@@ -1,3 +1,0 @@
-Add :func:`annotationlib.get_annotate_from_class_namespace` as a helper for
-accessing annotations in metaclasses, and remove
-``annotationlib.get_annotate_function``.

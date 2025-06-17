@@ -1,4 +1,3 @@
-
 #include "Python.h"
 
 #include "pycore_object.h"
@@ -34,12 +33,14 @@ make_table_entry(PyObject *obj, const char *filename, int linenumber)
     result->filename = filename;
     result->linenumber = linenumber;
     result->filename_borrow = NULL;
+    result->linenumber_borrow = 0;
     return result;
 }
 
 PyObject *
 _Py_stackref_get_object(_PyStackRef ref)
 {
+    assert(!PyStackRef_IsError(ref));
     if (ref.index == 0) {
         return NULL;
     }
@@ -64,6 +65,7 @@ PyStackRef_Is(_PyStackRef a, _PyStackRef b)
 PyObject *
 _Py_stackref_close(_PyStackRef ref, const char *filename, int linenumber)
 {
+    assert(!PyStackRef_IsError(ref));
     PyInterpreterState *interp = PyInterpreterState_Get();
     if (ref.index >= interp->next_stackref) {
         _Py_FatalErrorFormat(__func__, "Invalid StackRef with ID %" PRIu64 " at %s:%d\n", (void *)ref.index, filename, linenumber);
@@ -128,6 +130,7 @@ _Py_stackref_create(PyObject *obj, const char *filename, int linenumber)
 void
 _Py_stackref_record_borrow(_PyStackRef ref, const char *filename, int linenumber)
 {
+    assert(!PyStackRef_IsError(ref));
     if (ref.index < INITIAL_STACKREF_INDEX) {
         return;
     }
@@ -152,6 +155,7 @@ _Py_stackref_record_borrow(_PyStackRef ref, const char *filename, int linenumber
 void
 _Py_stackref_associate(PyInterpreterState *interp, PyObject *obj, _PyStackRef ref)
 {
+    assert(!PyStackRef_IsError(ref));
     assert(ref.index < INITIAL_STACKREF_INDEX);
     TableEntry *entry = make_table_entry(obj, "builtin-object", 0);
     if (entry == NULL) {
@@ -215,5 +219,13 @@ PyStackRef_IsNullOrInt(_PyStackRef ref)
 {
     return PyStackRef_IsNull(ref) || PyStackRef_IsTaggedInt(ref);
 }
+
+_PyStackRef
+PyStackRef_IncrementTaggedIntNoOverflow(_PyStackRef ref)
+{
+    assert(ref.index <= INT_MAX - 2); // No overflow
+    return (_PyStackRef){ .index = ref.index + 2 };
+}
+
 
 #endif

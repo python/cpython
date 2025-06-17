@@ -1,1 +1,0 @@
-Reset any :pep:`768` remote debugging pending call in children after :func:`os.fork` calls.

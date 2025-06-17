@@ -1,2 +1,0 @@
-Fix two races in the type lookup cache.  This affected the free-threaded
-build and could cause crashes (apparently quite difficult to trigger).

@@ -168,9 +168,9 @@ _FLOAT_FORMAT_SPECIFICATION_MATCHER = re.compile(r"""
     # A '0' that's *not* followed by another digit is parsed as a minimum width
     # rather than a zeropad flag.
     (?P<zeropad>0(?=[0-9]))?
-    (?P<minimumwidth>0|[1-9][0-9]*)?
+    (?P<minimumwidth>[0-9]+)?
     (?P<thousands_sep>[,_])?
-    (?:\.(?P<precision>0|[1-9][0-9]*))?
+    (?:\.(?P<precision>[0-9]+))?
     (?P<presentation_type>[eEfFgG%])
 """, re.DOTALL | re.VERBOSE).fullmatch
 
@@ -238,11 +238,6 @@ class Fraction(numbers.Rational):
                 self._denominator = 1
                 return self
 
-            elif isinstance(numerator, numbers.Rational):
-                self._numerator = numerator.numerator
-                self._denominator = numerator.denominator
-                return self
-
             elif (isinstance(numerator, float) or
                   (not isinstance(numerator, type) and
                    hasattr(numerator, 'as_integer_ratio'))):
@@ -277,6 +272,11 @@ class Fraction(numbers.Rational):
                             denominator *= 10**-exp
                 if m.group('sign') == '-':
                     numerator = -numerator
+
+            elif isinstance(numerator, numbers.Rational):
+                self._numerator = numerator.numerator
+                self._denominator = numerator.denominator
+                return self
 
             else:
                 raise TypeError("argument should be a string or a Rational "

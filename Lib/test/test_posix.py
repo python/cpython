@@ -1107,7 +1107,7 @@ class PosixTester(unittest.TestCase):
 
     def _test_chflags_regular_file(self, chflags_func, target_file, **kwargs):
         st = os.stat(target_file)
-        self.assertTrue(hasattr(st, 'st_flags'))
+        self.assertHasAttr(st, 'st_flags')
 
         # ZFS returns EOPNOTSUPP when attempting to set flag UF_IMMUTABLE.
         flags = st.st_flags | stat.UF_IMMUTABLE
@@ -1143,7 +1143,7 @@ class PosixTester(unittest.TestCase):
     def test_lchflags_symlink(self):
         testfn_st = os.stat(os_helper.TESTFN)
 
-        self.assertTrue(hasattr(testfn_st, 'st_flags'))
+        self.assertHasAttr(testfn_st, 'st_flags')
 
         self.addCleanup(os_helper.unlink, _DUMMY_SYMLINK)
         os.symlink(os_helper.TESTFN, _DUMMY_SYMLINK)
@@ -1521,8 +1521,8 @@ class PosixTester(unittest.TestCase):
         self.assertEqual(cm.exception.errno, errno.EINVAL)
         os.close(os.pidfd_open(os.getpid(), 0))
 
-    @unittest.skipUnless(hasattr(os, "link"), "test needs os.link()")
-    @support.skip_android_selinux('hard links to symbolic links')
+    @os_helper.skip_unless_hardlink
+    @os_helper.skip_unless_symlink
     def test_link_follow_symlinks(self):
         default_follow = sys.platform.startswith(
             ('darwin', 'freebsd', 'netbsd', 'openbsd', 'dragonfly', 'sunos5'))
@@ -2218,12 +2218,12 @@ class TestPosixWeaklinking(unittest.TestCase):
     def test_pwritev(self):
         self._verify_available("HAVE_PWRITEV")
         if self.mac_ver >= (10, 16):
-            self.assertTrue(hasattr(os, "pwritev"), "os.pwritev is not available")
-            self.assertTrue(hasattr(os, "preadv"), "os.readv is not available")
+            self.assertHasAttr(os, "pwritev")
+            self.assertHasAttr(os, "preadv")
 
         else:
-            self.assertFalse(hasattr(os, "pwritev"), "os.pwritev is available")
-            self.assertFalse(hasattr(os, "preadv"), "os.readv is available")
+            self.assertNotHasAttr(os, "pwritev")
+            self.assertNotHasAttr(os, "preadv")
 
     def test_stat(self):
         self._verify_available("HAVE_FSTATAT")

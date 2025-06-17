@@ -328,7 +328,7 @@ The general form of a *standard format specifier* is:
    sign: "+" | "-" | " "
    width_and_precision: [`width_with_grouping`][`precision_with_grouping`]
    width_with_grouping: [`width`][`grouping`]
-   precision_with_grouping: "." [`precision`][`grouping`]
+   precision_with_grouping: "." [`precision`][`grouping`] | "." `grouping`
    width: `~python-grammar:digit`+
    precision: `~python-grammar:digit`+
    grouping: "," | "_"
@@ -858,7 +858,7 @@ these rules.  The methods of :class:`Template` are:
 
    .. method:: is_valid()
 
-      Returns false if the template has invalid placeholders that will cause
+      Returns ``False`` if the template has invalid placeholders that will cause
       :meth:`substitute` to raise :exc:`ValueError`.
 
       .. versionadded:: 3.11
