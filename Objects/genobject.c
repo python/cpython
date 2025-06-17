@@ -10,7 +10,6 @@
 #include "pycore_gc.h"            // _PyGC_CLEAR_FINALIZED()
 #include "pycore_genobject.h"     // _PyGen_SetStopIterationValue()
 #include "pycore_interpframe.h"   // _PyFrame_GetCode()
-#include "pycore_pymem.h"         // _PyObject_XSetRefDelayed()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_opcode_utils.h"  // RESUME_AFTER_YIELD_FROM
@@ -721,7 +720,7 @@ gen_set_name(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
         return -1;
     }
     Py_BEGIN_CRITICAL_SECTION(self);
-    // gh-133980: To prevent use-after-free from other threads that reference
+    // gh-133931: To prevent use-after-free from other threads that reference
     // the gi_name.
     _PyObject_XSetRefDelayed(&op->gi_name, Py_NewRef(value));
     Py_END_CRITICAL_SECTION();
@@ -748,7 +747,7 @@ gen_set_qualname(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
         return -1;
     }
     Py_BEGIN_CRITICAL_SECTION(self);
-    // gh-133980: To prevent use-after-free from other threads that reference
+    // gh-133931: To prevent use-after-free from other threads that reference
     // the gi_qualname.
     _PyObject_XSetRefDelayed(&op->gi_qualname, Py_NewRef(value));
     Py_END_CRITICAL_SECTION();
