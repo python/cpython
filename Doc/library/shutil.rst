@@ -327,6 +327,10 @@ Directory and files operations
    The deprecated *onerror* is similar to *onexc*, except that the third
    parameter it receives is the tuple returned from :func:`sys.exc_info`.
 
+   .. seealso::
+      :ref:`shutil-rmtree-example` for an example of handling the removal
+      of a directory tree that contains read-only files.
+
    .. audit-event:: shutil.rmtree path,dir_fd shutil.rmtree
 
    .. versionchanged:: 3.3
