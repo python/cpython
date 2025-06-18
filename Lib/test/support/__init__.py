@@ -3080,14 +3080,17 @@ def _supports_remote_attaching():
 
     return PROCESS_VM_READV_SUPPORTED
 
-def support_remote_exec_only(test):
+def _support_remote_exec_only_impl(test):
     if not sys.is_remote_debug_enabled():
-        return unittest.skip("Remote debugging is not enabled")(test)
+        return unittest.skip("Remote debugging is not enabled")
     if sys.platform not in ("darwin", "linux", "win32"):
-        return unittest.skip("Test only runs on Linux, Windows and macOS")(test)
+        return unittest.skip("Test only runs on Linux, Windows and macOS")
     if sys.platform == "linux" and not _supports_remote_attaching():
-        return unittest.skip("Test only runs on Linux with process_vm_readv support")(test)
-    return _id(test)
+        return unittest.skip("Test only runs on Linux with process_vm_readv support")
+    return _id
+
+def support_remote_exec_only(test):
+    return _support_remote_exec_only_impl(test)
 
 class EqualToForwardRef:
     """Helper to ease use of annotationlib.ForwardRef in tests.
