@@ -501,7 +501,7 @@ and :ref:`numeric <numbers>` literals.
 
 Other “literals” are lexically denoted using :ref:`keywords <keywords>`
 (``None``, ``True``, ``False``) and the special
-:ref:`ellipsis token <lexical-ellipsis>` (``...``):
+:ref:`ellipsis token <lexical-ellipsis>` (``...``).
 
 
 .. index:: string literal, bytes literal, ASCII
@@ -519,7 +519,7 @@ quotes (``"``). For example:
    writing, highlighted strings don't look good when there's no code
    surrounding them.
 
-.. code-block:: text
+.. code-block:: python
 
    "spam"
    'eggs'
@@ -528,13 +528,28 @@ The quote used to start the literal also terminates it, so a string literal
 can only contain the other quote (except with escape sequences, see below).
 For example:
 
-.. code-block:: text
+.. code-block:: python
 
    'Say "Hello", please.'
    "Don't do that!"
 
 Except for this limitation, the choice of quote character (``'`` or ``"``)
 does not affect how the literal is parsed.
+
+Inside a string literal, the backslash (``\``) character introduces an
+:dfn:`escape sequence`, which has special meaning depending on the character
+after the backslash.
+For example, ``\"`` denotes the double quote character, and does *not* end
+the string:
+
+.. code-block:: python
+
+   >>> print("Say \"Hello\" to everyone!")
+   Say "Hello" to everyone!
+
+See :ref:`escape sequences <escape-sequences>` below for a full list of such
+sequences, and more details.
+
 
 .. index:: triple-quoted string
    single: """; string literal
@@ -545,32 +560,20 @@ Triple-quoted strings
 
 Strings can also be enclosed in matching groups of three single or double
 quotes.
-These are generally referred to as :dfn:`triple-quoted strings`.
+These are generally referred to as :dfn:`triple-quoted strings`::
 
-In triple-quoted literals, unescaped newlines and quotes are allowed (and are
-retained), except that three unescaped quotes in a row terminate the literal.
-(Here, a *quote* is the character used to open the literal, that is,
-either ``'`` or ``"``.)
+   """This is a triple-quoted string."""
 
-For example:
+In triple-quoted literals, unescaped quotes are allowed (and are
+retained), except that three unescaped quotes in a row terminate the literal,
+if they are of the same kind (``'`` or ``"``) used at the start::
 
-.. code-block:: text
+   """This string has "quotes" inside."""
 
-   """This is a triple-quoted string with "quotes" inside."""
+Unescaped newlines are also allowed and retained::
 
-   '''Another triple-quoted string. This one continues
-   on the next line.'''
-
-Escape sequences
-----------------
-
-Inside a string literal, the backslash (``\``) character introduces an
-:dfn:`escape sequence`, which has special meaning depending on the character
-after the backslash.
-For example, ``\n`` denotes the 'newline' character, rather the two characters
-``\`` and ``n``.
-See :ref:`escape sequences <escape-sequences>` below for a full list of such
-sequences, and more details.
+   '''This triple-quoted string
+   continues on the next line.'''
 
 
 .. index::
@@ -580,69 +583,27 @@ sequences, and more details.
 String prefixes
 ---------------
 
-String literals can have an optional :dfn:`prefix` that influences how the literal
-is parsed, for example:
+String literals can have an optional :dfn:`prefix` that influences how the
+content of the literal is parsed, for example:
 
 .. code-block:: python
 
    b"data"
    f'{result=}'
 
-* ``r``: Raw string
-* ``f``: "F-string"
-* ``t``: "T-string"
-* ``b``: Byte literal
+The allowed prefixes are:
+
+* ``b``: :ref:`Bytes literal <bytes-literal>`
+* ``r``: :ref:`Raw string <raw-strings>`
+* ``f``: :ref:`Formatted string literal <f-strings>` ("f-string")
+* ``t``: :ref:`Template string literal <t-strings>` ("t-string")
 * ``u``: No effect (allowed for backwards compatibility)
+
+See the linked sections for details on each type.
 
 Prefixes are case-insensitive (for example, ``B`` works the same as ``b``).
 The ``r`` prefix can be combined with ``f``, ``t`` or ``b``, so ``fr``,
 ``rf``, ``tr``, ``rt``, ``br`` and ``rb`` are also valid prefixes.
-
-
-.. index::
-   single: b'; bytes literal
-   single: b"; bytes literal
-
-:dfn:`Bytes literals` are always prefixed with ``'b'`` or ``'B'``; they produce an
-instance of the :class:`bytes` type instead of the :class:`str` type.
-They may only contain ASCII characters; bytes with a numeric value of 128
-or greater must be expressed with escape sequences.
-Similarly, a zero byte must be expressed using an escape sequence.
-
-
-.. index::
-   single: r'; raw string literal
-   single: r"; raw string literal
-
-Both string and bytes literals may optionally be prefixed with a letter ``'r'``
-or ``'R'``; such constructs are called :dfn:`raw string literals`
-and :dfn:`raw bytes literals` respectively and treat backslashes as
-literal characters.
-As a result, in raw string literals, :ref:`escape sequences <escape-sequences>`
-escapes are not treated specially.
-
-Even in a raw literal, quotes can be escaped with a backslash, but the
-backslash remains in the result; for example, ``r"\""`` is a valid string
-literal consisting of two characters: a backslash and a double quote; ``r"\"``
-is not a valid string literal (even a raw string cannot end in an odd number of
-backslashes).  Specifically, *a raw literal cannot end in a single backslash*
-(since the backslash would escape the following quote character).  Note also
-that a single backslash followed by a newline is interpreted as those two
-characters as part of the literal, *not* as a line continuation.
-
-
-.. index::
-   single: f'; formatted string literal
-   single: f"; formatted string literal
-
-A string literal with ``'f'`` or ``'F'`` in its prefix is a
-:dfn:`formatted string literal`; see :ref:`f-strings`.
-Similarly, string literal with ``'t'`` or ``'T'`` in its prefix is a
-:dfn:`template string literal`; see :ref:`t-strings`.
-
-The ``'f'`` or ``t`` may be combined with ``'r'`` to create a
-:dfn:`raw formatted string` or :dfn:`raw template string`.
-They may not be combined with ``'b'``, ``'u'``, or each other.
 
 .. versionadded:: 3.3
    The ``'rb'`` prefix of raw bytes literals has been added as a synonym
@@ -653,7 +614,11 @@ They may not be combined with ``'b'``, ``'u'``, or each other.
    See :pep:`414` for more information.
 
 
-String literals, except "F-strings" and "T-strings", are described by the
+Formal grammar
+--------------
+
+String literals, except :ref:`"F-strings" <f-strings>` and
+:ref:`"T-strings" <t-strings>`, are described by the
 following lexical definitions.
 
 These definitions use :ref:`negative lookaheads <lexical-lookaheads>` (``!``)
@@ -675,7 +640,236 @@ to indicate that an ending quote ends the literal.
    stringescapeseq: "\" <any `source_character`>
 
 Note that as in all lexical definitions, whitespace is significant.
-The prefix, if any, must be followed immediately by the quoted string content.
+In particular, the prefix (if any) must be immediately followed by the starting
+quote.
+
+.. _escape-sequences:
+
+Escape sequences
+----------------
+
+Unless an ``'r'`` or ``'R'`` prefix is present, escape sequences in string and
+bytes literals are interpreted according to rules similar to those used by
+Standard C.  The recognized escape sequences are:
+
+.. list-table::
+   :widths: auto
+   :header-rows: 1
+
+   * * Escape Sequence
+     * Meaning
+   * * ``\``\ <newline>
+     * :ref:`string-escape-ignore`
+   * * ``\\``
+     * :ref:`Backslash <string-escape-escaped-char>`
+   * * ``\'``
+     * :ref:`Single quote <string-escape-escaped-char>`
+   * * ``\"``
+     * :ref:`Double quote <string-escape-escaped-char>`
+   * * ``\a``
+     * ASCII Bell (BEL)
+   * * ``\b``
+     * ASCII Backspace (BS)
+   * * ``\f``
+     * ASCII Formfeed (FF)
+   * * ``\n``
+     * ASCII Linefeed (LF)
+   * * ``\r``
+     * ASCII Carriage Return (CR)
+   * * ``\t``
+     * ASCII Horizontal Tab (TAB)
+   * * ``\v``
+     * ASCII Vertical Tab (VT)
+   * * :samp:`\\\\{ooo}`
+     * :ref:`string-escape-oct`
+   * * :samp:`\\x{hh}`
+     * :ref:`string-escape-hex`
+   * * :samp:`\\N\\{{name}\\}`
+     * :ref:`string-escape-named`
+   * * :samp:`\\u{xxxx}`
+     * :ref:`Hexadecimal Unicode character <string-escape-long-hex>`
+   * * :samp:`\\U{xxxxxxxx}`
+     * :ref:`Hexadecimal Unicode character <string-escape-long-hex>`
+
+.. _string-escape-ignore:
+
+Ignored end of line
+^^^^^^^^^^^^^^^^^^^
+
+   A backslash can be added at the end of a line to ignore the newline::
+
+      >>> 'This string will not include \
+      ... backslashes or newline characters.'
+      'This string will not include backslashes or newline characters.'
+
+   The same result can be achieved using :ref:`triple-quoted strings <strings>`,
+   or parentheses and :ref:`string literal concatenation <string-concatenation>`.
+
+.. _string-escape-escaped-char:
+
+Escaped characters
+^^^^^^^^^^^^^^^^^^
+
+  To include a backslash in a non-:ref:`raw <raw-strings>` Python string
+  literal, it must be doubled. The ``\\`` escape sequence denotes a single
+  backslash character::
+
+      >>> print('C:\\Program Files')
+      C:\Program Files
+
+  Similarly, the ``\'`` and ``\"`` sequences denote the single and double
+  quote character, respectively::
+
+      >>> print('\' and \"')
+      ' and "
+
+.. _string-escape-oct:
+
+Octal character
+^^^^^^^^^^^^^^^
+
+  The sequence :samp:`\\\\{ooo}` denotes a *character* with the octal (base 8)
+  value *ooo*::
+
+     >>> '\120'
+     'P'
+
+  Up to three octal digits (0 through 7) are accepted.
+
+  In a bytes literal, *character* means a *byte* with the given value.
+  In a string literal, it means a Unicode character with the given value.
+
+   .. versionchanged:: 3.11
+      Octal escapes with value larger than ``0o377`` (255) produce a
+      :exc:`DeprecationWarning`.
+
+   .. versionchanged:: 3.12
+      Octal escapes with value larger than ``0o377`` (255) produce a
+      :exc:`SyntaxWarning`.
+      In a future Python version they will raise a :exc:`SyntaxError`.
+
+.. _string-escape-hex:
+
+Hexadecimal character
+^^^^^^^^^^^^^^^^^^^^^
+
+  The sequence :samp:`\\x{hh}` denotes a *character* with the hex (base 16)
+  value *hh*::
+
+     >>> '\x50'
+     'P'
+
+  Unlike in Standard C, exactly two hex digits are required.
+
+  In a bytes literal, *character* means a *byte* with the given value.
+  In a string literal, it means a Unicode character with the given value.
+
+.. _string-escape-named:
+
+Named Unicode character
+^^^^^^^^^^^^^^^^^^^^^^^
+
+  The sequence :samp:`\\N\\{{name}\\}` denotes a Unicode character
+  with the given *name*::
+
+     >>> '\N{LATIN CAPITAL LETTER P}'
+     'P'
+     >>> '\N{SNAKE}'
+     '🐍'
+
+  This sequence cannot appear in :ref:`bytes literals <bytes-literal>`.
+
+  .. versionchanged:: 3.3
+      Support for `name aliases <https://www.unicode.org/Public/16.0.0/ucd/NameAliases.txt>`__
+      has been added.
+
+.. _string-escape-long-hex:
+
+Hexadecimal Unicode characters
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  These sequences :samp:`\\u{xxxx}` and :samp:`\\U{xxxxxxxx}` denote the
+  Unicode character with the given hex (base 16) value.
+  Exactly four digits are required for ``\u``; exactly eight digits are
+  required for ``\U``.
+  The latter can encode any Unicode character.
+
+  .. code-block:: python
+
+      >>> '\u1234'
+      'ሴ'
+      >>> '\U0001f40d'
+      '🐍'
+
+  These sequences cannot appear in :ref:`bytes literals <bytes-literal>`.
+
+
+.. index:: unrecognized escape sequence
+
+Unrecognized escape sequences
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Unlike in Standard C, all unrecognized escape sequences are left in the string
+unchanged, that is, *the backslash is left in the result*::
+
+   >>> print('\q')
+   \q
+   >>> list('\q')
+   ['\\', 'q']
+
+Note that for bytes literals, the escape sequences only recognized in string
+literals (``\N...``, ``\u...``, ``\U...``) fall into the category of
+unrecognized escapes.
+
+.. versionchanged:: 3.6
+   Unrecognized escape sequences produce a :exc:`DeprecationWarning`.
+
+.. versionchanged:: 3.12
+   Unrecognized escape sequences produce a :exc:`SyntaxWarning`.
+   In a future Python version they will raise a :exc:`SyntaxError`.
+
+
+.. index::
+   single: b'; bytes literal
+   single: b"; bytes literal
+
+
+.. _bytes-literal:
+
+Bytes literals
+--------------
+
+:dfn:`Bytes literals` are always prefixed with ``'b'`` or ``'B'``; they produce an
+instance of the :class:`bytes` type instead of the :class:`str` type.
+They may only contain ASCII characters; bytes with a numeric value of 128
+or greater must be expressed with escape sequences.
+Similarly, a zero byte must be expressed using an escape sequence.
+
+
+.. index::
+   single: r'; raw string literal
+   single: r"; raw string literal
+
+.. _raw-strings:
+
+Raw string literals
+-------------------
+
+Both string and bytes literals may optionally be prefixed with a letter ``'r'``
+or ``'R'``; such constructs are called :dfn:`raw string literals`
+and :dfn:`raw bytes literals` respectively and treat backslashes as
+literal characters.
+As a result, in raw string literals, :ref:`escape sequences <escape-sequences>`
+escapes are not treated specially.
+
+Even in a raw literal, quotes can be escaped with a backslash, but the
+backslash remains in the result; for example, ``r"\""`` is a valid string
+literal consisting of two characters: a backslash and a double quote; ``r"\"``
+is not a valid string literal (even a raw string cannot end in an odd number of
+backslashes).  Specifically, *a raw literal cannot end in a single backslash*
+(since the backslash would escape the following quote character).  Note also
+that a single backslash followed by a newline is interpreted as those two
+characters as part of the literal, *not* as a line continuation.
 
 
 .. index:: physical line, escape sequence, Standard C, C
@@ -693,120 +887,6 @@ The prefix, if any, must be followed immediately by the quoted string content.
    single: \u; escape sequence
    single: \U; escape sequence
 
-.. _escape-sequences:
-
-Escape sequences
-----------------
-
-Unless an ``'r'`` or ``'R'`` prefix is present, escape sequences in string and
-bytes literals are interpreted according to rules similar to those used by
-Standard C.  The recognized escape sequences are:
-
-+-------------------------+---------------------------------+-------+
-| Escape Sequence         | Meaning                         | Notes |
-+=========================+=================================+=======+
-| ``\``\ <newline>        | Backslash and newline ignored   | \(1)  |
-+-------------------------+---------------------------------+-------+
-| ``\\``                  | Backslash (``\``)               |       |
-+-------------------------+---------------------------------+-------+
-| ``\'``                  | Single quote (``'``)            |       |
-+-------------------------+---------------------------------+-------+
-| ``\"``                  | Double quote (``"``)            |       |
-+-------------------------+---------------------------------+-------+
-| ``\a``                  | ASCII Bell (BEL)                |       |
-+-------------------------+---------------------------------+-------+
-| ``\b``                  | ASCII Backspace (BS)            |       |
-+-------------------------+---------------------------------+-------+
-| ``\f``                  | ASCII Formfeed (FF)             |       |
-+-------------------------+---------------------------------+-------+
-| ``\n``                  | ASCII Linefeed (LF)             |       |
-+-------------------------+---------------------------------+-------+
-| ``\r``                  | ASCII Carriage Return (CR)      |       |
-+-------------------------+---------------------------------+-------+
-| ``\t``                  | ASCII Horizontal Tab (TAB)      |       |
-+-------------------------+---------------------------------+-------+
-| ``\v``                  | ASCII Vertical Tab (VT)         |       |
-+-------------------------+---------------------------------+-------+
-| :samp:`\\\\{ooo}`       | Character with octal value      | (2,4) |
-|                         | *ooo*                           |       |
-+-------------------------+---------------------------------+-------+
-| :samp:`\\x{hh}`         | Character with hex value *hh*   | (3,4) |
-+-------------------------+---------------------------------+-------+
-
-Escape sequences only recognized in string literals are:
-
-+-------------------------+---------------------------------+-------+
-| Escape Sequence         | Meaning                         | Notes |
-+=========================+=================================+=======+
-| :samp:`\\N\\{{name}\\}` | Character named *name* in the   | \(5)  |
-|                         | Unicode database                |       |
-+-------------------------+---------------------------------+-------+
-| :samp:`\\u{xxxx}`       | Character with 16-bit hex value | \(6)  |
-|                         | *xxxx*                          |       |
-+-------------------------+---------------------------------+-------+
-| :samp:`\\U{xxxxxxxx}`   | Character with 32-bit hex value | \(7)  |
-|                         | *xxxxxxxx*                      |       |
-+-------------------------+---------------------------------+-------+
-
-Notes:
-
-(1)
-   A backslash can be added at the end of a line to ignore the newline::
-
-      >>> 'This string will not include \
-      ... backslashes or newline characters.'
-      'This string will not include backslashes or newline characters.'
-
-   The same result can be achieved using :ref:`triple-quoted strings <strings>`,
-   or parentheses and :ref:`string literal concatenation <string-concatenation>`.
-
-
-(2)
-   As in Standard C, up to three octal digits (0 through 7) are accepted.
-
-   .. versionchanged:: 3.11
-      Octal escapes with value larger than ``0o377`` (255) produce a
-      :exc:`DeprecationWarning`.
-
-   .. versionchanged:: 3.12
-      Octal escapes with value larger than ``0o377`` (255) produce a
-      :exc:`SyntaxWarning`. In a future Python version they will be eventually
-      a :exc:`SyntaxError`.
-
-(3)
-   Unlike in Standard C, exactly two hex digits are required.
-
-(4)
-   In a bytes literal, hexadecimal and octal escapes denote the byte with the
-   given value. In a string literal, these escapes denote a Unicode character
-   with the given value.
-
-(5)
-   .. versionchanged:: 3.3
-      Support for name aliases [#]_ has been added.
-
-(6)
-   Exactly four hex digits are required.
-
-(7)
-   Any Unicode character can be encoded this way.  Exactly eight hex digits
-   are required.
-
-
-.. index:: unrecognized escape sequence
-
-Unlike Standard C, all unrecognized escape sequences are left in the string
-unchanged, i.e., *the backslash is left in the result*.
-Note that for bytes literals, the escape sequences only recognized in string
-literals fall into the category of unrecognized escapes.
-
-.. versionchanged:: 3.6
-   Unrecognized escape sequences produce a :exc:`DeprecationWarning`.
-
-.. versionchanged:: 3.12
-   Unrecognized escape sequences produce a :exc:`SyntaxWarning`. In a future
-   Python version they will be eventually a :exc:`SyntaxError`.
-
 
 .. index::
    single: formatted string literal
@@ -815,6 +895,8 @@ literals fall into the category of unrecognized escapes.
    single: string; interpolated literal
    single: f-string
    single: fstring
+   single: f'; formatted string literal
+   single: f"; formatted string literal
    single: {} (curly brackets); in formatted string literal
    single: ! (exclamation); in formatted string literal
    single: : (colon); in formatted string literal
@@ -1022,7 +1104,7 @@ actually an expression composed of the unary operator '``-``' and the literal
 .. _integers:
 
 Integer literals
-^^^^^^^^^^^^^^^^
+----------------
 
 Integer literals denote whole numbers. For example::
 
@@ -1095,7 +1177,7 @@ Formally, integer literals are described by the following lexical definitions:
 .. _floating:
 
 Floating-point literals
-^^^^^^^^^^^^^^^^^^^^^^^
+-----------------------
 
 Floating-point (float) literals, such as ``3.14`` or ``1.5``, denote
 :ref:`approximations of real numbers <datamodel-float>`.
@@ -1157,7 +1239,7 @@ lexical definitions:
 .. _imaginary:
 
 Imaginary literals
-^^^^^^^^^^^^^^^^^^
+------------------
 
 Python has :ref:`complex number <typesnumeric>` objects, but no complex
 literals.
@@ -1279,7 +1361,3 @@ occurrence outside string literals and comments is an unconditional error:
 
    $       ?       `
 
-
-.. rubric:: Footnotes
-
-.. [#] https://www.unicode.org/Public/16.0.0/ucd/NameAliases.txt
