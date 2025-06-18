@@ -6901,9 +6901,8 @@ class MiscTestCase(unittest.TestCase):
             self.skipTest("forkserver specific test")
 
         name = os.path.join(os.path.dirname(__file__), 'mp_preload_main.py')
-        rc, out, err = test.support.script_helper.assert_python_ok(name)
+        _, out, err = test.support.script_helper.assert_python_ok(name)
         self.assertFalse(err, msg=err.decode())
-        self.assertEqual(rc, 0)
 
         # TODO: Where is the extra empty line coming from?
         out = out.decode().split("\n")

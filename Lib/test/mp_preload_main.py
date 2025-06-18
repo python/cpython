@@ -1,12 +1,6 @@
 import multiprocessing
-import sys
 
 print(f"{__name__}")
-
-# TODO: This is necessary as the fork server doesn't flush output after
-#       preloading modules, and hence buffered output is inherited by child
-#       processes. See gh-135335 (this should be removed once that is fixed).
-sys.stdout.flush()
 
 def f():
     print("f")
