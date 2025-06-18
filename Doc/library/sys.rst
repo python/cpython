@@ -1189,9 +1189,10 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    this implementation supports multiple isolated interpreters.
    It is ``True`` for CPython on most platforms.  Platforms with
    this support implement the low-level :mod:`!_interpreters` module.
-   
-   .. seealso:
-       :pep:`684`, :pep:`734`, and :mod:`concurrent.interpreters`.
+
+   .. seealso::
+
+      :pep:`684`, :pep:`734`, and :mod:`concurrent.interpreters`.
 
    :data:`sys.implementation` may contain additional attributes specific to
    the Python implementation.  These non-standard attributes must start with

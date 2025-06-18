@@ -1089,9 +1089,17 @@ class SysModuleTest(unittest.TestCase):
                          sys.implementation.name.lower())
 
         # https://peps.python.org/pep-0734
-        self.assertIsInstance(sys.implementation.supports_isolated_interpreters, bool)
+        sii = sys.implementation.supports_isolated_interpreters
+        self.assertIsInstance(sii, bool)
         if test.support.check_impl_detail(cpython=True):
-            self.assertIs(sys.implementation.supports_isolated_interpreters, True)
+            if (
+                test.support.is_apple_mobile
+                or test.support.is_emscripten
+                or test.support.is_wasi
+            ):
+                self.assertFalse(sii)
+            else:
+                self.assertTrue(sii)
 
     @test.support.cpython_only
     def test_debugmallocstats(self):
