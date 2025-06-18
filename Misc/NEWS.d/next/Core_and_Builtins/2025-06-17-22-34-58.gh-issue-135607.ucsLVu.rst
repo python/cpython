@@ -1,1 +1,2 @@
-Fix potential weakref races on module ojbect under free-threaded build.
+Fix potential :mod:`weakref` races on module objects on the :term:`free threaded <free
+threading>` build.
