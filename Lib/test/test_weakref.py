@@ -2253,11 +2253,31 @@ class ModuleTestCase(unittest.TestCase):
             self.assertEqual(obj.__name__, name)
             self.assertEqual(obj.__qualname__, name)
 
-    def test_module_dealloc(self):
+    def test_module_weakref(self):
         mod = types.ModuleType("temp_mod")
+        common_ref = weakref.ref(mod)
+        threads = []
+        n_threads = 5
+        b = threading.Barrier(n_threads)
+
+        def weakref_mod_worker():
+            b.wait()
+            r = weakref.ref(mod)
+            rr = r()
+            self.assertIs(rr, mod)
+            self.assertIs(rr, common_ref())
+
+        for i in range(n_threads):
+            t = threading.Thread(target=weakref_mod_worker)
+            threads.append(t)
+            t.start()
+
+        for t in threads:
+            t.join()
+
         r = weakref.ref(mod)
         self.assertIsNotNone(r, "weak ref to a module should not be None")
-
+        self.assertIs(r(), common_ref())
         del mod
 
 
