@@ -511,8 +511,8 @@ Module constants
 
    A :class:`tuple` containing all sqlite3 keywords.
 
-   The availability of this constant varies depending on the version of SQLite
-   Python was compiled with.
+   This constant is only available if Python was compiled with SQLite
+   3.24.0 or greater.
 
    .. versionadded:: next
 
