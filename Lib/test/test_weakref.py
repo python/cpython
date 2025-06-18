@@ -2253,11 +2253,12 @@ class ModuleTestCase(unittest.TestCase):
             self.assertEqual(obj.__name__, name)
             self.assertEqual(obj.__qualname__, name)
 
+    @threading_helper.requires_working_threading()
     def test_module_weakref(self):
         mod = types.ModuleType("temp_mod")
         common_ref = weakref.ref(mod)
         threads = []
-        n_threads = 5
+        n_threads = 10
         b = threading.Barrier(n_threads)
 
         def weakref_mod_worker():
