@@ -151,6 +151,7 @@ class TestBasicOps:
         # Exception raised if size of sample exceeds that of population
         self.assertRaises(ValueError, self.gen.sample, population, N+1)
         self.assertRaises(ValueError, self.gen.sample, [], -1)
+        self.assertRaises(TypeError, self.gen.sample, population, 1.0)
 
     def test_sample_distribution(self):
         # For the entire allowable range of 0 <= k <= N, validate that
@@ -268,6 +269,7 @@ class TestBasicOps:
             choices(data, range(4), k=5),
             choices(k=5, population=data, weights=range(4)),
             choices(k=5, population=data, cum_weights=range(4)),
+            choices(data, k=MyIndex(5)),
         ]:
             self.assertEqual(len(sample), 5)
             self.assertEqual(type(sample), list)
@@ -378,122 +380,40 @@ class TestBasicOps:
             self.assertEqual(x1, x2)
             self.assertEqual(y1, y2)
 
+    @support.requires_IEEE_754
+    def test_53_bits_per_float(self):
+        span = 2 ** 53
+        cum = 0
+        for i in range(100):
+            cum |= int(self.gen.random() * span)
+        self.assertEqual(cum, span-1)
+
     def test_getrandbits(self):
+        getrandbits = self.gen.getrandbits
         # Verify ranges
         for k in range(1, 1000):
-            self.assertTrue(0 <= self.gen.getrandbits(k) < 2**k)
-        self.assertEqual(self.gen.getrandbits(0), 0)
+            self.assertTrue(0 <= getrandbits(k) < 2**k)
+        self.assertEqual(getrandbits(0), 0)
 
         # Verify all bits active
-        getbits = self.gen.getrandbits
         for span in [1, 2, 3, 4, 31, 32, 32, 52, 53, 54, 119, 127, 128, 129]:
             all_bits = 2**span-1
             cum = 0
             cpl_cum = 0
             for i in range(100):
-                v = getbits(span)
+                v = getrandbits(span)
                 cum |= v
                 cpl_cum |= all_bits ^ v
             self.assertEqual(cum, all_bits)
             self.assertEqual(cpl_cum, all_bits)
 
         # Verify argument checking
-        self.assertRaises(TypeError, self.gen.getrandbits)
-        self.assertRaises(TypeError, self.gen.getrandbits, 1, 2)
-        self.assertRaises(ValueError, self.gen.getrandbits, -1)
-        self.assertRaises(OverflowError, self.gen.getrandbits, 1<<1000)
-        self.assertRaises(ValueError, self.gen.getrandbits, -1<<1000)
-        self.assertRaises(TypeError, self.gen.getrandbits, 10.1)
-
-    def test_pickling(self):
-        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            state = pickle.dumps(self.gen, proto)
-            origseq = [self.gen.random() for i in range(10)]
-            newgen = pickle.loads(state)
-            restoredseq = [newgen.random() for i in range(10)]
-            self.assertEqual(origseq, restoredseq)
-
-    def test_bug_1727780(self):
-        # verify that version-2-pickles can be loaded
-        # fine, whether they are created on 32-bit or 64-bit
-        # platforms, and that version-3-pickles load fine.
-        files = [("randv2_32.pck", 780),
-                 ("randv2_64.pck", 866),
-                 ("randv3.pck", 343)]
-        for file, value in files:
-            with open(support.findfile(file),"rb") as f:
-                r = pickle.load(f)
-            self.assertEqual(int(r.random()*1000), value)
-
-    def test_bug_9025(self):
-        # Had problem with an uneven distribution in int(n*random())
-        # Verify the fix by checking that distributions fall within expectations.
-        n = 100000
-        randrange = self.gen.randrange
-        k = sum(randrange(6755399441055744) % 3 == 2 for i in range(n))
-        self.assertTrue(0.30 < k/n < .37, (k/n))
-
-    def test_randbytes(self):
-        # Verify ranges
-        for n in range(1, 10):
-            data = self.gen.randbytes(n)
-            self.assertEqual(type(data), bytes)
-            self.assertEqual(len(data), n)
-
-        self.assertEqual(self.gen.randbytes(0), b'')
-
-        # Verify argument checking
-        self.assertRaises(TypeError, self.gen.randbytes)
-        self.assertRaises(TypeError, self.gen.randbytes, 1, 2)
-        self.assertRaises(ValueError, self.gen.randbytes, -1)
-        self.assertRaises(OverflowError, self.gen.randbytes, 1<<1000)
-        self.assertRaises((ValueError, OverflowError), self.gen.randbytes, -1<<1000)
-        self.assertRaises(TypeError, self.gen.randbytes, 1.0)
-
-    def test_mu_sigma_default_args(self):
-        self.assertIsInstance(self.gen.normalvariate(), float)
-        self.assertIsInstance(self.gen.gauss(), float)
-
-
-try:
-    random.SystemRandom().random()
-except NotImplementedError:
-    SystemRandom_available = False
-else:
-    SystemRandom_available = True
-
-@unittest.skipUnless(SystemRandom_available, "random.SystemRandom not available")
-class SystemRandom_TestBasicOps(TestBasicOps, unittest.TestCase):
-    gen = random.SystemRandom()
-
-    def test_autoseed(self):
-        # Doesn't need to do anything except not fail
-        self.gen.seed()
-
-    def test_saverestore(self):
-        self.assertRaises(NotImplementedError, self.gen.getstate)
-        self.assertRaises(NotImplementedError, self.gen.setstate, None)
-
-    def test_seedargs(self):
-        # Doesn't need to do anything except not fail
-        self.gen.seed(100)
-
-    def test_gauss(self):
-        self.gen.gauss_next = None
-        self.gen.seed(100)
-        self.assertEqual(self.gen.gauss_next, None)
-
-    def test_pickling(self):
-        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            self.assertRaises(NotImplementedError, pickle.dumps, self.gen, proto)
-
-    def test_53_bits_per_float(self):
-        # This should pass whenever a C double has 53 bit precision.
-        span = 2 ** 53
-        cum = 0
-        for i in range(100):
-            cum |= int(self.gen.random() * span)
-        self.assertEqual(cum, span-1)
+        self.assertRaises(TypeError, getrandbits)
+        self.assertRaises(TypeError, getrandbits, 1, 2)
+        self.assertRaises(ValueError, getrandbits, -1)
+        self.assertRaises(OverflowError, getrandbits, 1<<1000)
+        self.assertRaises(ValueError, getrandbits, -1<<1000)
+        self.assertRaises(TypeError, getrandbits, 10.1)
 
     def test_bigrand(self):
         # The randrange routine should build-up the required number of bits
@@ -572,6 +492,10 @@ class SystemRandom_TestBasicOps(TestBasicOps, unittest.TestCase):
             randrange(1000, step=100)
         with self.assertRaises(TypeError):
             randrange(1000, None, step=100)
+        with self.assertRaises(TypeError):
+            randrange(1000, step=MyIndex(1))
+        with self.assertRaises(TypeError):
+            randrange(1000, None, step=MyIndex(1))
 
     def test_randbelow_logic(self, _log=log, int=int):
         # check bitcount transition points:  2**i and 2**(i+1)-1
@@ -593,6 +517,116 @@ class SystemRandom_TestBasicOps(TestBasicOps, unittest.TestCase):
             k = int(1.00001 + _log(n, 2))
             self.assertEqual(k, numbits)        # note the stronger assertion
             self.assertTrue(2**k > n > 2**(k-1))   # note the stronger assertion
+
+    def test_randrange_index(self):
+        randrange = self.gen.randrange
+        self.assertIn(randrange(MyIndex(5)), range(5))
+        self.assertIn(randrange(MyIndex(2), MyIndex(7)), range(2, 7))
+        self.assertIn(randrange(MyIndex(5), MyIndex(15), MyIndex(2)), range(5, 15, 2))
+
+    def test_randint(self):
+        randint = self.gen.randint
+        self.assertIn(randint(2, 5), (2, 3, 4, 5))
+        self.assertEqual(randint(2, 2), 2)
+        self.assertIn(randint(MyIndex(2), MyIndex(5)), (2, 3, 4, 5))
+        self.assertEqual(randint(MyIndex(2), MyIndex(2)), 2)
+
+        self.assertRaises(ValueError, randint, 5, 2)
+        self.assertRaises(TypeError, randint)
+        self.assertRaises(TypeError, randint, 2)
+        self.assertRaises(TypeError, randint, 2, 5, 1)
+        self.assertRaises(TypeError, randint, 2.0, 5)
+        self.assertRaises(TypeError, randint, 2, 5.0)
+
+    def test_pickling(self):
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            state = pickle.dumps(self.gen, proto)
+            origseq = [self.gen.random() for i in range(10)]
+            newgen = pickle.loads(state)
+            restoredseq = [newgen.random() for i in range(10)]
+            self.assertEqual(origseq, restoredseq)
+
+    def test_bug_1727780(self):
+        # verify that version-2-pickles can be loaded
+        # fine, whether they are created on 32-bit or 64-bit
+        # platforms, and that version-3-pickles load fine.
+        files = [("randv2_32.pck", 780),
+                 ("randv2_64.pck", 866),
+                 ("randv3.pck", 343)]
+        for file, value in files:
+            with open(support.findfile(file),"rb") as f:
+                r = pickle.load(f)
+            self.assertEqual(int(r.random()*1000), value)
+
+    def test_bug_9025(self):
+        # Had problem with an uneven distribution in int(n*random())
+        # Verify the fix by checking that distributions fall within expectations.
+        n = 100000
+        randrange = self.gen.randrange
+        k = sum(randrange(6755399441055744) % 3 == 2 for i in range(n))
+        self.assertTrue(0.30 < k/n < .37, (k/n))
+
+    def test_randrange_bug_1590891(self):
+        start = 1000000000000
+        stop = -100000000000000000000
+        step = -200
+        x = self.gen.randrange(start, stop, step)
+        self.assertTrue(stop < x <= start)
+        self.assertEqual((x+stop)%step, 0)
+
+    def test_randbytes(self):
+        # Verify ranges
+        for n in range(1, 10):
+            data = self.gen.randbytes(n)
+            self.assertEqual(type(data), bytes)
+            self.assertEqual(len(data), n)
+
+        self.assertEqual(self.gen.randbytes(0), b'')
+
+        # Verify argument checking
+        self.assertRaises(TypeError, self.gen.randbytes)
+        self.assertRaises(TypeError, self.gen.randbytes, 1, 2)
+        self.assertRaises(ValueError, self.gen.randbytes, -1)
+        self.assertRaises(OverflowError, self.gen.randbytes, 1<<1000)
+        self.assertRaises((ValueError, OverflowError), self.gen.randbytes, -1<<1000)
+        self.assertRaises(TypeError, self.gen.randbytes, 1.0)
+
+    def test_mu_sigma_default_args(self):
+        self.assertIsInstance(self.gen.normalvariate(), float)
+        self.assertIsInstance(self.gen.gauss(), float)
+
+
+try:
+    random.SystemRandom().random()
+except NotImplementedError:
+    SystemRandom_available = False
+else:
+    SystemRandom_available = True
+
+@unittest.skipUnless(SystemRandom_available, "random.SystemRandom not available")
+class SystemRandom_TestBasicOps(TestBasicOps, unittest.TestCase):
+    gen = random.SystemRandom()
+
+    def test_autoseed(self):
+        # Doesn't need to do anything except not fail
+        self.gen.seed()
+
+    def test_saverestore(self):
+        self.assertRaises(NotImplementedError, self.gen.getstate)
+        self.assertRaises(NotImplementedError, self.gen.setstate, None)
+
+    def test_seedargs(self):
+        # Doesn't need to do anything except not fail
+        self.gen.seed(100)
+
+    def test_gauss(self):
+        self.gen.gauss_next = None
+        self.gen.seed(100)
+        self.assertEqual(self.gen.gauss_next, None)
+
+    def test_pickling(self):
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            self.assertRaises(NotImplementedError, pickle.dumps, self.gen, proto)
 
 
 class TestRawMersenneTwister(unittest.TestCase):
@@ -779,38 +813,6 @@ class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):
         seed = (1 << (10000 * 8)) - 1  # about 10K bytes
         self.gen.seed(seed)
 
-    def test_53_bits_per_float(self):
-        # This should pass whenever a C double has 53 bit precision.
-        span = 2 ** 53
-        cum = 0
-        for i in range(100):
-            cum |= int(self.gen.random() * span)
-        self.assertEqual(cum, span-1)
-
-    def test_bigrand(self):
-        # The randrange routine should build-up the required number of bits
-        # in stages so that all bit positions are active.
-        span = 2 ** 500
-        cum = 0
-        for i in range(100):
-            r = self.gen.randrange(span)
-            self.assertTrue(0 <= r < span)
-            cum |= r
-        self.assertEqual(cum, span-1)
-
-    def test_bigrand_ranges(self):
-        for i in [40,80, 160, 200, 211, 250, 375, 512, 550]:
-            start = self.gen.randrange(2 ** (i-2))
-            stop = self.gen.randrange(2 ** i)
-            if stop <= start:
-                continue
-            self.assertTrue(start <= self.gen.randrange(start, stop) < stop)
-
-    def test_rangelimits(self):
-        for start, stop in [(-2,0), (-(2**60)-2,-(2**60)), (2**60,2**60+2)]:
-            self.assertEqual(set(range(start,stop)),
-                set([self.gen.randrange(start,stop) for i in range(100)]))
-
     def test_getrandbits(self):
         super().test_getrandbits()
 
@@ -848,27 +850,6 @@ class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):
         self.assertEqual(self.gen.randrange(2**99),
                          97904845777343510404718956115)
 
-    def test_randbelow_logic(self, _log=log, int=int):
-        # check bitcount transition points:  2**i and 2**(i+1)-1
-        # show that: k = int(1.001 + _log(n, 2))
-        # is equal to or one greater than the number of bits in n
-        for i in range(1, 1000):
-            n = 1 << i # check an exact power of two
-            numbits = i+1
-            k = int(1.00001 + _log(n, 2))
-            self.assertEqual(k, numbits)
-            self.assertEqual(n, 2**(k-1))
-
-            n += n - 1      # check 1 below the next power of two
-            k = int(1.00001 + _log(n, 2))
-            self.assertIn(k, [numbits, numbits+1])
-            self.assertTrue(2**k > n > 2**(k-2))
-
-            n -= n >> 15     # check a little farther below the next power of two
-            k = int(1.00001 + _log(n, 2))
-            self.assertEqual(k, numbits)        # note the stronger assertion
-            self.assertTrue(2**k > n > 2**(k-1))   # note the stronger assertion
-
     def test_randbelow_without_getrandbits(self):
         # Random._randbelow() can only use random() when the built-in one
         # has been overridden but no new getrandbits() method was supplied.
@@ -902,14 +883,6 @@ class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):
             random_mock.side_effect = [limit + epsilon, limit - epsilon]
             self.gen._randbelow_without_getrandbits(n, maxsize=maxsize)
             self.assertEqual(random_mock.call_count, 2)
-
-    def test_randrange_bug_1590891(self):
-        start = 1000000000000
-        stop = -100000000000000000000
-        step = -200
-        x = self.gen.randrange(start, stop, step)
-        self.assertTrue(stop < x <= start)
-        self.assertEqual((x+stop)%step, 0)
 
     def test_choices_algorithms(self):
         # The various ways of specifying weights should produce the same results
