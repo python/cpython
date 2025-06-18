@@ -1008,7 +1008,7 @@ class EnsurePipTest(BaseTest):
                      err, flags=re.MULTILINE)
         # Ignore warning about missing optional module:
         try:
-            import ssl
+            import ssl  # noqa: F401
         except ImportError:
             err = re.sub(
                 "^WARNING: Disabling truststore since ssl support is missing$",

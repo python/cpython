@@ -920,10 +920,17 @@ def collect_windows(info_add):
 
     try:
         import _winapi
-        dll_path = _winapi.GetModuleFileName(sys.dllhandle)
-        info_add('windows.dll_path', dll_path)
-    except (ImportError, AttributeError):
+    except ImportError:
         pass
+    else:
+        try:
+            dll_path = _winapi.GetModuleFileName(sys.dllhandle)
+            info_add('windows.dll_path', dll_path)
+        except AttributeError:
+            pass
+
+        call_func(info_add, 'windows.ansi_code_page', _winapi, 'GetACP')
+        call_func(info_add, 'windows.oem_code_page', _winapi, 'GetOEMCP')
 
     # windows.version_caption: "wmic os get Caption,Version /value" command
     import subprocess

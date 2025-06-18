@@ -19,5 +19,12 @@ extend-exclude = [
 
 [lint]
 select = [
+    "F401",  # Unused import
     "F811",  # Redefinition of unused variable (useful for finding test methods with the same name)
 ]
+
+[lint.per-file-ignores]
+"*/**/__main__.py" = ["F401"]  # Unused import
+"test_import/*.py" = ["F401"]  # Unused import
+"test_importlib/*.py" = ["F401"]  # Unused import
+"typinganndata/partialexecution/*.py" = ["F401"]  # Unused import

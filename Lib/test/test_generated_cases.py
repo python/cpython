@@ -1,11 +1,9 @@
 import contextlib
 import os
-import re
 import sys
 import tempfile
 import unittest
 
-from io import StringIO
 from test import support
 from test import test_tools
 
@@ -31,12 +29,11 @@ skip_if_different_mount_drives()
 
 test_tools.skip_if_missing("cases_generator")
 with test_tools.imports_under_tool("cases_generator"):
-    from analyzer import analyze_forest, StackItem
+    from analyzer import StackItem
     from cwriter import CWriter
     import parser
     from stack import Local, Stack
     import tier1_generator
-    import opcode_metadata_generator
     import optimizer_generator
 
 
@@ -59,14 +56,14 @@ class TestEffects(unittest.TestCase):
     def test_effect_sizes(self):
         stack = Stack()
         inputs = [
-            x := StackItem("x", None, "1"),
-            y := StackItem("y", None, "oparg"),
-            z := StackItem("z", None, "oparg*2"),
+            x := StackItem("x", "1"),
+            y := StackItem("y", "oparg"),
+            z := StackItem("z", "oparg*2"),
         ]
         outputs = [
-            StackItem("x", None, "1"),
-            StackItem("b", None, "oparg*4"),
-            StackItem("c", None, "1"),
+            StackItem("x", "1"),
+            StackItem("b", "oparg*4"),
+            StackItem("c", "1"),
         ]
         null = CWriter.null()
         stack.pop(z, null)
@@ -1106,32 +1103,6 @@ class TestGeneratedCases(unittest.TestCase):
         """
         self.run_cases_test(input, output)
 
-    def test_pointer_to_stackref(self):
-        input = """
-        inst(OP, (arg: _PyStackRef * -- out)) {
-            out = *arg;
-            DEAD(arg);
-        }
-        """
-        output = """
-        TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
-            int opcode = OP;
-            (void)(opcode);
-            #endif
-            frame->instr_ptr = next_instr;
-            next_instr += 1;
-            INSTRUCTION_STATS(OP);
-            _PyStackRef *arg;
-            _PyStackRef out;
-            arg = (_PyStackRef *)stack_pointer[-1].bits;
-            out = *arg;
-            stack_pointer[-1] = out;
-            DISPATCH();
-        }
-        """
-        self.run_cases_test(input, output)
-
     def test_unused_cached_value(self):
         input = """
         op(FIRST, (arg1 -- out)) {
@@ -2005,8 +1976,8 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         output = """
         case OP: {
-            JitOptSymbol *arg1;
-            JitOptSymbol *out;
+            JitOptRef arg1;
+            JitOptRef out;
             arg1 = stack_pointer[-1];
             out = EGGS(arg1);
             stack_pointer[-1] = out;
@@ -2014,7 +1985,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         }
 
         case OP2: {
-            JitOptSymbol *out;
+            JitOptRef out;
             out = sym_new_not_null(ctx);
             stack_pointer[-1] = out;
             break;
@@ -2039,14 +2010,14 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         output = """
         case OP: {
-            JitOptSymbol *out;
+            JitOptRef out;
             out = sym_new_not_null(ctx);
             stack_pointer[-1] = out;
             break;
         }
 
         case OP2: {
-            JitOptSymbol *out;
+            JitOptRef out;
             out = NULL;
             stack_pointer[-1] = out;
             break;
@@ -2180,7 +2151,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         output = """
         case OP: {
-            JitOptSymbol *foo;
+            JitOptRef foo;
             foo = NULL;
             stack_pointer[0] = foo;
             stack_pointer += 1;

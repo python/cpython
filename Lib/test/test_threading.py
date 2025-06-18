@@ -28,7 +28,7 @@ from test import lock_tests
 from test import support
 
 try:
-    from test.support import interpreters
+    from concurrent import interpreters
 except ImportError:
     interpreters = None
 
@@ -1253,7 +1253,7 @@ class ThreadTests(BaseTestCase):
         # its state should be removed from interpreter' thread states list
         # to avoid its double cleanup
         try:
-            from resource import setrlimit, RLIMIT_NPROC
+            from resource import setrlimit, RLIMIT_NPROC  # noqa: F401
         except ImportError as err:
             self.skipTest(err)  # RLIMIT_NPROC is specific to Linux and BSD
         code = """if 1:

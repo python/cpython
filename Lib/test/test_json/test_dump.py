@@ -22,6 +22,14 @@ class TestDump:
         self.assertIn('valid_key', o)
         self.assertNotIn(b'invalid_key', o)
 
+    def test_dump_skipkeys_indent_empty(self):
+        v = {b'invalid_key': False}
+        self.assertEqual(self.json.dumps(v, skipkeys=True, indent=4), '{}')
+
+    def test_skipkeys_indent(self):
+        v = {b'invalid_key': False, 'valid_key': True}
+        self.assertEqual(self.json.dumps(v, skipkeys=True, indent=4), '{\n    "valid_key": true\n}')
+
     def test_encode_truefalse(self):
         self.assertEqual(self.dumps(
                  {True: False, False: True}, sort_keys=True),
