@@ -298,7 +298,11 @@ class HTMLParser(_markupbase.ParserBase):
             # this case is actually already handled in goahead()
             return self.parse_comment(i)
         elif rawdata[i:i+9] == '<![CDATA[':
-            return self.parse_marked_section(i)
+            j = rawdata.find(']]>')
+            if j < 0:
+                return -1
+            self.unknown_decl(rawdata[i+3: j])
+            return j + 3
         elif rawdata[i:i+9].lower() == '<!doctype':
             # find the closing >
             gtpos = rawdata.find('>', i+9)
