@@ -1186,7 +1186,12 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    be disabled.
 
    *supports_isolated_interpreters* is a boolean value, whether
-   this implementation supports :pep:`734`. It is always ``True`` for CPython.
+   this implementation supports multiple isolated interpreters.
+   It is ``True`` for CPython on most platforms.  Platforms with
+   this support implement the low-level :mod:`!_interpreters` module.
+   
+   .. seealso:
+       :pep:`684`, :pep:`734`, and :mod:`concurrent.interpreters`.
 
    :data:`sys.implementation` may contain additional attributes specific to
    the Python implementation.  These non-standard attributes must start with
