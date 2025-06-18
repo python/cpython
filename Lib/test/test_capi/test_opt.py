@@ -678,7 +678,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertLessEqual(len(guard_nos_float_count), 1)
         # TODO gh-115506: this assertion may change after propagating constants.
         # We'll also need to verify that propagation actually occurs.
-        self.assertIn("_BINARY_OP_ADD_FLOAT", uops)
+        self.assertIn("_BINARY_OP_ADD_FLOAT__NO_DECREF_INPUTS", uops)
 
     def test_float_subtract_constant_propagation(self):
         def testfunc(n):
@@ -700,7 +700,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertLessEqual(len(guard_nos_float_count), 1)
         # TODO gh-115506: this assertion may change after propagating constants.
         # We'll also need to verify that propagation actually occurs.
-        self.assertIn("_BINARY_OP_SUBTRACT_FLOAT", uops)
+        self.assertIn("_BINARY_OP_SUBTRACT_FLOAT__NO_DECREF_INPUTS", uops)
 
     def test_float_multiply_constant_propagation(self):
         def testfunc(n):
@@ -722,7 +722,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertLessEqual(len(guard_nos_float_count), 1)
         # TODO gh-115506: this assertion may change after propagating constants.
         # We'll also need to verify that propagation actually occurs.
-        self.assertIn("_BINARY_OP_MULTIPLY_FLOAT", uops)
+        self.assertIn("_BINARY_OP_MULTIPLY_FLOAT__NO_DECREF_INPUTS", uops)
 
     def test_add_unicode_propagation(self):
         def testfunc(n):
@@ -2261,6 +2261,20 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_LOAD_ATTR_METHOD_WITH_VALUES", uops)
         self.assertNotIn("_LOAD_ATTR_METHOD_NO_DICT", uops)
         self.assertNotIn("_LOAD_ATTR_METHOD_LAZY_DICT", uops)
+
+    def test_float_op_refcount_elimination(self):
+        def testfunc(args):
+            a, b, n = args
+            c = 0.0
+            for _ in range(n):
+                c += a + b
+            return c
+
+        res, ex = self._run_with_optimizer(testfunc, (0.1, 0.1, TIER2_THRESHOLD))
+        self.assertAlmostEqual(res, TIER2_THRESHOLD * (0.1 + 0.1))
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_OP_ADD_FLOAT__NO_DECREF_INPUTS", uops)
 
     def test_remove_guard_for_slice_list(self):
         def f(n):
