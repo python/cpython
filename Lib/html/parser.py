@@ -263,9 +263,6 @@ class HTMLParser(_markupbase.ParserBase):
                 if match:
                     # match.group() will contain at least 2 chars
                     if end and match.group() == rawdata[i:]:
-                        k = match.end()
-                        if k <= i:
-                            k = n
                         i = self.updatepos(i, i + 1)
                     # incomplete
                     break
