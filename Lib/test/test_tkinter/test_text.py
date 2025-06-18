@@ -109,14 +109,16 @@ class TextSearchOptionsTest(AbstractTkTest, unittest.TestCase):
 
     def test_all(self):
         result = self.text.search('test', '1.0', 'end', all=True)
-        self.assertIsInstance(result, tuple)
-        self.assertGreaterEqual(len(result), 2)
-        self.assertTrue(all(str(index) for index in result))  # ensure valid index strings
-
+        self.assertIsInstance(result, str)
+        indices = result.split()
+        self.assertGreaterEqual(len(indices), 2)
+        self.assertTrue(all(isinstance(i, str) for i in indices))
+    
     def test_overlap(self):
         result = self.text.search('test', '1.0', 'end', all=True, overlap=True)
-        self.assertIsInstance(result, tuple)
-        self.assertGreaterEqual(len(result), 2)
+        indices = result.split()
+        self.assertGreaterEqual(len(indices), 2)
+        self.assertTrue('1.10' in indices)
 
     def test_strictlimits(self):
         result = self.text.search('test', '1.0', '1.20', strictlimits=True)
