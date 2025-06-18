@@ -6816,8 +6816,8 @@ class _TestSpawnedSysPath(BaseTestCase):
         with open(init_name, "w") as f:
             cmd = '''if 1:
                 import sys
-                print('stderr', file=sys.stderr)
-                print('stdout', file=sys.stdout)
+                print('stderr', end='', file=sys.stderr)
+                print('stdout', end='', file=sys.stdout)
             '''
             f.write(cmd)
 
