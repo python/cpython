@@ -239,16 +239,28 @@ dummy_func(void) {
     op(_BINARY_OP_ADD_FLOAT, (left, right -- res)) {
         REPLACE_OPCODE_IF_EVALUATES_PURE(left, right);
         res = sym_new_type(ctx, &PyFloat_Type);
+        // TODO (gh-134584): Refactor this to use another uop
+        if (PyJitRef_IsBorrowed(left) && PyJitRef_IsBorrowed(right)) {
+            REPLACE_OP(this_instr, op_without_decref_inputs[opcode], oparg, 0);
+        }
     }
 
     op(_BINARY_OP_SUBTRACT_FLOAT, (left, right -- res)) {
         REPLACE_OPCODE_IF_EVALUATES_PURE(left, right);
         res = sym_new_type(ctx, &PyFloat_Type);
+        // TODO (gh-134584): Refactor this to use another uop
+        if (PyJitRef_IsBorrowed(left) && PyJitRef_IsBorrowed(right)) {
+            REPLACE_OP(this_instr, op_without_decref_inputs[opcode], oparg, 0);
+        }
     }
 
     op(_BINARY_OP_MULTIPLY_FLOAT, (left, right -- res)) {
         REPLACE_OPCODE_IF_EVALUATES_PURE(left, right);
         res = sym_new_type(ctx, &PyFloat_Type);
+        // TODO (gh-134584): Refactor this to use another uop
+        if (PyJitRef_IsBorrowed(left) && PyJitRef_IsBorrowed(right)) {
+            REPLACE_OP(this_instr, op_without_decref_inputs[opcode], oparg, 0);
+        }
     }
 
     op(_BINARY_OP_ADD_UNICODE, (left, right -- res)) {

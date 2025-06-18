@@ -527,6 +527,9 @@
                 break;
             }
             res = sym_new_type(ctx, &PyFloat_Type);
+            if (PyJitRef_IsBorrowed(left) && PyJitRef_IsBorrowed(right)) {
+                REPLACE_OP(this_instr, op_without_decref_inputs[opcode], oparg, 0);
+            }
             stack_pointer[-2] = res;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -569,6 +572,9 @@
                 break;
             }
             res = sym_new_type(ctx, &PyFloat_Type);
+            if (PyJitRef_IsBorrowed(left) && PyJitRef_IsBorrowed(right)) {
+                REPLACE_OP(this_instr, op_without_decref_inputs[opcode], oparg, 0);
+            }
             stack_pointer[-2] = res;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -611,6 +617,9 @@
                 break;
             }
             res = sym_new_type(ctx, &PyFloat_Type);
+            if (PyJitRef_IsBorrowed(left) && PyJitRef_IsBorrowed(right)) {
+                REPLACE_OP(this_instr, op_without_decref_inputs[opcode], oparg, 0);
+            }
             stack_pointer[-2] = res;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
