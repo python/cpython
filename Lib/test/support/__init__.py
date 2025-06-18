@@ -3080,7 +3080,7 @@ def _supports_remote_attaching():
 
     return PROCESS_VM_READV_SUPPORTED
 
-def _support_remote_exec_only_impl(test):
+def _support_remote_exec_only_impl():
     if not sys.is_remote_debug_enabled():
         return unittest.skip("Remote debugging is not enabled")
     if sys.platform not in ("darwin", "linux", "win32"):
