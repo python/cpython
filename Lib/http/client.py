@@ -287,6 +287,8 @@ class HTTPResponse(io.BufferedIOBase):
         self.length = _UNKNOWN          # number of bytes left in response
         self.will_close = _UNKNOWN      # conn will close at end of response
 
+        self.url = url
+
     def _read_status(self):
         line = str(self.fp.readline(_MAXLINE + 1), "iso-8859-1")
         if len(line) > _MAXLINE:
