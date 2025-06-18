@@ -113,7 +113,7 @@ class TextSearchOptionsTest(AbstractTkTest, unittest.TestCase):
         indices = result.split()
         self.assertGreaterEqual(len(indices), 2)
         self.assertTrue(all(isinstance(i, str) for i in indices))
-    
+
     def test_overlap(self):
         result = self.text.search('test', '1.0', 'end', all=True, overlap=True)
         indices = result.split()
