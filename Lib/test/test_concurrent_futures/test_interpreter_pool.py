@@ -360,8 +360,8 @@ class InterpreterPoolExecutorTest(
 
         def run(taskid, ready, blocker):
             ready.put_nowait(taskid)
-            blocker.get(timeout=10)  # blocking
-#            blocker.get()  # blocking
+#            blocker.get(timeout=20)  # blocking
+            blocker.get()  # blocking
 
         numtasks = 10
         futures = []
