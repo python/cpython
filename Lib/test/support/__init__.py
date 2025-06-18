@@ -3090,7 +3090,7 @@ def _support_remote_exec_only_impl(test):
     return _id
 
 def support_remote_exec_only(test):
-    return _support_remote_exec_only_impl(test)
+    return _support_remote_exec_only_impl()(test)
 
 class EqualToForwardRef:
     """Helper to ease use of annotationlib.ForwardRef in tests.
