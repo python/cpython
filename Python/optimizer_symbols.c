@@ -890,6 +890,7 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     _Py_uop_abstractcontext_init(ctx);
     PyObject *val_42 = NULL;
     PyObject *val_43 = NULL;
+    PyObject *val_big = NULL;
     PyObject *tuple = NULL;
 
     // Use a single 'sym' variable so copy-pasting tests is easier.
@@ -1020,9 +1021,38 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     TEST_PREDICATE(_Py_uop_sym_get_const(ctx, ref) == Py_False, "truthiness is not False");
     TEST_PREDICATE(_Py_uop_sym_is_const(ctx, value) == true, "value is not constant");
     TEST_PREDICATE(_Py_uop_sym_get_const(ctx, value) == Py_True, "value is not True");
+
+
+    val_big = PyNumber_Lshift(_PyLong_GetOne(), PyLong_FromLong(66));
+    if (val_big == NULL) {
+        goto fail;
+    }
+
+    JitOptRef ref_42 = _Py_uop_sym_new_const(ctx, val_42);
+    JitOptRef ref_big = _Py_uop_sym_new_const(ctx, val_big);
+    JitOptRef ref_int = _Py_uop_sym_new_compact_int(ctx);
+    TEST_PREDICATE(_Py_uop_sym_is_compact_int(ref_42), "42 is not a compact int");
+    TEST_PREDICATE(!_Py_uop_sym_is_compact_int(ref_big), "(1 << 66) is a compact int");
+    TEST_PREDICATE(_Py_uop_sym_is_compact_int(ref_int), "compact int is not a compact int");
+    TEST_PREDICATE(_Py_uop_sym_matches_type(ref_int, &PyLong_Type), "compact int is not an int");
+
+    _Py_uop_sym_set_type(ctx, ref_int, &PyLong_Type);  // Should have no effect
+    TEST_PREDICATE(_Py_uop_sym_is_compact_int(ref_int), "compact int is not a compact int after cast");
+    TEST_PREDICATE(_Py_uop_sym_matches_type(ref_int, &PyLong_Type), "compact int is not an int after cast");
+
+    _Py_uop_sym_set_type(ctx, ref_int, &PyFloat_Type);  // Should make it bottom
+    TEST_PREDICATE(_Py_uop_sym_is_bottom(ref_int), "compact int cast to float isn't bottom");
+
+    ref_int = _Py_uop_sym_new_compact_int(ctx);
+    _Py_uop_sym_set_const(ctx, ref_int, val_43);
+    TEST_PREDICATE(_Py_uop_sym_is_compact_int(ref_int), "43 is not a compact int");
+    TEST_PREDICATE(_Py_uop_sym_matches_type(ref_int, &PyLong_Type), "43 is not an int");
+    TEST_PREDICATE(_Py_uop_sym_get_const(ctx, ref_int) == val_43, "43 isn't 43");
+
     _Py_uop_abstractcontext_fini(ctx);
     Py_DECREF(val_42);
     Py_DECREF(val_43);
+    Py_DECREF(val_big);
     Py_DECREF(tuple);
     Py_RETURN_NONE;
 
@@ -1030,6 +1060,7 @@ fail:
     _Py_uop_abstractcontext_fini(ctx);
     Py_XDECREF(val_42);
     Py_XDECREF(val_43);
+    Py_XDECREF(val_big);
     Py_DECREF(tuple);
     return NULL;
 }
