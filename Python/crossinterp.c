@@ -674,7 +674,9 @@ _PyPickle_Loads(struct _unpickle_context *ctx, PyObject *pickled)
 
 finally:
     if (exc != NULL) {
-        sync_module_capture_exc(tstate, &ctx->main);
+        if (_PyErr_Occurred(tstate)) {
+            sync_module_capture_exc(tstate, &ctx->main);
+        }
         // We restore the original exception.
         // It might make sense to chain it (__context__).
         _PyErr_SetRaisedException(tstate, exc);
