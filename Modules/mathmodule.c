@@ -770,7 +770,7 @@ long_lcm(PyObject *a, PyObject *b)
         return PyLong_FromLong(0);
     }
 
-    /* Make sure |a| <= |b| to speed up (a // g) * b; see gh-102221 for details. */
+    /* Make sure a_size <= b_size to speed up (a // g) * b; see gh-102221 for details. */
     if (_PyLong_DigitCount((PyLongObject *)b) < _PyLong_DigitCount((PyLongObject *)a)) {
         g = a;
         a = b;
