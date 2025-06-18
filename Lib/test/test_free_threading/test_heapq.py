@@ -6,7 +6,7 @@ from enum import Enum
 from threading import Thread, Barrier
 from random import shuffle, randint
 
-from test.support import threading_helper
+from test.support import threading_helper, Py_GIL_DISABLED
 from test import test_heapq
 
 
@@ -177,6 +177,40 @@ class TestHeapq(unittest.TestCase):
         )
         self.assertEqual(len(max_heap), OBJECT_COUNT)
         self.test_heapq.check_max_invariant(max_heap)
+
+    @unittest.skipUnless(Py_GIL_DISABLED, 'only used to test under free-threaded build')
+    def test_lock_free_list_read(self):
+        n, n_threads = 1_000_000, 10
+        l = []
+        barrier = Barrier(n_threads * 2)
+
+        def writer():
+            barrier.wait()
+            for i in range(n):
+                heapq.heappush(l, 1)
+                heapq.heappop(l)
+
+        def reader():
+            barrier.wait()
+            for i in range(n):
+                try:
+                    l[0]
+                except IndexError:
+                    pass
+
+        import threading
+        threads = []
+        with threading_helper.catch_threading_exception() as cm:
+            for _ in range(n_threads):
+                t1 = threading.Thread(target=writer)
+                t2 = threading.Thread(target=reader)
+                threads.append(t1)
+                threads.append(t2)
+                t1.start()
+                t2.start()
+
+            for t in threads:
+                t.join()
 
     @staticmethod
     def is_sorted_ascending(lst):
