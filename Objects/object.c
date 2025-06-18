@@ -3077,17 +3077,14 @@ _PyTrash_thread_destroy_chain(PyThreadState *tstate)
         if (tagged_ptr & 1) {
             _PyObject_GC_TRACK(op);
         }
-        /* It is possible that the object has been accessed through
-         * a weak ref, so only free if refcount == 0) */
-        if (Py_REFCNT(op) == 0) {
-            /* Call the deallocator directly.  This used to try to
-            * fool Py_DECREF into calling it indirectly, but
-            * Py_DECREF was already called on this object, and in
-            * assorted non-release builds calling Py_DECREF again ends
-            * up distorting allocation statistics.
-            */
-            (*dealloc)(op);
-        }
+        /* Call the deallocator directly.  This used to try to
+         * fool Py_DECREF into calling it indirectly, but
+         * Py_DECREF was already called on this object, and in
+         * assorted non-release builds calling Py_DECREF again ends
+         * up distorting allocation statistics.
+         */
+        _PyObject_ASSERT(op, Py_REFCNT(op) == 0);
+        (*dealloc)(op);
     }
 }
 
