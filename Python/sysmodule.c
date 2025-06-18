@@ -3604,8 +3604,9 @@ make_impl_info(PyObject *version_info)
 
     res = PyDict_SetItemString(impl_info, "supports_isolated_interpreters",
                                Py_NewRef(Py_True));  // PEP-734
-    if (res < 0)
+    if (res < 0) {
         goto error;
+    }
 
     /* dict ready */
 
