@@ -687,6 +687,52 @@ dummy_func(
             ERROR_IF(PyStackRef_IsNull(res));
         }
 
+
+        pure op(_BINARY_OP_MULTIPLY_FLOAT__NO_DECREF_INPUTS, (left, right -- res)) {
+            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            assert(PyFloat_CheckExact(left_o));
+            assert(PyFloat_CheckExact(right_o));
+
+            STAT_INC(BINARY_OP, hit);
+            double dres =
+                ((PyFloatObject *)left_o)->ob_fval *
+                ((PyFloatObject *)right_o)->ob_fval;
+            res = PyStackRef_FromPyObjectSteal(PyFloat_FromDouble(dres));
+            INPUTS_DEAD();
+            ERROR_IF(PyStackRef_IsNull(res));
+        }
+
+        pure op(_BINARY_OP_ADD_FLOAT__NO_DECREF_INPUTS, (left, right -- res)) {
+            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            assert(PyFloat_CheckExact(left_o));
+            assert(PyFloat_CheckExact(right_o));
+
+            STAT_INC(BINARY_OP, hit);
+            double dres =
+                ((PyFloatObject *)left_o)->ob_fval +
+                ((PyFloatObject *)right_o)->ob_fval;
+            res = PyStackRef_FromPyObjectSteal(PyFloat_FromDouble(dres));
+            INPUTS_DEAD();
+            ERROR_IF(PyStackRef_IsNull(res));
+        }
+
+        pure op(_BINARY_OP_SUBTRACT_FLOAT__NO_DECREF_INPUTS, (left, right -- res)) {
+            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            assert(PyFloat_CheckExact(left_o));
+            assert(PyFloat_CheckExact(right_o));
+
+            STAT_INC(BINARY_OP, hit);
+            double dres =
+                ((PyFloatObject *)left_o)->ob_fval -
+                ((PyFloatObject *)right_o)->ob_fval;
+            res = PyStackRef_FromPyObjectSteal(PyFloat_FromDouble(dres));
+            INPUTS_DEAD();
+            ERROR_IF(PyStackRef_IsNull(res));
+        }
+
         macro(BINARY_OP_MULTIPLY_FLOAT) =
             _GUARD_TOS_FLOAT + _GUARD_NOS_FLOAT + unused/5 + _BINARY_OP_MULTIPLY_FLOAT;
         macro(BINARY_OP_ADD_FLOAT) =
@@ -4946,8 +4992,7 @@ dummy_func(
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
-        pure inst(COPY, (bottom, unused[oparg-1] -- bottom, unused[oparg-1], top)) {
-            assert(oparg > 0);
+        pure replicate(1:4) inst(COPY, (bottom, unused[oparg-1] -- bottom, unused[oparg-1], top)) {
             top = PyStackRef_DUP(bottom);
         }
 
@@ -4980,12 +5025,11 @@ dummy_func(
 
         macro(BINARY_OP) = _SPECIALIZE_BINARY_OP + unused/4 + _BINARY_OP;
 
-        pure inst(SWAP, (bottom, unused[oparg-2], top --
+        pure replicate(2:4) inst(SWAP, (bottom, unused[oparg-2], top --
                     bottom, unused[oparg-2], top)) {
             _PyStackRef temp = bottom;
             bottom = top;
             top = temp;
-            assert(oparg >= 2);
         }
 
         inst(INSTRUMENTED_LINE, ( -- )) {

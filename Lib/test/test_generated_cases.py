@@ -1976,8 +1976,8 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         output = """
         case OP: {
-            JitOptSymbol *arg1;
-            JitOptSymbol *out;
+            JitOptRef arg1;
+            JitOptRef out;
             arg1 = stack_pointer[-1];
             out = EGGS(arg1);
             stack_pointer[-1] = out;
@@ -1985,7 +1985,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         }
 
         case OP2: {
-            JitOptSymbol *out;
+            JitOptRef out;
             out = sym_new_not_null(ctx);
             stack_pointer[-1] = out;
             break;
@@ -2010,14 +2010,14 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         output = """
         case OP: {
-            JitOptSymbol *out;
+            JitOptRef out;
             out = sym_new_not_null(ctx);
             stack_pointer[-1] = out;
             break;
         }
 
         case OP2: {
-            JitOptSymbol *out;
+            JitOptRef out;
             out = NULL;
             stack_pointer[-1] = out;
             break;
@@ -2151,7 +2151,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         output = """
         case OP: {
-            JitOptSymbol *foo;
+            JitOptRef foo;
             foo = NULL;
             stack_pointer[0] = foo;
             stack_pointer += 1;
