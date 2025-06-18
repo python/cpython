@@ -2254,7 +2254,9 @@ class ModuleTestCase(unittest.TestCase):
             self.assertEqual(obj.__qualname__, name)
 
     @threading_helper.requires_working_threading()
+    @unittest.skipUnless(support.Py_GIL_DISABLED, 'only used under free-threaded build')
     def test_module_weakref(self):
+        # gh-135607: Avoid potential races on module weaklist under free-threaded build
         mod = types.ModuleType("temp_mod")
         common_ref = weakref.ref(mod)
         threads = []
