@@ -4,7 +4,6 @@ import io
 import os
 import sys
 import time
-from threading import Thread
 import unittest
 from concurrent.futures.interpreter import BrokenInterpreterPool
 from concurrent import interpreters
@@ -355,93 +354,82 @@ class InterpreterPoolExecutorTest(
         executor.shutdown(wait=True)
 
     def test_blocking(self):
+        # There is no guarantee that a worker will be created for every
+        # submitted task.  That's because there's a race between:
+        #
+        # * a new worker thread, created when task A was just submitted,
+        #   becoming non-idle when it picks up task A
+        # * after task B is added to the queue, a new worker thread
+        #   is started only if there are no idle workers
+        #   (the check in ThreadPoolExecutor._adjust_thread_count())
+        #
+        # That means we must not block waiting for *all* tasks to report
+        # "ready" before we unblock the known-ready workers.
         ready = queues.create()
         blocker = queues.create()
 
         def run(taskid, ready, blocker):
-            print(f'{taskid}: starting', flush=True)
+            # There can't be any globals here.
             ready.put_nowait(taskid)
-            print(f'{taskid}: ready', flush=True)
-#            blocker.get(timeout=20)  # blocking
             blocker.get()  # blocking
-            print(f'{taskid}: done', flush=True)
 
         numtasks = 10
         futures = []
-        executor = self.executor_type()
-        try:
+        with self.executor_type() as executor:
             # Request the jobs.
             for i in range(numtasks):
                 fut = executor.submit(run, i, ready, blocker)
                 futures.append(fut)
-#            assert len(executor._threads) == numtasks, len(executor._threads)
-
-            try:
-                # Wait for them all to be ready.
-                pending = numtasks
-                def wait_for_ready():
-                    nonlocal pending
+            pending = numtasks
+            while pending > 0:
+                # Wait for any to be ready.
+                done = 0
+                for _ in range(pending):
                     try:
-                        ready.get(timeout=10)  # blocking
+                        ready.get(timeout=1)  # blocking
                     except interpreters.QueueEmpty:
                         pass
                     else:
-                        pending -= 1
-                threads = [Thread(target=wait_for_ready)
-                           for _ in range(pending)]
-                for t in threads:
-                    t.start()
-                for t in threads:
-                    t.join()
-                if pending:
-                    if pending < numtasks:
-                        # At least one was ready, so wait longer.
-                        for _ in range(pending):
-                            ready.get()  # blocking
-                    else:
-                        # Something is probably wrong.  Bail out.
-                        group = []
-                        for fut in futures:
-                            try:
-                                fut.result(timeout=0)
-                            except TimeoutError:
-                                # Still running.
-                                try:
-                                    ready.get_nowait()
-                                except interpreters.QueueEmpty as exc:
-                                    # It's hung.
-                                    group.append(exc)
-                                else:
-                                    pending -= 1
-                            except Exception as exc:
-                                group.append(exc)
-                        if group:
-                            raise ExceptionGroup('futures', group)
-                        assert not pending, pending
-#                for _ in range(numtasks):
-#                    ready.get()  # blocking
-            finally:
+                        done += 1
+                pending -= done
                 # Unblock the workers.
-                for i in range(numtasks):
+                for _ in range(done):
                     blocker.put_nowait(None)
 
-            # Make sure they finished.
-            group = []
-            def wait_for_done(fut):
-                try:
-                    fut.result(timeout=10)
-                except Exception as exc:
-                    group.append(exc)
-            threads = [Thread(target=wait_for_done, args=(fut,))
-                       for fut in futures]
-            for t in threads:
-                t.start()
-            for t in threads:
-                t.join()
-            if group:
-                raise ExceptionGroup('futures', group)
-        finally:
-            executor.shutdown(wait=False)
+    def test_blocking_with_limited_workers(self):
+        # This is essentially the same as test_blocking,
+        # but we explicitly force a limited number of workers,
+        # instead of it happening implicitly sometimes due to a race.
+        ready = queues.create()
+        blocker = queues.create()
+
+        def run(taskid, ready, blocker):
+            # There can't be any globals here.
+            ready.put_nowait(taskid)
+            blocker.get()  # blocking
+
+        numtasks = 10
+        futures = []
+        with self.executor_type(4) as executor:
+            # Request the jobs.
+            for i in range(numtasks):
+                fut = executor.submit(run, i, ready, blocker)
+                futures.append(fut)
+            pending = numtasks
+            while pending > 0:
+                # Wait for any to be ready.
+                done = 0
+                for _ in range(pending):
+                    try:
+                        ready.get(timeout=1)  # blocking
+                    except interpreters.QueueEmpty:
+                        pass
+                    else:
+                        done += 1
+                pending -= done
+                # Unblock the workers.
+                for _ in range(done):
+                    blocker.put_nowait(None)
 
     @support.requires_gil_enabled("gh-117344: test is flaky without the GIL")
     def test_idle_thread_reuse(self):
