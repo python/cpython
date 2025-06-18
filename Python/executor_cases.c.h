@@ -1063,6 +1063,87 @@
             break;
         }
 
+        case _BINARY_OP_MULTIPLY_FLOAT__NO_DECREF_INPUTS: {
+            _PyStackRef right;
+            _PyStackRef left;
+            _PyStackRef res;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            assert(PyFloat_CheckExact(left_o));
+            assert(PyFloat_CheckExact(right_o));
+            STAT_INC(BINARY_OP, hit);
+            double dres =
+            ((PyFloatObject *)left_o)->ob_fval *
+            ((PyFloatObject *)right_o)->ob_fval;
+            res = PyStackRef_FromPyObjectSteal(PyFloat_FromDouble(dres));
+            if (PyStackRef_IsNull(res)) {
+                stack_pointer[-2] = res;
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
+                JUMP_TO_ERROR();
+            }
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _BINARY_OP_ADD_FLOAT__NO_DECREF_INPUTS: {
+            _PyStackRef right;
+            _PyStackRef left;
+            _PyStackRef res;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            assert(PyFloat_CheckExact(left_o));
+            assert(PyFloat_CheckExact(right_o));
+            STAT_INC(BINARY_OP, hit);
+            double dres =
+            ((PyFloatObject *)left_o)->ob_fval +
+            ((PyFloatObject *)right_o)->ob_fval;
+            res = PyStackRef_FromPyObjectSteal(PyFloat_FromDouble(dres));
+            if (PyStackRef_IsNull(res)) {
+                stack_pointer[-2] = res;
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
+                JUMP_TO_ERROR();
+            }
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _BINARY_OP_SUBTRACT_FLOAT__NO_DECREF_INPUTS: {
+            _PyStackRef right;
+            _PyStackRef left;
+            _PyStackRef res;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            assert(PyFloat_CheckExact(left_o));
+            assert(PyFloat_CheckExact(right_o));
+            STAT_INC(BINARY_OP, hit);
+            double dres =
+            ((PyFloatObject *)left_o)->ob_fval -
+            ((PyFloatObject *)right_o)->ob_fval;
+            res = PyStackRef_FromPyObjectSteal(PyFloat_FromDouble(dres));
+            if (PyStackRef_IsNull(res)) {
+                stack_pointer[-2] = res;
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
+                JUMP_TO_ERROR();
+            }
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
         case _BINARY_OP_ADD_UNICODE: {
             _PyStackRef right;
             _PyStackRef left;
@@ -6763,12 +6844,44 @@
             break;
         }
 
+        case _COPY_1: {
+            _PyStackRef bottom;
+            _PyStackRef top;
+            bottom = stack_pointer[-1];
+            top = PyStackRef_DUP(bottom);
+            stack_pointer[0] = top;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _COPY_2: {
+            _PyStackRef bottom;
+            _PyStackRef top;
+            bottom = stack_pointer[-2];
+            top = PyStackRef_DUP(bottom);
+            stack_pointer[0] = top;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _COPY_3: {
+            _PyStackRef bottom;
+            _PyStackRef top;
+            bottom = stack_pointer[-3];
+            top = PyStackRef_DUP(bottom);
+            stack_pointer[0] = top;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
         case _COPY: {
             _PyStackRef bottom;
             _PyStackRef top;
             oparg = CURRENT_OPARG();
             bottom = stack_pointer[-1 - (oparg-1)];
-            assert(oparg > 0);
             top = PyStackRef_DUP(bottom);
             stack_pointer[0] = top;
             stack_pointer += 1;
@@ -6808,6 +6921,32 @@
             break;
         }
 
+        case _SWAP_2: {
+            _PyStackRef top;
+            _PyStackRef bottom;
+            top = stack_pointer[-1];
+            bottom = stack_pointer[-2];
+            _PyStackRef temp = bottom;
+            bottom = top;
+            top = temp;
+            stack_pointer[-2] = bottom;
+            stack_pointer[-1] = top;
+            break;
+        }
+
+        case _SWAP_3: {
+            _PyStackRef top;
+            _PyStackRef bottom;
+            top = stack_pointer[-1];
+            bottom = stack_pointer[-3];
+            _PyStackRef temp = bottom;
+            bottom = top;
+            top = temp;
+            stack_pointer[-3] = bottom;
+            stack_pointer[-1] = top;
+            break;
+        }
+
         case _SWAP: {
             _PyStackRef top;
             _PyStackRef bottom;
@@ -6817,7 +6956,6 @@
             _PyStackRef temp = bottom;
             bottom = top;
             top = temp;
-            assert(oparg >= 2);
             stack_pointer[-2 - (oparg-2)] = bottom;
             stack_pointer[-1] = top;
             break;

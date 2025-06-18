@@ -5228,7 +5228,6 @@
             _PyStackRef bottom;
             _PyStackRef top;
             bottom = stack_pointer[-1 - (oparg-1)];
-            assert(oparg > 0);
             top = PyStackRef_DUP(bottom);
             stack_pointer[0] = top;
             stack_pointer += 1;
@@ -11568,7 +11567,6 @@
             _PyStackRef temp = bottom;
             bottom = top;
             top = temp;
-            assert(oparg >= 2);
             stack_pointer[-2 - (oparg-2)] = bottom;
             stack_pointer[-1] = top;
             DISPATCH();
