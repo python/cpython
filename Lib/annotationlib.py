@@ -27,6 +27,9 @@ class Format(enum.IntEnum):
 
 
 _sentinel = object()
+# Following `NAME_ERROR_MSG` in `ceval_macros.h`:
+_NAME_ERROR_MSG = "name '{name:.200}' is not defined"
+
 
 # Slots shared by ForwardRef and _Stringifier. The __forward__ names must be
 # preserved for compatibility with the old typing.ForwardRef class. The remaining
@@ -184,7 +187,7 @@ class ForwardRef:
             elif is_forwardref_format:
                 return self
             else:
-                raise NameError(arg)
+                raise NameError(_NAME_ERROR_MSG.format(name=arg), name=arg)
         else:
             code = self.__forward_code__
             try:
