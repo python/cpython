@@ -650,7 +650,7 @@ def test_sys_remote_exec():
     event_pid = -1
     event_script_path = ""
     def hook(event, args):
-        if event != "remote_exec": return
+        if event != "sys.remote_exec": return
         nonlocal event_pid
         event_pid = args[0]
         nonlocal event_script_path
