@@ -2240,13 +2240,13 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         output = """
         case OP: {
-            JitOptSymbol *foo;
-            JitOptSymbol *res;
+            JitOptRef foo;
+            JitOptRef res;
             foo = stack_pointer[-1];
             if (
                 sym_is_safe_const(ctx, foo)
             ) {
-                JitOptSymbol *foo_sym = foo;
+                JitOptRef foo_sym = foo;
                 _PyStackRef foo = sym_get_const_as_stackref(ctx, foo_sym);
                 _PyStackRef res_stackref;
                 /* Start of uop copied from bytecodes for constant evaluation */
@@ -2280,13 +2280,13 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         output = """
         case OP: {
-            JitOptSymbol *foo;
-            JitOptSymbol *res;
+            JitOptRef foo;
+            JitOptRef res;
             foo = stack_pointer[-1];
             if (
                 sym_is_safe_const(ctx, foo)
             ) {
-                JitOptSymbol *foo_sym = foo;
+                JitOptRef foo_sym = foo;
                 _PyStackRef foo = sym_get_const_as_stackref(ctx, foo_sym);
                 _PyStackRef res_stackref;
                 /* Start of uop copied from bytecodes for constant evaluation */
@@ -2324,13 +2324,13 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         output = """
         case OP: {
-            JitOptSymbol *foo;
-            JitOptSymbol *res;
+            JitOptRef foo;
+            JitOptRef res;
             foo = stack_pointer[-1];
             if (
                 sym_is_safe_const(ctx, foo)
             ) {
-                JitOptSymbol *foo_sym = foo;
+                JitOptRef foo_sym = foo;
                 _PyStackRef foo = sym_get_const_as_stackref(ctx, foo_sym);
                 _PyStackRef res_stackref;
                 /* Start of uop copied from bytecodes for constant evaluation */
@@ -2370,13 +2370,13 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         output = """
         case OP: {
-            JitOptSymbol *foo;
-            JitOptSymbol *res;
+            JitOptRef foo;
+            JitOptRef res;
             foo = stack_pointer[-1];
             if (
                 sym_is_safe_const(ctx, foo)
             ) {
-                JitOptSymbol *foo_sym = foo;
+                JitOptRef foo_sym = foo;
                 _PyStackRef foo = sym_get_const_as_stackref(ctx, foo_sym);
                 _PyStackRef res_stackref;
                 /* Start of uop copied from bytecodes for constant evaluation */
