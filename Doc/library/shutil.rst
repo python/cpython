@@ -328,8 +328,8 @@ Directory and files operations
    parameter it receives is the tuple returned from :func:`sys.exc_info`.
 
    .. seealso::
-      :ref:`shutil-rmtree-example` for an example of handling read-only files
-      on Windows.
+      :ref:`shutil-rmtree-example` for an example of handling the removal
+      of a directory tree that contains read-only files.
 
    .. audit-event:: shutil.rmtree path,dir_fd shutil.rmtree
 
