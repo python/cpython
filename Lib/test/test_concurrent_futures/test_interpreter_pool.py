@@ -359,9 +359,12 @@ class InterpreterPoolExecutorTest(
         blocker = queues.create()
 
         def run(taskid, ready, blocker):
+            print(f'{taskid}: starting', flush=True)
             ready.put_nowait(taskid)
+            print(f'{taskid}: ready', flush=True)
 #            blocker.get(timeout=20)  # blocking
             blocker.get()  # blocking
+            print(f'{taskid}: done', flush=True)
 
         numtasks = 10
         futures = []
