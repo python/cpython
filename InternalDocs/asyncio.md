@@ -2,7 +2,7 @@ asyncio
 =======
 
 
-This document describes the working and implementation details
+This document describes the working and implementation details of the
 [`asyncio`](https://docs.python.org/3/library/asyncio.html) module.
 
 # Task management
@@ -213,9 +213,9 @@ locking.
 This section describes the implementation details of async generators in `asyncio`.
 
 Since async generators are meant to be used from coroutines,
-the finalization (execution of finally blocks) of the it needs
+the finalization (execution of finally blocks) of it needs
 to be done while the loop is running.
-Most async generators are closed automatically when
+Most async generators are closed automatically
 when they are fully iterated over and exhausted, however,
 if the async generator is not fully iterated over,
 it may not be closed properly, leading to the `finally` blocks not being executed.
