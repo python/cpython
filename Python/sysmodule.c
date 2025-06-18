@@ -3602,6 +3602,11 @@ make_impl_info(PyObject *version_info)
         goto error;
 #endif
 
+    res = PyDict_SetItemString(impl_info, "supports_isolated_interpreters",
+                               Py_NewRef(Py_True));  // PEP-734
+    if (res < 0)
+        goto error;
+
     /* dict ready */
 
     ns = _PyNamespace_New(impl_info);

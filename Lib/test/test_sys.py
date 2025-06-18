@@ -1088,6 +1088,11 @@ class SysModuleTest(unittest.TestCase):
                          sys.implementation.name.lower())
 
     @test.support.cpython_only
+    def test_supports_isolated_interpreters(self):
+        # https://peps.python.org/pep-0734
+        self.assertIs(sys.implementation.supports_isolated_interpreters, True)
+
+    @test.support.cpython_only
     def test_debugmallocstats(self):
         # Test sys._debugmallocstats()
         from test.support.script_helper import assert_python_ok
