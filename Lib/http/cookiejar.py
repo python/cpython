@@ -893,7 +893,8 @@ class DefaultCookiePolicy(CookiePolicy):
                  strict_ns_domain=DomainLiberal,
                  strict_ns_set_initial_dollar=False,
                  strict_ns_set_path=False,
-                 secure_protocols=("https", "wss")
+                 secure_protocols=("https", "wss"),
+                 additional_country_code_slds=set(),
                  ):
         """Constructor arguments should be passed as keyword arguments only."""
         self.netscape = netscape
@@ -907,6 +908,16 @@ class DefaultCookiePolicy(CookiePolicy):
         self.strict_ns_set_initial_dollar = strict_ns_set_initial_dollar
         self.strict_ns_set_path = strict_ns_set_path
         self.secure_protocols = secure_protocols
+        # source: https://en.wikipedia.org/wiki/Second-level_domain
+        well_known_slds = set(["co", "ac", "com", "edu", "org", "net",
+                        "gov", "mil", "int", "aero", "biz", "cat", "coop",
+                        "info", "jobs", "mobi", "museum", "name", "pro",
+                        "travel", "eu", "tv", "or", "nom", "sch", "web"])
+        if isinstance(additional_country_code_slds, set):
+            self.slds = well_known_slds.union(additional_country_code_slds)
+            _debug(f"The set of country code slds is {self.slds}")
+        else:
+            raise TypeError("attribute 'additional_country_code_slds' should be a 'set' type")
 
         if blocked_domains is not None:
             self._blocked_domains = tuple(blocked_domains)
@@ -1032,10 +1043,7 @@ class DefaultCookiePolicy(CookiePolicy):
                 if j == 0:  # domain like .foo.bar
                     tld = domain[i+1:]
                     sld = domain[j+1:i]
-                    if sld.lower() in ("co", "ac", "com", "edu", "org", "net",
-                       "gov", "mil", "int", "aero", "biz", "cat", "coop",
-                       "info", "jobs", "mobi", "museum", "name", "pro",
-                       "travel", "eu") and len(tld) == 2:
+                    if sld.lower() in self.slds and len(tld) == 2:
                         # domain like .co.uk
                         _debug("   country-code second level domain %s", domain)
                         return False
