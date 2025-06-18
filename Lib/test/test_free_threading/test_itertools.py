@@ -45,7 +45,7 @@ class ItertoolsThreading(unittest.TestCase):
             barrier.wait()
             for _ in range(number_of_cycles):
                 try:
-                    _ = next(it)
+                    next(it)
                 except StopIteration:
                     pass
 
