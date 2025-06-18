@@ -236,9 +236,7 @@ class DefaultContext(BaseContext):
 
     def get_context(self, method=None):
         if method is None:
-            if self._actual_context is None:
-                self._actual_context = self._default_context
-            return self._actual_context
+            return self._actual_context or self._default_context
         else:
             return super().get_context(method)
 

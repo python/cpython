@@ -5811,6 +5811,12 @@ class TestStartMethod(unittest.TestCase):
         p.join()
         self.assertEqual(child_method, ctx.get_start_method())
 
+    def test_default_context(self):
+        # Get_context should not have side effect, see gh-109070.
+        multiprocessing.set_start_method(None, force=True)
+        multiprocessing.get_context()
+        self.assertIsNone(multiprocessing.context._default_context._actual_context)
+
     def test_context(self):
         for method in ('fork', 'spawn', 'forkserver'):
             try:
