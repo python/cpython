@@ -1074,6 +1074,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertHasAttr(sys.implementation, 'version')
         self.assertHasAttr(sys.implementation, 'hexversion')
         self.assertHasAttr(sys.implementation, 'cache_tag')
+        self.assertHasAttr(sys.implementation, 'supports_isolated_interpreters')
 
         version = sys.implementation.version
         self.assertEqual(version[:2], (version.major, version.minor))
@@ -1087,10 +1088,10 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(sys.implementation.name,
                          sys.implementation.name.lower())
 
-    @test.support.cpython_only
-    def test_supports_isolated_interpreters(self):
         # https://peps.python.org/pep-0734
-        self.assertIs(sys.implementation.supports_isolated_interpreters, True)
+        self.assertIsInstance(sys.implementation.supports_isolated_interpreters, bool)
+        if test.support.check_impl_detail(cpython=True):
+            self.assertIs(sys.implementation.supports_isolated_interpreters, True)
 
     @test.support.cpython_only
     def test_debugmallocstats(self):
