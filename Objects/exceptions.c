@@ -150,10 +150,8 @@ BaseException_dealloc(PyObject *op)
     // bpo-44348: The trashcan mechanism prevents stack overflow when deleting
     // long chains of exceptions. For example, exceptions can be chained
     // through the __context__ attributes or the __traceback__ attribute.
-    Py_TRASHCAN_BEGIN(self, BaseException_dealloc)
     (void)BaseException_clear(op);
     Py_TYPE(self)->tp_free(self);
-    Py_TRASHCAN_END
 }
 
 static int
