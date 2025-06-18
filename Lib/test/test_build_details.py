@@ -117,13 +117,20 @@ class CPythonBuildDetailsTests(unittest.TestCase, FormatTestsBase):
     # Override generic format tests with tests for our specific implemenation.
 
     @needs_installed_python
-    @unittest.skipIf(is_android or is_apple_mobile, 'Android and iOS run tests via a custom testbed method that changes sys.executable')
+    @unittest.skipIf(
+        is_android or is_apple_mobile,
+        'Android and iOS run tests via a custom testbed method that changes sys.executable'
+    )
     def test_base_interpreter(self):
         value = self.key('base_interpreter')
 
         self.assertEqual(os.path.realpath(value), os.path.realpath(sys.executable))
 
     @needs_installed_python
+    @unittest.skipIf(
+        is_android or is_apple_mobile,
+        "Android and iOS run tests via a custom testbed method that doesn't ship headers"
+    )
     def test_c_api(self):
         value = self.key('c_api')
         self.assertTrue(os.path.exists(os.path.join(value['headers'], 'Python.h')))
