@@ -704,7 +704,8 @@ static PyObject *
 gen_get_name(PyObject *self, void *Py_UNUSED(ignored))
 {
     PyGenObject *op = _PyGen_CAST(self);
-    return Py_NewRef(op->gi_name);
+    PyObject *name = FT_ATOMIC_LOAD_PTR_ACQUIRE(op->gi_name);
+    return Py_NewRef(name);
 }
 
 static int
@@ -718,7 +719,11 @@ gen_set_name(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
                         "__name__ must be set to a string object");
         return -1;
     }
-    Py_XSETREF(op->gi_name, Py_NewRef(value));
+    Py_BEGIN_CRITICAL_SECTION(self);
+    // gh-133931: To prevent use-after-free from other threads that reference
+    // the gi_name.
+    _PyObject_XSetRefDelayed(&op->gi_name, Py_NewRef(value));
+    Py_END_CRITICAL_SECTION();
     return 0;
 }
 
@@ -726,7 +731,8 @@ static PyObject *
 gen_get_qualname(PyObject *self, void *Py_UNUSED(ignored))
 {
     PyGenObject *op = _PyGen_CAST(self);
-    return Py_NewRef(op->gi_qualname);
+    PyObject *qualname = FT_ATOMIC_LOAD_PTR_ACQUIRE(op->gi_qualname);
+    return Py_NewRef(qualname);
 }
 
 static int
@@ -740,7 +746,11 @@ gen_set_qualname(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
                         "__qualname__ must be set to a string object");
         return -1;
     }
-    Py_XSETREF(op->gi_qualname, Py_NewRef(value));
+    Py_BEGIN_CRITICAL_SECTION(self);
+    // gh-133931: To prevent use-after-free from other threads that reference
+    // the gi_qualname.
+    _PyObject_XSetRefDelayed(&op->gi_qualname, Py_NewRef(value));
+    Py_END_CRITICAL_SECTION();
     return 0;
 }
 
