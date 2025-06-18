@@ -52,7 +52,7 @@ The :mod:`http` module also defines the following enums that help you work with 
 HTTP status codes
 -----------------
 
-:class:`http.HTTPStatus supports some `IANA-registered status codes <https://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml>`_, as well as 418 (the requested entity is a teapot incapable of brewing coffee)
+:class:`http.HTTPStatus` supports some `IANA-registered status codes <https://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml>`_, as well as 418 (the requested entity is a teapot incapable of brewing coffee)
 
 ======= =================================== ==================================================================
 Code    Enum Name                           Details
