@@ -383,8 +383,7 @@ iobase_dealloc(PyObject *op)
     }
     PyTypeObject *tp = Py_TYPE(self);
     _PyObject_GC_UNTRACK(self);
-    if (self->weakreflist != NULL)
-        PyObject_ClearWeakRefs(op);
+    PyObject_ClearWeakRefs(op);
     Py_CLEAR(self->dict);
     tp->tp_free(self);
     Py_DECREF(tp);

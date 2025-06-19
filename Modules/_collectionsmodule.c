@@ -1532,9 +1532,7 @@ deque_dealloc(PyObject *self)
     Py_ssize_t i;
 
     PyObject_GC_UnTrack(deque);
-    if (deque->weakreflist != NULL) {
-        PyObject_ClearWeakRefs(self);
-    }
+    PyObject_ClearWeakRefs(self);
     if (deque->leftblock != NULL) {
         (void)deque_clear(self);
         assert(deque->leftblock != NULL);
