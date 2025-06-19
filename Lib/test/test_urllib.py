@@ -1569,6 +1569,7 @@ class Pathname_Tests(unittest.TestCase):
                     urllib.request.url2pathname,
                     url, require_scheme=True)
 
+    @unittest.skipIf(support.is_emscripten, "Fixed by https://github.com/emscripten-core/emscripten/pull/24593")
     def test_url2pathname_resolve_host(self):
         fn = urllib.request.url2pathname
         sep = os.path.sep
