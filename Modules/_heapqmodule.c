@@ -210,8 +210,9 @@ heapreplace_internal(PyObject *heap, PyObject *item, int siftup_func(PyListObjec
     }
 
     returnitem = PyList_GET_ITEM(heap, 0);
-    PyList_SET_ITEM(heap, 0, Py_NewRef(item));
-    if (siftup_func((PyListObject *)heap, 0)) {
+    PyListObject *list = _PyList_CAST(heap);
+    FT_ATOMIC_STORE_PTR_RELAXED(list->ob_item[0], Py_NewRef(item));
+    if (siftup_func(list, 0)) {
         Py_DECREF(returnitem);
         return NULL;
     }
@@ -286,8 +287,9 @@ _heapq_heappushpop_impl(PyObject *module, PyObject *heap, PyObject *item)
     }
 
     returnitem = PyList_GET_ITEM(heap, 0);
-    PyList_SET_ITEM(heap, 0, Py_NewRef(item));
-    if (siftup((PyListObject *)heap, 0)) {
+    PyListObject *list = _PyList_CAST(heap);
+    FT_ATOMIC_STORE_PTR_RELAXED(list->ob_item[0], Py_NewRef(item));
+    if (siftup(list, 0)) {
         Py_DECREF(returnitem);
         return NULL;
     }
