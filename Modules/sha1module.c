@@ -272,19 +272,25 @@ static PyType_Spec sha1_type_spec = {
 /*[clinic input]
 _sha1.sha1
 
-    string: object(c_default="NULL") = b''
+    data: object(c_default="NULL") = b''
     *
     usedforsecurity: bool = True
+    string as string_obj: object(c_default="NULL") = None
 
 Return a new SHA1 hash object; optionally initialized with a string.
 [clinic start generated code]*/
 
 static PyObject *
-_sha1_sha1_impl(PyObject *module, PyObject *string, int usedforsecurity)
-/*[clinic end generated code: output=6f8b3af05126e18e input=bd54b68e2bf36a8a]*/
+_sha1_sha1_impl(PyObject *module, PyObject *data, int usedforsecurity,
+                PyObject *string_obj)
+/*[clinic end generated code: output=0d453775924f88a7 input=807f25264e0ac656]*/
 {
     SHA1object *new;
     Py_buffer buf;
+    PyObject *string;
+    if (_Py_hashlib_data_argument(&string, data, string_obj) < 0) {
+        return NULL;
+    }
 
     if (string) {
         GET_BUFFER_VIEW_OR_ERROUT(string, &buf);
@@ -362,8 +368,15 @@ _sha1_exec(PyObject *module)
     st->sha1_type = (PyTypeObject *)PyType_FromModuleAndSpec(
         module, &sha1_type_spec, NULL);
     if (PyModule_AddObjectRef(module,
-                           "SHA1Type",
-                           (PyObject *)st->sha1_type) < 0) {
+                              "SHA1Type",
+                              (PyObject *)st->sha1_type) < 0)
+    {
+        return -1;
+    }
+    if (PyModule_AddIntConstant(module,
+                                "_GIL_MINSIZE",
+                                HASHLIB_GIL_MINSIZE) < 0)
+    {
         return -1;
     }
 
@@ -381,14 +394,14 @@ static PyModuleDef_Slot _sha1_slots[] = {
 };
 
 static struct PyModuleDef _sha1module = {
-        PyModuleDef_HEAD_INIT,
-        .m_name = "_sha1",
-        .m_size = sizeof(SHA1State),
-        .m_methods = SHA1_functions,
-        .m_slots = _sha1_slots,
-        .m_traverse = _sha1_traverse,
-        .m_clear = _sha1_clear,
-        .m_free = _sha1_free
+    PyModuleDef_HEAD_INIT,
+    .m_name = "_sha1",
+    .m_size = sizeof(SHA1State),
+    .m_methods = SHA1_functions,
+    .m_slots = _sha1_slots,
+    .m_traverse = _sha1_traverse,
+    .m_clear = _sha1_clear,
+    .m_free = _sha1_free
 };
 
 PyMODINIT_FUNC

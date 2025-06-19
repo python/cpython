@@ -70,7 +70,7 @@ The :mod:`csv` module defines the following functions:
    section :ref:`csv-fmt-params`.
 
    Each row read from the csv file is returned as a list of strings.  No
-   automatic data type conversion is performed unless the ``QUOTE_NONNUMERIC`` format
+   automatic data type conversion is performed unless the :data:`QUOTE_NONNUMERIC` format
    option is specified (in which case unquoted fields are transformed into floats).
 
    A short usage example::
@@ -331,8 +331,14 @@ The :mod:`csv` module defines the following constants:
 
    Instructs :class:`writer` objects to quote all non-numeric fields.
 
-   Instructs :class:`reader` objects to convert all non-quoted fields to type *float*.
+   Instructs :class:`reader` objects to convert all non-quoted fields to type :class:`float`.
 
+   .. note::
+      Some numeric types, such as :class:`bool`, :class:`~fractions.Fraction`,
+      or :class:`~enum.IntEnum`, have a string representation that cannot be
+      converted to :class:`float`.
+      They cannot be read in the :data:`QUOTE_NONNUMERIC` and
+      :data:`QUOTE_STRINGS` modes.
 
 .. data:: QUOTE_NONE
 
@@ -603,7 +609,7 @@ A slightly more advanced use of the reader --- catching and reporting errors::
            for row in reader:
                print(row)
        except csv.Error as e:
-           sys.exit('file {}, line {}: {}'.format(filename, reader.line_num, e))
+           sys.exit(f'file {filename}, line {reader.line_num}: {e}')
 
 And while the module doesn't directly support parsing strings, it can easily be
 done::

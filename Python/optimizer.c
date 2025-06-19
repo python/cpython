@@ -204,16 +204,74 @@ get_oparg(PyObject *self, PyObject *Py_UNUSED(ignored))
 static int executor_clear(PyObject *executor);
 static void unlink_executor(_PyExecutorObject *executor);
 
+
+static void
+free_executor(_PyExecutorObject *self)
+{
+#ifdef _Py_JIT
+    _PyJIT_Free(self);
+#endif
+    PyObject_GC_Del(self);
+}
+
+void
+_Py_ClearExecutorDeletionList(PyInterpreterState *interp)
+{
+    _PyRuntimeState *runtime = &_PyRuntime;
+    HEAD_LOCK(runtime);
+    PyThreadState* ts = PyInterpreterState_ThreadHead(interp);
+    HEAD_UNLOCK(runtime);
+    while (ts) {
+        _PyExecutorObject *current = (_PyExecutorObject *)ts->current_executor;
+        if (current != NULL) {
+            /* Anything in this list will be unlinked, so we can reuse the
+             * linked field as a reachability marker. */
+            current->vm_data.linked = 1;
+        }
+        HEAD_LOCK(runtime);
+        ts = PyThreadState_Next(ts);
+        HEAD_UNLOCK(runtime);
+    }
+    _PyExecutorObject **prev_to_next_ptr = &interp->executor_deletion_list_head;
+    _PyExecutorObject *exec = *prev_to_next_ptr;
+    while (exec != NULL) {
+        if (exec->vm_data.linked) {
+            // This executor is currently executing
+            exec->vm_data.linked = 0;
+            prev_to_next_ptr = &exec->vm_data.links.next;
+        }
+        else {
+            *prev_to_next_ptr = exec->vm_data.links.next;
+            free_executor(exec);
+        }
+        exec = *prev_to_next_ptr;
+    }
+    interp->executor_deletion_list_remaining_capacity = EXECUTOR_DELETE_LIST_MAX;
+}
+
+static void
+add_to_pending_deletion_list(_PyExecutorObject *self)
+{
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    self->vm_data.links.next = interp->executor_deletion_list_head;
+    interp->executor_deletion_list_head = self;
+    if (interp->executor_deletion_list_remaining_capacity > 0) {
+        interp->executor_deletion_list_remaining_capacity--;
+    }
+    else {
+        _Py_ClearExecutorDeletionList(interp);
+    }
+}
+
 static void
 uop_dealloc(PyObject *op) {
     _PyExecutorObject *self = _PyExecutorObject_CAST(op);
     _PyObject_GC_UNTRACK(self);
     assert(self->vm_data.code == NULL);
     unlink_executor(self);
-#ifdef _Py_JIT
-    _PyJIT_Free(self);
-#endif
-    PyObject_GC_Del(self);
+    // Once unlinked it becomes impossible to invalidate an executor, so do it here.
+    self->vm_data.valid = 0;
+    add_to_pending_deletion_list(self);
 }
 
 const char *
@@ -569,13 +627,11 @@ translate_bytecode_to_trace(
             goto done;
         }
         assert(opcode != ENTER_EXECUTOR && opcode != EXTENDED_ARG);
-        if (OPCODE_HAS_NO_SAVE_IP(opcode)) {
-            RESERVE_RAW(2, "_CHECK_VALIDITY");
-            ADD_TO_TRACE(_CHECK_VALIDITY, 0, 0, target);
-        }
-        else {
-            RESERVE_RAW(2, "_CHECK_VALIDITY_AND_SET_IP");
-            ADD_TO_TRACE(_CHECK_VALIDITY_AND_SET_IP, 0, (uintptr_t)instr, target);
+        RESERVE_RAW(2, "_CHECK_VALIDITY");
+        ADD_TO_TRACE(_CHECK_VALIDITY, 0, 0, target);
+        if (!OPCODE_HAS_NO_SAVE_IP(opcode)) {
+            RESERVE_RAW(2, "_SET_IP");
+            ADD_TO_TRACE(_SET_IP, 0, (uintptr_t)instr, target);
         }
 
         /* Special case the first instruction,
@@ -1236,8 +1292,8 @@ uop_optimize(
     for (int pc = 0; pc < length; pc++) {
         int opcode = buffer[pc].opcode;
         int oparg = buffer[pc].oparg;
-        if (oparg < _PyUop_Replication[opcode]) {
-            buffer[pc].opcode = opcode + oparg + 1;
+        if (oparg < _PyUop_Replication[opcode].stop && oparg >= _PyUop_Replication[opcode].start) {
+            buffer[pc].opcode = opcode + oparg + 1 - _PyUop_Replication[opcode].start;
             assert(strncmp(_PyOpcode_uop_name[buffer[pc].opcode], _PyOpcode_uop_name[opcode], strlen(_PyOpcode_uop_name[opcode])) == 0);
         }
         else if (is_terminator(&buffer[pc])) {
