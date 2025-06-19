@@ -1866,7 +1866,7 @@ _PyEvalFramePushAndInit_Ex(PyThreadState *tstate, _PyStackRef func,
     _PyStackRef *newargs;
     PyObject *const *object_array = NULL;
     #if defined(__GNUC__)
-        #pragma clang diagnostic ignored "-Wmaybe-uninitialized"
+        #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
     #endif
     _PyStackRef stack_array[8];
     if (has_dict) {
@@ -1910,7 +1910,7 @@ _PyEvalFramePushAndInit_Ex(PyThreadState *tstate, _PyStackRef func,
         PyMem_Free((void *)newargs);
     }
     #if defined(__GNUC__)
-        #pragma clang diagnostic pop
+        #pragma GCC diagnostic pop
     #endif
     /* No need to decref func here because the reference has been stolen by
        _PyEvalFramePushAndInit.
