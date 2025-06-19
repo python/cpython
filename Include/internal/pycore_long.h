@@ -112,9 +112,9 @@ PyAPI_DATA(PyObject*) _PyLong_Rshift(PyObject *, int64_t);
 // Export for 'math' shared extension
 PyAPI_DATA(PyObject*) _PyLong_Lshift(PyObject *, int64_t);
 
-PyAPI_FUNC(PyObject*) _PyCompactLong_Add(PyLongObject *left, PyLongObject *right);
-PyAPI_FUNC(PyObject*) _PyCompactLong_Multiply(PyLongObject *left, PyLongObject *right);
-PyAPI_FUNC(PyObject*) _PyCompactLong_Subtract(PyLongObject *left, PyLongObject *right);
+PyAPI_FUNC(_PyStackRef) _PyCompactLong_Add(PyLongObject *left, PyLongObject *right);
+PyAPI_FUNC(_PyStackRef) _PyCompactLong_Multiply(PyLongObject *left, PyLongObject *right);
+PyAPI_FUNC(_PyStackRef) _PyCompactLong_Subtract(PyLongObject *left, PyLongObject *right);
 
 // Export for 'binascii' shared extension.
 PyAPI_DATA(unsigned char) _PyLong_DigitValue[256];
@@ -213,7 +213,6 @@ _PyLong_BothAreCompact(const PyLongObject* a, const PyLongObject* b) {
     assert(PyLong_Check(b));
     return (a->long_value.lv_tag | b->long_value.lv_tag) < (2 << NON_SIZE_BITS);
 }
-
 static inline bool
 _PyLong_IsZero(const PyLongObject *op)
 {

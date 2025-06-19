@@ -5875,9 +5875,9 @@ class TestSignatureDefinitions(unittest.TestCase):
         self._test_module_has_signatures(operator)
 
     def test_os_module_has_signatures(self):
-        unsupported_signature = {'chmod', 'link', 'utime'}
+        unsupported_signature = {'chmod', 'utime'}
         unsupported_signature |= {name for name in
-            ['get_terminal_size', 'posix_spawn', 'posix_spawnp',
+            ['get_terminal_size', 'link', 'posix_spawn', 'posix_spawnp',
              'register_at_fork', 'startfile']
             if hasattr(os, name)}
         self._test_module_has_signatures(os, unsupported_signature=unsupported_signature)

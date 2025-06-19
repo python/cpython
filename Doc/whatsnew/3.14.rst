@@ -82,9 +82,10 @@ and improvements in user-friendliness and correctness.
 
 .. PEP-sized items next.
 
+* :ref:`PEP 779: Free-threaded Python is officially supported <whatsnew314-pep779>`
 * :ref:`PEP 649 and 749: deferred evaluation of annotations <whatsnew314-pep649>`
-* :ref:`PEP 734: Multiple Interpreters in the Stdlib <whatsnew314-pep734>`
-* :ref:`PEP 741: Python Configuration C API <whatsnew314-pep741>`
+* :ref:`PEP 734: Multiple interpreters in the stdlib <whatsnew314-pep734>`
+* :ref:`PEP 741: Python configuration C API <whatsnew314-pep741>`
 * :ref:`PEP 750: Template strings <whatsnew314-pep750>`
 * :ref:`PEP 758: Allow except and except* expressions without parentheses <whatsnew314-pep758>`
 * :ref:`PEP 761: Discontinuation of PGP signatures <whatsnew314-pep761>`
@@ -124,9 +125,35 @@ of Python.  See :ref:`below <whatsnew314-refcount>` for details.
 New features
 ============
 
+.. _whatsnew314-pep779:
+
+PEP 779: Free-threaded Python is officially supported
+-----------------------------------------------------
+
+The free-threaded build of Python is now supported and no longer experimental.
+This is the start of phase II where free-threaded Python is officially supported
+but still optional.
+
+We are confident that the project is on the right path, and we appreciate the
+continued dedication from everyone working to make free-threading ready for
+broader adoption across the Python community.
+
+With these recommendations and the acceptance of this PEP, we as the Python
+developer community should broadly advertise that free-threading is a supported
+Python build option now and into the future, and that it will not be removed
+without a proper deprecation schedule.
+
+Any decision to transition to phase III, with free-threading as the default or
+sole build of Python is still undecided, and dependent on many factors both
+within CPython itself and the community. This decision is for the future.
+
+.. seealso::
+   :pep:`779` and its `acceptance
+   <https://discuss.python.org/t/pep-779-criteria-for-supported-status-for-free-threaded-python/84319/123>`__.
+
 .. _whatsnew314-pep734:
 
-PEP 734: Multiple Interpreters in the Stdlib
+PEP 734: Multiple interpreters in the stdlib
 --------------------------------------------
 
 The CPython runtime supports running multiple copies of Python in the
@@ -392,7 +419,7 @@ As can be seen, the API is similar to the APIs of the :mod:`!lzma` and
 :mod:`!bz2` modules.
 
 (Contributed by Emma Harper Smith, Adam Turner, Gregory P. Smith, Tomas Roun,
-Victor Stinner, and Rogdham in :gh:`132983`)
+Victor Stinner, and Rogdham in :gh:`132983`.)
 
 .. seealso::
    :pep:`784`.
@@ -727,7 +754,7 @@ Improved error messages
 
 .. _whatsnew314-pep741:
 
-PEP 741: Python Configuration C API
+PEP 741: Python configuration C API
 -----------------------------------
 
 Add a :ref:`PyInitConfig C API <pyinitconfig_api>` to configure the Python
@@ -1266,7 +1293,7 @@ configparser
   to :meth:`configparser.ConfigParser.write` keys containing delimiters or
   beginning with the section header pattern will raise a
   :class:`configparser.InvalidWriteError`.
-  (Contributed by Jacob Lincoln in :gh:`129270`)
+  (Contributed by Jacob Lincoln in :gh:`129270`.)
 
 contextvars
 -----------
@@ -2755,8 +2782,8 @@ New features
 
 * Add :c:func:`PyType_GetBaseByToken` and :c:data:`Py_tp_token` slot for easier
   superclass identification, which attempts to resolve the `type checking issue
-  <https://peps.python.org/pep-0630/#type-checking>`__ mentioned in :pep:`630`
-  (:gh:`124153`).
+  <https://peps.python.org/pep-0630/#type-checking>`__ mentioned in :pep:`630`.
+  (Contributed in :gh:`124153`.)
 
 * Add :c:func:`PyUnicode_Equal` function to the limited C API:
   test if two strings are equal.
