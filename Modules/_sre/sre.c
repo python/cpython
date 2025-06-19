@@ -736,7 +736,10 @@ pattern_dealloc(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
-    PyObject_ClearWeakRefs(self);
+    PatternObject *obj = _PatternObject_CAST(self);
+    if (obj->weakreflist != NULL) {
+        PyObject_ClearWeakRefs(self);
+    }
     (void)pattern_clear(self);
     tp->tp_free(self);
     Py_DECREF(tp);

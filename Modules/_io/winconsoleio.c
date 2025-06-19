@@ -518,7 +518,8 @@ winconsoleio_dealloc(PyObject *op)
     if (_PyIOBase_finalize(op) < 0)
         return;
     _PyObject_GC_UNTRACK(self);
-    PyObject_ClearWeakRefs(op);
+    if (self->weakreflist != NULL)
+        PyObject_ClearWeakRefs(op);
     Py_CLEAR(self->dict);
     tp->tp_free(self);
     Py_DECREF(tp);

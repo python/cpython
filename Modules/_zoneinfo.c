@@ -375,7 +375,9 @@ zoneinfo_dealloc(PyObject *obj_self)
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
 
-    PyObject_ClearWeakRefs(obj_self);
+    if (self->weakreflist != NULL) {
+        PyObject_ClearWeakRefs(obj_self);
+    }
 
     if (self->trans_list_utc != NULL) {
         PyMem_Free(self->trans_list_utc);
