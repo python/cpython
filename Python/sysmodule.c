@@ -3605,12 +3605,12 @@ make_impl_info(PyObject *version_info)
     // PEP-734
 #if defined(__wasi__) || defined(__EMSCRIPTEN__)
     // It is not enabled on WASM builds just yet
-    value = Py_NewRef(Py_False);
+    value = Py_False;
 #elif defined(__APPLE__) && defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
     // It is not enabled on iOS just yet
-    value = Py_NewRef(Py_False);
+    value = Py_False;
 #else
-    value = Py_NewRef(Py_True);
+    value = Py_True;
 #endif
     res = PyDict_SetItemString(impl_info, "supports_isolated_interpreters", value);
     if (res < 0) {
