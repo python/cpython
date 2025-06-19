@@ -2346,6 +2346,17 @@ class ArgsTestCase(BaseTestCase):
         output = self.run_tests('-j1', '-v', testname, env=env, isolated=False)
         check(output)
 
+    def test_pgo_exclude(self):
+        # Get PGO tests
+        output = self.run_tests('--pgo', '--list-tests')
+        pgo_tests = output.strip().split()
+
+        # Exclude test_re
+        output = self.run_tests('--pgo', '--list-tests', '-x', 'test_re')
+        tests = output.strip().split()
+        self.assertNotIn('test_re', tests)
+        self.assertEqual(len(tests), len(pgo_tests) - 1)
+
 
 class TestUtils(unittest.TestCase):
     def test_format_duration(self):
