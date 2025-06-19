@@ -185,7 +185,9 @@ cursor_dealloc(PyObject *op)
     pysqlite_Cursor *self = _pysqlite_Cursor_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
-    PyObject_ClearWeakRefs(op);
+    if (self->in_weakreflist != NULL) {
+        PyObject_ClearWeakRefs(op);
+    }
     (void)tp->tp_clear(op);
     tp->tp_free(self);
     Py_DECREF(tp);

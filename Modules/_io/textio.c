@@ -1469,7 +1469,8 @@ textiowrapper_dealloc(PyObject *op)
         return;
     self->ok = 0;
     _PyObject_GC_UNTRACK(self);
-    PyObject_ClearWeakRefs(op);
+    if (self->weakreflist != NULL)
+        PyObject_ClearWeakRefs(op);
     (void)textiowrapper_clear(op);
     tp->tp_free(self);
     Py_DECREF(tp);

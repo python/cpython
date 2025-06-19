@@ -1018,7 +1018,8 @@ static int
 tee_clear(PyObject *op)
 {
     teeobject *to = teeobject_CAST(op);
-    PyObject_ClearWeakRefs(op);
+    if (to->weakreflist != NULL)
+        PyObject_ClearWeakRefs(op);
     Py_CLEAR(to->dataobj);
     return 0;
 }

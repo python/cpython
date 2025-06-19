@@ -163,7 +163,8 @@ mmap_object_dealloc(PyObject *op)
     Py_END_ALLOW_THREADS
 #endif /* UNIX */
 
-    PyObject_ClearWeakRefs(op);
+    if (m_obj->weakreflist != NULL)
+        PyObject_ClearWeakRefs(op);
 
     tp->tp_free(m_obj);
     Py_DECREF(tp);

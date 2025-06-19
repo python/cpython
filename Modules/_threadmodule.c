@@ -1365,7 +1365,9 @@ static void
 localdummy_dealloc(PyObject *op)
 {
     localdummyobject *self = localdummyobject_CAST(op);
-    PyObject_ClearWeakRefs(op);
+    if (self->weakreflist != NULL) {
+        PyObject_ClearWeakRefs(op);
+    }
     PyTypeObject *tp = Py_TYPE(self);
     tp->tp_free(self);
     Py_DECREF(tp);
@@ -1535,7 +1537,9 @@ local_dealloc(PyObject *op)
     localobject *self = localobject_CAST(op);
     /* Weakrefs must be invalidated right now, otherwise they can be used
        from code called below, which is very dangerous since Py_REFCNT(self) == 0 */
-    PyObject_ClearWeakRefs(op);
+    if (self->weakreflist != NULL) {
+        PyObject_ClearWeakRefs(op);
+    }
     PyObject_GC_UnTrack(self);
     (void)local_clear(op);
     PyTypeObject *tp = Py_TYPE(self);

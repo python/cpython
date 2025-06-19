@@ -728,7 +728,9 @@ array_dealloc(PyObject *op)
     PyObject_GC_UnTrack(op);
 
     arrayobject *self = arrayobject_CAST(op);
-    PyObject_ClearWeakRefs(op);
+    if (self->weakreflist != NULL) {
+        PyObject_ClearWeakRefs(op);
+    }
     if (self->ob_item != NULL) {
         PyMem_Free(self->ob_item);
     }

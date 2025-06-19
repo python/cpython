@@ -221,7 +221,9 @@ simplequeue_dealloc(PyObject *op)
 
     PyObject_GC_UnTrack(self);
     (void)simplequeue_clear(op);
-    PyObject_ClearWeakRefs(op);
+    if (self->weakreflist != NULL) {
+        PyObject_ClearWeakRefs(op);
+    }
     tp->tp_free(self);
     Py_DECREF(tp);
 }
