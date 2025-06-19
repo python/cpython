@@ -131,8 +131,7 @@ any DWARF information available for them).
 
 #include "Python.h"
 #include "pycore_ceval.h"         // _PyPerf_Callbacks
-#include "pycore_frame.h"
-#include "pycore_interp.h"
+#include "pycore_interpframe.h"   // _PyFrame_GetCode()
 #include "pycore_runtime.h"       // _PyRuntime
 
 

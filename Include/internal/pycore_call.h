@@ -8,6 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_code.h"          // EVAL_CALL_STAT_INC_IF_FUNCTION()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_stats.h"
 

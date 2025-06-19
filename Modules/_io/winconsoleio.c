@@ -331,7 +331,6 @@ _io__WindowsConsoleIO___init___impl(winconsoleio *self, PyObject *nameobj,
     int ret = 0;
     int rwa = 0;
     int fd = -1;
-    int fd_is_own = 0;
     HANDLE handle = NULL;
 
 #ifndef NDEBUG
@@ -1196,7 +1195,7 @@ static PyMethodDef winconsoleio_methods[] = {
     _IO__WINDOWSCONSOLEIO_WRITABLE_METHODDEF
     _IO__WINDOWSCONSOLEIO_FILENO_METHODDEF
     _IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF
-    {"_isatty_open_only", (PyCFunction)_io__WindowsConsoleIO_isatty, METH_NOARGS},
+    {"_isatty_open_only", _io__WindowsConsoleIO_isatty, METH_NOARGS},
     {NULL,           NULL}             /* sentinel */
 };
 

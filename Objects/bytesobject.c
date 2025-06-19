@@ -13,6 +13,7 @@
 #include "pycore_object.h"        // _PyObject_GC_TRACK
 #include "pycore_pymem.h"         // PYMEM_CLEANBYTE
 #include "pycore_strhex.h"        // _Py_strhex_with_sep()
+#include "pycore_unicodeobject.h" // _PyUnicode_FormatLong()
 
 #include <stddef.h>
 
@@ -468,8 +469,6 @@ static PyObject *
 formatlong(PyObject *v, int flags, int prec, int type)
 {
     PyObject *result, *iobj;
-    if (type == 'i')
-        type = 'd';
     if (PyLong_Check(v))
         return _PyUnicode_FormatLong(v, flags & F_ALT, prec, type);
     if (PyNumber_Check(v)) {
@@ -1076,10 +1075,11 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
 }
 
 /* Unescape a backslash-escaped string. */
-PyObject *_PyBytes_DecodeEscape(const char *s,
+PyObject *_PyBytes_DecodeEscape2(const char *s,
                                 Py_ssize_t len,
                                 const char *errors,
-                                const char **first_invalid_escape)
+                                int *first_invalid_escape_char,
+                                const char **first_invalid_escape_ptr)
 {
     int c;
     char *p;
@@ -1093,7 +1093,8 @@ PyObject *_PyBytes_DecodeEscape(const char *s,
         return NULL;
     writer.overallocate = 1;
 
-    *first_invalid_escape = NULL;
+    *first_invalid_escape_char = -1;
+    *first_invalid_escape_ptr = NULL;
 
     end = s + len;
     while (s < end) {
@@ -1131,9 +1132,10 @@ PyObject *_PyBytes_DecodeEscape(const char *s,
                     c = (c<<3) + *s++ - '0';
             }
             if (c > 0377) {
-                if (*first_invalid_escape == NULL) {
-                    *first_invalid_escape = s-3; /* Back up 3 chars, since we've
-                                                    already incremented s. */
+                if (*first_invalid_escape_char == -1) {
+                    *first_invalid_escape_char = c;
+                    /* Back up 3 chars, since we've already incremented s. */
+                    *first_invalid_escape_ptr = s - 3;
                 }
             }
             *p++ = c;
@@ -1174,9 +1176,10 @@ PyObject *_PyBytes_DecodeEscape(const char *s,
             break;
 
         default:
-            if (*first_invalid_escape == NULL) {
-                *first_invalid_escape = s-1; /* Back up one char, since we've
-                                                already incremented s. */
+            if (*first_invalid_escape_char == -1) {
+                *first_invalid_escape_char = (unsigned char)s[-1];
+                /* Back up one char, since we've already incremented s. */
+                *first_invalid_escape_ptr = s - 1;
             }
             *p++ = '\\';
             s--;
@@ -1196,18 +1199,19 @@ PyObject *PyBytes_DecodeEscape(const char *s,
                                 Py_ssize_t Py_UNUSED(unicode),
                                 const char *Py_UNUSED(recode_encoding))
 {
-    const char* first_invalid_escape;
-    PyObject *result = _PyBytes_DecodeEscape(s, len, errors,
-                                             &first_invalid_escape);
+    int first_invalid_escape_char;
+    const char *first_invalid_escape_ptr;
+    PyObject *result = _PyBytes_DecodeEscape2(s, len, errors,
+                                             &first_invalid_escape_char,
+                                             &first_invalid_escape_ptr);
     if (result == NULL)
         return NULL;
-    if (first_invalid_escape != NULL) {
-        unsigned char c = *first_invalid_escape;
-        if ('4' <= c && c <= '7') {
+    if (first_invalid_escape_char != -1) {
+        if (first_invalid_escape_char > 0xff) {
             if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-                                 "b\"\\%.3s\" is an invalid octal escape sequence. "
+                                 "b\"\\%o\" is an invalid octal escape sequence. "
                                  "Such sequences will not work in the future. ",
-                                 first_invalid_escape) < 0)
+                                 first_invalid_escape_char) < 0)
             {
                 Py_DECREF(result);
                 return NULL;
@@ -1217,7 +1221,7 @@ PyObject *PyBytes_DecodeEscape(const char *s,
             if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
                                  "b\"\\%c\" is an invalid escape sequence. "
                                  "Such sequences will not work in the future. ",
-                                 c) < 0)
+                                 first_invalid_escape_char) < 0)
             {
                 Py_DECREF(result);
                 return NULL;
@@ -2648,15 +2652,16 @@ bytes_hex_impl(PyBytesObject *self, PyObject *sep, int bytes_per_sep)
 }
 
 static PyObject *
-bytes_getnewargs(PyBytesObject *v, PyObject *Py_UNUSED(ignored))
+bytes_getnewargs(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
+    PyBytesObject *v = _PyBytes_CAST(op);
     return Py_BuildValue("(y#)", v->ob_sval, Py_SIZE(v));
 }
 
 
 static PyMethodDef
 bytes_methods[] = {
-    {"__getnewargs__",          (PyCFunction)bytes_getnewargs,  METH_NOARGS},
+    {"__getnewargs__", bytes_getnewargs,  METH_NOARGS},
     BYTES___BYTES___METHODDEF
     {"capitalize", stringlib_capitalize, METH_NOARGS,
      _Py_capitalize__doc__},

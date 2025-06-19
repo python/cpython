@@ -70,8 +70,8 @@ class BasicTestMappingProtocol(unittest.TestCase):
         if not d: self.fail("Full mapping must compare to True")
         # keys(), items(), iterkeys() ...
         def check_iterandlist(iter, lst, ref):
-            self.assertTrue(hasattr(iter, '__next__'))
-            self.assertTrue(hasattr(iter, '__iter__'))
+            self.assertHasAttr(iter, '__next__')
+            self.assertHasAttr(iter, '__iter__')
             x = list(iter)
             self.assertTrue(set(x)==set(lst)==set(ref))
         check_iterandlist(iter(d.keys()), list(d.keys()),
@@ -624,6 +624,7 @@ class TestHashMappingProtocol(TestMappingProtocol):
 
     @support.skip_wasi_stack_overflow()
     @support.skip_emscripten_stack_overflow()
+    @support.skip_if_sanitizer("requires deep stack", ub=True)
     def test_repr_deep(self):
         d = self._empty_mapping()
         for i in range(support.exceeds_recursion_limit()):

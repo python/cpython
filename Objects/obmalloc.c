@@ -1,14 +1,14 @@
 /* Python's malloc wrappers (see pymem.h) */
 
 #include "Python.h"
-#include "pycore_code.h"          // stats
 #include "pycore_interp.h"        // _PyInterpreterState_HasFeature
 #include "pycore_object.h"        // _PyDebugAllocatorStats() definition
 #include "pycore_obmalloc.h"
+#include "pycore_obmalloc_init.h"
 #include "pycore_pyerrors.h"      // _Py_FatalErrorFormat()
 #include "pycore_pymem.h"
 #include "pycore_pystate.h"       // _PyInterpreterState_GET
-#include "pycore_obmalloc_init.h"
+#include "pycore_stats.h"         // OBJECT_STAT_INC_COND()
 
 #include <stdlib.h>               // malloc()
 #include <stdbool.h>
@@ -468,40 +468,6 @@ _PyMem_ArenaFree(void *Py_UNUSED(ctx), void *ptr,
 /*******************************************/
 /* end low-level allocator implementations */
 /*******************************************/
-
-
-#if defined(__has_feature)  /* Clang */
-#  if __has_feature(address_sanitizer) /* is ASAN enabled? */
-#    define _Py_NO_SANITIZE_ADDRESS \
-        __attribute__((no_sanitize("address")))
-#  endif
-#  if __has_feature(thread_sanitizer)  /* is TSAN enabled? */
-#    define _Py_NO_SANITIZE_THREAD __attribute__((no_sanitize_thread))
-#  endif
-#  if __has_feature(memory_sanitizer)  /* is MSAN enabled? */
-#    define _Py_NO_SANITIZE_MEMORY __attribute__((no_sanitize_memory))
-#  endif
-#elif defined(__GNUC__)
-#  if defined(__SANITIZE_ADDRESS__)    /* GCC 4.8+, is ASAN enabled? */
-#    define _Py_NO_SANITIZE_ADDRESS \
-        __attribute__((no_sanitize_address))
-#  endif
-   // TSAN is supported since GCC 5.1, but __SANITIZE_THREAD__ macro
-   // is provided only since GCC 7.
-#  if __GNUC__ > 5 || (__GNUC__ == 5 && __GNUC_MINOR__ >= 1)
-#    define _Py_NO_SANITIZE_THREAD __attribute__((no_sanitize_thread))
-#  endif
-#endif
-
-#ifndef _Py_NO_SANITIZE_ADDRESS
-#  define _Py_NO_SANITIZE_ADDRESS
-#endif
-#ifndef _Py_NO_SANITIZE_THREAD
-#  define _Py_NO_SANITIZE_THREAD
-#endif
-#ifndef _Py_NO_SANITIZE_MEMORY
-#  define _Py_NO_SANITIZE_MEMORY
-#endif
 
 
 #define ALLOCATORS_MUTEX (_PyRuntime.allocators.mutex)
@@ -1249,7 +1215,9 @@ void
 _PyMem_FreeDelayed(void *ptr)
 {
     assert(!((uintptr_t)ptr & 0x01));
-    free_delayed((uintptr_t)ptr);
+    if (ptr != NULL) {
+        free_delayed((uintptr_t)ptr);
+    }
 }
 
 #ifdef Py_GIL_DISABLED
@@ -1263,6 +1231,21 @@ _PyObject_XDecRefDelayed(PyObject *ptr)
 }
 #endif
 
+#ifdef Py_GIL_DISABLED
+void
+_PyObject_XSetRefDelayed(PyObject **ptr, PyObject *value)
+{
+    PyObject *old = *ptr;
+    FT_ATOMIC_STORE_PTR_RELEASE(*ptr, value);
+    if (old == NULL) {
+        return;
+    }
+    if (!_Py_IsImmortal(old)) {
+         _PyObject_XDecRefDelayed(old);
+    }
+}
+#endif
+
 static struct _mem_work_chunk *
 work_queue_first(struct llist_node *head)
 {
@@ -1270,7 +1253,7 @@ work_queue_first(struct llist_node *head)
 }
 
 static void
-process_queue(struct llist_node *head, struct _qsbr_thread_state *qsbr,
+process_queue(struct llist_node *head, _PyThreadStateImpl *tstate,
               bool keep_empty, delayed_dealloc_cb cb, void *state)
 {
     while (!llist_empty(head)) {
@@ -1278,7 +1261,7 @@ process_queue(struct llist_node *head, struct _qsbr_thread_state *qsbr,
 
         if (buf->rd_idx < buf->wr_idx) {
             struct _mem_work_item *item = &buf->array[buf->rd_idx];
-            if (!_Py_qsbr_poll(qsbr, item->qsbr_goal)) {
+            if (!_Py_qsbr_poll(tstate->qsbr, item->qsbr_goal)) {
                 return;
             }
 
@@ -1302,11 +1285,11 @@ process_queue(struct llist_node *head, struct _qsbr_thread_state *qsbr,
 
 static void
 process_interp_queue(struct _Py_mem_interp_free_queue *queue,
-                     struct _qsbr_thread_state *qsbr, delayed_dealloc_cb cb,
+                     _PyThreadStateImpl *tstate, delayed_dealloc_cb cb,
                      void *state)
 {
     assert(PyMutex_IsLocked(&queue->mutex));
-    process_queue(&queue->head, qsbr, false, cb, state);
+    process_queue(&queue->head, tstate, false, cb, state);
 
     int more_work = !llist_empty(&queue->head);
     _Py_atomic_store_int_relaxed(&queue->has_work, more_work);
@@ -1314,7 +1297,7 @@ process_interp_queue(struct _Py_mem_interp_free_queue *queue,
 
 static void
 maybe_process_interp_queue(struct _Py_mem_interp_free_queue *queue,
-                           struct _qsbr_thread_state *qsbr, delayed_dealloc_cb cb,
+                           _PyThreadStateImpl *tstate, delayed_dealloc_cb cb,
                            void *state)
 {
     if (!_Py_atomic_load_int_relaxed(&queue->has_work)) {
@@ -1323,7 +1306,7 @@ maybe_process_interp_queue(struct _Py_mem_interp_free_queue *queue,
 
     // Try to acquire the lock, but don't block if it's already held.
     if (_PyMutex_LockTimed(&queue->mutex, 0, 0) == PY_LOCK_ACQUIRED) {
-        process_interp_queue(queue, qsbr, cb, state);
+        process_interp_queue(queue, tstate, cb, state);
         PyMutex_Unlock(&queue->mutex);
     }
 }
@@ -1335,10 +1318,10 @@ _PyMem_ProcessDelayed(PyThreadState *tstate)
     _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
 
     // Process thread-local work
-    process_queue(&tstate_impl->mem_free_queue, tstate_impl->qsbr, true, NULL, NULL);
+    process_queue(&tstate_impl->mem_free_queue, tstate_impl, true, NULL, NULL);
 
     // Process shared interpreter work
-    maybe_process_interp_queue(&interp->mem_free_queue, tstate_impl->qsbr, NULL, NULL);
+    maybe_process_interp_queue(&interp->mem_free_queue, tstate_impl, NULL, NULL);
 }
 
 void
@@ -1348,10 +1331,10 @@ _PyMem_ProcessDelayedNoDealloc(PyThreadState *tstate, delayed_dealloc_cb cb, voi
     _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
 
     // Process thread-local work
-    process_queue(&tstate_impl->mem_free_queue, tstate_impl->qsbr, true, cb, state);
+    process_queue(&tstate_impl->mem_free_queue, tstate_impl, true, cb, state);
 
     // Process shared interpreter work
-    maybe_process_interp_queue(&interp->mem_free_queue, tstate_impl->qsbr, cb, state);
+    maybe_process_interp_queue(&interp->mem_free_queue, tstate_impl, cb, state);
 }
 
 void
@@ -1380,7 +1363,7 @@ _PyMem_AbandonDelayed(PyThreadState *tstate)
 
     // Process the merged queue now (see gh-130794).
     _PyThreadStateImpl *this_tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
-    process_interp_queue(&interp->mem_free_queue, this_tstate->qsbr, NULL, NULL);
+    process_interp_queue(&interp->mem_free_queue, this_tstate, NULL, NULL);
 
     PyMutex_Unlock(&interp->mem_free_queue.mutex);
 

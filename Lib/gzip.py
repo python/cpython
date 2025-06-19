@@ -5,7 +5,6 @@ but random access is not allowed."""
 
 # based on Andrew Kuchling's minigzip.py distributed with the zlib module
 
-import _compression
 import builtins
 import io
 import os
@@ -14,6 +13,7 @@ import sys
 import time
 import weakref
 import zlib
+from compression._common import _streams
 
 __all__ = ["BadGzipFile", "GzipFile", "open", "compress", "decompress"]
 
@@ -144,7 +144,7 @@ class _WriteBufferStream(io.RawIOBase):
         return True
 
 
-class GzipFile(_compression.BaseStream):
+class GzipFile(_streams.BaseStream):
     """The GzipFile class simulates most of the methods of a file object with
     the exception of the truncate() method.
 
@@ -202,51 +202,58 @@ class GzipFile(_compression.BaseStream):
             raise ValueError("Invalid mode: {!r}".format(mode))
         if mode and 'b' not in mode:
             mode += 'b'
-        if fileobj is None:
-            fileobj = self.myfileobj = builtins.open(filename, mode or 'rb')
-        if filename is None:
-            filename = getattr(fileobj, 'name', '')
-            if not isinstance(filename, (str, bytes)):
-                filename = ''
-        else:
-            filename = os.fspath(filename)
-        origmode = mode
-        if mode is None:
-            mode = getattr(fileobj, 'mode', 'rb')
+
+        try:
+            if fileobj is None:
+                fileobj = self.myfileobj = builtins.open(filename, mode or 'rb')
+            if filename is None:
+                filename = getattr(fileobj, 'name', '')
+                if not isinstance(filename, (str, bytes)):
+                    filename = ''
+            else:
+                filename = os.fspath(filename)
+            origmode = mode
+            if mode is None:
+                mode = getattr(fileobj, 'mode', 'rb')
 
 
-        if mode.startswith('r'):
-            self.mode = READ
-            raw = _GzipReader(fileobj)
-            self._buffer = io.BufferedReader(raw)
-            self.name = filename
+            if mode.startswith('r'):
+                self.mode = READ
+                raw = _GzipReader(fileobj)
+                self._buffer = io.BufferedReader(raw)
+                self.name = filename
 
-        elif mode.startswith(('w', 'a', 'x')):
-            if origmode is None:
-                import warnings
-                warnings.warn(
-                    "GzipFile was opened for writing, but this will "
-                    "change in future Python releases.  "
-                    "Specify the mode argument for opening it for writing.",
-                    FutureWarning, 2)
-            self.mode = WRITE
-            self._init_write(filename)
-            self.compress = zlib.compressobj(compresslevel,
-                                             zlib.DEFLATED,
-                                             -zlib.MAX_WBITS,
-                                             zlib.DEF_MEM_LEVEL,
-                                             0)
-            self._write_mtime = mtime
-            self._buffer_size = _WRITE_BUFFER_SIZE
-            self._buffer = io.BufferedWriter(_WriteBufferStream(self),
-                                             buffer_size=self._buffer_size)
-        else:
-            raise ValueError("Invalid mode: {!r}".format(mode))
+            elif mode.startswith(('w', 'a', 'x')):
+                if origmode is None:
+                    import warnings
+                    warnings.warn(
+                        "GzipFile was opened for writing, but this will "
+                        "change in future Python releases.  "
+                        "Specify the mode argument for opening it for writing.",
+                        FutureWarning, 2)
+                self.mode = WRITE
+                self._init_write(filename)
+                self.compress = zlib.compressobj(compresslevel,
+                                                 zlib.DEFLATED,
+                                                 -zlib.MAX_WBITS,
+                                                 zlib.DEF_MEM_LEVEL,
+                                                 0)
+                self._write_mtime = mtime
+                self._buffer_size = _WRITE_BUFFER_SIZE
+                self._buffer = io.BufferedWriter(_WriteBufferStream(self),
+                                                 buffer_size=self._buffer_size)
+            else:
+                raise ValueError("Invalid mode: {!r}".format(mode))
 
-        self.fileobj = fileobj
+            self.fileobj = fileobj
 
-        if self.mode == WRITE:
-            self._write_gzip_header(compresslevel)
+            if self.mode == WRITE:
+                self._write_gzip_header(compresslevel)
+        except:
+            # Avoid a ResourceWarning if the write fails,
+            # eg read-only file or KeyboardInterrupt
+            self._close()
+            raise
 
     @property
     def mtime(self):
@@ -387,11 +394,14 @@ class GzipFile(_compression.BaseStream):
             elif self.mode == READ:
                 self._buffer.close()
         finally:
-            self.fileobj = None
-            myfileobj = self.myfileobj
-            if myfileobj:
-                self.myfileobj = None
-                myfileobj.close()
+            self._close()
+
+    def _close(self):
+        self.fileobj = None
+        myfileobj = self.myfileobj
+        if myfileobj is not None:
+            self.myfileobj = None
+            myfileobj.close()
 
     def flush(self,zlib_mode=zlib.Z_SYNC_FLUSH):
         self._check_not_closed()
@@ -513,7 +523,7 @@ def _read_gzip_header(fp):
     return last_mtime
 
 
-class _GzipReader(_compression.DecompressReader):
+class _GzipReader(_streams.DecompressReader):
     def __init__(self, fp):
         super().__init__(_PaddedFile(fp), zlib._ZlibDecompressor,
                          wbits=-zlib.MAX_WBITS)
@@ -657,7 +667,9 @@ def main():
     from argparse import ArgumentParser
     parser = ArgumentParser(description=
         "A simple command line interface for the gzip module: act like gzip, "
-        "but do not delete the input file.")
+        "but do not delete the input file.",
+        color=True,
+    )
     group = parser.add_mutually_exclusive_group()
     group.add_argument('--fast', action='store_true', help='compress faster')
     group.add_argument('--best', action='store_true', help='compress better')

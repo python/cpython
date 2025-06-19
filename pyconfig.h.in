@@ -89,6 +89,9 @@
 /* Define to 1 if you have the 'atanh' function. */
 #undef HAVE_ATANH
 
+/* Define to 1 if you have the 'backtrace' function. */
+#undef HAVE_BACKTRACE
+
 /* Define if you have the 'bind' function. */
 #undef HAVE_BIND
 
@@ -264,6 +267,10 @@
    */
 #undef HAVE_DECL_TZNAME
 
+/* Define to 1 if you have the declaration of 'UT_NAMESIZE', and to 0 if you
+   don't. */
+#undef HAVE_DECL_UT_NAMESIZE
+
 /* Define to 1 if you have the device macros. */
 #undef HAVE_DEVICE_MACROS
 
@@ -288,6 +295,9 @@
 
 /* Define to 1 if you have the 'dladdr' function. */
 #undef HAVE_DLADDR
+
+/* Define to 1 if you have the 'dladdr1' function. */
+#undef HAVE_DLADDR1
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
@@ -333,6 +343,9 @@
 
 /* Define if you have the 'eventfd' function. */
 #undef HAVE_EVENTFD
+
+/* Define to 1 if you have the <execinfo.h> header file. */
+#undef HAVE_EXECINFO_H
 
 /* Define to 1 if you have the 'execv' function. */
 #undef HAVE_EXECV
@@ -530,6 +543,9 @@
 /* Define to 1 if you have the 'getlogin' function. */
 #undef HAVE_GETLOGIN
 
+/* Define to 1 if you have the 'getlogin_r' function. */
+#undef HAVE_GETLOGIN_R
+
 /* Define to 1 if you have the 'getnameinfo' function. */
 #undef HAVE_GETNAMEINFO
 
@@ -705,6 +721,9 @@
 /* Define to 1 if you have the 'linkat' function. */
 #undef HAVE_LINKAT
 
+/* Define to 1 if you have the <link.h> header file. */
+#undef HAVE_LINK_H
+
 /* Define to 1 if you have the <linux/auxvec.h> header file. */
 #undef HAVE_LINUX_AUXVEC_H
 
@@ -794,6 +813,9 @@
 
 /* Define this if you have the makedev macro. */
 #undef HAVE_MAKEDEV
+
+/* Define if you have the 'MAXLOGNAME' constant. */
+#undef HAVE_MAXLOGNAME
 
 /* Define to 1 if you have the 'mbrtowc' function. */
 #undef HAVE_MBRTOWC
@@ -993,6 +1015,9 @@
 /* Define to 1 if you have the 'pthread_getname_np' function. */
 #undef HAVE_PTHREAD_GETNAME_NP
 
+/* Define to 1 if you have the 'pthread_get_name_np' function. */
+#undef HAVE_PTHREAD_GET_NAME_NP
+
 /* Define to 1 if you have the <pthread.h> header file. */
 #undef HAVE_PTHREAD_H
 
@@ -1004,6 +1029,9 @@
 
 /* Define to 1 if you have the 'pthread_setname_np' function. */
 #undef HAVE_PTHREAD_SETNAME_NP
+
+/* Define to 1 if you have the 'pthread_set_name_np' function. */
+#undef HAVE_PTHREAD_SET_NAME_NP
 
 /* Define to 1 if you have the 'pthread_sigmask' function. */
 #undef HAVE_PTHREAD_SIGMASK
@@ -1557,6 +1585,9 @@
 /* Define to 1 if you have the <utmp.h> header file. */
 #undef HAVE_UTMP_H
 
+/* Define if you have the 'HAVE_UT_NAMESIZE' constant. */
+#undef HAVE_UT_NAMESIZE
+
 /* Define to 1 if you have the 'uuid_create' function. */
 #undef HAVE_UUID_CREATE
 
@@ -1565,6 +1596,9 @@
 
 /* Define if uuid_generate_time_safe() exists. */
 #undef HAVE_UUID_GENERATE_TIME_SAFE
+
+/* Define if uuid_generate_time_safe() is able to deduce a MAC address. */
+#undef HAVE_UUID_GENERATE_TIME_SAFE_STABLE_MAC
 
 /* Define to 1 if you have the <uuid.h> header file. */
 #undef HAVE_UUID_H
@@ -1612,11 +1646,17 @@
 /* Define to 1 if you have the 'writev' function. */
 #undef HAVE_WRITEV
 
+/* Define to 1 if you have the <zdict.h> header file. */
+#undef HAVE_ZDICT_H
+
 /* Define if the zlib library has inflateCopy */
 #undef HAVE_ZLIB_COPY
 
 /* Define to 1 if you have the <zlib.h> header file. */
 #undef HAVE_ZLIB_H
+
+/* Define to 1 if you have the <zstd.h> header file. */
+#undef HAVE_ZSTD_H
 
 /* Define to 1 if you have the '_getpty' function. */
 #undef HAVE__GETPTY
@@ -1706,11 +1746,11 @@
    SipHash13: 3, externally defined: 0 */
 #undef Py_HASH_ALGORITHM
 
-/* Defined if _Complex C type is available. */
-#undef Py_HAVE_C_COMPLEX
-
 /* Define if year with century should be normalized for strftime. */
 #undef Py_NORMALIZE_CENTURY
+
+/* Define if you want to enable remote debugging support. */
+#undef Py_REMOTE_DEBUG
 
 /* Define if rl_startup_hook takes arguments */
 #undef Py_RL_STARTUP_HOOK_TAKES_ARGS

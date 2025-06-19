@@ -1,0 +1,2 @@
+Only fetch globals and locals if necessary in
+:func:`annotationlib.get_annotations`

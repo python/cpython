@@ -8,7 +8,7 @@ import weakref
 
 from sys import monitoring
 from test.support import threading_helper
-from threading import Thread, _PyRLock
+from threading import Thread, _PyRLock, Barrier
 from unittest import TestCase
 
 
@@ -194,7 +194,9 @@ class SetProfileMultiThreaded(InstrumentationMultiThreadedMixin, TestCase):
 
 @threading_helper.requires_working_threading()
 class MonitoringMisc(MonitoringTestMixin, TestCase):
-    def register_callback(self):
+    def register_callback(self, barrier):
+        barrier.wait()
+
         def callback(*args):
             pass
 
@@ -206,8 +208,9 @@ class MonitoringMisc(MonitoringTestMixin, TestCase):
     def test_register_callback(self):
         self.refs = []
         threads = []
-        for i in range(50):
-            t = Thread(target=self.register_callback)
+        barrier = Barrier(5)
+        for i in range(5):
+            t = Thread(target=self.register_callback, args=(barrier,))
             t.start()
             threads.append(t)
 

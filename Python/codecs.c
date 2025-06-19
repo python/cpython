@@ -15,6 +15,7 @@ Copyright (c) Corporation for National Research Initiatives.
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
+#include "pycore_unicodeobject.h" // _PyUnicode_InternMortal()
 
 
 static const char *codecs_builtin_error_handlers[] = {
@@ -539,11 +540,19 @@ PyObject * _PyCodec_LookupTextEncoding(const char *encoding,
             Py_DECREF(attr);
             if (is_text_codec <= 0) {
                 Py_DECREF(codec);
-                if (!is_text_codec)
-                    PyErr_Format(PyExc_LookupError,
-                                 "'%.400s' is not a text encoding; "
-                                 "use %s to handle arbitrary codecs",
-                                 encoding, alternate_command);
+                if (!is_text_codec) {
+                    if (alternate_command != NULL) {
+                        PyErr_Format(PyExc_LookupError,
+                                     "'%.400s' is not a text encoding; "
+                                     "use %s to handle arbitrary codecs",
+                                     encoding, alternate_command);
+                    }
+                    else {
+                        PyErr_Format(PyExc_LookupError,
+                                     "'%.400s' is not a text encoding",
+                                     encoding);
+                    }
+                }
                 return NULL;
             }
         }

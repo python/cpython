@@ -29,15 +29,6 @@ class MD5Type "MD5object *" "&PyType_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=6e5261719957a912]*/
 
-/* Some useful types */
-
-#if SIZEOF_INT == 4
-typedef unsigned int MD5_INT32; /* 32-bit integer */
-typedef long long MD5_INT64; /* 64-bit integer */
-#else
-/* not defined. compilation will die. */
-#endif
-
 /* The MD5 block size and message digest sizes, in bytes */
 
 #define MD5_BLOCKSIZE    64
@@ -129,7 +120,7 @@ MD5Type_copy_impl(MD5object *self, PyTypeObject *cls)
     newobj->hash_state = Hacl_Hash_MD5_copy(self->hash_state);
     LEAVE_HASHLIB(self);
     if (newobj->hash_state == NULL) {
-        Py_DECREF(self);
+        Py_DECREF(newobj);
         return PyErr_NoMemory();
     }
     return (PyObject *)newobj;
@@ -285,17 +276,24 @@ static PyType_Spec md5_type_spec = {
 /*[clinic input]
 _md5.md5
 
-    string: object(c_default="NULL") = b''
+    data: object(c_default="NULL") = b''
     *
     usedforsecurity: bool = True
+    string as string_obj: object(c_default="NULL") = None
 
 Return a new MD5 hash object; optionally initialized with a string.
 [clinic start generated code]*/
 
 static PyObject *
-_md5_md5_impl(PyObject *module, PyObject *string, int usedforsecurity)
-/*[clinic end generated code: output=587071f76254a4ac input=7a144a1905636985]*/
+_md5_md5_impl(PyObject *module, PyObject *data, int usedforsecurity,
+              PyObject *string_obj)
+/*[clinic end generated code: output=d45e187d3d16f3a8 input=7ea5c5366dbb44bf]*/
 {
+    PyObject *string;
+    if (_Py_hashlib_data_argument(&string, data, string_obj) < 0) {
+        return NULL;
+    }
+
     MD5object *new;
     Py_buffer buf;
 
@@ -379,6 +377,9 @@ md5_exec(PyObject *m)
     if (PyModule_AddObjectRef(m, "MD5Type", (PyObject *)st->md5_type) < 0) {
         return -1;
     }
+    if (PyModule_AddIntConstant(m, "_GIL_MINSIZE", HASHLIB_GIL_MINSIZE) < 0) {
+        return -1;
+    }
 
     return 0;
 }
@@ -392,14 +393,14 @@ static PyModuleDef_Slot _md5_slots[] = {
 
 
 static struct PyModuleDef _md5module = {
-        PyModuleDef_HEAD_INIT,
-        .m_name = "_md5",
-        .m_size = sizeof(MD5State),
-        .m_methods = MD5_functions,
-        .m_slots = _md5_slots,
-        .m_traverse = _md5_traverse,
-        .m_clear = _md5_clear,
-        .m_free = _md5_free,
+    PyModuleDef_HEAD_INIT,
+    .m_name = "_md5",
+    .m_size = sizeof(MD5State),
+    .m_methods = MD5_functions,
+    .m_slots = _md5_slots,
+    .m_traverse = _md5_traverse,
+    .m_clear = _md5_clear,
+    .m_free = _md5_free,
 };
 
 PyMODINIT_FUNC

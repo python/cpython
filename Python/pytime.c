@@ -1,7 +1,8 @@
 #include "Python.h"
 #include "pycore_initconfig.h"    // _PyStatus_ERR
-#include "pycore_time.h"          // PyTime_t
 #include "pycore_pystate.h"       // _Py_AssertHoldsTstate()
+#include "pycore_runtime.h"       // _PyRuntime
+#include "pycore_time.h"          // PyTime_t
 
 #include <time.h>                 // gmtime_r()
 #ifdef HAVE_SYS_TIME_H

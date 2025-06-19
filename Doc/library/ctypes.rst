@@ -657,12 +657,13 @@ Nested structures can also be initialized in the constructor in several ways::
    >>> r = RECT((1, 2), (3, 4))
 
 Field :term:`descriptor`\s can be retrieved from the *class*, they are useful
-for debugging because they can provide useful information::
+for debugging because they can provide useful information.
+See :class:`CField`::
 
-   >>> print(POINT.x)
-   <Field type=c_long, ofs=0, size=4>
-   >>> print(POINT.y)
-   <Field type=c_long, ofs=4, size=4>
+   >>> POINT.x
+   <ctypes.CField 'x' type=c_int, ofs=0, size=4>
+   >>> POINT.y
+   <ctypes.CField 'y' type=c_int, ofs=4, size=4>
    >>>
 
 
@@ -713,10 +714,16 @@ item in the :attr:`~Structure._fields_` tuples::
    ...                 ("second_16", c_int, 16)]
    ...
    >>> print(Int.first_16)
-   <Field type=c_long, ofs=0:0, bits=16>
+   <ctypes.CField 'first_16' type=c_int, ofs=0, bit_size=16, bit_offset=0>
    >>> print(Int.second_16)
-   <Field type=c_long, ofs=0:16, bits=16>
-   >>>
+   <ctypes.CField 'second_16' type=c_int, ofs=0, bit_size=16, bit_offset=16>
+
+It is important to note that bit field allocation and layout in memory are not
+defined as a C standard; their implementation is compiler-specific.
+By default, Python will attempt to match the behavior of a "native" compiler
+for the current platform.
+See the :attr:`~Structure._layout_` attribute for details on the default
+behavior and how to change it.
 
 
 .. _ctypes-arrays:
@@ -875,7 +882,7 @@ invalid non-\ ``NULL`` pointers would crash Python)::
 Thread safety without the GIL
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In Python 3.13, the :term:`GIL` may be disabled on :term:`experimental free threaded <free threading>` builds.
+From Python 3.13 onward, the :term:`GIL` can be disabled on :term:`free threaded <free threading>` builds.
 In ctypes, reads and writes to a single object concurrently is safe, but not across multiple objects:
 
    .. code-block:: pycon
@@ -1778,7 +1785,8 @@ in :mod:`!ctypes`) which inherits from the private :class:`_CFuncPtr` class:
 
 .. audit-event:: ctypes.call_function func_pointer,arguments foreign-functions
 
-   Some ways to invoke foreign function calls may raise an auditing event
+   Some ways to invoke foreign function calls as well as some of the
+   functions in this module may raise an auditing event
    ``ctypes.call_function`` with arguments ``function pointer`` and ``arguments``.
 
 .. _ctypes-function-prototypes:
@@ -2029,35 +2037,55 @@ Utility functions
    pointer.
 
 
-.. function:: create_string_buffer(init_or_size, size=None)
+.. function:: create_string_buffer(init, size=None)
+              create_string_buffer(size)
 
    This function creates a mutable character buffer. The returned object is a
    ctypes array of :class:`c_char`.
 
-   *init_or_size* must be an integer which specifies the size of the array, or a
-   bytes object which will be used to initialize the array items.
+   If *size* is given (and not ``None``), it must be an :class:`int`.
+   It specifies the size of the returned array.
 
-   If a bytes object is specified as first argument, the buffer is made one item
-   larger than its length so that the last element in the array is a NUL
-   termination character. An integer can be passed as second argument which allows
-   specifying the size of the array if the length of the bytes should not be used.
+   If the *init* argument is given, it must be :class:`bytes`. It is used
+   to initialize the array items. Bytes not initialized this way are
+   set to zero (NUL).
+
+   If *size* is not given (or if it is ``None``), the buffer is made one element
+   larger than *init*, effectively adding a NUL terminator.
+
+   If both arguments are given, *size* must not be less than ``len(init)``.
+
+   .. warning::
+
+      If *size* is equal to ``len(init)``, a NUL terminator is
+      not added. Do not treat such a buffer as a C string.
+
+   For example::
+
+      >>> bytes(create_string_buffer(2))
+      b'\x00\x00'
+      >>> bytes(create_string_buffer(b'ab'))
+      b'ab\x00'
+      >>> bytes(create_string_buffer(b'ab', 2))
+      b'ab'
+      >>> bytes(create_string_buffer(b'ab', 4))
+      b'ab\x00\x00'
+      >>> bytes(create_string_buffer(b'abcdef', 2))
+      Traceback (most recent call last):
+         ...
+      ValueError: byte string too long
 
    .. audit-event:: ctypes.create_string_buffer init,size ctypes.create_string_buffer
 
 
-.. function:: create_unicode_buffer(init_or_size, size=None)
+.. function:: create_unicode_buffer(init, size=None)
+              create_unicode_buffer(size)
 
    This function creates a mutable unicode character buffer. The returned object is
    a ctypes array of :class:`c_wchar`.
 
-   *init_or_size* must be an integer which specifies the size of the array, or a
-   string which will be used to initialize the array items.
-
-   If a string is specified as first argument, the buffer is made one item
-   larger than the length of the string so that the last element in the array is a
-   NUL termination character. An integer can be passed as second argument which
-   allows specifying the size of the array if the length of the string should not
-   be used.
+   The function takes the same arguments as :func:`~create_string_buffer` except
+   *init* must be a string and *size* counts :class:`c_wchar`.
 
    .. audit-event:: ctypes.create_unicode_buffer init,size ctypes.create_unicode_buffer
 
@@ -2170,9 +2198,19 @@ Utility functions
 
 .. function:: POINTER(type, /)
 
-   Create and return a new ctypes pointer type. Pointer types are cached and
+   Create or return a ctypes pointer type. Pointer types are cached and
    reused internally, so calling this function repeatedly is cheap.
    *type* must be a ctypes type.
+
+   .. impl-detail::
+
+      The resulting pointer type is cached in the ``__pointer_type__``
+      attribute of *type*.
+      It is possible to set this attribute before the first call to
+      ``POINTER`` in order to set a custom pointer type.
+      However, doing this is discouraged: manually creating a suitable
+      pointer type is difficult without relying on implementation
+      details that may change in future Python versions.
 
 
 .. function:: pointer(obj, /)
@@ -2337,6 +2375,16 @@ Data types
       This method returns a ctypes type instance exported by a shared
       library. *name* is the name of the symbol that exports the data, *library*
       is the loaded shared library.
+
+   Common class variables of ctypes data types:
+
+   .. attribute:: __pointer_type__
+
+      The pointer type that was created by calling
+      :func:`POINTER` for corresponding ctypes data type. If a pointer type
+      was not yet created, the attribute is missing.
+
+      .. versionadded:: 3.14
 
    Common instance variables of ctypes data types:
 
@@ -2631,6 +2679,9 @@ These are the fundamental ctypes data types:
    Represents the C :c:expr:`PyObject *` datatype.  Calling this without an
    argument creates a ``NULL`` :c:expr:`PyObject *` pointer.
 
+   .. versionchanged:: 3.14
+      :class:`!py_object` is now a :term:`generic type`.
+
 The :mod:`!ctypes.wintypes` module provides quite some other Windows specific
 data types, for example :c:type:`!HWND`, :c:type:`!WPARAM`, or :c:type:`!DWORD`.
 Some useful structures like :c:type:`!MSG` or :c:type:`!RECT` are also defined.
@@ -2729,6 +2780,16 @@ fields, or any other data types containing pointer type fields.
       when :attr:`_fields_` is assigned, otherwise it will have no effect.
       Setting this attribute to 0 is the same as not setting it at all.
 
+      This is only implemented for the MSVC-compatible memory layout.
+
+      .. deprecated-removed:: 3.14 3.19
+
+         For historical reasons, if :attr:`!_pack_` is non-zero,
+         the MSVC-compatible layout will be used by default.
+         On non-Windows platforms, this default is deprecated and is slated to
+         become an error in Python 3.19.
+         If it is intended, set :attr:`~Structure._layout_` to ``'ms'``
+         explicitly.
 
    .. attribute:: _align_
 
@@ -2757,11 +2818,14 @@ fields, or any other data types containing pointer type fields.
       Currently the default will be:
 
       - On Windows: ``"ms"``
-      - When :attr:`~Structure._pack_` is specified: ``"ms"``
+      - When :attr:`~Structure._pack_` is specified: ``"ms"``.
+        (This is deprecated; see :attr:`~Structure._pack_` documentation.)
       - Otherwise: ``"gcc-sysv"``
 
       :attr:`!_layout_` must already be defined when
       :attr:`~Structure._fields_` is assigned, otherwise it will have no effect.
+
+      .. versionadded:: 3.14
 
    .. attribute:: _anonymous_
 
@@ -2810,6 +2874,98 @@ fields, or any other data types containing pointer type fields.
    constructor are interpreted as attribute assignments, so they will initialize
    :attr:`_fields_` with the same name, or create new attributes for names not
    present in :attr:`_fields_`.
+
+
+.. class:: CField(*args, **kw)
+
+   Descriptor for fields of a :class:`Structure` and :class:`Union`.
+   For example::
+
+      >>> class Color(Structure):
+      ...     _fields_ = (
+      ...         ('red', c_uint8),
+      ...         ('green', c_uint8),
+      ...         ('blue', c_uint8),
+      ...         ('intense', c_bool, 1),
+      ...         ('blinking', c_bool, 1),
+      ...    )
+      ...
+      >>> Color.red
+      <ctypes.CField 'red' type=c_ubyte, ofs=0, size=1>
+      >>> Color.green.type
+      <class 'ctypes.c_ubyte'>
+      >>> Color.blue.byte_offset
+      2
+      >>> Color.intense
+      <ctypes.CField 'intense' type=c_bool, ofs=3, bit_size=1, bit_offset=0>
+      >>> Color.blinking.bit_offset
+      1
+
+   All attributes are read-only.
+
+   :class:`!CField` objects are created via :attr:`~Structure._fields_`;
+   do not instantiate the class directly.
+
+   .. versionadded:: 3.14
+
+      Previously, descriptors only had ``offset`` and ``size`` attributes
+      and a readable string representation; the :class:`!CField` class was not
+      available directly.
+
+   .. attribute:: name
+
+      Name of the field, as a string.
+
+   .. attribute:: type
+
+      Type of the field, as a :ref:`ctypes class <ctypes-data-types>`.
+
+   .. attribute:: offset
+                  byte_offset
+
+      Offset of the field, in bytes.
+
+      For bitfields, this is the offset of the underlying byte-aligned
+      *storage unit*; see :attr:`~CField.bit_offset`.
+
+   .. attribute:: byte_size
+
+      Size of the field, in bytes.
+
+      For bitfields, this is the size of the underlying *storage unit*.
+      Typically, it has the same size as the bitfield's type.
+
+   .. attribute:: size
+
+      For non-bitfields, equivalent to :attr:`~CField.byte_size`.
+
+      For bitfields, this contains a backwards-compatible bit-packed
+      value that combines :attr:`~CField.bit_size` and
+      :attr:`~CField.bit_offset`.
+      Prefer using the explicit attributes instead.
+
+   .. attribute:: is_bitfield
+
+      True if this is a bitfield.
+
+   .. attribute:: bit_offset
+                  bit_size
+
+      The location of a bitfield within its *storage unit*, that is, within
+      :attr:`~CField.byte_size` bytes of memory starting at
+      :attr:`~CField.byte_offset`.
+
+      To get the field's value, read the storage unit as an integer,
+      :ref:`shift left <shifting>` by :attr:`!bit_offset` and
+      take the :attr:`!bit_size` least significant bits.
+
+      For non-bitfields, :attr:`!bit_offset` is zero
+      and :attr:`!bit_size` is equal to ``byte_size * 8``.
+
+   .. attribute:: is_anonymous
+
+      True if this field is anonymous, that is, it contains nested sub-fields
+      that should be be merged into a containing structure or union.
 
 
 .. _ctypes-arrays-pointers:

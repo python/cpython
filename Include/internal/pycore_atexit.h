@@ -1,8 +1,6 @@
 #ifndef Py_INTERNAL_ATEXIT_H
 #define Py_INTERNAL_ATEXIT_H
 
-#include "pycore_lock.h"        // PyMutex
-
 #ifdef __cplusplus
 extern "C" {
 #endif

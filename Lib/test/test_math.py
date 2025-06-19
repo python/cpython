@@ -573,6 +573,8 @@ class MathTests(unittest.TestCase):
         #self.assertEqual(math.ceil(NINF), NINF)
         #self.assertTrue(math.isnan(math.floor(NAN)))
 
+        class TestFloorIsNone(float):
+            __floor__ = None
         class TestFloor:
             def __floor__(self):
                 return 42
@@ -588,6 +590,7 @@ class MathTests(unittest.TestCase):
         self.assertEqual(math.floor(FloatLike(41.9)), 41)
         self.assertRaises(TypeError, math.floor, TestNoFloor())
         self.assertRaises(ValueError, math.floor, TestBadFloor())
+        self.assertRaises(TypeError, math.floor, TestFloorIsNone(3.5))
 
         t = TestNoFloor()
         t.__floor__ = lambda *args: args
@@ -1210,6 +1213,12 @@ class MathTests(unittest.TestCase):
             self.assertEqual(math.ldexp(INF, n), INF)
             self.assertEqual(math.ldexp(NINF, n), NINF)
             self.assertTrue(math.isnan(math.ldexp(NAN, n)))
+
+    @requires_IEEE_754
+    def testLdexp_denormal(self):
+        # Denormal output incorrectly rounded (truncated)
+        # on some Windows.
+        self.assertEqual(math.ldexp(6993274598585239, -1126), 1e-323)
 
     def testLog(self):
         self.assertRaises(TypeError, math.log)
@@ -1964,6 +1973,28 @@ class MathTests(unittest.TestCase):
         self.assertFalse(math.isfinite(float("inf")))
         self.assertFalse(math.isfinite(float("-inf")))
 
+    def testIsnormal(self):
+        self.assertTrue(math.isnormal(1.25))
+        self.assertTrue(math.isnormal(-1.0))
+        self.assertFalse(math.isnormal(0.0))
+        self.assertFalse(math.isnormal(-0.0))
+        self.assertFalse(math.isnormal(INF))
+        self.assertFalse(math.isnormal(NINF))
+        self.assertFalse(math.isnormal(NAN))
+        self.assertFalse(math.isnormal(FLOAT_MIN/2))
+        self.assertFalse(math.isnormal(-FLOAT_MIN/2))
+
+    def testIssubnormal(self):
+        self.assertFalse(math.issubnormal(1.25))
+        self.assertFalse(math.issubnormal(-1.0))
+        self.assertFalse(math.issubnormal(0.0))
+        self.assertFalse(math.issubnormal(-0.0))
+        self.assertFalse(math.issubnormal(INF))
+        self.assertFalse(math.issubnormal(NINF))
+        self.assertFalse(math.issubnormal(NAN))
+        self.assertTrue(math.issubnormal(FLOAT_MIN/2))
+        self.assertTrue(math.issubnormal(-FLOAT_MIN/2))
+
     def testIsnan(self):
         self.assertTrue(math.isnan(float("nan")))
         self.assertTrue(math.isnan(float("-nan")))
@@ -2533,10 +2564,10 @@ class MathTests(unittest.TestCase):
             math.log(x)
         x = -123
         with self.assertRaisesRegex(ValueError,
-                                    f"expected a positive input, got {x}"):
+                                    "expected a positive input$"):
             math.log(x)
         with self.assertRaisesRegex(ValueError,
-                                    f"expected a float or nonnegative integer, got {x}"):
+                                    f"expected a noninteger or positive integer, got {x}"):
             math.gamma(x)
         x = 1.0
         with self.assertRaisesRegex(ValueError,
@@ -2772,6 +2803,9 @@ class FMATests(unittest.TestCase):
         or (sys.platform == "android" and platform.machine() == "x86_64")
         or support.linked_to_musl(),  # gh-131032
         f"this platform doesn't implement IEE 754-2008 properly")
+    # gh-131032: musl is fixed but the fix is not yet released; when the fixed
+    # version is known change this to:
+    #   or support.linked_to_musl() < (1, <m>, <p>)
     def test_fma_zero_result(self):
         nonnegative_finites = [0.0, 1e-300, 2.3, 1e300]
 

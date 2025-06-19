@@ -871,6 +871,12 @@ conforming to :rfc:`8089`.
 
    .. versionadded:: 3.13
 
+   .. versionchanged:: 3.14
+      The URL authority is discarded if it matches the local hostname.
+      Otherwise, if the authority isn't empty or ``localhost``, then on
+      Windows a UNC path is returned (as before), and on other platforms a
+      :exc:`ValueError` is raised.
+
 
 .. method:: Path.as_uri()
 
@@ -886,9 +892,11 @@ conforming to :rfc:`8089`.
       >>> p.as_uri()
       'file:///c:/Windows'
 
-   For historical reasons, this method is also available from
-   :class:`PurePath` objects. However, its use of :func:`os.fsencode` makes
-   it strictly impure.
+   .. deprecated-removed:: 3.14 3.19
+
+      Calling this method from :class:`PurePath` rather than :class:`Path` is
+      possible but deprecated. The method's use of :func:`os.fsencode` makes
+      it strictly impure.
 
 
 Expanding and resolving paths
@@ -1773,9 +1781,12 @@ The following wildcards are supported in patterns for
 ``?``
   Matches one non-separator character.
 ``[seq]``
-  Matches one character in *seq*.
+  Matches one character in *seq*, where *seq* is a sequence of characters.
+  Range expressions are supported; for example, ``[a-z]`` matches any lowercase ASCII letter.
+  Multiple ranges can be combined: ``[a-zA-Z0-9_]`` matches any ASCII letter, digit, or underscore.
+
 ``[!seq]``
-  Matches one character not in *seq*.
+  Matches one character not in *seq*, where *seq* follows the same rules as above.
 
 For a literal match, wrap the meta-characters in brackets.
 For example, ``"[?]"`` matches the character ``"?"``.

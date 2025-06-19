@@ -1,10 +1,10 @@
 // TypeVar, TypeVarTuple, ParamSpec, and TypeAlias
 #include "Python.h"
-#include "pycore_frame.h"         // _PyInterpreterFrame
+#include "pycore_interpframe.h"   // _PyInterpreterFrame
 #include "pycore_object.h"        // _PyObject_GC_TRACK/UNTRACK, PyAnnotateFormat
 #include "pycore_typevarobject.h"
-#include "pycore_unionobject.h"   // _Py_union_type_or, _Py_union_from_tuple
 #include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
+#include "pycore_unionobject.h"   // _Py_union_type_or, _Py_union_from_tuple
 #include "structmember.h"
 
 /*[clinic input]
@@ -192,7 +192,7 @@ constevaluator_call(PyObject *self, PyObject *args, PyObject *kwargs)
             for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(value); i++) {
                 PyObject *item = PyTuple_GET_ITEM(value, i);
                 if (i > 0) {
-                    if (PyUnicodeWriter_WriteUTF8(writer, ", ", 2) < 0) {
+                    if (PyUnicodeWriter_WriteASCII(writer, ", ", 2) < 0) {
                         PyUnicodeWriter_Discard(writer);
                         return NULL;
                     }
@@ -273,7 +273,7 @@ _Py_typing_type_repr(PyUnicodeWriter *writer, PyObject *p)
     }
 
     if (p == (PyObject *)&_PyNone_Type) {
-        return PyUnicodeWriter_WriteUTF8(writer, "None", 4);
+        return PyUnicodeWriter_WriteASCII(writer, "None", 4);
     }
 
     if ((rc = PyObject_HasAttrWithError(p, &_Py_ID(__origin__))) > 0 &&
