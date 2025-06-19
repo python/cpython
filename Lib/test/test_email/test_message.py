@@ -1024,7 +1024,7 @@ class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
         self.assertNotIn(b"\r\n ", raw,
                          "Found fold indicator; wrapping not disabled")
 
-        parsed = message_from_bytes(msg.as_bytes(), policy=policy.default)
+        parsed = message_from_bytes(raw, policy=policy.default)
         self.assertEqual(parsed["Subject"], subj)
         parsed_body = parsed.get_body().get_content().rstrip('\n')
         self.assertEqual(parsed_body, body)
