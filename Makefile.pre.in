@@ -3284,6 +3284,35 @@ funny:
 		-o -name MANIFEST \
 		-o -print
 
+.PHONY: clean-venv
+clean-venv:
+	rm -rf .venv-pre-commit
+
+# Create a virtual environment for pre-commit
+.PHONY: pre-commit-venv
+pre-commit-venv:
+	@if [ -d .venv-pre-commit ] ; then \
+		echo "pre-commit venv already exists."; \
+		echo "To recreate it, remove it first with \`make clean-venv'."; \
+	else \
+		echo "Creating venv for pre-commit in .venv-pre-commit"; \
+		if uv --version > /dev/null; then \
+			uv venv .venv-pre-commit; \
+			VIRTUAL_ENV=.venv-pre-commit uv pip install pre-commit; \
+		else \
+			$(PYTHON_FOR_REGEN) -m venv .venv-pre-commit; \
+			.venv-pre-commit/bin/python3 -m pip install --upgrade pip; \
+			.venv-pre-commit/bin/python3 -m pip install pre-commit; \
+		fi; \
+		echo "The venv has been created in the .venv-pre-commit directory"; \
+	fi
+
+# Run CPython's static analysis, verification, and style checks.
+.PHONY: lint
+lint: pre-commit-venv
+	.venv-pre-commit/bin/pre-commit run --all-files
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/patchcheck/patchcheck.py
+
 # Perform some verification checks on any modified files.
 .PHONY: patchcheck
 patchcheck: all

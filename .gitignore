@@ -128,6 +128,7 @@ PCbuild/arm64/
 PCbuild/obj/
 PCbuild/win32/
 Tools/unicode/data/
+/.venv-pre-commit/
 /autom4te.cache
 /build/
 /builddir/
