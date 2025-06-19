@@ -196,9 +196,9 @@ The :mod:`uuid` module defines the following functions:
    Generate a UUID from a host ID, sequence number, and the current time
    according to :rfc:`RFC 9562, §5.1 <9562#section-5.1>`.
 
-   If *node* is not given, :func:`getnode` is used to obtain the hardware address.
-
-   If *clock_seq* is given, it is used as the sequence number; otherwise a random
+   When *node* is not specified, :func:`getnode` is used to obtain the hardware
+   address as a 48-bit positive integer. When a sequence number *clock_seq* is
+   not specified, a pseudo-random 14-bit positive integer is generated.
    14-bit sequence number is chosen.
 
 
