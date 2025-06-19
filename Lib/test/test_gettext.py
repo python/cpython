@@ -771,10 +771,10 @@ class FindTestCase(unittest.TestCase):
 
     def test_find_LANGUAGE_priority(self):
         self.env.set('LANGUAGE', 'ga_IE')
-        self.env.set('LC_ALL', 'pt_BR')
+        self.env.set('LC_ALL', 'C')
         orig = locale.setlocale(locale.LC_ALL)
         self.addCleanup(lambda: locale.setlocale(locale.LC_ALL, orig))
-        locale.setlocale(locale.LC_ALL, 'pt_BR')
+        locale.setlocale(locale.LC_ALL, 'C')
         mo_file = self.create_mo_file("ga_IE")
         result = gettext.find("mofile", localedir=os.path.join(self.tempdir, "locale"))
         self.assertEqual(result, mo_file)
@@ -784,7 +784,10 @@ class FindTestCase(unittest.TestCase):
         self.addCleanup(lambda: locale.setlocale(locale.LC_ALL, orig))
         mo_file = self.create_mo_file("ca_ES")
         for loc in ("ca_ES", "ca_ES.UTF-8", "ca_ES@euro", "ca_ES@valencia"):
-            locale.setlocale(locale.LC_ALL, loc)
+            try:
+                locale.setlocale(locale.LC_ALL, loc)
+            except locale.Error:
+                self.skipTest('platform does not support locale')
             result = gettext.find("mofile", localedir=os.path.join(self.tempdir, "locale"))
             self.assertEqual(mo_file, result)
         for loc in ("C", "C.UTF-8"):
