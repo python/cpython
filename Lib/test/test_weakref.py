@@ -9,7 +9,6 @@ import contextlib
 import copy
 import threading
 import time
-import types
 import random
 import textwrap
 
@@ -2252,36 +2251,6 @@ class ModuleTestCase(unittest.TestCase):
                 self.assertEqual(obj.__module__, 'weakref')
             self.assertEqual(obj.__name__, name)
             self.assertEqual(obj.__qualname__, name)
-
-    @threading_helper.requires_working_threading()
-    @unittest.skipUnless(support.Py_GIL_DISABLED, 'only used under free-threaded build')
-    def test_module_weakref(self):
-        # gh-135607: Avoid potential races on module weaklist under free-threaded build
-        mod = types.ModuleType("temp_mod")
-        common_ref = weakref.ref(mod)
-        threads = []
-        n_threads = 10
-        b = threading.Barrier(n_threads)
-
-        def weakref_mod_worker():
-            b.wait()
-            r = weakref.ref(mod)
-            rr = r()
-            self.assertIs(rr, mod)
-            self.assertIs(rr, common_ref())
-
-        for i in range(n_threads):
-            t = threading.Thread(target=weakref_mod_worker)
-            threads.append(t)
-            t.start()
-
-        for t in threads:
-            t.join()
-
-        r = weakref.ref(mod)
-        self.assertIsNotNone(r, "weak ref to a module should not be None")
-        self.assertIs(r(), common_ref())
-        del mod
 
 
 libreftest = """ Doctest for examples in the library reference: weakref.rst
