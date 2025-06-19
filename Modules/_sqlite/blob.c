@@ -56,9 +56,7 @@ blob_dealloc(PyObject *op)
 
     close_blob(self);
 
-    if (self->in_weakreflist != NULL) {
-        PyObject_ClearWeakRefs(op);
-    }
+    PyObject_ClearWeakRefs(op);
     (void)tp->tp_clear(op);
     tp->tp_free(self);
     Py_DECREF(tp);

@@ -421,8 +421,7 @@ buffered_dealloc(PyObject *op)
         return;
     _PyObject_GC_UNTRACK(self);
     self->ok = 0;
-    if (self->weakreflist != NULL)
-        PyObject_ClearWeakRefs(op);
+    PyObject_ClearWeakRefs(op);
     if (self->buffer) {
         PyMem_Free(self->buffer);
         self->buffer = NULL;

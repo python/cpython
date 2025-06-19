@@ -1794,9 +1794,7 @@ s_dealloc(PyObject *op)
     PyStructObject *s = PyStructObject_CAST(op);
     PyTypeObject *tp = Py_TYPE(s);
     PyObject_GC_UnTrack(s);
-    if (s->weakreflist != NULL) {
-        PyObject_ClearWeakRefs(op);
-    }
+    PyObject_ClearWeakRefs(op);
     if (s->s_codes != NULL) {
         PyMem_Free(s->s_codes);
     }
