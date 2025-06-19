@@ -31,10 +31,10 @@ typedef struct {
 #ifdef Py_GIL_DISABLED
     void *md_gil;
 #endif
-    Py_ssize_t md_size;
-    traverseproc md_traverse;
-    inquiry md_clear;
-    freefunc md_free;
+    Py_ssize_t md_state_size;
+    traverseproc md_state_traverse;
+    inquiry md_state_clear;
+    freefunc md_state_free;
     void *md_token;
     _Py_modexecfunc md_exec;  /* only set if md_def_or_null is NULL */
 } PyModuleObject;

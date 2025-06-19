@@ -30,7 +30,7 @@ static PyMemberDef module_members[] = {
 static void
 assert_def_missing_or_redundant(PyModuleObject *m) {
     if (m->md_def_or_null) {
-#define DO_ASSERT(F) assert (m->md_def_or_null->m_ ## F == m->md_ ## F);
+#define DO_ASSERT(F) assert (m->md_def_or_null->m_ ## F == m->md_state_ ## F);
         DO_ASSERT(size);
         DO_ASSERT(traverse);
         DO_ASSERT(clear);
@@ -165,10 +165,10 @@ new_module_notrack(PyTypeObject *mt)
     m->md_state = NULL;
     m->md_weaklist = NULL;
     m->md_name = NULL;
-    m->md_size = 0;
-    m->md_traverse = NULL;
-    m->md_clear = NULL;
-    m->md_free = NULL;
+    m->md_state_size = 0;
+    m->md_state_traverse = NULL;
+    m->md_state_clear = NULL;
+    m->md_state_free = NULL;
     m->md_exec = NULL;
     m->md_token = NULL;
     m->md_dict = PyDict_New();
@@ -291,10 +291,10 @@ module_copy_members_from_deflike(
     PyModuleDef *def_like /* not necessarily a valid Python object */)
 {
     /* def may not be a valid PyObject*, see */
-    md->md_size = def_like->m_size;
-    md->md_traverse = def_like->m_traverse;
-    md->md_clear = def_like->m_clear;
-    md->md_free = def_like->m_free;
+    md->md_state_size = def_like->m_size;
+    md->md_state_traverse = def_like->m_traverse;
+    md->md_state_clear = def_like->m_clear;
+    md->md_state_free = def_like->m_free;
 }
 
 PyObject *
@@ -691,16 +691,16 @@ alloc_state(PyObject *module)
     }
     PyModuleObject *md = (PyModuleObject*)module;
 
-    if (md->md_size >= 0) {
+    if (md->md_state_size >= 0) {
         if (md->md_state == NULL) {
             /* Always set a state pointer; this serves as a marker to skip
              * multiple initialization (importlib.reload() is no-op) */
-            md->md_state = PyMem_Malloc(md->md_size);
+            md->md_state = PyMem_Malloc(md->md_state_size);
             if (!md->md_state) {
                 PyErr_NoMemory();
                 return -1;
             }
-            memset(md->md_state, 0, md->md_size);
+            memset(md->md_state, 0, md->md_state_size);
         }
     }
     return 0;
@@ -798,7 +798,7 @@ PyModule_GetStateSize(PyObject *m, Py_ssize_t *size_p)
         return -1;
     }
     PyModuleObject *mod = (PyModuleObject *)m;
-    *size_p = mod->md_size;
+    *size_p = mod->md_state_size;
     return 0;
 }
 
@@ -823,9 +823,9 @@ _PyModule_GetGCHooks(PyObject *m, traverseproc *traverse,
         return -1;
     }
     PyModuleObject *mod = (PyModuleObject *)m;
-    *traverse = mod->md_traverse;
-    *clear = mod->md_clear;
-    *free = mod->md_free;
+    *traverse = mod->md_state_traverse;
+    *clear = mod->md_state_clear;
+    *free = mod->md_state_free;
     return 0;
 }
 
@@ -1095,9 +1095,9 @@ module_dealloc(PyObject *self)
 
     assert_def_missing_or_redundant(m);
     /* bpo-39824: Don't call m_free() if m_size > 0 and md_state=NULL */
-    if (m->md_free && (m->md_size <= 0 || m->md_state != NULL))
+    if (m->md_state_free && (m->md_state_size <= 0 || m->md_state != NULL))
     {
-        m->md_free(m);
+        m->md_state_free(m);
     }
 
     Py_XDECREF(m->md_dict);
@@ -1414,9 +1414,9 @@ module_traverse(PyObject *self, visitproc visit, void *arg)
 
     assert_def_missing_or_redundant(m);
     /* bpo-39824: Don't call m_traverse() if m_size > 0 and md_state=NULL */
-    if (m->md_traverse && (m->md_size <= 0 || m->md_state != NULL))
+    if (m->md_state_traverse && (m->md_state_size <= 0 || m->md_state != NULL))
     {
-        int res = m->md_traverse((PyObject*)m, visit, arg);
+        int res = m->md_state_traverse((PyObject*)m, visit, arg);
         if (res)
             return res;
     }
@@ -1432,9 +1432,9 @@ module_clear(PyObject *self)
 
     assert_def_missing_or_redundant(m);
     /* bpo-39824: Don't call m_clear() if m_size > 0 and md_state=NULL */
-    if (m->md_clear && (m->md_size <= 0 || m->md_state != NULL))
+    if (m->md_state_clear && (m->md_state_size <= 0 || m->md_state != NULL))
     {
-        int res = m->md_clear((PyObject*)m);
+        int res = m->md_state_clear((PyObject*)m);
         if (PyErr_Occurred()) {
             PyErr_FormatUnraisable("Exception ignored in m_clear of module%s%V",
                                    m->md_name ? " " : "",
