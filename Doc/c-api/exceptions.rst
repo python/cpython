@@ -751,7 +751,7 @@ Exception Classes
 
 .. c:function:: int PyExceptionClass_Check(PyObject *ob)
 
-   Return true if *ob* is an exception class. This function always succeeds.
+   Return non-zero if *ob* is an exception class, zero otherwise. This function always succeeds.
 
 
 .. c:function:: const char *PyExceptionClass_Name(PyObject *ob)
