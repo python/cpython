@@ -30,11 +30,15 @@ def print_list(extracted_list, file=None, *, show_lines=True):
     """Print the list of tuples as returned by extract_tb() or
     extract_stack() as a formatted stack trace to the given file.
 
-    If show_lines is False, source code lines are not included in the output.
+    To print in "recent call first" order, call "extracted_list.reverse()"
+    before passing it to this function.
+
+    If 'show_lines' is false, source code lines are not included in the output.
     """
     if file is None:
         file = sys.stderr
-    for item in StackSummary.from_list(extracted_list).format(show_lines=show_lines):
+    for item in StackSummary.from_list(extracted_list).format(
+            show_lines=show_lines):
         print(item, file=file, end="")
 
 def format_list(extracted_list, *, show_lines=True):
@@ -44,12 +48,10 @@ def format_list(extracted_list, *, show_lines=True):
     extract_tb() or extract_stack(), return a list of strings ready
     for printing.
 
-    Each string in the resulting list corresponds to the item with the
-    same index in the argument list.  Each string ends in a newline;
-    the strings may contain internal newlines as well, for those items
-    whose source text line is not None.
+    Each string ends in a newline; the strings may contain internal newlines as
+    well, for those items whose source text line is not None.
 
-    If show_lines is False, source code lines are not included in the output.
+    If 'show_lines' is false, source code lines are not included in the output.
     """
     return StackSummary.from_list(extracted_list).format(show_lines=show_lines)
 
@@ -57,7 +59,7 @@ def format_list(extracted_list, *, show_lines=True):
 # Printing and Extracting Tracebacks.
 #
 
-def print_tb(tb, limit=None, file=None, *, show_lines=True):
+def print_tb(tb, limit=None, file=None, *, show_lines=True, recent_first=False):
     """Print up to 'limit' stack trace entries from the traceback 'tb'.
 
     If 'limit' is omitted or None, all entries are printed.  If 'file'
@@ -65,16 +67,22 @@ def print_tb(tb, limit=None, file=None, *, show_lines=True):
     'file' should be an open file or file-like object with a write()
     method.
 
-    If show_lines is False, source code lines are not included in the output.
+    If 'show_lines' is false, source code lines are not included in the output.
+    If 'recent_first' is true, the stack trace is printed in "most recent call
+    first" order.
     """
-    print_list(extract_tb(tb, limit=limit), file=file, show_lines=show_lines)
+    tblist = extract_tb(tb, limit=limit)
+    if recent_first:
+        tblist.reverse()
+    print_list(tblist, file=file, show_lines=show_lines)
 
-def format_tb(tb, limit=None, *, show_lines=True):
-    """A shorthand for 'format_list(extract_tb(tb, limit))'.
+def format_tb(tb, limit=None, *, show_lines=True, recent_first=False):
+    """A shorthand for 'format_list(extract_tb(tb, limit))'."""
 
-    If show_lines is False, source code lines are not included in the output.
-    """
-    return extract_tb(tb, limit=limit).format(show_lines=show_lines)
+    tblist = extract_tb(tb, limit=limit)
+    if recent_first:
+        tblist.reverse()
+    return tblist.format(show_lines=show_lines)
 
 def extract_tb(tb, limit=None):
     """
@@ -90,7 +98,7 @@ def extract_tb(tb, limit=None):
     whitespace stripped; if the source is not available it is None.
     """
     return StackSummary._extract_from_extended_frame_gen(
-        _walk_tb_with_full_positions(tb), limit=limit, lookup_lines=False)
+        _walk_tb_with_full_positions(tb), limit=limit)
 
 #
 # Exception formatting and output.
@@ -126,8 +134,9 @@ def _parse_value_tb(exc, value, tb):
     return value, tb
 
 
-def print_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None, \
-                    file=None, chain=True, show_lines=True, **kwargs):
+def print_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None,
+                    file=None, chain=True, *, show_lines=True,
+                    recent_first=False, **kwargs):
     """Print exception up to 'limit' stack trace entries from 'tb' to 'file'.
 
     This differs from print_tb() in the following ways: (1) if
@@ -138,13 +147,15 @@ def print_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None, \
     occurred with a caret on the next line indicating the approximate
     position of the error.
 
-    If show_lines is False, source code lines are not included in the output.
+    If 'show_lines' is false, source code lines are not included in the output.
+    If 'recent_first' is true, exception is printed first and traceback is shown
+    by "most recent call first" order.
     """
     colorize = kwargs.get("colorize", False)
     value, tb = _parse_value_tb(exc, value, tb)
-    te = TracebackException(type(value), value, tb, limit=limit, compact=True,
-                            lookup_lines=show_lines)
-    te.print(file=file, chain=chain, colorize=colorize, show_lines=show_lines)
+    te = TracebackException(type(value), value, tb, limit=limit, compact=True)
+    te.print(file=file, chain=chain, colorize=colorize,
+             show_lines=show_lines, recent_first=recent_first)
 
 
 BUILTIN_EXCEPTION_LIMIT = object()
@@ -156,8 +167,8 @@ def _print_exception_bltin(exc, /):
     return print_exception(exc, limit=BUILTIN_EXCEPTION_LIMIT, file=file, colorize=colorize)
 
 
-def format_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None, \
-                     chain=True, show_lines=True, **kwargs):
+def format_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None,
+                     chain=True, *, show_lines=True, recent_first=False, **kwargs):
     """Format a stack trace and the exception information.
 
     The arguments have the same meaning as the corresponding arguments
@@ -165,14 +176,12 @@ def format_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None, \
     ending in a newline and some containing internal newlines.  When
     these lines are concatenated and printed, exactly the same text is
     printed as does print_exception().
-
-    If show_lines is False, source code lines are not included in the output.
     """
     colorize = kwargs.get("colorize", False)
     value, tb = _parse_value_tb(exc, value, tb)
-    te = TracebackException(type(value), value, tb, limit=limit, compact=True,
-                            lookup_lines=show_lines)
-    return list(te.format(chain=chain, colorize=colorize, show_lines=show_lines))
+    te = TracebackException(type(value), value, tb, limit=limit, compact=True)
+    return list(te.format(chain=chain, colorize=colorize,
+                          show_lines=show_lines, recent_first=recent_first))
 
 
 def format_exception_only(exc, /, value=_sentinel, *, show_group=False, **kwargs):
@@ -221,61 +230,63 @@ def _safe_string(value, what, func=str):
 
 # --
 
-def print_exc(limit=None, file=None, chain=True, *, show_lines=True):
-    """Shorthand for 'print_exception(sys.exception(), limit=limit, file=file, chain=chain)'.
+def print_exc(limit=None, file=None, chain=True, *, show_lines=True,
+              recent_first=False):
+    """Shorthand for 'print_exception(sys.exception(), limit=limit, file=file, chain=chain, ...)'."""
+    print_exception(sys.exception(), limit=limit, file=file, chain=chain,
+                    show_lines=show_lines, recent_first=recent_first)
 
-    If show_lines is False, source code lines are not included in the output.
-    """
-    print_exception(sys.exception(), limit=limit, file=file, chain=chain, show_lines=show_lines)
+def format_exc(limit=None, chain=True, *, show_lines=True, recent_first=False):
+    """Like print_exc() but return a string."""
+    return "".join(format_exception(
+        sys.exception(), limit=limit, chain=chain,
+        show_lines=show_lines, recent_first=recent_first))
 
-def format_exc(limit=None, chain=True, *, show_lines=True):
-    """Like print_exc() but return a string.
-
-    If show_lines is False, source code lines are not included in the output.
-    """
-    return "".join(format_exception(sys.exception(), limit=limit, chain=chain, show_lines=show_lines))
-
-def print_last(limit=None, file=None, chain=True, *, show_lines=True):
-    """This is a shorthand for 'print_exception(sys.last_exc, limit=limit, file=file, chain=chain)'.
-
-    If show_lines is False, source code lines are not included in the output.
-    """
+def print_last(limit=None, file=None, chain=True, *, show_lines=True,
+               recent_first=False):
+    """This is a shorthand for 'print_exception(sys.last_exc, limit=limit, file=file, chain=chain, ...)'."""
     if not hasattr(sys, "last_exc") and not hasattr(sys, "last_type"):
         raise ValueError("no last exception")
 
     if hasattr(sys, "last_exc"):
-        print_exception(sys.last_exc, limit=limit, file=file, chain=chain, show_lines=show_lines)
+        print_exception(sys.last_exc, limit=limit, file=file, chain=chain,
+                        show_lines=show_lines, recent_first=recent_first)
     else:
         print_exception(sys.last_type, sys.last_value, sys.last_traceback,
-                        limit=limit, file=file, chain=chain, show_lines=show_lines)
+                        limit=limit, file=file, chain=chain,
+                        show_lines=show_lines, recent_first=recent_first)
 
 
 #
 # Printing and Extracting Stacks.
 #
 
-def print_stack(f=None, limit=None, file=None, *, show_lines=True):
+def print_stack(f=None, limit=None, file=None, *, show_lines=True, recent_first=False):
     """Print a stack trace from its invocation point.
 
     The optional 'f' argument can be used to specify an alternate
     stack frame at which to start. The optional 'limit' and 'file'
     arguments have the same meaning as for print_exception().
 
-    If show_lines is False, source code lines are not included in the output.
+    If 'show_lines' is false, source code lines are not included in the output.
+    If 'recent_first' is true, stack is printed by "most recent call first" order.
     """
     if f is None:
         f = sys._getframe().f_back
-    print_list(extract_stack(f, limit=limit), file=file, show_lines=show_lines)
+    stack = extract_stack(f, limit=limit)
+    if recent_first:
+        stack.reverse()
+    print_list(stack, file=file, show_lines=show_lines)
 
 
-def format_stack(f=None, limit=None, *, show_lines=True):
-    """Shorthand for 'format_list(extract_stack(f, limit))'.
-
-    If show_lines is False, source code lines are not included in the output.
-    """
+def format_stack(f=None, limit=None, *, show_lines=True, recent_first=False):
+    """Shorthand for 'format_list(extract_stack(f, limit), show_lines)'."""
     if f is None:
         f = sys._getframe().f_back
-    return format_list(extract_stack(f, limit=limit), show_lines=show_lines)
+    stack = extract_stack(f, limit=limit)
+    if recent_first:
+        stack.reverse()
+    return format_list(stack, show_lines=show_lines)
 
 
 def extract_stack(f=None, limit=None):
@@ -289,7 +300,8 @@ def extract_stack(f=None, limit=None):
     """
     if f is None:
         f = sys._getframe().f_back
-    stack = StackSummary.extract(walk_stack(f), limit=limit, lookup_lines=False)
+    stack = StackSummary.extract(walk_stack(f), limit=limit)
+    # Traceback should use "recent call last" order.
     stack.reverse()
     return stack
 
@@ -465,7 +477,7 @@ class StackSummary(list):
     """A list of FrameSummary objects, representing a stack of frames."""
 
     @classmethod
-    def extract(klass, frame_gen, *, limit=None, lookup_lines=True,
+    def extract(klass, frame_gen, *, limit=None, lookup_lines=False,
                 capture_locals=False):
         """Create a StackSummary from a traceback or stack object.
 
@@ -488,7 +500,7 @@ class StackSummary(list):
 
     @classmethod
     def _extract_from_extended_frame_gen(klass, frame_gen, *, limit=None,
-            lookup_lines=True, capture_locals=False):
+            lookup_lines=False, capture_locals=False):
         # Same as extract but operates on a frame generator that yields
         # (frame, (lineno, end_lineno, colno, end_colno)) in the stack.
         # Only lineno is required, the remaining fields can be None if the
@@ -560,8 +572,6 @@ class StackSummary(list):
 
         Returns a string representing one frame involved in the stack. This
         gets called for every frame to be printed in the stack summary.
-
-        If show_lines is False, source code lines are not included in the output.
         """
         colorize = kwargs.get("colorize", False)
         row = []
@@ -785,8 +795,6 @@ class StackSummary(list):
         For long sequences of the same frame and line, the first few
         repetitions are shown, followed by a summary line stating the exact
         number of further repetitions.
-
-        If show_lines is False, source code lines are not included in the output.
         """
         colorize = kwargs.get("colorize", False)
         result = []
@@ -1076,7 +1084,7 @@ class TracebackException:
     """
 
     def __init__(self, exc_type, exc_value, exc_traceback, *, limit=None,
-            lookup_lines=True, capture_locals=False, compact=False,
+            lookup_lines=False, capture_locals=False, compact=False,
             max_group_width=15, max_group_depth=10, save_exc_type=True, _seen=None):
         # NB: we need to accept exc_traceback, exc_value, exc_traceback to
         # permit backwards compat with the existing API, otherwise we
@@ -1499,7 +1507,7 @@ class TracebackException:
             filename_suffix,
         )
 
-    def format(self, *, chain=True, show_lines=True, _ctx=None, **kwargs):
+    def format(self, *, chain=True, show_lines=True, _ctx=None, recent_first=False, **kwargs):
         """Format the exception.
 
         If chain is not *True*, *__cause__* and *__context__* will not be formatted.
@@ -1510,8 +1518,6 @@ class TracebackException:
 
         The message indicating which exception occurred is always the last
         string in the output.
-
-        If show_lines is False, source code lines are not included in the output.
         """
         colorize = kwargs.get("colorize", False)
         if _ctx is None:
@@ -1541,10 +1547,16 @@ class TracebackException:
             if msg is not None:
                 yield from _ctx.emit(msg)
             if exc.exceptions is None:
-                if exc.stack:
+                if not recent_first and exc.stack:
                     yield from _ctx.emit('Traceback (most recent call last):\n')
-                    yield from _ctx.emit(exc.stack.format(show_lines=show_lines, colorize=colorize))
+                    yield from _ctx.emit(exc.stack.format(
+                        show_lines=show_lines, colorize=colorize))
                 yield from _ctx.emit(exc.format_exception_only(colorize=colorize))
+                if recent_first and exc.stack:
+                    yield from _ctx.emit('Traceback (most recent call first):\n')
+                    reversed_stack = StackSummary(reversed(self.stack))
+                    yield from _ctx.emit(reversed_stack.format(
+                        show_lines=show_lines, colorize=colorize))
             elif _ctx.exception_group_depth > self.max_group_depth:
                 # exception group, but depth exceeds limit
                 yield from _ctx.emit(
@@ -1555,13 +1567,22 @@ class TracebackException:
                 if is_toplevel:
                     _ctx.exception_group_depth += 1
 
-                if exc.stack:
+                if not recent_first and exc.stack:
                     yield from _ctx.emit(
                         'Exception Group Traceback (most recent call last):\n',
                         margin_char = '+' if is_toplevel else None)
-                    yield from _ctx.emit(exc.stack.format(show_lines=show_lines, colorize=colorize))
+                    yield from _ctx.emit(exc.stack.format(
+                        show_lines=show_lines, colorize=colorize))
 
                 yield from _ctx.emit(exc.format_exception_only(colorize=colorize))
+                if recent_first and exc.stack:
+                    yield from _ctx.emit(
+                        'Exception Group Traceback (most recent call first):\n',
+                        margin_char = '+' if is_toplevel else None)
+                    reversed_stack = StackSummary(reversed(self.stack))
+                    yield from _ctx.emit(reversed_stack.format(
+                        show_lines=show_lines, colorize=colorize))
+
                 num_excs = len(exc.exceptions)
                 if num_excs <= self.max_group_width:
                     n = num_excs
@@ -1602,15 +1623,13 @@ class TracebackException:
                     _ctx.exception_group_depth = 0
 
 
-    def print(self, *, file=None, chain=True, show_lines=True, **kwargs):
-        """Print the result of self.format(chain=chain) to 'file'.
-
-        If show_lines is False, source code lines are not included in the output.
-        """
+    def print(self, *, file=None, chain=True, show_lines=True, recent_first=False, **kwargs):
+        """Print the result of self.format(chain=chain) to 'file'."""
         colorize = kwargs.get("colorize", False)
         if file is None:
             file = sys.stderr
-        for line in self.format(chain=chain, show_lines=show_lines, colorize=colorize):
+        for line in self.format(chain=chain, show_lines=show_lines,
+                                recent_first=recent_first, colorize=colorize):
             print(line, file=file, end="")
 
 

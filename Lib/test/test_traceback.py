@@ -564,12 +564,13 @@ class TracebackCases(unittest.TestCase):
         self.assertEqual(
             str(inspect.signature(traceback.print_exception)),
             ('(exc, /, value=<implicit>, tb=<implicit>, '
-             'limit=None, file=None, chain=True, show_lines=True, **kwargs)'))
+             'limit=None, file=None, chain=True, *, '
+             'show_lines=True, recent_first=False, **kwargs)'))
 
         self.assertEqual(
             str(inspect.signature(traceback.format_exception)),
             ('(exc, /, value=<implicit>, tb=<implicit>, limit=None, '
-             'chain=True, show_lines=True, **kwargs)'))
+             'chain=True, *, show_lines=True, recent_first=False, **kwargs)'))
 
         self.assertEqual(
             str(inspect.signature(traceback.format_exception_only)),
