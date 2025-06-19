@@ -1866,9 +1866,13 @@ _PyEvalFramePushAndInit_Ex(PyThreadState *tstate, _PyStackRef func,
     _PyStackRef *newargs;
     PyObject *const *object_array = NULL;
     #if defined(__GNUC__)
+        #pragma GCC diagnostic push
         #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
     #endif
     _PyStackRef stack_array[8];
+    #if defined(__GNUC__)
+        #pragma GCC diagnostic pop
+    #endif
     if (has_dict) {
         object_array = _PyStack_UnpackDict(tstate, _PyTuple_ITEMS(callargs), nargs, kwargs, &kwnames);
         if (object_array == NULL) {
@@ -1909,9 +1913,6 @@ _PyEvalFramePushAndInit_Ex(PyThreadState *tstate, _PyStackRef func,
     else if (nargs > 8) {
         PyMem_Free((void *)newargs);
     }
-    #if defined(__GNUC__)
-        #pragma GCC diagnostic pop
-    #endif
     /* No need to decref func here because the reference has been stolen by
        _PyEvalFramePushAndInit.
     */
