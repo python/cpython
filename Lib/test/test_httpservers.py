@@ -94,6 +94,7 @@ class TestServerThread(threading.Thread):
             self.server = create_https_server(
                 certfile, keyfile, password,
                 request_handler=self.request_handler,
+                **self.server_kwargs
             )
         else:
             self.server = HTTPServer(('localhost', 0), self.request_handler,
@@ -829,9 +830,10 @@ class SimpleHTTPServerTestCase(BaseTestCase):
 
 
 class CorsHTTPServerTestCase(SimpleHTTPServerTestCase):
-    server_kwargs = dict(
-        response_headers = {'Access-Control-Allow-Origin': '*'}
-    )
+    server_kwargs = {
+        'response_headers': {'Access-Control-Allow-Origin': '*'}
+    }
+
     def test_cors(self):
         response = self.request(self.base_url + '/test')
         self.check_status_and_reason(response, HTTPStatus.OK)

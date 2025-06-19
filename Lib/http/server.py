@@ -132,10 +132,9 @@ class HTTPServer(socketserver.TCPServer):
         """Finish one request by instantiating RequestHandlerClass."""
         args = (request, client_address, self)
         kwargs = {}
-        response_headers = getattr(self, 'response_headers', None)
-        if response_headers:
+        if hasattr(self, 'response_headers'):
             kwargs['response_headers'] = self.response_headers
-        self.RequestHandlerClass(*args, **kwargs)
+        self.RequestHandlerClass(request, client_address, self, **kwargs)
 
 class ThreadingHTTPServer(socketserver.ThreadingMixIn, HTTPServer):
     daemon_threads = True
@@ -144,7 +143,7 @@ class ThreadingHTTPServer(socketserver.ThreadingMixIn, HTTPServer):
 class HTTPSServer(HTTPServer):
     def __init__(self, server_address, RequestHandlerClass,
                  bind_and_activate=True, *, certfile, keyfile=None,
-                 password=None, alpn_protocols=None, response_headers=None):
+                 password=None, alpn_protocols=None, **http_server_kwargs):
         try:
             import ssl
         except ImportError:
@@ -163,7 +162,7 @@ class HTTPSServer(HTTPServer):
         super().__init__(server_address,
                          RequestHandlerClass,
                          bind_and_activate,
-                         response_headers=response_headers)
+                         **http_server_kwargs)
 
     def server_activate(self):
         """Wrap the socket in SSLSocket."""
@@ -709,7 +708,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         if directory is None:
             directory = os.getcwd()
         self.directory = os.fspath(directory)
-        self.response_headers = response_headers or {}
+        self.response_headers = response_headers
         super().__init__(*args, **kwargs)
 
     def do_GET(self):
@@ -991,7 +990,8 @@ def _get_best_family(*address):
 def test(HandlerClass=BaseHTTPRequestHandler,
          ServerClass=ThreadingHTTPServer,
          protocol="HTTP/1.0", port=8000, bind=None,
-         tls_cert=None, tls_key=None, tls_password=None, response_headers=None):
+         tls_cert=None, tls_key=None, tls_password=None,
+         response_headers=None):
     """Test the HTTP request handler class.
 
     This runs an HTTP server on port 8000 (or the port argument).
@@ -1075,11 +1075,9 @@ def _main(args=None):
             return super().server_bind()
 
         def finish_request(self, request, client_address):
-            handler_args = (request, client_address, self)
-            handler_kwargs = dict(directory=args.directory)
-            if self.response_headers:
-                handler_kwargs['response_headers'] = self.response_headers
-            self.RequestHandlerClass(*handler_args, **handler_kwargs)
+            self.RequestHandlerClass(request, client_address, self,
+                                     directory=args.directory,
+                                     response_headers=self.response_headers)
 
     class HTTPDualStackServer(DualStackServerMixin, ThreadingHTTPServer):
         pass
