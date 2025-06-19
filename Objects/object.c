@@ -925,6 +925,7 @@ _PyObject_ClearFreeLists(struct _Py_freelists *freelists, int is_finalization)
     // In the free-threaded build, freelists are per-PyThreadState and cleared in PyThreadState_Clear()
     // In the default build, freelists are per-interpreter and cleared in finalize_interp_types()
     clear_freelist(&freelists->floats, is_finalization, free_object);
+    clear_freelist(&freelists->complexes, is_finalization, free_object);
     for (Py_ssize_t i = 0; i < PyTuple_MAXSAVESIZE; i++) {
         clear_freelist(&freelists->tuples[i], is_finalization, free_object);
     }
@@ -2083,9 +2084,25 @@ _dir_locals(void)
     PyObject *names;
     PyObject *locals;
 
-    locals = _PyEval_GetFrameLocals();
-    if (locals == NULL)
+    if (_PyEval_GetFrame() != NULL) {
+        locals = _PyEval_GetFrameLocals();
+    }
+    else {
+        PyThreadState *tstate = _PyThreadState_GET();
+        locals = _PyEval_GetGlobalsFromRunningMain(tstate);
+        if (locals == NULL) {
+            if (!_PyErr_Occurred(tstate)) {
+                locals = _PyEval_GetFrameLocals();
+                assert(_PyErr_Occurred(tstate));
+            }
+        }
+        else {
+            Py_INCREF(locals);
+        }
+    }
+    if (locals == NULL) {
         return NULL;
+    }
 
     names = PyMapping_Keys(locals);
     Py_DECREF(locals);
