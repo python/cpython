@@ -1,5 +1,8 @@
 #ifndef Py_INTERNAL_MODULEOBJECT_H
 #define Py_INTERNAL_MODULEOBJECT_H
+
+#include <stdbool.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -21,13 +24,11 @@ typedef int (*_Py_modexecfunc)(PyObject *);
 typedef struct {
     PyObject_HEAD
     PyObject *md_dict;
-    // The PyModuleDef used to define the module, if any.
-    // (used to be `md_def`; renamed because all uses need inspection)
-    PyModuleDef *md_def_or_null;
     void *md_state;
     PyObject *md_weaklist;
     // for logging purposes after md_dict is cleared
     PyObject *md_name;
+    bool md_token_is_def;  /* if true, `md_token` is the PyModuleDef */
 #ifdef Py_GIL_DISABLED
     void *md_gil;
 #endif
@@ -39,17 +40,18 @@ typedef struct {
     _Py_modexecfunc md_exec;  /* only set if md_def_or_null is NULL */
 } PyModuleObject;
 
-static inline PyModuleDef* _PyModule_GetDefOrNull(PyObject *mod) {
-    assert(PyModule_Check(mod));
-    return ((PyModuleObject *)mod)->md_def_or_null;
+static inline PyModuleDef* _PyModule_GetDefOrNull(PyObject *arg) {
+    assert(PyModule_Check(arg));
+    PyModuleObject *mod = (PyModuleObject *)arg;
+    if (mod->md_token_is_def) {
+        return (PyModuleDef*)((PyModuleObject *)mod)->md_token;
+    }
+    return NULL;
 }
 
 static inline PyModuleDef* _PyModule_GetToken(PyObject *arg) {
     assert(PyModule_Check(arg));
     PyModuleObject *mod = (PyModuleObject *)arg;
-    if (mod->md_def_or_null) {
-        assert(mod->md_def_or_null == mod->md_token);
-    }
     return mod->md_token;
 }
 

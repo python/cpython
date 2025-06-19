@@ -29,14 +29,18 @@ static PyMemberDef module_members[] = {
 
 static void
 assert_def_missing_or_redundant(PyModuleObject *m) {
-    if (m->md_def_or_null) {
-#define DO_ASSERT(F) assert (m->md_def_or_null->m_ ## F == m->md_state_ ## F);
+#ifdef Py_DEBUG
+    if (m->md_token_is_def) {
+        PyModuleDef *def = (PyModuleDef *)m->md_token;
+        assert(def);
+#define DO_ASSERT(F) assert (def->m_ ## F == m->md_state_ ## F);
         DO_ASSERT(size);
         DO_ASSERT(traverse);
         DO_ASSERT(clear);
         DO_ASSERT(free);
 #undef DO_ASSERT
     }
+#endif // Py_DEBUG
 }
 
 
@@ -59,8 +63,11 @@ _PyModule_IsExtension(PyObject *obj)
     if (module->md_exec) {
         return 1;
     }
-    PyModuleDef *def = module->md_def_or_null;
-    return (def != NULL && def->m_methods != NULL);
+    if (module->md_token_is_def) {
+        PyModuleDef *def = (PyModuleDef *)module->md_token;
+        return (module->md_token_is_def && def->m_methods != NULL);
+    }
+    return 0;
 }
 
 
@@ -161,10 +168,13 @@ new_module_notrack(PyTypeObject *mt)
     m = (PyModuleObject *)_PyType_AllocNoTrack(mt, 0);
     if (m == NULL)
         return NULL;
-    m->md_def_or_null = NULL;
     m->md_state = NULL;
     m->md_weaklist = NULL;
     m->md_name = NULL;
+    m->md_token_is_def = false;
+#ifdef Py_GIL_DISABLED
+    m->md_gil = Py_MOD_GIL_USED;
+#endif
     m->md_state_size = 0;
     m->md_state_traverse = NULL;
     m->md_state_clear = NULL;
@@ -343,8 +353,8 @@ _PyModule_CreateInitialized(PyModuleDef* module, int module_api_version)
             return NULL;
         }
     }
-    m->md_def_or_null = module;
     m->md_token = module;
+    m->md_token_is_def = true;
     module_copy_members_from_deflike(m, module);
 #ifdef Py_GIL_DISABLED
     m->md_gil = Py_MOD_GIL_USED;
@@ -557,20 +567,18 @@ module_from_def_and_spec(
         mod->md_state = NULL;
         module_copy_members_from_deflike(mod, def_like);
         if (original_def) {
-            mod->md_def_or_null = original_def;
+            assert (!token);
+            mod->md_token = original_def;
+            mod->md_token_is_def = 1;
+        }
+        else {
+            mod->md_token = token;
         }
 #ifdef Py_GIL_DISABLED
         mod->md_gil = gil_slot;
 #else
         (void)gil_slot;
 #endif
-        if (original_def) {
-            mod->md_token = original_def;
-            assert (!token);
-        }
-        else {
-            mod->md_token = token;
-        }
         mod->md_exec = m_exec;
     } else {
         if (def_like->m_size > 0 || def_like->m_traverse || def_like->m_clear
@@ -714,12 +722,13 @@ PyModule_Exec(PyObject *module)
     }
     PyModuleObject *md = (PyModuleObject*)module;
     if (md->md_exec) {
-        assert(!md->md_def_or_null);
+        assert(!md->md_token_is_def);
         return run_exec_func(module, md->md_exec);
     }
 
-    if (md->md_def_or_null) {
-        return PyModule_ExecDef(module, md->md_def_or_null);
+    PyModuleDef *def = _PyModule_GetDefOrNull(module);
+    if(def) {
+        return PyModule_ExecDef(module, def);
     }
     return 0;
 }
