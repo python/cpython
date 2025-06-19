@@ -127,7 +127,7 @@ _PyLong_IsCompact(const PyLongObject* op) {
 static inline int
 PyLong_CheckCompact(const PyObject *op)
 {
-    return PyLong_CheckExact(op) && _PyLong_IsCompact((PyLongObject *)op);
+    return PyLong_CheckExact(op) && _PyLong_IsCompact((const PyLongObject *)op);
 }
 
 #define PyUnstable_Long_IsCompact _PyLong_IsCompact
