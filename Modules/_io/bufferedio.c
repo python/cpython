@@ -421,8 +421,7 @@ buffered_dealloc(PyObject *op)
         return;
     _PyObject_GC_UNTRACK(self);
     self->ok = 0;
-    if (self->weakreflist != NULL)
-        PyObject_ClearWeakRefs(op);
+    PyObject_ClearWeakRefs(op);
     if (self->buffer) {
         PyMem_Free(self->buffer);
         self->buffer = NULL;
@@ -2312,8 +2311,7 @@ bufferedrwpair_dealloc(PyObject *op)
     rwpair *self = rwpair_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
     _PyObject_GC_UNTRACK(self);
-    if (self->weakreflist != NULL)
-        PyObject_ClearWeakRefs(op);
+    PyObject_ClearWeakRefs(op);
     (void)bufferedrwpair_clear(op);
     tp->tp_free(self);
     Py_DECREF(tp);

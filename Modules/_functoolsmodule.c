@@ -351,9 +351,7 @@ partial_dealloc(PyObject *self)
     PyTypeObject *tp = Py_TYPE(self);
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(self);
-    if (partialobject_CAST(self)->weakreflist != NULL) {
-        PyObject_ClearWeakRefs(self);
-    }
+    PyObject_ClearWeakRefs(self);
     (void)partial_clear(self);
     tp->tp_free(self);
     Py_DECREF(tp);
@@ -1621,9 +1619,7 @@ lru_cache_dealloc(PyObject *op)
     PyTypeObject *tp = Py_TYPE(obj);
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(obj);
-    if (obj->weakreflist != NULL) {
-        PyObject_ClearWeakRefs(op);
-    }
+    PyObject_ClearWeakRefs(op);
 
     (void)lru_cache_tp_clear(op);
     tp->tp_free(obj);

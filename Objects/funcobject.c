@@ -1148,9 +1148,7 @@ func_dealloc(PyObject *self)
         return;
     }
     _PyObject_GC_UNTRACK(op);
-    if (op->func_weakreflist != NULL) {
-        PyObject_ClearWeakRefs((PyObject *) op);
-    }
+    PyObject_ClearWeakRefs((PyObject *) op);
     (void)func_clear((PyObject*)op);
     // These aren't cleared by func_clear().
     _Py_DECREF_CODE((PyCodeObject *)op->func_code);

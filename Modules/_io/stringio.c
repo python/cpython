@@ -638,9 +638,7 @@ stringio_dealloc(PyObject *op)
     }
     PyUnicodeWriter_Discard(self->writer);
     (void)stringio_clear(op);
-    if (self->weakreflist != NULL) {
-        PyObject_ClearWeakRefs(op);
-    }
+    PyObject_ClearWeakRefs(op);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
