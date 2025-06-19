@@ -1865,7 +1865,7 @@ _PyEvalFramePushAndInit_Ex(PyThreadState *tstate, _PyStackRef func,
     PyObject *kwnames = NULL;
     _PyStackRef *newargs;
     PyObject *const *object_array = NULL;
-    #if defined(__clang__)
+    #if defined(__GNUC__)
         #pragma clang diagnostic ignored "-Wmaybe-uninitialized"
     #endif
     _PyStackRef stack_array[8];
@@ -1909,7 +1909,7 @@ _PyEvalFramePushAndInit_Ex(PyThreadState *tstate, _PyStackRef func,
     else if (nargs > 8) {
         PyMem_Free((void *)newargs);
     }
-    #if defined(__clang__)
+    #if defined(__GNUC__)
         #pragma clang diagnostic pop
     #endif
     /* No need to decref func here because the reference has been stolen by
