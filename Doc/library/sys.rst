@@ -1935,8 +1935,10 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    .. audit-event:: sys.remote_exec pid script_path
 
-      When the code is executed in the remote process, an :ref:`auditing event <auditing>`
-      ``sys.remote_exec`` is raised with the *pid* and the path to the script file.
+      When the code is executed in the remote process, an
+      :ref:`auditing event <auditing>` ``sys.remote_exec`` is raised with
+      the *pid* and the path to the script file.
+      This event is raised in the process that called :func:`sys.remote_exec`.
 
    .. audit-event:: cpython.remote_debugger_script script_path
 
@@ -1944,6 +1946,8 @@ always available. Unless explicitly noted otherwise, all variables are read-only
       :ref:`auditing event <auditing>`
       ``cpython.remote_debugger_script`` is raised
       with the path in the remote process.
+      This event is raised in the remote process, not the one
+      that called :func:`sys.remote_exec`.
 
    .. availability:: Unix, Windows.
    .. versionadded:: 3.14

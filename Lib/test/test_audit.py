@@ -325,7 +325,9 @@ class AuditTest(unittest.TestCase):
     @support.support_remote_exec_only
     @support.cpython_only
     def test_sys_remote_exec(self):
-        returncode, stdout, stderr = self.run_python("test_sys_remote_exec")
+        returncode, events, stderr = self.run_python("test_sys_remote_exec")
+        self.assertTrue(any(["sys.remote_exec" in event for event in events]))
+        self.assertTrue(any(["cpython.remote_debugger_script" in event for event in events]))
         if returncode:
             self.fail(stderr)
 
