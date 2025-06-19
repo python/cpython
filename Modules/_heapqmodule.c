@@ -441,8 +441,8 @@ siftdown_max(PyListObject *heap, Py_ssize_t startpos, Py_ssize_t pos)
         arr = _PyList_ITEMS(heap);
         parent = arr[parentpos];
         newitem = arr[pos];
-        arr[parentpos] = newitem;
-        arr[pos] = parent;
+        FT_ATOMIC_STORE_PTR_RELAXED(arr[parentpos], newitem);
+        FT_ATOMIC_STORE_PTR_RELAXED(arr[pos], parent);
         pos = parentpos;
     }
     return 0;
@@ -490,8 +490,8 @@ siftup_max(PyListObject *heap, Py_ssize_t pos)
         /* Move the smaller child up. */
         tmp1 = arr[childpos];
         tmp2 = arr[pos];
-        arr[childpos] = tmp2;
-        arr[pos] = tmp1;
+        FT_ATOMIC_STORE_PTR_RELAXED(arr[childpos], tmp2);
+        FT_ATOMIC_STORE_PTR_RELAXED(arr[pos], tmp1);
         pos = childpos;
     }
     /* Bubble it up to its final resting place (by sifting its parents down). */
@@ -625,8 +625,9 @@ _heapq_heappushpop_max_impl(PyObject *module, PyObject *heap, PyObject *item)
     }
 
     returnitem = PyList_GET_ITEM(heap, 0);
-    PyList_SET_ITEM(heap, 0, Py_NewRef(item));
-    if (siftup_max((PyListObject *)heap, 0) < 0) {
+    PyListObject * list = _PyList_CAST(heap);
+    FT_ATOMIC_STORE_PTR_RELAXED(list->ob_item[0], Py_NewRef(item));
+    if (siftup_max(list, 0) < 0) {
         Py_DECREF(returnitem);
         return NULL;
     }
