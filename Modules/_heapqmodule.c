@@ -173,7 +173,6 @@ heappop_internal(PyObject *heap, int siftup_func(PyListObject *, Py_ssize_t))
     if (!n)
         return lastelt;
     returnitem = PyList_GET_ITEM(heap, 0);
-    // We're in the critical section now
     PyListObject *list = _PyList_CAST(heap);
     FT_ATOMIC_STORE_PTR_RELAXED(list->ob_item[0], lastelt);
     if (siftup_func(list, 0)) {

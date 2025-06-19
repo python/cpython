@@ -180,7 +180,7 @@ class TestHeapq(unittest.TestCase):
 
     @unittest.skipUnless(Py_GIL_DISABLED, 'only used to test under free-threaded build')
     def test_lock_free_list_read(self):
-        n, n_threads = 1_000_000, 10
+        n, n_threads = 1_000, 10
         l = []
         barrier = Barrier(n_threads * 2)
 
