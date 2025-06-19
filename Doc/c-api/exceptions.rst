@@ -749,6 +749,11 @@ Exception Classes
    .. versionadded:: 3.2
 
 
+.. c:function:: const char *PyExceptionClass_Name(PyObject *ob)
+
+   Return :c:member:`~PyTypeObject.tp_name` of the exception class *ob*.
+
+
 Exception Objects
 =================
 
