@@ -625,7 +625,7 @@ _heapq_heappushpop_max_impl(PyObject *module, PyObject *heap, PyObject *item)
     }
 
     returnitem = PyList_GET_ITEM(heap, 0);
-    PyListObject * list = _PyList_CAST(heap);
+    PyListObject *list = _PyList_CAST(heap);
     FT_ATOMIC_STORE_PTR_RELAXED(list->ob_item[0], Py_NewRef(item));
     if (siftup_max(list, 0) < 0) {
         Py_DECREF(returnitem);
