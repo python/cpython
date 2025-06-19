@@ -355,7 +355,7 @@ Callback function arguments
    that there are no arguments to the call.
 
 When an active event occurs, the registered callback function is called.
-Callback functions returning any object other than :data:`DISABLE` will have no effect.
+Callback functions returning an object other than :data:`DISABLE` will have no effect.
 Different events will provide the callback function with different arguments, as follows:
 
 * :monitoring-event:`PY_START` and :monitoring-event:`PY_RESUME`::
