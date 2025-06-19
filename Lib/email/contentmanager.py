@@ -2,8 +2,8 @@ import binascii
 import email.charset
 import email.message
 import email.errors
-from email import quoprimime
 import sys
+from email import quoprimime
 
 class ContentManager:
 

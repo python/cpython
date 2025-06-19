@@ -1005,24 +1005,29 @@ class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
         self.assertEqual(parsed_msg['Message-ID'], m['Message-ID'])
 
     def test_no_wrapping_max_line_length(self):
-        def do_test_no_wrapping_max_line_length(n):
-            pol = policy.default.clone(max_line_length=n)
-            subj = "S" * 100
-            body = "B" * 100
-            msg = EmailMessage(policy=pol)
-            msg["From"] = "a@ex.com"
-            msg["To"] = "b@ex.com"
-            msg["Subject"] = subj
-            msg.set_content(body)
+        # Test that falsey 'max_line_length' are converted to sys.maxsize.
+        for n in [0, None]:
+            with self.subTest(max_line_length=n):
+                self.do_test_no_wrapping_max_line_length(n)
 
-            raw = msg.as_bytes()
-            self.assertNotIn(b"\r\n ", raw, "Found fold indicator; wrapping not disabled")
+    def do_test_no_wrapping_max_line_length(self, n):
+        pol = policy.default.clone(max_line_length=n)
+        subj = "S" * 100
+        body = "B" * 100
+        msg = EmailMessage(policy=pol)
+        msg["From"] = "a@ex.com"
+        msg["To"] = "b@ex.com"
+        msg["Subject"] = subj
+        msg.set_content(body)
 
-            parsed = message_from_bytes(msg.as_bytes(), policy=policy.default)
-            self.assertEqual(parsed["Subject"], subj)
-            self.assertEqual(parsed.get_body().get_content().rstrip('\n'), body)
-        do_test_no_wrapping_max_line_length(None)
-        do_test_no_wrapping_max_line_length(0)
+        raw = msg.as_bytes()
+        self.assertNotIn(b"\r\n ", raw,
+                         "Found fold indicator; wrapping not disabled")
+
+        parsed = message_from_bytes(msg.as_bytes(), policy=policy.default)
+        self.assertEqual(parsed["Subject"], subj)
+        parsed_body = parsed.get_body().get_content().rstrip('\n')
+        self.assertEqual(parsed_body, body)
 
     def test_invalid_header_names(self):
         invalid_headers = [
