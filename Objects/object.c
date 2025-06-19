@@ -3042,12 +3042,19 @@ void
 _PyTrash_thread_deposit_object(PyThreadState *tstate, PyObject *op)
 {
     _PyObject_ASSERT(op, Py_REFCNT(op) == 0);
-    assert(PyObject_IS_GC(op));
-    int tracked = _PyObject_GC_IS_TRACKED(op);
-    if (tracked) {
-        _PyObject_GC_UNTRACK(op);
+    PyTypeObject *tp = Py_TYPE(op);
+    assert(tp->tp_flags & Py_TPFLAGS_HAVE_GC);
+    uintptr_t tagged_ptr;
+    if (tp->tp_is_gc == NULL || tp->tp_is_gc(op)) {
+        int tracked = _PyObject_GC_IS_TRACKED(op);
+        if (tracked) {
+            _PyObject_GC_UNTRACK(op);
+        }
+        tagged_ptr = ((uintptr_t)tstate->delete_later) | tracked;
     }
-    uintptr_t tagged_ptr = ((uintptr_t)tstate->delete_later) | tracked;
+    else {
+        tagged_ptr = ((uintptr_t)tstate->delete_later);
+    }
 #ifdef Py_GIL_DISABLED
     op->ob_tid = tagged_ptr;
 #else
@@ -3150,11 +3157,11 @@ void
 _Py_Dealloc(PyObject *op)
 {
     PyTypeObject *type = Py_TYPE(op);
-    unsigned long gc_flags = type->tp_flags & Py_TPFLAGS_HAVE_GC;
+    unsigned long gc_flag = type->tp_flags & Py_TPFLAGS_HAVE_GC;
     destructor dealloc = type->tp_dealloc;
     PyThreadState *tstate = _PyThreadState_GET();
     intptr_t margin = _Py_RecursionLimit_GetMargin(tstate);
-    if (margin < 2 && gc_flags) {
+    if (margin < 2 && gc_flag) {
         _PyTrash_thread_deposit_object(tstate, (PyObject *)op);
         return;
     }
@@ -3200,7 +3207,7 @@ _Py_Dealloc(PyObject *op)
     Py_XDECREF(old_exc);
     Py_DECREF(type);
 #endif
-    if (tstate->delete_later && margin >= 4 && gc_flags) {
+    if (tstate->delete_later && margin >= 4 && gc_flag) {
         _PyTrash_thread_destroy_chain(tstate);
     }
 }
