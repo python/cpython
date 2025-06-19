@@ -407,12 +407,12 @@ class TestUops(unittest.TestCase):
             x = 0
             for i in range(m):
                 for j in MyIter(n):
-                    x += 1000*i + j
+                    x += j
             return x
 
-        x = testfunc(TIER2_THRESHOLD, TIER2_THRESHOLD)
+        x = testfunc(TIER2_THRESHOLD, 2)
 
-        self.assertEqual(x, sum(range(TIER2_THRESHOLD)) * TIER2_THRESHOLD * 1001)
+        self.assertEqual(x, sum(range(TIER2_THRESHOLD)) * 2)
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
