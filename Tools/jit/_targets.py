@@ -3,7 +3,6 @@
 import asyncio
 import dataclasses
 import hashlib
-import itertools
 import json
 import os
 import pathlib
@@ -13,6 +12,7 @@ import tempfile
 import typing
 
 import _llvm
+import _optimizers
 import _schema
 import _stencils
 import _writer
@@ -35,258 +35,10 @@ _R = typing.TypeVar(
     "_R", _schema.COFFRelocation, _schema.ELFRelocation, _schema.MachORelocation
 )
 
-branches = {}
-for op, nop in [
-    ("ja", "jna"),
-    ("jae", "jnae"),
-    ("jb", "jnb"),
-    ("jbe", "jnbe"),
-    ("jc", "jnc"),
-    ("jcxz", None),
-    ("je", "jne"),
-    ("jecxz", None),
-    ("jg", "jng"),
-    ("jge", "jnge"),
-    ("jl", "jnl"),
-    ("jle", "jnle"),
-    ("jo", "jno"),
-    ("jp", "jnp"),
-    ("jpe", "jpo"),
-    ("jrxz", None),
-    ("js", "jns"),
-    ("jz", "jnz"),
-    ("loop", None),
-    ("loope", None),
-    ("loopne", None),
-    ("loopnz", None),
-    ("loopz", None),
-]:
-    branches[op] = nop
-    if nop is not None:
-        branches[nop] = op
-
-
-@dataclasses.dataclass
-class _Line:
-    fallthrough: typing.ClassVar[bool] = True
-    text: str
-    hot: bool = dataclasses.field(init=False, default=False)
-    predecessors: list["_Line"] = dataclasses.field(
-        init=False, repr=False, default_factory=list
-    )
-    link: "_Line | None" = dataclasses.field(init=False, repr=False, default=None)
-
-    def heat(self) -> None:
-        if self.hot:
-            return
-        self.hot = True
-        for predecessor in self.predecessors:
-            predecessor.heat()
-        if self.fallthrough and self.link is not None:
-            self.link.heat()
-
-    def optimize(self) -> None:
-        if self.link is not None:
-            self.link.optimize()
-
-
-@dataclasses.dataclass
-class _Label(_Line):
-    label: str
-
-
-@dataclasses.dataclass
-class _Jump(_Line):
-    fallthrough = False
-    target: _Label
-
-    def optimize(self) -> None:
-        super().optimize()
-        target_aliases = _aliases(self.target)
-        if any(alias in target_aliases for alias in _aliases(self.link)):
-            self.remove()
-
-    def remove(self) -> None:
-        [predecessor] = self.predecessors
-        assert predecessor.link is self
-        self.target.predecessors.remove(self)
-        predecessor.link = self.link
-        self.target.predecessors.append(predecessor)
-
-    def update(self, target: _Label) -> None:
-        self.target.predecessors.remove(self)
-        assert self.target.label in self.text
-        self.text = self.text.replace(self.target.label, target.label)
-        self.target = target
-        self.target.predecessors.append(self)
-
-
-@dataclasses.dataclass
-class _Branch(_Line):
-    op: str
-    target: _Label
-
-    def optimize(self) -> None:
-        super().optimize()
-        if self.target.hot:
-            for jump in _aliases(self.link):
-                if isinstance(jump, _Jump) and self.invert(jump):
-                    jump.optimize()
-
-    def update(self, target: _Label) -> None:
-        self.target.predecessors.remove(self)
-        assert self.target.label in self.text
-        self.text = self.text.replace(self.target.label, target.label)
-        self.target = target
-        self.target.predecessors.append(self)
-
-    def invert(self, jump: _Jump) -> bool:
-        inverted = branches[self.op]
-        if inverted is None:
-            return False
-        assert self.op in self.text
-        self.text = self.text.replace(self.op, inverted)
-        self.op = inverted
-        old_target = self.target
-        self.update(jump.target)
-        jump.update(old_target)
-        return True
-
-
-@dataclasses.dataclass
-class _Return(_Line):
-    fallthrough = False
-
-
-@dataclasses.dataclass
-class _Noise(_Line):
-    pass
-
-
-def _branch(
-    line: str, use_label: typing.Callable[[str], _Label]
-) -> tuple[str, _Label] | None:
-    branch = re.match(rf"\s*({'|'.join(branches)})\s+([\w\.]+)", line)
-    return branch and (branch.group(1), use_label(branch.group(2)))
-
-
-def _jump(line: str, use_label: typing.Callable[[str], _Label]) -> _Label | None:
-    if jump := re.match(r"\s*jmp\s+([\w\.]+)", line):
-        return use_label(jump.group(1))
-    return None
-
-
-def _label(line: str, use_label: typing.Callable[[str], _Label]) -> _Label | None:
-    label = re.match(r"\s*([\w\.]+):", line)
-    return label and use_label(label.group(1))
-
-
-def _return(line: str) -> bool:
-    return re.match(r"\s*ret\s+", line) is not None
-
-
-def _noise(line: str) -> bool:
-    return re.match(r"\s*[#\.]|\s*$", line) is not None
-
-
-def _aliases(line: _Line | None) -> list[_Line]:
-    aliases = []
-    while line is not None and isinstance(line, (_Label, _Noise)):
-        aliases.append(line)
-        line = line.link
-    if line is not None:
-        aliases.append(line)
-    return aliases
-
-
-@dataclasses.dataclass
-class _AssemblyTransformer:
-    path: pathlib.Path
-    alignment: int = 1
-    prefix: str = ""
-    _lines: _Line = dataclasses.field(init=False)
-    _labels: dict[str, _Label] = dataclasses.field(init=False, default_factory=dict)
-    _ran: bool = dataclasses.field(init=False, default=False)
-
-    def __post_init__(self) -> None:
-        dummy = current = _Noise("")
-        for line in self.path.read_text().splitlines(True):
-            new = self._new_line(line)
-            if current.fallthrough:
-                new.predecessors.append(current)
-            current.link = new
-            current = new
-        assert dummy.link is not None
-        self._lines = dummy.link
-
-    def __iter__(self) -> typing.Iterator[_Line]:
-        line = self._lines
-        while line is not None:
-            yield line
-            line = line.link
-
-    def _use_label(self, label: str) -> _Label:
-        if label not in self._labels:
-            self._labels[label] = _Label("", label)
-        return self._labels[label]
-
-    def _new_line(self, text: str) -> _Line:
-        if branch := _branch(text, self._use_label):
-            op, label = branch
-            line = _Branch(text, op, label)
-            label.predecessors.append(line)
-            return line
-        if label := _jump(text, self._use_label):
-            line = _Jump(text, label)
-            label.predecessors.append(line)
-            return line
-        if line := _label(text, self._use_label):
-            assert line.text == ""
-            line.text = text
-            return line
-        if _return(text):
-            return _Return(text)
-        if _noise(text):
-            return _Noise(text)
-        return _Line(text)
-
-    def _dump(self) -> str:
-        return "".join(line.text for line in self)
-
-    def _break_on(self, name: str) -> None:
-        if self.path.stem == name:
-            print(self._dump())
-            breakpoint()
-
-    def run(self) -> None:
-        assert not self._ran
-        self._ran = True
-        last_line = None
-        for line in self:
-            if not isinstance(line, (_Label, _Noise)):
-                last_line = line
-        assert last_line is not None
-        new = self._new_line(f".balign {self.alignment}\n")
-        new.link = last_line.link
-        last_line.link = new
-        new = self._new_line(f"{self.prefix}_JIT_CONTINUE:\n")
-        new.link = last_line.link
-        last_line.link = new
-        # Mark hot lines and optimize:
-        recursion_limit = sys.getrecursionlimit()
-        sys.setrecursionlimit(10_000)
-        try:
-            self._labels[f"{self.prefix}_JIT_CONTINUE"].heat()
-            # self._break_on("_BUILD_TUPLE")
-            self._lines.optimize()
-        finally:
-            sys.setrecursionlimit(recursion_limit)
-        # Write new assembly:
-        self.path.write_text(self._dump())
-
 
 @dataclasses.dataclass
 class _Target(typing.Generic[_S, _R]):
+
     triple: str
     condition: str
     _: dataclasses.KW_ONLY
@@ -298,6 +50,7 @@ class _Target(typing.Generic[_S, _R]):
     verbose: bool = False
     known_symbols: dict[str, int] = dataclasses.field(default_factory=dict)
     pyconfig_dir: pathlib.Path = pathlib.Path.cwd().resolve()
+    optimizer: type[_optimizers.Optimizer] | None = None
 
     def _get_nop(self) -> bytes:
         if re.fullmatch(r"aarch64-.*", self.triple):
@@ -409,7 +162,8 @@ class _Target(typing.Generic[_S, _R]):
             *self.args,
         ]
         await _llvm.run("clang", args_s, echo=self.verbose)
-        _AssemblyTransformer(s, alignment=self.alignment, prefix=self.prefix).run()
+        if self.optimizer:
+            self.optimizer(s, prefix=self.prefix).run()
         args_o = [
             f"--target={self.triple}",
             "-c",
@@ -804,18 +558,26 @@ def get_target(host: str) -> _COFF | _ELF | _MachO:
             "-Wno-ignored-attributes",
         ]
         condition = "defined(_M_IX86)"
-        target = _COFF(host, condition, args=args, prefix="_")
+        target = _COFF(
+            host,
+            condition,
+            args=args,
+            optimizer=_optimizers.OptimizerX86Windows,
+            prefix="_",
+        )
     elif re.fullmatch(r"x86_64-apple-darwin.*", host):
         condition = "defined(__x86_64__) && defined(__APPLE__)"
-        target = _MachO(host, condition, prefix="_")
+        target = _MachO(host, condition, optimizer=_optimizers.OptimizerX86, prefix="_")
     elif re.fullmatch(r"x86_64-pc-windows-msvc", host):
         args = ["-fms-runtime-lib=dll"]
         condition = "defined(_M_X64)"
-        target = _COFF(host, condition, args=args)
+        target = _COFF(
+            host, condition, args=args, optimizer=_optimizers.OptimizerX86Windows
+        )
     elif re.fullmatch(r"x86_64-.*-linux-gnu", host):
         args = ["-fno-pic", "-mcmodel=medium", "-mlarge-data-threshold=0"]
         condition = "defined(__x86_64__) && defined(__linux__)"
-        target = _ELF(host, condition, args=args)
+        target = _ELF(host, condition, args=args, optimizer=_optimizers.OptimizerX86)
     else:
         raise ValueError(host)
     return target
