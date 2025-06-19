@@ -771,18 +771,20 @@ class FindTestCase(unittest.TestCase):
         patch_expand_lang.assert_any_call('ga_IE.UTF-8')
         self.env.unset('LANGUAGE')
 
+    @unittest.skipIf(os.name != "posix", "LC_MESSAGES is posix only")
     def test_find_LANGUAGE_priority(self):
-        orig = locale.setlocale(locale.LC_MESSAGES)
-        self.addCleanup(lambda: locale.setlocale(locale.LC_MESSAGES, orig))
         self.env.set('LANGUAGE', 'ga_IE')
         self.env.set('LC_ALL', 'pt_BR')
-        locale.setlocale(locale.LC_MESSAGES, 'pt_BR')
+        if os.name != "posix":
+            orig = locale.setlocale(locale.LC_MESSAGES)
+            self.addCleanup(lambda: locale.setlocale(locale.LC_MESSAGES, orig))
+            locale.setlocale(locale.LC_MESSAGES, 'pt_BR')
         mo_file = self.create_mo_file("ga_IE")
 
         result = gettext.find("mofile", localedir=os.path.join(self.tempdir, "locale"))
         self.assertEqual(result, mo_file)
-        locale.setlocale(locale.LC_MESSAGES, orig)
 
+    @unittest.skipIf(os.name != "posix", "LC_MESSAGES is posix only")
     def test_process_vars_override(self):
         orig = locale.setlocale(locale.LC_MESSAGES)
         self.addCleanup(lambda: locale.setlocale(locale.LC_MESSAGES, orig))
