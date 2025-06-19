@@ -1,3 +1,6 @@
+import sys
+
+import locale
 import os
 import base64
 import gettext
@@ -6,8 +9,7 @@ import unittest.mock
 from functools import partial
 
 from test import support
-from test.support import os_helper
-
+from test.support import os_helper, run_with_locale
 
 # TODO:
 #  - Add new tests, for example for "dgettext"
@@ -736,32 +738,63 @@ class FindTestCase(unittest.TestCase):
             f.write(GNU_MO_DATA)
         return mo_file
 
-    def _for_all_vars(self, mo_file, locale):
+    def _for_all_vars(self, mo_file, locale, expected=True):
         for var in ('LANGUAGE', 'LC_ALL', 'LC_MESSAGES', 'LANG'):
             self.env.set(var, locale)
             result = gettext.find("mofile",
                                   localedir=os.path.join(self.tempdir, "locale"))
-            self.assertEqual(mo_file, result)
+            if expected:
+                self.assertEqual(mo_file, result)
+            else:
+                self.assertIsNone(result)
             self.env.unset(var)
 
-    @unittest.mock.patch("locale.setlocale", return_value=(None, None))
+    @unittest.mock.patch("locale.setlocale", return_value='')
     def test_find_with_env_vars(self, patch_getlocale):
         # test that find correctly finds the environment variables
         # when languages are not supplied
+        mo_file = self.create_mo_file("ca_ES")
+        self._for_all_vars(mo_file, "ca_ES")
+        self._for_all_vars(mo_file, "ca_ES.UTF-8")
+        self._for_all_vars(mo_file, "ca_ES.UTF-8.mo")
+        self._for_all_vars(mo_file, "es_ES:ca_ES:fr_FR")
+        self._for_all_vars(mo_file, "ca_ES@euro")
+        self._for_all_vars(mo_file, "ca_ES.UTF-8@euro")
+        self._for_all_vars(mo_file, "ca_ES@valencia")
+        self._for_all_vars(mo_file, "C", expected=False)
+        self._for_all_vars(mo_file, "C.UTF-8", expected=False)
+
+    @unittest.mock.patch('gettext._expand_lang')
+    def test_encoding_not_ignored(self, patch_expand_lang):
+        self.env.set('LANGUAGE', 'ga_IE.UTF-8')
+        gettext.find("mofile")
+        patch_expand_lang.assert_any_call('ga_IE.UTF-8')
+        self.env.unset('LANGUAGE')
+
+    def test_find_LANGUAGE_priority(self):
+        orig = locale.setlocale(locale.LC_MESSAGES)
+        self.addCleanup(lambda: locale.setlocale(locale.LC_MESSAGES, orig))
+        self.env.set('LANGUAGE', 'ga_IE')
+        self.env.set('LC_ALL', 'pt_BR')
+        locale.setlocale(locale.LC_MESSAGES, 'pt_BR')
         mo_file = self.create_mo_file("ga_IE")
-        self._for_all_vars(mo_file, "ga_IE")
-        self._for_all_vars(mo_file, "ga_IE.UTF-8")
-        self._for_all_vars(mo_file, "es_ES:ga_IE:fr_FR")
-        self._for_all_vars(mo_file, "ga_IE@euro")
+
+        result = gettext.find("mofile", localedir=os.path.join(self.tempdir, "locale"))
+        self.assertEqual(result, mo_file)
+        locale.setlocale(locale.LC_MESSAGES, orig)
 
     def test_process_vars_override(self):
-        mo_file = self.create_mo_file("ga_IE")
-        with unittest.mock.patch("locale.setlocale", return_value=('ga_IE', 'UTF-8')):
+        orig = locale.setlocale(locale.LC_MESSAGES)
+        self.addCleanup(lambda: locale.setlocale(locale.LC_MESSAGES, orig))
+        mo_file = self.create_mo_file("ca_ES")
+        for loc in ("ca_ES", "ca_ES.UTF-8", "ca_ES@euro", "ca_ES@valencia"):
+            locale.setlocale(locale.LC_MESSAGES, loc)
             result = gettext.find("mofile", localedir=os.path.join(self.tempdir, "locale"))
             self.assertEqual(mo_file, result)
-        with unittest.mock.patch("locale.setlocale", return_value=('ga_IE', None)):
+        for loc in ("C", "C.UTF-8"):
+            locale.setlocale(locale.LC_MESSAGES, loc)
             result = gettext.find("mofile", localedir=os.path.join(self.tempdir, "locale"))
-            self.assertEqual(mo_file, result)
+            self.assertIsNone(result)
 
     def test_find_with_languages(self):
         # test that passed languages are used
