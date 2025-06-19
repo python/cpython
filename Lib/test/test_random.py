@@ -1084,9 +1084,6 @@ class TestDistributions(unittest.TestCase):
                 (g.expovariate, (float('inf'),), 0.0),
                 (g.vonmisesvariate, (3.0, float('inf')), 3.0),
                 (g.gauss, (10.0, 0.0), 10.0),
-                (g.lognormvariate, (0.0, 0.0), 1.0),
-                (g.lognormvariate, (-float('inf'), 0.0), 0.0),
-                (g.normalvariate, (10.0, 0.0), 10.0),
                 (g.binomialvariate, (0, 0.5), 0),
                 (g.binomialvariate, (10, 0.0), 0),
                 (g.binomialvariate, (10, 1.0), 10),
@@ -1152,7 +1149,13 @@ class TestDistributions(unittest.TestCase):
         # Demonstrate the BTRS works for huge values of n
         self.assertTrue(19_000_000 <= B(100_000_000, 0.2) <= 21_000_000)
         self.assertTrue(89_000_000 <= B(100_000_000, 0.9) <= 91_000_000)
+    def test_log_norm_errors(self):
+        # sigma must be > 0.0
+        self.assertRaises(ValueError, random.lognormvariate, 1, -2)
 
+    def test_von_mises_errors(self):
+        # kappa must be >= 0.0
+        self.assertRaises(ValueError, random.vonmisesvariate, 1, -2)
 
     def test_von_mises_range(self):
         # Issue 17149: von mises variates were not consistently in the

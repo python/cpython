@@ -536,6 +536,8 @@ class Random(_random.Random):
     def normalvariate(self, mu=0.0, sigma=1.0):
         """Normal distribution.
 
+        Conditions on the parameters are sigma > 0.
+
         mu is the mean, and sigma is the standard deviation.
 
         """
@@ -543,6 +545,9 @@ class Random(_random.Random):
         # A.J. and Monahan, J.F., "Computer generation of random
         # variables using the ratio of uniform deviates", ACM Trans
         # Math Software, 3, (1977), pp257-260.
+
+        if sigma <= 0:
+            raise ValueError("normalvariate: sigma must be > 0.0")
 
         random = self.random
         while True:
@@ -640,7 +645,9 @@ class Random(_random.Random):
 
         random = self.random
         if kappa <= 1e-6:
-            return TWOPI * random()
+            if kappa >= 0:
+                return TWOPI * random()
+            raise ValueError("vonmisesvariate: kappa must be >= 0.0")
 
         s = 0.5 / kappa
         r = s + _sqrt(1.0 + s * s)
