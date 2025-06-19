@@ -852,7 +852,7 @@
             _PyStackRef left;
             left = stack_pointer[-2];
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
-            if (!PyLong_CheckCompact(left_o)) {
+            if (!_PyLong_CheckExactAndCompact(left_o)) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
@@ -863,7 +863,7 @@
             _PyStackRef value;
             value = stack_pointer[-1];
             PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-            if (!PyLong_CheckCompact(value_o)) {
+            if (!_PyLong_CheckExactAndCompact(value_o)) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
