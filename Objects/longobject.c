@@ -10,6 +10,7 @@
 #include "pycore_long.h"          // _Py_SmallInts
 #include "pycore_object.h"        // _PyObject_Init()
 #include "pycore_runtime.h"       // _PY_NSMALLPOSINTS
+#include "pycore_stackref.h"
 #include "pycore_structseq.h"     // _PyStructSequence_FiniBuiltin()
 #include "pycore_unicodeobject.h" // _PyUnicode_Equal()
 
@@ -315,6 +316,33 @@ _PyLong_FromSTwoDigits(stwodigits x)
     }
     return (PyLongObject*)_PyLong_FromLarge(x);
 }
+
+/* Create a new medium int object from a medium int.
+ * Do not raise. Return NULL if not medium or can't allocate. */
+static inline _PyStackRef
+medium_from_stwodigits(stwodigits x)
+{
+    if (IS_SMALL_INT(x)) {
+        return PyStackRef_FromPyObjectBorrow(get_small_int((sdigit)x));
+    }
+    assert(x != 0);
+    if(!is_medium_int(x)) {
+        return PyStackRef_NULL;
+    }
+    PyLongObject *v = (PyLongObject *)_Py_FREELIST_POP(PyLongObject, ints);
+    if (v == NULL) {
+        v = PyObject_Malloc(sizeof(PyLongObject));
+        if (v == NULL) {
+            return PyStackRef_NULL;
+        }
+        _PyObject_Init((PyObject*)v, &PyLong_Type);
+    }
+    digit abs_x = x < 0 ? -x : x;
+    _PyLong_SetSignAndDigitCount(v, x<0?-1:1, 1);
+    v->long_value.ob_digit[0] = abs_x;
+    return PyStackRef_FromPyObjectStealMortal((PyObject *)v);
+}
+
 
 /* If a freshly-allocated int is already shared, it must
    be a small integer, so negating it must go to PyLong_FromLong */
@@ -3771,12 +3799,12 @@ long_add(PyLongObject *a, PyLongObject *b)
     return z;
 }
 
-PyObject *
+_PyStackRef
 _PyCompactLong_Add(PyLongObject *a, PyLongObject *b)
 {
     assert(_PyLong_BothAreCompact(a, b));
-    stwodigits z = medium_value(a) + medium_value(b);
-    return (PyObject *)_PyLong_FromSTwoDigits(z);
+    stwodigits v = medium_value(a) + medium_value(b);
+    return medium_from_stwodigits(v);
 }
 
 static PyObject *
@@ -3816,11 +3844,12 @@ long_sub(PyLongObject *a, PyLongObject *b)
     return z;
 }
 
-PyObject *
+_PyStackRef
 _PyCompactLong_Subtract(PyLongObject *a, PyLongObject *b)
 {
     assert(_PyLong_BothAreCompact(a, b));
-    return (PyObject *)_PyLong_FromSTwoDigits(medium_value(a) - medium_value(b));
+    stwodigits v = medium_value(a) - medium_value(b);
+    return medium_from_stwodigits(v);
 }
 
 static PyObject *
@@ -4264,12 +4293,14 @@ long_mul(PyLongObject *a, PyLongObject *b)
     return z;
 }
 
-PyObject *
+/* This function returns NULL if the result is not compact,
+ * or if it fails to allocate, but never raises */
+_PyStackRef
 _PyCompactLong_Multiply(PyLongObject *a, PyLongObject *b)
 {
     assert(_PyLong_BothAreCompact(a, b));
     stwodigits v = medium_value(a) * medium_value(b);
-    return (PyObject *)_PyLong_FromSTwoDigits(v);
+    return medium_from_stwodigits(v);
 }
 
 static PyObject *

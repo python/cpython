@@ -27,6 +27,7 @@ typedef struct _Py_UOpsAbstractFrame _Py_UOpsAbstractFrame;
 #define sym_set_type(SYM, TYPE) _Py_uop_sym_set_type(ctx, SYM, TYPE)
 #define sym_set_type_version(SYM, VERSION) _Py_uop_sym_set_type_version(ctx, SYM, VERSION)
 #define sym_set_const(SYM, CNST) _Py_uop_sym_set_const(ctx, SYM, CNST)
+#define sym_set_compact_int(SYM) _Py_uop_sym_set_compact_int(ctx, SYM)
 #define sym_is_bottom _Py_uop_sym_is_bottom
 #define frame_new _Py_uop_frame_new
 #define frame_pop _Py_uop_frame_pop
@@ -34,6 +35,8 @@ typedef struct _Py_UOpsAbstractFrame _Py_UOpsAbstractFrame;
 #define sym_tuple_getitem _Py_uop_sym_tuple_getitem
 #define sym_tuple_length _Py_uop_sym_tuple_length
 #define sym_is_immortal _Py_uop_sym_is_immortal
+#define sym_new_compact_int _Py_uop_sym_new_compact_int
+#define sym_is_compact_int _Py_uop_sym_is_compact_int
 #define sym_new_truthiness _Py_uop_sym_new_truthiness
 
 extern int
@@ -105,17 +108,27 @@ dummy_func(void) {
     }
 
     op(_GUARD_TOS_INT, (value -- value)) {
-        if (sym_matches_type(value, &PyLong_Type)) {
+        if (sym_is_compact_int(value)) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
-        sym_set_type(value, &PyLong_Type);
+        else {
+            if (sym_get_type(value) == &PyLong_Type) {
+                REPLACE_OP(this_instr, _GUARD_TOS_OVERFLOWED, 0, 0);
+            }
+            sym_set_compact_int(value);
+        }
     }
 
     op(_GUARD_NOS_INT, (left, unused -- left, unused)) {
-        if (sym_matches_type(left, &PyLong_Type)) {
+        if (sym_is_compact_int(left)) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
-        sym_set_type(left, &PyLong_Type);
+        else {
+            if (sym_get_type(left) == &PyLong_Type) {
+                REPLACE_OP(this_instr, _GUARD_NOS_OVERFLOWED, 0, 0);
+            }
+            sym_set_compact_int(left);
+        }
     }
 
     op(_CHECK_ATTR_CLASS, (type_version/2, owner -- owner)) {
@@ -222,15 +235,15 @@ dummy_func(void) {
     }
 
     op(_BINARY_OP_ADD_INT, (left, right -- res)) {
-        res = sym_new_type(ctx, &PyLong_Type);
+        res = sym_new_compact_int(ctx);
     }
 
     op(_BINARY_OP_SUBTRACT_INT, (left, right -- res)) {
-        res = sym_new_type(ctx, &PyLong_Type);
+        res = sym_new_compact_int(ctx);
     }
 
     op(_BINARY_OP_MULTIPLY_INT, (left, right -- res)) {
-        res = sym_new_type(ctx, &PyLong_Type);
+        res = sym_new_compact_int(ctx);
     }
 
     op(_BINARY_OP_ADD_FLOAT, (left, right -- res)) {
@@ -432,6 +445,15 @@ dummy_func(void) {
     op(_UNARY_NOT, (value -- res)) {
         sym_set_type(value, &PyBool_Type);
         res = sym_new_truthiness(ctx, value, false);
+    }
+
+    op(_UNARY_NEGATIVE, (value -- res)) {
+        if (sym_is_compact_int(value)) {
+            res = sym_new_compact_int(ctx);
+        }
+        else {
+            res = sym_new_not_null(ctx);
+        }
     }
 
     op(_UNARY_INVERT, (value -- res)) {

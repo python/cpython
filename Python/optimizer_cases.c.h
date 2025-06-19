@@ -142,8 +142,15 @@
         }
 
         case _UNARY_NEGATIVE: {
+            JitOptRef value;
             JitOptRef res;
-            res = sym_new_not_null(ctx);
+            value = stack_pointer[-1];
+            if (sym_is_compact_int(value)) {
+                res = sym_new_compact_int(ctx);
+            }
+            else {
+                res = sym_new_not_null(ctx);
+            }
             stack_pointer[-1] = res;
             break;
         }
@@ -301,26 +308,44 @@
         case _GUARD_NOS_INT: {
             JitOptRef left;
             left = stack_pointer[-2];
-            if (sym_matches_type(left, &PyLong_Type)) {
+            if (sym_is_compact_int(left)) {
                 REPLACE_OP(this_instr, _NOP, 0, 0);
             }
-            sym_set_type(left, &PyLong_Type);
+            else {
+                if (sym_get_type(left) == &PyLong_Type) {
+                    REPLACE_OP(this_instr, _GUARD_NOS_OVERFLOWED, 0, 0);
+                }
+                sym_set_compact_int(left);
+            }
             break;
         }
 
         case _GUARD_TOS_INT: {
             JitOptRef value;
             value = stack_pointer[-1];
-            if (sym_matches_type(value, &PyLong_Type)) {
+            if (sym_is_compact_int(value)) {
                 REPLACE_OP(this_instr, _NOP, 0, 0);
             }
-            sym_set_type(value, &PyLong_Type);
+            else {
+                if (sym_get_type(value) == &PyLong_Type) {
+                    REPLACE_OP(this_instr, _GUARD_TOS_OVERFLOWED, 0, 0);
+                }
+                sym_set_compact_int(value);
+            }
+            break;
+        }
+
+        case _GUARD_NOS_OVERFLOWED: {
+            break;
+        }
+
+        case _GUARD_TOS_OVERFLOWED: {
             break;
         }
 
         case _BINARY_OP_MULTIPLY_INT: {
             JitOptRef res;
-            res = sym_new_type(ctx, &PyLong_Type);
+            res = sym_new_compact_int(ctx);
             stack_pointer[-2] = res;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -329,7 +354,7 @@
 
         case _BINARY_OP_ADD_INT: {
             JitOptRef res;
-            res = sym_new_type(ctx, &PyLong_Type);
+            res = sym_new_compact_int(ctx);
             stack_pointer[-2] = res;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -338,7 +363,7 @@
 
         case _BINARY_OP_SUBTRACT_INT: {
             JitOptRef res;
-            res = sym_new_type(ctx, &PyLong_Type);
+            res = sym_new_compact_int(ctx);
             stack_pointer[-2] = res;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
