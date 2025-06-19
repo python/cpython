@@ -161,8 +161,7 @@ gen_dealloc(PyObject *self)
 
     _PyObject_GC_UNTRACK(gen);
 
-    if (gen->gi_weakreflist != NULL)
-        PyObject_ClearWeakRefs(self);
+    PyObject_ClearWeakRefs(self);
 
     _PyObject_GC_TRACK(self);
 

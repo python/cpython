@@ -536,8 +536,7 @@ set_dealloc(PyObject *self)
 
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(so);
-    if (so->weakreflist != NULL)
-        PyObject_ClearWeakRefs((PyObject *) so);
+    PyObject_ClearWeakRefs((PyObject *) so);
 
     for (entry = so->table; used > 0; entry++) {
         if (entry->key && entry->key != dummy) {

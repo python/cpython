@@ -245,8 +245,7 @@ method_dealloc(PyObject *self)
 {
     PyMethodObject *im = _PyMethodObject_CAST(self);
     _PyObject_GC_UNTRACK(im);
-    if (im->im_weakreflist != NULL)
-        PyObject_ClearWeakRefs((PyObject *)im);
+    PyObject_ClearWeakRefs((PyObject *)im);
     Py_DECREF(im->im_func);
     Py_XDECREF(im->im_self);
     assert(Py_IS_TYPE(self, &PyMethod_Type));

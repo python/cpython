@@ -979,8 +979,7 @@ bytesio_dealloc(PyObject *op)
     }
     Py_CLEAR(self->buf);
     Py_CLEAR(self->dict);
-    if (self->weakreflist != NULL)
-        PyObject_ClearWeakRefs(op);
+    PyObject_ClearWeakRefs(op);
     tp->tp_free(self);
     Py_DECREF(tp);
 }

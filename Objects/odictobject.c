@@ -1391,8 +1391,7 @@ odict_dealloc(PyObject *op)
     PyObject_GC_UnTrack(self);
 
     Py_XDECREF(self->od_inst_dict);
-    if (self->od_weakreflist != NULL)
-        PyObject_ClearWeakRefs((PyObject *)self);
+    PyObject_ClearWeakRefs((PyObject *)self);
 
     _odict_clear_nodes(self);
     PyDict_Type.tp_dealloc((PyObject *)self);

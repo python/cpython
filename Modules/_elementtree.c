@@ -690,8 +690,7 @@ element_dealloc(PyObject *op)
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(self);
 
-    if (self->weakreflist != NULL)
-        PyObject_ClearWeakRefs(op);
+    PyObject_ClearWeakRefs(op);
 
     /* element_gc_clear clears all references and deallocates extra
     */

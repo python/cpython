@@ -21,9 +21,7 @@ unionobject_dealloc(PyObject *self)
     unionobject *alias = (unionobject *)self;
 
     _PyObject_GC_UNTRACK(self);
-    if (alias->weakreflist != NULL) {
-        PyObject_ClearWeakRefs((PyObject *)alias);
-    }
+    PyObject_ClearWeakRefs((PyObject *)alias);
 
     Py_XDECREF(alias->args);
     Py_XDECREF(alias->hashable_args);

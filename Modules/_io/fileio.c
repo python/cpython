@@ -570,9 +570,7 @@ fileio_dealloc(PyObject *op)
         PyMem_Free(self->stat_atopen);
         self->stat_atopen = NULL;
     }
-    if (self->weakreflist != NULL) {
-        PyObject_ClearWeakRefs(op);
-    }
+    PyObject_ClearWeakRefs(op);
     (void)fileio_clear(op);
 
     PyTypeObject *tp = Py_TYPE(op);
