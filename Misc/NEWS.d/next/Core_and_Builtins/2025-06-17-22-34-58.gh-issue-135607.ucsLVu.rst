@@ -1,2 +1,2 @@
-Fix potential :mod:`weakref` races on module objects on the :term:`free threaded <free
+Fix potential :mod:`weakref` races on objects dealloc on the :term:`free threaded <free
 threading>` build.
