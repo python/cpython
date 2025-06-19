@@ -1488,6 +1488,11 @@ queuesmod_create(PyObject *self, PyObject *args, PyObject *kwds)
     {
         return NULL;
     }
+    if (maxsize < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "max_size must be greater than or equal to 0");
+        return NULL;
+    }
     struct _queuedefaults defaults = {0};
     if (resolve_unboundop(unboundarg, UNBOUND_REPLACE,
                           &defaults.unboundop) < 0)
