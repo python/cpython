@@ -10,6 +10,7 @@ from test import support
 from test.support import cpython_only, os_helper
 from test.support.import_helper import ensure_lazy_imports
 
+
 # TODO:
 #  - Add new tests, for example for "dgettext"
 #  - Tests should have only one assert.
@@ -982,7 +983,7 @@ class MiscTestCase(unittest.TestCase):
 
     @cpython_only
     def test_lazy_import(self):
-        ensure_lazy_imports("gettext", {"re", "warnings", "locale"})
+        ensure_lazy_imports("gettext", {"re", "warnings"})
 
 
 if __name__ == '__main__':
