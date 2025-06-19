@@ -3044,17 +3044,14 @@ _PyTrash_thread_deposit_object(PyThreadState *tstate, PyObject *op)
     _PyObject_ASSERT(op, Py_REFCNT(op) == 0);
     PyTypeObject *tp = Py_TYPE(op);
     assert(tp->tp_flags & Py_TPFLAGS_HAVE_GC);
-    uintptr_t tagged_ptr;
+    int tracked = 0;
     if (tp->tp_is_gc == NULL || tp->tp_is_gc(op)) {
-        int tracked = _PyObject_GC_IS_TRACKED(op);
+        tracked = _PyObject_GC_IS_TRACKED(op);
         if (tracked) {
             _PyObject_GC_UNTRACK(op);
         }
-        tagged_ptr = ((uintptr_t)tstate->delete_later) | tracked;
     }
-    else {
-        tagged_ptr = ((uintptr_t)tstate->delete_later);
-    }
+    uintptr_t tagged_ptr = ((uintptr_t)tstate->delete_later) | tracked;
 #ifdef Py_GIL_DISABLED
     op->ob_tid = tagged_ptr;
 #else
