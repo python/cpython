@@ -1922,7 +1922,7 @@ chain_next_lock_held(PyObject *op)
 static PyObject *
 chain_next(PyObject *op)
 {
-    PyObject * result;
+    PyObject *result;
     Py_BEGIN_CRITICAL_SECTION(op);
     result = chain_next_lock_held(op);
     Py_END_CRITICAL_SECTION()
