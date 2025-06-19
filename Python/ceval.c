@@ -1865,12 +1865,12 @@ _PyEvalFramePushAndInit_Ex(PyThreadState *tstate, _PyStackRef func,
     PyObject *kwnames = NULL;
     _PyStackRef *newargs;
     PyObject *const *object_array = NULL;
-    #if defined(__GNUC__)
+    #if defined(__GNUC__) && !defined(__clang__)
         #pragma GCC diagnostic push
         #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
     #endif
     _PyStackRef stack_array[8];
-    #if defined(__GNUC__)
+    #if defined(__GNUC__) && !defined(__clang__)
         #pragma GCC diagnostic pop
     #endif
     if (has_dict) {
