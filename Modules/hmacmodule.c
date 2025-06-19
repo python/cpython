@@ -497,6 +497,7 @@ _hacl_convert_errno(hacl_errno_t code, PyObject *algorithm)
     if (code == Hacl_Streaming_Types_Success) {
         return 0;
     }
+
     PyGILState_STATE gstate = PyGILState_Ensure();
     switch (code) {
         case Hacl_Streaming_Types_InvalidAlgorithm: {
