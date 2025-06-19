@@ -707,8 +707,11 @@ _queue_is_full(_queue *queue, int *p_is_full)
         return err;
     }
 
-    assert(queue->items.count <= queue->items.maxsize);
-    *p_is_full = queue->items.count == queue->items.maxsize;
+    assert(queue->items.maxsize <= 0
+           || queue->items.count <= queue->items.maxsize);
+    *p_is_full = queue->items.maxsize > 0
+        ? queue->items.count == queue->items.maxsize
+        : 0;
 
     _queue_unlock(queue);
     return 0;
