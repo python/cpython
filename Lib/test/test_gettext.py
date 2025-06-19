@@ -1,5 +1,3 @@
-import sys
-
 import locale
 import os
 import base64
@@ -9,7 +7,7 @@ import unittest.mock
 from functools import partial
 
 from test import support
-from test.support import os_helper, run_with_locale
+from test.support import os_helper
 
 # TODO:
 #  - Add new tests, for example for "dgettext"
