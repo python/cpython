@@ -53,15 +53,6 @@ module_from_slots_size(PyObject *self, PyObject *spec)
     if (!mod) {
         return NULL;
     }
-    Py_ssize_t size;
-    if (PyModule_GetSize(mod, &size) < 0) {
-        Py_DECREF(mod);
-        return NULL;
-    }
-    if (PyModule_AddIntConstant(mod, "size", size) < 0) {
-        Py_DECREF(mod);
-        return NULL;
-    }
     return mod;
 }
 
@@ -326,6 +317,16 @@ pymodule_get_def(PyObject *self, PyObject *module)
     return PyLong_FromVoidPtr(def);
 }
 
+static PyObject *
+pymodule_get_state_size(PyObject *self, PyObject *module)
+{
+    Py_ssize_t size;
+    if (PyModule_GetStateSize(module, &size) < 0) {
+        return NULL;
+    }
+    return PyLong_FromSsize_t(size);
+}
+
 static PyMethodDef test_methods[] = {
     {"module_from_slots_empty", module_from_slots_empty, METH_O},
     {"module_from_slots_null", module_from_slots_null, METH_O},
@@ -343,6 +344,7 @@ static PyMethodDef test_methods[] = {
     {"module_from_def_slot", module_from_def_slot, METH_O},
     {"pymodule_get_token", pymodule_get_token, METH_O},
     {"pymodule_get_def", pymodule_get_def, METH_O},
+    {"pymodule_get_state_size", pymodule_get_state_size, METH_O},
     {"pymodule_exec", pymodule_exec, METH_O},
     {NULL},
 };

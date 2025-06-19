@@ -790,7 +790,7 @@ PyModule_GetDict(PyObject *m)
 }
 
 int
-PyModule_GetSize(PyObject *m, Py_ssize_t *size_p)
+PyModule_GetStateSize(PyObject *m, Py_ssize_t *size_p)
 {
     *size_p = -1;
     if (!PyModule_Check(m)) {

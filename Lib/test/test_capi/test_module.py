@@ -1,6 +1,6 @@
 import unittest
 import types
-from test.support import import_helper
+from test.support import import_helper, subTests
 
 # Skip this test if the _testcapi module isn't available.
 _testcapi = import_helper.import_module('_testcapi')
@@ -30,6 +30,8 @@ class TestModFromSlotsAndSpec(unittest.TestCase):
         self.assertIsInstance(mod, types.ModuleType)
         self.assertEqual(def_and_token(mod), (0, 0))
         self.assertEqual(mod.__name__, 'testmod')
+        size = _testcapi.pymodule_get_state_size(mod)
+        self.assertEqual(size, 0)
 
     def test_null_slots(self):
         with self.assertRaises(SystemError):
@@ -65,7 +67,8 @@ class TestModFromSlotsAndSpec(unittest.TestCase):
         self.assertEqual(def_and_token(mod), (0, 0))
         self.assertEqual(mod.__name__, 'testmod')
         self.assertEqual(mod.__doc__, None)
-        self.assertEqual(mod.size, 123)
+        size = _testcapi.pymodule_get_state_size(mod)
+        self.assertEqual(size, 123)
 
     def test_methods(self):
         mod = _testcapi.module_from_slots_methods(FakeSpec())
@@ -161,3 +164,13 @@ class TestModFromSlotsAndSpec(unittest.TestCase):
         def_ptr, token = def_and_token(mod)
         self.assertEqual(def_ptr, token)
         self.assertGreater(def_ptr, 0)
+
+    @subTests('name, expected_size', [
+        (__name__, 0),  # Python module
+        ('_testsinglephase', -1),  # single-phase init
+        ('sys', -1),
+    ])
+    def test_get_state_size(self, name, expected_size):
+        mod = import_helper.import_module(name)
+        size = _testcapi.pymodule_get_state_size(mod)
+        self.assertEqual(size, expected_size)
