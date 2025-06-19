@@ -1,0 +1,81 @@
+import tkinter as tk
+from tkinter import ttk, messagebox
+import pandas as pd
+import requests
+
+root = tk.Tk()
+root.title("Simulateur Crypto Aurélien")
+root.geometry("900x500")
+
+notebook = ttk.Notebook(root)
+notebook.pack(fill='both', expand=True)
+
+# --------- Onglet 1 : Paramètres d’achat ---------
+frame_achat = ttk.Frame(notebook)
+notebook.add(frame_achat, text="Paramètres d'achat")
+
+actifs = ["LINK", "XRP", "ETH", "PEPE", "CHILIZ"]
+montants = {}
+prix_conseilles = {}
+
+for i, actif in enumerate(actifs):
+    ttk.Label(frame_achat, text=f"{actif} - Montant (€)").grid(row=i, column=0, padx=10, pady=5, sticky='w')
+    montants[actif] = tk.DoubleVar(value=50)
+    ttk.Entry(frame_achat, textvariable=montants[actif], width=10).grid(row=i, column=1)
+
+    ttk.Label(frame_achat, text=f"Prix conseillé").grid(row=i, column=2, padx=10, pady=5, sticky='w')
+    prix_conseilles[actif] = tk.DoubleVar(value=1.0)
+    ttk.Entry(frame_achat, textvariable=prix_conseilles[actif], width=10).grid(row=i, column=3)
+
+# --------- Onglet 2 : Simulation ---------
+frame_simul = ttk.Frame(notebook)
+notebook.add(frame_simul, text="Simulation")
+
+text_resultats = tk.Text(frame_simul, wrap="none", height=20, width=100)
+text_resultats.pack(padx=10, pady=10)
+
+# --------- Onglet 3 : Telegram ---------
+frame_telegram = ttk.Frame(notebook)
+notebook.add(frame_telegram, text="Telegram")
+
+tk.Label(frame_telegram, text="Token Bot :").grid(row=0, column=0, sticky='e', padx=5)
+token_var = tk.StringVar()
+tk.Entry(frame_telegram, textvariable=token_var, width=40).grid(row=0, column=1, padx=5)
+
+tk.Label(frame_telegram, text="Chat ID :").grid(row=1, column=0, sticky='e', padx=5)
+chat_id_var = tk.StringVar()
+tk.Entry(frame_telegram, textvariable=chat_id_var, width=40).grid(row=1, column=1, padx=5)
+
+# --------- Fonction Simulation ---------
+def simuler():
+    data = []
+    for actif in actifs:
+        montant = montants[actif].get()
+        prix = prix_conseilles[actif].get()
+        data.append({
+            "Actif": actif,
+            "Montant initial (€)": montant,
+            "Prix d'achat conseillé (€)": prix
+        })
+
+    df = pd.DataFrame(data)
+
+    def ventes(m):
+        return {
+            "Vente +15% (10%)": m * 0.15 * 0.10,
+            "Vente +50% (15%)": m * 0.50 * 0.15,
+            "Vente x2 (25%)": m * 1.00 * 0.25,
+            "Vente x3+ (50%)": m * 2.00 * 0.50,
+        }
+
+    ventes_df = df["Montant initial (€)"].apply(ventes).apply(pd.Series)
+    df = pd.concat([df, ventes_df], axis=1)
+    df["Total gains (€)"] = ventes_df.sum(axis=1)
+    df["Réinvestissement (60%) (€)"] = df["Total gains (€)"] * 0.60
+    df["Capital final estimé (€)"] = df["Montant initial (€)"] + df["Réinvestissement (60%) (€)"]
+
+    text_resultats.delete("1.0", tk.END)
+    text_resultats.insert(tk.END, df.to_string(index=False))
+
+# --------- Bouton principal ---------
+tk.Button(root, text="Lancer la simulation", command=simuler, bg="green", fg="white", padx=20, pady=5).pack(pady=10)
