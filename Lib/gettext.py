@@ -493,8 +493,8 @@ def find(domain, localedir=None, languages=None, all=False):
         languages = []
         if val := os.environ.get('LANGUAGE'):
             languages = val.split(':')
-        elif os.name == 'posix' and (loc := locale.setlocale(locale.LC_MESSAGES)):
-            languages = loc.split(':')
+        elif (loc := locale.getlocale()) != (None, None):
+            languages = [".".join(filter(None, loc))]
         else:
             for envar in ('LC_ALL', 'LC_MESSAGES', 'LANG'):
                 val = os.environ.get(envar)

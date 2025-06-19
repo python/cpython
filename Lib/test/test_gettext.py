@@ -747,7 +747,7 @@ class FindTestCase(unittest.TestCase):
                 self.assertIsNone(result)
             self.env.unset(var)
 
-    @unittest.mock.patch("locale.setlocale", return_value='')
+    @unittest.mock.patch("locale.getlocale", return_value=(None, None))
     def test_find_with_env_vars(self, patch_getlocale):
         # test that find correctly finds the environment variables
         # when languages are not supplied
@@ -769,30 +769,26 @@ class FindTestCase(unittest.TestCase):
         patch_expand_lang.assert_any_call('ga_IE.UTF-8')
         self.env.unset('LANGUAGE')
 
-    @unittest.skipIf(os.name != "posix", "LC_MESSAGES is posix only")
     def test_find_LANGUAGE_priority(self):
         self.env.set('LANGUAGE', 'ga_IE')
         self.env.set('LC_ALL', 'pt_BR')
-        if os.name != "posix":
-            orig = locale.setlocale(locale.LC_MESSAGES)
-            self.addCleanup(lambda: locale.setlocale(locale.LC_MESSAGES, orig))
-            locale.setlocale(locale.LC_MESSAGES, 'pt_BR')
+        orig = locale.setlocale(locale.LC_ALL)
+        self.addCleanup(lambda: locale.setlocale(locale.LC_ALL, orig))
+        locale.setlocale(locale.LC_ALL, 'pt_BR')
         mo_file = self.create_mo_file("ga_IE")
-
         result = gettext.find("mofile", localedir=os.path.join(self.tempdir, "locale"))
         self.assertEqual(result, mo_file)
 
-    @unittest.skipIf(os.name != "posix", "LC_MESSAGES is posix only")
     def test_process_vars_override(self):
-        orig = locale.setlocale(locale.LC_MESSAGES)
-        self.addCleanup(lambda: locale.setlocale(locale.LC_MESSAGES, orig))
+        orig = locale.setlocale(locale.LC_ALL)
+        self.addCleanup(lambda: locale.setlocale(locale.LC_ALL, orig))
         mo_file = self.create_mo_file("ca_ES")
         for loc in ("ca_ES", "ca_ES.UTF-8", "ca_ES@euro", "ca_ES@valencia"):
-            locale.setlocale(locale.LC_MESSAGES, loc)
+            locale.setlocale(locale.LC_ALL, loc)
             result = gettext.find("mofile", localedir=os.path.join(self.tempdir, "locale"))
             self.assertEqual(mo_file, result)
         for loc in ("C", "C.UTF-8"):
-            locale.setlocale(locale.LC_MESSAGES, loc)
+            locale.setlocale(locale.LC_ALL, loc)
             result = gettext.find("mofile", localedir=os.path.join(self.tempdir, "locale"))
             self.assertIsNone(result)
 
