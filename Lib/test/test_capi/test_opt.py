@@ -2310,7 +2310,6 @@ class TestUopsOptimization(unittest.TestCase):
         # testing it doesn't crash.
         result = script_helper.run_python_until_end('-c', textwrap.dedent("""
         import _testinternalcapi
-        import opcode
         import _opcode
         import email
 
@@ -2324,9 +2323,6 @@ class TestUopsOptimization(unittest.TestCase):
                     pass
             return None
 
-        def get_opnames(ex):
-            return {item[0] for item in ex}
-
         def testfunc(n):
             for _ in range(n):
                 email.jit_testing = None
@@ -2335,6 +2331,8 @@ class TestUopsOptimization(unittest.TestCase):
 
 
         testfunc(_testinternalcapi.TIER2_THRESHOLD)
+        ex = get_first_executor(testfunc)
+        assert ex is not None
         """), PYTHON_JIT="1")
         self.assertEqual(result[0].rc, 0, result)
 
