@@ -1757,7 +1757,7 @@ iterations of the loop.
 
    Checks the eval breaker and performs periodic tasks if the eval breaker is set.
    Tasks inlcude switching threads and performing GC amongst others.
-   All :opcode:`CALL` instructions must be followed by opcode:`CHECK_PERIODIC`.
+   All :opcode:`CALL` instructions must be followed by :opcode:`CHECK_PERIODIC`.
 
    .. versionadded:: 3.14
 

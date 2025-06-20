@@ -502,7 +502,6 @@ optimize_uops(
 #include "optimizer_cases.c.h"
 
             default:
-                assert(0);
                 DPRINTF(1, "\nUnknown opcode in abstract interpreter\n");
                 Py_UNREACHABLE();
         }
