@@ -131,9 +131,9 @@ MD5Type_copy_impl(MD5object *self, PyTypeObject *cls)
         return NULL;
     }
 
-    ENTER_HASHLIB(self);
+    HASHLIB_ACQUIRE_LOCK(self);
     newobj->state = Hacl_Hash_MD5_copy(self->state);
-    LEAVE_HASHLIB(self);
+    HASHLIB_RELEASE_LOCK(self);
     if (newobj->state == NULL) {
         Py_DECREF(newobj);
         return PyErr_NoMemory();
@@ -152,9 +152,9 @@ MD5Type_digest_impl(MD5object *self)
 /*[clinic end generated code: output=eb691dc4190a07ec input=bc0c4397c2994be6]*/
 {
     uint8_t digest[MD5_DIGESTSIZE];
-    ENTER_HASHLIB(self);
+    HASHLIB_ACQUIRE_LOCK(self);
     Hacl_Hash_MD5_digest(self->state, digest);
-    LEAVE_HASHLIB(self);
+    HASHLIB_RELEASE_LOCK(self);
     return PyBytes_FromStringAndSize((const char *)digest, MD5_DIGESTSIZE);
 }
 
@@ -169,20 +169,22 @@ MD5Type_hexdigest_impl(MD5object *self)
 /*[clinic end generated code: output=17badced1f3ac932 input=b60b19de644798dd]*/
 {
     uint8_t digest[MD5_DIGESTSIZE];
-    ENTER_HASHLIB(self);
+    HASHLIB_ACQUIRE_LOCK(self);
     Hacl_Hash_MD5_digest(self->state, digest);
-    LEAVE_HASHLIB(self);
+    HASHLIB_RELEASE_LOCK(self);
     return _Py_strhex((const char *)digest, MD5_DIGESTSIZE);
 }
 
 static void
-update(Hacl_Hash_MD5_state_t *state, uint8_t *buf, Py_ssize_t len)
+_hacl_md5_state_update(Hacl_Hash_MD5_state_t *state,
+                       uint8_t *buf, Py_ssize_t len)
 {
+    assert(len >= 0);
     /*
-    * Note: we explicitly ignore the error code on the basis that it would
-    * take more than 1 billion years to overflow the maximum admissible length
-    * for MD5 (2^61 - 1).
-    */
+     * Note: we explicitly ignore the error code on the basis that it would
+     * take more than 1 billion years to overflow the maximum admissible length
+     * for MD5 (2^61 - 1).
+     */
 #if PY_SSIZE_T_MAX > UINT32_MAX
     while (len > UINT32_MAX) {
         (void)Hacl_Hash_MD5_update(state, buf, UINT32_MAX);
@@ -208,22 +210,11 @@ MD5Type_update_impl(MD5object *self, PyObject *obj)
 /*[clinic end generated code: output=b0fed9a7ce7ad253 input=6e1efcd9ecf17032]*/
 {
     Py_buffer buf;
-
     GET_BUFFER_VIEW_OR_ERROUT(obj, &buf);
-
-    if (!self->use_mutex && buf.len >= HASHLIB_GIL_MINSIZE) {
-        self->use_mutex = true;
-    }
-    if (self->use_mutex) {
-        Py_BEGIN_ALLOW_THREADS
-        PyMutex_Lock(&self->mutex);
-        update(self->state, buf.buf, buf.len);
-        PyMutex_Unlock(&self->mutex);
-        Py_END_ALLOW_THREADS
-    } else {
-        update(self->state, buf.buf, buf.len);
-    }
-
+    HASHLIB_EXTERNAL_INSTRUCTIONS_LOCKED(
+        self, buf.len,
+        _hacl_md5_state_update(self->state, buf.buf, buf.len)
+    );
     PyBuffer_Release(&buf);
     Py_RETURN_NONE;
 }
@@ -325,16 +316,12 @@ _md5_md5_impl(PyObject *module, PyObject *data, int usedforsecurity,
     }
 
     if (string) {
-        if (buf.len >= HASHLIB_GIL_MINSIZE) {
-            /* We do not initialize self->lock here as this is the constructor
-             * where it is not yet possible to have concurrent access. */
-            Py_BEGIN_ALLOW_THREADS
-            update(new->state, buf.buf, buf.len);
-            Py_END_ALLOW_THREADS
-        }
-        else {
-            update(new->state, buf.buf, buf.len);
-        }
+        /* Do not use self->mutex here as this is the constructor
+         * where it is not yet possible to have concurrent access. */
+        HASHLIB_EXTERNAL_INSTRUCTIONS_UNLOCKED(
+            buf.len,
+            _hacl_md5_state_update(new->state, buf.buf, buf.len)
+        );
         PyBuffer_Release(&buf);
     }
 
