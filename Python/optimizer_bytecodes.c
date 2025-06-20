@@ -99,7 +99,8 @@ dummy_func(void) {
         GETLOCAL(oparg) = temp;
     }
 
-    op(_STORE_FAST, (value --)) {
+    op(_SWAP_FAST, (value -- trash)) {
+        trash = GETLOCAL(oparg);
         GETLOCAL(oparg) = value;
     }
 
@@ -559,6 +560,27 @@ dummy_func(void) {
 
     op(_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW, (ptr/4, unused, unused, unused, unused -- value)) {
         value = PyJitRef_Borrow(sym_new_const(ctx, ptr));
+    }
+
+    op(_POP_TOP, (value -- )) {
+        PyTypeObject *typ = sym_get_type(value);
+        PyObject *const_val = sym_get_const(ctx, value);
+        if (PyJitRef_IsBorrowed(value) ||
+            (const_val != NULL && _Py_IsImmortal(const_val))) {
+            REPLACE_OP(this_instr, _POP_TOP_NOP, 0, 0);
+        }
+        else if (typ == &PyLong_Type) {
+            REPLACE_OP(this_instr, _POP_TOP_INT, 0, 0);
+        }
+        else if (typ == &PyFloat_Type) {
+            REPLACE_OP(this_instr, _POP_TOP_FLOAT, 0, 0);
+        }
+        else if (typ == &PyUnicode_Type) {
+            REPLACE_OP(this_instr, _POP_TOP_UNICODE, 0, 0);
+        }
+        else if (typ == &PyBool_Type) {
+            REPLACE_OP(this_instr, _POP_TOP_NOP, 0, 0);
+        }
     }
 
     op(_COPY, (bottom, unused[oparg-1] -- bottom, unused[oparg-1], top)) {

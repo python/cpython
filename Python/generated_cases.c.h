@@ -11148,14 +11148,22 @@
             next_instr += 1;
             INSTRUCTION_STATS(STORE_FAST);
             _PyStackRef value;
-            value = stack_pointer[-1];
-            _PyStackRef tmp = GETLOCAL(oparg);
-            GETLOCAL(oparg) = value;
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyStackRef_XCLOSE(tmp);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
+            _PyStackRef trash;
+            // _SWAP_FAST
+            {
+                value = stack_pointer[-1];
+                trash = GETLOCAL(oparg);
+                GETLOCAL(oparg) = value;
+            }
+            // _POP_TOP
+            {
+                value = trash;
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyStackRef_XCLOSE(value);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+            }
             DISPATCH();
         }
 
