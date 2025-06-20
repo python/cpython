@@ -13,6 +13,16 @@ If you need to add a new function ensure that is declared 'static'.
 extern "C" {
 #endif
 
+#ifdef __clang__
+    #define UNUSED __attribute__((unused))
+#elif defined(__GNUC__)
+    #define UNUSED __attribute__((unused))
+#elif defined(_MSC_VER)
+    #define UNUSED __pragma(warning(suppress: 4505))
+#else
+    #define UNUSED
+#endif
+
 #if !defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 #  error "this header requires Py_BUILD_CORE or Py_BUILD_CORE_MODULE define"
 #endif
@@ -133,7 +143,7 @@ _Py_RemoteDebug_FreePageCache(proc_handle_t *handle)
     }
 }
 
-void
+UNUSED static void
 _Py_RemoteDebug_ClearCache(proc_handle_t *handle)
 {
     for (int i = 0; i < MAX_PAGES; i++) {
@@ -674,8 +684,6 @@ search_linux_map_for_section(proc_handle_t *handle, const char* secname, const c
     }
 
     uintptr_t retval = 0;
-    int lines_processed = 0;
-    int matches_found = 0;
 
     while (fgets(line + linelen, linesz - linelen, maps_file) != NULL) {
         linelen = strlen(line);
@@ -700,7 +708,6 @@ search_linux_map_for_section(proc_handle_t *handle, const char* secname, const c
         line[linelen - 1] = '\0';
         // and prepare to read the next line into the start of the buffer.
         linelen = 0;
-        lines_processed++;
 
         unsigned long start = 0;
         unsigned long path_pos = 0;
@@ -721,7 +728,6 @@ search_linux_map_for_section(proc_handle_t *handle, const char* secname, const c
         }
 
         if (strstr(filename, substr)) {
-            matches_found++;
             retval = search_elf_file_for_section(handle, secname, start, path);
             if (retval) {
                 break;
@@ -840,15 +846,10 @@ search_windows_map_for_section(proc_handle_t* handle, const char* secname, const
     MODULEENTRY32W moduleEntry;
     moduleEntry.dwSize = sizeof(moduleEntry);
     void* runtime_addr = NULL;
-    int modules_examined = 0;
-    int matches_found = 0;
 
     for (BOOL hasModule = Module32FirstW(hProcSnap, &moduleEntry); hasModule; hasModule = Module32NextW(hProcSnap, &moduleEntry)) {
-        modules_examined++;
-
         // Look for either python executable or DLL
         if (wcsstr(moduleEntry.szModule, substr)) {
-            matches_found++;
             runtime_addr = analyze_pe(moduleEntry.szExePath, moduleEntry.modBaseAddr, secname);
             if (runtime_addr != NULL) {
                 break;
@@ -1059,7 +1060,7 @@ _Py_RemoteDebug_ReadRemoteMemory(proc_handle_t *handle, uintptr_t remote_address
 #endif
 }
 
-int
+UNUSED static int
 _Py_RemoteDebug_PagedReadRemoteMemory(proc_handle_t *handle,
                                       uintptr_t addr,
                                       size_t size,

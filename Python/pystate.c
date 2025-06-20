@@ -1142,6 +1142,7 @@ _Py_CheckMainModule(PyObject *module)
         PyObject *msg = PyUnicode_FromString("invalid __main__ module");
         if (msg != NULL) {
             (void)PyErr_SetImportError(msg, &_Py_ID(__main__), NULL);
+            Py_DECREF(msg);
         }
         return -1;
     }
