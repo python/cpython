@@ -387,6 +387,7 @@ Other functions
 
    - win-amd64 (64-bit Windows on AMD64, aka x86_64, Intel64, and EM64T)
    - win-arm64 (64-bit Windows on ARM64, aka AArch64)
+   - win32 (all others - specifically, sys.platform is returned)
 
    POSIX based OS:
 
