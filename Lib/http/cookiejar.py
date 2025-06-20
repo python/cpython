@@ -532,11 +532,15 @@ def parse_ns_headers(ns_headers):
     return result
 
 
-IPV4_RE = re.compile(r"\.\d+$", re.ASCII)
-def is_ip(text):
+IPV4_RE = re.compile(r"\.\d+$", re.ASCII) # kept for backwards compatibility
+def is_ip(text: str):
     """Return True if text is a valid IP address."""
     from ipaddress import ip_address
     try:
+        if text.startswith('['):
+            text = text[1:]
+        if text.endswith(']'):
+            text = text[:-1]
         ip_address(text)
     except ValueError:
         return False
@@ -610,9 +614,11 @@ def user_domain_match(A, B):
     A = A.lower()
     B = B.lower()
     if not (liberal_is_HDN(A) and liberal_is_HDN(B)):
+        # equal IPV4 addresses
         if A == B:
             return True
         return False
+    # A and B may be HDNs or a IPv6 addresses now
     initial_dot = B.startswith(".")
     if initial_dot and A.endswith(B):
         return True
