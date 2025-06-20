@@ -591,7 +591,13 @@ dummy_func(void) {
                     PyDict_Watch(GLOBALS_WATCHER_ID, dict);
                     _Py_BloomFilter_Add(dependencies, dict);
                     PyObject *res = convert_global_to_const(this_instr, dict, true);
-                    attr = sym_new_const(ctx, res);
+                    if (res == NULL) {
+                        attr = sym_new_not_null(ctx);
+                    }
+                    else {
+                        attr = sym_new_const(ctx, res);
+                    }
+
                 }
             }
         }
