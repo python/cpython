@@ -71,10 +71,10 @@ class Optimizer:
     )
     _re_jump: typing.ClassVar[re.Pattern[str]] = _RE_NEVER_MATCH  # One group: target.
     _re_label: typing.ClassVar[re.Pattern[str]] = re.compile(
-        r"\s*(?P<label>[\w\.]+):"
+        r'\s*(?P<label>[\w"$.?@]+):'
     )  # One group: label.
     _re_noise: typing.ClassVar[re.Pattern[str]] = re.compile(
-        r"\s*(?:[#\.]|$)"
+        r"\s*(?:[#.]|$)"
     )  # No groups.
     _re_return: typing.ClassVar[re.Pattern[str]] = _RE_NEVER_MATCH  # No groups.
 
@@ -257,6 +257,8 @@ class Optimizer:
                 todo.append(block.link)
         for block in self._blocks():
             if block not in reachable:
+                block.target = None
+                block.fallthrough = True
                 block.instructions.clear()
 
     def _remove_redundant_jumps(self) -> None:
@@ -301,9 +303,9 @@ class OptimizerX86(Optimizer):
 
     _branches = _X86_BRANCHES
     _re_branch = re.compile(
-        rf"\s*(?P<instruction>{'|'.join(_X86_BRANCHES)})\s+(?P<target>[\w\.]+)"
+        rf"\s*(?P<instruction>{'|'.join(_X86_BRANCHES)})\s+(?P<target>[\w.]+)"
     )
-    _re_jump = re.compile(r"\s*jmp\s+(?P<target>[\w\.]+)")
+    _re_jump = re.compile(r"\s*jmp\s+(?P<target>[\w.]+)")
     _re_return = re.compile(r"\s*ret\b")
 
     @staticmethod
