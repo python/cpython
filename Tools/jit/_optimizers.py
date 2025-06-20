@@ -67,7 +67,7 @@ class Optimizer:
         r'\s*(?P<label>[\w."$?@]+):'  # One group: label.
     )
     _re_noise: typing.ClassVar[re.Pattern[str]] = re.compile(
-        r"\s*(?:[#.]|$)"  # No groups.
+        r"\s*(?:\.|#|//|$)"  # No groups.
     )
     _re_return: typing.ClassVar[re.Pattern[str]] = _RE_NEVER_MATCH  # No groups.
 
@@ -223,6 +223,7 @@ class Optimizer:
 class OptimizerAArch64(Optimizer):
     # TODO: @diegorusso
     _alignment = 8
+    _re_jump = re.compile(r"\s*b\s+(?P<target>[\w.]+)")
 
 
 class OptimizerX86(Optimizer):
