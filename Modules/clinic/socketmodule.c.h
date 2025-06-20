@@ -84,7 +84,7 @@ PyDoc_STRVAR(_socket_socket_sendall__doc__,
 "\n"
 "For the optional flags argument, see the Unix manual.\n"
 "This calls send() repeatedly until all data is sent.\n"
-"If an error occurs, it\'s impossible to tell how much data has been sent.\"");
+"If an error occurs, it\'s impossible to tell how much data has been sent.");
 
 #define _SOCKET_SOCKET_SENDALL_METHODDEF    \
     {"sendall", _PyCFunction_CAST(_socket_socket_sendall), METH_FASTCALL, _socket_socket_sendall__doc__},
@@ -538,4 +538,4 @@ exit:
 #ifndef _SOCKET_IF_INDEXTONAME_METHODDEF
     #define _SOCKET_IF_INDEXTONAME_METHODDEF
 #endif /* !defined(_SOCKET_IF_INDEXTONAME_METHODDEF) */
-/*[clinic end generated code: output=ffebef95a4f50ef2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0376c46b76ae2bce input=a9049054013a1b77]*/

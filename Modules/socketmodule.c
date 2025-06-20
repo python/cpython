@@ -4626,7 +4626,6 @@ _socket_socket_send_impl(PySocketSockObject *s, Py_buffer *pbuf, int flags)
 }
 
 
-/* s.sendall(data [,flags]) method */
 /*[clinic input]
 _socket.socket.sendall
     self as s: self(type="PySocketSockObject *")
@@ -4638,13 +4637,13 @@ Send a data string to the socket.
 
 For the optional flags argument, see the Unix manual.
 This calls send() repeatedly until all data is sent.
-If an error occurs, it's impossible to tell how much data has been sent."
+If an error occurs, it's impossible to tell how much data has been sent.
 [clinic start generated code]*/
 
 static PyObject *
 _socket_socket_sendall_impl(PySocketSockObject *s, Py_buffer *pbuf,
                             int flags)
-/*[clinic end generated code: output=ec92861424d3faa8 input=47fb8b126a4f16b3]*/
+/*[clinic end generated code: output=ec92861424d3faa8 input=732b15b9ca64dce6]*/
 
 {
     char *buf;
@@ -4875,8 +4874,6 @@ sock_sendmsg_impl(PySocketSockObject *s, void *data)
     ctx->result = sendmsg(get_sock_fd(s), ctx->msg, ctx->flags);
     return (ctx->result >= 0);
 }
-
-/* s.sendmsg(buffers[, ancdata[, flags[, address]]]) method */
 
 /*[clinic input]
 _socket.socket.sendmsg
