@@ -39,15 +39,15 @@ mechanism to determine when it is safe to free the list's old backing array.
 
 Specific use cases for QSBR include:
 
-* Dictionary keys (PyDictKeysObject) and list arrays (_PyListArray): When a
+* Dictionary keys (PyDictKeysObject) and list arrays (`_PyListArray`): When a
 dictionary or list that may be shared between threads is resized, we use QSBR
 to delay freeing the old keys or array until it's safe. For dicts and lists
 that are not shared, their storage can be freed immediately upon resize.
 
-* Mimalloc mi_page_t: Non-locking dictionary and list accesses require
+* Mimalloc `mi_page_t`: Non-locking dictionary and list accesses require
 cooperation from the memory allocator. If an object is freed and its memory is
 reused, we must ensure the new object's reference count field is at the same
-memory location. In practice, this means when a mimalloc page (mi_page_t)
+memory location. In practice, this means when a mimalloc page (`mi_page_t`)
 becomes empty, we don't immediately allow it to be reused for allocations of a
 different size class. QSBR is used to determine when it's safe to repurpose the
 page or return its memory to the OS.
@@ -91,9 +91,9 @@ Periodically, a polling mechanism processes this deferred-free list:
 1. The minimum read sequence value across all active threads is calculated and
    stored as the global `rd_seq`.
 
-2. For each item on the deferred-free list, if its qsbr_goal is less than the
-   new `rd_seq`, its memory is freed, and it is removed from the list. Otherwise,
-   it remains on the list for a future attempt.
+2. For each item on the deferred-free list, if its qsbr_goal is less than or
+   equal to the new `rd_seq`, its memory is freed, and it is removed from the
+   list. Otherwise, it remains on the list for a future attempt.
 
 
 ### Deferred Advance Optimization
