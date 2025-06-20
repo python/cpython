@@ -351,7 +351,7 @@ storing this information by avoiding holding references to
 In addition, they expose more options to configure the output compared to
 the module-level functions described above.
 
-.. class:: TracebackException(exc_type, exc_value, exc_traceback, *, limit=None, lookup_lines=True, capture_locals=False, compact=False, max_group_width=15, max_group_depth=10)
+.. class:: TracebackException(exc_type, exc_value, exc_traceback, *, limit=None, lookup_lines=False, capture_locals=False, compact=False, max_group_width=15, max_group_depth=10)
 
    Capture an exception for later rendering. The meaning of *limit*,
    *lookup_lines* and *capture_locals* are as for the :class:`StackSummary`
@@ -376,6 +376,10 @@ the module-level functions described above.
 
    .. versionchanged:: 3.11
       Added the *max_group_width* and *max_group_depth* parameters.
+
+   .. versionchanged:: next
+      Changed *lookup_lines* default to ``False`` to avoid overhead when
+      formatting exceptions with ``show_lines=False``.
 
    .. attribute:: __cause__
 
@@ -459,12 +463,16 @@ the module-level functions described above.
 
       For syntax errors - the compiler error message.
 
-   .. classmethod:: from_exception(exc, *, limit=None, lookup_lines=True, capture_locals=False)
+   .. classmethod:: from_exception(exc, *, limit=None, lookup_lines=False, capture_locals=False)
 
       Capture an exception for later rendering. *limit*, *lookup_lines* and
       *capture_locals* are as for the :class:`StackSummary` class.
 
       Note that when locals are captured, they are also shown in the traceback.
+
+      .. versionchanged:: next
+         Changed *lookup_lines* default to ``False`` to avoid overhead when
+         formatting exceptions with ``show_lines=False``.
 
    .. method::  print(*, file=None, chain=True, show_lines=True, recent_first=False)
 
@@ -537,7 +545,7 @@ the module-level functions described above.
 
 .. class:: StackSummary
 
-   .. classmethod:: extract(frame_gen, *, limit=None, lookup_lines=True, capture_locals=False)
+   .. classmethod:: extract(frame_gen, *, limit=None, lookup_lines=False, capture_locals=False)
 
       Construct a :class:`!StackSummary` object from a frame generator (such as
       is returned by :func:`~traceback.walk_stack` or
@@ -554,6 +562,10 @@ the module-level functions described above.
       .. versionchanged:: 3.12
          Exceptions raised from :func:`repr` on a local variable (when
          *capture_locals* is ``True``) are no longer propagated to the caller.
+
+      .. versionchanged:: next
+         Changed *lookup_lines* default to ``False`` to avoid overhead when
+         formatting traceback with ``show_lines=False``.
 
    .. classmethod:: from_list(a_list)
 
