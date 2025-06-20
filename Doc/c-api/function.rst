@@ -245,4 +245,3 @@ There are a few functions specific to Python functions.
    it before returning.
 
    .. versionadded:: 3.12
-
