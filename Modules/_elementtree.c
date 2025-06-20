@@ -17,6 +17,7 @@
 
 #include "Python.h"
 #include "pycore_pyhash.h"        // _Py_HashSecret
+#include "pycore_weakref.h"
 
 #include <stddef.h>               // offsetof()
 #include "expat.h"
@@ -690,7 +691,7 @@ element_dealloc(PyObject *op)
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(self);
 
-    PyObject_ClearWeakRefs(op);
+    FT_CLEAR_WEAKREFS(op, self->weakreflist);
 
     /* element_gc_clear clears all references and deallocates extra
     */

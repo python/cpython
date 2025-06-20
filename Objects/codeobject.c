@@ -17,6 +17,7 @@
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "pycore_unicodeobject.h" // _PyUnicode_InternImmortal()
 #include "pycore_uniqueid.h"      // _PyObject_AssignUniqueId()
+#include "pycore_weakref.h"
 
 #include "clinic/codeobject.c.h"
 #include <stdbool.h>
@@ -2436,7 +2437,7 @@ code_dealloc(PyObject *self)
         Py_XDECREF(co->_co_cached->_co_varnames);
         PyMem_Free(co->_co_cached);
     }
-    PyObject_ClearWeakRefs(self);
+    FT_CLEAR_WEAKREFS(self, co->co_weakreflist);
     free_monitoring_data(co->_co_monitoring);
 #ifdef Py_GIL_DISABLED
     // The first element always points to the mutable bytecode at the end of

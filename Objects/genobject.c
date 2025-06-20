@@ -17,6 +17,7 @@
 #include "pycore_pyerrors.h"      // _PyErr_ClearExcState()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_warnings.h"      // _PyErr_WarnUnawaitedCoroutine()
+#include "pycore_weakref.h"
 
 
 #include "opcode_ids.h"           // RESUME, etc
@@ -161,7 +162,7 @@ gen_dealloc(PyObject *self)
 
     _PyObject_GC_UNTRACK(gen);
 
-    PyObject_ClearWeakRefs(self);
+    FT_CLEAR_WEAKREFS(self, gen->gi_weakreflist);
 
     _PyObject_GC_TRACK(self);
 

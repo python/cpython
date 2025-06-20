@@ -13,6 +13,7 @@
 #include "pycore_object.h"              // _PyObject_GC_UNTRACK()
 #include "pycore_pyerrors.h"            // _Py_FatalErrorFormat()
 #include "pycore_pylifecycle.h"         // _Py_IsInterpreterFinalizing()
+#include "pycore_weakref.h"
 
 #include "_iomodule.h"
 
@@ -421,7 +422,7 @@ buffered_dealloc(PyObject *op)
         return;
     _PyObject_GC_UNTRACK(self);
     self->ok = 0;
-    PyObject_ClearWeakRefs(op);
+    FT_CLEAR_WEAKREFS(op, self->weakreflist);
     if (self->buffer) {
         PyMem_Free(self->buffer);
         self->buffer = NULL;
@@ -2311,7 +2312,7 @@ bufferedrwpair_dealloc(PyObject *op)
     rwpair *self = rwpair_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
     _PyObject_GC_UNTRACK(self);
-    PyObject_ClearWeakRefs(op);
+    FT_CLEAR_WEAKREFS(op, self->weakreflist);
     (void)bufferedrwpair_clear(op);
     tp->tp_free(self);
     Py_DECREF(tp);

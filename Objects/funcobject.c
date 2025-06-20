@@ -10,6 +10,7 @@
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_stats.h"
+#include "pycore_weakref.h"
 
 
 static const char *
@@ -1148,7 +1149,7 @@ func_dealloc(PyObject *self)
         return;
     }
     _PyObject_GC_UNTRACK(op);
-    PyObject_ClearWeakRefs(self);
+    FT_CLEAR_WEAKREFS(self, op->func_weakreflist);
     (void)func_clear((PyObject*)op);
     // These aren't cleared by func_clear().
     _Py_DECREF_CODE((PyCodeObject *)op->func_code);

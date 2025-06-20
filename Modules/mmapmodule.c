@@ -25,6 +25,7 @@
 #include <Python.h>
 #include "pycore_bytesobject.h"   // _PyBytes_Find()
 #include "pycore_fileutils.h"     // _Py_stat_struct
+#include "pycore_weakref.h"
 
 #include <stddef.h>               // offsetof()
 #ifndef MS_WINDOWS
@@ -163,7 +164,7 @@ mmap_object_dealloc(PyObject *op)
     Py_END_ALLOW_THREADS
 #endif /* UNIX */
 
-    PyObject_ClearWeakRefs(op);
+    FT_CLEAR_WEAKREFS(op, m_obj->weakreflist);
 
     tp->tp_free(m_obj);
     Py_DECREF(tp);
