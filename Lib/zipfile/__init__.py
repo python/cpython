@@ -765,6 +765,13 @@ class LZMADecompressor:
         self._unconsumed = b''
         self.eof = False
 
+    @property
+    def unused_data(self):
+        try:
+            return self._decomp.unused_data
+        except AttributeError:
+            return b''
+
     def decompress(self, data):
         if self._decomp is None:
             self._unconsumed += data
@@ -1480,7 +1487,8 @@ class _ZipRepacker:
             # may raise on an invalid local file header
             used_entry_size = self._calc_local_file_entry_size(fp, zinfo)
 
-            self._debug(3, i, zinfo.orig_filename, zinfo.header_offset, entry_size, used_entry_size)
+            self._debug(3, 'entry:', i, zinfo.orig_filename,
+                        zinfo.header_offset, entry_size, used_entry_size)
             if used_entry_size > entry_size:
                 raise BadZipFile(
                     f"Overlapped entries: {zinfo.orig_filename!r} ")
@@ -1515,7 +1523,7 @@ class _ZipRepacker:
                     fp,
                     old_header_offset + used_entry_size,
                     zinfo.header_offset,
-                    entry_size - used_entry_size
+                    entry_size - used_entry_size,
                 )
 
                 # update entry_offset for subsequent files to follow
@@ -1523,16 +1531,18 @@ class _ZipRepacker:
 
             else:
                 if entry_offset > 0:
-                    self._copy_bytes(fp, old_header_offset, zinfo.header_offset, used_entry_size)
-
-                if used_entry_size < entry_size:
-                    stale_entry_size = self._validate_local_file_entry_sequence(
+                    self._copy_bytes(
                         fp,
-                        old_header_offset + used_entry_size,
-                        old_header_offset + entry_size,
+                        old_header_offset,
+                        zinfo.header_offset,
+                        used_entry_size,
                     )
-                else:
-                    stale_entry_size = 0
+
+                stale_entry_size = self._validate_local_file_entry_sequence(
+                    fp,
+                    old_header_offset + used_entry_size,
+                    old_header_offset + entry_size,
+                )
 
                 if stale_entry_size > 0:
                     self._copy_bytes(
@@ -1564,7 +1574,8 @@ class _ZipRepacker:
             self._debug(3, 'scanning file signatures before:', data_offset)
             for pos in self._iter_scan_signature(fp, stringFileHeader, 0, data_offset):
                 self._debug(3, 'checking file signature at:', pos)
-                entry_size = self._validate_local_file_entry_sequence(fp, pos, data_offset, checked_offsets)
+                entry_size = self._validate_local_file_entry_sequence(
+                    fp, pos, data_offset, checked_offsets)
                 if entry_size == data_offset - pos:
                     return entry_size
         return 0
@@ -1639,8 +1650,9 @@ class _ZipRepacker:
         if pos > end_offset:
             return None
 
+        # parse zip64
         try:
-            zinfo._decodeExtra(crc32(filename))  # parse zip64
+            zinfo._decodeExtra(crc32(filename))
         except BadZipFile:
             return None
 
@@ -1657,14 +1669,14 @@ class _ZipRepacker:
             zip64 = fheader[_FH_UNCOMPRESSED_SIZE] == 0xffffffff
 
             dd = self._scan_data_descriptor(fp, pos, end_offset, zip64)
-            if dd is None:
-                dd = self._scan_data_descriptor_no_sig_by_decompression(
-                    fp, pos, end_offset, zip64, fheader[_FH_COMPRESSION_METHOD])
+            if dd is None and not self.strict_descriptor:
+                if zinfo.flag_bits & _MASK_ENCRYPTED:
+                    dd = False
+                else:
+                    dd = self._scan_data_descriptor_no_sig_by_decompression(
+                        fp, pos, end_offset, zip64, fheader[_FH_COMPRESSION_METHOD])
                 if dd is False:
-                    if not self.strict_descriptor:
-                        dd = self._scan_data_descriptor_no_sig(fp, pos, end_offset, zip64)
-                    else:
-                        dd = None
+                    dd = self._scan_data_descriptor_no_sig(fp, pos, end_offset, zip64)
             if dd is None:
                 return None
 
@@ -1747,14 +1759,10 @@ class _ZipRepacker:
         if decompressor is None:
             return False
 
-        # Current LZMADecompressor is unreliable since it's `.eof` is usually
-        # not set as expected.
-        if isinstance(decompressor, LZMADecompressor):
-            return False
-
         dd_fmt = '<LQQ' if zip64 else '<LLL'
         dd_size = struct.calcsize(dd_fmt)
 
+        # early return and prevent potential `fp.read(-1)`
         if end_offset - dd_size < offset:
             return None
 
@@ -2339,15 +2347,16 @@ class ZipFile:
 
         with self._lock:
             # get the zinfo
-            # raise KeyError if arcname does not exist
             if isinstance(zinfo_or_arcname, ZipInfo):
                 zinfo = zinfo_or_arcname
-                if zinfo not in self.filelist:
-                    raise KeyError('There is no item %r in the archive' % zinfo)
             else:
+                # raise KeyError if arcname does not exist
                 zinfo = self.getinfo(zinfo_or_arcname)
 
-            self.filelist.remove(zinfo)
+            try:
+                self.filelist.remove(zinfo)
+            except ValueError:
+                raise KeyError('There is no item %r in the archive' % zinfo) from None
 
             try:
                 del self.NameToInfo[zinfo.filename]

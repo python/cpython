@@ -1724,6 +1724,25 @@ class AbstractRepackTests(RepackHelperMixin):
                 with zipfile.ZipFile(TESTFN) as zh:
                     self.assertIsNone(zh.testzip())
 
+    def test_repack_propagation(self):
+        """Should call internal API with adequate parameters."""
+        self._prepare_zip_from_test_files(TESTFN, self.test_files)
+
+        with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
+            with mock.patch.object(zipfile._ZipRepacker, 'repack') as m_rp, \
+                 mock.patch.object(zipfile, '_ZipRepacker', wraps=zipfile._ZipRepacker) as m_zr:
+                zh.repack()
+        m_zr.assert_called_once_with()
+        m_rp.assert_called_once_with(zh, None)
+
+        with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
+            zi = zh.remove(zh.infolist()[0])
+            with mock.patch.object(zipfile._ZipRepacker, 'repack') as m_rp, \
+                 mock.patch.object(zipfile, '_ZipRepacker', wraps=zipfile._ZipRepacker) as m_zr:
+                zh.repack([zi], strict_descriptor=True, chunk_size=1024)
+        m_zr.assert_called_once_with(strict_descriptor=True, chunk_size=1024)
+        m_rp.assert_called_once_with(zh, [zi])
+
     def test_repack_bytes_before_first_file(self):
         """Should preserve random bytes before the first recorded local file entry."""
         for ii in ([], [0], [0, 1], [0, 1, 2]):
@@ -1961,246 +1980,29 @@ class AbstractRepackTests(RepackHelperMixin):
         with zipfile.ZipFile(TESTFN) as zh:
             self.assertIsNone(zh.testzip())
 
-    def test_repack_zip64(self):
-        """Should correctly handle file entries with zip64."""
-        for ii in ([0], [0, 1], [1], [2]):
+    def test_repack_prepended_bytes(self):
+        for ii in ([], [0], [0, 1], [1], [2]):
             with self.subTest(remove=ii):
                 # calculate the expected results
                 test_files = [data for j, data in enumerate(self.test_files) if j not in ii]
-                expected_zinfos = self._prepare_zip_from_test_files(TESTFN, test_files, force_zip64=True)
-                expected_size = os.path.getsize(TESTFN)
-
-                # do the removal and check the result
-                self._prepare_zip_from_test_files(TESTFN, self.test_files, force_zip64=True)
-                with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
-                    for i in ii:
-                        zh.remove(self.test_files[i][0])
-                    zh.repack()
-
-                    # check infolist
-                    self.assertEqual(
-                        [ComparableZipInfo(zi) for zi in zh.infolist()],
-                        expected_zinfos,
-                    )
-
-                # check file size
-                self.assertEqual(os.path.getsize(TESTFN), expected_size)
-
-                # make sure the zip file is still valid
+                fz = io.BytesIO()
+                self._prepare_zip_from_test_files(fz, test_files)
+                fz.seek(0)
+                with open(TESTFN, 'wb') as fh:
+                    fh.write(b'dummy ')
+                    fh.write(fz.read())
                 with zipfile.ZipFile(TESTFN) as zh:
-                    self.assertIsNone(zh.testzip())
-
-    def test_repack_data_descriptor(self):
-        """Should correctly handle file entries using data descriptor."""
-        for ii in ([0], [0, 1], [1], [2]):
-            with self.subTest(remove=ii):
-                # calculate the expected results
-                test_files = [data for j, data in enumerate(self.test_files) if j not in ii]
-                with open(TESTFN, 'wb') as fh:
-                    expected_zinfos = self._prepare_zip_from_test_files(Unseekable(fh), test_files)
-                expected_size = os.path.getsize(TESTFN)
-
-                # do the removal and check the result
-                with open(TESTFN, 'wb') as fh:
-                    self._prepare_zip_from_test_files(Unseekable(fh), self.test_files)
-                with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
-                    # make sure data descriptor bit is really set (by making zipfile unseekable)
-                    for zi in zh.infolist():
-                        self.assertTrue(zi.flag_bits & 8, f'data descriptor not used: {zi.filename}')
-
-                    for i in ii:
-                        zh.remove(self.test_files[i][0])
-                    zh.repack()
-
-                    # check infolist
-                    self.assertEqual(
-                        [ComparableZipInfo(zi) for zi in zh.infolist()],
-                        expected_zinfos,
-                    )
-
-                # check file size
-                self.assertEqual(os.path.getsize(TESTFN), expected_size)
-
-                # make sure the zip file is still valid
-                with zipfile.ZipFile(TESTFN) as zh:
-                    self.assertIsNone(zh.testzip())
-
-    def test_repack_data_descriptor_and_zip64(self):
-        """Should correctly handle file entries using data descriptor and zip64."""
-        for ii in ([0], [0, 1], [1], [2]):
-            with self.subTest(remove=ii):
-                # calculate the expected results
-                test_files = [data for j, data in enumerate(self.test_files) if j not in ii]
-                with open(TESTFN, 'wb') as fh:
-                    expected_zinfos = self._prepare_zip_from_test_files(Unseekable(fh), test_files, force_zip64=True)
-                expected_size = os.path.getsize(TESTFN)
-
-                # do the removal and check the result
-                with open(TESTFN, 'wb') as fh:
-                    self._prepare_zip_from_test_files(Unseekable(fh), self.test_files, force_zip64=True)
-                with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
-                    # make sure data descriptor bit is really set (by making zipfile unseekable)
-                    for zi in zh.infolist():
-                        self.assertTrue(zi.flag_bits & 8, f'data descriptor not used: {zi.filename}')
-
-                    for i in ii:
-                        zh.remove(self.test_files[i][0])
-                    zh.repack()
-
-                    # check infolist
-                    self.assertEqual(
-                        [ComparableZipInfo(zi) for zi in zh.infolist()],
-                        expected_zinfos,
-                    )
-
-                # check file size
-                self.assertEqual(os.path.getsize(TESTFN), expected_size)
-
-                # make sure the zip file is still valid
-                with zipfile.ZipFile(TESTFN) as zh:
-                    self.assertIsNone(zh.testzip())
-
-    def test_repack_data_descriptor_no_sig(self):
-        """Should correctly handle file entries using data descriptor without signature."""
-        for ii in ([0], [0, 1], [1], [2]):
-            with self.subTest(remove=ii):
-                # calculate the expected results
-                test_files = [data for j, data in enumerate(self.test_files) if j not in ii]
-                with open(TESTFN, 'wb') as fh:
-                    with mock.patch.object(struct, 'pack', side_effect=struct_pack_no_dd_sig):
-                        expected_zinfos = self._prepare_zip_from_test_files(Unseekable(fh), test_files)
-                expected_size = os.path.getsize(TESTFN)
-
-                # do the removal and check the result
-                with open(TESTFN, 'wb') as fh:
-                    with mock.patch.object(struct, 'pack', side_effect=struct_pack_no_dd_sig):
-                        self._prepare_zip_from_test_files(Unseekable(fh), self.test_files)
-                with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
-                    # make sure data descriptor bit is really set (by making zipfile unseekable)
-                    for zi in zh.infolist():
-                        self.assertTrue(zi.flag_bits & 8, f'data descriptor flag not set: {zi.filename}')
-
-                    for i in ii:
-                        zh.remove(self.test_files[i][0])
-                    zh.repack()
-
-                    # check infolist
-                    self.assertEqual(
-                        [ComparableZipInfo(zi) for zi in zh.infolist()],
-                        expected_zinfos,
-                    )
-
-                # check file size
-                self.assertEqual(os.path.getsize(TESTFN), expected_size)
-
-                # make sure the zip file is still valid
-                with zipfile.ZipFile(TESTFN) as zh:
-                    self.assertIsNone(zh.testzip())
-
-    def test_repack_data_descriptor_no_sig_strict(self):
-        """Should skip data descriptor without signature when `strict_descriptor` is set."""
-        if self.compression not in (zipfile.ZIP_STORED, zipfile.ZIP_LZMA):
-            self.skipTest('require unsupported decompression method')
-
-        for ii in ([0], [0, 1], [1], [2]):
-            with self.subTest(remove=ii):
-                # calculate the expected results
-                with open(TESTFN, 'wb') as fh:
-                    with mock.patch.object(struct, 'pack', side_effect=struct_pack_no_dd_sig):
-                        self._prepare_zip_from_test_files(Unseekable(fh), self.test_files)
-                with zipfile.ZipFile(TESTFN, 'a') as zh:
-                    for i in ii:
-                        zh.remove(self.test_files[i][0])
                     expected_zinfos = [ComparableZipInfo(zi) for zi in zh.infolist()]
                 expected_size = os.path.getsize(TESTFN)
 
                 # do the removal and check the result
+                fz = io.BytesIO()
+                self._prepare_zip_from_test_files(fz, self.test_files)
+                fz.seek(0)
                 with open(TESTFN, 'wb') as fh:
-                    with mock.patch.object(struct, 'pack', side_effect=struct_pack_no_dd_sig):
-                        self._prepare_zip_from_test_files(Unseekable(fh), self.test_files)
+                    fh.write(b'dummy ')
+                    fh.write(fz.read())
                 with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
-                    # make sure data descriptor bit is really set (by making zipfile unseekable)
-                    for zi in zh.infolist():
-                        self.assertTrue(zi.flag_bits & 8, f'data descriptor flag not set: {zi.filename}')
-
-                    for i in ii:
-                        zh.remove(self.test_files[i][0])
-                    zh.repack(strict_descriptor=True)
-
-                    # check infolist
-                    self.assertEqual(
-                        [ComparableZipInfo(zi) for zi in zh.infolist()],
-                        expected_zinfos,
-                    )
-
-                # check file size
-                self.assertEqual(os.path.getsize(TESTFN), expected_size)
-
-                # make sure the zip file is still valid
-                with zipfile.ZipFile(TESTFN) as zh:
-                    self.assertIsNone(zh.testzip())
-
-    def test_repack_data_descriptor_no_sig_strict_by_decompressoin(self):
-        """Should correctly handle file entries using data descriptor without signature
-        through decompression."""
-        if self.compression in (zipfile.ZIP_STORED, zipfile.ZIP_LZMA):
-            self.skipTest('require supported decompression method')
-
-        for ii in ([0], [0, 1], [1], [2]):
-            with self.subTest(remove=ii):
-                # calculate the expected results
-                test_files = [data for j, data in enumerate(self.test_files) if j not in ii]
-                with open(TESTFN, 'wb') as fh:
-                    with mock.patch.object(struct, 'pack', side_effect=struct_pack_no_dd_sig):
-                        expected_zinfos = self._prepare_zip_from_test_files(Unseekable(fh), test_files)
-                expected_size = os.path.getsize(TESTFN)
-
-                # do the removal and check the result
-                with open(TESTFN, 'wb') as fh:
-                    with mock.patch.object(struct, 'pack', side_effect=struct_pack_no_dd_sig):
-                        self._prepare_zip_from_test_files(Unseekable(fh), self.test_files)
-                with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
-                    # make sure data descriptor bit is really set (by making zipfile unseekable)
-                    for zi in zh.infolist():
-                        self.assertTrue(zi.flag_bits & 8, f'data descriptor flag not set: {zi.filename}')
-
-                    for i in ii:
-                        zh.remove(self.test_files[i][0])
-                    zh.repack(strict_descriptor=True)
-
-                    # check infolist
-                    self.assertEqual(
-                        [ComparableZipInfo(zi) for zi in zh.infolist()],
-                        expected_zinfos,
-                    )
-
-                # check file size
-                self.assertEqual(os.path.getsize(TESTFN), expected_size)
-
-                # make sure the zip file is still valid
-                with zipfile.ZipFile(TESTFN) as zh:
-                    self.assertIsNone(zh.testzip())
-
-    def test_repack_data_descriptor_no_sig_and_zip64(self):
-        """Should correctly handle file entries using data descriptor without signature and zip64."""
-        for ii in ([0], [0, 1], [1], [2]):
-            with self.subTest(remove=ii):
-                # calculate the expected results
-                test_files = [data for j, data in enumerate(self.test_files) if j not in ii]
-                with open(TESTFN, 'wb') as fh:
-                    with mock.patch.object(struct, 'pack', side_effect=struct_pack_no_dd_sig):
-                        expected_zinfos = self._prepare_zip_from_test_files(Unseekable(fh), test_files, force_zip64=True)
-                expected_size = os.path.getsize(TESTFN)
-
-                # do the removal and check the result
-                with open(TESTFN, 'wb') as fh:
-                    with mock.patch.object(struct, 'pack', side_effect=struct_pack_no_dd_sig):
-                        self._prepare_zip_from_test_files(Unseekable(fh), self.test_files, force_zip64=True)
-                with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
-                    # make sure data descriptor bit is really set (by making zipfile unseekable)
-                    for zi in zh.infolist():
-                        self.assertTrue(zi.flag_bits & 8, f'data descriptor flag not set: {zi.filename}')
-
                     for i in ii:
                         zh.remove(self.test_files[i][0])
                     zh.repack()
@@ -2222,15 +2024,15 @@ class AbstractRepackTests(RepackHelperMixin):
         for ii in ([0], [1], [2]):
             with self.subTest(remove=ii):
                 self._prepare_zip_from_test_files(TESTFN, self.test_files)
-                with open(TESTFN, 'r+b') as fh:
-                    with zipfile.ZipFile(fh, 'a') as zh:
-                        zh.writestr('file.txt', b'dummy')
-                        for i in ii:
-                            zh.infolist()[i].file_size += 50
-                            zh.infolist()[i].compress_size += 50
+                with zipfile.ZipFile(TESTFN, 'a') as zh:
+                    zh._didModify = True
+                    for i in ii:
+                        zi = zh.infolist()[i]
+                        zi.compress_size += 1
+                        zi.file_size += 1
 
                 with zipfile.ZipFile(TESTFN, 'a') as zh:
-                    with self.assertRaises(zipfile.BadZipFile):
+                    with self.assertRaisesRegex(zipfile.BadZipFile, 'Overlapped entries'):
                         zh.repack()
 
     def test_repack_removed_basic(self):
@@ -2336,15 +2138,78 @@ class AbstractRepackTests(RepackHelperMixin):
                 with zipfile.ZipFile(TESTFN) as zh:
                     self.assertIsNone(zh.testzip())
 
-    def test_repack_removed_bad_removed_zinfos(self):
-        """Should raise when providing non-removed zinfos."""
+    def test_repack_removed_bad_header_offset(self):
+        """Should raise when provided ZipInfo objects has differing header offset."""
+        for ii in ([0], [1], [2]):
+            with self.subTest(removed=ii):
+                self._prepare_zip_from_test_files(TESTFN, self.test_files)
+                with zipfile.ZipFile(TESTFN, 'a') as zh:
+                    zinfos = [zh.remove(self.test_files[i][0]) for i in ii]
+                    for zi in zinfos:
+                        zi.header_offset += 1
+                    with self.assertRaisesRegex(zipfile.BadZipFile, 'Bad magic number for file header'):
+                        zh.repack(zinfos)
+
+    def test_repack_removed_bad_header_offset2(self):
+        """Should raise when provided ZipInfo objects has differing header offset."""
+        for ii in ([1], [2]):
+            with self.subTest(removed=ii):
+                self._prepare_zip_from_test_files(TESTFN, self.test_files)
+                with zipfile.ZipFile(TESTFN, 'a') as zh:
+                    zinfos = [zh.remove(self.test_files[i][0]) for i in ii]
+                    for zi in zinfos:
+                        zi.header_offset -= 1
+                    with self.assertRaisesRegex(zipfile.BadZipFile, 'Overlapped entries'):
+                        zh.repack(zinfos)
+
+    def test_repack_removed_bad_non_removed(self):
+        """Should raise when provided ZipInfo objects are not removed."""
         for ii in ([0], [1], [2]):
             with self.subTest(removed=ii):
                 self._prepare_zip_from_test_files(TESTFN, self.test_files)
                 with zipfile.ZipFile(TESTFN, 'a') as zh:
                     zinfos = [zh.getinfo(self.test_files[i][0]) for i in ii]
-                    with self.assertRaises(zipfile.BadZipFile):
+                    with self.assertRaisesRegex(zipfile.BadZipFile, 'Overlapped entries'):
                         zh.repack(zinfos)
+
+    def test_repack_removed_prepended_bytes(self):
+        for ii in ([], [0], [0, 1], [1], [2]):
+            with self.subTest(remove=ii):
+                # calculate the expected results
+                test_files = [data for j, data in enumerate(self.test_files) if j not in ii]
+                fz = io.BytesIO()
+                self._prepare_zip_from_test_files(fz, test_files)
+                fz.seek(0)
+                with open(TESTFN, 'wb') as fh:
+                    fh.write(b'dummy ')
+                    fh.write(fz.read())
+                with zipfile.ZipFile(TESTFN) as zh:
+                    expected_zinfos = [ComparableZipInfo(zi) for zi in zh.infolist()]
+                expected_size = os.path.getsize(TESTFN)
+
+                # do the removal and check the result
+                fz = io.BytesIO()
+                self._prepare_zip_from_test_files(fz, self.test_files)
+                fz.seek(0)
+                with open(TESTFN, 'wb') as fh:
+                    fh.write(b'dummy ')
+                    fh.write(fz.read())
+                with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
+                    zinfos = [zh.remove(self.test_files[i][0]) for i in ii]
+                    zh.repack(zinfos)
+
+                    # check infolist
+                    self.assertEqual(
+                        [ComparableZipInfo(zi) for zi in zh.infolist()],
+                        expected_zinfos,
+                    )
+
+                # check file size
+                self.assertEqual(os.path.getsize(TESTFN), expected_size)
+
+                # make sure the zip file is still valid
+                with zipfile.ZipFile(TESTFN) as zh:
+                    self.assertIsNone(zh.testzip())
 
     @mock.patch.object(zipfile, '_ZipRepacker')
     def test_repack_closed(self, m_repack):
@@ -2405,7 +2270,537 @@ class LzmaRepackTests(AbstractRepackTests, unittest.TestCase):
 class ZstdRepackTests(AbstractRepackTests, unittest.TestCase):
     compression = zipfile.ZIP_ZSTANDARD
 
+class OtherRepackTests(unittest.TestCase):
+    def test_full_overlap_different_names(self):
+        # see `test_full_overlap_different_names` in built-in test.test_zipfile
+        data = (
+            b'PK\x03\x04\x14\x00\x00\x00\x08\x00\xa0lH\x05\xe2\x1e'
+            b'8\xbb\x10\x00\x00\x00\t\x04\x00\x00\x01\x00\x00\x00b\xed'
+            b'\xc0\x81\x08\x00\x00\x00\xc00\xd6\xfbK\\d\x0b`P'
+            b'K\x01\x02\x14\x00\x14\x00\x00\x00\x08\x00\xa0lH\x05\xe2'
+            b'\x1e8\xbb\x10\x00\x00\x00\t\x04\x00\x00\x01\x00\x00\x00\x00'
+            b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00aPK'
+            b'\x01\x02\x14\x00\x14\x00\x00\x00\x08\x00\xa0lH\x05\xe2\x1e'
+            b'8\xbb\x10\x00\x00\x00\t\x04\x00\x00\x01\x00\x00\x00\x00\x00'
+            b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00bPK\x05'
+            b'\x06\x00\x00\x00\x00\x02\x00\x02\x00^\x00\x00\x00/\x00\x00'
+            b'\x00\x00\x00'
+        )
+
+        with zipfile.ZipFile(io.BytesIO(data), 'a') as zh:
+            with self.assertRaisesRegex(zipfile.BadZipFile, 'Overlapped entries'):
+                zh.repack()
+
+        with zipfile.ZipFile(io.BytesIO(data), 'a') as zh:
+            zi = zh.remove('a')
+            with self.assertRaisesRegex(zipfile.BadZipFile, 'Overlapped entries'):
+                zh.repack([zi])
+
+        # local entry of 'a' should not be stripped (not found)
+        fz = io.BytesIO(data)
+        with zipfile.ZipFile(fz, 'a') as zh:
+            zh.remove('a')
+            zh.repack()
+
+        expected = (
+            b'PK\x03\x04\x14\x00\x00\x00\x08\x00\xa0lH\x05\xe2\x1e'
+            b'8\xbb\x10\x00\x00\x00\t\x04\x00\x00\x01\x00\x00\x00b\xed'
+            b'\xc0\x81\x08\x00\x00\x00\xc00\xd6\xfbK\\d\x0b`P'
+            b'K\x01\x02\x14\x00\x14\x00\x00\x00\x08\x00\xa0lH\x05\xe2'
+            b'\x1e8\xbb\x10\x00\x00\x00\t\x04\x00\x00\x01\x00\x00\x00\x00'
+            b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00b'
+            b'PK\x05\x06\x00\x00\x00\x00\x01\x00\x01\x00/\x00\x00\x00/\x00'
+            b'\x00\x00\x00\x00'
+        )
+        fz.seek(0)
+        self.assertEqual(fz.read(), expected)
+
+    def test_quoted_overlap(self):
+        # see `test_quoted_overlap` in built-in test.test_zipfile
+        data = (
+            b'PK\x03\x04\x14\x00\x00\x00\x08\x00\xa0lH\x05Y\xfc'
+            b'8\x044\x00\x00\x00(\x04\x00\x00\x01\x00\x00\x00a\x00'
+            b'\x1f\x00\xe0\xffPK\x03\x04\x14\x00\x00\x00\x08\x00\xa0l'
+            b'H\x05\xe2\x1e8\xbb\x10\x00\x00\x00\t\x04\x00\x00\x01\x00'
+            b'\x00\x00b\xed\xc0\x81\x08\x00\x00\x00\xc00\xd6\xfbK\\'
+            b'd\x0b`PK\x01\x02\x14\x00\x14\x00\x00\x00\x08\x00\xa0'
+            b'lH\x05Y\xfc8\x044\x00\x00\x00(\x04\x00\x00\x01'
+            b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+            b'\x00aPK\x01\x02\x14\x00\x14\x00\x00\x00\x08\x00\xa0l'
+            b'H\x05\xe2\x1e8\xbb\x10\x00\x00\x00\t\x04\x00\x00\x01\x00'
+            b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00$\x00\x00\x00'
+            b'bPK\x05\x06\x00\x00\x00\x00\x02\x00\x02\x00^\x00\x00'
+            b'\x00S\x00\x00\x00\x00\x00'
+        )
+
+        with zipfile.ZipFile(io.BytesIO(data), 'a') as zh:
+            with self.assertRaisesRegex(zipfile.BadZipFile, 'Overlapped entries'):
+                zh.repack()
+
+        with zipfile.ZipFile(io.BytesIO(data), 'a') as zh:
+            zi = zh.remove('a')
+            with self.assertRaisesRegex(zipfile.BadZipFile, 'Overlapped entries'):
+                zh.repack([zi])
+
+        # local entry of 'a' should not be stripped (no valid entry)
+        fz = io.BytesIO(data)
+        with zipfile.ZipFile(fz, 'a') as zh:
+            zh.remove('a')
+            zh.repack()
+
+        expected = (
+            b'PK\x03\x04\x14\x00\x00\x00\x08\x00\xa0lH\x05Y\xfc'
+            b'8\x044\x00\x00\x00(\x04\x00\x00\x01\x00\x00\x00a\x00'
+            b'\x1f\x00\xe0\xffPK\x03\x04\x14\x00\x00\x00\x08\x00\xa0l'
+            b'H\x05\xe2\x1e8\xbb\x10\x00\x00\x00\t\x04\x00\x00\x01\x00'
+            b'\x00\x00b\xed\xc0\x81\x08\x00\x00\x00\xc00\xd6\xfbK\\'
+            b'd\x0b`PK\x01\x02\x14\x00\x14\x00\x00\x00\x08\x00\xa0l'
+            b'H\x05\xe2\x1e8\xbb\x10\x00\x00\x00\t\x04\x00\x00\x01\x00'
+            b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00$\x00\x00\x00'
+            b'bPK\x05\x06\x00\x00\x00\x00\x01\x00\x01\x00/\x00\x00'
+            b'\x00S\x00\x00\x00\x00\x00'
+        )
+        fz.seek(0)
+        self.assertEqual(fz.read(), expected)
+
+    def test_partial_overlap_at_dd(self):
+        # file 'a' has an unsigned data descriptor (whose information isn't
+        # consistent with in central directory) that starts at the starting
+        # position of file 'b'
+        data = (
+            b'PK\x03\x04\x14\x00\x08\x00\x00\x00\x00\x00!\x00\x00\x00\x00'
+            b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00acontent'
+            b'PK\x03\x04\x14\x00\x00\x00\x00\x00\x00\x00!\x00\xa90\xc5\xfe'
+            b'\x07\x00\x00\x00\x07\x00\x00\x00\x01\x00\x00\x00bcontent'
+            b'PK\x01\x02\x14\x00\x14\x00\x08\x00\x00\x00\x00\x00!\x00'
+            b'\xa90\xc5\xfe\x07\x00\x00\x00\x07\x00\x00\x00\x01\x00\x00\x00'
+            b'\x00\x00\x00\x00\x00\x00\x00\x00\x80\x01\x00\x00\x00\x00a'
+            b'PK\x01\x02\x14\x00\x14\x00\x00\x00\x00\x00\x00\x00!\x00'
+            b'\xa90\xc5\xfe\x07\x00\x00\x00\x07\x00\x00\x00\x01\x00\x00\x00'
+            b'\x00\x00\x00\x00\x00\x00\x00\x00\x80\x01&\x00\x00\x00b'
+            b'PK\x05\x06\x00\x00\x00\x00\x02\x00\x02\x00^\x00\x00\x00L\x00'
+            b'\x00\x00\x00\x00'
+        )
+
+        with zipfile.ZipFile(io.BytesIO(data), 'a') as zh:
+            zi = zh.getinfo('a')
+            self.assertEqual(zi.header_offset, 0)
+            self.assertEqual(zi.compress_size, 7)
+            self.assertEqual(zi.file_size, 7)
+            self.assertEqual(zi.flag_bits, 8)
+            zi = zh.getinfo('b')
+            self.assertEqual(zi.header_offset, 38)
+            self.assertEqual(zi.compress_size, 7)
+            self.assertEqual(zi.file_size, 7)
+            self.assertEqual(zi.flag_bits, 0)
+            with self.assertRaisesRegex(zipfile.BadZipFile, 'Overlapped entries'):
+                zh.repack()
+
+        with zipfile.ZipFile(io.BytesIO(data), 'a') as zh:
+            zi = zh.remove('a')
+            with self.assertRaisesRegex(zipfile.BadZipFile, 'Overlapped entries'):
+                zh.repack([zi])
+
+        # local entry of 'a' should not be stripped (no valid entry)
+        fz = io.BytesIO(data)
+        with zipfile.ZipFile(fz, 'a') as zh:
+            zh.remove('a')
+            zh.repack()
+
+        expected = (
+            b'PK\x03\x04\x14\x00\x08\x00\x00\x00\x00\x00!\x00\x00\x00\x00'
+            b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00acontent'
+            b'PK\x03\x04\x14\x00\x00\x00\x00\x00\x00\x00!\x00\xa90\xc5\xfe'
+            b'\x07\x00\x00\x00\x07\x00\x00\x00\x01\x00\x00\x00bcontent'
+            b'PK\x01\x02\x14\x00\x14\x00\x00\x00\x00\x00\x00\x00!\x00'
+            b'\xa90\xc5\xfe\x07\x00\x00\x00\x07\x00\x00\x00\x01\x00\x00\x00'
+            b'\x00\x00\x00\x00\x00\x00\x00\x00\x80\x01&\x00\x00\x00b'
+            b'PK\x05\x06\x00\x00\x00\x00\x01\x00\x01\x00/\x00\x00\x00L\x00'
+            b'\x00\x00\x00\x00'
+        )
+        fz.seek(0)
+        self.assertEqual(fz.read(), expected)
+
+    def test_overlap_with_central_dir(self):
+        # see `test_overlap_with_central_dir` in built-in test.test_zipfile
+        data = (
+            b'PK\x01\x02\x14\x03\x14\x00\x00\x00\x08\x00G_|Z'
+            b'\xe2\x1e8\xbb\x0b\x00\x00\x00\t\x04\x00\x00\x01\x00\x00\x00'
+            b'\x00\x00\x00\x00\x00\x00\x00\x00\xb4\x81\x00\x00\x00\x00aP'
+            b'K\x05\x06\x00\x00\x00\x00\x01\x00\x01\x00/\x00\x00\x00\x00'
+            b'\x00\x00\x00\x00\x00'
+        )
+
+        with zipfile.ZipFile(io.BytesIO(data), 'a') as zh:
+            with self.assertRaisesRegex(zipfile.BadZipFile, 'Bad magic number for file header'):
+                zh.repack()
+
+        with zipfile.ZipFile(io.BytesIO(data), 'a') as zh:
+            zi = zh.remove('a')
+            with self.assertRaisesRegex(zipfile.BadZipFile, 'Bad magic number for file header'):
+                zh.repack([zi])
+
+        # local entry of 'a' should not be stripped (not found)
+        fz = io.BytesIO(data)
+        with zipfile.ZipFile(fz, 'a') as zh:
+            zh.remove('a')
+            zh.repack()
+
+        expected = (
+            b'PK\x05\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+            b'\x00\x00\x00\x00'
+        )
+        fz.seek(0)
+        self.assertEqual(fz.read(), expected)
+
+    def test_overlap_with_archive_comment(self):
+        # see `test_overlap_with_archive_comment` in built-in test.test_zipfile
+        data = (
+            b'PK\x01\x02\x14\x03\x14\x00\x00\x00\x08\x00G_|Z'
+            b'\xe2\x1e8\xbb\x0b\x00\x00\x00\t\x04\x00\x00\x01\x00\x00\x00'
+            b'\x00\x00\x00\x00\x00\x00\x00\x00\xb4\x81E\x00\x00\x00aP'
+            b'K\x05\x06\x00\x00\x00\x00\x01\x00\x01\x00/\x00\x00\x00\x00'
+            b'\x00\x00\x00*\x00'
+            b'PK\x03\x04\x14\x00\x00\x00\x08\x00G_|Z\xe2\x1e'
+            b'8\xbb\x0b\x00\x00\x00\t\x04\x00\x00\x01\x00\x00\x00aK'
+            b'L\x1c\x05\xa3`\x14\x8cx\x00\x00'
+        )
+
+        with zipfile.ZipFile(io.BytesIO(data), 'a') as zh:
+            with self.assertRaisesRegex(zipfile.BadZipFile, 'Overlapped entries'):
+                zh.repack()
+
+        with zipfile.ZipFile(io.BytesIO(data), 'a') as zh:
+            zi = zh.remove('a')
+            with self.assertRaisesRegex(zipfile.BadZipFile, 'Overlapped entries'):
+                zh.repack([zi])
+
+        # local entry of 'a' should not be stripped (not found)
+        fz = io.BytesIO(data)
+        with zipfile.ZipFile(fz, 'a') as zh:
+            zh.remove('a')
+            zh.repack()
+
+        expected = (
+            b'PK\x05\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+            b'\x00\x00\x00*\x00'
+            b'PK\x03\x04\x14\x00\x00\x00\x08\x00G_|Z\xe2\x1e'
+            b'8\xbb\x0b\x00\x00\x00\t\x04\x00\x00\x01\x00\x00\x00aK'
+            b'L\x1c\x05\xa3`\x14\x8cx\x00\x00'
+        )
+        fz.seek(0)
+        self.assertEqual(fz.read(), expected)
+
 class ZipRepackerTests(unittest.TestCase):
+    def _generate_local_file_entry(self, arcname, raw_bytes,
+                                   compression=zipfile.ZIP_STORED,
+                                   force_zip64=False, dd=False, dd_sig=True):
+        fz = io.BytesIO()
+        f = Unseekable(fz) if dd else fz
+        cm = (mock.patch.object(struct, 'pack', side_effect=struct_pack_no_dd_sig)
+              if not dd_sig else contextlib.nullcontext())
+        with zipfile.ZipFile(f, 'w', compression=compression) as zh:
+            with cm:
+                with zh.open(arcname, 'w', force_zip64=force_zip64) as fh:
+                    fh.write(raw_bytes)
+            fz.seek(0)
+            return fz.read()
+
+    def test_validate_local_file_entry_stored(self):
+        self._test_validate_local_file_entry(method=zipfile.ZIP_STORED)
+
+    @requires_zlib()
+    def test_validate_local_file_entry_zlib(self):
+        self._test_validate_local_file_entry(method=zipfile.ZIP_DEFLATED)
+
+    @requires_bz2()
+    def test_validate_local_file_entry_bz2(self):
+        self._test_validate_local_file_entry(method=zipfile.ZIP_BZIP2)
+
+    @requires_lzma()
+    def test_validate_local_file_entry_lzma(self):
+        self._test_validate_local_file_entry(method=zipfile.ZIP_LZMA)
+
+    @requires_zstd()
+    def test_validate_local_file_entry_zstd(self):
+        self._test_validate_local_file_entry(method=zipfile.ZIP_ZSTANDARD)
+
+    def _test_validate_local_file_entry(self, method):
+        repacker = zipfile._ZipRepacker()
+
+        # basic
+        bytes_ = self._generate_local_file_entry(
+            'file.txt', b'dummy', compression=method)
+        fz = io.BytesIO(bytes_)
+        with mock.patch.object(repacker, '_scan_data_descriptor',
+                               wraps=repacker._scan_data_descriptor) as m_sdd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig_by_decompression',
+                               wraps=repacker._scan_data_descriptor_no_sig_by_decompression) as m_sddnsbd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig',
+                               wraps=repacker._scan_data_descriptor_no_sig) as m_sddns:
+            result = repacker._validate_local_file_entry(fz, 0, len(bytes_))
+        self.assertEqual(result, len(bytes_))
+        m_sdd.assert_not_called()
+        m_sddnsbd.assert_not_called()
+        m_sddns.assert_not_called()
+
+        # offset
+        with mock.patch.object(repacker, '_scan_data_descriptor',
+                               wraps=repacker._scan_data_descriptor) as m_sdd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig_by_decompression',
+                               wraps=repacker._scan_data_descriptor_no_sig_by_decompression) as m_sddnsbd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig',
+                               wraps=repacker._scan_data_descriptor_no_sig) as m_sddns:
+            result = repacker._validate_local_file_entry(fz, 0, len(bytes_) + 1)
+        self.assertEqual(result, len(bytes_))
+        m_sdd.assert_not_called()
+        m_sddnsbd.assert_not_called()
+        m_sddns.assert_not_called()
+
+        bytes_ = b'pre' + bytes_ + b'post'
+        fz = io.BytesIO(bytes_)
+        with mock.patch.object(repacker, '_scan_data_descriptor',
+                               wraps=repacker._scan_data_descriptor) as m_sdd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig_by_decompression',
+                               wraps=repacker._scan_data_descriptor_no_sig_by_decompression) as m_sddnsbd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig',
+                               wraps=repacker._scan_data_descriptor_no_sig) as m_sddns:
+            result = repacker._validate_local_file_entry(fz, 3, len(bytes_) - 4)
+        self.assertEqual(result, len(bytes_) - 7)
+        m_sdd.assert_not_called()
+        m_sddnsbd.assert_not_called()
+        m_sddns.assert_not_called()
+
+        with mock.patch.object(repacker, '_scan_data_descriptor',
+                               wraps=repacker._scan_data_descriptor) as m_sdd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig_by_decompression',
+                               wraps=repacker._scan_data_descriptor_no_sig_by_decompression) as m_sddnsbd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig',
+                               wraps=repacker._scan_data_descriptor_no_sig) as m_sddns:
+            result = repacker._validate_local_file_entry(fz, 3, len(bytes_))
+        self.assertEqual(result, len(bytes_) - 7)
+        m_sdd.assert_not_called()
+        m_sddnsbd.assert_not_called()
+        m_sddns.assert_not_called()
+
+        # return None if no match at given offset
+        with mock.patch.object(repacker, '_scan_data_descriptor',
+                               wraps=repacker._scan_data_descriptor) as m_sdd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig_by_decompression',
+                               wraps=repacker._scan_data_descriptor_no_sig_by_decompression) as m_sddnsbd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig',
+                               wraps=repacker._scan_data_descriptor_no_sig) as m_sddns:
+            result = repacker._validate_local_file_entry(fz, 2, len(bytes_) - 4)
+        self.assertEqual(result, None)
+        m_sdd.assert_not_called()
+        m_sddnsbd.assert_not_called()
+        m_sddns.assert_not_called()
+
+        with mock.patch.object(repacker, '_scan_data_descriptor',
+                               wraps=repacker._scan_data_descriptor) as m_sdd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig_by_decompression',
+                               wraps=repacker._scan_data_descriptor_no_sig_by_decompression) as m_sddnsbd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig',
+                               wraps=repacker._scan_data_descriptor_no_sig) as m_sddns:
+            result = repacker._validate_local_file_entry(fz, 4, len(bytes_) - 4)
+        self.assertEqual(result, None)
+        m_sdd.assert_not_called()
+        m_sddnsbd.assert_not_called()
+        m_sddns.assert_not_called()
+
+        # return None if no sufficient header length
+        bytes_ = self._generate_local_file_entry(
+            'file.txt', b'dummy', compression=method)
+        bytes_ = bytes_[:29]
+        fz = io.BytesIO(bytes_)
+        with mock.patch.object(repacker, '_scan_data_descriptor',
+                               wraps=repacker._scan_data_descriptor) as m_sdd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig_by_decompression',
+                               wraps=repacker._scan_data_descriptor_no_sig_by_decompression) as m_sddnsbd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig',
+                               wraps=repacker._scan_data_descriptor_no_sig) as m_sddns:
+            result = repacker._validate_local_file_entry(fz, 0, len(bytes_))
+        self.assertEqual(result, None)
+        m_sdd.assert_not_called()
+        m_sddnsbd.assert_not_called()
+        m_sddns.assert_not_called()
+
+        # data descriptor
+        bytes_ = self._generate_local_file_entry(
+            'file.txt', b'dummy', compression=method, dd=True)
+        fz = io.BytesIO(bytes_)
+        with mock.patch.object(repacker, '_scan_data_descriptor',
+                               wraps=repacker._scan_data_descriptor) as m_sdd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig_by_decompression',
+                               wraps=repacker._scan_data_descriptor_no_sig_by_decompression) as m_sddnsbd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig',
+                               wraps=repacker._scan_data_descriptor_no_sig) as m_sddns:
+            result = repacker._validate_local_file_entry(fz, 0, len(bytes_))
+        self.assertEqual(result, len(bytes_))
+        m_sdd.assert_called_once_with(fz, 38, len(bytes_), False)
+        m_sddnsbd.assert_not_called()
+        m_sddns.assert_not_called()
+
+        # data descriptor (unsigned)
+        bytes_ = self._generate_local_file_entry(
+            'file.txt', b'dummy', compression=method, dd=True, dd_sig=False)
+        fz = io.BytesIO(bytes_)
+        with mock.patch.object(repacker, '_scan_data_descriptor',
+                               wraps=repacker._scan_data_descriptor) as m_sdd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig_by_decompression',
+                               wraps=repacker._scan_data_descriptor_no_sig_by_decompression) as m_sddnsbd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig',
+                               wraps=repacker._scan_data_descriptor_no_sig) as m_sddns:
+            result = repacker._validate_local_file_entry(fz, 0, len(bytes_))
+        self.assertEqual(result, len(bytes_))
+        m_sdd.assert_called_once_with(fz, 38, len(bytes_), False)
+        m_sddnsbd.assert_called_once_with(fz, 38, len(bytes_), False, method)
+        if repacker._scan_data_descriptor_no_sig_by_decompression(fz, 38, len(bytes_), False, method):
+            m_sddns.assert_not_called()
+        else:
+            m_sddns.assert_called_once_with(fz, 38, len(bytes_), False)
+
+        # return None for data descriptor (unsigned) if `strict_descriptor=True`
+        repacker = zipfile._ZipRepacker(strict_descriptor=True)
+        bytes_ = self._generate_local_file_entry(
+            'file.txt', b'dummy', compression=method, dd=True, dd_sig=False)
+        fz = io.BytesIO(bytes_)
+        with mock.patch.object(repacker, '_scan_data_descriptor',
+                               wraps=repacker._scan_data_descriptor) as m_sdd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig_by_decompression',
+                               wraps=repacker._scan_data_descriptor_no_sig_by_decompression) as m_sddnsbd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig',
+                               wraps=repacker._scan_data_descriptor_no_sig) as m_sddns:
+            result = repacker._validate_local_file_entry(fz, 0, len(bytes_))
+        self.assertEqual(result, None)
+        m_sdd.assert_called_once_with(fz, 38, len(bytes_), False)
+        m_sddnsbd.assert_not_called()
+        m_sddns.assert_not_called()
+
+    def test_validate_local_file_entry_zip64_stored(self):
+        self._test_validate_local_file_entry_zip64(method=zipfile.ZIP_STORED)
+
+    @requires_zlib()
+    def test_validate_local_file_entry_zip64_zlib(self):
+        self._test_validate_local_file_entry_zip64(method=zipfile.ZIP_DEFLATED)
+
+    @requires_bz2()
+    def test_validate_local_file_entry_zip64_bz2(self):
+        self._test_validate_local_file_entry_zip64(method=zipfile.ZIP_BZIP2)
+
+    @requires_lzma()
+    def test_validate_local_file_entry_zip64_lzma(self):
+        self._test_validate_local_file_entry_zip64(method=zipfile.ZIP_LZMA)
+
+    @requires_zstd()
+    def test_validate_local_file_entry_zip64_zstd(self):
+        self._test_validate_local_file_entry_zip64(method=zipfile.ZIP_ZSTANDARD)
+
+    def _test_validate_local_file_entry_zip64(self, method):
+        repacker = zipfile._ZipRepacker()
+
+        # zip64
+        bytes_ = self._generate_local_file_entry(
+            'file.txt', b'dummy', compression=method, force_zip64=True)
+        fz = io.BytesIO(bytes_)
+        with mock.patch.object(repacker, '_scan_data_descriptor',
+                               wraps=repacker._scan_data_descriptor) as m_sdd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig_by_decompression',
+                               wraps=repacker._scan_data_descriptor_no_sig_by_decompression) as m_sddnsbd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig',
+                               wraps=repacker._scan_data_descriptor_no_sig) as m_sddns:
+            result = repacker._validate_local_file_entry(fz, 0, len(bytes_))
+        self.assertEqual(result, len(bytes_))
+        m_sdd.assert_not_called()
+        m_sddnsbd.assert_not_called()
+        m_sddns.assert_not_called()
+
+        # data descriptor + zip64
+        bytes_ = self._generate_local_file_entry(
+            'file.txt', b'dummy', compression=method, force_zip64=True, dd=True)
+        fz = io.BytesIO(bytes_)
+        with mock.patch.object(repacker, '_scan_data_descriptor',
+                               wraps=repacker._scan_data_descriptor) as m_sdd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig_by_decompression',
+                               wraps=repacker._scan_data_descriptor_no_sig_by_decompression) as m_sddnsbd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig',
+                               wraps=repacker._scan_data_descriptor_no_sig) as m_sddns:
+            result = repacker._validate_local_file_entry(fz, 0, len(bytes_))
+        self.assertEqual(result, len(bytes_))
+        m_sdd.assert_called_once_with(fz, 58, len(bytes_), True)
+        m_sddnsbd.assert_not_called()
+        m_sddns.assert_not_called()
+
+        # data descriptor (unsigned) + zip64
+        bytes_ = self._generate_local_file_entry(
+            'file.txt', b'dummy', compression=method, force_zip64=True, dd=True, dd_sig=False)
+        fz = io.BytesIO(bytes_)
+        with mock.patch.object(repacker, '_scan_data_descriptor',
+                               wraps=repacker._scan_data_descriptor) as m_sdd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig_by_decompression',
+                               wraps=repacker._scan_data_descriptor_no_sig_by_decompression) as m_sddnsbd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig',
+                               wraps=repacker._scan_data_descriptor_no_sig) as m_sddns:
+            result = repacker._validate_local_file_entry(fz, 0, len(bytes_))
+        self.assertEqual(result, len(bytes_))
+        m_sdd.assert_called_once_with(fz, 58, len(bytes_), True)
+        m_sddnsbd.assert_called_once_with(fz, 58, len(bytes_), True, method)
+        if repacker._scan_data_descriptor_no_sig_by_decompression(fz, 58, len(bytes_), True, method):
+            m_sddns.assert_not_called()
+        else:
+            m_sddns.assert_called_once_with(fz, 58, len(bytes_), True)
+
+        # return None for data descriptor (unsigned) if `strict_descriptor=True`
+        repacker = zipfile._ZipRepacker(strict_descriptor=True)
+        bytes_ = self._generate_local_file_entry(
+            'file.txt', b'dummy', compression=method, force_zip64=True, dd=True, dd_sig=False)
+        fz = io.BytesIO(bytes_)
+        with mock.patch.object(repacker, '_scan_data_descriptor',
+                               wraps=repacker._scan_data_descriptor) as m_sdd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig_by_decompression',
+                               wraps=repacker._scan_data_descriptor_no_sig_by_decompression) as m_sddnsbd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig',
+                               wraps=repacker._scan_data_descriptor_no_sig) as m_sddns:
+            result = repacker._validate_local_file_entry(fz, 0, len(bytes_))
+        self.assertEqual(result, None)
+        m_sdd.assert_called_once_with(fz, 58, len(bytes_), True)
+        m_sddnsbd.assert_not_called()
+        m_sddns.assert_not_called()
+
+    def test_validate_local_file_entry_encrypted(self):
+        repacker = zipfile._ZipRepacker()
+
+        bytes_ = (
+            b'PK\x03\x04'
+            b'\x14\x00'
+            b'\x09\x00'
+            b'\x08\x00'
+            b'\xAB\x28'
+            b'\xD2\x5A'
+            b'\x00\x00\x00\x00'
+            b'\x00\x00\x00\x00'
+            b'\x00\x00\x00\x00'
+            b'\x08\x00'
+            b'\x00\x00'
+            b'file.txt'
+            b'\x97\xF1\x83\x34\x9D\xC4\x8C\xD3\xED\x79\x8C\xA2\xBB\x49\xFF\x1B\x89'
+            b'\x3F\xF2\xF4\x4F'
+            b'\x11\x00\x00\x00'
+            b'\x05\x00\x00\x00'
+        )
+        fz = io.BytesIO(bytes_)
+        with mock.patch.object(repacker, '_scan_data_descriptor',
+                               wraps=repacker._scan_data_descriptor) as m_sdd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig_by_decompression',
+                               wraps=repacker._scan_data_descriptor_no_sig_by_decompression) as m_sddnsbd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig',
+                               wraps=repacker._scan_data_descriptor_no_sig) as m_sddns:
+            result = repacker._validate_local_file_entry(fz, 0, len(bytes_))
+        self.assertEqual(result, len(bytes_))
+        m_sdd.assert_called_once_with(fz, 38, len(bytes_), False)
+        m_sddnsbd.assert_not_called()
+        m_sddns.assert_called_once_with(fz, 38, len(bytes_), False)
+
     def test_iter_scan_signature(self):
         bytes_ = b'sig__sig__sig__sig'
         ln = len(bytes_)
@@ -2455,134 +2850,176 @@ class ZipRepackerTests(unittest.TestCase):
     def test_scan_data_descriptor(self):
         repacker = zipfile._ZipRepacker()
 
+        sig = zipfile._DD_SIGNATURE
+        raw_bytes = comp_bytes = b'dummy'
+        raw_len = comp_len = len(raw_bytes)
+        raw_crc = zipfile.crc32(raw_bytes)
+
         # basic
-        bytes_ = b'dummyPK\x07\x08\x3f\xf2\xf4\x4f\x05\x00\x00\x00\x05\x00\x00\x00'
+        bytes_ = comp_bytes + struct.pack('<4L', sig, raw_crc, comp_len, raw_len)
         self.assertEqual(
             repacker._scan_data_descriptor(io.BytesIO(bytes_), 0, len(bytes_), False),
-            (0x4ff4f23f, 5, 5, 16),
+            (raw_crc, comp_len, raw_len, 16),
         )
 
         # return None if no signature
-        bytes_ = b'dummy\x3f\xf2\xf4\x4f\x05\x00\x00\x00\x05\x00\x00\x00'
-        self.assertEqual(
-            repacker._scan_data_descriptor(io.BytesIO(bytes_), 0, len(bytes_), False),
-            None,
-        )
-
-        # return None if not unpackable
-        bytes_ = b'PK\x07\x08'
+        bytes_ = comp_bytes + struct.pack('<3L', raw_crc, comp_len, raw_len)
         self.assertEqual(
             repacker._scan_data_descriptor(io.BytesIO(bytes_), 0, len(bytes_), False),
             None,
         )
 
         # return None if compressed size not match
-        bytes_ = b'dummPK\x07\x08\x3f\xf2\xf4\x4f\x05\x00\x00\x00\x05\x00\x00\x00'
+        bytes_ = comp_bytes + struct.pack('<4L', sig, raw_crc, comp_len + 1, raw_len)
+        self.assertEqual(
+            repacker._scan_data_descriptor(io.BytesIO(bytes_), 0, len(bytes_), False),
+            None,
+        )
+
+        bytes_ = comp_bytes + struct.pack('<4L', sig, raw_crc, comp_len - 1, raw_len)
+        self.assertEqual(
+            repacker._scan_data_descriptor(io.BytesIO(bytes_), 0, len(bytes_), False),
+            None,
+        )
+
+        bytes_ = b'1' + comp_bytes + struct.pack('<4L', sig, raw_crc, comp_len, raw_len)
+        self.assertEqual(
+            repacker._scan_data_descriptor(io.BytesIO(bytes_), 0, len(bytes_), False),
+            None,
+        )
+
+        bytes_ = comp_bytes[1:] + struct.pack('<4L', sig, raw_crc, comp_len, raw_len)
         self.assertEqual(
             repacker._scan_data_descriptor(io.BytesIO(bytes_), 0, len(bytes_), False),
             None,
         )
 
         # zip64
-        bytes_ = b'dummyPK\x07\x08\x3f\xf2\xf4\x4f\x05\x00\x00\x00\x00\x00\x00\x00\x05\x00\x00\x00\x00\x00\x00\x00'
+        bytes_ = comp_bytes + struct.pack('<2L2Q', sig, raw_crc, comp_len, raw_len)
         self.assertEqual(
             repacker._scan_data_descriptor(io.BytesIO(bytes_), 0, len(bytes_), True),
-            (0x4ff4f23f, 5, 5, 24),
+            (raw_crc, comp_len, raw_len, 24),
         )
 
         # offset
-        bytes_ = b'dummyPK\x07\x08\x3f\xf2\xf4\x4f\x05\x00\x00\x00\x05\x00\x00\x00'
+        bytes_ = comp_bytes + struct.pack('<4L', sig, raw_crc, comp_len, raw_len)
         self.assertEqual(
             repacker._scan_data_descriptor(io.BytesIO(bytes_), 1, len(bytes_), False),
             None,
         )
 
-        bytes_ = b'123dummyPK\x07\x08\x3f\xf2\xf4\x4f\x05\x00\x00\x00\x05\x00\x00\x00'
+        bytes_ = b'123' + comp_bytes + struct.pack('<4L', sig, raw_crc, comp_len, raw_len)
         self.assertEqual(
             repacker._scan_data_descriptor(io.BytesIO(bytes_), 0, len(bytes_), False),
             None,
         )
         self.assertEqual(
             repacker._scan_data_descriptor(io.BytesIO(bytes_), 3, len(bytes_), False),
-            (0x4ff4f23f, 5, 5, 16),
+            (raw_crc, comp_len, raw_len, 16),
         )
 
         # end_offset
-        bytes_ = b'dummyPK\x07\x08\x3f\xf2\xf4\x4f\x05\x00\x00\x00\x05\x00\x00\x00'
+        bytes_ = comp_bytes + struct.pack('<4L', sig, raw_crc, comp_len, raw_len)
         self.assertEqual(
             repacker._scan_data_descriptor(io.BytesIO(bytes_), 0, len(bytes_) - 1, False),
             None,
         )
 
-        bytes_ = b'dummyPK\x07\x08\x3f\xf2\xf4\x4f\x05\x00\x00\x00\x05\x00\x00\x00123'
+        bytes_ = comp_bytes + struct.pack('<4L', sig, raw_crc, comp_len, raw_len) + b'123'
         self.assertEqual(
             repacker._scan_data_descriptor(io.BytesIO(bytes_), 0, len(bytes_) - 3, False),
-            (0x4ff4f23f, 5, 5, 16),
+            (raw_crc, comp_len, raw_len, 16),
+        )
+        self.assertEqual(
+            repacker._scan_data_descriptor(io.BytesIO(bytes_), 0, len(bytes_), False),
+            (raw_crc, comp_len, raw_len, 16),
         )
 
     def test_scan_data_descriptor_no_sig(self):
         repacker = zipfile._ZipRepacker()
 
+        raw_bytes = comp_bytes = b'dummy'
+        raw_len = comp_len = len(raw_bytes)
+        raw_crc = zipfile.crc32(raw_bytes)
+
         # basic
-        bytes_ = b'dummy\x3f\xf2\xf4\x4f\x05\x00\x00\x00\x05\x00\x00\x00'
+        bytes_ = comp_bytes + struct.pack('<3L', raw_crc, comp_len, raw_len)
         self.assertEqual(
             repacker._scan_data_descriptor_no_sig(io.BytesIO(bytes_), 0, len(bytes_), False),
-            (0x4ff4f23f, 5, 5, 12),
+            (raw_crc, comp_len, raw_len, 12),
         )
 
         # return None if compressed size not match
-        bytes_ = b'dumm\x3f\xf2\xf4\x4f\x05\x00\x00\x00\x05\x00\x00\x00'
+        bytes_ = comp_bytes + struct.pack('<3L', raw_crc, comp_len + 1, raw_len)
+        self.assertEqual(
+            repacker._scan_data_descriptor_no_sig(io.BytesIO(bytes_), 0, len(bytes_), False),
+            None,
+        )
+
+        bytes_ = comp_bytes + struct.pack('<3L', raw_crc, comp_len - 1, raw_len)
+        self.assertEqual(
+            repacker._scan_data_descriptor_no_sig(io.BytesIO(bytes_), 0, len(bytes_), False),
+            None,
+        )
+
+        bytes_ = b'1' + comp_bytes + struct.pack('<3L', raw_crc, comp_len, raw_len)
+        self.assertEqual(
+            repacker._scan_data_descriptor_no_sig(io.BytesIO(bytes_), 0, len(bytes_), False),
+            None,
+        )
+
+        bytes_ = comp_bytes[1:] + struct.pack('<3L', raw_crc, comp_len, raw_len)
         self.assertEqual(
             repacker._scan_data_descriptor_no_sig(io.BytesIO(bytes_), 0, len(bytes_), False),
             None,
         )
 
         # zip64
-        bytes_ = b'dummy\x3f\xf2\xf4\x4f\x05\x00\x00\x00\x00\x00\x00\x00\x05\x00\x00\x00\x00\x00\x00\x00'
+        bytes_ = comp_bytes + struct.pack('<L2Q', raw_crc, comp_len, raw_len)
         self.assertEqual(
             repacker._scan_data_descriptor_no_sig(io.BytesIO(bytes_), 0, len(bytes_), True),
-            (0x4ff4f23f, 5, 5, 20),
+            (raw_crc, comp_len, raw_len, 20),
         )
 
         # offset
-        bytes_ = b'dummy\x3f\xf2\xf4\x4f\x05\x00\x00\x00\x05\x00\x00\x00'
+        bytes_ = comp_bytes + struct.pack('<3L', raw_crc, comp_len, raw_len)
         self.assertEqual(
             repacker._scan_data_descriptor_no_sig(io.BytesIO(bytes_), 1, len(bytes_), False),
             None,
         )
 
-        bytes_ = b'123dummy\x3f\xf2\xf4\x4f\x05\x00\x00\x00\x05\x00\x00\x00'
-        self.assertEqual(
-            repacker._scan_data_descriptor_no_sig(io.BytesIO(bytes_), 0, len(bytes_), False),
-            None,
-        )
+        bytes_ = b'123' + comp_bytes + struct.pack('<3L', raw_crc, comp_len, raw_len)
         self.assertEqual(
             repacker._scan_data_descriptor_no_sig(io.BytesIO(bytes_), 3, len(bytes_), False),
-            (0x4ff4f23f, 5, 5, 12),
+            (raw_crc, comp_len, raw_len, 12),
         )
 
         # end_offset
-        bytes_ = b'dummy\x3f\xf2\xf4\x4f\x05\x00\x00\x00\x05\x00\x00\x00'
+        bytes_ = comp_bytes + struct.pack('<3L', raw_crc, comp_len, raw_len)
         self.assertEqual(
             repacker._scan_data_descriptor_no_sig(io.BytesIO(bytes_), 0, len(bytes_) - 1, False),
             None,
         )
 
-        bytes_ = b'dummy\x3f\xf2\xf4\x4f\x05\x00\x00\x00\x05\x00\x00\x00123'
+        bytes_ = comp_bytes + struct.pack('<3L', raw_crc, comp_len, raw_len) + b'123'
         self.assertEqual(
             repacker._scan_data_descriptor_no_sig(io.BytesIO(bytes_), 0, len(bytes_) - 3, False),
-            (0x4ff4f23f, 5, 5, 12),
+            (raw_crc, comp_len, raw_len, 12),
+        )
+        self.assertEqual(
+            repacker._scan_data_descriptor_no_sig(io.BytesIO(bytes_), 0, len(bytes_), False),
+            (raw_crc, comp_len, raw_len, 12),
         )
 
         # chunk_size
-        bytes_ = b'dummy\x3f\xf2\xf4\x4f\x05\x00\x00\x00\x05\x00\x00\x00'
+        bytes_ = comp_bytes + struct.pack('<3L', raw_crc, comp_len, raw_len)
         self.assertEqual(
             repacker._scan_data_descriptor_no_sig(io.BytesIO(bytes_), 0, len(bytes_), False, 12),
-            (0x4ff4f23f, 5, 5, 12),
+            (raw_crc, comp_len, raw_len, 12),
         )
         self.assertEqual(
             repacker._scan_data_descriptor_no_sig(io.BytesIO(bytes_), 0, len(bytes_), False, 1),
-            (0x4ff4f23f, 5, 5, 12),
+            (raw_crc, comp_len, raw_len, 12),
         )
 
     def test_scan_data_descriptor_no_sig_by_decompression_stored(self):
@@ -2598,7 +3035,7 @@ class ZipRepackerTests(unittest.TestCase):
 
     @requires_lzma()
     def test_scan_data_descriptor_no_sig_by_decompression_lzma(self):
-        self._test_scan_data_descriptor_no_sig_by_decompression_invalid(zipfile.ZIP_LZMA)
+        self._test_scan_data_descriptor_no_sig_by_decompression(zipfile.ZIP_LZMA)
 
     @requires_zstd()
     def test_scan_data_descriptor_no_sig_by_decompression_zstd(self):
@@ -2611,37 +3048,40 @@ class ZipRepackerTests(unittest.TestCase):
     def _test_scan_data_descriptor_no_sig_by_decompression(self, method):
         repacker = zipfile._ZipRepacker()
 
-        compressor = zipfile._get_compressor(method)
+        raw_bytes = b'dummy'
+        raw_len = len(raw_bytes)
+        raw_crc = zipfile.crc32(raw_bytes)
 
-        comp_bytes = compressor.compress(b'dummy')
+        compressor = zipfile._get_compressor(method)
+        comp_bytes = compressor.compress(raw_bytes)
         comp_bytes += compressor.flush()
         comp_len = len(comp_bytes)
 
         # basic
-        bytes_ = comp_bytes + b'\x3f\xf2\xf4\x4f' + struct.pack('<L', comp_len) + b'\x05\x00\x00\x00'
+        bytes_ = comp_bytes + struct.pack('<3L', raw_crc, comp_len, raw_len)
         self.assertEqual(
             repacker._scan_data_descriptor_no_sig_by_decompression(
                 io.BytesIO(bytes_), 0, len(bytes_), False, method),
-            (0x4ff4f23f, comp_len, 5, 12),
+            (raw_crc, comp_len, raw_len, 12),
         )
 
-        # return None if insufficient data length
-        bytes_ = b'\x3f\xf2\xf4\x4f\x05\x00\x00\x00\x05\x00\x00\x00'
+        # return None if data length < DD signature
+        bytes_ = comp_bytes + struct.pack('<3L', raw_crc, comp_len, raw_len)
         self.assertEqual(
             repacker._scan_data_descriptor_no_sig_by_decompression(
-                io.BytesIO(bytes_), 0, len(bytes_) - 1, False, method),
-            None,
-        )
-
-        bytes_ = b'\x3f\xf2\xf4\x4f\x05\x00\x00\x00\x05\x00\x00'
-        self.assertEqual(
-            repacker._scan_data_descriptor_no_sig_by_decompression(
-                io.BytesIO(bytes_), 0, len(bytes_) + 1, False, method),
+                io.BytesIO(bytes_), 0, 11, False, method),
             None,
         )
 
         # return None if compressed size not match
-        bytes_ = comp_bytes + b'\x3f\xf2\xf4\x4f' + struct.pack('<L', comp_len - 1) + b'\x05\x00\x00\x00'
+        bytes_ = comp_bytes + struct.pack('<3L', raw_crc, comp_len + 1, raw_len)
+        self.assertEqual(
+            repacker._scan_data_descriptor_no_sig_by_decompression(
+                io.BytesIO(bytes_), 0, len(bytes_), False, method),
+            None,
+        )
+
+        bytes_ = comp_bytes + struct.pack('<3L', raw_crc, comp_len - 1, raw_len)
         self.assertEqual(
             repacker._scan_data_descriptor_no_sig_by_decompression(
                 io.BytesIO(bytes_), 0, len(bytes_), False, method),
@@ -2649,41 +3089,46 @@ class ZipRepackerTests(unittest.TestCase):
         )
 
         # zip64
-        bytes_ = comp_bytes + b'\x3f\xf2\xf4\x4f' + struct.pack('<Q', comp_len) + b'\x05\x00\x00\x00\x00\x00\x00\x00'
+        bytes_ = comp_bytes + struct.pack('<L2Q', raw_crc, comp_len, raw_len)
         self.assertEqual(
             repacker._scan_data_descriptor_no_sig_by_decompression(
                 io.BytesIO(bytes_), 0, len(bytes_), True, method),
-            (0x4ff4f23f, comp_len, 5, 20),
+            (raw_crc, comp_len, raw_len, 20),
         )
 
         # offset
-        bytes_ = comp_bytes + b'\x3f\xf2\xf4\x4f' + struct.pack('<L', comp_len) + b'\x05\x00\x00\x00'
+        bytes_ = comp_bytes + struct.pack('<3L', raw_crc, comp_len, raw_len)
         self.assertEqual(
             repacker._scan_data_descriptor_no_sig_by_decompression(
                 io.BytesIO(bytes_), 1, len(bytes_), False, method),
             None,
         )
 
-        bytes_ = b'123' + comp_bytes + b'\x3f\xf2\xf4\x4f' + struct.pack('<L', comp_len) + b'\x05\x00\x00\x00'
+        bytes_ = b'123' + comp_bytes + struct.pack('<3L', raw_crc, comp_len, raw_len)
         self.assertEqual(
             repacker._scan_data_descriptor_no_sig_by_decompression(
                 io.BytesIO(bytes_), 3, len(bytes_), False, method),
-            (0x4ff4f23f, comp_len, 5, 12),
+            (raw_crc, comp_len, raw_len, 12),
         )
 
         # end_offset
-        bytes_ = comp_bytes + b'\x3f\xf2\xf4\x4f' + struct.pack('<L', comp_len) + b'\x05\x00\x00\x00'
+        bytes_ = comp_bytes + struct.pack('<3L', raw_crc, comp_len, raw_len)
         self.assertEqual(
             repacker._scan_data_descriptor_no_sig_by_decompression(
-                io.BytesIO(bytes_), 0, len(bytes_) - 2, False, method),
+                io.BytesIO(bytes_), 0, len(bytes_) - 1, False, method),
             None,
         )
 
-        bytes_ = comp_bytes + b'\x3f\xf2\xf4\x4f' + struct.pack('<L', comp_len) + b'\x05\x00\x00\x00123'
+        bytes_ = comp_bytes + struct.pack('<3L', raw_crc, comp_len, raw_len) + b'123'
         self.assertEqual(
             repacker._scan_data_descriptor_no_sig_by_decompression(
-                io.BytesIO(bytes_), 0, len(bytes_) - 2, False, method),
-            (0x4ff4f23f, comp_len, 5, 12),
+                io.BytesIO(bytes_), 0, len(bytes_) - 3, False, method),
+            (raw_crc, comp_len, raw_len, 12),
+        )
+        self.assertEqual(
+            repacker._scan_data_descriptor_no_sig_by_decompression(
+                io.BytesIO(bytes_), 0, len(bytes_), False, method),
+            (raw_crc, comp_len, raw_len, 12),
         )
 
     def _test_scan_data_descriptor_no_sig_by_decompression_invalid(self, method):

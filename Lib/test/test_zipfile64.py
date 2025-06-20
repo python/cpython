@@ -235,6 +235,40 @@ class TestRepack(unittest.TestCase):
             zh.repack()
             self.assertIsNone(zh.testzip())
 
+    @requires_zlib()
+    def test_strip_removed_large_file_with_dd_no_sig_by_decompression(self):
+        """Should scan for the data descriptor (without signature) of a removed
+        large file without causing a memory issue."""
+        # Try the temp file.  If we do TESTFN2, then it hogs
+        # gigabytes of disk space for the duration of the test.
+        with TemporaryFile() as f:
+            tracemalloc.start()
+            self._test_strip_removed_large_file_with_dd_no_sig_by_decompression(
+                f, zipfile.ZIP_DEFLATED)
+            self.assertFalse(f.closed)
+            current, peak = tracemalloc.get_traced_memory()
+            tracemalloc.stop()
+            self.assertLess(peak, self.allowed_memory)
+
+    def _test_strip_removed_large_file_with_dd_no_sig_by_decompression(self, f, method):
+        file = 'file.txt'
+        file1 = 'largefile.txt'
+        data = b'Sed ut perspiciatis unde omnis iste natus error sit voluptatem'
+        with mock.patch('zipfile.struct.pack', side_effect=struct_pack_no_dd_sig):
+            with zipfile.ZipFile(Unseekable(f), 'w', compression=method) as zh:
+                with zh.open(file1, 'w', force_zip64=True) as fh:
+                    self._write_large_file(fh)
+                zh.writestr(file, data)
+
+        with zipfile.ZipFile(f, 'a') as zh:
+            # make sure data descriptor bit is really set (by making zip file unseekable)
+            for zi in zh.infolist():
+                self.assertTrue(zi.flag_bits & 8, f'data descriptor flag not set: {zi.filename}')
+
+            zh.remove(file1)
+            zh.repack()
+            self.assertIsNone(zh.testzip())
+
 
 class OtherTests(unittest.TestCase):
     def testMoreThan64kFiles(self):
