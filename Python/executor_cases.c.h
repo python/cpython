@@ -852,7 +852,7 @@
             _PyStackRef left;
             left = stack_pointer[-2];
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
-            if (!PyLong_CheckExact(left_o)) {
+            if (!_PyLong_CheckExactAndCompact(left_o)) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
@@ -863,7 +863,31 @@
             _PyStackRef value;
             value = stack_pointer[-1];
             PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-            if (!PyLong_CheckExact(value_o)) {
+            if (!_PyLong_CheckExactAndCompact(value_o)) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            break;
+        }
+
+        case _GUARD_NOS_OVERFLOWED: {
+            _PyStackRef left;
+            left = stack_pointer[-2];
+            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+            assert(Py_TYPE(left_o) == &PyLong_Type);
+            if (!_PyLong_IsCompact((PyLongObject *)left_o)) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            break;
+        }
+
+        case _GUARD_TOS_OVERFLOWED: {
+            _PyStackRef value;
+            value = stack_pointer[-1];
+            PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
+            assert(Py_TYPE(value_o) == &PyLong_Type);
+            if (!_PyLong_IsCompact((PyLongObject *)value_o)) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
@@ -880,20 +904,15 @@
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
             assert(PyLong_CheckExact(left_o));
             assert(PyLong_CheckExact(right_o));
-            if (!_PyLong_BothAreCompact((PyLongObject *)left_o, (PyLongObject *)right_o)) {
+            assert(_PyLong_BothAreCompact((PyLongObject *)left_o, (PyLongObject *)right_o));
+            STAT_INC(BINARY_OP, hit);
+            res = _PyCompactLong_Multiply((PyLongObject *)left_o, (PyLongObject *)right_o);
+            if (PyStackRef_IsNull(res)) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
-            STAT_INC(BINARY_OP, hit);
-            PyObject *res_o = _PyCompactLong_Multiply((PyLongObject *)left_o, (PyLongObject *)right_o);
             PyStackRef_CLOSE_SPECIALIZED(right, _PyLong_ExactDealloc);
             PyStackRef_CLOSE_SPECIALIZED(left, _PyLong_ExactDealloc);
-            if (res_o == NULL) {
-                stack_pointer += -2;
-                assert(WITHIN_STACK_BOUNDS());
-                JUMP_TO_ERROR();
-            }
-            res = PyStackRef_FromPyObjectSteal(res_o);
             stack_pointer[-2] = res;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -910,20 +929,15 @@
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
             assert(PyLong_CheckExact(left_o));
             assert(PyLong_CheckExact(right_o));
-            if (!_PyLong_BothAreCompact((PyLongObject *)left_o, (PyLongObject *)right_o)) {
+            assert(_PyLong_BothAreCompact((PyLongObject *)left_o, (PyLongObject *)right_o));
+            STAT_INC(BINARY_OP, hit);
+            res = _PyCompactLong_Add((PyLongObject *)left_o, (PyLongObject *)right_o);
+            if (PyStackRef_IsNull(res)) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
-            STAT_INC(BINARY_OP, hit);
-            PyObject *res_o = _PyCompactLong_Add((PyLongObject *)left_o, (PyLongObject *)right_o);
             PyStackRef_CLOSE_SPECIALIZED(right, _PyLong_ExactDealloc);
             PyStackRef_CLOSE_SPECIALIZED(left, _PyLong_ExactDealloc);
-            if (res_o == NULL) {
-                stack_pointer += -2;
-                assert(WITHIN_STACK_BOUNDS());
-                JUMP_TO_ERROR();
-            }
-            res = PyStackRef_FromPyObjectSteal(res_o);
             stack_pointer[-2] = res;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -940,20 +954,15 @@
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
             assert(PyLong_CheckExact(left_o));
             assert(PyLong_CheckExact(right_o));
-            if (!_PyLong_BothAreCompact((PyLongObject *)left_o, (PyLongObject *)right_o)) {
+            assert(_PyLong_BothAreCompact((PyLongObject *)left_o, (PyLongObject *)right_o));
+            STAT_INC(BINARY_OP, hit);
+            res = _PyCompactLong_Subtract((PyLongObject *)left_o, (PyLongObject *)right_o);
+            if (PyStackRef_IsNull(res)) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
-            STAT_INC(BINARY_OP, hit);
-            PyObject *res_o = _PyCompactLong_Subtract((PyLongObject *)left_o, (PyLongObject *)right_o);
             PyStackRef_CLOSE_SPECIALIZED(right, _PyLong_ExactDealloc);
             PyStackRef_CLOSE_SPECIALIZED(left, _PyLong_ExactDealloc);
-            if (res_o == NULL) {
-                stack_pointer += -2;
-                assert(WITHIN_STACK_BOUNDS());
-                JUMP_TO_ERROR();
-            }
-            res = PyStackRef_FromPyObjectSteal(res_o);
             stack_pointer[-2] = res;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -3807,14 +3816,8 @@
             left = stack_pointer[-2];
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
-            if (!_PyLong_IsCompact((PyLongObject *)left_o)) {
-                UOP_STAT_INC(uopcode, miss);
-                JUMP_TO_JUMP_TARGET();
-            }
-            if (!_PyLong_IsCompact((PyLongObject *)right_o)) {
-                UOP_STAT_INC(uopcode, miss);
-                JUMP_TO_JUMP_TARGET();
-            }
+            assert(_PyLong_IsCompact((PyLongObject *)left_o));
+            assert(_PyLong_IsCompact((PyLongObject *)right_o));
             STAT_INC(COMPARE_OP, hit);
             assert(_PyLong_DigitCount((PyLongObject *)left_o) <= 1 &&
                    _PyLong_DigitCount((PyLongObject *)right_o) <= 1);

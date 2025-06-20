@@ -45,8 +45,9 @@ Python/flowgraph.c            @markshannon @iritkatriel
 Python/instruction_sequence.c @iritkatriel
 Python/bytecodes.c            @markshannon
 Python/optimizer*.c           @markshannon
-Python/optimizer_analysis.c   @Fidget-Spinner
-Python/optimizer_bytecodes.c  @Fidget-Spinner
+Python/optimizer_analysis.c   @Fidget-Spinner @tomasr8
+Python/optimizer_bytecodes.c  @Fidget-Spinner @tomasr8
+Python/optimizer_symbols.c    @tomasr8
 Python/symtable.c             @JelleZijlstra @carljm
 Lib/_pyrepl/*                 @pablogsal @lysnikolaou @ambv
 Lib/test/test_patma.py        @brandtbucher
@@ -188,13 +189,13 @@ Include/internal/pycore_time.h  @pganssle @abalkin
 /Tools/cases_generator/        @markshannon
 
 # AST
-Python/ast.c                  @isidentical @JelleZijlstra @eclips4
-Python/ast_preprocess.c       @isidentical @eclips4
-Parser/asdl.py                @isidentical @JelleZijlstra @eclips4
-Parser/asdl_c.py              @isidentical @JelleZijlstra @eclips4
-Lib/ast.py                    @isidentical @JelleZijlstra @eclips4
-Lib/_ast_unparse.py           @isidentical @JelleZijlstra @eclips4
-Lib/test/test_ast/            @eclips4
+Python/ast.c                  @isidentical @JelleZijlstra @eclips4 @tomasr8
+Python/ast_preprocess.c       @isidentical @eclips4 @tomasr8
+Parser/asdl.py                @isidentical @JelleZijlstra @eclips4 @tomasr8
+Parser/asdl_c.py              @isidentical @JelleZijlstra @eclips4 @tomasr8
+Lib/ast.py                    @isidentical @JelleZijlstra @eclips4 @tomasr8
+Lib/_ast_unparse.py           @isidentical @JelleZijlstra @eclips4 @tomasr8
+Lib/test/test_ast/            @eclips4 @tomasr8
 
 # Mock
 /Lib/unittest/mock.py         @cjw296
@@ -341,3 +342,6 @@ Modules/_xxtestfuzz/          @ammaraskar
 Python/remote_debug.h         @pablogsal
 Python/remote_debugging.c     @pablogsal
 Modules/_remote_debugging_module.c @pablogsal @ambv @1st1
+
+# gettext
+**/*gettext*                  @tomasr8

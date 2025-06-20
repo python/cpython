@@ -1933,12 +1933,21 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    interpreter is pre-release (alpha, beta, or release candidate) then the
    local and remote interpreters must be the same exact version.
 
-   .. audit-event:: remote_debugger_script script_path
+   .. audit-event:: sys.remote_exec pid script_path
+
+      When the code is executed in the remote process, an
+      :ref:`auditing event <auditing>` ``sys.remote_exec`` is raised with
+      the *pid* and the path to the script file.
+      This event is raised in the process that called :func:`sys.remote_exec`.
+
+   .. audit-event:: cpython.remote_debugger_script script_path
 
       When the script is executed in the remote process, an
       :ref:`auditing event <auditing>`
-      ``sys.remote_debugger_script`` is raised
+      ``cpython.remote_debugger_script`` is raised
       with the path in the remote process.
+      This event is raised in the remote process, not the one
+      that called :func:`sys.remote_exec`.
 
    .. availability:: Unix, Windows.
    .. versionadded:: 3.14
