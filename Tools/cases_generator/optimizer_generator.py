@@ -179,7 +179,11 @@ class OptimizerEmitter(Emitter):
         emitter.emit("if (\n")
         assert isinstance(uop, Uop)
         input_identifiers = replace_opcode_if_evaluates_pure_identifiers(uop)
-        assert len(input_identifiers) > 0, "Pure operations must have at least 1 input"
+        if len(input_identifiers) == 0:
+            raise analysis_error(
+                "Pure operations must have at least 1 input",
+                self.original_uop.body.open
+            )
         for inp in input_identifiers[:-1]:
             emitter.emit(f"sym_is_safe_const(ctx, {inp}) &&\n")
         emitter.emit(f"sym_is_safe_const(ctx, {input_identifiers[-1]})\n")
@@ -194,7 +198,11 @@ class OptimizerEmitter(Emitter):
                 emitter.emit(f"{stackref_type_name(inp)}{inp.name} = sym_get_const_as_stackref(ctx, {inp.name}_sym);\n")
         # Rename all output variables to stackref variant.
         for outp in self.original_uop.stack.outputs:
-            assert not outp.is_array(), "Array output StackRefs not supported for pure ops."
+            if outp.is_array():
+                raise analysis_error(
+                    "Array output StackRefs not supported for evaluating pure ops.",
+                    self.original_uop.body.open
+                )
             emitter.emit(f"_PyStackRef {outp.name}_stackref;\n")
 
 
