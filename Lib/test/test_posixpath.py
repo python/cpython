@@ -36,23 +36,7 @@ def skip_if_ABSTFN_contains_backslash(test):
 
 
 def _parameterize(*parameters):
-    """Simplistic decorator to parametrize a test
-
-    Runs the decorated test multiple times in subTest, with a value from
-    'parameters' passed as an extra positional argument.
-    Does *not* call doCleanups() after each run.
-
-    Not for general use. Intended to avoid indenting for easier backports.
-
-    See https://discuss.python.org/t/91827 for discussing generalizations.
-    """
-    def _parametrize_decorator(func):
-        def _parameterized(self, *args, **kwargs):
-            for parameter in parameters:
-                with self.subTest(parameter):
-                    func(self, *args, parameter, **kwargs)
-        return _parameterized
-    return _parametrize_decorator
+    return support.subTests('kwargs', parameters)
 
 
 class PosixPathTest(unittest.TestCase):

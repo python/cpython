@@ -79,6 +79,10 @@ version, release = import_module('patchlevel').get_version_info()
 rst_epilog = f"""
 .. |python_version_literal| replace:: ``Python {version}``
 .. |python_x_dot_y_literal| replace:: ``python{version}``
+.. |python_x_dot_y_t_literal| replace:: ``python{version}t``
+.. |python_x_dot_y_t_literal_config| replace:: ``python{version}t-config``
+.. |x_dot_y_b2_literal| replace:: ``{version}.0b2``
+.. |applications_python_version_literal| replace:: ``/Applications/Python {version}/``
 .. |usr_local_bin_python_x_dot_y_literal| replace:: ``/usr/local/bin/python{version}``
 
 .. Apparently this how you hack together a formatted link:
@@ -234,6 +238,7 @@ nitpick_ignore += [
     ('c:data', 'PyExc_AssertionError'),
     ('c:data', 'PyExc_AttributeError'),
     ('c:data', 'PyExc_BaseException'),
+    ('c:data', 'PyExc_BaseExceptionGroup'),
     ('c:data', 'PyExc_BlockingIOError'),
     ('c:data', 'PyExc_BrokenPipeError'),
     ('c:data', 'PyExc_BufferError'),
@@ -287,6 +292,7 @@ nitpick_ignore += [
     # C API: Standard Python warning classes
     ('c:data', 'PyExc_BytesWarning'),
     ('c:data', 'PyExc_DeprecationWarning'),
+    ('c:data', 'PyExc_EncodingWarning'),
     ('c:data', 'PyExc_FutureWarning'),
     ('c:data', 'PyExc_ImportWarning'),
     ('c:data', 'PyExc_PendingDeprecationWarning'),

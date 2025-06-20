@@ -13,7 +13,6 @@ import itertools
 import locale
 import os
 import pickle
-import platform
 import select
 import selectors
 import shutil
@@ -4291,13 +4290,8 @@ class EventfdTests(unittest.TestCase):
 @unittest.skipIf(sys.platform == "android", "gh-124873: Test is flaky on Android")
 @support.requires_linux_version(2, 6, 30)
 class TimerfdTests(unittest.TestCase):
-    # 1 ms accuracy is reliably achievable on every platform except Android
-    # emulators, where we allow 10 ms (gh-108277).
-    if sys.platform == "android" and platform.android_ver().is_emulator:
-        CLOCK_RES_PLACES = 2
-    else:
-        CLOCK_RES_PLACES = 3
-
+    # gh-126112: Use 10 ms to tolerate slow buildbots
+    CLOCK_RES_PLACES = 2  # 10 ms
     CLOCK_RES = 10 ** -CLOCK_RES_PLACES
     CLOCK_RES_NS = 10 ** (9 - CLOCK_RES_PLACES)
 

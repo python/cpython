@@ -239,6 +239,16 @@ static inline void _Py_LeaveRecursiveCall(void)  {
 
 extern _PyInterpreterFrame* _PyEval_GetFrame(void);
 
+extern PyObject * _PyEval_GetGlobalsFromRunningMain(PyThreadState *);
+extern int _PyEval_EnsureBuiltins(
+    PyThreadState *,
+    PyObject *,
+    PyObject **p_builtins);
+extern int _PyEval_EnsureBuiltinsWithModule(
+    PyThreadState *,
+    PyObject *,
+    PyObject **p_builtins);
+
 PyAPI_FUNC(PyObject *)_Py_MakeCoro(PyFunctionObject *func);
 
 /* Handle signals, pending calls, GIL drop request
@@ -353,7 +363,8 @@ PyAPI_FUNC(_PyStackRef) _PyFloat_FromDouble_ConsumeInputs(_PyStackRef left, _PyS
 extern int _PyRunRemoteDebugger(PyThreadState *tstate);
 #endif
 
-_PyStackRef _PyForIter_NextWithIndex(PyObject *seq, _PyStackRef index);
+PyAPI_FUNC(_PyStackRef)
+_PyForIter_VirtualIteratorNext(PyThreadState* tstate, struct _PyInterpreterFrame* frame, _PyStackRef iter, _PyStackRef *index_ptr);
 
 #ifdef __cplusplus
 }
