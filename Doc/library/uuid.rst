@@ -200,6 +200,9 @@ The :mod:`uuid` module defines the following functions:
    address as a 48-bit positive integer. When a sequence number *clock_seq* is
    not specified, a pseudo-random 14-bit positive integer is generated.
 
+   If *node* or *clock_seq* exceed their expected bit count,
+   only their least significant bits are kept.
+
 
 .. function:: uuid3(namespace, name)
 
@@ -234,8 +237,8 @@ The :mod:`uuid` module defines the following functions:
    address as a 48-bit positive integer. When a sequence number *clock_seq* is
    not specified, a pseudo-random 14-bit positive integer is generated.
 
-   If *node* or *clock_seq* exceed their expected bit count, only their least
-   significant bits are kept.
+   If *node* or *clock_seq* exceed their expected bit count,
+   only their least significant bits are kept.
 
    .. versionadded:: 3.14
 
