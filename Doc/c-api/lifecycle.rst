@@ -55,16 +55,14 @@ that must be true for *B* to occur after *A*.
    .. image:: lifecycle.dot.svg
       :align: center
       :class: invert-in-dark-mode
-      :alt: Diagram showing events in an object's life.  Explained in detail
-            below.
+      :alt: Diagram showing events in an object's life.  Explained in detail below.
 
 .. only:: latex
 
    .. image:: lifecycle.dot.pdf
       :align: center
       :class: invert-in-dark-mode
-      :alt: Diagram showing events in an object's life.  Explained in detail
-            below.
+      :alt: Diagram showing events in an object's life.  Explained in detail below.
 
 .. container::
    :name: life-events-graph-description

@@ -128,7 +128,7 @@ fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
                 Py_END_ALLOW_THREADS
             } while (ret == -1 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
             if (ret < 0) {
-                if (async_err) {
+                if (!async_err) {
                     PyErr_SetFromErrno(PyExc_OSError);
                 }
                 Py_DECREF(result);
@@ -136,6 +136,7 @@ fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
             }
             if (ptr[len] != '\0') {
                 PyErr_SetString(PyExc_SystemError, "buffer overflow");
+                Py_DECREF(result);
                 return NULL;
             }
             return result;
@@ -310,7 +311,7 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned long code, PyObject *arg,
                 Py_END_ALLOW_THREADS
             } while (ret == -1 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
             if (ret < 0) {
-                if (async_err) {
+                if (!async_err) {
                     PyErr_SetFromErrno(PyExc_OSError);
                 }
                 Py_DECREF(result);
@@ -318,6 +319,7 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned long code, PyObject *arg,
             }
             if (ptr[len] != '\0') {
                 PyErr_SetString(PyExc_SystemError, "buffer overflow");
+                Py_DECREF(result);
                 return NULL;
             }
             return result;

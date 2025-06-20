@@ -168,7 +168,7 @@ possible, consider explicit locking.
 If it is necessary to use process-global state, the simplest way to
 avoid issues with multiple interpreters is to explicitly prevent a
 module from being loaded more than once per process—see
-`Opt-Out: Limiting to One Module Object per Process`_.
+:ref:`isolating-extensions-optout`.
 
 
 Managing Per-Module State
@@ -206,6 +206,8 @@ An example of a module with per-module state is currently available as
 `xxlimited <https://github.com/python/cpython/blob/master/Modules/xxlimited.c>`__;
 example module initialization shown at the bottom of the file.
 
+
+.. _isolating-extensions-optout:
 
 Opt-Out: Limiting to One Module Object per Process
 --------------------------------------------------

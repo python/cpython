@@ -1,7 +1,6 @@
 import os
 import re
 
-
 _default_seps = os.sep + str(os.altsep) * bool(os.altsep)
 
 

@@ -63,3 +63,12 @@ link to the relevant file.
 * Add code to your app to :source:`start Python in embedded mode
   <Android/testbed/app/src/main/c/main_activity.c>`. This will need to be C code
   called via JNI.
+
+Building a Python package for Android
+-------------------------------------
+
+Python packages can be built for Android as wheels and released on PyPI. The
+recommended tool for doing this is `cibuildwheel
+<https://cibuildwheel.pypa.io/en/stable/platforms/#android>`__, which automates
+all the details of setting up a cross-compilation environment, building the
+wheel, and testing it on an emulator.

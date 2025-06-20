@@ -594,18 +594,24 @@ static PyType_Spec sha512_type_spec = {
 /*[clinic input]
 _sha2.sha256
 
-    string: object(c_default="NULL") = b''
+    data: object(c_default="NULL") = b''
     *
     usedforsecurity: bool = True
+    string as string_obj: object(c_default="NULL") = None
 
 Return a new SHA-256 hash object; optionally initialized with a string.
 [clinic start generated code]*/
 
 static PyObject *
-_sha2_sha256_impl(PyObject *module, PyObject *string, int usedforsecurity)
-/*[clinic end generated code: output=243c9dd289931f87 input=6249da1de607280a]*/
+_sha2_sha256_impl(PyObject *module, PyObject *data, int usedforsecurity,
+                  PyObject *string_obj)
+/*[clinic end generated code: output=49828a7bcd418f45 input=9ce1d70e669abc14]*/
 {
     Py_buffer buf;
+    PyObject *string;
+    if (_Py_hashlib_data_argument(&string, data, string_obj) < 0) {
+        return NULL;
+    }
 
     if (string) {
         GET_BUFFER_VIEW_OR_ERROUT(string, &buf);
@@ -651,18 +657,25 @@ _sha2_sha256_impl(PyObject *module, PyObject *string, int usedforsecurity)
 /*[clinic input]
 _sha2.sha224
 
-    string: object(c_default="NULL") = b''
+    data: object(c_default="NULL") = b''
     *
     usedforsecurity: bool = True
+    string as string_obj: object(c_default="NULL") = None
 
 Return a new SHA-224 hash object; optionally initialized with a string.
 [clinic start generated code]*/
 
 static PyObject *
-_sha2_sha224_impl(PyObject *module, PyObject *string, int usedforsecurity)
-/*[clinic end generated code: output=68191f232e4a3843 input=c42bcba47fd7d2b7]*/
+_sha2_sha224_impl(PyObject *module, PyObject *data, int usedforsecurity,
+                  PyObject *string_obj)
+/*[clinic end generated code: output=2163cb03b6cf6157 input=612f7682a889bc2a]*/
 {
     Py_buffer buf;
+    PyObject *string;
+    if (_Py_hashlib_data_argument(&string, data, string_obj) < 0) {
+        return NULL;
+    }
+
     if (string) {
         GET_BUFFER_VIEW_OR_ERROUT(string, &buf);
     }
@@ -706,19 +719,25 @@ _sha2_sha224_impl(PyObject *module, PyObject *string, int usedforsecurity)
 /*[clinic input]
 _sha2.sha512
 
-    string: object(c_default="NULL") = b''
+    data: object(c_default="NULL") = b''
     *
     usedforsecurity: bool = True
+    string as string_obj: object(c_default="NULL") = None
 
 Return a new SHA-512 hash object; optionally initialized with a string.
 [clinic start generated code]*/
 
 static PyObject *
-_sha2_sha512_impl(PyObject *module, PyObject *string, int usedforsecurity)
-/*[clinic end generated code: output=d55c8996eca214d7 input=0576ae2a6ebfad25]*/
+_sha2_sha512_impl(PyObject *module, PyObject *data, int usedforsecurity,
+                  PyObject *string_obj)
+/*[clinic end generated code: output=cc3fcfce001a4538 input=19c9f2c06d59563a]*/
 {
     SHA512object *new;
     Py_buffer buf;
+    PyObject *string;
+    if (_Py_hashlib_data_argument(&string, data, string_obj) < 0) {
+        return NULL;
+    }
 
     sha2_state *state = sha2_get_state(module);
 
@@ -763,19 +782,25 @@ _sha2_sha512_impl(PyObject *module, PyObject *string, int usedforsecurity)
 /*[clinic input]
 _sha2.sha384
 
-    string: object(c_default="NULL") = b''
+    data: object(c_default="NULL") = b''
     *
     usedforsecurity: bool = True
+    string as string_obj: object(c_default="NULL") = None
 
 Return a new SHA-384 hash object; optionally initialized with a string.
 [clinic start generated code]*/
 
 static PyObject *
-_sha2_sha384_impl(PyObject *module, PyObject *string, int usedforsecurity)
-/*[clinic end generated code: output=b29a0d81d51d1368 input=4e9199d8de0d2f9b]*/
+_sha2_sha384_impl(PyObject *module, PyObject *data, int usedforsecurity,
+                  PyObject *string_obj)
+/*[clinic end generated code: output=b6e3db593b5a0330 input=9fd50c942ad9e0bf]*/
 {
     SHA512object *new;
     Py_buffer buf;
+    PyObject *string;
+    if (_Py_hashlib_data_argument(&string, data, string_obj) < 0) {
+        return NULL;
+    }
 
     sha2_state *state = sha2_get_state(module);
 

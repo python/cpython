@@ -26,7 +26,23 @@ import sys
 #     test_signals in test_threadsignals.py.
 signal.pthread_sigmask(signal.SIG_UNBLOCK, [signal.SIGUSR1])
 
+mode = os.environ["PYTHON_MODE"]
+module = os.environ["PYTHON_MODULE"]
 sys.argv[1:] = shlex.split(os.environ["PYTHON_ARGS"])
 
-# The test module will call sys.exit to indicate whether the tests passed.
-runpy.run_module("test")
+cwd = f"{sys.prefix}/cwd"
+if not os.path.exists(cwd):
+    # Empty directories are lost in the asset packing/unpacking process.
+    os.mkdir(cwd)
+os.chdir(cwd)
+
+if mode == "-c":
+    # In -c mode, sys.path starts with an empty string, which means whatever the current
+    # working directory is at the moment of each import.
+    sys.path.insert(0, "")
+    exec(module, {})
+elif mode == "-m":
+    sys.path.insert(0, os.getcwd())
+    runpy.run_module(module, run_name="__main__", alter_sys=True)
+else:
+    raise ValueError(f"unknown mode: {mode}")

@@ -417,8 +417,14 @@ def decode_params(params):
         for name, continuations in rfc2231_params.items():
             value = []
             extended = False
-            # Sort by number
-            continuations.sort()
+            # Sort by number, treating None as 0 if there is no 0,
+            # and ignore it if there is already a 0.
+            has_zero = any(x[0] == 0 for x in continuations)
+            if has_zero:
+                continuations = [x for x in continuations if x[0] is not None]
+            else:
+                continuations = [(x[0] or 0, x[1], x[2]) for x in continuations]
+            continuations.sort(key=lambda x: x[0])
             # And now append all values in numerical order, converting
             # %-encodings for the encoded segments.  If any of the
             # continuation names ends in a *, then the entire string, after

@@ -399,14 +399,16 @@ class AddressTestCase_v6(BaseTestCase, CommonTestMixin_v6):
 
     def test_bad_address_split_v6_too_long(self):
         def assertBadSplit(addr):
-            msg = r"At most 39 characters expected in %s"
-            with self.assertAddressError(msg, repr(re.escape(addr[:14]))):
+            msg = r"At most 45 characters expected in '%s"
+            with self.assertAddressError(msg, re.escape(addr[:45])):
                 ipaddress.IPv6Address(addr)
 
         # Long IPv6 address
         long_addr = ("0:" * 10000) + "0"
         assertBadSplit(long_addr)
         assertBadSplit(long_addr + "%zoneid")
+        assertBadSplit(long_addr + ":255.255.255.255")
+        assertBadSplit(long_addr + ":ffff:255.255.255.255")
 
     def test_bad_address_split_v6_too_many_parts(self):
         def assertBadSplit(addr):
@@ -2189,6 +2191,11 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(ipaddress.ip_address('FFFF::192.0.2.1'),
                           ipaddress.ip_address('FFFF::c000:201'))
 
+        self.assertEqual(ipaddress.ip_address('0000:0000:0000:0000:0000:FFFF:192.168.255.255'),
+                          ipaddress.ip_address('::ffff:c0a8:ffff'))
+        self.assertEqual(ipaddress.ip_address('FFFF:0000:0000:0000:0000:0000:192.168.255.255'),
+                          ipaddress.ip_address('ffff::c0a8:ffff'))
+
         self.assertEqual(ipaddress.ip_address('::FFFF:192.0.2.1%scope'),
                           ipaddress.ip_address('::FFFF:c000:201%scope'))
         self.assertEqual(ipaddress.ip_address('FFFF::192.0.2.1%scope'),
@@ -2201,6 +2208,10 @@ class IpaddrUnitTest(unittest.TestCase):
                           ipaddress.ip_address('::FFFF:c000:201%scope'))
         self.assertNotEqual(ipaddress.ip_address('FFFF::192.0.2.1'),
                           ipaddress.ip_address('FFFF::c000:201%scope'))
+        self.assertEqual(ipaddress.ip_address('0000:0000:0000:0000:0000:FFFF:192.168.255.255%scope'),
+                          ipaddress.ip_address('::ffff:c0a8:ffff%scope'))
+        self.assertEqual(ipaddress.ip_address('FFFF:0000:0000:0000:0000:0000:192.168.255.255%scope'),
+                          ipaddress.ip_address('ffff::c0a8:ffff%scope'))
 
     def testIPVersion(self):
         self.assertEqual(ipaddress.IPv4Address.version, 4)
@@ -2610,6 +2621,10 @@ class IpaddrUnitTest(unittest.TestCase):
             '::7:6:5:4:3:2:0': '0:7:6:5:4:3:2:0/128',
             '7:6:5:4:3:2:1::': '7:6:5:4:3:2:1:0/128',
             '0:6:5:4:3:2:1::': '0:6:5:4:3:2:1:0/128',
+            '0000:0000:0000:0000:0000:0000:255.255.255.255': '::ffff:ffff/128',
+            '0000:0000:0000:0000:0000:ffff:255.255.255.255': '::ffff:255.255.255.255/128',
+            'ffff:ffff:ffff:ffff:ffff:ffff:255.255.255.255':
+                'ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff/128',
             }
         for uncompressed, compressed in list(test_addresses.items()):
             self.assertEqual(compressed, str(ipaddress.IPv6Interface(

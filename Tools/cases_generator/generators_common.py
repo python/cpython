@@ -56,9 +56,7 @@ def root_relative_path(filename: str) -> str:
 
 
 def type_and_null(var: StackItem) -> tuple[str, str]:
-    if var.type:
-        return var.type, "NULL"
-    elif var.is_array():
+    if var.is_array():
         return "_PyStackRef *", "NULL"
     else:
         return "_PyStackRef", "PyStackRef_NULL"
@@ -140,6 +138,7 @@ class Emitter:
     ) -> bool:
         if storage.spilled:
             raise analysis_error("stack_pointer needs reloading before dispatch", tkn)
+        storage.stack.flush(self.out)
         self.emit(tkn)
         return False
 

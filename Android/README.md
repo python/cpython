@@ -156,6 +156,10 @@ repository's `Lib` directory will be picked up immediately. Changes in C files,
 and architecture-specific files such as sysconfigdata, will not take effect
 until you re-run `android.py make-host` or `build`.
 
+The testbed app can also be used to test third-party packages. For more details,
+run `android.py test --help`, paying attention to the options `--site-packages`,
+`--cwd`, `-c` and `-m`.
+
 
 ## Using in your own app
 

@@ -56,7 +56,6 @@ Revision history:
 
 #include "Python.h"
 #include "osdefs.h"               // SEP
-#include "pycore_sysmodule.h"     // _PySys_GetOptionalAttrString()
 
 #include <syslog.h>
 
@@ -92,7 +91,7 @@ syslog_get_argv(void)
     Py_ssize_t slash;
     PyObject *argv;
 
-    if (_PySys_GetOptionalAttrString("argv", &argv) <= 0) {
+    if (PySys_GetOptionalAttrString("argv", &argv) <= 0) {
         return NULL;
     }
 

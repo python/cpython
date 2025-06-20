@@ -2748,6 +2748,19 @@ _winapi_GetACP_impl(PyObject *module)
 }
 
 /*[clinic input]
+_winapi.GetOEMCP
+
+Get the current Windows ANSI code page identifier.
+[clinic start generated code]*/
+
+static PyObject *
+_winapi_GetOEMCP_impl(PyObject *module)
+/*[clinic end generated code: output=4def5b07a8be1b3b input=e8caf4353a28e28e]*/
+{
+    return PyLong_FromUnsignedLong(GetOEMCP());
+}
+
+/*[clinic input]
 _winapi.GetFileType -> DWORD
 
     handle: HANDLE
@@ -3007,6 +3020,7 @@ static PyMethodDef winapi_functions[] = {
     _WINAPI_WAITFORSINGLEOBJECT_METHODDEF
     _WINAPI_WRITEFILE_METHODDEF
     _WINAPI_GETACP_METHODDEF
+    _WINAPI_GETOEMCP_METHODDEF
     _WINAPI_GETFILETYPE_METHODDEF
     _WINAPI__MIMETYPES_READ_WINDOWS_REGISTRY_METHODDEF
     _WINAPI_NEEDCURRENTDIRECTORYFOREXEPATH_METHODDEF

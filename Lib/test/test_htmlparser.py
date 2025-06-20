@@ -5,6 +5,7 @@ import pprint
 import unittest
 
 from unittest.mock import patch
+from test import support
 
 
 class EventCollector(html.parser.HTMLParser):
@@ -430,28 +431,34 @@ text
                             ('data', '<'),
                             ('starttag', 'bc<', [('a', None)]),
                             ('endtag', 'html'),
-                            ('data', '\n<img src="URL>'),
-                            ('comment', '/img'),
-                            ('endtag', 'html<')])
+                            ('data', '\n')])
 
     def test_starttag_junk_chars(self):
+        self._run_check("<", [('data', '<')])
+        self._run_check("<>", [('data', '<>')])
+        self._run_check("< >", [('data', '< >')])
+        self._run_check("< ", [('data', '< ')])
         self._run_check("</>", [])
+        self._run_check("<$>", [('data', '<$>')])
         self._run_check("</$>", [('comment', '$')])
         self._run_check("</", [('data', '</')])
-        self._run_check("</a", [('data', '</a')])
+        self._run_check("</a", [])
+        self._run_check("</ a>", [('endtag', 'a')])
+        self._run_check("</ a", [('comment', ' a')])
         self._run_check("<a<a>", [('starttag', 'a<a', [])])
         self._run_check("</a<a>", [('endtag', 'a<a')])
-        self._run_check("<!", [('data', '<!')])
-        self._run_check("<a", [('data', '<a')])
-        self._run_check("<a foo='bar'", [('data', "<a foo='bar'")])
-        self._run_check("<a foo='bar", [('data', "<a foo='bar")])
-        self._run_check("<a foo='>'", [('data', "<a foo='>'")])
-        self._run_check("<a foo='>", [('data', "<a foo='>")])
+        self._run_check("<!", [('comment', '')])
+        self._run_check("<a", [])
+        self._run_check("<a foo='bar'", [])
+        self._run_check("<a foo='bar", [])
+        self._run_check("<a foo='>'", [])
+        self._run_check("<a foo='>", [])
         self._run_check("<a$>", [('starttag', 'a$', [])])
         self._run_check("<a$b>", [('starttag', 'a$b', [])])
         self._run_check("<a$b/>", [('startendtag', 'a$b', [])])
         self._run_check("<a$b  >", [('starttag', 'a$b', [])])
         self._run_check("<a$b  />", [('startendtag', 'a$b', [])])
+        self._run_check("</a$b>", [('endtag', 'a$b')])
 
     def test_slashes_in_starttag(self):
         self._run_check('<a foo="var"/>', [('startendtag', 'a', [('foo', 'var')])])
@@ -576,21 +583,50 @@ text
         for html, expected in data:
             self._run_check(html, expected)
 
-    def test_EOF_in_comments_or_decls(self):
+    def test_eof_in_comments(self):
         data = [
-            ('<!', [('data', '<!')]),
-            ('<!-', [('data', '<!-')]),
-            ('<!--', [('data', '<!--')]),
-            ('<![', [('data', '<![')]),
-            ('<![CDATA[', [('data', '<![CDATA[')]),
-            ('<![CDATA[x', [('data', '<![CDATA[x')]),
-            ('<!DOCTYPE', [('data', '<!DOCTYPE')]),
-            ('<!DOCTYPE HTML', [('data', '<!DOCTYPE HTML')]),
+            ('<!--', [('comment', '')]),
+            ('<!---', [('comment', '')]),
+            ('<!----', [('comment', '')]),
+            ('<!-----', [('comment', '-')]),
+            ('<!------', [('comment', '--')]),
+            ('<!----!', [('comment', '')]),
+            ('<!---!', [('comment', '-!')]),
+            ('<!---!>', [('comment', '-!>')]),
+            ('<!--foo', [('comment', 'foo')]),
+            ('<!--foo-', [('comment', 'foo')]),
+            ('<!--foo--', [('comment', 'foo')]),
+            ('<!--foo--!', [('comment', 'foo')]),
+            ('<!--<!--', [('comment', '<!')]),
+            ('<!--<!--!', [('comment', '<!')]),
         ]
         for html, expected in data:
             self._run_check(html, expected)
+
+    def test_eof_in_declarations(self):
+        data = [
+            ('<!', [('comment', '')]),
+            ('<!-', [('comment', '-')]),
+            ('<![', [('comment', '[')]),
+            ('<![CDATA[', [('unknown decl', 'CDATA[')]),
+            ('<![CDATA[x', [('unknown decl', 'CDATA[x')]),
+            ('<![CDATA[x]', [('unknown decl', 'CDATA[x]')]),
+            ('<![CDATA[x]]', [('unknown decl', 'CDATA[x]]')]),
+            ('<!DOCTYPE', [('decl', 'DOCTYPE')]),
+            ('<!DOCTYPE ', [('decl', 'DOCTYPE ')]),
+            ('<!DOCTYPE html', [('decl', 'DOCTYPE html')]),
+            ('<!DOCTYPE html ', [('decl', 'DOCTYPE html ')]),
+            ('<!DOCTYPE html PUBLIC', [('decl', 'DOCTYPE html PUBLIC')]),
+            ('<!DOCTYPE html PUBLIC "foo', [('decl', 'DOCTYPE html PUBLIC "foo')]),
+            ('<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "foo',
+             [('decl', 'DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "foo')]),
+        ]
+        for html, expected in data:
+            self._run_check(html, expected)
+
     def test_bogus_comments(self):
-        html = ('<! not really a comment >'
+        html = ('<!ELEMENT br EMPTY>'
+                '<! not really a comment >'
                 '<! not a comment either -->'
                 '<! -- close enough -->'
                 '<!><!<-- this was an empty comment>'
@@ -604,6 +640,7 @@ text
                 '<![CDATA]]>'  # required '[' after CDATA
         )
         expected = [
+            ('comment', 'ELEMENT br EMPTY'),
             ('comment', ' not really a comment '),
             ('comment', ' not a comment either --'),
             ('comment', ' -- close enough --'),
@@ -683,6 +720,26 @@ text
             [('data', 'foo '), ('starttag', 'a', []), ('data', 'link'),
              ('endtag', 'a'), ('data', ' bar & baz')]
         )
+
+    @support.requires_resource('cpu')
+    def test_eof_no_quadratic_complexity(self):
+        # Each of these examples used to take about an hour.
+        # Now they take a fraction of a second.
+        def check(source):
+            parser = html.parser.HTMLParser()
+            parser.feed(source)
+            parser.close()
+        n = 120_000
+        check("<a " * n)
+        check("<a a=" * n)
+        check("</a " * 14 * n)
+        check("</a a=" * 11 * n)
+        check("<!--" * 4 * n)
+        check("<!" * 60 * n)
+        check("<?" * 19 * n)
+        check("</$" * 15 * n)
+        check("<![CDATA[" * 9 * n)
+        check("<!doctype" * 35 * n)
 
 
 class AttributesTestCase(TestCaseBase):

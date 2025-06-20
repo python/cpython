@@ -114,7 +114,7 @@ _PyRun_InteractiveLoopObject(FILE *fp, PyObject *filename, PyCompilerFlags *flag
     }
 
     PyObject *v;
-    if (_PySys_GetOptionalAttr(&_Py_ID(ps1), &v) < 0) {
+    if (PySys_GetOptionalAttr(&_Py_ID(ps1), &v) < 0) {
         PyErr_Print();
         return -1;
     }
@@ -128,7 +128,7 @@ _PyRun_InteractiveLoopObject(FILE *fp, PyObject *filename, PyCompilerFlags *flag
         }
     }
     Py_XDECREF(v);
-    if (_PySys_GetOptionalAttr(&_Py_ID(ps2), &v) < 0) {
+    if (PySys_GetOptionalAttr(&_Py_ID(ps2), &v) < 0) {
         PyErr_Print();
         return -1;
     }
@@ -206,7 +206,7 @@ pyrun_one_parse_ast(FILE *fp, PyObject *filename,
     PyObject *encoding_obj = NULL;
     const char *encoding = NULL;
     if (fp == stdin) {
-        if (_PySys_GetOptionalAttr(&_Py_ID(stdin), &attr) < 0) {
+        if (PySys_GetOptionalAttr(&_Py_ID(stdin), &attr) < 0) {
             PyErr_Clear();
         }
         else if (attr != NULL && attr != Py_None) {
@@ -226,7 +226,7 @@ pyrun_one_parse_ast(FILE *fp, PyObject *filename,
     // Get sys.ps1 (as UTF-8)
     PyObject *ps1_obj = NULL;
     const char *ps1 = "";
-    if (_PySys_GetOptionalAttr(&_Py_ID(ps1), &attr) < 0) {
+    if (PySys_GetOptionalAttr(&_Py_ID(ps1), &attr) < 0) {
         PyErr_Clear();
     }
     else if (attr != NULL) {
@@ -247,7 +247,7 @@ pyrun_one_parse_ast(FILE *fp, PyObject *filename,
     // Get sys.ps2 (as UTF-8)
     PyObject *ps2_obj = NULL;
     const char *ps2 = "";
-    if (_PySys_GetOptionalAttr(&_Py_ID(ps2), &attr) < 0) {
+    if (PySys_GetOptionalAttr(&_Py_ID(ps2), &attr) < 0) {
         PyErr_Clear();
     }
     else if (attr != NULL) {
@@ -658,7 +658,7 @@ _Py_HandleSystemExitAndKeyboardInterrupt(int *exitcode_p)
     }
 
     PyObject *sys_stderr;
-    if (_PySys_GetOptionalAttr(&_Py_ID(stderr), &sys_stderr) < 0) {
+    if (PySys_GetOptionalAttr(&_Py_ID(stderr), &sys_stderr) < 0) {
         PyErr_Clear();
     }
     else if (sys_stderr != NULL && sys_stderr != Py_None) {
@@ -722,7 +722,7 @@ _PyErr_PrintEx(PyThreadState *tstate, int set_sys_last_vars)
             _PyErr_Clear(tstate);
         }
     }
-    if (_PySys_GetOptionalAttr(&_Py_ID(excepthook), &hook) < 0) {
+    if (PySys_GetOptionalAttr(&_Py_ID(excepthook), &hook) < 0) {
         PyErr_Clear();
     }
     if (_PySys_Audit(tstate, "sys.excepthook", "OOOO", hook ? hook : Py_None,
@@ -1197,7 +1197,7 @@ void
 PyErr_Display(PyObject *unused, PyObject *value, PyObject *tb)
 {
     PyObject *file;
-    if (_PySys_GetOptionalAttr(&_Py_ID(stderr), &file) < 0) {
+    if (PySys_GetOptionalAttr(&_Py_ID(stderr), &file) < 0) {
         PyObject *exc = PyErr_GetRaisedException();
         _PyObject_Dump(value);
         fprintf(stderr, "lost sys.stderr\n");
@@ -1321,7 +1321,7 @@ static void
 flush_io_stream(PyThreadState *tstate, PyObject *name)
 {
     PyObject *f;
-    if (_PySys_GetOptionalAttr(name, &f) < 0) {
+    if (PySys_GetOptionalAttr(name, &f) < 0) {
         PyErr_Clear();
     }
     if (f != NULL) {

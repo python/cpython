@@ -255,6 +255,15 @@ The :mod:`tarfile` module defines the following exceptions:
    Raised to refuse extracting a symbolic link pointing outside the destination
    directory.
 
+.. exception:: LinkFallbackError
+
+   Raised to refuse emulating a link (hard or symbolic) by extracting another
+   archive member, when that member would be rejected by the filter location.
+   The exception that was raised to reject the replacement member is available
+   as :attr:`!BaseException.__context__`.
+
+   .. versionadded:: next
+
 
 The following constants are available at the module level:
 
@@ -1068,6 +1077,12 @@ reused in custom filters:
   Implements the ``'data'`` filter.
   In addition to what ``tar_filter`` does:
 
+  - Normalize link targets (:attr:`TarInfo.linkname`) using
+    :func:`os.path.normpath`.
+    Note that this removes internal ``..`` components, which may change the
+    meaning of the link if the path in :attr:`!TarInfo.linkname` traverses
+    symbolic links.
+
   - :ref:`Refuse <tarfile-extraction-refuse>` to extract links (hard or soft)
     that link to absolute paths, or ones that link outside the destination.
 
@@ -1099,6 +1114,10 @@ reused in custom filters:
   Note that this filter does not block *all* dangerous archive features.
   See :ref:`tarfile-further-verification`  for details.
 
+  .. versionchanged:: next
+
+     Link targets are now normalized.
+
 
 .. _tarfile-extraction-refuse:
 
@@ -1127,6 +1146,7 @@ Here is an incomplete list of things to consider:
 * Extract to a :func:`new temporary directory <tempfile.mkdtemp>`
   to prevent e.g. exploiting pre-existing links, and to make it easier to
   clean up after a failed extraction.
+* Disallow symbolic links if you do not need the functionality.
 * When working with untrusted data, use external (e.g. OS-level) limits on
   disk, memory and CPU usage.
 * Check filenames against an allow-list of characters

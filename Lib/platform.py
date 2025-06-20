@@ -1144,7 +1144,7 @@ def _sys_version(sys_version=None):
         # CPython
         cpython_sys_version_parser = re.compile(
             r'([\w.+]+)\s*'  # "version<space>"
-            r'(?:experimental free-threading build\s+)?' # "free-threading-build<space>"
+            r'(?:free-threading build\s+)?' # "free-threading-build<space>"
             r'\(#?([^,]+)'  # "(#buildno"
             r'(?:,\s*([\w ]*)'  # ", builddate"
             r'(?:,\s*([\w :]*))?)?\)\s*'  # ", buildtime)<space>"

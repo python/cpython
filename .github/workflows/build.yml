@@ -527,6 +527,14 @@ jobs:
       config_hash: ${{ needs.build-context.outputs.config-hash }}
       free-threading: ${{ matrix.free-threading }}
 
+  build-ubsan:
+    name: Undefined behavior sanitizer
+    needs: build-context
+    if: needs.build-context.outputs.run-tests == 'true'
+    uses: ./.github/workflows/reusable-ubsan.yml
+    with:
+      config_hash: ${{ needs.build-context.outputs.config-hash }}
+
   cross-build-linux:
     name: Cross build Linux
     runs-on: ubuntu-latest

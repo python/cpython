@@ -563,7 +563,7 @@ fill_and_set_sslerror(_sslmodulestate *state,
                 goto fail;
             }
         }
-        if (PyUnicodeWriter_WriteUTF8(writer, "] ", 2) < 0) {
+        if (PyUnicodeWriter_WriteASCII(writer, "] ", 2) < 0) {
             goto fail;
         }
     }

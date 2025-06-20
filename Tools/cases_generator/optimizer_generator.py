@@ -72,10 +72,8 @@ def validate_uop(override: Uop, uop: Uop) -> None:
 
 def type_name(var: StackItem) -> str:
     if var.is_array():
-        return "JitOptSymbol **"
-    if var.type:
-        return var.type
-    return "JitOptSymbol *"
+        return "JitOptRef *"
+    return "JitOptRef "
 
 
 def declare_variables(uop: Uop, out: CWriter, skip_inputs: bool) -> None:
@@ -230,7 +228,7 @@ def generate_abstract_interpreter(
             declare_variables(override, out, skip_inputs=False)
         else:
             declare_variables(uop, out, skip_inputs=True)
-        stack = Stack(extract_bits=False, cast_type="JitOptSymbol *")
+        stack = Stack()
         write_uop(override, uop, out, stack, debug, skip_inputs=(override is None))
         out.start_line()
         out.emit("break;\n")

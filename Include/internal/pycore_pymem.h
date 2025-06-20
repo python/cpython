@@ -90,16 +90,6 @@ extern int _PyMem_DebugEnabled(void);
 // Enqueue a pointer to be freed possibly after some delay.
 extern void _PyMem_FreeDelayed(void *ptr);
 
-// Enqueue an object to be freed possibly after some delay
-#ifdef Py_GIL_DISABLED
-PyAPI_FUNC(void) _PyObject_XDecRefDelayed(PyObject *obj);
-#else
-static inline void _PyObject_XDecRefDelayed(PyObject *obj)
-{
-    Py_XDECREF(obj);
-}
-#endif
-
 // Periodically process delayed free requests.
 extern void _PyMem_ProcessDelayed(PyThreadState *tstate);
 

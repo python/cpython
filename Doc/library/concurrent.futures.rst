@@ -265,7 +265,7 @@ Each worker's interpreter is isolated from all the other interpreters.
 "Isolated" means each interpreter has its own runtime state and
 operates completely independently.  For example, if you redirect
 :data:`sys.stdout` in one interpreter, it will not be automatically
-redirected any other interpreter.  If you import a module in one
+redirected to any other interpreter.  If you import a module in one
 interpreter, it is not automatically imported in any other.  You
 would need to import the module separately in interpreter where
 you need it.  In fact, each module imported in an interpreter is
@@ -287,7 +287,7 @@ efficient alternative is to serialize with :mod:`pickle` and then send
 the bytes over a shared :mod:`socket <socket>` or
 :func:`pipe <os.pipe>`.
 
-.. class:: InterpreterPoolExecutor(max_workers=None, thread_name_prefix='', initializer=None, initargs=(), shared=None)
+.. class:: InterpreterPoolExecutor(max_workers=None, thread_name_prefix='', initializer=None, initargs=())
 
    A :class:`ThreadPoolExecutor` subclass that executes calls asynchronously
    using a pool of at most *max_workers* threads.  Each thread runs
@@ -305,19 +305,8 @@ the bytes over a shared :mod:`socket <socket>` or
    interpreter.
 
    .. note::
-      Functions defined in the ``__main__`` module cannot be pickled
-      and thus cannot be used.
-
-   .. note::
       The executor may replace uncaught exceptions from *initializer*
       with :class:`~concurrent.futures.interpreter.ExecutionFailed`.
-
-   The optional *shared* argument is a :class:`dict` of objects that all
-   interpreters in the pool share.  The *shared* items are added to each
-   interpreter's ``__main__`` module.  Not all objects are shareable.
-   Shareable objects include the builtin singletons, :class:`str`
-   and :class:`bytes`, and :class:`memoryview`.  See :pep:`734`
-   for more info.
 
    Other caveats from parent :class:`ThreadPoolExecutor` apply here.
 
@@ -325,10 +314,6 @@ the bytes over a shared :mod:`socket <socket>` or
 except the worker serializes the callable and arguments using
 :mod:`pickle` when sending them to its interpreter.  The worker
 likewise serializes the return value when sending it back.
-
-.. note::
-   Functions defined in the ``__main__`` module cannot be pickled
-   and thus cannot be used.
 
 When a worker's current task raises an uncaught exception, the worker
 always tries to preserve the exception as-is.  If that is successful

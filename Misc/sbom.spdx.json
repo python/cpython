@@ -930,11 +930,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "4a0bdb9496d49bbfa3ad50bb7854d8f099e84891"
+          "checksumValue": "682b069d3888f3e8f8cc90f1a49bac9d1a5903d2"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "b1a45149239ee7af7de769a3e9339950d47c199bb9eaa10edce8a00fde603b12"
+          "checksumValue": "8551d2c3fde03b92c6fab5febde00347bd9184ea0085077976863c7836e9669d"
         }
       ],
       "fileName": "Modules/_hacl/python_hacl_namespaces.h"

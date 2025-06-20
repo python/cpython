@@ -11,7 +11,7 @@ from test.support import (
     cpython_only, get_pagesize, is_apple, requires_subprocess, verbose
 )
 from test.support.import_helper import import_module
-from test.support.os_helper import TESTFN, unlink
+from test.support.os_helper import TESTFN, unlink, make_bad_fd
 
 
 # Skip test if no fcntl module.
@@ -273,6 +273,17 @@ class TestFcntl(unittest.TestCase):
         "requires F_SETOWN_EX and F_GETOWN_EX")
     def test_fcntl_large_buffer(self):
         self._check_fcntl_not_mutate_len(2024)
+
+    @unittest.skipUnless(hasattr(fcntl, 'F_DUPFD'), 'need fcntl.F_DUPFD')
+    def test_bad_fd(self):
+        # gh-134744: Test error handling
+        fd = make_bad_fd()
+        with self.assertRaises(OSError):
+            fcntl.fcntl(fd, fcntl.F_DUPFD, 0)
+        with self.assertRaises(OSError):
+            fcntl.fcntl(fd, fcntl.F_DUPFD, b'\0' * 10)
+        with self.assertRaises(OSError):
+            fcntl.fcntl(fd, fcntl.F_DUPFD, b'\0' * 2048)
 
 
 if __name__ == '__main__':

@@ -1,0 +1,2 @@
+Optimize away ``_CALL_TYPE_1`` in the JIT when the return type is known.
+Patch by Tomas Roun

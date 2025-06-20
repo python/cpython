@@ -108,7 +108,6 @@ static const char PyCursesVersion[] = "2.2";
 #include "pycore_capsule.h"     // _PyCapsule_SetTraverse()
 #include "pycore_long.h"        // _PyLong_GetZero()
 #include "pycore_structseq.h"   // _PyStructSequence_NewType()
-#include "pycore_sysmodule.h"   // _PySys_GetOptionalAttrString()
 #include "pycore_fileutils.h"   // _Py_set_inheritable
 
 #ifdef __hpux
@@ -3847,7 +3846,7 @@ _curses_setupterm_impl(PyObject *module, const char *term, int fd)
     if (fd == -1) {
         PyObject* sys_stdout;
 
-        if (_PySys_GetOptionalAttrString("stdout", &sys_stdout) < 0) {
+        if (PySys_GetOptionalAttrString("stdout", &sys_stdout) < 0) {
             return NULL;
         }
 

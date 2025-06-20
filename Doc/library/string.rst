@@ -328,7 +328,7 @@ The general form of a *standard format specifier* is:
    sign: "+" | "-" | " "
    width_and_precision: [`width_with_grouping`][`precision_with_grouping`]
    width_with_grouping: [`width`][`grouping`]
-   precision_with_grouping: "." [`precision`][`grouping`]
+   precision_with_grouping: "." [`precision`][`grouping`] | "." `grouping`
    width: `~python-grammar:digit`+
    precision: `~python-grammar:digit`+
    grouping: "," | "_"

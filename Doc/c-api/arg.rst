@@ -685,6 +685,7 @@ Building values
 
    ``p`` (:class:`bool`) [int]
       Convert a C :c:expr:`int` to a Python :class:`bool` object.
+
       .. versionadded:: 3.14
 
    ``c`` (:class:`bytes` of length 1) [char]

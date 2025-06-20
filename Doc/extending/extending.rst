@@ -204,17 +204,32 @@ value must be in a particular range or must satisfy other conditions,
 :c:data:`PyExc_ValueError` is appropriate.
 
 You can also define a new exception that is unique to your module.
-For this, you can declare a static global object variable at the beginning
-of the file::
+The simplest way to do this is to declare a static global object variable at
+the beginning of the file::
 
-   static PyObject *SpamError;
+   static PyObject *SpamError = NULL;
 
-and initialize it with an exception object in the module's
+and initialize it by calling :c:func:`PyErr_NewException` in the module's
 :c:data:`Py_mod_exec` function (:c:func:`!spam_module_exec`)::
+
+   SpamError = PyErr_NewException("spam.error", NULL, NULL);
+
+Since :c:data:`!SpamError` is a global variable, it will be overwitten every time
+the module is reinitialized, when the :c:data:`Py_mod_exec` function is called.
+
+For now, let's avoid the issue: we will block repeated initialization by raising an
+:py:exc:`ImportError`::
+
+   static PyObject *SpamError = NULL;
 
    static int
    spam_module_exec(PyObject *m)
    {
+       if (SpamError != NULL) {
+           PyErr_SetString(PyExc_ImportError,
+                           "cannot initialize spam module more than once");
+           return -1;
+       }
        SpamError = PyErr_NewException("spam.error", NULL, NULL);
        if (PyModule_AddObjectRef(m, "SpamError", SpamError) < 0) {
            return -1;
@@ -252,6 +267,11 @@ removed from the module by external code, an owned reference to the class is
 needed to ensure that it will not be discarded, causing :c:data:`!SpamError` to
 become a dangling pointer. Should it become a dangling pointer, C code which
 raises the exception could cause a core dump or other unintended side effects.
+
+For now, the :c:func:`Py_DECREF` call to remove this reference is missing.
+Even when the Python interpreter shuts down, the global :c:data:`!SpamError`
+variable will not be garbage-collected. It will "leak".
+We did, however, ensure that this will happen at most once per process.
 
 We discuss the use of :c:macro:`PyMODINIT_FUNC` as a function return type later in this
 sample.

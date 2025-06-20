@@ -127,7 +127,7 @@ async def async_check_output(*args, **kwargs):
 async def select_simulator_device():
     # List the testing simulators, in JSON format
     raw_json = await async_check_output(
-        "xcrun", "simctl", "--set", "testing", "list", "-j"
+        "xcrun", "simctl", "list", "-j"
     )
     json_data = json.loads(raw_json)
 

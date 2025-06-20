@@ -1220,7 +1220,7 @@ static inline int run_remote_debugger_source(PyObject *source)
 // that would be an easy target for a ROP gadget.
 static inline void run_remote_debugger_script(PyObject *path)
 {
-    if (0 != PySys_Audit("remote_debugger_script", "O", path)) {
+    if (0 != PySys_Audit("cpython.remote_debugger_script", "O", path)) {
         PyErr_FormatUnraisable(
             "Audit hook failed for remote debugger script %U", path);
         return;

@@ -119,7 +119,7 @@ class StartupTests(TestBase):
         # The main interpreter's sys.path[0] should be used by subinterpreters.
         script = '''
             import sys
-            from test.support import interpreters
+            from concurrent import interpreters
 
             orig = sys.path[0]
 
@@ -170,7 +170,7 @@ class FinalizationTests(TestBase):
         # is reported, even when subinterpreters get cleaned up at the end.
         import subprocess
         argv = [sys.executable, '-c', '''if True:
-            from test.support import interpreters
+            from concurrent import interpreters
             interp = interpreters.create()
             raise Exception
             ''']

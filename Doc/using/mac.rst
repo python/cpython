@@ -20,13 +20,6 @@ the Pythons provided by the CPython release team for download from
 the `python.org website <https://www.python.org/downloads/>`_. See
 :ref:`alternative_bundles` for some other options.
 
-.. |usemac_x_dot_y| replace:: 3.13
-.. |usemac_python_x_dot_y_literal| replace:: ``python3.13``
-.. |usemac_python_x_dot_y_t_literal| replace:: ``python3.13t``
-.. |usemac_python_x_dot_y_t_literal_config| replace:: ``python3.13t-config``
-.. |usemac_applications_folder_name| replace:: ``Python 3.13``
-.. |usemac_applications_folder_version| replace:: ``/Applications/Python 3.13/``
-
 .. _getting-osx:
 .. _getting-and-installing-macpython:
 
@@ -64,7 +57,7 @@ Clicking on the **Continue** button brings up the **Read Me** for this installer
 Besides other important information, the **Read Me** documents which Python version is
 going to be installed and on what versions of macOS it is supported. You may need
 to scroll through to read the whole file. By default, this **Read Me** will also be
-installed in |usemac_applications_folder_version| and available to read anytime.
+installed in |applications_python_version_literal| and available to read anytime.
 
 .. image:: mac_installer_02_readme.png
 
@@ -83,7 +76,7 @@ display. For most uses, the standard set of installation operations is appropria
 By pressing the **Customize** button, you can choose to omit or select certain package
 components of the installer. Click on each package name to see a description of
 what it installs.
-To also install support for the optional experimental free-threaded feature,
+To also install support for the optional free-threaded feature,
 see :ref:`install-freethreaded-macos`.
 
 .. image:: mac_installer_05_custom_install.png
@@ -97,7 +90,7 @@ When the installation is complete, the **Summary** window will appear.
 .. image:: mac_installer_06_summary.png
 
 Double-click on the :command:`Install Certificates.command`
-icon or file in the |usemac_applications_folder_version| window to complete the
+icon or file in the |applications_python_version_literal| window to complete the
 installation.
 
 .. image:: mac_installer_07_applications.png
@@ -114,7 +107,7 @@ Close this terminal window and the installer window.
 
 A default install will include:
 
-* A |usemac_applications_folder_name| folder in your :file:`Applications` folder. In here
+* A |python_version_literal| folder in your :file:`Applications` folder. In here
   you find :program:`IDLE`, the development environment that is a standard part of official
   Python distributions; and :program:`Python Launcher`, which handles double-clicking Python
   scripts from the macOS `Finder <https://support.apple.com/en-us/HT201732>`_.
@@ -141,7 +134,7 @@ How to run a Python script
 
 There are two ways to invoke the Python interpreter.
 If you are familiar with using a Unix shell in a terminal
-window, you can invoke |usemac_python_x_dot_y_literal| or ``python3`` optionally
+window, you can invoke |python_x_dot_y_literal| or ``python3`` optionally
 followed by one or more command line options (described in :ref:`using-on-general`).
 The Python tutorial also has a useful section on
 :ref:`using Python interactively from a shell <tut-interac>`.
@@ -160,7 +153,7 @@ for more information.
 To run a Python script file from the terminal window, you can
 invoke the interpreter with the name of the script file:
 
-    |usemac_python_x_dot_y_literal| ``myscript.py``
+    |python_x_dot_y_literal| ``myscript.py``
 
 To run your script from the Finder, you can either:
 
@@ -259,20 +252,20 @@ Advanced Topics
 Installing Free-threaded Binaries
 ---------------------------------
 
-.. versionadded:: 3.13 (Experimental)
-
-.. note::
-
-   Everything described in this section is considered experimental,
-   and should be expected to change in future releases.
+.. versionadded:: 3.13
 
 The ``python.org`` :ref:`Python for macOS <getting-and-installing-macpython>`
 installer package can optionally install an additional build of
-Python |usemac_x_dot_y| that supports :pep:`703`, the experimental free-threading feature
+Python |version| that supports :pep:`703`, the free-threading feature
 (running with the :term:`global interpreter lock` disabled).
 Check the release page on ``python.org`` for possible updated information.
 
-Because this feature is still considered experimental, the support for it
+The free-threaded mode is working and continues to be improved, but
+there is some additional overhead in single-threaded workloads compared
+to the regular build. Additionally, third-party packages, in particular ones
+with an :term:`extension module`, may not be ready for use in a
+free-threaded build, and will re-enable the :term:`GIL`.
+Therefore, the support for free-threading
 is not installed by default. It is packaged as a separate install option,
 available by clicking the **Customize** button on the **Installation Type**
 step of the installer as described above.
@@ -282,46 +275,54 @@ step of the installer as described above.
 If the box next to the **Free-threaded Python** package name is checked,
 a separate :file:`PythonT.framework` will also be installed
 alongside the normal :file:`Python.framework` in :file:`/Library/Frameworks`.
-This configuration allows a free-threaded Python |usemac_x_dot_y| build to co-exist
-on your system with a traditional (GIL only) Python |usemac_x_dot_y| build with
-minimal risk while installing or testing. This installation layout is itself
-experimental and is subject to change in future releases.
+This configuration allows a free-threaded Python |version| build to co-exist
+on your system with a traditional (GIL only) Python |version| build with
+minimal risk while installing or testing. This installation layout may
+change in future releases.
 
 Known cautions and limitations:
 
 - The **UNIX command-line tools** package, which is selected by default,
-  will install links in :file:`/usr/local/bin` for |usemac_python_x_dot_y_t_literal|,
-  the free-threaded interpreter, and |usemac_python_x_dot_y_t_literal_config|,
+  will install links in :file:`/usr/local/bin` for |python_x_dot_y_t_literal|,
+  the free-threaded interpreter, and |python_x_dot_y_t_literal_config|,
   a configuration utility which may be useful for package builders.
   Since :file:`/usr/local/bin` is typically included in your shell ``PATH``,
   in most cases no changes to your ``PATH`` environment variables should
-  be needed to use |usemac_python_x_dot_y_t_literal|.
+  be needed to use |python_x_dot_y_t_literal|.
 
 - For this release, the **Shell profile updater** package and the
-  :file:`Update Shell Profile.command` in |usemac_applications_folder_version|
+  :file:`Update Shell Profile.command` in |applications_python_version_literal|
   do not support the free-threaded package.
 
 - The free-threaded build and the traditional build have separate search
   paths and separate :file:`site-packages` directories so, by default,
   if you need a package available in both builds, it may need to be installed in both.
   The free-threaded package will install a separate instance of :program:`pip` for use
-  with |usemac_python_x_dot_y_t_literal|.
+  with |python_x_dot_y_t_literal|.
 
   - To install a package using :command:`pip` without a :command:`venv`:
 
-        |usemac_python_x_dot_y_t_literal| ``-m pip install <package_name>``
+    .. parsed-literal::
+
+       python\ |version|\ t -m pip install <package_name>
 
 - When working with multiple Python environments, it is usually safest and easiest
   to :ref:`create and use virtual environments <tut-venv>`.
   This can avoid possible command name conflicts and confusion about which Python is in use:
 
-      |usemac_python_x_dot_y_t_literal| ``-m venv <venv_name>``
+  .. parsed-literal::
+
+     python\ |version|\ t -m venv <venv_name>
+
 
   then :command:`activate`.
 
 - To run a free-threaded version of IDLE:
 
-      |usemac_python_x_dot_y_t_literal| ``-m idlelib``
+  .. parsed-literal::
+
+     python\ |version|\ t -m idlelib
+
 
 - The interpreters in both builds respond to the same
   :ref:`PYTHON environment variables <using-on-envvars>`
@@ -337,28 +338,28 @@ Known cautions and limitations:
   thus it only needs to be run once.
 
 - If you cannot depend on the link in ``/usr/local/bin`` pointing to the
-  ``python.org`` free-threaded |usemac_python_x_dot_y_t_literal| (for example, if you want
+  ``python.org`` free-threaded |python_x_dot_y_t_literal| (for example, if you want
   to install your own version there or some other distribution does),
   you can explicitly set your shell ``PATH`` environment variable to
   include the ``PythonT`` framework ``bin`` directory:
 
-  .. code-block:: sh
+  .. parsed-literal::
 
-     export PATH="/Library/Frameworks/PythonT.framework/Versions/3.13/bin":"$PATH"
+     export PATH="/Library/Frameworks/PythonT.framework/Versions/\ |version|\ /bin":"$PATH"
 
   The traditional framework installation by default does something similar,
   except for :file:`Python.framework`. Be aware that having both framework ``bin``
   directories in ``PATH`` can lead to confusion if there are duplicate names
-  like ``python3.13`` in both; which one is actually used depends on the order
+  like |python_x_dot_y_literal| in both; which one is actually used depends on the order
   they appear in ``PATH``. The ``which python3.x`` or ``which python3.xt``
   commands can show which path is being used. Using virtual environments
   can help avoid such ambiguities. Another option might be to create
   a shell :command:`alias` to the desired interpreter, like:
 
-  .. code-block:: sh
+  .. parsed-literal::
 
-     alias py3.13="/Library/Frameworks/Python.framework/Versions/3.13/bin/python3.13"
-     alias py3.13t="/Library/Frameworks/PythonT.framework/Versions/3.13/bin/python3.13t"
+     alias py\ |version|\ ="/Library/Frameworks/Python.framework/Versions/\ |version|\ /bin/python\ |version|\ "
+     alias py\ |version|\ t="/Library/Frameworks/PythonT.framework/Versions/\ |version|\ /bin/python\ |version|\ t"
 
 Installing using the command line
 ---------------------------------
@@ -369,22 +370,22 @@ the macOS command line :command:`installer` utility lets you select non-default
 options, too. If you are not familiar with :command:`installer`, it can be
 somewhat cryptic (see :command:`man installer` for more information).
 As an example, the following shell snippet shows one way to do it,
-using the ``3.13.0b2`` release and selecting the free-threaded interpreter
+using the |x_dot_y_b2_literal| release and selecting the free-threaded interpreter
 option:
 
-..  code-block:: sh
+.. parsed-literal::
 
-    RELEASE="python-3.13.0b2-macos11.pkg"
+    RELEASE="python-\ |version|\ 0b2-macos11.pkg"
 
     # download installer pkg
-    curl -O https://www.python.org/ftp/python/3.13.0/${RELEASE}
+    curl -O \https://www.python.org/ftp/python/\ |version|\ .0/${RELEASE}
 
     # create installer choicechanges to customize the install:
-    #    enable the PythonTFramework-3.13 package
+    #    enable the PythonTFramework-\ |version|\  package
     #    while accepting the other defaults (install all other packages)
     cat > ./choicechanges.plist <<EOF
     <?xml version="1.0" encoding="UTF-8"?>
-    <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+    <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "\http://www.apple.com/DTDs/PropertyList-1.0.dtd">
     <plist version="1.0">
     <array>
             <dict>
@@ -393,7 +394,7 @@ option:
                     <key>choiceAttribute</key>
                     <string>selected</string>
                     <key>choiceIdentifier</key>
-                    <string>org.python.Python.PythonTFramework-3.13</string>
+                    <string>org.python.Python.PythonTFramework-\ |version|\ </string>
             </dict>
     </array>
     </plist>
@@ -404,19 +405,19 @@ option:
 
 You can then test that both installer builds are now available with something like:
 
-..  code-block:: console
+.. parsed-literal::
 
     $ # test that the free-threaded interpreter was installed if the Unix Command Tools package was enabled
-    $ /usr/local/bin/python3.13t -VV
-    Python 3.13.0b2 experimental free-threading build (v3.13.0b2:3a83b172af, Jun  5 2024, 12:57:31) [Clang 15.0.0 (clang-1500.3.9.4)]
+    $ /usr/local/bin/python\ |version|\ t -VV
+    Python \ |version|\ .0b2 free-threading build (v\ |version|\ .0b2:3a83b172af, Jun  5 2024, 12:57:31) [Clang 15.0.0 (clang-1500.3.9.4)]
     $ #    and the traditional interpreter
-    $ /usr/local/bin/python3.13 -VV
-    Python 3.13.0b2 (v3.13.0b2:3a83b172af, Jun  5 2024, 12:50:24) [Clang 15.0.0 (clang-1500.3.9.4)]
+    $ /usr/local/bin/python\ |version|\  -VV
+    Python \ |version|\ .0b2 (v\ |version|\ .0b2:3a83b172af, Jun  5 2024, 12:50:24) [Clang 15.0.0 (clang-1500.3.9.4)]
     $ # test that they are also available without the prefix if /usr/local/bin is on $PATH
-    $ python3.13t -VV
-    Python 3.13.0b2 experimental free-threading build (v3.13.0b2:3a83b172af, Jun  5 2024, 12:57:31) [Clang 15.0.0 (clang-1500.3.9.4)]
-    $ python3.13 -VV
-    Python 3.13.0b2 (v3.13.0b2:3a83b172af, Jun  5 2024, 12:50:24) [Clang 15.0.0 (clang-1500.3.9.4)]
+    $ python\ |version|\ t -VV
+    Python \ |version|\ .0b2 free-threading build (v\ |version|\ .0b2:3a83b172af, Jun  5 2024, 12:57:31) [Clang 15.0.0 (clang-1500.3.9.4)]
+    $ python\ |version|\  -VV
+    Python \ |version|\ .0b2 (v\ |version|\ .0b2:3a83b172af, Jun  5 2024, 12:50:24) [Clang 15.0.0 (clang-1500.3.9.4)]
 
 .. note::
 
