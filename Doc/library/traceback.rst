@@ -63,7 +63,7 @@ Module-Level Functions
    :term:`file <file object>` or :term:`file-like object` to
    receive the output.
 
-   If *show_lines* is false, source code lines are not included in the output.
+   If *show_lines* is true (the default), source code lines will be included in the output.
 
    If *recent_first* is true, the most recent stack trace entries are printed
    first, otherwise the oldest entries are printed first. The default is false.
@@ -121,7 +121,7 @@ Module-Level Functions
    printed as well, like the interpreter itself does when printing an unhandled
    exception.
 
-   If *show_lines* is false, source code lines are not included in the output.
+   If *show_lines* is true, source code lines are included in the output.
 
    If *recent_first* is true, the most recent stack trace entries are printed
    first, otherwise the oldest entries are printed first. The default is false.
@@ -165,8 +165,8 @@ Module-Level Functions
    The optional *f* argument can be used to specify an alternate
    :ref:`stack frame <frame-objects>`
    to start.  The optional *file* argument has the same meaning as for
-   :func:`print_tb`.  If *show_lines* is ``False``, source code lines are
-   not included in the output.
+   :func:`print_tb`.  If *show_lines* is true, source code lines are
+   included in the output.
 
    .. versionchanged:: 3.5
       Added negative *limit* support.
@@ -201,7 +201,7 @@ Module-Level Functions
    Print the list of tuples as returned by :func:`extract_tb` or
    :func:`extract_stack` as a formatted stack trace to the given file.
    If *file* is ``None``, the output is written to :data:`sys.stderr`.
-   If *show_lines* is ``False``, source code lines are not included in the output.
+   If *show_lines* is true, source code lines are included in the output.
 
    .. versionchanged:: next
       Added *show_lines* parameter.
@@ -214,8 +214,8 @@ Module-Level Functions
    for printing.  Each string in the resulting list corresponds to the item with
    the same index in the argument list.  Each string ends in a newline; the
    strings may contain internal newlines as well, for those items whose source
-   text line is not ``None``.  If *show_lines* is ``False``, source code lines
-   are not included in the output.
+   text line is not ``None``.  If *show_lines* is ``True``, source code lines
+   are included in the output.
 
    .. versionchanged:: next
       Added *show_lines* parameter.
@@ -259,7 +259,7 @@ Module-Level Functions
    containing internal newlines.  When these lines are concatenated and printed,
    exactly the same text is printed as does :func:`print_exception`.
 
-   If *show_lines* is false, source code lines are not included in the output.
+   If *show_lines* is true, source code lines are included in the output.
    If *recent_first* is true, the most recent stack trace entries are printed
    first, otherwise the oldest entries are printed first. The default is false.
 
@@ -279,7 +279,7 @@ Module-Level Functions
    This is like ``print_exc(limit)`` but returns a string instead of printing to
    a file.
 
-   If *show_lines* is false, source code lines are not included in the output.
+   If *show_lines* is true, source code lines are included in the output.
    If *recent_first* is true, the most recent stack trace entries are printed
    first, otherwise the oldest entries are printed first. The default is false.
 
@@ -478,7 +478,7 @@ the module-level functions described above.
       Print to *file* (default ``sys.stderr``) the exception information returned by
       :meth:`format`.
 
-      If *show_lines* is false, source code lines from being included in the output.
+      If *show_lines* is true, source code lines are included in the output.
 
       If *recent_first* is true, the exception is printed first followed by stack
       trace by "most recent call first" order.
@@ -501,7 +501,7 @@ the module-level functions described above.
       some containing internal newlines. :func:`~traceback.print_exception`
       is a wrapper around this method which just prints the lines to a file.
 
-      If *show_lines* is false, source code lines from being included in the output.
+      If *show_lines* is true, source code lines are included in the output.
 
       If *recent_first* is true, the exception is printed first followed by stack
       trace by "most recent call first" order.
@@ -585,8 +585,7 @@ the module-level functions described above.
       repetitions are shown, followed by a summary line stating the exact
       number of further repetitions.
 
-      The keyword argument *show_lines*, if ``False``, prevents source code
-      lines from being included in the output.
+      If *show_lines* is true, includes source code lines in the output.
 
       .. versionchanged:: 3.6
          Long sequences of repeated frames are now abbreviated.
@@ -602,8 +601,8 @@ the module-level functions described above.
       printed by :meth:`StackSummary.format`. If it returns ``None``, the
       frame is omitted from the output.
 
-      The keyword argument *show_lines*, if ``False``, prevents source code
-      lines from being included in the output.
+      The keyword argument *show_lines*, if ``True``, includes source code
+      lines in the output.
 
       .. versionadded:: 3.11
 
