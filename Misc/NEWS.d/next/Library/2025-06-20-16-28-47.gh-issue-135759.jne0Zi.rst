@@ -1,0 +1,2 @@
+:mod:`hashlib`: correctly reject negative digest lengths in SHAKE objects.
+Patch by Bénédikt Tran.
