@@ -1034,7 +1034,7 @@ heapctypewithweakref_dealloc(PyObject *op)
 {
     HeapCTypeWithWeakrefObject *self = (HeapCTypeWithWeakrefObject*)op;
     PyTypeObject *tp = Py_TYPE(self);
-    PyObject_ClearWeakRefs((PyObject *) self);
+    PyObject_ClearWeakRefs(op);
     Py_XDECREF(self->weakreflist);
     PyObject_Free(self);
     Py_DECREF(tp);

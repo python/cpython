@@ -111,7 +111,7 @@ picklebuf_dealloc(PyObject *op)
 {
     PyPickleBufferObject *self = (PyPickleBufferObject*)op;
     PyObject_GC_UnTrack(self);
-    PyObject_ClearWeakRefs((PyObject *) self);
+    PyObject_ClearWeakRefs(op);
     PyBuffer_Release(&self->view);
     Py_TYPE(self)->tp_free((PyObject *) self);
 }

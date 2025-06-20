@@ -33,7 +33,7 @@ ga_dealloc(PyObject *self)
     gaobject *alias = (gaobject *)self;
 
     _PyObject_GC_UNTRACK(self);
-    PyObject_ClearWeakRefs((PyObject *)alias);
+    PyObject_ClearWeakRefs(self);
     Py_XDECREF(alias->origin);
     Py_XDECREF(alias->args);
     Py_XDECREF(alias->parameters);
