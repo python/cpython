@@ -398,6 +398,75 @@ See also the description of the :keyword:`try` statement in section :ref:`try`
 and :keyword:`raise` statement in section :ref:`raise`.
 
 
+.. _execcomponents:
+
+Runtime Components
+==================
+
+Python's execution model does not operate in a vacuum.  It runs on a
+computer.  When a program runs, the conceptual layers of how it runs
+on the computer look something like this::
+
+   host computer (or VM or container)
+     process
+       OS thread (runs machine code)
+
+.. (Sometimes there may even be an extra layer right after "thread"
+   for light-weight threads or coroutines.)
+
+While a program always starts with exactly one of each of those, it may
+grow to include multiple of each.  Hosts and processes are isolated and
+independent from one another.  However, threads are not.  Each thread
+does *run* independently, for the small segments of time it is
+scheduled to execute its code on the CPU.  Otherwise, all threads
+in a process share all the process' resources, including memory.
+This is exactly what can make threads a pain: two threads running
+at the same arbitrary time on different CPU cores can accidentally
+interfere with each other's use of some shared data.  The initial
+thread is known as the "main" thread.
+
+The same layers apply to each Python program, with some extra layers
+specific to Python::
+
+   host
+     process
+       Python runtime
+         interpreter
+           Python thread (runs bytecode)
+
+when a Python program starts, it looks exactly like that, with one
+of each.  The process has a single global runtime to manage global
+resources.  Each Python thread has all the state it needs to run
+Python code (and use any supported C-API) in its OS thread.
+
+.. , including its stack of call frames.
+
+.. If the program uses coroutines (async) then the thread will end up
+   juggling multiple stacks.
+
+In between the global runtime and the threads lies the interpreter.
+It encapsulates all of the non-global runtime state that the
+interpreter's Python threads share.  For example, all those threads
+share :data:`sys.modules`.  When a Python thread is created, it belongs
+to an interpreter.
+
+If the runtime supports using multiple interpreters then each OS thread
+will have at most one Python thread for each interpreter.  However,
+only one is active in the OS thread at a time.  Switching between
+interpreters means changing the active Python thread.
+The initial interpreter is known as the "main" interpreter.
+
+.. (The interpreter is different from the "bytecode interpreter",
+   of which each thread has one to execute Python code.)
+
+Once a program is running, new Python threads can be created using the
+:mod:`threading` module.  Additional processes can be created using the
+:mod:`multiprocessing` and :mod:`subprocess` modules.  You can run
+coroutines (async) in the main thread using :mod:`asyncio`.
+Interpreters can be created using the :mod:`concurrent.interpreters`
+module.
+
+
 .. rubric:: Footnotes
 
 .. [#] This limitation occurs because the code that is executed by these operations
