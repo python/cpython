@@ -2308,7 +2308,7 @@ class TestUopsOptimization(unittest.TestCase):
     def test_attr_promotion_failure(self):
         # We're not testing for any specific uops here, just
         # testing it doesn't crash.
-        result = script_helper.run_python_until_end('-c', textwrap.dedent("""
+        script_helper.assert_python_ok('-c', textwrap.dedent("""
         import _testinternalcapi
         import _opcode
         import email
@@ -2333,8 +2333,7 @@ class TestUopsOptimization(unittest.TestCase):
         testfunc(_testinternalcapi.TIER2_THRESHOLD)
         ex = get_first_executor(testfunc)
         assert ex is not None
-        """), PYTHON_JIT="1")
-        self.assertEqual(result[0].rc, 0, result)
+        """))
 
 
 def global_identity(x):
