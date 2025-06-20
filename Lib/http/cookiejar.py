@@ -644,8 +644,8 @@ def eff_request_host(request):
 
     """
     erhn = req_host = request_host(request)
-    IPV6_RE = re.compile(r"^\[.*\]$")
-    if "." not in req_host and not IPV6_RE.search(req_host):
+    is_IPV6 = req_host.startswith('[') and req_host.endswith(']')
+    if "." not in req_host and not is_IPV6:
         # avoid adding .local at the end of a IPV6 address
         erhn = req_host + ".local"
     return req_host, erhn
