@@ -331,7 +331,8 @@ class HashLibTestCase(unittest.TestCase):
                 with self.subTest(digest_name, args=args, kwds=kwds):
                     with self.assertRaisesRegex(TypeError, errmsg):
                         hashlib.new(digest_name, *args, **kwds)
-                    if self._hashlib:
+                    if (self._hashlib and
+                            digest_name in self._hashlib._constructors):
                         with self.assertRaisesRegex(TypeError, errmsg):
                             self._hashlib.new(digest_name, *args, **kwds)
 
