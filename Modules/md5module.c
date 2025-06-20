@@ -22,6 +22,7 @@
 
 #include "Python.h"
 #include "pycore_strhex.h" // _Py_strhex()
+
 #include "hashlib.h"
 
 /*[clinic input]
