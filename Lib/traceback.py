@@ -33,7 +33,7 @@ def print_list(extracted_list, file=None, *, show_lines=True):
     To print in "recent call first" order, call "extracted_list.reverse()"
     before passing it to this function.
 
-    If 'show_lines' is false, source code lines are not included in the output.
+    If 'show_lines' is true, source code lines are included in the output.
     """
     if file is None:
         file = sys.stderr
@@ -51,7 +51,7 @@ def format_list(extracted_list, *, show_lines=True):
     Each string ends in a newline; the strings may contain internal newlines as
     well, for those items whose source text line is not None.
 
-    If 'show_lines' is false, source code lines are not included in the output.
+    If 'show_lines' is true, source code lines are included in the output.
     """
     return StackSummary.from_list(extracted_list).format(show_lines=show_lines)
 
@@ -67,7 +67,7 @@ def print_tb(tb, limit=None, file=None, *, show_lines=True, recent_first=False):
     'file' should be an open file or file-like object with a write()
     method.
 
-    If 'show_lines' is false, source code lines are not included in the output.
+    If 'show_lines' is true, source code lines are included in the output.
     If 'recent_first' is true, the stack trace is printed in "most recent call
     first" order.
     """
@@ -147,7 +147,7 @@ def print_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None,
     occurred with a caret on the next line indicating the approximate
     position of the error.
 
-    If 'show_lines' is false, source code lines are not included in the output.
+    If 'show_lines' is true, source code lines are included in the output.
     If 'recent_first' is true, exception is printed first and traceback is shown
     by "most recent call first" order.
     """
@@ -268,7 +268,7 @@ def print_stack(f=None, limit=None, file=None, *, show_lines=True, recent_first=
     stack frame at which to start. The optional 'limit' and 'file'
     arguments have the same meaning as for print_exception().
 
-    If 'show_lines' is false, source code lines are not included in the output.
+    If 'show_lines' is true, source code lines are included in the output.
     If 'recent_first' is true, stack is printed by "most recent call first" order.
     """
     if f is None:
