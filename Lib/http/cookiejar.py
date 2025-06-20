@@ -614,8 +614,8 @@ def user_domain_match(A, B):
     A = A.lower()
     B = B.lower()
     if not (liberal_is_HDN(A) and liberal_is_HDN(B)):
-        # equal IPV4 addresses
         if A == B:
+            # equal IPV4 addresses
             return True
         return False
     # A and B may be HDNs or a IPv6 addresses now
