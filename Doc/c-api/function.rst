@@ -118,13 +118,17 @@ There are a few functions specific to Python functions.
 
 .. c:function:: PyObject* PyFunction_GetKwDefaults(PyObject *op)
 
-   Return the keyword-argument default values of the function object *op*. This can be a
-   tuple of arguments or ``NULL``.
+   Return the keyword-only argument default values of the function object *op*. This can be a
+   dictionary of arguments or ``NULL``.
+
+   .. versionadded:: 3.0
 
 
 .. c:function:: PyObject *PyFunction_GET_KW_DEFAULTS(PyObject *op)
 
    Equivalent to :c:func:`PyFunction_GetKwDefaults`, but without error checking.
+
+   .. versionadded:: 3.0
 
 
 .. c:function:: PyObject* PyFunction_GetClosure(PyObject *op)
