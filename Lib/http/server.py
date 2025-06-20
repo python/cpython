@@ -1048,6 +1048,11 @@ def _main(args=None):
                              '(default: %(default)s)')
     parser.add_argument('--cors', action='store_true',
                         help='Enable Access-Control-Allow-Origin: * header')
+    parser.add_argument('-H', '--header', nargs=2, action='append',
+                        # metavar='HEADER VALUE',
+                        metavar=('HEADER', 'VALUE'),
+                        help='Add a custom response header '
+                             '(can be used multiple times)')
     args = parser.parse_args(args)
 
     if not args.tls_cert and args.tls_key:
@@ -1085,7 +1090,12 @@ def _main(args=None):
         pass
 
     ServerClass = HTTPSDualStackServer if args.tls_cert else HTTPDualStackServer
-    response_headers = {'Access-Control-Allow-Origin': '*'} if args.cors else None
+    response_headers = {}
+    if args.cors:
+        response_headers['Access-Control-Allow-Origin'] = '*'
+    for header, value in args.header or []:
+        response_headers[header] = value
+
 
     test(
         HandlerClass=SimpleHTTPRequestHandler,
@@ -1096,7 +1106,7 @@ def _main(args=None):
         tls_cert=args.tls_cert,
         tls_key=args.tls_key,
         tls_password=tls_key_password,
-        response_headers=response_headers
+        response_headers=response_headers or None
     )
 
 

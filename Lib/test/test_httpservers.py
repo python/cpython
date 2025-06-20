@@ -1399,6 +1399,18 @@ class CommandLineTestCase(unittest.TestCase):
         mock_func.assert_called_once_with(**call_args)
         mock_func.reset_mock()
 
+    @mock.patch('http.server.test')
+    def test_header_flag(self, mock_func):
+        self.invoke_httpd('--header', 'h1', 'v1', '-H', 'h2', 'v2')
+        call_args = self.args | dict(
+            response_headers={
+                'h1': 'v1',
+                'h2': 'v2'
+            }
+        )
+        mock_func.assert_called_once_with(**call_args)
+        mock_func.reset_mock()
+
     @unittest.skipIf(ssl is None, "requires ssl")
     @mock.patch('http.server.test')
     def test_tls_cert_and_key_flags(self, mock_func):
