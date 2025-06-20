@@ -34,7 +34,7 @@ typedef struct _Py_UOpsAbstractFrame _Py_UOpsAbstractFrame;
 #define sym_new_tuple _Py_uop_sym_new_tuple
 #define sym_tuple_getitem _Py_uop_sym_tuple_getitem
 #define sym_tuple_length _Py_uop_sym_tuple_length
-#define sym_is_immortal _Py_uop_sym_is_immortal
+#define sym_is_immortal _Py_uop_symbol_is_immortal
 #define sym_new_compact_int _Py_uop_sym_new_compact_int
 #define sym_is_compact_int _Py_uop_sym_is_compact_int
 #define sym_new_truthiness _Py_uop_sym_new_truthiness
@@ -535,7 +535,7 @@ dummy_func(void) {
     }
 
     op(_LOAD_CONST_INLINE, (ptr/4 -- value)) {
-        value = PyJitRef_Borrow(sym_new_const(ctx, ptr));
+        value = sym_new_const(ctx, ptr);
     }
 
     op(_LOAD_CONST_INLINE_BORROW, (ptr/4 -- value)) {
@@ -543,7 +543,7 @@ dummy_func(void) {
     }
 
     op(_POP_TOP_LOAD_CONST_INLINE, (ptr/4, pop -- value)) {
-        value = PyJitRef_Borrow(sym_new_const(ctx, ptr));
+        value = sym_new_const(ctx, ptr);
     }
 
     op(_POP_TOP_LOAD_CONST_INLINE_BORROW, (ptr/4, pop -- value)) {
@@ -564,9 +564,8 @@ dummy_func(void) {
 
     op(_POP_TOP, (value -- )) {
         PyTypeObject *typ = sym_get_type(value);
-        PyObject *const_val = sym_get_const(ctx, value);
         if (PyJitRef_IsBorrowed(value) ||
-            sym_is_immortal(value) ||
+            sym_is_immortal(PyJitRef_Unwrap(value)) ||
             sym_is_null(value)) {
             REPLACE_OP(this_instr, _POP_TOP_NOP, 0, 0);
         }
@@ -823,7 +822,9 @@ dummy_func(void) {
     }
 
     op(_RETURN_VALUE, (retval -- res)) {
-        JitOptRef temp = retval;
+        // We wrap and unwrap the value to mimic PyStackRef_MakeHeapSafe
+        // in bytecodes.c
+        JitOptRef temp = PyJitRef_Wrap(PyJitRef_Unwrap(retval));
         DEAD(retval);
         SAVE_STACK();
         ctx->frame->stack_pointer = stack_pointer;

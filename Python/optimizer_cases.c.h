@@ -104,9 +104,8 @@
             JitOptRef value;
             value = stack_pointer[-1];
             PyTypeObject *typ = sym_get_type(value);
-            PyObject *const_val = sym_get_const(ctx, value);
             if (PyJitRef_IsBorrowed(value) ||
-                sym_is_immortal(value) ||
+                sym_is_immortal(PyJitRef_Unwrap(value)) ||
                 sym_is_null(value)) {
                 REPLACE_OP(this_instr, _POP_TOP_NOP, 0, 0);
             }
@@ -827,7 +826,7 @@
             JitOptRef retval;
             JitOptRef res;
             retval = stack_pointer[-1];
-            JitOptRef temp = retval;
+            JitOptRef temp = PyJitRef_Wrap(PyJitRef_Unwrap(retval));
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             ctx->frame->stack_pointer = stack_pointer;
@@ -2684,7 +2683,7 @@
         case _LOAD_CONST_INLINE: {
             JitOptRef value;
             PyObject *ptr = (PyObject *)this_instr->operand0;
-            value = PyJitRef_Borrow(sym_new_const(ctx, ptr));
+            value = sym_new_const(ctx, ptr);
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -2694,7 +2693,7 @@
         case _POP_TOP_LOAD_CONST_INLINE: {
             JitOptRef value;
             PyObject *ptr = (PyObject *)this_instr->operand0;
-            value = PyJitRef_Borrow(sym_new_const(ctx, ptr));
+            value = sym_new_const(ctx, ptr);
             stack_pointer[-1] = value;
             break;
         }
