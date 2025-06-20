@@ -59,7 +59,7 @@ There are a few functions specific to Python functions.
 
 .. c:function:: PyObject *PyFunction_GET_CODE(PyObject *op)
 
-   Equivalent to :c:func:`PyFunction_GetCode`, but without error checking.
+   Similar to :c:func:`PyFunction_GetCode`, but without error checking.
 
 
 .. c:function:: PyObject* PyFunction_GetGlobals(PyObject *op)
@@ -69,7 +69,7 @@ There are a few functions specific to Python functions.
 
 .. c:function:: PyObject *PyFunction_GET_GLOBALS(PyObject *op)
 
-   Equivalent to :c:func:`PyFunction_GetGlobals`, but without error checking.
+   Similar to :c:func:`PyFunction_GetGlobals`, but without error checking.
 
 
 .. c:function:: PyObject* PyFunction_GetModule(PyObject *op)
@@ -84,7 +84,7 @@ There are a few functions specific to Python functions.
 
 .. c:function:: PyObject *PyFunction_GET_MODULE(PyObject *op)
 
-   Equivalent to :c:func:`PyFunction_GetModule`, but without error checking.
+   Similar to :c:func:`PyFunction_GetModule`, but without error checking.
 
 
 .. c:function:: PyObject* PyFunction_GetDefaults(PyObject *op)
@@ -95,7 +95,7 @@ There are a few functions specific to Python functions.
 
 .. c:function:: PyObject *PyFunction_GET_DEFAULTS(PyObject *op)
 
-   Equivalent to :c:func:`PyFunction_GetDefaults`, but without error checking.
+   Similar to :c:func:`PyFunction_GetDefaults`, but without error checking.
 
 
 .. c:function:: int PyFunction_SetDefaults(PyObject *op, PyObject *defaults)
@@ -126,7 +126,7 @@ There are a few functions specific to Python functions.
 
 .. c:function:: PyObject *PyFunction_GET_KW_DEFAULTS(PyObject *op)
 
-   Equivalent to :c:func:`PyFunction_GetKwDefaults`, but without error checking.
+   Similar to :c:func:`PyFunction_GetKwDefaults`, but without error checking.
 
    .. versionadded:: 3.0
 
@@ -139,7 +139,7 @@ There are a few functions specific to Python functions.
 
 .. c:function:: PyObject *PyFunction_GET_CLOSURE(PyObject *op)
 
-   Equivalent to :c:func:`PyFunction_GetClosure`, but without error checking.
+   Similar to :c:func:`PyFunction_GetClosure`, but without error checking.
 
 
 .. c:function:: int PyFunction_SetClosure(PyObject *op, PyObject *closure)
@@ -160,7 +160,7 @@ There are a few functions specific to Python functions.
 
 .. c:function:: PyObject *PyFunction_GET_ANNOTATIONS(PyObject *op)
 
-   Equivalent to :c:func:`PyFunction_GetAnnotations`, but without error checking.
+   Similar to :c:func:`PyFunction_GetAnnotations`, but without error checking.
 
    .. versionadded:: 3.0
 
