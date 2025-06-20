@@ -123,7 +123,7 @@ multi-threaded benchmarks reveal performance issues.
 
 ## References
 
-1. https://github.com/python/cpython/issues/115103
+[^1]: https://github.com/python/cpython/issues/115103
 2. https://youtu.be/ZXUIFj4nRjk?t=694
 3. https://people.kernel.org/joelfernandes/gus-vs-rcu
 4. http://bxr.su/FreeBSD/sys/kern/subr_smr.c#44
