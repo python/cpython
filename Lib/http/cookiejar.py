@@ -547,7 +547,6 @@ def is_HDN(text):
     # XXX
     # This may well be wrong.  Which RFC is HDN defined in, if any (for
     #  the purposes of RFC 2965)?
-    # Both IPv4 and IPv6 are supported.
     if is_ip(text):
         return False
     if text == "":
