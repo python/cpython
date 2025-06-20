@@ -211,11 +211,13 @@ dis_bug1333982 = """\
               MAKE_FUNCTION
               LOAD_FAST_BORROW         0 (x)
               CALL                     0
+              CHECK_PERIODIC
 
 %3d           LOAD_SMALL_INT           1
 
 %3d           BINARY_OP                0 (+)
               CALL                     0
+              CHECK_PERIODIC
               RAISE_VARARGS            1
 """ % (bug1333982.__code__.co_firstlineno,
        bug1333982.__code__.co_firstlineno + 1,
@@ -557,7 +559,8 @@ dis_with = """\
                SWAP                     3
                LOAD_SPECIAL             0 (__enter__)
                CALL                     0
-       L1:     POP_TOP
+       L1:     CHECK_PERIODIC
+               POP_TOP
 
 %4d           LOAD_SMALL_INT           1
                STORE_FAST               1 (x)
@@ -566,6 +569,7 @@ dis_with = """\
                LOAD_CONST               1 (None)
                LOAD_CONST               1 (None)
                CALL                     3
+               CHECK_PERIODIC
                POP_TOP
 
 %4d           LOAD_SMALL_INT           2
@@ -622,6 +626,7 @@ dis_asyncwith = """\
                 SWAP                     3
                 LOAD_SPECIAL             2 (__aenter__)
                 CALL                     0
+                CHECK_PERIODIC
                 GET_AWAITABLE            1
                 LOAD_CONST               0 (None)
         L2:     SEND                     3 (to L5)
@@ -638,6 +643,7 @@ dis_asyncwith = """\
                 LOAD_CONST               0 (None)
                 LOAD_CONST               0 (None)
                 CALL                     3
+                CHECK_PERIODIC
                 GET_AWAITABLE            2
                 LOAD_CONST               0 (None)
         L8:     SEND                     3 (to L11)
@@ -653,7 +659,7 @@ dis_asyncwith = """\
                 RETURN_VALUE
 
 %4d   L12:     CLEANUP_THROW
-       L13:     JUMP_BACKWARD_NO_INTERRUPT 26 (to L5)
+       L13:     JUMP_BACKWARD_NO_INTERRUPT 27 (to L5)
        L14:     CLEANUP_THROW
        L15:     JUMP_BACKWARD_NO_INTERRUPT 10 (to L11)
        L16:     PUSH_EXC_INFO
@@ -846,6 +852,7 @@ Disassembly of <code object foo at 0x..., file "%s", line %d>:
                SET_FUNCTION_ATTRIBUTE   8 (closure)
                LOAD_DEREF               1 (y)
                CALL                     0
+               CHECK_PERIODIC
                CALL                     1
                CHECK_PERIODIC
                RETURN_VALUE
@@ -1917,66 +1924,68 @@ expected_opinfo_jumpy = [
   make_inst(opname='SWAP', arg=3, argval=3, argrepr='', offset=282, start_offset=282, starts_line=False, line_number=25),
   make_inst(opname='LOAD_SPECIAL', arg=0, argval=0, argrepr='__enter__', offset=284, start_offset=284, starts_line=False, line_number=25),
   make_inst(opname='CALL', arg=0, argval=0, argrepr='', offset=286, start_offset=286, starts_line=False, line_number=25, cache_info=[('counter', 1, b'\x00\x00'), ('func_version', 2, b'\x00\x00\x00\x00')]),
-  make_inst(opname='STORE_FAST', arg=1, argval='dodgy', argrepr='dodgy', offset=294, start_offset=294, starts_line=False, line_number=25),
-  make_inst(opname='LOAD_GLOBAL', arg=3, argval='print', argrepr='print + NULL', offset=296, start_offset=296, starts_line=True, line_number=26, cache_info=[('counter', 1, b'\x00\x00'), ('index', 1, b'\x00\x00'), ('module_keys_version', 1, b'\x00\x00'), ('builtin_keys_version', 1, b'\x00\x00')]),
-  make_inst(opname='LOAD_CONST', arg=3, argval='Never reach this', argrepr="'Never reach this'", offset=306, start_offset=306, starts_line=False, line_number=26),
-  make_inst(opname='CALL', arg=1, argval=1, argrepr='', offset=308, start_offset=308, starts_line=False, line_number=26, cache_info=[('counter', 1, b'\x00\x00'), ('func_version', 2, b'\x00\x00\x00\x00')]),
-  make_inst(opname='CHECK_PERIODIC', arg=None, argval=None, argrepr='', offset=316, start_offset=316, starts_line=False, line_number=26),
-  make_inst(opname='POP_TOP', arg=None, argval=None, argrepr='', offset=318, start_offset=318, starts_line=False, line_number=26),
-  make_inst(opname='LOAD_CONST', arg=4, argval=None, argrepr='None', offset=320, start_offset=320, starts_line=True, line_number=25),
-  make_inst(opname='LOAD_CONST', arg=4, argval=None, argrepr='None', offset=322, start_offset=322, starts_line=False, line_number=25),
+  make_inst(opname='CHECK_PERIODIC', arg=None, argval=None, argrepr='', offset=294, start_offset=294, starts_line=False, line_number=25),
+  make_inst(opname='STORE_FAST', arg=1, argval='dodgy', argrepr='dodgy', offset=296, start_offset=296, starts_line=False, line_number=25),
+  make_inst(opname='LOAD_GLOBAL', arg=3, argval='print', argrepr='print + NULL', offset=298, start_offset=298, starts_line=True, line_number=26, cache_info=[('counter', 1, b'\x00\x00'), ('index', 1, b'\x00\x00'), ('module_keys_version', 1, b'\x00\x00'), ('builtin_keys_version', 1, b'\x00\x00')]),
+  make_inst(opname='LOAD_CONST', arg=3, argval='Never reach this', argrepr="'Never reach this'", offset=308, start_offset=308, starts_line=False, line_number=26),
+  make_inst(opname='CALL', arg=1, argval=1, argrepr='', offset=310, start_offset=310, starts_line=False, line_number=26, cache_info=[('counter', 1, b'\x00\x00'), ('func_version', 2, b'\x00\x00\x00\x00')]),
+  make_inst(opname='CHECK_PERIODIC', arg=None, argval=None, argrepr='', offset=318, start_offset=318, starts_line=False, line_number=26),
+  make_inst(opname='POP_TOP', arg=None, argval=None, argrepr='', offset=320, start_offset=320, starts_line=False, line_number=26),
+  make_inst(opname='LOAD_CONST', arg=4, argval=None, argrepr='None', offset=322, start_offset=322, starts_line=True, line_number=25),
   make_inst(opname='LOAD_CONST', arg=4, argval=None, argrepr='None', offset=324, start_offset=324, starts_line=False, line_number=25),
-  make_inst(opname='CALL', arg=3, argval=3, argrepr='', offset=326, start_offset=326, starts_line=False, line_number=25, cache_info=[('counter', 1, b'\x00\x00'), ('func_version', 2, b'\x00\x00\x00\x00')]),
-  make_inst(opname='POP_TOP', arg=None, argval=None, argrepr='', offset=334, start_offset=334, starts_line=False, line_number=25),
-  make_inst(opname='LOAD_GLOBAL', arg=3, argval='print', argrepr='print + NULL', offset=336, start_offset=336, starts_line=True, line_number=28, label=10, cache_info=[('counter', 1, b'\x00\x00'), ('index', 1, b'\x00\x00'), ('module_keys_version', 1, b'\x00\x00'), ('builtin_keys_version', 1, b'\x00\x00')]),
-  make_inst(opname='LOAD_CONST', arg=6, argval="OK, now we're done", argrepr='"OK, now we\'re done"', offset=346, start_offset=346, starts_line=False, line_number=28),
-  make_inst(opname='CALL', arg=1, argval=1, argrepr='', offset=348, start_offset=348, starts_line=False, line_number=28, cache_info=[('counter', 1, b'\x00\x00'), ('func_version', 2, b'\x00\x00\x00\x00')]),
-  make_inst(opname='CHECK_PERIODIC', arg=None, argval=None, argrepr='', offset=356, start_offset=356, starts_line=False, line_number=28),
-  make_inst(opname='POP_TOP', arg=None, argval=None, argrepr='', offset=358, start_offset=358, starts_line=False, line_number=28),
-  make_inst(opname='LOAD_CONST', arg=4, argval=None, argrepr='None', offset=360, start_offset=360, starts_line=False, line_number=28),
-  make_inst(opname='RETURN_VALUE', arg=None, argval=None, argrepr='', offset=362, start_offset=362, starts_line=False, line_number=28),
-  make_inst(opname='PUSH_EXC_INFO', arg=None, argval=None, argrepr='', offset=364, start_offset=364, starts_line=True, line_number=25),
-  make_inst(opname='WITH_EXCEPT_START', arg=None, argval=None, argrepr='', offset=366, start_offset=366, starts_line=False, line_number=25),
-  make_inst(opname='TO_BOOL', arg=None, argval=None, argrepr='', offset=368, start_offset=368, starts_line=False, line_number=25, cache_info=[('counter', 1, b'\x00\x00'), ('version', 2, b'\x00\x00\x00\x00')]),
-  make_inst(opname='POP_JUMP_IF_TRUE', arg=2, argval=384, argrepr='to L11', offset=376, start_offset=376, starts_line=False, line_number=25, cache_info=[('counter', 1, b'\x00\x00')]),
-  make_inst(opname='NOT_TAKEN', arg=None, argval=None, argrepr='', offset=380, start_offset=380, starts_line=False, line_number=25),
-  make_inst(opname='RERAISE', arg=2, argval=2, argrepr='', offset=382, start_offset=382, starts_line=False, line_number=25),
-  make_inst(opname='POP_TOP', arg=None, argval=None, argrepr='', offset=384, start_offset=384, starts_line=False, line_number=25, label=11),
-  make_inst(opname='POP_EXCEPT', arg=None, argval=None, argrepr='', offset=386, start_offset=386, starts_line=False, line_number=25),
-  make_inst(opname='POP_TOP', arg=None, argval=None, argrepr='', offset=388, start_offset=388, starts_line=False, line_number=25),
-  make_inst(opname='POP_TOP', arg=None, argval=None, argrepr='', offset=390, start_offset=390, starts_line=False, line_number=25),
+  make_inst(opname='LOAD_CONST', arg=4, argval=None, argrepr='None', offset=326, start_offset=326, starts_line=False, line_number=25),
+  make_inst(opname='CALL', arg=3, argval=3, argrepr='', offset=328, start_offset=328, starts_line=False, line_number=25, cache_info=[('counter', 1, b'\x00\x00'), ('func_version', 2, b'\x00\x00\x00\x00')]),
+  make_inst(opname='CHECK_PERIODIC', arg=None, argval=None, argrepr='', offset=336, start_offset=336, starts_line=False, line_number=25),
+  make_inst(opname='POP_TOP', arg=None, argval=None, argrepr='', offset=338, start_offset=338, starts_line=False, line_number=25),
+  make_inst(opname='LOAD_GLOBAL', arg=3, argval='print', argrepr='print + NULL', offset=340, start_offset=340, starts_line=True, line_number=28, label=10, cache_info=[('counter', 1, b'\x00\x00'), ('index', 1, b'\x00\x00'), ('module_keys_version', 1, b'\x00\x00'), ('builtin_keys_version', 1, b'\x00\x00')]),
+  make_inst(opname='LOAD_CONST', arg=6, argval="OK, now we're done", argrepr='"OK, now we\'re done"', offset=350, start_offset=350, starts_line=False, line_number=28),
+  make_inst(opname='CALL', arg=1, argval=1, argrepr='', offset=352, start_offset=352, starts_line=False, line_number=28, cache_info=[('counter', 1, b'\x00\x00'), ('func_version', 2, b'\x00\x00\x00\x00')]),
+  make_inst(opname='CHECK_PERIODIC', arg=None, argval=None, argrepr='', offset=360, start_offset=360, starts_line=False, line_number=28),
+  make_inst(opname='POP_TOP', arg=None, argval=None, argrepr='', offset=362, start_offset=362, starts_line=False, line_number=28),
+  make_inst(opname='LOAD_CONST', arg=4, argval=None, argrepr='None', offset=364, start_offset=364, starts_line=False, line_number=28),
+  make_inst(opname='RETURN_VALUE', arg=None, argval=None, argrepr='', offset=366, start_offset=366, starts_line=False, line_number=28),
+  make_inst(opname='PUSH_EXC_INFO', arg=None, argval=None, argrepr='', offset=368, start_offset=368, starts_line=True, line_number=25),
+  make_inst(opname='WITH_EXCEPT_START', arg=None, argval=None, argrepr='', offset=370, start_offset=370, starts_line=False, line_number=25),
+  make_inst(opname='TO_BOOL', arg=None, argval=None, argrepr='', offset=372, start_offset=372, starts_line=False, line_number=25, cache_info=[('counter', 1, b'\x00\x00'), ('version', 2, b'\x00\x00\x00\x00')]),
+  make_inst(opname='POP_JUMP_IF_TRUE', arg=2, argval=388, argrepr='to L11', offset=380, start_offset=380, starts_line=False, line_number=25, cache_info=[('counter', 1, b'\x00\x00')]),
+  make_inst(opname='NOT_TAKEN', arg=None, argval=None, argrepr='', offset=384, start_offset=384, starts_line=False, line_number=25),
+  make_inst(opname='RERAISE', arg=2, argval=2, argrepr='', offset=386, start_offset=386, starts_line=False, line_number=25),
+  make_inst(opname='POP_TOP', arg=None, argval=None, argrepr='', offset=388, start_offset=388, starts_line=False, line_number=25, label=11),
+  make_inst(opname='POP_EXCEPT', arg=None, argval=None, argrepr='', offset=390, start_offset=390, starts_line=False, line_number=25),
   make_inst(opname='POP_TOP', arg=None, argval=None, argrepr='', offset=392, start_offset=392, starts_line=False, line_number=25),
-  make_inst(opname='JUMP_BACKWARD_NO_INTERRUPT', arg=30, argval=336, argrepr='to L10', offset=394, start_offset=394, starts_line=False, line_number=25),
-  make_inst(opname='COPY', arg=3, argval=3, argrepr='', offset=396, start_offset=396, starts_line=True, line_number=None),
-  make_inst(opname='POP_EXCEPT', arg=None, argval=None, argrepr='', offset=398, start_offset=398, starts_line=False, line_number=None),
-  make_inst(opname='RERAISE', arg=1, argval=1, argrepr='', offset=400, start_offset=400, starts_line=False, line_number=None),
-  make_inst(opname='PUSH_EXC_INFO', arg=None, argval=None, argrepr='', offset=402, start_offset=402, starts_line=False, line_number=None),
-  make_inst(opname='LOAD_GLOBAL', arg=4, argval='ZeroDivisionError', argrepr='ZeroDivisionError', offset=404, start_offset=404, starts_line=True, line_number=22, cache_info=[('counter', 1, b'\x00\x00'), ('index', 1, b'\x00\x00'), ('module_keys_version', 1, b'\x00\x00'), ('builtin_keys_version', 1, b'\x00\x00')]),
-  make_inst(opname='CHECK_EXC_MATCH', arg=None, argval=None, argrepr='', offset=414, start_offset=414, starts_line=False, line_number=22),
-  make_inst(opname='POP_JUMP_IF_FALSE', arg=16, argval=452, argrepr='to L12', offset=416, start_offset=416, starts_line=False, line_number=22, cache_info=[('counter', 1, b'\x00\x00')]),
-  make_inst(opname='NOT_TAKEN', arg=None, argval=None, argrepr='', offset=420, start_offset=420, starts_line=False, line_number=22),
-  make_inst(opname='POP_TOP', arg=None, argval=None, argrepr='', offset=422, start_offset=422, starts_line=False, line_number=22),
-  make_inst(opname='LOAD_GLOBAL', arg=3, argval='print', argrepr='print + NULL', offset=424, start_offset=424, starts_line=True, line_number=23, cache_info=[('counter', 1, b'\x00\x00'), ('index', 1, b'\x00\x00'), ('module_keys_version', 1, b'\x00\x00'), ('builtin_keys_version', 1, b'\x00\x00')]),
-  make_inst(opname='LOAD_CONST', arg=5, argval='Here we go, here we go, here we go...', argrepr="'Here we go, here we go, here we go...'", offset=434, start_offset=434, starts_line=False, line_number=23),
-  make_inst(opname='CALL', arg=1, argval=1, argrepr='', offset=436, start_offset=436, starts_line=False, line_number=23, cache_info=[('counter', 1, b'\x00\x00'), ('func_version', 2, b'\x00\x00\x00\x00')]),
-  make_inst(opname='CHECK_PERIODIC', arg=None, argval=None, argrepr='', offset=444, start_offset=444, starts_line=False, line_number=23),
-  make_inst(opname='POP_TOP', arg=None, argval=None, argrepr='', offset=446, start_offset=446, starts_line=False, line_number=23),
-  make_inst(opname='POP_EXCEPT', arg=None, argval=None, argrepr='', offset=448, start_offset=448, starts_line=False, line_number=23),
-  make_inst(opname='JUMP_BACKWARD_NO_INTERRUPT', arg=58, argval=336, argrepr='to L10', offset=450, start_offset=450, starts_line=False, line_number=23),
-  make_inst(opname='RERAISE', arg=0, argval=0, argrepr='', offset=452, start_offset=452, starts_line=True, line_number=22, label=12),
-  make_inst(opname='COPY', arg=3, argval=3, argrepr='', offset=454, start_offset=454, starts_line=True, line_number=None),
-  make_inst(opname='POP_EXCEPT', arg=None, argval=None, argrepr='', offset=456, start_offset=456, starts_line=False, line_number=None),
-  make_inst(opname='RERAISE', arg=1, argval=1, argrepr='', offset=458, start_offset=458, starts_line=False, line_number=None),
-  make_inst(opname='PUSH_EXC_INFO', arg=None, argval=None, argrepr='', offset=460, start_offset=460, starts_line=False, line_number=None),
-  make_inst(opname='LOAD_GLOBAL', arg=3, argval='print', argrepr='print + NULL', offset=462, start_offset=462, starts_line=True, line_number=28, cache_info=[('counter', 1, b'\x00\x00'), ('index', 1, b'\x00\x00'), ('module_keys_version', 1, b'\x00\x00'), ('builtin_keys_version', 1, b'\x00\x00')]),
-  make_inst(opname='LOAD_CONST', arg=6, argval="OK, now we're done", argrepr='"OK, now we\'re done"', offset=472, start_offset=472, starts_line=False, line_number=28),
-  make_inst(opname='CALL', arg=1, argval=1, argrepr='', offset=474, start_offset=474, starts_line=False, line_number=28, cache_info=[('counter', 1, b'\x00\x00'), ('func_version', 2, b'\x00\x00\x00\x00')]),
-  make_inst(opname='CHECK_PERIODIC', arg=None, argval=None, argrepr='', offset=482, start_offset=482, starts_line=False, line_number=28),
-  make_inst(opname='POP_TOP', arg=None, argval=None, argrepr='', offset=484, start_offset=484, starts_line=False, line_number=28),
-  make_inst(opname='RERAISE', arg=0, argval=0, argrepr='', offset=486, start_offset=486, starts_line=False, line_number=28),
-  make_inst(opname='COPY', arg=3, argval=3, argrepr='', offset=488, start_offset=488, starts_line=True, line_number=None),
-  make_inst(opname='POP_EXCEPT', arg=None, argval=None, argrepr='', offset=490, start_offset=490, starts_line=False, line_number=None),
-  make_inst(opname='RERAISE', arg=1, argval=1, argrepr='', offset=492, start_offset=492, starts_line=False, line_number=None),
+  make_inst(opname='POP_TOP', arg=None, argval=None, argrepr='', offset=394, start_offset=394, starts_line=False, line_number=25),
+  make_inst(opname='POP_TOP', arg=None, argval=None, argrepr='', offset=396, start_offset=396, starts_line=False, line_number=25),
+  make_inst(opname='JUMP_BACKWARD_NO_INTERRUPT', arg=30, argval=340, argrepr='to L10', offset=398, start_offset=398, starts_line=False, line_number=25),
+  make_inst(opname='COPY', arg=3, argval=3, argrepr='', offset=400, start_offset=400, starts_line=True, line_number=None),
+  make_inst(opname='POP_EXCEPT', arg=None, argval=None, argrepr='', offset=402, start_offset=402, starts_line=False, line_number=None),
+  make_inst(opname='RERAISE', arg=1, argval=1, argrepr='', offset=404, start_offset=404, starts_line=False, line_number=None),
+  make_inst(opname='PUSH_EXC_INFO', arg=None, argval=None, argrepr='', offset=406, start_offset=406, starts_line=False, line_number=None),
+  make_inst(opname='LOAD_GLOBAL', arg=4, argval='ZeroDivisionError', argrepr='ZeroDivisionError', offset=408, start_offset=408, starts_line=True, line_number=22, cache_info=[('counter', 1, b'\x00\x00'), ('index', 1, b'\x00\x00'), ('module_keys_version', 1, b'\x00\x00'), ('builtin_keys_version', 1, b'\x00\x00')]),
+  make_inst(opname='CHECK_EXC_MATCH', arg=None, argval=None, argrepr='', offset=418, start_offset=418, starts_line=False, line_number=22),
+  make_inst(opname='POP_JUMP_IF_FALSE', arg=16, argval=456, argrepr='to L12', offset=420, start_offset=420, starts_line=False, line_number=22, cache_info=[('counter', 1, b'\x00\x00')]),
+  make_inst(opname='NOT_TAKEN', arg=None, argval=None, argrepr='', offset=424, start_offset=424, starts_line=False, line_number=22),
+  make_inst(opname='POP_TOP', arg=None, argval=None, argrepr='', offset=426, start_offset=426, starts_line=False, line_number=22),
+  make_inst(opname='LOAD_GLOBAL', arg=3, argval='print', argrepr='print + NULL', offset=428, start_offset=428, starts_line=True, line_number=23, cache_info=[('counter', 1, b'\x00\x00'), ('index', 1, b'\x00\x00'), ('module_keys_version', 1, b'\x00\x00'), ('builtin_keys_version', 1, b'\x00\x00')]),
+  make_inst(opname='LOAD_CONST', arg=5, argval='Here we go, here we go, here we go...', argrepr="'Here we go, here we go, here we go...'", offset=438, start_offset=438, starts_line=False, line_number=23),
+  make_inst(opname='CALL', arg=1, argval=1, argrepr='', offset=440, start_offset=440, starts_line=False, line_number=23, cache_info=[('counter', 1, b'\x00\x00'), ('func_version', 2, b'\x00\x00\x00\x00')]),
+  make_inst(opname='CHECK_PERIODIC', arg=None, argval=None, argrepr='', offset=448, start_offset=448, starts_line=False, line_number=23),
+  make_inst(opname='POP_TOP', arg=None, argval=None, argrepr='', offset=450, start_offset=450, starts_line=False, line_number=23),
+  make_inst(opname='POP_EXCEPT', arg=None, argval=None, argrepr='', offset=452, start_offset=452, starts_line=False, line_number=23),
+  make_inst(opname='JUMP_BACKWARD_NO_INTERRUPT', arg=58, argval=340, argrepr='to L10', offset=454, start_offset=454, starts_line=False, line_number=23),
+  make_inst(opname='RERAISE', arg=0, argval=0, argrepr='', offset=456, start_offset=456, starts_line=True, line_number=22, label=12),
+  make_inst(opname='COPY', arg=3, argval=3, argrepr='', offset=458, start_offset=458, starts_line=True, line_number=None),
+  make_inst(opname='POP_EXCEPT', arg=None, argval=None, argrepr='', offset=460, start_offset=460, starts_line=False, line_number=None),
+  make_inst(opname='RERAISE', arg=1, argval=1, argrepr='', offset=462, start_offset=462, starts_line=False, line_number=None),
+  make_inst(opname='PUSH_EXC_INFO', arg=None, argval=None, argrepr='', offset=464, start_offset=464, starts_line=False, line_number=None),
+  make_inst(opname='LOAD_GLOBAL', arg=3, argval='print', argrepr='print + NULL', offset=466, start_offset=466, starts_line=True, line_number=28, cache_info=[('counter', 1, b'\x00\x00'), ('index', 1, b'\x00\x00'), ('module_keys_version', 1, b'\x00\x00'), ('builtin_keys_version', 1, b'\x00\x00')]),
+  make_inst(opname='LOAD_CONST', arg=6, argval="OK, now we're done", argrepr='"OK, now we\'re done"', offset=476, start_offset=476, starts_line=False, line_number=28),
+  make_inst(opname='CALL', arg=1, argval=1, argrepr='', offset=478, start_offset=478, starts_line=False, line_number=28, cache_info=[('counter', 1, b'\x00\x00'), ('func_version', 2, b'\x00\x00\x00\x00')]),
+  make_inst(opname='CHECK_PERIODIC', arg=None, argval=None, argrepr='', offset=486, start_offset=486, starts_line=False, line_number=28),
+  make_inst(opname='POP_TOP', arg=None, argval=None, argrepr='', offset=488, start_offset=488, starts_line=False, line_number=28),
+  make_inst(opname='RERAISE', arg=0, argval=0, argrepr='', offset=490, start_offset=490, starts_line=False, line_number=28),
+  make_inst(opname='COPY', arg=3, argval=3, argrepr='', offset=492, start_offset=492, starts_line=True, line_number=None),
+  make_inst(opname='POP_EXCEPT', arg=None, argval=None, argrepr='', offset=494, start_offset=494, starts_line=False, line_number=None),
+  make_inst(opname='RERAISE', arg=1, argval=1, argrepr='', offset=496, start_offset=496, starts_line=False, line_number=None),
 ]
 
 # One last piece of inspect fodder to check the default line number handling

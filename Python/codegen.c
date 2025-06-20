@@ -5129,8 +5129,8 @@ codegen_with_inner(compiler *c, stmt_ty s, int pos)
     ADDOP_I(c, loc, SWAP, 3);
     ADDOP_I(c, loc, LOAD_SPECIAL, SPECIAL___ENTER__);
     ADDOP_I(c, loc, CALL, 0);
-    ADDOP(c, loc, CHECK_PERIODIC);
     ADDOP_JUMP(c, loc, SETUP_WITH, final);
+    ADDOP(c, loc, CHECK_PERIODIC);
 
     /* SETUP_WITH pushes a finally block. */
     USE_LABEL(c, block);
