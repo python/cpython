@@ -3606,9 +3606,6 @@ make_impl_info(PyObject *version_info)
 #if defined(__wasi__) || defined(__EMSCRIPTEN__)
     // It is not enabled on WASM builds just yet
     value = Py_False;
-#elif defined(__APPLE__) && defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
-    // It is not enabled on iOS just yet
-    value = Py_False;
 #else
     value = Py_True;
 #endif

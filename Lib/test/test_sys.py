@@ -1092,11 +1092,7 @@ class SysModuleTest(unittest.TestCase):
         sii = sys.implementation.supports_isolated_interpreters
         self.assertIsInstance(sii, bool)
         if test.support.check_impl_detail(cpython=True):
-            if (
-                test.support.is_apple_mobile
-                or test.support.is_emscripten
-                or test.support.is_wasi
-            ):
+            if test.support.is_emscripten or test.support.is_wasi:
                 self.assertFalse(sii)
             else:
                 self.assertTrue(sii)
