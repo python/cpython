@@ -199,7 +199,6 @@ The :mod:`uuid` module defines the following functions:
    When *node* is not specified, :func:`getnode` is used to obtain the hardware
    address as a 48-bit positive integer. When a sequence number *clock_seq* is
    not specified, a pseudo-random 14-bit positive integer is generated.
-   14-bit sequence number is chosen.
 
 
 .. function:: uuid3(namespace, name)
