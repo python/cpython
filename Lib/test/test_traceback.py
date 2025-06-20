@@ -5034,5 +5034,89 @@ class TestShowLines(unittest.TestCase):
         self.assertIn('ZeroDivisionError', result)
 
 
+class TestRecentFirst(unittest.TestCase):
+    """Tests for the recent_first parameter in traceback formatting functions."""
+
+    def setUp(self):
+        # Create a simple exception for testing
+        def f1():
+            return 1 / 0
+
+        def f2():
+            return f1()
+
+        try:
+            f2()
+        except ZeroDivisionError as e:
+            self.exc = e
+
+    def test_print_tb_recent_first(self):
+        """Test print_tb with recent_first=True"""
+        output = StringIO()
+        traceback.print_tb(self.exc.__traceback__, file=output, recent_first=True)
+        result = output.getvalue()
+        f1pos = result.index(", in f1")
+        f2pos = result.index(", in f2")
+        self.assertLess(f1pos, f2pos, "f1 should be printed before f2")
+
+    def test_format_tb_recent_first(self):
+        """Test format_tb with recent_first=True"""
+        result = traceback.format_tb(self.exc.__traceback__, recent_first=True)
+        formatted = ''.join(result)
+        f1pos = formatted.index(", in f1")
+        f2pos = formatted.index(", in f2")
+        self.assertLess(f1pos, f2pos, "f1 should be printed before f2")
+
+    def check_recent_first_exception_order(self, result: str):
+        """Helper to check if the recent_first order is correct in the result."""
+        lines = result.splitlines()
+        self.assertEqual(lines[0], "ZeroDivisionError: division by zero")
+        self.assertEqual(lines[1], "Traceback (most recent call first):")
+
+        f1pos = result.index(", in f1")
+        f2pos = result.index(", in f2")
+        self.assertLess(f1pos, f2pos, "f1 should be printed before f2")
+
+    def test_print_exception_recent_first(self):
+        """Test print_exception with recent_first=True"""
+        output = StringIO()
+        traceback.print_exception(self.exc, file=output, recent_first=True)
+        self.check_recent_first_exception_order(output.getvalue())
+
+    def test_format_exception_recent_first(self):
+        """Test format_exception with recent_first=True"""
+        result = traceback.format_exception(self.exc, recent_first=True)
+        self.check_recent_first_exception_order(''.join(result))
+
+    def test_print_stack_recent_first(self):
+        """Test print_stack with recent_first=True"""
+        output = StringIO()
+
+        def f1():
+            traceback.print_stack(file=output, recent_first=True)
+
+        def f2():
+            f1()
+
+        f2()
+        result = output.getvalue()
+        f1pos = result.index(", in f1")
+        f2pos = result.index(", in f2")
+        self.assertLess(f1pos, f2pos, "f1 should be printed before f2")
+
+    def test_format_stack_recent_first(self):
+        """Test format_stack with recent_first=True"""
+        def f1():
+            return traceback.format_stack(recent_first=True)
+
+        def f2():
+            return f1()
+
+        result = ''.join(f2())
+        f1pos = result.index(", in f1")
+        f2pos = result.index(", in f2")
+        self.assertLess(f1pos, f2pos, "f1 should be printed before f2")
+
+
 if __name__ == "__main__":
     unittest.main()
