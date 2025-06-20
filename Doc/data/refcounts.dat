@@ -972,6 +972,9 @@ PyFunction_GetCode:PyObject*:op:0:
 PyFunction_GetDefaults:PyObject*::0:
 PyFunction_GetDefaults:PyObject*:op:0:
 
+PyFunction_GetKwDefaults:PyObject*::0:
+PyFunction_GetKwDefaults:PyObject*:op:0:
+
 PyFunction_GetGlobals:PyObject*::0:
 PyFunction_GetGlobals:PyObject*:op:0:
 
