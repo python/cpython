@@ -288,7 +288,7 @@ class Optimizer:
         self._mark_hot_blocks()
         self._invert_hot_branches()
         self._thread_jumps()
-        self._remove_dead_code()
+        # self._remove_dead_code()  # XXX: Need calls to reason about this!
         self._remove_redundant_jumps()
         self._remove_unused_labels()
         self.path.write_text("\n".join(self._lines()))
