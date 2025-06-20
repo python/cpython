@@ -1231,6 +1231,21 @@ _PyObject_XDecRefDelayed(PyObject *ptr)
 }
 #endif
 
+#ifdef Py_GIL_DISABLED
+void
+_PyObject_XSetRefDelayed(PyObject **ptr, PyObject *value)
+{
+    PyObject *old = *ptr;
+    FT_ATOMIC_STORE_PTR_RELEASE(*ptr, value);
+    if (old == NULL) {
+        return;
+    }
+    if (!_Py_IsImmortal(old)) {
+         _PyObject_XDecRefDelayed(old);
+    }
+}
+#endif
+
 static struct _mem_work_chunk *
 work_queue_first(struct llist_node *head)
 {
