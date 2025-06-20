@@ -16,6 +16,7 @@
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_unicodeobject.h" // _PyUnicode_AsASCIIString()
+#include "pycore_weakref.h"
 
 #include "_iomodule.h"
 
@@ -1469,7 +1470,7 @@ textiowrapper_dealloc(PyObject *op)
         return;
     self->ok = 0;
     _PyObject_GC_UNTRACK(self);
-    PyObject_ClearWeakRefs(op);
+    FT_CLEAR_WEAKREFS(op, self->weakreflist);
     (void)textiowrapper_clear(op);
     tp->tp_free(self);
     Py_DECREF(tp);

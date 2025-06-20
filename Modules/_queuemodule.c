@@ -7,6 +7,7 @@
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_parking_lot.h"
 #include "pycore_time.h"          // _PyTime_FromSecondsObject()
+#include "pycore_weakref.h"
 
 #include <stdbool.h>
 #include <stddef.h>               // offsetof()
@@ -221,7 +222,7 @@ simplequeue_dealloc(PyObject *op)
 
     PyObject_GC_UnTrack(self);
     (void)simplequeue_clear(op);
-    PyObject_ClearWeakRefs(op);
+    FT_CLEAR_WEAKREFS(op, self->weakreflist);
     tp->tp_free(self);
     Py_DECREF(tp);
 }

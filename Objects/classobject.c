@@ -7,6 +7,7 @@
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_weakref.h"
 
 
 #include "clinic/classobject.c.h"
@@ -245,7 +246,7 @@ method_dealloc(PyObject *self)
 {
     PyMethodObject *im = _PyMethodObject_CAST(self);
     _PyObject_GC_UNTRACK(im);
-    PyObject_ClearWeakRefs(self);
+    FT_CLEAR_WEAKREFS(self, im->im_weakreflist);
     Py_DECREF(im->im_func);
     Py_XDECREF(im->im_self);
     assert(Py_IS_TYPE(self, &PyMethod_Type));
