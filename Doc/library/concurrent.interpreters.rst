@@ -195,6 +195,11 @@ This module defines the following functions:
    Initialize a new (idle) Python interpreter
    and return a :class:`Interpreter` object for it.
 
+.. function:: create_queue()
+
+   Initialize a new cross-interpreter queue and return a :class:`Queue`
+   object for it.
+
 
 Interpreter objects
 ^^^^^^^^^^^^^^^^^^^
@@ -277,7 +282,36 @@ Exceptions
    an object cannot be sent to another interpreter.
 
 
-.. XXX Add functions for communicating between interpreters.
+Communicating Between Interpreters
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. class:: Queue(id)
+
+   A wrapper around a low-level, cross-interpreter queue, which
+   implements the :class:`queue.Queue` interface.  The underlying queue
+   can only be created through :func:`create_queue`.
+
+   Cross-interpreter queues support all the same objects as
+   :meth:`Interpreter.prepare_main`.
+
+   .. attribute:: id
+
+      (read-only)
+
+      The queue's ID.
+
+
+.. exception:: QueueEmptyError
+
+   This is exception, a subclass of :exc:`queue.Empty`, is raised from
+   :meth:`!Queue.get` and :meth:`!Queue.get_nowait` when the queue
+   is empty.
+
+.. exception:: QueueFullError
+
+   This is exception, a subclass of :exc:`queue.Full`, is raised from
+   :meth:`!Queue.put` and :meth:`!Queue.put_nowait` when the queue
+   is full.
 
 
 Basic usage
