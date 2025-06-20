@@ -1,0 +1,2 @@
+Add *show_lines* and *recent_first* parameters to APIs in :mod:`traceback`.
+Contributed by Inada Naoki.

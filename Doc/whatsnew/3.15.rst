@@ -174,10 +174,16 @@ tarfile
 traceback
 ----------
 
-* The keyword only argument ``show_lines=True`` is added to all functions and
-  methods formatting or printing traceback. You can suppress the display of
-  source code lines in the traceback by passing ``show_lines=False``.
-  (Contributed by Inada Naoki in TBD).
+* Add new ``show_lines`` and ``recent_first`` keyword only arguments to
+  the :mod:`traceback` functions.
+
+  The ``show_lines`` argument controls whether source code lines are displayed.
+  It is default to ``True``.
+
+  The ``recent_first`` argument controls whether the most recent frames are
+  displayed first or last in the traceback. It affects wheher the exception
+  is displayed at the top or bottom of the traceback. It is default to ``False``.
+  (Contributed by Inada Naoki in :gh:`135751`)
 
 
 zlib
