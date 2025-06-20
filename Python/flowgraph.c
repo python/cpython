@@ -2290,6 +2290,7 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
     assert(PyList_CheckExact(consts));
     cfg_instr nop;
     INSTR_SET_OP0(&nop, NOP);
+    bool seen_check = false;
     for (int i = 0; i < bb->b_iused; i++) {
         cfg_instr *inst = &bb->b_instr[i];
         cfg_instr *target;
@@ -2480,6 +2481,17 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                 break;
             case BINARY_OP:
                 RETURN_IF_ERROR(fold_const_binop(bb, i, consts, const_cache));
+                break;
+            case CALL:
+            case CALL_KW:
+            case CALL_FUNCTION_EX:
+                seen_check = false;
+                break;
+            case CHECK_PERIODIC:
+                if (seen_check) {
+                    INSTR_SET_OP0(inst, NOP);
+                }
+                seen_check = true;
                 break;
         }
     }
