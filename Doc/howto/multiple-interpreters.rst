@@ -4,102 +4,90 @@
 Multiple Interpreters HOWTO
 ***************************
 
-When it comes to concurrency and parallelism,
-Python provides a number of options, each with various tradeoffs.
-This includes threads, async, and multiprocessing.
-There's one more option: multiple interpreters (AKA "subinterpreters").
+In this HOWTO document we'll look at how to take advantage of
+multiple interpreters in a Python program.  We will focus on doing
+so in Python code, through the stdlib :mod:`concurrent.interpreters`
+module.
 
-.. (PyPI packages expand that with "greenlets", and distributed computing.)
+This document has 3 parts: first a brief introduction, then a tutorial,
+and then a set of recipes and practical examples.
 
-Multiple interpreters in the same process provide conceptual isolation
-like processes but more efficiently, like threads.  In fact, you can
-think of them like threads with opt-in sharing.
-
-That provides a concurrency model which is easier to reason about,
-similar to CSP or the actor model.
-Furthermore, each interpreter has its own GIL, so they provide
-true multi-core parallelism.
-
-This HOWTO document has 2 parts: first a tutorial and then a set
-of recipes and practical examples.
-
-The tuturial covers the basics of using multiple interpreters
+The tutorial covers the basics of using multiple interpreters
 (:ref:`interp-tutorial-basics`), as well as how to communicate between
 interpreters (:ref:`interp-tutorial-communicating`).
 The examples section (:ref:`interp-recipes`) is focused on providing
 effective solutions for real concurrency use cases.  This includes
 comparisons with Python's various existing concurrency models.
 
-.. currentmodule:: interpreters
+.. currentmodule:: concurrent.interpreters
 
 .. seealso::
 
+   :mod:`concurrent.interpreters`
+
    :ref:`execcomponents`
-   :mod:`interpreters`
-   :mod:`interpreters.queues`
-   :mod:`interpreters.channels`
+       more details about how interpreters fit into
+       Python's execution model
+
+   .. XXX Add a reference to the upcoming concurrency HOWTO doc.
 
 .. note::
 
    This page is focused on *using* multiple interpreters.
    For information about changing an extension module to work
    with multiple interpreters, see :ref:`isolating-extensions-howto`.
-   
 
 
+Introduction
+============
 
+You can find a thorough explanation about what interpreters are and
+what they're for in the :mod:`concurrent.interpreters <interpreters-intro_>`
+docs.
 
+In summary, think of an interpreter as the Python runtime's execution
+context.  You can have multiple interpreters in a single process,
+switching between them at any time.  Each interpreter is almost
+completely isolated from the others.
+
+.. note::
+
+   Interpreters in the same process can technically never be strictly
+   isolated from one another since there are few restrictions on memory
+   access within the same process.  The Python runtime makes a best
+   effort at isolation but extension modules may easily violate that.
+   Therefore, do not use multiple interpreters in security-senstive
+   situations, where they shouldn't have access to each other's data.
+
+That isolation facilitates a concurrency model based an independent
+logical threads of execution, like CSP or the actor model.
+
+Each actual thread in Python, even if you're only running in the main
+thread, has its own *current* execution context.  Multiple threads can
+use the same interpreter or different ones.
 
 Why Use Multiple Interpreters?
 ------------------------------
 
-This provides a similar
+These are the main benefits:
 
-We can take advantage of the isolation and independence of multiple
-processes, by using :mod:`multiprocessing` or :mod:`subprocess`
-(with sockets and pipes)
-In the same process, We have threads, 
+* isolation supports a human-friendly concurrency model
+* isolation supports full multi-core parallelism
+* avoids the data races that make threads so challenging normally
 
+There are some downsides and temporary limitations:
 
-For concurrent code, imagine combining the efficiency of threads
-with the isolation 
-You can run multiple isolated Python execution environments
-in the same process
+* the concurrency model requires extra rigor; it enforces higher
+  discipline about how the isolated components in your program interact
+* not all PyPI extension modules support multiple interpreters yet
+* the existing tools for passing data between interpreters safely
+  is still relatively inefficient and limited
+* actually *sharing* data safely is tricky (true for free-threading too)
+* all necessary modules must be imported separately in each interpreter
+* relatively slow startup time per interpreter
+* non-trivial extra memory usage per interpreter
 
-
-
-
-Python can actually run multiple interpreters at the same time,
-which lets you have independent, isolated execution environments
-in the same process.  This has been true since Python 2.2, but
-the feature was only available through the C-API and not well known;
-and the isolation was incomplete.  However...
-
-As of Python 3.12, isolation has been fixed,
-to the point that interpreters in the same process no longer
-even share the GIL (global interpreter lock).  That means you can
-
-has had the ability to run multiple copies 
-
-Benefits:
-
-Downsides:
-
-...
-
-
-When to Use Multiple Interpreters
----------------------------------
-
-...
-
-+-------------------------------------+--------------------------------------+
-| Task you want to perform            | The best tool for the task           |
-+=====================================+======================================+
-| ...                                 | ...                                  |
-+-------------------------------------+--------------------------------------+
-| ...                                 | ...                                  |
-+-------------------------------------+--------------------------------------+
+Nearly all of these should improve in subsequent Python releases.
 
 
 .. _interp-tutorial-basics:
@@ -110,54 +98,64 @@ Tutorial: Basics
 First of all, keep in mind that using multiple interpreters is like
 using multiple processes.  They are isolated and independent from each
 other.  The main difference is that multiple interpreters live in the
-same process, which makes it all more efficient.
+same process, which makes it all more efficient and use fewer
+system resources.
 
-Each interpreter has its own ``__main__`` module, its own
-:func:`sys.modules`, and, in fact, its own set of *all* runtime state.
+Each interpreter has its own :mod:`!__main__` module, its own
+:data:`sys.modules`, and, in fact, its own set of *all* runtime state.
 Interpreters pretty much never share objects and very little data.
 
 Running Code in an Interpreter
 ------------------------------
 
 Running code in an interpreter is basically equivalent to running the
-buitlin :func:`exec` using that interpreter::
+builtin :func:`exec` using that interpreter::
 
-    import interpreters
+    from concurrent import interpreters
 
     interp = interpreters.create()
 
     interp.exec('print("spam!")')
-    interp.exec("""
+    # prints: spam!
+
+    interp.exec("""if True:
+        ...
         print('spam!')
+        ...
         """)
+    # prints: spam!
 
-Calling a function in an interpreter works the same way::
+(See :meth:`Interpreter.exec`.)
 
-    import interpreters
+Calling a simple function in an interpreter works the same way::
+
+    from concurrent import interpreters
 
     interp = interpreters.create()
 
     def script():
         print('spam!')
     interp.call(script)
+    # prints: spam!
+
+(See :meth:`Interpreter.call`.)
 
 When it runs, the code is executed using the interpreter's ``__main__``
-module, just like a Python process normally does::
+module, just like a Python process normally does when invoked from
+the command-line::
 
-    import interpreters
+    from concurrent import interpreters
 
     print(__name__)
-    # __main__
+    # prints: __main__
 
     interp = interpreters.create()
-    interp.exec("""
-        print(__name__)
-        """)
-    # __main__
+    interp.exec('print(__name__)')
+    # prints: __main__
 
 In fact, a comparison with ``python -c`` is quite direct::
 
-    import interpreters
+    from concurrent import interpreters
 
     ############################
     # python -c 'print("spam!")'
@@ -168,12 +166,15 @@ In fact, a comparison with ``python -c`` is quite direct::
 
 It's also fairly easy to simulate the other forms of the Python CLI::
 
-    import interpreters
+    from textwrap import dedent
+    from concurrent import interpreters
+
+    SCRIPT = """
+    print('spam!')
+    """
 
     with open('script.py', 'w') as outfile:
-        outfile.write("""
-    print('spam!')
-    """)
+        outfile.write(SCRIPT)
 
     ##################
     # python script.py
@@ -189,13 +190,229 @@ It's also fairly easy to simulate the other forms of the Python CLI::
     ##################
 
     interp = interpreters.create()
-    interp.exec("""
+    interp.exec(dedent("""
         import runpy
         runpy.run_module('script')
-        """)
+        """))
 
 That's more or less what the ``python`` executable is doing for each
 of those cases.
+
+Calling a Function in an Interpreter
+------------------------------------
+
+You can just as easily call a function in another interpreter::
+
+    from concurrent import interpreters
+
+    interp = interpreters.create()
+
+    def spam():
+        print('spam!')
+    interp.call(spam)
+    # prints: spam!
+
+In fact, nearly all Python functions and callables are supported,
+with the notable exception of closures.  Support includes arguments
+and return values, which we'll explore soon.
+
+Builtin functions always execute in the target interpreter's
+:mod:`!__main__` module::
+
+    from concurrent import interpreters
+
+    interp = interpreters.create()
+
+    interp.call(exec, 'print(__name__)')
+    # prints: __main__
+
+    interp.call(eval, 'print(__name__)')
+    # prints: __main__
+
+The same is true for Python functions that don't use any globals::
+
+    from concurrent import interpreters
+
+    interp = interpreters.create()
+
+    def spam():
+        # globals is a builtin.
+        print(globals()['__name__'])
+    interp.call(spam)
+    # prints: __main__
+
+There are very few cases where that matters, though.
+
+Otherwise, functions defined in modules other than :mod:`!__main__` run
+in that module::
+
+    from concurrent import interpreters
+    from mymod import spam
+
+    interp = interpreters.create()
+    interp.call(spam)
+    # prints: mymod
+
+    ##########
+    # mymod.py
+    ##########
+
+    def spam():
+        print(__name__)
+
+For a function actually defined in the :mod:`!__main__` module,
+it executes in a separate dummy module, in order to not pollute
+the :mod:`!__main__` module::
+
+    from concurrent import interpreters
+
+    interp = interpreters.create()
+
+    def spam():
+        print(__name__)
+    interp.call(spam)
+    # prints: '<fake __main__>'
+
+This means global state used in such a function won't be reflected
+in the interpreter's :mod:`!__main__` module::
+
+    from textwrap import dedent
+    from concurrent import interpreters
+
+    interp = interpreters.create()
+
+    total = 0
+
+    def inc():
+        global total
+        total += 1
+    def show_total():
+        print(total)
+
+    interp.call(show_total)
+    # prints: 0
+    interp.call(inc)
+    interp.call(show_total)
+    # prints: 1
+    interp.exec(dedent("""'
+        try:
+            print(total)
+        except NameError:
+            pass
+        else:
+            raise AssertionError('expected NameError')
+        """))
+
+    interp.exec('total = -1')
+    interp.exec('print(total)')
+    # prints: -1
+    interp.call(show_total)
+    # prints: 1
+    interp.call(inc)
+    interp.call(show_total)
+    # prints: 2
+    interp.exec('print(total)')
+    # prints: -1
+
+    print(total)
+    # prints: 0
+
+
+Calling Methods and Other Objects in an Interpreter
+---------------------------------------------------
+
+Pretty much any callable object may be run in an interpreter, following
+the same rules as functions::
+
+    from concurrent import interpreters
+    from mymod import Spam
+
+    interp = interpreters.create()
+
+    spam = Spam()
+    interp.call(Spam.modname)
+    # prints: mymod
+    interp.call(spam)
+    # prints: mymod
+    interp.call(spam.spam)
+    # prints: mymod
+
+    class Eggs:
+        @classmethod
+        def modname(cls):
+            print(__name__)
+        def __call__(self):
+            print(__name__)
+        def eggs(self):
+            print(__name__)
+
+    eggs = Eggs()
+    res = interp.call(Eggs.modname)
+    # prints: <fake __main__>
+    res = interp.call(eggs)
+    # prints: <fake __main__>
+    res = interp.call(eggs.eggs)
+    # prints: <fake __main__>
+
+    ##########
+    # mymod.py
+    ##########
+
+    class Spam:
+        @classmethod
+        def modname(cls):
+            print(__name__)
+        def __call__(self):
+            print(__name__)
+        def spam(self):
+            print(__name__)
+
+Mutable State is not Shared
+---------------------------
+
+Just be be clear, the underlying data of very few mutable objects is
+actually shared between interpreters.  The notable exceptions are
+:class:`Queue` and :class:`memoryview`, which we will explore in a
+little while.  In nearly every case, the raw data is copied in
+the other interpreter and never automatically synchronized::
+
+    from concurrent import interpreters
+
+    interp = interpreters.create()
+
+    class Counter:
+        def __init__(self, initial=0):
+            self.value = initial
+        def inc(self):
+            self.value += 1
+        def dec(self):
+            self.value -= 1
+        def show(self):
+            print(self.value)
+    counter = Counter(17)
+
+    interp.call(counter.show)
+    # prints: 17
+    counter.show()
+    # prints: 17
+
+    interp.call(counter.inc)
+    interp.call(counter.show)
+    # prints: 18
+    counter.show()
+    # prints: 17
+
+    interp.call(counter.inc)
+    interp.call(counter.show)
+    # prints: 18
+    counter.show()
+    # prints: 17
+
+    interp.call(counter.inc)
+    interp.call(counter.show)
+    # prints: 18
+    counter.show()
+    # prints: 17
 
 Preparing and Reusing an Interpreter
 ------------------------------------
@@ -205,29 +422,35 @@ That would make the REPL much less useful.  Likewise, when you use
 the builtin :func:`exec`, it doesn't reset the namespace it uses
 to run the code.
 
-In the same way, running code in an interpreter does not reset it.
-The next time you run code in that interpreter, the ``__main__`` module 
-will be in exactly the state in which you left it::
+In the same way, running code in an interpreter does not reset that
+interpreter..  The next time you run code in that interpreter, the
+:mod:`!__main__` module will be in exactly the state in which you
+left it::
 
-    import interpreters
+    from concurrent import interpreters
 
     interp = interpreters.create()
-    interp.exec("""
+    interp.exec("""if True
         answer = 42
         """)
-    interp.exec("""
+    interp.exec("""if True
         assert answer == 42
         """)
+
+    def script():
+        assert answer == 42
+    interp.call(script)
 
 You can take advantage of this to prepare an interpreter ahead of time
 or use it incrementally::
 
-    import interpreters
+    from textwrap import dedent
+    from concurrent import interpreters
 
     interp = interpreters.create()
 
     # Prepare the interpreter.
-    interp.exec("""
+    interp.exec(dedent("""
         # We will need this later.
         import math
 
@@ -236,26 +459,25 @@ or use it incrementally::
 
         def double(val):
             return val + val
-        """)
+        """))
 
     # Do the work.
-    for _ in range(10):
-        interp.exec("""
+    for _ in range(9):
+        interp.exec(dedent("""
             assert math.factorial(value + 1) >= double(value)
             value = double(value)
-            """)
+            """))
 
     # Show the result.
-    interp.exec("""
-        print(value)
-        """)
+    interp.exec('print(value)')
+    # prints: 1024
 
 In case you're curious, in a little while we'll look at how to pass
 data in and out of an interpreter (instead of just printing things).
 
-Sometimes you might also have values that you want to use in another
-interpreter.  We'll look more closely at that case in a little while:
-:ref:`interp-script-args`.
+Sometimes you might also have values that you want to use in a later
+script in another interpreter.  We'll look more closely at that
+case in a little while: :ref:`interp-script-args`.
 
 Running in a Thread
 -------------------
@@ -268,9 +490,9 @@ In the same way, running code in another interpreter doesn't create
 (or need) a new thread.  It uses the current OS thread, switching
 to the interpreter long enough to run the code.
 
-To actually run in a new thread, you do it explicitly::
+To actually run in a new thread, you can do it explicitly::
 
-    import interpreters
+    from concurrent import interpreters
     import threading
 
     interp = interpreters.create()
@@ -282,6 +504,8 @@ To actually run in a new thread, you do it explicitly::
     t.join()
 
     def run():
+        def script():
+            print('spam!')
         interp.call(script)
     t = threading.Thread(target=run)
     t.start()
@@ -289,7 +513,7 @@ To actually run in a new thread, you do it explicitly::
 
 There's also a helper method for that::
 
-    import interpreters
+    from concurrent import interpreters
 
     interp = interpreters.create()
 
@@ -309,7 +533,7 @@ The behavior is very similar when code is run in an interpreter.
 The traceback get printed and, rather than a failure code,
 an :class:`ExecutionFailed` exception is raised::
 
-    import interpreters
+    from concurrent import interpreters
 
     interp = interpreters.create()
 
@@ -321,7 +545,7 @@ an :class:`ExecutionFailed` exception is raised::
 The exception also has some information, which you can use to handle
 it with more specificity::
 
-    import interpreters
+    from concurrent import interpreters
 
     interp = interpreters.create()
 
@@ -336,27 +560,29 @@ it with more specificity::
 You can handle the exception in the interpreter as well, like you might
 do with threads or a script::
 
-    import interpreters
+    from textwrap import dedent
+    from concurrent import interpreters
 
     interp = interpreters.create()
 
-    interp.exec("""
+    interp.exec(dedent("""
         try:
             1/0
         except ZeroDivisionError:
             ...
-        """)
+        """))
 
 At the moment there isn't an easy way to "re-raise" an unhandled
 exception from another interpreter.  Here's one approach that works for
 exceptions that can be pickled::
 
-    import interpreters
+    from textwrap import dedent
+    from concurrent import interpreters
 
     interp = interpreters.create()
 
     try:
-        interp.exec("""
+        interp.exec(dedent("""
             try:
                 1/0
             except Exception as exc:
@@ -365,7 +591,7 @@ exceptions that can be pickled::
                 class PickledException(Exception):
                     pass
                 raise PickledException(data)
-            """)
+            """))
     except interpreters.ExecutionFailed as exc:
         if exc.excinfo.type.__name__ == 'PickledException':
             import pickle
@@ -381,13 +607,11 @@ cleaned up as soon as you're done with the interpreter.  While you can
 wait until the interpreter is cleaned up when the process exits, you
 can explicitly clean it up sooner::
 
-    import interpreters
+    from concurrent import interpreters
 
     interp = interpreters.create()
     try:
-        interp.exec("""
-            print('spam!')
-            """)
+        interp.exec('print("spam!")')
     finally:
         interp.close()
 
@@ -396,26 +620,18 @@ concurrent.futures.InterpreterPoolExecutor
 
 The :mod:`concurrent.futures` module is a simple, popular concurrency
 framework that wraps both threading and multiprocessing.  You can also
-use it with multiple interpreters::
+use it with multiple interpreters, via
+:class:`~concurrent.futures.InterpreterPoolExecutor`::
 
     from concurrent.futures import InterpreterPoolExecutor
 
+    def script():
+        return 'spam!'
+
     with InterpreterPoolExecutor(max_workers=5) as executor:
-        executor.submit('print("spam!")')
-
-Gotchas
--------
-
-...
-
-Keep in mind that there is a limit to the kinds of functions that may
-be called by an interpreter.  Specifically, ...
-
-
-* limited callables
-* limited shareable objects
-* not all PyPI packages support use in multiple interpreters yet
-* ...
+        fut = executor.submit(script)
+    res = fut.result()
+    # res: 'spam!'
 
 
 .. _interp-tutorial-communicating:
@@ -431,9 +647,186 @@ between interpreters.
 
 In this half of the tutorial, we explore various ways you can do so.
 
+Call Args and Return Values
+---------------------------
+
+As already noted, :meth:`Interpreter.call` supports most callables,
+as well as arguments and return values.
+
+Arguments provide a way to send information to an interpreter::
+
+    from concurrent import interpreters
+
+    interp = interpreters.create()
+
+    def show(arg):
+        print(arg)
+    interp.call(show, 'spam!')
+    # prints: spam!
+
+    def ident_full(a, /, b, c=42, *args, d, e='eggs', **kwargs):
+        print([a, b, c, d, e], args, kwargs)
+    interp.call(ident_full, 1, 2, 3, 4, 5, d=6, e=7, f=8, g=9)
+    # prints: [1, 2, 3, 6, 7] (4, 5) {'f': 8, 'g': 9}
+
+    def handle_request(req):
+        # do the work
+        ...
+    req = ...
+    interp.call(handle_request, req)
+
+Return values are a way an interpreter can send information back::
+
+    from concurrent import interpreters
+
+    interp = interpreters.create()
+
+    data = {}
+
+    def put(key, value):
+        data[key] = value
+    def get(key, default=None):
+        return data.get(key, default)
+
+    res = interp.call(get, 'spam')
+    # res: None
+    res = interp.call(get, 'spam', -1)
+    # res: -1
+    interp.call(put, 'spam', True)
+    res = interp.call(get, 'spam')
+    # res: True
+    interp.call(put, 'spam', 42)
+    res = interp.call(get, 'spam')
+    # res: 42
+
+Don't forget that the underlying data of few objects is actually shared
+between interpreters.  That means that, nearly always, arguments are
+copied on the way in and return values on the way out.  Furthermore,
+this will happen with each call, so it's a new copy every time
+and no state persists between calls.
+
+For example::
+
+    from concurrent import interpreters
+
+    interp = interpreters.create()
+
+    data = {
+        'a': 1,
+        'b': 2,
+        'c': 3,
+    }
+
+    interp.call(data.clear)
+    assert data == dict(a=1, b=2, c=3)
+
+    def update_and_copy(data, **updates):
+        data.update(updates)
+        return dict(data)
+
+    res = interp.call(update_and_copy, data)
+    assert res == dict(a=1, b=2, c=3)
+    assert res is not data
+    assert data == dict(a=1, b=2, c=3)
+
+    res = interp.call(update_and_copy, data, d=4, e=5)
+    assert res == dict(a=1, b=2, c=3, d=4, e=5)
+    assert data == dict(a=1, b=2, c=3)
+
+    res = interp.call(update_and_copy, data)
+    assert res == dict(a=1, b=2, c=3)
+    assert res is not data
+    assert data == dict(a=1, b=2, c=3)
+
+Supported and Unsupported Objects
+---------------------------------
+
+There are other ways of communicating between interpreters, like
+:meth:`Interpreter.prepare_main` and :class:`Queue`, which we'll
+cover shortly.  Before that, we should talk about which objects are
+supported by :meth:`Interpreter.call` and the others.
+
+Most objects are supported.  This includes anything that can be
+:mod:`pickled <pickle>`, though for some pickleable objects we copy the
+object in a more efficient way.  Aside from pickleable objects, there
+is a small set of other objects that are supported, such as
+non-closure inner functions.
+
+If you try to pass an unsupported object as an argument to
+:meth:`Interpreter.call` then you will get a :exc:`NotShareableError`
+with ``__cause__`` set appropriately.  :meth:`Interpreter.call` will
+also raise that way if the return value is not supported.  The same
+goes for :meth:`~Interpreter.prepare_main` and :class:`Queue.* <Queue>`.
+
+Relatedly, there's an interesting side-effect to how we use a fake
+module for objects with a class defined in :mod:`!__main__`.  If you
+pass the class to :meth:`Interpreter.call`, which will create an
+instance in the other interpreter, then that instance will fail to
+unpickle in the original interpreter, due to the fake module name::
+
+    from concurrent import interpreters
+
+    class Spam:
+        def __init__(self, x):
+            self.x = x
+
+    interp = interpreters.create()
+    try:
+        spam = interp.call(Spam, 10)
+    except interpreters.NotShareableError:
+        pass
+    else:
+        raise AssertionError('unexpected success')
+
+Sharing Data
+------------
+
+There are actually a small number of objects that aren't just copied and
+for which the underlying data is actually shared between interpreters.
+We'll talk about :class:`Queue` in the next section.
+
+Another example is :class:`memoryview`, where the underlying
+:ref:`buffer <bufferobjects>` can be read and written by multiple
+interpreters at once.  Users are responsible to manage thread-safety
+for that data in such cases.
+
+Support for actually sharing data for other objects is possible through
+extension modules, but we won't get into that here.
+
+Using Queues
+------------
+
+:class:`concurrent.interpreters.Queue` is an implementation of the
+:class:`queue.Queue` interface that supports safely and efficiently
+passing data between interpreters::
+
+    import time
+    from concurrent import interpreters
+
+    def push(queue, value, *extra, delay=0.1):
+        queue.put(value)
+        for val in extra:
+            if delay > 0:
+                time.sleep(delay)
+            queue.put(val)
+
+    def pop(queue, count=1, timeout=-1):
+        return tuple(queue.get(timeout=timeout)
+                     for _ in range(count))
+
+    interp1 = interpreters.create()
+    interp2 = interpreters.create()
+    queue = interpreters.create_queue()
+
+    t = interp1.call_in_thread(push, queue,
+                               'spam!', 42, 'eggs')
+    res = interp2.call(pop, queue)
+    # res: ('spam!', 42, 'eggs')
+    t.join()
+
 .. _interp-script-args:
 
-Passing Values to an Interpreter
+Initializing Values for a Script
 --------------------------------
 
 When you call a function in Python, sometimes that function requires
@@ -442,41 +835,12 @@ script you want to run in another interpreter requires some values.
 Providing such values to the interpreter, for the script to use,
 is the simplest kind of communication between interpreters.
 
-Perhaps the simplest approach: you can use an f-string or format string
-for the script and interpolate the required values::
+There's a method that supports this: :meth:`Interpreter.prepare_main`.
+It binds values to names in the interpreter's ``__main__`` module,
+which makes them available to any scripts that run in the interpreter
+after that::
 
-    import interpreters
-
-    interp = interpreters.create()
-
-    def run_interp(interp, name, value):
-        interp.exec(f"""
-            {name} = {value!r}
-            ...
-            """)
-    run_interp(interp, 'spam', 42)
-
-    try:
-        infile = open('spam.txt')
-    except FileNotFoundError:
-        pass
-    else:
-        with infile:
-            interp.exec(f"""
-                import os
-                for line in os.fdopen({infile.fileno())):
-                    print(line)
-                """))
-
-This works especially well for intrinsic values.  For complex values
-you'll usually want to reach for other solutions.
-
-There's one convenient alternative that works for some objects:
-:func:`Interpreter.prepare_main`.  It binds values to names in the
-interpreter's ``__main__`` module, which makes them available to any
-scripts that run in the interpreter after that::
-
-    import interpreters
+    from concurrent import interpreters
 
     interp = interpreters.create()
 
@@ -500,90 +864,141 @@ scripts that run in the interpreter after that::
                     print(line)
                 """))
 
-Note that :func:`Interpreter.prepare_main` only works with "shareable"
-objects.  (See :ref:`interp-shareable-objects`.)  In a little while
-also see how shareable objects make queues and channels especially
-convenient and efficient.
+This is particularly useful when you want to use a queue in a script::
 
-For anything more complex that isn't shareable, you'll probably need
-something more than f-strings or :func:`Interpreter.prepare_main`.
+    from textwrap import dedent
+    from concurrent import interpreters
 
-That brings us the next part: 2-way communication, passing data back
-and forth between interpreters.
+    interp = interpreters.create()
+    queue = interpreters.create_queue()
+
+    interp.prepare_main(queue=queue)
+    queue.put('spam!')
+
+    interp.exec(dedent("""
+        obj = queue.get()
+        print(msg)
+        """))
+    # prints: spam!
+
+For basic, intrinsic data it can also make sense to use an f-string or
+format string for the script and interpolate the required values::
+
+    from textwrap import dedent
+    from concurrent import interpreters
+
+    interp = interpreters.create()
+
+    def run_interp(interp, name, value):
+        interp.exec(dedent(f"""
+            {name} = {value!r}
+            ...
+            """))
+    run_interp(interp, 'spam', 42)
+
+    try:
+        infile = open('spam.txt')
+    except FileNotFoundError:
+        pass
+    else:
+        with infile:
+            interp.exec(dedent(f"""
+                import os
+                for line in os.fdopen({infile.fileno()}):
+                    print(line)
+                """))
 
 Pipes, Sockets, etc.
 --------------------
 
-We'll start off with an approach to duplex communication between
-interpreters that you can implement using OS-provided utilities.
-The examples will use :func:`os.pipe`, but the approach applies equally
-well to regular files and sockets.
+For the sake of contrast, let's take a look at a different approach
+to duplex communication between interpreters, which you can implement
+using OS-provided utilities.  You could do something similar with
+subprocesses.  The examples will use :func:`os.pipe`, but the approach
+applies equally well to regular files and sockets.
 
 Keep in mind that pipes, sockets, and files work with :class:`bytes`,
 not other objects, so this may involve at least some serialization.
 Aside from that inefficiency, sending data through the OS will
 also slow things down.
 
-After this we'll look at using queues and channels for simpler and more
-efficient 2-way communication.  The contrast should be clear then.
-
 First, let's use a pipe to pass a message from one interpreter
 to another::
 
-    import interpreters
+    from concurrent import interpreters
     import os
 
-    interp1 = interpreters.create()
-    interp2 = interpreters.create()
+    READY = b'\0'
 
-    rpipe, spipe = os.pipe()
+    def send(fd_tokens, fd_data, msg):
+        # Wait until ready.
+        token = os.read(fd_tokens, 1)
+        assert token == READY, token
+        # Ready!
+        os.write(fd_data, msg)
+
+    interp = interpreters.create()
+
+    r_tokens, s_tokens = os.pipe()
+    r_data, s_data = os.pipe()
     try:
-        def task():
-            interp.exec("""
-                import os
-                msg = os.read({rpipe}, 20)
-                print(msg)
-                """)
-        t = threading.thread(target=task)
-        t.start()
-
-        # Sending the message:
-        os.write(spipe, b'spam!')
+        t = interp.call_in_thread(
+                send, r_tokens, s_data, 'spam!')
+        os.write(s_tokens, READY)
+        msg = os.read(r_data, 20)
+        # msg: 'spam!'
         t.join()
     finally:
-        os.close(rpipe)
-        os.close(spipe)
+        os.close(r_tokens)
+        os.close(s_tokens)
+        os.close(r_data)
+        os.close(s_data)
 
 One interesting part of that is how the subthread blocked until
-we wrote to the pipe.  In addition to delivering the message, the
-read end of the pipe acted like a lock.
+we sent the "ready" token.  In addition to delivering the message,
+the read end of the pipes acted like locks.
 
-We can actually make use of that to synchronize
-execution between the interpreters::
+We can actually make use of that to synchronize execution between the
+interpreters (and use :class:`Queue` the same way)::
 
-    import interpreters
+    from concurrent import interpreters
+
+    STOP = b'\0'
+    READY = b'\1'
+
+    def task(tokens):
+        r, s = tokens
+        while True:
+            # Do stuff.
+            ...
+
+            # Synchronize!
+            token = os.read(r, 1)
+            os.write(s, token)
+            if token == STOP:
+                break
+
+            # Do other stuff.
+            ...
+
+    steps = [...]
 
     interp = interpreters.create()
 
     r1, s1 = os.pipe()
     r2, s2 = os.pipe()
     try:
-        def task():
-            interp.exec("""
-                # Do stuff...
+        t = interp.call_in_thread(task, (r1, s2))
+        for step in steps:
+            # Do the step.
+            ...
 
-                # Synchronize!
-                msg = os.read(r1, 1)
-                os.write(s2, msg)
-
-                # Do other stuff...
-                """)
-        t = threading.thread(target=task)
-        t.start()
-
-        # Synchronize!
-        os.write(s1, '')
+            # Synchronize!
+            os.write(s1, READY)
+            os.read(r2, 1)
+        os.write(s1, STOP)
         os.read(r2, 1)
+        t.join()
     finally:
         os.close(r1)
         os.close(s1)
@@ -592,180 +1007,90 @@ execution between the interpreters::
 
 You can also close the pipe ends and join the thread to synchronize.
 
-Again, using :func:`os.pipe`, etc. to communicate between interpreters
-is a little awkward, as well as inefficient.  We'll look at some of
-the alternatives next.
-
-Using Queues
-------------
-
-:class:`interpreters.queues.Queue` is an implementation of the
-:class:`queue.Queue` interface that supports safely and efficiently
-passing data between interpreters.
-
-::
-
-    import interpreters.queues
-
-    queue = interpreters.queues.create()
-    interp = interpreters.create()
-    interp.prepare_main(queue=queue)
-
-    queue.put('spam!')
-    interp.exec("""
-        msg = queue.get()
-        print(msg)
-        """)
-
-::
-
-    queue = interpreters.queues.create()
-    interp = interpreters.create()
-    interp.prepare_main(queue=queue)
-
-    queue.put('spam!')
-    interp.exec("""
-        obj = queue.get()
-        print(msg)
-        """)
-
-::
-
-    queue1 = interpreters.queues.create()
-    queue2 = interpreters.queues.create(syncobj=True)
-    interp = interpreters.create()
-    interp.prepare_main(queue1=queue1, queue2=queue2)
-
-    queue1.put('spam!')
-    queue1.put('spam!', syncobj=True)
-    queue2.put('spam!')
-    queue2.put('spam!', syncobj=False)
-    interp.exec("""
-        msg1 = queue1.get()
-        msg2 = queue1.get()
-        msg3 = queue2.get()
-        msg4 = queue2.get()
-        print(msg)
-        """)
-
-
-Using Channels
---------------
-
-...
-
-::
-
-    import interpreters.channels
-
-    rch, sch = interpreters.channels.create()
-    interp = interpreters.create()
-    interp.prepare_main(rch=rch)
-
-    sch.send_nowait('spam!')
-    interp.exec("""
-        msg = rch.recv()
-        print(msg)
-        """)
-
-::
-
-    rch, sch = interpreters.channels.create()
-    interp = interpreters.create()
-    interp.prepare_main(rch=rch)
-
-    data = bytearray(100)
-
-    sch.send_buffer_nowait(data)
-    interp.exec("""
-        data = rch.recv()
-        for i in range(len(data)):
-            data[i] = i
-        """)
-    assert len(data) == 100
-    for i in range(len(data)):
-        assert data[i] == i
+Using :func:`os.pipe` (or similar) to communicate between interpreters
+is a little awkward, as well as inefficient.
 
 Capturing an interpreter's stdout
 ---------------------------------
 
-::
+While interpreters share the same default file descriptors for stdout,
+stderr, and stdin, each interpreter still has its own :mod:`sys` module,
+with its own :data:`~sys.stdout` and so forth.  That means it isn't
+obvious how to capture stdout for multiple interpreters.
 
-   interp = interpreters.create()
-   stdout = io.StringIO()
-   with contextlib.redirect_stdout(stdout):
-       interp.exec(tw.dedent("""
-           print('spam!')
-           """))
-   assert(stdout.getvalue() == 'spam!')
+The solution is a bit anticlimactic; you have to capture it for each
+interpreter manually.  Here's a basic example::
 
-   # alternately:
-   interp.exec(tw.dedent("""
-       import contextlib, io
-       stdout = io.StringIO()
-       with contextlib.redirect_stdout(stdout):
-           print('spam!')
-       captured = stdout.getvalue()
-       """))
-   captured = interp.get_main_attr('captured')
-   assert(captured == 'spam!')
+    from concurrent import interpreters
+    import contextlib
+    import io
 
-:func:`os.pipe()` could be used similarly.
-
-Capturing Unhandled Exceptions
-----------------------------
-
-...
-
-Falling Back to Pickle
-----------------------
-
-For other objects you can use pickle::
-
-    import interpreters
-    import pickle
-
-    SCRIPT = """
-        import pickle
-        data = pickle.loads(_pickled)
-        setattr(data['name'], data['value'])
-        """
-    data = dict(name='spam', value=42)
+    def task():
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            # Do stuff in worker!
+            ...
+        return stdout.getvalue()
 
     interp = interpreters.create()
-    interp.prepare_main(_pickled=pickle.dumps(data))
-    interp.exec(SCRIPT)
+    output = interp.call(task)
+    ...
 
-Passing objects via pickle::
+Here's a more elaborate example::
 
-   interp = interpreters.create()
-   r, s = os.pipe()
-   interp.exec(tw.dedent(f"""
-       import os
-       import pickle
-       reader = {r}
-       """))
-   interp.exec(tw.dedent("""
-           data = b''
-           c = os.read(reader, 1)
-           while c != b'\x00':
-               while c != b'\x00':
-                   data += c
-                   c = os.read(reader, 1)
-               obj = pickle.loads(data)
-               do_something(obj)
-               c = os.read(reader, 1)
-           """))
-   for obj in input:
-       data = pickle.dumps(obj)
-       os.write(s, data)
-       os.write(s, b'\x00')
-   os.write(s, b'\x00')
+    from concurrent import interpreters
+    import contextlib
+    import errno
+    import os
+    import sys
+    import threading
 
-Gotchas
--------
+    def run_and_capture(fd, task, args, kwargs):
+        stdout = open(fd, 'w', closefd=False)
+        with contextlib.redirect_stdout(stdout):
+            return task(*args, **kwargs)
 
-...
+    @contextlib.contextmanager
+    def running_captured(interp, task, *args, **kwargs):
+        def background(fd, stdout=sys.stdout):
+            # Pass through captured output to local stdout.
+            # Normally we would not ignore the encoding.
+            infile = open(fd, 'r', closefd=False)
+            while True:
+                try:
+                    line = infile.readline()
+                except OSError as exc:
+                    if exc.errno == errno.EBADF:
+                        break
+                    raise  # re-raise
+                stdout.write(line)
+
+        bg = None
+        r, s = os.pipe()
+        try:
+            bg = threading.Thread(target=background, args=(r,))
+            bg.start()
+            t = interp.call_in_thread(run_and_capture, s, args, kwargs)
+            try:
+                yield
+            finally:
+                t.join()
+        finally:
+            os.close(r)
+            os.close(s)
+            if bg is not None:
+                bg.join()
+
+    def task():
+        # Do stuff in worker!
+        ...
+
+    interp = interpreters.create()
+    with running_captured(interp, task):
+        # Do stuff in main!
+        ...
+
+Using a :mod:`logger <logging>` can also help.
 
 
 .. _interp-recipes:
@@ -773,24 +1098,7 @@ Gotchas
 Recipes (Practical Examples)
 ============================
 
-Concurrency-Related Python Workloads
-------------------------------------
-
-...
-
-Comparisons With Other Concurrency Models
------------------------------------------
-
-...
-
-Concurrency
------------
-
-(incl. minimal comparisons with multiprocessing, threads, and async)
-
-...
-
-Isolation
----------
+Example: ...
+------------
 
 ...
