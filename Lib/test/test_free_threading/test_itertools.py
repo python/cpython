@@ -17,7 +17,7 @@ class ItertoolsThreading(unittest.TestCase):
             barrier.wait()
             while True:
                 try:
-                    _ = next(it)
+                    next(it)
                 except StopIteration:
                     break
 
@@ -72,10 +72,9 @@ class ItertoolsThreading(unittest.TestCase):
             barrier.wait()
             while True:
                 try:
-                    _ = next(it)
+                    next(it)
                 except StopIteration:
                     break
-
 
         data = [(1, )] * 200
         for it in range(number_of_iterations):
