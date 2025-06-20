@@ -393,7 +393,7 @@ Other functions
 
    - linux-x86_64
    - macosx-15.5-arm64
-   - android-9-arm64_v8a
+   - android-24-arm64_v8a
 
    For other non-POSIX platforms, currently just returns :data:`sys.platform`.
 
