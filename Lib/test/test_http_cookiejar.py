@@ -1168,6 +1168,12 @@ class CookieTests(unittest.TestCase):
         c.add_cookie_header(req)
         self.assertFalse(req.has_header("Cookie"))
 
+        pol.set_blocked_domains(["[::1]"])
+        req = urllib.request.Request("http://[::1]:8080")
+        res = FakeResponse(headers, "http://[::1]:8080")
+        c.extract_cookies(res, req)
+        self.assertEqual(len(c), 0)
+
     def test_secure(self):
         for ns in True, False:
             for whitespace in " ", "":
