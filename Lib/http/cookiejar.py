@@ -29,15 +29,14 @@ __all__ = ['Cookie', 'CookieJar', 'CookiePolicy', 'DefaultCookiePolicy',
            'FileCookieJar', 'LWPCookieJar', 'LoadError', 'MozillaCookieJar']
 
 import os
-import re
 import copy
-import time
 import datetime
+import re
+import time
 import urllib.parse, urllib.request
 import threading as _threading
 import http.client  # only for the default HTTP port
 from calendar import timegm
-from ipaddress import ip_address
 
 debug = False   # set to True to enable debugging via the logging module
 logger = None
@@ -536,6 +535,7 @@ def parse_ns_headers(ns_headers):
 IPV4_RE = re.compile(r"\.\d+$", re.ASCII)
 def is_ip(text):
     """Return True if text is a valid IP address."""
+    from ipaddress import ip_address
     try:
         ip_address(text)
     except ValueError:
@@ -611,10 +611,8 @@ def user_domain_match(A, B):
     B = B.lower()
     if not (liberal_is_HDN(A) and liberal_is_HDN(B)):
         if A == B:
-            # equal IPv4 addresses
             return True
         return False
-    # A and B may be HDNs or a IPv6 addresses now
     initial_dot = B.startswith(".")
     if initial_dot and A.endswith(B):
         return True
