@@ -625,8 +625,8 @@ is already executing raises a :exc:`ValueError` exception.
 
 .. method:: generator.close()
 
-   Raises a :exc:`GeneratorExit` exception at the point where the generator 
-   function was paused (equivalent to calling ``throw(GeneratorExit)``). 
+   Raises a :exc:`GeneratorExit` exception at the point where the generator
+   function was paused (equivalent to calling ``throw(GeneratorExit)``).
    The exception is raised by the yield expression where the generator was paused.
    If the generator function catches the exception and returns a
    value, this value is returned from :meth:`close`.  If the generator function
