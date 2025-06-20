@@ -42,15 +42,14 @@ class _Target(typing.Generic[_S, _R]):
     triple: str
     condition: str
     _: dataclasses.KW_ONLY
-    alignment: int = 1
     args: typing.Sequence[str] = ()
+    optimizer: type[_optimizers.Optimizer]
     prefix: str = ""
     stable: bool = False
     debug: bool = False
     verbose: bool = False
     known_symbols: dict[str, int] = dataclasses.field(default_factory=dict)
     pyconfig_dir: pathlib.Path = pathlib.Path.cwd().resolve()
-    optimizer: type[_optimizers.Optimizer] | None = None
 
     def _get_nop(self) -> bytes:
         if re.fullmatch(r"aarch64-.*", self.triple):
@@ -162,8 +161,7 @@ class _Target(typing.Generic[_S, _R]):
             *self.args,
         ]
         await _llvm.run("clang", args_s, echo=self.verbose)
-        if self.optimizer:
-            self.optimizer(s, prefix=self.prefix).run()
+        self.optimizer(s, prefix=self.prefix).run()
         args_o = [
             f"--target={self.triple}",
             "-c",
@@ -200,11 +198,7 @@ class _Target(typing.Generic[_S, _R]):
                     tasks.append(group.create_task(coro, name=opname))
         stencil_groups = {task.get_name(): task.result() for task in tasks}
         for stencil_group in stencil_groups.values():
-            stencil_group.process_relocations(
-                known_symbols=self.known_symbols,
-                alignment=self.alignment,
-                nop=self._get_nop(),
-            )
+            stencil_group.process_relocations(self.known_symbols)
         return stencil_groups
 
     def build(
@@ -537,11 +531,15 @@ def get_target(host: str) -> _COFF | _ELF | _MachO:
     target: _COFF | _ELF | _MachO
     if re.fullmatch(r"aarch64-apple-darwin.*", host):
         condition = "defined(__aarch64__) && defined(__APPLE__)"
-        target = _MachO(host, condition, alignment=8, prefix="_")
+        target = _MachO(
+            host, condition, optimizer=_optimizers.OptimizerAArch64, prefix="_"
+        )
     elif re.fullmatch(r"aarch64-pc-windows-msvc", host):
         args = ["-fms-runtime-lib=dll", "-fplt"]
         condition = "defined(_M_ARM64)"
-        target = _COFF(host, condition, alignment=8, args=args)
+        target = _COFF(
+            host, condition, args=args, optimizer=_optimizers.OptimizerAArch64
+        )
     elif re.fullmatch(r"aarch64-.*-linux-gnu", host):
         args = [
             "-fpic",
@@ -550,7 +548,9 @@ def get_target(host: str) -> _COFF | _ELF | _MachO:
             "-mno-outline-atomics",
         ]
         condition = "defined(__aarch64__) && defined(__linux__)"
-        target = _ELF(host, condition, alignment=8, args=args)
+        target = _ELF(
+            host, condition, args=args, optimizer=_optimizers.OptimizerAArch64
+        )
     elif re.fullmatch(r"i686-pc-windows-msvc", host):
         args = [
             "-DPy_NO_ENABLE_SHARED",

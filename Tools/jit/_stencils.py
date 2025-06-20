@@ -206,23 +206,6 @@ class Stencil:
             self.disassembly.append(f"{offset:x}: {' '.join(['00'] * padding)}")
         self.body.extend([0] * padding)
 
-    # def add_nops(self, nop: bytes, alignment: int) -> None:
-    #     """Add NOPs until there is alignment. Fail if it is not possible."""
-    #     offset = len(self.body)
-    #     nop_size = len(nop)
-
-    #     # Calculate the gap to the next multiple of alignment.
-    #     gap = -offset % alignment
-    #     if gap:
-    #         if gap % nop_size == 0:
-    #             count = gap // nop_size
-    #             self.body.extend(nop * count)
-    #         else:
-    #             raise ValueError(
-    #                 f"Cannot add nops of size '{nop_size}' to a body with "
-    #                 f"offset '{offset}' to align with '{alignment}'"
-    #             )
-
 
 @dataclasses.dataclass
 class StencilGroup:
@@ -240,9 +223,7 @@ class StencilGroup:
     _got: dict[str, int] = dataclasses.field(default_factory=dict, init=False)
     _trampolines: set[int] = dataclasses.field(default_factory=set, init=False)
 
-    def process_relocations(
-        self, known_symbols: dict[str, int], *, alignment: int = 1, nop: bytes = b""
-    ) -> None:
+    def process_relocations(self, known_symbols: dict[str, int]) -> None:
         """Fix up all GOT and internal relocations for this stencil group."""
         for hole in self.code.holes.copy():
             if (
@@ -262,7 +243,6 @@ class StencilGroup:
                 self._trampolines.add(ordinal)
                 hole.addend = ordinal
                 hole.symbol = None
-        # self.code.add_nops(nop=nop, alignment=alignment)
         self.data.pad(8)
         for stencil in [self.code, self.data]:
             for hole in stencil.holes:
