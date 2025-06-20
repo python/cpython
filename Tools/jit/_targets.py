@@ -38,7 +38,6 @@ _R = typing.TypeVar(
 
 @dataclasses.dataclass
 class _Target(typing.Generic[_S, _R]):
-
     triple: str
     condition: str
     _: dataclasses.KW_ONLY
