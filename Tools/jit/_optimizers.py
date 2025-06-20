@@ -1,4 +1,3 @@
-import collections
 import dataclasses
 import pathlib
 import re
@@ -44,12 +43,6 @@ class _Block:
     fallthrough: bool = True
     hot: bool = False
 
-    def __eq__(self, other: object) -> bool:
-        return self is other
-
-    def __hash__(self) -> int:
-        return super().__hash__()
-
     def resolve(self) -> typing.Self:
         while self.link and not self.instructions:
             self = self.link
@@ -71,7 +64,7 @@ class Optimizer:
     )
     _re_jump: typing.ClassVar[re.Pattern[str]] = _RE_NEVER_MATCH  # One group: target.
     _re_label: typing.ClassVar[re.Pattern[str]] = re.compile(
-        r"\s*(?P<label>[\w.]+):"  # One group: label.
+        r'\s*(?P<label>[\w."$?@]+):'  # One group: label.
     )
     _re_noise: typing.ClassVar[re.Pattern[str]] = re.compile(
         r"\s*(?:[#.]|$)"  # No groups.
@@ -104,6 +97,10 @@ class Optimizer:
                 assert not block.target
                 block.fallthrough = False
 
+    @staticmethod
+    def _preprocess(text: str) -> str:
+        return text
+
     @classmethod
     def _invert_branch(cls, line: str, target: str) -> str | None:
         match = cls._re_branch.match(line)
@@ -126,10 +123,6 @@ class Optimizer:
             self._labels[label] = _Block(label)
         return self._labels[label]
 
-    @staticmethod
-    def _preprocess(text: str) -> str:
-        return text
-
     def _blocks(self) -> typing.Generator[_Block, None, None]:
         block = self._graph
         while block:
@@ -143,6 +136,11 @@ class Optimizer:
             lines.extend(block.instructions)
         return "\n".join(lines)
 
+    def _predecessors(self, block: _Block) -> typing.Generator[_Block, None, None]:
+        for block in self._blocks():
+            if block.target is block or (block.fallthrough and block.link is block):
+                yield block
+
     def _insert_continue_label(self) -> None:
         for end in reversed(list(self._blocks())):
             if end.instructions:
@@ -155,36 +153,39 @@ class Optimizer:
         end.link, align.link, continuation.link = align, continuation, end.link
 
     def _mark_hot_blocks(self) -> None:
-        predecessors = collections.defaultdict(list)
-        for block in self._blocks():
-            if block.target:
-                predecessors[block.target].append(block)
-            if block.fallthrough and block.link:
-                predecessors[block.link].append(block)
         todo = [self._lookup_label(f"{self.prefix}_JIT_CONTINUE")]
         while todo:
             block = todo.pop()
             block.hot = True
             todo.extend(
                 predecessor
-                for predecessor in predecessors[block]
+                for predecessor in self._predecessors(block)
                 if not predecessor.hot
             )
 
     def _invert_hot_branches(self) -> None:
+        # Turn:
+        #    branch <hot>
+        #    jump <cold>
+        # Into:
+        #    opposite-branch <cold>
+        #    jump <hot>
         for branch in self._blocks():
-            jump = branch.link
+            link = branch.link
+            if link is None:
+                continue
+            jump = link.resolve()
             if (
                 # block ends with a branch to hot code...
                 branch.target
                 and branch.fallthrough
                 and branch.target.hot
-                # ...followed by a jump to cold code:
-                and jump
+                # ...followed by a jump to cold code with no other predecessors:
                 and jump.target
                 and not jump.fallthrough
                 and not jump.target.hot
                 and len(jump.instructions) == 1
+                and list(self._predecessors(jump)) == [branch]
             ):
                 assert jump.target.label
                 assert branch.target.label
