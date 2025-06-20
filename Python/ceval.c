@@ -2746,15 +2746,128 @@ _PyEval_GetFrameLocals(void)
     return locals;
 }
 
-PyObject *
-PyEval_GetGlobals(void)
+static PyObject *
+_PyEval_GetGlobals(PyThreadState *tstate)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
     _PyInterpreterFrame *current_frame = _PyThreadState_GetFrame(tstate);
     if (current_frame == NULL) {
         return NULL;
     }
     return current_frame->f_globals;
+}
+
+PyObject *
+PyEval_GetGlobals(void)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    return _PyEval_GetGlobals(tstate);
+}
+
+PyObject *
+_PyEval_GetGlobalsFromRunningMain(PyThreadState *tstate)
+{
+    if (!_PyInterpreterState_IsRunningMain(tstate->interp)) {
+        return NULL;
+    }
+    PyObject *mod = _Py_GetMainModule(tstate);
+    if (_Py_CheckMainModule(mod) < 0) {
+        Py_XDECREF(mod);
+        return NULL;
+    }
+    PyObject *globals = PyModule_GetDict(mod);  // borrowed
+    Py_DECREF(mod);
+    return globals;
+}
+
+static PyObject *
+get_globals_builtins(PyObject *globals)
+{
+    PyObject *builtins = NULL;
+    if (PyDict_Check(globals)) {
+        if (PyDict_GetItemRef(globals, &_Py_ID(__builtins__), &builtins) < 0) {
+            return NULL;
+        }
+    }
+    else {
+        if (PyMapping_GetOptionalItem(
+                        globals, &_Py_ID(__builtins__), &builtins) < 0)
+        {
+            return NULL;
+        }
+    }
+    return builtins;
+}
+
+static int
+set_globals_builtins(PyObject *globals, PyObject *builtins)
+{
+    if (PyDict_Check(globals)) {
+        if (PyDict_SetItem(globals, &_Py_ID(__builtins__), builtins) < 0) {
+            return -1;
+        }
+    }
+    else {
+        if (PyObject_SetItem(globals, &_Py_ID(__builtins__), builtins) < 0) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
+int
+_PyEval_EnsureBuiltins(PyThreadState *tstate, PyObject *globals,
+                       PyObject **p_builtins)
+{
+    PyObject *builtins = get_globals_builtins(globals);
+    if (builtins == NULL) {
+        if (_PyErr_Occurred(tstate)) {
+            return -1;
+        }
+        builtins = PyEval_GetBuiltins();  // borrowed
+        if (builtins == NULL) {
+            assert(_PyErr_Occurred(tstate));
+            return -1;
+        }
+        Py_INCREF(builtins);
+        if (set_globals_builtins(globals, builtins) < 0) {
+            Py_DECREF(builtins);
+            return -1;
+        }
+    }
+    if (p_builtins != NULL) {
+        *p_builtins = builtins;
+    }
+    else {
+        Py_DECREF(builtins);
+    }
+    return 0;
+}
+
+int
+_PyEval_EnsureBuiltinsWithModule(PyThreadState *tstate, PyObject *globals,
+                                 PyObject **p_builtins)
+{
+    PyObject *builtins = get_globals_builtins(globals);
+    if (builtins == NULL) {
+        if (_PyErr_Occurred(tstate)) {
+            return -1;
+        }
+        builtins = PyImport_ImportModuleLevel("builtins", NULL, NULL, NULL, 0);
+        if (builtins == NULL) {
+            return -1;
+        }
+        if (set_globals_builtins(globals, builtins) < 0) {
+            Py_DECREF(builtins);
+            return -1;
+        }
+    }
+    if (p_builtins != NULL) {
+        *p_builtins = builtins;
+    }
+    else {
+        Py_DECREF(builtins);
+    }
+    return 0;
 }
 
 PyObject*
@@ -3190,7 +3303,7 @@ _PyEval_FormatKwargsError(PyThreadState *tstate, PyObject *func, PyObject *kwarg
     else if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
         PyObject *exc = _PyErr_GetRaisedException(tstate);
         PyObject *args = PyException_GetArgs(exc);
-        if (exc && PyTuple_Check(args) && PyTuple_GET_SIZE(args) == 1) {
+        if (PyTuple_Check(args) && PyTuple_GET_SIZE(args) == 1) {
             _PyErr_Clear(tstate);
             PyObject *funcstr = _PyObject_FunctionStr(func);
             if (funcstr != NULL) {
@@ -3439,8 +3552,8 @@ _PyEval_LoadName(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject *na
     return value;
 }
 
-_PyStackRef
-_PyForIter_NextWithIndex(PyObject *seq, _PyStackRef index)
+static _PyStackRef
+foriter_next(PyObject *seq, _PyStackRef index)
 {
     assert(PyStackRef_IsTaggedInt(index));
     assert(PyTuple_CheckExact(seq) || PyList_CheckExact(seq));
@@ -3457,6 +3570,30 @@ _PyForIter_NextWithIndex(PyObject *seq, _PyStackRef index)
         return PyStackRef_NULL;
     }
     return PyStackRef_FromPyObjectSteal(item);
+}
+
+_PyStackRef _PyForIter_VirtualIteratorNext(PyThreadState* tstate, _PyInterpreterFrame* frame, _PyStackRef iter, _PyStackRef* index_ptr)
+{
+    PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
+    _PyStackRef index = *index_ptr;
+    if (PyStackRef_IsTaggedInt(index)) {
+        *index_ptr = PyStackRef_IncrementTaggedIntNoOverflow(index);
+        return foriter_next(iter_o, index);
+    }
+    PyObject *next_o = (*Py_TYPE(iter_o)->tp_iternext)(iter_o);
+    if (next_o == NULL) {
+        if (_PyErr_Occurred(tstate)) {
+            if (_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
+                _PyEval_MonitorRaise(tstate, frame, frame->instr_ptr);
+                _PyErr_Clear(tstate);
+            }
+            else {
+                return PyStackRef_ERROR;
+            }
+        }
+        return PyStackRef_NULL;
+    }
+    return PyStackRef_FromPyObjectSteal(next_o);
 }
 
 /* Check if a 'cls' provides the given special method. */

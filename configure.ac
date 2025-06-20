@@ -1716,7 +1716,7 @@ ABI_THREAD=""
 # --disable-gil
 AC_MSG_CHECKING([for --disable-gil])
 AC_ARG_ENABLE([gil],
-  [AS_HELP_STRING([--disable-gil], [enable experimental support for running without the GIL (default is no)])],
+  [AS_HELP_STRING([--disable-gil], [enable support for running without the GIL (default is no)])],
   [AS_VAR_IF([enable_gil], [yes], [disable_gil=no], [disable_gil=yes])], [disable_gil=no]
 )
 AC_MSG_RESULT([$disable_gil])
@@ -2776,7 +2776,7 @@ AS_VAR_IF([jit_flags],
           [],
           [AS_VAR_APPEND([CFLAGS_NODIST], [" $jit_flags"])
            AS_VAR_SET([REGEN_JIT_COMMAND],
-                      ["\$(PYTHON_FOR_REGEN) \$(srcdir)/Tools/jit/build.py ${ARCH_TRIPLES:-$host} --output-dir . --pyconfig-dir ."])
+                      ["\$(PYTHON_FOR_REGEN) \$(srcdir)/Tools/jit/build.py ${ARCH_TRIPLES:-$host} --output-dir . --pyconfig-dir . --cflags=\"$CFLAGS_JIT\""])
            AS_VAR_SET([JIT_STENCILS_H], ["jit_stencils.h"])
            AS_VAR_IF([Py_DEBUG],
                      [true],
@@ -3172,10 +3172,6 @@ if test "$ac_cv_sizeof_off_t" -gt "$ac_cv_sizeof_long" -a \
 else
   have_largefile_support="no"
 fi
-dnl LFS does not work with Emscripten 3.1
-AS_CASE([$ac_sys_system],
-  [Emscripten], [have_largefile_support="no"]
-)
 AS_VAR_IF([have_largefile_support], [yes], [
   AC_DEFINE([HAVE_LARGEFILE_SUPPORT], [1],
   [Defined to enable large file support when an off_t is bigger than a long
@@ -5219,7 +5215,7 @@ AC_CHECK_FUNCS([ \
   faccessat fchmod fchmodat fchown fchownat fdopendir fdwalk fexecve \
   fork fork1 fpathconf fstatat ftime ftruncate futimens futimes futimesat \
   gai_strerror getegid geteuid getgid getgrent getgrgid getgrgid_r \
-  getgrnam_r getgrouplist gethostname getitimer getloadavg getlogin \
+  getgrnam_r getgrouplist gethostname getitimer getloadavg getlogin getlogin_r \
   getpeername getpgid getpid getppid getpriority _getpty \
   getpwent getpwnam_r getpwuid getpwuid_r getresgid getresuid getrusage getsid getspent \
   getspnam getuid getwd grantpt if_nameindex initgroups kill killpg lchown linkat \
@@ -5537,6 +5533,18 @@ PY_CHECK_FUNC([setgroups], [
 #include <grp.h>
 #endif
 ])
+
+AC_CHECK_DECL([MAXLOGNAME],
+              [AC_DEFINE([HAVE_MAXLOGNAME], [1],
+                         [Define if you have the 'MAXLOGNAME' constant.])],
+              [],
+              [@%:@include <sys/param.h>])
+
+AC_CHECK_DECLS([UT_NAMESIZE],
+              [AC_DEFINE([HAVE_UT_NAMESIZE], [1],
+                         [Define if you have the 'HAVE_UT_NAMESIZE' constant.])],
+              [],
+              [@%:@include <utmp.h>])
 
 # check for openpty, login_tty, and forkpty
 
@@ -8001,6 +8009,15 @@ AC_SUBST([LIBHACL_CFLAGS])
 LIBHACL_LDFLAGS=  # for now, no specific linker flags are needed
 AC_SUBST([LIBHACL_LDFLAGS])
 
+dnl Check if universal2 HACL* implementation should be used.
+if test "$UNIVERSAL_ARCHS" = "universal2" -o \
+   \( "$build_cpu" = "aarch64" -a "$build_vendor" = "apple" \)
+then
+  use_hacl_universal2_impl=yes
+else
+  use_hacl_universal2_impl=no
+fi
+
 # The SIMD files use aligned_alloc, which is not available on older versions of
 # Android.
 # The *mmintrin.h headers are x86-family-specific, so can't be used on WASI.
@@ -8017,7 +8034,7 @@ then
     # available on x86_64. However, performance of the HACL SIMD128 implementation
     # isn't great, so it's disabled on ARM64.
     AC_MSG_CHECKING([for HACL* SIMD128 implementation])
-    if test "$UNIVERSAL_ARCHS" == "universal2"; then
+    if test "$use_hacl_universal2_impl" = "yes"; then
       [LIBHACL_BLAKE2_SIMD128_OBJS="Modules/_hacl/Hacl_Hash_Blake2s_Simd128_universal2.o"]
       AC_MSG_RESULT([universal2])
     else
@@ -8049,7 +8066,7 @@ then
     # implementation requires symbols that aren't available on ARM64. Use a
     # wrapped implementation if we're building for universal2.
     AC_MSG_CHECKING([for HACL* SIMD256 implementation])
-    if test "$UNIVERSAL_ARCHS" == "universal2"; then
+    if test "$use_hacl_universal2_impl" = "yes"; then
       [LIBHACL_BLAKE2_SIMD256_OBJS="Modules/_hacl/Hacl_Hash_Blake2b_Simd256_universal2.o"]
       AC_MSG_RESULT([universal2])
     else

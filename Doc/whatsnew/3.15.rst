@@ -89,6 +89,18 @@ New modules
 Improved modules
 ================
 
+dbm
+---
+
+* Added new :meth:`!reorganize` methods to :mod:`dbm.dumb` and :mod:`dbm.sqlite3`
+  which allow to recover unused free space previously occupied by deleted entries.
+  (Contributed by Andrea Oliveri in :gh:`134004`.)
+
+* Add the ``'m'`` flag for :func:`dbm.gnu.open` which allows to disable
+  the use of :manpage:`mmap(2)`.
+  This may harm performance, but improve crash tolerance.
+  (Contributed by Serhiy Storchaka in :gh:`66234`.)
+
 difflib
 -------
 
@@ -96,12 +108,67 @@ difflib
   class, and migrated the output to the HTML5 standard.
   (Contributed by Jiahao Li in :gh:`134580`.)
 
+
+math
+----
+
+* Add :func:`math.isnormal` and :func:`math.issubnormal` functions.
+  (Contributed by Sergey B Kirpichev in :gh:`132908`.)
+
+
+os.path
+-------
+
+* The *strict* parameter to :func:`os.path.realpath` accepts a new value,
+  :data:`os.path.ALLOW_MISSING`.
+  If used, errors other than :exc:`FileNotFoundError` will be re-raised;
+  the resulting path can be missing but it will be free of symlinks.
+  (Contributed by Petr Viktorin for :cve:`2025-4517`.)
+
+
+shelve
+------
+
+* Added new :meth:`!reorganize` method to :mod:`shelve` used to recover unused free
+  space previously occupied by deleted entries.
+  (Contributed by Andrea Oliveri in :gh:`134004`.)
+
+
+sqlite3
+-------
+
+* Support SQL keyword completion in the :mod:`sqlite3` command-line interface.
+  (Contributed by Long Tan in :gh:`133393`.)
+
+
 ssl
 ---
 
 * Indicate through :data:`ssl.HAS_PSK_TLS13` whether the :mod:`ssl` module
   supports "External PSKs" in TLSv1.3, as described in RFC 9258.
   (Contributed by Will Childs-Klein in :gh:`133624`.)
+
+
+tarfile
+-------
+
+* :func:`~tarfile.data_filter` now normalizes symbolic link targets in order to
+  avoid path traversal attacks.
+  (Contributed by Petr Viktorin in :gh:`127987` and :cve:`2025-4138`.)
+* :func:`~tarfile.TarFile.extractall` now skips fixing up directory attributes
+  when a directory was removed or replaced by another kind of file.
+  (Contributed by Petr Viktorin in :gh:`127987` and :cve:`2024-12718`.)
+* :func:`~tarfile.TarFile.extract` and :func:`~tarfile.TarFile.extractall`
+  now (re-)apply the extraction filter when substituting a link (hard or
+  symbolic) with a copy of another archive member, and when fixing up
+  directory attributes.
+  The former raises a new exception, :exc:`~tarfile.LinkFallbackError`.
+  (Contributed by Petr Viktorin for :cve:`2025-4330` and :cve:`2024-12718`.)
+* :func:`~tarfile.TarFile.extract` and :func:`~tarfile.TarFile.extractall`
+  no longer extract rejected members when
+  :func:`~tarfile.TarFile.errorlevel` is zero.
+  (Contributed by Matt Prodani and Petr Viktorin in :gh:`112887`
+  and :cve:`2025-4435`.)
 
 
 zlib
@@ -129,14 +196,34 @@ module_name
 Deprecated
 ==========
 
-* module_name:
-  TODO
+hashlib
+-------
+
+* In hash function constructors such as :func:`~hashlib.new` or the
+  direct hash-named constructors such as :func:`~hashlib.md5` and
+  :func:`~hashlib.sha256`, their optional initial data parameter could
+  also be passed a keyword argument named ``data=`` or ``string=`` in
+  various :mod:`hashlib` implementations.
+
+  Support for the ``string`` keyword argument name is now deprecated and
+  is slated for removal in Python 3.19. Prefer passing the initial data as
+  a positional argument for maximum backwards compatibility.
+
+  (Contributed by Bénédikt Tran in :gh:`134978`.)
 
 
 .. Add deprecations above alphabetically, not here at the end.
 
 Removed
 =======
+
+ctypes
+------
+
+* Removed the undocumented function :func:`!ctypes.SetPointerType`,
+  which has been deprecated since Python 3.13.
+  (Contributed by Bénédikt Tran in :gh:`133866`.)
+
 
 http.server
 -----------
@@ -217,6 +304,11 @@ New features
   :c:func:`PySys_GetOptionalAttr`, and :c:func:`PySys_GetOptionalAttrString`
   functions as replacements for :c:func:`PySys_GetObject`.
   (Contributed by Serhiy Storchaka in :gh:`108512`.)
+
+* Add :c:type:`PyUnstable_Unicode_GET_CACHED_HASH` to get the cached hash of
+  a string. See the documentation for caveats.
+  (Contributed by Petr Viktorin in :gh:`131510`)
+
 
 Porting to Python 3.15
 ----------------------
