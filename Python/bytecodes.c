@@ -2545,6 +2545,13 @@ dummy_func(
             pushed_frame->localsplus[0] = owner;
             DEAD(owner);
             new_frame = PyStackRef_Wrap(pushed_frame);
+            /* Can't use _SAVE_RETURN_OFFSET as there is no follwoing CHECK_PERIODIC to skip */
+            #if TIER_ONE
+            frame->return_offset = (uint16_t)(next_instr - this_instr);
+            #endif
+            #if TIER_TWO
+            frame->return_offset = oparg;
+            #endif
         }
 
         macro(LOAD_ATTR_PROPERTY) =
@@ -2553,7 +2560,6 @@ dummy_func(
             _GUARD_TYPE_VERSION +
             unused/2 +
             _LOAD_ATTR_PROPERTY_FRAME +
-            _SAVE_RETURN_OFFSET +
             _PUSH_FRAME;
 
         inst(LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN, (unused/1, type_version/2, func_version/2, getattribute/4, owner -- unused)) {
@@ -4352,6 +4358,7 @@ dummy_func(
         macro(CALL_LIST_APPEND) =
             unused/1 +
             unused/2 +
+            CHECK_PERIODIC + // Do this first to avoid deopting in the middle of the qinstruction
             _GUARD_CALLABLE_LIST_APPEND +
             _GUARD_NOS_NOT_NULL +
             _GUARD_NOS_LIST +
@@ -5203,8 +5210,10 @@ dummy_func(
         }
 
         op(_SAVE_RETURN_OFFSET, (--)) {
+            // Skips following CHEKC_PERIODIC
             #if TIER_ONE
-            frame->return_offset = (uint16_t)(next_instr - this_instr);
+            assert(next_instr->op.code == CHECK_PERIODIC);
+            frame->return_offset = (uint16_t)(next_instr - this_instr)+1;
             #endif
             #if TIER_TWO
             frame->return_offset = oparg;

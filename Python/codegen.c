@@ -463,6 +463,7 @@ codegen_call_exit_with_nones(compiler *c, location loc)
     ADDOP_LOAD_CONST(c, loc, Py_None);
     ADDOP_LOAD_CONST(c, loc, Py_None);
     ADDOP_I(c, loc, CALL, 3);
+    ADDOP(c, loc, CHECK_PERIODIC);
     return SUCCESS;
 }
 
@@ -1504,6 +1505,7 @@ codegen_function(compiler *c, stmt_ty s, int is_async)
             ADDOP(c, loc, PUSH_NULL);
             ADDOP_I(c, loc, CALL, 0);
         }
+        ADDOP(c, loc, CHECK_PERIODIC);
     }
 
     RETURN_IF_ERROR(codegen_apply_decorators(c, decos));
@@ -1777,6 +1779,8 @@ codegen_typealias(compiler *c, stmt_ty s)
         RETURN_IF_ERROR(ret);
         ADDOP(c, loc, PUSH_NULL);
         ADDOP_I(c, loc, CALL, 0);
+        ADDOP(c, loc, CHECK_PERIODIC);
+
     }
     RETURN_IF_ERROR(codegen_nameop(c, loc, name, Store));
     return SUCCESS;
@@ -2965,6 +2969,7 @@ codegen_assert(compiler *c, stmt_ty s)
     if (s->v.Assert.msg) {
         VISIT(c, expr, s->v.Assert.msg);
         ADDOP_I(c, LOC(s), CALL, 0);
+        ADDOP(c, LOC(s), CHECK_PERIODIC);
     }
     ADDOP_I(c, LOC(s->v.Assert.test), RAISE_VARARGS, 1);
 
@@ -4135,6 +4140,7 @@ codegen_joined_str(compiler *c, expr_ty e)
             ADDOP_I(c, loc, LIST_APPEND, 1);
         }
         ADDOP_I(c, loc, CALL, 1);
+        ADDOP(c, loc, CHECK_PERIODIC);
     }
     else {
         VISIT_SEQ(c, expr, e->v.JoinedStr.values);
@@ -4871,6 +4877,7 @@ codegen_comprehension(compiler *c, expr_ty e, int type,
 
     VISIT(c, expr, outermost->iter);
     ADDOP_I(c, loc, CALL, 0);
+    ADDOP(c, loc, CHECK_PERIODIC);
 
     if (is_async_comprehension && type != COMP_GENEXP) {
         ADDOP_I(c, loc, GET_AWAITABLE, 0);
@@ -5012,6 +5019,7 @@ codegen_async_with_inner(compiler *c, stmt_ty s, int pos)
     ADDOP_I(c, loc, SWAP, 3);
     ADDOP_I(c, loc, LOAD_SPECIAL, SPECIAL___AENTER__);
     ADDOP_I(c, loc, CALL, 0);
+    ADDOP(c, loc, CHECK_PERIODIC);
     ADDOP_I(c, loc, GET_AWAITABLE, 1);
     ADDOP_LOAD_CONST(c, loc, Py_None);
     ADD_YIELD_FROM(c, loc, 1);
@@ -5121,6 +5129,7 @@ codegen_with_inner(compiler *c, stmt_ty s, int pos)
     ADDOP_I(c, loc, SWAP, 3);
     ADDOP_I(c, loc, LOAD_SPECIAL, SPECIAL___ENTER__);
     ADDOP_I(c, loc, CALL, 0);
+    ADDOP(c, loc, CHECK_PERIODIC);
     ADDOP_JUMP(c, loc, SETUP_WITH, final);
 
     /* SETUP_WITH pushes a finally block. */

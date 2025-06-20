@@ -769,7 +769,7 @@ translate_bytecode_to_trace(
                                 oparg = orig_oparg & 0xF;
                                 break;
                             case OPARG_SAVE_RETURN_OFFSET:  // op=_SAVE_RETURN_OFFSET; oparg=return_offset
-                                oparg = offset;
+                                oparg = offset + 1;
                                 assert(uop == _SAVE_RETURN_OFFSET);
                                 break;
                             case OPARG_REPLACED:

@@ -1916,7 +1916,8 @@
             // _SAVE_RETURN_OFFSET
             {
                 #if TIER_ONE
-                frame->return_offset = (uint16_t)(next_instr - this_instr);
+                assert(next_instr->op.code == CHECK_PERIODIC);
+                frame->return_offset = (uint16_t)(next_instr - this_instr)+1;
                 #endif
                 #if TIER_TWO
                 frame->return_offset = oparg;
@@ -2046,7 +2047,8 @@
             // _SAVE_RETURN_OFFSET
             {
                 #if TIER_ONE
-                frame->return_offset = (uint16_t)(next_instr - this_instr);
+                assert(next_instr->op.code == CHECK_PERIODIC);
+                frame->return_offset = (uint16_t)(next_instr - this_instr)+1;
                 #endif
                 #if TIER_TWO
                 frame->return_offset = oparg;
@@ -3020,7 +3022,8 @@
             // _SAVE_RETURN_OFFSET
             {
                 #if TIER_ONE
-                frame->return_offset = (uint16_t)(next_instr - this_instr);
+                assert(next_instr->op.code == CHECK_PERIODIC);
+                frame->return_offset = (uint16_t)(next_instr - this_instr)+1;
                 #endif
                 #if TIER_TWO
                 frame->return_offset = oparg;
@@ -3240,7 +3243,8 @@
             // _SAVE_RETURN_OFFSET
             {
                 #if TIER_ONE
-                frame->return_offset = (uint16_t)(next_instr - this_instr);
+                assert(next_instr->op.code == CHECK_PERIODIC);
+                frame->return_offset = (uint16_t)(next_instr - this_instr)+1;
                 #endif
                 #if TIER_TWO
                 frame->return_offset = oparg;
@@ -3351,6 +3355,19 @@
             _PyStackRef arg;
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
+            // _CHECK_PERIODIC
+            {
+                _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+                QSBR_QUIESCENT_STATE(tstate);
+                if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    int err = _Py_HandlePending(tstate);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                    if (err != 0) {
+                        JUMP_TO_LABEL(error);
+                    }
+                }
+            }
             // _GUARD_CALLABLE_LIST_APPEND
             {
                 callable = stack_pointer[-3];
@@ -4013,7 +4030,8 @@
             // _SAVE_RETURN_OFFSET
             {
                 #if TIER_ONE
-                frame->return_offset = (uint16_t)(next_instr - this_instr);
+                assert(next_instr->op.code == CHECK_PERIODIC);
+                frame->return_offset = (uint16_t)(next_instr - this_instr)+1;
                 #endif
                 #if TIER_TWO
                 frame->return_offset = oparg;
@@ -4115,7 +4133,8 @@
             // _SAVE_RETURN_OFFSET
             {
                 #if TIER_ONE
-                frame->return_offset = (uint16_t)(next_instr - this_instr);
+                assert(next_instr->op.code == CHECK_PERIODIC);
+                frame->return_offset = (uint16_t)(next_instr - this_instr)+1;
                 #endif
                 #if TIER_TWO
                 frame->return_offset = oparg;
@@ -8367,9 +8386,6 @@
                 _PyInterpreterFrame *pushed_frame = _PyFrame_PushUnchecked(tstate, PyStackRef_FromPyObjectNew(fget), 1, frame);
                 pushed_frame->localsplus[0] = owner;
                 new_frame = PyStackRef_Wrap(pushed_frame);
-            }
-            // _SAVE_RETURN_OFFSET
-            {
                 #if TIER_ONE
                 frame->return_offset = (uint16_t)(next_instr - this_instr);
                 #endif
