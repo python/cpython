@@ -2488,6 +2488,11 @@ sys_remote_exec_impl(PyObject *module, int pid, PyObject *script)
     if (PyUnicode_FSConverter(script, &path) == 0) {
         return NULL;
     }
+
+    if (PySys_Audit("sys.remote_exec", "iO", pid, script) < 0) {
+        return NULL;
+    }
+
     debugger_script_path = PyBytes_AS_STRING(path);
 #ifdef MS_WINDOWS
     PyObject *unicode_path;

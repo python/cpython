@@ -234,24 +234,24 @@ typedef struct py_hmac_hacl_api {
  *
  * The formal signature of this macro is:
  *
- *     (HACL_HMAC_state *, uint8_t *, uint32_t, PyObject *, (C statements))
+ *     (HACL_HMAC_state *, uint8_t *, uint32_t, (C statements))
  */
 #ifndef NDEBUG
 #define Py_HMAC_HACL_UPDATE_ONCE(                                           \
     HACL_STATE, BUF, LEN,                                                   \
-    ALGORITHM, ERRACTION                                                    \
+    ERRACTION                                                               \
 )                                                                           \
     do {                                                                    \
         Py_CHECK_HACL_UINT32_T_LENGTH(LEN);                                 \
         hacl_errno_t code = Py_HMAC_HACL_UPDATE_CALL(HACL_STATE, BUF, LEN); \
-        if (_hacl_convert_errno(code, (ALGORITHM)) < 0) {                   \
+        if (_hacl_convert_errno(code) < 0) {                                \
             ERRACTION;                                                      \
         }                                                                   \
     } while (0)
 #else
 #define Py_HMAC_HACL_UPDATE_ONCE(                                   \
     HACL_STATE, BUF, LEN,                                           \
-    _ALGORITHM, _ERRACTION                                          \
+    _ERRACTION                                                      \
 )                                                                   \
     do {                                                            \
         (void)Py_HMAC_HACL_UPDATE_CALL(HACL_STATE, BUF, (LEN));     \
@@ -274,17 +274,17 @@ typedef struct py_hmac_hacl_api {
  *
  * The formal signature of this macro is:
  *
- *     (HACL_HMAC_state *, uint8_t *, C integer, PyObject *, (C statements))
+ *     (HACL_HMAC_state *, uint8_t *, C integer, (C statements))
  */
 #ifdef Py_HMAC_SSIZE_LARGER_THAN_UINT32
 #define Py_HMAC_HACL_UPDATE_LOOP(                                   \
     HACL_STATE, BUF, LEN,                                           \
-    ALGORITHM, ERRACTION                                            \
+    ERRACTION                                                       \
 )                                                                   \
     do {                                                            \
         while ((Py_ssize_t)LEN > UINT32_MAX_AS_SSIZE_T) {           \
             Py_HMAC_HACL_UPDATE_ONCE(HACL_STATE, BUF, UINT32_MAX,   \
-                                     ALGORITHM, ERRACTION);         \
+                                     ERRACTION);                    \
             BUF += UINT32_MAX;                                      \
             LEN -= UINT32_MAX;                                      \
         }                                                           \
@@ -292,7 +292,7 @@ typedef struct py_hmac_hacl_api {
 #else
 #define Py_HMAC_HACL_UPDATE_LOOP(   \
     HACL_STATE, BUF, LEN,           \
-    _ALGORITHM, _ERRACTION          \
+    _ERRACTION                      \
 )
 #endif
 
@@ -301,17 +301,17 @@ typedef struct py_hmac_hacl_api {
  *
  * The formal signature of this macro is:
  *
- *     (HACL_HMAC_state *, uint8_t *, C integer, PyObject *, (C statements))
+ *     (HACL_HMAC_state *, uint8_t *, C integer, (C statements))
  */
 #define Py_HMAC_HACL_UPDATE(                            \
     HACL_STATE, BUF, LEN,                               \
-    ALGORITHM, ERRACTION                                \
+    ERRACTION                                           \
 )                                                       \
     do {                                                \
         Py_HMAC_HACL_UPDATE_LOOP(HACL_STATE, BUF, LEN,  \
-                                 ALGORITHM, ERRACTION); \
+                                 ERRACTION);            \
         Py_HMAC_HACL_UPDATE_ONCE(HACL_STATE, BUF, LEN,  \
-                                 ALGORITHM, ERRACTION); \
+                                 ERRACTION);            \
     } while (0)
 
 /*
@@ -491,38 +491,40 @@ narrow_hmac_hash_kind(hmacmodule_state *state, HMAC_Hash_Kind kind)
  * Otherwise, this sets an appropriate exception and returns -1.
  */
 static int
-_hacl_convert_errno(hacl_errno_t code, PyObject *algorithm)
+_hacl_convert_errno(hacl_errno_t code)
 {
+    assert(PyGILState_GetThisThreadState() != NULL);
+    if (code == Hacl_Streaming_Types_Success) {
+        return 0;
+    }
+
+    PyGILState_STATE gstate = PyGILState_Ensure();
     switch (code) {
-        case Hacl_Streaming_Types_Success: {
-            return 0;
-        }
         case Hacl_Streaming_Types_InvalidAlgorithm: {
-            // only makes sense if an algorithm is known at call time
-            assert(algorithm != NULL);
-            assert(PyUnicode_CheckExact(algorithm));
-            PyErr_Format(PyExc_ValueError, "invalid algorithm: %U", algorithm);
-            return -1;
+            PyErr_SetString(PyExc_ValueError, "invalid HACL* algorithm");
+            break;
         }
         case Hacl_Streaming_Types_InvalidLength: {
             PyErr_SetString(PyExc_ValueError, "invalid length");
-            return -1;
+            break;
         }
         case Hacl_Streaming_Types_MaximumLengthExceeded: {
             PyErr_SetString(PyExc_OverflowError, "maximum length exceeded");
-            return -1;
+            break;
         }
         case Hacl_Streaming_Types_OutOfMemory: {
             PyErr_NoMemory();
-            return -1;
+            break;
         }
         default: {
             PyErr_Format(PyExc_RuntimeError,
-                         "HACL* internal routine failed with error code: %d",
+                         "HACL* internal routine failed with error code: %u",
                          code);
-            return -1;
+            break;
         }
     }
+    PyGILState_Release(gstate);
+    return -1;
 }
 
 /*
@@ -536,7 +538,7 @@ _hacl_hmac_state_new(HMAC_Hash_Kind kind, uint8_t *key, uint32_t len)
     assert(kind != Py_hmac_kind_hash_unknown);
     HACL_HMAC_state *state = NULL;
     hacl_errno_t retcode = Hacl_Streaming_HMAC_malloc_(kind, key, len, &state);
-    if (_hacl_convert_errno(retcode, NULL) < 0) {
+    if (_hacl_convert_errno(retcode) < 0) {
         assert(state == NULL);
         return NULL;
     }
@@ -804,13 +806,13 @@ hmac_feed_initial_data(HMACObject *self, uint8_t *msg, Py_ssize_t len)
     }
 
     if (len < HASHLIB_GIL_MINSIZE) {
-        Py_HMAC_HACL_UPDATE(self->state, msg, len, self->name, return -1);
+        Py_HMAC_HACL_UPDATE(self->state, msg, len, return -1);
         return 0;
     }
 
     int res = 0;
     Py_BEGIN_ALLOW_THREADS
-        Py_HMAC_HACL_UPDATE(self->state, msg, len, self->name, goto error);
+        Py_HMAC_HACL_UPDATE(self->state, msg, len, goto error);
         goto done;
 #ifndef NDEBUG
 error:
@@ -978,7 +980,7 @@ hmac_update_state_with_lock(HMACObject *self, uint8_t *buf, Py_ssize_t len)
     int res = 0;
     Py_BEGIN_ALLOW_THREADS
         PyMutex_Lock(&self->mutex);  // unconditionally acquire a lock
-        Py_HMAC_HACL_UPDATE(self->state, buf, len, self->name, goto error);
+        Py_HMAC_HACL_UPDATE(self->state, buf, len, goto error);
         goto done;
 #ifndef NDEBUG
 error:
@@ -1005,7 +1007,7 @@ static int
 hmac_update_state_cond_lock(HMACObject *self, uint8_t *buf, Py_ssize_t len)
 {
     ENTER_HASHLIB(self);  // conditionally acquire a lock
-    Py_HMAC_HACL_UPDATE(self->state, buf, len, self->name, goto error);
+    Py_HMAC_HACL_UPDATE(self->state, buf, len, goto error);
     LEAVE_HASHLIB(self);
     return 0;
 
@@ -1076,7 +1078,7 @@ hmac_digest_compute_cond_lock(HMACObject *self, uint8_t *digest)
         rc == Hacl_Streaming_Types_Success ||
         rc == Hacl_Streaming_Types_OutOfMemory
     );
-    return _hacl_convert_errno(rc, NULL);
+    return _hacl_convert_errno(rc);
 }
 
 /*[clinic input]
