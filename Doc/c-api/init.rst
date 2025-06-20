@@ -492,17 +492,8 @@ Initializing and finalizing the interpreter
    strings other than those passed in (however, the contents of the strings
    pointed to by the argument list are not modified).
 
-   The return value will be ``0`` if the interpreter exits normally (i.e.,
-   without an exception), ``1`` if the interpreter exits due to an exception,
-   or ``2`` if the argument list does not represent a valid Python command
-   line.
-
-   Note that if an otherwise unhandled :exc:`SystemExit` is raised, this
-   function will not return ``1``, but exit the process, as long as
-   ``Py_InspectFlag`` is not set. If ``Py_InspectFlag`` is set, execution will
-   drop into the interactive Python prompt, at which point a second otherwise
-   unhandled :exc:`SystemExit` will still exit the process, while any other
-   means of exiting will set the return value as described above.
+   The return value is ``2`` if the argument list does not represent a valid
+   Python command line, and otherwise the same as :c:func:`Py_RunMain`.
 
    In terms of the CPython runtime configuration APIs documented in the
    :ref:`runtime configuration <init-config>` section (and without accounting
@@ -539,23 +530,18 @@ Initializing and finalizing the interpreter
 
    If :c:member:`PyConfig.inspect` is not set (the default), the return value
    will be ``0`` if the interpreter exits normally (that is, without raising
-   an exception), or ``1`` if the interpreter exits due to an exception. If an
-   otherwise unhandled :exc:`SystemExit` is raised, the function will immediately
-   exit the process instead of returning ``1``.
+   an exception), the exit status of an unhandled :exc:`SystemExit`, or ``1``
+   for any other unhandled exception.
 
    If :c:member:`PyConfig.inspect` is set (such as when the :option:`-i` option
    is used), rather than returning when the interpreter exits, execution will
    instead resume in an interactive Python prompt (REPL) using the ``__main__``
    module's global namespace. If the interpreter exited with an exception, it
    is immediately raised in the REPL session. The function return value is
-   then determined by the way the *REPL session* terminates: returning ``0``
-   if the session terminates without raising an unhandled exception, exiting
-   immediately for an unhandled :exc:`SystemExit`, and returning ``1`` for
-   any other unhandled exception.
+   then determined by the way the *REPL session* terminates: ``0``, ``1``, or
+   the status of a :exc:`SystemExit`, as specified above.
 
-   This function always finalizes the Python interpreter regardless of whether
-   it returns a value or immediately exits the process due to an unhandled
-   :exc:`SystemExit` exception.
+   This function always finalizes the Python interpreter before it returns.
 
    See :ref:`Python Configuration <init-python-config>` for an example of a
    customized Python that always runs in isolated mode using

@@ -609,7 +609,7 @@ A slightly more advanced use of the reader --- catching and reporting errors::
            for row in reader:
                print(row)
        except csv.Error as e:
-           sys.exit('file {}, line {}: {}'.format(filename, reader.line_num, e))
+           sys.exit(f'file {filename}, line {reader.line_num}: {e}')
 
 And while the module doesn't directly support parsing strings, it can easily be
 done::

@@ -382,6 +382,13 @@ SyntaxError: invalid syntax
 Traceback (most recent call last):
 SyntaxError: invalid syntax
 
+# But prefixes of soft keywords should
+# still raise specialized errors
+
+>>> (mat x)
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Perhaps you forgot a comma?
+
 From compiler_complex_args():
 
 >>> def f(None=1):
@@ -1436,17 +1443,17 @@ Regression tests for gh-133999:
    >>> try: pass
    ... except TypeError as name: raise from None
    Traceback (most recent call last):
-   SyntaxError: invalid syntax
+   SyntaxError: did you forget an expression between 'raise' and 'from'?
 
    >>> try: pass
    ... except* TypeError as name: raise from None
    Traceback (most recent call last):
-   SyntaxError: invalid syntax
+   SyntaxError: did you forget an expression between 'raise' and 'from'?
 
    >>> match 1:
    ...     case 1 | 2 as abc: raise from None
    Traceback (most recent call last):
-   SyntaxError: invalid syntax
+   SyntaxError: did you forget an expression between 'raise' and 'from'?
 
 Ensure that early = are not matched by the parser as invalid comparisons
    >>> f(2, 4, x=34); 1 $ 2

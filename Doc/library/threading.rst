@@ -102,7 +102,7 @@ CPU-bound tasks, as only one thread can execute Python bytecode at a time.
 Despite this, threads remain a useful tool for achieving concurrency in many
 scenarios.
 
-As of Python 3.13, experimental :term:`free-threaded <free threading>` builds
+As of Python 3.13, :term:`free-threaded <free threading>` builds
 can disable the GIL, enabling true parallel execution of threads, but this
 feature is not available by default (see :pep:`703`).
 

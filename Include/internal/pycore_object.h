@@ -767,6 +767,27 @@ _Py_TryIncref(PyObject *op)
 #endif
 }
 
+// Enqueue an object to be freed possibly after some delay
+#ifdef Py_GIL_DISABLED
+PyAPI_FUNC(void) _PyObject_XDecRefDelayed(PyObject *obj);
+#else
+static inline void _PyObject_XDecRefDelayed(PyObject *obj)
+{
+    Py_XDECREF(obj);
+}
+#endif
+
+#ifdef Py_GIL_DISABLED
+// Same as `Py_XSETREF` but in free-threading, it stores the object atomically
+// and queues the old object to be decrefed at a safe point using QSBR.
+PyAPI_FUNC(void) _PyObject_XSetRefDelayed(PyObject **p_obj, PyObject *obj);
+#else
+static inline void _PyObject_XSetRefDelayed(PyObject **p_obj, PyObject *obj)
+{
+    Py_XSETREF(*p_obj, obj);
+}
+#endif
+
 #ifdef Py_REF_DEBUG
 extern void _PyInterpreterState_FinalizeRefTotal(PyInterpreterState *);
 extern void _Py_FinalizeRefTotal(_PyRuntimeState *);

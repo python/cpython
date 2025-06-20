@@ -3967,13 +3967,9 @@ _PyObject_SetDict(PyObject *obj, PyObject *value)
         return -1;
     }
     Py_BEGIN_CRITICAL_SECTION(obj);
-    PyObject *olddict = *dictptr;
-    FT_ATOMIC_STORE_PTR_RELEASE(*dictptr, Py_NewRef(value));
-#ifdef Py_GIL_DISABLED
-    _PyObject_XDecRefDelayed(olddict);
-#else
-    Py_XDECREF(olddict);
-#endif
+    // gh-133980: To prevent use-after-free from other threads that reference
+    // the __dict__
+    _PyObject_XSetRefDelayed(dictptr, Py_NewRef(value));
     Py_END_CRITICAL_SECTION();
     return 0;
 }
