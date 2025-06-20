@@ -1,1 +1,1 @@
-Add ``ZipFile.remove()`` and ``ZipFile.repack()``
+Add :meth:`remove` and :meth:`repack` to :class:`ZipFile`.
