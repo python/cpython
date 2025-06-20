@@ -599,9 +599,7 @@ def liberal_is_HDN(text):
     For accepting/blocking domains.
 
     """
-    if is_ip(text):
-        return False
-    return True
+    return not is_ip(text)
 
 def user_domain_match(A, B):
     """For blocking/accepting domains.
