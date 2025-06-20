@@ -58,7 +58,7 @@ page or return its memory to the OS.
 
 ### Core Implementation
 
-The proposal to add QSBR to Python is contained in Github issue 115103 [1].
+The proposal to add QSBR to Python is contained in Github issue 115103 [^1].
 Many details of that proposal have been copied here, so they can be kept
 up-to-date with the actual implementation.
 
