@@ -394,8 +394,6 @@ Other functions
    - macosx-15.5-arm64
    - android-9-arm64_v8a
 
-   Other non-POSIX platforms:
-
    For other non-POSIX platforms, currently just returns :data:`sys.platform`.
 
 
