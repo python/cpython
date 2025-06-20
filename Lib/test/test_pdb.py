@@ -3226,8 +3226,8 @@ def test_pdb_issue_gh_127321():
     ...     'continue'
     ... ]):
     ...    test_function()
-    > <doctest test.test_pdb.test_pdb_issue_gh_127321[0]>(4)test_function()
-    -> a = 1
+    > <doctest test.test_pdb.test_pdb_issue_gh_127321[0]>(3)test_function()
+    -> [1, 2] and pdb_instance.set_trace()
     (Pdb) continue
     """
 

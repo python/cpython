@@ -990,6 +990,7 @@ codegen_apply_decorators(compiler *c, asdl_expr_seq* decos)
     for (Py_ssize_t i = asdl_seq_LEN(decos) - 1; i > -1; i--) {
         location loc = LOC((expr_ty)asdl_seq_GET(decos, i));
         ADDOP_I(c, loc, CALL, 0);
+        ADDOP(c, NO_LOCATION, CHECK_PERIODIC);
     }
     return SUCCESS;
 }
@@ -1690,6 +1691,7 @@ codegen_class(compiler *c, stmt_ty s)
         RETURN_IF_ERROR(ret);
         ADDOP(c, loc, PUSH_NULL);
         ADDOP_I(c, loc, CALL, 0);
+        ADDOP(c, NO_LOCATION, CHECK_PERIODIC);
     } else {
         RETURN_IF_ERROR(codegen_call_helper(c, loc, 2,
                                             s->v.ClassDef.bases,
@@ -2103,6 +2105,7 @@ codegen_for(compiler *c, stmt_ty s)
     VISIT(c, expr, s->v.For.target);
     VISIT_SEQ(c, stmt, s->v.For.body);
     /* Mark jump as artificial */
+    ADDOP(c, NO_LOCATION, CHECK_PERIODIC);
     ADDOP_JUMP(c, NO_LOCATION, JUMP, start);
 
     USE_LABEL(c, cleanup);
@@ -2150,6 +2153,7 @@ codegen_async_for(compiler *c, stmt_ty s)
     VISIT(c, expr, s->v.AsyncFor.target);
     VISIT_SEQ(c, stmt, s->v.AsyncFor.body);
     /* Mark jump as artificial */
+    ADDOP(c, NO_LOCATION, CHECK_PERIODIC);
     ADDOP_JUMP(c, NO_LOCATION, JUMP, start);
 
     _PyCompile_PopFBlock(c, COMPILE_FBLOCK_ASYNC_FOR_LOOP, start);
@@ -2182,6 +2186,7 @@ codegen_while(compiler *c, stmt_ty s)
     RETURN_IF_ERROR(codegen_jump_if(c, LOC(s), s->v.While.test, anchor, 0));
 
     VISIT_SEQ(c, stmt, s->v.While.body);
+    ADDOP(c, NO_LOCATION, CHECK_PERIODIC);
     ADDOP_JUMP(c, NO_LOCATION, JUMP, loop);
 
     _PyCompile_PopFBlock(c, COMPILE_FBLOCK_WHILE_LOOP, loop);
@@ -2263,6 +2268,7 @@ codegen_continue(compiler *c, location loc)
     if (loop == NULL) {
         return _PyCompile_Error(c, origin_loc, "'continue' not properly in loop");
     }
+    ADDOP(c, loc, CHECK_PERIODIC);
     ADDOP_JUMP(c, loc, JUMP, loop->fb_block);
     return SUCCESS;
 }
@@ -4013,6 +4019,7 @@ maybe_optimize_method_call(compiler *c, expr_ty e)
         loc = update_start_location_to_match_attr(c, LOC(e), meth);
         ADDOP_I(c, loc, CALL, argsl);
     }
+    ADDOP(c, NO_LOCATION, CHECK_PERIODIC);
     return 1;
 }
 
@@ -4302,6 +4309,7 @@ codegen_call_helper_impl(compiler *c, location loc,
     else {
         ADDOP_I(c, loc, CALL, n + nelts);
     }
+    ADDOP(c, NO_LOCATION, CHECK_PERIODIC);
     return SUCCESS;
 
 ex_call:
@@ -4357,6 +4365,7 @@ ex_call:
         ADDOP(c, loc, PUSH_NULL);
     }
     ADDOP(c, loc, CALL_FUNCTION_EX);
+    ADDOP(c, NO_LOCATION, CHECK_PERIODIC);
     return SUCCESS;
 }
 

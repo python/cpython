@@ -12,16 +12,14 @@
             break;
         }
 
-        case _CHECK_PERIODIC: {
+        /* _CHECK_PERIODIC is not a viable micro-op for tier 2 because it is replaced */
+
+        case _CHECK_PERIODIC_TIER_TWO: {
             _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
             QSBR_QUIESCENT_STATE(tstate);
             if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                int err = _Py_HandlePending(tstate);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
-                if (err != 0) {
-                    JUMP_TO_ERROR();
-                }
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
             }
             break;
         }
@@ -6037,8 +6035,9 @@
             }
             #if TIER_ONE
 
-            assert(next_instr->op.code == POP_TOP);
-            SKIP_OVER(1);
+            assert(next_instr->op.code == CHECK_PERIODIC);
+            assert(next_instr[1].op.code == POP_TOP);
+            SKIP_OVER(2);
             #endif
             break;
         }

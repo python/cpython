@@ -7,7 +7,9 @@
             break;
         }
 
-        case _CHECK_PERIODIC: {
+        /* _CHECK_PERIODIC is not a viable micro-op for tier 2 */
+
+        case _CHECK_PERIODIC_TIER_TWO: {
             break;
         }
 

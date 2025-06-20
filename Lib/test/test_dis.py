@@ -174,6 +174,7 @@ dis_bug708901 = """\
 %3d           LOAD_SMALL_INT          10
 
 %3d           CALL                     2
+              CHECK_PERIODIC
               GET_ITER
       L1:     FOR_ITER                 3 (to L2)
               STORE_FAST               0 (res)
