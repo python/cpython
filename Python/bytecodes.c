@@ -346,26 +346,22 @@ dummy_func(
         }
 
         op(_POP_TOP_NOP, (value --)) {
-            // TODO (gh-134584): Consider moving this to a function pointer table and replicate.
             assert(!PyStackRef_RefcountOnObject(value) ||
                 _Py_IsImmortal((PyStackRef_AsPyObjectBorrow(value))));
             DEAD(value);
         }
 
         op(_POP_TOP_INT, (value --)) {
-            // TODO (gh-134584): Consider moving this to a function pointer table and replicate.
             assert(PyLong_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
             PyStackRef_CLOSE_SPECIALIZED(value, _PyLong_ExactDealloc);
         }
 
         op(_POP_TOP_FLOAT, (value --)) {
-            // TODO (gh-134584): Consider moving this to a function pointer table and replicate.
             assert(PyFloat_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
             PyStackRef_CLOSE_SPECIALIZED(value, _PyFloat_ExactDealloc);
         }
 
         op(_POP_TOP_UNICODE, (value --)) {
-            // TODO (gh-134584): Consider moving this to a function pointer table and replicate.
             assert(PyUnicode_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
             PyStackRef_CLOSE_SPECIALIZED(value, _PyUnicode_ExactDealloc);
         }

@@ -2408,6 +2408,19 @@ class TestUopsOptimization(unittest.TestCase):
 
         self.assertIn("_POP_TOP_UNICODE", uops)
 
+    def test_store_pop_top_specialize_none(self):
+        def testfunc(n):
+            for _ in range(n):
+                global_identity(None)
+
+        testfunc(TIER2_THRESHOLD)
+
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertIn("_POP_TOP_NOP", uops)
+
 
 
 def global_identity(x):
