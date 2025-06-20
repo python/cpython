@@ -119,8 +119,7 @@ Module-Level Functions
    :attr:`~BaseException.__cause__` or :attr:`~BaseException.__context__`
    attributes of the exception) will be
    printed as well, like the interpreter itself does when printing an unhandled
-   exception.  If *show_lines* is ``False``, source code lines are not included
-   in the output.
+   exception.
 
    If *show_lines* is false, source code lines are not included in the output.
 
