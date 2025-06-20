@@ -490,7 +490,7 @@ the module-level functions described above.
       .. versionchanged:: next
          Added *show_lines* and *recent_first* parameters.
 
-   .. method:: format(*, chain=True, show_lines=True, recent_first=False, **kwargs)
+   .. method:: format(*, chain=True, show_lines=True, recent_first=False)
 
       Format the exception.
 
