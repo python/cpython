@@ -536,7 +536,6 @@ def parse_ns_headers(ns_headers):
 IPV4_RE = re.compile(r"\.\d+$", re.ASCII)
 def is_ip(text):
     """Return True if text is a valid IP address."""
-    # This function is a replacement of regex `IPV4_RE` in previous versions.
     try:
         ip_address(text)
         return True
