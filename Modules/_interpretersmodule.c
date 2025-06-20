@@ -601,6 +601,7 @@ _make_call(struct interp_call *call,
         unwrap_not_shareable(tstate, failure);
         return -1;
     }
+    assert(!_PyErr_Occurred(tstate));
 
     // Make the call.
     PyObject *resobj = PyObject_Call(func, args, kwargs);
