@@ -538,9 +538,9 @@ def is_ip(text):
     """Return True if text is a valid IP address."""
     try:
         ip_address(text)
-        return True
     except ValueError:
         return False
+    return True
 def is_HDN(text):
     """Return True if text is a host domain name."""
     # XXX
