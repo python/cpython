@@ -640,27 +640,20 @@ def get_platform():
 
     Examples of returned values:
 
-    Linux
-
-    - linux-i586
-    - linux-i686
-    - linux-alpha (?)
-    - solaris-2.6-sun4u
-
-    Windows
+    Windows:
 
     - win-amd64 (64-bit Windows on AMD64, aka x86_64, Intel64, and EM64T)
     - win-arm64 (64-bit Windows on ARM64, aka AArch64)
 
-    macOS
+    POSIX based OS:
 
-    - macosx-10.13-x86_64
-    - macosx-11-universal2
+    - linux-x86_64
     - macosx-15.5-arm64
+    - android-9-arm64_v8a
 
+    Other non-POSIX platforms:
 
-   For other non-POSIX platforms, currently just returns :data:`sys.platform`.
-
+    For other non-POSIX platforms, currently just returns :data:`sys.platform`.
     """
     if os.name == 'nt':
         if 'amd64' in sys.version.lower():
