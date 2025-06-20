@@ -944,6 +944,22 @@ class TestInterpreterExec(TestBase):
             with self.assertRaisesRegex(InterpreterError, 'unrecognized'):
                 interp.exec('raise Exception("it worked!")')
 
+    def test_list_comprehension(self):
+        # gh-135450: List comprehensions caused an assertion failure
+        # in _PyCode_CheckNoExternalState()
+        import string
+        r_interp, w_interp = self.pipe()
+
+        interp = interpreters.create()
+        interp.exec(f"""if True:
+            import os
+            comp = [str(i) for i in range(10)]
+            os.write({w_interp}, ''.join(comp).encode())
+        """)
+        self.assertEqual(os.read(r_interp, 10).decode(), string.digits)
+        interp.close()
+
+
     # test__interpreters covers the remaining
     # Interpreter.exec() behavior.
 
@@ -1355,6 +1371,187 @@ class TestInterpreterCall(TestBase):
             with defined_in___main__(funcname, script, remove=True) as arg:
                 with self.assertRaises(interpreters.NotShareableError):
                     interp.call(defs.spam_returns_arg, arg)
+
+    def test_func_in___main___hidden(self):
+        # When a top-level function that uses global variables is called
+        # through Interpreter.call(), it will be pickled, sent over,
+        # and unpickled.  That requires that it be found in the other
+        # interpreter's __main__ module.  However, the original script
+        # that defined the function is only run in the main interpreter,
+        # so pickle.loads() would normally fail.
+        #
+        # We work around this by running the script in the other
+        # interpreter.  However, this is a one-off solution for the sake
+        # of unpickling, so we avoid modifying that interpreter's
+        # __main__ module by running the script in a hidden module.
+        #
+        # In this test we verify that the function runs with the hidden
+        # module as its __globals__ when called in the other interpreter,
+        # and that the interpreter's __main__ module is unaffected.
+        text = dedent("""
+            eggs = True
+
+            def spam(*, explicit=False):
+                if explicit:
+                    import __main__
+                    ns = __main__.__dict__
+                else:
+                    # For now we have to have a LOAD_GLOBAL in the
+                    # function in order for globals() to actually return
+                    # spam.__globals__.  Maybe it doesn't go through pickle?
+                    # XXX We will fix this later.
+                    spam
+                    ns = globals()
+
+                func = ns.get('spam')
+                return [
+                    id(ns),
+                    ns.get('__name__'),
+                    ns.get('__file__'),
+                    id(func),
+                    None if func is None else repr(func),
+                    ns.get('eggs'),
+                    ns.get('ham'),
+                ]
+
+            if __name__ == "__main__":
+                from concurrent import interpreters
+                interp = interpreters.create()
+
+                ham = True
+                print([
+                    [
+                        spam(explicit=True),
+                        spam(),
+                    ],
+                    [
+                        interp.call(spam, explicit=True),
+                        interp.call(spam),
+                    ],
+                ])
+           """)
+        with os_helper.temp_dir() as tempdir:
+            filename = script_helper.make_script(tempdir, 'my-script', text)
+            res = script_helper.assert_python_ok(filename)
+        stdout = res.out.decode('utf-8').strip()
+        local, remote = eval(stdout)
+
+        # In the main interpreter.
+        main, unpickled = local
+        nsid, _, _, funcid, func, _, _ = main
+        self.assertEqual(main, [
+            nsid,
+            '__main__',
+            filename,
+            funcid,
+            func,
+            True,
+            True,
+        ])
+        self.assertIsNot(func, None)
+        self.assertRegex(func, '^<function spam at 0x.*>$')
+        self.assertEqual(unpickled, main)
+
+        # In the subinterpreter.
+        main, unpickled = remote
+        nsid1, _, _, funcid1, _, _, _ = main
+        self.assertEqual(main, [
+            nsid1,
+            '__main__',
+            None,
+            funcid1,
+            None,
+            None,
+            None,
+        ])
+        nsid2, _, _, funcid2, func, _, _ = unpickled
+        self.assertEqual(unpickled, [
+            nsid2,
+            '<fake __main__>',
+            filename,
+            funcid2,
+            func,
+            True,
+            None,
+        ])
+        self.assertIsNot(func, None)
+        self.assertRegex(func, '^<function spam at 0x.*>$')
+        self.assertNotEqual(nsid2, nsid1)
+        self.assertNotEqual(funcid2, funcid1)
+
+    def test_func_in___main___uses_globals(self):
+        # See the note in test_func_in___main___hidden about pickle
+        # and the __main__ module.
+        #
+        # Additionally, the solution to that problem must provide
+        # for global variables on which a pickled function might rely.
+        #
+        # To check that, we run a script that has two global functions
+        # and a global variable in the __main__ module.  One of the
+        # functions sets the global variable and the other returns
+        # the value.
+        #
+        # The script calls those functions multiple times in another
+        # interpreter, to verify the following:
+        #
+        #  * the global variable is properly initialized
+        #  * the global variable retains state between calls
+        #  * the setter modifies that persistent variable
+        #  * the getter uses the variable
+        #  * the calls in the other interpreter do not modify
+        #    the main interpreter
+        #  * those calls don't modify the interpreter's __main__ module
+        #  * the functions and variable do not actually show up in the
+        #    other interpreter's __main__ module
+        text = dedent("""
+            count = 0
+
+            def inc(x=1):
+                global count
+                count += x
+
+            def get_count():
+                return count
+
+            if __name__ == "__main__":
+                counts = []
+                results = [count, counts]
+
+                from concurrent import interpreters
+                interp = interpreters.create()
+
+                val = interp.call(get_count)
+                counts.append(val)
+
+                interp.call(inc)
+                val = interp.call(get_count)
+                counts.append(val)
+
+                interp.call(inc, 3)
+                val = interp.call(get_count)
+                counts.append(val)
+
+                results.append(count)
+
+                modified = {name: interp.call(eval, f'{name!r} in vars()')
+                            for name in ('count', 'inc', 'get_count')}
+                results.append(modified)
+
+                print(results)
+           """)
+        with os_helper.temp_dir() as tempdir:
+            filename = script_helper.make_script(tempdir, 'my-script', text)
+            res = script_helper.assert_python_ok(filename)
+        stdout = res.out.decode('utf-8').strip()
+        before, counts, after, modified = eval(stdout)
+        self.assertEqual(modified, {
+            'count': False,
+            'inc': False,
+            'get_count': False,
+        })
+        self.assertEqual(before, 0)
+        self.assertEqual(after, 0)
+        self.assertEqual(counts, [0, 1, 4])
 
     def test_raises(self):
         interp = interpreters.create()

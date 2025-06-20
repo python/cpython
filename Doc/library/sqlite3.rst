@@ -507,6 +507,15 @@ Module constants
    Version number of the runtime SQLite library as a :class:`tuple` of
    :class:`integers <int>`.
 
+.. data:: SQLITE_KEYWORDS
+
+   A :class:`tuple` containing all sqlite3 keywords.
+
+   This constant is only available if Python was compiled with SQLite
+   3.24.0 or greater.
+
+   .. versionadded:: next
+
 .. data:: threadsafety
 
    Integer constant required by the DB-API 2.0, stating the level of thread

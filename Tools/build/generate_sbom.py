@@ -172,7 +172,7 @@ def download_with_retries(download_location: str,
     for attempt in range(max_retries + 1):
         try:
             resp = urllib.request.urlopen(download_location)
-        except urllib.error.URLError as ex:
+        except (urllib.error.URLError, ConnectionError) as ex:
             if attempt == max_retries:
                 msg = f"Download from {download_location} failed."
                 raise OSError(msg) from ex

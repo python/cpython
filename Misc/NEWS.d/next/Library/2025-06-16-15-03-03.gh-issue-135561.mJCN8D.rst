@@ -1,0 +1,2 @@
+Fix a crash on DEBUG builds when an HACL* HMAC routine fails. Patch by
+Bénédikt Tran.

@@ -44,7 +44,10 @@ class ItertoolsThreading(unittest.TestCase):
         def work(it):
             barrier.wait()
             for _ in range(number_of_cycles):
-                _ = next(it)
+                try:
+                    next(it)
+                except StopIteration:
+                    pass
 
         data = (1, 2, 3, 4)
         for it in range(number_of_iterations):
