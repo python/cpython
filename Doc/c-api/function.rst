@@ -155,10 +155,14 @@ There are a few functions specific to Python functions.
    Return the annotations of the function object *op*. This can be a
    mutable dictionary or ``NULL``.
 
+   .. versionadded:: 3.0
+
 
 .. c:function:: PyObject *PyFunction_GET_ANNOTATIONS(PyObject *op)
 
    Equivalent to :c:func:`PyFunction_GetAnnotations`, but without error checking.
+
+   .. versionadded:: 3.0
 
 
 .. c:function:: int PyFunction_SetAnnotations(PyObject *op, PyObject *annotations)
@@ -167,6 +171,8 @@ There are a few functions specific to Python functions.
    must be a dictionary or ``Py_None``.
 
    Raises :exc:`SystemError` and returns ``-1`` on failure.
+
+   .. versionadded:: 3.0
 
 
 .. c:function:: int PyFunction_AddWatcher(PyFunction_WatchCallback callback)
