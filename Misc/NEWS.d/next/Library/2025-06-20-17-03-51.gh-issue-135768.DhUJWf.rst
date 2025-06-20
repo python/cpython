@@ -1,1 +1,2 @@
-:mod:`http.cookiejar` now supports IPv6 address in blocked_domains and allowed_domains of class DefaultCookiePolicy
+:mod:`http.cookiejar`: fix allowed and blocked IPv6 domains
+in :class:`~http.cookiejar.DefaultCookiePolicy`.
