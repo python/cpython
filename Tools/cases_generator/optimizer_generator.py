@@ -170,11 +170,6 @@ class OptimizerEmitter(Emitter):
     ) -> bool:
         skip_to(tkn_iter, "SEMI")
 
-        if self.original_uop.properties.escapes:
-            raise analysis_error(
-                f"REPLACE_OPCODE_IF_EVALUATES_PURE cannot be used with an escaping uop {self.original_uop.properties.escaping_calls}",
-                self.original_uop.body.open
-            )
         emitter = OptimizerConstantEmitter(self.out, {}, self.original_uop, copy.deepcopy(self.stack))
         emitter.emit("if (\n")
         assert isinstance(uop, Uop)

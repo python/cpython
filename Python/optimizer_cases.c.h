@@ -2644,6 +2644,31 @@
             JitOptRef res;
             rhs = stack_pointer[-1];
             lhs = stack_pointer[-2];
+            if (
+                sym_is_safe_const(ctx, lhs) &&
+                sym_is_safe_const(ctx, rhs)
+            ) {
+                JitOptRef lhs_sym = lhs;
+                JitOptRef rhs_sym = rhs;
+                _PyStackRef lhs = sym_get_const_as_stackref(ctx, lhs_sym);
+                _PyStackRef rhs = sym_get_const_as_stackref(ctx, rhs_sym);
+                _PyStackRef res_stackref;
+                /* Start of uop copied from bytecodes for constant evaluation */
+                PyObject *lhs_o = PyStackRef_AsPyObjectBorrow(lhs);
+                PyObject *rhs_o = PyStackRef_AsPyObjectBorrow(rhs);
+                assert(_PyEval_BinaryOps[oparg]);
+                stack_pointer[-2] = res;
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
+                PyObject *res_o = _PyEval_BinaryOps[oparg](lhs_o, rhs_o);
+                if (res_o == NULL) {
+                    JUMP_TO_LABEL(error);
+                }
+                res_stackref = PyStackRef_FromPyObjectSteal(res_o);
+                /* End of uop copied from bytecodes for constant evaluation */
+                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
+                break;
+            }
             bool lhs_int = sym_matches_type(lhs, &PyLong_Type);
             bool rhs_int = sym_matches_type(rhs, &PyLong_Type);
             bool lhs_float = sym_matches_type(lhs, &PyFloat_Type);
