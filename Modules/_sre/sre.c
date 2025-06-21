@@ -2431,11 +2431,74 @@ match_group(PyObject *op, PyObject* args)
     return result;
 }
 
-static PyObject*
-match_getitem(PyObject *op, PyObject* name)
+static Py_ssize_t
+match_length(PyObject *op)
 {
     MatchObject *self = _MatchObject_CAST(op);
-    return match_getslice(self, name, Py_None);
+    return self->groups;
+}
+
+static PyObject*
+match_item(PyObject *op, Py_ssize_t index)
+{
+    MatchObject *self = _MatchObject_CAST(op);
+    if (index < 0 || index >= self->groups) {
+        PyErr_SetString(PyExc_IndexError, "no such group");
+        return NULL;
+    }
+    return match_getslice_by_index(self, index, Py_None);
+}
+
+static PyObject*
+match_subscript(PyObject *op, PyObject* item)
+{
+    MatchObject *self = _MatchObject_CAST(op);
+
+    if (PyIndex_Check(item)) {
+        Py_ssize_t i = PyNumber_AsSsize_t(item, PyExc_IndexError);
+        if (i == -1 && PyErr_Occurred()) {
+            return NULL;
+        }
+        if (i < 0) {
+            i += self->groups;
+        }
+        return match_item(op, i);
+    }
+    else if (PySlice_Check(item)) {
+        Py_ssize_t start, stop, step;
+        if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
+            return NULL;
+        }
+        Py_ssize_t slicelength = PySlice_AdjustIndices(self->groups, &start, &stop, step);
+        PyObject* result = PyTuple_New(slicelength);
+        if (!result) {
+            return NULL;
+        }
+        for (Py_ssize_t cur = start, i = 0; i < slicelength; cur += step, i++) {
+            PyObject* group = match_getslice_by_index(self, cur, Py_None);
+            if (!group) {
+                Py_DECREF(result);
+                return NULL;
+            }
+            PyTuple_SET_ITEM(result, i, group);
+        }
+        return result;
+    }
+    else {
+        if (self->pattern->groupindex) {
+            PyObject* index = PyDict_GetItemWithError(self->pattern->groupindex, item);
+            if (index && PyLong_Check(index)) {
+                Py_ssize_t i = PyLong_AsSsize_t(index);
+                if (i != -1 || !PyErr_Occurred()) {
+                    return match_item(op, i);
+                }
+            }
+        }
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(PyExc_IndexError, "no such group");
+        }
+        return NULL;
+    }
 }
 
 /*[clinic input]
@@ -2612,6 +2675,76 @@ _sre_SRE_Match_span_impl(MatchObject *self, PyObject *group)
 
     /* marks are -1 if group is undefined */
     return _pair(self->mark[index*2], self->mark[index*2+1]);
+}
+
+/*[clinic input]
+_sre.SRE_Match.index
+
+    value: object
+    start: slice_index(accept={int}) = 0
+    stop: slice_index(accept={int}, c_default="PY_SSIZE_T_MAX") = sys.maxsize
+    /
+
+Return the index of the first occurrence of the value among the matched groups.
+
+Raises ValueError if the value is not present.
+[clinic start generated code]*/
+
+static PyObject *
+_sre_SRE_Match_index_impl(MatchObject *self, PyObject *value,
+                          Py_ssize_t start, Py_ssize_t stop)
+/*[clinic end generated code: output=846597f6f96f829c input=7f41b5a99e0ad88e]*/
+{
+    (void)PySlice_AdjustIndices(self->groups, &start, &stop, 1);
+
+    for (Py_ssize_t i = start; i < stop; i++) {
+        PyObject* group = match_getslice_by_index(self, i, Py_None);
+        if (group == NULL) {
+            return NULL;
+        }
+        int cmp = PyObject_RichCompareBool(group, value, Py_EQ);
+        Py_DECREF(group);
+        if (cmp < 0) {
+            return NULL;
+        }
+        else if (cmp > 0) {
+            return PyLong_FromSsize_t(i);
+        }
+    }
+    PyErr_SetString(PyExc_ValueError, "match.index(x): x not in match");
+    return NULL;
+}
+
+/*[clinic input]
+_sre.SRE_Match.count
+
+     value: object
+     /
+
+Return the number of occurrences of the value among the matched groups.
+[clinic start generated code]*/
+
+static PyObject *
+_sre_SRE_Match_count_impl(MatchObject *self, PyObject *value)
+/*[clinic end generated code: output=c0b81bdce5872620 input=b1f3372cfb4b8c74]*/
+{
+    Py_ssize_t count = 0;
+
+    for (Py_ssize_t i = 0; i < self->groups; i++) {
+        PyObject* group = match_getslice_by_index(self, i, Py_None);
+        if (group == NULL) {
+            return NULL;
+        }
+        int cmp = PyObject_RichCompareBool(group, value, Py_EQ);
+        Py_DECREF(group);
+        if (cmp < 0) {
+            return NULL;
+        }
+        else if (cmp > 0) {
+            count++;
+        }
+    }
+    return PyLong_FromSsize_t(count);
 }
 
 static PyObject*
@@ -3224,6 +3357,8 @@ static PyMethodDef match_methods[] = {
     _SRE_SRE_MATCH_START_METHODDEF
     _SRE_SRE_MATCH_END_METHODDEF
     _SRE_SRE_MATCH_SPAN_METHODDEF
+    _SRE_SRE_MATCH_INDEX_METHODDEF
+    _SRE_SRE_MATCH_COUNT_METHODDEF
     _SRE_SRE_MATCH_GROUPS_METHODDEF
     _SRE_SRE_MATCH_GROUPDICT_METHODDEF
     _SRE_SRE_MATCH_EXPAND_METHODDEF
@@ -3268,12 +3403,12 @@ static PyType_Slot match_slots[] = {
     {Py_tp_traverse, match_traverse},
     {Py_tp_clear, match_clear},
 
-    /* As mapping.
-     *
-     * Match objects do not support length or assignment, but do support
-     * __getitem__.
-     */
-    {Py_mp_subscript, match_getitem},
+    // Sequence protocol
+    {Py_sq_length, match_length},
+    {Py_sq_item, match_item},
+
+    // Support group names provided as subscripts
+    {Py_mp_subscript, match_subscript},
 
     {0, NULL},
 };
@@ -3282,7 +3417,7 @@ static PyType_Spec match_spec = {
     .name = "re.Match",
     .basicsize = sizeof(MatchObject),
     .itemsize = sizeof(Py_ssize_t),
-    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE |
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_SEQUENCE | Py_TPFLAGS_IMMUTABLETYPE |
               Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_HAVE_GC),
     .slots = match_slots,
 };

@@ -1,0 +1,2 @@
+Make :class:`re.Match` a well-rounded :class:`~collections.abc.Sequence`
+type.

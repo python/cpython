@@ -1380,6 +1380,27 @@ when there is no match, you can test whether there was a match with a simple
    if match:
        process(match)
 
+Match objects are proper :class:`~collections.abc.Sequence` types. You can access
+match groups via subscripting ``match[...]`` and use familiar
+:class:`~collections.abc.Sequence` idioms to iterate over and extract match groups::
+
+   >>> m = re.match(r"(\w+) (\w+)", "Isaac Newton, physicist")
+   >>> m[1]
+   "Isaac"
+   >>> list(m)
+   ["Isaac Newton", "Isaac", "Newton"]
+   >>> _, first_name, last_name = m
+   >>> last_name
+   "Newton"
+
+You can also destructure match objects with python's ``match`` statement::
+
+   >>> match re.match(r"(\d+)-(\d+)-(\d+)", "2000-10-16"):
+   ...     case [_, year, month, day]:
+   ...         year
+   ...
+   "2000"
+
 .. class:: Match
 
    Match object returned by successful ``match``\ es and ``search``\ es.
@@ -1475,6 +1496,37 @@ when there is no match, you can test whether there was a match with a simple
 
    .. versionadded:: 3.6
 
+   .. versionchanged:: next
+
+      Negative indexing is now supported. This allows accessing match groups
+      from the end, starting from the last group defined in the pattern::
+
+         >>> m = re.match(r"(\w+) (\w+)", "Isaac Newton, physicist")
+         >>> m[-1]      # The first parenthesized subgroup starting from the end.
+         'Newton'
+         >>> m[-2]      # The second parenthesized subgroup starting from the end.
+         'Isaac'
+         >>> m[-3]      # The entire match starting from the end.
+         'Isaac Newton'
+
+      You can also use slicing to extract multiple groups as a tuple::
+
+         >>> m = re.match(r"(\w+) (\w+)", "Isaac Newton, physicist")
+         >>> m[1:]
+         ('Isaac', 'Newton')
+
+
+.. method:: Match.__len__()
+
+   Returns the number of groups accessible through the subscript syntax provided by
+   :meth:`~Match.__getitem__`. This includes group ``0`` representing the entire match::
+
+      >>> m = re.match(r"(\w+) (\w+)", "Isaac Newton, physicist")
+      >>> len(m)
+      3
+
+   .. versionadded:: next
+
 
 .. method:: Match.groups(default=None)
 
@@ -1539,6 +1591,22 @@ when there is no match, you can test whether there was a match with a simple
    For a match *m*, return the 2-tuple ``(m.start(group), m.end(group))``. Note
    that if *group* did not contribute to the match, this is ``(-1, -1)``.
    *group* defaults to zero, the entire match.
+
+
+.. method:: Match.index(value, start=0, stop=sys.maxsize, /)
+
+   Return the index of the first occurrence of the value among the matched groups.
+
+   Raises :exc:`ValueError` if the value is not present.
+
+   .. versionadded:: next
+
+
+.. method:: Match.count(value, /)
+
+   Return the number of occurrences of the value among the matched groups.
+
+   .. versionadded:: next
 
 
 .. attribute:: Match.pos
