@@ -26,6 +26,8 @@
 #include "pycore_function.h"
 #include "pycore_uop_ids.h"
 #include "pycore_range.h"
+#include "pycore_unicodeobject.h"
+#include "pycore_ceval.h"
 
 #include <stdarg.h>
 #include <stdbool.h>
@@ -321,7 +323,10 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
 /* Shortened forms for convenience, used in optimizer_bytecodes.c */
 #define sym_is_not_null _Py_uop_sym_is_not_null
 #define sym_is_const _Py_uop_sym_is_const
+#define sym_is_safe_const _Py_uop_sym_is_safe_const
 #define sym_get_const _Py_uop_sym_get_const
+#define sym_new_const_steal _Py_uop_sym_new_const_steal
+#define sym_get_const_as_stackref _Py_uop_sym_get_const_as_stackref
 #define sym_new_unknown _Py_uop_sym_new_unknown
 #define sym_new_not_null _Py_uop_sym_new_not_null
 #define sym_new_type _Py_uop_sym_new_type
@@ -349,6 +354,8 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
 #define sym_is_compact_int _Py_uop_sym_is_compact_int
 #define sym_new_compact_int _Py_uop_sym_new_compact_int
 #define sym_new_truthiness _Py_uop_sym_new_truthiness
+
+#define JUMP_TO_LABEL(label) goto label;
 
 static int
 optimize_to_bool(

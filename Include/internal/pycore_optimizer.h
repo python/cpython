@@ -10,7 +10,7 @@ extern "C" {
 
 #include "pycore_typedefs.h"      // _PyInterpreterFrame
 #include "pycore_uop_ids.h"
-#include "pycore_stackref.h"
+#include "pycore_stackref.h"      // _PyStackRef
 #include <stdbool.h>
 
 
@@ -316,6 +316,9 @@ extern JitOptRef _Py_uop_sym_new_type(
     JitOptContext *ctx, PyTypeObject *typ);
 
 extern JitOptRef _Py_uop_sym_new_const(JitOptContext *ctx, PyObject *const_val);
+extern JitOptRef _Py_uop_sym_new_const_steal(JitOptContext *ctx, PyObject *const_val);
+bool _Py_uop_sym_is_safe_const(JitOptContext *ctx, JitOptRef sym);
+_PyStackRef _Py_uop_sym_get_const_as_stackref(JitOptContext *ctx, JitOptRef sym);
 extern JitOptRef _Py_uop_sym_new_null(JitOptContext *ctx);
 extern bool _Py_uop_sym_has_type(JitOptRef sym);
 extern bool _Py_uop_sym_matches_type(JitOptRef sym, PyTypeObject *typ);
