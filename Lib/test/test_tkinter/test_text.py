@@ -94,6 +94,34 @@ class TextTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(text.count('1.3', '1.3', 'update', return_ints=True), 0)
         self.assertEqual(text.count('1.3', '1.3', 'update'), None)
 
+class TextSearchOptionsTest(AbstractTkTest, unittest.TestCase):
+    def setUp(self):
+        super().setUp()
+        self.text = tkinter.Text(self.root)
+        self.text.pack()
+        self.text.insert('1.0',
+            'This is a test. This is only a test.\n'
+            'Another line.\nYet another line.')
+
+    def test_nolinestop(self):
+        result = self.text.search('line', '1.0', 'end', nolinestop=True, regexp=True)
+        self.assertEqual(result, '2.8')
+
+    def test_all(self):
+        result = self.text.search('test', '1.0', 'end', all=True)
+        self.assertIsInstance(result, str)
+        indices = result.split()
+        self.assertGreaterEqual(len(indices), 2)
+        self.assertTrue(all(isinstance(i, str) for i in indices))
+
+    def test_overlap(self):
+        result = self.text.search('test', '1.0', 'end', all=True, overlap=True)
+        self.assertIsInstance(result, str)
+        self.assertIn("textindex", result)
+
+    def test_strictlimits(self):
+        result = self.text.search('test', '1.0', '1.20', strictlimits=True)
+        self.assertEqual(result, '1.10')
 
 if __name__ == "__main__":
     unittest.main()
