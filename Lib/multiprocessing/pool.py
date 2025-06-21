@@ -774,11 +774,18 @@ class ApplyResult(object):
             raise self._value
 
     def _set(self, i, obj):
-        self._success, self._value = obj
-        if self._callback and self._success:
-            self._callback(self._value)
-        if self._error_callback and not self._success:
-            self._error_callback(self._value)
+        success, value = obj
+        try:
+            if self._callback and success:
+                self._callback(value)
+            if self._error_callback and not success:
+                self._error_callback(value)
+        except BaseException as e:
+            self._value = e
+            self._success = False
+        else:
+            self._value = value
+            self._success = success
         self._event.set()
         del self._cache[self._job]
         self._pool = None
@@ -812,8 +819,12 @@ class MapResult(ApplyResult):
         if success and self._success:
             self._value[i*self._chunksize:(i+1)*self._chunksize] = result
             if self._number_left == 0:
-                if self._callback:
-                    self._callback(self._value)
+                try:
+                    if self._callback:
+                        self._callback(self._value)
+                except BaseException as e:
+                    self._value = e
+                    self._success = False
                 del self._cache[self._job]
                 self._event.set()
                 self._pool = None
@@ -824,8 +835,12 @@ class MapResult(ApplyResult):
                 self._value = result
             if self._number_left == 0:
                 # only consider the result ready once all jobs are done
-                if self._error_callback:
-                    self._error_callback(self._value)
+                try:
+                    if self._error_callback:
+                        self._error_callback(self._value)
+                except BaseException as e:
+                    self._value = e
+                    self._success = False
                 del self._cache[self._job]
                 self._event.set()
                 self._pool = None
