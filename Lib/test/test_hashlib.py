@@ -1043,40 +1043,59 @@ class HashLibTestCase(unittest.TestCase):
 
     def test_sha256_gil(self):
         gil_minsize = hashlib_helper.find_gil_minsize(['_sha2', '_hashlib'])
+        data = b'1' + b'#' * gil_minsize + b'1'
+        expected = hashlib.sha256(data).hexdigest()
+
         m = hashlib.sha256()
         m.update(b'1')
         m.update(b'#' * gil_minsize)
         m.update(b'1')
-        self.assertEqual(
-            m.hexdigest(),
-            '1cfceca95989f51f658e3f3ffe7f1cd43726c9e088c13ee10b46f57cef135b94'
-        )
-
-        m = hashlib.sha256(b'1' + b'#' * gil_minsize + b'1')
-        self.assertEqual(
-            m.hexdigest(),
-            '1cfceca95989f51f658e3f3ffe7f1cd43726c9e088c13ee10b46f57cef135b94'
-        )
+        self.assertEqual(m.hexdigest(), expected)
 
     @threading_helper.reap_threads
     @threading_helper.requires_working_threading()
-    def test_threaded_hashing(self):
+    def test_threaded_hashing_fast(self):
+        # Same as test_threaded_hashing_slow() but only tests "fast" functions
+        # since otherwise test_hashlib.py becomes too slow during development.
+        for name in ['md5', 'sha1', 'sha256', 'sha3_256', 'blake2s']:
+            if constructor := getattr(hashlib, name, None):
+                with self.subTest(name):
+                    self.do_test_threaded_hashing(constructor, is_shake=False)
+        if shake_128 := getattr(hashlib, 'shake_128', None):
+            self.do_test_threaded_hashing(shake_128, is_shake=True)
+
+    @requires_resource('cpu')
+    @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
+    def test_threaded_hashing_slow(self):
+        for algorithm, constructors in self.constructors_to_test.items():
+            is_shake = algorithm in self.shakes
+            for constructor in constructors:
+                with self.subTest(constructor.__name__, is_shake=is_shake):
+                    self.do_test_threaded_hashing(constructor, is_shake)
+
+    def do_test_threaded_hashing(self, constructor, is_shake):
         # Updating the same hash object from several threads at once
         # using data chunk sizes containing the same byte sequences.
         #
         # If the internal locks are working to prevent multiple
         # updates on the same object from running at once, the resulting
         # hash will be the same as doing it single threaded upfront.
-        hasher = hashlib.sha1()
+        #
+        # Be careful when choosing num_threads, len(smallest_data)
+        # and len(data) // len(smallest_data) as the obtained chunk
+        # size needs to satisfy some conditions below.
         num_threads = 5
-        smallest_data = b'swineflu'
+        smallest_data = os.urandom(8)
         data = smallest_data * 200000
-        expected_hash = hashlib.sha1(data*num_threads).hexdigest()
+
+        h1 = constructor()
+        h2 = constructor(data * num_threads)
 
         def hash_in_chunks(chunk_size):
             index = 0
             while index < len(data):
-                hasher.update(data[index:index + chunk_size])
+                h1.update(data[index:index + chunk_size])
                 index += chunk_size
 
         threads = []
@@ -1093,7 +1112,10 @@ class HashLibTestCase(unittest.TestCase):
         for thread in threads:
             thread.join()
 
-        self.assertEqual(expected_hash, hasher.hexdigest())
+        if is_shake:
+            self.assertEqual(h1.hexdigest(16), h2.hexdigest(16))
+        else:
+            self.assertEqual(h1.hexdigest(), h2.hexdigest())
 
     def test_get_fips_mode(self):
         fips_mode = self.is_fips_mode

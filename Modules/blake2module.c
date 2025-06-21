@@ -352,7 +352,7 @@ type_to_impl(PyTypeObject *type)
 }
 
 typedef struct {
-    PyObject_HEAD
+    HASHLIB_OBJECT_HEAD
     union {
         Hacl_Hash_Blake2s_state_t *blake2s_state;
         Hacl_Hash_Blake2b_state_t *blake2b_state;
@@ -364,8 +364,6 @@ typedef struct {
 #endif
     };
     blake2_impl impl;
-    bool use_mutex;
-    PyMutex mutex;
 } Blake2Object;
 
 #define _Blake2Object_CAST(op)  ((Blake2Object *)(op))
@@ -422,7 +420,7 @@ new_Blake2Object(PyTypeObject *type)
     } while (0)
 
 static void
-update(Blake2Object *self, uint8_t *buf, Py_ssize_t len)
+blake2_update_unlocked(Blake2Object *self, uint8_t *buf, Py_ssize_t len)
 {
     switch (self->impl) {
         // blake2b_256_state and blake2s_128_state must be if'd since
@@ -646,14 +644,12 @@ py_blake2_new(PyTypeObject *type, PyObject *data, int digest_size,
     if (data != NULL) {
         Py_buffer buf;
         GET_BUFFER_VIEW_OR_ERROR(data, &buf, goto error);
-        if (buf.len >= HASHLIB_GIL_MINSIZE) {
-            Py_BEGIN_ALLOW_THREADS
-            update(self, buf.buf, buf.len);
-            Py_END_ALLOW_THREADS
-        }
-        else {
-            update(self, buf.buf, buf.len);
-        }
+        /* Do not use self->mutex here as this is the constructor
+         * where it is not yet possible to have concurrent access. */
+        HASHLIB_EXTERNAL_INSTRUCTIONS_UNLOCKED(
+            buf.len,
+            blake2_update_unlocked(self, buf.buf, buf.len)
+        );
         PyBuffer_Release(&buf);
     }
 
@@ -744,7 +740,7 @@ py_blake2s_new_impl(PyTypeObject *type, PyObject *data_obj, int digest_size,
 }
 
 static int
-blake2_blake2b_copy_locked(Blake2Object *self, Blake2Object *cpy)
+blake2_blake2b_copy_unlocked(Blake2Object *self, Blake2Object *cpy)
 {
     assert(cpy != NULL);
 #define BLAKE2_COPY(TYPE, STATE_ATTR)                                       \
@@ -801,9 +797,9 @@ _blake2_blake2b_copy_impl(Blake2Object *self)
         return NULL;
     }
 
-    ENTER_HASHLIB(self);
-    rc = blake2_blake2b_copy_locked(self, cpy);
-    LEAVE_HASHLIB(self);
+    HASHLIB_ACQUIRE_LOCK(self);
+    rc = blake2_blake2b_copy_unlocked(self, cpy);
+    HASHLIB_RELEASE_LOCK(self);
     if (rc < 0) {
         Py_DECREF(cpy);
         return NULL;
@@ -825,25 +821,12 @@ _blake2_blake2b_update_impl(Blake2Object *self, PyObject *data)
 /*[clinic end generated code: output=99330230068e8c99 input=ffc4aa6a6a225d31]*/
 {
     Py_buffer buf;
-
     GET_BUFFER_VIEW_OR_ERROUT(data, &buf);
-
-    if (!self->use_mutex && buf.len >= HASHLIB_GIL_MINSIZE) {
-        self->use_mutex = true;
-    }
-    if (self->use_mutex) {
-        Py_BEGIN_ALLOW_THREADS
-        PyMutex_Lock(&self->mutex);
-        update(self, buf.buf, buf.len);
-        PyMutex_Unlock(&self->mutex);
-        Py_END_ALLOW_THREADS
-    }
-    else {
-        update(self, buf.buf, buf.len);
-    }
-
+    HASHLIB_EXTERNAL_INSTRUCTIONS_LOCKED(
+        self, buf.len,
+        blake2_update_unlocked(self, buf.buf, buf.len)
+    );
     PyBuffer_Release(&buf);
-
     Py_RETURN_NONE;
 }
 
@@ -881,9 +864,9 @@ _blake2_blake2b_digest_impl(Blake2Object *self)
 /*[clinic end generated code: output=31ab8ad477f4a2f7 input=7d21659e9c5fff02]*/
 {
     uint8_t digest_length = 0, digest[HACL_HASH_BLAKE2B_OUT_BYTES];
-    ENTER_HASHLIB(self);
+    HASHLIB_ACQUIRE_LOCK(self);
     digest_length = blake2_blake2b_compute_digest(self, digest);
-    LEAVE_HASHLIB(self);
+    HASHLIB_RELEASE_LOCK(self);
     return PyBytes_FromStringAndSize((const char *)digest, digest_length);
 }
 
@@ -898,9 +881,9 @@ _blake2_blake2b_hexdigest_impl(Blake2Object *self)
 /*[clinic end generated code: output=5ef54b138db6610a input=76930f6946351f56]*/
 {
     uint8_t digest_length = 0, digest[HACL_HASH_BLAKE2B_OUT_BYTES];
-    ENTER_HASHLIB(self);
+    HASHLIB_ACQUIRE_LOCK(self);
     digest_length = blake2_blake2b_compute_digest(self, digest);
-    LEAVE_HASHLIB(self);
+    HASHLIB_RELEASE_LOCK(self);
     return _Py_strhex((const char *)digest, digest_length);
 }
 
