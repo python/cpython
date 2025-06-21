@@ -502,6 +502,9 @@ _SHAKE_digest(SHA3object *self, Py_ssize_t digestlen, int hex)
      * - the output length is zero -- we follow the existing behavior and return
      *   an empty digest, without raising an error */
     if (digestlen > 0) {
+#if PY_SSIZE_T_MAX > UINT32_MAX
+        assert(digestlen <= (Py_ssize_t)UINT32_MAX);
+#endif
         (void)Hacl_Hash_SHA3_squeeze(self->hash_state, digest,
                                      (uint32_t)digestlen);
     }
