@@ -1,2 +1,0 @@
-The documentation for :func:`shutil.copyfileobj` now warns the user of the
-need to close or flush the destination stream on completion.
