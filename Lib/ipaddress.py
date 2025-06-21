@@ -1325,17 +1325,15 @@ class IPv4Address(_BaseV4, _BaseAddress):
     def is_private(self):
         """``True`` if the address is defined as not globally reachable by
         iana-ipv4-special-registry_ (for IPv4) or iana-ipv6-special-registry_
-        (for IPv6) with the following exceptions:
+        (for IPv6) with the following exception:
 
-        * ``is_private`` is ``False`` for ``100.64.0.0/10``
-        * For IPv4-mapped IPv6-addresses the ``is_private`` value is determined by the
-            semantics of the underlying IPv4 addresses and the following condition holds
-            (see :attr:`IPv6Address.ipv4_mapped`)::
+        For IPv4-mapped IPv6-addresses the ``is_private`` value is determined by the
+        semantics of the underlying IPv4 addresses and the following condition holds
+        (see :attr:`IPv6Address.ipv4_mapped`)::
 
-                address.is_private == address.ipv4_mapped.is_private
+            address.is_private == address.ipv4_mapped.is_private
 
-        ``is_private`` has value opposite to :attr:`is_global`, except for the ``100.64.0.0/10``
-        IPv4 range where they are both ``False``.
+        ``is_private`` has value opposite to :attr:`is_global`.
         """
         return (
             any(self in net for net in self._constants._private_networks)
@@ -1355,10 +1353,9 @@ class IPv4Address(_BaseV4, _BaseAddress):
 
             address.is_global == address.ipv4_mapped.is_global
 
-        ``is_global`` has value opposite to :attr:`is_private`, except for the ``100.64.0.0/10``
-        IPv4 range where they are both ``False``.
+        ``is_global`` has value opposite to :attr:`is_private`.
         """
-        return self not in self._constants._public_network and not self.is_private
+        return not self.is_private
 
     @property
     def is_multicast(self):
@@ -1557,9 +1554,7 @@ class IPv4Network(_BaseV4, _BaseNetwork):
             iana-ipv4-special-registry.
 
         """
-        return (not (self.network_address in IPv4Network('100.64.0.0/10') and
-                    self.broadcast_address in IPv4Network('100.64.0.0/10')) and
-                not self.is_private)
+        return not self.is_private
 
 
 class _IPv4Constants:
@@ -1569,13 +1564,12 @@ class _IPv4Constants:
 
     _multicast_network = IPv4Network('224.0.0.0/4')
 
-    _public_network = IPv4Network('100.64.0.0/10')
-
     # Not globally reachable address blocks listed on
     # https://www.iana.org/assignments/iana-ipv4-special-registry/iana-ipv4-special-registry.xhtml
     _private_networks = [
         IPv4Network('0.0.0.0/8'),
         IPv4Network('10.0.0.0/8'),
+        IPv4Network('100.64.0.0/10'),
         IPv4Network('127.0.0.0/8'),
         IPv4Network('169.254.0.0/16'),
         IPv4Network('172.16.0.0/12'),
@@ -2089,17 +2083,15 @@ class IPv6Address(_BaseV6, _BaseAddress):
     def is_private(self):
         """``True`` if the address is defined as not globally reachable by
         iana-ipv4-special-registry_ (for IPv4) or iana-ipv6-special-registry_
-        (for IPv6) with the following exceptions:
+        (for IPv6) with the following exception:
 
-        * ``is_private`` is ``False`` for ``100.64.0.0/10``
-        * For IPv4-mapped IPv6-addresses the ``is_private`` value is determined by the
-            semantics of the underlying IPv4 addresses and the following condition holds
-            (see :attr:`IPv6Address.ipv4_mapped`)::
+        For IPv4-mapped IPv6-addresses the ``is_private`` value is determined by the
+        semantics of the underlying IPv4 addresses and the following condition holds
+        (see :attr:`IPv6Address.ipv4_mapped`)::
 
-                address.is_private == address.ipv4_mapped.is_private
+            address.is_private == address.ipv4_mapped.is_private
 
-        ``is_private`` has value opposite to :attr:`is_global`, except for the ``100.64.0.0/10``
-        IPv4 range where they are both ``False``.
+        ``is_private`` has value opposite to :attr:`is_global`.
         """
         ipv4_mapped = self.ipv4_mapped
         if ipv4_mapped is not None:
@@ -2121,8 +2113,7 @@ class IPv6Address(_BaseV6, _BaseAddress):
 
             address.is_global == address.ipv4_mapped.is_global
 
-        ``is_global`` has value opposite to :attr:`is_private`, except for the ``100.64.0.0/10``
-        IPv4 range where they are both ``False``.
+        ``is_global`` has value opposite to :attr:`is_private`.
         """
         ipv4_mapped = self.ipv4_mapped
         if ipv4_mapped is not None:
