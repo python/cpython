@@ -1368,11 +1368,29 @@ class ContextTests(unittest.TestCase):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         ctx.set_ecdh_curve("prime256v1")
         ctx.set_ecdh_curve(b"prime256v1")
+        # Only OpenSSL 3 and above supported for multiple curves
+        if (IS_OPENSSL_3_0_0 >= 3):
+            ctx.set_ecdh_curve("prime256v1:brainpoolP384r1")
+            ctx.set_ecdh_curve(b"prime256v1:brainpoolP384r1")
         self.assertRaises(TypeError, ctx.set_ecdh_curve)
         self.assertRaises(TypeError, ctx.set_ecdh_curve, None)
         self.assertRaises(ValueError, ctx.set_ecdh_curve, "foo")
         self.assertRaises(ValueError, ctx.set_ecdh_curve, b"foo")
-
+        # Multiple bad curves should cause error for any OpenSSL version
+        self.assertRaises(ValueError, ctx.set_ecdh_curve, "foo:bar")
+        self.assertRaises(ValueError, ctx.set_ecdh_curve, b"foo:bar")
+        self.assertRaises(ValueError, ctx.set_ecdh_curve, "prime256v1:bar")
+        self.assertRaises(ValueError, ctx.set_ecdh_curve, b"prime256v1:bar")
+        self.assertRaises(ValueError, ctx.set_ecdh_curve, "foo:prime256v1")
+        self.assertRaises(ValueError, ctx.set_ecdh_curve, b"foo:prime256v1")
+        #self.assertRaises(ValueError, ctx.set_ecdh_curve, ":")
+        #self.assertRaises(ValueError, ctx.set_ecdh_curve, b":")
+        #self.assertRaises(ValueError, ctx.set_ecdh_curve, "::")
+        #self.assertRaises(ValueError, ctx.set_ecdh_curve, b"::")
+        #self.assertRaises(ValueError, ctx.set_ecdh_curve, "prime256v1:")
+        #self.assertRaises(ValueError, ctx.set_ecdh_curve, b"prime256v1:")
+        #self.assertRaises(ValueError, ctx.set_ecdh_curve, ":prime256v1")
+        #self.assertRaises(ValueError, ctx.set_ecdh_curve, b":prime256v1")
     def test_sni_callback(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
 
