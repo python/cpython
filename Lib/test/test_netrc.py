@@ -1,45 +1,92 @@
-import netrc, os, unittest, sys, textwrap
-from test.support import os_helper
+import netrc, os, unittest, sys, textwrap, tempfile
+
+from test import support
+from unittest import mock
 
 try:
     import pwd
 except ImportError:
     pwd = None
 
-temp_filename = os_helper.TESTFN
+
+def generate_netrc(directory, filename, data):
+    data = textwrap.dedent(data)
+    mode = 'w'
+    mode = 'w'
+    if sys.platform != 'cygwin':
+        mode += 't'
+    with open(os.path.join(directory, filename), mode, encoding="utf-8") as fp:
+        fp.write(data)
+
 
 class NetrcTestCase(unittest.TestCase):
 
-    def make_nrc(self, test_data):
-        test_data = textwrap.dedent(test_data)
-        mode = 'w'
-        if sys.platform != 'cygwin':
-            mode += 't'
-        with open(temp_filename, mode, encoding="utf-8") as fp:
-            fp.write(test_data)
-        try:
-            nrc = netrc.netrc(temp_filename)
-        finally:
-            os.unlink(temp_filename)
+    @staticmethod
+    def home_netrc(data):
+        with support.os_helper.EnvironmentVarGuard() as environ, \
+            tempfile.TemporaryDirectory() as tmpdir:
+                environ.unset('NETRC')
+                environ.unset('HOME')
+
+                generate_netrc(tmpdir, ".netrc", data)
+                os.chmod(os.path.join(tmpdir, ".netrc"), 0o600)
+
+                with mock.patch("os.path.expanduser"):
+                    os.path.expanduser.return_value = tmpdir
+                    nrc = netrc.netrc()
+
         return nrc
 
-    def test_toplevel_non_ordered_tokens(self):
-        nrc = self.make_nrc("""\
+    @staticmethod
+    def envvar_netrc(data):
+        with support.os_helper.EnvironmentVarGuard() as environ:
+            with tempfile.TemporaryDirectory() as tmpdir:
+                environ.set('NETRC', os.path.join(tmpdir, ".netrc"))
+                environ.unset('HOME')
+
+                generate_netrc(tmpdir, ".netrc", data)
+                os.chmod(os.path.join(tmpdir, ".netrc"), 0o600)
+
+                nrc = netrc.netrc()
+
+        return nrc
+        
+    @staticmethod
+    def file_argument(data):
+        with support.os_helper.EnvironmentVarGuard() as environ:
+            with tempfile.TemporaryDirectory() as tmpdir:
+                environ.set('NETRC', 'not-a-file.random')
+
+                generate_netrc(tmpdir, ".netrc", data)
+                os.chmod(os.path.join(tmpdir, ".netrc"), 0o600)
+
+                nrc = netrc.netrc(os.path.join(tmpdir, ".netrc"))
+
+        return nrc
+
+    def make_nrc(self, test_data):
+        return self.file_argument(test_data)
+    
+    @support.subTests('nrc_builder', (home_netrc, envvar_netrc, file_argument))
+    def test_toplevel_non_ordered_tokens(self, nrc_builder):
+        nrc = nrc_builder("""\
             machine host.domain.com password pass1 login log1 account acct1
             default login log2 password pass2 account acct2
             """)
         self.assertEqual(nrc.hosts['host.domain.com'], ('log1', 'acct1', 'pass1'))
         self.assertEqual(nrc.hosts['default'], ('log2', 'acct2', 'pass2'))
 
-    def test_toplevel_tokens(self):
-        nrc = self.make_nrc("""\
+    @support.subTests('nrc_builder', (home_netrc, envvar_netrc, file_argument))
+    def test_toplevel_tokens(self, nrc_builder):
+        nrc = nrc_builder("""\
             machine host.domain.com login log1 password pass1 account acct1
             default login log2 password pass2 account acct2
             """)
         self.assertEqual(nrc.hosts['host.domain.com'], ('log1', 'acct1', 'pass1'))
         self.assertEqual(nrc.hosts['default'], ('log2', 'acct2', 'pass2'))
 
-    def test_macros(self):
+    @support.subTests('nrc_builder', (home_netrc, envvar_netrc, file_argument))
+    def test_macros(self, nrc_builder):
         data = """\
             macdef macro1
             line1
@@ -50,14 +97,15 @@ class NetrcTestCase(unittest.TestCase):
             line4
 
         """
-        nrc = self.make_nrc(data)
+        nrc = nrc_builder(data)
         self.assertEqual(nrc.macros, {'macro1': ['line1\n', 'line2\n'],
                                       'macro2': ['line3\n', 'line4\n']})
         # strip the last \n
         self.assertRaises(netrc.NetrcParseError, self.make_nrc,
                           data.rstrip(' ')[:-1])
 
-    def test_optional_tokens(self):
+    @support.subTests('nrc_builder', (home_netrc, envvar_netrc, file_argument))
+    def test_optional_tokens(self, nrc_builder):
         data = (
             "machine host.domain.com",
             "machine host.domain.com login",
@@ -68,7 +116,7 @@ class NetrcTestCase(unittest.TestCase):
             "machine host.domain.com account \"\" password"
         )
         for item in data:
-            nrc = self.make_nrc(item)
+            nrc = nrc_builder(item)
             self.assertEqual(nrc.hosts['host.domain.com'], ('', '', ''))
         data = (
             "default",
@@ -83,7 +131,8 @@ class NetrcTestCase(unittest.TestCase):
             nrc = self.make_nrc(item)
             self.assertEqual(nrc.hosts['default'], ('', '', ''))
 
-    def test_invalid_tokens(self):
+    @support.subTests('nrc_builder', (home_netrc, envvar_netrc, file_argument))
+    def test_invalid_tokens(self, nrc_builder):
         data = (
             "invalid host.domain.com",
             "machine host.domain.com invalid",
@@ -92,7 +141,7 @@ class NetrcTestCase(unittest.TestCase):
             "default host.domain.com login log password pass account acct invalid"
         )
         for item in data:
-            self.assertRaises(netrc.NetrcParseError, self.make_nrc, item)
+            self.assertRaises(netrc.NetrcParseError, nrc_builder, item)
 
     def _test_token_x(self, nrc, token, value):
         nrc = self.make_nrc(nrc)
@@ -102,7 +151,7 @@ class NetrcTestCase(unittest.TestCase):
             self.assertEqual(nrc.hosts['host.domain.com'], ('log', value, 'pass'))
         elif token == 'password':
             self.assertEqual(nrc.hosts['host.domain.com'], ('log', 'acct', value))
-
+    
     def test_token_value_quotes(self):
         self._test_token_x("""\
             machine host.domain.com login "log" password pass account acct
@@ -272,20 +321,20 @@ class NetrcTestCase(unittest.TestCase):
 
     @unittest.skipUnless(os.name == 'posix', 'POSIX only test')
     @unittest.skipIf(pwd is None, 'security check requires pwd module')
-    @os_helper.skip_unless_working_chmod
+    @support.os_helper.skip_unless_working_chmod
     def test_security(self):
         # This test is incomplete since we are normally not run as root and
         # therefore can't test the file ownership being wrong.
-        d = os_helper.TESTFN
+        d = support.os_helper.TESTFN
         os.mkdir(d)
-        self.addCleanup(os_helper.rmtree, d)
+        self.addCleanup(support.os_helper.rmtree, d)
         fn = os.path.join(d, '.netrc')
         with open(fn, 'wt') as f:
             f.write("""\
                 machine foo.domain.com login bar password pass
                 default login foo password pass
                 """)
-        with os_helper.EnvironmentVarGuard() as environ:
+        with support.os_helper.EnvironmentVarGuard() as environ:
             environ.set('HOME', d)
             os.chmod(fn, 0o600)
             nrc = netrc.netrc()
@@ -298,7 +347,7 @@ class NetrcTestCase(unittest.TestCase):
                 machine foo.domain.com login anonymous password pass
                 default login foo password pass
                 """)
-        with os_helper.EnvironmentVarGuard() as environ:
+        with support.os_helper.EnvironmentVarGuard() as environ:
             environ.set('HOME', d)
             os.chmod(fn, 0o600)
             nrc = netrc.netrc()
