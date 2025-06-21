@@ -1389,10 +1389,9 @@ class _ZipRepacker:
         """
         Repack the ZIP file, stripping unreferenced local file entries.
 
-        Assumes that local file entries are stored consecutively, with no gaps
-        or overlaps.
-
-        Behavior:
+        Assumes that local file entries (and the central directory, which is
+        mostly treated as the "last entry") are stored consecutively, with no
+        gaps or overlaps:
 
         1. If any referenced entry overlaps with another, a `BadZipFile` error
            is raised since safe repacking cannot be guaranteed.
@@ -1405,8 +1404,8 @@ class _ZipRepacker:
            be a sequence of consecutive entries with no extra preceding bytes;
            extra following bytes are preserved.
 
-        4. This is to prevent an unexpected data removal (false positive),
-           though a false negative may happen in certain rare cases.
+        This is to prevent an unexpected data removal (false positive), though
+        a false negative may happen in certain rare cases.
 
         Examples:
 
@@ -1456,8 +1455,8 @@ class _ZipRepacker:
             - Modifies the ZIP file in place.
             - Updates zfile.start_dir to account for removed data.
             - Sets zfile._didModify to True.
-            - Updates header_offset and _end_offset of referenced ZipInfo
-              instances.
+            - Updates header_offset and clears _end_offset of referenced
+              ZipInfo instances.
 
         Parameters:
             zfile: A ZipFile object representing the archive to repack.
@@ -1559,14 +1558,8 @@ class _ZipRepacker:
         zfile.start_dir -= entry_offset
         zfile._didModify = True
 
-        end_offset = zfile.start_dir
-        for zinfo in reversed(filelist):
-            if zinfo in removed_zinfos:
-                zinfo._end_offset = None
-            else:
-                if zinfo._end_offset is not None:
-                    zinfo._end_offset = end_offset
-                end_offset = zinfo.header_offset
+        for zinfo in filelist:
+            zinfo._end_offset = None
 
     def _calc_initial_entry_offset(self, fp, data_offset):
         checked_offsets = {}

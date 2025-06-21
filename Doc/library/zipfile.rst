@@ -527,7 +527,7 @@ ZipFile Objects
    a path is provided.
 
    This does not physically remove the local file entry from the archive.
-   Call :meth:`ZipFile.repack` afterwards to reclaim space.
+   Call :meth:`repack` afterwards to reclaim space.
 
    The archive must be opened with mode ``'w'``, ``'x'`` or ``'a'``.
 

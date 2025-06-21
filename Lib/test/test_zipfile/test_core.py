@@ -1362,8 +1362,11 @@ class ZstdWriterTests(AbstractWriterTests, unittest.TestCase):
     compression = zipfile.ZIP_ZSTANDARD
 
 
-def ComparableZipInfo(zinfo):
-    return (zinfo.filename, zinfo.header_offset, zinfo.compress_size, zinfo.CRC)
+class ComparableZipInfo:
+    keys = [i for i in zipfile.ZipInfo.__slots__ if not i.startswith('_')]
+
+    def __new__(cls, zinfo):
+        return {i: getattr(zinfo, i) for i in cls.keys}
 
 _struct_pack = struct.pack
 
@@ -1379,6 +1382,8 @@ def struct_pack_no_dd_sig(fmt, *values):
 
 class RepackHelperMixin:
     """Common helpers for remove and repack."""
+    maxDiff = 8192
+
     @classmethod
     def _prepare_test_files(cls):
         return [
@@ -1389,14 +1394,11 @@ class RepackHelperMixin:
 
     @classmethod
     def _prepare_zip_from_test_files(cls, zfname, test_files, force_zip64=False):
-        zinfos = []
         with zipfile.ZipFile(zfname, 'w', cls.compression) as zh:
             for file, data in test_files:
                 with zh.open(file, 'w', force_zip64=force_zip64) as fh:
                     fh.write(data)
-                zinfo = zh.getinfo(file)
-                zinfos.append(ComparableZipInfo(zinfo))
-        return zinfos
+            return list(zh.infolist())
 
 class AbstractRemoveTests(RepackHelperMixin):
     @classmethod
@@ -1416,7 +1418,7 @@ class AbstractRemoveTests(RepackHelperMixin):
                     # check infolist
                     self.assertEqual(
                         [ComparableZipInfo(zi) for zi in zh.infolist()],
-                        [zi for j, zi in enumerate(zinfos) if j != i],
+                        [ComparableZipInfo(zi) for j, zi in enumerate(zinfos) if j != i],
                     )
 
                     # check NameToInfo cache
@@ -1437,7 +1439,7 @@ class AbstractRemoveTests(RepackHelperMixin):
                     # check infolist
                     self.assertEqual(
                         [ComparableZipInfo(zi) for zi in zh.infolist()],
-                        [zi for j, zi in enumerate(zinfos) if j != i],
+                        [ComparableZipInfo(zi) for j, zi in enumerate(zinfos) if j != i],
                     )
 
                     # check NameToInfo cache
@@ -1478,13 +1480,13 @@ class AbstractRemoveTests(RepackHelperMixin):
                 # check infolist
                 self.assertEqual(
                     [ComparableZipInfo(zi) for zi in zh.infolist()],
-                    [zinfos[0], zinfos[2]],
+                    [ComparableZipInfo(zi) for zi in [zinfos[0], zinfos[2]]],
                 )
 
                 # check NameToInfo cache
                 self.assertEqual(
                     ComparableZipInfo(zh.getinfo('file.txt')),
-                    zinfos[0],
+                    ComparableZipInfo(zinfos[0]),
                 )
 
             # make sure the zip file is still valid
@@ -1499,7 +1501,7 @@ class AbstractRemoveTests(RepackHelperMixin):
                 # check infolist
                 self.assertEqual(
                     [ComparableZipInfo(zi) for zi in zh.infolist()],
-                    [zinfos[2]],
+                    [ComparableZipInfo(zi) for zi in [zinfos[2]]],
                 )
 
                 # check NameToInfo cache
@@ -1528,13 +1530,13 @@ class AbstractRemoveTests(RepackHelperMixin):
                 # check infolist
                 self.assertEqual(
                     [ComparableZipInfo(zi) for zi in zh.infolist()],
-                    [zinfos[1], zinfos[2]],
+                    [ComparableZipInfo(zi) for zi in [zinfos[1], zinfos[2]]],
                 )
 
                 # check NameToInfo cache
                 self.assertEqual(
                     ComparableZipInfo(zh.getinfo('file.txt')),
-                    zinfos[1],
+                    ComparableZipInfo(zinfos[1]),
                 )
 
             # make sure the zip file is still valid
@@ -1548,13 +1550,13 @@ class AbstractRemoveTests(RepackHelperMixin):
                 # check infolist
                 self.assertEqual(
                     [ComparableZipInfo(zi) for zi in zh.infolist()],
-                    [zinfos[0], zinfos[2]],
+                    [ComparableZipInfo(zi) for zi in [zinfos[0], zinfos[2]]],
                 )
 
                 # check NameToInfo cache
                 self.assertEqual(
                     ComparableZipInfo(zh.getinfo('file.txt')),
-                    zinfos[0],
+                    ComparableZipInfo(zinfos[0]),
                 )
 
             # make sure the zip file is still valid
@@ -1570,7 +1572,7 @@ class AbstractRemoveTests(RepackHelperMixin):
                 # check infolist
                 self.assertEqual(
                     [ComparableZipInfo(zi) for zi in zh.infolist()],
-                    [zinfos[2]],
+                    [ComparableZipInfo(zi) for zi in [zinfos[2]]],
                 )
 
                 # check NameToInfo cache
@@ -1591,7 +1593,7 @@ class AbstractRemoveTests(RepackHelperMixin):
                     # check infolist
                     self.assertEqual(
                         [ComparableZipInfo(zi) for zi in zh.infolist()],
-                        [zi for j, zi in enumerate(zinfos) if j != i],
+                        [ComparableZipInfo(zi) for j, zi in enumerate(zinfos) if j != i],
                     )
 
                     # check NameToInfo cache
@@ -1626,14 +1628,14 @@ class AbstractRemoveTests(RepackHelperMixin):
         with zipfile.ZipFile(TESTFN, 'w') as zh:
             for file, data in self.test_files:
                 zh.writestr(file, data)
-            zinfos = [ComparableZipInfo(zi) for zi in zh.infolist()]
+            zinfos = list(zh.infolist())
 
             zh.remove(self.test_files[0][0])
 
             # check infolist
             self.assertEqual(
                 [ComparableZipInfo(zi) for zi in zh.infolist()],
-                [zinfos[1], zinfos[2]],
+                [ComparableZipInfo(zi) for zi in [zinfos[1], zinfos[2]]],
             )
 
             # check NameToInfo cache
@@ -1648,14 +1650,14 @@ class AbstractRemoveTests(RepackHelperMixin):
         with zipfile.ZipFile(TESTFN, 'x') as zh:
             for file, data in self.test_files:
                 zh.writestr(file, data)
-            zinfos = [ComparableZipInfo(zi) for zi in zh.infolist()]
+            zinfos = list(zh.infolist())
 
             zh.remove(self.test_files[0][0])
 
             # check infolist
             self.assertEqual(
                 [ComparableZipInfo(zi) for zi in zh.infolist()],
-                [zinfos[1], zinfos[2]],
+                [ComparableZipInfo(zi) for zi in [zinfos[1], zinfos[2]]],
             )
 
             # check NameToInfo cache
@@ -1714,7 +1716,7 @@ class AbstractRepackTests(RepackHelperMixin):
                     # check infolist
                     self.assertEqual(
                         [ComparableZipInfo(zi) for zi in zh.infolist()],
-                        expected_zinfos,
+                        [ComparableZipInfo(zi) for zi in expected_zinfos],
                     )
 
                 # check file size
@@ -1766,7 +1768,7 @@ class AbstractRepackTests(RepackHelperMixin):
                     # check infolist
                     self.assertEqual(
                         [ComparableZipInfo(zi) for zi in zh.infolist()],
-                        expected_zinfos,
+                        [ComparableZipInfo(zi) for zi in expected_zinfos],
                     )
 
                 # check file size
@@ -1800,7 +1802,7 @@ class AbstractRepackTests(RepackHelperMixin):
                     # check infolist
                     self.assertEqual(
                         [ComparableZipInfo(zi) for zi in zh.infolist()],
-                        expected_zinfos,
+                        [ComparableZipInfo(zi) for zi in expected_zinfos],
                     )
 
                 # check file size
@@ -1846,7 +1848,7 @@ class AbstractRepackTests(RepackHelperMixin):
                     # check infolist
                     self.assertEqual(
                         [ComparableZipInfo(zi) for zi in zh.infolist()],
-                        expected_zinfos,
+                        [ComparableZipInfo(zi) for zi in expected_zinfos],
                     )
 
                 # check file size
@@ -1856,6 +1858,7 @@ class AbstractRepackTests(RepackHelperMixin):
                 with zipfile.ZipFile(TESTFN) as zh:
                     self.assertIsNone(zh.testzip())
 
+    @mock.patch.object(time, 'time', new=lambda: 315504000)  # fix time for ZipFile.writestr()
     def test_repack_bytes_before_removed_files(self):
         """Should preserve if there are bytes before stale local file entries."""
         for ii in ([1], [1, 2], [2]):
@@ -1870,7 +1873,7 @@ class AbstractRepackTests(RepackHelperMixin):
                             zh.writestr(file, data)
                         for i in ii:
                             zh.remove(self.test_files[i][0])
-                        expected_zinfos = [ComparableZipInfo(zi) for zi in zh.infolist()]
+                        expected_zinfos = list(zh.infolist())
                 expected_size = os.path.getsize(TESTFN)
 
                 # do the removal and check the result
@@ -1889,7 +1892,7 @@ class AbstractRepackTests(RepackHelperMixin):
                     # check infolist
                     self.assertEqual(
                         [ComparableZipInfo(zi) for zi in zh.infolist()],
-                        expected_zinfos,
+                        [ComparableZipInfo(zi) for zi in expected_zinfos],
                     )
 
                 # check file size
@@ -1899,6 +1902,7 @@ class AbstractRepackTests(RepackHelperMixin):
                 with zipfile.ZipFile(TESTFN) as zh:
                     self.assertIsNone(zh.testzip())
 
+    @mock.patch.object(time, 'time', new=lambda: 315504000)  # fix time for ZipFile.writestr()
     def test_repack_bytes_after_removed_files(self):
         """Should keep extra bytes if there are bytes after stale local file entries."""
         for ii in ([1], [1, 2], [2]):
@@ -1912,7 +1916,7 @@ class AbstractRepackTests(RepackHelperMixin):
                             if i == ii[-1]:
                                 fh.write(b' dummy bytes ')
                                 zh.start_dir = fh.tell()
-                        expected_zinfos = [ComparableZipInfo(zi) for zi in zh.infolist()]
+                        expected_zinfos = list(zh.infolist())
                 expected_size = os.path.getsize(TESTFN)
 
                 # do the removal and check the result
@@ -1931,7 +1935,7 @@ class AbstractRepackTests(RepackHelperMixin):
                     # check infolist
                     self.assertEqual(
                         [ComparableZipInfo(zi) for zi in zh.infolist()],
-                        expected_zinfos,
+                        [ComparableZipInfo(zi) for zi in expected_zinfos],
                     )
 
                 # check file size
@@ -1941,6 +1945,7 @@ class AbstractRepackTests(RepackHelperMixin):
                 with zipfile.ZipFile(TESTFN) as zh:
                     self.assertIsNone(zh.testzip())
 
+    @mock.patch.object(time, 'time', new=lambda: 315504000)  # fix time for ZipFile.writestr()
     def test_repack_bytes_between_removed_files(self):
         """Should strip only local file entries before random bytes."""
         # calculate the expected results
@@ -1951,7 +1956,7 @@ class AbstractRepackTests(RepackHelperMixin):
                 zh.start_dir = fh.tell()
                 zh.writestr(*self.test_files[2])
                 zh.remove(self.test_files[2][0])
-                expected_zinfos = [ComparableZipInfo(zi) for zi in zh.infolist()]
+                expected_zinfos = list(zh.infolist())
         expected_size = os.path.getsize(TESTFN)
 
         # do the removal and check the result
@@ -1970,7 +1975,7 @@ class AbstractRepackTests(RepackHelperMixin):
             # check infolist
             self.assertEqual(
                 [ComparableZipInfo(zi) for zi in zh.infolist()],
-                expected_zinfos,
+                [ComparableZipInfo(zi) for zi in expected_zinfos],
             )
 
         # check file size
@@ -1992,7 +1997,7 @@ class AbstractRepackTests(RepackHelperMixin):
                     fh.write(b'dummy ')
                     fh.write(fz.read())
                 with zipfile.ZipFile(TESTFN) as zh:
-                    expected_zinfos = [ComparableZipInfo(zi) for zi in zh.infolist()]
+                    expected_zinfos = list(zh.infolist())
                 expected_size = os.path.getsize(TESTFN)
 
                 # do the removal and check the result
@@ -2010,7 +2015,7 @@ class AbstractRepackTests(RepackHelperMixin):
                     # check infolist
                     self.assertEqual(
                         [ComparableZipInfo(zi) for zi in zh.infolist()],
-                        expected_zinfos,
+                        [ComparableZipInfo(zi) for zi in expected_zinfos],
                     )
 
                 # check file size
@@ -2055,7 +2060,7 @@ class AbstractRepackTests(RepackHelperMixin):
                     # check infolist
                     self.assertEqual(
                         [ComparableZipInfo(zi) for zi in zh.infolist()],
-                        expected_zinfos,
+                        [ComparableZipInfo(zi) for zi in expected_zinfos],
                     )
 
                 # check file size
@@ -2098,20 +2103,20 @@ class AbstractRepackTests(RepackHelperMixin):
                 with zipfile.ZipFile(TESTFN) as zh:
                     self.assertIsNone(zh.testzip())
 
+    @mock.patch.object(time, 'time', new=lambda: 315504000)  # fix time for ZipFile.writestr()
     def test_repack_removed_bytes_between_files(self):
         """Should not remove bytes between local file entries."""
         for ii in ([0], [1], [2]):
             with self.subTest(removed=ii):
                 # calculate the expected results
-                expected_zinfos = []
                 with open(TESTFN, 'wb') as fh:
                     with zipfile.ZipFile(fh, 'w', self.compression) as zh:
                         for j, (file, data) in enumerate(self.test_files):
                             if j not in ii:
                                 zh.writestr(file, data)
-                                expected_zinfos.append(ComparableZipInfo(zh.getinfo(file)))
                             fh.write(b' dummy bytes ')
                             zh.start_dir = fh.tell()
+                        expected_zinfos = list(zh.infolist())
                 expected_size = os.path.getsize(TESTFN)
 
                 # do the removal and check the result
@@ -2128,7 +2133,7 @@ class AbstractRepackTests(RepackHelperMixin):
                     # check infolist
                     self.assertEqual(
                         [ComparableZipInfo(zi) for zi in zh.infolist()],
-                        expected_zinfos,
+                        [ComparableZipInfo(zi) for zi in expected_zinfos],
                     )
 
                 # check file size
@@ -2184,7 +2189,7 @@ class AbstractRepackTests(RepackHelperMixin):
                     fh.write(b'dummy ')
                     fh.write(fz.read())
                 with zipfile.ZipFile(TESTFN) as zh:
-                    expected_zinfos = [ComparableZipInfo(zi) for zi in zh.infolist()]
+                    expected_zinfos = list(zh.infolist())
                 expected_size = os.path.getsize(TESTFN)
 
                 # do the removal and check the result
@@ -2201,7 +2206,7 @@ class AbstractRepackTests(RepackHelperMixin):
                     # check infolist
                     self.assertEqual(
                         [ComparableZipInfo(zi) for zi in zh.infolist()],
-                        expected_zinfos,
+                        [ComparableZipInfo(zi) for zi in expected_zinfos],
                     )
 
                 # check file size
