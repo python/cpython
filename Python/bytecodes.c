@@ -5388,15 +5388,16 @@ dummy_func(
             GOTO_TIER_ONE(NULL);
         }
 
-        /* Progress is guaranteed if we DEOPT on the eval breaker, because
-         * ENTER_EXECUTOR will not re-enter tier 2 with the eval breaker set. */
         tier2 op(_TIER2_RESUME_CHECK, (--)) {
 #if defined(__EMSCRIPTEN__)
             DEOPT_IF(_Py_emscripten_signal_clock == 0);
             _Py_emscripten_signal_clock -= Py_EMSCRIPTEN_SIGNAL_HANDLING;
 #endif
             uintptr_t eval_breaker = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker);
-            DEOPT_IF(eval_breaker & _PY_EVAL_EVENTS_MASK);
+            if (eval_breaker & _PY_EVAL_EVENTS_MASK) {
+                int err = _Py_HandlePending(tstate);
+                ERROR_IF(err != 0);
+            }
             assert(tstate->tracing || eval_breaker == FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version));
         }
 

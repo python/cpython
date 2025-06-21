@@ -331,7 +331,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_FATAL_ERROR] = 0,
     [_DEOPT] = 0,
     [_ERROR_POP_N] = HAS_ARG_FLAG,
-    [_TIER2_RESUME_CHECK] = HAS_DEOPT_FLAG,
+    [_TIER2_RESUME_CHECK] = HAS_DEOPT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
 };
 
 const ReplicationRange _PyUop_Replication[MAX_UOP_ID+1] = {
