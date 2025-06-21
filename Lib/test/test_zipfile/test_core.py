@@ -1267,6 +1267,55 @@ class StoredTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
         self.assertEqual(dd_csize, file_size)  # compressed size (8 bytes because zip64)
         self.assertEqual(cd_sig, b"PK\x01\x02") # ensure the central directory header is next
 
+    def test_local_header_zip64_extra_total_archive_size(self):
+        file_size = zipfile.ZIP64_LIMIT + 1
+
+        fp = io.BytesIO()
+        with zipfile.ZipFile(fp, mode="w", allowZip64=True) as zf:
+            # pretend zipfile.ZipInfo.from_file was used to get the name and filesize
+            info = zipfile.ZipInfo("text.txt")
+            info.file_size = file_size
+            with zf.open(info, mode="w", force_zip64=False) as zi:
+                zi.write(b"_" * file_size)
+
+            # Add another file that is after the zip64 offset threshold
+            info = zipfile.ZipInfo("small.txt")
+            with zf.open(info, mode="w", force_zip64=False) as zi:
+                zi.write(b"_" * 10)
+
+        fp.seek(0)
+        fp_bytes = fp.getvalue()
+        with zipfile.ZipFile(fp) as zf:
+            zinfo = zf.infolist()[1]
+            self.assertGreaterEqual(zinfo.extract_version, zipfile.ZIP64_VERSION)
+            local_extract_version, = struct.unpack(
+                "<B",
+                fp_bytes[zinfo.header_offset + 4:zinfo.header_offset + 5],
+            )
+            self.assertGreaterEqual(local_extract_version, zipfile.ZIP64_VERSION)
+
+    def test_local_header_zip64_extra_total_filecount_threshold(self):
+        file_cnt = zipfile.ZIP_FILECOUNT_LIMIT
+
+        fp = io.BytesIO()
+        with zipfile.ZipFile(fp, mode="w", allowZip64=True) as zf:
+            for i in range(file_cnt):
+                zf.writestr(f"test{i}.txt", "test")
+
+            # Add another file that is after the file count threshold
+            zf.writestr(f"zip64.txt", "test")
+
+        fp.seek(0)
+        fp_bytes = fp.getvalue()
+        with zipfile.ZipFile(fp) as zf:
+            zinfo = zf.infolist()[-1]
+            self.assertGreaterEqual(zinfo.extract_version, zipfile.ZIP64_VERSION)
+            local_extract_version, = struct.unpack(
+                "<B",
+                fp_bytes[zinfo.header_offset + 4:zinfo.header_offset + 5],
+            )
+            self.assertGreaterEqual(local_extract_version, zipfile.ZIP64_VERSION)
+
 
 @requires_zlib()
 class DeflateTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
