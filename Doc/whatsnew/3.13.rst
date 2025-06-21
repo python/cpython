@@ -904,16 +904,6 @@ glob
   (Contributed by Barney Gale in :gh:`72904`.)
 
 
-http
-----
-
-* :class:`http.HTTPStatus` was updated to use the names from :rfc:`9110`.
-  This RFC includes some HTTP statuses previously only used for WEBDAV
-  and assigns more generic names to them.
-  The old constants are preserved for backwards compatibility.
-  (Contributed by Michiel W. Beijen in :gh:`102247`.)
-
-
 importlib
 ---------
 
