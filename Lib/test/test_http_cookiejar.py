@@ -912,11 +912,11 @@ class CookieTests(unittest.TestCase):
         self.assertFalse(user_domain_match("x.y.com", ".m"))
         self.assertFalse(user_domain_match("x.y.com", ""))
         self.assertFalse(user_domain_match("x.y.com", "."))
+        # not both HDNs, so must string-compare equal to match
         self.assertTrue(user_domain_match("192.168.1.1", "192.168.1.1"))
         self.assertTrue(user_domain_match("[::1]", "[::1]"))
-        self.assertFalse(user_domain_match("[::1]", "::1"))
         self.assertTrue(domain_match("[2001:db8:85a3::8a2e:370:7334]", "[2001:db8:85a3::8a2e:370:7334]"))
-        # not both HDNs, so must string-compare equal to match
+        self.assertFalse(user_domain_match("[::1]", "::1"))
         self.assertFalse(user_domain_match("192.168.1.1", ".168.1.1"))
         self.assertFalse(user_domain_match("192.168.1.1", "."))
         # empty string is a special case
