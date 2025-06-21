@@ -609,6 +609,29 @@ class PrettyPrinter:
 
     _dispatch[_collections.UserString.__repr__] = _pprint_user_string
 
+    def _pprint_template(self, object, stream, indent, allowance, context, level):
+        cls_name = object.__class__.__name__
+        indent += len(cls_name) + 1
+        items = (("strings", object.strings),
+                 ("interpolations", object.interpolations))
+        stream.write(cls_name + '(')
+        self._format_namespace_items(items, stream, indent, allowance, context, level)
+        stream.write(')')
+
+    def _pprint_interpolation(self, object, stream, indent, allowance, context, level):
+        cls_name = object.__class__.__name__
+        indent += len(cls_name)
+        items = (object.value, object.expression,
+                object.conversion, object.format_spec)
+        stream.write(cls_name + '(')
+        self._format_items(items, stream, indent, allowance, context, level)
+        stream.write(')')
+
+    t = t"{0}"
+    _dispatch[type(t).__repr__] = _pprint_template
+    _dispatch[type(t.interpolations[0]).__repr__] = _pprint_interpolation
+    del t
+
     def _safe_repr(self, object, context, maxlevels, level):
         # Return triple (repr_string, isreadable, isrecursive).
         typ = type(object)
