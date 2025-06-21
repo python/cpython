@@ -59,9 +59,7 @@
 # needs libm and on some platforms librt
 @MODULE__DATETIME_TRUE@_datetime _datetimemodule.c
 
-# _decimal uses libmpdec
-# either static libmpdec.a from Modules/_decimal/libmpdec or libmpdec.so
-# with ./configure --with-system-libmpdec
+# _decimal uses the system's libmpdec.so
 @MODULE__DECIMAL_TRUE@_decimal _decimal/_decimal.c
 
 # compression libs and binascii (optional CRC32 from zlib)
