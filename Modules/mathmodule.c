@@ -802,41 +802,47 @@ math_lcm_impl(PyObject *module, PyObject * const *args,
               Py_ssize_t args_length)
 /*[clinic end generated code: output=c8a59a5c2e55c816 input=3e4f4b7cdf948a98]*/
 {
-    PyObject *res, *x;
-    Py_ssize_t i;
-
     if (args_length == 0) {
         return PyLong_FromLong(1);
     }
-    res = PyNumber_Index(args[0]);
-    if (res == NULL) {
-        return NULL;
+    PyObject *res;
+    PyObject *stack[8 * sizeof(Py_ssize_t)];
+    int top = 0;
+    Py_ssize_t i = 0;
+    while (1) {
+        size_t j = i;
+        res = PyNumber_Index(args[i++]);
+        if (res == NULL) {
+            goto error;
+        }
+        if (i >= args_length) {
+            j = ((size_t)1 << top) - 1;
+        }
+        while (j & 1) {
+            j >>= 1;
+            Py_SETREF(res, long_lcm(res, stack[top-1]));
+            if (res == NULL) {
+                goto error;
+            }
+            top--;
+            Py_DECREF(stack[top]);
+        }
+        if (i >= args_length) {
+            break;
+        }
+        stack[top++] = res;
     }
     if (args_length == 1) {
         Py_SETREF(res, PyNumber_Absolute(res));
-        return res;
-    }
-
-    PyObject *zero = _PyLong_GetZero();  // borrowed ref
-    for (i = 1; i < args_length; i++) {
-        x = PyNumber_Index(args[i]);
-        if (x == NULL) {
-            Py_DECREF(res);
-            return NULL;
-        }
-        if (res == zero) {
-            /* Fast path: just check arguments.
-               It is okay to use identity comparison here. */
-            Py_DECREF(x);
-            continue;
-        }
-        Py_SETREF(res, long_lcm(res, x));
-        Py_DECREF(x);
-        if (res == NULL) {
-            return NULL;
-        }
     }
     return res;
+
+error:
+    while (top > 0) {
+        top--;
+        Py_DECREF(stack[top]);
+    }
+    return NULL;
 }
 
 
