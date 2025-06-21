@@ -67,14 +67,11 @@ Module-Level Functions
 
    If *recent_first* is true, the most recent stack trace entries are printed
    first, otherwise the oldest entries are printed first. The default is false.
-
-   .. note::
-      ``recent_first=True`` is useful for showing stack traces in places where
-      people see the top of the stack trace first, such as in a web browser.
-
-      ``recent_first=False`` is useful for showing stack traces in places where
-      people see the bottom of the stack trace first, such as a console or log
-      files watched with :command:`tail -f`.
+   ``recent_first=True`` is useful for showing stack traces in places where
+   people see the top of the stack trace first, such as in a web browser.
+   ``recent_first=False`` is useful for showing stack traces in places where
+   people see the bottom of the stack trace first, such as a console or log
+   files watched with :command:`tail -f`.
 
    .. note::
 
@@ -88,7 +85,7 @@ Module-Level Functions
        Added negative *limit* support.
 
    .. versionchanged:: next
-      Added *show_lines* and *recent_first* parameters.
+      Added the *show_lines* and *recent_first* parameters.
 
 
 .. function:: print_exception(exc, /[, value, tb], limit=None, \
@@ -134,7 +131,7 @@ Module-Level Functions
       positional-only.
 
    .. versionchanged:: next
-      Added *show_lines* and *recent_first* parameters.
+      Added the *show_lines* and *recent_first* parameters.
 
 
 .. function:: print_exc(limit=None, file=None, chain=True, *, show_lines=True, recent_first=False)
@@ -143,7 +140,7 @@ Module-Level Functions
    chain=chain, show_lines=show_lines, recent_first=recent_first)``.
 
    .. versionchanged:: next
-      Added *show_lines* and *recent_first* parameters.
+      Added the *show_lines* and *recent_first* parameters.
 
 
 .. function:: print_last(limit=None, file=None, chain=True, *, show_lines=True, recent_first=False)
@@ -154,7 +151,7 @@ Module-Level Functions
    prompt (see :data:`sys.last_exc`).
 
    .. versionchanged:: next
-      Added *show_lines* and *recent_first* parameters.
+      Added the *show_lines* and *recent_first* parameters.
 
 
 .. function:: print_stack(f=None, limit=None, file=None, *, show_lines=True, recent_first=False)
@@ -172,7 +169,7 @@ Module-Level Functions
       Added negative *limit* support.
 
    .. versionchanged:: next
-      Added *show_lines* and *recent_first* parameters.
+      Added the *show_lines* and *recent_first* parameters.
 
 
 .. function:: extract_tb(tb, limit=None)
@@ -204,7 +201,7 @@ Module-Level Functions
    If *show_lines* is true, source code lines are included in the output.
 
    .. versionchanged:: next
-      Added *show_lines* parameter.
+      Added the *show_lines* parameter.
 
 
 .. function:: format_list(extracted_list, *, show_lines=True)
@@ -218,7 +215,7 @@ Module-Level Functions
    are included in the output.
 
    .. versionchanged:: next
-      Added *show_lines* parameter.
+      Added the *show_lines* parameter.
 
 
 .. function:: format_exception_only(exc, /[, value], *, show_group=False)
@@ -271,7 +268,7 @@ Module-Level Functions
       :func:`print_exception`.
 
    .. versionchanged:: next
-      Added *show_lines* and *recent_first* parameters.
+      Added the *show_lines* and *recent_first* parameters.
 
 
 .. function:: format_exc(limit=None, chain=True, *, show_lines=True, recent_first=False)
@@ -284,7 +281,7 @@ Module-Level Functions
    first, otherwise the oldest entries are printed first. The default is false.
 
    .. versionchanged:: next
-      Added *show_lines* and *recent_first* parameters.
+      Added the *show_lines* and *recent_first* parameters.
 
 
 .. function:: format_tb(tb, limit=None, *, show_lines=True, recent_first=False)
@@ -294,7 +291,7 @@ Module-Level Functions
    If *recent_first* is true, ``reversed(extract_tb(tb, limit))`` is used.
 
    .. versionchanged:: next
-      Added *show_lines* and *recent_first* parameters.
+      Added the *show_lines* and *recent_first* parameters.
 
 
 .. function:: format_stack(f=None, limit=None, *, show_lines=True, recent_first=False)
@@ -304,7 +301,7 @@ Module-Level Functions
    If *recent_first* is true, ``reversed(extract_stack(f, limit))`` is used.
 
    .. versionchanged:: next
-      Added *show_lines* and *recent_first* parameters.
+      Added the *show_lines* and *recent_first* parameters.
 
 .. function:: clear_frames(tb)
 
@@ -488,7 +485,7 @@ the module-level functions described above.
       .. versionadded:: 3.11
 
       .. versionchanged:: next
-         Added *show_lines* and *recent_first* parameters.
+         Added the *show_lines* and *recent_first* parameters.
 
    .. method:: format(*, chain=True, show_lines=True, recent_first=False)
 
@@ -509,7 +506,7 @@ the module-level functions described above.
       followed by the exception.
 
       .. versionchanged:: next
-         Added *show_lines* and *recent_first* parameters.
+         Added the *show_lines* and *recent_first* parameters.
 
    .. method::  format_exception_only(*, show_group=False)
 
