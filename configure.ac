@@ -3694,7 +3694,9 @@ dnl trampoline in assembly.
 AC_MSG_CHECKING([perf trampoline])
 AS_CASE([$PLATFORM_TRIPLET],
   [x86_64-linux-gnu], [perf_trampoline=yes],
+  [x86_64-linux-musl], [perf_trampoline=yes],
   [aarch64-linux-gnu], [perf_trampoline=yes],
+  [aarch64-linux-musl], [perf_trampoline=yes],
   [perf_trampoline=no]
 )
 AC_MSG_RESULT([$perf_trampoline])
