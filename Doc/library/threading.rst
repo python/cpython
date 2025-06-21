@@ -1060,7 +1060,7 @@ item to the buffer only needs to wake up one consumer thread.
 
       .. versionadded:: 3.2
 
-   .. method:: notify(n=1)
+   .. method:: notify(n=1, timeout=None)
 
       By default, wake up one thread waiting on this condition, if any.  If the
       calling thread has not acquired the lock when this method is called, a
@@ -1078,7 +1078,10 @@ item to the buffer only needs to wake up one consumer thread.
       call until it can reacquire the lock.  Since :meth:`notify` does not
       release the lock, its caller should.
 
-   .. method:: notify_all()
+      .. versionchanged:: 3.14
+         The *timeout* parameter is new.
+
+   .. method:: notify_all(timeout=None)
 
       Wake up all threads waiting on this condition.  This method acts like
       :meth:`notify`, but wakes up all waiting threads instead of one. If the
@@ -1086,6 +1089,9 @@ item to the buffer only needs to wake up one consumer thread.
       :exc:`RuntimeError` is raised.
 
       The method ``notifyAll`` is a deprecated alias for this method.
+
+      .. versionchanged:: 3.14
+         The *timeout* parameter is new.
 
 
 .. _semaphore-objects:
