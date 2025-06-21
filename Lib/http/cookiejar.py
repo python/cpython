@@ -536,11 +536,8 @@ IPV4_RE = re.compile(r"\.\d+$", re.ASCII) # kept for backwards compatibility
 def is_ip(text: str):
     """Return True if text is a valid IP address."""
     from ipaddress import ip_address
+    text = text.removeprefix('[').removesuffix(']')
     try:
-        if text.startswith('['):
-            text = text[1:]
-        if text.endswith(']'):
-            text = text[:-1]
         ip_address(text)
     except ValueError:
         return False
