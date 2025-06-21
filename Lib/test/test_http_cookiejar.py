@@ -860,6 +860,8 @@ class CookieTests(unittest.TestCase):
         self.assertTrue(is_HDN("foo.bar.com"))
         self.assertTrue(is_HDN("1foo2.3bar4.5com"))
         self.assertFalse(is_HDN("192.168.1.1"))
+        self.assertFalse(is_HDN("[::1]"))
+        self.assertFalse(is_HDN("[2001:db8:85a3::8a2e:370:7334]"))
         self.assertFalse(is_HDN(""))
         self.assertFalse(is_HDN("."))
         self.assertFalse(is_HDN(".foo.bar.com"))
@@ -875,9 +877,14 @@ class CookieTests(unittest.TestCase):
         self.assertEqual(reach("."), ".")
         self.assertEqual(reach(""), "")
         self.assertEqual(reach("192.168.0.1"), "192.168.0.1")
+        self.assertEqual(reach("[::1]"), "[::1]")
+        self.assertEqual(reach("[2001:db8:85a3::8a2e:370:7334]"), "[2001:db8:85a3::8a2e:370:7334]")
 
     def test_domain_match(self):
         self.assertTrue(domain_match("192.168.1.1", "192.168.1.1"))
+        self.assertTrue(domain_match("[::1]", "[::1]"))
+        self.assertFalse(domain_match("[::1]", "::1"))
+        self.assertTrue(domain_match("[2001:db8:85a3::8a2e:370:7334]", "[2001:db8:85a3::8a2e:370:7334]"))
         self.assertFalse(domain_match("192.168.1.1", ".168.1.1"))
         self.assertTrue(domain_match("x.y.com", "x.Y.com"))
         self.assertTrue(domain_match("x.y.com", ".Y.com"))
@@ -906,6 +913,9 @@ class CookieTests(unittest.TestCase):
         self.assertFalse(user_domain_match("x.y.com", ""))
         self.assertFalse(user_domain_match("x.y.com", "."))
         self.assertTrue(user_domain_match("192.168.1.1", "192.168.1.1"))
+        self.assertTrue(user_domain_match("[::1]", "[::1]"))
+        self.assertFalse(user_domain_match("[::1]", "::1"))
+        self.assertTrue(domain_match("[2001:db8:85a3::8a2e:370:7334]", "[2001:db8:85a3::8a2e:370:7334]"))
         # not both HDNs, so must string-compare equal to match
         self.assertFalse(user_domain_match("192.168.1.1", ".168.1.1"))
         self.assertFalse(user_domain_match("192.168.1.1", "."))
@@ -1168,11 +1178,29 @@ class CookieTests(unittest.TestCase):
         c.add_cookie_header(req)
         self.assertFalse(req.has_header("Cookie"))
 
+        c.clear()
+
         pol.set_blocked_domains(["[::1]"])
         req = urllib.request.Request("http://[::1]:8080")
         res = FakeResponse(headers, "http://[::1]:8080")
         c.extract_cookies(res, req)
         self.assertEqual(len(c), 0)
+
+        pol.set_blocked_domains(["[2001:db8:85a3::8a2e:370:7334]"])
+        req = urllib.request.Request("http://[2001:db8:85a3::8a2e:370:7334]:8080")
+        res = FakeResponse(headers, "http://[2001:db8:85a3::8a2e:370:7334]:8080")
+        c.extract_cookies(res, req)
+        self.assertEqual(len(c), 0)
+
+        pol.set_blocked_domains([""])
+        req = urllib.request.Request("http://[::1]:8080")
+        res = FakeResponse(headers, "http://[::1]:8080")
+        c.extract_cookies(res, req)
+        self.assertEqual(len(c), 1)
+
+        c.clear()
+        
+
 
     def test_secure(self):
         for ns in True, False:
