@@ -686,27 +686,27 @@ text
         ]
         self._run_check(html, expected)
 
-    def test_cdata_declarations(self):
-        # More tests should be added. See also "8.2.4.42. Markup
-        # declaration open state", "8.2.4.69. CDATA section state",
-        # and issue 32876
-        html = ('<![CDATA[just some plain text]]>')
-        expected = [('unknown decl', 'CDATA[just some plain text')]
-        self._run_check(html, expected)
-
-    def test_cdata_declarations_multiline(self):
-        html = ('<code><![CDATA['
-                '    if (a < b && a > b) {'
-                '        printf("[<marquee>How?</marquee>]");'
-                '    }'
-                ']]></code>')
-        expected = [
-            ('starttag', 'code', []),
-            ('unknown decl',
-             'CDATA[    if (a < b && a > b) {        '
-             'printf("[<marquee>How?</marquee>]");    }'),
-            ('endtag', 'code')
-        ]
+    @support.subTests('content', [
+        'just some plain text',
+        '<!-- not a comment -->',
+        '&not-an-entity-ref;',
+        "<not a='start tag'>",
+        '',
+        '[[I have many brackets]]',
+        'I have a > in the middle',
+        'I have a ]] in the middle',
+        '] ]>',
+        ']] >',
+        ('\n'
+         '    if (a < b && a > b) {\n'
+         '        printf("[<marquee>How?</marquee>]");\n'
+         '    }\n'),
+    ])
+    def test_cdata_section(self, content):
+        # See "13.2.5.42 Markup declaration open state",
+        # "13.2.5.69 CDATA section state", and issue bpo-32876.
+        html = f'<![CDATA[{content}]]>'
+        expected = [('unknown decl', 'CDATA[' + content)]
         self._run_check(html, expected)
 
     def test_convert_charrefs_dropped_text(self):
