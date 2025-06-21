@@ -1089,8 +1089,8 @@ class HashLibTestCase(unittest.TestCase):
         smallest_data = os.urandom(8)
         data = smallest_data * 200000
 
-        h1 = constructor()
-        h2 = constructor(data * num_threads)
+        h1 = constructor(usedforsecurity=False)
+        h2 = constructor(data * num_threads, usedforsecurity=False)
 
         def hash_in_chunks(chunk_size):
             index = 0
