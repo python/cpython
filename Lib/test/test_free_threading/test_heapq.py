@@ -3,7 +3,7 @@ import unittest
 import heapq
 
 from enum import Enum
-from threading import Thread, Barrier
+from threading import Thread, Barrier, Lock
 from random import shuffle, randint
 
 from test.support import threading_helper
@@ -177,6 +177,33 @@ class TestHeapq(unittest.TestCase):
         )
         self.assertEqual(len(max_heap), OBJECT_COUNT)
         self.test_heapq.check_max_invariant(max_heap)
+
+    def test_lock_free_list_read(self):
+        n, n_threads = 1_000, 10
+        l = []
+        barrier = Barrier(n_threads * 2)
+
+        count = 0
+        lock = Lock()
+
+        def worker():
+            with lock:
+                nonlocal count
+                x = count
+                count += 1
+
+            barrier.wait()
+            for i in range(n):
+                if x % 2:
+                    heapq.heappush(l, 1)
+                    heapq.heappop(l)
+                else:
+                    try:
+                        l[0]
+                    except IndexError:
+                        pass
+
+        self.run_concurrently(worker, (), n_threads * 2)
 
     @staticmethod
     def is_sorted_ascending(lst):

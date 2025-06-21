@@ -938,8 +938,14 @@ _hashlib_HASHXOF_digest_impl(HASHobject *self, Py_ssize_t length)
 /*[clinic end generated code: output=dcb09335dd2fe908 input=3eb034ce03c55b21]*/
 {
     EVP_MD_CTX *temp_ctx;
-    PyObject *retval = PyBytes_FromStringAndSize(NULL, length);
+    PyObject *retval;
 
+    if (length < 0) {
+        PyErr_SetString(PyExc_ValueError, "negative digest length");
+        return NULL;
+    }
+
+    retval = PyBytes_FromStringAndSize(NULL, length);
     if (retval == NULL) {
         return NULL;
     }
@@ -986,9 +992,14 @@ _hashlib_HASHXOF_hexdigest_impl(HASHobject *self, Py_ssize_t length)
     EVP_MD_CTX *temp_ctx;
     PyObject *retval;
 
+    if (length < 0) {
+        PyErr_SetString(PyExc_ValueError, "negative digest length");
+        return NULL;
+    }
+
     digest = (unsigned char*)PyMem_Malloc(length);
     if (digest == NULL) {
-        PyErr_NoMemory();
+        (void)PyErr_NoMemory();
         return NULL;
     }
 

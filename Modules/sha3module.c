@@ -473,16 +473,25 @@ SHA3_TYPE_SLOTS(sha3_512_slots, sha3_512__doc__, SHA3_methods, SHA3_getseters);
 SHA3_TYPE_SPEC(sha3_512_spec, "sha3_512", sha3_512_slots);
 
 static PyObject *
-_SHAKE_digest(PyObject *op, unsigned long digestlen, int hex)
+_SHAKE_digest(SHA3object *self, Py_ssize_t digestlen, int hex)
 {
     unsigned char *digest = NULL;
     PyObject *result = NULL;
-    SHA3object *self = _SHA3object_CAST(op);
 
-    if (digestlen >= (1 << 29)) {
-        PyErr_SetString(PyExc_ValueError, "length is too large");
+    if (digestlen < 0) {
+        PyErr_SetString(PyExc_ValueError, "negative digest length");
         return NULL;
     }
+    if ((size_t)digestlen >= (1 << 29)) {
+        /*
+         * Raise OverflowError to match the semantics of OpenSSL SHAKE
+         * when the digest length exceeds the range of a 'Py_ssize_t';
+         * the exception message will however be different in this case.
+         */
+        PyErr_SetString(PyExc_OverflowError, "digest length is too large");
+        return NULL;
+    }
+
     digest = (unsigned char*)PyMem_Malloc(digestlen);
     if (digest == NULL) {
         return PyErr_NoMemory();
@@ -493,7 +502,11 @@ _SHAKE_digest(PyObject *op, unsigned long digestlen, int hex)
      * - the output length is zero -- we follow the existing behavior and return
      *   an empty digest, without raising an error */
     if (digestlen > 0) {
-        (void)Hacl_Hash_SHA3_squeeze(self->hash_state, digest, digestlen);
+#if PY_SSIZE_T_MAX > UINT32_MAX
+        assert(digestlen <= (Py_ssize_t)UINT32_MAX);
+#endif
+        (void)Hacl_Hash_SHA3_squeeze(self->hash_state, digest,
+                                     (uint32_t)digestlen);
     }
     if (hex) {
         result = _Py_strhex((const char *)digest, digestlen);
@@ -509,32 +522,32 @@ _SHAKE_digest(PyObject *op, unsigned long digestlen, int hex)
 /*[clinic input]
 _sha3.shake_128.digest
 
-    length: unsigned_long
+    length: Py_ssize_t
 
 Return the digest value as a bytes object.
 [clinic start generated code]*/
 
 static PyObject *
-_sha3_shake_128_digest_impl(SHA3object *self, unsigned long length)
-/*[clinic end generated code: output=2313605e2f87bb8f input=93d6d6ff32904f18]*/
+_sha3_shake_128_digest_impl(SHA3object *self, Py_ssize_t length)
+/*[clinic end generated code: output=6c53fb71a6cff0a0 input=be03ade4b31dd54c]*/
 {
-    return _SHAKE_digest((PyObject *)self, length, 0);
+    return _SHAKE_digest(self, length, 0);
 }
 
 
 /*[clinic input]
 _sha3.shake_128.hexdigest
 
-    length: unsigned_long
+    length: Py_ssize_t
 
 Return the digest value as a string of hexadecimal digits.
 [clinic start generated code]*/
 
 static PyObject *
-_sha3_shake_128_hexdigest_impl(SHA3object *self, unsigned long length)
-/*[clinic end generated code: output=bf8e2f1e490944a8 input=562d74e7060b56ab]*/
+_sha3_shake_128_hexdigest_impl(SHA3object *self, Py_ssize_t length)
+/*[clinic end generated code: output=a27412d404f64512 input=0d84d05d7a8ccd37]*/
 {
-    return _SHAKE_digest((PyObject *)self, length, 1);
+    return _SHAKE_digest(self, length, 1);
 }
 
 static PyObject *

@@ -1074,6 +1074,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertHasAttr(sys.implementation, 'version')
         self.assertHasAttr(sys.implementation, 'hexversion')
         self.assertHasAttr(sys.implementation, 'cache_tag')
+        self.assertHasAttr(sys.implementation, 'supports_isolated_interpreters')
 
         version = sys.implementation.version
         self.assertEqual(version[:2], (version.major, version.minor))
@@ -1086,6 +1087,15 @@ class SysModuleTest(unittest.TestCase):
         # PEP 421 requires that .name be lower case.
         self.assertEqual(sys.implementation.name,
                          sys.implementation.name.lower())
+
+        # https://peps.python.org/pep-0734
+        sii = sys.implementation.supports_isolated_interpreters
+        self.assertIsInstance(sii, bool)
+        if test.support.check_impl_detail(cpython=True):
+            if test.support.is_emscripten or test.support.is_wasi:
+                self.assertFalse(sii)
+            else:
+                self.assertTrue(sii)
 
     @test.support.cpython_only
     def test_debugmallocstats(self):
