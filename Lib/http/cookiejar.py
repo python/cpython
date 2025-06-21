@@ -537,12 +537,19 @@ IPV4_RE = re.compile(r"\.\d+$", re.ASCII)
 
 def is_ip(text: str):
     """Return True if text is a valid IP address."""
-    from ipaddress import ip_address
-    text = text.removeprefix('[').removesuffix(']')
+    from ipaddress import IPv4Address, IPv6Address
+    # check for IPv4 address
     try:
-        ip_address(text)
+        IPv4Address(text)
     except ValueError:
-        return False
+        # check for IPv6 address in []
+        if text.startswith('[') and text.endswith(']'):
+            try:
+                IPv6Address(text.removeprefix('[').removesuffix(']'))
+            except ValueError:
+                return False
+        else:
+            return False # not a IPv6 address in []
     return True
 def is_HDN(text):
     """Return True if text is a host domain name."""
