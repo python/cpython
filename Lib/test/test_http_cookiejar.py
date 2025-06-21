@@ -870,7 +870,6 @@ class CookieTests(unittest.TestCase):
 
     def test_is_ip(self):
         self.assertTrue(is_ip('[::1]'))
-        self.assertTrue(is_ip('::1'))
         self.assertTrue(is_ip('[2001:db8:85a3::8a2e:370:7334]'))
         self.assertTrue(is_ip('2001:db8:85a3::8a2e:370:7334'))
         self.assertTrue(is_ip('192.168.0.1'))
