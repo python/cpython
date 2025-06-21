@@ -152,13 +152,19 @@ dummy_func(
 
         macro(NOT_TAKEN) = NOP;
 
-        op(_CHECK_PERIODIC, (--)) {
+        replaced inst(CHECK_PERIODIC, (--)) {
             _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
             QSBR_QUIESCENT_STATE(tstate);
             if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
                 int err = _Py_HandlePending(tstate);
                 ERROR_IF(err != 0);
             }
+        }
+
+        op(_CHECK_PERIODIC_TIER_TWO, (--)) {
+            _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+            QSBR_QUIESCENT_STATE(tstate);
+            DEOPT_IF(_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK);
         }
 
         op(_CHECK_PERIODIC_IF_NOT_YIELD_FROM, (--)) {
@@ -2539,6 +2545,13 @@ dummy_func(
             pushed_frame->localsplus[0] = owner;
             DEAD(owner);
             new_frame = PyStackRef_Wrap(pushed_frame);
+            /* Can't use _SAVE_RETURN_OFFSET as there is no follwoing CHECK_PERIODIC to skip */
+            #if TIER_ONE
+            frame->return_offset = (uint16_t)(next_instr - this_instr);
+            #endif
+            #if TIER_TWO
+            frame->return_offset = oparg;
+            #endif
         }
 
         macro(LOAD_ATTR_PROPERTY) =
@@ -2547,7 +2560,6 @@ dummy_func(
             _GUARD_TYPE_VERSION +
             unused/2 +
             _LOAD_ATTR_PROPERTY_FRAME +
-            _SAVE_RETURN_OFFSET +
             _PUSH_FRAME;
 
         inst(LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN, (unused/1, type_version/2, func_version/2, getattribute/4, owner -- unused)) {
@@ -2962,17 +2974,14 @@ dummy_func(
         macro(JUMP_BACKWARD) =
             unused/1 +
             _SPECIALIZE_JUMP_BACKWARD +
-            _CHECK_PERIODIC +
             JUMP_BACKWARD_NO_INTERRUPT;
 
         macro(JUMP_BACKWARD_NO_JIT) =
             unused/1 +
-            _CHECK_PERIODIC +
             JUMP_BACKWARD_NO_INTERRUPT;
 
         macro(JUMP_BACKWARD_JIT) =
             unused/1 +
-            _CHECK_PERIODIC +
             JUMP_BACKWARD_NO_INTERRUPT +
             _JIT;
 
@@ -3776,8 +3785,8 @@ dummy_func(
             ERROR_IF(err);
         }
 
-        macro(CALL) = _SPECIALIZE_CALL + unused/2 + _MAYBE_EXPAND_METHOD + _DO_CALL + _CHECK_PERIODIC;
-        macro(INSTRUMENTED_CALL) = unused/3 + _MAYBE_EXPAND_METHOD + _MONITOR_CALL + _DO_CALL + _CHECK_PERIODIC;
+        macro(CALL) = _SPECIALIZE_CALL + unused/2 + _MAYBE_EXPAND_METHOD + _DO_CALL;
+        macro(INSTRUMENTED_CALL) = unused/3 + _MAYBE_EXPAND_METHOD + _MONITOR_CALL + _DO_CALL;
 
         op(_PY_FRAME_GENERAL, (callable, self_or_null, args[oparg] -- new_frame)) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
@@ -3897,8 +3906,7 @@ dummy_func(
             unused/1 + // Skip over the counter
             unused/2 +
             _CHECK_IS_NOT_PY_CALLABLE +
-            _CALL_NON_PY_GENERAL +
-            _CHECK_PERIODIC;
+            _CALL_NON_PY_GENERAL;
 
         op(_CHECK_CALL_BOUND_METHOD_EXACT_ARGS, (callable, null, unused[oparg] -- callable, null, unused[oparg])) {
             EXIT_IF(!PyStackRef_IsNull(null));
@@ -4054,8 +4062,7 @@ dummy_func(
             unused/2 +
             _GUARD_NOS_NULL +
             _GUARD_CALLABLE_STR_1 +
-            _CALL_STR_1 +
-            _CHECK_PERIODIC;
+            _CALL_STR_1;
 
         op(_GUARD_CALLABLE_TUPLE_1, (callable, unused, unused -- callable, unused, unused)) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
@@ -4082,8 +4089,7 @@ dummy_func(
             unused/2 +
             _GUARD_NOS_NULL +
             _GUARD_CALLABLE_TUPLE_1 +
-            _CALL_TUPLE_1 +
-            _CHECK_PERIODIC;
+            _CALL_TUPLE_1;
 
         op(_CHECK_AND_ALLOCATE_OBJECT, (type_version/2, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
@@ -4178,8 +4184,7 @@ dummy_func(
         macro(CALL_BUILTIN_CLASS) =
             unused/1 +
             unused/2 +
-            _CALL_BUILTIN_CLASS +
-            _CHECK_PERIODIC;
+            _CALL_BUILTIN_CLASS;
 
         op(_CALL_BUILTIN_O, (callable, self_or_null, args[oparg] -- res)) {
             /* Builtin METH_O functions */
@@ -4213,8 +4218,7 @@ dummy_func(
         macro(CALL_BUILTIN_O) =
             unused/1 +
             unused/2 +
-            _CALL_BUILTIN_O +
-            _CHECK_PERIODIC;
+            _CALL_BUILTIN_O;
 
         op(_CALL_BUILTIN_FAST, (callable, self_or_null, args[oparg] -- res)) {
             /* Builtin METH_FASTCALL functions, without keywords */
@@ -4250,8 +4254,7 @@ dummy_func(
         macro(CALL_BUILTIN_FAST) =
             unused/1 +
             unused/2 +
-            _CALL_BUILTIN_FAST +
-            _CHECK_PERIODIC;
+            _CALL_BUILTIN_FAST;
 
         op(_CALL_BUILTIN_FAST_WITH_KEYWORDS, (callable, self_or_null, args[oparg] -- res)) {
             /* Builtin METH_FASTCALL | METH_KEYWORDS functions */
@@ -4286,8 +4289,7 @@ dummy_func(
         macro(CALL_BUILTIN_FAST_WITH_KEYWORDS) =
             unused/1 +
             unused/2 +
-            _CALL_BUILTIN_FAST_WITH_KEYWORDS +
-            _CHECK_PERIODIC;
+            _CALL_BUILTIN_FAST_WITH_KEYWORDS;
 
         macro(CALL_LEN) =
             unused/1 +
@@ -4356,6 +4358,7 @@ dummy_func(
         macro(CALL_LIST_APPEND) =
             unused/1 +
             unused/2 +
+            CHECK_PERIODIC + // Do this first to avoid deopting in the middle of the qinstruction
             _GUARD_CALLABLE_LIST_APPEND +
             _GUARD_NOS_NOT_NULL +
             _GUARD_NOS_LIST +
@@ -4383,8 +4386,9 @@ dummy_func(
         #if TIER_ONE
             // Skip the following POP_TOP. This is done here in tier one, and
             // during trace projection in tier two:
-            assert(next_instr->op.code == POP_TOP);
-            SKIP_OVER(1);
+            assert(next_instr->op.code == CHECK_PERIODIC);
+            assert(next_instr[1].op.code == POP_TOP);
+            SKIP_OVER(2);
         #endif
         }
 
@@ -4424,8 +4428,7 @@ dummy_func(
         macro(CALL_METHOD_DESCRIPTOR_O) =
             unused/1 +
             unused/2 +
-            _CALL_METHOD_DESCRIPTOR_O +
-            _CHECK_PERIODIC;
+            _CALL_METHOD_DESCRIPTOR_O;
 
         op(_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS, (callable, self_or_null, args[oparg] -- res)) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
@@ -4466,8 +4469,7 @@ dummy_func(
         macro(CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS) =
             unused/1 +
             unused/2 +
-            _CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS +
-            _CHECK_PERIODIC;
+            _CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS;
 
         op(_CALL_METHOD_DESCRIPTOR_NOARGS, (callable, self_or_null, args[oparg] -- res)) {
             assert(oparg == 0 || oparg == 1);
@@ -4504,8 +4506,7 @@ dummy_func(
         macro(CALL_METHOD_DESCRIPTOR_NOARGS) =
             unused/1 +
             unused/2 +
-            _CALL_METHOD_DESCRIPTOR_NOARGS +
-            _CHECK_PERIODIC;
+            _CALL_METHOD_DESCRIPTOR_NOARGS;
 
         op(_CALL_METHOD_DESCRIPTOR_FAST, (callable, self_or_null, args[oparg] -- res)) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
@@ -4545,8 +4546,7 @@ dummy_func(
         macro(CALL_METHOD_DESCRIPTOR_FAST) =
             unused/1 +
             unused/2 +
-            _CALL_METHOD_DESCRIPTOR_FAST +
-            _CHECK_PERIODIC;
+            _CALL_METHOD_DESCRIPTOR_FAST;
 
         // Cache layout: counter/1, func_version/2
         family(CALL_KW, INLINE_CACHE_ENTRIES_CALL_KW) = {
@@ -4801,8 +4801,7 @@ dummy_func(
             unused/1 + // Skip over the counter
             unused/2 +
             _CHECK_IS_NOT_PY_CALLABLE_KW +
-            _CALL_KW_NON_PY +
-            _CHECK_PERIODIC;
+            _CALL_KW_NON_PY;
 
         op(_MAKE_CALLARGS_A_TUPLE, (func, unused, callargs, kwargs -- func, unused, callargs, kwargs)) {
             PyObject *callargs_o = PyStackRef_AsPyObjectBorrow(callargs);
@@ -4902,13 +4901,11 @@ dummy_func(
 
         macro(CALL_FUNCTION_EX) =
             _MAKE_CALLARGS_A_TUPLE +
-            _DO_CALL_FUNCTION_EX +
-            _CHECK_PERIODIC;
+            _DO_CALL_FUNCTION_EX;
 
         macro(INSTRUMENTED_CALL_FUNCTION_EX) =
             _MAKE_CALLARGS_A_TUPLE +
-            _DO_CALL_FUNCTION_EX +
-            _CHECK_PERIODIC;
+            _DO_CALL_FUNCTION_EX;
 
         inst(MAKE_FUNCTION, (codeobj_st -- func)) {
             PyObject *codeobj = PyStackRef_AsPyObjectBorrow(codeobj_st);
@@ -5101,7 +5098,6 @@ dummy_func(
 
         macro(INSTRUMENTED_JUMP_BACKWARD) =
             unused/1 +
-            _CHECK_PERIODIC +
             _MONITOR_JUMP_BACKWARD;
 
         inst(INSTRUMENTED_POP_JUMP_IF_TRUE, (unused/1, cond -- )) {
@@ -5214,8 +5210,10 @@ dummy_func(
         }
 
         op(_SAVE_RETURN_OFFSET, (--)) {
+            // Skips following CHEKC_PERIODIC
             #if TIER_ONE
-            frame->return_offset = (uint16_t)(next_instr - this_instr);
+            assert(next_instr->op.code == CHECK_PERIODIC);
+            frame->return_offset = (uint16_t)(next_instr - this_instr)+1;
             #endif
             #if TIER_TWO
             frame->return_offset = oparg;

@@ -106,6 +106,7 @@ class IsolatedAssembleTests(AssemblerTestCase):
             ('SET_FUNCTION_ATTRIBUTE', 8, 2),
             ('PUSH_NULL', None, 1),
             ('CALL', 0, 2),                     # (lambda: x)()
+            ('CHECK_PERIODIC', 0, 2),
             ('LOAD_CONST', 2, 2),               # 2
             ('BINARY_OP', 6, 2),                # %
             ('RETURN_VALUE', None, 2)

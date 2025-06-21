@@ -78,6 +78,7 @@ the following command can be used to display the disassembly of
      3           LOAD_GLOBAL              1 (len + NULL)
                  LOAD_FAST_BORROW         0 (alist)
                  CALL                     1
+                 CHECK_PERIODIC
                  RETURN_VALUE
 
 (The "2" is a line number).
@@ -217,6 +218,7 @@ Example:
     LOAD_GLOBAL
     LOAD_FAST_BORROW
     CALL
+    CHECK_PERIODIC
     RETURN_VALUE
 
 
@@ -1749,6 +1751,15 @@ iterations of the loop.
    by *delta*.
 
    .. versionadded:: 3.11
+
+
+.. opcode:: CHECK_PERIODIC
+
+   Checks the eval breaker and performs periodic tasks if the eval breaker is set.
+   Tasks inlcude switching threads and performing GC amongst others.
+   All :opcode:`CALL` instructions must be followed by :opcode:`CHECK_PERIODIC`.
+
+   .. versionadded:: 3.14
 
 
 .. opcode:: HAVE_ARGUMENT

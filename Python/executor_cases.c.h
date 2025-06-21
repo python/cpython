@@ -12,16 +12,14 @@
             break;
         }
 
-        case _CHECK_PERIODIC: {
+        /* _CHECK_PERIODIC is not a viable micro-op for tier 2 because it is replaced */
+
+        case _CHECK_PERIODIC_TIER_TWO: {
             _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
             QSBR_QUIESCENT_STATE(tstate);
             if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                int err = _Py_HandlePending(tstate);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
-                if (err != 0) {
-                    JUMP_TO_ERROR();
-                }
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
             }
             break;
         }
@@ -3567,39 +3565,7 @@
             break;
         }
 
-        case _LOAD_ATTR_PROPERTY_FRAME: {
-            _PyStackRef owner;
-            _PyStackRef new_frame;
-            oparg = CURRENT_OPARG();
-            owner = stack_pointer[-1];
-            PyObject *fget = (PyObject *)CURRENT_OPERAND0();
-            assert((oparg & 1) == 0);
-            assert(Py_IS_TYPE(fget, &PyFunction_Type));
-            PyFunctionObject *f = (PyFunctionObject *)fget;
-            PyCodeObject *code = (PyCodeObject *)f->func_code;
-            if ((code->co_flags & (CO_VARKEYWORDS | CO_VARARGS | CO_OPTIMIZED)) != CO_OPTIMIZED) {
-                UOP_STAT_INC(uopcode, miss);
-                JUMP_TO_JUMP_TARGET();
-            }
-            if (code->co_kwonlyargcount) {
-                UOP_STAT_INC(uopcode, miss);
-                JUMP_TO_JUMP_TARGET();
-            }
-            if (code->co_argcount != 1) {
-                UOP_STAT_INC(uopcode, miss);
-                JUMP_TO_JUMP_TARGET();
-            }
-            if (!_PyThreadState_HasStackSpace(tstate, code->co_framesize)) {
-                UOP_STAT_INC(uopcode, miss);
-                JUMP_TO_JUMP_TARGET();
-            }
-            STAT_INC(LOAD_ATTR, hit);
-            _PyInterpreterFrame *pushed_frame = _PyFrame_PushUnchecked(tstate, PyStackRef_FromPyObjectNew(fget), 1, frame);
-            pushed_frame->localsplus[0] = owner;
-            new_frame = PyStackRef_Wrap(pushed_frame);
-            stack_pointer[-1] = new_frame;
-            break;
-        }
+        /* _LOAD_ATTR_PROPERTY_FRAME is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
 
         /* _LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN is not a viable micro-op for tier 2 because it has too many cache entries */
 
@@ -6037,8 +6003,9 @@
             }
             #if TIER_ONE
 
-            assert(next_instr->op.code == POP_TOP);
-            SKIP_OVER(1);
+            assert(next_instr->op.code == CHECK_PERIODIC);
+            assert(next_instr[1].op.code == POP_TOP);
+            SKIP_OVER(2);
             #endif
             break;
         }
@@ -7072,7 +7039,8 @@
         case _SAVE_RETURN_OFFSET: {
             oparg = CURRENT_OPARG();
             #if TIER_ONE
-            frame->return_offset = (uint16_t)(next_instr - this_instr);
+            assert(next_instr->op.code == CHECK_PERIODIC);
+            frame->return_offset = (uint16_t)(next_instr - this_instr)+1;
             #endif
             #if TIER_TWO
             frame->return_offset = oparg;

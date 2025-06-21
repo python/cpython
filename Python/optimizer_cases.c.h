@@ -7,7 +7,9 @@
             break;
         }
 
-        case _CHECK_PERIODIC: {
+        /* _CHECK_PERIODIC is not a viable micro-op for tier 2 */
+
+        case _CHECK_PERIODIC_TIER_TWO: {
             break;
         }
 
@@ -1331,15 +1333,7 @@
             break;
         }
 
-        case _LOAD_ATTR_PROPERTY_FRAME: {
-            JitOptRef new_frame;
-            PyObject *fget = (PyObject *)this_instr->operand0;
-            (void)fget;
-            new_frame = PyJitRef_NULL;
-            ctx->done = true;
-            stack_pointer[-1] = new_frame;
-            break;
-        }
+        /* _LOAD_ATTR_PROPERTY_FRAME is not a viable micro-op for tier 2 */
 
         /* _LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN is not a viable micro-op for tier 2 */
 

@@ -463,6 +463,7 @@ codegen_call_exit_with_nones(compiler *c, location loc)
     ADDOP_LOAD_CONST(c, loc, Py_None);
     ADDOP_LOAD_CONST(c, loc, Py_None);
     ADDOP_I(c, loc, CALL, 3);
+    ADDOP(c, loc, CHECK_PERIODIC);
     return SUCCESS;
 }
 
@@ -990,6 +991,7 @@ codegen_apply_decorators(compiler *c, asdl_expr_seq* decos)
     for (Py_ssize_t i = asdl_seq_LEN(decos) - 1; i > -1; i--) {
         location loc = LOC((expr_ty)asdl_seq_GET(decos, i));
         ADDOP_I(c, loc, CALL, 0);
+        ADDOP(c, NO_LOCATION, CHECK_PERIODIC);
     }
     return SUCCESS;
 }
@@ -1503,6 +1505,7 @@ codegen_function(compiler *c, stmt_ty s, int is_async)
             ADDOP(c, loc, PUSH_NULL);
             ADDOP_I(c, loc, CALL, 0);
         }
+        ADDOP(c, loc, CHECK_PERIODIC);
     }
 
     RETURN_IF_ERROR(codegen_apply_decorators(c, decos));
@@ -1690,6 +1693,7 @@ codegen_class(compiler *c, stmt_ty s)
         RETURN_IF_ERROR(ret);
         ADDOP(c, loc, PUSH_NULL);
         ADDOP_I(c, loc, CALL, 0);
+        ADDOP(c, NO_LOCATION, CHECK_PERIODIC);
     } else {
         RETURN_IF_ERROR(codegen_call_helper(c, loc, 2,
                                             s->v.ClassDef.bases,
@@ -1775,6 +1779,8 @@ codegen_typealias(compiler *c, stmt_ty s)
         RETURN_IF_ERROR(ret);
         ADDOP(c, loc, PUSH_NULL);
         ADDOP_I(c, loc, CALL, 0);
+        ADDOP(c, loc, CHECK_PERIODIC);
+
     }
     RETURN_IF_ERROR(codegen_nameop(c, loc, name, Store));
     return SUCCESS;
@@ -2103,6 +2109,7 @@ codegen_for(compiler *c, stmt_ty s)
     VISIT(c, expr, s->v.For.target);
     VISIT_SEQ(c, stmt, s->v.For.body);
     /* Mark jump as artificial */
+    ADDOP(c, NO_LOCATION, CHECK_PERIODIC);
     ADDOP_JUMP(c, NO_LOCATION, JUMP, start);
 
     USE_LABEL(c, cleanup);
@@ -2150,6 +2157,7 @@ codegen_async_for(compiler *c, stmt_ty s)
     VISIT(c, expr, s->v.AsyncFor.target);
     VISIT_SEQ(c, stmt, s->v.AsyncFor.body);
     /* Mark jump as artificial */
+    ADDOP(c, NO_LOCATION, CHECK_PERIODIC);
     ADDOP_JUMP(c, NO_LOCATION, JUMP, start);
 
     _PyCompile_PopFBlock(c, COMPILE_FBLOCK_ASYNC_FOR_LOOP, start);
@@ -2182,6 +2190,7 @@ codegen_while(compiler *c, stmt_ty s)
     RETURN_IF_ERROR(codegen_jump_if(c, LOC(s), s->v.While.test, anchor, 0));
 
     VISIT_SEQ(c, stmt, s->v.While.body);
+    ADDOP(c, NO_LOCATION, CHECK_PERIODIC);
     ADDOP_JUMP(c, NO_LOCATION, JUMP, loop);
 
     _PyCompile_PopFBlock(c, COMPILE_FBLOCK_WHILE_LOOP, loop);
@@ -2263,6 +2272,7 @@ codegen_continue(compiler *c, location loc)
     if (loop == NULL) {
         return _PyCompile_Error(c, origin_loc, "'continue' not properly in loop");
     }
+    ADDOP(c, loc, CHECK_PERIODIC);
     ADDOP_JUMP(c, loc, JUMP, loop->fb_block);
     return SUCCESS;
 }
@@ -2959,6 +2969,7 @@ codegen_assert(compiler *c, stmt_ty s)
     if (s->v.Assert.msg) {
         VISIT(c, expr, s->v.Assert.msg);
         ADDOP_I(c, LOC(s), CALL, 0);
+        ADDOP(c, LOC(s), CHECK_PERIODIC);
     }
     ADDOP_I(c, LOC(s->v.Assert.test), RAISE_VARARGS, 1);
 
@@ -4013,6 +4024,7 @@ maybe_optimize_method_call(compiler *c, expr_ty e)
         loc = update_start_location_to_match_attr(c, LOC(e), meth);
         ADDOP_I(c, loc, CALL, argsl);
     }
+    ADDOP(c, NO_LOCATION, CHECK_PERIODIC);
     return 1;
 }
 
@@ -4128,6 +4140,7 @@ codegen_joined_str(compiler *c, expr_ty e)
             ADDOP_I(c, loc, LIST_APPEND, 1);
         }
         ADDOP_I(c, loc, CALL, 1);
+        ADDOP(c, loc, CHECK_PERIODIC);
     }
     else {
         VISIT_SEQ(c, expr, e->v.JoinedStr.values);
@@ -4302,6 +4315,7 @@ codegen_call_helper_impl(compiler *c, location loc,
     else {
         ADDOP_I(c, loc, CALL, n + nelts);
     }
+    ADDOP(c, NO_LOCATION, CHECK_PERIODIC);
     return SUCCESS;
 
 ex_call:
@@ -4357,6 +4371,7 @@ ex_call:
         ADDOP(c, loc, PUSH_NULL);
     }
     ADDOP(c, loc, CALL_FUNCTION_EX);
+    ADDOP(c, NO_LOCATION, CHECK_PERIODIC);
     return SUCCESS;
 }
 
@@ -4862,6 +4877,7 @@ codegen_comprehension(compiler *c, expr_ty e, int type,
 
     VISIT(c, expr, outermost->iter);
     ADDOP_I(c, loc, CALL, 0);
+    ADDOP(c, loc, CHECK_PERIODIC);
 
     if (is_async_comprehension && type != COMP_GENEXP) {
         ADDOP_I(c, loc, GET_AWAITABLE, 0);
@@ -5003,6 +5019,7 @@ codegen_async_with_inner(compiler *c, stmt_ty s, int pos)
     ADDOP_I(c, loc, SWAP, 3);
     ADDOP_I(c, loc, LOAD_SPECIAL, SPECIAL___AENTER__);
     ADDOP_I(c, loc, CALL, 0);
+    ADDOP(c, loc, CHECK_PERIODIC);
     ADDOP_I(c, loc, GET_AWAITABLE, 1);
     ADDOP_LOAD_CONST(c, loc, Py_None);
     ADD_YIELD_FROM(c, loc, 1);
@@ -5113,6 +5130,7 @@ codegen_with_inner(compiler *c, stmt_ty s, int pos)
     ADDOP_I(c, loc, LOAD_SPECIAL, SPECIAL___ENTER__);
     ADDOP_I(c, loc, CALL, 0);
     ADDOP_JUMP(c, loc, SETUP_WITH, final);
+    ADDOP(c, loc, CHECK_PERIODIC);
 
     /* SETUP_WITH pushes a finally block. */
     USE_LABEL(c, block);
