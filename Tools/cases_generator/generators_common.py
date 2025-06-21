@@ -124,6 +124,7 @@ class Emitter:
             "DISPATCH": self.dispatch,
             "INSTRUCTION_SIZE": self.instruction_size,
             "stack_pointer": self.stack_pointer,
+            "Py_UNREACHABLE": self.unreachable,
         }
         self.out = out
         self.labels = labels
@@ -140,6 +141,19 @@ class Emitter:
             raise analysis_error("stack_pointer needs reloading before dispatch", tkn)
         storage.stack.flush(self.out)
         self.emit(tkn)
+        return False
+
+    def unreachable(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        self.emit(tkn)
+        emit_to(self.out, tkn_iter, "SEMI")
+        self.emit(";")
         return False
 
     def deopt_if(
@@ -530,10 +544,10 @@ class Emitter:
         self.out.emit(stmt.condition)
         branch = stmt.else_ is not None
         reachable = True
-        if branch:
-            else_storage = storage.copy()
+        if_storage = storage
+        else_storage = storage.copy()
         for s in stmt.body:
-            r, tkn, storage = self._emit_stmt(s, uop, storage, inst)
+            r, tkn, if_storage = self._emit_stmt(s, uop, if_storage, inst)
             if tkn is not None:
                 self.out.emit(tkn)
             if not r:
@@ -548,7 +562,10 @@ class Emitter:
                     self.out.emit(tkn)
                 if not r:
                     reachable = False
-            else_storage.merge(storage, self.out)  # type: ignore[possibly-undefined]
+            else_storage.merge(if_storage, self.out)
+            storage = if_storage
+        else:
+            if_storage.merge(else_storage, self.out)
             storage = else_storage
         self.out.emit(stmt.endif)
         return reachable, None, storage
@@ -701,6 +718,8 @@ def cflags(p: Properties) -> str:
         flags.append("HAS_PURE_FLAG")
     if p.no_save_ip:
         flags.append("HAS_NO_SAVE_IP_FLAG")
+    if p.sync_sp:
+        flags.append("HAS_SYNC_SP_FLAG")
     if flags:
         return " | ".join(flags)
     else:

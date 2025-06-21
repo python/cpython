@@ -1,0 +1,6 @@
+Implement a limited form of register allocation know as "top of stack
+caching" in the JIT. It works by keeping 0-3 of the top items in the stack
+in registers. The code generator generates multiple versions of thos uops
+that do not escape and are relatively small. During JIT compilation, the
+copy that produces the least memory traffic is selected, spilling or
+reloading values when needed.
