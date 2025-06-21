@@ -10767,6 +10767,8 @@ slot_tp_finalize(PyObject *self)
         }
     }
 
+    PyType_Modified(Py_TYPE(self));
+
     _PyThreadState_PopCStackRef(tstate, &cref);
 
     /* Restore the saved exception. */
