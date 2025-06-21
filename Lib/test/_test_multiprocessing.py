@@ -137,8 +137,12 @@ SHUTDOWN_TIMEOUT = support.SHORT_TIMEOUT
 
 WAIT_ACTIVE_CHILDREN_TIMEOUT = 5.0
 
-HAVE_GETVALUE = not getattr(_multiprocessing,
-                            'HAVE_BROKEN_SEM_GETVALUE', False)
+# Since gh-125828, we no longer need HAVE_GETVALUE.
+# This value should be remove from Modules/_multiprocessing/multiprocessing.c.
+# when cleanup is complete.
+# -------------------
+# HAVE_GETVALUE = not getattr(_multiprocessing,
+#                            'HAVE_BROKEN_SEM_GETVALUE', False)
 
 WIN32 = (sys.platform == "win32")
 
@@ -1664,10 +1668,8 @@ class _TestSemaphore(BaseTestCase):
     def test_bounded_semaphore(self):
         sem = self.BoundedSemaphore(2)
         self._test_semaphore(sem)
-        # Currently fails on OS/X
-        #if HAVE_GETVALUE:
-        #    self.assertRaises(ValueError, sem.release)
-        #    self.assertReturnsIfImplemented(2, get_value, sem)
+        self.assertRaises(ValueError, sem.release)
+        self.assertReturnsIfImplemented(2, get_value, sem)
 
     def test_timeout(self):
         if self.TYPE != 'processes':
@@ -6894,6 +6896,63 @@ class MiscTestCase(unittest.TestCase):
         self.assertEqual(p.exitcode, 0)
         self.assertEqual(q.get_nowait(), "done")
         close_queue(q)
+
+
+#
+# Tests for workaround macOSX Semaphore
+#
+
+ACQUIRE, RELEASE = range(2)
+@unittest.skipIf(sys.platform != "darwin", "MacOSX only")
+class _TestMacOSXSemaphore(BaseTestCase):
+    ALLOWED_TYPES = ('processes',)
+    @classmethod
+    def _run_thread(cls, sem, meth, ntime, delay):
+        if meth == ACQUIRE:
+            for _ in range(ntime):
+                sem.acquire()
+                time.sleep(delay)
+        else:
+            for _ in range(ntime):
+                sem.release()
+                time.sleep(delay)
+
+    @classmethod
+    def _run_process(cls, sem, sem_meth, nthread=1, ntime=10, delay=0.1):
+        ts = []
+        for _ in range(nthread):
+            t = threading.Thread(target=cls._run_thread,
+                            args=(sem, sem_meth, ntime, delay))
+            ts.append(t)
+        for t in ts:
+            t.start()
+        for t in ts:
+            t.join()
+
+    def test_mix_several_acquire_release(self):
+        # n processes, threads per process and loops per threads
+        n_p_acq, n_th_acq, n_loop_acq = 15, 5, 20
+        n_p_rel, n_th_rel, n_loop_rel = 8, 8, 8
+
+        n_acq = n_p_acq*n_th_acq*n_loop_acq
+        n_rel = n_p_rel*n_th_rel*n_loop_rel
+        sem = self.Semaphore(n_acq)
+        ps = []
+        for _ in range(n_p_acq):
+            p = self.Process(target=self._run_process,
+                             args=(sem, ACQUIRE, n_th_acq, n_loop_acq, 0.01))
+            ps.append(p)
+
+        for _ in range(n_p_rel):
+            p = self.Process(target=self._run_process,
+                             args=(sem, RELEASE, n_th_rel, n_loop_rel, 0.005))
+            ps.append(p)
+
+        for p in ps:
+            p.start()
+        for p in ps:
+            p.join()
+        self.assertEqual(sem.get_value(), n_rel)
 
 
 #
