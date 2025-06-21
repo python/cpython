@@ -306,12 +306,13 @@ dummy_func(
             value = PyStackRef_FromPyObjectBorrow(obj);
         }
 
-        replicate(8) inst(STORE_FAST, (value --)) {
-            _PyStackRef tmp = GETLOCAL(oparg);
+        replicate(8) op(_SWAP_FAST, (value -- trash)) {
+            trash = GETLOCAL(oparg);
             GETLOCAL(oparg) = value;
             DEAD(value);
-            PyStackRef_XCLOSE(tmp);
         }
+
+        macro(STORE_FAST) = _SWAP_FAST + POP_TOP;
 
         pseudo(STORE_FAST_MAYBE_NULL, (unused --)) = {
             STORE_FAST,
@@ -342,6 +343,27 @@ dummy_func(
 
         pure inst(POP_TOP, (value --)) {
             PyStackRef_XCLOSE(value);
+        }
+
+        op(_POP_TOP_NOP, (value --)) {
+            assert(PyStackRef_IsNull(value) || (!PyStackRef_RefcountOnObject(value)) ||
+                _Py_IsImmortal((PyStackRef_AsPyObjectBorrow(value))));
+            DEAD(value);
+        }
+
+        op(_POP_TOP_INT, (value --)) {
+            assert(PyLong_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
+            PyStackRef_CLOSE_SPECIALIZED(value, _PyLong_ExactDealloc);
+        }
+
+        op(_POP_TOP_FLOAT, (value --)) {
+            assert(PyFloat_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
+            PyStackRef_CLOSE_SPECIALIZED(value, _PyFloat_ExactDealloc);
+        }
+
+        op(_POP_TOP_UNICODE, (value --)) {
+            assert(PyUnicode_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
+            PyStackRef_CLOSE_SPECIALIZED(value, _PyUnicode_ExactDealloc);
         }
 
         tier2 op(_POP_TWO, (nos, tos --)) {

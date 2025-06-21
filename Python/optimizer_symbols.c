@@ -668,9 +668,6 @@ _Py_uop_symbol_is_immortal(JitOptSymbol *sym)
     if (sym->tag == JIT_SYM_KNOWN_CLASS_TAG) {
         return sym->cls.type == &PyBool_Type;
     }
-    if (sym->tag == JIT_SYM_TRUTHINESS_TAG) {
-        return true;
-    }
     return false;
 }
 
