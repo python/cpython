@@ -656,7 +656,7 @@ def eff_request_host(request):
         except ValueError:
             is_IPV6 = False
     else:
-        is_IPV6 = False  
+        is_IPV6 = False
     if "." not in req_host and not is_IPV6:
         # avoid adding .local at the end of a IPV6 address
         erhn = req_host + ".local"
