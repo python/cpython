@@ -98,7 +98,7 @@ loops that truncate the stream.
     Make an iterator that returns accumulated sums or accumulated
     results from other binary functions.
 
-    The *func* defaults to addition.  The *func* should accept
+    The *function* defaults to addition.  The *function* should accept
     two arguments, an accumulated total and a value from the *iterable*.
 
     If an *initial* value is provided, the accumulation will start with
@@ -128,9 +128,9 @@ loops that truncate the stream.
                 total = func(total, element)
                 yield total
 
-    To compute a running minimum, set *func* to :func:`min`.
-    For a running maximum, set *func* to :func:`max`.
-    Or for a running product, set *func* to :func:`operator.mul`.
+    To compute a running minimum, set *function* to :func:`min`.
+    For a running maximum, set *function* to :func:`max`.
+    Or for a running product, set *function* to :func:`operator.mul`.
     To build an `amortization table
     <https://www.ramseysolutions.com/real-estate/amortization-schedule>`_,
     accumulate the interest and apply payments:
@@ -154,7 +154,7 @@ loops that truncate the stream.
     .. versionadded:: 3.2
 
     .. versionchanged:: 3.3
-       Added the optional *func* parameter.
+       Added the optional *function* parameter.
 
     .. versionchanged:: 3.8
        Added the optional *initial* parameter.
