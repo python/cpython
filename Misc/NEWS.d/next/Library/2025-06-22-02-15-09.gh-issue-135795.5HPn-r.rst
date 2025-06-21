@@ -1,0 +1,1 @@
+Support `.tables` in the sqlite3 command-line interface.
