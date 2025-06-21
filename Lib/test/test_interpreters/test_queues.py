@@ -50,6 +50,10 @@ class LowLevelTests(TestBase):
         with self.assertRaises(queues.QueueNotFoundError):
             _queues.destroy(qid)
 
+        with self.assertRaises(ValueError):
+            # gh-135698: max_size must be greater than or equal to 0
+            _queues.create(-1, 1, 1)
+
     def test_not_destroyed(self):
         # It should have cleaned up any remaining queues.
         stdout, stderr = self.assert_python_ok(
@@ -114,8 +118,8 @@ class QueueTests(TestBase):
             self.assertEqual(queue.maxsize, 0)
 
         with self.subTest('negative maxsize'):
-            queue = queues.create(-10)
-            self.assertEqual(queue.maxsize, -10)
+            with self.assertRaises(ValueError):
+                queues.create(-10)
 
         with self.subTest('bad maxsize'):
             with self.assertRaises(TypeError):
