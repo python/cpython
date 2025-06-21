@@ -686,6 +686,12 @@ Building values
    ``p`` (:class:`bool`) [int]
       Convert a C :c:expr:`int` to a Python :class:`bool` object.
 
+      Be aware that this format requires an ``int`` argument.
+      Unlike most other contexts in C, variadic arguments are not coerced to
+      a suitable type automatically.
+      You can convert another type (for example, a pointer or a float) to a
+      suitable ``int`` value using ``(x) ? 1 : 0`` or ``!!x``.
+
       .. versionadded:: 3.14
 
    ``c`` (:class:`bytes` of length 1) [char]
