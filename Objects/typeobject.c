@@ -54,7 +54,6 @@ class object "PyObject *" "&PyBaseObject_Type"
         PyUnicode_CheckExact(name) &&                           \
         (PyUnicode_GET_LENGTH(name) <= MCACHE_MAX_ATTR_SIZE)
 
-#define NEXT_GLOBAL_VERSION_TAG _PyRuntime.types.next_version_tag
 #define NEXT_VERSION_TAG(interp) \
     (interp)->types.next_version_tag
 
@@ -1360,6 +1359,25 @@ _PyType_LookupByVersion(unsigned int version)
 #endif
 
 static int
+get_next_global_version(unsigned int *dest)
+{
+    unsigned int v;
+    while (1) {
+        v = _Py_atomic_load_uint_relaxed(&_PyRuntime.types.next_version_tag);
+
+        /* Stop if passed the maximum or we successfully updated the field */
+        if (v > _Py_MAX_GLOBAL_TYPE_VERSION_TAG ||
+            _Py_atomic_compare_exchange_uint(&_PyRuntime.types.next_version_tag,
+                                             &v, v + 1)) {
+            break;
+        }
+    }
+
+    *dest = v;
+    return v <= _Py_MAX_GLOBAL_TYPE_VERSION_TAG;
+}
+
+static int
 assign_version_tag(PyInterpreterState *interp, PyTypeObject *type)
 {
     ASSERT_TYPE_LOCK_HELD();
@@ -1389,11 +1407,12 @@ assign_version_tag(PyInterpreterState *interp, PyTypeObject *type)
     }
     if (type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) {
         /* static types */
-        if (NEXT_GLOBAL_VERSION_TAG > _Py_MAX_GLOBAL_TYPE_VERSION_TAG) {
+        unsigned int version;
+        if (!get_next_global_version(&version)) {
             /* We have run out of version numbers */
             return 0;
         }
-        set_version_unlocked(type, NEXT_GLOBAL_VERSION_TAG++);
+        set_version_unlocked(type, version);
         assert (type->tp_version_tag <= _Py_MAX_GLOBAL_TYPE_VERSION_TAG);
     }
     else {
@@ -9215,9 +9234,12 @@ init_static_type(PyInterpreterState *interp, PyTypeObject *self,
         type_add_flags(self, _Py_TPFLAGS_STATIC_BUILTIN);
         type_add_flags(self, Py_TPFLAGS_IMMUTABLETYPE);
 
-        assert(NEXT_GLOBAL_VERSION_TAG <= _Py_MAX_GLOBAL_TYPE_VERSION_TAG);
         if (self->tp_version_tag == 0) {
-            _PyType_SetVersion(self, NEXT_GLOBAL_VERSION_TAG++);
+            unsigned int version;
+            if (!get_next_global_version(&version)) {
+                assert(0 && "we have run out of version numbers");
+            }
+            _PyType_SetVersion(self, version);
         }
     }
     else {
