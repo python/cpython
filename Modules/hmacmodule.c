@@ -377,15 +377,13 @@ get_hmacmodule_state_by_cls(PyTypeObject *cls)
     return (hmacmodule_state *)state;
 }
 
-// --- HMAC Object ------------------------------------------------------------
+// --- HMAC object ------------------------------------------------------------
 
 typedef Hacl_Streaming_HMAC_agile_state HACL_HMAC_state;
 
 typedef struct HMACObject {
     PyObject_HEAD
-
-    bool use_mutex;
-    PyMutex mutex;
+    HASHLIB_MUTEX_API
 
     // Hash function information
     PyObject *name;         // rendered name (exact unicode object)
@@ -1843,7 +1841,7 @@ static struct PyModuleDef_Slot hmacmodule_slots[] = {
     {0, NULL} /* sentinel */
 };
 
-static struct PyModuleDef _hmacmodule = {
+static struct PyModuleDef hmacmodule_def = {
     PyModuleDef_HEAD_INIT,
     .m_name = "_hmac",
     .m_size = sizeof(hmacmodule_state),
@@ -1857,5 +1855,5 @@ static struct PyModuleDef _hmacmodule = {
 PyMODINIT_FUNC
 PyInit__hmac(void)
 {
-    return PyModuleDef_Init(&_hmacmodule);
+    return PyModuleDef_Init(&hmacmodule_def);
 }

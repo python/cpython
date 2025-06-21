@@ -2,6 +2,7 @@
  * Written in 2013 by Dmitry Chestnykh <dmitry@codingrobots.com>
  * Modified for CPython by Christian Heimes <christian@python.org>
  * Updated to use HACL* by Jonathan Protzenko <jonathan@protzenko.fr>
+ * Refactored by Bénédikt Tran <10796600+picnixz@users.noreply.github.com>
  *
  * To the extent possible under law, the author have dedicated all
  * copyright and related and neighboring rights to this software to
@@ -64,69 +65,107 @@
 #include "_hacl/Hacl_Hash_Blake2b_Simd256.h"
 #endif
 
-// MODULE TYPE SLOTS
-
-static PyType_Spec blake2b_type_spec;
-static PyType_Spec blake2s_type_spec;
-
-PyDoc_STRVAR(blake2mod__doc__,
-             "_blake2 provides BLAKE2b and BLAKE2s for hashlib\n");
+// --- BLAKE-2 module state ---------------------------------------------------
 
 typedef struct {
     PyTypeObject *blake2b_type;
     PyTypeObject *blake2s_type;
     bool can_run_simd128;
     bool can_run_simd256;
-} Blake2State;
+} blake2module_state;
 
-static inline Blake2State *
-blake2_get_state(PyObject *module)
+static inline blake2module_state *
+get_blake2module_state(PyObject *module)
 {
     void *state = _PyModule_GetState(module);
     assert(state != NULL);
-    return (Blake2State *)state;
+    return (blake2module_state *)state;
 }
 
-#if defined(HACL_CAN_COMPILE_SIMD128) || defined(HACL_CAN_COMPILE_SIMD256)
-static inline Blake2State *
-blake2_get_state_from_type(PyTypeObject *module)
+static inline blake2module_state *
+get_blake2module_state_by_cls(PyTypeObject *cls)
 {
-    void *state = _PyType_GetModuleState(module);
+    void *state = _PyType_GetModuleState(cls);
     assert(state != NULL);
-    return (Blake2State *)state;
+    return (blake2module_state *)state;
 }
-#endif
 
-static struct PyMethodDef blake2mod_functions[] = {
-    {NULL, NULL}
-};
+// --- BLAKE-2 object ---------------------------------------------------------
+
+// The HACL* API does not offer an agile API that can deal with either Blake2S
+// or Blake2B -- the reason is that the underlying states are optimized (uint32s
+// for S, uint64s for B). Therefore, we use a tagged union in this module to
+// correctly dispatch. Note that the previous incarnation of this code
+// transformed the Blake2b implementation into the Blake2s one using a script,
+// so this is an improvement.
+//
+// The 128 and 256 versions are only available if i) we were able to compile
+// them, and ii) if the CPU we run on also happens to have the right instruction
+// set.
+typedef enum { Blake2s, Blake2b, Blake2s_128, Blake2b_256 } blake2_impl;
+
+typedef struct {
+    PyObject_HEAD
+    HASHLIB_MUTEX_API
+    union {
+        Hacl_Hash_Blake2s_state_t *blake2s_state;
+        Hacl_Hash_Blake2b_state_t *blake2b_state;
+#if HACL_CAN_COMPILE_SIMD128
+        Hacl_Hash_Blake2s_Simd128_state_t *blake2s_128_state;
+#endif
+#if HACL_CAN_COMPILE_SIMD256
+        Hacl_Hash_Blake2b_Simd256_state_t *blake2b_256_state;
+#endif
+    };
+    blake2_impl impl;
+} Blake2Object;
+
+#define _Blake2Object_CAST(op)  ((Blake2Object *)(op))
+
+// --- BLAKE-2 module clinic configuration ------------------------------------
+
+/*[clinic input]
+module _blake2
+class _blake2.blake2b "Blake2Object *" "clinic_state()->blake2b_type"
+class _blake2.blake2s "Blake2Object *" "clinic_state()->blake2s_type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=7e2b2b3b67a72f18]*/
+
+#define clinic_state()  (get_blake2module_state_by_cls(Py_TYPE(self)))
+#include "clinic/blake2module.c.h"
+#undef clinic_state
+
+// MODULE TYPE SLOTS
+
+static PyType_Spec blake2b_type_spec;
+static PyType_Spec blake2s_type_spec;
 
 static int
-_blake2_traverse(PyObject *module, visitproc visit, void *arg)
+blake2module_traverse(PyObject *module, visitproc visit, void *arg)
 {
-    Blake2State *state = blake2_get_state(module);
+    blake2module_state *state = get_blake2module_state(module);
     Py_VISIT(state->blake2b_type);
     Py_VISIT(state->blake2s_type);
     return 0;
 }
 
 static int
-_blake2_clear(PyObject *module)
+blake2module_clear(PyObject *module)
 {
-    Blake2State *state = blake2_get_state(module);
+    blake2module_state *state = get_blake2module_state(module);
     Py_CLEAR(state->blake2b_type);
     Py_CLEAR(state->blake2s_type);
     return 0;
 }
 
 static void
-_blake2_free(void *module)
+blake2module_free(void *module)
 {
-    (void)_blake2_clear((PyObject *)module);
+    (void)blake2module_clear((PyObject *)module);
 }
 
 static void
-blake2module_init_cpu_features(Blake2State *state)
+blake2module_init_cpu_features(blake2module_state *state)
 {
     /* This must be kept in sync with hmacmodule_init_cpu_features()
      * in hmacmodule.c */
@@ -202,10 +241,10 @@ blake2module_init_cpu_features(Blake2State *state)
 }
 
 static int
-blake2_exec(PyObject *m)
+blake2module_exec(PyObject *m)
 {
-    Blake2State *st = blake2_get_state(m);
-    blake2module_init_cpu_features(st);
+    blake2module_state *state = get_blake2module_state(m);
+    blake2module_init_cpu_features(state);
 
 #define ADD_INT(DICT, NAME, VALUE)                      \
     do {                                                \
@@ -229,17 +268,17 @@ blake2_exec(PyObject *m)
 
     ADD_INT_CONST("_GIL_MINSIZE", HASHLIB_GIL_MINSIZE);
 
-    st->blake2b_type = (PyTypeObject *)PyType_FromModuleAndSpec(
+    state->blake2b_type = (PyTypeObject *)PyType_FromModuleAndSpec(
         m, &blake2b_type_spec, NULL);
 
-    if (st->blake2b_type == NULL) {
+    if (state->blake2b_type == NULL) {
         return -1;
     }
-    if (PyModule_AddType(m, st->blake2b_type) < 0) {
+    if (PyModule_AddType(m, state->blake2b_type) < 0) {
         return -1;
     }
 
-    PyObject *d = st->blake2b_type->tp_dict;
+    PyObject *d = state->blake2b_type->tp_dict;
     ADD_INT(d, "SALT_SIZE", HACL_HASH_BLAKE2B_SALT_BYTES);
     ADD_INT(d, "PERSON_SIZE", HACL_HASH_BLAKE2B_PERSONAL_BYTES);
     ADD_INT(d, "MAX_KEY_SIZE", HACL_HASH_BLAKE2B_KEY_BYTES);
@@ -251,17 +290,17 @@ blake2_exec(PyObject *m)
     ADD_INT_CONST("BLAKE2B_MAX_DIGEST_SIZE", HACL_HASH_BLAKE2B_OUT_BYTES);
 
     /* BLAKE2s */
-    st->blake2s_type = (PyTypeObject *)PyType_FromModuleAndSpec(
+    state->blake2s_type = (PyTypeObject *)PyType_FromModuleAndSpec(
         m, &blake2s_type_spec, NULL);
 
-    if (st->blake2s_type == NULL) {
+    if (state->blake2s_type == NULL) {
         return -1;
     }
-    if (PyModule_AddType(m, st->blake2s_type) < 0) {
+    if (PyModule_AddType(m, state->blake2s_type) < 0) {
         return -1;
     }
 
-    d = st->blake2s_type->tp_dict;
+    d = state->blake2s_type->tp_dict;
     ADD_INT(d, "SALT_SIZE", HACL_HASH_BLAKE2S_SALT_BYTES);
     ADD_INT(d, "PERSON_SIZE", HACL_HASH_BLAKE2S_PERSONAL_BYTES);
     ADD_INT(d, "MAX_KEY_SIZE", HACL_HASH_BLAKE2S_KEY_BYTES);
@@ -277,44 +316,34 @@ blake2_exec(PyObject *m)
     return 0;
 }
 
-static PyModuleDef_Slot _blake2_slots[] = {
-    {Py_mod_exec, blake2_exec},
+static PyModuleDef_Slot blake2module_slots[] = {
+    {Py_mod_exec, blake2module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 
-static struct PyModuleDef blake2_module = {
-    .m_base = PyModuleDef_HEAD_INIT,
+PyDoc_STRVAR(blake2module__doc__,
+             "_blake2 provides BLAKE2b and BLAKE2s for hashlib\n");
+
+static struct PyModuleDef blake2module_def = {
+    PyModuleDef_HEAD_INIT,
     .m_name = "_blake2",
-    .m_doc = blake2mod__doc__,
-    .m_size = sizeof(Blake2State),
-    .m_methods = blake2mod_functions,
-    .m_slots = _blake2_slots,
-    .m_traverse = _blake2_traverse,
-    .m_clear = _blake2_clear,
-    .m_free = _blake2_free,
+    .m_doc = blake2module__doc__,
+    .m_size = sizeof(blake2module_state),
+    .m_slots = blake2module_slots,
+    .m_traverse = blake2module_traverse,
+    .m_clear = blake2module_clear,
+    .m_free = blake2module_free,
 };
 
 PyMODINIT_FUNC
 PyInit__blake2(void)
 {
-    return PyModuleDef_Init(&blake2_module);
+    return PyModuleDef_Init(&blake2module_def);
 }
 
 // IMPLEMENTATION OF METHODS
-
-// The HACL* API does not offer an agile API that can deal with either Blake2S
-// or Blake2B -- the reason is that the underlying states are optimized (uint32s
-// for S, uint64s for B). Therefore, we use a tagged union in this module to
-// correctly dispatch. Note that the previous incarnation of this code
-// transformed the Blake2b implementation into the Blake2s one using a script,
-// so this is an improvement.
-//
-// The 128 and 256 versions are only available if i) we were able to compile
-// them, and ii) if the CPU we run on also happens to have the right instruction
-// set.
-typedef enum { Blake2s, Blake2b, Blake2s_128, Blake2b_256 } blake2_impl;
 
 static inline bool
 is_blake2b(blake2_impl impl)
@@ -332,53 +361,24 @@ static inline blake2_impl
 type_to_impl(PyTypeObject *type)
 {
 #if defined(HACL_CAN_COMPILE_SIMD128) || defined(HACL_CAN_COMPILE_SIMD256)
-    Blake2State *st = blake2_get_state_from_type(type);
+    blake2module_state *state = get_blake2module_state_by_cls(type);
 #endif
     if (!strcmp(type->tp_name, blake2b_type_spec.name)) {
 #if HACL_CAN_COMPILE_SIMD256
-        return st->can_run_simd256 ? Blake2b_256 : Blake2b;
+        return state->can_run_simd256 ? Blake2b_256 : Blake2b;
 #else
         return Blake2b;
 #endif
     }
     else if (!strcmp(type->tp_name, blake2s_type_spec.name)) {
 #if HACL_CAN_COMPILE_SIMD128
-        return st->can_run_simd128 ? Blake2s_128 : Blake2s;
+        return state->can_run_simd128 ? Blake2s_128 : Blake2s;
 #else
         return Blake2s;
 #endif
     }
     Py_UNREACHABLE();
 }
-
-typedef struct {
-    PyObject_HEAD
-    union {
-        Hacl_Hash_Blake2s_state_t *blake2s_state;
-        Hacl_Hash_Blake2b_state_t *blake2b_state;
-#if HACL_CAN_COMPILE_SIMD128
-        Hacl_Hash_Blake2s_Simd128_state_t *blake2s_128_state;
-#endif
-#if HACL_CAN_COMPILE_SIMD256
-        Hacl_Hash_Blake2b_Simd256_state_t *blake2b_256_state;
-#endif
-    };
-    blake2_impl impl;
-    bool use_mutex;
-    PyMutex mutex;
-} Blake2Object;
-
-#define _Blake2Object_CAST(op)  ((Blake2Object *)(op))
-
-#include "clinic/blake2module.c.h"
-
-/*[clinic input]
-module _blake2
-class _blake2.blake2b "Blake2Object *" "&PyBlake2_BLAKE2bType"
-class _blake2.blake2s "Blake2Object *" "&PyBlake2_BLAKE2sType"
-[clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=b7526666bd18af83]*/
-
 
 static Blake2Object *
 new_Blake2Object(PyTypeObject *type)

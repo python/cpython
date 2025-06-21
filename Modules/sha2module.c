@@ -9,6 +9,7 @@
    Greg Stein (gstein@lyra.org)
    Trevor Perrin (trevp@trevp.net)
    Jonathan Protzenko (jonathan@protzenko.fr)
+   Bénédikt Tran (10796600+picnixz@users.noreply.github.com)
 
    Copyright (C) 2005-2007   Gregory P. Smith (greg@krypto.org)
    Licensed to PSF under a Contributor Agreement.
@@ -28,14 +29,9 @@
 
 #include "hashlib.h"
 
-/*[clinic input]
-module _sha2
-class SHA256Type "SHA256object *" "&PyType_Type"
-class SHA512Type "SHA512object *" "&PyType_Type"
-[clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=b5315a7b611c9afc]*/
+#include "_hacl/Hacl_Hash_SHA2.h"
 
-
+// TODO: Get rid of int digestsize in favor of Hacl state info?
 /* The SHA block sizes and maximum message digest sizes, in bytes */
 
 #define SHA256_BLOCKSIZE   64
@@ -43,51 +39,64 @@ class SHA512Type "SHA512object *" "&PyType_Type"
 #define SHA512_BLOCKSIZE   128
 #define SHA512_DIGESTSIZE  64
 
-/* Our SHA2 implementations defer to the HACL* verified library. */
+// --- SHA-2 module state -----------------------------------------------------
 
-#include "_hacl/Hacl_Hash_SHA2.h"
+/* We shall use run-time type information in the remainder of this module to
+ * tell apart SHA2-224 and SHA2-256 */
+typedef struct {
+    PyTypeObject *sha224_type;
+    PyTypeObject *sha256_type;
+    PyTypeObject *sha384_type;
+    PyTypeObject *sha512_type;
+} sha2module_state;
 
-// TODO: Get rid of int digestsize in favor of Hacl state info?
+static inline sha2module_state *
+get_sha2module_state(PyObject *module)
+{
+    void *state = _PyModule_GetState(module);
+    assert(state != NULL);
+    return (sha2module_state *)state;
+}
+
+static inline sha2module_state *
+get_sha2module_state_by_cls(PyTypeObject *cls)
+{
+    void *state = PyType_GetModuleState(cls);
+    assert(state != NULL);
+    return (sha2module_state *)state;
+}
+
+// --- SHA-2 object -----------------------------------------------------------
 
 typedef struct {
     PyObject_HEAD
     int digestsize;
-    // Prevents undefined behavior via multiple threads entering the C API.
-    bool use_mutex;
-    PyMutex mutex;
+    HASHLIB_MUTEX_API
     Hacl_Hash_SHA2_state_t_256 *state;
 } SHA256object;
 
 typedef struct {
     PyObject_HEAD
     int digestsize;
-    // Prevents undefined behavior via multiple threads entering the C API.
-    bool use_mutex;
-    PyMutex mutex;
+    HASHLIB_MUTEX_API
     Hacl_Hash_SHA2_state_t_512 *state;
 } SHA512object;
 
 #define _SHA256object_CAST(op)  ((SHA256object *)(op))
 #define _SHA512object_CAST(op)  ((SHA512object *)(op))
 
+// --- SHA-2 module clinic configuration --------------------------------------
+
+/*[clinic input]
+module _sha2
+class SHA256Type "SHA256object *" "clinic_state()->sha256_type"
+class SHA512Type "SHA512object *" "clinic_state()->sha512_type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=e758ed2b54d457ea]*/
+
+#define clinic_state()  (get_sha2module_state_by_cls(Py_TYPE(self)))
 #include "clinic/sha2module.c.h"
-
-/* We shall use run-time type information in the remainder of this module to
- * tell apart SHA2-224 and SHA2-256 */
-typedef struct {
-    PyTypeObject* sha224_type;
-    PyTypeObject* sha256_type;
-    PyTypeObject* sha384_type;
-    PyTypeObject* sha512_type;
-} sha2_state;
-
-static inline sha2_state*
-sha2_get_state(PyObject *module)
-{
-    void *state = _PyModule_GetState(module);
-    assert(state != NULL);
-    return (sha2_state *)state;
-}
+#undef clinic_state
 
 static int
 SHA256copy(SHA256object *src, SHA256object *dest)
@@ -114,7 +123,7 @@ SHA512copy(SHA512object *src, SHA512object *dest)
 }
 
 static SHA256object *
-newSHA224object(sha2_state *state)
+newSHA224object(sha2module_state *state)
 {
     SHA256object *sha = PyObject_GC_New(SHA256object, state->sha224_type);
     if (!sha) {
@@ -127,7 +136,7 @@ newSHA224object(sha2_state *state)
 }
 
 static SHA256object *
-newSHA256object(sha2_state *state)
+newSHA256object(sha2module_state *state)
 {
     SHA256object *sha = PyObject_GC_New(SHA256object, state->sha256_type);
     if (!sha) {
@@ -140,7 +149,7 @@ newSHA256object(sha2_state *state)
 }
 
 static SHA512object *
-newSHA384object(sha2_state *state)
+newSHA384object(sha2module_state *state)
 {
     SHA512object *sha = PyObject_GC_New(SHA512object, state->sha384_type);
     if (!sha) {
@@ -153,7 +162,7 @@ newSHA384object(sha2_state *state)
 }
 
 static SHA512object *
-newSHA512object(sha2_state *state)
+newSHA512object(sha2module_state *state)
 {
     SHA512object *sha = PyObject_GC_New(SHA512object, state->sha512_type);
     if (!sha) {
@@ -260,7 +269,7 @@ SHA256Type_copy_impl(SHA256object *self, PyTypeObject *cls)
 {
     int rc;
     SHA256object *newobj;
-    sha2_state *state = _PyType_GetModuleState(cls);
+    sha2module_state *state = get_sha2module_state_by_cls(cls);
     if (Py_IS_TYPE(self, state->sha256_type)) {
         if ((newobj = newSHA256object(state)) == NULL) {
             return NULL;
@@ -296,7 +305,7 @@ SHA512Type_copy_impl(SHA512object *self, PyTypeObject *cls)
 {
     int rc;
     SHA512object *newobj;
-    sha2_state *state = _PyType_GetModuleState(cls);
+    sha2module_state *state = _PyType_GetModuleState(cls);
 
     if (Py_IS_TYPE((PyObject*)self, state->sha512_type)) {
         if ((newobj = newSHA512object(state)) == NULL) {
@@ -617,7 +626,7 @@ _sha2_sha256_impl(PyObject *module, PyObject *data, int usedforsecurity,
         GET_BUFFER_VIEW_OR_ERROUT(string, &buf);
     }
 
-    sha2_state *state = sha2_get_state(module);
+    sha2module_state *state = get_sha2module_state(module);
 
     SHA256object *new;
     if ((new = newSHA256object(state)) == NULL) {
@@ -680,7 +689,7 @@ _sha2_sha224_impl(PyObject *module, PyObject *data, int usedforsecurity,
         GET_BUFFER_VIEW_OR_ERROUT(string, &buf);
     }
 
-    sha2_state *state = sha2_get_state(module);
+    sha2module_state *state = get_sha2module_state(module);
     SHA256object *new;
     if ((new = newSHA224object(state)) == NULL) {
         if (string) {
@@ -739,7 +748,7 @@ _sha2_sha512_impl(PyObject *module, PyObject *data, int usedforsecurity,
         return NULL;
     }
 
-    sha2_state *state = sha2_get_state(module);
+    sha2module_state *state = get_sha2module_state(module);
 
     if (string) {
         GET_BUFFER_VIEW_OR_ERROUT(string, &buf);
@@ -802,7 +811,7 @@ _sha2_sha384_impl(PyObject *module, PyObject *data, int usedforsecurity,
         return NULL;
     }
 
-    sha2_state *state = sha2_get_state(module);
+    sha2module_state *state = get_sha2module_state(module);
 
     if (string) {
         GET_BUFFER_VIEW_OR_ERROUT(string, &buf);
@@ -844,7 +853,7 @@ _sha2_sha384_impl(PyObject *module, PyObject *data, int usedforsecurity,
 
 /* List of functions exported by this module */
 
-static struct PyMethodDef SHA2_functions[] = {
+static struct PyMethodDef sha2module_methods[] = {
     _SHA2_SHA256_METHODDEF
     _SHA2_SHA224_METHODDEF
     _SHA2_SHA512_METHODDEF
@@ -853,9 +862,9 @@ static struct PyMethodDef SHA2_functions[] = {
 };
 
 static int
-_sha2_traverse(PyObject *module, visitproc visit, void *arg)
+sha2module_traverse(PyObject *module, visitproc visit, void *arg)
 {
-    sha2_state *state = sha2_get_state(module);
+    sha2module_state *state = get_sha2module_state(module);
     Py_VISIT(state->sha224_type);
     Py_VISIT(state->sha256_type);
     Py_VISIT(state->sha384_type);
@@ -864,9 +873,9 @@ _sha2_traverse(PyObject *module, visitproc visit, void *arg)
 }
 
 static int
-_sha2_clear(PyObject *module)
+sha2module_clear(PyObject *module)
 {
-    sha2_state *state = sha2_get_state(module);
+    sha2module_state *state = get_sha2module_state(module);
     Py_CLEAR(state->sha224_type);
     Py_CLEAR(state->sha256_type);
     Py_CLEAR(state->sha384_type);
@@ -875,15 +884,16 @@ _sha2_clear(PyObject *module)
 }
 
 static void
-_sha2_free(void *module)
+sha2module_free(void *module)
 {
-    (void)_sha2_clear((PyObject *)module);
+    (void)sha2module_clear((PyObject *)module);
 }
 
 /* Initialize this module. */
-static int sha2_exec(PyObject *module)
+static int
+sha2module_exec(PyObject *module)
 {
-    sha2_state *state = sha2_get_state(module);
+    sha2module_state *state = get_sha2module_state(module);
 
     state->sha224_type = (PyTypeObject *)PyType_FromModuleAndSpec(
         module, &sha224_type_spec, NULL);
@@ -929,26 +939,26 @@ static int sha2_exec(PyObject *module)
     return 0;
 }
 
-static PyModuleDef_Slot _sha2_slots[] = {
-    {Py_mod_exec, sha2_exec},
+static PyModuleDef_Slot sha2module_slots[] = {
+    {Py_mod_exec, sha2module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 
-static struct PyModuleDef _sha2module = {
+static struct PyModuleDef sha2module_def = {
     PyModuleDef_HEAD_INIT,
     .m_name = "_sha2",
-    .m_size = sizeof(sha2_state),
-    .m_methods = SHA2_functions,
-    .m_slots = _sha2_slots,
-    .m_traverse = _sha2_traverse,
-    .m_clear = _sha2_clear,
-    .m_free = _sha2_free
+    .m_size = sizeof(sha2module_state),
+    .m_methods = sha2module_methods,
+    .m_slots = sha2module_slots,
+    .m_traverse = sha2module_traverse,
+    .m_clear = sha2module_clear,
+    .m_free = sha2module_free
 };
 
 PyMODINIT_FUNC
 PyInit__sha2(void)
 {
-    return PyModuleDef_Init(&_sha2module);
+    return PyModuleDef_Init(&sha2module_def);
 }
