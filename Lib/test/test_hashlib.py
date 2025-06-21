@@ -1043,20 +1043,14 @@ class HashLibTestCase(unittest.TestCase):
 
     def test_sha256_gil(self):
         gil_minsize = hashlib_helper.find_gil_minsize(['_sha2', '_hashlib'])
+        data = b'1' + b'#' * gil_minsize + b'1'
+        expected = hashlib.sha256(data).hexdigest()
+
         m = hashlib.sha256()
         m.update(b'1')
         m.update(b'#' * gil_minsize)
         m.update(b'1')
-        self.assertEqual(
-            m.hexdigest(),
-            '1cfceca95989f51f658e3f3ffe7f1cd43726c9e088c13ee10b46f57cef135b94'
-        )
-
-        m = hashlib.sha256(b'1' + b'#' * gil_minsize + b'1')
-        self.assertEqual(
-            m.hexdigest(),
-            '1cfceca95989f51f658e3f3ffe7f1cd43726c9e088c13ee10b46f57cef135b94'
-        )
+        self.assertEqual(m.hexdigest(), expected)
 
     @threading_helper.reap_threads
     @threading_helper.requires_working_threading()
