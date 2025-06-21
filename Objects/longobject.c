@@ -337,7 +337,7 @@ medium_from_stwodigits(stwodigits x)
         }
         _PyObject_Init((PyObject*)v, &PyLong_Type);
     }
-    digit abs_x = x < 0 ? -x : x;
+    digit abs_x = x < 0 ? (digit)(-x) : (digit)x;
     _PyLong_SetSignAndDigitCount(v, x<0?-1:1, 1);
     v->long_value.ob_digit[0] = abs_x;
     return PyStackRef_FromPyObjectStealMortal((PyObject *)v);

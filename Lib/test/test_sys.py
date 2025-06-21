@@ -1943,22 +1943,7 @@ class SizeofTest(unittest.TestCase):
         self.assertEqual(out, b"")
         self.assertEqual(err, b"")
 
-
-def _supports_remote_attaching():
-    PROCESS_VM_READV_SUPPORTED = False
-
-    try:
-        from _remote_debugging import PROCESS_VM_READV_SUPPORTED
-    except ImportError:
-        pass
-
-    return PROCESS_VM_READV_SUPPORTED
-
-@unittest.skipIf(not sys.is_remote_debug_enabled(), "Remote debugging is not enabled")
-@unittest.skipIf(sys.platform != "darwin" and sys.platform != "linux" and sys.platform != "win32",
-                    "Test only runs on Linux, Windows and MacOS")
-@unittest.skipIf(sys.platform == "linux" and not _supports_remote_attaching(),
-                    "Test only runs on Linux with process_vm_readv support")
+@test.support.support_remote_exec_only
 @test.support.cpython_only
 class TestRemoteExec(unittest.TestCase):
     def tearDown(self):
@@ -2117,7 +2102,7 @@ print("Remote script executed successfully!")
         returncode, stdout, stderr = self._run_remote_exec_test(script, prologue=prologue)
         self.assertEqual(returncode, 0)
         self.assertIn(b"Remote script executed successfully!", stdout)
-        self.assertIn(b"Audit event: remote_debugger_script, arg: ", stdout)
+        self.assertIn(b"Audit event: cpython.remote_debugger_script, arg: ", stdout)
         self.assertEqual(stderr, b"")
 
     def test_remote_exec_with_exception(self):
