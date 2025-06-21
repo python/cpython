@@ -1920,7 +1920,7 @@ class MakedirTests(unittest.TestCase):
     )
     @unittest.skipIf(
         support.is_emscripten,
-        "TODO: Fails in buildbot"
+        "TODO: Fails in buildbot; see #135783"
     )
     def test_mode(self):
         with os_helper.temp_umask(0o002):
