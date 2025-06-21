@@ -364,6 +364,16 @@ class StrptimeTests(unittest.TestCase):
         tup, frac, _ = _strptime._strptime(str(d), format="%Y-%m-%d %H:%M:%S.%f")
         self.assertEqual(frac, d.microsecond)
 
+    def test_optional_fraction(self):
+        # Test optional microseconds
+        import datetime
+        d = datetime.datetime(2012, 12, 20, 12, 34, 56, 78987)
+        tup, frac, _ = _strptime._strptime(str(d), format="%Y-%m-%d %H:%M:%S%F")
+        self.assertEqual(frac, d.microsecond)
+        dn = datetime.datetime(2012, 12, 20, 12, 34, 56)
+        tup, frac, _ = _strptime._strptime(str(dn), format="%Y-%m-%d %H:%M:%S%F")
+        self.assertEqual(frac, dn.microsecond)
+
     def test_weekday(self):
         # Test weekday directives
         self.roundtrip('%w', 6)

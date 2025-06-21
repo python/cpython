@@ -2895,6 +2895,16 @@ class TestDateTime(TestDate):
             strptime("-00:02:01.000003", "%z").utcoffset(),
             -timedelta(minutes=2, seconds=1, microseconds=3)
         )
+
+        # Test %F
+        inputs = [
+            (self.theclass(2025, 3, 23, 13, 2, 47, 197000), "2025-03-23 13:02:47.197", "%Y-%m-%d %H:%M:%S%F"),
+            (self.theclass(2025, 3, 23, 13, 2, 47), "2025-03-23 13:02:47", "%Y-%m-%d %H:%M:%S%F"),
+        ]
+        for expected, string, format in inputs:
+            with self.subTest(expected=expected, string=string, format=format):
+                self.assertEqual(expected, self.theclass.strptime(string, format))
+
         # Only local timezone and UTC are supported
         for tzseconds, tzname in ((0, 'UTC'), (0, 'GMT'),
                                  (-_time.timezone, _time.tzname[0])):
@@ -3877,6 +3887,15 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
         self.assertEqual(t.strftime('%H %M %S %f'), "01 02 03 000004")
         # A naive object replaces %z, %:z and %Z with empty strings.
         self.assertEqual(t.strftime("'%z' '%:z' '%Z'"), "'' '' ''")
+
+        # Test %F
+        inputs = [
+            (self.theclass(13, 2, 47, 197000), "13:02:47.197", "%H:%M:%S%F"),
+            (self.theclass(13, 2, 47), "13:02:47", "%H:%M:%S%F"),
+        ]
+        for expected, string, format in inputs:
+            with self.subTest(expected=expected, string=string, format=format):
+                self.assertEqual(expected, self.theclass.strptime(string, format))
 
         # bpo-34482: Check that surrogates don't cause a crash.
         try:
