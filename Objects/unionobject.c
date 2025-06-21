@@ -290,7 +290,7 @@ union_repr(PyObject *self)
     }
 
     for (Py_ssize_t i = 0; i < len; i++) {
-        if (i > 0 && PyUnicodeWriter_WriteUTF8(writer, " | ", 3) < 0) {
+        if (i > 0 && PyUnicodeWriter_WriteASCII(writer, " | ", 3) < 0) {
             goto error;
         }
         PyObject *p = PyTuple_GET_ITEM(alias->args, i);
@@ -300,12 +300,12 @@ union_repr(PyObject *self)
     }
 
 #if 0
-    PyUnicodeWriter_WriteUTF8(writer, "|args=", 6);
+    PyUnicodeWriter_WriteASCII(writer, "|args=", 6);
     PyUnicodeWriter_WriteRepr(writer, alias->args);
-    PyUnicodeWriter_WriteUTF8(writer, "|h=", 3);
+    PyUnicodeWriter_WriteASCII(writer, "|h=", 3);
     PyUnicodeWriter_WriteRepr(writer, alias->hashable_args);
     if (alias->unhashable_args) {
-        PyUnicodeWriter_WriteUTF8(writer, "|u=", 3);
+        PyUnicodeWriter_WriteASCII(writer, "|u=", 3);
         PyUnicodeWriter_WriteRepr(writer, alias->unhashable_args);
     }
 #endif

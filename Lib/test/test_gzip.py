@@ -9,7 +9,6 @@ import os
 import struct
 import sys
 import unittest
-import warnings
 from subprocess import PIPE, Popen
 from test.support import catch_unraisable_exception
 from test.support import import_helper

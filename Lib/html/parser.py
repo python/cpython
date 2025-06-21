@@ -27,6 +27,7 @@ charref = re.compile('&#(?:[0-9]+|[xX][0-9a-fA-F]+)[^0-9a-fA-F]')
 attr_charref = re.compile(r'&(#[0-9]+|#[xX][0-9a-fA-F]+|[a-zA-Z][a-zA-Z0-9]*)[;=]?')
 
 starttagopen = re.compile('<[a-zA-Z]')
+endtagopen = re.compile('</[a-zA-Z]')
 piclose = re.compile('>')
 commentclose = re.compile(r'--\s*>')
 # Note:
@@ -195,7 +196,7 @@ class HTMLParser(_markupbase.ParserBase):
                     k = self.parse_pi(i)
                 elif startswith("<!", i):
                     k = self.parse_html_declaration(i)
-                elif (i + 1) < n:
+                elif (i + 1) < n or end:
                     self.handle_data("<")
                     k = i + 1
                 else:
@@ -203,17 +204,35 @@ class HTMLParser(_markupbase.ParserBase):
                 if k < 0:
                     if not end:
                         break
-                    k = rawdata.find('>', i + 1)
-                    if k < 0:
-                        k = rawdata.find('<', i + 1)
-                        if k < 0:
-                            k = i + 1
+                    if starttagopen.match(rawdata, i):  # < + letter
+                        pass
+                    elif startswith("</", i):
+                        if i + 2 == n:
+                            self.handle_data("</")
+                        elif endtagopen.match(rawdata, i):  # </ + letter
+                            pass
+                        else:
+                            # bogus comment
+                            self.handle_comment(rawdata[i+2:])
+                    elif startswith("<!--", i):
+                        j = n
+                        for suffix in ("--!", "--", "-"):
+                            if rawdata.endswith(suffix, i+4):
+                                j -= len(suffix)
+                                break
+                        self.handle_comment(rawdata[i+4:j])
+                    elif startswith("<![CDATA[", i):
+                        self.unknown_decl(rawdata[i+3:])
+                    elif rawdata[i:i+9].lower() == '<!doctype':
+                        self.handle_decl(rawdata[i+2:])
+                    elif startswith("<!", i):
+                        # bogus comment
+                        self.handle_comment(rawdata[i+2:])
+                    elif startswith("<?", i):
+                        self.handle_pi(rawdata[i+2:])
                     else:
-                        k += 1
-                    if self.convert_charrefs and not self.cdata_elem:
-                        self.handle_data(unescape(rawdata[i:k]))
-                    else:
-                        self.handle_data(rawdata[i:k])
+                        raise AssertionError("we should not get here!")
+                    k = n
                 i = self.updatepos(i, k)
             elif startswith("&#", i):
                 match = charref.match(rawdata, i)

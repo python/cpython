@@ -29,9 +29,6 @@ PyAPI_DATA(int) (*PyOS_InputHook)(void);
 #  define PYOS_LOG2_STACK_MARGIN 12
 #elif defined(Py_DEBUG) && defined(WIN32)
 #  define PYOS_LOG2_STACK_MARGIN 12
-#elif defined(__wasi__)
-   /* Web assembly has two stacks, so this isn't really a size */
-#  define PYOS_LOG2_STACK_MARGIN 9
 #else
 #  define PYOS_LOG2_STACK_MARGIN 11
 #endif

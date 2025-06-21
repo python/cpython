@@ -137,4 +137,3 @@ jobs:
           CC=clang-20 ./configure --with-tail-call-interp --disable-gil
           make all --jobs 4
           ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
-
