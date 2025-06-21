@@ -532,15 +532,31 @@ def parse_ns_headers(ns_headers):
     return result
 
 
+# only kept for backwards compatibilty.
 IPV4_RE = re.compile(r"\.\d+$", re.ASCII)
+
+def is_ip_like(text: str):
+    """Return True if text is a valid hostname in the form of IP address."""
+    from ipaddress import IPv4Address, IPv6Address
+    # check for IPv4 address
+    try:
+        IPv4Address(text)
+    except ValueError:
+        # check for IPv6 address in []
+        if text.startswith('[') and text.endswith(']'):
+            try:
+                IPv6Address(text.removeprefix('[').removesuffix(']'))
+            except ValueError:
+                return False
+        else:
+            return False # not a IPv6 address in []
+    return True
 def is_HDN(text):
     """Return True if text is a host domain name."""
     # XXX
     # This may well be wrong.  Which RFC is HDN defined in, if any (for
     #  the purposes of RFC 2965)?
-    # For the current implementation, what about IPv6?  Remember to look
-    #  at other uses of IPV4_RE also, if change this.
-    if IPV4_RE.search(text):
+    if is_ip_like(text):
         return False
     if text == "":
         return False
@@ -593,9 +609,7 @@ def liberal_is_HDN(text):
     For accepting/blocking domains.
 
     """
-    if IPV4_RE.search(text):
-        return False
-    return True
+    return not is_ip_like(text)
 
 def user_domain_match(A, B):
     """For blocking/accepting domains.
@@ -641,7 +655,17 @@ def eff_request_host(request):
 
     """
     erhn = req_host = request_host(request)
-    if "." not in req_host:
+    if req_host.startswith('[') and req_host.endswith(']'):
+        from ipaddress import IPv6Address
+        try:
+            IPv6Address(req_host.removeprefix('[').removesuffix(']'))
+            is_ipV6 = True
+        except ValueError:
+            is_ipV6 = False
+    else:
+        is_ipV6 = False
+    if "." not in req_host and not is_ipV6:
+        # avoid adding .local at the end of a IPV6 address
         erhn = req_host + ".local"
     return req_host, erhn
 
