@@ -1,6 +1,7 @@
 import _pyio
 import array
 import contextlib
+import datetime
 import importlib.util
 import io
 import itertools
@@ -1928,6 +1929,54 @@ class OtherTests(unittest.TestCase):
             zipfp.writestr('приклад', b'sample')
             self.assertEqual(zipfp.read('приклад'), b'sample')
 
+    def create_zipfile_with_extended_timestamp_extra_data(self, filename, extra_timestamp_data):
+        with zipfile.ZipFile(TESTFN, mode='w') as zf:
+            filename_encoded = filename.encode("utf-8")
+            zip_info = zipfile.ZipInfo(filename)
+
+            tag_for_extra_block = b'\x55\x54'
+
+            # Set only modification time
+            flags = b'\x01'
+
+            # modification time
+            if extra_timestamp_data is not None:
+                mtime = struct.pack('<l', extra_timestamp_data)
+            else:
+                mtime = b''
+            extra_data = flags + mtime
+
+            tsize = len(extra_data).to_bytes(2, 'little')
+
+            zip_info.extra = tag_for_extra_block + tsize + extra_data
+
+            # add the file to the ZIP archive
+            zf.writestr(zip_info, b'Hello World!')
+
+    def test_read_zipfile_containing_extended_timestamp_extra_field(self):
+        timestamp_data = int(datetime.datetime(2024, 6, 26, 9, 27, 30).timestamp())
+        self.create_zipfile_with_extended_timestamp_extra_data("aayush.txt", timestamp_data)
+        with zipfile.ZipFile(TESTFN, "r") as zf:
+            self.assertEqual(zf.filelist[0].extended_mtime, timestamp_data)
+
+    def test_read_zipfile_containing_timestamp_beyond_2038(self):
+        # Test for 2038 problem
+        timestamp_data = -1
+        self.create_zipfile_with_extended_timestamp_extra_data("aayush.txt", timestamp_data)
+        with zipfile.ZipFile(TESTFN, "r") as zf:
+            self.assertEqual(zf.filelist[0].extended_mtime, timestamp_data)
+
+    def test_read_zipfile_zero_timestamp_extra_field(self):
+        timestamp_data = 0
+        self.create_zipfile_with_extended_timestamp_extra_data("aayush.txt", timestamp_data)
+        with zipfile.ZipFile(TESTFN, "r") as zf:
+            self.assertEqual(zf.filelist[0].extended_mtime, timestamp_data)
+
+    def test_read_zipfile_none_timestamp_extra_field(self):
+        self.create_zipfile_with_extended_timestamp_extra_data("aayush.txt", None)
+        with zipfile.ZipFile(TESTFN, "r") as zf:
+            self.assertIsNone(zf.filelist[0].extended_mtime)
+
     def test_exclusive_create_zip_file(self):
         """Test exclusive creating a new zipfile."""
         unlink(TESTFN2)
@@ -2330,6 +2379,8 @@ class OtherTests(unittest.TestCase):
         # Before bpo-26185, both were missing
         self.assertEqual(zi.file_size, 0)
         self.assertEqual(zi.compress_size, 0)
+
+        self.assertIsNone(zi.extended_mtime)
 
     def test_zipfile_with_short_extra_field(self):
         """If an extra field in the header is less than 4 bytes, skip it."""
