@@ -184,8 +184,9 @@ return_stmt[stmt_ty]:
     | 'return' a=[star_expressions] { _PyAST_Return(a, EXTRA) }
 
 raise_stmt[stmt_ty]:
+    | 'raise' a=expression 'from' b=expression { _PyAST_Raise(a, b, EXTRA) }
     | invalid_raise_stmt
-    | 'raise' a=expression b=['from' z=expression { z }] { _PyAST_Raise(a, b, EXTRA) }
+    | 'raise' a=expression { _PyAST_Raise(a, NULL, EXTRA) }
     | 'raise' { _PyAST_Raise(NULL, NULL, EXTRA) }
 
 pass_stmt[stmt_ty]:
