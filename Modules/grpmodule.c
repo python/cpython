@@ -168,9 +168,16 @@ grp_getgrgid_impl(PyObject *module, PyObject *id)
 
     Py_END_ALLOW_THREADS
 #else
+    static PyMutex getgrgid_mutex = {0};
+    PyMutex_Lock(&getgrgid_mutex);
+    // The getgrgid() function need not be thread-safe.
+    // https://pubs.opengroup.org/onlinepubs/9699919799/functions/getgrgid.html
     p = getgrgid(gid);
 #endif
     if (p == NULL) {
+#ifndef HAVE_GETGRGID_R
+        PyMutex_Unlock(&getgrgid_mutex);
+#endif
         PyMem_RawFree(buf);
         if (nomem == 1) {
             return PyErr_NoMemory();
@@ -185,6 +192,8 @@ grp_getgrgid_impl(PyObject *module, PyObject *id)
     retval = mkgrent(module, p);
 #ifdef HAVE_GETGRGID_R
     PyMem_RawFree(buf);
+#else
+    PyMutex_Unlock(&getgrgid_mutex);
 #endif
     return retval;
 }
@@ -249,9 +258,16 @@ grp_getgrnam_impl(PyObject *module, PyObject *name)
 
     Py_END_ALLOW_THREADS
 #else
+    static PyMutex getgrnam_mutex = {0};
+    PyMutex_Lock(&getgrnam_mutex);
+    // The getgrnam() function need not be thread-safe.
+    // https://pubs.opengroup.org/onlinepubs/9699919799/functions/getgrnam.html
     p = getgrnam(name_chars);
 #endif
     if (p == NULL) {
+#ifndef HAVE_GETGRNAM_R
+        PyMutex_Unlock(&getgrnam_mutex);
+#endif
         if (nomem == 1) {
             PyErr_NoMemory();
         }
@@ -261,6 +277,9 @@ grp_getgrnam_impl(PyObject *module, PyObject *name)
         goto out;
     }
     retval = mkgrent(module, p);
+#ifndef HAVE_GETGRNAM_R
+    PyMutex_Unlock(&getgrnam_mutex);
+#endif
 out:
     PyMem_RawFree(buf);
     Py_DECREF(bytes);
