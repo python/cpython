@@ -1945,6 +1945,14 @@ sysconfig
   (Contributed by Xuehai Pan in :gh:`131799`.)
 
 
+tempfile
+--------
+
+* :func:`tempfile.NamedTemporaryFile` and :func:`~tempfile.TemporaryDirectory`
+  now return a :term:`path-like object`.
+  (Contributed by Barney Gale in :gh:`87646`.)
+
+
 threading
 ---------
 
