@@ -6314,7 +6314,7 @@ Return the true host name, a list of aliases, and a list of IP addresses,\n\
 for a host.  The host argument is a string giving a host name or IP number.");
 #endif
 
-#ifdef HAVE_GETSERVBYNAME
+#if defined(HAVE_GETSERVBYNAME_R) || defined (HAVE_GETSERVBYNAME)
 /* Python interface to getservbyname(name).
    This only returns the port number, since the other info is already
    known or not useful (like the list of aliases). */
@@ -6324,6 +6324,12 @@ static PyObject *
 socket_getservbyname(PyObject *self, PyObject *args)
 {
     const char *name, *proto=NULL;
+#ifdef HAVE_GETSERVBYNAME_R
+    struct servent entry;
+    /* TODO: The man page says 1024 is usually enough, start with that and
+       retry if insufficient? */
+    char buf[16384];
+#endif
     struct servent *sp;
     if (!PyArg_ParseTuple(args, "s|s:getservbyname", &name, &proto))
         return NULL;
@@ -6333,7 +6339,11 @@ socket_getservbyname(PyObject *self, PyObject *args)
     }
 
     Py_BEGIN_ALLOW_THREADS
+#ifdef HAVE_GETSERVBYNAME_R
+    getservbyname_r(name, proto, &entry, buf, sizeof(buf), &sp);
+#else
     sp = getservbyname(name, proto);
+#endif
     Py_END_ALLOW_THREADS
     if (sp == NULL) {
         PyErr_SetString(PyExc_OSError, "service/proto not found");
@@ -6350,7 +6360,7 @@ The optional protocol name, if given, should be 'tcp' or 'udp',\n\
 otherwise any protocol will match.");
 #endif
 
-#ifdef HAVE_GETSERVBYPORT
+#if defined(HAVE_GETSERVBYPORT_R) || defined (HAVE_GETSERVBYPORT)
 /* Python interface to getservbyport(port).
    This only returns the service name, since the other info is already
    known or not useful (like the list of aliases). */
@@ -6361,6 +6371,12 @@ socket_getservbyport(PyObject *self, PyObject *args)
 {
     int port;
     const char *proto=NULL;
+#ifdef HAVE_GETSERVBYPORT_R
+    struct servent entry;
+    /* TODO: The man page says 1024 is usually enough, start with that and
+       retry if insufficient? */
+    char buf[16384];
+#endif
     struct servent *sp;
     if (!PyArg_ParseTuple(args, "i|s:getservbyport", &port, &proto))
         return NULL;
@@ -6376,7 +6392,11 @@ socket_getservbyport(PyObject *self, PyObject *args)
     }
 
     Py_BEGIN_ALLOW_THREADS
+#ifdef HAVE_GETSERVBYPORT_R
+    getservbyport_r(htons((short)port), proto, &entry, buf, sizeof(buf), &sp);
+#else
     sp = getservbyport(htons((short)port), proto);
+#endif
     Py_END_ALLOW_THREADS
     if (sp == NULL) {
         PyErr_SetString(PyExc_OSError, "port/proto not found");
@@ -6393,7 +6413,7 @@ The optional protocol name, if given, should be 'tcp' or 'udp',\n\
 otherwise any protocol will match.");
 #endif
 
-#ifdef HAVE_GETPROTOBYNAME
+#if defined(HAVE_GETPROTOBYNAME_R) || defined (HAVE_GETPROTOBYNAME)
 /* Python interface to getprotobyname(name).
    This only returns the protocol number, since the other info is
    already known or not useful (like the list of aliases). */
@@ -6403,11 +6423,21 @@ static PyObject *
 socket_getprotobyname(PyObject *self, PyObject *args)
 {
     const char *name;
+#ifdef HAVE_GETPROTOBYNAME_R
+    struct protoent entry;
+    /* TODO: The man page says 1024 is usually enough, start with that and
+       retry if insufficient? */
+    char buf[16384];
+#endif
     struct protoent *sp;
     if (!PyArg_ParseTuple(args, "s:getprotobyname", &name))
         return NULL;
     Py_BEGIN_ALLOW_THREADS
+#ifdef HAVE_GETPROTOBYNAME_R
+    getprotobyname_r(name, &entry, buf, sizeof(buf), &sp);
+#else
     sp = getprotobyname(name);
+#endif
     Py_END_ALLOW_THREADS
     if (sp == NULL) {
         PyErr_SetString(PyExc_OSError, "protocol not found");
@@ -7396,15 +7426,15 @@ static PyMethodDef socket_methods[] = {
     {"sethostname",             socket_sethostname,
      METH_VARARGS,  sethostname_doc},
 #endif
-#ifdef HAVE_GETSERVBYNAME
+#if defined(HAVE_GETSERVBYNAME_R) || defined (HAVE_GETSERVBYNAME)
     {"getservbyname",           socket_getservbyname,
      METH_VARARGS, getservbyname_doc},
 #endif
-#ifdef HAVE_GETSERVBYPORT
+#if defined(HAVE_GETSERVBYPORT_R) || defined (HAVE_GETSERVBYPORT)
     {"getservbyport",           socket_getservbyport,
      METH_VARARGS, getservbyport_doc},
 #endif
-#ifdef HAVE_GETPROTOBYNAME
+#if defined (HAVE_GETPROTOBYNAME_R) || defined (HAVE_GETPROTOBYNAME)
     {"getprotobyname",          socket_getprotobyname,
      METH_VARARGS, getprotobyname_doc},
 #endif
