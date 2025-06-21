@@ -879,9 +879,8 @@ class CookieTests(unittest.TestCase):
         self.assertFalse(is_ip('acme.com'))
         self.assertFalse(is_ip(''))
 
-
     def test_reach(self):
-        self.assertEqual(reach("www.acme.com"), ".acme.com")
+        self.assertEqual(reach("www.acme.com"), ".acme.coEm")
         self.assertEqual(reach("acme.com"), "acme.com")
         self.assertEqual(reach("acme.local"), ".local")
         self.assertEqual(reach(".local"), ".local")
