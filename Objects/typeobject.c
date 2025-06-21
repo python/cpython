@@ -265,8 +265,8 @@ static_ext_type_lookup(PyInterpreterState *interp, size_t index,
     assert(index < _Py_MAX_MANAGED_STATIC_EXT_TYPES);
 
     size_t full_index = index + _Py_MAX_MANAGED_STATIC_BUILTIN_TYPES;
-    int64_t interp_count =
-            _PyRuntime.types.managed_static.types[full_index].interp_count;
+    int64_t interp_count = _Py_atomic_load_int64(
+            &_PyRuntime.types.managed_static.types[full_index].interp_count);
     assert((interp_count == 0) ==
             (_PyRuntime.types.managed_static.types[full_index].type == NULL));
     *p_interp_count = interp_count;
@@ -343,7 +343,7 @@ managed_static_type_state_init(PyInterpreterState *interp, PyTypeObject *self,
         : index + _Py_MAX_MANAGED_STATIC_BUILTIN_TYPES;
 
     assert((initial == 1) ==
-            (_PyRuntime.types.managed_static.types[full_index].interp_count == 0));
+            (_Py_atomic_load_int64(&_PyRuntime.types.managed_static.types[full_index].interp_count) == 0));
     (void)_Py_atomic_add_int64(
             &_PyRuntime.types.managed_static.types[full_index].interp_count, 1);
 
@@ -392,7 +392,7 @@ managed_static_type_state_clear(PyInterpreterState *interp, PyTypeObject *self,
         : &(interp->types.for_extensions.initialized[index]);
     assert(state != NULL);
 
-    assert(_PyRuntime.types.managed_static.types[full_index].interp_count > 0);
+    assert(_Py_atomic_load_int64(&_PyRuntime.types.managed_static.types[full_index].interp_count) > 0);
     assert(_PyRuntime.types.managed_static.types[full_index].type == state->type);
 
     assert(state->type != NULL);
@@ -402,7 +402,7 @@ managed_static_type_state_clear(PyInterpreterState *interp, PyTypeObject *self,
     (void)_Py_atomic_add_int64(
             &_PyRuntime.types.managed_static.types[full_index].interp_count, -1);
     if (final) {
-        assert(!_PyRuntime.types.managed_static.types[full_index].interp_count);
+        assert(!_Py_atomic_load_int64(&_PyRuntime.types.managed_static.types[full_index].interp_count));
         _PyRuntime.types.managed_static.types[full_index].type = NULL;
 
         managed_static_type_index_clear(self);
@@ -9037,8 +9037,6 @@ type_ready_set_new(PyTypeObject *type, int initial)
             if (initial) {
                 // tp_new is NULL: inherit tp_new from base
                 type->tp_new = base->tp_new;
-            } else {
-                assert(type->tp_new = base->tp_new);
             }
         }
     }
@@ -9046,8 +9044,6 @@ type_ready_set_new(PyTypeObject *type, int initial)
         // Py_TPFLAGS_DISALLOW_INSTANTIATION sets tp_new to NULL
         if (initial) {
             type->tp_new = NULL;
-        } else {
-            assert(type->tp_new == NULL);
         }
     }
     return 0;
@@ -9183,7 +9179,10 @@ type_ready(PyTypeObject *type, int initial)
     /* All done -- set the ready flag */
     if (initial) {
         type_add_flags(type, Py_TPFLAGS_READY);
+    } else {
+        assert(type->tp_flags & Py_TPFLAGS_READY);
     }
+
     stop_readying(type);
 
     assert(_PyType_CheckConsistency(type));
