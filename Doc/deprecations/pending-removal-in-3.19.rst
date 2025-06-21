@@ -18,7 +18,7 @@ Pending removal in Python 3.19
     Support for the ``string`` keyword argument name is now deprecated
     and slated for removal in Python 3.19.
 
-    Before Python 3.13, the ``string`` keyword parameter was not correctly
+    Before Python 3.13, the ``string`` keyword argument was not correctly
     supported depending on the backend implementation of hash functions.
     Prefer passing the initial data as a positional argument for maximum
     backwards compatibility.

@@ -35,7 +35,7 @@ Context Variables
    The required *name* parameter is used for introspection and debug
    purposes.
 
-   The optional keyword-only *default* parameter is returned by
+   If the optional keyword argument *default* is specified, it will be returned by
    :meth:`ContextVar.get` when no value for the variable is found
    in the current context.
 

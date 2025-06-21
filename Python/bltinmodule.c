@@ -2073,7 +2073,7 @@ PyDoc_STRVAR(min_doc,
 min(arg1, arg2, *args, *[, key=func]) -> value\n\
 \n\
 With a single iterable argument, return its smallest item. The\n\
-default keyword-only argument specifies an object to return if\n\
+default keyword argument specifies an object to return if\n\
 the provided iterable is empty.\n\
 With two or more positional arguments, return the smallest argument.");
 
@@ -2090,7 +2090,7 @@ PyDoc_STRVAR(max_doc,
 max(arg1, arg2, *args, *[, key=func]) -> value\n\
 \n\
 With a single iterable argument, return its biggest item. The\n\
-default keyword-only argument specifies an object to return if\n\
+default keyword argument specifies an object to return if\n\
 the provided iterable is empty.\n\
 With two or more positional arguments, return the largest argument.");
 

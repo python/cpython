@@ -812,7 +812,7 @@ the following methods and attributes:
    .. note::
 
       A ``0`` value for any parameter will cause the default character to be used for
-      that parameter.  Keyword parameters can *not* be used.  The defaults are listed
+      that parameter.  Keyword arguments can *not* be used.  The defaults are listed
       in this table:
 
    +-----------+---------------------+-----------------------+
