@@ -1858,7 +1858,7 @@ class AbstractRepackTests(RepackHelperMixin):
                 with zipfile.ZipFile(TESTFN) as zh:
                     self.assertIsNone(zh.testzip())
 
-    @mock.patch.object(time, 'time', new=lambda: 315504000)  # fix time for ZipFile.writestr()
+    @mock.patch.object(time, 'time', new=lambda: 315590400)  # fix time for ZipFile.writestr()
     def test_repack_bytes_before_removed_files(self):
         """Should preserve if there are bytes before stale local file entries."""
         for ii in ([1], [1, 2], [2]):
@@ -1902,7 +1902,7 @@ class AbstractRepackTests(RepackHelperMixin):
                 with zipfile.ZipFile(TESTFN) as zh:
                     self.assertIsNone(zh.testzip())
 
-    @mock.patch.object(time, 'time', new=lambda: 315504000)  # fix time for ZipFile.writestr()
+    @mock.patch.object(time, 'time', new=lambda: 315590400)  # fix time for ZipFile.writestr()
     def test_repack_bytes_after_removed_files(self):
         """Should keep extra bytes if there are bytes after stale local file entries."""
         for ii in ([1], [1, 2], [2]):
@@ -1945,7 +1945,7 @@ class AbstractRepackTests(RepackHelperMixin):
                 with zipfile.ZipFile(TESTFN) as zh:
                     self.assertIsNone(zh.testzip())
 
-    @mock.patch.object(time, 'time', new=lambda: 315504000)  # fix time for ZipFile.writestr()
+    @mock.patch.object(time, 'time', new=lambda: 315590400)  # fix time for ZipFile.writestr()
     def test_repack_bytes_between_removed_files(self):
         """Should strip only local file entries before random bytes."""
         # calculate the expected results
@@ -2103,7 +2103,7 @@ class AbstractRepackTests(RepackHelperMixin):
                 with zipfile.ZipFile(TESTFN) as zh:
                     self.assertIsNone(zh.testzip())
 
-    @mock.patch.object(time, 'time', new=lambda: 315504000)  # fix time for ZipFile.writestr()
+    @mock.patch.object(time, 'time', new=lambda: 315590400)  # fix time for ZipFile.writestr()
     def test_repack_removed_bytes_between_files(self):
         """Should not remove bytes between local file entries."""
         for ii in ([0], [1], [2]):
