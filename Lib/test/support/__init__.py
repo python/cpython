@@ -1902,6 +1902,39 @@ def run_in_subinterp(code):
     return _testcapi.run_in_subinterp(code)
 
 
+def run_in_subprocess(*, if_=True):
+    """
+    Run the marked test case in a separated process to avoid some global
+    resource conflict.
+    """
+    def wrapper(case):
+        if not if_:
+            return case
+        if not has_subprocess_support:
+            return case
+
+        env_key = 'TEST_HELPER_IS_IN_SUBPROCESS'
+        if os.environ.get(env_key):
+            return case
+
+        import subprocess
+
+        @functools.wraps(case)
+        def f(self):
+            pattern = f'{case.__module__}.{case.__qualname__}'
+            args = [sys.executable, '-m', 'test', case.__module__, '-m', pattern]
+            envs = os.environ.copy()
+            envs[env_key] = 'yes'
+            p = subprocess.run(args, env=envs, capture_output=True)
+            if p.returncode != 0:
+                print(p.stderr.decode(), file=sys.stderr)
+                self.fail('failed')
+
+        return f
+
+    return wrapper
+
+
 def run_in_subinterp_with_config(code, *, own_gil=None, **config):
     """
     Run code in a subinterpreter. Raise unittest.SkipTest if the tracemalloc
