@@ -3399,7 +3399,7 @@ _Py_FatalErrorFormat(const char *func, const char *format, ...)
     char* msg = malloc(length + 1);
 
     va_start(vargs, format);
-    vsnprintf(text, length + 1, format, vargs);
+    vsnprintf(msg, length + 1, format, vargs);
     va_end(vargs);
 
     fatal_error(fileno(stderr), func, msg, -1);
@@ -3424,7 +3424,7 @@ Py_ExitStatusException(PyStatus status)
         exit(status.exitcode);
     }
     else if (_PyStatus_IS_ERROR(status)) {
-        fatal_error(fileno(stderr), 1, status.func, status.err_msg, 1);
+        fatal_error(fileno(stderr), status.func, status.err_msg, 1);
     }
     else {
         Py_FatalError("Py_ExitStatusException() must not be called on success");
