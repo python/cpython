@@ -1,0 +1,5 @@
+Support negative values (dates before the UNIX epoch of 1970-01-01) in
+:meth:`datetime.date.fromtimestamp` and
+:meth:`datetime.datetime.fromtimestamp` on Windows, by substituting 0
+and using :class:`datetime.timedelta` to go back in time. Patch by
+John Keith Hohm.
