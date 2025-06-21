@@ -1010,8 +1010,9 @@ class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
             with self.subTest(max_line_length=n):
                 self.do_test_no_wrapping_max_line_length(n)
 
-    def do_test_no_wrapping_max_line_length(self, n):
-        pol = policy.default.clone(max_line_length=n)
+    def do_test_no_wrapping_max_line_length(self, falsey):
+        self.assertFalse(falsey)
+        pol = policy.default.clone(max_line_length=falsey)
         subj = "S" * 100
         body = "B" * 100
         msg = EmailMessage(policy=pol)
