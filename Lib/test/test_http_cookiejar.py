@@ -873,6 +873,7 @@ class CookieTests(unittest.TestCase):
         self.assertTrue(is_ip('[2001:db8:85a3::8a2e:370:7334]'))
         self.assertTrue(is_ip('2001:db8:85a3::8a2e:370:7334'))
         self.assertTrue(is_ip('192.168.0.1'))
+
         self.assertFalse(is_ip('256.256.256.256'))
         self.assertFalse(is_ip('[::2001:db8:85a3::]'))
         self.assertFalse(is_ip('acme.com'))
