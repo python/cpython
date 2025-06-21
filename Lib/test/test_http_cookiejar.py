@@ -1198,10 +1198,6 @@ class CookieTests(unittest.TestCase):
         c.extract_cookies(res, req)
         self.assertEqual(len(c), 1)
 
-        c.clear()
-        
-
-
     def test_secure(self):
         for ns in True, False:
             for whitespace in " ", "":
