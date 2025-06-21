@@ -612,7 +612,7 @@ def user_domain_match(A, B):
     B = B.lower()
     if not (liberal_is_HDN(A) and liberal_is_HDN(B)):
         if A == B:
-            # equal IPV4 addresses
+            # equal IP addresses
             return True
         return False
     initial_dot = B.startswith(".")
