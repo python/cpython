@@ -1496,8 +1496,8 @@ locale_alias = {
 # This maps Windows language identifiers to locale strings.
 #
 # This list has been updated from
-# http://msdn.microsoft.com/library/default.asp?url=/library/en-us/intl/nls_238z.asp
-# to include every locale up to Windows Vista.
+# https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-lcid/70feba9f-294e-491e-b6eb-56532684c37f
+# to include every locale up to protocol revision 16.0 (4/23/2024).
 #
 # NOTE: this mapping is incomplete.  If your language is missing, please
 # submit a bug report as detailed in the Python devguide at:
@@ -1507,10 +1507,15 @@ locale_alias = {
 #
 
 windows_locale = {
-    0x0436: "af_ZA", # Afrikaans
-    0x041c: "sq_AL", # Albanian
-    0x0484: "gsw_FR",# Alsatian - France
+    0x0036: "af", # Afrikaans
+    0x0436: "af_ZA", # Afrikaans - South Africa
+    0x001c: "sq", # Albanian
+    0x041c: "sq_AL", # Albanian - Albania
+    0x0084: "gsw", # Alsatian
+    0x0484: "gsw_FR", # Alsatian - France
+    0x005e: "am", # Amharic
     0x045e: "am_ET", # Amharic - Ethiopia
+    0x0001: "ar", # Arabic
     0x0401: "ar_SA", # Arabic - Saudi Arabia
     0x0801: "ar_IQ", # Arabic - Iraq
     0x0c01: "ar_EG", # Arabic - Egypt
@@ -1524,39 +1529,72 @@ windows_locale = {
     0x2c01: "ar_JO", # Arabic - Jordan
     0x3001: "ar_LB", # Arabic - Lebanon
     0x3401: "ar_KW", # Arabic - Kuwait
-    0x3801: "ar_AE", # Arabic - United Arab Emirates
+    0x3801: "ar_AE", # Arabic - U.A.E.
     0x3c01: "ar_BH", # Arabic - Bahrain
     0x4001: "ar_QA", # Arabic - Qatar
-    0x042b: "hy_AM", # Armenian
+    0x002b: "hy", # Armenian
+    0x042b: "hy_AM", # Armenian - Armenia
+    0x004d: "as", # Assamese
     0x044d: "as_IN", # Assamese - India
-    0x042c: "az_AZ", # Azeri - Latin
-    0x082c: "az_AZ", # Azeri - Cyrillic
-    0x046d: "ba_RU", # Bashkir
-    0x042d: "eu_ES", # Basque - Russia
-    0x0423: "be_BY", # Belarusian
-    0x0445: "bn_IN", # Begali
-    0x201a: "bs_BA", # Bosnian - Cyrillic
-    0x141a: "bs_BA", # Bosnian - Latin
+    0x002c: "az", # Azerbaijani (Latin)
+    0x742c: "az", # Azerbaijani (Cyrillic)
+    0x782c: "az", # Azerbaijani (Latin)
+    0x042c: "az_AZ", # Azerbaijani (Latin) - Azerbaijan
+    0x0045: "bn", # Bangla
+    0x0445: "bn_IN", # Bangla - India
+    0x0845: "bn_BD", # Bangla - Bangladesh
+    0x006d: "ba", # Bashkir
+    0x046d: "ba_RU", # Bashkir - Russia
+    0x002d: "eu", # Basque
+    0x042d: "eu_ES", # Basque - Spain
+    0x0023: "be", # Belarusian
+    0x0423: "be_BY", # Belarusian - Belarus
+    0x641a: "bs", # Bosnian (Cyrillic)
+    0x681a: "bs", # Bosnian (Latin)
+    0x141a: "bs_BA", # Bosnian (Latin) - Bosnia and Herzegovina
+    0x201a: "bs_BA", # Bosnian (Cyrillic) - Bosnia and Herzegovina
+    0x781a: "bs", # Bosnian (Latin)
+    0x007e: "br", # Breton
     0x047e: "br_FR", # Breton - France
-    0x0402: "bg_BG", # Bulgarian
-#    0x0455: "my_MM", # Burmese - Not supported
-    0x0403: "ca_ES", # Catalan
-    0x0004: "zh_CHS",# Chinese - Simplified
-    0x0404: "zh_TW", # Chinese - Taiwan
-    0x0804: "zh_CN", # Chinese - PRC
-    0x0c04: "zh_HK", # Chinese - Hong Kong S.A.R.
-    0x1004: "zh_SG", # Chinese - Singapore
-    0x1404: "zh_MO", # Chinese - Macao S.A.R.
-    0x7c04: "zh_CHT",# Chinese - Traditional
+    0x0002: "bg", # Bulgarian
+    0x0402: "bg_BG", # Bulgarian - Bulgaria
+    0x0055: "my", # Burmese
+    0x0455: "my_MM", # Burmese - Myanmar
+    0x0003: "ca", # Catalan
+    0x0403: "ca_ES", # Catalan - Spain
+    0x0803: "ca_ES", # Valencian - Spain
+    0x0092: "ku", # Central Kurdish
+    0x7c92: "ku", # Central Kurdish
+    0x0492: "ku_IQ", # Central Kurdish - Iraq
+    0x005c: "chr", # Cherokee
+    0x7c5c: "chr", # Cherokee
+    0x045c: "chr_US", # Cherokee - United States
+    0x0004: "zh", # Chinese (Simplified)
+    0x7804: "zh", # Chinese (Simplified)
+    0x7c04: "zh", # Chinese (Traditional)
+    0x0404: "zh_TW", # Chinese (Traditional) - Taiwan
+    0x0804: "zh_CN", # Chinese (Simplified) - People's Republic of China
+    0x0c04: "zh_HK", # Chinese (Traditional) - Hong Kong S.A.R.
+    0x1004: "zh_SG", # Chinese (Simplified) - Singapore
+    0x1404: "zh_MO", # Chinese (Traditional) - Macao S.A.R.
+    0x0083: "co", # Corsican
     0x0483: "co_FR", # Corsican - France
-    0x041a: "hr_HR", # Croatian
-    0x101a: "hr_BA", # Croatian - Bosnia
-    0x0405: "cs_CZ", # Czech
-    0x0406: "da_DK", # Danish
-    0x048c: "gbz_AF",# Dari - Afghanistan
-    0x0465: "div_MV",# Divehi - Maldives
-    0x0413: "nl_NL", # Dutch - The Netherlands
+    0x001a: "hr", # Croatian
+    0x041a: "hr_HR", # Croatian - Croatia
+    0x101a: "hr_BA", # Croatian (Latin) - Bosnia and Herzegovina
+    0x0005: "cs", # Czech
+    0x0405: "cs_CZ", # Czech - Czech Republic
+    0x0006: "da", # Danish
+    0x0406: "da_DK", # Danish - Denmark
+    0x008c: "prs", # Dari
+    0x048c: "prs_AF", # Dari - Afghanistan
+    0x0065: "dv", # Divehi
+    0x0465: "dv_MV", # Divehi - Maldives
+    0x0013: "nl", # Dutch
+    0x0413: "nl_NL", # Dutch - Netherlands
     0x0813: "nl_BE", # Dutch - Belgium
+    0x0c51: "dz_BT", # Dzongkha - Bhutan
+    0x0009: "en", # English
     0x0409: "en_US", # English - United States
     0x0809: "en_GB", # English - United Kingdom
     0x0c09: "en_AU", # English - Australia
@@ -1564,122 +1602,248 @@ windows_locale = {
     0x1409: "en_NZ", # English - New Zealand
     0x1809: "en_IE", # English - Ireland
     0x1c09: "en_ZA", # English - South Africa
-    0x2009: "en_JA", # English - Jamaica
-    0x2409: "en_CB", # English - Caribbean
+    0x2009: "en_JM", # English - Jamaica
     0x2809: "en_BZ", # English - Belize
-    0x2c09: "en_TT", # English - Trinidad
+    0x2c09: "en_TT", # English - Trinidad and Tobago
     0x3009: "en_ZW", # English - Zimbabwe
-    0x3409: "en_PH", # English - Philippines
+    0x3409: "en_PH", # English - Republic of the Philippines
+    0x3c09: "en_HK", # English - Hong Kong
     0x4009: "en_IN", # English - India
     0x4409: "en_MY", # English - Malaysia
-    0x4809: "en_IN", # English - Singapore
-    0x0425: "et_EE", # Estonian
-    0x0438: "fo_FO", # Faroese
-    0x0464: "fil_PH",# Filipino
-    0x040b: "fi_FI", # Finnish
+    0x4809: "en_SG", # English - Singapore
+    0x4c09: "en_AE", # English - United Arab Emirates
+    0x0025: "et", # Estonian
+    0x0425: "et_EE", # Estonian - Estonia
+    0x0038: "fo", # Faroese
+    0x0438: "fo_FO", # Faroese - Faroe Islands
+    0x0064: "fil", # Filipino
+    0x0464: "fil_PH", # Filipino - Philippines
+    0x000b: "fi", # Finnish
+    0x040b: "fi_FI", # Finnish - Finland
+    0x000c: "fr", # French
     0x040c: "fr_FR", # French - France
     0x080c: "fr_BE", # French - Belgium
     0x0c0c: "fr_CA", # French - Canada
     0x100c: "fr_CH", # French - Switzerland
     0x140c: "fr_LU", # French - Luxembourg
-    0x180c: "fr_MC", # French - Monaco
+    0x180c: "fr_MC", # French - Principality of Monaco
+    0x1c0c: "fr_029", # French - Caribbean
+    0x200c: "fr_RE", # French - Reunion
+    0x240c: "fr_CD", # French - Congo, DRC
+    0x280c: "fr_SN", # French - Senegal
+    0x2c0c: "fr_CM", # French - Cameroon
+    0x300c: "fr_CI", # French - Côte d'Ivoire
+    0x340c: "fr_ML", # French - Mali
+    0x380c: "fr_MA", # French - Morocco
+    0x3c0c: "fr_HT", # French - Haiti
+    0x0062: "fy", # Frisian
     0x0462: "fy_NL", # Frisian - Netherlands
-    0x0456: "gl_ES", # Galician
-    0x0437: "ka_GE", # Georgian
+    0x0067: "ff", # Fulah
+    0x7c67: "ff", # Fulah (Latin)
+    0x0467: "ff_NG",
+    0x0867: "ff_SN", # Fulah - Senegal
+    0x0056: "gl", # Galician
+    0x0456: "gl_ES", # Galician - Spain
+    0x0037: "ka", # Georgian
+    0x0437: "ka_GE", # Georgian - Georgia
+    0x0007: "de", # German
     0x0407: "de_DE", # German - Germany
     0x0807: "de_CH", # German - Switzerland
     0x0c07: "de_AT", # German - Austria
     0x1007: "de_LU", # German - Luxembourg
     0x1407: "de_LI", # German - Liechtenstein
-    0x0408: "el_GR", # Greek
+    0x0008: "el", # Greek
+    0x0408: "el_GR", # Greek - Greece
+    0x006f: "kl", # Greenlandic
     0x046f: "kl_GL", # Greenlandic - Greenland
-    0x0447: "gu_IN", # Gujarati
-    0x0468: "ha_NG", # Hausa - Latin
-    0x040d: "he_IL", # Hebrew
-    0x0439: "hi_IN", # Hindi
-    0x040e: "hu_HU", # Hungarian
-    0x040f: "is_IS", # Icelandic
-    0x0421: "id_ID", # Indonesian
-    0x045d: "iu_CA", # Inuktitut - Syllabics
-    0x085d: "iu_CA", # Inuktitut - Latin
+    0x0074: "gn", # Guarani
+    0x0474: "gn_PY", # Guarani - Paraguay
+    0x0047: "gu", # Gujarati
+    0x0447: "gu_IN", # Gujarati - India
+    0x0068: "ha", # Hausa (Latin)
+    0x7c68: "ha", # Hausa (Latin)
+    0x0468: "ha_NG", # Hausa (Latin) - Nigeria
+    0x0075: "haw", # Hawaiian
+    0x0475: "haw_US", # Hawaiian - United States
+    0x000d: "he", # Hebrew
+    0x040d: "he_IL", # Hebrew - Israel
+    0x0039: "hi", # Hindi
+    0x0439: "hi_IN", # Hindi - India
+    0x000e: "hu", # Hungarian
+    0x040e: "hu_HU", # Hungarian - Hungary
+    0x000f: "is", # Icelandic
+    0x040f: "is_IS", # Icelandic - Iceland
+    0x0070: "ig", # Igbo
+    0x0470: "ig_NG", # Igbo - Nigeria
+    0x0021: "id", # Indonesian
+    0x0421: "id_ID", # Indonesian - Indonesia
+    0x005d: "iu", # Inuktitut (Latin)
+    0x785d: "iu", # Inuktitut (Syllabics)
+    0x7c5d: "iu", # Inuktitut (Latin)
+    0x045d: "iu_CA", # Inuktitut (Syllabics) - Canada
+    0x085d: "iu_CA", # Inuktitut (Latin) - Canada
+    0x003c: "ga", # Irish
     0x083c: "ga_IE", # Irish - Ireland
+    0x0010: "it", # Italian
     0x0410: "it_IT", # Italian - Italy
     0x0810: "it_CH", # Italian - Switzerland
-    0x0411: "ja_JP", # Japanese
+    0x0011: "ja", # Japanese
+    0x0411: "ja_JP", # Japanese - Japan
+    0x004b: "kn", # Kannada
     0x044b: "kn_IN", # Kannada - India
-    0x043f: "kk_KZ", # Kazakh
-    0x0453: "kh_KH", # Khmer - Cambodia
-    0x0486: "qut_GT",# K'iche - Guatemala
+    0x0471: "kr_NG", # Kanuri (Latin) - Nigeria
+    0x0060: "ks", # Kashmiri
+    0x0460: "ks", # Kashmiri - Perso_Arabic
+    0x0860: "ks_IN", # Kashmiri (Devanagari) - India
+    0x003f: "kk", # Kazakh
+    0x043f: "kk_KZ", # Kazakh - Kazakhstan
+    0x0053: "km", # Khmer
+    0x0453: "km_KH", # Khmer - Cambodia
+    0x0087: "rw", # Kinyarwanda
     0x0487: "rw_RW", # Kinyarwanda - Rwanda
-    0x0457: "kok_IN",# Konkani
-    0x0412: "ko_KR", # Korean
-    0x0440: "ky_KG", # Kyrgyz
-    0x0454: "lo_LA", # Lao - Lao PDR
-    0x0426: "lv_LV", # Latvian
-    0x0427: "lt_LT", # Lithuanian
-    0x082e: "dsb_DE",# Lower Sorbian - Germany
-    0x046e: "lb_LU", # Luxembourgish
-    0x042f: "mk_MK", # FYROM Macedonian
+    0x0041: "sw", # Kiswahili
+    0x0441: "sw_KE", # Kiswahili - Kenya
+    0x0057: "kok", # Konkani
+    0x0457: "kok_IN", # Konkani - India
+    0x0012: "ko", # Korean
+    0x0412: "ko_KR", # Korean - Korea
+    0x0040: "ky", # Kyrgyz
+    0x0440: "ky_KG", # Kyrgyz - Kyrgyzstan
+    0x0054: "lo", # Lao
+    0x0454: "lo_LA", # Lao - Lao P.D.R.
+    0x0476: "la_VA", # Latin - Vatican City
+    0x0026: "lv", # Latvian
+    0x0426: "lv_LV", # Latvian - Latvia
+    0x0027: "lt", # Lithuanian
+    0x0427: "lt_LT", # Lithuanian - Lithuania
+    0x7c2e: "dsb", # Lower Sorbian
+    0x082e: "dsb_DE", # Lower Sorbian - Germany
+    0x006e: "lb", # Luxembourgish
+    0x046e: "lb_LU", # Luxembourgish - Luxembourg
+    0x002f: "mk", # Macedonian
+    0x042f: "mk_MK", # Macedonian - North Macedonia
+    0x003e: "ms", # Malay
     0x043e: "ms_MY", # Malay - Malaysia
     0x083e: "ms_BN", # Malay - Brunei Darussalam
+    0x004c: "ml", # Malayalam
     0x044c: "ml_IN", # Malayalam - India
-    0x043a: "mt_MT", # Maltese
-    0x0481: "mi_NZ", # Maori
-    0x047a: "arn_CL",# Mapudungun
-    0x044e: "mr_IN", # Marathi
-    0x047c: "moh_CA",# Mohawk - Canada
-    0x0450: "mn_MN", # Mongolian - Cyrillic
-    0x0850: "mn_CN", # Mongolian - PRC
-    0x0461: "ne_NP", # Nepali
-    0x0414: "nb_NO", # Norwegian - Bokmal
-    0x0814: "nn_NO", # Norwegian - Nynorsk
+    0x003a: "mt", # Maltese
+    0x043a: "mt_MT", # Maltese - Malta
+    0x0081: "mi", # Maori
+    0x0481: "mi_NZ", # Maori - New Zealand
+    0x007a: "arn", # Mapudungun
+    0x047a: "arn_CL", # Mapudungun - Chile
+    0x004e: "mr", # Marathi
+    0x044e: "mr_IN", # Marathi - India
+    0x007c: "moh", # Mohawk
+    0x047c: "moh_CA", # Mohawk - Canada
+    0x0050: "mn", # Mongolian (Cyrillic)
+    0x7850: "mn", # Mongolian (Cyrillic)
+    0x7c50: "mn", # Mongolian (Traditional Mongolian)
+    0x0450: "mn_MN", # Mongolian (Cyrillic) - Mongolia
+    0x0c50: "mn_MN", # Mongolian (Traditional Mongolian) - Mongolia
+    0x0061: "ne", # Nepali
+    0x0461: "ne_NP", # Nepali - Nepal
+    0x0861: "ne_IN", # Nepali - India
+    0x0014: "no", # Norwegian (Bokmal)
+    0x0414: "nb_NO", # Norwegian (Bokmal) - Norway
+    0x0814: "nn_NO", # Norwegian (Nynorsk) - Norway
+    0x7814: "nn", # Norwegian (Nynorsk)
+    0x7c14: "nb", # Norwegian (Bokmal)
+    0x0082: "oc", # Occitan
     0x0482: "oc_FR", # Occitan - France
-    0x0448: "or_IN", # Oriya - India
+    0x0048: "or", # Odia
+    0x0448: "or_IN", # Odia - India
+    0x0072: "om", # Oromo
+    0x0472: "om_ET", # Oromo - Ethiopia
+    0x0063: "ps", # Pashto
     0x0463: "ps_AF", # Pashto - Afghanistan
-    0x0429: "fa_IR", # Persian
-    0x0415: "pl_PL", # Polish
+    0x0029: "fa", # Persian
+    0x0429: "fa_IR", # Persian - Iran
+    0x0015: "pl", # Polish
+    0x0415: "pl_PL", # Polish - Poland
+    0x0016: "pt", # Portuguese
     0x0416: "pt_BR", # Portuguese - Brazil
     0x0816: "pt_PT", # Portuguese - Portugal
-    0x0446: "pa_IN", # Punjabi
-    0x046b: "quz_BO",# Quechua (Bolivia)
-    0x086b: "quz_EC",# Quechua (Ecuador)
-    0x0c6b: "quz_PE",# Quechua (Peru)
+    0x0046: "pa", # Punjabi
+    0x7c46: "pa", # Punjabi
+    0x0446: "pa_IN", # Punjabi - India
+    0x0846: "pa_PK", # Punjabi - Islamic Republic of Pakistan
+    0x006b: "quz", # Quechua
+    0x046b: "quz_BO", # Quechua - Bolivia
+    0x086b: "quz_EC", # Quechua - Ecuador
+    0x0c6b: "quz_PE", # Quechua - Peru
+    0x0018: "ro", # Romanian
     0x0418: "ro_RO", # Romanian - Romania
-    0x0417: "rm_CH", # Romansh
-    0x0419: "ru_RU", # Russian
-    0x243b: "smn_FI",# Sami Finland
-    0x103b: "smj_NO",# Sami Norway
-    0x143b: "smj_SE",# Sami Sweden
-    0x043b: "se_NO", # Sami Northern Norway
-    0x083b: "se_SE", # Sami Northern Sweden
-    0x0c3b: "se_FI", # Sami Northern Finland
-    0x203b: "sms_FI",# Sami Skolt
-    0x183b: "sma_NO",# Sami Southern Norway
-    0x1c3b: "sma_SE",# Sami Southern Sweden
-    0x044f: "sa_IN", # Sanskrit
-    0x0c1a: "sr_SP", # Serbian - Cyrillic
-    0x1c1a: "sr_BA", # Serbian - Bosnia Cyrillic
-    0x081a: "sr_SP", # Serbian - Latin
-    0x181a: "sr_BA", # Serbian - Bosnia Latin
+    0x0818: "ro_MD", # Romanian - Moldova
+    0x0017: "rm", # Romansh
+    0x0417: "rm_CH", # Romansh - Switzerland
+    0x0019: "ru", # Russian
+    0x0419: "ru_RU", # Russian - Russia
+    0x0819: "ru_MD", # Russian - Moldova
+    0x0085: "sah", # Sakha
+    0x0485: "sah_RU", # Sakha - Russia
+    0x003b: "se", # Sami (Northern)
+    0x043b: "se_NO", # Sami (Northern) - Norway
+    0x083b: "se_SE", # Sami (Northern) - Sweden
+    0x0c3b: "se_FI", # Sami (Northern) - Finland
+    0x7c3b: "smj", # Sami (Lule)
+    0x103b: "smj_NO", # Sami (Lule) - Norway
+    0x143b: "smj_SE", # Sami (Lule) - Sweden
+    0x783b: "sma", # Sami (Southern)
+    0x183b: "sma_NO", # Sami (Southern) - Norway
+    0x1c3b: "sma_SE", # Sami (Southern) - Sweden
+    0x743b: "sms", # Sami (Skolt)
+    0x203b: "sms_FI", # Sami (Skolt) - Finland
+    0x703b: "smn", # Sami (Inari)
+    0x243b: "smn_FI", # Sami (Inari) - Finland
+    0x004f: "sa", # Sanskrit
+    0x044f: "sa_IN", # Sanskrit - India
+    0x0091: "gd", # Scottish Gaelic
+    0x0491: "gd_GB", # Scottish Gaelic - United Kingdom
+    0x6c1a: "sr", # Serbian (Cyrillic)
+    0x701a: "sr", # Serbian (Latin)
+    0x7c1a: "sr", # Serbian (Latin)
+    0x081a: "sr_CS", # Serbian (Latin) - Serbia and Montenegro (Former)
+    0x0c1a: "sr_CS", # Serbian (Cyrillic) - Serbia and Montenegro (Former)
+    0x181a: "sr_BA", # Serbian (Latin) - Bosnia and Herzegovina
+    0x1c1a: "sr_BA", # Serbian (Cyrillic) - Bosnia and Herzegovina
+    0x241a: "sr_RS", # Serbian (Latin) - Serbia
+    0x281a: "sr_RS", # Serbian (Cyrillic) - Serbia
+    0x2c1a: "sr_ME", # Serbian (Latin) - Montenegro
+    0x301a: "sr_ME", # Serbian (Cyrillic) - Montenegro
+    0x006c: "nso", # Sesotho sa Leboa
+    0x046c: "nso_ZA", # Sesotho sa Leboa - South Africa
+    0x0032: "tn", # Setswana
+    0x0432: "tn_ZA", # Setswana - South Africa
+    0x0832: "tn_BW", # Setswana - Botswana
+    0x0059: "sd", # Sindhi
+    0x7c59: "sd", # Sindhi
+    0x0859: "sd_PK", # Sindhi - Islamic Republic of Pakistan
+    0x005b: "si", # Sinhala
     0x045b: "si_LK", # Sinhala - Sri Lanka
-    0x046c: "ns_ZA", # Northern Sotho
-    0x0432: "tn_ZA", # Setswana - Southern Africa
-    0x041b: "sk_SK", # Slovak
-    0x0424: "sl_SI", # Slovenian
+    0x001b: "sk", # Slovak
+    0x041b: "sk_SK", # Slovak - Slovakia
+    0x0024: "sl", # Slovenian
+    0x0424: "sl_SI", # Slovenian - Slovenia
+    0x0477: "so_SO", # Somali - Somalia
+    0x0030: "st", # Sotho
+    0x0430: "st_ZA", # Sotho - South Africa
+    0x000a: "es", # Spanish
     0x040a: "es_ES", # Spanish - Spain
     0x080a: "es_MX", # Spanish - Mexico
-    0x0c0a: "es_ES", # Spanish - Spain (Modern)
+    0x0c0a: "es_ES", # Spanish - Spain
     0x100a: "es_GT", # Spanish - Guatemala
     0x140a: "es_CR", # Spanish - Costa Rica
     0x180a: "es_PA", # Spanish - Panama
     0x1c0a: "es_DO", # Spanish - Dominican Republic
-    0x200a: "es_VE", # Spanish - Venezuela
+    0x200a: "es_VE", # Spanish - Bolivarian Republic of Venezuela
     0x240a: "es_CO", # Spanish - Colombia
     0x280a: "es_PE", # Spanish - Peru
     0x2c0a: "es_AR", # Spanish - Argentina
     0x300a: "es_EC", # Spanish - Ecuador
     0x340a: "es_CL", # Spanish - Chile
-    0x380a: "es_UR", # Spanish - Uruguay
+    0x380a: "es_UY", # Spanish - Uruguay
     0x3c0a: "es_PY", # Spanish - Paraguay
     0x400a: "es_BO", # Spanish - Bolivia
     0x440a: "es_SV", # Spanish - El Salvador
@@ -1687,36 +1851,87 @@ windows_locale = {
     0x4c0a: "es_NI", # Spanish - Nicaragua
     0x500a: "es_PR", # Spanish - Puerto Rico
     0x540a: "es_US", # Spanish - United States
-#    0x0430: "", # Sutu - Not supported
-    0x0441: "sw_KE", # Swahili
+    0x5c0a: "es_CU", # Spanish - Cuba
+    0x001d: "sv", # Swedish
     0x041d: "sv_SE", # Swedish - Sweden
     0x081d: "sv_FI", # Swedish - Finland
-    0x045a: "syr_SY",# Syriac
-    0x0428: "tg_TJ", # Tajik - Cyrillic
-    0x085f: "tmz_DZ",# Tamazight - Latin
-    0x0449: "ta_IN", # Tamil
-    0x0444: "tt_RU", # Tatar
-    0x044a: "te_IN", # Telugu
-    0x041e: "th_TH", # Thai
-    0x0851: "bo_BT", # Tibetan - Bhutan
-    0x0451: "bo_CN", # Tibetan - PRC
-    0x041f: "tr_TR", # Turkish
-    0x0442: "tk_TM", # Turkmen - Cyrillic
-    0x0480: "ug_CN", # Uighur - Arabic
-    0x0422: "uk_UA", # Ukrainian
-    0x042e: "wen_DE",# Upper Sorbian - Germany
-    0x0420: "ur_PK", # Urdu
+    0x005a: "syr", # Syriac
+    0x045a: "syr_SY", # Syriac - Syria
+    0x0028: "tg", # Tajik (Cyrillic)
+    0x7c28: "tg", # Tajik (Cyrillic)
+    0x0428: "tg_TJ", # Tajik (Cyrillic) - Tajikistan
+    0x005f: "tzm", # Tamazight (Latin)
+    0x785f: "tzm",
+    0x7c5f: "tzm", # Tamazight (Latin)
+    0x085f: "tzm_DZ", # Tamazight (Latin) - Algeria
+    0x045f: "tzm_MA", # Central Atlas Tamazight (Arabic) - Morocco
+    0x105f: "tzm_MA",
+    0x0049: "ta", # Tamil
+    0x0449: "ta_IN", # Tamil - India
+    0x0849: "ta_LK", # Tamil - Sri Lanka
+    0x0044: "tt", # Tatar
+    0x0444: "tt_RU", # Tatar - Russia
+    0x004a: "te", # Telugu
+    0x044a: "te_IN", # Telugu - India
+    0x001e: "th", # Thai
+    0x041e: "th_TH", # Thai - Thailand
+    0x0051: "bo", # Tibetan
+    0x0451: "bo_CN", # Tibetan - People's Republic of China
+    0x0073: "ti", # Tigrinya
+    0x0473: "ti_ET", # Tigrinya - Ethiopia
+    0x0873: "ti_ER", # Tigrinya - Eritrea
+    0x0031: "ts", # Tsonga
+    0x0431: "ts_ZA", # Tsonga - South Africa
+    0x001f: "tr", # Turkish
+    0x041f: "tr_TR", # Turkish - Turkey
+    0x0042: "tk", # Turkmen
+    0x0442: "tk_TM", # Turkmen - Turkmenistan
+    0x0022: "uk", # Ukrainian
+    0x0422: "uk_UA", # Ukrainian - Ukraine
+    0x002e: "hsb", # Upper Sorbian
+    0x042e: "hsb_DE", # Upper Sorbian - Germany
+    0x0020: "ur", # Urdu
+    0x0420: "ur_PK", # Urdu - Islamic Republic of Pakistan
     0x0820: "ur_IN", # Urdu - India
-    0x0443: "uz_UZ", # Uzbek - Latin
-    0x0843: "uz_UZ", # Uzbek - Cyrillic
-    0x042a: "vi_VN", # Vietnamese
-    0x0452: "cy_GB", # Welsh
+    0x0080: "ug", # Uyghur
+    0x0480: "ug_CN", # Uyghur - People's Republic of China
+    0x0043: "uz", # Uzbek (Latin)
+    0x7843: "uz", # Uzbek (Cyrillic)
+    0x7c43: "uz", # Uzbek (Latin)
+    0x0443: "uz_UZ", # Uzbek (Latin) - Uzbekistan
+    0x0033: "ve", # Venda
+    0x0433: "ve_ZA", # Venda - South Africa
+    0x002a: "vi", # Vietnamese
+    0x042a: "vi_VN", # Vietnamese - Vietnam
+    0x0052: "cy", # Welsh
+    0x0452: "cy_GB", # Welsh - United Kingdom
+    0x0088: "wo", # Wolof
     0x0488: "wo_SN", # Wolof - Senegal
+    0x0034: "xh", # Xhosa
     0x0434: "xh_ZA", # Xhosa - South Africa
-    0x0485: "sah_RU",# Yakut - Cyrillic
-    0x0478: "ii_CN", # Yi - PRC
+    0x0078: "ii", # Yi
+    0x0478: "ii_CN", # Yi - People's Republic of China
+    0x043d: "yi_001", # Yiddish - World
+    0x006a: "yo", # Yoruba
     0x046a: "yo_NG", # Yoruba - Nigeria
-    0x0435: "zu_ZA", # Zulu
+    0x0035: "zu", # Zulu
+    0x0435: "zu_ZA", # Zulu - South Africa
+    0x0086: "qut",
+
+#    0x0001007f: "x-IV-mathan", # math alphanumeric sorting
+    0x00010407: "de_DE",
+    0x0001040e: "hu_HU",
+    0x00010437: "ka_GE",
+    0x00020804: "zh_CN",
+    0x00021004: "zh_SG",
+    0x00021404: "zh_MO",
+    0x00030404: "zh_TW",
+    0x00040404: "zh_TW",
+    0x00040411: "ja_JP",
+    0x00040c04: "zh_HK",
+    0x00041404: "zh_MO",
+    0x00050804: "zh_CN",
+    0x00051004: "zh_SG",
 }
 
 def _print_locale():
