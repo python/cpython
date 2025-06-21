@@ -2362,7 +2362,7 @@ test_interp_refcount(PyObject *self, PyObject *unused)
 
     for (int i = 0; i < NUM_REFS; ++i) {
         PyInterpreterRef_Close(refs[i]);
-        assert(_PyInterpreterState_Refcount(interp) == (NUM_REFS - i));
+        assert(_PyInterpreterState_Refcount(interp) == (NUM_REFS - i - 1));
     }
 
     Py_RETURN_NONE;
@@ -2390,7 +2390,7 @@ test_interp_weakref_incref(PyObject *self, PyObject *unused)
 
     for (int i = 0; i < NUM_REFS; ++i) {
         PyInterpreterRef_Close(refs[i]);
-        assert(_PyInterpreterState_Refcount(interp) == (NUM_REFS - i));
+        assert(_PyInterpreterState_Refcount(interp) == (NUM_REFS - i - 1));
     }
 
     PyInterpreterWeakRef_Close(wref);
