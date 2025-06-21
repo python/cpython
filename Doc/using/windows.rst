@@ -1006,6 +1006,9 @@ UTF-8 mode
 ==========
 
 .. versionadded:: 3.7
+.. versionchanged:: next
+
+   Python UTF-8 mode is now enabled by default (:pep:`686`).
 
 Windows still uses legacy encodings for the system encoding (the ANSI Code
 Page).  Python uses it for the default encoding of text files (e.g.
@@ -1014,20 +1017,22 @@ Page).  Python uses it for the default encoding of text files (e.g.
 This may cause issues because UTF-8 is widely used on the internet
 and most Unix systems, including WSL (Windows Subsystem for Linux).
 
-You can use the :ref:`Python UTF-8 Mode <utf8-mode>` to change the default text
-encoding to UTF-8. You can enable the :ref:`Python UTF-8 Mode <utf8-mode>` via
-the ``-X utf8`` command line option, or the ``PYTHONUTF8=1`` environment
-variable.  See :envvar:`PYTHONUTF8` for enabling UTF-8 mode, and
-:ref:`setting-envvars` for how to modify environment variables.
-
-When the :ref:`Python UTF-8 Mode <utf8-mode>` is enabled, you can still use the
+The :ref:`Python UTF-8 Mode <utf8-mode>`, enabled by default, can help by
+changing the default text encoding to UTF-8.
+When the :ref:`UTF-8 mode <utf8-mode>` is enabled, you can still use the
 system encoding (the ANSI Code Page) via the "mbcs" codec.
 
-Note that adding ``PYTHONUTF8=1`` to the default environment variables
-will affect all Python 3.7+ applications on your system.
-If you have any Python 3.7+ applications which rely on the legacy
-system encoding, it is recommended to set the environment variable
-temporarily or use the ``-X utf8`` command line option.
+You can disable the :ref:`Python UTF-8 Mode <utf8-mode>` via
+the ``-X utf8=0`` command line option, or the ``PYTHONUTF8=0`` environment
+variable.  See :envvar:`PYTHONUTF8` for disabling UTF-8 mode, and
+:ref:`setting-envvars` for how to modify environment variables.
+
+.. hint::
+   Adding ``PYTHONUTF8={0,1}`` to the default environment variables
+   will affect all Python 3.7+ applications on your system.
+   If you have any Python 3.7+ applications which rely on the legacy
+   system encoding, it is recommended to set the environment variable
+   temporarily or use the ``-X utf8`` command line option.
 
 .. note::
    Even when UTF-8 mode is disabled, Python uses UTF-8 by default
