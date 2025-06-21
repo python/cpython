@@ -1217,6 +1217,7 @@ dummy_func(
             DEAD(retval);
             SAVE_STACK();
             assert(STACK_LEVEL() == 0);
+            DTRACE_FUNCTION_EXIT();
             _Py_LeaveRecursiveCallPy(tstate);
             // GH-99729: We need to unlink the frame *before* clearing it:
             _PyInterpreterFrame *dying = frame;
@@ -1393,6 +1394,7 @@ dummy_func(
             _PyStackRef temp = retval;
             DEAD(retval);
             SAVE_STACK();
+            DTRACE_FUNCTION_EXIT();
             tstate->exc_info = gen->gi_exc_state.previous_item;
             gen->gi_exc_state.previous_item = NULL;
             _Py_LeaveRecursiveCallPy(tstate);
