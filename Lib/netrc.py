@@ -45,7 +45,10 @@ class _netrclex:
                     if ch == '"':
                         return token
                     elif ch == "\\":
+                        backslash = ch
                         ch = self._read_char()
+                        if ch != '"':
+                            token += backslash
                     token += ch
             else:
                 if ch == "\\":
@@ -54,8 +57,6 @@ class _netrclex:
                 for ch in fiter:
                     if ch in self.whitespace:
                         return token
-                    elif ch == "\\":
-                        ch = self._read_char()
                     token += ch
         return token
 
