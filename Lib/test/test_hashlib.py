@@ -1060,11 +1060,24 @@ class HashLibTestCase(unittest.TestCase):
 
     @threading_helper.reap_threads
     @threading_helper.requires_working_threading()
-    def test_threaded_hashing(self):
+    def test_threaded_hashing_fast(self):
+        # Same as test_threaded_hashing_slow() but only tests "fast" functions
+        # since otherwise test_hashlib.py becomes too slow during development.
+        for name in ['md5', 'sha1', 'sha256', 'sha3_256', 'blake2s']:
+            if constructor := getattr(hashlib, name, None):
+                with self.subTest(name):
+                    self.do_test_threaded_hashing(constructor, is_shake=False)
+        if shake_128 := getattr(hashlib, 'shake_128', None):
+            self.do_test_threaded_hashing(shake_128, is_shake=True)
+
+    @requires_resource('cpu')
+    @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
+    def test_threaded_hashing_slow(self):
         for algorithm, constructors in self.constructors_to_test.items():
             is_shake = algorithm in self.shakes
             for constructor in constructors:
-                with self.subTest(constructor=constructor, is_shake=is_shake):
+                with self.subTest(constructor.__name__, is_shake=is_shake):
                     self.do_test_threaded_hashing(constructor, is_shake)
 
     def do_test_threaded_hashing(self, constructor, is_shake):
@@ -1074,8 +1087,12 @@ class HashLibTestCase(unittest.TestCase):
         # If the internal locks are working to prevent multiple
         # updates on the same object from running at once, the resulting
         # hash will be the same as doing it single threaded upfront.
+        #
+        # Be careful when choosing num_threads, len(smallest_data)
+        # and len(data) // len(smallest_data) as the obtained chunk
+        # size needs to satisfy some conditions below.
         num_threads = 5
-        smallest_data = os.urandom(16)
+        smallest_data = os.urandom(8)
         data = smallest_data * 200000
 
         h1 = constructor()
