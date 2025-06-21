@@ -16,6 +16,48 @@
 /* For _Py_log1p with workarounds for buggy handling of zeros. */
 #include "_math.h"
 
+/* A little helper to set 'value' attribute on exceptions.
+   Warning: steal a reference to value. */
+
+static void
+set_cmath_error(PyObject *value)
+{
+    if (errno == EDOM || errno == ERANGE) {
+        PyObject *exc_type;
+        PyObject *exc_string;
+
+        if (errno == EDOM) {
+            exc_type = PyExc_ValueError;
+            exc_string = PyUnicode_FromString("math domain error");
+        }
+        else {
+            exc_type = PyExc_OverflowError;
+            exc_string = PyUnicode_FromString("math range error");
+        }
+        if (!exc_string) {
+            Py_DECREF(value);
+            return;
+        }
+        PyObject *exc = PyObject_CallOneArg(exc_type, exc_string);
+
+        Py_DECREF(exc_string);
+        if (!exc) {
+            Py_DECREF(value);
+            return;
+        }
+        if (PyObject_SetAttrString(exc, "value", value)) {
+            Py_DECREF(value);
+            return;
+        }
+        Py_DECREF(value);
+        PyErr_SetRaisedException(exc);
+    }
+    else { /* Unexpected math error */
+        Py_DECREF(value);
+        PyErr_SetFromErrno(PyExc_ValueError);
+    }
+}
+
 #include "clinic/cmathmodule.c.h"
 /*[clinic input]
 module cmath
@@ -34,20 +76,17 @@ class Py_complex_protected_return_converter(CReturnConverter):
     def render(self, function, data):
         self.declare(data)
         data.return_conversion.append("""
-if (errno == EDOM) {
-    PyErr_SetString(PyExc_ValueError, "math domain error");
+return_value = PyComplex_FromCComplex(_return_value);
+if (errno) {
+    if (return_value) {
+        set_cmath_error(return_value);
+    }
+    return_value = NULL;
     goto exit;
-}
-else if (errno == ERANGE) {
-    PyErr_SetString(PyExc_OverflowError, "math range error");
-    goto exit;
-}
-else {
-    return_value = PyComplex_FromCComplex(_return_value);
 }
 """.strip())
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=8b27adb674c08321]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=fff1087cce9b4c85]*/
 
 #if (FLT_RADIX != 2 && FLT_RADIX != 16)
 #error "Modules/cmathmodule.c expects FLT_RADIX to be 2 or 16"
@@ -438,6 +477,9 @@ cmath_cosh_impl(PyObject *module, Py_complex z)
         x_minus_one = z.real - copysign(1., z.real);
         r.real = cos(z.imag) * cosh(x_minus_one) * Py_MATH_E;
         r.imag = sin(z.imag) * sinh(x_minus_one) * Py_MATH_E;
+        if (isnan(r.imag)) {
+            r.imag = copysign(0., z.real*z.imag);
+        }
     } else {
         r.real = cos(z.imag) * cosh(z.real);
         r.imag = sin(z.imag) * sinh(z.real);
@@ -674,6 +716,9 @@ cmath_sinh_impl(PyObject *module, Py_complex z)
         x_minus_one = z.real - copysign(1., z.real);
         r.real = cos(z.imag) * sinh(x_minus_one) * Py_MATH_E;
         r.imag = sin(z.imag) * cosh(x_minus_one) * Py_MATH_E;
+        if (isnan(r.imag)) {
+            r.imag = copysign(0., z.imag);
+        }
     } else {
         r.real = cos(z.imag) * sinh(z.real);
         r.imag = sin(z.imag) * cosh(z.real);
@@ -888,9 +933,16 @@ cmath_log_impl(PyObject *module, Py_complex x, PyObject *y_obj)
         y = c_log(y);
         x = _Py_c_quot(x, y);
     }
-    if (errno != 0)
-        return math_error();
-    return PyComplex_FromCComplex(x);
+
+    PyObject *res = PyComplex_FromCComplex(x);
+
+    if (errno) {
+        if (res) {
+            set_cmath_error(res);
+        }
+        return NULL;
+    }
+    return res;
 }
 
 
@@ -952,10 +1004,16 @@ cmath_polar_impl(PyObject *module, Py_complex z)
     errno = 0;
     phi = atan2(z.imag, z.real); /* should not cause any exception */
     r = _Py_c_abs(z); /* sets errno to ERANGE on overflow */
-    if (errno != 0)
-        return math_error();
-    else
-        return Py_BuildValue("dd", r, phi);
+
+    PyObject *res = Py_BuildValue("dd", r, phi);
+
+    if (errno != 0) {
+        if (res) {
+            set_cmath_error(res);
+        }
+        return NULL;
+    }
+    return res;
 }
 
 /*
@@ -972,7 +1030,7 @@ cmath_polar_impl(PyObject *module, Py_complex z)
 static Py_complex rect_special_values[7][7];
 
 /*[clinic input]
-cmath.rect
+cmath.rect -> Py_complex_protected
 
     r: double
     phi: double
@@ -981,9 +1039,9 @@ cmath.rect
 Convert from polar coordinates to rectangular coordinates.
 [clinic start generated code]*/
 
-static PyObject *
+static Py_complex
 cmath_rect_impl(PyObject *module, double r, double phi)
-/*[clinic end generated code: output=385a0690925df2d5 input=24c5646d147efd69]*/
+/*[clinic end generated code: output=74ff3d17585f3388 input=50e60c5d28c834e6]*/
 {
     Py_complex z;
     errno = 0;
@@ -1027,11 +1085,7 @@ cmath_rect_impl(PyObject *module, double r, double phi)
         z.imag = r * sin(phi);
         errno = 0;
     }
-
-    if (errno != 0)
-        return math_error();
-    else
-        return PyComplex_FromCComplex(z);
+    return z;
 }
 
 /*[clinic input]
