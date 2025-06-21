@@ -4093,10 +4093,14 @@ class TestStringAnnotations(unittest.TestCase):
         from test.test_dataclasses import dataclass_module_1_str
         from test.test_dataclasses import dataclass_module_2
         from test.test_dataclasses import dataclass_module_2_str
+        from test.test_dataclasses import dataclass_module_3
+        from test.test_dataclasses import dataclass_module_3_str
 
-        for m in (dataclass_module_1, dataclass_module_1_str,
-                  dataclass_module_2, dataclass_module_2_str,
-                  ):
+        for m in (
+            dataclass_module_1, dataclass_module_1_str,
+            dataclass_module_2, dataclass_module_2_str,
+            dataclass_module_3, dataclass_module_3_str,
+        ):
             with self.subTest(m=m):
                 # There's a difference in how the ClassVars are
                 # interpreted when using string annotations or
