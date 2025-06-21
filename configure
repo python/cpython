@@ -30895,6 +30895,71 @@ LIBS=$save_LIBS
 
 
 
+save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+  LIBS="$LIBS $OPENSSL_LIBS"
+  CFLAGS="$CFLAGS $OPENSSL_INCLUDES"
+  LDFLAGS="$LDFLAGS $OPENSSL_LDFLAGS $OPENSSL_LDFLAGS_RPATH"
+
+       for ac_header in openssl/ech.h
+do :
+  ac_fn_c_check_header_compile "$LINENO" "openssl/ech.h" "ac_cv_header_openssl_ech_h" "$ac_includes_default"
+if test "x$ac_cv_header_openssl_ech_h" = xyes
+then :
+  printf "%s\n" "#define HAVE_OPENSSL_ECH_H 1" >>confdefs.h
+ have_openssl_ech_h=yes
+else case e in #(
+  e) have_openssl_ech_h=no ;;
+esac
+fi
+
+done
+if test "$have_openssl_ech_h" = "yes"; then
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for OpenSSL ECH support" >&5
+printf %s "checking for OpenSSL ECH support... " >&6; }
+    ac_fn_check_decl "$LINENO" "SSL_ECH_STATUS_GREASE_ECH" "ac_cv_have_decl_SSL_ECH_STATUS_GREASE_ECH" "
+		     #include <openssl/ech.h>
+
+" "$ac_c_undeclared_builtin_options" "CFLAGS"
+if test "x$ac_cv_have_decl_SSL_ECH_STATUS_GREASE_ECH" = xyes
+then :
+  ac_have_decl=1
+else case e in #(
+  e) ac_have_decl=0 ;;
+esac
+fi
+printf "%s\n" "#define HAVE_DECL_SSL_ECH_STATUS_GREASE_ECH $ac_have_decl" >>confdefs.h
+if test $ac_have_decl = 1
+then :
+
+printf "%s\n" "#define OPENSSL_ECH 1" >>confdefs.h
+
+else case e in #(
+  e)
+printf "%s\n" "#define OPENSSL_NO_ECH 1" >>confdefs.h
+ ;;
+esac
+fi
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_have_decl_SSL_ECH_STATUS_GREASE_ECH" >&5
+printf "%s\n" "$ac_cv_have_decl_SSL_ECH_STATUS_GREASE_ECH" >&6; }
+else
+
+printf "%s\n" "#define OPENSSL_NO_ECH 1" >>confdefs.h
+
+fi
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
+
 # ssl module default cipher suite string
 
 
