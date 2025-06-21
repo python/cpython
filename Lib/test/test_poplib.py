@@ -211,7 +211,6 @@ class DummyPOP3Server(asyncore.dispatcher, threading.Thread):
     def __init__(self, address, af=socket.AF_INET):
         threading.Thread.__init__(self)
         asyncore.dispatcher.__init__(self)
-        self.daemon = True
         self.create_socket(af, socket.SOCK_STREAM)
         self.bind(address)
         self.listen(5)

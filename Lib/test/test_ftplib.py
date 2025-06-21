@@ -283,7 +283,6 @@ class DummyFTPServer(asyncore.dispatcher, threading.Thread):
     def __init__(self, address, af=socket.AF_INET, encoding=DEFAULT_ENCODING):
         threading.Thread.__init__(self)
         asyncore.dispatcher.__init__(self)
-        self.daemon = True
         self.create_socket(af, socket.SOCK_STREAM)
         self.bind(address)
         self.listen(5)
@@ -1052,7 +1051,6 @@ class TestTimeouts(TestCase):
         self.sock.settimeout(20)
         self.port = socket_helper.bind_port(self.sock)
         self.server_thread = threading.Thread(target=self.server)
-        self.server_thread.daemon = True
         self.server_thread.start()
         # Wait for the server to be ready.
         self.evt.wait()
