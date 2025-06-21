@@ -24,6 +24,17 @@
 #include "pycore_typeobject.h"    // _PyType_GetModuleState()
 #include "hashlib.h"
 
+/*
+ * Assert that 'LEN' can be safely casted to uint32_t.
+ *
+ * The 'LEN' parameter should be convertible to Py_ssize_t.
+ */
+#if !defined(NDEBUG) && (PY_SSIZE_T_MAX > UINT32_MAX)
+#define CHECK_HACL_UINT32_T_LENGTH(LEN) assert((LEN) < (Py_ssize_t)UINT32_MAX)
+#else
+#define CHECK_HACL_UINT32_T_LENGTH(LEN)
+#endif
+
 #define SHA3_MAX_DIGESTSIZE 64 /* 64 Bytes (512 Bits) for 224 to 512 */
 
 typedef struct {
@@ -472,50 +483,23 @@ SHA3_TYPE_SPEC(sha3_384_spec, "sha3_384", sha3_384_slots);
 SHA3_TYPE_SLOTS(sha3_512_slots, sha3_512__doc__, SHA3_methods, SHA3_getseters);
 SHA3_TYPE_SPEC(sha3_512_spec, "sha3_512", sha3_512_slots);
 
-static PyObject *
-_SHAKE_digest(SHA3object *self, Py_ssize_t digestlen, int hex)
+static int
+sha3_shake_check_digest_length(Py_ssize_t length)
 {
-    unsigned char *digest = NULL;
-    PyObject *result = NULL;
-
-    if (digestlen < 0) {
+    if (length < 0) {
         PyErr_SetString(PyExc_ValueError, "negative digest length");
-        return NULL;
+        return -1;
     }
-    if ((size_t)digestlen >= (1 << 29)) {
+    if ((size_t)length >= (1 << 29)) {
         /*
          * Raise OverflowError to match the semantics of OpenSSL SHAKE
          * when the digest length exceeds the range of a 'Py_ssize_t';
          * the exception message will however be different in this case.
          */
         PyErr_SetString(PyExc_OverflowError, "digest length is too large");
-        return NULL;
+        return -1;
     }
-
-    digest = (unsigned char*)PyMem_Malloc(digestlen);
-    if (digest == NULL) {
-        return PyErr_NoMemory();
-    }
-
-    /* Get the raw (binary) digest value. The HACL functions errors out if:
-     * - the algorithm is not shake -- not the case here
-     * - the output length is zero -- we follow the existing behavior and return
-     *   an empty digest, without raising an error */
-    if (digestlen > 0) {
-#if PY_SSIZE_T_MAX > UINT32_MAX
-        assert(digestlen <= (Py_ssize_t)UINT32_MAX);
-#endif
-        (void)Hacl_Hash_SHA3_squeeze(self->hash_state, digest,
-                                     (uint32_t)digestlen);
-    }
-    if (hex) {
-        result = _Py_strhex((const char *)digest, digestlen);
-    }
-    else {
-        result = PyBytes_FromStringAndSize((const char *)digest, digestlen);
-    }
-    PyMem_Free(digest);
-    return result;
+    return 0;
 }
 
 
@@ -531,7 +515,26 @@ static PyObject *
 _sha3_shake_128_digest_impl(SHA3object *self, Py_ssize_t length)
 /*[clinic end generated code: output=6c53fb71a6cff0a0 input=be03ade4b31dd54c]*/
 {
-    return _SHAKE_digest(self, length, 0);
+    if (sha3_shake_check_digest_length(length) < 0) {
+        return NULL;
+    }
+
+    /*
+     * Hacl_Hash_SHA3_squeeze() fails if the algorithm is not SHAKE,
+     * or if the length is 0. In the latter case, we follow OpenSSL's
+     * behavior and return an empty digest, without raising an error.
+     */
+    if (length == 0) {
+        return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
+    }
+
+    CHECK_HACL_UINT32_T_LENGTH(length);
+    PyObject *digest = PyBytes_FromStringAndSize(NULL, length);
+    uint8_t *buffer = (uint8_t *)PyBytes_AS_STRING(digest);
+    ENTER_HASHLIB(self);
+    (void)Hacl_Hash_SHA3_squeeze(self->hash_state, buffer, (uint32_t)length);
+    LEAVE_HASHLIB(self);
+    return digest;
 }
 
 
@@ -547,7 +550,27 @@ static PyObject *
 _sha3_shake_128_hexdigest_impl(SHA3object *self, Py_ssize_t length)
 /*[clinic end generated code: output=a27412d404f64512 input=0d84d05d7a8ccd37]*/
 {
-    return _SHAKE_digest(self, length, 1);
+    if (sha3_shake_check_digest_length(length) < 0) {
+        return NULL;
+    }
+
+    /* See _sha3_shake_128_digest_impl() for the fast path rationale. */
+    if (length == 0) {
+        return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
+    }
+
+    CHECK_HACL_UINT32_T_LENGTH(length);
+    uint8_t *buffer = PyMem_Malloc(length);
+    if (buffer == NULL) {
+        return PyErr_NoMemory();
+    }
+
+    ENTER_HASHLIB(self);
+    (void)Hacl_Hash_SHA3_squeeze(self->hash_state, buffer, (uint32_t)length);
+    LEAVE_HASHLIB(self);
+    PyObject *digest = _Py_strhex((const char *)buffer, length);
+    PyMem_Free(buffer);
+    return digest;
 }
 
 static PyObject *
