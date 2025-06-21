@@ -513,23 +513,11 @@ try_complex_special_method(PyObject *op)
         if (!res || PyComplex_CheckExact(res)) {
             return res;
         }
-        if (!PyComplex_Check(res)) {
-            PyErr_Format(PyExc_TypeError,
-                "__complex__ returned non-complex (type %.200s)",
-                Py_TYPE(res)->tp_name);
-            Py_DECREF(res);
-            return NULL;
-        }
-        /* Issue #29894: warn if 'res' not of exact type complex. */
-        if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-                "__complex__ returned non-complex (type %.200s).  "
-                "The ability to return an instance of a strict subclass of complex "
-                "is deprecated, and may be removed in a future version of Python.",
-                Py_TYPE(res)->tp_name)) {
-            Py_DECREF(res);
-            return NULL;
-        }
-        return res;
+        PyErr_Format(PyExc_TypeError,
+                     "%T.__complex__ returned non-complex (type %T)",
+                     op, res);
+        Py_DECREF(res);
+        return NULL;
     }
     return NULL;
 }
