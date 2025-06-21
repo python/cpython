@@ -1,0 +1,1 @@
+Improve speed of :func:`!inspect.formatannotation`. Patch by Semyon Moroz.
