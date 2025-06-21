@@ -945,6 +945,10 @@ _hashlib_HASHXOF_digest_impl(HASHobject *self, Py_ssize_t length)
         return NULL;
     }
 
+    if (length == 0) {
+        return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
+    }
+
     retval = PyBytes_FromStringAndSize(NULL, length);
     if (retval == NULL) {
         return NULL;
@@ -995,6 +999,10 @@ _hashlib_HASHXOF_hexdigest_impl(HASHobject *self, Py_ssize_t length)
     if (length < 0) {
         PyErr_SetString(PyExc_ValueError, "negative digest length");
         return NULL;
+    }
+
+    if (length == 0) {
+        return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     }
 
     digest = (unsigned char*)PyMem_Malloc(length);
