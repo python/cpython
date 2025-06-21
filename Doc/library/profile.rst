@@ -44,6 +44,12 @@ profiling interface:
    but not for C-level functions, and so the C code would seem faster than any
    Python one.
 
+.. note::
+
+   Only one profiler can be active at any given time.
+   Attemting to enable a profiler while another one is already in use will
+   result in a :exc:`ValueError`.
+
 
 .. _profile-instant:
 
