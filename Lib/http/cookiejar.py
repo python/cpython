@@ -556,7 +556,7 @@ def is_HDN(text):
     # XXX
     # This may well be wrong.  Which RFC is HDN defined in, if any (for
     #  the purposes of RFC 2965)?
-    if is_ip(text):
+    if is_ip_like(text):
         return False
     if text == "":
         return False
@@ -609,7 +609,7 @@ def liberal_is_HDN(text):
     For accepting/blocking domains.
 
     """
-    return not is_ip(text)
+    return not is_ip_like(text)
 
 def user_domain_match(A, B):
     """For blocking/accepting domains.
@@ -659,12 +659,12 @@ def eff_request_host(request):
         from ipaddress import IPv6Address
         try:
             IPv6Address(req_host.removeprefix('[').removesuffix(']'))
-            is_IPV6 = True
+            is_ipV6 = True
         except ValueError:
-            is_IPV6 = False
+            is_ipV6 = False
     else:
-        is_IPV6 = False
-    if "." not in req_host and not is_IPV6:
+        is_ipV6 = False
+    if "." not in req_host and not is_ipV6:
         # avoid adding .local at the end of a IPV6 address
         erhn = req_host + ".local"
     return req_host, erhn
