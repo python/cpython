@@ -1826,7 +1826,8 @@ See :ref:`ctypes-callback-functions` for examples.
 .. function:: PYFUNCTYPE(restype, *argtypes)
 
    The returned function prototype creates functions that use the Python calling
-   convention.  The function will *not* release the GIL during the call.
+   convention.  The function will acquire the GIL and use it like normal python
+   code during the call.
 
 Function prototypes created by these factory functions can be instantiated in
 different ways, depending on the type and number of the parameters in the call:
