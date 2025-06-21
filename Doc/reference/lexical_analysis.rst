@@ -913,6 +913,31 @@ See also :pep:`498` for the proposal that added formatted string literals,
 and :meth:`str.format`, which uses a related format string mechanism.
 
 
+.. _t-strings:
+.. _template-string-literals:
+
+t-strings
+---------
+
+.. versionadded:: 3.14
+
+A :dfn:`template string literal` or :dfn:`t-string` is a string literal
+that is prefixed with ``'t'`` or ``'T'``.  These strings follow the same
+syntax and evaluation rules as :ref:`formatted string literals <f-strings>`, with
+the following differences:
+
+- Rather than evaluating to a ``str`` object, t-strings evaluate to a
+  :class:`~string.templatelib.Template` object from the
+  :mod:`string.templatelib` module.
+
+- The :func:`format` protocol is not used. Instead, the format specifier and
+  conversions (if any) are passed to a new :class:`~string.templatelib.Interpolation`
+  object that is created for each evaluated expression.
+
+- Format specifiers containing nested replacement fields are evaluated eagerly,
+  prior to being passed to the :class:`~string.templatelib.Interpolation` object.
+
+
 .. _numbers:
 
 Numeric literals
