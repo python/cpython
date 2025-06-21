@@ -3597,6 +3597,18 @@ make_impl_info(PyObject *version_info)
     if (res < 0)
         goto error;
 
+#ifdef ARCH_NAME
+    value = PyUnicode_FromString(ARCH_NAME);
+    if (value == NULL) {
+        goto error;
+    }
+    res = PyDict_SetItemString(impl_info, "arch", value);
+    Py_DECREF(value);
+    if (res < 0) {
+        goto error;
+    }
+#endif
+
 #ifdef MULTIARCH
     value = PyUnicode_FromString(MULTIARCH);
     if (value == NULL)
