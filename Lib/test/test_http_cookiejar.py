@@ -867,7 +867,7 @@ class CookieTests(unittest.TestCase):
         self.assertFalse(is_HDN(".foo.bar.com"))
         self.assertFalse(is_HDN("..foo"))
         self.assertFalse(is_HDN("foo."))
-    
+
     def test_is_ip(self):
         self.assertTrue(is_ip('[::1]'))
         self.assertTrue(is_ip('::1'))
