@@ -648,7 +648,15 @@ def eff_request_host(request):
 
     """
     erhn = req_host = request_host(request)
-    is_IPV6 = req_host.startswith('[') and req_host.endswith(']')
+    if req_host.startswith('[') and req_host.endswith(']'):
+        from ipaddress import IPv6Address
+        try:
+            IPv6Address(req_host.removeprefix('[').removesuffix(']'))
+            is_IPV6 = True
+        except ValueError:
+            is_IPV6 = False
+    else:
+        is_IPV6 = False  
     if "." not in req_host and not is_IPV6:
         # avoid adding .local at the end of a IPV6 address
         erhn = req_host + ".local"
