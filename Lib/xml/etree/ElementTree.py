@@ -527,7 +527,9 @@ class ElementTree:
 
     """
     def __init__(self, element=None, file=None):
-        # assert element is None or iselement(element)
+        if element is not None and not iselement(element):
+            raise TypeError(f"element must be etree.Element, "
+                            f"not {type(element).__name__}")
         self._root = element # first node
         if file:
             self.parse(file)
@@ -543,7 +545,9 @@ class ElementTree:
         with the given element.  Use with care!
 
         """
-        # assert iselement(element)
+        if not iselement(element):
+            raise TypeError(f"element must be etree.Element, "
+                            f"not {type(element).__name__}")
         self._root = element
 
     def parse(self, source, parser=None):
