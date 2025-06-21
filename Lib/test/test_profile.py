@@ -4,6 +4,9 @@ import sys
 import pstats
 import unittest
 import os
+import subprocess
+import tempfile
+import shutil
 from difflib import unified_diff
 from io import StringIO
 from test.support.os_helper import TESTFN, unlink, temp_dir, change_cwd
@@ -129,6 +132,118 @@ class ProfileTest(unittest.TestCase):
             )
 
             self.assertTrue(os.path.exists('out.pstats'))
+
+
+class ProfileCLITests(unittest.TestCase):
+    """Tests for the profile module's command line interface."""
+
+    def setUp(self):
+        self.temp_dir = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.temp_dir)
+
+        self.script_content = """\
+def factorial(n):
+    if n <= 1:
+        return 1
+    return n * factorial(n-1)
+
+if __name__ == "__main__":
+    factorial(10)
+"""
+        self.script_file = os.path.join(self.temp_dir, "factorial_script.py")
+        with open(self.script_file, "w") as f:
+            f.write(self.script_content)
+
+    def _run_profile_cli(self, *args):
+        cmd = [sys.executable, '-m', 'profile', *args]
+        proc = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True
+        )
+        stdout, stderr = proc.communicate()
+        return proc.returncode, stdout, stderr
+
+    def test_basic_profile(self):
+        returncode, stdout, stderr = self._run_profile_cli(self.script_file)
+        self.assertEqual(returncode, 0)
+        self.assertIn("function calls", stdout)
+        self.assertIn("factorial", stdout)
+        self.assertIn("ncalls", stdout)
+
+    def test_sort_options(self):
+        sort_options = ['calls', 'cumulative', 'cumtime', 'file',
+                        'filename', 'module', 'ncalls', 'pcalls',
+                        'line', 'stdname', 'time', 'tottime']
+
+        for option in sort_options:
+            with self.subTest(sort_option=option):
+                returncode, stdout, stderr = self._run_profile_cli(
+                    '-s', option, self.script_file
+                )
+                self.assertEqual(returncode, 0)
+                self.assertIn("function calls", stdout)
+
+    def test_output_file(self):
+        output_file = os.path.join(self.temp_dir, "profile_output.prof")
+
+        returncode, stdout, stderr = self._run_profile_cli(
+            '-o', output_file, self.script_file
+        )
+        self.assertEqual(returncode, 0)
+
+        self.assertTrue(os.path.exists(output_file))
+        stats = pstats.Stats(output_file)
+        self.assertGreater(stats.total_calls, 0)
+
+    def test_invalid_option(self):
+        returncode, stdout, stderr = self._run_profile_cli(
+            '--invalid-option', self.script_file
+        )
+        self.assertNotEqual(returncode, 0)
+        self.assertIn("error", stderr.lower())
+
+    def test_no_arguments(self):
+        returncode, stdout, stderr = self._run_profile_cli()
+        self.assertNotEqual(returncode, 0)
+
+        combined_output = stdout.lower() + stderr.lower()
+        self.assertTrue(
+            "usage:" in combined_output or
+            "error:" in combined_output or
+            "no script filename specified" in combined_output,
+            "Expected usage information or error message not found"
+        )
+
+    def test_run_module(self):
+        module_name = "profilemod"
+        module_file = os.path.join(self.temp_dir, f"{module_name}.py")
+
+        with open(module_file, "w") as f:
+            f.write("print('Module executed')\n")
+
+        env = os.environ.copy()
+
+        python_path = self.temp_dir
+        if 'PYTHONPATH' in env:
+            python_path = os.pathsep.join([python_path, env['PYTHONPATH']])
+        env['PYTHONPATH'] = python_path
+
+        cmd = [sys.executable, '-m', 'profile', '-m', module_name]
+        proc = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True,
+            env=env
+        )
+        stdout, stderr = proc.communicate()
+        returncode = proc.returncode
+
+        self.assertEqual(returncode, 0)
+        self.assertIn("Module executed", stdout)
+        self.assertIn("function calls", stdout)
 
 
 def regenerate_expected_output(filename, cls):
