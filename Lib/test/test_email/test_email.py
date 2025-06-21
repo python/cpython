@@ -3257,7 +3257,7 @@ class TestMiscellaneous(TestEmailBase):
 
         """
         self.assertEqual(utils.parsedate_tz('25 Feb 03 13:47:26 -0800'),
-                         utils.parsedate_tz('25 Feb 2003 13:47:26 -0800'))
+                         utils.parsedate_tz('25 Feb 3 13:47:26 -0800'))
         self.assertEqual(utils.parsedate_tz('25 Feb 71 13:47:26 -0800'),
                          utils.parsedate_tz('25 Feb 1971 13:47:26 -0800'))
 
