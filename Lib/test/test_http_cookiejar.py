@@ -874,7 +874,6 @@ class CookieTests(unittest.TestCase):
         self.assertTrue(is_ip('[2001:db8:85a3::8a2e:370:7334]'))
         self.assertTrue(is_ip('2001:db8:85a3::8a2e:370:7334'))
         self.assertTrue(is_ip('192.168.0.1'))
-
         self.assertFalse(is_ip('256.256.256.256'))
         self.assertFalse(is_ip('[::2001:db8:85a3::]'))
         self.assertFalse(is_ip('acme.com'))
@@ -890,13 +889,15 @@ class CookieTests(unittest.TestCase):
         self.assertEqual(reach(""), "")
         self.assertEqual(reach("192.168.0.1"), "192.168.0.1")
         self.assertEqual(reach("[::1]"), "[::1]")
-        self.assertEqual(reach("[2001:db8:85a3::8a2e:370:7334]"), "[2001:db8:85a3::8a2e:370:7334]")
+        self.assertEqual(reach("[2001:db8:85a3::8a2e:370:7334]"),
+                          "[2001:db8:85a3::8a2e:370:7334]")
 
     def test_domain_match(self):
         self.assertTrue(domain_match("192.168.1.1", "192.168.1.1"))
         self.assertTrue(domain_match("[::1]", "[::1]"))
         self.assertFalse(domain_match("[::1]", "::1"))
-        self.assertTrue(domain_match("[2001:db8:85a3::8a2e:370:7334]", "[2001:db8:85a3::8a2e:370:7334]"))
+        self.assertTrue(domain_match("[2001:db8:85a3::8a2e:370:7334]",
+                                      "[2001:db8:85a3::8a2e:370:7334]"))
         self.assertFalse(domain_match("192.168.1.1", ".168.1.1"))
         self.assertTrue(domain_match("x.y.com", "x.Y.com"))
         self.assertTrue(domain_match("x.y.com", ".Y.com"))
@@ -1190,7 +1191,11 @@ class CookieTests(unittest.TestCase):
         c.add_cookie_header(req)
         self.assertFalse(req.has_header("Cookie"))
 
-        c.clear()
+    def test_block_ip_domains(self):
+        pol = DefaultCookiePolicy(
+            rfc2965=True, blocked_domains=[])
+        c = CookieJar(policy=pol)
+        headers = ["Set-Cookie: CUSTOMER=WILE_E_COYOTE; path=/"]
 
         pol.set_blocked_domains(["[::1]"])
         req = urllib.request.Request("http://[::1]:8080")
