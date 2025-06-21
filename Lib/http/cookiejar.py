@@ -615,7 +615,6 @@ def user_domain_match(A, B):
             # equal IPV4 addresses
             return True
         return False
-    # A and B may be HDNs or a IPv6 addresses now
     initial_dot = B.startswith(".")
     if initial_dot and A.endswith(B):
         return True
