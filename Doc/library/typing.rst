@@ -3257,17 +3257,6 @@ Functions and decorators
 
    ``@no_type_check`` mutates the decorated object in place.
 
-.. decorator:: no_type_check_decorator
-
-   Decorator to give another decorator the :func:`no_type_check` effect.
-
-   This wraps the decorator with something that wraps the decorated
-   function in :func:`no_type_check`.
-
-   .. deprecated-removed:: 3.13 3.15
-      No type checker ever added support for ``@no_type_check_decorator``. It
-      is therefore deprecated, and will be removed in Python 3.15.
-
 .. decorator:: override
 
    Decorator to indicate that a method in a subclass is intended to override a
@@ -4076,10 +4065,6 @@ convenience. This is subject to change, and not all deprecations are listed.
      - 3.12
      - Undecided
      - :pep:`695`
-   * - :func:`@typing.no_type_check_decorator <no_type_check_decorator>`
-     - 3.13
-     - 3.15
-     - :gh:`106309`
    * - :data:`typing.AnyStr`
      - 3.13
      - 3.18

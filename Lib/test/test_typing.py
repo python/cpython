@@ -32,7 +32,7 @@ from typing import override
 from typing import is_typeddict, is_protocol
 from typing import reveal_type
 from typing import dataclass_transform
-from typing import no_type_check, no_type_check_decorator
+from typing import no_type_check
 from typing import Type
 from typing import NamedTuple, NotRequired, Required, ReadOnly, TypedDict
 from typing import IO, TextIO, BinaryIO
@@ -6271,35 +6271,6 @@ class NoTypeCheckTests(BaseTestCase):
         expected_result = {'foo': typing.ClassVar[int]}
         for clazz in [C, D, E, F]:
             self.assertEqual(get_type_hints(clazz), expected_result)
-
-    def test_meta_no_type_check(self):
-        depr_msg = (
-            "'typing.no_type_check_decorator' is deprecated "
-            "and slated for removal in Python 3.15"
-        )
-        with self.assertWarnsRegex(DeprecationWarning, depr_msg):
-            @no_type_check_decorator
-            def magic_decorator(func):
-                return func
-
-        self.assertEqual(magic_decorator.__name__, 'magic_decorator')
-
-        @magic_decorator
-        def foo(a: 'whatevers') -> {}:
-            pass
-
-        @magic_decorator
-        class C:
-            def foo(a: 'whatevers') -> {}:
-                pass
-
-        self.assertEqual(foo.__name__, 'foo')
-        th = get_type_hints(foo)
-        self.assertEqual(th, {})
-        cth = get_type_hints(C.foo)
-        self.assertEqual(cth, {})
-        ith = get_type_hints(C().foo)
-        self.assertEqual(ith, {})
 
 
 class InternalsTests(BaseTestCase):

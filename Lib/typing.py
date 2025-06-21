@@ -139,7 +139,6 @@ __all__ = [
     'Never',
     'NewType',
     'no_type_check',
-    'no_type_check_decorator',
     'NoDefault',
     'NoReturn',
     'NotRequired',
@@ -2550,23 +2549,6 @@ def no_type_check(arg):
     except TypeError:  # built-in classes
         pass
     return arg
-
-
-def no_type_check_decorator(decorator):
-    """Decorator to give another decorator the @no_type_check effect.
-
-    This wraps the decorator with something that wraps the decorated
-    function in @no_type_check.
-    """
-    import warnings
-    warnings._deprecated("typing.no_type_check_decorator", remove=(3, 15))
-    @functools.wraps(decorator)
-    def wrapped_decorator(*args, **kwds):
-        func = decorator(*args, **kwds)
-        func = no_type_check(func)
-        return func
-
-    return wrapped_decorator
 
 
 def _overload_dummy(*args, **kwds):
