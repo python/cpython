@@ -274,7 +274,10 @@ class HashLibTestCase(unittest.TestCase):
                 with self.assertWarnsRegex(DeprecationWarning,
                                            DEPRECATED_STRING_PARAMETER):
                     hashlib.new(digest_name, string=b'')
-                if self._hashlib:
+                # when using a combination of libcrypto and interned hash
+                # implementations, we need to make sure that _hashlib contains
+                # the constructor we're testing
+                if self._hashlib and digest_name in self._hashlib._constructors:
                     self._hashlib.new(digest_name, b'')
                     self._hashlib.new(digest_name, data=b'')
                     with self.assertWarnsRegex(DeprecationWarning,
