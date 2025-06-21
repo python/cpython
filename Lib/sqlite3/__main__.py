@@ -69,7 +69,7 @@ class SqliteInteractiveConsole(InteractiveConsole):
                     select_clauses = (f"""SELECT
                         CASE '{schema}'
                             WHEN 'main' THEN name
-                            ELSE CONCAT('{schema}.', name)
+                            ELSE '{schema}.' || name
                         END
                         FROM "{schema}".sqlite_master
                         WHERE type IN ('table', 'view')
