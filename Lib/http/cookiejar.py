@@ -532,7 +532,9 @@ def parse_ns_headers(ns_headers):
     return result
 
 
-IPV4_RE = re.compile(r"\.\d+$", re.ASCII) # kept for backwards compatibility
+# only kept for backwards compatibilty.
+IPV4_RE = re.compile(r"\.\d+$", re.ASCII)
+
 def is_ip(text: str):
     """Return True if text is a valid IP address."""
     from ipaddress import ip_address
