@@ -1,0 +1,1 @@
+Fix ``struct.error`` exception when creating a file with ``gzip.GzipFile()`` if the system time is outside the range 00:00:00 UTC, January 1, 1970 through 06:28:15 UTC, February 7, 2106.
