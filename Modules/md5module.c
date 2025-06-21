@@ -159,15 +159,14 @@ MD5Type_hexdigest_impl(MD5object *self)
 }
 
 static void
-_hacl_md5_state_update(Hacl_Hash_MD5_state_t *state,
-                       uint8_t *buf, Py_ssize_t len)
+update(Hacl_Hash_MD5_state_t *state, uint8_t *buf, Py_ssize_t len)
 {
-    assert(len >= 0);
     /*
-     * Note: we explicitly ignore the error code on the basis that it would
-     * take more than 1 billion years to overflow the maximum admissible length
-     * for MD5 (2^61 - 1).
-     */
+    * Note: we explicitly ignore the error code on the basis that it would
+    * take more than 1 billion years to overflow the maximum admissible length
+    * for MD5 (2^61 - 1).
+    */
+    assert(len >= 0);
 #if PY_SSIZE_T_MAX > UINT32_MAX
     while (len > UINT32_MAX) {
         (void)Hacl_Hash_MD5_update(state, buf, UINT32_MAX);
@@ -196,7 +195,7 @@ MD5Type_update_impl(MD5object *self, PyObject *obj)
     GET_BUFFER_VIEW_OR_ERROUT(obj, &buf);
     HASHLIB_EXTERNAL_INSTRUCTIONS_LOCKED(
         self, buf.len,
-        _hacl_md5_state_update(self->hash_state, buf.buf, buf.len)
+        update(self->hash_state, buf.buf, buf.len)
     );
     PyBuffer_Release(&buf);
     Py_RETURN_NONE;
@@ -303,7 +302,7 @@ _md5_md5_impl(PyObject *module, PyObject *data, int usedforsecurity,
          * where it is not yet possible to have concurrent access. */
         HASHLIB_EXTERNAL_INSTRUCTIONS_UNLOCKED(
             buf.len,
-            _hacl_md5_state_update(new->hash_state, buf.buf, buf.len)
+            update(new->hash_state, buf.buf, buf.len)
         );
         PyBuffer_Release(&buf);
     }

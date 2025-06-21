@@ -3,9 +3,9 @@
 #include "pycore_lock.h"        // PyMutex
 
 /*
- * Given a PyObject* 'obj', fill in the Py_buffer* 'viewp' with the result
- * of PyObject_GetBuffer.  Sets an exception and issues the 'erraction'
- * on any errors, e.g., 'return NULL' or 'goto error'.
+ * Given a PyObject* obj, fill in the Py_buffer* viewp with the result
+ * of PyObject_GetBuffer.  Sets an exception and issues the erraction
+ * on any errors, e.g. 'return NULL' or 'goto error'.
  */
 #define GET_BUFFER_VIEW_OR_ERROR(obj, viewp, erraction) do { \
         if (PyUnicode_Check((obj))) { \

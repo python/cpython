@@ -200,8 +200,7 @@ SHA512_dealloc(PyObject *op)
  * 64 bits so we loop in <4gig chunks when needed. */
 
 static void
-_hacl_sha2_state_update_256(Hacl_Hash_SHA2_state_t_256 *state,
-                            uint8_t *buf, Py_ssize_t len)
+update_256(Hacl_Hash_SHA2_state_t_256 *state, uint8_t *buf, Py_ssize_t len)
 {
     /*
      * Note: we explicitly ignore the error code on the basis that it would
@@ -220,8 +219,7 @@ _hacl_sha2_state_update_256(Hacl_Hash_SHA2_state_t_256 *state,
 }
 
 static void
-_hacl_sha2_state_update_512(Hacl_Hash_SHA2_state_t_512 *state,
-                            uint8_t *buf, Py_ssize_t len)
+update_512(Hacl_Hash_SHA2_state_t_512 *state, uint8_t *buf, Py_ssize_t len)
 {
     /*
      * Note: we explicitly ignore the error code on the basis that it would
@@ -408,7 +406,7 @@ SHA256Type_update_impl(SHA256object *self, PyObject *obj)
     GET_BUFFER_VIEW_OR_ERROUT(obj, &buf);
     HASHLIB_EXTERNAL_INSTRUCTIONS_LOCKED(
         self, buf.len,
-        _hacl_sha2_state_update_256(self->state, buf.buf, buf.len)
+        update_256(self->state, buf.buf, buf.len)
     );
     PyBuffer_Release(&buf);
     Py_RETURN_NONE;
@@ -431,7 +429,7 @@ SHA512Type_update_impl(SHA512object *self, PyObject *obj)
     GET_BUFFER_VIEW_OR_ERROUT(obj, &buf);
     HASHLIB_EXTERNAL_INSTRUCTIONS_LOCKED(
         self, buf.len,
-        _hacl_sha2_state_update_512(self->state, buf.buf, buf.len)
+        update_512(self->state, buf.buf, buf.len)
     );
     PyBuffer_Release(&buf);
     Py_RETURN_NONE;
@@ -616,7 +614,7 @@ _sha2_sha256_impl(PyObject *module, PyObject *data, int usedforsecurity,
          * where it is not yet possible to have concurrent access. */
         HASHLIB_EXTERNAL_INSTRUCTIONS_UNLOCKED(
             buf.len,
-            _hacl_sha2_state_update_256(new->state, buf.buf, buf.len)
+            update_256(new->state, buf.buf, buf.len)
         );
         PyBuffer_Release(&buf);
     }
@@ -674,7 +672,7 @@ _sha2_sha224_impl(PyObject *module, PyObject *data, int usedforsecurity,
          * where it is not yet possible to have concurrent access. */
         HASHLIB_EXTERNAL_INSTRUCTIONS_UNLOCKED(
             buf.len,
-            _hacl_sha2_state_update_256(new->state, buf.buf, buf.len)
+            update_256(new->state, buf.buf, buf.len)
         );
         PyBuffer_Release(&buf);
     }
@@ -733,7 +731,7 @@ _sha2_sha512_impl(PyObject *module, PyObject *data, int usedforsecurity,
          * where it is not yet possible to have concurrent access. */
         HASHLIB_EXTERNAL_INSTRUCTIONS_UNLOCKED(
             buf.len,
-            _hacl_sha2_state_update_512(new->state, buf.buf, buf.len)
+            update_512(new->state, buf.buf, buf.len)
         );
         PyBuffer_Release(&buf);
     }
@@ -792,7 +790,7 @@ _sha2_sha384_impl(PyObject *module, PyObject *data, int usedforsecurity,
          * where it is not yet possible to have concurrent access. */
         HASHLIB_EXTERNAL_INSTRUCTIONS_UNLOCKED(
             buf.len,
-            _hacl_sha2_state_update_512(new->state, buf.buf, buf.len)
+            update_512(new->state, buf.buf, buf.len)
         );
         PyBuffer_Release(&buf);
     }

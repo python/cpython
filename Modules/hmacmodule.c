@@ -500,11 +500,11 @@ _hacl_hmac_state_update(HACL_HMAC_state *state, uint8_t *buf, Py_ssize_t len)
 
 /* Static information used to construct the hash table. */
 static const py_hmac_hinfo py_hmac_static_hinfo[] = {
-#define Py_HMAC_HINFO_HACL_API(HACL_HID)                    \
-    {                                                       \
-        /* one-shot helpers */                              \
-        .compute = &Py_hmac_## HACL_HID ##_compute_func,    \
-        .compute_py = &_hmac_compute_## HACL_HID ##_impl,   \
+#define Py_HMAC_HINFO_HACL_API(HACL_HID)                                \
+    {                                                                   \
+        /* one-shot helpers */                                          \
+        .compute = &Py_hmac_## HACL_HID ##_compute_func,                \
+        .compute_py = &_hmac_compute_## HACL_HID ##_impl,               \
     }
 
 #define Py_HMAC_HINFO_ENTRY(HACL_HID, HLIB_NAME)            \
