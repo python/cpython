@@ -16,7 +16,7 @@ from http.cookiejar import (time2isoz, http2time, iso2time, time2netscape,
      CookieJar, DefaultCookiePolicy, LWPCookieJar, MozillaCookieJar,
      LoadError, lwp_cookie_str, DEFAULT_HTTP_PORT, escape_path,
      reach, is_HDN, domain_match, user_domain_match, request_path,
-     request_port, request_host)
+     request_port, request_host, is_ip)
 
 mswindows = (sys.platform == "win32")
 
@@ -867,6 +867,18 @@ class CookieTests(unittest.TestCase):
         self.assertFalse(is_HDN(".foo.bar.com"))
         self.assertFalse(is_HDN("..foo"))
         self.assertFalse(is_HDN("foo."))
+    
+    def test_is_ip(self):
+        self.assertTrue(is_ip('[::1]'))
+        self.assertTrue(is_ip('::1'))
+        self.assertTrue(is_ip('[2001:db8:85a3::8a2e:370:7334]'))
+        self.assertTrue(is_ip('2001:db8:85a3::8a2e:370:7334'))
+        self.assertTrue(is_ip('192.168.0.1'))
+        self.assertFalse(is_ip('256.256.256.256'))
+        self.assertFalse(is_ip('[::2001:db8:85a3::]'))
+        self.assertFalse(is_ip('acme.com'))
+        self.assertFalse(is_ip(''))
+
 
     def test_reach(self):
         self.assertEqual(reach("www.acme.com"), ".acme.com")
@@ -915,7 +927,7 @@ class CookieTests(unittest.TestCase):
         # not both HDNs, so must string-compare equal to match
         self.assertTrue(user_domain_match("192.168.1.1", "192.168.1.1"))
         self.assertTrue(user_domain_match("[::1]", "[::1]"))
-        self.assertTrue(domain_match("[2001:db8:85a3::8a2e:370:7334]", "[2001:db8:85a3::8a2e:370:7334]"))
+        self.assertTrue(domain_match("2001:db8::", "2001:db8::"))
         self.assertFalse(user_domain_match("[::1]", "::1"))
         self.assertFalse(user_domain_match("192.168.1.1", ".168.1.1"))
         self.assertFalse(user_domain_match("192.168.1.1", "."))
