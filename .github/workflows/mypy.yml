@@ -24,6 +24,7 @@ on:
       - "Tools/clinic/**"
       - "Tools/jit/**"
       - "Tools/peg_generator/**"
+      - "Tools/refcounts/lint.py"
       - "Tools/requirements-dev.txt"
   workflow_dispatch:
 
@@ -55,6 +56,7 @@ jobs:
           "Tools/cases_generator",
           "Tools/clinic",
           "Tools/jit",
+          "Tools/refcounts",
           "Tools/peg_generator",
         ]
     steps:
