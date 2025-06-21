@@ -1,0 +1,1 @@
+Let ``urllib.robotparser.RobotParser`` accept a ``urllib.request.Request`` object as well as a url string when setting a robots.txt url.
