@@ -289,7 +289,8 @@ class _SpoofOut(StringIO):
         return result
 
     def truncate(self, size=None):
-        self.seek(size)
+        if size != None:
+            self.seek(size)
         StringIO.truncate(self)
 
 # Worst-case linear-time ellipsis matching.
