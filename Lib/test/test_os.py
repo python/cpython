@@ -1918,6 +1918,10 @@ class MakedirTests(unittest.TestCase):
         support.is_wasi,
         "WASI's umask is a stub."
     )
+    @unittest.skipIf(
+        support.is_emscripten,
+        "TODO: Fails in buildbot; see #135783"
+    )
     def test_mode(self):
         with os_helper.temp_umask(0o002):
             base = os_helper.TESTFN
