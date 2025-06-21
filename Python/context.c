@@ -1093,7 +1093,7 @@ _contextvars_ContextVar_reset_impl(PyContextVar *self, PyObject *token)
 
 
 static PyMemberDef PyContextVar_members[] = {
-    {"name", _Py_T_OBJECT, offsetof(PyContextVar, var_name), Py_READONLY},
+    {"name", Py_T_OBJECT_EX, offsetof(PyContextVar, var_name), Py_READONLY},
     {NULL}
 };
 
