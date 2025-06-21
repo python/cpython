@@ -54,7 +54,6 @@ class object "PyObject *" "&PyBaseObject_Type"
         PyUnicode_CheckExact(name) &&                           \
         (PyUnicode_GET_LENGTH(name) <= MCACHE_MAX_ATTR_SIZE)
 
-#define NEXT_GLOBAL_VERSION_TAG _PyRuntime.types.next_version_tag
 #define NEXT_VERSION_TAG(interp) \
     (interp)->types.next_version_tag
 
@@ -1359,6 +1358,19 @@ _PyType_LookupByVersion(unsigned int version)
 #error "_Py_ATTR_CACHE_UNUSED must be bigger than max"
 #endif
 
+static inline unsigned int
+get_next_global_version_tag(void)
+{
+    unsigned int old;
+    do {
+        old = _Py_atomic_load_uint_relaxed(&_PyRuntime.types.next_version_tag);
+        if (old >= _Py_MAX_GLOBAL_TYPE_VERSION_TAG) {
+            return (unsigned int)-1;
+        }
+    } while (!_Py_atomic_compare_exchange_uint(&_PyRuntime.types.next_version_tag, &old, old + 1));
+    return old + 1;
+}
+
 static int
 assign_version_tag(PyInterpreterState *interp, PyTypeObject *type)
 {
@@ -1389,11 +1401,12 @@ assign_version_tag(PyInterpreterState *interp, PyTypeObject *type)
     }
     if (type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) {
         /* static types */
-        if (NEXT_GLOBAL_VERSION_TAG > _Py_MAX_GLOBAL_TYPE_VERSION_TAG) {
+        unsigned int next_version_tag = get_next_global_version_tag();
+        if (next_version_tag == (unsigned int)-1) {
             /* We have run out of version numbers */
             return 0;
         }
-        set_version_unlocked(type, NEXT_GLOBAL_VERSION_TAG++);
+        set_version_unlocked(type, next_version_tag);
         assert (type->tp_version_tag <= _Py_MAX_GLOBAL_TYPE_VERSION_TAG);
     }
     else {
@@ -9005,7 +9018,7 @@ type_ready_set_new(PyTypeObject *type, int initial)
        default also inherit object.__new__. */
     if (type->tp_new == NULL
         && base == &PyBaseObject_Type
-        && !(type->tp_flags & Py_TPFLAGS_HEAPTYPE))
+        && !(type->tp_flags & Py_TPFLAGS_HEAPTYPE) && initial)
     {
         type_add_flags(type, Py_TPFLAGS_DISALLOW_INSTANTIATION);
     }
@@ -9021,13 +9034,21 @@ type_ready_set_new(PyTypeObject *type, int initial)
             }
         }
         else {
-            // tp_new is NULL: inherit tp_new from base
-            type->tp_new = base->tp_new;
+            if (initial) {
+                // tp_new is NULL: inherit tp_new from base
+                type->tp_new = base->tp_new;
+            } else {
+                assert(type->tp_new = base->tp_new);
+            }
         }
     }
     else {
         // Py_TPFLAGS_DISALLOW_INSTANTIATION sets tp_new to NULL
-        type->tp_new = NULL;
+        if (initial) {
+            type->tp_new = NULL;
+        } else {
+            assert(type->tp_new == NULL);
+        }
     }
     return 0;
 }
@@ -9160,7 +9181,9 @@ type_ready(PyTypeObject *type, int initial)
     }
 
     /* All done -- set the ready flag */
-    type_add_flags(type, Py_TPFLAGS_READY);
+    if (initial) {
+        type_add_flags(type, Py_TPFLAGS_READY);
+    }
     stop_readying(type);
 
     assert(_PyType_CheckConsistency(type));
@@ -9209,15 +9232,16 @@ init_static_type(PyInterpreterState *interp, PyTypeObject *self,
     assert(!(self->tp_flags & Py_TPFLAGS_MANAGED_DICT));
     assert(!(self->tp_flags & Py_TPFLAGS_MANAGED_WEAKREF));
 
-    if ((self->tp_flags & Py_TPFLAGS_READY) == 0) {
-        assert(initial);
+    if (initial) {
+        assert((self->tp_flags & Py_TPFLAGS_READY) == 0);
 
         type_add_flags(self, _Py_TPFLAGS_STATIC_BUILTIN);
         type_add_flags(self, Py_TPFLAGS_IMMUTABLETYPE);
 
-        assert(NEXT_GLOBAL_VERSION_TAG <= _Py_MAX_GLOBAL_TYPE_VERSION_TAG);
         if (self->tp_version_tag == 0) {
-            _PyType_SetVersion(self, NEXT_GLOBAL_VERSION_TAG++);
+            unsigned int next_version_tag = get_next_global_version_tag();
+            assert(next_version_tag != (unsigned int)-1);
+            _PyType_SetVersion(self, next_version_tag);
         }
     }
     else {
