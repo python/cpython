@@ -87,7 +87,7 @@ class BaseEventQueue:
             if isinstance(k, dict):
                 self.keymap = k
             else:
-                self.insert(Event('key', k, self.flush_buf()))
+                self.insert(Event('key', k, bytes(self.flush_buf())))
                 self.keymap = self.compiled_keymap
 
         elif self.buf and self.buf[0] == 27:  # escape
@@ -96,7 +96,7 @@ class BaseEventQueue:
             # the docstring in keymap.py
             trace('unrecognized escape sequence, propagating...')
             self.keymap = self.compiled_keymap
-            self.insert(Event('key', '\033', bytearray(b'\033')))
+            self.insert(Event('key', '\033', b'\033'))
             for _c in self.flush_buf()[1:]:
                 self.push(_c)
 
@@ -106,5 +106,5 @@ class BaseEventQueue:
             except UnicodeError:
                 return
             else:
-                self.insert(Event('key', decoded, self.flush_buf()))
+                self.insert(Event('key', decoded, bytes(self.flush_buf())))
             self.keymap = self.compiled_keymap
