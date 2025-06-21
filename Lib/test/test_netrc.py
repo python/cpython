@@ -24,7 +24,7 @@ class NetrcEnvironment:
         write_mode = "w"
         if sys.platform != "cygwin":
             write_mode += "t"
-        
+
         netrc_file = os.path.join(self.tmpdir, filename)
         with open(netrc_file, mode=write_mode, encoding=encoding) as fp:
             fp.write(textwrap.dedent(content))
@@ -40,7 +40,7 @@ class NetrcBuilder:
         with NetrcEnvironment() as helper:
             helper.environ.unset("NETRC")
             helper.environ.unset("HOME")
-            
+
             helper.generate_netrc(*args, **kwargs)
 
             with mock.patch("os.path.expanduser"):
@@ -54,7 +54,7 @@ class NetrcBuilder:
 
             helper.environ.set("NETRC", netrc_file)
             return netrc.netrc()
-        
+
     @staticmethod
     def use_file_argument(*args, **kwargs):
         with NetrcEnvironment() as helper:
@@ -157,7 +157,7 @@ class NetrcTestCase(unittest.TestCase):
             self.assertEqual(nrc.hosts['host.domain.com'], ('log', value, 'pass'))
         elif token == 'password':
             self.assertEqual(nrc.hosts['host.domain.com'], ('log', 'acct', value))
-    
+
     @support.subTests('make_nrc', ALL_STRATEGIES)
     def test_token_value_quotes(self, make_nrc):
         self._test_token_x(make_nrc, """\
