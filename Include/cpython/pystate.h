@@ -208,6 +208,9 @@ struct _ts {
     */
     PyObject *threading_local_sentinel;
     _PyRemoteDebuggerSupport remote_debugger_support;
+
+    uint64_t prng;
+    Py_ssize_t ob_dealloc_depth;
 };
 
 /* other API */
