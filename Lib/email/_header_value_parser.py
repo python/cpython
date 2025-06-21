@@ -2839,6 +2839,17 @@ def _refold_parse_tree(parse_tree, *, policy):
             _fold_mime_parameters(part, lines, maxlen, encoding)
             continue
 
+        if want_encoding and part.token_type == 'addr-spec':
+            # RFC2047 forbids encoded-word in any part of an addr-spec.
+            if charset == 'unknown-8bit':
+                # Non-ASCII addr-spec came from parsed message; leave unchanged.
+                want_encoding = False
+            else:
+                raise errors.InvalidMailboxError(
+                    f"Non-ASCII mailbox '{part}' is invalid"
+                    " under current policy setting (utf8=False)"
+                )
+
         if want_encoding and not wrap_as_ew_blocked:
             if not part.as_ew_allowed:
                 want_encoding = False
