@@ -1914,9 +1914,14 @@ class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
     def test_get_incomplete_frame(self):
         self.run_embedded_interpreter("test_get_incomplete_frame")
 
-
     def test_gilstate_after_finalization(self):
         self.run_embedded_interpreter("test_gilstate_after_finalization")
+
+    def test_thread_state_ensure(self):
+        self.run_embedded_interpreter("test_thread_state_ensure")
+
+    def test_main_interpreter_ref(self):
+        self.run_embedded_interpreter("test_main_interpreter_ref")
 
 
 class MiscTests(EmbeddingTestsMixin, unittest.TestCase):

@@ -208,6 +208,20 @@ struct _ts {
     */
     PyObject *threading_local_sentinel;
     _PyRemoteDebuggerSupport remote_debugger_support;
+
+    struct {
+        /* Number of nested PyThreadState_Ensure() calls on this thread state */
+        Py_ssize_t counter;
+
+        /* Thread state that was active before PyThreadState_Ensure() was called. */
+        PyThreadState *prior_tstate;
+
+        /* Should this thread state be deleted upon calling
+           PyThreadState_Release() (with the counter at 1)?
+
+           This is only true for thread states created by PyThreadState_Ensure() */
+        int delete_on_release;
+    } ensure;
 };
 
 /* other API */
@@ -261,3 +275,42 @@ PyAPI_FUNC(_PyFrameEvalFunction) _PyInterpreterState_GetEvalFrameFunc(
 PyAPI_FUNC(void) _PyInterpreterState_SetEvalFrameFunc(
     PyInterpreterState *interp,
     _PyFrameEvalFunction eval_frame);
+
+/* Strong interpreter references */
+
+typedef uintptr_t PyInterpreterRef;
+
+PyAPI_FUNC(int) PyInterpreterRef_Get(PyInterpreterRef *ref);
+PyAPI_FUNC(PyInterpreterRef) PyInterpreterRef_Dup(PyInterpreterRef ref);
+PyAPI_FUNC(int) PyInterpreterRef_Main(PyInterpreterRef *ref);
+PyAPI_FUNC(void) PyInterpreterRef_Close(PyInterpreterRef ref);
+PyAPI_FUNC(PyInterpreterState *) PyInterpreterRef_AsInterpreter(PyInterpreterRef ref);
+
+#define PyInterpreterRef_Close(ref) do {    \
+    PyInterpreterRef_Close(ref);            \
+    ref = 0;                                \
+} while (0)
+
+/* Weak interpreter references */
+
+typedef struct _PyInterpreterWeakRef {
+    int64_t id;
+    Py_ssize_t refcount;
+} _PyInterpreterWeakRef;
+
+typedef _PyInterpreterWeakRef *PyInterpreterWeakRef;
+
+PyAPI_FUNC(int) PyInterpreterWeakRef_Get(PyInterpreterWeakRef *ptr);
+PyAPI_FUNC(PyInterpreterWeakRef) PyInterpreterWeakRef_Dup(PyInterpreterWeakRef wref);
+PyAPI_FUNC(int) PyInterpreterWeakRef_AsStrong(PyInterpreterWeakRef wref, PyInterpreterRef *strong_ptr);
+PyAPI_FUNC(void) PyInterpreterWeakRef_Close(PyInterpreterWeakRef wref);
+
+#define PyInterpreterWeakRef_Close(ref) do {    \
+    PyInterpreterWeakRef_Close(ref);            \
+    ref = 0;                                    \
+} while (0)
+
+
+PyAPI_FUNC(int) PyThreadState_Ensure(PyInterpreterRef interp_ref);
+
+PyAPI_FUNC(void) PyThreadState_Release(void);
