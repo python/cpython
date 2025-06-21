@@ -2030,9 +2030,10 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                         setattr(namespace, action.dest, action.default)
 
         # add any parser defaults that aren't present
-        for dest in self._defaults:
-            if not hasattr(namespace, dest):
-                setattr(namespace, dest, self._defaults[dest])
+        for dest, default in self._defaults.items():
+            if default is not SUPPRESS:
+                if not hasattr(namespace, dest):
+                    setattr(namespace, dest, self._defaults[dest])
 
         # parse the arguments and exit if there are any errors
         if self.exit_on_error:
