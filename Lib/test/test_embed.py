@@ -584,6 +584,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'cpu_count': -1,
         'faulthandler': False,
         'tracemalloc': 0,
+        'traceback_timestamps': "",
         'perf_profiling': 0,
         'import_time': 0,
         'thread_inherit_context': DEFAULT_THREAD_INHERIT_CONTEXT,

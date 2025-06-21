@@ -15,7 +15,8 @@ from test.support import (captured_stderr, check_impl_detail,
                           cpython_only, gc_collect,
                           no_tracing, script_helper,
                           SuppressCrashReport,
-                          force_not_colorized)
+                          force_not_colorized,
+                          force_no_traceback_timestamps)
 from test.support.import_helper import import_module
 from test.support.os_helper import TESTFN, unlink
 from test.support.warnings_helper import check_warnings
@@ -2095,6 +2096,7 @@ class AssertionErrorTests(unittest.TestCase):
         unlink(TESTFN)
 
     @force_not_colorized
+    @force_no_traceback_timestamps
     def test_assertion_error_location(self):
         cases = [
             ('assert None',
@@ -2193,6 +2195,7 @@ class AssertionErrorTests(unittest.TestCase):
                 self.assertEqual(result[-3:], expected)
 
     @force_not_colorized
+    @force_no_traceback_timestamps
     def test_multiline_not_highlighted(self):
         cases = [
             ("""

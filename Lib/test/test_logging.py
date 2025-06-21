@@ -54,6 +54,7 @@ from test.support import smtpd
 from test.support.logging_helper import TestHandler
 import textwrap
 import threading
+import traceback
 import asyncio
 import time
 import unittest
@@ -825,7 +826,8 @@ class StreamHandlerTest(BaseTest):
             with support.captured_stderr() as stderr:
                 h.handle(r)
                 msg = '\nRuntimeError: deliberate mistake\n'
-                self.assertIn(msg, stderr.getvalue())
+                stderr = traceback.strip_exc_timestamps(stderr.getvalue())
+                self.assertIn(msg, stderr)
 
             logging.raiseExceptions = False
             with support.captured_stderr() as stderr:
@@ -5033,7 +5035,7 @@ class ExceptionTest(BaseTest):
         r = h.records[0]
         self.assertStartsWith(r.exc_text,
                 'Traceback (most recent call last):\n')
-        self.assertEndsWith(r.exc_text,
+        self.assertEndsWith(traceback.strip_exc_timestamps(r.exc_text),
                 '\nRuntimeError: deliberate mistake')
         self.assertStartsWith(r.stack_info,
                 'Stack (most recent call last):\n')

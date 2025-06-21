@@ -22,6 +22,7 @@ import sys
 import textwrap
 import threading
 import time
+import traceback
 import types
 import unittest
 from unittest import mock
@@ -1001,7 +1002,9 @@ from not_a_module import symbol
 
                 expected_error = error + (
                     rb" \(consider renaming '.*numpy.py' if it has the "
-                    rb"same name as a library you intended to import\)\s+\z"
+                    rb"same name as a library you intended to import\)"
+                    + traceback.TIMESTAMP_AFTER_EXC_MSG_RE_GROUP.encode() +
+                    rb"?\s+\Z"
                 )
 
                 popen = script_helper.spawn_python(os.path.join(tmp, "numpy.py"))
@@ -1022,14 +1025,18 @@ from not_a_module import symbol
                 f.write("this_script_does_not_attempt_to_import_numpy = True")
 
             expected_error = (
-                rb"AttributeError: module 'numpy' has no attribute 'attr'\s+\z"
+                rb"AttributeError: module 'numpy' has no attribute 'attr'"
+                + traceback.TIMESTAMP_AFTER_EXC_MSG_RE_GROUP.encode() +
+                rb"?\s+\Z"
             )
             popen = script_helper.spawn_python('-c', 'import numpy; numpy.attr', cwd=tmp)
             stdout, stderr = popen.communicate()
             self.assertRegex(stdout, expected_error)
 
             expected_error = (
-                rb"ImportError: cannot import name 'attr' from 'numpy' \(.*\)\s+\z"
+                rb"ImportError: cannot import name 'attr' from 'numpy' \(.*\)"
+                + traceback.TIMESTAMP_AFTER_EXC_MSG_RE_GROUP.encode() +
+                rb"?\s+\Z"
             )
             popen = script_helper.spawn_python('-c', 'from numpy import attr', cwd=tmp)
             stdout, stderr = popen.communicate()
