@@ -798,7 +798,7 @@ _hashlib_HASH_update_impl(HASHobject *self, PyObject *obj)
     Py_buffer view;
     GET_BUFFER_VIEW_OR_ERROUT(obj, &view);
     HASHLIB_EXTERNAL_INSTRUCTIONS_LOCKED(
-        self, HASHLIB_GIL_MINSIZE,
+        self, view.len,
         result = _hashlib_HASH_hash(self, view.buf, view.len)
     );
     PyBuffer_Release(&view);
