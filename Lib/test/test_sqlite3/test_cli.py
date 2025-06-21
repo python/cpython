@@ -125,6 +125,27 @@ class InteractiveSession(unittest.TestCase):
         self.assertEqual(out.count(self.PS2), 0)
         self.assertIn(sqlite3.sqlite_version, out)
 
+    def test_interact_tables(self):
+        out, err = self.run_cli(commands=(
+            "CREATE TABLE table_ (id INTEGER);",
+            "CREATE TEMP TABLE temp_table (id INTEGER);",
+            "CREATE VIEW view_ AS SELECT * FROM table_;",
+            "CREATE TEMP VIEW temp_view As SELECT * FROM table_;",
+            "ATTACH ':memory:' AS attach_;",
+            "CREATE TABLE attach_.table_ (id INTEGER);",
+            "CREATE VIEW attach_.view_ AS SELECT * FROM table_;",
+            "ATTACH ':memory:' AS 123;",
+            "CREATE TABLE \"123\".table_ (id INTEGER);",
+            "CREATE VIEW \"123\".view_ AS SELECT * FROM table_;",
+            ".tables",
+            ))
+        self.assertIn(self.MEMORY_DB_MSG, err)
+        self.assertEndsWith(out, self.PS1)
+        self.assertEqual(out.count(self.PS1), 12)
+        self.assertEqual(out.count(self.PS2), 0)
+        self.assertIn("123.table_\n123.view_\nattach_.table_\nattach_.view_\n"
+                      "table_\ntemp.temp_table\ntemp.temp_view\nview_\n", out)
+
     def test_interact_empty_source(self):
         out, err = self.run_cli(commands=("", " "))
         self.assertIn(self.MEMORY_DB_MSG, err)

@@ -63,11 +63,28 @@ class SqliteInteractiveConsole(InteractiveConsole):
         # Remember to update CLI_COMMANDS in _completer.py
         if source[0] == ".":
             match source[1:].strip():
+                case "tables":
+                    schema_names = tuple(row[1]
+                        for row in self._cur.execute("PRAGMA database_list"))
+                    select_clauses = (f"""SELECT
+                        CASE '{schema}'
+                            WHEN 'main' THEN name
+                            ELSE CONCAT('{schema}.', name)
+                        END
+                        FROM "{schema}".sqlite_master
+                        WHERE type IN ('table', 'view')
+                        AND name NOT LIKE 'sqlite_%'"""
+                        for schema in schema_names
+                    )
+                    command = " UNION ALL ".join(select_clauses) + " ORDER BY 1"
+                    for row in self._cur.execute(command):
+                        print(row[0])
                 case "version":
                     print(sqlite3.sqlite_version)
                 case "help":
                     t = theme.syntax
                     print(f"Enter SQL code or one of the below commands, and press enter.\n\n"
+                          f"{t.builtin}.tables{t.reset}     List names of tables\n"
                           f"{t.builtin}.version{t.reset}    Print underlying SQLite library version\n"
                           f"{t.builtin}.help{t.reset}       Print this help message\n"
                           f"{t.builtin}.quit{t.reset}       Exit the CLI, equivalent to CTRL-D\n")
