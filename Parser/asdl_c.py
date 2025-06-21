@@ -298,7 +298,7 @@ class StructVisitor(EmitVisitor):
             # rudimentary attribute handling
             type = str(field.type)
             assert type in asdl.builtin_types, type
-            emit("%s %s;" % (type, field.name), depth + 1);
+            emit("%s %s;" % (type, field.name), depth + 1)
         emit("};")
         emit("")
 
@@ -332,7 +332,7 @@ class StructVisitor(EmitVisitor):
             # rudimentary attribute handling
             type = str(field.type)
             assert type in asdl.builtin_types, type
-            self.emit("%s %s;" % (type, field.name), depth + 1);
+            self.emit("%s %s;" % (type, field.name), depth + 1)
         self.emit("};", depth)
         self.emit("", depth)
 
@@ -434,7 +434,7 @@ class FunctionVisitor(PrototypeVisitor):
                 emit('return NULL;', 2)
                 emit('}', 1)
 
-        emit("p = (%s)_PyArena_Malloc(arena, sizeof(*p));" % ctype, 1);
+        emit("p = (%s)_PyArena_Malloc(arena, sizeof(*p));" % ctype, 1)
         emit("if (!p)", 1)
         emit("return NULL;", 2)
         if union:
@@ -1734,6 +1734,17 @@ make_type(struct ast_state *state, const char *type, PyObject* base,
                     state->__module__,
                     state->ast,
                     state->__doc__, doc);
+    if (result) {
+        PyObject *empty_dict = PyDict_New();
+        if (!empty_dict ||
+            PyObject_SetAttr(result, state->_field_types, empty_dict) < 0) {
+            Py_XDECREF(empty_dict);
+            Py_DECREF(result);
+            Py_DECREF(fnames);
+            return NULL;
+        }
+        Py_DECREF(empty_dict);
+    }
     Py_DECREF(fnames);
     return result;
 }
@@ -1860,16 +1871,20 @@ static int obj2ast_int(struct ast_state* Py_UNUSED(state), PyObject* obj, int* o
 
 static int add_ast_fields(struct ast_state *state)
 {
-    PyObject *empty_tuple;
+    PyObject *empty_tuple, *empty_dict;
     empty_tuple = PyTuple_New(0);
-    if (!empty_tuple ||
+    empty_dict = PyDict_New();
+    if (!empty_tuple || !empty_dict ||
         PyObject_SetAttrString(state->AST_type, "_fields", empty_tuple) < 0 ||
+        PyObject_SetAttrString(state->AST_type, "_field_types", empty_dict) < 0 ||
         PyObject_SetAttrString(state->AST_type, "__match_args__", empty_tuple) < 0 ||
         PyObject_SetAttrString(state->AST_type, "_attributes", empty_tuple) < 0) {
         Py_XDECREF(empty_tuple);
+        Py_XDECREF(empty_dict);
         return -1;
     }
     Py_DECREF(empty_tuple);
+    Py_DECREF(empty_dict);
     return 0;
 }
 
@@ -2089,13 +2104,13 @@ class ObjVisitor(PickleVisitor):
             self.emit("case %s:" % t.name, 2)
             self.emit("return Py_NewRef(state->%s_singleton);" % t.name, 3)
         self.emit("}", 1)
-        self.emit("Py_UNREACHABLE();", 1);
+        self.emit("Py_UNREACHABLE();", 1)
         self.emit("}", 0)
 
     def visitProduct(self, prod, name):
         self.func_begin(name)
         self.emit("tp = (PyTypeObject *)state->%s_type;" % name, 1)
-        self.emit("result = PyType_GenericNew(tp, NULL, NULL);", 1);
+        self.emit("result = PyType_GenericNew(tp, NULL, NULL);", 1)
         self.emit("if (!result) return NULL;", 1)
         for field in prod.fields:
             self.visitField(field, name, 1, True)
@@ -2110,7 +2125,7 @@ class ObjVisitor(PickleVisitor):
     def visitConstructor(self, cons, enum, name):
         self.emit("case %s_kind:" % cons.name, 1)
         self.emit("tp = (PyTypeObject *)state->%s_type;" % cons.name, 2)
-        self.emit("result = PyType_GenericNew(tp, NULL, NULL);", 2);
+        self.emit("result = PyType_GenericNew(tp, NULL, NULL);", 2)
         self.emit("if (!result) goto failed;", 2)
         for f in cons.fields:
             self.visitField(f, cons.name, 2, False)
@@ -2272,6 +2287,7 @@ def generate_module_def(mod, metadata, f, internal_h):
     state_strings = {
         "ast",
         "_fields",
+        "_field_types",
         "__match_args__",
         "__doc__",
         "__dict__",

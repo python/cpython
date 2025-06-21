@@ -160,6 +160,7 @@ struct ast_state {
     PyObject *__match_args__;
     PyObject *__module__;
     PyObject *_attributes;
+    PyObject *_field_types;
     PyObject *_fields;
     PyObject *alias_type;
     PyObject *annotation;

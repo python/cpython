@@ -177,6 +177,7 @@ void _PyAST_Fini(PyInterpreterState *interp)
     Py_CLEAR(state->__match_args__);
     Py_CLEAR(state->__module__);
     Py_CLEAR(state->_attributes);
+    Py_CLEAR(state->_field_types);
     Py_CLEAR(state->_fields);
     Py_CLEAR(state->alias_type);
     Py_CLEAR(state->annotation);
@@ -291,6 +292,7 @@ static int init_identifiers(struct ast_state *state)
     if ((state->__match_args__ = PyUnicode_InternFromString("__match_args__")) == NULL) return -1;
     if ((state->__module__ = PyUnicode_InternFromString("__module__")) == NULL) return -1;
     if ((state->_attributes = PyUnicode_InternFromString("_attributes")) == NULL) return -1;
+    if ((state->_field_types = PyUnicode_InternFromString("_field_types")) == NULL) return -1;
     if ((state->_fields = PyUnicode_InternFromString("_fields")) == NULL) return -1;
     if ((state->annotation = PyUnicode_InternFromString("annotation")) == NULL) return -1;
     if ((state->arg = PyUnicode_InternFromString("arg")) == NULL) return -1;
@@ -6018,6 +6020,17 @@ make_type(struct ast_state *state, const char *type, PyObject* base,
                     state->__module__,
                     state->ast,
                     state->__doc__, doc);
+    if (result) {
+        PyObject *empty_dict = PyDict_New();
+        if (!empty_dict ||
+            PyObject_SetAttr(result, state->_field_types, empty_dict) < 0) {
+            Py_XDECREF(empty_dict);
+            Py_DECREF(result);
+            Py_DECREF(fnames);
+            return NULL;
+        }
+        Py_DECREF(empty_dict);
+    }
     Py_DECREF(fnames);
     return result;
 }
@@ -6144,16 +6157,20 @@ static int obj2ast_int(struct ast_state* Py_UNUSED(state), PyObject* obj, int* o
 
 static int add_ast_fields(struct ast_state *state)
 {
-    PyObject *empty_tuple;
+    PyObject *empty_tuple, *empty_dict;
     empty_tuple = PyTuple_New(0);
-    if (!empty_tuple ||
+    empty_dict = PyDict_New();
+    if (!empty_tuple || !empty_dict ||
         PyObject_SetAttrString(state->AST_type, "_fields", empty_tuple) < 0 ||
+        PyObject_SetAttrString(state->AST_type, "_field_types", empty_dict) < 0 ||
         PyObject_SetAttrString(state->AST_type, "__match_args__", empty_tuple) < 0 ||
         PyObject_SetAttrString(state->AST_type, "_attributes", empty_tuple) < 0) {
         Py_XDECREF(empty_tuple);
+        Py_XDECREF(empty_dict);
         return -1;
     }
     Py_DECREF(empty_tuple);
+    Py_DECREF(empty_dict);
     return 0;
 }
 

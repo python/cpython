@@ -1,0 +1,2 @@
+Add the _field_types attribute to the base AST class and its subclasses. The
+default value is an empty dict. Patch by Hunter Hogan.
