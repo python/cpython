@@ -1812,7 +1812,6 @@ def writedocs(dir, pkgpath='', done=None):
 
 
 def _introdoc():
-    import textwrap
     ver = '%d.%d' % sys.version_info[:2]
     if os.environ.get('PYTHON_BASIC_REPL'):
         pyrepl_keys = ''
@@ -2170,7 +2169,6 @@ module "pydoc_data.topics" could not be found.
         if more_xrefs:
             xrefs = (xrefs or '') + ' ' + more_xrefs
         if xrefs:
-            import textwrap
             text = 'Related help topics: ' + ', '.join(xrefs.split()) + '\n'
             wrapped_text = textwrap.wrap(text, 72)
             doc += '\n%s\n' % '\n'.join(wrapped_text)
