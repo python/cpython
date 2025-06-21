@@ -208,6 +208,11 @@ class HashLibTestCase(unittest.TestCase):
         return itertools.chain.from_iterable(constructors)
 
     @property
+    def shake_constructors(self):
+        for shake_name in self.shakes:
+            yield from self.constructors_to_test.get(shake_name, ())
+
+    @property
     def is_fips_mode(self):
         return get_fips_mode()
 
@@ -376,21 +381,50 @@ class HashLibTestCase(unittest.TestCase):
                 self.assertIsInstance(h.digest(), bytes)
                 self.assertEqual(hexstr(h.digest()), h.hexdigest())
 
-    def test_digest_length_overflow(self):
-        # See issue #34922
-        large_sizes = (2**29, 2**32-10, 2**32+10, 2**61, 2**64-10, 2**64+10)
-        for cons in self.hash_constructors:
-            h = cons(usedforsecurity=False)
-            if h.name not in self.shakes:
-                continue
-            if HASH is not None and isinstance(h, HASH):
-                # _hashopenssl's take a size_t
-                continue
-            for digest in h.digest, h.hexdigest:
-                self.assertRaises(ValueError, digest, -10)
-                for length in large_sizes:
-                    with self.assertRaises((ValueError, OverflowError)):
-                        digest(length)
+    def test_shakes_zero_digest_length(self):
+        for constructor in self.shake_constructors:
+            with self.subTest(constructor=constructor):
+                h = constructor(b'abcdef', usedforsecurity=False)
+                self.assertEqual(h.digest(0), b'')
+                self.assertEqual(h.hexdigest(0), '')
+
+    def test_shakes_invalid_digest_length(self):
+        # See https://github.com/python/cpython/issues/79103.
+        for constructor in self.shake_constructors:
+            with self.subTest(constructor=constructor):
+                h = constructor(usedforsecurity=False)
+                # Note: digest() and hexdigest() take a signed input and
+                # raise if it is negative; the rationale is that we use
+                # internally PyBytes_FromStringAndSize() and _Py_strhex()
+                # which both take a Py_ssize_t.
+                for negative_size in (-1, -10, -(1 << 31), -sys.maxsize):
+                    self.assertRaises(ValueError, h.digest, negative_size)
+                    self.assertRaises(ValueError, h.hexdigest, negative_size)
+
+    def test_shakes_overflow_digest_length(self):
+        # See https://github.com/python/cpython/issues/135759.
+
+        exc_types = (OverflowError, ValueError)
+        # HACL* accepts an 'uint32_t' while OpenSSL accepts a 'size_t'.
+        openssl_overflown_sizes = (sys.maxsize + 1, 2 * sys.maxsize)
+        # https://github.com/python/cpython/issues/79103 restricts
+        # the accepted built-in lengths to 2 ** 29, even if OpenSSL
+        # accepts such lengths.
+        builtin_overflown_sizes = openssl_overflown_sizes + (
+            2 ** 29, 2 ** 32 - 10, 2 ** 32, 2 ** 32 + 10,
+            2 ** 61, 2 ** 64 - 10, 2 ** 64, 2 ** 64 + 10,
+        )
+
+        for constructor in self.shake_constructors:
+            with self.subTest(constructor=constructor):
+                h = constructor(usedforsecurity=False)
+                if HASH is not None and isinstance(h, HASH):
+                    overflown_sizes = openssl_overflown_sizes
+                else:
+                    overflown_sizes = builtin_overflown_sizes
+                for invalid_size in overflown_sizes:
+                    self.assertRaises(exc_types, h.digest, invalid_size)
+                    self.assertRaises(exc_types, h.hexdigest, invalid_size)
 
     def test_name_attribute(self):
         for cons in self.hash_constructors:

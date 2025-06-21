@@ -1185,6 +1185,15 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    ``cache_tag`` is set to ``None``, it indicates that module caching should
    be disabled.
 
+   *supports_isolated_interpreters* is a boolean value, whether
+   this implementation supports multiple isolated interpreters.
+   It is ``True`` for CPython on most platforms.  Platforms with
+   this support implement the low-level :mod:`!_interpreters` module.
+
+   .. seealso::
+
+      :pep:`684`, :pep:`734`, and :mod:`concurrent.interpreters`.
+
    :data:`sys.implementation` may contain additional attributes specific to
    the Python implementation.  These non-standard attributes must start with
    an underscore, and are not described here.  Regardless of its contents,
@@ -1193,6 +1202,9 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    language versions, however.)  See :pep:`421` for more information.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.14
+      Added ``supports_isolated_interpreters`` field.
 
    .. note::
 

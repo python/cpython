@@ -1203,8 +1203,21 @@ dummy_func(void) {
         sym_set_const(callable, (PyObject *)&PyUnicode_Type);
     }
 
-    op(_CALL_LEN, (unused, unused, unused -- res)) {
+    op(_CALL_LEN, (callable, null, arg -- res)) {
         res = sym_new_type(ctx, &PyLong_Type);
+        int tuple_length = sym_tuple_length(arg);
+        if (tuple_length >= 0) {
+            PyObject *temp = PyLong_FromLong(tuple_length);
+            if (temp == NULL) {
+                goto error;
+            }
+            if (_Py_IsImmortal(temp)) {
+                REPLACE_OP(this_instr, _POP_CALL_ONE_LOAD_CONST_INLINE_BORROW,
+                           0, (uintptr_t)temp);
+            }
+            res = sym_new_const(ctx, temp);
+            Py_DECREF(temp);
+        }
     }
 
     op(_GET_LEN, (obj -- obj, len)) {
