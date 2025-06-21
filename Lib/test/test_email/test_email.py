@@ -5432,6 +5432,9 @@ A very long line that must get split to something other than at the
     def test_whitespace_header(self):
         self.assertEqual(Header(' ').encode(), ' ')
 
+    def test_header_with_trailing_space(self):
+        self.assertEqual(Header('Content-Type: multipart/alternative; \n boundary="--test"').encode(),
+                         'Content-Type: multipart/alternative; \n boundary="--test"')
 
 
 # Test RFC 2231 header parameters (en/de)coding
