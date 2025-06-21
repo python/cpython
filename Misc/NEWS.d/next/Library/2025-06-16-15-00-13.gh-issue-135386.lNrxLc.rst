@@ -1,0 +1,1 @@
+Fix :exc:`sqlite3.OperationalError` error when using :func:`dbm.open` with a read-only file object.
