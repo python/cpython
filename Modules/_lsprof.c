@@ -632,6 +632,27 @@ _lsprof_Profiler__pystart_callback_impl(ProfilerObject *self, PyObject *code,
 }
 
 /*[clinic input]
+_lsprof.Profiler._pythrow_callback
+
+    code: object
+    instruction_offset: object
+    exception: object
+    /
+
+[clinic start generated code]*/
+
+static PyObject *
+_lsprof_Profiler__pythrow_callback_impl(ProfilerObject *self, PyObject *code,
+                                        PyObject *instruction_offset,
+                                        PyObject *exception)
+/*[clinic end generated code: output=0a32988919dfb94c input=fd728fc2c074f5e6]*/
+{
+    ptrace_enter_call((PyObject*)self, (void *)code, code);
+
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
 _lsprof.Profiler._pyreturn_callback
 
     code: object
@@ -747,7 +768,7 @@ static const struct {
 } callback_table[] = {
     {PY_MONITORING_EVENT_PY_START, "_pystart_callback"},
     {PY_MONITORING_EVENT_PY_RESUME, "_pystart_callback"},
-    {PY_MONITORING_EVENT_PY_THROW, "_pystart_callback"},
+    {PY_MONITORING_EVENT_PY_THROW, "_pythrow_callback"},
     {PY_MONITORING_EVENT_PY_RETURN, "_pyreturn_callback"},
     {PY_MONITORING_EVENT_PY_YIELD, "_pyreturn_callback"},
     {PY_MONITORING_EVENT_PY_UNWIND, "_pyreturn_callback"},
@@ -1002,6 +1023,7 @@ static PyMethodDef profiler_methods[] = {
     _LSPROF_PROFILER_DISABLE_METHODDEF
     _LSPROF_PROFILER_CLEAR_METHODDEF
     _LSPROF_PROFILER__PYSTART_CALLBACK_METHODDEF
+    _LSPROF_PROFILER__PYTHROW_CALLBACK_METHODDEF
     _LSPROF_PROFILER__PYRETURN_CALLBACK_METHODDEF
     _LSPROF_PROFILER__CCALL_CALLBACK_METHODDEF
     _LSPROF_PROFILER__CRETURN_CALLBACK_METHODDEF
