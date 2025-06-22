@@ -1162,6 +1162,7 @@ iterations of the loop.
 
    .. versionadded:: 3.6
 
+
 .. opcode:: BUILD_TEMPLATE
 
    Create a :class:`~string.templatelib.Template` object consuming interpolations
