@@ -119,7 +119,7 @@ math
 netrc
 -----
 
-* Added support for the :envvar:`NETRC` environment variable in :func:`netrc.netrc`.
+* Added support for the :envvar:`!NETRC` environment variable in :func:`netrc.netrc`.
   (Contributed by Berthin Torres in :gh:`135788`.)
 
 
