@@ -1735,7 +1735,7 @@ _hashlib_hmac_singleshot_impl(PyObject *module, Py_buffer *key,
                               Py_buffer *msg, PyObject *digest)
 /*[clinic end generated code: output=82f19965d12706ac input=0a0790cc3db45c2e]*/
 {
-    const void *r;
+    const void *result;
     unsigned char md[EVP_MAX_MD_SIZE] = {0};
 #ifdef Py_HAS_OPENSSL3_SUPPORT
     size_t md_len = 0;
@@ -1760,7 +1760,7 @@ _hashlib_hmac_singleshot_impl(PyObject *module, Py_buffer *key,
         return NULL;
     }
     Py_BEGIN_ALLOW_THREADS
-    r = EVP_Q_mac(
+    result = EVP_Q_mac(
         NULL, OSSL_MAC_NAME_HMAC, NULL, NULL,
         HASHLIB_HMAC_OSSL_PARAMS(digest_name),
         (const void *)key->buf, (size_t)key->len,
@@ -1776,7 +1776,7 @@ _hashlib_hmac_singleshot_impl(PyObject *module, Py_buffer *key,
     }
 
     Py_BEGIN_ALLOW_THREADS
-    r = HMAC(
+    result = HMAC(
         evp,
         (const void *)key->buf, (int)key->len,
         (const unsigned char *)msg->buf, (size_t)msg->len,
@@ -1785,7 +1785,7 @@ _hashlib_hmac_singleshot_impl(PyObject *module, Py_buffer *key,
     Py_END_ALLOW_THREADS
     PY_EVP_MD_free(evp);
 #endif
-    if (r == NULL) {
+    if (result == NULL) {
 #ifdef Py_HAS_OPENSSL3_SUPPORT
         notify_ssl_error_occurred_in(Py_STRINGIFY(EVP_Q_mac));
 #else
@@ -2200,7 +2200,7 @@ _hashlib_HMAC_hexdigest_impl(HMACobject *self)
 }
 
 static PyObject *
-_hashlib_HMAC_get_digestsize(PyObject *op, void *Py_UNUSED(closure))
+_hashlib_HMAC_digest_size_getter(PyObject *op, void *Py_UNUSED(closure))
 {
     HMACobject *self = HMACobject_CAST(op);
     unsigned int size = hashlib_openssl_HMAC_digest_size(self);
@@ -2208,7 +2208,7 @@ _hashlib_HMAC_get_digestsize(PyObject *op, void *Py_UNUSED(closure))
 }
 
 static PyObject *
-_hashlib_HMAC_get_blocksize(PyObject *op, void *Py_UNUSED(closure))
+_hashlib_HMAC_block_size_getter(PyObject *op, void *Py_UNUSED(closure))
 {
     HMACobject *self = HMACobject_CAST(op);
 #ifdef Py_HAS_OPENSSL3_SUPPORT
@@ -2221,7 +2221,7 @@ _hashlib_HMAC_get_blocksize(PyObject *op, void *Py_UNUSED(closure))
 }
 
 static PyObject *
-_hashlib_HMAC_get_name(PyObject *op, void *Py_UNUSED(closure))
+_hashlib_HMAC_name_getter(PyObject *op, void *Py_UNUSED(closure))
 {
     HMACobject *self = HMACobject_CAST(op);
     const char *digest_name = hashlib_HMAC_get_hashlib_digest_name(self);
@@ -2241,9 +2241,9 @@ static PyMethodDef HMAC_methods[] = {
 };
 
 static PyGetSetDef HMAC_getsets[] = {
-    {"digest_size", _hashlib_HMAC_get_digestsize, NULL, NULL, NULL},
-    {"block_size", _hashlib_HMAC_get_blocksize, NULL, NULL, NULL},
-    {"name", _hashlib_HMAC_get_name, NULL, NULL, NULL},
+    {"digest_size", _hashlib_HMAC_digest_size_getter, NULL, NULL, NULL},
+    {"block_size", _hashlib_HMAC_block_size_getter, NULL, NULL, NULL},
+    {"name", _hashlib_HMAC_name_getter, NULL, NULL, NULL},
     {NULL}  /* Sentinel */
 };
 
