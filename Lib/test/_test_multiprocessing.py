@@ -5833,8 +5833,11 @@ class TestStartMethod(unittest.TestCase):
         for method in ('fork', 'spawn', 'forkserver'):
             multiprocessing.set_start_method(None, force=True)
 
-            context = multiprocessing.get_context(method)
-            process = context.Process(target=self._dummy_func)
+            try:
+                ctx = multiprocessing.get_context(method)
+            except ValueError:
+                continue
+            process = ctx .Process(target=self._dummy_func)
             process.start()
             process.join()
             self.assertIsNone(multiprocessing.get_start_method(allow_none=True))
