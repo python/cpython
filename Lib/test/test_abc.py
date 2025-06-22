@@ -322,7 +322,7 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
                 pass
             class B(object):
                 pass
-                
+
             a = A()
             b = B()
             # trigger caching
@@ -353,7 +353,7 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
 
             class C(B):
                 pass
-                
+
             c = C()
             # trigger caching
             for _ in range(2):
