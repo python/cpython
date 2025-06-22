@@ -659,9 +659,10 @@ def eff_request_host(request):
         from ipaddress import IPv6Address
         try:
             IPv6Address(req_host.removeprefix('[').removesuffix(']'))
-            is_ipV6 = True
         except ValueError:
             is_ipV6 = False
+        else:
+            is_ipV6 = True
     else:
         is_ipV6 = False
     if "." not in req_host and not is_ipV6:
