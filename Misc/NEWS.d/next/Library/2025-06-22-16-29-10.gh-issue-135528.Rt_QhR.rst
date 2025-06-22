@@ -1,1 +1,1 @@
-:mod:`http.cookiejar`: aadd "tv", "or", "nom", "sch", and "web" to the default list of supported country code second-level domains.
+:mod:`http.cookiejar`: add "tv", "or", "nom", "sch", and "web" to the default list of supported country code second-level domains.
