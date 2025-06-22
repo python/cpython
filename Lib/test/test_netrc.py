@@ -10,9 +10,8 @@ except ImportError:
 
 
 class NetrcEnvironment:
-    """
-    Context manager for setting up an isolated environment to test `.netrc` file
-    handling.
+    """Context manager for setting up an isolated environment to test
+    `.netrc` file handling.
 
     This class configures a temporary directory for the `.netrc` file and
     environment variables, providing a controlled setup to simulate different
@@ -20,9 +19,7 @@ class NetrcEnvironment:
     """
 
     def __enter__(self):
-        """
-        Enter the managed environment.
-        """
+        """Enter the managed environment."""
         self.stack = ExitStack()
         self.environ = self.stack.enter_context(
             support.os_helper.EnvironmentVarGuard(),
@@ -31,10 +28,10 @@ class NetrcEnvironment:
         return self
 
     def __exit__(self, *ignore_exc):
-        """
-        Exit the managed environment and performs cleanup. This method closes
-        the `ExitStack`, which automatically cleans up the temporary directory
-        and environment.
+        """Exit the managed environment and performs cleanup.
+
+        This method closes the `ExitStack`, which automatically cleans up the
+        temporary directory and environment.
         """
         self.stack.close()
 
