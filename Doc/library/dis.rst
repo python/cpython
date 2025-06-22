@@ -1171,8 +1171,8 @@ iterations of the loop.
 
 .. opcode:: BUILD_INTERPOLATION
 
-   Constructs an :class:`~string.templatelib.Interpolation` object from the
-   following components, and pushes it onto the stack:
+   Constructs an Interpolation object from the following components, and pushes
+   it onto the stack:
 
    * ``value``: the evaluated result at runtime
    * ``name``: the expression's source code as a string
@@ -1183,8 +1183,8 @@ iterations of the loop.
 
 .. opcode:: BUILD_TEMPLATE
 
-   Create a :class:`~string.templatelib.Template` object consuming interpolations
-   and a string from the stack, and pushes it onto the stack.
+   Create a Template object consuming interpolations and a string from the stack,
+   and pushes it onto the stack.
 
    .. versionadded:: 3.14
 
