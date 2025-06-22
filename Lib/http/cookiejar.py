@@ -536,7 +536,15 @@ def parse_ns_headers(ns_headers):
 IPV4_RE = re.compile(r"\.\d+$", re.ASCII)
 
 def is_ip_like_hostname(text):
-    """Return True if text is a valid hostname in the form of IP address."""
+    """Return True if text is a valid hostname in the form of IP address.
+    
+    If text is a valid IPv4 address, retrun True;
+
+    If text is a valid IPv6 address wrapped in [], return True;
+
+    Else, return False
+    
+    """
     from ipaddress import IPv4Address, IPv6Address
     # check for IPv4 address
     try:
@@ -667,6 +675,8 @@ def eff_request_host(request):
         is_ipV6 = False
     if "." not in req_host and not is_ipV6:
         # avoid adding .local at the end of a IPV6 address
+        # for the additional ".local", see RFC 2965 section 1
+        # https://www.rfc-editor.org/rfc/rfc2965
         erhn = req_host + ".local"
     return req_host, erhn
 
