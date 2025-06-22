@@ -542,7 +542,7 @@ def is_ip_like_hostname(text):
 
     If text is a valid IPv6 address wrapped in [], return True;
 
-    Else, return False
+    Else, return False.
 
     """
     from ipaddress import IPv4Address, IPv6Address
