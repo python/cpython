@@ -46,6 +46,11 @@ the Unix :program:`ftp` program and other FTP clients.
       can contain arbitrary characters, like whitespace and non-ASCII characters.
       If the login name is anonymous, it won't trigger the security check.
 
+   .. versionadded:: next
+      :class:`netrc` try to use the value of the :envvar:`NETRC` environment variable
+      if when *file* is not passed as argument, before falling back to the user's
+      :file:`.netrc` file in the home directory.
+
 
 .. exception:: NetrcParseError
 
