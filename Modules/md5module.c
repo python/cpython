@@ -178,12 +178,12 @@ static void
 _hacl_md5_state_update(Hacl_Hash_MD5_state_t *state,
                        uint8_t *buf, Py_ssize_t len)
 {
-    assert(len >= 0);
     /*
      * Note: we explicitly ignore the error code on the basis that it would
      * take more than 1 billion years to overflow the maximum admissible length
      * for MD5 (2^61 - 1).
      */
+    assert(len >= 0);
 #if PY_SSIZE_T_MAX > UINT32_MAX
     while (len > UINT32_MAX) {
         (void)Hacl_Hash_MD5_update(state, buf, UINT32_MAX);

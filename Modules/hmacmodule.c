@@ -284,7 +284,6 @@ typedef Hacl_Streaming_HMAC_agile_state HACL_HMAC_state;
 
 typedef struct HMACObject {
     HASHLIB_OBJECT_HEAD
-
     // Hash function information
     PyObject *name;         // rendered name (exact unicode object)
     HMAC_Hash_Kind kind;    // can be used for runtime dispatch (must be known)
