@@ -431,6 +431,40 @@ dis_fn_with_annotate_str = """\
               RETURN_VALUE
 """
 
+issue_135700 = """\
+22
+333
+__dataclass_fields__: ClassVar
+"""
+
+class _B:
+    2
+    c: int
+
+dis_issue_135700_class = """\
+Disassembly of __annotate_func__:
+  --           COPY_FREE_VARS           1
+
+ %3d           RESUME                   0
+               LOAD_FAST_BORROW         0 (format)
+               LOAD_SMALL_INT           2
+               COMPARE_OP             132 (>)
+               POP_JUMP_IF_FALSE        3 (to L1)
+               NOT_TAKEN
+               LOAD_COMMON_CONSTANT     1 (NotImplementedError)
+               RAISE_VARARGS            1
+       L1:     BUILD_MAP                0
+
+ %3d           LOAD_DEREF               1 (__classdict__)
+               LOAD_FROM_DICT_OR_GLOBALS 0 (int)
+               COPY                     2
+               LOAD_CONST               1 ('c')
+
+ %3d           STORE_SUBSCR
+               RETURN_VALUE
+
+""" % (_B.__firstlineno__, _B.__firstlineno__ + 2, _B.__firstlineno__)
+
 compound_stmt_str = """\
 x = 0
 while 1:
@@ -1123,6 +1157,24 @@ class DisTests(DisTestBase):
     def test_bug_46724(self):
         # Test that negative operargs are handled properly
         self.do_disassembly_test(bug46724, dis_bug46724)
+
+    def test_annotate_no_spurious_first_node_positions(self):
+        # Test that __annotate__ code doesn't inherit first AST node positions
+        annotate_code = compile(issue_135700, "<string>", "exec").co_consts[1]
+        instructions = list(dis.Bytecode(annotate_code))
+
+        spurious_positions = 0
+        for instr in instructions:
+            if (instr.positions and
+                instr.positions.lineno == 1 and
+                instr.positions.col_offset == 0 and
+                instr.positions.end_col_offset == 1):
+                spurious_positions += 1
+
+        self.assertEqual(spurious_positions, 0,
+                        "No instructions should have first statement's position")
+        got = self.get_disassembly(_B, depth=1)
+        self.do_disassembly_compare(got, dis_issue_135700_class)
 
     def test_kw_names(self):
         # Test that value is displayed for keyword argument names:
