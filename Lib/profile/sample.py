@@ -6,6 +6,7 @@ import time
 from _colorize import ANSIColors
 
 from .pstats_collector import PstatsCollector
+from .stack_collectors import CollapsedStackCollector
 
 
 class SampleProfiler:
@@ -255,6 +256,9 @@ def sample(
     match output_format:
         case "pstats":
             collector = PstatsCollector(sample_interval_usec)
+        case "collapsed":
+            collector = CollapsedStackCollector()
+            filename = filename or f"collapsed.{pid}.txt"
         case _:
             raise ValueError(f"Invalid output format: {output_format}")
 
@@ -281,6 +285,8 @@ def main():
             "The default sort is by cumulative time (--sort-cumulative)."
             "Format descriptions:\n"
             "  pstats     Standard Python profiler output format\n"
+            "  collapsed  Stack traces in collapsed format (file:function:line;file:function:line;... count)\n"
+            "             Useful for generating flamegraphs with tools like flamegraph.pl"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
         color=True,
@@ -325,7 +331,7 @@ def main():
     )
     parser.add_argument(
         "--format",
-        choices=["pstats"],
+        choices=["pstats", "collapsed"],
         default="pstats",
         help="Output format (default: pstats)",
     )
