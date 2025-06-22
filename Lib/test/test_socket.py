@@ -7335,9 +7335,11 @@ class SendRecvFdsTests(unittest.TestCase):
         self.addCleanup(close_fds, fds)
 
     def _test_pipe(self, rfd, wfd, msg):
-        assert len(msg) < 512
+        # POSIX requires PIPE_BUF to be at least 512 bytes.
+        PIPE_BUF = 512
+        assert len(msg) < PIPE_BUF
         os.write(wfd, msg)
-        data = os.read(rfd, 512)
+        data = os.read(rfd, PIPE_BUF)
         self.assertEqual(data, msg)
 
     @staticmethod
