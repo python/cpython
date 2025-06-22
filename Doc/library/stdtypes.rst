@@ -956,6 +956,12 @@ methods.
 More information about generators can be found in :ref:`the documentation for
 the yield expression <yieldexpr>`.
 
+.. note::
+
+   Calling ``close()`` on a generator raises a ``GeneratorExit`` exception inside the generator 
+   at the point where it is paused. If this exception is not caught or handled inside the 
+   generator (for example, using ``try``/``except`` or ``finally``), then the call to 
+   ``close()`` will simply return ``None`` without raising any error to the caller.
 
 .. _typesseq:
 
