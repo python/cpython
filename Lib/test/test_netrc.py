@@ -1,6 +1,7 @@
 import netrc, os, unittest, sys, tempfile, textwrap
 from contextlib import ExitStack
 from test.support import os_helper, subTests
+from unittest import mock
 
 try:
     import pwd
@@ -58,10 +59,14 @@ class NetrcBuilder:
         user's home directory.
         """
         with NetrcEnvironment() as helper:
+            helper.generate_netrc(*args, **kwargs)
             helper.environ.unset("NETRC")
             helper.environ.set("HOME", helper.tmpdir)
-            helper.generate_netrc(*args, **kwargs)
-            return netrc.netrc()
+            real_expanduser = os.path.expanduser
+            with mock.patch("os.path.expanduser") as mock_expanduser:
+                mock_expanduser.side_effect = lambda arg: helper.tmpdir \
+                    if arg == "~" else real_expanduser(arg)
+                return netrc.netrc()
 
     @staticmethod
     def use_netrc_envvar(*args, **kwargs):
