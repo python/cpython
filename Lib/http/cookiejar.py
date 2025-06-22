@@ -559,9 +559,7 @@ def is_ip_like_hostname(text):
     A valid IP-like hostname is either an IPv4 address or
     an IPv6 enclosed in brackets (for instance, "[::1]").
     """
-    if _is_ipv4_hostname(text) or _is_ipv6_hostname(text):
-        return True
-    return False
+    return _is_ipv4_hostname(text) or _is_ipv6_hostname(text)
 
 def is_HDN(text):
     """Return True if text is a host domain name."""
