@@ -7457,6 +7457,8 @@ class SendRecvFdsTests(unittest.TestCase):
             self._cleanup_fds(fds)
 
         self.assertEqual(msg, MSG)
+        if hasattr(socket, "MSG_CTRUNC"):
+            self.assertEqual(flags & socket.MSG_CTRUNC, 0)
         self.assertEqual(len(fds), 1)
         self._test_pipe(fds[0], wfd, MSG)
 
