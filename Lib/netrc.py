@@ -157,9 +157,10 @@ class netrc:
     def _security_check(self, fp, default_netrc, login):
         if _can_security_check() and default_netrc and login != "anonymous":
             prop = os.fstat(fp.fileno())
-            if prop.st_uid != os.getuid():
+            current_user_id = os.getuid()
+            if prop.st_uid != current_user_id:
                 fowner = _getpwuid(prop.st_uid)
-                user = _getpwuid(os.getuid())
+                user = _getpwuid(current_user_id)
                 raise NetrcParseError(
                     (f"~/.netrc file owner ({fowner}, {user}) does not match"
                      " current user"))
