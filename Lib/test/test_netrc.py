@@ -381,65 +381,44 @@ class NetrcTestCase(unittest.TestCase):
             machine bar.domain.com login foo password pass
             """, '#pass')
 
-    @unittest.skipUnless(os.name == 'posix', 'POSIX only test')
-    @unittest.skipIf(pwd is None, 'security check requires pwd module')
-    @support.os_helper.skip_unless_working_chmod
-    def test_non_anonymous_security(self):
-        # This test is incomplete since we are normally not run as root and
-        # therefore can't test the file ownership being wrong.
-        content = """
-            machine foo.domain.com login bar password pass
-            default login foo password pass
-        """
-        mode = 0o662
-
-        # Use ~/.netrc and login is not anon
-        with self.assertRaises(netrc.NetrcParseError):
-            NetrcBuilder.use_default_netrc_in_home(content, mode=mode)
-
-        # Don't use default file
-        nrc = NetrcBuilder.use_file_argument(content, mode=mode)
-        self.assertEqual(nrc.hosts['foo.domain.com'],
-                            ('bar', '', 'pass'))
 
     @unittest.skipUnless(os.name == 'posix', 'POSIX only test')
     @unittest.skipIf(pwd is None, 'security check requires pwd module')
     @support.os_helper.skip_unless_working_chmod
-    @support.subTests('make_nrc', ALL_NETRC_FILE_SCENARIOS)
-    def test_anonymous_security(self, make_nrc):
+    def test_security(self):
         # This test is incomplete since we are normally not run as root and
         # therefore can't test the file ownership being wrong.
-        content = """\
-            machine foo.domain.com login anonymous password pass
-        """
-        mode = 0o662
-
-        # When it's anonymous, file permissions are not bypassed
-        nrc = make_nrc(content, mode=mode)
-        self.assertEqual(nrc.hosts['foo.domain.com'],
-                         ('anonymous', '', 'pass'))
-
-    @unittest.skipUnless(os.name == 'posix', 'POSIX only test')
-    @unittest.skipIf(pwd is None, 'security check requires pwd module')
-    @support.os_helper.skip_unless_working_chmod
-    def test_anonymous_security_with_default(self):
-        # This test is incomplete since we are normally not run as root and
-        # therefore can't test the file ownership being wrong.
-        content = """\
-            machine foo.domain.com login anonymous password pass
-            default login foo password pass
-        """
-        mode = 0o622
-
-        # "foo" is not anonymous, therefore the security check is triggered when we fallback to default netrc
-        with self.assertRaises(netrc.NetrcParseError):
-            NetrcBuilder.use_default_netrc_in_home(content, mode=mode)
-
-        # Security check isn't triggered if the file is passed as environment variable or argument
-        for make_nrc in (NetrcBuilder.use_file_argument, NetrcBuilder.use_netrc_envvar):
-            nrc = make_nrc(content, mode=mode)
+        d = support.os_helper.TESTFN
+        os.mkdir(d)
+        self.addCleanup(support.os_helper.rmtree, d)
+        fn = os.path.join(d, '.netrc')
+        with open(fn, 'wt') as f:
+            f.write("""\
+                machine foo.domain.com login bar password pass
+                default login foo password pass
+                """)
+        with support.os_helper.EnvironmentVarGuard() as environ:
+            environ.set('HOME', d)
+            os.chmod(fn, 0o600)
+            nrc = netrc.netrc()
             self.assertEqual(nrc.hosts['foo.domain.com'],
-                            ('anonymous', '', 'pass'))
+                             ('bar', '', 'pass'))
+            os.chmod(fn, 0o622)
+            self.assertRaises(netrc.NetrcParseError, netrc.netrc)
+        with open(fn, 'wt') as f:
+            f.write("""\
+                machine foo.domain.com login anonymous password pass
+                default login foo password pass
+                """)
+        with support.os_helper.EnvironmentVarGuard() as environ:
+            environ.set('HOME', d)
+            os.chmod(fn, 0o600)
+            nrc = netrc.netrc()
+            self.assertEqual(nrc.hosts['foo.domain.com'],
+                             ('anonymous', '', 'pass'))
+            os.chmod(fn, 0o622)
+            self.assertEqual(nrc.hosts['foo.domain.com'],
+                             ('anonymous', '', 'pass'))
 
 
 if __name__ == "__main__":
