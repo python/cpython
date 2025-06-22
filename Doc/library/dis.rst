@@ -585,6 +585,12 @@ operations on it as if it was a Python list. The top of the stack corresponds to
    generate line tracing events.
 
 
+.. opcode:: NOT_TAKEN
+   Do nothing code.  Used as a hint to the interpreter that a branch was predicted
+   as not taken.
+   .. versionadded:: 3.14
+
+
 .. opcode:: POP_TOP
 
    Removes the top-of-stack item::
@@ -1168,9 +1174,9 @@ iterations of the loop.
    Constructs an :class:`~string.templatelib.Interpolation` object from the
    following components, and pushes it onto the stack:
 
-   * value: the evaluated result at runtime
-   * name: the expression's source code as a string
-   * format: the format specification
+   * ``value``: the evaluated result at runtime
+   * ``name``: the expression's source code as a string
+   * ``format``: the format specification
 
    .. versionadded:: 3.14
 
