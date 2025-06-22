@@ -2,14 +2,6 @@
 
 #include "pycore_lock.h"        // PyMutex
 
-#define HASHLIB_MUTEX_API                           \
-    /*
-     * Attributes to prevent undefined behaviors
-     * via multiple threads entering the C API.
-     */                                             \
-    bool use_mutex;                                 \
-    PyMutex mutex;
-
 /*
  * Given a PyObject* 'obj', fill in the Py_buffer* 'viewp' with the result
  * of PyObject_GetBuffer.  Sets an exception and issues the 'erraction'
