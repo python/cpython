@@ -1826,8 +1826,8 @@ Optional Features:
                           no)
   --enable-profiling      enable C-level code profiling with gprof (default is
                           no)
-  --disable-gil           enable experimental support for running without the
-                          GIL (default is no)
+  --disable-gil           enable support for running without the GIL (default
+                          is no)
   --enable-pystats        enable internal statistics gathering (default is no)
   --enable-optimizations  enable expensive, stable optimizations (PGO, etc.)
                           (default is no)
@@ -12979,13 +12979,6 @@ if test "$ac_cv_sizeof_off_t" -gt "$ac_cv_sizeof_long" -a \
 else
   have_largefile_support="no"
 fi
-case $ac_sys_system in #(
-  Emscripten) :
-    have_largefile_support="no"
- ;; #(
-  *) :
-     ;;
-esac
 if test "x$have_largefile_support" = xyes
 then :
 
@@ -23849,7 +23842,7 @@ fi
 
 
 
-ac_fn_check_decl "$LINENO" "MAXLOGNAME" "ac_cv_have_decl_MAXLOGNAME" "#include <sys/params.h>
+ac_fn_check_decl "$LINENO" "MAXLOGNAME" "ac_cv_have_decl_MAXLOGNAME" "#include <sys/param.h>
 " "$ac_c_undeclared_builtin_options" "CFLAGS"
 if test "x$ac_cv_have_decl_MAXLOGNAME" = xyes
 then :
