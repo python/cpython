@@ -5,6 +5,8 @@ asyncio
 This document describes the working and implementation details of the
 [`asyncio`](https://docs.python.org/3/library/asyncio.html) module.
 
+**This section describes the implementation details of the C implementation**.
+
 # Task management
 
 ## Pre-Python 3.14 implementation
@@ -207,6 +209,8 @@ threads can access the current task of thier running loop without any
 locking.
 
 ---
+
+**This section describes the implementation details of the Python implementation**.
 
 # async generators
 
