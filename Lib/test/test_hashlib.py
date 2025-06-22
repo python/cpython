@@ -1055,7 +1055,7 @@ class HashLibTestCase(unittest.TestCase):
     @threading_helper.reap_threads
     @threading_helper.requires_working_threading()
     def test_threaded_hashing_fast(self):
-        # Same as test_threaded_hashing_slow() but only tests "fast" functions
+        # Same as test_threaded_hashing_slow() but only tests some functions
         # since otherwise test_hashlib.py becomes too slow during development.
         for name in ['md5', 'sha1', 'sha256', 'sha3_256', 'blake2s']:
             if constructor := getattr(hashlib, name, None):
@@ -1081,30 +1081,29 @@ class HashLibTestCase(unittest.TestCase):
         # If the internal locks are working to prevent multiple
         # updates on the same object from running at once, the resulting
         # hash will be the same as doing it single threaded upfront.
-        #
-        # Be careful when choosing num_threads, len(smallest_data)
-        # and len(data) // len(smallest_data) as the obtained chunk
-        # size needs to satisfy some conditions below.
-        num_threads = 5
-        smallest_data = os.urandom(8)
-        data = smallest_data * 200000
+
+        # The data to hash has length s|M|q^N and the chunk size for the i-th
+        # thread is s|M|q^(N-i), where N is the number of threads, M is a fixed
+        # message of small length, and s >= 1 and q >= 2 are small integers.
+        smallest_size, num_threads, s, q = 8, 5, 2, 10
+
+        smallest_data = os.urandom(smallest_size)
+        data = s * smallest_data * (q ** num_threads)
 
         h1 = constructor(usedforsecurity=False)
         h2 = constructor(data * num_threads, usedforsecurity=False)
 
-        def hash_in_chunks(chunk_size):
-            index = 0
-            while index < len(data):
+        def update(chunk_size):
+            for index in range(0, len(data), chunk_size):
                 h1.update(data[index:index + chunk_size])
-                index += chunk_size
 
         threads = []
-        for threadnum in range(num_threads):
-            chunk_size = len(data) // (10 ** threadnum)
+        for thread_num in range(num_threads):
+            # chunk_size = len(data) // (q ** thread_num)
+            chunk_size = s * smallest_size * q ** (num_threads - thread_num)
             self.assertGreater(chunk_size, 0)
-            self.assertEqual(chunk_size % len(smallest_data), 0)
-            thread = threading.Thread(target=hash_in_chunks,
-                                      args=(chunk_size,))
+            self.assertEqual(chunk_size % smallest_size, 0)
+            thread = threading.Thread(target=update, args=(chunk_size,))
             threads.append(thread)
 
         for thread in threads:
