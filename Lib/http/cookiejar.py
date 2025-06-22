@@ -658,7 +658,7 @@ def eff_request_host(request):
     if req_host.startswith('[') and req_host.endswith(']'):
         from ipaddress import IPv6Address
         try:
-            IPv6Address(req_host.removeprefix('[').removesuffix(']'))
+            IPv6Address(req_host[1:-1])
         except ValueError:
             is_ipV6 = False
         else:
