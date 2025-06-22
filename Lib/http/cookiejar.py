@@ -535,7 +535,7 @@ def parse_ns_headers(ns_headers):
 # only kept for backwards compatibilty.
 IPV4_RE = re.compile(r"\.\d+$", re.ASCII)
 
-def is_ip_like(text: str):
+def is_ip_like_hostname(text: str):
     """Return True if text is a valid hostname in the form of IP address."""
     from ipaddress import IPv4Address, IPv6Address
     # check for IPv4 address
@@ -556,7 +556,7 @@ def is_HDN(text):
     # XXX
     # This may well be wrong.  Which RFC is HDN defined in, if any (for
     #  the purposes of RFC 2965)?
-    if is_ip_like(text):
+    if is_ip_like_hostname(text):
         return False
     if text == "":
         return False
@@ -609,7 +609,7 @@ def liberal_is_HDN(text):
     For accepting/blocking domains.
 
     """
-    return not is_ip_like(text)
+    return not is_ip_like_hostname(text)
 
 def user_domain_match(A, B):
     """For blocking/accepting domains.
