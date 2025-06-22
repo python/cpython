@@ -545,7 +545,7 @@ def is_ip_like_hostname(text):
         # check for IPv6 address in []
         if text.startswith('[') and text.endswith(']'):
             try:
-                IPv6Address(text.removeprefix('[').removesuffix(']'))
+                IPv6Address(text[1:-1])
             except ValueError:
                 return False
         else:
