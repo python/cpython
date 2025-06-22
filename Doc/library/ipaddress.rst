@@ -106,7 +106,7 @@ write code that handles both IP versions correctly.  Address objects are
       integer represents an octet (byte) in the address. Leading zeroes are
       not tolerated to prevent confusion with octal notation.
    2. An integer that fits into 32 bits.
-   3. An integer packed into a :class:`bytes` object of length 4 (most
+   3. An integer packed into a :class:`bytes` or :class:`bytearray` object of length 4 (most
       significant octet first).
 
    >>> ipaddress.IPv4Address('192.168.0.1')
@@ -310,7 +310,7 @@ write code that handles both IP versions correctly.  Address objects are
       See :RFC:`4007` for details.
       For example, ``fe80::1234%1`` might identify address ``fe80::1234`` on the first link of the node.
    2. An integer that fits into 128 bits.
-   3. An integer packed into a :class:`bytes` object of length 16, big-endian.
+   3. An integer packed into a :class:`bytes` or :class:`bytearray` object of length 16, big-endian.
 
 
    >>> ipaddress.IPv6Address('2001:db8::1000')
@@ -507,7 +507,7 @@ dictionaries.
       single-address network, with the network address being *address* and
       the mask being ``/32``.
 
-   3. An integer packed into a :class:`bytes` object of length 4, big-endian.
+   3. An integer packed into a :class:`bytes` or :class:`bytearray` object of length 4, big-endian.
       The interpretation is similar to an integer *address*.
 
    4. A two-tuple of an address description and a netmask, where the address
@@ -728,7 +728,7 @@ dictionaries.
       single-address network, with the network address being *address* and
       the mask being ``/128``.
 
-   3. An integer packed into a :class:`bytes` object of length 16, big-endian.
+   3. An integer packed into a :class:`bytes` or :class:`bytearray` object of length 16, big-endian.
       The interpretation is similar to an integer *address*.
 
    4. A two-tuple of an address description and a netmask, where the address
