@@ -22,9 +22,9 @@ class NetrcEnvironment:
         """Enter the managed environment."""
         self.stack = ExitStack()
         self.environ = self.stack.enter_context(
-            support.os_helper.EnvironmentVarGuard(),
+            os_helper.EnvironmentVarGuard(),
         )
-        self.tmpdir = self.stack.enter_context(support.os_helper.temp_dir())
+        self.tmpdir = self.stack.enter_context(os_helper.temp_dir())
         return self
 
     def __exit__(self, *ignore_exc):
@@ -43,7 +43,7 @@ class NetrcEnvironment:
         write_mode = "w" if sys.platform != "cygwin" else "wt"
         with open(netrc_file, mode=write_mode, encoding=encoding) as fp:
             fp.write(textwrap.dedent(content))
-        if support.os_helper.can_chmod():
+        if os_helper.can_chmod():
             os.chmod(netrc_file, mode=mode)
         return netrc_file
 
@@ -372,20 +372,20 @@ class NetrcTestCase(unittest.TestCase):
 
     @unittest.skipUnless(os.name == 'posix', 'POSIX only test')
     @unittest.skipIf(pwd is None, 'security check requires pwd module')
-    @support.os_helper.skip_unless_working_chmod
+    @os_helper.skip_unless_working_chmod
     def test_security(self):
         # This test is incomplete since we are normally not run as root and
         # therefore can't test the file ownership being wrong.
-        d = support.os_helper.TESTFN
+        d = os_helper.TESTFN
         os.mkdir(d)
-        self.addCleanup(support.os_helper.rmtree, d)
+        self.addCleanup(os_helper.rmtree, d)
         fn = os.path.join(d, '.netrc')
         with open(fn, 'wt') as f:
             f.write("""\
                 machine foo.domain.com login bar password pass
                 default login foo password pass
                 """)
-        with support.os_helper.EnvironmentVarGuard() as environ:
+        with os_helper.EnvironmentVarGuard() as environ:
             environ.set('HOME', d)
             os.chmod(fn, 0o600)
             nrc = netrc.netrc()
@@ -398,7 +398,7 @@ class NetrcTestCase(unittest.TestCase):
                 machine foo.domain.com login anonymous password pass
                 default login foo password pass
                 """)
-        with support.os_helper.EnvironmentVarGuard() as environ:
+        with os_helper.EnvironmentVarGuard() as environ:
             environ.set('HOME', d)
             os.chmod(fn, 0o600)
             nrc = netrc.netrc()

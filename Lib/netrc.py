@@ -65,10 +65,10 @@ class _netrclex:
 
 class netrc:
     def __init__(self, file=None):
-        netrc_envvar = os.environ.get("NETRC", "")
-        default_netrc = file is None and not bool(netrc_envvar)
-        if file is None:
-            file = netrc_envvar or os.path.join(os.path.expanduser("~"), ".netrc")
+        envvar_netrc = os.environ.get("NETRC", "")
+        home_netrc = os.path.join(os.path.expanduser("~"), ".netrc")
+        file = file or envvar_netrc or home_netrc
+        default_netrc = (file == home_netrc)
         self.hosts = {}
         self.macros = {}
         try:
