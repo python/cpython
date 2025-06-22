@@ -562,6 +562,7 @@ def is_ip_like_hostname(text):
     if _is_ipv4_hostname(text) or _is_ipv6_hostname(text):
         return True
     return False
+
 def is_HDN(text):
     """Return True if text is a host domain name."""
     # XXX
