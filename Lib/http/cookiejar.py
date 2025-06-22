@@ -538,12 +538,8 @@ IPV4_RE = re.compile(r"\.\d+$", re.ASCII)
 def is_ip_like_hostname(text):
     """Return True if text is a valid hostname in the form of IP address.
 
-    If text is a valid IPv4 address, retrun True;
-
-    If text is a valid IPv6 address wrapped in [], return True;
-
-    Else, return False.
-
+    A valid IP-like hostname is either an IPv4 address or
+    an IPv6 enclosed in brackets (for instance, "[::1]").
     """
     from ipaddress import IPv4Address, IPv6Address
     # check for IPv4 address
