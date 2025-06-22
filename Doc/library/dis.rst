@@ -1162,6 +1162,13 @@ iterations of the loop.
 
    .. versionadded:: 3.6
 
+.. opcode:: BUILD_TEMPLATE
+
+   Create a :class:`~string.templatelib.Template` object consuming interpolations
+   and a string from the stack, and pushes the resulting template onto the stack.
+
+   .. versionadded:: 3.14
+
 
 .. opcode:: LIST_EXTEND (i)
 
