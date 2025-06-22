@@ -539,6 +539,48 @@
             break;
         }
 
+        case _POP_TOP_NOP: {
+            _PyStackRef value;
+            value = stack_pointer[-1];
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            assert(PyStackRef_IsNull(value) || (!PyStackRef_RefcountOnObject(value)) ||
+                   _Py_IsImmortal((PyStackRef_AsPyObjectBorrow(value))));
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _POP_TOP_INT: {
+            _PyStackRef value;
+            value = stack_pointer[-1];
+            assert(PyLong_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
+            PyStackRef_CLOSE_SPECIALIZED(value, _PyLong_ExactDealloc);
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _POP_TOP_FLOAT: {
+            _PyStackRef value;
+            value = stack_pointer[-1];
+            assert(PyFloat_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
+            PyStackRef_CLOSE_SPECIALIZED(value, _PyFloat_ExactDealloc);
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _POP_TOP_UNICODE: {
+            _PyStackRef value;
+            value = stack_pointer[-1];
+            assert(PyUnicode_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
+            PyStackRef_CLOSE_SPECIALIZED(value, _PyUnicode_ExactDealloc);
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
         case _POP_TWO: {
             _PyStackRef tos;
             _PyStackRef nos;

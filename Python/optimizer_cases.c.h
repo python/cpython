@@ -105,6 +105,30 @@
             break;
         }
 
+        case _POP_TOP_NOP: {
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _POP_TOP_INT: {
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _POP_TOP_FLOAT: {
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _POP_TOP_UNICODE: {
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
         case _POP_TWO: {
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
