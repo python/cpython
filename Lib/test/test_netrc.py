@@ -1,4 +1,4 @@
-import netrc, os, unittest, sys, textwrap, tempfile
+import netrc, os, unittest, sys, textwrap
 
 from test import support
 from contextlib import ExitStack
@@ -11,42 +11,41 @@ except ImportError:
 
 class NetrcEnvironment:
     """
-    Context manager for setting up an isolated environment to test `.netrc` file handling.
+    Context manager for setting up an isolated environment to test `.netrc` file
+    handling.
 
-    This class configures a temporary directory for the `.netrc` file and environment variables, providing
-    a controlled setup to simulate different scenarios.
+    This class configures a temporary directory for the `.netrc` file and
+    environment variables, providing a controlled setup to simulate different
+    scenarios.
     """
 
-    def __enter__(self) -> 'NetrcEnvironment':
+    def __enter__(self):
         """
-        Enters the managed environment.
+        Enter the managed environment.
         """
         self.stack = ExitStack()
-        self.environ = self.stack.enter_context(support.os_helper.EnvironmentVarGuard())
-        self.tmpdir = self.stack.enter_context(tempfile.TemporaryDirectory())
+        self.environ = self.stack.enter_context(
+            support.os_helper.EnvironmentVarGuard(),
+        )
+        self.tmpdir = self.stack.enter_context(support.os_helper.temp_dir())
         return self
 
-    def __exit__(self, *ignore_exc) -> None:
+    def __exit__(self, *ignore_exc):
         """
-        Exits the managed environment and performs cleanup. This method closes the `ExitStack`,
-        which automatically cleans up the temporary directory and environment.
+        Exit the managed environment and performs cleanup. This method closes
+        the `ExitStack`, which automatically cleans up the temporary directory
+        and environment.
         """
         self.stack.close()
 
-    def generate_netrc(self, content, filename=".netrc", mode=0o600, encoding="utf-8") -> str:
-        """
-        Creates a `.netrc` file in the temporary directory with the given content and permissions.
-
-        Args:
-            content (str): The content to write into the `.netrc` file.
-            filename (str, optional): The name of the file to write. Defaults to ".netrc".
-            mode (int, optional): File permission bits to set after writing. Defaults to `0o600`. Mode
-                                  is set only if the platform supports `chmod`.
-            encoding (str, optional): The encoding used to write the file. Defaults to "utf-8".
-
-        Returns:
-            str: The full path to the generated `.netrc` file.
-        """
+    def generate_netrc(
+        self,
+        content,
+        filename=".netrc",
+        mode=0o600,
+        encoding="utf-8",
+    ):
+        """Create and return the path to a temporary `.netrc` file."""
         write_mode = "w"
         if sys.platform != "cygwin":
             write_mode += "t"
@@ -62,19 +61,14 @@ class NetrcEnvironment:
 
 
 class NetrcBuilder:
-    """
-    Utility class to construct and load `netrc.netrc` instances using different configuration scenarios.
-
-    This class provides static methods to simulate different ways the `netrc` module can locate and load
-    a `.netrc` file.
-
-    These methods are useful for testing or mocking `.netrc` behavior in different system environments.
+    """Utility class to construct and load `netrc.netrc` instances using
+    different configuration scenarios.
     """
 
     @staticmethod
-    def use_default_netrc_in_home(*args, **kwargs) -> netrc.netrc:
-        """
-        Loads an instance of netrc using the default `.netrc` file from the user's home directory.
+    def use_default_netrc_in_home(*args, **kwargs):
+        """Load an instance of netrc using the default `.netrc` file from the
+        user's home directory.
         """
         with NetrcEnvironment() as helper:
             helper.environ.unset("NETRC")
@@ -84,9 +78,9 @@ class NetrcBuilder:
             return netrc.netrc()
 
     @staticmethod
-    def use_netrc_envvar(*args, **kwargs) -> netrc.netrc:
-        """
-        Loads an instance of the netrc using the `.netrc` file specified by the `NETRC` environment variable.
+    def use_netrc_envvar(*args, **kwargs):
+        """Load an instance of the netrc using the `.netrc` file specified by
+        the `NETRC` environment variable.
         """
         with NetrcEnvironment() as helper:
             netrc_file = helper.generate_netrc(*args, **kwargs)
@@ -95,13 +89,12 @@ class NetrcBuilder:
             return netrc.netrc()
 
     @staticmethod
-    def use_file_argument(*args, **kwargs) -> netrc.netrc:
-        """
-        Loads an instance of `.netrc` file using the file as argument.
+    def use_file_argument(*args, **kwargs):
+        """Load an instance of `.netrc` file using the file as argument.
         """
         with NetrcEnvironment() as helper:
-            # Just to stress a bit more the test scenario, the NETRC envvar will contain
-            # rubish information which shouldn't be used
+            # Just to stress a bit more the test scenario, the NETRC envvar
+            # will contain rubish information which shouldn't be used
             helper.environ.set("NETRC", "not-a-file.netrc")
 
             netrc_file = helper.generate_netrc(*args, **kwargs)
@@ -109,10 +102,10 @@ class NetrcBuilder:
 
     @staticmethod
     def get_all_scenarios():
-        """
-        Returns all `.netrc` loading scenarios as callables.
+        """Return all `.netrc` loading scenarios as callables.
 
-        This method is useful for iterating through all supported ways the `.netrc` file can be located.
+        This method is useful for iterating through all supported ways the
+        `.netrc` file can be located.
         """
         return (NetrcBuilder.use_default_netrc_in_home,
                 NetrcBuilder.use_netrc_envvar,
@@ -128,7 +121,8 @@ class NetrcTestCase(unittest.TestCase):
             machine host.domain.com password pass1 login log1 account acct1
             default login log2 password pass2 account acct2
             """)
-        self.assertEqual(nrc.hosts['host.domain.com'], ('log1', 'acct1', 'pass1'))
+        self.assertEqual(nrc.hosts['host.domain.com'],
+                         ('log1', 'acct1', 'pass1'))
         self.assertEqual(nrc.hosts['default'], ('log2', 'acct2', 'pass2'))
 
     @support.subTests('make_nrc', ALL_NETRC_FILE_SCENARIOS)
@@ -137,7 +131,8 @@ class NetrcTestCase(unittest.TestCase):
             machine host.domain.com login log1 password pass1 account acct1
             default login log2 password pass2 account acct2
             """)
-        self.assertEqual(nrc.hosts['host.domain.com'], ('log1', 'acct1', 'pass1'))
+        self.assertEqual(nrc.hosts['host.domain.com'],
+                         ('log1', 'acct1', 'pass1'))
         self.assertEqual(nrc.hosts['default'], ('log2', 'acct2', 'pass2'))
 
     @support.subTests('make_nrc', ALL_NETRC_FILE_SCENARIOS)
