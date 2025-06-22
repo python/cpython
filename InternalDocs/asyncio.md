@@ -213,10 +213,10 @@ locking.
 This section describes the implementation details of async generators in `asyncio`.
 
 Since async generators are meant to be used from coroutines,
-the finalization (execution of finally blocks) of it needs
+their finalization (execution of finally blocks) needs
 to be done while the loop is running.
 Most async generators are closed automatically
-when they are fully iterated over and exhausted, however,
+when they are fully iterated over and exhausted; however,
 if the async generator is not fully iterated over,
 it may not be closed properly, leading to the `finally` blocks not being executed.
 
