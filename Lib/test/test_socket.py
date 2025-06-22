@@ -3513,10 +3513,11 @@ class SendmsgStreamTests(SendmsgTests):
 
     # XXX: would be nice to have more tests for sendmsg flags argument.
 
-    # Linux supports MSG_DONTWAIT when sending, but in general, it
-    # only works when receiving.  Could add other platforms if they
+    # Linux and FreeBSD support MSG_DONTWAIT when sending, but in general,
+    # it only works when receiving.  Could add other platforms if they
     # support it too.
-    @skipWithClientIf(sys.platform not in {"linux", "android", "freebsd"},
+    @requireAttrs(socket, "MSG_DONTWAIT")
+    @skipWithClientIf(sys.platform in ("darwin",),
                       "MSG_DONTWAIT not known to work on this platform when "
                       "sending")
     def testSendmsgDontWait(self):
