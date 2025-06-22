@@ -277,6 +277,7 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
                 pass
             class C(A):
                 pass
+
             a = A()
             b = B()
             c = C()
@@ -321,9 +322,9 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
                 pass
             class B(object):
                 pass
+                
             a = A()
             b = B()
-
             # trigger caching
             for _ in range(2):
                 self.assertNotIsSubclass(B, A)
@@ -352,6 +353,7 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
 
             class C(B):
                 pass
+                
             c = C()
             # trigger caching
             for _ in range(2):

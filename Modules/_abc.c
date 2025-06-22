@@ -65,7 +65,7 @@ typedef struct {
     PyObject *_abc_cache;
     PyObject *_abc_negative_cache;
     uint64_t _abc_negative_cache_version;
-    bool _abc_issubclasscheck_recursive;
+    uint8_t _abc_issubclasscheck_recursive;
 } _abc_data;
 
 #define _abc_data_CAST(op)  ((_abc_data *)(op))
@@ -90,22 +90,34 @@ set_cache_version(_abc_data *impl, uint64_t version)
 #endif
 }
 
-static inline bool
+static inline uint8_t
 is_issubclasscheck_recursive(_abc_data *impl)
 {
+#ifdef Py_GIL_DISABLED
+    return _Py_atomic_load_uint64(&impl->_abc_issubclasscheck_recursive);
+#else
     return impl->_abc_issubclasscheck_recursive;
+#endif
 }
 
 static inline void
 set_issubclasscheck_recursive(_abc_data *impl)
 {
-    impl->_abc_issubclasscheck_recursive = true;
+#ifdef Py_GIL_DISABLED
+    _Py_atomic_store_uint8(&impl->_abc_issubclasscheck_recursive, 1);
+#else
+    impl->_abc_issubclasscheck_recursive = 1;
+#endif
 }
 
 static inline void
 unset_issubclasscheck_recursive(_abc_data *impl)
 {
-    impl->_abc_issubclasscheck_recursive = false;
+#ifdef Py_GIL_DISABLED
+    _Py_atomic_store_uint8(&impl->_abc_issubclasscheck_recursive, 0);
+#else
+    impl->_abc_issubclasscheck_recursive = 0;
+#endif
 }
 
 static int
@@ -158,7 +170,7 @@ abc_data_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     self->_abc_cache = NULL;
     self->_abc_negative_cache = NULL;
     self->_abc_negative_cache_version = get_invalidation_counter(state);
-    self->_abc_issubclasscheck_recursive = false;
+    self->_abc_issubclasscheck_recursive = 0;
     return (PyObject *) self;
 }
 
@@ -197,21 +209,24 @@ _get_impl(PyObject *module, PyObject *self)
     return (_abc_data *)impl;
 }
 
-static _abc_data *
-_get_impl_optional(PyObject *module, PyObject *self)
+static int
+_get_impl_optional(PyObject *module, PyObject *self, _abc_data **data)
 {
     _abcmodule_state *state = get_abc_state(module);
     PyObject *impl = NULL;
     int res = PyObject_GetOptionalAttr(self, &_Py_ID(_abc_impl), &impl);
     if (res <= 0) {
-        return NULL;
+        *data = NULL;
+        return res;
     }
     if (!Py_IS_TYPE(impl, state->_abc_data_type)) {
         PyErr_SetString(PyExc_TypeError, "_abc_impl is set to a wrong type");
         Py_DECREF(impl);
-        return NULL;
+        *data = NULL;
+        return -1;
     }
-    return (_abc_data *)impl;
+    *data = (_abc_data *)impl;
+    return 1;
 }
 
 static int
@@ -853,22 +868,25 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
             goto end;
         }
 
-        _abc_data *scls_impl = _get_impl_optional(module, scls);
-        if (scls_impl != NULL) {
+        _abc_data *scls_impl;
+        int scls_is_abc = _get_impl_optional(module, scls, &scls_impl);
+        if (scls_is_abc < 0) {
+            goto end;
+        }
+        if (scls_is_abc > 0) {
             /*
-                If inside recursive issubclass check, avoid adding classes to any cache because this
-                may drastically increase memory usage.
-                Unfortunately, issubclass/__subclasscheck__ don't accept third argument with context,
-                so using global context within ABCMeta.
-                This is done only on first method call, others will use cached result.
+              If inside recursive issubclass check, avoid adding classes
+              to any cache because this may drastically increase memory usage.
+              Unfortunately, issubclass/__subclasscheck__ don't accept third
+              argument with context, so using global context within ABCMeta.
+              This is done only on first method call, next will use cache.
             */
             set_issubclasscheck_recursive(scls_impl);
         }
 
         int r = PyObject_IsSubclass(subclass, scls);
         Py_DECREF(scls);
-
-        if (scls_impl != NULL) {
+        if (scls_is_abc > 0) {
             unset_issubclasscheck_recursive(scls_impl);
             Py_DECREF(scls_impl);
         }
