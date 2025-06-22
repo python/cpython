@@ -255,7 +255,8 @@ py_hashentry_table_new(void) {
     return NULL;
 }
 
-/* Module state */
+// --- Module state -----------------------------------------------------------
+
 static PyModuleDef _hashlibmodule;
 
 typedef struct {
@@ -277,6 +278,8 @@ get_hashlib_state(PyObject *module)
     return (_hashlibstate *)state;
 }
 
+// --- Module objects ---------------------------------------------------------
+
 typedef struct {
     HASHLIB_OBJECT_HEAD
     EVP_MD_CTX *ctx;    /* OpenSSL message digest context */
@@ -291,15 +294,17 @@ typedef struct {
 
 #define HMACobject_CAST(op) ((HMACobject *)(op))
 
-#include "clinic/_hashopenssl.c.h"
+// --- Module clinic configuration --------------------------------------------
+
 /*[clinic input]
 module _hashlib
-class _hashlib.HASH "HASHobject *" "((_hashlibstate *)PyModule_GetState(module))->HASH_type"
-class _hashlib.HASHXOF "HASHobject *" "((_hashlibstate *)PyModule_GetState(module))->HASHXOF_type"
-class _hashlib.HMAC "HMACobject *" "((_hashlibstate *)PyModule_GetState(module))->HMAC_type"
+class _hashlib.HASH "HASHobject *" "&PyType_Type"
+class _hashlib.HASHXOF "HASHobject *" "&PyType_Type"
+class _hashlib.HMAC "HMACobject *" "&PyType_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=eb805ce4b90b1b31]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=6b5c9ce5c28bdc58]*/
 
+#include "clinic/_hashopenssl.c.h"
 
 /* LCOV_EXCL_START */
 
