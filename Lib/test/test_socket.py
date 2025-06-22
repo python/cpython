@@ -7349,7 +7349,7 @@ class SendRecvFdsTests(unittest.TestCase):
             max_fds = 1
         return socket.recv_fds(sock, bufsize, max_fds, flags)
 
-    def testSendAndRecvFds(self):
+    def test_send_and_recv_fds(self):
         # send 10 file descriptors
         pipes = [os.pipe() for _ in range(10)]
         self._cleanup_fds(fd for pair in pipes for fd in pair)
@@ -7369,7 +7369,7 @@ class SendRecvFdsTests(unittest.TestCase):
         # don't test addr
 
         # test that file descriptors are connected
-        for index, ((_, wfd), rfd) in enumerate(zip(pipes, fds2)):
+        for index, ((_, wfd), rfd) in enumerate(zip(pipes, fds2, strict=True)):
             self._test_pipe(rfd, wfd, str(index).encode())
 
     def test_send_recv_fds_with_addrs(self):
@@ -7412,6 +7412,7 @@ class SendRecvFdsTests(unittest.TestCase):
 
             # peek message on sock2
             peek_len = len(MSG) // 2
+            self.assertGreater(peek_len, 0)
             msg, fds, flags, addr = socket.recv_fds(sock2, peek_len, 1,
                                                     flags=socket.MSG_PEEK)
             self._cleanup_fds(fds)
