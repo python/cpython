@@ -674,9 +674,9 @@ def eff_request_host(request):
     else:
         is_ipV6 = False
     if "." not in req_host and not is_ipV6:
-        # avoid adding .local at the end of a IPV6 address
-        # for the additional ".local", see RFC 2965 section 1
-        # https://www.rfc-editor.org/rfc/rfc2965
+        # Avoid adding .local at the end of an IPv6 address.
+        # See RFC 2965 [1] for the rationale of ".local".
+        # [1]: https://www.rfc-editor.org/rfc/rfc2965
         erhn = req_host + ".local"
     return req_host, erhn
 
