@@ -535,26 +535,33 @@ def parse_ns_headers(ns_headers):
 # only kept for backwards compatibilty.
 IPV4_RE = re.compile(r"\.\d+$", re.ASCII)
 
+def _is_ipv4_hostname(text):
+    from ipaddress import IPv4Address
+    try:
+        IPv4Address(text)
+    except ValueError:
+        return False
+    return True
+
+def _is_ipv6_hostname(text):
+    if text.startswith('[') and text.endswith(']'):
+        from ipaddress import IPv6Address
+        try:
+            IPv6Address(text[1:-1])
+        except ValueError:
+            return False
+        return True
+    return False
+
 def is_ip_like_hostname(text):
     """Return True if text is a valid hostname in the form of IP address.
 
     A valid IP-like hostname is either an IPv4 address or
     an IPv6 enclosed in brackets (for instance, "[::1]").
     """
-    from ipaddress import IPv4Address, IPv6Address
-    # check for IPv4 address
-    try:
-        IPv4Address(text)
-    except ValueError:
-        # check for IPv6 address in []
-        if text.startswith('[') and text.endswith(']'):
-            try:
-                IPv6Address(text[1:-1])
-            except ValueError:
-                return False
-        else:
-            return False # not a IPv6 address in []
-    return True
+    if _is_ipv4_hostname(text) or _is_ipv6_hostname(text):
+        return True
+    return False
 def is_HDN(text):
     """Return True if text is a host domain name."""
     # XXX
@@ -659,17 +666,7 @@ def eff_request_host(request):
 
     """
     erhn = req_host = request_host(request)
-    if req_host.startswith('[') and req_host.endswith(']'):
-        from ipaddress import IPv6Address
-        try:
-            IPv6Address(req_host[1:-1])
-        except ValueError:
-            is_ipV6 = False
-        else:
-            is_ipV6 = True
-    else:
-        is_ipV6 = False
-    if "." not in req_host and not is_ipV6:
+    if "." not in req_host and not _is_ipv6_hostname(req_host):
         # Avoid adding .local at the end of an IPv6 address.
         # See RFC 2965 [1] for the rationale of ".local".
         # [1]: https://www.rfc-editor.org/rfc/rfc2965
