@@ -100,6 +100,26 @@
         }
 
         case _POP_TOP: {
+            JitOptRef value;
+            value = stack_pointer[-1];
+            PyTypeObject *typ = sym_get_type(value);
+            PyObject *const_val = sym_get_const(ctx, value);
+            if (PyJitRef_IsBorrowed(value) ||
+                (const_val != NULL && _Py_IsImmortal(const_val))) {
+                REPLACE_OP(this_instr, _POP_TOP_NOP, 0, 0);
+            }
+            else if (typ == &PyLong_Type) {
+                REPLACE_OP(this_instr, _POP_TOP_INT, 0, 0);
+            }
+            else if (typ == &PyFloat_Type) {
+                REPLACE_OP(this_instr, _POP_TOP_FLOAT, 0, 0);
+            }
+            else if (typ == &PyUnicode_Type) {
+                REPLACE_OP(this_instr, _POP_TOP_UNICODE, 0, 0);
+            }
+            else if (typ == &PyBool_Type) {
+                REPLACE_OP(this_instr, _POP_TOP_NOP, 0, 0);
+            }
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;
@@ -124,6 +144,12 @@
         }
 
         case _POP_TOP_UNICODE: {
+            JitOptRef value;
+            value = stack_pointer[-1];
+            if (PyJitRef_IsBorrowed(value) ||
+                sym_is_immortal(PyJitRef_Unwrap(value))) {
+                REPLACE_OP(this_instr, _POP_TOP_NOP, 0, 0);
+            }
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;
@@ -541,6 +567,8 @@
             JitOptRef right;
             JitOptRef left;
             JitOptRef res;
+            JitOptRef l;
+            JitOptRef r;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
             if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
@@ -551,16 +579,24 @@
                     goto error;
                 }
                 res = sym_new_const(ctx, temp);
+                l = left;
+                r = right;
                 stack_pointer[-2] = res;
-                stack_pointer += -1;
+                stack_pointer[-1] = l;
+                stack_pointer[0] = r;
+                stack_pointer += 1;
                 assert(WITHIN_STACK_BOUNDS());
                 Py_DECREF(temp);
             }
             else {
                 res = sym_new_type(ctx, &PyUnicode_Type);
-                stack_pointer += -1;
+                l = left;
+                r = right;
+                stack_pointer += 1;
             }
-            stack_pointer[-1] = res;
+            stack_pointer[-3] = res;
+            stack_pointer[-2] = l;
+            stack_pointer[-1] = r;
             break;
         }
 
@@ -808,7 +844,7 @@
             JitOptRef retval;
             JitOptRef res;
             retval = stack_pointer[-1];
-            JitOptRef temp = retval;
+            JitOptRef temp = PyJitRef_Wrap(PyJitRef_Unwrap(retval));
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             ctx->frame->stack_pointer = stack_pointer;

@@ -1431,6 +1431,10 @@ optimize_and_assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
                                                  &optimized_instrs) < 0) {
         goto error;
     }
+    /* Reserve an extra word on the stack to ensure there is space for uops to
+       pass at least one item on the stack to a subsequent uop.
+    */
+    stackdepth++;
 
     /** Assembly **/
     co = _PyAssemble_MakeCodeObject(&u->u_metadata, const_cache, consts,
