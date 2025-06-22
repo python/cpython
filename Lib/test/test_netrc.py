@@ -1,7 +1,7 @@
 import netrc, os, unittest, sys, textwrap
-
-from test import support
 from contextlib import ExitStack
+from test import support
+from test.support import os_helper
 
 try:
     import pwd
@@ -36,24 +36,15 @@ class NetrcEnvironment:
         self.stack.close()
 
     def generate_netrc(
-        self,
-        content,
-        filename=".netrc",
-        mode=0o600,
-        encoding="utf-8",
+        self, content, filename=".netrc", mode=0o600, encoding=None,
     ):
         """Create and return the path to a temporary `.netrc` file."""
-        write_mode = "w"
-        if sys.platform != "cygwin":
-            write_mode += "t"
-
         netrc_file = os.path.join(self.tmpdir, filename)
+        write_mode = "w" if sys.platform != "cygwin" else "wt"
         with open(netrc_file, mode=write_mode, encoding=encoding) as fp:
             fp.write(textwrap.dedent(content))
-
         if support.os_helper.can_chmod():
             os.chmod(netrc_file, mode=mode)
-
         return netrc_file
 
 
@@ -70,7 +61,6 @@ class NetrcBuilder:
         with NetrcEnvironment() as helper:
             helper.environ.unset("NETRC")
             helper.environ.set("HOME", helper.tmpdir)
-
             helper.generate_netrc(*args, **kwargs)
             return netrc.netrc()
 
@@ -82,7 +72,6 @@ class NetrcBuilder:
         with NetrcEnvironment() as helper:
             netrc_file = helper.generate_netrc(*args, **kwargs)
             helper.environ.set("NETRC", netrc_file)
-
             return netrc.netrc()
 
     @staticmethod
@@ -93,7 +82,6 @@ class NetrcBuilder:
             # Just to stress a bit more the test scenario, the NETRC envvar
             # will contain rubish information which shouldn't be used
             helper.environ.set("NETRC", "not-a-file.netrc")
-
             netrc_file = helper.generate_netrc(*args, **kwargs)
             return netrc.netrc(netrc_file)
 
