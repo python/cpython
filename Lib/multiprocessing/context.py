@@ -266,6 +266,17 @@ class DefaultContext(BaseContext):
         )
         return start_method_names
 
+    def freeze_support(self):
+        '''Check whether this is a fake forked process in a frozen executable.
+        If so then run code specified by commandline and exit.
+        '''
+        start_method = self.get_start_method(allow_none=True)
+        if start_method is None:
+            start_method = self._default_context.get_start_method()
+        if start_method == 'spawn' and getattr(sys, 'frozen', False):
+            from .spawn import freeze_support
+            freeze_support()
+
 
 #
 # Context types for fixed start method
