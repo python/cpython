@@ -44,61 +44,55 @@ class NetrcEnvironment:
         return netrc_file
 
 
-class NetrcBuilder:
-    """Utility class to construct and load `netrc.netrc` instances using
-    different configuration scenarios.
+def use_default_netrc_in_home(*args, **kwargs):
+    """Load an instance of netrc using the default `.netrc` file from the
+    user's home directory.
     """
-
-    @staticmethod
-    def use_default_netrc_in_home(*args, **kwargs):
-        """Load an instance of netrc using the default `.netrc` file from the
-        user's home directory.
-        """
-        with NetrcEnvironment() as helper:
-            helper.generate_netrc(*args, **kwargs)
-            helper.environ.unset("NETRC")
-            helper.environ.set("HOME", helper.tmpdir)
-            real_expanduser = os.path.expanduser
-            with mock.patch("os.path.expanduser") as mock_expanduser:
-                mock_expanduser.side_effect = lambda arg: helper.tmpdir \
-                    if arg == "~" else real_expanduser(arg)
-                return netrc.netrc()
-
-    @staticmethod
-    def use_netrc_envvar(*args, **kwargs):
-        """Load an instance of the netrc using the `.netrc` file specified by
-        the `NETRC` environment variable.
-        """
-        with NetrcEnvironment() as helper:
-            netrc_file = helper.generate_netrc(*args, **kwargs)
-            helper.environ.set("NETRC", netrc_file)
+    with NetrcEnvironment() as helper:
+        helper.generate_netrc(*args, **kwargs)
+        helper.environ.unset("NETRC")
+        helper.environ.set("HOME", helper.tmpdir)
+        with mock.patch("os.path.expanduser") as mock_expanduser:
+            def fake_expanduser(path):
+                return helper.tmpdir if path == "~" else os.path.expanduser(path)
+            mock_expanduser.side_effect = fake_expanduser
             return netrc.netrc()
 
-    @staticmethod
-    def use_file_argument(*args, **kwargs):
-        """Load an instance of `.netrc` file using the file as argument.
-        """
-        with NetrcEnvironment() as helper:
-            # Just to stress a bit more the test scenario, the NETRC envvar
-            # will contain rubish information which shouldn't be used
-            helper.environ.set("NETRC", "not-a-file.netrc")
-            netrc_file = helper.generate_netrc(*args, **kwargs)
-            return netrc.netrc(netrc_file)
 
-    @staticmethod
-    def get_all_scenarios():
-        """Return all `.netrc` loading scenarios as callables.
+def use_netrc_envvar(*args, **kwargs):
+    """Load an instance of the netrc using the `.netrc` file specified by
+    the `NETRC` environment variable.
+    """
+    with NetrcEnvironment() as helper:
+        netrc_file = helper.generate_netrc(*args, **kwargs)
+        helper.environ.set("NETRC", netrc_file)
+        return netrc.netrc()
 
-        This method is useful for iterating through all d ways the
-        `.netrc` file can be located.
-        """
-        return (NetrcBuilder.use_default_netrc_in_home,
-                NetrcBuilder.use_netrc_envvar,
-                NetrcBuilder.use_file_argument)
+
+def use_file_argument(*args, **kwargs):
+    """Load an instance of `.netrc` file using the file as argument.
+    """
+    with NetrcEnvironment() as helper:
+        # Just to stress a bit more the test scenario, the NETRC envvar
+        # will contain rubish information which shouldn't be used
+        helper.environ.set("NETRC", "not-a-file.netrc")
+        netrc_file = helper.generate_netrc(*args, **kwargs)
+        return netrc.netrc(netrc_file)
+
+
+def get_all_scenarios():
+    """Return all `.netrc` loading scenarios as callables.
+
+    This method is useful for iterating through all ways the
+    `.netrc` file can be located.
+    """
+    return (use_default_netrc_in_home,
+            use_netrc_envvar,
+            use_file_argument)
 
 
 class NetrcTestCase(unittest.TestCase):
-    ALL_NETRC_FILE_SCENARIOS = NetrcBuilder.get_all_scenarios()
+    ALL_NETRC_FILE_SCENARIOS = get_all_scenarios()
 
     @subTests('make_nrc', ALL_NETRC_FILE_SCENARIOS)
     def test_toplevel_non_ordered_tokens(self, make_nrc):
