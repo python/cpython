@@ -58,8 +58,7 @@ get_md5module_state_by_cls(PyTypeObject *cls)
 // --- MD5 object -------------------------------------------------------------
 
 typedef struct {
-    PyObject_HEAD
-    HASHLIB_MUTEX_API
+    HASHLIB_OBJECT_HEAD
     Hacl_Hash_MD5_state_t *state;
 } MD5object;
 

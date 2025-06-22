@@ -105,8 +105,7 @@ get_blake2module_state_by_cls(PyTypeObject *cls)
 typedef enum { Blake2s, Blake2b, Blake2s_128, Blake2b_256 } blake2_impl;
 
 typedef struct {
-    PyObject_HEAD
-    HASHLIB_MUTEX_API
+    HASHLIB_OBJECT_HEAD
     union {
         Hacl_Hash_Blake2s_state_t *blake2s_state;
         Hacl_Hash_Blake2b_state_t *blake2b_state;

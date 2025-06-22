@@ -798,7 +798,7 @@ _hashlib_HASH_update_impl(HASHobject *self, PyObject *obj)
     Py_buffer view;
     GET_BUFFER_VIEW_OR_ERROUT(obj, &view);
     HASHLIB_EXTERNAL_INSTRUCTIONS_LOCKED(
-        self, HASHLIB_GIL_MINSIZE,
+        self, view.len,
         result = _hashlib_HASH_hash(self, view.buf, view.len)
     );
     PyBuffer_Release(&view);
@@ -918,8 +918,18 @@ _hashlib_HASHXOF_digest_impl(HASHobject *self, Py_ssize_t length)
 /*[clinic end generated code: output=dcb09335dd2fe908 input=3eb034ce03c55b21]*/
 {
     EVP_MD_CTX *temp_ctx;
-    PyObject *retval = PyBytes_FromStringAndSize(NULL, length);
+    PyObject *retval;
 
+    if (length < 0) {
+        PyErr_SetString(PyExc_ValueError, "negative digest length");
+        return NULL;
+    }
+
+    if (length == 0) {
+        return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
+    }
+
+    retval = PyBytes_FromStringAndSize(NULL, length);
     if (retval == NULL) {
         return NULL;
     }
@@ -966,9 +976,18 @@ _hashlib_HASHXOF_hexdigest_impl(HASHobject *self, Py_ssize_t length)
     EVP_MD_CTX *temp_ctx;
     PyObject *retval;
 
+    if (length < 0) {
+        PyErr_SetString(PyExc_ValueError, "negative digest length");
+        return NULL;
+    }
+
+    if (length == 0) {
+        return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
+    }
+
     digest = (unsigned char*)PyMem_Malloc(length);
     if (digest == NULL) {
-        PyErr_NoMemory();
+        (void)PyErr_NoMemory();
         return NULL;
     }
 
