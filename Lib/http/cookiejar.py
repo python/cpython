@@ -535,7 +535,7 @@ def parse_ns_headers(ns_headers):
 # only kept for backwards compatibilty.
 IPV4_RE = re.compile(r"\.\d+$", re.ASCII)
 
-def is_ip_like_hostname(text: str):
+def is_ip_like_hostname(text):
     """Return True if text is a valid hostname in the form of IP address."""
     from ipaddress import IPv4Address, IPv6Address
     # check for IPv4 address
