@@ -1,4 +1,4 @@
-import netrc, os, unittest, sys, tempfile, textwrap
+import netrc, os, unittest, sys, textwrap
 from contextlib import ExitStack
 from test.support import os_helper, subTests
 from unittest import mock
@@ -24,7 +24,7 @@ class NetrcEnvironment:
         self.environ = self.stack.enter_context(
             os_helper.EnvironmentVarGuard(),
         )
-        self.tmpdir = self.stack.enter_context(tempfile.TemporaryDirectory())
+        self.tmpdir = self.stack.enter_context(os_helper.temp_dir())
         return self
 
     def __exit__(self, *ignore_exc):
@@ -110,8 +110,7 @@ class NetrcTestCase(unittest.TestCase):
             machine host.domain.com password pass1 login log1 account acct1
             default login log2 password pass2 account acct2
             """)
-        self.assertEqual(nrc.hosts['host.domain.com'],
-                         ('log1', 'acct1', 'pass1'))
+        self.assertEqual(nrc.hosts['host.domain.com'], ('log1', 'acct1', 'pass1'))
         self.assertEqual(nrc.hosts['default'], ('log2', 'acct2', 'pass2'))
 
     @subTests('make_nrc', ALL_NETRC_FILE_SCENARIOS)
@@ -120,8 +119,7 @@ class NetrcTestCase(unittest.TestCase):
             machine host.domain.com login log1 password pass1 account acct1
             default login log2 password pass2 account acct2
             """)
-        self.assertEqual(nrc.hosts['host.domain.com'],
-                         ('log1', 'acct1', 'pass1'))
+        self.assertEqual(nrc.hosts['host.domain.com'], ('log1', 'acct1', 'pass1'))
         self.assertEqual(nrc.hosts['default'], ('log2', 'acct2', 'pass2'))
 
     @subTests('make_nrc', ALL_NETRC_FILE_SCENARIOS)
