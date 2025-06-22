@@ -192,10 +192,6 @@ class TestRepack(unittest.TestCase):
             zh.writestr(file, data)
 
         with zipfile.ZipFile(f, 'a') as zh:
-            # make sure data descriptor bit is really set (by making zip file unseekable)
-            for zi in zh.infolist():
-                self.assertTrue(zi.flag_bits & 8, f'data descriptor flag not set: {zi.filename}')
-
             zh.remove(file1)
             zh.repack()
             self.assertIsNone(zh.testzip())
@@ -227,10 +223,6 @@ class TestRepack(unittest.TestCase):
                 zh.writestr(file, data)
 
         with zipfile.ZipFile(f, 'a') as zh:
-            # make sure data descriptor bit is really set (by making zip file unseekable)
-            for zi in zh.infolist():
-                self.assertTrue(zi.flag_bits & 8, f'data descriptor flag not set: {zi.filename}')
-
             zh.remove(file1)
             zh.repack()
             self.assertIsNone(zh.testzip())
@@ -261,10 +253,6 @@ class TestRepack(unittest.TestCase):
                 zh.writestr(file, data)
 
         with zipfile.ZipFile(f, 'a') as zh:
-            # make sure data descriptor bit is really set (by making zip file unseekable)
-            for zi in zh.infolist():
-                self.assertTrue(zi.flag_bits & 8, f'data descriptor flag not set: {zi.filename}')
-
             zh.remove(file1)
             zh.repack()
             self.assertIsNone(zh.testzip())

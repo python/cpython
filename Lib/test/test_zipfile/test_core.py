@@ -2503,11 +2503,14 @@ class ZipRepackerTests(unittest.TestCase):
         fz = io.BytesIO()
         f = Unseekable(fz) if dd else fz
         cm = (mock.patch.object(struct, 'pack', side_effect=struct_pack_no_dd_sig)
-              if not dd_sig else contextlib.nullcontext())
+              if dd and not dd_sig else contextlib.nullcontext())
         with zipfile.ZipFile(f, 'w', compression=compression) as zh:
-            with cm:
-                with zh.open(arcname, 'w', force_zip64=force_zip64) as fh:
-                    fh.write(raw_bytes)
+            with cm, zh.open(arcname, 'w', force_zip64=force_zip64) as fh:
+                fh.write(raw_bytes)
+            if dd:
+                zi = zh.infolist()[0]
+                self.assertTrue(zi.flag_bits & zipfile._MASK_USE_DATA_DESCRIPTOR,
+                                f'data descriptor flag not set: {zi.filename}')
             fz.seek(0)
             return fz.read()
 
