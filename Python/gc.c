@@ -858,6 +858,21 @@ move_legacy_finalizer_reachable(PyGC_Head *finalizers)
     }
 }
 
+/* Move types from unreachable set to prevent clearing of type's subclasses */
+static void
+move_types_from_unreachable(PyGC_Head *unreachable, PyGC_Head *to)
+{
+    PyGC_Head *gc, *next;
+    for(gc = GC_NEXT(unreachable); gc != unreachable; gc = next) {
+        PyObject *op = FROM_GC(gc);
+        next = GC_NEXT(gc);
+
+        if (PyType_Check(op)) {
+            gc_list_move(gc, to);
+        }
+    }
+}
+
 /* Clear all weakrefs to unreachable objects, and if such a weakref has a
  * callback, invoke it if necessary.  Note that it's possible for such
  * weakrefs to be outside the unreachable set -- indeed, those are precisely
@@ -1698,6 +1713,7 @@ gc_collect_region(PyThreadState *tstate,
 {
     PyGC_Head unreachable; /* non-problematic unreachable trash */
     PyGC_Head finalizers;  /* objects with, & reachable from, __del__ */
+    PyGC_Head types;       /* unreachable types */
     PyGC_Head *gc; /* initialize to prevent a compiler warning */
     GCState *gcstate = &tstate->interp->gc;
 
@@ -1736,6 +1752,15 @@ gc_collect_region(PyThreadState *tstate,
         }
     }
 
+    /* All types in the unreachable set should be handled after the
+     * instances of those types are finalized. Otherwise, when we clear
+     * the weak references, the subclasses list will also be cleared, and
+     * the type's cache will not be properly invalidated from
+     * within the __del__ method.
+     */
+    gc_list_init(&types);
+    move_types_from_unreachable(&unreachable, &types);
+
     /* Clear weakrefs and invoke callbacks as necessary. */
     stats->collected += handle_weakrefs(&unreachable, to);
     gc_list_validate_space(to, gcstate->visited_space);
@@ -1744,6 +1769,20 @@ gc_collect_region(PyThreadState *tstate,
 
     /* Call tp_finalize on objects which have one. */
     finalize_garbage(tstate, &unreachable);
+
+    /* Clear weakrefs to types and invoke callbacks as necessary. */
+    stats->collected += handle_weakrefs(&types, to);
+    gc_list_validate_space(to, gcstate->visited_space);
+    validate_list(to, collecting_clear_unreachable_clear);
+
+    /* Call tp_finalize on types. */
+    finalize_garbage(tstate, &types);
+
+    /* Merge types back to unreachable to properly process resurected
+     * objects and so on.
+     */
+    gc_list_merge(&types, &unreachable);
+
     /* Handle any objects that may have resurrected after the call
      * to 'finalize_garbage' and continue the collection with the
      * objects that are still unreachable */
