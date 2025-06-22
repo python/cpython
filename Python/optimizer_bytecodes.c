@@ -327,15 +327,13 @@ dummy_func(void) {
                 goto error;
             }
             res = sym_new_const(ctx, temp);
-            l = left;
-            r = right;
             Py_DECREF(temp);
         }
         else {
             res = sym_new_type(ctx, &PyUnicode_Type);
-            l = left;
-            r = right;
         }
+        l = left;
+        r = right;
     }
 
     op(_BINARY_OP_INPLACE_ADD_UNICODE, (left, right -- )) {

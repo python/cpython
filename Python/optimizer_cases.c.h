@@ -579,24 +579,22 @@
                     goto error;
                 }
                 res = sym_new_const(ctx, temp);
-                l = left;
-                r = right;
                 stack_pointer[-2] = res;
-                stack_pointer[-1] = l;
-                stack_pointer[0] = r;
-                stack_pointer += 1;
+                stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
                 Py_DECREF(temp);
             }
             else {
                 res = sym_new_type(ctx, &PyUnicode_Type);
-                l = left;
-                r = right;
-                stack_pointer += 1;
+                stack_pointer += -1;
             }
-            stack_pointer[-3] = res;
-            stack_pointer[-2] = l;
-            stack_pointer[-1] = r;
+            l = left;
+            r = right;
+            stack_pointer[-1] = res;
+            stack_pointer[0] = l;
+            stack_pointer[1] = r;
+            stack_pointer += 2;
+            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
