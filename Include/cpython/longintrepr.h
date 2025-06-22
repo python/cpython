@@ -124,12 +124,6 @@ _PyLong_IsCompact(const PyLongObject* op) {
     return op->long_value.lv_tag < (2 << _PyLong_NON_SIZE_BITS);
 }
 
-static inline int
-PyLong_CheckCompact(const PyObject *op)
-{
-    return PyLong_CheckExact(op) && _PyLong_IsCompact((PyLongObject *)op);
-}
-
 #define PyUnstable_Long_IsCompact _PyLong_IsCompact
 
 static inline Py_ssize_t

@@ -386,7 +386,7 @@ _Py_uop_sym_set_const(JitOptContext *ctx, JitOptRef ref, PyObject *const_val)
             make_const(sym, const_val);
             return;
         case JIT_SYM_COMPACT_INT:
-            if (PyLong_CheckCompact(const_val)) {
+            if (_PyLong_CheckExactAndCompact(const_val)) {
                 make_const(sym, const_val);
             }
             else {
@@ -679,7 +679,7 @@ _Py_uop_sym_is_compact_int(JitOptRef ref)
 {
     JitOptSymbol *sym = PyJitRef_Unwrap(ref);
     if (sym->tag == JIT_SYM_KNOWN_VALUE_TAG) {
-        return (bool)PyLong_CheckCompact(sym->value.value);
+        return (bool)_PyLong_CheckExactAndCompact(sym->value.value);
     }
     return sym->tag == JIT_SYM_COMPACT_INT;
 }
@@ -716,7 +716,7 @@ _Py_uop_sym_set_compact_int(JitOptContext *ctx, JitOptRef ref)
             }
             return;
         case JIT_SYM_KNOWN_VALUE_TAG:
-            if (!PyLong_CheckCompact(sym->value.value)) {
+            if (!_PyLong_CheckExactAndCompact(sym->value.value)) {
                 Py_CLEAR(sym->value.value);
                 sym_set_bottom(ctx, sym);
             }

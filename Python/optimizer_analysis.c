@@ -103,6 +103,10 @@ convert_global_to_const(_PyUOpInstruction *inst, PyObject *obj, bool pop)
     if ((int)index >= dict->ma_keys->dk_nentries) {
         return NULL;
     }
+    PyDictKeysObject *keys = dict->ma_keys;
+    if (keys->dk_version != inst->operand0) {
+        return NULL;
+    }
     PyObject *res = entries[index].me_value;
     if (res == NULL) {
         return NULL;

@@ -569,12 +569,12 @@ dummy_func(
 
         op(_GUARD_NOS_INT, (left, unused -- left, unused)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
-            EXIT_IF(!PyLong_CheckCompact(left_o));
+            EXIT_IF(!_PyLong_CheckExactAndCompact(left_o));
         }
 
         op(_GUARD_TOS_INT, (value -- value)) {
             PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-            EXIT_IF(!PyLong_CheckCompact(value_o));
+            EXIT_IF(!_PyLong_CheckExactAndCompact(value_o));
         }
 
         op(_GUARD_NOS_OVERFLOWED, (left, unused -- left, unused)) {

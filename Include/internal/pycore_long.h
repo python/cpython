@@ -312,6 +312,12 @@ _PyLong_FlipSign(PyLongObject *op) {
 #define _PyLong_FALSE_TAG TAG_FROM_SIGN_AND_SIZE(0, 0)
 #define _PyLong_TRUE_TAG TAG_FROM_SIGN_AND_SIZE(1, 1)
 
+static inline int
+_PyLong_CheckExactAndCompact(PyObject *op)
+{
+    return PyLong_CheckExact(op) && _PyLong_IsCompact((const PyLongObject *)op);
+}
+
 #ifdef __cplusplus
 }
 #endif
