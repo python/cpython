@@ -120,8 +120,9 @@ class ParseError(SyntaxError):
 
 def iselement(element):
     """Return True if *element* appears to be an Element."""
-    return hasattr(element, 'tag')
-
+    return (hasattr(element, 'tag') and hasattr(element, 'text') and
+        hasattr(element, 'tail') and callable(element.iter) and
+        callable(element.items) and callable(element.__len__))
 
 class Element:
     """An XML element.
@@ -528,7 +529,7 @@ class ElementTree:
     """
     def __init__(self, element=None, file=None):
         if element is not None and not iselement(element):
-            raise TypeError(f"element must be etree.Element, "
+            raise TypeError(f"element must be xml.etree.Element, "
                             f"not {type(element).__name__}")
         self._root = element # first node
         if file:
@@ -546,7 +547,7 @@ class ElementTree:
 
         """
         if not iselement(element):
-            raise TypeError(f"element must be etree.Element, "
+            raise TypeError(f"element must be xml.etree.Element, "
                             f"not {type(element).__name__}")
         self._root = element
 

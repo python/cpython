@@ -218,6 +218,42 @@ class ElementTreeTest(unittest.TestCase):
     def serialize_check(self, elem, expected):
         self.assertEqual(serialize(elem), expected)
 
+    def test_constructor(self):
+        # Test constructor behavior.
+
+        with self.assertRaises(TypeError):
+            tree = ET.ElementTree("")
+        with self.assertRaises(TypeError):
+            tree = ET.ElementTree(ET.ElementTree())
+
+        # Test _setroot as well, since it also sets the _root object.
+
+        tree = ET.ElementTree()
+        with self.assertRaises(TypeError):
+            tree._setroot("")
+        with self.assertRaises(TypeError):
+            tree._setroot(ET.ElementTree())
+
+        # Make sure it accepts an Element-like object.
+
+        class ElementLike:
+            def __init__(self):
+                self.tag = "tag"
+                self.text = None
+                self.tail = None
+            def iter(self):
+                pass
+            def items(self):
+                pass
+            def __len__(self):
+                pass
+
+        element_like = ElementLike()
+        try:
+            tree = ET.ElementTree(element_like)
+        except Exception as err:
+            self.fail(err)
+
     def test_interface(self):
         # Test element tree interface.
 
@@ -246,13 +282,6 @@ class ElementTreeTest(unittest.TestCase):
         tree = ET.ElementTree(element)
         self.assertRegex(repr(element), r"^<Element 't\xe4g' at 0x.*>$")
         element = ET.Element("tag", key="value")
-
-        # Verify type checking for ElementTree constructor
-
-        with self.assertRaises(TypeError):
-            tree = ET.ElementTree("")
-        with self.assertRaises(TypeError):
-            tree = ET.ElementTree(ET.ElementTree())
 
         # Make sure all standard element methods exist.
 

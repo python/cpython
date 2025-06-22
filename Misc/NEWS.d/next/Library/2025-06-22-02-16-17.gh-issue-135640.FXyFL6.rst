@@ -1,0 +1,3 @@
+Address bug where calling :func:`xml.etree.ElementTree.ElementTree.write` on
+an ElementTree object with an invalid root element would blank the file
+passed to ``write`` if it already existed.
