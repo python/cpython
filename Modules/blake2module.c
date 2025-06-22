@@ -2,6 +2,7 @@
  * Written in 2013 by Dmitry Chestnykh <dmitry@codingrobots.com>
  * Modified for CPython by Christian Heimes <christian@python.org>
  * Updated to use HACL* by Jonathan Protzenko <jonathan@protzenko.fr>
+ * Additional work by Bénédikt Tran <10796600+picnixz@users.noreply.github.com>
  *
  * To the extent possible under law, the author have dedicated all
  * copyright and related and neighboring rights to this software to
@@ -368,15 +369,18 @@ typedef struct {
 
 #define _Blake2Object_CAST(op)  ((Blake2Object *)(op))
 
-#include "clinic/blake2module.c.h"
+// --- Module clinic configuration --------------------------------------------
 
 /*[clinic input]
 module _blake2
-class _blake2.blake2b "Blake2Object *" "&PyBlake2_BLAKE2bType"
-class _blake2.blake2s "Blake2Object *" "&PyBlake2_BLAKE2sType"
+class _blake2.blake2b "Blake2Object *" "&PyType_Type"
+class _blake2.blake2s "Blake2Object *" "&PyType_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=b7526666bd18af83]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=86b0972b0c41b3d0]*/
 
+#include "clinic/blake2module.c.h"
+
+// --- BLAKE-2 object interface -----------------------------------------------
 
 static Blake2Object *
 new_Blake2Object(PyTypeObject *type)
