@@ -1517,6 +1517,23 @@ class PythonFinalizationTests(unittest.TestCase):
         """)
         assert_python_ok("-c", code)
 
+    def test_reset_type_cache_after_finalization(self):
+        # https://github.com/python/cpython/issues/135552
+        code = textwrap.dedent("""
+            class BaseNode:
+                def __del__(self):
+                    BaseNode.next = BaseNode.next.next
+            
+            
+            class Node(BaseNode):
+                pass
+            
+            
+            BaseNode.next = Node()
+            BaseNode.next.next = Node()
+        """)
+        assert_python_ok("-c", code)
+
 
 def setUpModule():
     global enabled, debug
