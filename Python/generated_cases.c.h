@@ -6834,7 +6834,23 @@
             next_instr += 2;
             INSTRUCTION_STATS(INSTRUMENTED_JUMP_BACKWARD);
             /* Skip 1 cache entry */
-            INSTRUMENTED_JUMP(this_instr, next_instr - oparg, PY_MONITORING_EVENT_JUMP);
+            // _CHECK_PERIODIC
+            {
+                _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+                QSBR_QUIESCENT_STATE(tstate);
+                if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    int err = _Py_HandlePending(tstate);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                    if (err != 0) {
+                        JUMP_TO_LABEL(error);
+                    }
+                }
+            }
+            // _MONITOR_JUMP_BACKWARD
+            {
+                INSTRUMENTED_JUMP(this_instr, next_instr - oparg, PY_MONITORING_EVENT_JUMP);
+            }
             DISPATCH();
         }
 
@@ -7436,6 +7452,19 @@
             _Py_CODEUNIT* const this_instr = next_instr - 2;
             (void)this_instr;
             /* Skip 1 cache entry */
+            // _CHECK_PERIODIC
+            {
+                _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+                QSBR_QUIESCENT_STATE(tstate);
+                if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    int err = _Py_HandlePending(tstate);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                    if (err != 0) {
+                        JUMP_TO_LABEL(error);
+                    }
+                }
+            }
             // _SPECIALIZE_JUMP_BACKWARD
             {
                 #if ENABLE_SPECIALIZATION
@@ -7466,6 +7495,16 @@
             INSTRUCTION_STATS(JUMP_BACKWARD_JIT);
             static_assert(1 == 1, "incorrect cache size");
             /* Skip 1 cache entry */
+            // _GUARD_CHECK_PERIODIC
+            {
+                _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+                QSBR_QUIESCENT_STATE(tstate);
+                if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+                    UPDATE_MISS_STATS(JUMP_BACKWARD);
+                    assert(_PyOpcode_Deopt[opcode] == (JUMP_BACKWARD));
+                    JUMP_TO_PREDICTED(JUMP_BACKWARD);
+                }
+            }
             // _JUMP_BACKWARD_NO_INTERRUPT
             {
                 assert(oparg <= INSTR_OFFSET());
@@ -7525,13 +7564,28 @@
             int opcode = JUMP_BACKWARD_NO_JIT;
             (void)(opcode);
             #endif
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(JUMP_BACKWARD_NO_JIT);
             static_assert(1 == 1, "incorrect cache size");
             /* Skip 1 cache entry */
-            assert(oparg <= INSTR_OFFSET());
-            JUMPBY(-oparg);
+            // _GUARD_CHECK_PERIODIC
+            {
+                _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+                QSBR_QUIESCENT_STATE(tstate);
+                if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+                    UPDATE_MISS_STATS(JUMP_BACKWARD);
+                    assert(_PyOpcode_Deopt[opcode] == (JUMP_BACKWARD));
+                    JUMP_TO_PREDICTED(JUMP_BACKWARD);
+                }
+            }
+            // _JUMP_BACKWARD_NO_INTERRUPT
+            {
+                assert(oparg <= INSTR_OFFSET());
+                JUMPBY(-oparg);
+            }
             DISPATCH();
         }
 

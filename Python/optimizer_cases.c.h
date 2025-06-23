@@ -9,7 +9,7 @@
 
         /* _CHECK_PERIODIC is not a viable micro-op for tier 2 */
 
-        case _CHECK_PERIODIC_TIER_TWO: {
+        case _GUARD_CHECK_PERIODIC: {
             break;
         }
 

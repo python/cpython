@@ -2109,7 +2109,6 @@ codegen_for(compiler *c, stmt_ty s)
     VISIT(c, expr, s->v.For.target);
     VISIT_SEQ(c, stmt, s->v.For.body);
     /* Mark jump as artificial */
-    ADDOP(c, NO_LOCATION, CHECK_PERIODIC);
     ADDOP_JUMP(c, NO_LOCATION, JUMP, start);
 
     USE_LABEL(c, cleanup);
@@ -2157,7 +2156,6 @@ codegen_async_for(compiler *c, stmt_ty s)
     VISIT(c, expr, s->v.AsyncFor.target);
     VISIT_SEQ(c, stmt, s->v.AsyncFor.body);
     /* Mark jump as artificial */
-    ADDOP(c, NO_LOCATION, CHECK_PERIODIC);
     ADDOP_JUMP(c, NO_LOCATION, JUMP, start);
 
     _PyCompile_PopFBlock(c, COMPILE_FBLOCK_ASYNC_FOR_LOOP, start);
@@ -2190,7 +2188,6 @@ codegen_while(compiler *c, stmt_ty s)
     RETURN_IF_ERROR(codegen_jump_if(c, LOC(s), s->v.While.test, anchor, 0));
 
     VISIT_SEQ(c, stmt, s->v.While.body);
-    ADDOP(c, NO_LOCATION, CHECK_PERIODIC);
     ADDOP_JUMP(c, NO_LOCATION, JUMP, loop);
 
     _PyCompile_PopFBlock(c, COMPILE_FBLOCK_WHILE_LOOP, loop);
@@ -2272,7 +2269,6 @@ codegen_continue(compiler *c, location loc)
     if (loop == NULL) {
         return _PyCompile_Error(c, origin_loc, "'continue' not properly in loop");
     }
-    ADDOP(c, loc, CHECK_PERIODIC);
     ADDOP_JUMP(c, loc, JUMP, loop->fb_block);
     return SUCCESS;
 }

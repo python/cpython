@@ -14,7 +14,7 @@
 
         /* _CHECK_PERIODIC is not a viable micro-op for tier 2 because it is replaced */
 
-        case _CHECK_PERIODIC_TIER_TWO: {
+        case _GUARD_CHECK_PERIODIC: {
             _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
             QSBR_QUIESCENT_STATE(tstate);
             if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {

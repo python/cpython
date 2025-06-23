@@ -432,7 +432,7 @@ _PyUOp_Replacements[MAX_UOP_ID + 1] = {
     [_ITER_JUMP_TUPLE] = _GUARD_NOT_EXHAUSTED_TUPLE,
     [_FOR_ITER] = _FOR_ITER_TIER_TWO,
     [_ITER_NEXT_LIST] = _ITER_NEXT_LIST_TIER_TWO,
-    [_CHECK_PERIODIC] = _CHECK_PERIODIC_TIER_TWO,
+    [_CHECK_PERIODIC] = _GUARD_CHECK_PERIODIC,
 };
 
 static const uint8_t
@@ -698,6 +698,8 @@ translate_bytecode_to_trace(
 
             case JUMP_BACKWARD:
             case JUMP_BACKWARD_JIT:
+                ADD_TO_TRACE(_GUARD_CHECK_PERIODIC, 0, 0, target);
+                _Py_FALLTHROUGH;
             case JUMP_BACKWARD_NO_INTERRUPT:
             {
                 instr += 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]] - (int)oparg;
@@ -776,7 +778,7 @@ translate_bytecode_to_trace(
                                 uop = _PyUOp_Replacements[uop];
                                 assert(uop != 0);
 #ifdef Py_DEBUG
-                                if (uop != _CHECK_PERIODIC_TIER_TWO) {
+                                if (uop != _GUARD_CHECK_PERIODIC) {
                                     uint32_t next_inst = target + 1 + INLINE_CACHE_ENTRIES_FOR_ITER + (oparg > 255);
                                     uint32_t jump_target = next_inst + oparg;
                                     assert(_Py_GetBaseCodeUnit(code, jump_target).op.code == END_FOR);

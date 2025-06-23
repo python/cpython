@@ -161,7 +161,7 @@ dummy_func(
             }
         }
 
-        op(_CHECK_PERIODIC_TIER_TWO, (--)) {
+        op(_GUARD_CHECK_PERIODIC, (--)) {
             _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
             QSBR_QUIESCENT_STATE(tstate);
             DEOPT_IF(_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK);
@@ -2973,15 +2973,18 @@ dummy_func(
 
         macro(JUMP_BACKWARD) =
             unused/1 +
+            CHECK_PERIODIC +
             _SPECIALIZE_JUMP_BACKWARD +
             JUMP_BACKWARD_NO_INTERRUPT;
 
         macro(JUMP_BACKWARD_NO_JIT) =
             unused/1 +
+            _GUARD_CHECK_PERIODIC +
             JUMP_BACKWARD_NO_INTERRUPT;
 
         macro(JUMP_BACKWARD_JIT) =
             unused/1 +
+            _GUARD_CHECK_PERIODIC +
             JUMP_BACKWARD_NO_INTERRUPT +
             _JIT;
 
@@ -5098,6 +5101,7 @@ dummy_func(
 
         macro(INSTRUMENTED_JUMP_BACKWARD) =
             unused/1 +
+            CHECK_PERIODIC +
             _MONITOR_JUMP_BACKWARD;
 
         inst(INSTRUMENTED_POP_JUMP_IF_TRUE, (unused/1, cond -- )) {

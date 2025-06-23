@@ -1591,10 +1591,10 @@ class TestBranchAndJumpEvents(CheckEvents):
 
         self.check_events(func, recorders = BRANCH_OFFSET_RECORDERS, expected = [
             ('branch left', 'func', 30, 34),
-            ('branch right', 'func', 46, 62),
+            ('branch right', 'func', 46, 60),
             ('branch left', 'func', 30, 34),
             ('branch left', 'func', 46, 52),
-            ('branch right', 'func', 30, 76)])
+            ('branch right', 'func', 30, 72)])
 
     def test_except_star(self):
 
@@ -1650,7 +1650,7 @@ class TestBranchAndJumpEvents(CheckEvents):
             return None
 
         in_loop = ('branch left', 'foo', 10, 16)
-        exit_loop = ('branch right', 'foo', 10, 42)
+        exit_loop = ('branch right', 'foo', 10, 40)
         self.check_events(foo, recorders = BRANCH_OFFSET_RECORDERS, expected = [
             in_loop,
             in_loop,
