@@ -5,7 +5,7 @@ asyncio
 This document describes the working and implementation details of the
 [`asyncio`](https://docs.python.org/3/library/asyncio.html) module.
 
-**This section describes the implementation details of the C implementation**.
+**The following section describes the implementation details of the C implementation**.
 
 # Task management
 
@@ -210,7 +210,7 @@ locking.
 
 ---
 
-**This section describes the implementation details of the Python implementation**.
+**The following section describes the implementation details of the Python implementation**.
 
 # async generators
 
