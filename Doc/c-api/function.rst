@@ -144,7 +144,7 @@ There are a few functions specific to Python functions.
 
    Similar to their ``PyFunction_Get*`` counterparts, but do not do type
    checking. Passing anything other than an instance of
-   :c:type:`PyFunction_type` is undefined behavior.
+   :c:data:`PyFunction_Type` is undefined behavior.
 
 
 .. c:function:: int PyFunction_AddWatcher(PyFunction_WatchCallback callback)
