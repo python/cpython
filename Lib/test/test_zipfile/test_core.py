@@ -1482,6 +1482,289 @@ class RepackHelperMixin:
                     fh.write(data)
             return list(zh.infolist())
 
+class AbstractCopyTests(RepackHelperMixin):
+    @classmethod
+    def setUpClass(cls):
+        cls.test_files = cls._prepare_test_files()
+
+    def tearDown(self):
+        unlink(TESTFN)
+
+    def test_copy_by_name(self):
+        for i in range(3):
+            with self.subTest(i=i, filename=self.test_files[i][0]):
+                zinfos = self._prepare_zip_from_test_files(TESTFN, self.test_files)
+                with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
+                    zi_new = {
+                        **comparable_zinfo(zinfos[i]),
+                        'filename': 'file.txt',
+                        'orig_filename': 'file.txt',
+                        'header_offset': zh.start_dir,
+                    }
+                    zh.copy(self.test_files[i][0], 'file.txt')
+
+                    # check infolist
+                    self.assertEqual(
+                        [comparable_zinfo(zi) for zi in zh.infolist()],
+                        [*(comparable_zinfo(zi) for zi in zinfos), zi_new],
+                    )
+
+                    # check NameToInfo cache
+                    self.assertEqual(comparable_zinfo(zh.getinfo('file.txt')), zi_new)
+
+                    # check content
+                    self.assertEqual(
+                        zh.read(zi_new['filename']),
+                        zh.read(zinfos[i].filename),
+                    )
+
+                # make sure the zip file is still valid
+                with zipfile.ZipFile(TESTFN) as zh:
+                    self.assertIsNone(zh.testzip())
+
+    def test_copy_by_zinfo(self):
+        for i in range(3):
+            with self.subTest(i=i, filename=self.test_files[i][0]):
+                zinfos = self._prepare_zip_from_test_files(TESTFN, self.test_files)
+                with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
+                    zi_new = {
+                        **comparable_zinfo(zinfos[i]),
+                        'filename': 'file.txt',
+                        'orig_filename': 'file.txt',
+                        'header_offset': zh.start_dir,
+                    }
+                    zh.copy(zh.infolist()[i], 'file.txt')
+
+                    # check infolist
+                    self.assertEqual(
+                        [comparable_zinfo(zi) for zi in zh.infolist()],
+                        [*(comparable_zinfo(zi) for zi in zinfos), zi_new],
+                    )
+
+                    # check NameToInfo cache
+                    self.assertEqual(comparable_zinfo(zh.getinfo('file.txt')), zi_new)
+
+                    # check content
+                    self.assertEqual(
+                        zh.read(zi_new['filename']),
+                        zh.read(zinfos[i].filename),
+                    )
+
+                # make sure the zip file is still valid
+                with zipfile.ZipFile(TESTFN) as zh:
+                    self.assertIsNone(zh.testzip())
+
+    def test_copy_zip64(self):
+        for i in range(3):
+            with self.subTest(i=i, filename=self.test_files[i][0]):
+                zinfos = self._prepare_zip_from_test_files(TESTFN, self.test_files, force_zip64=True)
+                with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
+                    zi_new = {
+                        **comparable_zinfo(zinfos[i]),
+                        'filename': 'file.txt',
+                        'orig_filename': 'file.txt',
+                        'header_offset': zh.start_dir,
+                    }
+                    zh.copy(self.test_files[i][0], 'file.txt')
+
+                    # check infolist
+                    self.assertEqual(
+                        [comparable_zinfo(zi) for zi in zh.infolist()],
+                        [*(comparable_zinfo(zi) for zi in zinfos), zi_new],
+                    )
+
+                    # check NameToInfo cache
+                    self.assertEqual(comparable_zinfo(zh.getinfo('file.txt')), zi_new)
+
+                    # check content
+                    self.assertEqual(
+                        zh.read(zi_new['filename']),
+                        zh.read(zinfos[i].filename),
+                    )
+
+                # make sure the zip file is still valid
+                with zipfile.ZipFile(TESTFN) as zh:
+                    self.assertIsNone(zh.testzip())
+
+    def test_copy_data_descriptor(self):
+        for i in range(3):
+            with self.subTest(i=i, filename=self.test_files[i][0]):
+                with open(TESTFN, 'wb') as fh:
+                    zinfos = self._prepare_zip_from_test_files(Unseekable(fh), self.test_files)
+                with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
+                    zi_new = {
+                        **comparable_zinfo(zinfos[i]),
+                        'filename': 'file.txt',
+                        'orig_filename': 'file.txt',
+                        'header_offset': zh.start_dir,
+                    }
+                    zh.copy(self.test_files[i][0], 'file.txt')
+
+                    # check infolist
+                    self.assertEqual(
+                        [comparable_zinfo(zi) for zi in zh.infolist()],
+                        [*(comparable_zinfo(zi) for zi in zinfos), zi_new],
+                    )
+
+                    # check NameToInfo cache
+                    self.assertEqual(comparable_zinfo(zh.getinfo('file.txt')), zi_new)
+
+                    # check content
+                    self.assertEqual(
+                        zh.read(zi_new['filename']),
+                        zh.read(zinfos[i].filename),
+                    )
+
+                # make sure the zip file is still valid
+                with zipfile.ZipFile(TESTFN) as zh:
+                    self.assertIsNone(zh.testzip())
+
+    def test_copy_target_exist(self):
+        for i in (1,):
+            with self.subTest(i=i, filename=self.test_files[i][0]):
+                zinfos = self._prepare_zip_from_test_files(TESTFN, self.test_files)
+                with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
+                    zi_new = {
+                        **comparable_zinfo(zinfos[i]),
+                        'filename': 'file2.txt',
+                        'orig_filename': 'file2.txt',
+                        'header_offset': zh.start_dir,
+                    }
+                    zh.copy(self.test_files[i][0], 'file2.txt')
+
+                    # check infolist
+                    self.assertEqual(
+                        [comparable_zinfo(zi) for zi in zh.infolist()],
+                        [*(comparable_zinfo(zi) for zi in zinfos), zi_new],
+                    )
+
+                    # check NameToInfo cache
+                    self.assertEqual(comparable_zinfo(zh.getinfo('file2.txt')), zi_new)
+
+                    # check content
+                    self.assertEqual(
+                        zh.read(zi_new['filename']),
+                        zh.read(zinfos[i].filename),
+                    )
+
+                # make sure the zip file is still valid
+                with zipfile.ZipFile(TESTFN) as zh:
+                    self.assertIsNone(zh.testzip())
+
+    @mock.patch.object(zipfile, '_ZipRepacker')
+    def test_copy_closed(self, m_repack):
+        self._prepare_zip_from_test_files(TESTFN, self.test_files)
+        with zipfile.ZipFile(TESTFN, 'a') as zh:
+            zh.close()
+            with self.assertRaises(ValueError):
+                zh.copy(self.test_files[0][0], 'file.txt')
+        m_repack.assert_not_called()
+
+    @mock.patch.object(zipfile, '_ZipRepacker')
+    def test_copy_writing(self, m_repack):
+        self._prepare_zip_from_test_files(TESTFN, self.test_files)
+        with zipfile.ZipFile(TESTFN, 'a') as zh:
+            with zh.open('newfile.txt', 'w'):
+                with self.assertRaises(ValueError):
+                    zh.copy(self.test_files[0][0], 'file.txt')
+        m_repack.assert_not_called()
+
+    @mock.patch.object(zipfile, '_ZipRepacker')
+    def test_copy_unseekble(self, m_repack):
+        with open(TESTFN, 'wb') as fh:
+            with zipfile.ZipFile(Unseekable(fh), 'w') as zh:
+                for file, data in self.test_files:
+                    zh.writestr(file, data)
+
+                with self.assertRaises(io.UnsupportedOperation):
+                    zh.copy(zh.infolist()[0], 'file.txt')
+        m_repack.assert_not_called()
+
+    def test_copy_mode_w(self):
+        with zipfile.ZipFile(TESTFN, 'w') as zh:
+            for file, data in self.test_files:
+                zh.writestr(file, data)
+            zinfos = list(zh.infolist())
+
+            zi_new = {
+                **comparable_zinfo(zinfos[0]),
+                'filename': 'file.txt',
+                'orig_filename': 'file.txt',
+                'header_offset': zh.start_dir,
+            }
+            zh.copy(zh.infolist()[0], 'file.txt')
+
+            # check infolist
+            self.assertEqual(
+                [comparable_zinfo(zi) for zi in zh.infolist()],
+                [*(comparable_zinfo(zi) for zi in zinfos), zi_new],
+            )
+
+            # check NameToInfo cache
+            self.assertEqual(comparable_zinfo(zh.getinfo('file.txt')), zi_new)
+
+            # check content
+            self.assertEqual(
+                zh.read(zi_new['filename']),
+                zh.read(zinfos[0].filename),
+            )
+
+        # make sure the zip file is still valid
+        with zipfile.ZipFile(TESTFN) as zh:
+            self.assertIsNone(zh.testzip())
+
+    def test_copy_mode_x(self):
+        with zipfile.ZipFile(TESTFN, 'x') as zh:
+            for file, data in self.test_files:
+                zh.writestr(file, data)
+            zinfos = list(zh.infolist())
+
+            zi_new = {
+                **comparable_zinfo(zinfos[0]),
+                'filename': 'file.txt',
+                'orig_filename': 'file.txt',
+                'header_offset': zh.start_dir,
+            }
+            zh.copy(zh.infolist()[0], 'file.txt')
+
+            # check infolist
+            self.assertEqual(
+                [comparable_zinfo(zi) for zi in zh.infolist()],
+                [*(comparable_zinfo(zi) for zi in zinfos), zi_new],
+            )
+
+            # check NameToInfo cache
+            self.assertEqual(comparable_zinfo(zh.getinfo('file.txt')), zi_new)
+
+            # check content
+            self.assertEqual(
+                zh.read(zi_new['filename']),
+                zh.read(zinfos[0].filename),
+            )
+
+        # make sure the zip file is still valid
+        with zipfile.ZipFile(TESTFN) as zh:
+            self.assertIsNone(zh.testzip())
+
+class StoredCopyTests(AbstractCopyTests, unittest.TestCase):
+    compression = zipfile.ZIP_STORED
+
+@requires_zlib()
+class DeflateCopyTests(AbstractCopyTests, unittest.TestCase):
+    compression = zipfile.ZIP_DEFLATED
+
+@requires_bz2()
+class Bzip2CopyTests(AbstractCopyTests, unittest.TestCase):
+    compression = zipfile.ZIP_BZIP2
+
+@requires_lzma()
+class LzmaCopyTests(AbstractCopyTests, unittest.TestCase):
+    compression = zipfile.ZIP_LZMA
+
+@requires_zstd()
+class ZstdCopyTests(AbstractCopyTests, unittest.TestCase):
+    compression = zipfile.ZIP_ZSTANDARD
+
 class AbstractRemoveTests(RepackHelperMixin):
     @classmethod
     def setUpClass(cls):
@@ -3432,7 +3715,7 @@ class ZipRepackerTests(unittest.TestCase):
 
         self.assertEqual(
             repacker._calc_local_file_entry_size(fz, zi),
-            43,
+            (30, 8, 0, 5, 0),
         )
 
         # data descriptor
@@ -3444,7 +3727,7 @@ class ZipRepackerTests(unittest.TestCase):
 
         self.assertEqual(
             repacker._calc_local_file_entry_size(fz, zi),
-            59,
+            (30, 8, 0, 5, 16),
         )
 
         # data descriptor (unsigned)
@@ -3457,7 +3740,7 @@ class ZipRepackerTests(unittest.TestCase):
 
         self.assertEqual(
             repacker._calc_local_file_entry_size(fz, zi),
-            55,
+            (30, 8, 0, 5, 12),
         )
 
     def test_calc_local_file_entry_size_zip64(self):
@@ -3472,7 +3755,7 @@ class ZipRepackerTests(unittest.TestCase):
 
         self.assertEqual(
             repacker._calc_local_file_entry_size(fz, zi),
-            63,
+            (30, 8, 20, 5, 0),
         )
 
         # data descriptor + zip64
@@ -3484,7 +3767,7 @@ class ZipRepackerTests(unittest.TestCase):
 
         self.assertEqual(
             repacker._calc_local_file_entry_size(fz, zi),
-            87,
+            (30, 8, 20, 5, 24),
         )
 
         # data descriptor (unsigned) + zip64
@@ -3497,7 +3780,7 @@ class ZipRepackerTests(unittest.TestCase):
 
         self.assertEqual(
             repacker._calc_local_file_entry_size(fz, zi),
-            83,
+            (30, 8, 20, 5, 20),
         )
 
     def test_copy_bytes(self):
