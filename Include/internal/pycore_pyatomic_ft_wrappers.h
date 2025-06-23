@@ -167,6 +167,7 @@ extern "C" {
 #define FT_ATOMIC_LOAD_ULLONG_RELAXED(value) value
 #define FT_ATOMIC_STORE_ULLONG_RELAXED(value, new_value) value = new_value
 #define FT_ATOMIC_ADD_SSIZE(value, new_value) (void)(value += new_value)
+#define FT_ATOMIC_ADD_UINT64(value, new_value) (void)(value += new_value)
 
 #endif
 
