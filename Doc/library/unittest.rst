@@ -1131,7 +1131,7 @@ Test cases
       .. versionchanged:: 3.3
          Added the *msg* keyword argument when used as a context manager.
 
-   .. method:: assertLogs(logger=None, level=None)
+   .. method:: assertLogs(logger=None, level=None, formatter=None)
 
       A context manager to test that at least one message is logged on
       the *logger* or one of its children, with at least the given
@@ -1145,6 +1145,10 @@ Test cases
       If given, *level* should be either a numeric logging level or
       its string equivalent (for example either ``"ERROR"`` or
       :const:`logging.ERROR`).  The default is :const:`logging.INFO`.
+
+      If given, *formatter* should be a :class:`logging.Formatter` object.
+      The default is a formatter with
+      ``LOGGING_FORMAT = "%(levelname)s:%(name)s:%(message)s"``
 
       The test passes if at least one message emitted inside the ``with``
       block matches the *logger* and *level* conditions, otherwise it fails.
@@ -1172,6 +1176,10 @@ Test cases
                                       'ERROR:foo.bar:second message'])
 
       .. versionadded:: 3.4
+
+      .. versionchanged:: 3.15
+         Now accepts a formatter argument so your assertions can match
+         a custom format where you are using one.
 
    .. method:: assertNoLogs(logger=None, level=None)
 
