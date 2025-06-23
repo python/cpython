@@ -1,6 +1,6 @@
 /*
  * Implementation of safe memory reclamation scheme using
- * quiescent states.
+ * quiescent states.  See InternalDocs/qsbr.md.
  *
  * This is derived from the "GUS" safe memory reclamation technique
  * in FreeBSD written by Jeffrey Roberson. It is heavily modified. Any bugs
