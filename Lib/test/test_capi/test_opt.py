@@ -2349,7 +2349,7 @@ class TestUopsOptimization(unittest.TestCase):
         assert ex is not None
         """))
 
-    def test_store_pop_top_specialize_none(self):
+    def test_pop_top_specialize_none(self):
         def testfunc(n):
             for _ in range(n):
                 global_identity(None)
@@ -2362,7 +2362,7 @@ class TestUopsOptimization(unittest.TestCase):
 
         self.assertIn("_POP_TOP_NOP", uops)
 
-    def test_store_pop_top_specialize_int(self):
+    def test_pop_top_specialize_int(self):
         def testfunc(n):
             for _ in range(n):
                 global_identity(100000)
@@ -2375,7 +2375,7 @@ class TestUopsOptimization(unittest.TestCase):
 
         self.assertIn("_POP_TOP_INT", uops)
 
-    def test_store_pop_top_specialize_float(self):
+    def test_pop_top_specialize_float(self):
         def testfunc(n):
             for _ in range(n):
                 global_identity(1e6)
@@ -2388,7 +2388,7 @@ class TestUopsOptimization(unittest.TestCase):
 
         self.assertIn("_POP_TOP_FLOAT", uops)
 
-    def test_store_pop_top_specialize_str(self):
+    def test_pop_top_specialize_str(self):
         def testfunc(n):
             for _ in range(n):
                 global_identity("2" + "1")
