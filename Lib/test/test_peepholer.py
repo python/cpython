@@ -12,7 +12,7 @@ except ImportError:
 
 from test import support
 from test.support.bytecode_helper import (
-    BytecodeTestCase, CfgOptimizationTestCase, CompilationStepTestCase)
+    BytecodeTestCase, CfgOptimizationTestCase)
 
 
 def compile_pattern_with_fast_locals(pattern):
@@ -316,7 +316,7 @@ class TestTranforms(BytecodeTestCase):
             return -(1.0-1.0)
 
         for instr in dis.get_instructions(negzero):
-            self.assertFalse(instr.opname.startswith('UNARY_'))
+            self.assertNotStartsWith(instr.opname, 'UNARY_')
         self.check_lnotab(negzero)
 
     def test_constant_folding_binop(self):
@@ -2614,6 +2614,90 @@ class OptimizeLoadFastTestCase(DirectCfgOptimizerTests):
         ]
         self.cfg_optimization_test(insts, expected, consts=[None])
 
+    def test_format_simple(self):
+        # FORMAT_SIMPLE will leave its operand on the stack if it's a unicode
+        # object. We treat it conservatively and assume that it always leaves
+        # its operand on the stack.
+        insts = [
+            ("LOAD_FAST", 0, 1),
+            ("FORMAT_SIMPLE", None, 2),
+            ("STORE_FAST", 1, 3),
+        ]
+        self.check(insts, insts)
+
+        insts = [
+            ("LOAD_FAST", 0, 1),
+            ("FORMAT_SIMPLE", None, 2),
+            ("POP_TOP", None, 3),
+        ]
+        expected = [
+            ("LOAD_FAST_BORROW", 0, 1),
+            ("FORMAT_SIMPLE", None, 2),
+            ("POP_TOP", None, 3),
+        ]
+        self.check(insts, expected)
+
+    def test_set_function_attribute(self):
+        # SET_FUNCTION_ATTRIBUTE leaves the function on the stack
+        insts = [
+            ("LOAD_CONST", 0, 1),
+            ("LOAD_FAST", 0, 2),
+            ("SET_FUNCTION_ATTRIBUTE", 2, 3),
+            ("STORE_FAST", 1, 4),
+            ("LOAD_CONST", 0, 5),
+            ("RETURN_VALUE", None, 6)
+        ]
+        self.cfg_optimization_test(insts, insts, consts=[None])
+
+        insts = [
+            ("LOAD_CONST", 0, 1),
+            ("LOAD_FAST", 0, 2),
+            ("SET_FUNCTION_ATTRIBUTE", 2, 3),
+            ("RETURN_VALUE", None, 4)
+        ]
+        expected = [
+            ("LOAD_CONST", 0, 1),
+            ("LOAD_FAST_BORROW", 0, 2),
+            ("SET_FUNCTION_ATTRIBUTE", 2, 3),
+            ("RETURN_VALUE", None, 4)
+        ]
+        self.cfg_optimization_test(insts, expected, consts=[None])
+
+    def test_get_yield_from_iter(self):
+        # GET_YIELD_FROM_ITER may leave its operand on the stack
+        insts = [
+            ("LOAD_FAST", 0, 1),
+            ("GET_YIELD_FROM_ITER", None, 2),
+            ("LOAD_CONST", 0, 3),
+            send := self.Label(),
+            ("SEND", end := self.Label(), 5),
+            ("YIELD_VALUE", 1, 6),
+            ("RESUME", 2, 7),
+            ("JUMP", send, 8),
+            end,
+            ("END_SEND", None, 9),
+            ("LOAD_CONST", 0, 10),
+            ("RETURN_VALUE", None, 11),
+        ]
+        self.cfg_optimization_test(insts, insts, consts=[None])
+
+    def test_push_exc_info(self):
+        insts = [
+            ("LOAD_FAST", 0, 1),
+            ("PUSH_EXC_INFO", None, 2),
+        ]
+        self.check(insts, insts)
+
+    def test_load_special(self):
+        # LOAD_SPECIAL may leave self on the stack
+        insts = [
+            ("LOAD_FAST", 0, 1),
+            ("LOAD_SPECIAL", 0, 2),
+            ("STORE_FAST", 1, 3),
+        ]
+        self.check(insts, insts)
+
+
     def test_del_in_finally(self):
         # This loads `obj` onto the stack, executes `del obj`, then returns the
         # `obj` from the stack. See gh-133371 for more details.
@@ -2629,6 +2713,14 @@ class OptimizeLoadFastTestCase(DirectCfgOptimizerTests):
         # interpreter finalization, so run it here manually.
         gc.collect()
         self.assertEqual(obj, [42])
+
+    def test_format_simple_unicode(self):
+        # Repro from gh-134889
+        def f():
+            var = f"{1}"
+            var = f"{var}"
+            return var
+        self.assertEqual(f(), "1")
 
 
 
