@@ -3287,7 +3287,7 @@ _Py_DumpExtensionModules(int fd, PyInterpreterState *interp)
 
 
 static void _Py_NO_RETURN
-fatal_error(int fd, const char *prefix, const char *msg,
+fatal_error(int fd, int header, const char *prefix, const char *msg,
             int status)
 {
     static int reentrant = 0;
@@ -3299,18 +3299,20 @@ fatal_error(int fd, const char *prefix, const char *msg,
     }
     reentrant = 1;
 
-    PUTS(fd, "Fatal Python error: ");
-    if (prefix) {
-        PUTS(fd, prefix);
-        PUTS(fd, ": ");
+    if (header) {
+        PUTS(fd, "Fatal Python error: ");
+        if (prefix) {
+            PUTS(fd, prefix);
+            PUTS(fd, ": ");
+        }
+        if (msg) {
+            PUTS(fd, msg);
+        }
+        else {
+            PUTS(fd, "<message not set>");
+        }
+        PUTS(fd, "\n");
     }
-    if (msg) {
-        PUTS(fd, msg);
-    }
-    else {
-        PUTS(fd, "<message not set>");
-    }
-    PUTS(fd, "\n");
 
     _PyRuntimeState *runtime = &_PyRuntime;
     fatal_error_dump_runtime(fd, runtime);
@@ -3377,33 +3379,68 @@ fatal_error(int fd, const char *prefix, const char *msg,
 void _Py_NO_RETURN
 Py_FatalError(const char *msg)
 {
-    fatal_error(fileno(stderr), NULL, msg, -1);
+    fatal_error(fileno(stderr), 1, NULL, msg, -1);
 }
 
 
 void _Py_NO_RETURN
 _Py_FatalErrorFunc(const char *func, const char *msg)
 {
-    fatal_error(fileno(stderr), func, msg, -1);
+    fatal_error(fileno(stderr), 1, func, msg, -1);
 }
 
+#define FATAL_MSG_SIZE 1024
+#define FATAL_MSG_SIZE_WITHOUT_ELLIPSIS FATAL_MSG_SIZE - 3
 
 void _Py_NO_RETURN
 _Py_FatalErrorFormat(const char *func, const char *format, ...)
 {
+    static int reentrant = 0;
+    if (reentrant) {
+        /* _Py_FatalErrorFormat() caused a second fatal error */
+        fatal_error_exit(-1);
+    }
+    reentrant = 1;
+
     va_list vargs;
+#ifdef MS_WINDOWS
     va_start(vargs, format);
     int length = vsnprintf(NULL, 0, format, vargs);
     va_end(vargs);
 
-    char* msg = malloc(length + 1);
+    char msg[FATAL_MSG_SIZE];
+    if (length < FATAL_MSG_SIZE) {
+        va_start(vargs, format);
+        vsnprintf(msg, length + 1, format, vargs);
+        va_end(vargs);
+
+        fatal_error(fileno(stderr), 1, func, msg, -1);
+    }
 
     va_start(vargs, format);
-    vsnprintf(msg, length + 1, format, vargs);
+    vsnprintf(msg, FATAL_MSG_SIZE_WITHOUT_ELLIPSIS, format, vargs);
+    va_end(vargs);
+    strcpy (msg + FATAL_MSG_SIZE_WITHOUT_ELLIPSIS - 1, "...");
+#else
+    char *msg = NULL;
+#endif
+
+    FILE *stream = stderr;
+    const int fd = fileno(stream);
+    PUTS(fd, "Fatal Python error: ");
+    if (func) {
+        PUTS(fd, func);
+        PUTS(fd, ": ");
+    }
+
+    va_start(vargs, format);
+    vfprintf(stream, format, vargs);
     va_end(vargs);
 
-    fatal_error(fileno(stderr), func, msg, -1);
-    free(msg);
+    fputs("\n", stream);
+    fflush(stream);
+
+    fatal_error(fd, 0, func, msg, -1);
 }
 
 
@@ -3424,7 +3461,7 @@ Py_ExitStatusException(PyStatus status)
         exit(status.exitcode);
     }
     else if (_PyStatus_IS_ERROR(status)) {
-        fatal_error(fileno(stderr), status.func, status.err_msg, 1);
+        fatal_error(fileno(stderr), 1, status.func, status.err_msg, 1);
     }
     else {
         Py_FatalError("Py_ExitStatusException() must not be called on success");
