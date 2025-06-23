@@ -1284,12 +1284,6 @@ class ThreadTests(BaseTestCase):
 
     @cpython_only
     def test_finalize_daemon_thread_hang(self):
-        if support.check_sanitizer(thread=True, memory=True):
-            # the thread running `time.sleep(100)` below will still be alive
-            # at process exit
-            self.skipTest(
-                    "https://github.com/python/cpython/issues/124878 - Known"
-                    " race condition that TSAN identifies.")
         # gh-87135: tests that daemon threads hang during finalization
         script = textwrap.dedent('''
             import os
