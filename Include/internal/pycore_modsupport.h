@@ -39,6 +39,7 @@ extern PyObject ** _Py_VaBuildStack(
     Py_ssize_t *p_nargs);
 
 extern PyObject* _PyModule_CreateInitialized(PyModuleDef*, int apiver);
+extern PyObject *_PyModule_CreateInitializedImmortalMethods(PyModuleDef* module, int module_api_version);
 
 // Export for '_curses' shared extension
 PyAPI_FUNC(int) _PyArg_ParseStack(
@@ -90,6 +91,8 @@ PyAPI_FUNC(PyObject * const *) _PyArg_UnpackKeywords(
       (args) : \
      _PyArg_UnpackKeywords((args), (nargs), (kwargs), (kwnames), (parser), \
                            (minpos), (maxpos), (minkw), (varpos), (buf)))
+
+int _PyModule_AddFunctionsImmortal(PyObject *m, PyMethodDef *functions);
 
 #ifdef __cplusplus
 }

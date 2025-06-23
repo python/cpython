@@ -3414,7 +3414,7 @@ _PyBuiltin_Init(PyInterpreterState *interp)
 
     const PyConfig *config = _PyInterpreterState_GetConfig(interp);
 
-    mod = _PyModule_CreateInitialized(&builtinsmodule, PYTHON_API_VERSION);
+    mod = _PyModule_CreateInitializedImmortalMethods(&builtinsmodule, PYTHON_API_VERSION);
     if (mod == NULL)
         return NULL;
 #ifdef Py_GIL_DISABLED

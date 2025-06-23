@@ -171,7 +171,7 @@ check_api_version(const char *name, int module_api_version)
 }
 
 static int
-_add_methods_to_object(PyObject *module, PyObject *name, PyMethodDef *functions)
+_add_methods_to_object(PyObject *module, PyObject *name, PyMethodDef *functions, int immortalize_methods)
 {
     PyObject *func;
     PyMethodDef *fdef;
@@ -188,7 +188,12 @@ _add_methods_to_object(PyObject *module, PyObject *name, PyMethodDef *functions)
         if (func == NULL) {
             return -1;
         }
-        _PyObject_SetDeferredRefcount(func);
+        if (immortalize_methods) {
+            _Py_SetImmortal(func);
+        }
+        else {
+            _PyObject_SetDeferredRefcount(func);
+        }
         if (PyObject_SetAttrString(module, fdef->ml_name, func) != 0) {
             Py_DECREF(func);
             return -1;
@@ -210,8 +215,10 @@ PyModule_Create2(PyModuleDef* module, int module_api_version)
     return _PyModule_CreateInitialized(module, module_api_version);
 }
 
-PyObject *
-_PyModule_CreateInitialized(PyModuleDef* module, int module_api_version)
+typedef int (*module_addfunctions_ptr)(PyObject *, PyMethodDef *);
+
+static PyObject *
+module_createinitialized_impl(PyModuleDef* module, int module_api_version, module_addfunctions_ptr module_addfunctions)
 {
     const char* name;
     PyModuleObject *m;
@@ -245,7 +252,7 @@ _PyModule_CreateInitialized(PyModuleDef* module, int module_api_version)
     }
 
     if (module->m_methods != NULL) {
-        if (PyModule_AddFunctions((PyObject *) m, module->m_methods) != 0) {
+        if (module_addfunctions((PyObject *) m, module->m_methods) != 0) {
             Py_DECREF(m);
             return NULL;
         }
@@ -261,6 +268,18 @@ _PyModule_CreateInitialized(PyModuleDef* module, int module_api_version)
     m->md_gil = Py_MOD_GIL_USED;
 #endif
     return (PyObject*)m;
+}
+
+PyObject *
+_PyModule_CreateInitialized(PyModuleDef* module, int module_api_version)
+{
+    return module_createinitialized_impl(module, module_api_version, PyModule_AddFunctions);
+}
+
+PyObject *
+_PyModule_CreateInitializedImmortalMethods(PyModuleDef* module, int module_api_version)
+{
+    return module_createinitialized_impl(module, module_api_version, _PyModule_AddFunctionsImmortal);
 }
 
 PyObject *
@@ -422,7 +441,7 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
     }
 
     if (def->m_methods != NULL) {
-        ret = _add_methods_to_object(m, nameobj, def->m_methods);
+        ret = _add_methods_to_object(m, nameobj, def->m_methods, 0);
         if (ret != 0) {
             goto error;
         }
@@ -535,7 +554,21 @@ PyModule_AddFunctions(PyObject *m, PyMethodDef *functions)
         return -1;
     }
 
-    res = _add_methods_to_object(m, name, functions);
+    res = _add_methods_to_object(m, name, functions, 0);
+    Py_DECREF(name);
+    return res;
+}
+
+int
+_PyModule_AddFunctionsImmortal(PyObject *m, PyMethodDef *functions)
+{
+    int res;
+    PyObject *name = PyModule_GetNameObject(m);
+    if (name == NULL) {
+        return -1;
+    }
+
+    res = _add_methods_to_object(m, name, functions, 1);
     Py_DECREF(name);
     return res;
 }
