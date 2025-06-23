@@ -1960,6 +1960,15 @@ int
 _PyErr_EmitSyntaxWarningFromCompiler(PyObject *msg, PyObject *filename, int lineno, int col_offset,
                                      int end_lineno, int end_col_offset)
 {
+    Py_ssize_t len = PyUnicode_GET_LENGTH(filename);
+    if (len > 1 &&
+        PyUnicode_READ_CHAR(filename, 0) == '<' &&
+        PyUnicode_READ_CHAR(filename, len - 1) == '>')
+    {
+        return _PyErr_EmitSyntaxWarning(msg, filename, lineno, col_offset,
+                                        end_lineno, end_col_offset);
+    }
+
     if (PyErr_WarnExplicitObject(PyExc_SyntaxWarning, msg,
                                  filename, lineno, NULL, NULL) < 0)
     {
