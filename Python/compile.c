@@ -1210,8 +1210,8 @@ _PyCompile_Warn(compiler *c, location loc, const char *format, ...)
     if (msg == NULL) {
         return ERROR;
     }
-    int ret = _PyErr_EmitSyntaxWarning(msg, c->c_filename, loc.lineno, loc.col_offset + 1,
-                                       loc.end_lineno, loc.end_col_offset + 1);
+    int ret = _PyErr_EmitSyntaxWarningFromCompiler(msg, c->c_filename, loc.lineno, loc.col_offset + 1,
+                                                   loc.end_lineno, loc.end_col_offset + 1);
     Py_DECREF(msg);
     return ret;
 }

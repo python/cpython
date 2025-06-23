@@ -124,6 +124,8 @@ extern PyObject* _PyErr_NoMemory(PyThreadState *tstate);
 
 extern int _PyErr_EmitSyntaxWarning(PyObject *msg, PyObject *filename, int lineno, int col_offset,
                                     int end_lineno, int end_col_offset);
+extern int _PyErr_EmitSyntaxWarningFromCompiler(PyObject *msg, PyObject *filename, int lineno, int col_offset,
+                                                int end_lineno, int end_col_offset);
 extern void _PyErr_RaiseSyntaxError(PyObject *msg, PyObject *filename, int lineno, int col_offset,
                                     int end_lineno, int end_col_offset);
 

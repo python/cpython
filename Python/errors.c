@@ -1,4 +1,3 @@
-
 /* Error handling */
 
 #include "Python.h"
@@ -1939,6 +1938,30 @@ _PyErr_EmitSyntaxWarning(PyObject *msg, PyObject *filename, int lineno, int col_
 {
     if (_PyErr_WarnExplicitObjectWithContext(PyExc_SyntaxWarning, msg,
                                              filename, lineno) < 0)
+    {
+        if (PyErr_ExceptionMatches(PyExc_SyntaxWarning)) {
+            /* Replace the SyntaxWarning exception with a SyntaxError
+               to get a more accurate error report */
+            PyErr_Clear();
+            _PyErr_RaiseSyntaxError(msg, filename, lineno, col_offset,
+                                    end_lineno, end_col_offset);
+        }
+        return -1;
+    }
+    return 0;
+}
+
+/* Emits a SyntaxWarning and returns 0 on success.
+   If a SyntaxWarning is raised as error, replaces it with a SyntaxError
+   and returns -1.
+   This version is for the compiler, and derives the module from the filename.
+*/
+int
+_PyErr_EmitSyntaxWarningFromCompiler(PyObject *msg, PyObject *filename, int lineno, int col_offset,
+                                     int end_lineno, int end_col_offset)
+{
+    if (PyErr_WarnExplicitObject(PyExc_SyntaxWarning, msg,
+                                 filename, lineno, NULL, NULL) < 0)
     {
         if (PyErr_ExceptionMatches(PyExc_SyntaxWarning)) {
             /* Replace the SyntaxWarning exception with a SyntaxError
