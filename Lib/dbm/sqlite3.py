@@ -59,11 +59,10 @@ class _Database(MutableMapping):
 
         # We use the URI format when opening the database.
         uri = _normalize_uri(path)
+        uri = f"{uri}?mode={flag}"
         if flag == "ro":
             # Add immutable=1 to allow read-only SQLite access even if wal/shm missing
-            uri = f"{uri}?mode={flag}&immutable=1"
-        else:
-            uri = f"{uri}?mode={flag}"
+            uri += "&immutable=1"
 
         try:
             self._cx = sqlite3.connect(uri, autocommit=True, uri=True)
