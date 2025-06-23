@@ -3158,6 +3158,10 @@ class ZipRepackerTests(unittest.TestCase):
     def test_trace_compressed_block_end_bz2(self):
         self._test_trace_compressed_block_end(zipfile.ZIP_BZIP2, OSError)
 
+    @requires_lzma()
+    def test_trace_compressed_block_end_lzma(self):
+        self._test_trace_compressed_block_end(zipfile.ZIP_LZMA, EOFError)
+
     @requires_zstd()
     def test_trace_compressed_block_end_zstd(self):
         import compression.zstd
@@ -3224,6 +3228,86 @@ class ZipRepackerTests(unittest.TestCase):
         self.assertEqual(
             repacker._trace_compressed_block_end(io.BytesIO(bytes_), 0, len(bytes_), decompressor, 1),
             comp_len,
+        )
+
+    def test_calc_local_file_entry_size(self):
+        repacker = zipfile._ZipRepacker()
+
+        # basic
+        fz = io.BytesIO()
+        with zipfile.ZipFile(fz, 'w') as zh:
+            with zh.open('file.txt', 'w') as fh:
+                fh.write(b'dummy')
+            zi = zh.infolist()[-1]
+
+        self.assertEqual(
+            repacker._calc_local_file_entry_size(fz, zi),
+            43,
+        )
+
+        # data descriptor
+        fz = io.BytesIO()
+        with zipfile.ZipFile(Unseekable(fz), 'w') as zh:
+            with zh.open('file.txt', 'w') as fh:
+                fh.write(b'dummy')
+            zi = zh.infolist()[-1]
+
+        self.assertEqual(
+            repacker._calc_local_file_entry_size(fz, zi),
+            59,
+        )
+
+        # data descriptor (unsigned)
+        fz = io.BytesIO()
+        with zipfile.ZipFile(Unseekable(fz), 'w') as zh:
+            with mock.patch.object(struct, 'pack', side_effect=struct_pack_no_dd_sig), \
+                 zh.open('file.txt', 'w') as fh:
+                fh.write(b'dummy')
+            zi = zh.infolist()[-1]
+
+        self.assertEqual(
+            repacker._calc_local_file_entry_size(fz, zi),
+            55,
+        )
+
+    def test_calc_local_file_entry_size_zip64(self):
+        repacker = zipfile._ZipRepacker()
+
+        # zip64
+        fz = io.BytesIO()
+        with zipfile.ZipFile(fz, 'w') as zh:
+            with zh.open('file.txt', 'w', force_zip64=True) as fh:
+                fh.write(b'dummy')
+            zi = zh.infolist()[-1]
+
+        self.assertEqual(
+            repacker._calc_local_file_entry_size(fz, zi),
+            63,
+        )
+
+        # data descriptor + zip64
+        fz = io.BytesIO()
+        with zipfile.ZipFile(Unseekable(fz), 'w') as zh:
+            with zh.open('file.txt', 'w', force_zip64=True) as fh:
+                fh.write(b'dummy')
+            zi = zh.infolist()[-1]
+
+        self.assertEqual(
+            repacker._calc_local_file_entry_size(fz, zi),
+            87,
+        )
+
+        # data descriptor (unsigned) + zip64
+        fz = io.BytesIO()
+        with zipfile.ZipFile(Unseekable(fz), 'w') as zh:
+            with mock.patch.object(struct, 'pack', side_effect=struct_pack_no_dd_sig), \
+                 zh.open('file.txt', 'w', force_zip64=True) as fh:
+                fh.write(b'dummy')
+            zi = zh.infolist()[-1]
+
+        self.assertEqual(
+            repacker._calc_local_file_entry_size(fz, zi),
+            83,
         )
 
     def test_copy_bytes(self):
