@@ -771,9 +771,11 @@ class WCmdLineTests(BaseTest):
             self.assertRaises(UserWarning, self.module.warn, 'convert to error')
 
     def test_import_from_module(self):
-        script = support.script_helper.make_script('test_warnings_importer',
-            'import test.test_warnings.data.import_warning')
-        rc, out, err = assert_python_ok(script)
+        with support.temp_dir() as script_dir:
+            script = support.script_helper.make_script(script_dir,
+                'test_warnings_importer',
+                'import test.test_warnings.data.import_warning')
+            rc, out, err = assert_python_ok(script)
         self.assertNotIn(b'UserWarning', err)
 
     def test_syntax_warning_for_compiler(self):
@@ -794,6 +796,7 @@ class WCmdLineTests(BaseTest):
         self.assertEqual(out, b'')
         # Check that we got a SyntaxError.
         err = err.decode()
+        err = support.strip_ansi(err)
         self.assertIn("""SyntaxError: "is" with 'int' literal. Did you mean "=="?""", err)
         # Check that the filename in the traceback is correct.
         self.assertIn(os.path.basename(script_name), err)
