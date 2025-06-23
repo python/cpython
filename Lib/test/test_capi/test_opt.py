@@ -1819,9 +1819,10 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         # When the result of type(...) is known, _CALL_TYPE_1 is replaced with
-        # _POP_CALL_ONE_LOAD_CONST_INLINE_BORROW which is optimized away in
+        # _SWAP_CALL_ONE_LOAD_CONST_INLINE_BORROW which is optimized away in
         # remove_unneeded_uops.
         self.assertNotIn("_CALL_TYPE_1", uops)
+        self.assertNotIn("_SWAP_CALL_ONE_LOAD_CONST_INLINE_BORROW", uops)
         self.assertNotIn("_POP_CALL_ONE_LOAD_CONST_INLINE_BORROW", uops)
         self.assertNotIn("_POP_CALL_LOAD_CONST_INLINE_BORROW", uops)
         self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
