@@ -128,6 +128,7 @@ class InteractiveSession(unittest.TestCase):
     def test_interact_tables(self):
         out, err = self.run_cli(commands=(
             "CREATE TABLE table_ (id INTEGER);",
+            "CREATE TABLE sqlitee (id INTEGER);",
             "CREATE TEMP TABLE temp_table (id INTEGER);",
             "CREATE VIEW view_ AS SELECT 1;",
             "CREATE TEMP VIEW temp_view AS SELECT 1;",
@@ -141,10 +142,18 @@ class InteractiveSession(unittest.TestCase):
             ))
         self.assertIn(self.MEMORY_DB_MSG, err)
         self.assertEndsWith(out, self.PS1)
-        self.assertEqual(out.count(self.PS1), 12)
+        self.assertEqual(out.count(self.PS1), 13)
         self.assertEqual(out.count(self.PS2), 0)
-        self.assertIn("123.table_\n123.view_\nattach_.table_\nattach_.view_\n"
-                      "table_\ntemp.temp_table\ntemp.temp_view\nview_\n", out)
+        tables = ("123.table_",
+                  "123.view_",
+                  "attach_.table_",
+                  "attach_.view_",
+                  "sqlitee",
+                  "table_",
+                  "temp.temp_table",
+                  "temp.temp_view",
+                  "view_")
+        self.assertIn("\n".join(tables), out)
 
     def test_interact_empty_source(self):
         out, err = self.run_cli(commands=("", " "))

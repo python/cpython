@@ -73,7 +73,7 @@ class SqliteInteractiveConsole(InteractiveConsole):
                         END
                         FROM "{schema}".sqlite_master
                         WHERE type IN ('table', 'view')
-                        AND name NOT LIKE 'sqlite_%'"""
+                        AND name NOT LIKE 'sqlite_%' ESCAPE '_'"""
                         for schema in schema_names
                     )
                     command = " UNION ALL ".join(select_clauses) + " ORDER BY 1"
