@@ -99,8 +99,7 @@ dummy_func(void) {
         GETLOCAL(oparg) = temp;
     }
 
-    op(_SWAP_FAST, (value -- trash)) {
-        trash = GETLOCAL(oparg);
+    op(_STORE_FAST, (value --)) {
         GETLOCAL(oparg) = value;
     }
 

@@ -306,13 +306,12 @@ dummy_func(
             value = PyStackRef_FromPyObjectBorrow(obj);
         }
 
-        replicate(8) op(_SWAP_FAST, (value -- trash)) {
-            trash = GETLOCAL(oparg);
+        replicate(8) inst(STORE_FAST, (value --)) {
+            _PyStackRef tmp = GETLOCAL(oparg);
             GETLOCAL(oparg) = value;
             DEAD(value);
+            PyStackRef_XCLOSE(tmp);
         }
-
-        macro(STORE_FAST) = _SWAP_FAST + POP_TOP;
 
         pseudo(STORE_FAST_MAYBE_NULL, (unused --)) = {
             STORE_FAST,

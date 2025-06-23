@@ -90,13 +90,12 @@
             break;
         }
 
-        case _SWAP_FAST: {
+        case _STORE_FAST: {
             JitOptRef value;
-            JitOptRef trash;
             value = stack_pointer[-1];
-            trash = GETLOCAL(oparg);
             GETLOCAL(oparg) = value;
-            stack_pointer[-1] = trash;
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 

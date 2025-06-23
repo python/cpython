@@ -2349,65 +2349,6 @@ class TestUopsOptimization(unittest.TestCase):
         assert ex is not None
         """))
 
-    def test_store_fast_pop_top_specialize_immortal(self):
-        def testfunc(n):
-            for _ in range(n):
-                x = None # _POP_TOP, as x's type is not yet known by optimizer.
-                x = None # _POP_TOP_NOP, as x = None
-
-        testfunc(TIER2_THRESHOLD)
-
-        ex = get_first_executor(testfunc)
-        self.assertIsNotNone(ex)
-        uops = get_opnames(ex)
-
-        self.assertIn("_POP_TOP_NOP", uops)
-
-    def test_store_fast_pop_top_specialize_int(self):
-        def testfunc(n):
-            y = int(1e6) # Big number so no int caching
-            for _ in range(n):
-                x = y + y  # _POP_TOP, as x's type is not yet known by optimizer.
-                x = None # _POP_TOP_INT, as x = int
-
-        testfunc(TIER2_THRESHOLD)
-
-        ex = get_first_executor(testfunc)
-        self.assertIsNotNone(ex)
-        uops = get_opnames(ex)
-
-        self.assertIn("_POP_TOP_INT", uops)
-
-    def test_store_fast_pop_top_specialize_float(self):
-        def testfunc(n):
-            y = 1.0
-            for _ in range(n):
-                x = y + y  # _POP_TOP, as x's type is not yet known by optimizer.
-                x = None # _POP_TOP_FLOAT, as x = int
-
-        testfunc(TIER2_THRESHOLD)
-
-        ex = get_first_executor(testfunc)
-        self.assertIsNotNone(ex)
-        uops = get_opnames(ex)
-
-        self.assertIn("_POP_TOP_FLOAT", uops)
-
-    def test_store_fast_pop_top_specialize_unicode(self):
-        def testfunc(n):
-            y = "hi"
-            for _ in range(n):
-                x = y + y  # _POP_TOP, as x's type is not yet known by optimizer.
-                x = None # _POP_TOP_STR, as x = int
-
-        testfunc(TIER2_THRESHOLD)
-
-        ex = get_first_executor(testfunc)
-        self.assertIsNotNone(ex)
-        uops = get_opnames(ex)
-
-        self.assertIn("_POP_TOP_UNICODE", uops)
-
     def test_store_pop_top_specialize_none(self):
         def testfunc(n):
             for _ in range(n):
@@ -2421,6 +2362,44 @@ class TestUopsOptimization(unittest.TestCase):
 
         self.assertIn("_POP_TOP_NOP", uops)
 
+    def test_store_pop_top_specialize_int(self):
+        def testfunc(n):
+            for _ in range(n):
+                global_identity(100000)
+
+        testfunc(TIER2_THRESHOLD)
+
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertIn("_POP_TOP_INT", uops)
+
+    def test_store_pop_top_specialize_float(self):
+        def testfunc(n):
+            for _ in range(n):
+                global_identity(1e6)
+
+        testfunc(TIER2_THRESHOLD)
+
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertIn("_POP_TOP_FLOAT", uops)
+
+    def test_store_pop_top_specialize_str(self):
+        def testfunc(n):
+            for _ in range(n):
+                global_identity("2" + "1")
+
+        testfunc(TIER2_THRESHOLD)
+
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertIn("_POP_TOP_UNICODE", uops)
 
 
 def global_identity(x):
