@@ -186,12 +186,16 @@
             JitOptRef value;
             JitOptRef res;
             value = stack_pointer[-1];
-            PyTypeObject *type = sym_get_type(value);
-            if (type == &PyLong_Type || type == &PyFloat_Type) {
-                res = sym_new_type(ctx, type);
-            }
-            else {
-                res = sym_new_not_null(ctx);
+            if (sym_is_compact_int(value)) {
+                res = sym_new_compact_int(ctx);
+            } else {
+                PyTypeObject *type = sym_get_type(value);
+                if (type == &PyLong_Type || type == &PyFloat_Type) {
+                    res = sym_new_type(ctx, type);
+                }
+                else {
+                    res = sym_new_not_null(ctx);
+                }
             }
             stack_pointer[-1] = res;
             break;
