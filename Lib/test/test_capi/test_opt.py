@@ -2392,6 +2392,46 @@ class TestUopsOptimization(unittest.TestCase):
         assert ex is not None
         """))
 
+    def test_pop_top_specialize_none(self):
+        def testfunc(n):
+            for _ in range(n):
+                global_identity(None)
+
+        testfunc(TIER2_THRESHOLD)
+
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertIn("_POP_TOP_NOP", uops)
+
+    def test_pop_top_specialize_int(self):
+        def testfunc(n):
+            for _ in range(n):
+                global_identity(100000)
+
+        testfunc(TIER2_THRESHOLD)
+
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertIn("_POP_TOP_INT", uops)
+
+    def test_pop_top_specialize_float(self):
+        def testfunc(n):
+            for _ in range(n):
+                global_identity(1e6)
+
+        testfunc(TIER2_THRESHOLD)
+
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertIn("_POP_TOP_FLOAT", uops)
+
+
 
 def global_identity(x):
     return x
