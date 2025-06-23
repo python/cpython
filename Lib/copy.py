@@ -143,7 +143,7 @@ def deepcopy(x, memo=None, _nil=[]):
         else:
             raise Error(
                 "un(deep)copyable object of type %s" % cls)
-        
+
         if isinstance(rv, str):
             y = x
         else:
