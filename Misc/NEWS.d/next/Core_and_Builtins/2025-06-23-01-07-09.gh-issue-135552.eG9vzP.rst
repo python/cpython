@@ -1,4 +1,4 @@
 Split the handling of weak references in the GC if both types and instances
 within a generation are unreachable. This prevent  the clearing  of the
-type's subclasses list too early. This fix a segfault that occurs when
-__del__ modifies the base's attributes and tries to access them from self.
+type's subclasses list too early. This fix a crash that occurs when
+:meth:`~object.__del__` modifies the base's attributes and tries to access them from self.
