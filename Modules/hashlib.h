@@ -1,6 +1,32 @@
 /* Common code for use by all hashlib related modules. */
 
-#include "pycore_lock.h"        // PyMutex
+#include "pycore_lock.h"            // PyMutex
+#include "pycore_moduleobject.h"    // _PyModule_GetDef()
+
+#ifndef NDEBUG
+/*
+ * Assert that a type cannot be subclassed and that
+ * its associated module definition matches 'moddef'.
+ *
+ * Use this helper to ensure that _PyType_GetModuleState() can be safely used.
+ */
+static inline void
+_Py_hashlib_check_exported_type(PyTypeObject *type, PyModuleDef *moddef)
+{
+    assert(type != NULL);
+    assert(moddef != NULL);
+    /* ensure that the type is a final heap type */
+    assert(PyType_Check(type));
+    assert(type->tp_flags & Py_TPFLAGS_HEAPTYPE);
+    assert(!(type->tp_flags & Py_TPFLAGS_BASETYPE));
+    /* ensure that the associated module definition matches 'moddef' */
+    PyHeapTypeObject *ht = (PyHeapTypeObject *)type;
+    assert(ht->ht_module != NULL);
+    assert(moddef == _PyModule_GetDef(ht->ht_module));
+}
+#else
+#define _Py_hashlib_check_exported_type(_TYPE, _MODDEF)
+#endif
 
 /*
  * Given a PyObject* obj, fill in the Py_buffer* viewp with the result
