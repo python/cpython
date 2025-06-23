@@ -1171,8 +1171,8 @@ class BaseEventLoop(events.AbstractEventLoop):
                         raise OSError('Multiple exceptions: {}'.format(
                             ', '.join(str(exc) for exc in exceptions)))
                     else:
-                        # No exceptions were collected, raise a generic connection error
-                        raise OSError('create_connection failed')
+                        # No exceptions were collected, raise a timeout error
+                        raise TimeoutError('create_connection failed')
                 finally:
                     exceptions = None
 
