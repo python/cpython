@@ -139,6 +139,19 @@
 #endif
 
 
+static void
+check_invalid_reentrancy(void)
+{
+#if defined(Py_DEBUG) && defined(Py_GIL_DISABLED)
+    // In the free-threaded build, the interpreter must not be re-entered if
+    // the world-is-stopped.  If so, that's a bug somewhere (quite likely in
+    // the painfully complex typeobject code).
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    assert(!interp->stoptheworld.world_stopped);
+#endif
+}
+
+
 #ifdef Py_DEBUG
 static void
 dump_item(_PyStackRef item)
@@ -360,9 +373,6 @@ _Py_EnterRecursiveCallUnchecked(PyThreadState *tstate)
 #  define Py_C_STACK_SIZE 1200000
 #elif defined(__sparc__)
 #  define Py_C_STACK_SIZE 1600000
-#elif defined(__wasi__)
-   /* Web assembly has two stacks, so this isn't really the stack depth */
-#  define Py_C_STACK_SIZE 131072  // wasi-libc DEFAULT_STACK_SIZE
 #elif defined(__hppa__) || defined(__powerpc64__)
 #  define Py_C_STACK_SIZE 2000000
 #else
@@ -999,6 +1009,7 @@ PyObject* _Py_HOT_FUNCTION DONT_SLP_VECTORIZE
 _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
 {
     _Py_EnsureTstateNotNULL(tstate);
+    check_invalid_reentrancy();
     CALL_STAT_INC(pyeval_calls);
 
 #if USE_COMPUTED_GOTOS && !Py_TAIL_CALL_INTERP
@@ -2735,15 +2746,128 @@ _PyEval_GetFrameLocals(void)
     return locals;
 }
 
-PyObject *
-PyEval_GetGlobals(void)
+static PyObject *
+_PyEval_GetGlobals(PyThreadState *tstate)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
     _PyInterpreterFrame *current_frame = _PyThreadState_GetFrame(tstate);
     if (current_frame == NULL) {
         return NULL;
     }
     return current_frame->f_globals;
+}
+
+PyObject *
+PyEval_GetGlobals(void)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    return _PyEval_GetGlobals(tstate);
+}
+
+PyObject *
+_PyEval_GetGlobalsFromRunningMain(PyThreadState *tstate)
+{
+    if (!_PyInterpreterState_IsRunningMain(tstate->interp)) {
+        return NULL;
+    }
+    PyObject *mod = _Py_GetMainModule(tstate);
+    if (_Py_CheckMainModule(mod) < 0) {
+        Py_XDECREF(mod);
+        return NULL;
+    }
+    PyObject *globals = PyModule_GetDict(mod);  // borrowed
+    Py_DECREF(mod);
+    return globals;
+}
+
+static PyObject *
+get_globals_builtins(PyObject *globals)
+{
+    PyObject *builtins = NULL;
+    if (PyDict_Check(globals)) {
+        if (PyDict_GetItemRef(globals, &_Py_ID(__builtins__), &builtins) < 0) {
+            return NULL;
+        }
+    }
+    else {
+        if (PyMapping_GetOptionalItem(
+                        globals, &_Py_ID(__builtins__), &builtins) < 0)
+        {
+            return NULL;
+        }
+    }
+    return builtins;
+}
+
+static int
+set_globals_builtins(PyObject *globals, PyObject *builtins)
+{
+    if (PyDict_Check(globals)) {
+        if (PyDict_SetItem(globals, &_Py_ID(__builtins__), builtins) < 0) {
+            return -1;
+        }
+    }
+    else {
+        if (PyObject_SetItem(globals, &_Py_ID(__builtins__), builtins) < 0) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
+int
+_PyEval_EnsureBuiltins(PyThreadState *tstate, PyObject *globals,
+                       PyObject **p_builtins)
+{
+    PyObject *builtins = get_globals_builtins(globals);
+    if (builtins == NULL) {
+        if (_PyErr_Occurred(tstate)) {
+            return -1;
+        }
+        builtins = PyEval_GetBuiltins();  // borrowed
+        if (builtins == NULL) {
+            assert(_PyErr_Occurred(tstate));
+            return -1;
+        }
+        Py_INCREF(builtins);
+        if (set_globals_builtins(globals, builtins) < 0) {
+            Py_DECREF(builtins);
+            return -1;
+        }
+    }
+    if (p_builtins != NULL) {
+        *p_builtins = builtins;
+    }
+    else {
+        Py_DECREF(builtins);
+    }
+    return 0;
+}
+
+int
+_PyEval_EnsureBuiltinsWithModule(PyThreadState *tstate, PyObject *globals,
+                                 PyObject **p_builtins)
+{
+    PyObject *builtins = get_globals_builtins(globals);
+    if (builtins == NULL) {
+        if (_PyErr_Occurred(tstate)) {
+            return -1;
+        }
+        builtins = PyImport_ImportModuleLevel("builtins", NULL, NULL, NULL, 0);
+        if (builtins == NULL) {
+            return -1;
+        }
+        if (set_globals_builtins(globals, builtins) < 0) {
+            Py_DECREF(builtins);
+            return -1;
+        }
+    }
+    if (p_builtins != NULL) {
+        *p_builtins = builtins;
+    }
+    else {
+        Py_DECREF(builtins);
+    }
+    return 0;
 }
 
 PyObject*
@@ -2968,7 +3092,7 @@ _PyEval_ImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
     int is_possibly_shadowing_stdlib = 0;
     if (is_possibly_shadowing) {
         PyObject *stdlib_modules;
-        if (_PySys_GetOptionalAttrString("stdlib_module_names", &stdlib_modules) < 0) {
+        if (PySys_GetOptionalAttrString("stdlib_module_names", &stdlib_modules) < 0) {
             goto done;
         }
         if (stdlib_modules && PyAnySet_Check(stdlib_modules)) {
@@ -3179,7 +3303,7 @@ _PyEval_FormatKwargsError(PyThreadState *tstate, PyObject *func, PyObject *kwarg
     else if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
         PyObject *exc = _PyErr_GetRaisedException(tstate);
         PyObject *args = PyException_GetArgs(exc);
-        if (exc && PyTuple_Check(args) && PyTuple_GET_SIZE(args) == 1) {
+        if (PyTuple_Check(args) && PyTuple_GET_SIZE(args) == 1) {
             _PyErr_Clear(tstate);
             PyObject *funcstr = _PyObject_FunctionStr(func);
             if (funcstr != NULL) {
@@ -3426,6 +3550,50 @@ _PyEval_LoadName(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject *na
                     NAME_ERROR_MSG, name);
     }
     return value;
+}
+
+static _PyStackRef
+foriter_next(PyObject *seq, _PyStackRef index)
+{
+    assert(PyStackRef_IsTaggedInt(index));
+    assert(PyTuple_CheckExact(seq) || PyList_CheckExact(seq));
+    intptr_t i = PyStackRef_UntagInt(index);
+    if (PyTuple_CheckExact(seq)) {
+        size_t size = PyTuple_GET_SIZE(seq);
+        if ((size_t)i >= size) {
+            return PyStackRef_NULL;
+        }
+        return PyStackRef_FromPyObjectNew(PyTuple_GET_ITEM(seq, i));
+    }
+    PyObject *item = _PyList_GetItemRef((PyListObject *)seq, i);
+    if (item == NULL) {
+        return PyStackRef_NULL;
+    }
+    return PyStackRef_FromPyObjectSteal(item);
+}
+
+_PyStackRef _PyForIter_VirtualIteratorNext(PyThreadState* tstate, _PyInterpreterFrame* frame, _PyStackRef iter, _PyStackRef* index_ptr)
+{
+    PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
+    _PyStackRef index = *index_ptr;
+    if (PyStackRef_IsTaggedInt(index)) {
+        *index_ptr = PyStackRef_IncrementTaggedIntNoOverflow(index);
+        return foriter_next(iter_o, index);
+    }
+    PyObject *next_o = (*Py_TYPE(iter_o)->tp_iternext)(iter_o);
+    if (next_o == NULL) {
+        if (_PyErr_Occurred(tstate)) {
+            if (_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
+                _PyEval_MonitorRaise(tstate, frame, frame->instr_ptr);
+                _PyErr_Clear(tstate);
+            }
+            else {
+                return PyStackRef_ERROR;
+            }
+        }
+        return PyStackRef_NULL;
+    }
+    return PyStackRef_FromPyObjectSteal(next_o);
 }
 
 /* Check if a 'cls' provides the given special method. */

@@ -267,6 +267,10 @@
    */
 #undef HAVE_DECL_TZNAME
 
+/* Define to 1 if you have the declaration of 'UT_NAMESIZE', and to 0 if you
+   don't. */
+#undef HAVE_DECL_UT_NAMESIZE
+
 /* Define to 1 if you have the device macros. */
 #undef HAVE_DEVICE_MACROS
 
@@ -539,6 +543,9 @@
 /* Define to 1 if you have the 'getlogin' function. */
 #undef HAVE_GETLOGIN
 
+/* Define to 1 if you have the 'getlogin_r' function. */
+#undef HAVE_GETLOGIN_R
+
 /* Define to 1 if you have the 'getnameinfo' function. */
 #undef HAVE_GETNAMEINFO
 
@@ -806,6 +813,9 @@
 
 /* Define this if you have the makedev macro. */
 #undef HAVE_MAKEDEV
+
+/* Define if you have the 'MAXLOGNAME' constant. */
+#undef HAVE_MAXLOGNAME
 
 /* Define to 1 if you have the 'mbrtowc' function. */
 #undef HAVE_MBRTOWC
@@ -1575,6 +1585,9 @@
 /* Define to 1 if you have the <utmp.h> header file. */
 #undef HAVE_UTMP_H
 
+/* Define if you have the 'HAVE_UT_NAMESIZE' constant. */
+#undef HAVE_UT_NAMESIZE
+
 /* Define to 1 if you have the 'uuid_create' function. */
 #undef HAVE_UUID_CREATE
 
@@ -1583,6 +1596,9 @@
 
 /* Define if uuid_generate_time_safe() exists. */
 #undef HAVE_UUID_GENERATE_TIME_SAFE
+
+/* Define if uuid_generate_time_safe() is able to deduce a MAC address. */
+#undef HAVE_UUID_GENERATE_TIME_SAFE_STABLE_MAC
 
 /* Define to 1 if you have the <uuid.h> header file. */
 #undef HAVE_UUID_H

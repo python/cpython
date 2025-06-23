@@ -6805,7 +6805,7 @@ class TestImportStar(TestCase):
 
     def test(self):
         for name in argparse.__all__:
-            self.assertTrue(hasattr(argparse, name))
+            self.assertHasAttr(argparse, name)
 
     def test_all_exports_everything_but_modules(self):
         items = [

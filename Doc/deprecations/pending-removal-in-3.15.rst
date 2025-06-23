@@ -20,7 +20,7 @@ Pending removal in Python 3.15
 
 * :mod:`http.server`:
 
-  * The obsolete and rarely used :class:`~http.server.CGIHTTPRequestHandler`
+  * The obsolete and rarely used :class:`!CGIHTTPRequestHandler`
     has been deprecated since Python 3.13.
     No direct replacement exists.
     *Anything* is better than CGI to interface
@@ -51,7 +51,7 @@ Pending removal in Python 3.15
 
 * :mod:`platform`:
 
-  * :func:`~platform.java_ver` has been deprecated since Python 3.13.
+  * :func:`!platform.java_ver` has been deprecated since Python 3.13.
     This function is only useful for Jython support, has a confusing API,
     and is largely untested.
 
@@ -99,8 +99,7 @@ Pending removal in Python 3.15
 
 * :mod:`wave`:
 
-  * The :meth:`~wave.Wave_read.getmark`, :meth:`!setmark`,
-    and :meth:`~wave.Wave_read.getmarkers` methods of
+  * The ``getmark()``, ``setmark()`` and ``getmarkers()`` methods of
     the :class:`~wave.Wave_read` and :class:`~wave.Wave_write` classes
     have been deprecated since Python 3.13.
 

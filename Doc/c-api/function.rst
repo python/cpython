@@ -169,7 +169,7 @@ There are a few functions specific to Python functions.
    unpredictable effects, including infinite recursion.
 
    If *event* is ``PyFunction_EVENT_CREATE``, then the callback is invoked
-   after `func` has been fully initialized. Otherwise, the callback is invoked
+   after *func* has been fully initialized. Otherwise, the callback is invoked
    before the modification to *func* takes place, so the prior state of *func*
    can be inspected. The runtime is permitted to optimize away the creation of
    function objects when possible. In such cases no event will be emitted.

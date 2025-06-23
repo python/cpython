@@ -1,5 +1,4 @@
 import io
-import time
 import itertools
 import json
 import os
@@ -8,16 +7,13 @@ import signal
 import socket
 import subprocess
 import sys
-import tempfile
 import textwrap
-import threading
 import unittest
 import unittest.mock
 from contextlib import closing, contextmanager, redirect_stdout, redirect_stderr, ExitStack
-from pathlib import Path
 from test.support import is_wasi, cpython_only, force_color, requires_subprocess, SHORT_TIMEOUT
-from test.support.os_helper import temp_dir, TESTFN, unlink
-from typing import Dict, List, Optional, Tuple, Union, Any
+from test.support.os_helper import TESTFN, unlink
+from typing import List
 
 import pdb
 from pdb import _PdbServer, _PdbClient
@@ -1434,7 +1430,6 @@ class PdbConnectTestCase(unittest.TestCase):
 
 
 def _supports_remote_attaching():
-    from contextlib import suppress
     PROCESS_VM_READV_SUPPORTED = False
 
     try:

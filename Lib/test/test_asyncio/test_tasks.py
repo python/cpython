@@ -2116,6 +2116,46 @@ class BaseTaskTests:
         self.assertTrue(outer.cancelled())
         self.assertEqual(0, 0 if outer._callbacks is None else len(outer._callbacks))
 
+    def test_shield_cancel_outer_result(self):
+        mock_handler = mock.Mock()
+        self.loop.set_exception_handler(mock_handler)
+        inner = self.new_future(self.loop)
+        outer = asyncio.shield(inner)
+        test_utils.run_briefly(self.loop)
+        outer.cancel()
+        test_utils.run_briefly(self.loop)
+        inner.set_result(1)
+        test_utils.run_briefly(self.loop)
+        mock_handler.assert_not_called()
+
+    def test_shield_cancel_outer_exception(self):
+        mock_handler = mock.Mock()
+        self.loop.set_exception_handler(mock_handler)
+        inner = self.new_future(self.loop)
+        outer = asyncio.shield(inner)
+        test_utils.run_briefly(self.loop)
+        outer.cancel()
+        test_utils.run_briefly(self.loop)
+        inner.set_exception(Exception('foo'))
+        test_utils.run_briefly(self.loop)
+        mock_handler.assert_called_once()
+
+    def test_shield_duplicate_log_once(self):
+        mock_handler = mock.Mock()
+        self.loop.set_exception_handler(mock_handler)
+        inner = self.new_future(self.loop)
+        outer = asyncio.shield(inner)
+        test_utils.run_briefly(self.loop)
+        outer.cancel()
+        test_utils.run_briefly(self.loop)
+        outer = asyncio.shield(inner)
+        test_utils.run_briefly(self.loop)
+        outer.cancel()
+        test_utils.run_briefly(self.loop)
+        inner.set_exception(Exception('foo'))
+        test_utils.run_briefly(self.loop)
+        mock_handler.assert_called_once()
+
     def test_shield_shortcut(self):
         fut = self.new_future(self.loop)
         fut.set_result(42)

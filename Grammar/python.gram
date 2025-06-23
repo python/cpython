@@ -96,12 +96,12 @@ func_type[mod_ty]: '(' a=[type_expressions] ')' '->' b=expression NEWLINE* ENDMA
 
 statements[asdl_stmt_seq*]: a=statement+ { _PyPegen_register_stmts(p, (asdl_stmt_seq*)_PyPegen_seq_flatten(p, a)) }
 
-statement[asdl_stmt_seq*]: 
-    | a=compound_stmt { (asdl_stmt_seq*)_PyPegen_singleton_seq(p, a) } 
+statement[asdl_stmt_seq*]:
+    | a=compound_stmt { (asdl_stmt_seq*)_PyPegen_singleton_seq(p, a) }
     | a[asdl_stmt_seq*]=simple_stmts { a }
 
 single_compound_stmt[asdl_stmt_seq*]:
-    | a=compound_stmt { 
+    | a=compound_stmt {
         _PyPegen_register_stmts(p, (asdl_stmt_seq*)_PyPegen_singleton_seq(p, a)) }
 
 statement_newline[asdl_stmt_seq*]:
@@ -184,6 +184,7 @@ return_stmt[stmt_ty]:
     | 'return' a=[star_expressions] { _PyAST_Return(a, EXTRA) }
 
 raise_stmt[stmt_ty]:
+    | invalid_raise_stmt
     | 'raise' a=expression b=['from' z=expression { z }] { _PyAST_Raise(a, b, EXTRA) }
     | 'raise' { _PyAST_Raise(NULL, NULL, EXTRA) }
 
@@ -449,9 +450,9 @@ except_block[excepthandler_ty]:
         _PyAST_ExceptHandler(e, ((expr_ty) t)->v.Name.id, b, EXTRA) }
     | 'except' e=expressions ':' b=block {
         CHECK_VERSION(
-            excepthandler_ty, 
-            14, 
-            "except expressions without parentheses are", 
+            excepthandler_ty,
+            14,
+            "except expressions without parentheses are",
             _PyAST_ExceptHandler(e, NULL, b, EXTRA)) }
     | 'except' ':' b=block { _PyAST_ExceptHandler(NULL, NULL, b, EXTRA) }
     | invalid_except_stmt
@@ -463,9 +464,9 @@ except_star_block[excepthandler_ty]:
         _PyAST_ExceptHandler(e, ((expr_ty) t)->v.Name.id, b, EXTRA) }
     | 'except' '*' e=expressions ':' b=block {
         CHECK_VERSION(
-            excepthandler_ty, 
-            14, 
-            "except expressions without parentheses are", 
+            excepthandler_ty,
+            14,
+            "except expressions without parentheses are",
             _PyAST_ExceptHandler(e,  NULL, b, EXTRA)) }
     | invalid_except_star_stmt
 finally_block[asdl_stmt_seq*]:
@@ -977,11 +978,11 @@ tstring_middle[expr_ty]:
     | tstring_replacement_field
     | t=TSTRING_MIDDLE { _PyPegen_constant_from_token(p, t) }
 tstring[expr_ty] (memo):
-    | a=TSTRING_START b=tstring_middle* c=TSTRING_END { 
+    | a=TSTRING_START b=tstring_middle* c=TSTRING_END {
         CHECK_VERSION(
-            expr_ty, 
-            14, 
-            "t-strings are", 
+            expr_ty,
+            14,
+            "t-strings are",
             _PyPegen_template_str(p, a, (asdl_expr_seq*)b, c)) }
 
 string[expr_ty]: s[Token*]=STRING { _PyPegen_constant_from_string(p, s) }
@@ -1287,6 +1288,11 @@ invalid_ann_assign_target[expr_ty]:
     | list
     | tuple
     | '(' a=invalid_ann_assign_target ')' { a }
+invalid_raise_stmt:
+    | a='raise' b='from' {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "did you forget an expression between 'raise' and 'from'?") }
+    | 'raise' expression a='from' {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "did you forget an expression after 'from'?") }
 invalid_del_stmt:
     | 'del' a=star_expressions {
         RAISE_SYNTAX_ERROR_INVALID_TARGET(DEL_TARGETS, a) }
@@ -1383,11 +1389,11 @@ invalid_import:
         RAISE_SYNTAX_ERROR_STARTING_FROM(token, "Expected one or more names after 'import'") }
 invalid_dotted_as_name:
     | dotted_name 'as' !(NAME (',' | ')' | NEWLINE)) a=expression {
-        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, 
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a,
             "cannot use %s as import target", _PyPegen_get_expr_name(a)) }
 invalid_import_from_as_name:
     | NAME 'as' !(NAME (',' | ')' | NEWLINE)) a=expression {
-        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, 
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a,
             "cannot use %s as import target", _PyPegen_get_expr_name(a)) }
 
 invalid_import_from_targets:
@@ -1418,7 +1424,7 @@ invalid_except_stmt:
         RAISE_SYNTAX_ERROR_STARTING_FROM(a, "multiple exception types must be parenthesized when using 'as'") }
     | a='except' expression ['as' NAME ] NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
     | a='except' NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
-    | 'except' expression 'as' a=expression {
+    | 'except' expression 'as' a=expression ':' block {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
             a, "cannot use except statement with %s", _PyPegen_get_expr_name(a)) }
 invalid_except_star_stmt:
@@ -1426,7 +1432,7 @@ invalid_except_star_stmt:
         RAISE_SYNTAX_ERROR_STARTING_FROM(a, "multiple exception types must be parenthesized when using 'as'") }
     | a='except' '*' expression ['as' NAME ] NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
     | a='except' '*' (NEWLINE | ':') { RAISE_SYNTAX_ERROR("expected one or more exception types") }
-    | 'except' '*' expression 'as' a=expression {
+    | 'except' '*' expression 'as' a=expression ':' block {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
             a, "cannot use except* statement with %s", _PyPegen_get_expr_name(a)) }
 invalid_finally_stmt:
