@@ -5358,6 +5358,15 @@ dummy_func(
             value = PyStackRef_FromPyObjectBorrow(ptr);
         }
 
+        tier2 op(_SWAP_CALL_ONE_LOAD_CONST_INLINE_BORROW, (ptr/4, callable, null, arg -- value, a)) {
+            PyStackRef_CLOSE(arg);
+            (void)null; // Silence compiler warnings about unused variables
+            DEAD(null);
+            PyStackRef_CLOSE(callable);
+            value = PyStackRef_FromPyObjectBorrow(ptr);
+            a = arg;
+        }
+
         tier2 op(_LOAD_CONST_UNDER_INLINE, (ptr/4, old -- value, new)) {
             new = old;
             DEAD(old);
