@@ -93,31 +93,19 @@ set_cache_version(_abc_data *impl, uint64_t version)
 static inline uint8_t
 is_issubclasscheck_recursive(_abc_data *impl)
 {
-#ifdef Py_GIL_DISABLED
-    return _Py_atomic_load_uint64(&impl->_abc_issubclasscheck_recursive);
-#else
-    return impl->_abc_issubclasscheck_recursive;
-#endif
+    return FT_ATOMIC_LOAD_UINT8_RELAXED(impl->_abc_issubclasscheck_recursive);
 }
 
 static inline void
 set_issubclasscheck_recursive(_abc_data *impl)
 {
-#ifdef Py_GIL_DISABLED
-    _Py_atomic_store_uint8(&impl->_abc_issubclasscheck_recursive, 1);
-#else
-    impl->_abc_issubclasscheck_recursive = 1;
-#endif
+    FT_ATOMIC_STORE_UINT8_RELAXED(impl->_abc_issubclasscheck_recursive, 1);
 }
 
 static inline void
 unset_issubclasscheck_recursive(_abc_data *impl)
 {
-#ifdef Py_GIL_DISABLED
-    _Py_atomic_store_uint8(&impl->_abc_issubclasscheck_recursive, 0);
-#else
-    impl->_abc_issubclasscheck_recursive = 0;
-#endif
+    FT_ATOMIC_STORE_UINT8_RELAXED(impl->_abc_issubclasscheck_recursive, 0);
 }
 
 static int
