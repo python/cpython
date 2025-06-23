@@ -450,7 +450,8 @@ dummy_func(void) {
     op(_UNARY_NEGATIVE, (value -- res)) {
         if (sym_is_compact_int(value)) {
             res = sym_new_compact_int(ctx);
-        } else {
+        }
+        else {
             PyTypeObject *type = sym_get_type(value);
             if (type == &PyLong_Type || type == &PyFloat_Type) {
                 res = sym_new_type(ctx, type);
