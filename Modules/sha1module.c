@@ -20,9 +20,11 @@
 #endif
 
 #include "Python.h"
+#include "pycore_moduleobject.h"    // _PyModule_GetState()
+#include "pycore_strhex.h"          // _Py_strhex()
+#include "pycore_typeobject.h"      // _PyType_GetModuleState()
+
 #include "hashlib.h"
-#include "pycore_strhex.h"        // _Py_strhex()
-#include "pycore_typeobject.h"    // _PyType_GetModuleState()
 
 #include "_hacl/Hacl_Hash_SHA1.h"
 
@@ -42,16 +44,27 @@ typedef struct {
 
 // --- Module state -----------------------------------------------------------
 
-typedef struct {
-    PyTypeObject* sha1_type;
-} SHA1State;
+static struct PyModuleDef sha1module_def;
 
-static inline SHA1State*
-sha1_get_state(PyObject *module)
+typedef struct {
+    PyTypeObject *sha1_type;
+} sha1module_state;
+
+static inline sha1module_state *
+get_sha1module_state(PyObject *module)
 {
-    void *state = PyModule_GetState(module);
+    void *state = _PyModule_GetState(module);
     assert(state != NULL);
-    return (SHA1State *)state;
+    return (sha1module_state *)state;
+}
+
+static inline sha1module_state *
+get_sha1module_state_by_cls(PyTypeObject *cls)
+{
+    _Py_hashlib_check_exported_type(cls, &sha1module_def);
+    void *state = _PyType_GetModuleState(cls);
+    assert(state != NULL);
+    return (sha1module_state *)state;
 }
 
 // --- Module clinic configuration --------------------------------------------
@@ -67,7 +80,7 @@ class SHA1Type "SHA1object *" "&PyType_Type"
 // --- SHA-1 object interface configuration -----------------------------------
 
 static SHA1object *
-newSHA1object(SHA1State *st)
+newSHA1object(sha1module_state *st)
 {
     SHA1object *sha = PyObject_GC_New(SHA1object, st->sha1_type);
     if (sha == NULL) {
@@ -117,7 +130,7 @@ static PyObject *
 SHA1Type_copy_impl(SHA1object *self, PyTypeObject *cls)
 /*[clinic end generated code: output=b32d4461ce8bc7a7 input=6c22e66fcc34c58e]*/
 {
-    SHA1State *st = _PyType_GetModuleState(cls);
+    sha1module_state *st = get_sha1module_state_by_cls(cls);
 
     SHA1object *newobj;
     if ((newobj = newSHA1object(st)) == NULL) {
@@ -288,7 +301,7 @@ _sha1_sha1_impl(PyObject *module, PyObject *data, int usedforsecurity,
         GET_BUFFER_VIEW_OR_ERROUT(string, &buf);
     }
 
-    SHA1State *st = sha1_get_state(module);
+    sha1module_state *st = get_sha1module_state(module);
     if ((new = newSHA1object(st)) == NULL) {
         if (string) {
             PyBuffer_Release(&buf);
@@ -329,7 +342,7 @@ static struct PyMethodDef SHA1_functions[] = {
 static int
 _sha1_traverse(PyObject *module, visitproc visit, void *arg)
 {
-    SHA1State *state = sha1_get_state(module);
+    sha1module_state *state = get_sha1module_state(module);
     Py_VISIT(state->sha1_type);
     return 0;
 }
@@ -337,7 +350,7 @@ _sha1_traverse(PyObject *module, visitproc visit, void *arg)
 static int
 _sha1_clear(PyObject *module)
 {
-    SHA1State *state = sha1_get_state(module);
+    sha1module_state *state = get_sha1module_state(module);
     Py_CLEAR(state->sha1_type);
     return 0;
 }
@@ -351,7 +364,7 @@ _sha1_free(void *module)
 static int
 _sha1_exec(PyObject *module)
 {
-    SHA1State* st = sha1_get_state(module);
+    sha1module_state *st = get_sha1module_state(module);
 
     st->sha1_type = (PyTypeObject *)PyType_FromModuleAndSpec(
         module, &sha1_type_spec, NULL);
@@ -381,10 +394,10 @@ static PyModuleDef_Slot _sha1_slots[] = {
     {0, NULL}
 };
 
-static struct PyModuleDef _sha1module = {
+static struct PyModuleDef sha1module_def = {
     PyModuleDef_HEAD_INIT,
     .m_name = "_sha1",
-    .m_size = sizeof(SHA1State),
+    .m_size = sizeof(sha1module_state),
     .m_methods = SHA1_functions,
     .m_slots = _sha1_slots,
     .m_traverse = _sha1_traverse,
@@ -395,5 +408,5 @@ static struct PyModuleDef _sha1module = {
 PyMODINIT_FUNC
 PyInit__sha1(void)
 {
-    return PyModuleDef_Init(&_sha1module);
+    return PyModuleDef_Init(&sha1module_def);
 }

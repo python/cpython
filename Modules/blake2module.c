@@ -15,10 +15,11 @@
 #endif
 
 #include "Python.h"
+#include "pycore_moduleobject.h"    // _PyModule_GetState()
+#include "pycore_strhex.h"          // _Py_strhex()
+#include "pycore_typeobject.h"      // _PyType_GetModuleState()
+
 #include "hashlib.h"
-#include "pycore_strhex.h"       // _Py_strhex()
-#include "pycore_typeobject.h"
-#include "pycore_moduleobject.h"
 
 // QUICK CPU AUTODETECTION
 //
@@ -67,6 +68,7 @@
 
 // MODULE TYPE SLOTS
 
+static struct PyModuleDef blake2module_def;
 static PyType_Spec blake2b_type_spec;
 static PyType_Spec blake2s_type_spec;
 
@@ -78,23 +80,24 @@ typedef struct {
     PyTypeObject *blake2s_type;
     bool can_run_simd128;
     bool can_run_simd256;
-} Blake2State;
+} blake2module_state;
 
-static inline Blake2State *
-blake2_get_state(PyObject *module)
+static inline blake2module_state *
+get_blake2module_state(PyObject *module)
 {
     void *state = _PyModule_GetState(module);
     assert(state != NULL);
-    return (Blake2State *)state;
+    return (blake2module_state *)state;
 }
 
 #if defined(HACL_CAN_COMPILE_SIMD128) || defined(HACL_CAN_COMPILE_SIMD256)
-static inline Blake2State *
-blake2_get_state_from_type(PyTypeObject *module)
+static inline blake2module_state *
+get_blake2module_state_by_cls(PyTypeObject *cls)
 {
-    void *state = _PyType_GetModuleState(module);
+    _Py_hashlib_check_exported_type(cls, &blake2module_def);
+    void *state = _PyType_GetModuleState(cls);
     assert(state != NULL);
-    return (Blake2State *)state;
+    return (blake2module_state *)state;
 }
 #endif
 
@@ -105,7 +108,7 @@ static struct PyMethodDef blake2mod_functions[] = {
 static int
 _blake2_traverse(PyObject *module, visitproc visit, void *arg)
 {
-    Blake2State *state = blake2_get_state(module);
+    blake2module_state *state = get_blake2module_state(module);
     Py_VISIT(state->blake2b_type);
     Py_VISIT(state->blake2s_type);
     return 0;
@@ -114,7 +117,7 @@ _blake2_traverse(PyObject *module, visitproc visit, void *arg)
 static int
 _blake2_clear(PyObject *module)
 {
-    Blake2State *state = blake2_get_state(module);
+    blake2module_state *state = get_blake2module_state(module);
     Py_CLEAR(state->blake2b_type);
     Py_CLEAR(state->blake2s_type);
     return 0;
@@ -127,7 +130,7 @@ _blake2_free(void *module)
 }
 
 static void
-blake2module_init_cpu_features(Blake2State *state)
+blake2module_init_cpu_features(blake2module_state *state)
 {
     /* This must be kept in sync with hmacmodule_init_cpu_features()
      * in hmacmodule.c */
@@ -205,7 +208,7 @@ blake2module_init_cpu_features(Blake2State *state)
 static int
 blake2_exec(PyObject *m)
 {
-    Blake2State *st = blake2_get_state(m);
+    blake2module_state *st = get_blake2module_state(m);
     blake2module_init_cpu_features(st);
 
 #define ADD_INT(DICT, NAME, VALUE)                      \
@@ -285,11 +288,11 @@ static PyModuleDef_Slot _blake2_slots[] = {
     {0, NULL}
 };
 
-static struct PyModuleDef blake2_module = {
+static struct PyModuleDef blake2module_def = {
     .m_base = PyModuleDef_HEAD_INIT,
     .m_name = "_blake2",
     .m_doc = blake2mod__doc__,
-    .m_size = sizeof(Blake2State),
+    .m_size = sizeof(blake2module_state),
     .m_methods = blake2mod_functions,
     .m_slots = _blake2_slots,
     .m_traverse = _blake2_traverse,
@@ -300,7 +303,7 @@ static struct PyModuleDef blake2_module = {
 PyMODINIT_FUNC
 PyInit__blake2(void)
 {
-    return PyModuleDef_Init(&blake2_module);
+    return PyModuleDef_Init(&blake2module_def);
 }
 
 // IMPLEMENTATION OF METHODS
@@ -333,7 +336,7 @@ static inline blake2_impl
 type_to_impl(PyTypeObject *type)
 {
 #if defined(HACL_CAN_COMPILE_SIMD128) || defined(HACL_CAN_COMPILE_SIMD256)
-    Blake2State *st = blake2_get_state_from_type(type);
+    blake2module_state *st = get_blake2module_state_by_cls(type);
 #endif
     if (!strcmp(type->tp_name, blake2b_type_spec.name)) {
 #if HACL_CAN_COMPILE_SIMD256
@@ -385,6 +388,7 @@ class _blake2.blake2s "Blake2Object *" "&PyType_Type"
 static Blake2Object *
 new_Blake2Object(PyTypeObject *type)
 {
+    _Py_hashlib_check_exported_type(type, &blake2module_def);
     Blake2Object *self = PyObject_GC_New(Blake2Object, type);
     if (self == NULL) {
         return NULL;

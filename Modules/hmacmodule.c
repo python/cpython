@@ -18,7 +18,9 @@
 
 #include "Python.h"
 #include "pycore_hashtable.h"
+#include "pycore_moduleobject.h"        // _PyModule_GetState()
 #include "pycore_strhex.h"              // _Py_strhex()
+#include "pycore_typeobject.h"          // _PyType_GetModuleState()
 
 /*
  * Taken from blake2module.c. In the future, detection of SIMD support
@@ -250,6 +252,8 @@ typedef struct py_hmac_hinfo {
 
 // --- HMAC module state ------------------------------------------------------
 
+static struct PyModuleDef hmacmodule_def;
+
 typedef struct hmacmodule_state {
     _Py_hashtable_t *hinfo_table;
     PyObject *unknown_hash_error;
@@ -265,7 +269,7 @@ typedef struct hmacmodule_state {
 static inline hmacmodule_state *
 get_hmacmodule_state(PyObject *module)
 {
-    void *state = PyModule_GetState(module);
+    void *state = _PyModule_GetState(module);
     assert(state != NULL);
     return (hmacmodule_state *)state;
 }
@@ -273,7 +277,8 @@ get_hmacmodule_state(PyObject *module)
 static inline hmacmodule_state *
 get_hmacmodule_state_by_cls(PyTypeObject *cls)
 {
-    void *state = PyType_GetModuleState(cls);
+    _Py_hashlib_check_exported_type(cls, &hmacmodule_def);
+    void *state = _PyType_GetModuleState(cls);
     assert(state != NULL);
     return (hmacmodule_state *)state;
 }
@@ -301,13 +306,11 @@ typedef struct HMACObject {
 
 /*[clinic input]
 module _hmac
-class _hmac.HMAC "HMACObject *" "clinic_state()->hmac_type"
+class _hmac.HMAC "HMACObject *" "&PyType_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=c8bab73fde49ba8a]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=72bc06d6dc634770]*/
 
-#define clinic_state()  (get_hmacmodule_state_by_cls(Py_TYPE(self)))
 #include "clinic/hmacmodule.c.h"
-#undef clinic_state
 
 // --- Helpers ----------------------------------------------------------------
 //
@@ -1683,7 +1686,7 @@ static struct PyModuleDef_Slot hmacmodule_slots[] = {
     {0, NULL} /* sentinel */
 };
 
-static struct PyModuleDef _hmacmodule = {
+static struct PyModuleDef hmacmodule_def = {
     PyModuleDef_HEAD_INIT,
     .m_name = "_hmac",
     .m_size = sizeof(hmacmodule_state),
@@ -1697,5 +1700,5 @@ static struct PyModuleDef _hmacmodule = {
 PyMODINIT_FUNC
 PyInit__hmac(void)
 {
-    return PyModuleDef_Init(&_hmacmodule);
+    return PyModuleDef_Init(&hmacmodule_def);
 }

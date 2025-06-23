@@ -22,7 +22,9 @@ _Py_hashlib_check_exported_type(PyTypeObject *type, PyModuleDef *moddef)
     /* ensure that the associated module definition matches 'moddef' */
     PyHeapTypeObject *ht = (PyHeapTypeObject *)type;
     assert(ht->ht_module != NULL);
-    assert(moddef == _PyModule_GetDef(ht->ht_module));
+    PyModuleDef *ht_moddef = _PyModule_GetDef(ht->ht_module);
+    assert(ht_moddef != NULL);
+    assert(ht_moddef == moddef);
 }
 #else
 #define _Py_hashlib_check_exported_type(_TYPE, _MODDEF)

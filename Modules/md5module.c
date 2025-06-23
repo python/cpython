@@ -22,7 +22,9 @@
 #endif
 
 #include "Python.h"
-#include "pycore_strhex.h" // _Py_strhex()
+#include "pycore_moduleobject.h"    // _PyModule_GetState()
+#include "pycore_strhex.h"          // _Py_strhex()
+#include "pycore_typeobject.h"      // _PyType_GetModuleState()
 
 #include "hashlib.h"
 
@@ -44,16 +46,27 @@ typedef struct {
 
 // --- Module state -----------------------------------------------------------
 
-typedef struct {
-    PyTypeObject* md5_type;
-} MD5State;
+static struct PyModuleDef md5module_def;
 
-static inline MD5State*
-md5_get_state(PyObject *module)
+typedef struct {
+    PyTypeObject *md5_type;
+} md5module_state;
+
+static inline md5module_state *
+get_md5module_state(PyObject *module)
 {
-    void *state = PyModule_GetState(module);
+    void *state = _PyModule_GetState(module);
     assert(state != NULL);
-    return (MD5State *)state;
+    return (md5module_state *)state;
+}
+
+static inline md5module_state *
+get_md5module_state_by_cls(PyTypeObject *cls)
+{
+    _Py_hashlib_check_exported_type(cls, &md5module_def);
+    void *state = _PyType_GetModuleState(cls);
+    assert(state != NULL);
+    return (md5module_state *)state;
 }
 
 // --- Module clinic configuration --------------------------------------------
@@ -69,7 +82,7 @@ class MD5Type "MD5object *" "&PyType_Type"
 // --- MD5 object interface ---------------------------------------------------
 
 static MD5object *
-newMD5object(MD5State * st)
+newMD5object(md5module_state *st)
 {
     MD5object *md5 = PyObject_GC_New(MD5object, st->md5_type);
     if (!md5) {
@@ -115,7 +128,7 @@ static PyObject *
 MD5Type_copy_impl(MD5object *self, PyTypeObject *cls)
 /*[clinic end generated code: output=bf055e08244bf5ee input=d89087dcfb2a8620]*/
 {
-    MD5State *st = PyType_GetModuleState(cls);
+    md5module_state *st = get_md5module_state_by_cls(cls);
 
     MD5object *newobj;
     if ((newobj = newMD5object(st)) == NULL) {
@@ -288,7 +301,7 @@ _md5_md5_impl(PyObject *module, PyObject *data, int usedforsecurity,
         GET_BUFFER_VIEW_OR_ERROUT(string, &buf);
     }
 
-    MD5State *st = md5_get_state(module);
+    md5module_state *st = get_md5module_state(module);
     if ((new = newMD5object(st)) == NULL) {
         if (string) {
             PyBuffer_Release(&buf);
@@ -329,7 +342,7 @@ static struct PyMethodDef MD5_functions[] = {
 static int
 _md5_traverse(PyObject *module, visitproc visit, void *arg)
 {
-    MD5State *state = md5_get_state(module);
+    md5module_state *state = get_md5module_state(module);
     Py_VISIT(state->md5_type);
     return 0;
 }
@@ -337,7 +350,7 @@ _md5_traverse(PyObject *module, visitproc visit, void *arg)
 static int
 _md5_clear(PyObject *module)
 {
-    MD5State *state = md5_get_state(module);
+    md5module_state *state = get_md5module_state(module);
     Py_CLEAR(state->md5_type);
     return 0;
 }
@@ -352,7 +365,7 @@ _md5_free(void *module)
 static int
 md5_exec(PyObject *m)
 {
-    MD5State *st = md5_get_state(m);
+    md5module_state *st = get_md5module_state(m);
 
     st->md5_type = (PyTypeObject *)PyType_FromModuleAndSpec(
         m, &md5_type_spec, NULL);
@@ -375,10 +388,10 @@ static PyModuleDef_Slot _md5_slots[] = {
 };
 
 
-static struct PyModuleDef _md5module = {
+static struct PyModuleDef md5module_def = {
     PyModuleDef_HEAD_INIT,
     .m_name = "_md5",
-    .m_size = sizeof(MD5State),
+    .m_size = sizeof(md5module_state),
     .m_methods = MD5_functions,
     .m_slots = _md5_slots,
     .m_traverse = _md5_traverse,
@@ -389,5 +402,5 @@ static struct PyModuleDef _md5module = {
 PyMODINIT_FUNC
 PyInit__md5(void)
 {
-    return PyModuleDef_Init(&_md5module);
+    return PyModuleDef_Init(&md5module_def);
 }
