@@ -92,7 +92,7 @@ PyAPI_FUNC(PyObject * const *) _PyArg_UnpackKeywords(
      _PyArg_UnpackKeywords((args), (nargs), (kwargs), (kwnames), (parser), \
                            (minpos), (maxpos), (minkw), (varpos), (buf)))
 
-int _PyModule_AddFunctionsImmortal(PyObject *m, PyMethodDef *functions);
+extern int _PyModule_AddFunctionsImmortal(PyObject *m, PyMethodDef *functions);
 
 #ifdef __cplusplus
 }
