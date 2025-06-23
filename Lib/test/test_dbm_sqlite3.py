@@ -1,3 +1,4 @@
+import stat
 import os
 import sys
 import unittest
@@ -90,22 +91,28 @@ class ReadOnly(_SQLiteDbmTests):
     def test_readonly_iter(self):
         self.assertEqual([k for k in self.db], [b"key1", b"key2"])
 
-    @unittest.skipIf(sys.platform.startswith("win"), "incompatible with Windows file locking")
     def test_readonly_open_without_wal_shm(self):
         wal_path = self.filename + "-wal"
         shm_path = self.filename + "-shm"
 
         for suffix in wal_path, shm_path:
-            try:
-                os.remove(suffix)
-            except FileNotFoundError:
-                pass
+            os_helper.unlink(suffix)
 
-        os.chmod(self.filename, 0o444)
+        try:
+            self.db.close()
+        except Exception:
+            pass
 
-        with dbm_sqlite3.open(self.filename, "r") as db:
+        os.chmod(self.filename, stat.S_IREAD)
+
+        db = dbm_sqlite3.open(self.filename, "r")
+        try:
             self.assertEqual(db[b"key1"], b"value1")
             self.assertEqual(db[b"key2"], b"value2")
+        finally:
+            db.close()
+
+        os.chmod(self.filename, stat.S_IWRITE)
 
 
 class ReadWrite(_SQLiteDbmTests):
