@@ -431,18 +431,6 @@ dis_fn_with_annotate_str = """\
               RETURN_VALUE
 """
 
-issue_135700 = """\
-22
-333
-__dataclass_fields__: ClassVar
-"""
-
-issue_135700_class = """\
-class _B:
-    2
-    c: int
-"""
-
 compound_stmt_str = """\
 x = 0
 while 1:
@@ -1138,25 +1126,44 @@ class DisTests(DisTestBase):
 
     def test_annotate_no_spurious_first_node_positions(self):
         # Test that __annotate__ code doesn't inherit first AST node positions
+        issue_135700 = "1\nx: int"
+        issue_135700_class = "class A:\n    1\n    x: int"
+
         test_cases = [
             ("module", compile(issue_135700, "<string>", "exec").co_consts[1]),
-            ("class", compile(ast.parse(issue_135700_class), "?", "exec").co_consts[0].co_consts[1])
+            (
+                "class",
+                compile(ast.parse(issue_135700_class), "?", "exec")
+                .co_consts[0]
+                .co_consts[1],
+            ),
         ]
 
         for case_name, annotate_code in test_cases:
             with self.subTest(case=case_name):
                 instructions = list(dis.Bytecode(annotate_code))
-
-                spurious_positions = sum(
-                    1 for instr in instructions
-                    if (instr.positions and
-                        instr.positions.lineno == 1 and
-                        instr.positions.col_offset == 0 and
-                        instr.positions.end_col_offset == 1)
+                print(instructions)
+                resume_pos = next(
+                    (
+                        inst.positions
+                        for inst in instructions
+                        if inst.opname == "RESUME"
+                    ),
+                    None,
                 )
-
-                self.assertEqual(spurious_positions, 0,
-                            f"No instructions in {case_name} __annotate__ should have first statement's position")
+                for instruction in instructions:
+                    if instruction.opname == "BUILD_MAP":
+                        break
+                    if (
+                        instruction.opname != "RESUME"
+                        and instruction.positions
+                        and instruction.positions.lineno
+                    ):
+                        self.assertEqual(
+                            instruction.positions,
+                            resume_pos,
+                            f"{case_name}: Unexpected position {instruction.positions} in {instruction.opname}, expected {resume_pos}",
+                        )
 
     def test_kw_names(self):
         # Test that value is displayed for keyword argument names:
