@@ -663,7 +663,7 @@ cleanup:
         PyErr_Clear();
         return PyUnicode_FromString("<unknown>");
     }
-    
+
     if (PyUnicode_GetLength(module_name) == 0) {
         Py_DECREF(module_name);
         return PyUnicode_FromString("<unknown>");
