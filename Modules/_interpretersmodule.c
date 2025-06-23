@@ -1039,8 +1039,8 @@ interp_set___main___attrs(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject *id, *updates;
     int restricted = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-                                     "OO|$p:" MODULE_NAME_STR ".set___main___attrs",
-                                     kwlist, &id, &updates, &restricted))
+                                     "OO!|$p:" MODULE_NAME_STR ".set___main___attrs",
+                                     kwlist, &id, &PyDict_Type, &updates, &restricted))
     {
         return NULL;
     }
@@ -1055,13 +1055,13 @@ interp_set___main___attrs(PyObject *self, PyObject *args, PyObject *kwargs)
 
     // Check the updates.
     if (updates != Py_None) {
-        Py_ssize_t size = PyObject_Size(updates);
+        Py_ssize_t size = PyDict_Size(updates);
         if (size < 0) {
             return NULL;
         }
         if (size == 0) {
             PyErr_SetString(PyExc_ValueError,
-                            "arg 2 must be a non-empty mapping");
+                            "arg 2 must be a non-empty dict");
             return NULL;
         }
     }
