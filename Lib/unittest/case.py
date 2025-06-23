@@ -861,7 +861,7 @@ class TestCase(object):
         `records` attribute will be a list of the corresponding LogRecord
         objects.
 
-        Optionally supply `format` to control how messages are formatted.
+        Optionally supply `formatter` to control how messages are formatted.
 
         Example::
 
