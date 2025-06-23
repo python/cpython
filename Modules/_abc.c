@@ -73,21 +73,13 @@ typedef struct {
 static inline uint64_t
 get_cache_version(_abc_data *impl)
 {
-#ifdef Py_GIL_DISABLED
-    return _Py_atomic_load_uint64_relaxed(&impl->_abc_negative_cache_version);
-#else
-    return impl->_abc_negative_cache_version;
-#endif
+    return FT_ATOMIC_LOAD_UINT64_RELAXED(impl->_abc_negative_cache_version);
 }
 
 static inline void
 set_cache_version(_abc_data *impl, uint64_t version)
 {
-#ifdef Py_GIL_DISABLED
-    _Py_atomic_store_uint64_relaxed(&impl->_abc_negative_cache_version, version);
-#else
-    impl->_abc_negative_cache_version = version;
-#endif
+    FT_ATOMIC_STORE_UINT64_RELAXED(impl->_abc_negative_cache_version, version);
 }
 
 static inline uint8_t
