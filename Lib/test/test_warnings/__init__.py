@@ -771,15 +771,32 @@ class WCmdLineTests(BaseTest):
             self.assertRaises(UserWarning, self.module.warn, 'convert to error')
 
     def test_import_from_module(self):
-        with self.module.catch_warnings():
-            self.module._setoption('ignore::Warning')
-            with self.assertRaises(self.module._OptionError):
-                self.module._setoption('ignore::TestWarning')
-            with self.assertRaises(self.module._OptionError):
-                self.module._setoption('ignore::test.test_warnings.bogus')
-            self.module._setoption('error::test.test_warnings.TestWarning')
-            with self.assertRaises(TestWarning):
-                self.module.warn('test warning', TestWarning)
+        script = support.script_helper.make_script('test_warnings_importer',
+            'import test.test_warnings.data.import_warning')
+        rc, out, err = assert_python_ok(script)
+        self.assertNotIn(b'UserWarning', err)
+
+    def test_syntax_warning_for_compiler(self):
+        # Test that SyntaxWarning from the compiler has a proper module name,
+        # not a guessed one like 'sys'. gh-135801
+        code = textwrap.dedent("""\
+            class A:
+                def func(self):
+                    return self.var is 2
+            """)
+        # The name of the script is 'test_sw'
+        with os_helper.temp_dir() as script_dir:
+            script_name = support.script_helper.make_script(script_dir, 'test_sw', code)
+            # We want to check that the warning filter for 'test_sw' module works.
+            rc, out, err = assert_python_failure("-W", "error::SyntaxWarning:test_sw",
+                                                 script_name)
+        self.assertEqual(rc, 1)
+        self.assertEqual(out, b'')
+        # Check that we got a SyntaxError.
+        err = err.decode()
+        self.assertIn("""SyntaxError: "is" with 'int' literal. Did you mean "=="?""", err)
+        # Check that the filename in the traceback is correct.
+        self.assertIn(os.path.basename(script_name), err)
 
 
 class CWCmdLineTests(WCmdLineTests, unittest.TestCase):
