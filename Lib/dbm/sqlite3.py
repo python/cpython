@@ -72,7 +72,7 @@ class _Database(MutableMapping):
 
         self._readonly = (flag == "ro")
         # This is an optimization only; it's ok if it fails.
-        if not self._readonly:
+        if flag != "ro":
             with suppress(sqlite3.OperationalError):
                 self._cx.execute("PRAGMA journal_mode = OFF")
 
