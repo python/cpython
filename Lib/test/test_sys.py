@@ -297,19 +297,19 @@ class SysModuleTest(unittest.TestCase):
         # into stderr
         check_exit_message(
             sys_exit_impl("'message'", 'sys.stderr.write("unflushed,")'),
-            b"unflushed,message"
-        )
+            b"unflushed,message")
 
         # test that the exit message is written with backslashreplace error
         # handler to stderr
-        check_exit_message(sys_exit_impl(r"'surrogates:\uDCFF'"),
-                           b"surrogates:\\udcff")
+        check_exit_message(
+            sys_exit_impl(r"'surrogates:\uDCFF'"),
+            b"surrogates:\\udcff")
 
         # test that the unicode message is encoded to the stderr encoding
         # instead of the default encoding (utf8)
-        check_exit_message(sys_exit_impl(r"'h\xe9'"), b"h\xe9",
-                           PYTHONIOENCODING='latin-1')
-
+        check_exit_message(
+            sys_exit_impl(r"'h\xe9'"),
+            b"h\xe9", PYTHONIOENCODING='latin-1')
 
     @support.requires_subprocess()
     def test_exit_codes_under_repl(self):
