@@ -131,15 +131,21 @@ class Optimizer:
 
     def _body(self) -> str:
         lines = []
+        hot = True
         for block in self._blocks():
+            if hot != block.hot:
+                hot = block.hot
+                lines.append(f"# JIT: {'HOT' if hot else 'COLD'} ".ljust(80, "#"))
             lines.extend(block.noise)
             lines.extend(block.instructions)
         return "\n".join(lines)
 
     def _predecessors(self, block: _Block) -> typing.Generator[_Block, None, None]:
-        for block in self._blocks():
-            if block.target is block or (block.fallthrough and block.link is block):
-                yield block
+        for predecessor in self._blocks():
+            if predecessor.target is block or (
+                predecessor.fallthrough and predecessor.link is block
+            ):
+                yield predecessor
 
     def _insert_continue_label(self) -> None:
         for end in reversed(list(self._blocks())):
@@ -153,7 +159,7 @@ class Optimizer:
         end.link, align.link, continuation.link = align, continuation, end.link
 
     def _mark_hot_blocks(self) -> None:
-        todo = [self._lookup_label(f"{self.prefix}_JIT_CONTINUE")]
+        todo = list(self._blocks())[-1:]
         while todo:
             block = todo.pop()
             block.hot = True
@@ -227,7 +233,6 @@ class OptimizerAArch64(Optimizer):
 
 
 class OptimizerX86(Optimizer):
-
     _branches = _X86_BRANCHES
     _re_branch = re.compile(
         rf"\s*(?P<instruction>{'|'.join(_X86_BRANCHES)})\s+(?P<target>[\w.]+)"
@@ -237,7 +242,6 @@ class OptimizerX86(Optimizer):
 
 
 class OptimizerX86Windows(OptimizerX86):
-
     def _preprocess(self, text: str) -> str:
         text = super()._preprocess(text)
         # rex64 jumpq *__imp__JIT_CONTINUE(%rip) -> jmp _JIT_CONTINUE

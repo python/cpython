@@ -136,7 +136,6 @@ class _Target(typing.Generic[_S, _R]):
             f"-I{CPYTHON / 'Tools' / 'jit'}",
             "-O3",
             "-S",
-            # "-c",
             # Shorten full absolute file paths in the generated code (like the
             # __FILE__ macro and assert failure messages) for reproducibility:
             f"-ffile-prefix-map={CPYTHON}=.",
@@ -161,13 +160,7 @@ class _Target(typing.Generic[_S, _R]):
         ]
         await _llvm.run("clang", args_s, echo=self.verbose)
         self.optimizer(s, prefix=self.prefix).run()
-        args_o = [
-            f"--target={self.triple}",
-            "-c",
-            "-o",
-            f"{o}",
-            f"{s}",
-        ]
+        args_o = [f"--target={self.triple}", "-c", "-o", f"{o}", f"{s}"]
         await _llvm.run("clang", args_o, echo=self.verbose)
         return await self._parse(o)
 
