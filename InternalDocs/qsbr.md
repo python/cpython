@@ -58,13 +58,13 @@ page or return its memory to the OS.
 
 ### Core Implementation
 
-The proposal to add QSBR to Python is contained in [Github issue 115103]
-(https://github.com/python/cpython/issues/115103).
+The proposal to add QSBR to Python is contained in
+[Github issue 115103](https://github.com/python/cpython/issues/115103).
 Many details of that proposal have been copied here, so they can be kept
 up-to-date with the actual implementation.
 
 Python's QSBR implementation is based on FreeBSD's "Global Unbounded
-Sequences." [^1, ^2, ^3].  It relies on a few key counters:
+Sequences." [^1][^2][^3].  It relies on a few key counters:
 
 * Global Write Sequence (`wr_seq`): A per-interpreter counter, `wr_seq`, is started
 at 1 and incremented by 2 each time it is advanced. This ensures its value is
