@@ -2133,6 +2133,7 @@
         case _CALL_TYPE_1: {
             JitOptRef arg;
             JitOptRef res;
+            JitOptRef a;
             arg = stack_pointer[-1];
             PyObject* type = (PyObject *)sym_get_type(arg);
             if (type) {
@@ -2143,8 +2144,10 @@
             else {
                 res = sym_new_not_null(ctx);
             }
+            a = arg;
             stack_pointer[-3] = res;
-            stack_pointer += -2;
+            stack_pointer[-2] = a;
+            stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }

@@ -969,7 +969,7 @@ dummy_func(void) {
        next = sym_new_type(ctx, &PyLong_Type);
     }
 
-    op(_CALL_TYPE_1, (unused, unused, arg -- res)) {
+    op(_CALL_TYPE_1, (unused, unused, arg -- res, a)) {
         PyObject* type = (PyObject *)sym_get_type(arg);
         if (type) {
             res = sym_new_const(ctx, type);
@@ -979,6 +979,7 @@ dummy_func(void) {
         else {
             res = sym_new_not_null(ctx);
         }
+        a = arg;
     }
 
     op(_CALL_STR_1, (unused, unused, arg -- res)) {
