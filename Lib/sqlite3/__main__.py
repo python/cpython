@@ -64,7 +64,7 @@ class SqliteInteractiveConsole(InteractiveConsole):
         if source[0] == ".":
             match source[1:].strip():
                 case "tables":
-                    schema_names = tuple(row[1]
+                    schema_names = (row[1]
                         for row in self._cur.execute("PRAGMA database_list"))
                     select_clauses = (f"""SELECT
                         CASE '{schema}'
@@ -84,7 +84,7 @@ class SqliteInteractiveConsole(InteractiveConsole):
                 case "help":
                     t = theme.syntax
                     print(f"Enter SQL code or one of the below commands, and press enter.\n\n"
-                          f"{t.builtin}.tables{t.reset}     List names of tables\n"
+                          f"{t.builtin}.tables{t.reset}     Print names of tables\n"
                           f"{t.builtin}.version{t.reset}    Print underlying SQLite library version\n"
                           f"{t.builtin}.help{t.reset}       Print this help message\n"
                           f"{t.builtin}.quit{t.reset}       Exit the CLI, equivalent to CTRL-D\n")

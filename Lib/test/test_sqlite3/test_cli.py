@@ -129,14 +129,14 @@ class InteractiveSession(unittest.TestCase):
         out, err = self.run_cli(commands=(
             "CREATE TABLE table_ (id INTEGER);",
             "CREATE TEMP TABLE temp_table (id INTEGER);",
-            "CREATE VIEW view_ AS SELECT * FROM table_;",
-            "CREATE TEMP VIEW temp_view As SELECT * FROM table_;",
+            "CREATE VIEW view_ AS SELECT 1;",
+            "CREATE TEMP VIEW temp_view AS SELECT 1;",
             "ATTACH ':memory:' AS attach_;",
             "CREATE TABLE attach_.table_ (id INTEGER);",
-            "CREATE VIEW attach_.view_ AS SELECT * FROM table_;",
+            "CREATE VIEW attach_.view_ AS SELECT 1;",
             "ATTACH ':memory:' AS 123;",
             "CREATE TABLE \"123\".table_ (id INTEGER);",
-            "CREATE VIEW \"123\".view_ AS SELECT * FROM table_;",
+            "CREATE VIEW \"123\".view_ AS SELECT 1;",
             ".tables",
             ))
         self.assertIn(self.MEMORY_DB_MSG, err)
