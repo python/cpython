@@ -103,6 +103,10 @@ convert_global_to_const(_PyUOpInstruction *inst, PyObject *obj, bool pop)
     if ((int)index >= dict->ma_keys->dk_nentries) {
         return NULL;
     }
+    PyDictKeysObject *keys = dict->ma_keys;
+    if (keys->dk_version != inst->operand0) {
+        return NULL;
+    }
     PyObject *res = entries[index].me_value;
     if (res == NULL) {
         return NULL;
@@ -333,6 +337,7 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
 #define sym_set_type(SYM, TYPE) _Py_uop_sym_set_type(ctx, SYM, TYPE)
 #define sym_set_type_version(SYM, VERSION) _Py_uop_sym_set_type_version(ctx, SYM, VERSION)
 #define sym_set_const(SYM, CNST) _Py_uop_sym_set_const(ctx, SYM, CNST)
+#define sym_set_compact_int(SYM) _Py_uop_sym_set_compact_int(ctx, SYM)
 #define sym_is_bottom _Py_uop_sym_is_bottom
 #define sym_truthiness _Py_uop_sym_truthiness
 #define frame_new _Py_uop_frame_new
@@ -340,15 +345,17 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
 #define sym_new_tuple _Py_uop_sym_new_tuple
 #define sym_tuple_getitem _Py_uop_sym_tuple_getitem
 #define sym_tuple_length _Py_uop_sym_tuple_length
-#define sym_is_immortal _Py_uop_sym_is_immortal
+#define sym_is_immortal _Py_uop_symbol_is_immortal
+#define sym_is_compact_int _Py_uop_sym_is_compact_int
+#define sym_new_compact_int _Py_uop_sym_new_compact_int
 #define sym_new_truthiness _Py_uop_sym_new_truthiness
 
 static int
 optimize_to_bool(
     _PyUOpInstruction *this_instr,
     JitOptContext *ctx,
-    JitOptSymbol *value,
-    JitOptSymbol **result_ptr)
+    JitOptRef value,
+    JitOptRef *result_ptr)
 {
     if (sym_matches_type(value, &PyBool_Type)) {
         REPLACE_OP(this_instr, _NOP, 0, 0);
@@ -375,7 +382,7 @@ eliminate_pop_guard(_PyUOpInstruction *this_instr, bool exit)
     }
 }
 
-static JitOptSymbol *
+static JitOptRef
 lookup_attr(JitOptContext *ctx, _PyUOpInstruction *this_instr,
             PyTypeObject *type, PyObject *name, uint16_t immortal,
             uint16_t mortal)
@@ -440,6 +447,13 @@ get_code_with_logging(_PyUOpInstruction *op)
     return co;
 }
 
+// TODO (gh-134584) generate most of this table automatically
+const uint16_t op_without_decref_inputs[MAX_UOP_ID + 1] = {
+    [_BINARY_OP_MULTIPLY_FLOAT] = _BINARY_OP_MULTIPLY_FLOAT__NO_DECREF_INPUTS,
+    [_BINARY_OP_ADD_FLOAT] = _BINARY_OP_ADD_FLOAT__NO_DECREF_INPUTS,
+    [_BINARY_OP_SUBTRACT_FLOAT] = _BINARY_OP_SUBTRACT_FLOAT__NO_DECREF_INPUTS,
+};
+
 /* 1 for success, 0 for not ready, cannot error at the moment. */
 static int
 optimize_uops(
@@ -477,7 +491,7 @@ optimize_uops(
 
         int oparg = this_instr->oparg;
         opcode = this_instr->opcode;
-        JitOptSymbol **stack_pointer = ctx->frame->stack_pointer;
+        JitOptRef *stack_pointer = ctx->frame->stack_pointer;
 
 #ifdef Py_DEBUG
         if (get_lltrace() >= 3) {
