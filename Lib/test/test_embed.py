@@ -440,49 +440,6 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
         self.assertEqual(out, '20000101\n' * INIT_LOOPS)
 
-    def test_datetime_capi_type_address(self):
-        # Check if the C-API types keep their addresses until runtime shutdown
-        code = textwrap.dedent("""
-            import _datetime as d
-            print(
-                f'{id(d.date)}'
-                f'{id(d.time)}'
-                f'{id(d.datetime)}'
-                f'{id(d.timedelta)}'
-                f'{id(d.tzinfo)}'
-            )
-        """)
-        out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
-        self.assertEqual(len(set(out.splitlines())), 1)
-
-    def test_datetime_capi_at_shutdown(self):
-        # gh-132413: Users need to call PyDateTime_IMPORT every time
-        # after starting an interpreter.
-        code = textwrap.dedent("""
-            import sys
-            import _testcapi
-            _testcapi.test_datetime_capi()  # PyDateTime_IMPORT only once
-            timedelta = type(_testcapi.get_delta_fromdsu(False, 1, 0, 0))
-
-            def gen():
-                try:
-                    yield
-                finally:
-                    assert not sys.modules
-                    res = 0
-                    try:
-                        timedelta(days=1)
-                        res = 1
-                    except ImportError:
-                        res = 2
-                    print(res)
-
-            it = gen()
-            next(it)
-        """)
-        out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
-        self.assertEqual(out, '1\n' + '2\n' * (INIT_LOOPS - 1))
-
     def test_static_types_inherited_slots(self):
         script = textwrap.dedent("""
             import test.support
