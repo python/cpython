@@ -536,7 +536,7 @@ dummy_func(void) {
     }
 
     op(_LOAD_CONST_INLINE, (ptr/4 -- value)) {
-        value = PyJitRef_Borrow(sym_new_const(ctx, ptr));
+        value = sym_new_const(ctx, ptr);
     }
 
     op(_LOAD_CONST_INLINE_BORROW, (ptr/4 -- value)) {
@@ -544,7 +544,7 @@ dummy_func(void) {
     }
 
     op(_POP_TOP_LOAD_CONST_INLINE, (ptr/4, pop -- value)) {
-        value = PyJitRef_Borrow(sym_new_const(ctx, ptr));
+        value = sym_new_const(ctx, ptr);
     }
 
     op(_POP_TOP_LOAD_CONST_INLINE_BORROW, (ptr/4, pop -- value)) {
@@ -570,16 +570,11 @@ dummy_func(void) {
         }
     }
 
-    op(_COPY, (bottom, unused[oparg-1] -- bottom, unused[oparg-1], top)) {
-        assert(oparg > 0);
-        top = bottom;
-    }
-
     op(_POP_TOP, (value -- )) {
         PyTypeObject *typ = sym_get_type(value);
-        PyObject *const_val = sym_get_const(ctx, value);
         if (PyJitRef_IsBorrowed(value) ||
-            (const_val != NULL && _Py_IsImmortal(const_val))) {
+            sym_is_immortal(PyJitRef_Unwrap(value)) ||
+            sym_is_null(value)) {
             REPLACE_OP(this_instr, _POP_TOP_NOP, 0, 0);
         }
         else if (typ == &PyLong_Type) {
@@ -591,9 +586,11 @@ dummy_func(void) {
         else if (typ == &PyUnicode_Type) {
             REPLACE_OP(this_instr, _POP_TOP_UNICODE, 0, 0);
         }
-        else if (typ == &PyBool_Type) {
-            REPLACE_OP(this_instr, _POP_TOP_NOP, 0, 0);
-        }
+    }
+
+    op(_COPY, (bottom, unused[oparg-1] -- bottom, unused[oparg-1], top)) {
+        assert(oparg > 0);
+        top = bottom;
     }
 
     op(_SWAP, (bottom, unused[oparg-2], top -- bottom, unused[oparg-2], top)) {
@@ -833,6 +830,8 @@ dummy_func(void) {
     }
 
     op(_RETURN_VALUE, (retval -- res)) {
+        // We wrap and unwrap the value to mimic PyStackRef_MakeHeapSafe
+        // in bytecodes.c
         JitOptRef temp = PyJitRef_Wrap(PyJitRef_Unwrap(retval));
         DEAD(retval);
         SAVE_STACK();

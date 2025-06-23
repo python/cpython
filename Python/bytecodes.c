@@ -344,7 +344,6 @@ dummy_func(
             PyStackRef_XCLOSE(value);
         }
 
-
         op(_POP_TOP_NOP, (value --)) {
             assert(PyStackRef_IsNull(value) || (!PyStackRef_RefcountOnObject(value)) ||
                 _Py_IsImmortal((PyStackRef_AsPyObjectBorrow(value))));

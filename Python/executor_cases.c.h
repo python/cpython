@@ -542,10 +542,8 @@
         case _POP_TOP_NOP: {
             _PyStackRef value;
             value = stack_pointer[-1];
-            _PyFrame_SetStackPointer(frame, stack_pointer);
             assert(PyStackRef_IsNull(value) || (!PyStackRef_RefcountOnObject(value)) ||
                    _Py_IsImmortal((PyStackRef_AsPyObjectBorrow(value))));
-            stack_pointer = _PyFrame_GetStackPointer(frame);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;
