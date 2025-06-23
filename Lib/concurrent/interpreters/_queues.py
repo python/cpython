@@ -1,6 +1,5 @@
 """Cross-interpreter Queues High Level Module."""
 
-import pickle
 import queue
 import time
 import weakref

@@ -14,7 +14,7 @@ from asyncio import wait_for
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from glob import glob
-from os.path import basename, relpath
+from os.path import abspath, basename, relpath
 from pathlib import Path
 from subprocess import CalledProcessError
 from tempfile import TemporaryDirectory
@@ -22,9 +22,13 @@ from tempfile import TemporaryDirectory
 
 SCRIPT_NAME = Path(__file__).name
 ANDROID_DIR = Path(__file__).resolve().parent
-CHECKOUT = ANDROID_DIR.parent
+PYTHON_DIR = ANDROID_DIR.parent
+in_source_tree = (
+    ANDROID_DIR.name == "Android" and (PYTHON_DIR / "pyconfig.h.in").exists()
+)
+
 TESTBED_DIR = ANDROID_DIR / "testbed"
-CROSS_BUILD_DIR = CHECKOUT / "cross-build"
+CROSS_BUILD_DIR = PYTHON_DIR / "cross-build"
 
 HOSTS = ["aarch64-linux-android", "x86_64-linux-android"]
 APP_ID = "org.python.testbed"
@@ -76,37 +80,66 @@ def run(command, *, host=None, env=None, log=True, **kwargs):
     kwargs.setdefault("check", True)
     if env is None:
         env = os.environ.copy()
-    original_env = env.copy()
 
     if host:
-        env_script = ANDROID_DIR / "android-env.sh"
-        env_output = subprocess.run(
-            f"set -eu; "
-            f"HOST={host}; "
-            f"PREFIX={subdir(host)}/prefix; "
-            f". {env_script}; "
-            f"export",
-            check=True, shell=True, text=True, stdout=subprocess.PIPE
-        ).stdout
-
-        for line in env_output.splitlines():
-            # We don't require every line to match, as there may be some other
-            # output from installing the NDK.
-            if match := re.search(
-                "^(declare -x |export )?(\\w+)=['\"]?(.*?)['\"]?$", line
-            ):
-                key, value = match[2], match[3]
-                if env.get(key) != value:
-                    print(line)
-                    env[key] = value
-
-        if env == original_env:
-            raise ValueError(f"Found no variables in {env_script.name} output:\n"
-                             + env_output)
+        host_env = android_env(host)
+        print_env(host_env)
+        env.update(host_env)
 
     if log:
-        print(">", " ".join(map(str, command)))
+        print(">", join_command(command))
     return subprocess.run(command, env=env, **kwargs)
+
+
+# Format a command so it can be copied into a shell. Like shlex.join, but also
+# accepts arguments which are Paths, or a single string/Path outside of a list.
+def join_command(args):
+    if isinstance(args, (str, Path)):
+        return str(args)
+    else:
+        return shlex.join(map(str, args))
+
+
+# Format the environment so it can be pasted into a shell.
+def print_env(env):
+    for key, value in sorted(env.items()):
+        print(f"export {key}={shlex.quote(value)}")
+
+
+def android_env(host):
+    if host:
+        prefix = subdir(host) / "prefix"
+    else:
+        prefix = ANDROID_DIR / "prefix"
+        sysconfig_files = prefix.glob("lib/python*/_sysconfigdata__android_*.py")
+        sysconfig_filename = next(sysconfig_files).name
+        host = re.fullmatch(r"_sysconfigdata__android_(.+).py", sysconfig_filename)[1]
+
+    env_script = ANDROID_DIR / "android-env.sh"
+    env_output = subprocess.run(
+        f"set -eu; "
+        f"export HOST={host}; "
+        f"PREFIX={prefix}; "
+        f". {env_script}; "
+        f"export",
+        check=True, shell=True, capture_output=True, encoding='utf-8',
+    ).stdout
+
+    env = {}
+    for line in env_output.splitlines():
+        # We don't require every line to match, as there may be some other
+        # output from installing the NDK.
+        if match := re.search(
+            "^(declare -x |export )?(\\w+)=['\"]?(.*?)['\"]?$", line
+        ):
+            key, value = match[2], match[3]
+            if os.environ.get(key) != value:
+                env[key] = value
+
+    if not env:
+        raise ValueError(f"Found no variables in {env_script.name} output:\n"
+                         + env_output)
+    return env
 
 
 def build_python_path():
@@ -127,7 +160,7 @@ def configure_build_python(context):
         clean("build")
     os.chdir(subdir("build", create=True))
 
-    command = [relpath(CHECKOUT / "configure")]
+    command = [relpath(PYTHON_DIR / "configure")]
     if context.args:
         command.extend(context.args)
     run(command)
@@ -139,12 +172,13 @@ def make_build_python(context):
 
 
 def unpack_deps(host, prefix_dir):
+    os.chdir(prefix_dir)
     deps_url = "https://github.com/beeware/cpython-android-source-deps/releases/download"
-    for name_ver in ["bzip2-1.0.8-2", "libffi-3.4.4-3", "openssl-3.0.15-4",
+    for name_ver in ["bzip2-1.0.8-3", "libffi-3.4.4-3", "openssl-3.0.15-4",
                      "sqlite-3.49.1-0", "xz-5.4.6-1"]:
         filename = f"{name_ver}-{host}.tar.gz"
         download(f"{deps_url}/{name_ver}/{filename}")
-        shutil.unpack_archive(filename, prefix_dir)
+        shutil.unpack_archive(filename)
         os.remove(filename)
 
 
@@ -167,7 +201,7 @@ def configure_host_python(context):
     os.chdir(host_dir)
     command = [
         # Basic cross-compiling configuration
-        relpath(CHECKOUT / "configure"),
+        relpath(PYTHON_DIR / "configure"),
         f"--host={context.host}",
         f"--build={sysconfig.get_config_var('BUILD_GNU_TYPE')}",
         f"--with-build-python={build_python_path()}",
@@ -196,9 +230,12 @@ def make_host_python(context):
     for pattern in ("include/python*", "lib/libpython*", "lib/python*"):
         delete_glob(f"{prefix_dir}/{pattern}")
 
+    # The Android environment variables were already captured in the Makefile by
+    # `configure`, and passing them again when running `make` may cause some
+    # flags to be duplicated. So we don't use the `host` argument here.
     os.chdir(host_dir)
-    run(["make", "-j", str(os.cpu_count())], host=context.host)
-    run(["make", "install", f"prefix={prefix_dir}"], host=context.host)
+    run(["make", "-j", str(os.cpu_count())])
+    run(["make", "install", f"prefix={prefix_dir}"])
 
 
 def build_all(context):
@@ -228,7 +265,12 @@ def setup_sdk():
     if not all((android_home / "licenses" / path).exists() for path in [
         "android-sdk-arm-dbt-license", "android-sdk-license"
     ]):
-        run([sdkmanager, "--licenses"], text=True, input="y\n" * 100)
+        run(
+            [sdkmanager, "--licenses"],
+            text=True,
+            capture_output=True,
+            input="y\n" * 100,
+        )
 
     # Gradle may install this automatically, but we can't rely on that because
     # we need to run adb within the logcat task.
@@ -474,24 +516,49 @@ async def gradle_task(context):
         task_prefix = "connected"
         env["ANDROID_SERIAL"] = context.connected
 
+    hidden_output = []
+
+    def log(line):
+        # Gradle may take several minutes to install SDK packages, so it's worth
+        # showing those messages even in non-verbose mode.
+        if context.verbose or line.startswith('Preparing "Install'):
+            sys.stdout.write(line)
+        else:
+            hidden_output.append(line)
+
+    if context.command:
+        mode = "-c"
+        module = context.command
+    else:
+        mode = "-m"
+        module = context.module or "test"
+
     args = [
         gradlew, "--console", "plain", f"{task_prefix}DebugAndroidTest",
-        "-Pandroid.testInstrumentationRunnerArguments.pythonArgs="
-        + shlex.join(context.args),
+    ] + [
+        # Build-time properties
+        f"-Ppython.{name}={value}"
+        for name, value in [
+            ("sitePackages", context.site_packages), ("cwd", context.cwd)
+        ] if value
+    ] + [
+        # Runtime properties
+        f"-Pandroid.testInstrumentationRunnerArguments.python{name}={value}"
+        for name, value in [
+            ("Mode", mode), ("Module", module), ("Args", join_command(context.args))
+        ] if value
     ]
-    hidden_output = []
+    if context.verbose >= 2:
+        args.append("--info")
+    log("> " + join_command(args))
+
     try:
         async with async_process(
             *args, cwd=TESTBED_DIR, env=env,
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
         ) as process:
             while line := (await process.stdout.readline()).decode(*DECODE_ARGS):
-                # Gradle may take several minutes to install SDK packages, so
-                # it's worth showing those messages even in non-verbose mode.
-                if context.verbose or line.startswith('Preparing "Install'):
-                    sys.stdout.write(line)
-                else:
-                    hidden_output.append(line)
+                log(line)
 
             status = await wait_for(process.wait(), timeout=1)
             if status == 0:
@@ -604,6 +671,10 @@ def package(context):
         print(f"Wrote {package_path}")
 
 
+def env(context):
+    print_env(android_env(getattr(context, "host", None)))
+
+
 # Handle SIGTERM the same way as SIGINT. This ensures that if we're terminated
 # by the buildbot worker, we'll make an attempt to clean up our subprocesses.
 def install_signal_handler():
@@ -615,36 +686,41 @@ def install_signal_handler():
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    subcommands = parser.add_subparsers(dest="subcommand")
+    subcommands = parser.add_subparsers(dest="subcommand", required=True)
 
     # Subcommands
-    build = subcommands.add_parser("build", help="Build everything")
-    configure_build = subcommands.add_parser("configure-build",
-                                             help="Run `configure` for the "
-                                             "build Python")
-    make_build = subcommands.add_parser("make-build",
-                                        help="Run `make` for the build Python")
-    configure_host = subcommands.add_parser("configure-host",
-                                            help="Run `configure` for Android")
-    make_host = subcommands.add_parser("make-host",
-                                       help="Run `make` for Android")
+    build = subcommands.add_parser(
+        "build", help="Run configure-build, make-build, configure-host and "
+        "make-host")
+    configure_build = subcommands.add_parser(
+        "configure-build", help="Run `configure` for the build Python")
     subcommands.add_parser(
-        "clean", help="Delete all build and prefix directories")
-    subcommands.add_parser(
-        "build-testbed", help="Build the testbed app")
-    test = subcommands.add_parser(
-        "test", help="Run the test suite")
+        "make-build", help="Run `make` for the build Python")
+    configure_host = subcommands.add_parser(
+        "configure-host", help="Run `configure` for Android")
+    make_host = subcommands.add_parser(
+        "make-host", help="Run `make` for Android")
+
+    subcommands.add_parser("clean", help="Delete all build directories")
+    subcommands.add_parser("build-testbed", help="Build the testbed app")
+    test = subcommands.add_parser("test", help="Run the testbed app")
     package = subcommands.add_parser("package", help="Make a release package")
+    env = subcommands.add_parser("env", help="Print environment variables")
 
     # Common arguments
     for subcommand in build, configure_build, configure_host:
         subcommand.add_argument(
             "--clean", action="store_true", default=False, dest="clean",
-            help="Delete the relevant build and prefix directories first")
-    for subcommand in [build, configure_host, make_host, package]:
+            help="Delete the relevant build directories first")
+
+    host_commands = [build, configure_host, make_host, package]
+    if in_source_tree:
+        host_commands.append(env)
+    for subcommand in host_commands:
         subcommand.add_argument(
             "host", metavar="HOST", choices=HOSTS,
             help="Host triplet: choices=[%(choices)s]")
+
     for subcommand in build, configure_build, configure_host:
         subcommand.add_argument("args", nargs="*",
                                 help="Extra arguments to pass to `configure`")
@@ -654,6 +730,7 @@ def parse_args():
         "-v", "--verbose", action="count", default=0,
         help="Show Gradle output, and non-Python logcat messages. "
         "Use twice to include high-volume messages which are rarely useful.")
+
     device_group = test.add_mutually_exclusive_group(required=True)
     device_group.add_argument(
         "--connected", metavar="SERIAL", help="Run on a connected device. "
@@ -661,8 +738,24 @@ def parse_args():
     device_group.add_argument(
         "--managed", metavar="NAME", help="Run on a Gradle-managed device. "
         "These are defined in `managedDevices` in testbed/app/build.gradle.kts.")
+
     test.add_argument(
-        "args", nargs="*", help=f"Arguments for `python -m test`. "
+        "--site-packages", metavar="DIR", type=abspath,
+        help="Directory to copy as the app's site-packages.")
+    test.add_argument(
+        "--cwd", metavar="DIR", type=abspath,
+        help="Directory to copy as the app's working directory.")
+
+    mode_group = test.add_mutually_exclusive_group()
+    mode_group.add_argument(
+        "-c", dest="command", help="Execute the given Python code.")
+    mode_group.add_argument(
+        "-m", dest="module", help="Execute the module with the given name.")
+    test.epilog = (
+        "If neither -c nor -m are passed, the default is '-m test', which will "
+        "run Python's own test suite.")
+    test.add_argument(
+        "args", nargs="*", help=f"Arguments to add to sys.argv. "
         f"Separate them from {SCRIPT_NAME}'s own arguments with `--`.")
 
     return parser.parse_args()
@@ -688,6 +781,7 @@ def main():
         "build-testbed": build_testbed,
         "test": run_testbed,
         "package": package,
+        "env": env,
     }
 
     try:
@@ -708,14 +802,9 @@ def print_called_process_error(e):
             if not content.endswith("\n"):
                 stream.write("\n")
 
-    # Format the command so it can be copied into a shell. shlex uses single
-    # quotes, so we surround the whole command with double quotes.
-    args_joined = (
-        e.cmd if isinstance(e.cmd, str)
-        else " ".join(shlex.quote(str(arg)) for arg in e.cmd)
-    )
+    # shlex uses single quotes, so we surround the command with double quotes.
     print(
-        f'Command "{args_joined}" returned exit status {e.returncode}'
+        f'Command "{join_command(e.cmd)}" returned exit status {e.returncode}'
     )
 
 

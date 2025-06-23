@@ -1,0 +1,4 @@
+Fixed :mod:`asyncio` debugging tools to properly display internal coroutine
+call stacks alongside external task dependencies. The ``python -m asyncio
+ps`` and ``python -m asyncio pstree`` commands now show complete execution
+context. Patch by Pablo Galindo.

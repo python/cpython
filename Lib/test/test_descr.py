@@ -4114,6 +4114,34 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         else:
             self.fail("shouldn't be able to create inheritance cycles")
 
+    def test_assign_bases_many_subclasses(self):
+        # This is intended to check that typeobject.c:queue_slot_update() can
+        # handle updating many subclasses when a slot method is re-assigned.
+        class A:
+            x = 'hello'
+            def __call__(self):
+                return 123
+            def __getitem__(self, index):
+                return None
+
+        class X:
+            x = 'bye'
+
+        class B(A):
+            pass
+
+        subclasses = []
+        for i in range(1000):
+            sc = type(f'Sub{i}', (B,), {})
+            subclasses.append(sc)
+
+        self.assertEqual(subclasses[0]()(), 123)
+        self.assertEqual(subclasses[0]().x, 'hello')
+        B.__bases__ = (X,)
+        with self.assertRaises(TypeError):
+            subclasses[0]()()
+        self.assertEqual(subclasses[0]().x, 'bye')
+
     def test_builtin_bases(self):
         # Make sure all the builtin types can have their base queried without
         # segfaulting. See issue #5787.

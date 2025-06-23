@@ -119,6 +119,9 @@ _PyMutex_LockTimed(PyMutex *m, PyTime_t timeout, _PyLockFlags flags)
                 return PY_LOCK_INTR;
             }
         }
+        else if (ret == Py_PARK_INTR && (flags & _PY_FAIL_IF_INTERRUPTED)) {
+            return PY_LOCK_INTR;
+        }
         else if (ret == Py_PARK_TIMEOUT) {
             assert(timeout >= 0);
             return PY_LOCK_FAILURE;
