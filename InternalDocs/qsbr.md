@@ -26,7 +26,7 @@ for threads to report this state.
 While CPython's memory management is dominated by reference counting and a
 tracing garbage collector, these mechanisms are not suitable for all data
 structures. For example, the backing array of a list object is not individually
-reference-counted but may have a shorter lifetime than the PyListObject that
+reference-counted but may have a shorter lifetime than the `PyListObject` that
 contains it. We could delay reclamation until the next GC run, but we want
 reclamation to be prompt and to run the GC less frequently in the free-threaded
 build, as it requires pausing all threads.
@@ -39,7 +39,7 @@ mechanism to determine when it is safe to free the list's old backing array.
 
 Specific use cases for QSBR include:
 
-* Dictionary keys (PyDictKeysObject) and list arrays (`_PyListArray`): When a
+* Dictionary keys (`PyDictKeysObject`) and list arrays (`_PyListArray`): When a
 dictionary or list that may be shared between threads is resized, we use QSBR
 to delay freeing the old keys or array until it's safe. For dicts and lists
 that are not shared, their storage can be freed immediately upon resize.
@@ -58,12 +58,13 @@ page or return its memory to the OS.
 
 ### Core Implementation
 
-The proposal to add QSBR to Python is contained in Github issue 115103 [^1].
+The proposal to add QSBR to Python is contained in [Github issue 115103]
+(https://github.com/python/cpython/issues/115103).
 Many details of that proposal have been copied here, so they can be kept
 up-to-date with the actual implementation.
 
 Python's QSBR implementation is based on FreeBSD's "Global Unbounded
-Sequences." [2, 3, 4].  It relies on a few key counters:
+Sequences." [^1, ^2, ^3].  It relies on a few key counters:
 
 * Global Write Sequence (`wr_seq`): A per-interpreter counter, `wr_seq`, is started
 at 1 and incremented by 2 each time it is advanced. This ensures its value is
@@ -92,7 +93,7 @@ Periodically, a polling mechanism processes this deferred-free list:
    stored as the global `rd_seq`.
 
 2. For each item on the deferred-free list, if its qsbr_goal is less than or
-   equal to the new `rd_seq`, its memory is freed, and it is removed from the
+   equal to the new `rd_seq`, its memory is freed, and it is removed from the:
    list. Otherwise, it remains on the list for a future attempt.
 
 
@@ -123,7 +124,6 @@ multi-threaded benchmarks reveal performance issues.
 
 ## References
 
-[^1]: https://github.com/python/cpython/issues/115103
-2. https://youtu.be/ZXUIFj4nRjk?t=694
-3. https://people.kernel.org/joelfernandes/gus-vs-rcu
-4. http://bxr.su/FreeBSD/sys/kern/subr_smr.c#44
+[^1]: https://youtu.be/ZXUIFj4nRjk?t=694
+[^2]: https://people.kernel.org/joelfernandes/gus-vs-rcu
+[^3]: http://bxr.su/FreeBSD/sys/kern/subr_smr.c#44
