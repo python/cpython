@@ -4,7 +4,6 @@ import re
 import typing
 
 _RE_NEVER_MATCH = re.compile(r"(?!)")  # Same as saying "not string.startswith('')".
-
 _X86_BRANCHES = {
     "ja": "jna",
     "jae": "jnae",
@@ -51,7 +50,6 @@ class _Block:
 
 @dataclasses.dataclass
 class Optimizer:
-
     path: pathlib.Path
     _: dataclasses.KW_ONLY
     prefix: str = ""
