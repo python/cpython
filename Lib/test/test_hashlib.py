@@ -216,24 +216,6 @@ class HashLibTestCase(unittest.TestCase):
     def is_fips_mode(self):
         return get_fips_mode()
 
-    def match_digest(self, h1, h2, *, shake_size=16):
-        self.assertIs(type(h1), type(h2))
-        self.assertEqual(h1.name, h2.name)
-
-        if h1.name in self.shakes:
-            d1, h1 = h1.digest(shake_size), h1.hexdigest(shake_size)
-            d2, h2 = h2.digest(shake_size), h2.hexdigest(shake_size)
-        else:
-            d1, h1 = h1.digest(), h1.hexdigest()
-            d2, h2 = h2.digest(), h2.hexdigest()
-
-        self.assertIsInstance(d1, bytes)
-        self.assertIsInstance(h1, str)
-        self.assertEqual(d1.hex(), h1)
-
-        self.assertEqual(d1, d2)
-        self.assertEqual(h1, h2)
-
     def test_hash_array(self):
         a = array.array("b", range(10))
         for cons in self.hash_constructors:
@@ -391,11 +373,13 @@ class HashLibTestCase(unittest.TestCase):
 
     def test_copy(self):
         for cons in self.hash_constructors:
-            h1 = cons(usedforsecurity=False)
-            h1.update(os.urandom(16))
+            h1 = cons(os.urandom(16), usedforsecurity=False)
             h2 = h1.copy()
             self.assertIs(type(h1), type(h2))
-            self.match_digest(h1, h2)
+            self.assertEqual(h1.name, h2.name)
+            size = (16,) if h1.name in self.shakes else ()
+            self.assertEqual(h1.digest(*size), h2.digest(*size))
+            self.assertEqual(h1.hexdigest(*size), h2.hexdigest(*size))
 
     def test_hexdigest(self):
         for cons in self.hash_constructors:
