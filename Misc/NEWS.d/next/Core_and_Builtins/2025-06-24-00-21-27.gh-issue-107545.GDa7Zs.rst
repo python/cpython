@@ -1,0 +1,2 @@
+Improve error message when :meth:`~socket.socket.setsockopt` raises an error
+other than a :exc:`TypeError`.
