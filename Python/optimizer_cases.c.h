@@ -100,6 +100,47 @@
         }
 
         case _POP_TOP: {
+            JitOptRef value;
+            value = stack_pointer[-1];
+            PyTypeObject *typ = sym_get_type(value);
+            if (PyJitRef_IsBorrowed(value) ||
+                sym_is_immortal(PyJitRef_Unwrap(value)) ||
+                sym_is_null(value)) {
+                REPLACE_OP(this_instr, _POP_TOP_NOP, 0, 0);
+            }
+            else if (typ == &PyLong_Type) {
+                REPLACE_OP(this_instr, _POP_TOP_INT, 0, 0);
+            }
+            else if (typ == &PyFloat_Type) {
+                REPLACE_OP(this_instr, _POP_TOP_FLOAT, 0, 0);
+            }
+            else if (typ == &PyUnicode_Type) {
+                REPLACE_OP(this_instr, _POP_TOP_UNICODE, 0, 0);
+            }
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _POP_TOP_NOP: {
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _POP_TOP_INT: {
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _POP_TOP_FLOAT: {
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _POP_TOP_UNICODE: {
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;
@@ -784,7 +825,7 @@
             JitOptRef retval;
             JitOptRef res;
             retval = stack_pointer[-1];
-            JitOptRef temp = retval;
+            JitOptRef temp = PyJitRef_Wrap(PyJitRef_Unwrap(retval));
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             ctx->frame->stack_pointer = stack_pointer;
@@ -2660,7 +2701,7 @@
         case _LOAD_CONST_INLINE: {
             JitOptRef value;
             PyObject *ptr = (PyObject *)this_instr->operand0;
-            value = PyJitRef_Borrow(sym_new_const(ctx, ptr));
+            value = sym_new_const(ctx, ptr);
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -2670,7 +2711,7 @@
         case _POP_TOP_LOAD_CONST_INLINE: {
             JitOptRef value;
             PyObject *ptr = (PyObject *)this_instr->operand0;
-            value = PyJitRef_Borrow(sym_new_const(ctx, ptr));
+            value = sym_new_const(ctx, ptr);
             stack_pointer[-1] = value;
             break;
         }
