@@ -115,6 +115,8 @@ extern "C" {
     _Py_atomic_load_ullong_relaxed(&value)
 #define FT_ATOMIC_ADD_SSIZE(value, new_value) \
     (void)_Py_atomic_add_ssize(&value, new_value)
+#define FT_ATOMIC_ADD_UINT64(value, new_value) \
+    (void)_Py_atomic_add_uint64(&value, new_value)
 
 #else
 #define FT_ATOMIC_LOAD_PTR(value) value

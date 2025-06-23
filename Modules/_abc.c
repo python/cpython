@@ -35,21 +35,13 @@ get_abc_state(PyObject *module)
 static inline uint64_t
 get_invalidation_counter(_abcmodule_state *state)
 {
-#ifdef Py_GIL_DISABLED
-    return _Py_atomic_load_uint64(&state->abc_invalidation_counter);
-#else
-    return state->abc_invalidation_counter;
-#endif
+    return FT_ATOMIC_LOAD_UINT64_RELAXED(state->abc_invalidation_counter);
 }
 
 static inline void
 increment_invalidation_counter(_abcmodule_state *state)
 {
-#ifdef Py_GIL_DISABLED
-    _Py_atomic_add_uint64(&state->abc_invalidation_counter, 1);
-#else
-    state->abc_invalidation_counter++;
-#endif
+    FT_ATOMIC_ADD_UINT64(state->abc_invalidation_counter, 1);
 }
 
 /* This object stores internal state for ABCs.
