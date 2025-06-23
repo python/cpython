@@ -1,0 +1,1 @@
+Fixed :exc:`IndexError` in :func:`asyncio.create_connection` that could occur when the Happy Eyeballs algorithm resulted in an empty exceptions list during concurrent connection attempts, particularly in high-load environments with mixed IPv4/IPv6 connectivity.
