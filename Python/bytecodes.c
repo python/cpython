@@ -5361,8 +5361,10 @@ dummy_func(
         tier2 op(_SWAP_CALL_ONE_LOAD_CONST_INLINE_BORROW, (ptr/4, callable, null, arg -- value, a)) {
             PyStackRef_CLOSE(arg);
             (void)null; // Silence compiler warnings about unused variables
+            (void)callable;
             DEAD(null);
-            PyStackRef_CLOSE(callable);
+            DEAD(callable);
+            assert(_Py_IsImmortal(PyStackRef_AsPyObjectBorrow(callable)));
             value = PyStackRef_FromPyObjectBorrow(ptr);
             a = arg;
         }

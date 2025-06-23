@@ -7412,17 +7412,12 @@
             PyStackRef_CLOSE(arg);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             (void)null;
-            stack_pointer += -2;
-            assert(WITHIN_STACK_BOUNDS());
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyStackRef_CLOSE(callable);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
+            (void)callable;
+            assert(_Py_IsImmortal(PyStackRef_AsPyObjectBorrow(callable)));
             value = PyStackRef_FromPyObjectBorrow(ptr);
             a = arg;
-            stack_pointer[0] = value;
-            stack_pointer[1] = a;
-            stack_pointer += 2;
-            assert(WITHIN_STACK_BOUNDS());
+            stack_pointer[-2] = value;
+            stack_pointer[-1] = a;
             break;
         }
 
