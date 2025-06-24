@@ -333,6 +333,47 @@ The :func:`zip` function would do a great job for this use case::
 
 See :ref:`tut-unpacking-arguments` for details on the asterisk in this line.
 
+Unpacking in Lists and List Comprehensions
+------------------------------------------
+
+The section on :ref:`tut-unpacking-arguments` describes the use of ``*`` to
+"unpack" the elements of an iterable object, providing each one seperately as
+an argument to a function.  Unpacking can also be used in other contexts, for
+example, when creating lists.  When specifying elements of a list, prefixing an
+expression by a ``*`` will unpack the result of that expression, adding each of
+its elements to the list we're creating::
+
+   >>> x = [1, 2, 3]
+   >>> [0, *x, 4, 5, 6]
+   [0, 1, 2, 3, 4, 5, 6]
+
+This only works if the expression following the ``*`` evaluates to an iterable
+object; trying to unpack a non-iterable object will raise an exception::
+
+   >>> x = 1
+   >>> [0, *x, 2, 3, 4]
+   Traceback (most recent call last):
+     File "<python-input-1>", line 1, in <module>
+       [0, *x, 2, 3, 4]
+   TypeError: Value after * must be an iterable, not int
+
+Unpacking can also be used in list comprehensions, as a way to build a new list
+representing the concatenation of an arbitrary number of iterables::
+
+   >>> x = [[1, 2, 3], [4, 5, 6], [], [7], [8, 9]]
+   >>> [*element for element in x]
+   [1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+Note that the effect is that each element from ``x`` is unpacked.  This works
+for arbitrary iterable objects, not just lists::
+
+   >>> x = [[1, 2, 3], 'cat', {'spam': 'eggs'}]
+   >>> [*element for element in x]
+   [1, 2, 3, 'c', 'a', 't', 'spam']
+
+But if the objects in ``x`` are not iterable, this expression would again raise
+an exception.
+
 .. _tut-del:
 
 The :keyword:`!del` statement
@@ -394,7 +435,10 @@ A tuple consists of a number of values separated by commas, for instance::
    >>> v = ([1, 2, 3], [3, 2, 1])
    >>> v
    ([1, 2, 3], [3, 2, 1])
-
+   >>> # they support unpacking just like lists:
+   >>> x = [1,2,3]
+   >>> 0, *x, 4
+   (0, 1, 2, 3, 4)
 
 As you see, on output tuples are always enclosed in parentheses, so that nested
 tuples are interpreted correctly; they may be input with or without surrounding
@@ -480,11 +524,15 @@ Here is a brief demonstration::
    {'r', 'd', 'b', 'm', 'z', 'l'}
 
 Similarly to :ref:`list comprehensions <tut-listcomps>`, set comprehensions
-are also supported::
+are also supported, including comprehensions with unpacking::
 
    >>> a = {x for x in 'abracadabra' if x not in 'abc'}
    >>> a
    {'r', 'd'}
+
+   >>> fruits = [{'apple', 'avocado', 'apricot'}, {'banana', 'blueberry'}]
+   >>> {*fruit for fruit in fruits}
+   {'blueberry', 'banana', 'avocado', 'apple', 'apricot'}
 
 
 .. _tut-dictionaries:
@@ -562,6 +610,18 @@ arbitrary key and value expressions::
 
    >>> {x: x**2 for x in (2, 4, 6)}
    {2: 4, 4: 16, 6: 36}
+
+And dictionary unpacking (via ``**``) can be used to merge multiple
+dictionaries::
+
+   >>> odds = {i: i**2 for i in (1, 3, 5)}
+   >>> evens = {i: i**2 for i in (2, 4, 6)}
+   >>> {**odds, **evens}
+   {1: 1, 3: 9, 5: 25, 2: 4, 4: 16, 6: 36}
+
+   >>> all_values = [odds, evens, {0: 0}]
+   >>> {**i for i in all_values}
+   {1: 1, 3: 9, 5: 25, 2: 4, 4: 16, 6: 36, 0: 0}
 
 When the keys are simple strings, it is sometimes easier to specify pairs using
 keyword arguments::
