@@ -167,11 +167,7 @@ static inline void PyUnicode_SET_UTF8_LENGTH(PyObject *op, Py_ssize_t length)
 #define _PyUnicode_HASH(op)                             \
     (_PyASCIIObject_CAST(op)->hash)
 
-static inline Py_hash_t PyUnicode_HASH(PyObject *op)
-{
-    assert(_PyUnicode_CHECK(op));
-    return FT_ATOMIC_LOAD_SSIZE_RELAXED(_PyASCIIObject_CAST(op)->hash);
-}
+#define PyUnicode_HASH PyUnstable_Unicode_GET_CACHED_HASH
 
 static inline void PyUnicode_SET_HASH(PyObject *op, Py_hash_t hash)
 {
