@@ -5933,9 +5933,9 @@ done:
    This returns a strong reference, and might set an exception.
    'error' is set to: -1: error with exception; 0: ok */
 static PyObject *
-find_name_in_mro_new(PyObject *mro_dict, PyObject *name, int *error)
+find_name_in_mro_new(PyTypeObject *type, PyObject *mro_dict, PyObject *name, int *error)
 {
-    ASSERT_TYPE_LOCK_HELD();
+    ASSERT_NEW_TYPE_OR_LOCKED(type);
 
     PyObject *res = NULL;
     if (PyDict_GetItemRef(mro_dict, name, &res) < 0) {
@@ -11539,7 +11539,7 @@ update_one_slot(PyTypeObject *type, pytype_slotdef *p, pytype_slotdef **next_p,
         if (mro_dict == NULL) {
             descr = find_name_in_mro(type, p->name_strobj, &error);
         } else {
-            descr = find_name_in_mro_new(mro_dict, p->name_strobj, &error);
+            descr = find_name_in_mro_new(type, mro_dict, p->name_strobj, &error);
         }
         if (descr == NULL) {
             if (error == -1) {
@@ -11724,7 +11724,7 @@ fixup_slot_dispatchers(PyTypeObject *type)
     // This lock isn't strictly necessary because the type has not been
     // exposed to anyone else yet, but update_ont_slot calls find_name_in_mro
     // where we'd like to assert that the type is locked.
-    BEGIN_TYPE_LOCK();
+    ASSERT_NEW_TYPE_OR_LOCKED(type);
 
     PyObject *mro = Py_NewRef(lookup_tp_mro(type));
 
@@ -11767,7 +11767,6 @@ finish:
     Py_XDECREF(mro_dict);
     Py_DECREF(mro);
 
-    END_TYPE_LOCK();
     return res;
 }
 
