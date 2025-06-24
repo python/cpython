@@ -7,7 +7,7 @@ import typing
 
 # Same as saying "not string.startswith('')":
 _RE_NEVER_MATCH = re.compile(r"(?!)")
-# Dictionary mapping x86 branching instructions to their inverted counterparts.
+# Dictionary mapping branch instructions to their inverted branch instructions.
 # If a branch cannot be inverted, the value is None:
 _X86_BRANCHES = {
     "ja": "jna",
