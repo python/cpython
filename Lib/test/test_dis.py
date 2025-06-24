@@ -1141,28 +1141,25 @@ class DisTests(DisTestBase):
 
         for case_name, annotate_code in test_cases:
             with self.subTest(case=case_name):
-                instructions = list(dis.Bytecode(annotate_code))
-                resume_pos = next(
-                    (
-                        inst.positions
-                        for inst in instructions
-                        if inst.opname == "RESUME"
-                    ),
-                    None,
+                line_starts_iterator = dis.findlinestarts(annotate_code)
+                valid_line_starts = [
+                    item[0]
+                    for item in line_starts_iterator
+                    if item[1] is not None
+                ]  # The first item is not RESUME in class case
+                setup_scope_begin = valid_line_starts[0]
+                setup_scope_end = valid_line_starts[1]
+                setup_annotations_scope_positions = {
+                    instr.positions
+                    for instr in dis.get_instructions(annotate_code)
+                    if setup_scope_begin <= instr.offset < setup_scope_end
+                    and instr.positions
+                }
+                self.assertEqual(
+                    len(setup_annotations_scope_positions),
+                    1,
+                    f"{case_name}: Expected uniform positions, found {len(setup_annotations_scope_positions)}: {setup_annotations_scope_positions}",
                 )
-                for instruction in instructions:
-                    if instruction.opname == "BUILD_MAP":
-                        break
-                    if (
-                        instruction.opname != "RESUME"
-                        and instruction.positions
-                        and instruction.positions.lineno
-                    ):
-                        self.assertEqual(
-                            instruction.positions,
-                            resume_pos,
-                            f"{case_name}: Unexpected position {instruction.positions} in {instruction.opname}, expected {resume_pos}",
-                        )
 
     def test_kw_names(self):
         # Test that value is displayed for keyword argument names:
