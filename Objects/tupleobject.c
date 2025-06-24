@@ -207,7 +207,6 @@ tuple_dealloc(PyObject *self)
     }
 
     PyObject_GC_UnTrack(op);
-    Py_TRASHCAN_BEGIN(op, tuple_dealloc)
 
     Py_ssize_t i = Py_SIZE(op);
     while (--i >= 0) {
@@ -217,8 +216,6 @@ tuple_dealloc(PyObject *self)
     if (!maybe_freelist_push(op)) {
         Py_TYPE(op)->tp_free((PyObject *)op);
     }
-
-    Py_TRASHCAN_END
 }
 
 static PyObject *

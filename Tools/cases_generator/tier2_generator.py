@@ -64,7 +64,7 @@ class Tier2Emitter(Emitter):
         super().__init__(out, labels)
         self._replacers["oparg"] = self.oparg
 
-    def goto_error(self, offset: int, label: str, storage: Storage) -> str:
+    def goto_error(self, offset: int, storage: Storage) -> str:
         # To do: Add jump targets for popping values.
         if offset != 0:
             storage.copy().flush(self.out)
@@ -91,7 +91,7 @@ class Tier2Emitter(Emitter):
         self.emit("}\n")
         return not always_true(first_tkn)
 
-    def exit_if(  # type: ignore[override]
+    def exit_if(
         self,
         tkn: Token,
         tkn_iter: TokenIterator,
