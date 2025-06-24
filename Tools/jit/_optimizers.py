@@ -92,8 +92,8 @@ class Optimizer:
     def __post_init__(self) -> None:
         # Split the code into a linked list of basic blocks. A basic block is an
         # optional label, followed by zero or more non-instruction ("noise")
-        # lines, followed by one or more instruction lines (only the last of
-        # which may be a branch, jump, or return).
+        # lines, followed by zero or more instruction lines (only the last of
+        # which may be a branch, jump, or return):
         text = self._preprocess(self.path.read_text())
         block = self._root
         for line in text.splitlines():
@@ -114,15 +114,15 @@ class Optimizer:
                 block.link = block = _Block()
             block.instructions.append(line)
             if match := self._re_branch.match(line):
-                # A block ending in a branch has a target, and fallthrough:
+                # A block ending in a branch has a target and fallthrough:
                 block.target = self._lookup_label(match["target"])
                 assert block.fallthrough
             elif match := self._re_jump.match(line):
-                # A block ending in a jump has a target, and no fallthrough:
+                # A block ending in a jump has a target and no fallthrough:
                 block.target = self._lookup_label(match["target"])
                 block.fallthrough = False
             elif self._re_return.match(line):
-                # A block ending in a return has no target, and fallthrough:
+                # A block ending in a return has no target and fallthrough:
                 assert not block.target
                 block.fallthrough = False
 
@@ -196,7 +196,8 @@ class Optimizer:
         # After:
         #    jmp FOO
         #    .balign 8
-        #  _JIT_CONTINUE:
+        #    _JIT_CONTINUE:
+        # This lets the assembler encode _JIT_CONTINUE jumps at build time!
         align = _Block()
         align.noise.append(f"\t.balign\t{self._alignment}")
         continuation = self._lookup_label(f"{self.prefix}_JIT_CONTINUE")
