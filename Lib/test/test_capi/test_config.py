@@ -3,7 +3,6 @@ Tests PyConfig_Get() and PyConfig_Set() C API (PEP 741).
 """
 import os
 import sys
-import sysconfig
 import types
 import unittest
 from test import support

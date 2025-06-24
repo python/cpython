@@ -563,7 +563,7 @@ fill_and_set_sslerror(_sslmodulestate *state,
                 goto fail;
             }
         }
-        if (PyUnicodeWriter_WriteUTF8(writer, "] ", 2) < 0) {
+        if (PyUnicodeWriter_WriteASCII(writer, "] ", 2) < 0) {
             goto fail;
         }
     }
@@ -6624,6 +6624,12 @@ sslmodule_init_constants(PyObject *m)
     addbool(m, "HAS_PSK", 0);
 #else
     addbool(m, "HAS_PSK", 1);
+#endif
+
+#ifdef OPENSSL_NO_EXTERNAL_PSK_TLS13
+    addbool(m, "HAS_PSK_TLS13", 0);
+#else
+    addbool(m, "HAS_PSK_TLS13", 1);
 #endif
 
 #ifdef SSL_VERIFY_POST_HANDSHAKE

@@ -434,9 +434,9 @@ class _EnumTests:
             def spam(cls):
                 pass
         #
-        self.assertTrue(hasattr(Season, 'spam'))
+        self.assertHasAttr(Season, 'spam')
         del Season.spam
-        self.assertFalse(hasattr(Season, 'spam'))
+        self.assertNotHasAttr(Season, 'spam')
         #
         with self.assertRaises(AttributeError):
             del Season.SPRING
@@ -2652,12 +2652,12 @@ class TestSpecial(unittest.TestCase):
             OneDay = day_1
             OneWeek = week_1
             OneMonth = month_1
-        self.assertFalse(hasattr(Period, '_ignore_'))
-        self.assertFalse(hasattr(Period, 'Period'))
-        self.assertFalse(hasattr(Period, 'i'))
-        self.assertTrue(isinstance(Period.day_1, timedelta))
-        self.assertTrue(Period.month_1 is Period.day_30)
-        self.assertTrue(Period.week_4 is Period.day_28)
+        self.assertNotHasAttr(Period, '_ignore_')
+        self.assertNotHasAttr(Period, 'Period')
+        self.assertNotHasAttr(Period, 'i')
+        self.assertIsInstance(Period.day_1, timedelta)
+        self.assertIs(Period.month_1, Period.day_30)
+        self.assertIs(Period.week_4, Period.day_28)
 
     def test_nonhash_value(self):
         class AutoNumberInAList(Enum):
@@ -2877,7 +2877,7 @@ class TestSpecial(unittest.TestCase):
         self.assertEqual(str(ReformedColor.BLUE), 'blue')
         self.assertEqual(ReformedColor.RED.behavior(), 'booyah')
         self.assertEqual(ConfusedColor.RED.social(), "what's up?")
-        self.assertTrue(issubclass(ReformedColor, int))
+        self.assertIsSubclass(ReformedColor, int)
 
     def test_multiple_inherited_mixin(self):
         @unique

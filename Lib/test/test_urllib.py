@@ -109,7 +109,7 @@ class urlopen_FileTests(unittest.TestCase):
         finally:
             f.close()
         self.pathname = os_helper.TESTFN
-        self.quoted_pathname = urllib.parse.quote(self.pathname)
+        self.quoted_pathname = urllib.parse.quote(os.fsencode(self.pathname))
         self.returned_obj = urllib.request.urlopen("file:%s" % self.quoted_pathname)
 
     def tearDown(self):
@@ -1569,6 +1569,7 @@ class Pathname_Tests(unittest.TestCase):
                     urllib.request.url2pathname,
                     url, require_scheme=True)
 
+    @unittest.skipIf(support.is_emscripten, "Fixed by https://github.com/emscripten-core/emscripten/pull/24593")
     def test_url2pathname_resolve_host(self):
         fn = urllib.request.url2pathname
         sep = os.path.sep

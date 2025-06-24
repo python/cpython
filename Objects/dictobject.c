@@ -547,13 +547,13 @@ static inline uint8_t
 calculate_log2_keysize(Py_ssize_t minsize)
 {
 #if SIZEOF_LONG == SIZEOF_SIZE_T
-    minsize = (minsize | PyDict_MINSIZE) - 1;
-    return _Py_bit_length(minsize | (PyDict_MINSIZE-1));
+    minsize = Py_MAX(minsize, PyDict_MINSIZE);
+    return _Py_bit_length(minsize - 1);
 #elif defined(_MSC_VER)
-    // On 64bit Windows, sizeof(long) == 4.
-    minsize = (minsize | PyDict_MINSIZE) - 1;
+    // On 64bit Windows, sizeof(long) == 4. We cannot use _Py_bit_length.
+    minsize = Py_MAX(minsize, PyDict_MINSIZE);
     unsigned long msb;
-    _BitScanReverse64(&msb, (uint64_t)minsize);
+    _BitScanReverse64(&msb, (uint64_t)minsize - 1);
     return (uint8_t)(msb + 1);
 #else
     uint8_t log2_size;
@@ -2916,6 +2916,11 @@ clear_lock_held(PyObject *op)
 }
 
 void
+_PyDict_Clear_LockHeld(PyObject *op) {
+    clear_lock_held(op);
+}
+
+void
 PyDict_Clear(PyObject *op)
 {
     Py_BEGIN_CRITICAL_SECTION(op);
@@ -3853,7 +3858,7 @@ dict_dict_merge(PyInterpreterState *interp, PyDictObject *mp, PyDictObject *othe
         }
     }
 
-    Py_ssize_t orig_size = other->ma_keys->dk_nentries;
+    Py_ssize_t orig_size = other->ma_used;
     Py_ssize_t pos = 0;
     Py_hash_t hash;
     PyObject *key, *value;
@@ -3887,7 +3892,7 @@ dict_dict_merge(PyInterpreterState *interp, PyDictObject *mp, PyDictObject *othe
         if (err != 0)
             return -1;
 
-        if (orig_size != other->ma_keys->dk_nentries) {
+        if (orig_size != other->ma_used) {
             PyErr_SetString(PyExc_RuntimeError,
                     "dict mutated during update");
             return -1;

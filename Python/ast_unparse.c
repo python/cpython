@@ -749,6 +749,7 @@ append_templatestr(PyUnicodeWriter *writer, expr_ty e)
             goto error;
         }
     }
+    _PyArena_Free(arena);
 
     return 0;
 
