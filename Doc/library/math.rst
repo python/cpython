@@ -42,6 +42,8 @@ noted otherwise, all return values are floats.
 :func:`fabs(x) <fabs>`                                Absolute value of *x*
 :func:`floor(x)  <floor>`                             Floor of *x*, the largest integer less than or equal to *x*
 :func:`fma(x, y, z) <fma>`                            Fused multiply-add operation: ``(x * y) + z``
+:func:`fmax(x, y) <fmax>`                             Maximum of two floating-point values
+:func:`fmin(x, y) <fmin>`                             Minimum of two floating-point values
 :func:`fmod(x, y) <fmod>`                             Remainder of division ``x / y``
 :func:`modf(x) <modf>`                                Fractional and integer parts of *x*
 :func:`remainder(x, y) <remainder>`                   Remainder of *x* with respect to *y*
@@ -245,6 +247,26 @@ Floating point arithmetic
    and does not raise any exception.
 
    .. versionadded:: 3.13
+
+
+.. function:: fmax(x, y, /)
+
+   Get the larger of two floating-point values, treating NaNs as missing data.
+
+   If *x* and *y* are NaNs of same sign *s*, return ``copysign(nan, s)``.
+   If *x* and *y* are NaNs of different sign, return ``copysign(nan, 1)``.
+
+   .. versionadded:: next
+
+
+.. function:: fmin(x, y, /)
+
+   Get the smaller of two floating-point values, treating NaNs as missing data.
+
+   If *x* and *y* are NaNs of same sign *s*, return ``copysign(nan, s)``.
+   If *x* and *y* are NaNs of different sign, return ``copysign(nan, -1)``.
+
+   .. versionadded:: next
 
 
 .. function:: fmod(x, y)

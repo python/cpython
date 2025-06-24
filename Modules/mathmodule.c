@@ -1214,6 +1214,50 @@ math_floor(PyObject *module, PyObject *number)
     return PyLong_FromDouble(floor(x));
 }
 
+/*[clinic input]
+math.fmax -> double
+
+    x: double
+    y: double
+    /
+
+Returns the larger of two floating-point arguments.
+
+[clinic start generated code]*/
+
+static double
+math_fmax_impl(PyObject *module, double x, double y)
+/*[clinic end generated code: output=00692358d312fee2 input=0dcf618bb27f98c7]*/
+{
+    if (isnan(x) && isnan(y)) {
+        double s = copysign(1, x);
+        return s == copysign(1, y) ? copysign(NAN, s) : NAN;
+    }
+    return fmax(x, y);
+}
+
+/*[clinic input]
+math.fmin -> double
+
+    x: double
+    y: double
+    /
+
+Returns the smaller of two floating-point arguments.
+[clinic start generated code]*/
+
+static double
+math_fmin_impl(PyObject *module, double x, double y)
+/*[clinic end generated code: output=3d5b7826bd292dd9 input=f7b5c91de01d766f]*/
+{
+    if (isnan(x) && isnan(y)) {
+        double s = copysign(1, x);
+        // return ±NAN if both are ±NAN and -NAN otherwise.
+        return copysign(NAN, s == copysign(1, y) ? s : -1);
+    }
+    return fmin(x, y);
+}
+
 FUNC1AD(gamma, m_tgamma,
       "gamma($module, x, /)\n--\n\n"
       "Gamma function at x.",
@@ -4175,7 +4219,9 @@ static PyMethodDef math_methods[] = {
     MATH_FACTORIAL_METHODDEF
     MATH_FLOOR_METHODDEF
     MATH_FMA_METHODDEF
+    MATH_FMAX_METHODDEF
     MATH_FMOD_METHODDEF
+    MATH_FMIN_METHODDEF
     MATH_FREXP_METHODDEF
     MATH_FSUM_METHODDEF
     {"gamma",           math_gamma,     METH_O,         math_gamma_doc},

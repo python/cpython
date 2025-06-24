@@ -84,6 +84,112 @@ PyDoc_STRVAR(math_floor__doc__,
 #define MATH_FLOOR_METHODDEF    \
     {"floor", (PyCFunction)math_floor, METH_O, math_floor__doc__},
 
+PyDoc_STRVAR(math_fmax__doc__,
+"fmax($module, x, y, /)\n"
+"--\n"
+"\n"
+"Returns the larger of two floating-point arguments.");
+
+#define MATH_FMAX_METHODDEF    \
+    {"fmax", _PyCFunction_CAST(math_fmax), METH_FASTCALL, math_fmax__doc__},
+
+static double
+math_fmax_impl(PyObject *module, double x, double y);
+
+static PyObject *
+math_fmax(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    double x;
+    double y;
+    double _return_value;
+
+    if (!_PyArg_CheckPositional("fmax", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (PyFloat_CheckExact(args[0])) {
+        x = PyFloat_AS_DOUBLE(args[0]);
+    }
+    else
+    {
+        x = PyFloat_AsDouble(args[0]);
+        if (x == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    if (PyFloat_CheckExact(args[1])) {
+        y = PyFloat_AS_DOUBLE(args[1]);
+    }
+    else
+    {
+        y = PyFloat_AsDouble(args[1]);
+        if (y == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    _return_value = math_fmax_impl(module, x, y);
+    if ((_return_value == -1.0) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyFloat_FromDouble(_return_value);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(math_fmin__doc__,
+"fmin($module, x, y, /)\n"
+"--\n"
+"\n"
+"Returns the smaller of two floating-point arguments.");
+
+#define MATH_FMIN_METHODDEF    \
+    {"fmin", _PyCFunction_CAST(math_fmin), METH_FASTCALL, math_fmin__doc__},
+
+static double
+math_fmin_impl(PyObject *module, double x, double y);
+
+static PyObject *
+math_fmin(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    double x;
+    double y;
+    double _return_value;
+
+    if (!_PyArg_CheckPositional("fmin", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (PyFloat_CheckExact(args[0])) {
+        x = PyFloat_AS_DOUBLE(args[0]);
+    }
+    else
+    {
+        x = PyFloat_AsDouble(args[0]);
+        if (x == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    if (PyFloat_CheckExact(args[1])) {
+        y = PyFloat_AS_DOUBLE(args[1]);
+    }
+    else
+    {
+        y = PyFloat_AsDouble(args[1]);
+        if (y == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    _return_value = math_fmin_impl(module, x, y);
+    if ((_return_value == -1.0) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyFloat_FromDouble(_return_value);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(math_fsum__doc__,
 "fsum($module, seq, /)\n"
 "--\n"
@@ -1178,4 +1284,4 @@ math_ulp(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=44bba3a0a052a364 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d5c3d9b9b47ad54e input=a9049054013a1b77]*/

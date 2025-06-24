@@ -115,6 +115,9 @@ math
 * Add :func:`math.isnormal` and :func:`math.issubnormal` functions.
   (Contributed by Sergey B Kirpichev in :gh:`132908`.)
 
+* Add :func:`math.fmax` and :func:`math.fmin` functions.
+  (Contributed by Bénédikt Tran in :gh:`135853`.)
+
 
 os.path
 -------

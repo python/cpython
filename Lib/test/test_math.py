@@ -17,6 +17,7 @@ import sys
 
 eps = 1E-05
 NAN = float('nan')
+NNAN = float('-nan')
 INF = float('inf')
 NINF = float('-inf')
 FLOAT_MAX = sys.float_info.max
@@ -35,6 +36,11 @@ else:
 test_dir = os.path.dirname(file) or os.curdir
 math_testcases = os.path.join(test_dir, 'mathdata', 'math_testcases.txt')
 test_file = os.path.join(test_dir, 'mathdata', 'cmath_testcases.txt')
+
+
+def is_signed_nan(x, x0):
+    """Check if x is a NaN with the same sign as x0."""
+    return math.isnan(x) and math.copysign(1, x) == math.copysign(1, x0)
 
 
 def to_ulps(x):
@@ -253,9 +259,10 @@ class MathTests(unittest.TestCase):
         non-finite floats, exact equality is demanded. Also, nan==nan
         in this function.
         """
-        failure = result_check(expected, got, ulp_tol, abs_tol)
-        if failure is not None:
-            self.fail("{}: {}".format(name, failure))
+        with self.subTest(name):
+            failure = result_check(expected, got, ulp_tol, abs_tol)
+            if failure is not None:
+                self.fail(failure)
 
     def testConstants(self):
         # Ref: Abramowitz & Stegun (Dover, 1965)
@@ -622,6 +629,101 @@ class MathTests(unittest.TestCase):
         self.assertEqual(math.fmod(0.0, 3.0), 0.0)
         self.assertEqual(math.fmod(0.0, NINF), 0.0)
         self.assertRaises(ValueError, math.fmod, INF, INF)
+
+    def test_fmax(self):
+        self.assertRaises(TypeError, math.fmax)
+        self.assertRaises(TypeError, math.fmax, 'x', 'y')
+
+        self.assertEqual(math.fmax(0., 0.), 0.)
+        self.assertEqual(math.fmax(0., -0.), 0.)
+        self.assertEqual(math.fmax(-0., 0.), 0.)
+
+        self.assertEqual(math.fmax(1., 0.), 1.)
+        self.assertEqual(math.fmax(0., 1.), 1.)
+        self.assertEqual(math.fmax(1., -0.), 1.)
+        self.assertEqual(math.fmax(-0., 1.), 1.)
+
+        self.assertEqual(math.fmax(-1., 0.), 0.)
+        self.assertEqual(math.fmax(0., -1.), 0.)
+        self.assertEqual(math.fmax(-1., -0.), -0.)
+        self.assertEqual(math.fmax(-0., -1.), -0.)
+
+        for x in [NINF, -1., -0., 0., 1., INF]:
+            self.assertFalse(math.isnan(x))
+
+            with self.subTest("math.fmax(INF, x)", x=x):
+                self.assertEqual(math.fmax(INF, x), INF)
+            with self.subTest("math.fmax(x, INF)", x=x):
+                self.assertEqual(math.fmax(x, INF), INF)
+
+            with self.subTest("math.fmax(NINF, x)", x=x):
+                self.assertEqual(math.fmax(NINF, x), x)
+            with self.subTest("math.fmax(x, NINF)", x=x):
+                self.assertEqual(math.fmax(x, NINF), x)
+
+    @requires_IEEE_754
+    def test_fmax_nans(self):
+        # When exactly one operand is NaN, the other is returned.
+        for x in [NINF, -1., -0., 0., 1., INF]:
+            with self.subTest(x=x):
+                self.assertFalse(math.isnan(math.fmax(NAN, x)))
+                self.assertFalse(math.isnan(math.fmax(x, NAN)))
+                self.assertFalse(math.isnan(math.fmax(NNAN, x)))
+                self.assertFalse(math.isnan(math.fmax(x, NNAN)))
+        # When operands are NaNs with identical sign, return this signed NaN.
+        self.assertTrue(is_signed_nan(math.fmax(NAN, NAN), 1))
+        self.assertTrue(is_signed_nan(math.fmax(NNAN, NNAN), -1))
+        # When operands are NaNs of different signs, return the positive NaN.
+        self.assertTrue(is_signed_nan(math.fmax(NAN, NNAN), 1))
+        self.assertTrue(is_signed_nan(math.fmax(NNAN, NAN), 1))
+
+    def test_fmin(self):
+        self.assertRaises(TypeError, math.fmin)
+        self.assertRaises(TypeError, math.fmin, 'x', 'y')
+
+        self.assertEqual(math.fmin(0., 0.), 0.)
+        self.assertEqual(math.fmin(0., -0.), -0.)
+        self.assertEqual(math.fmin(-0., 0.), -0.)
+
+        self.assertEqual(math.fmin(1., 0.), 0.)
+        self.assertEqual(math.fmin(0., 1.), 0.)
+        self.assertEqual(math.fmin(1., -0.), -0.)
+        self.assertEqual(math.fmin(-0., 1.), -0.)
+
+        self.assertEqual(math.fmin(-1., 0.), -1.)
+        self.assertEqual(math.fmin(0., -1.), -1.)
+        self.assertEqual(math.fmin(-1., -0.), -1.)
+        self.assertEqual(math.fmin(-0., -1.), -1.)
+
+        for x in [NINF, -1., -0., 0., 1., INF]:
+            self.assertFalse(math.isnan(x))
+
+            with self.subTest("math.fmin(INF, x)", x=x):
+                self.assertEqual(math.fmin(INF, x), x)
+            with self.subTest("math.fmin(x, INF)", x=x):
+                self.assertEqual(math.fmin(x, INF), x)
+
+            with self.subTest("math.fmin(NINF, x)", x=x):
+                self.assertEqual(math.fmin(NINF, x), NINF)
+            with self.subTest("math.fmin(x, NINF)", x=x):
+                self.assertEqual(math.fmin(x, NINF), NINF)
+
+    @requires_IEEE_754
+    def test_fmin_nans(self):
+        # When exactly one operand is NaN, the other is returned.
+        for x in [NINF, -1., -0., 0., 1., INF]:
+            with self.subTest(x=x):
+                self.assertFalse(math.isnan(x))
+                self.assertFalse(math.isnan(math.fmin(NAN, x)))
+                self.assertFalse(math.isnan(math.fmin(x, NAN)))
+                self.assertFalse(math.isnan(math.fmin(NNAN, x)))
+                self.assertFalse(math.isnan(math.fmin(x, NNAN)))
+        # When operands are NaNs with identical sign, return this signed NaN.
+        self.assertTrue(is_signed_nan(math.fmin(NAN, NAN), 1))
+        self.assertTrue(is_signed_nan(math.fmin(NNAN, NNAN), -1))
+        # When operands are NaNs of different signs, return the negative NaN.
+        self.assertTrue(is_signed_nan(math.fmin(NAN, NNAN), -1))
+        self.assertTrue(is_signed_nan(math.fmin(NNAN, NAN), -1))
 
     def testFrexp(self):
         self.assertRaises(TypeError, math.frexp)
