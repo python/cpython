@@ -671,7 +671,7 @@ Miscellaneous options
 
    * :samp:`-X tlbc={0,1}` enables (1, the default) or disables (0) thread-local
      bytecode in builds configured with :option:`--disable-gil`.  When disabled,
-     this also disables specialization in the tier 1 interpreter.  See also
+     this also disables the specializing interpreter.  See also
      :envvar:`PYTHON_TLBC`.
 
      .. versionadded:: 3.14
@@ -1312,10 +1312,10 @@ conflict.
 .. envvar:: PYTHON_TLBC
 
    If set to ``1`` enables thread-local bytecode. If set to ``0`` thread-local
-   bytecode (and specialization in the tier 1 interpreter) is disabled. Only
-   applies to builds configured with :option:`--disable-gil`.
+   bytecode and the specializing interpreter are disabled.  Only applies to
+   builds configured with :option:`--disable-gil`.
 
-   See also the :option:`-X tlbc <-X>` command-line option
+   See also the :option:`-X tlbc <-X>` command-line option.
 
    .. versionadded:: 3.14
 
