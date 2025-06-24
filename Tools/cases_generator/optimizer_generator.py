@@ -72,8 +72,8 @@ def validate_uop(override: Uop, uop: Uop) -> None:
 
 def type_name(var: StackItem) -> str:
     if var.is_array():
-        return "JitOptSymbol **"
-    return "JitOptSymbol *"
+        return "JitOptRef *"
+    return "JitOptRef "
 
 
 def declare_variables(uop: Uop, out: CWriter, skip_inputs: bool) -> None:

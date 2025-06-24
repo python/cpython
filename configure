@@ -12979,13 +12979,6 @@ if test "$ac_cv_sizeof_off_t" -gt "$ac_cv_sizeof_long" -a \
 else
   have_largefile_support="no"
 fi
-case $ac_sys_system in #(
-  Emscripten) :
-    have_largefile_support="no"
- ;; #(
-  *) :
-     ;;
-esac
 if test "x$have_largefile_support" = xyes
 then :
 

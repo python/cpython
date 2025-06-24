@@ -2385,6 +2385,10 @@ PyType_GetFlags:PyTypeObject*:type:0:
 PyType_GetName:PyObject*::+1:
 PyType_GetName:PyTypeObject*:type:0:
 
+PyType_GetModuleByDef:PyObject*::0:
+PyType_GetModuleByDef:PyTypeObject*:type:0:
+PyType_GetModuleByDef:PyModuleDef*:def::
+
 PyType_GetQualName:PyObject*::+1:
 PyType_GetQualName:PyTypeObject*:type:0:
 

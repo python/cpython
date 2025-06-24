@@ -2424,7 +2424,7 @@ test_critical_sections(PyObject *module, PyObject *Py_UNUSED(args))
 
 
 // Used by `finalize_thread_hang`.
-#ifdef _POSIX_THREADS
+#if defined(_POSIX_THREADS) && !defined(__wasi__)
 static void finalize_thread_hang_cleanup_callback(void *Py_UNUSED(arg)) {
     // Should not reach here.
     Py_FatalError("pthread thread termination was triggered unexpectedly");

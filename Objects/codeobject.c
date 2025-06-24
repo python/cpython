@@ -1999,7 +1999,6 @@ _PyCode_CheckNoExternalState(PyCodeObject *co, _PyCode_var_counts_t *counts,
                              const char **p_errmsg)
 {
     const char *errmsg = NULL;
-    assert(counts->locals.hidden.total == 0);
     if (counts->numfree > 0) {  // It's a closure.
         errmsg = "closures not supported";
     }
