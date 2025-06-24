@@ -234,8 +234,7 @@ Interpreter objects
 
    .. method:: prepare_main(ns=None, **kwargs)
 
-      Bind "shareable" objects in the interpreter's
-      :mod:`!__main__` module.
+      Bind objects in the interpreter's :mod:`!__main__` module.
 
    .. method:: exec(code, /, dedent=True)
 
@@ -291,9 +290,6 @@ Communicating Between Interpreters
    implements the :class:`queue.Queue` interface.  The underlying queue
    can only be created through :func:`create_queue`.
 
-   Cross-interpreter queues support all the same objects as
-   :meth:`Interpreter.prepare_main`.
-
    .. attribute:: id
 
       (read-only)
@@ -345,6 +341,3 @@ Creating an interpreter and running code in it::
 
     t = interp.call_in_thread(run)
     t.join()
-
-
-.. XXX Explain about object "sharing".
