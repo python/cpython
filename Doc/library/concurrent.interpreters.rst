@@ -28,7 +28,7 @@ Actual concurrency is available separately through
 
 .. seealso::
 
-   :class:`InterpreterPoolExecutor`
+   :class:`~concurrent.futures.InterpreterPoolExecutor`
       combines threads with interpreters in a familiar interface.
 
     .. XXX Add references to the upcoming HOWTO docs in the seealso block.
