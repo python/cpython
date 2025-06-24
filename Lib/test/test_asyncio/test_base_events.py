@@ -3,6 +3,7 @@
 import concurrent.futures
 import errno
 import math
+import os
 import platform
 import socket
 import sys
@@ -22,6 +23,10 @@ from test.support import socket_helper
 import warnings
 
 MOCK_ANY = mock.ANY
+
+
+class CustomError(Exception):
+    pass
 
 
 def tearDownModule():
@@ -1295,6 +1300,31 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         self.assertIsInstance(cm.exception, ExceptionGroup)
         self.assertEqual(len(cm.exception.exceptions), 1)
         self.assertIsInstance(cm.exception.exceptions[0], OSError)
+
+    def test_create_connection_connect_non_os_err_close_err(self):
+        # Test the case when sock_connect() raises non-OSError exception
+        # and sock.close() raises OSError.
+        async def getaddrinfo(*args, **kw):
+            return [(2, 1, 6, '', ('107.6.106.82', 80))]
+
+        def getaddrinfo_task(*args, **kwds):
+            return self.loop.create_task(getaddrinfo(*args, **kwds))
+
+        async def sock_connect(sock, address):
+            # Force sock.close() to raise OSError.
+            os.close(sock.fileno())
+            raise CustomError
+
+        self.loop.getaddrinfo = getaddrinfo_task
+        self.loop.sock_connect = sock_connect
+
+        coro = self.loop.create_connection(MyProto, 'example.com', 80)
+        self.assertRaises(
+            CustomError, self.loop.run_until_complete, coro)
+
+        coro = self.loop.create_connection(MyProto, 'example.com', 80, all_errors=True)
+        self.assertRaises(
+            CustomError, self.loop.run_until_complete, coro)
 
     def test_create_connection_multiple(self):
         async def getaddrinfo(*args, **kw):
