@@ -791,17 +791,19 @@ error:
 /*[clinic input]
 _blake2.blake2b.copy
 
+    cls: defining_class
+
 Return a copy of the hash object.
 [clinic start generated code]*/
 
 static PyObject *
-_blake2_blake2b_copy_impl(Blake2Object *self)
-/*[clinic end generated code: output=622d1c56b91c50d8 input=e383c2d199fd8a2e]*/
+_blake2_blake2b_copy_impl(Blake2Object *self, PyTypeObject *cls)
+/*[clinic end generated code: output=5f8ea31c56c52287 input=f38f3475e9aec98d]*/
 {
     int rc;
     Blake2Object *cpy;
 
-    if ((cpy = new_Blake2Object(Py_TYPE(self))) == NULL) {
+    if ((cpy = new_Blake2Object(cls)) == NULL) {
         return NULL;
     }
 

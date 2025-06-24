@@ -278,7 +278,7 @@ As another example, generating HTML attributes from data:
 
    attributes = {"src": "shrubbery.jpg", "alt": "looks nice"}
    template = t"<img {attributes}>"
-   assert html(template) == '<img src="shrubbery.jpg" alt="looks nice" class="looks-nice">'
+   assert html(template) == '<img src="shrubbery.jpg" alt="looks nice" />'
 
 Compared to using an f-string, the ``html`` function has access to template attributes
 containing the original information: static strings, interpolations, and values

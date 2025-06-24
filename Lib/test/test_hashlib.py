@@ -371,6 +371,16 @@ class HashLibTestCase(unittest.TestCase):
         self.assertIs(constructor, _md5.md5)
         self.assertEqual(sorted(builtin_constructor_cache), ['MD5', 'md5'])
 
+    def test_copy(self):
+        for cons in self.hash_constructors:
+            h1 = cons(os.urandom(16), usedforsecurity=False)
+            h2 = h1.copy()
+            self.assertIs(type(h1), type(h2))
+            self.assertEqual(h1.name, h2.name)
+            size = (16,) if h1.name in self.shakes else ()
+            self.assertEqual(h1.digest(*size), h2.digest(*size))
+            self.assertEqual(h1.hexdigest(*size), h2.hexdigest(*size))
+
     def test_hexdigest(self):
         for cons in self.hash_constructors:
             h = cons(usedforsecurity=False)
