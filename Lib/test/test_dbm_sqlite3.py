@@ -91,28 +91,29 @@ class ReadOnly(_SQLiteDbmTests):
     def test_readonly_iter(self):
         self.assertEqual([k for k in self.db], [b"key1", b"key2"])
 
+class Immutable(unittest.TestCase):
+    def setUp(self):
+        self.filename = os_helper.TESTFN
+
+        db = dbm_sqlite3.open(self.filename, "c")
+        db[b"key"] = b"value"
+        db.close()
+
+        self.db = dbm_sqlite3.open(self.filename, "r")
+
+    def tearDown(self):
+        self.db.close()
+        for suffix in "", "-wal", "-shm":
+            os_helper.unlink(self.filename + suffix)
+
     def test_readonly_open_without_wal_shm(self):
         wal_path = self.filename + "-wal"
         shm_path = self.filename + "-shm"
 
-        for suffix in wal_path, shm_path:
-            os_helper.unlink(suffix)
-
-        try:
-            self.db.close()
-        except Exception:
-            pass
-
-        os.chmod(self.filename, stat.S_IREAD)
-
-        db = dbm_sqlite3.open(self.filename, "r")
-        try:
-            self.assertEqual(db[b"key1"], b"value1")
-            self.assertEqual(db[b"key2"], b"value2")
-        finally:
-            db.close()
-
-        os.chmod(self.filename, stat.S_IWRITE)
+        self.assertFalse(os.path.exists(wal_path))
+        self.assertFalse(os.path.exists(shm_path))
+        
+        self.assertEqual(self.db[b"key"], b"value")
 
 
 class ReadWrite(_SQLiteDbmTests):

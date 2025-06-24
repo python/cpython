@@ -69,7 +69,6 @@ class _Database(MutableMapping):
         except sqlite3.Error as exc:
             raise error(str(exc))
 
-        self._readonly = (flag == "ro")
         # This is an optimization only; it's ok if it fails.
         if flag != "ro":
             with suppress(sqlite3.OperationalError):
