@@ -1639,12 +1639,11 @@ encoder_encode_key_value(PyEncoderObject *s, PyUnicodeWriter *writer, bool *firs
 
 static inline int
 _encoder_iterate_mapping_lock_held(PyEncoderObject *s, PyUnicodeWriter *writer,
-                            PyObject *dct, PyObject *items,
+                            bool *first, PyObject *dct, PyObject *items,
                             Py_ssize_t indent_level, PyObject *indent_cache,
                             PyObject *separator)
 {
     PyObject *key, *value;
-    bool first = true;
     for (Py_ssize_t  i = 0; i < PyList_GET_SIZE(items); i++) {
         PyObject *item = PyList_GET_ITEM(items, i);
 
@@ -1655,7 +1654,7 @@ _encoder_iterate_mapping_lock_held(PyEncoderObject *s, PyUnicodeWriter *writer,
 
         key = PyTuple_GET_ITEM(item, 0);
         value = PyTuple_GET_ITEM(item, 1);
-        if (encoder_encode_key_value(s, writer, &first, dct, key, value,
+        if (encoder_encode_key_value(s, writer, first, dct, key, value,
                                      indent_level, indent_cache,
                                      separator) < 0) {
             return -1;
@@ -1667,14 +1666,13 @@ _encoder_iterate_mapping_lock_held(PyEncoderObject *s, PyUnicodeWriter *writer,
 
 static inline int
 _encoder_iterate_dict_lock_held(PyEncoderObject *s, PyUnicodeWriter *writer,
-                         PyObject *dct, Py_ssize_t indent_level,
+                         bool *first, PyObject *dct, Py_ssize_t indent_level,
                          PyObject *indent_cache, PyObject *separator)
 {
     PyObject *key, *value;
     Py_ssize_t pos = 0;
-    bool first = true;
     while (PyDict_Next(dct, &pos, &key, &value)) {
-        if (encoder_encode_key_value(s, writer, &first, dct, key, value,
+        if (encoder_encode_key_value(s, writer, first, dct, key, value,
                                     indent_level, indent_cache,
                                     separator) < 0) {
             return -1;
@@ -1685,12 +1683,13 @@ _encoder_iterate_dict_lock_held(PyEncoderObject *s, PyUnicodeWriter *writer,
 
 static int
 encoder_listencode_dict(PyEncoderObject *s, PyUnicodeWriter *writer,
-                        PyObject *dct,
+                       PyObject *dct,
                        Py_ssize_t indent_level, PyObject *indent_cache)
 {
     /* Encode Python dict dct a JSON term */
     PyObject *ident = NULL;
     PyObject *items = NULL;
+    bool first = true;
 
     if (PyDict_GET_SIZE(dct) == 0) {
         /* Fast path */
@@ -1733,7 +1732,7 @@ encoder_listencode_dict(PyEncoderObject *s, PyUnicodeWriter *writer,
 
         int result;
         Py_BEGIN_CRITICAL_SECTION_SEQUENCE_FAST(items);
-        result = _encoder_iterate_mapping_lock_held(s, writer, dct,
+        result = _encoder_iterate_mapping_lock_held(s, writer, &first, dct,
                     items, indent_level, indent_cache, separator);
         Py_END_CRITICAL_SECTION_SEQUENCE_FAST();
         Py_CLEAR(items);
@@ -1745,7 +1744,7 @@ encoder_listencode_dict(PyEncoderObject *s, PyUnicodeWriter *writer,
     } else {
         int result;
         Py_BEGIN_CRITICAL_SECTION(dct);
-        result = _encoder_iterate_dict_lock_held(s, writer, dct,
+        result = _encoder_iterate_dict_lock_held(s, writer, &first, dct,
                             indent_level, indent_cache, separator);
         Py_END_CRITICAL_SECTION();
         if (result < 0) {
