@@ -122,18 +122,6 @@ it's safe to do so. This can lead to different values returned from
 :func:`sys.getrefcount` and :c:func:`Py_REFCNT` compared to previous versions
 of Python.  See :ref:`below <whatsnew314-refcount>` for details.
 
-A new flag has been added, :data:`~sys.flags.context_aware_warnings`.  This
-flag defaults to true for the free-threaded build and false for the GIL-enabled
-build. If the flag is true then the :class:`warnings.catch_warnings` context
-manager uses a context variable for warning filters.
-
-A new flag has been added, :data:`~sys.flags.thread_inherit_context`. This
-flag defaults to true for the free-threaded build and false for the GIL-enabled
-build. If the flag is true then threads created with :class:`threading.Thread`
-start with a copy of the :class:`~contextvars.Context()` of the caller of
-:meth:`~threading.Thread.start`.
-
-
 New features
 ============
 
@@ -989,6 +977,23 @@ CPython on Windows, the preprocessor variable ``Py_GIL_DISABLED`` now needs to
 be specified by the build backend, as it will no longer be determined
 automatically by the C compiler. For a running interpreter, the setting that
 was used at compile time can be found using :func:`sysconfig.get_config_var`.
+
+A new flag has been added, :data:`~sys.flags.context_aware_warnings`.  This
+flag defaults to true for the free-threaded build and false for the GIL-enabled
+build. If the flag is true then the :class:`warnings.catch_warnings` context
+manager uses a context variable for warning filters.  This makes the context
+manager behave predicably when used with multiple threads or asynchronous
+tasks.
+
+A new flag has been added, :data:`~sys.flags.thread_inherit_context`. This flag
+defaults to true for the free-threaded build and false for the GIL-enabled
+build. If the flag is true then threads created with :class:`threading.Thread`
+start with a copy of the :class:`~contextvars.Context()` of the caller of
+:meth:`~threading.Thread.start`.  Most significantly, this makes the warning
+filtering context established by :class:`~warnings.catch_warnings` be
+"inherited" by threads (or asyncio tasks) started within that context.  It also
+affects other modules that use context variables, such as the :mod:`decimal`
+context manager.
 
 
 .. _whatsnew314-pyrepl-highlighting:
