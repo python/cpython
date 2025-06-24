@@ -563,12 +563,12 @@ unroll_digits_size_t(PyLongObject *v, Py_ssize_t *iptr)
     digit *digits = v->long_value.ob_digit;
     size_t x = digits[i];
 
-    #if ( (SIZE_MAX >> PyLong_SHIFT) >= ( ( 1 << PyLong_SHIFT) - 1) )
+#if (SIZE_MAX >> PyLong_SHIFT) >= ((1 << PyLong_SHIFT) - 1)
     /* unroll another digit */
     x <<= PyLong_SHIFT;
     --i;
     x |= digits[i];
-    #endif
+#endif
 
     *iptr = i;
     return x;

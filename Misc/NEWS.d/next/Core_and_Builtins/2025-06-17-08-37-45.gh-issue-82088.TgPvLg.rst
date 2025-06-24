@@ -1,4 +1,4 @@
-Improve performance of ``PyLongObject`` conversion methods ``PyLong_AsLongAndOverflow``,
+Improve performance of ``PyLongObject`` conversion functions
 ``PyLong_AsLongAndOverflow()``, ``PyLong_AsSsize_t()``, ``PyLong_AsUnsignedLong()``, ``PyLong_AsSize_t()``,
 ``PyLong_AsUnsignedLongMask()``, ``PyLong_AsUnsignedLongLongMask()``, ``PyLong_AsLongLongAndOverflow()``
 for integers larger than 2**30 up to 30%.
