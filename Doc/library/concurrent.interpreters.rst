@@ -247,7 +247,7 @@ Interpreter objects
 
       (read-only)
 
-      The interpreter's ID.
+      The underlying interpreter's ID.
 
    .. attribute:: whence
 
