@@ -254,10 +254,9 @@ class MathTests(unittest.TestCase):
         non-finite floats, exact equality is demanded. Also, nan==nan
         in this function.
         """
-        with self.subTest(name):
-            failure = result_check(expected, got, ulp_tol, abs_tol)
-            if failure is not None:
-                self.fail(failure)
+        failure = result_check(expected, got, ulp_tol, abs_tol)
+        if failure is not None:
+            self.fail("{}: {}".format(name, failure))
 
     def testConstants(self):
         # Ref: Abramowitz & Stegun (Dover, 1965)
