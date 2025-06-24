@@ -124,7 +124,8 @@ namespace_repr(PyObject *ns)
         if (PyUnicode_Check(key) && PyUnicode_GET_LENGTH(key) > 0) {
             PyObject *value, *item;
 
-            if (PyDict_GetItemRef(d, key, &value) == 1) {
+            int has_key = PyDict_GetItemRef(d, key, &value);
+            if (has_key == 1) {
                 item = PyUnicode_FromFormat("%U=%R", key, value);
                 Py_DECREF(value);
                 if (item == NULL) {
@@ -135,7 +136,7 @@ namespace_repr(PyObject *ns)
                     Py_DECREF(item);
                 }
             }
-            else {
+            else if (has_key < 0) {
                 loop_error = 1;
             }
         }
