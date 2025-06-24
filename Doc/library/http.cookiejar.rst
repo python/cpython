@@ -247,6 +247,20 @@ contained :class:`Cookie` objects.
    Note that the :meth:`save` method won't save session cookies anyway, unless you
    ask otherwise by passing a true *ignore_discard* argument.
 
+
+.. method:: CookieJar.clear_expired_cookies()
+
+   Discard all expired cookies.
+
+   Discards all contained cookies that have a true :attr:`is_expired` attribute
+   (usually because their expiration time have passed)
+
+   You probably don't need to call this method because expired cookies are never
+   sent back to the server (provided you're using :class:`DefaultCookiePolicy`),
+   this method is called by :class:`CookieJar` itself every so often, and the
+   :meth:`save` method won't save expired cookies anyway (unless you ask
+   otherwise by passing a true *ignore_expires* argument).
+
 :class:`FileCookieJar` implements the following additional methods:
 
 
