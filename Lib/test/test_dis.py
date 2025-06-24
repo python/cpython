@@ -1125,7 +1125,7 @@ class DisTests(DisTestBase):
         self.do_disassembly_test(bug46724, dis_bug46724)
 
     def test_annotate_source_locations(self):
-        # Test that __annotate__ code doesn't inherit first AST node positions
+        # See gh-135700
         issue_135700 = "1\nx: int"
         issue_135700_class = "class A:\n    1\n    x: int"
 
@@ -1142,7 +1142,6 @@ class DisTests(DisTestBase):
         for case_name, annotate_code in test_cases:
             with self.subTest(case=case_name):
                 instructions = list(dis.Bytecode(annotate_code))
-                print(instructions)
                 resume_pos = next(
                     (
                         inst.positions
