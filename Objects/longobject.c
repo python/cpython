@@ -499,42 +499,46 @@ PyLong_FromDouble(double dval)
 #define PY_ABS_SSIZE_T_MIN      (0-(size_t)PY_SSIZE_T_MIN)
 
 static inline unsigned long
-unroll_digits_ulong(PyLongObject *v, Py_ssize_t *i)
+unroll_digits_ulong(PyLongObject *v, Py_ssize_t *iptr)
 {
+    Py_ssize_t i = *iptr;
     digit *digits = v->long_value.ob_digit;
-    assert(*i >= 2);
+    assert(i >= 2);
     /* unroll 1 digit */
-    --(*i);
+    --i;
     assert(ULONG_MAX >= ((1UL << PyLong_SHIFT) - 1));
-    unsigned long x = digits[*i];
+    unsigned long x = digits[i];
 
     #if ((ULONG_MAX >> PyLong_SHIFT)) >= ((1UL << PyLong_SHIFT) - 1)
     /* unroll another digit */
     x <<= PyLong_SHIFT;
-    --(*i);
-    x |= digits[*i];
+    --i;
+    x |= digits[i];
     #endif
 
+    *iptr = i;
     return x;
 }
 
 static inline size_t
-unroll_digits_size_t(PyLongObject *v, Py_ssize_t *i)
+unroll_digits_size_t(PyLongObject *v, Py_ssize_t *iptr)
 {
+    Py_ssize_t i = *iptr;
     digit *digits = v->long_value.ob_digit;
-    assert(*i >= 2);
+    assert(i >= 2);
     /* unroll 1 digit */
-    --(*i);
+    --i;
     assert(SIZE_MAX >= ((1UL << PyLong_SHIFT) - 1));
-    size_t x = digits[*i];
+    size_t x = digits[i];
 
     #if ( (SIZE_MAX >> PyLong_SHIFT) >= ( ( 1 << PyLong_SHIFT) - 1) )
     /* unroll another digit */
     x <<= PyLong_SHIFT;
-    --(*i);
-    x |= digits[*i];
+    --i;
+    x |= digits[i];
     #endif
 
+    *iptr = i;
     return x;
 }
 
