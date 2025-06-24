@@ -1,0 +1,1 @@
+Fix sqlite3 CLI keeping part of previous commands when scrolling history.
