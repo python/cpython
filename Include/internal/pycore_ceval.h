@@ -196,25 +196,6 @@ extern void _PyEval_DeactivateOpCache(void);
 
 /* --- _Py_EnterRecursiveCall() ----------------------------------------- */
 
-#if !_Py__has_builtin(__builtin_frame_address) && !defined(_MSC_VER)
-static uintptr_t return_pointer_as_int(char* p) {
-    return (uintptr_t)p;
-}
-#endif
-
-static inline uintptr_t
-_Py_get_machine_stack_pointer(void) {
-#if _Py__has_builtin(__builtin_frame_address)
-    return (uintptr_t)__builtin_frame_address(0);
-#elif defined(_MSC_VER)
-    return (uintptr_t)_AddressOfReturnAddress();
-#else
-    char here;
-    /* Avoid compiler warning about returning stack address */
-    return return_pointer_as_int(&here);
-#endif
-}
-
 static inline int _Py_MakeRecCheck(PyThreadState *tstate)  {
     uintptr_t here_addr = _Py_get_machine_stack_pointer();
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
@@ -249,12 +230,7 @@ PyAPI_FUNC(void) _Py_InitializeRecursionLimits(PyThreadState *tstate);
 static inline int _Py_ReachedRecursionLimit(PyThreadState *tstate)  {
     uintptr_t here_addr = _Py_get_machine_stack_pointer();
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
-    if (here_addr > _tstate->c_stack_soft_limit) {
-        return 0;
-    }
-    if (_tstate->c_stack_hard_limit == 0) {
-        _Py_InitializeRecursionLimits(tstate);
-    }
+    assert(_tstate->c_stack_hard_limit != 0);
     return here_addr <= _tstate->c_stack_soft_limit;
 }
 
@@ -262,6 +238,16 @@ static inline void _Py_LeaveRecursiveCall(void)  {
 }
 
 extern _PyInterpreterFrame* _PyEval_GetFrame(void);
+
+extern PyObject * _PyEval_GetGlobalsFromRunningMain(PyThreadState *);
+extern int _PyEval_EnsureBuiltins(
+    PyThreadState *,
+    PyObject *,
+    PyObject **p_builtins);
+extern int _PyEval_EnsureBuiltinsWithModule(
+    PyThreadState *,
+    PyObject *,
+    PyObject **p_builtins);
 
 PyAPI_FUNC(PyObject *)_Py_MakeCoro(PyFunctionObject *func);
 
@@ -376,6 +362,9 @@ PyAPI_FUNC(_PyStackRef) _PyFloat_FromDouble_ConsumeInputs(_PyStackRef left, _PyS
 #if defined(Py_REMOTE_DEBUG) && defined(Py_SUPPORTS_REMOTE_DEBUG)
 extern int _PyRunRemoteDebugger(PyThreadState *tstate);
 #endif
+
+PyAPI_FUNC(_PyStackRef)
+_PyForIter_VirtualIteratorNext(PyThreadState* tstate, struct _PyInterpreterFrame* frame, _PyStackRef iter, _PyStackRef *index_ptr);
 
 #ifdef __cplusplus
 }

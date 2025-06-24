@@ -3,6 +3,7 @@
   Nick Mathewson
 """
 
+import annotationlib
 import sys
 import os
 import shutil
@@ -11,7 +12,7 @@ import importlib.util
 import unittest
 import textwrap
 
-from test.support import verbose
+from test.support import verbose, EqualToForwardRef
 from test.support.os_helper import create_empty_file
 from reprlib import repr as r # Don't shadow builtin repr
 from reprlib import Repr
@@ -172,13 +173,13 @@ class ReprTests(unittest.TestCase):
         eq(r(i3), ("<ClassWithFailingRepr instance at %#x>"%id(i3)))
 
         s = r(ClassWithFailingRepr)
-        self.assertTrue(s.startswith("<class "))
-        self.assertTrue(s.endswith(">"))
+        self.assertStartsWith(s, "<class ")
+        self.assertEndsWith(s, ">")
         self.assertIn(s.find("..."), [12, 13])
 
     def test_lambda(self):
         r = repr(lambda x: x)
-        self.assertTrue(r.startswith("<function ReprTests.test_lambda.<locals>.<lambda"), r)
+        self.assertStartsWith(r, "<function ReprTests.test_lambda.<locals>.<lambda")
         # XXX anonymous functions?  see func_repr
 
     def test_builtin_function(self):
@@ -186,8 +187,8 @@ class ReprTests(unittest.TestCase):
         # Functions
         eq(repr(hash), '<built-in function hash>')
         # Methods
-        self.assertTrue(repr(''.split).startswith(
-            '<built-in method split of str object at 0x'))
+        self.assertStartsWith(repr(''.split),
+            '<built-in method split of str object at 0x')
 
     def test_range(self):
         eq = self.assertEqual
@@ -729,8 +730,8 @@ class baz:
         importlib.invalidate_caches()
         from areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation import baz
         ibaz = baz.baz()
-        self.assertTrue(repr(ibaz).startswith(
-            "<%s.baz object at 0x" % baz.__name__))
+        self.assertStartsWith(repr(ibaz),
+            "<%s.baz object at 0x" % baz.__name__)
 
     def test_method(self):
         self._check_path_limitations('qux')
@@ -743,13 +744,13 @@ class aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
         from areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation import qux
         # Unbound methods first
         r = repr(qux.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.amethod)
-        self.assertTrue(r.startswith('<function aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.amethod'), r)
+        self.assertStartsWith(r, '<function aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.amethod')
         # Bound method next
         iqux = qux.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa()
         r = repr(iqux.amethod)
-        self.assertTrue(r.startswith(
+        self.assertStartsWith(r,
             '<bound method aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.amethod of <%s.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa object at 0x' \
-            % (qux.__name__,) ), r)
+            % (qux.__name__,) )
 
     @unittest.skip('needs a built-in function with a really long name')
     def test_builtin_function(self):
@@ -828,6 +829,20 @@ class TestRecursiveRepr(unittest.TestCase):
         self.assertEqual(len(type_params), 1)
         self.assertEqual(type_params[0].__name__, 'T')
         self.assertEqual(type_params[0].__bound__, str)
+
+    def test_annotations(self):
+        class My:
+            @recursive_repr()
+            def __repr__(self, default: undefined = ...):
+                return default
+
+        annotations = annotationlib.get_annotations(
+            My.__repr__, format=annotationlib.Format.FORWARDREF
+        )
+        self.assertEqual(
+            annotations,
+            {'default': EqualToForwardRef("undefined", owner=My.__repr__)}
+        )
 
 if __name__ == "__main__":
     unittest.main()

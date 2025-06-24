@@ -1,0 +1,2 @@
+Improve error messages for incorrect types and values of :class:`csv.Dialect`
+attributes.

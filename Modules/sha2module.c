@@ -50,20 +50,14 @@ class SHA512Type "SHA512object *" "&PyType_Type"
 // TODO: Get rid of int digestsize in favor of Hacl state info?
 
 typedef struct {
-    PyObject_HEAD
+    HASHLIB_OBJECT_HEAD
     int digestsize;
-    // Prevents undefined behavior via multiple threads entering the C API.
-    bool use_mutex;
-    PyMutex mutex;
     Hacl_Hash_SHA2_state_t_256 *state;
 } SHA256object;
 
 typedef struct {
-    PyObject_HEAD
+    HASHLIB_OBJECT_HEAD
     int digestsize;
-    // Prevents undefined behavior via multiple threads entering the C API.
-    bool use_mutex;
-    PyMutex mutex;
     Hacl_Hash_SHA2_state_t_512 *state;
 } SHA512object;
 
@@ -272,9 +266,9 @@ SHA256Type_copy_impl(SHA256object *self, PyTypeObject *cls)
         }
     }
 
-    ENTER_HASHLIB(self);
+    HASHLIB_ACQUIRE_LOCK(self);
     rc = SHA256copy(self, newobj);
-    LEAVE_HASHLIB(self);
+    HASHLIB_RELEASE_LOCK(self);
     if (rc < 0) {
         Py_DECREF(newobj);
         return NULL;
@@ -309,9 +303,9 @@ SHA512Type_copy_impl(SHA512object *self, PyTypeObject *cls)
         }
     }
 
-    ENTER_HASHLIB(self);
+    HASHLIB_ACQUIRE_LOCK(self);
     rc = SHA512copy(self, newobj);
-    LEAVE_HASHLIB(self);
+    HASHLIB_RELEASE_LOCK(self);
     if (rc < 0) {
         Py_DECREF(newobj);
         return NULL;
@@ -331,11 +325,11 @@ SHA256Type_digest_impl(SHA256object *self)
 {
     uint8_t digest[SHA256_DIGESTSIZE];
     assert(self->digestsize <= SHA256_DIGESTSIZE);
-    ENTER_HASHLIB(self);
+    HASHLIB_ACQUIRE_LOCK(self);
     // HACL* performs copies under the hood so that self->state remains valid
     // after this call.
     Hacl_Hash_SHA2_digest_256(self->state, digest);
-    LEAVE_HASHLIB(self);
+    HASHLIB_RELEASE_LOCK(self);
     return PyBytes_FromStringAndSize((const char *)digest, self->digestsize);
 }
 
@@ -351,11 +345,11 @@ SHA512Type_digest_impl(SHA512object *self)
 {
     uint8_t digest[SHA512_DIGESTSIZE];
     assert(self->digestsize <= SHA512_DIGESTSIZE);
-    ENTER_HASHLIB(self);
+    HASHLIB_ACQUIRE_LOCK(self);
     // HACL* performs copies under the hood so that self->state remains valid
     // after this call.
     Hacl_Hash_SHA2_digest_512(self->state, digest);
-    LEAVE_HASHLIB(self);
+    HASHLIB_RELEASE_LOCK(self);
     return PyBytes_FromStringAndSize((const char *)digest, self->digestsize);
 }
 
@@ -371,9 +365,9 @@ SHA256Type_hexdigest_impl(SHA256object *self)
 {
     uint8_t digest[SHA256_DIGESTSIZE];
     assert(self->digestsize <= SHA256_DIGESTSIZE);
-    ENTER_HASHLIB(self);
+    HASHLIB_ACQUIRE_LOCK(self);
     Hacl_Hash_SHA2_digest_256(self->state, digest);
-    LEAVE_HASHLIB(self);
+    HASHLIB_RELEASE_LOCK(self);
     return _Py_strhex((const char *)digest, self->digestsize);
 }
 
@@ -389,9 +383,9 @@ SHA512Type_hexdigest_impl(SHA512object *self)
 {
     uint8_t digest[SHA512_DIGESTSIZE];
     assert(self->digestsize <= SHA512_DIGESTSIZE);
-    ENTER_HASHLIB(self);
+    HASHLIB_ACQUIRE_LOCK(self);
     Hacl_Hash_SHA2_digest_512(self->state, digest);
-    LEAVE_HASHLIB(self);
+    HASHLIB_RELEASE_LOCK(self);
     return _Py_strhex((const char *)digest, self->digestsize);
 }
 
@@ -409,22 +403,11 @@ SHA256Type_update_impl(SHA256object *self, PyObject *obj)
 /*[clinic end generated code: output=dc58a580cf8905a5 input=b2d449d5b30f0f5a]*/
 {
     Py_buffer buf;
-
     GET_BUFFER_VIEW_OR_ERROUT(obj, &buf);
-
-    if (!self->use_mutex && buf.len >= HASHLIB_GIL_MINSIZE) {
-        self->use_mutex = true;
-    }
-    if (self->use_mutex) {
-        Py_BEGIN_ALLOW_THREADS
-        PyMutex_Lock(&self->mutex);
-        update_256(self->state, buf.buf, buf.len);
-        PyMutex_Unlock(&self->mutex);
-        Py_END_ALLOW_THREADS
-    } else {
-        update_256(self->state, buf.buf, buf.len);
-    }
-
+    HASHLIB_EXTERNAL_INSTRUCTIONS_LOCKED(
+        self, buf.len,
+        update_256(self->state, buf.buf, buf.len)
+    );
     PyBuffer_Release(&buf);
     Py_RETURN_NONE;
 }
@@ -443,22 +426,11 @@ SHA512Type_update_impl(SHA512object *self, PyObject *obj)
 /*[clinic end generated code: output=9af211766c0b7365 input=ded2b46656566283]*/
 {
     Py_buffer buf;
-
     GET_BUFFER_VIEW_OR_ERROUT(obj, &buf);
-
-    if (!self->use_mutex && buf.len >= HASHLIB_GIL_MINSIZE) {
-        self->use_mutex = true;
-    }
-    if (self->use_mutex) {
-        Py_BEGIN_ALLOW_THREADS
-        PyMutex_Lock(&self->mutex);
-        update_512(self->state, buf.buf, buf.len);
-        PyMutex_Unlock(&self->mutex);
-        Py_END_ALLOW_THREADS
-    } else {
-        update_512(self->state, buf.buf, buf.len);
-    }
-
+    HASHLIB_EXTERNAL_INSTRUCTIONS_LOCKED(
+        self, buf.len,
+        update_512(self->state, buf.buf, buf.len)
+    );
     PyBuffer_Release(&buf);
     Py_RETURN_NONE;
 }
@@ -594,18 +566,24 @@ static PyType_Spec sha512_type_spec = {
 /*[clinic input]
 _sha2.sha256
 
-    string: object(c_default="NULL") = b''
+    data: object(c_default="NULL") = b''
     *
     usedforsecurity: bool = True
+    string as string_obj: object(c_default="NULL") = None
 
 Return a new SHA-256 hash object; optionally initialized with a string.
 [clinic start generated code]*/
 
 static PyObject *
-_sha2_sha256_impl(PyObject *module, PyObject *string, int usedforsecurity)
-/*[clinic end generated code: output=243c9dd289931f87 input=6249da1de607280a]*/
+_sha2_sha256_impl(PyObject *module, PyObject *data, int usedforsecurity,
+                  PyObject *string_obj)
+/*[clinic end generated code: output=49828a7bcd418f45 input=9ce1d70e669abc14]*/
 {
     Py_buffer buf;
+    PyObject *string;
+    if (_Py_hashlib_data_argument(&string, data, string_obj) < 0) {
+        return NULL;
+    }
 
     if (string) {
         GET_BUFFER_VIEW_OR_ERROUT(string, &buf);
@@ -632,16 +610,12 @@ _sha2_sha256_impl(PyObject *module, PyObject *string, int usedforsecurity)
         return PyErr_NoMemory();
     }
     if (string) {
-        if (buf.len >= HASHLIB_GIL_MINSIZE) {
-            /* We do not initialize self->lock here as this is the constructor
-             * where it is not yet possible to have concurrent access. */
-            Py_BEGIN_ALLOW_THREADS
-            update_256(new->state, buf.buf, buf.len);
-            Py_END_ALLOW_THREADS
-        }
-        else {
-            update_256(new->state, buf.buf, buf.len);
-        }
+        /* Do not use self->mutex here as this is the constructor
+         * where it is not yet possible to have concurrent access. */
+        HASHLIB_EXTERNAL_INSTRUCTIONS_UNLOCKED(
+            buf.len,
+            update_256(new->state, buf.buf, buf.len)
+        );
         PyBuffer_Release(&buf);
     }
 
@@ -651,18 +625,25 @@ _sha2_sha256_impl(PyObject *module, PyObject *string, int usedforsecurity)
 /*[clinic input]
 _sha2.sha224
 
-    string: object(c_default="NULL") = b''
+    data: object(c_default="NULL") = b''
     *
     usedforsecurity: bool = True
+    string as string_obj: object(c_default="NULL") = None
 
 Return a new SHA-224 hash object; optionally initialized with a string.
 [clinic start generated code]*/
 
 static PyObject *
-_sha2_sha224_impl(PyObject *module, PyObject *string, int usedforsecurity)
-/*[clinic end generated code: output=68191f232e4a3843 input=c42bcba47fd7d2b7]*/
+_sha2_sha224_impl(PyObject *module, PyObject *data, int usedforsecurity,
+                  PyObject *string_obj)
+/*[clinic end generated code: output=2163cb03b6cf6157 input=612f7682a889bc2a]*/
 {
     Py_buffer buf;
+    PyObject *string;
+    if (_Py_hashlib_data_argument(&string, data, string_obj) < 0) {
+        return NULL;
+    }
+
     if (string) {
         GET_BUFFER_VIEW_OR_ERROUT(string, &buf);
     }
@@ -687,16 +668,12 @@ _sha2_sha224_impl(PyObject *module, PyObject *string, int usedforsecurity)
         return PyErr_NoMemory();
     }
     if (string) {
-        if (buf.len >= HASHLIB_GIL_MINSIZE) {
-            /* We do not initialize self->lock here as this is the constructor
-             * where it is not yet possible to have concurrent access. */
-            Py_BEGIN_ALLOW_THREADS
-            update_256(new->state, buf.buf, buf.len);
-            Py_END_ALLOW_THREADS
-        }
-        else {
-            update_256(new->state, buf.buf, buf.len);
-        }
+        /* Do not use self->mutex here as this is the constructor
+         * where it is not yet possible to have concurrent access. */
+        HASHLIB_EXTERNAL_INSTRUCTIONS_UNLOCKED(
+            buf.len,
+            update_256(new->state, buf.buf, buf.len)
+        );
         PyBuffer_Release(&buf);
     }
 
@@ -706,19 +683,25 @@ _sha2_sha224_impl(PyObject *module, PyObject *string, int usedforsecurity)
 /*[clinic input]
 _sha2.sha512
 
-    string: object(c_default="NULL") = b''
+    data: object(c_default="NULL") = b''
     *
     usedforsecurity: bool = True
+    string as string_obj: object(c_default="NULL") = None
 
 Return a new SHA-512 hash object; optionally initialized with a string.
 [clinic start generated code]*/
 
 static PyObject *
-_sha2_sha512_impl(PyObject *module, PyObject *string, int usedforsecurity)
-/*[clinic end generated code: output=d55c8996eca214d7 input=0576ae2a6ebfad25]*/
+_sha2_sha512_impl(PyObject *module, PyObject *data, int usedforsecurity,
+                  PyObject *string_obj)
+/*[clinic end generated code: output=cc3fcfce001a4538 input=19c9f2c06d59563a]*/
 {
     SHA512object *new;
     Py_buffer buf;
+    PyObject *string;
+    if (_Py_hashlib_data_argument(&string, data, string_obj) < 0) {
+        return NULL;
+    }
 
     sha2_state *state = sha2_get_state(module);
 
@@ -744,16 +727,12 @@ _sha2_sha512_impl(PyObject *module, PyObject *string, int usedforsecurity)
         return PyErr_NoMemory();
     }
     if (string) {
-        if (buf.len >= HASHLIB_GIL_MINSIZE) {
-            /* We do not initialize self->lock here as this is the constructor
-             * where it is not yet possible to have concurrent access. */
-            Py_BEGIN_ALLOW_THREADS
-            update_512(new->state, buf.buf, buf.len);
-            Py_END_ALLOW_THREADS
-        }
-        else {
-            update_512(new->state, buf.buf, buf.len);
-        }
+        /* Do not use self->mutex here as this is the constructor
+         * where it is not yet possible to have concurrent access. */
+        HASHLIB_EXTERNAL_INSTRUCTIONS_UNLOCKED(
+            buf.len,
+            update_512(new->state, buf.buf, buf.len)
+        );
         PyBuffer_Release(&buf);
     }
 
@@ -763,19 +742,25 @@ _sha2_sha512_impl(PyObject *module, PyObject *string, int usedforsecurity)
 /*[clinic input]
 _sha2.sha384
 
-    string: object(c_default="NULL") = b''
+    data: object(c_default="NULL") = b''
     *
     usedforsecurity: bool = True
+    string as string_obj: object(c_default="NULL") = None
 
 Return a new SHA-384 hash object; optionally initialized with a string.
 [clinic start generated code]*/
 
 static PyObject *
-_sha2_sha384_impl(PyObject *module, PyObject *string, int usedforsecurity)
-/*[clinic end generated code: output=b29a0d81d51d1368 input=4e9199d8de0d2f9b]*/
+_sha2_sha384_impl(PyObject *module, PyObject *data, int usedforsecurity,
+                  PyObject *string_obj)
+/*[clinic end generated code: output=b6e3db593b5a0330 input=9fd50c942ad9e0bf]*/
 {
     SHA512object *new;
     Py_buffer buf;
+    PyObject *string;
+    if (_Py_hashlib_data_argument(&string, data, string_obj) < 0) {
+        return NULL;
+    }
 
     sha2_state *state = sha2_get_state(module);
 
@@ -801,16 +786,12 @@ _sha2_sha384_impl(PyObject *module, PyObject *string, int usedforsecurity)
         return PyErr_NoMemory();
     }
     if (string) {
-        if (buf.len >= HASHLIB_GIL_MINSIZE) {
-            /* We do not initialize self->lock here as this is the constructor
-             * where it is not yet possible to have concurrent access. */
-            Py_BEGIN_ALLOW_THREADS
-            update_512(new->state, buf.buf, buf.len);
-            Py_END_ALLOW_THREADS
-        }
-        else {
-            update_512(new->state, buf.buf, buf.len);
-        }
+        /* Do not use self->mutex here as this is the constructor
+         * where it is not yet possible to have concurrent access. */
+        HASHLIB_EXTERNAL_INSTRUCTIONS_UNLOCKED(
+            buf.len,
+            update_512(new->state, buf.buf, buf.len)
+        );
         PyBuffer_Release(&buf);
     }
 

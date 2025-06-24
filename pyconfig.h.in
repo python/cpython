@@ -267,6 +267,10 @@
    */
 #undef HAVE_DECL_TZNAME
 
+/* Define to 1 if you have the declaration of 'UT_NAMESIZE', and to 0 if you
+   don't. */
+#undef HAVE_DECL_UT_NAMESIZE
+
 /* Define to 1 if you have the device macros. */
 #undef HAVE_DEVICE_MACROS
 
@@ -539,6 +543,9 @@
 /* Define to 1 if you have the 'getlogin' function. */
 #undef HAVE_GETLOGIN
 
+/* Define to 1 if you have the 'getlogin_r' function. */
+#undef HAVE_GETLOGIN_R
+
 /* Define to 1 if you have the 'getnameinfo' function. */
 #undef HAVE_GETNAMEINFO
 
@@ -806,6 +813,9 @@
 
 /* Define this if you have the makedev macro. */
 #undef HAVE_MAKEDEV
+
+/* Define if you have the 'MAXLOGNAME' constant. */
+#undef HAVE_MAXLOGNAME
 
 /* Define to 1 if you have the 'mbrtowc' function. */
 #undef HAVE_MBRTOWC
@@ -1575,6 +1585,9 @@
 /* Define to 1 if you have the <utmp.h> header file. */
 #undef HAVE_UTMP_H
 
+/* Define if you have the 'HAVE_UT_NAMESIZE' constant. */
+#undef HAVE_UT_NAMESIZE
+
 /* Define to 1 if you have the 'uuid_create' function. */
 #undef HAVE_UUID_CREATE
 
@@ -1583,6 +1596,9 @@
 
 /* Define if uuid_generate_time_safe() exists. */
 #undef HAVE_UUID_GENERATE_TIME_SAFE
+
+/* Define if uuid_generate_time_safe() is able to deduce a MAC address. */
+#undef HAVE_UUID_GENERATE_TIME_SAFE_STABLE_MAC
 
 /* Define to 1 if you have the <uuid.h> header file. */
 #undef HAVE_UUID_H
@@ -1630,11 +1646,17 @@
 /* Define to 1 if you have the 'writev' function. */
 #undef HAVE_WRITEV
 
+/* Define to 1 if you have the <zdict.h> header file. */
+#undef HAVE_ZDICT_H
+
 /* Define if the zlib library has inflateCopy */
 #undef HAVE_ZLIB_COPY
 
 /* Define to 1 if you have the <zlib.h> header file. */
 #undef HAVE_ZLIB_H
+
+/* Define to 1 if you have the <zstd.h> header file. */
+#undef HAVE_ZSTD_H
 
 /* Define to 1 if you have the '_getpty' function. */
 #undef HAVE__GETPTY
@@ -1723,9 +1745,6 @@
 /* Define hash algorithm for str, bytes and memoryview. SipHash24: 1, FNV: 2,
    SipHash13: 3, externally defined: 0 */
 #undef Py_HASH_ALGORITHM
-
-/* Defined if _Complex C type is available. */
-#undef Py_HAVE_C_COMPLEX
 
 /* Define if year with century should be normalized for strftime. */
 #undef Py_NORMALIZE_CENTURY
