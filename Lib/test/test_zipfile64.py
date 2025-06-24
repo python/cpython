@@ -210,8 +210,9 @@ class TestRepack(unittest.TestCase):
             self.assertLess(peak, self.allowed_memory)
 
     def _test_strip_removed_large_file_with_dd_no_sig(self, f):
-        # Reduce data to 400 MiB for this test, as it's especially slow...
-        self.datacount = 400*1024**2 // len(self.data)
+        # Reduce data scale for this test, as it's especially slow...
+        self.datacount = 30*1024**2 // len(self.data)
+        self.allowed_memory = 200*1024
 
         file = 'file.txt'
         file1 = 'largefile.txt'
