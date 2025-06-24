@@ -1054,16 +1054,14 @@ interp_set___main___attrs(PyObject *self, PyObject *args, PyObject *kwargs)
     }
 
     // Check the updates.
-    if (updates != Py_None) {
-        Py_ssize_t size = PyDict_Size(updates);
-        if (size < 0) {
-            return NULL;
-        }
-        if (size == 0) {
-            PyErr_SetString(PyExc_ValueError,
-                            "arg 2 must be a non-empty dict");
-            return NULL;
-        }
+    Py_ssize_t size = PyDict_Size(updates);
+    if (size < 0) {
+        return NULL;
+    }
+    if (size == 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "arg 2 must be a non-empty dict");
+        return NULL;
     }
 
     _PyXI_session *session = _PyXI_NewSession();

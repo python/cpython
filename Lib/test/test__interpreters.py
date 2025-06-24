@@ -490,6 +490,17 @@ class CommonTests(TestBase):
         with self.assertRaisesRegex(TypeError, msg):
             _interpreters.set___main___attrs(self.id, 1)
 
+    def test_invalid_shared_none(self):
+        msg = r'must be dict, not None'
+        with self.assertRaisesRegex(TypeError, msg):
+            _interpreters.exec(self.id, 'a', shared=None)
+        with self.assertRaisesRegex(TypeError, msg):
+            _interpreters.run_string(self.id, 'a', shared=None)
+        with self.assertRaisesRegex(TypeError, msg):
+            _interpreters.run_func(self.id, lambda: None, shared=None)
+        with self.assertRaisesRegex(TypeError, msg):
+            _interpreters.set___main___attrs(self.id, None)
+
     def test_invalid_shared_encoding(self):
         # See https://github.com/python/cpython/issues/127196
         bad_shared = {"\uD82A": 0}
