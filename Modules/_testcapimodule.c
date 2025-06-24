@@ -2419,6 +2419,13 @@ test_critical_sections(PyObject *module, PyObject *Py_UNUSED(args))
     Py_BEGIN_CRITICAL_SECTION2(module, module);
     Py_END_CRITICAL_SECTION2();
 
+    PyMutex mut = {0};
+    Py_BEGIN_CRITICAL_SECTION_MUTEX(&mut);
+    Py_END_CRITICAL_SECTION();
+
+    Py_BEGIN_CRITICAL_SECTION2_MUTEX(&mut, &mut);
+    Py_END_CRITICAL_SECTION2();
+
     Py_RETURN_NONE;
 }
 
