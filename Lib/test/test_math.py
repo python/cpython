@@ -17,8 +17,13 @@ import sys
 
 eps = 1E-05
 NAN = float('nan')
+NNAN = float('-nan')
+DNAN = decimal.Decimal("nan")
+DNNAN = decimal.Decimal("-nan")
 INF = float('inf')
 NINF = float('-inf')
+DINF = decimal.Decimal("inf")
+DNINF = decimal.Decimal("-inf")
 FLOAT_MAX = sys.float_info.max
 FLOAT_MIN = sys.float_info.min
 
@@ -474,6 +479,14 @@ class MathTests(unittest.TestCase):
         self.assertTrue(math.isinf(math.copysign(INF, NAN)))
         # similarly, copysign(2., NAN) could be 2. or -2.
         self.assertEqual(abs(math.copysign(2., NAN)), 2.)
+
+    def test_signbit(self):
+        for arg in [0, 0., 1, 1., INF, NAN, DINF, DNAN]:
+            with self.subTest('positive', arg=arg):
+                self.assertFalse(math.signbit(arg))
+        for arg in [-0., -1, -1., NINF, NNAN, DNINF, DNNAN]:
+            with self.subTest('negative', arg=arg):
+                self.assertTrue(math.signbit(arg))
 
     def testCos(self):
         self.assertRaises(TypeError, math.cos)
@@ -1386,7 +1399,6 @@ class MathTests(unittest.TestCase):
         # Error cases that arose during development
         args = ((-5, -5, 10), (1.5, 4611686018427387904, 2305843009213693952))
         self.assertEqual(sumprod(*args), 0.0)
-
 
     @requires_IEEE_754
     @unittest.skipIf(HAVE_DOUBLE_ROUNDING,
@@ -2485,7 +2497,6 @@ class MathTests(unittest.TestCase):
         self.assertEqual(1.0, math.nextafter(1.0, INF, steps=0))
         with self.assertRaises(ValueError):
             math.nextafter(1.0, INF, steps=-1)
-
 
     @requires_IEEE_754
     def test_ulp(self):
