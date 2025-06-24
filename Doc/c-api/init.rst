@@ -2294,7 +2294,7 @@ is resumed, and its locks reacquired.  This means the critical section API
 provides weaker guarantees than traditional locks -- they are useful because
 their behavior is similar to the :term:`GIL`.
 
-Variants that accept :c:type:`PyMutex` instances rather than objects are also
+Variants that accept :c:type:`PyMutex` pointers rather than Python objects are also
 available. Use these variants to start a critical section in a situation where
 there is no :c:type:`PyObject` -- for example, when working with a C type that
 does not extend or wrap :c:type:`PyObject` but still needs to call into the C
@@ -2360,7 +2360,7 @@ code triggered by the finalizer blocks and calls :c:func:`PyEval_SaveThread`.
 
    On the default build, this macro expands to ``{``.
 
-   .. versionadded:: 3.15
+   .. versionadded:: next
 
 .. c:macro:: Py_END_CRITICAL_SECTION()
 
@@ -2402,11 +2402,11 @@ code triggered by the finalizer blocks and calls :c:func:`PyEval_SaveThread`.
           PyCriticalSection2_BeginMutex(&_py_cs2, m1, m2)
 
    Note that unlike :c:macro:`Py_BEGIN_CRITICAL_SECTION2`, there is no cast for
-   the second and third arguments - they must be :c:type:`PyMutex` instances.
+   the second and third arguments - they must be :c:type:`PyMutex` pointers.
 
    On the default build, this macro expands to ``{``.
 
-   .. versionadded:: 3.15
+   .. versionadded:: next
 
 .. c:macro:: Py_END_CRITICAL_SECTION2()
 
