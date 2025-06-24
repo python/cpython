@@ -2924,6 +2924,19 @@ class TestDateTime(TestDate):
         with self.assertRaises(ValueError): strptime("-000", "%z")
         with self.assertRaises(ValueError): strptime("z", "%z")
 
+    def test_strptime_detailed_error(self):
+        # bpo-24929: detailed errors for month and day parsing failure
+
+        strptime = self.theclass.strptime
+
+        self.assertRaisesRegex(ValueError, "month must be in 1..12", strptime, '0', '%m')
+        strptime('10', '%m')
+        self.assertRaisesRegex(ValueError, "month must be in 1..12", strptime, '13', '%m')
+
+        self.assertRaisesRegex(ValueError, "day is out of range for month", strptime, '0', '%d')
+        strptime('10', '%d')
+        self.assertRaisesRegex(ValueError, "day is out of range for month", strptime, '32', '%d')
+
     def test_strptime_single_digit(self):
         # bpo-34903: Check that single digit dates and times are allowed.
 
