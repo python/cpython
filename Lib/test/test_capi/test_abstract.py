@@ -460,7 +460,8 @@ class CAPITest(unittest.TestCase):
             self.assertFalse(haskey({}, []))
             self.assertEqual(cm.unraisable.exc_type, TypeError)
             self.assertEqual(str(cm.unraisable.exc_value),
-                             "unhashable type: 'list'")
+                             "cannot use 'list' as a dict key "
+                             "(unhashable type: 'list')")
 
         with support.catch_unraisable_exception() as cm:
             self.assertFalse(haskey([], 1))

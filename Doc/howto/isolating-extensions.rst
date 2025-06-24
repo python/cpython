@@ -168,7 +168,7 @@ possible, consider explicit locking.
 If it is necessary to use process-global state, the simplest way to
 avoid issues with multiple interpreters is to explicitly prevent a
 module from being loaded more than once per process—see
-`Opt-Out: Limiting to One Module Object per Process`_.
+:ref:`isolating-extensions-optout`.
 
 
 Managing Per-Module State
@@ -207,6 +207,8 @@ An example of a module with per-module state is currently available as
 example module initialization shown at the bottom of the file.
 
 
+.. _isolating-extensions-optout:
+
 Opt-Out: Limiting to One Module Object per Process
 --------------------------------------------------
 
@@ -215,19 +217,34 @@ multiple interpreters correctly. If this is not yet the case for your
 module, you can explicitly make your module loadable only once per
 process. For example::
 
+   // A process-wide flag
    static int loaded = 0;
+
+   // Mutex to provide thread safety (only needed for free-threaded Python)
+   static PyMutex modinit_mutex = {0};
 
    static int
    exec_module(PyObject* module)
    {
+       PyMutex_Lock(&modinit_mutex);
        if (loaded) {
+           PyMutex_Unlock(&modinit_mutex);
            PyErr_SetString(PyExc_ImportError,
                            "cannot load module more than once per process");
            return -1;
        }
        loaded = 1;
+       PyMutex_Unlock(&modinit_mutex);
        // ... rest of initialization
    }
+
+
+If your module's :c:member:`PyModuleDef.m_clear` function is able to prepare
+for future re-initialization, it should clear the ``loaded`` flag.
+In this case, your module won't support multiple instances existing
+*concurrently*, but it will, for example, support being loaded after
+Python runtime shutdown (:c:func:`Py_FinalizeEx`) and re-initialization
+(:c:func:`Py_Initialize`).
 
 
 Module State Access from Functions

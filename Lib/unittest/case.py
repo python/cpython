@@ -111,8 +111,17 @@ def _enter_context(cm, addcleanup):
         enter = cls.__enter__
         exit = cls.__exit__
     except AttributeError:
-        raise TypeError(f"'{cls.__module__}.{cls.__qualname__}' object does "
-                        f"not support the context manager protocol") from None
+        msg = (f"'{cls.__module__}.{cls.__qualname__}' object does "
+               "not support the context manager protocol")
+        try:
+            cls.__aenter__
+            cls.__aexit__
+        except AttributeError:
+            pass
+        else:
+            msg += (" but it supports the asynchronous context manager "
+                    "protocol. Did you mean to use enterAsyncContext()?")
+        raise TypeError(msg) from None
     result = enter(cm)
     addcleanup(exit, cm, None, None, None)
     return result
@@ -140,9 +149,7 @@ def doModuleCleanups():
         except Exception as exc:
             exceptions.append(exc)
     if exceptions:
-        # Swallows all but first exception. If a multi-exception handler
-        # gets written we should use that here instead.
-        raise exceptions[0]
+        raise ExceptionGroup('module cleanup failed', exceptions)
 
 
 def skip(reason):

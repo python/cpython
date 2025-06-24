@@ -93,9 +93,7 @@ class TestPerfTrampoline(unittest.TestCase):
                 perf_line, f"Could not find {expected_symbol} in perf file"
             )
             perf_addr = perf_line.split(" ")[0]
-            self.assertFalse(
-                perf_addr.startswith("0x"), "Address should not be prefixed with 0x"
-            )
+            self.assertNotStartsWith(perf_addr, "0x")
             self.assertTrue(
                 set(perf_addr).issubset(string.hexdigits),
                 "Address should contain only hex characters",
@@ -260,6 +258,8 @@ def perf_command_works():
             cmd = (
                 "perf",
                 "record",
+                "--no-buildid",
+                "--no-buildid-cache",
                 "-g",
                 "--call-graph=fp",
                 "-o",
@@ -289,11 +289,22 @@ def run_perf(cwd, *args, use_jit=False, **env_vars):
     env["PYTHON_JIT"] = "0"
     output_file = cwd + "/perf_output.perf"
     if not use_jit:
-        base_cmd = ("perf", "record", "-g", "--call-graph=fp", "-o", output_file, "--")
+        base_cmd = (
+            "perf",
+            "record",
+            "--no-buildid",
+            "--no-buildid-cache",
+            "-g",
+            "--call-graph=fp",
+            "-o", output_file,
+            "--"
+        )
     else:
         base_cmd = (
             "perf",
             "record",
+            "--no-buildid",
+            "--no-buildid-cache",
             "-g",
             "--call-graph=dwarf,65528",
             "-F99",
@@ -495,9 +506,12 @@ def _is_perf_version_at_least(major, minor):
     # The output of perf --version looks like "perf version 6.7-3" but
     # it can also be perf version "perf version 5.15.143", or even include
     # a commit hash in the version string, like "6.12.9.g242e6068fd5c"
+    #
+    # PermissionError is raised if perf does not exist on the Windows Subsystem
+    # for Linux, see #134987
     try:
         output = subprocess.check_output(["perf", "--version"], text=True)
-    except (subprocess.CalledProcessError, FileNotFoundError):
+    except (subprocess.CalledProcessError, FileNotFoundError, PermissionError):
         return False
     version = output.split()[2]
     version = version.split("-")[0]

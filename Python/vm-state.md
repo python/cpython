@@ -73,7 +73,8 @@ It will be more complex in the JIT.
 
 Another important piece of VM state is the **thread state**, held in `tstate`.
 The current frame pointer, `frame`, is always equal to `tstate->current_frame`.
-The thread state also holds the exception state (`tstate->exc_info`) and the recursion counters (`tstate->c_recursion_remaining` and `tstate->py_recursion_remaining`).
+The thread state also holds the exception state (`tstate->exc_info`) and
+recursion tracking data (`tstate->py_recursion_remaining`, `tstate->c_stack*`).
 
 The thread state is also used to access the **interpreter state** (`tstate->interp`), which is important since the "eval breaker" flags are stored there (`tstate->interp->ceval.eval_breaker`, an "atomic" variable), as well as the "PEP 523 function" (`tstate->interp->eval_frame`).
 The interpreter state also holds the optimizer state (`optimizer` and some counters).

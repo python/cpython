@@ -16,40 +16,56 @@
 This module provides an implementation of the heap queue algorithm, also known
 as the priority queue algorithm.
 
-Heaps are binary trees for which every parent node has a value less than or
-equal to any of its children.  We refer to this condition as the heap invariant.
+Min-heaps are binary trees for which every parent node has a value less than
+or equal to any of its children.
+We refer to this condition as the heap invariant.
 
-This implementation uses arrays for which
-``heap[k] <= heap[2*k+1]`` and ``heap[k] <= heap[2*k+2]`` for all *k*, counting
-elements from zero.  For the sake of comparison, non-existing elements are
-considered to be infinite.  The interesting property of a heap is that its
-smallest element is always the root, ``heap[0]``.
+For min-heaps, this implementation uses lists for which
+``heap[k] <= heap[2*k+1]`` and ``heap[k] <= heap[2*k+2]`` for all *k* for which
+the compared elements exist.  Elements are counted from zero.  The interesting
+property of a min-heap is that its smallest element is always the root,
+``heap[0]``.
 
-The API below differs from textbook heap algorithms in two aspects: (a) We use
-zero-based indexing.  This makes the relationship between the index for a node
-and the indexes for its children slightly less obvious, but is more suitable
-since Python uses zero-based indexing. (b) Our pop method returns the smallest
-item, not the largest (called a "min heap" in textbooks; a "max heap" is more
-common in texts because of its suitability for in-place sorting).
+Max-heaps satisfy the reverse invariant: every parent node has a value
+*greater* than any of its children.  These are implemented as lists for which
+``maxheap[2*k+1] <= maxheap[k]`` and ``maxheap[2*k+2] <= maxheap[k]`` for all
+*k* for which the compared elements exist.
+The root, ``maxheap[0]``, contains the *largest* element;
+``heap.sort(reverse=True)`` maintains the max-heap invariant.
 
-These two make it possible to view the heap as a regular Python list without
-surprises: ``heap[0]`` is the smallest item, and ``heap.sort()`` maintains the
-heap invariant!
+The :mod:`!heapq` API differs from textbook heap algorithms in two aspects: (a)
+We use zero-based indexing.  This makes the relationship between the index for
+a node and the indexes for its children slightly less obvious, but is more
+suitable since Python uses zero-based indexing. (b) Textbooks often focus on
+max-heaps, due to their suitability for in-place sorting. Our implementation
+favors min-heaps as they better correspond to Python :class:`lists <list>`.
 
-To create a heap, use a list initialized to ``[]``, or you can transform a
-populated list into a heap via function :func:`heapify`.
+These two aspects make it possible to view the heap as a regular Python list
+without surprises: ``heap[0]`` is the smallest item, and ``heap.sort()``
+maintains the heap invariant!
 
-The following functions are provided:
+Like :meth:`list.sort`, this implementation uses only the ``<`` operator
+for comparisons, for both min-heaps and max-heaps.
+
+In the API below, and in this documentation, the unqualified term *heap*
+generally refers to a min-heap.
+The API for max-heaps is named using a ``_max``  suffix.
+
+To create a heap, use a list initialized as ``[]``, or transform an existing list
+into a min-heap or max-heap using the :func:`heapify` or :func:`heapify_max`
+functions, respectively.
+
+The following functions are provided for min-heaps:
 
 
 .. function:: heappush(heap, item)
 
-   Push the value *item* onto the *heap*, maintaining the heap invariant.
+   Push the value *item* onto the *heap*, maintaining the min-heap invariant.
 
 
 .. function:: heappop(heap)
 
-   Pop and return the smallest item from the *heap*, maintaining the heap
+   Pop and return the smallest item from the *heap*, maintaining the min-heap
    invariant.  If the heap is empty, :exc:`IndexError` is raised.  To access the
    smallest item without popping it, use ``heap[0]``.
 
@@ -63,7 +79,7 @@ The following functions are provided:
 
 .. function:: heapify(x)
 
-   Transform list *x* into a heap, in-place, in linear time.
+   Transform list *x* into a min-heap, in-place, in linear time.
 
 
 .. function:: heapreplace(heap, item)
@@ -80,6 +96,56 @@ The following functions are provided:
    desired, consider using :func:`heappushpop` instead.  Its push/pop
    combination returns the smaller of the two values, leaving the larger value
    on the heap.
+
+
+For max-heaps, the following functions are provided:
+
+
+.. function:: heapify_max(x)
+
+   Transform list *x* into a max-heap, in-place, in linear time.
+
+   .. versionadded:: 3.14
+
+
+.. function:: heappush_max(heap, item)
+
+   Push the value *item* onto the max-heap *heap*, maintaining the max-heap
+   invariant.
+
+   .. versionadded:: 3.14
+
+
+.. function:: heappop_max(heap)
+
+   Pop and return the largest item from the max-heap *heap*, maintaining the
+   max-heap invariant.  If the max-heap is empty, :exc:`IndexError` is raised.
+   To access the largest item without popping it, use ``maxheap[0]``.
+
+   .. versionadded:: 3.14
+
+
+.. function:: heappushpop_max(heap, item)
+
+   Push *item* on the max-heap *heap*, then pop and return the largest item
+   from *heap*.
+   The combined action runs more efficiently than :func:`heappush_max`
+   followed by a separate call to :func:`heappop_max`.
+
+   .. versionadded:: 3.14
+
+
+.. function:: heapreplace_max(heap, item)
+
+   Pop and return the largest item from the max-heap *heap* and also push the
+   new *item*.
+   The max-heap size doesn't change. If the max-heap is empty,
+   :exc:`IndexError` is raised.
+
+   The value returned may be smaller than the *item* added.  Refer to the
+   analogous function :func:`heapreplace` for detailed usage notes.
+
+   .. versionadded:: 3.14
 
 
 The module also offers three general purpose functions based on heaps.
@@ -246,17 +312,12 @@ elements are considered to be infinite.  The interesting property of a heap is
 that ``a[0]`` is always its smallest element.
 
 The strange invariant above is meant to be an efficient memory representation
-for a tournament.  The numbers below are *k*, not ``a[k]``::
+for a tournament.  The numbers below are *k*, not ``a[k]``:
 
-                                  0
-
-                 1                                 2
-
-         3               4                5               6
-
-     7       8       9       10      11      12      13      14
-
-   15 16   17 18   19 20   21 22   23 24   25 26   27 28   29 30
+.. figure:: heapq-binary-tree.svg
+   :class: invert-in-dark-mode
+   :align: center
+   :alt: Example (min-heap) binary tree.
 
 In the tree above, each cell *k* is topping ``2*k+1`` and ``2*k+2``. In a usual
 binary tournament we see in sports, each cell is the winner over the two cells
