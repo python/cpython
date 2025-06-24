@@ -18,12 +18,8 @@ import sys
 eps = 1E-05
 NAN = float('nan')
 NNAN = float('-nan')
-DNAN = decimal.Decimal("nan")
-DNNAN = decimal.Decimal("-nan")
 INF = float('inf')
 NINF = float('-inf')
-DINF = decimal.Decimal("inf")
-DNINF = decimal.Decimal("-inf")
 FLOAT_MAX = sys.float_info.max
 FLOAT_MIN = sys.float_info.min
 
@@ -481,10 +477,13 @@ class MathTests(unittest.TestCase):
         self.assertEqual(abs(math.copysign(2., NAN)), 2.)
 
     def test_signbit(self):
-        for arg in [0, 0., 1, 1., INF, NAN, DINF, DNAN]:
+        self.assertRaises(TypeError, math.signbit)
+        self.assertRaises(TypeError, math.signbit, '1.0')
+
+        for arg in [0, 0., 1, 1., INF, NAN]:
             with self.subTest('positive', arg=arg):
                 self.assertFalse(math.signbit(arg))
-        for arg in [-0., -1, -1., NINF, NNAN, DNINF, DNNAN]:
+        for arg in [-0., -1, -1., NINF, NNAN]:
             with self.subTest('negative', arg=arg):
                 self.assertTrue(math.signbit(arg))
 

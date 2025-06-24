@@ -434,7 +434,7 @@ Floating point manipulation functions
 
 .. function:: signbit(x)
 
-   Return :const:`True` if *x* is negative and :const:`False` otherwise.
+   Return ``True`` if the sign of *x* is negative and ``False`` otherwise.
 
    This is useful to detect the sign bit of zeroes, infinities and NaNs.
 

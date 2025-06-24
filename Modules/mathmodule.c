@@ -1240,7 +1240,7 @@ math.signbit
     x: double
     /
 
-Return True if 'x' is negative and False otherwise.
+Return True if the sign of 'x' is negative and False otherwise.
 
 This is useful to detect the sign bit of zeroes, infinities and NaNs.
 [clinic start generated code]*/
