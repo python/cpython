@@ -1,4 +1,3 @@
-import stat
 import os
 import sys
 import unittest
@@ -112,7 +111,7 @@ class Immutable(unittest.TestCase):
 
         self.assertFalse(os.path.exists(wal_path))
         self.assertFalse(os.path.exists(shm_path))
-        
+
         self.assertEqual(self.db[b"key"], b"value")
 
 
