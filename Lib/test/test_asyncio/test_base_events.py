@@ -3,7 +3,6 @@
 import concurrent.futures
 import errno
 import math
-import os
 import platform
 import socket
 import sys
@@ -1301,7 +1300,8 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         self.assertEqual(len(cm.exception.exceptions), 1)
         self.assertIsInstance(cm.exception.exceptions[0], OSError)
 
-    def test_create_connection_connect_non_os_err_close_err(self):
+    @patch_socket
+    def test_create_connection_connect_non_os_err_close_err(self, m_socket):
         # Test the case when sock_connect() raises non-OSError exception
         # and sock.close() raises OSError.
         async def getaddrinfo(*args, **kw):
@@ -1310,13 +1310,12 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         def getaddrinfo_task(*args, **kwds):
             return self.loop.create_task(getaddrinfo(*args, **kwds))
 
-        async def sock_connect(sock, address):
-            # Force sock.close() to raise OSError.
-            os.close(sock.fileno())
-            raise CustomError
-
         self.loop.getaddrinfo = getaddrinfo_task
-        self.loop.sock_connect = sock_connect
+        self.loop.sock_connect = mock.Mock()
+        self.loop.sock_connect.side_effect = CustomError
+        sock = mock.Mock()
+        m_socket.socket.return_value = sock
+        sock.close.side_effect = OSError
 
         coro = self.loop.create_connection(MyProto, 'example.com', 80)
         self.assertRaises(
