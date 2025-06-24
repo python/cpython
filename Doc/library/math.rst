@@ -253,8 +253,8 @@ Floating point arithmetic
 
    Get the larger of two floating-point values, treating NaNs as missing data.
 
-   If *x* and *y* are NaNs of same sign *s*, return ``copysign(nan, s)``.
-   If *x* and *y* are NaNs of different sign, return ``copysign(nan, 1)``.
+   When both operands are NaNs, return ``nan`` (the sign of the result is
+   implementation-defined).
 
    .. versionadded:: next
 
@@ -263,8 +263,8 @@ Floating point arithmetic
 
    Get the smaller of two floating-point values, treating NaNs as missing data.
 
-   If *x* and *y* are NaNs of same sign *s*, return ``copysign(nan, s)``.
-   If *x* and *y* are NaNs of different sign, return ``copysign(nan, -1)``.
+   When both operands are NaNs, return ``nan`` (the sign of the result is
+   implementation-defined).
 
    .. versionadded:: next
 

@@ -1222,17 +1222,12 @@ math.fmax -> double
     /
 
 Returns the larger of two floating-point arguments.
-
 [clinic start generated code]*/
 
 static double
 math_fmax_impl(PyObject *module, double x, double y)
-/*[clinic end generated code: output=00692358d312fee2 input=0dcf618bb27f98c7]*/
+/*[clinic end generated code: output=00692358d312fee2 input=e64ab9f40a60f4f1]*/
 {
-    if (isnan(x) && isnan(y)) {
-        double s = copysign(1, x);
-        return s == copysign(1, y) ? copysign(NAN, s) : NAN;
-    }
     return fmax(x, y);
 }
 
@@ -1250,11 +1245,6 @@ static double
 math_fmin_impl(PyObject *module, double x, double y)
 /*[clinic end generated code: output=3d5b7826bd292dd9 input=f7b5c91de01d766f]*/
 {
-    if (isnan(x) && isnan(y)) {
-        double s = copysign(1, x);
-        // return ±NAN if both are ±NAN and -NAN otherwise.
-        return copysign(NAN, s == copysign(1, y) ? s : -1);
-    }
     return fmin(x, y);
 }
 
