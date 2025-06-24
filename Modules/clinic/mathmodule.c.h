@@ -88,9 +88,7 @@ PyDoc_STRVAR(math_signbit__doc__,
 "signbit($module, x, /)\n"
 "--\n"
 "\n"
-"Return True if \'x\' is negative and False otherwise.\n"
-"\n"
-"This is useful to detect the sign bit of zeroes, infinities and NaNs.");
+"Return True if the sign of x is negative and False otherwise.");
 
 #define MATH_SIGNBIT_METHODDEF    \
     {"signbit", (PyCFunction)math_signbit, METH_O, math_signbit__doc__},
@@ -1214,4 +1212,4 @@ math_ulp(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ae85f0ca1de2c864 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4e3fa94d026f027b input=a9049054013a1b77]*/

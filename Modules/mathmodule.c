@@ -1240,14 +1240,12 @@ math.signbit
     x: double
     /
 
-Return True if the sign of 'x' is negative and False otherwise.
-
-This is useful to detect the sign bit of zeroes, infinities and NaNs.
+Return True if the sign of x is negative and False otherwise.
 [clinic start generated code]*/
 
 static PyObject *
 math_signbit_impl(PyObject *module, double x)
-/*[clinic end generated code: output=20c5f20156a9b871 input=1765b06afd3c4bd0]*/
+/*[clinic end generated code: output=20c5f20156a9b871 input=3d3493fbcb5bdb3e]*/
 {
     return PyBool_FromLong(signbit(x));
 }
