@@ -1422,7 +1422,7 @@ f_string_middle:
                         _PyTokenizer_syntaxerror(
                             tok,
                             "%c-string: newlines are not allowed in format specifiers for single quoted %c-strings",
-                            TOK_GET_STRING_PREFIX(tok),TOK_GET_STRING_PREFIX(tok)
+                            TOK_GET_STRING_PREFIX(tok), TOK_GET_STRING_PREFIX(tok)
                         )
                     );
                 }
