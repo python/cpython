@@ -1127,30 +1127,23 @@ class GCTests(unittest.TestCase):
 
     def test_do_not_cleanup_type_subclasses_before_finalization(self):
         # https://github.com/python/cpython/issues/135552
-        code = textwrap.dedent("""
+        code = """
             class BaseNode:
                 def __del__(self):
                     BaseNode.next = BaseNode.next.next
+                    BaseNode.next.next
 
             class Node(BaseNode):
                 pass
 
             BaseNode.next = Node()
             BaseNode.next.next = Node()
-        """)
-        assert_python_ok("-c", code)
+        """
+        assert_python_ok("-c", textwrap.dedent(code))
 
-        code_inside_function = textwrap.dedent("""
+        code_inside_function = textwrap.dedent(F"""
             def test():
-                class BaseNode:
-                    def __del__(self):
-                        BaseNode.next = BaseNode.next.next
-
-                class Node(BaseNode):
-                    pass
-
-                BaseNode.next = Node()
-                BaseNode.next.next = Node()
+                {textwrap.indent(code, '    ')}
 
             test()
         """)
