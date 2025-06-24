@@ -370,6 +370,12 @@ Creating an interpreter and running code in it::
         print('spam!')
         """))
 
+    def run(arg):
+        return arg
+
+    res = interp.call(run, 'spam!')
+    print(res)
+
     def run():
         print('spam!')
 
