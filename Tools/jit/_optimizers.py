@@ -41,11 +41,17 @@ _X86_BRANCHES |= {v: k for k, v in _X86_BRANCHES.items() if v}
 @dataclasses.dataclass
 class _Block:
     label: str | None = None
-    header: list[str] = dataclasses.field(default_factory=list)
+    # Non-instruction lines like labels, directives, and comments:
+    noise: list[str] = dataclasses.field(default_factory=list)
+    # Instruction lines:
     instructions: list[str] = dataclasses.field(default_factory=list)
+    # If this block ends in a jump, where to?
     target: typing.Self | None = None
+    # The next block in the linked list:
     link: typing.Self | None = None
+    # Whether control flow can fall through to the linked block above:
     fallthrough: bool = True
+    # Whether this block can eventually reach the next uop (_JIT_CONTINUE):
     hot: bool = False
 
     def resolve(self) -> typing.Self:
@@ -68,7 +74,7 @@ class Optimizer:
     _root: _Block = dataclasses.field(init=False, default_factory=_Block)
     _labels: dict[str, _Block] = dataclasses.field(init=False, default_factory=dict)
     # No groups:
-    _re_header: typing.ClassVar[re.Pattern[str]] = re.compile(r"\s*(?:\.|#|//|$)")
+    _re_noise: typing.ClassVar[re.Pattern[str]] = re.compile(r"\s*(?:\.|#|//|$)")
     # One group (label):
     _re_label: typing.ClassVar[re.Pattern[str]] = re.compile(
         r'\s*(?P<label>[\w."$?@]+):'
@@ -84,32 +90,44 @@ class Optimizer:
     _re_return: typing.ClassVar[re.Pattern[str]] = _RE_NEVER_MATCH
 
     def __post_init__(self) -> None:
+        # Split the code into a linked list of basic blocks. A basic block is an
+        # optional label, followed by zero or more non-instruction ("noise")
+        # lines, followed by one or more instruction lines (only the last of
+        # which may be a branch, jump, or return).
         text = self._preprocess(self.path.read_text())
         block = self._root
         for line in text.splitlines():
+            # See if we need to start a new block:
             if match := self._re_label.match(line):
+                # Label. New block:
                 block.link = block = self._lookup_label(match["label"])
-                block.header.append(line)
+                block.noise.append(line)
                 continue
-            if self._re_header.match(line):
+            if self._re_noise.match(line):
                 if block.instructions:
+                    # Noise lines. New block:
                     block.link = block = _Block()
-                block.header.append(line)
+                block.noise.append(line)
                 continue
             if block.target or not block.fallthrough:
+                # Current block ends with a branch, jump, or return. New block:
                 block.link = block = _Block()
             block.instructions.append(line)
             if match := self._re_branch.match(line):
+                # A block ending in a branch has a target, and fallthrough:
                 block.target = self._lookup_label(match["target"])
                 assert block.fallthrough
             elif match := self._re_jump.match(line):
+                # A block ending in a jump has a target, and no fallthrough:
                 block.target = self._lookup_label(match["target"])
                 block.fallthrough = False
             elif self._re_return.match(line):
+                # A block ending in a return has no target, and fallthrough:
                 assert not block.target
                 block.fallthrough = False
 
     def _preprocess(self, text: str) -> str:
+        # Override this method to do preprocessing of the textual assembly:
         return text
 
     @classmethod
@@ -120,6 +138,10 @@ class Optimizer:
         if not inverted:
             return None
         (a, b), (c, d) = match.span("instruction"), match.span("target")
+        # Before:
+        #     je FOO
+        # After:
+        #     jne BAR
         return "".join([line[:a], inverted, line[b:c], target, line[d:]])
 
     @classmethod
@@ -127,6 +149,10 @@ class Optimizer:
         match = cls._re_jump.match(line)
         assert match
         a, b = match.span("target")
+        # Before:
+        #     jmp FOO
+        # After:
+        #     jmp BAR
         return "".join([line[:a], target, line[b:]])
 
     def _lookup_label(self, label: str) -> _Block:
@@ -146,12 +172,14 @@ class Optimizer:
         for block in self._blocks():
             if hot != block.hot:
                 hot = block.hot
+                # Make it easy to tell at a glance where cold code is:
                 lines.append(f"# JIT: {'HOT' if hot else 'COLD'} ".ljust(80, "#"))
-            lines.extend(block.header)
+            lines.extend(block.noise)
             lines.extend(block.instructions)
         return "\n".join(lines)
 
     def _predecessors(self, block: _Block) -> typing.Generator[_Block, None, None]:
+        # This is inefficient, but it's never wrong:
         for predecessor in self._blocks():
             if predecessor.target is block or (
                 predecessor.fallthrough and predecessor.link is block
@@ -159,17 +187,26 @@ class Optimizer:
                 yield predecessor
 
     def _insert_continue_label(self) -> None:
+        # Find the block with the last instruction:
         for end in reversed(list(self._blocks())):
             if end.instructions:
                 break
+        # Before:
+        #    jmp FOO
+        # After:
+        #    jmp FOO
+        #    .balign 8
+        #  _JIT_CONTINUE:
         align = _Block()
-        align.header.append(f"\t.balign\t{self._alignment}")
+        align.noise.append(f"\t.balign\t{self._alignment}")
         continuation = self._lookup_label(f"{self.prefix}_JIT_CONTINUE")
         assert continuation.label
-        continuation.header.append(f"{continuation.label}:")
+        continuation.noise.append(f"{continuation.label}:")
         end.link, align.link, continuation.link = align, continuation, end.link
 
     def _mark_hot_blocks(self) -> None:
+        # Start with the last block, and perform a DFS to find all blocks that
+        # can eventually reach it:
         todo = list(self._blocks())[-1:]
         while todo:
             block = todo.pop()
@@ -181,17 +218,17 @@ class Optimizer:
             )
 
     def _invert_hot_branches(self) -> None:
-        # Before:
-        #    branch <hot>
-        #    jump <cold>
-        # After:
-        #    opposite-branch <cold>
-        #    jump <hot>
         for branch in self._blocks():
             link = branch.link
             if link is None:
                 continue
             jump = link.resolve()
+            # Before:
+            #    je HOT
+            #    jmp COLD
+            # After:
+            #    jne COLD
+            #    jmp HOT
             if (
                 # block ends with a branch to hot code...
                 branch.target
@@ -209,6 +246,7 @@ class Optimizer:
                 inverted = self._invert_branch(
                     branch.instructions[-1], jump.target.label
                 )
+                # Check to see if the branch can even be inverted:
                 if inverted is None:
                     continue
                 branch.instructions[-1] = inverted
@@ -219,7 +257,14 @@ class Optimizer:
                 jump.hot = True
 
     def _remove_redundant_jumps(self) -> None:
+        # Zero-length jumps can be introduced by _insert_continue_label and
+        # _invert_hot_branches:
         for block in self._blocks():
+            # Before:
+            #    jmp FOO
+            #    FOO:
+            # After:
+            #    FOO:
             if (
                 block.target
                 and block.link
