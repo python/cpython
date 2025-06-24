@@ -501,20 +501,22 @@ PyLong_FromDouble(double dval)
 static inline unsigned long
 unroll_digits_ulong(PyLongObject *v, Py_ssize_t *iptr)
 {
+    assert(ULONG_MAX >= ((1UL << PyLong_SHIFT) - 1));
+    
     Py_ssize_t i = *iptr;
-    digit *digits = v->long_value.ob_digit;
     assert(i >= 2);
+
     /* unroll 1 digit */
     --i;
-    assert(ULONG_MAX >= ((1UL << PyLong_SHIFT) - 1));
+    digit *digits = v->long_value.ob_digit;
     unsigned long x = digits[i];
 
-    #if ((ULONG_MAX >> PyLong_SHIFT)) >= ((1UL << PyLong_SHIFT) - 1)
+#if (ULONG_MAX >> PyLong_SHIFT) >= ((1UL << PyLong_SHIFT) - 1)
     /* unroll another digit */
     x <<= PyLong_SHIFT;
     --i;
     x |= digits[i];
-    #endif
+#endif
 
     *iptr = i;
     return x;
@@ -523,12 +525,14 @@ unroll_digits_ulong(PyLongObject *v, Py_ssize_t *iptr)
 static inline size_t
 unroll_digits_size_t(PyLongObject *v, Py_ssize_t *iptr)
 {
+    assert(SIZE_MAX >= ((1UL << PyLong_SHIFT) - 1));
+
     Py_ssize_t i = *iptr;
-    digit *digits = v->long_value.ob_digit;
     assert(i >= 2);
+
     /* unroll 1 digit */
     --i;
-    assert(SIZE_MAX >= ((1UL << PyLong_SHIFT) - 1));
+    digit *digits = v->long_value.ob_digit;
     size_t x = digits[i];
 
     #if ( (SIZE_MAX >> PyLong_SHIFT) >= ( ( 1 << PyLong_SHIFT) - 1) )
@@ -690,7 +694,7 @@ PyLong_AsSsize_t(PyObject *vv) {
 
     size_t x = unroll_digits_size_t(v, &i);
     while (--i >= 0) {
-        if (x > SIZE_MAX >> PyLong_SHIFT) {
+        if (x > (SIZE_MAX >> PyLong_SHIFT)) {
             goto overflow;
         }
         x = (x << PyLong_SHIFT) | v->long_value.ob_digit[i];
@@ -752,7 +756,7 @@ PyLong_AsUnsignedLong(PyObject *vv)
 
     unsigned long x = unroll_digits_ulong(v, &i);
     while (--i >= 0) {
-        if (x > ULONG_MAX >> PyLong_SHIFT) {
+        if (x > (ULONG_MAX >> PyLong_SHIFT)) {
             goto overflow;
         }
         x = (x << PyLong_SHIFT) | v->long_value.ob_digit[i];
@@ -796,7 +800,7 @@ PyLong_AsSize_t(PyObject *vv)
 
     size_t x = unroll_digits_size_t(v, &i);
     while (--i >= 0) {
-            if (x > SIZE_MAX >> PyLong_SHIFT) {
+            if (x > (SIZE_MAX >> PyLong_SHIFT)) {
                 PyErr_SetString(PyExc_OverflowError,
                     "Python int too large to convert to C size_t");
                 return (size_t) -1;
