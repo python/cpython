@@ -706,7 +706,6 @@ class MathTests(unittest.TestCase):
         # When exactly one operand is NaN, the other is returned.
         for x in [NINF, -1., -0., 0., 1., INF]:
             with self.subTest(x=x):
-                self.assertFalse(math.isnan(x))
                 self.assertFalse(math.isnan(math.fmin(NAN, x)))
                 self.assertFalse(math.isnan(math.fmin(x, NAN)))
                 self.assertFalse(math.isnan(math.fmin(NNAN, x)))
