@@ -3034,57 +3034,28 @@ finally:
 
 /* Trashcan support. */
 
-#ifndef Py_GIL_DISABLED
-/* We need to store a pointer in the refcount field of
- * an object. It is important that we never store 0 (NULL).
-* It is also important to not make the object appear immortal,
-* or it might be untracked by the cycle GC. */
-static uintptr_t
-pointer_to_safe_refcount(void *ptr)
-{
-    uintptr_t full = (uintptr_t)ptr;
-    assert((full & 3) == 0);
-#if SIZEOF_VOID_P > 4
-    uint32_t refcnt = (uint32_t)full;
-    if (refcnt >= (uint32_t)_Py_IMMORTAL_MINIMUM_REFCNT) {
-        full = full - ((uintptr_t)_Py_IMMORTAL_MINIMUM_REFCNT) + 1;
-    }
-    return full + 2;
-#else
-    // Make the top two bits 0, so it appears mortal.
-    return (full >> 2) + 1;
-#endif
-}
-
-static void *
-safe_refcount_to_pointer(uintptr_t refcnt)
-{
-#if SIZEOF_VOID_P > 4
-    if (refcnt & 1) {
-        refcnt += _Py_IMMORTAL_MINIMUM_REFCNT - 1;
-    }
-    return (void *)(refcnt - 2);
-#else
-    return (void *)((refcnt -1) << 2);
-#endif
-}
-#endif
-
 /* Add op to the gcstate->trash_delete_later list.  Called when the current
- * call-stack depth gets large.  op must be a currently untracked gc'ed
- * object, with refcount 0.  Py_DECREF must already have been called on it.
+ * call-stack depth gets large.  op must be a gc'ed object, with refcount 0.
+ *  Py_DECREF must already have been called on it.
  */
 void
 _PyTrash_thread_deposit_object(PyThreadState *tstate, PyObject *op)
 {
     _PyObject_ASSERT(op, Py_REFCNT(op) == 0);
+    PyTypeObject *tp = Py_TYPE(op);
+    assert(tp->tp_flags & Py_TPFLAGS_HAVE_GC);
+    int tracked = 0;
+    if (tp->tp_is_gc == NULL || tp->tp_is_gc(op)) {
+        tracked = _PyObject_GC_IS_TRACKED(op);
+        if (tracked) {
+            _PyObject_GC_UNTRACK(op);
+        }
+    }
+    uintptr_t tagged_ptr = ((uintptr_t)tstate->delete_later) | tracked;
 #ifdef Py_GIL_DISABLED
-    op->ob_tid = (uintptr_t)tstate->delete_later;
+    op->ob_tid = tagged_ptr;
 #else
-    /* Store the delete_later pointer in the refcnt field. */
-    uintptr_t refcnt = pointer_to_safe_refcount(tstate->delete_later);
-    *((uintptr_t*)op) = refcnt;
-    assert(!_Py_IsImmortal(op));
+    _Py_AS_GC(op)->_gc_next = tagged_ptr;
 #endif
     tstate->delete_later = op;
 }
@@ -3099,17 +3070,17 @@ _PyTrash_thread_destroy_chain(PyThreadState *tstate)
         destructor dealloc = Py_TYPE(op)->tp_dealloc;
 
 #ifdef Py_GIL_DISABLED
-        tstate->delete_later = (PyObject*) op->ob_tid;
+        uintptr_t tagged_ptr = op->ob_tid;
         op->ob_tid = 0;
         _Py_atomic_store_ssize_relaxed(&op->ob_ref_shared, _Py_REF_MERGED);
 #else
-        /* Get the delete_later pointer from the refcnt field.
-         * See _PyTrash_thread_deposit_object(). */
-        uintptr_t refcnt = *((uintptr_t*)op);
-        tstate->delete_later = safe_refcount_to_pointer(refcnt);
-        op->ob_refcnt = 0;
+        uintptr_t tagged_ptr = _Py_AS_GC(op)->_gc_next;
+        _Py_AS_GC(op)->_gc_next = 0;
 #endif
-
+        tstate->delete_later = (PyObject *)(tagged_ptr & ~1);
+        if (tagged_ptr & 1) {
+            _PyObject_GC_TRACK(op);
+        }
         /* Call the deallocator directly.  This used to try to
          * fool Py_DECREF into calling it indirectly, but
          * Py_DECREF was already called on this object, and in
@@ -3183,10 +3154,11 @@ void
 _Py_Dealloc(PyObject *op)
 {
     PyTypeObject *type = Py_TYPE(op);
+    unsigned long gc_flag = type->tp_flags & Py_TPFLAGS_HAVE_GC;
     destructor dealloc = type->tp_dealloc;
     PyThreadState *tstate = _PyThreadState_GET();
     intptr_t margin = _Py_RecursionLimit_GetMargin(tstate);
-    if (margin < 2) {
+    if (margin < 2 && gc_flag) {
         _PyTrash_thread_deposit_object(tstate, (PyObject *)op);
         return;
     }
@@ -3232,7 +3204,7 @@ _Py_Dealloc(PyObject *op)
     Py_XDECREF(old_exc);
     Py_DECREF(type);
 #endif
-    if (tstate->delete_later && margin >= 4) {
+    if (tstate->delete_later && margin >= 4 && gc_flag) {
         _PyTrash_thread_destroy_chain(tstate);
     }
 }
