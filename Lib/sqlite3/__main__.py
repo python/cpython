@@ -132,8 +132,8 @@ def main(*args):
     theme = get_theme()
     s = theme.syntax
 
-    sys.ps1 = f"{s.prompt}sqlite> {s.reset}"
-    sys.ps2 = f"{s.prompt}    ... {s.reset}"
+    sys.ps1 = f"\001{s.prompt}\002sqlite> \001{s.reset}\002"
+    sys.ps2 = f"\001{s.prompt}\002    ... \001{s.reset}\002"
 
     con = sqlite3.connect(args.filename, isolation_level=None)
     try:
