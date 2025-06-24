@@ -11724,7 +11724,7 @@ fixup_slot_dispatchers(PyTypeObject *type)
     // This lock isn't strictly necessary because the type has not been
     // exposed to anyone else yet, but update_ont_slot calls find_name_in_mro
     // where we'd like to assert that the type is locked.
-    BEGIN_TYPE_LOCK();
+    ASSERT_NEW_TYPE_OR_LOCKED(type);
 
     PyObject *mro = Py_NewRef(lookup_tp_mro(type));
 
@@ -11767,7 +11767,6 @@ finish:
     Py_XDECREF(mro_dict);
     Py_DECREF(mro);
 
-    END_TYPE_LOCK();
     return res;
 }
 
