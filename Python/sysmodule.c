@@ -917,7 +917,8 @@ sys_exit_impl(PyObject *module, PyObject *status)
 {
     /* Raise SystemExit so callers may catch it or clean up. */
     if (PyTuple_Check(status)) {
-        /* Make sure that tuples are not flattened during normalization. */
+        /* Make sure that tuples are not flattened during normalization
+         * due to the fast path for tuples in _PyErr_CreateException(). */
         PyObject *exc = PyObject_CallOneArg(PyExc_SystemExit, status);
         PyErr_SetObject(PyExc_SystemExit, exc);
         Py_DECREF(exc);
