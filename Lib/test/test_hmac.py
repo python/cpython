@@ -21,7 +21,6 @@ import functools
 import hmac
 import hashlib
 import random
-import test.support
 import test.support.hashlib_helper as hashlib_helper
 import types
 import unittest

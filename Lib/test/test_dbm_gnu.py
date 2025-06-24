@@ -74,12 +74,12 @@ class TestGdbm(unittest.TestCase):
         # Test the flag parameter open() by trying all supported flag modes.
         all = set(gdbm.open_flags)
         # Test standard flags (presumably "crwn").
-        modes = all - set('fsu')
+        modes = all - set('fsum')
         for mode in sorted(modes):  # put "c" mode first
             self.g = gdbm.open(filename, mode)
             self.g.close()
 
-        # Test additional flags (presumably "fsu").
+        # Test additional flags (presumably "fsum").
         flags = all - set('crwn')
         for mode in modes:
             for flag in flags:
@@ -216,6 +216,29 @@ class TestGdbm(unittest.TestCase):
         with temp_dir() as d:
             create_empty_file(os.path.join(d, 'test'))
             self.assertRaises(gdbm.error, gdbm.open, filename, 'r')
+
+    @unittest.skipUnless('m' in gdbm.open_flags, "requires 'm' in open_flags")
+    def test_nommap_no_crash(self):
+        self.g = g = gdbm.open(filename, 'nm')
+        os.truncate(filename, 0)
+
+        g.get(b'a', b'c')
+        g.keys()
+        g.firstkey()
+        g.nextkey(b'a')
+        with self.assertRaises(KeyError):
+            g[b'a']
+        with self.assertRaises(gdbm.error):
+            len(g)
+
+        with self.assertRaises(gdbm.error):
+            g[b'a'] = b'c'
+        with self.assertRaises(gdbm.error):
+            del g[b'a']
+        with self.assertRaises(gdbm.error):
+            g.setdefault(b'a', b'c')
+        with self.assertRaises(gdbm.error):
+            g.reorganize()
 
 
 if __name__ == '__main__':
