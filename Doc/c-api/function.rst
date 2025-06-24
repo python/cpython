@@ -142,8 +142,8 @@ There are a few functions specific to Python functions.
                 PyObject *PyFunction_GET_CLOSURE(PyObject *op)
                 PyObject *PyFunction_GET_ANNOTATIONS(PyObject *op)
 
-   Similar to their ``PyFunction_Get*`` counterparts, but do not do type
-   checking. Passing anything other than an instance of
+   These functions are similar to their ``PyFunction_Get*`` counterparts, but
+   do not do type checking. Passing anything other than an instance of
    :c:data:`PyFunction_Type` is undefined behavior.
 
 
