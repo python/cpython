@@ -799,4 +799,5 @@ _PyAssemble_MakeCodeObject(_PyCompile_CodeUnitMetadata *umd, PyObject *const_cac
     }
     assemble_free(&a);
     return co;
+    
 }
