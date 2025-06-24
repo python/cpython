@@ -145,12 +145,13 @@ There are a few functions specific to Python functions.
 
 .. c:type:: PyFunction_WatchEvent
 
-   Enumeration of possible function watcher events:
-   - ``PyFunction_EVENT_CREATE``
-   - ``PyFunction_EVENT_DESTROY``
-   - ``PyFunction_EVENT_MODIFY_CODE``
-   - ``PyFunction_EVENT_MODIFY_DEFAULTS``
-   - ``PyFunction_EVENT_MODIFY_KWDEFAULTS``
+    Enumeration of possible function watcher events:
+
+    - ``PyFunction_EVENT_CREATE``
+    - ``PyFunction_EVENT_DESTROY``
+    - ``PyFunction_EVENT_MODIFY_CODE``
+    - ``PyFunction_EVENT_MODIFY_DEFAULTS``
+    - ``PyFunction_EVENT_MODIFY_KWDEFAULTS``
 
    .. versionadded:: 3.12
 
@@ -168,7 +169,7 @@ There are a few functions specific to Python functions.
    unpredictable effects, including infinite recursion.
 
    If *event* is ``PyFunction_EVENT_CREATE``, then the callback is invoked
-   after `func` has been fully initialized. Otherwise, the callback is invoked
+   after *func* has been fully initialized. Otherwise, the callback is invoked
    before the modification to *func* takes place, so the prior state of *func*
    can be inspected. The runtime is permitted to optimize away the creation of
    function objects when possible. In such cases no event will be emitted.

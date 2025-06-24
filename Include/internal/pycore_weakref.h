@@ -9,7 +9,7 @@ extern "C" {
 #endif
 
 #include "pycore_critical_section.h" // Py_BEGIN_CRITICAL_SECTION()
-#include "pycore_lock.h"
+#include "pycore_lock.h"             // PyMutex_LockFlags()
 #include "pycore_object.h"           // _Py_REF_IS_MERGED()
 #include "pycore_pyatomic_ft_wrappers.h"
 

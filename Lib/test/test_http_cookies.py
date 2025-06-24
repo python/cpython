@@ -180,7 +180,7 @@ class CookieTests(unittest.TestCase):
         C = cookies.SimpleCookie('Customer="WILE_E_COYOTE"')
         C['Customer']['expires'] = 0
         # can't test exact output, it always depends on current date/time
-        self.assertTrue(C.output().endswith('GMT'))
+        self.assertEndsWith(C.output(), 'GMT')
 
         # loading 'expires'
         C = cookies.SimpleCookie()

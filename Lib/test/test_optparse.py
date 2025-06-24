@@ -14,8 +14,9 @@ import unittest
 
 from io import StringIO
 from test import support
-from test.support import os_helper
+from test.support import cpython_only, os_helper
 from test.support.i18n_helper import TestTranslationsBase, update_translation_snapshots
+from test.support.import_helper import ensure_lazy_imports
 
 import optparse
 from optparse import make_option, Option, \
@@ -1654,6 +1655,10 @@ class MiscTestCase(unittest.TestCase):
     def test__all__(self):
         not_exported = {'check_builtin', 'AmbiguousOptionError', 'NO_DEFAULT'}
         support.check__all__(self, optparse, not_exported=not_exported)
+
+    @cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("optparse", {"textwrap"})
 
 
 class TestTranslations(TestTranslationsBase):

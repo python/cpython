@@ -24,6 +24,8 @@ There are four basic concrete server classes:
    :meth:`~BaseServer.server_activate`.  The other parameters are passed to
    the :class:`BaseServer` base class.
 
+   .. versionchanged:: next
+      The default queue size is now ``socket.SOMAXCONN`` for :class:`socketserver.TCPServer`.
 
 .. class:: UDPServer(server_address, RequestHandlerClass, bind_and_activate=True)
 
@@ -266,8 +268,11 @@ Server Objects
 
    .. attribute:: address_family
 
-      The family of protocols to which the server's socket belongs.
-      Common examples are :const:`socket.AF_INET` and :const:`socket.AF_UNIX`.
+      The family of protocols to which the server's socket belongs.  Common
+      examples are :const:`socket.AF_INET`, :const:`socket.AF_INET6`, and
+      :const:`socket.AF_UNIX`.  Subclass the TCP or UDP server classes in this
+      module with class attribute ``address_family = AF_INET6`` set if you
+      want IPv6 server classes.
 
 
    .. attribute:: RequestHandlerClass

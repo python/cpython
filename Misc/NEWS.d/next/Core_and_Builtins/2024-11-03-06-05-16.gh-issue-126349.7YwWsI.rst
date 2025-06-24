@@ -1,2 +1,0 @@
-Add :func:`turtle.fill`, :func:`turtle.poly` and :func:`turtle.no_animation` context managers.
-Patch by Marie Roald and Yngve Mardal Moe.

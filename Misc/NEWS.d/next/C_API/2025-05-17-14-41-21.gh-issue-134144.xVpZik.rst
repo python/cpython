@@ -1,0 +1,1 @@
+Fix crash when calling :c:func:`Py_EndInterpreter` with a :term:`thread state` that isn't the initial thread for the interpreter.

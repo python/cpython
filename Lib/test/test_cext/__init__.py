@@ -38,6 +38,9 @@ class TestExt(unittest.TestCase):
 
     @unittest.skipIf(support.MS_WINDOWS, "MSVC doesn't support /std:c99")
     def test_build_c99(self):
+        # In public docs, we say C API is compatible with C11. However,
+        # in practice we do maintain C99 compatibility in public headers.
+        # Please ask the C API WG before adding a new C11-only feature.
         self.check_build('_test_c99_cext', std='c99')
 
     @support.requires_gil_enabled('incompatible with Free Threading')
@@ -50,7 +53,7 @@ class TestExt(unittest.TestCase):
 
     def check_build(self, extension_name, std=None, limited=False):
         venv_dir = 'env'
-        with support.setup_venv_with_pip_setuptools_wheel(venv_dir) as python_exe:
+        with support.setup_venv_with_pip_setuptools(venv_dir) as python_exe:
             self._check_build(extension_name, python_exe,
                               std=std, limited=limited)
 

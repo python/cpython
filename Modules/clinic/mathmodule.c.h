@@ -108,9 +108,7 @@ PyDoc_STRVAR(math_factorial__doc__,
 "factorial($module, n, /)\n"
 "--\n"
 "\n"
-"Find n!.\n"
-"\n"
-"Raise a ValueError if x is negative or non-integral.");
+"Find n!.");
 
 #define MATH_FACTORIAL_METHODDEF    \
     {"factorial", (PyCFunction)math_factorial, METH_O, math_factorial__doc__},
@@ -630,6 +628,74 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(math_isnormal__doc__,
+"isnormal($module, x, /)\n"
+"--\n"
+"\n"
+"Return True if x is normal, and False otherwise.");
+
+#define MATH_ISNORMAL_METHODDEF    \
+    {"isnormal", (PyCFunction)math_isnormal, METH_O, math_isnormal__doc__},
+
+static PyObject *
+math_isnormal_impl(PyObject *module, double x);
+
+static PyObject *
+math_isnormal(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    double x;
+
+    if (PyFloat_CheckExact(arg)) {
+        x = PyFloat_AS_DOUBLE(arg);
+    }
+    else
+    {
+        x = PyFloat_AsDouble(arg);
+        if (x == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    return_value = math_isnormal_impl(module, x);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(math_issubnormal__doc__,
+"issubnormal($module, x, /)\n"
+"--\n"
+"\n"
+"Return True if x is subnormal, and False otherwise.");
+
+#define MATH_ISSUBNORMAL_METHODDEF    \
+    {"issubnormal", (PyCFunction)math_issubnormal, METH_O, math_issubnormal__doc__},
+
+static PyObject *
+math_issubnormal_impl(PyObject *module, double x);
+
+static PyObject *
+math_issubnormal(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    double x;
+
+    if (PyFloat_CheckExact(arg)) {
+        x = PyFloat_AS_DOUBLE(arg);
+    }
+    else
+    {
+        x = PyFloat_AsDouble(arg);
+        if (x == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    return_value = math_issubnormal_impl(module, x);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(math_isnan__doc__,
 "isnan($module, x, /)\n"
 "--\n"
@@ -737,9 +803,11 @@ math_isclose(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { _Py_LATIN1_CHR('a'), _Py_LATIN1_CHR('b'), &_Py_ID(rel_tol), &_Py_ID(abs_tol), },
     };
     #undef NUM_KEYWORDS
@@ -856,9 +924,11 @@ math_prod(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(start), },
     };
     #undef NUM_KEYWORDS
@@ -1007,9 +1077,11 @@ math_nextafter(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(steps), },
     };
     #undef NUM_KEYWORDS
@@ -1106,4 +1178,4 @@ math_ulp(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1ccb4b9f570d6dad input=a9049054013a1b77]*/
+/*[clinic end generated code: output=44bba3a0a052a364 input=a9049054013a1b77]*/

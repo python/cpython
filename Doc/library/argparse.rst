@@ -74,7 +74,7 @@ ArgumentParser objects
                           prefix_chars='-', fromfile_prefix_chars=None, \
                           argument_default=None, conflict_handler='error', \
                           add_help=True, allow_abbrev=True, exit_on_error=True, \
-                          suggest_on_error=False)
+                          *, suggest_on_error=False, color=False)
 
    Create a new :class:`ArgumentParser` object. All parameters should be passed
    as keyword arguments. Each parameter has its own more detailed description
@@ -111,7 +111,7 @@ ArgumentParser objects
    * add_help_ - Add a ``-h/--help`` option to the parser (default: ``True``)
 
    * allow_abbrev_ - Allows long options to be abbreviated if the
-     abbreviation is unambiguous. (default: ``True``)
+     abbreviation is unambiguous (default: ``True``)
 
    * exit_on_error_ - Determines whether or not :class:`!ArgumentParser` exits with
      error info when an error occurs. (default: ``True``)
@@ -119,6 +119,7 @@ ArgumentParser objects
    * suggest_on_error_ - Enables suggestions for mistyped argument choices
      and subparser names (default: ``False``)
 
+   * color_ - Allow color output (default: ``False``)
 
    .. versionchanged:: 3.5
       *allow_abbrev* parameter was added.
@@ -129,6 +130,9 @@ ArgumentParser objects
 
    .. versionchanged:: 3.9
       *exit_on_error* parameter was added.
+
+   .. versionchanged:: 3.14
+      *suggest_on_error* and *color* parameters were added.
 
 The following sections describe how each of these are used.
 
@@ -594,7 +598,8 @@ subparser names, the feature can be enabled by setting ``suggest_on_error`` to
 ``True``. Note that this only applies for arguments when the choices specified
 are strings::
 
-   >>> parser = argparse.ArgumentParser(description='Process some integers.', suggest_on_error=True)
+   >>> parser = argparse.ArgumentParser(description='Process some integers.',
+                                        suggest_on_error=True)
    >>> parser.add_argument('--action', choices=['sum', 'max'])
    >>> parser.add_argument('integers', metavar='N', type=int, nargs='+',
    ...                     help='an integer for the accumulator')
@@ -608,6 +613,33 @@ keyword argument::
 
    >>> parser = argparse.ArgumentParser(description='Process some integers.')
    >>> parser.suggest_on_error = True
+
+.. versionadded:: 3.14
+
+
+color
+^^^^^
+
+By default, the help message is printed in plain text. If you want to allow
+color in help messages, you can enable it by setting ``color`` to ``True``::
+
+   >>> parser = argparse.ArgumentParser(description='Process some integers.',
+   ...                                  color=True)
+   >>> parser.add_argument('--action', choices=['sum', 'max'])
+   >>> parser.add_argument('integers', metavar='N', type=int, nargs='+',
+   ...                     help='an integer for the accumulator')
+   >>> parser.parse_args(['--help'])
+
+Even if a CLI author has enabled color, it can be
+:ref:`controlled using environment variables <using-on-controlling-color>`.
+
+If you're writing code that needs to be compatible with older Python versions
+and want to opportunistically use ``color`` when it's available, you
+can set it as an attribute after initializing the parser instead of using the
+keyword argument::
+
+   >>> parser = argparse.ArgumentParser(description='Process some integers.')
+   >>> parser.color = True
 
 .. versionadded:: 3.14
 
@@ -923,7 +955,7 @@ See also :ref:`specifying-ambiguous-arguments`. The supported values are:
 
 .. index:: single: + (plus); in argparse module
 
-* ``'+'``. Just like ``'*'``, all command-line args present are gathered into a
+* ``'+'``. Just like ``'*'``, all command-line arguments present are gathered into a
   list.  Additionally, an error message will be generated if there wasn't at
   least one command-line argument present.  For example::
 
@@ -2090,12 +2122,15 @@ Partial parsing
 
 .. method:: ArgumentParser.parse_known_args(args=None, namespace=None)
 
-   Sometimes a script may only parse a few of the command-line arguments, passing
-   the remaining arguments on to another script or program. In these cases, the
-   :meth:`~ArgumentParser.parse_known_args` method can be useful.  It works much like
-   :meth:`~ArgumentParser.parse_args` except that it does not produce an error when
-   extra arguments are present.  Instead, it returns a two item tuple containing
-   the populated namespace and the list of remaining argument strings.
+   Sometimes a script only needs to handle a specific set of command-line
+   arguments, leaving any unrecognized arguments for another script or program.
+   In these cases, the :meth:`~ArgumentParser.parse_known_args` method can be
+   useful.
+
+   This method works similarly to :meth:`~ArgumentParser.parse_args`, but it does
+   not raise an error for extra, unrecognized arguments. Instead, it parses the
+   known arguments and returns a two item tuple that contains the populated
+   namespace and the list of any unrecognized arguments.
 
    ::
 

@@ -1,1 +1,0 @@
-Improved the ``SyntaxWarning`` message for invalid escape sequences to clarify that such sequences will raise a ``SyntaxError`` in future Python releases. The new message also suggests a potential fix, i.e., ``Did you mean "\\e"?``.

@@ -1,3 +1,0 @@
-Reduce the import time of :mod:`csv` by up to five times, by importing
-:mod:`re` on demand. In particular, ``re`` is no more implicitly exposed
-as ``csv.re``. Patch by Bénédikt Tran.

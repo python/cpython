@@ -15,6 +15,7 @@ import re
 import types
 import decimal
 import unittest
+import warnings
 from test import support
 from test.support.os_helper import temp_cwd
 from test.support.script_helper import assert_python_failure, assert_python_ok
@@ -627,13 +628,23 @@ x = (
                             r"does not match opening parenthesis '\('",
                             ["f'{a(4}'",
                             ])
-        self.assertRaises(SyntaxError, eval, "f'{" + "("*500 + "}'")
+        self.assertRaises(SyntaxError, eval, "f'{" + "("*20 + "}'")
 
     @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
     def test_fstring_nested_too_deeply(self):
-        self.assertAllRaise(SyntaxError,
-                            "f-string: expressions nested too deeply",
-                            ['f"{1+2:{1+2:{1+1:{1}}}}"'])
+        def raises_syntax_or_memory_error(txt):
+            try:
+                eval(txt)
+            except SyntaxError:
+                pass
+            except MemoryError:
+                pass
+            except Exception as ex:
+                self.fail(f"Should raise SyntaxError or MemoryError, not {type(ex)}")
+            else:
+                self.fail("No exception raised")
+
+        raises_syntax_or_memory_error('f"{1+2:{1+2:{1+1:{1}}}}"')
 
         def create_nested_fstring(n):
             if n == 0:
@@ -641,9 +652,10 @@ x = (
             prev = create_nested_fstring(n-1)
             return f'f"{{{prev}}}"'
 
-        self.assertAllRaise(SyntaxError,
-                            "too many nested f-strings",
-                            [create_nested_fstring(160)])
+        raises_syntax_or_memory_error(create_nested_fstring(160))
+        raises_syntax_or_memory_error("f'{" + "("*100 + "}'")
+        raises_syntax_or_memory_error("f'{" + "("*1000 + "}'")
+        raises_syntax_or_memory_error("f'{" + "("*10_000 + "}'")
 
     def test_syntax_error_in_nested_fstring(self):
         # See gh-104016 for more information on this crash
@@ -1292,7 +1304,7 @@ x = (
                              "Bf''",
                              "BF''",]
         double_quote_cases = [case.replace("'", '"') for case in single_quote_cases]
-        self.assertAllRaise(SyntaxError, 'invalid syntax',
+        self.assertAllRaise(SyntaxError, 'prefixes are incompatible',
                             single_quote_cases + double_quote_cases)
 
     def test_leading_trailing_spaces(self):
@@ -1346,7 +1358,6 @@ x = (
         self.assertAllRaise(SyntaxError, "f-string: expecting '}'",
                             ["f'{3!'",
                              "f'{3!s'",
-                             "f'{3!g'",
                              ])
 
         self.assertAllRaise(SyntaxError, 'f-string: missing conversion character',
@@ -1369,7 +1380,7 @@ x = (
         for conv in ' s', ' s ':
             self.assertAllRaise(SyntaxError,
                                 "f-string: conversion type must come right after the"
-                                " exclamanation mark",
+                                " exclamation mark",
                                 ["f'{3!" + conv + "}'"])
 
         self.assertAllRaise(SyntaxError,
@@ -1650,8 +1661,9 @@ x = (
         #self.assertEqual(f'X{x =       }Y', 'Xx\t=\t'+repr(x)+'Y')
 
     def test_debug_expressions_are_raw_strings(self):
-
-        self.assertEqual(f'{b"\N{OX}"=}', 'b"\\N{OX}"=b\'\\\\N{OX}\'')
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', SyntaxWarning)
+            self.assertEqual(eval("""f'{b"\\N{OX}"=}'"""), 'b"\\N{OX}"=b\'\\\\N{OX}\'')
         self.assertEqual(f'{r"\xff"=}', 'r"\\xff"=\'\\\\xff\'')
         self.assertEqual(f'{r"\n"=}', 'r"\\n"=\'\\\\n\'')
         self.assertEqual(f"{'\''=}", "'\\''=\"'\"")
@@ -1781,6 +1793,31 @@ print(f'''{{
         self.assertEqual(f'{f'{1 == 2=}'=}', "f'{1 == 2=}'='1 == 2=False'")
         self.assertEqual(f'{f'{1!=2=}'=}', "f'{1!=2=}'='1!=2=True'")
         self.assertEqual(f'{f'{1 != 2=}'=}', "f'{1 != 2=}'='1 != 2=True'")
+
+    def test_newlines_in_format_specifiers(self):
+        cases = [
+            """f'{1:d\n}'""",
+            """f'__{
+                1:d
+            }__'""",
+            '''f"{value:.
+               {'2f'}}"''',
+            '''f"{value:
+               {'.2f'}f}"''',
+            '''f"{value:
+                #{'x'}}"''',
+        ]
+        self.assertAllRaise(SyntaxError, "f-string: newlines are not allowed in format specifiers", cases)
+
+        valid_cases = [
+            """f'''__{
+                1:d
+            }__'''""",
+            """f'''{1:d\n}'''""",
+        ]
+
+        for case in valid_cases:
+            compile(case, "<string>", "exec")
 
 
 if __name__ == '__main__':

@@ -13,8 +13,18 @@
 
 #include <Python.h>
 
-#if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
-#  include "../_complex.h"        // csqrt()
+#ifdef thread_local
+#  define _Py_thread_local thread_local
+#elif __STDC_VERSION__ >= 201112L && !defined(__STDC_NO_THREADS__)
+#  define _Py_thread_local _Thread_local
+#elif defined(_MSC_VER)  /* AKA NT_THREADS */
+#  define _Py_thread_local __declspec(thread)
+#elif defined(__GNUC__)  /* includes clang */
+#  define _Py_thread_local __thread
+#endif
+
+#if defined(Py_FFI_SUPPORT_C_COMPLEX)
+#  include <complex.h>            // csqrt()
 #  undef I                        // for _ctypes_test_generated.c.h
 #endif
 #include <stdio.h>                // printf()
@@ -81,7 +91,7 @@ typedef struct {
 } TestReg;
 
 
-EXPORT(TestReg) last_tfrsuv_arg = {0};
+_Py_thread_local TestReg last_tfrsuv_arg = {0};
 
 
 EXPORT(void)
@@ -447,7 +457,7 @@ EXPORT(double) my_sqrt(double a)
     return sqrt(a);
 }
 
-#if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
+#if defined(Py_FFI_SUPPORT_C_COMPLEX)
 EXPORT(double complex) my_csqrt(double complex a)
 {
     return csqrt(a);
@@ -741,8 +751,8 @@ EXPORT(void) _py_func(void)
 {
 }
 
-EXPORT(long long) last_tf_arg_s = 0;
-EXPORT(unsigned long long) last_tf_arg_u = 0;
+_Py_thread_local long long last_tf_arg_s = 0;
+_Py_thread_local unsigned long long last_tf_arg_u = 0;
 
 struct BITS {
     signed int A: 1, B:2, C:3, D:4, E: 5, F: 6, G: 7, H: 8, I: 9;
@@ -827,10 +837,24 @@ EXPORT(int) unpack_bitfields_msvc(struct BITS_msvc *bits, char name)
 }
 #endif
 
+PyObject *get_last_tf_arg_s(PyObject *self, PyObject *noargs)
+{
+    return PyLong_FromLongLong(last_tf_arg_s);
+}
+
+PyObject *get_last_tf_arg_u(PyObject *self, PyObject *noargs)
+{
+    return PyLong_FromUnsignedLongLong(last_tf_arg_u);
+}
+
+EXPORT(TestReg) get_last_tfrsuv_arg(void)
+{
+    return last_tfrsuv_arg;
+}
+
 static PyMethodDef module_methods[] = {
-/*      {"get_last_tf_arg_s", get_last_tf_arg_s, METH_NOARGS},
+    {"get_last_tf_arg_s", get_last_tf_arg_s, METH_NOARGS},
     {"get_last_tf_arg_u", get_last_tf_arg_u, METH_NOARGS},
-*/
     {"func_si", py_func_si, METH_VARARGS},
     {"func", py_func, METH_NOARGS},
     {"get_generated_test_data", get_generated_test_data, METH_O},

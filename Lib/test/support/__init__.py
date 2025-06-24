@@ -3,9 +3,11 @@
 if __name__ != 'test.support':
     raise ImportError('support must be imported from the test package')
 
+import annotationlib
 import contextlib
 import functools
 import inspect
+import logging
 import _opcode
 import os
 import re
@@ -31,7 +33,7 @@ __all__ = [
     "is_resource_enabled", "requires", "requires_freebsd_version",
     "requires_gil_enabled", "requires_linux_version", "requires_mac_ver",
     "check_syntax_error",
-    "requires_gzip", "requires_bz2", "requires_lzma",
+    "requires_gzip", "requires_bz2", "requires_lzma", "requires_zstd",
     "bigmemtest", "bigaddrspacetest", "cpython_only", "get_attribute",
     "requires_IEEE_754", "requires_zlib",
     "has_fork_support", "requires_fork",
@@ -44,6 +46,7 @@ __all__ = [
     # sys
     "MS_WINDOWS", "is_jython", "is_android", "is_emscripten", "is_wasi",
     "is_apple_mobile", "check_impl_detail", "unix_shell", "setswitchinterval",
+    "support_remote_exec_only",
     # os
     "get_pagesize",
     # network
@@ -56,8 +59,7 @@ __all__ = [
     "run_with_tz", "PGO", "missing_compiler_executable",
     "ALWAYS_EQ", "NEVER_EQ", "LARGEST", "SMALLEST",
     "LOOPBACK_TIMEOUT", "INTERNET_TIMEOUT", "SHORT_TIMEOUT", "LONG_TIMEOUT",
-    "Py_DEBUG", "exceeds_recursion_limit", "get_c_recursion_limit",
-    "skip_on_s390x",
+    "Py_DEBUG", "exceeds_recursion_limit", "skip_on_s390x",
     "requires_jit_enabled",
     "requires_jit_disabled",
     "force_not_colorized",
@@ -405,11 +407,12 @@ def skip_if_buildbot(reason=None):
     try:
         isbuildbot = getpass.getuser().lower() == 'buildbot'
     except (KeyError, OSError) as err:
-        warnings.warn(f'getpass.getuser() failed {err}.', RuntimeWarning)
+        logging.getLogger(__name__).warning('getpass.getuser() failed %s.', err, exc_info=err)
         isbuildbot = False
     return unittest.skipIf(isbuildbot, reason)
 
-def check_sanitizer(*, address=False, memory=False, ub=False, thread=False):
+def check_sanitizer(*, address=False, memory=False, ub=False, thread=False,
+                    function=True):
     """Returns True if Python is compiled with sanitizer support"""
     if not (address or memory or ub or thread):
         raise ValueError('At least one of address, memory, ub or thread must be True')
@@ -433,11 +436,15 @@ def check_sanitizer(*, address=False, memory=False, ub=False, thread=False):
         '-fsanitize=thread' in cflags or
         '--with-thread-sanitizer' in config_args
     )
+    function_sanitizer = (
+        '-fsanitize=function' in cflags
+    )
     return (
         (memory and memory_sanitizer) or
         (address and address_sanitizer) or
         (ub and ub_sanitizer) or
-        (thread and thread_sanitizer)
+        (thread and thread_sanitizer) or
+        (function and function_sanitizer)
     )
 
 
@@ -521,6 +528,13 @@ def requires_lzma(reason='requires lzma'):
         lzma = None
     return unittest.skipUnless(lzma, reason)
 
+def requires_zstd(reason='requires zstd'):
+    try:
+        from compression import zstd
+    except ImportError:
+        zstd = None
+    return unittest.skipUnless(zstd, reason)
+
 def has_no_debug_ranges():
     try:
         import _testcapi
@@ -557,6 +571,9 @@ is_wasi = sys.platform == "wasi"
 
 def skip_emscripten_stack_overflow():
     return unittest.skipIf(is_emscripten, "Exhausts limited stack on Emscripten")
+
+def skip_wasi_stack_overflow():
+    return unittest.skipIf(is_wasi, "Exhausts stack on WASI")
 
 is_apple_mobile = sys.platform in {"ios", "tvos", "watchos"}
 is_apple = is_apple_mobile or sys.platform == "darwin"
@@ -680,9 +697,11 @@ def sortdict(dict):
     return "{%s}" % withcommas
 
 
-def run_code(code: str) -> dict[str, object]:
+def run_code(code: str, extra_names: dict[str, object] | None = None) -> dict[str, object]:
     """Run a piece of code after dedenting it, and return its global namespace."""
     ns = {}
+    if extra_names:
+        ns.update(extra_names)
     exec(textwrap.dedent(code), ns)
     return ns
 
@@ -833,7 +852,6 @@ def gc_threshold(*args):
     finally:
         gc.set_threshold(*old_threshold)
 
-
 def python_is_optimized():
     """Find if Python was built with optimizations."""
     cflags = sysconfig.get_config_var('PY_CFLAGS') or ''
@@ -841,7 +859,11 @@ def python_is_optimized():
     for opt in cflags.split():
         if opt.startswith('-O'):
             final_opt = opt
-    return final_opt not in ('', '-O0', '-Og')
+    if sysconfig.get_config_var("CC") == "gcc":
+        non_opts = ('', '-O0', '-Og')
+    else:
+        non_opts = ('', '-O0')
+    return final_opt not in non_opts
 
 
 def check_cflags_pgo():
@@ -923,6 +945,31 @@ def check_sizeof(test, o, size):
     msg = 'wrong size for %s: got %d, expected %d' \
             % (type(o), result, size)
     test.assertEqual(result, size, msg)
+
+def subTests(arg_names, arg_values, /, *, _do_cleanups=False):
+    """Run multiple subtests with different parameters.
+    """
+    single_param = False
+    if isinstance(arg_names, str):
+        arg_names = arg_names.replace(',',' ').split()
+        if len(arg_names) == 1:
+            single_param = True
+    arg_values = tuple(arg_values)
+    def decorator(func):
+        if isinstance(func, type):
+            raise TypeError('subTests() can only decorate methods, not classes')
+        @functools.wraps(func)
+        def wrapper(self, /, *args, **kwargs):
+            for values in arg_values:
+                if single_param:
+                    values = (values,)
+                subtest_kwargs = dict(zip(arg_names, values))
+                with self.subTest(**subtest_kwargs):
+                    func(self, *args, **kwargs, **subtest_kwargs)
+                if _do_cleanups:
+                    self.doCleanups()
+        return wrapper
+    return decorator
 
 #=======================================================================
 # Decorator/context manager for running a code in a different locale,
@@ -1063,7 +1110,7 @@ def set_memlimit(limit: str) -> None:
     global real_max_memuse
     memlimit = _parse_memlimit(limit)
     if memlimit < _2G - 1:
-        raise ValueError('Memory limit {limit!r} too low to be useful')
+        raise ValueError(f'Memory limit {limit!r} too low to be useful')
 
     real_max_memuse = memlimit
     memlimit = min(memlimit, MAX_Py_ssize_t)
@@ -1080,12 +1127,10 @@ class _MemoryWatchdog:
         self.started = False
 
     def start(self):
-        import warnings
         try:
             f = open(self.procfile, 'r')
         except OSError as e:
-            warnings.warn('/proc not available for stats: {}'.format(e),
-                          RuntimeWarning)
+            logging.getLogger(__name__).warning('/proc not available for stats: %s', e, exc_info=e)
             sys.stderr.flush()
             return
 
@@ -1321,8 +1366,8 @@ MISSING_C_DOCSTRINGS = (check_impl_detail() and
                         sys.platform != 'win32' and
                         not sysconfig.get_config_var('WITH_DOC_STRINGS'))
 
-HAVE_DOCSTRINGS = (_check_docstrings.__doc__ is not None and
-                   not MISSING_C_DOCSTRINGS)
+HAVE_PY_DOCSTRINGS = _check_docstrings.__doc__ is not None
+HAVE_DOCSTRINGS = (HAVE_PY_DOCSTRINGS and not MISSING_C_DOCSTRINGS)
 
 requires_docstrings = unittest.skipUnless(HAVE_DOCSTRINGS,
                                           "test requires docstrings")
@@ -1929,8 +1974,9 @@ def missing_compiler_executable(cmd_names=[]):
     missing.
 
     """
-    from setuptools._distutils import ccompiler, sysconfig, spawn
+    from setuptools._distutils import ccompiler, sysconfig
     from setuptools import errors
+    import shutil
 
     compiler = ccompiler.new_compiler()
     sysconfig.customize_compiler(compiler)
@@ -1949,7 +1995,7 @@ def missing_compiler_executable(cmd_names=[]):
                     "the '%s' executable is not configured" % name
         elif not cmd:
             continue
-        if spawn.find_executable(cmd[0]) is None:
+        if shutil.which(cmd[0]) is None:
             return cmd[0]
 
 
@@ -2338,7 +2384,7 @@ def infinite_recursion(max_depth=None):
         # very deep recursion.
         max_depth = 20_000
     elif max_depth < 3:
-        raise ValueError("max_depth must be at least 3, got {max_depth}")
+        raise ValueError(f"max_depth must be at least 3, got {max_depth}")
     depth = get_recursion_depth()
     depth = max(depth - 1, 1)  # Ignore infinite_recursion() frame.
     limit = depth + max_depth
@@ -2359,8 +2405,9 @@ def clear_ignored_deprecations(*tokens: object) -> None:
         raise ValueError("Provide token or tokens returned by ignore_deprecations_from")
 
     new_filters = []
+    old_filters = warnings._get_filters()
     endswith = tuple(rf"(?#support{id(token)})" for token in tokens)
-    for action, message, category, module, lineno in warnings.filters:
+    for action, message, category, module, lineno in old_filters:
         if action == "ignore" and category is DeprecationWarning:
             if isinstance(message, re.Pattern):
                 msg = message.pattern
@@ -2369,8 +2416,8 @@ def clear_ignored_deprecations(*tokens: object) -> None:
             if msg.endswith(endswith):
                 continue
         new_filters.append((action, message, category, module, lineno))
-    if warnings.filters != new_filters:
-        warnings.filters[:] = new_filters
+    if old_filters != new_filters:
+        old_filters[:] = new_filters
         warnings._filters_mutated()
 
 
@@ -2404,7 +2451,7 @@ def _findwheel(pkgname):
     filenames = os.listdir(wheel_dir)
     filenames = sorted(filenames, reverse=True)  # approximate "newest" first
     for filename in filenames:
-        # filename is like 'setuptools-67.6.1-py3-none-any.whl'
+        # filename is like 'setuptools-{version}-py3-none-any.whl'
         if not filename.endswith(".whl"):
             continue
         prefix = pkgname + '-'
@@ -2413,16 +2460,16 @@ def _findwheel(pkgname):
     raise FileNotFoundError(f"No wheel for {pkgname} found in {wheel_dir}")
 
 
-# Context manager that creates a virtual environment, install setuptools and wheel in it
-# and returns the path to the venv directory and the path to the python executable
+# Context manager that creates a virtual environment, install setuptools in it,
+# and returns the paths to the venv directory and the python executable
 @contextlib.contextmanager
-def setup_venv_with_pip_setuptools_wheel(venv_dir):
-    import shlex
+def setup_venv_with_pip_setuptools(venv_dir):
     import subprocess
     from .os_helper import temp_cwd
 
     def run_command(cmd):
         if verbose:
+            import shlex
             print()
             print('Run:', ' '.join(map(shlex.quote, cmd)))
             subprocess.run(cmd, check=True)
@@ -2446,10 +2493,10 @@ def setup_venv_with_pip_setuptools_wheel(venv_dir):
         else:
             python = os.path.join(venv, 'bin', python_exe)
 
-        cmd = [python, '-X', 'dev',
+        cmd = (python, '-X', 'dev',
                '-m', 'pip', 'install',
                _findwheel('setuptools'),
-               _findwheel('wheel')]
+               )
         run_command(cmd)
 
         yield python
@@ -2573,30 +2620,30 @@ def sleeping_retry(timeout, err_msg=None, /,
         delay = min(delay * 2, max_delay)
 
 
-class CPUStopwatch:
+class Stopwatch:
     """Context manager to roughly time a CPU-bound operation.
 
-    Disables GC. Uses CPU time if it can (i.e. excludes sleeps & time of
-    other processes).
+    Disables GC. Uses perf_counter, which is a clock with the highest
+    available resolution. It is chosen even though it does include
+    time elapsed during sleep and is system-wide, because the
+    resolution of process_time is too coarse on Windows and
+    process_time does not exist everywhere (for example, WASM).
 
-    N.B.:
-    - This *includes* time spent in other threads.
+    Note:
+    - This *includes* time spent in other threads/processes.
     - Some systems only have a coarse resolution; check
-      stopwatch.clock_info.rseolution if.
+      stopwatch.clock_info.resolution when using the results.
 
     Usage:
 
-    with ProcessStopwatch() as stopwatch:
+    with Stopwatch() as stopwatch:
         ...
     elapsed = stopwatch.seconds
     resolution = stopwatch.clock_info.resolution
     """
     def __enter__(self):
-        get_time = time.process_time
-        clock_info = time.get_clock_info('process_time')
-        if get_time() <= 0:  # some platforms like WASM lack process_time()
-            get_time = time.monotonic
-            clock_info = time.get_clock_info('monotonic')
+        get_time = time.perf_counter
+        clock_info = time.get_clock_info('perf_counter')
         self.context = disable_gc()
         self.context.__enter__()
         self.get_time = get_time
@@ -2624,17 +2671,9 @@ def adjust_int_max_str_digits(max_digits):
         sys.set_int_max_str_digits(current)
 
 
-def get_c_recursion_limit():
-    try:
-        import _testcapi
-        return _testcapi.Py_C_RECURSION_LIMIT
-    except ImportError:
-        raise unittest.SkipTest('requires _testcapi')
-
-
 def exceeds_recursion_limit():
     """For recursion tests, easily exceeds default recursion limit."""
-    return get_c_recursion_limit() * 3
+    return 150_000
 
 
 # Windows doesn't have os.uname() but it doesn't support s390x.
@@ -2643,13 +2682,9 @@ skip_on_s390x = unittest.skipIf(is_s390x, 'skipped on s390x')
 
 Py_TRACE_REFS = hasattr(sys, 'getobjects')
 
-try:
-    from _testinternalcapi import jit_enabled
-except ImportError:
-    requires_jit_enabled = requires_jit_disabled = unittest.skip("requires _testinternalcapi")
-else:
-    requires_jit_enabled = unittest.skipUnless(jit_enabled(), "requires JIT enabled")
-    requires_jit_disabled = unittest.skipIf(jit_enabled(), "requires JIT disabled")
+_JIT_ENABLED = sys._jit.is_enabled()
+requires_jit_enabled = unittest.skipUnless(_JIT_ENABLED, "requires JIT enabled")
+requires_jit_disabled = unittest.skipIf(_JIT_ENABLED, "requires JIT disabled")
 
 
 _BASE_COPY_SRC_DIR_IGNORED_NAMES = frozenset({
@@ -2718,7 +2753,7 @@ def iter_builtin_types():
     # Fall back to making a best-effort guess.
     if hasattr(object, '__flags__'):
         # Look for any type object with the Py_TPFLAGS_STATIC_BUILTIN flag set.
-        import datetime
+        import datetime  # noqa: F401
         seen = set()
         for cls, subs in walk_class_hierarchy(object):
             if cls in seen:
@@ -2850,37 +2885,59 @@ def iter_slot_wrappers(cls):
 
 
 @contextlib.contextmanager
-def no_color():
+def force_color(color: bool):
     import _colorize
     from .os_helper import EnvironmentVarGuard
 
     with (
-        swap_attr(_colorize, "can_colorize", lambda file=None: False),
+        swap_attr(_colorize, "can_colorize", lambda file=None: color),
         EnvironmentVarGuard() as env,
     ):
-        for var in {"FORCE_COLOR", "NO_COLOR", "PYTHON_COLORS"}:
-            env.unset(var)
-        env.set("NO_COLOR", "1")
+        env.unset("FORCE_COLOR", "NO_COLOR", "PYTHON_COLORS")
+        env.set("FORCE_COLOR" if color else "NO_COLOR", "1")
         yield
 
 
-def force_not_colorized(func):
-    """Force the terminal not to be colorized."""
+def force_colorized(func):
+    """Force the terminal to be colorized."""
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        with no_color():
+        with force_color(True):
             return func(*args, **kwargs)
     return wrapper
 
 
-def force_not_colorized_test_class(cls):
-    """Force the terminal not to be colorized for the entire test class."""
+def force_not_colorized(func):
+    """Force the terminal NOT to be colorized."""
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        with force_color(False):
+            return func(*args, **kwargs)
+    return wrapper
+
+
+def force_colorized_test_class(cls):
+    """Force the terminal to be colorized for the entire test class."""
     original_setUpClass = cls.setUpClass
 
     @classmethod
     @functools.wraps(cls.setUpClass)
     def new_setUpClass(cls):
-        cls.enterClassContext(no_color())
+        cls.enterClassContext(force_color(True))
+        original_setUpClass()
+
+    cls.setUpClass = new_setUpClass
+    return cls
+
+
+def force_not_colorized_test_class(cls):
+    """Force the terminal NOT to be colorized for the entire test class."""
+    original_setUpClass = cls.setUpClass
+
+    @classmethod
+    @functools.wraps(cls.setUpClass)
+    def new_setUpClass(cls):
+        cls.enterClassContext(force_color(False))
         original_setUpClass()
 
     cls.setUpClass = new_setUpClass
@@ -2895,12 +2952,6 @@ def make_clean_env() -> dict[str, str]:
     clean_env.pop("FORCE_COLOR", None)
     clean_env.pop("NO_COLOR", None)
     return clean_env
-
-
-def initialized_with_pyrepl():
-    """Detect whether PyREPL was used during Python initialization."""
-    # If the main module has a __file__ attribute it's a Python module, which means PyREPL.
-    return hasattr(sys.modules["__main__"], "__file__")
 
 
 WINDOWS_STATUS = {
@@ -3018,3 +3069,99 @@ def is_libssl_fips_mode():
     except ImportError:
         return False  # more of a maybe, unless we add this to the _ssl module.
     return get_fips_mode() != 0
+
+def _supports_remote_attaching():
+    PROCESS_VM_READV_SUPPORTED = False
+
+    try:
+        from _remote_debugging import PROCESS_VM_READV_SUPPORTED
+    except ImportError:
+        pass
+
+    return PROCESS_VM_READV_SUPPORTED
+
+def _support_remote_exec_only_impl():
+    if not sys.is_remote_debug_enabled():
+        return unittest.skip("Remote debugging is not enabled")
+    if sys.platform not in ("darwin", "linux", "win32"):
+        return unittest.skip("Test only runs on Linux, Windows and macOS")
+    if sys.platform == "linux" and not _supports_remote_attaching():
+        return unittest.skip("Test only runs on Linux with process_vm_readv support")
+    return _id
+
+def support_remote_exec_only(test):
+    return _support_remote_exec_only_impl()(test)
+
+class EqualToForwardRef:
+    """Helper to ease use of annotationlib.ForwardRef in tests.
+
+    This checks only attributes that can be set using the constructor.
+
+    """
+
+    def __init__(
+        self,
+        arg,
+        *,
+        module=None,
+        owner=None,
+        is_class=False,
+    ):
+        self.__forward_arg__ = arg
+        self.__forward_is_class__ = is_class
+        self.__forward_module__ = module
+        self.__owner__ = owner
+
+    def __eq__(self, other):
+        if not isinstance(other, (EqualToForwardRef, annotationlib.ForwardRef)):
+            return NotImplemented
+        return (
+            self.__forward_arg__ == other.__forward_arg__
+            and self.__forward_module__ == other.__forward_module__
+            and self.__forward_is_class__ == other.__forward_is_class__
+            and self.__owner__ == other.__owner__
+        )
+
+    def __repr__(self):
+        extra = []
+        if self.__forward_module__ is not None:
+            extra.append(f", module={self.__forward_module__!r}")
+        if self.__forward_is_class__:
+            extra.append(", is_class=True")
+        if self.__owner__ is not None:
+            extra.append(f", owner={self.__owner__!r}")
+        return f"EqualToForwardRef({self.__forward_arg__!r}{''.join(extra)})"
+
+
+_linked_to_musl = None
+def linked_to_musl():
+    """
+    Report if the Python executable is linked to the musl C library.
+
+    Return False if we don't think it is, or a version triple otherwise.
+    """
+    # This is can be a relatively expensive check, so we use a cache.
+    global _linked_to_musl
+    if _linked_to_musl is not None:
+        return _linked_to_musl
+
+    # emscripten (at least as far as we're concerned) and wasi use musl,
+    # but platform doesn't know how to get the version, so set it to zero.
+    if is_emscripten or is_wasi:
+        _linked_to_musl = (0, 0, 0)
+        return _linked_to_musl
+
+    # On all other non-linux platforms assume no musl.
+    if sys.platform != 'linux':
+        _linked_to_musl = False
+        return _linked_to_musl
+
+    # On linux, we'll depend on the platform module to do the check, so new
+    # musl platforms should add support in that module if possible.
+    import platform
+    lib, version = platform.libc_ver()
+    if lib != 'musl':
+        _linked_to_musl = False
+        return _linked_to_musl
+    _linked_to_musl = tuple(map(int, version.split('.')))
+    return _linked_to_musl

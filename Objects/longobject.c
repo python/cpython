@@ -10,7 +10,9 @@
 #include "pycore_long.h"          // _Py_SmallInts
 #include "pycore_object.h"        // _PyObject_Init()
 #include "pycore_runtime.h"       // _PY_NSMALLPOSINTS
+#include "pycore_stackref.h"
 #include "pycore_structseq.h"     // _PyStructSequence_FiniBuiltin()
+#include "pycore_unicodeobject.h" // _PyUnicode_Equal()
 
 #include <float.h>                // DBL_MANT_DIG
 #include <stddef.h>               // offsetof
@@ -315,6 +317,33 @@ _PyLong_FromSTwoDigits(stwodigits x)
     return (PyLongObject*)_PyLong_FromLarge(x);
 }
 
+/* Create a new medium int object from a medium int.
+ * Do not raise. Return NULL if not medium or can't allocate. */
+static inline _PyStackRef
+medium_from_stwodigits(stwodigits x)
+{
+    if (IS_SMALL_INT(x)) {
+        return PyStackRef_FromPyObjectBorrow(get_small_int((sdigit)x));
+    }
+    assert(x != 0);
+    if(!is_medium_int(x)) {
+        return PyStackRef_NULL;
+    }
+    PyLongObject *v = (PyLongObject *)_Py_FREELIST_POP(PyLongObject, ints);
+    if (v == NULL) {
+        v = PyObject_Malloc(sizeof(PyLongObject));
+        if (v == NULL) {
+            return PyStackRef_NULL;
+        }
+        _PyObject_Init((PyObject*)v, &PyLong_Type);
+    }
+    digit abs_x = x < 0 ? (digit)(-x) : (digit)x;
+    _PyLong_SetSignAndDigitCount(v, x<0?-1:1, 1);
+    v->long_value.ob_digit[0] = abs_x;
+    return PyStackRef_FromPyObjectStealMortal((PyObject *)v);
+}
+
+
 /* If a freshly-allocated int is already shared, it must
    be a small integer, so negating it must go to PyLong_FromLong */
 Py_LOCAL_INLINE(void)
@@ -332,49 +361,51 @@ _PyLong_Negate(PyLongObject **x_p)
     Py_DECREF(x);
 }
 
+#define PYLONG_FROM_INT(UINT_TYPE, INT_TYPE, ival)                                  \
+    do {                                                                            \
+        /* Handle small and medium cases. */                                        \
+        if (IS_SMALL_INT(ival)) {                                                   \
+            return get_small_int((sdigit)(ival));                                   \
+        }                                                                           \
+        if (-(INT_TYPE)PyLong_MASK <= (ival) && (ival) <= (INT_TYPE)PyLong_MASK) {  \
+            return _PyLong_FromMedium((sdigit)(ival));                              \
+        }                                                                           \
+        UINT_TYPE abs_ival = (ival) < 0 ? 0U-(UINT_TYPE)(ival) : (UINT_TYPE)(ival); \
+        /* Do shift in two steps to avoid possible undefined behavior. */           \
+        UINT_TYPE t = abs_ival >> PyLong_SHIFT >> PyLong_SHIFT;                     \
+        /* Count digits (at least two - smaller cases were handled above). */       \
+        Py_ssize_t ndigits = 2;                                                     \
+        while (t) {                                                                 \
+            ++ndigits;                                                              \
+            t >>= PyLong_SHIFT;                                                     \
+        }                                                                           \
+        /* Construct output value. */                                               \
+        PyLongObject *v = long_alloc(ndigits);                                      \
+        if (v == NULL) {                                                            \
+            return NULL;                                                            \
+        }                                                                           \
+        digit *p = v->long_value.ob_digit;                                          \
+        _PyLong_SetSignAndDigitCount(v, (ival) < 0 ? -1 : 1, ndigits);              \
+        t = abs_ival;                                                               \
+        while (t) {                                                                 \
+            *p++ = (digit)(t & PyLong_MASK);                                        \
+            t >>= PyLong_SHIFT;                                                     \
+        }                                                                           \
+        return (PyObject *)v;                                                       \
+    } while(0)
+
+
 /* Create a new int object from a C long int */
 
 PyObject *
 PyLong_FromLong(long ival)
 {
-    PyLongObject *v;
-    unsigned long abs_ival, t;
-    int ndigits;
-
-    /* Handle small and medium cases. */
-    if (IS_SMALL_INT(ival)) {
-        return get_small_int((sdigit)ival);
-    }
-    if (-(long)PyLong_MASK <= ival && ival <= (long)PyLong_MASK) {
-        return _PyLong_FromMedium((sdigit)ival);
-    }
-
-    /* Count digits (at least two - smaller cases were handled above). */
-    abs_ival = ival < 0 ? 0U-(unsigned long)ival : (unsigned long)ival;
-    /* Do shift in two steps to avoid possible undefined behavior. */
-    t = abs_ival >> PyLong_SHIFT >> PyLong_SHIFT;
-    ndigits = 2;
-    while (t) {
-        ++ndigits;
-        t >>= PyLong_SHIFT;
-    }
-
-    /* Construct output value. */
-    v = long_alloc(ndigits);
-    if (v != NULL) {
-        digit *p = v->long_value.ob_digit;
-        _PyLong_SetSignAndDigitCount(v, ival < 0 ? -1 : 1, ndigits);
-        t = abs_ival;
-        while (t) {
-            *p++ = (digit)(t & PyLong_MASK);
-            t >>= PyLong_SHIFT;
-        }
-    }
-    return (PyObject *)v;
+    PYLONG_FROM_INT(unsigned long, long, ival);
 }
 
 #define PYLONG_FROM_UINT(INT_TYPE, ival) \
     do { \
+        /* Handle small and medium cases. */ \
         if (IS_SMALL_UINT(ival)) { \
             return get_small_int((sdigit)(ival)); \
         } \
@@ -383,12 +414,13 @@ PyLong_FromLong(long ival)
         } \
         /* Do shift in two steps to avoid possible undefined behavior. */ \
         INT_TYPE t = (ival) >> PyLong_SHIFT >> PyLong_SHIFT; \
-        /* Count the number of Python digits. */ \
+        /* Count digits (at least two - smaller cases were handled above). */ \
         Py_ssize_t ndigits = 2; \
         while (t) { \
             ++ndigits; \
             t >>= PyLong_SHIFT; \
         } \
+        /* Construct output value. */ \
         PyLongObject *v = long_alloc(ndigits); \
         if (v == NULL) { \
             return NULL; \
@@ -905,7 +937,9 @@ _PyLong_NumBits(PyObject *vv)
     assert(ndigits == 0 || v->long_value.ob_digit[ndigits - 1] != 0);
     if (ndigits > 0) {
         digit msd = v->long_value.ob_digit[ndigits - 1];
+#if SIZEOF_SIZE_T == 8
         assert(ndigits <= INT64_MAX / PyLong_SHIFT);
+#endif
         result = (int64_t)(ndigits - 1) * PyLong_SHIFT;
         msd_bits = bit_length_digit(msd);
         result += msd_bits;
@@ -965,16 +999,9 @@ _PyLong_FromByteArray(const unsigned char* bytes, size_t n,
             ++numsignificantbytes;
     }
 
-    /* How many Python int digits do we need?  We have
-       8*numsignificantbytes bits, and each Python int digit has
-       PyLong_SHIFT bits, so it's the ceiling of the quotient. */
-    /* catch overflow before it happens */
-    if (numsignificantbytes > (PY_SSIZE_T_MAX - PyLong_SHIFT) / 8) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "byte array too long to convert to int");
-        return NULL;
-    }
-    ndigits = (numsignificantbytes * 8 + PyLong_SHIFT - 1) / PyLong_SHIFT;
+    /* avoid integer overflow */
+    ndigits = numsignificantbytes / PyLong_SHIFT * 8
+        + (numsignificantbytes % PyLong_SHIFT * 8 + PyLong_SHIFT - 1) / PyLong_SHIFT;
     v = long_alloc(ndigits);
     if (v == NULL)
         return NULL;
@@ -1482,40 +1509,7 @@ PyLong_AsVoidPtr(PyObject *vv)
 PyObject *
 PyLong_FromLongLong(long long ival)
 {
-    PyLongObject *v;
-    unsigned long long abs_ival, t;
-    int ndigits;
-
-    /* Handle small and medium cases. */
-    if (IS_SMALL_INT(ival)) {
-        return get_small_int((sdigit)ival);
-    }
-    if (-(long long)PyLong_MASK <= ival && ival <= (long long)PyLong_MASK) {
-        return _PyLong_FromMedium((sdigit)ival);
-    }
-
-    /* Count digits (at least two - smaller cases were handled above). */
-    abs_ival = ival < 0 ? 0U-(unsigned long long)ival : (unsigned long long)ival;
-    /* Do shift in two steps to avoid possible undefined behavior. */
-    t = abs_ival >> PyLong_SHIFT >> PyLong_SHIFT;
-    ndigits = 2;
-    while (t) {
-        ++ndigits;
-        t >>= PyLong_SHIFT;
-    }
-
-    /* Construct output value. */
-    v = long_alloc(ndigits);
-    if (v != NULL) {
-        digit *p = v->long_value.ob_digit;
-        _PyLong_SetSignAndDigitCount(v, ival < 0 ? -1 : 1, ndigits);
-        t = abs_ival;
-        while (t) {
-            *p++ = (digit)(t & PyLong_MASK);
-            t >>= PyLong_SHIFT;
-        }
-    }
-    return (PyObject *)v;
+    PYLONG_FROM_INT(unsigned long long, long long, ival);
 }
 
 /* Create a new int object from a C Py_ssize_t. */
@@ -1523,42 +1517,7 @@ PyLong_FromLongLong(long long ival)
 PyObject *
 PyLong_FromSsize_t(Py_ssize_t ival)
 {
-    PyLongObject *v;
-    size_t abs_ival;
-    size_t t;  /* unsigned so >> doesn't propagate sign bit */
-    int ndigits = 0;
-    int negative = 0;
-
-    if (IS_SMALL_INT(ival)) {
-        return get_small_int((sdigit)ival);
-    }
-
-    if (ival < 0) {
-        /* avoid signed overflow when ival = SIZE_T_MIN */
-        abs_ival = (size_t)(-1-ival)+1;
-        negative = 1;
-    }
-    else {
-        abs_ival = (size_t)ival;
-    }
-
-    /* Count the number of Python digits. */
-    t = abs_ival;
-    while (t) {
-        ++ndigits;
-        t >>= PyLong_SHIFT;
-    }
-    v = long_alloc(ndigits);
-    if (v != NULL) {
-        digit *p = v->long_value.ob_digit;
-        _PyLong_SetSignAndDigitCount(v, negative ? -1 : 1, ndigits);
-        t = abs_ival;
-        while (t) {
-            *p++ = (digit)(t & PyLong_MASK);
-            t >>= PyLong_SHIFT;
-        }
-    }
-    return (PyObject *)v;
+    PYLONG_FROM_INT(size_t, Py_ssize_t, ival);
 }
 
 /* Get a C long long int from an int object or any object that has an
@@ -1797,100 +1756,35 @@ PyLong_AsLongLongAndOverflow(PyObject *vv, int *overflow)
     return res;
 }
 
-int
-_PyLong_UnsignedShort_Converter(PyObject *obj, void *ptr)
-{
-    unsigned long uval;
-
-    if (PyLong_Check(obj) && _PyLong_IsNegative((PyLongObject *)obj)) {
-        PyErr_SetString(PyExc_ValueError, "value must be positive");
-        return 0;
-    }
-    uval = PyLong_AsUnsignedLong(obj);
-    if (uval == (unsigned long)-1 && PyErr_Occurred())
-        return 0;
-    if (uval > USHRT_MAX) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "Python int too large for C unsigned short");
-        return 0;
-    }
-
-    *(unsigned short *)ptr = Py_SAFE_DOWNCAST(uval, unsigned long, unsigned short);
-    return 1;
+#define UNSIGNED_INT_CONVERTER(NAME, TYPE)                          \
+int                                                                 \
+_PyLong_##NAME##_Converter(PyObject *obj, void *ptr)                \
+{                                                                   \
+    Py_ssize_t bytes = PyLong_AsNativeBytes(obj, ptr, sizeof(TYPE), \
+            Py_ASNATIVEBYTES_NATIVE_ENDIAN |                        \
+            Py_ASNATIVEBYTES_ALLOW_INDEX |                          \
+            Py_ASNATIVEBYTES_REJECT_NEGATIVE |                      \
+            Py_ASNATIVEBYTES_UNSIGNED_BUFFER);                      \
+    if (bytes < 0) {                                                \
+        return 0;                                                   \
+    }                                                               \
+    if ((size_t)bytes > sizeof(TYPE)) {                             \
+        PyErr_SetString(PyExc_OverflowError,                        \
+                        "Python int too large for C "#TYPE);        \
+        return 0;                                                   \
+    }                                                               \
+    return 1;                                                       \
 }
 
-int
-_PyLong_UnsignedInt_Converter(PyObject *obj, void *ptr)
-{
-    unsigned long uval;
-
-    if (PyLong_Check(obj) && _PyLong_IsNegative((PyLongObject *)obj)) {
-        PyErr_SetString(PyExc_ValueError, "value must be positive");
-        return 0;
-    }
-    uval = PyLong_AsUnsignedLong(obj);
-    if (uval == (unsigned long)-1 && PyErr_Occurred())
-        return 0;
-    if (uval > UINT_MAX) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "Python int too large for C unsigned int");
-        return 0;
-    }
-
-    *(unsigned int *)ptr = Py_SAFE_DOWNCAST(uval, unsigned long, unsigned int);
-    return 1;
-}
-
-int
-_PyLong_UnsignedLong_Converter(PyObject *obj, void *ptr)
-{
-    unsigned long uval;
-
-    if (PyLong_Check(obj) && _PyLong_IsNegative((PyLongObject *)obj)) {
-        PyErr_SetString(PyExc_ValueError, "value must be positive");
-        return 0;
-    }
-    uval = PyLong_AsUnsignedLong(obj);
-    if (uval == (unsigned long)-1 && PyErr_Occurred())
-        return 0;
-
-    *(unsigned long *)ptr = uval;
-    return 1;
-}
-
-int
-_PyLong_UnsignedLongLong_Converter(PyObject *obj, void *ptr)
-{
-    unsigned long long uval;
-
-    if (PyLong_Check(obj) && _PyLong_IsNegative((PyLongObject *)obj)) {
-        PyErr_SetString(PyExc_ValueError, "value must be positive");
-        return 0;
-    }
-    uval = PyLong_AsUnsignedLongLong(obj);
-    if (uval == (unsigned long long)-1 && PyErr_Occurred())
-        return 0;
-
-    *(unsigned long long *)ptr = uval;
-    return 1;
-}
-
-int
-_PyLong_Size_t_Converter(PyObject *obj, void *ptr)
-{
-    size_t uval;
-
-    if (PyLong_Check(obj) && _PyLong_IsNegative((PyLongObject *)obj)) {
-        PyErr_SetString(PyExc_ValueError, "value must be positive");
-        return 0;
-    }
-    uval = PyLong_AsSize_t(obj);
-    if (uval == (size_t)-1 && PyErr_Occurred())
-        return 0;
-
-    *(size_t *)ptr = uval;
-    return 1;
-}
+UNSIGNED_INT_CONVERTER(UnsignedShort, unsigned short)
+UNSIGNED_INT_CONVERTER(UnsignedInt, unsigned int)
+UNSIGNED_INT_CONVERTER(UnsignedLong, unsigned long)
+UNSIGNED_INT_CONVERTER(UnsignedLongLong, unsigned long long)
+UNSIGNED_INT_CONVERTER(Size_t, size_t)
+UNSIGNED_INT_CONVERTER(UInt8, uint8_t)
+UNSIGNED_INT_CONVERTER(UInt16, uint16_t)
+UNSIGNED_INT_CONVERTER(UInt32, uint32_t)
+UNSIGNED_INT_CONVERTER(UInt64, uint64_t)
 
 
 #define CHECK_BINOP(v,w)                                \
@@ -2820,6 +2714,58 @@ that triggers it(!).  Instead the code was tested by artificially allocating
 just 1 digit at the start, so that the copying code was exercised for every
 digit beyond the first.
 ***/
+
+// Tables are computed by Tools/scripts/long_conv_tables.py
+#if PYLONG_BITS_IN_DIGIT == 15
+    static const double log_base_BASE[37] = {0.0, 0.0, 0.0,
+        0.10566416671474375, 0.0, 0.15479520632582416,
+        0.17233083338141042, 0.18715699480384027, 0.0,
+        0.2113283334294875, 0.22146187299249084, 0.23062877457581984,
+        0.2389975000480771, 0.24669598120940617, 0.25382366147050694,
+        0.26045937304056793, 0.0, 0.27249752275002265,
+        0.27799500009615413, 0.2831951675629057, 0.28812853965915747,
+        0.29282116151858406, 0.2972954412424865, 0.3015707970704675,
+        0.3056641667147438, 0.30959041265164833, 0.3133626478760728,
+        0.31699250014423125, 0.3204903281371736, 0.3238653996751715,
+        0.3271260397072346, 0.3302797540257917, 0.0,
+        0.3362929412905636, 0.3391641894166893, 0.34195220112966446,
+        0.34466166676282084};
+    static const int convwidth_base[37] = {0, 0, 0, 9, 0, 6, 5, 5, 0,
+        4, 4, 4, 4, 4, 3, 3, 0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+        3, 3, 0, 2, 2, 2, 2};
+    static const twodigits convmultmax_base[37] = {0, 0, 0, 19683, 0,
+        15625, 7776, 16807, 0, 6561, 10000, 14641, 20736, 28561, 2744,
+        3375, 0, 4913, 5832, 6859, 8000, 9261, 10648, 12167, 13824,
+        15625, 17576, 19683, 21952, 24389, 27000, 29791, 0, 1089,
+        1156, 1225, 1296};
+#elif PYLONG_BITS_IN_DIGIT == 30
+    static const double log_base_BASE[37] = {0.0, 0.0, 0.0,
+        0.05283208335737188, 0.0, 0.07739760316291208,
+        0.08616541669070521, 0.09357849740192013, 0.0,
+        0.10566416671474375, 0.11073093649624542, 0.11531438728790992,
+        0.11949875002403855, 0.12334799060470308, 0.12691183073525347,
+        0.13022968652028397, 0.0, 0.13624876137501132,
+        0.13899750004807707, 0.14159758378145285, 0.14406426982957873,
+        0.14641058075929203, 0.14864772062124326, 0.15078539853523376,
+        0.1528320833573719, 0.15479520632582416, 0.1566813239380364,
+        0.15849625007211562, 0.1602451640685868, 0.16193269983758574,
+        0.1635630198536173, 0.16513987701289584, 0.0,
+        0.1681464706452818, 0.16958209470834465, 0.17097610056483223,
+        0.17233083338141042};
+    static const int convwidth_base[37] = {0, 0, 0, 18, 0, 12, 11, 10,
+        0, 9, 9, 8, 8, 8, 7, 7, 0, 7, 7, 7, 6, 6, 6, 6, 6, 6, 6, 6, 6,
+        6, 6, 6, 0, 5, 5, 5, 5};
+    static const twodigits convmultmax_base[37] = {0, 0, 0, 387420489,
+        0, 244140625, 362797056, 282475249, 0, 387420489, 1000000000,
+        214358881, 429981696, 815730721, 105413504, 170859375, 0,
+        410338673, 612220032, 893871739, 64000000, 85766121,
+        113379904, 148035889, 191102976, 244140625, 308915776,
+        387420489, 481890304, 594823321, 729000000, 887503681, 0,
+        39135393, 45435424, 52521875, 60466176};
+#else
+    #error "invalid PYLONG_BITS_IN_DIGIT value"
+#endif
+
 static int
 long_from_non_binary_base(const char *start, const char *end, Py_ssize_t digits, int base, PyLongObject **res)
 {
@@ -2832,28 +2778,7 @@ long_from_non_binary_base(const char *start, const char *end, Py_ssize_t digits,
     PyLongObject *z;
     const char *p;
 
-    static double log_base_BASE[37] = {0.0e0,};
-    static int convwidth_base[37] = {0,};
-    static twodigits convmultmax_base[37] = {0,};
-
-    if (log_base_BASE[base] == 0.0) {
-        twodigits convmax = base;
-        int i = 1;
-
-        log_base_BASE[base] = (log((double)base) /
-                               log((double)PyLong_BASE));
-        for (;;) {
-            twodigits next = convmax * base;
-            if (next > PyLong_BASE) {
-                break;
-            }
-            convmax = next;
-            ++i;
-        }
-        convmultmax_base[base] = convmax;
-        assert(i > 0);
-        convwidth_base[base] = i;
-    }
+    assert(log_base_BASE[base] != 0.0);
 
     /* Create an int object that can contain the largest possible
      * integer with this base and length.  Note that there's no
@@ -3469,9 +3394,7 @@ x_divrem(PyLongObject *v1, PyLongObject *w1, PyLongObject **prem)
 /* For a nonzero PyLong a, express a in the form x * 2**e, with 0.5 <=
    abs(x) < 1.0 and e >= 0; return x and put e in *e.  Here x is
    rounded to DBL_MANT_DIG significant bits using round-half-to-even.
-   If a == 0, return 0.0 and set *e = 0.  If the resulting exponent
-   e is larger than PY_SSIZE_T_MAX, raise OverflowError and return
-   -1.0. */
+   If a == 0, return 0.0 and set *e = 0.  */
 
 /* attempt to define 2.0**DBL_MANT_DIG as a compile-time constant */
 #if DBL_MANT_DIG == 53
@@ -3876,10 +3799,12 @@ long_add(PyLongObject *a, PyLongObject *b)
     return z;
 }
 
-PyObject *
-_PyLong_Add(PyLongObject *a, PyLongObject *b)
+_PyStackRef
+_PyCompactLong_Add(PyLongObject *a, PyLongObject *b)
 {
-    return (PyObject*)long_add(a, b);
+    assert(_PyLong_BothAreCompact(a, b));
+    stwodigits v = medium_value(a) + medium_value(b);
+    return medium_from_stwodigits(v);
 }
 
 static PyObject *
@@ -3919,10 +3844,12 @@ long_sub(PyLongObject *a, PyLongObject *b)
     return z;
 }
 
-PyObject *
-_PyLong_Subtract(PyLongObject *a, PyLongObject *b)
+_PyStackRef
+_PyCompactLong_Subtract(PyLongObject *a, PyLongObject *b)
 {
-    return (PyObject*)long_sub(a, b);
+    assert(_PyLong_BothAreCompact(a, b));
+    stwodigits v = medium_value(a) - medium_value(b);
+    return medium_from_stwodigits(v);
 }
 
 static PyObject *
@@ -4366,10 +4293,14 @@ long_mul(PyLongObject *a, PyLongObject *b)
     return z;
 }
 
-PyObject *
-_PyLong_Multiply(PyLongObject *a, PyLongObject *b)
+/* This function returns NULL if the result is not compact,
+ * or if it fails to allocate, but never raises */
+_PyStackRef
+_PyCompactLong_Multiply(PyLongObject *a, PyLongObject *b)
 {
-    return (PyObject*)long_mul(a, b);
+    assert(_PyLong_BothAreCompact(a, b));
+    stwodigits v = medium_value(a) * medium_value(b);
+    return medium_from_stwodigits(v);
 }
 
 static PyObject *
@@ -6507,6 +6438,12 @@ long_long_meth(PyObject *self, PyObject *Py_UNUSED(ignored))
     return long_long(self);
 }
 
+static PyObject *
+long_long_getter(PyObject *self, void *Py_UNUSED(ignored))
+{
+    return long_long(self);
+}
+
 /*[clinic input]
 int.is_integer
 
@@ -6567,19 +6504,19 @@ static PyMethodDef long_methods[] = {
 
 static PyGetSetDef long_getset[] = {
     {"real",
-     (getter)long_long_meth, (setter)NULL,
+     long_long_getter, NULL,
      "the real part of a complex number",
      NULL},
     {"imag",
-     long_get0, (setter)NULL,
+     long_get0, NULL,
      "the imaginary part of a complex number",
      NULL},
     {"numerator",
-     (getter)long_long_meth, (setter)NULL,
+     long_long_getter, NULL,
      "the numerator of a rational number in lowest terms",
      NULL},
     {"denominator",
-     long_get1, (setter)NULL,
+     long_get1, NULL,
      "the denominator of a rational number in lowest terms",
      NULL},
     {NULL}  /* Sentinel */
@@ -6776,16 +6713,24 @@ PyUnstable_Long_CompactValue(const PyLongObject* op) {
 
 
 PyObject* PyLong_FromInt32(int32_t value)
-{ return PyLong_FromNativeBytes(&value, sizeof(value), -1); }
+{
+    PYLONG_FROM_INT(uint32_t, int32_t, value);
+}
 
 PyObject* PyLong_FromUInt32(uint32_t value)
-{ return PyLong_FromUnsignedNativeBytes(&value, sizeof(value), -1); }
+{
+    PYLONG_FROM_UINT(uint32_t, value);
+}
 
 PyObject* PyLong_FromInt64(int64_t value)
-{ return PyLong_FromNativeBytes(&value, sizeof(value), -1); }
+{
+    PYLONG_FROM_INT(uint64_t, int64_t, value);
+}
 
 PyObject* PyLong_FromUInt64(uint64_t value)
-{ return PyLong_FromUnsignedNativeBytes(&value, sizeof(value), -1); }
+{
+    PYLONG_FROM_UINT(uint64_t, value);
+}
 
 #define LONG_TO_INT(obj, value, type_name) \
     do { \

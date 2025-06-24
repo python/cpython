@@ -949,9 +949,9 @@ Generator Types
 ---------------
 
 Python's :term:`generator`\s provide a convenient way to implement the iterator
-protocol.  If a container object's :meth:`~iterator.__iter__` method is implemented as a
+protocol.  If a container object's :meth:`~object.__iter__` method is implemented as a
 generator, it will automatically return an iterator object (technically, a
-generator object) supplying the :meth:`!__iter__` and :meth:`~generator.__next__`
+generator object) supplying the :meth:`~iterator.__iter__` and :meth:`~generator.__next__`
 methods.
 More information about generators can be found in :ref:`the documentation for
 the yield expression <yieldexpr>`.
@@ -1018,7 +1018,7 @@ operations have the same priority as the corresponding numeric operations. [3]_
 | ``s * n`` or             | equivalent to adding *s* to    | (2)(7)   |
 | ``n * s``                | itself *n* times               |          |
 +--------------------------+--------------------------------+----------+
-| ``s[i]``                 | *i*\ th item of *s*, origin 0  | \(3)     |
+| ``s[i]``                 | *i*\ th item of *s*, origin 0  | (3)(9)   |
 +--------------------------+--------------------------------+----------+
 | ``s[i:j]``               | slice of *s* from *i* to *j*   | (3)(4)   |
 +--------------------------+--------------------------------+----------+
@@ -1150,6 +1150,9 @@ Notes:
    without copying any data and with the returned index being relative to
    the start of the sequence rather than the start of the slice.
 
+(9)
+   An :exc:`IndexError` is raised if *i* is outside the sequence range.
+
 
 .. _typesseq-immutable:
 
@@ -1213,6 +1216,8 @@ accepts integers that meet the value restriction ``0 <= x <= 255``).
 +==============================+================================+=====================+
 | ``s[i] = x``                 | item *i* of *s* is replaced by |                     |
 |                              | *x*                            |                     |
++------------------------------+--------------------------------+---------------------+
+| ``del s[i]``                 | removes item *i* of *s*        |                     |
 +------------------------------+--------------------------------+---------------------+
 | ``s[i:j] = t``               | slice of *s* from *i* to *j*   |                     |
 |                              | is replaced by the contents of |                     |
@@ -1788,8 +1793,14 @@ expression support in the :mod:`re` module).
 
    Return centered in a string of length *width*. Padding is done using the
    specified *fillchar* (default is an ASCII space). The original string is
-   returned if *width* is less than or equal to ``len(s)``.
+   returned if *width* is less than or equal to ``len(s)``.  For example::
 
+      >>> 'Python'.center(10)
+      '  Python  '
+      >>> 'Python'.center(10, '-')
+      '--Python--'
+      >>> 'Python'.center(4)
+      'Python'
 
 
 .. method:: str.count(sub[, start[, end]])
@@ -1799,8 +1810,18 @@ expression support in the :mod:`re` module).
    interpreted as in slice notation.
 
    If *sub* is empty, returns the number of empty strings between characters
-   which is the length of the string plus one.
+   which is the length of the string plus one. For example::
 
+      >>> 'spam, spam, spam'.count('spam')
+      3
+      >>> 'spam, spam, spam'.count('spam', 5)
+      2
+      >>> 'spam, spam, spam'.count('spam', 5, 10)
+      1
+      >>> 'spam, spam, spam'.count('eggs')
+      0
+      >>> 'spam, spam, spam'.count('')
+      17
 
 .. method:: str.encode(encoding="utf-8", errors="strict")
 
@@ -1820,6 +1841,14 @@ expression support in the :mod:`re` module).
    unless an encoding error actually occurs,
    :ref:`devmode` is enabled
    or a :ref:`debug build <debug-build>` is used.
+   For example::
+
+      >>> encoded_str_to_bytes = 'Python'.encode()
+      >>> type(encoded_str_to_bytes)
+      <class 'bytes'>
+      >>> encoded_str_to_bytes
+      b'Python'
+
 
    .. versionchanged:: 3.1
       Added support for keyword arguments.
@@ -1834,7 +1863,19 @@ expression support in the :mod:`re` module).
    Return ``True`` if the string ends with the specified *suffix*, otherwise return
    ``False``.  *suffix* can also be a tuple of suffixes to look for.  With optional
    *start*, test beginning at that position.  With optional *end*, stop comparing
-   at that position.
+   at that position. Using *start* and *end* is equivalent to
+   ``str[start:end].endswith(suffix)``. For example::
+
+      >>> 'Python'.endswith('on')
+      True
+      >>> 'a tuple of suffixes'.endswith(('at', 'in'))
+      False
+      >>> 'a tuple of suffixes'.endswith(('at', 'es'))
+      True
+      >>> 'Python is amazing'.endswith('is', 0, 9)
+      True
+
+   See also :meth:`startswith` and :meth:`removesuffix`.
 
 
 .. method:: str.expandtabs(tabsize=8)
@@ -1850,12 +1891,15 @@ expression support in the :mod:`re` module).
    (``\n``) or return (``\r``), it is copied and the current column is reset to
    zero.  Any other character is copied unchanged and the current column is
    incremented by one regardless of how the character is represented when
-   printed.
+   printed. For example::
 
       >>> '01\t012\t0123\t01234'.expandtabs()
       '01      012     0123    01234'
       >>> '01\t012\t0123\t01234'.expandtabs(4)
       '01  012 0123    01234'
+      >>> print('01\t012\n0123\t01234'.expandtabs(4))
+      01  012
+      0123    01234
 
 
 .. method:: str.find(sub[, start[, end]])
@@ -2012,13 +2056,19 @@ expression support in the :mod:`re` module).
 
 .. method:: str.isprintable()
 
-   Return ``True`` if all characters in the string are printable or the string is
-   empty, ``False`` otherwise.  Nonprintable characters are those characters defined
-   in the Unicode character database as "Other" or "Separator", excepting the
-   ASCII space (0x20) which is considered printable.  (Note that printable
-   characters in this context are those which should not be escaped when
-   :func:`repr` is invoked on a string.  It has no bearing on the handling of
-   strings written to :data:`sys.stdout` or :data:`sys.stderr`.)
+   Return ``True`` if all characters in the string are printable, ``False`` if it
+   contains at least one non-printable character.
+
+   Here "printable" means the character is suitable for :func:`repr` to use in
+   its output; "non-printable" means that :func:`repr` on built-in types will
+   hex-escape the character.  It has no bearing on the handling of strings
+   written to :data:`sys.stdout` or :data:`sys.stderr`.
+
+   The printable characters are those which in the Unicode character database
+   (see :mod:`unicodedata`) have a general category in group Letter, Mark,
+   Number, Punctuation, or Symbol (L, M, N, P, or S); plus the ASCII space 0x20.
+   Nonprintable characters are those in group Separator or Other (Z or C),
+   except the ASCII space.
 
 
 .. method:: str.isspace()
@@ -2263,6 +2313,18 @@ expression support in the :mod:`re` module).
       >>> '   1   2   3   '.split()
       ['1', '2', '3']
 
+   If *sep* is not specified or is ``None`` and  *maxsplit* is ``0``, only
+   leading runs of consecutive whitespace are considered.
+
+   For example::
+
+      >>> "".split(None, 0)
+      []
+      >>> "   ".split(None, 0)
+      []
+      >>> "   foo   ".split(maxsplit=0)
+      ['foo   ']
+
 
 .. index::
    single: universal newlines; str.splitlines method
@@ -2449,6 +2511,146 @@ expression support in the :mod:`re` module).
       >>> "-42".zfill(5)
       '-0042'
 
+
+.. index::
+   single: ! formatted string literal
+   single: formatted string literals
+   single: ! f-string
+   single: f-strings
+   single: fstring
+   single: interpolated string literal
+   single: string; formatted literal
+   single: string; interpolated literal
+   single: {} (curly brackets); in formatted string literal
+   single: ! (exclamation mark); in formatted string literal
+   single: : (colon); in formatted string literal
+   single: = (equals); for help in debugging using string literals
+
+Formatted String Literals (f-strings)
+-------------------------------------
+
+.. versionadded:: 3.6
+.. versionchanged:: 3.7
+   The :keyword:`await` and :keyword:`async for` can be used in expressions
+   within f-strings.
+.. versionchanged:: 3.8
+   Added the debugging operator (``=``)
+.. versionchanged:: 3.12
+   Many restrictions on expressions within f-strings have been removed.
+   Notably, nested strings, comments, and backslashes are now permitted.
+
+An :dfn:`f-string` (formally a :dfn:`formatted string literal`) is
+a string literal that is prefixed with ``f`` or ``F``.
+This type of string literal allows embedding arbitrary Python expressions
+within *replacement fields*, which are delimited by curly brackets (``{}``).
+These expressions are evaluated at runtime, similarly to :meth:`str.format`,
+and are converted into regular :class:`str` objects.
+For example:
+
+.. doctest::
+
+   >>> who = 'nobody'
+   >>> nationality = 'Spanish'
+   >>> f'{who.title()} expects the {nationality} Inquisition!'
+   'Nobody expects the Spanish Inquisition!'
+
+It is also possible to use a multi line f-string:
+
+.. doctest::
+
+   >>> f'''This is a string
+   ... on two lines'''
+   'This is a string\non two lines'
+
+A single opening curly bracket, ``'{'``, marks a *replacement field* that
+can contain any Python expression:
+
+.. doctest::
+
+   >>> nationality = 'Spanish'
+   >>> f'The {nationality} Inquisition!'
+   'The Spanish Inquisition!'
+
+To include a literal ``{`` or ``}``, use a double bracket:
+
+.. doctest::
+
+   >>> x = 42
+   >>> f'{{x}} is {x}'
+   '{x} is 42'
+
+Functions can also be used, and :ref:`format specifiers <formatstrings>`:
+
+.. doctest::
+
+   >>> from math import sqrt
+   >>> f'√2 \N{ALMOST EQUAL TO} {sqrt(2):.5f}'
+   '√2 ≈ 1.41421'
+
+Any non-string expression is converted using :func:`str`, by default:
+
+.. doctest::
+
+   >>> from fractions import Fraction
+   >>> f'{Fraction(1, 3)}'
+   '1/3'
+
+To use an explicit conversion, use the ``!`` (exclamation mark) operator,
+followed by any of the valid formats, which are:
+
+========== ==============
+Conversion  Meaning
+========== ==============
+``!a``      :func:`ascii`
+``!r``      :func:`repr`
+``!s``      :func:`str`
+========== ==============
+
+For example:
+
+.. doctest::
+
+   >>> from fractions import Fraction
+   >>> f'{Fraction(1, 3)!s}'
+   '1/3'
+   >>> f'{Fraction(1, 3)!r}'
+   'Fraction(1, 3)'
+   >>> question = '¿Dónde está el Presidente?'
+   >>> print(f'{question!a}')
+   '\xbfD\xf3nde est\xe1 el Presidente?'
+
+While debugging it may be helpful to see both the expression and its value,
+by using the equals sign (``=``) after the expression.
+This preserves spaces within the brackets, and can be used with a converter.
+By default, the debugging operator uses the :func:`repr` (``!r``) conversion.
+For example:
+
+.. doctest::
+
+   >>> from fractions import Fraction
+   >>> calculation = Fraction(1, 3)
+   >>> f'{calculation=}'
+   'calculation=Fraction(1, 3)'
+   >>> f'{calculation = }'
+   'calculation = Fraction(1, 3)'
+   >>> f'{calculation = !s}'
+   'calculation = 1/3'
+
+Once the output has been evaluated, it can be formatted using a
+:ref:`format specifier <formatstrings>` following a colon (``':'``).
+After the expression has been evaluated, and possibly converted to a string,
+the :meth:`!__format__` method of the result is called with the format specifier,
+or the empty string if no format specifier is given.
+The formatted result is then used as the final value for the replacement field.
+For example:
+
+.. doctest::
+
+   >>> from fractions import Fraction
+   >>> f'{Fraction(1, 7):.6f}'
+   '0.142857'
+   >>> f'{Fraction(1, 7):_^+10}'
+   '___+1/7___'
 
 
 .. _old-string-formatting:
@@ -2738,6 +2940,10 @@ data and are closely related to string objects in a variety of other ways.
          :meth:`bytes.fromhex` now skips all ASCII whitespace in the string,
          not just spaces.
 
+      .. versionchanged:: 3.14
+         :meth:`bytes.fromhex` now accepts ASCII :class:`bytes` and
+         :term:`bytes-like objects <bytes-like object>` as input.
+
    A reverse conversion function exists to transform a bytes object into its
    hexadecimal representation.
 
@@ -2823,6 +3029,10 @@ objects.
          :meth:`bytearray.fromhex` now skips all ASCII whitespace in the string,
          not just spaces.
 
+      .. versionchanged:: 3.14
+         :meth:`bytearray.fromhex` now accepts ASCII :class:`bytes` and
+         :term:`bytes-like objects <bytes-like object>` as input.
+
    A reverse conversion function exists to transform a bytearray object into its
    hexadecimal representation.
 
@@ -2871,7 +3081,7 @@ objects.
       >>> (grow, len(grow))
       (bytearray(b'abc\x00\x00'), 5)
 
-      .. versionadded:: next
+      .. versionadded:: 3.14
 
 Since bytearray objects are sequences of integers (akin to a list), for a
 bytearray object *b*, ``b[0]`` will be an integer, while ``b[0:1]`` will be
@@ -4669,7 +4879,13 @@ can be used interchangeably to index the same dictionary entry.
    being added is already present, the value from the keyword argument
    replaces the value from the positional argument.
 
-   To illustrate, the following examples all return a dictionary equal to
+   Providing keyword arguments as in the first example only works for keys that
+   are valid Python identifiers.  Otherwise, any valid keys can be used.
+
+   Dictionaries compare equal if and only if they have the same ``(key,
+   value)`` pairs (regardless of ordering). Order comparisons ('<', '<=', '>=', '>') raise
+   :exc:`TypeError`.  To illustrate dictionary creation and equality,
+   the following examples all return a dictionary equal to
    ``{"one": 1, "two": 2, "three": 3}``::
 
       >>> a = dict(one=1, two=2, three=3)
@@ -4684,6 +4900,27 @@ can be used interchangeably to index the same dictionary entry.
    Providing keyword arguments as in the first example only works for keys that
    are valid Python identifiers.  Otherwise, any valid keys can be used.
 
+   Dictionaries preserve insertion order.  Note that updating a key does not
+   affect the order.  Keys added after deletion are inserted at the end. ::
+
+      >>> d = {"one": 1, "two": 2, "three": 3, "four": 4}
+      >>> d
+      {'one': 1, 'two': 2, 'three': 3, 'four': 4}
+      >>> list(d)
+      ['one', 'two', 'three', 'four']
+      >>> list(d.values())
+      [1, 2, 3, 4]
+      >>> d["one"] = 42
+      >>> d
+      {'one': 42, 'two': 2, 'three': 3, 'four': 4}
+      >>> del d["two"]
+      >>> d["two"] = None
+      >>> d
+      {'one': 42, 'three': 3, 'four': 4, 'two': None}
+
+   .. versionchanged:: 3.7
+      Dictionary order is guaranteed to be insertion order.  This behavior was
+      an implementation detail of CPython from 3.6.
 
    These are the operations that dictionaries support (and therefore, custom
    mapping types should support too):
@@ -4766,7 +5003,7 @@ can be used interchangeably to index the same dictionary entry.
       such as an empty list.  To get distinct values, use a :ref:`dict
       comprehension <dict>` instead.
 
-   .. method:: get(key, default=None)
+   .. method:: get(key, default=None, /)
 
       Return the value for *key* if *key* is in the dictionary, else *default*.
       If *default* is not given, it defaults to ``None``, so that this method
@@ -4808,7 +5045,7 @@ can be used interchangeably to index the same dictionary entry.
 
       .. versionadded:: 3.8
 
-   .. method:: setdefault(key, default=None)
+   .. method:: setdefault(key, default=None, /)
 
       If *key* is in the dictionary, return its value.  If not, insert *key*
       with a value of *default* and return *default*.  *default* defaults to
@@ -4853,32 +5090,6 @@ can be used interchangeably to index the same dictionary entry.
       values of *other* take priority when *d* and *other* share keys.
 
       .. versionadded:: 3.9
-
-   Dictionaries compare equal if and only if they have the same ``(key,
-   value)`` pairs (regardless of ordering). Order comparisons ('<', '<=', '>=', '>') raise
-   :exc:`TypeError`.
-
-   Dictionaries preserve insertion order.  Note that updating a key does not
-   affect the order.  Keys added after deletion are inserted at the end. ::
-
-      >>> d = {"one": 1, "two": 2, "three": 3, "four": 4}
-      >>> d
-      {'one': 1, 'two': 2, 'three': 3, 'four': 4}
-      >>> list(d)
-      ['one', 'two', 'three', 'four']
-      >>> list(d.values())
-      [1, 2, 3, 4]
-      >>> d["one"] = 42
-      >>> d
-      {'one': 42, 'two': 2, 'three': 3, 'four': 4}
-      >>> del d["two"]
-      >>> d["two"] = None
-      >>> d
-      {'one': 42, 'three': 3, 'four': 4, 'two': None}
-
-   .. versionchanged:: 3.7
-      Dictionary order is guaranteed to be insertion order.  This behavior was
-      an implementation detail of CPython from 3.6.
 
    Dictionaries and dictionary views are reversible. ::
 
@@ -5230,6 +5441,8 @@ list is non-exhaustive.
 * :class:`set`
 * :class:`frozenset`
 * :class:`type`
+* :class:`asyncio.Future`
+* :class:`asyncio.Task`
 * :class:`collections.deque`
 * :class:`collections.defaultdict`
 * :class:`collections.OrderedDict`
@@ -5358,7 +5571,7 @@ Union Type
 A union object holds the value of the ``|`` (bitwise or) operation on
 multiple :ref:`type objects <bltin-type-objects>`.  These types are intended
 primarily for :term:`type annotations <annotation>`. The union type expression
-enables cleaner type hinting syntax compared to :data:`typing.Union`.
+enables cleaner type hinting syntax compared to subscripting :class:`typing.Union`.
 
 .. describe:: X | Y | ...
 
@@ -5394,9 +5607,10 @@ enables cleaner type hinting syntax compared to :data:`typing.Union`.
 
       int | str == str | int
 
-   * It is compatible with :data:`typing.Union`::
+   * It creates instances of :class:`typing.Union`::
 
       int | str == typing.Union[int, str]
+      type(int | str) is typing.Union
 
    * Optional types can be spelled as a union with ``None``::
 
@@ -5422,16 +5636,15 @@ enables cleaner type hinting syntax compared to :data:`typing.Union`.
       TypeError: isinstance() argument 2 cannot be a parameterized generic
 
 The user-exposed type for the union object can be accessed from
-:data:`types.UnionType` and used for :func:`isinstance` checks.  An object cannot be
-instantiated from the type::
+:class:`typing.Union` and used for :func:`isinstance` checks::
 
-   >>> import types
-   >>> isinstance(int | str, types.UnionType)
+   >>> import typing
+   >>> isinstance(int | str, typing.Union)
    True
-   >>> types.UnionType()
+   >>> typing.Union()
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   TypeError: cannot create 'types.UnionType' instances
+   TypeError: cannot create 'typing.Union' instances
 
 .. note::
    The :meth:`!__or__` method for type objects was added to support the syntax
@@ -5457,6 +5670,11 @@ instantiated from the type::
    :pep:`604` -- PEP proposing the ``X | Y`` syntax and the Union type.
 
 .. versionadded:: 3.10
+
+.. versionchanged:: 3.14
+
+   Union objects are now instances of :class:`typing.Union`. Previously, they were instances
+   of :class:`types.UnionType`, which remains an alias for :class:`typing.Union`.
 
 
 .. _typesother:
