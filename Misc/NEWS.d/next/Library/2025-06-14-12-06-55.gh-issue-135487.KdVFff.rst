@@ -1,3 +1,2 @@
-Fix :meth:`reprlib.Repr.repr_int <reprlib.Repr.repr_TYPE>` when given
-integers with more than :func:`sys.get_int_max_str_digits` digits. Patch by
-Bénédikt Tran.
+Fix :meth:`!reprlib.Repr.repr_int` when given integers with more than
+:func:`sys.get_int_max_str_digits` digits. Patch by Bénédikt Tran.

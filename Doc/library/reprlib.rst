@@ -219,6 +219,7 @@ which format specific object types.
 
 
 .. method:: Repr.repr_TYPE(obj, level)
+   :noindex:
 
    Formatting methods for specific types are implemented as methods with a name
    based on the type name.  In the method name, **TYPE** is replaced by
