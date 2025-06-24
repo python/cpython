@@ -1124,7 +1124,7 @@ class DisTests(DisTestBase):
         # Test that negative operargs are handled properly
         self.do_disassembly_test(bug46724, dis_bug46724)
 
-    def test_annotate_no_spurious_first_node_positions(self):
+    def test_annotate_source_locations(self):
         # Test that __annotate__ code doesn't inherit first AST node positions
         issue_135700 = "1\nx: int"
         issue_135700_class = "class A:\n    1\n    x: int"
