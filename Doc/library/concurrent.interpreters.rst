@@ -219,6 +219,8 @@ This module defines the following functions:
 .. function:: get_main()
 
    Return an :class:`Interpreter` object for the main interpreter.
+   This is the interpreter the runtime created to run the :term:`REPL`
+   or the script given at the command-line.  It is usually the only one.
 
 .. function:: create()
 
