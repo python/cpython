@@ -126,6 +126,7 @@ namespace_repr(PyObject *ns)
 
             if (PyDict_GetItemRef(d, key, &value) == 1) {
                 item = PyUnicode_FromFormat("%U=%R", key, value);
+                Py_DECREF(value);
                 if (item == NULL) {
                     loop_error = 1;
                 }
