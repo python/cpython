@@ -862,7 +862,7 @@ class Message:
         parameter, and it is unquoted.
         """
         missing = object()
-        boundary = self.get_param('boundary', missing)
+        boundary = self.get_param('boundary', missing, unquote=False)
         if boundary is missing:
             return failobj
         # RFC 2046 says that boundaries may begin but not end in w/s
