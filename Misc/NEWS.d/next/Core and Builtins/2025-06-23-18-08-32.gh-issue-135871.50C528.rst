@@ -1,0 +1,1 @@
+gh-135871: _PyMutex_LockTimed() no longer spins or fails for timeout==0 in no-GIL builds; spin loop now reloads lock state.
