@@ -1945,6 +1945,15 @@ sysconfig
   (Contributed by Xuehai Pan in :gh:`131799`.)
 
 
+tarfile
+-------
+
+* Emit ``mode``, ``uname`` and ``gname`` fields for long paths in
+  :mod:`tarfile` archives, providing better bit-for-bit compatibility with GNU
+  :manpage:`tar(1)`.
+  (Contributed by Dahan Gong in :gh:`130820`.)
+
+
 threading
 ---------
 
