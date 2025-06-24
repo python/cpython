@@ -3883,7 +3883,7 @@ static void object_dealloc(PyObject *);
 static PyObject *object_new(PyTypeObject *, PyObject *, PyObject *);
 static int object_init(PyObject *, PyObject *, PyObject *);
 static int update_slot(PyTypeObject *, PyObject *, slot_update_t *update);
-static void fixup_slot_dispatchers(PyTypeObject *);
+static int fixup_slot_dispatchers(PyTypeObject *);
 static int type_new_set_names(PyTypeObject *);
 static int type_new_init_subclass(PyTypeObject *, PyObject *);
 static bool has_slotdef(PyObject *);
