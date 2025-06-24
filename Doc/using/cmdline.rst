@@ -669,6 +669,15 @@ Miscellaneous options
 
      .. versionadded:: 3.14
 
+   * :samp:`-X traceback_timestamps=[us|ns|iso|0|1]` enables or configures timestamp
+     display in exception tracebacks. When enabled, each exception's traceback
+     will include a timestamp showing when the exception occurred. The format
+     options are: ``us`` (microseconds, default if no value provided), ``ns``
+     (nanoseconds), ``iso`` (ISO-8601 formatted time), ``0`` (disable timestamps),
+     and ``1`` (equivalent to ``us``). See also :envvar:`PYTHON_TRACEBACK_TIMESTAMPS`.
+
+     .. versionadded:: next
+
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
 
@@ -1301,6 +1310,31 @@ conflict.
    interpreter startup.
 
    .. versionadded:: 3.13
+
+.. envvar:: PYTHON_TRACEBACK_TIMESTAMPS
+
+   If this variable is set to one of the following values, tracebacks printed
+   by the runtime will be annotated with the timestamp of each exception.  The
+   values control the format of the timestamp:
+
+   * ``us`` or ``1``: Prints decimal timestamps with microsecond precision.
+   * ``ns``: Prints the raw timestamp in nanoseconds.
+   * ``iso``: Prints the timestamp formatted by :meth:`~datetime.datetime.isoformat` (also microsecond precision).
+   * ``0``: Explicitly disables timestamps.
+
+   When unset, timestamps are disabled by default. The time is not recorded on
+   the :exc:`StopIteration` family of exceptions for performance reasons as those
+   are used for control flow rather than errors. If set to empty or invalid values,
+   this feature remains disabled when using the environment variable.
+
+   Note that the command line option :option:`-X` ``traceback_timestamps`` takes
+   precedence over this environment variable when both are specified.
+
+   Formatting of the timestamps only happens at printing time.  The ``iso``
+   format may be slower due to the complexity of the code involved but is much
+   more readable.
+
+   .. versionadded:: next
 
 Debug-mode variables
 ~~~~~~~~~~~~~~~~~~~~

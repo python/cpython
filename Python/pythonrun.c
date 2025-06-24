@@ -17,6 +17,7 @@
 #include "pycore_fileutils.h"     // _PyFile_Flush
 #include "pycore_import.h"        // _PyImport_GetImportlibExternalLoader()
 #include "pycore_interp.h"        // PyInterpreterState.importlib
+#include "pycore_long.h"          // _PyLong_IsZero()
 #include "pycore_object.h"        // _PyDebug_PrintTotalRefs()
 #include "pycore_parser.h"        // _PyParser_ASTFromString()
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
@@ -956,6 +957,36 @@ print_exception_message(struct exception_print_context *ctx, PyObject *type,
         if (res < 0) {
             return -1;
         }
+
+        /* attempt to append the exception timestamp if configured to do so
+         * in the traceback module.  non-fatal if any of this fails. */
+        PyObject *timestamp_formatter = PyImport_ImportModuleAttr(
+            &_Py_ID(traceback),
+            &_Py_ID(_timestamp_formatter));
+        if (timestamp_formatter && PyCallable_Check(timestamp_formatter)) {
+            PyObject *ns_obj = PyObject_GetAttr(value, &_Py_ID(__timestamp_ns__));
+            if (ns_obj && PyLong_Check(ns_obj) && !_PyLong_IsZero((PyLongObject *)ns_obj)) {
+                PyObject* ns_str = PyObject_CallOneArg(timestamp_formatter, ns_obj);
+                if (ns_str) {
+                    if (PyFile_WriteString(" ", f) >= 0) {
+                        if (PyFile_WriteObject(ns_str, f, Py_PRINT_RAW) < 0) {
+#ifdef Py_DEBUG
+                            PyFile_WriteString("<traceback._timestamp_formatter failed>", f);
+#endif
+                        }
+                    }
+                    Py_DECREF(ns_str);
+                } else {
+                    PyErr_Clear();
+                }
+            } else {
+                PyErr_Clear();
+            }
+            Py_XDECREF(ns_obj);
+        } else {
+            PyErr_Clear();
+        }
+        Py_XDECREF(timestamp_formatter);
     }
 
     return 0;
@@ -1147,9 +1178,9 @@ _PyErr_Display(PyObject *file, PyObject *unused, PyObject *value, PyObject *tb)
     }
 
     // Try first with the stdlib traceback module
-    PyObject *print_exception_fn = PyImport_ImportModuleAttrString(
-        "traceback",
-        "_print_exception_bltin");
+    PyObject *print_exception_fn = PyImport_ImportModuleAttr(
+        &_Py_ID(traceback),
+        &_Py_ID(_print_exception_bltin));
     if (print_exception_fn == NULL || !PyCallable_Check(print_exception_fn)) {
         goto fallback;
     }

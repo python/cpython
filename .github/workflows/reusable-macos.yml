@@ -14,6 +14,10 @@ on:
         description: OS to run the job
         required: true
         type: string
+      traceback_timestamps:
+        description: Set to us|1|ns|iso to enable printing timestamps on exceptions in tracebacks (for feature coverage)
+        required: false
+        type: string
 
 env:
   FORCE_COLOR: 1
@@ -29,6 +33,7 @@ jobs:
       HOMEBREW_NO_INSTALL_CLEANUP: 1
       HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK: 1
       PYTHONSTRICTEXTENSIONBUILD: 1
+      PYTHON_TRACEBACK_TIMESTAMPS: ${{ inputs.traceback_timestamps }}
       TERM: linux
     steps:
     - uses: actions/checkout@v4

@@ -2105,6 +2105,8 @@ class ExceptHookTests(BaseTestCase):
             threading.excepthook = threading.__excepthook__
             recovered_output = run_thread()
 
+        default_output = traceback.strip_exc_timestamps(default_output)
+        recovered_output = traceback.strip_exc_timestamps(recovered_output)
         self.assertEqual(default_output, recovered_output)
         self.assertNotEqual(default_output, custom_hook_output)
         self.assertEqual(custom_hook_output, "Running a thread failed\n")

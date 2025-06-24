@@ -22,6 +22,7 @@ from test.support.socket_helper import find_unused_port
 from test.support import threading_helper
 from test.support import import_helper
 from test.support import force_not_colorized
+from test.support import force_no_traceback_timestamps
 from test.support import SHORT_TIMEOUT
 try:
     from concurrent import interpreters
@@ -165,6 +166,7 @@ class ActiveExceptionTests(unittest.TestCase):
 class ExceptHookTest(unittest.TestCase):
 
     @force_not_colorized
+    @force_no_traceback_timestamps
     def test_original_excepthook(self):
         try:
             raise ValueError(42)
@@ -866,6 +868,11 @@ class SysModuleTest(unittest.TestCase):
 
         self.assertIn(sys.flags.utf8_mode, {0, 1, 2})
 
+        # non-tuple sequence fields
+        self.assertIsInstance(sys.flags.gil, int|type(None))
+        self.assertIsInstance(sys.flags.traceback_timestamps, str)
+
+
     def assert_raise_on_new_sys_type(self, sys_attr):
         # Users are intentionally prevented from creating new instances of
         # sys.flags, sys.version_info, and sys.getwindowsversion.
@@ -1224,6 +1231,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertGreater(level, 0)
 
     @force_not_colorized
+    @force_no_traceback_timestamps
     @support.requires_subprocess()
     def test_sys_tracebacklimit(self):
         code = """if 1:
@@ -1642,13 +1650,13 @@ class SizeofTest(unittest.TestCase):
         class C(object): pass
         check(C.__dict__, size('P'))
         # BaseException
-        check(BaseException(), size('6Pb'))
+        check(BaseException(), size('6Pqb'))
         # UnicodeEncodeError
-        check(UnicodeEncodeError("", "", 0, 0, ""), size('6Pb 2P2nP'))
+        check(UnicodeEncodeError("", "", 0, 0, ""), size('6Pqb 2P2nP'))
         # UnicodeDecodeError
-        check(UnicodeDecodeError("", b"", 0, 0, ""), size('6Pb 2P2nP'))
+        check(UnicodeDecodeError("", b"", 0, 0, ""), size('6Pqb 2P2nP'))
         # UnicodeTranslateError
-        check(UnicodeTranslateError("", 0, 1, ""), size('6Pb 2P2nP'))
+        check(UnicodeTranslateError("", 0, 1, ""), size('6Pqb 2P2nP'))
         # ellipses
         check(Ellipsis, size(''))
         # EncodingMap
@@ -1892,10 +1900,14 @@ class SizeofTest(unittest.TestCase):
         # symtable entry
         # XXX
         # sys.flags
-        # FIXME: The +3 is for the 'gil', 'thread_inherit_context' and
-        # 'context_aware_warnings' flags and will not be necessary once
-        # gh-122575 is fixed
-        check(sys.flags, vsize('') + self.P + self.P * (3 + len(sys.flags)))
+        # FIXME: The non_sequence_fields adjustment is for these flags:
+        # - 'gil'
+        # - 'thread_inherit_context'
+        # - 'context_aware_warnings'
+        # - 'traceback_timestamps'
+        # It will not be necessary once GH-122575 is fixed.
+        non_sequence_fields = 4
+        check(sys.flags, vsize('') + self.P + self.P * (non_sequence_fields + len(sys.flags)))
 
     def test_asyncgen_hooks(self):
         old = sys.get_asyncgen_hooks()

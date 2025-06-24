@@ -606,6 +606,11 @@ always available. Unless explicitly noted otherwise, all variables are read-only
         - :option:`-X context_aware_warnings <-X>` and
           :envvar:`PYTHON_CONTEXT_AWARE_WARNINGS`
 
+      * - .. attribute:: flags.traceback_timestamps
+        - :option:`-X traceback_timestamps <-X>` and
+          :envvar:`PYTHON_TRACEBACK_TIMESTAMPS`.  This is a string containing
+          the selected format (``us``, ``ns``, ``iso``),  or an empty string
+          when disabled.
 
    .. versionchanged:: 3.2
       Added ``quiet`` attribute for the new :option:`-q` flag.
@@ -641,6 +646,9 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    .. versionchanged:: 3.14
       Added the ``context_aware_warnings`` attribute.
+
+   .. versionchanged:: next
+      Added the ``traceback_timestamps`` attribute.
 
 
 .. data:: float_info

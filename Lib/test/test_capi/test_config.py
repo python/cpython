@@ -86,6 +86,7 @@ class CAPITests(unittest.TestCase):
             ("stdio_encoding", str, None),
             ("stdio_errors", str, None),
             ("stdlib_dir", str | None, "_stdlib_dir"),
+            ("traceback_timestamps", str, None),
             ("tracemalloc", int, None),
             ("use_environment", bool, None),
             ("use_frozen_modules", bool, None),
@@ -172,6 +173,7 @@ class CAPITests(unittest.TestCase):
             ("warn_default_encoding", "warn_default_encoding", False),
             ("safe_path", "safe_path", False),
             ("int_max_str_digits", "int_max_str_digits", False),
+            ("traceback_timestamps", "traceback_timestamps", False),
             # "gil", "thread_inherit_context" and "context_aware_warnings" are tested below
         ):
             with self.subTest(flag=flag, name=name, negate=negate):

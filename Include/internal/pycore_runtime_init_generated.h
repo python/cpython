@@ -728,6 +728,7 @@ extern "C" {
     INIT_ID(__sub__), \
     INIT_ID(__subclasscheck__), \
     INIT_ID(__subclasshook__), \
+    INIT_ID(__timestamp_ns__), \
     INIT_ID(__truediv__), \
     INIT_ID(__trunc__), \
     INIT_ID(__type_params__), \
@@ -771,6 +772,7 @@ extern "C" {
     INIT_ID(_loop), \
     INIT_ID(_needs_com_addref_), \
     INIT_ID(_only_immortal), \
+    INIT_ID(_print_exception_bltin), \
     INIT_ID(_restype_), \
     INIT_ID(_showwarnmsg), \
     INIT_ID(_shutdown), \
@@ -779,6 +781,7 @@ extern "C" {
     INIT_ID(_strptime_datetime_date), \
     INIT_ID(_strptime_datetime_datetime), \
     INIT_ID(_strptime_datetime_time), \
+    INIT_ID(_timestamp_formatter), \
     INIT_ID(_type_), \
     INIT_ID(_uninitialized_submodules), \
     INIT_ID(_warn_unawaited_coroutine), \

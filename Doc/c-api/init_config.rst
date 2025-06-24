@@ -493,6 +493,10 @@ Configuration Options
      - :c:member:`tracemalloc <PyConfig.tracemalloc>`
      - ``int``
      - Read-only
+   * - ``"traceback_timestamps"``
+     - :c:member:`traceback_timestamps <PyConfig.traceback_timestamps>`
+     - ``str``
+     - Read-only
    * - ``"use_environment"``
      - :c:member:`use_environment <PyConfig.use_environment>`
      - ``bool``
@@ -1890,6 +1894,25 @@ PyConfig
       :envvar:`PYTHONTRACEMALLOC` environment variable.
 
       Default: ``-1`` in Python mode, ``0`` in isolated mode.
+
+   .. c:member:: wchar_t* traceback_timestamps
+
+      Format of timestamps shown in tracebacks.
+
+      If not ``NULL`` or an empty string, timestamps of exceptions are collected
+      and will be displayed in the configured format. Acceptable values are:
+
+      * ``"us"``: Display timestamps in microseconds
+      * ``"ns"``: Display timestamps in nanoseconds
+      * ``"iso"``: Display timestamps in ISO-8601 format
+      * ``""``: Collection and display is disabled.
+
+      Set by the :option:`-X traceback_timestamps=FORMAT <-X>` command line
+      option or the :envvar:`PYTHON_TRACEBACK_TIMESTAMPS` environment variable.
+
+      Default: ``NULL`` (timestamps disabled).
+
+      .. versionadded:: next
 
    .. c:member:: int perf_profiling
 
