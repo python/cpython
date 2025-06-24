@@ -42,7 +42,7 @@ class _Target(typing.Generic[_S, _R]):
     condition: str
     _: dataclasses.KW_ONLY
     args: typing.Sequence[str] = ()
-    optimizer: type[_optimizers.Optimizer]
+    optimizer: type[_optimizers.Optimizer] = _optimizers.Optimizer
     prefix: str = ""
     stable: bool = False
     debug: bool = False
@@ -520,6 +520,7 @@ class _MachO(
 
 def get_target(host: str) -> _COFF | _ELF | _MachO:
     """Build a _Target for the given host "triple" and options."""
+    optimizer: type[_optimizers.Optimizer]
     target: _COFF | _ELF | _MachO
     if re.fullmatch(r"aarch64-apple-darwin.*", host):
         condition = "defined(__aarch64__) && defined(__APPLE__)"
@@ -539,7 +540,7 @@ def get_target(host: str) -> _COFF | _ELF | _MachO:
     elif re.fullmatch(r"i686-pc-windows-msvc", host):
         # -Wno-ignored-attributes: __attribute__((preserve_none)) is not supported here.
         args = ["-DPy_NO_ENABLE_SHARED", "-Wno-ignored-attributes"]
-        optimizer = _optimizers.OptimizerX86Windows
+        optimizer = _optimizers.OptimizerX86
         condition = "defined(_M_IX86)"
         target = _COFF(host, condition, args=args, optimizer=optimizer, prefix="_")
     elif re.fullmatch(r"x86_64-apple-darwin.*", host):
@@ -549,7 +550,7 @@ def get_target(host: str) -> _COFF | _ELF | _MachO:
     elif re.fullmatch(r"x86_64-pc-windows-msvc", host):
         args = ["-fms-runtime-lib=dll"]
         condition = "defined(_M_X64)"
-        optimizer = _optimizers.OptimizerX86Windows
+        optimizer = _optimizers.OptimizerX8664Windows
         target = _COFF(host, condition, args=args, optimizer=optimizer)
     elif re.fullmatch(r"x86_64-.*-linux-gnu", host):
         args = ["-fno-pic", "-mcmodel=medium", "-mlarge-data-threshold=0"]

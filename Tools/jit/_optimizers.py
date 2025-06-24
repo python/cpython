@@ -1,9 +1,14 @@
+"""Low-level optimization of textual assembly."""
+
 import dataclasses
 import pathlib
 import re
 import typing
 
-_RE_NEVER_MATCH = re.compile(r"(?!)")  # Same as saying "not string.startswith('')".
+# Same as saying "not string.startswith('')":
+_RE_NEVER_MATCH = re.compile(r"(?!)")
+# Dictionary mapping x86 branching instructions to their inverted counterparts.
+# If a branch cannot be inverted, the value is None:
 _X86_BRANCHES = {
     "ja": "jna",
     "jae": "jnae",
@@ -29,13 +34,14 @@ _X86_BRANCHES = {
     "loopnz": None,
     "loopz": None,
 }
+# Update with all of the inverted branches, too:
 _X86_BRANCHES |= {v: k for k, v in _X86_BRANCHES.items() if v}
 
 
 @dataclasses.dataclass
 class _Block:
     label: str | None = None
-    noise: list[str] = dataclasses.field(default_factory=list)
+    header: list[str] = dataclasses.field(default_factory=list)
     instructions: list[str] = dataclasses.field(default_factory=list)
     target: typing.Self | None = None
     link: typing.Self | None = None
@@ -43,44 +49,52 @@ class _Block:
     hot: bool = False
 
     def resolve(self) -> typing.Self:
-        while self.link and not self.instructions:
-            self = self.link
-        return self
+        """Find the first non-empty block reachable from this one."""
+        block = self
+        while block.link and not block.instructions:
+            block = block.link
+        return block
 
 
 @dataclasses.dataclass
 class Optimizer:
+    """Several passes of analysis and optimization for textual assembly."""
+
     path: pathlib.Path
     _: dataclasses.KW_ONLY
+    # prefix used to mangle symbols on some platforms:
     prefix: str = ""
-    _graph: _Block = dataclasses.field(init=False)
-    _labels: dict = dataclasses.field(init=False, default_factory=dict)
+    # The first block in the linked list:
+    _root: _Block = dataclasses.field(init=False, default_factory=_Block)
+    _labels: dict[str, _Block] = dataclasses.field(init=False, default_factory=dict)
+    # No groups:
+    _re_header: typing.ClassVar[re.Pattern[str]] = re.compile(r"\s*(?:\.|#|//|$)")
+    # One group (label):
+    _re_label: typing.ClassVar[re.Pattern[str]] = re.compile(
+        r'\s*(?P<label>[\w."$?@]+):'
+    )
+    # Override everything that follows in subclasses:
     _alignment: typing.ClassVar[int] = 1
     _branches: typing.ClassVar[dict[str, str | None]] = {}
-    _re_branch: typing.ClassVar[re.Pattern[str]] = (
-        _RE_NEVER_MATCH  # Two groups: instruction and target.
-    )
-    _re_jump: typing.ClassVar[re.Pattern[str]] = _RE_NEVER_MATCH  # One group: target.
-    _re_label: typing.ClassVar[re.Pattern[str]] = re.compile(
-        r'\s*(?P<label>[\w."$?@]+):'  # One group: label.
-    )
-    _re_noise: typing.ClassVar[re.Pattern[str]] = re.compile(
-        r"\s*(?:\.|#|//|$)"  # No groups.
-    )
-    _re_return: typing.ClassVar[re.Pattern[str]] = _RE_NEVER_MATCH  # No groups.
+    # Two groups (instruction and target):
+    _re_branch: typing.ClassVar[re.Pattern[str]] = _RE_NEVER_MATCH
+    # One group (target):
+    _re_jump: typing.ClassVar[re.Pattern[str]] = _RE_NEVER_MATCH
+    # No groups:
+    _re_return: typing.ClassVar[re.Pattern[str]] = _RE_NEVER_MATCH
 
     def __post_init__(self) -> None:
         text = self._preprocess(self.path.read_text())
-        self._graph = block = _Block()
+        block = self._root
         for line in text.splitlines():
             if match := self._re_label.match(line):
                 block.link = block = self._lookup_label(match["label"])
-                block.noise.append(line)
+                block.header.append(line)
                 continue
-            if self._re_noise.match(line):
+            if self._re_header.match(line):
                 if block.instructions:
                     block.link = block = _Block()
-                block.noise.append(line)
+                block.header.append(line)
                 continue
             if block.target or not block.fallthrough:
                 block.link = block = _Block()
@@ -95,8 +109,7 @@ class Optimizer:
                 assert not block.target
                 block.fallthrough = False
 
-    @staticmethod
-    def _preprocess(text: str) -> str:
+    def _preprocess(self, text: str) -> str:
         return text
 
     @classmethod
@@ -122,7 +135,7 @@ class Optimizer:
         return self._labels[label]
 
     def _blocks(self) -> typing.Generator[_Block, None, None]:
-        block = self._graph
+        block: _Block | None = self._root
         while block:
             yield block
             block = block.link
@@ -134,7 +147,7 @@ class Optimizer:
             if hot != block.hot:
                 hot = block.hot
                 lines.append(f"# JIT: {'HOT' if hot else 'COLD'} ".ljust(80, "#"))
-            lines.extend(block.noise)
+            lines.extend(block.header)
             lines.extend(block.instructions)
         return "\n".join(lines)
 
@@ -150,10 +163,10 @@ class Optimizer:
             if end.instructions:
                 break
         align = _Block()
-        align.noise.append(f"\t.balign\t{self._alignment}")
+        align.header.append(f"\t.balign\t{self._alignment}")
         continuation = self._lookup_label(f"{self.prefix}_JIT_CONTINUE")
         assert continuation.label
-        continuation.noise.append(f"{continuation.label}:")
+        continuation.header.append(f"{continuation.label}:")
         end.link, align.link, continuation.link = align, continuation, end.link
 
     def _mark_hot_blocks(self) -> None:
@@ -168,10 +181,10 @@ class Optimizer:
             )
 
     def _invert_hot_branches(self) -> None:
-        # Turn:
+        # Before:
         #    branch <hot>
         #    jump <cold>
-        # Into:
+        # After:
         #    opposite-branch <cold>
         #    jump <hot>
         for branch in self._blocks():
@@ -217,6 +230,7 @@ class Optimizer:
                 block.instructions.pop()
 
     def run(self) -> None:
+        """Run this optimizer."""
         self._insert_continue_label()
         self._mark_hot_blocks()
         self._invert_hot_branches()
@@ -224,13 +238,17 @@ class Optimizer:
         self.path.write_text(self._body())
 
 
-class OptimizerAArch64(Optimizer):
+class OptimizerAArch64(Optimizer):  # pylint: disable = too-few-public-methods
+    """aarch64-apple-darwin/aarch64-pc-windows-msvc/aarch64-unknown-linux-gnu"""
+
     # TODO: @diegorusso
     _alignment = 8
     _re_jump = re.compile(r"\s*b\s+(?P<target>[\w.]+)")
 
 
-class OptimizerX86(Optimizer):
+class OptimizerX86(Optimizer):  # pylint: disable = too-few-public-methods
+    """i686-pc-windows-msvc/x86_64-apple-darwin/x86_64-unknown-linux-gnu"""
+
     _branches = _X86_BRANCHES
     _re_branch = re.compile(
         rf"\s*(?P<instruction>{'|'.join(_X86_BRANCHES)})\s+(?P<target>[\w.]+)"
@@ -239,10 +257,15 @@ class OptimizerX86(Optimizer):
     _re_return = re.compile(r"\s*ret\b")
 
 
-class OptimizerX86Windows(OptimizerX86):
+class OptimizerX8664Windows(OptimizerX86):  # pylint: disable = too-few-public-methods
+    """x86_64-pc-windows-msvc"""
+
     def _preprocess(self, text: str) -> str:
         text = super()._preprocess(text)
-        # rex64 jumpq *__imp__JIT_CONTINUE(%rip) -> jmp _JIT_CONTINUE
+        # Before:
+        #     rex64 jmpq *__imp__JIT_CONTINUE(%rip)
+        # After:
+        #     jmp _JIT_CONTINUE
         far_indirect_jump = (
             rf"rex64\s+jmpq\s+\*__imp_(?P<target>{self.prefix}_JIT_\w+)\(%rip\)"
         )
