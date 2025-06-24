@@ -80,7 +80,7 @@ python \- an interpreted, interactive, object-oriented programming language
 ]
 .br
        [
-.B \--check-hash-based-pycs
+.B \-\-check-hash-based-pycs
 .I default
 |
 .I always
@@ -89,16 +89,16 @@ python \- an interpreted, interactive, object-oriented programming language
 ]
 .br
        [
-.B \--help
+.B \-\-help
 ]
 [
-.B \--help-env
+.B \-\-help\-env
 ]
 [
-.B \--help-xoptions
+.B \-\-help\-xoptions
 ]
 [
-.B \--help-all
+.B \-\-help\-all
 ]
 .br
        [
@@ -144,14 +144,14 @@ files on import. See also PYTHONDONTWRITEBYTECODE.
 .TP
 .B \-b
 Issue warnings about str(bytes_instance), str(bytearray_instance)
-and comparing bytes/bytearray with str. (-bb: issue errors)
+and comparing bytes/bytearray with str. (\-bb: issue errors)
 .TP
 .BI "\-c " command
 Specify the command to execute (see next section).
 This terminates the option list (following options are passed as
 arguments to the command).
 .TP
-.BI "\-\-check-hash-based-pycs " mode
+.BI "\-\-check\-hash\-based\-pycs " mode
 Configure how Python evaluates the up-to-dateness of hash-based .pyc files.
 .TP
 .B \-d
@@ -185,7 +185,7 @@ raises an exception.
 .B \-I
 Run Python in isolated mode. This also implies \fB\-E\fP, \fB\-P\fP and \fB\-s\fP. In
 isolated mode sys.path contains neither the script's directory nor the user's
-site-packages directory. All PYTHON* environment variables are ignored, too.
+site\-packages directory. All PYTHON* environment variables are ignored, too.
 Further restrictions may be imposed to prevent the user from injecting
 malicious code.
 .TP
@@ -203,7 +203,7 @@ __debug__; augment the filename for compiled (bytecode) files by
 adding .opt-1 before the .pyc extension.
 .TP
 .B \-OO
-Do \fB-O\fP and also discard docstrings; change the filename for
+Do \fB\-O\fP and also discard docstrings; change the filename for
 compiled (bytecode) files by adding .opt-2 before the .pyc extension.
 .TP
 .B \-P
@@ -266,16 +266,16 @@ emitted by a process (even those that are otherwise ignored by default):
 
 The action names can be abbreviated as desired and the interpreter will resolve
 them to the appropriate action name. For example,
-.B -Wi
+.B \-Wi
 is the same as
-.B -Wignore .
+.B \-Wignore .
 
 The full form of argument is:
 .IB action:message:category:module:lineno
 
 Empty fields match all values; trailing empty fields may be omitted. For
 example
-.B -W ignore::DeprecationWarning
+.B \-W ignore::DeprecationWarning
 ignores all DeprecationWarning warnings.
 
 The
@@ -304,10 +304,10 @@ field matches the line number, where zero matches all line numbers and is thus
 equivalent to an omitted line number.
 
 Multiple
-.B -W
+.B \-W
 options can be given; when a warning matches more than one option, the action
 for the last matching option is performed. Invalid
-.B -W
+.B \-W
 options are ignored (though, a warning message is printed about invalid options
 when the first warning is issued).
 
@@ -321,15 +321,15 @@ a regular expression on the warning message.
 .BI "\-X " option
 Set implementation-specific option. The following options are available:
 
-    \fB-X cpu_count=\fIN\fR: override the return value of \fIos.cpu_count()\fR;
-       \fB-X cpu_count=default\fR cancels overriding; also \fBPYTHON_CPU_COUNT\fI
+    \fB\-X cpu_count=\fIN\fR: override the return value of \fIos.cpu_count()\fR;
+       \fB\-X cpu_count=default\fR cancels overriding; also \fBPYTHON_CPU_COUNT\fI
 
-    \fB-X dev\fR: enable CPython's "development mode", introducing additional
+    \fB\-X dev\fR: enable CPython's "development mode", introducing additional
         runtime checks which are too expensive to be enabled by default. It
         will not be more verbose than the default if the code is correct: new
         warnings are only emitted when an issue is detected. Effect of the
         developer mode:
-           * Add default warning filter, as \fB-W default\fR
+           * Add default warning filter, as \fB\-W default\fR
            * Install debug hooks on memory allocators: see the
              PyMem_SetupDebugHooks() C function
            * Enable the faulthandler module to dump the Python traceback on a
@@ -338,59 +338,63 @@ Set implementation-specific option. The following options are available:
            * Set the dev_mode attribute of sys.flags to True
            * io.IOBase destructor logs close() exceptions
 
-    \fB-X importtime\fR: show how long each import takes. It shows module name,
+    \fB\-X importtime\fR: show how long each import takes. It shows module name,
         cumulative time (including nested imports) and self time (excluding
         nested imports). Note that its output may be broken in multi-threaded
         application. Typical usage is
-        \fBpython3 -X importtime -c 'import asyncio'\fR
+        \fBpython3 \-X importtime \-c 'import asyncio'\fR
 
-    \fB-X faulthandler\fR: enable faulthandler
+        \fB\-X importtime=2\fR enables additional output that indicates when an
+        imported module has already been loaded.  In such cases, the string
+        \fBcached\fR will be printed in both time columns.
 
-    \fB-X frozen_modules=\fR[\fBon\fR|\fBoff\fR]: whether or not frozen modules
+    \fB\-X faulthandler\fR: enable faulthandler
+
+    \fB\-X frozen_modules=\fR[\fBon\fR|\fBoff\fR]: whether or not frozen modules
        should be used.
        The default is "on" (or "off" if you are running a local build).
 
-    \fB-X gil=\fR[\fB0\fR|\fB1\fR]: enable (1) or disable (0) the GIL; also
+    \fB\-X gil=\fR[\fB0\fR|\fB1\fR]: enable (1) or disable (0) the GIL; also
        \fBPYTHON_GIL\fR
-       Only available in builds configured with \fB--disable-gil\fR.
+       Only available in builds configured with \fB\-\-disable\-gil\fR.
 
-    \fB-X int_max_str_digits=\fInumber\fR: limit the size of int<->str conversions.
+    \fB\-X int_max_str_digits=\fInumber\fR: limit the size of int<->str conversions.
        This helps avoid denial of service attacks when parsing untrusted data.
        The default is sys.int_info.default_max_str_digits.  0 disables.
 
-    \fB-X no_debug_ranges\fR: disable the inclusion of the tables mapping extra
+    \fB\-X no_debug_ranges\fR: disable the inclusion of the tables mapping extra
        location information (end line, start column offset and end column
        offset) to every instruction in code objects. This is useful when
        smaller code objects and pyc files are desired as well as suppressing
        the extra visual location indicators when the interpreter displays
        tracebacks.
 
-    \fB-X perf\fR: support the Linux "perf" profiler; also \fBPYTHONPERFSUPPORT=1\fR
+    \fB\-X perf\fR: support the Linux "perf" profiler; also \fBPYTHONPERFSUPPORT=1\fR
 
-    \fB-X perf_jit\fR: support the Linux "perf" profiler with DWARF support;
+    \fB\-X perf_jit\fR: support the Linux "perf" profiler with DWARF support;
        also \fBPYTHON_PERF_JIT_SUPPORT=1\fR
 
-    \fB-X presite=\fIMOD\fR: import this module before site; also \fBPYTHON_PRESITE\fR
+    \fB\-X presite=\fIMOD\fR: import this module before site; also \fBPYTHON_PRESITE\fR
        This only works on debug builds.
 
-    \fB-X pycache_prefix=\fIPATH\fR: enable writing .pyc files to a parallel
+    \fB\-X pycache_prefix=\fIPATH\fR: enable writing .pyc files to a parallel
        tree rooted at the given directory instead of to the code tree.
 
-    \fB-X showrefcount\fR: output the total reference count and number of used
+    \fB\-X showrefcount\fR: output the total reference count and number of used
         memory blocks when the program finishes or after each statement in the
         interactive interpreter. This only works on debug builds
 
-    \fB-X tracemalloc\fR: start tracing Python memory allocations using the
+    \fB\-X tracemalloc\fR: start tracing Python memory allocations using the
         tracemalloc module. By default, only the most recent frame is stored in a
-        traceback of a trace. Use -X tracemalloc=NFRAME to start tracing with a
+        traceback of a trace. Use \-X tracemalloc=NFRAME to start tracing with a
         traceback limit of NFRAME frames
 
-    \fB-X utf8\fR: enable UTF-8 mode for operating system interfaces,
-        overriding the default locale-aware mode. \fB-X utf8=0\fR explicitly
+    \fB\-X utf8\fR: enable UTF-8 mode for operating system interfaces,
+        overriding the default locale-aware mode. \fB\-X utf8=0\fR explicitly
         disables UTF-8 mode (even when it would otherwise activate
         automatically). See \fBPYTHONUTF8\fR for more details
 
-    \fB-X warn_default_encoding\fR: enable opt-in EncodingWarning for 'encoding=None'
+    \fB\-X warn_default_encoding\fR: enable opt-in EncodingWarning for 'encoding=None'
 
 .TP
 .B \-x
@@ -430,7 +434,7 @@ is an empty string; if
 is used,
 .I sys.argv[0]
 contains the string
-.I '-c'.
+.I '\-c'.
 Note that options interpreted by the Python interpreter itself
 are not placed in
 .IR sys.argv .
@@ -513,7 +517,7 @@ If this environment variable is set to a non-empty string,
 is called at startup: install a handler for SIGSEGV, SIGFPE, SIGABRT, SIGBUS
 and SIGILL signals to dump the Python traceback.
 .IP
-This is equivalent to the \fB-X faulthandler\fP option.
+This is equivalent to the \fB\-X faulthandler\fP option.
 .IP PYTHON_FROZEN_MODULES
 If this variable is set to \fBon\fR or \fBoff\fR, it determines whether or not
 frozen modules are ignored by the import machinery.  A value of \fBon\fR means
@@ -524,12 +528,12 @@ See also the \fB\-X frozen_modules\fR option.
 .IP PYTHON_GIL
 If this variable is set to 1, the global interpreter lock (GIL) will be forced
 on. Setting it to 0 forces the GIL off. Only available in builds configured
-with \fB--disable-gil\fP.
+with \fB\-\-disable\-gil\fP.
+.IP
+This is equivalent to the \fB\-X gil\fR option.
 .IP PYTHON_HISTORY
 This environment variable can be used to set the location of a history file
 (on Unix, it is \fI~/.python_history\fP by default).
-.IP
-This is equivalent to the \fB-X gil\fR option.
 .IP PYTHONNODEBUGRANGES
 If this variable is set, it disables the inclusion of the tables mapping
 extra location information (end line, start column offset and end column
@@ -576,7 +580,7 @@ when converting from a string and when converting an int back to a str.
 A value of 0 disables the limit.  Conversions to or from bases 2, 4, 8,
 16, and 32 are never limited.
 .IP
-This is equivalent to the \fB-X int_max_str_digits=\fINUMBER\fR option.
+This is equivalent to the \fB\-X int_max_str_digits=\fINUMBER\fR option.
 .IP PYTHONIOENCODING
 If this is set before running the interpreter, it overrides the encoding used
 for stdin/stdout/stderr, in the syntax
@@ -648,9 +652,10 @@ See also the \fB\-X perf\fR option.
 .IP PYTHONPLATLIBDIR
 Override sys.platlibdir.
 .IP PYTHONPROFILEIMPORTTIME
-If this environment variable is set to a non-empty string, Python will
-show how long each import takes. This is exactly equivalent to setting
-\fB\-X importtime\fP on the command line.
+If this environment variable is set to \fB1\fR, Python will show
+how long each import takes. If set to \fB2\fR, Python will include output for
+imported modules that have already been loaded.
+This is exactly equivalent to setting \fB\-X importtime\fP on the command line.
 .IP PYTHONPYCACHEPREFIX
 If this is set, Python will write \fB.pyc\fR files in a mirror directory tree
 at this path, instead of in \fB__pycache__\fR directories within the source
@@ -686,7 +691,7 @@ If this is set to a non-empty string it is equivalent to specifying
 the \fB\-u\fP option.
 .IP PYTHONUSERBASE
 Defines the user base directory, which is used to compute the path of the user
-.IR site-packages
+.IR site\-packages
 directory and installation paths for
 .IR "python \-m pip install \-\-user" .
 .IP PYTHONUTF8
@@ -704,7 +709,7 @@ specifying the \fB\-W\fP option for each separate value.
 .SS Debug-mode variables
 Setting these variables only has an effect in a debug build of Python, that is,
 if Python was configured with the
-\fB\--with-pydebug\fP build option.
+\fB\-\-with\-pydebug\fP build option.
 .IP PYTHONDUMPREFS
 If this environment variable is set, Python will dump objects and reference
 counts still alive after shutting down the interpreter.
@@ -718,7 +723,7 @@ early in the interpreter lifecycle, before the \fIsite\fR module is
 executed, and before the \fI__main__\fR module is created.
 This only works on debug builds.
 .IP
-This is equivalent to the \fB-X presite=\fImodule\fR option.
+This is equivalent to the \fB\-X presite=\fImodule\fR option.
 .SH AUTHOR
 The Python Software Foundation: https://www.python.org/psf/
 .SH INTERNET RESOURCES

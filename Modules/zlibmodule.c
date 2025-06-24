@@ -17,6 +17,16 @@
 #error "At least zlib version 1.2.2.1 is required"
 #endif
 
+#if (SIZEOF_OFF_T == SIZEOF_SIZE_T)
+#  define convert_to_z_off_t  PyLong_AsSsize_t
+#elif (SIZEOF_OFF_T == SIZEOF_LONG_LONG)
+#  define convert_to_z_off_t  PyLong_AsLongLong
+#elif (SIZEOF_OFF_T == SIZEOF_LONG)
+#  define convert_to_z_off_t  PyLong_AsLong
+#else
+#  error off_t does not match either size_t, long, or long long!
+#endif
+
 // Blocks output buffer wrappers
 #include "pycore_blocks_output_buffer.h"
 
@@ -1877,6 +1887,44 @@ zlib_adler32_impl(PyObject *module, Py_buffer *data, unsigned int value)
 }
 
 /*[clinic input]
+zlib.adler32_combine -> unsigned_int
+
+    adler1: unsigned_int(bitwise=True)
+        Adler-32 checksum for sequence A
+
+    adler2: unsigned_int(bitwise=True)
+        Adler-32 checksum for sequence B
+
+    len2: object(subclass_of='&PyLong_Type')
+        Length of sequence B
+    /
+
+Combine two Adler-32 checksums into one.
+
+Given the Adler-32 checksum 'adler1' of a sequence A and the
+Adler-32 checksum 'adler2' of a sequence B of length 'len2',
+return the Adler-32 checksum of A and B concatenated.
+[clinic start generated code]*/
+
+static unsigned int
+zlib_adler32_combine_impl(PyObject *module, unsigned int adler1,
+                          unsigned int adler2, PyObject *len2)
+/*[clinic end generated code: output=61842cefb16afb1b input=51bb045c95130c6f]*/
+{
+#if defined(Z_WANT64)
+    z_off64_t len = convert_to_z_off_t(len2);
+#else
+    z_off_t len = convert_to_z_off_t(len2);
+#endif
+    if (PyErr_Occurred()) {
+        return (unsigned int)-1;
+    }
+    return adler32_combine(adler1, adler2, len);
+}
+
+
+
+/*[clinic input]
 zlib.crc32 -> unsigned_int
 
     data: Py_buffer
@@ -1923,13 +1971,50 @@ zlib_crc32_impl(PyObject *module, Py_buffer *data, unsigned int value)
     return value;
 }
 
+/*[clinic input]
+zlib.crc32_combine -> unsigned_int
+
+    crc1: unsigned_int(bitwise=True)
+        CRC-32 checksum for sequence A
+
+    crc2: unsigned_int(bitwise=True)
+        CRC-32 checksum for sequence B
+
+    len2: object(subclass_of='&PyLong_Type')
+        Length of sequence B
+    /
+
+Combine two CRC-32 checksums into one.
+
+Given the CRC-32 checksum 'crc1' of a sequence A and the
+CRC-32 checksum 'crc2' of a sequence B of length 'len2',
+return the CRC-32 checksum of A and B concatenated.
+[clinic start generated code]*/
+
+static unsigned int
+zlib_crc32_combine_impl(PyObject *module, unsigned int crc1,
+                        unsigned int crc2, PyObject *len2)
+/*[clinic end generated code: output=c4def907c602e6eb input=9c8a065d9040dc66]*/
+{
+#if defined(Z_WANT64)
+    z_off64_t len = convert_to_z_off_t(len2);
+#else
+    z_off_t len = convert_to_z_off_t(len2);
+#endif
+    if (PyErr_Occurred()) {
+        return (unsigned int)-1;
+    }
+    return crc32_combine(crc1, crc2, len);
+}
 
 static PyMethodDef zlib_methods[] =
 {
     ZLIB_ADLER32_METHODDEF
+    ZLIB_ADLER32_COMBINE_METHODDEF
     ZLIB_COMPRESS_METHODDEF
     ZLIB_COMPRESSOBJ_METHODDEF
     ZLIB_CRC32_METHODDEF
+    ZLIB_CRC32_COMBINE_METHODDEF
     ZLIB_DECOMPRESS_METHODDEF
     ZLIB_DECOMPRESSOBJ_METHODDEF
     {NULL, NULL}
@@ -1981,14 +2066,17 @@ static PyType_Spec ZlibDecompressor_type_spec = {
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE),
     .slots = ZlibDecompressor_type_slots,
 };
+
 PyDoc_STRVAR(zlib_module_documentation,
 "The functions in this module allow compression and decompression using the\n"
 "zlib library, which is based on GNU zip.\n"
 "\n"
 "adler32(string[, start]) -- Compute an Adler-32 checksum.\n"
+"adler32_combine(adler1, adler2, len2, /) -- Combine two Adler-32 checksums.\n"
 "compress(data[, level]) -- Compress data, with compression level 0-9 or -1.\n"
 "compressobj([level[, ...]]) -- Return a compressor object.\n"
 "crc32(string[, start]) -- Compute a CRC-32 checksum.\n"
+"crc32_combine(crc1, crc2, len2, /) -- Combine two CRC-32 checksums.\n"
 "decompress(string,[wbits],[bufsize]) -- Decompresses a compressed string.\n"
 "decompressobj([wbits[, zdict]]) -- Return a decompressor object.\n"
 "\n"

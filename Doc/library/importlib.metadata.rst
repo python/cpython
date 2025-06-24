@@ -297,7 +297,7 @@ Distribution files
    package is not installed in the current Python environment.
 
    Returns :const:`None` if the distribution is found but the installation
-   database records reporting the files associated with the distribuion package
+   database records reporting the files associated with the distribution package
    are missing.
 
 .. class:: PackagePath

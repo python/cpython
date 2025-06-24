@@ -853,7 +853,7 @@ The :mod:`test.support` module defines the following functions:
 
 .. function:: linked_with_musl()
 
-   Return ``False`` if there is no evidence the interperter was compiled with
+   Return ``False`` if there is no evidence the interpreter was compiled with
    ``musl``, otherwise return a version triple, either ``(0, 0, 0)`` if the
    version is unknown, or the actual version if it is known.  Intended for use
    in ``skip`` decorators.  ``emscripten`` and ``wasi`` are assumed to be
@@ -1468,7 +1468,7 @@ The :mod:`test.support.os_helper` module provides support for os tests.
 
    Temporarily unset one or more environment variables.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
       More than one environment variable can be unset.
 
 

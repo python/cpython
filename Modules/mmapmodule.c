@@ -23,7 +23,6 @@
 #endif
 
 #include <Python.h>
-#include "pycore_abstract.h"      // _Py_convert_optional_to_ssize_t()
 #include "pycore_bytesobject.h"   // _PyBytes_Find()
 #include "pycore_fileutils.h"     // _Py_stat_struct
 
@@ -291,6 +290,24 @@ filter_page_exception_method(mmap_object *self, EXCEPTION_POINTERS *ptrs,
     }
     return EXCEPTION_CONTINUE_SEARCH;
 }
+
+static void
+_PyErr_SetFromNTSTATUS(ULONG status)
+{
+#if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
+    PyErr_SetFromWindowsErr(LsaNtStatusToWinError((NTSTATUS)status));
+#else
+    if (status & 0x80000000) {
+        // HRESULT-shaped codes are supported by PyErr_SetFromWindowsErr
+        PyErr_SetFromWindowsErr((int)status);
+    }
+    else {
+        // No mapping for NTSTATUS values, so just return it for diagnostic purposes
+        // If we provide it as winerror it could incorrectly change the type of the exception.
+        PyErr_Format(PyExc_OSError, "Operating system error NTSTATUS=0x%08lX", status);
+    }
+#endif
+}
 #endif
 
 #if defined(MS_WINDOWS) && !defined(DONT_USE_SEH)
@@ -304,9 +321,7 @@ do {                                                                       \
         assert(record.ExceptionCode == EXCEPTION_IN_PAGE_ERROR ||          \
                record.ExceptionCode == EXCEPTION_ACCESS_VIOLATION);        \
         if (record.ExceptionCode == EXCEPTION_IN_PAGE_ERROR) {             \
-            NTSTATUS status = (NTSTATUS) record.ExceptionInformation[2];   \
-            ULONG code = LsaNtStatusToWinError(status);                    \
-            PyErr_SetFromWindowsErr(code);                                 \
+            _PyErr_SetFromNTSTATUS((ULONG)record.ExceptionInformation[2]); \
         }                                                                  \
         else if (record.ExceptionCode == EXCEPTION_ACCESS_VIOLATION) {     \
             PyErr_SetFromWindowsErr(ERROR_NOACCESS);                       \
@@ -333,9 +348,7 @@ do {                                                                          \
         assert(record.ExceptionCode == EXCEPTION_IN_PAGE_ERROR ||             \
                record.ExceptionCode == EXCEPTION_ACCESS_VIOLATION);           \
         if (record.ExceptionCode == EXCEPTION_IN_PAGE_ERROR) {                \
-            NTSTATUS status = (NTSTATUS) record.ExceptionInformation[2];      \
-            ULONG code = LsaNtStatusToWinError(status);                       \
-            PyErr_SetFromWindowsErr(code);                                    \
+            _PyErr_SetFromNTSTATUS((ULONG)record.ExceptionInformation[2]);    \
         }                                                                     \
         else if (record.ExceptionCode == EXCEPTION_ACCESS_VIOLATION) {        \
             PyErr_SetFromWindowsErr(ERROR_NOACCESS);                          \
@@ -516,7 +529,7 @@ mmap_read_method(PyObject *op, PyObject *args)
     mmap_object *self = mmap_object_CAST(op);
 
     CHECK_VALID(NULL);
-    if (!PyArg_ParseTuple(args, "|O&:read", _Py_convert_optional_to_ssize_t, &num_bytes))
+    if (!PyArg_ParseTuple(args, "|n?:read", &num_bytes))
         return NULL;
     CHECK_VALID(NULL);
 
@@ -1710,7 +1723,7 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
     DWORD off_lo;       /* lower 32 bits of offset */
     DWORD size_hi;      /* upper 32 bits of size */
     DWORD size_lo;      /* lower 32 bits of size */
-    PyObject *tagname = Py_None;
+    PyObject *tagname = NULL;
     DWORD dwErr = 0;
     int fileno;
     HANDLE fh = 0;
@@ -1720,7 +1733,7 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
                                 "tagname",
                                 "access", "offset", NULL };
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwdict, "in|OiL", keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kwdict, "in|U?iL", keywords,
                                      &fileno, &map_size,
                                      &tagname, &access, &offset)) {
         return NULL;
@@ -1853,13 +1866,7 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
     m_obj->weakreflist = NULL;
     m_obj->exports = 0;
     /* set the tag name */
-    if (!Py_IsNone(tagname)) {
-        if (!PyUnicode_Check(tagname)) {
-            Py_DECREF(m_obj);
-            return PyErr_Format(PyExc_TypeError, "expected str or None for "
-                                "'tagname', not %.200s",
-                                Py_TYPE(tagname)->tp_name);
-        }
+    if (tagname != NULL) {
         m_obj->tagname = PyUnicode_AsWideCharString(tagname, NULL);
         if (m_obj->tagname == NULL) {
             Py_DECREF(m_obj);

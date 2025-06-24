@@ -150,18 +150,6 @@ def bin(num, max_bits=None):
             digits = (sign[-1] * max_bits + digits)[-max_bits:]
     return "%s %s" % (sign, digits)
 
-def _dedent(text):
-    """
-    Like textwrap.dedent.  Rewritten because we cannot import textwrap.
-    """
-    lines = text.split('\n')
-    for i, ch in enumerate(lines[0]):
-        if ch != ' ':
-            break
-    for j, l in enumerate(lines):
-        lines[j] = l[i:]
-    return '\n'.join(lines)
-
 class _not_given:
     def __repr__(self):
         return('<not given>')
@@ -743,14 +731,16 @@ class EnumType(type):
         """
         if isinstance(value, cls):
             return True
-        try:
-            cls(value)
-            return True
-        except ValueError:
-            return (
-                    value in cls._unhashable_values_    # both structures are lists
-                    or value in cls._hashable_values_
-                    )
+        if issubclass(cls, Flag):
+            try:
+                result = cls._missing_(value)
+                return isinstance(result, cls)
+            except ValueError:
+                pass
+        return (
+                value in cls._unhashable_values_    # both structures are lists
+                or value in cls._hashable_values_
+                )
 
     def __delattr__(cls, attr):
         # nicer error message when someone tries to delete an attribute

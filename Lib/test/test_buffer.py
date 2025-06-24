@@ -2879,11 +2879,11 @@ class TestBufferProtocol(unittest.TestCase):
     def test_memoryview_repr(self):
         m = memoryview(bytearray(9))
         r = m.__repr__()
-        self.assertTrue(r.startswith("<memory"))
+        self.assertStartsWith(r, "<memory")
 
         m.release()
         r = m.__repr__()
-        self.assertTrue(r.startswith("<released"))
+        self.assertStartsWith(r, "<released")
 
     def test_memoryview_sequence(self):
 
