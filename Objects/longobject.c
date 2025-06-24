@@ -530,7 +530,7 @@ static inline unsigned long
 unroll_digits_ulong(PyLongObject *v, Py_ssize_t *iptr)
 {
     assert(ULONG_MAX >= ((1UL << PyLong_SHIFT) - 1));
-    
+
     Py_ssize_t i = *iptr;
     assert(i >= 2);
 
