@@ -170,6 +170,36 @@ With this in mind, the :mod:`!concurrent.interpreters` module provides
 a :class:`queue.Queue` implementation, available through
 :func:`create_queue`.
 
+.. _interp-object-sharing:
+
+"Sharing" Objects
+^^^^^^^^^^^^^^^^^
+
+Any data actually shared between interpreters loses the thread-safety
+provided by the :term:`GIL`.  There are various options for dealing with
+this in extension modules.  However, from Python code the lack of
+thread-safety means objects can't actually be shared, with a few
+exceptions.  Instead, a copy must be created, which means mutable
+objects won't stay in sync.
+
+By default, most objects are copied with :mod:`pickle` when they are
+passed to another interpreter.  Nearly all of the immutable builtin
+objects are either directly shared or copied efficiently.  For example:
+
+* :const:`None`
+* :class:`bool` (:const:`True` and :const:`False`)
+* :class:`bytes`
+* :class:`str`
+* :class:`int`
+* :class:`float`
+* :class:`tuple` (of similarly supported objects)
+
+There is a small number of Python types that actually share mutable
+data between interpreters:
+
+* :class:`memoryview`
+* :class:`Queue`
+
 
 Reference
 ---------
@@ -236,6 +266,9 @@ Interpreter objects
 
       Bind objects in the interpreter's :mod:`!__main__` module.
 
+      Some objects are actually shared and some are copied efficiently,
+      but most are copied via :mod:`pickle`.  See :ref:`interp-object-sharing`.
+
    .. method:: exec(code, /, dedent=True)
 
       Run the given source code in the interpreter (in the current thread).
@@ -289,6 +322,9 @@ Communicating Between Interpreters
    A wrapper around a low-level, cross-interpreter queue, which
    implements the :class:`queue.Queue` interface.  The underlying queue
    can only be created through :func:`create_queue`.
+
+   Some objects are actually shared and some are copied efficiently,
+   but most are copied via :mod:`pickle`.  See :ref:`interp-object-sharing`.
 
    .. attribute:: id
 
