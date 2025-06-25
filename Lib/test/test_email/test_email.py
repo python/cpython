@@ -2211,36 +2211,36 @@ Content-Type: text/plain
 
     def test_boundary_stripped_only_once(self):
         eq = self.assertEqual
-        msg = email.message_from_string('''\
-MIME-Version: 1.0
-Content-Type: multipart/mixed; boundary="<>"
+        msg = email.message_from_string(textwrap.dedent('''\
+            MIME-Version: 1.0
+            Content-Type: multipart/mixed; boundary="<>"
 
---<>
-Content-Type: text/plain
+            --<>
+            Content-Type: text/plain
 
 
---<>
-Content-Type: text/plain
+            --<>
+            Content-Type: text/plain
 
---<>--
-''')
+            --<>--
+            '''))
         self.assertTrue(msg.is_multipart())
         eq(msg.get_boundary(), '<>')
         eq(len(msg.get_payload()), 2)
 
-        msg = email.message_from_string('''\
-MIME-Version: 1.0
-Content-Type: multipart/mixed; boundary=<"">
+        msg = email.message_from_string(textwrap.dedent('''\
+            MIME-Version: 1.0
+            Content-Type: multipart/mixed; boundary=<"">
 
---""
-Content-Type: text/plain
+            --""
+            Content-Type: text/plain
 
 
---""
-Content-Type: text/plain
+            --""
+            Content-Type: text/plain
 
---""--
-''')
+            --""--
+            '''))
         self.assertTrue(msg.is_multipart())
         eq(msg.get_boundary(), '""')
         eq(len(msg.get_payload()), 2)
