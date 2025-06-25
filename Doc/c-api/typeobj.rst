@@ -493,6 +493,7 @@ type objects) *must* have the :c:member:`~PyVarObject.ob_size` field.
 
 
 .. c:member:: Py_ssize_t PyObject.ob_refcnt
+   :noindex:
 
    This is the type object's reference count, initialized to ``1`` by the
    ``PyObject_HEAD_INIT`` macro.  Note that for :ref:`statically allocated type
@@ -507,6 +508,7 @@ type objects) *must* have the :c:member:`~PyVarObject.ob_size` field.
 
 
 .. c:member:: PyTypeObject* PyObject.ob_type
+   :noindex:
 
    This is the type's type, in other words its metatype.  It is initialized by the
    argument to the ``PyObject_HEAD_INIT`` macro, and its value should normally be
@@ -533,6 +535,7 @@ PyVarObject Slots
 -----------------
 
 .. c:member:: Py_ssize_t PyVarObject.ob_size
+   :noindex:
 
    For :ref:`statically allocated type objects <static-types>`, this should be
    initialized to zero. For :ref:`dynamically allocated type objects
