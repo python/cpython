@@ -829,7 +829,7 @@ _Py_TryIncrefCompareStackRef(PyObject **src, PyObject *op, _PyStackRef *out)
 static inline int
 _Py_TryXGetStackRef(PyObject **src, _PyStackRef *out)
 {
-    PyObject *op = _Py_STATIC_CAST(PyObject*, _Py_atomic_load_ptr_relaxed(src));
+    PyObject *op = _PyObject_CAST( _Py_atomic_load_ptr_relaxed(src));
     if (op == NULL) {
         *out = PyStackRef_NULL;
         return 1;
