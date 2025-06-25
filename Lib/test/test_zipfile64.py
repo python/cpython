@@ -199,6 +199,10 @@ class TestRepack(unittest.TestCase):
     def test_strip_removed_large_file_with_dd_no_sig(self):
         """Should scan for the data descriptor (without signature) of a removed
         large file without causing a memory issue."""
+        # Reduce data scale for this test, as it's especially slow...
+        self.datacount = 30*1024**2 // len(self.data)
+        self.allowed_memory = 200*1024
+
         # Try the temp file.  If we do TESTFN2, then it hogs
         # gigabytes of disk space for the duration of the test.
         with TemporaryFile() as f:
@@ -210,10 +214,6 @@ class TestRepack(unittest.TestCase):
             self.assertLess(peak, self.allowed_memory)
 
     def _test_strip_removed_large_file_with_dd_no_sig(self, f):
-        # Reduce data scale for this test, as it's especially slow...
-        self.datacount = 30*1024**2 // len(self.data)
-        self.allowed_memory = 200*1024
-
         file = 'file.txt'
         file1 = 'largefile.txt'
         data = b'Sed ut perspiciatis unde omnis iste natus error sit voluptatem'
