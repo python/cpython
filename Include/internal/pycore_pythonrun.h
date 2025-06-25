@@ -39,19 +39,19 @@ extern const char* _Py_SourceAsString(
  * apart. In practice, that means it must be larger than the C
  * stack consumption of PyEval_EvalDefault */
 #if defined(_Py_ADDRESS_SANITIZER) || defined(_Py_THREAD_SANITIZER)
-#  define _PYOS_LOG2_STACK_MARGIN 12
+#  define _PyOS_LOG2_STACK_MARGIN 12
 #elif defined(Py_DEBUG) && defined(WIN32)
-#  define _PYOS_LOG2_STACK_MARGIN 12
+#  define _PyOS_LOG2_STACK_MARGIN 12
 #else
-#  define _PYOS_LOG2_STACK_MARGIN 11
+#  define _PyOS_LOG2_STACK_MARGIN 11
 #endif
-#define _PYOS_STACK_MARGIN (1 << _PYOS_LOG2_STACK_MARGIN)
-#define _PYOS_STACK_MARGIN_BYTES (_PYOS_STACK_MARGIN * sizeof(void *))
+#define _PyOS_STACK_MARGIN (1 << _PyOS_LOG2_STACK_MARGIN)
+#define _PyOS_STACK_MARGIN_BYTES (_PyOS_STACK_MARGIN * sizeof(void *))
 
 #if SIZEOF_VOID_P == 8
-#  define _PYOS_STACK_MARGIN_SHIFT (_PYOS_LOG2_STACK_MARGIN + 3)
+#  define _PyOS_STACK_MARGIN_SHIFT (_PyOS_LOG2_STACK_MARGIN + 3)
 #else
-#  define _PYOS_STACK_MARGIN_SHIFT (_PYOS_LOG2_STACK_MARGIN + 2)
+#  define _PyOS_STACK_MARGIN_SHIFT (_PyOS_LOG2_STACK_MARGIN + 2)
 #endif
 
 
