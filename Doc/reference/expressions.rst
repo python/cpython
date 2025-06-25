@@ -143,7 +143,7 @@ integer, floating-point number, complex number) with the given value.  The value
 may be approximated in the case of floating-point and imaginary (complex)
 literals.
 See section :ref:`literals` for details.
-Seee section :ref:`string-concatenation` for details on ``strings``.
+See section :ref:`string-concatenation` for details on ``strings``.
 
 
 .. index::
