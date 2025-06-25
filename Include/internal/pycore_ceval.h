@@ -363,6 +363,13 @@ PyAPI_FUNC(_PyStackRef) _PyFloat_FromDouble_ConsumeInputs(_PyStackRef left, _PyS
 extern int _PyRunRemoteDebugger(PyThreadState *tstate);
 #endif
 
+/* Special methods used by LOAD_SPECIAL */
+#define SPECIAL___ENTER__   0
+#define SPECIAL___EXIT__    1
+#define SPECIAL___AENTER__  2
+#define SPECIAL___AEXIT__   3
+#define SPECIAL_MAX   3
+
 #ifdef __cplusplus
 }
 #endif
