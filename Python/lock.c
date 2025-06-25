@@ -89,7 +89,6 @@ _PyMutex_LockTimed(PyMutex *m, PyTime_t timeout, _PyLockFlags flags)
             // Spin for a bit.
             _Py_yield();
             spin_count++;
-            v = _Py_atomic_load_uint8_relaxed(&m->_bits);
             continue;
         }
 

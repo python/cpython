@@ -1,1 +1,2 @@
-Improve internal lock performance on the free threaded build.
+Free-threaded (no-GIL) builds: a non-blocking mutex lock attempt now returns
+immediately when the lock is busy instead of briefly spinning.
