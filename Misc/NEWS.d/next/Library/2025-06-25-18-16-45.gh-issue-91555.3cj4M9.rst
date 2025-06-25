@@ -1,0 +1,4 @@
+An earlier change, which was introduced in 3.13.4, has been reverted. It
+disabled logging for a logger during handling of log messages for that
+logger. Since the reversion, the behaviour should be as it was before
+3.13.4.
