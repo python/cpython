@@ -1,2 +1,2 @@
-Free-threaded (no-GIL) builds: a non-blocking mutex lock attempt now returns
-immediately when the lock is busy instead of briefly spinning.
+Non-blocking mutex lock attempts now return immediately when the lock is busy
+instead of briefly spinning in the :term:`free threading` build.
