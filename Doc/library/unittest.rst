@@ -1148,7 +1148,7 @@ Test cases
 
       If given, *formatter* should be a :class:`logging.Formatter` object.
       The default is a formatter with
-      ``LOGGING_FORMAT = "%(levelname)s:%(name)s:%(message)s"``
+      ``"%(levelname)s:%(name)s:%(message)s"``
 
       The test passes if at least one message emitted inside the ``with``
       block matches the *logger* and *level* conditions, otherwise it fails.
@@ -1177,7 +1177,7 @@ Test cases
 
       .. versionadded:: 3.4
 
-      .. versionchanged:: 3.15
+      .. versionchanged:: next
          Now accepts a formatter argument so your assertions can match
          a custom format where you are using one.
 
