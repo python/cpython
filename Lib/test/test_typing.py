@@ -46,11 +46,10 @@ import abc
 import textwrap
 import typing
 import weakref
-import warnings
 import types
 
 from test.support import (
-    captured_stderr, cpython_only, infinite_recursion, requires_docstrings, import_helper, run_code,
+    captured_stderr, cpython_only, requires_docstrings, import_helper, run_code,
     EqualToForwardRef,
 )
 from test.typinganndata import (
@@ -6859,12 +6858,10 @@ class GetTypeHintsTests(BaseTestCase):
         self.assertEqual(hints, {'value': Final})
 
     def test_top_level_class_var(self):
-        # https://bugs.python.org/issue45166
-        with self.assertRaisesRegex(
-            TypeError,
-            r'typing.ClassVar\[int\] is not valid as type argument',
-        ):
-            get_type_hints(ann_module6)
+        # This is not meaningful but we don't raise for it.
+        # https://github.com/python/cpython/issues/133959
+        hints = get_type_hints(ann_module6)
+        self.assertEqual(hints, {'wrong': ClassVar[int]})
 
     def test_get_type_hints_typeddict(self):
         self.assertEqual(get_type_hints(TotalMovie), {'title': str, 'year': int})
@@ -6967,6 +6964,11 @@ class GetTypeHintsTests(BaseTestCase):
         self.assertEqual(get_type_hints(foo, globals(), locals()),
                          {'a': Callable[..., T]})
 
+    def test_special_forms_no_forward(self):
+        def f(x: ClassVar[int]):
+            pass
+        self.assertEqual(get_type_hints(f), {'x': ClassVar[int]})
+
     def test_special_forms_forward(self):
 
         class C:
@@ -6982,8 +6984,9 @@ class GetTypeHintsTests(BaseTestCase):
         self.assertEqual(get_type_hints(C, globals())['b'], Final[int])
         self.assertEqual(get_type_hints(C, globals())['x'], ClassVar)
         self.assertEqual(get_type_hints(C, globals())['y'], Final)
-        with self.assertRaises(TypeError):
-            get_type_hints(CF, globals()),
+        lfi = get_type_hints(CF, globals())['b']
+        self.assertIs(get_origin(lfi), list)
+        self.assertEqual(get_args(lfi), (Final[int],))
 
     def test_union_forward_recursion(self):
         ValueList = List['Value']
@@ -7216,33 +7219,113 @@ class GetUtilitiesTestCase(TestCase):
 class EvaluateForwardRefTests(BaseTestCase):
     def test_evaluate_forward_ref(self):
         int_ref = ForwardRef('int')
-        missing = ForwardRef('missing')
+        self.assertIs(typing.evaluate_forward_ref(int_ref), int)
         self.assertIs(
             typing.evaluate_forward_ref(int_ref, type_params=()),
             int,
         )
         self.assertIs(
-            typing.evaluate_forward_ref(
-                int_ref, type_params=(), format=annotationlib.Format.FORWARDREF,
-            ),
+            typing.evaluate_forward_ref(int_ref, format=annotationlib.Format.VALUE),
             int,
         )
         self.assertIs(
             typing.evaluate_forward_ref(
-                missing, type_params=(), format=annotationlib.Format.FORWARDREF,
+                int_ref, format=annotationlib.Format.FORWARDREF,
+            ),
+            int,
+        )
+        self.assertEqual(
+            typing.evaluate_forward_ref(
+                int_ref, format=annotationlib.Format.STRING,
+            ),
+            'int',
+        )
+
+    def test_evaluate_forward_ref_undefined(self):
+        missing = ForwardRef('missing')
+        with self.assertRaises(NameError):
+            typing.evaluate_forward_ref(missing)
+        self.assertIs(
+            typing.evaluate_forward_ref(
+                missing, format=annotationlib.Format.FORWARDREF,
             ),
             missing,
         )
         self.assertEqual(
             typing.evaluate_forward_ref(
-                int_ref, type_params=(), format=annotationlib.Format.STRING,
+                missing, format=annotationlib.Format.STRING,
             ),
-            'int',
+            "missing",
         )
 
-    def test_evaluate_forward_ref_no_type_params(self):
-        ref = ForwardRef('int')
-        self.assertIs(typing.evaluate_forward_ref(ref), int)
+    def test_evaluate_forward_ref_nested(self):
+        ref = ForwardRef("int | list['str']")
+        self.assertEqual(
+            typing.evaluate_forward_ref(ref),
+            int | list[str],
+        )
+        self.assertEqual(
+            typing.evaluate_forward_ref(ref, format=annotationlib.Format.FORWARDREF),
+            int | list[str],
+        )
+        self.assertEqual(
+            typing.evaluate_forward_ref(ref, format=annotationlib.Format.STRING),
+            "int | list['str']",
+        )
+
+        why = ForwardRef('"\'str\'"')
+        self.assertIs(typing.evaluate_forward_ref(why), str)
+
+    def test_evaluate_forward_ref_none(self):
+        none_ref = ForwardRef('None')
+        self.assertIs(typing.evaluate_forward_ref(none_ref), None)
+
+    def test_globals(self):
+        A = "str"
+        ref = ForwardRef('list[A]')
+        with self.assertRaises(NameError):
+            typing.evaluate_forward_ref(ref)
+        self.assertEqual(
+            typing.evaluate_forward_ref(ref, globals={'A': A}),
+            list[str],
+        )
+
+    def test_owner(self):
+        ref = ForwardRef("A")
+
+        with self.assertRaises(NameError):
+            typing.evaluate_forward_ref(ref)
+
+        # We default to the globals of `owner`,
+        # so it no longer raises `NameError`
+        self.assertIs(
+            typing.evaluate_forward_ref(ref, owner=Loop), A
+        )
+
+    def test_inherited_owner(self):
+        # owner passed to evaluate_forward_ref
+        ref = ForwardRef("list['A']")
+        self.assertEqual(
+            typing.evaluate_forward_ref(ref, owner=Loop),
+            list[A],
+        )
+
+        # owner set on the ForwardRef
+        ref = ForwardRef("list['A']", owner=Loop)
+        self.assertEqual(
+            typing.evaluate_forward_ref(ref),
+            list[A],
+        )
+
+    def test_partial_evaluation(self):
+        ref = ForwardRef("list[A]")
+        with self.assertRaises(NameError):
+            typing.evaluate_forward_ref(ref)
+
+        self.assertEqual(
+            typing.evaluate_forward_ref(ref, format=annotationlib.Format.FORWARDREF),
+            list[EqualToForwardRef('A')],
+        )
 
 
 class CollectionsAbcTests(BaseTestCase):

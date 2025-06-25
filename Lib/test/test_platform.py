@@ -401,7 +401,7 @@ class PlatformTest(unittest.TestCase):
             for v in version.split('.'):
                 int(v)  # should not fail
         if csd:
-            self.assertTrue(csd.startswith('SP'), msg=csd)
+            self.assertStartsWith(csd, 'SP')
         if ptype:
             if os.cpu_count() > 1:
                 self.assertIn('Multiprocessor', ptype)

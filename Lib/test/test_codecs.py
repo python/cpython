@@ -1,6 +1,7 @@
 import codecs
 import contextlib
 import copy
+import importlib
 import io
 import pickle
 import os
@@ -3111,9 +3112,9 @@ class TransformCodecTest(unittest.TestCase):
     def test_alias_modules_exist(self):
         encodings_dir = os.path.dirname(encodings.__file__)
         for value in encodings.aliases.aliases.values():
-            codec_file = os.path.join(encodings_dir, value + ".py")
-            self.assertTrue(os.path.isfile(codec_file),
-                            "Codec file not found: " + codec_file)
+            codec_mod = f"encodings.{value}"
+            self.assertIsNotNone(importlib.util.find_spec(codec_mod),
+                                 f"Codec module not found: {codec_mod}")
 
     def test_quopri_stateless(self):
         # Should encode with quotetabs=True
@@ -3802,7 +3803,7 @@ class LocaleCodecTest(unittest.TestCase):
                     with self.assertRaises(RuntimeError) as cm:
                         self.decode(encoded, errors)
                     errmsg = str(cm.exception)
-                    self.assertTrue(errmsg.startswith("decode error: "), errmsg)
+                    self.assertStartsWith(errmsg, "decode error: ")
                 else:
                     decoded = self.decode(encoded, errors)
                     self.assertEqual(decoded, expected)

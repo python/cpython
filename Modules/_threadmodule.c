@@ -10,7 +10,6 @@
 #include "pycore_object_deferred.h" // _PyObject_SetDeferredRefcount()
 #include "pycore_pylifecycle.h"
 #include "pycore_pystate.h"       // _PyThreadState_SetCurrent()
-#include "pycore_sysmodule.h"     // _PySys_GetOptionalAttr()
 #include "pycore_time.h"          // _PyTime_FromSeconds()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
@@ -293,6 +292,12 @@ _PyThread_AfterFork(struct _pythread_runtime_state *state)
     llist_for_each_safe(node, &state->handles) {
         ThreadHandle *handle = llist_data(node, ThreadHandle, node);
         if (handle->ident == current) {
+            continue;
+        }
+
+        // Keep handles for threads that have not been started yet. They are
+        // safe to start in the child process.
+        if (handle->state == THREAD_HANDLE_NOT_STARTED) {
             continue;
         }
 
@@ -1022,6 +1027,11 @@ rlock_traverse(PyObject *self, visitproc visit, void *arg)
     return 0;
 }
 
+static int
+rlock_locked_impl(rlockobject *self)
+{
+    return PyMutex_IsLocked(&self->lock.mutex);
+}
 
 static void
 rlock_dealloc(PyObject *self)
@@ -1111,7 +1121,7 @@ static PyObject *
 rlock_locked(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
     rlockobject *self = rlockobject_CAST(op);
-    int is_locked = _PyRecursiveMutex_IsLockedByCurrentThread(&self->lock);
+    int is_locked = rlock_locked_impl(self);
     return PyBool_FromLong(is_locked);
 }
 
@@ -1219,10 +1229,17 @@ rlock_repr(PyObject *op)
 {
     rlockobject *self = rlockobject_CAST(op);
     PyThread_ident_t owner = self->lock.thread;
-    size_t count = self->lock.level + 1;
+    int locked = rlock_locked_impl(self);
+    size_t count;
+    if (locked) {
+        count = self->lock.level + 1;
+    }
+    else {
+        count = 0;
+    }
     return PyUnicode_FromFormat(
         "<%s %s object owner=%" PY_FORMAT_THREAD_IDENT_T " count=%zu at %p>",
-        owner ? "locked" : "unlocked",
+        locked ? "locked" : "unlocked",
         Py_TYPE(self)->tp_name, owner,
         count, self);
 }
@@ -2272,7 +2289,7 @@ thread_excepthook(PyObject *module, PyObject *args)
     PyObject *thread = PyStructSequence_GET_ITEM(args, 3);
 
     PyObject *file;
-    if (_PySys_GetOptionalAttr( &_Py_ID(stderr), &file) < 0) {
+    if (PySys_GetOptionalAttr( &_Py_ID(stderr), &file) < 0) {
         return NULL;
     }
     if (file == NULL || file == Py_None) {

@@ -68,7 +68,7 @@ The module :mod:`curses` defines the following exception:
 The module :mod:`curses` defines the following functions:
 
 
-.. function:: assume_default_colors(fg, bg)
+.. function:: assume_default_colors(fg, bg, /)
 
    Allow use of default values for colors on terminals supporting this feature.
    Use this to support transparency in your application.

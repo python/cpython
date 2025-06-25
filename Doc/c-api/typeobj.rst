@@ -79,7 +79,7 @@ Quick Reference
    | :c:member:`~PyTypeObject.tp_setattro`          | :c:type:`setattrofunc`            | __setattr__,      | X | X |   | G |
    |                                                |                                   | __delattr__       |   |   |   |   |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | :c:member:`~PyTypeObject.tp_as_buffer`         | :c:type:`PyBufferProcs` *         |                   |   |   |   | % |
+   | :c:member:`~PyTypeObject.tp_as_buffer`         | :c:type:`PyBufferProcs` *         | :ref:`sub-slots`  |   |   |   | % |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
    | :c:member:`~PyTypeObject.tp_flags`             | unsigned long                     |                   | X | X |   | ? |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
@@ -325,9 +325,10 @@ sub-slots
    +---------------------------------------------------------+-----------------------------------+---------------+
    |                                                                                                             |
    +---------------------------------------------------------+-----------------------------------+---------------+
-   | :c:member:`~PyBufferProcs.bf_getbuffer`                 | :c:func:`getbufferproc`           |               |
+   | :c:member:`~PyBufferProcs.bf_getbuffer`                 | :c:func:`getbufferproc`           | __buffer__    |
    +---------------------------------------------------------+-----------------------------------+---------------+
-   | :c:member:`~PyBufferProcs.bf_releasebuffer`             | :c:func:`releasebufferproc`       |               |
+   | :c:member:`~PyBufferProcs.bf_releasebuffer`             | :c:func:`releasebufferproc`       | __release_\   |
+   |                                                         |                                   | buffer\__     |
    +---------------------------------------------------------+-----------------------------------+---------------+
 
 .. _slot-typedefs-table:
@@ -684,6 +685,26 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    (e.g., call :c:func:`Py_CLEAR`), free all memory buffers owned by the
    instance, and call the type's :c:member:`~PyTypeObject.tp_free` function to
    free the object itself.
+
+   If you may call functions that may set the error indicator, you must use
+   :c:func:`PyErr_GetRaisedException` and :c:func:`PyErr_SetRaisedException`
+   to ensure you don't clobber a preexisting error indicator (the deallocation
+   could have occurred while processing a different error):
+
+   .. code-block:: c
+
+     static void
+     foo_dealloc(foo_object *self)
+     {
+         PyObject *et, *ev, *etb;
+         PyObject *exc = PyErr_GetRaisedException();
+         ...
+         PyErr_SetRaisedException(exc);
+     }
+
+   The dealloc handler itself must not raise an exception; if it hits an error
+   case it should call :c:func:`PyErr_FormatUnraisable` to log (and clear) an
+   unraisable exception.
 
    No guarantees are made about when an object is destroyed, except:
 
@@ -1237,7 +1258,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
    .. c:macro:: Py_TPFLAGS_MANAGED_DICT
 
-      This bit indicates that instances of the class have a `~object.__dict__`
+      This bit indicates that instances of the class have a :attr:`~object.__dict__`
       attribute, and that the space for the dictionary is managed by the VM.
 
       If this flag is set, :c:macro:`Py_TPFLAGS_HAVE_GC` should also be set.

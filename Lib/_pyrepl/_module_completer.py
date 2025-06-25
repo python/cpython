@@ -17,8 +17,8 @@ if TYPE_CHECKING:
 
 
 def make_default_module_completer() -> ModuleCompleter:
-    # Inside pyrepl, __package__ is set to '_pyrepl'
-    return ModuleCompleter(namespace={'__package__': '_pyrepl'})
+    # Inside pyrepl, __package__ is set to None by default
+    return ModuleCompleter(namespace={'__package__': None})
 
 
 class ModuleCompleter:
@@ -42,11 +42,11 @@ class ModuleCompleter:
         self._global_cache: list[pkgutil.ModuleInfo] = []
         self._curr_sys_path: list[str] = sys.path[:]
 
-    def get_completions(self, line: str) -> list[str]:
+    def get_completions(self, line: str) -> list[str] | None:
         """Return the next possible import completions for 'line'."""
         result = ImportParser(line).parse()
         if not result:
-            return []
+            return None
         try:
             return self.complete(*result)
         except Exception:

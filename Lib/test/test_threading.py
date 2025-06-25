@@ -28,7 +28,7 @@ from test import lock_tests
 from test import support
 
 try:
-    from test.support import interpreters
+    from concurrent import interpreters
 except ImportError:
     interpreters = None
 
@@ -1253,7 +1253,7 @@ class ThreadTests(BaseTestCase):
         # its state should be removed from interpreter' thread states list
         # to avoid its double cleanup
         try:
-            from resource import setrlimit, RLIMIT_NPROC
+            from resource import setrlimit, RLIMIT_NPROC  # noqa: F401
         except ImportError as err:
             self.skipTest(err)  # RLIMIT_NPROC is specific to Linux and BSD
         code = """if 1:
@@ -1284,12 +1284,6 @@ class ThreadTests(BaseTestCase):
 
     @cpython_only
     def test_finalize_daemon_thread_hang(self):
-        if support.check_sanitizer(thread=True, memory=True):
-            # the thread running `time.sleep(100)` below will still be alive
-            # at process exit
-            self.skipTest(
-                    "https://github.com/python/cpython/issues/124878 - Known"
-                    " race condition that TSAN identifies.")
         # gh-87135: tests that daemon threads hang during finalization
         script = textwrap.dedent('''
             import os
@@ -1353,6 +1347,7 @@ class ThreadTests(BaseTestCase):
         assert_python_ok("-c", script)
 
     @skip_unless_reliable_fork
+    @unittest.skipUnless(hasattr(threading, 'get_native_id'), "test needs threading.get_native_id()")
     def test_native_id_after_fork(self):
         script = """if True:
             import threading
