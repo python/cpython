@@ -2365,17 +2365,20 @@ class TestUopsOptimization(unittest.TestCase):
     def test_store_subscr_int(self):
         def testfunc(args):
             n = args[0]
-            l = [0] * n
-            ret = 0
-            for idx in range(n):
-                l[idx] = idx
+            l = [0, 0, 0, 0]
+            for _ in range(n):
+                l[0] = 1
+                l[1] = 2
+                l[2] = 3
+                l[3] = 4
             return sum(l)
 
         res, ex = self._run_with_optimizer(testfunc, (TIER2_THRESHOLD,))
-        self.assertEqual(res, sum(range(TIER2_THRESHOLD)))
+        self.assertEqual(res, 10)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_POP_TOP_INT", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
+        self.assertNotIn("_POP_TOP_INT", uops)
 
     def test_attr_promotion_failure(self):
         # We're not testing for any specific uops here, just
