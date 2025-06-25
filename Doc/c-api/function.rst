@@ -144,10 +144,12 @@ There are a few functions specific to Python functions.
 
 .. c:function:: PyObject *PyFunction_GET_BUILTINS(PyObject *op)
 
-   Return the dictionary used to look up builtins when calling function *op*.
+   Return the dictionary used to look up builtins (which might be ``NULL``)
+   when calling function *op*.
 
-   This function does not do error checking; passing anything other than an
-   instance of :c:data:`PyFunction_Type` is undefined behavior.
+   This function cannot fail and does not do error checking; passing anything
+   other than an instance of :c:data:`PyFunction_Type` is undefined behavior.
+   There is no ``PyFunction_Get*`` equivalent for this function.
 
    .. versionadded 3.14
 
