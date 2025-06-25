@@ -966,6 +966,9 @@ PyFunction_GetAnnotations:PyObject*:op:0:
 PyFunction_GET_ANNOTATIONS:PyObject*::0:
 PyFunction_GET_ANNOTATIONS:PyObject*:op:0:
 
+PyFunction_GET_BUILTINS:PyObject*::0:
+PyFunction_GET_BUILTINS:PyObject*:op:0:
+
 PyFunction_GetClosure:PyObject*::0:
 PyFunction_GetClosure:PyObject*:op:0:
 

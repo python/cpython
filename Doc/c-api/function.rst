@@ -142,6 +142,14 @@ There are a few functions specific to Python functions.
    do not do type checking. Passing anything other than an instance of
    :c:data:`PyFunction_Type` is undefined behavior.
 
+.. c:function:: PyObject *PyFunction_GET_BUILTINS(PyObject *op)
+
+   Return the dictionary used to look up builtins when calling function *op*.
+
+   This function does not do error checking; passing anything other than an
+   instance of :c:data:`PyFunction_Type` is undefined behavior.
+
+   .. versionadded 3.14
 
 .. c:function:: int PyFunction_AddWatcher(PyFunction_WatchCallback callback)
 
