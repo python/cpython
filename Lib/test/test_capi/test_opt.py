@@ -2362,6 +2362,21 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_GUARD_TOS_INT", uops)
         self.assertNotIn("_GUARD_NOS_INT", uops)
 
+    def test_store_subscr_int(self):
+        def testfunc(args):
+            n = args[0]
+            l = [0] * n
+            ret = 0
+            for idx in range(n):
+                l[idx] = idx
+            return sum(l)
+
+        res, ex = self._run_with_optimizer(testfunc, (TIER2_THRESHOLD,))
+        self.assertEqual(res, sum(range(TIER2_THRESHOLD)))
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_POP_TOP_INT", uops)
+
     def test_attr_promotion_failure(self):
         # We're not testing for any specific uops here, just
         # testing it doesn't crash.
