@@ -8,7 +8,7 @@
 #include "pycore_backoff.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_cell.h"          // PyCell_GetRef()
-#include "pycore_ceval.h"
+#include "pycore_ceval.h"         // SPECIAL___ENTER__
 #include "pycore_code.h"
 #include "pycore_dict.h"
 #include "pycore_emscripten_signal.h"  // _Py_CHECK_EMSCRIPTEN_SIGNALS
