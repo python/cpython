@@ -190,7 +190,13 @@
                 res = sym_new_compact_int(ctx);
             }
             else {
-                res = sym_new_not_null(ctx);
+                PyTypeObject *type = sym_get_type(value);
+                if (type == &PyLong_Type || type == &PyFloat_Type) {
+                    res = sym_new_type(ctx, type);
+                }
+                else {
+                    res = sym_new_not_null(ctx);
+                }
             }
             stack_pointer[-1] = res;
             break;
