@@ -515,10 +515,6 @@ String and Bytes literals
 String literals are text enclosed in single quotes (``'``) or double
 quotes (``"``). For example:
 
-.. This is Python code, but we turn off highlighting because as of this
-   writing, highlighted strings don't look good when there's no code
-   surrounding them.
-
 .. code-block:: python
 
    "spam"
