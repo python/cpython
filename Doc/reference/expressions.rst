@@ -160,7 +160,7 @@ value.
 .. _string-concatenation:
 
 String literal concatenation
-............................
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Multiple adjacent string or bytes literals (delimited by whitespace), possibly
 using different quoting conventions, are allowed, and their meaning is the same
@@ -172,7 +172,7 @@ Formally:
 .. grammar-snippet::
    :group: python-grammar
 
-   strings: ( `STRING` | `fstring` | `tstring`)+
+   strings: ( `STRING` | fstring | tstring)+
 
 Note that this feature is defined at the syntactical level, so it only works
 with literals.
