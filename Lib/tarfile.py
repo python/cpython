@@ -1927,7 +1927,7 @@ class TarFile(object):
             if "preset" in kwargs and comptype not in ("xz",):
                 raise ValueError("preset is only valid for w|xz mode")
 
-            compresslevel = kwargs.pop("compresslevel", 9)
+            compresslevel = kwargs.pop("compresslevel", 6)
             preset = kwargs.pop("preset", None)
             stream = _Stream(name, filemode, comptype, fileobj, bufsize,
                              compresslevel, preset)
