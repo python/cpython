@@ -7,9 +7,7 @@ Graphic User Interface FAQ
 .. only:: html
 
    .. contents::
-
-.. XXX need review for Python 3.
-
+   .. contents::
 
 General GUI Questions
 =====================
