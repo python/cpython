@@ -49,7 +49,8 @@
 // Static inline functions should use _Py_NULL rather than using directly NULL
 // to prevent C++ compiler warnings. On C23 and newer and on C++11 and newer,
 // _Py_NULL is defined as nullptr.
-#if (defined (__STDC_VERSION__) && __STDC_VERSION__ > 201710L) \
+#if (defined(__GNUC__) || defined(__clang__)) && \
+    (defined (__STDC_VERSION__) && __STDC_VERSION__ > 201710L) \
         || (defined(__cplusplus) && __cplusplus >= 201103)
 #  define _Py_NULL nullptr
 #else
