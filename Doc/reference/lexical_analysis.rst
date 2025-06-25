@@ -643,6 +643,21 @@ Note that as in all lexical definitions, whitespace is significant.
 In particular, the prefix (if any) must be immediately followed by the starting
 quote.
 
+.. index:: physical line, escape sequence, Standard C, C
+   single: \ (backslash); escape sequence
+   single: \\; escape sequence
+   single: \a; escape sequence
+   single: \b; escape sequence
+   single: \f; escape sequence
+   single: \n; escape sequence
+   single: \r; escape sequence
+   single: \t; escape sequence
+   single: \v; escape sequence
+   single: \x; escape sequence
+   single: \N; escape sequence
+   single: \u; escape sequence
+   single: \U; escape sequence
+
 .. _escape-sequences:
 
 Escape sequences
@@ -842,8 +857,18 @@ Bytes literals
 :dfn:`Bytes literals` are always prefixed with ``'b'`` or ``'B'``; they produce an
 instance of the :class:`bytes` type instead of the :class:`str` type.
 They may only contain ASCII characters; bytes with a numeric value of 128
-or greater must be expressed with escape sequences.
-Similarly, a zero byte must be expressed using an escape sequence.
+or greater must be expressed with escape sequences (typically
+:ref:`string-escape-hex` or :ref:`string-escape-oct`):
+
+.. code-block:: python
+
+   >>> b'\x89PNG\r\n\x1a\n'
+   b'\x89PNG\r\n\x1a\n'
+   >>> list(b'\x89PNG\r\n\x1a\n')
+   [137, 80, 78, 71, 13, 10, 26, 10]
+
+Similarly, a zero byte must be expressed using an escape sequence (typically
+``\0`` or ``\x00``).
 
 
 .. index::
@@ -860,7 +885,12 @@ or ``'R'``; such constructs are called :dfn:`raw string literals`
 and :dfn:`raw bytes literals` respectively and treat backslashes as
 literal characters.
 As a result, in raw string literals, :ref:`escape sequences <escape-sequences>`
-escapes are not treated specially.
+are not treated specially:
+
+.. code-block:: python
+
+   >>> r'\d{4}-\d{2}-\d{2}'
+   '\\d{4}-\\d{2}-\\d{2}'
 
 Even in a raw literal, quotes can be escaped with a backslash, but the
 backslash remains in the result; for example, ``r"\""`` is a valid string
@@ -870,22 +900,6 @@ backslashes).  Specifically, *a raw literal cannot end in a single backslash*
 (since the backslash would escape the following quote character).  Note also
 that a single backslash followed by a newline is interpreted as those two
 characters as part of the literal, *not* as a line continuation.
-
-
-.. index:: physical line, escape sequence, Standard C, C
-   single: \ (backslash); escape sequence
-   single: \\; escape sequence
-   single: \a; escape sequence
-   single: \b; escape sequence
-   single: \f; escape sequence
-   single: \n; escape sequence
-   single: \r; escape sequence
-   single: \t; escape sequence
-   single: \v; escape sequence
-   single: \x; escape sequence
-   single: \N; escape sequence
-   single: \u; escape sequence
-   single: \U; escape sequence
 
 
 .. index::
@@ -1066,6 +1080,19 @@ include expressions.
 
 See also :pep:`498` for the proposal that added formatted string literals,
 and :meth:`str.format`, which uses a related format string mechanism.
+
+.. _t-strings:
+.. _template-string-literals:
+
+t-strings
+---------
+
+A :dfn:`template string literal` or :dfn:`t-string` is a string literal that
+is prefixed with ``'t'`` or ``'T'``.
+These strings have internal structure similar to :ref:`f-strings`,
+but are evaluated as Template objects instead of strings.
+
+.. versionadded:: 3.14
 
 
 .. _numbers:
