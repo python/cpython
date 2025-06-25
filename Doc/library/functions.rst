@@ -1154,44 +1154,44 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: locals()
 
-    Return a mapping object representing the current local symbol table, with
-    variable names as the keys, and their currently bound references as the
-    values.
+   Return a mapping object representing the current local symbol table, with
+   variable names as the keys, and their currently bound references as the
+   values.
 
-    At module scope, as well as when using :func:`exec` or :func:`eval` with
-    a single namespace, this function returns the same namespace as
-    :func:`globals`.
+   At module scope, as well as when using :func:`exec` or :func:`eval` with
+   a single namespace, this function returns the same namespace as
+   :func:`globals`.
 
-    At class scope, it returns the namespace that will be passed to the
-    metaclass constructor.
+   At class scope, it returns the namespace that will be passed to the
+   metaclass constructor.
 
-    When using ``exec()`` or ``eval()`` with separate local and global
-    arguments, it returns the local namespace passed in to the function call.
+   When using ``exec()`` or ``eval()`` with separate local and global
+   arguments, it returns the local namespace passed in to the function call.
 
-    In all of the above cases, each call to ``locals()`` in a given frame of
-    execution will return the *same* mapping object. Changes made through
-    the mapping object returned from ``locals()`` will be visible as assigned,
-    reassigned, or deleted local variables, and assigning, reassigning, or
-    deleting local variables will immediately affect the contents of the
-    returned mapping object.
+   In all of the above cases, each call to ``locals()`` in a given frame of
+   execution will return the *same* mapping object. Changes made through
+   the mapping object returned from ``locals()`` will be visible as assigned,
+   reassigned, or deleted local variables, and assigning, reassigning, or
+   deleting local variables will immediately affect the contents of the
+   returned mapping object.
 
-    In an :term:`optimized scope` (including functions, generators, and
-    coroutines), each call to ``locals()`` instead returns a fresh dictionary
-    containing the current bindings of the function's local variables and any
-    nonlocal cell references. In this case, name binding changes made via the
-    returned dict are *not* written back to the corresponding local variables
-    or nonlocal cell references, and assigning, reassigning, or deleting local
-    variables and nonlocal cell references does *not* affect the contents
-    of previously returned dictionaries.
+   In an :term:`optimized scope` (including functions, generators, and
+   coroutines), each call to ``locals()`` instead returns a fresh dictionary
+   containing the current bindings of the function's local variables and any
+   nonlocal cell references. In this case, name binding changes made via the
+   returned dict are *not* written back to the corresponding local variables
+   or nonlocal cell references, and assigning, reassigning, or deleting local
+   variables and nonlocal cell references does *not* affect the contents
+   of previously returned dictionaries.
 
-    Calling ``locals()`` as part of a comprehension in a function, generator, or
-    coroutine is equivalent to calling it in the containing scope, except that
-    the comprehension's initialised iteration variables will be included. In
-    other scopes, it behaves as if the comprehension were running as a nested
-    function.
+   Calling ``locals()`` as part of a comprehension in a function, generator, or
+   coroutine is equivalent to calling it in the containing scope, except that
+   the comprehension's initialised iteration variables will be included. In
+   other scopes, it behaves as if the comprehension were running as a nested
+   function.
 
-    Calling ``locals()`` as part of a generator expression is equivalent to
-    calling it in a nested generator function.
+   Calling ``locals()`` as part of a generator expression is equivalent to
+   calling it in a nested generator function.
 
    .. versionchanged:: 3.12
       The behaviour of ``locals()`` in a comprehension has been updated as
@@ -1405,10 +1405,10 @@ are always available.  They are listed here in alphabetical order.
    :func:`io.TextIOWrapper.reconfigure`. When no *buffering* argument is
    given, the default buffering policy works as follows:
 
-   * Binary files are buffered in fixed-size chunks; the size of the buffer is
-     chosen using a heuristic trying to determine the underlying device's "block
-     size" and falling back on :const:`io.DEFAULT_BUFFER_SIZE`.  On many systems,
-     the buffer will typically be 4096 or 8192 bytes long.
+   * Binary files are buffered in fixed-size chunks; the size of the buffer
+     is ``max(min(blocksize, 8 MiB), DEFAULT_BUFFER_SIZE)``
+     when the device block size is available.
+     On most systems, the buffer will typically be 128 kilobytes long.
 
    * "Interactive" text files (files for which :meth:`~io.IOBase.isatty`
      returns ``True``) use line buffering.  Other text files use the policy

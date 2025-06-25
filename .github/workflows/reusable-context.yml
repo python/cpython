@@ -26,6 +26,9 @@ on:  # yamllint disable-line rule:truthy
       run-tests:
         description: Whether to run the regular tests
         value: ${{ jobs.compute-changes.outputs.run-tests  }}  # bool
+      run-windows-tests:
+        description: Whether to run the Windows tests
+        value: ${{ jobs.compute-changes.outputs.run-windows-tests }}  # bool
       run-windows-msi:
         description: Whether to run the MSI installer smoke tests
         value: ${{ jobs.compute-changes.outputs.run-windows-msi }}  # bool
@@ -44,6 +47,7 @@ jobs:
       run-docs: ${{ steps.changes.outputs.run-docs }}
       run-tests: ${{ steps.changes.outputs.run-tests }}
       run-windows-msi: ${{ steps.changes.outputs.run-windows-msi }}
+      run-windows-tests: ${{ steps.changes.outputs.run-windows-tests }}
     steps:
     - name: Set up Python
       uses: actions/setup-python@v5
@@ -93,6 +97,9 @@ jobs:
       run: python Tools/build/compute-changes.py
       env:
         GITHUB_DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        GITHUB_EVENT_NAME: ${{ github.event_name }}
+        CCF_TARGET_REF: ${{ github.base_ref || github.event.repository.default_branch }}
+        CCF_HEAD_REF: ${{ github.event.pull_request.head.sha || github.sha }}
 
     - name: Compute hash for config cache key
       id: config-hash

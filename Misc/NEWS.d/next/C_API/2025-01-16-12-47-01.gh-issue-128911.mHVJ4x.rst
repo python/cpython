@@ -1,3 +1,0 @@
-Add :c:func:`PyImport_ImportModuleAttr` and :c:func:`PyImport_ImportModuleAttrString`
-helper functions to import a module and get an attribute of the module. Patch
-by Victor Stinner.

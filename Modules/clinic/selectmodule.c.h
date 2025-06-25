@@ -570,9 +570,11 @@ select_epoll(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(sizehint), &_Py_ID(flags), },
     };
     #undef NUM_KEYWORDS
@@ -693,7 +695,7 @@ static PyObject *
 select_epoll_fromfd_impl(PyTypeObject *type, int fd);
 
 static PyObject *
-select_epoll_fromfd(PyTypeObject *type, PyObject *arg)
+select_epoll_fromfd(PyObject *type, PyObject *arg)
 {
     PyObject *return_value = NULL;
     int fd;
@@ -702,7 +704,7 @@ select_epoll_fromfd(PyTypeObject *type, PyObject *arg)
     if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = select_epoll_fromfd_impl(type, fd);
+    return_value = select_epoll_fromfd_impl((PyTypeObject *)type, fd);
 
 exit:
     return return_value;
@@ -743,9 +745,11 @@ select_epoll_register(PyObject *self, PyObject *const *args, Py_ssize_t nargs, P
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(fd), &_Py_ID(eventmask), },
     };
     #undef NUM_KEYWORDS
@@ -822,9 +826,11 @@ select_epoll_modify(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyO
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(fd), &_Py_ID(eventmask), },
     };
     #undef NUM_KEYWORDS
@@ -893,9 +899,11 @@ select_epoll_unregister(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(fd), },
     };
     #undef NUM_KEYWORDS
@@ -966,9 +974,11 @@ select_epoll_poll(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObj
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(timeout), &_Py_ID(maxevents), },
     };
     #undef NUM_KEYWORDS
@@ -1196,7 +1206,7 @@ static PyObject *
 select_kqueue_fromfd_impl(PyTypeObject *type, int fd);
 
 static PyObject *
-select_kqueue_fromfd(PyTypeObject *type, PyObject *arg)
+select_kqueue_fromfd(PyObject *type, PyObject *arg)
 {
     PyObject *return_value = NULL;
     int fd;
@@ -1205,7 +1215,7 @@ select_kqueue_fromfd(PyTypeObject *type, PyObject *arg)
     if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = select_kqueue_fromfd_impl(type, fd);
+    return_value = select_kqueue_fromfd_impl((PyTypeObject *)type, fd);
 
 exit:
     return return_value;
@@ -1365,4 +1375,4 @@ exit:
 #ifndef SELECT_KQUEUE_CONTROL_METHODDEF
     #define SELECT_KQUEUE_CONTROL_METHODDEF
 #endif /* !defined(SELECT_KQUEUE_CONTROL_METHODDEF) */
-/*[clinic end generated code: output=c18fd93efc5f4dce input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6fc20d78802511d1 input=a9049054013a1b77]*/

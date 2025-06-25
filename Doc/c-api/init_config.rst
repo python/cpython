@@ -320,7 +320,7 @@ Configuration Options
    * - ``"cpu_count"``
      - :c:member:`cpu_count <PyConfig.cpu_count>`
      - ``int``
-     - Read-only
+     - Public
    * - ``"dev_mode"``
      - :c:member:`dev_mode <PyConfig.dev_mode>`
      - ``bool``
@@ -363,7 +363,7 @@ Configuration Options
      - Read-only
    * - ``"import_time"``
      - :c:member:`import_time <PyConfig.import_time>`
-     - ``bool``
+     - ``int``
      - Read-only
    * - ``"inspect"``
      - :c:member:`inspect <PyConfig.inspect>`
@@ -505,6 +505,10 @@ Configuration Options
      - :c:member:`use_hash_seed <PyConfig.use_hash_seed>`
      - ``bool``
      - Read-only
+   * - ``"use_system_logger"``
+     - :c:member:`use_system_logger <PyConfig.use_system_logger>`
+     - ``bool``
+     - Read-only
    * - ``"user_site_directory"``
      - :c:member:`user_site_directory <PyConfig.user_site_directory>`
      - ``bool``
@@ -574,8 +578,8 @@ Some options are read from the :mod:`sys` attributes. For example, the option
    * ``list[str]``
    * ``dict[str, str]``
 
-   The caller must hold the GIL. The function cannot be called before
-   Python initialization nor after Python finalization.
+   The caller must have an :term:`attached thread state`. The function cannot
+   be called before Python initialization nor after Python finalization.
 
    .. versionadded:: 3.14
 
@@ -597,8 +601,8 @@ Some options are read from the :mod:`sys` attributes. For example, the option
    * Return a new reference on success.
    * Set an exception and return ``NULL`` on error.
 
-   The caller must hold the GIL. The function cannot be called before
-   Python initialization nor after Python finalization.
+   The caller must have an :term:`attached thread state`. The function cannot
+   be called before Python initialization nor after Python finalization.
 
    .. versionadded:: 3.14
 
@@ -612,8 +616,10 @@ Some options are read from the :mod:`sys` attributes. For example, the option
    * Raise a :exc:`ValueError` if the option is read-only (cannot be set).
    * Raise a :exc:`TypeError` if *value* has not the proper type.
 
-   The caller must hold the GIL. The function cannot be called before
-   Python initialization nor after Python finalization.
+   The caller must have an :term:`attached thread state`. The function cannot
+   be called before Python initialization nor after Python finalization.
+
+   .. audit-event:: cpython.PyConfig_Set name,value c.PyConfig_Set
 
    .. versionadded:: 3.14
 
@@ -1471,12 +1477,18 @@ PyConfig
 
    .. c:member:: int import_time
 
-      If non-zero, profile import time.
+      If ``1``, profile import time.
+      If ``2``, include additional output that indicates
+      when an imported module has already been loaded.
 
-      Set the ``1`` by the :option:`-X importtime <-X>` option and the
+      Set by the :option:`-X importtime <-X>` option and the
       :envvar:`PYTHONPROFILEIMPORTTIME` environment variable.
 
       Default: ``0``.
+
+     .. versionchanged:: 3.14
+
+        Added support for ``import_time = 2``
 
    .. c:member:: int inspect
 
@@ -1927,9 +1939,10 @@ PyConfig
 
       Only available on macOS 10.12 and later, and on iOS.
 
-      Default: ``0`` (don't use system log).
+      Default: ``0`` (don't use the system log) on macOS; ``1`` on iOS (use the
+      system log).
 
-      .. versionadded:: 3.13.2
+      .. versionadded:: 3.14
 
    .. c:member:: int user_site_directory
 
@@ -2098,7 +2111,7 @@ initialization::
 
         /* Specify sys.path explicitly */
         /* If you want to modify the default set of paths, finish
-           initialization first and then use PySys_GetObject("path") */
+           initialization first and then use PySys_GetAttrString("path") */
         config.module_search_paths_set = 1;
         status = PyWideStringList_Append(&config.module_search_paths,
                                          L"/path/to/stdlib");

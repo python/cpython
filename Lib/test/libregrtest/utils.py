@@ -7,7 +7,6 @@ import platform
 import random
 import re
 import shlex
-import signal
 import subprocess
 import sys
 import sysconfig
@@ -32,7 +31,7 @@ WORKER_WORK_DIR_PREFIX = WORK_DIR_PREFIX + 'worker_'
 EXIT_TIMEOUT = 120.0
 
 
-ALL_RESOURCES = ('audio', 'curses', 'largefile', 'network',
+ALL_RESOURCES = ('audio', 'console', 'curses', 'largefile', 'network',
                  'decimal', 'cpu', 'subprocess', 'urlfetch', 'gui', 'walltime')
 
 # Other resources excluded from --use=all:
@@ -336,43 +335,11 @@ def get_build_info():
             build.append('with_assert')
 
     # --enable-experimental-jit
-    tier2 = re.search('-D_Py_TIER2=([0-9]+)', cflags)
-    if tier2:
-        tier2 = int(tier2.group(1))
-
-    if not sys.flags.ignore_environment:
-        PYTHON_JIT = os.environ.get('PYTHON_JIT', None)
-        if PYTHON_JIT:
-            PYTHON_JIT = (PYTHON_JIT != '0')
-    else:
-        PYTHON_JIT = None
-
-    if tier2 == 1:  # =yes
-        if PYTHON_JIT == False:
-            jit = 'JIT=off'
+    if sys._jit.is_available():
+        if sys._jit.is_enabled():
+            build.append("JIT")
         else:
-            jit = 'JIT'
-    elif tier2 == 3:  # =yes-off
-        if PYTHON_JIT:
-            jit = 'JIT'
-        else:
-            jit = 'JIT=off'
-    elif tier2 == 4:  # =interpreter
-        if PYTHON_JIT == False:
-            jit = 'JIT-interpreter=off'
-        else:
-            jit = 'JIT-interpreter'
-    elif tier2 == 6:  # =interpreter-off (Secret option!)
-        if PYTHON_JIT:
-            jit = 'JIT-interpreter'
-        else:
-            jit = 'JIT-interpreter=off'
-    elif '-D_Py_JIT' in cflags:
-        jit = 'JIT'
-    else:
-        jit = None
-    if jit:
-        build.append(jit)
+            build.append("JIT (disabled)")
 
     # --enable-framework=name
     framework = sysconfig.get_config_var('PYTHONFRAMEWORK')

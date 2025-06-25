@@ -811,6 +811,14 @@ pathlib
   :meth:`pathlib.Path.rglob` and :meth:`pathlib.PurePath.match` for matching
   the path's case sensitivity, allowing for more precise control over the matching process.
 
+platform
+--------
+
+* Add support for detecting Windows 11 and Windows Server releases past 2012.
+  Previously, lookups on Windows Server platforms newer than Windows Server 2012
+  and on Windows 11 would return ``Windows-10``.
+  (Contributed by Steve Dower in :gh:`89545`.)
+
 pdb
 ---
 
@@ -1339,6 +1347,8 @@ Deprecated
 
 .. include:: ../deprecations/pending-removal-in-3.16.rst
 
+.. include:: ../deprecations/pending-removal-in-3.17.rst
+
 .. include:: ../deprecations/pending-removal-in-future.rst
 
 .. _whatsnew312-removed:
@@ -1819,7 +1829,7 @@ Build Changes
 * ``PYTHON_FOR_REGEN`` now require Python 3.10 or newer.
 
 * Autoconf 2.71 and aclocal 1.16.4 is now required to regenerate
-  :file:`!configure`.
+  :file:`configure`.
   (Contributed by Christian Heimes in :gh:`89886`.)
 
 * Windows builds and macOS installers from python.org now use OpenSSL 3.0.

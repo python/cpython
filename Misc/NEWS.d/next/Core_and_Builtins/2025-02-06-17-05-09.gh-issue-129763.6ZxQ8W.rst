@@ -1,1 +1,0 @@
-Remove the internal ``LLTRACE`` macro (use :c:macro:`Py_DEBUG` instead).

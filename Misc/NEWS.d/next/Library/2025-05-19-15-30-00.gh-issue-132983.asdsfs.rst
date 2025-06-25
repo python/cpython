@@ -1,0 +1,1 @@
+Add :mod:`!compression.zstd` version information to ``test.pythoninfo``.

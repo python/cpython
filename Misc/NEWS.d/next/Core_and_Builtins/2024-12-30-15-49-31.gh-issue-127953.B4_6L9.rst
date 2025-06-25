@@ -1,2 +1,0 @@
-The time to handle a ``LINE`` event in sys.monitoring (and sys.settrace) is
-now independent of the number of lines in the code object.

@@ -19,13 +19,11 @@
 #include "pycore_opcode_utils.h"
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_uop_metadata.h"
-#include "pycore_dict.h"
 #include "pycore_long.h"
+#include "pycore_interpframe.h"  // _PyFrame_GetCode
 #include "pycore_optimizer.h"
 #include "pycore_object.h"
-#include "pycore_dict.h"
 #include "pycore_function.h"
-#include "pycore_uop_metadata.h"
 #include "pycore_uop_ids.h"
 #include "pycore_range.h"
 
@@ -93,26 +91,31 @@ type_watcher_callback(PyTypeObject* type)
 }
 
 static PyObject *
-convert_global_to_const(_PyUOpInstruction *inst, PyObject *obj)
+convert_global_to_const(_PyUOpInstruction *inst, PyObject *obj, bool pop)
 {
-    assert(inst->opcode == _LOAD_GLOBAL_MODULE || inst->opcode == _LOAD_GLOBAL_BUILTINS || inst->opcode == _LOAD_ATTR_MODULE_FROM_KEYS);
+    assert(inst->opcode == _LOAD_GLOBAL_MODULE || inst->opcode == _LOAD_GLOBAL_BUILTINS || inst->opcode == _LOAD_ATTR_MODULE);
     assert(PyDict_CheckExact(obj));
     PyDictObject *dict = (PyDictObject *)obj;
     assert(dict->ma_keys->dk_kind == DICT_KEYS_UNICODE);
     PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(dict->ma_keys);
-    assert(inst->operand0 <= UINT16_MAX);
-    if ((int)inst->operand0 >= dict->ma_keys->dk_nentries) {
+    int64_t index = inst->operand1;
+    assert(index <= UINT16_MAX);
+    if ((int)index >= dict->ma_keys->dk_nentries) {
         return NULL;
     }
-    PyObject *res = entries[inst->operand0].me_value;
+    PyDictKeysObject *keys = dict->ma_keys;
+    if (keys->dk_version != inst->operand0) {
+        return NULL;
+    }
+    PyObject *res = entries[index].me_value;
     if (res == NULL) {
         return NULL;
     }
     if (_Py_IsImmortal(res)) {
-        inst->opcode = _LOAD_CONST_INLINE_BORROW;
+        inst->opcode = pop ? _POP_TOP_LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE_BORROW;
     }
     else {
-        inst->opcode = _LOAD_CONST_INLINE;
+        inst->opcode = pop ? _POP_TOP_LOAD_CONST_INLINE : _LOAD_CONST_INLINE;
     }
     if (inst->oparg & 1) {
         assert(inst[1].opcode == _PUSH_NULL_CONDITIONAL);
@@ -133,26 +136,6 @@ incorrect_keys(_PyUOpInstruction *inst, PyObject *obj)
         return 1;
     }
     return 0;
-}
-
-static int
-check_next_uop(_PyUOpInstruction *buffer, int size, int pc, uint16_t expected)
-{
-    if (pc + 1 >= size) {
-        DPRINTF(1, "Cannot rewrite %s at pc %d: buffer too small\n",
-                _PyOpcode_uop_name[buffer[pc].opcode], pc);
-        return 0;
-    }
-    uint16_t next_opcode = buffer[pc + 1].opcode;
-    if (next_opcode != expected) {
-        DPRINTF(1,
-                "Cannot rewrite %s at pc %d: unexpected next opcode %s, "
-                "expected %s\n",
-                _PyOpcode_uop_name[buffer[pc].opcode], pc,
-                _PyOpcode_uop_name[next_opcode], _PyOpcode_uop_name[expected]);
-        return 0;
-    }
-    return 1;
 }
 
 /* Returns 1 if successfully optimized
@@ -198,48 +181,12 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
         _PyUOpInstruction *inst = &buffer[pc];
         int opcode = inst->opcode;
         switch(opcode) {
-            case _GUARD_BUILTINS_VERSION_PUSH_KEYS:
-                if (incorrect_keys(inst, builtins)) {
-                    OPT_STAT_INC(remove_globals_incorrect_keys);
-                    return 0;
-                }
-                if (interp->rare_events.builtin_dict >= _Py_MAX_ALLOWED_BUILTINS_MODIFICATIONS) {
-                    continue;
-                }
-                if (!check_next_uop(buffer, buffer_size, pc,
-                                    _LOAD_GLOBAL_BUILTINS_FROM_KEYS)) {
-                    continue;
-                }
-                if ((builtins_watched & 1) == 0) {
-                    PyDict_Watch(BUILTINS_WATCHER_ID, builtins);
-                    builtins_watched |= 1;
-                }
-                if (function_checked & 1) {
-                    buffer[pc].opcode = NOP;
-                }
-                else {
-                    buffer[pc].opcode = _CHECK_FUNCTION;
-                    buffer[pc].operand0 = function_version;
-                    function_checked |= 1;
-                }
-                // We're no longer pushing the builtins keys; rewrite the
-                // instruction that consumed the keys to load them from the
-                // frame.
-                buffer[pc + 1].opcode = _LOAD_GLOBAL_BUILTINS;
-                break;
             case _GUARD_GLOBALS_VERSION:
-            case _GUARD_GLOBALS_VERSION_PUSH_KEYS:
                 if (incorrect_keys(inst, globals)) {
                     OPT_STAT_INC(remove_globals_incorrect_keys);
                     return 0;
                 }
-                uint64_t watched_mutations = get_mutations(globals);
-                if (watched_mutations >= _Py_MAX_ALLOWED_GLOBALS_MODIFICATIONS) {
-                    continue;
-                }
-                if (opcode == _GUARD_GLOBALS_VERSION_PUSH_KEYS &&
-                    !check_next_uop(buffer, buffer_size, pc,
-                                    _LOAD_GLOBAL_MODULE_FROM_KEYS)) {
+                if (get_mutations(globals) >= _Py_MAX_ALLOWED_GLOBALS_MODIFICATIONS) {
                     continue;
                 }
                 if ((globals_watched & 1) == 0) {
@@ -255,21 +202,43 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                     buffer[pc].operand0 = function_version;
                     function_checked |= 1;
                 }
-                if (opcode == _GUARD_GLOBALS_VERSION_PUSH_KEYS) {
-                    // We're no longer pushing the globals keys; rewrite the
-                    // instruction that consumed the keys to load them from the
-                    // frame.
-                    buffer[pc + 1].opcode = _LOAD_GLOBAL_MODULE;
-                }
                 break;
             case _LOAD_GLOBAL_BUILTINS:
-                if (function_checked & globals_watched & builtins_watched & 1) {
-                    convert_global_to_const(inst, builtins);
+                if (incorrect_keys(inst, builtins)) {
+                    OPT_STAT_INC(remove_globals_incorrect_keys);
+                    return 0;
+                }
+                if (interp->rare_events.builtin_dict >= _Py_MAX_ALLOWED_BUILTINS_MODIFICATIONS) {
+                    continue;
+                }
+                if ((builtins_watched & 1) == 0) {
+                    PyDict_Watch(BUILTINS_WATCHER_ID, builtins);
+                    builtins_watched |= 1;
+                }
+                if (function_checked & globals_watched & 1) {
+                    convert_global_to_const(inst, builtins, false);
                 }
                 break;
             case _LOAD_GLOBAL_MODULE:
-                if (function_checked & globals_watched & 1) {
-                    convert_global_to_const(inst, globals);
+                if (incorrect_keys(inst, globals)) {
+                    OPT_STAT_INC(remove_globals_incorrect_keys);
+                    return 0;
+                }
+                if (get_mutations(globals) >= _Py_MAX_ALLOWED_GLOBALS_MODIFICATIONS) {
+                    continue;
+                }
+                if ((globals_watched & 1) == 0) {
+                    PyDict_Watch(GLOBALS_WATCHER_ID, globals);
+                    _Py_BloomFilter_Add(dependencies, globals);
+                    globals_watched |= 1;
+                }
+                if ((function_checked & 1) == 0 && buffer[pc-1].opcode == _NOP) {
+                    buffer[pc-1].opcode = _CHECK_FUNCTION;
+                    buffer[pc-1].operand0 = function_version;
+                    function_checked |= 1;
+                }
+                if (function_checked & 1) {
+                    convert_global_to_const(inst, globals, false);
                 }
                 break;
             case _PUSH_FRAME:
@@ -368,6 +337,7 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
 #define sym_set_type(SYM, TYPE) _Py_uop_sym_set_type(ctx, SYM, TYPE)
 #define sym_set_type_version(SYM, VERSION) _Py_uop_sym_set_type_version(ctx, SYM, VERSION)
 #define sym_set_const(SYM, CNST) _Py_uop_sym_set_const(ctx, SYM, CNST)
+#define sym_set_compact_int(SYM) _Py_uop_sym_set_compact_int(ctx, SYM)
 #define sym_is_bottom _Py_uop_sym_is_bottom
 #define sym_truthiness _Py_uop_sym_truthiness
 #define frame_new _Py_uop_frame_new
@@ -375,21 +345,24 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
 #define sym_new_tuple _Py_uop_sym_new_tuple
 #define sym_tuple_getitem _Py_uop_sym_tuple_getitem
 #define sym_tuple_length _Py_uop_sym_tuple_length
-#define sym_is_immortal _Py_uop_sym_is_immortal
+#define sym_is_immortal _Py_uop_symbol_is_immortal
+#define sym_is_compact_int _Py_uop_sym_is_compact_int
+#define sym_new_compact_int _Py_uop_sym_new_compact_int
+#define sym_new_truthiness _Py_uop_sym_new_truthiness
 
 static int
 optimize_to_bool(
     _PyUOpInstruction *this_instr,
     JitOptContext *ctx,
-    JitOptSymbol *value,
-    JitOptSymbol **result_ptr)
+    JitOptRef value,
+    JitOptRef *result_ptr)
 {
     if (sym_matches_type(value, &PyBool_Type)) {
         REPLACE_OP(this_instr, _NOP, 0, 0);
         *result_ptr = value;
         return 1;
     }
-    int truthiness = sym_truthiness(value);
+    int truthiness = sym_truthiness(ctx, value);
     if (truthiness >= 0) {
         PyObject *load = truthiness ? Py_True : Py_False;
         REPLACE_OP(this_instr, _POP_TOP_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)load);
@@ -407,6 +380,23 @@ eliminate_pop_guard(_PyUOpInstruction *this_instr, bool exit)
         REPLACE_OP((this_instr+1), _EXIT_TRACE, 0, 0);
         this_instr[1].target = this_instr->target;
     }
+}
+
+static JitOptRef
+lookup_attr(JitOptContext *ctx, _PyUOpInstruction *this_instr,
+            PyTypeObject *type, PyObject *name, uint16_t immortal,
+            uint16_t mortal)
+{
+    // The cached value may be dead, so we need to do the lookup again... :(
+    if (type && PyType_Check(type)) {
+        PyObject *lookup = _PyType_Lookup(type, name);
+        if (lookup) {
+            int opcode = _Py_IsImmortal(lookup) ? immortal : mortal;
+            REPLACE_OP(this_instr, opcode, 0, (uintptr_t)lookup);
+            return sym_new_const(ctx, lookup);
+        }
+    }
+    return sym_new_not_null(ctx);
 }
 
 /* _PUSH_FRAME/_RETURN_VALUE's operand can be 0, a PyFunctionObject *, or a
@@ -457,6 +447,13 @@ get_code_with_logging(_PyUOpInstruction *op)
     return co;
 }
 
+// TODO (gh-134584) generate most of this table automatically
+const uint16_t op_without_decref_inputs[MAX_UOP_ID + 1] = {
+    [_BINARY_OP_MULTIPLY_FLOAT] = _BINARY_OP_MULTIPLY_FLOAT__NO_DECREF_INPUTS,
+    [_BINARY_OP_ADD_FLOAT] = _BINARY_OP_ADD_FLOAT__NO_DECREF_INPUTS,
+    [_BINARY_OP_SUBTRACT_FLOAT] = _BINARY_OP_SUBTRACT_FLOAT__NO_DECREF_INPUTS,
+};
+
 /* 1 for success, 0 for not ready, cannot error at the moment. */
 static int
 optimize_uops(
@@ -494,7 +491,7 @@ optimize_uops(
 
         int oparg = this_instr->oparg;
         opcode = this_instr->opcode;
-        JitOptSymbol **stack_pointer = ctx->frame->stack_pointer;
+        JitOptRef *stack_pointer = ctx->frame->stack_pointer;
 
 #ifdef Py_DEBUG
         if (get_lltrace() >= 3) {
@@ -557,6 +554,45 @@ error:
 
 }
 
+const uint16_t op_without_push[MAX_UOP_ID + 1] = {
+    [_COPY] = _NOP,
+    [_LOAD_CONST_INLINE] = _NOP,
+    [_LOAD_CONST_INLINE_BORROW] = _NOP,
+    [_LOAD_CONST_UNDER_INLINE] = _POP_TOP_LOAD_CONST_INLINE,
+    [_LOAD_CONST_UNDER_INLINE_BORROW] = _POP_TOP_LOAD_CONST_INLINE_BORROW,
+    [_LOAD_FAST] = _NOP,
+    [_LOAD_FAST_BORROW] = _NOP,
+    [_LOAD_SMALL_INT] = _NOP,
+    [_POP_TOP_LOAD_CONST_INLINE] = _POP_TOP,
+    [_POP_TOP_LOAD_CONST_INLINE_BORROW] = _POP_TOP,
+    [_POP_TWO_LOAD_CONST_INLINE_BORROW] = _POP_TWO,
+    [_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW] = _POP_CALL_TWO,
+};
+
+const bool op_skip[MAX_UOP_ID + 1] = {
+    [_NOP] = true,
+    [_CHECK_VALIDITY] = true,
+    [_CHECK_PERIODIC] = true,
+    [_SET_IP] = true,
+};
+
+const uint16_t op_without_pop[MAX_UOP_ID + 1] = {
+    [_POP_TOP] = _NOP,
+    [_POP_TOP_LOAD_CONST_INLINE] = _LOAD_CONST_INLINE,
+    [_POP_TOP_LOAD_CONST_INLINE_BORROW] = _LOAD_CONST_INLINE_BORROW,
+    [_POP_TWO] = _POP_TOP,
+    [_POP_TWO_LOAD_CONST_INLINE_BORROW] = _POP_TOP_LOAD_CONST_INLINE_BORROW,
+    [_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW] = _POP_CALL_ONE_LOAD_CONST_INLINE_BORROW,
+    [_POP_CALL_ONE_LOAD_CONST_INLINE_BORROW] = _POP_CALL_LOAD_CONST_INLINE_BORROW,
+    [_POP_CALL_TWO] = _POP_CALL_ONE,
+    [_POP_CALL_ONE] = _POP_CALL,
+};
+
+const uint16_t op_without_pop_null[MAX_UOP_ID + 1] = {
+    [_POP_CALL] = _POP_TOP,
+    [_POP_CALL_LOAD_CONST_INLINE_BORROW] = _POP_TOP_LOAD_CONST_INLINE_BORROW,
+};
+
 
 static int
 remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
@@ -585,40 +621,37 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                     buffer[pc].opcode = _NOP;
                 }
                 break;
-            case _CHECK_VALIDITY_AND_SET_IP:
-                if (may_have_escaped) {
-                    may_have_escaped = false;
-                    buffer[pc].opcode = _CHECK_VALIDITY;
-                }
-                else {
-                    buffer[pc].opcode = _NOP;
-                }
-                last_set_ip = pc;
-                break;
-            case _POP_TOP:
-            {
-                _PyUOpInstruction *last = &buffer[pc-1];
-                while (last->opcode == _NOP) {
-                    last--;
-                }
-                if (last->opcode == _LOAD_CONST_INLINE  ||
-                    last->opcode == _LOAD_CONST_INLINE_BORROW ||
-                    last->opcode == _LOAD_FAST ||
-                    last->opcode == _COPY
-                ) {
-                    last->opcode = _NOP;
-                    buffer[pc].opcode = _NOP;
-                }
-                if (last->opcode == _REPLACE_WITH_TRUE) {
-                    last->opcode = _NOP;
-                }
-                break;
-            }
-            case _JUMP_TO_TOP:
-            case _EXIT_TRACE:
-                return pc + 1;
             default:
             {
+                // Cancel out pushes and pops, repeatedly. So:
+                //     _LOAD_FAST + _POP_TWO_LOAD_CONST_INLINE_BORROW + _POP_TOP
+                // ...becomes:
+                //     _NOP + _POP_TOP + _NOP
+                while (op_without_pop[opcode] || op_without_pop_null[opcode]) {
+                    _PyUOpInstruction *last = &buffer[pc - 1];
+                    while (op_skip[last->opcode]) {
+                        last--;
+                    }
+                    if (op_without_push[last->opcode] && op_without_pop[opcode]) {
+                        last->opcode = op_without_push[last->opcode];
+                        opcode = buffer[pc].opcode = op_without_pop[opcode];
+                        if (op_without_pop[last->opcode]) {
+                            opcode = last->opcode;
+                            pc = last - buffer;
+                        }
+                    }
+                    else if (last->opcode == _PUSH_NULL) {
+                        // Handle _POP_CALL and _POP_CALL_LOAD_CONST_INLINE_BORROW separately.
+                        // This looks for a preceding _PUSH_NULL instruction and
+                        // simplifies to _POP_TOP(_LOAD_CONST_INLINE_BORROW).
+                        last->opcode = _NOP;
+                        opcode = buffer[pc].opcode = op_without_pop_null[opcode];
+                        assert(opcode);
+                    }
+                    else {
+                        break;
+                    }
+                }
                 /* _PUSH_FRAME doesn't escape or error, but it
                  * does need the IP for the return address */
                 bool needs_ip = opcode == _PUSH_FRAME;
@@ -627,16 +660,15 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                     may_have_escaped = true;
                 }
                 if (needs_ip && last_set_ip >= 0) {
-                    if (buffer[last_set_ip].opcode == _CHECK_VALIDITY) {
-                        buffer[last_set_ip].opcode = _CHECK_VALIDITY_AND_SET_IP;
-                    }
-                    else {
-                        assert(buffer[last_set_ip].opcode == _NOP);
-                        buffer[last_set_ip].opcode = _SET_IP;
-                    }
+                    assert(buffer[last_set_ip].opcode == _NOP);
+                    buffer[last_set_ip].opcode = _SET_IP;
                     last_set_ip = -1;
                 }
+                break;
             }
+            case _JUMP_TO_TOP:
+            case _EXIT_TRACE:
+                return pc + 1;
         }
     }
     Py_UNREACHABLE();

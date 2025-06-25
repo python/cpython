@@ -1,1 +1,0 @@
-Corrected :exc:`ValueError` message for :class:`asyncio.Barrier` and :class:`threading.Barrier`.

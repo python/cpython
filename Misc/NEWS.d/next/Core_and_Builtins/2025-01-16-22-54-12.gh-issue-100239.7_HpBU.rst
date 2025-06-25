@@ -1,1 +1,0 @@
-Specialize ``BINARY_OP`` for bitwise logical operations on compact ints.

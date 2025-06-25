@@ -1,3 +1,0 @@
-Document that :const:`string.printable` is not printable in the POSIX sense.
-In particular, :meth:`string.printable.isprintable() <str.isprintable>` returns
-:const:`False`. Patch by Bénédikt Tran.

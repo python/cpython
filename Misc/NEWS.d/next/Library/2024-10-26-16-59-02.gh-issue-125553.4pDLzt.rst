@@ -1,2 +1,0 @@
-Fix round-trip invariance for backslash continuations in
-:func:`tokenize.untokenize`.

@@ -316,7 +316,7 @@ class MockTest(unittest.TestCase):
         passed to the wrapped object and the return_value is returned instead.
         """
         def my_func():
-            return None
+            return None  # pragma: no cover
         func_mock = create_autospec(spec=my_func, wraps=my_func)
         return_value = "explicit return value"
         func_mock.return_value = return_value

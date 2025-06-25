@@ -1161,7 +1161,8 @@ Changes in the C API
     .. code-block:: c
 
         int
-        foo_traverse(foo_struct *self, visitproc visit, void *arg) {
+        foo_traverse(PyObject *self, visitproc visit, void *arg)
+        {
         // Rest of the traverse function
         #if PY_VERSION_HEX >= 0x03090000
             // This was not needed before Python 3.9 (Python issue 35810 and 40217)
