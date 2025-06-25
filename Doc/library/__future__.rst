@@ -46,39 +46,39 @@ language using this mechanism:
      * optional in
      * mandatory in
      * effect
-   * * nested_scopes
+   * * .. data:: nested_scopes
      * 2.1.0b1
      * 2.2
      * :pep:`227`: *Statically Nested Scopes*
-   * * generators
+   * * .. data:: generators
      * 2.2.0a1
      * 2.3
      * :pep:`255`: *Simple Generators*
-   * * division
+   * * .. data:: division
      * 2.2.0a2
      * 3.0
      * :pep:`238`: *Changing the Division Operator*
-   * * absolute_import
+   * * .. data:: absolute_import
      * 2.5.0a1
      * 3.0
      * :pep:`328`: *Imports: Multi-Line and Absolute/Relative*
-   * * with_statement
+   * * .. data:: with_statement
      * 2.5.0a1
      * 2.6
      * :pep:`343`: *The “with” Statement*
-   * * print_function
+   * * .. data:: print_function
      * 2.6.0a2
      * 3.0
      * :pep:`3105`: *Make print a function*
-   * * unicode_literals
+   * * .. data:: unicode_literals
      * 2.6.0a2
      * 3.0
      * :pep:`3112`: *Bytes literals in Python 3000*
-   * * generator_stop
+   * * .. data:: generator_stop
      * 3.5.0b1
      * 3.7
      * :pep:`479`: *StopIteration handling inside generators*
-   * * annotations
+   * * .. data:: annotations
      * 3.7.0b1
      * Never [1]_
      * :pep:`563`: *Postponed evaluation of annotations*,
