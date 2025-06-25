@@ -1184,7 +1184,7 @@ iterations of the loop.
 
 .. opcode:: BUILD_TEMPLATE
 
-   It consumes ``STACK[-1]`` (interpolations) and ``STACK[-2]`` (strings) and
+   Consumes ``STACK[-1]`` (interpolations) and ``STACK[-2]`` (strings) and
    outputs the template object to ``STACK[-1]``.
 
    .. versionadded:: 3.14
