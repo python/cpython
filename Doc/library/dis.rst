@@ -1171,20 +1171,21 @@ iterations of the loop.
 
 .. opcode:: BUILD_INTERPOLATION
 
-   Constructs an Interpolation object from the following components, and pushes
-   it onto the stack:
+   It expects as stack inputs (from top of stack down):
 
-   * ``value``: the evaluated result at runtime
-   * ``name``: the expression's source code as a string
-   * ``format``: the format specification
+   * ``format``: ``STACK[oparg & 1]``
+   * ``str``: ``STACK[-1 - (oparg & 1)]``
+   * ``value``: ``STACK[-2 - (oparg & 1)]``
+
+   It outputs the interpolation object to ``STACK[-1]`` after consuming its inputs.
 
    .. versionadded:: 3.14
 
 
 .. opcode:: BUILD_TEMPLATE
 
-   Create a Template object consuming interpolations and a string from the stack,
-   and pushes it onto the stack.
+   It consumes ``STACK[-1]``(string) and ``STACK[-2]``(interpolations) and
+   outputs the template object to ``STACK[-1]``.
 
    .. versionadded:: 3.14
 
