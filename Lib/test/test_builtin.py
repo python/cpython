@@ -2991,7 +2991,7 @@ class TestType(unittest.TestCase):
 
 def load_tests(loader, tests, pattern):
     from doctest import DocTestSuite
-    if getattr(sys, 'float_repr_style', '') == 'short':
+    if sys.float_repr_style == 'short':
         tests.addTest(DocTestSuite(builtins))
     return tests
 

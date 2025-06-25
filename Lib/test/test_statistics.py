@@ -3319,7 +3319,7 @@ class TestNormalDistC(unittest.TestCase, TestNormalDist):
 def load_tests(loader, tests, ignore):
     """Used for doctest/unittest integration."""
     tests.addTests(doctest.DocTestSuite())
-    if getattr(sys, 'float_repr_style', '') == 'short':
+    if sys.float_repr_style == 'short':
         tests.addTests(doctest.DocTestSuite(statistics))
     return tests
 
