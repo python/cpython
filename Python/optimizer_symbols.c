@@ -30,17 +30,19 @@ we often skip in-between states for convenience:
    |     |
 NULL     |
 |        |                <- Anything below this level is an object.
-|        NON_NULL
-|        |      |         <- Anything below this level has a known type version.
-| TYPE_VERSION  |
-| |             |         <- Anything below this level has a known type.
-| KNOWN_CLASS   |
-| |         |   |         <- Anything below this level has a known truthiness.
-| |         |  TRUTHINESS
-| |         |  |
-| TUPLE     |  |
-|     |     |  |          <- Anything below this level is a known constant.
-|    KNOWN_VALUE
+|        NON_NULL-+
+|          |      |       <- Anything below this level has a known type version.
+|    TYPE_VERSION |
+|    |            |       <- Anything below this level has a known type.
+|    KNOWN_CLASS  |
+|    |  |  |   |  |
+|    |  | INT* |  |
+|    |  |  |   |  |       <- Anything below this level has a known truthiness.
+|    |  |  |   |  TRUTHINESS
+|    |  |  |   |  |
+| TUPLE |  |   |  |
+|    |  |  |   |  |       <- Anything below this level is a known constant.
+|    KNOWN_VALUE--+
 |    |                    <- Anything below this level is unreachable.
 BOTTOM
 
@@ -51,6 +53,8 @@ result of a truth test, which would allow us to narrow the symbol to KNOWN_VALUE
 (with a value of integer zero). If at any point we encounter a float guard on
 the same symbol, that would be a contradiction, and the symbol would be set to
 BOTTOM (indicating that the code is unreachable).
+
+INT* is a limited range int, currently a "compact" int.
 
 */
 
@@ -229,6 +233,11 @@ _Py_uop_sym_set_type(JitOptContext *ctx, JitOptRef ref, PyTypeObject *typ)
                 sym_set_bottom(ctx, sym);
             }
             return;
+        case JIT_SYM_COMPACT_INT:
+            if (typ != &PyLong_Type) {
+                sym_set_bottom(ctx, sym);
+            }
+            return;
     }
 }
 
@@ -282,6 +291,12 @@ _Py_uop_sym_set_type_version(JitOptContext *ctx, JitOptRef ref, unsigned int ver
             return true;
         case JIT_SYM_TRUTHINESS_TAG:
             if (version != PyBool_Type.tp_version_tag) {
+                sym_set_bottom(ctx, sym);
+                return false;
+            }
+            return true;
+        case JIT_SYM_COMPACT_INT:
+            if (version != PyLong_Type.tp_version_tag) {
                 sym_set_bottom(ctx, sym);
                 return false;
             }
@@ -369,6 +384,14 @@ _Py_uop_sym_set_const(JitOptContext *ctx, JitOptRef ref, PyObject *const_val)
             }
             // TODO: More types (GH-130415)!
             make_const(sym, const_val);
+            return;
+        case JIT_SYM_COMPACT_INT:
+            if (_PyLong_CheckExactAndCompact(const_val)) {
+                make_const(sym, const_val);
+            }
+            else {
+                sym_set_bottom(ctx, sym);
+            }
             return;
     }
 }
@@ -477,6 +500,9 @@ _Py_uop_sym_get_type(JitOptRef ref)
             return &PyTuple_Type;
         case JIT_SYM_TRUTHINESS_TAG:
             return &PyBool_Type;
+        case JIT_SYM_COMPACT_INT:
+            return &PyLong_Type;
+
     }
     Py_UNREACHABLE();
 }
@@ -502,6 +528,8 @@ _Py_uop_sym_get_type_version(JitOptRef ref)
             return PyTuple_Type.tp_version_tag;
         case JIT_SYM_TRUTHINESS_TAG:
             return PyBool_Type.tp_version_tag;
+        case JIT_SYM_COMPACT_INT:
+            return PyLong_Type.tp_version_tag;
     }
     Py_UNREACHABLE();
 }
@@ -535,6 +563,7 @@ _Py_uop_sym_truthiness(JitOptContext *ctx, JitOptRef ref)
         case JIT_SYM_BOTTOM_TAG:
         case JIT_SYM_NON_NULL_TAG:
         case JIT_SYM_UNKNOWN_TAG:
+        case JIT_SYM_COMPACT_INT:
             return -1;
         case JIT_SYM_KNOWN_CLASS_TAG:
             /* TODO :
@@ -639,10 +668,17 @@ _Py_uop_symbol_is_immortal(JitOptSymbol *sym)
     if (sym->tag == JIT_SYM_KNOWN_CLASS_TAG) {
         return sym->cls.type == &PyBool_Type;
     }
-    if (sym->tag == JIT_SYM_TRUTHINESS_TAG) {
-        return true;
-    }
     return false;
+}
+
+bool
+_Py_uop_sym_is_compact_int(JitOptRef ref)
+{
+    JitOptSymbol *sym = PyJitRef_Unwrap(ref);
+    if (sym->tag == JIT_SYM_KNOWN_VALUE_TAG) {
+        return (bool)_PyLong_CheckExactAndCompact(sym->value.value);
+    }
+    return sym->tag == JIT_SYM_COMPACT_INT;
 }
 
 bool
@@ -650,6 +686,50 @@ _Py_uop_sym_is_immortal(JitOptRef ref)
 {
     JitOptSymbol *sym = PyJitRef_Unwrap(ref);
     return _Py_uop_symbol_is_immortal(sym);
+}
+
+void
+_Py_uop_sym_set_compact_int(JitOptContext *ctx, JitOptRef ref)
+{
+    JitOptSymbol *sym = PyJitRef_Unwrap(ref);
+    JitSymType tag = sym->tag;
+    switch(tag) {
+        case JIT_SYM_NULL_TAG:
+            sym_set_bottom(ctx, sym);
+            return;
+        case JIT_SYM_KNOWN_CLASS_TAG:
+            if (sym->cls.type == &PyLong_Type) {
+                sym->tag = JIT_SYM_COMPACT_INT;
+            } else {
+                sym_set_bottom(ctx, sym);
+            }
+            return;
+        case JIT_SYM_TYPE_VERSION_TAG:
+            if (sym->version.version == PyLong_Type.tp_version_tag) {
+                sym->tag = JIT_SYM_COMPACT_INT;
+            }
+            else {
+                sym_set_bottom(ctx, sym);
+            }
+            return;
+        case JIT_SYM_KNOWN_VALUE_TAG:
+            if (!_PyLong_CheckExactAndCompact(sym->value.value)) {
+                Py_CLEAR(sym->value.value);
+                sym_set_bottom(ctx, sym);
+            }
+            return;
+        case JIT_SYM_TUPLE_TAG:
+        case JIT_SYM_TRUTHINESS_TAG:
+            sym_set_bottom(ctx, sym);
+            return;
+        case JIT_SYM_BOTTOM_TAG:
+        case JIT_SYM_COMPACT_INT:
+            return;
+        case JIT_SYM_NON_NULL_TAG:
+        case JIT_SYM_UNKNOWN_TAG:
+            sym->tag = JIT_SYM_COMPACT_INT;
+            return;
+    }
 }
 
 JitOptRef
@@ -675,6 +755,17 @@ _Py_uop_sym_new_truthiness(JitOptContext *ctx, JitOptRef ref, bool truthy)
         make_const(res, (truthiness ^ invert) ? Py_True : Py_False);
     }
     return PyJitRef_Wrap(res);
+}
+
+JitOptRef
+_Py_uop_sym_new_compact_int(JitOptContext *ctx)
+{
+    JitOptSymbol *sym = sym_new(ctx);
+    if (sym == NULL) {
+        return out_of_space_ref(ctx);
+    }
+    sym->tag = JIT_SYM_COMPACT_INT;
+    return PyJitRef_Wrap(sym);
 }
 
 // 0 on success, -1 on error.
@@ -796,6 +887,7 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     _Py_uop_abstractcontext_init(ctx);
     PyObject *val_42 = NULL;
     PyObject *val_43 = NULL;
+    PyObject *val_big = NULL;
     PyObject *tuple = NULL;
 
     // Use a single 'sym' variable so copy-pasting tests is easier.
@@ -926,9 +1018,38 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     TEST_PREDICATE(_Py_uop_sym_get_const(ctx, ref) == Py_False, "truthiness is not False");
     TEST_PREDICATE(_Py_uop_sym_is_const(ctx, value) == true, "value is not constant");
     TEST_PREDICATE(_Py_uop_sym_get_const(ctx, value) == Py_True, "value is not True");
+
+
+    val_big = PyNumber_Lshift(_PyLong_GetOne(), PyLong_FromLong(66));
+    if (val_big == NULL) {
+        goto fail;
+    }
+
+    JitOptRef ref_42 = _Py_uop_sym_new_const(ctx, val_42);
+    JitOptRef ref_big = _Py_uop_sym_new_const(ctx, val_big);
+    JitOptRef ref_int = _Py_uop_sym_new_compact_int(ctx);
+    TEST_PREDICATE(_Py_uop_sym_is_compact_int(ref_42), "42 is not a compact int");
+    TEST_PREDICATE(!_Py_uop_sym_is_compact_int(ref_big), "(1 << 66) is a compact int");
+    TEST_PREDICATE(_Py_uop_sym_is_compact_int(ref_int), "compact int is not a compact int");
+    TEST_PREDICATE(_Py_uop_sym_matches_type(ref_int, &PyLong_Type), "compact int is not an int");
+
+    _Py_uop_sym_set_type(ctx, ref_int, &PyLong_Type);  // Should have no effect
+    TEST_PREDICATE(_Py_uop_sym_is_compact_int(ref_int), "compact int is not a compact int after cast");
+    TEST_PREDICATE(_Py_uop_sym_matches_type(ref_int, &PyLong_Type), "compact int is not an int after cast");
+
+    _Py_uop_sym_set_type(ctx, ref_int, &PyFloat_Type);  // Should make it bottom
+    TEST_PREDICATE(_Py_uop_sym_is_bottom(ref_int), "compact int cast to float isn't bottom");
+
+    ref_int = _Py_uop_sym_new_compact_int(ctx);
+    _Py_uop_sym_set_const(ctx, ref_int, val_43);
+    TEST_PREDICATE(_Py_uop_sym_is_compact_int(ref_int), "43 is not a compact int");
+    TEST_PREDICATE(_Py_uop_sym_matches_type(ref_int, &PyLong_Type), "43 is not an int");
+    TEST_PREDICATE(_Py_uop_sym_get_const(ctx, ref_int) == val_43, "43 isn't 43");
+
     _Py_uop_abstractcontext_fini(ctx);
     Py_DECREF(val_42);
     Py_DECREF(val_43);
+    Py_DECREF(val_big);
     Py_DECREF(tuple);
     Py_RETURN_NONE;
 
@@ -936,6 +1057,7 @@ fail:
     _Py_uop_abstractcontext_fini(ctx);
     Py_XDECREF(val_42);
     Py_XDECREF(val_43);
+    Py_XDECREF(val_big);
     Py_DECREF(tuple);
     return NULL;
 }
