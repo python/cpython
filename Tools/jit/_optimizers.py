@@ -287,6 +287,7 @@ class OptimizerAArch64(Optimizer):  # pylint: disable = too-few-public-methods
 
     # TODO: @diegorusso
     _alignment = 8
+    # https://developer.arm.com/documentation/ddi0602/2025-03/Base-Instructions/B--Branch-
     _re_jump = re.compile(r"\s*b\s+(?P<target>[\w.]+)")
 
 
@@ -297,7 +298,9 @@ class OptimizerX86(Optimizer):  # pylint: disable = too-few-public-methods
     _re_branch = re.compile(
         rf"\s*(?P<instruction>{'|'.join(_X86_BRANCHES)})\s+(?P<target>[\w.]+)"
     )
+    # https://www.felixcloutier.com/x86/jmp
     _re_jump = re.compile(r"\s*jmp\s+(?P<target>[\w.]+)")
+    # https://www.felixcloutier.com/x86/ret
     _re_return = re.compile(r"\s*ret\b")
 
 
