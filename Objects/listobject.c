@@ -61,7 +61,8 @@ free_list_items(PyObject** items, bool use_qsbr)
 #ifdef Py_GIL_DISABLED
     _PyListArray *array = _Py_CONTAINER_OF(items, _PyListArray, ob_item);
     if (use_qsbr) {
-        _PyMem_FreeDelayed(array);
+        size_t size = sizeof(_PyListArray) + array->allocated * sizeof(PyObject *);
+        _PyMem_FreeDelayed(array, size);
     }
     else {
         PyMem_Free(array);

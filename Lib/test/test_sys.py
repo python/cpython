@@ -24,7 +24,7 @@ from test.support import import_helper
 from test.support import force_not_colorized
 from test.support import SHORT_TIMEOUT
 try:
-    from test.support import interpreters
+    from concurrent import interpreters
 except ImportError:
     interpreters = None
 import textwrap
@@ -57,7 +57,7 @@ class DisplayHookTest(unittest.TestCase):
             dh(None)
 
         self.assertEqual(out.getvalue(), "")
-        self.assertTrue(not hasattr(builtins, "_"))
+        self.assertNotHasAttr(builtins, "_")
 
         # sys.displayhook() requires arguments
         self.assertRaises(TypeError, dh)
@@ -172,7 +172,7 @@ class ExceptHookTest(unittest.TestCase):
             with support.captured_stderr() as err:
                 sys.__excepthook__(*sys.exc_info())
 
-        self.assertTrue(err.getvalue().endswith("ValueError: 42\n"))
+        self.assertEndsWith(err.getvalue(), "ValueError: 42\n")
 
         self.assertRaises(TypeError, sys.__excepthook__)
 
@@ -192,7 +192,7 @@ class ExceptHookTest(unittest.TestCase):
         err = err.getvalue()
         self.assertIn("""  File "b'bytes_filename'", line 123\n""", err)
         self.assertIn("""    text\n""", err)
-        self.assertTrue(err.endswith("SyntaxError: msg\n"))
+        self.assertEndsWith(err, "SyntaxError: msg\n")
 
     def test_excepthook(self):
         with test.support.captured_output("stderr") as stderr:
@@ -269,8 +269,7 @@ class SysModuleTest(unittest.TestCase):
             rc, out, err = assert_python_failure('-c', code, **env_vars)
             self.assertEqual(rc, 1)
             self.assertEqual(out, b'')
-            self.assertTrue(err.startswith(expected),
-                "%s doesn't start with %s" % (ascii(err), ascii(expected)))
+            self.assertStartsWith(err, expected)
 
         # test that stderr buffer is flushed before the exit message is written
         # into stderr
@@ -437,7 +436,7 @@ class SysModuleTest(unittest.TestCase):
     @unittest.skipUnless(hasattr(sys, "setdlopenflags"),
                          'test needs sys.setdlopenflags()')
     def test_dlopenflags(self):
-        self.assertTrue(hasattr(sys, "getdlopenflags"))
+        self.assertHasAttr(sys, "getdlopenflags")
         self.assertRaises(TypeError, sys.getdlopenflags, 42)
         oldflags = sys.getdlopenflags()
         self.assertRaises(TypeError, sys.setdlopenflags)
@@ -623,8 +622,7 @@ class SysModuleTest(unittest.TestCase):
             # And the next record must be for g456().
             filename, lineno, funcname, sourceline = stack[i+1]
             self.assertEqual(funcname, "g456")
-            self.assertTrue((sourceline.startswith("if leave_g.wait(") or
-                             sourceline.startswith("g_raised.set()")))
+            self.assertStartsWith(sourceline, ("if leave_g.wait(", "g_raised.set()"))
         finally:
             # Reap the spawned thread.
             leave_g.set()
@@ -731,7 +729,7 @@ class SysModuleTest(unittest.TestCase):
         info = sys.thread_info
         self.assertEqual(len(info), 3)
         self.assertIn(info.name, ('nt', 'pthread', 'pthread-stubs', 'solaris', None))
-        self.assertIn(info.lock, ('semaphore', 'mutex+cond', None))
+        self.assertIn(info.lock, ('pymutex', None))
         if sys.platform.startswith(("linux", "android", "freebsd")):
             self.assertEqual(info.name, "pthread")
         elif sys.platform == "win32":
@@ -860,7 +858,7 @@ class SysModuleTest(unittest.TestCase):
                  "hash_randomization", "isolated", "dev_mode", "utf8_mode",
                  "warn_default_encoding", "safe_path", "int_max_str_digits")
         for attr in attrs:
-            self.assertTrue(hasattr(sys.flags, attr), attr)
+            self.assertHasAttr(sys.flags, attr)
             attr_type = bool if attr in ("dev_mode", "safe_path") else int
             self.assertEqual(type(getattr(sys.flags, attr)), attr_type, attr)
         self.assertTrue(repr(sys.flags))
@@ -1072,10 +1070,11 @@ class SysModuleTest(unittest.TestCase):
 
         levels = {'alpha': 0xA, 'beta': 0xB, 'candidate': 0xC, 'final': 0xF}
 
-        self.assertTrue(hasattr(sys.implementation, 'name'))
-        self.assertTrue(hasattr(sys.implementation, 'version'))
-        self.assertTrue(hasattr(sys.implementation, 'hexversion'))
-        self.assertTrue(hasattr(sys.implementation, 'cache_tag'))
+        self.assertHasAttr(sys.implementation, 'name')
+        self.assertHasAttr(sys.implementation, 'version')
+        self.assertHasAttr(sys.implementation, 'hexversion')
+        self.assertHasAttr(sys.implementation, 'cache_tag')
+        self.assertHasAttr(sys.implementation, 'supports_isolated_interpreters')
 
         version = sys.implementation.version
         self.assertEqual(version[:2], (version.major, version.minor))
@@ -1088,6 +1087,15 @@ class SysModuleTest(unittest.TestCase):
         # PEP 421 requires that .name be lower case.
         self.assertEqual(sys.implementation.name,
                          sys.implementation.name.lower())
+
+        # https://peps.python.org/pep-0734
+        sii = sys.implementation.supports_isolated_interpreters
+        self.assertIsInstance(sii, bool)
+        if test.support.check_impl_detail(cpython=True):
+            if test.support.is_emscripten or test.support.is_wasi:
+                self.assertFalse(sii)
+            else:
+                self.assertTrue(sii)
 
     @test.support.cpython_only
     def test_debugmallocstats(self):
@@ -1137,23 +1145,12 @@ class SysModuleTest(unittest.TestCase):
         b = sys.getallocatedblocks()
         self.assertLessEqual(b, a)
         try:
-            # While we could imagine a Python session where the number of
-            # multiple buffer objects would exceed the sharing of references,
-            # it is unlikely to happen in a normal test run.
-            #
-            # In free-threaded builds each code object owns an array of
-            # pointers to copies of the bytecode. When the number of
-            # code objects is a large fraction of the total number of
-            # references, this can cause the total number of allocated
-            # blocks to exceed the total number of references.
-            #
-            # For some reason, iOS seems to trigger the "unlikely to happen"
-            # case reliably under CI conditions. It's not clear why; but as
-            # this test is checking the behavior of getallocatedblock()
-            # under garbage collection, we can skip this pre-condition check
-            # for now. See GH-130384.
-            if not support.Py_GIL_DISABLED and not support.is_apple_mobile:
-                self.assertLess(a, sys.gettotalrefcount())
+            # The reported blocks will include immortalized strings, but the
+            # total ref count will not. This will sanity check that among all
+            # other objects (those eligible for garbage collection) there
+            # are more references being tracked than allocated blocks.
+            interned_immortal = sys.getunicodeinternedsize(_only_immortal=True)
+            self.assertLess(a - interned_immortal, sys.gettotalrefcount())
         except AttributeError:
             # gettotalrefcount() not available
             pass
@@ -1301,6 +1298,7 @@ class SysModuleTest(unittest.TestCase):
         for name in sys.stdlib_module_names:
             self.assertIsInstance(name, str)
 
+    @unittest.skipUnless(hasattr(sys, '_stdlib_dir'), 'need sys._stdlib_dir')
     def test_stdlib_dir(self):
         os = import_helper.import_fresh_module('os')
         marker = getattr(os, '__file__', None)
@@ -1419,7 +1417,7 @@ class UnraisableHookTest(unittest.TestCase):
                 else:
                     self.assertIn("ValueError", report)
                     self.assertIn("del is broken", report)
-                self.assertTrue(report.endswith("\n"))
+                self.assertEndsWith(report, "\n")
 
     def test_original_unraisablehook_exception_qualname(self):
         # See bpo-41031, bpo-45083.
@@ -1955,22 +1953,7 @@ class SizeofTest(unittest.TestCase):
         self.assertEqual(out, b"")
         self.assertEqual(err, b"")
 
-
-def _supports_remote_attaching():
-    PROCESS_VM_READV_SUPPORTED = False
-
-    try:
-        from _remote_debugging import PROCESS_VM_READV_SUPPORTED
-    except ImportError:
-        pass
-
-    return PROCESS_VM_READV_SUPPORTED
-
-@unittest.skipIf(not sys.is_remote_debug_enabled(), "Remote debugging is not enabled")
-@unittest.skipIf(sys.platform != "darwin" and sys.platform != "linux" and sys.platform != "win32",
-                    "Test only runs on Linux, Windows and MacOS")
-@unittest.skipIf(sys.platform == "linux" and not _supports_remote_attaching(),
-                    "Test only runs on Linux with process_vm_readv support")
+@test.support.support_remote_exec_only
 @test.support.cpython_only
 class TestRemoteExec(unittest.TestCase):
     def tearDown(self):
@@ -2129,7 +2112,7 @@ print("Remote script executed successfully!")
         returncode, stdout, stderr = self._run_remote_exec_test(script, prologue=prologue)
         self.assertEqual(returncode, 0)
         self.assertIn(b"Remote script executed successfully!", stdout)
-        self.assertIn(b"Audit event: remote_debugger_script, arg: ", stdout)
+        self.assertIn(b"Audit event: cpython.remote_debugger_script, arg: ", stdout)
         self.assertEqual(stderr, b"")
 
     def test_remote_exec_with_exception(self):

@@ -171,6 +171,11 @@ class Shelf(collections.abc.MutableMapping):
         if hasattr(self.dict, 'sync'):
             self.dict.sync()
 
+    def reorganize(self):
+        self.sync()
+        if hasattr(self.dict, 'reorganize'):
+            self.dict.reorganize()
+
 
 class BsdDbShelf(Shelf):
     """Shelf implementation using the "BSD" db interface.
