@@ -277,7 +277,15 @@ Whitespace between tokens
 
 Except at the beginning of a logical line or in string literals, the whitespace
 characters space, tab and formfeed can be used interchangeably to separate
-tokens.  Whitespace is needed between two tokens only if their concatenation
+tokens:
+
+.. grammar-snippet::
+   :group: python-grammar
+
+   whitespace:  ' ' | tab | formfeed
+
+
+Whitespace is needed between two tokens only if their concatenation
 could otherwise be interpreted as a different token. For example, ``ab`` is one
 token, but ``a b`` is two tokens. However, ``+a`` and ``+ a`` both produce
 two tokens, ``+`` and ``a``, as ``+a`` is not a valid token.
@@ -921,24 +929,60 @@ f-strings
 .. versionadded:: 3.6
 
 A :dfn:`formatted string literal` or :dfn:`f-string` is a string literal
-that is prefixed with ``'f'`` or ``'F'``.  These strings may contain
-replacement fields, which are expressions delimited by curly braces ``{}``.
-While other string literals always have a constant value, formatted strings
-are really expressions evaluated at run time.
+that is prefixed with ``'f'`` or ``'F'``.
+Unlike other string literals, f-strings do not have a constant value.
+They may contain *replacement fields*, which are expressions delimited by
+curly braces ``{}``, which are evaluated at run time.
+For example::
+
+   >>> f'One plus one is {1 + 1}.'
+   'One plus one is 2.'
+
 
 Escape sequences are decoded like in ordinary string literals (except when
 a literal is also marked as a raw string).  After decoding, the grammar
 for the contents of the string is:
 
-.. productionlist:: python-grammar
-   f_string: (`literal_char` | "{{" | "}}" | `replacement_field`)*
-   replacement_field: "{" `f_expression` ["="] ["!" `conversion`] [":" `format_spec`] "}"
-   f_expression: (`conditional_expression` | "*" `or_expr`)
-               :   ("," `conditional_expression` | "," "*" `or_expr`)* [","]
-               : | `yield_expression`
-   conversion: "s" | "r" | "a"
-   format_spec: (`literal_char` | `replacement_field`)*
-   literal_char: <any code point except "{", "}" or NULL>
+.. grammar-snippet:: python-grammar
+   :group: python-grammar
+
+   FSTRING_START:      `fstringprefix` ("'" | '"' | "'''" | '"""')
+   FSTRING_MIDDLE:
+      | <any `source_character`, except backslash, newline, '{' and '}'>
+      | `stringescapeseq`
+      | "{{"
+      | "}}"
+      | <newline, in triple-quoted f-strings only>
+   FSTRING_END:        ("'" | '"' | "'''" | '"""')
+   fstringprefix:      <("f" | "fr" | "rf"), case-insensitive>
+   f_debug_specifier:  whitespace* '=' whitespace*
+
+.. grammar-snippet:: python-grammar
+   :group: python-grammar
+
+   fstring:    `FSTRING_START` `fstring_middle`* `FSTRING_END`
+   fstring_middle:
+      | `fstring_replacement_field`
+      | `FSTRING_MIDDLE`
+   fstring_replacement_field:
+      | '{' `f_expression` [`f_debug_specifier`] [`fstring_conversion`]
+            [`fstring_full_format_spec`] '}'
+   fstring_conversion:
+      | "!" ("s" | "r" | "a")
+   fstring_full_format_spec:
+      | ':' `fstring_format_spec`*
+   fstring_format_spec:
+      | `FSTRING_MIDDLE`
+      | `fstring_replacement_field`
+   f_expression:
+      | ','.(`conditional_expression` | "*" `or_expr`)+ [","]
+      | `yield_expression`
+
+
+---------------
+
+
+
 
 The parts of the string outside curly braces are treated literally,
 except that any doubled curly braces ``'{{'`` or ``'}}'`` are replaced
