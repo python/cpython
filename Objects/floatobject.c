@@ -1238,13 +1238,13 @@ Create a floating-point number from a hexadecimal string.
 
 >>> float.fromhex('0x1.ffffp10')
 2047.984375
->>> float.fromhex('0x1.21p-1034')
-6.132567835889637e-312
+>>> float.fromhex('-0x1p-1074')
+-5e-324
 [clinic start generated code]*/
 
 static PyObject *
 float_fromhex_impl(PyTypeObject *type, PyObject *string)
-/*[clinic end generated code: output=c54b4923552e5af5 input=d75b777b5766774a]*/
+/*[clinic end generated code: output=c54b4923552e5af5 input=0407bebd354bca89]*/
 {
     PyObject *result;
     double x;

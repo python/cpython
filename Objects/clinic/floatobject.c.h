@@ -159,8 +159,8 @@ PyDoc_STRVAR(float_fromhex__doc__,
 "\n"
 ">>> float.fromhex(\'0x1.ffffp10\')\n"
 "2047.984375\n"
-">>> float.fromhex(\'0x1.21p-1034\')\n"
-"6.132567835889637e-312");
+">>> float.fromhex(\'-0x1p-1074\')\n"
+"-5e-324");
 
 #define FLOAT_FROMHEX_METHODDEF    \
     {"fromhex", (PyCFunction)float_fromhex, METH_O|METH_CLASS, float_fromhex__doc__},
@@ -353,4 +353,4 @@ float___format__(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=196d2522f416d01d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=927035897ea3573f input=a9049054013a1b77]*/
