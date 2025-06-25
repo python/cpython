@@ -300,15 +300,9 @@ class TimeRE(dict):
             'u': r"(?P<u>[1-7])",
             'V': r"(?P<V>5[0-3]|0[1-9]|[1-4][0-9]|[0-9])",
             # W is set below by using 'U'
-<<<<<<< ascii-strptime
             'y': r"(?P<y>[0-9][0-9])",
             'Y': r"(?P<Y>[0-9]{4})",
-            'z': r"(?P<z>[+-][0-9][0-9]:?[0-5][0-9](:?[0-5][0-9](\.[0-9]{1,6})?)?|(?-i:Z))",
-=======
-            'y': r"(?P<y>\d\d)",
-            'Y': r"(?P<Y>\d\d\d\d)",
-            'z': r"(?P<z>([+-]\d\d:?[0-5]\d(:?[0-5]\d(\.\d{1,6})?)?)|(?-i:Z))?",
->>>>>>> main
+            'z': r"(?P<z>([+-][0-9][0-9]:?[0-5][0-9](:?[0-5][0-9](\.[0-9]{1,6})?)?)|(?-i:Z))?",
             'A': self.__seqToRE(self.locale_time.f_weekday, 'A'),
             'a': self.__seqToRE(self.locale_time.a_weekday, 'a'),
             'B': self.__seqToRE(self.locale_time.f_month[1:], 'B'),
