@@ -7168,8 +7168,6 @@ if test "$with_remote_debug" = yes; then
     [Define if you want to enable remote debugging support.])
   AC_MSG_RESULT([yes])
 else
-  AC_DEFINE([Py_REMOTE_DEBUG], [0],
-    [Define if you want to enable remote debugging support.])
   AC_MSG_RESULT([no])
 fi
 
