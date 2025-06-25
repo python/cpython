@@ -614,7 +614,7 @@ static inline PyObject *
 _Py_XGetRef(PyObject **ptr)
 {
     for (;;) {
-        PyObject *value = _Py_STATIC_CAST(PyObject*, _Py_atomic_load_ptr(ptr));
+        PyObject *value = _PyObject_CAST(_Py_atomic_load_ptr(ptr));
         if (value == NULL) {
             return value;
         }
@@ -629,7 +629,7 @@ _Py_XGetRef(PyObject **ptr)
 static inline PyObject *
 _Py_TryXGetRef(PyObject **ptr)
 {
-    PyObject *value = _Py_STATIC_CAST(PyObject*, _Py_atomic_load_ptr(ptr));
+    PyObject *value = _PyObject_CAST(_Py_atomic_load_ptr(ptr));
     if (value == NULL) {
         return value;
     }
