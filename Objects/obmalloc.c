@@ -138,6 +138,10 @@ should_advance_qsbr_for_page(struct _qsbr_thread_state *qsbr, mi_page_t *page)
 {
     size_t bsize = mi_page_block_size(page);
     size_t page_size = page->capacity*bsize;
+    if (page_size > QSBR_PAGE_MEM_LIMIT) {
+        qsbr->deferred_page_memory = 0;
+        return true;
+    }
     qsbr->deferred_page_memory += page_size;
     if (qsbr->deferred_page_memory > QSBR_PAGE_MEM_LIMIT) {
         qsbr->deferred_page_memory = 0;
@@ -1188,6 +1192,12 @@ free_work_item(uintptr_t ptr, delayed_dealloc_cb cb, void *state)
 static bool
 should_advance_qsbr_for_free(struct _qsbr_thread_state *qsbr, size_t size)
 {
+    if (size > QSBR_FREE_MEM_LIMIT) {
+        qsbr->deferred_count = 0;
+        qsbr->deferred_memory = 0;
+        qsbr->should_process = true;
+        return true;
+    }
     qsbr->deferred_count++;
     qsbr->deferred_memory += size;
     if (qsbr->deferred_count > QSBR_DEFERRED_LIMIT ||
