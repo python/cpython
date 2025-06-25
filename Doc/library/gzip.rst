@@ -59,6 +59,11 @@ The module defines the following items:
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
+   .. versionchanged:: 3.14
+      The default compression level was reduced to 6 (down from 9).
+      It is the default level used by most compression tools and a better
+      tradeoff between speed and performance.
+
 .. exception:: BadGzipFile
 
    An exception raised for invalid gzip files.  It inherits from :exc:`OSError`.
@@ -181,6 +186,11 @@ The module defines the following items:
       Remove the ``filename`` attribute, use the :attr:`~GzipFile.name`
       attribute instead.
 
+   .. versionchanged:: 3.14
+      The default compression level was reduced to 6 (down from 9).
+      It is the default level used by most compression tools and a better
+      tradeoff between speed and performance.
+
 
 .. function:: compress(data, compresslevel=6, *, mtime=0)
 
@@ -206,6 +216,10 @@ The module defines the following items:
       The *mtime* parameter now defaults to 0 for reproducible output.
       For the previous behaviour of using the current time,
       pass ``None`` to *mtime*.
+   .. versionchanged:: 3.14
+      The default compression level was reduced to 6 (down from 9).
+      It is the default level used by most compression tools and a better
+      tradeoff between speed and performance.
 
 .. function:: decompress(data)
 
