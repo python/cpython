@@ -1,0 +1,4 @@
+Backport file reorganization for Tools/wasm/wasi .
+
+This should make backporting future code changes easier. It also simplifies
+instructions around how to do WASI builds in the devguide.
