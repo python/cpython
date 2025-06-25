@@ -10,6 +10,7 @@ _RE_NEVER_MATCH = re.compile(r"(?!)")
 # Dictionary mapping branch instructions to their inverted branch instructions.
 # If a branch cannot be inverted, the value is None:
 _X86_BRANCHES = {
+    # https://www.felixcloutier.com/x86/jcc
     "ja": "jna",
     "jae": "jnae",
     "jb": "jnb",
@@ -25,9 +26,10 @@ _X86_BRANCHES = {
     "jo": "jno",
     "jp": "jnp",
     "jpe": "jpo",
-    "jrxz": None,
+    "jrcxz": None,
     "js": "jns",
     "jz": "jnz",
+    # https://www.felixcloutier.com/x86/loop:loopcc
     "loop": None,
     "loope": None,
     "loopne": None,
@@ -42,7 +44,7 @@ _X86_BRANCHES |= {v: k for k, v in _X86_BRANCHES.items() if v}
 class _Block:
     label: str | None = None
     # Non-instruction lines like labels, directives, and comments:
-    noise: list[str] = dataclasses.field(default_factory=list)
+    noninstructions: list[str] = dataclasses.field(default_factory=list)
     # Instruction lines:
     instructions: list[str] = dataclasses.field(default_factory=list)
     # If this block ends in a jump, where to?
@@ -74,7 +76,9 @@ class Optimizer:
     _root: _Block = dataclasses.field(init=False, default_factory=_Block)
     _labels: dict[str, _Block] = dataclasses.field(init=False, default_factory=dict)
     # No groups:
-    _re_noise: typing.ClassVar[re.Pattern[str]] = re.compile(r"\s*(?:\.|#|//|$)")
+    _re_noninstructions: typing.ClassVar[re.Pattern[str]] = re.compile(
+        r"\s*(?:\.|#|//|$)"
+    )
     # One group (label):
     _re_label: typing.ClassVar[re.Pattern[str]] = re.compile(
         r'\s*(?P<label>[\w."$?@]+):'
@@ -91,9 +95,9 @@ class Optimizer:
 
     def __post_init__(self) -> None:
         # Split the code into a linked list of basic blocks. A basic block is an
-        # optional label, followed by zero or more non-instruction ("noise")
-        # lines, followed by zero or more instruction lines (only the last of
-        # which may be a branch, jump, or return):
+        # optional label, followed by zero or more non-instruction lines,
+        # followed by zero or more instruction lines (only the last of which may
+        # be a branch, jump, or return):
         text = self._preprocess(self.path.read_text())
         block = self._root
         for line in text.splitlines():
@@ -101,13 +105,13 @@ class Optimizer:
             if match := self._re_label.match(line):
                 # Label. New block:
                 block.link = block = self._lookup_label(match["label"])
-                block.noise.append(line)
+                block.noninstructions.append(line)
                 continue
-            if self._re_noise.match(line):
+            if self._re_noninstructions.match(line):
                 if block.instructions:
-                    # Noise lines. New block:
+                    # Non-instruction lines. New block:
                     block.link = block = _Block()
-                block.noise.append(line)
+                block.noninstructions.append(line)
                 continue
             if block.target or not block.fallthrough:
                 # Current block ends with a branch, jump, or return. New block:
@@ -174,17 +178,15 @@ class Optimizer:
                 hot = block.hot
                 # Make it easy to tell at a glance where cold code is:
                 lines.append(f"# JIT: {'HOT' if hot else 'COLD'} ".ljust(80, "#"))
-            lines.extend(block.noise)
+            lines.extend(block.noninstructions)
             lines.extend(block.instructions)
         return "\n".join(lines)
 
     def _predecessors(self, block: _Block) -> typing.Generator[_Block, None, None]:
         # This is inefficient, but it's never wrong:
-        for predecessor in self._blocks():
-            if predecessor.target is block or (
-                predecessor.fallthrough and predecessor.link is block
-            ):
-                yield predecessor
+        for pre in self._blocks():
+            if pre.target is block or pre.fallthrough and pre.link is block:
+                yield pre
 
     def _insert_continue_label(self) -> None:
         # Find the block with the last instruction:
@@ -199,10 +201,10 @@ class Optimizer:
         #    _JIT_CONTINUE:
         # This lets the assembler encode _JIT_CONTINUE jumps at build time!
         align = _Block()
-        align.noise.append(f"\t.balign\t{self._alignment}")
+        align.noninstructions.append(f"\t.balign\t{self._alignment}")
         continuation = self._lookup_label(f"{self.prefix}_JIT_CONTINUE")
         assert continuation.label
-        continuation.noise.append(f"{continuation.label}:")
+        continuation.noninstructions.append(f"{continuation.label}:")
         end.link, align.link, continuation.link = align, continuation, end.link
 
     def _mark_hot_blocks(self) -> None:
@@ -212,11 +214,7 @@ class Optimizer:
         while todo:
             block = todo.pop()
             block.hot = True
-            todo.extend(
-                predecessor
-                for predecessor in self._predecessors(block)
-                if not predecessor.hot
-            )
+            todo.extend(pre for pre in self._predecessors(block) if not pre.hot)
 
     def _invert_hot_branches(self) -> None:
         for branch in self._blocks():
