@@ -346,6 +346,13 @@ Available code examples:
         help="Code example to benchmark (default: basic)",
     )
 
+    parser.add_argument(
+        "--threads",
+        choices=["all", "main", "only_active"],
+        default="all",
+        help="Which threads to include in the benchmark (default: all)",
+    )
+
     return parser.parse_args()
 
 
@@ -419,8 +426,15 @@ def main():
                 # Create unwinder and run benchmark
                 print(f"{colors.BLUE}Initializing unwinder...{colors.RESET}")
                 try:
+                    kwargs = {}
+                    if args.threads == "all":
+                        kwargs["all_threads"] = True
+                    elif args.threads == "main":
+                        kwargs["all_threads"] = False
+                    elif args.threads == "only_active":
+                        kwargs["only_active_thread"] = True
                     unwinder = _remote_debugging.RemoteUnwinder(
-                        process.pid, all_threads=True
+                        process.pid, **kwargs
                     )
                     results = benchmark(unwinder, duration_seconds=args.duration)
                 finally:
