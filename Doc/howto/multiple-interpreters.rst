@@ -37,6 +37,16 @@ comparisons with Python's various existing concurrency models.
    For information about changing an extension module to work
    with multiple interpreters, see :ref:`isolating-extensions-howto`.
 
+.. TODO:
+
+   * tutorial: explain how to use interpreters C-API?
+   * recipes: add some!
+   * recipes: add short examples of how to solve specific small problems
+   * recipes: add a section specifically for workflow-oriented examples
+   * recipes: add comparisons with other concurrency models
+   * recipes: add examples focused just on taking advantage of isolation?
+   * recipes: add examples of using C-API in extensions?  embedded?
+
 
 Introduction
 ============
