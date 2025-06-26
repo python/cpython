@@ -161,9 +161,8 @@ class TestTString(unittest.TestCase, TStringBaseCase):
 
         # Test template + string
         t1 = t"Hello"
-        combined = t1 + ", world"
-        self.assertTStringEqual(combined, ("Hello, world",), ())
-        self.assertEqual(fstring(combined), "Hello, world")
+        with self.assertRaises(TypeError):
+            _ = t1 + ", world"
 
         # Test template + template with interpolation
         name = "Python"
@@ -174,9 +173,8 @@ class TestTString(unittest.TestCase, TStringBaseCase):
         self.assertEqual(fstring(combined), "Hello, Python")
 
         # Test string + template
-        t = "Hello, " + t"{name}"
-        self.assertTStringEqual(t, ("Hello, ", ""), [(name, "name")])
-        self.assertEqual(fstring(t), "Hello, Python")
+        with self.assertRaises(TypeError):
+            _ = "Hello, " + t"{name}"
 
     def test_nested_templates(self):
         # Test a template inside another template expression
