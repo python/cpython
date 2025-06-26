@@ -4361,11 +4361,6 @@ dummy_func(
             PyStackRef_CLOSE(callable);
             res = retval ? PyStackRef_True : PyStackRef_False;
             assert((!PyStackRef_IsNull(res)) ^ (_PyErr_Occurred(tstate) != NULL));
-        #if TIER_ONE
-            // Skip the following CHECK_PERIODIC.
-            assert(next_instr->op.code == CHECK_PERIODIC);
-            SKIP_OVER(1);
-        #endif
         }
 
         macro(CALL_ISINSTANCE) =
@@ -4373,12 +4368,12 @@ dummy_func(
             unused/2 +
             _GUARD_THIRD_NULL +
             _GUARD_CALLABLE_ISINSTANCE +
-            _CALL_ISINSTANCE;
+            _CALL_ISINSTANCE +
+            _SKIP_CHECK_PERIODIC;
 
         macro(CALL_LIST_APPEND) =
             unused/1 +
             unused/2 +
-            CHECK_PERIODIC + // Do this first to avoid deopting in the middle of the qinstruction
             _GUARD_CALLABLE_LIST_APPEND +
             _GUARD_NOS_NOT_NULL +
             _GUARD_NOS_LIST +

@@ -5958,11 +5958,6 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             res = retval ? PyStackRef_True : PyStackRef_False;
             assert((!PyStackRef_IsNull(res)) ^ (_PyErr_Occurred(tstate) != NULL));
-            #if TIER_ONE
-
-            assert(next_instr->op.code == CHECK_PERIODIC);
-            SKIP_OVER(1);
-            #endif
             stack_pointer[0] = res;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());

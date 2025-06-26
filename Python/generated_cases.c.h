@@ -2725,6 +2725,9 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 res = retval ? PyStackRef_True : PyStackRef_False;
                 assert((!PyStackRef_IsNull(res)) ^ (_PyErr_Occurred(tstate) != NULL));
+            }
+            // _SKIP_CHECK_PERIODIC
+            {
                 #if TIER_ONE
 
                 assert(next_instr->op.code == CHECK_PERIODIC);
@@ -3368,19 +3371,6 @@
             _PyStackRef arg;
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
-            // _CHECK_PERIODIC
-            {
-                _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
-                QSBR_QUIESCENT_STATE(tstate);
-                if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
-                    _PyFrame_SetStackPointer(frame, stack_pointer);
-                    int err = _Py_HandlePending(tstate);
-                    stack_pointer = _PyFrame_GetStackPointer(frame);
-                    if (err != 0) {
-                        JUMP_TO_LABEL(error);
-                    }
-                }
-            }
             // _GUARD_CALLABLE_LIST_APPEND
             {
                 callable = stack_pointer[-3];
