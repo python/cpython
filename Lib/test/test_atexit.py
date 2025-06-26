@@ -97,7 +97,8 @@ class FunctionalTest(unittest.TestCase):
             threading.Thread(target=run).start()
         """
 
-        _, stdout, stderr = script_helper.assert_python_ok("-c", textwrap.dedent(source))
+        return_code, stdout, stderr = script_helper.assert_python_ok("-c", textwrap.dedent(source))
+        self.assertEqual(return_code, 0)
         self.assertEqual(stderr, b"")
         self.assertEqual(stdout, b"24\n42\n")
 
