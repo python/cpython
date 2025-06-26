@@ -2,7 +2,7 @@
 
 from test.support import (
     run_with_locale, cpython_only, no_rerun,
-    MISSING_C_DOCSTRINGS, EqualToForwardRef,
+    MISSING_C_DOCSTRINGS, EqualToForwardRef, check_disallow_instantiation,
 )
 from test.support.script_helper import assert_python_ok
 from test.support.import_helper import import_fresh_module
@@ -1148,8 +1148,7 @@ class UnionTests(unittest.TestCase):
                              msg='Check for union reference leak.')
 
     def test_instantiation(self):
-        with self.assertRaises(TypeError):
-            types.UnionType()
+        check_disallow_instantiation(self, types.UnionType)
         self.assertIs(int, types.UnionType[int])
         self.assertIs(int, types.UnionType[int, int])
         self.assertEqual(int | str, types.UnionType[int, str])
