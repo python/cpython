@@ -1558,7 +1558,7 @@ def _shutdown():
     # mark it done here.
     if _main_thread._os_thread_handle.is_done() and _is_main_interpreter():
         # _shutdown() was already called
-        return
+        return False
 
     global _SHUTTING_DOWN
     _SHUTTING_DOWN = True
@@ -1572,7 +1572,7 @@ def _shutdown():
         _main_thread._os_thread_handle._set_done()
 
     # Wait for all non-daemon threads to exit.
-    _thread_shutdown()
+    return _thread_shutdown()
 
 
 def main_thread():

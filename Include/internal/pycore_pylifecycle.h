@@ -85,7 +85,7 @@ extern void _PyErr_DisplayException(PyObject *file, PyObject *exc);
 
 extern void _PyThreadState_DeleteCurrent(PyThreadState *tstate);
 
-extern void _PyAtExit_Call(PyInterpreterState *interp);
+extern int _PyAtExit_Call(PyInterpreterState *interp);
 
 extern int _Py_IsCoreInitialized(void);
 

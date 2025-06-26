@@ -96,7 +96,7 @@ static PyStatus init_android_streams(PyThreadState *tstate);
 #if defined(__APPLE__) && HAS_APPLE_SYSTEM_LOG
 static PyStatus init_apple_streams(PyThreadState *tstate);
 #endif
-static void wait_for_thread_shutdown(PyThreadState *tstate);
+static int wait_for_thread_shutdown(PyThreadState *tstate);
 static void finalize_subinterpreters(void);
 static void call_ll_exitfuncs(_PyRuntimeState *runtime);
 
@@ -2003,6 +2003,39 @@ resolve_final_tstate(_PyRuntimeState *runtime)
     return main_tstate;
 }
 
+static void
+make_pre_finalization_calls(PyThreadState *tstate)
+{
+    /* Each of these functions can start one another, e.g. a pending call
+     * could start a thread or vice versa. To ensure that we properly clean
+     * call everything, we run these in a loop until none of them run anything. */
+    for (;;) {
+        int called = 0;
+
+        // Wrap up existing "threading"-module-created, non-daemon threads.
+        called = Py_MAX(called, wait_for_thread_shutdown(tstate));
+
+        // Make any remaining pending calls.
+        called = Py_MAX(called, _Py_FinishPendingCalls(tstate));
+
+        /* The interpreter is still entirely intact at this point, and the
+        * exit funcs may be relying on that.  In particular, if some thread
+        * or exit func is still waiting to do an import, the import machinery
+        * expects Py_IsInitialized() to return true.  So don't say the
+        * runtime is uninitialized until after the exit funcs have run.
+        * Note that Threading.py uses an exit func to do a join on all the
+        * threads created thru it, so this also protects pending imports in
+        * the threads created via Threading.
+        */
+
+        called = Py_MAX(called, _PyAtExit_Call(tstate->interp));
+
+        if (called == 0) {
+            break;
+        }
+    }
+}
+
 static int
 _Py_Finalize(_PyRuntimeState *runtime)
 {
@@ -2019,23 +2052,7 @@ _Py_Finalize(_PyRuntimeState *runtime)
     // Block some operations.
     tstate->interp->finalizing = 1;
 
-    // Wrap up existing "threading"-module-created, non-daemon threads.
-    wait_for_thread_shutdown(tstate);
-
-    // Make any remaining pending calls.
-    _Py_FinishPendingCalls(tstate);
-
-    /* The interpreter is still entirely intact at this point, and the
-     * exit funcs may be relying on that.  In particular, if some thread
-     * or exit func is still waiting to do an import, the import machinery
-     * expects Py_IsInitialized() to return true.  So don't say the
-     * runtime is uninitialized until after the exit funcs have run.
-     * Note that Threading.py uses an exit func to do a join on all the
-     * threads created thru it, so this also protects pending imports in
-     * the threads created via Threading.
-     */
-
-    _PyAtExit_Call(tstate->interp);
+    make_pre_finalization_calls(tstate);
 
     assert(_PyThreadState_GET() == tstate);
 
@@ -3442,7 +3459,7 @@ Py_ExitStatusException(PyStatus status)
    the threading module was imported in the first place.
    The shutdown routine will wait until all non-daemon
    "threading" threads have completed. */
-static void
+static int
 wait_for_thread_shutdown(PyThreadState *tstate)
 {
     PyObject *result;
@@ -3452,16 +3469,19 @@ wait_for_thread_shutdown(PyThreadState *tstate)
             PyErr_FormatUnraisable("Exception ignored on threading shutdown");
         }
         /* else: threading not imported */
-        return;
+        return 0;
     }
+    int called = 0;
     result = PyObject_CallMethodNoArgs(threading, &_Py_ID(_shutdown));
     if (result == NULL) {
         PyErr_FormatUnraisable("Exception ignored on threading shutdown");
     }
     else {
-        Py_DECREF(result);
+        assert(PyBool_Check(result) && _Py_IsImmortal(result));
+        called = result == Py_True;
     }
     Py_DECREF(threading);
+    return called;
 }
 
 int Py_AtExit(void (*func)(void))
