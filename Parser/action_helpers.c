@@ -1887,6 +1887,11 @@ _PyPegen_concatenate_strings(Parser *p, asdl_expr_seq *strings,
         return NULL;
     }
 
+    if ((unicode_string_found || f_string_found) && t_string_found) {
+        RAISE_SYNTAX_ERROR("cannot mix str and Template literals");
+        return NULL;
+    }
+
     // If it's only bytes or only unicode string, do a simple concat
     if (!f_string_found && !t_string_found) {
         if (len == 1) {
@@ -1901,6 +1906,7 @@ _PyPegen_concatenate_strings(Parser *p, asdl_expr_seq *strings,
                 end_lineno, end_col_offset, arena);
         }
     }
+
 
     if (t_string_found) {
         return _build_concatenated_template_str(p, strings, lineno,
