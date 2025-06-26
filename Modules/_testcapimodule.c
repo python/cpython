@@ -2546,6 +2546,16 @@ toggle_reftrace_printer(PyObject *ob, PyObject *arg)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+simple_pending_call(PyObject *self, PyObject *callable)
+{
+    if (Py_AddPendingCall(_pending_callback, Py_NewRef(callable)) < 0) {
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef TestMethods[] = {
     {"set_errno",               set_errno,                       METH_VARARGS},
     {"test_config",             test_config,                     METH_NOARGS},
@@ -2640,6 +2650,7 @@ static PyMethodDef TestMethods[] = {
     {"test_atexit", test_atexit, METH_NOARGS},
     {"code_offset_to_line", _PyCFunction_CAST(code_offset_to_line), METH_FASTCALL},
     {"toggle_reftrace_printer", toggle_reftrace_printer, METH_O},
+    {"simple_pending_call", simple_pending_call, METH_O},
     {NULL, NULL} /* sentinel */
 };
 
