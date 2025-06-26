@@ -72,7 +72,7 @@ a program.  This includes things like the import state and builtins.
 runtime state, in addition to the current interpreter, related to
 the current exception and the bytecode eval loop.)
 
-The concept and functionality of the interpreter has been a part of
+The concept and functionality of the interpreter have been a part of
 Python since version 2.2, but the feature was only available through
 the C-API and not well known, and the `isolation <interp-isolation_>`_
 was relatively incomplete until version 3.12.
@@ -97,7 +97,7 @@ careful control of how those components interact.
    isolated from one another since there are few restrictions on memory
    access within the same process.  The Python runtime makes a best
    effort at isolation but extension modules may easily violate that.
-   Therefore, do not use multiple interpreters in security-senstive
+   Therefore, do not use multiple interpreters in security-sensitive
    situations, where they shouldn't have access to each other's data.
 
 Running in an Interpreter
@@ -337,13 +337,13 @@ Communicating Between Interpreters
 
 .. exception:: QueueEmptyError
 
-   This is exception, a subclass of :exc:`queue.Empty`, is raised from
+   This exception, a subclass of :exc:`queue.Empty`, is raised from
    :meth:`!Queue.get` and :meth:`!Queue.get_nowait` when the queue
    is empty.
 
 .. exception:: QueueFullError
 
-   This is exception, a subclass of :exc:`queue.Full`, is raised from
+   This exception, a subclass of :exc:`queue.Full`, is raised from
    :meth:`!Queue.put` and :meth:`!Queue.put_nowait` when the queue
    is full.
 
