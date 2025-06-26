@@ -57,9 +57,8 @@ any codec:
 
    Return a mapping suitable for decoding a custom single-byte encoding.
    Given a string *string* of up to 256 characters representing an encoding
-   table, returns either a compact internal mapping object or a dictionary
-   mapping character ordinals to byte values. Raises a :exc:`TypeError`
-   on invalid input.
+   table, returns a dictionary mapping character ordinals to byte values.
+   Raises a :exc:`TypeError` on invalid input.
 
 The full details for each codec can also be looked up directly:
 
