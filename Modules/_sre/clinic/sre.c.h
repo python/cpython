@@ -978,6 +978,51 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_sre_SRE_Pattern_compile_template__doc__,
+"compile_template($self, repl, /)\n"
+"--\n"
+"\n"
+"Compile a replacement string into a template object.");
+
+#define _SRE_SRE_PATTERN_COMPILE_TEMPLATE_METHODDEF    \
+    {"compile_template", _PyCFunction_CAST(_sre_SRE_Pattern_compile_template), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _sre_SRE_Pattern_compile_template__doc__},
+
+static PyObject *
+_sre_SRE_Pattern_compile_template_impl(PatternObject *self,
+                                       PyTypeObject *cls, PyObject *repl);
+
+static PyObject *
+_sre_SRE_Pattern_compile_template(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "compile_template",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *repl;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    repl = args[0];
+    return_value = _sre_SRE_Pattern_compile_template_impl((PatternObject *)self, cls, repl);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_sre_SRE_Pattern___copy____doc__,
 "__copy__($self, /)\n"
 "--\n"
@@ -1568,4 +1613,4 @@ _sre_SRE_Scanner_search(PyObject *self, PyTypeObject *cls, PyObject *const *args
 #ifndef _SRE_SRE_PATTERN__FAIL_AFTER_METHODDEF
     #define _SRE_SRE_PATTERN__FAIL_AFTER_METHODDEF
 #endif /* !defined(_SRE_SRE_PATTERN__FAIL_AFTER_METHODDEF) */
-/*[clinic end generated code: output=bbf42e1de3bdd3ae input=a9049054013a1b77]*/
+/*[clinic end generated code: output=76344e4385bd1406 input=a9049054013a1b77]*/
