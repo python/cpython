@@ -2708,24 +2708,24 @@
     <function-decl name='PyOS_AfterFork_Parent' mangled-name='PyOS_AfterFork_Parent' filepath='./Modules/posixmodule.c' line='674' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyOS_AfterFork_Parent'>
       <return type-id='type-id-3'/>
     </function-decl>
-    <function-decl name='PyOS_AfterFork_Child' mangled-name='PyOS_AfterFork_Child' filepath='./Modules/posixmodule.c' line='693' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyOS_AfterFork_Child'>
+    <function-decl name='PyOS_AfterFork_Child' mangled-name='PyOS_AfterFork_Child' filepath='./Modules/posixmodule.c' line='694' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyOS_AfterFork_Child'>
       <return type-id='type-id-3'/>
     </function-decl>
-    <function-decl name='PyOS_AfterFork' mangled-name='PyOS_AfterFork' filepath='./Modules/posixmodule.c' line='775' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyOS_AfterFork'>
+    <function-decl name='PyOS_AfterFork' mangled-name='PyOS_AfterFork' filepath='./Modules/posixmodule.c' line='776' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyOS_AfterFork'>
       <return type-id='type-id-3'/>
     </function-decl>
-    <function-decl name='_PyLong_FromGid' mangled-name='_PyLong_FromGid' filepath='./Modules/posixmodule.c' line='804' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyLong_FromGid'>
-      <parameter type-id='type-id-116' name='gid' filepath='./Modules/posixmodule.c' line='804' column='1'/>
+    <function-decl name='_PyLong_FromGid' mangled-name='_PyLong_FromGid' filepath='./Modules/posixmodule.c' line='805' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyLong_FromGid'>
+      <parameter type-id='type-id-116' name='gid' filepath='./Modules/posixmodule.c' line='805' column='1'/>
       <return type-id='type-id-6'/>
     </function-decl>
-    <function-decl name='_Py_Uid_Converter' mangled-name='_Py_Uid_Converter' filepath='./Modules/posixmodule.c' line='812' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_Uid_Converter'>
-      <parameter type-id='type-id-6' name='obj' filepath='./Modules/posixmodule.c' line='812' column='1'/>
-      <parameter type-id='type-id-168' name='p' filepath='./Modules/posixmodule.c' line='812' column='1'/>
+    <function-decl name='_Py_Uid_Converter' mangled-name='_Py_Uid_Converter' filepath='./Modules/posixmodule.c' line='813' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_Uid_Converter'>
+      <parameter type-id='type-id-6' name='obj' filepath='./Modules/posixmodule.c' line='813' column='1'/>
+      <parameter type-id='type-id-168' name='p' filepath='./Modules/posixmodule.c' line='813' column='1'/>
       <return type-id='type-id-5'/>
     </function-decl>
-    <function-decl name='_Py_Gid_Converter' mangled-name='_Py_Gid_Converter' filepath='./Modules/posixmodule.c' line='918' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_Gid_Converter'>
-      <parameter type-id='type-id-6' name='obj' filepath='./Modules/posixmodule.c' line='918' column='1'/>
-      <parameter type-id='type-id-156' name='p' filepath='./Modules/posixmodule.c' line='918' column='1'/>
+    <function-decl name='_Py_Gid_Converter' mangled-name='_Py_Gid_Converter' filepath='./Modules/posixmodule.c' line='919' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_Gid_Converter'>
+      <parameter type-id='type-id-6' name='obj' filepath='./Modules/posixmodule.c' line='919' column='1'/>
+      <parameter type-id='type-id-156' name='p' filepath='./Modules/posixmodule.c' line='919' column='1'/>
       <return type-id='type-id-5'/>
     </function-decl>
     <function-decl name='opendir' filepath='/usr/include/dirent.h' line='134' column='1' visibility='default' binding='global' size-in-bits='64'>
@@ -3621,7 +3621,7 @@
     <function-decl name='_PyEval_SignalReceived' filepath='./Include/internal/pycore_ceval.h' line='48' column='1' visibility='default' binding='global' size-in-bits='64'>
       <return type-id='type-id-3'/>
     </function-decl>
-    <function-decl name='_PyRunRemoteDebugger' filepath='./Include/internal/pycore_ceval.h' line='353' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyRunRemoteDebugger' filepath='./Include/internal/pycore_ceval.h' line='363' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-31'/>
       <return type-id='type-id-5'/>
     </function-decl>
@@ -4006,68 +4006,68 @@
       <parameter type-id='type-id-6' name='o' filepath='./Python/sysmodule.c' line='1922' column='1'/>
       <return type-id='type-id-21'/>
     </function-decl>
-    <function-decl name='PyUnstable_PerfMapState_Init' mangled-name='PyUnstable_PerfMapState_Init' filepath='./Python/sysmodule.c' line='2660' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnstable_PerfMapState_Init'>
+    <function-decl name='PyUnstable_PerfMapState_Init' mangled-name='PyUnstable_PerfMapState_Init' filepath='./Python/sysmodule.c' line='2665' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnstable_PerfMapState_Init'>
       <return type-id='type-id-5'/>
     </function-decl>
-    <function-decl name='PyUnstable_WritePerfMapEntry' mangled-name='PyUnstable_WritePerfMapEntry' filepath='./Python/sysmodule.c' line='2691' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnstable_WritePerfMapEntry'>
-      <parameter type-id='type-id-35' name='code_addr' filepath='./Python/sysmodule.c' line='2692' column='1'/>
-      <parameter type-id='type-id-105' name='code_size' filepath='./Python/sysmodule.c' line='2693' column='1'/>
-      <parameter type-id='type-id-4' name='entry_name' filepath='./Python/sysmodule.c' line='2694' column='1'/>
+    <function-decl name='PyUnstable_WritePerfMapEntry' mangled-name='PyUnstable_WritePerfMapEntry' filepath='./Python/sysmodule.c' line='2696' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnstable_WritePerfMapEntry'>
+      <parameter type-id='type-id-35' name='code_addr' filepath='./Python/sysmodule.c' line='2697' column='1'/>
+      <parameter type-id='type-id-105' name='code_size' filepath='./Python/sysmodule.c' line='2698' column='1'/>
+      <parameter type-id='type-id-4' name='entry_name' filepath='./Python/sysmodule.c' line='2699' column='1'/>
       <return type-id='type-id-5'/>
     </function-decl>
-    <function-decl name='PyUnstable_PerfMapState_Fini' mangled-name='PyUnstable_PerfMapState_Fini' filepath='./Python/sysmodule.c' line='2711' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnstable_PerfMapState_Fini'>
+    <function-decl name='PyUnstable_PerfMapState_Fini' mangled-name='PyUnstable_PerfMapState_Fini' filepath='./Python/sysmodule.c' line='2716' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnstable_PerfMapState_Fini'>
       <return type-id='type-id-3'/>
     </function-decl>
-    <function-decl name='PyUnstable_CopyPerfMapFile' mangled-name='PyUnstable_CopyPerfMapFile' filepath='./Python/sysmodule.c' line='2726' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnstable_CopyPerfMapFile'>
-      <parameter type-id='type-id-4' name='parent_filename' filepath='./Python/sysmodule.c' line='2726' column='1'/>
+    <function-decl name='PyUnstable_CopyPerfMapFile' mangled-name='PyUnstable_CopyPerfMapFile' filepath='./Python/sysmodule.c' line='2731' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnstable_CopyPerfMapFile'>
+      <parameter type-id='type-id-4' name='parent_filename' filepath='./Python/sysmodule.c' line='2731' column='1'/>
       <return type-id='type-id-5'/>
     </function-decl>
-    <function-decl name='PySys_ResetWarnOptions' mangled-name='PySys_ResetWarnOptions' filepath='./Python/sysmodule.c' line='3035' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PySys_ResetWarnOptions'>
+    <function-decl name='PySys_ResetWarnOptions' mangled-name='PySys_ResetWarnOptions' filepath='./Python/sysmodule.c' line='3040' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PySys_ResetWarnOptions'>
       <return type-id='type-id-3'/>
     </function-decl>
-    <function-decl name='PySys_AddWarnOptionUnicode' mangled-name='PySys_AddWarnOptionUnicode' filepath='./Python/sysmodule.c' line='3072' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PySys_AddWarnOptionUnicode'>
-      <parameter type-id='type-id-6' name='option' filepath='./Python/sysmodule.c' line='3072' column='1'/>
+    <function-decl name='PySys_AddWarnOptionUnicode' mangled-name='PySys_AddWarnOptionUnicode' filepath='./Python/sysmodule.c' line='3077' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PySys_AddWarnOptionUnicode'>
+      <parameter type-id='type-id-6' name='option' filepath='./Python/sysmodule.c' line='3077' column='1'/>
       <return type-id='type-id-3'/>
     </function-decl>
-    <function-decl name='PySys_AddWarnOption' mangled-name='PySys_AddWarnOption' filepath='./Python/sysmodule.c' line='3085' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PySys_AddWarnOption'>
-      <parameter type-id='type-id-18' name='s' filepath='./Python/sysmodule.c' line='3085' column='1'/>
+    <function-decl name='PySys_AddWarnOption' mangled-name='PySys_AddWarnOption' filepath='./Python/sysmodule.c' line='3090' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PySys_AddWarnOption'>
+      <parameter type-id='type-id-18' name='s' filepath='./Python/sysmodule.c' line='3090' column='1'/>
       <return type-id='type-id-3'/>
     </function-decl>
-    <function-decl name='PySys_HasWarnOptions' mangled-name='PySys_HasWarnOptions' filepath='./Python/sysmodule.c' line='3105' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PySys_HasWarnOptions'>
+    <function-decl name='PySys_HasWarnOptions' mangled-name='PySys_HasWarnOptions' filepath='./Python/sysmodule.c' line='3110' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PySys_HasWarnOptions'>
       <return type-id='type-id-5'/>
     </function-decl>
-    <function-decl name='PySys_AddXOption' mangled-name='PySys_AddXOption' filepath='./Python/sysmodule.c' line='3195' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PySys_AddXOption'>
-      <parameter type-id='type-id-18' name='s' filepath='./Python/sysmodule.c' line='3195' column='1'/>
+    <function-decl name='PySys_AddXOption' mangled-name='PySys_AddXOption' filepath='./Python/sysmodule.c' line='3200' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PySys_AddXOption'>
+      <parameter type-id='type-id-18' name='s' filepath='./Python/sysmodule.c' line='3200' column='1'/>
       <return type-id='type-id-3'/>
     </function-decl>
-    <function-decl name='PySys_GetXOptions' mangled-name='PySys_GetXOptions' filepath='./Python/sysmodule.c' line='3209' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PySys_GetXOptions'>
+    <function-decl name='PySys_GetXOptions' mangled-name='PySys_GetXOptions' filepath='./Python/sysmodule.c' line='3214' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PySys_GetXOptions'>
       <return type-id='type-id-6'/>
     </function-decl>
-    <function-decl name='_Py_CreateMonitoringObject' filepath='./Python/sysmodule.c' line='3988' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_Py_CreateMonitoringObject' filepath='./Python/sysmodule.c' line='4005' column='1' visibility='default' binding='global' size-in-bits='64'>
       <return type-id='type-id-6'/>
     </function-decl>
-    <function-decl name='PySys_SetPath' mangled-name='PySys_SetPath' filepath='./Python/sysmodule.c' line='4189' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PySys_SetPath'>
-      <parameter type-id='type-id-18' name='path' filepath='./Python/sysmodule.c' line='4189' column='1'/>
+    <function-decl name='PySys_SetPath' mangled-name='PySys_SetPath' filepath='./Python/sysmodule.c' line='4206' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PySys_SetPath'>
+      <parameter type-id='type-id-18' name='path' filepath='./Python/sysmodule.c' line='4206' column='1'/>
       <return type-id='type-id-3'/>
     </function-decl>
-    <function-decl name='PySys_SetArgvEx' mangled-name='PySys_SetArgvEx' filepath='./Python/sysmodule.c' line='4221' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PySys_SetArgvEx'>
-      <parameter type-id='type-id-5' name='argc' filepath='./Python/sysmodule.c' line='4221' column='1'/>
-      <parameter type-id='type-id-244' name='argv' filepath='./Python/sysmodule.c' line='4221' column='1'/>
-      <parameter type-id='type-id-5' name='updatepath' filepath='./Python/sysmodule.c' line='4221' column='1'/>
+    <function-decl name='PySys_SetArgvEx' mangled-name='PySys_SetArgvEx' filepath='./Python/sysmodule.c' line='4238' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PySys_SetArgvEx'>
+      <parameter type-id='type-id-5' name='argc' filepath='./Python/sysmodule.c' line='4238' column='1'/>
+      <parameter type-id='type-id-244' name='argv' filepath='./Python/sysmodule.c' line='4238' column='1'/>
+      <parameter type-id='type-id-5' name='updatepath' filepath='./Python/sysmodule.c' line='4238' column='1'/>
       <return type-id='type-id-3'/>
     </function-decl>
-    <function-decl name='PySys_SetArgv' mangled-name='PySys_SetArgv' filepath='./Python/sysmodule.c' line='4268' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PySys_SetArgv'>
-      <parameter type-id='type-id-5' name='argc' filepath='./Python/sysmodule.c' line='4268' column='1'/>
-      <parameter type-id='type-id-244' name='argv' filepath='./Python/sysmodule.c' line='4268' column='1'/>
+    <function-decl name='PySys_SetArgv' mangled-name='PySys_SetArgv' filepath='./Python/sysmodule.c' line='4285' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PySys_SetArgv'>
+      <parameter type-id='type-id-5' name='argc' filepath='./Python/sysmodule.c' line='4285' column='1'/>
+      <parameter type-id='type-id-244' name='argv' filepath='./Python/sysmodule.c' line='4285' column='1'/>
       <return type-id='type-id-3'/>
     </function-decl>
-    <function-decl name='PySys_WriteStdout' mangled-name='PySys_WriteStdout' filepath='./Python/sysmodule.c' line='4364' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PySys_WriteStdout'>
-      <parameter type-id='type-id-4' name='format' filepath='./Python/sysmodule.c' line='4364' column='1'/>
+    <function-decl name='PySys_WriteStdout' mangled-name='PySys_WriteStdout' filepath='./Python/sysmodule.c' line='4381' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PySys_WriteStdout'>
+      <parameter type-id='type-id-4' name='format' filepath='./Python/sysmodule.c' line='4381' column='1'/>
       <parameter is-variadic='yes'/>
       <return type-id='type-id-3'/>
     </function-decl>
-    <function-decl name='PySys_FormatStdout' mangled-name='PySys_FormatStdout' filepath='./Python/sysmodule.c' line='4407' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PySys_FormatStdout'>
-      <parameter type-id='type-id-4' name='format' filepath='./Python/sysmodule.c' line='4407' column='1'/>
+    <function-decl name='PySys_FormatStdout' mangled-name='PySys_FormatStdout' filepath='./Python/sysmodule.c' line='4424' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PySys_FormatStdout'>
+      <parameter type-id='type-id-4' name='format' filepath='./Python/sysmodule.c' line='4424' column='1'/>
       <parameter is-variadic='yes'/>
       <return type-id='type-id-3'/>
     </function-decl>
@@ -6492,55 +6492,55 @@
       <parameter type-id='type-id-345' name='code' filepath='Objects/codeobject.c' line='1687' column='1'/>
       <return type-id='type-id-6'/>
     </function-decl>
-    <function-decl name='_PyCode_GetVarCounts' mangled-name='_PyCode_GetVarCounts' filepath='Objects/codeobject.c' line='1791' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyCode_GetVarCounts'>
-      <parameter type-id='type-id-345' name='co' filepath='Objects/codeobject.c' line='1791' column='1'/>
-      <parameter type-id='type-id-356' name='counts' filepath='Objects/codeobject.c' line='1791' column='1'/>
+    <function-decl name='_PyCode_GetVarCounts' mangled-name='_PyCode_GetVarCounts' filepath='Objects/codeobject.c' line='1807' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyCode_GetVarCounts'>
+      <parameter type-id='type-id-345' name='co' filepath='Objects/codeobject.c' line='1807' column='1'/>
+      <parameter type-id='type-id-356' name='counts' filepath='Objects/codeobject.c' line='1807' column='1'/>
       <return type-id='type-id-3'/>
     </function-decl>
-    <function-decl name='_PyCode_SetUnboundVarCounts' mangled-name='_PyCode_SetUnboundVarCounts' filepath='Objects/codeobject.c' line='1898' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyCode_SetUnboundVarCounts'>
-      <parameter type-id='type-id-31' name='tstate' filepath='Objects/codeobject.c' line='1898' column='1'/>
-      <parameter type-id='type-id-345' name='co' filepath='Objects/codeobject.c' line='1899' column='1'/>
-      <parameter type-id='type-id-356' name='counts' filepath='Objects/codeobject.c' line='1899' column='1'/>
-      <parameter type-id='type-id-6' name='globalnames' filepath='Objects/codeobject.c' line='1900' column='1'/>
-      <parameter type-id='type-id-6' name='attrnames' filepath='Objects/codeobject.c' line='1900' column='1'/>
-      <parameter type-id='type-id-6' name='globalsns' filepath='Objects/codeobject.c' line='1901' column='1'/>
-      <parameter type-id='type-id-6' name='builtinsns' filepath='Objects/codeobject.c' line='1901' column='1'/>
+    <function-decl name='_PyCode_SetUnboundVarCounts' mangled-name='_PyCode_SetUnboundVarCounts' filepath='Objects/codeobject.c' line='1914' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyCode_SetUnboundVarCounts'>
+      <parameter type-id='type-id-31' name='tstate' filepath='Objects/codeobject.c' line='1914' column='1'/>
+      <parameter type-id='type-id-345' name='co' filepath='Objects/codeobject.c' line='1915' column='1'/>
+      <parameter type-id='type-id-356' name='counts' filepath='Objects/codeobject.c' line='1915' column='1'/>
+      <parameter type-id='type-id-6' name='globalnames' filepath='Objects/codeobject.c' line='1916' column='1'/>
+      <parameter type-id='type-id-6' name='attrnames' filepath='Objects/codeobject.c' line='1916' column='1'/>
+      <parameter type-id='type-id-6' name='globalsns' filepath='Objects/codeobject.c' line='1917' column='1'/>
+      <parameter type-id='type-id-6' name='builtinsns' filepath='Objects/codeobject.c' line='1917' column='1'/>
       <return type-id='type-id-5'/>
     </function-decl>
-    <function-decl name='_PyCode_CheckNoInternalState' mangled-name='_PyCode_CheckNoInternalState' filepath='Objects/codeobject.c' line='1959' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyCode_CheckNoInternalState'>
-      <parameter type-id='type-id-345' name='co' filepath='Objects/codeobject.c' line='1959' column='1'/>
-      <parameter type-id='type-id-266' name='p_errmsg' filepath='Objects/codeobject.c' line='1959' column='1'/>
-      <return type-id='type-id-5'/>
-    </function-decl>
-    <function-decl name='_PyCode_CheckNoExternalState' mangled-name='_PyCode_CheckNoExternalState' filepath='Objects/codeobject.c' line='1978' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyCode_CheckNoExternalState'>
-      <parameter type-id='type-id-345' name='co' filepath='Objects/codeobject.c' line='1978' column='1'/>
-      <parameter type-id='type-id-356' name='counts' filepath='Objects/codeobject.c' line='1978' column='1'/>
+    <function-decl name='_PyCode_CheckNoInternalState' mangled-name='_PyCode_CheckNoInternalState' filepath='Objects/codeobject.c' line='1979' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyCode_CheckNoInternalState'>
+      <parameter type-id='type-id-345' name='co' filepath='Objects/codeobject.c' line='1979' column='1'/>
       <parameter type-id='type-id-266' name='p_errmsg' filepath='Objects/codeobject.c' line='1979' column='1'/>
       <return type-id='type-id-5'/>
     </function-decl>
-    <function-decl name='_PyCode_VerifyStateless' mangled-name='_PyCode_VerifyStateless' filepath='Objects/codeobject.c' line='2007' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyCode_VerifyStateless'>
-      <parameter type-id='type-id-31' name='tstate' filepath='Objects/codeobject.c' line='2007' column='1'/>
-      <parameter type-id='type-id-345' name='co' filepath='Objects/codeobject.c' line='2008' column='1'/>
-      <parameter type-id='type-id-6' name='globalnames' filepath='Objects/codeobject.c' line='2008' column='1'/>
-      <parameter type-id='type-id-6' name='globalsns' filepath='Objects/codeobject.c' line='2009' column='1'/>
-      <parameter type-id='type-id-6' name='builtinsns' filepath='Objects/codeobject.c' line='2009' column='1'/>
+    <function-decl name='_PyCode_CheckNoExternalState' mangled-name='_PyCode_CheckNoExternalState' filepath='Objects/codeobject.c' line='1998' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyCode_CheckNoExternalState'>
+      <parameter type-id='type-id-345' name='co' filepath='Objects/codeobject.c' line='1998' column='1'/>
+      <parameter type-id='type-id-356' name='counts' filepath='Objects/codeobject.c' line='1998' column='1'/>
+      <parameter type-id='type-id-266' name='p_errmsg' filepath='Objects/codeobject.c' line='1999' column='1'/>
       <return type-id='type-id-5'/>
     </function-decl>
-    <function-decl name='_PyCode_CheckPureFunction' mangled-name='_PyCode_CheckPureFunction' filepath='Objects/codeobject.c' line='2041' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyCode_CheckPureFunction'>
-      <parameter type-id='type-id-345' name='co' filepath='Objects/codeobject.c' line='2041' column='1'/>
-      <parameter type-id='type-id-266' name='p_errmsg' filepath='Objects/codeobject.c' line='2041' column='1'/>
+    <function-decl name='_PyCode_VerifyStateless' mangled-name='_PyCode_VerifyStateless' filepath='Objects/codeobject.c' line='2026' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyCode_VerifyStateless'>
+      <parameter type-id='type-id-31' name='tstate' filepath='Objects/codeobject.c' line='2026' column='1'/>
+      <parameter type-id='type-id-345' name='co' filepath='Objects/codeobject.c' line='2027' column='1'/>
+      <parameter type-id='type-id-6' name='globalnames' filepath='Objects/codeobject.c' line='2027' column='1'/>
+      <parameter type-id='type-id-6' name='globalsns' filepath='Objects/codeobject.c' line='2028' column='1'/>
+      <parameter type-id='type-id-6' name='builtinsns' filepath='Objects/codeobject.c' line='2028' column='1'/>
       <return type-id='type-id-5'/>
     </function-decl>
-    <function-decl name='_PyCode_ReturnsOnlyNone' mangled-name='_PyCode_ReturnsOnlyNone' filepath='Objects/codeobject.c' line='2134' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyCode_ReturnsOnlyNone'>
-      <parameter type-id='type-id-345' name='co' filepath='Objects/codeobject.c' line='2134' column='1'/>
+    <function-decl name='_PyCode_CheckPureFunction' mangled-name='_PyCode_CheckPureFunction' filepath='Objects/codeobject.c' line='2060' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyCode_CheckPureFunction'>
+      <parameter type-id='type-id-345' name='co' filepath='Objects/codeobject.c' line='2060' column='1'/>
+      <parameter type-id='type-id-266' name='p_errmsg' filepath='Objects/codeobject.c' line='2060' column='1'/>
       <return type-id='type-id-5'/>
     </function-decl>
-    <function-decl name='PyCode_GetCode' mangled-name='PyCode_GetCode' filepath='Objects/codeobject.c' line='2213' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyCode_GetCode'>
-      <parameter type-id='type-id-345' name='co' filepath='Objects/codeobject.c' line='2213' column='1'/>
+    <function-decl name='_PyCode_ReturnsOnlyNone' mangled-name='_PyCode_ReturnsOnlyNone' filepath='Objects/codeobject.c' line='2153' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyCode_ReturnsOnlyNone'>
+      <parameter type-id='type-id-345' name='co' filepath='Objects/codeobject.c' line='2153' column='1'/>
+      <return type-id='type-id-5'/>
+    </function-decl>
+    <function-decl name='PyCode_GetCode' mangled-name='PyCode_GetCode' filepath='Objects/codeobject.c' line='2232' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyCode_GetCode'>
+      <parameter type-id='type-id-345' name='co' filepath='Objects/codeobject.c' line='2232' column='1'/>
       <return type-id='type-id-6'/>
     </function-decl>
-    <function-decl name='_PyCode_ConstantKey' mangled-name='_PyCode_ConstantKey' filepath='Objects/codeobject.c' line='2912' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyCode_ConstantKey'>
-      <parameter type-id='type-id-6' name='op' filepath='Objects/codeobject.c' line='2912' column='1'/>
+    <function-decl name='_PyCode_ConstantKey' mangled-name='_PyCode_ConstantKey' filepath='Objects/codeobject.c' line='2931' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyCode_ConstantKey'>
+      <parameter type-id='type-id-6' name='op' filepath='Objects/codeobject.c' line='2931' column='1'/>
       <return type-id='type-id-6'/>
     </function-decl>
     <pointer-type-def type-id='type-id-364' size-in-bits='64' id='type-id-345'/>
@@ -9256,8 +9256,8 @@
       <parameter type-id='type-id-6'/>
       <return type-id='type-id-6'/>
     </function-decl>
-    <function-decl name='_PyNamespace_New' mangled-name='_PyNamespace_New' filepath='Objects/namespaceobject.c' line='308' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyNamespace_New'>
-      <parameter type-id='type-id-6' name='kwds' filepath='Objects/namespaceobject.c' line='308' column='1'/>
+    <function-decl name='_PyNamespace_New' mangled-name='_PyNamespace_New' filepath='Objects/namespaceobject.c' line='309' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyNamespace_New'>
+      <parameter type-id='type-id-6' name='kwds' filepath='Objects/namespaceobject.c' line='309' column='1'/>
       <return type-id='type-id-6'/>
     </function-decl>
   </abi-instr>
@@ -9302,7 +9302,11 @@
       <parameter type-id='type-id-6'/>
       <return type-id='type-id-5'/>
     </function-decl>
-    <function-decl name='_PyEval_GetFrameLocals' filepath='./Include/internal/pycore_ceval.h' line='248' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyEval_GetGlobalsFromRunningMain' filepath='./Include/internal/pycore_ceval.h' line='242' column='1' visibility='default' binding='global' size-in-bits='64'>
+      <parameter type-id='type-id-31'/>
+      <return type-id='type-id-6'/>
+    </function-decl>
+    <function-decl name='_PyEval_GetFrameLocals' filepath='./Include/internal/pycore_ceval.h' line='258' column='1' visibility='default' binding='global' size-in-bits='64'>
       <return type-id='type-id-6'/>
     </function-decl>
     <function-decl name='_PyDict_DebugMallocStats' filepath='./Include/internal/pycore_dict.h' line='59' column='1' visibility='default' binding='global' size-in-bits='64'>
@@ -9549,104 +9553,104 @@
       <parameter type-id='type-id-6' name='v' filepath='Objects/object.c' line='1949' column='1'/>
       <return type-id='type-id-5'/>
     </function-decl>
-    <function-decl name='_Py_SetImmortalUntracked' mangled-name='_Py_SetImmortalUntracked' filepath='Objects/object.c' line='2526' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_SetImmortalUntracked'>
-      <parameter type-id='type-id-6' name='op' filepath='Objects/object.c' line='2526' column='1'/>
+    <function-decl name='_Py_SetImmortalUntracked' mangled-name='_Py_SetImmortalUntracked' filepath='Objects/object.c' line='2542' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_SetImmortalUntracked'>
+      <parameter type-id='type-id-6' name='op' filepath='Objects/object.c' line='2542' column='1'/>
       <return type-id='type-id-3'/>
     </function-decl>
-    <function-decl name='PyUnstable_Object_EnableDeferredRefcount' mangled-name='PyUnstable_Object_EnableDeferredRefcount' filepath='Objects/object.c' line='2574' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnstable_Object_EnableDeferredRefcount'>
-      <parameter type-id='type-id-6' name='op' filepath='Objects/object.c' line='2574' column='1'/>
+    <function-decl name='PyUnstable_Object_EnableDeferredRefcount' mangled-name='PyUnstable_Object_EnableDeferredRefcount' filepath='Objects/object.c' line='2590' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnstable_Object_EnableDeferredRefcount'>
+      <parameter type-id='type-id-6' name='op' filepath='Objects/object.c' line='2590' column='1'/>
       <return type-id='type-id-5'/>
     </function-decl>
-    <function-decl name='PyUnstable_Object_IsUniqueReferencedTemporary' mangled-name='PyUnstable_Object_IsUniqueReferencedTemporary' filepath='Objects/object.c' line='2603' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnstable_Object_IsUniqueReferencedTemporary'>
-      <parameter type-id='type-id-6' name='op' filepath='Objects/object.c' line='2603' column='1'/>
+    <function-decl name='PyUnstable_Object_IsUniqueReferencedTemporary' mangled-name='PyUnstable_Object_IsUniqueReferencedTemporary' filepath='Objects/object.c' line='2619' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnstable_Object_IsUniqueReferencedTemporary'>
+      <parameter type-id='type-id-6' name='op' filepath='Objects/object.c' line='2619' column='1'/>
       <return type-id='type-id-5'/>
     </function-decl>
-    <function-decl name='PyUnstable_TryIncRef' mangled-name='PyUnstable_TryIncRef' filepath='Objects/object.c' line='2626' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnstable_TryIncRef'>
-      <parameter type-id='type-id-6' name='op' filepath='Objects/object.c' line='2626' column='1'/>
+    <function-decl name='PyUnstable_TryIncRef' mangled-name='PyUnstable_TryIncRef' filepath='Objects/object.c' line='2642' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnstable_TryIncRef'>
+      <parameter type-id='type-id-6' name='op' filepath='Objects/object.c' line='2642' column='1'/>
       <return type-id='type-id-5'/>
     </function-decl>
-    <function-decl name='PyUnstable_EnableTryIncRef' mangled-name='PyUnstable_EnableTryIncRef' filepath='Objects/object.c' line='2632' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnstable_EnableTryIncRef'>
-      <parameter type-id='type-id-6' name='op' filepath='Objects/object.c' line='2632' column='1'/>
-      <return type-id='type-id-3'/>
-    </function-decl>
-    <function-decl name='_Py_ResurrectReference' mangled-name='_Py_ResurrectReference' filepath='Objects/object.c' line='2640' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_ResurrectReference'>
-      <parameter type-id='type-id-6' name='op' filepath='Objects/object.c' line='2640' column='1'/>
-      <return type-id='type-id-3'/>
-    </function-decl>
-    <function-decl name='_Py_ForgetReference' mangled-name='_Py_ForgetReference' filepath='Objects/object.c' line='2648' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_ForgetReference'>
+    <function-decl name='PyUnstable_EnableTryIncRef' mangled-name='PyUnstable_EnableTryIncRef' filepath='Objects/object.c' line='2648' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnstable_EnableTryIncRef'>
       <parameter type-id='type-id-6' name='op' filepath='Objects/object.c' line='2648' column='1'/>
       <return type-id='type-id-3'/>
     </function-decl>
-    <function-decl name='_PyTrash_thread_deposit_object' mangled-name='_PyTrash_thread_deposit_object' filepath='Objects/object.c' line='2951' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyTrash_thread_deposit_object'>
-      <parameter type-id='type-id-31' name='tstate' filepath='Objects/object.c' line='2951' column='1'/>
-      <parameter type-id='type-id-6' name='op' filepath='Objects/object.c' line='2951' column='1'/>
+    <function-decl name='_Py_ResurrectReference' mangled-name='_Py_ResurrectReference' filepath='Objects/object.c' line='2656' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_ResurrectReference'>
+      <parameter type-id='type-id-6' name='op' filepath='Objects/object.c' line='2656' column='1'/>
       <return type-id='type-id-3'/>
     </function-decl>
-    <function-decl name='_PyTrash_thread_destroy_chain' mangled-name='_PyTrash_thread_destroy_chain' filepath='Objects/object.c' line='2968' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyTrash_thread_destroy_chain'>
-      <parameter type-id='type-id-31' name='tstate' filepath='Objects/object.c' line='2968' column='1'/>
+    <function-decl name='_Py_ForgetReference' mangled-name='_Py_ForgetReference' filepath='Objects/object.c' line='2664' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_ForgetReference'>
+      <parameter type-id='type-id-6' name='op' filepath='Objects/object.c' line='2664' column='1'/>
       <return type-id='type-id-3'/>
     </function-decl>
-    <function-decl name='PyObject_GET_WEAKREFS_LISTPTR' mangled-name='PyObject_GET_WEAKREFS_LISTPTR' filepath='Objects/object.c' line='3115' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyObject_GET_WEAKREFS_LISTPTR'>
-      <parameter type-id='type-id-6' name='op' filepath='Objects/object.c' line='3115' column='1'/>
+    <function-decl name='_PyTrash_thread_deposit_object' mangled-name='_PyTrash_thread_deposit_object' filepath='Objects/object.c' line='2967' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyTrash_thread_deposit_object'>
+      <parameter type-id='type-id-31' name='tstate' filepath='Objects/object.c' line='2967' column='1'/>
+      <parameter type-id='type-id-6' name='op' filepath='Objects/object.c' line='2967' column='1'/>
+      <return type-id='type-id-3'/>
+    </function-decl>
+    <function-decl name='_PyTrash_thread_destroy_chain' mangled-name='_PyTrash_thread_destroy_chain' filepath='Objects/object.c' line='2984' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyTrash_thread_destroy_chain'>
+      <parameter type-id='type-id-31' name='tstate' filepath='Objects/object.c' line='2984' column='1'/>
+      <return type-id='type-id-3'/>
+    </function-decl>
+    <function-decl name='PyObject_GET_WEAKREFS_LISTPTR' mangled-name='PyObject_GET_WEAKREFS_LISTPTR' filepath='Objects/object.c' line='3131' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyObject_GET_WEAKREFS_LISTPTR'>
+      <parameter type-id='type-id-6' name='op' filepath='Objects/object.c' line='3131' column='1'/>
       <return type-id='type-id-241'/>
     </function-decl>
-    <function-decl name='Py_NewRef' mangled-name='Py_NewRef' filepath='Objects/object.c' line='3126' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='Py_NewRef'>
-      <parameter type-id='type-id-6' name='obj' filepath='Objects/object.c' line='3126' column='1'/>
+    <function-decl name='Py_NewRef' mangled-name='Py_NewRef' filepath='Objects/object.c' line='3142' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='Py_NewRef'>
+      <parameter type-id='type-id-6' name='obj' filepath='Objects/object.c' line='3142' column='1'/>
       <return type-id='type-id-6'/>
     </function-decl>
-    <function-decl name='Py_XNewRef' mangled-name='Py_XNewRef' filepath='Objects/object.c' line='3132' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='Py_XNewRef'>
-      <parameter type-id='type-id-6' name='obj' filepath='Objects/object.c' line='3132' column='1'/>
+    <function-decl name='Py_XNewRef' mangled-name='Py_XNewRef' filepath='Objects/object.c' line='3148' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='Py_XNewRef'>
+      <parameter type-id='type-id-6' name='obj' filepath='Objects/object.c' line='3148' column='1'/>
       <return type-id='type-id-6'/>
     </function-decl>
-    <function-decl name='Py_Is' mangled-name='Py_Is' filepath='Objects/object.c' line='3144' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='Py_Is'>
-      <parameter type-id='type-id-6' name='x' filepath='Objects/object.c' line='3144' column='1'/>
-      <parameter type-id='type-id-6' name='y' filepath='Objects/object.c' line='3144' column='1'/>
+    <function-decl name='Py_Is' mangled-name='Py_Is' filepath='Objects/object.c' line='3160' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='Py_Is'>
+      <parameter type-id='type-id-6' name='x' filepath='Objects/object.c' line='3160' column='1'/>
+      <parameter type-id='type-id-6' name='y' filepath='Objects/object.c' line='3160' column='1'/>
       <return type-id='type-id-5'/>
     </function-decl>
-    <function-decl name='Py_IsNone' mangled-name='Py_IsNone' filepath='Objects/object.c' line='3149' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='Py_IsNone'>
-      <parameter type-id='type-id-6' name='x' filepath='Objects/object.c' line='3149' column='1'/>
+    <function-decl name='Py_IsNone' mangled-name='Py_IsNone' filepath='Objects/object.c' line='3165' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='Py_IsNone'>
+      <parameter type-id='type-id-6' name='x' filepath='Objects/object.c' line='3165' column='1'/>
       <return type-id='type-id-5'/>
     </function-decl>
-    <function-decl name='Py_IsTrue' mangled-name='Py_IsTrue' filepath='Objects/object.c' line='3154' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='Py_IsTrue'>
-      <parameter type-id='type-id-6' name='x' filepath='Objects/object.c' line='3154' column='1'/>
+    <function-decl name='Py_IsTrue' mangled-name='Py_IsTrue' filepath='Objects/object.c' line='3170' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='Py_IsTrue'>
+      <parameter type-id='type-id-6' name='x' filepath='Objects/object.c' line='3170' column='1'/>
       <return type-id='type-id-5'/>
     </function-decl>
-    <function-decl name='Py_IsFalse' mangled-name='Py_IsFalse' filepath='Objects/object.c' line='3159' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='Py_IsFalse'>
-      <parameter type-id='type-id-6' name='x' filepath='Objects/object.c' line='3159' column='1'/>
+    <function-decl name='Py_IsFalse' mangled-name='Py_IsFalse' filepath='Objects/object.c' line='3175' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='Py_IsFalse'>
+      <parameter type-id='type-id-6' name='x' filepath='Objects/object.c' line='3175' column='1'/>
       <return type-id='type-id-5'/>
     </function-decl>
-    <function-decl name='_Py_SetRefcnt' mangled-name='_Py_SetRefcnt' filepath='Objects/object.c' line='3167' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_SetRefcnt'>
-      <parameter type-id='type-id-6' name='ob' filepath='Objects/object.c' line='3167' column='1'/>
-      <parameter type-id='type-id-7' name='refcnt' filepath='Objects/object.c' line='3167' column='1'/>
+    <function-decl name='_Py_SetRefcnt' mangled-name='_Py_SetRefcnt' filepath='Objects/object.c' line='3183' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_SetRefcnt'>
+      <parameter type-id='type-id-6' name='ob' filepath='Objects/object.c' line='3183' column='1'/>
+      <parameter type-id='type-id-7' name='refcnt' filepath='Objects/object.c' line='3183' column='1'/>
       <return type-id='type-id-3'/>
     </function-decl>
-    <function-decl name='PyRefTracer_SetTracer' mangled-name='PyRefTracer_SetTracer' filepath='Objects/object.c' line='3172' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyRefTracer_SetTracer'>
-      <parameter type-id='type-id-487' name='tracer' filepath='Objects/object.c' line='3172' column='1'/>
-      <parameter type-id='type-id-35' name='data' filepath='Objects/object.c' line='3172' column='1'/>
+    <function-decl name='PyRefTracer_SetTracer' mangled-name='PyRefTracer_SetTracer' filepath='Objects/object.c' line='3188' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyRefTracer_SetTracer'>
+      <parameter type-id='type-id-487' name='tracer' filepath='Objects/object.c' line='3188' column='1'/>
+      <parameter type-id='type-id-35' name='data' filepath='Objects/object.c' line='3188' column='1'/>
       <return type-id='type-id-5'/>
     </function-decl>
-    <function-decl name='PyRefTracer_GetTracer' mangled-name='PyRefTracer_GetTracer' filepath='Objects/object.c' line='3179' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyRefTracer_GetTracer'>
-      <parameter type-id='type-id-267' name='data' filepath='Objects/object.c' line='3179' column='1'/>
+    <function-decl name='PyRefTracer_GetTracer' mangled-name='PyRefTracer_GetTracer' filepath='Objects/object.c' line='3195' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyRefTracer_GetTracer'>
+      <parameter type-id='type-id-267' name='data' filepath='Objects/object.c' line='3195' column='1'/>
       <return type-id='type-id-487'/>
     </function-decl>
-    <function-decl name='Py_GetConstantBorrowed' mangled-name='Py_GetConstantBorrowed' filepath='Objects/object.c' line='3232' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='Py_GetConstantBorrowed'>
-      <parameter type-id='type-id-105' name='constant_id' filepath='Objects/object.c' line='3232' column='1'/>
+    <function-decl name='Py_GetConstantBorrowed' mangled-name='Py_GetConstantBorrowed' filepath='Objects/object.c' line='3248' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='Py_GetConstantBorrowed'>
+      <parameter type-id='type-id-105' name='constant_id' filepath='Objects/object.c' line='3248' column='1'/>
       <return type-id='type-id-6'/>
     </function-decl>
-    <function-decl name='Py_TYPE' mangled-name='Py_TYPE' filepath='Objects/object.c' line='3242' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='Py_TYPE'>
-      <parameter type-id='type-id-6' name='ob' filepath='Objects/object.c' line='3242' column='1'/>
+    <function-decl name='Py_TYPE' mangled-name='Py_TYPE' filepath='Objects/object.c' line='3258' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='Py_TYPE'>
+      <parameter type-id='type-id-6' name='ob' filepath='Objects/object.c' line='3258' column='1'/>
       <return type-id='type-id-1'/>
     </function-decl>
-    <function-decl name='Py_REFCNT' mangled-name='Py_REFCNT' filepath='Objects/object.c' line='3251' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='Py_REFCNT'>
-      <parameter type-id='type-id-6' name='ob' filepath='Objects/object.c' line='3251' column='1'/>
+    <function-decl name='Py_REFCNT' mangled-name='Py_REFCNT' filepath='Objects/object.c' line='3267' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='Py_REFCNT'>
+      <parameter type-id='type-id-6' name='ob' filepath='Objects/object.c' line='3267' column='1'/>
       <return type-id='type-id-7'/>
     </function-decl>
-    <function-decl name='PyUnstable_IsImmortal' mangled-name='PyUnstable_IsImmortal' filepath='Objects/object.c' line='3257' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnstable_IsImmortal'>
-      <parameter type-id='type-id-6' name='op' filepath='Objects/object.c' line='3257' column='1'/>
+    <function-decl name='PyUnstable_IsImmortal' mangled-name='PyUnstable_IsImmortal' filepath='Objects/object.c' line='3273' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnstable_IsImmortal'>
+      <parameter type-id='type-id-6' name='op' filepath='Objects/object.c' line='3273' column='1'/>
       <return type-id='type-id-5'/>
     </function-decl>
-    <function-decl name='PyUnstable_Object_IsUniquelyReferenced' mangled-name='PyUnstable_Object_IsUniquelyReferenced' filepath='Objects/object.c' line='3266' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnstable_Object_IsUniquelyReferenced'>
-      <parameter type-id='type-id-6' name='op' filepath='Objects/object.c' line='3266' column='1'/>
+    <function-decl name='PyUnstable_Object_IsUniquelyReferenced' mangled-name='PyUnstable_Object_IsUniquelyReferenced' filepath='Objects/object.c' line='3282' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnstable_Object_IsUniquelyReferenced'>
+      <parameter type-id='type-id-6' name='op' filepath='Objects/object.c' line='3282' column='1'/>
       <return type-id='type-id-5'/>
     </function-decl>
   </abi-instr>
@@ -15778,7 +15782,7 @@
     </class-decl>
     <typedef-decl name='PyMemAllocatorEx' type-id='type-id-1037' filepath='./Include/cpython/pymem.h' line='48' column='1' id='type-id-563'/>
     <typedef-decl name='Py_tracefunc' type-id='type-id-1041' filepath='./Include/cpython/pystate.h' line='14' column='1' id='type-id-1042'/>
-    <class-decl name='_remote_debugger_support' size-in-bits='4128' is-struct='yes' visibility='default' filepath='./Include/cpython/pystate.h' line='32' column='1' id='type-id-1043'>
+    <class-decl name='_PyRemoteDebuggerSupport' size-in-bits='4128' is-struct='yes' naming-typedef-id='type-id-1043' visibility='default' filepath='./Include/cpython/pystate.h' line='32' column='1' id='type-id-1044'>
       <data-member access='public' layout-offset-in-bits='0'>
         <var-decl name='debugger_pending_call' type-id='type-id-456' visibility='default' filepath='./Include/cpython/pystate.h' line='33' column='1'/>
       </data-member>
@@ -15786,7 +15790,7 @@
         <var-decl name='debugger_script_path' type-id='type-id-302' visibility='default' filepath='./Include/cpython/pystate.h' line='34' column='1'/>
       </data-member>
     </class-decl>
-    <typedef-decl name='_PyRemoteDebuggerSupport' type-id='type-id-1043' filepath='./Include/cpython/pystate.h' line='35' column='1' id='type-id-1044'/>
+    <typedef-decl name='_PyRemoteDebuggerSupport' type-id='type-id-1044' filepath='./Include/cpython/pystate.h' line='35' column='1' id='type-id-1043'/>
     <class-decl name='_err_stackitem' size-in-bits='128' is-struct='yes' visibility='default' filepath='./Include/cpython/pystate.h' line='37' column='1' id='type-id-1045'>
       <data-member access='public' layout-offset-in-bits='0'>
         <var-decl name='exc_value' type-id='type-id-6' visibility='default' filepath='./Include/cpython/pystate.h' line='51' column='1'/>
@@ -15936,7 +15940,7 @@
         <var-decl name='threading_local_sentinel' type-id='type-id-6' visibility='default' filepath='./Include/cpython/pystate.h' line='209' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='2432'>
-        <var-decl name='remote_debugger_support' type-id='type-id-1044' visibility='default' filepath='./Include/cpython/pystate.h' line='210' column='1'/>
+        <var-decl name='remote_debugger_support' type-id='type-id-1043' visibility='default' filepath='./Include/cpython/pystate.h' line='210' column='1'/>
       </data-member>
     </class-decl>
     <class-decl name='__anonymous_struct__31' size-in-bits='32' is-struct='yes' is-anonymous='yes' visibility='default' filepath='./Include/cpython/pystate.h' line='78' column='1' id='type-id-1051'>
@@ -25000,6 +25004,12 @@
       <parameter type-id='type-id-647'/>
       <return type-id='type-id-5'/>
     </function-decl>
+    <function-decl name='_PyEval_EnsureBuiltins' filepath='./Include/internal/pycore_ceval.h' line='243' column='1' visibility='default' binding='global' size-in-bits='64'>
+      <parameter type-id='type-id-31'/>
+      <parameter type-id='type-id-6'/>
+      <parameter type-id='type-id-241'/>
+      <return type-id='type-id-5'/>
+    </function-decl>
     <function-decl name='_PyAST_Compile' mangled-name='_PyAST_Compile' filepath='./Include/internal/pycore_compile.h' line='30' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyAST_Compile'>
       <parameter type-id='type-id-646'/>
       <parameter type-id='type-id-6'/>
@@ -25055,7 +25065,7 @@
       <parameter type-id='type-id-4'/>
       <return type-id='type-id-6'/>
     </function-decl>
-    <function-decl name='PyAnextAwaitable_New' filepath='Python/bltinmodule.c' line='1807' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='PyAnextAwaitable_New' filepath='Python/bltinmodule.c' line='1845' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-6'/>
       <parameter type-id='type-id-6'/>
       <return type-id='type-id-6'/>
@@ -25133,19 +25143,19 @@
     <array-type-def dimensions='1' type-id='type-id-1580' size-in-bits='infinite' id='type-id-1582'>
       <subrange length='infinite' id='type-id-230'/>
     </array-type-def>
-    <typedef-decl name='conversion_func' type-id='type-id-1391' filepath='./Include/internal/pycore_ceval.h' line='250' column='1' id='type-id-1583'/>
-    <class-decl name='_special_method' size-in-bits='192' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_ceval.h' line='255' column='1' id='type-id-1584'>
+    <typedef-decl name='conversion_func' type-id='type-id-1391' filepath='./Include/internal/pycore_ceval.h' line='260' column='1' id='type-id-1583'/>
+    <class-decl name='_special_method' size-in-bits='192' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_ceval.h' line='265' column='1' id='type-id-1584'>
       <data-member access='public' layout-offset-in-bits='0'>
-        <var-decl name='name' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_ceval.h' line='256' column='1'/>
+        <var-decl name='name' type-id='type-id-6' visibility='default' filepath='./Include/internal/pycore_ceval.h' line='266' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='64'>
-        <var-decl name='error' type-id='type-id-4' visibility='default' filepath='./Include/internal/pycore_ceval.h' line='257' column='1'/>
+        <var-decl name='error' type-id='type-id-4' visibility='default' filepath='./Include/internal/pycore_ceval.h' line='267' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='128'>
-        <var-decl name='error_suggestion' type-id='type-id-4' visibility='default' filepath='./Include/internal/pycore_ceval.h' line='258' column='1'/>
+        <var-decl name='error_suggestion' type-id='type-id-4' visibility='default' filepath='./Include/internal/pycore_ceval.h' line='268' column='1'/>
       </data-member>
     </class-decl>
-    <typedef-decl name='_Py_SpecialMethod' type-id='type-id-1584' filepath='./Include/internal/pycore_ceval.h' line='259' column='1' id='type-id-1585'/>
+    <typedef-decl name='_Py_SpecialMethod' type-id='type-id-1584' filepath='./Include/internal/pycore_ceval.h' line='269' column='1' id='type-id-1585'/>
     <typedef-decl name='pthread_t' type-id='type-id-2' filepath='/usr/include/x86_64-linux-gnu/bits/pthreadtypes.h' line='27' column='1' id='type-id-32'/>
     <union-decl name='pthread_attr_t' size-in-bits='448' visibility='default' filepath='/usr/include/x86_64-linux-gnu/bits/pthreadtypes.h' line='56' column='1' id='type-id-1586'>
       <data-member access='public'>
@@ -25173,6 +25183,14 @@
     <function-decl name='PyThreadState_Next' mangled-name='PyThreadState_Next' filepath='./Include/cpython/pystate.h' line='252' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyThreadState_Next'>
       <parameter type-id='type-id-31'/>
       <return type-id='type-id-31'/>
+    </function-decl>
+    <function-decl name='PyImport_ImportModuleLevel' mangled-name='PyImport_ImportModuleLevel' filepath='./Include/import.h' line='57' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyImport_ImportModuleLevel'>
+      <parameter type-id='type-id-4'/>
+      <parameter type-id='type-id-6'/>
+      <parameter type-id='type-id-6'/>
+      <parameter type-id='type-id-6'/>
+      <parameter type-id='type-id-5'/>
+      <return type-id='type-id-6'/>
     </function-decl>
     <function-decl name='_PyNumber_PowerNoMod' filepath='./Include/internal/pycore_abstract.h' line='19' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-6'/>
@@ -25216,15 +25234,15 @@
       <parameter type-id='type-id-6'/>
       <return type-id='type-id-5'/>
     </function-decl>
-    <function-decl name='_Py_HandlePending' mangled-name='_Py_HandlePending' filepath='./Include/internal/pycore_ceval.h' line='246' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_HandlePending'>
+    <function-decl name='_Py_HandlePending' mangled-name='_Py_HandlePending' filepath='./Include/internal/pycore_ceval.h' line='256' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_HandlePending'>
       <parameter type-id='type-id-31'/>
       <return type-id='type-id-5'/>
     </function-decl>
-    <var-decl name='_PyEval_BinaryOps' type-id='type-id-1576' mangled-name='_PyEval_BinaryOps' visibility='default' filepath='./Include/internal/pycore_ceval.h' line='252' column='1' elf-symbol-id='_PyEval_BinaryOps'/>
-    <var-decl name='_PyEval_ConversionFuncs' type-id='type-id-1579' mangled-name='_PyEval_ConversionFuncs' visibility='default' filepath='./Include/internal/pycore_ceval.h' line='253' column='1' elf-symbol-id='_PyEval_ConversionFuncs'/>
-    <var-decl name='_Py_SpecialMethods' type-id='type-id-1572' mangled-name='_Py_SpecialMethods' visibility='default' filepath='./Include/internal/pycore_ceval.h' line='261' column='1' elf-symbol-id='_Py_SpecialMethods'/>
-    <var-decl name='_Py_FunctionAttributeOffsets' type-id='type-id-1582' mangled-name='_Py_FunctionAttributeOffsets' visibility='default' filepath='./Include/internal/pycore_ceval.h' line='262' column='1' elf-symbol-id='_Py_FunctionAttributeOffsets'/>
-    <function-decl name='_PyFloat_FromDouble_ConsumeInputs' filepath='./Include/internal/pycore_ceval.h' line='337' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <var-decl name='_PyEval_BinaryOps' type-id='type-id-1576' mangled-name='_PyEval_BinaryOps' visibility='default' filepath='./Include/internal/pycore_ceval.h' line='262' column='1' elf-symbol-id='_PyEval_BinaryOps'/>
+    <var-decl name='_PyEval_ConversionFuncs' type-id='type-id-1579' mangled-name='_PyEval_ConversionFuncs' visibility='default' filepath='./Include/internal/pycore_ceval.h' line='263' column='1' elf-symbol-id='_PyEval_ConversionFuncs'/>
+    <var-decl name='_Py_SpecialMethods' type-id='type-id-1572' mangled-name='_Py_SpecialMethods' visibility='default' filepath='./Include/internal/pycore_ceval.h' line='271' column='1' elf-symbol-id='_Py_SpecialMethods'/>
+    <var-decl name='_Py_FunctionAttributeOffsets' type-id='type-id-1582' mangled-name='_Py_FunctionAttributeOffsets' visibility='default' filepath='./Include/internal/pycore_ceval.h' line='272' column='1' elf-symbol-id='_Py_FunctionAttributeOffsets'/>
+    <function-decl name='_PyFloat_FromDouble_ConsumeInputs' filepath='./Include/internal/pycore_ceval.h' line='347' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-433'/>
       <parameter type-id='type-id-433'/>
       <parameter type-id='type-id-172'/>
@@ -25435,6 +25453,18 @@
       <parameter type-id='type-id-6'/>
       <return type-id='type-id-6'/>
     </function-decl>
+    <function-decl name='_PyInterpreterState_IsRunningMain' mangled-name='_PyInterpreterState_IsRunningMain' filepath='./Include/internal/pycore_pystate.h' line='72' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyInterpreterState_IsRunningMain'>
+      <parameter type-id='type-id-33'/>
+      <return type-id='type-id-5'/>
+    </function-decl>
+    <function-decl name='_Py_GetMainModule' filepath='./Include/internal/pycore_pystate.h' line='287' column='1' visibility='default' binding='global' size-in-bits='64'>
+      <parameter type-id='type-id-31'/>
+      <return type-id='type-id-6'/>
+    </function-decl>
+    <function-decl name='_Py_CheckMainModule' filepath='./Include/internal/pycore_pystate.h' line='288' column='1' visibility='default' binding='global' size-in-bits='64'>
+      <parameter type-id='type-id-6'/>
+      <return type-id='type-id-5'/>
+    </function-decl>
     <function-decl name='_PyBuildSlice_ConsumeRefs' filepath='./Include/internal/pycore_sliceobject.h' line='15' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-6'/>
       <parameter type-id='type-id-6'/>
@@ -25592,107 +25622,107 @@
     <function-decl name='PyEval_GetLocals' mangled-name='PyEval_GetLocals' filepath='Python/ceval.c' line='2657' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyEval_GetLocals'>
       <return type-id='type-id-6'/>
     </function-decl>
-    <function-decl name='PyEval_GetFrameLocals' mangled-name='PyEval_GetFrameLocals' filepath='Python/ceval.c' line='2747' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyEval_GetFrameLocals'>
+    <function-decl name='PyEval_GetFrameLocals' mangled-name='PyEval_GetFrameLocals' filepath='Python/ceval.c' line='2860' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyEval_GetFrameLocals'>
       <return type-id='type-id-6'/>
     </function-decl>
-    <function-decl name='PyEval_GetFrameGlobals' mangled-name='PyEval_GetFrameGlobals' filepath='Python/ceval.c' line='2752' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyEval_GetFrameGlobals'>
+    <function-decl name='PyEval_GetFrameGlobals' mangled-name='PyEval_GetFrameGlobals' filepath='Python/ceval.c' line='2865' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyEval_GetFrameGlobals'>
       <return type-id='type-id-6'/>
     </function-decl>
-    <function-decl name='PyEval_GetFrameBuiltins' mangled-name='PyEval_GetFrameBuiltins' filepath='Python/ceval.c' line='2762' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyEval_GetFrameBuiltins'>
+    <function-decl name='PyEval_GetFrameBuiltins' mangled-name='PyEval_GetFrameBuiltins' filepath='Python/ceval.c' line='2875' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyEval_GetFrameBuiltins'>
       <return type-id='type-id-6'/>
     </function-decl>
-    <function-decl name='PyEval_GetFuncName' mangled-name='PyEval_GetFuncName' filepath='Python/ceval.c' line='2788' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyEval_GetFuncName'>
-      <parameter type-id='type-id-6' name='func' filepath='Python/ceval.c' line='2788' column='1'/>
+    <function-decl name='PyEval_GetFuncName' mangled-name='PyEval_GetFuncName' filepath='Python/ceval.c' line='2901' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyEval_GetFuncName'>
+      <parameter type-id='type-id-6' name='func' filepath='Python/ceval.c' line='2901' column='1'/>
       <return type-id='type-id-4'/>
     </function-decl>
-    <function-decl name='PyEval_GetFuncDesc' mangled-name='PyEval_GetFuncDesc' filepath='Python/ceval.c' line='2801' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyEval_GetFuncDesc'>
-      <parameter type-id='type-id-6' name='func' filepath='Python/ceval.c' line='2801' column='1'/>
+    <function-decl name='PyEval_GetFuncDesc' mangled-name='PyEval_GetFuncDesc' filepath='Python/ceval.c' line='2914' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyEval_GetFuncDesc'>
+      <parameter type-id='type-id-6' name='func' filepath='Python/ceval.c' line='2914' column='1'/>
       <return type-id='type-id-4'/>
     </function-decl>
-    <function-decl name='_PyEval_ImportName' mangled-name='_PyEval_ImportName' filepath='Python/ceval.c' line='2862' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_ImportName'>
-      <parameter type-id='type-id-31' name='tstate' filepath='Python/ceval.c' line='2862' column='1'/>
-      <parameter type-id='type-id-428' name='frame' filepath='Python/ceval.c' line='2862' column='1'/>
-      <parameter type-id='type-id-6' name='name' filepath='Python/ceval.c' line='2863' column='1'/>
-      <parameter type-id='type-id-6' name='fromlist' filepath='Python/ceval.c' line='2863' column='1'/>
-      <parameter type-id='type-id-6' name='level' filepath='Python/ceval.c' line='2863' column='1'/>
+    <function-decl name='_PyEval_ImportName' mangled-name='_PyEval_ImportName' filepath='Python/ceval.c' line='2975' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_ImportName'>
+      <parameter type-id='type-id-31' name='tstate' filepath='Python/ceval.c' line='2975' column='1'/>
+      <parameter type-id='type-id-428' name='frame' filepath='Python/ceval.c' line='2975' column='1'/>
+      <parameter type-id='type-id-6' name='name' filepath='Python/ceval.c' line='2976' column='1'/>
+      <parameter type-id='type-id-6' name='fromlist' filepath='Python/ceval.c' line='2976' column='1'/>
+      <parameter type-id='type-id-6' name='level' filepath='Python/ceval.c' line='2976' column='1'/>
       <return type-id='type-id-6'/>
     </function-decl>
-    <function-decl name='_PyEval_ImportFrom' mangled-name='_PyEval_ImportFrom' filepath='Python/ceval.c' line='2901' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_ImportFrom'>
-      <parameter type-id='type-id-31' name='tstate' filepath='Python/ceval.c' line='2901' column='1'/>
-      <parameter type-id='type-id-6' name='v' filepath='Python/ceval.c' line='2901' column='1'/>
-      <parameter type-id='type-id-6' name='name' filepath='Python/ceval.c' line='2901' column='1'/>
+    <function-decl name='_PyEval_ImportFrom' mangled-name='_PyEval_ImportFrom' filepath='Python/ceval.c' line='3014' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_ImportFrom'>
+      <parameter type-id='type-id-31' name='tstate' filepath='Python/ceval.c' line='3014' column='1'/>
+      <parameter type-id='type-id-6' name='v' filepath='Python/ceval.c' line='3014' column='1'/>
+      <parameter type-id='type-id-6' name='name' filepath='Python/ceval.c' line='3014' column='1'/>
       <return type-id='type-id-6'/>
     </function-decl>
-    <function-decl name='_PyEval_CheckExceptTypeValid' mangled-name='_PyEval_CheckExceptTypeValid' filepath='Python/ceval.c' line='3075' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_CheckExceptTypeValid'>
-      <parameter type-id='type-id-31' name='tstate' filepath='Python/ceval.c' line='3075' column='1'/>
-      <parameter type-id='type-id-6' name='right' filepath='Python/ceval.c' line='3075' column='1'/>
+    <function-decl name='_PyEval_CheckExceptTypeValid' mangled-name='_PyEval_CheckExceptTypeValid' filepath='Python/ceval.c' line='3188' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_CheckExceptTypeValid'>
+      <parameter type-id='type-id-31' name='tstate' filepath='Python/ceval.c' line='3188' column='1'/>
+      <parameter type-id='type-id-6' name='right' filepath='Python/ceval.c' line='3188' column='1'/>
       <return type-id='type-id-5'/>
     </function-decl>
-    <function-decl name='_PyEval_CheckExceptStarTypeValid' mangled-name='_PyEval_CheckExceptStarTypeValid' filepath='Python/ceval.c' line='3100' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_CheckExceptStarTypeValid'>
-      <parameter type-id='type-id-31' name='tstate' filepath='Python/ceval.c' line='3100' column='1'/>
-      <parameter type-id='type-id-6' name='right' filepath='Python/ceval.c' line='3100' column='1'/>
+    <function-decl name='_PyEval_CheckExceptStarTypeValid' mangled-name='_PyEval_CheckExceptStarTypeValid' filepath='Python/ceval.c' line='3213' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_CheckExceptStarTypeValid'>
+      <parameter type-id='type-id-31' name='tstate' filepath='Python/ceval.c' line='3213' column='1'/>
+      <parameter type-id='type-id-6' name='right' filepath='Python/ceval.c' line='3213' column='1'/>
       <return type-id='type-id-5'/>
     </function-decl>
-    <function-decl name='_Py_Check_ArgsIterable' mangled-name='_Py_Check_ArgsIterable' filepath='Python/ceval.c' line='3137' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_Check_ArgsIterable'>
-      <parameter type-id='type-id-31' name='tstate' filepath='Python/ceval.c' line='3137' column='1'/>
-      <parameter type-id='type-id-6' name='func' filepath='Python/ceval.c' line='3137' column='1'/>
-      <parameter type-id='type-id-6' name='args' filepath='Python/ceval.c' line='3137' column='1'/>
+    <function-decl name='_Py_Check_ArgsIterable' mangled-name='_Py_Check_ArgsIterable' filepath='Python/ceval.c' line='3250' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_Check_ArgsIterable'>
+      <parameter type-id='type-id-31' name='tstate' filepath='Python/ceval.c' line='3250' column='1'/>
+      <parameter type-id='type-id-6' name='func' filepath='Python/ceval.c' line='3250' column='1'/>
+      <parameter type-id='type-id-6' name='args' filepath='Python/ceval.c' line='3250' column='1'/>
       <return type-id='type-id-5'/>
     </function-decl>
-    <function-decl name='_PyEval_FormatKwargsError' mangled-name='_PyEval_FormatKwargsError' filepath='Python/ceval.c' line='3157' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_FormatKwargsError'>
-      <parameter type-id='type-id-31' name='tstate' filepath='Python/ceval.c' line='3157' column='1'/>
-      <parameter type-id='type-id-6' name='func' filepath='Python/ceval.c' line='3157' column='1'/>
-      <parameter type-id='type-id-6' name='kwargs' filepath='Python/ceval.c' line='3157' column='1'/>
+    <function-decl name='_PyEval_FormatKwargsError' mangled-name='_PyEval_FormatKwargsError' filepath='Python/ceval.c' line='3270' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_FormatKwargsError'>
+      <parameter type-id='type-id-31' name='tstate' filepath='Python/ceval.c' line='3270' column='1'/>
+      <parameter type-id='type-id-6' name='func' filepath='Python/ceval.c' line='3270' column='1'/>
+      <parameter type-id='type-id-6' name='kwargs' filepath='Python/ceval.c' line='3270' column='1'/>
       <return type-id='type-id-3'/>
     </function-decl>
-    <function-decl name='_PyEval_FormatExcCheckArg' mangled-name='_PyEval_FormatExcCheckArg' filepath='Python/ceval.c' line='3200' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_FormatExcCheckArg'>
-      <parameter type-id='type-id-31' name='tstate' filepath='Python/ceval.c' line='3200' column='1'/>
-      <parameter type-id='type-id-6' name='exc' filepath='Python/ceval.c' line='3200' column='1'/>
-      <parameter type-id='type-id-4' name='format_str' filepath='Python/ceval.c' line='3201' column='1'/>
-      <parameter type-id='type-id-6' name='obj' filepath='Python/ceval.c' line='3201' column='1'/>
+    <function-decl name='_PyEval_FormatExcCheckArg' mangled-name='_PyEval_FormatExcCheckArg' filepath='Python/ceval.c' line='3313' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_FormatExcCheckArg'>
+      <parameter type-id='type-id-31' name='tstate' filepath='Python/ceval.c' line='3313' column='1'/>
+      <parameter type-id='type-id-6' name='exc' filepath='Python/ceval.c' line='3313' column='1'/>
+      <parameter type-id='type-id-4' name='format_str' filepath='Python/ceval.c' line='3314' column='1'/>
+      <parameter type-id='type-id-6' name='obj' filepath='Python/ceval.c' line='3314' column='1'/>
       <return type-id='type-id-3'/>
     </function-decl>
-    <function-decl name='_PyEval_FormatExcUnbound' mangled-name='_PyEval_FormatExcUnbound' filepath='Python/ceval.c' line='3229' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_FormatExcUnbound'>
-      <parameter type-id='type-id-31' name='tstate' filepath='Python/ceval.c' line='3229' column='1'/>
-      <parameter type-id='type-id-345' name='co' filepath='Python/ceval.c' line='3229' column='1'/>
-      <parameter type-id='type-id-5' name='oparg' filepath='Python/ceval.c' line='3229' column='1'/>
+    <function-decl name='_PyEval_FormatExcUnbound' mangled-name='_PyEval_FormatExcUnbound' filepath='Python/ceval.c' line='3342' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_FormatExcUnbound'>
+      <parameter type-id='type-id-31' name='tstate' filepath='Python/ceval.c' line='3342' column='1'/>
+      <parameter type-id='type-id-345' name='co' filepath='Python/ceval.c' line='3342' column='1'/>
+      <parameter type-id='type-id-5' name='oparg' filepath='Python/ceval.c' line='3342' column='1'/>
       <return type-id='type-id-3'/>
     </function-decl>
-    <function-decl name='_PyEval_FormatAwaitableError' mangled-name='_PyEval_FormatAwaitableError' filepath='Python/ceval.c' line='3246' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_FormatAwaitableError'>
-      <parameter type-id='type-id-31' name='tstate' filepath='Python/ceval.c' line='3246' column='1'/>
-      <parameter type-id='type-id-1' name='type' filepath='Python/ceval.c' line='3246' column='1'/>
-      <parameter type-id='type-id-5' name='oparg' filepath='Python/ceval.c' line='3246' column='1'/>
+    <function-decl name='_PyEval_FormatAwaitableError' mangled-name='_PyEval_FormatAwaitableError' filepath='Python/ceval.c' line='3359' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_FormatAwaitableError'>
+      <parameter type-id='type-id-31' name='tstate' filepath='Python/ceval.c' line='3359' column='1'/>
+      <parameter type-id='type-id-1' name='type' filepath='Python/ceval.c' line='3359' column='1'/>
+      <parameter type-id='type-id-5' name='oparg' filepath='Python/ceval.c' line='3359' column='1'/>
       <return type-id='type-id-3'/>
     </function-decl>
-    <function-decl name='PyUnstable_Eval_RequestCodeExtraIndex' mangled-name='PyUnstable_Eval_RequestCodeExtraIndex' filepath='Python/ceval.c' line='3266' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnstable_Eval_RequestCodeExtraIndex'>
-      <parameter type-id='type-id-471' name='free' filepath='Python/ceval.c' line='3266' column='1'/>
+    <function-decl name='PyUnstable_Eval_RequestCodeExtraIndex' mangled-name='PyUnstable_Eval_RequestCodeExtraIndex' filepath='Python/ceval.c' line='3379' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnstable_Eval_RequestCodeExtraIndex'>
+      <parameter type-id='type-id-471' name='free' filepath='Python/ceval.c' line='3379' column='1'/>
       <return type-id='type-id-7'/>
     </function-decl>
-    <function-decl name='_PyEval_GetANext' mangled-name='_PyEval_GetANext' filepath='Python/ceval.c' line='3293' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_GetANext'>
-      <parameter type-id='type-id-6' name='aiter' filepath='Python/ceval.c' line='3293' column='1'/>
+    <function-decl name='_PyEval_GetANext' mangled-name='_PyEval_GetANext' filepath='Python/ceval.c' line='3406' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_GetANext'>
+      <parameter type-id='type-id-6' name='aiter' filepath='Python/ceval.c' line='3406' column='1'/>
       <return type-id='type-id-6'/>
     </function-decl>
-    <function-decl name='_PyEval_LoadGlobalStackRef' mangled-name='_PyEval_LoadGlobalStackRef' filepath='Python/ceval.c' line='3332' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_LoadGlobalStackRef'>
-      <parameter type-id='type-id-6' name='globals' filepath='Python/ceval.c' line='3332' column='1'/>
-      <parameter type-id='type-id-6' name='builtins' filepath='Python/ceval.c' line='3332' column='1'/>
-      <parameter type-id='type-id-6' name='name' filepath='Python/ceval.c' line='3332' column='1'/>
-      <parameter type-id='type-id-395' name='writeto' filepath='Python/ceval.c' line='3332' column='1'/>
+    <function-decl name='_PyEval_LoadGlobalStackRef' mangled-name='_PyEval_LoadGlobalStackRef' filepath='Python/ceval.c' line='3445' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_LoadGlobalStackRef'>
+      <parameter type-id='type-id-6' name='globals' filepath='Python/ceval.c' line='3445' column='1'/>
+      <parameter type-id='type-id-6' name='builtins' filepath='Python/ceval.c' line='3445' column='1'/>
+      <parameter type-id='type-id-6' name='name' filepath='Python/ceval.c' line='3445' column='1'/>
+      <parameter type-id='type-id-395' name='writeto' filepath='Python/ceval.c' line='3445' column='1'/>
       <return type-id='type-id-3'/>
     </function-decl>
-    <function-decl name='_PyEval_GetAwaitable' mangled-name='_PyEval_GetAwaitable' filepath='Python/ceval.c' line='3372' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_GetAwaitable'>
-      <parameter type-id='type-id-6' name='iterable' filepath='Python/ceval.c' line='3372' column='1'/>
-      <parameter type-id='type-id-5' name='oparg' filepath='Python/ceval.c' line='3372' column='1'/>
+    <function-decl name='_PyEval_GetAwaitable' mangled-name='_PyEval_GetAwaitable' filepath='Python/ceval.c' line='3485' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_GetAwaitable'>
+      <parameter type-id='type-id-6' name='iterable' filepath='Python/ceval.c' line='3485' column='1'/>
+      <parameter type-id='type-id-5' name='oparg' filepath='Python/ceval.c' line='3485' column='1'/>
       <return type-id='type-id-6'/>
     </function-decl>
-    <function-decl name='_PyEval_LoadName' mangled-name='_PyEval_LoadName' filepath='Python/ceval.c' line='3396' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_LoadName'>
-      <parameter type-id='type-id-31' name='tstate' filepath='Python/ceval.c' line='3396' column='1'/>
-      <parameter type-id='type-id-428' name='frame' filepath='Python/ceval.c' line='3396' column='1'/>
-      <parameter type-id='type-id-6' name='name' filepath='Python/ceval.c' line='3396' column='1'/>
+    <function-decl name='_PyEval_LoadName' mangled-name='_PyEval_LoadName' filepath='Python/ceval.c' line='3509' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_LoadName'>
+      <parameter type-id='type-id-31' name='tstate' filepath='Python/ceval.c' line='3509' column='1'/>
+      <parameter type-id='type-id-428' name='frame' filepath='Python/ceval.c' line='3509' column='1'/>
+      <parameter type-id='type-id-6' name='name' filepath='Python/ceval.c' line='3509' column='1'/>
       <return type-id='type-id-6'/>
     </function-decl>
-    <function-decl name='_PyEval_SpecialMethodCanSuggest' mangled-name='_PyEval_SpecialMethodCanSuggest' filepath='Python/ceval.c' line='3439' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_SpecialMethodCanSuggest'>
-      <parameter type-id='type-id-6' name='self' filepath='Python/ceval.c' line='3439' column='1'/>
-      <parameter type-id='type-id-5' name='oparg' filepath='Python/ceval.c' line='3439' column='1'/>
+    <function-decl name='_PyEval_SpecialMethodCanSuggest' mangled-name='_PyEval_SpecialMethodCanSuggest' filepath='Python/ceval.c' line='3552' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_SpecialMethodCanSuggest'>
+      <parameter type-id='type-id-6' name='self' filepath='Python/ceval.c' line='3552' column='1'/>
+      <parameter type-id='type-id-5' name='oparg' filepath='Python/ceval.c' line='3552' column='1'/>
       <return type-id='type-id-5'/>
     </function-decl>
   </abi-instr>
@@ -26972,41 +27002,41 @@
       </data-member>
     </class-decl>
     <typedef-decl name='_PyXI_session_result' type-id='type-id-1680' filepath='./Include/internal/pycore_crossinterp.h' line='360' column='1' id='type-id-1679'/>
-    <class-decl name='xi_failure' size-in-bits='192' is-struct='yes' visibility='default' filepath='Python/crossinterp.c' line='1749' column='1' id='type-id-1675'>
+    <class-decl name='xi_failure' size-in-bits='192' is-struct='yes' visibility='default' filepath='Python/crossinterp.c' line='1740' column='1' id='type-id-1675'>
       <data-member access='public' layout-offset-in-bits='0'>
-        <var-decl name='code' type-id='type-id-1674' visibility='default' filepath='Python/crossinterp.c' line='1751' column='1'/>
+        <var-decl name='code' type-id='type-id-1674' visibility='default' filepath='Python/crossinterp.c' line='1742' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='64'>
-        <var-decl name='msg' type-id='type-id-4' visibility='default' filepath='Python/crossinterp.c' line='1753' column='1'/>
+        <var-decl name='msg' type-id='type-id-4' visibility='default' filepath='Python/crossinterp.c' line='1744' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='128'>
-        <var-decl name='msg_owned' type-id='type-id-5' visibility='default' filepath='Python/crossinterp.c' line='1754' column='1'/>
+        <var-decl name='msg_owned' type-id='type-id-5' visibility='default' filepath='Python/crossinterp.c' line='1745' column='1'/>
       </data-member>
     </class-decl>
-    <class-decl name='xi_session' size-in-bits='384' is-struct='yes' visibility='default' filepath='Python/crossinterp.c' line='2463' column='1' id='type-id-1677'>
+    <class-decl name='xi_session' size-in-bits='384' is-struct='yes' visibility='default' filepath='Python/crossinterp.c' line='2454' column='1' id='type-id-1677'>
       <data-member access='public' layout-offset-in-bits='0'>
-        <var-decl name='status' type-id='type-id-5' visibility='default' filepath='Python/crossinterp.c' line='2466' column='1'/>
+        <var-decl name='status' type-id='type-id-5' visibility='default' filepath='Python/crossinterp.c' line='2457' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='32'>
-        <var-decl name='switched' type-id='type-id-5' visibility='default' filepath='Python/crossinterp.c' line='2467' column='1'/>
+        <var-decl name='switched' type-id='type-id-5' visibility='default' filepath='Python/crossinterp.c' line='2458' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='64'>
-        <var-decl name='prev_tstate' type-id='type-id-31' visibility='default' filepath='Python/crossinterp.c' line='2473' column='1'/>
+        <var-decl name='prev_tstate' type-id='type-id-31' visibility='default' filepath='Python/crossinterp.c' line='2464' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='128'>
-        <var-decl name='init_tstate' type-id='type-id-31' visibility='default' filepath='Python/crossinterp.c' line='2476' column='1'/>
+        <var-decl name='init_tstate' type-id='type-id-31' visibility='default' filepath='Python/crossinterp.c' line='2467' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='192'>
-        <var-decl name='own_init_tstate' type-id='type-id-5' visibility='default' filepath='Python/crossinterp.c' line='2478' column='1'/>
+        <var-decl name='own_init_tstate' type-id='type-id-5' visibility='default' filepath='Python/crossinterp.c' line='2469' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='224'>
-        <var-decl name='running' type-id='type-id-5' visibility='default' filepath='Python/crossinterp.c' line='2485' column='1'/>
+        <var-decl name='running' type-id='type-id-5' visibility='default' filepath='Python/crossinterp.c' line='2476' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='256'>
-        <var-decl name='main_ns' type-id='type-id-6' visibility='default' filepath='Python/crossinterp.c' line='2489' column='1'/>
+        <var-decl name='main_ns' type-id='type-id-6' visibility='default' filepath='Python/crossinterp.c' line='2480' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='320'>
-        <var-decl name='_preserved' type-id='type-id-6' visibility='default' filepath='Python/crossinterp.c' line='2494' column='1'/>
+        <var-decl name='_preserved' type-id='type-id-6' visibility='default' filepath='Python/crossinterp.c' line='2485' column='1'/>
       </data-member>
     </class-decl>
     <pointer-type-def type-id='type-id-1665' size-in-bits='64' id='type-id-1681'/>
@@ -27049,6 +27079,11 @@
     </function-decl>
     <var-decl name='PyExc_InterpreterError' type-id='type-id-6' mangled-name='PyExc_InterpreterError' visibility='default' filepath='./Include/internal/pycore_crossinterp.h' line='18' column='1' elf-symbol-id='PyExc_InterpreterError'/>
     <var-decl name='PyExc_InterpreterNotFoundError' type-id='type-id-6' mangled-name='PyExc_InterpreterNotFoundError' visibility='default' filepath='./Include/internal/pycore_crossinterp.h' line='19' column='1' elf-symbol-id='PyExc_InterpreterNotFoundError'/>
+    <function-decl name='_PyImport_SetModule' mangled-name='_PyImport_SetModule' filepath='./Include/internal/pycore_import.h' line='18' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyImport_SetModule'>
+      <parameter type-id='type-id-6'/>
+      <parameter type-id='type-id-6'/>
+      <return type-id='type-id-5'/>
+    </function-decl>
     <function-decl name='_PyErr_SetFromPyStatus' mangled-name='_PyErr_SetFromPyStatus' filepath='./Include/internal/pycore_initconfig.h' line='48' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyErr_SetFromPyStatus'>
       <parameter type-id='type-id-66'/>
       <return type-id='type-id-3'/>
@@ -27093,14 +27128,6 @@
       <parameter type-id='type-id-5'/>
       <return type-id='type-id-31'/>
     </function-decl>
-    <function-decl name='_Py_GetMainModule' filepath='./Include/internal/pycore_pystate.h' line='287' column='1' visibility='default' binding='global' size-in-bits='64'>
-      <parameter type-id='type-id-31'/>
-      <return type-id='type-id-6'/>
-    </function-decl>
-    <function-decl name='_Py_CheckMainModule' filepath='./Include/internal/pycore_pystate.h' line='288' column='1' visibility='default' binding='global' size-in-bits='64'>
-      <parameter type-id='type-id-6'/>
-      <return type-id='type-id-5'/>
-    </function-decl>
     <function-decl name='_PyObject_SupportedAsScript' filepath='./Include/internal/pycore_pythonrun.h' line='28' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-6'/>
       <return type-id='type-id-5'/>
@@ -27122,6 +27149,10 @@
     <function-decl name='PyInterpreterState_Delete' mangled-name='PyInterpreterState_Delete' filepath='./Include/pystate.h' line='16' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyInterpreterState_Delete'>
       <parameter type-id='type-id-33'/>
       <return type-id='type-id-3'/>
+    </function-decl>
+    <function-decl name='PyInterpreterState_GetDict' mangled-name='PyInterpreterState_GetDict' filepath='./Include/pystate.h' line='31' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyInterpreterState_GetDict'>
+      <parameter type-id='type-id-33'/>
+      <return type-id='type-id-6'/>
     </function-decl>
     <function-decl name='PyInterpreterState_GetID' mangled-name='PyInterpreterState_GetID' filepath='./Include/pystate.h' line='36' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyInterpreterState_GetID'>
       <parameter type-id='type-id-33'/>
@@ -27147,187 +27178,187 @@
       <parameter type-id='type-id-5'/>
       <return type-id='type-id-3'/>
     </function-decl>
-    <function-decl name='_PyXIData_New' mangled-name='_PyXIData_New' filepath='Python/crossinterp.c' line='240' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyXIData_New'>
+    <function-decl name='_PyXIData_New' mangled-name='_PyXIData_New' filepath='Python/crossinterp.c' line='307' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyXIData_New'>
       <return type-id='type-id-1502'/>
     </function-decl>
-    <function-decl name='_PyXIData_Free' mangled-name='_PyXIData_Free' filepath='Python/crossinterp.c' line='250' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyXIData_Free'>
-      <parameter type-id='type-id-1502' name='xid' filepath='Python/crossinterp.c' line='250' column='1'/>
+    <function-decl name='_PyXIData_Free' mangled-name='_PyXIData_Free' filepath='Python/crossinterp.c' line='317' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyXIData_Free'>
+      <parameter type-id='type-id-1502' name='xid' filepath='Python/crossinterp.c' line='317' column='1'/>
       <return type-id='type-id-3'/>
     </function-decl>
-    <function-decl name='_PyXIData_Init' mangled-name='_PyXIData_Init' filepath='Python/crossinterp.c' line='288' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyXIData_Init'>
-      <parameter type-id='type-id-1502' name='xidata' filepath='Python/crossinterp.c' line='288' column='1'/>
-      <parameter type-id='type-id-33' name='interp' filepath='Python/crossinterp.c' line='289' column='1'/>
-      <parameter type-id='type-id-35' name='shared' filepath='Python/crossinterp.c' line='290' column='1'/>
-      <parameter type-id='type-id-6' name='obj' filepath='Python/crossinterp.c' line='290' column='1'/>
-      <parameter type-id='type-id-1122' name='new_object' filepath='Python/crossinterp.c' line='291' column='1'/>
+    <function-decl name='_PyXIData_Init' mangled-name='_PyXIData_Init' filepath='Python/crossinterp.c' line='355' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyXIData_Init'>
+      <parameter type-id='type-id-1502' name='xidata' filepath='Python/crossinterp.c' line='355' column='1'/>
+      <parameter type-id='type-id-33' name='interp' filepath='Python/crossinterp.c' line='356' column='1'/>
+      <parameter type-id='type-id-35' name='shared' filepath='Python/crossinterp.c' line='357' column='1'/>
+      <parameter type-id='type-id-6' name='obj' filepath='Python/crossinterp.c' line='357' column='1'/>
+      <parameter type-id='type-id-1122' name='new_object' filepath='Python/crossinterp.c' line='358' column='1'/>
       <return type-id='type-id-3'/>
     </function-decl>
-    <function-decl name='_PyXIData_InitWithSize' mangled-name='_PyXIData_InitWithSize' filepath='Python/crossinterp.c' line='312' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyXIData_InitWithSize'>
-      <parameter type-id='type-id-1502' name='xidata' filepath='Python/crossinterp.c' line='312' column='1'/>
-      <parameter type-id='type-id-33' name='interp' filepath='Python/crossinterp.c' line='313' column='1'/>
-      <parameter type-id='type-id-1580' name='size' filepath='Python/crossinterp.c' line='314' column='1'/>
-      <parameter type-id='type-id-6' name='obj' filepath='Python/crossinterp.c' line='314' column='1'/>
-      <parameter type-id='type-id-1122' name='new_object' filepath='Python/crossinterp.c' line='315' column='1'/>
+    <function-decl name='_PyXIData_InitWithSize' mangled-name='_PyXIData_InitWithSize' filepath='Python/crossinterp.c' line='379' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyXIData_InitWithSize'>
+      <parameter type-id='type-id-1502' name='xidata' filepath='Python/crossinterp.c' line='379' column='1'/>
+      <parameter type-id='type-id-33' name='interp' filepath='Python/crossinterp.c' line='380' column='1'/>
+      <parameter type-id='type-id-1580' name='size' filepath='Python/crossinterp.c' line='381' column='1'/>
+      <parameter type-id='type-id-6' name='obj' filepath='Python/crossinterp.c' line='381' column='1'/>
+      <parameter type-id='type-id-1122' name='new_object' filepath='Python/crossinterp.c' line='382' column='1'/>
       <return type-id='type-id-5'/>
     </function-decl>
-    <function-decl name='_PyXIData_Clear' mangled-name='_PyXIData_Clear' filepath='Python/crossinterp.c' line='331' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyXIData_Clear'>
-      <parameter type-id='type-id-33' name='interp' filepath='Python/crossinterp.c' line='331' column='1'/>
-      <parameter type-id='type-id-1502' name='xidata' filepath='Python/crossinterp.c' line='331' column='1'/>
+    <function-decl name='_PyXIData_Clear' mangled-name='_PyXIData_Clear' filepath='Python/crossinterp.c' line='398' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyXIData_Clear'>
+      <parameter type-id='type-id-33' name='interp' filepath='Python/crossinterp.c' line='398' column='1'/>
+      <parameter type-id='type-id-1502' name='xidata' filepath='Python/crossinterp.c' line='398' column='1'/>
       <return type-id='type-id-3'/>
     </function-decl>
-    <function-decl name='_PyObject_CheckXIData' mangled-name='_PyObject_CheckXIData' filepath='Python/crossinterp.c' line='364' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyObject_CheckXIData'>
-      <parameter type-id='type-id-31' name='tstate' filepath='Python/crossinterp.c' line='364' column='1'/>
-      <parameter type-id='type-id-6' name='obj' filepath='Python/crossinterp.c' line='364' column='1'/>
+    <function-decl name='_PyObject_CheckXIData' mangled-name='_PyObject_CheckXIData' filepath='Python/crossinterp.c' line='431' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyObject_CheckXIData'>
+      <parameter type-id='type-id-31' name='tstate' filepath='Python/crossinterp.c' line='431' column='1'/>
+      <parameter type-id='type-id-6' name='obj' filepath='Python/crossinterp.c' line='431' column='1'/>
       <return type-id='type-id-5'/>
     </function-decl>
-    <function-decl name='_PyObject_GetXIDataNoFallback' mangled-name='_PyObject_GetXIDataNoFallback' filepath='Python/crossinterp.c' line='457' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyObject_GetXIDataNoFallback'>
-      <parameter type-id='type-id-31' name='tstate' filepath='Python/crossinterp.c' line='457' column='1'/>
-      <parameter type-id='type-id-6' name='obj' filepath='Python/crossinterp.c' line='458' column='1'/>
-      <parameter type-id='type-id-1502' name='xidata' filepath='Python/crossinterp.c' line='458' column='1'/>
+    <function-decl name='_PyObject_GetXIDataNoFallback' mangled-name='_PyObject_GetXIDataNoFallback' filepath='Python/crossinterp.c' line='524' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyObject_GetXIDataNoFallback'>
+      <parameter type-id='type-id-31' name='tstate' filepath='Python/crossinterp.c' line='524' column='1'/>
+      <parameter type-id='type-id-6' name='obj' filepath='Python/crossinterp.c' line='525' column='1'/>
+      <parameter type-id='type-id-1502' name='xidata' filepath='Python/crossinterp.c' line='525' column='1'/>
       <return type-id='type-id-5'/>
     </function-decl>
-    <function-decl name='_PyObject_GetXIData' mangled-name='_PyObject_GetXIData' filepath='Python/crossinterp.c' line='464' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyObject_GetXIData'>
-      <parameter type-id='type-id-31' name='tstate' filepath='Python/crossinterp.c' line='464' column='1'/>
-      <parameter type-id='type-id-6' name='obj' filepath='Python/crossinterp.c' line='465' column='1'/>
-      <parameter type-id='type-id-1124' name='fallback' filepath='Python/crossinterp.c' line='465' column='1'/>
-      <parameter type-id='type-id-1502' name='xidata' filepath='Python/crossinterp.c' line='466' column='1'/>
+    <function-decl name='_PyObject_GetXIData' mangled-name='_PyObject_GetXIData' filepath='Python/crossinterp.c' line='531' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyObject_GetXIData'>
+      <parameter type-id='type-id-31' name='tstate' filepath='Python/crossinterp.c' line='531' column='1'/>
+      <parameter type-id='type-id-6' name='obj' filepath='Python/crossinterp.c' line='532' column='1'/>
+      <parameter type-id='type-id-1124' name='fallback' filepath='Python/crossinterp.c' line='532' column='1'/>
+      <parameter type-id='type-id-1502' name='xidata' filepath='Python/crossinterp.c' line='533' column='1'/>
       <return type-id='type-id-5'/>
     </function-decl>
-    <function-decl name='_PyPickle_LoadFromXIData' mangled-name='_PyPickle_LoadFromXIData' filepath='Python/crossinterp.c' line='733' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyPickle_LoadFromXIData'>
-      <parameter type-id='type-id-1502' name='xidata' filepath='Python/crossinterp.c' line='733' column='1'/>
+    <function-decl name='_PyPickle_LoadFromXIData' mangled-name='_PyPickle_LoadFromXIData' filepath='Python/crossinterp.c' line='724' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyPickle_LoadFromXIData'>
+      <parameter type-id='type-id-1502' name='xidata' filepath='Python/crossinterp.c' line='724' column='1'/>
       <return type-id='type-id-6'/>
     </function-decl>
-    <function-decl name='_PyPickle_GetXIData' mangled-name='_PyPickle_GetXIData' filepath='Python/crossinterp.c' line='768' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyPickle_GetXIData'>
-      <parameter type-id='type-id-31' name='tstate' filepath='Python/crossinterp.c' line='768' column='1'/>
-      <parameter type-id='type-id-6' name='obj' filepath='Python/crossinterp.c' line='768' column='1'/>
-      <parameter type-id='type-id-1502' name='xidata' filepath='Python/crossinterp.c' line='768' column='1'/>
+    <function-decl name='_PyPickle_GetXIData' mangled-name='_PyPickle_GetXIData' filepath='Python/crossinterp.c' line='759' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyPickle_GetXIData'>
+      <parameter type-id='type-id-31' name='tstate' filepath='Python/crossinterp.c' line='759' column='1'/>
+      <parameter type-id='type-id-6' name='obj' filepath='Python/crossinterp.c' line='759' column='1'/>
+      <parameter type-id='type-id-1502' name='xidata' filepath='Python/crossinterp.c' line='759' column='1'/>
       <return type-id='type-id-5'/>
     </function-decl>
-    <function-decl name='_PyMarshal_ReadObjectFromXIData' mangled-name='_PyMarshal_ReadObjectFromXIData' filepath='Python/crossinterp.c' line='810' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyMarshal_ReadObjectFromXIData'>
-      <parameter type-id='type-id-1502' name='xidata' filepath='Python/crossinterp.c' line='810' column='1'/>
+    <function-decl name='_PyMarshal_ReadObjectFromXIData' mangled-name='_PyMarshal_ReadObjectFromXIData' filepath='Python/crossinterp.c' line='801' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyMarshal_ReadObjectFromXIData'>
+      <parameter type-id='type-id-1502' name='xidata' filepath='Python/crossinterp.c' line='801' column='1'/>
       <return type-id='type-id-6'/>
     </function-decl>
-    <function-decl name='_PyMarshal_GetXIData' mangled-name='_PyMarshal_GetXIData' filepath='Python/crossinterp.c' line='827' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyMarshal_GetXIData'>
-      <parameter type-id='type-id-31' name='tstate' filepath='Python/crossinterp.c' line='827' column='1'/>
-      <parameter type-id='type-id-6' name='obj' filepath='Python/crossinterp.c' line='827' column='1'/>
-      <parameter type-id='type-id-1502' name='xidata' filepath='Python/crossinterp.c' line='827' column='1'/>
+    <function-decl name='_PyMarshal_GetXIData' mangled-name='_PyMarshal_GetXIData' filepath='Python/crossinterp.c' line='818' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyMarshal_GetXIData'>
+      <parameter type-id='type-id-31' name='tstate' filepath='Python/crossinterp.c' line='818' column='1'/>
+      <parameter type-id='type-id-6' name='obj' filepath='Python/crossinterp.c' line='818' column='1'/>
+      <parameter type-id='type-id-1502' name='xidata' filepath='Python/crossinterp.c' line='818' column='1'/>
       <return type-id='type-id-5'/>
     </function-decl>
-    <function-decl name='_PyCode_GetScriptXIData' mangled-name='_PyCode_GetScriptXIData' filepath='Python/crossinterp.c' line='967' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyCode_GetScriptXIData'>
-      <parameter type-id='type-id-31' name='tstate' filepath='Python/crossinterp.c' line='967' column='1'/>
-      <parameter type-id='type-id-6' name='obj' filepath='Python/crossinterp.c' line='968' column='1'/>
-      <parameter type-id='type-id-1502' name='xidata' filepath='Python/crossinterp.c' line='968' column='1'/>
+    <function-decl name='_PyCode_GetScriptXIData' mangled-name='_PyCode_GetScriptXIData' filepath='Python/crossinterp.c' line='958' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyCode_GetScriptXIData'>
+      <parameter type-id='type-id-31' name='tstate' filepath='Python/crossinterp.c' line='958' column='1'/>
+      <parameter type-id='type-id-6' name='obj' filepath='Python/crossinterp.c' line='959' column='1'/>
+      <parameter type-id='type-id-1502' name='xidata' filepath='Python/crossinterp.c' line='959' column='1'/>
       <return type-id='type-id-5'/>
     </function-decl>
-    <function-decl name='_PyCode_GetPureScriptXIData' mangled-name='_PyCode_GetPureScriptXIData' filepath='Python/crossinterp.c' line='974' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyCode_GetPureScriptXIData'>
-      <parameter type-id='type-id-31' name='tstate' filepath='Python/crossinterp.c' line='974' column='1'/>
-      <parameter type-id='type-id-6' name='obj' filepath='Python/crossinterp.c' line='975' column='1'/>
+    <function-decl name='_PyCode_GetPureScriptXIData' mangled-name='_PyCode_GetPureScriptXIData' filepath='Python/crossinterp.c' line='965' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyCode_GetPureScriptXIData'>
+      <parameter type-id='type-id-31' name='tstate' filepath='Python/crossinterp.c' line='965' column='1'/>
+      <parameter type-id='type-id-6' name='obj' filepath='Python/crossinterp.c' line='966' column='1'/>
+      <parameter type-id='type-id-1502' name='xidata' filepath='Python/crossinterp.c' line='966' column='1'/>
+      <return type-id='type-id-5'/>
+    </function-decl>
+    <function-decl name='_PyXIData_NewObject' mangled-name='_PyXIData_NewObject' filepath='Python/crossinterp.c' line='975' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyXIData_NewObject'>
       <parameter type-id='type-id-1502' name='xidata' filepath='Python/crossinterp.c' line='975' column='1'/>
-      <return type-id='type-id-5'/>
-    </function-decl>
-    <function-decl name='_PyXIData_NewObject' mangled-name='_PyXIData_NewObject' filepath='Python/crossinterp.c' line='984' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyXIData_NewObject'>
-      <parameter type-id='type-id-1502' name='xidata' filepath='Python/crossinterp.c' line='984' column='1'/>
       <return type-id='type-id-6'/>
     </function-decl>
-    <function-decl name='_PyXIData_Release' mangled-name='_PyXIData_Release' filepath='Python/crossinterp.c' line='1034' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyXIData_Release'>
-      <parameter type-id='type-id-1502' name='xidata' filepath='Python/crossinterp.c' line='1034' column='1'/>
+    <function-decl name='_PyXIData_Release' mangled-name='_PyXIData_Release' filepath='Python/crossinterp.c' line='1025' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyXIData_Release'>
+      <parameter type-id='type-id-1502' name='xidata' filepath='Python/crossinterp.c' line='1025' column='1'/>
       <return type-id='type-id-5'/>
     </function-decl>
-    <function-decl name='_PyXIData_ReleaseAndRawFree' mangled-name='_PyXIData_ReleaseAndRawFree' filepath='Python/crossinterp.c' line='1040' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyXIData_ReleaseAndRawFree'>
-      <parameter type-id='type-id-1502' name='xidata' filepath='Python/crossinterp.c' line='1040' column='1'/>
+    <function-decl name='_PyXIData_ReleaseAndRawFree' mangled-name='_PyXIData_ReleaseAndRawFree' filepath='Python/crossinterp.c' line='1031' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyXIData_ReleaseAndRawFree'>
+      <parameter type-id='type-id-1502' name='xidata' filepath='Python/crossinterp.c' line='1031' column='1'/>
       <return type-id='type-id-5'/>
     </function-decl>
-    <function-decl name='_PyXI_NewExcInfo' mangled-name='_PyXI_NewExcInfo' filepath='Python/crossinterp.c' line='1645' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyXI_NewExcInfo'>
-      <parameter type-id='type-id-6' name='exc' filepath='Python/crossinterp.c' line='1645' column='1'/>
+    <function-decl name='_PyXI_NewExcInfo' mangled-name='_PyXI_NewExcInfo' filepath='Python/crossinterp.c' line='1636' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyXI_NewExcInfo'>
+      <parameter type-id='type-id-6' name='exc' filepath='Python/crossinterp.c' line='1636' column='1'/>
       <return type-id='type-id-1684'/>
     </function-decl>
-    <function-decl name='_PyXI_FreeExcInfo' mangled-name='_PyXI_FreeExcInfo' filepath='Python/crossinterp.c' line='1672' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyXI_FreeExcInfo'>
-      <parameter type-id='type-id-1684' name='info' filepath='Python/crossinterp.c' line='1672' column='1'/>
+    <function-decl name='_PyXI_FreeExcInfo' mangled-name='_PyXI_FreeExcInfo' filepath='Python/crossinterp.c' line='1663' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyXI_FreeExcInfo'>
+      <parameter type-id='type-id-1684' name='info' filepath='Python/crossinterp.c' line='1663' column='1'/>
       <return type-id='type-id-3'/>
     </function-decl>
-    <function-decl name='_PyXI_FormatExcInfo' mangled-name='_PyXI_FormatExcInfo' filepath='Python/crossinterp.c' line='1679' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyXI_FormatExcInfo'>
-      <parameter type-id='type-id-1684' name='info' filepath='Python/crossinterp.c' line='1679' column='1'/>
+    <function-decl name='_PyXI_FormatExcInfo' mangled-name='_PyXI_FormatExcInfo' filepath='Python/crossinterp.c' line='1670' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyXI_FormatExcInfo'>
+      <parameter type-id='type-id-1684' name='info' filepath='Python/crossinterp.c' line='1670' column='1'/>
       <return type-id='type-id-6'/>
     </function-decl>
-    <function-decl name='_PyXI_ExcInfoAsObject' mangled-name='_PyXI_ExcInfoAsObject' filepath='Python/crossinterp.c' line='1685' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyXI_ExcInfoAsObject'>
-      <parameter type-id='type-id-1684' name='info' filepath='Python/crossinterp.c' line='1685' column='1'/>
+    <function-decl name='_PyXI_ExcInfoAsObject' mangled-name='_PyXI_ExcInfoAsObject' filepath='Python/crossinterp.c' line='1676' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyXI_ExcInfoAsObject'>
+      <parameter type-id='type-id-1684' name='info' filepath='Python/crossinterp.c' line='1676' column='1'/>
       <return type-id='type-id-6'/>
     </function-decl>
-    <function-decl name='_PyXI_NewFailure' mangled-name='_PyXI_NewFailure' filepath='Python/crossinterp.c' line='1776' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyXI_NewFailure'>
+    <function-decl name='_PyXI_NewFailure' mangled-name='_PyXI_NewFailure' filepath='Python/crossinterp.c' line='1767' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyXI_NewFailure'>
       <return type-id='type-id-1685'/>
     </function-decl>
-    <function-decl name='_PyXI_FreeFailure' mangled-name='_PyXI_FreeFailure' filepath='Python/crossinterp.c' line='1788' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyXI_FreeFailure'>
-      <parameter type-id='type-id-1685' name='failure' filepath='Python/crossinterp.c' line='1788' column='1'/>
+    <function-decl name='_PyXI_FreeFailure' mangled-name='_PyXI_FreeFailure' filepath='Python/crossinterp.c' line='1779' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyXI_FreeFailure'>
+      <parameter type-id='type-id-1685' name='failure' filepath='Python/crossinterp.c' line='1779' column='1'/>
       <return type-id='type-id-3'/>
     </function-decl>
-    <function-decl name='_PyXI_GetFailureCode' mangled-name='_PyXI_GetFailureCode' filepath='Python/crossinterp.c' line='1795' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyXI_GetFailureCode'>
-      <parameter type-id='type-id-1685' name='failure' filepath='Python/crossinterp.c' line='1795' column='1'/>
+    <function-decl name='_PyXI_GetFailureCode' mangled-name='_PyXI_GetFailureCode' filepath='Python/crossinterp.c' line='1786' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyXI_GetFailureCode'>
+      <parameter type-id='type-id-1685' name='failure' filepath='Python/crossinterp.c' line='1786' column='1'/>
       <return type-id='type-id-1674'/>
     </function-decl>
-    <function-decl name='_PyXI_InitFailureUTF8' mangled-name='_PyXI_InitFailureUTF8' filepath='Python/crossinterp.c' line='1804' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyXI_InitFailureUTF8'>
-      <parameter type-id='type-id-1685' name='failure' filepath='Python/crossinterp.c' line='1804' column='1'/>
-      <parameter type-id='type-id-1674' name='code' filepath='Python/crossinterp.c' line='1805' column='1'/>
-      <parameter type-id='type-id-4' name='msg' filepath='Python/crossinterp.c' line='1805' column='1'/>
+    <function-decl name='_PyXI_InitFailureUTF8' mangled-name='_PyXI_InitFailureUTF8' filepath='Python/crossinterp.c' line='1795' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyXI_InitFailureUTF8'>
+      <parameter type-id='type-id-1685' name='failure' filepath='Python/crossinterp.c' line='1795' column='1'/>
+      <parameter type-id='type-id-1674' name='code' filepath='Python/crossinterp.c' line='1796' column='1'/>
+      <parameter type-id='type-id-4' name='msg' filepath='Python/crossinterp.c' line='1796' column='1'/>
       <return type-id='type-id-3'/>
     </function-decl>
-    <function-decl name='_PyXI_InitFailure' mangled-name='_PyXI_InitFailure' filepath='Python/crossinterp.c' line='1815' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyXI_InitFailure'>
-      <parameter type-id='type-id-1685' name='failure' filepath='Python/crossinterp.c' line='1815' column='1'/>
-      <parameter type-id='type-id-1674' name='code' filepath='Python/crossinterp.c' line='1815' column='1'/>
-      <parameter type-id='type-id-6' name='obj' filepath='Python/crossinterp.c' line='1815' column='1'/>
+    <function-decl name='_PyXI_InitFailure' mangled-name='_PyXI_InitFailure' filepath='Python/crossinterp.c' line='1806' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyXI_InitFailure'>
+      <parameter type-id='type-id-1685' name='failure' filepath='Python/crossinterp.c' line='1806' column='1'/>
+      <parameter type-id='type-id-1674' name='code' filepath='Python/crossinterp.c' line='1806' column='1'/>
+      <parameter type-id='type-id-6' name='obj' filepath='Python/crossinterp.c' line='1806' column='1'/>
       <return type-id='type-id-5'/>
     </function-decl>
-    <function-decl name='_PyXI_NewSession' mangled-name='_PyXI_NewSession' filepath='Python/crossinterp.c' line='2498' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyXI_NewSession'>
+    <function-decl name='_PyXI_NewSession' mangled-name='_PyXI_NewSession' filepath='Python/crossinterp.c' line='2489' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyXI_NewSession'>
       <return type-id='type-id-1686'/>
     </function-decl>
-    <function-decl name='_PyXI_FreeSession' mangled-name='_PyXI_FreeSession' filepath='Python/crossinterp.c' line='2509' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyXI_FreeSession'>
-      <parameter type-id='type-id-1686' name='session' filepath='Python/crossinterp.c' line='2509' column='1'/>
+    <function-decl name='_PyXI_FreeSession' mangled-name='_PyXI_FreeSession' filepath='Python/crossinterp.c' line='2500' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyXI_FreeSession'>
+      <parameter type-id='type-id-1686' name='session' filepath='Python/crossinterp.c' line='2500' column='1'/>
       <return type-id='type-id-3'/>
     </function-decl>
-    <function-decl name='_PyXI_Enter' mangled-name='_PyXI_Enter' filepath='Python/crossinterp.c' line='2618' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyXI_Enter'>
-      <parameter type-id='type-id-1686' name='session' filepath='Python/crossinterp.c' line='2618' column='1'/>
-      <parameter type-id='type-id-33' name='interp' filepath='Python/crossinterp.c' line='2619' column='1'/>
-      <parameter type-id='type-id-6' name='nsupdates' filepath='Python/crossinterp.c' line='2619' column='1'/>
-      <parameter type-id='type-id-1687' name='result' filepath='Python/crossinterp.c' line='2620' column='1'/>
+    <function-decl name='_PyXI_Enter' mangled-name='_PyXI_Enter' filepath='Python/crossinterp.c' line='2609' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyXI_Enter'>
+      <parameter type-id='type-id-1686' name='session' filepath='Python/crossinterp.c' line='2609' column='1'/>
+      <parameter type-id='type-id-33' name='interp' filepath='Python/crossinterp.c' line='2610' column='1'/>
+      <parameter type-id='type-id-6' name='nsupdates' filepath='Python/crossinterp.c' line='2610' column='1'/>
+      <parameter type-id='type-id-1687' name='result' filepath='Python/crossinterp.c' line='2611' column='1'/>
       <return type-id='type-id-5'/>
     </function-decl>
-    <function-decl name='_PyXI_Exit' mangled-name='_PyXI_Exit' filepath='Python/crossinterp.c' line='2730' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyXI_Exit'>
-      <parameter type-id='type-id-1686' name='session' filepath='Python/crossinterp.c' line='2730' column='1'/>
-      <parameter type-id='type-id-1685' name='override' filepath='Python/crossinterp.c' line='2730' column='1'/>
-      <parameter type-id='type-id-1687' name='result' filepath='Python/crossinterp.c' line='2731' column='1'/>
+    <function-decl name='_PyXI_Exit' mangled-name='_PyXI_Exit' filepath='Python/crossinterp.c' line='2728' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyXI_Exit'>
+      <parameter type-id='type-id-1686' name='session' filepath='Python/crossinterp.c' line='2728' column='1'/>
+      <parameter type-id='type-id-1685' name='override' filepath='Python/crossinterp.c' line='2728' column='1'/>
+      <parameter type-id='type-id-1687' name='result' filepath='Python/crossinterp.c' line='2729' column='1'/>
       <return type-id='type-id-5'/>
     </function-decl>
-    <function-decl name='_PyXI_GetMainNamespace' mangled-name='_PyXI_GetMainNamespace' filepath='Python/crossinterp.c' line='2908' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyXI_GetMainNamespace'>
-      <parameter type-id='type-id-1686' name='session' filepath='Python/crossinterp.c' line='2908' column='1'/>
-      <parameter type-id='type-id-1685' name='failure' filepath='Python/crossinterp.c' line='2908' column='1'/>
+    <function-decl name='_PyXI_GetMainNamespace' mangled-name='_PyXI_GetMainNamespace' filepath='Python/crossinterp.c' line='2907' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyXI_GetMainNamespace'>
+      <parameter type-id='type-id-1686' name='session' filepath='Python/crossinterp.c' line='2907' column='1'/>
+      <parameter type-id='type-id-1685' name='failure' filepath='Python/crossinterp.c' line='2907' column='1'/>
       <return type-id='type-id-6'/>
     </function-decl>
-    <function-decl name='_PyXI_Preserve' mangled-name='_PyXI_Preserve' filepath='Python/crossinterp.c' line='3009' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyXI_Preserve'>
-      <parameter type-id='type-id-1686' name='session' filepath='Python/crossinterp.c' line='3009' column='1'/>
-      <parameter type-id='type-id-4' name='name' filepath='Python/crossinterp.c' line='3009' column='1'/>
-      <parameter type-id='type-id-6' name='value' filepath='Python/crossinterp.c' line='3009' column='1'/>
-      <parameter type-id='type-id-1685' name='p_failure' filepath='Python/crossinterp.c' line='3010' column='1'/>
+    <function-decl name='_PyXI_Preserve' mangled-name='_PyXI_Preserve' filepath='Python/crossinterp.c' line='3008' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyXI_Preserve'>
+      <parameter type-id='type-id-1686' name='session' filepath='Python/crossinterp.c' line='3008' column='1'/>
+      <parameter type-id='type-id-4' name='name' filepath='Python/crossinterp.c' line='3008' column='1'/>
+      <parameter type-id='type-id-6' name='value' filepath='Python/crossinterp.c' line='3008' column='1'/>
+      <parameter type-id='type-id-1685' name='p_failure' filepath='Python/crossinterp.c' line='3009' column='1'/>
       <return type-id='type-id-5'/>
     </function-decl>
-    <function-decl name='_PyXI_GetPreserved' mangled-name='_PyXI_GetPreserved' filepath='Python/crossinterp.c' line='3041' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyXI_GetPreserved'>
-      <parameter type-id='type-id-1687' name='result' filepath='Python/crossinterp.c' line='3041' column='1'/>
-      <parameter type-id='type-id-4' name='name' filepath='Python/crossinterp.c' line='3041' column='1'/>
+    <function-decl name='_PyXI_GetPreserved' mangled-name='_PyXI_GetPreserved' filepath='Python/crossinterp.c' line='3040' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyXI_GetPreserved'>
+      <parameter type-id='type-id-1687' name='result' filepath='Python/crossinterp.c' line='3040' column='1'/>
+      <parameter type-id='type-id-4' name='name' filepath='Python/crossinterp.c' line='3040' column='1'/>
       <return type-id='type-id-6'/>
     </function-decl>
-    <function-decl name='_PyXI_ClearResult' mangled-name='_PyXI_ClearResult' filepath='Python/crossinterp.c' line='3051' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyXI_ClearResult'>
-      <parameter type-id='type-id-1687' name='result' filepath='Python/crossinterp.c' line='3051' column='1'/>
+    <function-decl name='_PyXI_ClearResult' mangled-name='_PyXI_ClearResult' filepath='Python/crossinterp.c' line='3050' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyXI_ClearResult'>
+      <parameter type-id='type-id-1687' name='result' filepath='Python/crossinterp.c' line='3050' column='1'/>
       <return type-id='type-id-3'/>
     </function-decl>
-    <function-decl name='_PyXI_NewInterpreter' mangled-name='_PyXI_NewInterpreter' filepath='Python/crossinterp.c' line='3198' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyXI_NewInterpreter'>
-      <parameter type-id='type-id-1681' name='config' filepath='Python/crossinterp.c' line='3198' column='1'/>
-      <parameter type-id='type-id-170' name='maybe_whence' filepath='Python/crossinterp.c' line='3198' column='1'/>
-      <parameter type-id='type-id-1682' name='p_tstate' filepath='Python/crossinterp.c' line='3199' column='1'/>
-      <parameter type-id='type-id-1682' name='p_save_tstate' filepath='Python/crossinterp.c' line='3199' column='1'/>
+    <function-decl name='_PyXI_NewInterpreter' mangled-name='_PyXI_NewInterpreter' filepath='Python/crossinterp.c' line='3197' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyXI_NewInterpreter'>
+      <parameter type-id='type-id-1681' name='config' filepath='Python/crossinterp.c' line='3197' column='1'/>
+      <parameter type-id='type-id-170' name='maybe_whence' filepath='Python/crossinterp.c' line='3197' column='1'/>
+      <parameter type-id='type-id-1682' name='p_tstate' filepath='Python/crossinterp.c' line='3198' column='1'/>
+      <parameter type-id='type-id-1682' name='p_save_tstate' filepath='Python/crossinterp.c' line='3198' column='1'/>
       <return type-id='type-id-33'/>
     </function-decl>
-    <function-decl name='_PyXI_EndInterpreter' mangled-name='_PyXI_EndInterpreter' filepath='Python/crossinterp.c' line='3245' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyXI_EndInterpreter'>
-      <parameter type-id='type-id-33' name='interp' filepath='Python/crossinterp.c' line='3245' column='1'/>
-      <parameter type-id='type-id-31' name='tstate' filepath='Python/crossinterp.c' line='3246' column='1'/>
-      <parameter type-id='type-id-1682' name='p_save_tstate' filepath='Python/crossinterp.c' line='3246' column='1'/>
+    <function-decl name='_PyXI_EndInterpreter' mangled-name='_PyXI_EndInterpreter' filepath='Python/crossinterp.c' line='3244' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyXI_EndInterpreter'>
+      <parameter type-id='type-id-33' name='interp' filepath='Python/crossinterp.c' line='3244' column='1'/>
+      <parameter type-id='type-id-31' name='tstate' filepath='Python/crossinterp.c' line='3245' column='1'/>
+      <parameter type-id='type-id-1682' name='p_save_tstate' filepath='Python/crossinterp.c' line='3245' column='1'/>
       <return type-id='type-id-3'/>
     </function-decl>
     <function-decl name='_PyXIData_GetNotShareableErrorType' mangled-name='_PyXIData_GetNotShareableErrorType' filepath='Python/crossinterp_data_lookup.h' line='66' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyXIData_GetNotShareableErrorType'>
@@ -27407,10 +27438,10 @@
       <parameter type-id='type-id-1502' name='xidata' filepath='Python/crossinterp_data_lookup.h' line='716' column='1'/>
       <return type-id='type-id-6'/>
     </function-decl>
-    <function-decl name='_PyFunction_GetXIData' mangled-name='_PyFunction_GetXIData' filepath='Python/crossinterp_data_lookup.h' line='746' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyFunction_GetXIData'>
-      <parameter type-id='type-id-31' name='tstate' filepath='Python/crossinterp_data_lookup.h' line='746' column='1'/>
-      <parameter type-id='type-id-6' name='func' filepath='Python/crossinterp_data_lookup.h' line='746' column='1'/>
-      <parameter type-id='type-id-1502' name='xidata' filepath='Python/crossinterp_data_lookup.h' line='747' column='1'/>
+    <function-decl name='_PyFunction_GetXIData' mangled-name='_PyFunction_GetXIData' filepath='Python/crossinterp_data_lookup.h' line='756' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyFunction_GetXIData'>
+      <parameter type-id='type-id-31' name='tstate' filepath='Python/crossinterp_data_lookup.h' line='756' column='1'/>
+      <parameter type-id='type-id-6' name='func' filepath='Python/crossinterp_data_lookup.h' line='756' column='1'/>
+      <parameter type-id='type-id-1502' name='xidata' filepath='Python/crossinterp_data_lookup.h' line='757' column='1'/>
       <return type-id='type-id-5'/>
     </function-decl>
   </abi-instr>
@@ -28206,6 +28237,12 @@
       <parameter type-id='type-id-174'/>
       <return type-id='type-id-5'/>
     </function-decl>
+    <function-decl name='_PyEval_EnsureBuiltinsWithModule' filepath='./Include/internal/pycore_ceval.h' line='247' column='1' visibility='default' binding='global' size-in-bits='64'>
+      <parameter type-id='type-id-31'/>
+      <parameter type-id='type-id-6'/>
+      <parameter type-id='type-id-241'/>
+      <return type-id='type-id-5'/>
+    </function-decl>
     <function-decl name='_Py_ext_module_loader_info_clear' filepath='./Include/internal/pycore_importdl.h' line='46' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-1727'/>
       <return type-id='type-id-3'/>
@@ -28289,11 +28326,6 @@
     </function-decl>
     <function-decl name='PyImport_GetModuleDict' mangled-name='PyImport_GetModuleDict' filepath='Python/import.c' line='206' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyImport_GetModuleDict'>
       <return type-id='type-id-6'/>
-    </function-decl>
-    <function-decl name='_PyImport_SetModule' mangled-name='_PyImport_SetModule' filepath='Python/import.c' line='213' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyImport_SetModule'>
-      <parameter type-id='type-id-6' name='name' filepath='Python/import.c' line='213' column='1'/>
-      <parameter type-id='type-id-6' name='m' filepath='Python/import.c' line='213' column='1'/>
-      <return type-id='type-id-5'/>
     </function-decl>
     <function-decl name='PyImport_AddModuleRef' mangled-name='PyImport_AddModuleRef' filepath='Python/import.c' line='339' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyImport_AddModuleRef'>
       <parameter type-id='type-id-4' name='name' filepath='Python/import.c' line='339' column='1'/>
@@ -28383,24 +28415,16 @@
       <parameter type-id='type-id-4' name='name' filepath='Python/import.c' line='3439' column='1'/>
       <return type-id='type-id-6'/>
     </function-decl>
-    <function-decl name='PyImport_ImportModuleLevel' mangled-name='PyImport_ImportModuleLevel' filepath='Python/import.c' line='3898' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyImport_ImportModuleLevel'>
-      <parameter type-id='type-id-4' name='name' filepath='Python/import.c' line='3898' column='1'/>
-      <parameter type-id='type-id-6' name='globals' filepath='Python/import.c' line='3898' column='1'/>
-      <parameter type-id='type-id-6' name='locals' filepath='Python/import.c' line='3898' column='1'/>
-      <parameter type-id='type-id-6' name='fromlist' filepath='Python/import.c' line='3899' column='1'/>
-      <parameter type-id='type-id-5' name='level' filepath='Python/import.c' line='3899' column='1'/>
-      <return type-id='type-id-6'/>
-    </function-decl>
     <function-decl name='PyImport_ReloadModule' mangled-name='PyImport_ReloadModule' filepath='Python/import.c' line='3916' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyImport_ReloadModule'>
       <parameter type-id='type-id-6' name='m' filepath='Python/import.c' line='3916' column='1'/>
       <return type-id='type-id-6'/>
     </function-decl>
-    <function-decl name='PyImport_ImportModuleAttr' mangled-name='PyImport_ImportModuleAttr' filepath='Python/import.c' line='4206' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyImport_ImportModuleAttr'>
-      <parameter type-id='type-id-6' name='modname' filepath='Python/import.c' line='4206' column='1'/>
-      <parameter type-id='type-id-6' name='attrname' filepath='Python/import.c' line='4206' column='1'/>
+    <function-decl name='PyImport_ImportModuleAttr' mangled-name='PyImport_ImportModuleAttr' filepath='Python/import.c' line='4209' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyImport_ImportModuleAttr'>
+      <parameter type-id='type-id-6' name='modname' filepath='Python/import.c' line='4209' column='1'/>
+      <parameter type-id='type-id-6' name='attrname' filepath='Python/import.c' line='4209' column='1'/>
       <return type-id='type-id-6'/>
     </function-decl>
-    <function-decl name='PyInit__imp' mangled-name='PyInit__imp' filepath='Python/import.c' line='4888' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyInit__imp'>
+    <function-decl name='PyInit__imp' mangled-name='PyInit__imp' filepath='Python/import.c' line='4891' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyInit__imp'>
       <return type-id='type-id-6'/>
     </function-decl>
   </abi-instr>
@@ -30579,90 +30603,82 @@
       <parameter type-id='type-id-33' name='interp' filepath='Python/pystate.c' line='984' column='1'/>
       <return type-id='type-id-3'/>
     </function-decl>
-    <function-decl name='_PyInterpreterState_IsRunningMain' mangled-name='_PyInterpreterState_IsRunningMain' filepath='Python/pystate.c' line='1150' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyInterpreterState_IsRunningMain'>
-      <parameter type-id='type-id-33' name='interp' filepath='Python/pystate.c' line='1150' column='1'/>
-      <return type-id='type-id-5'/>
-    </function-decl>
     <function-decl name='_PyInterpreterState_GetWhence' mangled-name='_PyInterpreterState_GetWhence' filepath='Python/pystate.c' line='1208' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyInterpreterState_GetWhence'>
       <parameter type-id='type-id-33' name='interp' filepath='Python/pystate.c' line='1208' column='1'/>
       <return type-id='type-id-184'/>
     </function-decl>
-    <function-decl name='PyInterpreterState_GetDict' mangled-name='PyInterpreterState_GetDict' filepath='Python/pystate.c' line='1262' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyInterpreterState_GetDict'>
-      <parameter type-id='type-id-33' name='interp' filepath='Python/pystate.c' line='1262' column='1'/>
-      <return type-id='type-id-6'/>
-    </function-decl>
-    <function-decl name='_PyInterpreterState_ObjectToID' mangled-name='_PyInterpreterState_ObjectToID' filepath='Python/pystate.c' line='1280' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyInterpreterState_ObjectToID'>
-      <parameter type-id='type-id-6' name='idobj' filepath='Python/pystate.c' line='1280' column='1'/>
+    <function-decl name='_PyInterpreterState_ObjectToID' mangled-name='_PyInterpreterState_ObjectToID' filepath='Python/pystate.c' line='1281' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyInterpreterState_ObjectToID'>
+      <parameter type-id='type-id-6' name='idobj' filepath='Python/pystate.c' line='1281' column='1'/>
       <return type-id='type-id-409'/>
     </function-decl>
-    <function-decl name='_PyInterpreterState_GetIDObject' mangled-name='_PyInterpreterState_GetIDObject' filepath='Python/pystate.c' line='1324' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyInterpreterState_GetIDObject'>
-      <parameter type-id='type-id-33' name='interp' filepath='Python/pystate.c' line='1324' column='1'/>
+    <function-decl name='_PyInterpreterState_GetIDObject' mangled-name='_PyInterpreterState_GetIDObject' filepath='Python/pystate.c' line='1325' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyInterpreterState_GetIDObject'>
+      <parameter type-id='type-id-33' name='interp' filepath='Python/pystate.c' line='1325' column='1'/>
       <return type-id='type-id-6'/>
     </function-decl>
-    <function-decl name='_PyInterpreterState_IDIncref' mangled-name='_PyInterpreterState_IDIncref' filepath='Python/pystate.c' line='1337' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyInterpreterState_IDIncref'>
-      <parameter type-id='type-id-33' name='interp' filepath='Python/pystate.c' line='1337' column='1'/>
+    <function-decl name='_PyInterpreterState_IDIncref' mangled-name='_PyInterpreterState_IDIncref' filepath='Python/pystate.c' line='1338' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyInterpreterState_IDIncref'>
+      <parameter type-id='type-id-33' name='interp' filepath='Python/pystate.c' line='1338' column='1'/>
       <return type-id='type-id-3'/>
     </function-decl>
-    <function-decl name='_PyInterpreterState_IDDecref' mangled-name='_PyInterpreterState_IDDecref' filepath='Python/pystate.c' line='1344' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyInterpreterState_IDDecref'>
-      <parameter type-id='type-id-33' name='interp' filepath='Python/pystate.c' line='1344' column='1'/>
+    <function-decl name='_PyInterpreterState_IDDecref' mangled-name='_PyInterpreterState_IDDecref' filepath='Python/pystate.c' line='1345' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyInterpreterState_IDDecref'>
+      <parameter type-id='type-id-33' name='interp' filepath='Python/pystate.c' line='1345' column='1'/>
       <return type-id='type-id-3'/>
     </function-decl>
-    <function-decl name='_PyInterpreterState_RequiresIDRef' mangled-name='_PyInterpreterState_RequiresIDRef' filepath='Python/pystate.c' line='1362' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyInterpreterState_RequiresIDRef'>
-      <parameter type-id='type-id-33' name='interp' filepath='Python/pystate.c' line='1362' column='1'/>
+    <function-decl name='_PyInterpreterState_RequiresIDRef' mangled-name='_PyInterpreterState_RequiresIDRef' filepath='Python/pystate.c' line='1363' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyInterpreterState_RequiresIDRef'>
+      <parameter type-id='type-id-33' name='interp' filepath='Python/pystate.c' line='1363' column='1'/>
       <return type-id='type-id-5'/>
     </function-decl>
-    <function-decl name='_PyInterpreterState_RequireIDRef' mangled-name='_PyInterpreterState_RequireIDRef' filepath='Python/pystate.c' line='1368' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyInterpreterState_RequireIDRef'>
-      <parameter type-id='type-id-33' name='interp' filepath='Python/pystate.c' line='1368' column='1'/>
-      <parameter type-id='type-id-5' name='required' filepath='Python/pystate.c' line='1368' column='1'/>
+    <function-decl name='_PyInterpreterState_RequireIDRef' mangled-name='_PyInterpreterState_RequireIDRef' filepath='Python/pystate.c' line='1369' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyInterpreterState_RequireIDRef'>
+      <parameter type-id='type-id-33' name='interp' filepath='Python/pystate.c' line='1369' column='1'/>
+      <parameter type-id='type-id-5' name='required' filepath='Python/pystate.c' line='1369' column='1'/>
       <return type-id='type-id-3'/>
     </function-decl>
-    <function-decl name='_PyInterpreterState_LookUpIDObject' mangled-name='_PyInterpreterState_LookUpIDObject' filepath='Python/pystate.c' line='1435' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyInterpreterState_LookUpIDObject'>
-      <parameter type-id='type-id-6' name='requested_id' filepath='Python/pystate.c' line='1435' column='1'/>
+    <function-decl name='_PyInterpreterState_LookUpIDObject' mangled-name='_PyInterpreterState_LookUpIDObject' filepath='Python/pystate.c' line='1436' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyInterpreterState_LookUpIDObject'>
+      <parameter type-id='type-id-6' name='requested_id' filepath='Python/pystate.c' line='1436' column='1'/>
       <return type-id='type-id-33'/>
     </function-decl>
-    <function-decl name='_PyThreadState_Prealloc' mangled-name='_PyThreadState_Prealloc' filepath='Python/pystate.c' line='1692' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyThreadState_Prealloc'>
-      <parameter type-id='type-id-33' name='interp' filepath='Python/pystate.c' line='1692' column='1'/>
+    <function-decl name='_PyThreadState_Prealloc' mangled-name='_PyThreadState_Prealloc' filepath='Python/pystate.c' line='1693' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyThreadState_Prealloc'>
+      <parameter type-id='type-id-33' name='interp' filepath='Python/pystate.c' line='1693' column='1'/>
       <return type-id='type-id-31'/>
     </function-decl>
-    <function-decl name='_PyThreadState_Init' mangled-name='_PyThreadState_Init' filepath='Python/pystate.c' line='1700' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyThreadState_Init'>
-      <parameter type-id='type-id-31' name='tstate' filepath='Python/pystate.c' line='1700' column='1'/>
+    <function-decl name='_PyThreadState_Init' mangled-name='_PyThreadState_Init' filepath='Python/pystate.c' line='1701' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyThreadState_Init'>
+      <parameter type-id='type-id-31' name='tstate' filepath='Python/pystate.c' line='1701' column='1'/>
       <return type-id='type-id-3'/>
     </function-decl>
-    <function-decl name='PyThreadState_DeleteCurrent' mangled-name='PyThreadState_DeleteCurrent' filepath='Python/pystate.c' line='1951' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyThreadState_DeleteCurrent'>
+    <function-decl name='PyThreadState_DeleteCurrent' mangled-name='PyThreadState_DeleteCurrent' filepath='Python/pystate.c' line='1952' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyThreadState_DeleteCurrent'>
       <return type-id='type-id-3'/>
     </function-decl>
-    <function-decl name='_PyThreadState_GetDict' mangled-name='_PyThreadState_GetDict' filepath='Python/pystate.c' line='2037' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyThreadState_GetDict'>
-      <parameter type-id='type-id-31' name='tstate' filepath='Python/pystate.c' line='2037' column='1'/>
+    <function-decl name='_PyThreadState_GetDict' mangled-name='_PyThreadState_GetDict' filepath='Python/pystate.c' line='2038' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyThreadState_GetDict'>
+      <parameter type-id='type-id-31' name='tstate' filepath='Python/pystate.c' line='2038' column='1'/>
       <return type-id='type-id-6'/>
     </function-decl>
-    <function-decl name='PyThreadState_GetID' mangled-name='PyThreadState_GetID' filepath='Python/pystate.c' line='2086' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyThreadState_GetID'>
-      <parameter type-id='type-id-31' name='tstate' filepath='Python/pystate.c' line='2086' column='1'/>
+    <function-decl name='PyThreadState_GetID' mangled-name='PyThreadState_GetID' filepath='Python/pystate.c' line='2087' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyThreadState_GetID'>
+      <parameter type-id='type-id-31' name='tstate' filepath='Python/pystate.c' line='2087' column='1'/>
       <return type-id='type-id-111'/>
     </function-decl>
-    <function-decl name='PyThreadState_SetAsyncExc' mangled-name='PyThreadState_SetAsyncExc' filepath='Python/pystate.c' line='2484' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyThreadState_SetAsyncExc'>
-      <parameter type-id='type-id-2' name='id' filepath='Python/pystate.c' line='2484' column='1'/>
-      <parameter type-id='type-id-6' name='exc' filepath='Python/pystate.c' line='2484' column='1'/>
+    <function-decl name='PyThreadState_SetAsyncExc' mangled-name='PyThreadState_SetAsyncExc' filepath='Python/pystate.c' line='2485' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyThreadState_SetAsyncExc'>
+      <parameter type-id='type-id-2' name='id' filepath='Python/pystate.c' line='2485' column='1'/>
+      <parameter type-id='type-id-6' name='exc' filepath='Python/pystate.c' line='2485' column='1'/>
       <return type-id='type-id-5'/>
     </function-decl>
-    <function-decl name='PyThreadState_GetUnchecked' mangled-name='PyThreadState_GetUnchecked' filepath='Python/pystate.c' line='2526' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyThreadState_GetUnchecked'>
+    <function-decl name='PyThreadState_GetUnchecked' mangled-name='PyThreadState_GetUnchecked' filepath='Python/pystate.c' line='2527' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyThreadState_GetUnchecked'>
       <return type-id='type-id-31'/>
     </function-decl>
-    <function-decl name='PyInterpreterState_Main' mangled-name='PyInterpreterState_Main' filepath='Python/pystate.c' line='2604' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyInterpreterState_Main'>
+    <function-decl name='PyInterpreterState_Main' mangled-name='PyInterpreterState_Main' filepath='Python/pystate.c' line='2605' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyInterpreterState_Main'>
       <return type-id='type-id-33'/>
     </function-decl>
-    <function-decl name='_PyThread_CurrentFrames' mangled-name='_PyThread_CurrentFrames' filepath='Python/pystate.c' line='2635' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyThread_CurrentFrames'>
+    <function-decl name='_PyThread_CurrentFrames' mangled-name='_PyThread_CurrentFrames' filepath='Python/pystate.c' line='2636' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyThread_CurrentFrames'>
       <return type-id='type-id-6'/>
     </function-decl>
-    <function-decl name='PyGILState_Check' mangled-name='PyGILState_Check' filepath='Python/pystate.c' line='2832' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyGILState_Check'>
+    <function-decl name='PyGILState_Check' mangled-name='PyGILState_Check' filepath='Python/pystate.c' line='2833' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyGILState_Check'>
       <return type-id='type-id-5'/>
     </function-decl>
-    <function-decl name='_PyInterpreterState_GetEvalFrameFunc' mangled-name='_PyInterpreterState_GetEvalFrameFunc' filepath='Python/pystate.c' line='2958' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyInterpreterState_GetEvalFrameFunc'>
-      <parameter type-id='type-id-33' name='interp' filepath='Python/pystate.c' line='2958' column='1'/>
+    <function-decl name='_PyInterpreterState_GetEvalFrameFunc' mangled-name='_PyInterpreterState_GetEvalFrameFunc' filepath='Python/pystate.c' line='2959' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyInterpreterState_GetEvalFrameFunc'>
+      <parameter type-id='type-id-33' name='interp' filepath='Python/pystate.c' line='2959' column='1'/>
       <return type-id='type-id-1054'/>
     </function-decl>
-    <function-decl name='_PyInterpreterState_SetEvalFrameFunc' mangled-name='_PyInterpreterState_SetEvalFrameFunc' filepath='Python/pystate.c' line='2968' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyInterpreterState_SetEvalFrameFunc'>
-      <parameter type-id='type-id-33' name='interp' filepath='Python/pystate.c' line='2968' column='1'/>
-      <parameter type-id='type-id-1054' name='eval_frame' filepath='Python/pystate.c' line='2969' column='1'/>
+    <function-decl name='_PyInterpreterState_SetEvalFrameFunc' mangled-name='_PyInterpreterState_SetEvalFrameFunc' filepath='Python/pystate.c' line='2969' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyInterpreterState_SetEvalFrameFunc'>
+      <parameter type-id='type-id-33' name='interp' filepath='Python/pystate.c' line='2969' column='1'/>
+      <parameter type-id='type-id-1054' name='eval_frame' filepath='Python/pystate.c' line='2970' column='1'/>
       <return type-id='type-id-3'/>
     </function-decl>
   </abi-instr>
