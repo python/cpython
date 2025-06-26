@@ -1094,14 +1094,6 @@ iterations of the loop.
    .. versionadded:: 3.14
 
 
-.. opcode:: LOAD_CONST_IMMORTAL (consti)
-
-   Pushes ``co_consts[consti]`` onto the stack.
-   Can be used when the constant value is known to be immortal.
-
-   .. versionadded:: 3.14
-
-
 .. opcode:: LOAD_NAME (namei)
 
    Pushes the value associated with ``co_names[namei]`` onto the stack.

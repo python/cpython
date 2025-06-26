@@ -1,2 +1,0 @@
-Fix a crash when iterating over :class:`io.StringIO` on the :term:`free
-threaded <free threading>` build.

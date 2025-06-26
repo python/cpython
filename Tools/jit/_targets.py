@@ -10,6 +10,7 @@ import re
 import sys
 import tempfile
 import typing
+import shlex
 
 import _llvm
 import _schema
@@ -46,6 +47,7 @@ class _Target(typing.Generic[_S, _R]):
     stable: bool = False
     debug: bool = False
     verbose: bool = False
+    cflags: str = ""
     known_symbols: dict[str, int] = dataclasses.field(default_factory=dict)
     pyconfig_dir: pathlib.Path = pathlib.Path.cwd().resolve()
 
@@ -62,6 +64,7 @@ class _Target(typing.Generic[_S, _R]):
         hasher = hashlib.sha256()
         hasher.update(self.triple.encode())
         hasher.update(self.debug.to_bytes())
+        hasher.update(self.cflags.encode())
         # These dependencies are also reflected in _JITSources in regen.targets:
         hasher.update(PYTHON_EXECUTOR_CASES_C_H.read_bytes())
         hasher.update((self.pyconfig_dir / "pyconfig.h").read_bytes())
@@ -155,6 +158,8 @@ class _Target(typing.Generic[_S, _R]):
             f"{o}",
             f"{c}",
             *self.args,
+            # Allow user-provided CFLAGS to override any defaults
+            *shlex.split(self.cflags),
         ]
         await _llvm.run("clang", args, echo=self.verbose)
         return await self._parse(o)

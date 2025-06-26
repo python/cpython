@@ -58,7 +58,7 @@ _PyMutex_LockTimed(PyMutex *m, PyTime_t timeout, _PyLockFlags flags)
             return PY_LOCK_ACQUIRED;
         }
     }
-    else if (timeout == 0) {
+    if (timeout == 0) {
         return PY_LOCK_FAILURE;
     }
 

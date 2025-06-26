@@ -1256,7 +1256,7 @@ _PyFunction_VerifyStateless(PyThreadState *tstate, PyObject *func)
         return -1;
     }
     // Check the builtins.
-    PyObject *builtinsns = PyFunction_GET_BUILTINS(func);
+    PyObject *builtinsns = _PyFunction_GET_BUILTINS(func);
     if (builtinsns != NULL && !PyDict_Check(builtinsns)) {
         _PyErr_Format(tstate, PyExc_TypeError,
                       "unsupported builtins %R", builtinsns);
