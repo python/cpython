@@ -1064,8 +1064,8 @@ possible, while any potentially slow operations (such as sending an email via
       The :mod:`multiprocessing` module uses an internal logger created and
       accessed via :meth:`~multiprocessing.get_logger`.
       :class:`multiprocessing.Queue` will log ``DEBUG`` level messages upon
-      items being queued. If those log messages are processed by the same
-      :class:`QueueHandler` it will cause a deadlock or infinite recursion.
+      items being queued. If those log messages are processed by a
+      :class:`QueueHandler` using the same :class:`multiprocessing.Queue` instance, it will cause a deadlock or infinite recursion.
 
    .. method:: emit(record)
 
