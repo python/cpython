@@ -1,1 +1,2 @@
-Fix missing ``›`` char in palmos encoding.
+:mod:`codecs`: The byte `0x9b` now correctly decodes to `›` (U+203A - SINGLE
+RIGHT-POINTING ANGLE QUOTATION MARK) when using the palmos encoding.
