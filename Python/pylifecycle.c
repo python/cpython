@@ -2013,10 +2013,12 @@ make_pre_finalization_calls(PyThreadState *tstate)
         int called = 0;
 
         // Wrap up existing "threading"-module-created, non-daemon threads.
-        called = Py_MAX(called, wait_for_thread_shutdown(tstate));
+        int threads_joined = wait_for_thread_shutdown(tstate);
+        called = Py_MAX(called, threads_joined);
 
         // Make any remaining pending calls.
-        called = Py_MAX(called, _Py_FinishPendingCalls(tstate));
+        int made_pending_calls = _Py_FinishPendingCalls(tstate);
+        called = Py_MAX(called, made_pending_calls);
 
         /* The interpreter is still entirely intact at this point, and the
         * exit funcs may be relying on that.  In particular, if some thread
@@ -2028,7 +2030,8 @@ make_pre_finalization_calls(PyThreadState *tstate)
         * the threads created via Threading.
         */
 
-        called = Py_MAX(called, _PyAtExit_Call(tstate->interp));
+        int called_atexit = _PyAtExit_Call(tstate->interp);
+        called = Py_MAX(called, called_atexit);
 
         if (called == 0) {
             break;
