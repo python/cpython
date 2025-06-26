@@ -932,10 +932,23 @@ the following differences:
 
 - The :func:`format` protocol is not used. Instead, the format specifier and
   conversions (if any) are passed to a new :class:`~string.templatelib.Interpolation`
-  object that is created for each evaluated expression.
+  object that is created for each evaluated expression. It is up to code that
+  processes the resulting :class:`~string.templatelib.Template` object to
+  decide how to handle format specifiers and conversions.
 
 - Format specifiers containing nested replacement fields are evaluated eagerly,
   prior to being passed to the :class:`~string.templatelib.Interpolation` object.
+
+- When the equal sign ``'='`` is provided in an interpolation expression, the
+  resulting :class:`~string.templatelib.Template` object will have the expression
+  text along with a ``'='`` character placed in its
+  :attr:`~string.templatelib.Template.strings` attribute. The
+  :attr:`~string.templatelib.Template.interpolations` attribute will also
+  contain an ``Interpolation`` instance for the expression. By default, the
+  :attr:`~string.templatelib.Interpolation.conversion` attribute will be set to
+  ``'r'`` (i.e. :func:`repr`), unless there is a conversion explicitly specified
+  (in which case it overrides the default) or a format specifier is provided (in
+  which case, the ``conversion`` defaults to ``None``).
 
 
 .. _numbers:
@@ -1069,7 +1082,7 @@ readability::
 
 Either of these parts, but not both, can be empty. For example::
 
-   10.  # (equivalent to 10.0)
+   1.   # (equivalent to 10.0)
    .001  # (equivalent to 0.001)
 
 Optionally, the integer and fraction may be followed by an *exponent*:
