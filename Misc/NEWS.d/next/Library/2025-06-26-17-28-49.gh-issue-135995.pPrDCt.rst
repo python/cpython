@@ -1,0 +1,1 @@
+Fix missing `›` char in palmos encoding.
