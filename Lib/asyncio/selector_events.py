@@ -1077,7 +1077,11 @@ class _SelectorSocketTransport(_SelectorTransport):
                 self._fatal_error(exc, 'Fatal write error on socket transport')
                 return
             else:
-                data = memoryview(data)[n:]
+                if isinstance(data, memoryview):
+                    data = data.cast('c')[n:]
+                else:
+                    data = memoryview(data)[n:]
+                assert(data.itemsize == 1)
                 if not data:
                     return
             # Not all was written; register write handler.

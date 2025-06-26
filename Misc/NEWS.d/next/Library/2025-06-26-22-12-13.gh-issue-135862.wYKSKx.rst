@@ -1,0 +1,2 @@
+Fix bug where partial writes of :class:`memoryview` s of non-byte or 2+
+dimensional arrays would write remaining binary data incorrectly.

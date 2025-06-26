@@ -1,5 +1,6 @@
 """Tests for selector_events.py"""
 
+import array
 import collections
 import selectors
 import socket
@@ -12,6 +13,11 @@ try:
     import ssl
 except ImportError:
     ssl = None
+
+try:
+    from _testbuffer import *
+except ImportError:
+    ndarray = None
 
 import asyncio
 from asyncio.selector_events import (BaseSelectorEventLoop,
@@ -768,7 +774,39 @@ class SelectorSocketTransportTests(test_utils.TestCase):
         transport.write(data)
 
         self.loop.assert_writer(7, transport._write_ready)
-        self.assertEqual(list_to_buffer([b'ta']), transport._buffer)
+        self.assertEqualBufferContents(b'ta', transport._buffer)
+
+    def test_write_partial_nonbyte_array_memview_write(self):
+        arr = array.array('l', [-1, 1])
+        data = memoryview(arr)
+
+        self.sock.send.return_value = 8
+
+        transport = self.socket_transport()
+        transport.write(data)
+
+        self.loop.assert_writer(7, transport._write_ready)
+        remainder = memoryview(array.array('l', [1]))
+        self.assertEqualBufferContents(remainder.tobytes(), transport._buffer)
+
+    @unittest.skipUnless(ndarray, 'ndarray object required for this test')
+    def test_write_partial_ndarray_memview_write(self):
+        items = (-2, -1, 1, 2)
+        arr = ndarray(items, format='l', shape=(1, 2, 2))
+        data = memoryview(arr)
+
+        self.sock.send.return_value = 16
+
+        transport = self.socket_transport()
+        transport.write(data)
+
+        self.loop.assert_writer(7, transport._write_ready)
+        remainder = memoryview(array.array('l', (1, 2)))
+        self.assertEqualBufferContents(remainder.tobytes(), transport._buffer)
+
+    def assertEqualBufferContents(self, expected, buffer):
+        self.assertEqual(len(buffer), 1)
+        self.assertEqual(expected, buffer[0].tobytes())
 
     def test_write_partial_none(self):
         data = b'data'
