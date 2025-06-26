@@ -1353,8 +1353,8 @@ Regular Expression Objects
 
    Compile a replacement string into a :ref:`template object
    <template-objects>`, which can be used for replacing patterns in strings
-   using functions :re:`re.sub` or :re:`re.subn` or corresponding methods of
-   the :ref:`pattern object <re-objects>`.
+   using functions :func:`re.sub` or :func:`re.subn` or corresponding methods
+   of the :ref:`pattern object <re-objects>`.
 
    .. versionadded:: next
 
