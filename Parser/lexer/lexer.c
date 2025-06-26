@@ -1421,7 +1421,8 @@ f_string_middle:
                     return MAKE_TOKEN(
                         _PyTokenizer_syntaxerror(
                             tok,
-                            "f-string: newlines are not allowed in format specifiers for single quoted f-strings"
+                            "%c-string: newlines are not allowed in format specifiers for single quoted %c-strings",
+                            TOK_GET_STRING_PREFIX(tok), TOK_GET_STRING_PREFIX(tok)
                         )
                     );
                 }
