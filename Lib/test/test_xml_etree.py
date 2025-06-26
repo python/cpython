@@ -239,14 +239,6 @@ class ElementTreeTest(unittest.TestCase):
         class ElementLike:
             def __init__(self):
                 self.tag = "tag"
-                self.text = None
-                self.tail = None
-            def iter(self):
-                pass
-            def items(self):
-                pass
-            def __len__(self):
-                pass
 
         element_like = ElementLike()
         try:
