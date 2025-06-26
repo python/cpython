@@ -257,6 +257,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_GUARD_THIRD_NULL] = HAS_DEOPT_FLAG,
     [_GUARD_CALLABLE_TYPE_1] = HAS_DEOPT_FLAG,
     [_CALL_TYPE_1] = HAS_ARG_FLAG | HAS_ESCAPES_FLAG,
+    [_SKIP_CHECK_PERIODIC] = HAS_EVAL_BREAK_FLAG,
     [_GUARD_CALLABLE_STR_1] = HAS_DEOPT_FLAG,
     [_CALL_STR_1] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_GUARD_CALLABLE_TUPLE_1] = HAS_DEOPT_FLAG,
@@ -612,6 +613,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_SET_FUNCTION_ATTRIBUTE] = "_SET_FUNCTION_ATTRIBUTE",
     [_SET_IP] = "_SET_IP",
     [_SET_UPDATE] = "_SET_UPDATE",
+    [_SKIP_CHECK_PERIODIC] = "_SKIP_CHECK_PERIODIC",
     [_START_EXECUTOR] = "_START_EXECUTOR",
     [_STORE_ATTR] = "_STORE_ATTR",
     [_STORE_ATTR_INSTANCE_VALUE] = "_STORE_ATTR_INSTANCE_VALUE",
@@ -1133,6 +1135,8 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 0;
         case _CALL_TYPE_1:
             return 3;
+        case _SKIP_CHECK_PERIODIC:
+            return 0;
         case _GUARD_CALLABLE_STR_1:
             return 0;
         case _CALL_STR_1:

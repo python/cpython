@@ -293,6 +293,7 @@ typedef struct _JitOptContext {
     char done;
     char out_of_space;
     bool contradiction;
+    bool can_skip_periodic;
     // The current "executing" frame.
     _Py_UOpsAbstractFrame *frame;
     _Py_UOpsAbstractFrame frames[MAX_ABSTRACT_FRAME_DEPTH];

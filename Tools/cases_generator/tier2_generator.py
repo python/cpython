@@ -130,7 +130,7 @@ class Tier2Emitter(Emitter):
         one = next(tkn_iter)
         assert one.text == "1"
         self.out.emit_at(uop.name[-1], tkn)
-        return True
+        return TrueCHE
 
 
 def write_uop(uop: Uop, emitter: Emitter, stack: Stack) -> Stack:

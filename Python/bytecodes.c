@@ -2979,12 +2979,12 @@ dummy_func(
 
         macro(JUMP_BACKWARD_NO_JIT) =
             unused/1 +
-            _GUARD_CHECK_PERIODIC +
+            CHECK_PERIODIC +
             JUMP_BACKWARD_NO_INTERRUPT;
 
         macro(JUMP_BACKWARD_JIT) =
             unused/1 +
-            _GUARD_CHECK_PERIODIC +
+            CHECK_PERIODIC +
             JUMP_BACKWARD_NO_INTERRUPT +
             _JIT;
 
@@ -4033,12 +4033,21 @@ dummy_func(
             PyStackRef_CLOSE(arg);
         }
 
+        op(_SKIP_CHECK_PERIODIC, ( -- )) {
+        #if TIER_ONE
+            // Skip the following CHECK_PERIODIC.
+            assert(next_instr->op.code == CHECK_PERIODIC);
+            SKIP_OVER(1);
+        #endif
+        }
+
         macro(CALL_TYPE_1) =
             unused/1 +
             unused/2 +
             _GUARD_NOS_NULL +
             _GUARD_CALLABLE_TYPE_1 +
-            _CALL_TYPE_1;
+            _CALL_TYPE_1 +
+            _SKIP_CHECK_PERIODIC;
 
         op(_GUARD_CALLABLE_STR_1, (callable, unused, unused -- callable, unused, unused)) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
@@ -4065,7 +4074,8 @@ dummy_func(
             unused/2 +
             _GUARD_NOS_NULL +
             _GUARD_CALLABLE_STR_1 +
-            _CALL_STR_1;
+            _CALL_STR_1 +
+            _SKIP_CHECK_PERIODIC;
 
         op(_GUARD_CALLABLE_TUPLE_1, (callable, unused, unused -- callable, unused, unused)) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
@@ -4092,7 +4102,8 @@ dummy_func(
             unused/2 +
             _GUARD_NOS_NULL +
             _GUARD_CALLABLE_TUPLE_1 +
-            _CALL_TUPLE_1;
+            _CALL_TUPLE_1 +
+            _SKIP_CHECK_PERIODIC;
 
         op(_CHECK_AND_ALLOCATE_OBJECT, (type_version/2, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
@@ -4299,7 +4310,8 @@ dummy_func(
             unused/2 +
             _GUARD_NOS_NULL +
             _GUARD_CALLABLE_LEN +
-            _CALL_LEN;
+            _CALL_LEN +
+            _SKIP_CHECK_PERIODIC;
 
         op(_GUARD_CALLABLE_LEN, (callable, unused, unused -- callable, unused, unused)){
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
@@ -4349,6 +4361,11 @@ dummy_func(
             PyStackRef_CLOSE(callable);
             res = retval ? PyStackRef_True : PyStackRef_False;
             assert((!PyStackRef_IsNull(res)) ^ (_PyErr_Occurred(tstate) != NULL));
+        #if TIER_ONE
+            // Skip the following CHECK_PERIODIC.
+            assert(next_instr->op.code == CHECK_PERIODIC);
+            SKIP_OVER(1);
+        #endif
         }
 
         macro(CALL_ISINSTANCE) =

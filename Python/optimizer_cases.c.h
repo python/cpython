@@ -10,6 +10,10 @@
         /* _CHECK_PERIODIC is not a viable micro-op for tier 2 */
 
         case _GUARD_CHECK_PERIODIC: {
+            if (ctx->can_skip_periodic) {
+                ctx->can_skip_periodic = false;
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
             break;
         }
 
@@ -2094,6 +2098,12 @@
             stack_pointer[-3] = res;
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _SKIP_CHECK_PERIODIC: {
+            ctx->can_skip_periodic = true;
+            REPLACE_OP(this_instr, _NOP, 0, 0);
             break;
         }
 

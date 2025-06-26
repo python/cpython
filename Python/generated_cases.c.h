@@ -2725,6 +2725,11 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 res = retval ? PyStackRef_True : PyStackRef_False;
                 assert((!PyStackRef_IsNull(res)) ^ (_PyErr_Occurred(tstate) != NULL));
+                #if TIER_ONE
+
+                assert(next_instr->op.code == CHECK_PERIODIC);
+                SKIP_OVER(1);
+                #endif
             }
             stack_pointer[0] = res;
             stack_pointer += 1;
@@ -3331,6 +3336,14 @@
                 PyStackRef_CLOSE(callable);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 res = PyStackRef_FromPyObjectSteal(res_o);
+            }
+            // _SKIP_CHECK_PERIODIC
+            {
+                #if TIER_ONE
+
+                assert(next_instr->op.code == CHECK_PERIODIC);
+                SKIP_OVER(1);
+                #endif
             }
             stack_pointer[0] = res;
             stack_pointer += 1;
@@ -4213,6 +4226,14 @@
                 }
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
+            // _SKIP_CHECK_PERIODIC
+            {
+                #if TIER_ONE
+
+                assert(next_instr->op.code == CHECK_PERIODIC);
+                SKIP_OVER(1);
+                #endif
+            }
             stack_pointer[0] = res;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -4276,6 +4297,14 @@
                 }
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
+            // _SKIP_CHECK_PERIODIC
+            {
+                #if TIER_ONE
+
+                assert(next_instr->op.code == CHECK_PERIODIC);
+                SKIP_OVER(1);
+                #endif
+            }
             stack_pointer[0] = res;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -4333,6 +4362,14 @@
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyStackRef_CLOSE(arg);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
+            }
+            // _SKIP_CHECK_PERIODIC
+            {
+                #if TIER_ONE
+
+                assert(next_instr->op.code == CHECK_PERIODIC);
+                SKIP_OVER(1);
+                #endif
             }
             DISPATCH();
         }
@@ -7495,14 +7532,17 @@
             INSTRUCTION_STATS(JUMP_BACKWARD_JIT);
             static_assert(1 == 1, "incorrect cache size");
             /* Skip 1 cache entry */
-            // _GUARD_CHECK_PERIODIC
+            // _CHECK_PERIODIC
             {
                 _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
                 QSBR_QUIESCENT_STATE(tstate);
                 if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
-                    UPDATE_MISS_STATS(JUMP_BACKWARD);
-                    assert(_PyOpcode_Deopt[opcode] == (JUMP_BACKWARD));
-                    JUMP_TO_PREDICTED(JUMP_BACKWARD);
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    int err = _Py_HandlePending(tstate);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                    if (err != 0) {
+                        JUMP_TO_LABEL(error);
+                    }
                 }
             }
             // _JUMP_BACKWARD_NO_INTERRUPT
@@ -7564,21 +7604,22 @@
             int opcode = JUMP_BACKWARD_NO_JIT;
             (void)(opcode);
             #endif
-            _Py_CODEUNIT* const this_instr = next_instr;
-            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(JUMP_BACKWARD_NO_JIT);
             static_assert(1 == 1, "incorrect cache size");
             /* Skip 1 cache entry */
-            // _GUARD_CHECK_PERIODIC
+            // _CHECK_PERIODIC
             {
                 _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
                 QSBR_QUIESCENT_STATE(tstate);
                 if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
-                    UPDATE_MISS_STATS(JUMP_BACKWARD);
-                    assert(_PyOpcode_Deopt[opcode] == (JUMP_BACKWARD));
-                    JUMP_TO_PREDICTED(JUMP_BACKWARD);
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    int err = _Py_HandlePending(tstate);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                    if (err != 0) {
+                        JUMP_TO_LABEL(error);
+                    }
                 }
             }
             // _JUMP_BACKWARD_NO_INTERRUPT
