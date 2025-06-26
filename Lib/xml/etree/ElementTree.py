@@ -122,6 +122,7 @@ def iselement(element):
     """Return True if *element* appears to be an Element."""
     return hasattr(element, 'tag')
 
+
 class Element:
     """An XML element.
 
