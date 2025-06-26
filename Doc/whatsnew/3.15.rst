@@ -229,7 +229,7 @@ sre_*
 -----
 
 * Removed :mod:`!sre_compile`, :mod:`!sre_constants` and :mod:`!sre_parse` modules.
-  (Contributed by Stan Ulbrych in :gh:``.)
+  (Contributed by Stan Ulbrych in :gh:`135994`.)
 
 
 http.server
