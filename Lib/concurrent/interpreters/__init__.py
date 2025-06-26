@@ -9,6 +9,10 @@ from _interpreters import (
     InterpreterError, InterpreterNotFoundError, NotShareableError,
     is_shareable,
 )
+from ._queues import (
+    create as create_queue,
+    Queue, QueueEmpty, QueueFull,
+)
 
 
 __all__ = [
@@ -18,21 +22,6 @@ __all__ = [
     'NotShareableError',
     'create_queue', 'Queue', 'QueueEmpty', 'QueueFull',
 ]
-
-
-_queuemod = None
-
-def __getattr__(name):
-    if name in ('Queue', 'QueueEmpty', 'QueueFull', 'create_queue'):
-        global create_queue, Queue, QueueEmpty, QueueFull
-        ns = globals()
-        from .queues import (
-            create as create_queue,
-            Queue, QueueEmpty, QueueFull,
-        )
-        return ns[name]
-    else:
-        raise AttributeError(name)
 
 
 _EXEC_FAILURE_STR = """

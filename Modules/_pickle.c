@@ -5543,17 +5543,16 @@ static int
 load_counted_binstring(PickleState *st, UnpicklerObject *self, int nbytes)
 {
     PyObject *obj;
-    Py_ssize_t size;
+    long size;
     char *s;
 
     if (_Unpickler_Read(self, st, &s, nbytes) < 0)
         return -1;
 
-    size = calc_binsize(s, nbytes);
+    size = calc_binint(s, nbytes);
     if (size < 0) {
-        PyErr_Format(st->UnpicklingError,
-                     "BINSTRING exceeds system's maximum size of %zd bytes",
-                     PY_SSIZE_T_MAX);
+        PyErr_SetString(st->UnpicklingError,
+                     "BINSTRING pickle has negative byte count");
         return -1;
     }
 

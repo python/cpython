@@ -1716,7 +1716,7 @@ ABI_THREAD=""
 # --disable-gil
 AC_MSG_CHECKING([for --disable-gil])
 AC_ARG_ENABLE([gil],
-  [AS_HELP_STRING([--disable-gil], [enable experimental support for running without the GIL (default is no)])],
+  [AS_HELP_STRING([--disable-gil], [enable support for running without the GIL (default is no)])],
   [AS_VAR_IF([enable_gil], [yes], [disable_gil=no], [disable_gil=yes])], [disable_gil=no]
 )
 AC_MSG_RESULT([$disable_gil])
@@ -2776,7 +2776,7 @@ AS_VAR_IF([jit_flags],
           [],
           [AS_VAR_APPEND([CFLAGS_NODIST], [" $jit_flags"])
            AS_VAR_SET([REGEN_JIT_COMMAND],
-                      ["\$(PYTHON_FOR_REGEN) \$(srcdir)/Tools/jit/build.py ${ARCH_TRIPLES:-$host} --output-dir . --pyconfig-dir ."])
+                      ["\$(PYTHON_FOR_REGEN) \$(srcdir)/Tools/jit/build.py ${ARCH_TRIPLES:-$host} --output-dir . --pyconfig-dir . --cflags=\"$CFLAGS_JIT\""])
            AS_VAR_SET([JIT_STENCILS_H], ["jit_stencils.h"])
            AS_VAR_IF([Py_DEBUG],
                      [true],
@@ -3172,10 +3172,6 @@ if test "$ac_cv_sizeof_off_t" -gt "$ac_cv_sizeof_long" -a \
 else
   have_largefile_support="no"
 fi
-dnl LFS does not work with Emscripten 3.1
-AS_CASE([$ac_sys_system],
-  [Emscripten], [have_largefile_support="no"]
-)
 AS_VAR_IF([have_largefile_support], [yes], [
   AC_DEFINE([HAVE_LARGEFILE_SUPPORT], [1],
   [Defined to enable large file support when an off_t is bigger than a long
@@ -4167,7 +4163,7 @@ int main(void)
 [ac_cv_ffi_complex_double_supported=no])
 ])])
 if test "$ac_cv_ffi_complex_double_supported" = "yes"; then
-    AC_DEFINE([Py_FFI_SUPPORT_C_COMPLEX], [1],
+    AC_DEFINE([_Py_FFI_SUPPORT_C_COMPLEX], [1],
               [Defined if _Complex C type can be used with libffi.])
 fi
 
@@ -5542,7 +5538,7 @@ AC_CHECK_DECL([MAXLOGNAME],
               [AC_DEFINE([HAVE_MAXLOGNAME], [1],
                          [Define if you have the 'MAXLOGNAME' constant.])],
               [],
-              [@%:@include <sys/params.h>])
+              [@%:@include <sys/param.h>])
 
 AC_CHECK_DECLS([UT_NAMESIZE],
               [AC_DEFINE([HAVE_UT_NAMESIZE], [1],
@@ -7172,8 +7168,6 @@ if test "$with_remote_debug" = yes; then
     [Define if you want to enable remote debugging support.])
   AC_MSG_RESULT([yes])
 else
-  AC_DEFINE([Py_REMOTE_DEBUG], [0],
-    [Define if you want to enable remote debugging support.])
   AC_MSG_RESULT([no])
 fi
 
