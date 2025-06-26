@@ -42,10 +42,7 @@ class LoaderTest(unittest.TestCase):
                 self.skipTest('could not find library to load')
         CDLL(test_lib)
         CDLL(os.path.basename(test_lib))
-        class CTypesTestPathLikeCls:
-            def __fspath__(self):
-                return test_lib
-        CDLL(CTypesTestPathLikeCls())
+        CDLL(os_helper.FakePath(test_lib))
         self.assertRaises(OSError, CDLL, self.unknowndll)
 
     def test_load_version(self):
@@ -138,7 +135,7 @@ class LoaderTest(unittest.TestCase):
                          'test specific to Windows')
     def test_load_hasattr(self):
         # bpo-34816: shouldn't raise OSError
-        self.assertFalse(hasattr(ctypes.windll, 'test'))
+        self.assertNotHasAttr(ctypes.windll, 'test')
 
     @unittest.skipUnless(os.name == "nt",
                          'test specific to Windows')

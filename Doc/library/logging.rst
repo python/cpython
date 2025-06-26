@@ -109,11 +109,11 @@ The ``name`` is potentially a period-separated hierarchical value, like
 Loggers that are further down in the hierarchical list are children of loggers
 higher up in the list.  For example, given a logger with a name of ``foo``,
 loggers with names of ``foo.bar``, ``foo.bar.baz``, and ``foo.bam`` are all
-descendants of ``foo``.  The logger name hierarchy is analogous to the Python
-package hierarchy, and identical to it if you organise your loggers on a
-per-module basis using the recommended construction
-``logging.getLogger(__name__)``.  That's because in a module, ``__name__``
-is the module's name in the Python package namespace.
+descendants of ``foo``.  In addition, all loggers are descendants of the root
+logger. The logger name hierarchy is analogous to the Python package hierarchy,
+and identical to it if you organise your loggers on a per-module basis using
+the recommended construction ``logging.getLogger(__name__)``.  That's because
+in a module, ``__name__`` is the module's name in the Python package namespace.
 
 
 .. class:: Logger
@@ -304,7 +304,8 @@ is the module's name in the Python package namespace.
       parameter mirrors the equivalent one in the :mod:`warnings` module.
 
       The fourth keyword argument is *extra* which can be used to pass a
-      dictionary which is used to populate the __dict__ of the :class:`LogRecord`
+      dictionary which is used to populate the :attr:`~object.__dict__` of the
+      :class:`LogRecord`
       created for the logging event with user-defined attributes. These custom
       attributes can then be used as you like. For example, they could be
       incorporated into logged messages. For example::
@@ -341,7 +342,7 @@ is the module's name in the Python package namespace.
 
       If no handler is attached to this logger (or any of its ancestors,
       taking into account the relevant :attr:`Logger.propagate` attributes),
-      the message will be sent to the handler set on :attr:`lastResort`.
+      the message will be sent to the handler set on :data:`lastResort`.
 
       .. versionchanged:: 3.2
          The *stack_info* parameter was added.
@@ -351,10 +352,6 @@ is the module's name in the Python package namespace.
 
       .. versionchanged:: 3.8
          The *stacklevel* parameter was added.
-
-      .. versionchanged:: 3.13
-         Remove the undocumented ``warn()`` method which was an alias to the
-         :meth:`warning` method.
 
 
    .. method:: Logger.info(msg, *args, **kwargs)
@@ -367,6 +364,10 @@ is the module's name in the Python package namespace.
 
       Logs a message with level :const:`WARNING` on this logger. The arguments are
       interpreted as for :meth:`debug`.
+
+      .. note:: There is an obsolete method ``warn`` which is functionally
+         identical to ``warning``. As ``warn`` is deprecated, please do not use
+         it - use ``warning`` instead.
 
    .. method:: Logger.error(msg, *args, **kwargs)
 
@@ -561,7 +562,8 @@ subclasses. However, the :meth:`!__init__` method in subclasses needs to call
 
    .. method:: Handler.setFormatter(fmt)
 
-      Sets the :class:`Formatter` for this handler to *fmt*.
+      Sets the formatter for this handler to *fmt*.
+      The *fmt* argument must be a :class:`Formatter` instance or ``None``.
 
 
    .. method:: Handler.addFilter(filter)
@@ -591,10 +593,12 @@ subclasses. However, the :meth:`!__init__` method in subclasses needs to call
 
    .. method:: Handler.close()
 
-      Tidy up any resources used by the handler. This version does no output but
-      removes the handler from an internal list of handlers which is closed when
-      :func:`shutdown` is called. Subclasses should ensure that this gets called
-      from overridden :meth:`close` methods.
+      Tidy up any resources used by the handler. This version does no output
+      but removes the handler from an internal map of handlers, which is used
+      for handler lookup by name.
+
+      Subclasses should ensure that this gets called from overridden :meth:`close`
+      methods.
 
 
    .. method:: Handler.handle(record)
@@ -1098,11 +1102,11 @@ information into logging calls. For a usage example, see the section on
 
    .. attribute:: manager
 
-      Delegates to the underlying :attr:`!manager`` on *logger*.
+      Delegates to the underlying :attr:`!manager` on *logger*.
 
    .. attribute:: _log
 
-      Delegates to the underlying :meth:`!_log`` method on *logger*.
+      Delegates to the underlying :meth:`!_log` method on *logger*.
 
    In addition to the above, :class:`LoggerAdapter` supports the following
    methods of :class:`Logger`: :meth:`~Logger.debug`, :meth:`~Logger.info`,
@@ -1123,11 +1127,6 @@ information into logging calls. For a usage example, see the section on
 
       Attribute :attr:`!manager` and method :meth:`!_log` were added, which
       delegate to the underlying logger and allow adapters to be nested.
-
-   .. versionchanged:: 3.13
-
-      Remove the undocumented :meth:`!warn`` method which was an alias to the
-      :meth:`!warning` method.
 
    .. versionchanged:: 3.13
 
@@ -1157,10 +1156,12 @@ functions.
 
 .. function:: getLogger(name=None)
 
-   Return a logger with the specified name or, if name is ``None``, return a
-   logger which is the root logger of the hierarchy. If specified, the name is
-   typically a dot-separated hierarchical name like *'a'*, *'a.b'* or *'a.b.c.d'*.
-   Choice of these names is entirely up to the developer who is using logging.
+   Return a logger with the specified name or, if name is ``None``, return the
+   root logger of the hierarchy. If specified, the name is typically a
+   dot-separated hierarchical name like *'a'*, *'a.b'* or *'a.b.c.d'*. Choice
+   of these names is entirely up to the developer who is using logging, though
+   it is recommended that ``__name__`` be used unless you have a specific
+   reason for not doing that, as mentioned in :ref:`logger`.
 
    All calls to this function with a given name return the same logger instance.
    This means that logger instances never need to be passed between different parts
@@ -1221,10 +1222,6 @@ functions.
    .. note:: There is an obsolete function ``warn`` which is functionally
       identical to ``warning``. As ``warn`` is deprecated, please do not use
       it - use ``warning`` instead.
-
-   .. versionchanged:: 3.13
-      Remove the undocumented ``warn()`` function which was an alias to the
-      :func:`warning` function.
 
 
 .. function:: error(msg, *args, **kwargs)
@@ -1345,8 +1342,9 @@ functions.
 
 .. function:: basicConfig(**kwargs)
 
-   Does basic configuration for the logging system by creating a
-   :class:`StreamHandler` with a default :class:`Formatter` and adding it to the
+   Does basic configuration for the logging system by either creating a
+   :class:`StreamHandler` with a default :class:`Formatter`
+   or using the  given *formatter* instance, and adding it to the
    root logger. The functions :func:`debug`, :func:`info`, :func:`warning`,
    :func:`error` and :func:`critical` will call :func:`basicConfig` automatically
    if no handlers are defined for the root logger.
@@ -1431,6 +1429,19 @@ functions.
    |              | which means that it will be treated the     |
    |              | same as passing 'errors'.                   |
    +--------------+---------------------------------------------+
+   | *formatter*  | If specified, set this formatter instance   |
+   |              | (see :ref:`formatter-objects`)              |
+   |              | for all involved handlers.                  |
+   |              | If not specified, the default is to create  |
+   |              | and use an instance of                      |
+   |              | :class:`logging.Formatter` based on         |
+   |              | arguments *format*, *datefmt* and *style*.  |
+   |              | When *formatter* is specified together with |
+   |              | any of the three arguments *format*,        |
+   |              | *datefmt* and *style*, a ``ValueError`` is  |
+   |              | raised to signal that these arguments would |
+   |              | lose meaning otherwise.                     |
+   +--------------+---------------------------------------------+
 
    .. versionchanged:: 3.2
       The *style* argument was added.
@@ -1446,6 +1457,9 @@ functions.
 
    .. versionchanged:: 3.9
       The *encoding* and *errors* arguments were added.
+
+   .. versionchanged:: 3.15
+      The *formatter* argument was added.
 
 .. function:: shutdown()
 
@@ -1501,7 +1515,7 @@ functions.
 Module-Level Attributes
 -----------------------
 
-.. attribute:: lastResort
+.. data:: lastResort
 
    A "handler of last resort" is available through this attribute. This
    is a :class:`StreamHandler` writing to ``sys.stderr`` with a level of
@@ -1513,7 +1527,7 @@ Module-Level Attributes
 
    .. versionadded:: 3.2
 
-.. attribute:: raiseExceptions
+.. data:: raiseExceptions
 
    Used to see if exceptions during handling should be propagated.
 

@@ -28,16 +28,25 @@ extensions for multiline input.
 
 from __future__ import annotations
 
+import warnings
 from dataclasses import dataclass, field
 
 import os
-import readline
-from site import gethistoryfile   # type: ignore[attr-defined]
+from site import gethistoryfile
 import sys
+from rlcompleter import Completer as RLCompleter
 
 from . import commands, historical_reader
 from .completing_reader import CompletingReader
-from .unix_console import UnixConsole, _error
+from .console import Console as ConsoleType
+from ._module_completer import ModuleCompleter, make_default_module_completer
+
+Console: type[ConsoleType]
+_error: tuple[type[Exception], ...] | type[Exception]
+try:
+    from .unix_console import UnixConsole as Console, _error
+except ImportError:
+    from .windows_console import WindowsConsole as Console, _error
 
 ENCODING = sys.getdefaultencoding() or "latin1"
 
@@ -46,6 +55,14 @@ ENCODING = sys.getdefaultencoding() or "latin1"
 Command = commands.Command
 from collections.abc import Callable, Collection
 from .types import Callback, Completer, KeySpec, CommandName
+
+TYPE_CHECKING = False
+
+if TYPE_CHECKING:
+    from typing import Any, Mapping
+
+
+MoreLinesCallable = Callable[[str], bool]
 
 
 __all__ = [
@@ -73,6 +90,7 @@ __all__ = [
     # "set_pre_input_hook",
     "set_startup_hook",
     "write_history_file",
+    "append_history_file",
     # ---- multiline extensions ----
     "multiline_input",
 ]
@@ -81,9 +99,9 @@ __all__ = [
 
 @dataclass
 class ReadlineConfig:
-    readline_completer: Completer | None = readline.get_completer()
+    readline_completer: Completer | None = None
     completer_delims: frozenset[str] = frozenset(" \t\n`~!@#$%^&*()-=+[{]}\\|;:'\",<>/?")
-
+    module_completer: ModuleCompleter = field(default_factory=make_default_module_completer)
 
 @dataclass(kw_only=True)
 class ReadlineAlikeReader(historical_reader.HistoricalReader, CompletingReader):
@@ -94,7 +112,8 @@ class ReadlineAlikeReader(historical_reader.HistoricalReader, CompletingReader):
 
     # Instance fields
     config: ReadlineConfig
-    more_lines: Callable[[str], bool] | None = None
+    more_lines: MoreLinesCallable | None = None
+    last_used_indentation: str | None = None
 
     def __post_init__(self) -> None:
         super().__post_init__()
@@ -115,6 +134,9 @@ class ReadlineAlikeReader(historical_reader.HistoricalReader, CompletingReader):
         return "".join(b[p + 1 : self.pos])
 
     def get_completions(self, stem: str) -> list[str]:
+        module_completions = self.get_module_completions()
+        if module_completions is not None:
+            return module_completions
         if len(stem) == 0 and self.more_lines is not None:
             b = self.buffer
             p = self.pos
@@ -144,6 +166,10 @@ class ReadlineAlikeReader(historical_reader.HistoricalReader, CompletingReader):
             result.sort()
         return result
 
+    def get_module_completions(self) -> list[str] | None:
+        line = self.get_line()
+        return self.config.module_completer.get_completions(line)
+
     def get_trimmed_history(self, maxlength: int) -> list[str]:
         if maxlength >= 0:
             cut = len(self.history) - maxlength
@@ -152,6 +178,11 @@ class ReadlineAlikeReader(historical_reader.HistoricalReader, CompletingReader):
         else:
             cut = 0
         return self.history[cut:]
+
+    def update_last_used_indentation(self) -> None:
+        indentation = _get_first_indentation(self.buffer)
+        if indentation is not None:
+            self.last_used_indentation = indentation
 
     # --- simplified support for reading multiline Python statements ---
 
@@ -207,25 +238,80 @@ def _get_previous_line_indent(buffer: list[str], pos: int) -> tuple[int, int | N
     return prevlinestart, indent
 
 
+def _get_first_indentation(buffer: list[str]) -> str | None:
+    indented_line_start = None
+    for i in range(len(buffer)):
+        if (i < len(buffer) - 1
+            and buffer[i] == "\n"
+            and buffer[i + 1] in " \t"
+        ):
+            indented_line_start = i + 1
+        elif indented_line_start is not None and buffer[i] not in " \t\n":
+            return ''.join(buffer[indented_line_start : i])
+    return None
+
+
+def _should_auto_indent(buffer: list[str], pos: int) -> bool:
+    # check if last character before "pos" is a colon, ignoring
+    # whitespaces and comments.
+    last_char = None
+    while pos > 0:
+        pos -= 1
+        if last_char is None:
+            if buffer[pos] not in " \t\n#":  # ignore whitespaces and comments
+                last_char = buffer[pos]
+        else:
+            # even if we found a non-whitespace character before
+            # original pos, we keep going back until newline is reached
+            # to make sure we ignore comments
+            if buffer[pos] == "\n":
+                break
+            if buffer[pos] == "#":
+                last_char = None
+    return last_char == ":"
+
+
 class maybe_accept(commands.Command):
     def do(self) -> None:
         r: ReadlineAlikeReader
         r = self.reader  # type: ignore[assignment]
         r.dirty = True  # this is needed to hide the completion menu, if visible
-        #
+
         # if there are already several lines and the cursor
         # is not on the last one, always insert a new \n.
         text = r.get_unicode()
+
         if "\n" in r.buffer[r.pos :] or (
             r.more_lines is not None and r.more_lines(text)
         ):
-            #
+            def _newline_before_pos():
+                before_idx = r.pos - 1
+                while before_idx > 0 and text[before_idx].isspace():
+                    before_idx -= 1
+                return text[before_idx : r.pos].count("\n") > 0
+
+            # if there's already a new line before the cursor then
+            # even if the cursor is followed by whitespace, we assume
+            # the user is trying to terminate the block
+            if _newline_before_pos() and text[r.pos:].isspace():
+                self.finish = True
+                return
+
             # auto-indent the next line like the previous line
             prevlinestart, indent = _get_previous_line_indent(r.buffer, r.pos)
             r.insert("\n")
-            if not self.reader.paste_mode and indent:
-                for i in range(prevlinestart, prevlinestart + indent):
-                    r.insert(r.buffer[i])
+            if not self.reader.paste_mode:
+                if indent:
+                    for i in range(prevlinestart, prevlinestart + indent):
+                        r.insert(r.buffer[i])
+                r.update_last_used_indentation()
+                if _should_auto_indent(r.buffer, r.pos):
+                    if r.last_used_indentation is not None:
+                        indentation = r.last_used_indentation
+                    else:
+                        # default
+                        indentation = " " * 4
+                    r.insert(indentation)
         elif not self.reader.paste_mode:
             self.finish = True
         else:
@@ -261,10 +347,10 @@ class backspace_dedent(commands.Command):
 class _ReadlineWrapper:
     f_in: int = -1
     f_out: int = -1
-    reader: ReadlineAlikeReader | None = None
+    reader: ReadlineAlikeReader | None = field(default=None, repr=False)
     saved_history_length: int = -1
     startup_hook: Callback | None = None
-    config: ReadlineConfig = field(default_factory=ReadlineConfig)
+    config: ReadlineConfig = field(default_factory=ReadlineConfig, repr=False)
 
     def __post_init__(self) -> None:
         if self.f_in == -1:
@@ -274,7 +360,7 @@ class _ReadlineWrapper:
 
     def get_reader(self) -> ReadlineAlikeReader:
         if self.reader is None:
-            console = UnixConsole(self.f_in, self.f_out, encoding=ENCODING)
+            console = Console(self.f_in, self.f_out, encoding=ENCODING)
             self.reader = ReadlineAlikeReader(console=console, config=self.config)
         return self.reader
 
@@ -284,10 +370,14 @@ class _ReadlineWrapper:
         except _error:
             assert raw_input is not None
             return raw_input(prompt)
-        reader.ps1 = str(prompt)
-        return reader.readline(startup_hook=self.startup_hook)
+        prompt_str = str(prompt)
+        reader.ps1 = prompt_str
+        sys.audit("builtins.input", prompt_str)
+        result = reader.readline(startup_hook=self.startup_hook)
+        sys.audit("builtins.input/result", result)
+        return result
 
-    def multiline_input(self, more_lines, ps1, ps2):
+    def multiline_input(self, more_lines: MoreLinesCallable, ps1: str, ps2: str) -> str:
         """Read an input on possibly multiple lines, asking for more
         lines as long as 'more_lines(unicodetext)' returns an object whose
         boolean value is true.
@@ -296,13 +386,15 @@ class _ReadlineWrapper:
         saved = reader.more_lines
         try:
             reader.more_lines = more_lines
-            reader.ps1 = reader.ps2 = ps1
-            reader.ps3 = reader.ps4 = ps2
-            return reader.readline(), reader.was_paste_mode_activated
+            reader.ps1 = ps1
+            reader.ps2 = ps1
+            reader.ps3 = ps2
+            reader.ps4 = ""
+            with warnings.catch_warnings(action="ignore"):
+                return reader.readline()
         finally:
             reader.more_lines = saved
             reader.paste_mode = False
-            reader.was_paste_mode_activated = False
 
     def parse_and_bind(self, string: str) -> None:
         pass  # XXX we don't support parsing GNU-readline-style init files
@@ -340,29 +432,49 @@ class _ReadlineWrapper:
         history = self.get_reader().history
 
         with open(os.path.expanduser(filename), 'rb') as f:
-            lines = [line.decode('utf-8', errors='replace') for line in f.read().split(b'\n')]
+            is_editline = f.readline().startswith(b"_HiStOrY_V2_")
+            if is_editline:
+                encoding = "unicode-escape"
+            else:
+                f.seek(0)
+                encoding = "utf-8"
+
+            lines = [line.decode(encoding, errors='replace') for line in f.read().split(b'\n')]
             buffer = []
             for line in lines:
-                # Ignore readline history file header
-                if line.startswith("_HiStOrY_V2_"):
-                    continue
                 if line.endswith("\r"):
                     buffer.append(line+'\n')
                 else:
                     line = self._histline(line)
                     if buffer:
-                        line = "".join(buffer).replace("\r", "") + line
+                        line = self._histline("".join(buffer).replace("\r", "") + line)
                         del buffer[:]
                     if line:
                         history.append(line)
+        self.set_history_length(self.get_current_history_length())
 
     def write_history_file(self, filename: str = gethistoryfile()) -> None:
         maxlength = self.saved_history_length
         history = self.get_reader().get_trimmed_history(maxlength)
-        with open(os.path.expanduser(filename), "w", encoding="utf-8") as f:
+        f = open(os.path.expanduser(filename), "w",
+                 encoding="utf-8", newline="\n")
+        with f:
             for entry in history:
                 entry = entry.replace("\n", "\r\n")  # multiline history support
                 f.write(entry + "\n")
+
+    def append_history_file(self, filename: str = gethistoryfile()) -> None:
+        reader = self.get_reader()
+        saved_length = self.get_history_length()
+        length = self.get_current_history_length() - saved_length
+        history = reader.get_trimmed_history(length)
+        f = open(os.path.expanduser(filename), "a",
+                 encoding="utf-8", newline="\n")
+        with f:
+            for entry in history:
+                entry = entry.replace("\n", "\r\n")  # multiline history support
+                f.write(entry + "\n")
+        self.set_history_length(saved_length + length)
 
     def clear_history(self) -> None:
         del self.get_reader().history[:]
@@ -396,15 +508,14 @@ class _ReadlineWrapper:
     def set_startup_hook(self, function: Callback | None = None) -> None:
         self.startup_hook = function
 
-    def get_line_buffer(self) -> bytes:
-        buf_str = self.get_reader().get_unicode()
-        return buf_str.encode(ENCODING)
+    def get_line_buffer(self) -> str:
+        return self.get_reader().get_unicode()
 
     def _get_idxs(self) -> tuple[int, int]:
         start = cursor = self.get_reader().pos
         buf = self.get_line_buffer()
         for i in range(cursor - 1, -1, -1):
-            if str(buf[i]) in self.get_completer_delims():
+            if buf[i] in self.get_completer_delims():
                 break
             start = i
         return start, cursor
@@ -434,6 +545,7 @@ set_history_length = _wrapper.set_history_length
 get_current_history_length = _wrapper.get_current_history_length
 read_history_file = _wrapper.read_history_file
 write_history_file = _wrapper.write_history_file
+append_history_file = _wrapper.append_history_file
 clear_history = _wrapper.clear_history
 get_history_item = _wrapper.get_history_item
 remove_history_item = _wrapper.remove_history_item
@@ -476,7 +588,7 @@ for _name, _ret in [
 # ____________________________________________________________
 
 
-def _setup() -> None:
+def _setup(namespace: Mapping[str, Any]) -> None:
     global raw_input
     if raw_input is not None:
         return  # don't run _setup twice
@@ -492,9 +604,14 @@ def _setup() -> None:
     _wrapper.f_in = f_in
     _wrapper.f_out = f_out
 
+    # set up namespace in rlcompleter, which requires it to be a bona fide dict
+    if not isinstance(namespace, dict):
+        namespace = dict(namespace)
+    _wrapper.config.module_completer = ModuleCompleter(namespace)
+    _wrapper.config.readline_completer = RLCompleter(namespace).complete
+
     # this is not really what readline.c does.  Better than nothing I guess
     import builtins
-
     raw_input = builtins.input
     builtins.input = _wrapper.input
 

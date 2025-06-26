@@ -138,7 +138,7 @@ class NameNormalizationTests(fixtures.OnSysPath, fixtures.SiteDir, unittest.Test
         fixtures.build_files(self.make_pkg('abc'), self.site_dir)
         before = list(_unique(distributions()))
 
-        alt_site_dir = self.fixtures.enter_context(fixtures.tempdir())
+        alt_site_dir = self.fixtures.enter_context(fixtures.tmp_path())
         self.fixtures.enter_context(self.add_sys_path(alt_site_dir))
         fixtures.build_files(self.make_pkg('ABC'), alt_site_dir)
         after = list(_unique(distributions()))

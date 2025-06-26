@@ -19,7 +19,6 @@ devnull = 'nul'
 
 import os
 import sys
-import stat
 import genericpath
 from genericpath import *
 
@@ -30,7 +29,7 @@ __all__ = ["normcase","isabs","join","splitdrive","splitroot","split","splitext"
            "abspath","curdir","pardir","sep","pathsep","defpath","altsep",
            "extsep","devnull","realpath","supports_unicode_filenames","relpath",
            "samefile", "sameopenfile", "samestat", "commonpath", "isjunction",
-           "isdevdrive"]
+           "isdevdrive", "ALLOW_MISSING"]
 
 def _get_bothseps(path):
     if isinstance(path, bytes):
@@ -168,19 +167,12 @@ def splitdrive(p):
 
 
 try:
-    from nt import _path_splitroot_ex
+    from nt import _path_splitroot_ex as splitroot
 except ImportError:
     def splitroot(p):
-        """Split a pathname into drive, root and tail. The drive is defined
-        exactly as in splitdrive(). On Windows, the root may be a single path
-        separator or an empty string. The tail contains anything after the root.
-        For example:
+        """Split a pathname into drive, root and tail.
 
-            splitroot('//server/share/') == ('//server/share', '/', '')
-            splitroot('C:/Users/Barney') == ('C:', '/', 'Users/Barney')
-            splitroot('C:///spam///ham') == ('C:', '/', '//spam///ham')
-            splitroot('Windows/notepad') == ('', '', 'Windows/notepad')
-        """
+        The tail contains anything after the root."""
         p = os.fspath(p)
         if isinstance(p, bytes):
             sep = b'\\'
@@ -220,23 +212,6 @@ except ImportError:
         else:
             # Relative path, e.g. Windows
             return empty, empty, p
-else:
-    def splitroot(p):
-        """Split a pathname into drive, root and tail. The drive is defined
-        exactly as in splitdrive(). On Windows, the root may be a single path
-        separator or an empty string. The tail contains anything after the root.
-        For example:
-
-            splitroot('//server/share/') == ('//server/share', '/', '')
-            splitroot('C:/Users/Barney') == ('C:', '/', 'Users/Barney')
-            splitroot('C:///spam///ham') == ('C:', '/', '//spam///ham')
-            splitroot('Windows/notepad') == ('', '', 'Windows/notepad')
-        """
-        p = os.fspath(p)
-        if isinstance(p, bytes):
-            drive, root, tail = _path_splitroot_ex(os.fsdecode(p))
-            return os.fsencode(drive), os.fsencode(root), os.fsencode(tail)
-        return _path_splitroot_ex(p)
 
 
 # Split a path in head (everything up to the last '/') and tail (the
@@ -286,21 +261,6 @@ def basename(p):
 def dirname(p):
     """Returns the directory component of a pathname"""
     return split(p)[0]
-
-
-# Is a path a junction?
-
-if hasattr(os.stat_result, 'st_reparse_tag'):
-    def isjunction(path):
-        """Test whether a path is a junction"""
-        try:
-            st = os.lstat(path)
-        except (OSError, ValueError, AttributeError):
-            return False
-        return st.st_reparse_tag == stat.IO_REPARSE_TAG_MOUNT_POINT
-else:
-    # Use genericpath.isjunction as imported above
-    pass
 
 
 # Is a path a mount point?
@@ -553,7 +513,7 @@ def expandvars(path):
 # Previously, this function also truncated pathnames to 8+3 format,
 # but as this module is called "ntpath", that's obviously wrong!
 try:
-    from nt import _path_normpath
+    from nt import _path_normpath as normpath
 
 except ImportError:
     def normpath(path):
@@ -592,37 +552,22 @@ except ImportError:
             comps.append(curdir)
         return prefix + sep.join(comps)
 
-else:
-    def normpath(path):
-        """Normalize path, eliminating double slashes, etc."""
-        path = os.fspath(path)
-        if isinstance(path, bytes):
-            return os.fsencode(_path_normpath(os.fsdecode(path))) or b"."
-        return _path_normpath(path) or "."
-
-
-def _abspath_fallback(path):
-    """Return the absolute version of a path as a fallback function in case
-    `nt._getfullpathname` is not available or raises OSError. See bpo-31047 for
-    more.
-
-    """
-
-    path = os.fspath(path)
-    if not isabs(path):
-        if isinstance(path, bytes):
-            cwd = os.getcwdb()
-        else:
-            cwd = os.getcwd()
-        path = join(cwd, path)
-    return normpath(path)
 
 # Return an absolute path.
 try:
     from nt import _getfullpathname
 
 except ImportError: # not running on Windows - mock up something sensible
-    abspath = _abspath_fallback
+    def abspath(path):
+        """Return the absolute version of a path."""
+        path = os.fspath(path)
+        if not isabs(path):
+            if isinstance(path, bytes):
+                cwd = os.getcwdb()
+            else:
+                cwd = os.getcwd()
+            path = join(cwd, path)
+        return normpath(path)
 
 else:  # use native Windows method on Windows
     def abspath(path):
@@ -630,15 +575,36 @@ else:  # use native Windows method on Windows
         try:
             return _getfullpathname(normpath(path))
         except (OSError, ValueError):
-            return _abspath_fallback(path)
+            # See gh-75230, handle outside for cleaner traceback
+            pass
+        path = os.fspath(path)
+        if not isabs(path):
+            if isinstance(path, bytes):
+                sep = b'\\'
+                getcwd = os.getcwdb
+            else:
+                sep = '\\'
+                getcwd = os.getcwd
+            drive, root, path = splitroot(path)
+            # Either drive or root can be nonempty, but not both.
+            if drive or root:
+                try:
+                    path = join(_getfullpathname(drive + root), path)
+                except (OSError, ValueError):
+                    # Drive "\0:" cannot exist; use the root directory.
+                    path = drive + sep + path
+            else:
+                path = join(getcwd(), path)
+        return normpath(path)
 
 try:
     from nt import _findfirstfile, _getfinalpathname, readlink as _nt_readlink
 except ImportError:
     # realpath is a no-op on systems without _getfinalpathname support.
-    realpath = abspath
+    def realpath(path, *, strict=False):
+        return abspath(path)
 else:
-    def _readlink_deep(path):
+    def _readlink_deep(path, ignored_error=OSError):
         # These error codes indicate that we should stop reading links and
         # return the path we currently have.
         # 1: ERROR_INVALID_FUNCTION
@@ -671,7 +637,7 @@ else:
                         path = old_path
                         break
                     path = normpath(join(dirname(old_path), path))
-            except OSError as ex:
+            except ignored_error as ex:
                 if ex.winerror in allowed_winerror:
                     break
                 raise
@@ -680,7 +646,7 @@ else:
                 break
         return path
 
-    def _getfinalpathname_nonstrict(path):
+    def _getfinalpathname_nonstrict(path, ignored_error=OSError):
         # These error codes indicate that we should stop resolving the path
         # and return the value we currently have.
         # 1: ERROR_INVALID_FUNCTION
@@ -696,9 +662,10 @@ else:
         # 87: ERROR_INVALID_PARAMETER
         # 123: ERROR_INVALID_NAME
         # 161: ERROR_BAD_PATHNAME
+        # 1005: ERROR_UNRECOGNIZED_VOLUME
         # 1920: ERROR_CANT_ACCESS_FILE
         # 1921: ERROR_CANT_RESOLVE_FILENAME (implies unfollowable symlink)
-        allowed_winerror = 1, 2, 3, 5, 21, 32, 50, 53, 65, 67, 87, 123, 161, 1920, 1921
+        allowed_winerror = 1, 2, 3, 5, 21, 32, 50, 53, 65, 67, 87, 123, 161, 1005, 1920, 1921
 
         # Non-strict algorithm is to find as much of the target directory
         # as we can and join the rest.
@@ -707,17 +674,18 @@ else:
             try:
                 path = _getfinalpathname(path)
                 return join(path, tail) if tail else path
-            except OSError as ex:
+            except ignored_error as ex:
                 if ex.winerror not in allowed_winerror:
                     raise
                 try:
                     # The OS could not resolve this path fully, so we attempt
                     # to follow the link ourselves. If we succeed, join the tail
                     # and return.
-                    new_path = _readlink_deep(path)
+                    new_path = _readlink_deep(path,
+                                              ignored_error=ignored_error)
                     if new_path != path:
                         return join(new_path, tail) if tail else new_path
-                except OSError:
+                except ignored_error:
                     # If we fail to readlink(), let's keep traversing
                     pass
                 # If we get these errors, try to get the real name of the file without accessing it.
@@ -725,7 +693,7 @@ else:
                     try:
                         name = _findfirstfile(path)
                         path, _ = split(path)
-                    except OSError:
+                    except ignored_error:
                         path, name = split(path)
                 else:
                     path, name = split(path)
@@ -755,6 +723,15 @@ else:
             if normcase(path) == devnull:
                 return '\\\\.\\NUL'
         had_prefix = path.startswith(prefix)
+
+        if strict is ALLOW_MISSING:
+            ignored_error = FileNotFoundError
+            strict = True
+        elif strict:
+            ignored_error = ()
+        else:
+            ignored_error = OSError
+
         if not had_prefix and not isabs(path):
             path = join(cwd, path)
         try:
@@ -762,17 +739,16 @@ else:
             initial_winerror = 0
         except ValueError as ex:
             # gh-106242: Raised for embedded null characters
-            # In strict mode, we convert into an OSError.
+            # In strict modes, we convert into an OSError.
             # Non-strict mode returns the path as-is, since we've already
             # made it absolute.
             if strict:
                 raise OSError(str(ex)) from None
             path = normpath(path)
-        except OSError as ex:
-            if strict:
-                raise
+        except ignored_error as ex:
             initial_winerror = ex.winerror
-            path = _getfinalpathname_nonstrict(path)
+            path = _getfinalpathname_nonstrict(path,
+                                               ignored_error=ignored_error)
         # The path returned by _getfinalpathname will always start with \\?\ -
         # strip off that prefix unless it was already provided on the original
         # path.
@@ -911,13 +887,15 @@ def commonpath(paths):
 
 
 try:
-    # The isdir(), isfile(), islink() and exists() implementations in
-    # genericpath use os.stat(). This is overkill on Windows. Use simpler
+    # The isdir(), isfile(), islink(), exists() and lexists() implementations
+    # in genericpath use os.stat(). This is overkill on Windows. Use simpler
     # builtin functions if they are available.
     from nt import _path_isdir as isdir
     from nt import _path_isfile as isfile
     from nt import _path_islink as islink
+    from nt import _path_isjunction as isjunction
     from nt import _path_exists as exists
+    from nt import _path_lexists as lexists
 except ImportError:
     # Use genericpath.* as imported above
     pass

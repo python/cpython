@@ -3,7 +3,6 @@
 
 """Fraction, infinite-precision, rational numbers."""
 
-from decimal import Decimal
 import functools
 import math
 import numbers
@@ -65,7 +64,7 @@ _RATIONAL_FORMAT = re.compile(r"""
        (?:\.(?P<decimal>\d*|\d+(_\d+)*))?  # an optional fractional part
        (?:E(?P<exp>[-+]?\d+(_\d+)*))?      # and optional exponent
     )
-    \s*\Z                                  # and optional whitespace to finish
+    \s*\z                                  # and optional whitespace to finish
 """, re.VERBOSE | re.IGNORECASE)
 
 
@@ -169,9 +168,9 @@ _FLOAT_FORMAT_SPECIFICATION_MATCHER = re.compile(r"""
     # A '0' that's *not* followed by another digit is parsed as a minimum width
     # rather than a zeropad flag.
     (?P<zeropad>0(?=[0-9]))?
-    (?P<minimumwidth>0|[1-9][0-9]*)?
+    (?P<minimumwidth>[0-9]+)?
     (?P<thousands_sep>[,_])?
-    (?:\.(?P<precision>0|[1-9][0-9]*))?
+    (?:\.(?P<precision>[0-9]+))?
     (?P<presentation_type>[eEfFgG%])
 """, re.DOTALL | re.VERBOSE).fullmatch
 
@@ -239,12 +238,9 @@ class Fraction(numbers.Rational):
                 self._denominator = 1
                 return self
 
-            elif isinstance(numerator, numbers.Rational):
-                self._numerator = numerator.numerator
-                self._denominator = numerator.denominator
-                return self
-
-            elif isinstance(numerator, (float, Decimal)):
+            elif (isinstance(numerator, float) or
+                  (not isinstance(numerator, type) and
+                   hasattr(numerator, 'as_integer_ratio'))):
                 # Exact conversion
                 self._numerator, self._denominator = numerator.as_integer_ratio()
                 return self
@@ -277,9 +273,14 @@ class Fraction(numbers.Rational):
                 if m.group('sign') == '-':
                     numerator = -numerator
 
+            elif isinstance(numerator, numbers.Rational):
+                self._numerator = numerator.numerator
+                self._denominator = numerator.denominator
+                return self
+
             else:
-                raise TypeError("argument should be a string "
-                                "or a Rational instance")
+                raise TypeError("argument should be a string or a Rational "
+                                "instance or have the as_integer_ratio() method")
 
         elif type(numerator) is int is type(denominator):
             pass # *very* normal case
@@ -304,6 +305,28 @@ class Fraction(numbers.Rational):
         self._numerator = numerator
         self._denominator = denominator
         return self
+
+    @classmethod
+    def from_number(cls, number):
+        """Converts a finite real number to a rational number, exactly.
+
+        Beware that Fraction.from_number(0.3) != Fraction(3, 10).
+
+        """
+        if type(number) is int:
+            return cls._from_coprime_ints(number, 1)
+
+        elif isinstance(number, numbers.Rational):
+            return cls._from_coprime_ints(number.numerator, number.denominator)
+
+        elif (isinstance(number, float) or
+              (not isinstance(number, type) and
+               hasattr(number, 'as_integer_ratio'))):
+            return cls._from_coprime_ints(*number.as_integer_ratio())
+
+        else:
+            raise TypeError("argument should be a Rational instance or "
+                            "have the as_integer_ratio() method")
 
     @classmethod
     def from_float(cls, f):
@@ -668,7 +691,7 @@ class Fraction(numbers.Rational):
             elif isinstance(b, float):
                 return fallback_operator(float(a), b)
             elif handle_complex and isinstance(b, complex):
-                return fallback_operator(complex(a), b)
+                return fallback_operator(float(a), b)
             else:
                 return NotImplemented
         forward.__name__ = '__' + fallback_operator.__name__ + '__'
@@ -681,7 +704,7 @@ class Fraction(numbers.Rational):
             elif isinstance(a, numbers.Real):
                 return fallback_operator(float(a), float(b))
             elif handle_complex and isinstance(a, numbers.Complex):
-                return fallback_operator(complex(a), complex(b))
+                return fallback_operator(complex(a), float(b))
             else:
                 return NotImplemented
         reverse.__name__ = '__r' + fallback_operator.__name__ + '__'
@@ -848,7 +871,7 @@ class Fraction(numbers.Rational):
 
     __mod__, __rmod__ = _operator_fallbacks(_mod, operator.mod, False)
 
-    def __pow__(a, b):
+    def __pow__(a, b, modulo=None):
         """a ** b
 
         If b is not an integer, the result will be a float or complex
@@ -856,6 +879,8 @@ class Fraction(numbers.Rational):
         result will be rational.
 
         """
+        if modulo is not None:
+            return NotImplemented
         if isinstance(b, numbers.Rational):
             if b.denominator == 1:
                 power = b.numerator
@@ -875,11 +900,15 @@ class Fraction(numbers.Rational):
                 # A fractional power will generally produce an
                 # irrational number.
                 return float(a) ** float(b)
-        else:
+        elif isinstance(b, (float, complex)):
             return float(a) ** b
+        else:
+            return NotImplemented
 
-    def __rpow__(b, a):
+    def __rpow__(b, a, modulo=None):
         """a ** b"""
+        if modulo is not None:
+            return NotImplemented
         if b._denominator == 1 and b._numerator >= 0:
             # If a is an int, keep it that way if possible.
             return a ** b._numerator

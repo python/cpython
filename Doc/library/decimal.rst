@@ -1,8 +1,8 @@
-:mod:`!decimal` --- Decimal fixed point and floating point arithmetic
+:mod:`!decimal` --- Decimal fixed-point and floating-point arithmetic
 =====================================================================
 
 .. module:: decimal
-   :synopsis: Implementation of the General Decimal Arithmetic  Specification.
+   :synopsis: Implementation of the General Decimal Arithmetic Specification.
 
 .. moduleauthor:: Eric Price <eprice at tjhsst.edu>
 .. moduleauthor:: Facundo Batista <facundo at taniquetil.com.ar>
@@ -31,7 +31,7 @@
 --------------
 
 The :mod:`decimal` module provides support for fast correctly rounded
-decimal floating point arithmetic. It offers several advantages over the
+decimal floating-point arithmetic. It offers several advantages over the
 :class:`float` datatype:
 
 * Decimal "is based on a floating-point model which was designed with people
@@ -121,7 +121,7 @@ reset them before monitoring a calculation.
 
 .. _decimal-tutorial:
 
-Quick-start Tutorial
+Quick-start tutorial
 --------------------
 
 The usual start to using decimals is importing the module, viewing the current
@@ -207,7 +207,7 @@ a decimal raises :class:`InvalidOperation`::
 .. versionchanged:: 3.3
 
 Decimals interact well with much of the rest of Python.  Here is a small decimal
-floating point flying circus:
+floating-point flying circus:
 
 .. doctest::
    :options: +NORMALIZE_WHITESPACE
@@ -367,13 +367,15 @@ Decimal objects
    appears above.  These include decimal digits from various other
    alphabets (for example, Arabic-Indic and Devanāgarī digits) along
    with the fullwidth digits ``'\uff10'`` through ``'\uff19'``.
+   Case is not significant, so, for example, ``inf``, ``Inf``, ``INFINITY``,
+   and ``iNfINity`` are all acceptable spellings for positive infinity.
 
    If *value* is a :class:`tuple`, it should have three components, a sign
    (``0`` for positive or ``1`` for negative), a :class:`tuple` of
    digits, and an integer exponent. For example, ``Decimal((0, (1, 4, 1, 4), -3))``
    returns ``Decimal('1.414')``.
 
-   If *value* is a :class:`float`, the binary floating point value is losslessly
+   If *value* is a :class:`float`, the binary floating-point value is losslessly
    converted to its exact decimal equivalent.  This conversion can often require
    53 or more digits of precision.  For example, ``Decimal(float('1.1'))``
    converts to
@@ -403,7 +405,7 @@ Decimal objects
       Underscores are allowed for grouping, as with integral and floating-point
       literals in code.
 
-   Decimal floating point objects share many properties with the other built-in
+   Decimal floating-point objects share many properties with the other built-in
    numeric types such as :class:`float` and :class:`int`.  All of the usual math
    operations and special methods apply.  Likewise, decimal objects can be
    copied, pickled, printed, used as dictionary keys, used as set elements,
@@ -445,7 +447,7 @@ Decimal objects
       Mixed-type comparisons between :class:`Decimal` instances and other
       numeric types are now fully supported.
 
-   In addition to the standard numeric properties, decimal floating point
+   In addition to the standard numeric properties, decimal floating-point
    objects also have a number of specialized methods:
 
 
@@ -597,6 +599,23 @@ Decimal objects
           Decimal('-Infinity')
 
       .. versionadded:: 3.1
+
+   .. classmethod:: from_number(number)
+
+      Alternative constructor that only accepts instances of
+      :class:`float`, :class:`int` or :class:`Decimal`, but not strings
+      or tuples.
+
+      .. doctest::
+
+          >>> Decimal.from_number(314)
+          Decimal('314')
+          >>> Decimal.from_number(0.1)
+          Decimal('0.1000000000000000055511151231257827021181583404541015625')
+          >>> Decimal.from_number(Decimal('3.14'))
+          Decimal('3.14')
+
+      .. versionadded:: 3.14
 
    .. method:: fma(other, third, context=None)
 
@@ -897,6 +916,48 @@ Decimal objects
       :const:`Rounded`.  If given, applies *rounding*; otherwise, uses the
       rounding method in either the supplied *context* or the current context.
 
+   Decimal numbers can be rounded using the :func:`.round` function:
+
+   .. describe:: round(number)
+   .. describe:: round(number, ndigits)
+
+      If *ndigits* is not given or ``None``,
+      returns the nearest :class:`int` to *number*,
+      rounding ties to even, and ignoring the rounding mode of the
+      :class:`Decimal` context.  Raises :exc:`OverflowError` if *number* is an
+      infinity or :exc:`ValueError` if it is a (quiet or signaling) NaN.
+
+      If *ndigits* is an :class:`int`, the context's rounding mode is respected
+      and a :class:`Decimal` representing *number* rounded to the nearest
+      multiple of ``Decimal('1E-ndigits')`` is returned; in this case,
+      ``round(number, ndigits)`` is equivalent to
+      ``self.quantize(Decimal('1E-ndigits'))``.  Returns ``Decimal('NaN')`` if
+      *number* is a quiet NaN.  Raises :class:`InvalidOperation` if *number*
+      is an infinity, a signaling NaN, or if the length of the coefficient after
+      the quantize operation would be greater than the current context's
+      precision.  In other words, for the non-corner cases:
+
+      * if *ndigits* is positive, return *number* rounded to *ndigits* decimal
+        places;
+      * if *ndigits* is zero, return *number* rounded to the nearest integer;
+      * if *ndigits* is negative, return *number* rounded to the nearest
+        multiple of ``10**abs(ndigits)``.
+
+      For example::
+
+          >>> from decimal import Decimal, getcontext, ROUND_DOWN
+          >>> getcontext().rounding = ROUND_DOWN
+          >>> round(Decimal('3.75'))     # context rounding ignored
+          4
+          >>> round(Decimal('3.5'))      # round-ties-to-even
+          4
+          >>> round(Decimal('3.75'), 0)  # uses the context rounding
+          Decimal('3')
+          >>> round(Decimal('3.75'), 1)
+          Decimal('3.7')
+          >>> round(Decimal('3.75'), -1)
+          Decimal('0E+1')
+
 
 .. _logical_operands_label:
 
@@ -970,11 +1031,19 @@ function to temporarily change the active context.
    .. versionchanged:: 3.11
       :meth:`localcontext` now supports setting context attributes through the use of keyword arguments.
 
+.. function:: IEEEContext(bits)
+
+   Return a context object initialized to the proper values for one of the
+   IEEE interchange formats.  The argument must be a multiple of 32 and less
+   than :const:`IEEE_CONTEXT_MAX_BITS`.
+
+   .. versionadded:: 3.14
+
 New contexts can also be created using the :class:`Context` constructor
 described below. In addition, the module provides three pre-made contexts:
 
 
-.. class:: BasicContext
+.. data:: BasicContext
 
    This is a standard context defined by the General Decimal Arithmetic
    Specification.  Precision is set to nine.  Rounding is set to
@@ -985,7 +1054,7 @@ described below. In addition, the module provides three pre-made contexts:
    Because many of the traps are enabled, this context is useful for debugging.
 
 
-.. class:: ExtendedContext
+.. data:: ExtendedContext
 
    This is a standard context defined by the General Decimal Arithmetic
    Specification.  Precision is set to nine.  Rounding is set to
@@ -998,7 +1067,7 @@ described below. In addition, the module provides three pre-made contexts:
    presence of conditions that would otherwise halt the program.
 
 
-.. class:: DefaultContext
+.. data:: DefaultContext
 
    This context is used by the :class:`Context` constructor as a prototype for new
    contexts.  Changing a field (such a precision) has the effect of changing the
@@ -1027,40 +1096,52 @@ In addition to the three supplied contexts, new contexts can be created with the
    default values are copied from the :const:`DefaultContext`.  If the *flags*
    field is not specified or is :const:`None`, all flags are cleared.
 
-   *prec* is an integer in the range [``1``, :const:`MAX_PREC`] that sets
-   the precision for arithmetic operations in the context.
+   .. attribute:: prec
 
-   The *rounding* option is one of the constants listed in the section
-   `Rounding Modes`_.
+      An integer in the range [``1``, :const:`MAX_PREC`] that sets
+      the precision for arithmetic operations in the context.
 
-   The *traps* and *flags* fields list any signals to be set. Generally, new
-   contexts should only set traps and leave the flags clear.
+   .. attribute:: rounding
 
-   The *Emin* and *Emax* fields are integers specifying the outer limits allowable
-   for exponents. *Emin* must be in the range [:const:`MIN_EMIN`, ``0``],
-   *Emax* in the range [``0``, :const:`MAX_EMAX`].
+      One of the constants listed in the section `Rounding Modes`_.
 
-   The *capitals* field is either ``0`` or ``1`` (the default). If set to
-   ``1``, exponents are printed with a capital ``E``; otherwise, a
-   lowercase ``e`` is used: ``Decimal('6.02e+23')``.
+   .. attribute:: traps
+                  flags
 
-   The *clamp* field is either ``0`` (the default) or ``1``.
-   If set to ``1``, the exponent ``e`` of a :class:`Decimal`
-   instance representable in this context is strictly limited to the
-   range ``Emin - prec + 1 <= e <= Emax - prec + 1``.  If *clamp* is
-   ``0`` then a weaker condition holds: the adjusted exponent of
-   the :class:`Decimal` instance is at most :attr:`~Context.Emax`.  When *clamp* is
-   ``1``, a large normal number will, where possible, have its
-   exponent reduced and a corresponding number of zeros added to its
-   coefficient, in order to fit the exponent constraints; this
-   preserves the value of the number but loses information about
-   significant trailing zeros.  For example::
+      Lists of any signals to be set. Generally, new contexts should only set
+      traps and leave the flags clear.
 
-      >>> Context(prec=6, Emax=999, clamp=1).create_decimal('1.23e999')
-      Decimal('1.23000E+999')
+   .. attribute:: Emin
+                  Emax
 
-   A *clamp* value of ``1`` allows compatibility with the
-   fixed-width decimal interchange formats specified in IEEE 754.
+      Integers specifying the outer limits allowable for exponents. *Emin* must
+      be in the range [:const:`MIN_EMIN`, ``0``], *Emax* in the range
+      [``0``, :const:`MAX_EMAX`].
+
+   .. attribute:: capitals
+
+      Either ``0`` or ``1`` (the default). If set to
+      ``1``, exponents are printed with a capital ``E``; otherwise, a
+      lowercase ``e`` is used: ``Decimal('6.02e+23')``.
+
+   .. attribute:: clamp
+
+      Either ``0`` (the default) or ``1``.  If set to ``1``, the exponent ``e``
+      of a :class:`Decimal` instance representable in this context is strictly
+      limited to the range ``Emin - prec + 1 <= e <= Emax - prec + 1``.
+      If *clamp* is ``0`` then a weaker condition holds: the adjusted exponent of
+      the :class:`Decimal` instance is at most :attr:`~Context.Emax`.  When *clamp* is
+      ``1``, a large normal number will, where possible, have its
+      exponent reduced and a corresponding number of zeros added to its
+      coefficient, in order to fit the exponent constraints; this
+      preserves the value of the number but loses information about
+      significant trailing zeros.  For example::
+
+         >>> Context(prec=6, Emax=999, clamp=1).create_decimal('1.23e999')
+         Decimal('1.23000E+999')
+
+      A *clamp* value of ``1`` allows compatibility with the
+      fixed-width decimal interchange formats specified in IEEE 754.
 
    The :class:`Context` class defines several general purpose methods as well as
    a large number of methods for doing arithmetic directly in a given context.
@@ -1491,18 +1572,19 @@ Constants
 The constants in this section are only relevant for the C module. They
 are also included in the pure Python version for compatibility.
 
-+---------------------+---------------------+-------------------------------+
-|                     |       32-bit        |            64-bit             |
-+=====================+=====================+===============================+
-| .. data:: MAX_PREC  |    ``425000000``    |    ``999999999999999999``     |
-+---------------------+---------------------+-------------------------------+
-| .. data:: MAX_EMAX  |    ``425000000``    |    ``999999999999999999``     |
-+---------------------+---------------------+-------------------------------+
-| .. data:: MIN_EMIN  |    ``-425000000``   |    ``-999999999999999999``    |
-+---------------------+---------------------+-------------------------------+
-| .. data:: MIN_ETINY |    ``-849999999``   |    ``-1999999999999999997``   |
-+---------------------+---------------------+-------------------------------+
-
++---------------------------------+---------------------+-------------------------------+
+|                                 |       32-bit        |            64-bit             |
++=================================+=====================+===============================+
+| .. data:: MAX_PREC              |    ``425000000``    |    ``999999999999999999``     |
++---------------------------------+---------------------+-------------------------------+
+| .. data:: MAX_EMAX              |    ``425000000``    |    ``999999999999999999``     |
++---------------------------------+---------------------+-------------------------------+
+| .. data:: MIN_EMIN              |    ``-425000000``   |    ``-999999999999999999``    |
++---------------------------------+---------------------+-------------------------------+
+| .. data:: MIN_ETINY             |    ``-849999999``   |    ``-1999999999999999997``   |
++---------------------------------+---------------------+-------------------------------+
+| .. data:: IEEE_CONTEXT_MAX_BITS |    ``256``          |    ``512``                    |
++---------------------------------+---------------------+-------------------------------+
 
 .. data:: HAVE_THREADS
 
@@ -1699,7 +1781,7 @@ The following table summarizes the hierarchy of signals::
 
 .. _decimal-notes:
 
-Floating Point Notes
+Floating-point notes
 --------------------
 
 
@@ -1712,7 +1794,7 @@ can still incur round-off error when non-zero digits exceed the fixed precision.
 
 The effects of round-off error can be amplified by the addition or subtraction
 of nearly offsetting quantities resulting in loss of significance.  Knuth
-provides two instructive examples where rounded floating point arithmetic with
+provides two instructive examples where rounded floating-point arithmetic with
 insufficient precision causes the breakdown of the associative and distributive
 properties of addition:
 
@@ -1802,7 +1884,7 @@ treated as equal and their sign is informational.
 In addition to the two signed zeros which are distinct yet equal, there are
 various representations of zero with differing precisions yet equivalent in
 value.  This takes a bit of getting used to.  For an eye accustomed to
-normalized floating point representations, it is not immediately obvious that
+normalized floating-point representations, it is not immediately obvious that
 the following calculation returns a value equal to zero:
 
    >>> 1 / Decimal('Infinity')
@@ -1825,13 +1907,20 @@ the current thread.
 
 If :func:`setcontext` has not been called before :func:`getcontext`, then
 :func:`getcontext` will automatically create a new context for use in the
-current thread.
+current thread.  New context objects have default values set from the
+:data:`decimal.DefaultContext` object.
 
-The new context is copied from a prototype context called *DefaultContext*. To
-control the defaults so that each thread will use the same values throughout the
-application, directly modify the *DefaultContext* object. This should be done
-*before* any threads are started so that there won't be a race condition between
-threads calling :func:`getcontext`. For example::
+The :data:`sys.flags.thread_inherit_context` flag affects the context for
+new threads.  If the flag is false, new threads will start with an empty
+context.  In this case, :func:`getcontext` will create a new context object
+when called and use the default values from *DefaultContext*.  If the flag
+is true, new threads will start with a copy of context from the caller of
+:meth:`threading.Thread.start`.
+
+To control the defaults so that each thread will use the same values throughout
+the application, directly modify the *DefaultContext* object. This should be
+done *before* any threads are started so that there won't be a race condition
+between threads calling :func:`getcontext`. For example::
 
    # Set applicationwide defaults for all threads about to be launched
    DefaultContext.prec = 12
@@ -2129,7 +2218,7 @@ value unchanged:
 
 Q. Is there a way to convert a regular float to a :class:`Decimal`?
 
-A. Yes, any binary floating point number can be exactly expressed as a
+A. Yes, any binary floating-point number can be exactly expressed as a
 Decimal though an exact conversion may take more precision than intuition would
 suggest:
 
@@ -2183,7 +2272,7 @@ Q. Is the CPython implementation fast for large numbers?
 A. Yes.  In the CPython and PyPy3 implementations, the C/CFFI versions of
 the decimal module integrate the high speed `libmpdec
 <https://www.bytereef.org/mpdecimal/doc/libmpdec/index.html>`_ library for
-arbitrary precision correctly rounded decimal floating point arithmetic [#]_.
+arbitrary precision correctly rounded decimal floating-point arithmetic [#]_.
 ``libmpdec`` uses `Karatsuba multiplication
 <https://en.wikipedia.org/wiki/Karatsuba_algorithm>`_
 for medium-sized numbers and the `Number Theoretic Transform
@@ -2203,7 +2292,7 @@ value for :attr:`~Context.prec` as well [#]_::
     Decimal('904625697166532776746648320380374280103671755200316906558262375061821325312')
 
 
-For inexact results, :attr:`MAX_PREC` is far too large on 64-bit platforms and
+For inexact results, :const:`MAX_PREC` is far too large on 64-bit platforms and
 the available memory will be insufficient::
 
    >>> Decimal(1) / 3

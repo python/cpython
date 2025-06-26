@@ -308,9 +308,11 @@ signal_set_wakeup_fd(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(warn_on_full_buffer), },
     };
     #undef NUM_KEYWORDS
@@ -332,7 +334,8 @@ signal_set_wakeup_fd(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     PyObject *fdobj;
     int warn_on_full_buffer = 1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -597,7 +600,7 @@ PyDoc_STRVAR(signal_sigtimedwait__doc__,
 "\n"
 "Like sigwaitinfo(), but with a timeout.\n"
 "\n"
-"The timeout is specified in seconds, with floating point numbers allowed.");
+"The timeout is specified in seconds, with floating-point numbers allowed.");
 
 #define SIGNAL_SIGTIMEDWAIT_METHODDEF    \
     {"sigtimedwait", _PyCFunction_CAST(signal_sigtimedwait), METH_FASTCALL, signal_sigtimedwait__doc__},
@@ -653,7 +656,7 @@ signal_pthread_kill(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("pthread_kill", nargs, 2, 2)) {
         goto exit;
     }
-    if (!PyLong_Check(args[0])) {
+    if (!PyIndex_Check(args[0])) {
         _PyArg_BadArgument("pthread_kill", "argument 1", "int", args[0]);
         goto exit;
     }
@@ -670,7 +673,7 @@ exit:
 
 #endif /* defined(HAVE_PTHREAD_KILL) */
 
-#if (defined(__linux__) && defined(__NR_pidfd_send_signal))
+#if (defined(__linux__) && defined(__NR_pidfd_send_signal) && !(defined(__ANDROID__) && __ANDROID_API__ < 31))
 
 PyDoc_STRVAR(signal_pidfd_send_signal__doc__,
 "pidfd_send_signal($module, pidfd, signalnum, siginfo=None, flags=0, /)\n"
@@ -723,7 +726,7 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(__linux__) && defined(__NR_pidfd_send_signal)) */
+#endif /* (defined(__linux__) && defined(__NR_pidfd_send_signal) && !(defined(__ANDROID__) && __ANDROID_API__ < 31)) */
 
 #ifndef SIGNAL_ALARM_METHODDEF
     #define SIGNAL_ALARM_METHODDEF
@@ -776,4 +779,4 @@ exit:
 #ifndef SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF
     #define SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF
 #endif /* !defined(SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF) */
-/*[clinic end generated code: output=1c11c1b6f12f26be input=a9049054013a1b77]*/
+/*[clinic end generated code: output=48bfaffeb25df5d2 input=a9049054013a1b77]*/

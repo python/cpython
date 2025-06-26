@@ -30,7 +30,6 @@
 #endif
 
 #include <Python.h>
-#include "pycore_long.h"          // _PyLong_IsZero()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_typeobject.h"
 #include "complexobject.h"
@@ -76,8 +75,9 @@ typedef struct {
 #ifndef WITH_DECIMAL_CONTEXTVAR
     /* Key for thread state dictionary */
     PyObject *tls_context_key;
-    /* Invariant: NULL or the most recently accessed thread local context */
-    struct PyDecContextObject *cached_context;
+    /* Invariant: NULL or a strong reference to the most recently accessed
+       thread local context. */
+    struct PyDecContextObject *cached_context;  /* Not borrowed */
 #else
     PyObject *current_context_var;
 #endif
@@ -121,6 +121,8 @@ get_module_state(PyObject *mod)
 }
 
 static struct PyModuleDef _decimal_module;
+static PyType_Spec dec_spec;
+static PyType_Spec context_spec;
 
 static inline decimal_state *
 get_module_state_by_def(PyTypeObject *tp)
@@ -133,10 +135,34 @@ get_module_state_by_def(PyTypeObject *tp)
 static inline decimal_state *
 find_state_left_or_right(PyObject *left, PyObject *right)
 {
-    PyObject *mod = _PyType_GetModuleByDef2(Py_TYPE(left), Py_TYPE(right),
-                                            &_decimal_module);
-    assert(mod != NULL);
-    return get_module_state(mod);
+    PyTypeObject *base;
+    if (PyType_GetBaseByToken(Py_TYPE(left), &dec_spec, &base) != 1) {
+        assert(!PyErr_Occurred());
+        PyType_GetBaseByToken(Py_TYPE(right), &dec_spec, &base);
+    }
+    assert(base != NULL);
+    void *state = _PyType_GetModuleState(base);
+    assert(state != NULL);
+    Py_DECREF(base);
+    return (decimal_state *)state;
+}
+
+static inline decimal_state *
+find_state_ternary(PyObject *left, PyObject *right, PyObject *modulus)
+{
+    PyTypeObject *base;
+    if (PyType_GetBaseByToken(Py_TYPE(left), &dec_spec, &base) != 1) {
+        assert(!PyErr_Occurred());
+        if (PyType_GetBaseByToken(Py_TYPE(right), &dec_spec, &base) != 1) {
+            assert(!PyErr_Occurred());
+            PyType_GetBaseByToken(Py_TYPE(modulus), &dec_spec, &base);
+        }
+    }
+    assert(base != NULL);
+    void *state = _PyType_GetModuleState(base);
+    assert(state != NULL);
+    Py_DECREF(base);
+    return (decimal_state *)state;
 }
 
 
@@ -160,12 +186,6 @@ find_state_left_or_right(PyObject *left, PyObject *right)
 
 #define BOUNDS_CHECK(x, MIN, MAX) x = (x < MIN || MAX < x) ? MAX : x
 
-#if defined(__GNUC__) && !defined(__INTEL_COMPILER)
-  #define UNUSED __attribute__((unused))
-#else
-  #define UNUSED
-#endif
-
 /* _Py_DEC_MINALLOC >= MPD_MINALLOC */
 #define _Py_DEC_MINALLOC 4
 
@@ -176,10 +196,14 @@ typedef struct {
     mpd_uint_t data[_Py_DEC_MINALLOC];
 } PyDecObject;
 
+#define _PyDecObject_CAST(op)   ((PyDecObject *)(op))
+
 typedef struct {
     PyObject_HEAD
     uint32_t *flags;
 } PyDecSignalDictObject;
+
+#define _PyDecSignalDictObject_CAST(op) ((PyDecSignalDictObject *)(op))
 
 typedef struct PyDecContextObject {
     PyObject_HEAD
@@ -188,7 +212,10 @@ typedef struct PyDecContextObject {
     PyObject *flags;
     int capitals;
     PyThreadState *tstate;
+    decimal_state *modstate;
 } PyDecContextObject;
+
+#define _PyDecContextObject_CAST(op)    ((PyDecContextObject *)(op))
 
 typedef struct {
     PyObject_HEAD
@@ -196,17 +223,28 @@ typedef struct {
     PyObject *global;
 } PyDecContextManagerObject;
 
+#define _PyDecContextManagerObject_CAST(op) ((PyDecContextManagerObject *)(op))
+
 #undef MPD
 #undef CTX
 #define PyDec_CheckExact(st, v) Py_IS_TYPE(v, (st)->PyDec_Type)
 #define PyDec_Check(st, v) PyObject_TypeCheck(v, (st)->PyDec_Type)
 #define PyDecSignalDict_Check(st, v) Py_IS_TYPE(v, (st)->PyDecSignalDict_Type)
 #define PyDecContext_Check(st, v) PyObject_TypeCheck(v, (st)->PyDecContext_Type)
-#define MPD(v) (&((PyDecObject *)v)->dec)
-#define SdFlagAddr(v) (((PyDecSignalDictObject *)v)->flags)
-#define SdFlags(v) (*((PyDecSignalDictObject *)v)->flags)
-#define CTX(v) (&((PyDecContextObject *)v)->ctx)
-#define CtxCaps(v) (((PyDecContextObject *)v)->capitals)
+#define MPD(v) (&_PyDecObject_CAST(v)->dec)
+#define SdFlagAddr(v) (_PyDecSignalDictObject_CAST(v)->flags)
+#define SdFlags(v) (*_PyDecSignalDictObject_CAST(v)->flags)
+#define CTX(v) (&_PyDecContextObject_CAST(v)->ctx)
+#define CtxCaps(v) (_PyDecContextObject_CAST(v)->capitals)
+
+static inline decimal_state *
+get_module_state_from_ctx(PyObject *v)
+{
+    assert(PyType_GetBaseByToken(Py_TYPE(v), &context_spec, NULL) == 1);
+    decimal_state *state = ((PyDecContextObject *)v)->modstate;
+    assert(state != NULL);
+    return state;
+}
 
 
 Py_LOCAL_INLINE(PyObject *)
@@ -361,7 +399,7 @@ runtime_error_ptr(const char *mesg)
     return runtime_error_ptr("internal error in " funcname)
 
 static void
-dec_traphandler(mpd_context_t *ctx UNUSED) /* GCOV_NOT_REACHED */
+dec_traphandler(mpd_context_t *Py_UNUSED(ctx)) /* GCOV_NOT_REACHED */
 { /* GCOV_NOT_REACHED */
     return; /* GCOV_NOT_REACHED */
 }
@@ -562,7 +600,7 @@ static int
 dec_addstatus(PyObject *context, uint32_t status)
 {
     mpd_context_t *ctx = CTX(context);
-    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
+    decimal_state *state = get_module_state_from_ctx(context);
 
     ctx->status |= status;
     if (status & (ctx->traps|MPD_Malloc_error)) {
@@ -623,7 +661,8 @@ getround(decimal_state *state, PyObject *v)
 static const char *INVALID_SIGNALDICT_ERROR_MSG = "invalid signal dict";
 
 static int
-signaldict_init(PyObject *self, PyObject *args UNUSED, PyObject *kwds UNUSED)
+signaldict_init(PyObject *self,
+                PyObject *Py_UNUSED(args), PyObject *Py_UNUSED(kwds))
 {
     SdFlagAddr(self) = NULL;
     return 0;
@@ -749,7 +788,7 @@ signaldict_richcompare(PyObject *v, PyObject *w, int op)
 {
     PyObject *res = Py_NotImplemented;
 
-    decimal_state *state = find_state_left_or_right(v, w);
+    decimal_state *state = get_module_state_by_def(Py_TYPE(v));
     assert(PyDecSignalDict_Check(state, v));
 
     if ((SdFlagAddr(v) == NULL) || (SdFlagAddr(w) == NULL)) {
@@ -781,7 +820,7 @@ signaldict_richcompare(PyObject *v, PyObject *w, int op)
 }
 
 static PyObject *
-signaldict_copy(PyObject *self, PyObject *args UNUSED)
+signaldict_copy(PyObject *self, PyObject *Py_UNUSED(dummy))
 {
     if (SdFlagAddr(self) == NULL) {
         return value_error_ptr(INVALID_SIGNALDICT_ERROR_MSG);
@@ -792,7 +831,7 @@ signaldict_copy(PyObject *self, PyObject *args UNUSED)
 
 
 static PyMethodDef signaldict_methods[] = {
-    { "copy", (PyCFunction)signaldict_copy, METH_NOARGS, NULL},
+    { "copy", signaldict_copy, METH_NOARGS, NULL},
     {NULL, NULL}
 };
 
@@ -828,18 +867,18 @@ static PyType_Spec signaldict_spec = {
 /*                         Context Object, Part 1                             */
 /******************************************************************************/
 
-#define Dec_CONTEXT_GET_SSIZE(mem) \
-static PyObject *                                       \
-context_get##mem(PyObject *self, void *closure UNUSED)  \
-{                                                       \
-    return PyLong_FromSsize_t(mpd_get##mem(CTX(self))); \
+#define Dec_CONTEXT_GET_SSIZE(mem)                          \
+static PyObject *                                           \
+context_get##mem(PyObject *self, void *Py_UNUSED(closure))  \
+{                                                           \
+    return PyLong_FromSsize_t(mpd_get##mem(CTX(self)));     \
 }
 
-#define Dec_CONTEXT_GET_ULONG(mem) \
-static PyObject *                                            \
-context_get##mem(PyObject *self, void *closure UNUSED)       \
-{                                                            \
-    return PyLong_FromUnsignedLong(mpd_get##mem(CTX(self))); \
+#define Dec_CONTEXT_GET_ULONG(mem)                              \
+static PyObject *                                               \
+context_get##mem(PyObject *self, void *Py_UNUSED(closure))      \
+{                                                               \
+    return PyLong_FromUnsignedLong(mpd_get##mem(CTX(self)));    \
 }
 
 Dec_CONTEXT_GET_SSIZE(prec)
@@ -853,42 +892,42 @@ Dec_CONTEXT_GET_ULONG(status)
 #endif
 
 static PyObject *
-context_getround(PyObject *self, void *closure UNUSED)
+context_getround(PyObject *self, void *Py_UNUSED(closure))
 {
     int i = mpd_getround(CTX(self));
-    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
+    decimal_state *state = get_module_state_from_ctx(self);
 
     return Py_NewRef(state->round_map[i]);
 }
 
 static PyObject *
-context_getcapitals(PyObject *self, void *closure UNUSED)
+context_getcapitals(PyObject *self, void *Py_UNUSED(closure))
 {
     return PyLong_FromLong(CtxCaps(self));
 }
 
 #ifdef EXTRA_FUNCTIONALITY
 static PyObject *
-context_getallcr(PyObject *self, void *closure UNUSED)
+context_getallcr(PyObject *self, void *Py_UNUSED(closure))
 {
     return PyLong_FromLong(mpd_getcr(CTX(self)));
 }
 #endif
 
 static PyObject *
-context_getetiny(PyObject *self, PyObject *dummy UNUSED)
+context_getetiny(PyObject *self, PyObject *Py_UNUSED(dummy))
 {
     return PyLong_FromSsize_t(mpd_etiny(CTX(self)));
 }
 
 static PyObject *
-context_getetop(PyObject *self, PyObject *dummy UNUSED)
+context_getetop(PyObject *self, PyObject *Py_UNUSED(dummy))
 {
     return PyLong_FromSsize_t(mpd_etop(CTX(self)));
 }
 
 static int
-context_setprec(PyObject *self, PyObject *value, void *closure UNUSED)
+context_setprec(PyObject *self, PyObject *value, void *Py_UNUSED(closure))
 {
     mpd_context_t *ctx;
     mpd_ssize_t x;
@@ -908,7 +947,7 @@ context_setprec(PyObject *self, PyObject *value, void *closure UNUSED)
 }
 
 static int
-context_setemin(PyObject *self, PyObject *value, void *closure UNUSED)
+context_setemin(PyObject *self, PyObject *value, void *Py_UNUSED(closure))
 {
     mpd_context_t *ctx;
     mpd_ssize_t x;
@@ -928,7 +967,7 @@ context_setemin(PyObject *self, PyObject *value, void *closure UNUSED)
 }
 
 static int
-context_setemax(PyObject *self, PyObject *value, void *closure UNUSED)
+context_setemax(PyObject *self, PyObject *value, void *Py_UNUSED(closure))
 {
     mpd_context_t *ctx;
     mpd_ssize_t x;
@@ -1010,12 +1049,12 @@ context_unsafe_setemax(PyObject *self, PyObject *value)
 #endif
 
 static int
-context_setround(PyObject *self, PyObject *value, void *closure UNUSED)
+context_setround(PyObject *self, PyObject *value, void *Py_UNUSED(closure))
 {
     mpd_context_t *ctx;
     int x;
 
-    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
+    decimal_state *state = get_module_state_from_ctx(self);
     x = getround(state, value);
     if (x == -1) {
         return -1;
@@ -1030,7 +1069,7 @@ context_setround(PyObject *self, PyObject *value, void *closure UNUSED)
 }
 
 static int
-context_setcapitals(PyObject *self, PyObject *value, void *closure UNUSED)
+context_setcapitals(PyObject *self, PyObject *value, void *Py_UNUSED(closure))
 {
     mpd_ssize_t x;
 
@@ -1050,7 +1089,7 @@ context_setcapitals(PyObject *self, PyObject *value, void *closure UNUSED)
 
 #ifdef EXTRA_FUNCTIONALITY
 static int
-context_settraps(PyObject *self, PyObject *value, void *closure UNUSED)
+context_settraps(PyObject *self, PyObject *value, void *Py_UNUSED(closure))
 {
     mpd_context_t *ctx;
     uint32_t flags;
@@ -1074,7 +1113,7 @@ context_settraps_list(PyObject *self, PyObject *value)
 {
     mpd_context_t *ctx;
     uint32_t flags;
-    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
+    decimal_state *state = get_module_state_from_ctx(self);
     flags = list_as_flags(state, value);
     if (flags & DEC_ERRORS) {
         return -1;
@@ -1094,7 +1133,7 @@ context_settraps_dict(PyObject *self, PyObject *value)
     mpd_context_t *ctx;
     uint32_t flags;
 
-    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
+    decimal_state *state = get_module_state_from_ctx(self);
     if (PyDecSignalDict_Check(state, value)) {
         flags = SdFlags(value);
     }
@@ -1115,7 +1154,7 @@ context_settraps_dict(PyObject *self, PyObject *value)
 
 #ifdef EXTRA_FUNCTIONALITY
 static int
-context_setstatus(PyObject *self, PyObject *value, void *closure UNUSED)
+context_setstatus(PyObject *self, PyObject *value, void *Py_UNUSED(closure))
 {
     mpd_context_t *ctx;
     uint32_t flags;
@@ -1139,7 +1178,7 @@ context_setstatus_list(PyObject *self, PyObject *value)
 {
     mpd_context_t *ctx;
     uint32_t flags;
-    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
+    decimal_state *state = get_module_state_from_ctx(self);
 
     flags = list_as_flags(state, value);
     if (flags & DEC_ERRORS) {
@@ -1160,7 +1199,7 @@ context_setstatus_dict(PyObject *self, PyObject *value)
     mpd_context_t *ctx;
     uint32_t flags;
 
-    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
+    decimal_state *state = get_module_state_from_ctx(self);
     if (PyDecSignalDict_Check(state, value)) {
         flags = SdFlags(value);
     }
@@ -1180,7 +1219,7 @@ context_setstatus_dict(PyObject *self, PyObject *value)
 }
 
 static int
-context_setclamp(PyObject *self, PyObject *value, void *closure UNUSED)
+context_setclamp(PyObject *self, PyObject *value, void *Py_UNUSED(closure))
 {
     mpd_context_t *ctx;
     mpd_ssize_t x;
@@ -1201,7 +1240,7 @@ context_setclamp(PyObject *self, PyObject *value, void *closure UNUSED)
 
 #ifdef EXTRA_FUNCTIONALITY
 static int
-context_setallcr(PyObject *self, PyObject *value, void *closure UNUSED)
+context_setallcr(PyObject *self, PyObject *value, void *Py_UNUSED(closure))
 {
     mpd_context_t *ctx;
     mpd_ssize_t x;
@@ -1323,14 +1362,14 @@ context_setattrs(PyObject *self, PyObject *prec, PyObject *rounding,
 }
 
 static PyObject *
-context_clear_traps(PyObject *self, PyObject *dummy UNUSED)
+context_clear_traps(PyObject *self, PyObject *Py_UNUSED(dummy))
 {
     CTX(self)->traps = 0;
     Py_RETURN_NONE;
 }
 
 static PyObject *
-context_clear_flags(PyObject *self, PyObject *dummy UNUSED)
+context_clear_flags(PyObject *self, PyObject *Py_UNUSED(dummy))
 {
     CTX(self)->status = 0;
     Py_RETURN_NONE;
@@ -1346,7 +1385,8 @@ static mpd_context_t dflt_ctx = {
 };
 
 static PyObject *
-context_new(PyTypeObject *type, PyObject *args UNUSED, PyObject *kwds UNUSED)
+context_new(PyTypeObject *type,
+            PyObject *Py_UNUSED(args), PyObject *Py_UNUSED(kwds))
 {
     PyDecContextObject *self = NULL;
     mpd_context_t *ctx;
@@ -1389,13 +1429,19 @@ context_new(PyTypeObject *type, PyObject *args UNUSED, PyObject *kwds UNUSED)
 
     CtxCaps(self) = 1;
     self->tstate = NULL;
+    self->modstate = state;
 
+    if (type == state->PyDecContext_Type) {
+        PyObject_GC_Track(self);
+    }
+    assert(PyObject_GC_IsTracked((PyObject *)self));
     return (PyObject *)self;
 }
 
 static int
-context_traverse(PyDecContextObject *self, visitproc visit, void *arg)
+context_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    PyDecContextObject *self = _PyDecContextObject_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->traps);
     Py_VISIT(self->flags);
@@ -1403,24 +1449,19 @@ context_traverse(PyDecContextObject *self, visitproc visit, void *arg)
 }
 
 static int
-context_clear(PyDecContextObject *self)
+context_clear(PyObject *op)
 {
+    PyDecContextObject *self = _PyDecContextObject_CAST(op);
     Py_CLEAR(self->traps);
     Py_CLEAR(self->flags);
     return 0;
 }
 
 static void
-context_dealloc(PyDecContextObject *self)
+context_dealloc(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
-#ifndef WITH_DECIMAL_CONTEXTVAR
-    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
-    if (self == state->cached_context) {
-        state->cached_context = NULL;
-    }
-#endif
     (void)context_clear(self);
     tp->tp_free(self);
     Py_DECREF(tp);
@@ -1460,7 +1501,7 @@ context_init(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 static PyObject *
-context_repr(PyDecContextObject *self)
+context_repr(PyObject *self)
 {
     mpd_context_t *ctx;
     char flags[MPD_MAX_SIGNAL_LIST];
@@ -1468,7 +1509,7 @@ context_repr(PyDecContextObject *self)
     int n, mem;
 
 #ifdef Py_DEBUG
-    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
+    decimal_state *state = get_module_state_from_ctx(self);
     assert(PyDecContext_Check(state, self));
 #endif
     ctx = CTX(self);
@@ -1488,7 +1529,7 @@ context_repr(PyDecContextObject *self)
         "Context(prec=%zd, rounding=%s, Emin=%zd, Emax=%zd, "
                 "capitals=%d, clamp=%d, flags=%s, traps=%s)",
          ctx->prec, mpd_round_string[ctx->round], ctx->emin, ctx->emax,
-         self->capitals, ctx->clamp, flags, traps);
+         CtxCaps(self), ctx->clamp, flags, traps);
 }
 
 static void
@@ -1516,10 +1557,9 @@ init_extended_context(PyObject *v)
     CtxCaps(v) = 1;
 }
 
-#ifdef EXTRA_FUNCTIONALITY
 /* Factory function for creating IEEE interchange format contexts */
 static PyObject *
-ieee_context(PyObject *dummy UNUSED, PyObject *v)
+ieee_context(PyObject *module, PyObject *v)
 {
     PyObject *context;
     mpd_ssize_t bits;
@@ -1536,7 +1576,7 @@ ieee_context(PyObject *dummy UNUSED, PyObject *v)
         goto error;
     }
 
-    decimal_state *state = get_module_state_by_def(Py_TYPE(v));
+    decimal_state *state = get_module_state(module);
     context = PyObject_CallObject((PyObject *)state->PyDecContext_Type, NULL);
     if (context == NULL) {
         return NULL;
@@ -1552,14 +1592,13 @@ error:
 
     return NULL;
 }
-#endif
 
 static PyObject *
-context_copy(PyObject *self, PyObject *args UNUSED)
+context_copy(PyObject *self, PyObject *Py_UNUSED(dummy))
 {
     PyObject *copy;
 
-    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
+    decimal_state *state = get_module_state_from_ctx(self);
     copy = PyObject_CallObject((PyObject *)state->PyDecContext_Type, NULL);
     if (copy == NULL) {
         return NULL;
@@ -1573,13 +1612,13 @@ context_copy(PyObject *self, PyObject *args UNUSED)
 }
 
 static PyObject *
-context_reduce(PyObject *self, PyObject *args UNUSED)
+context_reduce(PyObject *self, PyObject *Py_UNUSED(dummy))
 {
     PyObject *flags;
     PyObject *traps;
     PyObject *ret;
     mpd_context_t *ctx;
-    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
+    decimal_state *state = get_module_state_from_ctx(self);
 
     ctx = CTX(self);
 
@@ -1608,16 +1647,16 @@ context_reduce(PyObject *self, PyObject *args UNUSED)
 
 static PyGetSetDef context_getsets [] =
 {
-  { "prec", (getter)context_getprec, (setter)context_setprec, NULL, NULL},
-  { "Emax", (getter)context_getemax, (setter)context_setemax, NULL, NULL},
-  { "Emin", (getter)context_getemin, (setter)context_setemin, NULL, NULL},
-  { "rounding", (getter)context_getround, (setter)context_setround, NULL, NULL},
-  { "capitals", (getter)context_getcapitals, (setter)context_setcapitals, NULL, NULL},
-  { "clamp", (getter)context_getclamp, (setter)context_setclamp, NULL, NULL},
+  { "prec", context_getprec, context_setprec, NULL, NULL},
+  { "Emax", context_getemax, context_setemax, NULL, NULL},
+  { "Emin", context_getemin, context_setemin, NULL, NULL},
+  { "rounding", context_getround, context_setround, NULL, NULL},
+  { "capitals", context_getcapitals, context_setcapitals, NULL, NULL},
+  { "clamp", context_getclamp, context_setclamp, NULL, NULL},
 #ifdef EXTRA_FUNCTIONALITY
-  { "_allcr", (getter)context_getallcr, (setter)context_setallcr, NULL, NULL},
-  { "_traps", (getter)context_gettraps, (setter)context_settraps, NULL, NULL},
-  { "_flags", (getter)context_getstatus, (setter)context_setstatus, NULL, NULL},
+  { "_allcr", context_getallcr, context_setallcr, NULL, NULL},
+  { "_traps", context_gettraps, context_settraps, NULL, NULL},
+  { "_flags", context_getstatus, context_setstatus, NULL, NULL},
 #endif
   {NULL}
 };
@@ -1697,7 +1736,8 @@ current_context_from_dict(decimal_state *modstate)
 
     /* Cache the context of the current thread, assuming that it
      * will be accessed several times before a thread switch. */
-    modstate->cached_context = (PyDecContextObject *)tl_context;
+    Py_XSETREF(modstate->cached_context,
+               (PyDecContextObject *)Py_NewRef(tl_context));
     modstate->cached_context->tstate = tstate;
 
     /* Borrowed reference with refcount==1 */
@@ -1717,15 +1757,17 @@ current_context(decimal_state *modstate)
 }
 
 /* ctxobj := borrowed reference to the current context */
-#define CURRENT_CONTEXT(state, ctxobj) \
-    ctxobj = current_context(state); \
-    if (ctxobj == NULL) {       \
-        return NULL;            \
-    }
+#define CURRENT_CONTEXT(STATE, CTXOBJ)      \
+    do {                                    \
+        CTXOBJ = current_context(STATE);    \
+        if (CTXOBJ == NULL) {               \
+            return NULL;                    \
+        }                                   \
+    } while (0)
 
 /* Return a new reference to the current context */
 static PyObject *
-PyDec_GetCurrentContext(PyObject *self, PyObject *args UNUSED)
+PyDec_GetCurrentContext(PyObject *self, PyObject *Py_UNUSED(dummy))
 {
     PyObject *context;
     decimal_state *state = get_module_state(self);
@@ -1765,7 +1807,7 @@ PyDec_SetCurrentContext(PyObject *self, PyObject *v)
         Py_INCREF(v);
     }
 
-    state->cached_context = NULL;
+    Py_CLEAR(state->cached_context);
     if (PyDict_SetItem(dict, state->tls_context_key, v) < 0) {
         Py_DECREF(v);
         return NULL;
@@ -1810,16 +1852,18 @@ current_context(decimal_state *state)
 }
 
 /* ctxobj := borrowed reference to the current context */
-#define CURRENT_CONTEXT(state, ctxobj) \
-    ctxobj = current_context(state);   \
-    if (ctxobj == NULL) {       \
-        return NULL;            \
-    }                           \
-    Py_DECREF(ctxobj);
+#define CURRENT_CONTEXT(STATE, CTXOBJ)      \
+    do {                                    \
+        CTXOBJ = current_context(STATE);    \
+        if (CTXOBJ == NULL) {               \
+            return NULL;                    \
+        }                                   \
+        Py_DECREF(CTXOBJ);                  \
+    } while (0)
 
 /* Return a new reference to the current context */
 static PyObject *
-PyDec_GetCurrentContext(PyObject *self, PyObject *args UNUSED)
+PyDec_GetCurrentContext(PyObject *self, PyObject *Py_UNUSED(dummy))
 {
     decimal_state *state = get_module_state(self);
     return current_context(state);
@@ -1928,9 +1972,9 @@ ctxmanager_new(PyObject *m, PyObject *args, PyObject *kwds)
 }
 
 static int
-ctxmanager_traverse(PyDecContextManagerObject *self, visitproc visit,
-                    void *arg)
+ctxmanager_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    PyDecContextManagerObject *self = _PyDecContextManagerObject_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->local);
     Py_VISIT(self->global);
@@ -1938,28 +1982,29 @@ ctxmanager_traverse(PyDecContextManagerObject *self, visitproc visit,
 }
 
 static int
-ctxmanager_clear(PyDecContextManagerObject *self)
+ctxmanager_clear(PyObject *op)
 {
+    PyDecContextManagerObject *self = _PyDecContextManagerObject_CAST(op);
     Py_CLEAR(self->local);
     Py_CLEAR(self->global);
     return 0;
 }
 
 static void
-ctxmanager_dealloc(PyDecContextManagerObject *self)
+ctxmanager_dealloc(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
     (void)ctxmanager_clear(self);
-    tp->tp_free((PyObject *)self);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
 static PyObject *
-ctxmanager_set_local(PyDecContextManagerObject *self, PyObject *args UNUSED)
+ctxmanager_set_local(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     PyObject *ret;
-
+    PyDecContextManagerObject *self = _PyDecContextManagerObject_CAST(op);
     ret = PyDec_SetCurrentContext(PyType_GetModule(Py_TYPE(self)), self->local);
     if (ret == NULL) {
         return NULL;
@@ -1970,11 +2015,10 @@ ctxmanager_set_local(PyDecContextManagerObject *self, PyObject *args UNUSED)
 }
 
 static PyObject *
-ctxmanager_restore_global(PyDecContextManagerObject *self,
-                          PyObject *args UNUSED)
+ctxmanager_restore_global(PyObject *op, PyObject *Py_UNUSED(args))
 {
     PyObject *ret;
-
+    PyDecContextManagerObject *self = _PyDecContextManagerObject_CAST(op);
     ret = PyDec_SetCurrentContext(PyType_GetModule(Py_TYPE(self)), self->global);
     if (ret == NULL) {
         return NULL;
@@ -1986,8 +2030,8 @@ ctxmanager_restore_global(PyDecContextManagerObject *self,
 
 
 static PyMethodDef ctxmanager_methods[] = {
-  {"__enter__", (PyCFunction)ctxmanager_set_local, METH_NOARGS, NULL},
-  {"__exit__", (PyCFunction)ctxmanager_restore_global, METH_VARARGS, NULL},
+  {"__enter__", ctxmanager_set_local, METH_NOARGS, NULL},
+  {"__exit__", ctxmanager_restore_global, METH_VARARGS, NULL},
   {NULL, NULL}
 };
 
@@ -2014,11 +2058,10 @@ static PyType_Spec ctxmanager_spec = {
 /******************************************************************************/
 
 static PyObject *
-PyDecType_New(PyTypeObject *type)
+PyDecType_New(decimal_state *state, PyTypeObject *type)
 {
     PyDecObject *dec;
 
-    decimal_state *state = get_module_state_by_def(type);
     if (type == state->PyDec_Type) {
         dec = PyObject_GC_New(PyDecObject, state->PyDec_Type);
     }
@@ -2038,9 +2081,13 @@ PyDecType_New(PyTypeObject *type)
     MPD(dec)->alloc = _Py_DEC_MINALLOC;
     MPD(dec)->data = dec->data;
 
+    if (type == state->PyDec_Type) {
+        PyObject_GC_Track(dec);
+    }
+    assert(PyObject_GC_IsTracked((PyObject *)dec));
     return (PyObject *)dec;
 }
-#define dec_alloc(st) PyDecType_New((st)->PyDec_Type)
+#define dec_alloc(st) PyDecType_New(st, (st)->PyDec_Type)
 
 static int
 dec_traverse(PyObject *dec, visitproc visit, void *arg)
@@ -2143,7 +2190,8 @@ PyDecType_FromCString(PyTypeObject *type, const char *s,
     PyObject *dec;
     uint32_t status = 0;
 
-    dec = PyDecType_New(type);
+    decimal_state *state = get_module_state_from_ctx(context);
+    dec = PyDecType_New(state, type);
     if (dec == NULL) {
         return NULL;
     }
@@ -2167,7 +2215,8 @@ PyDecType_FromCStringExact(PyTypeObject *type, const char *s,
     uint32_t status = 0;
     mpd_context_t maxctx;
 
-    dec = PyDecType_New(type);
+    decimal_state *state = get_module_state_from_ctx(context);
+    dec = PyDecType_New(state, type);
     if (dec == NULL) {
         return NULL;
     }
@@ -2254,7 +2303,8 @@ PyDecType_FromSsize(PyTypeObject *type, mpd_ssize_t v, PyObject *context)
     PyObject *dec;
     uint32_t status = 0;
 
-    dec = PyDecType_New(type);
+    decimal_state *state = get_module_state_from_ctx(context);
+    dec = PyDecType_New(state, type);
     if (dec == NULL) {
         return NULL;
     }
@@ -2275,7 +2325,8 @@ PyDecType_FromSsizeExact(PyTypeObject *type, mpd_ssize_t v, PyObject *context)
     uint32_t status = 0;
     mpd_context_t maxctx;
 
-    dec = PyDecType_New(type);
+    decimal_state *state = get_module_state_from_ctx(context);
+    dec = PyDecType_New(state, type);
     if (dec == NULL) {
         return NULL;
     }
@@ -2293,41 +2344,46 @@ PyDecType_FromSsizeExact(PyTypeObject *type, mpd_ssize_t v, PyObject *context)
 /* Convert from a PyLongObject. The context is not modified; flags set
    during conversion are accumulated in the status parameter. */
 static PyObject *
-dec_from_long(PyTypeObject *type, PyObject *v,
+dec_from_long(decimal_state *state, PyTypeObject *type, PyObject *v,
               const mpd_context_t *ctx, uint32_t *status)
 {
-    PyObject *dec;
-    PyLongObject *l = (PyLongObject *)v;
+    PyObject *dec = PyDecType_New(state, type);
 
-    dec = PyDecType_New(type);
     if (dec == NULL) {
         return NULL;
     }
 
-    if (_PyLong_IsZero(l)) {
-        _dec_settriple(dec, MPD_POS, 0, 0);
-        return dec;
+    PyLongExport export_long;
+
+    if (PyLong_Export(v, &export_long) == -1) {
+        Py_DECREF(dec);
+        return NULL;
     }
+    if (export_long.digits) {
+        const PyLongLayout *layout = PyLong_GetNativeLayout();
 
-    uint8_t sign = _PyLong_IsNegative(l) ? MPD_NEG :  MPD_POS;
+        assert(layout->bits_per_digit < 32);
+        assert(layout->digits_order == -1);
+        assert(layout->digit_endianness == (PY_LITTLE_ENDIAN ? -1 : 1));
+        assert(layout->digit_size == 2 || layout->digit_size == 4);
 
-    if (_PyLong_IsCompact(l)) {
-        _dec_settriple(dec, sign, l->long_value.ob_digit[0], 0);
-        mpd_qfinalize(MPD(dec), ctx, status);
-        return dec;
+        uint32_t base = (uint32_t)1 << layout->bits_per_digit;
+        uint8_t sign = export_long.negative ? MPD_NEG : MPD_POS;
+        Py_ssize_t len = export_long.ndigits;
+
+        if (layout->digit_size == 4) {
+            mpd_qimport_u32(MPD(dec), export_long.digits, len, sign,
+                            base, ctx, status);
+        }
+        else {
+            mpd_qimport_u16(MPD(dec), export_long.digits, len, sign,
+                            base, ctx, status);
+        }
+        PyLong_FreeExport(&export_long);
     }
-    size_t len = _PyLong_DigitCount(l);
-
-#if PYLONG_BITS_IN_DIGIT == 30
-    mpd_qimport_u32(MPD(dec), l->long_value.ob_digit, len, sign, PyLong_BASE,
-                    ctx, status);
-#elif PYLONG_BITS_IN_DIGIT == 15
-    mpd_qimport_u16(MPD(dec), l->long_value.ob_digit, len, sign, PyLong_BASE,
-                    ctx, status);
-#else
-  #error "PYLONG_BITS_IN_DIGIT should be 15 or 30"
-#endif
-
+    else {
+        mpd_qset_i64(MPD(dec), export_long.value, ctx, status);
+    }
     return dec;
 }
 
@@ -2344,7 +2400,8 @@ PyDecType_FromLong(PyTypeObject *type, PyObject *v, PyObject *context)
         return NULL;
     }
 
-    dec = dec_from_long(type, v, CTX(context), &status);
+    decimal_state *state = get_module_state_from_ctx(context);
+    dec = dec_from_long(state, type, v, CTX(context), &status);
     if (dec == NULL) {
         return NULL;
     }
@@ -2373,7 +2430,8 @@ PyDecType_FromLongExact(PyTypeObject *type, PyObject *v,
     }
 
     mpd_maxcontext(&maxctx);
-    dec = dec_from_long(type, v, &maxctx, &status);
+    decimal_state *state = get_module_state_from_ctx(context);
+    dec = dec_from_long(state, type, v, &maxctx, &status);
     if (dec == NULL) {
         return NULL;
     }
@@ -2405,7 +2463,7 @@ PyDecType_FromFloatExact(PyTypeObject *type, PyObject *v,
     mpd_t *d1, *d2;
     uint32_t status = 0;
     mpd_context_t maxctx;
-    decimal_state *state = get_module_state_by_def(type);
+    decimal_state *state = get_module_state_from_ctx(context);
 
 #ifdef Py_DEBUG
     assert(PyType_IsSubtype(type, state->PyDec_Type));
@@ -2425,12 +2483,12 @@ PyDecType_FromFloatExact(PyTypeObject *type, PyObject *v,
     }
     sign = (copysign(1.0, x) == 1.0) ? 0 : 1;
 
-    if (Py_IS_NAN(x) || Py_IS_INFINITY(x)) {
-        dec = PyDecType_New(type);
+    if (isnan(x) || isinf(x)) {
+        dec = PyDecType_New(state, type);
         if (dec == NULL) {
             return NULL;
         }
-        if (Py_IS_NAN(x)) {
+        if (isnan(x)) {
             /* decimal.py calls repr(float(+-nan)),
              * which always gives a positive result. */
             mpd_setspecial(MPD(dec), MPD_POS, MPD_NAN);
@@ -2543,12 +2601,12 @@ PyDecType_FromDecimalExact(PyTypeObject *type, PyObject *v, PyObject *context)
     PyObject *dec;
     uint32_t status = 0;
 
-    decimal_state *state = get_module_state_by_def(type);
+    decimal_state *state = get_module_state_from_ctx(context);
     if (type == state->PyDec_Type && PyDec_CheckExact(state, v)) {
         return Py_NewRef(v);
     }
 
-    dec = PyDecType_New(type);
+    dec = PyDecType_New(state, type);
     if (dec == NULL) {
         return NULL;
     }
@@ -2828,11 +2886,56 @@ dec_from_float(PyObject *type, PyObject *pyfloat)
     return result;
 }
 
+/* 'v' can have any numeric type accepted by the Decimal constructor. Attempt
+   an exact conversion. If the result does not meet the restrictions
+   for an mpd_t, fail with InvalidOperation. */
+static PyObject *
+PyDecType_FromNumberExact(PyTypeObject *type, PyObject *v, PyObject *context)
+{
+    decimal_state *state = get_module_state_by_def(type);
+    assert(v != NULL);
+    if (PyDec_Check(state, v)) {
+        return PyDecType_FromDecimalExact(type, v, context);
+    }
+    else if (PyLong_Check(v)) {
+        return PyDecType_FromLongExact(type, v, context);
+    }
+    else if (PyFloat_Check(v)) {
+        if (dec_addstatus(context, MPD_Float_operation)) {
+            return NULL;
+        }
+        return PyDecType_FromFloatExact(type, v, context);
+    }
+    else {
+        PyErr_Format(PyExc_TypeError,
+            "conversion from %s to Decimal is not supported",
+            Py_TYPE(v)->tp_name);
+        return NULL;
+    }
+}
+
+/* class method */
+static PyObject *
+dec_from_number(PyObject *type, PyObject *number)
+{
+    PyObject *context;
+    PyObject *result;
+
+    decimal_state *state = get_module_state_by_def((PyTypeObject *)type);
+    CURRENT_CONTEXT(state, context);
+    result = PyDecType_FromNumberExact(state->PyDec_Type, number, context);
+    if (type != (PyObject *)state->PyDec_Type && result != NULL) {
+        Py_SETREF(result, PyObject_CallFunctionObjArgs(type, result, NULL));
+    }
+
+    return result;
+}
+
 /* create_decimal_from_float */
 static PyObject *
 ctx_from_float(PyObject *context, PyObject *v)
 {
-    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
+    decimal_state *state = get_module_state_from_ctx(context);
     return PyDec_FromFloat(state, v, context);
 }
 
@@ -2843,7 +2946,7 @@ dec_apply(PyObject *v, PyObject *context)
     PyObject *result;
     uint32_t status = 0;
 
-    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
+    decimal_state *state = get_module_state_from_ctx(context);
     result = dec_alloc(state);
     if (result == NULL) {
         return NULL;
@@ -2870,7 +2973,7 @@ dec_apply(PyObject *v, PyObject *context)
 static PyObject *
 PyDecType_FromObjectExact(PyTypeObject *type, PyObject *v, PyObject *context)
 {
-    decimal_state *state = get_module_state_by_def(type);
+    decimal_state *state = get_module_state_from_ctx(context);
     if (v == NULL) {
         return PyDecType_FromSsizeExact(type, 0, context);
     }
@@ -2905,7 +3008,7 @@ PyDecType_FromObjectExact(PyTypeObject *type, PyObject *v, PyObject *context)
 static PyObject *
 PyDec_FromObject(PyObject *v, PyObject *context)
 {
-    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
+    decimal_state *state = get_module_state_from_ctx(context);
     if (v == NULL) {
         return PyDec_FromSsize(state, 0, context);
     }
@@ -2992,7 +3095,7 @@ ctx_create_decimal(PyObject *context, PyObject *args)
 Py_LOCAL_INLINE(int)
 convert_op(int type_err, PyObject **conv, PyObject *v, PyObject *context)
 {
-    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
+    decimal_state *state = get_module_state_from_ctx(context);
     if (PyDec_Check(state, v)) {
         *conv = Py_NewRef(v);
         return 1;
@@ -3095,7 +3198,7 @@ multiply_by_denominator(PyObject *v, PyObject *r, PyObject *context)
     if (tmp == NULL) {
         return NULL;
     }
-    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
+    decimal_state *state = get_module_state_from_ctx(context);
     denom = PyDec_FromLongExact(state, tmp, context);
     Py_DECREF(tmp);
     if (denom == NULL) {
@@ -3150,7 +3253,7 @@ numerator_as_decimal(PyObject *r, PyObject *context)
         return NULL;
     }
 
-    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
+    decimal_state *state = get_module_state_from_ctx(context);
     num = PyDec_FromLongExact(state, tmp, context);
     Py_DECREF(tmp);
     return num;
@@ -3169,7 +3272,7 @@ convert_op_cmp(PyObject **vcmp, PyObject **wcmp, PyObject *v, PyObject *w,
 
     *vcmp = v;
 
-    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
+    decimal_state *state = get_module_state_from_ctx(context);
     if (PyDec_Check(state, w)) {
         *wcmp = Py_NewRef(w);
     }
@@ -3387,7 +3490,7 @@ pydec_format(PyObject *dec, PyObject *context, PyObject *fmt, decimal_state *sta
     PyObject *u;
 
     if (state->PyDecimal == NULL) {
-        state->PyDecimal = _PyImport_GetModuleAttrString("_pydecimal", "Decimal");
+        state->PyDecimal = PyImport_ImportModuleAttrString("_pydecimal", "Decimal");
         if (state->PyDecimal == NULL) {
             return NULL;
         }
@@ -3565,13 +3668,6 @@ finish:
 static PyObject *
 dec_as_long(PyObject *dec, PyObject *context, int round)
 {
-    PyLongObject *pylong;
-    digit *ob_digit;
-    size_t n;
-    mpd_t *x;
-    mpd_context_t workctx;
-    uint32_t status = 0;
-
     if (mpd_isspecial(MPD(dec))) {
         if (mpd_isnan(MPD(dec))) {
             PyErr_SetString(PyExc_ValueError,
@@ -3584,12 +3680,16 @@ dec_as_long(PyObject *dec, PyObject *context, int round)
         return NULL;
     }
 
-    x = mpd_qnew();
+    mpd_t *x = mpd_qnew();
+
     if (x == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
-    workctx = *CTX(context);
+
+    mpd_context_t workctx = *CTX(context);
+    uint32_t status = 0;
+
     workctx.round = round;
     mpd_qround_to_int(x, MPD(dec), &workctx, &status);
     if (dec_addstatus(context, status)) {
@@ -3598,39 +3698,61 @@ dec_as_long(PyObject *dec, PyObject *context, int round)
     }
 
     status = 0;
-    ob_digit = NULL;
-#if PYLONG_BITS_IN_DIGIT == 30
-    n = mpd_qexport_u32(&ob_digit, 0, PyLong_BASE, x, &status);
-#elif PYLONG_BITS_IN_DIGIT == 15
-    n = mpd_qexport_u16(&ob_digit, 0, PyLong_BASE, x, &status);
-#else
-    #error "PYLONG_BITS_IN_DIGIT should be 15 or 30"
-#endif
+    int64_t val = mpd_qget_i64(x, &status);
+
+    if (!status) {
+        mpd_del(x);
+        return PyLong_FromInt64(val);
+    }
+    assert(!mpd_iszero(x));
+
+    const PyLongLayout *layout = PyLong_GetNativeLayout();
+
+    assert(layout->bits_per_digit < 32);
+    assert(layout->digits_order == -1);
+    assert(layout->digit_endianness == (PY_LITTLE_ENDIAN ? -1 : 1));
+    assert(layout->digit_size == 2 || layout->digit_size == 4);
+
+    uint32_t base = (uint32_t)1 << layout->bits_per_digit;
+    /* We use a temporary buffer for digits for now, as for nonzero rdata
+       mpd_qexport_u32/u16() require either space "allocated by one of
+       libmpdec’s allocation functions" or "rlen MUST be correct" (to avoid
+       reallocation).  This can be further optimized by using rlen from
+       mpd_sizeinbase().  See gh-127925. */
+    void *tmp_digits = NULL;
+    size_t n;
+
+    status = 0;
+    if (layout->digit_size == 4) {
+        n = mpd_qexport_u32((uint32_t **)&tmp_digits, 0, base, x, &status);
+    }
+    else {
+        n = mpd_qexport_u16((uint16_t **)&tmp_digits, 0, base, x, &status);
+    }
 
     if (n == SIZE_MAX) {
         PyErr_NoMemory();
         mpd_del(x);
+        mpd_free(tmp_digits);
         return NULL;
     }
 
-    if (n == 1) {
-        sdigit val = mpd_arith_sign(x) * ob_digit[0];
-        mpd_free(ob_digit);
-        mpd_del(x);
-        return PyLong_FromLong(val);
-    }
+    void *digits;
+    PyLongWriter *writer = PyLongWriter_Create(mpd_isnegative(x), n, &digits);
 
-    assert(n > 0);
-    assert(!mpd_iszero(x));
-    pylong = _PyLong_FromDigits(mpd_isnegative(x), n, ob_digit);
-    mpd_free(ob_digit);
     mpd_del(x);
-    return (PyObject *) pylong;
+    if (writer == NULL) {
+        mpd_free(tmp_digits);
+        return NULL;
+    }
+    memcpy(digits, tmp_digits, layout->digit_size*n);
+    mpd_free(tmp_digits);
+    return PyLongWriter_Finish(writer);
 }
 
 /* Convert a Decimal to its exact integer ratio representation. */
 static PyObject *
-dec_as_integer_ratio(PyObject *self, PyObject *args UNUSED)
+dec_as_integer_ratio(PyObject *self, PyObject *Py_UNUSED(dummy))
 {
     PyObject *numerator = NULL;
     PyObject *denominator = NULL;
@@ -3898,7 +4020,7 @@ PyDec_Round(PyObject *dec, PyObject *args)
 
 /* Return the DecimalTuple representation of a PyDecObject. */
 static PyObject *
-PyDec_AsTuple(PyObject *dec, PyObject *dummy UNUSED)
+PyDec_AsTuple(PyObject *dec, PyObject *Py_UNUSED(dummy))
 {
     PyObject *result = NULL;
     PyObject *sign = NULL;
@@ -4054,7 +4176,7 @@ nm_##MPDFUNC(PyObject *self, PyObject *other)                    \
 /* Boolean function without a context arg. */
 #define Dec_BoolFunc(MPDFUNC) \
 static PyObject *                                           \
-dec_##MPDFUNC(PyObject *self, PyObject *dummy UNUSED)       \
+dec_##MPDFUNC(PyObject *self, PyObject *Py_UNUSED(dummy))   \
 {                                                           \
     return MPDFUNC(MPD(self)) ? incr_true() : incr_false(); \
 }
@@ -4301,7 +4423,7 @@ nm_mpd_qpow(PyObject *base, PyObject *exp, PyObject *mod)
     PyObject *context;
     uint32_t status = 0;
 
-    decimal_state *state = find_state_left_or_right(base, exp);
+    decimal_state *state = find_state_ternary(base, exp, mod);
     CURRENT_CONTEXT(state, context);
     CONVERT_BINOP(&a, &b, base, exp, context);
 
@@ -4383,7 +4505,7 @@ Dec_BoolFuncVA(mpd_issubnormal)
 
 /* Unary functions, no context arg */
 static PyObject *
-dec_mpd_adjexp(PyObject *self, PyObject *dummy UNUSED)
+dec_mpd_adjexp(PyObject *self, PyObject *Py_UNUSED(dummy))
 {
     mpd_ssize_t retval;
 
@@ -4398,23 +4520,22 @@ dec_mpd_adjexp(PyObject *self, PyObject *dummy UNUSED)
 }
 
 static PyObject *
-dec_canonical(PyObject *self, PyObject *dummy UNUSED)
+dec_canonical(PyObject *self, PyObject *Py_UNUSED(dummy))
 {
     return Py_NewRef(self);
 }
 
 static PyObject *
-dec_conjugate(PyObject *self, PyObject *dummy UNUSED)
+dec_conjugate(PyObject *self, PyObject *Py_UNUSED(dummy))
 {
     return Py_NewRef(self);
 }
 
-static PyObject *
-dec_mpd_radix(PyObject *self, PyObject *dummy UNUSED)
+static inline PyObject *
+_dec_mpd_radix(decimal_state *state)
 {
     PyObject *result;
 
-    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
     result = dec_alloc(state);
     if (result == NULL) {
         return NULL;
@@ -4425,7 +4546,14 @@ dec_mpd_radix(PyObject *self, PyObject *dummy UNUSED)
 }
 
 static PyObject *
-dec_mpd_qcopy_abs(PyObject *self, PyObject *dummy UNUSED)
+dec_mpd_radix(PyObject *self, PyObject *Py_UNUSED(dummy))
+{
+    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
+    return _dec_mpd_radix(state);
+}
+
+static PyObject *
+dec_mpd_qcopy_abs(PyObject *self, PyObject *Py_UNUSED(dummy))
 {
     PyObject *result;
     uint32_t status = 0;
@@ -4446,7 +4574,7 @@ dec_mpd_qcopy_abs(PyObject *self, PyObject *dummy UNUSED)
 }
 
 static PyObject *
-dec_mpd_qcopy_negate(PyObject *self, PyObject *dummy UNUSED)
+dec_mpd_qcopy_negate(PyObject *self, PyObject *Py_UNUSED(dummy))
 {
     PyObject *result;
     uint32_t status = 0;
@@ -4700,7 +4828,7 @@ dec_richcompare(PyObject *v, PyObject *w, int op)
 
 /* __ceil__ */
 static PyObject *
-dec_ceil(PyObject *self, PyObject *dummy UNUSED)
+dec_ceil(PyObject *self, PyObject *Py_UNUSED(dummy))
 {
     PyObject *context;
 
@@ -4711,7 +4839,7 @@ dec_ceil(PyObject *self, PyObject *dummy UNUSED)
 
 /* __complex__ */
 static PyObject *
-dec_complex(PyObject *self, PyObject *dummy UNUSED)
+dec_complex(PyObject *self, PyObject *Py_UNUSED(dummy))
 {
     PyObject *f;
     double x;
@@ -4730,16 +4858,16 @@ dec_complex(PyObject *self, PyObject *dummy UNUSED)
     return PyComplex_FromDoubles(x, 0);
 }
 
-/* __copy__ and __deepcopy__ */
+/* __copy__ (METH_NOARGS) and __deepcopy__ (METH_O) */
 static PyObject *
-dec_copy(PyObject *self, PyObject *dummy UNUSED)
+dec_copy(PyObject *self, PyObject *Py_UNUSED(dummy))
 {
     return Py_NewRef(self);
 }
 
 /* __floor__ */
 static PyObject *
-dec_floor(PyObject *self, PyObject *dummy UNUSED)
+dec_floor(PyObject *self, PyObject *Py_UNUSED(dummy))
 {
     PyObject *context;
 
@@ -4865,8 +4993,9 @@ malloc_error:
 }
 
 static Py_hash_t
-dec_hash(PyDecObject *self)
+dec_hash(PyObject *op)
 {
+    PyDecObject *self = _PyDecObject_CAST(op);
     if (self->hash == -1) {
         self->hash = _dec_hash(self);
     }
@@ -4876,7 +5005,7 @@ dec_hash(PyDecObject *self)
 
 /* __reduce__ */
 static PyObject *
-dec_reduce(PyObject *self, PyObject *dummy UNUSED)
+dec_reduce(PyObject *self, PyObject *Py_UNUSED(dummy))
 {
     PyObject *result, *str;
 
@@ -4893,7 +5022,7 @@ dec_reduce(PyObject *self, PyObject *dummy UNUSED)
 
 /* __sizeof__ */
 static PyObject *
-dec_sizeof(PyObject *v, PyObject *dummy UNUSED)
+dec_sizeof(PyObject *v, PyObject *Py_UNUSED(dummy))
 {
     size_t res = _PyObject_SIZE(Py_TYPE(v));
     if (mpd_isdynamic_data(MPD(v))) {
@@ -4904,7 +5033,7 @@ dec_sizeof(PyObject *v, PyObject *dummy UNUSED)
 
 /* __trunc__ */
 static PyObject *
-dec_trunc(PyObject *self, PyObject *dummy UNUSED)
+dec_trunc(PyObject *self, PyObject *Py_UNUSED(dummy))
 {
     PyObject *context;
 
@@ -4915,13 +5044,13 @@ dec_trunc(PyObject *self, PyObject *dummy UNUSED)
 
 /* real and imag */
 static PyObject *
-dec_real(PyObject *self, void *closure UNUSED)
+dec_real(PyObject *self, void *Py_UNUSED(closure))
 {
     return Py_NewRef(self);
 }
 
 static PyObject *
-dec_imag(PyObject *self UNUSED, void *closure UNUSED)
+dec_imag(PyObject *self, void *Py_UNUSED(closure))
 {
     PyObject *result;
 
@@ -4938,8 +5067,8 @@ dec_imag(PyObject *self UNUSED, void *closure UNUSED)
 
 static PyGetSetDef dec_getsets [] =
 {
-  { "real", (getter)dec_real, NULL, NULL, NULL},
-  { "imag", (getter)dec_imag, NULL, NULL, NULL},
+  { "real", dec_real, NULL, NULL, NULL},
+  { "imag", dec_imag, NULL, NULL, NULL},
   {NULL}
 };
 
@@ -5017,6 +5146,7 @@ static PyMethodDef dec_methods [] =
 
   /* Miscellaneous */
   { "from_float", dec_from_float, METH_O|METH_CLASS, doc_from_float },
+  { "from_number", dec_from_number, METH_O|METH_CLASS, doc_from_number },
   { "as_tuple", PyDec_AsTuple, METH_NOARGS, doc_as_tuple },
   { "as_integer_ratio", dec_as_integer_ratio, METH_NOARGS, doc_as_integer_ratio },
 
@@ -5036,6 +5166,7 @@ static PyMethodDef dec_methods [] =
 };
 
 static PyType_Slot dec_slots[] = {
+    {Py_tp_token, Py_TP_USE_SPEC},
     {Py_tp_dealloc, dec_dealloc},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_traverse, dec_traverse},
@@ -5125,7 +5256,7 @@ ctx_##MPDFUNC(PyObject *context, PyObject *v)            \
                                                          \
     CONVERT_OP_RAISE(&a, v, context);                    \
     decimal_state *state =                               \
-        get_module_state_by_def(Py_TYPE(context));       \
+        get_module_state_from_ctx(context);              \
     if ((result = dec_alloc(state)) == NULL) {           \
         Py_DECREF(a);                                    \
         return NULL;                                     \
@@ -5157,7 +5288,7 @@ ctx_##MPDFUNC(PyObject *context, PyObject *args)                 \
                                                                  \
     CONVERT_BINOP_RAISE(&a, &b, v, w, context);                  \
     decimal_state *state =                                       \
-        get_module_state_by_def(Py_TYPE(context));               \
+        get_module_state_from_ctx(context);                      \
     if ((result = dec_alloc(state)) == NULL) {                   \
         Py_DECREF(a);                                            \
         Py_DECREF(b);                                            \
@@ -5193,7 +5324,7 @@ ctx_##MPDFUNC(PyObject *context, PyObject *args) \
                                                  \
     CONVERT_BINOP_RAISE(&a, &b, v, w, context);  \
     decimal_state *state =                       \
-        get_module_state_by_def(Py_TYPE(context)); \
+        get_module_state_from_ctx(context);      \
     if ((result = dec_alloc(state)) == NULL) {   \
         Py_DECREF(a);                            \
         Py_DECREF(b);                            \
@@ -5222,7 +5353,7 @@ ctx_##MPDFUNC(PyObject *context, PyObject *args)                         \
     }                                                                    \
                                                                          \
     CONVERT_TERNOP_RAISE(&a, &b, &c, v, w, x, context);                  \
-    decimal_state *state = get_module_state_by_def(Py_TYPE(context));    \
+    decimal_state *state = get_module_state_from_ctx(context);           \
     if ((result = dec_alloc(state)) == NULL) {                           \
         Py_DECREF(a);                                                    \
         Py_DECREF(b);                                                    \
@@ -5288,7 +5419,7 @@ ctx_mpd_qdivmod(PyObject *context, PyObject *args)
     }
 
     CONVERT_BINOP_RAISE(&a, &b, v, w, context);
-    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
+    decimal_state *state = get_module_state_from_ctx(context);
     q = dec_alloc(state);
     if (q == NULL) {
         Py_DECREF(a);
@@ -5343,7 +5474,7 @@ ctx_mpd_qpow(PyObject *context, PyObject *args, PyObject *kwds)
         }
     }
 
-    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
+    decimal_state *state = get_module_state_from_ctx(context);
     result = dec_alloc(state);
     if (result == NULL) {
         Py_DECREF(a);
@@ -5378,7 +5509,8 @@ DecCtx_TernaryFunc(mpd_qfma)
 static PyObject *
 ctx_mpd_radix(PyObject *context, PyObject *dummy)
 {
-    return dec_mpd_radix(context, dummy);
+    decimal_state *state = get_module_state_from_ctx(context);
+    return _dec_mpd_radix(state);
 }
 
 /* Boolean functions: single decimal argument */
@@ -5395,7 +5527,7 @@ DecCtx_BoolFunc_NO_CTX(mpd_iszero)
 static PyObject *
 ctx_iscanonical(PyObject *context, PyObject *v)
 {
-    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
+    decimal_state *state = get_module_state_from_ctx(context);
     if (!PyDec_Check(state, v)) {
         PyErr_SetString(PyExc_TypeError,
             "argument must be a Decimal");
@@ -5421,7 +5553,7 @@ PyDecContext_Apply(PyObject *context, PyObject *v)
 static PyObject *
 ctx_canonical(PyObject *context, PyObject *v)
 {
-    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
+    decimal_state *state = get_module_state_from_ctx(context);
     if (!PyDec_Check(state, v)) {
         PyErr_SetString(PyExc_TypeError,
             "argument must be a Decimal");
@@ -5438,7 +5570,7 @@ ctx_mpd_qcopy_abs(PyObject *context, PyObject *v)
     uint32_t status = 0;
 
     CONVERT_OP_RAISE(&a, v, context);
-    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
+    decimal_state *state = get_module_state_from_ctx(context);
     result = dec_alloc(state);
     if (result == NULL) {
         Py_DECREF(a);
@@ -5471,7 +5603,7 @@ ctx_mpd_qcopy_negate(PyObject *context, PyObject *v)
     uint32_t status = 0;
 
     CONVERT_OP_RAISE(&a, v, context);
-    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
+    decimal_state *state = get_module_state_from_ctx(context);
     result = dec_alloc(state);
     if (result == NULL) {
         Py_DECREF(a);
@@ -5568,7 +5700,7 @@ ctx_mpd_qcopy_sign(PyObject *context, PyObject *args)
     }
 
     CONVERT_BINOP_RAISE(&a, &b, v, w, context);
-    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
+    decimal_state *state = get_module_state_from_ctx(context);
     result = dec_alloc(state);
     if (result == NULL) {
         Py_DECREF(a);
@@ -5713,9 +5845,9 @@ static PyMethodDef context_methods [] =
 #endif
 
   /* Miscellaneous */
-  { "__copy__", (PyCFunction)context_copy, METH_NOARGS, NULL },
+  { "__copy__", context_copy, METH_NOARGS, NULL },
   { "__reduce__", context_reduce, METH_NOARGS, NULL },
-  { "copy", (PyCFunction)context_copy, METH_NOARGS, doc_ctx_copy },
+  { "copy", context_copy, METH_NOARGS, doc_ctx_copy },
   { "create_decimal", ctx_create_decimal, METH_VARARGS, doc_ctx_create_decimal },
   { "create_decimal_from_float", ctx_from_float, METH_O, doc_ctx_create_decimal_from_float },
 
@@ -5723,6 +5855,7 @@ static PyMethodDef context_methods [] =
 };
 
 static PyType_Slot context_slots[] = {
+    {Py_tp_token, Py_TP_USE_SPEC},
     {Py_tp_dealloc, context_dealloc},
     {Py_tp_traverse, context_traverse},
     {Py_tp_clear, context_clear},
@@ -5748,12 +5881,10 @@ static PyType_Spec context_spec = {
 
 static PyMethodDef _decimal_methods [] =
 {
-  { "getcontext", (PyCFunction)PyDec_GetCurrentContext, METH_NOARGS, doc_getcontext},
-  { "setcontext", (PyCFunction)PyDec_SetCurrentContext, METH_O, doc_setcontext},
+  { "getcontext", PyDec_GetCurrentContext, METH_NOARGS, doc_getcontext},
+  { "setcontext", PyDec_SetCurrentContext, METH_O, doc_setcontext},
   { "localcontext", _PyCFunction_CAST(ctxmanager_new), METH_VARARGS|METH_KEYWORDS, doc_localcontext},
-#ifdef EXTRA_FUNCTIONALITY
-  { "IEEEContext", (PyCFunction)ieee_context, METH_O, doc_ieee_context},
-#endif
+  { "IEEEContext", ieee_context, METH_O, doc_ieee_context},
   { NULL, NULL, 1, NULL }
 };
 
@@ -5770,11 +5901,11 @@ static struct ssize_constmap ssize_constants [] = {
 struct int_constmap { const char *name; int val; };
 static struct int_constmap int_constants [] = {
     /* int constants */
+    {"IEEE_CONTEXT_MAX_BITS", MPD_IEEE_CONTEXT_MAX_BITS},
 #ifdef EXTRA_FUNCTIONALITY
     {"DECIMAL32", MPD_DECIMAL32},
     {"DECIMAL64", MPD_DECIMAL64},
     {"DECIMAL128", MPD_DECIMAL128},
-    {"IEEE_CONTEXT_MAX_BITS", MPD_IEEE_CONTEXT_MAX_BITS},
     /* int condition flags */
     {"DecClamped", MPD_Clamped},
     {"DecConversionSyntax", MPD_Conversion_syntax},
@@ -6114,6 +6245,16 @@ decimal_traverse(PyObject *module, visitproc visit, void *arg)
     Py_VISIT(state->Rational);
     Py_VISIT(state->SignalTuple);
 
+    if (state->signal_map != NULL) {
+        for (DecCondMap *cm = state->signal_map; cm->name != NULL; cm++) {
+            Py_VISIT(cm->ex);
+        }
+    }
+    if (state->cond_map != NULL) {
+        for (DecCondMap *cm = state->cond_map + 1; cm->name != NULL; cm++) {
+            Py_VISIT(cm->ex);
+        }
+    }
     return 0;
 }
 
@@ -6143,8 +6284,22 @@ decimal_clear(PyObject *module)
     Py_CLEAR(state->SignalTuple);
     Py_CLEAR(state->PyDecimal);
 
-    PyMem_Free(state->signal_map);
-    PyMem_Free(state->cond_map);
+    if (state->signal_map != NULL) {
+        for (DecCondMap *cm = state->signal_map; cm->name != NULL; cm++) {
+            Py_DECREF(cm->ex);
+        }
+        PyMem_Free(state->signal_map);
+        state->signal_map = NULL;
+    }
+
+    if (state->cond_map != NULL) {
+        // cond_map[0].ex has borrowed a reference from signal_map[0].ex
+        for (DecCondMap *cm = state->cond_map + 1; cm->name != NULL; cm++) {
+            Py_DECREF(cm->ex);
+        }
+        PyMem_Free(state->cond_map);
+        state->cond_map = NULL;
+    }
     return 0;
 }
 

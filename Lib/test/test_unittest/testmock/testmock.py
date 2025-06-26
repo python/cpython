@@ -129,6 +129,11 @@ class MockTest(unittest.TestCase):
         # pass kwargs with respect to the parent mock.
         self.assertEqual(class_mock().return_value.meth.side_effect, None)
 
+    def test_create_autospec_correctly_handles_name(self):
+        class X: ...
+        mock = create_autospec(X, spec_set=True, name="Y")
+        self.assertEqual(mock._mock_name, "Y")
+
     def test_repr(self):
         mock = Mock(name='foo')
         self.assertIn('foo', repr(mock))
@@ -311,7 +316,7 @@ class MockTest(unittest.TestCase):
         passed to the wrapped object and the return_value is returned instead.
         """
         def my_func():
-            return None
+            return None  # pragma: no cover
         func_mock = create_autospec(spec=my_func, wraps=my_func)
         return_value = "explicit return value"
         func_mock.return_value = return_value
@@ -2210,13 +2215,13 @@ class MockTest(unittest.TestCase):
     def test_attribute_deletion(self):
         for mock in (Mock(), MagicMock(), NonCallableMagicMock(),
                      NonCallableMock()):
-            self.assertTrue(hasattr(mock, 'm'))
+            self.assertHasAttr(mock, 'm')
 
             del mock.m
-            self.assertFalse(hasattr(mock, 'm'))
+            self.assertNotHasAttr(mock, 'm')
 
             del mock.f
-            self.assertFalse(hasattr(mock, 'f'))
+            self.assertNotHasAttr(mock, 'f')
             self.assertRaises(AttributeError, getattr, mock, 'f')
 
 
@@ -2225,18 +2230,18 @@ class MockTest(unittest.TestCase):
         for mock in (Mock(), MagicMock(), NonCallableMagicMock(),
                      NonCallableMock()):
             mock.foo = 3
-            self.assertTrue(hasattr(mock, 'foo'))
+            self.assertHasAttr(mock, 'foo')
             self.assertEqual(mock.foo, 3)
 
             del mock.foo
-            self.assertFalse(hasattr(mock, 'foo'))
+            self.assertNotHasAttr(mock, 'foo')
 
             mock.foo = 4
-            self.assertTrue(hasattr(mock, 'foo'))
+            self.assertHasAttr(mock, 'foo')
             self.assertEqual(mock.foo, 4)
 
             del mock.foo
-            self.assertFalse(hasattr(mock, 'foo'))
+            self.assertNotHasAttr(mock, 'foo')
 
 
     def test_mock_raises_when_deleting_nonexistent_attribute(self):
@@ -2254,7 +2259,7 @@ class MockTest(unittest.TestCase):
         mock.child = True
         del mock.child
         mock.reset_mock()
-        self.assertFalse(hasattr(mock, 'child'))
+        self.assertNotHasAttr(mock, 'child')
 
 
     def test_class_assignable(self):

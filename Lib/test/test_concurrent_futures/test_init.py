@@ -20,6 +20,10 @@ INITIALIZER_STATUS = 'uninitialized'
 def init(x):
     global INITIALIZER_STATUS
     INITIALIZER_STATUS = x
+    # InterpreterPoolInitializerTest.test_initializer fails
+    # if we don't have a LOAD_GLOBAL.  (It could be any global.)
+    # We will address this separately.
+    INITIALIZER_STATUS
 
 def get_init_status():
     return INITIALIZER_STATUS
@@ -139,6 +143,7 @@ class FailingInitializerResourcesTest(unittest.TestCase):
     def test_spawn(self):
         self._test(ProcessPoolSpawnFailingInitializerTest)
 
+    @support.skip_if_sanitizer("TSAN doesn't support threads after fork", thread=True)
     def test_forkserver(self):
         self._test(ProcessPoolForkserverFailingInitializerTest)
 

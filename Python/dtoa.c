@@ -119,8 +119,10 @@
 
 #include "Python.h"
 #include "pycore_dtoa.h"          // _PY_SHORT_FLOAT_REPR
+#include "pycore_interp_structs.h"// struct Bigint
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include <stdlib.h>               // exit()
+
 
 /* if _PY_SHORT_FLOAT_REPR == 0, then don't even try to compile
    the following code */
@@ -157,7 +159,7 @@
 #endif
 
 
-// ULong is defined in pycore_dtoa.h.
+typedef uint32_t ULong;
 typedef int32_t Long;
 typedef uint64_t ULLong;
 
@@ -1405,7 +1407,7 @@ _Py_dg_strtod(const char *s00, char **se)
     switch (c) {
     case '-':
         sign = 1;
-        /* fall through */
+        _Py_FALLTHROUGH;
     case '+':
         c = *++s;
     }
@@ -1474,7 +1476,7 @@ _Py_dg_strtod(const char *s00, char **se)
         switch (c) {
         case '-':
             esign = 1;
-            /* fall through */
+            _Py_FALLTHROUGH;
         case '+':
             c = *++s;
         }
@@ -2362,7 +2364,7 @@ _Py_dg_dtoa(double dd, int mode, int ndigits,
         break;
     case 2:
         leftright = 0;
-        /* fall through */
+        _Py_FALLTHROUGH;
     case 4:
         if (ndigits <= 0)
             ndigits = 1;
@@ -2370,7 +2372,7 @@ _Py_dg_dtoa(double dd, int mode, int ndigits,
         break;
     case 3:
         leftright = 0;
-        /* fall through */
+        _Py_FALLTHROUGH;
     case 5:
         i = ndigits + k + 1;
         ilim = i;
