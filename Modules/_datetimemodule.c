@@ -1934,7 +1934,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             }
             replacement = freplacement;
         }
-#ifdef Py_NORMALIZE_CENTURY
+#ifdef _Py_NORMALIZE_CENTURY
         else if (ch == 'Y' || ch == 'G'
                  || ch == 'F' || ch == 'C'
         ) {

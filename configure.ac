@@ -6813,7 +6813,7 @@ int main(void)
 [ac_cv_normalize_century=yes])])
 if test "$ac_cv_normalize_century" = yes
 then
-  AC_DEFINE([Py_NORMALIZE_CENTURY], [1],
+  AC_DEFINE([_Py_NORMALIZE_CENTURY], [1],
   [Define if year with century should be normalized for strftime.])
 fi
 
