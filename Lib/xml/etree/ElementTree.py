@@ -120,9 +120,7 @@ class ParseError(SyntaxError):
 
 def iselement(element):
     """Return True if *element* appears to be an Element."""
-    return (hasattr(element, 'tag') and hasattr(element, 'text') and
-        hasattr(element, 'tail') and callable(element.iter) and
-        callable(element.items) and callable(element.__len__))
+    return hasattr(element, 'tag')
 
 class Element:
     """An XML element.
