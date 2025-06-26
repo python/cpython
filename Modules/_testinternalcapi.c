@@ -21,6 +21,7 @@
 #include "pycore_fileutils.h"     // _Py_normpath()
 #include "pycore_flowgraph.h"     // _PyCompile_OptimizeCfg()
 #include "pycore_frame.h"         // _PyInterpreterFrame
+#include "pycore_function.h"      // _PyFunction_GET_BUILTINS
 #include "pycore_gc.h"            // PyGC_Head
 #include "pycore_hashtable.h"     // _Py_hashtable_new()
 #include "pycore_import.h"        // _PyImport_ClearExtension()
@@ -1022,7 +1023,7 @@ get_code_var_counts(PyObject *self, PyObject *_args, PyObject *_kwargs)
             globalsns = PyFunction_GET_GLOBALS(codearg);
         }
         if (builtinsns == NULL) {
-            builtinsns = PyFunction_GET_BUILTINS(codearg);
+            builtinsns = _PyFunction_GET_BUILTINS(codearg);
         }
         codearg = PyFunction_GET_CODE(codearg);
     }
@@ -1190,7 +1191,7 @@ verify_stateless_code(PyObject *self, PyObject *args, PyObject *kwargs)
             globalsns = PyFunction_GET_GLOBALS(codearg);
         }
         if (builtinsns == NULL) {
-            builtinsns = PyFunction_GET_BUILTINS(codearg);
+            builtinsns = _PyFunction_GET_BUILTINS(codearg);
         }
         codearg = PyFunction_GET_CODE(codearg);
     }

@@ -344,6 +344,27 @@ dummy_func(
             PyStackRef_XCLOSE(value);
         }
 
+        op(_POP_TOP_NOP, (value --)) {
+            assert(PyStackRef_IsNull(value) || (!PyStackRef_RefcountOnObject(value)) ||
+                _Py_IsImmortal((PyStackRef_AsPyObjectBorrow(value))));
+            DEAD(value);
+        }
+
+        op(_POP_TOP_INT, (value --)) {
+            assert(PyLong_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
+            PyStackRef_CLOSE_SPECIALIZED(value, _PyLong_ExactDealloc);
+        }
+
+        op(_POP_TOP_FLOAT, (value --)) {
+            assert(PyFloat_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
+            PyStackRef_CLOSE_SPECIALIZED(value, _PyFloat_ExactDealloc);
+        }
+
+        op(_POP_TOP_UNICODE, (value --)) {
+            assert(PyUnicode_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
+            PyStackRef_CLOSE_SPECIALIZED(value, _PyUnicode_ExactDealloc);
+        }
+
         tier2 op(_POP_TWO, (nos, tos --)) {
             PyStackRef_CLOSE(tos);
             PyStackRef_CLOSE(nos);

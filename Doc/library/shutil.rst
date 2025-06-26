@@ -47,6 +47,13 @@ Directory and files operations
    0, only the contents from the current file position to the end of the file will
    be copied.
 
+   :func:`copyfileobj` will *not* guarantee that the destination stream has
+   been flushed on completion of the copy. If you want to read from the
+   destination at the completion of the copy operation (for example, reading
+   the contents of a temporary file that has been copied from a HTTP stream),
+   you must ensure that you have called :func:`~io.IOBase.flush` or
+   :func:`~io.IOBase.close` on the file-like object before attempting to read
+   the destination file.
 
 .. function:: copyfile(src, dst, *, follow_symlinks=True)
 

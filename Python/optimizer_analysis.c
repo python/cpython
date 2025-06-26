@@ -103,6 +103,10 @@ convert_global_to_const(_PyUOpInstruction *inst, PyObject *obj, bool pop)
     if ((int)index >= dict->ma_keys->dk_nentries) {
         return NULL;
     }
+    PyDictKeysObject *keys = dict->ma_keys;
+    if (keys->dk_version != inst->operand0) {
+        return NULL;
+    }
     PyObject *res = entries[index].me_value;
     if (res == NULL) {
         return NULL;
@@ -341,7 +345,7 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
 #define sym_new_tuple _Py_uop_sym_new_tuple
 #define sym_tuple_getitem _Py_uop_sym_tuple_getitem
 #define sym_tuple_length _Py_uop_sym_tuple_length
-#define sym_is_immortal _Py_uop_sym_is_immortal
+#define sym_is_immortal _Py_uop_symbol_is_immortal
 #define sym_is_compact_int _Py_uop_sym_is_compact_int
 #define sym_new_compact_int _Py_uop_sym_new_compact_int
 #define sym_new_truthiness _Py_uop_sym_new_truthiness

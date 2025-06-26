@@ -242,6 +242,6 @@ in the following ways:
 * Single-phase modules support module lookup functions like
   :c:func:`PyState_FindModule`.
 
-.. [#testsinglephase] ``_testsinglephase`` is an internal module used \
-   in CPython's self-test suite; your installation may or may not \
+.. [#testsinglephase] ``_testsinglephase`` is an internal module used
+   in CPython's self-test suite; your installation may or may not
    include it.
