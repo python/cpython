@@ -1,5 +1,5 @@
-#ifndef Py_REFCOUNT_H
-#define Py_REFCOUNT_H
+#ifndef _Py_REFCOUNT_H
+#define _Py_REFCOUNT_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -561,4 +561,4 @@ static inline PyObject* _Py_XNewRef(PyObject *obj)
 #ifdef __cplusplus
 }
 #endif
-#endif   // !Py_REFCOUNT_H
+#endif   // !_Py_REFCOUNT_H
