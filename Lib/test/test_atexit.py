@@ -99,8 +99,9 @@ class FunctionalTest(unittest.TestCase):
 
         return_code, stdout, stderr = script_helper.assert_python_ok("-c", textwrap.dedent(source))
         self.assertEqual(return_code, 0)
+        end = "\r\n" if os.name == "nt" else "\n"
+        self.assertEqual(stdout, f"24{end}42{end}".encode("utf-8"))
         self.assertEqual(stderr, b"")
-        self.assertEqual(stdout, b"24\n42\n")
 
 
 @support.cpython_only
