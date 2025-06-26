@@ -835,8 +835,12 @@ lock_PyThread_acquire_lock(PyObject *op, PyObject *args, PyObject *kwds)
     }
 
     PyLockStatus r = _PyMutex_LockTimed(&self->lock, timeout,
-                                        _PY_LOCK_HANDLE_SIGNALS | _PY_LOCK_DETACH);
+                                        _PY_LOCK_PYTHONLOCK);
     if (r == PY_LOCK_INTR) {
+        assert(PyErr_Occurred());
+        return NULL;
+    }
+    if (r == PY_LOCK_FAILURE && PyErr_Occurred()) {
         return NULL;
     }
 
@@ -1055,8 +1059,12 @@ rlock_acquire(PyObject *op, PyObject *args, PyObject *kwds)
     }
 
     PyLockStatus r = _PyRecursiveMutex_LockTimed(&self->lock, timeout,
-                                                 _PY_LOCK_HANDLE_SIGNALS | _PY_LOCK_DETACH);
+                                                 _PY_LOCK_PYTHONLOCK);
     if (r == PY_LOCK_INTR) {
+        assert(PyErr_Occurred());
+        return NULL;
+    }
+    if (r == PY_LOCK_FAILURE && PyErr_Occurred()) {
         return NULL;
     }
 
