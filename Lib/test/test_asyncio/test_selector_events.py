@@ -780,7 +780,7 @@ class SelectorSocketTransportTests(test_utils.TestCase):
         arr = array.array('l', [-1, 1])
         data = memoryview(arr)
 
-        self.sock.send.return_value = len(data) * data.itemsize // 2
+        self.sock.send.return_value = len(arr) * data.itemsize // 2
 
         transport = self.socket_transport()
         transport.write(data)
@@ -795,7 +795,7 @@ class SelectorSocketTransportTests(test_utils.TestCase):
         arr = ndarray(items, format='l', shape=(1, 2, 2))
         data = memoryview(arr)
 
-        self.sock.send.return_value = len(data) * data.itemsize // 2
+        self.sock.send.return_value = arr.nbytes // 2
 
         transport = self.socket_transport()
         transport.write(data)
