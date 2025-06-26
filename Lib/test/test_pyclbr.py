@@ -246,9 +246,6 @@ class PyclbrTest(TestCase):
         # These were once some of the longest modules.
         cm('random', ignore=('Random',))  # from _random import Random as CoreGenerator
         cm('pickle', ignore=('partial', 'PickleBuffer'))
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', DeprecationWarning)
-            cm('sre_parse', ignore=('dump', 'groups', 'pos')) # from sre_constants import *; property
         with temporary_main_spec():
             cm(
                 'pdb',

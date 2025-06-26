@@ -225,6 +225,13 @@ ctypes
   (Contributed by Bénédikt Tran in :gh:`133866`.)
 
 
+sre_*
+-----
+
+* Removed :mod:`!sre_compile`, :mod:`!sre_constants` and :mod:`!sre_parse` modules.
+  (Contributed by Stan Ulbrych in :gh:``.)
+
+
 http.server
 -----------
 

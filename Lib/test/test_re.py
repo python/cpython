@@ -1444,7 +1444,7 @@ class ReTests(unittest.TestCase):
         for flag in [re.I, re.M, re.X, re.S, re.A, re.L]:
             self.assertTrue(re.compile(b'^pattern$', flag))
 
-    def test_sre_character_literals(self):
+    def test_character_literals(self):
         for i in [0, 8, 16, 32, 64, 127, 128, 255, 256, 0xFFFF, 0x10000, 0x10FFFF]:
             if i < 256:
                 self.assertTrue(re.match(r"\%03o" % i, chr(i)))
@@ -1476,7 +1476,7 @@ class ReTests(unittest.TestCase):
         self.checkPatternError(r"\U0001234z", r'incomplete escape \U0001234', 0)
         self.checkPatternError(r"\U00110000", r'bad escape \U00110000', 0)
 
-    def test_sre_character_class_literals(self):
+    def test_character_class_literals(self):
         for i in [0, 8, 16, 32, 64, 127, 128, 255, 256, 0xFFFF, 0x10000, 0x10FFFF]:
             if i < 256:
                 self.assertTrue(re.match(r"[\%o]" % i, chr(i)))
@@ -1504,7 +1504,7 @@ class ReTests(unittest.TestCase):
         self.checkPatternError(r"[\U00110000]", r'bad escape \U00110000', 1)
         self.assertTrue(re.match(r"[\U0001d49c-\U0001d4b5]", "\U0001d49e"))
 
-    def test_sre_byte_literals(self):
+    def test_byte_literals(self):
         for i in [0, 8, 16, 32, 64, 127, 128, 255]:
             self.assertTrue(re.match((r"\%03o" % i).encode(), bytes([i])))
             self.assertTrue(re.match((r"\%03o0" % i).encode(), bytes([i])+b"0"))
@@ -1525,7 +1525,7 @@ class ReTests(unittest.TestCase):
         self.checkPatternError(br"\x1", r'incomplete escape \x1', 0)
         self.checkPatternError(br"\x1z", r'incomplete escape \x1', 0)
 
-    def test_sre_byte_class_literals(self):
+    def test_byte_class_literals(self):
         for i in [0, 8, 16, 32, 64, 127, 128, 255]:
             self.assertTrue(re.match((r"[\%o]" % i).encode(), bytes([i])))
             self.assertTrue(re.match((r"[\%o8]" % i).encode(), bytes([i])))
@@ -2926,33 +2926,6 @@ class ImplementationTest(unittest.TestCase):
         check_disallow_instantiation(self, re.Pattern)
         pat = re.compile("")
         check_disallow_instantiation(self, type(pat.scanner("")))
-
-    def test_deprecated_modules(self):
-        deprecated = {
-            'sre_compile': ['compile', 'error',
-                            'SRE_FLAG_IGNORECASE', 'SUBPATTERN',
-                            '_compile_info'],
-            'sre_constants': ['error', 'SRE_FLAG_IGNORECASE', 'SUBPATTERN',
-                              '_NamedIntConstant'],
-            'sre_parse': ['SubPattern', 'parse',
-                          'SRE_FLAG_IGNORECASE', 'SUBPATTERN',
-                          '_parse_sub'],
-        }
-        for name in deprecated:
-            with self.subTest(module=name):
-                sys.modules.pop(name, None)
-                with self.assertWarns(DeprecationWarning) as w:
-                    __import__(name)
-                self.assertEqual(str(w.warning),
-                                 f"module {name!r} is deprecated")
-                self.assertEqual(w.filename, __file__)
-                self.assertIn(name, sys.modules)
-                mod = sys.modules[name]
-                self.assertEqual(mod.__name__, name)
-                self.assertEqual(mod.__package__, '')
-                for attr in deprecated[name]:
-                    self.assertHasAttr(mod, attr)
-                del sys.modules[name]
 
     @cpython_only
     def test_case_helpers(self):
