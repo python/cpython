@@ -1261,6 +1261,8 @@ class ThreadTests(BaseTestCase):
 
             lock = threading.{lock_class_name}()
             def loop():
+                if {lock_class_name!r} == 'RLock':
+                    lock.acquire()
                 with lock:
                     thread_started_event.set()
                     while True:
@@ -1281,6 +1283,8 @@ class ThreadTests(BaseTestCase):
 
                     # We *can* acquire an unlocked lock
                     uncontested_lock.acquire()
+                    if {lock_class_name!r} == 'RLock':
+                        uncontested_lock.acquire()
 
                     # Acquiring a locked one fails
                     try:
