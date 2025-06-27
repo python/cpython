@@ -797,8 +797,8 @@ Template strings ($-strings)
 
 .. note::
 
-   The feature described here was introduced in Python 2.4.  It is entirely
-   unrelated to, and should *not* be confused with, the new
+   The feature described here was introduced in Python 2.4.  It is unrelated
+   to, and should not be confused with, the newer
    :ref:`Template Strings <template-strings>` feature and
    :ref:`t-string literal syntax <t-strings>` introduced in Python 3.14.
    T-string literals evaluate to instances of a different
