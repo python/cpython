@@ -1658,7 +1658,14 @@ r_object(RFILE *p)
         Py_ssize_t idx = r_ref_reserve(flag, p);
         PyObject *stop = NULL;
         PyObject *step = NULL;
-        PyObject *start = r_object(p);
+        PyObject *start = NULL;
+
+        if (idx < 0 && flag) {
+            // r_ref_reserve failed
+            break;
+        }
+
+        start = r_object(p);
         if (start == NULL) {
             goto cleanup;
         }
@@ -1671,7 +1678,9 @@ r_object(RFILE *p)
             goto cleanup;
         }
         retval = PySlice_New(start, stop, step);
-        r_ref_insert(retval, idx, flag, p);
+        if (retval != NULL) {
+            r_ref_insert(retval, idx, flag, p);
+        }
     cleanup:
         Py_XDECREF(start);
         Py_XDECREF(stop);
