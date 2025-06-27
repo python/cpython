@@ -54,8 +54,8 @@ typedef enum _PyLockFlags {
 
     // Locking & unlocking this lock requires attached thread state.
     // If locking returns PY_LOCK_FAILURE, a Python exception *may* be raised.
-    // Implies _PY_LOCK_HANDLE_SIGNALS and _PY_LOCK_DETACH.
-    _PY_LOCK_PYTHONLOCK = 8 | 2 | 1,
+    // (Intended for use with _PY_LOCK_HANDLE_SIGNALS and _PY_LOCK_DETACH.)
+    _PY_LOCK_PYTHONLOCK = 8,
 } _PyLockFlags;
 
 // Lock a mutex with an optional timeout and additional options. See
