@@ -2532,11 +2532,11 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
 {
     // Validate that all_threads and only_active_thread are not both True
     if (all_threads && only_active_thread) {
-        PyErr_SetString(PyExc_ValueError, 
+        PyErr_SetString(PyExc_ValueError,
                        "all_threads and only_active_thread cannot both be True");
         return -1;
     }
-    
+
     self->debug = debug;
     self->only_active_thread = only_active_thread;
     self->cached_state = NULL;

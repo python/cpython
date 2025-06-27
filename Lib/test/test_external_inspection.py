@@ -888,17 +888,17 @@ class TestGetStackTrace(unittest.TestCase):
         script = textwrap.dedent(
             f"""\
             import time, sys, socket, threading
-            
+
             # Connect to the test process
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.connect(('localhost', {port}))
-            
+
             def worker_thread(name, barrier, ready_event):
                 barrier.wait()  # Synchronize thread start
                 ready_event.wait()  # Wait for main thread signal
                 # Sleep to keep thread alive
                 time.sleep(10_000)
-            
+
             def main_work():
                 # Do busy work to hold the GIL
                 count = 0
@@ -906,36 +906,36 @@ class TestGetStackTrace(unittest.TestCase):
                     count += 1
                     if count % 10000000 == 0:
                         pass  # Keep main thread busy
-            
+
             # Create synchronization primitives
             num_threads = 3
             barrier = threading.Barrier(num_threads + 1)  # +1 for main thread
             ready_event = threading.Event()
-            
+
             # Start worker threads
             threads = []
             for i in range(num_threads):
                 t = threading.Thread(target=worker_thread, args=(f"Worker-{{i}}", barrier, ready_event))
                 t.start()
                 threads.append(t)
-            
+
             # Wait for all threads to be ready
             barrier.wait()
-            
+
             # Signal ready to parent process
             sock.sendall(b"ready\\n")
-            
+
             # Signal threads to start waiting
             ready_event.set()
-            
+
             # Give threads time to start sleeping
             time.sleep(0.1)
-            
+
             # Now do busy work to hold the GIL
             main_work()
             """
         )
-        
+
         with os_helper.temp_dir() as work_dir:
             script_dir = os.path.join(work_dir, "script_pkg")
             os.mkdir(script_dir)
@@ -953,23 +953,23 @@ class TestGetStackTrace(unittest.TestCase):
                 p = subprocess.Popen([sys.executable, script_name])
                 client_socket, _ = server_socket.accept()
                 server_socket.close()
-                
+
                 # Wait for ready signal
                 response = b""
                 while b"ready" not in response:
                     response += client_socket.recv(1024)
-                
+
                 # Give threads a moment to start their busy work
                 time.sleep(0.1)
-                
+
                 # Get stack trace with all threads
                 unwinder_all = RemoteUnwinder(p.pid, all_threads=True)
                 all_traces = unwinder_all.get_stack_trace()
-                
+
                 # Get stack trace with only GIL holder
                 unwinder_gil = RemoteUnwinder(p.pid, only_active_thread=True)
                 gil_traces = unwinder_gil.get_stack_trace()
-                
+
             except PermissionError:
                 self.skipTest(
                     "Insufficient permissions to read the stack trace"
@@ -980,17 +980,17 @@ class TestGetStackTrace(unittest.TestCase):
                 p.kill()
                 p.terminate()
                 p.wait(timeout=SHORT_TIMEOUT)
-            
+
             # Verify we got multiple threads in all_traces
             self.assertGreater(len(all_traces), 1, "Should have multiple threads")
-            
+
             # Verify we got exactly one thread in gil_traces
             self.assertEqual(len(gil_traces), 1, "Should have exactly one GIL holder")
-            
+
             # The GIL holder should be in the all_traces list
             gil_thread_id = gil_traces[0][0]
             all_thread_ids = [trace[0] for trace in all_traces]
-            self.assertIn(gil_thread_id, all_thread_ids, 
+            self.assertIn(gil_thread_id, all_thread_ids,
                          "GIL holder should be among all threads")
 
 
