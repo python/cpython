@@ -1135,8 +1135,8 @@ iterations of the loop.
 
 .. opcode:: BUILD_INTERPOLATION (format)
 
-   Constructs a new :class:`~string.templatelib.Interpolation` from an
-   expression and its source text and pushes the resulting instance onto the
+   Constructs a new :class:`~string.templatelib.Interpolation` from a
+   value and its source expression and pushes the resulting instance onto the
    stack.
 
    If no conversion or format specification is present, ``format`` is set to
