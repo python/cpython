@@ -326,8 +326,8 @@ Literals
 
 .. class:: TemplateStr(values)
 
-    A t-string, comprising a series of :class:`Interpolation` and :class:`Constant`
-    nodes.
+   A t-string, comprising a series of :class:`Interpolation` and :class:`Constant`
+   nodes.
 
    .. doctest::
 
@@ -349,23 +349,23 @@ Literals
                                 Constant(value='ordinal')]))]))
 
 
-.. class:: Interpolation(value, str, int, format_spec)
+.. class:: Interpolation(value, str, conversion, format_spec)
 
-    Node representing a single interpolation field in a t-string.
+   Node representing a single interpolation field in a t-string.
 
-    * ``value`` is any expression node (such as a literal, a variable, or a
-      function call).
-    * ``str`` is a constant containing the text of the interpolation expression.
-    * ``conversion`` is an integer:
+   * ``value`` is any expression node (such as a literal, a variable, or a
+     function call).
+   * ``str`` is a constant containing the text of the interpolation expression.
+   * ``conversion`` is an integer:
 
-      * -1: no conversion
-      * 115: ``!s`` string conversion
-      * 114: ``!r`` repr conversion
-      * 97: ``!a`` ascii conversion
+     * -1: no conversion
+     * 115: ``!s`` string conversion
+     * 114: ``!r`` repr conversion
+     * 97: ``!a`` ascii conversion
 
-    * ``format_spec`` is a :class:`JoinedStr` node representing the formatting
-      of the value, or ``None`` if no format was specified. Both
-      ``conversion`` and ``format_spec`` can be set at the same time.
+   * ``format_spec`` is a :class:`JoinedStr` node representing the formatting
+     of the value, or ``None`` if no format was specified. Both
+     ``conversion`` and ``format_spec`` can be set at the same time.
 
 
 .. class:: List(elts, ctx)
