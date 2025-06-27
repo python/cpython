@@ -224,14 +224,16 @@ class StrptimeTests(unittest.TestCase):
         self.assertRaises(ValueError, _strptime._strptime_time, data_string="%d",
                           format="%A")
         for bad_format in ("%", "% ", "%\n"):
-            with self.assertRaisesRegex(ValueError, "stray % in format "):
+            with (self.subTest(format=bad_format),
+                  self.assertRaisesRegex(ValueError, "stray % in format ")):
                 _strptime._strptime_time("2005", bad_format)
-        for bad_format in ("%e", "%Oe", "%O", "%O ", "%Ee", "%E", "%E ",
-                           "%.", "%+", "%_", "%~", "%\\",
+        for bad_format in ("%i", "%Oi", "%O", "%O ", "%Ee", "%E", "%E ",
+                           "%.", "%+", "%~", "%\\",
                            "%O.", "%O+", "%O_", "%O~", "%O\\"):
             directive = bad_format[1:].rstrip()
-            with self.assertRaisesRegex(ValueError,
-                    f"'{re.escape(directive)}' is a bad directive in format "):
+            with (self.subTest(format=bad_format),
+                  self.assertRaisesRegex(ValueError,
+                    f"'{re.escape(directive)}' is a bad directive in format ")):
                 _strptime._strptime_time("2005", bad_format)
 
         msg_week_no_year_or_weekday = r"ISO week directive '%V' must be used with " \
@@ -486,13 +488,11 @@ class StrptimeTests(unittest.TestCase):
     # * Year is not included: ha_NG.
     # * Use non-Gregorian calendar: lo_LA, thai, th_TH.
     #   On Windows: ar_IN, ar_SA, fa_IR, ps_AF.
-    #
-    # BUG: Generates regexp that does not match the current date and time
-    # for lzh_TW.
     @run_with_locales('LC_TIME', 'C', 'en_US', 'fr_FR', 'de_DE', 'ja_JP',
                       'he_IL', 'eu_ES', 'ar_AE', 'mfe_MU', 'yo_NG',
                       'csb_PL', 'br_FR', 'gez_ET', 'brx_IN',
-                      'my_MM', 'or_IN', 'shn_MM', 'az_IR')
+                      'my_MM', 'or_IN', 'shn_MM', 'az_IR',
+                      'byn_ER', 'wal_ET', 'lzh_TW')
     def test_date_time_locale(self):
         # Test %c directive
         loc = locale.getlocale(locale.LC_TIME)[0]
@@ -531,11 +531,9 @@ class StrptimeTests(unittest.TestCase):
 
     # NB: Does not roundtrip because use non-Gregorian calendar:
     # lo_LA, thai, th_TH. On Windows: ar_IN, ar_SA, fa_IR, ps_AF.
-    # BUG: Generates regexp that does not match the current date
-    # for lzh_TW.
     @run_with_locales('LC_TIME', 'C', 'en_US', 'fr_FR', 'de_DE', 'ja_JP',
                       'he_IL', 'eu_ES', 'ar_AE',
-                      'az_IR', 'my_MM', 'or_IN', 'shn_MM')
+                      'az_IR', 'my_MM', 'or_IN', 'shn_MM', 'lzh_TW')
     def test_date_locale(self):
         # Test %x directive
         now = time.time()
@@ -555,7 +553,7 @@ class StrptimeTests(unittest.TestCase):
         "musl libc issue on Emscripten, bpo-46390"
     )
     @run_with_locales('LC_TIME', 'en_US', 'fr_FR', 'de_DE', 'ja_JP',
-                      'eu_ES', 'ar_AE', 'my_MM', 'shn_MM')
+                      'eu_ES', 'ar_AE', 'my_MM', 'shn_MM', 'lzh_TW')
     def test_date_locale2(self):
         # Test %x directive
         loc = locale.getlocale(locale.LC_TIME)[0]
@@ -571,11 +569,11 @@ class StrptimeTests(unittest.TestCase):
     #   norwegian, nynorsk.
     # * Hours are in 12-hour notation without AM/PM indication: hy_AM,
     #   ms_MY, sm_WS.
-    # BUG: Generates regexp that does not match the current time for lzh_TW.
     @run_with_locales('LC_TIME', 'C', 'en_US', 'fr_FR', 'de_DE', 'ja_JP',
                       'aa_ET', 'am_ET', 'az_IR', 'byn_ER', 'fa_IR', 'gez_ET',
                       'my_MM', 'om_ET', 'or_IN', 'shn_MM', 'sid_ET', 'so_SO',
-                      'ti_ET', 'tig_ER', 'wal_ET')
+                      'ti_ET', 'tig_ER', 'wal_ET', 'lzh_TW',
+                      'ar_SA', 'bg_BG')
     def test_time_locale(self):
         # Test %X directive
         loc = locale.getlocale(locale.LC_TIME)[0]
