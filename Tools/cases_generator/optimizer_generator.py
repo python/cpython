@@ -4,7 +4,6 @@ Writes the cases to optimizer_cases.c.h, which is #included in Python/optimizer_
 """
 
 import argparse
-import copy
 
 from analyzer import (
     Analysis,
@@ -22,7 +21,6 @@ from generators_common import (
     write_header,
     Emitter,
     TokenIterator,
-    skip_to,
     always_true,
 )
 from cwriter import CWriter
@@ -81,8 +79,7 @@ def type_name(var: StackItem) -> str:
     return "JitOptRef "
 
 def stackref_type_name(var: StackItem) -> str:
-    if var.is_array():
-        assert False, "Unsafe to convert a symbol to an array-like StackRef."
+    assert not var.is_array(), "Unsafe to convert a symbol to an array-like StackRef."
     return "_PyStackRef "
 
 def declare_variables(uop: Uop, out: CWriter, skip_inputs: bool) -> None:
@@ -168,27 +165,45 @@ class OptimizerEmitter(Emitter):
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
-        skip_to(tkn_iter, "SEMI")
+        input_identifiers = []
+        for token in tkn_iter:
+            if token.kind == "IDENTIFIER":
+                input_identifiers.append(token)
+            if token.kind == "SEMI":
+                break
 
-        emitter = OptimizerConstantEmitter(self.out, {}, self.original_uop, copy.deepcopy(self.stack))
-        emitter.emit("if (\n")
-        assert isinstance(uop, Uop)
-        input_identifiers = replace_opcode_if_evaluates_pure_identifiers(uop)
         if len(input_identifiers) == 0:
             raise analysis_error(
-                "Pure operations must have at least 1 input",
+                "To evaluate an operation as pure, it must have at least 1 input",
                 self.original_uop.body.open
             )
-        for inp in input_identifiers[:-1]:
-            emitter.emit(f"sym_is_safe_const(ctx, {inp}) &&\n")
-        emitter.emit(f"sym_is_safe_const(ctx, {input_identifiers[-1]})\n")
+        # Check that the input identifiers belong to the uop's
+        # input stack effect
+        uop_stack_effect_input_identifers = {inp.name for inp in uop.stack.inputs}
+        for input_tkn in input_identifiers:
+            if input_tkn.text not in uop_stack_effect_input_identifers:
+                raise analysis_error(f"{input_tkn.text} referenced in "
+                                     f"REPLACE_OPCODE_IF_EVALUATES_PURE but does not "
+                                     f"exist in the base uop's input stack effects",
+                                     input_tkn)
+        input_identifiers_as_str = {tkn.text for tkn in input_identifiers}
+        used_stack_inputs = [inp for inp in uop.stack.inputs if inp.name in input_identifiers_as_str]
+        assert len(used_stack_inputs) > 0
+        emitter = OptimizerConstantEmitter(self.out, {}, self.original_uop, self.stack.copy())
+        emitter.emit("if (\n")
+        assert isinstance(uop, Uop)
+        for inp in used_stack_inputs[:-1]:
+            emitter.emit(f"sym_is_safe_const(ctx, {inp.name}) &&\n")
+        emitter.emit(f"sym_is_safe_const(ctx, {used_stack_inputs[-1].name})\n")
         emitter.emit(') {\n')
         # Declare variables, before they are shadowed.
-        for inp in self.original_uop.stack.inputs:
+        for inp in used_stack_inputs:
             if inp.used:
                 emitter.emit(f"{type_name(inp)}{inp.name}_sym = {inp.name};\n")
         # Shadow the symbolic variables with stackrefs.
-        for inp in self.original_uop.stack.inputs:
+        for inp in used_stack_inputs:
+            if inp.is_array():
+                raise analysis_error("Pure evaluation cannot take array-like inputs.", tkn)
             if inp.used:
                 emitter.emit(f"{stackref_type_name(inp)}{inp.name} = sym_get_const_as_stackref(ctx, {inp.name}_sym);\n")
         # Rename all output variables to stackref variant.
@@ -321,24 +336,6 @@ class OptimizerConstantEmitter(OptimizerEmitter):
         return not unconditional
 
 
-def replace_opcode_if_evaluates_pure_identifiers(uop: Uop) -> list[str]:
-    token = None
-    iterator = uop.body.tokens()
-    for token in iterator:
-        if token.kind == "IDENTIFIER" and token.text == "REPLACE_OPCODE_IF_EVALUATES_PURE":
-            break
-    assert token is not None
-    assert token.kind == "IDENTIFIER" and token.text == "REPLACE_OPCODE_IF_EVALUATES_PURE", uop.name
-    assert next(iterator).kind == "LPAREN"
-    idents = []
-    for token in iterator:
-        if token.kind == "RPAREN":
-            break
-        if token.kind == "IDENTIFIER":
-            idents.append(token.text)
-    return idents
-
-
 def write_uop(
     override: Uop | None,
     uop: Uop,
@@ -369,7 +366,7 @@ def write_uop(
                         cast = f"uint{cache.size*16}_t"
                     out.emit(f"{type}{cache.name} = ({cast})this_instr->operand0;\n")
         if override:
-            emitter = OptimizerEmitter(out, {}, uop, copy.deepcopy(stack))
+            emitter = OptimizerEmitter(out, {}, uop, stack.copy())
             # No reference management of inputs needed.
             for var in storage.inputs:  # type: ignore[possibly-undefined]
                 var.in_local = False

@@ -86,16 +86,6 @@ def emit_to(out: CWriter, tkn_iter: TokenIterator, end: str) -> Token:
         out.emit(tkn)
     raise analysis_error(f"Expecting {end}. Reached end of file", tkn)
 
-def skip_to(tkn_iter: TokenIterator, end: str) -> Token:
-    parens = 0
-    for tkn in tkn_iter:
-        if tkn.kind == end and parens == 0:
-            return tkn
-        if tkn.kind == "LPAREN":
-            parens += 1
-        if tkn.kind == "RPAREN":
-            parens -= 1
-    raise analysis_error(f"Expecting {end}. Reached end of file", tkn)
 
 ReplacementFunctionType = Callable[
     [Token, TokenIterator, CodeSection, Storage, Instruction | None], bool

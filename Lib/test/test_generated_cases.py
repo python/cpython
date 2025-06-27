@@ -2411,14 +2411,14 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         input2 = """
         op(OP, (foo[2] -- res)) {
-            REPLACE_OPCODE_IF_EVALUATES_PURE(foo[2]);
+            REPLACE_OPCODE_IF_EVALUATES_PURE(foo);
             res = sym_new_unknown(ctx);
         }
         """
         output = """
         """
-        with self.assertRaisesRegex(AssertionError,
-                                    "Unsafe to convert a symbol to an array-like StackRef."):
+        with self.assertRaisesRegex(SyntaxError,
+                                    "Pure evaluation cannot take array-like inputs"):
             self.run_cases_test(input, input2, output)
 
 if __name__ == "__main__":
