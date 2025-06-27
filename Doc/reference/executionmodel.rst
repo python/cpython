@@ -438,26 +438,28 @@ specific to Python::
 
 When a Python program starts, it looks exactly like that, with one
 of each.  The process has a single global runtime to manage Python's
-global resources.  Each Python thread has all the state it needs to run
-Python code (and use any supported C-API) in its OS thread.  Depending
-on the implementation, this probably includes the current exception
-and the Python call stack.
+process-global resources.  Each Python thread has all the state it needs
+to run Python code (and use any supported C-API) in its OS thread.
+Depending on the implementation, this probably includes the current
+exception and the Python call stack.
 
 In between the global runtime and the thread(s) lies the interpreter.
-It completely encapsulates all of the non-global runtime state that the
-interpreter's Python threads share.  For example, all its threads share
-:data:`sys.modules`.  When a Python thread is created, it belongs
-to an interpreter, and likewise when an OS thread is otherwise
-associated with Python.
+It completely encapsulates all of the non-process-global runtime state
+that the interpreter's Python threads share.  For example, all its
+threads share :data:`sys.modules`.  When a Python thread is created,
+it belongs to an interpreter, and likewise when an OS thread is
+otherwise associated with Python.
+
+.. note::
+
+   The interpreter here is not the same as the "bytecode interpreter",
+   which is what runs in each thread, executing compiled Python code.
 
 If the runtime supports using multiple interpreters then each OS thread
 will have at most one Python thread for each interpreter.  However,
 only one is active in the OS thread at a time.  Switching between
 interpreters means changing the active Python thread.
 The initial interpreter is known as the "main" interpreter.
-
-.. (The interpreter is different from the "bytecode interpreter",
-   of which each thread has one to execute Python code.)
 
 Once a program is running, new Python threads can be created using the
 :mod:`threading` module (on platforms and Python implementations that
