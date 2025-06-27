@@ -225,13 +225,6 @@ ctypes
   (Contributed by Bénédikt Tran in :gh:`133866`.)
 
 
-sre_*
------
-
-* Removed :mod:`!sre_compile`, :mod:`!sre_constants` and :mod:`!sre_parse` modules.
-  (Contributed by Stan Ulbrych in :gh:`135994`.)
-
-
 http.server
 -----------
 
@@ -247,6 +240,13 @@ platform
 * Removed the :func:`!platform.java_ver` function,
   which was deprecated since Python 3.13.
   (Contributed by Alexey Makridenko in :gh:`133604`.)
+
+
+sre_*
+-----
+
+* Removed :mod:`!sre_compile`, :mod:`!sre_constants` and :mod:`!sre_parse` modules.
+  (Contributed by Stan Ulbrych in :gh:`135994`.)
 
 
 sysconfig
