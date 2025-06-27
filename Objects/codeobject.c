@@ -1714,7 +1714,7 @@ static int
 identify_unbound_names(PyThreadState *tstate, PyCodeObject *co,
                        PyObject *globalnames, PyObject *attrnames,
                        PyObject *globalsns, PyObject *builtinsns,
-                       struct co_unbound_counts *counts)
+                       struct co_unbound_counts *counts, int *p_numdupes)
 {
     // This function is inspired by inspect.getclosurevars().
     // It would be nicer if we had something similar to co_localspluskinds,
@@ -1729,6 +1729,7 @@ identify_unbound_names(PyThreadState *tstate, PyCodeObject *co,
     assert(builtinsns == NULL || PyDict_Check(builtinsns));
     assert(counts == NULL || counts->total == 0);
     struct co_unbound_counts unbound = {0};
+    int numdupes = 0;
     Py_ssize_t len = Py_SIZE(co);
     for (int i = 0; i < len; i += _PyInstruction_GetLength(co, i)) {
         _Py_CODEUNIT inst = _Py_GetBaseCodeUnit(co, i);
@@ -1746,6 +1747,12 @@ identify_unbound_names(PyThreadState *tstate, PyCodeObject *co,
             unbound.numattrs += 1;
             if (PySet_Add(attrnames, name) < 0) {
                 return -1;
+            }
+            if (PySet_Contains(globalnames, name)) {
+                if (_PyErr_Occurred(tstate)) {
+                    return -1;
+                }
+                numdupes += 1;
             }
         }
         else if (inst.op.code == LOAD_GLOBAL) {
@@ -1778,10 +1785,19 @@ identify_unbound_names(PyThreadState *tstate, PyCodeObject *co,
             if (PySet_Add(globalnames, name) < 0) {
                 return -1;
             }
+            if (PySet_Contains(attrnames, name)) {
+                if (_PyErr_Occurred(tstate)) {
+                    return -1;
+                }
+                numdupes += 1;
+            }
         }
     }
     if (counts != NULL) {
         *counts = unbound;
+    }
+    if (p_numdupes != NULL) {
+        *p_numdupes = numdupes;
     }
     return 0;
 }
@@ -1932,20 +1948,24 @@ _PyCode_SetUnboundVarCounts(PyThreadState *tstate,
 
     // Fill in unbound.globals and unbound.numattrs.
     struct co_unbound_counts unbound = {0};
+    int numdupes = 0;
     Py_BEGIN_CRITICAL_SECTION(co);
     res = identify_unbound_names(
             tstate, co, globalnames, attrnames, globalsns, builtinsns,
-            &unbound);
+            &unbound, &numdupes);
     Py_END_CRITICAL_SECTION();
     if (res < 0) {
         goto finally;
     }
     assert(unbound.numunknown == 0);
-    assert(unbound.total <= counts->unbound.total);
+    assert(unbound.total - numdupes <= counts->unbound.total);
     assert(counts->unbound.numunknown == counts->unbound.total);
-    unbound.numunknown = counts->unbound.total - unbound.total;
-    unbound.total = counts->unbound.total;
+    // There may be a name that is both a global and an attr.
+    int totalunbound = counts->unbound.total + numdupes;
+    unbound.numunknown = totalunbound - unbound.total;
+    unbound.total = totalunbound;
     counts->unbound = unbound;
+    counts->total += numdupes;
     res = 0;
 
 finally:

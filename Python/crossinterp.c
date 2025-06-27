@@ -1324,6 +1324,12 @@ _excinfo_normalize_type(struct _excinfo_type *info,
     *p_module = module;
 }
 
+static int
+excinfo_is_set(_PyXI_excinfo *info)
+{
+    return info->type.name != NULL || info->msg != NULL;
+}
+
 static void
 _PyXI_excinfo_clear(_PyXI_excinfo *info)
 {
@@ -1485,6 +1491,11 @@ _PyXI_excinfo_Apply(_PyXI_excinfo *info, PyObject *exctype)
         if (tbexc == NULL) {
             PyErr_Clear();
         }
+        else {
+            PyErr_SetObject(exctype, tbexc);
+            Py_DECREF(tbexc);
+            return;
+        }
     }
 
     PyObject *formatted = _PyXI_excinfo_format(info);
@@ -1630,13 +1641,17 @@ error:
 }
 
 
-int
-_PyXI_InitExcInfo(_PyXI_excinfo *info, PyObject *exc)
+_PyXI_excinfo *
+_PyXI_NewExcInfo(PyObject *exc)
 {
     assert(!PyErr_Occurred());
     if (exc == NULL || exc == Py_None) {
         PyErr_SetString(PyExc_ValueError, "missing exc");
-        return -1;
+        return NULL;
+    }
+    _PyXI_excinfo *info = PyMem_RawCalloc(1, sizeof(_PyXI_excinfo));
+    if (info == NULL) {
+        return NULL;
     }
     const char *failure;
     if (PyExceptionInstance_Check(exc) || PyExceptionClass_Check(exc)) {
@@ -1646,10 +1661,18 @@ _PyXI_InitExcInfo(_PyXI_excinfo *info, PyObject *exc)
         failure = _PyXI_excinfo_InitFromObject(info, exc);
     }
     if (failure != NULL) {
-        PyErr_SetString(PyExc_Exception, failure);
-        return -1;
+        PyMem_RawFree(info);
+        set_exc_with_cause(PyExc_Exception, failure);
+        return NULL;
     }
-    return 0;
+    return info;
+}
+
+void
+_PyXI_FreeExcInfo(_PyXI_excinfo *info)
+{
+    _PyXI_excinfo_clear(info);
+    PyMem_RawFree(info);
 }
 
 PyObject *
@@ -1662,12 +1685,6 @@ PyObject *
 _PyXI_ExcInfoAsObject(_PyXI_excinfo *info)
 {
     return _PyXI_excinfo_AsObject(info);
-}
-
-void
-_PyXI_ClearExcInfo(_PyXI_excinfo *info)
-{
-    _PyXI_excinfo_clear(info);
 }
 
 
@@ -1727,70 +1744,267 @@ _PyXI_ApplyErrorCode(_PyXI_errcode code, PyInterpreterState *interp)
     return -1;
 }
 
+/* basic failure info */
+
+struct xi_failure {
+    // The kind of error to propagate.
+    _PyXI_errcode code;
+    // The propagated message.
+    const char *msg;
+    int msg_owned;
+};  // _PyXI_failure
+
+#define XI_FAILURE_INIT (_PyXI_failure){ .code = _PyXI_ERR_NO_ERROR }
+
+static void
+clear_xi_failure(_PyXI_failure *failure)
+{
+    if (failure->msg != NULL && failure->msg_owned) {
+        PyMem_RawFree((void*)failure->msg);
+    }
+    *failure = XI_FAILURE_INIT;
+}
+
+static void
+copy_xi_failure(_PyXI_failure *dest, _PyXI_failure *src)
+{
+    *dest = *src;
+    dest->msg_owned = 0;
+}
+
+_PyXI_failure *
+_PyXI_NewFailure(void)
+{
+    _PyXI_failure *failure = PyMem_RawMalloc(sizeof(_PyXI_failure));
+    if (failure == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    *failure = XI_FAILURE_INIT;
+    return failure;
+}
+
+void
+_PyXI_FreeFailure(_PyXI_failure *failure)
+{
+    clear_xi_failure(failure);
+    PyMem_RawFree(failure);
+}
+
+_PyXI_errcode
+_PyXI_GetFailureCode(_PyXI_failure *failure)
+{
+    if (failure == NULL) {
+        return _PyXI_ERR_NO_ERROR;
+    }
+    return failure->code;
+}
+
+void
+_PyXI_InitFailureUTF8(_PyXI_failure *failure,
+                      _PyXI_errcode code, const char *msg)
+{
+    *failure = (_PyXI_failure){
+        .code = code,
+        .msg = msg,
+        .msg_owned = 0,
+    };
+}
+
+int
+_PyXI_InitFailure(_PyXI_failure *failure, _PyXI_errcode code, PyObject *obj)
+{
+    PyObject *msgobj = PyObject_Str(obj);
+    if (msgobj == NULL) {
+        return -1;
+    }
+    // This will leak if not paired with clear_xi_failure().
+    // That happens automatically in _capture_current_exception().
+    const char *msg = _copy_string_obj_raw(msgobj, NULL);
+    Py_DECREF(msgobj);
+    if (PyErr_Occurred()) {
+        return -1;
+    }
+    *failure = (_PyXI_failure){
+        .code = code,
+        .msg = msg,
+        .msg_owned = 1,
+    };
+    return 0;
+}
+
 /* shared exceptions */
 
-static const char *
-_PyXI_InitError(_PyXI_error *error, PyObject *excobj, _PyXI_errcode code)
-{
-    if (error->interp == NULL) {
-        error->interp = PyInterpreterState_Get();
-    }
+typedef struct {
+    // The originating interpreter.
+    PyInterpreterState *interp;
+    // The error to propagate, if different from the uncaught exception.
+    _PyXI_failure *override;
+    _PyXI_failure _override;
+    // The exception information to propagate, if applicable.
+    // This is populated only for some error codes,
+    // but always for _PyXI_ERR_UNCAUGHT_EXCEPTION.
+    _PyXI_excinfo uncaught;
+} _PyXI_error;
 
-    const char *failure = NULL;
-    if (code == _PyXI_ERR_UNCAUGHT_EXCEPTION) {
-        // There is an unhandled exception we need to propagate.
-        failure = _PyXI_excinfo_InitFromException(&error->uncaught, excobj);
-        if (failure != NULL) {
-            // We failed to initialize error->uncaught.
-            // XXX Print the excobj/traceback?  Emit a warning?
-            // XXX Print the current exception/traceback?
-            if (PyErr_ExceptionMatches(PyExc_MemoryError)) {
-                error->code = _PyXI_ERR_NO_MEMORY;
-            }
-            else {
-                error->code = _PyXI_ERR_OTHER;
-            }
-            PyErr_Clear();
+static void
+xi_error_clear(_PyXI_error *err)
+{
+    err->interp = NULL;
+    if (err->override != NULL) {
+        clear_xi_failure(err->override);
+    }
+    _PyXI_excinfo_clear(&err->uncaught);
+}
+
+static int
+xi_error_is_set(_PyXI_error *error)
+{
+    if (error->override != NULL) {
+        assert(error->override->code != _PyXI_ERR_NO_ERROR);
+        assert(error->override->code != _PyXI_ERR_UNCAUGHT_EXCEPTION
+               || excinfo_is_set(&error->uncaught));
+        return 1;
+    }
+    return excinfo_is_set(&error->uncaught);
+}
+
+static int
+xi_error_has_override(_PyXI_error *err)
+{
+    if (err->override == NULL) {
+        return 0;
+    }
+    return (err->override->code != _PyXI_ERR_NO_ERROR
+            && err->override->code != _PyXI_ERR_UNCAUGHT_EXCEPTION);
+}
+
+static PyObject *
+xi_error_resolve_current_exc(PyThreadState *tstate,
+                             _PyXI_failure *override)
+{
+    assert(override == NULL || override->code != _PyXI_ERR_NO_ERROR);
+
+    PyObject *exc = _PyErr_GetRaisedException(tstate);
+    if (exc == NULL) {
+        assert(override == NULL
+               || override->code != _PyXI_ERR_UNCAUGHT_EXCEPTION);
+    }
+    else if (override == NULL) {
+        // This is equivalent to _PyXI_ERR_UNCAUGHT_EXCEPTION.
+    }
+    else if (override->code == _PyXI_ERR_UNCAUGHT_EXCEPTION) {
+        // We want to actually capture the current exception.
+    }
+    else if (exc != NULL) {
+        // It might make sense to do similarly for other codes.
+        if (override->code == _PyXI_ERR_ALREADY_RUNNING) {
+            // We don't need the exception info.
+            Py_CLEAR(exc);
+        }
+        // ...else we want to actually capture the current exception.
+    }
+    return exc;
+}
+
+static void
+xi_error_set_override(PyThreadState *tstate, _PyXI_error *err,
+                      _PyXI_failure *override)
+{
+    assert(err->override == NULL);
+    assert(override != NULL);
+    assert(override->code != _PyXI_ERR_NO_ERROR);
+    // Use xi_error_set_exc() instead of setting _PyXI_ERR_UNCAUGHT_EXCEPTION..
+    assert(override->code != _PyXI_ERR_UNCAUGHT_EXCEPTION);
+    err->override = &err->_override;
+    // The caller still owns override->msg.
+    copy_xi_failure(&err->_override, override);
+    err->interp = tstate->interp;
+}
+
+static void
+xi_error_set_override_code(PyThreadState *tstate, _PyXI_error *err,
+                           _PyXI_errcode code)
+{
+    _PyXI_failure override = XI_FAILURE_INIT;
+    override.code = code;
+    xi_error_set_override(tstate, err, &override);
+}
+
+static const char *
+xi_error_set_exc(PyThreadState *tstate, _PyXI_error *err, PyObject *exc)
+{
+    assert(!_PyErr_Occurred(tstate));
+    assert(!xi_error_is_set(err));
+    assert(err->override == NULL);
+    assert(err->interp == NULL);
+    assert(exc != NULL);
+    const char *failure =
+                _PyXI_excinfo_InitFromException(&err->uncaught, exc);
+    if (failure != NULL) {
+        // We failed to initialize err->uncaught.
+        // XXX Print the excobj/traceback?  Emit a warning?
+        // XXX Print the current exception/traceback?
+        if (_PyErr_ExceptionMatches(tstate, PyExc_MemoryError)) {
+            xi_error_set_override_code(tstate, err, _PyXI_ERR_NO_MEMORY);
         }
         else {
-            error->code = code;
+            xi_error_set_override_code(tstate, err, _PyXI_ERR_OTHER);
         }
-        assert(error->code != _PyXI_ERR_NO_ERROR);
-    }
-    else {
-        // There is an error code we need to propagate.
-        assert(excobj == NULL);
-        assert(code != _PyXI_ERR_NO_ERROR);
-        error->code = code;
-        _PyXI_excinfo_clear(&error->uncaught);
+        PyErr_Clear();
     }
     return failure;
 }
 
-PyObject *
-_PyXI_ApplyError(_PyXI_error *error)
+static PyObject *
+_PyXI_ApplyError(_PyXI_error *error, const char *failure)
 {
     PyThreadState *tstate = PyThreadState_Get();
-    if (error->code == _PyXI_ERR_UNCAUGHT_EXCEPTION) {
+
+    if (failure != NULL) {
+        xi_error_clear(error);
+        return NULL;
+    }
+
+    _PyXI_errcode code = _PyXI_ERR_UNCAUGHT_EXCEPTION;
+    if (error->override != NULL) {
+        code = error->override->code;
+        assert(code != _PyXI_ERR_NO_ERROR);
+    }
+
+    if (code == _PyXI_ERR_UNCAUGHT_EXCEPTION) {
         // We will raise an exception that proxies the propagated exception.
        return _PyXI_excinfo_AsObject(&error->uncaught);
     }
-    else if (error->code == _PyXI_ERR_NOT_SHAREABLE) {
+    else if (code == _PyXI_ERR_NOT_SHAREABLE) {
         // Propagate the exception directly.
         assert(!_PyErr_Occurred(tstate));
-        _set_xid_lookup_failure(tstate, NULL, error->uncaught.msg, NULL);
+        PyObject *cause = NULL;
+        if (excinfo_is_set(&error->uncaught)) {
+            // Maybe instead set a PyExc_ExceptionSnapshot as __cause__?
+            // That type doesn't exist currently
+            // but would look like interpreters.ExecutionFailed.
+            _PyXI_excinfo_Apply(&error->uncaught, PyExc_Exception);
+            cause = _PyErr_GetRaisedException(tstate);
+        }
+        const char *msg = error->override != NULL
+            ? error->override->msg
+            : error->uncaught.msg;
+        _set_xid_lookup_failure(tstate, NULL, msg, cause);
+        Py_XDECREF(cause);
     }
     else {
         // Raise an exception corresponding to the code.
-        assert(error->code != _PyXI_ERR_NO_ERROR);
-        (void)_PyXI_ApplyErrorCode(error->code, error->interp);
-        if (error->uncaught.type.name != NULL || error->uncaught.msg != NULL) {
+        (void)_PyXI_ApplyErrorCode(code, error->interp);
+        assert(error->override == NULL || error->override->msg == NULL);
+        if (excinfo_is_set(&error->uncaught)) {
             // __context__ will be set to a proxy of the propagated exception.
-            PyObject *exc = PyErr_GetRaisedException();
+            // (or use PyExc_ExceptionSnapshot like _PyXI_ERR_NOT_SHAREABLE?)
+            PyObject *exc = _PyErr_GetRaisedException(tstate);
             _PyXI_excinfo_Apply(&error->uncaught, PyExc_InterpreterError);
-            PyObject *exc2 = PyErr_GetRaisedException();
+            PyObject *exc2 = _PyErr_GetRaisedException(tstate);
             PyException_SetContext(exc, exc2);
-            PyErr_SetRaisedException(exc);
+            _PyErr_SetRaisedException(tstate, exc);
         }
     }
     assert(PyErr_Occurred());
@@ -2164,20 +2378,22 @@ error:
     return NULL;
 }
 
-static void _propagate_not_shareable_error(_PyXI_errcode *);
+static void _propagate_not_shareable_error(PyThreadState *,
+                                           _PyXI_failure *);
 
 static int
 _fill_sharedns(_PyXI_namespace *ns, PyObject *nsobj,
-               xidata_fallback_t fallback, _PyXI_errcode *p_errcode)
+               xidata_fallback_t fallback, _PyXI_failure *p_err)
 {
     // All items are expected to be shareable.
     assert(_sharedns_check_counts(ns));
     assert(ns->numnames == ns->maxitems);
     assert(ns->numvalues == 0);
+    PyThreadState *tstate = PyThreadState_Get();
     for (Py_ssize_t i=0; i < ns->maxitems; i++) {
         if (_sharednsitem_copy_from_ns(&ns->items[i], nsobj, fallback) < 0) {
-            if (p_errcode != NULL) {
-                _propagate_not_shareable_error(p_errcode);
+            if (p_err != NULL) {
+                _propagate_not_shareable_error(tstate, p_err);
             }
             // Clear out the ones we set so far.
             for (Py_ssize_t j=0; j < i; j++) {
@@ -2244,18 +2460,6 @@ _apply_sharedns(_PyXI_namespace *ns, PyObject *nsobj, PyObject *dflt)
 /* switched-interpreter sessions */
 /*********************************/
 
-struct xi_session_error {
-    // This is set if the interpreter is entered and raised an exception
-    // that needs to be handled in some special way during exit.
-    _PyXI_errcode *override;
-    // This is set if exit captured an exception to propagate.
-    _PyXI_error *info;
-
-    // -- pre-allocated memory --
-    _PyXI_error _info;
-    _PyXI_errcode _override;
-};
-
 struct xi_session {
 #define SESSION_UNUSED 0
 #define SESSION_ACTIVE 1
@@ -2288,8 +2492,6 @@ struct xi_session {
     // once the session exits.  Do not access this directly; use
     // _PyXI_Preserve() and _PyXI_GetPreserved() instead;
     PyObject *_preserved;
-
-    struct xi_session_error error;
 };
 
 _PyXI_session *
@@ -2317,26 +2519,6 @@ _session_is_active(_PyXI_session *session)
     return session->status == SESSION_ACTIVE;
 }
 
-static int
-_session_pop_error(_PyXI_session *session, struct xi_session_error *err)
-{
-    if (session->error.info == NULL) {
-        assert(session->error.override == NULL);
-        *err = (struct xi_session_error){0};
-        return 0;
-    }
-    *err = session->error;
-    err->info = &err->_info;
-    if (err->override != NULL) {
-        err->override = &err->_override;
-    }
-    session->error = (struct xi_session_error){0};
-    return 1;
-}
-
-static int _ensure_main_ns(_PyXI_session *, _PyXI_errcode *);
-static inline void _session_set_error(_PyXI_session *, _PyXI_errcode);
-
 
 /* enter/exit a cross-interpreter session */
 
@@ -2351,10 +2533,6 @@ _enter_session(_PyXI_session *session, PyInterpreterState *interp)
     // Set elsewhere and cleared in _exit_session().
     assert(!session->running);
     assert(session->main_ns == NULL);
-    // Set elsewhere and cleared in _capture_current_exception().
-    assert(session->error.override == NULL);
-    // Set elsewhere and cleared in _PyXI_Exit().
-    assert(session->error.info == NULL);
 
     // Switch to interpreter.
     PyThreadState *tstate = PyThreadState_Get();
@@ -2409,17 +2587,14 @@ _exit_session(_PyXI_session *session)
         assert(!session->own_init_tstate);
     }
 
-    assert(session->error.info == NULL);
-    assert(session->error.override == _PyXI_ERR_NO_ERROR);
-
     *session = (_PyXI_session){0};
 }
 
 static void
-_propagate_not_shareable_error(_PyXI_errcode *p_errcode)
+_propagate_not_shareable_error(PyThreadState *tstate,
+                               _PyXI_failure *override)
 {
-    assert(p_errcode != NULL);
-    PyThreadState *tstate = PyThreadState_Get();
+    assert(override != NULL);
     PyObject *exctype = get_notshareableerror_type(tstate);
     if (exctype == NULL) {
         PyErr_FormatUnraisable(
@@ -2428,15 +2603,24 @@ _propagate_not_shareable_error(_PyXI_errcode *p_errcode)
     }
     if (PyErr_ExceptionMatches(exctype)) {
         // We want to propagate the exception directly.
-        *p_errcode = _PyXI_ERR_NOT_SHAREABLE;
+        *override = (_PyXI_failure){
+            .code = _PyXI_ERR_NOT_SHAREABLE,
+        };
     }
 }
+
+
+static int _ensure_main_ns(_PyXI_session *, _PyXI_failure *);
+static const char * capture_session_error(_PyXI_session *, _PyXI_error *,
+                                          _PyXI_failure *);
 
 int
 _PyXI_Enter(_PyXI_session *session,
             PyInterpreterState *interp, PyObject *nsupdates,
             _PyXI_session_result *result)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
+
     // Convert the attrs for cross-interpreter use.
     _PyXI_namespace *sharedns = NULL;
     if (nsupdates != NULL) {
@@ -2457,16 +2641,16 @@ _PyXI_Enter(_PyXI_session *session,
             }
             // For now we limit it to shareable objects.
             xidata_fallback_t fallback = _PyXIDATA_XIDATA_ONLY;
-            _PyXI_errcode errcode = _PyXI_ERR_NO_ERROR;
-            if (_fill_sharedns(sharedns, nsupdates, fallback, &errcode) < 0) {
-                assert(PyErr_Occurred());
-                assert(session->error.info == NULL);
-                if (errcode == _PyXI_ERR_NO_ERROR) {
-                    errcode = _PyXI_ERR_UNCAUGHT_EXCEPTION;
+            _PyXI_failure _err = XI_FAILURE_INIT;
+            if (_fill_sharedns(sharedns, nsupdates, fallback, &_err) < 0) {
+                assert(_PyErr_Occurred(tstate));
+                if (_err.code == _PyXI_ERR_NO_ERROR) {
+                    _err.code = _PyXI_ERR_UNCAUGHT_EXCEPTION;
                 }
                 _destroy_sharedns(sharedns);
                 if (result != NULL) {
-                    result->errcode = errcode;
+                    assert(_err.msg == NULL);
+                    result->errcode = _err.code;
                 }
                 return -1;
             }
@@ -2475,52 +2659,53 @@ _PyXI_Enter(_PyXI_session *session,
 
     // Switch to the requested interpreter (if necessary).
     _enter_session(session, interp);
-    _PyXI_errcode errcode = _PyXI_ERR_UNCAUGHT_EXCEPTION;
+    _PyXI_failure override = XI_FAILURE_INIT;
+    override.code = _PyXI_ERR_UNCAUGHT_EXCEPTION;
+    tstate = _PyThreadState_GET();
 
     // Ensure this thread owns __main__.
     if (_PyInterpreterState_SetRunningMain(interp) < 0) {
         // In the case where we didn't switch interpreters, it would
         // be more efficient to leave the exception in place and return
         // immediately.  However, life is simpler if we don't.
-        errcode = _PyXI_ERR_ALREADY_RUNNING;
+        override.code = _PyXI_ERR_ALREADY_RUNNING;
         goto error;
     }
     session->running = 1;
 
     // Apply the cross-interpreter data.
     if (sharedns != NULL) {
-        if (_ensure_main_ns(session, &errcode) < 0) {
+        if (_ensure_main_ns(session, &override) < 0) {
             goto error;
         }
         if (_apply_sharedns(sharedns, session->main_ns, NULL) < 0) {
-            errcode = _PyXI_ERR_APPLY_NS_FAILURE;
+            override.code = _PyXI_ERR_APPLY_NS_FAILURE;
             goto error;
         }
         _destroy_sharedns(sharedns);
     }
 
-    errcode = _PyXI_ERR_NO_ERROR;
-    assert(!PyErr_Occurred());
+    override.code = _PyXI_ERR_NO_ERROR;
+    assert(!_PyErr_Occurred(tstate));
     return 0;
 
 error:
     // We want to propagate all exceptions here directly (best effort).
-    assert(errcode != _PyXI_ERR_NO_ERROR);
-    _session_set_error(session, errcode);
-    assert(!PyErr_Occurred());
+    assert(override.code != _PyXI_ERR_NO_ERROR);
+    _PyXI_error err = {0};
+    const char *failure = capture_session_error(session, &err, &override);
 
     // Exit the session.
-    struct xi_session_error err;
-    (void)_session_pop_error(session, &err);
     _exit_session(session);
+    tstate = _PyThreadState_GET();
 
     if (sharedns != NULL) {
         _destroy_sharedns(sharedns);
     }
 
     // Apply the error from the other interpreter.
-    PyObject *excinfo = _PyXI_ApplyError(err.info);
-    _PyXI_excinfo_clear(&err.info->uncaught);
+    PyObject *excinfo = _PyXI_ApplyError(&err, failure);
+    xi_error_clear(&err);
     if (excinfo != NULL) {
         if (result != NULL) {
             result->excinfo = excinfo;
@@ -2529,84 +2714,100 @@ error:
 #ifdef Py_DEBUG
             fprintf(stderr, "_PyXI_Enter(): uncaught exception discarded");
 #endif
+            Py_DECREF(excinfo);
         }
     }
-    assert(PyErr_Occurred());
+    assert(_PyErr_Occurred(tstate));
 
     return -1;
 }
 
 static int _pop_preserved(_PyXI_session *, _PyXI_namespace **, PyObject **,
-                          _PyXI_errcode *);
+                          _PyXI_failure *);
 static int _finish_preserved(_PyXI_namespace *, PyObject **);
 
 int
-_PyXI_Exit(_PyXI_session *session, _PyXI_errcode errcode,
+_PyXI_Exit(_PyXI_session *session, _PyXI_failure *override,
            _PyXI_session_result *result)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
     int res = 0;
 
     // Capture the raised exception, if any.
-    assert(session->error.info == NULL);
-    if (PyErr_Occurred()) {
-        _session_set_error(session, errcode);
-        assert(!PyErr_Occurred());
+    _PyXI_error err = {0};
+    const char *failure = NULL;
+    if (override != NULL && override->code == _PyXI_ERR_NO_ERROR) {
+        assert(override->msg == NULL);
+        override = NULL;
+    }
+    if (_PyErr_Occurred(tstate)) {
+        failure = capture_session_error(session, &err, override);
     }
     else {
-        assert(errcode == _PyXI_ERR_NO_ERROR);
-        assert(session->error.override == NULL);
+        assert(override == NULL);
     }
 
     // Capture the preserved namespace.
     _PyXI_namespace *preserved = NULL;
     PyObject *preservedobj = NULL;
     if (result != NULL) {
-        errcode = _PyXI_ERR_NO_ERROR;
-        if (_pop_preserved(session, &preserved, &preservedobj, &errcode) < 0) {
-            if (session->error.info != NULL) {
+        assert(!_PyErr_Occurred(tstate));
+        _PyXI_failure _override = XI_FAILURE_INIT;
+        if (_pop_preserved(
+                    session, &preserved, &preservedobj, &_override) < 0)
+        {
+            assert(preserved == NULL);
+            assert(preservedobj == NULL);
+            if (xi_error_is_set(&err)) {
                 // XXX Chain the exception (i.e. set __context__)?
                 PyErr_FormatUnraisable(
                     "Exception ignored while capturing preserved objects");
+                clear_xi_failure(&_override);
             }
             else {
-                _session_set_error(session, errcode);
+                if (_override.code == _PyXI_ERR_NO_ERROR) {
+                    _override.code = _PyXI_ERR_UNCAUGHT_EXCEPTION;
+                }
+                failure = capture_session_error(session, &err, &_override);
             }
         }
     }
 
     // Exit the session.
-    struct xi_session_error err;
-    (void)_session_pop_error(session, &err);
+    assert(!_PyErr_Occurred(tstate));
     _exit_session(session);
+    tstate = _PyThreadState_GET();
 
     // Restore the preserved namespace.
     assert(preserved == NULL || preservedobj == NULL);
     if (_finish_preserved(preserved, &preservedobj) < 0) {
         assert(preservedobj == NULL);
-        if (err.info != NULL) {
+        if (xi_error_is_set(&err)) {
             // XXX Chain the exception (i.e. set __context__)?
             PyErr_FormatUnraisable(
                 "Exception ignored while capturing preserved objects");
         }
         else {
-            errcode = _PyXI_ERR_PRESERVE_FAILURE;
-            _propagate_not_shareable_error(&errcode);
+            xi_error_set_override_code(
+                            tstate, &err, _PyXI_ERR_PRESERVE_FAILURE);
+            _propagate_not_shareable_error(tstate, err.override);
         }
     }
     if (result != NULL) {
         result->preserved = preservedobj;
-        result->errcode = errcode;
+        result->errcode = err.override != NULL
+            ? err.override->code
+            : _PyXI_ERR_NO_ERROR;
     }
 
     // Apply the error from the other interpreter, if any.
-    if (err.info != NULL) {
+    if (xi_error_is_set(&err)) {
         res = -1;
-        assert(!PyErr_Occurred());
-        PyObject *excinfo = _PyXI_ApplyError(err.info);
-        _PyXI_excinfo_clear(&err.info->uncaught);
+        assert(!_PyErr_Occurred(tstate));
+        PyObject *excinfo = _PyXI_ApplyError(&err, failure);
         if (excinfo == NULL) {
-            assert(PyErr_Occurred());
-            if (result != NULL) {
+            assert(_PyErr_Occurred(tstate));
+            if (result != NULL && !xi_error_has_override(&err)) {
                 _PyXI_ClearResult(result);
                 *result = (_PyXI_session_result){
                     .errcode = _PyXI_ERR_EXC_PROPAGATION_FAILURE,
@@ -2620,7 +2821,9 @@ _PyXI_Exit(_PyXI_session *session, _PyXI_errcode errcode,
 #ifdef Py_DEBUG
             fprintf(stderr, "_PyXI_Exit(): uncaught exception discarded");
 #endif
+            Py_DECREF(excinfo);
         }
+        xi_error_clear(&err);
     }
     return res;
 }
@@ -2628,106 +2831,72 @@ _PyXI_Exit(_PyXI_session *session, _PyXI_errcode errcode,
 
 /* in an active cross-interpreter session */
 
-static void
-_capture_current_exception(_PyXI_session *session)
+static const char *
+capture_session_error(_PyXI_session *session, _PyXI_error *err,
+                      _PyXI_failure *override)
 {
-    assert(session->error.info == NULL);
-    if (!PyErr_Occurred()) {
-        assert(session->error.override == NULL);
-        return;
-    }
+    assert(_session_is_active(session));
+    assert(!xi_error_is_set(err));
+    PyThreadState *tstate = session->init_tstate;
 
-    // Handle the exception override.
-    _PyXI_errcode *override = session->error.override;
-    session->error.override = NULL;
-    _PyXI_errcode errcode = override != NULL
-        ? *override
-        : _PyXI_ERR_UNCAUGHT_EXCEPTION;
-
-    // Pop the exception object.
-    PyObject *excval = NULL;
-    if (errcode == _PyXI_ERR_UNCAUGHT_EXCEPTION) {
-        // We want to actually capture the current exception.
-        excval = PyErr_GetRaisedException();
-    }
-    else if (errcode == _PyXI_ERR_ALREADY_RUNNING) {
-        // We don't need the exception info.
-        PyErr_Clear();
-    }
-    else {
-        // We could do a variety of things here, depending on errcode.
-        // However, for now we simply capture the exception and save
-        // the errcode.
-        excval = PyErr_GetRaisedException();
-    }
-
-    // Capture the exception.
-    _PyXI_error *err = &session->error._info;
-    *err = (_PyXI_error){
-        .interp = session->init_tstate->interp,
-    };
-    const char *failure;
-    if (excval == NULL) {
-        failure = _PyXI_InitError(err, NULL, errcode);
-    }
-    else {
-        failure = _PyXI_InitError(err, excval, _PyXI_ERR_UNCAUGHT_EXCEPTION);
-        Py_DECREF(excval);
-        if (failure == NULL && override != NULL) {
-            err->code = errcode;
+    // Normalize the exception override.
+    if (override != NULL) {
+        if (override->code == _PyXI_ERR_UNCAUGHT_EXCEPTION) {
+            assert(override->msg == NULL);
+            override = NULL;
+        }
+        else {
+            assert(override->code != _PyXI_ERR_NO_ERROR);
         }
     }
 
-    // Handle capture failure.
-    if (failure != NULL) {
-        // XXX Make this error message more generic.
-        fprintf(stderr,
-                "RunFailedError: script raised an uncaught exception (%s)",
-                failure);
-        err = NULL;
+    // Handle the exception, if any.
+    const char *failure = NULL;
+    PyObject *exc = xi_error_resolve_current_exc(tstate, override);
+    if (exc != NULL) {
+        // There is an unhandled exception we need to preserve.
+        failure = xi_error_set_exc(tstate, err, exc);
+        Py_DECREF(exc);
+        if (_PyErr_Occurred(tstate)) {
+            PyErr_FormatUnraisable(failure);
+        }
+    }
+
+    // Handle the override.
+    if (override != NULL && failure == NULL) {
+        xi_error_set_override(tstate, err, override);
     }
 
     // Finished!
-    assert(!PyErr_Occurred());
-    session->error.info = err;
-}
-
-static inline void
-_session_set_error(_PyXI_session *session, _PyXI_errcode errcode)
-{
-    assert(_session_is_active(session));
-    assert(PyErr_Occurred());
-    if (errcode == _PyXI_ERR_NO_ERROR) {
-        // We're a bit forgiving here.
-        errcode = _PyXI_ERR_UNCAUGHT_EXCEPTION;
-    }
-    if (errcode != _PyXI_ERR_UNCAUGHT_EXCEPTION) {
-        session->error._override = errcode;
-        session->error.override = &session->error._override;
-    }
-    _capture_current_exception(session);
+    assert(!_PyErr_Occurred(tstate));
+    return failure;
 }
 
 static int
-_ensure_main_ns(_PyXI_session *session, _PyXI_errcode *p_errcode)
+_ensure_main_ns(_PyXI_session *session, _PyXI_failure *failure)
 {
     assert(_session_is_active(session));
+    PyThreadState *tstate = session->init_tstate;
     if (session->main_ns != NULL) {
         return 0;
     }
     // Cache __main__.__dict__.
-    PyObject *main_mod = _Py_GetMainModule(session->init_tstate);
+    PyObject *main_mod = _Py_GetMainModule(tstate);
     if (_Py_CheckMainModule(main_mod) < 0) {
-        if (p_errcode != NULL) {
-            *p_errcode = _PyXI_ERR_MAIN_NS_FAILURE;
+        if (failure != NULL) {
+            *failure = (_PyXI_failure){
+                .code = _PyXI_ERR_MAIN_NS_FAILURE,
+            };
         }
         return -1;
     }
     PyObject *ns = PyModule_GetDict(main_mod);  // borrowed
     Py_DECREF(main_mod);
     if (ns == NULL) {
-        if (p_errcode != NULL) {
-            *p_errcode = _PyXI_ERR_MAIN_NS_FAILURE;
+        if (failure != NULL) {
+            *failure = (_PyXI_failure){
+                .code = _PyXI_ERR_MAIN_NS_FAILURE,
+            };
         }
         return -1;
     }
@@ -2736,13 +2905,13 @@ _ensure_main_ns(_PyXI_session *session, _PyXI_errcode *p_errcode)
 }
 
 PyObject *
-_PyXI_GetMainNamespace(_PyXI_session *session, _PyXI_errcode *p_errcode)
+_PyXI_GetMainNamespace(_PyXI_session *session, _PyXI_failure *failure)
 {
     if (!_session_is_active(session)) {
         PyErr_SetString(PyExc_RuntimeError, "session not active");
         return NULL;
     }
-    if (_ensure_main_ns(session, p_errcode) < 0) {
+    if (_ensure_main_ns(session, failure) < 0) {
         return NULL;
     }
     return session->main_ns;
@@ -2752,9 +2921,12 @@ _PyXI_GetMainNamespace(_PyXI_session *session, _PyXI_errcode *p_errcode)
 static int
 _pop_preserved(_PyXI_session *session,
                _PyXI_namespace **p_xidata, PyObject **p_obj,
-               _PyXI_errcode *p_errcode)
+               _PyXI_failure *p_failure)
 {
+    _PyXI_failure failure = XI_FAILURE_INIT;
+    _PyXI_namespace *xidata = NULL;
     assert(_PyThreadState_GET() == session->init_tstate);  // active session
+
     if (session->_preserved == NULL) {
         *p_xidata = NULL;
         *p_obj = NULL;
@@ -2772,10 +2944,8 @@ _pop_preserved(_PyXI_session *session,
     // We did switch interpreters.
     Py_ssize_t len = PyDict_Size(session->_preserved);
     if (len < 0) {
-        if (p_errcode != NULL) {
-            *p_errcode = _PyXI_ERR_PRESERVE_FAILURE;
-        }
-        return -1;
+        failure.code = _PyXI_ERR_PRESERVE_FAILURE;
+        goto error;
     }
     else if (len == 0) {
         *p_xidata = NULL;
@@ -2783,29 +2953,31 @@ _pop_preserved(_PyXI_session *session,
     else {
         _PyXI_namespace *xidata = _create_sharedns(session->_preserved);
         if (xidata == NULL) {
-            if (p_errcode != NULL) {
-                *p_errcode = _PyXI_ERR_PRESERVE_FAILURE;
-            }
-            return -1;
+            failure.code = _PyXI_ERR_PRESERVE_FAILURE;
+            goto error;
         }
-        _PyXI_errcode errcode = _PyXI_ERR_NO_ERROR;
         if (_fill_sharedns(xidata, session->_preserved,
-                           _PyXIDATA_FULL_FALLBACK, &errcode) < 0)
+                           _PyXIDATA_FULL_FALLBACK, &failure) < 0)
         {
-            assert(session->error.info == NULL);
-            if (errcode != _PyXI_ERR_NOT_SHAREABLE) {
-                errcode = _PyXI_ERR_PRESERVE_FAILURE;
+            if (failure.code != _PyXI_ERR_NOT_SHAREABLE) {
+                assert(failure.msg != NULL);
+                failure.code = _PyXI_ERR_PRESERVE_FAILURE;
             }
-            if (p_errcode != NULL) {
-                *p_errcode = errcode;
-            }
-            _destroy_sharedns(xidata);
-            return -1;
+            goto error;
         }
         *p_xidata = xidata;
     }
     Py_CLEAR(session->_preserved);
     return 0;
+
+error:
+    if (p_failure != NULL) {
+        *p_failure = failure;
+    }
+    if (xidata != NULL) {
+        _destroy_sharedns(xidata);
+    }
+    return -1;
 }
 
 static int
@@ -2835,8 +3007,9 @@ finally:
 
 int
 _PyXI_Preserve(_PyXI_session *session, const char *name, PyObject *value,
-               _PyXI_errcode *p_errcode)
+               _PyXI_failure *p_failure)
 {
+    _PyXI_failure failure = XI_FAILURE_INIT;
     if (!_session_is_active(session)) {
         PyErr_SetString(PyExc_RuntimeError, "session not active");
         return -1;
@@ -2846,20 +3019,22 @@ _PyXI_Preserve(_PyXI_session *session, const char *name, PyObject *value,
         if (session->_preserved == NULL) {
             set_exc_with_cause(PyExc_RuntimeError,
                                "failed to initialize preserved objects");
-            if (p_errcode != NULL) {
-                *p_errcode = _PyXI_ERR_PRESERVE_FAILURE;
-            }
-            return -1;
+            failure.code = _PyXI_ERR_PRESERVE_FAILURE;
+            goto error;
         }
     }
     if (PyDict_SetItemString(session->_preserved, name, value) < 0) {
         set_exc_with_cause(PyExc_RuntimeError, "failed to preserve object");
-        if (p_errcode != NULL) {
-            *p_errcode = _PyXI_ERR_PRESERVE_FAILURE;
-        }
-        return -1;
+        failure.code = _PyXI_ERR_PRESERVE_FAILURE;
+        goto error;
     }
     return 0;
+
+error:
+    if (p_failure != NULL) {
+        *p_failure = failure;
+    }
+    return -1;
 }
 
 PyObject *

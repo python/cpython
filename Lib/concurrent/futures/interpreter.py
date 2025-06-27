@@ -167,7 +167,7 @@ class WorkerContext(_thread.WorkerContext):
             except _interpqueues.QueueError:
                 continue
             except ModuleNotFoundError:
-                # interpreters.queues doesn't exist, which means
+                # interpreters._queues doesn't exist, which means
                 # QueueEmpty doesn't.  Act as though it does.
                 continue
             else:

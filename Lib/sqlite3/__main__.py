@@ -12,6 +12,8 @@ from code import InteractiveConsole
 from textwrap import dedent
 from _colorize import get_theme, theme_no_color
 
+from ._completer import completer
+
 
 def execute(c, sql, suppress_errors=True, theme=theme_no_color):
     """Helper that wraps execution of SQL code.
@@ -136,12 +138,9 @@ def main(*args):
             execute(con, args.sql, suppress_errors=False, theme=theme)
         else:
             # No SQL provided; start the REPL.
-            console = SqliteInteractiveConsole(con, use_color=True)
-            try:
-                import readline  # noqa: F401
-            except ImportError:
-                pass
-            console.interact(banner, exitmsg="")
+            with completer():
+                console = SqliteInteractiveConsole(con, use_color=True)
+                console.interact(banner, exitmsg="")
     finally:
         con.close()
 

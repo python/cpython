@@ -13,11 +13,11 @@ from test.support import script_helper
 from test.support import import_helper
 # Raise SkipTest if subinterpreters not supported.
 _interpreters = import_helper.import_module('_interpreters')
+from concurrent import interpreters
 from test.support import Py_GIL_DISABLED
-from test.support import interpreters
 from test.support import force_not_colorized
 import test._crossinterp_definitions as defs
-from test.support.interpreters import (
+from concurrent.interpreters import (
     InterpreterError, InterpreterNotFoundError, ExecutionFailed,
 )
 from .utils import (
@@ -133,7 +133,7 @@ class CreateTests(TestBase):
         main, = interpreters.list_all()
         interp = interpreters.create()
         out = _run_output(interp, dedent("""
-            from test.support import interpreters
+            from concurrent import interpreters
             interp = interpreters.create()
             print(interp.id)
             """))
@@ -196,7 +196,7 @@ class GetCurrentTests(TestBase):
         main = interpreters.get_main()
         interp = interpreters.create()
         out = _run_output(interp, dedent("""
-            from test.support import interpreters
+            from concurrent import interpreters
             cur = interpreters.get_current()
             print(cur.id)
             """))
@@ -213,7 +213,7 @@ class GetCurrentTests(TestBase):
         with self.subTest('subinterpreter'):
             interp = interpreters.create()
             out = _run_output(interp, dedent("""
-                from test.support import interpreters
+                from concurrent import interpreters
                 cur = interpreters.get_current()
                 print(id(cur))
                 cur = interpreters.get_current()
@@ -225,7 +225,7 @@ class GetCurrentTests(TestBase):
         with self.subTest('per-interpreter'):
             interp = interpreters.create()
             out = _run_output(interp, dedent("""
-                from test.support import interpreters
+                from concurrent import interpreters
                 cur = interpreters.get_current()
                 print(id(cur))
                 """))
@@ -582,7 +582,7 @@ class TestInterpreterClose(TestBase):
         main, = interpreters.list_all()
         interp = interpreters.create()
         out = _run_output(interp, dedent(f"""
-            from test.support import interpreters
+            from concurrent import interpreters
             interp = interpreters.Interpreter({interp.id})
             try:
                 interp.close()
@@ -599,7 +599,7 @@ class TestInterpreterClose(TestBase):
         self.assertEqual(set(interpreters.list_all()),
                          {main, interp1, interp2})
         interp1.exec(dedent(f"""
-            from test.support import interpreters
+            from concurrent import interpreters
             interp2 = interpreters.Interpreter({interp2.id})
             interp2.close()
             interp3 = interpreters.create()
@@ -806,7 +806,7 @@ class TestInterpreterExec(TestBase):
                 ham()
             """)
         scriptfile = self.make_script('script.py', tempdir, text="""
-            from test.support import interpreters
+            from concurrent import interpreters
 
             def script():
                 import spam
@@ -827,7 +827,7 @@ class TestInterpreterExec(TestBase):
                 ~~~~~~~~~~~^^^^^^^^
               {interpmod_line.strip()}
                 raise ExecutionFailed(excinfo)
-            test.support.interpreters.ExecutionFailed: RuntimeError: uh-oh!
+            concurrent.interpreters.ExecutionFailed: RuntimeError: uh-oh!
 
             Uncaught in the interpreter:
 
@@ -1281,7 +1281,7 @@ class TestInterpreterCall(TestBase):
             # no module indirection
             with self.subTest('no indirection'):
                 text = run(f"""
-                    from test.support import interpreters
+                    from concurrent import interpreters
 
                     def spam():
                         # This a global var...
@@ -1301,7 +1301,7 @@ class TestInterpreterCall(TestBase):
                 """)
             with self.subTest('indirect as func, direct interp'):
                 text = run(f"""
-                    from test.support import interpreters
+                    from concurrent import interpreters
                     import mymod
 
                     def spam():
@@ -1317,7 +1317,7 @@ class TestInterpreterCall(TestBase):
 
             # indirect as func, indirect interp
             new_mod('mymod', f"""
-                from test.support import interpreters
+                from concurrent import interpreters
                 def run(func):
                     interp = interpreters.create()
                     return interp.call(func)

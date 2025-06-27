@@ -3772,9 +3772,11 @@ long_add(PyLongObject *a, PyLongObject *b)
 }
 
 PyObject *
-_PyLong_Add(PyLongObject *a, PyLongObject *b)
+_PyCompactLong_Add(PyLongObject *a, PyLongObject *b)
 {
-    return (PyObject*)long_add(a, b);
+    assert(_PyLong_BothAreCompact(a, b));
+    stwodigits z = medium_value(a) + medium_value(b);
+    return (PyObject *)_PyLong_FromSTwoDigits(z);
 }
 
 static PyObject *
@@ -3815,9 +3817,10 @@ long_sub(PyLongObject *a, PyLongObject *b)
 }
 
 PyObject *
-_PyLong_Subtract(PyLongObject *a, PyLongObject *b)
+_PyCompactLong_Subtract(PyLongObject *a, PyLongObject *b)
 {
-    return (PyObject*)long_sub(a, b);
+    assert(_PyLong_BothAreCompact(a, b));
+    return (PyObject *)_PyLong_FromSTwoDigits(medium_value(a) - medium_value(b));
 }
 
 static PyObject *
@@ -4262,9 +4265,11 @@ long_mul(PyLongObject *a, PyLongObject *b)
 }
 
 PyObject *
-_PyLong_Multiply(PyLongObject *a, PyLongObject *b)
+_PyCompactLong_Multiply(PyLongObject *a, PyLongObject *b)
 {
-    return (PyObject*)long_mul(a, b);
+    assert(_PyLong_BothAreCompact(a, b));
+    stwodigits v = medium_value(a) * medium_value(b);
+    return (PyObject *)_PyLong_FromSTwoDigits(v);
 }
 
 static PyObject *

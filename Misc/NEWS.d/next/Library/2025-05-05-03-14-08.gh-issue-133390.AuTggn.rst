@@ -1,0 +1,1 @@
+Support keyword completion in the :mod:`sqlite3` command-line interface.

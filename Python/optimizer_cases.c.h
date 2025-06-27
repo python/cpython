@@ -319,86 +319,29 @@
         }
 
         case _BINARY_OP_MULTIPLY_INT: {
-            JitOptSymbol *right;
-            JitOptSymbol *left;
             JitOptSymbol *res;
-            right = stack_pointer[-1];
-            left = stack_pointer[-2];
-            if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
-                assert(PyLong_CheckExact(sym_get_const(ctx, left)));
-                assert(PyLong_CheckExact(sym_get_const(ctx, right)));
-                PyObject *temp = _PyLong_Multiply((PyLongObject *)sym_get_const(ctx, left),
-                    (PyLongObject *)sym_get_const(ctx, right));
-                if (temp == NULL) {
-                    goto error;
-                }
-                res = sym_new_const(ctx, temp);
-                stack_pointer[-2] = res;
-                stack_pointer += -1;
-                assert(WITHIN_STACK_BOUNDS());
-                Py_DECREF(temp);
-            }
-            else {
-                res = sym_new_type(ctx, &PyLong_Type);
-                stack_pointer += -1;
-            }
-            stack_pointer[-1] = res;
+            res = sym_new_type(ctx, &PyLong_Type);
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _BINARY_OP_ADD_INT: {
-            JitOptSymbol *right;
-            JitOptSymbol *left;
             JitOptSymbol *res;
-            right = stack_pointer[-1];
-            left = stack_pointer[-2];
-            if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
-                assert(PyLong_CheckExact(sym_get_const(ctx, left)));
-                assert(PyLong_CheckExact(sym_get_const(ctx, right)));
-                PyObject *temp = _PyLong_Add((PyLongObject *)sym_get_const(ctx, left),
-                    (PyLongObject *)sym_get_const(ctx, right));
-                if (temp == NULL) {
-                    goto error;
-                }
-                res = sym_new_const(ctx, temp);
-                stack_pointer[-2] = res;
-                stack_pointer += -1;
-                assert(WITHIN_STACK_BOUNDS());
-                Py_DECREF(temp);
-            }
-            else {
-                res = sym_new_type(ctx, &PyLong_Type);
-                stack_pointer += -1;
-            }
-            stack_pointer[-1] = res;
+            res = sym_new_type(ctx, &PyLong_Type);
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _BINARY_OP_SUBTRACT_INT: {
-            JitOptSymbol *right;
-            JitOptSymbol *left;
             JitOptSymbol *res;
-            right = stack_pointer[-1];
-            left = stack_pointer[-2];
-            if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
-                assert(PyLong_CheckExact(sym_get_const(ctx, left)));
-                assert(PyLong_CheckExact(sym_get_const(ctx, right)));
-                PyObject *temp = _PyLong_Subtract((PyLongObject *)sym_get_const(ctx, left),
-                    (PyLongObject *)sym_get_const(ctx, right));
-                if (temp == NULL) {
-                    goto error;
-                }
-                res = sym_new_const(ctx, temp);
-                stack_pointer[-2] = res;
-                stack_pointer += -1;
-                assert(WITHIN_STACK_BOUNDS());
-                Py_DECREF(temp);
-            }
-            else {
-                res = sym_new_type(ctx, &PyLong_Type);
-                stack_pointer += -1;
-            }
-            stack_pointer[-1] = res;
+            res = sym_new_type(ctx, &PyLong_Type);
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
@@ -1890,6 +1833,16 @@
         }
 
         case _CHECK_METHOD_VERSION: {
+            JitOptSymbol *callable;
+            callable = stack_pointer[-2 - oparg];
+            uint32_t func_version = (uint32_t)this_instr->operand0;
+            if (sym_is_const(ctx, callable) && sym_matches_type(callable, &PyMethod_Type)) {
+                PyMethodObject *method = (PyMethodObject *)sym_get_const(ctx, callable);
+                assert(PyMethod_Check(method));
+                REPLACE_OP(this_instr, _CHECK_FUNCTION_VERSION_INLINE, 0, func_version);
+                this_instr->operand1 = (uintptr_t)method->im_func;
+            }
+            sym_set_type(callable, &PyMethod_Type);
             break;
         }
 
