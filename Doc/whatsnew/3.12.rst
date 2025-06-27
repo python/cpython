@@ -1347,6 +1347,8 @@ Deprecated
 
 .. include:: ../deprecations/pending-removal-in-3.16.rst
 
+.. include:: ../deprecations/pending-removal-in-3.17.rst
+
 .. include:: ../deprecations/pending-removal-in-future.rst
 
 .. _whatsnew312-removed:

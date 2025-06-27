@@ -810,8 +810,7 @@ def register(*kernels):
 @register('normal', 'gauss')
 def normal_kernel():
     sqrt2pi = sqrt(2 * pi)
-    sqrt2 = sqrt(2)
-    neg_sqrt2 = -sqrt2
+    neg_sqrt2 = -sqrt(2)
     pdf = lambda t: exp(-1/2 * t * t) / sqrt2pi
     cdf = lambda t: 1/2 * erfc(t / neg_sqrt2)
     invcdf = lambda t: _normal_dist_inv_cdf(t, 0.0, 1.0)

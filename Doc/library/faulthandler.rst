@@ -69,7 +69,7 @@ Dumping the traceback
 Dumping the C stack
 -------------------
 
-.. versionadded:: next
+.. versionadded:: 3.14
 
 .. function:: dump_c_stack(file=sys.stderr)
 
@@ -90,7 +90,7 @@ An error will be printed instead of the stack.
 
 Additionally, some compilers do not support :term:`CPython's <CPython>`
 implementation of C stack dumps. As a result, a different error may be printed
-instead of the stack, even if the the operating system supports dumping stacks.
+instead of the stack, even if the operating system supports dumping stacks.
 
 .. note::
 
@@ -130,7 +130,7 @@ Fault handler state
       Only the current thread is dumped if the :term:`GIL` is disabled to
       prevent the risk of data races.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
       The dump now displays the C stack trace if *c_stack* is true.
 
 .. function:: disable()

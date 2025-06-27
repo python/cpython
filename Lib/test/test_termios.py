@@ -152,7 +152,9 @@ class TestFunctions(unittest.TestCase):
     def test_tcflush_clear_input_or_output(self):
         wfd = self.fd
         rfd = self.master_fd
-        inbuf = sys.platform == 'linux'
+        # The data is buffered in the input buffer on Linux, and in
+        # the output buffer on other platforms.
+        inbuf = sys.platform in ('linux', 'android')
 
         os.write(wfd, b'abcdef')
         self.assertEqual(os.read(rfd, 2), b'ab')
@@ -190,7 +192,8 @@ class TestFunctions(unittest.TestCase):
         self.assertRaises(TypeError, termios.tcflow, object(), termios.TCOON)
         self.assertRaises(TypeError, termios.tcflow, self.fd)
 
-    @unittest.skipUnless(sys.platform == 'linux', 'only works on Linux')
+    @support.skip_android_selinux('tcflow')
+    @unittest.skipUnless(sys.platform in ('linux', 'android'), 'only works on Linux')
     def test_tcflow_suspend_and_resume_output(self):
         wfd = self.fd
         rfd = self.master_fd
@@ -199,20 +202,22 @@ class TestFunctions(unittest.TestCase):
 
         def writer():
             os.write(wfd, b'abc')
-            write_suspended.wait()
+            self.assertTrue(write_suspended.wait(support.SHORT_TIMEOUT))
             os.write(wfd, b'def')
             write_finished.set()
 
         with threading_helper.start_threads([threading.Thread(target=writer)]):
             self.assertEqual(os.read(rfd, 3), b'abc')
             try:
-                termios.tcflow(wfd, termios.TCOOFF)
-                write_suspended.set()
+                try:
+                    termios.tcflow(wfd, termios.TCOOFF)
+                finally:
+                    write_suspended.set()
                 self.assertFalse(write_finished.wait(0.5),
                                  'output was not suspended')
             finally:
                 termios.tcflow(wfd, termios.TCOON)
-            self.assertTrue(write_finished.wait(0.5),
+            self.assertTrue(write_finished.wait(support.SHORT_TIMEOUT),
                             'output was not resumed')
             self.assertEqual(os.read(rfd, 1024), b'def')
 
@@ -285,8 +290,8 @@ class TestModule(unittest.TestCase):
                 self.assertGreaterEqual(value, 0)
 
     def test_exception(self):
-        self.assertTrue(issubclass(termios.error, Exception))
-        self.assertFalse(issubclass(termios.error, OSError))
+        self.assertIsSubclass(termios.error, Exception)
+        self.assertNotIsSubclass(termios.error, OSError)
 
 
 if __name__ == '__main__':

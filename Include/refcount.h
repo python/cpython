@@ -1,5 +1,5 @@
-#ifndef Py_REFCOUNT_H
-#define Py_REFCOUNT_H
+#ifndef _Py_REFCOUNT_H
+#define _Py_REFCOUNT_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -18,9 +18,6 @@ statically allocated immortal instances vs those promoted by the runtime to be
 immortal. The latter should be the only instances that require
 cleanup during runtime finalization.
 */
-
-#define _Py_STATICALLY_ALLOCATED_FLAG 4
-#define _Py_IMMORTAL_FLAGS 1
 
 #if SIZEOF_VOID_P > 4
 /*
@@ -564,4 +561,4 @@ static inline PyObject* _Py_XNewRef(PyObject *obj)
 #ifdef __cplusplus
 }
 #endif
-#endif   // !Py_REFCOUNT_H
+#endif   // !_Py_REFCOUNT_H

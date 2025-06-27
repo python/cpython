@@ -428,6 +428,7 @@ The following exceptions are the exceptions that are usually raised.
    :exc:`PythonFinalizationError` during the Python finalization:
 
    * Creating a new Python thread.
+   * :meth:`Joining <threading.Thread.join>` a running daemon thread.
    * :func:`os.fork`.
 
    See also the :func:`sys.is_finalizing` function.
@@ -435,6 +436,9 @@ The following exceptions are the exceptions that are usually raised.
    .. versionadded:: 3.13
       Previously, a plain :exc:`RuntimeError` was raised.
 
+   .. versionchanged:: 3.14
+
+      :meth:`threading.Thread.join` can now raise this exception.
 
 .. exception:: RecursionError
 
@@ -1044,7 +1048,7 @@ their subgroups based on the types of the contained exceptions.
    subclasses that need a different constructor signature need to
    override that rather than :meth:`~object.__init__`. For example, the following
    defines an exception group subclass which accepts an exit_code and
-   and constructs the group's message from it. ::
+   constructs the group's message from it. ::
 
       class Errors(ExceptionGroup):
          def __new__(cls, errors, exit_code):

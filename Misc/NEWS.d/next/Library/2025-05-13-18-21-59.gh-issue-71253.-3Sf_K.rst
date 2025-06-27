@@ -1,0 +1,3 @@
+Raise :exc:`ValueError` in :func:`open` if *opener* returns a negative
+file-descriptor in the Python implementation of :mod:`io` to match the
+C implementation.
