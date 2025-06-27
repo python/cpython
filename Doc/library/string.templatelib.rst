@@ -14,6 +14,17 @@
    :ref:`Format strings <f-strings>`
 
 
+
+.. _template-strings:
+
+Template strings
+----------------
+
+Documentation forthcoming for PEP 750 template strings, also known as t-strings.
+
+.. versionadded:: 3.14
+
+
 .. _templatelib-template:
 
 Template

@@ -790,10 +790,20 @@ Nesting arguments and more complex examples::
 
 
 
-.. _template-strings:
+.. _template-strings-pep292:
 
-Template strings
-----------------
+Template strings ($-strings)
+----------------------------
+
+.. note::
+
+   The :class:`~string.Template` class described here was introduced in Python
+   2.4.  It is entirely unrelated to, and should *not* be confused with, the
+   new :ref:`Template Strings <template-strings>` feature and
+   :ref:`t-string literal syntax <t-strings>` introduced in Python 3.14 and
+   originally described in :pep:`750`. Python's t-string literals evaluate to
+   instances of a different :class:`~string.templatelib.Template` class, which
+   is found in the :mod:`string.templatelib` module.
 
 Template strings provide simpler string substitutions as described in
 :pep:`292`.  A primary use case for template strings is for

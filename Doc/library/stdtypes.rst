@@ -2673,9 +2673,9 @@ For example:
    lead to a number of common errors (such as failing to display tuples and
    dictionaries correctly).  Using the newer :ref:`formatted string literals
    <f-strings>`, the :meth:`str.format` interface, or :ref:`template strings
-   <template-strings>` may help avoid these errors.  Each of these
-   alternatives provides their own trade-offs and benefits of simplicity,
-   flexibility, and/or extensibility.
+   ($-strings) <template-strings-pep292>` may help avoid these errors.
+   Each of these alternatives provides their own trade-offs and benefits of
+   simplicity, flexibility, and/or extensibility.
 
 String objects have one unique built-in operation: the ``%`` operator (modulo).
 This is also known as the string *formatting* or *interpolation* operator.
