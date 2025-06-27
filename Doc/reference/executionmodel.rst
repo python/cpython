@@ -411,9 +411,6 @@ on the computer look something like this::
      process
        OS thread (runs machine code)
 
-.. (Sometimes there may even be an extra layer right after "thread"
-   for light-weight threads or coroutines.)
-
 While a program always starts with exactly one of each of those, it may
 grow to include multiple of each.  Hosts and processes are isolated and
 independent from one another.  However, threads are not.
