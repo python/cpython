@@ -121,6 +121,7 @@ def worker(inqueue, outqueue, initializer=None, initargs=(), maxtasks=None,
             break
 
         job, i, func, args, kwds = task
+        put((job, i, (None, os.getpid())))  # Provide info on who took job
         try:
             result = (True, func(*args, **kwds))
         except Exception as e:
@@ -223,12 +224,14 @@ class Pool(object):
 
         sentinels = self._get_sentinels()
 
+        self._job_assignments = {}
         self._worker_handler = threading.Thread(
             target=Pool._handle_workers,
             args=(self._cache, self._taskqueue, self._ctx, self.Process,
                   self._processes, self._pool, self._inqueue, self._outqueue,
                   self._initializer, self._initargs, self._maxtasksperchild,
-                  self._wrap_exception, sentinels, self._change_notifier)
+                  self._wrap_exception, sentinels, self._change_notifier,
+                  self._job_assignments)
             )
         self._worker_handler.daemon = True
         self._worker_handler._state = RUN
@@ -246,7 +249,8 @@ class Pool(object):
 
         self._result_handler = threading.Thread(
             target=Pool._handle_results,
-            args=(self._outqueue, self._quick_get, self._cache)
+            args=(self._outqueue, self._quick_get, self._cache,
+                  self._job_assignments)
             )
         self._result_handler.daemon = True
         self._result_handler._state = RUN
@@ -267,8 +271,6 @@ class Pool(object):
         if self._state == RUN:
             _warn(f"unclosed running multiprocessing pool {self!r}",
                   ResourceWarning, source=self)
-            if getattr(self, '_change_notifier', None) is not None:
-                self._change_notifier.put(None)
 
     def __repr__(self):
         cls = self.__class__
@@ -287,7 +289,7 @@ class Pool(object):
                 workers if hasattr(worker, "sentinel")]
 
     @staticmethod
-    def _join_exited_workers(pool):
+    def _join_exited_workers(pool, outqueue, job_assignments):
         """Cleanup after any worker processes which have exited due to reaching
         their specified lifetime.  Returns True if any workers were cleaned up.
         """
@@ -297,8 +299,16 @@ class Pool(object):
             if worker.exitcode is not None:
                 # worker exited
                 util.debug('cleaning up worker %d' % i)
+                pid = worker.ident
                 worker.join()
                 cleaned = True
+                job_info = job_assignments.pop(pid, None)
+                if job_info is not None:
+                    # If the worker process died without communicating back
+                    # while running a job, add a default result for it.
+                    outqueue.put(
+                        (*job_info, (False, RuntimeError("Worker died")))
+                    )
                 del pool[i]
         return cleaned
 
@@ -333,10 +343,10 @@ class Pool(object):
     @staticmethod
     def _maintain_pool(ctx, Process, processes, pool, inqueue, outqueue,
                        initializer, initargs, maxtasksperchild,
-                       wrap_exception):
+                       wrap_exception, job_assignments):
         """Clean up any exited workers and start replacements for them.
         """
-        if Pool._join_exited_workers(pool):
+        if Pool._join_exited_workers(pool, outqueue, job_assignments):
             Pool._repopulate_pool_static(ctx, Process, processes, pool,
                                          inqueue, outqueue, initializer,
                                          initargs, maxtasksperchild,
@@ -507,7 +517,7 @@ class Pool(object):
     def _handle_workers(cls, cache, taskqueue, ctx, Process, processes,
                         pool, inqueue, outqueue, initializer, initargs,
                         maxtasksperchild, wrap_exception, sentinels,
-                        change_notifier):
+                        change_notifier, job_assignments):
         thread = threading.current_thread()
 
         # Keep maintaining workers until the cache gets drained, unless the pool
@@ -515,7 +525,8 @@ class Pool(object):
         while thread._state == RUN or (cache and thread._state != TERMINATE):
             cls._maintain_pool(ctx, Process, processes, pool, inqueue,
                                outqueue, initializer, initargs,
-                               maxtasksperchild, wrap_exception)
+                               maxtasksperchild, wrap_exception,
+                               job_assignments)
 
             current_sentinels = [*cls._get_worker_sentinels(pool), *sentinels]
 
@@ -571,7 +582,7 @@ class Pool(object):
         util.debug('task handler exiting')
 
     @staticmethod
-    def _handle_results(outqueue, get, cache):
+    def _handle_results(outqueue, get, cache, job_assignments):
         thread = threading.current_thread()
 
         while 1:
@@ -590,12 +601,18 @@ class Pool(object):
                 util.debug('result handler got sentinel')
                 break
 
-            job, i, obj = task
-            try:
-                cache[job]._set(i, obj)
-            except KeyError:
-                pass
-            task = job = obj = None
+            job, i, (task_info, value) = task
+            if task_info is None:
+                # task_info is True or False when a task has completed but
+                # None indicates information about which process has
+                # accepted a job from the queue.
+                job_assignments[value] = (job, i)
+            else:
+                try:
+                    cache[job]._set(i, (task_info, value))
+                except KeyError:
+                    pass
+            task = job = task_info = value = None
 
         while cache and thread._state != TERMINATE:
             try:
@@ -607,12 +624,16 @@ class Pool(object):
             if task is None:
                 util.debug('result handler ignoring extra sentinel')
                 continue
-            job, i, obj = task
-            try:
-                cache[job]._set(i, obj)
-            except KeyError:
-                pass
-            task = job = obj = None
+
+            job, i, (task_info, value) = task
+            if task_info is None:
+                job_assignments[value] = (job, i)
+            else:
+                try:
+                    cache[job]._set(i, (task_info, value))
+                except KeyError:
+                    pass
+            task = job = task_info = value = None
 
         if hasattr(outqueue, '_reader'):
             util.debug('ensuring that outqueue is not full')
@@ -672,7 +693,8 @@ class Pool(object):
     def _help_stuff_finish(inqueue, task_handler, size):
         # task_handler may be blocked trying to put items on inqueue
         util.debug('removing tasks from inqueue until task handler finished')
-        inqueue._rlock.acquire()
+        if inqueue._reader.poll():
+            inqueue._rlock.acquire()
         while task_handler.is_alive() and inqueue._reader.poll():
             inqueue._reader.recv()
             time.sleep(0)
