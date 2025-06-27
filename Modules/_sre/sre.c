@@ -3108,7 +3108,7 @@ cleanup:
 }
 
 static PyObject *
-template_call(TemplateObject *self, PyObject *args, PyObject *kwargs)
+template_call(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     MatchObject *match;
     if (!_PyArg_NoKeywords("template", kwargs))
@@ -3121,7 +3121,7 @@ template_call(TemplateObject *self, PyObject *args, PyObject *kwargs)
     if (!PyArg_ParseTuple(args, "O!", state->Match_Type, &match))
         return NULL;
 
-    return expand_template(self, match);
+    return expand_template((TemplateObject *)self, match);
 }
 
 
