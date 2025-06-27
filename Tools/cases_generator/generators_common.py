@@ -653,7 +653,7 @@ class Emitter:
         code: CodeSection,
         storage: Storage,
         inst: Instruction | None,
-        emit_braces: bool = True,
+        emit_braces: bool = True
     ) -> tuple[bool, Storage]:
         self.out.start_line()
         reachable, tkn, storage = self.emit_BlockStmt(code.body, code, storage, inst, emit_braces)
