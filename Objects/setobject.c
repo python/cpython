@@ -85,6 +85,8 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
     int probes;
     int cmp;
 
+    int frozenset = PyFrozenSet_CheckExact(so);
+
     while (1) {
         entry = &so->table[i];
         probes = (i + LINEAR_PROBES <= mask) ? LINEAR_PROBES: 0;
@@ -101,9 +103,14 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
                     && unicode_eq(startkey, key))
                     return entry;
                 table = so->table;
-                Py_INCREF(startkey);
-                cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
-                Py_DECREF(startkey);
+                if (frozenset) {
+                    cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
+                } else {
+                    // incref startkey because it can be removed from the set by the compare
+                    Py_INCREF(startkey);
+                    cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
+                    Py_DECREF(startkey);
+                }
                 if (cmp < 0)
                     return NULL;
                 if (table != so->table || entry->key != startkey)
@@ -2234,10 +2241,16 @@ set_contains_lock_held(PySetObject *so, PyObject *key)
 int
 _PySet_Contains(PySetObject *so, PyObject *key)
 {
+    assert(so);
+
     int rv;
-    Py_BEGIN_CRITICAL_SECTION(so);
-    rv = set_contains_lock_held(so, key);
-    Py_END_CRITICAL_SECTION();
+    if (PyFrozenSet_CheckExact(so)) {
+        rv = set_contains_lock_held(so, key);
+    } else {
+        Py_BEGIN_CRITICAL_SECTION(so);
+        rv = set_contains_lock_held(so, key);
+        Py_END_CRITICAL_SECTION();
+    }
     return rv;
 }
 
