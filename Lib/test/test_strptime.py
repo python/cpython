@@ -340,6 +340,15 @@ class StrptimeTests(unittest.TestCase):
             self.roundtrip('%B', 1, (1900, m, 1, 0, 0, 0, 0, 1, 0))
             self.roundtrip('%b', 1, (1900, m, 1, 0, 0, 0, 0, 1, 0))
 
+    @run_with_locales('LC_TIME', 'az_AZ', 'ber_DZ', 'ber_MA', 'crh_UA')
+    def test_month_locale2(self):
+        # Test for month directives
+        # Month name contains 'İ' ('\u0130')
+        self.roundtrip('%B', 1, (2025, 6, 1, 0, 0, 0, 6, 152, 0))
+        self.roundtrip('%b', 1, (2025, 6, 1, 0, 0, 0, 6, 152, 0))
+        self.roundtrip('%B', 1, (2025, 7, 1, 0, 0, 0, 1, 182, 0))
+        self.roundtrip('%b', 1, (2025, 7, 1, 0, 0, 0, 1, 182, 0))
+
     def test_day(self):
         # Test for day directives
         self.roundtrip('%d %Y', 2)
