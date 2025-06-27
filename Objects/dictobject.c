@@ -813,7 +813,7 @@ free_keys_object(PyDictKeysObject *keys, bool use_qsbr)
 {
 #ifdef Py_GIL_DISABLED
     if (use_qsbr) {
-        _PyMem_FreeDelayed(keys);
+        _PyMem_FreeDelayed(keys, _PyDict_KeysSize(keys));
         return;
     }
 #endif
@@ -858,7 +858,7 @@ free_values(PyDictValues *values, bool use_qsbr)
     assert(values->embedded == 0);
 #ifdef Py_GIL_DISABLED
     if (use_qsbr) {
-        _PyMem_FreeDelayed(values);
+        _PyMem_FreeDelayed(values, values_size_from_count(values->capacity));
         return;
     }
 #endif
@@ -3858,7 +3858,7 @@ dict_dict_merge(PyInterpreterState *interp, PyDictObject *mp, PyDictObject *othe
         }
     }
 
-    Py_ssize_t orig_size = other->ma_keys->dk_nentries;
+    Py_ssize_t orig_size = other->ma_used;
     Py_ssize_t pos = 0;
     Py_hash_t hash;
     PyObject *key, *value;
@@ -3892,7 +3892,7 @@ dict_dict_merge(PyInterpreterState *interp, PyDictObject *mp, PyDictObject *othe
         if (err != 0)
             return -1;
 
-        if (orig_size != other->ma_keys->dk_nentries) {
+        if (orig_size != other->ma_used) {
             PyErr_SetString(PyExc_RuntimeError,
                     "dict mutated during update");
             return -1;

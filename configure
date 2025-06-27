@@ -12979,13 +12979,6 @@ if test "$ac_cv_sizeof_off_t" -gt "$ac_cv_sizeof_long" -a \
 else
   have_largefile_support="no"
 fi
-case $ac_sys_system in #(
-  Emscripten) :
-    have_largefile_support="no"
- ;; #(
-  *) :
-     ;;
-esac
 if test "x$have_largefile_support" = xyes
 then :
 
@@ -15749,7 +15742,7 @@ fi
 printf "%s\n" "$ac_cv_ffi_complex_double_supported" >&6; }
 if test "$ac_cv_ffi_complex_double_supported" = "yes"; then
 
-printf "%s\n" "#define Py_FFI_SUPPORT_C_COMPLEX 1" >>confdefs.h
+printf "%s\n" "#define _Py_FFI_SUPPORT_C_COMPLEX 1" >>confdefs.h
 
 fi
 
@@ -29940,9 +29933,6 @@ printf "%s\n" "#define Py_REMOTE_DEBUG 1" >>confdefs.h
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
 else
-
-printf "%s\n" "#define Py_REMOTE_DEBUG 0" >>confdefs.h
-
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
 fi
@@ -32643,7 +32633,7 @@ then :
     LIBHACL_SIMD128_FLAGS="-msse -msse2 -msse3 -msse4.1 -msse4.2"
 
 
-printf "%s\n" "#define HACL_CAN_COMPILE_SIMD128 1" >>confdefs.h
+printf "%s\n" "#define _Py_HACL_CAN_COMPILE_VEC128 1" >>confdefs.h
 
 
     # macOS universal2 builds *support* the -msse etc flags because they're
@@ -32719,7 +32709,7 @@ then :
 
     LIBHACL_SIMD256_FLAGS="-mavx2"
 
-printf "%s\n" "#define HACL_CAN_COMPILE_SIMD256 1" >>confdefs.h
+printf "%s\n" "#define _Py_HACL_CAN_COMPILE_VEC256 1" >>confdefs.h
 
 
     # macOS universal2 builds *support* the -mavx2 compiler flag because it's
