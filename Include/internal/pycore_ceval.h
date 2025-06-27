@@ -139,7 +139,7 @@ _Py_CODEUNIT *_PyTier2Interpreter(
 
 extern _PyJitEntryFuncPtr _Py_jit_entry;
 
-extern PyObject*
+PyAPI_FUNC(PyObject *)
 _PyEval_Vector(PyThreadState *tstate,
             PyFunctionObject *func, PyObject *locals,
             PyObject* const* args, size_t argcount,
