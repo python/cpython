@@ -1974,6 +1974,11 @@ class MathTests(unittest.TestCase):
         self.assertFalse(math.isfinite(float("-inf")))
 
     def testIsnormal(self):
+        # C11, §7.12.3.5 requires isnormal() to return
+        # a nonzero value if and only its argument has
+        # a normal value.
+        self.assertIsInstance(math.isnormal(1.0), bool)
+
         self.assertTrue(math.isnormal(1.25))
         self.assertTrue(math.isnormal(-1.0))
         self.assertFalse(math.isnormal(0.0))
@@ -1985,6 +1990,11 @@ class MathTests(unittest.TestCase):
         self.assertFalse(math.isnormal(-FLOAT_MIN/2))
 
     def testIssubnormal(self):
+        # issubnormal() is a C extension (ISO/IEC TS 18661-1:2014)
+        # and part of the C23 standard. In particular, it follows
+        # the same convention as isnormal() for its return value.
+        self.assertIsInstance(math.issubnormal(FLOAT_MIN/2), bool)
+
         self.assertFalse(math.issubnormal(1.25))
         self.assertFalse(math.issubnormal(-1.0))
         self.assertFalse(math.issubnormal(0.0))
