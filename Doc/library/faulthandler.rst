@@ -90,7 +90,7 @@ An error will be printed instead of the stack.
 
 Additionally, some compilers do not support :term:`CPython's <CPython>`
 implementation of C stack dumps. As a result, a different error may be printed
-instead of the stack, even if the the operating system supports dumping stacks.
+instead of the stack, even if the operating system supports dumping stacks.
 
 .. note::
 
