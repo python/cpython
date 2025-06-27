@@ -208,6 +208,11 @@ class HashLibTestCase(unittest.TestCase):
         return itertools.chain.from_iterable(constructors)
 
     @property
+    def shake_constructors(self):
+        for shake_name in self.shakes:
+            yield from self.constructors_to_test.get(shake_name, ())
+
+    @property
     def is_fips_mode(self):
         return get_fips_mode()
 
@@ -366,6 +371,16 @@ class HashLibTestCase(unittest.TestCase):
         self.assertIs(constructor, _md5.md5)
         self.assertEqual(sorted(builtin_constructor_cache), ['MD5', 'md5'])
 
+    def test_copy(self):
+        for cons in self.hash_constructors:
+            h1 = cons(os.urandom(16), usedforsecurity=False)
+            h2 = h1.copy()
+            self.assertIs(type(h1), type(h2))
+            self.assertEqual(h1.name, h2.name)
+            size = (16,) if h1.name in self.shakes else ()
+            self.assertEqual(h1.digest(*size), h2.digest(*size))
+            self.assertEqual(h1.hexdigest(*size), h2.hexdigest(*size))
+
     def test_hexdigest(self):
         for cons in self.hash_constructors:
             h = cons(usedforsecurity=False)
@@ -376,21 +391,50 @@ class HashLibTestCase(unittest.TestCase):
                 self.assertIsInstance(h.digest(), bytes)
                 self.assertEqual(hexstr(h.digest()), h.hexdigest())
 
-    def test_digest_length_overflow(self):
-        # See issue #34922
-        large_sizes = (2**29, 2**32-10, 2**32+10, 2**61, 2**64-10, 2**64+10)
-        for cons in self.hash_constructors:
-            h = cons(usedforsecurity=False)
-            if h.name not in self.shakes:
-                continue
-            if HASH is not None and isinstance(h, HASH):
-                # _hashopenssl's take a size_t
-                continue
-            for digest in h.digest, h.hexdigest:
-                self.assertRaises(ValueError, digest, -10)
-                for length in large_sizes:
-                    with self.assertRaises((ValueError, OverflowError)):
-                        digest(length)
+    def test_shakes_zero_digest_length(self):
+        for constructor in self.shake_constructors:
+            with self.subTest(constructor=constructor):
+                h = constructor(b'abcdef', usedforsecurity=False)
+                self.assertEqual(h.digest(0), b'')
+                self.assertEqual(h.hexdigest(0), '')
+
+    def test_shakes_invalid_digest_length(self):
+        # See https://github.com/python/cpython/issues/79103.
+        for constructor in self.shake_constructors:
+            with self.subTest(constructor=constructor):
+                h = constructor(usedforsecurity=False)
+                # Note: digest() and hexdigest() take a signed input and
+                # raise if it is negative; the rationale is that we use
+                # internally PyBytes_FromStringAndSize() and _Py_strhex()
+                # which both take a Py_ssize_t.
+                for negative_size in (-1, -10, -(1 << 31), -sys.maxsize):
+                    self.assertRaises(ValueError, h.digest, negative_size)
+                    self.assertRaises(ValueError, h.hexdigest, negative_size)
+
+    def test_shakes_overflow_digest_length(self):
+        # See https://github.com/python/cpython/issues/135759.
+
+        exc_types = (OverflowError, ValueError)
+        # HACL* accepts an 'uint32_t' while OpenSSL accepts a 'size_t'.
+        openssl_overflown_sizes = (sys.maxsize + 1, 2 * sys.maxsize)
+        # https://github.com/python/cpython/issues/79103 restricts
+        # the accepted built-in lengths to 2 ** 29, even if OpenSSL
+        # accepts such lengths.
+        builtin_overflown_sizes = openssl_overflown_sizes + (
+            2 ** 29, 2 ** 32 - 10, 2 ** 32, 2 ** 32 + 10,
+            2 ** 61, 2 ** 64 - 10, 2 ** 64, 2 ** 64 + 10,
+        )
+
+        for constructor in self.shake_constructors:
+            with self.subTest(constructor=constructor):
+                h = constructor(usedforsecurity=False)
+                if HASH is not None and isinstance(h, HASH):
+                    overflown_sizes = openssl_overflown_sizes
+                else:
+                    overflown_sizes = builtin_overflown_sizes
+                for invalid_size in overflown_sizes:
+                    self.assertRaises(exc_types, h.digest, invalid_size)
+                    self.assertRaises(exc_types, h.hexdigest, invalid_size)
 
     def test_name_attribute(self):
         for cons in self.hash_constructors:
@@ -1009,49 +1053,67 @@ class HashLibTestCase(unittest.TestCase):
 
     def test_sha256_gil(self):
         gil_minsize = hashlib_helper.find_gil_minsize(['_sha2', '_hashlib'])
+        data = b'1' + b'#' * gil_minsize + b'1'
+        expected = hashlib.sha256(data).hexdigest()
+
         m = hashlib.sha256()
         m.update(b'1')
         m.update(b'#' * gil_minsize)
         m.update(b'1')
-        self.assertEqual(
-            m.hexdigest(),
-            '1cfceca95989f51f658e3f3ffe7f1cd43726c9e088c13ee10b46f57cef135b94'
-        )
-
-        m = hashlib.sha256(b'1' + b'#' * gil_minsize + b'1')
-        self.assertEqual(
-            m.hexdigest(),
-            '1cfceca95989f51f658e3f3ffe7f1cd43726c9e088c13ee10b46f57cef135b94'
-        )
+        self.assertEqual(m.hexdigest(), expected)
 
     @threading_helper.reap_threads
     @threading_helper.requires_working_threading()
-    def test_threaded_hashing(self):
+    def test_threaded_hashing_fast(self):
+        # Same as test_threaded_hashing_slow() but only tests some functions
+        # since otherwise test_hashlib.py becomes too slow during development.
+        for name in ['md5', 'sha1', 'sha256', 'sha3_256', 'blake2s']:
+            if constructor := getattr(hashlib, name, None):
+                with self.subTest(name):
+                    self.do_test_threaded_hashing(constructor, is_shake=False)
+        if shake_128 := getattr(hashlib, 'shake_128', None):
+            self.do_test_threaded_hashing(shake_128, is_shake=True)
+
+    @requires_resource('cpu')
+    @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
+    def test_threaded_hashing_slow(self):
+        for algorithm, constructors in self.constructors_to_test.items():
+            is_shake = algorithm in self.shakes
+            for constructor in constructors:
+                with self.subTest(constructor.__name__, is_shake=is_shake):
+                    self.do_test_threaded_hashing(constructor, is_shake)
+
+    def do_test_threaded_hashing(self, constructor, is_shake):
         # Updating the same hash object from several threads at once
         # using data chunk sizes containing the same byte sequences.
         #
         # If the internal locks are working to prevent multiple
         # updates on the same object from running at once, the resulting
         # hash will be the same as doing it single threaded upfront.
-        hasher = hashlib.sha1()
-        num_threads = 5
-        smallest_data = b'swineflu'
-        data = smallest_data * 200000
-        expected_hash = hashlib.sha1(data*num_threads).hexdigest()
 
-        def hash_in_chunks(chunk_size):
-            index = 0
-            while index < len(data):
-                hasher.update(data[index:index + chunk_size])
-                index += chunk_size
+        # The data to hash has length s|M|q^N and the chunk size for the i-th
+        # thread is s|M|q^(N-i), where N is the number of threads, M is a fixed
+        # message of small length, and s >= 1 and q >= 2 are small integers.
+        smallest_size, num_threads, s, q = 8, 5, 2, 10
+
+        smallest_data = os.urandom(smallest_size)
+        data = s * smallest_data * (q ** num_threads)
+
+        h1 = constructor(usedforsecurity=False)
+        h2 = constructor(data * num_threads, usedforsecurity=False)
+
+        def update(chunk_size):
+            for index in range(0, len(data), chunk_size):
+                h1.update(data[index:index + chunk_size])
 
         threads = []
-        for threadnum in range(num_threads):
-            chunk_size = len(data) // (10 ** threadnum)
+        for thread_num in range(num_threads):
+            # chunk_size = len(data) // (q ** thread_num)
+            chunk_size = s * smallest_size * q ** (num_threads - thread_num)
             self.assertGreater(chunk_size, 0)
-            self.assertEqual(chunk_size % len(smallest_data), 0)
-            thread = threading.Thread(target=hash_in_chunks,
-                                      args=(chunk_size,))
+            self.assertEqual(chunk_size % smallest_size, 0)
+            thread = threading.Thread(target=update, args=(chunk_size,))
             threads.append(thread)
 
         for thread in threads:
@@ -1059,7 +1121,10 @@ class HashLibTestCase(unittest.TestCase):
         for thread in threads:
             thread.join()
 
-        self.assertEqual(expected_hash, hasher.hexdigest())
+        if is_shake:
+            self.assertEqual(h1.hexdigest(16), h2.hexdigest(16))
+        else:
+            self.assertEqual(h1.hexdigest(), h2.hexdigest())
 
     def test_get_fips_mode(self):
         fips_mode = self.is_fips_mode

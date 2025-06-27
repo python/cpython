@@ -82,8 +82,10 @@ and improvements in user-friendliness and correctness.
 
 .. PEP-sized items next.
 
+* :ref:`PEP 779: Free-threaded Python is officially supported <whatsnew314-pep779>`
 * :ref:`PEP 649 and 749: deferred evaluation of annotations <whatsnew314-pep649>`
-* :ref:`PEP 741: Python Configuration C API <whatsnew314-pep741>`
+* :ref:`PEP 734: Multiple interpreters in the stdlib <whatsnew314-pep734>`
+* :ref:`PEP 741: Python configuration C API <whatsnew314-pep741>`
 * :ref:`PEP 750: Template strings <whatsnew314-pep750>`
 * :ref:`PEP 758: Allow except and except* expressions without parentheses <whatsnew314-pep758>`
 * :ref:`PEP 761: Discontinuation of PGP signatures <whatsnew314-pep761>`
@@ -123,6 +125,127 @@ of Python.  See :ref:`below <whatsnew314-refcount>` for details.
 New features
 ============
 
+.. _whatsnew314-pep779:
+
+PEP 779: Free-threaded Python is officially supported
+-----------------------------------------------------
+
+The free-threaded build of Python is now supported and no longer experimental.
+This is the start of phase II where free-threaded Python is officially supported
+but still optional.
+
+We are confident that the project is on the right path, and we appreciate the
+continued dedication from everyone working to make free-threading ready for
+broader adoption across the Python community.
+
+With these recommendations and the acceptance of this PEP, we as the Python
+developer community should broadly advertise that free-threading is a supported
+Python build option now and into the future, and that it will not be removed
+without a proper deprecation schedule.
+
+Any decision to transition to phase III, with free-threading as the default or
+sole build of Python is still undecided, and dependent on many factors both
+within CPython itself and the community. This decision is for the future.
+
+.. seealso::
+   :pep:`779` and its `acceptance
+   <https://discuss.python.org/t/pep-779-criteria-for-supported-status-for-free-threaded-python/84319/123>`__.
+
+.. _whatsnew314-pep734:
+
+PEP 734: Multiple interpreters in the stdlib
+--------------------------------------------
+
+The CPython runtime supports running multiple copies of Python in the
+same process simultaneously and has done so for over 20 years.
+Each of these separate copies is called an "interpreter".
+However, the feature had been available only through the C-API.
+
+That limitation is removed in the 3.14 release,
+with the new :mod:`concurrent.interpreters` module.
+
+There are at least two notable reasons why using multiple interpreters
+is worth considering:
+
+* they support a new (to Python), human-friendly concurrency model
+* true multi-core parallelism
+
+For some use cases, concurrency in software enables efficiency and
+can simplify software, at a high level.  At the same time, implementing
+and maintaining all but the simplest concurrency is often a struggle
+for the human brain.  That especially applies to plain threads
+(for example, :mod:`threading`), where all memory is shared between all threads.
+
+With multiple isolated interpreters, you can take advantage of a class
+of concurrency models, like CSP or the actor model, that have found
+success in other programming languages, like Smalltalk, Erlang,
+Haskell, and Go.  Think of multiple interpreters like threads
+but with opt-in sharing.
+
+Regarding multi-core parallelism: as of the 3.12 release, interpreters
+are now sufficiently isolated from one another to be used in parallel.
+(See :pep:`684`.)  This unlocks a variety of CPU-intensive use cases
+for Python that were limited by the :term:`GIL`.
+
+Using multiple interpreters is similar in many ways to
+:mod:`multiprocessing`, in that they both provide isolated logical
+"processes" that can run in parallel, with no sharing by default.
+However, when using multiple interpreters, an application will use
+fewer system resources and will operate more efficiently (since it
+stays within the same process).  Think of multiple interpreters as
+having the isolation of processes with the efficiency of threads.
+
+.. XXX Add an example or two.
+.. XXX Link to the not-yet-added HOWTO doc.
+
+While the feature has been around for decades, multiple interpreters
+have not been used widely, due to low awareness and the lack of a stdlib
+module.  Consequently, they currently have several notable limitations,
+which will improve significantly now that the feature is finally
+going mainstream.
+
+Current limitations:
+
+* starting each interpreter has not been optimized yet
+* each interpreter uses more memory than necessary
+  (we will be working next on extensive internal sharing between
+  interpreters)
+* there aren't many options *yet* for truly sharing objects or other
+  data between interpreters (other than :type:`memoryview`)
+* many extension modules on PyPI are not compatible with multiple
+  interpreters yet (stdlib extension modules *are* compatible)
+* the approach to writing applications that use multiple isolated
+  interpreters is mostly unfamiliar to Python users, for now
+
+The impact of these limitations will depend on future CPython
+improvements, how interpreters are used, and what the community solves
+through PyPI packages.  Depending on the use case, the limitations may
+not have much impact, so try it out!
+
+Furthermore, future CPython releases will reduce or eliminate overhead
+and provide utilities that are less appropriate on PyPI.  In the
+meantime, most of the limitations can also be addressed through
+extension modules, meaning PyPI packages can fill any gap for 3.14, and
+even back to 3.12 where interpreters were finally properly isolated and
+stopped sharing the :term:`GIL`.  Likewise, we expect to slowly see
+libraries on PyPI for high-level abstractions on top of interpreters.
+
+Regarding extension modules, work is in progress to update some PyPI
+projects, as well as tools like Cython, pybind11, nanobind, and PyO3.
+The steps for isolating an extension module are found at
+:ref:`isolating-extensions-howto`.  Isolating a module has a lot of
+overlap with what is required to support
+:ref:`free-threading <whatsnew314-free-threaded-cpython>`,
+so the ongoing work in the community in that area will help accelerate
+support for multiple interpreters.
+
+Also added in 3.14: :ref:`concurrent.futures.InterpreterPoolExecutor
+<whatsnew314-concurrent-futures-interp-pool>`.
+
+.. seealso::
+   :pep:`734`.
+
+
 .. _whatsnew314-pep750:
 
 PEP 750: Template strings
@@ -155,7 +278,7 @@ As another example, generating HTML attributes from data:
 
    attributes = {"src": "shrubbery.jpg", "alt": "looks nice"}
    template = t"<img {attributes}>"
-   assert html(template) == '<img src="shrubbery.jpg" alt="looks nice" class="looks-nice">'
+   assert html(template) == '<img src="shrubbery.jpg" alt="looks nice" />'
 
 Compared to using an f-string, the ``html`` function has access to template attributes
 containing the original information: static strings, interpolations, and values
@@ -296,7 +419,7 @@ As can be seen, the API is similar to the APIs of the :mod:`!lzma` and
 :mod:`!bz2` modules.
 
 (Contributed by Emma Harper Smith, Adam Turner, Gregory P. Smith, Tomas Roun,
-Victor Stinner, and Rogdham in :gh:`132983`)
+Victor Stinner, and Rogdham in :gh:`132983`.)
 
 .. seealso::
    :pep:`784`.
@@ -631,7 +754,7 @@ Improved error messages
 
 .. _whatsnew314-pep741:
 
-PEP 741: Python Configuration C API
+PEP 741: Python configuration C API
 -----------------------------------
 
 Add a :ref:`PyInitConfig C API <pyinitconfig_api>` to configure the Python
@@ -720,43 +843,58 @@ Executing the new tool on the running process will yield a table like this:
 
   python -m asyncio ps 12345
 
-  tid        task id              task name            coroutine chain                                    awaiter name         awaiter id
-  ---------------------------------------------------------------------------------------------------------------------------------------
-  8138752    0x564bd3d0210        Task-1                                                                                       0x0
-  8138752    0x564bd3d0410        Sundowning           _aexit -> __aexit__ -> main                        Task-1               0x564bd3d0210
-  8138752    0x564bd3d0610        TMBTE                _aexit -> __aexit__ -> main                        Task-1               0x564bd3d0210
-  8138752    0x564bd3d0810        TNDNBTG              _aexit -> __aexit__ -> album                       Sundowning           0x564bd3d0410
-  8138752    0x564bd3d0a10        Levitate             _aexit -> __aexit__ -> album                       Sundowning           0x564bd3d0410
-  8138752    0x564bd3e0550        DYWTYLM              _aexit -> __aexit__ -> album                       TMBTE                 0x564bd3d0610
-  8138752    0x564bd3e0710        Aqua Regia           _aexit -> __aexit__ -> album                       TMBTE                 0x564bd3d0610
+  tid        task id              task name            coroutine stack                                    awaiter chain                                      awaiter name    awaiter id
+  ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  1935500    0x7fc930c18050       Task-1               TaskGroup._aexit -> TaskGroup.__aexit__ -> main                                                                       0x0
+  1935500    0x7fc930c18230       Sundowning           TaskGroup._aexit -> TaskGroup.__aexit__ -> album   TaskGroup._aexit -> TaskGroup.__aexit__ -> main    Task-1          0x7fc930c18050
+  1935500    0x7fc93173fa50       TMBTE                TaskGroup._aexit -> TaskGroup.__aexit__ -> album   TaskGroup._aexit -> TaskGroup.__aexit__ -> main    Task-1          0x7fc930c18050
+  1935500    0x7fc93173fdf0       TNDNBTG              sleep -> play                                      TaskGroup._aexit -> TaskGroup.__aexit__ -> album   Sundowning      0x7fc930c18230
+  1935500    0x7fc930d32510       Levitate             sleep -> play                                      TaskGroup._aexit -> TaskGroup.__aexit__ -> album   Sundowning      0x7fc930c18230
+  1935500    0x7fc930d32890       DYWTYLM              sleep -> play                                      TaskGroup._aexit -> TaskGroup.__aexit__ -> album   TMBTE           0x7fc93173fa50
+  1935500    0x7fc93161ec30       Aqua Regia           sleep -> play                                      TaskGroup._aexit -> TaskGroup.__aexit__ -> album   TMBTE           0x7fc93173fa50
 
-
-or:
+or a tree like this:
 
 .. code-block:: bash
 
   python -m asyncio pstree 12345
 
   └── (T) Task-1
-      └──  main
-          └──  __aexit__
-              └──  _aexit
+      └──  main example.py:13
+          └──  TaskGroup.__aexit__ Lib/asyncio/taskgroups.py:72
+              └──  TaskGroup._aexit Lib/asyncio/taskgroups.py:121
                   ├── (T) Sundowning
-                  │   └──  album
-                  │       └──  __aexit__
-                  │           └──  _aexit
+                  │   └──  album example.py:8
+                  │       └──  TaskGroup.__aexit__ Lib/asyncio/taskgroups.py:72
+                  │           └──  TaskGroup._aexit Lib/asyncio/taskgroups.py:121
                   │               ├── (T) TNDNBTG
+                  │               │   └──  play example.py:4
+                  │               │       └──  sleep Lib/asyncio/tasks.py:702
                   │               └── (T) Levitate
+                  │                   └──  play example.py:4
+                  │                       └──  sleep Lib/asyncio/tasks.py:702
                   └── (T) TMBTE
-                      └──  album
-                          └──  __aexit__
-                              └──  _aexit
+                      └──  album example.py:8
+                          └──  TaskGroup.__aexit__ Lib/asyncio/taskgroups.py:72
+                              └──  TaskGroup._aexit Lib/asyncio/taskgroups.py:121
                                   ├── (T) DYWTYLM
+                                  │   └──  play example.py:4
+                                  │       └──  sleep Lib/asyncio/tasks.py:702
                                   └── (T) Aqua Regia
+                                      └──  play example.py:4
+                                          └──  sleep Lib/asyncio/tasks.py:702
 
 If a cycle is detected in the async await graph (which could indicate a
 programming issue), the tool raises an error and lists the cycle paths that
-prevent tree construction.
+prevent tree construction:
+
+.. code-block:: bash
+
+  python -m asyncio pstree 12345
+
+  ERROR: await-graph contains cycles - cannot print a tree!
+
+  cycle: Task-2 → Task-3 → Task-2
 
 (Contributed by Pablo Galindo, Łukasz Langa, Yury Selivanov, and Marta
 Gomez Macias in :gh:`91048`.)
@@ -840,6 +978,23 @@ be specified by the build backend, as it will no longer be determined
 automatically by the C compiler. For a running interpreter, the setting that
 was used at compile time can be found using :func:`sysconfig.get_config_var`.
 
+A new flag has been added, :data:`~sys.flags.context_aware_warnings`.  This
+flag defaults to true for the free-threaded build and false for the GIL-enabled
+build. If the flag is true then the :class:`warnings.catch_warnings` context
+manager uses a context variable for warning filters.  This makes the context
+manager behave predicably when used with multiple threads or asynchronous
+tasks.
+
+A new flag has been added, :data:`~sys.flags.thread_inherit_context`. This flag
+defaults to true for the free-threaded build and false for the GIL-enabled
+build. If the flag is true then threads created with :class:`threading.Thread`
+start with a copy of the :class:`~contextvars.Context()` of the caller of
+:meth:`~threading.Thread.start`.  Most significantly, this makes the warning
+filtering context established by :class:`~warnings.catch_warnings` be
+"inherited" by threads (or asyncio tasks) started within that context.  It also
+affects other modules that use context variables, such as the :mod:`decimal`
+context manager.
+
 
 .. _whatsnew314-pyrepl-highlighting:
 
@@ -890,6 +1045,18 @@ Please report any bugs or major performance regressions that you encounter!
 
 .. seealso:: :pep:`744`
 
+Concurrent safe warnings control
+--------------------------------
+
+The :class:`warnings.catch_warnings` context manager will now optionally
+use a context variable for warning filters.  This is enabled by setting
+the :data:`~sys.flags.context_aware_warnings` flag, either with the ``-X``
+command-line option or an environment variable.  This gives predicable
+warnings control when using :class:`~warnings.catch_warnings` combined with
+multiple threads or asynchronous tasks. The flag defaults to true for the
+free-threaded build and false for the GIL-enabled build.
+
+(Contributed by Neil Schemenauer and Kumar Aditya in :gh:`130010`.)
 
 Other language changes
 ======================
@@ -1109,6 +1276,8 @@ calendar
 concurrent.futures
 ------------------
 
+.. _whatsnew314-concurrent-futures-interp-pool:
+
 * Add :class:`~concurrent.futures.InterpreterPoolExecutor`,
   which exposes "subinterpreters" (multiple Python interpreters in the
   same process) to Python code.  This is separate from the proposed API
@@ -1146,6 +1315,14 @@ concurrent.futures
   buffer.
   (Contributed by Enzo Bonnal and Josh Rosenberg in :gh:`74028`.)
 
+configparser
+------------
+
+* Security fix: will no longer write config files it cannot read. Attempting
+  to :meth:`configparser.ConfigParser.write` keys containing delimiters or
+  beginning with the section header pattern will raise a
+  :class:`configparser.InvalidWriteError`.
+  (Contributed by Jacob Lincoln in :gh:`129270`.)
 
 contextvars
 -----------
@@ -1609,6 +1786,16 @@ os
   (Contributed by Cody Maloney in :gh:`129205`.)
 
 
+os.path
+-------
+
+* The *strict* parameter to :func:`os.path.realpath` accepts a new value,
+  :data:`os.path.ALLOW_MISSING`.
+  If used, errors other than :exc:`FileNotFoundError` will be re-raised;
+  the resulting path can be missing but it will be free of symlinks.
+  (Contributed by Petr Viktorin for :cve:`2025-4517`.)
+
+
 pathlib
 -------
 
@@ -1795,6 +1982,28 @@ sysconfig
 
 * Add ``ABIFLAGS`` key to :func:`sysconfig.get_config_vars` on Windows.
   (Contributed by Xuehai Pan in :gh:`131799`.)
+
+
+tarfile
+-------
+
+* :func:`~tarfile.data_filter` now normalizes symbolic link targets in order to
+  avoid path traversal attacks.
+  (Contributed by Petr Viktorin in :gh:`127987` and :cve:`2025-4138`.)
+* :func:`~tarfile.TarFile.extractall` now skips fixing up directory attributes
+  when a directory was removed or replaced by another kind of file.
+  (Contributed by Petr Viktorin in :gh:`127987` and :cve:`2024-12718`.)
+* :func:`~tarfile.TarFile.extract` and :func:`~tarfile.TarFile.extractall`
+  now (re-)apply the extraction filter when substituting a link (hard or
+  symbolic) with a copy of another archive member, and when fixing up
+  directory attributes.
+  The former raises a new exception, :exc:`~tarfile.LinkFallbackError`.
+  (Contributed by Petr Viktorin for :cve:`2025-4330` and :cve:`2024-12718`.)
+* :func:`~tarfile.TarFile.extract` and :func:`~tarfile.TarFile.extractall`
+  no longer extract rejected members when
+  :func:`~tarfile.TarFile.errorlevel` is zero.
+  (Contributed by Matt Prodani and Petr Viktorin in :gh:`112887`
+  and :cve:`2025-4435`.)
 
 
 threading
@@ -2552,6 +2761,7 @@ New features
   * :c:func:`PyUnicodeWriter_Discard`
   * :c:func:`PyUnicodeWriter_Finish`
   * :c:func:`PyUnicodeWriter_Format`
+  * :c:func:`PyUnicodeWriter_WriteASCII`
   * :c:func:`PyUnicodeWriter_WriteChar`
   * :c:func:`PyUnicodeWriter_WriteRepr`
   * :c:func:`PyUnicodeWriter_WriteStr`
@@ -2634,8 +2844,8 @@ New features
 
 * Add :c:func:`PyType_GetBaseByToken` and :c:data:`Py_tp_token` slot for easier
   superclass identification, which attempts to resolve the `type checking issue
-  <https://peps.python.org/pep-0630/#type-checking>`__ mentioned in :pep:`630`
-  (:gh:`124153`).
+  <https://peps.python.org/pep-0630/#type-checking>`__ mentioned in :pep:`630`.
+  (Contributed in :gh:`124153`.)
 
 * Add :c:func:`PyUnicode_Equal` function to the limited C API:
   test if two strings are equal.
@@ -2828,7 +3038,7 @@ Deprecated
     :c:func:`PyUnicodeWriter_WriteSubstring(writer, str, start, end) <PyUnicodeWriter_WriteSubstring>`.
   * :c:func:`!_PyUnicodeWriter_WriteASCIIString`:
     replace ``_PyUnicodeWriter_WriteASCIIString(&writer, str)`` with
-    :c:func:`PyUnicodeWriter_WriteUTF8(writer, str) <PyUnicodeWriter_WriteUTF8>`.
+    :c:func:`PyUnicodeWriter_WriteASCII(writer, str) <PyUnicodeWriter_WriteASCII>`.
   * :c:func:`!_PyUnicodeWriter_WriteLatin1String`:
     replace ``_PyUnicodeWriter_WriteLatin1String(&writer, str)`` with
     :c:func:`PyUnicodeWriter_WriteUTF8(writer, str) <PyUnicodeWriter_WriteUTF8>`.

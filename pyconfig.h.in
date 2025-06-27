@@ -1736,9 +1736,6 @@
 /* Defined if Python is built as a shared library. */
 #undef Py_ENABLE_SHARED
 
-/* Defined if _Complex C type can be used with libffi. */
-#undef Py_FFI_SUPPORT_C_COMPLEX
-
 /* Define if you want to disable the GIL */
 #undef Py_GIL_DISABLED
 
@@ -2025,6 +2022,9 @@
 
 /* Maximum length in bytes of a thread name */
 #undef _PYTHREAD_NAME_MAXLEN
+
+/* Defined if _Complex C type can be used with libffi. */
+#undef _Py_FFI_SUPPORT_C_COMPLEX
 
 /* Define to force use of thread-safe errno, h_errno, and other functions */
 #undef _REENTRANT
