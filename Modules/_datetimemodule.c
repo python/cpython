@@ -1781,24 +1781,6 @@ normalize_century(void)
     return cache;
 }
 
-/* Check whether C99-specific strftime specifiers are supported. */
-inline static int
-strftime_c99_support(void)
-{
-    static int cache = -1;
-    if (cache < 0) {
-        char full_date[11];
-        struct tm date = {
-            .tm_year = 0,
-            .tm_mon = 0,
-            .tm_mday = 1
-        };
-        cache = (strftime(full_date, sizeof(full_date), "%F", &date) &&
-                 strcmp(full_date, "1900-01-01") == 0);
-    }
-    return cache;
-}
-
 static PyObject *
 make_somezreplacement(PyObject *object, char *sep, PyObject *tzinfoarg)
 {
@@ -1970,8 +1952,8 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             }
             replacement = freplacement;
         }
-        else if (normalize_century() && (ch == 'Y' || ch == 'G' ||
-                 (strftime_c99_support() && (ch == 'F' || ch == 'C'))))
+        else if (normalize_century()
+                 && (ch == 'Y' || ch == 'G' || ch == 'F' || ch == 'C'))
         {
             /* 0-pad year with century as necessary */
             PyObject *item = PySequence_GetItem(timetuple, 0);
