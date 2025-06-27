@@ -1221,12 +1221,12 @@ math.fmax -> double
     y: double
     /
 
-Returns the larger of two floating-point arguments.
+Return the larger of two floating-point arguments.
 [clinic start generated code]*/
 
 static double
 math_fmax_impl(PyObject *module, double x, double y)
-/*[clinic end generated code: output=00692358d312fee2 input=e64ab9f40a60f4f1]*/
+/*[clinic end generated code: output=00692358d312fee2 input=021596c027336ffe]*/
 {
     return fmax(x, y);
 }
@@ -1238,12 +1238,12 @@ math.fmin -> double
     y: double
     /
 
-Returns the smaller of two floating-point arguments.
+Return the smaller of two floating-point arguments.
 [clinic start generated code]*/
 
 static double
 math_fmin_impl(PyObject *module, double x, double y)
-/*[clinic end generated code: output=3d5b7826bd292dd9 input=f7b5c91de01d766f]*/
+/*[clinic end generated code: output=3d5b7826bd292dd9 input=d12e64ccc33f878a]*/
 {
     return fmin(x, y);
 }

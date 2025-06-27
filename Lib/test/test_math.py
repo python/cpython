@@ -629,8 +629,9 @@ class MathTests(unittest.TestCase):
         self.assertRaises(TypeError, math.fmax, 'x', 'y')
 
         self.assertEqual(math.fmax(0., 0.), 0.)
-        self.assertEqual(math.fmax(0., -0.), 0.)
-        self.assertEqual(math.fmax(-0., 0.), 0.)
+        # fmax() does not need to be sensitive to the sign of 0 (F.10.9.2.3).
+        self.assertIn(math.fmax(0., -0.), {-0., 0.})
+        self.assertIn(math.fmax(-0., 0.), {-0., 0.})
 
         self.assertEqual(math.fmax(1., 0.), 1.)
         self.assertEqual(math.fmax(0., 1.), 1.)
@@ -645,26 +646,23 @@ class MathTests(unittest.TestCase):
         for x in [NINF, -1., -0., 0., 1., INF]:
             self.assertFalse(math.isnan(x))
 
-            with self.subTest("math.fmax(INF, x)", x=x):
+            with self.subTest(x=x, is_negative=math.copysign(1, x) < 0):
                 self.assertEqual(math.fmax(INF, x), INF)
-            with self.subTest("math.fmax(x, INF)", x=x):
                 self.assertEqual(math.fmax(x, INF), INF)
-
-            with self.subTest("math.fmax(NINF, x)", x=x):
                 self.assertEqual(math.fmax(NINF, x), x)
-            with self.subTest("math.fmax(x, NINF)", x=x):
                 self.assertEqual(math.fmax(x, NINF), x)
 
     @requires_IEEE_754
     def test_fmax_nans(self):
         # When exactly one operand is NaN, the other is returned.
         for x in [NINF, -1., -0., 0., 1., INF]:
-            with self.subTest(x=x):
+            with self.subTest(x=x, is_negative=math.copysign(1, x) < 0):
                 self.assertFalse(math.isnan(math.fmax(NAN, x)))
                 self.assertFalse(math.isnan(math.fmax(x, NAN)))
                 self.assertFalse(math.isnan(math.fmax(NNAN, x)))
                 self.assertFalse(math.isnan(math.fmax(x, NNAN)))
-        # When both operands are NaNs, fmax() returns NaN (see C11, F.10.9.2).
+        # When both operands are NaNs, fmax() returns NaN (see C11, F.10.9.2)
+        # whose sign is implementation-defined (see C11, F.10.0.3).
         self.assertTrue(math.isnan(math.fmax(NAN, NAN)))
         self.assertTrue(math.isnan(math.fmax(NNAN, NNAN)))
         self.assertTrue(math.isnan(math.fmax(NAN, NNAN)))
@@ -675,8 +673,9 @@ class MathTests(unittest.TestCase):
         self.assertRaises(TypeError, math.fmin, 'x', 'y')
 
         self.assertEqual(math.fmin(0., 0.), 0.)
-        self.assertEqual(math.fmin(0., -0.), -0.)
-        self.assertEqual(math.fmin(-0., 0.), -0.)
+        # fmin() does not need to be sensitive to the sign of 0 (F.10.9.3.1).
+        self.assertIn(math.fmin(0., -0.), {-0., 0.})
+        self.assertIn(math.fmin(-0., 0.), {-0., 0.})
 
         self.assertEqual(math.fmin(1., 0.), 0.)
         self.assertEqual(math.fmin(0., 1.), 0.)
@@ -691,26 +690,23 @@ class MathTests(unittest.TestCase):
         for x in [NINF, -1., -0., 0., 1., INF]:
             self.assertFalse(math.isnan(x))
 
-            with self.subTest("math.fmin(INF, x)", x=x):
+            with self.subTest(x=x, is_negative=math.copysign(1, x) < 0):
                 self.assertEqual(math.fmin(INF, x), x)
-            with self.subTest("math.fmin(x, INF)", x=x):
                 self.assertEqual(math.fmin(x, INF), x)
-
-            with self.subTest("math.fmin(NINF, x)", x=x):
                 self.assertEqual(math.fmin(NINF, x), NINF)
-            with self.subTest("math.fmin(x, NINF)", x=x):
                 self.assertEqual(math.fmin(x, NINF), NINF)
 
     @requires_IEEE_754
     def test_fmin_nans(self):
         # When exactly one operand is NaN, the other is returned.
         for x in [NINF, -1., -0., 0., 1., INF]:
-            with self.subTest(x=x):
+            with self.subTest(x=x, is_negative=math.copysign(1, x) < 0):
                 self.assertFalse(math.isnan(math.fmin(NAN, x)))
                 self.assertFalse(math.isnan(math.fmin(x, NAN)))
                 self.assertFalse(math.isnan(math.fmin(NNAN, x)))
                 self.assertFalse(math.isnan(math.fmin(x, NNAN)))
-        # When both operands are NaNs, fmin() returns NaN (see C11, F.10.9.3).
+        # When both operands are NaNs, fmin() returns NaN (see C11, F.10.9.2)
+        # whose sign is implementation-defined (see C11, F.10.0.3).
         self.assertTrue(math.isnan(math.fmin(NAN, NAN)))
         self.assertTrue(math.isnan(math.fmin(NNAN, NNAN)))
         self.assertTrue(math.isnan(math.fmin(NAN, NNAN)))

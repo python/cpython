@@ -253,8 +253,10 @@ Floating point arithmetic
 
    Get the larger of two floating-point values, treating NaNs as missing data.
 
-   When both operands are NaNs, return ``nan`` (the sign of the result is
-   implementation-defined).
+   When both operands are (signed) NaNs or zeroes, return ``nan`` and ``0``
+   respectively and the sign of the result is implementation-defined, that
+   is, :func:`!fmax` is not required to be sensitive to the sign of such
+   operands (see ISO C11, Annexes F.10.0.3 and F.10.9.2).
 
    .. versionadded:: next
 
@@ -263,8 +265,10 @@ Floating point arithmetic
 
    Get the smaller of two floating-point values, treating NaNs as missing data.
 
-   When both operands are NaNs, return ``nan`` (the sign of the result is
-   implementation-defined).
+   When both operands are (signed) NaNs or zeroes, return ``nan`` and ``0``
+   respectively and the sign of the result is implementation-defined, that
+   is, :func:`!fmin` is not required to be sensitive to the sign of such
+   operands (see ISO C11, Annexes F.10.0.3 and F.10.9.3).
 
    .. versionadded:: next
 

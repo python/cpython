@@ -88,7 +88,7 @@ PyDoc_STRVAR(math_fmax__doc__,
 "fmax($module, x, y, /)\n"
 "--\n"
 "\n"
-"Returns the larger of two floating-point arguments.");
+"Return the larger of two floating-point arguments.");
 
 #define MATH_FMAX_METHODDEF    \
     {"fmax", _PyCFunction_CAST(math_fmax), METH_FASTCALL, math_fmax__doc__},
@@ -141,7 +141,7 @@ PyDoc_STRVAR(math_fmin__doc__,
 "fmin($module, x, y, /)\n"
 "--\n"
 "\n"
-"Returns the smaller of two floating-point arguments.");
+"Return the smaller of two floating-point arguments.");
 
 #define MATH_FMIN_METHODDEF    \
     {"fmin", _PyCFunction_CAST(math_fmin), METH_FASTCALL, math_fmin__doc__},
@@ -1284,4 +1284,4 @@ math_ulp(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d5c3d9b9b47ad54e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3e4fd119a2006b3a input=a9049054013a1b77]*/
