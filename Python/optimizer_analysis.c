@@ -461,7 +461,7 @@ const uint16_t op_without_decref_inputs[MAX_UOP_ID + 1] = {
     [_BINARY_OP_SUBTRACT_FLOAT] = _BINARY_OP_SUBTRACT_FLOAT__NO_DECREF_INPUTS,
 };
 
-/* 1 for success, 0 for not ready, cannot error at the moment. */
+/* 1 for success, 0 for not ready, clears all possible errors. */
 static int
 optimize_uops(
     PyCodeObject *co,
@@ -471,6 +471,7 @@ optimize_uops(
     _PyBloomFilter *dependencies
 )
 {
+    assert(!PyErr_Occurred());
 
     JitOptContext context;
     JitOptContext *ctx = &context;
@@ -557,6 +558,10 @@ error:
         OPT_ERROR_IN_OPCODE(opcode);
     }
     _Py_uop_abstractcontext_fini(ctx);
+
+    if (PyErr_Occurred()) {
+        PyErr_Clear();
+    }
     return -1;
 
 }
