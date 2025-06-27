@@ -484,7 +484,7 @@ optimize_uops(
     _Py_uop_abstractcontext_init(ctx);
     _Py_UOpsAbstractFrame *frame = _Py_uop_frame_new(ctx, co, curr_stacklen, NULL, 0);
     if (frame == NULL) {
-        return -1;
+        return 0;
     }
     ctx->curr_frame_depth++;
     ctx->frame = frame;
@@ -562,7 +562,7 @@ error:
     if (PyErr_Occurred()) {
         PyErr_Clear();
     }
-    return -1;
+    return 0;
 
 }
 
@@ -709,7 +709,7 @@ _Py_uop_analyze_and_optimize(
         _PyFrame_GetCode(frame), buffer,
         length, curr_stacklen, dependencies);
 
-    if (length <= 0) {
+    if (length == 0) {
         return length;
     }
 
