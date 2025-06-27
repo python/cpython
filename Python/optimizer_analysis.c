@@ -713,6 +713,8 @@ _Py_uop_analyze_and_optimize(
         return length;
     }
 
+    assert(length > 0);
+
     length = remove_unneeded_uops(buffer, length);
     assert(length > 0);
 
