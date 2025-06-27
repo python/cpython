@@ -1472,45 +1472,49 @@ class AbstractRemoveTests(RepackHelperMixin):
         # suppress duplicated name warning
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-
             zinfos = self._prepare_zip_from_test_files(TESTFN, test_files)
-            with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
-                zh.remove('file.txt')
 
-                # check infolist
-                self.assertEqual(
-                    [ComparableZipInfo(zi) for zi in zh.infolist()],
-                    [ComparableZipInfo(zi) for zi in [zinfos[0], zinfos[2]]],
-                )
+        with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
+            zh.remove('file.txt')
 
-                # check NameToInfo cache
-                self.assertEqual(
-                    ComparableZipInfo(zh.getinfo('file.txt')),
-                    ComparableZipInfo(zinfos[0]),
-                )
+            # check infolist
+            self.assertEqual(
+                [ComparableZipInfo(zi) for zi in zh.infolist()],
+                [ComparableZipInfo(zi) for zi in [zinfos[0], zinfos[2]]],
+            )
 
-            # make sure the zip file is still valid
-            with zipfile.ZipFile(TESTFN) as zh:
-                self.assertIsNone(zh.testzip())
+            # check NameToInfo cache
+            self.assertEqual(
+                ComparableZipInfo(zh.getinfo('file.txt')),
+                ComparableZipInfo(zinfos[0]),
+            )
 
+        # make sure the zip file is still valid
+        with zipfile.ZipFile(TESTFN) as zh:
+            self.assertIsNone(zh.testzip())
+
+        # suppress duplicated name warning
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
             zinfos = self._prepare_zip_from_test_files(TESTFN, test_files)
-            with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
-                zh.remove('file.txt')
-                zh.remove('file.txt')
 
-                # check infolist
-                self.assertEqual(
-                    [ComparableZipInfo(zi) for zi in zh.infolist()],
-                    [ComparableZipInfo(zi) for zi in [zinfos[2]]],
-                )
+        with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
+            zh.remove('file.txt')
+            zh.remove('file.txt')
 
-                # check NameToInfo cache
-                with self.assertRaises(KeyError):
-                    zh.getinfo('file.txt')
+            # check infolist
+            self.assertEqual(
+                [ComparableZipInfo(zi) for zi in zh.infolist()],
+                [ComparableZipInfo(zi) for zi in [zinfos[2]]],
+            )
 
-            # make sure the zip file is still valid
-            with zipfile.ZipFile(TESTFN) as zh:
-                self.assertIsNone(zh.testzip())
+            # check NameToInfo cache
+            with self.assertRaises(KeyError):
+                zh.getinfo('file.txt')
+
+        # make sure the zip file is still valid
+        with zipfile.ZipFile(TESTFN) as zh:
+            self.assertIsNone(zh.testzip())
 
     def test_remove_by_zinfo_duplicated(self):
         test_files = [
@@ -1522,66 +1526,74 @@ class AbstractRemoveTests(RepackHelperMixin):
         # suppress duplicated name warning
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-
             zinfos = self._prepare_zip_from_test_files(TESTFN, test_files)
-            with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
-                zh.remove(zh.infolist()[0])
 
-                # check infolist
-                self.assertEqual(
-                    [ComparableZipInfo(zi) for zi in zh.infolist()],
-                    [ComparableZipInfo(zi) for zi in [zinfos[1], zinfos[2]]],
-                )
+        with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
+            zh.remove(zh.infolist()[0])
 
-                # check NameToInfo cache
-                self.assertEqual(
-                    ComparableZipInfo(zh.getinfo('file.txt')),
-                    ComparableZipInfo(zinfos[1]),
-                )
+            # check infolist
+            self.assertEqual(
+                [ComparableZipInfo(zi) for zi in zh.infolist()],
+                [ComparableZipInfo(zi) for zi in [zinfos[1], zinfos[2]]],
+            )
 
-            # make sure the zip file is still valid
-            with zipfile.ZipFile(TESTFN) as zh:
-                self.assertIsNone(zh.testzip())
+            # check NameToInfo cache
+            self.assertEqual(
+                ComparableZipInfo(zh.getinfo('file.txt')),
+                ComparableZipInfo(zinfos[1]),
+            )
 
+        # make sure the zip file is still valid
+        with zipfile.ZipFile(TESTFN) as zh:
+            self.assertIsNone(zh.testzip())
+
+        # suppress duplicated name warning
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
             zinfos = self._prepare_zip_from_test_files(TESTFN, test_files)
-            with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
-                zh.remove(zh.infolist()[1])
 
-                # check infolist
-                self.assertEqual(
-                    [ComparableZipInfo(zi) for zi in zh.infolist()],
-                    [ComparableZipInfo(zi) for zi in [zinfos[0], zinfos[2]]],
-                )
+        with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
+            zh.remove(zh.infolist()[1])
 
-                # check NameToInfo cache
-                self.assertEqual(
-                    ComparableZipInfo(zh.getinfo('file.txt')),
-                    ComparableZipInfo(zinfos[0]),
-                )
+            # check infolist
+            self.assertEqual(
+                [ComparableZipInfo(zi) for zi in zh.infolist()],
+                [ComparableZipInfo(zi) for zi in [zinfos[0], zinfos[2]]],
+            )
 
-            # make sure the zip file is still valid
-            with zipfile.ZipFile(TESTFN) as zh:
-                self.assertIsNone(zh.testzip())
+            # check NameToInfo cache
+            self.assertEqual(
+                ComparableZipInfo(zh.getinfo('file.txt')),
+                ComparableZipInfo(zinfos[0]),
+            )
 
+        # make sure the zip file is still valid
+        with zipfile.ZipFile(TESTFN) as zh:
+            self.assertIsNone(zh.testzip())
+
+        # suppress duplicated name warning
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
             zinfos = self._prepare_zip_from_test_files(TESTFN, test_files)
-            with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
-                infolist = zh.infolist().copy()
-                zh.remove(infolist[0])
-                zh.remove(infolist[1])
 
-                # check infolist
-                self.assertEqual(
-                    [ComparableZipInfo(zi) for zi in zh.infolist()],
-                    [ComparableZipInfo(zi) for zi in [zinfos[2]]],
-                )
+        with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
+            infolist = zh.infolist().copy()
+            zh.remove(infolist[0])
+            zh.remove(infolist[1])
 
-                # check NameToInfo cache
-                with self.assertRaises(KeyError):
-                    zh.getinfo('file.txt')
+            # check infolist
+            self.assertEqual(
+                [ComparableZipInfo(zi) for zi in zh.infolist()],
+                [ComparableZipInfo(zi) for zi in [zinfos[2]]],
+            )
 
-            # make sure the zip file is still valid
-            with zipfile.ZipFile(TESTFN) as zh:
-                self.assertIsNone(zh.testzip())
+            # check NameToInfo cache
+            with self.assertRaises(KeyError):
+                zh.getinfo('file.txt')
+
+        # make sure the zip file is still valid
+        with zipfile.ZipFile(TESTFN) as zh:
+            self.assertIsNone(zh.testzip())
 
     def test_remove_zip64(self):
         for i in range(0, 3):

@@ -1573,7 +1573,8 @@ class _ZipRepacker:
                     return entry_size
         return 0
 
-    def _iter_scan_signature(self, fp, signature, start_offset, end_offset, chunk_size=4096):
+    def _iter_scan_signature(self, fp, signature, start_offset, end_offset,
+                             chunk_size=io.DEFAULT_BUFFER_SIZE):
         sig_len = len(signature)
         remainder = b''
         pos = start_offset
@@ -1775,7 +1776,8 @@ class _ZipRepacker:
 
         return crc, compress_size, file_size, dd_size
 
-    def _trace_compressed_block_end(self, fp, offset, end_offset, decompressor, chunk_size=4096):
+    def _trace_compressed_block_end(self, fp, offset, end_offset, decompressor,
+                                    chunk_size=io.DEFAULT_BUFFER_SIZE):
         fp.seek(offset)
         read_size = 0
         while True:
