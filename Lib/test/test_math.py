@@ -17,7 +17,6 @@ import sys
 
 eps = 1E-05
 NAN = float('nan')
-NNAN = float('-nan')
 INF = float('inf')
 NINF = float('-inf')
 FLOAT_MAX = sys.float_info.max
@@ -480,12 +479,14 @@ class MathTests(unittest.TestCase):
         self.assertRaises(TypeError, math.signbit)
         self.assertRaises(TypeError, math.signbit, '1.0')
 
-        for arg in [0, 0., 1, 1., INF, NAN]:
-            with self.subTest('positive', arg=arg):
-                self.assertFalse(math.signbit(arg))
-        for arg in [-0., -1, -1., NINF, NNAN]:
-            with self.subTest('negative', arg=arg):
-                self.assertTrue(math.signbit(arg))
+        # C11, §7.12.3.6 requires signbit() to return a nonzero value
+        # if and only if the sign of its argument value is negative,
+        # but in practice, we are only interested in a boolean value.
+        self.assertIsInstance(math.signbit(1.0), bool)
+
+        for arg in [0., 1., INF, NAN]:
+            self.assertFalse(math.signbit(arg))
+            self.assertTrue(math.signbit(-arg))
 
     def testCos(self):
         self.assertRaises(TypeError, math.cos)
