@@ -1663,7 +1663,6 @@ r_object(RFILE *p)
         if (idx < 0) {
             break;
         }
-
         start = r_object(p);
         if (start == NULL) {
             goto cleanup;
