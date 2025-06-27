@@ -629,19 +629,22 @@ class MathTests(unittest.TestCase):
         self.assertRaises(TypeError, math.fmax, 'x', 'y')
 
         self.assertEqual(math.fmax(0., 0.), 0.)
+        self.assertEqual(math.fmax(1., 2.), 2.)
+        self.assertEqual(math.fmax(2., 1.), 2.)
+
         # fmax() does not need to be sensitive to the sign of 0 (§F.10.9.2).
-        self.assertIn(math.fmax(0., -0.), {-0., 0.})
-        self.assertIn(math.fmax(-0., 0.), {-0., 0.})
+        self.assertEqual(math.fmax(+0., -0.), 0.)
+        self.assertEqual(math.fmax(-0., +0.), 0.)
 
-        self.assertEqual(math.fmax(1., 0.), 1.)
-        self.assertEqual(math.fmax(0., 1.), 1.)
-        self.assertEqual(math.fmax(1., -0.), 1.)
-        self.assertEqual(math.fmax(-0., 1.), 1.)
+        self.assertEqual(math.fmax(+1., +0.), 1.)
+        self.assertEqual(math.fmax(+0., +1.), 1.)
+        self.assertEqual(math.fmax(+1., -0.), 1.)
+        self.assertEqual(math.fmax(-0., +1.), 1.)
 
-        self.assertEqual(math.fmax(-1., 0.), 0.)
-        self.assertEqual(math.fmax(0., -1.), 0.)
-        self.assertEqual(math.fmax(-1., -0.), -0.)
-        self.assertEqual(math.fmax(-0., -1.), -0.)
+        self.assertEqual(math.fmax(-1., +0.), 0.)
+        self.assertEqual(math.fmax(+0., -1.), 0.)
+        self.assertEqual(math.fmax(-1., -0.), 0.)
+        self.assertEqual(math.fmax(-0., -1.), 0.)
 
         for x in [NINF, -1., -0., 0., 1., INF]:
             self.assertFalse(math.isnan(x))
@@ -673,17 +676,20 @@ class MathTests(unittest.TestCase):
         self.assertRaises(TypeError, math.fmin, 'x', 'y')
 
         self.assertEqual(math.fmin(0., 0.), 0.)
+        self.assertEqual(math.fmin(1., 2.), 1.)
+        self.assertEqual(math.fmin(2., 1.), 1.)
+
         # fmin() does not need to be sensitive to the sign of 0 (§F.10.9.3).
-        self.assertIn(math.fmin(0., -0.), {-0., 0.})
-        self.assertIn(math.fmin(-0., 0.), {-0., 0.})
+        self.assertEqual(math.fmin(+0., -0.), 0.)
+        self.assertEqual(math.fmin(-0., +0.), 0.)
 
-        self.assertEqual(math.fmin(1., 0.), 0.)
-        self.assertEqual(math.fmin(0., 1.), 0.)
-        self.assertEqual(math.fmin(1., -0.), -0.)
-        self.assertEqual(math.fmin(-0., 1.), -0.)
+        self.assertEqual(math.fmin(+1., +0.), 0.)
+        self.assertEqual(math.fmin(+0., +1.), 0.)
+        self.assertEqual(math.fmin(+1., -0.), 0.)
+        self.assertEqual(math.fmin(-0., +1.), 0.)
 
-        self.assertEqual(math.fmin(-1., 0.), -1.)
-        self.assertEqual(math.fmin(0., -1.), -1.)
+        self.assertEqual(math.fmin(-1., +0.), -1.)
+        self.assertEqual(math.fmin(+0., -1.), -1.)
         self.assertEqual(math.fmin(-1., -0.), -1.)
         self.assertEqual(math.fmin(-0., -1.), -1.)
 
