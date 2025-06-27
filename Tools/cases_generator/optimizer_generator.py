@@ -176,7 +176,7 @@ class OptimizerEmitter(Emitter):
         if len(input_identifiers) == 0:
             raise analysis_error(
                 "To evaluate an operation as pure, it must have at least 1 input",
-                self.original_uop.body.open
+                tkn
             )
         # Check that the input identifiers belong to the uop's
         # input stack effect
