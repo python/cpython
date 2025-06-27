@@ -10,6 +10,8 @@ Appendix
 Interactive Mode
 ================
 
+.. versionadded:: 3.13
+
 There are two variants of the interactive :term:`REPL`.  The classic
 basic interpreter is supported on all platforms with minimal line
 control capabilities.
