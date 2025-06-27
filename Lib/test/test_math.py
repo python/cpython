@@ -629,7 +629,7 @@ class MathTests(unittest.TestCase):
         self.assertRaises(TypeError, math.fmax, 'x', 'y')
 
         self.assertEqual(math.fmax(0., 0.), 0.)
-        # fmax() does not need to be sensitive to the sign of 0 (F.10.9.2.3).
+        # fmax() does not need to be sensitive to the sign of 0 (§F.10.9.2).
         self.assertIn(math.fmax(0., -0.), {-0., 0.})
         self.assertIn(math.fmax(-0., 0.), {-0., 0.})
 
@@ -673,7 +673,7 @@ class MathTests(unittest.TestCase):
         self.assertRaises(TypeError, math.fmin, 'x', 'y')
 
         self.assertEqual(math.fmin(0., 0.), 0.)
-        # fmin() does not need to be sensitive to the sign of 0 (F.10.9.3.1).
+        # fmin() does not need to be sensitive to the sign of 0 (§F.10.9.3).
         self.assertIn(math.fmin(0., -0.), {-0., 0.})
         self.assertIn(math.fmin(-0., 0.), {-0., 0.})
 
