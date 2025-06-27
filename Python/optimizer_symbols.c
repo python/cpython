@@ -209,6 +209,7 @@ _Py_uop_sym_is_safe_const(JitOptContext *ctx, JitOptRef sym)
     PyTypeObject *typ = Py_TYPE(const_val);
     return (typ == &PyLong_Type) ||
            (typ == &PyUnicode_Type) ||
+           (typ == &PyBytes_Type) ||
            (typ == &PyFloat_Type) ||
            (typ == &PyTuple_Type) ||
            (typ == &PyBool_Type);
