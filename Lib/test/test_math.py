@@ -705,7 +705,7 @@ class MathTests(unittest.TestCase):
                 self.assertFalse(math.isnan(math.fmin(x, NAN)))
                 self.assertFalse(math.isnan(math.fmin(NNAN, x)))
                 self.assertFalse(math.isnan(math.fmin(x, NNAN)))
-        # When both operands are NaNs, fmin() returns NaN (see C11, F.10.9.2)
+        # When both operands are NaNs, fmin() returns NaN (see C11, F.10.9.3)
         # whose sign is implementation-defined (see C11, F.10.0.3).
         self.assertTrue(math.isnan(math.fmin(NAN, NAN)))
         self.assertTrue(math.isnan(math.fmin(NNAN, NNAN)))
