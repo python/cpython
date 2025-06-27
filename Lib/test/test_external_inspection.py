@@ -901,11 +901,13 @@ class TestGetStackTrace(unittest.TestCase):
 
             def main_work():
                 # Do busy work to hold the GIL
+                sock.sendall(b"working\\n")
                 count = 0
                 while count < 100000000:
                     count += 1
                     if count % 10000000 == 0:
                         pass  # Keep main thread busy
+                sock.sendall(b"done\\n")
 
             # Create synchronization primitives
             num_threads = 3
@@ -959,8 +961,9 @@ class TestGetStackTrace(unittest.TestCase):
                 while b"ready" not in response:
                     response += client_socket.recv(1024)
 
-                # Give threads a moment to start their busy work
-                time.sleep(0.1)
+                # Wait for the main thread to start its busy work
+                while b"working" not in response:
+                    response += client_socket.recv(1024)
 
                 # Get stack trace with all threads
                 unwinder_all = RemoteUnwinder(p.pid, all_threads=True)
