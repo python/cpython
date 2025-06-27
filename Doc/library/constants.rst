@@ -96,8 +96,8 @@ should not be used in programs.
 .. data:: quit(code=None)
           exit(code=None)
 
-   Objects that when printed, print a message like "Use quit() or Ctrl-D
-   (i.e. EOF) to exit", and when called, raise :exc:`SystemExit` with the
+   Objects that when printed, print a message like "Use quit() or Ctrl-Z
+   plus Return to exit", and when called, raise :exc:`SystemExit` with the
    specified exit code.
 
 .. data:: help
