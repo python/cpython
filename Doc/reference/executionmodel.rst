@@ -439,12 +439,9 @@ specific to Python::
 When a Python program starts, it looks exactly like that, with one
 of each.  The process has a single global runtime to manage Python's
 global resources.  Each Python thread has all the state it needs to run
-Python code (and use any supported C-API) in its OS thread.
-
-.. , including its stack of call frames.
-
-.. If the program uses coroutines (async) then the thread will end up
-   juggling multiple stacks.
+Python code (and use any supported C-API) in its OS thread.  Depending
+on the implementation, this probably includes the current exception
+and the Python call stack.
 
 In between the global runtime and the thread(s) lies the interpreter.
 It completely encapsulates all of the non-global runtime state that the
