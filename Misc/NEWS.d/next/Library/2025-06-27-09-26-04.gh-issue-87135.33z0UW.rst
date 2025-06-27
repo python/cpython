@@ -1,0 +1,3 @@
+Acquiring a :cls:`threading.Lock` or :cls:`threading.RLock` at interpreter
+shutdown will raise :exc:`PythonFinalizationError` if Python can determine
+that it would otherwise deadlock.
