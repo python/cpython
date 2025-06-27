@@ -446,20 +446,24 @@ exception and the Python call stack.
 In between the global runtime and the thread(s) lies the interpreter.
 It completely encapsulates all of the non-process-global runtime state
 that the interpreter's Python threads share.  For example, all its
-threads share :data:`sys.modules`.  When a Python thread is created,
-it belongs to an interpreter, and likewise when an OS thread is
-otherwise associated with Python.
+threads share :data:`sys.modules`.  Every Python thread belongs to a
+single interpreter and runs using that shared state.  The initial
+interpreter is known as the "main" interpreter, and the initial thread,
+where the runtime was initialized, is known as the "main" thread.
 
 .. note::
 
    The interpreter here is not the same as the "bytecode interpreter",
    which is what runs in each thread, executing compiled Python code.
 
-If the runtime supports using multiple interpreters then each OS thread
-will have at most one Python thread for each interpreter.  However,
-only one is active in the OS thread at a time.  Switching between
-interpreters means changing the active Python thread.
-The initial interpreter is known as the "main" interpreter.
+Every Python thread is associated with a single OS thread, which is
+where it runs.  However, multiple Python threads can be associated with
+the same OS thread.  For example, an OS thread might run code with a
+first interpreter and then with a second, each necessarily with its own
+Python thread.  Still, regardless of how many are *associated* with
+an OS thread, only one Python thread can be actively *running* in
+an OS thread at a time.  Switching between interpreters means
+changing the active Python thread.
 
 Once a program is running, new Python threads can be created using the
 :mod:`threading` module (on platforms and Python implementations that
