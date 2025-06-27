@@ -206,9 +206,11 @@ _Py_uop_sym_is_safe_const(JitOptContext *ctx, JitOptRef sym)
     if (const_val == NULL) {
         return false;
     }
+    if (_PyLong_CheckExactAndCompact(const_val)) {
+        return true;
+    }
     PyTypeObject *typ = Py_TYPE(const_val);
-    return (typ == &PyLong_Type) ||
-           (typ == &PyUnicode_Type) ||
+    return (typ == &PyUnicode_Type) ||
            (typ == &PyFloat_Type) ||
            (typ == &PyTuple_Type) ||
            (typ == &PyBool_Type);
