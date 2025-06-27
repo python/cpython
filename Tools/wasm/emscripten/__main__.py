@@ -167,11 +167,12 @@ def make_build_python(context, working_dir):
 @subdir(HOST_BUILD_DIR, clean_ok=True)
 def make_emscripten_libffi(context, working_dir):
     shutil.rmtree(working_dir / "libffi-3.4.6", ignore_errors=True)
-    with tempfile.NamedTemporaryFile(suffix=".tar.gz") as tmp_file:
+    with tempfile.NamedTemporaryFile(suffix=".tar.gz", delete_on_close=False) as tmp_file:
         with urlopen(
             "https://github.com/libffi/libffi/releases/download/v3.4.6/libffi-3.4.6.tar.gz"
         ) as response:
             shutil.copyfileobj(response, tmp_file)
+        tmp_file.close()
         shutil.unpack_archive(tmp_file.name, working_dir)
     call(
         [EMSCRIPTEN_DIR / "make_libffi.sh"],
