@@ -430,7 +430,7 @@ The following exceptions are the exceptions that are usually raised.
    * Creating a new Python thread.
    * :meth:`Joining <threading.Thread.join>` a running daemon thread.
    * :func:`os.fork`,
-   * acquiring a lock such as :cls:`threading.Lock`, when it is known that
+   * acquiring a lock such as :class:`threading.Lock`, when it is known that
      the operation would otherwise deadlock.
 
    See also the :func:`sys.is_finalizing` function.
