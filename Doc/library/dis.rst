@@ -1139,6 +1139,9 @@ iterations of the loop.
    expression and its source text and pushes the resulting instance onto the
    stack.
 
+   If no conversion or format specification is present, ``format`` is set to
+   ``2``.
+
    If the low bit of ``format`` is set, it indicates that the interpolation
    contains a format specification.
 
@@ -1147,11 +1150,11 @@ iterations of the loop.
    (e.g. ``0`` for no conversion, ``1`` for ``!s``, ``2`` for ``!r``, and
    ``3`` for ``!a``)::
 
+      conversion = format >> 2
       if format & 1:
           format_spec = STACK.pop()
       else:
           format_spec = None
-      conversion = format >> 2
       expression = STACK.pop()
       value = STACK.pop()
       STACK.append(_build_interpolation(value, expression, conversion, format_spec))

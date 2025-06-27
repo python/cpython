@@ -324,6 +324,7 @@ Literals
                             values=[
                                 Constant(value='.3')]))]))
 
+
 .. class:: TemplateStr(values)
 
    A t-string, comprising a series of :class:`Interpolation` and :class:`Constant`
@@ -348,6 +349,8 @@ Literals
                             values=[
                                 Constant(value='ordinal')]))]))
 
+   .. versionadded:: 3.14
+
 
 .. class:: Interpolation(value, str, conversion, format_spec)
 
@@ -366,6 +369,8 @@ Literals
    * ``format_spec`` is a :class:`JoinedStr` node representing the formatting
      of the value, or ``None`` if no format was specified. Both
      ``conversion`` and ``format_spec`` can be set at the same time.
+
+   .. versionadded:: 3.14
 
 
 .. class:: List(elts, ctx)
