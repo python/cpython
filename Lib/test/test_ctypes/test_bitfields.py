@@ -430,6 +430,7 @@ class BitFieldTest(unittest.TestCase, StructCheckMixin):
     def test_gh_84039(self):
         class Bad(Structure):
             _pack_ = 1
+            _layout_ = "ms"
             _fields_ = [
                 ("a0", c_uint8, 1),
                 ("a1", c_uint8, 1),
@@ -443,9 +444,9 @@ class BitFieldTest(unittest.TestCase, StructCheckMixin):
                 ("b1", c_uint16, 12),
             ]
 
-
         class GoodA(Structure):
             _pack_ = 1
+            _layout_ = "ms"
             _fields_ = [
                 ("a0", c_uint8, 1),
                 ("a1", c_uint8, 1),
@@ -460,6 +461,7 @@ class BitFieldTest(unittest.TestCase, StructCheckMixin):
 
         class Good(Structure):
             _pack_ = 1
+            _layout_ = "ms"
             _fields_ = [
                 ("a", GoodA),
                 ("b0", c_uint16, 4),
@@ -475,6 +477,7 @@ class BitFieldTest(unittest.TestCase, StructCheckMixin):
     def test_gh_73939(self):
         class MyStructure(Structure):
             _pack_      = 1
+            _layout_ = "ms"
             _fields_    = [
                             ("P",       c_uint16),
                             ("L",       c_uint16, 9),

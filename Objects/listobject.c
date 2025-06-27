@@ -61,7 +61,8 @@ free_list_items(PyObject** items, bool use_qsbr)
 #ifdef Py_GIL_DISABLED
     _PyListArray *array = _Py_CONTAINER_OF(items, _PyListArray, ob_item);
     if (use_qsbr) {
-        _PyMem_FreeDelayed(array);
+        size_t size = sizeof(_PyListArray) + array->allocated * sizeof(PyObject *);
+        _PyMem_FreeDelayed(array, size);
     }
     else {
         PyMem_Free(array);
@@ -550,7 +551,6 @@ list_dealloc(PyObject *self)
     PyListObject *op = (PyListObject *)self;
     Py_ssize_t i;
     PyObject_GC_UnTrack(op);
-    Py_TRASHCAN_BEGIN(op, list_dealloc)
     if (op->ob_item != NULL) {
         /* Do it backwards, for Christian Tismer.
            There's a simple test case where somehow this reduces
@@ -569,7 +569,6 @@ list_dealloc(PyObject *self)
     else {
         PyObject_GC_Del(op);
     }
-    Py_TRASHCAN_END
 }
 
 static PyObject *
@@ -583,6 +582,7 @@ list_repr_impl(PyListObject *v)
     /* "[" + "1" + ", 2" * (len - 1) + "]" */
     Py_ssize_t prealloc = 1 + 1 + (2 + 1) * (Py_SIZE(v) - 1) + 1;
     PyUnicodeWriter *writer = PyUnicodeWriter_Create(prealloc);
+    PyObject *item = NULL;
     if (writer == NULL) {
         goto error;
     }
@@ -594,6 +594,9 @@ list_repr_impl(PyListObject *v)
     /* Do repr() on each element.  Note that this may mutate the list,
        so must refetch the list size on each iteration. */
     for (Py_ssize_t i = 0; i < Py_SIZE(v); ++i) {
+        /* Hold a strong reference since repr(item) can mutate the list */
+        item = Py_NewRef(v->ob_item[i]);
+
         if (i > 0) {
             if (PyUnicodeWriter_WriteChar(writer, ',') < 0) {
                 goto error;
@@ -603,9 +606,10 @@ list_repr_impl(PyListObject *v)
             }
         }
 
-        if (PyUnicodeWriter_WriteRepr(writer, v->ob_item[i]) < 0) {
+        if (PyUnicodeWriter_WriteRepr(writer, item) < 0) {
             goto error;
         }
+        Py_CLEAR(item);
     }
 
     if (PyUnicodeWriter_WriteChar(writer, ']') < 0) {
@@ -616,6 +620,7 @@ list_repr_impl(PyListObject *v)
     return PyUnicodeWriter_Finish(writer);
 
 error:
+    Py_XDECREF(item);
     PyUnicodeWriter_Discard(writer);
     Py_ReprLeave((PyObject *)v);
     return NULL;
@@ -1309,9 +1314,15 @@ list_extend_set(PyListObject *self, PySetObject *other)
 {
     Py_ssize_t m = Py_SIZE(self);
     Py_ssize_t n = PySet_GET_SIZE(other);
-    if (list_resize(self, m + n) < 0) {
+    Py_ssize_t r = m + n;
+    if (r == 0) {
+        return 0;
+    }
+    if (list_resize(self, r) < 0) {
         return -1;
     }
+
+    assert(self->ob_item != NULL);
     /* populate the end of self with iterable's items */
     Py_ssize_t setpos = 0;
     Py_hash_t hash;
@@ -1321,7 +1332,7 @@ list_extend_set(PyListObject *self, PySetObject *other)
         FT_ATOMIC_STORE_PTR_RELEASE(*dest, key);
         dest++;
     }
-    Py_SET_SIZE(self, m + n);
+    Py_SET_SIZE(self, r);
     return 0;
 }
 
@@ -1331,10 +1342,15 @@ list_extend_dict(PyListObject *self, PyDictObject *dict, int which_item)
     // which_item: 0 for keys and 1 for values
     Py_ssize_t m = Py_SIZE(self);
     Py_ssize_t n = PyDict_GET_SIZE(dict);
-    if (list_resize(self, m + n) < 0) {
+    Py_ssize_t r = m + n;
+    if (r == 0) {
+        return 0;
+    }
+    if (list_resize(self, r) < 0) {
         return -1;
     }
 
+    assert(self->ob_item != NULL);
     PyObject **dest = self->ob_item + m;
     Py_ssize_t pos = 0;
     PyObject *keyvalue[2];
@@ -1345,7 +1361,7 @@ list_extend_dict(PyListObject *self, PyDictObject *dict, int which_item)
         dest++;
     }
 
-    Py_SET_SIZE(self, m + n);
+    Py_SET_SIZE(self, r);
     return 0;
 }
 
@@ -1354,10 +1370,15 @@ list_extend_dictitems(PyListObject *self, PyDictObject *dict)
 {
     Py_ssize_t m = Py_SIZE(self);
     Py_ssize_t n = PyDict_GET_SIZE(dict);
-    if (list_resize(self, m + n) < 0) {
+    Py_ssize_t r = m + n;
+    if (r == 0) {
+        return 0;
+    }
+    if (list_resize(self, r) < 0) {
         return -1;
     }
 
+    assert(self->ob_item != NULL);
     PyObject **dest = self->ob_item + m;
     Py_ssize_t pos = 0;
     Py_ssize_t i = 0;
@@ -1373,7 +1394,7 @@ list_extend_dictitems(PyListObject *self, PyDictObject *dict)
         i++;
     }
 
-    Py_SET_SIZE(self, m + n);
+    Py_SET_SIZE(self, r);
     return 0;
 }
 
@@ -1664,10 +1685,7 @@ sortslice_advance(sortslice *slice, Py_ssize_t n)
 /* Avoid malloc for small temp arrays. */
 #define MERGESTATE_TEMP_SIZE 256
 
-/* The largest value of minrun. This must be a power of 2, and >= 1, so that
- * the compute_minrun() algorithm guarantees to return a result no larger than
- * this,
- */
+/* The largest value of minrun. This must be a power of 2, and >= 1 */
 #define MAX_MINRUN 64
 #if ((MAX_MINRUN) < 1) || ((MAX_MINRUN) & ((MAX_MINRUN) - 1))
 #error "MAX_MINRUN must be a power of 2, and >= 1"
@@ -1728,6 +1746,11 @@ struct s_MergeState {
      * of tuples. It may be set to safe_object_compare, but the idea is that hopefully
      * we can assume more, and use one of the special-case compares. */
     int (*tuple_elem_compare)(PyObject *, PyObject *, MergeState *);
+
+    /* Varisbles used for minrun computation. The "ideal" minrun length is
+     * the infinite precision listlen / 2**e. See listsort.txt.
+     */
+     Py_ssize_t mr_current, mr_e, mr_mask;
 };
 
 /* binarysort is the best method for sorting small arrays: it does few
@@ -2189,6 +2212,14 @@ merge_init(MergeState *ms, Py_ssize_t list_size, int has_keyfunc,
     ms->min_gallop = MIN_GALLOP;
     ms->listlen = list_size;
     ms->basekeys = lo->keys;
+
+    /* State for generating minrun values. See listsort.txt. */
+    ms->mr_e = 0;
+    while (list_size >> ms->mr_e >= MAX_MINRUN) {
+        ++ms->mr_e;
+    }
+    ms->mr_mask = (1 << ms->mr_e) - 1;
+    ms->mr_current = 0;
 }
 
 /* Free all the temp memory owned by the MergeState.  This must be called
@@ -2666,27 +2697,15 @@ merge_force_collapse(MergeState *ms)
     return 0;
 }
 
-/* Compute a good value for the minimum run length; natural runs shorter
- * than this are boosted artificially via binary insertion.
- *
- * If n < MAX_MINRUN return n (it's too small to bother with fancy stuff).
- * Else if n is an exact power of 2, return MAX_MINRUN / 2.
- * Else return an int k, MAX_MINRUN / 2 <= k <= MAX_MINRUN, such that n/k is
- * close to, but strictly less than, an exact power of 2.
- *
- * See listsort.txt for more info.
- */
-static Py_ssize_t
-merge_compute_minrun(Py_ssize_t n)
+/* Return the next minrun value to use. See listsort.txt. */
+Py_LOCAL_INLINE(Py_ssize_t)
+minrun_next(MergeState *ms)
 {
-    Py_ssize_t r = 0;           /* becomes 1 if any 1 bits are shifted off */
-
-    assert(n >= 0);
-    while (n >= MAX_MINRUN) {
-        r |= n & 1;
-        n >>= 1;
-    }
-    return n + r;
+    ms->mr_current += ms->listlen;
+    assert(ms->mr_current >= 0); /* no overflow */
+    Py_ssize_t result = ms->mr_current >> ms->mr_e;
+    ms->mr_current &= ms->mr_mask;
+    return result;
 }
 
 /* Here we define custom comparison functions to optimize for the cases one commonly
@@ -3054,7 +3073,6 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
     /* March over the array once, left to right, finding natural runs,
      * and extending short natural runs to minrun elements.
      */
-    minrun = merge_compute_minrun(nremaining);
     do {
         Py_ssize_t n;
 
@@ -3063,6 +3081,7 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
         if (n < 0)
             goto fail;
         /* If short, extend to min(minrun, nremaining). */
+        minrun = minrun_next(&ms);
         if (n < minrun) {
             const Py_ssize_t force = nremaining <= minrun ?
                               nremaining : minrun;
@@ -3597,6 +3616,24 @@ list_slice_wrap(PyListObject *aa, Py_ssize_t start, Py_ssize_t stop, Py_ssize_t 
     return res;
 }
 
+static inline PyObject*
+list_slice_subscript(PyObject* self, PyObject* item)
+{
+    assert(PyList_Check(self));
+    assert(PySlice_Check(item));
+    Py_ssize_t start, stop, step;
+    if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
+        return NULL;
+    }
+    return list_slice_wrap((PyListObject *)self, start, stop, step);
+}
+
+PyObject *
+_PyList_SliceSubscript(PyObject* _self, PyObject* item)
+{
+    return list_slice_subscript(_self, item);
+}
+
 static PyObject *
 list_subscript(PyObject* _self, PyObject* item)
 {
@@ -3611,11 +3648,7 @@ list_subscript(PyObject* _self, PyObject* item)
         return list_item((PyObject *)self, i);
     }
     else if (PySlice_Check(item)) {
-        Py_ssize_t start, stop, step;
-        if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
-            return NULL;
-        }
-        return list_slice_wrap(self, start, stop, step);
+        return list_slice_subscript(_self, item);
     }
     else {
         PyErr_Format(PyExc_TypeError,

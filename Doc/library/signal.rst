@@ -211,8 +211,8 @@ The variables defined in the :mod:`signal` module are:
 
 .. data:: SIGSTKFLT
 
-    Stack fault on coprocessor. The Linux kernel does not raise this signal: it
-    can only be raised in user space.
+   Stack fault on coprocessor. The Linux kernel does not raise this signal: it
+   can only be raised in user space.
 
    .. availability:: Linux.
 
@@ -510,10 +510,12 @@ The :mod:`signal` module defines the following functions:
 
 .. function:: set_wakeup_fd(fd, *, warn_on_full_buffer=True)
 
-   Set the wakeup file descriptor to *fd*.  When a signal is received, the
-   signal number is written as a single byte into the fd.  This can be used by
-   a library to wakeup a poll or select call, allowing the signal to be fully
-   processed.
+   Set the wakeup file descriptor to *fd*.  When a signal your program has
+   registered a signal handler for is received, the signal number is written as
+   a single byte into the fd.  If you haven't registered a signal handler for
+   the signals you care about, then nothing will be written to the wakeup fd.
+   This can be used by a library to wakeup a poll or select call, allowing the
+   signal to be fully processed.
 
    The old wakeup fd is returned (or -1 if file descriptor wakeup was not
    enabled).  If *fd* is -1, file descriptor wakeup is disabled.
