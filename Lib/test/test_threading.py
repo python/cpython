@@ -1247,50 +1247,56 @@ class ThreadTests(BaseTestCase):
         self.assertEqual(err, b"")
         self.assertIn(b"all clear", out)
 
-    def test_acquire_daemon_thread_lock_in_finalization(self):
+    @support.subTests('lock_class_name', ['Lock', 'RLock'])
+    def test_acquire_daemon_thread_lock_in_finalization(self, lock_class_name):
         # gh-123940: Py_Finalize() prevents other threads from running Python
         # code (and so, releasing locks), so acquiring a locked lock can not
         # succeed.
         # We raise an exception rather than hang.
-        for timeout in (None, 10):
-            with self.subTest(timeout=timeout):
-                code = textwrap.dedent(f"""
-                    import threading
-                    import time
+        code = textwrap.dedent(f"""
+            import threading
+            import time
 
-                    thread_started_event = threading.Event()
+            thread_started_event = threading.Event()
 
-                    lock = threading.Lock()
-                    def loop():
-                        with lock:
-                            thread_started_event.set()
-                            while True:
-                                time.sleep(1)
+            lock = threading.{lock_class_name}()
+            def loop():
+                with lock:
+                    thread_started_event.set()
+                    while True:
+                        time.sleep(1)
 
-                    class Cycle:
-                        def __init__(self):
-                            self.self_ref = self
-                            self.thr = threading.Thread(
-                                target=loop, daemon=True)
-                            self.thr.start()
-                            thread_started_event.wait()
+            uncontested_lock = threading.{lock_class_name}()
 
-                        def __del__(self):
-                            assert self.thr.is_alive()
-                            try:
-                                lock.acquire()
-                            except PythonFinalizationError:
-                                assert self.thr.is_alive()
-                                print('got the correct exception!')
+            class Cycle:
+                def __init__(self):
+                    self.self_ref = self
+                    self.thr = threading.Thread(
+                        target=loop, daemon=True)
+                    self.thr.start()
+                    thread_started_event.wait()
 
-                    # Cycle holds a reference to itself, which ensures it is
-                    # cleaned up during the GC that runs after daemon threads
-                    # have been forced to exit during finalization.
-                    Cycle()
-                """)
-                rc, out, err = assert_python_ok("-c", code)
-                self.assertEqual(err, b"")
-                self.assertIn(b"got the correct exception", out)
+                def __del__(self):
+                    assert self.thr.is_alive()
+
+                    # We *can* acquire an unlocked lock
+                    uncontested_lock.acquire()
+
+                    # Acquiring a locked one fails
+                    try:
+                        lock.acquire()
+                    except PythonFinalizationError:
+                        assert self.thr.is_alive()
+                        print('got the correct exception!')
+
+            # Cycle holds a reference to itself, which ensures it is
+            # cleaned up during the GC that runs after daemon threads
+            # have been forced to exit during finalization.
+            Cycle()
+        """)
+        rc, out, err = assert_python_ok("-c", code)
+        self.assertEqual(err, b"")
+        self.assertIn(b"got the correct exception", out)
 
     def test_start_new_thread_failed(self):
         # gh-109746: if Python fails to start newly created thread
