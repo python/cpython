@@ -357,6 +357,10 @@ class TimeTestCase(unittest.TestCase):
                                    r'.*day of month without a year.*'):
             time.strptime('02-07 18:28', '%m-%d %H:%M')
 
+    def test_strptime_non_ascii(self):
+        with self.assertRaises(ValueError):
+            time.strptime('٢025', '%Y')
+
     def test_asctime(self):
         time.asctime(time.gmtime(self.t))
 

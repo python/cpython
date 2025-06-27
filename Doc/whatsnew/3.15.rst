@@ -89,6 +89,16 @@ New modules
 Improved modules
 ================
 
+datetime
+--------
+
+* When using digits in :meth:`datetime.date.strptime`,
+  :meth:`datetime.datetime.strptime`, or :meth:`datetime.time.strptime`, a
+  :exc:`ValueError` is raised if non-ASCII digits are specified for
+  non-locale-specific numeric format codes.
+  (Contributed by Stan Ulbrych in :gh:`131008`.)
+
+
 dbm
 ---
 
@@ -171,6 +181,14 @@ tarfile
   and :cve:`2025-4435`.)
 
 
+time
+----
+
+* When using digits in :func:`time.strptime`, a :exc:`ValueError` is raised if
+  non-ASCII digits are specified for non-locale-specific numeric format codes.
+  (Contributed by Stan Ulbrych in :gh:`131008`.)
+
+
 zlib
 ----
 
@@ -179,6 +197,7 @@ zlib
 
 * Allow combining two CRC-32 checksums via :func:`~zlib.crc32_combine`.
   (Contributed by Bénédikt Tran in :gh:`134635`.)
+
 
 
 .. Add improved modules above alphabetically, not here at the end.
