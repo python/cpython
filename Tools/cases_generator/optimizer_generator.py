@@ -165,6 +165,7 @@ class OptimizerEmitter(Emitter):
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
+        assert isinstance(uop, Uop)
         input_identifiers = []
         for token in tkn_iter:
             if token.kind == "IDENTIFIER":
@@ -191,7 +192,6 @@ class OptimizerEmitter(Emitter):
         assert len(used_stack_inputs) > 0
         emitter = OptimizerConstantEmitter(self.out, {}, self.original_uop, self.stack.copy())
         emitter.emit("if (\n")
-        assert isinstance(uop, Uop)
         for inp in used_stack_inputs[:-1]:
             emitter.emit(f"sym_is_safe_const(ctx, {inp.name}) &&\n")
         emitter.emit(f"sym_is_safe_const(ctx, {used_stack_inputs[-1].name})\n")
