@@ -2157,6 +2157,21 @@ class TestRegressions(MonitoringTestBase, unittest.TestCase):
         sys.monitoring.restart_events()
         sys.monitoring.set_events(0, 0)
 
+    def test_134879(self):
+        # gh-134789
+        # Specialized FOR_ITER not incrementing index
+        def foo():
+            t = 0
+            for i in [1,2,3,4]:
+                t += i
+            self.assertEqual(t, 10)
+
+        sys.monitoring.use_tool_id(0, "test")
+        self.addCleanup(sys.monitoring.free_tool_id, 0)
+        sys.monitoring.set_local_events(0, foo.__code__, E.BRANCH_LEFT | E.BRANCH_RIGHT)
+        foo()
+        sys.monitoring.set_local_events(0, foo.__code__, 0)
+
 
 class TestOptimizer(MonitoringTestBase, unittest.TestCase):
 

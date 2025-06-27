@@ -15,9 +15,15 @@
 * :mod:`dbm.ndbm`
 
 If none of these modules are installed, the
-slow-but-simple implementation in module :mod:`dbm.dumb` will be used.  There
+slow-but-simple implementation in module :mod:`dbm.dumb` will be used. There
 is a `third party interface <https://www.jcea.es/programacion/pybsddb.htm>`_ to
 the Oracle Berkeley DB.
+
+.. note::
+   None of the underlying modules will automatically shrink the disk space used by
+   the database file. However, :mod:`dbm.sqlite3`, :mod:`dbm.gnu` and :mod:`dbm.dumb`
+   provide a :meth:`!reorganize` method that can be used for this purpose.
+
 
 .. exception:: error
 
@@ -186,6 +192,17 @@ or any other SQLite browser, including the SQLite CLI.
       The Unix file access mode of the file (default: octal ``0o666``),
       used only when the database has to be created.
 
+   .. method:: sqlite3.reorganize()
+
+      If you have carried out a lot of deletions and would like to shrink the space
+      used on disk, this method will reorganize the database; otherwise, deleted file
+      space will be kept and reused as new (key, value) pairs are added.
+
+      .. note::
+         While reorganizing, as much as two times the size of the original database is required
+         in free disk space. However, be aware that this factor changes for each :mod:`dbm` submodule.
+
+      .. versionadded:: next
 
 :mod:`dbm.gnu` --- GNU database manager
 ---------------------------------------
@@ -237,6 +254,9 @@ functionality like crash tolerance.
       * ``'s'``: Synchronized mode.
         Changes to the database will be written immediately to the file.
       * ``'u'``: Do not lock database.
+      * ``'m'``: Do not use :manpage:`mmap(2)`.
+        This may harm performance, but improve crash tolerance.
+        .. versionadded:: next
 
       Not all flags are valid for all versions of GDBM.
       See the :data:`open_flags` member for a list of supported flag characters.
@@ -283,6 +303,10 @@ functionality like crash tolerance.
       objects will not shorten the length of a database file except by using this
       reorganization; otherwise, deleted file space will be kept and reused as new
       (key, value) pairs are added.
+
+      .. note::
+         While reorganizing, as much as one time the size of the original database is required
+         in free disk space. However, be aware that this factor changes for each :mod:`dbm` submodule.
 
    .. method:: gdbm.sync()
 
@@ -438,6 +462,11 @@ The :mod:`!dbm.dumb` module defines the following:
       with a sufficiently large/complex entry due to stack depth limitations in
       Python's AST compiler.
 
+   .. warning::
+      :mod:`dbm.dumb` does not support concurrent read/write access. (Multiple
+      simultaneous read accesses are safe.) When a program has the database open
+      for writing, no other program should have it open for reading or writing.
+
    .. versionchanged:: 3.5
       :func:`~dbm.dumb.open` always creates a new database when *flag* is ``'n'``.
 
@@ -460,3 +489,15 @@ The :mod:`!dbm.dumb` module defines the following:
    .. method:: dumbdbm.close()
 
       Close the database.
+
+   .. method:: dumbdbm.reorganize()
+
+      If you have carried out a lot of deletions and would like to shrink the space
+      used on disk, this method will reorganize the database; otherwise, deleted file
+      space will not be reused.
+
+      .. note::
+         While reorganizing, no additional free disk space is required. However, be aware
+         that this factor changes for each :mod:`dbm` submodule.
+
+      .. versionadded:: next

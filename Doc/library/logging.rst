@@ -1342,8 +1342,9 @@ functions.
 
 .. function:: basicConfig(**kwargs)
 
-   Does basic configuration for the logging system by creating a
-   :class:`StreamHandler` with a default :class:`Formatter` and adding it to the
+   Does basic configuration for the logging system by either creating a
+   :class:`StreamHandler` with a default :class:`Formatter`
+   or using the  given *formatter* instance, and adding it to the
    root logger. The functions :func:`debug`, :func:`info`, :func:`warning`,
    :func:`error` and :func:`critical` will call :func:`basicConfig` automatically
    if no handlers are defined for the root logger.
@@ -1428,6 +1429,19 @@ functions.
    |              | which means that it will be treated the     |
    |              | same as passing 'errors'.                   |
    +--------------+---------------------------------------------+
+   | *formatter*  | If specified, set this formatter instance   |
+   |              | (see :ref:`formatter-objects`)              |
+   |              | for all involved handlers.                  |
+   |              | If not specified, the default is to create  |
+   |              | and use an instance of                      |
+   |              | :class:`logging.Formatter` based on         |
+   |              | arguments *format*, *datefmt* and *style*.  |
+   |              | When *formatter* is specified together with |
+   |              | any of the three arguments *format*,        |
+   |              | *datefmt* and *style*, a ``ValueError`` is  |
+   |              | raised to signal that these arguments would |
+   |              | lose meaning otherwise.                     |
+   +--------------+---------------------------------------------+
 
    .. versionchanged:: 3.2
       The *style* argument was added.
@@ -1443,6 +1457,9 @@ functions.
 
    .. versionchanged:: 3.9
       The *encoding* and *errors* arguments were added.
+
+   .. versionchanged:: 3.15
+      The *formatter* argument was added.
 
 .. function:: shutdown()
 

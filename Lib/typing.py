@@ -956,12 +956,8 @@ def evaluate_forward_ref(
     """Evaluate a forward reference as a type hint.
 
     This is similar to calling the ForwardRef.evaluate() method,
-    but unlike that method, evaluate_forward_ref() also:
-
-    * Recursively evaluates forward references nested within the type hint.
-    * Rejects certain objects that are not valid type hints.
-    * Replaces type hints that evaluate to None with types.NoneType.
-    * Supports the *FORWARDREF* and *STRING* formats.
+    but unlike that method, evaluate_forward_ref() also
+    recursively evaluates forward references nested within the type hint.
 
     *forward_ref* must be an instance of ForwardRef. *owner*, if given,
     should be the object that holds the annotations that the forward reference
@@ -981,23 +977,24 @@ def evaluate_forward_ref(
     if forward_ref.__forward_arg__ in _recursive_guard:
         return forward_ref
 
-    try:
-        value = forward_ref.evaluate(globals=globals, locals=locals,
-                                     type_params=type_params, owner=owner)
-    except NameError:
-        if format == _lazy_annotationlib.Format.FORWARDREF:
-            return forward_ref
-        else:
-            raise
+    if format is None:
+        format = _lazy_annotationlib.Format.VALUE
+    value = forward_ref.evaluate(globals=globals, locals=locals,
+                                 type_params=type_params, owner=owner, format=format)
 
-    type_ = _type_check(
-        value,
-        "Forward references must evaluate to types.",
-        is_argument=forward_ref.__forward_is_argument__,
-        allow_special_forms=forward_ref.__forward_is_class__,
-    )
+    if (isinstance(value, _lazy_annotationlib.ForwardRef)
+            and format == _lazy_annotationlib.Format.FORWARDREF):
+        return value
+
+    if isinstance(value, str):
+        value = _make_forward_ref(value, module=forward_ref.__forward_module__,
+                                  owner=owner or forward_ref.__owner__,
+                                  is_argument=forward_ref.__forward_is_argument__,
+                                  is_class=forward_ref.__forward_is_class__)
+    if owner is None:
+        owner = forward_ref.__owner__
     return _eval_type(
-        type_,
+        value,
         globals,
         locals,
         type_params,
@@ -1648,6 +1645,9 @@ class _UnionGenericAliasMeta(type):
         if other is _UnionGenericAlias or other is Union:
             return True
         return NotImplemented
+
+    def __hash__(self):
+        return hash(Union)
 
 
 class _UnionGenericAlias(metaclass=_UnionGenericAliasMeta):
@@ -2335,12 +2335,12 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False,
                 # This only affects ForwardRefs.
                 base_globals, base_locals = base_locals, base_globals
             for name, value in ann.items():
-                if value is None:
-                    value = type(None)
                 if isinstance(value, str):
                     value = _make_forward_ref(value, is_argument=False, is_class=True)
                 value = _eval_type(value, base_globals, base_locals, base.__type_params__,
                                    format=format, owner=obj)
+                if value is None:
+                    value = type(None)
                 hints[name] = value
         if include_extras or format == Format.STRING:
             return hints
@@ -2374,8 +2374,6 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False,
         localns = globalns
     type_params = getattr(obj, "__type_params__", ())
     for name, value in hints.items():
-        if value is None:
-            value = type(None)
         if isinstance(value, str):
             # class-level forward refs were handled above, this must be either
             # a module-level annotation or a function argument annotation
@@ -2384,7 +2382,10 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False,
                 is_argument=not isinstance(obj, types.ModuleType),
                 is_class=False,
             )
-        hints[name] = _eval_type(value, globalns, localns, type_params, format=format, owner=obj)
+        value = _eval_type(value, globalns, localns, type_params, format=format, owner=obj)
+        if value is None:
+            value = type(None)
+        hints[name] = value
     return hints if include_extras else {k: _strip_annotations(t) for k, t in hints.items()}
 
 
@@ -3045,14 +3046,16 @@ class _TypedDictMeta(type):
         else:
             generic_base = ()
 
+        ns_annotations = ns.pop('__annotations__', None)
+
         tp_dict = type.__new__(_TypedDictMeta, name, (*generic_base, dict), ns)
 
         if not hasattr(tp_dict, '__orig_bases__'):
             tp_dict.__orig_bases__ = bases
 
-        if "__annotations__" in ns:
+        if ns_annotations is not None:
             own_annotate = None
-            own_annotations = ns["__annotations__"]
+            own_annotations = ns_annotations
         elif (own_annotate := _lazy_annotationlib.get_annotate_from_class_namespace(ns)) is not None:
             own_annotations = _lazy_annotationlib.call_annotate_function(
                 own_annotate, _lazy_annotationlib.Format.FORWARDREF, owner=tp_dict
@@ -3123,7 +3126,7 @@ class _TypedDictMeta(type):
                 if base_annotate is None:
                     continue
                 base_annos = _lazy_annotationlib.call_annotate_function(
-                    base.__annotate__, format, owner=base)
+                    base_annotate, format, owner=base)
                 annos.update(base_annos)
             if own_annotate is not None:
                 own = _lazy_annotationlib.call_annotate_function(
