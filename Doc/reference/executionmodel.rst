@@ -434,7 +434,7 @@ specific to Python::
          interpreter
            Python thread (runs bytecode)
 
-when a Python program starts, it looks exactly like that, with one
+When a Python program starts, it looks exactly like that, with one
 of each.  The process has a single global runtime to manage global
 resources.  Each Python thread has all the state it needs to run
 Python code (and use any supported C-API) in its OS thread.
