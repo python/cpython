@@ -75,6 +75,7 @@ import dis
 import code
 import glob
 import json
+import stat
 import token
 import types
 import atexit
@@ -3418,6 +3419,8 @@ def attach(pid, commands=()):
             )
         )
         connect_script.close()
+        orig_mode = os.stat(connect_script.name).st_mode
+        os.chmod(connect_script.name, orig_mode | stat.S_IROTH | stat.S_IRGRP)
         sys.remote_exec(pid, connect_script.name)
 
         # TODO Add a timeout? Or don't bother since the user can ^C?
@@ -3489,7 +3492,8 @@ def help():
 _usage = """\
 Debug the Python program given by pyfile. Alternatively,
 an executable module or package to debug can be specified using
-the -m switch.
+the -m switch. You can also attach to a running Python process
+using the -p option with its PID.
 
 Initial commands are read from .pdbrc files in your home directory
 and in the current directory, if they exist.  Commands supplied with

@@ -299,26 +299,34 @@ basicblock_returns(const basicblock *b) {
 }
 
 static void
-dump_basicblock(const basicblock *b)
+dump_basicblock(const basicblock *b, bool highlight)
 {
     const char *b_return = basicblock_returns(b) ? "return " : "";
+    if (highlight) {
+        fprintf(stderr, ">>> ");
+    }
     fprintf(stderr, "%d: [EH=%d CLD=%d WRM=%d NO_FT=%d %p] used: %d, depth: %d, preds: %d %s\n",
         b->b_label.id, b->b_except_handler, b->b_cold, b->b_warm, BB_NO_FALLTHROUGH(b), b, b->b_iused,
         b->b_startdepth, b->b_predecessors, b_return);
+    int depth = b->b_startdepth;
     if (b->b_instr) {
         int i;
         for (i = 0; i < b->b_iused; i++) {
-            fprintf(stderr, "  [%02d] ", i);
+            fprintf(stderr, "  [%02d] depth: %d ", i, depth);
             dump_instr(b->b_instr + i);
+
+            int popped = _PyOpcode_num_popped(b->b_instr[i].i_opcode, b->b_instr[i].i_oparg);
+            int pushed = _PyOpcode_num_pushed(b->b_instr[i].i_opcode, b->b_instr[i].i_oparg);
+            depth += (pushed - popped);
         }
     }
 }
 
 void
-_PyCfgBuilder_DumpGraph(const basicblock *entryblock)
+_PyCfgBuilder_DumpGraph(const basicblock *entryblock, const basicblock *mark)
 {
     for (const basicblock *b = entryblock; b != NULL; b = b->b_next) {
-        dump_basicblock(b);
+        dump_basicblock(b, b == mark);
     }
 }
 
@@ -2862,8 +2870,11 @@ optimize_load_fast(cfg_builder *g)
                 // how many inputs should be left on the stack.
 
                 // Opcodes that consume no inputs
+                case FORMAT_SIMPLE:
                 case GET_ANEXT:
+                case GET_ITER:
                 case GET_LEN:
+                case GET_YIELD_FROM_ITER:
                 case IMPORT_FROM:
                 case MATCH_KEYS:
                 case MATCH_MAPPING:
@@ -2898,6 +2909,16 @@ optimize_load_fast(cfg_builder *g)
                     break;
                 }
 
+                case END_SEND:
+                case SET_FUNCTION_ATTRIBUTE: {
+                    assert(_PyOpcode_num_popped(opcode, oparg) == 2);
+                    assert(_PyOpcode_num_pushed(opcode, oparg) == 1);
+                    ref tos = ref_stack_pop(&refs);
+                    ref_stack_pop(&refs);
+                    PUSH_REF(tos.instr, tos.local);
+                    break;
+                }
+
                 // Opcodes that consume some inputs and push new values
                 case CHECK_EXC_MATCH: {
                     ref_stack_pop(&refs);
@@ -2924,6 +2945,14 @@ optimize_load_fast(cfg_builder *g)
                         // back onto the stack
                         PUSH_REF(self.instr, self.local);
                     }
+                    break;
+                }
+
+                case LOAD_SPECIAL:
+                case PUSH_EXC_INFO: {
+                    ref tos = ref_stack_pop(&refs);
+                    PUSH_REF(i, NOT_LOCAL);
+                    PUSH_REF(tos.instr, tos.local);
                     break;
                 }
 
