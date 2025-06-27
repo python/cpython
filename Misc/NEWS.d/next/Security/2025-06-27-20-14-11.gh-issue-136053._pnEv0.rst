@@ -1,1 +1,0 @@
-Fix a potential out-of-bounds memory access vulnerability in the ``TYPE_SLICE`` case of the ``r_object`` function in ``marshal.c``. The code now properly checks if ``r_ref_reserve()`` fails before using its return value, preventing crashes or security issues when deserializing malicious marshal data.
