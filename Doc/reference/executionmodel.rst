@@ -416,14 +416,19 @@ on the computer look something like this::
 
 While a program always starts with exactly one of each of those, it may
 grow to include multiple of each.  Hosts and processes are isolated and
-independent from one another.  However, threads are not.  Each thread
-does *run* independently, for the small segments of time it is
-scheduled to execute its code on the CPU.  Otherwise, all threads
+independent from one another.  However, threads are not.
+
+Not all platforms support threads, though most do.  For those that do,
+each thread does *run* independently, for the small segments of time it
+is scheduled to execute its code on the CPU.  Otherwise, all threads
 in a process share all the process' resources, including memory.
-This is exactly what can make threads a pain: two threads running
-at the same arbitrary time on different CPU cores can accidentally
-interfere with each other's use of some shared data.  The initial
-thread is known as the "main" thread.
+The initial thread is known as the "main" thread.
+
+.. note::
+
+   The way they share resources is exactly what can make threads a pain:
+   two threads running at the same arbitrary time on different CPU cores
+   can accidentally interfere with each other's use of some shared data.
 
 The same layers apply to each Python program, with some extra layers
 specific to Python::
@@ -435,8 +440,8 @@ specific to Python::
            Python thread (runs bytecode)
 
 When a Python program starts, it looks exactly like that, with one
-of each.  The process has a single global runtime to manage global
-resources.  Each Python thread has all the state it needs to run
+of each.  The process has a single global runtime to manage Python's
+global resources.  Each Python thread has all the state it needs to run
 Python code (and use any supported C-API) in its OS thread.
 
 .. , including its stack of call frames.
@@ -444,11 +449,12 @@ Python code (and use any supported C-API) in its OS thread.
 .. If the program uses coroutines (async) then the thread will end up
    juggling multiple stacks.
 
-In between the global runtime and the threads lies the interpreter.
-It encapsulates all of the non-global runtime state that the
-interpreter's Python threads share.  For example, all those threads
-share :data:`sys.modules`.  When a Python thread is created, it belongs
-to an interpreter.
+In between the global runtime and the thread(s) lies the interpreter.
+It completely encapsulates all of the non-global runtime state that the
+interpreter's Python threads share.  For example, all its threads share
+:data:`sys.modules`.  When a Python thread is created, it belongs
+to an interpreter, and likewise when an OS thread is otherwise
+associated with Python.
 
 If the runtime supports using multiple interpreters then each OS thread
 will have at most one Python thread for each interpreter.  However,
@@ -460,9 +466,10 @@ The initial interpreter is known as the "main" interpreter.
    of which each thread has one to execute Python code.)
 
 Once a program is running, new Python threads can be created using the
-:mod:`threading` module.  Additional processes can be created using the
-:mod:`multiprocessing` and :mod:`subprocess` modules.  You can run
-coroutines (async) in the main thread using :mod:`asyncio`.
+:mod:`threading` module (on platforms and Python implementations that
+support threads).  Additional processes can be created using the
+:mod:`os`, :mod:`subprocess`, and :mod:`multiprocessing` modules.
+You can run coroutines (async) in the main thread using :mod:`asyncio`.
 Interpreters can be created using the :mod:`concurrent.interpreters`
 module.
 
