@@ -4349,7 +4349,7 @@ dummy_func(
             DEOPT_IF(callable_o != interp->callable_cache.isinstance);
         }
 
-        op(_CALL_ISINSTANCE, (callable, null, instance, cls -- res, i, c)) {
+        op(_CALL_ISINSTANCE, (callable, null, instance, cls -- res, c1, i, c2)) {
             /* isinstance(o, o2) */
             STAT_INC(CALL, hit);
             PyObject *inst_o = PyStackRef_AsPyObjectBorrow(instance);
@@ -4359,8 +4359,9 @@ dummy_func(
                 ERROR_NO_POP();
             }
             INPUTS_DEAD();
+            c1 = callable;
             i = instance;
-            c = cls;
+            c2 = cls;
             res = retval ? PyStackRef_True : PyStackRef_False;
             assert((!PyStackRef_IsNull(res)) ^ (_PyErr_Occurred(tstate) != NULL));
         }
@@ -4371,6 +4372,7 @@ dummy_func(
             _GUARD_THIRD_NULL +
             _GUARD_CALLABLE_ISINSTANCE +
             _CALL_ISINSTANCE +
+            POP_TOP +
             POP_TOP +
             POP_TOP;
 
@@ -5360,17 +5362,17 @@ dummy_func(
             value = PyStackRef_FromPyObjectBorrow(ptr);
         }
 
-        tier2 op(_SWAP_CALL_TWO_LOAD_CONST_INLINE_BORROW, (ptr/4, callable, null, instance, cls -- value, i, c)) {
+        tier2 op(_SWAP_CALL_TWO_LOAD_CONST_INLINE_BORROW, (ptr/4, callable, null, instance, cls -- value, c1, i, c2)) {
             PyStackRef_CLOSE(cls);
             PyStackRef_CLOSE(instance);
             (void)null; // Silence compiler warnings about unused variables
-            (void)callable;
             DEAD(null);
-            DEAD(callable);
+            PyStackRef_CLOSE(callable);
             assert(_Py_IsImmortal(PyStackRef_AsPyObjectBorrow(callable)));
             value = PyStackRef_FromPyObjectBorrow(ptr);
+            c1 = callable;
             i = instance;
-            c = cls;
+            c2 = cls;
         }
 
         tier2 op(_LOAD_CONST_UNDER_INLINE, (ptr/4, old -- value, new)) {

@@ -5989,11 +5989,14 @@
         case _CALL_ISINSTANCE: {
             _PyStackRef cls;
             _PyStackRef instance;
+            _PyStackRef callable;
             _PyStackRef res;
+            _PyStackRef c1;
             _PyStackRef i;
-            _PyStackRef c;
+            _PyStackRef c2;
             cls = stack_pointer[-1];
             instance = stack_pointer[-2];
+            callable = stack_pointer[-4];
             STAT_INC(CALL, hit);
             PyObject *inst_o = PyStackRef_AsPyObjectBorrow(instance);
             PyObject *cls_o = PyStackRef_AsPyObjectBorrow(cls);
@@ -6003,15 +6006,15 @@
             if (retval < 0) {
                 JUMP_TO_ERROR();
             }
+            c1 = callable;
             i = instance;
-            c = cls;
+            c2 = cls;
             res = retval ? PyStackRef_True : PyStackRef_False;
             assert((!PyStackRef_IsNull(res)) ^ (_PyErr_Occurred(tstate) != NULL));
             stack_pointer[-4] = res;
-            stack_pointer[-3] = i;
-            stack_pointer[-2] = c;
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
+            stack_pointer[-3] = c1;
+            stack_pointer[-2] = i;
+            stack_pointer[-1] = c2;
             break;
         }
 
@@ -7394,8 +7397,9 @@
             _PyStackRef null;
             _PyStackRef callable;
             _PyStackRef value;
+            _PyStackRef c1;
             _PyStackRef i;
-            _PyStackRef c;
+            _PyStackRef c2;
             cls = stack_pointer[-1];
             instance = stack_pointer[-2];
             null = stack_pointer[-3];
@@ -7412,15 +7416,21 @@
             PyStackRef_CLOSE(instance);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             (void)null;
-            (void)callable;
+            stack_pointer += -2;
+            assert(WITHIN_STACK_BOUNDS());
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyStackRef_CLOSE(callable);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             assert(_Py_IsImmortal(PyStackRef_AsPyObjectBorrow(callable)));
             value = PyStackRef_FromPyObjectBorrow(ptr);
+            c1 = callable;
             i = instance;
-            c = cls;
-            stack_pointer[-2] = value;
-            stack_pointer[-1] = i;
-            stack_pointer[0] = c;
-            stack_pointer += 1;
+            c2 = cls;
+            stack_pointer[0] = value;
+            stack_pointer[1] = c1;
+            stack_pointer[2] = i;
+            stack_pointer[3] = c2;
+            stack_pointer += 4;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
