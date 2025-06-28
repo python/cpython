@@ -1,0 +1,1 @@
+Code for replacing left and right angled brackets in extension names when loading extensions in IDLE has been simplified.
