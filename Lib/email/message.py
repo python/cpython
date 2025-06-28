@@ -313,6 +313,8 @@ class Message:
                 # If it does happen, turn the string into bytes in a way
                 # guaranteed not to fail.
                 bpayload = payload.encode('raw-unicode-escape')
+        elif isinstance(payload, bytes):
+            bpayload = payload
         if cte == 'quoted-printable':
             return quopri.decodestring(bpayload)
         elif cte == 'base64':
