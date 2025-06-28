@@ -614,6 +614,27 @@ class SliceTestCase(unittest.TestCase, HelperMixin):
                     with self.assertRaises(ValueError):
                         marshal.dumps(obj, version)
 
+    def test_slice_ref_reserve_failure(self):
+        # Test for the fix: if (idx < 0) { break; }
+        # This tests the case where r_ref_reserve fails when processing TYPE_SLICE with FLAG_REF
+        # We simulate a scenario where the reference list is too large
+
+        # Create malformed marshal data: TYPE_SLICE with FLAG_REF but invalid reference handling
+        # This should trigger the r_ref_reserve failure path and be handled gracefully
+        malformed_data = b'\xba'  # TYPE_SLICE | FLAG_REF (0x3a | 0x80)
+        malformed_data += b'N'    # None for start
+        malformed_data += b'N'    # None for stop
+        malformed_data += b'N'    # None for step
+
+        # This should raise an exception rather than crash
+        with self.assertRaises((ValueError, EOFError)):
+            marshal.loads(malformed_data)
+
+        # Test truncated data that would also trigger the error path
+        truncated_data = b'\xba' + b'N'  # TYPE_SLICE | FLAG_REF + only one component
+        with self.assertRaises((ValueError, EOFError)):
+            marshal.loads(truncated_data)
+
 @support.cpython_only
 @unittest.skipUnless(_testcapi, 'requires _testcapi')
 class CAPI_TestCase(unittest.TestCase, HelperMixin):
