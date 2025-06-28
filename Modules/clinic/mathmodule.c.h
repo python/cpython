@@ -190,6 +190,40 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(math_signbit__doc__,
+"signbit($module, x, /)\n"
+"--\n"
+"\n"
+"Return True if the sign of x is negative and False otherwise.");
+
+#define MATH_SIGNBIT_METHODDEF    \
+    {"signbit", (PyCFunction)math_signbit, METH_O, math_signbit__doc__},
+
+static PyObject *
+math_signbit_impl(PyObject *module, double x);
+
+static PyObject *
+math_signbit(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    double x;
+
+    if (PyFloat_CheckExact(arg)) {
+        x = PyFloat_AS_DOUBLE(arg);
+    }
+    else
+    {
+        x = PyFloat_AsDouble(arg);
+        if (x == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    return_value = math_signbit_impl(module, x);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(math_fsum__doc__,
 "fsum($module, seq, /)\n"
 "--\n"
@@ -1284,4 +1318,4 @@ math_ulp(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=3e4fd119a2006b3a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4fb180d4c25ff8fa input=a9049054013a1b77]*/

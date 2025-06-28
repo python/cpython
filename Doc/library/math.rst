@@ -61,6 +61,7 @@ noted otherwise, all return values are floats.
 :func:`isnan(x) <isnan>`                              Check if *x* is a NaN  (not a number)
 :func:`ldexp(x, i) <ldexp>`                           ``x * (2**i)``, inverse of function :func:`frexp`
 :func:`nextafter(x, y, steps) <nextafter>`            Floating-point value *steps* steps after *x* towards *y*
+:func:`signbit(x) <signbit>`                          Check if *x* is a negative number
 :func:`ulp(x) <ulp>`                                  Value of the least significant bit of *x*
 
 **Power, exponential and logarithmic functions**
@@ -455,6 +456,15 @@ Floating point manipulation functions
 
    .. versionchanged:: 3.12
       Added the *steps* argument.
+
+
+.. function:: signbit(x)
+
+   Return ``True`` if the sign of *x* is negative and ``False`` otherwise.
+
+   This is useful to detect the sign bit of zeroes, infinities and NaNs.
+
+   .. versionadded:: next
 
 
 .. function:: ulp(x)

@@ -850,7 +850,7 @@ dummy_func(
             DEOPT_IF(!res);
         }
 
-        pure op(_BINARY_OP_EXTEND, (descr/4, left, right -- res)) {
+       op(_BINARY_OP_EXTEND, (descr/4, left, right -- res)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
             assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5);

@@ -13,6 +13,7 @@ import typing
 import shlex
 
 import _llvm
+import _optimizers
 import _schema
 import _stencils
 import _writer
@@ -41,8 +42,8 @@ class _Target(typing.Generic[_S, _R]):
     triple: str
     condition: str
     _: dataclasses.KW_ONLY
-    alignment: int = 1
     args: typing.Sequence[str] = ()
+    optimizer: type[_optimizers.Optimizer] = _optimizers.Optimizer
     prefix: str = ""
     stable: bool = False
     debug: bool = False
@@ -121,8 +122,9 @@ class _Target(typing.Generic[_S, _R]):
     async def _compile(
         self, opname: str, c: pathlib.Path, tempdir: pathlib.Path
     ) -> _stencils.StencilGroup:
+        s = tempdir / f"{opname}.s"
         o = tempdir / f"{opname}.o"
-        args = [
+        args_s = [
             f"--target={self.triple}",
             "-DPy_BUILD_CORE_MODULE",
             "-D_DEBUG" if self.debug else "-DNDEBUG",
@@ -136,7 +138,7 @@ class _Target(typing.Generic[_S, _R]):
             f"-I{CPYTHON / 'Python'}",
             f"-I{CPYTHON / 'Tools' / 'jit'}",
             "-O3",
-            "-c",
+            "-S",
             # Shorten full absolute file paths in the generated code (like the
             # __FILE__ macro and assert failure messages) for reproducibility:
             f"-ffile-prefix-map={CPYTHON}=.",
@@ -155,13 +157,16 @@ class _Target(typing.Generic[_S, _R]):
             "-fno-stack-protector",
             "-std=c11",
             "-o",
-            f"{o}",
+            f"{s}",
             f"{c}",
             *self.args,
             # Allow user-provided CFLAGS to override any defaults
             *shlex.split(self.cflags),
         ]
-        await _llvm.run("clang", args, echo=self.verbose)
+        await _llvm.run("clang", args_s, echo=self.verbose)
+        self.optimizer(s, prefix=self.prefix).run()
+        args_o = [f"--target={self.triple}", "-c", "-o", f"{o}", f"{s}"]
+        await _llvm.run("clang", args_o, echo=self.verbose)
         return await self._parse(o)
 
     async def _build_stencils(self) -> dict[str, _stencils.StencilGroup]:
@@ -190,11 +195,7 @@ class _Target(typing.Generic[_S, _R]):
                     tasks.append(group.create_task(coro, name=opname))
         stencil_groups = {task.get_name(): task.result() for task in tasks}
         for stencil_group in stencil_groups.values():
-            stencil_group.process_relocations(
-                known_symbols=self.known_symbols,
-                alignment=self.alignment,
-                nop=self._get_nop(),
-            )
+            stencil_group.process_relocations(self.known_symbols)
         return stencil_groups
 
     def build(
@@ -524,42 +525,43 @@ class _MachO(
 
 def get_target(host: str) -> _COFF | _ELF | _MachO:
     """Build a _Target for the given host "triple" and options."""
+    optimizer: type[_optimizers.Optimizer]
     target: _COFF | _ELF | _MachO
     if re.fullmatch(r"aarch64-apple-darwin.*", host):
         condition = "defined(__aarch64__) && defined(__APPLE__)"
-        target = _MachO(host, condition, alignment=8, prefix="_")
+        optimizer = _optimizers.OptimizerAArch64
+        target = _MachO(host, condition, optimizer=optimizer, prefix="_")
     elif re.fullmatch(r"aarch64-pc-windows-msvc", host):
         args = ["-fms-runtime-lib=dll", "-fplt"]
         condition = "defined(_M_ARM64)"
-        target = _COFF(host, condition, alignment=8, args=args)
+        optimizer = _optimizers.OptimizerAArch64
+        target = _COFF(host, condition, args=args, optimizer=optimizer)
     elif re.fullmatch(r"aarch64-.*-linux-gnu", host):
-        args = [
-            "-fpic",
-            # On aarch64 Linux, intrinsics were being emitted and this flag
-            # was required to disable them.
-            "-mno-outline-atomics",
-        ]
+        # -mno-outline-atomics: Keep intrinsics from being emitted.
+        args = ["-fpic", "-mno-outline-atomics"]
         condition = "defined(__aarch64__) && defined(__linux__)"
-        target = _ELF(host, condition, alignment=8, args=args)
+        optimizer = _optimizers.OptimizerAArch64
+        target = _ELF(host, condition, args=args, optimizer=optimizer)
     elif re.fullmatch(r"i686-pc-windows-msvc", host):
-        args = [
-            "-DPy_NO_ENABLE_SHARED",
-            # __attribute__((preserve_none)) is not supported
-            "-Wno-ignored-attributes",
-        ]
+        # -Wno-ignored-attributes: __attribute__((preserve_none)) is not supported here.
+        args = ["-DPy_NO_ENABLE_SHARED", "-Wno-ignored-attributes"]
+        optimizer = _optimizers.OptimizerX86
         condition = "defined(_M_IX86)"
-        target = _COFF(host, condition, args=args, prefix="_")
+        target = _COFF(host, condition, args=args, optimizer=optimizer, prefix="_")
     elif re.fullmatch(r"x86_64-apple-darwin.*", host):
         condition = "defined(__x86_64__) && defined(__APPLE__)"
-        target = _MachO(host, condition, prefix="_")
+        optimizer = _optimizers.OptimizerX86
+        target = _MachO(host, condition, optimizer=optimizer, prefix="_")
     elif re.fullmatch(r"x86_64-pc-windows-msvc", host):
         args = ["-fms-runtime-lib=dll"]
         condition = "defined(_M_X64)"
-        target = _COFF(host, condition, args=args)
+        optimizer = _optimizers.OptimizerX8664Windows
+        target = _COFF(host, condition, args=args, optimizer=optimizer)
     elif re.fullmatch(r"x86_64-.*-linux-gnu", host):
         args = ["-fno-pic", "-mcmodel=medium", "-mlarge-data-threshold=0"]
         condition = "defined(__x86_64__) && defined(__linux__)"
-        target = _ELF(host, condition, args=args)
+        optimizer = _optimizers.OptimizerX86
+        target = _ELF(host, condition, args=args, optimizer=optimizer)
     else:
         raise ValueError(host)
     return target
