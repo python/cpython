@@ -86,7 +86,7 @@ class SearchDialogBase:
         top.wm_iconname(self.icon)
         _setup_dialog(top)
         self.top = top
-        self.frame = Frame(top, padding="5px")
+        self.frame = Frame(top, padding=5)
         self.frame.grid(sticky="nwes")
         top.grid_columnconfigure(0, weight=100)
         top.grid_rowconfigure(0, weight=100)

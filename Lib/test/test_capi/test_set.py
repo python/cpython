@@ -2,8 +2,10 @@ import unittest
 
 from test.support import import_helper
 
-# Skip this test if the _testcapi or _testinternalcapi modules aren't available.
+# Skip this test if the _testcapi, _testlimitedcapi or _testinternalcapi
+# modules aren't available.
 _testcapi = import_helper.import_module('_testcapi')
+_testlimitedcapi = import_helper.import_module('_testlimitedcapi')
 _testinternalcapi = import_helper.import_module('_testinternalcapi')
 
 class set_subclass(set):
@@ -23,7 +25,7 @@ class BaseSetTests:
 
 class TestSetCAPI(BaseSetTests, unittest.TestCase):
     def test_set_check(self):
-        check = _testcapi.set_check
+        check = _testlimitedcapi.set_check
         self.assertTrue(check(set()))
         self.assertTrue(check({1, 2}))
         self.assertFalse(check(frozenset()))
@@ -33,7 +35,7 @@ class TestSetCAPI(BaseSetTests, unittest.TestCase):
         # CRASHES: check(NULL)
 
     def test_set_check_exact(self):
-        check = _testcapi.set_checkexact
+        check = _testlimitedcapi.set_checkexact
         self.assertTrue(check(set()))
         self.assertTrue(check({1, 2}))
         self.assertFalse(check(frozenset()))
@@ -43,7 +45,7 @@ class TestSetCAPI(BaseSetTests, unittest.TestCase):
         # CRASHES: check(NULL)
 
     def test_frozenset_check(self):
-        check = _testcapi.frozenset_check
+        check = _testlimitedcapi.frozenset_check
         self.assertFalse(check(set()))
         self.assertTrue(check(frozenset()))
         self.assertTrue(check(frozenset({1, 2})))
@@ -53,7 +55,7 @@ class TestSetCAPI(BaseSetTests, unittest.TestCase):
         # CRASHES: check(NULL)
 
     def test_frozenset_check_exact(self):
-        check = _testcapi.frozenset_checkexact
+        check = _testlimitedcapi.frozenset_checkexact
         self.assertFalse(check(set()))
         self.assertTrue(check(frozenset()))
         self.assertTrue(check(frozenset({1, 2})))
@@ -63,7 +65,7 @@ class TestSetCAPI(BaseSetTests, unittest.TestCase):
         # CRASHES: check(NULL)
 
     def test_anyset_check(self):
-        check = _testcapi.anyset_check
+        check = _testlimitedcapi.anyset_check
         self.assertTrue(check(set()))
         self.assertTrue(check({1, 2}))
         self.assertTrue(check(frozenset()))
@@ -74,7 +76,7 @@ class TestSetCAPI(BaseSetTests, unittest.TestCase):
         # CRASHES: check(NULL)
 
     def test_anyset_check_exact(self):
-        check = _testcapi.anyset_checkexact
+        check = _testlimitedcapi.anyset_checkexact
         self.assertTrue(check(set()))
         self.assertTrue(check({1, 2}))
         self.assertTrue(check(frozenset()))
@@ -85,7 +87,7 @@ class TestSetCAPI(BaseSetTests, unittest.TestCase):
         # CRASHES: check(NULL)
 
     def test_set_new(self):
-        set_new = _testcapi.set_new
+        set_new = _testlimitedcapi.set_new
         self.assertEqual(set_new().__class__, set)
         self.assertEqual(set_new(), set())
         self.assertEqual(set_new((1, 1, 2)), {1, 2})
@@ -98,7 +100,7 @@ class TestSetCAPI(BaseSetTests, unittest.TestCase):
             set_new((1, {}))
 
     def test_frozenset_new(self):
-        frozenset_new = _testcapi.frozenset_new
+        frozenset_new = _testlimitedcapi.frozenset_new
         self.assertEqual(frozenset_new().__class__, frozenset)
         self.assertEqual(frozenset_new(), frozenset())
         self.assertEqual(frozenset_new((1, 1, 2)), frozenset({1, 2}))
@@ -111,7 +113,7 @@ class TestSetCAPI(BaseSetTests, unittest.TestCase):
             frozenset_new((1, {}))
 
     def test_set_size(self):
-        get_size = _testcapi.set_size
+        get_size = _testlimitedcapi.set_size
         self.assertEqual(get_size(set()), 0)
         self.assertEqual(get_size(frozenset()), 0)
         self.assertEqual(get_size({1, 1, 2}), 2)
@@ -134,7 +136,7 @@ class TestSetCAPI(BaseSetTests, unittest.TestCase):
         # CRASHES: get_size(object())
 
     def test_set_contains(self):
-        contains = _testcapi.set_contains
+        contains = _testlimitedcapi.set_contains
         for cls in (set, frozenset, set_subclass, frozenset_subclass):
             with self.subTest(cls=cls):
                 instance = cls((1, 2))
@@ -147,7 +149,7 @@ class TestSetCAPI(BaseSetTests, unittest.TestCase):
         # CRASHES: contains(NULL, NULL)
 
     def test_add(self):
-        add = _testcapi.set_add
+        add = _testlimitedcapi.set_add
         for cls in (set, set_subclass):
             with self.subTest(cls=cls):
                 instance = cls((1, 2))
@@ -165,7 +167,7 @@ class TestSetCAPI(BaseSetTests, unittest.TestCase):
         # CRASHES: add(NULL, NULL)
 
     def test_discard(self):
-        discard = _testcapi.set_discard
+        discard = _testlimitedcapi.set_discard
         for cls in (set, set_subclass):
             with self.subTest(cls=cls):
                 instance = cls((1, 2))
@@ -187,7 +189,7 @@ class TestSetCAPI(BaseSetTests, unittest.TestCase):
         # CRASHES: discard(NULL, NULL)
 
     def test_pop(self):
-        pop = _testcapi.set_pop
+        pop = _testlimitedcapi.set_pop
         orig = (1, 2)
         for cls in (set, set_subclass):
             with self.subTest(cls=cls):
@@ -204,7 +206,7 @@ class TestSetCAPI(BaseSetTests, unittest.TestCase):
         # CRASHES: pop(NULL)
 
     def test_clear(self):
-        clear = _testcapi.set_clear
+        clear = _testlimitedcapi.set_clear
         for cls in (set, set_subclass):
             with self.subTest(cls=cls):
                 instance = cls((1, 2))
@@ -263,3 +265,7 @@ class TestInternalCAPI(BaseSetTests, unittest.TestCase):
         with self.assertRaises(SystemError):
             set_next(object(), 0)
         # CRASHES: set_next(NULL, 0)
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -73,7 +73,7 @@ class FinderTests(abc.FinderTests):
                         if error.errno != errno.ENOENT:
                             raise
             loader = self.import_(mapping['.root'], test)
-            self.assertTrue(hasattr(loader, 'load_module'))
+            self.assertHasAttr(loader, 'load_module')
             return loader
 
     def test_module(self):
@@ -100,7 +100,7 @@ class FinderTests(abc.FinderTests):
         with util.create_modules('pkg.__init__', 'pkg.sub') as mapping:
             pkg_dir = os.path.dirname(mapping['pkg.__init__'])
             loader = self.import_(pkg_dir, 'pkg.sub')
-            self.assertTrue(hasattr(loader, 'load_module'))
+            self.assertHasAttr(loader, 'load_module')
 
     # [sub package]
     def test_package_in_package(self):
@@ -108,7 +108,7 @@ class FinderTests(abc.FinderTests):
         with context as mapping:
             pkg_dir = os.path.dirname(mapping['pkg.__init__'])
             loader = self.import_(pkg_dir, 'pkg.sub')
-            self.assertTrue(hasattr(loader, 'load_module'))
+            self.assertHasAttr(loader, 'load_module')
 
     # [package over modules]
     def test_package_over_module(self):
@@ -129,7 +129,7 @@ class FinderTests(abc.FinderTests):
             file.write("# test file for importlib")
         try:
             loader = self._find(finder, 'mod', loader_only=True)
-            self.assertTrue(hasattr(loader, 'load_module'))
+            self.assertHasAttr(loader, 'load_module')
         finally:
             os.unlink('mod.py')
 

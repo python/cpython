@@ -1,0 +1,5 @@
+# Files listed will be ignored by the compiler warning checker
+# for the Ubuntu/build and test job.
+# Keep lines sorted lexicographically to help avoid merge conflicts.
+# Format example:
+# /path/to/file (number of warnings in file)

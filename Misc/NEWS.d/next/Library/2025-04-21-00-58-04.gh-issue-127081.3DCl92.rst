@@ -1,0 +1,2 @@
+Fix libc thread safety issues with :mod:`pwd` by locking access to
+``getpwall``.

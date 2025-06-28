@@ -1,0 +1,3 @@
+Add check that timezone fields are in range for
+:meth:`datetime.datetime.fromisoformat` and
+:meth:`datetime.time.fromisoformat`. Patch by Semyon Moroz.

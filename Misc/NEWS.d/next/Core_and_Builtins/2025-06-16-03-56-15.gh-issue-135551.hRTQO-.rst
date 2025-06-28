@@ -1,0 +1,1 @@
+Sorting randomly ordered lists will often run a bit faster, thanks to a new scheme for picking minimum run lengths from Stefan Pochmann, which arranges for the merge tree to be as evenly balanced as is possible.

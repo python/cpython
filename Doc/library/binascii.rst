@@ -1,5 +1,5 @@
-:mod:`binascii` --- Convert between binary and ASCII
-====================================================
+:mod:`!binascii` --- Convert between binary and ASCII
+=====================================================
 
 .. module:: binascii
    :synopsis: Tools for converting between binary and various ASCII-encoded binary

@@ -1,5 +1,5 @@
-:mod:`difflib` --- Helpers for computing deltas
-===============================================
+:mod:`!difflib` --- Helpers for computing deltas
+================================================
 
 .. module:: difflib
    :synopsis: Helpers for computing differences between objects.
@@ -52,8 +52,8 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
    the purpose of sequence matching. This heuristic can be turned off by setting
    the ``autojunk`` argument to ``False`` when creating the :class:`SequenceMatcher`.
 
-   .. versionadded:: 3.2
-      The *autojunk* parameter.
+   .. versionchanged:: 3.2
+      Added the *autojunk* parameter.
 
 
 .. class:: Differ
@@ -171,9 +171,12 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
    expressed in the ISO 8601 format. If not specified, the
    strings default to blanks.
 
+      >>> import sys
+      >>> from difflib import *
       >>> s1 = ['bacon\n', 'eggs\n', 'ham\n', 'guido\n']
       >>> s2 = ['python\n', 'eggy\n', 'hamster\n', 'guido\n']
-      >>> sys.stdout.writelines(context_diff(s1, s2, fromfile='before.py', tofile='after.py'))
+      >>> sys.stdout.writelines(context_diff(s1, s2, fromfile='before.py',
+      ...                        tofile='after.py'))
       *** before.py
       --- after.py
       ***************
@@ -294,12 +297,11 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
    For inputs that do not have trailing newlines, set the *lineterm* argument to
    ``""`` so that the output will be uniformly newline free.
 
-   The context diff format normally has a header for filenames and modification
+   The unified diff format normally has a header for filenames and modification
    times.  Any or all of these may be specified using strings for *fromfile*,
    *tofile*, *fromfiledate*, and *tofiledate*.  The modification times are normally
    expressed in the ISO 8601 format. If not specified, the
    strings default to blanks.
-
 
       >>> s1 = ['bacon\n', 'eggs\n', 'ham\n', 'guido\n']
       >>> s2 = ['python\n', 'eggy\n', 'hamster\n', 'guido\n']
@@ -381,8 +383,8 @@ The :class:`SequenceMatcher` class has this constructor:
    The optional argument *autojunk* can be used to disable the automatic junk
    heuristic.
 
-   .. versionadded:: 3.2
-      The *autojunk* parameter.
+   .. versionchanged:: 3.2
+      Added the *autojunk* parameter.
 
    SequenceMatcher objects get three data attributes: *bjunk* is the
    set of elements of *b* for which *isjunk* is ``True``; *bpopular* is the set of
@@ -629,7 +631,7 @@ If you want to know how to change the first sequence into the second, use
      work.
 
    * `Simple version control recipe
-     <https://code.activestate.com/recipes/576729/>`_ for a small application
+     <https://code.activestate.com/recipes/576729-simple-version-control/>`_ for a small application
      built with :class:`SequenceMatcher`.
 
 

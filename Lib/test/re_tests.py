@@ -531,7 +531,7 @@ xyzabc
     (r'a[ ]*?\ (\d+).*', 'a   10', SUCCEED, 'found', 'a   10'),
     (r'a[ ]*?\ (\d+).*', 'a    10', SUCCEED, 'found', 'a    10'),
     # bug 127259: \Z shouldn't depend on multiline mode
-    (r'(?ms).*?x\s*\Z(.*)','xx\nx\n', SUCCEED, 'g1', ''),
+    (r'(?ms).*?x\s*\z(.*)','xx\nx\n', SUCCEED, 'g1', ''),
     # bug 128899: uppercase literals under the ignorecase flag
     (r'(?i)M+', 'MMM', SUCCEED, 'found', 'MMM'),
     (r'(?i)m+', 'MMM', SUCCEED, 'found', 'MMM'),

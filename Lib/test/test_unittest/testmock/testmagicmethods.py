@@ -1,7 +1,7 @@
 import math
 import unittest
 import os
-from asyncio import iscoroutinefunction
+from inspect import iscoroutinefunction
 from unittest.mock import AsyncMock, Mock, MagicMock, _magics
 
 
@@ -10,13 +10,13 @@ class TestMockingMagicMethods(unittest.TestCase):
 
     def test_deleting_magic_methods(self):
         mock = Mock()
-        self.assertFalse(hasattr(mock, '__getitem__'))
+        self.assertNotHasAttr(mock, '__getitem__')
 
         mock.__getitem__ = Mock()
-        self.assertTrue(hasattr(mock, '__getitem__'))
+        self.assertHasAttr(mock, '__getitem__')
 
         del mock.__getitem__
-        self.assertFalse(hasattr(mock, '__getitem__'))
+        self.assertNotHasAttr(mock, '__getitem__')
 
 
     def test_magicmock_del(self):
@@ -252,12 +252,12 @@ class TestMockingMagicMethods(unittest.TestCase):
         self.assertEqual(list(mock), [1, 2, 3])
 
         getattr(mock, '__bool__').return_value = False
-        self.assertFalse(hasattr(mock, '__nonzero__'))
+        self.assertNotHasAttr(mock, '__nonzero__')
         self.assertFalse(bool(mock))
 
         for entry in _magics:
-            self.assertTrue(hasattr(mock, entry))
-        self.assertFalse(hasattr(mock, '__imaginary__'))
+            self.assertHasAttr(mock, entry)
+        self.assertNotHasAttr(mock, '__imaginary__')
 
 
     def test_magic_mock_equality(self):
@@ -331,6 +331,45 @@ class TestMockingMagicMethods(unittest.TestCase):
         self.assertEqual(os.fspath(mock), expected_path)
         mock.__fspath__.assert_called_once()
 
+    def test_magic_mock_does_not_reset_magic_returns(self):
+        # https://github.com/python/cpython/issues/123934
+        for reset in (True, False):
+            with self.subTest(reset=reset):
+                mm = MagicMock()
+                self.assertIs(type(mm.__str__()), str)
+                mm.__str__.assert_called_once()
+
+                self.assertIs(type(mm.__hash__()), int)
+                mm.__hash__.assert_called_once()
+
+                for _ in range(3):
+                    # Repeat reset several times to be sure:
+                    mm.reset_mock(return_value=reset)
+
+                    self.assertIs(type(mm.__str__()), str)
+                    mm.__str__.assert_called_once()
+
+                    self.assertIs(type(mm.__hash__()), int)
+                    mm.__hash__.assert_called_once()
+
+    def test_magic_mock_resets_manual_mocks(self):
+        mm = MagicMock()
+        mm.__iter__ = MagicMock(return_value=iter([1]))
+        mm.custom = MagicMock(return_value=2)
+        self.assertEqual(list(iter(mm)), [1])
+        self.assertEqual(mm.custom(), 2)
+
+        mm.reset_mock(return_value=True)
+        self.assertEqual(list(iter(mm)), [])
+        self.assertIsInstance(mm.custom(), MagicMock)
+
+    def test_magic_mock_resets_manual_mocks_empty_iter(self):
+        mm = MagicMock()
+        mm.__iter__.return_value = []
+        self.assertEqual(list(iter(mm)), [])
+
+        mm.reset_mock(return_value=True)
+        self.assertEqual(list(iter(mm)), [])
 
     def test_magic_methods_and_spec(self):
         class Iterable(object):

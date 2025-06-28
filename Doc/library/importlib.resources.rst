@@ -1,5 +1,5 @@
-:mod:`importlib.resources` -- Package resource reading, opening and access
---------------------------------------------------------------------------
+:mod:`!importlib.resources` -- Package resource reading, opening and access
+---------------------------------------------------------------------------
 
 .. module:: importlib.resources
     :synopsis: Package resource reading, opening, and access
@@ -50,7 +50,7 @@ for example, a package and its resources can be imported from a zip file using
 ``get_resource_reader(fullname)`` method as specified by
 :class:`importlib.resources.abc.ResourceReader`.
 
-.. data:: Anchor
+.. class:: Anchor
 
     Represents an anchor for resources, either a :class:`module object
     <types.ModuleType>` or a module name as a string. Defined as
@@ -63,7 +63,7 @@ for example, a package and its resources can be imported from a zip file using
     (think files). A Traversable may contain other containers (think
     subdirectories).
 
-    *anchor* is an optional :data:`Anchor`. If the anchor is a
+    *anchor* is an optional :class:`Anchor`. If the anchor is a
     package, resources are resolved from that package. If a module,
     resources are resolved adjacent to that module (in the same package
     or the package root). If the anchor is omitted, the caller's module
@@ -72,10 +72,10 @@ for example, a package and its resources can be imported from a zip file using
     .. versionadded:: 3.9
 
     .. versionchanged:: 3.12
-       "package" parameter was renamed to "anchor". "anchor" can now
+       *package* parameter was renamed to *anchor*. *anchor* can now
        be a non-package module and if omitted will default to the caller's
-       module. "package" is still accepted for compatibility but will raise
-       a DeprecationWarning. Consider passing the anchor positionally or
+       module. *package* is still accepted for compatibility but will raise
+       a :exc:`DeprecationWarning`. Consider passing the anchor positionally or
        using ``importlib_resources >= 5.10`` for a compatible interface
        on older Pythons.
 
@@ -96,4 +96,182 @@ for example, a package and its resources can be imported from a zip file using
     .. versionadded:: 3.9
 
     .. versionchanged:: 3.12
-       Added support for ``traversable`` representing a directory.
+       Added support for *traversable* representing a directory.
+
+
+.. _importlib_resources_functional:
+
+Functional API
+^^^^^^^^^^^^^^
+
+A set of simplified, backwards-compatible helpers is available.
+These allow common operations in a single function call.
+
+For all the following functions:
+
+- *anchor* is an :class:`~importlib.resources.Anchor`,
+  as in :func:`~importlib.resources.files`.
+  Unlike in ``files``, it may not be omitted.
+
+- *path_names* are components of a resource's path name, relative to
+  the anchor.
+  For example, to get the text of resource named ``info.txt``, use::
+
+      importlib.resources.read_text(my_module, "info.txt")
+
+  Like :meth:`Traversable.joinpath <importlib.resources.abc.Traversable>`,
+  The individual components should use forward slashes (``/``)
+  as path separators.
+  For example, the following are equivalent::
+
+      importlib.resources.read_binary(my_module, "pics/painting.png")
+      importlib.resources.read_binary(my_module, "pics", "painting.png")
+
+  For backward compatibility reasons, functions that read text require
+  an explicit *encoding* argument if multiple *path_names* are given.
+  For example, to get the text of ``info/chapter1.txt``, use::
+
+      importlib.resources.read_text(my_module, "info", "chapter1.txt",
+                                    encoding='utf-8')
+
+.. function:: open_binary(anchor, *path_names)
+
+    Open the named resource for binary reading.
+
+    See :ref:`the introduction <importlib_resources_functional>` for
+    details on *anchor* and *path_names*.
+
+    This function returns a :class:`~typing.BinaryIO` object,
+    that is, a binary stream open for reading.
+
+    This function is roughly equivalent to::
+
+        files(anchor).joinpath(*path_names).open('rb')
+
+    .. versionchanged:: 3.13
+        Multiple *path_names* are accepted.
+
+
+.. function:: open_text(anchor, *path_names, encoding='utf-8', errors='strict')
+
+    Open the named resource for text reading.
+    By default, the contents are read as strict UTF-8.
+
+    See :ref:`the introduction <importlib_resources_functional>` for
+    details on *anchor* and *path_names*.
+    *encoding* and *errors* have the same meaning as in built-in :func:`open`.
+
+    For backward compatibility reasons, the *encoding* argument must be given
+    explicitly if there are multiple *path_names*.
+    This limitation is scheduled to be removed in Python 3.15.
+
+    This function returns a :class:`~typing.TextIO` object,
+    that is, a text stream open for reading.
+
+    This function is roughly equivalent to::
+
+          files(anchor).joinpath(*path_names).open('r', encoding=encoding)
+
+    .. versionchanged:: 3.13
+        Multiple *path_names* are accepted.
+        *encoding* and *errors* must be given as keyword arguments.
+
+
+.. function:: read_binary(anchor, *path_names)
+
+    Read and return the contents of the named resource as :class:`bytes`.
+
+    See :ref:`the introduction <importlib_resources_functional>` for
+    details on *anchor* and *path_names*.
+
+    This function is roughly equivalent to::
+
+          files(anchor).joinpath(*path_names).read_bytes()
+
+    .. versionchanged:: 3.13
+        Multiple *path_names* are accepted.
+
+
+.. function:: read_text(anchor, *path_names, encoding='utf-8', errors='strict')
+
+    Read and return the contents of the named resource as :class:`str`.
+    By default, the contents are read as strict UTF-8.
+
+    See :ref:`the introduction <importlib_resources_functional>` for
+    details on *anchor* and *path_names*.
+    *encoding* and *errors* have the same meaning as in built-in :func:`open`.
+
+    For backward compatibility reasons, the *encoding* argument must be given
+    explicitly if there are multiple *path_names*.
+    This limitation is scheduled to be removed in Python 3.15.
+
+    This function is roughly equivalent to::
+
+          files(anchor).joinpath(*path_names).read_text(encoding=encoding)
+
+    .. versionchanged:: 3.13
+        Multiple *path_names* are accepted.
+        *encoding* and *errors* must be given as keyword arguments.
+
+
+.. function:: path(anchor, *path_names)
+
+    Provides the path to the *resource* as an actual file system path.  This
+    function returns a context manager for use in a :keyword:`with` statement.
+    The context manager provides a :class:`pathlib.Path` object.
+
+    Exiting the context manager cleans up any temporary files created, e.g.
+    when the resource needs to be extracted from a zip file.
+
+    For example, the :meth:`~pathlib.Path.stat` method requires
+    an actual file system path; it can be used like this::
+
+        with importlib.resources.path(anchor, "resource.txt") as fspath:
+            result = fspath.stat()
+
+    See :ref:`the introduction <importlib_resources_functional>` for
+    details on *anchor* and *path_names*.
+
+    This function is roughly equivalent to::
+
+          as_file(files(anchor).joinpath(*path_names))
+
+    .. versionchanged:: 3.13
+        Multiple *path_names* are accepted.
+        *encoding* and *errors* must be given as keyword arguments.
+
+
+.. function:: is_resource(anchor, *path_names)
+
+    Return ``True`` if the named resource exists, otherwise ``False``.
+    This function does not consider directories to be resources.
+
+    See :ref:`the introduction <importlib_resources_functional>` for
+    details on *anchor* and *path_names*.
+
+    This function is roughly equivalent to::
+
+          files(anchor).joinpath(*path_names).is_file()
+
+    .. versionchanged:: 3.13
+        Multiple *path_names* are accepted.
+
+
+.. function:: contents(anchor, *path_names)
+
+    Return an iterable over the named items within the package or path.
+    The iterable returns names of resources (e.g. files) and non-resources
+    (e.g. directories) as :class:`str`.
+    The iterable does not recurse into subdirectories.
+
+    See :ref:`the introduction <importlib_resources_functional>` for
+    details on *anchor* and *path_names*.
+
+    This function is roughly equivalent to::
+
+        for resource in files(anchor).joinpath(*path_names).iterdir():
+            yield resource.name
+
+    .. deprecated:: 3.11
+        Prefer ``iterdir()`` as above, which offers more control over the
+        results and richer functionality.

@@ -1,0 +1,2 @@
+Ensures packages are not accidentally bundled into the traditional
+installer.

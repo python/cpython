@@ -23,10 +23,9 @@ except ImportError:
 
 from io import BytesIO, StringIO
 from fileinput import FileInput, hook_encoded
-from pathlib import Path
 
 from test.support import verbose
-from test.support.os_helper import TESTFN
+from test.support.os_helper import TESTFN, FakePath
 from test.support.os_helper import unlink as safe_unlink
 from test.support import os_helper
 from test import support
@@ -151,7 +150,7 @@ class BufferSizesTests(BaseTests, unittest.TestCase):
             print('6. Inplace')
         savestdout = sys.stdout
         try:
-            fi = FileInput(files=(t1, t2, t3, t4), inplace=1, encoding="utf-8")
+            fi = FileInput(files=(t1, t2, t3, t4), inplace=True, encoding="utf-8")
             for line in fi:
                 line = line[:-1].upper()
                 print(line)
@@ -246,7 +245,7 @@ class FileInputTests(BaseTests, unittest.TestCase):
         orig_stdin = sys.stdin
         try:
             sys.stdin = BytesIO(b'spam, bacon, sausage, and spam')
-            self.assertFalse(hasattr(sys.stdin, 'buffer'))
+            self.assertNotHasAttr(sys.stdin, 'buffer')
             fi = FileInput(files=['-'], mode='rb')
             lines = list(fi)
             self.assertEqual(lines, [b'spam, bacon, sausage, and spam'])
@@ -256,7 +255,7 @@ class FileInputTests(BaseTests, unittest.TestCase):
     def test_file_opening_hook(self):
         try:
             # cannot use openhook and inplace mode
-            fi = FileInput(inplace=1, openhook=lambda f, m: None)
+            fi = FileInput(inplace=True, openhook=lambda f, m: None)
             self.fail("FileInput should raise if both inplace "
                              "and openhook arguments are given")
         except ValueError:
@@ -478,23 +477,23 @@ class FileInputTests(BaseTests, unittest.TestCase):
             self.assertRaises(StopIteration, next, fi)
             self.assertEqual(src.linesread, [])
 
-    def test_pathlib_file(self):
-        t1 = Path(self.writeTmp("Pathlib file."))
+    def test_pathlike_file(self):
+        t1 = FakePath(self.writeTmp("Path-like file."))
         with FileInput(t1, encoding="utf-8") as fi:
             line = fi.readline()
-            self.assertEqual(line, 'Pathlib file.')
+            self.assertEqual(line, 'Path-like file.')
             self.assertEqual(fi.lineno(), 1)
             self.assertEqual(fi.filelineno(), 1)
             self.assertEqual(fi.filename(), os.fspath(t1))
 
-    def test_pathlib_file_inplace(self):
-        t1 = Path(self.writeTmp('Pathlib file.'))
+    def test_pathlike_file_inplace(self):
+        t1 = FakePath(self.writeTmp('Path-like file.'))
         with FileInput(t1, inplace=True, encoding="utf-8") as fi:
             line = fi.readline()
-            self.assertEqual(line, 'Pathlib file.')
+            self.assertEqual(line, 'Path-like file.')
             print('Modified %s' % line)
         with open(t1, encoding="utf-8") as f:
-            self.assertEqual(f.read(), 'Modified Pathlib file.\n')
+            self.assertEqual(f.read(), 'Modified Path-like file.\n')
 
 
 class MockFileInput:

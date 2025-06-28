@@ -1,0 +1,3 @@
+The :mod:`ctypes` module now performs a more portable test for the
+definition of :manpage:`alloca(3)`, fixing a compilation failure on
+NetBSD.

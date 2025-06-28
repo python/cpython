@@ -18,3 +18,9 @@ PyAPI_FUNC(int) PyErr_WarnExplicitFormat(
 
 // DEPRECATED: Use PyErr_WarnEx() instead.
 #define PyErr_Warn(category, msg) PyErr_WarnEx((category), (msg), 1)
+
+int _PyErr_WarnExplicitObjectWithContext(
+    PyObject *category,
+    PyObject *message,
+    PyObject *filename,
+    int lineno);

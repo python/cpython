@@ -221,7 +221,7 @@ def overrideRootMenu(root, flist):
         # The binding above doesn't reliably work on all versions of Tk
         # on macOS. Adding command definition below does seem to do the
         # right thing for now.
-        root.createcommand('exit', flist.close_all_callback)
+        root.createcommand('::tk::mac::Quit', flist.close_all_callback)
 
     if isCarbonTk():
         # for Carbon AquaTk, replace the default Tk apple menu

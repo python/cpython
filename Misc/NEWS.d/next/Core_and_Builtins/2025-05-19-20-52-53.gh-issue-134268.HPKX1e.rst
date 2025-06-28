@@ -1,0 +1,2 @@
+Add ``_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW`` and use it to further
+optimize ``CALL_ISINSTANCE``.

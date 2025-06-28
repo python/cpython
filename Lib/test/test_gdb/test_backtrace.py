@@ -49,6 +49,7 @@ Traceback \(most recent call first\):
 
     @unittest.skipIf(python_is_optimized(),
                      "Python was compiled with optimizations")
+    @support.requires_gil_enabled()
     @support.requires_resource('cpu')
     def test_threads(self):
         'Verify that "py-bt" indicates threads that are waiting for the GIL'

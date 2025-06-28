@@ -153,10 +153,13 @@ _x509name_print(_sslmodulestate *state, X509_NAME *name, int indent, unsigned lo
  * PySSLCertificate_Type
  */
 
+#define PySSLCertificate_CAST(op)   ((PySSLCertificate *)(op))
+
 static PyObject *
-certificate_repr(PySSLCertificate *self)
+certificate_repr(PyObject *op)
 {
     PyObject *osubject, *result;
+    PySSLCertificate *self = PySSLCertificate_CAST(op);
 
     /* subject string is ASCII encoded, UTF-8 chars are quoted */
     osubject = _x509name_print(
@@ -176,8 +179,9 @@ certificate_repr(PySSLCertificate *self)
 }
 
 static Py_hash_t
-certificate_hash(PySSLCertificate *self)
+certificate_hash(PyObject *op)
 {
+    PySSLCertificate *self = PySSLCertificate_CAST(op);
     if (self->hash == (Py_hash_t)-1) {
         unsigned long hash;
         hash = X509_subject_name_hash(self->cert);
@@ -191,19 +195,20 @@ certificate_hash(PySSLCertificate *self)
 }
 
 static PyObject *
-certificate_richcompare(PySSLCertificate *self, PyObject *other, int op)
+certificate_richcompare(PyObject *lhs, PyObject *rhs, int op)
 {
     int cmp;
+    PySSLCertificate *self = PySSLCertificate_CAST(lhs);
     _sslmodulestate *state = get_state_cert(self);
 
-    if (Py_TYPE(other) != state->PySSLCertificate_Type) {
+    if (Py_TYPE(rhs) != state->PySSLCertificate_Type) {
         Py_RETURN_NOTIMPLEMENTED;
     }
     /* only support == and != */
     if ((op != Py_EQ) && (op != Py_NE)) {
         Py_RETURN_NOTIMPLEMENTED;
     }
-    cmp = X509_cmp(self->cert, ((PySSLCertificate*)other)->cert);
+    cmp = X509_cmp(self->cert, ((PySSLCertificate*)rhs)->cert);
     if (((op == Py_EQ) && (cmp == 0)) || ((op == Py_NE) && (cmp != 0))) {
         Py_RETURN_TRUE;
     } else {
@@ -212,11 +217,12 @@ certificate_richcompare(PySSLCertificate *self, PyObject *other, int op)
 }
 
 static void
-certificate_dealloc(PySSLCertificate *self)
+certificate_dealloc(PyObject *op)
 {
+    PySSLCertificate *self = PySSLCertificate_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
     X509_free(self->cert);
-    Py_TYPE(self)->tp_free(self);
+    (void)Py_TYPE(self)->tp_free(self);
     Py_DECREF(tp);
 }
 

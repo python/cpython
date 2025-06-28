@@ -1,0 +1,2 @@
+Remove support for creating :class:`~typing.NamedTuple` classes via the
+undocumented keyword argument syntax. Patch by Bénédikt Tran.

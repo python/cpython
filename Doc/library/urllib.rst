@@ -1,5 +1,5 @@
-:mod:`urllib` --- URL handling modules
-======================================
+:mod:`!urllib` --- URL handling modules
+=======================================
 
 .. module:: urllib
 

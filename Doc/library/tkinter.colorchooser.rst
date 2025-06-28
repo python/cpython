@@ -1,5 +1,5 @@
-:mod:`tkinter.colorchooser` --- Color choosing dialog
-=====================================================
+:mod:`!tkinter.colorchooser` --- Color choosing dialog
+======================================================
 
 .. module:: tkinter.colorchooser
    :platform: Tk

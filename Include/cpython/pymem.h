@@ -23,6 +23,10 @@ typedef enum {
     PYMEM_ALLOCATOR_PYMALLOC = 5,
     PYMEM_ALLOCATOR_PYMALLOC_DEBUG = 6,
 #endif
+#ifdef WITH_MIMALLOC
+    PYMEM_ALLOCATOR_MIMALLOC = 7,
+    PYMEM_ALLOCATOR_MIMALLOC_DEBUG = 8,
+#endif
 } PyMemAllocatorName;
 
 

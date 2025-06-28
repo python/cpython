@@ -1,5 +1,5 @@
-:mod:`resource` --- Resource usage information
-==============================================
+:mod:`!resource` --- Resource usage information
+===============================================
 
 .. module:: resource
    :platform: Unix
@@ -13,7 +13,7 @@
 This module provides basic mechanisms for measuring and controlling system
 resources utilized by a program.
 
-.. include:: ../includes/wasm-notavail.rst
+.. availability:: Unix, not WASI.
 
 Symbolic constants are used to specify particular system resources and to
 request usage information about either the current process or its children.
@@ -177,6 +177,8 @@ platform.
 
    The largest area of mapped memory which the process may occupy.
 
+   .. availability:: FreeBSD >= 11.
+
 
 .. data:: RLIMIT_AS
 
@@ -277,7 +279,7 @@ These functions are used to retrieve resource usage information:
 
    This function returns an object that describes the resources consumed by either
    the current process or its children, as specified by the *who* parameter.  The
-   *who* parameter should be specified using one of the :const:`RUSAGE_\*`
+   *who* parameter should be specified using one of the :const:`!RUSAGE_\*`
    constants described below.
 
    A simple example::
@@ -303,7 +305,7 @@ These functions are used to retrieve resource usage information:
    elements.
 
    The fields :attr:`ru_utime` and :attr:`ru_stime` of the return value are
-   floating point values representing the amount of time spent executing in user
+   floating-point values representing the amount of time spent executing in user
    mode and the amount of time spent executing in system mode, respectively. The
    remaining values are integers. Consult the :manpage:`getrusage(2)` man page for
    detailed information about these values. A brief summary is presented here:
@@ -353,7 +355,7 @@ These functions are used to retrieve resource usage information:
    Returns the number of bytes in a system page. (This need not be the same as the
    hardware page size.)
 
-The following :const:`RUSAGE_\*` symbols are passed to the :func:`getrusage`
+The following :const:`!RUSAGE_\*` symbols are passed to the :func:`getrusage`
 function to specify which processes information should be provided for.
 
 

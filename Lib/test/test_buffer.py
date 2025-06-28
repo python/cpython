@@ -130,10 +130,10 @@ if struct:
     for fmt in fmtdict['@']:
         fmtdict['@'][fmt] = native_type_range(fmt)
 
-# Format codes suppported by the memoryview object
+# Format codes supported by the memoryview object
 MEMORYVIEW = NATIVE.copy()
 
-# Format codes suppported by array.array
+# Format codes supported by array.array
 ARRAY = NATIVE.copy()
 for k in NATIVE:
     if not k in "bBhHiIlLfd":
@@ -168,7 +168,7 @@ def randrange_fmt(mode, char, obj):
     if char == 'c':
         x = bytes([x])
         if obj == 'numpy' and x == b'\x00':
-            # http://projects.scipy.org/numpy/ticket/1925
+            # https://github.com/numpy/numpy/issues/2518
             x = b'\x01'
     if char == '?':
         x = bool(x)
@@ -1918,7 +1918,7 @@ class TestBufferProtocol(unittest.TestCase):
                 if numpy_array:
                     shape = t[3]
                     if 0 in shape:
-                        continue # http://projects.scipy.org/numpy/ticket/1910
+                        continue # https://github.com/numpy/numpy/issues/2503
                     z = numpy_array_from_structure(items, fmt, t)
                     self.verify(x, obj=None,
                                 itemsize=z.itemsize, fmt=fmt, readonly=False,
@@ -1950,7 +1950,7 @@ class TestBufferProtocol(unittest.TestCase):
                     except Exception as e:
                         numpy_err = e.__class__
 
-                    if 0: # http://projects.scipy.org/numpy/ticket/1910
+                    if 0: # https://github.com/numpy/numpy/issues/2503
                         self.assertTrue(numpy_err)
 
     def test_ndarray_random_slice_assign(self):
@@ -1996,7 +1996,7 @@ class TestBufferProtocol(unittest.TestCase):
 
                 if numpy_array:
                     if 0 in lshape or 0 in rshape:
-                        continue # http://projects.scipy.org/numpy/ticket/1910
+                        continue # https://github.com/numpy/numpy/issues/2503
 
                     zl = numpy_array_from_structure(litems, fmt, tl)
                     zr = numpy_array_from_structure(ritems, fmt, tr)
@@ -2879,11 +2879,11 @@ class TestBufferProtocol(unittest.TestCase):
     def test_memoryview_repr(self):
         m = memoryview(bytearray(9))
         r = m.__repr__()
-        self.assertTrue(r.startswith("<memory"))
+        self.assertStartsWith(r, "<memory")
 
         m.release()
         r = m.__repr__()
-        self.assertTrue(r.startswith("<released"))
+        self.assertStartsWith(r, "<released")
 
     def test_memoryview_sequence(self):
 
@@ -3910,6 +3910,8 @@ class TestBufferProtocol(unittest.TestCase):
         self.assertRaises(ValueError, memoryview, m)
         # memoryview.cast()
         self.assertRaises(ValueError, m.cast, 'c')
+        # memoryview.__iter__()
+        self.assertRaises(ValueError, m.__iter__)
         # getbuffer()
         self.assertRaises(ValueError, ndarray, m)
         # memoryview.tolist()
@@ -4437,12 +4439,35 @@ class TestBufferProtocol(unittest.TestCase):
         x = ndarray([1,2,3], shape=[3], flags=ND_GETBUF_FAIL)
         self.assertRaises(BufferError, memoryview, x)
 
+    def test_bytearray_release_buffer_read_flag(self):
+        # See https://github.com/python/cpython/issues/126980
+        obj = bytearray(b'abc')
+        with self.assertRaises(SystemError):
+            obj.__buffer__(inspect.BufferFlags.READ)
+        with self.assertRaises(SystemError):
+            obj.__buffer__(inspect.BufferFlags.WRITE)
+
     @support.cpython_only
     def test_pybuffer_size_from_format(self):
         # basic tests
         for format in ('', 'ii', '3s'):
             self.assertEqual(_testcapi.PyBuffer_SizeFromFormat(format),
                              struct.calcsize(format))
+
+    @support.cpython_only
+    def test_flags_overflow(self):
+        # gh-126594: Check for integer overlow on large flags
+        try:
+            from _testcapi import INT_MIN, INT_MAX
+        except ImportError:
+            INT_MIN = -(2 ** 31)
+            INT_MAX = 2 ** 31 - 1
+
+        obj = b'abc'
+        for flags in (INT_MIN - 1, INT_MAX + 1):
+            with self.subTest(flags=flags):
+                with self.assertRaises(OverflowError):
+                    obj.__buffer__(flags)
 
 
 class TestPythonBufferProtocol(unittest.TestCase):
@@ -4584,6 +4609,33 @@ class TestPythonBufferProtocol(unittest.TestCase):
         with self.assertRaises(ValueError):
             buf.__release_buffer__(mv)
         self.assertEqual(buf.references, 0)
+
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
+    def test_c_buffer_invalid_flags(self):
+        buf = _testcapi.testBuf()
+        self.assertRaises(SystemError, buf.__buffer__, PyBUF_READ)
+        self.assertRaises(SystemError, buf.__buffer__, PyBUF_WRITE)
+
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
+    def test_c_fill_buffer_invalid_flags(self):
+        # PyBuffer_FillInfo
+        source = b"abc"
+        self.assertRaises(SystemError, _testcapi.buffer_fill_info,
+                          source, 0, PyBUF_READ)
+        self.assertRaises(SystemError, _testcapi.buffer_fill_info,
+                          source, 0, PyBUF_WRITE)
+
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
+    def test_c_fill_buffer_readonly_and_writable(self):
+        source = b"abc"
+        with _testcapi.buffer_fill_info(source, 1, PyBUF_SIMPLE) as m:
+            self.assertEqual(bytes(m), b"abc")
+            self.assertTrue(m.readonly)
+        with _testcapi.buffer_fill_info(source, 0, PyBUF_WRITABLE) as m:
+            self.assertEqual(bytes(m), b"abc")
+            self.assertFalse(m.readonly)
+        self.assertRaises(BufferError, _testcapi.buffer_fill_info,
+                          source, 1, PyBUF_WRITABLE)
 
     def test_inheritance(self):
         class A(bytearray):

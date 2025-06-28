@@ -1,1 +1,0 @@
-Optimize recursive wildcards in :mod:`pathlib`.

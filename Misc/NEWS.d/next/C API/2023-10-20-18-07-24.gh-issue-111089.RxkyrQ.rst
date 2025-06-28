@@ -1,2 +1,0 @@
-Add :c:func:`PyUnicode_AsUTF8` function to the limited C API. Patch by
-Victor Stinner.

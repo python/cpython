@@ -1,3 +1,0 @@
-Emit deprecation warning for non-integer numbers in :mod:`gettext` functions
-and methods that consider plural forms even if the translation was not
-found.

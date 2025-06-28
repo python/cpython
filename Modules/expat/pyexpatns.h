@@ -108,6 +108,7 @@
 #define XML_SetNotStandaloneHandler     PyExpat_XML_SetNotStandaloneHandler
 #define XML_SetParamEntityParsing       PyExpat_XML_SetParamEntityParsing
 #define XML_SetProcessingInstructionHandler PyExpat_XML_SetProcessingInstructionHandler
+#define XML_SetReparseDeferralEnabled   PyExpat_XML_SetReparseDeferralEnabled
 #define XML_SetReturnNSTriplet          PyExpat_XML_SetReturnNSTriplet
 #define XML_SetSkippedEntityHandler     PyExpat_XML_SetSkippedEntityHandler
 #define XML_SetStartCdataSectionHandler PyExpat_XML_SetStartCdataSectionHandler

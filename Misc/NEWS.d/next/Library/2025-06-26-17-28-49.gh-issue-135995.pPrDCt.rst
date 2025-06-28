@@ -1,0 +1,1 @@
+In the palmos encoding, make byte ``0x9b`` decode to ``›`` (U+203A - SINGLE RIGHT-POINTING ANGLE QUOTATION MARK).

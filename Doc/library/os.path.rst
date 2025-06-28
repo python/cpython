@@ -1,10 +1,10 @@
-:mod:`os.path` --- Common pathname manipulations
-================================================
+:mod:`!os.path` --- Common pathname manipulations
+=================================================
 
 .. module:: os.path
    :synopsis: Operations on pathnames.
 
-**Source code:** :source:`Lib/posixpath.py` (for POSIX) and
+**Source code:** :source:`Lib/genericpath.py`, :source:`Lib/posixpath.py` (for POSIX) and
 :source:`Lib/ntpath.py` (for Windows).
 
 .. index:: single: path; operations
@@ -79,18 +79,19 @@ the :mod:`glob` module.)
 
 .. function:: commonpath(paths)
 
-   Return the longest common sub-path of each pathname in the sequence
+   Return the longest common sub-path of each pathname in the iterable
    *paths*.  Raise :exc:`ValueError` if *paths* contain both absolute
-   and relative pathnames, the *paths* are on the different drives or
+   and relative pathnames, if *paths* are on different drives, or
    if *paths* is empty.  Unlike :func:`commonprefix`, this returns a
    valid path.
-
-   .. availability:: Unix, Windows.
 
    .. versionadded:: 3.5
 
    .. versionchanged:: 3.6
       Accepts a sequence of :term:`path-like objects <path-like object>`.
+
+   .. versionchanged:: 3.13
+      Any iterable can now be passed, rather than just sequences.
 
 
 .. function:: commonprefix(list)
@@ -144,7 +145,7 @@ the :mod:`glob` module.)
 
 .. function:: lexists(path)
 
-   Return ``True`` if *path* refers to an existing path. Returns ``True`` for
+   Return ``True`` if *path* refers to an existing path, including
    broken symbolic links.   Equivalent to :func:`exists` on platforms lacking
    :func:`os.lstat`.
 
@@ -200,14 +201,14 @@ the :mod:`glob` module.)
 
 .. function:: getatime(path)
 
-   Return the time of last access of *path*.  The return value is a floating point number giving
+   Return the time of last access of *path*.  The return value is a floating-point number giving
    the number of seconds since the epoch (see the  :mod:`time` module).  Raise
    :exc:`OSError` if the file does not exist or is inaccessible.
 
 
 .. function:: getmtime(path)
 
-   Return the time of last modification of *path*.  The return value is a floating point number
+   Return the time of last modification of *path*.  The return value is a floating-point number
    giving the number of seconds since the epoch (see the  :mod:`time` module).
    Raise :exc:`OSError` if the file does not exist or is inaccessible.
 
@@ -239,11 +240,15 @@ the :mod:`glob` module.)
 .. function:: isabs(path)
 
    Return ``True`` if *path* is an absolute pathname.  On Unix, that means it
-   begins with a slash, on Windows that it begins with a (back)slash after chopping
-   off a potential drive letter.
+   begins with a slash, on Windows that it begins with two (back)slashes, or a
+   drive letter, colon, and (back)slash together.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. versionchanged:: 3.13
+      On Windows, returns ``False`` if the given path starts with exactly one
+      (back)slash.
 
 
 .. function:: isfile(path)
@@ -297,8 +302,8 @@ the :mod:`glob` module.)
    always mount points, and for any other path ``GetVolumePathName`` is called
    to see if it is different from the input path.
 
-   .. versionadded:: 3.4
-      Support for detecting non-root mount points on Windows.
+   .. versionchanged:: 3.4
+      Added support for detecting non-root mount points on Windows.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
@@ -317,9 +322,32 @@ the :mod:`glob` module.)
    Dev Drives. See `the Windows documentation <https://learn.microsoft.com/windows/dev-drive/>`_
    for information on enabling and creating Dev Drives.
 
+   .. versionadded:: 3.12
+
+   .. versionchanged:: 3.13
+      The function is now available on all platforms, and will always return ``False`` on those that have no support for Dev Drives
+
+
+.. function:: isreserved(path)
+
+   Return ``True`` if *path* is a reserved pathname on the current system.
+
+   On Windows, reserved filenames include those that end with a space or dot;
+   those that contain colons (i.e. file streams such as "name:stream"),
+   wildcard characters (i.e. ``'*?"<>'``), pipe, or ASCII control characters;
+   as well as DOS device names such as "NUL", "CON", "CONIN$", "CONOUT$",
+   "AUX", "PRN", "COM1", and "LPT1".
+
+   .. note::
+
+      This function approximates rules for reserved paths on most Windows
+      systems. These rules change over time in various Windows releases.
+      This function may be updated in future Python releases as changes to
+      the rules become broadly available.
+
    .. availability:: Windows.
 
-   .. versionadded:: 3.12
+   .. versionadded:: 3.13
 
 
 .. function:: join(path, *paths)
@@ -361,7 +389,7 @@ the :mod:`glob` module.)
    that contains symbolic links.  On Windows, it converts forward slashes to
    backward slashes. To normalize case, use :func:`normcase`.
 
-  .. note::
+   .. note::
       On POSIX systems, in accordance with `IEEE Std 1003.1 2013 Edition; 4.13
       Pathname Resolution <https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap04.html#tag_04_13>`_,
       if a pathname begins with exactly two slashes, the first component
@@ -380,10 +408,26 @@ the :mod:`glob` module.)
    system). On Windows, this function will also resolve MS-DOS (also called 8.3)
    style names such as ``C:\\PROGRA~1`` to ``C:\\Program Files``.
 
-   If a path doesn't exist or a symlink loop is encountered, and *strict* is
-   ``True``, :exc:`OSError` is raised. If *strict* is ``False``, the path is
-   resolved as far as possible and any remainder is appended without checking
-   whether it exists.
+   By default, the path is evaluated up to the first component that does not
+   exist, is a symlink loop, or whose evaluation raises :exc:`OSError`.
+   All such components are appended unchanged to the existing part of the path.
+
+   Some errors that are handled this way include "access denied", "not a
+   directory", or "bad argument to internal function". Thus, the
+   resulting path may be missing or inaccessible, may still contain
+   links or loops, and may traverse non-directories.
+
+   This behavior can be modified by keyword arguments:
+
+   If *strict* is ``True``, the first error encountered when evaluating the path is
+   re-raised.
+   In particular, :exc:`FileNotFoundError` is raised if *path* does not exist,
+   or another :exc:`OSError` if it is otherwise inaccessible.
+
+   If *strict* is :py:data:`os.path.ALLOW_MISSING`, errors other than
+   :exc:`FileNotFoundError` are re-raised (as with ``strict=True``).
+   Thus, the returned path will not contain any symbolic links, but the named
+   file and some of its parent directories may be missing.
 
    .. note::
       This function emulates the operating system's procedure for making a path
@@ -402,6 +446,15 @@ the :mod:`glob` module.)
    .. versionchanged:: 3.10
       The *strict* parameter was added.
 
+   .. versionchanged:: next
+      The :py:data:`~os.path.ALLOW_MISSING` value for the *strict* parameter
+      was added.
+
+.. data:: ALLOW_MISSING
+
+   Special value used for the *strict* argument in :func:`realpath`.
+
+   .. versionadded:: next
 
 .. function:: relpath(path, start=os.curdir)
 
@@ -413,8 +466,6 @@ the :mod:`glob` module.)
 
    *start* defaults to :data:`os.curdir`.
 
-   .. availability:: Unix, Windows.
-
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
@@ -424,8 +475,6 @@ the :mod:`glob` module.)
    Return ``True`` if both pathname arguments refer to the same file or directory.
    This is determined by the device number and i-node number and raises an
    exception if an :func:`os.stat` call on either pathname fails.
-
-   .. availability:: Unix, Windows.
 
    .. versionchanged:: 3.2
       Added Windows support.
@@ -441,8 +490,6 @@ the :mod:`glob` module.)
 
    Return ``True`` if the file descriptors *fp1* and *fp2* refer to the same file.
 
-   .. availability:: Unix, Windows.
-
    .. versionchanged:: 3.2
       Added Windows support.
 
@@ -456,8 +503,6 @@ the :mod:`glob` module.)
    These structures may have been returned by :func:`os.fstat`,
    :func:`os.lstat`, or :func:`os.stat`.  This function implements the
    underlying comparison used by :func:`samefile` and :func:`sameopenfile`.
-
-   .. availability:: Unix, Windows.
 
    .. versionchanged:: 3.4
       Added Windows support.

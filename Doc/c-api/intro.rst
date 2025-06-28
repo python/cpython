@@ -30,6 +30,16 @@ familiar with writing an extension before  attempting to embed Python in a real
 application.
 
 
+Language version compatibility
+==============================
+
+Python's C API is compatible with C11 and C++11 versions of C and C++.
+
+This is a lower limit: the C API does not require features from later
+C/C++ versions.
+You do *not* need to enable your compiler's "c11 mode".
+
+
 Coding standards
 ================
 
@@ -101,32 +111,10 @@ Useful macros
 =============
 
 Several useful macros are defined in the Python header files.  Many are
-defined closer to where they are useful (e.g. :c:macro:`Py_RETURN_NONE`).
+defined closer to where they are useful (for example, :c:macro:`Py_RETURN_NONE`,
+:c:macro:`PyMODINIT_FUNC`).
 Others of a more general utility are defined here.  This is not necessarily a
 complete listing.
-
-.. c:macro:: PyMODINIT_FUNC
-
-   Declare an extension module ``PyInit`` initialization function. The function
-   return type is :c:expr:`PyObject*`. The macro declares any special linkage
-   declarations required by the platform, and for C++ declares the function as
-   ``extern "C"``.
-
-   The initialization function must be named :samp:`PyInit_{name}`, where
-   *name* is the name of the module, and should be the only non-\ ``static``
-   item defined in the module file. Example::
-
-       static struct PyModuleDef spam_module = {
-           PyModuleDef_HEAD_INIT,
-           .m_name = "spam",
-           ...
-       };
-
-       PyMODINIT_FUNC
-       PyInit_spam(void)
-       {
-           return PyModule_Create(&spam_module);
-       }
 
 
 .. c:macro:: Py_ABS(x)
@@ -138,7 +126,7 @@ complete listing.
 .. c:macro:: Py_ALWAYS_INLINE
 
    Ask the compiler to always inline a static inline function. The compiler can
-   ignore it and decides to not inline the function.
+   ignore it and decide to not inline the function.
 
    It can be used to inline performance critical static inline functions when
    building Python in debug mode with function inlining disabled. For example,
@@ -148,7 +136,7 @@ complete listing.
    worse performances (due to increased code size for example). The compiler is
    usually smarter than the developer for the cost/benefit analysis.
 
-   If Python is :ref:`built in debug mode <debug-build>` (if the ``Py_DEBUG``
+   If Python is :ref:`built in debug mode <debug-build>` (if the :c:macro:`Py_DEBUG`
    macro is defined), the :c:macro:`Py_ALWAYS_INLINE` macro does nothing.
 
    It must be specified before the function return type. Usage::
@@ -325,8 +313,8 @@ objects that reference each other here; for now, the solution
 is "don't do that.")
 
 .. index::
-   single: Py_INCREF()
-   single: Py_DECREF()
+   single: Py_INCREF (C function)
+   single: Py_DECREF (C function)
 
 Reference counts are always manipulated explicitly.  The normal way is
 to use the macro :c:func:`Py_INCREF` to take a new reference to an
@@ -401,8 +389,8 @@ function, that function assumes that it now owns that reference, and you are not
 responsible for it any longer.
 
 .. index::
-   single: PyList_SetItem()
-   single: PyTuple_SetItem()
+   single: PyList_SetItem (C function)
+   single: PyTuple_SetItem (C function)
 
 Few functions steal references; the two notable exceptions are
 :c:func:`PyList_SetItem` and :c:func:`PyTuple_SetItem`, which  steal a reference
@@ -491,8 +479,8 @@ using :c:func:`PySequence_GetItem` (which happens to take exactly the same
 arguments), you do own a reference to the returned object.
 
 .. index::
-   single: PyList_GetItem()
-   single: PySequence_GetItem()
+   single: PyList_GetItem (C function)
+   single: PySequence_GetItem (C function)
 
 Here is an example of how you could write a function that computes the sum of
 the items in a list of integers; once using  :c:func:`PyList_GetItem`, and once
@@ -587,7 +575,7 @@ caller, then to the caller's caller, and so on, until they reach the top-level
 interpreter, where they are reported to the  user accompanied by a stack
 traceback.
 
-.. index:: single: PyErr_Occurred()
+.. index:: single: PyErr_Occurred (C function)
 
 For C programmers, however, error checking always has to be explicit.  All
 functions in the Python/C API can raise exceptions, unless an explicit claim is
@@ -601,8 +589,8 @@ ambiguous return value, and require explicit testing for errors with
 :c:func:`PyErr_Occurred`.  These exceptions are always explicitly documented.
 
 .. index::
-   single: PyErr_SetString()
-   single: PyErr_Clear()
+   single: PyErr_SetString (C function)
+   single: PyErr_Clear (C function)
 
 Exception state is maintained in per-thread storage (this is  equivalent to
 using global storage in an unthreaded application).  A  thread can be in one of
@@ -624,7 +612,7 @@ an exception is being passed on between C functions until it reaches the Python
 bytecode interpreter's  main loop, which takes care of transferring it to
 ``sys.exc_info()`` and friends.
 
-.. index:: single: exc_info() (in module sys)
+.. index:: single: exc_info (in module sys)
 
 Note that starting with Python 1.5, the preferred, thread-safe way to access the
 exception state from Python code is to call the function :func:`sys.exc_info`,
@@ -709,9 +697,9 @@ Here is the corresponding C code, in all its glory::
 .. index:: single: incr_item()
 
 .. index::
-   single: PyErr_ExceptionMatches()
-   single: PyErr_Clear()
-   single: Py_XDECREF()
+   single: PyErr_ExceptionMatches (C function)
+   single: PyErr_Clear (C function)
+   single: Py_XDECREF (C function)
 
 This example represents an endorsed use of the ``goto`` statement  in C!
 It illustrates the use of :c:func:`PyErr_ExceptionMatches` and
@@ -735,7 +723,7 @@ the finalization, of the Python interpreter.  Most functionality of the
 interpreter can only be used after the interpreter has been initialized.
 
 .. index::
-   single: Py_Initialize()
+   single: Py_Initialize (C function)
    pair: module; builtins
    pair: module; __main__
    pair: module; sys
@@ -769,22 +757,13 @@ found along :envvar:`PATH`.)  The user can override this behavior by setting the
 environment variable :envvar:`PYTHONHOME`, or insert additional directories in
 front of the standard path by setting :envvar:`PYTHONPATH`.
 
-.. index::
-   single: Py_GetPath()
-   single: Py_GetPrefix()
-   single: Py_GetExecPrefix()
-   single: Py_GetProgramFullPath()
-
 The embedding application can steer the search by setting
 :c:member:`PyConfig.program_name` *before* calling
 :c:func:`Py_InitializeFromConfig`. Note that
 :envvar:`PYTHONHOME` still overrides this and :envvar:`PYTHONPATH` is still
-inserted in front of the standard path.  An application that requires total
-control has to provide its own implementation of :c:func:`Py_GetPath`,
-:c:func:`Py_GetPrefix`, :c:func:`Py_GetExecPrefix`, and
-:c:func:`Py_GetProgramFullPath` (all defined in :file:`Modules/getpath.c`).
+inserted in front of the standard path.
 
-.. index:: single: Py_IsInitialized()
+.. index:: single: Py_IsInitialized (C function)
 
 Sometimes, it is desirable to "uninitialize" Python.  For instance,  the
 application may want to start over (make another call to
@@ -812,16 +791,21 @@ available that support tracing of reference counts, debugging the memory
 allocator, or low-level profiling of the main interpreter loop.  Only the most
 frequently used builds will be described in the remainder of this section.
 
-Compiling the interpreter with the :c:macro:`Py_DEBUG` macro defined produces
+.. c:macro:: Py_DEBUG
+
+Compiling the interpreter with the :c:macro:`!Py_DEBUG` macro defined produces
 what is generally meant by :ref:`a debug build of Python <debug-build>`.
-:c:macro:`Py_DEBUG` is enabled in the Unix build by adding
-:option:`--with-pydebug` to the :file:`./configure` command.
-It is also implied by the presence of the
-not-Python-specific :c:macro:`_DEBUG` macro.  When :c:macro:`Py_DEBUG` is enabled
-in the Unix build, compiler optimization is disabled.
+
+On Unix, :c:macro:`!Py_DEBUG` can be enabled by adding :option:`--with-pydebug`
+to the :file:`./configure` command. This will also disable compiler optimization.
+
+On Windows, selecting a debug build (e.g., by passing the :option:`-d` option to
+:file:`PCbuild/build.bat`) automatically enables :c:macro:`!Py_DEBUG`.
+Additionally, the presence of the not-Python-specific :c:macro:`!_DEBUG` macro,
+when defined by the compiler, will also implicitly enable :c:macro:`!Py_DEBUG`.
 
 In addition to the reference count debugging described below, extra checks are
-performed, see :ref:`Python Debug Build <debug-build>`.
+performed. See :ref:`Python Debug Build <debug-build>` for more details.
 
 Defining :c:macro:`Py_TRACE_REFS` enables reference tracing
 (see the :option:`configure --with-trace-refs option <--with-trace-refs>`).
@@ -833,3 +817,40 @@ after every statement run by the interpreter.)
 Please refer to :file:`Misc/SpecialBuilds.txt` in the Python source distribution
 for more detailed information.
 
+
+.. _c-api-tools:
+
+Recommended third party tools
+=============================
+
+The following third party tools offer both simpler and more sophisticated
+approaches to creating C, C++ and Rust extensions for Python:
+
+* `Cython <https://cython.org/>`_
+* `cffi <https://cffi.readthedocs.io>`_
+* `HPy <https://hpyproject.org/>`_
+* `nanobind <https://github.com/wjakob/nanobind>`_ (C++)
+* `Numba <https://numba.pydata.org/>`_
+* `pybind11 <https://pybind11.readthedocs.io/>`_ (C++)
+* `PyO3 <https://pyo3.rs/>`_ (Rust)
+* `SWIG <https://www.swig.org>`_
+
+Using tools such as these can help avoid writing code that is tightly bound to
+a particular version of CPython, avoid reference counting errors, and focus
+more on your own code than on using the CPython API. In general, new versions
+of Python can be supported by updating the tool, and your code will often use
+newer and more efficient APIs automatically. Some tools also support compiling
+for other implementations of Python from a single set of sources.
+
+These projects are not supported by the same people who maintain Python, and
+issues need to be raised with the projects directly. Remember to check that the
+project is still maintained and supported, as the list above may become
+outdated.
+
+.. seealso::
+
+   `Python Packaging User Guide: Binary Extensions <https://packaging.python.org/guides/packaging-binary-extensions/>`_
+      The Python Packaging User Guide not only covers several available
+      tools that simplify the creation of binary extensions, but also
+      discusses the various reasons why creating an extension module may be
+      desirable in the first place.

@@ -112,8 +112,8 @@ Port :mod:`syslog` to multiphase initialization (:pep:`489`).
 Reporting a specialised error message for invalid string prefixes, which was
 introduced in :issue:`40246`, is being reverted due to backwards
 compatibility concerns for strings that immediately follow a reserved
-keyword without whitespace between them. Constructs like `bg="#d00" if clear
-else"#fca"` were failing to parse, which is not an acceptable breakage on
+keyword without whitespace between them. Constructs like ``bg="#d00" if clear
+else"#fca"`` were failing to parse, which is not an acceptable breakage on
 such short notice.
 
 ..
@@ -532,7 +532,7 @@ Remove ``_random.Random.randbytes()``: the C implementation of
 .. section: Library
 
 Added default arguments to
-:meth:`difflib.SequenceMatcher.find_longest_match()`.
+:meth:`difflib.SequenceMatcher.find_longest_match`.
 
 ..
 
@@ -684,7 +684,7 @@ The ``isocalendar()`` methods of :class:`datetime.date` and
 .. nonce: t6kW_1
 .. section: Documentation
 
-Add version of removal for explicit passing of coros to `asyncio.wait()`'s
+Add version of removal for explicit passing of coros to ``asyncio.wait()``'s
 documentation
 
 ..

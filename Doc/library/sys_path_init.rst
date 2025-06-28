@@ -47,8 +47,15 @@ however on other platforms :file:`lib/python{majorversion}.{minorversion}/lib-dy
 ``exec_prefix``. On some platforms :file:`lib` may be :file:`lib64` or another value,
 see :data:`sys.platlibdir` and :envvar:`PYTHONPLATLIBDIR`.
 
-Once found, ``prefix`` and ``exec_prefix`` are available at :data:`sys.prefix` and
-:data:`sys.exec_prefix` respectively.
+Once found, ``prefix`` and ``exec_prefix`` are available at
+:data:`sys.base_prefix` and :data:`sys.base_exec_prefix` respectively.
+
+If :envvar:`PYTHONHOME` is not set, and a ``pyvenv.cfg`` file is found alongside
+the main executable, or in its parent directory, :data:`sys.prefix` and
+:data:`sys.exec_prefix` get set to the directory containing ``pyvenv.cfg``,
+otherwise they are set to the same value as :data:`sys.base_prefix` and
+:data:`sys.base_exec_prefix`, respectively.
+This is used by :ref:`sys-path-init-virtual-environments`.
 
 Finally, the :mod:`site` module is processed and :file:`site-packages` directories
 are added to the module search path. A common way to customize the search path is
@@ -60,18 +67,40 @@ the :mod:`site` module documentation.
    Certain command line options may further affect path calculations.
    See :option:`-E`, :option:`-I`, :option:`-s` and :option:`-S` for further details.
 
-Virtual environments
+.. versionchanged:: 3.14
+
+   :data:`sys.prefix` and :data:`sys.exec_prefix` are now set to the
+   ``pyvenv.cfg`` directory during the path initialization. This was previously
+   done by :mod:`site`, therefore affected by :option:`-S`.
+
+.. _sys-path-init-virtual-environments:
+
+Virtual Environments
 --------------------
 
-If Python is run in a virtual environment (as described at :ref:`tut-venv`)
-then ``prefix`` and ``exec_prefix`` are specific to the virtual environment.
+Virtual environments place a ``pyvenv.cfg`` file in their prefix, which causes
+:data:`sys.prefix` and :data:`sys.exec_prefix` to point to them, instead of the
+base installation.
 
-If a ``pyvenv.cfg`` file is found alongside the main executable, or in the
-directory one level above the executable, the following variations apply:
+The ``prefix`` and ``exec_prefix`` values of the base installation are available
+at :data:`sys.base_prefix` and :data:`sys.base_exec_prefix`.
 
-* If ``home`` is an absolute path and :envvar:`PYTHONHOME` is not set, this
-  path is used instead of the path to the main executable when deducing ``prefix``
-  and ``exec_prefix``.
+As well as being used as a marker to identify virtual environments,
+``pyvenv.cfg`` may also be used to configure the :mod:`site` initialization.
+Please refer to :mod:`site`'s
+:ref:`virtual environments documentation <site-virtual-environments-configuration>`.
+
+.. note::
+
+   :envvar:`PYTHONHOME` overrides the ``pyvenv.cfg`` detection.
+
+.. note::
+
+   There are other ways how "virtual environments" could be implemented, this
+   documentation refers implementations based on the ``pyvenv.cfg`` mechanism,
+   such as :mod:`venv`. Most virtual environment implementations follow the
+   model set by :mod:`venv`, but there may be exotic implementations that
+   diverge from it.
 
 _pth files
 ----------

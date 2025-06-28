@@ -1,0 +1,1 @@
+Fix a crash in the JIT involving attributes of modules.

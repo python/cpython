@@ -1,0 +1,1 @@
+:term:`REPL` import autocomplete only suggests private modules when explicitly specified.

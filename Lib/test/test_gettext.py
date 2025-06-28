@@ -2,16 +2,16 @@ import os
 import base64
 import gettext
 import unittest
+import unittest.mock
 from functools import partial
 
 from test import support
-from test.support import os_helper
+from test.support import cpython_only, os_helper
+from test.support.import_helper import ensure_lazy_imports
 
 
 # TODO:
 #  - Add new tests, for example for "dgettext"
-#  - Remove dummy tests, for example testing for single and double quotes
-#    has no sense, it would have if we were testing a parser (i.e. pygettext)
 #  - Tests should have only one assert.
 
 GNU_MO_DATA = b'''\
@@ -37,6 +37,9 @@ ZyB6cmZmbnRyIHBuZ255YnQgeXZvZW5lbC4ASGF5ICVzIGZpY2hlcm8gKGNvbnRleHQpAEhheSAl
 cyBmaWNoZXJvcyAoY29udGV4dCkAYmFjb24Ad2luayB3aW5rIChpbiAibXkgY29udGV4dCIpAHdp
 bmsgd2luayAoaW4gIm15IG90aGVyIGNvbnRleHQiKQB3aW5rIHdpbmsA
 '''
+
+# .mo file with an invalid magic number
+GNU_MO_DATA_BAD_MAGIC_NUMBER = base64.b64encode(b'ABCD')
 
 # This data contains an invalid major version number (5)
 # An unexpected major version number should be treated as an error when
@@ -86,6 +89,49 @@ IHNiZSBsYmhlIENsZ3ViYSBjZWJ0ZW56ZiBvbCBjZWJpdnF2YXQgbmEgdmFncmVzbnByIGdiIGd1
 ciBUQUgKdHJnZ3JrZyB6cmZmbnRyIHBuZ255YnQgeXZvZW5lbC4AYmFjb24Ad2luayB3aW5rAA==
 '''
 
+# Corrupt .mo file
+# Generated from
+#
+# msgid "foo"
+# msgstr "bar"
+#
+# with msgfmt --no-hash
+#
+# The translation offset is changed to 0xFFFFFFFF,
+# making it larger than the file size, which should
+# raise an error when parsing.
+GNU_MO_DATA_CORRUPT = base64.b64encode(bytes([
+    0xDE, 0x12, 0x04, 0x95,  # Magic
+    0x00, 0x00, 0x00, 0x00,  # Version
+    0x01, 0x00, 0x00, 0x00,  # Message count
+    0x1C, 0x00, 0x00, 0x00,  # Message offset
+    0x24, 0x00, 0x00, 0x00,  # Translation offset
+    0x00, 0x00, 0x00, 0x00,  # Hash table size
+    0x2C, 0x00, 0x00, 0x00,  # Hash table offset
+    0x03, 0x00, 0x00, 0x00,  # 1st message length
+    0x2C, 0x00, 0x00, 0x00,  # 1st message offset
+    0x03, 0x00, 0x00, 0x00,  # 1st trans length
+    0xFF, 0xFF, 0xFF, 0xFF,  # 1st trans offset (Modified to make it invalid)
+    0x66, 0x6F, 0x6F, 0x00,  # Message data
+    0x62, 0x61, 0x72, 0x00,  # Message data
+]))
+
+
+GNU_MO_DATA_BIG_ENDIAN = base64.b64encode(bytes([
+    0x95, 0x04, 0x12, 0xDE,  # Magic
+    0x00, 0x00, 0x00, 0x00,  # Version
+    0x00, 0x00, 0x00, 0x01,  # Message count
+    0x00, 0x00, 0x00, 0x1C,  # Message offset
+    0x00, 0x00, 0x00, 0x24,  # Translation offset
+    0x00, 0x00, 0x00, 0x00,  # Hash table size
+    0x00, 0x00, 0x00, 0x2C,  # Hash table offset
+    0x00, 0x00, 0x00, 0x03,  # 1st message length
+    0x00, 0x00, 0x00, 0x2C,  # 1st message offset
+    0x00, 0x00, 0x00, 0x03,  # 1st trans length
+    0x00, 0x00, 0x00, 0x30,  # 1st trans offset
+    0x66, 0x6F, 0x6F, 0x00,  # Message data
+    0x62, 0x61, 0x72, 0x00,  # Message data
+]))
 
 UMO_DATA = b'''\
 3hIElQAAAAADAAAAHAAAADQAAAAAAAAAAAAAAAAAAABMAAAABAAAAE0AAAAQAAAAUgAAAA8BAABj
@@ -110,8 +156,11 @@ bGUKR2VuZXJhdGVkLUJ5OiBweWdldHRleHQucHkgMS4zCgA=
 
 LOCALEDIR = os.path.join('xx', 'LC_MESSAGES')
 MOFILE = os.path.join(LOCALEDIR, 'gettext.mo')
+MOFILE_BAD_MAGIC_NUMBER = os.path.join(LOCALEDIR, 'gettext_bad_magic_number.mo')
 MOFILE_BAD_MAJOR_VERSION = os.path.join(LOCALEDIR, 'gettext_bad_major_version.mo')
 MOFILE_BAD_MINOR_VERSION = os.path.join(LOCALEDIR, 'gettext_bad_minor_version.mo')
+MOFILE_CORRUPT = os.path.join(LOCALEDIR, 'gettext_corrupt.mo')
+MOFILE_BIG_ENDIAN = os.path.join(LOCALEDIR, 'gettext_big_endian.mo')
 UMOFILE = os.path.join(LOCALEDIR, 'ugettext.mo')
 MMOFILE = os.path.join(LOCALEDIR, 'metadata.mo')
 
@@ -130,10 +179,16 @@ class GettextBaseTest(unittest.TestCase):
             os.makedirs(LOCALEDIR)
         with open(MOFILE, 'wb') as fp:
             fp.write(base64.decodebytes(GNU_MO_DATA))
+        with open(MOFILE_BAD_MAGIC_NUMBER, 'wb') as fp:
+            fp.write(base64.decodebytes(GNU_MO_DATA_BAD_MAGIC_NUMBER))
         with open(MOFILE_BAD_MAJOR_VERSION, 'wb') as fp:
             fp.write(base64.decodebytes(GNU_MO_DATA_BAD_MAJOR_VERSION))
         with open(MOFILE_BAD_MINOR_VERSION, 'wb') as fp:
             fp.write(base64.decodebytes(GNU_MO_DATA_BAD_MINOR_VERSION))
+        with open(MOFILE_CORRUPT, 'wb') as fp:
+            fp.write(base64.decodebytes(GNU_MO_DATA_CORRUPT))
+        with open(MOFILE_BIG_ENDIAN, 'wb') as fp:
+            fp.write(base64.decodebytes(GNU_MO_DATA_BIG_ENDIAN))
         with open(UMOFILE, 'wb') as fp:
             fp.write(base64.decodebytes(UMO_DATA))
         with open(MMOFILE, 'wb') as fp:
@@ -174,30 +229,6 @@ class GettextTestCase1(GettextBaseTest):
            'wink wink (in "my context")')
         eq(pgettext('my other context', 'nudge nudge'),
            'wink wink (in "my other context")')
-
-    def test_double_quotes(self):
-        eq = self.assertEqual
-        # double quotes
-        eq(_("albatross"), 'albatross')
-        eq(_("mullusk"), 'bacon')
-        eq(_(r"Raymond Luxury Yach-t"), 'Throatwobbler Mangrove')
-        eq(_(r"nudge nudge"), 'wink wink')
-
-    def test_triple_single_quotes(self):
-        eq = self.assertEqual
-        # triple single quotes
-        eq(_('''albatross'''), 'albatross')
-        eq(_('''mullusk'''), 'bacon')
-        eq(_(r'''Raymond Luxury Yach-t'''), 'Throatwobbler Mangrove')
-        eq(_(r'''nudge nudge'''), 'wink wink')
-
-    def test_triple_double_quotes(self):
-        eq = self.assertEqual
-        # triple double quotes
-        eq(_("""albatross"""), 'albatross')
-        eq(_("""mullusk"""), 'bacon')
-        eq(_(r"""Raymond Luxury Yach-t"""), 'Throatwobbler Mangrove')
-        eq(_(r"""nudge nudge"""), 'wink wink')
 
     def test_multiline_strings(self):
         eq = self.assertEqual
@@ -248,6 +279,16 @@ class GettextTestCase2(GettextBaseTest):
     def test_textdomain(self):
         self.assertEqual(gettext.textdomain(), 'gettext')
 
+    def test_bad_magic_number(self):
+        with open(MOFILE_BAD_MAGIC_NUMBER, 'rb') as fp:
+            with self.assertRaises(OSError) as cm:
+                gettext.GNUTranslations(fp)
+
+            exception = cm.exception
+            self.assertEqual(exception.errno, 0)
+            self.assertEqual(exception.strerror, "Bad magic number")
+            self.assertEqual(exception.filename, MOFILE_BAD_MAGIC_NUMBER)
+
     def test_bad_major_version(self):
         with open(MOFILE_BAD_MAJOR_VERSION, 'rb') as fp:
             with self.assertRaises(OSError) as cm:
@@ -262,6 +303,22 @@ class GettextTestCase2(GettextBaseTest):
         with open(MOFILE_BAD_MINOR_VERSION, 'rb') as fp:
             # Check that no error is thrown with a bad minor version number
             gettext.GNUTranslations(fp)
+
+    def test_corrupt_file(self):
+        with open(MOFILE_CORRUPT, 'rb') as fp:
+            with self.assertRaises(OSError) as cm:
+                gettext.GNUTranslations(fp)
+
+            exception = cm.exception
+            self.assertEqual(exception.errno, 0)
+            self.assertEqual(exception.strerror, "File is corrupt")
+            self.assertEqual(exception.filename, MOFILE_CORRUPT)
+
+    def test_big_endian_file(self):
+        with open(MOFILE_BIG_ENDIAN, 'rb') as fp:
+            t = gettext.GNUTranslations(fp)
+
+        self.assertEqual(t.gettext('foo'), 'bar')
 
     def test_some_translations(self):
         eq = self.assertEqual
@@ -284,30 +341,6 @@ class GettextTestCase2(GettextBaseTest):
            'wink wink (in "my context")')
         eq(gettext.dpgettext('gettext', 'my other context', 'nudge nudge'),
            'wink wink (in "my other context")')
-
-    def test_double_quotes(self):
-        eq = self.assertEqual
-        # double quotes
-        eq(self._("albatross"), 'albatross')
-        eq(self._("mullusk"), 'bacon')
-        eq(self._(r"Raymond Luxury Yach-t"), 'Throatwobbler Mangrove')
-        eq(self._(r"nudge nudge"), 'wink wink')
-
-    def test_triple_single_quotes(self):
-        eq = self.assertEqual
-        # triple single quotes
-        eq(self._('''albatross'''), 'albatross')
-        eq(self._('''mullusk'''), 'bacon')
-        eq(self._(r'''Raymond Luxury Yach-t'''), 'Throatwobbler Mangrove')
-        eq(self._(r'''nudge nudge'''), 'wink wink')
-
-    def test_triple_double_quotes(self):
-        eq = self.assertEqual
-        # triple double quotes
-        eq(self._("""albatross"""), 'albatross')
-        eq(self._("""mullusk"""), 'bacon')
-        eq(self._(r"""Raymond Luxury Yach-t"""), 'Throatwobbler Mangrove')
-        eq(self._(r"""nudge nudge"""), 'wink wink')
 
     def test_multiline_strings(self):
         eq = self.assertEqual
@@ -452,7 +485,7 @@ class GNUTranslationsClassPluralFormsTestCase(PluralFormsTests, GettextBaseTest)
             numbers_only=False)
 
 
-class PluralFormsInternalTestCase:
+class PluralFormsInternalTestCase(unittest.TestCase):
     # Examples from http://www.gnu.org/software/gettext/manual/gettext.html
 
     def test_ja(self):
@@ -534,6 +567,7 @@ class PluralFormsInternalTestCase:
         s = ''.join([ str(f(x)) for x in range(200) ])
         eq(s, "01233333333444444444444444444444444444444444444444444444444444444444444444444444444444444444444444445553333333344444444444444444444444444444444444444444444444444444444444444444444444444444444444444444")
 
+    @support.skip_wasi_stack_overflow()
     def test_security(self):
         raises = self.assertRaises
         # Test for a dangerous expression
@@ -567,11 +601,17 @@ class PluralFormsInternalTestCase:
     def test_invalid_syntax(self):
         invalid_expressions = [
             'x>1', '(n>1', 'n>1)', '42**42**42', '0xa', '1.0', '1e2',
-            'n>0x1', '+n', '-n', 'n()', 'n(1)', '1+', 'nn', 'n n',
+            'n>0x1', '+n', '-n', 'n()', 'n(1)', '1+', 'nn', 'n n', 'n ? 1 2'
         ]
         for expr in invalid_expressions:
             with self.assertRaises(ValueError):
                 gettext.c2py(expr)
+
+    def test_negation(self):
+        f = gettext.c2py('!!!n')
+        self.assertEqual(f(0), 1)
+        self.assertEqual(f(1), 0)
+        self.assertEqual(f(2), 0)
 
     def test_nested_condition_operator(self):
         self.assertEqual(gettext.c2py('n?1?2:3:4')(0), 4)
@@ -735,10 +775,166 @@ class GettextCacheTestCase(GettextBaseTest):
         self.assertEqual(t.__class__, DummyGNUTranslations)
 
 
+class FallbackTranslations(gettext.NullTranslations):
+    def gettext(self, message):
+        return f'gettext: {message}'
+
+    def ngettext(self, msgid1, msgid2, n):
+        return f'ngettext: {msgid1}, {msgid2}, {n}'
+
+    def pgettext(self, context, message):
+        return f'pgettext: {context}, {message}'
+
+    def npgettext(self, context, msgid1, msgid2, n):
+        return f'npgettext: {context}, {msgid1}, {msgid2}, {n}'
+
+
+class FallbackTestCase(GettextBaseTest):
+    def test_null_translations_fallback(self):
+        t = gettext.NullTranslations()
+        t.add_fallback(FallbackTranslations())
+        self.assertEqual(t.gettext('foo'), 'gettext: foo')
+        self.assertEqual(t.ngettext('foo', 'foos', 1),
+                         'ngettext: foo, foos, 1')
+        self.assertEqual(t.pgettext('context', 'foo'),
+                         'pgettext: context, foo')
+        self.assertEqual(t.npgettext('context', 'foo', 'foos', 1),
+                         'npgettext: context, foo, foos, 1')
+
+    def test_gnu_translations_fallback(self):
+        with open(MOFILE, 'rb') as fp:
+            t = gettext.GNUTranslations(fp)
+        t.add_fallback(FallbackTranslations())
+        self.assertEqual(t.gettext('foo'), 'gettext: foo')
+        self.assertEqual(t.ngettext('foo', 'foos', 1),
+                         'ngettext: foo, foos, 1')
+        self.assertEqual(t.pgettext('context', 'foo'),
+                         'pgettext: context, foo')
+        self.assertEqual(t.npgettext('context', 'foo', 'foos', 1),
+                         'npgettext: context, foo, foos, 1')
+
+    def test_nested_fallbacks(self):
+        class NestedFallback(gettext.NullTranslations):
+            def gettext(self, message):
+                if message == 'foo':
+                    return 'fallback'
+                return super().gettext(message)
+
+        fallback1 = NestedFallback()
+        fallback2 = FallbackTranslations()
+        t = gettext.NullTranslations()
+        t.add_fallback(fallback1)
+        t.add_fallback(fallback2)
+
+        self.assertEqual(fallback1.gettext('bar'), 'gettext: bar')
+        self.assertEqual(t.gettext('foo'), 'fallback')
+        self.assertEqual(t.gettext('bar'), 'gettext: bar')
+
+
+class ExpandLangTestCase(unittest.TestCase):
+    def test_expand_lang(self):
+        # Test all combinations of territory, charset and
+        # modifier (locale extension)
+        locales = {
+            'cs': ['cs'],
+            'cs_CZ': ['cs_CZ', 'cs'],
+            'cs.ISO8859-2': ['cs.ISO8859-2', 'cs'],
+            'cs@euro': ['cs@euro', 'cs'],
+            'cs_CZ.ISO8859-2': ['cs_CZ.ISO8859-2', 'cs_CZ', 'cs.ISO8859-2',
+                                'cs'],
+            'cs_CZ@euro': ['cs_CZ@euro', 'cs@euro', 'cs_CZ', 'cs'],
+            'cs.ISO8859-2@euro': ['cs.ISO8859-2@euro', 'cs@euro',
+                                  'cs.ISO8859-2', 'cs'],
+            'cs_CZ.ISO8859-2@euro': ['cs_CZ.ISO8859-2@euro', 'cs_CZ@euro',
+                                     'cs.ISO8859-2@euro', 'cs@euro',
+                                     'cs_CZ.ISO8859-2', 'cs_CZ',
+                                     'cs.ISO8859-2', 'cs'],
+        }
+        for locale, expanded in locales.items():
+            with self.subTest(locale=locale):
+                with unittest.mock.patch("locale.normalize",
+                                         return_value=locale):
+                    self.assertEqual(gettext._expand_lang(locale), expanded)
+
+
+class FindTestCase(unittest.TestCase):
+
+    def setUp(self):
+        self.env = self.enterContext(os_helper.EnvironmentVarGuard())
+        self.tempdir = self.enterContext(os_helper.temp_cwd())
+
+        for key in ('LANGUAGE', 'LC_ALL', 'LC_MESSAGES', 'LANG'):
+            self.env.unset(key)
+
+    def create_mo_file(self, lang):
+        locale_dir = os.path.join(self.tempdir, "locale")
+        mofile_dir = os.path.join(locale_dir, lang, "LC_MESSAGES")
+        os.makedirs(mofile_dir)
+        mo_file = os.path.join(mofile_dir, "mofile.mo")
+        with open(mo_file, "wb") as f:
+            f.write(GNU_MO_DATA)
+        return mo_file
+
+    def test_find_with_env_vars(self):
+        # test that find correctly finds the environment variables
+        # when languages are not supplied
+        mo_file = self.create_mo_file("ga_IE")
+        for var in ('LANGUAGE', 'LC_ALL', 'LC_MESSAGES', 'LANG'):
+            self.env.set(var, 'ga_IE')
+            result = gettext.find("mofile",
+                                  localedir=os.path.join(self.tempdir, "locale"))
+            self.assertEqual(result, mo_file)
+            self.env.unset(var)
+
+    def test_find_with_languages(self):
+        # test that passed languages are used
+        self.env.set('LANGUAGE', 'pt_BR')
+        mo_file = self.create_mo_file("ga_IE")
+
+        result = gettext.find("mofile",
+                              localedir=os.path.join(self.tempdir, "locale"),
+                              languages=['ga_IE'])
+        self.assertEqual(result, mo_file)
+
+    @unittest.mock.patch('gettext._expand_lang')
+    def test_find_with_no_lang(self, patch_expand_lang):
+        # no language can be found
+        gettext.find('foo')
+        patch_expand_lang.assert_called_with('C')
+
+    @unittest.mock.patch('gettext._expand_lang')
+    def test_find_with_c(self, patch_expand_lang):
+        # 'C' is already in languages
+        self.env.set('LANGUAGE', 'C')
+        gettext.find('foo')
+        patch_expand_lang.assert_called_with('C')
+
+    def test_find_all(self):
+        # test that all are returned when all is set
+        paths = []
+        for lang in ["ga_IE", "es_ES"]:
+            paths.append(self.create_mo_file(lang))
+        result = gettext.find('mofile',
+                              localedir=os.path.join(self.tempdir, "locale"),
+                              languages=["ga_IE", "es_ES"], all=True)
+        self.assertEqual(sorted(result), sorted(paths))
+
+    def test_find_deduplication(self):
+        # test that find removes duplicate languages
+        mo_file = [self.create_mo_file('ga_IE')]
+        result = gettext.find("mofile", localedir=os.path.join(self.tempdir, "locale"),
+                              languages=['ga_IE', 'ga_IE'], all=True)
+        self.assertEqual(result, mo_file)
+
+
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
         support.check__all__(self, gettext,
                              not_exported={'c2py', 'ENOENT'})
+
+    @cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("gettext", {"re", "warnings", "locale"})
 
 
 if __name__ == '__main__':

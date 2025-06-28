@@ -75,10 +75,13 @@ extern "C" {
 #define FSTRING_START   59
 #define FSTRING_MIDDLE  60
 #define FSTRING_END     61
-#define COMMENT         62
-#define NL              63
-#define ERRORTOKEN      64
-#define N_TOKENS        66
+#define TSTRING_START   62
+#define TSTRING_MIDDLE  63
+#define TSTRING_END     64
+#define COMMENT         65
+#define NL              66
+#define ERRORTOKEN      67
+#define N_TOKENS        69
 #define NT_OFFSET       256
 
 /* Special definitions for cooperation with parser */
@@ -91,7 +94,8 @@ extern "C" {
                                  (x) == INDENT    || \
                                  (x) == DEDENT)
 #define ISSTRINGLIT(x)          ((x) == STRING           || \
-                                 (x) == FSTRING_MIDDLE)
+                                 (x) == FSTRING_MIDDLE   || \
+                                 (x) == TSTRING_MIDDLE)
 
 
 // Export these 4 symbols for 'test_peg_generator'

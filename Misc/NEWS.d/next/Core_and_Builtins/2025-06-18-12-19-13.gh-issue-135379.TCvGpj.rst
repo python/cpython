@@ -1,0 +1,3 @@
+Changes specialization of ``BINARY_OP`` for ints to only specialize for
+"compact" ints. This streamlines the fast path at the cost of fewer
+specializations when very large integers are used.

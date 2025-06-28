@@ -6,12 +6,17 @@ import sys
 import difflib
 import gc
 from functools import wraps
-import asyncio
-from test.support import import_helper
+from test.support import import_helper, requires_subprocess, run_no_yield_async_fn
 import contextlib
+import os
+import tempfile
+import textwrap
+import subprocess
 import warnings
-
-support.requires_working_socket(module=True)
+try:
+    import _testinternalcapi
+except ImportError:
+    _testinternalcapi = None
 
 class tracecontext:
     """Context manager that traces its enter and exit."""
@@ -915,20 +920,28 @@ class TraceTestCase(unittest.TestCase):
 
         def func():
             try:
-                2/0
-            except IndexError:
-                4
-            finally:
-                return 6
+                try:
+                    2/0
+                except IndexError:
+                    5
+                finally:
+                    7
+            except:
+                pass
+            return 10
 
         self.run_and_compare(func,
             [(0, 'call'),
              (1, 'line'),
              (2, 'line'),
-             (2, 'exception'),
              (3, 'line'),
-             (6, 'line'),
-             (6, 'return')])
+             (3, 'exception'),
+             (4, 'line'),
+             (7, 'line'),
+             (8, 'line'),
+             (9, 'line'),
+             (10, 'line'),
+             (10, 'return')])
 
     def test_finally_with_conditional(self):
 
@@ -1642,15 +1655,15 @@ class TraceTestCase(unittest.TestCase):
         EXPECTED_EVENTS = [
             (0, 'call'),
             (2, 'line'),
-            (1, 'line'),
             (-3, 'call'),
             (-2, 'line'),
             (-2, 'return'),
-            (4, 'line'),
             (1, 'line'),
+            (4, 'line'),
+            (2, 'line'),
             (-2, 'call'),
             (-2, 'return'),
-            (1, 'return'),
+            (2, 'return'),
         ]
 
         # C level events should be the same as expected and the same as Python level.
@@ -1801,6 +1814,40 @@ class TraceOpcodesTestCase(TraceTestCase):
     @staticmethod
     def make_tracer():
         return Tracer(trace_opcode_events=True)
+
+    @requires_subprocess()
+    def test_trace_opcodes_after_settrace(self):
+        """Make sure setting f_trace_opcodes after starting trace works even
+        if it's the first time f_trace_opcodes is being set. GH-103615"""
+
+        code = textwrap.dedent("""
+            import sys
+
+            def opcode_trace_func(frame, event, arg):
+                if event == "opcode":
+                    print("opcode trace triggered")
+                return opcode_trace_func
+
+            sys.settrace(opcode_trace_func)
+            sys._getframe().f_trace = opcode_trace_func
+            sys._getframe().f_trace_opcodes = True
+            a = 1
+        """)
+
+        # We can't use context manager because Windows can't execute a file while
+        # it's being written
+        tmp = tempfile.NamedTemporaryFile(delete=False, suffix='.py')
+        tmp.write(code.encode('utf-8'))
+        tmp.close()
+        try:
+            p = subprocess.Popen([sys.executable, tmp.name], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            p.wait()
+            out = p.stdout.read()
+        finally:
+            os.remove(tmp.name)
+            p.stdout.close()
+            p.stderr.close()
+        self.assertIn(b"opcode trace triggered", out)
 
 
 class RaisingTraceFuncTestCase(unittest.TestCase):
@@ -2025,10 +2072,9 @@ class JumpTestCase(unittest.TestCase):
                 stack.enter_context(self.assertRaisesRegex(*error))
             if warning is not None:
                 stack.enter_context(self.assertWarnsRegex(*warning))
-            asyncio.run(func(output))
+            run_no_yield_async_fn(func, output)
 
         sys.settrace(None)
-        asyncio.set_event_loop_policy(None)
         self.compare_jump_output(expected, output)
 
     def jump_test(jumpFrom, jumpTo, expected, error=None, event='line', warning=None):
@@ -2188,21 +2234,6 @@ class JumpTestCase(unittest.TestCase):
             finally:
                 output.append(10)
             output.append(11)
-        output.append(12)
-
-    @jump_test(5, 11, [2, 4], (ValueError, 'comes after the current code block'))
-    def test_no_jump_over_return_try_finally_in_finally_block(output):
-        try:
-            output.append(2)
-        finally:
-            output.append(4)
-            output.append(5)
-            return
-            try:
-                output.append(8)
-            finally:
-                output.append(10)
-            pass
         output.append(12)
 
     @jump_test(3, 4, [1], (ValueError, 'after'))
@@ -2728,7 +2759,7 @@ class JumpTestCase(unittest.TestCase):
         finally:
             output.append(4)
             output.append(5)
-            return
+        return
         output.append(7)
 
     @jump_test(7, 4, [1, 6], (ValueError, 'into'))
@@ -2815,7 +2846,7 @@ output.append(4)
         output.append(1)
         1 / 0
 
-    @jump_test(3, 2, [2, 5], event='return')
+    @jump_test(3, 2, [2, 2, 5], event='return')
     def test_jump_from_yield(output):
         def gen():
             output.append(2)
@@ -2996,16 +3027,19 @@ class TestExtendedArgs(unittest.TestCase):
         self.assertEqual(counts, {'call': 1, 'line': 301, 'return': 1})
 
     def test_trace_lots_of_globals(self):
+
+        count = 1000
+
         code = """if 1:
             def f():
                 return (
                     {}
                 )
-        """.format("\n+\n".join(f"var{i}\n" for i in range(1000)))
-        ns = {f"var{i}": i for i in range(1000)}
+        """.format("\n,\n".join(f"var{i}\n" for i in range(count)))
+        ns = {f"var{i}": i for i in range(count)}
         exec(code, ns)
         counts = self.count_traces(ns["f"])
-        self.assertEqual(counts, {'call': 1, 'line': 2000, 'return': 1})
+        self.assertEqual(counts, {'call': 1, 'line': count * 2 + 1, 'return': 1})
 
 
 class TestEdgeCases(unittest.TestCase):
