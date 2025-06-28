@@ -520,20 +520,23 @@ ZipFile Objects
 
 .. method:: ZipFile.remove(zinfo_or_arcname)
 
-   Removes a member from the archive.  *zinfo_or_arcname* may be the full path
-   of the member or a :class:`ZipInfo` instance.
-
-   If multiple members share the same full path, only one is removed when
-   a path is provided.
-
-   This does not physically remove the local file entry from the archive.
-   Call :meth:`repack` afterwards to reclaim space.
+   Removes a member entry from the archive's central directory.
+   *zinfo_or_arcname* may be the full path of the member or a :class:`ZipInfo`
+   instance.  If multiple members share the same full path and the path is
+   provided, only one of them is removed.
 
    The archive must be opened with mode ``'w'``, ``'x'`` or ``'a'``.
 
    Returns the removed :class:`ZipInfo` instance.
 
    Calling :meth:`remove` on a closed ZipFile will raise a :exc:`ValueError`.
+
+   .. note::
+      This method only removes the member's entry from the central directory,
+      making it inaccessible to most tools.  The member's local file entry,
+      including content and metadata, remains in the archive and is still
+      recoverable using forensic tools.  Call :meth:`repack` afterwards to
+      completely remove the member and reclaim space.
 
    .. versionadded:: next
 
