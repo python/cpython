@@ -1,3 +1,4 @@
+import locale
 import os
 import base64
 import gettext
@@ -875,16 +876,64 @@ class FindTestCase(unittest.TestCase):
             f.write(GNU_MO_DATA)
         return mo_file
 
-    def test_find_with_env_vars(self):
-        # test that find correctly finds the environment variables
-        # when languages are not supplied
-        mo_file = self.create_mo_file("ga_IE")
+    def _for_all_vars(self, mo_file, locale, expected=True):
         for var in ('LANGUAGE', 'LC_ALL', 'LC_MESSAGES', 'LANG'):
-            self.env.set(var, 'ga_IE')
+            self.env.set(var, locale)
             result = gettext.find("mofile",
                                   localedir=os.path.join(self.tempdir, "locale"))
-            self.assertEqual(result, mo_file)
+            if expected:
+                self.assertEqual(mo_file, result)
+            else:
+                self.assertIsNone(result)
             self.env.unset(var)
+
+    @unittest.mock.patch("locale.getlocale", return_value=(None, None))
+    def test_find_with_env_vars(self, patch_getlocale):
+        # test that find correctly finds the environment variables
+        # when languages are not supplied
+        mo_file = self.create_mo_file("ca_ES")
+        self._for_all_vars(mo_file, "ca_ES")
+        self._for_all_vars(mo_file, "ca_ES.UTF-8")
+        self._for_all_vars(mo_file, "ca_ES.UTF-8.mo")
+        self._for_all_vars(mo_file, "es_ES:ca_ES:fr_FR")
+        self._for_all_vars(mo_file, "ca_ES@euro")
+        self._for_all_vars(mo_file, "ca_ES.UTF-8@euro")
+        self._for_all_vars(mo_file, "ca_ES@valencia")
+        self._for_all_vars(mo_file, "C", expected=False)
+        self._for_all_vars(mo_file, "C.UTF-8", expected=False)
+
+    @unittest.mock.patch('gettext._expand_lang')
+    def test_encoding_not_ignored(self, patch_expand_lang):
+        self.env.set('LANGUAGE', 'ga_IE.UTF-8')
+        gettext.find("mofile")
+        patch_expand_lang.assert_any_call('ga_IE.UTF-8')
+        self.env.unset('LANGUAGE')
+
+    def test_find_LANGUAGE_priority(self):
+        self.env.set('LANGUAGE', 'ga_IE')
+        self.env.set('LC_ALL', 'C')
+        orig = locale.setlocale(locale.LC_ALL)
+        self.addCleanup(lambda: locale.setlocale(locale.LC_ALL, orig))
+        locale.setlocale(locale.LC_ALL, 'C')
+        mo_file = self.create_mo_file("ga_IE")
+        result = gettext.find("mofile", localedir=os.path.join(self.tempdir, "locale"))
+        self.assertEqual(result, mo_file)
+
+    def test_process_vars_override(self):
+        orig = locale.setlocale(locale.LC_ALL)
+        self.addCleanup(lambda: locale.setlocale(locale.LC_ALL, orig))
+        mo_file = self.create_mo_file("ca_ES")
+        for loc in ("ca_ES", "ca_ES.UTF-8", "ca_ES@euro", "ca_ES@valencia"):
+            try:
+                locale.setlocale(locale.LC_ALL, loc)
+            except locale.Error:
+                self.skipTest('platform does not support locale')
+            result = gettext.find("mofile", localedir=os.path.join(self.tempdir, "locale"))
+            self.assertEqual(mo_file, result)
+        for loc in ("C", "C.UTF-8"):
+            locale.setlocale(locale.LC_ALL, loc)
+            result = gettext.find("mofile", localedir=os.path.join(self.tempdir, "locale"))
+            self.assertIsNone(result)
 
     def test_find_with_languages(self):
         # test that passed languages are used
@@ -934,14 +983,14 @@ class MiscTestCase(unittest.TestCase):
 
     @cpython_only
     def test_lazy_import(self):
-        ensure_lazy_imports("gettext", {"re", "warnings", "locale"})
+        ensure_lazy_imports("gettext", {"re", "warnings"})
 
 
 if __name__ == '__main__':
     unittest.main()
 
 
-# For reference, here's the .po file used to created the GNU_MO_DATA above.
+# For reference, here's the .po file used to create the GNU_MO_DATA above.
 #
 # The original version was automatically generated from the sources with
 # pygettext. Later it was manually modified to add plural forms support.
