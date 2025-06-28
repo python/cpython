@@ -8,7 +8,7 @@ import threading
 import time
 from asyncio import staggered, taskgroups, base_events, tasks
 from unittest.mock import ANY
-from test.support import os_helper, SHORT_TIMEOUT, busy_retry
+from test.support import os_helper, SHORT_TIMEOUT, busy_retry, requires_gil_enabled
 from test.support.script_helper import make_script
 from test.support.socket_helper import find_unused_port
 
@@ -882,6 +882,7 @@ class TestGetStackTrace(unittest.TestCase):
         sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
         "Test only runs on Linux with process_vm_readv support",
     )
+    @requires_gil_enabled
     def test_only_active_thread(self):
         # Test that only_active_thread parameter works correctly
         port = find_unused_port()
