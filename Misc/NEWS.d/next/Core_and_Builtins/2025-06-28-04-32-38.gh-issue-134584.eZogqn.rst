@@ -1,1 +1,1 @@
-Eliminate redundant refcounting from `_CALL_BUILTIN_O`.
+Eliminate redundant refcounting from ``_CALL_BUILTIN_O``.
