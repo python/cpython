@@ -5,7 +5,6 @@ import importlib
 import sys
 import socket
 import threading
-import time
 from asyncio import staggered, taskgroups, base_events, tasks
 from unittest.mock import ANY
 from test.support import os_helper, SHORT_TIMEOUT, busy_retry, requires_gil_enabled

@@ -2537,6 +2537,14 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
         return -1;
     }
 
+#ifdef Py_GIL_DISABLED
+    if (only_active_thread) {
+        PyErr_SetString(PyExc_ValueError,
+                       "only_active_thread is not supported when Py_GIL_DISABLED is not defined");
+        return -1;
+    }
+#endif
+
     self->debug = debug;
     self->only_active_thread = only_active_thread;
     self->cached_state = NULL;
