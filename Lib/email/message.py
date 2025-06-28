@@ -74,19 +74,23 @@ def _parseparam(s):
     # RDM This might be a Header, so for now stringify it.
     s = ';' + str(s)
     plist = []
-    while s[:1] == ';':
-        s = s[1:]
-        end = s.find(';')
-        while end > 0 and (s.count('"', 0, end) - s.count('\\"', 0, end)) % 2:
+    start = 0
+    while s.find(';', start) == start:
+        start += 1
+        end = s.find(';', start)
+        while end > 0 and (
+            s.count('"', start, end) - s.count('\\"', start, end)
+        ) % 2:
             end = s.find(';', end + 1)
         if end < 0:
             end = len(s)
-        f = s[:end]
-        if '=' in f:
-            i = f.index('=')
-            f = f[:i].strip().lower() + '=' + f[i+1:].strip()
+        i = s.find('=', start, end)
+        if i == -1:
+            f = s[start:end]
+        else:
+            f = s[start:i].rstrip().lower() + '=' + s[i+1:end].lstrip()
         plist.append(f.strip())
-        s = s[end:]
+        start = end
     return plist
 
 

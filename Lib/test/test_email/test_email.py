@@ -481,6 +481,17 @@ class TestMessageAPI(TestEmailBase):
             "Content-Type: foo; bar*0=\"baz\\\"foobar\"; bar*1=\"\\\"baz\"")
         self.assertEqual(msg.get_param('bar'), 'baz"foobar"baz')
 
+    def test_get_param_linear_complexity(self):
+        # Ensure that email.message._parseparam() is fast.
+        # See https://github.com/python/cpython/issues/136063.
+        N = 100_000
+        res = email.message._parseparam(';' * N)
+        self.assertEqual(res, [''] * N)
+        res = email.message._parseparam('foo=bar;' * N)
+        self.assertEqual(res, ['foo=bar'] * N)
+        res = email.message._parseparam(' FOO = bar ;' * N)
+        self.assertEqual(res, ['foo=bar'] * N)
+
     def test_field_containment(self):
         msg = email.message_from_string('Header: exists')
         self.assertIn('header', msg)
