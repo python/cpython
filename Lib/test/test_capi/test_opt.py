@@ -2119,6 +2119,21 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_COMPARE_OP_INT", uops)
         self.assertNotIn("_GUARD_IS_TRUE_POP", uops)
 
+    def test_call_builtin_o(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                y = abs(1)
+                x += y
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_CALL_BUILTIN_O", uops)
+        self.assertIn("_POP_TWO", uops)
+
     def test_get_len_with_const_tuple(self):
         def testfunc(n):
             x = 0.0
