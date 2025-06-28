@@ -4349,7 +4349,7 @@ dummy_func(
             DEOPT_IF(callable_o != interp->callable_cache.isinstance);
         }
 
-        op(_CALL_ISINSTANCE, (callable, null, instance, cls -- res)) {
+        op(_CALL_ISINSTANCE, (callable, null, instance, cls -- res, i, c)) {
             /* isinstance(o, o2) */
             STAT_INC(CALL, hit);
             PyObject *inst_o = PyStackRef_AsPyObjectBorrow(instance);
@@ -4358,11 +4358,9 @@ dummy_func(
             if (retval < 0) {
                 ERROR_NO_POP();
             }
-            (void)null; // Silence compiler warnings about unused variables
-            PyStackRef_CLOSE(cls);
-            PyStackRef_CLOSE(instance);
-            DEAD(null);
-            PyStackRef_CLOSE(callable);
+            INPUTS_DEAD();
+            i = instance;
+            c = cls;
             res = retval ? PyStackRef_True : PyStackRef_False;
             assert((!PyStackRef_IsNull(res)) ^ (_PyErr_Occurred(tstate) != NULL));
         }
@@ -4372,7 +4370,9 @@ dummy_func(
             unused/2 +
             _GUARD_THIRD_NULL +
             _GUARD_CALLABLE_ISINSTANCE +
-            _CALL_ISINSTANCE;
+            _CALL_ISINSTANCE +
+            POP_TOP +
+            POP_TOP;
 
         macro(CALL_LIST_APPEND) =
             unused/1 +
@@ -5358,6 +5358,19 @@ dummy_func(
             DEAD(null);
             PyStackRef_CLOSE(callable);
             value = PyStackRef_FromPyObjectBorrow(ptr);
+        }
+
+        tier2 op(_SWAP_CALL_TWO_LOAD_CONST_INLINE_BORROW, (ptr/4, callable, null, instance, cls -- value, i, c)) {
+            PyStackRef_CLOSE(cls);
+            PyStackRef_CLOSE(instance);
+            (void)null; // Silence compiler warnings about unused variables
+            (void)callable;
+            DEAD(null);
+            DEAD(callable);
+            assert(_Py_IsImmortal(PyStackRef_AsPyObjectBorrow(callable)));
+            value = PyStackRef_FromPyObjectBorrow(ptr);
+            i = instance;
+            c = cls;
         }
 
         tier2 op(_LOAD_CONST_UNDER_INLINE, (ptr/4, old -- value, new)) {
