@@ -1274,6 +1274,13 @@ class CookieTests(unittest.TestCase):
 
         c.clear()
 
+        req = urllib.request.Request("http://acme.com:1234")
+        res = FakeResponse(headers, "http://acme.com:1234")
+        self.assertTrue(pol.set_ok_port(c.make_cookies(res, req)[0], req))
+        self.assertTrue(pol.set_ok_port(c.make_cookies(res, req)[0], req))
+
+        c.clear()
+
         req = urllib.request.Request("http://[::1]:1234")
         res = FakeResponse(headers, "http://[::1]:1234")
         self.assertTrue(pol.set_ok_port(c.make_cookies(res, req)[0], req))
@@ -1286,6 +1293,13 @@ class CookieTests(unittest.TestCase):
         headers = ["Set-Cookie: CUSTOMER=WILE_E_COYOTE; path=/; port=1234"]
         req = urllib.request.Request("http://127.0.0.1:1234")
         res = FakeResponse(headers, "http://127.0.0.1:1234")
+        self.assertTrue(pol.return_ok_port(c.make_cookies(res, req)[0], req))
+        self.assertTrue(pol.return_ok_port(c.make_cookies(res, req)[0], req))
+
+        c.clear()
+
+        req = urllib.request.Request("http://acme.com:1234")
+        res = FakeResponse(headers, "http://acme.com:1234")
         self.assertTrue(pol.return_ok_port(c.make_cookies(res, req)[0], req))
         self.assertTrue(pol.return_ok_port(c.make_cookies(res, req)[0], req))
 
