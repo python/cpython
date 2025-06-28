@@ -64,12 +64,14 @@
 #endif
 
 #ifdef Py_GIL_DISABLED
-#define INTERP_STATE_MIN_SIZE MAX(MAX(offsetof(PyInterpreterState, _code_object_generation) + sizeof(uint64_t), \
-                                      offsetof(PyInterpreterState, tlbc_indices.tlbc_generation) + sizeof(uint32_t)), \
-                                  offsetof(PyInterpreterState, threads.head) + sizeof(void*))
+#define INTERP_STATE_MIN_SIZE MAX(MAX(MAX(offsetof(PyInterpreterState, _code_object_generation) + sizeof(uint64_t), \
+                                          offsetof(PyInterpreterState, tlbc_indices.tlbc_generation) + sizeof(uint32_t)), \
+                                      offsetof(PyInterpreterState, threads.head) + sizeof(void*)), \
+                                  offsetof(PyInterpreterState, _gil.last_holder) + sizeof(PyThreadState*))
 #else
-#define INTERP_STATE_MIN_SIZE MAX(offsetof(PyInterpreterState, _code_object_generation) + sizeof(uint64_t), \
-                                  offsetof(PyInterpreterState, threads.head) + sizeof(void*))
+#define INTERP_STATE_MIN_SIZE MAX(MAX(offsetof(PyInterpreterState, _code_object_generation) + sizeof(uint64_t), \
+                                      offsetof(PyInterpreterState, threads.head) + sizeof(void*)), \
+                                  offsetof(PyInterpreterState, _gil.last_holder) + sizeof(PyThreadState*))
 #endif
 #define INTERP_STATE_BUFFER_SIZE MAX(INTERP_STATE_MIN_SIZE, 256)
 
@@ -206,6 +208,7 @@ typedef struct {
     uint64_t code_object_generation;
     _Py_hashtable_t *code_object_cache;
     int debug;
+    int only_active_thread;
     RemoteDebuggingState *cached_state;  // Cached module state
 #ifdef Py_GIL_DISABLED
     // TLBC cache invalidation tracking
@@ -2496,6 +2499,7 @@ _remote_debugging.RemoteUnwinder.__init__
     pid: int
     *
     all_threads: bool = False
+    only_active_thread: bool = False
     debug: bool = False
 
 Initialize a new RemoteUnwinder object for debugging a remote Python process.
@@ -2504,6 +2508,8 @@ Args:
     pid: Process ID of the target Python process to debug
     all_threads: If True, initialize state for all threads in the process.
                 If False, only initialize for the main thread.
+    only_active_thread: If True, only sample the thread holding the GIL.
+                       Cannot be used together with all_threads=True.
     debug: If True, chain exceptions to explain the sequence of events that
            lead to the exception.
 
@@ -2514,15 +2520,33 @@ Raises:
     PermissionError: If access to the target process is denied
     OSError: If unable to attach to the target process or access its memory
     RuntimeError: If unable to read debug information from the target process
+    ValueError: If both all_threads and only_active_thread are True
 [clinic start generated code]*/
 
 static int
 _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
                                                int pid, int all_threads,
+                                               int only_active_thread,
                                                int debug)
-/*[clinic end generated code: output=3982f2a7eba49334 input=48a762566b828e91]*/
+/*[clinic end generated code: output=13ba77598ecdcbe1 input=8f8f12504e17da04]*/
 {
+    // Validate that all_threads and only_active_thread are not both True
+    if (all_threads && only_active_thread) {
+        PyErr_SetString(PyExc_ValueError,
+                       "all_threads and only_active_thread cannot both be True");
+        return -1;
+    }
+
+#ifdef Py_GIL_DISABLED
+    if (only_active_thread) {
+        PyErr_SetString(PyExc_ValueError,
+                       "only_active_thread is not supported when Py_GIL_DISABLED is not defined");
+        return -1;
+    }
+#endif
+
     self->debug = debug;
+    self->only_active_thread = only_active_thread;
     self->cached_state = NULL;
     if (_Py_RemoteDebug_InitProcHandle(&self->handle, pid) < 0) {
         set_exception_cause(self, PyExc_RuntimeError, "Failed to initialize process handle");
@@ -2602,12 +2626,17 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
 @critical_section
 _remote_debugging.RemoteUnwinder.get_stack_trace
 
-Returns a list of stack traces for all threads in the target process.
+Returns a list of stack traces for threads in the target process.
 
 Each element in the returned list is a tuple of (thread_id, frame_list), where:
 - thread_id is the OS thread identifier
 - frame_list is a list of tuples (function_name, filename, line_number) representing
   the Python stack frames for that thread, ordered from most recent to oldest
+
+The threads returned depend on the initialization parameters:
+- If only_active_thread was True: returns only the thread holding the GIL
+- If all_threads was True: returns all threads
+- Otherwise: returns only the main thread
 
 Example:
     [
@@ -2632,7 +2661,7 @@ Raises:
 
 static PyObject *
 _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self)
-/*[clinic end generated code: output=666192b90c69d567 input=331dbe370578badf]*/
+/*[clinic end generated code: output=666192b90c69d567 input=f756f341206f9116]*/
 {
     PyObject* result = NULL;
     // Read interpreter state into opaque buffer
@@ -2655,6 +2684,28 @@ _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self
         _Py_hashtable_clear(self->code_object_cache);
     }
 
+    // If only_active_thread is true, we need to determine which thread holds the GIL
+    PyThreadState* gil_holder = NULL;
+    if (self->only_active_thread) {
+        // The GIL state is already in interp_state_buffer, just read from there
+        // Check if GIL is locked
+        int gil_locked = GET_MEMBER(int, interp_state_buffer,
+            self->debug_offsets.interpreter_state.gil_runtime_state_locked);
+
+        if (gil_locked) {
+            // Get the last holder (current holder when GIL is locked)
+            gil_holder = GET_MEMBER(PyThreadState*, interp_state_buffer,
+                self->debug_offsets.interpreter_state.gil_runtime_state_holder);
+        } else {
+            // GIL is not locked, return empty list
+            result = PyList_New(0);
+            if (!result) {
+                set_exception_cause(self, PyExc_MemoryError, "Failed to create empty result list");
+            }
+            goto exit;
+        }
+    }
+
 #ifdef Py_GIL_DISABLED
     // Check TLBC generation and invalidate cache if needed
     uint32_t current_tlbc_generation = GET_MEMBER(uint32_t, interp_state_buffer,
@@ -2666,7 +2717,10 @@ _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self
 #endif
 
     uintptr_t current_tstate;
-    if (self->tstate_addr == 0) {
+    if (self->only_active_thread && gil_holder != NULL) {
+        // We have the GIL holder, process only that thread
+        current_tstate = (uintptr_t)gil_holder;
+    } else if (self->tstate_addr == 0) {
         // Get threads head from buffer
         current_tstate = GET_MEMBER(uintptr_t, interp_state_buffer,
                 self->debug_offsets.interpreter_state.threads_head);
@@ -2700,10 +2754,14 @@ _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self
         if (self->tstate_addr) {
             break;
         }
+
+        // If we're only processing the GIL holder, we're done after one iteration
+        if (self->only_active_thread && gil_holder != NULL) {
+            break;
+        }
     }
 
 exit:
-   _Py_RemoteDebug_ClearCache(&self->handle);
     return result;
 }
 
@@ -2827,11 +2885,9 @@ _remote_debugging_RemoteUnwinder_get_all_awaited_by_impl(RemoteUnwinderObject *s
         goto result_err;
     }
 
-    _Py_RemoteDebug_ClearCache(&self->handle);
     return result;
 
 result_err:
-    _Py_RemoteDebug_ClearCache(&self->handle);
     Py_XDECREF(result);
     return NULL;
 }
@@ -2898,11 +2954,9 @@ _remote_debugging_RemoteUnwinder_get_async_stack_trace_impl(RemoteUnwinderObject
         goto cleanup;
     }
 
-    _Py_RemoteDebug_ClearCache(&self->handle);
     return result;
 
 cleanup:
-    _Py_RemoteDebug_ClearCache(&self->handle);
     Py_XDECREF(result);
     return NULL;
 }
@@ -2928,7 +2982,6 @@ RemoteUnwinder_dealloc(PyObject *op)
     }
 #endif
     if (self->handle.pid != 0) {
-        _Py_RemoteDebug_ClearCache(&self->handle);
         _Py_RemoteDebug_CleanupProcHandle(&self->handle);
     }
     PyObject_Del(self);
