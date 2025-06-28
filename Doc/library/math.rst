@@ -249,7 +249,7 @@ Floating point arithmetic
    .. versionadded:: 3.13
 
 
-.. function:: fmax(x, y, /)
+.. function:: fmax(x, y)
 
    Get the larger of two floating-point values, treating NaNs as missing data.
 
@@ -261,7 +261,7 @@ Floating point arithmetic
    .. versionadded:: next
 
 
-.. function:: fmin(x, y, /)
+.. function:: fmin(x, y)
 
    Get the smaller of two floating-point values, treating NaNs as missing data.
 
