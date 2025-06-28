@@ -4,6 +4,7 @@
 
 import os
 import parsesetup
+import re
 
 def checkextensions(unknown, extensions):
     files = []
@@ -70,21 +71,21 @@ def treatword(w):
     return w
 
 def expandvars(str, vars):
-    i = 0
-    while i < len(str):
-        i = k = str.find('$', i)
-        if i < 0:
-            break
-        i = i+1
-        var = str[i:i+1]
-        i = i+1
-        if var == '(':
-            j = str.find(')', i)
-            if j < 0:
-                break
-            var = str[i:j]
-            i = j+1
-        if var in vars:
-            str = str[:k] + vars[var] + str[i:]
-            i = k
-    return str
+    def repl(m):
+        name = m[1]
+        if name[0] == '(':
+            if name[-1] != ')':
+                return m[0]
+            name = name[1:-1]
+        if name in vars and name not in seen:
+            seen.add(name)
+            result = expandvars(vars[name])
+            seen.remove(name)
+            return result
+        return m[0]
+
+    def expandvars(str):
+        return re.sub(r'(?m)\$(\([^)]*\)?|.)', repl, str)
+
+    seen = set()
+    return expandvars(str)
