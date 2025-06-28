@@ -1,1 +1,0 @@
-Fix a DOS vulnerability in :mod:`idlelib` regarding string slicing.
