@@ -1286,6 +1286,13 @@ class CookieTests(unittest.TestCase):
         self.assertTrue(pol.set_ok_port(c.make_cookies(res, req)[0], req))
         self.assertTrue(pol.set_ok_port(c.make_cookies(res, req)[0], req))
 
+        c.clear()
+
+        req = urllib.request.Request("http://[::1]:1235")
+        res = FakeResponse(headers, "http://[::1]:1235")
+        self.assertFalse(pol.set_ok_port(c.make_cookies(res, req)[0], req))
+        self.assertFalse(pol.set_ok_port(c.make_cookies(res, req)[0], req))
+
     def test_return_ok_port(self):
         pol = DefaultCookiePolicy(
             rfc2965=True, blocked_domains=[])
@@ -1309,6 +1316,13 @@ class CookieTests(unittest.TestCase):
         res = FakeResponse(headers, "http://[::1]:1234")
         self.assertTrue(pol.return_ok_port(c.make_cookies(res, req)[0], req))
         self.assertTrue(pol.return_ok_port(c.make_cookies(res, req)[0], req))
+
+        c.clear()
+
+        req = urllib.request.Request("http://[::1]:1235")
+        res = FakeResponse(headers, "http://[::1]:1235")
+        self.assertFalse(pol.return_ok_port(c.make_cookies(res, req)[0], req))
+        self.assertFalse(pol.return_ok_port(c.make_cookies(res, req)[0], req))
 
     def test_domain_mirror(self):
         pol = DefaultCookiePolicy(rfc2965=True)
