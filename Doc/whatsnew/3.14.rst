@@ -278,7 +278,7 @@ As another example, generating HTML attributes from data:
 
    attributes = {"src": "shrubbery.jpg", "alt": "looks nice"}
    template = t"<img {attributes}>"
-   assert html(template) == '<img src="shrubbery.jpg" alt="looks nice" class="looks-nice">'
+   assert html(template) == '<img src="shrubbery.jpg" alt="looks nice" />'
 
 Compared to using an f-string, the ``html`` function has access to template attributes
 containing the original information: static strings, interpolations, and values
@@ -978,6 +978,23 @@ be specified by the build backend, as it will no longer be determined
 automatically by the C compiler. For a running interpreter, the setting that
 was used at compile time can be found using :func:`sysconfig.get_config_var`.
 
+A new flag has been added, :data:`~sys.flags.context_aware_warnings`.  This
+flag defaults to true for the free-threaded build and false for the GIL-enabled
+build. If the flag is true then the :class:`warnings.catch_warnings` context
+manager uses a context variable for warning filters.  This makes the context
+manager behave predicably when used with multiple threads or asynchronous
+tasks.
+
+A new flag has been added, :data:`~sys.flags.thread_inherit_context`. This flag
+defaults to true for the free-threaded build and false for the GIL-enabled
+build. If the flag is true then threads created with :class:`threading.Thread`
+start with a copy of the :class:`~contextvars.Context()` of the caller of
+:meth:`~threading.Thread.start`.  Most significantly, this makes the warning
+filtering context established by :class:`~warnings.catch_warnings` be
+"inherited" by threads (or asyncio tasks) started within that context.  It also
+affects other modules that use context variables, such as the :mod:`decimal`
+context manager.
+
 
 .. _whatsnew314-pyrepl-highlighting:
 
@@ -1028,6 +1045,18 @@ Please report any bugs or major performance regressions that you encounter!
 
 .. seealso:: :pep:`744`
 
+Concurrent safe warnings control
+--------------------------------
+
+The :class:`warnings.catch_warnings` context manager will now optionally
+use a context variable for warning filters.  This is enabled by setting
+the :data:`~sys.flags.context_aware_warnings` flag, either with the ``-X``
+command-line option or an environment variable.  This gives predicable
+warnings control when using :class:`~warnings.catch_warnings` combined with
+multiple threads or asynchronous tasks. The flag defaults to true for the
+free-threaded build and false for the GIL-enabled build.
+
+(Contributed by Neil Schemenauer and Kumar Aditya in :gh:`130010`.)
 
 Other language changes
 ======================
@@ -1757,6 +1786,16 @@ os
   (Contributed by Cody Maloney in :gh:`129205`.)
 
 
+os.path
+-------
+
+* The *strict* parameter to :func:`os.path.realpath` accepts a new value,
+  :data:`os.path.ALLOW_MISSING`.
+  If used, errors other than :exc:`FileNotFoundError` will be re-raised;
+  the resulting path can be missing but it will be free of symlinks.
+  (Contributed by Petr Viktorin for :cve:`2025-4517`.)
+
+
 pathlib
 -------
 
@@ -1943,6 +1982,28 @@ sysconfig
 
 * Add ``ABIFLAGS`` key to :func:`sysconfig.get_config_vars` on Windows.
   (Contributed by Xuehai Pan in :gh:`131799`.)
+
+
+tarfile
+-------
+
+* :func:`~tarfile.data_filter` now normalizes symbolic link targets in order to
+  avoid path traversal attacks.
+  (Contributed by Petr Viktorin in :gh:`127987` and :cve:`2025-4138`.)
+* :func:`~tarfile.TarFile.extractall` now skips fixing up directory attributes
+  when a directory was removed or replaced by another kind of file.
+  (Contributed by Petr Viktorin in :gh:`127987` and :cve:`2024-12718`.)
+* :func:`~tarfile.TarFile.extract` and :func:`~tarfile.TarFile.extractall`
+  now (re-)apply the extraction filter when substituting a link (hard or
+  symbolic) with a copy of another archive member, and when fixing up
+  directory attributes.
+  The former raises a new exception, :exc:`~tarfile.LinkFallbackError`.
+  (Contributed by Petr Viktorin for :cve:`2025-4330` and :cve:`2024-12718`.)
+* :func:`~tarfile.TarFile.extract` and :func:`~tarfile.TarFile.extractall`
+  no longer extract rejected members when
+  :func:`~tarfile.TarFile.errorlevel` is zero.
+  (Contributed by Matt Prodani and Petr Viktorin in :gh:`112887`
+  and :cve:`2025-4435`.)
 
 
 threading
@@ -2700,6 +2761,7 @@ New features
   * :c:func:`PyUnicodeWriter_Discard`
   * :c:func:`PyUnicodeWriter_Finish`
   * :c:func:`PyUnicodeWriter_Format`
+  * :c:func:`PyUnicodeWriter_WriteASCII`
   * :c:func:`PyUnicodeWriter_WriteChar`
   * :c:func:`PyUnicodeWriter_WriteRepr`
   * :c:func:`PyUnicodeWriter_WriteStr`
@@ -2976,7 +3038,7 @@ Deprecated
     :c:func:`PyUnicodeWriter_WriteSubstring(writer, str, start, end) <PyUnicodeWriter_WriteSubstring>`.
   * :c:func:`!_PyUnicodeWriter_WriteASCIIString`:
     replace ``_PyUnicodeWriter_WriteASCIIString(&writer, str)`` with
-    :c:func:`PyUnicodeWriter_WriteUTF8(writer, str) <PyUnicodeWriter_WriteUTF8>`.
+    :c:func:`PyUnicodeWriter_WriteASCII(writer, str) <PyUnicodeWriter_WriteASCII>`.
   * :c:func:`!_PyUnicodeWriter_WriteLatin1String`:
     replace ``_PyUnicodeWriter_WriteLatin1String(&writer, str)`` with
     :c:func:`PyUnicodeWriter_WriteUTF8(writer, str) <PyUnicodeWriter_WriteUTF8>`.

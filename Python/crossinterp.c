@@ -674,7 +674,9 @@ _PyPickle_Loads(struct _unpickle_context *ctx, PyObject *pickled)
 
 finally:
     if (exc != NULL) {
-        sync_module_capture_exc(tstate, &ctx->main);
+        if (_PyErr_Occurred(tstate)) {
+            sync_module_capture_exc(tstate, &ctx->main);
+        }
         // We restore the original exception.
         // It might make sense to chain it (__context__).
         _PyErr_SetRaisedException(tstate, exc);
@@ -2615,6 +2617,7 @@ _PyXI_Enter(_PyXI_session *session,
     // Convert the attrs for cross-interpreter use.
     _PyXI_namespace *sharedns = NULL;
     if (nsupdates != NULL) {
+        assert(PyDict_Check(nsupdates));
         Py_ssize_t len = PyDict_Size(nsupdates);
         if (len < 0) {
             if (result != NULL) {
