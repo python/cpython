@@ -17,7 +17,7 @@
 #include "pycore_pyerrors.h"      // _PyErr_ClearExcState()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_warnings.h"      // _PyErr_WarnUnawaitedCoroutine()
-#include "pycore_weakref.h"
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 
 #include "opcode_ids.h"           // RESUME, etc

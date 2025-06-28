@@ -17,7 +17,7 @@
 
 #include "Python.h"
 #include "pycore_pyhash.h"        // _Py_HashSecret
-#include "pycore_weakref.h"
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 #include <stddef.h>               // offsetof()
 #include "expat.h"

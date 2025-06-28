@@ -4,7 +4,7 @@
 
 #include "blob.h"
 #include "util.h"
-#include "pycore_weakref.h"
+#include "pycore_weakref.h"    // FT_CLEAR_WEAKREFS()
 
 #define clinic_state() (pysqlite_get_state_by_type(Py_TYPE(self)))
 #include "clinic/blob.c.h"

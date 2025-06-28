@@ -473,7 +473,7 @@ later:
 #include "pycore_pyerrors.h"         // _PyErr_ChainExceptions1()
 #include "pycore_tuple.h"            // _PyTuple_Recycle()
 #include <stddef.h>                  // offsetof()
-#include "pycore_weakref.h"
+#include "pycore_weakref.h"          // FT_CLEAR_WEAKREFS()
 
 #include "clinic/odictobject.c.h"
 
