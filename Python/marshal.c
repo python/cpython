@@ -1661,8 +1661,7 @@ r_object(RFILE *p)
         }
         PyObject *stop = NULL;
         PyObject *step = NULL;
-        PyObject *start = NULL;
-        start = r_object(p);
+        PyObject *start = r_object(p);
         if (start == NULL) {
             goto cleanup;
         }
