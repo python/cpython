@@ -2102,7 +2102,8 @@ _Py_wreadlink(const wchar_t *path, wchar_t *buf, size_t buflen)
         errno = EINVAL;
         return -1;
     }
-    wcsncpy(buf, wbuf, buflen);
+    wcsncpy(buf, wbuf, buflen - 1);
+    buf[buflen - 1] = L'\0';  /* Ensure null termination */
     PyMem_RawFree(wbuf);
     return (int)r1;
 }
