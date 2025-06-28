@@ -485,12 +485,17 @@ class TestMessageAPI(TestEmailBase):
         # Ensure that email.message._parseparam() is fast.
         # See https://github.com/python/cpython/issues/136063.
         N = 100_000
-        res = email.message._parseparam(';' * N)
-        self.assertEqual(res, [''] * N)
-        res = email.message._parseparam('foo=bar;' * N)
-        self.assertEqual(res, ['foo=bar'] * N)
-        res = email.message._parseparam(' FOO = bar ;' * N)
-        self.assertEqual(res, ['foo=bar'] * N)
+        for s, r in [
+            ("", ""),
+            ("foo=bar", "foo=bar"),
+            (" FOO = bar    ", "foo=bar"),
+        ]:
+            with self.subTest(s=s, r=r, N=N):
+                src = f'{s};' * (N - 1) + s
+                res = email.message._parseparam(src)
+                self.assertEqual(len(res), N)
+                self.assertEqual(len(set(res)), 1)
+                self.assertEqual(res[0], r)
 
     def test_field_containment(self):
         msg = email.message_from_string('Header: exists')
