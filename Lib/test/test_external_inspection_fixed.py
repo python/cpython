@@ -8,7 +8,7 @@ import threading
 import time
 from asyncio import staggered, taskgroups, base_events, tasks
 from unittest.mock import ANY
-from test.support import os_helper, SHORT_TIMEOUT, busy_retry, requires_gil_enabled
+from test.support import os_helper, SHORT_TIMEOUT, busy_retry
 from test.support.script_helper import make_script
 from test.support.socket_helper import find_unused_port
 
@@ -877,7 +877,6 @@ class TestGetStackTrace(unittest.TestCase):
             ],
         )
 
-    @requires_gil_enabled("Free threaded builds don't have an 'active thread'")
     @skip_if_not_supported
     @unittest.skipIf(
         sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
