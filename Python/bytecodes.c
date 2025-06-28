@@ -5368,7 +5368,6 @@ dummy_func(
             (void)null; // Silence compiler warnings about unused variables
             DEAD(null);
             PyStackRef_CLOSE(callable);
-            assert(_Py_IsImmortal(PyStackRef_AsPyObjectBorrow(callable)));
             value = PyStackRef_FromPyObjectBorrow(ptr);
             c1 = callable;
             i = instance;

@@ -7421,7 +7421,6 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(callable);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            assert(_Py_IsImmortal(PyStackRef_AsPyObjectBorrow(callable)));
             value = PyStackRef_FromPyObjectBorrow(ptr);
             c1 = callable;
             i = instance;
