@@ -877,12 +877,12 @@ class TestGetStackTrace(unittest.TestCase):
             ],
         )
 
-    @requires_gil_enabled("Free threaded builds don't have an 'active thread'")
     @skip_if_not_supported
     @unittest.skipIf(
         sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
         "Test only runs on Linux with process_vm_readv support",
     )
+    @requires_gil_enabled("Free threaded builds don't have an 'active thread'")
     def test_only_active_thread(self):
         # Test that only_active_thread parameter works correctly
         port = find_unused_port()
