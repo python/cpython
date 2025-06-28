@@ -1,0 +1,1 @@
+Fix buffer overflow vulnerability in `_Py_wreadlink` function by ensuring proper null-termination when using `wcsncpy`.
