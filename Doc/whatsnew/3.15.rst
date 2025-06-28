@@ -327,6 +327,10 @@ Porting to Python 3.15
 
   (Contributed by Serhiy Storchaka in :gh:`133595`.)
 
+* Removed deprecated :meth:`!pathlib.PurePath.is_reserved`.
+  Use :func:`os.path.isreserved` to detect reserved paths on Windows.
+  (Contributed by Nikita Sobolev in :gh:`133875`.)
+
 Deprecated C APIs
 -----------------
 
