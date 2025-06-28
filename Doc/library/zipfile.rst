@@ -542,7 +542,7 @@ ZipFile Objects
                            strict_descriptor=False[, chunk_size])
 
    Rewrites the archive to remove stale local file entries, shrinking its file
-   size.
+   size.  The archive must be opened with mode ``'a'``.
 
    If *removed* is provided, it must be a sequence of :class:`ZipInfo` objects
    representing removed entries; only their corresponding local file entries
@@ -570,8 +570,6 @@ ZipFile Objects
 
    *chunk_size* may be specified to control the buffer size when moving
    entry data (default is 1 MiB).
-
-   The archive must be opened with mode ``'a'``.
 
    Calling :meth:`repack` on a closed ZipFile will raise a :exc:`ValueError`.
 
