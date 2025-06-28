@@ -387,8 +387,8 @@ Floating point manipulation functions
 .. function:: issubnormal(x)
 
    Return ``True`` if *x* is a subnormal number, that is a finite
-   nonzero number with a magnitude smaller than the smallest positive normal
-   number, see :data:`sys.float_info.min`.  Return ``False`` otherwise.
+   nonzero number with a magnitude smaller than :data:`sys.float_info.min`.
+   Return ``False`` otherwise.
 
    .. versionadded:: next
 
