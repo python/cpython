@@ -613,9 +613,7 @@ def system_alias(system, release, version):
 ### Various internal helpers
 
 # Table for cleaning up characters in filenames.
-_SIMPLE_SUBSTITUTIONS = (
-    dict.fromkeys(map(ord, '/\\:;"()'), '-') | {ord(' '): '_'}
-)
+_SIMPLE_SUBSTITUTIONS = str.maketrans(r' /\:;"()', r'_-------')
 
 def _platform(*args):
 
@@ -632,7 +630,7 @@ def _platform(*args):
     platform = platform.replace('unknown', '')
 
     # Fold '--'s and remove trailing '-'
-    return re.sub(r'-+', '-', platform).rstrip('-')
+    return re.sub(r'-{2,}', '-', platform).rstrip('-')
 
 def _node(default=''):
 

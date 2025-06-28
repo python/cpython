@@ -1,2 +1,0 @@
-:mod:`platform`: eliminate asymptotic quadratic-time complexity
-in the private helper :func:`!_platform`. Patch by Bénédikt Tran.
