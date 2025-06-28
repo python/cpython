@@ -62,7 +62,7 @@ def get_match_tests():
 
 
 def set_match_tests(patterns=None, match_labels=None):
-    global _test_matchers, _test_patterns
+    global _test_matchers, _test_patterns, _match_labels
 
     if not patterns:
         _test_matchers = ()
@@ -76,6 +76,11 @@ def set_match_tests(patterns=None, match_labels=None):
                 for result, it in itertools.groupby(patterns, itemgetter(1))
             ]
             _test_patterns = patterns
+
+    if not match_labels:
+        _match_labels = ()
+    else:
+        _match_labels = tuple(match_labels)
 
 
 def _compile_match_function(patterns):
