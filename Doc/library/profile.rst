@@ -54,7 +54,7 @@ This section is provided for users that "don't want to read the manual." It
 provides a very brief overview, and allows a user to rapidly perform profiling
 on an existing application.
 
-To profile a function that takes a single argument, you can do::
+To profile a single statement, you can do::
 
    import cProfile
    import re
@@ -121,6 +121,14 @@ results to a file by specifying a filename to the :func:`run` function::
 The :class:`pstats.Stats` class reads profile results from a file and formats
 them in various ways.
 
+You can also do inline profiling with :class:`cProfile.Profile <profile.Profile>`::
+
+   import cProfile
+   import re
+   with cProfile.Profile() as pr:
+       re.compile("foo|bar")
+   pr.print_stats()
+
 .. _profile-cli:
 
 .. program:: cProfile
@@ -149,6 +157,10 @@ profile another script.  For example::
 
    .. versionadded:: 3.8
       Added the ``-m`` option to :mod:`profile`.
+
+Note that if the process is terminated abruptly (for example, by
+:data:`~signal.SIGTERM` or :data:`~signal.SIGKILL`) during profiling,
+no results will be generated/printed.
 
 The :mod:`pstats` module's :class:`~pstats.Stats` class has a variety of methods
 for manipulating and printing the data saved into a profile results file::
@@ -331,11 +343,6 @@ functions:
    .. method:: runcall(func, /, *args, **kwargs)
 
       Profile ``func(*args, **kwargs)``
-
-Note that profiling will only work if the called command/function actually
-returns.  If the interpreter is terminated (e.g. via a :func:`sys.exit` call
-during the called command/function execution) no profiling results will be
-printed.
 
 .. _profile-stats:
 
@@ -593,23 +600,17 @@ implementations.
 Limitations
 ===========
 
-One limitation has to do with accuracy of timing information. There is a
-fundamental problem with deterministic profilers involving accuracy.  The most
-obvious restriction is that the underlying "clock" is only ticking at a rate
-(typically) of about .001 seconds.  Hence no measurements will be more accurate
-than the underlying clock.  If enough measurements are taken, then the "error"
-will tend to average out. Unfortunately, removing this first error induces a
-second source of error.
-
-The second problem is that it "takes a while" from when an event is dispatched
+It "takes a while" from when an event is dispatched
 until the profiler's call to get the time actually *gets* the state of the
 clock.  Similarly, there is a certain lag when exiting the profiler event
 handler from the time that the clock's value was obtained (and then squirreled
 away), until the user's code is once again executing.  As a result, functions
 that are called many times, or call many functions, will typically accumulate
-this error. The error that accumulates in this fashion is typically less than
-the accuracy of the clock (less than one clock tick), but it *can* accumulate
-and become very significant.
+this error.
+
+Also, the logic in the profiler event handler takes time to execute, which
+will introduce skew into the results, making the functions slower than they
+would be if the profiler was not running.
 
 The problem is more important with :mod:`profile` than with the lower-overhead
 :mod:`cProfile`.  For this reason, :mod:`profile` provides a means of
@@ -620,6 +621,9 @@ negative numbers (when call counts are exceptionally low, and the gods of
 probability work against you :-). )  Do *not* be alarmed by negative numbers in
 the profile.  They should *only* appear if you have calibrated your profiler,
 and the results are actually better than without calibration.
+
+To avoid infinite recursion, :mod:`profile` and :mod:`cProfile` do not work
+inside trace functions set using :func:`sys.settrace` or :func:`sys.setprofile`.
 
 
 .. _profile-calibration:
