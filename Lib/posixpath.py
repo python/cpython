@@ -188,7 +188,9 @@ def dirname(p):
 # (Does this work for all UNIXes?  Is it even guaranteed to work by Posix?)
 
 def ismount(path):
-    """Test whether a path is a mount point"""
+    """Test whether a path is a mount point. Does not work reliably
+    with bind mounts on the same filesystems, has false positives for
+    btrfs subvolumes that aren't a mountpoint."""
     try:
         s1 = os.lstat(path)
     except (OSError, ValueError):
