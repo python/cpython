@@ -15742,7 +15742,7 @@ fi
 printf "%s\n" "$ac_cv_ffi_complex_double_supported" >&6; }
 if test "$ac_cv_ffi_complex_double_supported" = "yes"; then
 
-printf "%s\n" "#define Py_FFI_SUPPORT_C_COMPLEX 1" >>confdefs.h
+printf "%s\n" "#define _Py_FFI_SUPPORT_C_COMPLEX 1" >>confdefs.h
 
 fi
 
@@ -32633,7 +32633,7 @@ then :
     LIBHACL_SIMD128_FLAGS="-msse -msse2 -msse3 -msse4.1 -msse4.2"
 
 
-printf "%s\n" "#define HACL_CAN_COMPILE_SIMD128 1" >>confdefs.h
+printf "%s\n" "#define _Py_HACL_CAN_COMPILE_VEC128 1" >>confdefs.h
 
 
     # macOS universal2 builds *support* the -msse etc flags because they're
@@ -32709,7 +32709,7 @@ then :
 
     LIBHACL_SIMD256_FLAGS="-mavx2"
 
-printf "%s\n" "#define HACL_CAN_COMPILE_SIMD256 1" >>confdefs.h
+printf "%s\n" "#define _Py_HACL_CAN_COMPILE_VEC256 1" >>confdefs.h
 
 
     # macOS universal2 builds *support* the -mavx2 compiler flag because it's

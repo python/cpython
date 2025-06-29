@@ -10020,6 +10020,11 @@ tp_new_wrapper(PyObject *self, PyObject *args, PyObject *kwds)
     /* If staticbase is NULL now, it is a really weird type.
        In the spirit of backwards compatibility (?), just shut up. */
     if (staticbase && staticbase->tp_new != type->tp_new) {
+        if (staticbase->tp_new == NULL) {
+            PyErr_Format(PyExc_TypeError,
+                         "cannot create '%s' instances", subtype->tp_name);
+            return NULL;
+        }
         PyErr_Format(PyExc_TypeError,
                      "%s.__new__(%s) is not safe, use %s.__new__()",
                      type->tp_name,

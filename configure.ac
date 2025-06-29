@@ -4163,7 +4163,7 @@ int main(void)
 [ac_cv_ffi_complex_double_supported=no])
 ])])
 if test "$ac_cv_ffi_complex_double_supported" = "yes"; then
-    AC_DEFINE([Py_FFI_SUPPORT_C_COMPLEX], [1],
+    AC_DEFINE([_Py_FFI_SUPPORT_C_COMPLEX], [1],
               [Defined if _Complex C type can be used with libffi.])
 fi
 
@@ -8026,7 +8026,8 @@ then
   AX_CHECK_COMPILE_FLAG([-msse -msse2 -msse3 -msse4.1 -msse4.2],[
     [LIBHACL_SIMD128_FLAGS="-msse -msse2 -msse3 -msse4.1 -msse4.2"]
 
-    AC_DEFINE([HACL_CAN_COMPILE_SIMD128], [1], [HACL* library can compile SIMD128 implementations])
+    AC_DEFINE([_Py_HACL_CAN_COMPILE_VEC128], [1], [
+      HACL* library can compile SIMD128 implementations])
 
     # macOS universal2 builds *support* the -msse etc flags because they're
     # available on x86_64. However, performance of the HACL SIMD128 implementation
@@ -8057,7 +8058,8 @@ if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "WASI" || \
 then
   AX_CHECK_COMPILE_FLAG([-mavx2],[
     [LIBHACL_SIMD256_FLAGS="-mavx2"]
-    AC_DEFINE([HACL_CAN_COMPILE_SIMD256], [1], [HACL* library can compile SIMD256 implementations])
+    AC_DEFINE([_Py_HACL_CAN_COMPILE_VEC256], [1], [
+      HACL* library can compile SIMD256 implementations])
 
     # macOS universal2 builds *support* the -mavx2 compiler flag because it's
     # available on x86_64; but the HACL SIMD256 build then fails because the
