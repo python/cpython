@@ -5244,6 +5244,16 @@ dummy_func(
             #endif
         }
 
+        tier2 op(_SWAP_CALL_LOAD_CONST_INLINE_BORROW, (ptr/4, callable, null, arg -- res, a, c)) {
+            (void)null; // Silence compiler warnings about unused variables
+            DEAD(null);
+            PyStackRef_CLOSE(arg);
+            PyStackRef_CLOSE(callable);
+            res = PyStackRef_FromPyObjectBorrow(ptr);
+            a = arg;
+            c = callable;
+        }
+
         tier2 op(_EXIT_TRACE, (exit_p/4 --)) {
             _PyExitData *exit = (_PyExitData *)exit_p;
             PyCodeObject *code = _PyFrame_GetCode(frame);
