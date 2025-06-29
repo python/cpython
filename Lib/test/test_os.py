@@ -25,6 +25,7 @@ import sys
 import sysconfig
 import tempfile
 import textwrap
+import threading
 import time
 import types
 import unittest
@@ -36,6 +37,7 @@ from test.support import os_helper
 from test.support import socket_helper
 from test.support import infinite_recursion
 from test.support import warnings_helper
+from test.support import threading_helper
 from platform import win32_is_iot
 
 try:
@@ -5404,6 +5406,49 @@ class TestScandir(unittest.TestCase):
         with self.check_no_resource_warning():
             del iterator
 
+    @support.requires_resource('cpu')
+    @threading_helper.requires_working_threading()
+    def test_races_scandir_iterations(self):
+        N = 4
+        ITERATIONS = 10 if support.check_sanitizer(address=True) else 1000
+
+        self.create_file("file.txt")
+        self.create_file("file2.txt")
+
+        def scan(iter, barrier):
+            barrier.wait()
+            for entry in iter:
+                pass
+
+        for _ in range(ITERATIONS):
+            barrier = threading.Barrier(N)
+            iter = os.scandir(self.path)
+
+            threads = [threading.Thread(target=scan, args=(iter, barrier))
+                       for _ in range(N)]
+            with threading_helper.start_threads(threads):
+                pass
+
+    @threading_helper.requires_working_threading()
+    @unittest.skipUnless(support.check_sanitizer(address=True), "requires ASAN")
+    def test_races_scandir_entry(self):
+        N = 2
+        ITERATIONS = 10
+
+        self.create_file("file.txt")
+        self.create_file("file2.txt")
+
+        def stat(entry, barrier):
+            barrier.wait()
+            entry.stat()
+
+        for _ in range(ITERATIONS):
+            barrier = threading.Barrier(N)
+            for entry in os.scandir(self.path):
+                threads = [threading.Thread(target=stat, args=(entry, barrier))
+                           for _ in range(N)]
+                with threading_helper.start_threads(threads):
+                    pass
 
 class TestPEP519(unittest.TestCase):
 
