@@ -38,3 +38,6 @@ _symtable symtablemodule.c
 
 # for systems without $HOME env, used by site._getuserbase()
 @MODULE_PWD_TRUE@pwd pwdmodule.c
+
+# for optimization purposes
+@MODULE_ARRAY_TRUE@array arraymodule.c
