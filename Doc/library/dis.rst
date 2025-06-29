@@ -1256,6 +1256,9 @@ iterations of the loop.
    ``cmp_op[opname >> 5]``. If the fifth-lowest bit of ``opname`` is set
    (``opname & 16``), the result should be coerced to ``bool``.
 
+   .. versionchanged:: 3.12
+     The cmp_op index is now stored in the four-highest bits of oparg instead of the four-lowest bits of oparg.
+
    .. versionchanged:: 3.13
       The fifth-lowest bit of the oparg now indicates a forced conversion to
       :class:`bool`.
