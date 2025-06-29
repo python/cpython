@@ -325,6 +325,54 @@ Literals
                                 Constant(value='.3')]))]))
 
 
+.. class:: TemplateStr(values)
+
+   A t-string, comprising a series of :class:`Interpolation` and :class:`Constant`
+   nodes.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse('t"{name} finished {place:ordinal}"', mode='eval'), indent=4))
+        Expression(
+            body=TemplateStr(
+                values=[
+                    Interpolation(
+                        value=Name(id='name'),
+                        str='name',
+                        conversion=-1),
+                    Constant(value=' finished '),
+                    Interpolation(
+                        value=Name(id='place'),
+                        str='place',
+                        conversion=-1,
+                        format_spec=JoinedStr(
+                            values=[
+                                Constant(value='ordinal')]))]))
+
+   .. versionadded:: 3.14
+
+
+.. class:: Interpolation(value, str, conversion, format_spec)
+
+   Node representing a single interpolation field in a t-string.
+
+   * ``value`` is any expression node (such as a literal, a variable, or a
+     function call).
+   * ``str`` is a constant containing the text of the interpolation expression.
+   * ``conversion`` is an integer:
+
+     * -1: no conversion
+     * 115: ``!s`` string conversion
+     * 114: ``!r`` repr conversion
+     * 97: ``!a`` ascii conversion
+
+   * ``format_spec`` is a :class:`JoinedStr` node representing the formatting
+     of the value, or ``None`` if no format was specified. Both
+     ``conversion`` and ``format_spec`` can be set at the same time.
+
+   .. versionadded:: 3.14
+
+
 .. class:: List(elts, ctx)
            Tuple(elts, ctx)
 

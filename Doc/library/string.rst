@@ -198,8 +198,9 @@ Format String Syntax
 The :meth:`str.format` method and the :class:`Formatter` class share the same
 syntax for format strings (although in the case of :class:`Formatter`,
 subclasses can define their own format string syntax).  The syntax is
-related to that of :ref:`formatted string literals <f-strings>`, but it is
-less sophisticated and, in particular, does not support arbitrary expressions.
+related to that of :ref:`formatted string literals <f-strings>` and
+:ref:`template string literals <t-strings>`, but it is less sophisticated
+and, in particular, does not support arbitrary expressions.
 
 .. index::
    single: {} (curly brackets); in string formatting
@@ -306,7 +307,7 @@ Format Specification Mini-Language
 
 "Format specifications" are used within replacement fields contained within a
 format string to define how individual values are presented (see
-:ref:`formatstrings` and :ref:`f-strings`).
+:ref:`formatstrings`, :ref:`f-strings`, and :ref:`t-strings`).
 They can also be passed directly to the built-in
 :func:`format` function.  Each formattable type may define how the format
 specification is to be interpreted.
@@ -789,10 +790,20 @@ Nesting arguments and more complex examples::
 
 
 
-.. _template-strings:
+.. _template-strings-pep292:
 
-Template strings
-----------------
+Template strings ($-strings)
+----------------------------
+
+.. note::
+
+   The feature described here was introduced in Python 2.4.  It is unrelated
+   to, and should not be confused with, the newer
+   :ref:`template strings <template-strings>` feature and
+   :ref:`t-string literal syntax <t-strings>` introduced in Python 3.14.
+   T-string literals evaluate to instances of a different
+   :class:`~string.templatelib.Template` class, found in the
+   :mod:`string.templatelib` module.
 
 Template strings provide simpler string substitutions as described in
 :pep:`292`.  A primary use case for template strings is for
@@ -972,3 +983,9 @@ Helper functions
    or ``None``, runs of whitespace characters are replaced by a single space
    and leading and trailing whitespace are removed, otherwise *sep* is used to
    split and join the words.
+
+
+
+.. toctree::
+
+   string.templatelib.rst
