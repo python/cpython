@@ -516,12 +516,6 @@ dummy_func(void) {
         value = PyJitRef_Borrow(sym_new_const(ctx, ptr));
     }
 
-    op(_SWAP_CALL_LOAD_CONST_INLINE_BORROW, (ptr/4, callable, null, arg -- res, a, c)) {
-        res = PyJitRef_Borrow(sym_new_const(ctx, ptr));
-        a = arg;
-        c = callable;
-    }
-
     op(_POP_TOP, (value -- )) {
         PyTypeObject *typ = sym_get_type(value);
         if (PyJitRef_IsBorrowed(value) ||
@@ -1193,7 +1187,7 @@ dummy_func(void) {
                 goto error;
             }
             if (_Py_IsImmortal(temp)) {
-                REPLACE_OP(this_instr, _SWAP_CALL_LOAD_CONST_INLINE_BORROW,
+                REPLACE_OP(this_instr, _POP_CALL_ONE_LOAD_CONST_INLINE_BORROW,
                            0, (uintptr_t)temp);
             }
             res = sym_new_const(ctx, temp);

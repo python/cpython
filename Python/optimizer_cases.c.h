@@ -2474,7 +2474,7 @@
                     goto error;
                 }
                 if (_Py_IsImmortal(temp)) {
-                    REPLACE_OP(this_instr, _SWAP_CALL_LOAD_CONST_INLINE_BORROW,
+                    REPLACE_OP(this_instr, _POP_CALL_ONE_LOAD_CONST_INLINE_BORROW,
                            0, (uintptr_t)temp);
                 }
                 res = sym_new_const(ctx, temp);
@@ -2892,24 +2892,6 @@
         }
 
         case _SAVE_RETURN_OFFSET: {
-            break;
-        }
-
-        case _SWAP_CALL_LOAD_CONST_INLINE_BORROW: {
-            JitOptRef arg;
-            JitOptRef callable;
-            JitOptRef res;
-            JitOptRef a;
-            JitOptRef c;
-            arg = stack_pointer[-1];
-            callable = stack_pointer[-3];
-            PyObject *ptr = (PyObject *)this_instr->operand0;
-            res = PyJitRef_Borrow(sym_new_const(ctx, ptr));
-            a = arg;
-            c = callable;
-            stack_pointer[-3] = res;
-            stack_pointer[-2] = a;
-            stack_pointer[-1] = c;
             break;
         }
 
