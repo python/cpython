@@ -4,6 +4,7 @@ import socket
 import time
 import threading
 import unittest
+from unittest.mock import Mock
 
 from test.support import socket_helper
 from test.test_asyncio import utils as test_utils
@@ -65,7 +66,7 @@ class BaseStartServer(func_tests.FunctionalTestCaseMixin):
         self.assertIsNone(srv._waiters)
         self.assertFalse(srv.is_serving())
 
-        with self.assertRaisesRegex(RuntimeError, r'is closed'):
+        with self.assertRaisesRegex(RuntimeError, r'started and then closed'):
             self.loop.run_until_complete(srv.serve_forever())
 
 
@@ -118,7 +119,7 @@ class SelectorStartServerTests(BaseStartServer, unittest.TestCase):
             self.assertIsNone(srv._waiters)
             self.assertFalse(srv.is_serving())
 
-            with self.assertRaisesRegex(RuntimeError, r'is closed'):
+            with self.assertRaisesRegex(RuntimeError, r'started and then closed'):
                 self.loop.run_until_complete(srv.serve_forever())
 
 
@@ -186,6 +187,8 @@ class TestServer2(unittest.IsolatedAsyncioTestCase):
         loop.call_soon(srv.close)
         loop.call_soon(wr.close)
         await srv.wait_closed()
+        self.assertTrue(task.done())
+        self.assertFalse(srv.is_serving())
 
     async def test_close_clients(self):
         async def serve(rd, wr):
@@ -211,6 +214,9 @@ class TestServer2(unittest.IsolatedAsyncioTestCase):
         await asyncio.sleep(0)
         await asyncio.sleep(0)
         self.assertTrue(task.done())
+
+        with self.assertRaisesRegex(RuntimeError, r'started and then closed'):
+            await srv.start_serving()
 
     async def test_abort_clients(self):
         async def serve(rd, wr):
