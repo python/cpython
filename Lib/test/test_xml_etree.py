@@ -218,6 +218,34 @@ class ElementTreeTest(unittest.TestCase):
     def serialize_check(self, elem, expected):
         self.assertEqual(serialize(elem), expected)
 
+    def test_constructor(self):
+        # Test constructor behavior.
+
+        with self.assertRaises(TypeError):
+            tree = ET.ElementTree("")
+        with self.assertRaises(TypeError):
+            tree = ET.ElementTree(ET.ElementTree())
+
+        # Test _setroot as well, since it also sets the _root object.
+
+        tree = ET.ElementTree()
+        with self.assertRaises(TypeError):
+            tree._setroot("")
+        with self.assertRaises(TypeError):
+            tree._setroot(ET.ElementTree())
+
+        # Make sure it accepts an Element-like object.
+
+        class ElementLike:
+            def __init__(self):
+                self.tag = "tag"
+
+        element_like = ElementLike()
+        try:
+            tree = ET.ElementTree(element_like)
+        except Exception as err:
+            self.fail(err)
+
     def test_interface(self):
         # Test element tree interface.
 

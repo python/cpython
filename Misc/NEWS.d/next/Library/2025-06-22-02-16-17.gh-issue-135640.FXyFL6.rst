@@ -1,0 +1,4 @@
+Address bug where it was possible to call
+:func:`xml.etree.ElementTree.ElementTree.write` on an ElementTree object with
+an invalid root element. This behavior blanked the file passed to ``write``
+if it already existed.
