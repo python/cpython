@@ -2580,6 +2580,14 @@ class TestInvalidFD(unittest.TestCase):
     def test_lseek(self):
         self.check(os.lseek, 0, 0)
 
+    @unittest.skipUnless(hasattr(os, 'lseek'), 'test needs os.lseek()')
+    @unittest.skipUnless(hasattr(os, 'pipe'), "need os.pipe()")
+    def test_lseek_on_pipe(self):
+        rfd, wfd = os.pipe()
+        self.addCleanup(os.close, rfd)
+        self.addCleanup(os.close, wfd)
+        self.assertRaises(OSError, os.lseek, rfd, 123, os.SEEK_END)
+
     @unittest.skipUnless(hasattr(os, 'read'), 'test needs os.read()')
     def test_read(self):
         self.check(os.read, 1)
