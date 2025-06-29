@@ -2658,11 +2658,15 @@ For :class:`date` objects, the format codes for hours, minutes, seconds, and
 microseconds should not be used, as :class:`date` objects have no such
 values. If they're used anyway, 0 is substituted for them.
 
-For the same reason, handling of format strings containing Unicode code points
-that can't be represented in the charset of the current locale is also
-platform-dependent. On some platforms such code points are preserved intact in
-the output, while on others ``strftime`` may raise :exc:`UnicodeError` or return
-an empty string instead.
+If a format directive is unrecognized, the behavior is platform-dependent. glibc
+will return the directive unmodified, Windows will raise a :exc:`ValueError`,
+and macOS, musl, and BSD will return an empty string.
+
+Handling of format strings containing Unicode code points that can't be
+represented in the charset of the current locale is also platform-dependent. On
+some platforms such code points are preserved intact in the output, while on
+others ``strftime`` may raise :exc:`UnicodeError` or return an empty string
+instead.
 
 Notes:
 
