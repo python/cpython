@@ -1648,7 +1648,7 @@ Some smaller changes made to the core Python language are:
   (Contributed by Collin Winter; :issue:`1473257`.)
 
 * The :func:`compile` built-in function now accepts keyword arguments
-  as well as positional parameters.  (Contributed by Thomas Wouters;
+  as well as positional arguments.  (Contributed by Thomas Wouters;
   :issue:`1444529`.)
 
 * The :func:`complex` constructor now accepts strings containing
@@ -2851,11 +2851,11 @@ where various combinations of ``(start, stop, step)`` are supplied.
 .. Revision 57769
 
 All :mod:`ctypes` data types now support
-:meth:`from_buffer` and :meth:`from_buffer_copy`
+:meth:`~ctypes._CData.from_buffer` and :meth:`~ctypes._CData.from_buffer_copy`
 methods that create a ctypes instance based on a
-provided buffer object.  :meth:`from_buffer_copy` copies
+provided buffer object.  :meth:`!from_buffer_copy` copies
 the contents of the object,
-while :meth:`from_buffer` will share the same memory area.
+while :meth:`!from_buffer` will share the same memory area.
 
 A new calling convention tells :mod:`ctypes` to clear the ``errno`` or
 Win32 LastError variables at the outset of each wrapped call.
@@ -2863,18 +2863,18 @@ Win32 LastError variables at the outset of each wrapped call.
 
 You can now retrieve the Unix ``errno`` variable after a function
 call.  When creating a wrapped function, you can supply
-``use_errno=True`` as a keyword parameter to the :func:`DLL` function
-and then call the module-level methods :meth:`set_errno` and
-:meth:`get_errno` to set and retrieve the error value.
+``use_errno=True`` as a keyword argument to the :func:`~ctypes.DLL` function
+and then call the module-level methods :func:`~ctypes.set_errno` and
+:func:`~ctypes.get_errno` to set and retrieve the error value.
 
 The Win32 LastError variable is similarly supported by
-the :func:`DLL`, :func:`OleDLL`, and :func:`WinDLL` functions.
-You supply ``use_last_error=True`` as a keyword parameter
-and then call the module-level methods :meth:`set_last_error`
-and :meth:`get_last_error`.
+the :func:`~ctypes.DLL`, :func:`~ctypes.OleDLL`, and :func:`~ctypes.WinDLL` functions.
+You supply ``use_last_error=True`` as a keyword argument
+and then call the module-level methods :func:`~ctypes.set_last_error`
+and :func:`~ctypes.get_last_error`.
 
-The :func:`byref` function, used to retrieve a pointer to a ctypes
-instance, now has an optional *offset* parameter that is a byte
+The :func:`~ctypes.byref` function, used to retrieve a pointer to a ctypes
+instance, now has an optional *offset* argument that is a byte
 count that will be added to the returned pointer.
 
 .. ======================================================================

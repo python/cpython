@@ -238,7 +238,7 @@ append_ast_args(PyUnicodeWriter *writer, arguments_ty args)
 
     first = true;
 
-    /* positional-only and positional arguments with defaults */
+    /* positional-only and positional parameters with defaults */
     posonlyarg_count = asdl_seq_LEN(args->posonlyargs);
     arg_count = asdl_seq_LEN(args->args);
     default_count = asdl_seq_LEN(args->defaults);
@@ -260,7 +260,7 @@ append_ast_args(PyUnicodeWriter *writer, arguments_ty args)
         }
     }
 
-    /* vararg, or bare '*' if no varargs but keyword-only arguments present */
+    /* vararg, or bare '*' if no varargs but keyword-only parameters present */
     if (args->vararg || asdl_seq_LEN(args->kwonlyargs)) {
         APPEND_STR_IF_NOT_FIRST(", ");
         APPEND_STR("*");
@@ -269,7 +269,7 @@ append_ast_args(PyUnicodeWriter *writer, arguments_ty args)
         }
     }
 
-    /* keyword-only arguments */
+    /* keyword-only parameters */
     arg_count = asdl_seq_LEN(args->kwonlyargs);
     default_count = asdl_seq_LEN(args->kw_defaults);
     for (i = 0; i < arg_count; i++) {

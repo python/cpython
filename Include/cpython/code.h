@@ -73,10 +73,10 @@ typedef struct {
     int co_flags;                  /* CO_..., see below */                     \
                                                                                \
     /* The rest are not so impactful on performance. */                        \
-    int co_argcount;              /* #arguments, except *args */               \
-    int co_posonlyargcount;       /* #positional only arguments */             \
-    int co_kwonlyargcount;        /* #keyword only arguments */                \
-    int co_stacksize;             /* #entries needed for evaluation stack */   \
+    int co_argcount;              /* # of positional parameters, except *args */ \
+    int co_posonlyargcount;       /* # of positional-only parameters */        \
+    int co_kwonlyargcount;        /* # of keyword-only parameters, except **kwargs */ \
+    int co_stacksize;             /* # of entries needed for evaluation stack */ \
     int co_firstlineno;           /* first source line number */               \
                                                                                \
     /* redundant values (derived from co_localsplusnames and                   \

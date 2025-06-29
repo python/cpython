@@ -204,7 +204,7 @@ The following exceptions are the exceptions that are usually raised.
    assignment fails.  (When an object does not support attribute references or
    attribute assignments at all, :exc:`TypeError` is raised.)
 
-   The :attr:`name` and :attr:`obj` attributes can be set using keyword-only
+   The :attr:`name` and :attr:`obj` attributes can be set using keyword
    arguments to the constructor. When set they represent the name of the attribute
    that was attempted to be accessed and the object that was accessed for said
    attribute, respectively.
@@ -238,7 +238,7 @@ The following exceptions are the exceptions that are usually raised.
    load a module.  Also raised when the "from list" in ``from ... import``
    has a name that cannot be found.
 
-   The optional *name* and *path* keyword-only arguments
+   The optional *name* and *path* keyword arguments
    set the corresponding attributes:
 
    .. attribute:: name
@@ -312,7 +312,7 @@ The following exceptions are the exceptions that are usually raised.
    unqualified names.  The associated value is an error message that includes the
    name that could not be found.
 
-   The :attr:`name` attribute can be set using a keyword-only argument to the
+   The :attr:`name` attribute can be set passing a keyword argument to the
    constructor. When set it represent the name of the variable that was attempted
    to be accessed.
 

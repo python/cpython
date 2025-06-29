@@ -1625,7 +1625,7 @@ are many environment variables to go over.
 .. nonce: u64_QI
 .. section: Library
 
-Add *follow_symlinks* keyword-only argument to :meth:`pathlib.Path.owner`
+Add *follow_symlinks* keyword-only parameter to :meth:`pathlib.Path.owner`
 and :meth:`~pathlib.Path.group`, defaulting to ``True``.
 
 ..

@@ -970,7 +970,7 @@ raised.
 .. nonce: AWy4Cs
 .. section: Library
 
-Add an optional keyword *shutdown_timeout* parameter to the
+Add support for an optional keyword argument *shutdown_timeout* to the
 :class:`multiprocessing.BaseManager` constructor. Kill the process if
 terminate() takes longer than the timeout. Patch by Victor Stinner.
 

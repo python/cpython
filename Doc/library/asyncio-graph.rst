@@ -32,10 +32,10 @@ and debuggers.
    If not passed, the current running task will be used.
 
    If the function is called on *the current task*, the optional
-   keyword-only *depth* argument can be used to skip the specified
+   keyword argument *depth* can be used to skip the specified
    number of frames from top of the stack.
 
-   If the optional keyword-only *limit* argument is provided, each call stack
+   If the optional keyword argument *limit* is provided, each call stack
    in the resulting graph is truncated to include at most ``abs(limit)``
    entries. If *limit* is positive, the entries left are the closest to
    the invocation point. If *limit* is negative, the topmost entries are
@@ -91,7 +91,7 @@ and debuggers.
    current task, the function returns ``None``.
 
    If the function is called on *the current task*, the optional
-   keyword-only *depth* argument can be used to skip the specified
+   keyword argument *depth* can be used to skip the specified
    number of frames from top of the stack.
 
    Returns a ``FutureCallGraph`` data class object:
