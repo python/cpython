@@ -137,11 +137,7 @@ class Hole:
     def __post_init__(self) -> None:
         self.func = _PATCH_FUNCS[self.kind]
 
-    def fold(
-        self,
-        other: typing.Self,
-        body: bytes | bytearray,
-    ) -> typing.Self | None:
+    def fold(self, other: typing.Self, body: bytearray) -> typing.Self | None:
         """Combine two holes into a single hole, if possible."""
         instruction_a = int.from_bytes(
             body[self.offset : self.offset + 4], byteorder=sys.byteorder
