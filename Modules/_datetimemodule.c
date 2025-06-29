@@ -4382,6 +4382,16 @@ timezone_tzname(PyObject *op, PyObject *dt)
 }
 
 static PyObject *
+timezone_name(PyDateTime_TimeZone *self, void *closure)
+{
+    if (self->name == NULL) {
+        return PyUnicode_FromString("");
+    }
+    Py_INCREF(self->name);
+    return self->name;
+}
+
+static PyObject *
 timezone_utcoffset(PyObject *op, PyObject *dt)
 {
     if (_timezone_check_argument(dt, "utcoffset") == -1)
@@ -4448,6 +4458,13 @@ static PyMethodDef timezone_methods[] = {
     {NULL, NULL}
 };
 
+static PyGetSetDef timezone_getset[] = {
+    {"name", (getter)timezone_name, NULL,
+     PyDoc_STR("If name is specified when timezone is created, returns the name."), NULL},
+    {NULL}
+};
+
+
 static const char timezone_doc[] =
 PyDoc_STR("Fixed offset from UTC implementation of tzinfo.");
 
@@ -4481,7 +4498,7 @@ static PyTypeObject PyDateTime_TimeZoneType = {
     0,                                /* tp_iternext */
     timezone_methods,                 /* tp_methods */
     0,                                /* tp_members */
-    0,                                /* tp_getset */
+    timezone_getset,                  /* tp_getset */
     0,                                /* tp_base; filled in PyInit__datetime */
     0,                                /* tp_dict */
     0,                                /* tp_descr_get */
