@@ -277,6 +277,15 @@ typing
   (Contributed by Bénédikt Tran in :gh:`133823`.)
 
 
+unittest
+--------
+
+* Lets users specify formatter in TestCase.assertLogs.
+  :func:`unittest.TestCase.assertLogs` will now accept a formatter
+  argument so your assertions can match a custom format where you are using one.
+  (Contributed by Garry Cairns in :gh:`134567`.)
+
+
 wave
 ----
 

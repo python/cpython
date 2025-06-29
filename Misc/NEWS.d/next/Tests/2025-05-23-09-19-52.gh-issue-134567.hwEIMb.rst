@@ -1,0 +1,2 @@
+Expose log formatter to users in TestCase.assertLogs.
+:func:`unittest.TestCase.assertLogs` will now optionally accept a formatter that will be used to format the strings in output if provided.
