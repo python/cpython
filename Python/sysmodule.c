@@ -18,13 +18,15 @@ Data members:
 #include "pycore_audit.h"         // _Py_AuditHookEntry
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_SetAsyncGenFinalizer()
-#include "pycore_dict.h"          // _PyDict_GetItemWithError()
 #include "pycore_frame.h"         // _PyInterpreterFrame
+#include "pycore_import.h"        // _PyImport_SetDLOpenFlags()
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
+#include "pycore_interpframe.h"   // _PyFrame_GetFirstComplete()
 #include "pycore_long.h"          // _PY_LONG_MAX_STR_DIGITS_THRESHOLD
 #include "pycore_modsupport.h"    // _PyModule_CreateInitialized()
 #include "pycore_namespace.h"     // _PyNamespace_New()
 #include "pycore_object.h"        // _PyObject_DebugTypeStats()
+#include "pycore_optimizer.h"     // _PyDumpExecutors()
 #include "pycore_pathconfig.h"    // _PyPathConfig_ComputeSysPath0()
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pylifecycle.h"   // _PyErr_WriteUnraisableDefaultHook()
@@ -34,7 +36,7 @@ Data members:
 #include "pycore_pystats.h"       // _Py_PrintSpecializationStats()
 #include "pycore_structseq.h"     // _PyStructSequence_InitBuiltinWithFlags()
 #include "pycore_sysmodule.h"     // export _PySys_GetSizeOf()
-#include "pycore_tuple.h"         // _PyTuple_FromArray()
+#include "pycore_unicodeobject.h" // _PyUnicode_InternImmortal()
 
 #include "pydtrace.h"             // PyDTrace_AUDIT()
 #include "osdefs.h"               // DELIM
@@ -45,7 +47,9 @@ Data members:
 #endif
 
 #ifdef MS_WINDOWS
-#  define WIN32_LEAN_AND_MEAN
+#  ifndef WIN32_LEAN_AND_MEAN
+#    define WIN32_LEAN_AND_MEAN
+#  endif
 #  include <windows.h>
 #endif /* MS_WINDOWS */
 
@@ -72,48 +76,92 @@ module sys
 
 
 PyObject *
-_PySys_GetAttr(PyThreadState *tstate, PyObject *name)
+PySys_GetAttr(PyObject *name)
 {
-    PyObject *sd = tstate->interp->sysdict;
-    if (sd == NULL) {
+    if (!PyUnicode_Check(name)) {
+        PyErr_Format(PyExc_TypeError,
+                     "attribute name must be string, not '%T'",
+                     name);
         return NULL;
     }
-    PyObject *exc = _PyErr_GetRaisedException(tstate);
-    /* XXX Suppress a new exception if it was raised and restore
-     * the old one. */
-    PyObject *value = _PyDict_GetItemWithError(sd, name);
-    _PyErr_SetRaisedException(tstate, exc);
-    return value;
-}
-
-static PyObject *
-_PySys_GetObject(PyInterpreterState *interp, const char *name)
-{
-    PyObject *sysdict = interp->sysdict;
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *sysdict = tstate->interp->sysdict;
     if (sysdict == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "no sys module");
         return NULL;
     }
     PyObject *value;
-    if (PyDict_GetItemStringRef(sysdict, name, &value) != 1) {
+    if (PyDict_GetItemRef(sysdict, name, &value) == 0) {
+        PyErr_Format(PyExc_RuntimeError, "lost sys.%U", name);
+    }
+    return value;
+}
+
+PyObject *
+PySys_GetAttrString(const char *name)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *sysdict = tstate->interp->sysdict;
+    if (sysdict == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "no sys module");
         return NULL;
     }
-    Py_DECREF(value);  // return a borrowed reference
+    PyObject *value;
+    if (PyDict_GetItemStringRef(sysdict, name, &value) == 0) {
+        PyErr_Format(PyExc_RuntimeError, "lost sys.%s", name);
+    }
     return value;
+}
+
+int
+PySys_GetOptionalAttr(PyObject *name, PyObject **value)
+{
+    if (!PyUnicode_Check(name)) {
+        PyErr_Format(PyExc_TypeError,
+                     "attribute name must be string, not '%T'",
+                     name);
+        *value = NULL;
+        return -1;
+    }
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *sysdict = tstate->interp->sysdict;
+    if (sysdict == NULL) {
+        *value = NULL;
+        return 0;
+    }
+    return PyDict_GetItemRef(sysdict, name, value);
+}
+
+int
+PySys_GetOptionalAttrString(const char *name, PyObject **value)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *sysdict = tstate->interp->sysdict;
+    if (sysdict == NULL) {
+        *value = NULL;
+        return 0;
+    }
+    return PyDict_GetItemStringRef(sysdict, name, value);
 }
 
 PyObject *
 PySys_GetObject(const char *name)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-
+    PyObject *sysdict = tstate->interp->sysdict;
+    if (sysdict == NULL) {
+        return NULL;
+    }
     PyObject *exc = _PyErr_GetRaisedException(tstate);
-    PyObject *value = _PySys_GetObject(tstate->interp, name);
+    PyObject *value;
+    (void) PyDict_GetItemStringRef(sysdict, name, &value);
     /* XXX Suppress a new exception if it was raised and restore
      * the old one. */
     if (_PyErr_Occurred(tstate)) {
         PyErr_FormatUnraisable("Exception ignored in PySys_GetObject()");
     }
     _PyErr_SetRaisedException(tstate, exc);
+    Py_XDECREF(value);  // return a borrowed reference
     return value;
 }
 
@@ -124,6 +172,10 @@ sys_set_object(PyInterpreterState *interp, PyObject *key, PyObject *v)
         return -1;
     }
     PyObject *sd = interp->sysdict;
+    if (sd == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "no sys module");
+        return -1;
+    }
     if (v == NULL) {
         if (PyDict_Pop(sd, key, NULL) < 0) {
             return -1;
@@ -721,9 +773,13 @@ sys_displayhook(PyObject *module, PyObject *o)
     }
     if (PyObject_SetAttr(builtins, _Py_LATIN1_CHR('_'), Py_None) != 0)
         return NULL;
-    outf = _PySys_GetAttr(tstate, &_Py_ID(stdout));
-    if (outf == NULL || outf == Py_None) {
+    outf = PySys_GetAttr(&_Py_ID(stdout));
+    if (outf == NULL) {
+        return NULL;
+    }
+    if (outf == Py_None) {
         _PyErr_SetString(tstate, PyExc_RuntimeError, "lost sys.stdout");
+        Py_DECREF(outf);
         return NULL;
     }
     if (PyFile_WriteObject(o, outf, 0) != 0) {
@@ -734,17 +790,23 @@ sys_displayhook(PyObject *module, PyObject *o)
             _PyErr_Clear(tstate);
             err = sys_displayhook_unencodable(outf, o);
             if (err) {
+                Py_DECREF(outf);
                 return NULL;
             }
         }
         else {
+            Py_DECREF(outf);
             return NULL;
         }
     }
-    if (PyFile_WriteObject(_Py_LATIN1_CHR('\n'), outf, Py_PRINT_RAW) != 0)
+    if (PyFile_WriteObject(_Py_LATIN1_CHR('\n'), outf, Py_PRINT_RAW) != 0) {
+        Py_DECREF(outf);
         return NULL;
-    if (PyObject_SetAttr(builtins, _Py_LATIN1_CHR('_'), o) != 0)
+    }
+    Py_DECREF(outf);
+    if (PyObject_SetAttr(builtins, _Py_LATIN1_CHR('_'), o) != 0) {
         return NULL;
+    }
     Py_RETURN_NONE;
 }
 
@@ -1552,7 +1614,7 @@ sys_getrecursionlimit_impl(PyObject *module)
 
 #ifdef MS_WINDOWS
 
-static PyTypeObject WindowsVersionType = {0, 0, 0, 0, 0, 0};
+static PyTypeObject WindowsVersionType = { 0 };
 
 static PyStructSequence_Field windows_version_fields[] = {
     {"major", "Major version number"},
@@ -1581,6 +1643,7 @@ static PyObject *
 _sys_getwindowsversion_from_kernel32(void)
 {
 #ifndef MS_WINDOWS_DESKTOP
+    PyErr_SetString(PyExc_OSError, "cannot read version info on this platform");
     return NULL;
 #else
     HANDLE hKernel32;
@@ -1608,6 +1671,9 @@ _sys_getwindowsversion_from_kernel32(void)
         !GetFileVersionInfoW(kernel32_path, 0, verblock_size, verblock) ||
         !VerQueryValueW(verblock, L"", (LPVOID)&ffi, &ffi_len)) {
         PyErr_SetFromWindowsErr(0);
+        if (verblock) {
+            PyMem_RawFree(verblock);
+        }
         return NULL;
     }
 
@@ -2146,6 +2212,14 @@ static PyObject *
 sys__clear_type_cache_impl(PyObject *module)
 /*[clinic end generated code: output=20e48ca54a6f6971 input=127f3e04a8d9b555]*/
 {
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "sys._clear_type_cache() is deprecated and"
+                     " scheduled for removal in a future version."
+                     " Use sys._clear_internal_caches() instead.",
+                     1) < 0)
+    {
+        return NULL;
+    }
     PyType_ClearCache();
     Py_RETURN_NONE;
 }
@@ -2359,6 +2433,123 @@ sys_is_stack_trampoline_active_impl(PyObject *module)
     Py_RETURN_FALSE;
 }
 
+
+/*[clinic input]
+sys.is_remote_debug_enabled
+
+Return True if remote debugging is enabled, False otherwise.
+[clinic start generated code]*/
+
+static PyObject *
+sys_is_remote_debug_enabled_impl(PyObject *module)
+/*[clinic end generated code: output=7ca3d38bdd5935eb input=7335c4a2fe8cf4f3]*/
+{
+#if !defined(Py_REMOTE_DEBUG) || !defined(Py_SUPPORTS_REMOTE_DEBUG)
+    Py_RETURN_FALSE;
+#else
+    const PyConfig *config = _Py_GetConfig();
+    return PyBool_FromLong(config->remote_debug);
+#endif
+}
+
+/*[clinic input]
+sys.remote_exec
+
+    pid: int
+    script: object
+
+Executes a file containing Python code in a given remote Python process.
+
+This function returns immediately, and the code will be executed by the
+target process's main thread at the next available opportunity, similarly
+to how signals are handled. There is no interface to determine when the
+code has been executed. The caller is responsible for making sure that
+the file still exists whenever the remote process tries to read it and that
+it hasn't been overwritten.
+
+The remote process must be running a CPython interpreter of the same major
+and minor version as the local process. If either the local or remote
+interpreter is pre-release (alpha, beta, or release candidate) then the
+local and remote interpreters must be the same exact version.
+
+Args:
+     pid (int): The process ID of the target Python process.
+     script (str|bytes): The path to a file containing
+         the Python code to be executed.
+[clinic start generated code]*/
+
+static PyObject *
+sys_remote_exec_impl(PyObject *module, int pid, PyObject *script)
+/*[clinic end generated code: output=7d94c56afe4a52c0 input=39908ca2c5fe1eb0]*/
+{
+    PyObject *path;
+    const char *debugger_script_path;
+
+    if (PyUnicode_FSConverter(script, &path) == 0) {
+        return NULL;
+    }
+
+    if (PySys_Audit("sys.remote_exec", "iO", pid, script) < 0) {
+        return NULL;
+    }
+
+    debugger_script_path = PyBytes_AS_STRING(path);
+#ifdef MS_WINDOWS
+    PyObject *unicode_path;
+    if (PyUnicode_FSDecoder(path, &unicode_path) < 0) {
+        goto error;
+    }
+    // Use UTF-16 (wide char) version of the path for permission checks
+    wchar_t *debugger_script_path_w = PyUnicode_AsWideCharString(unicode_path, NULL);
+    Py_DECREF(unicode_path);
+    if (debugger_script_path_w == NULL) {
+        goto error;
+    }
+    DWORD attr = GetFileAttributesW(debugger_script_path_w);
+    if (attr == INVALID_FILE_ATTRIBUTES) {
+        DWORD err = GetLastError();
+        PyMem_Free(debugger_script_path_w);
+        if (err == ERROR_FILE_NOT_FOUND || err == ERROR_PATH_NOT_FOUND) {
+            PyErr_SetString(PyExc_FileNotFoundError, "Script file does not exist");
+        }
+        else if (err == ERROR_ACCESS_DENIED) {
+            PyErr_SetString(PyExc_PermissionError, "Script file cannot be read");
+        }
+        else {
+            PyErr_SetFromWindowsErr(err);
+        }
+        goto error;
+    }
+    PyMem_Free(debugger_script_path_w);
+#else // MS_WINDOWS
+    if (access(debugger_script_path, F_OK | R_OK) != 0) {
+        switch (errno) {
+            case ENOENT:
+                PyErr_SetString(PyExc_FileNotFoundError, "Script file does not exist");
+                break;
+            case EACCES:
+                PyErr_SetString(PyExc_PermissionError, "Script file cannot be read");
+                break;
+            default:
+                PyErr_SetFromErrno(PyExc_OSError);
+        }
+        goto error;
+    }
+#endif // MS_WINDOWS
+    if (_PySysRemoteDebug_SendExec(pid, 0, debugger_script_path) < 0) {
+        goto error;
+    }
+
+    Py_DECREF(path);
+    Py_RETURN_NONE;
+
+error:
+    Py_DECREF(path);
+    return NULL;
+}
+
+
+
 /*[clinic input]
 sys._dump_tracelets
 
@@ -2468,7 +2659,9 @@ sys__is_gil_enabled_impl(PyObject *module)
 }
 
 
+#ifndef MS_WINDOWS
 static PerfMapState perf_map_state;
+#endif
 
 PyAPI_FUNC(int) PyUnstable_PerfMapState_Init(void) {
 #ifndef MS_WINDOWS
@@ -2631,6 +2824,8 @@ static PyMethodDef sys_methods[] = {
     SYS_ACTIVATE_STACK_TRAMPOLINE_METHODDEF
     SYS_DEACTIVATE_STACK_TRAMPOLINE_METHODDEF
     SYS_IS_STACK_TRAMPOLINE_ACTIVE_METHODDEF
+    SYS_IS_REMOTE_DEBUG_ENABLED_METHODDEF
+    SYS_REMOTE_EXEC_METHODDEF
     SYS_UNRAISABLEHOOK_METHODDEF
     SYS_GET_INT_MAX_STR_DIGITS_METHODDEF
     SYS_SET_INT_MAX_STR_DIGITS_METHODDEF
@@ -2814,7 +3009,10 @@ _PySys_ReadPreinitXOptions(PyConfig *config)
 static PyObject *
 get_warnoptions(PyThreadState *tstate)
 {
-    PyObject *warnoptions = _PySys_GetAttr(tstate, &_Py_ID(warnoptions));
+    PyObject *warnoptions;
+    if (PySys_GetOptionalAttr(&_Py_ID(warnoptions), &warnoptions) < 0) {
+        return NULL;
+    }
     if (warnoptions == NULL || !PyList_Check(warnoptions)) {
         /* PEP432 TODO: we can reach this if warnoptions is NULL in the main
         *  interpreter config. When that happens, we need to properly set
@@ -2826,6 +3024,7 @@ get_warnoptions(PyThreadState *tstate)
          * call optional for embedding applications, thus making this
          * reachable again.
          */
+        Py_XDECREF(warnoptions);
         warnoptions = PyList_New(0);
         if (warnoptions == NULL) {
             return NULL;
@@ -2834,7 +3033,6 @@ get_warnoptions(PyThreadState *tstate)
             Py_DECREF(warnoptions);
             return NULL;
         }
-        Py_DECREF(warnoptions);
     }
     return warnoptions;
 }
@@ -2848,10 +3046,15 @@ PySys_ResetWarnOptions(void)
         return;
     }
 
-    PyObject *warnoptions = _PySys_GetAttr(tstate, &_Py_ID(warnoptions));
-    if (warnoptions == NULL || !PyList_Check(warnoptions))
+    PyObject *warnoptions;
+    if (PySys_GetOptionalAttr(&_Py_ID(warnoptions), &warnoptions) < 0) {
+        PyErr_Clear();
         return;
-    PyList_SetSlice(warnoptions, 0, PyList_GET_SIZE(warnoptions), NULL);
+    }
+    if (warnoptions != NULL && PyList_Check(warnoptions)) {
+        PyList_SetSlice(warnoptions, 0, PyList_GET_SIZE(warnoptions), NULL);
+    }
+    Py_XDECREF(warnoptions);
 }
 
 static int
@@ -2863,8 +3066,10 @@ _PySys_AddWarnOptionWithError(PyThreadState *tstate, PyObject *option)
         return -1;
     }
     if (PyList_Append(warnoptions, option)) {
+        Py_DECREF(warnoptions);
         return -1;
     }
+    Py_DECREF(warnoptions);
     return 0;
 }
 
@@ -2905,16 +3110,24 @@ _Py_COMP_DIAG_POP
 PyAPI_FUNC(int)
 PySys_HasWarnOptions(void)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *warnoptions = _PySys_GetAttr(tstate, &_Py_ID(warnoptions));
-    return (warnoptions != NULL && PyList_Check(warnoptions)
-            && PyList_GET_SIZE(warnoptions) > 0);
+    PyObject *warnoptions;
+    if (PySys_GetOptionalAttr(&_Py_ID(warnoptions), &warnoptions) < 0) {
+        PyErr_Clear();
+        return 0;
+    }
+    int r = (warnoptions != NULL && PyList_Check(warnoptions) &&
+             PyList_GET_SIZE(warnoptions) > 0);
+    Py_XDECREF(warnoptions);
+    return r;
 }
 
 static PyObject *
 get_xoptions(PyThreadState *tstate)
 {
-    PyObject *xoptions = _PySys_GetAttr(tstate, &_Py_ID(_xoptions));
+    PyObject *xoptions;
+    if (PySys_GetOptionalAttr(&_Py_ID(_xoptions), &xoptions) < 0) {
+        return NULL;
+    }
     if (xoptions == NULL || !PyDict_Check(xoptions)) {
         /* PEP432 TODO: we can reach this if xoptions is NULL in the main
         *  interpreter config. When that happens, we need to properly set
@@ -2926,6 +3139,7 @@ get_xoptions(PyThreadState *tstate)
          * call optional for embedding applications, thus making this
          * reachable again.
          */
+        Py_XDECREF(xoptions);
         xoptions = PyDict_New();
         if (xoptions == NULL) {
             return NULL;
@@ -2934,7 +3148,6 @@ get_xoptions(PyThreadState *tstate)
             Py_DECREF(xoptions);
             return NULL;
         }
-        Py_DECREF(xoptions);
     }
     return xoptions;
 }
@@ -2973,11 +3186,13 @@ _PySys_AddXOptionWithError(const wchar_t *s)
     }
     Py_DECREF(name);
     Py_DECREF(value);
+    Py_DECREF(opts);
     return 0;
 
 error:
     Py_XDECREF(name);
     Py_XDECREF(value);
+    Py_XDECREF(opts);
     return -1;
 }
 
@@ -3000,7 +3215,9 @@ PyObject *
 PySys_GetXOptions(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    return get_xoptions(tstate);
+    PyObject *opts = get_xoptions(tstate);
+    Py_XDECREF(opts);
+    return opts;
 }
 
 /* XXX This doc string is too long to be a single string literal in VC++ 5.0.
@@ -3133,6 +3350,8 @@ static PyStructSequence_Field flags_fields[] = {
     {"safe_path", "-P"},
     {"int_max_str_digits",      "-X int_max_str_digits"},
     {"gil",                     "-X gil"},
+    {"thread_inherit_context",  "-X thread_inherit_context"},
+    {"context_aware_warnings",    "-X context_aware_warnings"},
     {0}
 };
 
@@ -3159,11 +3378,8 @@ sys_set_flag(PyObject *flags, Py_ssize_t pos, PyObject *value)
 int
 _PySys_SetFlagObj(Py_ssize_t pos, PyObject *value)
 {
-    PyObject *flags = Py_XNewRef(PySys_GetObject("flags"));
+    PyObject *flags = PySys_GetAttrString("flags");
     if (flags == NULL) {
-        if (!PyErr_Occurred()) {
-            PyErr_SetString(PyExc_RuntimeError, "lost sys.flags");
-        }
         return -1;
     }
 
@@ -3236,6 +3452,8 @@ set_flags_from_config(PyInterpreterState *interp, PyObject *flags)
 #else
     SetFlagObj(PyLong_FromLong(1));
 #endif
+    SetFlag(config->thread_inherit_context);
+    SetFlag(config->context_aware_warnings);
 #undef SetFlagObj
 #undef SetFlag
     return 0;
@@ -3388,6 +3606,18 @@ make_impl_info(PyObject *version_info)
     if (res < 0)
         goto error;
 #endif
+
+    // PEP-734
+#if defined(__wasi__) || defined(__EMSCRIPTEN__)
+    // It is not enabled on WASM builds just yet
+    value = Py_False;
+#else
+    value = Py_True;
+#endif
+    res = PyDict_SetItemString(impl_info, "supports_isolated_interpreters", value);
+    if (res < 0) {
+        goto error;
+    }
 
     /* dict ready */
 
@@ -3722,16 +3952,15 @@ _PySys_UpdateConfig(PyThreadState *tstate)
 #undef COPY_WSTR
 
     // sys.flags
-    PyObject *flags = _PySys_GetObject(interp, "flags"); // borrowed ref
+    PyObject *flags = PySys_GetAttrString("flags");
     if (flags == NULL) {
-        if (!_PyErr_Occurred(tstate)) {
-            _PyErr_SetString(tstate, PyExc_RuntimeError, "lost sys.flags");
-        }
         return -1;
     }
     if (set_flags_from_config(interp, flags) < 0) {
+        Py_DECREF(flags);
         return -1;
     }
+    Py_DECREF(flags);
 
     SET_SYS("dont_write_bytecode", PyBool_FromLong(!config->write_bytecode));
 
@@ -3775,6 +4004,71 @@ error:
 }
 
 PyObject *_Py_CreateMonitoringObject(void);
+
+/*[clinic input]
+module _jit
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=10952f74d7bbd972]*/
+
+PyDoc_STRVAR(_jit_doc, "Utilities for observing just-in-time compilation.");
+
+/*[clinic input]
+_jit.is_available -> bool
+Return True if the current Python executable supports JIT compilation, and False otherwise.
+[clinic start generated code]*/
+
+static int
+_jit_is_available_impl(PyObject *module)
+/*[clinic end generated code: output=6849a9cd2ff4aac9 input=03add84aa8347cf1]*/
+{
+    (void)module;
+#ifdef _Py_TIER2
+    return true;
+#else
+    return false;
+#endif
+}
+
+/*[clinic input]
+_jit.is_enabled -> bool
+Return True if JIT compilation is enabled for the current Python process (implies sys._jit.is_available()), and False otherwise.
+[clinic start generated code]*/
+
+static int
+_jit_is_enabled_impl(PyObject *module)
+/*[clinic end generated code: output=55865f8de993fe42 input=02439394da8e873f]*/
+{
+    (void)module;
+    return _PyInterpreterState_GET()->jit;
+}
+
+/*[clinic input]
+_jit.is_active -> bool
+Return True if the topmost Python frame is currently executing JIT code (implies sys._jit.is_enabled()), and False otherwise.
+[clinic start generated code]*/
+
+static int
+_jit_is_active_impl(PyObject *module)
+/*[clinic end generated code: output=7facca06b10064d4 input=be2fcd8a269d9b72]*/
+{
+    (void)module;
+    return _PyThreadState_GET()->current_executor != NULL;
+}
+
+static PyMethodDef _jit_methods[] = {
+    _JIT_IS_AVAILABLE_METHODDEF
+    _JIT_IS_ENABLED_METHODDEF
+    _JIT_IS_ACTIVE_METHODDEF
+    {NULL}
+};
+
+static struct PyModuleDef _jit_module = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "sys._jit",
+    .m_doc = _jit_doc,
+    .m_size = -1,
+    .m_methods = _jit_methods,
+};
 
 /* Create sys module without all attributes.
    _PySys_UpdateConfig() should be called later to add remaining attributes. */
@@ -3834,6 +4128,16 @@ _PySys_Create(PyThreadState *tstate, PyObject **sysmod_p)
     int err = PyDict_SetItemString(sysdict, "monitoring", monitoring);
     Py_DECREF(monitoring);
     if (err < 0) {
+        goto error;
+    }
+
+    PyObject *_jit = _PyModule_CreateInitialized(&_jit_module, PYTHON_API_VERSION);
+    if (_jit == NULL) {
+        goto error;
+    }
+    err = PyDict_SetItemString(sysdict, "_jit", _jit);
+    Py_DECREF(_jit);
+    if (err) {
         goto error;
     }
 
@@ -3963,12 +4267,15 @@ PySys_SetArgvEx(int argc, wchar_t **argv, int updatepath)
                 Py_FatalError("can't compute path0 from argv");
             }
 
-            PyObject *sys_path = _PySys_GetAttr(tstate, &_Py_ID(path));
-            if (sys_path != NULL) {
+            PyObject *sys_path;
+            if (PySys_GetOptionalAttr(&_Py_ID(path), &sys_path) < 0) {
+                Py_FatalError("can't get sys.path");
+            }
+            else if (sys_path != NULL) {
                 if (PyList_Insert(sys_path, 0, path0) < 0) {
-                    Py_DECREF(path0);
                     Py_FatalError("can't prepend path0 to sys.path");
                 }
+                Py_DECREF(sys_path);
             }
             Py_DECREF(path0);
         }
@@ -4056,8 +4363,8 @@ sys_write(PyObject *key, FILE *fp, const char *format, va_list va)
     PyThreadState *tstate = _PyThreadState_GET();
 
     PyObject *exc = _PyErr_GetRaisedException(tstate);
-    file = _PySys_GetAttr(tstate, key);
     written = PyOS_vsnprintf(buffer, sizeof(buffer), format, va);
+    file = PySys_GetAttr(key);
     if (sys_pyfile_write(buffer, file) != 0) {
         _PyErr_Clear(tstate);
         fputs(buffer, fp);
@@ -4067,6 +4374,7 @@ sys_write(PyObject *key, FILE *fp, const char *format, va_list va)
         if (sys_pyfile_write(truncated, file) != 0)
             fputs(truncated, fp);
     }
+    Py_XDECREF(file);
     _PyErr_SetRaisedException(tstate, exc);
 }
 
@@ -4098,15 +4406,16 @@ sys_format(PyObject *key, FILE *fp, const char *format, va_list va)
     PyThreadState *tstate = _PyThreadState_GET();
 
     PyObject *exc = _PyErr_GetRaisedException(tstate);
-    file = _PySys_GetAttr(tstate, key);
     message = PyUnicode_FromFormatV(format, va);
     if (message != NULL) {
+        file = PySys_GetAttr(key);
         if (sys_pyfile_write_unicode(message, file) != 0) {
             _PyErr_Clear(tstate);
             utf8 = PyUnicode_AsUTF8(message);
             if (utf8 != NULL)
                 fputs(utf8, fp);
         }
+        Py_XDECREF(file);
         Py_DECREF(message);
     }
     _PyErr_SetRaisedException(tstate, exc);

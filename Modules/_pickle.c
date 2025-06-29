@@ -9,17 +9,18 @@
 #endif
 
 #include "Python.h"
-#include "pycore_bytesobject.h"       // _PyBytesWriter
-#include "pycore_ceval.h"             // _Py_EnterRecursiveCall()
-#include "pycore_critical_section.h"  // Py_BEGIN_CRITICAL_SECTION()
-#include "pycore_long.h"              // _PyLong_AsByteArray()
-#include "pycore_moduleobject.h"      // _PyModule_GetState()
-#include "pycore_object.h"            // _PyNone_Type
-#include "pycore_pyerrors.h"          // _PyErr_FormatNote
-#include "pycore_pystate.h"           // _PyThreadState_GET()
-#include "pycore_runtime.h"           // _Py_ID()
-#include "pycore_setobject.h"         // _PySet_NextEntry()
-#include "pycore_sysmodule.h"         // _PySys_GetAttr()
+#include "pycore_bytesobject.h"   // _PyBytesWriter
+#include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
+#include "pycore_critical_section.h" // Py_BEGIN_CRITICAL_SECTION()
+#include "pycore_long.h"          // _PyLong_AsByteArray()
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_object.h"        // _PyNone_Type
+#include "pycore_pyerrors.h"      // _PyErr_FormatNote
+#include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_runtime.h"       // _Py_ID()
+#include "pycore_setobject.h"     // _PySet_NextEntry()
+#include "pycore_sysmodule.h"     // _PySys_GetSizeOf()
+#include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
 
 #include <stdlib.h>               // strtol()
 
@@ -1878,6 +1879,10 @@ _checkmodule(PyObject *module_name, PyObject *module,
             _PyUnicode_EqualToASCIIString(module_name, "__main__")) {
         return -1;
     }
+    if (PyUnicode_Check(module_name) &&
+            _PyUnicode_EqualToASCIIString(module_name, "__mp_main__")) {
+        return -1;
+    }
 
     PyObject *candidate = getattribute(module, dotted_path, 0);
     if (candidate == NULL) {
@@ -1910,10 +1915,8 @@ whichmodule(PickleState *st, PyObject *global, PyObject *global_name, PyObject *
            __module__ can be None. If it is so, then search sys.modules for
            the module of global. */
         Py_CLEAR(module_name);
-        PyThreadState *tstate = _PyThreadState_GET();
-        modules = _PySys_GetAttr(tstate, &_Py_ID(modules));
+        modules = PySys_GetAttr(&_Py_ID(modules));
         if (modules == NULL) {
-            PyErr_SetString(PyExc_RuntimeError, "unable to get sys.modules");
             return NULL;
         }
         if (PyDict_CheckExact(modules)) {
@@ -1923,11 +1926,13 @@ whichmodule(PickleState *st, PyObject *global, PyObject *global_name, PyObject *
                 Py_INCREF(module);
                 if (_checkmodule(module_name, module, global, dotted_path) == 0) {
                     Py_DECREF(module);
+                    Py_DECREF(modules);
                     return module_name;
                 }
                 Py_DECREF(module);
                 Py_DECREF(module_name);
                 if (PyErr_Occurred()) {
+                    Py_DECREF(modules);
                     return NULL;
                 }
             }
@@ -1935,6 +1940,7 @@ whichmodule(PickleState *st, PyObject *global, PyObject *global_name, PyObject *
         else {
             PyObject *iterator = PyObject_GetIter(modules);
             if (iterator == NULL) {
+                Py_DECREF(modules);
                 return NULL;
             }
             while ((module_name = PyIter_Next(iterator))) {
@@ -1942,22 +1948,26 @@ whichmodule(PickleState *st, PyObject *global, PyObject *global_name, PyObject *
                 if (module == NULL) {
                     Py_DECREF(module_name);
                     Py_DECREF(iterator);
+                    Py_DECREF(modules);
                     return NULL;
                 }
                 if (_checkmodule(module_name, module, global, dotted_path) == 0) {
                     Py_DECREF(module);
                     Py_DECREF(iterator);
+                    Py_DECREF(modules);
                     return module_name;
                 }
                 Py_DECREF(module);
                 Py_DECREF(module_name);
                 if (PyErr_Occurred()) {
                     Py_DECREF(iterator);
+                    Py_DECREF(modules);
                     return NULL;
                 }
             }
             Py_DECREF(iterator);
         }
+        Py_DECREF(modules);
         if (PyErr_Occurred()) {
             return NULL;
         }
@@ -5533,17 +5543,16 @@ static int
 load_counted_binstring(PickleState *st, UnpicklerObject *self, int nbytes)
 {
     PyObject *obj;
-    Py_ssize_t size;
+    long size;
     char *s;
 
     if (_Unpickler_Read(self, st, &s, nbytes) < 0)
         return -1;
 
-    size = calc_binsize(s, nbytes);
+    size = calc_binint(s, nbytes);
     if (size < 0) {
-        PyErr_Format(st->UnpicklingError,
-                     "BINSTRING exceeds system's maximum size of %zd bytes",
-                     PY_SSIZE_T_MAX);
+        PyErr_SetString(st->UnpicklingError,
+                     "BINSTRING pickle has negative byte count");
         return -1;
     }
 
@@ -7964,9 +7973,9 @@ pickle_clear(PyObject *m)
 }
 
 static void
-pickle_free(PyObject *m)
+pickle_free(void *m)
 {
-    _Pickle_ClearState(_Pickle_GetState(m));
+    _Pickle_ClearState(_Pickle_GetState((PyObject*)m));
 }
 
 static int
@@ -8072,7 +8081,7 @@ static struct PyModuleDef _picklemodule = {
     .m_slots = pickle_slots,
     .m_traverse = pickle_traverse,
     .m_clear = pickle_clear,
-    .m_free = (freefunc)pickle_free,
+    .m_free = pickle_free,
 };
 
 PyMODINIT_FUNC

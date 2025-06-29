@@ -10,8 +10,8 @@
 
 --------------
 
-This module provides access to the mathematical functions defined by the C
-standard.
+This module provides access to common mathematical functions and constants,
+including those defined by the C standard.
 
 These functions cannot be used with complex numbers; use the functions of the
 same name from the :mod:`cmath` module if you require support for complex
@@ -53,10 +53,13 @@ noted otherwise, all return values are floats.
 :func:`frexp(x) <frexp>`                              Mantissa and exponent of *x*
 :func:`isclose(a, b, rel_tol, abs_tol) <isclose>`     Check if the values *a* and *b* are close to each other
 :func:`isfinite(x) <isfinite>`                        Check if *x* is neither an infinity nor a NaN
+:func:`isnormal(x) <isnormal>`                        Check if *x* is a normal number
+:func:`issubnormal(x) <issubnormal>`                  Check if *x* is a subnormal number
 :func:`isinf(x) <isinf>`                              Check if *x* is a positive or negative infinity
 :func:`isnan(x) <isnan>`                              Check if *x* is a NaN  (not a number)
 :func:`ldexp(x, i) <ldexp>`                           ``x * (2**i)``, inverse of function :func:`frexp`
 :func:`nextafter(x, y, steps) <nextafter>`            Floating-point value *steps* steps after *x* towards *y*
+:func:`signbit(x) <signbit>`                          Check if *x* is a negative number
 :func:`ulp(x) <ulp>`                                  Value of the least significant bit of *x*
 
 **Power, exponential and logarithmic functions**
@@ -144,8 +147,7 @@ Number-theoretic functions
 
 .. function:: factorial(n)
 
-   Return *n* factorial as an integer.  Raises :exc:`ValueError` if *n* is not integral or
-   is negative.
+   Return factorial of the nonnegative integer *n*.
 
    .. versionchanged:: 3.10
       Floats with integral values (like ``5.0``) are no longer accepted.
@@ -350,8 +352,8 @@ Floating point manipulation functions
 
    *abs_tol* is the absolute tolerance; it defaults to ``0.0`` and it must be
    nonnegative.  When comparing ``x`` to ``0.0``, ``isclose(x, 0)`` is computed
-   as ``abs(x) <= rel_tol  * abs(x)``, which is ``False`` for any ``x`` and
-   rel_tol less than ``1.0``.  So add an appropriate positive abs_tol argument
+   as ``abs(x) <= rel_tol  * abs(x)``, which is ``False`` for any nonzero ``x`` and
+   *rel_tol* less than ``1.0``.  So add an appropriate positive *abs_tol* argument
    to the call.
 
    The IEEE 754 special values of ``NaN``, ``inf``, and ``-inf`` will be
@@ -372,6 +374,24 @@ Floating point manipulation functions
    ``False`` otherwise.  (Note that ``0.0`` *is* considered finite.)
 
    .. versionadded:: 3.2
+
+
+.. function:: isnormal(x)
+
+   Return ``True`` if *x* is a normal number, that is a finite
+   nonzero number that is not a subnormal (see :func:`issubnormal`).
+   Return ``False`` otherwise.
+
+   .. versionadded:: next
+
+
+.. function:: issubnormal(x)
+
+   Return ``True`` if *x* is a subnormal number, that is a finite
+   nonzero number with a magnitude smaller than :data:`sys.float_info.min`.
+   Return ``False`` otherwise.
+
+   .. versionadded:: next
 
 
 .. function:: isinf(x)
@@ -410,6 +430,15 @@ Floating point manipulation functions
 
    .. versionchanged:: 3.12
       Added the *steps* argument.
+
+
+.. function:: signbit(x)
+
+   Return ``True`` if the sign of *x* is negative and ``False`` otherwise.
+
+   This is useful to detect the sign bit of zeroes, infinities and NaNs.
+
+   .. versionadded:: next
 
 
 .. function:: ulp(x)

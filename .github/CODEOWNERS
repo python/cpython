@@ -30,10 +30,12 @@ Modules/Setup*                @erlend-aasland
 Objects/set*                  @rhettinger
 Objects/dict*                 @methane @markshannon
 Objects/typevarobject.c       @JelleZijlstra
+Objects/unionobject.c         @JelleZijlstra
 Objects/type*                 @markshannon
 Objects/codeobject.c          @markshannon
 Objects/frameobject.c         @markshannon
 Objects/call.c                @markshannon
+Objects/object.c              @ZeroIntensity
 Python/ceval*.c               @markshannon
 Python/ceval*.h               @markshannon
 Python/codegen.c              @markshannon @iritkatriel
@@ -43,8 +45,9 @@ Python/flowgraph.c            @markshannon @iritkatriel
 Python/instruction_sequence.c @iritkatriel
 Python/bytecodes.c            @markshannon
 Python/optimizer*.c           @markshannon
-Python/optimizer_analysis.c   @Fidget-Spinner
-Python/optimizer_bytecodes.c  @Fidget-Spinner
+Python/optimizer_analysis.c   @Fidget-Spinner @tomasr8
+Python/optimizer_bytecodes.c  @Fidget-Spinner @tomasr8
+Python/optimizer_symbols.c    @tomasr8
 Python/symtable.c             @JelleZijlstra @carljm
 Lib/_pyrepl/*                 @pablogsal @lysnikolaou @ambv
 Lib/test/test_patma.py        @brandtbucher
@@ -65,8 +68,8 @@ Doc/_static/**                @AA-Turner @hugovk
 Doc/tools/**                  @AA-Turner @hugovk
 
 # runtime state/lifecycle
-**/*pylifecycle*              @ericsnowcurrently
-**/*pystate*                  @ericsnowcurrently
+**/*pylifecycle*              @ericsnowcurrently @ZeroIntensity
+**/*pystate*                  @ericsnowcurrently @ZeroIntensity
 **/*preconfig*                @ericsnowcurrently
 **/*initconfig*               @ericsnowcurrently
 **/*pathconfig*               @ericsnowcurrently
@@ -107,12 +110,15 @@ Objects/exceptions.c          @iritkatriel
 # Hashing & cryptographic primitives
 **/*hashlib*                  @gpshead @tiran @picnixz
 **/*hashopenssl*              @gpshead @tiran @picnixz
-**/*pyhash*                   @gpshead @tiran
-**/sha*                       @gpshead @tiran @picnixz
-Modules/md5*                  @gpshead @tiran @picnixz
-**/*blake*                    @gpshead @tiran @picnixz
-Modules/_hacl/**              @gpshead
+**/*pyhash*                   @gpshead @tiran @picnixz
+Modules/*blake*               @gpshead @tiran @picnixz
+Modules/*md5*                 @gpshead @tiran @picnixz
+Modules/*sha*                 @gpshead @tiran @picnixz
+Modules/_hacl/**              @gpshead @picnixz
 **/*hmac*                     @gpshead @picnixz
+
+# libssl
+**/*ssl*                      @gpshead @picnixz
 
 # logging
 **/*logging*                  @vsajip
@@ -164,6 +170,9 @@ Include/internal/pycore_time.h  @pganssle @abalkin
 **/*imap*                     @python/email-team
 **/*poplib*                   @python/email-team
 
+# Exclude .mailmap from being owned by @python/email-team
+/.mailmap
+
 # Garbage collector
 /Modules/gcmodule.c           @pablogsal
 /Doc/library/gc.rst           @pablogsal
@@ -180,12 +189,13 @@ Include/internal/pycore_time.h  @pganssle @abalkin
 /Tools/cases_generator/        @markshannon
 
 # AST
-Python/ast.c                  @isidentical @JelleZijlstra @eclips4
-Python/ast_opt.c              @isidentical @eclips4
-Parser/asdl.py                @isidentical @JelleZijlstra @eclips4
-Parser/asdl_c.py              @isidentical @JelleZijlstra @eclips4
-Lib/ast.py                    @isidentical @JelleZijlstra @eclips4
-Lib/test/test_ast/            @eclips4
+Python/ast.c                  @isidentical @JelleZijlstra @eclips4 @tomasr8
+Python/ast_preprocess.c       @isidentical @eclips4 @tomasr8
+Parser/asdl.py                @isidentical @JelleZijlstra @eclips4 @tomasr8
+Parser/asdl_c.py              @isidentical @JelleZijlstra @eclips4 @tomasr8
+Lib/ast.py                    @isidentical @JelleZijlstra @eclips4 @tomasr8
+Lib/_ast_unparse.py           @isidentical @JelleZijlstra @eclips4 @tomasr8
+Lib/test/test_ast/            @eclips4 @tomasr8
 
 # Mock
 /Lib/unittest/mock.py         @cjw296
@@ -273,9 +283,13 @@ Doc/howto/clinic.rst          @erlend-aasland
 # Subinterpreters
 **/*interpreteridobject.*     @ericsnowcurrently
 **/*crossinterp*              @ericsnowcurrently
-Lib/test/support/interpreters/  @ericsnowcurrently
 Modules/_interp*module.c      @ericsnowcurrently
+Lib/test/test__interp*.py     @ericsnowcurrently
+Lib/concurrent/interpreters/  @ericsnowcurrently
+Lib/test/support/channels.py  @ericsnowcurrently
+Doc/library/concurrent.interpreters.rst  @ericsnowcurrently
 Lib/test/test_interpreters/   @ericsnowcurrently
+Lib/concurrent/futures/interpreter.py  @ericsnowcurrently
 
 # Android
 **/*Android*                  @mhsmith @freakboy3742
@@ -290,7 +304,12 @@ Lib/test/test_interpreters/   @ericsnowcurrently
 **/*-ios*                     @freakboy3742
 
 # WebAssembly
-/Tools/wasm/                  @brettcannon @freakboy3742
+Tools/wasm/config.site-wasm32-emscripten  @freakboy3742
+/Tools/wasm/README.md         @brettcannon @freakboy3742
+/Tools/wasm/wasi-env          @brettcannon
+/Tools/wasm/wasi.py           @brettcannon
+/Tools/wasm/emscripten        @freakboy3742
+/Tools/wasm/wasi              @brettcannon
 
 # SBOM
 /Misc/externals.spdx.json     @sethmlarson
@@ -309,3 +328,20 @@ Doc/reference/                @willingc @AA-Turner
 # Colorize
 Lib/_colorize.py              @hugovk
 Lib/test/test__colorize.py    @hugovk
+
+# Fuzzing
+Modules/_xxtestfuzz/          @ammaraskar
+
+# t-strings
+**/*interpolationobject*      @lysnikolaou
+**/*templateobject*           @lysnikolaou
+**/*templatelib*              @lysnikolaou
+**/*tstring*                  @lysnikolaou
+
+# Remote debugging
+Python/remote_debug.h         @pablogsal
+Python/remote_debugging.c     @pablogsal
+Modules/_remote_debugging_module.c @pablogsal @ambv @1st1
+
+# gettext
+**/*gettext*                  @tomasr8

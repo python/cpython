@@ -333,11 +333,13 @@ The following exceptions are the exceptions that are usually raised.
       meant to be supported at all -- in that case either leave the operator /
       method undefined or, if a subclass, set it to :data:`None`.
 
-   .. note::
+   .. caution::
 
-      ``NotImplementedError`` and :data:`NotImplemented` are not interchangeable,
-      even though they have similar names and purposes.  See
-      :data:`!NotImplemented` for details on when to use it.
+      :exc:`!NotImplementedError` and :data:`!NotImplemented` are not
+      interchangeable. This exception should only be used as described
+      above; see :data:`NotImplemented` for details on correct usage of
+      the built-in constant.
+
 
 .. exception:: OSError([arg])
                OSError(errno, strerror[, filename[, winerror[, filename2]]])
@@ -426,6 +428,7 @@ The following exceptions are the exceptions that are usually raised.
    :exc:`PythonFinalizationError` during the Python finalization:
 
    * Creating a new Python thread.
+   * :meth:`Joining <threading.Thread.join>` a running daemon thread.
    * :func:`os.fork`.
 
    See also the :func:`sys.is_finalizing` function.
@@ -433,6 +436,9 @@ The following exceptions are the exceptions that are usually raised.
    .. versionadded:: 3.13
       Previously, a plain :exc:`RuntimeError` was raised.
 
+   .. versionchanged:: 3.14
+
+      :meth:`threading.Thread.join` can now raise this exception.
 
 .. exception:: RecursionError
 
@@ -1042,7 +1048,7 @@ their subgroups based on the types of the contained exceptions.
    subclasses that need a different constructor signature need to
    override that rather than :meth:`~object.__init__`. For example, the following
    defines an exception group subclass which accepts an exit_code and
-   and constructs the group's message from it. ::
+   constructs the group's message from it. ::
 
       class Errors(ExceptionGroup):
          def __new__(cls, errors, exit_code):

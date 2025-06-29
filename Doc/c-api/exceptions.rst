@@ -413,7 +413,7 @@ Querying the error indicator
    own a reference to the return value, so you do not need to :c:func:`Py_DECREF`
    it.
 
-   The caller must hold the GIL.
+   The caller must have an :term:`attached thread state`.
 
    .. note::
 
@@ -675,7 +675,7 @@ Signal Handling
 
    .. note::
       This function is async-signal-safe.  It can be called without
-      the :term:`GIL` and from a C signal handler.
+      an :term:`attached thread state` and from a C signal handler.
 
 
 .. c:function:: int PyErr_SetInterruptEx(int signum)
@@ -702,7 +702,7 @@ Signal Handling
 
    .. note::
       This function is async-signal-safe.  It can be called without
-      the :term:`GIL` and from a C signal handler.
+      an :term:`attached thread state` and from a C signal handler.
 
    .. versionadded:: 3.10
 
@@ -747,6 +747,16 @@ Exception Classes
    docstring for the exception class.
 
    .. versionadded:: 3.2
+
+
+.. c:function:: int PyExceptionClass_Check(PyObject *ob)
+
+   Return non-zero if *ob* is an exception class, zero otherwise. This function always succeeds.
+
+
+.. c:function:: const char *PyExceptionClass_Name(PyObject *ob)
+
+   Return :c:member:`~PyTypeObject.tp_name` of the exception class *ob*.
 
 
 Exception Objects
@@ -982,6 +992,7 @@ the variables:
 
 .. index::
    single: PyExc_BaseException (C var)
+   single: PyExc_BaseExceptionGroup (C var)
    single: PyExc_Exception (C var)
    single: PyExc_ArithmeticError (C var)
    single: PyExc_AssertionError (C var)
@@ -1040,6 +1051,8 @@ the variables:
 | C Name                                  | Python Name                     | Notes    |
 +=========================================+=================================+==========+
 | :c:data:`PyExc_BaseException`           | :exc:`BaseException`            | [1]_     |
++-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_BaseExceptionGroup`      | :exc:`BaseExceptionGroup`       | [1]_     |
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_Exception`               | :exc:`Exception`                | [1]_     |
 +-----------------------------------------+---------------------------------+----------+
@@ -1164,6 +1177,9 @@ the variables:
 .. versionadded:: 3.6
    :c:data:`PyExc_ModuleNotFoundError`.
 
+.. versionadded:: 3.11
+   :c:data:`PyExc_BaseExceptionGroup`.
+
 These are compatibility aliases to :c:data:`PyExc_OSError`:
 
 .. index::
@@ -1207,6 +1223,7 @@ the variables:
    single: PyExc_Warning (C var)
    single: PyExc_BytesWarning (C var)
    single: PyExc_DeprecationWarning (C var)
+   single: PyExc_EncodingWarning (C var)
    single: PyExc_FutureWarning (C var)
    single: PyExc_ImportWarning (C var)
    single: PyExc_PendingDeprecationWarning (C var)
@@ -1224,6 +1241,8 @@ the variables:
 | :c:data:`PyExc_BytesWarning`             | :exc:`BytesWarning`             |          |
 +------------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_DeprecationWarning`       | :exc:`DeprecationWarning`       |          |
++------------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_EncodingWarning`          | :exc:`EncodingWarning`          |          |
 +------------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_FutureWarning`            | :exc:`FutureWarning`            |          |
 +------------------------------------------+---------------------------------+----------+
@@ -1244,6 +1263,9 @@ the variables:
 
 .. versionadded:: 3.2
    :c:data:`PyExc_ResourceWarning`.
+
+.. versionadded:: 3.10
+   :c:data:`PyExc_EncodingWarning`.
 
 Notes:
 

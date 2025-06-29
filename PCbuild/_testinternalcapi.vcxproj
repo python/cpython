@@ -98,6 +98,7 @@
     <ClCompile Include="..\Modules\_testinternalcapi\test_critical_sections.c" />
     <ClCompile Include="..\Modules\_testinternalcapi\test_lock.c" />
     <ClCompile Include="..\Modules\_testinternalcapi\set.c" />
+    <ClCompile Include="..\Modules\_testinternalcapi\complex.c" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\python_nt.rc" />

@@ -1,0 +1,2 @@
+Remove deprecated Python initialization getter functions ``Py_Get*``.
+Patch by Bénédikt Tran.

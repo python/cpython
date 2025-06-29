@@ -1,20 +1,21 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 import itertools
 import lexer
 import parser
 import re
-from typing import Optional
+from typing import Optional, Callable
+
+from parser import Stmt, SimpleStmt, BlockStmt, IfStmt, WhileStmt
 
 @dataclass
 class EscapingCall:
-    start: lexer.Token
+    stmt: SimpleStmt
     call: lexer.Token
-    end: lexer.Token
     kills: lexer.Token | None
 
 @dataclass
 class Properties:
-    escaping_calls: dict[lexer.Token, EscapingCall]
+    escaping_calls: dict[SimpleStmt, EscapingCall]
     escapes: bool
     error_with_pop: bool
     error_without_pop: bool
@@ -33,7 +34,6 @@ class Properties:
     pure: bool
     uses_opcode: bool
     tier: int | None = None
-    oparg_and_1: bool = False
     const_oparg: int = -1
     needs_prev: bool = False
     no_save_ip: bool = False
@@ -49,7 +49,7 @@ class Properties:
 
     @staticmethod
     def from_list(properties: list["Properties"]) -> "Properties":
-        escaping_calls: dict[lexer.Token, EscapingCall] = {}
+        escaping_calls: dict[SimpleStmt, EscapingCall] = {}
         for p in properties:
             escaping_calls.update(p.escaping_calls)
         return Properties(
@@ -135,17 +135,13 @@ class Flush:
 @dataclass
 class StackItem:
     name: str
-    type: str | None
-    condition: str | None
     size: str
     peek: bool = False
     used: bool = False
 
     def __str__(self) -> str:
-        cond = f" if ({self.condition})" if self.condition else ""
         size = f"[{self.size}]" if self.size else ""
-        type = "" if self.type is None else f"{self.type} "
-        return f"{type}{self.name}{size}{cond} {self.peek}"
+        return f"{self.name}{size} {self.peek}"
 
     def is_array(self) -> bool:
         return self.size != ""
@@ -179,13 +175,12 @@ class Uop:
     annotations: list[str]
     stack: StackEffect
     caches: list[CacheEntry]
-    deferred_refs: dict[lexer.Token, str | None]
-    output_stores: list[lexer.Token]
-    body: list[lexer.Token]
+    local_stores: list[lexer.Token]
+    body: BlockStmt
     properties: Properties
     _size: int = -1
     implicitly_created: bool = False
-    replicated = 0
+    replicated = range(0)
     replicates: "Uop | None" = None
     # Size of the instruction(s), only set for uops containing the INSTRUCTION_SIZE macro
     instruction_size: int | None = None
@@ -215,7 +210,7 @@ class Uop:
         if self.properties.needs_this:
             return "uses the 'this_instr' variable"
         if len([c for c in self.caches if c.name != "unused"]) > 2:
-            return "has unused cache entries"
+            return "has too many cache entries"
         if self.properties.error_with_pop and self.properties.error_without_pop:
             return "has both popping and not-popping errors"
         return None
@@ -224,7 +219,7 @@ class Uop:
         return self.why_not_viable() is None
 
     def is_super(self) -> bool:
-        for tkn in self.body:
+        for tkn in self.body.tokens():
             if tkn.kind == "IDENTIFIER" and tkn.text == "oparg1":
                 return True
         return False
@@ -232,14 +227,14 @@ class Uop:
 
 class Label:
 
-    def __init__(self, name: str, spilled: bool, body: list[lexer.Token], properties: Properties):
+    def __init__(self, name: str, spilled: bool, body: BlockStmt, properties: Properties):
         self.name = name
         self.spilled = spilled
         self.body = body
         self.properties = properties
 
     size:int = 0
-    output_stores: list[lexer.Token] = []
+    local_stores: list[lexer.Token] = []
     instruction_size = None
 
     def __str__(self) -> str:
@@ -348,10 +343,7 @@ def override_error(
 def convert_stack_item(
     item: parser.StackEffect, replace_op_arg_1: str | None
 ) -> StackItem:
-    cond = item.cond
-    if replace_op_arg_1 and OPARG_AND_1.match(item.cond):
-        cond = replace_op_arg_1
-    return StackItem(item.name, item.type, cond, item.size)
+    return StackItem(item.name, item.size)
 
 def check_unused(stack: list[StackItem], input_names: dict[str, lexer.Token]) -> None:
     "Unused items cannot be on the stack above used, non-peek items"
@@ -416,110 +408,113 @@ def analyze_caches(inputs: list[parser.InputEffect]) -> list[CacheEntry]:
     caches: list[parser.CacheEffect] = [
         i for i in inputs if isinstance(i, parser.CacheEffect)
     ]
-    for cache in caches:
-        if cache.name == "unused":
-            raise analysis_error(
-                "Unused cache entry in op. Move to enclosing macro.", cache.tokens[0]
-            )
+    if caches:
+        # Middle entries are allowed to be unused. Check first and last caches.
+        for index in (0, -1):
+            cache = caches[index]
+            if cache.name == "unused":
+                position = "First" if index == 0 else "Last"
+                msg = f"{position} cache entry in op is unused. Move to enclosing macro."
+                raise analysis_error(msg, cache.tokens[0])
     return [CacheEntry(i.name, int(i.size)) for i in caches]
 
 
-def find_assignment_target(node: parser.InstDef, idx: int) -> list[lexer.Token]:
-    """Find the tokens that make up the left-hand side of an assignment"""
-    offset = 0
-    for tkn in reversed(node.block.tokens[: idx]):
-        if tkn.kind in {"SEMI", "LBRACE", "RBRACE", "CMACRO"}:
-            return node.block.tokens[idx - offset : idx]
-        offset += 1
-    return []
-
-
-def find_stores_outputs(node: parser.InstDef) -> list[lexer.Token]:
+def find_variable_stores(node: parser.InstDef) -> list[lexer.Token]:
     res: list[lexer.Token] = []
     outnames = { out.name for out in node.outputs }
     innames = { out.name for out in node.inputs }
-    for idx, tkn in enumerate(node.block.tokens):
-        if tkn.kind == "AND":
-            name = node.block.tokens[idx+1]
-            if name.text in outnames:
-                res.append(name)
-        if tkn.kind != "EQUALS":
-            continue
-        lhs = find_assignment_target(node, idx)
-        assert lhs
-        while lhs and lhs[0].kind == "COMMENT":
-            lhs = lhs[1:]
-        if len(lhs) != 1 or lhs[0].kind != "IDENTIFIER":
-            continue
-        name = lhs[0]
-        if name.text in innames:
-            raise analysis_error(f"Cannot assign to input variable '{name.text}'", name)
-        if name.text in outnames:
-            res.append(name)
+
+    def find_stores_in_tokens(tokens: list[lexer.Token], callback: Callable[[lexer.Token], None]) -> None:
+        while tokens and tokens[0].kind == "COMMENT":
+            tokens = tokens[1:]
+        if len(tokens) < 4:
+            return
+        if tokens[1].kind == "EQUALS":
+            if tokens[0].kind == "IDENTIFIER":
+                name = tokens[0].text
+                if name in outnames or name in innames:
+                    callback(tokens[0])
+        #Passing the address of a local is also a definition
+        for idx, tkn in enumerate(tokens):
+            if tkn.kind == "AND":
+                name_tkn = tokens[idx+1]
+                if name_tkn.text in outnames:
+                    callback(name_tkn)
+
+    def visit(stmt: Stmt) -> None:
+        if isinstance(stmt, IfStmt):
+            def error(tkn: lexer.Token) -> None:
+                raise analysis_error("Cannot define variable in 'if' condition", tkn)
+            find_stores_in_tokens(stmt.condition, error)
+        elif isinstance(stmt, SimpleStmt):
+            find_stores_in_tokens(stmt.contents, res.append)
+
+    node.block.accept(visit)
     return res
 
-def analyze_deferred_refs(node: parser.InstDef) -> dict[lexer.Token, str | None]:
-    """Look for PyStackRef_FromPyObjectNew() calls"""
 
-    def in_frame_push(idx: int) -> bool:
-        for tkn in reversed(node.block.tokens[: idx - 1]):
-            if tkn.kind in {"SEMI", "LBRACE", "RBRACE"}:
-                return False
-            if tkn.kind == "IDENTIFIER" and tkn.text == "_PyFrame_PushUnchecked":
-                return True
-        return False
+#def analyze_deferred_refs(node: parser.InstDef) -> dict[lexer.Token, str | None]:
+    #"""Look for PyStackRef_FromPyObjectNew() calls"""
 
-    refs: dict[lexer.Token, str | None] = {}
-    for idx, tkn in enumerate(node.block.tokens):
-        if tkn.kind != "IDENTIFIER" or tkn.text != "PyStackRef_FromPyObjectNew":
-            continue
+    #def in_frame_push(idx: int) -> bool:
+        #for tkn in reversed(node.block.tokens[: idx - 1]):
+            #if tkn.kind in {"SEMI", "LBRACE", "RBRACE"}:
+                #return False
+            #if tkn.kind == "IDENTIFIER" and tkn.text == "_PyFrame_PushUnchecked":
+                #return True
+        #return False
 
-        if idx == 0 or node.block.tokens[idx - 1].kind != "EQUALS":
-            if in_frame_push(idx):
-                # PyStackRef_FromPyObjectNew() is called in _PyFrame_PushUnchecked()
-                refs[tkn] = None
-                continue
-            raise analysis_error("Expected '=' before PyStackRef_FromPyObjectNew", tkn)
+    #refs: dict[lexer.Token, str | None] = {}
+    #for idx, tkn in enumerate(node.block.tokens):
+        #if tkn.kind != "IDENTIFIER" or tkn.text != "PyStackRef_FromPyObjectNew":
+            #continue
 
-        lhs = find_assignment_target(node, idx - 1)
-        if len(lhs) == 0:
-            raise analysis_error(
-                "PyStackRef_FromPyObjectNew() must be assigned to an output", tkn
-            )
+        #if idx == 0 or node.block.tokens[idx - 1].kind != "EQUALS":
+            #if in_frame_push(idx):
+                ## PyStackRef_FromPyObjectNew() is called in _PyFrame_PushUnchecked()
+                #refs[tkn] = None
+                #continue
+            #raise analysis_error("Expected '=' before PyStackRef_FromPyObjectNew", tkn)
 
-        if lhs[0].kind == "TIMES" or any(
-            t.kind == "ARROW" or t.kind == "LBRACKET" for t in lhs[1:]
-        ):
-            # Don't handle: *ptr = ..., ptr->field = ..., or ptr[field] = ...
-            # Assume that they are visible to the GC.
-            refs[tkn] = None
-            continue
+        #lhs = find_assignment_target(node, idx - 1)
+        #if len(lhs) == 0:
+            #raise analysis_error(
+                #"PyStackRef_FromPyObjectNew() must be assigned to an output", tkn
+            #)
 
-        if len(lhs) != 1 or lhs[0].kind != "IDENTIFIER":
-            raise analysis_error(
-                "PyStackRef_FromPyObjectNew() must be assigned to an output", tkn
-            )
+        #if lhs[0].kind == "TIMES" or any(
+            #t.kind == "ARROW" or t.kind == "LBRACKET" for t in lhs[1:]
+        #):
+            ## Don't handle: *ptr = ..., ptr->field = ..., or ptr[field] = ...
+            ## Assume that they are visible to the GC.
+            #refs[tkn] = None
+            #continue
 
-        name = lhs[0].text
-        match = (
-            any(var.name == name for var in node.inputs)
-            or any(var.name == name for var in node.outputs)
-        )
-        if not match:
-            raise analysis_error(
-                f"PyStackRef_FromPyObjectNew() must be assigned to an input or output, not '{name}'",
-                tkn,
-            )
+        #if len(lhs) != 1 or lhs[0].kind != "IDENTIFIER":
+            #raise analysis_error(
+                #"PyStackRef_FromPyObjectNew() must be assigned to an output", tkn
+            #)
 
-        refs[tkn] = name
+        #name = lhs[0].text
+        #match = (
+            #any(var.name == name for var in node.inputs)
+            #or any(var.name == name for var in node.outputs)
+        #)
+        #if not match:
+            #raise analysis_error(
+                #f"PyStackRef_FromPyObjectNew() must be assigned to an input or output, not '{name}'",
+                #tkn,
+            #)
 
-    return refs
+        #refs[tkn] = name
+
+    #return refs
 
 
 def variable_used(node: parser.CodeDef, name: str) -> bool:
     """Determine whether a variable with a given name is used in a node."""
     return any(
-        token.kind == "IDENTIFIER" and token.text == name for token in node.block.tokens
+        token.kind == "IDENTIFIER" and token.text == name for token in node.block.tokens()
     )
 
 
@@ -546,7 +541,6 @@ def tier_variable(node: parser.CodeDef) -> int | None:
 def has_error_with_pop(op: parser.CodeDef) -> bool:
     return (
         variable_used(op, "ERROR_IF")
-        or variable_used(op, "pop_1_error")
         or variable_used(op, "exception_unwind")
     )
 
@@ -554,7 +548,6 @@ def has_error_with_pop(op: parser.CodeDef) -> bool:
 def has_error_without_pop(op: parser.CodeDef) -> bool:
     return (
         variable_used(op, "ERROR_NO_POP")
-        or variable_used(op, "pop_1_error")
         or variable_used(op, "exception_unwind")
     )
 
@@ -583,20 +576,27 @@ NON_ESCAPING_FUNCTIONS = (
     "PySlice_New",
     "PyStackRef_AsPyObjectBorrow",
     "PyStackRef_AsPyObjectNew",
+    "PyStackRef_FromPyObjectNewMortal",
     "PyStackRef_AsPyObjectSteal",
+    "PyStackRef_Borrow",
     "PyStackRef_CLEAR",
     "PyStackRef_CLOSE_SPECIALIZED",
     "PyStackRef_DUP",
     "PyStackRef_False",
-    "PyStackRef_FromPyObjectImmortal",
+    "PyStackRef_FromPyObjectBorrow",
     "PyStackRef_FromPyObjectNew",
     "PyStackRef_FromPyObjectSteal",
     "PyStackRef_IsExactly",
+    "PyStackRef_FromPyObjectStealMortal",
     "PyStackRef_IsNone",
+    "PyStackRef_Is",
+    "PyStackRef_IsHeapSafe",
     "PyStackRef_IsTrue",
     "PyStackRef_IsFalse",
     "PyStackRef_IsNull",
+    "PyStackRef_MakeHeapSafe",
     "PyStackRef_None",
+    "PyStackRef_RefcountOnObject",
     "PyStackRef_TYPE",
     "PyStackRef_True",
     "PyTuple_GET_ITEM",
@@ -629,7 +629,6 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyGen_GetGeneratorFromFrame",
     "_PyInterpreterState_GET",
     "_PyList_AppendTakeRef",
-    "_PyList_FromStackRefStealOnSuccess",
     "_PyList_ITEMS",
     "_PyLong_CompactValue",
     "_PyLong_DigitCount",
@@ -637,12 +636,18 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyLong_IsNegative",
     "_PyLong_IsNonNegativeCompact",
     "_PyLong_IsZero",
+    "_PyLong_BothAreCompact",
+    "_PyCompactLong_Add",
+    "_PyCompactLong_Multiply",
+    "_PyCompactLong_Subtract",
     "_PyManagedDictPointer_IsValues",
+    "_PyObject_GC_IS_SHARED",
     "_PyObject_GC_IS_TRACKED",
     "_PyObject_GC_MAY_BE_TRACKED",
     "_PyObject_GC_TRACK",
     "_PyObject_GetManagedDict",
     "_PyObject_InlineValues",
+    "_PyObject_IsUniquelyReferenced",
     "_PyObject_ManagedDictPointer",
     "_PyThreadState_HasStackSpace",
     "_PyTuple_FromStackRefStealOnSuccess",
@@ -655,6 +660,7 @@ NON_ESCAPING_FUNCTIONS = (
     "_Py_DECREF_NO_DEALLOC",
     "_Py_ID",
     "_Py_IsImmortal",
+    "_Py_IsOwnedByCurrentThread",
     "_Py_LeaveRecursiveCallPy",
     "_Py_LeaveRecursiveCallTstate",
     "_Py_NewRef",
@@ -673,95 +679,99 @@ NON_ESCAPING_FUNCTIONS = (
     "JUMP_TO_LABEL",
     "restart_backoff_counter",
     "_Py_ReachedRecursionLimit",
+    "PyStackRef_IsTaggedInt",
+    "PyStackRef_TagInt",
+    "PyStackRef_UntagInt",
+    "PyStackRef_IncrementTaggedIntNoOverflow",
+    "PyStackRef_IsNullOrInt",
+    "PyStackRef_IsError",
+    "PyStackRef_IsValid",
+    "PyStackRef_Wrap",
+    "PyStackRef_Unwrap",
+    "_PyLong_CheckExactAndCompact",
 )
 
-def find_stmt_start(node: parser.CodeDef, idx: int) -> lexer.Token:
-    assert idx < len(node.block.tokens)
-    while True:
-        tkn = node.block.tokens[idx-1]
-        if tkn.kind in {"SEMI", "LBRACE", "RBRACE", "CMACRO"}:
-            break
-        idx -= 1
-        assert idx > 0
-    while node.block.tokens[idx].kind == "COMMENT":
-        idx += 1
-    return node.block.tokens[idx]
 
-
-def find_stmt_end(node: parser.CodeDef, idx: int) -> lexer.Token:
-    assert idx < len(node.block.tokens)
-    while True:
-        idx += 1
-        tkn = node.block.tokens[idx]
-        if tkn.kind == "SEMI":
-            return node.block.tokens[idx+1]
-
-def check_escaping_calls(instr: parser.CodeDef, escapes: dict[lexer.Token, EscapingCall]) -> None:
+def check_escaping_calls(instr: parser.CodeDef, escapes: dict[SimpleStmt, EscapingCall]) -> None:
+    error: lexer.Token | None = None
     calls = {e.call for e in escapes.values()}
-    in_if = 0
-    tkn_iter = iter(instr.block.tokens)
-    for tkn in tkn_iter:
-        if tkn.kind == "IF":
-            next(tkn_iter)
-            in_if = 1
-        if tkn.kind == "IDENTIFIER" and tkn.text in ("DEOPT_IF", "ERROR_IF", "EXIT_IF"):
-            next(tkn_iter)
-            in_if = 1
-        elif tkn.kind == "LPAREN" and in_if:
-            in_if += 1
-        elif tkn.kind == "RPAREN":
-            if in_if:
-                in_if -= 1
-        elif tkn in calls and in_if:
-            raise analysis_error(f"Escaping call '{tkn.text} in condition", tkn)
 
-def find_escaping_api_calls(instr: parser.CodeDef) -> dict[lexer.Token, EscapingCall]:
-    result: dict[lexer.Token, EscapingCall] = {}
-    tokens = instr.block.tokens
-    for idx, tkn in enumerate(tokens):
-        try:
-            next_tkn = tokens[idx+1]
-        except IndexError:
-            break
-        if tkn.kind == "SWITCH":
-            raise analysis_error(f"switch statements are not supported due to their complex flow control. Sorry.", tkn)
-        if next_tkn.kind != lexer.LPAREN:
-            continue
-        if tkn.kind == lexer.IDENTIFIER:
-            if tkn.text.upper() == tkn.text:
-                # simple macro
+    def visit(stmt: Stmt) -> None:
+        nonlocal error
+        if isinstance(stmt, IfStmt) or isinstance(stmt, WhileStmt):
+            for tkn in stmt.condition:
+                if tkn in calls:
+                    error = tkn
+        elif isinstance(stmt, SimpleStmt):
+            in_if = 0
+            tkn_iter = iter(stmt.contents)
+            for tkn in tkn_iter:
+                if tkn.kind == "IDENTIFIER" and tkn.text in ("DEOPT_IF", "ERROR_IF", "EXIT_IF"):
+                    in_if = 1
+                    next(tkn_iter)
+                elif tkn.kind == "LPAREN":
+                    if in_if:
+                        in_if += 1
+                elif tkn.kind == "RPAREN":
+                    if in_if:
+                        in_if -= 1
+                elif tkn in calls and in_if:
+                    error = tkn
+
+
+    instr.block.accept(visit)
+    if error is not None:
+        raise analysis_error(f"Escaping call '{error.text} in condition", error)
+
+def find_escaping_api_calls(instr: parser.CodeDef) -> dict[SimpleStmt, EscapingCall]:
+    result: dict[SimpleStmt, EscapingCall] = {}
+
+    def visit(stmt: Stmt) -> None:
+        if not isinstance(stmt, SimpleStmt):
+            return
+        tokens = stmt.contents
+        for idx, tkn in enumerate(tokens):
+            try:
+                next_tkn = tokens[idx+1]
+            except IndexError:
+                break
+            if next_tkn.kind != lexer.LPAREN:
                 continue
-            #if not tkn.text.startswith(("Py", "_Py", "monitor")):
-            #    continue
-            if tkn.text.startswith(("sym_", "optimize_")):
-                # Optimize functions
+            if tkn.kind == lexer.IDENTIFIER:
+                if tkn.text.upper() == tkn.text:
+                    # simple macro
+                    continue
+                #if not tkn.text.startswith(("Py", "_Py", "monitor")):
+                #    continue
+                if tkn.text.startswith(("sym_", "optimize_", "PyJitRef")):
+                    # Optimize functions
+                    continue
+                if tkn.text.endswith("Check"):
+                    continue
+                if tkn.text.startswith("Py_Is"):
+                    continue
+                if tkn.text.endswith("CheckExact"):
+                    continue
+                if tkn.text in NON_ESCAPING_FUNCTIONS:
+                    continue
+            elif tkn.kind == "RPAREN":
+                prev = tokens[idx-1]
+                if prev.text.endswith("_t") or prev.text == "*" or prev.text == "int":
+                    #cast
+                    continue
+            elif tkn.kind != "RBRACKET":
                 continue
-            if tkn.text.endswith("Check"):
-                continue
-            if tkn.text.startswith("Py_Is"):
-                continue
-            if tkn.text.endswith("CheckExact"):
-                continue
-            if tkn.text in NON_ESCAPING_FUNCTIONS:
-                continue
-        elif tkn.kind == "RPAREN":
-            prev = tokens[idx-1]
-            if prev.text.endswith("_t") or prev.text == "*" or prev.text == "int":
-                #cast
-                continue
-        elif tkn.kind != "RBRACKET":
-            continue
-        if tkn.text in ("PyStackRef_CLOSE", "PyStackRef_XCLOSE"):
-            if len(tokens) <= idx+2:
-                raise analysis_error("Unexpected end of file", next_tkn)
-            kills = tokens[idx+2]
-            if kills.kind != "IDENTIFIER":
-                raise analysis_error(f"Expected identifier, got '{kills.text}'", kills)
-        else:
-            kills = None
-        start = find_stmt_start(instr, idx)
-        end = find_stmt_end(instr, idx)
-        result[start] = EscapingCall(start, tkn, end, kills)
+            if tkn.text in ("PyStackRef_CLOSE", "PyStackRef_XCLOSE"):
+                if len(tokens) <= idx+2:
+                    raise analysis_error("Unexpected end of file", next_tkn)
+                kills = tokens[idx+2]
+                if kills.kind != "IDENTIFIER":
+                    raise analysis_error(f"Expected identifier, got '{kills.text}'", kills)
+            else:
+                kills = None
+            result[stmt] = EscapingCall(stmt, tkn, kills)
+
+    instr.block.accept(visit)
     check_escaping_calls(instr, result)
     return result
 
@@ -806,31 +816,10 @@ def stack_effect_only_peeks(instr: parser.InstDef) -> bool:
         return False
     if len(stack_inputs) == 0:
         return False
-    if any(s.cond for s in stack_inputs) or any(s.cond for s in instr.outputs):
-        return False
     return all(
-        (s.name == other.name and s.type == other.type and s.size == other.size)
+        (s.name == other.name and s.size == other.size)
         for s, other in zip(stack_inputs, instr.outputs)
     )
-
-
-OPARG_AND_1 = re.compile("\\(*oparg *& *1")
-
-
-def effect_depends_on_oparg_1(op: parser.InstDef) -> bool:
-    for effect in op.inputs:
-        if isinstance(effect, parser.CacheEffect):
-            continue
-        if not effect.cond:
-            continue
-        if OPARG_AND_1.match(effect.cond):
-            return True
-    for effect in op.outputs:
-        if not effect.cond:
-            continue
-        if OPARG_AND_1.match(effect.cond):
-            return True
-    return False
 
 
 def compute_properties(op: parser.CodeDef) -> Properties:
@@ -854,7 +843,7 @@ def compute_properties(op: parser.CodeDef) -> Properties:
         )
     error_with_pop = has_error_with_pop(op)
     error_without_pop = has_error_without_pop(op)
-    escapes = bool(escaping_calls)
+    escapes = bool(escaping_calls) or variable_used(op, "DECREF_INPUTS")
     pure = False if isinstance(op, parser.LabelDef) else "pure" in op.annotations
     no_save_ip = False if isinstance(op, parser.LabelDef) else "no_save_ip" in op.annotations
     return Properties(
@@ -881,6 +870,28 @@ def compute_properties(op: parser.CodeDef) -> Properties:
         needs_prev=variable_used(op, "prev_instr"),
     )
 
+def expand(items: list[StackItem], oparg: int) -> list[StackItem]:
+    # Only replace array item with scalar if no more than one item is an array
+    index = -1
+    for i, item in enumerate(items):
+        if "oparg" in item.size:
+            if index >= 0:
+                return items
+            index = i
+    if index < 0:
+        return items
+    try:
+        count = int(eval(items[index].size.replace("oparg", str(oparg))))
+    except ValueError:
+        return items
+    return items[:index] + [
+        StackItem(items[index].name + f"_{i}", "", items[index].peek, items[index].used) for i in range(count)
+        ] + items[index+1:]
+
+def scalarize_stack(stack: StackEffect, oparg: int) -> StackEffect:
+    stack.inputs = expand(stack.inputs, oparg)
+    stack.outputs = expand(stack.outputs, oparg)
+    return stack
 
 def make_uop(
     name: str,
@@ -894,54 +905,35 @@ def make_uop(
         annotations=op.annotations,
         stack=analyze_stack(op),
         caches=analyze_caches(inputs),
-        deferred_refs=analyze_deferred_refs(op),
-        output_stores=find_stores_outputs(op),
-        body=op.block.tokens,
+        local_stores=find_variable_stores(op),
+        body=op.block,
         properties=compute_properties(op),
     )
-    if effect_depends_on_oparg_1(op) and "split" in op.annotations:
-        result.properties.oparg_and_1 = True
-        for bit in ("0", "1"):
-            name_x = name + "_" + bit
-            properties = compute_properties(op)
-            if properties.oparg:
-                # May not need oparg anymore
-                properties.oparg = any(
-                    token.text == "oparg" for token in op.block.tokens
-                )
-            rep = Uop(
-                name=name_x,
-                context=op.context,
-                annotations=op.annotations,
-                stack=analyze_stack(op, bit),
-                caches=analyze_caches(inputs),
-                deferred_refs=analyze_deferred_refs(op),
-                output_stores=find_stores_outputs(op),
-                body=op.block.tokens,
-                properties=properties,
-            )
-            rep.replicates = result
-            uops[name_x] = rep
     for anno in op.annotations:
         if anno.startswith("replicate"):
-            result.replicated = int(anno[10:-1])
+            text = anno[10:-1]
+            start, stop = text.split(":")
+            result.replicated = range(int(start), int(stop))
             break
     else:
         return result
-    for oparg in range(result.replicated):
+    for oparg in result.replicated:
         name_x = name + "_" + str(oparg)
         properties = compute_properties(op)
         properties.oparg = False
-        properties.const_oparg = oparg
+        stack = analyze_stack(op)
+        if not variable_used(op, "oparg"):
+            stack = scalarize_stack(stack, oparg)
+        else:
+            properties.const_oparg = oparg
         rep = Uop(
             name=name_x,
             context=op.context,
             annotations=op.annotations,
-            stack=analyze_stack(op),
+            stack=stack,
             caches=analyze_caches(inputs),
-            deferred_refs=analyze_deferred_refs(op),
-            output_stores=find_stores_outputs(op),
-            body=op.block.tokens,
+            local_stores=find_variable_stores(op),
+            body=op.block,
             properties=properties,
         )
         rep.replicates = result
@@ -1056,7 +1048,7 @@ def add_label(
     labels: dict[str, Label],
 ) -> None:
     properties = compute_properties(label)
-    labels[label.name] = Label(label.name, label.spilled, label.block.tokens, properties)
+    labels[label.name] = Label(label.name, label.spilled, label.block, properties)
 
 
 def assign_opcodes(
@@ -1075,8 +1067,8 @@ def assign_opcodes(
     # This helps catch cases where we attempt to execute a cache.
     instmap["RESERVED"] = 17
 
-    # 149 is RESUME - it is hard coded as such in Tools/build/deepfreeze.py
-    instmap["RESUME"] = 149
+    # 128 is RESUME - it is hard coded as such in Tools/build/deepfreeze.py
+    instmap["RESUME"] = 128
 
     # This is an historical oddity.
     instmap["BINARY_OP_INPLACE_ADD_UNICODE"] = 3
@@ -1106,7 +1098,7 @@ def assign_opcodes(
 
     # Specialized ops appear in their own section
     # Instrumented opcodes are at the end of the valid range
-    min_internal = 150
+    min_internal = instmap["RESUME"] + 1
     min_instrumented = 254 - (len(instrumented) - 1)
     assert min_internal + len(specialized) < min_instrumented
 
@@ -1150,9 +1142,9 @@ def get_instruction_size_for_uop(instructions: dict[str, Instruction], uop: Uop)
     If there is more than one instruction that contains the uop,
     ensure that they all have the same size.
     """
-    for tkn in uop.body:
-          if tkn.text == "INSTRUCTION_SIZE":
-               break
+    for tkn in uop.body.tokens():
+        if tkn.text == "INSTRUCTION_SIZE":
+            break
     else:
         return None
 

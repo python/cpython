@@ -6,9 +6,10 @@
 # The contents of this file are pickled, so don't put values in the namespace
 # that aren't pickleable (module imports are okay, they're removed automatically).
 
-import importlib
 import os
 import sys
+from importlib import import_module
+from importlib.util import find_spec
 
 # Make our custom extensions available to Sphinx
 sys.path.append(os.path.abspath('tools/extensions'))
@@ -29,6 +30,7 @@ extensions = [
     'glossary_search',
     'grammar_snippet',
     'implementation_detail',
+    'issue_role',
     'lexers',
     'misc_news',
     'pydoc_topics',
@@ -39,19 +41,17 @@ extensions = [
 ]
 
 # Skip if downstream redistributors haven't installed them
-try:
-    import notfound.extension  # noqa: F401
-except ImportError:
-    pass
-else:
-    extensions.append('notfound.extension')
-try:
-    import sphinxext.opengraph  # noqa: F401
-except ImportError:
-    pass
-else:
-    extensions.append('sphinxext.opengraph')
-
+_OPTIONAL_EXTENSIONS = (
+    'notfound.extension',
+    'sphinxext.opengraph',
+)
+for optional_ext in _OPTIONAL_EXTENSIONS:
+    try:
+        if find_spec(optional_ext) is not None:
+            extensions.append(optional_ext)
+    except (ImportError, ValueError):
+        pass
+del _OPTIONAL_EXTENSIONS
 
 doctest_global_setup = '''
 try:
@@ -74,11 +74,15 @@ copyright = "2001 Python Software Foundation"
 # We look for the Include/patchlevel.h file in the current Python source tree
 # and replace the values accordingly.
 # See Doc/tools/extensions/patchlevel.py
-version, release = importlib.import_module('patchlevel').get_version_info()
+version, release = import_module('patchlevel').get_version_info()
 
 rst_epilog = f"""
 .. |python_version_literal| replace:: ``Python {version}``
 .. |python_x_dot_y_literal| replace:: ``python{version}``
+.. |python_x_dot_y_t_literal| replace:: ``python{version}t``
+.. |python_x_dot_y_t_literal_config| replace:: ``python{version}t-config``
+.. |x_dot_y_b2_literal| replace:: ``{version}.0b2``
+.. |applications_python_version_literal| replace:: ``/Applications/Python {version}/``
 .. |usr_local_bin_python_x_dot_y_literal| replace:: ``/usr/local/bin/python{version}``
 
 .. Apparently this how you hack together a formatted link:
@@ -100,7 +104,7 @@ highlight_language = 'python3'
 
 # Minimum version of sphinx required
 # Keep this version in sync with ``Doc/requirements.txt``.
-needs_sphinx = '8.1.3'
+needs_sphinx = '8.2.0'
 
 # Create table of contents entries for domain objects (e.g. functions, classes,
 # attributes, etc.). Default is True.
@@ -234,6 +238,7 @@ nitpick_ignore += [
     ('c:data', 'PyExc_AssertionError'),
     ('c:data', 'PyExc_AttributeError'),
     ('c:data', 'PyExc_BaseException'),
+    ('c:data', 'PyExc_BaseExceptionGroup'),
     ('c:data', 'PyExc_BlockingIOError'),
     ('c:data', 'PyExc_BrokenPipeError'),
     ('c:data', 'PyExc_BufferError'),
@@ -287,6 +292,7 @@ nitpick_ignore += [
     # C API: Standard Python warning classes
     ('c:data', 'PyExc_BytesWarning'),
     ('c:data', 'PyExc_DeprecationWarning'),
+    ('c:data', 'PyExc_EncodingWarning'),
     ('c:data', 'PyExc_FutureWarning'),
     ('c:data', 'PyExc_ImportWarning'),
     ('c:data', 'PyExc_PendingDeprecationWarning'),
@@ -308,7 +314,6 @@ nitpick_ignore += [
     ('py:attr', '__annotations__'),
     ('py:meth', '__missing__'),
     ('py:attr', '__wrapped__'),
-    ('py:attr', 'decimal.Context.clamp'),
     ('py:meth', 'index'),  # list.index, tuple.index, etc.
 ]
 
@@ -624,11 +629,19 @@ stable_abi_file = 'data/stable_abi.dat'
 # Options for sphinxext-opengraph
 # -------------------------------
 
-ogp_site_url = 'https://docs.python.org/3/'
+ogp_canonical_url = 'https://docs.python.org/3/'
 ogp_site_name = 'Python documentation'
-ogp_image = '_static/og-image.png'
+ogp_social_cards = {  # Used when matplotlib is installed
+    'image': '_static/og-image.png',
+    'line_color': '#3776ab',
+}
 ogp_custom_meta_tags = [
-    '<meta property="og:image:width" content="200" />',
-    '<meta property="og:image:height" content="200" />',
-    '<meta name="theme-color" content="#3776ab" />',
+    '<meta name="theme-color" content="#3776ab">',
 ]
+if 'create-social-cards' not in tags:  # noqa: F821
+    # Define a static preview image when not creating social cards
+    ogp_image = '_static/og-image.png'
+    ogp_custom_meta_tags += [
+        '<meta property="og:image:width" content="200">',
+        '<meta property="og:image:height" content="200">',
+    ]

@@ -157,7 +157,7 @@ class TestFilemode:
 
             os.chmod(TESTFN, 0o700)
             st_mode, modestr = self.get_mode()
-            self.assertEqual(modestr[:3], '-rw')
+            self.assertStartsWith(modestr, '-rw')
             self.assertS_IS("REG", st_mode)
             self.assertEqual(self.statmod.S_IFMT(st_mode),
                              self.statmod.S_IFREG)
@@ -256,7 +256,7 @@ class TestFilemode:
                          "FILE_ATTRIBUTE_* constants are Win32 specific")
     def test_file_attribute_constants(self):
         for key, value in sorted(self.file_attributes.items()):
-            self.assertTrue(hasattr(self.statmod, key), key)
+            self.assertHasAttr(self.statmod, key)
             modvalue = getattr(self.statmod, key)
             self.assertEqual(value, modvalue, key)
 
@@ -314,7 +314,7 @@ class TestFilemode:
         self.assertEqual(self.statmod.S_ISGID, 0o002000)
         self.assertEqual(self.statmod.S_ISVTX, 0o001000)
 
-        self.assertFalse(hasattr(self.statmod, "S_ISTXT"))
+        self.assertNotHasAttr(self.statmod, "S_ISTXT")
         self.assertEqual(self.statmod.S_IREAD, self.statmod.S_IRUSR)
         self.assertEqual(self.statmod.S_IWRITE, self.statmod.S_IWUSR)
         self.assertEqual(self.statmod.S_IEXEC, self.statmod.S_IXUSR)

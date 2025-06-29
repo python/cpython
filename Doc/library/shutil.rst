@@ -47,6 +47,13 @@ Directory and files operations
    0, only the contents from the current file position to the end of the file will
    be copied.
 
+   :func:`copyfileobj` will *not* guarantee that the destination stream has
+   been flushed on completion of the copy. If you want to read from the
+   destination at the completion of the copy operation (for example, reading
+   the contents of a temporary file that has been copied from a HTTP stream),
+   you must ensure that you have called :func:`~io.IOBase.flush` or
+   :func:`~io.IOBase.close` on the file-like object before attempting to read
+   the destination file.
 
 .. function:: copyfile(src, dst, *, follow_symlinks=True)
 
@@ -327,6 +334,10 @@ Directory and files operations
    The deprecated *onerror* is similar to *onexc*, except that the third
    parameter it receives is the tuple returned from :func:`sys.exc_info`.
 
+   .. seealso::
+      :ref:`shutil-rmtree-example` for an example of handling the removal
+      of a directory tree that contains read-only files.
+
    .. audit-event:: shutil.rmtree path,dir_fd shutil.rmtree
 
    .. versionchanged:: 3.3
@@ -454,6 +465,10 @@ Directory and files operations
    :envvar:`PATH` environment variable is read from :data:`os.environ`,
    falling back to :data:`os.defpath` if it is not set.
 
+   If *cmd* contains a directory component, :func:`!which` only checks the
+   specified path directly and does not search the directories listed in
+   *path* or in the system's :envvar:`PATH` environment variable.
+
    On Windows, the current directory is prepended to the *path* if *mode* does
    not include ``os.X_OK``. When the *mode* does include ``os.X_OK``, the
    Windows API ``NeedCurrentDirectoryForExePathW`` will be consulted to
@@ -473,7 +488,7 @@ Directory and files operations
    This is also applied when *cmd* is a path that contains a directory
    component::
 
-      >> shutil.which("C:\\Python33\\python")
+      >>> shutil.which("C:\\Python33\\python")
       'C:\\Python33\\python.EXE'
 
    .. versionadded:: 3.3

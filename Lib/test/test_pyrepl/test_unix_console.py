@@ -3,7 +3,8 @@ import os
 import sys
 import unittest
 from functools import partial
-from test.support import os_helper
+from test.support import os_helper, force_not_colorized_test_class
+
 from unittest import TestCase
 from unittest.mock import MagicMock, call, patch, ANY
 
@@ -19,10 +20,12 @@ except ImportError:
 def unix_console(events, **kwargs):
     console = UnixConsole()
     console.get_event = MagicMock(side_effect=events)
+    console.getpending = MagicMock(return_value=Event("key", ""))
 
     height = kwargs.get("height", 25)
     width = kwargs.get("width", 80)
     console.getheightwidth = MagicMock(side_effect=lambda: (height, width))
+    console.wait = MagicMock()
 
     console.prepare()
     for key, val in kwargs.items():
@@ -32,7 +35,7 @@ def unix_console(events, **kwargs):
 
 handle_events_unix_console = partial(
     handle_all_events,
-    prepare_console=partial(unix_console),
+    prepare_console=unix_console,
 )
 handle_events_narrow_unix_console = partial(
     handle_all_events,
@@ -117,6 +120,7 @@ TERM_CAPABILITIES = {
 )
 @patch("termios.tcsetattr", lambda a, b, c: None)
 @patch("os.write")
+@force_not_colorized_test_class
 class TestConsole(TestCase):
     def test_simple_addition(self, _os_write):
         code = "12+34"

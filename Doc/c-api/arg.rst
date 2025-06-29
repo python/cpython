@@ -5,7 +5,7 @@
 Parsing arguments and building values
 =====================================
 
-These functions are useful when creating your own extensions functions and
+These functions are useful when creating your own extension functions and
 methods.  Additional information and examples are available in
 :ref:`extending-index`.
 
@@ -113,14 +113,18 @@ There are three ways strings and buffers can be converted to C:
 ``z`` (:class:`str` or ``None``) [const char \*]
    Like ``s``, but the Python object may also be ``None``, in which case the C
    pointer is set to ``NULL``.
+   It is the same as ``s?`` with the C pointer was initialized to ``NULL``.
 
 ``z*`` (:class:`str`, :term:`bytes-like object` or ``None``) [Py_buffer]
    Like ``s*``, but the Python object may also be ``None``, in which case the
    ``buf`` member of the :c:type:`Py_buffer` structure is set to ``NULL``.
+   It is the same as ``s*?`` with the ``buf`` member of the :c:type:`Py_buffer`
+   structure was initialized to ``NULL``.
 
 ``z#`` (:class:`str`, read-only :term:`bytes-like object` or ``None``) [const char \*, :c:type:`Py_ssize_t`]
    Like ``s#``, but the Python object may also be ``None``, in which case the C
    pointer is set to ``NULL``.
+   It is the same as ``s#?`` with the C pointer was initialized to ``NULL``.
 
 ``y`` (read-only :term:`bytes-like object`) [const char \*]
    This format converts a bytes-like object to a C pointer to a
@@ -270,12 +274,18 @@ small to receive the value.
    Convert a Python integer to a C :c:expr:`unsigned long` without
    overflow checking.
 
+   .. versionchanged:: 3.14
+      Use :meth:`~object.__index__` if available.
+
 ``L`` (:class:`int`) [long long]
    Convert a Python integer to a C :c:expr:`long long`.
 
 ``K`` (:class:`int`) [unsigned long long]
    Convert a Python integer to a C :c:expr:`unsigned long long`
    without overflow checking.
+
+   .. versionchanged:: 3.14
+      Use :meth:`~object.__index__` if available.
 
 ``n`` (:class:`int`) [:c:type:`Py_ssize_t`]
    Convert a Python integer to a C :c:type:`Py_ssize_t`.
@@ -357,10 +367,36 @@ Other objects
 
    .. versionadded:: 3.3
 
-``(items)`` (:class:`tuple`) [*matching-items*]
-   The object must be a Python sequence whose length is the number of format units
+``(items)`` (sequence) [*matching-items*]
+   The object must be a Python sequence (except :class:`str`, :class:`bytes`
+   or :class:`bytearray`) whose length is the number of format units
    in *items*.  The C arguments must correspond to the individual format units in
    *items*.  Format units for sequences may be nested.
+
+   If *items* contains format units which store a :ref:`borrowed buffer
+   <c-arg-borrowed-buffer>` (``s``, ``s#``, ``z``, ``z#``, ``y``, or ``y#``)
+   or a :term:`borrowed reference` (``S``, ``Y``, ``U``, ``O``, or ``O!``),
+   the object must be a Python tuple.
+   The *converter* for the ``O&`` format unit in *items* must not store
+   a borrowed buffer or a borrowed reference.
+
+   .. versionchanged:: 3.14
+      :class:`str` and :class:`bytearray` objects no longer accepted as a sequence.
+
+   .. deprecated:: 3.14
+      Non-tuple sequences are deprecated if *items* contains format units
+      which store a borrowed buffer or a borrowed reference.
+
+``unit?`` (anything or ``None``) [*matching-variable(s)*]
+   ``?`` modifies the behavior of the preceding format unit.
+   The C variable(s) corresponding to that parameter should be initialized
+   to their default value --- when the argument is ``None``,
+   :c:func:`PyArg_ParseTuple` does not touch the contents of the corresponding
+   C variable(s).
+   If the argument is not ``None``, it is parsed according to the specified
+   format unit.
+
+   .. versionadded:: 3.14
 
 A few other characters have a meaning in a format string.  These may not occur
 inside nested parentheses.  They are:
@@ -639,6 +675,8 @@ Building values
    ``L`` (:class:`int`) [long long]
       Convert a C :c:expr:`long long` to a Python integer object.
 
+   .. _capi-py-buildvalue-format-K:
+
    ``K`` (:class:`int`) [unsigned long long]
       Convert a C :c:expr:`unsigned long long` to a Python integer object.
 
@@ -647,6 +685,13 @@ Building values
 
    ``p`` (:class:`bool`) [int]
       Convert a C :c:expr:`int` to a Python :class:`bool` object.
+
+      Be aware that this format requires an ``int`` argument.
+      Unlike most other contexts in C, variadic arguments are not coerced to
+      a suitable type automatically.
+      You can convert another type (for example, a pointer or a float) to a
+      suitable ``int`` value using ``(x) ? 1 : 0`` or ``!!x``.
+
       .. versionadded:: 3.14
 
    ``c`` (:class:`bytes` of length 1) [char]

@@ -1,2 +1,0 @@
-The iOS testbed now correctly handles symlinks used as Python framework
-references.
