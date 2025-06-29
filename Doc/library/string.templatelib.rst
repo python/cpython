@@ -11,8 +11,9 @@
 
 .. seealso::
 
+   :ref:`T-strings tutorial <tut-t-strings>`
    :ref:`Format strings <f-strings>`
-
+   :ref:`T-string literal syntax <t-strings>`
 
 
 .. _template-strings:
@@ -22,47 +23,12 @@ Template strings
 
 .. versionadded:: 3.14
 
-Template strings are a generalization of :ref:`f-strings <f-strings>`
-that allow for powerful string processing. The :class:`Template` class
-provides direct access to the static and interpolated (substituted) parts of
-a string.
+Template strings are an extension of :ref:`f-strings <f-strings>`
+that allow for greater control of formatting behavior. The :class:`Template`
+class gives you access to the static and interpolated (in curly braces)
+parts of a string *before* they are combined into a final string.
 
-The most common way to create a :class:`!Template` instance is to use the
-:ref:`t-string literal syntax <t-strings>`. This syntax is identical to that of
-:ref:`f-strings`, except that the string is prefixed with a ``t`` instead of
-an ``f``. For example, the following code creates a :class:`!Template`:
-
-   >>> name = "World"
-   >>> greeting = t"Hello {name}!"
-   >>> type(greeting)
-   <class 'string.templatelib.Template'>
-   >>> list(greeting)
-   ['Hello ', Interpolation('World', 'name', None, ''), '!']
-
-The :class:`Interpolation` class represents an expression inside a template
-string. It contains the evaluated value of the interpolation (``'World'`` in
-this example), the original expression text (``'name'``), and optional
-conversion and format specification attributes.
-
-Templates can be processed in a variety of ways. For instance, here's a
-simple example that converts static strings to lowercase and interpolated
-values to uppercase:
-
-   >>> from string.templatelib import Template
-   >>> def lower_upper(template: Template) -> str:
-   ...     return ''.join(
-   ...         part.lower() if isinstance(part, str) else part.value.upper()
-   ...         for part in template
-   ...     )
-   ...
-   >>> name = "World"
-   >>> greeting = t"Hello {name}!"
-   >>> lower_upper(greeting)
-   'hello WORLD!'
-
-More interesting use cases include sanitizing user input (e.g., to prevent SQL
-injection or cross-site scripting attacks) or processing domain specific
-languages.
+See the :ref:`t-strings tutorial <tut-t-strings>` for an introduction.
 
 
 .. _templatelib-template:
@@ -82,28 +48,45 @@ reassigned.
    :param args: A mix of strings and :class:`Interpolation` instances in any order.
    :type args: str | Interpolation
 
-   While :ref:`t-string literal syntax <t-strings>` is the most common way to
-   create :class:`!Template` instances, it is also possible to create them
-   directly using the constructor:
+   The most common way to create a :class:`!Template` instance is to use the
+   :ref:`t-string literal syntax <t-strings>`. This syntax is identical to that of
+   :ref:`f-strings` except that it uses a ``t`` instead of an ``f``:
+
+   >>> name = "World"
+   >>> template = t"Hello {name}!"
+   >>> type(template)
+   <class 'string.templatelib.Template'>
+   >>> template.strings
+   ('Hello ', '!')
+   >>> template.values
+   ('World',)
+
+   While literal syntax is the most common way to create :class:`!Template`
+   instances, it is also possible to create them directly using the constructor:
 
    >>> from string.templatelib import Interpolation, Template
    >>> name = "World"
-   >>> greeting = Template("Hello, ", Interpolation(name, "name"), "!")
-   >>> list(greeting)
+   >>> template = Template("Hello, ", Interpolation(name, "name"), "!")
+   >>> list(template)
    ['Hello, ', Interpolation('World', 'name', None, ''), '!']
 
-   If two or more consecutive strings are passed, they will be concatenated into a single value in the :attr:`~Template.strings` attribute. For example, the following code creates a :class:`Template` with a single final string:
+   If two or more consecutive strings are passed, they will be concatenated
+   into a single value in the :attr:`~Template.strings` attribute. For example,
+   the following code creates a :class:`Template` with a single final string:
 
    >>> from string.templatelib import Template
-   >>> greeting = Template("Hello ", "World", "!")
-   >>> greeting.strings
+   >>> template = Template("Hello ", "World", "!")
+   >>> template.strings
    ('Hello World!',)
 
-   If two or more consecutive interpolations are passed, they will be treated as separate interpolations and an empty string will be inserted between them. For example, the following code creates a template with a single value in the :attr:`~Template.strings` attribute:
+   If two or more consecutive interpolations are passed, they will be treated
+   as separate interpolations and an empty string will be inserted between them.
+   For example, the following code creates a template with a single value in
+   the :attr:`~Template.strings` attribute:
 
    >>> from string.templatelib import Interpolation, Template
-   >>> greeting = Template(Interpolation("World", "name"), Interpolation("!", "punctuation"))
-   >>> greeting.strings
+   >>> template = Template(Interpolation("World", "name"), Interpolation("!", "punctuation"))
+   >>> template.strings
    ('', '', '')
 
    .. attribute:: strings
@@ -156,7 +139,8 @@ reassigned.
        ('World',)
 
        The ``values`` tuple is always the same length as the
-       ``interpolations`` tuple.
+       ``interpolations`` tuple. It is equivalent to
+       ``tuple(i.value for i in template.interpolations)``.
 
    .. method:: __iter__()
 
@@ -175,7 +159,7 @@ reassigned.
 
    .. method:: __add__(other)
 
-       Concatenate this template with another template, returning a new
+       Concatenate this template with another, returning a new
        :class:`!Template` instance:
 
        >>> name = "World"
@@ -190,11 +174,13 @@ reassigned.
        an :class:`!Interpolation` (to treat it as dynamic):
 
        >>> from string.templatelib import Template, Interpolation
-       >>> greeting = t"Hello "
-       >>> greeting += Template("there ")  # Treat as static
+       >>> template = t"Hello "
+       >>> # Treat "there " as a static string
+       >>> template += Template("there ")
+       >>> # Treat name as an interpolation
        >>> name = "World"
-       >>> greeting += Template(Interpolation(name, "name"))  # Treat as dynamic
-       >>> list(greeting)
+       >>> template += Template(Interpolation(name, "name"))
+       >>> list(template)
        ['Hello there ', Interpolation('World', 'name', None, '')]
 
 
