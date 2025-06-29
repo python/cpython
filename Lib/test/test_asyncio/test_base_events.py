@@ -1195,16 +1195,16 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         # Test for gh-135836: Fix IndexError when Happy Eyeballs algorithm
         # results in empty exceptions list
         from unittest import mock
-        
+
         async def getaddrinfo(*args, **kw):
             return [(socket.AF_INET, socket.SOCK_STREAM, 0, '', ('127.0.0.1', 80)),
                     (socket.AF_INET6, socket.SOCK_STREAM, 0, '', ('::1', 80))]
-        
+
         def getaddrinfo_task(*args, **kwds):
             return self.loop.create_task(getaddrinfo(*args, **kwds))
-        
+
         self.loop.getaddrinfo = getaddrinfo_task
-        
+
         # Mock staggered_race to return empty exceptions list
         # This simulates the scenario where Happy Eyeballs algorithm
         # cancels all attempts but doesn't properly collect exceptions
@@ -1213,10 +1213,10 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             async def mock_race(coro_fns, delay, loop):
                 return None, []
             mock_staggered.side_effect = mock_race
-            
+
             coro = self.loop.create_connection(
                 MyProto, 'example.com', 80, happy_eyeballs_delay=0.1)
-            
+
             # Should raise TimeoutError instead of IndexError
             with self.assertRaises(TimeoutError):
                 self.loop.run_until_complete(coro)
