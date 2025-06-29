@@ -1,1 +1,2 @@
-:mod:`http.cookiejar` Fix the bug happens when trying to prase ports of a IPv6 address in :class:`~http.cookiejar.DefaultCookiePolicy`
+:mod:`http.cookiejar`: Fix a bug that occurs when :class:`~http.cookiejar.DefaultCookiePolicy`
+attempts to parse the port of an IPv6 address.
