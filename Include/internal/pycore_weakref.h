@@ -45,6 +45,7 @@ extern "C" {
 
 #define FT_CLEAR_WEAKREFS(obj, weakref_list)        \
     do {                                            \
+        assert(Py_REFCNT(obj) == 0);                \
         if (weakref_list != NULL) {                 \
             PyObject_ClearWeakRefs(obj);            \
         }                                           \
