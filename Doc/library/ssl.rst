@@ -1078,8 +1078,9 @@ SSL Sockets
      (but passing a non-zero ``flags`` argument is not allowed)
    - :meth:`~socket.socket.send`, :meth:`~socket.socket.sendall` (with
      the same limitation)
-   - :meth:`~socket.socket.sendfile` (but :mod:`os.sendfile` will be used
-     for plain-text sockets only, else :meth:`~socket.socket.send` will be used)
+   - :meth:`~socket.socket.sendfile` (it may be high-performant only when
+     the kernel TLS is enabled by setting :data:`~ssl.OP_ENABLE_KTLS` or when a
+     socket is plain-text, else :meth:`~socket.socket.send` will be used)
    - :meth:`~socket.socket.shutdown`
 
    However, since the SSL (and TLS) protocol has its own framing atop
@@ -1112,6 +1113,11 @@ SSL Sockets
       Python now uses ``SSL_read_ex`` and ``SSL_write_ex`` internally. The
       functions support reading and writing of data larger than 2 GB. Writing
       zero-length data no longer fails with a protocol violation error.
+
+   .. versionchanged:: next
+      Python now uses ``SSL_sendfile`` internally when possible. The
+      function sends a file more efficiently because it performs TLS encryption
+      in the kernel to avoid additional context switches.
 
 SSL sockets also have the following additional methods and attributes:
 
