@@ -6176,6 +6176,27 @@ int___round___impl(PyObject *self, PyObject *o_ndigits)
         return long_long(self);
     }
 
+    int64_t n, e;
+
+    if (PyLong_AsInt64(ndigits, &n) < 0) {
+        Py_DECREF(ndigits);
+        return NULL;
+    }
+    n = -n;
+
+    /* A quick exit, if the result is zero.
+     * We start from criteria abs(self) < 10**(n - 1).  Then, from
+     * definition of the _PyLong_Frexp() we have
+     * abs(self) < 10*10**(log10(2)*e) < 10**(e/3 + 1). */
+    (void)_PyLong_Frexp((PyLongObject *)self, &e);
+    assert(e >= 0);
+    assert(!PyErr_Occurred());
+
+    if (e/3 + 2 < n) {
+        Py_DECREF(ndigits);
+        return _PyLong_GetZero();
+    }
+
     /* result = self - divmod_near(self, 10 ** -ndigits)[1] */
     PyObject *temp = (PyObject*)long_neg((PyLongObject*)ndigits);
     Py_SETREF(ndigits, temp);
