@@ -118,7 +118,7 @@ Interactive Interpreter Objects
    with it.
 
 
-.. method:: InteractiveInterpreter.showsyntaxerror(filename=None)
+.. method:: InteractiveInterpreter.showsyntaxerror(filename=None, **kwargs)
 
    Display the syntax error that just occurred.  This does not display a stack
    trace because there isn't one for syntax errors. If *filename* is given, it is
@@ -172,7 +172,7 @@ interpreter objects as well as the following additions.
       Print an exit message when exiting.
 
 
-.. method:: InteractiveConsole.push(line)
+.. method:: InteractiveConsole.push(line, filename=None, _symbol="single")
 
    Push a line of source text to the interpreter. The line should not have a
    trailing newline; it may have internal newlines.  The line is appended to a
