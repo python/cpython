@@ -2396,7 +2396,9 @@ altbininstall: $(BUILDPYTHON) @FRAMEWORKPYTHONW@
 	else \
 		$(INSTALL_PROGRAM) $(STRIPFLAG) Mac/pythonw $(DESTDIR)$(BINDIR)/python$(LDVERSION)$(EXE); \
 	fi
-	-if test "$(VERSION)" != "$(LDVERSION)"; then \
+	# For framework installs, the unsuffixed binary file name is currently
+	# needed for getpath.py setting of sys._base_executable for venv's
+	-if test "$(VERSION)" != "$(LDVERSION)" && test "$(PYTHONFRAMEWORKDIR)" != "no-framework"; then \
 		if test -f $(DESTDIR)$(BINDIR)/python$(VERSION)$(EXE) -o -h $(DESTDIR)$(BINDIR)/python$(VERSION)$(EXE); \
 		then rm -f $(DESTDIR)$(BINDIR)/python$(VERSION)$(EXE); \
 		fi; \
@@ -2419,16 +2421,16 @@ altbininstall: $(BUILDPYTHON) @FRAMEWORKPYTHONW@
 		fi; \
 	fi
 	if test "x$(LIPO_32BIT_FLAGS)" != "x" ; then \
-		rm -f $(DESTDIR)$(BINDIR)/python$(VERSION)-32$(EXE); \
+		rm -f $(DESTDIR)$(BINDIR)/python$(LDVERSION)-32$(EXE); \
 		lipo $(LIPO_32BIT_FLAGS) \
-			-output $(DESTDIR)$(BINDIR)/python$(VERSION)-32$(EXE) \
-			$(DESTDIR)$(BINDIR)/python$(VERSION)$(EXE); \
+			-output $(DESTDIR)$(BINDIR)/python$(LDVERSION)-32$(EXE) \
+			$(DESTDIR)$(BINDIR)/python$(LDVERSION)$(EXE); \
 	fi
 	if test "x$(LIPO_INTEL64_FLAGS)" != "x" ; then \
-		rm -f $(DESTDIR)$(BINDIR)/python$(VERSION)-intel64$(EXE); \
+		rm -f $(DESTDIR)$(BINDIR)/python$(LDVERSION)-intel64$(EXE); \
 		lipo $(LIPO_INTEL64_FLAGS) \
-			-output $(DESTDIR)$(BINDIR)/python$(VERSION)-intel64$(EXE) \
-			$(DESTDIR)$(BINDIR)/python$(VERSION)$(EXE); \
+			-output $(DESTDIR)$(BINDIR)/python$(LDVERSION)-intel64$(EXE) \
+			$(DESTDIR)$(BINDIR)/python$(LDVERSION)$(EXE); \
 	fi
 	# Install macOS debug information (if available)
 	if test -d "$(BUILDPYTHON).dSYM"; then \
@@ -2453,40 +2455,25 @@ altbininstall: $(BUILDPYTHON) @FRAMEWORKPYTHONW@
 # problems for anything else trying to run 'python3' while we install, particularly
 # if we're installing in parallel with -j.
 bininstall: commoninstall altbininstall
-	if test ! -d $(DESTDIR)$(LIBPC); then \
-		echo "Creating directory $(LIBPC)"; \
-		$(INSTALL) -d -m $(DIRMODE) $(DESTDIR)$(LIBPC); \
-	fi
-	-if test -f $(DESTDIR)$(BINDIR)/python3$(EXE) -o -h $(DESTDIR)$(BINDIR)/python3$(EXE); \
-	then rm -f $(DESTDIR)$(BINDIR)/python3$(EXE); \
-	else true; \
-	fi
-	(cd $(DESTDIR)$(BINDIR); $(LN) -s python$(VERSION)$(EXE) python3$(EXE))
-	-if test "$(VERSION)" != "$(LDVERSION)"; then \
-		rm -f $(DESTDIR)$(BINDIR)/python$(VERSION)-config; \
-		(cd $(DESTDIR)$(BINDIR); $(LN) -s python$(LDVERSION)-config python$(VERSION)-config); \
-		rm -f $(DESTDIR)$(LIBPC)/python-$(VERSION).pc; \
-		(cd $(DESTDIR)$(LIBPC); $(LN) -s python-$(LDVERSION).pc python-$(VERSION).pc); \
-		rm -f $(DESTDIR)$(LIBPC)/python-$(VERSION)-embed.pc; \
-		(cd $(DESTDIR)$(LIBPC); $(LN) -s python-$(LDVERSION)-embed.pc python-$(VERSION)-embed.pc); \
-	fi
-	-rm -f $(DESTDIR)$(BINDIR)/python3-config
-	(cd $(DESTDIR)$(BINDIR); $(LN) -s python$(VERSION)-config python3-config)
-	-rm -f $(DESTDIR)$(LIBPC)/python3.pc
-	(cd $(DESTDIR)$(LIBPC); $(LN) -s python-$(VERSION).pc python3.pc)
-	-rm -f $(DESTDIR)$(LIBPC)/python3-embed.pc
-	(cd $(DESTDIR)$(LIBPC); $(LN) -s python-$(VERSION)-embed.pc python3-embed.pc)
-	-rm -f $(DESTDIR)$(BINDIR)/idle3
-	(cd $(DESTDIR)$(BINDIR); $(LN) -s idle$(VERSION) idle3)
-	-rm -f $(DESTDIR)$(BINDIR)/pydoc3
-	(cd $(DESTDIR)$(BINDIR); $(LN) -s pydoc$(VERSION) pydoc3)
+	-rm -f $(DESTDIR)$(BINDIR)/python3$(ABIFLAGS)$(EXE)
+	(cd $(DESTDIR)$(BINDIR); $(LN) -s python$(LDVERSION)$(EXE) python3$(ABIFLAGS)$(EXE))
+	-rm -f $(DESTDIR)$(BINDIR)/python3$(ABIFLAGS)-config
+	(cd $(DESTDIR)$(BINDIR); $(LN) -s python$(LDVERSION)-config python3$(ABIFLAGS)-config)
+	-rm -f $(DESTDIR)$(LIBPC)/python3$(ABIFLAGS).pc
+	(cd $(DESTDIR)$(LIBPC); $(LN) -s python-$(LDVERSION).pc python3$(ABIFLAGS).pc)
+	-rm -f $(DESTDIR)$(LIBPC)/python3$(ABIFLAGS)-embed.pc
+	(cd $(DESTDIR)$(LIBPC); $(LN) -s python-$(LDVERSION)-embed.pc python3$(ABIFLAGS)-embed.pc)
+	-rm -f $(DESTDIR)$(BINDIR)/idle3$(ABIFLAGS)
+	(cd $(DESTDIR)$(BINDIR); $(LN) -s idle$(LDVERSION) idle3$(ABIFLAGS))
+	-rm -f $(DESTDIR)$(BINDIR)/pydoc3$(ABIFLAGS)
+	(cd $(DESTDIR)$(BINDIR); $(LN) -s pydoc$(LDVERSION) pydoc3$(ABIFLAGS))
 	if test "x$(LIPO_32BIT_FLAGS)" != "x" ; then \
-		rm -f $(DESTDIR)$(BINDIR)/python3-32$(EXE); \
-		(cd $(DESTDIR)$(BINDIR); $(LN) -s python$(VERSION)-32$(EXE) python3-32$(EXE)) \
+		rm -f $(DESTDIR)$(BINDIR)/python3$(ABIFLAGS)-32$(EXE); \
+		(cd $(DESTDIR)$(BINDIR); $(LN) -s python$(LDVERSION)-32$(EXE) python3$(ABIFLAGS)-32$(EXE)) \
 	fi
 	if test "x$(LIPO_INTEL64_FLAGS)" != "x" ; then \
-		rm -f $(DESTDIR)$(BINDIR)/python3-intel64$(EXE); \
-		(cd $(DESTDIR)$(BINDIR); $(LN) -s python$(VERSION)-intel64$(EXE) python3-intel64$(EXE)) \
+		rm -f $(DESTDIR)$(BINDIR)/python3$(ABIFLAGS)-intel64$(EXE); \
+		(cd $(DESTDIR)$(BINDIR); $(LN) -s python$(LDVERSION)-intel64$(EXE) python3$(ABIFLAGS)-intel64$(EXE)) \
 	fi
 
 # Install the versioned manual page
@@ -2922,8 +2909,8 @@ libainstall: all scripts
 	$(INSTALL_SCRIPT) $(srcdir)/install-sh $(DESTDIR)$(LIBPL)/install-sh
 	$(INSTALL_SCRIPT) python-config.py $(DESTDIR)$(LIBPL)/python-config.py
 	$(INSTALL_SCRIPT) python-config $(DESTDIR)$(BINDIR)/python$(LDVERSION)-config
-	$(INSTALL_SCRIPT) $(SCRIPT_IDLE) $(DESTDIR)$(BINDIR)/idle$(VERSION)
-	$(INSTALL_SCRIPT) $(SCRIPT_PYDOC) $(DESTDIR)$(BINDIR)/pydoc$(VERSION)
+	$(INSTALL_SCRIPT) $(SCRIPT_IDLE) $(DESTDIR)$(BINDIR)/idle$(LDVERSION)
+	$(INSTALL_SCRIPT) $(SCRIPT_PYDOC) $(DESTDIR)$(BINDIR)/pydoc$(LDVERSION)
 	@if [ -s Modules/python.exp -a \
 		"`echo $(MACHDEP) | sed 's/^\(...\).*/\1/'`" = "aix" ]; then \
 		echo; echo "Installing support files for building shared extension modules on AIX:"; \
