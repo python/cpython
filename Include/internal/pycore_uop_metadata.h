@@ -64,6 +64,10 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_STORE_FAST_LOAD_FAST] = HAS_ARG_FLAG | HAS_LOCAL_FLAG | HAS_ESCAPES_FLAG,
     [_STORE_FAST_STORE_FAST] = HAS_ARG_FLAG | HAS_LOCAL_FLAG | HAS_ESCAPES_FLAG,
     [_POP_TOP] = HAS_ESCAPES_FLAG | HAS_PURE_FLAG,
+    [_POP_TOP_NOP] = 0,
+    [_POP_TOP_INT] = 0,
+    [_POP_TOP_FLOAT] = 0,
+    [_POP_TOP_UNICODE] = 0,
     [_POP_TWO] = HAS_ESCAPES_FLAG,
     [_PUSH_NULL] = HAS_PURE_FLAG,
     [_END_FOR] = HAS_ESCAPES_FLAG | HAS_NO_SAVE_IP_FLAG,
@@ -102,7 +106,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_BINARY_OP_ADD_UNICODE] = HAS_ERROR_FLAG | HAS_PURE_FLAG,
     [_BINARY_OP_INPLACE_ADD_UNICODE] = HAS_LOCAL_FLAG | HAS_DEOPT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_GUARD_BINARY_OP_EXTEND] = HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG,
-    [_BINARY_OP_EXTEND] = HAS_ESCAPES_FLAG | HAS_PURE_FLAG,
+    [_BINARY_OP_EXTEND] = HAS_ESCAPES_FLAG,
     [_BINARY_SLICE] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_STORE_SLICE] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_BINARY_OP_SUBSCR_LIST_INT] = HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG,
@@ -593,8 +597,12 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_POP_EXCEPT] = "_POP_EXCEPT",
     [_POP_ITER] = "_POP_ITER",
     [_POP_TOP] = "_POP_TOP",
+    [_POP_TOP_FLOAT] = "_POP_TOP_FLOAT",
+    [_POP_TOP_INT] = "_POP_TOP_INT",
     [_POP_TOP_LOAD_CONST_INLINE] = "_POP_TOP_LOAD_CONST_INLINE",
     [_POP_TOP_LOAD_CONST_INLINE_BORROW] = "_POP_TOP_LOAD_CONST_INLINE_BORROW",
+    [_POP_TOP_NOP] = "_POP_TOP_NOP",
+    [_POP_TOP_UNICODE] = "_POP_TOP_UNICODE",
     [_POP_TWO] = "_POP_TWO",
     [_POP_TWO_LOAD_CONST_INLINE_BORROW] = "_POP_TWO_LOAD_CONST_INLINE_BORROW",
     [_PUSH_EXC_INFO] = "_PUSH_EXC_INFO",
@@ -748,6 +756,14 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _STORE_FAST_STORE_FAST:
             return 2;
         case _POP_TOP:
+            return 1;
+        case _POP_TOP_NOP:
+            return 1;
+        case _POP_TOP_INT:
+            return 1;
+        case _POP_TOP_FLOAT:
+            return 1;
+        case _POP_TOP_UNICODE:
             return 1;
         case _POP_TWO:
             return 2;
