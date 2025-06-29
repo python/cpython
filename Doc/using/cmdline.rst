@@ -843,7 +843,7 @@ conflict.
 
 .. envvar:: PYTHONUNBUFFERED
 
-   If this is set to a non-empty string it is equivalent to specifying the
+   If this is set, it is equivalent to specifying the
    :option:`-u` option.
 
 
