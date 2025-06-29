@@ -1758,6 +1758,15 @@ multiprocessing
   :keyword:`finally` clauses to print a stack trace for the terminated
   process. (Contributed by Artem Pulkin in :gh:`131913`.)
 
+multiprocessing
+---------------
+
+* Add the :attr:`~multiprocessing.Process.closed` property to
+  :class:`multiprocessing.Process` objects to determine whether
+  they have been closed or not.
+  (Contributed by James Roy in :gh:`87063`.)
+
+
 operator
 --------
 
