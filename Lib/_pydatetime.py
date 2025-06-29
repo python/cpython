@@ -2143,7 +2143,13 @@ class datetime(date):
         utc = (self - myoffset).replace(tzinfo=tz)
 
         # Convert from UTC to tz's local time.
-        return tz.fromutc(utc)
+        result = tz.fromutc(utc)
+
+        # Set fold if there is discrepancy between timestamp and timezone.
+        if tz.utcoffset(result) != myoffset:
+            result = result.replace(fold=1)
+
+        return result
 
     # Ways to produce a string.
 
