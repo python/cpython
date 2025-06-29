@@ -1768,6 +1768,18 @@ operator
   (Contributed by Raymond Hettinger and Nico Mexis in :gh:`115808`.)
 
 
+datetime
+--------
+
+* Add support for the ISO 8601 basic format for the following methods:
+
+  - :meth:`date.isoformat <datetime.date.isoformat>`
+  - :meth:`datetime.isoformat <datetime.datetime.isoformat>`
+  - :meth:`time.isoformat <datetime.time.isoformat>`
+
+  (Contributed by Bénédikt Tran in :gh:`118948`.)
+
+
 os
 --
 
