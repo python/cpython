@@ -1,0 +1,1 @@
+Make :c:func:`PyBytes_Repr` available to general objects supporting buffer protocol. Patched by Xiang Zhang and Furkan Onder.
