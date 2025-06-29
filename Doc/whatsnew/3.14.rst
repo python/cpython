@@ -1952,6 +1952,11 @@ symtable
 
   (Contributed by Bénédikt Tran in :gh:`120029`.)
 
+unittest
+--------
+
+* The new :meth:`.TextTestResult.getName` method allows customizing test names
+  in test results.
 
 sys
 ---
