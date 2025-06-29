@@ -1073,6 +1073,14 @@ validate_refcounts(const mi_heap_t *heap, const mi_heap_area_t *area,
         return true;
     }
 
+    // This assert mirrors the one in Python/gc.c:update_refs(). There must be
+    // no tracked objects with a reference count of 0 when the cyclic
+    // collector starts. If there is, then the collector will double dealloc
+    // the object. The likely cause for hitting this is a faulty .tp_dealloc.
+    // Also see the comment in `update_refs()`.
+    _PyObject_ASSERT_WITH_MSG(op, Py_REFCNT(op) > 0,
+                              "tracked objects must have a reference count > 0");
+
     _PyObject_ASSERT_WITH_MSG(op, !gc_is_unreachable(op),
                               "object should not be marked as unreachable yet");
 
@@ -1422,13 +1430,6 @@ static int
 deduce_unreachable_heap(PyInterpreterState *interp,
                         struct collection_state *state)
 {
-
-#ifdef GC_DEBUG
-    // Check that all objects are marked as unreachable and that the computed
-    // reference count difference (stored in `ob_tid`) is non-negative.
-    gc_visit_heaps(interp, &validate_refcounts, &state->base);
-#endif
-
     // Identify objects that are directly reachable from outside the GC heap
     // by computing the difference between the refcount and the number of
     // incoming references.
@@ -2153,6 +2154,13 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
     for (int i = 1; i <= generation; ++i) {
         state->gcstate->old[i-1].count = 0;
     }
+
+#ifdef GC_DEBUG
+    // Before we start, check that the heap is in a good condition. There must
+    // be no objects with a zero reference count. And `ob_tid` must only have a
+    // thread if the refcount is unmerged.
+    gc_visit_heaps(interp, &validate_refcounts, &state->base);
+#endif
 
     _Py_FOR_EACH_TSTATE_BEGIN(interp, p) {
         _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)p;
