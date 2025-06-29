@@ -33,7 +33,7 @@ increase and decrease the objects reference count.
 
 In order to offer sufficient resilience to C extensions using the stable ABI
 compiled against 3.11 or earlier, we set the initial value near the
-middle of the range (2**31, 2**32). That way the the refcount can be
+middle of the range (2**31, 2**32). That way the refcount can be
 off by ~1 billion without affecting immortality.
 
 Reference count increases will use saturated arithmetic, taking advantage of
