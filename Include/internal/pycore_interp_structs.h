@@ -810,6 +810,13 @@ struct _is {
            or the size specified by the THREAD_STACK_SIZE macro. */
         /* Used in Python/thread.c. */
         size_t stacksize;
+
+        struct _Py_finalizing_threads {
+            Py_ssize_t countdown;
+            PyEvent finished;
+            PyMutex mutex;
+            int shutting_down;
+        } finalizing;
     } threads;
 
     /* Reference to the _PyRuntime global variable. This field exists

@@ -2313,6 +2313,66 @@ test_get_incomplete_frame(void)
     return result;
 }
 
+const char *THREAD_CODE = \
+    "import time\n"
+    "time.sleep(0.2)\n"
+    "def fib(n):\n"
+    "  if n <= 1:\n"
+    "    return n\n"
+    "  else:\n"
+    "    return fib(n - 1) + fib(n - 2)\n"
+    "fib(10)";
+
+typedef struct {
+    PyInterpreterRef ref;
+    int done;
+} ThreadData;
+
+static void
+do_tstate_ensure(void *arg)
+{
+    ThreadData *data = (ThreadData *)arg;
+    int res = PyThreadState_Ensure(data->ref);
+    assert(res == 0);
+    PyThreadState_Ensure(data->ref);
+    PyThreadState_Ensure(data->ref);
+    PyGILState_STATE gstate = PyGILState_Ensure();
+    PyThreadState_Ensure(data->ref);
+    res = PyRun_SimpleString(THREAD_CODE);
+    PyThreadState_Release();
+    PyGILState_Release(gstate);
+    PyThreadState_Release();
+    PyThreadState_Release();
+    assert(res == 0);
+    PyThreadState_Release();
+    PyInterpreterRef_Close(data->ref);
+    data->done = 1;
+}
+
+static int
+test_thread_state_ensure(void)
+{
+    _testembed_initialize();
+    PyThread_handle_t handle;
+    PyThread_ident_t ident;
+    PyInterpreterRef ref;
+    if (PyInterpreterRef_Get(&ref) < 0) {
+        return -1;
+    };
+    ThreadData data = { ref };
+    if (PyThread_start_joinable_thread(do_tstate_ensure, &data,
+                                       &ident, &handle) < 0) {
+        PyInterpreterRef_Close(ref);
+        return -1;
+    }
+    // We hold a strong interpreter reference, so we don't
+    // have to worry about the interpreter shutting down before
+    // we finalize.
+    Py_Finalize();
+    assert(data.done == 1);
+    return 0;
+}
+
 static void
 do_gilstate_ensure(void *event_ptr)
 {
@@ -2338,6 +2398,31 @@ test_gilstate_after_finalization(void)
     // We're now pretty confident that the thread went for
     // PyGILState_Ensure(), but that means it got hung.
     return PyThread_detach_thread(handle);
+}
+
+static int
+test_main_interpreter_ref(void)
+{
+    // It should not work before the runtime has started.
+    PyInterpreterRef ref;
+    int res = PyInterpreterRef_Main(&ref);
+    (void)res;
+    assert(res == -1);
+
+    _testembed_initialize();
+
+    // Main interpreter is initialized and ready.
+    res = PyInterpreterRef_Main(&ref);
+    assert(res == 0);
+    assert(PyInterpreterRef_AsInterpreter(ref) == PyInterpreterState_Main());
+    PyInterpreterRef_Close(ref);
+
+    Py_Finalize();
+
+    // Main interpreter is dead, we can no longer acquire references to it.
+    res = PyInterpreterRef_Main(&ref);
+    assert(res == -1);
+    return 0;
 }
 
 /* *********************************************************
@@ -2429,7 +2514,9 @@ static struct TestCase TestCases[] = {
     {"test_frozenmain", test_frozenmain},
 #endif
     {"test_get_incomplete_frame", test_get_incomplete_frame},
+    {"test_thread_state_ensure", test_thread_state_ensure},
     {"test_gilstate_after_finalization", test_gilstate_after_finalization},
+    {"test_main_interpreter_ref", test_main_interpreter_ref},
     {NULL, NULL}
 };
 

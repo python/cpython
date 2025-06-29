@@ -97,6 +97,7 @@ static PyStatus init_android_streams(PyThreadState *tstate);
 static PyStatus init_apple_streams(PyThreadState *tstate);
 #endif
 static void wait_for_thread_shutdown(PyThreadState *tstate);
+static void wait_for_interp_references(PyInterpreterState *interp);
 static void finalize_subinterpreters(void);
 static void call_ll_exitfuncs(_PyRuntimeState *runtime);
 
@@ -2022,6 +2023,9 @@ _Py_Finalize(_PyRuntimeState *runtime)
     // Wrap up existing "threading"-module-created, non-daemon threads.
     wait_for_thread_shutdown(tstate);
 
+    // Wait for the interpreter's reference count to reach zero
+    wait_for_interp_references(tstate->interp);
+
     // Make any remaining pending calls.
     _Py_FinishPendingCalls(tstate);
 
@@ -2437,6 +2441,9 @@ Py_EndInterpreter(PyThreadState *tstate)
 
     // Wrap up existing "threading"-module-created, non-daemon threads.
     wait_for_thread_shutdown(tstate);
+
+    // Wait for the interpreter's reference count to reach zero
+    wait_for_interp_references(tstate->interp);
 
     // Make any remaining pending calls.
     _Py_FinishPendingCalls(tstate);
@@ -3462,6 +3469,47 @@ wait_for_thread_shutdown(PyThreadState *tstate)
         Py_DECREF(result);
     }
     Py_DECREF(threading);
+}
+
+/* Wait for the interpreter's reference count to reach zero.
+   See PEP 788. */
+static void
+wait_for_interp_references(PyInterpreterState *interp)
+{
+    assert(interp != NULL);
+    struct _Py_finalizing_threads *finalizing = &interp->threads.finalizing;
+    _Py_atomic_store_int_release(&finalizing->shutting_down, 1);
+    PyMutex_Lock(&finalizing->mutex);
+    if (_Py_atomic_load_ssize_relaxed(&finalizing->countdown) == 0) {
+        // Nothing to do.
+        PyMutex_Unlock(&finalizing->mutex);
+        return;
+    }
+    PyMutex_Unlock(&finalizing->mutex);
+
+    PyTime_t wait_max = 1000 * 1000 * 100; // 100 milliseconds
+    PyTime_t wait_ns = 1000; // 1 microsecond
+
+    while (true) {
+        if (PyEvent_WaitTimed(&finalizing->finished, wait_ns, 1)) {
+            // Event set
+            break;
+        }
+
+        wait_ns *= 2;
+        wait_ns = Py_MIN(wait_ns, wait_max);
+
+        if (PyErr_CheckSignals()) {
+            PyErr_FormatUnraisable("Exception ignored while waiting on interpreter shutdown");
+            /* The user CTRL+C'd us, bail out without waiting for a reference
+               count of zero.
+
+               This will probably cause threads to crash, but maybe that's
+               better than a deadlock. It might be worth intentionally
+               leaking subinterpreters to prevent some crashes here. */
+            break;
+        }
+    }
 }
 
 int Py_AtExit(void (*func)(void))
