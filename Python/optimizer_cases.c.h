@@ -129,6 +129,12 @@
         }
 
         case _POP_TOP_INT: {
+            JitOptRef value;
+            value = stack_pointer[-1];
+            if (PyJitRef_IsBorrowed(value) ||
+                sym_is_immortal(PyJitRef_Unwrap(value))) {
+                REPLACE_OP(this_instr, _POP_TOP_NOP, 0, 0);
+            }
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;
@@ -965,7 +971,10 @@
         }
 
         case _STORE_SUBSCR_LIST_INT: {
-            stack_pointer += -3;
+            JitOptRef ss;
+            ss = sym_new_not_null(ctx);
+            stack_pointer[-3] = ss;
+            stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }

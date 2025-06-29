@@ -1774,6 +1774,7 @@
             _PyStackRef sub_st;
             _PyStackRef list_st;
             _PyStackRef value;
+            _PyStackRef ss;
             sub_st = stack_pointer[-1];
             list_st = stack_pointer[-2];
             value = stack_pointer[-3];
@@ -1803,8 +1804,9 @@
                                         PyStackRef_AsPyObjectSteal(value));
             assert(old_value != NULL);
             UNLOCK_OBJECT(list);
-            PyStackRef_CLOSE_SPECIALIZED(sub_st, _PyLong_ExactDealloc);
-            stack_pointer += -3;
+            ss = sub_st;
+            stack_pointer[-3] = ss;
+            stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(list_st);
