@@ -4026,13 +4026,6 @@ math_nextafter_impl(PyObject *module, double x, double y, PyObject *steps)
         return NULL;
     }
     assert(PyLong_CheckExact(steps));
-    if (_PyLong_IsNegative((PyLongObject *)steps)) {
-        PyErr_SetString(PyExc_ValueError,
-                        "steps must be a non-negative integer");
-        Py_DECREF(steps);
-        return NULL;
-    }
-
     unsigned long long usteps_ull = PyLong_AsUnsignedLongLong(steps);
     // Conveniently, uint64_t and double have the same number of bits
     // on all the platforms we care about.
@@ -4044,7 +4037,12 @@ math_nextafter_impl(PyObject *module, double x, double y, PyObject *steps)
         // usteps_ull can be strictly larger than UINT64_MAX on a machine
         // where unsigned long long has width > 64 bits.
         if (PyErr_Occurred()) {
-            if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+            if (PyErr_ExceptionMatches(PyExc_ValueError)) {
+                PyErr_SetString(PyExc_ValueError,
+                                "steps must be a non-negative integer");
+                return NULL;
+            }
+            else if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
                 PyErr_Clear();
             }
             else {
