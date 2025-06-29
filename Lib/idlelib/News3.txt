@@ -4,6 +4,9 @@ Released on 2025-10-07
 =========================
 
 
+gh-134873: Update code in editor.Editor.load_extension.
+Patch by johnzhou721, Zachary Ware, and Terry J. Reedy.
+
 gh-112936: IDLE - Include Shell menu in single-process mode,
 though with Restart Shell and View Last Restart disabled.
 Patch by Zhikang Yan.

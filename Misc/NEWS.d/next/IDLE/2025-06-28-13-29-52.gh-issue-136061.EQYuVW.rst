@@ -1,0 +1,1 @@
+Update code in editor.Editor.load_extension.  Patch by johnzhou721, Zachary Ware, and Terry J. Reedy.
