@@ -4730,6 +4730,15 @@ class TestMatchArgs(unittest.TestCase):
         C = make_dataclass('C', [('x', int), ('y', int)], namespace={'__match_args__': ('z',)})
         self.assertEqual(C.__match_args__, ('z',))
 
+    def test_match_args_with_classvar_and_initvar(self):
+        @dataclass
+        class A:
+            a: ClassVar[int]
+            b: InitVar[int]
+            c: int
+
+        self.assertEqual(A.__match_args__, ('c',))
+
 
 class TestKeywordArgs(unittest.TestCase):
     def test_no_classvar_kwarg(self):
