@@ -5255,7 +5255,7 @@ load_int(PickleState *state, UnpicklerObject *self)
         }
     }
     else {
-        if (len == 3 && (x == 0 || x == 1)) {
+        if (len == 3 && s[0] == '0' && (s[1] == '0' || s[1] == '1')) {
             if ((value = PyBool_FromLong(x)) == NULL)
                 return -1;
         }
