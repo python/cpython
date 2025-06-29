@@ -1056,10 +1056,10 @@ class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
         m.get_body()
 
     def test_get_bytes_payload_with_quoted_printable_encoding(self):
-        payload = b'Some payload'
+        payload = memoryview(b'Some payload')
         m = self._make_message()
         m.add_header('Content-Transfer-Encoding', 'quoted-printable')
-        m._payload = payload
+        m.set_payload(payload)
         self.assertEqual(m.get_payload(decode=True), payload)
 
 
