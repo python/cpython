@@ -1271,19 +1271,13 @@ class CookieTests(unittest.TestCase):
         res = FakeResponse(headers, "http://127.0.0.1:1234")
         self.assertTrue(pol.set_ok_port(c.make_cookies(res, req)[0], req))
 
-        c.clear()
-
         req = urllib.request.Request("http://acme.com:1234")
         res = FakeResponse(headers, "http://acme.com:1234")
         self.assertTrue(pol.set_ok_port(c.make_cookies(res, req)[0], req))
 
-        c.clear()
-
         req = urllib.request.Request("http://[::1]:1234")
         res = FakeResponse(headers, "http://[::1]:1234")
         self.assertTrue(pol.set_ok_port(c.make_cookies(res, req)[0], req))
-
-        c.clear()
 
         req = urllib.request.Request("http://[::1]:1235")
         res = FakeResponse(headers, "http://[::1]:1235")
@@ -1298,18 +1292,13 @@ class CookieTests(unittest.TestCase):
         res = FakeResponse(headers, "http://127.0.0.1:1234")
         self.assertTrue(pol.return_ok_port(c.make_cookies(res, req)[0], req))
 
-        c.clear()
-
         req = urllib.request.Request("http://acme.com:1234")
         res = FakeResponse(headers, "http://acme.com:1234")
         self.assertTrue(pol.return_ok_port(c.make_cookies(res, req)[0], req))
-        c.clear()
 
         req = urllib.request.Request("http://[::1]:1234")
         res = FakeResponse(headers, "http://[::1]:1234")
         self.assertTrue(pol.return_ok_port(c.make_cookies(res, req)[0], req))
-
-        c.clear()
 
         req = urllib.request.Request("http://[::1]:1235")
         res = FakeResponse(headers, "http://[::1]:1235")
