@@ -2785,6 +2785,15 @@ Notes:
       :exc:`DeprecationWarning`. In 3.15 or later we may change this into
       an error or change the default year to a leap year. See :gh:`70647`.
 
+(11)
+   When parsing a string using :meth:`~.datetime.strptime`, if more than one
+   directive of the same time unit is used, a SyntaxWarning is raised as
+   only the last directive gets parsed and applied to the datetime object. For
+   example, if the format string contains both ``%Y`` and ``%y``, like ``%Y%y``,
+   only the last directive of the string (``%y``) gets used on the resulting
+   datetime object.
+
+
 .. rubric:: Footnotes
 
 .. [#] If, that is, we ignore the effects of Relativity
