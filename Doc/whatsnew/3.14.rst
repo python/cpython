@@ -2640,7 +2640,9 @@ pty
 sqlite3
 -------
 
-* Remove :data:`!version` and :data:`!version_info` from :mod:`sqlite3`.
+* Remove :data:`!version` and :data:`!version_info` from :mod:`sqlite3`;
+  use :data:`~sqlite3.sqlite_version` and :data:`~sqlite3.sqlite_version_info`
+  for the actual version number of the runtime SQLite library.
   (Contributed by Hugo van Kemenade in :gh:`118924`.)
 
 * Disallow using a sequence of parameters with named placeholders.
