@@ -2813,6 +2813,10 @@ The conversion types are:
 |            | character in the result.                            |       |
 +------------+-----------------------------------------------------+-------+
 
+For floating-point formats, the result should be correctly rounded to a given
+precision ``p`` of digits after the decimal point.  The rounding mode matches
+that of the :func:`round` builtin.
+
 Notes:
 
 (1)
