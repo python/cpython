@@ -14,7 +14,6 @@ import sys
 import threading
 import unittest
 import weakref
-import warnings
 from ast import literal_eval
 from unittest import mock
 
@@ -29,7 +28,6 @@ except ImportError:  # pragma: no cover
 from asyncio import base_events
 from asyncio import events
 from asyncio import format_helpers
-from asyncio import futures
 from asyncio import tasks
 from asyncio.log import logger
 from test import support
@@ -105,7 +103,7 @@ def run_until(loop, pred, timeout=support.SHORT_TIMEOUT):
         loop.run_until_complete(tasks.sleep(delay))
         delay = max(delay * 2, 1.0)
     else:
-        raise futures.TimeoutError()
+        raise TimeoutError()
 
 
 def run_once(loop):

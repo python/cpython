@@ -32,12 +32,11 @@ extern "C" {
 
 #include <string.h>
 #include "python_hacl_namespaces.h"
-#include "krml/types.h"
+#include "krml/internal/types.h"
 #include "krml/lowstar_endianness.h"
 #include "krml/internal/target.h"
 
 #include "Hacl_Streaming_Types.h"
-
 
 typedef Hacl_Streaming_MD_state_32 Hacl_Hash_SHA2_state_t_224;
 

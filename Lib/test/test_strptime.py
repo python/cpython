@@ -79,9 +79,6 @@ class LocaleTime_Tests(unittest.TestCase):
         self.assertEqual(self.LT_ins.am_pm[position], strftime_output,
                          "AM/PM representation in the wrong position within the tuple")
 
-    @unittest.skipIf(
-        support.is_emscripten, "musl libc issue on Emscripten, bpo-46390"
-    )
     def test_timezone(self):
         # Make sure timezone is correct
         timezone = time.strftime("%Z", self.time_tuple).lower()
@@ -223,16 +220,18 @@ class StrptimeTests(unittest.TestCase):
         # Make sure ValueError is raised when match fails or format is bad
         self.assertRaises(ValueError, _strptime._strptime_time, data_string="%d",
                           format="%A")
-        for bad_format in ("%", "% ", "%e"):
-            try:
+        for bad_format in ("%", "% ", "%\n"):
+            with (self.subTest(format=bad_format),
+                  self.assertRaisesRegex(ValueError, "stray % in format ")):
                 _strptime._strptime_time("2005", bad_format)
-            except ValueError:
-                continue
-            except Exception as err:
-                self.fail("'%s' raised %s, not ValueError" %
-                            (bad_format, err.__class__.__name__))
-            else:
-                self.fail("'%s' did not raise ValueError" % bad_format)
+        for bad_format in ("%i", "%Oi", "%O", "%O ", "%Ee", "%E", "%E ",
+                           "%.", "%+", "%~", "%\\",
+                           "%O.", "%O+", "%O_", "%O~", "%O\\"):
+            directive = bad_format[1:].rstrip()
+            with (self.subTest(format=bad_format),
+                  self.assertRaisesRegex(ValueError,
+                    f"'{re.escape(directive)}' is a bad directive in format ")):
+                _strptime._strptime_time("2005", bad_format)
 
         msg_week_no_year_or_weekday = r"ISO week directive '%V' must be used with " \
             r"the ISO year directive '%G' and a weekday directive " \
@@ -288,11 +287,11 @@ class StrptimeTests(unittest.TestCase):
         # check that this doesn't chain exceptions needlessly (see #17572)
         with self.assertRaises(ValueError) as e:
             _strptime._strptime_time('', '%D')
-        self.assertIs(e.exception.__suppress_context__, True)
-        # additional check for IndexError branch (issue #19545)
+        self.assertTrue(e.exception.__suppress_context__)
+        # additional check for stray % branch
         with self.assertRaises(ValueError) as e:
-            _strptime._strptime_time('19', '%Y %')
-        self.assertIsNone(e.exception.__context__)
+            _strptime._strptime_time('%', '%')
+        self.assertTrue(e.exception.__suppress_context__)
 
     def test_unconverteddata(self):
         # Check ValueError is raised when there is unconverted data
@@ -337,6 +336,15 @@ class StrptimeTests(unittest.TestCase):
         for m in range(1, 13):
             self.roundtrip('%B', 1, (1900, m, 1, 0, 0, 0, 0, 1, 0))
             self.roundtrip('%b', 1, (1900, m, 1, 0, 0, 0, 0, 1, 0))
+
+    @run_with_locales('LC_TIME', 'az_AZ', 'ber_DZ', 'ber_MA', 'crh_UA')
+    def test_month_locale2(self):
+        # Test for month directives
+        # Month name contains 'İ' ('\u0130')
+        self.roundtrip('%B', 1, (2025, 6, 1, 0, 0, 0, 6, 152, 0))
+        self.roundtrip('%b', 1, (2025, 6, 1, 0, 0, 0, 6, 152, 0))
+        self.roundtrip('%B', 1, (2025, 7, 1, 0, 0, 0, 1, 182, 0))
+        self.roundtrip('%b', 1, (2025, 7, 1, 0, 0, 0, 1, 182, 0))
 
     def test_day(self):
         # Test for day directives
@@ -431,9 +439,6 @@ class StrptimeTests(unittest.TestCase):
         self.assertEqual("Inconsistent use of : in -01:3030", str(err.exception))
 
     @skip_if_buggy_ucrt_strfptime
-    @unittest.skipIf(
-        support.is_emscripten, "musl libc issue on Emscripten, bpo-46390"
-    )
     def test_timezone(self):
         # Test timezone directives.
         # When gmtime() is used with %Z, entire result of strftime() is empty.
@@ -486,13 +491,11 @@ class StrptimeTests(unittest.TestCase):
     # * Year is not included: ha_NG.
     # * Use non-Gregorian calendar: lo_LA, thai, th_TH.
     #   On Windows: ar_IN, ar_SA, fa_IR, ps_AF.
-    #
-    # BUG: Generates regexp that does not match the current date and time
-    # for lzh_TW.
     @run_with_locales('LC_TIME', 'C', 'en_US', 'fr_FR', 'de_DE', 'ja_JP',
                       'he_IL', 'eu_ES', 'ar_AE', 'mfe_MU', 'yo_NG',
                       'csb_PL', 'br_FR', 'gez_ET', 'brx_IN',
-                      'my_MM', 'or_IN', 'shn_MM', 'az_IR')
+                      'my_MM', 'or_IN', 'shn_MM', 'az_IR',
+                      'byn_ER', 'wal_ET', 'lzh_TW')
     def test_date_time_locale(self):
         # Test %c directive
         loc = locale.getlocale(locale.LC_TIME)[0]
@@ -515,22 +518,25 @@ class StrptimeTests(unittest.TestCase):
 
     # NB: Dates before 1969 do not roundtrip on some locales:
     # az_IR, bo_CN, bo_IN, dz_BT, eu_ES, eu_FR, fa_IR, or_IN.
+    @support.run_with_tz('STD-1DST,M4.1.0,M10.1.0')
     @run_with_locales('LC_TIME', 'C', 'en_US', 'fr_FR', 'de_DE', 'ja_JP',
                       'he_IL', 'ar_AE', 'mfe_MU', 'yo_NG',
                       'csb_PL', 'br_FR', 'gez_ET', 'brx_IN',
                       'my_MM', 'shn_MM')
     def test_date_time_locale2(self):
         # Test %c directive
+        loc = locale.getlocale(locale.LC_TIME)[0]
+        if sys.platform.startswith('sunos'):
+            if loc in ('ar_AE',):
+                self.skipTest(f'locale {loc!r} may not work on this platform')
         self.roundtrip('%c', slice(0, 6), (1900, 1, 1, 0, 0, 0, 0, 1, 0))
         self.roundtrip('%c', slice(0, 6), (1800, 1, 1, 0, 0, 0, 0, 1, 0))
 
     # NB: Does not roundtrip because use non-Gregorian calendar:
     # lo_LA, thai, th_TH. On Windows: ar_IN, ar_SA, fa_IR, ps_AF.
-    # BUG: Generates regexp that does not match the current date
-    # for lzh_TW.
     @run_with_locales('LC_TIME', 'C', 'en_US', 'fr_FR', 'de_DE', 'ja_JP',
                       'he_IL', 'eu_ES', 'ar_AE',
-                      'az_IR', 'my_MM', 'or_IN', 'shn_MM')
+                      'az_IR', 'my_MM', 'or_IN', 'shn_MM', 'lzh_TW')
     def test_date_locale(self):
         # Test %x directive
         now = time.time()
@@ -545,14 +551,15 @@ class StrptimeTests(unittest.TestCase):
         self.roundtrip('%x', slice(0, 3), time.localtime(now - 366*24*3600))
 
     # NB: Dates before 1969 do not roundtrip on many locales, including C.
-    @unittest.skipIf(
-        support.is_emscripten or support.is_wasi,
-        "musl libc issue on Emscripten, bpo-46390"
-    )
+    @unittest.skipIf(support.linked_to_musl(), "musl libc issue, bpo-46390")
     @run_with_locales('LC_TIME', 'en_US', 'fr_FR', 'de_DE', 'ja_JP',
-                      'eu_ES', 'ar_AE', 'my_MM', 'shn_MM')
+                      'eu_ES', 'ar_AE', 'my_MM', 'shn_MM', 'lzh_TW')
     def test_date_locale2(self):
         # Test %x directive
+        loc = locale.getlocale(locale.LC_TIME)[0]
+        if sys.platform.startswith('sunos'):
+            if loc in ('en_US', 'de_DE', 'ar_AE'):
+                self.skipTest(f'locale {loc!r} may not work on this platform')
         self.roundtrip('%x', slice(0, 3), (1900, 1, 1, 0, 0, 0, 0, 1, 0))
         self.roundtrip('%x', slice(0, 3), (1800, 1, 1, 0, 0, 0, 0, 1, 0))
 
@@ -562,11 +569,11 @@ class StrptimeTests(unittest.TestCase):
     #   norwegian, nynorsk.
     # * Hours are in 12-hour notation without AM/PM indication: hy_AM,
     #   ms_MY, sm_WS.
-    # BUG: Generates regexp that does not match the current time for lzh_TW.
     @run_with_locales('LC_TIME', 'C', 'en_US', 'fr_FR', 'de_DE', 'ja_JP',
                       'aa_ET', 'am_ET', 'az_IR', 'byn_ER', 'fa_IR', 'gez_ET',
                       'my_MM', 'om_ET', 'or_IN', 'shn_MM', 'sid_ET', 'so_SO',
-                      'ti_ET', 'tig_ER', 'wal_ET')
+                      'ti_ET', 'tig_ER', 'wal_ET', 'lzh_TW',
+                      'ar_SA', 'bg_BG')
     def test_time_locale(self):
         # Test %X directive
         loc = locale.getlocale(locale.LC_TIME)[0]

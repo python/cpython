@@ -941,7 +941,7 @@ result from ``entry_points()`` as deprecated.
 
 ..
 
-.. gh: 47383
+.. gh-issue: 47383
 .. date: 2021-04-08-19-32-26
 .. nonce: YI1hdL
 .. section: Library

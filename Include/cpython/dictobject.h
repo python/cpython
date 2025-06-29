@@ -17,7 +17,9 @@ typedef struct {
     /* This is a private field for CPython's internal use.
      * Bits 0-7 are for dict watchers.
      * Bits 8-11 are for the watched mutation counter (used by tier2 optimization)
-     * The remaining bits are not currently used. */
+     * Bits 12-31 are currently unused
+     * Bits 32-63 are a unique id in the free threading build (used for per-thread refcounting)
+     */
     uint64_t _ma_watcher_tag;
 
     PyDictKeysObject *ma_keys;
@@ -66,7 +68,12 @@ PyAPI_FUNC(PyObject *) _PyDict_NewPresized(Py_ssize_t minused);
 
 PyAPI_FUNC(int) PyDict_Pop(PyObject *dict, PyObject *key, PyObject **result);
 PyAPI_FUNC(int) PyDict_PopString(PyObject *dict, const char *key, PyObject **result);
-PyAPI_FUNC(PyObject *) _PyDict_Pop(PyObject *dict, PyObject *key, PyObject *default_value);
+
+// Use PyDict_Pop() instead
+Py_DEPRECATED(3.14) PyAPI_FUNC(PyObject *) _PyDict_Pop(
+    PyObject *dict,
+    PyObject *key,
+    PyObject *default_value);
 
 /* Dictionary watchers */
 

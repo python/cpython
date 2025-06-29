@@ -123,16 +123,10 @@ Context object management functions:
 
    Enumeration of possible context object watcher events:
 
-   - ``Py_CONTEXT_EVENT_ENTER``: A context has been entered, causing the
-     :term:`current context` to switch to it.  The object passed to the watch
-     callback is the now-current :class:`contextvars.Context` object.  Each
-     enter event will eventually have a corresponding exit event for the same
-     context object after any subsequently entered contexts have themselves been
-     exited.
-   - ``Py_CONTEXT_EVENT_EXIT``: A context is about to be exited, which will
-     cause the :term:`current context` to switch back to what it was before the
-     context was entered.  The object passed to the watch callback is the
-     still-current :class:`contextvars.Context` object.
+   - ``Py_CONTEXT_SWITCHED``: The :term:`current context` has switched to a
+     different context.  The object passed to the watch callback is the
+     now-current :class:`contextvars.Context` object, or None if no context is
+     current.
 
    .. versionadded:: 3.14
 

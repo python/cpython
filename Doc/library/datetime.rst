@@ -93,7 +93,7 @@ The :mod:`!datetime` module exports the following constants:
    The largest year number allowed in a :class:`date` or :class:`.datetime` object.
    :const:`MAXYEAR` is 9999.
 
-.. attribute:: UTC
+.. data:: UTC
 
    Alias for the UTC time zone singleton :attr:`datetime.timezone.utc`.
 
@@ -260,6 +260,22 @@ A :class:`timedelta` object represents a duration, the difference between two
       >>> d = timedelta(microseconds=-1)
       >>> (d.days, d.seconds, d.microseconds)
       (-1, 86399, 999999)
+
+   Since the string representation of :class:`!timedelta` objects can be confusing,
+   use the following recipe to produce a more readable format:
+
+   .. code-block:: pycon
+
+      >>> def pretty_timedelta(td):
+      ...     if td.days >= 0:
+      ...         return str(td)
+      ...     return f'-({-td!s})'
+      ...
+      >>> d = timedelta(hours=-1)
+      >>> str(d)  # not human-friendly
+      '-1 day, 23:00:00'
+      >>> pretty_timedelta(d)
+      '-(1:00:00)'
 
 
 Class attributes:
@@ -699,8 +715,8 @@ Instance methods:
 
 .. method:: date.replace(year=self.year, month=self.month, day=self.day)
 
-   Return a date with the same value, except for those parameters given new
-   values by whichever keyword arguments are specified.
+   Return a new :class:`date` object with the same values, but with specified
+   parameters updated.
 
    Example::
 
@@ -709,8 +725,8 @@ Instance methods:
        >>> d.replace(day=26)
        datetime.date(2002, 12, 26)
 
-   :class:`date` objects are also supported by generic function
-   :func:`copy.replace`.
+   The generic function :func:`copy.replace` also supports :class:`date`
+   objects.
 
 
 .. method:: date.timetuple()
@@ -970,7 +986,7 @@ Other constructors, all class methods:
 
    .. deprecated:: 3.12
 
-      Use :meth:`datetime.now` with :attr:`UTC` instead.
+      Use :meth:`datetime.now` with :const:`UTC` instead.
 
 
 .. classmethod:: datetime.fromtimestamp(timestamp, tz=None)
@@ -1042,7 +1058,7 @@ Other constructors, all class methods:
 
    .. deprecated:: 3.12
 
-      Use :meth:`datetime.fromtimestamp` with :attr:`UTC` instead.
+      Use :meth:`datetime.fromtimestamp` with :const:`UTC` instead.
 
 
 .. classmethod:: datetime.fromordinal(ordinal)
@@ -1348,10 +1364,10 @@ Instance methods:
    hour=self.hour, minute=self.minute, second=self.second, microsecond=self.microsecond, \
    tzinfo=self.tzinfo, *, fold=0)
 
-   Return a datetime with the same attributes, except for those attributes given
-   new values by whichever keyword arguments are specified. Note that
-   ``tzinfo=None`` can be specified to create a naive datetime from an aware
-   datetime with no conversion of date and time data.
+   Return a new :class:`datetime` object with the same attributes, but with
+   specified parameters updated. Note that ``tzinfo=None`` can be specified to
+   create a naive datetime from an aware datetime with no conversion of date
+   and time data.
 
    :class:`.datetime` objects are also supported by generic function
    :func:`copy.replace`.
@@ -1486,11 +1502,11 @@ Instance methods:
    returned by :func:`time.time`.
 
    Naive :class:`.datetime` instances are assumed to represent local
-   time and this method relies on the platform C :c:func:`mktime`
-   function to perform the conversion. Since :class:`.datetime`
-   supports wider range of values than :c:func:`mktime` on many
-   platforms, this method may raise :exc:`OverflowError` or :exc:`OSError`
-   for times far in the past or far in the future.
+   time and this method relies on platform C functions to perform
+   the conversion. Since :class:`.datetime` supports a wider range of
+   values than the platform C functions on many platforms, this
+   method may raise :exc:`OverflowError` or :exc:`OSError` for times
+   far in the past or far in the future.
 
    For aware :class:`.datetime` instances, the return value is computed
    as::
@@ -1502,6 +1518,10 @@ Instance methods:
    .. versionchanged:: 3.6
       The :meth:`timestamp` method uses the :attr:`.fold` attribute to
       disambiguate the times during a repeated interval.
+
+   .. versionchanged:: 3.6
+      This method no longer relies on the platform C :c:func:`mktime`
+      function to perform conversions.
 
    .. note::
 
@@ -1942,10 +1962,10 @@ Instance methods:
 .. method:: time.replace(hour=self.hour, minute=self.minute, second=self.second, \
    microsecond=self.microsecond, tzinfo=self.tzinfo, *, fold=0)
 
-   Return a :class:`.time` with the same value, except for those attributes given
-   new values by whichever keyword arguments are specified. Note that
-   ``tzinfo=None`` can be specified to create a naive :class:`.time` from an
-   aware :class:`.time`, without conversion of the time data.
+   Return a new :class:`.time` with the same values, but with specified
+   parameters updated. Note that ``tzinfo=None`` can be specified to create a
+   naive :class:`.time` from an aware :class:`.time`, without conversion of the
+   time data.
 
    :class:`.time` objects are also supported by generic function
    :func:`copy.replace`.

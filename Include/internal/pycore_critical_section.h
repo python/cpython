@@ -5,7 +5,7 @@
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_lock.h"        // PyMutex
+#include "pycore_lock.h"        // PyMutex_LockFast()
 #include "pycore_pystate.h"     // _PyThreadState_GET()
 #include <stdint.h>
 
@@ -64,7 +64,7 @@ extern "C" {
 
 # define _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op)                           \
     if (Py_REFCNT(op) != 1) {                                                    \
-        _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(&_PyObject_CAST(op)->ob_mutex); \
+        _PyCriticalSection_AssertHeldObj(_PyObject_CAST(op)); \
     }
 
 #else   /* Py_DEBUG */
@@ -109,7 +109,7 @@ _PyCriticalSection_IsActive(uintptr_t tag)
 static inline void
 _PyCriticalSection_BeginMutex(PyCriticalSection *c, PyMutex *m)
 {
-    if (PyMutex_LockFast(&m->_bits)) {
+    if (PyMutex_LockFast(m)) {
         PyThreadState *tstate = _PyThreadState_GET();
         c->_cs_mutex = m;
         c->_cs_prev = tstate->critical_section;
@@ -145,6 +145,12 @@ _PyCriticalSection_Pop(PyCriticalSection *c)
 static inline void
 _PyCriticalSection_End(PyCriticalSection *c)
 {
+    // If the mutex is NULL, we used the fast path in
+    // _PyCriticalSection_BeginSlow for locks already held in the top-most
+    // critical section, and we shouldn't unlock or pop this critical section.
+    if (c->_cs_mutex == NULL) {
+        return;
+    }
     PyMutex_Unlock(c->_cs_mutex);
     _PyCriticalSection_Pop(c);
 }
@@ -170,8 +176,8 @@ _PyCriticalSection2_BeginMutex(PyCriticalSection2 *c, PyMutex *m1, PyMutex *m2)
         m2 = tmp;
     }
 
-    if (PyMutex_LockFast(&m1->_bits)) {
-        if (PyMutex_LockFast(&m2->_bits)) {
+    if (PyMutex_LockFast(m1)) {
+        if (PyMutex_LockFast(m2)) {
             PyThreadState *tstate = _PyThreadState_GET();
             c->_cs_base._cs_mutex = m1;
             c->_cs_mutex2 = m2;
@@ -199,6 +205,14 @@ _PyCriticalSection2_Begin(PyCriticalSection2 *c, PyObject *a, PyObject *b)
 static inline void
 _PyCriticalSection2_End(PyCriticalSection2 *c)
 {
+    // if mutex1 is NULL, we used the fast path in
+    // _PyCriticalSection_BeginSlow for mutexes that are already held,
+    // which should only happen when mutex1 and mutex2 were the same mutex,
+    // and mutex2 should also be NULL.
+    if (c->_cs_base._cs_mutex == NULL) {
+        assert(c->_cs_mutex2 == NULL);
+        return;
+    }
     if (c->_cs_mutex2) {
         PyMutex_Unlock(c->_cs_mutex2);
     }
@@ -225,6 +239,28 @@ _PyCriticalSection_AssertHeld(PyMutex *mutex)
 #endif
 }
 
+static inline void
+_PyCriticalSection_AssertHeldObj(PyObject *op)
+{
+#ifdef Py_DEBUG
+    PyMutex *mutex = &_PyObject_CAST(op)->ob_mutex;
+    PyThreadState *tstate = _PyThreadState_GET();
+    uintptr_t prev = tstate->critical_section;
+    if (prev & _Py_CRITICAL_SECTION_TWO_MUTEXES) {
+        PyCriticalSection2 *cs = (PyCriticalSection2 *)(prev & ~_Py_CRITICAL_SECTION_MASK);
+        _PyObject_ASSERT_WITH_MSG(op,
+            (cs != NULL && (cs->_cs_base._cs_mutex == mutex || cs->_cs_mutex2 == mutex)),
+            "Critical section of object is not held");
+    }
+    else {
+        PyCriticalSection *cs = (PyCriticalSection *)(prev & ~_Py_CRITICAL_SECTION_MASK);
+        _PyObject_ASSERT_WITH_MSG(op,
+            (cs != NULL && cs->_cs_mutex == mutex),
+            "Critical section of object is not held");
+    }
+
+#endif
+}
 #endif /* Py_GIL_DISABLED */
 
 #ifdef __cplusplus

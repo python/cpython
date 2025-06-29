@@ -285,52 +285,42 @@ This will:
 * Install the Python iOS framework into the copy of the testbed project; and
 * Run the test suite on an "iPhone SE (3rd generation)" simulator.
 
-While the test suite is running, Xcode does not display any console output.
-After showing some Xcode build commands, the console output will print ``Testing
-started``, and then appear to stop. It will remain in this state until the test
-suite completes. On a 2022 M1 MacBook Pro, the test suite takes approximately 12
-minutes to run; a couple of extra minutes is required to boot and prepare the
-iOS simulator.
-
 On success, the test suite will exit and report successful completion of the
-test suite. No output of the Python test suite will be displayed.
-
-On failure, the output of the Python test suite *will* be displayed. This will
-show the details of the tests that failed.
+test suite. On a 2022 M1 MacBook Pro, the test suite takes approximately 15
+minutes to run; a couple of extra minutes is required to compile the testbed
+project, and then boot and prepare the iOS simulator.
 
 Debugging test failures
 -----------------------
 
-The easiest way to diagnose a single test failure is to open the testbed project
-in Xcode and run the tests from there using the "Product > Test" menu item.
+Running ``make test`` generates a standalone version of the ``iOS/testbed``
+project, and runs the full test suite. It does this using ``iOS/testbed``
+itself - the folder is an executable module that can be used to create and run
+a clone of the testbed project.
 
-To test in Xcode, you must ensure the testbed project has a copy of a compiled
-framework. If you've configured your build with the default install location of
-``iOS/Frameworks``, you can copy from that location into the test project. To
-test on an ARM64 simulator, run::
+You can generate your own standalone testbed instance by running::
 
-    $ rm -rf iOS/testbed/Python.xcframework/ios-arm64_x86_64-simulator/*
-    $ cp -r iOS/Frameworks/arm64-iphonesimulator/* iOS/testbed/Python.xcframework/ios-arm64_x86_64-simulator
+    $ python iOS/testbed clone --framework iOS/Frameworks/arm64-iphonesimulator my-testbed
 
-To test on an x86-64 simulator, run::
+This invocation assumes that ``iOS/Frameworks/arm64-iphonesimulator`` is the
+path to the iOS simulator framework for your platform (ARM64 in this case);
+``my-testbed`` is the name of the folder for the new testbed clone.
 
-    $ rm -rf iOS/testbed/Python.xcframework/ios-arm64_x86_64-simulator/*
-    $ cp -r iOS/Frameworks/x86_64-iphonesimulator/* iOS/testbed/Python.xcframework/ios-arm64_x86_64-simulator
+You can then use the ``my-testbed`` folder to run the Python test suite,
+passing in any command line arguments you may require. For example, if you're
+trying to diagnose a failure in the ``os`` module, you might run::
 
-To test on a physical device::
+    $ python my-testbed run -- test -W test_os
 
-    $ rm -rf iOS/testbed/Python.xcframework/ios-arm64/*
-    $ cp -r iOS/Frameworks/arm64-iphoneos/* iOS/testbed/Python.xcframework/ios-arm64
+This is the equivalent of running ``python -m test -W test_os`` on a desktop
+Python build. Any arguments after the ``--`` will be passed to testbed as if
+they were arguments to ``python -m`` on a desktop machine.
 
-Alternatively, you can configure your build to install directly into the
-testbed project. For a simulator, use::
+You can also open the testbed project in Xcode by running::
 
-    --enable-framework=$(pwd)/iOS/testbed/Python.xcframework/ios-arm64_x86_64-simulator
+    $ open my-testbed/iOSTestbed.xcodeproj
 
-For a physical device, use::
-
-    --enable-framework=$(pwd)/iOS/testbed/Python.xcframework/ios-arm64
-
+This will allow you to use the full Xcode suite of tools for debugging.
 
 Testing on an iOS device
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -351,13 +341,13 @@ Running specific tests
 ^^^^^^^^^^^^^^^^^^^^^^
 
 As the test suite is being executed on an iOS simulator, it is not possible to
-pass in command line arguments to configure test suite operation. To work around
-this limitation, the arguments that would normally be passed as command line
-arguments are configured as a static string at the start of the XCTest method
-``- (void)testPython`` in ``iOSTestbedTests.m``. To pass an argument to the test
-suite, add a a string to the ``argv`` definition. These arguments will be passed
-to the test suite as if they had been passed to ``python -m test`` at the
-command line.
+pass in command line arguments to configure test suite operation. To work
+around this limitation, the arguments that would normally be passed as command
+line arguments are configured as part of the ``iOSTestbed-Info.plist`` file
+that is used to configure the iOS testbed app. In this file, the ``TestArgs``
+key is an array containing the arguments that would be passed to ``python -m``
+on the command line (including ``test`` in position 0, the name of the test
+module to be executed).
 
 Disabling automated breakpoints
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

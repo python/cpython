@@ -274,7 +274,7 @@ class CAPITest(unittest.TestCase):
 
         # PyObject_SetAttr(obj, attr_name, NULL) removes the attribute
         xsetattr(obj, 'a', NULL)
-        self.assertFalse(hasattr(obj, 'a'))
+        self.assertNotHasAttr(obj, 'a')
         self.assertRaises(AttributeError, xsetattr, obj, 'b', NULL)
         self.assertRaises(RuntimeError, xsetattr, obj, 'evil', NULL)
 
@@ -294,7 +294,7 @@ class CAPITest(unittest.TestCase):
 
         # PyObject_SetAttrString(obj, attr_name, NULL) removes the attribute
         setattrstring(obj, b'a', NULL)
-        self.assertFalse(hasattr(obj, 'a'))
+        self.assertNotHasAttr(obj, 'a')
         self.assertRaises(AttributeError, setattrstring, obj, b'b', NULL)
         self.assertRaises(RuntimeError, setattrstring, obj, b'evil', NULL)
 
@@ -311,10 +311,10 @@ class CAPITest(unittest.TestCase):
         obj.a = 1
         setattr(obj, '\U0001f40d', 2)
         xdelattr(obj, 'a')
-        self.assertFalse(hasattr(obj, 'a'))
+        self.assertNotHasAttr(obj, 'a')
         self.assertRaises(AttributeError, xdelattr, obj, 'b')
         xdelattr(obj, '\U0001f40d')
-        self.assertFalse(hasattr(obj, '\U0001f40d'))
+        self.assertNotHasAttr(obj, '\U0001f40d')
 
         self.assertRaises(AttributeError, xdelattr, 42, 'numerator')
         self.assertRaises(RuntimeError, xdelattr, obj, 'evil')
@@ -328,10 +328,10 @@ class CAPITest(unittest.TestCase):
         obj.a = 1
         setattr(obj, '\U0001f40d', 2)
         delattrstring(obj, b'a')
-        self.assertFalse(hasattr(obj, 'a'))
+        self.assertNotHasAttr(obj, 'a')
         self.assertRaises(AttributeError, delattrstring, obj, b'b')
         delattrstring(obj, '\U0001f40d'.encode())
-        self.assertFalse(hasattr(obj, '\U0001f40d'))
+        self.assertNotHasAttr(obj, '\U0001f40d')
 
         self.assertRaises(AttributeError, delattrstring, 42, b'numerator')
         self.assertRaises(RuntimeError, delattrstring, obj, b'evil')
@@ -460,7 +460,8 @@ class CAPITest(unittest.TestCase):
             self.assertFalse(haskey({}, []))
             self.assertEqual(cm.unraisable.exc_type, TypeError)
             self.assertEqual(str(cm.unraisable.exc_value),
-                             "unhashable type: 'list'")
+                             "cannot use 'list' as a dict key "
+                             "(unhashable type: 'list')")
 
         with support.catch_unraisable_exception() as cm:
             self.assertFalse(haskey([], 1))
@@ -993,6 +994,42 @@ class CAPITest(unittest.TestCase):
 
         self.assertRaises(TypeError, xtuple, 42)
         self.assertRaises(SystemError, xtuple, NULL)
+
+    def test_sequence_fast(self):
+        # Test PySequence_Fast()
+        sequence_fast = _testlimitedcapi.sequence_fast
+        sequence_fast_get_size = _testcapi.sequence_fast_get_size
+        sequence_fast_get_item = _testcapi.sequence_fast_get_item
+
+        tpl = ('a', 'b', 'c')
+        fast = sequence_fast(tpl, "err_msg")
+        self.assertIs(fast, tpl)
+        self.assertEqual(sequence_fast_get_size(fast), 3)
+        self.assertEqual(sequence_fast_get_item(fast, 2), 'c')
+
+        lst = ['a', 'b', 'c']
+        fast = sequence_fast(lst, "err_msg")
+        self.assertIs(fast, lst)
+        self.assertEqual(sequence_fast_get_size(fast), 3)
+        self.assertEqual(sequence_fast_get_item(fast, 2), 'c')
+
+        it = iter(['A', 'B'])
+        fast = sequence_fast(it, "err_msg")
+        self.assertEqual(fast, ['A', 'B'])
+        self.assertEqual(sequence_fast_get_size(fast), 2)
+        self.assertEqual(sequence_fast_get_item(fast, 1), 'B')
+
+        text = 'fast'
+        fast = sequence_fast(text, "err_msg")
+        self.assertEqual(fast, ['f', 'a', 's', 't'])
+        self.assertEqual(sequence_fast_get_size(fast), 4)
+        self.assertEqual(sequence_fast_get_item(fast, 0), 'f')
+
+        self.assertRaises(TypeError, sequence_fast, 42, "err_msg")
+        self.assertRaises(SystemError, sequence_fast, NULL, "err_msg")
+
+        # CRASHES sequence_fast_get_size(NULL)
+        # CRASHES sequence_fast_get_item(NULL, 0)
 
     def test_object_generichash(self):
         # Test PyObject_GenericHash()
