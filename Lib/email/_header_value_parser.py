@@ -3011,7 +3011,10 @@ def _fold_as_ew(to_encode, lines, maxlen, last_ew, ew_combine_allowed, charset, 
             to_encode_word = to_encode_word[:-1]
             encoded_word = _ew.encode(to_encode_word, charset=encode_as)
             excess = len(encoded_word) - remaining_space
-        lines[-1] += encoded_word
+        # If encoding a single character pushes this line over the limit,
+        # give up on it and go to the next line.
+        if to_encode_word != "":
+            lines[-1] += encoded_word
         to_encode = to_encode[len(to_encode_word):]
         leading_whitespace = ''
 
