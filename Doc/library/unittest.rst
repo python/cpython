@@ -1147,7 +1147,7 @@ Test cases
       :const:`logging.ERROR`).  The default is :const:`logging.INFO`.
 
       If given, *formatter* should be a :class:`logging.Formatter` object.
-      The default is a formatter with
+      The default is a formatter with format string
       ``"%(levelname)s:%(name)s:%(message)s"``
 
       The test passes if at least one message emitted inside the ``with``
@@ -1178,7 +1178,7 @@ Test cases
       .. versionadded:: 3.4
 
       .. versionchanged:: next
-         Now accepts a formatter argument so your assertions can match
+         Now accepts a *formatter* so your assertions can match
          a custom format where you are using one.
 
    .. method:: assertNoLogs(logger=None, level=None)
