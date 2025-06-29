@@ -429,7 +429,9 @@ The following exceptions are the exceptions that are usually raised.
 
    * Creating a new Python thread.
    * :meth:`Joining <threading.Thread.join>` a running daemon thread.
-   * :func:`os.fork`.
+   * :func:`os.fork`,
+   * acquiring a lock such as :class:`threading.Lock`, when it is known that
+     the operation would otherwise deadlock.
 
    See also the :func:`sys.is_finalizing` function.
 
@@ -439,6 +441,11 @@ The following exceptions are the exceptions that are usually raised.
    .. versionchanged:: 3.14
 
       :meth:`threading.Thread.join` can now raise this exception.
+
+   .. versionchanged:: next
+
+      This exception may be raised when acquiring :meth:`threading.Lock`
+      or :meth:`threading.RLock`.
 
 .. exception:: RecursionError
 
