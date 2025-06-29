@@ -1,0 +1,1 @@
+Fix ``No space left on device`` error emitted by :mod:`venv` when on a filesystem that contains large extended attributes.
