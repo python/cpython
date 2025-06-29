@@ -105,16 +105,18 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
                 table = so->table;
                 if (frozenset) {
                     cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
+                    if (cmp < 0)
+                        return NULL;
                 } else {
                     // incref startkey because it can be removed from the set by the compare
                     Py_INCREF(startkey);
                     cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
                     Py_DECREF(startkey);
+                    if (cmp < 0)
+                        return NULL;
+                    if (table != so->table || entry->key != startkey)
+                        return set_lookkey(so, key, hash);
                 }
-                if (cmp < 0)
-                    return NULL;
-                if (table != so->table || entry->key != startkey)
-                    return set_lookkey(so, key, hash);
                 if (cmp > 0)
                     return entry;
                 mask = so->mask;
