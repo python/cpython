@@ -1453,7 +1453,8 @@ class _ZipRepacker:
 
         Side effects:
             - Modifies the ZIP file in place.
-            - Updates zfile.start_dir to account for removed data.
+            - Updates zfile.start_dir and zfile.data_offset to account for
+              removed data.
             - Sets zfile._didModify to True.
             - Updates header_offset and clears _end_offset of referenced
               ZipInfo instances.
@@ -1557,6 +1558,14 @@ class _ZipRepacker:
         # update state
         zfile.start_dir -= entry_offset
         zfile._didModify = True
+
+        if zfile._data_offset:
+            try:
+                offset = filelist[0].header_offset
+            except IndexError:
+                offset = zfile.start_dir
+            if offset < zfile._data_offset:
+                zfile._data_offset = offset
 
         for zinfo in filelist:
             zinfo._end_offset = None

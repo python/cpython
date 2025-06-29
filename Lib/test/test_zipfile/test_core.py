@@ -2001,8 +2001,8 @@ class AbstractRepackTests(RepackHelperMixin):
         for ii in ([], [0], [0, 1], [1], [2]):
             with self.subTest(remove=ii):
                 # calculate the expected results
-                test_files = [data for j, data in enumerate(self.test_files) if j not in ii]
                 fz = io.BytesIO()
+                test_files = [data for j, data in enumerate(self.test_files) if j not in ii]
                 self._prepare_zip_from_test_files(fz, test_files)
                 fz.seek(0)
                 with open(TESTFN, 'wb') as fh:
@@ -2020,9 +2020,64 @@ class AbstractRepackTests(RepackHelperMixin):
                     fh.write(b'dummy ')
                     fh.write(fz.read())
                 with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
+                    self.assertEqual(zh.data_offset, 6)
                     for i in ii:
                         zh.remove(self.test_files[i][0])
                     zh.repack()
+                    if hasattr(zh, 'data_offset'):
+                        self.assertEqual(zh.data_offset, 6)
+
+                    # check infolist
+                    self.assertEqual(
+                        [ComparableZipInfo(zi) for zi in zh.infolist()],
+                        [ComparableZipInfo(zi) for zi in expected_zinfos],
+                    )
+
+                # check file size
+                self.assertEqual(os.path.getsize(TESTFN), expected_size)
+
+                # make sure the zip file is still valid
+                with zipfile.ZipFile(TESTFN) as zh:
+                    self.assertIsNone(zh.testzip())
+
+    def test_repack_prepended_file_entry(self):
+        for ii in ([0], [0, 1], [0, 1, 2]):
+            with self.subTest(remove=ii):
+                # calculate the expected results
+                fz = io.BytesIO()
+                test_files = [data for j, data in enumerate(self.test_files) if j not in ii]
+                self._prepare_zip_from_test_files(fz, test_files)
+                fz.seek(0)
+                with open(TESTFN, 'wb') as fh:
+                    fh.write(b'dummy ')
+                    fh.write(fz.read())
+                with zipfile.ZipFile(TESTFN) as zh:
+                    expected_zinfos = list(zh.infolist())
+                expected_size = os.path.getsize(TESTFN)
+
+                # do the removal and check the result
+                fz = io.BytesIO()
+                with zipfile.ZipFile(fz, 'w') as zh:
+                    for j, (file, data) in enumerate(self.test_files):
+                        if j in ii:
+                            zh.writestr(file, data)
+                    fz.seek(0)
+                    prefix = fz.read()
+
+                fz = io.BytesIO()
+                test_files = [data for j, data in enumerate(self.test_files) if j not in ii]
+                self._prepare_zip_from_test_files(fz, test_files)
+                fz.seek(0)
+
+                with open(TESTFN, 'wb') as fh:
+                    fh.write(b'dummy ')
+                    fh.write(prefix)
+                    fh.write(fz.read())
+
+                with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
+                    self.assertEqual(zh.data_offset, 6 + len(prefix))
+                    zh.repack()
+                    self.assertEqual(zh.data_offset, 6)
 
                     # check infolist
                     self.assertEqual(
@@ -2212,8 +2267,10 @@ class AbstractRepackTests(RepackHelperMixin):
                     fh.write(b'dummy ')
                     fh.write(fz.read())
                 with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
+                    self.assertEqual(zh.data_offset, 6)
                     zinfos = [zh.remove(self.test_files[i][0]) for i in ii]
                     zh.repack(zinfos)
+                    self.assertEqual(zh.data_offset, 6)
 
                     # check infolist
                     self.assertEqual(
