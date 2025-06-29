@@ -1,0 +1,2 @@
+Add a ``--cors`` cli option to :program:`python -m http.server`. Contributed by
+Anton I. Sipos.

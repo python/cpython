@@ -81,11 +81,12 @@ class TestSSLDisabled(unittest.TestCase):
 
 
 class TestServerThread(threading.Thread):
-    def __init__(self, test_object, request_handler, tls=None):
+    def __init__(self, test_object, request_handler, tls=None, server_kwargs=None):
         threading.Thread.__init__(self)
         self.request_handler = request_handler
         self.test_object = test_object
         self.tls = tls
+        self.server_kwargs = server_kwargs or {}
 
     def run(self):
         if self.tls:
@@ -93,9 +94,11 @@ class TestServerThread(threading.Thread):
             self.server = create_https_server(
                 certfile, keyfile, password,
                 request_handler=self.request_handler,
+                **self.server_kwargs
             )
         else:
-            self.server = HTTPServer(('localhost', 0), self.request_handler)
+            self.server = HTTPServer(('localhost', 0), self.request_handler,
+                                     **self.server_kwargs)
         self.test_object.HOST, self.test_object.PORT = self.server.socket.getsockname()
         self.test_object.server_started.set()
         self.test_object = None
@@ -113,12 +116,14 @@ class BaseTestCase(unittest.TestCase):
 
     # Optional tuple (certfile, keyfile, password) to use for HTTPS servers.
     tls = None
+    server_kwargs = None
 
     def setUp(self):
         self._threads = threading_helper.threading_setup()
         os.environ = os_helper.EnvironmentVarGuard()
         self.server_started = threading.Event()
-        self.thread = TestServerThread(self, self.request_handler, self.tls)
+        self.thread = TestServerThread(self, self.request_handler, self.tls,
+                                       self.server_kwargs)
         self.thread.start()
         self.server_started.wait()
 
@@ -824,6 +829,17 @@ class SimpleHTTPServerTestCase(BaseTestCase):
                          self.tempdir_name + "/?hi=1")
 
 
+class CorsHTTPServerTestCase(SimpleHTTPServerTestCase):
+    server_kwargs = {
+        'response_headers': {'Access-Control-Allow-Origin': '*'}
+    }
+
+    def test_cors(self):
+        response = self.request(self.base_url + '/test')
+        self.check_status_and_reason(response, HTTPStatus.OK)
+        self.assertEqual(response.getheader('Access-Control-Allow-Origin'), '*')
+
+
 class SocketlessRequestHandler(SimpleHTTPRequestHandler):
     def __init__(self, directory=None):
         request = mock.Mock()
@@ -1306,6 +1322,7 @@ class CommandLineTestCase(unittest.TestCase):
         'tls_cert': None,
         'tls_key': None,
         'tls_password': None,
+        'response_headers': None,
     }
 
     def setUp(self):
@@ -1370,6 +1387,29 @@ class CommandLineTestCase(unittest.TestCase):
                     call_args = self.args | dict(protocol=protocol)
                     mock_func.assert_called_once_with(**call_args)
                     mock_func.reset_mock()
+
+    @mock.patch('http.server.test')
+    def test_cors_flag(self, mock_func):
+        self.invoke_httpd('--cors')
+        call_args = self.args | dict(
+            response_headers={
+                'Access-Control-Allow-Origin': '*'
+            }
+        )
+        mock_func.assert_called_once_with(**call_args)
+        mock_func.reset_mock()
+
+    @mock.patch('http.server.test')
+    def test_header_flag(self, mock_func):
+        self.invoke_httpd('--header', 'h1', 'v1', '-H', 'h2', 'v2')
+        call_args = self.args | dict(
+            response_headers={
+                'h1': 'v1',
+                'h2': 'v2'
+            }
+        )
+        mock_func.assert_called_once_with(**call_args)
+        mock_func.reset_mock()
 
     @unittest.skipIf(ssl is None, "requires ssl")
     @mock.patch('http.server.test')
