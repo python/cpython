@@ -1848,7 +1848,7 @@ class Helper:
     # in pydoc_data/topics.py.
     #
     # CAUTION: if you change one of these dictionaries, be sure to adapt the
-    #          list of needed labels in Doc/tools/extensions/pyspecific.py and
+    #          list of needed labels in Doc/tools/extensions/pydoc_topics.py and
     #          regenerate the pydoc_data/topics.py file by running
     #              make pydoc-topics
     #          in Doc/ and copying the output file into the Lib/ directory.
@@ -1863,6 +1863,7 @@ class Helper:
         'async': ('async', ''),
         'await': ('await', ''),
         'break': ('break', 'while for'),
+        'case': 'match',
         'class': ('class', 'CLASSES SPECIALMETHODS'),
         'continue': ('continue', 'while for'),
         'def': ('function', ''),
@@ -1874,11 +1875,12 @@ class Helper:
         'for': ('for', 'break continue while'),
         'from': 'import',
         'global': ('global', 'nonlocal NAMESPACES'),
-        'if': ('if', 'TRUTHVALUE'),
+        'if': ('if', 'TRUTHVALUE match'),
         'import': ('import', 'MODULES'),
         'in': ('in', 'SEQUENCEMETHODS'),
         'is': 'COMPARISON',
         'lambda': ('lambda', 'FUNCTIONS'),
+        'match': ('match', 'if'),
         'nonlocal': ('nonlocal', 'global NAMESPACES'),
         'not': 'BOOLEAN',
         'or': 'BOOLEAN',
