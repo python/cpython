@@ -469,7 +469,10 @@ of a number respectively. It can be one of the following:
 |         | this option is not supported.                            |
 +---------+----------------------------------------------------------+
 
-For a locale aware separator, use the ``'n'`` presentation type instead.
+For a locale-aware separator, use the ``'n'`` presentation type instead.
+Note that the locale setting for numeric values must first be set using
+the :mod:`locale` module, for example,
+``locale.setlocale(locale.LC_NUMERIC, 'en_US')``.
 
 .. versionchanged:: 3.1
    Added the ``','`` option (see also :pep:`378`).
@@ -517,7 +520,10 @@ The available integer presentation types are:
    +---------+----------------------------------------------------------+
    | ``'n'`` | Number. This is the same as ``'d'``, except that it uses |
    |         | the current locale setting to insert the appropriate     |
-   |         | digit group separators.                                  |
+   |         | digit group separators. Note that the default locale is  |
+   |         | not the system locale, and therefore, you must set, at a |
+   |         | minimum, the ``LC_NUMERIC`` category (see the            |
+   |         | :mod:`locale` module for more information).              |
    +---------+----------------------------------------------------------+
    | None    | The same as ``'d'``.                                     |
    +---------+----------------------------------------------------------+
@@ -599,8 +605,11 @@ The available presentation types for :class:`float` and
    +---------+----------------------------------------------------------+
    | ``'n'`` | Number. This is the same as ``'g'``, except that it uses |
    |         | the current locale setting to insert the appropriate     |
-   |         | digit group separators                                   |
-   |         | for the integral part of a number.                       |
+   |         | digit group separators for the integral part of a        |
+   |         | number. Note that the default locale is not the system   |
+   |         | locale, and therefore, you must set, at a minimum, the   |
+   |         | ``LC_NUMERIC`` category (see the :mod:`locale` module    |
+   |         | for more information).                                   |
    +---------+----------------------------------------------------------+
    | ``'%'`` | Percentage. Multiplies the number by 100 and displays    |
    |         | in fixed (``'f'``) format, followed by a percent sign.   |
