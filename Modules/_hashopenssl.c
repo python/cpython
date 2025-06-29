@@ -48,7 +48,6 @@
 
 #define MUNCH_SIZE INT_MAX
 
-#define PY_OPENSSL_HAS_SCRYPT 1
 #if defined(NID_sha3_224) && defined(NID_sha3_256) && defined(NID_sha3_384) && defined(NID_sha3_512)
 #define PY_OPENSSL_HAS_SHA3 1
 #endif
@@ -1540,7 +1539,25 @@ end:
     return key_obj;
 }
 
-#ifdef PY_OPENSSL_HAS_SCRYPT
+// --- PBKDF: scrypt (RFC 7914) -----------------------------------------------
+
+/*
+ * By default, OpenSSL 1.1.0 restricts 'maxmem' in EVP_PBE_scrypt()
+ * to 32 MiB (1024 * 1024 * 32) but only if 'maxmem = 0' and allows
+ * for an arbitrary large limit fitting on an uint64_t otherwise.
+ *
+ * For legacy reasons, we limited 'maxmem' to be at most INTMAX,
+ * but if users need a more relaxed value, we will revisit this
+ * limit in the future.
+ */
+#define HASHLIB_SCRYPT_MAX_MAXMEM   INT_MAX
+
+/*
+ * Limit 'dklen' to INT_MAX even if it can be at most (32 * UINT32_MAX).
+ *
+ * See https://datatracker.ietf.org/doc/html/rfc7914.html for details.
+ */
+#define HASHLIB_SCRYPT_MAX_DKLEN    INT_MAX
 
 /*[clinic input]
 _hashlib.scrypt
@@ -1554,7 +1571,6 @@ _hashlib.scrypt
     maxmem: long = 0
     dklen: long = 64
 
-
 scrypt password-based key derivation function.
 [clinic start generated code]*/
 
@@ -1562,77 +1578,73 @@ static PyObject *
 _hashlib_scrypt_impl(PyObject *module, Py_buffer *password, Py_buffer *salt,
                      unsigned long n, unsigned long r, unsigned long p,
                      long maxmem, long dklen)
-/*[clinic end generated code: output=d424bc3e8c6b9654 input=0c9a84230238fd79]*/
+/*[clinic end generated code: output=d424bc3e8c6b9654 input=bdeac9628d07f7a1]*/
 {
-    PyObject *key_obj = NULL;
-    char *key;
+    PyObject *key = NULL;
     int retval;
 
     if (password->len > INT_MAX) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "password is too long.");
+        PyErr_SetString(PyExc_OverflowError, "password is too long");
         return NULL;
     }
 
     if (salt->len > INT_MAX) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "salt is too long.");
+        PyErr_SetString(PyExc_OverflowError, "salt is too long");
         return NULL;
     }
 
     if (n < 2 || n & (n - 1)) {
-        PyErr_SetString(PyExc_ValueError,
-                        "n must be a power of 2.");
+        PyErr_SetString(PyExc_ValueError, "n must be a power of 2");
         return NULL;
     }
 
-    if (maxmem < 0 || maxmem > INT_MAX) {
-        /* OpenSSL 1.1.0 restricts maxmem to 32 MiB. It may change in the
-           future. The maxmem constant is private to OpenSSL. */
+    if (maxmem < 0 || maxmem > HASHLIB_SCRYPT_MAX_MAXMEM) {
         PyErr_Format(PyExc_ValueError,
-                     "maxmem must be positive and smaller than %d",
-                     INT_MAX);
+                     "maxmem must be positive and at most %d",
+                     HASHLIB_SCRYPT_MAX_MAXMEM);
         return NULL;
     }
 
-    if (dklen < 1 || dklen > INT_MAX) {
+    if (dklen < 1 || dklen > HASHLIB_SCRYPT_MAX_DKLEN) {
         PyErr_Format(PyExc_ValueError,
-                     "dklen must be greater than 0 and smaller than %d",
-                     INT_MAX);
+                     "dklen must be at least 1 and at most %d",
+                     HASHLIB_SCRYPT_MAX_DKLEN);
         return NULL;
     }
 
     /* let OpenSSL validate the rest */
-    retval = EVP_PBE_scrypt(NULL, 0, NULL, 0, n, r, p, maxmem, NULL, 0);
+    retval = EVP_PBE_scrypt(NULL, 0, NULL, 0, n, r, p,
+                            (uint64_t)maxmem, NULL, 0);
     if (!retval) {
-        notify_ssl_error_occurred(
-            "Invalid parameter combination for n, r, p, maxmem.");
+        notify_ssl_error_occurred("invalid parameter combination for "
+                                  "n, r, p, and maxmem");
         return NULL;
    }
 
-    key_obj = PyBytes_FromStringAndSize(NULL, dklen);
-    if (key_obj == NULL) {
+    key = PyBytes_FromStringAndSize(NULL, dklen);
+    if (key == NULL) {
         return NULL;
     }
-    key = PyBytes_AS_STRING(key_obj);
 
     Py_BEGIN_ALLOW_THREADS
     retval = EVP_PBE_scrypt(
-        (const char*)password->buf, (size_t)password->len,
+        (const char *)password->buf, (size_t)password->len,
         (const unsigned char *)salt->buf, (size_t)salt->len,
-        n, r, p, maxmem,
-        (unsigned char *)key, (size_t)dklen
+        (uint64_t)n, (uint64_t)r, (uint64_t)p, (uint64_t)maxmem,
+        (unsigned char *)PyBytes_AS_STRING(key), (size_t)dklen
     );
     Py_END_ALLOW_THREADS
 
     if (!retval) {
-        Py_CLEAR(key_obj);
+        Py_DECREF(key);
         notify_ssl_error_occurred_in(Py_STRINGIFY(EVP_PBE_scrypt));
         return NULL;
     }
-    return key_obj;
+    return key;
 }
-#endif  /* PY_OPENSSL_HAS_SCRYPT */
+
+#undef HASHLIB_SCRYPT_MAX_DKLEN
+#undef HASHLIB_SCRYPT_MAX_MAXMEM
 
 /* Fast HMAC for hmac.digest()
  */
