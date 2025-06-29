@@ -1263,8 +1263,7 @@ class CookieTests(unittest.TestCase):
         self.assertTrue(req.has_header("Cookie"))
 
     def test_set_ok_port(self):
-        pol = DefaultCookiePolicy(
-            rfc2965=True, blocked_domains=[])
+        pol = DefaultCookiePolicy()
         c = CookieJar(policy=pol)
         headers = ["Set-Cookie: CUSTOMER=WILE_E_COYOTE; path=/; port=1234"]
         req = urllib.request.Request("http://127.0.0.1:1234")
@@ -1284,8 +1283,7 @@ class CookieTests(unittest.TestCase):
         self.assertFalse(pol.set_ok_port(c.make_cookies(res, req)[0], req))
 
     def test_return_ok_port(self):
-        pol = DefaultCookiePolicy(
-            rfc2965=True, blocked_domains=[])
+        pol = DefaultCookiePolicy()
         c = CookieJar(policy=pol)
         headers = ["Set-Cookie: CUSTOMER=WILE_E_COYOTE; path=/; port=1234"]
         req = urllib.request.Request("http://127.0.0.1:1234")
