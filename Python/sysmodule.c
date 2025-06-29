@@ -1,4 +1,3 @@
-
 /* System module */
 
 /*
@@ -36,7 +35,7 @@ Data members:
 #include "pycore_pystats.h"       // _Py_PrintSpecializationStats()
 #include "pycore_structseq.h"     // _PyStructSequence_InitBuiltinWithFlags()
 #include "pycore_sysmodule.h"     // export _PySys_GetSizeOf()
-#include "pycore_unicodeobject.h" // _PyUnicode_InternImmortal()
+#include "pycore_unicodeobject.h" // _PyUnicode_InternImmortal(), _PyUnicode_EqualToASCIIString()
 
 #include "pydtrace.h"             // PyDTrace_AUDIT()
 #include "osdefs.h"               // DELIM
@@ -75,6 +74,26 @@ module sys
 #include "clinic/sysmodule.c.h"
 
 
+#ifndef ABIFLAGS
+
+// TODO: Remove this and related code in Python 3.16. Set the `ABIFLAGS` macro
+//       and `sys.abiflags` on Windows.
+static inline int
+_warn_incoming_sys_abiflags_change(void)
+{
+    return PyErr_WarnEx(
+        PyExc_DeprecationWarning,
+        "sys.abiflags will be set to a meaningful value on all platforms "
+        "in Python 3.16 instead of absent.\n\n"
+        "Please consider using `warnings.simplefilter()` with the "
+        "`warnings.catch_warnings()` context manager.\n"
+        "Or update the code with `if sys.platform.startswith('win')` "
+        "condition.",
+        /*stack_level=*/1);
+}
+
+#endif
+
 PyObject *
 PySys_GetAttr(PyObject *name)
 {
@@ -92,6 +111,14 @@ PySys_GetAttr(PyObject *name)
     }
     PyObject *value;
     if (PyDict_GetItemRef(sysdict, name, &value) == 0) {
+#ifndef ABIFLAGS
+        if (_PyUnicode_EqualToASCIIString(name, "abiflags")) {
+            if (_warn_incoming_sys_abiflags_change() < 0) {
+                Py_CLEAR(value);
+                return NULL;
+            }
+        }
+#endif
         PyErr_Format(PyExc_RuntimeError, "lost sys.%U", name);
     }
     return value;
@@ -108,6 +135,14 @@ PySys_GetAttrString(const char *name)
     }
     PyObject *value;
     if (PyDict_GetItemStringRef(sysdict, name, &value) == 0) {
+#ifndef ABIFLAGS
+        if (strcmp(name, "abiflags") == 0) {
+            if (_warn_incoming_sys_abiflags_change() < 0) {
+                Py_CLEAR(value);
+                return NULL;
+            }
+        }
+#endif
         PyErr_Format(PyExc_RuntimeError, "lost sys.%s", name);
     }
     return value;
@@ -129,7 +164,16 @@ PySys_GetOptionalAttr(PyObject *name, PyObject **value)
         *value = NULL;
         return 0;
     }
-    return PyDict_GetItemRef(sysdict, name, value);
+    int ret = PyDict_GetItemRef(sysdict, name, value);
+#ifndef ABIFLAGS
+    if (ret == 0 && _PyUnicode_EqualToASCIIString(name, "abiflags")) {
+        if (_warn_incoming_sys_abiflags_change() < 0) {
+            Py_CLEAR(*value);
+            return -1;
+        }
+    }
+#endif
+    return ret;
 }
 
 int
@@ -141,7 +185,16 @@ PySys_GetOptionalAttrString(const char *name, PyObject **value)
         *value = NULL;
         return 0;
     }
-    return PyDict_GetItemStringRef(sysdict, name, value);
+    int ret = PyDict_GetItemStringRef(sysdict, name, value);
+#ifndef ABIFLAGS
+    if (ret == 0 && strcmp(name, "abiflags") == 0) {
+        if (_warn_incoming_sys_abiflags_change() < 0) {
+            Py_CLEAR(*value);
+            return -1;
+        }
+    }
+#endif
+    return ret;
 }
 
 PyObject *
@@ -154,7 +207,7 @@ PySys_GetObject(const char *name)
     }
     PyObject *exc = _PyErr_GetRaisedException(tstate);
     PyObject *value;
-    (void) PyDict_GetItemStringRef(sysdict, name, &value);
+    int ret = PyDict_GetItemStringRef(sysdict, name, &value);
     /* XXX Suppress a new exception if it was raised and restore
      * the old one. */
     if (_PyErr_Occurred(tstate)) {
@@ -162,6 +215,16 @@ PySys_GetObject(const char *name)
     }
     _PyErr_SetRaisedException(tstate, exc);
     Py_XDECREF(value);  // return a borrowed reference
+#ifndef ABIFLAGS
+    if (ret == 0 && strcmp(name, "abiflags") == 0) {
+        if (_warn_incoming_sys_abiflags_change() < 0) {
+            Py_CLEAR(value);
+            return NULL;
+        }
+    }
+#else
+    (void) ret;  // ignore unused variable warning
+#endif
     return value;
 }
 
@@ -919,6 +982,33 @@ sys_exit_impl(PyObject *module, PyObject *status)
     PyErr_SetObject(PyExc_SystemExit, status);
     return NULL;
 }
+
+
+// This function is used to warn about the future change of sys.abiflags
+// from absent to a meaningful value on all platforms.
+// It can be removed when the change is made.
+static PyObject *
+sys___getattr__(PyObject *module, PyObject *name)
+{
+    PyObject *value = NULL;
+    if (_PySys_GetOptionalAttr(name, &value) < 0) {
+        Py_XDECREF(value);
+        return NULL;
+    }
+    if (value == NULL) {
+        PyErr_Clear();
+        PyErr_Format(PyExc_AttributeError,
+                     "module 'sys' has no attribute '%U'", name);
+    }
+    return value;
+}
+
+PyDoc_STRVAR(sysmodule__getattr___doc,
+"__getattr__($module, name, /)\n"
+"--\n"
+"\n"
+"Get a sys attribute by name.\n"
+);
 
 
 static PyObject *
@@ -2780,6 +2870,8 @@ static PyMethodDef sys_methods[] = {
     SYS_EXC_INFO_METHODDEF
     SYS_EXCEPTHOOK_METHODDEF
     SYS_EXIT_METHODDEF
+    {"__getattr__", _PyCFunction_CAST(sys___getattr__),
+     METH_O, sysmodule__getattr___doc},
     SYS_GETDEFAULTENCODING_METHODDEF
     SYS_GETDLOPENFLAGS_METHODDEF
     SYS_GETALLOCATEDBLOCKS_METHODDEF
