@@ -5831,6 +5831,20 @@ static PyType_Spec sock_spec = {
     .slots = sock_slots,
 };
 
+static PyObject*
+socket_getattr(PyObject *self, PyObject *name)
+{
+    if (PyUnicode_EqualToUTF8(name, "SocketType")) {
+        socket_state *state = get_module_state(self);
+        PyErr_Warn(PyExc_DeprecationWarning, "_socket.SocketType is deprecated and "
+                                             "will be removed in Python 3.16. "
+                                             "Use socket.socket instead");
+        return state != NULL ? (PyObject *)state->sock_type : NULL;
+    }
+
+    PyErr_Format(PyExc_AttributeError, "module _socket has no attribute '%U'", name);
+    return NULL;
+}
 
 #ifdef HAVE_GETHOSTNAME
 /* Python interface to gethostname(). */
@@ -7376,6 +7390,7 @@ range of values.");
 /* List of functions exported by this module. */
 
 static PyMethodDef socket_methods[] = {
+    {"__getattr__", socket_getattr, METH_O, "Module __getattr__"},
 #ifdef HAVE_GETADDRINFO
     {"gethostbyname",           socket_gethostbyname,
      METH_VARARGS, gethostbyname_doc},
@@ -7616,9 +7631,6 @@ socket_exec(PyObject *m)
         goto error;
     }
     state->sock_type = (PyTypeObject *)sock_type;
-    if (PyModule_AddObjectRef(m, "SocketType", sock_type) < 0) {
-        goto error;
-    }
     if (PyModule_AddType(m, state->sock_type) < 0) {
         goto error;
     }
