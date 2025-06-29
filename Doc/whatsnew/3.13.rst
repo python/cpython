@@ -2590,7 +2590,7 @@ Build Changes
 
   .. _mimalloc library: https://github.com/microsoft/mimalloc/
 
-* The :file:`configure` option :option:`--with-system-libmpdec`
+* The :file:`configure` option :option:!--with-system-libmpdec`
   now defaults to ``yes``.
   The bundled copy of ``libmpdecimal`` will be removed in Python 3.15.
 

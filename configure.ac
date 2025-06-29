@@ -4167,36 +4167,9 @@ if test "$ac_cv_ffi_complex_double_supported" = "yes"; then
               [Defined if _Complex C type can be used with libffi.])
 fi
 
-# Check for use of the system libmpdec library
-AC_MSG_CHECKING([for --with-system-libmpdec])
-AC_ARG_WITH(
-  [system_libmpdec],
-  [AS_HELP_STRING(
-    [--with-system-libmpdec],
-    [build _decimal module using an installed mpdecimal library, see Doc/library/decimal.rst (default is yes)]
-  )],
-  [],
-  [with_system_libmpdec="yes"])
-AC_MSG_RESULT([$with_system_libmpdec])
-
-AC_DEFUN([USE_BUNDLED_LIBMPDEC],
-         [LIBMPDEC_CFLAGS="-I\$(srcdir)/Modules/_decimal/libmpdec"
-          LIBMPDEC_LIBS="-lm \$(LIBMPDEC_A)"
-          LIBMPDEC_INTERNAL="\$(LIBMPDEC_HEADERS) \$(LIBMPDEC_A)"
-          have_mpdec=yes
-          with_system_libmpdec=no])
-
-AS_VAR_IF(
-  [with_system_libmpdec], [yes],
-  [PKG_CHECK_MODULES(
-    [LIBMPDEC], [libmpdec >= 2.5.0], [],
-    [LIBMPDEC_CFLAGS=${LIBMPDEC_CFLAGS-""}
-     LIBMPDEC_LIBS=${LIBMPDEC_LIBS-"-lmpdec -lm"}
-     LIBMPDEC_INTERNAL=])],
-  [USE_BUNDLED_LIBMPDEC()])
-
-AS_VAR_IF([with_system_libmpdec], [yes],
-  [WITH_SAVE_ENV([
+dnl Check for libmpdec >= 2.5.0
+PKG_CHECK_MODULES([LIBMPDEC], [libmpdec >= 2.5.0], [have_mpdec=yes], [
+  WITH_SAVE_ENV([
     CPPFLAGS="$CPPFLAGS $LIBMPDEC_CFLAGS"
     LIBS="$LIBS $LIBMPDEC_LIBS"
 
@@ -4206,24 +4179,35 @@ AS_VAR_IF([with_system_libmpdec], [yes],
         #if MPD_VERSION_HEX < 0x02050000
         #  error "mpdecimal 2.5.0 or higher required"
         #endif
-      ], [const char *x = mpd_version();])],
-      [have_mpdec=yes],
-      [have_mpdec=no])
-  ])],
-  [AC_MSG_WARN([m4_normalize([
-     the bundled copy of libmpdecimal is scheduled for removal in Python 3.15;
-     consider using a system installed mpdecimal library.])])])
+      ], [const char *x = mpd_version();])
+    ], [have_mpdec=yes], [have_mpdec=no])
 
-AS_IF([test "$with_system_libmpdec" = "yes" && test "$have_mpdec" = "no"],
-      [AC_MSG_WARN([m4_normalize([
-         no system libmpdecimal found; falling back to bundled libmpdecimal
-         (deprecated and scheduled for removal in Python 3.15)])])
-       USE_BUNDLED_LIBMPDEC()])
+    AS_VAR_IF([have_mpdec], [yes], [
+     LIBMPDEC_CFLAGS=${LIBMPDEC_CFLAGS-""}
+     LIBMPDEC_LIBS=${LIBMPDEC_LIBS-"-lmpdec -lm"}
+    ])
+  ])
+])
 
 # Disable forced inlining in debug builds, see GH-94847
 AS_VAR_IF(
   [with_pydebug], [yes],
   [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DTEST_COVERAGE"])])
+
+if test "$have_ipa_pure_const_bug" = yes; then
+    # Some versions of gcc miscompile inline asm:
+    # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=46491
+    # https://gcc.gnu.org/ml/gcc/2010-11/msg00366.html
+    AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -fno-ipa-pure-const"])
+fi
+
+if test "$have_glibc_memmove_bug" = yes; then
+    # _FORTIFY_SOURCE wrappers for memmove and bcopy are incorrect:
+    # https://sourceware.org/ml/libc-alpha/2010-12/msg00009.html
+    AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -U_FORTIFY_SOURCE"])
+fi
+
+AC_SUBST([LIBMPDEC_CFLAGS])
 
 # Check whether _decimal should use a coroutine-local or thread-local context
 AC_MSG_CHECKING([for --with-decimal-contextvar])
@@ -4241,72 +4225,7 @@ then
     AC_DEFINE([WITH_DECIMAL_CONTEXTVAR], [1],
       [Define if you want build the _decimal module using a coroutine-local rather than a thread-local context])
 fi
-
 AC_MSG_RESULT([$with_decimal_contextvar])
-
-AS_VAR_IF(
-  [with_system_libmpdec], [no],
-  [# Check for libmpdec machine flavor
-   AC_MSG_CHECKING([for decimal libmpdec machine])
-   AS_CASE([$ac_sys_system],
-     [Darwin*], [libmpdec_system=Darwin],
-     [SunOS*], [libmpdec_system=sunos],
-     [libmpdec_system=other]
-   )
-
-   libmpdec_machine=unknown
-   if test "$libmpdec_system" = Darwin; then
-       # universal here means: build libmpdec with the same arch options
-       # the python interpreter was built with
-       libmpdec_machine=universal
-   elif test $ac_cv_sizeof_size_t -eq 8; then
-       if test "$ac_cv_gcc_asm_for_x64" = yes; then
-           libmpdec_machine=x64
-       elif test "$ac_cv_type___uint128_t" = yes; then
-           libmpdec_machine=uint128
-       else
-           libmpdec_machine=ansi64
-       fi
-   elif test $ac_cv_sizeof_size_t -eq 4; then
-       if test "$ac_cv_gcc_asm_for_x87" = yes -a "$libmpdec_system" != sunos; then
-           AS_CASE([$ac_cv_cc_name],
-               [*gcc*],   [libmpdec_machine=ppro],
-               [*clang*], [libmpdec_machine=ppro],
-               [libmpdec_machine=ansi32]
-           )
-       else
-           libmpdec_machine=ansi32
-       fi
-   fi
-   AC_MSG_RESULT([$libmpdec_machine])
-
-   AS_CASE([$libmpdec_machine],
-     [x64],         [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_64=1 -DASM=1"])],
-     [uint128],     [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_64=1 -DANSI=1 -DHAVE_UINT128_T=1"])],
-     [ansi64],      [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_64=1 -DANSI=1"])],
-     [ppro],        [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_32=1 -DANSI=1 -DASM=1 -Wno-unknown-pragmas"])],
-     [ansi32],      [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_32=1 -DANSI=1"])],
-     [ansi-legacy], [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_32=1 -DANSI=1 -DLEGACY_COMPILER=1"])],
-     [universal],   [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DUNIVERSAL=1"])],
-     [AC_MSG_ERROR([_decimal: unsupported architecture])]
-   )])
-
-if test "$have_ipa_pure_const_bug" = yes; then
-    # Some versions of gcc miscompile inline asm:
-    # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=46491
-    # https://gcc.gnu.org/ml/gcc/2010-11/msg00366.html
-    AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -fno-ipa-pure-const"])
-fi
-
-if test "$have_glibc_memmove_bug" = yes; then
-    # _FORTIFY_SOURCE wrappers for memmove and bcopy are incorrect:
-    # https://sourceware.org/ml/libc-alpha/2010-12/msg00009.html
-    AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -U_FORTIFY_SOURCE"])
-fi
-
-AC_SUBST([LIBMPDEC_CFLAGS])
-AC_SUBST([LIBMPDEC_INTERNAL])
-
 
 dnl detect sqlite3 from Emscripten emport
 PY_CHECK_EMSCRIPTEN_PORT([LIBSQLITE3], [-sUSE_SQLITE3])
@@ -7191,7 +7110,6 @@ SRCDIRS="\
   Modules \
   Modules/_ctypes \
   Modules/_decimal \
-  Modules/_decimal/libmpdec \
   Modules/_hacl \
   Modules/_io \
   Modules/_multiprocessing \
@@ -8133,6 +8051,10 @@ PY_STDLIB_MOD([_curses_panel],
   [], [test "$have_curses" = "yes" && test "$have_panel" = "yes"],
   [$PANEL_CFLAGS $CURSES_CFLAGS], [$PANEL_LIBS $CURSES_LIBS]
 )
+if test "$have_mpdec" = "no"
+then
+  AS_VAR_SET([py_cv_module_]_decimal, [n/a])
+fi
 PY_STDLIB_MOD([_decimal],
   [], [test "$have_mpdec" = "yes"],
   [$LIBMPDEC_CFLAGS], [$LIBMPDEC_LIBS])
