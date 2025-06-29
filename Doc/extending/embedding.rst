@@ -181,7 +181,7 @@ then the result should be:
 
 .. code-block:: shell-session
 
-   $ call multiply multiply 3 2
+   $ call multiply 3 2
    Will compute 3 times 2
    Result of call: 6
 
