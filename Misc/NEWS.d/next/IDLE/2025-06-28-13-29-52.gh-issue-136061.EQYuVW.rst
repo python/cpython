@@ -1,1 +1,1 @@
-Code for replacing left and right angled brackets in extension names when loading extensions in IDLE has been simplified.
+Update code in editor.Editor.load_extension.  Patch by johnzhou721, Zachary Ware, and Terry J. Reedy.
