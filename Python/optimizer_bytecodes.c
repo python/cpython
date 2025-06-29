@@ -936,7 +936,7 @@ dummy_func(void) {
         }
     }
 
-    op(_CALL_STR_1, (unused, unused, arg -- res)) {
+    op(_CALL_STR_1, (unused, unused, arg -- res, a)) {
         if (sym_matches_type(arg, &PyUnicode_Type)) {
             // e.g. str('foo') or str(foo) where foo is known to be a string
             res = arg;
@@ -944,6 +944,7 @@ dummy_func(void) {
         else {
             res = sym_new_type(ctx, &PyUnicode_Type);
         }
+        a = arg;
     }
 
     op(_CALL_ISINSTANCE, (unused, unused, instance, cls -- res)) {
