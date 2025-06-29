@@ -563,7 +563,8 @@ if hasattr(_socket.socket, "sendmsg"):
         import array
 
         return sock.sendmsg(buffers, [(_socket.SOL_SOCKET,
-            _socket.SCM_RIGHTS, array.array("i", fds))])
+            _socket.SCM_RIGHTS, array.array("i", fds))],
+            flags, address)
     __all__.append("send_fds")
 
 if hasattr(_socket.socket, "recvmsg"):
@@ -578,14 +579,14 @@ if hasattr(_socket.socket, "recvmsg"):
 
         # Array of ints
         fds = array.array("i")
-        msg, ancdata, flags, addr = sock.recvmsg(bufsize,
-            _socket.CMSG_LEN(maxfds * fds.itemsize))
+        msg, ancdata, msg_flags, addr = sock.recvmsg(bufsize,
+            _socket.CMSG_LEN(maxfds * fds.itemsize), flags)
         for cmsg_level, cmsg_type, cmsg_data in ancdata:
             if (cmsg_level == _socket.SOL_SOCKET and cmsg_type == _socket.SCM_RIGHTS):
                 fds.frombytes(cmsg_data[:
                         len(cmsg_data) - (len(cmsg_data) % fds.itemsize)])
 
-        return msg, list(fds), flags, addr
+        return msg, list(fds), msg_flags, addr
     __all__.append("recv_fds")
 
 if hasattr(_socket.socket, "share"):
