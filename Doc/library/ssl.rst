@@ -1782,6 +1782,10 @@ to speed up repeated connections from the same clients.
    a well-known elliptic curve, for example ``prime256v1`` for a widely
    supported curve.
 
+   For OpenSSL 3.0 and above *curve_name* parameter can be a colon separated
+   list of curves, for example ``prime256v1:brainpoolP384r1`` specifies two curves that will be
+   used on a client hello.
+
    This setting doesn't apply to client sockets.  You can also use the
    :data:`OP_SINGLE_ECDH_USE` option to further improve security.
 
