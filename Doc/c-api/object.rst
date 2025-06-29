@@ -197,6 +197,10 @@ Object Protocol
    in favour of using :c:func:`PyObject_DelAttr`, but there are currently no
    plans to remove it.
 
+   .. deprecated:: next
+      Calling this function with ``NULL`` *v* and an exception set is now
+      deprecated.
+
 
 .. c:function:: int PyObject_SetAttrString(PyObject *o, const char *attr_name, PyObject *v)
 
@@ -214,6 +218,11 @@ Object Protocol
    :c:func:`PyUnicode_FromString` and :c:func:`PyObject_SetAttr` directly.
    For more details, see :c:func:`PyUnicode_InternFromString`, which may be
    used internally to create a key object.
+
+   .. deprecated:: next
+      Calling this function with ``NULL`` *v* and an exception set is now
+      deprecated.
+
 
 .. c:function:: int PyObject_GenericSetAttr(PyObject *o, PyObject *name, PyObject *value)
 
