@@ -1277,12 +1277,8 @@ class ClinicParserTest(TestCase):
             os.stat
                 invalid syntax: int = 42
         """
-        err = dedent(r"""
-            Function 'stat' has an invalid parameter declaration:
-            \s+'invalid syntax: int = 42'
-        """).strip()
-        with self.assertRaisesRegex(ClinicError, err):
-            self.parse_function(block)
+        err = "Function 'stat' has an invalid parameter declaration: 'invalid syntax: int = 42'"
+        self.expect_failure(block, err, lineno=2)
 
     def test_param_default_invalid_syntax(self):
         block = """
@@ -1290,7 +1286,7 @@ class ClinicParserTest(TestCase):
             os.stat
                 x: int = invalid syntax
         """
-        err = r"Syntax error: 'x = invalid syntax\n'"
+        err = "Function 'stat' has an invalid parameter declaration:"
         self.expect_failure(block, err, lineno=2)
 
     def test_cloning_nonexistent_function_correctly_fails(self):
@@ -2510,7 +2506,7 @@ class ClinicParserTest(TestCase):
         self.expect_failure(block, err, lineno=1)
 
     def test_vararg_cannot_take_default_value(self):
-        err = "Vararg can't take a default value!"
+        err = "Function 'fn' has an invalid parameter declaration:"
         block = """
             fn
                 *args: tuple = None
