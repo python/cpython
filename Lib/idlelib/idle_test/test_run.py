@@ -45,6 +45,7 @@ class ExceptionTest(unittest.TestCase):
             ('int.reel', AttributeError,
                  "type object 'int' has no attribute 'reel'. "
                  "Did you mean: 'real'?\n"),
+            ('raise NameError("123\\n456")', NameError, "123\n456"),
             )
 
     @force_not_colorized
@@ -52,10 +53,16 @@ class ExceptionTest(unittest.TestCase):
         for code, exc, msg in self.data:
             with self.subTest(code=code):
                 try:
-                    eval(compile(code, '', 'eval'))
+                    if "raise " not in code:
+                        eval(compile(code, '', 'eval'))
+                    else:
+                        exec(compile(code, '', 'exec'))
                 except exc:
-                    typ, val, tb = sys.exc_info()
-                    actual = run.get_message_lines(typ, val, tb)[0]
+                    if "raise " in code:
+                        actual = run.print_exception(in_test=True)
+                    else:
+                        typ, val, tb = sys.exc_info()
+                        actual = run.get_message_lines(typ, val, tb)[0]
                     expect = f'{exc.__name__}: {msg}'
                     self.assertEqual(actual, expect)
 
