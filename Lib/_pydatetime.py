@@ -1611,7 +1611,7 @@ class time:
             s = s[:-1] + ", fold=1)"
         return s
 
-    def isoformat(self, timespec='auto'):
+    def isoformat(self, timespec='auto', use_utc_designator=False):
         """Return the time formatted according to ISO.
 
         The full format is 'HH:MM:SS.mmmmmm+zz:zz'. By default, the fractional
@@ -1620,12 +1620,19 @@ class time:
         The optional argument timespec specifies the number of additional
         terms of the time to include. Valid options are 'auto', 'hours',
         'minutes', 'seconds', 'milliseconds' and 'microseconds'.
+
+        The UTC offset will be replaced with 'Z' if use_utc_designator
+        is True and self.tzname() is exactly 'UTC'.
         """
         s = _format_time(self._hour, self._minute, self._second,
                           self._microsecond, timespec)
-        tz = self._tzstr()
-        if tz:
-            s += tz
+
+        if use_utc_designator and (self.tzinfo is timezone.utc or self.tzname() == 'UTC'):
+            s += 'Z'
+        else:
+            tz = self._tzstr()
+            if tz:
+                s += tz
         return s
 
     __str__ = isoformat
@@ -2157,7 +2164,7 @@ class datetime(date):
             self._hour, self._minute, self._second,
             self._year)
 
-    def isoformat(self, sep='T', timespec='auto'):
+    def isoformat(self, sep='T', timespec='auto', use_utc_designator=False):
         """Return the time formatted according to ISO.
 
         The full format looks like 'YYYY-MM-DD HH:MM:SS.mmmmmm'.
@@ -2172,15 +2179,21 @@ class datetime(date):
         The optional argument timespec specifies the number of additional
         terms of the time to include. Valid options are 'auto', 'hours',
         'minutes', 'seconds', 'milliseconds' and 'microseconds'.
+
+        The UTC offset will be replaced with 'Z' if use_utc_designator
+        is True and self.tzname() is exactly 'UTC'.
         """
         s = ("%04d-%02d-%02d%c" % (self._year, self._month, self._day, sep) +
              _format_time(self._hour, self._minute, self._second,
                           self._microsecond, timespec))
 
         off = self.utcoffset()
-        tz = _format_offset(off)
-        if tz:
-            s += tz
+        if use_utc_designator and (self.tzinfo is timezone.utc or self.tzname() == 'UTC'):
+            s += 'Z'
+        else:
+            tz = _format_offset(off)
+            if tz:
+                s += tz
 
         return s
 
