@@ -2248,43 +2248,62 @@ math_modf_impl(PyObject *module, double x)
    in that int is larger than PY_SSIZE_T_MAX. */
 
 static PyObject*
+loghelper_int(PyObject* arg, double (*func)(double))
+{
+    /* If it is int, do it ourselves. */
+    double x, result;
+    int64_t e;
+
+    /* Negative or zero inputs give a ValueError. */
+    if (!_PyLong_IsPositive((PyLongObject *)arg)) {
+        PyErr_SetString(PyExc_ValueError,
+                        "expected a positive input");
+        return NULL;
+    }
+
+    x = PyLong_AsDouble(arg);
+    if (x == -1.0 && PyErr_Occurred()) {
+        if (!PyErr_ExceptionMatches(PyExc_OverflowError))
+            return NULL;
+        /* Here the conversion to double overflowed, but it's possible
+           to compute the log anyway.  Clear the exception and continue. */
+        PyErr_Clear();
+        x = _PyLong_Frexp((PyLongObject *)arg, &e);
+        assert(!PyErr_Occurred());
+        /* Value is ~= x * 2**e, so the log ~= log(x) + log(2) * e. */
+        result = func(x) + func(2.0) * e;
+    }
+    else
+        /* Successfully converted x to a double. */
+        result = func(x);
+    return PyFloat_FromDouble(result);
+}
+
+static PyObject*
 loghelper(PyObject* arg, double (*func)(double))
 {
     /* If it is int, do it ourselves. */
     if (PyLong_Check(arg)) {
-        double x, result;
-        int64_t e;
-
-        /* Negative or zero inputs give a ValueError. */
-        if (!_PyLong_IsPositive((PyLongObject *)arg)) {
-            /* The input can be an arbitrary large integer, so we
-               don't include it's value in the error message. */
-            PyErr_SetString(PyExc_ValueError,
-                            "expected a positive input");
+        return loghelper_int(arg, func);
+    }
+    /* Else let libm handle it by itself. */
+    PyObject *res = math_1(arg, func, 0, "expected a positive input, got %s");
+    if (res == NULL &&
+        PyErr_ExceptionMatches(PyExc_OverflowError) &&
+        PyIndex_Check(arg))
+    {
+        /* Here the conversion to double overflowed, but it's possible
+           to compute the log anyway.  Clear the exception, convert to
+           integer and continue. */
+        PyErr_Clear();
+        arg = _PyNumber_Index(arg);
+        if (arg == NULL) {
             return NULL;
         }
-
-        x = PyLong_AsDouble(arg);
-        if (x == -1.0 && PyErr_Occurred()) {
-            if (!PyErr_ExceptionMatches(PyExc_OverflowError))
-                return NULL;
-            /* Here the conversion to double overflowed, but it's possible
-               to compute the log anyway.  Clear the exception and continue. */
-            PyErr_Clear();
-            x = _PyLong_Frexp((PyLongObject *)arg, &e);
-            assert(e >= 0);
-            assert(!PyErr_Occurred());
-            /* Value is ~= x * 2**e, so the log ~= log(x) + log(2) * e. */
-            result = func(x) + func(2.0) * e;
-        }
-        else
-            /* Successfully converted x to a double. */
-            result = func(x);
-        return PyFloat_FromDouble(result);
+        res = loghelper_int(arg, func);
+        Py_DECREF(arg);
     }
-
-    /* Else let libm handle it by itself. */
-    return math_1(arg, func, 0, "expected a positive input, got %s");
+    return res;
 }
 
 
