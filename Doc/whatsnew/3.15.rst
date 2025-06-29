@@ -75,9 +75,33 @@ New features
 Other language changes
 ======================
 
+* Python now uses UTF-8_ as the default encoding, independent of the system's
+  environment. This means that I/O operations without an explicit encoding,
+  e.g. ``open('flying-circus.txt')``, will use UTF-8.
+  UTF-8 is a widely-supported Unicode_ character encoding that has become a
+  *de facto* standard for representing text, including nearly every webpage
+  on the internet, many common file formats, programming languages, and more.
+
+  This only applies when no ``encoding`` argument is given. For best
+  compatibility between versions of Python, ensure that an explicit ``encoding``
+  argument is always provided. The :ref:`opt-in encoding warning <io-encoding-warning>`
+  can be used to identify code that may be affected by this change.
+  The special special ``encoding='locale'`` argument uses the current locale
+  encoding, and has been supported since Python 3.10.
+
+  To retain the previous behaviour, Python's UTF-8 mode may be disabled with
+  the :envvar:`PYTHONUTF8=0 <PYTHONUTF8>` environment variable or the
+  :option:`-X utf8=0 <-X>` command line option.
+
+  .. seealso:: :pep:`686` for further details.
+
+  .. _UTF-8: https://en.wikipedia.org/wiki/UTF-8
+  .. _Unicode: https://home.unicode.org/
+
+  (Contributed by Adam Turner in :gh:`133711`; PEP 686 written by Inada Naoki.)
+
 * Several error messages incorrectly using the term "argument" have been corrected.
   (Contributed by Stan Ulbrych in :gh:`133382`.)
-
 
 
 New modules
