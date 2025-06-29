@@ -36,7 +36,8 @@ __all__ = ["normcase","isabs","join","splitdrive","splitroot","split","splitext"
            "samefile","sameopenfile","samestat",
            "curdir","pardir","sep","pathsep","defpath","altsep","extsep",
            "devnull","realpath","supports_unicode_filenames","relpath",
-           "commonpath", "isjunction","isdevdrive","ALLOW_MISSING"]
+           "commonpath", "isjunction","isdevdrive",
+           "ALL_BUT_LAST", "ALLOW_MISSING"]
 
 
 def _get_sep(path):
@@ -404,7 +405,8 @@ symbolic links encountered in the path."""
         getcwd = os.getcwd
     if strict is ALLOW_MISSING:
         ignored_error = FileNotFoundError
-        strict = True
+    elif strict is ALL_BUT_LAST:
+        ignored_error = FileNotFoundError
     elif strict:
         ignored_error = ()
     else:
@@ -418,7 +420,7 @@ symbolic links encountered in the path."""
     # indicates that a symlink target has been resolved, and that the original
     # symlink path can be retrieved by popping again. The [::-1] slice is a
     # very fast way of spelling list(reversed(...)).
-    rest = filename.split(sep)[::-1]
+    rest = filename.rstrip(sep).split(sep)[::-1]
 
     # Number of unprocessed parts in 'rest'. This can differ from len(rest)
     # later, because 'rest' might contain markers for unresolved symlinks.
@@ -427,6 +429,7 @@ symbolic links encountered in the path."""
     # The resolved path, which is absolute throughout this function.
     # Note: getcwd() returns a normalized and symlink-free path.
     path = sep if filename.startswith(sep) else getcwd()
+    trailing_sep = filename.endswith(sep)
 
     # Mapping from symlink paths to *fully resolved* symlink targets. If a
     # symlink is encountered but not yet resolved, the value is None. This is
@@ -459,7 +462,8 @@ symbolic links encountered in the path."""
         try:
             st_mode = lstat(newpath).st_mode
             if not stat.S_ISLNK(st_mode):
-                if strict and part_count and not stat.S_ISDIR(st_mode):
+                if (strict and (part_count or trailing_sep)
+                    and not stat.S_ISDIR(st_mode)):
                     raise OSError(errno.ENOTDIR, os.strerror(errno.ENOTDIR),
                                   newpath)
                 path = newpath
@@ -486,7 +490,8 @@ symbolic links encountered in the path."""
                 continue
             target = readlink(newpath)
         except ignored_error:
-            pass
+            if strict is ALL_BUT_LAST and part_count:
+                raise
         else:
             # Resolve the symbolic link
             if target.startswith(sep):
