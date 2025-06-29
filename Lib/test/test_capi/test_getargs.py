@@ -451,8 +451,7 @@ class Float_TestCase(unittest.TestCase, FloatsAreIdenticalMixin):
         self.assertEqual(getargs_f(FloatSubclass(7.5)), 7.5)
         self.assertEqual(getargs_f(FloatSubclass2(7.5)), 7.5)
         self.assertRaises(TypeError, getargs_f, BadFloat())
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(getargs_f(BadFloat2()), 4.25)
+        self.assertRaises(TypeError, getargs_f, BadFloat2())
         self.assertEqual(getargs_f(BadFloat3(7.5)), 7.5)
         self.assertEqual(getargs_f(Index()), 99.0)
         self.assertRaises(TypeError, getargs_f, Int())
@@ -485,8 +484,7 @@ class Float_TestCase(unittest.TestCase, FloatsAreIdenticalMixin):
         self.assertEqual(getargs_d(FloatSubclass(7.5)), 7.5)
         self.assertEqual(getargs_d(FloatSubclass2(7.5)), 7.5)
         self.assertRaises(TypeError, getargs_d, BadFloat())
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(getargs_d(BadFloat2()), 4.25)
+        self.assertRaises(TypeError, getargs_d, BadFloat2())
         self.assertEqual(getargs_d(BadFloat3(7.5)), 7.5)
         self.assertEqual(getargs_d(Index()), 99.0)
         self.assertRaises(TypeError, getargs_d, Int())
@@ -509,8 +507,7 @@ class Float_TestCase(unittest.TestCase, FloatsAreIdenticalMixin):
         self.assertEqual(getargs_D(ComplexSubclass(7.5+0.25j)), 7.5+0.25j)
         self.assertEqual(getargs_D(ComplexSubclass2(7.5+0.25j)), 7.5+0.25j)
         self.assertRaises(TypeError, getargs_D, BadComplex())
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(getargs_D(BadComplex2()), 4.25+0.5j)
+        self.assertRaises(TypeError, getargs_D, BadComplex2())
         self.assertEqual(getargs_D(BadComplex3(7.5+0.25j)), 7.5+0.25j)
         self.assertEqual(getargs_D(Index()), 99.0+0j)
         self.assertRaises(TypeError, getargs_D, Int())
