@@ -864,16 +864,37 @@ class _SelectorTransport(transports._FlowControlMixin,
         self._closing = True
         self._loop._remove_reader(self._sock_fd)
         if not self._buffer:
-            self._conn_lost += 1
             self._loop._remove_writer(self._sock_fd)
+            self._conn_lost += 1
             self._loop.call_soon(self._call_connection_lost, None)
 
     def __del__(self, _warn=warnings.warn):
         if self._sock is not None:
-            _warn(f"unclosed transport {self!r}", ResourceWarning, source=self)
+            if self._protocol_connected:
+                self._protocol_connected = False
+                _warn(f"unclosed transport {self!r}", ResourceWarning, source=self)
+
+            if self._buffer:
+                self._buffer.clear()
+                self._loop._remove_writer(self._sock_fd)
+
+            if not self._closing:
+                self._closing = True
+                self._loop._remove_reader(self._sock_fd)
+
+            self._conn_lost += 1
+
+            self._sock_fd = -1
             self._sock.close()
-            if self._server is not None:
-                self._server._detach(self)
+            self._sock = None
+
+        self._protocol = None
+        self._loop = None
+
+        server = self._server
+        if server is not None:
+            self._server = None
+            server._detach(self)
 
     def _fatal_error(self, exc, message='Fatal error on transport'):
         # Should be called from exception handler only.
@@ -904,8 +925,10 @@ class _SelectorTransport(transports._FlowControlMixin,
     def _call_connection_lost(self, exc):
         try:
             if self._protocol_connected:
+                self._protocol_connected = False
                 self._protocol.connection_lost(exc)
         finally:
+            self._sock_fd = -1
             self._sock.close()
             self._sock = None
             self._protocol = None
