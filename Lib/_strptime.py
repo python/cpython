@@ -302,7 +302,7 @@ class TimeRE(dict):
             # W is set below by using 'U'
             'y': r"(?P<y>\d\d)",
             'Y': r"(?P<Y>\d\d\d\d)",
-            'z': r"(?P<z>[+-]\d\d(:?[0-5]\d(:?[0-5]\d(\.\d{1,6})?)?)?|(?-i:Z))",
+            'z': r"(?P<z>([+-]\d\d(:?[0-5]\d(:?[0-5]\d(\.\d{1,6})?)?)?)|(?-i:Z))?",
             'A': self.__seqToRE(self.locale_time.f_weekday, 'A'),
             'a': self.__seqToRE(self.locale_time.a_weekday, 'a'),
             'B': self.__seqToRE(self.locale_time.f_month[1:], 'B'),
