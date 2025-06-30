@@ -858,6 +858,19 @@ move_legacy_finalizer_reachable(PyGC_Head *finalizers)
     }
 }
 
+static bool
+should_clear_weakref(PyWeakReference *wr)
+{
+    if (wr->wr_callback == NULL && PyType_Check(wr->wr_object)) {
+        /* This is intended to match the values of the tp_subclasses dict.
+         * It matches weakrefs to types in other places as well, which is
+         * an unintended side effect.
+         */
+        return false;
+    }
+    return true;
+}
+
 /* Clear all weakrefs to unreachable objects, and if such a weakref has a
  * callback, invoke it if necessary.  Note that it's possible for such
  * weakrefs to be outside the unreachable set -- indeed, those are precisely
@@ -895,7 +908,7 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
         op = FROM_GC(gc);
         next = GC_NEXT(gc);
 
-        if (PyWeakref_Check(op)) {
+        if (PyWeakref_Check(op) && should_clear_weakref((PyWeakReference *)op)) {
             /* A weakref inside the unreachable set must be cleared.  If we
              * allow its callback to execute inside delete_garbage(), it
              * could expose objects that have tp_clear already called on
@@ -925,16 +938,19 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
          * all the weakrefs, and move the weakrefs with callbacks
          * that must be called into wrcb_to_call.
          */
-        for (wr = *wrlist; wr != NULL; wr = *wrlist) {
+        PyWeakReference *next_wr;
+        for (wr = *wrlist; wr != NULL; wr = next_wr) {
+            next_wr = wr->wr_next;
             PyGC_Head *wrasgc;                  /* AS_GC(wr) */
 
-            /* _PyWeakref_ClearRef clears the weakref but leaves
-             * the callback pointer intact.  Obscure:  it also
-             * changes *wrlist.
-             */
-            _PyObject_ASSERT((PyObject *)wr, wr->wr_object == op);
-            _PyWeakref_ClearRef(wr);
-            _PyObject_ASSERT((PyObject *)wr, wr->wr_object == Py_None);
+            if (should_clear_weakref(wr)) {
+                /* _PyWeakref_ClearRef clears the weakref but leaves
+                 * the callback pointer intact.  Obscure:  it also
+                 * changes *wrlist.
+                 */
+                _PyWeakref_ClearRef(wr);
+                _PyObject_ASSERT((PyObject *)wr, wr->wr_object == Py_None);
+            }
             if (wr->wr_callback == NULL) {
                 /* no callback */
                 continue;
