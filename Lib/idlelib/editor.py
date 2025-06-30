@@ -1202,7 +1202,7 @@ class EditorWindow:
         if keydefs:
             self.apply_bindings(keydefs)
             for vevent in keydefs:
-                methodname = vevent.lstrip("<").replace("-", "_").rstrip(">") + "_event"
+                methodname = vevent.strip("<>").replace("-", "_") + "_event"
                 if hasattr(ins, methodname):
                     self.text.bind(vevent, getattr(ins, methodname))
 
