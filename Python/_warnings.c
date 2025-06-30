@@ -616,33 +616,60 @@ already_warned(PyInterpreterState *interp, PyObject *registry, PyObject *key,
 static PyObject *
 normalize_module(PyObject *filename)
 {
-    PyObject *module;
-    int kind;
-    const void *data;
-    Py_ssize_t len;
+    PyObject *module_name = NULL;
+    PyObject *os_path = NULL;
+    PyObject *basename = NULL;
+    PyObject *splitext = NULL;
+    PyObject *root = NULL;
 
-    len = PyUnicode_GetLength(filename);
-    if (len < 0)
+    os_path = PyImport_ImportModule("os.path");
+    if (os_path == NULL) {
         return NULL;
+    }
 
-    if (len == 0)
+    basename = PyObject_CallMethod(os_path, "basename", "O", filename);
+    if (basename == NULL) {
+        goto cleanup;
+    }
+
+    splitext = PyObject_CallMethod(os_path, "splitext", "O", basename);
+    if (splitext == NULL) {
+        goto cleanup;
+    }
+
+    root = PyTuple_GetItem(splitext, 0);
+    if (root == NULL) {
+        goto cleanup;
+    }
+
+    if (PyUnicode_CompareWithASCIIString(root, "__init__") == 0) {
+        PyObject *dirname = PyObject_CallMethod(os_path, "dirname", "O", filename);
+        if (dirname == NULL) {
+            goto cleanup;
+        }
+        module_name = PyObject_CallMethod(os_path, "basename", "O", dirname);
+        Py_DECREF(dirname);
+    } else {
+        module_name = Py_NewRef(root);
+    }
+
+cleanup:
+    Py_XDECREF(os_path);
+    Py_XDECREF(basename);
+    Py_XDECREF(splitext);
+
+    if (module_name == NULL) {
+        // Fallback or error occurred
+        PyErr_Clear();
         return PyUnicode_FromString("<unknown>");
-
-    kind = PyUnicode_KIND(filename);
-    data = PyUnicode_DATA(filename);
-
-    /* if filename.endswith(".py"): */
-    if (len >= 3 &&
-        PyUnicode_READ(kind, data, len-3) == '.' &&
-        PyUnicode_READ(kind, data, len-2) == 'p' &&
-        PyUnicode_READ(kind, data, len-1) == 'y')
-    {
-        module = PyUnicode_Substring(filename, 0, len-3);
     }
-    else {
-        module = Py_NewRef(filename);
+
+    if (PyUnicode_GetLength(module_name) == 0) {
+        Py_DECREF(module_name);
+        return PyUnicode_FromString("<unknown>");
     }
-    return module;
+
+    return module_name;
 }
 
 static int
