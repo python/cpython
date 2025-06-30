@@ -39,55 +39,59 @@ extern "C" {
 import os, sys
 sys.path.insert(0, os.path.realpath(os.path.join(os.getcwd(), "Tools")))
 from cpuinfo.cpuid_features_gen import generate_cpuid_features_enum
-print(generate_cpuid_features_enum("_Py_cpuid_feature_mask"))
+print(generate_cpuid_features_enum())
 [python start generated code]*/
-// fmt: off
-/** Enumeration for CPUID features */
-enum _Py_cpuid_feature_mask_e {
-    /* CPUID (LEAF=1, SUBLEAF=0) [ECX] */
-    _Py_CPUID_MASK_ECX_L1_SSE3                  = 0x00000001,    // bit = 0
-    _Py_CPUID_MASK_ECX_L1_PCLMULQDQ             = 0x00000002,    // bit = 1
-    _Py_CPUID_MASK_ECX_L1_SSSE3                 = 0x00000200,    // bit = 9
-    _Py_CPUID_MASK_ECX_L1_FMA                   = 0x00001000,    // bit = 12
-    _Py_CPUID_MASK_ECX_L1_SSE4_1                = 0x00080000,    // bit = 19
-    _Py_CPUID_MASK_ECX_L1_SSE4_2                = 0x00100000,    // bit = 20
-    _Py_CPUID_MASK_ECX_L1_POPCNT                = 0x00800000,    // bit = 23
-    _Py_CPUID_MASK_ECX_L1_XSAVE                 = 0x04000000,    // bit = 26
-    _Py_CPUID_MASK_ECX_L1_OSXSAVE               = 0x08000000,    // bit = 27
-    _Py_CPUID_MASK_ECX_L1_AVX                   = 0x10000000,    // bit = 28
-    /* CPUID (LEAF=1, SUBLEAF=0) [EDX] */
-    _Py_CPUID_MASK_EDX_L1_CMOV                  = 0x00008000,    // bit = 15
-    _Py_CPUID_MASK_EDX_L1_SSE                   = 0x02000000,    // bit = 25
-    _Py_CPUID_MASK_EDX_L1_SSE2                  = 0x04000000,    // bit = 26
-    /* CPUID (LEAF=7, SUBLEAF=0) [EBX] */
-    _Py_CPUID_MASK_EBX_L7_AVX2                  = 0x00000020,    // bit = 5
-    _Py_CPUID_MASK_EBX_L7_AVX512_F              = 0x00010000,    // bit = 16
-    _Py_CPUID_MASK_EBX_L7_AVX512_DQ             = 0x00020000,    // bit = 17
-    _Py_CPUID_MASK_EBX_L7_AVX512_IFMA           = 0x00200000,    // bit = 21
-    _Py_CPUID_MASK_EBX_L7_AVX512_PF             = 0x04000000,    // bit = 26
-    _Py_CPUID_MASK_EBX_L7_AVX512_ER             = 0x08000000,    // bit = 27
-    _Py_CPUID_MASK_EBX_L7_AVX512_CD             = 0x10000000,    // bit = 28
-    _Py_CPUID_MASK_EBX_L7_AVX512_BW             = 0x40000000,    // bit = 30
-    _Py_CPUID_MASK_EBX_L7_AVX512_VL             = 0x80000000,    // bit = 31
-    /* CPUID (LEAF=7, SUBLEAF=0) [ECX] */
-    _Py_CPUID_MASK_ECX_L7_AVX512_VBMI           = 0x00000002,    // bit = 1
-    _Py_CPUID_MASK_ECX_L7_AVX512_VBMI2          = 0x00000040,    // bit = 6
-    _Py_CPUID_MASK_ECX_L7_AVX512_VNNI           = 0x00000800,    // bit = 11
-    _Py_CPUID_MASK_ECX_L7_AVX512_BITALG         = 0x00001000,    // bit = 12
-    _Py_CPUID_MASK_ECX_L7_AVX512_VPOPCNTDQ      = 0x00004000,    // bit = 14
-    /* CPUID (LEAF=7, SUBLEAF=0) [EDX] */
-    _Py_CPUID_MASK_EDX_L7_AVX512_4VNNIW         = 0x00000004,    // bit = 2
-    _Py_CPUID_MASK_EDX_L7_AVX512_4FMAPS         = 0x00000008,    // bit = 3
-    _Py_CPUID_MASK_EDX_L7_AVX512_VP2INTERSECT   = 0x00000100,    // bit = 8
-    /* CPUID (LEAF=7, SUBLEAF=1) [EAX] */
-    _Py_CPUID_MASK_EAX_L7S1_AVX_VNNI            = 0x00000010,    // bit = 4
-    _Py_CPUID_MASK_EAX_L7S1_AVX_IFMA            = 0x00800000,    // bit = 23
-    /* CPUID (LEAF=7, SUBLEAF=1) [EDX] */
-    _Py_CPUID_MASK_EDX_L7S1_AVX_VNNI_INT8       = 0x00000010,    // bit = 4
-    _Py_CPUID_MASK_EDX_L7S1_AVX_NE_CONVERT      = 0x00000020,    // bit = 5
-    _Py_CPUID_MASK_EDX_L7S1_AVX_VNNI_INT16      = 0x00000400,    // bit = 10
-};
-// fmt: on
-/*[python end generated code: output=8e58b0997d69bbf8 input=fce00935f64021f9]*/
+// clang-format off
+/** Constants for CPUID features */
+/* CPUID (LEAF=1, SUBLEAF=0) [ECX] */
+#define _Py_CPUID_MASK_ECX_L1_SSE3                  0x00000001  // bit = 0
+#define _Py_CPUID_MASK_ECX_L1_PCLMULQDQ             0x00000002  // bit = 1
+#define _Py_CPUID_MASK_ECX_L1_SSSE3                 0x00000200  // bit = 9
+#define _Py_CPUID_MASK_ECX_L1_FMA                   0x00001000  // bit = 12
+#define _Py_CPUID_MASK_ECX_L1_SSE4_1                0x00080000  // bit = 19
+#define _Py_CPUID_MASK_ECX_L1_SSE4_2                0x00100000  // bit = 20
+#define _Py_CPUID_MASK_ECX_L1_POPCNT                0x00800000  // bit = 23
+#define _Py_CPUID_MASK_ECX_L1_XSAVE                 0x04000000  // bit = 26
+#define _Py_CPUID_MASK_ECX_L1_OSXSAVE               0x08000000  // bit = 27
+#define _Py_CPUID_MASK_ECX_L1_AVX                   0x10000000  // bit = 28
+
+/* CPUID (LEAF=1, SUBLEAF=0) [EDX] */
+#define _Py_CPUID_MASK_EDX_L1_CMOV                  0x00008000  // bit = 15
+#define _Py_CPUID_MASK_EDX_L1_SSE                   0x02000000  // bit = 25
+#define _Py_CPUID_MASK_EDX_L1_SSE2                  0x04000000  // bit = 26
+
+/* CPUID (LEAF=7, SUBLEAF=0) [EBX] */
+#define _Py_CPUID_MASK_EBX_L7_AVX2                  0x00000020  // bit = 5
+#define _Py_CPUID_MASK_EBX_L7_AVX512_F              0x00010000  // bit = 16
+#define _Py_CPUID_MASK_EBX_L7_AVX512_DQ             0x00020000  // bit = 17
+#define _Py_CPUID_MASK_EBX_L7_AVX512_IFMA           0x00200000  // bit = 21
+#define _Py_CPUID_MASK_EBX_L7_AVX512_PF             0x04000000  // bit = 26
+#define _Py_CPUID_MASK_EBX_L7_AVX512_ER             0x08000000  // bit = 27
+#define _Py_CPUID_MASK_EBX_L7_AVX512_CD             0x10000000  // bit = 28
+#define _Py_CPUID_MASK_EBX_L7_AVX512_BW             0x40000000  // bit = 30
+#define _Py_CPUID_MASK_EBX_L7_AVX512_VL             0x80000000  // bit = 31
+
+/* CPUID (LEAF=7, SUBLEAF=0) [ECX] */
+#define _Py_CPUID_MASK_ECX_L7_AVX512_VBMI           0x00000002  // bit = 1
+#define _Py_CPUID_MASK_ECX_L7_AVX512_VBMI2          0x00000040  // bit = 6
+#define _Py_CPUID_MASK_ECX_L7_AVX512_VNNI           0x00000800  // bit = 11
+#define _Py_CPUID_MASK_ECX_L7_AVX512_BITALG         0x00001000  // bit = 12
+#define _Py_CPUID_MASK_ECX_L7_AVX512_VPOPCNTDQ      0x00004000  // bit = 14
+
+/* CPUID (LEAF=7, SUBLEAF=0) [EDX] */
+#define _Py_CPUID_MASK_EDX_L7_AVX512_4VNNIW         0x00000004  // bit = 2
+#define _Py_CPUID_MASK_EDX_L7_AVX512_4FMAPS         0x00000008  // bit = 3
+#define _Py_CPUID_MASK_EDX_L7_AVX512_VP2INTERSECT   0x00000100  // bit = 8
+
+/* CPUID (LEAF=7, SUBLEAF=1) [EAX] */
+#define _Py_CPUID_MASK_EAX_L7S1_AVX_VNNI            0x00000010  // bit = 4
+#define _Py_CPUID_MASK_EAX_L7S1_AVX_IFMA            0x00800000  // bit = 23
+
+/* CPUID (LEAF=7, SUBLEAF=1) [EDX] */
+#define _Py_CPUID_MASK_EDX_L7S1_AVX_VNNI_INT8       0x00000010  // bit = 4
+#define _Py_CPUID_MASK_EDX_L7S1_AVX_NE_CONVERT      0x00000020  // bit = 5
+#define _Py_CPUID_MASK_EDX_L7S1_AVX_VNNI_INT16      0x00000400  // bit = 10
+// clang-format on
+/*[python end generated code: output=e9112f064e2effec input=d7df15fec9f3daa2]*/
 
 #endif // !Py_INTERNAL_CPUINFO_CPUID_FEATURES_H

@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 __all__ = [
-    "next_block", "make_enum_name", "make_enum_member",
+    "next_block", "make_constant",
     "Style", "C99_STYLE", "C11_STYLE", "DOXYGEN_STYLE",
-    "CWriter"
+    "CWriter",
 ]  # fmt: skip
 
 import contextlib
@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
-    from typing import Any, Final
+    from typing import Any, Final, Literal
 
 
 def next_block(w: int) -> int:
@@ -21,20 +21,15 @@ def next_block(w: int) -> int:
     return ((w + 3) & ~0x03) if (w % 4) else (w + 4)
 
 
-_MASKSIZE: Final[int] = next_block(len("= 0x00000000,"))
+_MASKSIZE: Final[int] = next_block(len("0x00000000"))
 
 
-def make_enum_name(name: str) -> tuple[str, str]:
-    if name.endswith("_e"):
-        raise ValueError(f"enumeration must not end by '_e': {name!r}")
-    return f"{name}_e", name  # (enum name, typedef name)
-
-
-def make_enum_member(key: str, bit: int, name_maxsize: int) -> str:
+def make_constant(key: str, bit: int, name_maxsize: int) -> str:
+    assert bit <= 32, f"{key}: mask does not on an uint32_t"
     member_name = key.ljust(name_maxsize)
     member_mask = format(1 << bit, "008x")
-    member_mask = f"= 0x{member_mask},".ljust(_MASKSIZE)
-    return f"{member_name}{member_mask} // bit = {bit}"
+    member_mask = f"0x{member_mask}".ljust(_MASKSIZE)
+    return f"#define {member_name}{member_mask}// bit = {bit}"
 
 
 class Style(enum.IntEnum):
@@ -43,9 +38,9 @@ class Style(enum.IntEnum):
     DOXYGEN = enum.auto()
 
 
-C99_STYLE = Style.C99
-C11_STYLE = Style.C11
-DOXYGEN_STYLE = Style.DOXYGEN
+C99_STYLE: Final[Literal[Style.C99]] = Style.C99
+C11_STYLE: Final[Literal[Style.C11]] = Style.C11
+DOXYGEN_STYLE: Final[Literal[Style.DOXYGEN]] = Style.DOXYGEN
 
 _COMMENT_INLINE_STYLE: Final[dict[Style, tuple[str, str, str]]] = {
     C99_STYLE: ("// ", "", ""),
@@ -65,17 +60,6 @@ class CWriter:
         self._stream = StringIO()
         self._indent = " " * indentsize
         self._prefix = ""
-        self._disable_external_formatter()
-
-    def _disable_external_formatter(self) -> None:
-        """Add a directive to suppress external formatters to run."""
-        with self.prefixed(""):
-            self.write("// fmt: off")
-
-    def _enable_external_formatter(self) -> None:
-        """Add a directive to allow external formatters to run."""
-        with self.prefixed(""):
-            self.write("// fmt: on")
 
     def comment(
         self, text: str, *, level: int = 0, style: Style = C11_STYLE
@@ -111,9 +95,18 @@ class CWriter:
             self._write(prefix, sep="", end="")
         self._write(*args, sep=sep, end=end)
 
-    def _write(self, *args: Any, sep: str, end: str) -> None:
+    def write_blankline(self) -> None:
+        self._write()
+
+    def _write(self, *args: Any, sep: str = " ", end: str = "\n") -> None:
         print(*args, sep=sep, end=end, file=self._stream)
 
     def build(self) -> str:
-        self._enable_external_formatter()
-        return self._stream.getvalue().rstrip("\n")
+        # inject directives to temporarily disable external C formatters
+        return "\n".join(
+            (
+                "// clang-format off",
+                self._stream.getvalue().rstrip(),
+                "// clang-format on",
+            )
+        )
