@@ -1,7 +1,5 @@
 #include "pycore_cpuinfo.h"
 
-/* CPUID input and output registers are 32-bit unsigned integers */
-#define CPUID_REG                   uint32_t
 /* Check one or more CPUID register bits. */
 #define CHECK_REG(REG, MASK)        ((((REG) & (MASK)) == (MASK)) ? 0 : 1)
 #define CPUID_CHECK_REG(REG, FEAT)  CHECK_REG(REG, (_Py_CPUID_MASK_ ## FEAT))
@@ -121,7 +119,7 @@
 static void
 get_cpuid_info(uint32_t level /* input eax */,
                uint32_t count /* input ecx */,
-               CPUID_REG *eax, CPUID_REG *ebx, CPUID_REG *ecx, CPUID_REG *edx)
+               uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx)
 {
     *eax = *ebx = *ecx = *edx = 0; // ensure the output to be initialized
 #if defined(HAS_CPUID_SUPPORT) && defined(__x86_64__) && defined(__GNUC__)
@@ -153,14 +151,14 @@ get_xgetbv(uint32_t index)
 static uint32_t
 detect_cpuid_maxleaf(void)
 {
-    CPUID_REG maxleaf = 0, ebx = 0, ecx = 0, edx = 0;
+    uint32_t maxleaf = 0, ebx = 0, ecx = 0, edx = 0;
     get_cpuid_info(0, 0, &maxleaf, &ebx, &ecx, &edx);
     return maxleaf;
 }
 
 /* Processor Info and Feature Bits (LEAF=1, SUBLEAF=0). */
 static void
-detect_cpuid_features(_Py_cpuid_features *flags, CPUID_REG ecx, CPUID_REG edx)
+detect_cpuid_features(_Py_cpuid_features *flags, uint32_t ecx, uint32_t edx)
 {
     assert(flags->maxleaf >= 1);
     // Keep the ordering and newlines as they are declared in the structure.
@@ -205,7 +203,7 @@ detect_cpuid_features(_Py_cpuid_features *flags, CPUID_REG ecx, CPUID_REG edx)
 /* Extended Feature Bits (LEAF=7, SUBLEAF=0). */
 static void
 detect_cpuid_extended_features_L7S0(_Py_cpuid_features *flags,
-                                    CPUID_REG ebx, CPUID_REG ecx, CPUID_REG edx)
+                                    uint32_t ebx, uint32_t ecx, uint32_t edx)
 {
     assert(flags->maxleaf >= 7);
     (void)ebx, (void)ecx, (void)edx; // to suppress unused warnings
@@ -279,10 +277,10 @@ detect_cpuid_extended_features_L7S0(_Py_cpuid_features *flags,
 /* Extended Feature Bits (LEAF=7, SUBLEAF=1). */
 static void
 detect_cpuid_extended_features_L7S1(_Py_cpuid_features *flags,
-                                    CPUID_REG eax,
-                                    CPUID_REG ebx,
-                                    CPUID_REG ecx,
-                                    CPUID_REG edx)
+                                    uint32_t eax,
+                                    uint32_t ebx,
+                                    uint32_t ecx,
+                                    uint32_t edx)
 {
     assert(flags->maxleaf >= 7);
     (void)eax, (void)ebx, (void)ecx, (void)edx; // to suppress unused warnings
@@ -489,7 +487,7 @@ static void
 cpuid_detect_l1_features(_Py_cpuid_features *flags)
 {
     if (flags->maxleaf >= 1) {
-        CPUID_REG eax = 0, ebx = 0, ecx = 0, edx = 0;
+        uint32_t eax = 0, ebx = 0, ecx = 0, edx = 0;
         get_cpuid_info(1, 0, &eax, &ebx, &ecx, &edx);
         detect_cpuid_features(flags, ecx, edx);
         if (flags->osxsave) {
@@ -506,7 +504,7 @@ static void
 cpuid_detect_l7s0_features(_Py_cpuid_features *flags)
 {
     assert(flags->maxleaf >= 7);
-    CPUID_REG eax = 0, ebx = 0, ecx = 0, edx = 0;
+    uint32_t eax = 0, ebx = 0, ecx = 0, edx = 0;
     get_cpuid_info(7, 0, &eax, &ebx, &ecx, &edx);
     detect_cpuid_extended_features_L7S0(flags, ebx, ecx, edx);
 }
@@ -519,7 +517,7 @@ static void
 cpuid_detect_l7s1_features(_Py_cpuid_features *flags)
 {
     assert(flags->maxleaf >= 7);
-    CPUID_REG eax = 0, ebx = 0, ecx = 0, edx = 0;
+    uint32_t eax = 0, ebx = 0, ecx = 0, edx = 0;
     get_cpuid_info(7, 1, &eax, &ebx, &ecx, &edx);
     detect_cpuid_extended_features_L7S1(flags, eax, ebx, ecx, edx);
 }
