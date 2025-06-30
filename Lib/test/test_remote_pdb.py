@@ -1526,6 +1526,9 @@ class PdbAttachTestCase(unittest.TestCase):
             redirect_stdout(client_stdout),
             redirect_stderr(client_stderr),
             unittest.mock.patch("sys.argv", ["pdb", "-p", str(process.pid)]),
+            unittest.mock.patch(
+                "pdb.exit_with_permission_help_text", side_effect=PermissionError
+            ),
         ):
             try:
                 pdb.main()
