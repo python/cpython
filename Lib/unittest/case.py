@@ -149,9 +149,7 @@ def doModuleCleanups():
         except Exception as exc:
             exceptions.append(exc)
     if exceptions:
-        # Swallows all but first exception. If a multi-exception handler
-        # gets written we should use that here instead.
-        raise exceptions[0]
+        raise ExceptionGroup('module cleanup failed', exceptions)
 
 
 def skip(reason):

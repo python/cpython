@@ -1386,6 +1386,10 @@ mark_stacks(PyCodeObject *code_obj, int len)
                     stacks[j] = next_stack;
                     break;
                 case GET_ITER:
+                    next_stack = push_value(pop_value(next_stack), Iterator);
+                    next_stack = push_value(next_stack, Iterator);
+                    stacks[next_i] = next_stack;
+                    break;
                 case GET_AITER:
                     next_stack = push_value(pop_value(next_stack), Iterator);
                     stacks[next_i] = next_stack;
@@ -1917,7 +1921,6 @@ frame_dealloc(PyObject *op)
         _PyObject_GC_UNTRACK(f);
     }
 
-    Py_TRASHCAN_BEGIN(f, frame_dealloc);
     /* GH-106092: If f->f_frame was on the stack and we reached the maximum
      * nesting depth for deallocations, the trashcan may have delayed this
      * deallocation until after f->f_frame is freed. Avoid dereferencing
@@ -1942,7 +1945,6 @@ frame_dealloc(PyObject *op)
     Py_CLEAR(f->f_locals_cache);
     Py_CLEAR(f->f_overwritten_fast_locals);
     PyObject_GC_Del(f);
-    Py_TRASHCAN_END;
 }
 
 static int

@@ -274,7 +274,7 @@ small to receive the value.
    Convert a Python integer to a C :c:expr:`unsigned long` without
    overflow checking.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
       Use :meth:`~object.__index__` if available.
 
 ``L`` (:class:`int`) [long long]
@@ -284,7 +284,7 @@ small to receive the value.
    Convert a Python integer to a C :c:expr:`unsigned long long`
    without overflow checking.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
       Use :meth:`~object.__index__` if available.
 
 ``n`` (:class:`int`) [:c:type:`Py_ssize_t`]
@@ -380,10 +380,10 @@ Other objects
    The *converter* for the ``O&`` format unit in *items* must not store
    a borrowed buffer or a borrowed reference.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
       :class:`str` and :class:`bytearray` objects no longer accepted as a sequence.
 
-   .. deprecated:: next
+   .. deprecated:: 3.14
       Non-tuple sequences are deprecated if *items* contains format units
       which store a borrowed buffer or a borrowed reference.
 
@@ -396,7 +396,7 @@ Other objects
    If the argument is not ``None``, it is parsed according to the specified
    format unit.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 A few other characters have a meaning in a format string.  These may not occur
 inside nested parentheses.  They are:
@@ -685,6 +685,13 @@ Building values
 
    ``p`` (:class:`bool`) [int]
       Convert a C :c:expr:`int` to a Python :class:`bool` object.
+
+      Be aware that this format requires an ``int`` argument.
+      Unlike most other contexts in C, variadic arguments are not coerced to
+      a suitable type automatically.
+      You can convert another type (for example, a pointer or a float) to a
+      suitable ``int`` value using ``(x) ? 1 : 0`` or ``!!x``.
+
       .. versionadded:: 3.14
 
    ``c`` (:class:`bytes` of length 1) [char]

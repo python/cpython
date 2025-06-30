@@ -419,10 +419,8 @@ inst_seq_dealloc(PyObject *op)
 {
     _PyInstructionSequence *seq = (_PyInstructionSequence *)op;
     PyObject_GC_UnTrack(seq);
-    Py_TRASHCAN_BEGIN(seq, inst_seq_dealloc)
     PyInstructionSequence_Fini(seq);
     PyObject_GC_Del(seq);
-    Py_TRASHCAN_END
 }
 
 static int

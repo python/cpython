@@ -153,7 +153,7 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
     SPEC(home, WSTR_OPT, READ_ONLY, NO_SYS),
     SPEC(thread_inherit_context, INT, READ_ONLY, NO_SYS),
     SPEC(context_aware_warnings, INT, READ_ONLY, NO_SYS),
-    SPEC(import_time, BOOL, READ_ONLY, NO_SYS),
+    SPEC(import_time, UINT, READ_ONLY, NO_SYS),
     SPEC(install_signal_handlers, BOOL, READ_ONLY, NO_SYS),
     SPEC(isolated, BOOL, READ_ONLY, NO_SYS),  // sys.flags.isolated
 #ifdef MS_WINDOWS
@@ -312,7 +312,8 @@ The following implementation-specific options are available:\n\
 "-X gil=[0|1]: enable (1) or disable (0) the GIL; also PYTHON_GIL\n"
 #endif
 "\
--X importtime: show how long each import takes; also PYTHONPROFILEIMPORTTIME\n\
+-X importtime[=2]: show how long each import takes; use -X importtime=2 to\
+         log imports of already-loaded modules; also PYTHONPROFILEIMPORTTIME\n\
 -X int_max_str_digits=N: limit the size of int<->str conversions;\n\
          0 disables the limit; also PYTHONINTMAXSTRDIGITS\n\
 -X no_debug_ranges: don't include extra location information in code objects;\n\
@@ -1004,6 +1005,7 @@ _PyConfig_InitCompatConfig(PyConfig *config)
     memset(config, 0, sizeof(*config));
 
     config->_config_init = (int)_PyConfig_INIT_COMPAT;
+    config->import_time = -1;
     config->isolated = -1;
     config->use_environment = -1;
     config->dev_mode = -1;
@@ -2246,6 +2248,38 @@ config_init_run_presite(PyConfig *config)
 }
 #endif
 
+static PyStatus
+config_init_import_time(PyConfig *config)
+{
+    int importtime = 0;
+
+    const char *env = config_get_env(config, "PYTHONPROFILEIMPORTTIME");
+    if (env) {
+        if (_Py_str_to_int(env, &importtime) != 0) {
+            importtime = 1;
+        }
+        if (importtime < 0 || importtime > 2) {
+            return _PyStatus_ERR(
+                "PYTHONPROFILEIMPORTTIME: numeric values other than 1 and 2 "
+                "are reserved for future use.");
+        }
+    }
+
+    const wchar_t *x_value = config_get_xoption_value(config, L"importtime");
+    if (x_value) {
+        if (*x_value == 0 || config_wstr_to_int(x_value, &importtime) != 0) {
+            importtime = 1;
+        }
+        if (importtime < 0 || importtime > 2) {
+            return _PyStatus_ERR(
+                "-X importtime: values other than 1 and 2 "
+                "are reserved for future use.");
+        }
+    }
+
+    config->import_time = importtime;
+    return _PyStatus_OK();
+}
 
 static PyStatus
 config_read_complex_options(PyConfig *config)
@@ -2257,17 +2291,19 @@ config_read_complex_options(PyConfig *config)
             config->faulthandler = 1;
         }
     }
-    if (config_get_env(config, "PYTHONPROFILEIMPORTTIME")
-       || config_get_xoption(config, L"importtime")) {
-        config->import_time = 1;
-    }
-
     if (config_get_env(config, "PYTHONNODEBUGRANGES")
        || config_get_xoption(config, L"no_debug_ranges")) {
         config->code_debug_ranges = 0;
     }
 
     PyStatus status;
+    if (config->import_time < 0) {
+        status = config_init_import_time(config);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+    }
+
     if (config->tracemalloc < 0) {
         status = config_init_tracemalloc(config);
         if (_PyStatus_EXCEPTION(status)) {
@@ -2925,8 +2961,6 @@ config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
         case 'X':
             /* option handled by _PyPreCmdline_Read() */
             break;
-
-        /* case 'J': reserved for Jython */
 
         case 'O':
             config->optimization_level++;
@@ -3613,7 +3647,7 @@ _Py_DumpPathConfig(PyThreadState *tstate)
 #define DUMP_SYS(NAME) \
         do { \
             PySys_FormatStderr("  sys.%s = ", #NAME); \
-            if (_PySys_GetOptionalAttrString(#NAME, &obj) < 0) { \
+            if (PySys_GetOptionalAttrString(#NAME, &obj) < 0) { \
                 PyErr_Clear(); \
             } \
             if (obj != NULL) { \
@@ -3637,7 +3671,7 @@ _Py_DumpPathConfig(PyThreadState *tstate)
 #undef DUMP_SYS
 
     PyObject *sys_path;
-    (void) _PySys_GetOptionalAttrString("path", &sys_path);
+    (void) PySys_GetOptionalAttrString("path", &sys_path);
     if (sys_path != NULL && PyList_Check(sys_path)) {
         PySys_WriteStderr("  sys.path = [\n");
         Py_ssize_t len = PyList_GET_SIZE(sys_path);
@@ -4260,7 +4294,7 @@ _PyConfig_CreateXOptionsDict(const PyConfig *config)
 static int
 config_get_sys_write_bytecode(const PyConfig *config, int *value)
 {
-    PyObject *attr = _PySys_GetRequiredAttrString("dont_write_bytecode");
+    PyObject *attr = PySys_GetAttrString("dont_write_bytecode");
     if (attr == NULL) {
         return -1;
     }
@@ -4281,7 +4315,7 @@ config_get(const PyConfig *config, const PyConfigSpec *spec,
 {
     if (use_sys) {
         if (spec->sys.attr != NULL) {
-            return _PySys_GetRequiredAttrString(spec->sys.attr);
+            return PySys_GetAttrString(spec->sys.attr);
         }
 
         if (strcmp(spec->name, "write_bytecode") == 0) {

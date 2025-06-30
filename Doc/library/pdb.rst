@@ -81,7 +81,7 @@ The debugger's prompt is ``(Pdb)``, which is the indicator that you are in debug
 You can also invoke :mod:`pdb` from the command line to debug other scripts.  For
 example::
 
-   python -m pdb [-c command] (-m module | pyfile) [args ...]
+   python -m pdb [-c command] (-m module | -p pid | pyfile) [args ...]
 
 When invoked as a module, pdb will automatically enter post-mortem debugging if
 the program being debugged exits abnormally.  After post-mortem debugging (or
@@ -104,6 +104,24 @@ useful than quitting the debugger upon program's exit.
 
    .. versionchanged:: 3.7
       Added the ``-m`` option.
+
+.. option:: -p, --pid <pid>
+
+   Attach to the process with the specified PID.
+
+   .. versionadded:: 3.14
+
+
+To attach to a running Python process for remote debugging, use the ``-p`` or
+``--pid`` option with the target process's PID::
+
+   python -m pdb -p 1234
+
+.. note::
+
+   Attaching to a process that is blocked in a system call or waiting for I/O
+   will only work once the next bytecode instruction is executed or when the
+   process receives a signal.
 
 Typical usage to execute a statement under control of the debugger is::
 
@@ -244,7 +262,7 @@ The ``run*`` functions and :func:`set_trace` are aliases for instantiating the
 access further features, you have to do this yourself:
 
 .. class:: Pdb(completekey='tab', stdin=None, stdout=None, skip=None, \
-               nosigint=False, readrc=True, mode=None, backend=None)
+               nosigint=False, readrc=True, mode=None, backend=None, colorize=False)
 
    :class:`Pdb` is the debugger class.
 
@@ -274,6 +292,9 @@ access further features, you have to do this yourself:
    is passed, the default backend will be used. See :func:`set_default_backend`.
    Otherwise the supported backends are ``'settrace'`` and ``'monitoring'``.
 
+   The *colorize* argument, if set to ``True``, will enable colorized output in the
+   debugger, if color is supported. This will highlight source code displayed in pdb.
+
    Example call to enable tracing with *skip*::
 
       import pdb; pdb.Pdb(skip=['django.*']).set_trace()
@@ -295,6 +316,9 @@ access further features, you have to do this yourself:
 
    .. versionadded:: 3.14
       Added the *backend* argument.
+
+   .. versionadded:: 3.14
+      Added the *colorize* argument.
 
    .. versionchanged:: 3.14
       Inline breakpoints like :func:`breakpoint` or :func:`pdb.set_trace` will

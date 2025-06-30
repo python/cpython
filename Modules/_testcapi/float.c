@@ -157,42 +157,9 @@ test_string_to_double(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 
-/*[clinic input]
-_testcapi.float_set_snan
-
-    obj: object
-    /
-
-Make a signaling NaN.
-[clinic start generated code]*/
-
-static PyObject *
-_testcapi_float_set_snan(PyObject *module, PyObject *obj)
-/*[clinic end generated code: output=f43778a70f60aa4b input=c1269b0f88ef27ac]*/
-{
-    if (!PyFloat_Check(obj)) {
-        PyErr_SetString(PyExc_ValueError, "float-point number expected");
-        return NULL;
-    }
-    double d = ((PyFloatObject *)obj)->ob_fval;
-    if (!isnan(d)) {
-        PyErr_SetString(PyExc_ValueError, "nan expected");
-        return NULL;
-    }
-    uint64_t v;
-    memcpy(&v, &d, 8);
-    v &= ~(1ULL << 51); /* make sNaN */
-
-    // gh-130317: memcpy() is needed to preserve the sNaN flag on x86 (32-bit)
-    PyObject *res = PyFloat_FromDouble(0.0);
-    memcpy(&((PyFloatObject *)res)->ob_fval, &v, 8);
-    return res;
-}
-
 static PyMethodDef test_methods[] = {
     _TESTCAPI_FLOAT_PACK_METHODDEF
     _TESTCAPI_FLOAT_UNPACK_METHODDEF
-    _TESTCAPI_FLOAT_SET_SNAN_METHODDEF
     {"test_string_to_double", test_string_to_double, METH_NOARGS},
     {NULL},
 };

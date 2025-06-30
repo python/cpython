@@ -135,15 +135,13 @@ class Flush:
 @dataclass
 class StackItem:
     name: str
-    type: str | None
     size: str
     peek: bool = False
     used: bool = False
 
     def __str__(self) -> str:
         size = f"[{self.size}]" if self.size else ""
-        type = "" if self.type is None else f"{self.type} "
-        return f"{type}{self.name}{size} {self.peek}"
+        return f"{self.name}{size} {self.peek}"
 
     def is_array(self) -> bool:
         return self.size != ""
@@ -182,7 +180,7 @@ class Uop:
     properties: Properties
     _size: int = -1
     implicitly_created: bool = False
-    replicated = 0
+    replicated = range(0)
     replicates: "Uop | None" = None
     # Size of the instruction(s), only set for uops containing the INSTRUCTION_SIZE macro
     instruction_size: int | None = None
@@ -345,7 +343,7 @@ def override_error(
 def convert_stack_item(
     item: parser.StackEffect, replace_op_arg_1: str | None
 ) -> StackItem:
-    return StackItem(item.name, item.type, item.size)
+    return StackItem(item.name, item.size)
 
 def check_unused(stack: list[StackItem], input_names: dict[str, lexer.Token]) -> None:
     "Unused items cannot be on the stack above used, non-peek items"
@@ -543,7 +541,6 @@ def tier_variable(node: parser.CodeDef) -> int | None:
 def has_error_with_pop(op: parser.CodeDef) -> bool:
     return (
         variable_used(op, "ERROR_IF")
-        or variable_used(op, "pop_1_error")
         or variable_used(op, "exception_unwind")
     )
 
@@ -551,7 +548,6 @@ def has_error_with_pop(op: parser.CodeDef) -> bool:
 def has_error_without_pop(op: parser.CodeDef) -> bool:
     return (
         variable_used(op, "ERROR_NO_POP")
-        or variable_used(op, "pop_1_error")
         or variable_used(op, "exception_unwind")
     )
 
@@ -587,7 +583,7 @@ NON_ESCAPING_FUNCTIONS = (
     "PyStackRef_CLOSE_SPECIALIZED",
     "PyStackRef_DUP",
     "PyStackRef_False",
-    "PyStackRef_FromPyObjectImmortal",
+    "PyStackRef_FromPyObjectBorrow",
     "PyStackRef_FromPyObjectNew",
     "PyStackRef_FromPyObjectSteal",
     "PyStackRef_IsExactly",
@@ -600,6 +596,7 @@ NON_ESCAPING_FUNCTIONS = (
     "PyStackRef_IsNull",
     "PyStackRef_MakeHeapSafe",
     "PyStackRef_None",
+    "PyStackRef_RefcountOnObject",
     "PyStackRef_TYPE",
     "PyStackRef_True",
     "PyTuple_GET_ITEM",
@@ -639,6 +636,10 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyLong_IsNegative",
     "_PyLong_IsNonNegativeCompact",
     "_PyLong_IsZero",
+    "_PyLong_BothAreCompact",
+    "_PyCompactLong_Add",
+    "_PyCompactLong_Multiply",
+    "_PyCompactLong_Subtract",
     "_PyManagedDictPointer_IsValues",
     "_PyObject_GC_IS_SHARED",
     "_PyObject_GC_IS_TRACKED",
@@ -681,7 +682,15 @@ NON_ESCAPING_FUNCTIONS = (
     "PyStackRef_IsTaggedInt",
     "PyStackRef_TagInt",
     "PyStackRef_UntagInt",
+    "PyStackRef_IncrementTaggedIntNoOverflow",
+    "PyStackRef_IsNullOrInt",
+    "PyStackRef_IsError",
+    "PyStackRef_IsValid",
+    "PyStackRef_Wrap",
+    "PyStackRef_Unwrap",
+    "_PyLong_CheckExactAndCompact",
 )
+
 
 def check_escaping_calls(instr: parser.CodeDef, escapes: dict[SimpleStmt, EscapingCall]) -> None:
     error: lexer.Token | None = None
@@ -734,7 +743,7 @@ def find_escaping_api_calls(instr: parser.CodeDef) -> dict[SimpleStmt, EscapingC
                     continue
                 #if not tkn.text.startswith(("Py", "_Py", "monitor")):
                 #    continue
-                if tkn.text.startswith(("sym_", "optimize_")):
+                if tkn.text.startswith(("sym_", "optimize_", "PyJitRef")):
                     # Optimize functions
                     continue
                 if tkn.text.endswith("Check"):
@@ -808,7 +817,7 @@ def stack_effect_only_peeks(instr: parser.InstDef) -> bool:
     if len(stack_inputs) == 0:
         return False
     return all(
-        (s.name == other.name and s.type == other.type and s.size == other.size)
+        (s.name == other.name and s.size == other.size)
         for s, other in zip(stack_inputs, instr.outputs)
     )
 
@@ -834,7 +843,7 @@ def compute_properties(op: parser.CodeDef) -> Properties:
         )
     error_with_pop = has_error_with_pop(op)
     error_without_pop = has_error_without_pop(op)
-    escapes = bool(escaping_calls)
+    escapes = bool(escaping_calls) or variable_used(op, "DECREF_INPUTS")
     pure = False if isinstance(op, parser.LabelDef) else "pure" in op.annotations
     no_save_ip = False if isinstance(op, parser.LabelDef) else "no_save_ip" in op.annotations
     return Properties(
@@ -861,6 +870,28 @@ def compute_properties(op: parser.CodeDef) -> Properties:
         needs_prev=variable_used(op, "prev_instr"),
     )
 
+def expand(items: list[StackItem], oparg: int) -> list[StackItem]:
+    # Only replace array item with scalar if no more than one item is an array
+    index = -1
+    for i, item in enumerate(items):
+        if "oparg" in item.size:
+            if index >= 0:
+                return items
+            index = i
+    if index < 0:
+        return items
+    try:
+        count = int(eval(items[index].size.replace("oparg", str(oparg))))
+    except ValueError:
+        return items
+    return items[:index] + [
+        StackItem(items[index].name + f"_{i}", "", items[index].peek, items[index].used) for i in range(count)
+        ] + items[index+1:]
+
+def scalarize_stack(stack: StackEffect, oparg: int) -> StackEffect:
+    stack.inputs = expand(stack.inputs, oparg)
+    stack.outputs = expand(stack.outputs, oparg)
+    return stack
 
 def make_uop(
     name: str,
@@ -880,20 +911,26 @@ def make_uop(
     )
     for anno in op.annotations:
         if anno.startswith("replicate"):
-            result.replicated = int(anno[10:-1])
+            text = anno[10:-1]
+            start, stop = text.split(":")
+            result.replicated = range(int(start), int(stop))
             break
     else:
         return result
-    for oparg in range(result.replicated):
+    for oparg in result.replicated:
         name_x = name + "_" + str(oparg)
         properties = compute_properties(op)
         properties.oparg = False
-        properties.const_oparg = oparg
+        stack = analyze_stack(op)
+        if not variable_used(op, "oparg"):
+            stack = scalarize_stack(stack, oparg)
+        else:
+            properties.const_oparg = oparg
         rep = Uop(
             name=name_x,
             context=op.context,
             annotations=op.annotations,
-            stack=analyze_stack(op),
+            stack=stack,
             caches=analyze_caches(inputs),
             local_stores=find_variable_stores(op),
             body=op.block,

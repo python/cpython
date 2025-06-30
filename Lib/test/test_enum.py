@@ -19,7 +19,8 @@ from io import StringIO
 from pickle import dumps, loads, PicklingError, HIGHEST_PROTOCOL
 from test import support
 from test.support import ALWAYS_EQ, REPO_ROOT
-from test.support import threading_helper
+from test.support import threading_helper, cpython_only
+from test.support.import_helper import ensure_lazy_imports
 from datetime import timedelta
 
 python_version = sys.version_info[:2]
@@ -35,7 +36,7 @@ def load_tests(loader, tests, ignore):
                 optionflags=doctest.ELLIPSIS|doctest.NORMALIZE_WHITESPACE,
                 ))
     howto_tests = os.path.join(REPO_ROOT, 'Doc/howto/enum.rst')
-    if os.path.exists(howto_tests):
+    if os.path.exists(howto_tests) and sys.float_repr_style == 'short':
         tests.addTests(doctest.DocFileSuite(
                 howto_tests,
                 module_relative=False,
@@ -433,9 +434,9 @@ class _EnumTests:
             def spam(cls):
                 pass
         #
-        self.assertTrue(hasattr(Season, 'spam'))
+        self.assertHasAttr(Season, 'spam')
         del Season.spam
-        self.assertFalse(hasattr(Season, 'spam'))
+        self.assertNotHasAttr(Season, 'spam')
         #
         with self.assertRaises(AttributeError):
             del Season.SPRING
@@ -2651,12 +2652,12 @@ class TestSpecial(unittest.TestCase):
             OneDay = day_1
             OneWeek = week_1
             OneMonth = month_1
-        self.assertFalse(hasattr(Period, '_ignore_'))
-        self.assertFalse(hasattr(Period, 'Period'))
-        self.assertFalse(hasattr(Period, 'i'))
-        self.assertTrue(isinstance(Period.day_1, timedelta))
-        self.assertTrue(Period.month_1 is Period.day_30)
-        self.assertTrue(Period.week_4 is Period.day_28)
+        self.assertNotHasAttr(Period, '_ignore_')
+        self.assertNotHasAttr(Period, 'Period')
+        self.assertNotHasAttr(Period, 'i')
+        self.assertIsInstance(Period.day_1, timedelta)
+        self.assertIs(Period.month_1, Period.day_30)
+        self.assertIs(Period.week_4, Period.day_28)
 
     def test_nonhash_value(self):
         class AutoNumberInAList(Enum):
@@ -2876,7 +2877,7 @@ class TestSpecial(unittest.TestCase):
         self.assertEqual(str(ReformedColor.BLUE), 'blue')
         self.assertEqual(ReformedColor.RED.behavior(), 'booyah')
         self.assertEqual(ConfusedColor.RED.social(), "what's up?")
-        self.assertTrue(issubclass(ReformedColor, int))
+        self.assertIsSubclass(ReformedColor, int)
 
     def test_multiple_inherited_mixin(self):
         @unique
@@ -5287,6 +5288,10 @@ class MiscTestCase(unittest.TestCase):
 
     def test__all__(self):
         support.check__all__(self, enum, not_exported={'bin', 'show_flag_values'})
+
+    @cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("enum", {"functools", "warnings", "inspect", "re"})
 
     def test_doc_1(self):
         class Single(Enum):

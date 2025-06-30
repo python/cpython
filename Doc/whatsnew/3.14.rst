@@ -2,7 +2,7 @@
   What's new in Python 3.14
 ****************************
 
-:Editor: TBD
+:Editor: Hugo van Kemenade
 
 .. Rules for maintenance:
 
@@ -48,6 +48,10 @@ This article explains the new features in Python 3.14, compared to 3.13.
 
 For full details, see the :ref:`changelog <changelog>`.
 
+.. seealso::
+
+   :pep:`745` -- Python 3.14 release schedule
+
 .. note::
 
    Prerelease users should be aware that this document is currently in draft
@@ -61,16 +65,41 @@ Summary -- release highlights
 .. This section singles out the most important changes in Python 3.14.
    Brevity is key.
 
+Python 3.14 beta is the pre-release of the next version of the Python
+programming language, with a mix of changes to the language, the
+implementation and the standard library.
+
+The biggest changes to the implementation include template strings (:pep:`750`),
+deferred evaluation of annotations (:pep:`649`),
+and a new type of interpreter that uses tail calls.
+
+The library changes include the addition of a new :mod:`!annotationlib` module
+for introspecting and wrapping annotations (:pep:`749`),
+a new :mod:`!compression.zstd` module for Zstandard support (:pep:`784`),
+plus syntax highlighting in the REPL,
+as well as the usual deprecations and removals,
+and improvements in user-friendliness and correctness.
 
 .. PEP-sized items next.
 
-* :ref:`PEP 649: deferred evaluation of annotations <whatsnew314-pep649>`
-* :ref:`PEP 741: Python Configuration C API <whatsnew314-pep741>`
+* :ref:`PEP 779: Free-threaded Python is officially supported <whatsnew314-pep779>`
+* :ref:`PEP 649 and 749: deferred evaluation of annotations <whatsnew314-pep649>`
+* :ref:`PEP 734: Multiple interpreters in the stdlib <whatsnew314-pep734>`
+* :ref:`PEP 741: Python configuration C API <whatsnew314-pep741>`
+* :ref:`PEP 750: Template strings <whatsnew314-pep750>`
 * :ref:`PEP 758: Allow except and except* expressions without parentheses <whatsnew314-pep758>`
 * :ref:`PEP 761: Discontinuation of PGP signatures <whatsnew314-pep761>`
 * :ref:`PEP 765: Disallow return/break/continue that exit a finally block <whatsnew314-pep765>`
+* :ref:`Free-threaded mode improvements <whatsnew314-free-threaded-cpython>`
 * :ref:`PEP 768: Safe external debugger interface for CPython <whatsnew314-pep768>`
-* :ref:`A new type of interpreter  <whatsnew314-tail-call>`
+* :ref:`PEP 784: Adding Zstandard to the standard library <whatsnew314-pep784>`
+* :ref:`A new type of interpreter <whatsnew314-tail-call>`
+* :ref:`Syntax highlighting in PyREPL <whatsnew314-pyrepl-highlighting>`,
+  and color output in :ref:`unittest <whatsnew314-color-unittest>`,
+  :ref:`argparse <whatsnew314-color-argparse>`,
+  :ref:`json <whatsnew314-color-json>` and
+  :ref:`calendar <whatsnew314-color-calendar>` CLIs
+* :ref:`Binary releases for the experimental just-in-time compiler <whatsnew314-jit-compiler>`
 
 
 Incompatible changes
@@ -88,9 +117,206 @@ If you encounter :exc:`NameError`\s or pickling errors coming out of
 :mod:`multiprocessing` or :mod:`concurrent.futures`, see the
 :ref:`forkserver restrictions <multiprocessing-programming-forkserver>`.
 
+The interpreter avoids some reference count modifications internally when
+it's safe to do so. This can lead to different values returned from
+:func:`sys.getrefcount` and :c:func:`Py_REFCNT` compared to previous versions
+of Python.  See :ref:`below <whatsnew314-refcount>` for details.
 
 New features
 ============
+
+.. _whatsnew314-pep779:
+
+PEP 779: Free-threaded Python is officially supported
+-----------------------------------------------------
+
+The free-threaded build of Python is now supported and no longer experimental.
+This is the start of phase II where free-threaded Python is officially supported
+but still optional.
+
+We are confident that the project is on the right path, and we appreciate the
+continued dedication from everyone working to make free-threading ready for
+broader adoption across the Python community.
+
+With these recommendations and the acceptance of this PEP, we as the Python
+developer community should broadly advertise that free-threading is a supported
+Python build option now and into the future, and that it will not be removed
+without a proper deprecation schedule.
+
+Any decision to transition to phase III, with free-threading as the default or
+sole build of Python is still undecided, and dependent on many factors both
+within CPython itself and the community. This decision is for the future.
+
+.. seealso::
+   :pep:`779` and its `acceptance
+   <https://discuss.python.org/t/pep-779-criteria-for-supported-status-for-free-threaded-python/84319/123>`__.
+
+.. _whatsnew314-pep734:
+
+PEP 734: Multiple interpreters in the stdlib
+--------------------------------------------
+
+The CPython runtime supports running multiple copies of Python in the
+same process simultaneously and has done so for over 20 years.
+Each of these separate copies is called an "interpreter".
+However, the feature had been available only through the C-API.
+
+That limitation is removed in the 3.14 release,
+with the new :mod:`concurrent.interpreters` module.
+
+There are at least two notable reasons why using multiple interpreters
+is worth considering:
+
+* they support a new (to Python), human-friendly concurrency model
+* true multi-core parallelism
+
+For some use cases, concurrency in software enables efficiency and
+can simplify software, at a high level.  At the same time, implementing
+and maintaining all but the simplest concurrency is often a struggle
+for the human brain.  That especially applies to plain threads
+(for example, :mod:`threading`), where all memory is shared between all threads.
+
+With multiple isolated interpreters, you can take advantage of a class
+of concurrency models, like CSP or the actor model, that have found
+success in other programming languages, like Smalltalk, Erlang,
+Haskell, and Go.  Think of multiple interpreters like threads
+but with opt-in sharing.
+
+Regarding multi-core parallelism: as of the 3.12 release, interpreters
+are now sufficiently isolated from one another to be used in parallel.
+(See :pep:`684`.)  This unlocks a variety of CPU-intensive use cases
+for Python that were limited by the :term:`GIL`.
+
+Using multiple interpreters is similar in many ways to
+:mod:`multiprocessing`, in that they both provide isolated logical
+"processes" that can run in parallel, with no sharing by default.
+However, when using multiple interpreters, an application will use
+fewer system resources and will operate more efficiently (since it
+stays within the same process).  Think of multiple interpreters as
+having the isolation of processes with the efficiency of threads.
+
+.. XXX Add an example or two.
+.. XXX Link to the not-yet-added HOWTO doc.
+
+While the feature has been around for decades, multiple interpreters
+have not been used widely, due to low awareness and the lack of a stdlib
+module.  Consequently, they currently have several notable limitations,
+which will improve significantly now that the feature is finally
+going mainstream.
+
+Current limitations:
+
+* starting each interpreter has not been optimized yet
+* each interpreter uses more memory than necessary
+  (we will be working next on extensive internal sharing between
+  interpreters)
+* there aren't many options *yet* for truly sharing objects or other
+  data between interpreters (other than :type:`memoryview`)
+* many extension modules on PyPI are not compatible with multiple
+  interpreters yet (stdlib extension modules *are* compatible)
+* the approach to writing applications that use multiple isolated
+  interpreters is mostly unfamiliar to Python users, for now
+
+The impact of these limitations will depend on future CPython
+improvements, how interpreters are used, and what the community solves
+through PyPI packages.  Depending on the use case, the limitations may
+not have much impact, so try it out!
+
+Furthermore, future CPython releases will reduce or eliminate overhead
+and provide utilities that are less appropriate on PyPI.  In the
+meantime, most of the limitations can also be addressed through
+extension modules, meaning PyPI packages can fill any gap for 3.14, and
+even back to 3.12 where interpreters were finally properly isolated and
+stopped sharing the :term:`GIL`.  Likewise, we expect to slowly see
+libraries on PyPI for high-level abstractions on top of interpreters.
+
+Regarding extension modules, work is in progress to update some PyPI
+projects, as well as tools like Cython, pybind11, nanobind, and PyO3.
+The steps for isolating an extension module are found at
+:ref:`isolating-extensions-howto`.  Isolating a module has a lot of
+overlap with what is required to support
+:ref:`free-threading <whatsnew314-free-threaded-cpython>`,
+so the ongoing work in the community in that area will help accelerate
+support for multiple interpreters.
+
+Also added in 3.14: :ref:`concurrent.futures.InterpreterPoolExecutor
+<whatsnew314-concurrent-futures-interp-pool>`.
+
+.. seealso::
+   :pep:`734`.
+
+
+.. _whatsnew314-pep750:
+
+PEP 750: Template strings
+-------------------------
+
+Template string literals (t-strings) are a generalization of f-strings,
+using a ``t`` in place of the ``f`` prefix. Instead of evaluating
+to :class:`str`, t-strings evaluate to a new :class:`!string.templatelib.Template` type:
+
+.. code-block:: python
+
+   from string.templatelib import Template
+
+   name = "World"
+   template: Template = t"Hello {name}"
+
+The template can then be combined with functions that operate on the template's
+structure to produce a :class:`str` or a string-like result.
+For example, sanitizing input:
+
+.. code-block:: python
+
+   evil = "<script>alert('evil')</script>"
+   template = t"<p>{evil}</p>"
+   assert html(template) == "<p>&lt;script&gt;alert('evil')&lt;/script&gt;</p>"
+
+As another example, generating HTML attributes from data:
+
+.. code-block:: python
+
+   attributes = {"src": "shrubbery.jpg", "alt": "looks nice"}
+   template = t"<img {attributes}>"
+   assert html(template) == '<img src="shrubbery.jpg" alt="looks nice" />'
+
+Compared to using an f-string, the ``html`` function has access to template attributes
+containing the original information: static strings, interpolations, and values
+from the original scope. Unlike existing templating approaches, t-strings build
+from the well-known f-string syntax and rules. Template systems thus benefit
+from Python tooling as they are much closer to the Python language, syntax,
+scoping, and more.
+
+Writing template handlers is straightforward:
+
+.. code-block:: python
+
+   from string.templatelib import Template, Interpolation
+
+   def lower_upper(template: Template) -> str:
+       """Render static parts lowercased and interpolations uppercased."""
+       parts: list[str] = []
+       for item in template:
+           if isinstance(item, Interpolation):
+               parts.append(str(item.value).upper())
+           else:
+               parts.append(item.lower())
+       return "".join(parts)
+
+   name = "world"
+   assert lower_upper(t"HELLO {name}") == "hello WORLD"
+
+With this in place, developers can write template systems to sanitize SQL, make
+safe shell operations, improve logging, tackle modern ideas in web development
+(HTML, CSS, and so on), and implement lightweight, custom business DSLs.
+
+(Contributed by Jim Baker, Guido van Rossum, Paul Everitt, Koudai Aono,
+Lysandros Nikolaou, Dave Peck, Adam Turner, Jelle Zijlstra, Bénédikt Tran,
+and Pablo Galindo Salgado in :gh:`132661`.)
+
+.. seealso::
+   :pep:`750`.
+
 
 .. _whatsnew314-pep768:
 
@@ -147,9 +373,56 @@ A key implementation detail is that the interface piggybacks on the interpreter'
 loop and safe points, ensuring zero overhead during normal execution while providing a reliable way
 for external processes to coordinate debugging operations.
 
-See :pep:`768` for more details.
-
 (Contributed by Pablo Galindo Salgado, Matt Wozniski, and Ivona Stojanovic in :gh:`131591`.)
+
+.. seealso::
+   :pep:`768`.
+
+
+.. _whatsnew314-pep784:
+
+PEP 784: Adding Zstandard to the standard library
+-------------------------------------------------
+
+The new ``compression`` package contains modules :mod:`!compression.lzma`,
+:mod:`!compression.bz2`, :mod:`!compression.gzip` and :mod:`!compression.zlib`
+which re-export the :mod:`lzma`, :mod:`bz2`, :mod:`gzip` and :mod:`zlib`
+modules respectively. The new import names under ``compression`` are the
+canonical names for importing these compression modules going forward. However,
+the existing modules names have not been deprecated. Any deprecation or removal
+of the existing compression modules will occur no sooner than five years after
+the release of 3.14.
+
+The new :mod:`!compression.zstd` module provides compression and decompression
+APIs for the Zstandard format via bindings to `Meta's zstd library
+<https://facebook.github.io/zstd/>`__. Zstandard is a widely adopted, highly
+efficient, and fast compression format. In addition to the APIs introduced in
+:mod:`!compression.zstd`, support for reading and writing Zstandard compressed
+archives has been added to the :mod:`tarfile`, :mod:`zipfile`, and
+:mod:`shutil` modules.
+
+Here's an example of using the new module to compress some data:
+
+.. code-block:: python
+
+    from compression import zstd
+    import math
+
+    data = str(math.pi).encode() * 20
+
+    compressed = zstd.compress(data)
+
+    ratio = len(compressed) / len(data)
+    print(f"Achieved compression ratio of {ratio}")
+
+As can be seen, the API is similar to the APIs of the :mod:`!lzma` and
+:mod:`!bz2` modules.
+
+(Contributed by Emma Harper Smith, Adam Turner, Gregory P. Smith, Tomas Roun,
+Victor Stinner, and Rogdham in :gh:`132983`.)
+
+.. seealso::
+   :pep:`784`.
 
 
 .. _whatsnew314-remote-pdb:
@@ -170,11 +443,14 @@ attaching to a remote process that is blocked in a system call or waiting for
 I/O will only work once the next bytecode instruction is executed or when the
 process receives a signal.
 
-This feature leverages :pep:`768` and the :func:`sys.remote_exec` function
+This feature uses :pep:`768` and the :func:`sys.remote_exec` function
 to attach to the remote process and send the PDB commands to it.
 
 
 (Contributed by Matt Wozniski and Pablo Galindo in :gh:`131591`.)
+
+.. seealso::
+   :pep:`768`.
 
 
 .. _whatsnew314-pep758:
@@ -189,35 +465,40 @@ For example the following expressions are now valid:
 .. code-block:: python
 
    try:
-       release_new_sleep_token_album()
-   except AlbumNotFound, SongsTooGoodToBeReleased:
-       print("Sorry, no new album this year.")
+       connect_to_server()
+   except TimeoutError, ConnectionRefusedError:
+       print("Network issue encountered.")
 
     # The same applies to except* (for exception groups):
+
    try:
-       release_new_sleep_token_album()
-   except* AlbumNotFound, SongsTooGoodToBeReleased:
-       print("Sorry, no new album this year.")
+       connect_to_server()
+   except* TimeoutError, ConnectionRefusedError:
+       print("Network issue encountered.")
 
 Check :pep:`758` for more details.
 
 (Contributed by Pablo Galindo and Brett Cannon in :gh:`131831`.)
 
+.. seealso::
+   :pep:`758`.
+
 
 .. _whatsnew314-pep649:
 
-PEP 649: deferred evaluation of annotations
--------------------------------------------
+PEP 649 and 749: deferred evaluation of annotations
+---------------------------------------------------
 
 The :term:`annotations <annotation>` on functions, classes, and modules are no
 longer evaluated eagerly. Instead, annotations are stored in special-purpose
 :term:`annotate functions <annotate function>` and evaluated only when
-necessary. This is specified in :pep:`649` and :pep:`749`.
+necessary (except if ``from __future__ import annotations`` is used).
+This is specified in :pep:`649` and :pep:`749`.
 
 This change is designed to make annotations in Python more performant and more
 usable in most circumstances. The runtime cost for defining annotations is
 minimized, but it remains possible to introspect annotations at runtime.
-It is usually no longer necessary to enclose annotations in strings if they
+It is no longer necessary to enclose annotations in strings if they
 contain forward references.
 
 The new :mod:`annotationlib` module provides tools for inspecting deferred
@@ -253,7 +534,8 @@ writing annotations the same way you did with previous versions of Python.
 You will likely be able to remove quoted strings in annotations, which are frequently
 used for forward references. Similarly, if you use ``from __future__ import annotations``
 to avoid having to write strings in annotations, you may well be able to
-remove that import. However, if you rely on third-party libraries that read annotations,
+remove that import once you support only Python 3.14 and newer.
+However, if you rely on third-party libraries that read annotations,
 those libraries may need changes to support unquoted annotations before they
 work as expected.
 
@@ -266,6 +548,11 @@ annotations. For example, you may want to use :func:`annotationlib.get_annotatio
 with the :attr:`~annotationlib.Format.FORWARDREF` format, as the :mod:`dataclasses`
 module now does.
 
+The external :pypi:`typing_extensions` package provides partial backports of some of the
+functionality of the :mod:`annotationlib` module, such as the :class:`~annotationlib.Format`
+enum and the :func:`~annotationlib.get_annotations` function. These can be used to
+write cross-version code that takes advantage of the new behavior in Python 3.14.
+
 Related changes
 ^^^^^^^^^^^^^^^
 
@@ -276,6 +563,14 @@ if you rely on undocumented details of the annotation behavior or on private
 functions in the standard library, there are many ways in which your code may
 not work in Python 3.14. To safeguard your code against future changes,
 use only the documented functionality of the :mod:`annotationlib` module.
+
+In particular, do not read annotations directly from the namespace dictionary
+attribute of type objects. Use :func:`annotationlib.get_annotate_from_class_namespace`
+during class construction and :func:`annotationlib.get_annotations` afterwards.
+
+In previous releases, it was sometimes possible to access class annotations from
+an instance of an annotated class. This behavior was undocumented and accidental,
+and will no longer work in Python 3.14.
 
 ``from __future__ import annotations``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -288,6 +583,11 @@ Python without deferred evaluation of annotations, reaches its end of life in 20
 In Python 3.14, the behavior of code using ``from __future__ import annotations``
 is unchanged.
 
+(Contributed by Jelle Zijlstra in :gh:`119180`; :pep:`649` was written by Larry Hastings.)
+
+.. seealso::
+   :pep:`649` and :pep:`749`.
+
 
 Improved error messages
 -----------------------
@@ -298,7 +598,7 @@ Improved error messages
   feature helps programmers quickly identify and fix common typing mistakes. For
   example:
 
-  .. code-block:: python
+  .. code-block:: pycon
 
      >>> whille True:
      ...     pass
@@ -339,7 +639,7 @@ Improved error messages
   error message prints the received number of values in more cases than before.
   (Contributed by Tushar Sadhwani in :gh:`122239`.)
 
-  .. code-block:: python
+  .. code-block:: pycon
 
      >>> x, y, z = 1, 2, 3, 4
      Traceback (most recent call last):
@@ -393,16 +693,68 @@ Improved error messages
   that the string may be intended to be part of the string. (Contributed by
   Pablo Galindo in :gh:`88535`.)
 
-  .. code-block:: python
+  .. code-block:: pycon
 
     >>> "The interesting object "The important object" is very important"
     Traceback (most recent call last):
     SyntaxError: invalid syntax. Is this intended to be part of the string?
 
+* When strings have incompatible prefixes, the error now shows
+  which prefixes are incompatible. (Contributed by
+  Nikita Sobolev in :gh:`133197`.)
+
+  .. code-block:: pycon
+
+    >>> ub'abc'
+      File "<python-input-0>", line 1
+        ub'abc'
+        ^^
+    SyntaxError: 'u' and 'b' prefixes are incompatible
+
+* Improved error messages when using ``as`` with incompatible targets in:
+
+  - Imports: ``import ... as ...``
+  - From imports: ``from ... import ... as ...``
+  - Except handlers: ``except ... as ...``
+  - Pattern-match cases: ``case ... as ...``
+
+  (Contributed by Nikita Sobolev in :gh:`123539`,
+  :gh:`123562`, and :gh:`123440`.)
+
+  .. code-block:: pycon
+
+   >>> import ast as arr[0]
+     File "<python-input-1>", line 1
+       import ast as arr[0]
+                     ^^^^^^
+   SyntaxError: cannot use subscript as import target
+
+* Improved error message when trying to add an instance of an unhashable type to
+  a :class:`dict` or :class:`set`. (Contributed by CF Bolz-Tereick and Victor Stinner
+  in :gh:`132828`.)
+
+  .. code-block:: pycon
+
+     >>> s = set()
+     >>> s.add({'pages': 12, 'grade': 'A'})
+     Traceback (most recent call last):
+       File "<python-input-1>", line 1, in <module>
+         s.add({'pages': 12, 'grade': 'A'})
+         ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     TypeError: cannot use 'dict' as a set element (unhashable type: 'dict')
+     >>> d = {}
+     >>> l = [1, 2, 3]
+     >>> d[l] = 12
+     Traceback (most recent call last):
+       File "<python-input-4>", line 1, in <module>
+         d[l] = 12
+         ~^^^
+     TypeError: cannot use 'list' as a dict key (unhashable type: 'list')
+
 
 .. _whatsnew314-pep741:
 
-PEP 741: Python Configuration C API
+PEP 741: Python configuration C API
 -----------------------------------
 
 Add a :ref:`PyInitConfig C API <pyinitconfig_api>` to configure the Python
@@ -432,6 +784,120 @@ configuration mechanisms).
 
 .. seealso::
    :pep:`741`.
+
+.. _whatsnew314-asyncio-introspection:
+
+Asyncio introspection capabilities
+----------------------------------
+
+Added a new command-line interface to inspect running Python processes using
+asynchronous tasks, available via:
+
+.. code-block:: bash
+
+  python -m asyncio ps PID
+
+This tool inspects the given process ID (PID) and displays information about
+currently running asyncio tasks.  It outputs a task table: a flat
+listing of all tasks, their names, their coroutine stacks, and which tasks are
+awaiting them.
+
+.. code-block:: bash
+
+  python -m asyncio pstree PID
+
+This tool fetches the same information, but renders a visual async call tree,
+showing coroutine relationships in a hierarchical format.  This command is
+particularly useful for debugging long-running or stuck asynchronous programs.
+It can help developers quickly identify where a program is blocked, what tasks
+are pending, and how coroutines are chained together.
+
+For example given this code:
+
+.. code-block:: python
+
+  import asyncio
+
+  async def play(track):
+      await asyncio.sleep(5)
+      print(f"🎵 Finished: {track}")
+
+  async def album(name, tracks):
+      async with asyncio.TaskGroup() as tg:
+          for track in tracks:
+              tg.create_task(play(track), name=track)
+
+  async def main():
+      async with asyncio.TaskGroup() as tg:
+          tg.create_task(
+            album("Sundowning", ["TNDNBTG", "Levitate"]), name="Sundowning")
+          tg.create_task(
+            album("TMBTE", ["DYWTYLM", "Aqua Regia"]), name="TMBTE")
+
+  if __name__ == "__main__":
+      asyncio.run(main())
+
+Executing the new tool on the running process will yield a table like this:
+
+.. code-block:: bash
+
+  python -m asyncio ps 12345
+
+  tid        task id              task name            coroutine stack                                    awaiter chain                                      awaiter name    awaiter id
+  ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  1935500    0x7fc930c18050       Task-1               TaskGroup._aexit -> TaskGroup.__aexit__ -> main                                                                       0x0
+  1935500    0x7fc930c18230       Sundowning           TaskGroup._aexit -> TaskGroup.__aexit__ -> album   TaskGroup._aexit -> TaskGroup.__aexit__ -> main    Task-1          0x7fc930c18050
+  1935500    0x7fc93173fa50       TMBTE                TaskGroup._aexit -> TaskGroup.__aexit__ -> album   TaskGroup._aexit -> TaskGroup.__aexit__ -> main    Task-1          0x7fc930c18050
+  1935500    0x7fc93173fdf0       TNDNBTG              sleep -> play                                      TaskGroup._aexit -> TaskGroup.__aexit__ -> album   Sundowning      0x7fc930c18230
+  1935500    0x7fc930d32510       Levitate             sleep -> play                                      TaskGroup._aexit -> TaskGroup.__aexit__ -> album   Sundowning      0x7fc930c18230
+  1935500    0x7fc930d32890       DYWTYLM              sleep -> play                                      TaskGroup._aexit -> TaskGroup.__aexit__ -> album   TMBTE           0x7fc93173fa50
+  1935500    0x7fc93161ec30       Aqua Regia           sleep -> play                                      TaskGroup._aexit -> TaskGroup.__aexit__ -> album   TMBTE           0x7fc93173fa50
+
+or a tree like this:
+
+.. code-block:: bash
+
+  python -m asyncio pstree 12345
+
+  └── (T) Task-1
+      └──  main example.py:13
+          └──  TaskGroup.__aexit__ Lib/asyncio/taskgroups.py:72
+              └──  TaskGroup._aexit Lib/asyncio/taskgroups.py:121
+                  ├── (T) Sundowning
+                  │   └──  album example.py:8
+                  │       └──  TaskGroup.__aexit__ Lib/asyncio/taskgroups.py:72
+                  │           └──  TaskGroup._aexit Lib/asyncio/taskgroups.py:121
+                  │               ├── (T) TNDNBTG
+                  │               │   └──  play example.py:4
+                  │               │       └──  sleep Lib/asyncio/tasks.py:702
+                  │               └── (T) Levitate
+                  │                   └──  play example.py:4
+                  │                       └──  sleep Lib/asyncio/tasks.py:702
+                  └── (T) TMBTE
+                      └──  album example.py:8
+                          └──  TaskGroup.__aexit__ Lib/asyncio/taskgroups.py:72
+                              └──  TaskGroup._aexit Lib/asyncio/taskgroups.py:121
+                                  ├── (T) DYWTYLM
+                                  │   └──  play example.py:4
+                                  │       └──  sleep Lib/asyncio/tasks.py:702
+                                  └── (T) Aqua Regia
+                                      └──  play example.py:4
+                                          └──  sleep Lib/asyncio/tasks.py:702
+
+If a cycle is detected in the async await graph (which could indicate a
+programming issue), the tool raises an error and lists the cycle paths that
+prevent tree construction:
+
+.. code-block:: bash
+
+  python -m asyncio pstree 12345
+
+  ERROR: await-graph contains cycles - cannot print a tree!
+
+  cycle: Task-2 → Task-3 → Task-2
+
+(Contributed by Pablo Galindo, Łukasz Langa, Yury Selivanov, and Marta
+Gomez Macias in :gh:`91048`.)
 
 .. _whatsnew314-tail-call:
 
@@ -485,9 +951,122 @@ For further information on how to build Python, see
 (Contributed by Ken Jin in :gh:`128563`, with ideas on how to implement this
 in CPython by Mark Shannon, Garrett Gu, Haoran Xu, and Josh Haberman.)
 
+.. _whatsnew314-free-threaded-cpython:
+
+Free-threaded mode
+------------------
+
+Free-threaded mode (:pep:`703`), initially added in 3.13, has been significantly improved.
+The implementation described in PEP 703 was finished, including C API changes,
+and temporary workarounds in the interpreter were replaced with more permanent solutions.
+The specializing adaptive interpreter (:pep:`659`) is now enabled in free-threaded mode,
+which along with many other optimizations greatly improves its performance.
+The performance penalty on single-threaded code in free-threaded mode is now roughly 5-10%,
+depending on platform and C compiler used.
+
+This work was done by many contributors: Sam Gross, Matt Page, Neil Schemenauer,
+Thomas Wouters, Donghee Na, Kirill Podoprigora, Ken Jin, Itamar Oren,
+Brett Simmers, Dino Viehland, Nathan Goldbaum, Ralf Gommers, Lysandros Nikolaou,
+Kumar Aditya, Edgar Margffoy, and many others.
+
+Some of these contributors are employed by Meta, which has continued to provide
+significant engineering resources to support this project.
+
+From 3.14, when compiling extension modules for the free-threaded build of
+CPython on Windows, the preprocessor variable ``Py_GIL_DISABLED`` now needs to
+be specified by the build backend, as it will no longer be determined
+automatically by the C compiler. For a running interpreter, the setting that
+was used at compile time can be found using :func:`sysconfig.get_config_var`.
+
+A new flag has been added, :data:`~sys.flags.context_aware_warnings`.  This
+flag defaults to true for the free-threaded build and false for the GIL-enabled
+build. If the flag is true then the :class:`warnings.catch_warnings` context
+manager uses a context variable for warning filters.  This makes the context
+manager behave predicably when used with multiple threads or asynchronous
+tasks.
+
+A new flag has been added, :data:`~sys.flags.thread_inherit_context`. This flag
+defaults to true for the free-threaded build and false for the GIL-enabled
+build. If the flag is true then threads created with :class:`threading.Thread`
+start with a copy of the :class:`~contextvars.Context()` of the caller of
+:meth:`~threading.Thread.start`.  Most significantly, this makes the warning
+filtering context established by :class:`~warnings.catch_warnings` be
+"inherited" by threads (or asyncio tasks) started within that context.  It also
+affects other modules that use context variables, such as the :mod:`decimal`
+context manager.
+
+
+.. _whatsnew314-pyrepl-highlighting:
+
+Syntax highlighting in PyREPL
+-----------------------------
+
+The default :term:`interactive` shell now highlights Python syntax as you
+type.  The feature is enabled by default unless the
+:envvar:`PYTHON_BASIC_REPL` environment is set or any color-disabling
+environment variables are used. See :ref:`using-on-controlling-color` for
+details.
+
+The default color theme for syntax highlighting strives for good contrast
+and uses exclusively the 4-bit VGA standard ANSI color codes for maximum
+compatibility. The theme can be customized using an experimental API
+``_colorize.set_theme()``.  This can be called interactively, as well as
+in the :envvar:`PYTHONSTARTUP` script.
+
+(Contributed by Łukasz Langa in :gh:`131507`.)
+
+
+.. _whatsnew314-jit-compiler:
+
+Binary releases for the experimental just-in-time compiler
+----------------------------------------------------------
+
+The official macOS and Windows release binaries now include an *experimental*
+just-in-time (JIT) compiler. Although it is **not** recommended for production
+use, it can be tested by setting :envvar:`PYTHON_JIT=1 <PYTHON_JIT>` as an
+environment variable. Downstream source builds and redistributors can use the
+:option:`--enable-experimental-jit=yes-off` configuration option for similar
+behavior.
+
+The JIT is at an early stage and still in active development. As such, the
+typical performance impact of enabling it can range from 10% slower to 20%
+faster, depending on workload. To aid in testing and evaluation, a set of
+introspection functions has been provided in the :data:`sys._jit` namespace.
+:func:`sys._jit.is_available` can be used to determine if the current executable
+supports JIT compilation, while :func:`sys._jit.is_enabled` can be used to tell
+if JIT compilation has been enabled for the current process.
+
+Currently, the most significant missing functionality is that native debuggers
+and profilers like ``gdb`` and ``perf`` are unable to unwind through JIT frames
+(Python debuggers and profilers, like :mod:`pdb` or :mod:`profile`, continue to
+work without modification). Free-threaded builds do not support JIT compilation.
+
+Please report any bugs or major performance regressions that you encounter!
+
+.. seealso:: :pep:`744`
+
+Concurrent safe warnings control
+--------------------------------
+
+The :class:`warnings.catch_warnings` context manager will now optionally
+use a context variable for warning filters.  This is enabled by setting
+the :data:`~sys.flags.context_aware_warnings` flag, either with the ``-X``
+command-line option or an environment variable.  This gives predicable
+warnings control when using :class:`~warnings.catch_warnings` combined with
+multiple threads or asynchronous tasks. The flag defaults to true for the
+free-threaded build and false for the GIL-enabled build.
+
+(Contributed by Neil Schemenauer and Kumar Aditya in :gh:`130010`.)
 
 Other language changes
 ======================
+
+* The default :term:`interactive` shell now supports import autocompletion.
+  This means that typing ``import foo`` and pressing ``<tab>`` will suggest
+  modules starting with ``foo``. Similarly, typing ``from foo import b`` will
+  suggest submodules of ``foo`` starting with ``b``. Note that autocompletion
+  of module attributes is not currently supported.
+  (Contributed by Tomas Roun in :gh:`69605`.)
 
 * The :func:`map` built-in now has an optional keyword-only *strict* flag
   like :func:`zip` to check that all the iterables are of equal length.
@@ -532,6 +1111,11 @@ Other language changes
   ASCII :class:`bytes` and :term:`bytes-like objects <bytes-like object>`.
   (Contributed by Daniel Pope in :gh:`129349`.)
 
+* Support ``\z`` as a synonym for ``\Z`` in :mod:`regular expressions <re>`.
+  It is interpreted unambiguously in many other regular expression engines,
+  unlike ``\Z``, which has subtly different behavior.
+  (Contributed by Serhiy Storchaka in :gh:`133306`.)
+
 * ``\B`` in :mod:`regular expression <re>` now matches empty input string.
   Now it is always the opposite of ``\b``.
   (Contributed by Serhiy Storchaka in :gh:`124130`.)
@@ -544,9 +1128,9 @@ Other language changes
   The testbed can also be used to run the test suite of projects other than
   CPython itself. (Contributed by Russell Keith-Magee in :gh:`127592`.)
 
-* Three-argument :func:`pow` now try calling :meth:`~object.__rpow__` if necessary.
-  Previously it was only called in two-argument :func:`!pow` and the binary
-  power operator.
+* Three-argument :func:`pow` now tries calling :meth:`~object.__rpow__` if
+  necessary. Previously it was only called in two-argument :func:`!pow` and the
+  binary power operator.
   (Contributed by Serhiy Storchaka in :gh:`130104`.)
 
 * Add a built-in implementation for HMAC (:rfc:`2104`) using formally verified
@@ -555,27 +1139,39 @@ Other language changes
   of HMAC is not available.
   (Contributed by Bénédikt Tran in :gh:`99108`.)
 
+* The import time flag can now track modules that are already loaded ('cached'),
+  via the new :option:`-X importtime=2 <-X>`.
+  When such a module is imported, the ``self`` and ``cumulative`` times
+  are replaced by the string ``cached``.
+  Values above ``2`` for ``-X importtime`` are now reserved for future use.
+  (Contributed by Noah Kim and Adam Turner in :gh:`118655`.)
+
 * When subclassing from a pure C type, the C slots for the new type are no
   longer replaced with a wrapped version on class creation if they are not
   explicitly overridden in the subclass.
   (Contributed by Tomasz Pytel in :gh:`132329`.)
 
-* The command line option :option:`-c` now automatically dedents its code
+* The command-line option :option:`-c` now automatically dedents its code
   argument before execution. The auto-dedentation behavior mirrors
   :func:`textwrap.dedent`.
   (Contributed by Jon Crall and Steven Sun in :gh:`103998`.)
 
-* Improve error message when an object supporting the synchronous (resp.
-  asynchronous) context manager protocol is entered using :keyword:`async
-  with` (resp. :keyword:`with`) instead of :keyword:`with` (resp.
-  :keyword:`async with`).
+* Improve error message when an object supporting the synchronous
+  context manager protocol is entered using :keyword:`async
+  with` instead of :keyword:`with`.
+  And vice versa with the asynchronous context manager protocol.
   (Contributed by Bénédikt Tran in :gh:`128398`.)
 
+* :option:`!-J` is no longer a reserved flag for Jython_,
+  and now has no special meaning.
+  (Contributed by Adam Turner in :gh:`133336`.)
+
+  .. _Jython: https://www.jython.org/
 
 .. _whatsnew314-pep765:
 
-PEP 765: Disallow return/break/continue that exit a finally block
------------------------------------------------------------------
+PEP 765: Disallow ``return``/``break``/``continue`` that exit a ``finally`` block
+---------------------------------------------------------------------------------
 
 The compiler emits a :exc:`SyntaxWarning` when a :keyword:`return`, :keyword:`break` or
 :keyword:`continue` statements appears where it exits a :keyword:`finally` block.
@@ -606,6 +1202,16 @@ argparse
   and subparser names if mistyped by the user.
   (Contributed by Savannah Ostrowski in :gh:`124456`.)
 
+  .. _whatsnew314-color-argparse:
+
+* Introduced the optional *color* parameter to
+  :class:`argparse.ArgumentParser`, enabling color for help text.
+  This can be controlled by :ref:`environment variables
+  <using-on-controlling-color>`. Color has also been enabled for help in the
+  :ref:`stdlib CLIs <library-cmdline>` which use :mod:`!argparse`.
+  (Contributed by Hugo van Kemenade in :gh:`130645`.)
+
+
 ast
 ---
 
@@ -619,11 +1225,34 @@ ast
   (Contributed by Irit Katriel in :gh:`123958`.)
 
 * The ``repr()`` output for AST nodes now includes more information.
-  (Contributed by Tomas R in :gh:`116022`.)
+  (Contributed by Tomas Roun in :gh:`116022`.)
 
 * :func:`ast.parse`, when called with an AST as input, now always verifies
   that the root node type is appropriate.
   (Contributed by Irit Katriel in :gh:`130139`.)
+
+* Add new ``--feature-version``, ``--optimize``, ``--show-empty`` options to
+  command-line interface.
+  (Contributed by Semyon Moroz in :gh:`133367`.)
+
+
+asyncio
+-------
+
+* The function and methods named :func:`!create_task` now take an arbitrary
+  list of keyword arguments. All keyword arguments are passed to the
+  :class:`~asyncio.Task` constructor or the custom task factory.
+  (See :meth:`~asyncio.loop.set_task_factory` for details.)
+  The ``name`` and ``context`` keyword arguments are no longer special;
+  the name should now be set using the ``name`` keyword argument of the factory,
+  and ``context`` may be ``None``.
+
+  This affects the following function and methods:
+  :meth:`asyncio.create_task`,
+  :meth:`asyncio.loop.create_task`,
+  :meth:`asyncio.TaskGroup.create_task`.
+  (Contributed by Thomas Grainger in :gh:`128307`.)
+
 
 bdb
 ---
@@ -631,23 +1260,26 @@ bdb
 * The :mod:`bdb` module now supports the :mod:`sys.monitoring` backend.
   (Contributed by Tian Gao in :gh:`124533`.)
 
+
+  .. _whatsnew314-color-calendar:
+
 calendar
 --------
 
 * By default, today's date is highlighted in color in :mod:`calendar`'s
   :ref:`command-line <calendar-cli>` text output.
-  This can be controlled via the :envvar:`PYTHON_COLORS` environment
-  variable as well as the canonical |NO_COLOR|_
-  and |FORCE_COLOR|_ environment variables.
-  See also :ref:`using-on-controlling-color`.
+  This can be controlled by :ref:`environment variables
+  <using-on-controlling-color>`.
   (Contributed by Hugo van Kemenade in :gh:`128317`.)
 
 
 concurrent.futures
 ------------------
 
+.. _whatsnew314-concurrent-futures-interp-pool:
+
 * Add :class:`~concurrent.futures.InterpreterPoolExecutor`,
-  which exposes "subinterpreters (multiple Python interpreters in the
+  which exposes "subinterpreters" (multiple Python interpreters in the
   same process) to Python code.  This is separate from the proposed API
   in :pep:`734`.
   (Contributed by Eric Snow in :gh:`124548`.)
@@ -683,6 +1315,14 @@ concurrent.futures
   buffer.
   (Contributed by Enzo Bonnal and Josh Rosenberg in :gh:`74028`.)
 
+configparser
+------------
+
+* Security fix: will no longer write config files it cannot read. Attempting
+  to :meth:`configparser.ConfigParser.write` keys containing delimiters or
+  beginning with the section header pattern will raise a
+  :class:`configparser.InvalidWriteError`.
+  (Contributed by Jacob Lincoln in :gh:`129270`.)
 
 contextvars
 -----------
@@ -726,16 +1366,32 @@ ctypes
   :class:`~ctypes.c_double_complex` and :class:`~ctypes.c_longdouble_complex`,
   are now available if both the compiler and the ``libffi`` library support
   complex C types.
-  (Contributed by Sergey B Kirpichev in :gh:`61103`).
+  (Contributed by Sergey B Kirpichev in :gh:`61103`.)
 
 * Add :func:`ctypes.util.dllist` for listing the shared libraries
   loaded by the current process.
   (Contributed by Brian Ward in :gh:`119349`.)
 
+* Move :func:`ctypes.POINTER` types cache from a global internal cache
+  (``_pointer_type_cache``) to the :attr:`ctypes._CData.__pointer_type__`
+  attribute of the corresponding :mod:`ctypes` types.
+  This will stop the cache from growing without limits in some situations.
+  (Contributed by Sergey Miryanov in :gh:`100926`.)
+
 * The :class:`ctypes.py_object` type now supports subscription,
   making it a :term:`generic type`.
   (Contributed by Brian Schubert in :gh:`132168`.)
 
+* :mod:`ctypes` now supports :term:`free-threading builds <free threading>`.
+  (Contributed by Kumar Aditya and Peter Bierma in :gh:`127945`.)
+
+curses
+------
+
+* Add the :func:`~curses.assume_default_colors` function,
+  a refinement of the :func:`~curses.use_default_colors` function which
+  allows to change the color pair ``0``.
+  (Contributed by Serhiy Storchaka in :gh:`133139`.)
 
 datetime
 --------
@@ -840,12 +1496,33 @@ getopt
   (Contributed by Serhiy Storchaka in :gh:`126390`.)
 
 
+getpass
+-------
+
+* Support keyboard feedback by :func:`getpass.getpass` via the keyword-only
+  optional argument ``echo_char``. Placeholder characters are rendered whenever
+  a character is entered, and removed when a character is deleted.
+  (Contributed by Semyon Moroz in :gh:`77065`.)
+
+
 graphlib
 --------
 
 * Allow :meth:`graphlib.TopologicalSorter.prepare` to be called more than once
   as long as sorting has not started.
-  (Contributed by Daniel Pope in :gh:`130914`)
+  (Contributed by Daniel Pope in :gh:`130914`.)
+
+
+heapq
+-----
+
+* Add functions for working with max-heaps:
+
+  * :func:`heapq.heapify_max`,
+  * :func:`heapq.heappush_max`,
+  * :func:`heapq.heappop_max`,
+  * :func:`heapq.heapreplace_max`
+  * :func:`heapq.heappushpop_max`
 
 
 hmac
@@ -924,11 +1601,12 @@ json
   See the :ref:`JSON command-line interface <json-commandline>` documentation.
   (Contributed by Trey Hunner in :gh:`122873`.)
 
-* By default, the output of the :ref:`JSON command-line interface <json-commandline>`
-  is highlighted in color. This can be controlled via the
-  :envvar:`PYTHON_COLORS` environment variable as well as the canonical
-  |NO_COLOR|_ and |FORCE_COLOR|_ environment variables. See also
-  :ref:`using-on-controlling-color`.
+  .. _whatsnew314-color-json:
+
+* By default, the output of the :ref:`JSON command-line interface
+  <json-commandline>` is highlighted in color.
+  This can be controlled by :ref:`environment variables
+  <using-on-controlling-color>`.
   (Contributed by Tomas Roun in :gh:`131952`.)
 
 linecache
@@ -954,7 +1632,7 @@ math
 ----
 
 * Added more detailed error messages for domain errors in the module.
-  (Contributed by by Charlie Zhao and Sergey B Kirpichev in :gh:`101410`.)
+  (Contributed by Charlie Zhao and Sergey B Kirpichev in :gh:`101410`.)
 
 
 mimetypes
@@ -1064,9 +1742,9 @@ multiprocessing
 * The :ref:`multiprocessing proxy objects <multiprocessing-proxy_objects>`
   for *list* and *dict* types gain previously overlooked missing methods:
 
-   * :meth:`!clear` and :meth:`!copy` for proxies of :class:`list`.
+   * :meth:`!clear` and :meth:`!copy` for proxies of :class:`list`
    * :meth:`~dict.fromkeys`, ``reversed(d)``, ``d | {}``, ``{} | d``,
-     ``d |= {'b': 2}`` for proxies of :class:`dict`.
+     ``d |= {'b': 2}`` for proxies of :class:`dict`
 
   (Contributed by Roy Hyunjin Han for :gh:`103134`.)
 
@@ -1076,9 +1754,9 @@ multiprocessing
   (Contributed by Mingyu Park in :gh:`129949`.)
 
 * Add :func:`multiprocessing.Process.interrupt` which terminates the child
-  process by sending :py:const:`~signal.SIGINT`. This enables "finally" clauses
-  and printing stack trace for the terminated process.
-  (Contributed by Artem Pulkin in :gh:`131913`.)
+  process by sending :py:const:`~signal.SIGINT`. This enables
+  :keyword:`finally` clauses to print a stack trace for the terminated
+  process. (Contributed by Artem Pulkin in :gh:`131913`.)
 
 operator
 --------
@@ -1106,6 +1784,16 @@ os
 * Add the :func:`os.readinto` function to read into a
   :ref:`buffer object <bufferobjects>` from a file descriptor.
   (Contributed by Cody Maloney in :gh:`129205`.)
+
+
+os.path
+-------
+
+* The *strict* parameter to :func:`os.path.realpath` accepts a new value,
+  :data:`os.path.ALLOW_MISSING`.
+  If used, errors other than :exc:`FileNotFoundError` will be re-raised;
+  the resulting path can be missing but it will be free of symlinks.
+  (Contributed by Petr Viktorin for :cve:`2025-4517`.)
 
 
 pathlib
@@ -1158,6 +1846,11 @@ pdb
   fill in a 4-space indentation now, instead of inserting a ``\t`` character.
   (Contributed by Tian Gao in :gh:`130471`.)
 
+* Auto-indent is introduced in :mod:`pdb` multi-line input. It will either
+  keep the indentation of the last line or insert a 4-space indentation when
+  it detects a new code block.
+  (Contributed by Tian Gao in :gh:`133350`.)
+
 * ``$_asynctask`` is added to access the current asyncio task if applicable.
   (Contributed by Tian Gao in :gh:`124367`.)
 
@@ -1172,6 +1865,11 @@ pdb
   coroutines. :keyword:`await` statements are supported with this
   function.
   (Contributed by Tian Gao in :gh:`132576`.)
+
+* Source code displayed in :mod:`pdb` will be syntax-highlighted. This feature
+  can be controlled using the same methods as PyREPL, in addition to the newly
+  added ``colorize`` argument of :class:`pdb.Pdb`.
+  (Contributed by Tian Gao and Łukasz Langa in :gh:`133355`.)
 
 
 pickle
@@ -1218,7 +1916,7 @@ socket
     :const:`~socket.BTPROTO_HCI` on Linux.
     (Contributed by Serhiy Storchaka in :gh:`70145`.)
   * Accept an integer as the address for
-    :const:`~socket.BTPROTO_HCI` on Linux
+    :const:`~socket.BTPROTO_HCI` on Linux.
     (Contributed by Serhiy Storchaka in :gh:`132099`.)
   * Return *cid* in :meth:`~socket.socket.getsockname` for
     :const:`~socket.BTPROTO_L2CAP`.
@@ -1238,8 +1936,8 @@ struct
 ------
 
 * Support the :c:expr:`float complex` and :c:expr:`double complex` C types in
-  the :mod:`struct` module (formatting characters ``'F'`` and ``'D'``,
-  respectively) if the compiler has C11 complex arithmetic.
+  the :mod:`struct` module (formatting characters ``'F'`` and ``'D'``
+  respectively).
   (Contributed by Sergey B Kirpichev in :gh:`121249`.)
 
 
@@ -1286,6 +1984,28 @@ sysconfig
   (Contributed by Xuehai Pan in :gh:`131799`.)
 
 
+tarfile
+-------
+
+* :func:`~tarfile.data_filter` now normalizes symbolic link targets in order to
+  avoid path traversal attacks.
+  (Contributed by Petr Viktorin in :gh:`127987` and :cve:`2025-4138`.)
+* :func:`~tarfile.TarFile.extractall` now skips fixing up directory attributes
+  when a directory was removed or replaced by another kind of file.
+  (Contributed by Petr Viktorin in :gh:`127987` and :cve:`2024-12718`.)
+* :func:`~tarfile.TarFile.extract` and :func:`~tarfile.TarFile.extractall`
+  now (re-)apply the extraction filter when substituting a link (hard or
+  symbolic) with a copy of another archive member, and when fixing up
+  directory attributes.
+  The former raises a new exception, :exc:`~tarfile.LinkFallbackError`.
+  (Contributed by Petr Viktorin for :cve:`2025-4330` and :cve:`2024-12718`.)
+* :func:`~tarfile.TarFile.extract` and :func:`~tarfile.TarFile.extractall`
+  no longer extract rejected members when
+  :func:`~tarfile.TarFile.errorlevel` is zero.
+  (Contributed by Matt Prodani and Petr Viktorin in :gh:`112887`
+  and :cve:`2025-4435`.)
+
+
 threading
 ---------
 
@@ -1297,10 +2017,13 @@ threading
 tkinter
 -------
 
-* Make tkinter widget methods :meth:`!after` and :meth:`!after_idle` accept
-  arguments passed by keyword.
+* Make :mod:`tkinter` widget methods :meth:`!after` and :meth:`!after_idle`
+  accept arguments passed by keyword.
   (Contributed by Zhikang Yan in :gh:`126899`.)
 
+* Add ability to specify name for :class:`!tkinter.OptionMenu` and
+  :class:`!tkinter.ttk.OptionMenu`.
+  (Contributed by Zhikang Yan in :gh:`130482`.)
 
 turtle
 ------
@@ -1367,14 +2090,14 @@ unicodedata
 * The Unicode database has been updated to Unicode 16.0.0.
 
 
+.. _whatsnew314-color-unittest:
+
 unittest
 --------
 
 * :mod:`unittest` output is now colored by default.
-  This can be controlled via the :envvar:`PYTHON_COLORS` environment
-  variable as well as the canonical |NO_COLOR|_
-  and |FORCE_COLOR|_ environment variables.
-  See also :ref:`using-on-controlling-color`.
+  This can be controlled by :ref:`environment variables
+  <using-on-controlling-color>`.
   (Contributed by Hugo van Kemenade in :gh:`127221`.)
 
 * unittest discovery supports :term:`namespace package` as start
@@ -1413,9 +2136,11 @@ urllib
 
   - Accept a complete URL when the new *require_scheme* argument is set to
     true.
-  - Discard URL authorities that resolve to a local IP address.
-  - Raise :exc:`~urllib.error.URLError` if a URL authority doesn't resolve
-    to a local IP address, except on Windows where we return a UNC path.
+  - Discard URL authority if it matches the local hostname.
+  - Discard URL authority if it resolves to a local IP address when the new
+    *resolve_host* argument is set to true.
+  - Raise :exc:`~urllib.error.URLError` if a URL authority isn't local,
+    except on Windows where we return a UNC path as before.
 
   In :func:`urllib.request.pathname2url`:
 
@@ -1489,10 +2214,18 @@ Optimizations
 asyncio
 -------
 
-* :mod:`asyncio` now uses double linked list implementation for native tasks
-  which speeds up execution by 10% on standard pyperformance benchmarks and
-  reduces memory usage.
+* :mod:`asyncio` has a new per-thread double linked list implementation internally for
+  :class:`native tasks <asyncio.Task>` which speeds up execution by 10-20% on standard
+  pyperformance benchmarks and reduces memory usage.
+  This enables external introspection tools such as
+  :ref:`python -m asyncio pstree <whatsnew314-asyncio-introspection>`
+  to introspect the call graph of asyncio tasks running in all threads.
   (Contributed by Kumar Aditya in :gh:`107803`.)
+
+* :mod:`asyncio` has first class support for :term:`free-threading builds <free threading>`.
+  This enables parallel execution of multiple event loops across different threads and scales
+  linearly with the number of threads.
+  (Contributed by Kumar Aditya in :gh:`128002`.)
 
 * :mod:`asyncio` has new utility functions for introspecting and printing
   the program's call graph: :func:`asyncio.capture_call_graph` and
@@ -1575,7 +2308,6 @@ Deprecated
     * :class:`asyncio.WindowsProactorEventLoopPolicy`
     * :func:`asyncio.get_event_loop_policy`
     * :func:`asyncio.set_event_loop_policy`
-    * :func:`asyncio.set_event_loop`
 
     Users should use :func:`asyncio.run` or :class:`asyncio.Runner` with
     *loop_factory* to use the desired event loop implementation.
@@ -1596,6 +2328,23 @@ Deprecated
   :func:`complex` constructor is now deprecated; it should only be passed
   as a single positional argument.
   (Contributed by Serhiy Storchaka in :gh:`109218`.)
+
+* :mod:`codecs`:
+  :func:`codecs.open` is now deprecated. Use :func:`open` instead.
+  (Contributed by Inada Naoki in :gh:`133036`.)
+
+* :mod:`ctypes`:
+
+  * On non-Windows platforms, setting :attr:`.Structure._pack_` to use a
+    MSVC-compatible default memory layout is deprecated in favor of setting
+    :attr:`.Structure._layout_` to ``'ms'``.
+    (Contributed by Petr Viktorin in :gh:`131747`.)
+
+  * Calling :func:`ctypes.POINTER` on a string is deprecated.
+    Use :ref:`ctypes-incomplete-types` for self-referential structures.
+    Also, the internal ``ctypes._pointer_type_cache`` is deprecated.
+    See :func:`ctypes.POINTER` for updated implementation details.
+    (Contributed by Sergey Myrianov in :gh:`100926`.)
 
 * :mod:`functools`:
   Calling the Python implementation of :func:`functools.reduce` with *function*
@@ -1661,6 +2410,10 @@ Deprecated
 .. include:: ../deprecations/pending-removal-in-3.15.rst
 
 .. include:: ../deprecations/pending-removal-in-3.16.rst
+
+.. include:: ../deprecations/pending-removal-in-3.17.rst
+
+.. include:: ../deprecations/pending-removal-in-3.19.rst
 
 .. include:: ../deprecations/pending-removal-in-future.rst
 
@@ -1757,7 +2510,7 @@ asyncio
 
     asyncio.run(main())
 
-  If you need to start something, e.g. a server listening on a socket
+  If you need to start something, for example, a server listening on a socket
   and then run forever, use :func:`asyncio.run` and an
   :class:`asyncio.Event`.
 
@@ -1887,7 +2640,9 @@ pty
 sqlite3
 -------
 
-* Remove :data:`!version` and :data:`!version_info` from :mod:`sqlite3`.
+* Remove :data:`!version` and :data:`!version_info` from :mod:`sqlite3`;
+  use :data:`~sqlite3.sqlite_version` and :data:`~sqlite3.sqlite_version_info`
+  for the actual version number of the runtime SQLite library.
   (Contributed by Hugo van Kemenade in :gh:`118924`.)
 
 * Disallow using a sequence of parameters with named placeholders.
@@ -1933,7 +2688,7 @@ Others
   :meth:`~object.__index__`. (Contributed by Mark Dickinson in :gh:`119743`.)
 
 
-CPython Bytecode Changes
+CPython bytecode changes
 ========================
 
 * Replaced the opcode ``BINARY_SUBSCR`` by :opcode:`BINARY_OP` with oparg ``NB_SUBSCR``.
@@ -1961,6 +2716,11 @@ Changes in the Python API
   causing changes in some behaviors.
   See :ref:`above <whatsnew314-typing-union>` for more details.
   (Contributed by Jelle Zijlstra in :gh:`105499`.)
+
+* The runtime behavior of annotations has changed in various ways; see
+  :ref:`above <whatsnew314-pep649>` for details. While most code that interacts
+  with annotations should continue to work, some undocumented details may behave
+  differently.
 
 
 Build changes
@@ -2003,6 +2763,7 @@ New features
   * :c:func:`PyUnicodeWriter_Discard`
   * :c:func:`PyUnicodeWriter_Finish`
   * :c:func:`PyUnicodeWriter_Format`
+  * :c:func:`PyUnicodeWriter_WriteASCII`
   * :c:func:`PyUnicodeWriter_WriteChar`
   * :c:func:`PyUnicodeWriter_WriteRepr`
   * :c:func:`PyUnicodeWriter_WriteStr`
@@ -2074,19 +2835,19 @@ New features
 
 * Add a new import and export API for Python :class:`int` objects (:pep:`757`):
 
-  * :c:func:`PyLong_GetNativeLayout`;
-  * :c:func:`PyLong_Export`;
-  * :c:func:`PyLong_FreeExport`;
-  * :c:func:`PyLongWriter_Create`;
-  * :c:func:`PyLongWriter_Finish`;
-  * :c:func:`PyLongWriter_Discard`.
+  * :c:func:`PyLong_GetNativeLayout`
+  * :c:func:`PyLong_Export`
+  * :c:func:`PyLong_FreeExport`
+  * :c:func:`PyLongWriter_Create`
+  * :c:func:`PyLongWriter_Finish`
+  * :c:func:`PyLongWriter_Discard`
 
   (Contributed by Sergey B Kirpichev and Victor Stinner in :gh:`102471`.)
 
 * Add :c:func:`PyType_GetBaseByToken` and :c:data:`Py_tp_token` slot for easier
   superclass identification, which attempts to resolve the `type checking issue
-  <https://peps.python.org/pep-0630/#type-checking>`__ mentioned in :pep:`630`
-  (:gh:`124153`).
+  <https://peps.python.org/pep-0630/#type-checking>`__ mentioned in :pep:`630`.
+  (Contributed in :gh:`124153`.)
 
 * Add :c:func:`PyUnicode_Equal` function to the limited C API:
   test if two strings are equal.
@@ -2135,6 +2896,15 @@ New features
   take a C integer and produce a Python :class:`bool` object. (Contributed by
   Pablo Galindo in :issue:`45325`.)
 
+* Add :c:func:`PyUnstable_Object_IsUniqueReferencedTemporary` to determine if an object
+  is a unique temporary object on the interpreter's operand stack. This can
+  be used in some cases as a replacement for checking if :c:func:`Py_REFCNT`
+  is ``1`` for Python objects passed as arguments to C API functions.
+
+* Add :c:func:`PyUnstable_Object_IsUniquelyReferenced` as a replacement for
+  ``Py_REFCNT(op) == 1`` on :term:`free threaded <free threading>` builds.
+  (Contributed by Peter Bierma in :gh:`133140`.)
+
 
 Limited C API changes
 ---------------------
@@ -2169,26 +2939,37 @@ Porting to Python 3.14
   a :exc:`UnicodeError` object.
   (Contributed by Bénédikt Tran in :gh:`127691`.)
 
+.. _whatsnew314-refcount:
+
+* The interpreter internally avoids some reference count modifications when
+  loading objects onto the operands stack by :term:`borrowing <borrowed reference>`
+  references when possible. This can lead to smaller reference count values
+  compared to previous Python versions. C API extensions that checked
+  :c:func:`Py_REFCNT` of ``1`` to determine if an function argument is not
+  referenced by any other code should instead use
+  :c:func:`PyUnstable_Object_IsUniqueReferencedTemporary` as a safer replacement.
+
+
 * Private functions promoted to public C APIs:
 
-  * ``_PyBytes_Join()``: :c:func:`PyBytes_Join`.
-  * ``_PyLong_IsNegative()``: :c:func:`PyLong_IsNegative`.
-  * ``_PyLong_IsPositive()``: :c:func:`PyLong_IsPositive`.
-  * ``_PyLong_IsZero()``: :c:func:`PyLong_IsZero`.
-  * ``_PyLong_Sign()``: :c:func:`PyLong_GetSign`.
-  * ``_PyUnicodeWriter_Dealloc()``: :c:func:`PyUnicodeWriter_Discard`.
-  * ``_PyUnicodeWriter_Finish()``: :c:func:`PyUnicodeWriter_Finish`.
-  * ``_PyUnicodeWriter_Init()``: use :c:func:`PyUnicodeWriter_Create`.
-  * ``_PyUnicodeWriter_Prepare()``: (no replacement).
-  * ``_PyUnicodeWriter_PrepareKind()``: (no replacement).
-  * ``_PyUnicodeWriter_WriteChar()``: :c:func:`PyUnicodeWriter_WriteChar`.
-  * ``_PyUnicodeWriter_WriteStr()``: :c:func:`PyUnicodeWriter_WriteStr`.
-  * ``_PyUnicodeWriter_WriteSubstring()``: :c:func:`PyUnicodeWriter_WriteSubstring`.
-  * ``_PyUnicode_EQ()``: :c:func:`PyUnicode_Equal`.
-  * ``_PyUnicode_Equal()``: :c:func:`PyUnicode_Equal`.
-  * ``_Py_GetConfig()``: :c:func:`PyConfig_Get` and :c:func:`PyConfig_GetInt`.
-  * ``_Py_HashBytes()``: :c:func:`Py_HashBuffer`.
-  * ``_Py_fopen_obj()``: :c:func:`Py_fopen`.
+  * ``_PyBytes_Join()``: :c:func:`PyBytes_Join`
+  * ``_PyLong_IsNegative()``: :c:func:`PyLong_IsNegative`
+  * ``_PyLong_IsPositive()``: :c:func:`PyLong_IsPositive`
+  * ``_PyLong_IsZero()``: :c:func:`PyLong_IsZero`
+  * ``_PyLong_Sign()``: :c:func:`PyLong_GetSign`
+  * ``_PyUnicodeWriter_Dealloc()``: :c:func:`PyUnicodeWriter_Discard`
+  * ``_PyUnicodeWriter_Finish()``: :c:func:`PyUnicodeWriter_Finish`
+  * ``_PyUnicodeWriter_Init()``: use :c:func:`PyUnicodeWriter_Create`
+  * ``_PyUnicodeWriter_Prepare()``: (no replacement)
+  * ``_PyUnicodeWriter_PrepareKind()``: (no replacement)
+  * ``_PyUnicodeWriter_WriteChar()``: :c:func:`PyUnicodeWriter_WriteChar`
+  * ``_PyUnicodeWriter_WriteStr()``: :c:func:`PyUnicodeWriter_WriteStr`
+  * ``_PyUnicodeWriter_WriteSubstring()``: :c:func:`PyUnicodeWriter_WriteSubstring`
+  * ``_PyUnicode_EQ()``: :c:func:`PyUnicode_Equal`
+  * ``_PyUnicode_Equal()``: :c:func:`PyUnicode_Equal`
+  * ``_Py_GetConfig()``: :c:func:`PyConfig_Get` and :c:func:`PyConfig_GetInt`
+  * ``_Py_HashBytes()``: :c:func:`Py_HashBuffer`
+  * ``_Py_fopen_obj()``: :c:func:`Py_fopen`
 
   The `pythoncapi-compat project`_ can be used to get most of these new
   functions on Python 3.13 and older.
@@ -2259,7 +3040,7 @@ Deprecated
     :c:func:`PyUnicodeWriter_WriteSubstring(writer, str, start, end) <PyUnicodeWriter_WriteSubstring>`.
   * :c:func:`!_PyUnicodeWriter_WriteASCIIString`:
     replace ``_PyUnicodeWriter_WriteASCIIString(&writer, str)`` with
-    :c:func:`PyUnicodeWriter_WriteUTF8(writer, str) <PyUnicodeWriter_WriteUTF8>`.
+    :c:func:`PyUnicodeWriter_WriteASCII(writer, str) <PyUnicodeWriter_WriteASCII>`.
   * :c:func:`!_PyUnicodeWriter_WriteLatin1String`:
     replace ``_PyUnicodeWriter_WriteLatin1String(&writer, str)`` with
     :c:func:`PyUnicodeWriter_WriteUTF8(writer, str) <PyUnicodeWriter_WriteUTF8>`.
