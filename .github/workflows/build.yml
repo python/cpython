@@ -332,7 +332,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-24.04]
-        awslc_ver: [1.52.1]
+        awslc_ver: [80f986b94] # TODO: change to an AWS-LC release version once AWS-LC PR #2484 is released
     env:
       AWSLC_VER: ${{ matrix.awslc_ver}}
       MULTISSL_DIR: ${{ github.workspace }}/multissl
