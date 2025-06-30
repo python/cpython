@@ -774,7 +774,7 @@ Constants
    The mathematical constant *τ* = 6.283185..., to available precision.
    Tau is a circle constant equal to 2\ *π*, the ratio of a circle's circumference to
    its radius. To learn more about Tau, check out Vi Hart's video `Pi is (still)
-   Wrong <https://www.youtube.com/watch?v=jG7vhMMXagQ>`_, and start celebrating
+   Wrong <https://vimeo.com/147792667>`_, and start celebrating
    `Tau day <https://tauday.com/>`_ by eating twice as much pie!
 
    .. versionadded:: 3.6
