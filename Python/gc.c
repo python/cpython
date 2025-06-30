@@ -1238,12 +1238,6 @@ deduce_unreachable(PyGC_Head *base, PyGC_Head *unreachable) {
      * objects will remain unreachable, so it would be more efficient to move
      * the reachable objects instead.  But this is a one-time cost, probably not
      * worth complicating the code to speed just a little.
-     *
-     * Note on types: All types in the unreachable set should be handled after
-     * the instances of those types are finalized. Otherwise, when we clear
-     * the weak references, the subclasses list will also be cleared, and
-     * the type's cache will not be properly invalidated from
-     * within the __del__ method.
      */
     move_unreachable(base, unreachable);  // gc_prev is pointer again
     validate_list(base, collecting_clear_unreachable_clear);
@@ -1761,7 +1755,6 @@ gc_collect_region(PyThreadState *tstate,
 
     /* Call tp_finalize on objects which have one. */
     finalize_garbage(tstate, &unreachable);
-
     /* Handle any objects that may have resurrected after the call
      * to 'finalize_garbage' and continue the collection with the
      * objects that are still unreachable */
