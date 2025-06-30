@@ -2327,11 +2327,16 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                     # twice (which may fail) if the argument was given, but
                     # only if it was defined already in the namespace
                     if (action.default is not None and
-                        isinstance(action.default, str) and
                         hasattr(namespace, action.dest) and
                         action.default is getattr(namespace, action.dest)):
-                        setattr(namespace, action.dest,
+                        if isinstance(action.default, str):
+                            setattr(namespace, action.dest,
                                 self._get_value(action, action.default))
+                        elif (action.nargs not in (OPTIONAL, None) and
+                              isinstance(action.default, (list, tuple)) and
+                              all(isinstance(v, str) for v in action.default)):
+                            setattr(namespace, action.dest,
+                                [self._get_value(action, v) for v in action.default])
 
         if required_actions:
             raise ArgumentError(None, _('the following arguments are required: %s') %
