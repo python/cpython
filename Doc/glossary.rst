@@ -1280,6 +1280,16 @@ Glossary
       and ending with double underscores.  Special methods are documented in
       :ref:`specialnames`.
 
+   standard library
+      The collection of :term:`packages <package>`, :term:`modules <module>`
+      and :term:`extension modules <extension module>` distributed as a part
+      of the official Python interpreter package, or an individual member of
+      that collection.  The exact membership of the collection may vary based
+      on platform, available system packages, or other criteria.
+
+   stdlib
+      A synonym for :term:`standard library`.
+
    statement
       A statement is part of a suite (a "block" of code).  A statement is either
       an :term:`expression` or one of several constructs with a keyword, such
