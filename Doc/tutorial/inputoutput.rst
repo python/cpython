@@ -295,8 +295,8 @@ Now let's implement a function that sanitizes *any* HTML
 
 This function iterates over the parts of the
 :class:`~!string.templatelib.Template`, escaping any interpolated values using
-the :func:`html.escape` function, which converts special characters like `<`,
-`>`, and `&` into their HTML-safe equivalents.
+the :func:`html.escape` function, which converts special characters like ``<``,
+``>``, and ``&`` into their HTML-safe equivalents.
 
 Now we can tie it all together:
 
