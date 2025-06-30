@@ -2175,7 +2175,7 @@ empty:
 static PyObject *
 product_next(PyObject *op)
 {
-    PyObject * result;
+    PyObject *result;
     Py_BEGIN_CRITICAL_SECTION(op);
     result = product_next_lock_held(op);
     Py_END_CRITICAL_SECTION()
@@ -2417,7 +2417,7 @@ empty:
 static PyObject *
 combinations_next(PyObject *op)
 {
-    PyObject * result;
+    PyObject *result;
     Py_BEGIN_CRITICAL_SECTION(op);
     result = combinations_next_lock_held(op);
     Py_END_CRITICAL_SECTION()
