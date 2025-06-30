@@ -58,8 +58,8 @@ any codec:
    Return a mapping suitable for decoding a custom single-byte encoding.
    Given a :class:`str` *string* of up to 256 characters representing an
    encoding table, returns either a compact internal mapping object
-   ``EncodingMap`` or a :class:`dictionary <dict>` mapping character ordinals to byte values.
-   Raises a :exc:`TypeError` on invalid input.
+   ``EncodingMap`` or a :class:`dictionary <dict>` mapping character ordinals
+   to byte values. Raises a :exc:`TypeError` on invalid input.
 
 The full details for each codec can also be looked up directly:
 
