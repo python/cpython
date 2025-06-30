@@ -1287,9 +1287,6 @@ Glossary
       that collection.  The exact membership of the collection may vary based
       on platform, available system packages, or other criteria.
 
-   stdlib
-      A synonym for :term:`standard library`.
-
    statement
       A statement is part of a suite (a "block" of code).  A statement is either
       an :term:`expression` or one of several constructs with a keyword, such
@@ -1299,6 +1296,9 @@ Glossary
       An external tool that reads Python code and analyzes it, looking for
       issues such as incorrect types. See also :term:`type hints <type hint>`
       and the :mod:`typing` module.
+
+   stdlib
+      A synonym for :term:`standard library`.
 
    strong reference
       In Python's C API, a strong reference is a reference to an object
