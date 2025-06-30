@@ -277,7 +277,7 @@ uop_dealloc(PyObject *op) {
 const char *
 _PyUOpName(int index)
 {
-    if (index < 0 || index > MAX_UOP_ID) {
+    if (index < 0 || index > MAX_UOP_REGS_ID) {
         return NULL;
     }
     return _PyOpcode_uop_name[index];
@@ -336,7 +336,9 @@ uop_item(PyObject *op, Py_ssize_t index)
         PyErr_SetNone(PyExc_IndexError);
         return NULL;
     }
-    const char *name = _PyUOpName(self->trace[index].opcode);
+    int opcode = self->trace[index].opcode;
+    int base_opcode = _PyUop_Uncached[opcode];
+    const char *name = _PyUOpName(base_opcode);
     if (name == NULL) {
         name = "<nil>";
     }
@@ -995,16 +997,49 @@ count_exits(_PyUOpInstruction *buffer, int length)
 {
     int exit_count = 0;
     for (int i = 0; i < length; i++) {
-        int opcode = buffer[i].opcode;
-        if (opcode == _EXIT_TRACE) {
+        uint16_t base_opcode = _PyUop_Uncached[buffer[i].opcode];
+        if (base_opcode == _EXIT_TRACE) {
             exit_count++;
         }
     }
     return exit_count;
 }
 
+#define MAX_CACHED_REGISTER 3
+
+/* The number of cached registers at any exit (`EXIT_IF` or `DEOPT_IF`)
+ * This is the number of cached at entries at start, unless the uop is
+ * marked as `exit_depth_is_output` in which case it is the number of
+ * cached entries at the end */
+static int
+get_cached_entries_for_side_exit(_PyUOpInstruction *inst)
+{
+    // TO DO -- Add another generated table for this?
+    int base_opcode = _PyUop_Uncached[inst->opcode];
+    assert(base_opcode != 0);
+    if (_PyUop_Flags[base_opcode] & HAS_DEOPT_FLAG) {
+        return 0;
+    }
+    int input = -1;
+    /* Find number of cached entries at input. */
+    for (int i = 0; i <= MAX_CACHED_REGISTER; i++) {
+        if (_PyUop_Caching[base_opcode].opcodes[i] == inst->opcode) {
+            input = i;
+            break;
+        }
+    }
+    if (input == -1) {
+        return -1;
+    }
+    if (_PyUop_Caching[base_opcode].exit_depth_is_output) {
+        return input + _PyUop_Caching[base_opcode].delta;
+    }
+    return input;
+}
+
 static void make_exit(_PyUOpInstruction *inst, int opcode, int target)
 {
+    assert(opcode > MAX_UOP_ID && opcode <= MAX_UOP_REGS_ID);
     inst->opcode = opcode;
     inst->oparg = 0;
     inst->operand0 = 0;
@@ -1041,13 +1076,16 @@ prepare_for_execution(_PyUOpInstruction *buffer, int length)
     int next_spare = length;
     for (int i = 0; i < length; i++) {
         _PyUOpInstruction *inst = &buffer[i];
-        int opcode = inst->opcode;
+        int base_opcode = _PyUop_Uncached[inst->opcode];
+        assert(inst->opcode != _NOP);
         int32_t target = (int32_t)uop_get_target(inst);
-        if (_PyUop_Flags[opcode] & (HAS_EXIT_FLAG | HAS_DEOPT_FLAG)) {
-            uint16_t exit_op = (_PyUop_Flags[opcode] & HAS_EXIT_FLAG) ?
+        if (_PyUop_Flags[base_opcode] & (HAS_EXIT_FLAG | HAS_DEOPT_FLAG)) {
+            uint16_t base_exit_op = (_PyUop_Flags[base_opcode] & HAS_EXIT_FLAG) ?
                 _EXIT_TRACE : _DEOPT;
+            int exit_depth = get_cached_entries_for_side_exit(inst);
+            uint16_t exit_op = _PyUop_Caching[base_exit_op].opcodes[exit_depth];
             int32_t jump_target = target;
-            if (is_for_iter_test[opcode]) {
+            if (is_for_iter_test[base_opcode]) {
                 /* Target the POP_TOP immediately after the END_FOR,
                  * leaving only the iterator on the stack. */
                 int extended_arg = inst->oparg > 255;
@@ -1064,14 +1102,14 @@ prepare_for_execution(_PyUOpInstruction *buffer, int length)
             buffer[i].jump_target = current_jump;
             buffer[i].format = UOP_FORMAT_JUMP;
         }
-        if (_PyUop_Flags[opcode] & HAS_ERROR_FLAG) {
-            int popped = (_PyUop_Flags[opcode] & HAS_ERROR_NO_POP_FLAG) ?
-                0 : _PyUop_num_popped(opcode, inst->oparg);
+        if (_PyUop_Flags[base_opcode] & HAS_ERROR_FLAG) {
+            int popped = (_PyUop_Flags[base_opcode] & HAS_ERROR_NO_POP_FLAG) ?
+                0 : _PyUop_num_popped(base_opcode, inst->oparg);
             if (target != current_error_target || popped != current_popped) {
                 current_popped = popped;
                 current_error = next_spare;
                 current_error_target = target;
-                make_exit(&buffer[next_spare], _ERROR_POP_N, 0);
+                make_exit(&buffer[next_spare], _ERROR_POP_N_r00, 0);
                 buffer[next_spare].operand0 = target;
                 next_spare++;
             }
@@ -1081,8 +1119,8 @@ prepare_for_execution(_PyUOpInstruction *buffer, int length)
                 buffer[i].jump_target = 0;
             }
         }
-        if (opcode == _JUMP_TO_TOP) {
-            assert(buffer[0].opcode == _START_EXECUTOR);
+        if (base_opcode == _JUMP_TO_TOP) {
+            assert(buffer[0].opcode == _START_EXECUTOR_r00);
             buffer[i].format = UOP_FORMAT_JUMP;
             buffer[i].jump_target = 1;
         }
@@ -1129,25 +1167,29 @@ sanity_check(_PyExecutorObject *executor)
     }
     bool ended = false;
     uint32_t i = 0;
-    CHECK(executor->trace[0].opcode == _START_EXECUTOR);
+    CHECK(executor->trace[0].opcode == _START_EXECUTOR_r00);
     for (; i < executor->code_size; i++) {
         const _PyUOpInstruction *inst = &executor->trace[i];
         uint16_t opcode = inst->opcode;
-        CHECK(opcode <= MAX_UOP_ID);
-        CHECK(_PyOpcode_uop_name[opcode] != NULL);
+        uint16_t base_opcode = _PyUop_Uncached[opcode];
+        CHECK(opcode > MAX_UOP_ID);
+        CHECK(opcode <= MAX_UOP_REGS_ID);
+        CHECK(base_opcode <= MAX_UOP_ID);
+        CHECK(base_opcode != 0);
+        CHECK(_PyOpcode_uop_name[base_opcode] != NULL);
         switch(inst->format) {
             case UOP_FORMAT_TARGET:
-                CHECK(target_unused(opcode));
+                CHECK(target_unused(base_opcode));
                 break;
             case UOP_FORMAT_JUMP:
                 CHECK(inst->jump_target < executor->code_size);
                 break;
         }
-        if (_PyUop_Flags[opcode] & HAS_ERROR_FLAG) {
+        if (_PyUop_Flags[base_opcode] & HAS_ERROR_FLAG) {
             CHECK(inst->format == UOP_FORMAT_JUMP);
             CHECK(inst->error_target < executor->code_size);
         }
-        if (is_terminator(inst)) {
+        if (base_opcode == _EXIT_TRACE || base_opcode == _JUMP_TO_TOP) {
             ended = true;
             i++;
             break;
@@ -1156,11 +1198,11 @@ sanity_check(_PyExecutorObject *executor)
     CHECK(ended);
     for (; i < executor->code_size; i++) {
         const _PyUOpInstruction *inst = &executor->trace[i];
-        uint16_t opcode = inst->opcode;
+        uint16_t base_opcode = _PyUop_Uncached[inst->opcode];
         CHECK(
-            opcode == _DEOPT ||
-            opcode == _EXIT_TRACE ||
-            opcode == _ERROR_POP_N);
+            base_opcode == _DEOPT ||
+            base_opcode == _EXIT_TRACE ||
+            base_opcode == _ERROR_POP_N);
     }
 }
 
@@ -1188,14 +1230,14 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
     }
     int next_exit = exit_count-1;
     _PyUOpInstruction *dest = (_PyUOpInstruction *)&executor->trace[length];
-    assert(buffer[0].opcode == _START_EXECUTOR);
+    assert(buffer[0].opcode == _START_EXECUTOR_r00);
     buffer[0].operand0 = (uint64_t)executor;
     for (int i = length-1; i >= 0; i--) {
-        int opcode = buffer[i].opcode;
+        uint16_t base_opcode = _PyUop_Uncached[buffer[i].opcode];
         dest--;
         *dest = buffer[i];
-        assert(opcode != _POP_JUMP_IF_FALSE && opcode != _POP_JUMP_IF_TRUE);
-        if (opcode == _EXIT_TRACE) {
+        assert(base_opcode != _POP_JUMP_IF_FALSE && base_opcode != _POP_JUMP_IF_TRUE);
+        if (base_opcode == _EXIT_TRACE) {
             _PyExitData *exit = &executor->exits[next_exit];
             exit->target = buffer[i].target;
             dest->operand0 = (uint64_t)exit;
@@ -1204,7 +1246,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
     }
     assert(next_exit == -1);
     assert(dest == executor->trace);
-    assert(dest->opcode == _START_EXECUTOR);
+    assert(dest->opcode == _START_EXECUTOR_r00);
     _Py_ExecutorInit(executor, dependencies);
 #ifdef Py_DEBUG
     char *python_lltrace = Py_GETENV("PYTHON_LLTRACE");
@@ -1259,6 +1301,48 @@ int effective_trace_length(_PyUOpInstruction *buffer, int length)
 #endif
 
 static int
+stack_allocate(_PyUOpInstruction *buffer, int length)
+{
+    for (int i = length-1; i >= 0; i--) {
+        buffer[i*2].format = UOP_FORMAT_TARGET;
+        buffer[i*2].oparg = 0;
+        buffer[i*2].target = 0;
+        buffer[i*2+1] = buffer[i];
+    }
+    int depth = 0;
+    for (int i = 0; i < length; i++) {
+        _PyUOpInstruction *spill_or_reload = &buffer[i*2];
+        int uop = buffer[i*2+1].opcode;
+        if (uop == _NOP) {
+            // leave _NOPs to be cleaned up later
+            spill_or_reload->opcode = _NOP;
+            continue;
+        }
+        if (_PyUop_Caching[uop].opcodes[depth] > 0) {
+            spill_or_reload->opcode = _NOP;
+        }
+        else {
+            int min_depth = _PyUop_Caching[uop].min_input;
+            int max_depth = _PyUop_Caching[uop].max_input;
+            if (depth < min_depth) {
+                spill_or_reload->opcode = _PyUop_SpillsAndReloads[depth][min_depth];
+                depth = min_depth;
+            }
+            else {
+                assert(depth != max_depth);
+                spill_or_reload->opcode = _PyUop_SpillsAndReloads[depth][max_depth];
+                depth = max_depth;
+            }
+        }
+        assert(_PyUop_Caching[uop].opcodes[depth] != 0);
+        assert(spill_or_reload->opcode != 0);
+        buffer[i*2+1].opcode = _PyUop_Caching[uop].opcodes[depth];
+        depth += _PyUop_Caching[uop].delta;
+    }
+    return length*2;
+}
+
+static int
 uop_optimize(
     _PyInterpreterFrame *frame,
     _Py_CODEUNIT *instr,
@@ -1270,12 +1354,12 @@ uop_optimize(
     _Py_BloomFilter_Init(&dependencies);
     _PyUOpInstruction buffer[UOP_MAX_TRACE_LENGTH];
     OPT_STAT_INC(attempts);
-    int length = translate_bytecode_to_trace(frame, instr, buffer, UOP_MAX_TRACE_LENGTH, &dependencies, progress_needed);
+    int length = translate_bytecode_to_trace(frame, instr, buffer, UOP_MAX_TRACE_LENGTH/2, &dependencies, progress_needed);
     if (length <= 0) {
         // Error or nothing translated
         return length;
     }
-    assert(length < UOP_MAX_TRACE_LENGTH);
+    assert(length < UOP_MAX_TRACE_LENGTH/2);
     OPT_STAT_INC(traces_created);
     char *env_var = Py_GETENV("PYTHON_UOPS_OPTIMIZE");
     if (env_var == NULL || *env_var == '\0' || *env_var > '0') {
@@ -1286,7 +1370,7 @@ uop_optimize(
             return length;
         }
     }
-    assert(length < UOP_MAX_TRACE_LENGTH);
+    assert(length < UOP_MAX_TRACE_LENGTH/2);
     assert(length >= 1);
     /* Fix up */
     for (int pc = 0; pc < length; pc++) {
@@ -1302,6 +1386,7 @@ uop_optimize(
         assert(_PyOpcode_uop_name[buffer[pc].opcode]);
     }
     OPT_HIST(effective_trace_length(buffer, length), optimized_trace_length_hist);
+    length = stack_allocate(buffer, length);
     length = prepare_for_execution(buffer, length);
     assert(length <= UOP_MAX_TRACE_LENGTH);
     _PyExecutorObject *executor = make_executor_from_uops(buffer, length,  &dependencies);
@@ -1681,13 +1766,14 @@ executor_to_gv(_PyExecutorObject *executor, FILE *out)
          * https://graphviz.readthedocs.io/en/stable/manual.html#node-ports-compass
          */
         _PyUOpInstruction const *inst = &executor->trace[i];
-        const char *opname = _PyOpcode_uop_name[inst->opcode];
+        uint16_t base_opcode = _PyUop_Uncached[inst->opcode];
+        const char *opname = _PyOpcode_uop_name[base_opcode];
 #ifdef Py_STATS
         fprintf(out, "        <tr><td port=\"i%d\" border=\"1\" >%s -- %" PRIu64 "</td></tr>\n", i, opname, inst->execution_count);
 #else
         fprintf(out, "        <tr><td port=\"i%d\" border=\"1\" >%s</td></tr>\n", i, opname);
 #endif
-        if (inst->opcode == _EXIT_TRACE || inst->opcode == _JUMP_TO_TOP) {
+        if (base_opcode == _EXIT_TRACE || base_opcode == _JUMP_TO_TOP) {
             break;
         }
     }
@@ -1697,21 +1783,22 @@ executor_to_gv(_PyExecutorObject *executor, FILE *out)
     /* Write all the outgoing edges */
     for (uint32_t i = 0; i < executor->code_size; i++) {
         _PyUOpInstruction const *inst = &executor->trace[i];
-        uint16_t flags = _PyUop_Flags[inst->opcode];
+        uint16_t base_opcode = _PyUop_Uncached[inst->opcode];
+        uint16_t flags = _PyUop_Flags[base_opcode];
         _PyExitData *exit = NULL;
-        if (inst->opcode == _EXIT_TRACE) {
+        if (base_opcode == _EXIT_TRACE) {
             exit = (_PyExitData *)inst->operand0;
         }
         else if (flags & HAS_EXIT_FLAG) {
             assert(inst->format == UOP_FORMAT_JUMP);
             _PyUOpInstruction const *exit_inst = &executor->trace[inst->jump_target];
-            assert(exit_inst->opcode == _EXIT_TRACE);
+            assert(_PyUop_Uncached[exit_inst->opcode] == _EXIT_TRACE);
             exit = (_PyExitData *)exit_inst->operand0;
         }
         if (exit != NULL && exit->executor != NULL) {
             fprintf(out, "executor_%p:i%d -> executor_%p:start\n", executor, i, exit->executor);
         }
-        if (inst->opcode == _EXIT_TRACE || inst->opcode == _JUMP_TO_TOP) {
+        if (base_opcode == _EXIT_TRACE || base_opcode == _JUMP_TO_TOP) {
             break;
         }
     }

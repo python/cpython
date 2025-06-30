@@ -5266,7 +5266,9 @@ dummy_func(
                 _Py_BackoffCounter temperature = exit->temperature;
                 if (!backoff_counter_triggers(temperature)) {
                     exit->temperature = advance_backoff_counter(temperature);
+                    SYNC_SP();
                     GOTO_TIER_ONE(target);
+                    Py_UNREACHABLE();
                 }
                 _PyExecutorObject *executor;
                 if (target->op.code == ENTER_EXECUTOR) {
@@ -5278,12 +5280,18 @@ dummy_func(
                     int optimized = _PyOptimizer_Optimize(frame, target, &executor, chain_depth);
                     if (optimized <= 0) {
                         exit->temperature = restart_backoff_counter(temperature);
+                        SYNC_SP();
                         GOTO_TIER_ONE(optimized < 0 ? NULL : target);
+                        Py_UNREACHABLE();
                     }
                     exit->temperature = initial_temperature_backoff_counter();
                 }
                 exit->executor = executor;
             }
+            /* In future we might want to avoid spilling
+            * on side exits, so we might not sync the stack
+            * here and start the side trace with N cached registers */
+            SYNC_SP();
             GOTO_TIER_TWO(exit->executor);
         }
 
@@ -5399,6 +5407,7 @@ dummy_func(
         }
 
         tier2 op(_DEOPT, (--)) {
+            SYNC_SP();
             GOTO_TIER_ONE(_PyFrame_GetBytecode(frame) + CURRENT_TARGET());
         }
 
@@ -5419,6 +5428,9 @@ dummy_func(
             uintptr_t eval_breaker = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker);
             DEOPT_IF(eval_breaker & _PY_EVAL_EVENTS_MASK);
             assert(tstate->tracing || eval_breaker == FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version));
+        }
+
+        tier2 op(_SPILL_OR_RELOAD, (--)) {
         }
 
         label(pop_2_error) {

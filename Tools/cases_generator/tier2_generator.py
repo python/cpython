@@ -14,6 +14,7 @@ from analyzer import (
     analyze_files,
     StackItem,
     analysis_error,
+    get_uop_cache_depths,
 )
 from generators_common import (
     DEFAULT_INPUT,
@@ -60,15 +61,19 @@ def declare_variables(uop: Uop, out: CWriter) -> None:
 
 class Tier2Emitter(Emitter):
 
-    def __init__(self, out: CWriter, labels: dict[str, Label]):
+    def __init__(self, out: CWriter, labels: dict[str, Label], exit_cache_depth: int):
         super().__init__(out, labels)
         self._replacers["oparg"] = self.oparg
+        self.exit_cache_depth = exit_cache_depth
 
     def goto_error(self, offset: int, storage: Storage) -> str:
         # To do: Add jump targets for popping values.
         if offset != 0:
             storage.copy().flush(self.out)
-        return f"JUMP_TO_ERROR();"
+        else:
+            storage.stack.copy().flush(self.out)
+        self.emit("SET_CURRENT_CACHED_VALUES(0);\n")
+        return "JUMP_TO_ERROR();"
 
     def deopt_if(
         self,
@@ -86,7 +91,9 @@ class Tier2Emitter(Emitter):
         emit_to(self.out, tkn_iter, "RPAREN")
         next(tkn_iter)  # Semi colon
         self.emit(") {\n")
+        storage.stack.copy().flush(self.out)
         self.emit("UOP_STAT_INC(uopcode, miss);\n")
+        self.emit("SET_CURRENT_CACHED_VALUES(0);\n")
         self.emit("JUMP_TO_JUMP_TARGET();\n")
         self.emit("}\n")
         return not always_true(first_tkn)
@@ -107,6 +114,7 @@ class Tier2Emitter(Emitter):
         next(tkn_iter)  # Semi colon
         self.emit(") {\n")
         self.emit("UOP_STAT_INC(uopcode, miss);\n")
+        self.emit(f"SET_CURRENT_CACHED_VALUES({self.exit_cache_depth});\n")
         self.emit("JUMP_TO_JUMP_TARGET();\n")
         self.emit("}\n")
         return not always_true(first_tkn)
@@ -133,7 +141,7 @@ class Tier2Emitter(Emitter):
         return True
 
 
-def write_uop(uop: Uop, emitter: Emitter, stack: Stack) -> Stack:
+def write_uop(uop: Uop, emitter: Emitter, stack: Stack, cached_items: int = 0) -> Stack:
     locals: dict[str, Local] = {}
     try:
         emitter.out.start_line()
@@ -155,6 +163,12 @@ def write_uop(uop: Uop, emitter: Emitter, stack: Stack) -> Stack:
                 emitter.emit(f"{type}{cache.name} = ({cast})CURRENT_OPERAND{idx}();\n")
                 idx += 1
         _, storage = emitter.emit_tokens(uop, storage, None, False)
+        storage.stack._print(emitter.out)
+        while cached_items > 0:
+            emitter.out.start_line()
+            item = StackItem(f"_tos_cache{cached_items-1}", "", False, True)
+            storage.stack.pop(item, emitter.out)
+            cached_items -= 1
         storage.flush(emitter.out)
     except StackError as ex:
         raise analysis_error(ex.args[0], uop.body.open) from None
@@ -162,6 +176,11 @@ def write_uop(uop: Uop, emitter: Emitter, stack: Stack) -> Stack:
 
 SKIPS = ("_EXTENDED_ARG",)
 
+def is_for_iter_test(uop: Uop) -> bool:
+    return uop.name in (
+        "_GUARD_NOT_EXHAUSTED_RANGE", "_GUARD_NOT_EXHAUSTED_LIST",
+        "_GUARD_NOT_EXHAUSTED_TUPLE", "_FOR_ITER_TIER_TWO"
+    )
 
 def generate_tier2(
     filenames: list[str], analysis: Analysis, outfile: TextIO, lines: bool
@@ -176,7 +195,7 @@ def generate_tier2(
 """
     )
     out = CWriter(outfile, 2, lines)
-    emitter = Tier2Emitter(out, analysis.labels)
+
     out.emit("\n")
     for name, uop in analysis.uops.items():
         if uop.properties.tier == 1:
@@ -189,16 +208,22 @@ def generate_tier2(
                 f"/* {uop.name} is not a viable micro-op for tier 2 because it {why_not_viable} */\n\n"
             )
             continue
-        out.emit(f"case {uop.name}: {{\n")
-        declare_variables(uop, out)
-        stack = Stack()
-        stack = write_uop(uop, emitter, stack)
-        out.start_line()
-        if not uop.properties.always_exits:
-            out.emit("break;\n")
-        out.start_line()
-        out.emit("}")
-        out.emit("\n\n")
+        for inputs, outputs, exit_depth in get_uop_cache_depths(uop):
+            emitter = Tier2Emitter(out, analysis.labels, exit_depth)
+            out.emit(f"case {uop.name}_r{inputs}{outputs}: {{\n")
+            out.emit(f"CHECK_CURRENT_CACHED_VALUES({inputs});\n")
+            declare_variables(uop, out)
+            stack = Stack()
+            stack.push_cache([f"_tos_cache{i}" for i in range(inputs)], out)
+            stack._print(out)
+            stack = write_uop(uop, emitter, stack, outputs)
+            out.start_line()
+            out.emit(f"SET_CURRENT_CACHED_VALUES({outputs});\n")
+            if not uop.properties.always_exits:
+                out.emit("break;\n")
+            out.start_line()
+            out.emit("}")
+            out.emit("\n\n")
     outfile.write("#undef TIER_TWO\n")
 
 

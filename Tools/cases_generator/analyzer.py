@@ -3,9 +3,11 @@ import itertools
 import lexer
 import parser
 import re
-from typing import Optional, Callable
+from typing import Optional, Callable, Iterator
 
 from parser import Stmt, SimpleStmt, BlockStmt, IfStmt, WhileStmt
+
+MAX_CACHED_REGISTER = 3
 
 @dataclass
 class EscapingCall:
@@ -25,7 +27,7 @@ class Properties:
     eval_breaker: bool
     needs_this: bool
     always_exits: bool
-    stores_sp: bool
+    sync_sp: bool
     uses_co_consts: bool
     uses_co_names: bool
     uses_locals: bool
@@ -63,7 +65,7 @@ class Properties:
             eval_breaker=any(p.eval_breaker for p in properties),
             needs_this=any(p.needs_this for p in properties),
             always_exits=any(p.always_exits for p in properties),
-            stores_sp=any(p.stores_sp for p in properties),
+            sync_sp=any(p.sync_sp for p in properties),
             uses_co_consts=any(p.uses_co_consts for p in properties),
             uses_co_names=any(p.uses_co_names for p in properties),
             uses_locals=any(p.uses_locals for p in properties),
@@ -90,7 +92,7 @@ SKIP_PROPERTIES = Properties(
     eval_breaker=False,
     needs_this=False,
     always_exits=False,
-    stores_sp=False,
+    sync_sp=False,
     uses_co_consts=False,
     uses_co_names=False,
     uses_locals=False,
@@ -858,7 +860,7 @@ def compute_properties(op: parser.CodeDef) -> Properties:
         eval_breaker="CHECK_PERIODIC" in op.name,
         needs_this=variable_used(op, "this_instr"),
         always_exits=always_exits(op),
-        stores_sp=variable_used(op, "SYNC_SP"),
+        sync_sp=variable_used(op, "SYNC_SP"),
         uses_co_consts=variable_used(op, "FRAME_CO_CONSTS"),
         uses_co_names=variable_used(op, "FRAME_CO_NAMES"),
         uses_locals=variable_used(op, "GETLOCAL") and not has_free,
@@ -1215,6 +1217,71 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
     return Analysis(
         instructions, uops, families, pseudos, labels, opmap, first_arg, min_instrumented
     )
+
+#Simple heuristic for size to avoid too much stencil duplication
+def is_large(uop: Uop) -> bool:
+    return len(list(uop.body.tokens())) > 80
+
+def get_uop_cache_depths(uop: Uop) -> Iterator[tuple[int, int, int]]:
+    if uop.name == "_SPILL_OR_RELOAD":
+        for inputs in range(MAX_CACHED_REGISTER+1):
+            for outputs in range(MAX_CACHED_REGISTER+1):
+                if inputs != outputs:
+                    yield inputs, outputs, inputs
+        return
+    if uop.name == "_EXIT_TRACE":
+        for i in range(MAX_CACHED_REGISTER+1):
+            yield i, 0, i
+        return
+    if uop.name in ("_START_EXECUTOR", "_JUMP_TO_TOP", "_DEOPT", "_ERROR_POP_N"):
+        yield 0, 0, 0
+        return
+    non_decref_escape = False
+    for call in uop.properties.escaping_calls.values():
+        if "DECREF" in call.call.text or "CLOSE" in call.call.text:
+            continue
+        non_decref_escape = True
+    has_exit = uop.properties.deopts or uop.properties.side_exit
+    ideal_inputs = 0
+    has_array = False
+    for item in reversed(uop.stack.inputs):
+        if item.size:
+            has_array = True
+            break
+        if item.peek and uop.properties.escapes:
+            break
+        ideal_inputs += 1
+    ideal_outputs = 0
+    for item in reversed(uop.stack.outputs):
+        if item.size:
+            has_array = True
+            break
+        if item.peek and uop.properties.escapes:
+            break
+        ideal_outputs += 1
+    if ideal_inputs > MAX_CACHED_REGISTER:
+        ideal_inputs = MAX_CACHED_REGISTER
+    if ideal_outputs > MAX_CACHED_REGISTER:
+        ideal_outputs = MAX_CACHED_REGISTER
+    if non_decref_escape:
+        yield 0, ideal_outputs, 0
+        return
+    exit_depth = ideal_outputs if uop.properties.sync_sp else ideal_inputs
+    yield ideal_inputs, ideal_outputs, exit_depth
+    if uop.properties.escapes or uop.properties.sync_sp or has_array or is_large(uop):
+        return
+    if ideal_inputs == MAX_CACHED_REGISTER or ideal_outputs == MAX_CACHED_REGISTER:
+        return
+    inputs, outputs = ideal_inputs, ideal_outputs
+    if inputs < outputs:
+        inputs, outputs = 0, outputs-inputs
+    else:
+        inputs, outputs = inputs-outputs, 0
+    while inputs <= MAX_CACHED_REGISTER and outputs <= MAX_CACHED_REGISTER:
+        if inputs != ideal_inputs:
+            yield inputs, outputs, inputs
+        inputs += 1
+        outputs += 1
 
 
 def analyze_files(filenames: list[str]) -> Analysis:
