@@ -119,11 +119,11 @@ typedef struct _Py_cpuid_features_s {
 } _Py_cpuid_features;
 
 /*
- * Explicitly initialize all members to zero to guarantee that
- * we never have an un-initialized attribute at runtime which
- * could lead to an illegal instruction error.
+ * Explicitly set all members to zero to guarantee that
+ * we never have a non-initialized attribute at runtime
+ * which could lead to an illegal instruction error.
  *
- * This does not mark 'flags' as being ready yet.
+ * This readiness state of 'flags' is ignored and left untouched.
  *
  * Note: This function does not set any exception and thus never fails.
  */
