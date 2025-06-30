@@ -4,8 +4,8 @@
 #define CPUID_REG                   uint32_t
 /* Check one or more CPUID register bits. */
 #define CHECK_REG(REG, MASK)        ((((REG) & (MASK)) == (MASK)) ? 0 : 1)
-#define CPUID_CHECK_REG(REG, FEAT)  CHECK_REG(REG, (Py_CPUID_MASK_ ## FEAT))
-#define XSAVE_CHECK_REG(REG, FEAT)  CHECK_REG(REG, (Py_XSAVE_MASK_ ## FEAT))
+#define CPUID_CHECK_REG(REG, FEAT)  CHECK_REG(REG, (_Py_CPUID_MASK_ ## FEAT))
+#define XSAVE_CHECK_REG(REG, FEAT)  CHECK_REG(REG, (_Py_XSAVE_MASK_ ## FEAT))
 
 // For now, we only try to enable SIMD instructions for x86-64 Intel CPUs.
 // In the future, we should carefully enable support for ARM NEON and POWER
@@ -29,46 +29,46 @@
 // corresponding flags or if we are not on an 64-bit platform we do not
 // even try to inspect the output of CPUID for those specific features.
 #ifdef HAS_CPUID_SUPPORT
-#if defined(Py_CAN_COMPILE_SIMD_SSE_INSTRUCTIONS)              \
-    || defined(Py_CAN_COMPILE_SIMD_SSE2_INSTRUCTIONS)          \
-    || defined(Py_CAN_COMPILE_SIMD_SSE3_INSTRUCTIONS)          \
-    || defined(Py_CAN_COMPILE_SIMD_SSSE3_INSTRUCTIONS)         \
-    || defined(Py_CAN_COMPILE_SIMD_SSE4_1_INSTRUCTIONS)        \
-    || defined(Py_CAN_COMPILE_SIMD_SSE4_2_INSTRUCTIONS)        \
+#if defined(_Py_CAN_COMPILE_SIMD_SSE_INSTRUCTIONS)          \
+    || defined(_Py_CAN_COMPILE_SIMD_SSE2_INSTRUCTIONS)      \
+    || defined(_Py_CAN_COMPILE_SIMD_SSE3_INSTRUCTIONS)      \
+    || defined(_Py_CAN_COMPILE_SIMD_SSSE3_INSTRUCTIONS)     \
+    || defined(_Py_CAN_COMPILE_SIMD_SSE4_1_INSTRUCTIONS)    \
+    || defined(_Py_CAN_COMPILE_SIMD_SSE4_2_INSTRUCTIONS)    \
     // macros above should be sorted in alphabetical order
 #  define SIMD_SSE_INSTRUCTIONS_DETECTION_GUARD
 #endif
 
-#if defined(Py_CAN_COMPILE_SIMD_AVX_INSTRUCTIONS)               \
-    || defined(Py_CAN_COMPILE_SIMD_AVX_IFMA_INSTRUCTIONS)       \
-    || defined(Py_CAN_COMPILE_SIMD_AVX_NE_CONVERT_INSTRUCTIONS) \
-    || defined(Py_CAN_COMPILE_SIMD_AVX_VNNI_INSTRUCTIONS)       \
-    || defined(Py_CAN_COMPILE_SIMD_AVX_VNNI_INT8_INSTRUCTIONS)  \
-    || defined(Py_CAN_COMPILE_SIMD_AVX_VNNI_INT16_INSTRUCTIONS) \
+#if defined(_Py_CAN_COMPILE_SIMD_AVX_INSTRUCTIONS)                  \
+    || defined(_Py_CAN_COMPILE_SIMD_AVX_IFMA_INSTRUCTIONS)          \
+    || defined(_Py_CAN_COMPILE_SIMD_AVX_NE_CONVERT_INSTRUCTIONS)    \
+    || defined(_Py_CAN_COMPILE_SIMD_AVX_VNNI_INSTRUCTIONS)          \
+    || defined(_Py_CAN_COMPILE_SIMD_AVX_VNNI_INT8_INSTRUCTIONS)     \
+    || defined(_Py_CAN_COMPILE_SIMD_AVX_VNNI_INT16_INSTRUCTIONS)    \
     // macros above should be sorted in alphabetical order
 #  define SIMD_AVX_INSTRUCTIONS_DETECTION_GUARD
 #endif
 
-#if defined(Py_CAN_COMPILE_SIMD_AVX2_INSTRUCTIONS)
+#if defined(_Py_CAN_COMPILE_SIMD_AVX2_INSTRUCTIONS)
 #  define SIMD_AVX2_INSTRUCTIONS_DETECTION_GUARD
 #endif
 
-#if defined(Py_CAN_COMPILE_SIMD_AVX512_BITALG_INSTRUCTIONS)             \
-    || defined(Py_CAN_COMPILE_SIMD_AVX512_BW_INSTRUCTIONS)              \
-    || defined(Py_CAN_COMPILE_SIMD_AVX512_CD_INSTRUCTIONS)              \
-    || defined(Py_CAN_COMPILE_SIMD_AVX512_DQ_INSTRUCTIONS)              \
-    || defined(Py_CAN_COMPILE_SIMD_AVX512_ER_INSTRUCTIONS)              \
-    || defined(Py_CAN_COMPILE_SIMD_AVX512_F_INSTRUCTIONS)               \
-    || defined(Py_CAN_COMPILE_SIMD_AVX512_IFMA_INSTRUCTIONS)            \
-    || defined(Py_CAN_COMPILE_SIMD_AVX512_PF_INSTRUCTIONS)              \
-    || defined(Py_CAN_COMPILE_SIMD_AVX512_VBMI_INSTRUCTIONS)            \
-    || defined(Py_CAN_COMPILE_SIMD_AVX512_VBMI2_INSTRUCTIONS)           \
-    || defined(Py_CAN_COMPILE_SIMD_AVX512_VL_INSTRUCTIONS)              \
-    || defined(Py_CAN_COMPILE_SIMD_AVX512_VNNI_INSTRUCTIONS)            \
-    || defined(Py_CAN_COMPILE_SIMD_AVX512_VP2INTERSECT_INSTRUCTIONS)    \
-    || defined(Py_CAN_COMPILE_SIMD_AVX512_VPOPCNTDQ_INSTRUCTIONS)       \
-    || defined(Py_CAN_COMPILE_SIMD_AVX512_4FMAPS_INSTRUCTIONS)          \
-    || defined(Py_CAN_COMPILE_SIMD_AVX512_4VNNIW_INSTRUCTIONS)          \
+#if defined(_Py_CAN_COMPILE_SIMD_AVX512_BITALG_INSTRUCTIONS)            \
+    || defined(_Py_CAN_COMPILE_SIMD_AVX512_BW_INSTRUCTIONS)             \
+    || defined(_Py_CAN_COMPILE_SIMD_AVX512_CD_INSTRUCTIONS)             \
+    || defined(_Py_CAN_COMPILE_SIMD_AVX512_DQ_INSTRUCTIONS)             \
+    || defined(_Py_CAN_COMPILE_SIMD_AVX512_ER_INSTRUCTIONS)             \
+    || defined(_Py_CAN_COMPILE_SIMD_AVX512_F_INSTRUCTIONS)              \
+    || defined(_Py_CAN_COMPILE_SIMD_AVX512_IFMA_INSTRUCTIONS)           \
+    || defined(_Py_CAN_COMPILE_SIMD_AVX512_PF_INSTRUCTIONS)             \
+    || defined(_Py_CAN_COMPILE_SIMD_AVX512_VBMI_INSTRUCTIONS)           \
+    || defined(_Py_CAN_COMPILE_SIMD_AVX512_VBMI2_INSTRUCTIONS)          \
+    || defined(_Py_CAN_COMPILE_SIMD_AVX512_VL_INSTRUCTIONS)             \
+    || defined(_Py_CAN_COMPILE_SIMD_AVX512_VNNI_INSTRUCTIONS)           \
+    || defined(_Py_CAN_COMPILE_SIMD_AVX512_VP2INTERSECT_INSTRUCTIONS)   \
+    || defined(_Py_CAN_COMPILE_SIMD_AVX512_VPOPCNTDQ_INSTRUCTIONS)      \
+    || defined(_Py_CAN_COMPILE_SIMD_AVX512_4FMAPS_INSTRUCTIONS)         \
+    || defined(_Py_CAN_COMPILE_SIMD_AVX512_4VNNIW_INSTRUCTIONS)         \
     // macros above should be sorted in alphabetical order
 #  define SIMD_AVX512_INSTRUCTIONS_DETECTION_GUARD
 #endif
@@ -160,33 +160,33 @@ detect_cpuid_maxleaf(void)
 
 /* Processor Info and Feature Bits (LEAF=1, SUBLEAF=0). */
 static inline void
-detect_cpuid_features(py_cpuid_features *flags, CPUID_REG ecx, CPUID_REG edx)
+detect_cpuid_features(_Py_cpuid_features *flags, CPUID_REG ecx, CPUID_REG edx)
 {
     assert(flags->maxleaf >= 1);
     // Keep the ordering and newlines as they are declared in the structure.
 #ifdef SIMD_SSE_INSTRUCTIONS_DETECTION_GUARD
-#ifdef Py_CAN_COMPILE_SIMD_SSE_INSTRUCTIONS
+#ifdef _Py_CAN_COMPILE_SIMD_SSE_INSTRUCTIONS
     flags->sse = CPUID_CHECK_REG(edx, EDX_L1_SSE);
 #endif
-#ifdef Py_CAN_COMPILE_SIMD_SSE2_INSTRUCTIONS
+#ifdef _Py_CAN_COMPILE_SIMD_SSE2_INSTRUCTIONS
     flags->sse2 = CPUID_CHECK_REG(edx, EDX_L1_SSE2);
 #endif
-#ifdef Py_CAN_COMPILE_SIMD_SSE3_INSTRUCTIONS
+#ifdef _Py_CAN_COMPILE_SIMD_SSE3_INSTRUCTIONS
     flags->sse3 = CPUID_CHECK_REG(ecx, ECX_L1_SSE3);
 #endif
-#ifdef Py_CAN_COMPILE_SIMD_SSSE3_INSTRUCTIONS
+#ifdef _Py_CAN_COMPILE_SIMD_SSSE3_INSTRUCTIONS
     flags->ssse3 = CPUID_CHECK_REG(ecx, ECX_L1_SSSE3);
 #endif
-#ifdef Py_CAN_COMPILE_SIMD_SSE4_1_INSTRUCTIONS
+#ifdef _Py_CAN_COMPILE_SIMD_SSE4_1_INSTRUCTIONS
     flags->sse41 = CPUID_CHECK_REG(ecx, ECX_L1_SSE4_1);
 #endif
-#ifdef Py_CAN_COMPILE_SIMD_SSE4_2_INSTRUCTIONS
+#ifdef _Py_CAN_COMPILE_SIMD_SSE4_2_INSTRUCTIONS
     flags->sse42 = CPUID_CHECK_REG(ecx, ECX_L1_SSE4_2);
 #endif
 #endif // SIMD_SSE_INSTRUCTIONS_DETECTION_GUARD
 
 #ifdef SIMD_AVX_INSTRUCTIONS_DETECTION_GUARD
-#ifdef Py_CAN_COMPILE_SIMD_AVX_INSTRUCTIONS
+#ifdef _Py_CAN_COMPILE_SIMD_AVX_INSTRUCTIONS
     flags->avx = CPUID_CHECK_REG(ecx, ECX_L1_AVX);
 #endif
 #endif // SIMD_AVX_INSTRUCTIONS_DETECTION_GUARD
@@ -204,73 +204,73 @@ detect_cpuid_features(py_cpuid_features *flags, CPUID_REG ecx, CPUID_REG edx)
 
 /* Extended Feature Bits (LEAF=7, SUBLEAF=0). */
 static inline void
-detect_cpuid_extended_features_L7S0(py_cpuid_features *flags,
+detect_cpuid_extended_features_L7S0(_Py_cpuid_features *flags,
                                     CPUID_REG ebx, CPUID_REG ecx, CPUID_REG edx)
 {
     assert(flags->maxleaf >= 7);
     (void)ebx, (void)ecx, (void)edx; // to suppress unused warnings
     // Keep the ordering and newlines as they are declared in the structure.
 #ifdef SIMD_AVX2_INSTRUCTIONS_DETECTION_GUARD
-#ifdef Py_CAN_COMPILE_SIMD_AVX2_INSTRUCTIONS
+#ifdef _Py_CAN_COMPILE_SIMD_AVX2_INSTRUCTIONS
     flags->avx2 = CPUID_CHECK_REG(ebx, EBX_L7_AVX2);
 #endif
 #endif // SIMD_AVX2_INSTRUCTIONS_DETECTION_GUARD
 
 #ifdef SIMD_AVX512_INSTRUCTIONS_DETECTION_GUARD
-#ifdef Py_CAN_COMPILE_SIMD_AVX512_F_INSTRUCTIONS
+#ifdef _Py_CAN_COMPILE_SIMD_AVX512_F_INSTRUCTIONS
     flags->avx512_f = CPUID_CHECK_REG(ebx, EBX_L7_AVX512_F);
 #endif
-#ifdef Py_CAN_COMPILE_SIMD_AVX512_CD_INSTRUCTIONS
+#ifdef _Py_CAN_COMPILE_SIMD_AVX512_CD_INSTRUCTIONS
     flags->avx512_cd = CPUID_CHECK_REG(ebx, EBX_L7_AVX512_CD);
 #endif
 
-#ifdef Py_CAN_COMPILE_SIMD_AVX512_ER_INSTRUCTIONS
+#ifdef _Py_CAN_COMPILE_SIMD_AVX512_ER_INSTRUCTIONS
     flags->avx512_er = CPUID_CHECK_REG(ebx, EBX_L7_AVX512_ER);
 #endif
-#ifdef Py_CAN_COMPILE_SIMD_AVX512_PF_INSTRUCTIONS
+#ifdef _Py_CAN_COMPILE_SIMD_AVX512_PF_INSTRUCTIONS
     flags->avx512_pf = CPUID_CHECK_REG(ebx, EBX_L7_AVX512_PF);
 #endif
 
-#ifdef Py_CAN_COMPILE_SIMD_AVX512_4FMAPS_INSTRUCTIONS
+#ifdef _Py_CAN_COMPILE_SIMD_AVX512_4FMAPS_INSTRUCTIONS
     flags->avx512_4fmaps = CPUID_CHECK_REG(edx, EDX_L7_AVX512_4FMAPS);
 #endif
-#ifdef Py_CAN_COMPILE_SIMD_AVX512_4VNNIW_INSTRUCTIONS
+#ifdef _Py_CAN_COMPILE_SIMD_AVX512_4VNNIW_INSTRUCTIONS
     flags->avx512_4vnniw = CPUID_CHECK_REG(edx, EDX_L7_AVX512_4VNNIW);
 #endif
 
-#ifdef Py_CAN_COMPILE_SIMD_AVX512_VPOPCNTDQ_INSTRUCTIONS
+#ifdef _Py_CAN_COMPILE_SIMD_AVX512_VPOPCNTDQ_INSTRUCTIONS
     flags->avx512_vpopcntdq = CPUID_CHECK_REG(ecx, ECX_L7_AVX512_VPOPCNTDQ);
 #endif
 
-#ifdef Py_CAN_COMPILE_SIMD_AVX512_VL_INSTRUCTIONS
+#ifdef _Py_CAN_COMPILE_SIMD_AVX512_VL_INSTRUCTIONS
     flags->avx512_vl = CPUID_CHECK_REG(ebx, EBX_L7_AVX512_VL);
 #endif
-#ifdef Py_CAN_COMPILE_SIMD_AVX512_DQ_INSTRUCTIONS
+#ifdef _Py_CAN_COMPILE_SIMD_AVX512_DQ_INSTRUCTIONS
     flags->avx512_dq = CPUID_CHECK_REG(ebx, EBX_L7_AVX512_DQ);
 #endif
-#ifdef Py_CAN_COMPILE_SIMD_AVX512_BW_INSTRUCTIONS
+#ifdef _Py_CAN_COMPILE_SIMD_AVX512_BW_INSTRUCTIONS
     flags->avx512_bw = CPUID_CHECK_REG(ebx, EBX_L7_AVX512_BW);
 #endif
 
-#ifdef Py_CAN_COMPILE_SIMD_AVX512_IFMA_INSTRUCTIONS
+#ifdef _Py_CAN_COMPILE_SIMD_AVX512_IFMA_INSTRUCTIONS
     flags->avx512_ifma = CPUID_CHECK_REG(ebx, EBX_L7_AVX512_IFMA);
 #endif
-#ifdef Py_CAN_COMPILE_SIMD_AVX512_VBMI_INSTRUCTIONS
+#ifdef _Py_CAN_COMPILE_SIMD_AVX512_VBMI_INSTRUCTIONS
     flags->avx512_vbmi = CPUID_CHECK_REG(ecx, ECX_L7_AVX512_VBMI);
 #endif
 
-#ifdef Py_CAN_COMPILE_SIMD_AVX512_VNNI_INSTRUCTIONS
+#ifdef _Py_CAN_COMPILE_SIMD_AVX512_VNNI_INSTRUCTIONS
     flags->avx512_vnni = CPUID_CHECK_REG(ecx, ECX_L7_AVX512_VNNI);
 #endif
 
-#ifdef Py_CAN_COMPILE_SIMD_AVX512_VBMI2_INSTRUCTIONS
+#ifdef _Py_CAN_COMPILE_SIMD_AVX512_VBMI2_INSTRUCTIONS
     flags->avx512_vbmi2 = CPUID_CHECK_REG(ecx, ECX_L7_AVX512_VBMI2);
 #endif
-#ifdef Py_CAN_COMPILE_SIMD_AVX512_BITALG_INSTRUCTIONS
+#ifdef _Py_CAN_COMPILE_SIMD_AVX512_BITALG_INSTRUCTIONS
     flags->avx512_bitalg = CPUID_CHECK_REG(ecx, ECX_L7_AVX512_BITALG);
 #endif
 
-#ifdef Py_CAN_COMPILE_SIMD_AVX512_VP2INTERSECT_INSTRUCTIONS
+#ifdef _Py_CAN_COMPILE_SIMD_AVX512_VP2INTERSECT_INSTRUCTIONS
     flags->avx512_vp2intersect = CPUID_CHECK_REG(edx, EDX_L7_AVX512_VP2INTERSECT);
 #endif
 #endif // SIMD_AVX512_INSTRUCTIONS_DETECTION_GUARD
@@ -278,7 +278,7 @@ detect_cpuid_extended_features_L7S0(py_cpuid_features *flags,
 
 /* Extended Feature Bits (LEAF=7, SUBLEAF=1). */
 static inline void
-detect_cpuid_extended_features_L7S1(py_cpuid_features *flags,
+detect_cpuid_extended_features_L7S1(_Py_cpuid_features *flags,
                                     CPUID_REG eax,
                                     CPUID_REG ebx,
                                     CPUID_REG ecx,
@@ -288,28 +288,28 @@ detect_cpuid_extended_features_L7S1(py_cpuid_features *flags,
     (void)eax, (void)ebx, (void)ecx, (void)edx; // to suppress unused warnings
     // Keep the ordering and newlines as they are declared in the structure.
 #ifdef SIMD_AVX_INSTRUCTIONS_DETECTION_GUARD
-#ifdef Py_CAN_COMPILE_SIMD_AVX_NE_CONVERT_INSTRUCTIONS
+#ifdef _Py_CAN_COMPILE_SIMD_AVX_NE_CONVERT_INSTRUCTIONS
     flags->avx_ne_convert = CPUID_CHECK_REG(edx, EDX_L7S1_AVX_NE_CONVERT);
 #endif
 
-#ifdef Py_CAN_COMPILE_SIMD_AVX_IFMA_INSTRUCTIONS
+#ifdef _Py_CAN_COMPILE_SIMD_AVX_IFMA_INSTRUCTIONS
     flags->avx_ifma = CPUID_CHECK_REG(eax, EAX_L7S1_AVX_IFMA);
 #endif
 
-#ifdef Py_CAN_COMPILE_SIMD_AVX_VNNI_INSTRUCTIONS
+#ifdef _Py_CAN_COMPILE_SIMD_AVX_VNNI_INSTRUCTIONS
     flags->avx_vnni = CPUID_CHECK_REG(eax, EAX_L7S1_AVX_VNNI);
 #endif
-#ifdef Py_CAN_COMPILE_SIMD_AVX_VNNI_INT8_INSTRUCTIONS
+#ifdef _Py_CAN_COMPILE_SIMD_AVX_VNNI_INT8_INSTRUCTIONS
     flags->avx_vnni_int8 = CPUID_CHECK_REG(edx, EDX_L7S1_AVX_VNNI_INT8);
 #endif
-#ifdef Py_CAN_COMPILE_SIMD_AVX_VNNI_INT16_INSTRUCTIONS
+#ifdef _Py_CAN_COMPILE_SIMD_AVX_VNNI_INT16_INSTRUCTIONS
     flags->avx_vnni_int16 = CPUID_CHECK_REG(edx, EDX_L7S1_AVX_VNNI_INT16);
 #endif
 #endif // SIMD_AVX_INSTRUCTIONS_DETECTION_GUARD
 }
 
 static inline void
-detect_cpuid_xsave_state(py_cpuid_features *flags)
+detect_cpuid_xsave_state(_Py_cpuid_features *flags)
 {
     // Keep the ordering and newlines as they are declared in the structure.
     assert(flags->maxleaf >= 1);
@@ -324,7 +324,7 @@ detect_cpuid_xsave_state(py_cpuid_features *flags)
 }
 
 static inline void
-cpuid_features_finalize(py_cpuid_features *flags)
+cpuid_features_finalize(_Py_cpuid_features *flags)
 {
     assert(flags->ready == 0);
 
@@ -335,7 +335,7 @@ cpuid_features_finalize(py_cpuid_features *flags)
 }
 
 static inline int
-cpuid_features_validate(const py_cpuid_features *flags)
+cpuid_features_validate(const _Py_cpuid_features *flags)
 {
     if (flags->ready != 1) {
         return -1;
@@ -363,14 +363,14 @@ cpuid_features_validate(const py_cpuid_features *flags)
 }
 
 int
-_Py_cpuid_check_features(const py_cpuid_features *flags)
+_Py_cpuid_check_features(const _Py_cpuid_features *flags)
 {
     return cpuid_features_validate(flags) < 0 ? 0 : 1;
 }
 
 /*
  * Apply a 1-parameter macro MACRO(FLAG) on all members
- * of a 'py_cpuid_features' object ('ready' is omitted).
+ * of a '_Py_cpuid_features' object ('ready' is omitted).
  */
 #define CPUID_APPLY_MACRO(MACRO)        \
     do {                                \
@@ -432,7 +432,7 @@ _Py_cpuid_check_features(const py_cpuid_features *flags)
     } while (0)
 
 void
-_Py_cpuid_disable_features(py_cpuid_features *flags)
+_Py_cpuid_disable_features(_Py_cpuid_features *flags)
 {
     flags->maxleaf = 0;
 #define CPUID_DISABLE(FLAG)    flags->FLAG = 0
@@ -441,8 +441,8 @@ _Py_cpuid_disable_features(py_cpuid_features *flags)
 }
 
 int
-_Py_cpuid_has_features(const py_cpuid_features *actual,
-                       const py_cpuid_features *expect)
+_Py_cpuid_has_features(const _Py_cpuid_features *actual,
+                       const _Py_cpuid_features *expect)
 {
     if (!actual->ready || !expect->ready) {
         return 0;
@@ -462,8 +462,8 @@ _Py_cpuid_has_features(const py_cpuid_features *actual,
 }
 
 int
-_Py_cpuid_match_features(const py_cpuid_features *actual,
-                         const py_cpuid_features *expect)
+_Py_cpuid_match_features(const _Py_cpuid_features *actual,
+                         const _Py_cpuid_features *expect)
 {
     if (!actual->ready || !expect->ready) {
         return 0;
@@ -486,7 +486,7 @@ _Py_cpuid_match_features(const py_cpuid_features *actual,
 
 #ifdef SHOULD_PARSE_CPUID_L1
 static inline void
-cpuid_detect_l1_features(py_cpuid_features *flags)
+cpuid_detect_l1_features(_Py_cpuid_features *flags)
 {
     if (flags->maxleaf >= 1) {
         CPUID_REG eax = 0, ebx = 0, ecx = 0, edx = 0;
@@ -503,7 +503,7 @@ cpuid_detect_l1_features(py_cpuid_features *flags)
 
 #ifdef SHOULD_PARSE_CPUID_L7S0
 static inline void
-cpuid_detect_l7s0_features(py_cpuid_features *flags)
+cpuid_detect_l7s0_features(_Py_cpuid_features *flags)
 {
     assert(flags->maxleaf >= 7);
     CPUID_REG eax = 0, ebx = 0, ecx = 0, edx = 0;
@@ -516,7 +516,7 @@ cpuid_detect_l7s0_features(py_cpuid_features *flags)
 
 #ifdef SHOULD_PARSE_CPUID_L7S1
 static inline void
-cpuid_detect_l7s1_features(py_cpuid_features *flags)
+cpuid_detect_l7s1_features(_Py_cpuid_features *flags)
 {
     assert(flags->maxleaf >= 7);
     CPUID_REG eax = 0, ebx = 0, ecx = 0, edx = 0;
@@ -529,7 +529,7 @@ cpuid_detect_l7s1_features(py_cpuid_features *flags)
 
 #ifdef SHOULD_PARSE_CPUID_L7
 static inline void
-cpuid_detect_l7_features(py_cpuid_features *flags)
+cpuid_detect_l7_features(_Py_cpuid_features *flags)
 {
     if (flags->maxleaf >= 7) {
         cpuid_detect_l7s0_features(flags);
@@ -541,7 +541,7 @@ cpuid_detect_l7_features(py_cpuid_features *flags)
 #endif
 
 void
-_Py_cpuid_detect_features(py_cpuid_features *flags)
+_Py_cpuid_detect_features(_Py_cpuid_features *flags)
 {
     if (flags->ready) {
         return;

@@ -17,7 +17,7 @@
 #endif
 
 #include "Python.h"
-#include "pycore_cpuinfo.h"             // py_cpuid_features
+#include "pycore_cpuinfo.h"             // _Py_cpuid_features
 #include "pycore_hashtable.h"
 #include "pycore_strhex.h"              // _Py_strhex()
 
@@ -1553,7 +1553,7 @@ hmacmodule_init_globals(PyObject *module, hmacmodule_state *state)
 static void
 hmacmodule_init_cpu_features(hmacmodule_state *state)
 {
-    py_cpuid_features flags;
+    _Py_cpuid_features flags;
     _Py_cpuid_detect_features(&flags);
 #if _Py_HACL_CAN_COMPILE_VEC128
     state->can_run_simd128 = flags.sse && flags.sse2 && flags.sse3

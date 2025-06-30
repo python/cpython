@@ -27,10 +27,10 @@ extern "C" {
 #include "pycore_cpuinfo_cpuid_features.h"
 #include "pycore_cpuinfo_xsave_features.h"
 
-typedef struct py_cpuid_features {
+typedef struct _Py_cpuid_features_s {
     uint32_t maxleaf;
     /*
-     * Macro to declare a member flag of 'py_cpuid_features' as a uint8_t.
+     * Macro to declare a member flag of '_Py_cpuid_features' as a uint8_t.
      * Whenever this macro is used, do not forget to update the number of
      * fields and the bitsize of the 'ready' member (see structure end).
      */
@@ -116,7 +116,7 @@ typedef struct py_cpuid_features {
     // number of fields (40) and adjust the bitsize of 'ready'
     // so that the size of this structure is a multiple of 8.
     uint8_t ready; // set if the structure is ready for usage
-} py_cpuid_features;
+} _Py_cpuid_features;
 
 /*
  * Explicitly initialize all members to zero to guarantee that
@@ -128,7 +128,7 @@ typedef struct py_cpuid_features {
  * Note: This function does not set any exception and thus never fails.
  */
 PyAPI_FUNC(void)
-_Py_cpuid_disable_features(py_cpuid_features *flags);
+_Py_cpuid_disable_features(_Py_cpuid_features *flags);
 
 /*
  * Check whether the structure is ready and flags are inter-compatible,
@@ -140,7 +140,7 @@ _Py_cpuid_disable_features(py_cpuid_features *flags);
  * Note: This function does not set any exception and thus never fails.
  */
 PyAPI_FUNC(int)
-_Py_cpuid_check_features(const py_cpuid_features *flags);
+_Py_cpuid_check_features(const _Py_cpuid_features *flags);
 
 /*
  * Return 1 if all expected flags are set in 'actual', 0 otherwise.
@@ -150,8 +150,8 @@ _Py_cpuid_check_features(const py_cpuid_features *flags);
  * Note: This function does not set any exception and thus never fails.
  */
 PyAPI_FUNC(int)
-_Py_cpuid_has_features(const py_cpuid_features *actual,
-                       const py_cpuid_features *expect);
+_Py_cpuid_has_features(const _Py_cpuid_features *actual,
+                       const _Py_cpuid_features *expect);
 
 /*
  * Return 1 if 'actual' and 'expect' are identical, 0 otherwise.
@@ -161,16 +161,16 @@ _Py_cpuid_has_features(const py_cpuid_features *actual,
  * Note: This function does not set any exception and thus never fails.
  */
 PyAPI_FUNC(int)
-_Py_cpuid_match_features(const py_cpuid_features *actual,
-                         const py_cpuid_features *expect);
+_Py_cpuid_match_features(const _Py_cpuid_features *actual,
+                         const _Py_cpuid_features *expect);
 
 /*
- * Detect the available features on this machine, storing the result in 'flags'.
+ * Detect the available host features, storing the result in 'flags'.
  *
  * Note: This function does not set any exception and thus never fails.
  */
 PyAPI_FUNC(void)
-_Py_cpuid_detect_features(py_cpuid_features *flags);
+_Py_cpuid_detect_features(_Py_cpuid_features *flags);
 
 #ifdef __cplusplus
 }

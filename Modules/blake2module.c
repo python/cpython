@@ -16,7 +16,7 @@
 
 #include "Python.h"
 #include "hashlib.h"
-#include "pycore_cpuinfo.h"         // py_cpuid_features
+#include "pycore_cpuinfo.h"         // _Py_cpuid_features
 #include "pycore_strhex.h"          // _Py_strhex()
 #include "pycore_typeobject.h"
 #include "pycore_moduleobject.h"
@@ -111,7 +111,7 @@ _blake2_free(void *module)
 static void
 blake2module_init_cpu_features(Blake2State *state)
 {
-    py_cpuid_features flags;
+    _Py_cpuid_features flags;
     _Py_cpuid_detect_features(&flags);
 #if _Py_HACL_CAN_COMPILE_VEC128
     state->can_run_simd128 = flags.sse && flags.sse2 && flags.sse3
