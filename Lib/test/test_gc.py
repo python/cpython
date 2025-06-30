@@ -1125,6 +1125,30 @@ class GCTests(unittest.TestCase):
         """)
         assert_python_ok("-c", source)
 
+    def test_do_not_cleanup_type_subclasses_before_finalization(self):
+        # https://github.com/python/cpython/issues/135552
+        code = """
+            class BaseNode:
+                def __del__(self):
+                    BaseNode.next = BaseNode.next.next
+                    BaseNode.next.next
+
+            class Node(BaseNode):
+                pass
+
+            BaseNode.next = Node()
+            BaseNode.next.next = Node()
+        """
+        assert_python_ok("-c", textwrap.dedent(code))
+
+        code_inside_function = textwrap.dedent(F"""
+            def test():
+                {textwrap.indent(code, '    ')}
+
+            test()
+        """)
+        assert_python_ok("-c", code_inside_function)
+
 
 class IncrementalGCTests(unittest.TestCase):
     @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
@@ -1516,6 +1540,7 @@ class PythonFinalizationTests(unittest.TestCase):
             support.late_deletion(tree)
         """)
         assert_python_ok("-c", code)
+
 
 
 def setUpModule():
