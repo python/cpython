@@ -53,6 +53,13 @@ any codec:
    :exc:`UnicodeDecodeError`). Refer to :ref:`codec-base-classes` for more
    information on codec error handling.
 
+.. function:: charmap_build(string)
+
+   Return a mapping suitable for decoding a custom single-byte encoding.
+   Given a string *string* of up to 256 characters representing an encoding
+   table, returns a dictionary mapping character ordinals to byte values.
+   Raises a :exc:`TypeError` on invalid input.
+
 The full details for each codec can also be looked up directly:
 
 .. function:: lookup(encoding, /)
