@@ -410,6 +410,11 @@ Distributions
    Raises :exc:`PackageNotFoundError` if the named distribution
    package is not installed in the current Python environment.
 
+.. function:: distributions()
+
+   Return an iterable of all :class:`Distribution` instances
+   in the current environment.
+
 .. class:: Distribution
 
    Details of an installed distribution package.
