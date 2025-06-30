@@ -108,25 +108,25 @@ def _disable_pip_configuration_settings():
 
 def bootstrap(*, root=None, upgrade=False, user=False,
               altinstall=False, default_pip=False,
-              verbosity=0):
+              verbosity=0, prefix=None):
     """
     Bootstrap pip into the current Python installation (or the given root
-    directory).
+    and directory prefix).
 
     Note that calling this function will alter both sys.path and os.environ.
     """
     # Discard the return value
     _bootstrap(root=root, upgrade=upgrade, user=user,
                altinstall=altinstall, default_pip=default_pip,
-               verbosity=verbosity)
+               verbosity=verbosity, prefix=prefix)
 
 
 def _bootstrap(*, root=None, upgrade=False, user=False,
               altinstall=False, default_pip=False,
-              verbosity=0):
+              verbosity=0, prefix=None):
     """
     Bootstrap pip into the current Python installation (or the given root
-    directory). Returns pip command status code.
+    and directory prefix). Returns pip command status code.
 
     Note that calling this function will alter both sys.path and os.environ.
     """
@@ -160,14 +160,30 @@ def _bootstrap(*, root=None, upgrade=False, user=False,
 
         # Construct the arguments to be passed to the pip command
         args = ["install", "--no-cache-dir", "--no-index", "--find-links", tmpdir]
-        if root:
-            args += ["--root", root]
         if upgrade:
             args += ["--upgrade"]
-        if user:
-            args += ["--user"]
         if verbosity:
             args += ["-" + "v" * verbosity]
+
+        if user:
+            # --user is mutually exclusive with --root/--prefix,
+            # pip will enforce this.
+            args += ["--user"]
+        else:
+            # Handle installation paths.
+            # If --root is given but not --prefix, we default to a prefix of "/"
+            # so that the install happens at the root of the --root directory.
+            # Otherwise, pip would use the configured sys.prefix, e.g.
+            # /usr/local, and install into ${root}/usr/local/.
+            effective_prefix = prefix
+            if root and not prefix:
+                effective_prefix = "/"
+
+            if root:
+                args += ["--root", root]
+
+            if effective_prefix:
+                args += ["--prefix", effective_prefix]
 
         return _run_pip([*args, "pip"], [os.fsdecode(tmp_wheel_path)])
 
@@ -238,6 +254,11 @@ def _main(argv=None):
         help="Install everything relative to this alternate root directory.",
     )
     parser.add_argument(
+        "--prefix",
+        default=None,
+        help="Install everything using this prefix.",
+    )
+    parser.add_argument(
         "--altinstall",
         action="store_true",
         default=False,
@@ -256,6 +277,7 @@ def _main(argv=None):
 
     return _bootstrap(
         root=args.root,
+        prefix=args.prefix,
         upgrade=args.upgrade,
         user=args.user,
         verbosity=args.verbosity,
