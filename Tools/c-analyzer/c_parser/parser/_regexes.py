@@ -59,6 +59,8 @@ _KEYWORD = textwrap.dedent(r'''
             register |
             static |
             _Thread_local |
+            _Alignas |
+            _Alignof |
             typedef |
 
             const |
@@ -153,6 +155,17 @@ _STORAGE = 'auto register static extern _Thread_local'.split()
 STORAGE_CLASS = rf'(?: \b (?: {" | ".join(_STORAGE)} ) \b )'
 TYPE_QUALIFIER = r'(?: \b (?: const | volatile ) \b )'
 PTR_QUALIFIER = rf'(?: [*] (?: \s* {TYPE_QUALIFIER} )? )'
+
+ALIGNMENT_SPECIFIER = textwrap.dedent(r'''
+    # alignment specifier
+    (?:
+        _Alignas
+        \s* [(]
+        [^)]*
+        [)]
+    )
+    # end alignment specifier
+    ''')
 
 TYPE_SPEC = textwrap.dedent(rf'''
     # type spec
@@ -318,6 +331,9 @@ STRUCT_MEMBER_DECL = textwrap.dedent(rf'''
         (?:
             # typed member
             (?:
+                (?:  # <ALIGNMENT SPECIFIER>
+                    \s* {ALIGNMENT_SPECIFIER} \s*
+                )?
                 # Technically it doesn't have to have a type...
                 (?:  # <SPECIFIER_QUALIFIER>
                     (?: {TYPE_QUALIFIER} \s* )?
