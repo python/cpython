@@ -1907,7 +1907,14 @@ expression support in the :mod:`re` module).
    Return the lowest index in the string where substring *sub* is found within
    the slice ``s[start:end]``.  Optional arguments *start* and *end* are
    interpreted as in slice notation.  Return ``-1`` if *sub* is not found.
+   For example::
 
+      >>> 'spam, spam, spam'.find('sp')
+      0
+      >>> 'spam, spam, spam'.find('sp', 5)
+      6
+
+   See also :meth:`rfind` and :meth:`index`.
    .. note::
 
       The :meth:`~str.find` method should be used only if you need to know the
