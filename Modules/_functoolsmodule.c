@@ -7,6 +7,7 @@
 #include "pycore_pyatomic_ft_wrappers.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 
 #include "clinic/_functoolsmodule.c.h"
@@ -351,9 +352,7 @@ partial_dealloc(PyObject *self)
     PyTypeObject *tp = Py_TYPE(self);
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(self);
-    if (partialobject_CAST(self)->weakreflist != NULL) {
-        PyObject_ClearWeakRefs(self);
-    }
+    FT_CLEAR_WEAKREFS(self, partialobject_CAST(self)->weakreflist);
     (void)partial_clear(self);
     tp->tp_free(self);
     Py_DECREF(tp);
@@ -1621,9 +1620,7 @@ lru_cache_dealloc(PyObject *op)
     PyTypeObject *tp = Py_TYPE(obj);
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(obj);
-    if (obj->weakreflist != NULL) {
-        PyObject_ClearWeakRefs(op);
-    }
+    FT_CLEAR_WEAKREFS(op, obj->weakreflist);
 
     (void)lru_cache_tp_clear(op);
     tp->tp_free(obj);

@@ -7,6 +7,7 @@
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_typeobject.h"    // _PyType_GetModuleState()
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 #include "datetime.h"             // PyDateTime_TZInfo
 
@@ -375,9 +376,7 @@ zoneinfo_dealloc(PyObject *obj_self)
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
 
-    if (self->weakreflist != NULL) {
-        PyObject_ClearWeakRefs(obj_self);
-    }
+    FT_CLEAR_WEAKREFS(obj_self, self->weakreflist);
 
     if (self->trans_list_utc != NULL) {
         PyMem_Free(self->trans_list_utc);

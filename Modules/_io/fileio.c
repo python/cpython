@@ -4,6 +4,7 @@
 #include "pycore_fileutils.h"     // _Py_BEGIN_SUPPRESS_IPH
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 #include <stdbool.h>              // bool
 #ifdef HAVE_UNISTD_H
@@ -570,9 +571,7 @@ fileio_dealloc(PyObject *op)
         PyMem_Free(self->stat_atopen);
         self->stat_atopen = NULL;
     }
-    if (self->weakreflist != NULL) {
-        PyObject_ClearWeakRefs(op);
-    }
+    FT_CLEAR_WEAKREFS(op, self->weakreflist);
     (void)fileio_clear(op);
 
     PyTypeObject *tp = Py_TYPE(op);

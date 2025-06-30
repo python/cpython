@@ -11,7 +11,7 @@
 #include "pycore_pylifecycle.h"
 #include "pycore_pystate.h"       // _PyThreadState_SetCurrent()
 #include "pycore_time.h"          // _PyTime_FromSeconds()
-#include "pycore_weakref.h"       // _PyWeakref_GET_REF()
+#include "pycore_weakref.h"       // _PyWeakref_GET_REF(), FT_CLEAR_WEAKREFS()
 
 #include <stddef.h>               // offsetof()
 #ifdef HAVE_SIGNAL_H
@@ -1365,9 +1365,7 @@ static void
 localdummy_dealloc(PyObject *op)
 {
     localdummyobject *self = localdummyobject_CAST(op);
-    if (self->weakreflist != NULL) {
-        PyObject_ClearWeakRefs(op);
-    }
+    FT_CLEAR_WEAKREFS(op, self->weakreflist);
     PyTypeObject *tp = Py_TYPE(self);
     tp->tp_free(self);
     Py_DECREF(tp);
