@@ -475,6 +475,19 @@ class MathTests(unittest.TestCase):
         # similarly, copysign(2., NAN) could be 2. or -2.
         self.assertEqual(abs(math.copysign(2., NAN)), 2.)
 
+    def test_signbit(self):
+        self.assertRaises(TypeError, math.signbit)
+        self.assertRaises(TypeError, math.signbit, '1.0')
+
+        # C11, §7.12.3.6 requires signbit() to return a nonzero value
+        # if and only if the sign of its argument value is negative,
+        # but in practice, we are only interested in a boolean value.
+        self.assertIsInstance(math.signbit(1.0), bool)
+
+        for arg in [0., 1., INF, NAN]:
+            self.assertFalse(math.signbit(arg))
+            self.assertTrue(math.signbit(-arg))
+
     def testCos(self):
         self.assertRaises(TypeError, math.cos)
         self.ftest('cos(-pi/2)', math.cos(-math.pi/2), 0, abs_tol=math.ulp(1))
@@ -1386,7 +1399,6 @@ class MathTests(unittest.TestCase):
         # Error cases that arose during development
         args = ((-5, -5, 10), (1.5, 4611686018427387904, 2305843009213693952))
         self.assertEqual(sumprod(*args), 0.0)
-
 
     @requires_IEEE_754
     @unittest.skipIf(HAVE_DOUBLE_ROUNDING,
@@ -2485,7 +2497,6 @@ class MathTests(unittest.TestCase):
         self.assertEqual(1.0, math.nextafter(1.0, INF, steps=0))
         with self.assertRaises(ValueError):
             math.nextafter(1.0, INF, steps=-1)
-
 
     @requires_IEEE_754
     def test_ulp(self):
