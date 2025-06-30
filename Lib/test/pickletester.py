@@ -1105,6 +1105,10 @@ class AbstractUnpickleTests:
         with self.assertRaisesRegex(pickle.UnpicklingError, errmsg):
             self.loads(b'T\0\0\0\x80')
 
+    def test_appends_additems_no_items(self):
+        self.assertEqual(self.loads(b'K\x01(e.'), 1)
+        self.assertEqual(self.loads(b'K\x01(\x90.'), 1)
+
     def test_get(self):
         pickled = b'((lp100000\ng100000\nt.'
         unpickled = self.loads(pickled)
