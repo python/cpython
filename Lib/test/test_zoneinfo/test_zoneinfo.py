@@ -222,6 +222,7 @@ class ZoneInfoTest(TzPathUserMixin, ZoneInfoTestBase):
             "America.Los_Angeles",
             "🇨🇦",  # Non-ascii
             "America/New\ud800York",  # Contains surrogate character
+            "Europe",  # Is a directory, see issue gh-85702
         ]
 
         for bad_key in bad_keys:
