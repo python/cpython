@@ -21,6 +21,8 @@ import types
 import unittest.mock
 import weakref
 import typing
+from types import SimpleNamespace 
+
 
 c_types = import_fresh_module('types', fresh=['_types'])
 py_types = import_fresh_module('types', blocked=['_types'])
@@ -2128,6 +2130,23 @@ class SimpleNamespaceTests(unittest.TestCase):
             types.SimpleNamespace() > FakeSimpleNamespace()
         with self.assertRaises(TypeError):
             types.SimpleNamespace() >= FakeSimpleNamespace()
+    
+    def test_update_method(self):
+        ns = SimpleNamespace(a=1)
+        self.assertEqual(ns.a, 1)
+
+        ns.update(b=2, c=3)
+        self.assertEqual(ns.b, 2)
+        self.assertEqual(ns.c, 3)
+
+        # Overwriting existing key
+        ns.update(a=42)
+        self.assertEqual(ns.a, 42)
+
+        # No update with no kwargs
+        ns.update()
+        self.assertEqual(vars(ns), {'a': 42, 'b': 2, 'c': 3})
+
 
 
 class CoroutineTests(unittest.TestCase):

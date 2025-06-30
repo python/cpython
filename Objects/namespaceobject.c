@@ -245,6 +245,7 @@ namespace_replace(PyObject *self, PyObject *args, PyObject *kwargs)
     return result;
 }
 
+static PyObject *namespace_update(PyObject *self, PyObject *args, PyObject *kwds);
 
 static PyMethodDef namespace_methods[] = {
     {"__reduce__", namespace_reduce, METH_NOARGS,
@@ -252,7 +253,11 @@ static PyMethodDef namespace_methods[] = {
     {"__replace__", _PyCFunction_CAST(namespace_replace), METH_VARARGS|METH_KEYWORDS,
      PyDoc_STR("__replace__($self, /, **changes)\n--\n\n"
         "Return a copy of the namespace object with new values for the specified attributes.")},
-    {NULL,         NULL}  // sentinel
+    {"update", (PyCFunction)(void(*)(void))namespace_update,
+     METH_VARARGS | METH_KEYWORDS,
+     PyDoc_STR("update(**kwargs)\n--\n\nUpdate namespace attributes from keyword arguments.")
+    },
+
 };
 
 
@@ -321,3 +326,28 @@ _PyNamespace_New(PyObject *kwds)
 
     return (PyObject *)ns;
 }
+
+#include "Python.h"
+
+static PyObject *
+namespace_update(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    if (kwds == NULL) {
+        Py_RETURN_NONE;
+    }
+
+    PyObject *dict = PyObject_GetAttrString(self, "__dict__");
+    if (dict == NULL) {
+        return NULL;
+    }
+
+    int result = PyDict_Update(dict, kwds);
+    Py_DECREF(dict);
+
+    if (result < 0) {
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
