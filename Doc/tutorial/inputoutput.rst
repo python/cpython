@@ -200,7 +200,7 @@ an ``f``:
      >>> template.values
      ('World',)
 
-:class:`~!string.templatelib.Template` instances are iterable, yielding each
+:class:`!Template` instances are iterable, yielding each
 string and :class:`~string.templatelib.Interpolation` in order:
 
 .. testsetup::
@@ -280,8 +280,7 @@ update our ``user_html()`` function to return a :class:`~string.templatelib.Temp
      >>> def user_html(user: User) -> Template:
      ...     return t"<div><h1>{user.name}</h1></div>"
 
-Now let's implement a function that sanitizes *any* HTML
-:class:`~!string.templatelib.Template`:
+Now let's implement a function that sanitizes *any* HTML :class:`!Template`:
 
      >>> from html import escape
      >>> from string.templatelib import Template
@@ -293,10 +292,10 @@ Now let's implement a function that sanitizes *any* HTML
      ...     )
      ...
 
-This function iterates over the parts of the
-:class:`~!string.templatelib.Template`, escaping any interpolated values using
-the :func:`html.escape` function, which converts special characters like ``<``,
-``>``, and ``&`` into their HTML-safe equivalents.
+This function iterates over the parts of the :class:`!Template`, escaping any
+interpolated values using the :func:`html.escape` function, which converts
+special characters like ``<``, ``>``, and ``&`` into their HTML-safe
+equivalents.
 
 Now we can tie it all together:
 
@@ -327,10 +326,10 @@ Now we can tie it all together:
 We are no longer vulnerable to XSS attacks because we are escaping the
 interpolated values before they are included in the rendered HTML.
 
-Of course, there's no need for code that processes
-:class:`~!string.templatelib.Template` instances to be limited to returning a
-simple string. For instance, we could imagine defining a more complex ``html()``
-function that returns a structured representation of the HTML:
+Of course, there's no need for code that processes :class:`!Template` instances
+to be limited to returning a simple string. For instance, we could imagine
+defining a more complex ``html()`` function that returns a structured
+representation of the HTML:
 
      >>> from dataclasses import dataclass
      >>> from string.templatelib import Template
