@@ -1541,6 +1541,8 @@ Creating files and directories
    as a directory if *target_is_directory* is true or a file symlink (the
    default) otherwise.  On non-Windows platforms, *target_is_directory* is ignored.
 
+   If this path already exists, :exc:`FileExistsError` is raised.
+
    ::
 
       >>> p = Path('mylink')
