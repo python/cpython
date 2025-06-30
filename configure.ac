@@ -1716,7 +1716,7 @@ ABI_THREAD=""
 # --disable-gil
 AC_MSG_CHECKING([for --disable-gil])
 AC_ARG_ENABLE([gil],
-  [AS_HELP_STRING([--disable-gil], [enable experimental support for running without the GIL (default is no)])],
+  [AS_HELP_STRING([--disable-gil], [enable support for running without the GIL (default is no)])],
   [AS_VAR_IF([enable_gil], [yes], [disable_gil=no], [disable_gil=yes])], [disable_gil=no]
 )
 AC_MSG_RESULT([$disable_gil])
@@ -2776,7 +2776,7 @@ AS_VAR_IF([jit_flags],
           [],
           [AS_VAR_APPEND([CFLAGS_NODIST], [" $jit_flags"])
            AS_VAR_SET([REGEN_JIT_COMMAND],
-                      ["\$(PYTHON_FOR_REGEN) \$(srcdir)/Tools/jit/build.py ${ARCH_TRIPLES:-$host} --output-dir . --pyconfig-dir ."])
+                      ["\$(PYTHON_FOR_REGEN) \$(srcdir)/Tools/jit/build.py ${ARCH_TRIPLES:-$host} --output-dir . --pyconfig-dir . --cflags=\"$CFLAGS_JIT\""])
            AS_VAR_SET([JIT_STENCILS_H], ["jit_stencils.h"])
            AS_VAR_IF([Py_DEBUG],
                      [true],
@@ -3172,10 +3172,6 @@ if test "$ac_cv_sizeof_off_t" -gt "$ac_cv_sizeof_long" -a \
 else
   have_largefile_support="no"
 fi
-dnl LFS does not work with Emscripten 3.1
-AS_CASE([$ac_sys_system],
-  [Emscripten], [have_largefile_support="no"]
-)
 AS_VAR_IF([have_largefile_support], [yes], [
   AC_DEFINE([HAVE_LARGEFILE_SUPPORT], [1],
   [Defined to enable large file support when an off_t is bigger than a long
@@ -4167,7 +4163,7 @@ int main(void)
 [ac_cv_ffi_complex_double_supported=no])
 ])])
 if test "$ac_cv_ffi_complex_double_supported" = "yes"; then
-    AC_DEFINE([Py_FFI_SUPPORT_C_COMPLEX], [1],
+    AC_DEFINE([_Py_FFI_SUPPORT_C_COMPLEX], [1],
               [Defined if _Complex C type can be used with libffi.])
 fi
 
@@ -5219,7 +5215,7 @@ AC_CHECK_FUNCS([ \
   faccessat fchmod fchmodat fchown fchownat fdopendir fdwalk fexecve \
   fork fork1 fpathconf fstatat ftime ftruncate futimens futimes futimesat \
   gai_strerror getegid geteuid getgid getgrent getgrgid getgrgid_r \
-  getgrnam_r getgrouplist gethostname getitimer getloadavg getlogin \
+  getgrnam_r getgrouplist gethostname getitimer getloadavg getlogin getlogin_r \
   getpeername getpgid getpid getppid getpriority _getpty \
   getpwent getpwnam_r getpwuid getpwuid_r getresgid getresuid getrusage getsid getspent \
   getspnam getuid getwd grantpt if_nameindex initgroups kill killpg lchown linkat \
@@ -5537,6 +5533,18 @@ PY_CHECK_FUNC([setgroups], [
 #include <grp.h>
 #endif
 ])
+
+AC_CHECK_DECL([MAXLOGNAME],
+              [AC_DEFINE([HAVE_MAXLOGNAME], [1],
+                         [Define if you have the 'MAXLOGNAME' constant.])],
+              [],
+              [@%:@include <sys/param.h>])
+
+AC_CHECK_DECLS([UT_NAMESIZE],
+              [AC_DEFINE([HAVE_UT_NAMESIZE], [1],
+                         [Define if you have the 'HAVE_UT_NAMESIZE' constant.])],
+              [],
+              [@%:@include <utmp.h>])
 
 # check for openpty, login_tty, and forkpty
 
@@ -7160,8 +7168,6 @@ if test "$with_remote_debug" = yes; then
     [Define if you want to enable remote debugging support.])
   AC_MSG_RESULT([yes])
 else
-  AC_DEFINE([Py_REMOTE_DEBUG], [0],
-    [Define if you want to enable remote debugging support.])
   AC_MSG_RESULT([no])
 fi
 
@@ -7965,12 +7971,12 @@ dnl
 dnl Check if the compiler supports a given COMPILER-FLAG and define:
 dnl
 dnl     ac_cv_can_compile_simd_<name> = yes
-dnl     #define Py_CAN_COMPILE_SIMD_<NAME>_INSTRUCTIONS 1
+dnl     #define _Py_CAN_COMPILE_SIMD_<NAME>_INSTRUCTIONS 1
 dnl
 dnl or
 dnl
 dnl     ac_cv_can_compile_simd_<name> = no
-dnl     #undef Py_CAN_COMPILE_SIMD_<NAME>_INSTRUCTIONS
+dnl     #undef _Py_CAN_COMPILE_SIMD_<NAME>_INSTRUCTIONS
 dnl
 dnl where <name> and <NAME> are the lowercased and uppercased versions
 dnl of NORMALIZED-NAME; by default, the latter is INSTRUCTION-SET-NAME.
@@ -7980,11 +7986,12 @@ AC_DEFUN([PY_SIMD_DETECT], [
     [[ac_cv_can_compile_simd_]m4_tolower([$1])],
     [[ac_cv_can_compile_simd_]m4_tolower([$3])])])
   AS_VAR_PUSHDEF([py_define], [m4_ifblank([$3],
-    [[Py_CAN_COMPILE_SIMD_]m4_toupper([$1])[_INSTRUCTIONS]],
-    [[Py_CAN_COMPILE_SIMD_]m4_toupper([$3])[_INSTRUCTIONS]])])
+    [[_Py_CAN_COMPILE_SIMD_]m4_toupper([$1])[_INSTRUCTIONS]],
+    [[_Py_CAN_COMPILE_SIMD_]m4_toupper([$3])[_INSTRUCTIONS]])])
   AX_CHECK_COMPILE_FLAG([$2],
     [AS_VAR_SET([py_var], [yes])],
-    [AS_VAR_SET([py_var], [no])])
+    [AS_VAR_SET([py_var], [no])],
+    [-Werror])
   AS_VAR_IF([py_var], [yes], [
     AC_DEFINE([py_define], [1], [Define if '$2' is a valid compiler flag.])
   ])
@@ -7999,6 +8006,11 @@ AC_DEFUN([PY_SIMD_DETECT], [
 # See py_cpuid_features in pycore_cpuinfo.h for how to order fields
 # and where to put blank lines to separate processor generations for
 # AVX-512 instructions.
+#
+# Although AVX support is not guaranteed on Android [1], this is safe
+# because we do a runtime CPUID check.
+#
+# [1]: https://developer.android.com/ndk/guides/abis#86-64
 if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "WASI" || \
    { test -n "$ANDROID_API_LEVEL" && test "$ANDROID_API_LEVEL" -ge 28; }
 then
@@ -8097,17 +8109,23 @@ else
   use_hacl_universal2_impl=no
 fi
 
-# The SIMD files use aligned_alloc, which is not available on older versions of
-# Android.
-# The *mmintrin.h headers are x86-family-specific, so can't be used on WASI.
+# The HACL* SIMD-128 files use aligned_alloc, which is not available
+# on older versions of Android. In addition, since the *mmintrin.h
+# headers are x86-family-specific, they cannot be used on WASI.
 if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "WASI" || \
    { test -n "$ANDROID_API_LEVEL" && test "$ANDROID_API_LEVEL" -ge 28; }
 then
-  dnl This can be extended here to detect e.g. Power8, which HACL* should also support.
-  AX_CHECK_COMPILE_FLAG([-msse -msse2 -msse3 -msse4.1 -msse4.2],[
+  # SIMD-128
+  if test "$ac_cv_can_compile_simd_sse" = "yes" \
+    -a "$ac_cv_can_compile_simd_sse2" = "yes"   \
+    -a "$ac_cv_can_compile_simd_sse3" = "yes"   \
+    -a "$ac_cv_can_compile_simd_sse41" = "yes"  \
+    -a "$ac_cv_can_compile_simd_sse42" = "yes"
+  then
     [LIBHACL_SIMD128_FLAGS="-msse -msse2 -msse3 -msse4.1 -msse4.2"]
 
-    AC_DEFINE([HACL_CAN_COMPILE_SIMD128], [1], [HACL* library can compile SIMD128 implementations])
+    AC_DEFINE([_Py_HACL_CAN_COMPILE_VEC128], [1], [
+      HACL* library can compile SIMD128 implementations])
 
     # macOS universal2 builds *support* the -msse etc flags because they're
     # available on x86_64. However, performance of the HACL SIMD128 implementation
@@ -8120,25 +8138,23 @@ then
       [LIBHACL_BLAKE2_SIMD128_OBJS="Modules/_hacl/Hacl_Hash_Blake2s_Simd128.o"]
       AC_MSG_RESULT([standard])
     fi
-
-  ], [], [-Werror])
+  fi
 fi
 AC_SUBST([LIBHACL_SIMD128_FLAGS])
 AC_SUBST([LIBHACL_BLAKE2_SIMD128_OBJS])
 
-# The SIMD files use aligned_alloc, which is not available on older versions of
-# Android.
-# The *mmintrin.h headers are x86-family-specific, so can't be used on WASI.
-#
-# Although AVX support is not guaranteed on Android
-# (https://developer.android.com/ndk/guides/abis#86-64), this is safe because we do a
-# runtime CPUID check.
+# The HACL* SIMD-256 files use aligned_alloc, which is not available
+# on older versions of Android. In addition, since the *mmintrin.h
+# headers are x86-family-specific, they cannot be used on WASI.
 if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "WASI" || \
    { test -n "$ANDROID_API_LEVEL" && test "$ANDROID_API_LEVEL" -ge 28; }
 then
-  AX_CHECK_COMPILE_FLAG([-mavx2],[
+  if test "$ac_cv_can_compile_simd_avx2" = "yes"
+  then
     [LIBHACL_SIMD256_FLAGS="-mavx2"]
-    AC_DEFINE([HACL_CAN_COMPILE_SIMD256], [1], [HACL* library can compile SIMD256 implementations])
+
+    AC_DEFINE([_Py_HACL_CAN_COMPILE_VEC256], [1], [
+      HACL* library can compile SIMD256 implementations])
 
     # macOS universal2 builds *support* the -mavx2 compiler flag because it's
     # available on x86_64; but the HACL SIMD256 build then fails because the
@@ -8152,7 +8168,7 @@ then
       [LIBHACL_BLAKE2_SIMD256_OBJS="Modules/_hacl/Hacl_Hash_Blake2b_Simd256.o"]
       AC_MSG_RESULT([standard])
     fi
-  ], [], [-Werror])
+  fi
 fi
 AC_SUBST([LIBHACL_SIMD256_FLAGS])
 AC_SUBST([LIBHACL_BLAKE2_SIMD256_OBJS])

@@ -13,6 +13,16 @@ If you need to add a new function ensure that is declared 'static'.
 extern "C" {
 #endif
 
+#ifdef __clang__
+    #define UNUSED __attribute__((unused))
+#elif defined(__GNUC__)
+    #define UNUSED __attribute__((unused))
+#elif defined(_MSC_VER)
+    #define UNUSED __pragma(warning(suppress: 4505))
+#else
+    #define UNUSED
+#endif
+
 #if !defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 #  error "this header requires Py_BUILD_CORE or Py_BUILD_CORE_MODULE define"
 #endif
@@ -100,14 +110,6 @@ get_page_size(void) {
     return page_size;
 }
 
-typedef struct page_cache_entry {
-    uintptr_t page_addr; // page-aligned base address
-    char *data;
-    int valid;
-    struct page_cache_entry *next;
-} page_cache_entry_t;
-
-#define MAX_PAGES 1024
 
 // Define a platform-independent process handle structure
 typedef struct {
@@ -116,28 +118,12 @@ typedef struct {
     mach_port_t task;
 #elif defined(MS_WINDOWS)
     HANDLE hProcess;
+#elif defined(__linux__)
+    int memfd;
 #endif
-    page_cache_entry_t pages[MAX_PAGES];
     Py_ssize_t page_size;
 } proc_handle_t;
 
-static void
-_Py_RemoteDebug_FreePageCache(proc_handle_t *handle)
-{
-    for (int i = 0; i < MAX_PAGES; i++) {
-        PyMem_RawFree(handle->pages[i].data);
-        handle->pages[i].data = NULL;
-        handle->pages[i].valid = 0;
-    }
-}
-
-void
-_Py_RemoteDebug_ClearCache(proc_handle_t *handle)
-{
-    for (int i = 0; i < MAX_PAGES; i++) {
-        handle->pages[i].valid = 0;
-    }
-}
 
 #if defined(__APPLE__) && defined(TARGET_OS_OSX) && TARGET_OS_OSX
 static mach_port_t pid_to_task(pid_t pid);
@@ -162,12 +148,10 @@ _Py_RemoteDebug_InitProcHandle(proc_handle_t *handle, pid_t pid) {
         _set_debug_exception_cause(PyExc_RuntimeError, "Failed to initialize Windows process handle");
         return -1;
     }
+#elif defined(__linux__)
+    handle->memfd = -1;
 #endif
     handle->page_size = get_page_size();
-    for (int i = 0; i < MAX_PAGES; i++) {
-        handle->pages[i].data = NULL;
-        handle->pages[i].valid = 0;
-    }
     return 0;
 }
 
@@ -179,9 +163,13 @@ _Py_RemoteDebug_CleanupProcHandle(proc_handle_t *handle) {
         CloseHandle(handle->hProcess);
         handle->hProcess = NULL;
     }
+#elif defined(__linux__)
+    if (handle->memfd != -1) {
+        close(handle->memfd);
+        handle->memfd = -1;
+    }
 #endif
     handle->pid = 0;
-    _Py_RemoteDebug_FreePageCache(handle);
 }
 
 #if defined(__APPLE__) && defined(TARGET_OS_OSX) && TARGET_OS_OSX
@@ -665,8 +653,6 @@ search_linux_map_for_section(proc_handle_t *handle, const char* secname, const c
     }
 
     uintptr_t retval = 0;
-    int lines_processed = 0;
-    int matches_found = 0;
 
     while (fgets(line + linelen, linesz - linelen, maps_file) != NULL) {
         linelen = strlen(line);
@@ -691,7 +677,6 @@ search_linux_map_for_section(proc_handle_t *handle, const char* secname, const c
         line[linelen - 1] = '\0';
         // and prepare to read the next line into the start of the buffer.
         linelen = 0;
-        lines_processed++;
 
         unsigned long start = 0;
         unsigned long path_pos = 0;
@@ -712,7 +697,6 @@ search_linux_map_for_section(proc_handle_t *handle, const char* secname, const c
         }
 
         if (strstr(filename, substr)) {
-            matches_found++;
             retval = search_elf_file_for_section(handle, secname, start, path);
             if (retval) {
                 break;
@@ -831,15 +815,10 @@ search_windows_map_for_section(proc_handle_t* handle, const char* secname, const
     MODULEENTRY32W moduleEntry;
     moduleEntry.dwSize = sizeof(moduleEntry);
     void* runtime_addr = NULL;
-    int modules_examined = 0;
-    int matches_found = 0;
 
     for (BOOL hasModule = Module32FirstW(hProcSnap, &moduleEntry); hasModule; hasModule = Module32NextW(hProcSnap, &moduleEntry)) {
-        modules_examined++;
-
         // Look for either python executable or DLL
         if (wcsstr(moduleEntry.szModule, substr)) {
-            matches_found++;
             runtime_addr = analyze_pe(moduleEntry.szExePath, moduleEntry.modBaseAddr, secname);
             if (runtime_addr != NULL) {
                 break;
@@ -907,6 +886,61 @@ _Py_RemoteDebug_GetPyRuntimeAddress(proc_handle_t* handle)
     return address;
 }
 
+#if defined(__linux__) && HAVE_PROCESS_VM_READV
+
+static int
+open_proc_mem_fd(proc_handle_t *handle)
+{
+    char mem_file_path[64];
+    sprintf(mem_file_path, "/proc/%d/mem", handle->pid);
+
+    handle->memfd = open(mem_file_path, O_RDWR);
+    if (handle->memfd == -1) {
+        PyErr_SetFromErrno(PyExc_OSError);
+        _set_debug_exception_cause(PyExc_OSError,
+            "failed to open file %s: %s", mem_file_path, strerror(errno));
+        return -1;
+    }
+    return 0;
+}
+
+// Why is pwritev not guarded? Except on Android API level 23 (no longer
+// supported), HAVE_PROCESS_VM_READV is sufficient.
+static int
+read_remote_memory_fallback(proc_handle_t *handle, uintptr_t remote_address, size_t len, void* dst)
+{
+    if (handle->memfd == -1) {
+        if (open_proc_mem_fd(handle) < 0) {
+            return -1;
+        }
+    }
+
+    struct iovec local[1];
+    Py_ssize_t result = 0;
+    Py_ssize_t read_bytes = 0;
+
+    do {
+        local[0].iov_base = (char*)dst + result;
+        local[0].iov_len = len - result;
+        off_t offset = remote_address + result;
+
+        read_bytes = preadv(handle->memfd, local, 1, offset);
+        if (read_bytes < 0) {
+            PyErr_SetFromErrno(PyExc_OSError);
+            _set_debug_exception_cause(PyExc_OSError,
+                "preadv failed for PID %d at address 0x%lx "
+                "(size %zu, partial read %zd bytes): %s",
+                handle->pid, remote_address + result, len - result, result, strerror(errno));
+            return -1;
+        }
+
+        result += read_bytes;
+    } while ((size_t)read_bytes != local[0].iov_len);
+    return 0;
+}
+
+#endif // __linux__
+
 // Platform-independent memory read function
 static int
 _Py_RemoteDebug_ReadRemoteMemory(proc_handle_t *handle, uintptr_t remote_address, size_t len, void* dst)
@@ -928,6 +962,9 @@ _Py_RemoteDebug_ReadRemoteMemory(proc_handle_t *handle, uintptr_t remote_address
     } while (result < len);
     return 0;
 #elif defined(__linux__) && HAVE_PROCESS_VM_READV
+    if (handle->memfd != -1) {
+        return read_remote_memory_fallback(handle, remote_address, len, dst);
+    }
     struct iovec local[1];
     struct iovec remote[1];
     Py_ssize_t result = 0;
@@ -941,6 +978,9 @@ _Py_RemoteDebug_ReadRemoteMemory(proc_handle_t *handle, uintptr_t remote_address
 
         read_bytes = process_vm_readv(handle->pid, local, 1, remote, 1, 0);
         if (read_bytes < 0) {
+            if (errno == ENOSYS) {
+                return read_remote_memory_fallback(handle, remote_address, len, dst);
+            }
             PyErr_SetFromErrno(PyExc_OSError);
             _set_debug_exception_cause(PyExc_OSError,
                 "process_vm_readv failed for PID %d at address 0x%lx "
@@ -989,59 +1029,12 @@ _Py_RemoteDebug_ReadRemoteMemory(proc_handle_t *handle, uintptr_t remote_address
 #endif
 }
 
-int
+UNUSED static int
 _Py_RemoteDebug_PagedReadRemoteMemory(proc_handle_t *handle,
                                       uintptr_t addr,
                                       size_t size,
                                       void *out)
 {
-    size_t page_size = handle->page_size;
-    uintptr_t page_base = addr & ~(page_size - 1);
-    size_t offset_in_page = addr - page_base;
-
-    if (offset_in_page + size > page_size) {
-        return _Py_RemoteDebug_ReadRemoteMemory(handle, addr, size, out);
-    }
-
-    // Search for valid cached page
-    for (int i = 0; i < MAX_PAGES; i++) {
-        page_cache_entry_t *entry = &handle->pages[i];
-        if (entry->valid && entry->page_addr == page_base) {
-            memcpy(out, entry->data + offset_in_page, size);
-            return 0;
-        }
-    }
-
-    // Find reusable slot
-    for (int i = 0; i < MAX_PAGES; i++) {
-        page_cache_entry_t *entry = &handle->pages[i];
-        if (!entry->valid) {
-            if (entry->data == NULL) {
-                entry->data = PyMem_RawMalloc(page_size);
-                if (entry->data == NULL) {
-                    _set_debug_exception_cause(PyExc_MemoryError,
-                        "Cannot allocate %zu bytes for page cache entry "
-                        "during read from PID %d at address 0x%lx",
-                        page_size, handle->pid, addr);
-                    return -1;
-                }
-            }
-
-            if (_Py_RemoteDebug_ReadRemoteMemory(handle, page_base, page_size, entry->data) < 0) {
-                // Try to just copy the exact ammount as a fallback
-                PyErr_Clear();
-                goto fallback;
-            }
-
-            entry->page_addr = page_base;
-            entry->valid = 1;
-            memcpy(out, entry->data + offset_in_page, size);
-            return 0;
-        }
-    }
-
-fallback:
-    // Cache full — fallback to uncached read
     return _Py_RemoteDebug_ReadRemoteMemory(handle, addr, size, out);
 }
 

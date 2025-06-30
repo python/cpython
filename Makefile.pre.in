@@ -2518,7 +2518,7 @@ XMLLIBSUBDIRS=  xml xml/dom xml/etree xml/parsers xml/sax
 LIBSUBDIRS=	asyncio \
 		collections \
 		compression compression/_common compression/zstd \
-		concurrent concurrent/futures \
+		concurrent concurrent/futures concurrent/interpreters \
 		csv \
 		ctypes ctypes/macholib \
 		curses \
@@ -2577,7 +2577,6 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/subprocessdata \
 		test/support \
 		test/support/_hypothesis_stubs \
-		test/support/interpreters \
 		test/test_asyncio \
 		test/test_capi \
 		test/test_cext \

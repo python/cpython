@@ -507,6 +507,15 @@ Module constants
    Version number of the runtime SQLite library as a :class:`tuple` of
    :class:`integers <int>`.
 
+.. data:: SQLITE_KEYWORDS
+
+   A :class:`tuple` containing all sqlite3 keywords.
+
+   This constant is only available if Python was compiled with SQLite
+   3.24.0 or greater.
+
+   .. versionadded:: next
+
 .. data:: threadsafety
 
    Integer constant required by the DB-API 2.0, stating the level of thread
@@ -1482,7 +1491,9 @@ Cursor objects
       :type parameters: :class:`dict` | :term:`sequence`
 
       :raises ProgrammingError:
-         If *sql* contains more than one SQL statement.
+         When *sql* contains more than one SQL statement.
+         When :ref:`named placeholders <sqlite3-placeholders>` are used
+         and *parameters* is a sequence instead of a :class:`dict`.
 
       If :attr:`~Connection.autocommit` is
       :data:`LEGACY_TRANSACTION_CONTROL`,
@@ -1491,13 +1502,11 @@ Cursor objects
       and there is no open transaction,
       a transaction is implicitly opened before executing *sql*.
 
-      .. deprecated-removed:: 3.12 3.14
+      .. versionchanged:: 3.14
 
-         :exc:`DeprecationWarning` is emitted if
+         :exc:`ProgrammingError` is emitted if
          :ref:`named placeholders <sqlite3-placeholders>` are used
          and *parameters* is a sequence instead of a :class:`dict`.
-         Starting with Python 3.14, :exc:`ProgrammingError` will
-         be raised instead.
 
       Use :meth:`executescript` to execute multiple SQL statements.
 
@@ -1519,8 +1528,10 @@ Cursor objects
       :type parameters: :term:`iterable`
 
       :raises ProgrammingError:
-         If *sql* contains more than one SQL statement,
-         or is not a DML statement.
+         When *sql* contains more than one SQL statement
+         or is not a DML statement,
+         When :ref:`named placeholders <sqlite3-placeholders>` are used
+         and the items in *parameters* are sequences instead of :class:`dict`\s.
 
       Example:
 
@@ -1544,14 +1555,12 @@ Cursor objects
 
       .. _RETURNING clauses: https://www.sqlite.org/lang_returning.html
 
-      .. deprecated-removed:: 3.12 3.14
+      .. versionchanged:: 3.14
 
-         :exc:`DeprecationWarning` is emitted if
+         :exc:`ProgrammingError` is emitted if
          :ref:`named placeholders <sqlite3-placeholders>` are used
          and the items in *parameters* are sequences
          instead of :class:`dict`\s.
-         Starting with Python 3.14, :exc:`ProgrammingError` will
-         be raised instead.
 
    .. method:: executescript(sql_script, /)
 
