@@ -101,6 +101,12 @@ whose size is determined when the object is allocated.
 #define PyObject_VAR_HEAD      PyVarObject ob_base;
 #define Py_INVALID_SIZE (Py_ssize_t)-1
 
+/* PyObjects are given a minimum alignment so that the least significant bits
+ * of an object pointer become available for other purposes.
+ * This must be an integer literal with the value (1 << _PyGC_PREV_SHIFT), number of bytes.
+ */
+#define _PyObject_MIN_ALIGNMENT 4
+
 /* Nothing is actually declared to be a PyObject, but every pointer to
  * a Python object can be cast to a PyObject*.  This is inheritance built
  * by hand.  Similarly every pointer to a variable-size Python object can,
@@ -136,6 +142,7 @@ struct _object {
 #else
         Py_ssize_t ob_refcnt;
 #endif
+        _Py_ALIGNED_DEF(_PyObject_MIN_ALIGNMENT, char) _aligner;
     };
 #ifdef _MSC_VER
     __pragma(warning(pop))
@@ -153,7 +160,7 @@ struct _object {
     // ob_tid stores the thread id (or zero). It is also used by the GC and the
     // trashcan mechanism as a linked list pointer and by the GC to store the
     // computed "gc_refs" refcount.
-    uintptr_t ob_tid;
+    _Py_ALIGNED_DEF(_PyObject_MIN_ALIGNMENT, uintptr_t) ob_tid;
     uint16_t ob_flags;
     PyMutex ob_mutex;           // per-object lock
     uint8_t ob_gc_bits;         // gc-related state

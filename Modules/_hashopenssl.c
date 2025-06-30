@@ -255,7 +255,8 @@ py_hashentry_table_new(void) {
     return NULL;
 }
 
-/* Module state */
+// --- Module state -----------------------------------------------------------
+
 static PyModuleDef _hashlibmodule;
 
 typedef struct {
@@ -277,35 +278,33 @@ get_hashlib_state(PyObject *module)
     return (_hashlibstate *)state;
 }
 
+// --- Module objects ---------------------------------------------------------
+
 typedef struct {
-    PyObject_HEAD
+    HASHLIB_OBJECT_HEAD
     EVP_MD_CTX *ctx;    /* OpenSSL message digest context */
-    // Prevents undefined behavior via multiple threads entering the C API.
-    bool use_mutex;
-    PyMutex mutex;      /* OpenSSL context lock */
 } HASHobject;
 
 #define HASHobject_CAST(op) ((HASHobject *)(op))
 
 typedef struct {
-    PyObject_HEAD
+    HASHLIB_OBJECT_HEAD
     HMAC_CTX *ctx;            /* OpenSSL hmac context */
-    // Prevents undefined behavior via multiple threads entering the C API.
-    bool use_mutex;
-    PyMutex mutex;  /* HMAC context lock */
 } HMACobject;
 
 #define HMACobject_CAST(op) ((HMACobject *)(op))
 
-#include "clinic/_hashopenssl.c.h"
+// --- Module clinic configuration --------------------------------------------
+
 /*[clinic input]
 module _hashlib
-class _hashlib.HASH "HASHobject *" "((_hashlibstate *)PyModule_GetState(module))->HASH_type"
-class _hashlib.HASHXOF "HASHobject *" "((_hashlibstate *)PyModule_GetState(module))->HASHXOF_type"
-class _hashlib.HMAC "HMACobject *" "((_hashlibstate *)PyModule_GetState(module))->HMAC_type"
+class _hashlib.HASH "HASHobject *" "&PyType_Type"
+class _hashlib.HASHXOF "HASHobject *" "&PyType_Type"
+class _hashlib.HMAC "HMACobject *" "&PyType_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=eb805ce4b90b1b31]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=6b5c9ce5c28bdc58]*/
 
+#include "clinic/_hashopenssl.c.h"
 
 /* LCOV_EXCL_START */
 
@@ -700,9 +699,9 @@ static int
 _hashlib_HASH_copy_locked(HASHobject *self, EVP_MD_CTX *new_ctx_p)
 {
     int result;
-    ENTER_HASHLIB(self);
+    HASHLIB_ACQUIRE_LOCK(self);
     result = EVP_MD_CTX_copy(new_ctx_p, self->ctx);
-    LEAVE_HASHLIB(self);
+    HASHLIB_RELEASE_LOCK(self);
     if (result == 0) {
         notify_smart_ssl_error_occurred_in(Py_STRINGIFY(EVP_MD_CTX_copy));
         return -1;
@@ -802,27 +801,13 @@ _hashlib_HASH_update_impl(HASHobject *self, PyObject *obj)
 {
     int result;
     Py_buffer view;
-
     GET_BUFFER_VIEW_OR_ERROUT(obj, &view);
-
-    if (!self->use_mutex && view.len >= HASHLIB_GIL_MINSIZE) {
-        self->use_mutex = true;
-    }
-    if (self->use_mutex) {
-        Py_BEGIN_ALLOW_THREADS
-        PyMutex_Lock(&self->mutex);
-        result = _hashlib_HASH_hash(self, view.buf, view.len);
-        PyMutex_Unlock(&self->mutex);
-        Py_END_ALLOW_THREADS
-    } else {
-        result = _hashlib_HASH_hash(self, view.buf, view.len);
-    }
-
+    HASHLIB_EXTERNAL_INSTRUCTIONS_LOCKED(
+        self, view.len,
+        result = _hashlib_HASH_hash(self, view.buf, view.len)
+    );
     PyBuffer_Release(&view);
-
-    if (result == -1)
-        return NULL;
-    Py_RETURN_NONE;
+    return result < 0 ? NULL : Py_None;
 }
 
 static PyMethodDef HASH_methods[] = {
@@ -938,8 +923,18 @@ _hashlib_HASHXOF_digest_impl(HASHobject *self, Py_ssize_t length)
 /*[clinic end generated code: output=dcb09335dd2fe908 input=3eb034ce03c55b21]*/
 {
     EVP_MD_CTX *temp_ctx;
-    PyObject *retval = PyBytes_FromStringAndSize(NULL, length);
+    PyObject *retval;
 
+    if (length < 0) {
+        PyErr_SetString(PyExc_ValueError, "negative digest length");
+        return NULL;
+    }
+
+    if (length == 0) {
+        return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
+    }
+
+    retval = PyBytes_FromStringAndSize(NULL, length);
     if (retval == NULL) {
         return NULL;
     }
@@ -986,9 +981,18 @@ _hashlib_HASHXOF_hexdigest_impl(HASHobject *self, Py_ssize_t length)
     EVP_MD_CTX *temp_ctx;
     PyObject *retval;
 
+    if (length < 0) {
+        PyErr_SetString(PyExc_ValueError, "negative digest length");
+        return NULL;
+    }
+
+    if (length == 0) {
+        return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
+    }
+
     digest = (unsigned char*)PyMem_Malloc(length);
     if (digest == NULL) {
-        PyErr_NoMemory();
+        (void)PyErr_NoMemory();
         return NULL;
     }
 
@@ -1125,15 +1129,12 @@ _hashlib_HASH(PyObject *module, const char *digestname, PyObject *data_obj,
     }
 
     if (view.buf && view.len) {
-        if (view.len >= HASHLIB_GIL_MINSIZE) {
-            /* We do not initialize self->lock here as this is the constructor
-             * where it is not yet possible to have concurrent access. */
-            Py_BEGIN_ALLOW_THREADS
-            result = _hashlib_HASH_hash(self, view.buf, view.len);
-            Py_END_ALLOW_THREADS
-        } else {
-            result = _hashlib_HASH_hash(self, view.buf, view.len);
-        }
+        /* Do not use self->mutex here as this is the constructor
+         * where it is not yet possible to have concurrent access. */
+        HASHLIB_EXTERNAL_INSTRUCTIONS_UNLOCKED(
+            view.len,
+            result = _hashlib_HASH_hash(self, view.buf, view.len)
+        );
         if (result == -1) {
             assert(PyErr_Occurred());
             Py_CLEAR(self);
@@ -1794,9 +1795,9 @@ static int
 locked_HMAC_CTX_copy(HMAC_CTX *new_ctx_p, HMACobject *self)
 {
     int result;
-    ENTER_HASHLIB(self);
+    HASHLIB_ACQUIRE_LOCK(self);
     result = HMAC_CTX_copy(new_ctx_p, self->ctx);
-    LEAVE_HASHLIB(self);
+    HASHLIB_RELEASE_LOCK(self);
     if (result == 0) {
         notify_smart_ssl_error_occurred_in(Py_STRINGIFY(HMAC_CTX_copy));
         return -1;
@@ -1827,24 +1828,12 @@ _hmac_update(HMACobject *self, PyObject *obj)
     Py_buffer view = {0};
 
     GET_BUFFER_VIEW_OR_ERROR(obj, &view, return 0);
-
-    if (!self->use_mutex && view.len >= HASHLIB_GIL_MINSIZE) {
-        self->use_mutex = true;
-    }
-    if (self->use_mutex) {
-        Py_BEGIN_ALLOW_THREADS
-        PyMutex_Lock(&self->mutex);
-        r = HMAC_Update(self->ctx,
-                        (const unsigned char *)view.buf,
-                        (size_t)view.len);
-        PyMutex_Unlock(&self->mutex);
-        Py_END_ALLOW_THREADS
-    } else {
-        r = HMAC_Update(self->ctx,
-                        (const unsigned char *)view.buf,
-                        (size_t)view.len);
-    }
-
+    HASHLIB_EXTERNAL_INSTRUCTIONS_LOCKED(
+        self, view.len,
+        r = HMAC_Update(
+            self->ctx, (const unsigned char *)view.buf, (size_t)view.len
+        )
+    );
     PyBuffer_Release(&view);
 
     if (r == 0) {

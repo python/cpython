@@ -115,6 +115,9 @@ math
 * Add :func:`math.isnormal` and :func:`math.issubnormal` functions.
   (Contributed by Sergey B Kirpichev in :gh:`132908`.)
 
+* Add :func:`math.signbit` function.
+  (Contributed by Bénédikt Tran in :gh:`135853`.)
+
 
 os.path
 -------
@@ -132,6 +135,13 @@ shelve
 * Added new :meth:`!reorganize` method to :mod:`shelve` used to recover unused free
   space previously occupied by deleted entries.
   (Contributed by Andrea Oliveri in :gh:`134004`.)
+
+
+sqlite3
+-------
+
+* Support SQL keyword completion in the :mod:`sqlite3` command-line interface.
+  (Contributed by Long Tan in :gh:`133393`.)
 
 
 ssl

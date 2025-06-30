@@ -7,8 +7,8 @@ import unittest
 from test.support import import_helper, Py_DEBUG
 # Raise SkipTest if subinterpreters not supported.
 _queues = import_helper.import_module('_interpqueues')
-from test.support import interpreters
-from test.support.interpreters import queues, _crossinterp
+from concurrent import interpreters
+from concurrent.interpreters import _queues as queues, _crossinterp
 from .utils import _run_output, TestBase as _TestBase
 
 
@@ -126,7 +126,7 @@ class QueueTests(TestBase):
 
         interp = interpreters.create()
         interp.exec(dedent(f"""
-            from test.support.interpreters import queues
+            from concurrent.interpreters import _queues as queues
             queue1 = queues.Queue({queue1.id})
             """));
 
@@ -208,18 +208,64 @@ class TestQueueOps(TestBase):
         self.assertIs(after, True)
 
     def test_full(self):
-        expected = [False, False, False, True, False, False, False]
-        actual = []
-        queue = queues.create(3)
-        for _ in range(3):
-            actual.append(queue.full())
-            queue.put(None)
-        actual.append(queue.full())
-        for _ in range(3):
-            queue.get()
-            actual.append(queue.full())
+        for maxsize in [1, 3, 11]:
+            with self.subTest(f'maxsize={maxsize}'):
+                num_to_add = maxsize
+                expected = [False] * (num_to_add * 2 + 3)
+                expected[maxsize] = True
+                expected[maxsize + 1] = True
 
-        self.assertEqual(actual, expected)
+                queue = queues.create(maxsize)
+                actual = []
+                empty = [queue.empty()]
+
+                for _ in range(num_to_add):
+                    actual.append(queue.full())
+                    queue.put_nowait(None)
+                actual.append(queue.full())
+                with self.assertRaises(queues.QueueFull):
+                    queue.put_nowait(None)
+                empty.append(queue.empty())
+
+                for _ in range(num_to_add):
+                    actual.append(queue.full())
+                    queue.get_nowait()
+                actual.append(queue.full())
+                with self.assertRaises(queues.QueueEmpty):
+                    queue.get_nowait()
+                actual.append(queue.full())
+                empty.append(queue.empty())
+
+                self.assertEqual(actual, expected)
+                self.assertEqual(empty, [True, False, True])
+
+        # no max size
+        for args in [(), (0,), (-1,), (-10,)]:
+            with self.subTest(f'maxsize={args[0]}' if args else '<default>'):
+                num_to_add = 13
+                expected = [False] * (num_to_add * 2 + 3)
+
+                queue = queues.create(*args)
+                actual = []
+                empty = [queue.empty()]
+
+                for _ in range(num_to_add):
+                    actual.append(queue.full())
+                    queue.put_nowait(None)
+                actual.append(queue.full())
+                empty.append(queue.empty())
+
+                for _ in range(num_to_add):
+                    actual.append(queue.full())
+                    queue.get_nowait()
+                actual.append(queue.full())
+                with self.assertRaises(queues.QueueEmpty):
+                    queue.get_nowait()
+                actual.append(queue.full())
+                empty.append(queue.empty())
+
+                self.assertEqual(actual, expected)
+                self.assertEqual(empty, [True, False, True])
 
     def test_qsize(self):
         expected = [0, 1, 2, 3, 2, 3, 2, 1, 0, 1, 0]
@@ -324,7 +370,7 @@ class TestQueueOps(TestBase):
     def test_put_get_same_interpreter(self):
         interp = interpreters.create()
         interp.exec(dedent("""
-            from test.support.interpreters import queues
+            from concurrent.interpreters import _queues as queues
             queue = queues.create()
             """))
         for methname in ('get', 'get_nowait'):
@@ -351,7 +397,7 @@ class TestQueueOps(TestBase):
                 out = _run_output(
                     interp,
                     dedent(f"""
-                        from test.support.interpreters import queues
+                        from concurrent.interpreters import _queues as queues
                         queue1 = queues.Queue({queue1.id})
                         queue2 = queues.Queue({queue2.id})
                         assert queue1.qsize() == 1, 'expected: queue1.qsize() == 1'
@@ -390,7 +436,7 @@ class TestQueueOps(TestBase):
             interp = interpreters.create()
 
             _run_output(interp, dedent(f"""
-                from test.support.interpreters import queues
+                from concurrent.interpreters import _queues as queues
                 queue = queues.Queue({queue.id})
                 obj1 = b'spam'
                 obj2 = b'eggs'
@@ -468,7 +514,7 @@ class TestQueueOps(TestBase):
         queue = queues.create()
         interp = interpreters.create()
         _run_output(interp, dedent(f"""
-            from test.support.interpreters import queues
+            from concurrent.interpreters import _queues as queues
             queue = queues.Queue({queue.id})
             queue.put(1, unbounditems=queues.UNBOUND)
             queue.put(2, unbounditems=queues.UNBOUND_ERROR)
@@ -504,14 +550,14 @@ class TestQueueOps(TestBase):
 
         queue.put(1)
         _run_output(interp1, dedent(f"""
-            from test.support.interpreters import queues
+            from concurrent.interpreters import _queues as queues
             queue = queues.Queue({queue.id})
             obj1 = queue.get()
             queue.put(2, unbounditems=queues.UNBOUND)
             queue.put(obj1, unbounditems=queues.UNBOUND_REMOVE)
             """))
         _run_output(interp2, dedent(f"""
-            from test.support.interpreters import queues
+            from concurrent.interpreters import _queues as queues
             queue = queues.Queue({queue.id})
             obj2 = queue.get()
             obj1 = queue.get()
