@@ -9,15 +9,11 @@ multiple interpreters in a Python program.  We will focus on doing
 so in Python code, through the stdlib :mod:`concurrent.interpreters`
 module.
 
-This document has 3 parts: first a brief introduction, then a tutorial,
-and then a set of recipes and practical examples.
+This document has 2 parts: first a brief introduction and then a tutorial.
 
 The tutorial covers the basics of using multiple interpreters
 (:ref:`interp-tutorial-basics`), as well as how to communicate between
 interpreters (:ref:`interp-tutorial-communicating`).
-The examples section (:ref:`interp-recipes`) is focused on providing
-effective solutions for real concurrency use cases.  This includes
-comparisons with Python's various existing concurrency models.
 
 .. currentmodule:: concurrent.interpreters
 
@@ -38,6 +34,7 @@ comparisons with Python's various existing concurrency models.
 .. TODO:
 
    * tutorial: explain how to use interpreters C-API?
+   * add a top-level recipes/examples section
    * recipes: add some!
    * recipes: add short examples of how to solve specific small problems
    * recipes: add a section specifically for workflow-oriented examples
@@ -1099,14 +1096,3 @@ Here's a more elaborate example::
         ...
 
 Using a :mod:`logger <logging>` can also help.
-
-
-.. _interp-recipes:
-
-Recipes (Practical Examples)
-============================
-
-Example: ...
-------------
-
-...
