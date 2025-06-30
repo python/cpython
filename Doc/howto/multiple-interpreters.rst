@@ -50,7 +50,7 @@ Introduction
 ============
 
 You can find a thorough explanation about what interpreters are and
-what they're for in the :mod:`concurrent.interpreters <interpreters-intro_>`
+what they're for in the :ref:`concurrent.interpreters <interpreters-intro>`
 docs.
 
 In summary, think of an interpreter as the Python runtime's execution
