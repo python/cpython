@@ -419,17 +419,28 @@ thread, it may grow to run in multiple.  Not all platforms support
 threads, but most do.  For those that do, all threads in a process
 share all the process' resources, including memory.
 
-Each thread does *run* independently, at the same time as the others.
-That may be only conceptually at the same time ("concurrently") or
-physically ("in parallel").  Either way, the threads run at a
-non-synchronized rate, which means global state isn't guaranteed
-to stay consistent for any given thread.
+The fundamental point of threads is that each thread does *run*
+independently, at the same time as the others.  That may be only
+conceptually at the same time ("concurrently") or physically
+("in parallel").  Either way, the threads effectively run
+at a non-synchronized rate.
 
 .. note::
 
-   The way they share resources is exactly what can make threads a pain:
-   two threads running at the same time can accidentally interfere with
-   each other's use of some shared data.
+   That non-synchronized rate means none of the global state is
+   guaranteed to stay consistent for the code running in any given
+   thread.  Thus multi-threaded programs must take care to coordinate
+   access to intentionally shared resources.  Likewise, they must take
+   care to be absolutely diligent about not accessing any *other*
+   resources in multiple threads; otherwise two threads running at the
+   same time might accidentally interfere with each other's use of some
+   shared data.  All this is true for both Python programs and the
+   Python runtime.
+
+   The cost of this broad, unstructured requirement is the tradeoff for
+   the concurrency and, especially, parallelism that threads provide.
+   The alternative generally means dealing with non-deterministic bugs
+   and data corruption.
 
 The same layers apply to each Python program, with some extra layers
 specific to Python::
