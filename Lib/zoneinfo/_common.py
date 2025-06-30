@@ -10,6 +10,7 @@ def load_tzdata(key):
 
     try:
         path = resources.files(package_name).joinpath(resource_name)
+        # gh-85702: Prevent PermissionError on Windows
         if path.is_dir():
             raise IsADirectoryError
         return path.open("rb")
