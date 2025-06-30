@@ -410,6 +410,20 @@ Distributions
    Raises :exc:`PackageNotFoundError` if the named distribution
    package is not installed in the current Python environment.
 
+.. function:: distributions(**kwargs)
+
+   Get all :class:`Distribution` instances in the current environment.
+
+   Any keyword arguments are passed to the ``find_distributions()`` method
+   of the registered distribution finders (see :class:`DistributionFinder`).
+
+   Common keyword arguments include:
+
+   * ``name``: Filter to distributions matching this package name
+   * ``path``: Search these path segments (defaults to :data:`sys.path`)
+
+   :return: An iterable of :class:`Distribution` instances.
+
 .. class:: Distribution
 
    Details of an installed distribution package.
@@ -417,6 +431,47 @@ Distributions
    Note: different :class:`!Distribution` instances do not currently compare
    equal, even if they relate to the same installed distribution and
    accordingly have the same attributes.
+
+   .. classmethod:: discover(*, context=None, **kwargs)
+
+      Return an iterable of Distribution objects for all packages.
+
+      Pass a ``context`` or pass keyword arguments for constructing
+      a context.
+
+      :param context: A :class:`DistributionFinder.Context` object.
+      :param kwargs: Context parameters used to construct a new context if one
+                    is not supplied.
+      :return: Iterable of Distribution objects for packages matching
+               the context.
+
+.. class:: DistributionFinder
+
+   An abstract base class subclass of :class:`importlib.abc.MetaPathFinder`
+   capable of discovering installed distributions.
+
+   Custom providers should implement this interface to supply metadata
+   for distributions that cannot be discovered through the file system
+   or other built-in mechanisms.
+
+   See the section on :ref:`implementing-custom-providers` for more details.
+
+.. class:: DistributionFinder.Context
+
+   Context object used to provide parameters when discovering distributions.
+
+   Keyword arguments supplied to :func:`distributions` or
+   :meth:`Distribution.discover` are stored as attributes in the context
+   object and can be used by distribution finders to filter or customize
+   their search results.
+
+   The context provides these attributes:
+
+   * ``name``: A package name to match, or ``None`` to match all distributions
+   * ``path``: A list of directories to search (defaults to :data:`sys.path`)
+
+   Custom distribution finders can accept other keyword parameters through
+   this context.
 
 While the module level API described above is the most common and convenient usage,
 you can get all of that information from the :class:`!Distribution` class.
@@ -466,6 +521,8 @@ This metadata finder search defaults to ``sys.path``, but varies slightly in how
 - ``importlib.metadata`` does not honor :class:`bytes` objects on ``sys.path``.
 - ``importlib.metadata`` will incidentally honor :py:class:`pathlib.Path` objects on ``sys.path`` even though such values will be ignored for imports.
 
+
+.. _implementing-custom-providers:
 
 Implementing Custom Providers
 =============================
