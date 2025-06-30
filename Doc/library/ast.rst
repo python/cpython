@@ -1079,6 +1079,11 @@ Imports
                         alias(name='z')],
                     level=0)])
 
+   .. versionchanged:: next
+
+      Previously, the ``level`` field was marked as optional in the interface
+      definition, although the CPython parser always sets this field to an integer.
+
 
 .. class:: alias(name, asname)
 
