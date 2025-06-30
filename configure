@@ -32547,6 +32547,11 @@ fi
 # See py_cpuid_features in pycore_cpuinfo.h for how to order fields
 # and where to put blank lines to separate processor generations for
 # AVX-512 instructions.
+#
+# Although AVX support is not guaranteed on Android [1], this is safe
+# because we do a runtime CPUID check.
+#
+# [1]: https://developer.android.com/ndk/guides/abis#86-64
 if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "WASI" || \
    { test -n "$ANDROID_API_LEVEL" && test "$ANDROID_API_LEVEL" -ge 28; }
 then
@@ -32556,13 +32561,13 @@ then
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -msse" >&5
 printf %s "checking whether C compiler accepts -msse... " >&6; }
-if test ${ax_cv_check_cflags___msse+y}
+if test ${ax_cv_check_cflags__Werror__msse+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
   e)
   ax_check_save_flags=$CFLAGS
-  CFLAGS="$CFLAGS  -msse"
+  CFLAGS="$CFLAGS -Werror -msse"
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -32576,18 +32581,18 @@ main (void)
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"
 then :
-  ax_cv_check_cflags___msse=yes
+  ax_cv_check_cflags__Werror__msse=yes
 else case e in #(
-  e) ax_cv_check_cflags___msse=no ;;
+  e) ax_cv_check_cflags__Werror__msse=no ;;
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
   CFLAGS=$ax_check_save_flags ;;
 esac
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___msse" >&5
-printf "%s\n" "$ax_cv_check_cflags___msse" >&6; }
-if test "x$ax_cv_check_cflags___msse" = xyes
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__msse" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__msse" >&6; }
+if test "x$ax_cv_check_cflags__Werror__msse" = xyes
 then :
   ac_cv_can_compile_simd_sse=yes
 else case e in #(
@@ -32599,7 +32604,7 @@ fi
 then :
 
 
-printf "%s\n" "#define Py_CAN_COMPILE_SIMD_SSE_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define _Py_CAN_COMPILE_SIMD_SSE_INSTRUCTIONS 1" >>confdefs.h
 
 
 fi
@@ -32611,13 +32616,13 @@ fi
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -msse2" >&5
 printf %s "checking whether C compiler accepts -msse2... " >&6; }
-if test ${ax_cv_check_cflags___msse2+y}
+if test ${ax_cv_check_cflags__Werror__msse2+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
   e)
   ax_check_save_flags=$CFLAGS
-  CFLAGS="$CFLAGS  -msse2"
+  CFLAGS="$CFLAGS -Werror -msse2"
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -32631,18 +32636,18 @@ main (void)
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"
 then :
-  ax_cv_check_cflags___msse2=yes
+  ax_cv_check_cflags__Werror__msse2=yes
 else case e in #(
-  e) ax_cv_check_cflags___msse2=no ;;
+  e) ax_cv_check_cflags__Werror__msse2=no ;;
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
   CFLAGS=$ax_check_save_flags ;;
 esac
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___msse2" >&5
-printf "%s\n" "$ax_cv_check_cflags___msse2" >&6; }
-if test "x$ax_cv_check_cflags___msse2" = xyes
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__msse2" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__msse2" >&6; }
+if test "x$ax_cv_check_cflags__Werror__msse2" = xyes
 then :
   ac_cv_can_compile_simd_sse2=yes
 else case e in #(
@@ -32654,7 +32659,7 @@ fi
 then :
 
 
-printf "%s\n" "#define Py_CAN_COMPILE_SIMD_SSE2_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define _Py_CAN_COMPILE_SIMD_SSE2_INSTRUCTIONS 1" >>confdefs.h
 
 
 fi
@@ -32666,13 +32671,13 @@ fi
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -msse3" >&5
 printf %s "checking whether C compiler accepts -msse3... " >&6; }
-if test ${ax_cv_check_cflags___msse3+y}
+if test ${ax_cv_check_cflags__Werror__msse3+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
   e)
   ax_check_save_flags=$CFLAGS
-  CFLAGS="$CFLAGS  -msse3"
+  CFLAGS="$CFLAGS -Werror -msse3"
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -32686,18 +32691,18 @@ main (void)
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"
 then :
-  ax_cv_check_cflags___msse3=yes
+  ax_cv_check_cflags__Werror__msse3=yes
 else case e in #(
-  e) ax_cv_check_cflags___msse3=no ;;
+  e) ax_cv_check_cflags__Werror__msse3=no ;;
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
   CFLAGS=$ax_check_save_flags ;;
 esac
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___msse3" >&5
-printf "%s\n" "$ax_cv_check_cflags___msse3" >&6; }
-if test "x$ax_cv_check_cflags___msse3" = xyes
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__msse3" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__msse3" >&6; }
+if test "x$ax_cv_check_cflags__Werror__msse3" = xyes
 then :
   ac_cv_can_compile_simd_sse3=yes
 else case e in #(
@@ -32709,7 +32714,7 @@ fi
 then :
 
 
-printf "%s\n" "#define Py_CAN_COMPILE_SIMD_SSE3_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define _Py_CAN_COMPILE_SIMD_SSE3_INSTRUCTIONS 1" >>confdefs.h
 
 
 fi
@@ -32721,13 +32726,13 @@ fi
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mssse3" >&5
 printf %s "checking whether C compiler accepts -mssse3... " >&6; }
-if test ${ax_cv_check_cflags___mssse3+y}
+if test ${ax_cv_check_cflags__Werror__mssse3+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
   e)
   ax_check_save_flags=$CFLAGS
-  CFLAGS="$CFLAGS  -mssse3"
+  CFLAGS="$CFLAGS -Werror -mssse3"
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -32741,18 +32746,18 @@ main (void)
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"
 then :
-  ax_cv_check_cflags___mssse3=yes
+  ax_cv_check_cflags__Werror__mssse3=yes
 else case e in #(
-  e) ax_cv_check_cflags___mssse3=no ;;
+  e) ax_cv_check_cflags__Werror__mssse3=no ;;
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
   CFLAGS=$ax_check_save_flags ;;
 esac
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___mssse3" >&5
-printf "%s\n" "$ax_cv_check_cflags___mssse3" >&6; }
-if test "x$ax_cv_check_cflags___mssse3" = xyes
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__mssse3" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__mssse3" >&6; }
+if test "x$ax_cv_check_cflags__Werror__mssse3" = xyes
 then :
   ac_cv_can_compile_simd_ssse3=yes
 else case e in #(
@@ -32764,7 +32769,7 @@ fi
 then :
 
 
-printf "%s\n" "#define Py_CAN_COMPILE_SIMD_SSSE3_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define _Py_CAN_COMPILE_SIMD_SSSE3_INSTRUCTIONS 1" >>confdefs.h
 
 
 fi
@@ -32776,13 +32781,13 @@ fi
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -msse4.1" >&5
 printf %s "checking whether C compiler accepts -msse4.1... " >&6; }
-if test ${ax_cv_check_cflags___msse4_1+y}
+if test ${ax_cv_check_cflags__Werror__msse4_1+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
   e)
   ax_check_save_flags=$CFLAGS
-  CFLAGS="$CFLAGS  -msse4.1"
+  CFLAGS="$CFLAGS -Werror -msse4.1"
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -32796,18 +32801,18 @@ main (void)
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"
 then :
-  ax_cv_check_cflags___msse4_1=yes
+  ax_cv_check_cflags__Werror__msse4_1=yes
 else case e in #(
-  e) ax_cv_check_cflags___msse4_1=no ;;
+  e) ax_cv_check_cflags__Werror__msse4_1=no ;;
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
   CFLAGS=$ax_check_save_flags ;;
 esac
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___msse4_1" >&5
-printf "%s\n" "$ax_cv_check_cflags___msse4_1" >&6; }
-if test "x$ax_cv_check_cflags___msse4_1" = xyes
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__msse4_1" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__msse4_1" >&6; }
+if test "x$ax_cv_check_cflags__Werror__msse4_1" = xyes
 then :
   ac_cv_can_compile_simd_sse4_1=yes
 else case e in #(
@@ -32819,7 +32824,7 @@ fi
 then :
 
 
-printf "%s\n" "#define Py_CAN_COMPILE_SIMD_SSE4_1_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define _Py_CAN_COMPILE_SIMD_SSE4_1_INSTRUCTIONS 1" >>confdefs.h
 
 
 fi
@@ -32831,13 +32836,13 @@ fi
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -msse4.2" >&5
 printf %s "checking whether C compiler accepts -msse4.2... " >&6; }
-if test ${ax_cv_check_cflags___msse4_2+y}
+if test ${ax_cv_check_cflags__Werror__msse4_2+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
   e)
   ax_check_save_flags=$CFLAGS
-  CFLAGS="$CFLAGS  -msse4.2"
+  CFLAGS="$CFLAGS -Werror -msse4.2"
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -32851,18 +32856,18 @@ main (void)
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"
 then :
-  ax_cv_check_cflags___msse4_2=yes
+  ax_cv_check_cflags__Werror__msse4_2=yes
 else case e in #(
-  e) ax_cv_check_cflags___msse4_2=no ;;
+  e) ax_cv_check_cflags__Werror__msse4_2=no ;;
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
   CFLAGS=$ax_check_save_flags ;;
 esac
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___msse4_2" >&5
-printf "%s\n" "$ax_cv_check_cflags___msse4_2" >&6; }
-if test "x$ax_cv_check_cflags___msse4_2" = xyes
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__msse4_2" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__msse4_2" >&6; }
+if test "x$ax_cv_check_cflags__Werror__msse4_2" = xyes
 then :
   ac_cv_can_compile_simd_sse4_2=yes
 else case e in #(
@@ -32874,7 +32879,7 @@ fi
 then :
 
 
-printf "%s\n" "#define Py_CAN_COMPILE_SIMD_SSE4_2_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define _Py_CAN_COMPILE_SIMD_SSE4_2_INSTRUCTIONS 1" >>confdefs.h
 
 
 fi
@@ -32887,13 +32892,13 @@ fi
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavx" >&5
 printf %s "checking whether C compiler accepts -mavx... " >&6; }
-if test ${ax_cv_check_cflags___mavx+y}
+if test ${ax_cv_check_cflags__Werror__mavx+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
   e)
   ax_check_save_flags=$CFLAGS
-  CFLAGS="$CFLAGS  -mavx"
+  CFLAGS="$CFLAGS -Werror -mavx"
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -32907,18 +32912,18 @@ main (void)
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"
 then :
-  ax_cv_check_cflags___mavx=yes
+  ax_cv_check_cflags__Werror__mavx=yes
 else case e in #(
-  e) ax_cv_check_cflags___mavx=no ;;
+  e) ax_cv_check_cflags__Werror__mavx=no ;;
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
   CFLAGS=$ax_check_save_flags ;;
 esac
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___mavx" >&5
-printf "%s\n" "$ax_cv_check_cflags___mavx" >&6; }
-if test "x$ax_cv_check_cflags___mavx" = xyes
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__mavx" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__mavx" >&6; }
+if test "x$ax_cv_check_cflags__Werror__mavx" = xyes
 then :
   ac_cv_can_compile_simd_avx=yes
 else case e in #(
@@ -32930,7 +32935,7 @@ fi
 then :
 
 
-printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define _Py_CAN_COMPILE_SIMD_AVX_INSTRUCTIONS 1" >>confdefs.h
 
 
 fi
@@ -32942,13 +32947,13 @@ fi
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavxifma" >&5
 printf %s "checking whether C compiler accepts -mavxifma... " >&6; }
-if test ${ax_cv_check_cflags___mavxifma+y}
+if test ${ax_cv_check_cflags__Werror__mavxifma+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
   e)
   ax_check_save_flags=$CFLAGS
-  CFLAGS="$CFLAGS  -mavxifma"
+  CFLAGS="$CFLAGS -Werror -mavxifma"
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -32962,18 +32967,18 @@ main (void)
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"
 then :
-  ax_cv_check_cflags___mavxifma=yes
+  ax_cv_check_cflags__Werror__mavxifma=yes
 else case e in #(
-  e) ax_cv_check_cflags___mavxifma=no ;;
+  e) ax_cv_check_cflags__Werror__mavxifma=no ;;
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
   CFLAGS=$ax_check_save_flags ;;
 esac
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___mavxifma" >&5
-printf "%s\n" "$ax_cv_check_cflags___mavxifma" >&6; }
-if test "x$ax_cv_check_cflags___mavxifma" = xyes
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__mavxifma" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__mavxifma" >&6; }
+if test "x$ax_cv_check_cflags__Werror__mavxifma" = xyes
 then :
   ac_cv_can_compile_simd_avx_ifma=yes
 else case e in #(
@@ -32985,7 +32990,7 @@ fi
 then :
 
 
-printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX_IFMA_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define _Py_CAN_COMPILE_SIMD_AVX_IFMA_INSTRUCTIONS 1" >>confdefs.h
 
 
 fi
@@ -32997,13 +33002,13 @@ fi
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavxneconvert" >&5
 printf %s "checking whether C compiler accepts -mavxneconvert... " >&6; }
-if test ${ax_cv_check_cflags___mavxneconvert+y}
+if test ${ax_cv_check_cflags__Werror__mavxneconvert+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
   e)
   ax_check_save_flags=$CFLAGS
-  CFLAGS="$CFLAGS  -mavxneconvert"
+  CFLAGS="$CFLAGS -Werror -mavxneconvert"
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -33017,18 +33022,18 @@ main (void)
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"
 then :
-  ax_cv_check_cflags___mavxneconvert=yes
+  ax_cv_check_cflags__Werror__mavxneconvert=yes
 else case e in #(
-  e) ax_cv_check_cflags___mavxneconvert=no ;;
+  e) ax_cv_check_cflags__Werror__mavxneconvert=no ;;
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
   CFLAGS=$ax_check_save_flags ;;
 esac
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___mavxneconvert" >&5
-printf "%s\n" "$ax_cv_check_cflags___mavxneconvert" >&6; }
-if test "x$ax_cv_check_cflags___mavxneconvert" = xyes
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__mavxneconvert" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__mavxneconvert" >&6; }
+if test "x$ax_cv_check_cflags__Werror__mavxneconvert" = xyes
 then :
   ac_cv_can_compile_simd_avx_ne_convert=yes
 else case e in #(
@@ -33040,7 +33045,7 @@ fi
 then :
 
 
-printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX_NE_CONVERT_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define _Py_CAN_COMPILE_SIMD_AVX_NE_CONVERT_INSTRUCTIONS 1" >>confdefs.h
 
 
 fi
@@ -33053,13 +33058,13 @@ fi
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavxvnni" >&5
 printf %s "checking whether C compiler accepts -mavxvnni... " >&6; }
-if test ${ax_cv_check_cflags___mavxvnni+y}
+if test ${ax_cv_check_cflags__Werror__mavxvnni+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
   e)
   ax_check_save_flags=$CFLAGS
-  CFLAGS="$CFLAGS  -mavxvnni"
+  CFLAGS="$CFLAGS -Werror -mavxvnni"
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -33073,18 +33078,18 @@ main (void)
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"
 then :
-  ax_cv_check_cflags___mavxvnni=yes
+  ax_cv_check_cflags__Werror__mavxvnni=yes
 else case e in #(
-  e) ax_cv_check_cflags___mavxvnni=no ;;
+  e) ax_cv_check_cflags__Werror__mavxvnni=no ;;
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
   CFLAGS=$ax_check_save_flags ;;
 esac
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___mavxvnni" >&5
-printf "%s\n" "$ax_cv_check_cflags___mavxvnni" >&6; }
-if test "x$ax_cv_check_cflags___mavxvnni" = xyes
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__mavxvnni" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__mavxvnni" >&6; }
+if test "x$ax_cv_check_cflags__Werror__mavxvnni" = xyes
 then :
   ac_cv_can_compile_simd_avx_vnni=yes
 else case e in #(
@@ -33096,7 +33101,7 @@ fi
 then :
 
 
-printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX_VNNI_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define _Py_CAN_COMPILE_SIMD_AVX_VNNI_INSTRUCTIONS 1" >>confdefs.h
 
 
 fi
@@ -33108,13 +33113,13 @@ fi
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavxvnniint8" >&5
 printf %s "checking whether C compiler accepts -mavxvnniint8... " >&6; }
-if test ${ax_cv_check_cflags___mavxvnniint8+y}
+if test ${ax_cv_check_cflags__Werror__mavxvnniint8+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
   e)
   ax_check_save_flags=$CFLAGS
-  CFLAGS="$CFLAGS  -mavxvnniint8"
+  CFLAGS="$CFLAGS -Werror -mavxvnniint8"
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -33128,18 +33133,18 @@ main (void)
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"
 then :
-  ax_cv_check_cflags___mavxvnniint8=yes
+  ax_cv_check_cflags__Werror__mavxvnniint8=yes
 else case e in #(
-  e) ax_cv_check_cflags___mavxvnniint8=no ;;
+  e) ax_cv_check_cflags__Werror__mavxvnniint8=no ;;
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
   CFLAGS=$ax_check_save_flags ;;
 esac
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___mavxvnniint8" >&5
-printf "%s\n" "$ax_cv_check_cflags___mavxvnniint8" >&6; }
-if test "x$ax_cv_check_cflags___mavxvnniint8" = xyes
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__mavxvnniint8" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__mavxvnniint8" >&6; }
+if test "x$ax_cv_check_cflags__Werror__mavxvnniint8" = xyes
 then :
   ac_cv_can_compile_simd_avx_vnni_int8=yes
 else case e in #(
@@ -33151,7 +33156,7 @@ fi
 then :
 
 
-printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX_VNNI_INT8_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define _Py_CAN_COMPILE_SIMD_AVX_VNNI_INT8_INSTRUCTIONS 1" >>confdefs.h
 
 
 fi
@@ -33163,13 +33168,13 @@ fi
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavxvnniint16" >&5
 printf %s "checking whether C compiler accepts -mavxvnniint16... " >&6; }
-if test ${ax_cv_check_cflags___mavxvnniint16+y}
+if test ${ax_cv_check_cflags__Werror__mavxvnniint16+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
   e)
   ax_check_save_flags=$CFLAGS
-  CFLAGS="$CFLAGS  -mavxvnniint16"
+  CFLAGS="$CFLAGS -Werror -mavxvnniint16"
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -33183,18 +33188,18 @@ main (void)
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"
 then :
-  ax_cv_check_cflags___mavxvnniint16=yes
+  ax_cv_check_cflags__Werror__mavxvnniint16=yes
 else case e in #(
-  e) ax_cv_check_cflags___mavxvnniint16=no ;;
+  e) ax_cv_check_cflags__Werror__mavxvnniint16=no ;;
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
   CFLAGS=$ax_check_save_flags ;;
 esac
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___mavxvnniint16" >&5
-printf "%s\n" "$ax_cv_check_cflags___mavxvnniint16" >&6; }
-if test "x$ax_cv_check_cflags___mavxvnniint16" = xyes
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__mavxvnniint16" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__mavxvnniint16" >&6; }
+if test "x$ax_cv_check_cflags__Werror__mavxvnniint16" = xyes
 then :
   ac_cv_can_compile_simd_avx_vnni_int16=yes
 else case e in #(
@@ -33206,7 +33211,7 @@ fi
 then :
 
 
-printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX_VNNI_INT16_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define _Py_CAN_COMPILE_SIMD_AVX_VNNI_INT16_INSTRUCTIONS 1" >>confdefs.h
 
 
 fi
@@ -33219,13 +33224,13 @@ fi
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavx2" >&5
 printf %s "checking whether C compiler accepts -mavx2... " >&6; }
-if test ${ax_cv_check_cflags___mavx2+y}
+if test ${ax_cv_check_cflags__Werror__mavx2+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
   e)
   ax_check_save_flags=$CFLAGS
-  CFLAGS="$CFLAGS  -mavx2"
+  CFLAGS="$CFLAGS -Werror -mavx2"
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -33239,18 +33244,18 @@ main (void)
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"
 then :
-  ax_cv_check_cflags___mavx2=yes
+  ax_cv_check_cflags__Werror__mavx2=yes
 else case e in #(
-  e) ax_cv_check_cflags___mavx2=no ;;
+  e) ax_cv_check_cflags__Werror__mavx2=no ;;
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
   CFLAGS=$ax_check_save_flags ;;
 esac
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___mavx2" >&5
-printf "%s\n" "$ax_cv_check_cflags___mavx2" >&6; }
-if test "x$ax_cv_check_cflags___mavx2" = xyes
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__mavx2" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__mavx2" >&6; }
+if test "x$ax_cv_check_cflags__Werror__mavx2" = xyes
 then :
   ac_cv_can_compile_simd_avx2=yes
 else case e in #(
@@ -33262,7 +33267,7 @@ fi
 then :
 
 
-printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX2_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define _Py_CAN_COMPILE_SIMD_AVX2_INSTRUCTIONS 1" >>confdefs.h
 
 
 fi
@@ -33275,13 +33280,13 @@ fi
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavx512f" >&5
 printf %s "checking whether C compiler accepts -mavx512f... " >&6; }
-if test ${ax_cv_check_cflags___mavx512f+y}
+if test ${ax_cv_check_cflags__Werror__mavx512f+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
   e)
   ax_check_save_flags=$CFLAGS
-  CFLAGS="$CFLAGS  -mavx512f"
+  CFLAGS="$CFLAGS -Werror -mavx512f"
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -33295,18 +33300,18 @@ main (void)
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"
 then :
-  ax_cv_check_cflags___mavx512f=yes
+  ax_cv_check_cflags__Werror__mavx512f=yes
 else case e in #(
-  e) ax_cv_check_cflags___mavx512f=no ;;
+  e) ax_cv_check_cflags__Werror__mavx512f=no ;;
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
   CFLAGS=$ax_check_save_flags ;;
 esac
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___mavx512f" >&5
-printf "%s\n" "$ax_cv_check_cflags___mavx512f" >&6; }
-if test "x$ax_cv_check_cflags___mavx512f" = xyes
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__mavx512f" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__mavx512f" >&6; }
+if test "x$ax_cv_check_cflags__Werror__mavx512f" = xyes
 then :
   ac_cv_can_compile_simd_avx512_f=yes
 else case e in #(
@@ -33318,7 +33323,7 @@ fi
 then :
 
 
-printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX512_F_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define _Py_CAN_COMPILE_SIMD_AVX512_F_INSTRUCTIONS 1" >>confdefs.h
 
 
 fi
@@ -33330,13 +33335,13 @@ fi
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavx512cd" >&5
 printf %s "checking whether C compiler accepts -mavx512cd... " >&6; }
-if test ${ax_cv_check_cflags___mavx512cd+y}
+if test ${ax_cv_check_cflags__Werror__mavx512cd+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
   e)
   ax_check_save_flags=$CFLAGS
-  CFLAGS="$CFLAGS  -mavx512cd"
+  CFLAGS="$CFLAGS -Werror -mavx512cd"
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -33350,18 +33355,18 @@ main (void)
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"
 then :
-  ax_cv_check_cflags___mavx512cd=yes
+  ax_cv_check_cflags__Werror__mavx512cd=yes
 else case e in #(
-  e) ax_cv_check_cflags___mavx512cd=no ;;
+  e) ax_cv_check_cflags__Werror__mavx512cd=no ;;
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
   CFLAGS=$ax_check_save_flags ;;
 esac
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___mavx512cd" >&5
-printf "%s\n" "$ax_cv_check_cflags___mavx512cd" >&6; }
-if test "x$ax_cv_check_cflags___mavx512cd" = xyes
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__mavx512cd" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__mavx512cd" >&6; }
+if test "x$ax_cv_check_cflags__Werror__mavx512cd" = xyes
 then :
   ac_cv_can_compile_simd_avx512_cd=yes
 else case e in #(
@@ -33373,7 +33378,7 @@ fi
 then :
 
 
-printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX512_CD_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define _Py_CAN_COMPILE_SIMD_AVX512_CD_INSTRUCTIONS 1" >>confdefs.h
 
 
 fi
@@ -33386,13 +33391,13 @@ fi
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavx512er" >&5
 printf %s "checking whether C compiler accepts -mavx512er... " >&6; }
-if test ${ax_cv_check_cflags___mavx512er+y}
+if test ${ax_cv_check_cflags__Werror__mavx512er+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
   e)
   ax_check_save_flags=$CFLAGS
-  CFLAGS="$CFLAGS  -mavx512er"
+  CFLAGS="$CFLAGS -Werror -mavx512er"
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -33406,18 +33411,18 @@ main (void)
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"
 then :
-  ax_cv_check_cflags___mavx512er=yes
+  ax_cv_check_cflags__Werror__mavx512er=yes
 else case e in #(
-  e) ax_cv_check_cflags___mavx512er=no ;;
+  e) ax_cv_check_cflags__Werror__mavx512er=no ;;
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
   CFLAGS=$ax_check_save_flags ;;
 esac
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___mavx512er" >&5
-printf "%s\n" "$ax_cv_check_cflags___mavx512er" >&6; }
-if test "x$ax_cv_check_cflags___mavx512er" = xyes
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__mavx512er" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__mavx512er" >&6; }
+if test "x$ax_cv_check_cflags__Werror__mavx512er" = xyes
 then :
   ac_cv_can_compile_simd_avx512_er=yes
 else case e in #(
@@ -33429,7 +33434,7 @@ fi
 then :
 
 
-printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX512_ER_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define _Py_CAN_COMPILE_SIMD_AVX512_ER_INSTRUCTIONS 1" >>confdefs.h
 
 
 fi
@@ -33441,13 +33446,13 @@ fi
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavx512pf" >&5
 printf %s "checking whether C compiler accepts -mavx512pf... " >&6; }
-if test ${ax_cv_check_cflags___mavx512pf+y}
+if test ${ax_cv_check_cflags__Werror__mavx512pf+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
   e)
   ax_check_save_flags=$CFLAGS
-  CFLAGS="$CFLAGS  -mavx512pf"
+  CFLAGS="$CFLAGS -Werror -mavx512pf"
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -33461,18 +33466,18 @@ main (void)
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"
 then :
-  ax_cv_check_cflags___mavx512pf=yes
+  ax_cv_check_cflags__Werror__mavx512pf=yes
 else case e in #(
-  e) ax_cv_check_cflags___mavx512pf=no ;;
+  e) ax_cv_check_cflags__Werror__mavx512pf=no ;;
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
   CFLAGS=$ax_check_save_flags ;;
 esac
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___mavx512pf" >&5
-printf "%s\n" "$ax_cv_check_cflags___mavx512pf" >&6; }
-if test "x$ax_cv_check_cflags___mavx512pf" = xyes
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__mavx512pf" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__mavx512pf" >&6; }
+if test "x$ax_cv_check_cflags__Werror__mavx512pf" = xyes
 then :
   ac_cv_can_compile_simd_avx512_pf=yes
 else case e in #(
@@ -33484,7 +33489,7 @@ fi
 then :
 
 
-printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX512_PF_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define _Py_CAN_COMPILE_SIMD_AVX512_PF_INSTRUCTIONS 1" >>confdefs.h
 
 
 fi
@@ -33497,13 +33502,13 @@ fi
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavx5124fmaps" >&5
 printf %s "checking whether C compiler accepts -mavx5124fmaps... " >&6; }
-if test ${ax_cv_check_cflags___mavx5124fmaps+y}
+if test ${ax_cv_check_cflags__Werror__mavx5124fmaps+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
   e)
   ax_check_save_flags=$CFLAGS
-  CFLAGS="$CFLAGS  -mavx5124fmaps"
+  CFLAGS="$CFLAGS -Werror -mavx5124fmaps"
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -33517,18 +33522,18 @@ main (void)
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"
 then :
-  ax_cv_check_cflags___mavx5124fmaps=yes
+  ax_cv_check_cflags__Werror__mavx5124fmaps=yes
 else case e in #(
-  e) ax_cv_check_cflags___mavx5124fmaps=no ;;
+  e) ax_cv_check_cflags__Werror__mavx5124fmaps=no ;;
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
   CFLAGS=$ax_check_save_flags ;;
 esac
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___mavx5124fmaps" >&5
-printf "%s\n" "$ax_cv_check_cflags___mavx5124fmaps" >&6; }
-if test "x$ax_cv_check_cflags___mavx5124fmaps" = xyes
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__mavx5124fmaps" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__mavx5124fmaps" >&6; }
+if test "x$ax_cv_check_cflags__Werror__mavx5124fmaps" = xyes
 then :
   ac_cv_can_compile_simd_avx512_4fmaps=yes
 else case e in #(
@@ -33540,7 +33545,7 @@ fi
 then :
 
 
-printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX512_4FMAPS_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define _Py_CAN_COMPILE_SIMD_AVX512_4FMAPS_INSTRUCTIONS 1" >>confdefs.h
 
 
 fi
@@ -33552,13 +33557,13 @@ fi
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavx5124vnniw" >&5
 printf %s "checking whether C compiler accepts -mavx5124vnniw... " >&6; }
-if test ${ax_cv_check_cflags___mavx5124vnniw+y}
+if test ${ax_cv_check_cflags__Werror__mavx5124vnniw+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
   e)
   ax_check_save_flags=$CFLAGS
-  CFLAGS="$CFLAGS  -mavx5124vnniw"
+  CFLAGS="$CFLAGS -Werror -mavx5124vnniw"
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -33572,18 +33577,18 @@ main (void)
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"
 then :
-  ax_cv_check_cflags___mavx5124vnniw=yes
+  ax_cv_check_cflags__Werror__mavx5124vnniw=yes
 else case e in #(
-  e) ax_cv_check_cflags___mavx5124vnniw=no ;;
+  e) ax_cv_check_cflags__Werror__mavx5124vnniw=no ;;
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
   CFLAGS=$ax_check_save_flags ;;
 esac
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___mavx5124vnniw" >&5
-printf "%s\n" "$ax_cv_check_cflags___mavx5124vnniw" >&6; }
-if test "x$ax_cv_check_cflags___mavx5124vnniw" = xyes
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__mavx5124vnniw" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__mavx5124vnniw" >&6; }
+if test "x$ax_cv_check_cflags__Werror__mavx5124vnniw" = xyes
 then :
   ac_cv_can_compile_simd_avx512_4vnniw=yes
 else case e in #(
@@ -33595,7 +33600,7 @@ fi
 then :
 
 
-printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX512_4VNNIW_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define _Py_CAN_COMPILE_SIMD_AVX512_4VNNIW_INSTRUCTIONS 1" >>confdefs.h
 
 
 fi
@@ -33608,13 +33613,13 @@ fi
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavx512vpopcntdq" >&5
 printf %s "checking whether C compiler accepts -mavx512vpopcntdq... " >&6; }
-if test ${ax_cv_check_cflags___mavx512vpopcntdq+y}
+if test ${ax_cv_check_cflags__Werror__mavx512vpopcntdq+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
   e)
   ax_check_save_flags=$CFLAGS
-  CFLAGS="$CFLAGS  -mavx512vpopcntdq"
+  CFLAGS="$CFLAGS -Werror -mavx512vpopcntdq"
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -33628,18 +33633,18 @@ main (void)
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"
 then :
-  ax_cv_check_cflags___mavx512vpopcntdq=yes
+  ax_cv_check_cflags__Werror__mavx512vpopcntdq=yes
 else case e in #(
-  e) ax_cv_check_cflags___mavx512vpopcntdq=no ;;
+  e) ax_cv_check_cflags__Werror__mavx512vpopcntdq=no ;;
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
   CFLAGS=$ax_check_save_flags ;;
 esac
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___mavx512vpopcntdq" >&5
-printf "%s\n" "$ax_cv_check_cflags___mavx512vpopcntdq" >&6; }
-if test "x$ax_cv_check_cflags___mavx512vpopcntdq" = xyes
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__mavx512vpopcntdq" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__mavx512vpopcntdq" >&6; }
+if test "x$ax_cv_check_cflags__Werror__mavx512vpopcntdq" = xyes
 then :
   ac_cv_can_compile_simd_avx512_vpopcntdq=yes
 else case e in #(
@@ -33651,7 +33656,7 @@ fi
 then :
 
 
-printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX512_VPOPCNTDQ_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define _Py_CAN_COMPILE_SIMD_AVX512_VPOPCNTDQ_INSTRUCTIONS 1" >>confdefs.h
 
 
 fi
@@ -33664,13 +33669,13 @@ fi
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavx512vl" >&5
 printf %s "checking whether C compiler accepts -mavx512vl... " >&6; }
-if test ${ax_cv_check_cflags___mavx512vl+y}
+if test ${ax_cv_check_cflags__Werror__mavx512vl+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
   e)
   ax_check_save_flags=$CFLAGS
-  CFLAGS="$CFLAGS  -mavx512vl"
+  CFLAGS="$CFLAGS -Werror -mavx512vl"
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -33684,18 +33689,18 @@ main (void)
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"
 then :
-  ax_cv_check_cflags___mavx512vl=yes
+  ax_cv_check_cflags__Werror__mavx512vl=yes
 else case e in #(
-  e) ax_cv_check_cflags___mavx512vl=no ;;
+  e) ax_cv_check_cflags__Werror__mavx512vl=no ;;
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
   CFLAGS=$ax_check_save_flags ;;
 esac
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___mavx512vl" >&5
-printf "%s\n" "$ax_cv_check_cflags___mavx512vl" >&6; }
-if test "x$ax_cv_check_cflags___mavx512vl" = xyes
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__mavx512vl" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__mavx512vl" >&6; }
+if test "x$ax_cv_check_cflags__Werror__mavx512vl" = xyes
 then :
   ac_cv_can_compile_simd_avx512_vl=yes
 else case e in #(
@@ -33707,7 +33712,7 @@ fi
 then :
 
 
-printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX512_VL_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define _Py_CAN_COMPILE_SIMD_AVX512_VL_INSTRUCTIONS 1" >>confdefs.h
 
 
 fi
@@ -33719,13 +33724,13 @@ fi
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavx512dq" >&5
 printf %s "checking whether C compiler accepts -mavx512dq... " >&6; }
-if test ${ax_cv_check_cflags___mavx512dq+y}
+if test ${ax_cv_check_cflags__Werror__mavx512dq+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
   e)
   ax_check_save_flags=$CFLAGS
-  CFLAGS="$CFLAGS  -mavx512dq"
+  CFLAGS="$CFLAGS -Werror -mavx512dq"
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -33739,18 +33744,18 @@ main (void)
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"
 then :
-  ax_cv_check_cflags___mavx512dq=yes
+  ax_cv_check_cflags__Werror__mavx512dq=yes
 else case e in #(
-  e) ax_cv_check_cflags___mavx512dq=no ;;
+  e) ax_cv_check_cflags__Werror__mavx512dq=no ;;
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
   CFLAGS=$ax_check_save_flags ;;
 esac
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___mavx512dq" >&5
-printf "%s\n" "$ax_cv_check_cflags___mavx512dq" >&6; }
-if test "x$ax_cv_check_cflags___mavx512dq" = xyes
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__mavx512dq" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__mavx512dq" >&6; }
+if test "x$ax_cv_check_cflags__Werror__mavx512dq" = xyes
 then :
   ac_cv_can_compile_simd_avx512_dq=yes
 else case e in #(
@@ -33762,7 +33767,7 @@ fi
 then :
 
 
-printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX512_DQ_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define _Py_CAN_COMPILE_SIMD_AVX512_DQ_INSTRUCTIONS 1" >>confdefs.h
 
 
 fi
@@ -33774,13 +33779,13 @@ fi
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavx512bw" >&5
 printf %s "checking whether C compiler accepts -mavx512bw... " >&6; }
-if test ${ax_cv_check_cflags___mavx512bw+y}
+if test ${ax_cv_check_cflags__Werror__mavx512bw+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
   e)
   ax_check_save_flags=$CFLAGS
-  CFLAGS="$CFLAGS  -mavx512bw"
+  CFLAGS="$CFLAGS -Werror -mavx512bw"
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -33794,18 +33799,18 @@ main (void)
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"
 then :
-  ax_cv_check_cflags___mavx512bw=yes
+  ax_cv_check_cflags__Werror__mavx512bw=yes
 else case e in #(
-  e) ax_cv_check_cflags___mavx512bw=no ;;
+  e) ax_cv_check_cflags__Werror__mavx512bw=no ;;
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
   CFLAGS=$ax_check_save_flags ;;
 esac
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___mavx512bw" >&5
-printf "%s\n" "$ax_cv_check_cflags___mavx512bw" >&6; }
-if test "x$ax_cv_check_cflags___mavx512bw" = xyes
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__mavx512bw" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__mavx512bw" >&6; }
+if test "x$ax_cv_check_cflags__Werror__mavx512bw" = xyes
 then :
   ac_cv_can_compile_simd_avx512_bw=yes
 else case e in #(
@@ -33817,7 +33822,7 @@ fi
 then :
 
 
-printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX512_BW_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define _Py_CAN_COMPILE_SIMD_AVX512_BW_INSTRUCTIONS 1" >>confdefs.h
 
 
 fi
@@ -33830,13 +33835,13 @@ fi
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavx512ifma" >&5
 printf %s "checking whether C compiler accepts -mavx512ifma... " >&6; }
-if test ${ax_cv_check_cflags___mavx512ifma+y}
+if test ${ax_cv_check_cflags__Werror__mavx512ifma+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
   e)
   ax_check_save_flags=$CFLAGS
-  CFLAGS="$CFLAGS  -mavx512ifma"
+  CFLAGS="$CFLAGS -Werror -mavx512ifma"
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -33850,18 +33855,18 @@ main (void)
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"
 then :
-  ax_cv_check_cflags___mavx512ifma=yes
+  ax_cv_check_cflags__Werror__mavx512ifma=yes
 else case e in #(
-  e) ax_cv_check_cflags___mavx512ifma=no ;;
+  e) ax_cv_check_cflags__Werror__mavx512ifma=no ;;
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
   CFLAGS=$ax_check_save_flags ;;
 esac
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___mavx512ifma" >&5
-printf "%s\n" "$ax_cv_check_cflags___mavx512ifma" >&6; }
-if test "x$ax_cv_check_cflags___mavx512ifma" = xyes
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__mavx512ifma" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__mavx512ifma" >&6; }
+if test "x$ax_cv_check_cflags__Werror__mavx512ifma" = xyes
 then :
   ac_cv_can_compile_simd_avx512_ifma=yes
 else case e in #(
@@ -33873,7 +33878,7 @@ fi
 then :
 
 
-printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX512_IFMA_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define _Py_CAN_COMPILE_SIMD_AVX512_IFMA_INSTRUCTIONS 1" >>confdefs.h
 
 
 fi
@@ -33885,13 +33890,13 @@ fi
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavx512vbmi" >&5
 printf %s "checking whether C compiler accepts -mavx512vbmi... " >&6; }
-if test ${ax_cv_check_cflags___mavx512vbmi+y}
+if test ${ax_cv_check_cflags__Werror__mavx512vbmi+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
   e)
   ax_check_save_flags=$CFLAGS
-  CFLAGS="$CFLAGS  -mavx512vbmi"
+  CFLAGS="$CFLAGS -Werror -mavx512vbmi"
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -33905,18 +33910,18 @@ main (void)
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"
 then :
-  ax_cv_check_cflags___mavx512vbmi=yes
+  ax_cv_check_cflags__Werror__mavx512vbmi=yes
 else case e in #(
-  e) ax_cv_check_cflags___mavx512vbmi=no ;;
+  e) ax_cv_check_cflags__Werror__mavx512vbmi=no ;;
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
   CFLAGS=$ax_check_save_flags ;;
 esac
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___mavx512vbmi" >&5
-printf "%s\n" "$ax_cv_check_cflags___mavx512vbmi" >&6; }
-if test "x$ax_cv_check_cflags___mavx512vbmi" = xyes
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__mavx512vbmi" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__mavx512vbmi" >&6; }
+if test "x$ax_cv_check_cflags__Werror__mavx512vbmi" = xyes
 then :
   ac_cv_can_compile_simd_avx512_vbmi=yes
 else case e in #(
@@ -33928,7 +33933,7 @@ fi
 then :
 
 
-printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX512_VBMI_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define _Py_CAN_COMPILE_SIMD_AVX512_VBMI_INSTRUCTIONS 1" >>confdefs.h
 
 
 fi
@@ -33941,13 +33946,13 @@ fi
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavx512vnni" >&5
 printf %s "checking whether C compiler accepts -mavx512vnni... " >&6; }
-if test ${ax_cv_check_cflags___mavx512vnni+y}
+if test ${ax_cv_check_cflags__Werror__mavx512vnni+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
   e)
   ax_check_save_flags=$CFLAGS
-  CFLAGS="$CFLAGS  -mavx512vnni"
+  CFLAGS="$CFLAGS -Werror -mavx512vnni"
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -33961,18 +33966,18 @@ main (void)
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"
 then :
-  ax_cv_check_cflags___mavx512vnni=yes
+  ax_cv_check_cflags__Werror__mavx512vnni=yes
 else case e in #(
-  e) ax_cv_check_cflags___mavx512vnni=no ;;
+  e) ax_cv_check_cflags__Werror__mavx512vnni=no ;;
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
   CFLAGS=$ax_check_save_flags ;;
 esac
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___mavx512vnni" >&5
-printf "%s\n" "$ax_cv_check_cflags___mavx512vnni" >&6; }
-if test "x$ax_cv_check_cflags___mavx512vnni" = xyes
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__mavx512vnni" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__mavx512vnni" >&6; }
+if test "x$ax_cv_check_cflags__Werror__mavx512vnni" = xyes
 then :
   ac_cv_can_compile_simd_avx512_vnni=yes
 else case e in #(
@@ -33984,7 +33989,7 @@ fi
 then :
 
 
-printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX512_VNNI_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define _Py_CAN_COMPILE_SIMD_AVX512_VNNI_INSTRUCTIONS 1" >>confdefs.h
 
 
 fi
@@ -33997,13 +34002,13 @@ fi
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavx512vbmi2" >&5
 printf %s "checking whether C compiler accepts -mavx512vbmi2... " >&6; }
-if test ${ax_cv_check_cflags___mavx512vbmi2+y}
+if test ${ax_cv_check_cflags__Werror__mavx512vbmi2+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
   e)
   ax_check_save_flags=$CFLAGS
-  CFLAGS="$CFLAGS  -mavx512vbmi2"
+  CFLAGS="$CFLAGS -Werror -mavx512vbmi2"
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -34017,18 +34022,18 @@ main (void)
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"
 then :
-  ax_cv_check_cflags___mavx512vbmi2=yes
+  ax_cv_check_cflags__Werror__mavx512vbmi2=yes
 else case e in #(
-  e) ax_cv_check_cflags___mavx512vbmi2=no ;;
+  e) ax_cv_check_cflags__Werror__mavx512vbmi2=no ;;
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
   CFLAGS=$ax_check_save_flags ;;
 esac
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___mavx512vbmi2" >&5
-printf "%s\n" "$ax_cv_check_cflags___mavx512vbmi2" >&6; }
-if test "x$ax_cv_check_cflags___mavx512vbmi2" = xyes
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__mavx512vbmi2" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__mavx512vbmi2" >&6; }
+if test "x$ax_cv_check_cflags__Werror__mavx512vbmi2" = xyes
 then :
   ac_cv_can_compile_simd_avx512_vbmi2=yes
 else case e in #(
@@ -34040,7 +34045,7 @@ fi
 then :
 
 
-printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX512_VBMI2_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define _Py_CAN_COMPILE_SIMD_AVX512_VBMI2_INSTRUCTIONS 1" >>confdefs.h
 
 
 fi
@@ -34052,13 +34057,13 @@ fi
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavx512bitalg" >&5
 printf %s "checking whether C compiler accepts -mavx512bitalg... " >&6; }
-if test ${ax_cv_check_cflags___mavx512bitalg+y}
+if test ${ax_cv_check_cflags__Werror__mavx512bitalg+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
   e)
   ax_check_save_flags=$CFLAGS
-  CFLAGS="$CFLAGS  -mavx512bitalg"
+  CFLAGS="$CFLAGS -Werror -mavx512bitalg"
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -34072,18 +34077,18 @@ main (void)
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"
 then :
-  ax_cv_check_cflags___mavx512bitalg=yes
+  ax_cv_check_cflags__Werror__mavx512bitalg=yes
 else case e in #(
-  e) ax_cv_check_cflags___mavx512bitalg=no ;;
+  e) ax_cv_check_cflags__Werror__mavx512bitalg=no ;;
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
   CFLAGS=$ax_check_save_flags ;;
 esac
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___mavx512bitalg" >&5
-printf "%s\n" "$ax_cv_check_cflags___mavx512bitalg" >&6; }
-if test "x$ax_cv_check_cflags___mavx512bitalg" = xyes
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__mavx512bitalg" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__mavx512bitalg" >&6; }
+if test "x$ax_cv_check_cflags__Werror__mavx512bitalg" = xyes
 then :
   ac_cv_can_compile_simd_avx512_bitalg=yes
 else case e in #(
@@ -34095,7 +34100,7 @@ fi
 then :
 
 
-printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX512_BITALG_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define _Py_CAN_COMPILE_SIMD_AVX512_BITALG_INSTRUCTIONS 1" >>confdefs.h
 
 
 fi
@@ -34108,13 +34113,13 @@ fi
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavx512vp2intersect" >&5
 printf %s "checking whether C compiler accepts -mavx512vp2intersect... " >&6; }
-if test ${ax_cv_check_cflags___mavx512vp2intersect+y}
+if test ${ax_cv_check_cflags__Werror__mavx512vp2intersect+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
   e)
   ax_check_save_flags=$CFLAGS
-  CFLAGS="$CFLAGS  -mavx512vp2intersect"
+  CFLAGS="$CFLAGS -Werror -mavx512vp2intersect"
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -34128,18 +34133,18 @@ main (void)
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"
 then :
-  ax_cv_check_cflags___mavx512vp2intersect=yes
+  ax_cv_check_cflags__Werror__mavx512vp2intersect=yes
 else case e in #(
-  e) ax_cv_check_cflags___mavx512vp2intersect=no ;;
+  e) ax_cv_check_cflags__Werror__mavx512vp2intersect=no ;;
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
   CFLAGS=$ax_check_save_flags ;;
 esac
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___mavx512vp2intersect" >&5
-printf "%s\n" "$ax_cv_check_cflags___mavx512vp2intersect" >&6; }
-if test "x$ax_cv_check_cflags___mavx512vp2intersect" = xyes
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__mavx512vp2intersect" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__mavx512vp2intersect" >&6; }
+if test "x$ax_cv_check_cflags__Werror__mavx512vp2intersect" = xyes
 then :
   ac_cv_can_compile_simd_avx512_vp2intersect=yes
 else case e in #(
@@ -34151,7 +34156,7 @@ fi
 then :
 
 
-printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX512_VP2INTERSECT_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define _Py_CAN_COMPILE_SIMD_AVX512_VP2INTERSECT_INSTRUCTIONS 1" >>confdefs.h
 
 
 fi
@@ -34210,48 +34215,19 @@ else
   use_hacl_universal2_impl=no
 fi
 
-# The SIMD files use aligned_alloc, which is not available on older versions of
-# Android.
-# The *mmintrin.h headers are x86-family-specific, so can't be used on WASI.
+# The HACL* SIMD-128 files use aligned_alloc, which is not available
+# on older versions of Android. In addition, since the *mmintrin.h
+# headers are x86-family-specific, they cannot be used on WASI.
 if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "WASI" || \
    { test -n "$ANDROID_API_LEVEL" && test "$ANDROID_API_LEVEL" -ge 28; }
 then
-    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -msse -msse2 -msse3 -msse4.1 -msse4.2" >&5
-printf %s "checking whether C compiler accepts -msse -msse2 -msse3 -msse4.1 -msse4.2... " >&6; }
-if test ${ax_cv_check_cflags__Werror__msse__msse2__msse3__msse4_1__msse4_2+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e)
-  ax_check_save_flags=$CFLAGS
-  CFLAGS="$CFLAGS -Werror -msse -msse2 -msse3 -msse4.1 -msse4.2"
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main (void)
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-  ax_cv_check_cflags__Werror__msse__msse2__msse3__msse4_1__msse4_2=yes
-else case e in #(
-  e) ax_cv_check_cflags__Werror__msse__msse2__msse3__msse4_1__msse4_2=no ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-  CFLAGS=$ax_check_save_flags ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__msse__msse2__msse3__msse4_1__msse4_2" >&5
-printf "%s\n" "$ax_cv_check_cflags__Werror__msse__msse2__msse3__msse4_1__msse4_2" >&6; }
-if test "x$ax_cv_check_cflags__Werror__msse__msse2__msse3__msse4_1__msse4_2" = xyes
-then :
-
+  # SIMD-128
+  if test "$ac_cv_can_compile_simd_sse" = "yes" \
+    -a "$ac_cv_can_compile_simd_sse2" = "yes"   \
+    -a "$ac_cv_can_compile_simd_sse3" = "yes"   \
+    -a "$ac_cv_can_compile_simd_sse4_1" = "yes"  \
+    -a "$ac_cv_can_compile_simd_sse4_2" = "yes"
+  then
     LIBHACL_SIMD128_FLAGS="-msse -msse2 -msse3 -msse4.1 -msse4.2"
 
 
@@ -34272,64 +34248,21 @@ printf "%s\n" "universal2" >&6; }
       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: standard" >&5
 printf "%s\n" "standard" >&6; }
     fi
-
-
-else case e in #(
-  e) : ;;
-esac
-fi
-
+  fi
 fi
 
 
 
-# The SIMD files use aligned_alloc, which is not available on older versions of
-# Android.
-# The *mmintrin.h headers are x86-family-specific, so can't be used on WASI.
-#
-# Although AVX support is not guaranteed on Android
-# (https://developer.android.com/ndk/guides/abis#86-64), this is safe because we do a
-# runtime CPUID check.
+# The HACL* SIMD-256 files use aligned_alloc, which is not available
+# on older versions of Android. In addition, since the *mmintrin.h
+# headers are x86-family-specific, they cannot be used on WASI.
 if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "WASI" || \
    { test -n "$ANDROID_API_LEVEL" && test "$ANDROID_API_LEVEL" -ge 28; }
 then
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavx2" >&5
-printf %s "checking whether C compiler accepts -mavx2... " >&6; }
-if test ${ax_cv_check_cflags__Werror__mavx2+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e)
-  ax_check_save_flags=$CFLAGS
-  CFLAGS="$CFLAGS -Werror -mavx2"
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main (void)
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-  ax_cv_check_cflags__Werror__mavx2=yes
-else case e in #(
-  e) ax_cv_check_cflags__Werror__mavx2=no ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-  CFLAGS=$ax_check_save_flags ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__mavx2" >&5
-printf "%s\n" "$ax_cv_check_cflags__Werror__mavx2" >&6; }
-if test "x$ax_cv_check_cflags__Werror__mavx2" = xyes
-then :
-
+  if test "$ac_cv_can_compile_simd_avx2" = "yes"
+  then
     LIBHACL_SIMD256_FLAGS="-mavx2"
+
 
 printf "%s\n" "#define _Py_HACL_CAN_COMPILE_VEC256 1" >>confdefs.h
 
@@ -34349,12 +34282,7 @@ printf "%s\n" "universal2" >&6; }
       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: standard" >&5
 printf "%s\n" "standard" >&6; }
     fi
-
-else case e in #(
-  e) : ;;
-esac
-fi
-
+  fi
 fi
 
 

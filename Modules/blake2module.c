@@ -58,7 +58,6 @@ PyDoc_STRVAR(blake2mod__doc__,
 typedef struct {
     PyTypeObject *blake2b_type;
     PyTypeObject *blake2s_type;
-
     bool can_run_simd128;
     bool can_run_simd256;
 } Blake2State;

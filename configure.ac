@@ -8119,8 +8119,8 @@ then
   if test "$ac_cv_can_compile_simd_sse" = "yes" \
     -a "$ac_cv_can_compile_simd_sse2" = "yes"   \
     -a "$ac_cv_can_compile_simd_sse3" = "yes"   \
-    -a "$ac_cv_can_compile_simd_sse41" = "yes"  \
-    -a "$ac_cv_can_compile_simd_sse42" = "yes"
+    -a "$ac_cv_can_compile_simd_sse4_1" = "yes"  \
+    -a "$ac_cv_can_compile_simd_sse4_2" = "yes"
   then
     [LIBHACL_SIMD128_FLAGS="-msse -msse2 -msse3 -msse4.1 -msse4.2"]
 
