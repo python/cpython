@@ -53,7 +53,7 @@ The :mod:`csv` module defines the following functions:
 .. index::
    single: universal newlines; csv.reader function
 
-.. function:: reader(csvfile, dialect='excel', **fmtparams)
+.. function:: reader(csvfile, /, dialect='excel', **fmtparams)
 
    Return a :ref:`reader object <reader-objects>` that will process
    lines from the given *csvfile*.  A csvfile must be an iterable of
@@ -84,7 +84,7 @@ The :mod:`csv` module defines the following functions:
       Spam, Lovely Spam, Wonderful Spam
 
 
-.. function:: writer(csvfile, dialect='excel', **fmtparams)
+.. function:: writer(csvfile, /, dialect='excel', **fmtparams)
 
    Return a writer object responsible for converting the user's data into delimited
    strings on the given file-like object.  *csvfile* can be any object with a
