@@ -1,6 +1,7 @@
 import unittest
 from threading import Thread, Barrier
 from itertools import (
+    chain,
     cycle,
     tee,
 )
@@ -36,6 +37,34 @@ class ItertoolsThreading(unittest.TestCase):
                 pass
 
             barrier.reset()
+
+    @threading_helper.reap_threads
+    def test_chain(self):
+        number_of_threads = 6
+        number_of_iterations = 20
+
+        barrier = Barrier(number_of_threads)
+        def work(it):
+            barrier.wait()
+            while True:
+                try:
+                    next(it)
+                except StopIteration:
+                    break
+
+        data = [(1, )] * 200
+        for it in range(number_of_iterations):
+            chain_iterator = chain(*data)
+            worker_threads = []
+            for ii in range(number_of_threads):
+                worker_threads.append(
+                    Thread(target=work, args=[chain_iterator]))
+
+            with threading_helper.start_threads(worker_threads):
+                pass
+
+            barrier.reset()
+
 
 
 class TestTeeConcurrent(unittest.TestCase):
