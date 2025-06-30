@@ -343,7 +343,7 @@ The exception type for matching is interpreted as in the case of
 group that is being handled. Each :keyword:`!except*` clause splits (see
 :meth:`~BaseExceptionGroup.split`) the exception group into the subgroups of
 matching and non-matching exceptions. If the matching subgroup is not empty, it
-becomes the handled exception (the value returned from `sys.exception()`) and
+becomes the handled exception (the value returned from ``sys.exception()``) and
 assigned to the target of the :keyword:`!except*` clause (if there is one). Then,
 the body of the :keyword:`!except*` clause is executed. If the non-matching
 subgroup is not empty, it is processed by the next :keyword:`!except*` in the
@@ -375,7 +375,7 @@ clauses. This merged exception group propagates on.
 If the exception raised from the :keyword:`try` block is not an exception group
 and its type matches one of the :keyword:`!except*` clauses, it is caught and
 wrapped by an exception group with an empty message string. This ensures that the
-type of the target `e` is consistently :exc:`BaseExceptionGroup`::
+type of the target ``e`` is consistently :exc:`BaseExceptionGroup`::
 
    >>> try:
    ...     raise BlockingIOError
