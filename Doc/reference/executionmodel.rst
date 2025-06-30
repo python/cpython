@@ -407,7 +407,7 @@ Python's execution model does not operate in a vacuum.  It runs on a
 computer.  When a program runs, the conceptual layers of how it runs
 on the computer look something like this::
 
-   host computer (or VM or container)
+   host machine
      process
        OS thread (runs machine code)
 
