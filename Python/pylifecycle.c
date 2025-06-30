@@ -1554,7 +1554,17 @@ finalize_remove_modules(PyObject *modules, int verbose)
         if (weaklist != NULL) { \
             PyObject *wr = PyWeakref_NewRef(mod, NULL); \
             if (wr) { \
-                PyObject *tup = PyTuple_Pack(2, name, wr); \
+                PyObject *tup; \
+                if (Py_REFCNT(wr) > 1) { \
+                    /* gh-132413: When the weakref is already used
+                     * elsewhere, keep the referenced module alive
+                     * until finalize_modules_clear_weaklist() finishes.
+                     */ \
+                    tup = PyTuple_Pack(3, name, wr, mod); \
+                } \
+                else { \
+                    tup = PyTuple_Pack(2, name, wr); \
+                } \
                 if (!tup || PyList_Append(weaklist, tup) < 0) { \
                     PyErr_FormatUnraisable("Exception ignored while removing modules"); \
                 } \
