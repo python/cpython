@@ -103,6 +103,15 @@ static struct _inittab *inittab_copy = NULL;
 #define FIND_AND_LOAD(interp) \
     (interp)->imports.find_and_load
 
+#define _IMPORT_TIME_HEADER(interp)                                           \
+    do {                                                                      \
+        if (FIND_AND_LOAD((interp)).header) {                                 \
+            fputs("import time: self [us] | cumulative | imported package\n", \
+                  stderr);                                                    \
+            FIND_AND_LOAD((interp)).header = 0;                               \
+        }                                                                     \
+    } while (0)
+
 
 /*******************/
 /* the import lock */
@@ -246,9 +255,13 @@ import_ensure_initialized(PyInterpreterState *interp, PyObject *mod, PyObject *n
         rc = _PyModuleSpec_IsInitializing(spec);
         Py_DECREF(spec);
     }
-    if (rc <= 0) {
+    if (rc == 0) {
+        goto done;
+    }
+    else if (rc < 0) {
         return rc;
     }
+
     /* Wait until module is done importing. */
     PyObject *value = PyObject_CallMethodOneArg(
         IMPORTLIB(interp), &_Py_ID(_lock_unlock_module), name);
@@ -256,6 +269,19 @@ import_ensure_initialized(PyInterpreterState *interp, PyObject *mod, PyObject *n
         return -1;
     }
     Py_DECREF(value);
+
+done:
+    /* When -X importtime=2, print an import time entry even if an
+       imported module has already been loaded.
+     */
+    if (_PyInterpreterState_GetConfig(interp)->import_time == 2) {
+        _IMPORT_TIME_HEADER(interp);
+#define import_level FIND_AND_LOAD(interp).import_level
+        fprintf(stderr, "import time: cached    | cached     | %*s\n",
+                import_level*2, PyUnicode_AsUTF8(name));
+#undef import_level
+    }
+
     return 0;
 }
 
@@ -3343,11 +3369,11 @@ PyObject *
 PyImport_GetImporter(PyObject *path)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *path_importer_cache = _PySys_GetRequiredAttrString("path_importer_cache");
+    PyObject *path_importer_cache = PySys_GetAttrString("path_importer_cache");
     if (path_importer_cache == NULL) {
         return NULL;
     }
-    PyObject *path_hooks = _PySys_GetRequiredAttrString("path_hooks");
+    PyObject *path_hooks = PySys_GetAttrString("path_hooks");
     if (path_hooks == NULL) {
         Py_DECREF(path_importer_cache);
         return NULL;
@@ -3408,8 +3434,10 @@ PyImport_ImportModule(const char *name)
  * ImportError instead of blocking.
  *
  * Returns the module object with incremented ref count.
+ *
+ * Removed in 3.15, but kept for stable ABI compatibility.
  */
-PyObject *
+PyAPI_FUNC(PyObject *)
 PyImport_ImportModuleNoBlock(const char *name)
 {
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
@@ -3654,14 +3682,14 @@ import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
     PyTime_t t1 = 0, accumulated_copy = accumulated;
 
     PyObject *sys_path, *sys_meta_path, *sys_path_hooks;
-    if (_PySys_GetOptionalAttrString("path", &sys_path) < 0) {
+    if (PySys_GetOptionalAttrString("path", &sys_path) < 0) {
         return NULL;
     }
-    if (_PySys_GetOptionalAttrString("meta_path", &sys_meta_path) < 0) {
+    if (PySys_GetOptionalAttrString("meta_path", &sys_meta_path) < 0) {
         Py_XDECREF(sys_path);
         return NULL;
     }
-    if (_PySys_GetOptionalAttrString("path_hooks", &sys_path_hooks) < 0) {
+    if (PySys_GetOptionalAttrString("path_hooks", &sys_path_hooks) < 0) {
         Py_XDECREF(sys_meta_path);
         Py_XDECREF(sys_path);
         return NULL;
@@ -3686,13 +3714,7 @@ import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
      * _PyDict_GetItemIdWithError().
      */
     if (import_time) {
-#define header FIND_AND_LOAD(interp).header
-        if (header) {
-            fputs("import time: self [us] | cumulative | imported package\n",
-                  stderr);
-            header = 0;
-        }
-#undef header
+        _IMPORT_TIME_HEADER(interp);
 
         import_level++;
         // ignore error: don't block import if reading the clock fails
@@ -3832,15 +3854,17 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
                 }
 
                 final_mod = import_get_module(tstate, to_return);
-                Py_DECREF(to_return);
                 if (final_mod == NULL) {
                     if (!_PyErr_Occurred(tstate)) {
                         _PyErr_Format(tstate, PyExc_KeyError,
                                       "%R not in sys.modules as expected",
                                       to_return);
                     }
+                    Py_DECREF(to_return);
                     goto error;
                 }
+
+                Py_DECREF(to_return);
             }
         }
         else {
@@ -3936,23 +3960,28 @@ PyImport_Import(PyObject *module_name)
     }
 
     /* Get the builtins from current globals */
-    globals = PyEval_GetGlobals();
+    globals = PyEval_GetGlobals();  // borrowed
     if (globals != NULL) {
         Py_INCREF(globals);
+        // XXX Use _PyEval_EnsureBuiltins()?
         builtins = PyObject_GetItem(globals, &_Py_ID(__builtins__));
-        if (builtins == NULL)
+        if (builtins == NULL) {
+            // XXX Fall back to interp->builtins or sys.modules['builtins']?
             goto err;
+        }
+    }
+    else if (_PyErr_Occurred(tstate)) {
+        goto err;
     }
     else {
         /* No globals -- use standard builtins, and fake globals */
-        builtins = PyImport_ImportModuleLevel("builtins",
-                                              NULL, NULL, NULL, 0);
-        if (builtins == NULL) {
+        globals = PyDict_New();
+        if (globals == NULL) {
             goto err;
         }
-        globals = Py_BuildValue("{OO}", &_Py_ID(__builtins__), builtins);
-        if (globals == NULL)
+        if (_PyEval_EnsureBuiltinsWithModule(tstate, globals, &builtins) < 0) {
             goto err;
+        }
     }
 
     /* Get the __import__ function from the builtins */
@@ -4103,7 +4132,7 @@ _PyImport_FiniCore(PyInterpreterState *interp)
 static int
 init_zipimport(PyThreadState *tstate, int verbose)
 {
-    PyObject *path_hooks = _PySys_GetRequiredAttrString("path_hooks");
+    PyObject *path_hooks = PySys_GetAttrString("path_hooks");
     if (path_hooks == NULL) {
         return -1;
     }

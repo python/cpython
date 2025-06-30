@@ -493,6 +493,7 @@ update_refs(PyGC_Head *containers)
         next = GC_NEXT(gc);
         PyObject *op = FROM_GC(gc);
         if (_Py_IsImmortal(op)) {
+            assert(!_Py_IsStaticImmortal(op));
             _PyObject_GC_UNTRACK(op);
            gc = next;
            continue;

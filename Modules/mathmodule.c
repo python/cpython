@@ -1233,6 +1233,23 @@ FUNC2(remainder, m_remainder,
       "Return x - n*y where n*y is the closest integer multiple of y.\n"
       "In the case where x is exactly halfway between two multiples of\n"
       "y, the nearest even value of n is used. The result is always exact.")
+
+/*[clinic input]
+math.signbit
+
+    x: double
+    /
+
+Return True if the sign of x is negative and False otherwise.
+[clinic start generated code]*/
+
+static PyObject *
+math_signbit_impl(PyObject *module, double x)
+/*[clinic end generated code: output=20c5f20156a9b871 input=3d3493fbcb5bdb3e]*/
+{
+    return PyBool_FromLong(signbit(x));
+}
+
 FUNC1D(sin, sin, 0,
       "sin($module, x, /)\n--\n\n"
       "Return the sine of x (measured in radians).",
@@ -2008,13 +2025,11 @@ math.factorial
     /
 
 Find n!.
-
-Raise a ValueError if x is negative or non-integral.
 [clinic start generated code]*/
 
 static PyObject *
 math_factorial(PyObject *module, PyObject *arg)
-/*[clinic end generated code: output=6686f26fae00e9ca input=713fb771677e8c31]*/
+/*[clinic end generated code: output=6686f26fae00e9ca input=366cc321df3d4773]*/
 {
     long x, two_valuation;
     int overflow;
@@ -2163,6 +2178,27 @@ math_ldexp_impl(PyObject *module, double x, PyObject *i)
     } else {
         errno = 0;
         r = ldexp(x, (int)exp);
+#ifdef _MSC_VER
+        if (DBL_MIN > r && r > -DBL_MIN) {
+            /* Denormal (or zero) results can be incorrectly rounded here (rather,
+               truncated).  Fixed in newer versions of the C runtime, included
+               with Windows 11. */
+            int original_exp;
+            frexp(x, &original_exp);
+            if (original_exp > DBL_MIN_EXP) {
+                /* Shift down to the smallest normal binade.  No bits lost. */
+                int shift = DBL_MIN_EXP - original_exp;
+                x = ldexp(x, shift);
+                exp -= shift;
+            }
+            /* Multiplying by 2**exp finishes the job, and the HW will round as
+               appropriate.  Note: if exp < -DBL_MANT_DIG, all of x is shifted
+               to be < 0.5ULP of smallest denorm, so should be thrown away.  If
+               exp is so very negative that ldexp underflows to 0, that's fine;
+               no need to check in advance. */
+            r = x*ldexp(1.0, (int)exp);
+        }
+#endif
         if (isinf(r))
             errno = ERANGE;
     }
@@ -3096,6 +3132,44 @@ math_isfinite_impl(PyObject *module, double x)
 /*[clinic end generated code: output=8ba1f396440c9901 input=46967d254812e54a]*/
 {
     return PyBool_FromLong((long)isfinite(x));
+}
+
+
+/*[clinic input]
+math.isnormal
+
+    x: double
+    /
+
+Return True if x is normal, and False otherwise.
+[clinic start generated code]*/
+
+static PyObject *
+math_isnormal_impl(PyObject *module, double x)
+/*[clinic end generated code: output=c7b302b5b89c3541 input=fdaa00c58aa7bc17]*/
+{
+    return PyBool_FromLong(isnormal(x));
+}
+
+
+/*[clinic input]
+math.issubnormal
+
+    x: double
+    /
+
+Return True if x is subnormal, and False otherwise.
+[clinic start generated code]*/
+
+static PyObject *
+math_issubnormal_impl(PyObject *module, double x)
+/*[clinic end generated code: output=4e76ac98ddcae761 input=9a20aba7107d0d95]*/
+{
+#if !defined(_MSC_VER) && defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
+    return PyBool_FromLong(issubnormal(x));
+#else
+    return PyBool_FromLong(isfinite(x) && x && !isnormal(x));
+#endif
 }
 
 
@@ -4126,6 +4200,8 @@ static PyMethodDef math_methods[] = {
     MATH_HYPOT_METHODDEF
     MATH_ISCLOSE_METHODDEF
     MATH_ISFINITE_METHODDEF
+    MATH_ISNORMAL_METHODDEF
+    MATH_ISSUBNORMAL_METHODDEF
     MATH_ISINF_METHODDEF
     MATH_ISNAN_METHODDEF
     MATH_ISQRT_METHODDEF
@@ -4140,6 +4216,7 @@ static PyMethodDef math_methods[] = {
     MATH_POW_METHODDEF
     MATH_RADIANS_METHODDEF
     {"remainder",       _PyCFunction_CAST(math_remainder), METH_FASTCALL,  math_remainder_doc},
+    MATH_SIGNBIT_METHODDEF
     {"sin",             math_sin,       METH_O,         math_sin_doc},
     {"sinh",            math_sinh,      METH_O,         math_sinh_doc},
     {"sqrt",            math_sqrt,      METH_O,         math_sqrt_doc},

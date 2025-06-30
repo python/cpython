@@ -118,6 +118,7 @@ if _exists("_have_functions"):
     _add("HAVE_FCHMODAT",   "chmod")
     _add("HAVE_FCHOWNAT",   "chown")
     _add("HAVE_FSTATAT",    "stat")
+    _add("HAVE_LSTAT",      "lstat")
     _add("HAVE_FUTIMESAT",  "utime")
     _add("HAVE_LINKAT",     "link")
     _add("HAVE_MKDIRAT",    "mkdir")

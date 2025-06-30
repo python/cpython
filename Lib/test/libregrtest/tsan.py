@@ -8,7 +8,7 @@ TSAN_TESTS = [
     'test_capi.test_pyatomic',
     'test_code',
     'test_ctypes',
-    # 'test_concurrent_futures',  # gh-130605: too many data races
+    'test_concurrent_futures',
     'test_enum',
     'test_functools',
     'test_httpservers',

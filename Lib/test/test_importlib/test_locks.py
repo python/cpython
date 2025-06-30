@@ -34,6 +34,7 @@ class ModuleLockAsRLockTests:
     # lock status in repr unsupported
     test_repr = None
     test_locked_repr = None
+    test_repr_count = None
 
     def tearDown(self):
         for splitinit in init.values():

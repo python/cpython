@@ -237,7 +237,6 @@ class ZoneInfoTest(TzPathUserMixin, ZoneInfoTestBase):
             "../zoneinfo/America/Los_Angeles",  # Traverses above TZPATH
             "America/../America/Los_Angeles",  # Not normalized
             "America/./Los_Angeles",
-            "",
         ]
 
         for bad_key in bad_keys:
@@ -1916,8 +1915,8 @@ class ExtensionBuiltTest(unittest.TestCase):
     def test_cache_location(self):
         # The pure Python version stores caches on attributes, but the C
         # extension stores them in C globals (at least for now)
-        self.assertFalse(hasattr(c_zoneinfo.ZoneInfo, "_weak_cache"))
-        self.assertTrue(hasattr(py_zoneinfo.ZoneInfo, "_weak_cache"))
+        self.assertNotHasAttr(c_zoneinfo.ZoneInfo, "_weak_cache")
+        self.assertHasAttr(py_zoneinfo.ZoneInfo, "_weak_cache")
 
     def test_gc_tracked(self):
         import gc

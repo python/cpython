@@ -92,7 +92,7 @@ Then we can use ``perf report`` to analyze the data:
                             |          |          |                     |
                             |          |          |                     |--51.67%--_PyEval_EvalFrameDefault
                             |          |          |                     |          |
-                            |          |          |                     |          |--11.52%--_PyLong_Add
+                            |          |          |                     |          |--11.52%--_PyCompactLong_Add
                             |          |          |                     |          |          |
                             |          |          |                     |          |          |--2.97%--_PyObject_Malloc
     ...
@@ -142,7 +142,7 @@ Instead, if we run the same experiment with ``perf`` support enabled we get:
                             |          |          |                     |
                             |          |          |                     |--51.81%--_PyEval_EvalFrameDefault
                             |          |          |                     |          |
-                            |          |          |                     |          |--13.77%--_PyLong_Add
+                            |          |          |                     |          |--13.77%--_PyCompactLong_Add
                             |          |          |                     |          |          |
                             |          |          |                     |          |          |--3.26%--_PyObject_Malloc
 

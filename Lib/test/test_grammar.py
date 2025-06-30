@@ -1,7 +1,7 @@
 # Python test set -- part 1, grammar.
 # This just tests whether the parser accepts them all.
 
-from test.support import check_syntax_error
+from test.support import check_syntax_error, skip_wasi_stack_overflow
 from test.support import import_helper
 import annotationlib
 import inspect
@@ -216,6 +216,27 @@ the \'lazy\' dog.\n\
 '
         self.assertEqual(x, y)
 
+    def test_string_prefixes(self):
+        def check(s):
+            parsed = eval(s)
+            self.assertIs(type(parsed), str)
+            self.assertGreater(len(parsed), 0)
+
+        check("u'abc'")
+        check("r'abc\t'")
+        check("rf'abc\a {1 + 1}'")
+        check("fr'abc\a {1 + 1}'")
+
+    def test_bytes_prefixes(self):
+        def check(s):
+            parsed = eval(s)
+            self.assertIs(type(parsed), bytes)
+            self.assertGreater(len(parsed), 0)
+
+        check("b'abc'")
+        check("br'abc\t'")
+        check("rb'abc\a'")
+
     def test_ellipsis(self):
         x = ...
         self.assertTrue(x is Ellipsis)
@@ -227,6 +248,18 @@ the \'lazy\' dog.\n\
             with self.assertRaises(SyntaxError) as cm:
                 compile(s, "<test>", "exec")
             self.assertIn("was never closed", str(cm.exception))
+
+    @skip_wasi_stack_overflow()
+    def test_max_level(self):
+        # Macro defined in Parser/lexer/state.h
+        MAXLEVEL = 200
+
+        result = eval("(" * MAXLEVEL + ")" * MAXLEVEL)
+        self.assertEqual(result, ())
+
+        with self.assertRaises(SyntaxError) as cm:
+            eval("(" * (MAXLEVEL + 1) + ")" * (MAXLEVEL + 1))
+        self.assertStartsWith(str(cm.exception), 'too many nested parentheses')
 
 var_annot_global: int # a global annotated is necessary for test_var_annot
 

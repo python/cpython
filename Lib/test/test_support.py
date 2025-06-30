@@ -407,10 +407,10 @@ class TestSupport(unittest.TestCase):
         with support.swap_attr(obj, "y", 5) as y:
             self.assertEqual(obj.y, 5)
             self.assertIsNone(y)
-        self.assertFalse(hasattr(obj, 'y'))
+        self.assertNotHasAttr(obj, 'y')
         with support.swap_attr(obj, "y", 5):
             del obj.y
-        self.assertFalse(hasattr(obj, 'y'))
+        self.assertNotHasAttr(obj, 'y')
 
     def test_swap_item(self):
         D = {"x":1}
@@ -561,6 +561,7 @@ class TestSupport(unittest.TestCase):
             ['-Wignore', '-X', 'dev'],
             ['-X', 'faulthandler'],
             ['-X', 'importtime'],
+            ['-X', 'importtime=2'],
             ['-X', 'showrefcount'],
             ['-X', 'tracemalloc'],
             ['-X', 'tracemalloc=3'],

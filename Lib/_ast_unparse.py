@@ -627,6 +627,9 @@ class Unparser(NodeVisitor):
         self._ftstring_helper(fstring_parts)
 
     def _tstring_helper(self, node):
+        if not node.values:
+            self._write_ftstring([], "t")
+            return
         last_idx = 0
         for i, value in enumerate(node.values):
             # This can happen if we have an implicit concat of a t-string
@@ -679,9 +682,12 @@ class Unparser(NodeVisitor):
         unparser.set_precedence(_Precedence.TEST.next(), inner)
         return unparser.visit(inner)
 
-    def _write_interpolation(self, node):
+    def _write_interpolation(self, node, is_interpolation=False):
         with self.delimit("{", "}"):
-            expr = self._unparse_interpolation_value(node.value)
+            if is_interpolation:
+                expr = node.str
+            else:
+                expr = self._unparse_interpolation_value(node.value)
             if expr.startswith("{"):
                 # Separate pair of opening brackets as "{ {"
                 self.write(" ")
@@ -696,7 +702,7 @@ class Unparser(NodeVisitor):
         self._write_interpolation(node)
 
     def visit_Interpolation(self, node):
-        self._write_interpolation(node)
+        self._write_interpolation(node, is_interpolation=True)
 
     def visit_Name(self, node):
         self.write(node.id)

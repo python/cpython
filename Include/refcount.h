@@ -1,5 +1,5 @@
-#ifndef Py_REFCOUNT_H
-#define Py_REFCOUNT_H
+#ifndef _Py_REFCOUNT_H
+#define _Py_REFCOUNT_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -19,9 +19,6 @@ immortal. The latter should be the only instances that require
 cleanup during runtime finalization.
 */
 
-#define _Py_STATICALLY_ALLOCATED_FLAG 4
-#define _Py_IMMORTAL_FLAGS 1
-
 #if SIZEOF_VOID_P > 4
 /*
 In 64+ bit systems, any object whose 32 bit reference count is >= 2**31
@@ -33,7 +30,7 @@ increase and decrease the objects reference count.
 
 In order to offer sufficient resilience to C extensions using the stable ABI
 compiled against 3.11 or earlier, we set the initial value near the
-middle of the range (2**31, 2**32). That way the the refcount can be
+middle of the range (2**31, 2**32). That way the refcount can be
 off by ~1 billion without affecting immortality.
 
 Reference count increases will use saturated arithmetic, taking advantage of
@@ -564,4 +561,4 @@ static inline PyObject* _Py_XNewRef(PyObject *obj)
 #ifdef __cplusplus
 }
 #endif
-#endif   // !Py_REFCOUNT_H
+#endif   // !_Py_REFCOUNT_H

@@ -4199,7 +4199,7 @@ class OptionMenu(Menubutton):
         keyword argument command."""
         kw = {"borderwidth": 2, "textvariable": variable,
               "indicatoron": 1, "relief": RAISED, "anchor": "c",
-              "highlightthickness": 2}
+              "highlightthickness": 2, "name": kwargs.pop("name", None)}
         Widget.__init__(self, master, "menubutton", kw)
         self.widgetName = 'tk_optionMenu'
         menu = self.__menu = Menu(self, name="menu", tearoff=0)

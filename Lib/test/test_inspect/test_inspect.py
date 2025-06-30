@@ -786,12 +786,12 @@ class TestRetrievingSourceCode(GetSourceBase):
     def test_getfile_builtin_module(self):
         with self.assertRaises(TypeError) as e:
             inspect.getfile(sys)
-        self.assertTrue(str(e.exception).startswith('<module'))
+        self.assertStartsWith(str(e.exception), '<module')
 
     def test_getfile_builtin_class(self):
         with self.assertRaises(TypeError) as e:
             inspect.getfile(int)
-        self.assertTrue(str(e.exception).startswith('<class'))
+        self.assertStartsWith(str(e.exception), '<class')
 
     def test_getfile_builtin_function_or_method(self):
         with self.assertRaises(TypeError) as e_abs:
@@ -2949,7 +2949,7 @@ class TestSignatureObject(unittest.TestCase):
             pass
 
         sig = inspect.signature(test)
-        self.assertTrue(repr(sig).startswith('<Signature'))
+        self.assertStartsWith(repr(sig), '<Signature')
         self.assertTrue('(po, /, pk' in repr(sig))
 
         # We need two functions, because it is impossible to represent
@@ -2958,7 +2958,7 @@ class TestSignatureObject(unittest.TestCase):
             pass
 
         sig2 = inspect.signature(test2)
-        self.assertTrue(repr(sig2).startswith('<Signature'))
+        self.assertStartsWith(repr(sig2), '<Signature')
         self.assertTrue('(pod=42, /)' in repr(sig2))
 
         po = sig.parameters['po']
@@ -3847,7 +3847,6 @@ class TestSignatureObject(unittest.TestCase):
                            ('b', ..., ..., "positional_or_keyword")),
                           ...))
 
-
     def test_signature_on_class(self):
         class C:
             def __init__(self, a):
@@ -4021,6 +4020,45 @@ class TestSignatureObject(unittest.TestCase):
                            ('dct', ..., ..., "positional_or_keyword"),
                            ('bar', 2, ..., "keyword_only")),
                           ...))
+
+    def test_signature_on_class_with_decorated_new(self):
+        def identity(func):
+            @functools.wraps(func)
+            def wrapped(*args, **kwargs):
+                return func(*args, **kwargs)
+            return wrapped
+
+        class Foo:
+            @identity
+            def __new__(cls, a, b):
+                pass
+
+        self.assertEqual(self.signature(Foo),
+                         ((('a', ..., ..., "positional_or_keyword"),
+                           ('b', ..., ..., "positional_or_keyword")),
+                          ...))
+
+        self.assertEqual(self.signature(Foo.__new__),
+                         ((('cls', ..., ..., "positional_or_keyword"),
+                           ('a', ..., ..., "positional_or_keyword"),
+                           ('b', ..., ..., "positional_or_keyword")),
+                          ...))
+
+        class Bar:
+            __new__ = identity(object.__new__)
+
+        varargs_signature = (
+            (('args', ..., ..., 'var_positional'),
+             ('kwargs', ..., ..., 'var_keyword')),
+            ...,
+        )
+
+        self.assertEqual(self.signature(Bar), ((), ...))
+        self.assertEqual(self.signature(Bar.__new__), varargs_signature)
+        self.assertEqual(self.signature(Bar, follow_wrapped=False),
+                         varargs_signature)
+        self.assertEqual(self.signature(Bar.__new__, follow_wrapped=False),
+                         varargs_signature)
 
     def test_signature_on_class_with_init(self):
         class C:
@@ -4959,6 +4997,37 @@ class TestSignatureObject(unittest.TestCase):
                 with self.assertRaisesRegex(NameError, "undefined"):
                     signature_func(ida.f)
 
+    def test_signature_deferred_annotations(self):
+        def f(x: undef):
+            pass
+
+        class C:
+            x: undef
+
+            def __init__(self, x: undef):
+                self.x = x
+
+        sig = inspect.signature(f, annotation_format=Format.FORWARDREF)
+        self.assertEqual(list(sig.parameters), ['x'])
+        sig = inspect.signature(C, annotation_format=Format.FORWARDREF)
+        self.assertEqual(list(sig.parameters), ['x'])
+
+        class CallableWrapper:
+            def __init__(self, func):
+                self.func = func
+                self.__annotate__ = func.__annotate__
+
+            def __call__(self, *args, **kwargs):
+                return self.func(*args, **kwargs)
+
+            @property
+            def __annotations__(self):
+                return self.__annotate__(Format.VALUE)
+
+        cw = CallableWrapper(f)
+        sig = inspect.signature(cw, annotation_format=Format.FORWARDREF)
+        self.assertEqual(list(sig.parameters), ['args', 'kwargs'])
+
     def test_signature_none_annotation(self):
         class funclike:
             # Has to be callable, and have correct
@@ -5064,7 +5133,7 @@ class TestParameterObject(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'cannot have default values'):
             p.replace(kind=inspect.Parameter.VAR_POSITIONAL)
 
-        self.assertTrue(repr(p).startswith('<Parameter'))
+        self.assertStartsWith(repr(p), '<Parameter')
         self.assertTrue('"a=42"' in repr(p))
 
     def test_signature_parameter_hashable(self):
@@ -5808,7 +5877,7 @@ class TestSignatureDefinitions(unittest.TestCase):
     def test_os_module_has_signatures(self):
         unsupported_signature = {'chmod', 'utime'}
         unsupported_signature |= {name for name in
-            ['get_terminal_size', 'posix_spawn', 'posix_spawnp',
+            ['get_terminal_size', 'link', 'posix_spawn', 'posix_spawnp',
              'register_at_fork', 'startfile']
             if hasattr(os, name)}
         self._test_module_has_signatures(os, unsupported_signature=unsupported_signature)
@@ -6108,12 +6177,14 @@ class TestRepl(unittest.TestCase):
         object.
         """
 
+        # TODO(picnixz): refactor this as it's used by test_repl.py
+
         # To run the REPL without using a terminal, spawn python with the command
         # line option '-i' and the process name set to '<stdin>'.
         # The directory of argv[0] must match the directory of the Python
         # executable for the Popen() call to python to succeed as the directory
-        # path may be used by Py_GetPath() to build the default module search
-        # path.
+        # path may be used by PyConfig_Get("module_search_paths") to build the
+        # default module search path.
         stdin_fname = os.path.join(os.path.dirname(sys.executable), "<stdin>")
         cmd_line = [stdin_fname, '-E', '-i']
         cmd_line.extend(args)
