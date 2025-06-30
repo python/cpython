@@ -1298,7 +1298,7 @@ Glossary
       and the :mod:`typing` module.
 
    stdlib
-      A synonym for :term:`standard library`.
+      An abbreviation of :term:`standard library`.
 
    strong reference
       In Python's C API, a strong reference is a reference to an object
