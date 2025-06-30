@@ -712,12 +712,17 @@ Functions
 
    Clock:
 
-   * On Windows, call ``GetSystemTimeAsFileTime()``.
+   * On Windows, call ``GetSystemTimePreciseAsFileTime()``.
    * Call ``clock_gettime(CLOCK_REALTIME)`` if available.
    * Otherwise, call ``gettimeofday()``.
 
    Use :func:`time_ns` to avoid the precision loss caused by the :class:`float`
    type.
+
+.. versionchanged:: 3.13
+
+   On Windows, calls ``GetSystemTimePreciseAsFileTime()`` instead of
+   ``GetSystemTimeAsFileTime()``.
 
 
 .. function:: time_ns() -> int
