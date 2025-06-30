@@ -2310,18 +2310,21 @@
         case _CALL_TYPE_1: {
             JitOptRef arg;
             JitOptRef res;
+            JitOptRef a;
             arg = stack_pointer[-1];
             PyObject* type = (PyObject *)sym_get_type(arg);
             if (type) {
                 res = sym_new_const(ctx, type);
-                REPLACE_OP(this_instr, _POP_CALL_ONE_LOAD_CONST_INLINE_BORROW, 0,
+                REPLACE_OP(this_instr, _SWAP_CALL_ONE_LOAD_CONST_INLINE_BORROW, 0,
                        (uintptr_t)type);
             }
             else {
                 res = sym_new_not_null(ctx);
             }
+            a = arg;
             stack_pointer[-3] = res;
-            stack_pointer += -2;
+            stack_pointer[-2] = a;
+            stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
@@ -2989,6 +2992,21 @@
             value = PyJitRef_Borrow(sym_new_const(ctx, ptr));
             stack_pointer[-4] = value;
             stack_pointer += -3;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _SWAP_CALL_ONE_LOAD_CONST_INLINE_BORROW: {
+            JitOptRef arg;
+            JitOptRef value;
+            JitOptRef a;
+            arg = stack_pointer[-1];
+            PyObject *ptr = (PyObject *)this_instr->operand0;
+            value = PyJitRef_Borrow(sym_new_const(ctx, ptr));
+            a = arg;
+            stack_pointer[-3] = value;
+            stack_pointer[-2] = a;
+            stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
