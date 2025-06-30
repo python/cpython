@@ -411,15 +411,15 @@ on the computer look something like this::
      process
        OS thread (runs machine code)
 
-While a program always starts with exactly one of each of those, it may
-grow to include multiple of each.  Hosts and processes are isolated and
-independent from one another.  However, threads are not.
+Hosts and processes are isolated and independent from one another.
+However, threads are not.
 
-Not all platforms support threads, though most do.  For those that do,
-each thread does *run* independently, for the small segments of time it
-is scheduled to execute its code on the CPU.  Otherwise, all threads
-in a process share all the process' resources, including memory.
-The initial thread is known as the "main" thread.
+While a program always starts with exactly one thread, known as the
+"main" thread, it may grow to run in multiple.  Not all platforms
+support threads, but most do.  For those that do, each thread does *run*
+independently, for the small segments of time it is scheduled to execute
+its code on the CPU.  Otherwise, all threads in a process share all the
+process' resources, including memory.
 
 .. note::
 
