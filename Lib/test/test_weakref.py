@@ -1314,7 +1314,7 @@ class MappingTestCase(TestBase):
         n2 = len(dct)
         # one item may be kept alive inside the iterator
         self.assertIn(n1, (0, 1))
-        self.assertEqual(n2, 0)
+        self.assertIn(n2, (0, 1))
 
     def test_weak_keyed_len_cycles(self):
         self.check_len_cycles(weakref.WeakKeyDictionary, lambda k: (k, 1))

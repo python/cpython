@@ -858,57 +858,30 @@ move_legacy_finalizer_reachable(PyGC_Head *finalizers)
     }
 }
 
-/* Clear all weakrefs to unreachable objects, and if such a weakref has a
- * callback, invoke it if necessary.  Note that it's possible for such
- * weakrefs to be outside the unreachable set -- indeed, those are precisely
- * the weakrefs whose callbacks must be invoked.  See gc_weakref.txt for
- * overview & some details.  Some weakrefs with callbacks may be reclaimed
- * directly by this routine; the number reclaimed is the return value.  Other
- * weakrefs with callbacks may be moved into the `old` generation.  Objects
- * moved into `old` have gc_refs set to GC_REACHABLE; the objects remaining in
- * unreachable are left at GC_TENTATIVELY_UNREACHABLE.  When this returns,
- * no object in `unreachable` is weakly referenced anymore.
+/* Handle weakref callbacks.  Note that it's possible for such weakrefs to be
+ * outside the unreachable set -- indeed, those are precisely the weakrefs
+ * whose callbacks must be invoked.  See gc_weakref.txt for overview & some
+ * details.
  */
 static int
-handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
+handle_weakref_callbacks(PyGC_Head *unreachable, PyGC_Head *old)
 {
     PyGC_Head *gc;
-    PyObject *op;               /* generally FROM_GC(gc) */
-    PyWeakReference *wr;        /* generally a cast of op */
     PyGC_Head wrcb_to_call;     /* weakrefs with callbacks to call */
     PyGC_Head *next;
     int num_freed = 0;
 
     gc_list_init(&wrcb_to_call);
 
-    /* Clear all weakrefs to the objects in unreachable.  If such a weakref
-     * also has a callback, move it into `wrcb_to_call` if the callback
-     * needs to be invoked.  Note that we cannot invoke any callbacks until
-     * all weakrefs to unreachable objects are cleared, lest the callback
-     * resurrect an unreachable object via a still-active weakref.  We
-     * make another pass over wrcb_to_call, invoking callbacks, after this
-     * pass completes.
+    /* Find all weakrefs with callbacks and move into `wrcb_to_call` if the
+     * callback needs to be invoked. We make another pass over wrcb_to_call,
+     * invoking callbacks, after this pass completes.
      */
     for (gc = GC_NEXT(unreachable); gc != unreachable; gc = next) {
         PyWeakReference **wrlist;
 
-        op = FROM_GC(gc);
+        PyObject *op = FROM_GC(gc);
         next = GC_NEXT(gc);
-
-        if (PyWeakref_Check(op)) {
-            /* A weakref inside the unreachable set must be cleared.  If we
-             * allow its callback to execute inside delete_garbage(), it
-             * could expose objects that have tp_clear already called on
-             * them.  Or, it could resurrect unreachable objects.  One way
-             * this can happen is if some container objects do not implement
-             * tp_traverse.  Then, wr_object can be outside the unreachable
-             * set but can be deallocated as a result of breaking the
-             * reference cycle.  If we don't clear the weakref, the callback
-             * will run and potentially cause a crash.  See bpo-38006 for
-             * one example.
-             */
-            _PyWeakref_ClearRef((PyWeakReference *)op);
-        }
 
         if (! _PyType_SUPPORTS_WEAKREFS(Py_TYPE(op))) {
             continue;
@@ -921,20 +894,13 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
          */
         wrlist = _PyObject_GET_WEAKREFS_LISTPTR_FROM_OFFSET(op);
 
-        /* `op` may have some weakrefs.  March over the list, clear
-         * all the weakrefs, and move the weakrefs with callbacks
-         * that must be called into wrcb_to_call.
+        /* `op` may have some weakrefs.  March over the list and move the
+         * weakrefs with callbacks that must be called into wrcb_to_call.
          */
-        for (wr = *wrlist; wr != NULL; wr = *wrlist) {
-            PyGC_Head *wrasgc;                  /* AS_GC(wr) */
+        PyWeakReference *next_wr;
+        for (PyWeakReference *wr = *wrlist; wr != NULL; wr = next_wr) {
+            next_wr = wr->wr_next;
 
-            /* _PyWeakref_ClearRef clears the weakref but leaves
-             * the callback pointer intact.  Obscure:  it also
-             * changes *wrlist.
-             */
-            _PyObject_ASSERT((PyObject *)wr, wr->wr_object == op);
-            _PyWeakref_ClearRef(wr);
-            _PyObject_ASSERT((PyObject *)wr, wr->wr_object == Py_None);
             if (wr->wr_callback == NULL) {
                 /* no callback */
                 continue;
@@ -955,10 +921,10 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
              *    outside the current generation, CT may be reachable from the
              *    callback.  Then the callback could resurrect insane objects.
              *
-             * Since the callback is never needed and may be unsafe in this case,
-             * wr is simply left in the unreachable set.  Note that because we
-             * already called _PyWeakref_ClearRef(wr), its callback will never
-             * trigger.
+             * Since the callback is never needed and may be unsafe in this
+             * case, wr is simply left in the unreachable set.  Note that
+             * clear_weakrefs() will ensure its callback will not trigger
+             * inside delete_garbage().
              *
              * OTOH, if wr isn't part of CT, we should invoke the callback:  the
              * weakref outlived the trash.  Note that since wr isn't CT in this
@@ -969,8 +935,11 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
              * is moved to wrcb_to_call in this case.
              */
             if (gc_is_collecting(AS_GC((PyObject *)wr))) {
-                /* it should already have been cleared above */
-                _PyObject_ASSERT((PyObject*)wr, wr->wr_object == Py_None);
+                continue;
+            }
+
+            if (_PyGC_FINALIZED((PyObject *)wr)) {
+                /* Callback was already run (weakref must have been resurrected). */
                 continue;
             }
 
@@ -980,7 +949,7 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
             Py_INCREF(wr);
 
             /* Move wr to wrcb_to_call, for the next pass. */
-            wrasgc = AS_GC((PyObject *)wr);
+            PyGC_Head *wrasgc = AS_GC((PyObject *)wr);
             // wrasgc is reachable, but next isn't, so they can't be the same
             _PyObject_ASSERT((PyObject *)wr, wrasgc != next);
             gc_list_move(wrasgc, &wrcb_to_call);
@@ -996,11 +965,15 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
         PyObject *callback;
 
         gc = (PyGC_Head*)wrcb_to_call._gc_next;
-        op = FROM_GC(gc);
+        PyObject *op = FROM_GC(gc);
         _PyObject_ASSERT(op, PyWeakref_Check(op));
-        wr = (PyWeakReference *)op;
+        PyWeakReference *wr = (PyWeakReference *)op;
         callback = wr->wr_callback;
         _PyObject_ASSERT(op, callback != NULL);
+
+        /* Ensure we don't execute the callback again if the weakref is
+         * resurrected. */
+        _PyGC_SET_FINALIZED(op);
 
         /* copy-paste of weakrefobject.c's handle_callback() */
         temp = PyObject_CallOneArg(callback, (PyObject *)wr);
@@ -1035,6 +1008,68 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
     }
 
     return num_freed;
+}
+
+/* Clear all weakrefs to unreachable objects.  When this returns, no object in
+ * `unreachable` is weakly referenced anymore.
+ */
+static void
+clear_weakrefs(PyGC_Head *unreachable)
+{
+    PyGC_Head *gc;
+    PyGC_Head *next;
+
+    /* Clear all weakrefs to the objects in unreachable.  If such a weakref
+     * also has a callback, move it into `wrcb_to_call` if the callback
+     * needs to be invoked.  Note that we cannot call `tp_clear` until
+     * all weakrefs to unreachable objects are cleared, lest finalizers
+     * resurrect an unreachable object via a still-active weakref.
+     */
+    for (gc = GC_NEXT(unreachable); gc != unreachable; gc = next) {
+        PyWeakReference **wrlist;
+
+        PyObject *op = FROM_GC(gc);
+        next = GC_NEXT(gc);
+
+        if (PyWeakref_Check(op)) {
+            /* A weakref inside the unreachable set must be cleared.  If we
+             * allow its callback to execute inside delete_garbage(), it
+             * could expose objects that have tp_clear already called on
+             * them.  Or, it could resurrect unreachable objects.  One way
+             * this can happen is if some container objects do not implement
+             * tp_traverse.  Then, wr_object can be outside the unreachable
+             * set but can be deallocated as a result of breaking the
+             * reference cycle.  If we don't clear the weakref, the callback
+             * will run and potentially cause a crash.  See bpo-38006 for
+             * one example.
+             */
+            _PyWeakref_ClearRef((PyWeakReference *)op);
+        }
+
+        if (! _PyType_SUPPORTS_WEAKREFS(Py_TYPE(op))) {
+            continue;
+        }
+
+        /* It supports weakrefs.  Does it have any?
+         *
+         * This is never triggered for static types so we can avoid the
+         * (slightly) more costly _PyObject_GET_WEAKREFS_LISTPTR().
+         */
+        wrlist = _PyObject_GET_WEAKREFS_LISTPTR_FROM_OFFSET(op);
+
+        /* `op` may have some weakrefs.  March over the list, clear
+         * all the weakrefs.
+         */
+        for (PyWeakReference *wr = *wrlist; wr != NULL; wr = *wrlist) {
+            /* _PyWeakref_ClearRef clears the weakref but leaves
+             * the callback pointer intact.  Obscure:  it also
+             * changes *wrlist.
+             */
+            _PyObject_ASSERT((PyObject *)wr, wr->wr_object == op);
+            _PyWeakref_ClearRef(wr);
+            _PyObject_ASSERT((PyObject *)wr, wr->wr_object == Py_None);
+        }
+    }
 }
 
 static void
@@ -1736,8 +1771,8 @@ gc_collect_region(PyThreadState *tstate,
         }
     }
 
-    /* Clear weakrefs and invoke callbacks as necessary. */
-    stats->collected += handle_weakrefs(&unreachable, to);
+    /* Invoke weakref callbacks as necessary. */
+    stats->collected += handle_weakref_callbacks(&unreachable, to);
     gc_list_validate_space(to, gcstate->visited_space);
     validate_list(to, collecting_clear_unreachable_clear);
     validate_list(&unreachable, collecting_set_unreachable_clear);
@@ -1750,6 +1785,22 @@ gc_collect_region(PyThreadState *tstate,
     PyGC_Head final_unreachable;
     gc_list_init(&final_unreachable);
     handle_resurrected_objects(&unreachable, &final_unreachable, to);
+
+    /* Clear weakrefs to objects in the unreachable set.  No Python-level
+     * code must be allowed to access those unreachable objects.  During
+     * delete_garbage(), finalizers outside the unreachable set might run
+     * and if those weakrefs were not cleared, that could reveal unreachable
+     * objects.
+     *
+     * We used to clear weakrefs earlier, before calling finalizers.  That
+     * causes at least two problems.  First, the finalizers could create
+     * new weakrefs, that refer to unreachable objects.  Those would not be
+     * cleared and could cause the problem described above (see GH-91636 as
+     * an example).  Second, we need the weakrefs in the tp_subclasses to
+     * *not* be cleared so that caches based on the type version are correctly
+     * invalidated (see GH-135552 as a bug caused by this).
+     */
+    clear_weakrefs(&final_unreachable);
 
     /* Call tp_clear on objects in the final_unreachable set.  This will cause
     * the reference cycles to be broken.  It may also cause some objects
