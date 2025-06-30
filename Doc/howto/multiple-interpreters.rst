@@ -25,9 +25,7 @@ comparisons with Python's various existing concurrency models.
 
    :mod:`concurrent.interpreters`
 
-   :ref:`execcomponents`
-       more details about how interpreters fit into
-       Python's execution model
+   .. XXX Add a ref to the upcoming lang ref runtime components section.
 
    .. XXX Add a reference to the upcoming concurrency HOWTO doc.
 

@@ -31,6 +31,8 @@ Actual concurrency is available separately through
    :class:`~concurrent.futures.InterpreterPoolExecutor`
       combines threads with interpreters in a familiar interface.
 
+   .. XXX Add a ref to the upcoming lang ref runtime components section.
+
    :ref:`multiple-interpreters-howto`
        how to use multiple interpreters
 
