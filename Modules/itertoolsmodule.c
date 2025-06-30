@@ -1880,8 +1880,8 @@ chain_traverse(PyObject *op, visitproc visit, void *arg)
     return 0;
 }
 
-static PyObject *
-chain_next(PyObject *op)
+static inline PyObject *
+chain_next_lock_held(PyObject *op)
 {
     chainobject *lz = chainobject_CAST(op);
     PyObject *item;
@@ -1917,6 +1917,16 @@ chain_next(PyObject *op)
     }
     /* Everything had been consumed already. */
     return NULL;
+}
+
+static PyObject *
+chain_next(PyObject *op)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = chain_next_lock_held(op);
+    Py_END_CRITICAL_SECTION()
+    return result;
 }
 
 PyDoc_STRVAR(chain_doc,
