@@ -397,20 +397,20 @@ class ReprTests(unittest.TestCase):
                 'object': {
                     1: 'two',
                     b'three': [
-                        (4.5, 6.7),
+                        (4.5, 6.25),
                         [set((8, 9)), frozenset((10, 11))],
                     ],
                 },
                 'tests': (
                     (dict(indent=None), '''\
-                        {1: 'two', b'three': [(4.5, 6.7), [{8, 9}, frozenset({10, 11})]]}'''),
+                        {1: 'two', b'three': [(4.5, 6.25), [{8, 9}, frozenset({10, 11})]]}'''),
                     (dict(indent=False), '''\
                         {
                         1: 'two',
                         b'three': [
                         (
                         4.5,
-                        6.7,
+                        6.25,
                         ),
                         [
                         {
@@ -430,7 +430,7 @@ class ReprTests(unittest.TestCase):
                          b'three': [
                           (
                            4.5,
-                           6.7,
+                           6.25,
                           ),
                           [
                            {
@@ -450,7 +450,7 @@ class ReprTests(unittest.TestCase):
                         b'three': [
                         (
                         4.5,
-                        6.7,
+                        6.25,
                         ),
                         [
                         {
@@ -470,7 +470,7 @@ class ReprTests(unittest.TestCase):
                          b'three': [
                           (
                            4.5,
-                           6.7,
+                           6.25,
                           ),
                           [
                            {
@@ -490,7 +490,7 @@ class ReprTests(unittest.TestCase):
                             b'three': [
                                 (
                                     4.5,
-                                    6.7,
+                                    6.25,
                                 ),
                                 [
                                     {
@@ -518,7 +518,7 @@ class ReprTests(unittest.TestCase):
                         b'three': [
                         (
                         4.5,
-                        6.7,
+                        6.25,
                         ),
                         [
                         {
@@ -538,7 +538,7 @@ class ReprTests(unittest.TestCase):
                         -->b'three': [
                         -->-->(
                         -->-->-->4.5,
-                        -->-->-->6.7,
+                        -->-->-->6.25,
                         -->-->),
                         -->-->[
                         -->-->-->{
@@ -558,7 +558,7 @@ class ReprTests(unittest.TestCase):
                         ....b'three': [
                         ........(
                         ............4.5,
-                        ............6.7,
+                        ............6.25,
                         ........),
                         ........[
                         ............{
