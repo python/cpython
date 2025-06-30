@@ -1843,11 +1843,15 @@ def _no_init_or_replace_init(self, *args, **kwargs):
     cls.__init__(self, *args, **kwargs)
 
 
+_RECKLESS_CLASS_CHECK_ALLOWED = {'abc', 'functools', None}
+_SYS_HAS_GETFRAMEMODULENAME = hasattr(sys, '_getframemodulename')
+if not _SYS_HAS_GETFRAMEMODULENAME:
+    _RECKLESS_CLASS_CHECK_ALLOWED.add('_py_abc')
+
+
 def _caller(depth=1, default='__main__'):
-    try:
+    if _SYS_HAS_GETFRAMEMODULENAME:
         return sys._getframemodulename(depth + 1) or default
-    except AttributeError:  # For platforms without _getframemodulename()
-        pass
     try:
         return sys._getframe(depth + 1).f_globals.get('__name__', default)
     except (AttributeError, ValueError):  # For platforms without _getframe()
@@ -1860,7 +1864,7 @@ def _allow_reckless_class_checks(depth=2):
     The abc and functools modules indiscriminately call isinstance() and
     issubclass() on the whole MRO of a user class, which may contain protocols.
     """
-    return _caller(depth) in {'abc', 'functools', None}
+    return _caller(depth) in _RECKLESS_CLASS_CHECK_ALLOWED
 
 
 _PROTO_ALLOWLIST = {
