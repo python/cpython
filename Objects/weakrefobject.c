@@ -72,6 +72,7 @@ init_weakref(PyWeakReference *self, PyObject *ob, PyObject *callback)
     _PyObject_SetMaybeWeakref(ob);
     _PyObject_SetMaybeWeakref((PyObject *)self);
 #endif
+    self->is_subclass = 0;
 }
 
 // Clear the weakref and steal its callback into `callback`, if provided.
