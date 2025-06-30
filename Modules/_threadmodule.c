@@ -1367,8 +1367,7 @@ typedef struct {
 static void
 localdummy_dealloc(localdummyobject *self)
 {
-    if (self->weakreflist != NULL)
-        PyObject_ClearWeakRefs((PyObject *) self);
+    FT_CLEAR_WEAKREFS((PyObject *) self, self->weakreflist);
     PyTypeObject *tp = Py_TYPE(self);
     tp->tp_free((PyObject*)self);
     Py_DECREF(tp);
