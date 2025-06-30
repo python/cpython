@@ -332,11 +332,11 @@ cpuid_features_finalize(_Py_cpuid_features *flags)
     flags->ready = 1;
 }
 
-static int
-cpuid_features_validate(const _Py_cpuid_features *flags)
+int
+_Py_cpuid_check_features(const _Py_cpuid_features *flags)
 {
     if (flags->ready != 1) {
-        return -1;
+        return 0;
     }
 
     // AVX-512/F is required to support any other AVX-512 instruction set
@@ -354,16 +354,10 @@ cpuid_features_validate(const _Py_cpuid_features *flags)
     );
 
     if (!flags->avx512_f && !avx512_require_f) {
-        return -1;
+        return 0;
     }
 
-    return 0;
-}
-
-int
-_Py_cpuid_check_features(const _Py_cpuid_features *flags)
-{
-    return cpuid_features_validate(flags) < 0 ? 0 : 1;
+    return 1;
 }
 
 /*
@@ -552,7 +546,7 @@ _Py_cpuid_detect_features(_Py_cpuid_features *flags)
     cpuid_detect_l1_features(flags);
     cpuid_detect_l7_features(flags);
     cpuid_features_finalize(flags);
-    if (cpuid_features_validate(flags) < 0) {
+    if (!_Py_cpuid_check_features(flags)) {
         _Py_cpuid_disable_features(flags);
     }
 #endif // !HAS_CPUID_SUPPORT
