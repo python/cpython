@@ -4,6 +4,7 @@ import re
 import tempfile
 import unittest
 import unittest.mock
+from turtle import getmethparlist
 from test import support
 from test.support import import_helper
 from test.support import os_helper
@@ -655,6 +656,16 @@ class TestModuleLevel(unittest.TestCase):
                 sig = inspect.signature(obj)
                 self.assertEqual(str(sig), known_signatures[name])
 
+class TestGetmethparlist(unittest.TestCase):
+    def setUp(self):
+        class TestClass:
+            def no_params(self):
+                pass
+
+    def test_no_parameters(self):
+        def_sig, call_sig = getmethparlist(self.test_obj.no_params)
+        self.assertEqual(def_sig, "()")
+        self.assertEqual(call_sig, "()")
 
 if __name__ == '__main__':
     unittest.main()
