@@ -1494,7 +1494,7 @@ move_legacy_finalizer_reachable(struct collection_state *state)
 // Clear all weakrefs to unreachable objects. Weakrefs with callbacks are
 // enqueued in `wrcb_to_call`, but not invoked yet.
 static void
-clear_weakrefs(struct collection_state *state)
+handle_weakrefs(struct collection_state *state)
 {
     PyObject *op;
     WORKSTACK_FOR_EACH(&state->unreachable, op) {
@@ -1541,6 +1541,42 @@ clear_weakrefs(struct collection_state *state)
 
             // Enqueue weakref to be called later.
             worklist_push(&state->wrcb_to_call, (PyObject *)wr);
+        }
+    }
+}
+
+// Clear all weakrefs to unreachable objects.
+static void
+clear_weakrefs(struct collection_state *state)
+{
+    PyObject *op;
+    WORKSTACK_FOR_EACH(&state->unreachable, op) {
+        if (PyWeakref_Check(op)) {
+            // Clear weakrefs that are themselves unreachable to ensure their
+            // callbacks will not be executed later from a `tp_clear()`
+            // inside delete_garbage(). That would be unsafe: it could
+            // resurrect a dead object or access a an already cleared object.
+            // See bpo-38006 for one example.
+            _PyWeakref_ClearRef((PyWeakReference *)op);
+        }
+
+        if (!_PyType_SUPPORTS_WEAKREFS(Py_TYPE(op))) {
+            continue;
+        }
+
+        // NOTE: This is never triggered for static types so we can avoid the
+        // (slightly) more costly _PyObject_GET_WEAKREFS_LISTPTR().
+        PyWeakReference **wrlist = _PyObject_GET_WEAKREFS_LISTPTR_FROM_OFFSET(op);
+
+        // `op` may have some weakrefs.  March over the list, clear
+        // all the weakrefs.
+        for (PyWeakReference *wr = *wrlist; wr != NULL; wr = *wrlist) {
+            // _PyWeakref_ClearRef clears the weakref but leaves
+            // the callback pointer intact.  Obscure: it also
+            // changes *wrlist.
+            _PyObject_ASSERT((PyObject *)wr, wr->wr_object == op);
+            _PyWeakref_ClearRef(wr);
+            _PyObject_ASSERT((PyObject *)wr, wr->wr_object == Py_None);
         }
     }
 }
@@ -2211,7 +2247,7 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
     interp->gc.long_lived_total = state->long_lived_total;
 
     // Clear weakrefs and enqueue callbacks (but do not call them).
-    clear_weakrefs(state);
+    handle_weakrefs(state);
     _PyEval_StartTheWorld(interp);
 
     // Deallocate any object from the refcount merge step
@@ -2222,11 +2258,19 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
     call_weakref_callbacks(state);
     finalize_garbage(state);
 
-    // Handle any objects that may have resurrected after the finalization.
     _PyEval_StopTheWorld(interp);
+    // Handle any objects that may have resurrected after the finalization.
     err = handle_resurrected_objects(state);
     // Clear free lists in all threads
     _PyGC_ClearAllFreeLists(interp);
+    if (err == 0) {
+        // Clear weakrefs to objects in the unreachable set.  No Python-level
+        // code must be allowed to access those unreachable objects.  During
+        // delete_garbage(), finalizers outside the unreachable set might
+        // run and create new weakrefs.  If those weakrefs were not cleared,
+        // they could reveal unreachable objects.
+        clear_weakrefs(state);
+    }
     _PyEval_StartTheWorld(interp);
 
     if (err < 0) {
