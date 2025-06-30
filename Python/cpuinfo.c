@@ -128,6 +128,8 @@ get_cpuid_info(uint32_t level /* input eax */,
     uint32_t info[4] = {0};
     __cpuidex(info, level, count);
     *eax = info[0], *ebx = info[1], *ecx = info[2], *edx = info[3];
+#else
+    (void)level, (void)count;
 #endif
 }
 
@@ -151,8 +153,8 @@ get_xgetbv(uint32_t index)
 static uint32_t
 detect_cpuid_maxleaf(void)
 {
-    uint32_t maxleaf = 0, ebx = 0, ecx = 0, edx = 0;
-    get_cpuid_info(0, 0, &maxleaf, &ebx, &ecx, &edx);
+    uint32_t maxleaf = 0, _ebx = 0, _ecx = 0, _edx = 0;
+    get_cpuid_info(0, 0, &maxleaf, &_ebx, &_ecx, &_edx);
     return maxleaf;
 }
 
@@ -160,7 +162,9 @@ detect_cpuid_maxleaf(void)
 static void
 detect_cpuid_features(_Py_cpuid_features *flags, uint32_t ecx, uint32_t edx)
 {
+    assert(flags->ready == 0);
     assert(flags->maxleaf >= 1);
+    (void)flags, (void)ecx, (void)edx;  // silence -Wunused-parameter
     // Keep the ordering and newlines as they are declared in the structure.
 #ifdef SIMD_SSE_INSTRUCTIONS_DETECTION_GUARD
 #ifdef _Py_CAN_COMPILE_SIMD_SSE_INSTRUCTIONS
@@ -205,8 +209,9 @@ static void
 detect_cpuid_extended_features_L7S0(_Py_cpuid_features *flags,
                                     uint32_t ebx, uint32_t ecx, uint32_t edx)
 {
+    assert(flags->ready == 0);
     assert(flags->maxleaf >= 7);
-    (void)ebx, (void)ecx, (void)edx; // to suppress unused warnings
+    (void)flags, (void)ebx, (void)ecx, (void)edx;
     // Keep the ordering and newlines as they are declared in the structure.
 #ifdef SIMD_AVX2_INSTRUCTIONS_DETECTION_GUARD
 #ifdef _Py_CAN_COMPILE_SIMD_AVX2_INSTRUCTIONS
@@ -282,8 +287,9 @@ detect_cpuid_extended_features_L7S1(_Py_cpuid_features *flags,
                                     uint32_t ecx,
                                     uint32_t edx)
 {
+    assert(flags->ready == 0);
     assert(flags->maxleaf >= 7);
-    (void)eax, (void)ebx, (void)ecx, (void)edx; // to suppress unused warnings
+    (void)flags, (void)eax, (void)ebx, (void)ecx, (void)edx;
     // Keep the ordering and newlines as they are declared in the structure.
 #ifdef SIMD_AVX_INSTRUCTIONS_DETECTION_GUARD
 #ifdef _Py_CAN_COMPILE_SIMD_AVX_NE_CONVERT_INSTRUCTIONS
@@ -309,8 +315,10 @@ detect_cpuid_extended_features_L7S1(_Py_cpuid_features *flags,
 static void
 detect_cpuid_xsave_state(_Py_cpuid_features *flags)
 {
-    // Keep the ordering and newlines as they are declared in the structure.
+    assert(flags->ready == 0);
     assert(flags->maxleaf >= 1);
+    (void)flags;
+    // Keep the ordering and newlines as they are declared in the structure.
 #ifdef HAS_XGETBV_SUPPORT
     uint64_t xcr0 = flags->osxsave ? get_xgetbv(0) : 0;
     flags->xcr0_sse = XSAVE_CHECK_REG(xcr0, XCR0_SSE);
@@ -480,6 +488,7 @@ _Py_cpuid_match_features(const _Py_cpuid_features *actual,
 static void
 cpuid_detect_l1_features(_Py_cpuid_features *flags)
 {
+    assert(flags->ready == 0);
     if (flags->maxleaf >= 1) {
         uint32_t eax = 0, ebx = 0, ecx = 0, edx = 0;
         get_cpuid_info(1, 0, &eax, &ebx, &ecx, &edx);
@@ -497,9 +506,10 @@ cpuid_detect_l1_features(_Py_cpuid_features *flags)
 static void
 cpuid_detect_l7s0_features(_Py_cpuid_features *flags)
 {
+    assert(flags->ready == 0);
     assert(flags->maxleaf >= 7);
-    uint32_t eax = 0, ebx = 0, ecx = 0, edx = 0;
-    get_cpuid_info(7, 0, &eax, &ebx, &ecx, &edx);
+    uint32_t _eax = 0, ebx = 0, ecx = 0, edx = 0;
+    get_cpuid_info(7, 0, &_eax, &ebx, &ecx, &edx);
     detect_cpuid_extended_features_L7S0(flags, ebx, ecx, edx);
 }
 #else
@@ -510,6 +520,7 @@ cpuid_detect_l7s0_features(_Py_cpuid_features *flags)
 static void
 cpuid_detect_l7s1_features(_Py_cpuid_features *flags)
 {
+    assert(flags->ready == 0);
     assert(flags->maxleaf >= 7);
     uint32_t eax = 0, ebx = 0, ecx = 0, edx = 0;
     get_cpuid_info(7, 1, &eax, &ebx, &ecx, &edx);
@@ -523,6 +534,7 @@ cpuid_detect_l7s1_features(_Py_cpuid_features *flags)
 static void
 cpuid_detect_l7_features(_Py_cpuid_features *flags)
 {
+    assert(flags->ready == 0);
     if (flags->maxleaf >= 7) {
         cpuid_detect_l7s0_features(flags);
         cpuid_detect_l7s1_features(flags);
