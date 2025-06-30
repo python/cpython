@@ -683,6 +683,13 @@ also be used to improve performance.
    not compiled. This includes both the functionality to schedule code to be executed
    and the functionality to receive code to be executed.
 
+   .. c:macro:: Py_REMOTE_DEBUG
+
+      This macro is defined by default, unless Python is configured with
+      :option:`--without-remote-debug`.
+
+      Note that even if the macro is defined, remote debugging may not be
+      available (for example, on an incompatible platform).
 
    .. versionadded:: 3.14
 
