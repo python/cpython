@@ -1535,7 +1535,7 @@ Instance methods:
 
       or by calculating the timestamp directly::
 
-         timestamp = (dt - datetime(1970, 1, 1)) / timedelta(seconds=1)
+         timestamp = (dt - datetime(1970, 1, 1)).total_seconds()
 
 .. method:: datetime.weekday()
 
