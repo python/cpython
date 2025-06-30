@@ -534,6 +534,9 @@ given type object has a specified feature.
  */
 #define Py_TPFLAGS_MANAGED_DICT (1 << 4)
 
+/* Type has dictionary or weakref pointers that are managed by VM and has
+ * to allocate space to store these.
+ */
 #define Py_TPFLAGS_PREHEADER (Py_TPFLAGS_MANAGED_WEAKREF | Py_TPFLAGS_MANAGED_DICT)
 
 /* Set if instances of the type object are treated as sequences for pattern matching */
