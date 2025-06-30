@@ -656,10 +656,9 @@ def request_path(request):
     return path
 
 def request_port(request):
-    host = request.host
-    i = host.find(':')
-    if i >= 0:
-        port = host[i+1:]
+    match = cut_port_re.search(request.host)
+    if match:
+        port = match.group(0).removeprefix(':')
         try:
             int(port)
         except ValueError:

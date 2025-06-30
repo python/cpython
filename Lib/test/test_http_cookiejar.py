@@ -1262,6 +1262,46 @@ class CookieTests(unittest.TestCase):
         c.add_cookie_header(req)
         self.assertTrue(req.has_header("Cookie"))
 
+    def test_set_ok_port(self):
+        pol = DefaultCookiePolicy()
+        c = CookieJar(policy=pol)
+        headers = ["Set-Cookie: CUSTOMER=WILE_E_COYOTE; path=/; port=1234"]
+        req = urllib.request.Request("http://127.0.0.1:1234")
+        res = FakeResponse(headers, "http://127.0.0.1:1234")
+        self.assertTrue(pol.set_ok_port(c.make_cookies(res, req)[0], req))
+
+        req = urllib.request.Request("http://acme.com:1234")
+        res = FakeResponse(headers, "http://acme.com:1234")
+        self.assertTrue(pol.set_ok_port(c.make_cookies(res, req)[0], req))
+
+        req = urllib.request.Request("http://[::1]:1234")
+        res = FakeResponse(headers, "http://[::1]:1234")
+        self.assertTrue(pol.set_ok_port(c.make_cookies(res, req)[0], req))
+
+        req = urllib.request.Request("http://[::1]:1235")
+        res = FakeResponse(headers, "http://[::1]:1235")
+        self.assertFalse(pol.set_ok_port(c.make_cookies(res, req)[0], req))
+
+    def test_return_ok_port(self):
+        pol = DefaultCookiePolicy()
+        c = CookieJar(policy=pol)
+        headers = ["Set-Cookie: CUSTOMER=WILE_E_COYOTE; path=/; port=1234"]
+        req = urllib.request.Request("http://127.0.0.1:1234")
+        res = FakeResponse(headers, "http://127.0.0.1:1234")
+        self.assertTrue(pol.return_ok_port(c.make_cookies(res, req)[0], req))
+
+        req = urllib.request.Request("http://acme.com:1234")
+        res = FakeResponse(headers, "http://acme.com:1234")
+        self.assertTrue(pol.return_ok_port(c.make_cookies(res, req)[0], req))
+
+        req = urllib.request.Request("http://[::1]:1234")
+        res = FakeResponse(headers, "http://[::1]:1234")
+        self.assertTrue(pol.return_ok_port(c.make_cookies(res, req)[0], req))
+
+        req = urllib.request.Request("http://[::1]:1235")
+        res = FakeResponse(headers, "http://[::1]:1235")
+        self.assertFalse(pol.return_ok_port(c.make_cookies(res, req)[0], req))
+
     def test_domain_mirror(self):
         pol = DefaultCookiePolicy(rfc2965=True)
 

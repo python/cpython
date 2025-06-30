@@ -1,0 +1,2 @@
+:mod:`http.cookiejar`: Fix a bug that occurs when :class:`~http.cookiejar.DefaultCookiePolicy`
+attempts to parse the port of an IPv6 address in func ``request_port()``.
