@@ -1250,7 +1250,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 .. c:function:: void PyInterpreterState_Clear(PyInterpreterState *interp)
 
    Reset all information in an interpreter state object.  There must be
-   an :term:`attached thread state` for the the interpreter.
+   an :term:`attached thread state` for the interpreter.
 
    .. audit-event:: cpython.PyInterpreterState_Clear "" c.PyInterpreterState_Clear
 
