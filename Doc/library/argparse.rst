@@ -839,15 +839,17 @@ how the command-line arguments should be handled. The supplied actions are:
     >>> parser.parse_args(['--version'])
     PROG 2.0
 
-Only actions that consume command-line arguments (e.g. ``'store'``,
-``'append'`` or ``'extend'``) can be used with positional arguments.
+Note that only actions that consume command-line arguments (e.g. ``'store'``,
+``'append'`` or ``'extend'``) can be used with positional arguments. You may
+also specify an arbitrary action by passing an :class:`Action` subclass or
+other object that implements the same interface.
 
 .. class:: BooleanOptionalAction
 
-   You may also specify an arbitrary action by passing an :class:`Action` subclass or
-   other object that implements the same interface. The :class:`!BooleanOptionalAction`
-   is available in :mod:`!argparse` and adds support for boolean actions such as
-   ``--foo`` and ``--no-foo``::
+   A subclass of :class:`Action` for handling boolean flags with positive
+   and negative options. Adding a single argument such as ``--foo`` automatically
+   creates both ``--foo`` and ``--no-foo`` options, storing ``True`` and ``False``
+   respectively::
 
        >>> import argparse
        >>> parser = argparse.ArgumentParser()
