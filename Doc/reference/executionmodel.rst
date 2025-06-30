@@ -453,40 +453,55 @@ specific to Python::
 
 When a Python program starts, it looks exactly like that, with one
 of each.  The process has a single global runtime to manage Python's
-process-global resources.  Each Python thread has all the state it needs
-to run Python code (and use any supported C-API) in its OS thread.
-Depending on the implementation, this probably includes the current
-exception and the Python call stack.
+process-global resources.  The runtime may grow to include multiple
+interpreters and each interpreter may grow to include multiple Python
+threads.  The initial interpreter is known as the "main" interpreter,
+and the initial thread, where the runtime was initialized, is known
+as the "main" thread.
 
-In between the global runtime and the thread(s) lies the interpreter.
-It completely encapsulates all of the non-process-global runtime state
-that the interpreter's Python threads share.  For example, all its
-threads share :data:`sys.modules`.  Every Python thread belongs to a
-single interpreter and runs using that shared state.  The initial
-interpreter is known as the "main" interpreter, and the initial thread,
-where the runtime was initialized, is known as the "main" thread.
+An interpreter completely encapsulates all of the non-process-global
+runtime state that the interpreter's Python threads share.  For example,
+all its threads share :data:`sys.modules`, but each interpreter has its
+own :data:`sys.modules`.
 
 .. note::
 
    The interpreter here is not the same as the "bytecode interpreter",
-   which is what runs in each thread, executing compiled Python code.
+   which is what regularly runs in threads, executing compiled Python code.
 
-Every Python thread is associated with a single OS thread, which is
-where it runs.  However, multiple Python threads can be associated with
-the same OS thread.  For example, an OS thread might run code with a
-first interpreter and then with a second, each necessarily with its own
-Python thread.  Still, regardless of how many are *associated* with
-an OS thread, only one Python thread can be actively *running* in
-an OS thread at a time.  Switching between interpreters means
-changing the active Python thread.
+A Python thread represents the state necessary for the Python runtime
+to *run* in an OS thread.  It also represents the execution of Python
+code (or any supported C-API) in that OS thread.  Depending on the
+implementation, this probably includes the current exception and
+the Python call stack.  The Python thread always identifies the
+interpreter it belongs to, meaning the state it shares
+with other threads.
+
+.. note::
+
+   Here "Python thread" does not necessarily refer to a thread created
+   using the :mod:`threading` module.
+
+Each Python thread is associated with a single OS thread, which is where
+it can run.  In the opposite direction, a single OS thread can have many
+Python threads associated with it.  However, only one of those Python
+threads is "active" in the OS thread at time.  The runtime will operate
+in the OS thread relative to the active Python thread.
+
+For an interpreter to be used in an OS thread, it must have a
+corresponding active Python thread.  Thus switching between interpreters
+means changing the active Python thread.  An interpreter can have Python
+threads, active or inactive, for as many OS threads as it needs.  It may
+even have multiple Python threads for the same OS thread, though at most
+one can be active at a time.
 
 Once a program is running, new Python threads can be created using the
 :mod:`threading` module (on platforms and Python implementations that
 support threads).  Additional processes can be created using the
 :mod:`os`, :mod:`subprocess`, and :mod:`multiprocessing` modules.
 You can run coroutines (async) in the main thread using :mod:`asyncio`.
-Interpreters can be created using the :mod:`concurrent.interpreters`
-module.
+Interpreters can be created and used with the
+:mod:`concurrent.interpreters` module.
 
 
 .. rubric:: Footnotes
