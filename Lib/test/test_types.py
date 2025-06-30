@@ -495,8 +495,8 @@ class TypesTests(unittest.TestCase):
         # and a number after the decimal.  This is tricky, because
         # a totally empty format specifier means something else.
         # So, just use a sign flag
-        test(1e200, '+g', '+1e+200')
-        test(1e200, '+', '+1e+200')
+        test(1.25e200, '+g', '+1.25e+200')
+        test(1.25e200, '+', '+1.25e+200')
 
         test(1.1e200, '+g', '+1.1e+200')
         test(1.1e200, '+', '+1.1e+200')
