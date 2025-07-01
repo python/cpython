@@ -2255,11 +2255,28 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
     call_weakref_callbacks(state);
     finalize_garbage(state);
 
-    // Handle any objects that may have resurrected after the finalization.
     _PyEval_StopTheWorld(interp);
+    // Handle any objects that may have resurrected after the finalization.
     err = handle_resurrected_objects(state);
     // Clear free lists in all threads
     _PyGC_ClearAllFreeLists(interp);
+    if (err == 0) {
+        // Clear weakrefs to objects in the unreachable set.  No Python-level
+        // code must be allowed to access those unreachable objects.  During
+        // delete_garbage(), finalizers outside the unreachable set might
+        // run and if those weakrefs were not cleared, that could reveal
+        // unreachable objects.
+        //
+        // We used to clear weakrefs earlier, before calling finalizers.
+        // That causes at least two problems.  First, the finalizers could
+        // create new weakrefs, that refer to unreachable objects.  Those
+        // would not be cleared and could cause the problem described above
+        // (see GH-91636 as an example).  Second, we need the weakrefs in the
+        // tp_subclasses to *not* be cleared so that caches based on the type
+        // version are correctly invalidated (see GH-135552 as a bug caused by
+        // this).
+        clear_weakrefs(state);
+    }
     _PyEval_StartTheWorld(interp);
 
     if (err < 0) {
@@ -2270,21 +2287,6 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
         PyErr_NoMemory();
         return;
     }
-
-    // Clear weakrefs to objects in the unreachable set.  No Python-level
-    // code must be allowed to access those unreachable objects.  During
-    // delete_garbage(), finalizers outside the unreachable set might run
-    // and if those weakrefs were not cleared, that could reveal unreachable
-    // objects.
-    //
-    // We used to clear weakrefs earlier, before calling finalizers.  That
-    // causes at least two problems.  First, the finalizers could create
-    // new weakrefs, that refer to unreachable objects.  Those would not be
-    // cleared and could cause the problem described above (see GH-91636 as
-    // an example).  Second, we need the weakrefs in the tp_subclasses to
-    // *not* be cleared so that caches based on the type version are correctly
-    // invalidated (see GH-135552 as a bug caused by this).
-    clear_weakrefs(state);
 
     // Call tp_clear on objects in the unreachable set. This will cause
     // the reference cycles to be broken. It may also cause some objects
