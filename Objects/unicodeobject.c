@@ -10046,7 +10046,7 @@ lower_ucs4(int kind, const void *data, Py_ssize_t length, Py_ssize_t i,
         mapped[0] = handle_capital_sigma(kind, data, length, i);
         return 1;
     }
-    return _PyUnicode_ToLowerFull(c, mapped);
+    return PyUnicode_ToLower(c, mapped);
 }
 
 static Py_ssize_t
@@ -10057,7 +10057,7 @@ do_capitalize(int kind, const void *data, Py_ssize_t length, Py_UCS4 *res, Py_UC
     Py_UCS4 c, mapped[3];
 
     c = PyUnicode_READ(kind, data, 0);
-    n_res = _PyUnicode_ToTitleFull(c, mapped);
+    n_res = PyUnicode_ToTitle(c, mapped);
     for (j = 0; j < n_res; j++) {
         *maxchar = Py_MAX(*maxchar, mapped[j]);
         res[k++] = mapped[j];
@@ -10084,7 +10084,7 @@ do_swapcase(int kind, const void *data, Py_ssize_t length, Py_UCS4 *res, Py_UCS4
             n_res = lower_ucs4(kind, data, length, i, c, mapped);
         }
         else if (Py_UNICODE_ISLOWER(c)) {
-            n_res = _PyUnicode_ToUpperFull(c, mapped);
+            n_res = PyUnicode_ToUpper(c, mapped);
         }
         else {
             n_res = 1;
@@ -10110,7 +10110,7 @@ do_upper_or_lower(int kind, const void *data, Py_ssize_t length, Py_UCS4 *res,
         if (lower)
             n_res = lower_ucs4(kind, data, length, i, c, mapped);
         else
-            n_res = _PyUnicode_ToUpperFull(c, mapped);
+            n_res = PyUnicode_ToUpper(c, mapped);
         for (j = 0; j < n_res; j++) {
             *maxchar = Py_MAX(*maxchar, mapped[j]);
             res[k++] = mapped[j];
@@ -10163,7 +10163,7 @@ do_title(int kind, const void *data, Py_ssize_t length, Py_UCS4 *res, Py_UCS4 *m
         if (previous_is_cased)
             n_res = lower_ucs4(kind, data, length, i, c, mapped);
         else
-            n_res = _PyUnicode_ToTitleFull(c, mapped);
+            n_res = PyUnicode_ToTitle(c, mapped);
 
         for (j = 0; j < n_res; j++) {
             *maxchar = Py_MAX(*maxchar, mapped[j]);

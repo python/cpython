@@ -733,6 +733,21 @@ PyAPI_FUNC(int) _PyUnicode_IsAlpha(
     Py_UCS4 ch       /* Unicode character */
     );
 
+PyAPI_FUNC(int) PyUnicode_ToLower(
+    Py_UCS4 ch,     /* Unicode character */
+    Py_UCS4 *res    /* Output buffer */
+    );
+
+PyAPI_FUNC(int) PyUnicode_ToUpper(
+    Py_UCS4 ch,     /* Unicode character */
+    Py_UCS4 *res    /* Output buffer */
+    );
+
+PyAPI_FUNC(int) PyUnicode_ToTitle(
+    Py_UCS4 ch,     /* Unicode character */
+    Py_UCS4 *res    /* Output buffer */
+    );
+
 // Helper array used by Py_UNICODE_ISSPACE().
 PyAPI_DATA(const unsigned char) _Py_ascii_whitespace[];
 
