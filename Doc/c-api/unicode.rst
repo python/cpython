@@ -307,6 +307,36 @@ These APIs can be used for fast direct character conversions:
    possible.  This function does not raise exceptions.
 
 
+.. c:function:: Py_ssize_t PyUnicode_ToLower(Py_UCS4 ch, Py_UCS4 *buffer)
+
+   Convert *ch* to lower case, store result in *buffer*, which should be
+   able to hold as many characters needed for *ch* to be lower cased
+   (maximum three), and return the number of characters stored.
+   Passing a ``NULL`` buffer returns the buffer size needed.
+
+   .. versionadded:: next
+
+
+.. c:function:: Py_ssize_t PyUnicode_ToUpper(Py_UCS4 ch, Py_UCS4 *buffer)
+
+   Convert *ch* to lower case, store result in *buffer*, which should be
+   able to hold as many characters needed for *ch* to be lower cased
+   (maximum three), and return the number of characters stored.
+   Passing a ``NULL`` buffer returns the buffer size needed.
+
+   .. versionadded:: next
+
+
+.. c:function:: Py_ssize_t PyUnicode_ToTitle(Py_UCS4 ch, Py_UCS4 *buffer)
+
+   Convert *ch* to lower case, store result in *buffer*, which should be
+   able to hold as many characters needed for *ch* to be lower cased
+   (maximum three), and return the number of characters stored.
+   Passing a ``NULL`` buffer returns the buffer size needed.
+
+   .. versionadded:: next
+
+
 These APIs can be used to work with surrogates:
 
 .. c:function:: int Py_UNICODE_IS_SURROGATE(Py_UCS4 ch)

@@ -198,7 +198,7 @@ Py_UCS4 _PyUnicode_ToLowercase(Py_UCS4 ch)
     return ch + ctype->lower;
 }
 
-int _PyUnicode_ToLowerFull(Py_UCS4 ch, Py_UCS4 *res)
+int PyUnicode_ToLower(Py_UCS4 ch, Py_UCS4 *res)
 {
     const _PyUnicode_TypeRecord *ctype = gettyperecord(ch);
 
@@ -206,15 +206,21 @@ int _PyUnicode_ToLowerFull(Py_UCS4 ch, Py_UCS4 *res)
         int index = ctype->lower & 0xFFFF;
         int n = ctype->lower >> 24;
         int i;
-        for (i = 0; i < n; i++)
-            res[i] = _PyUnicode_ExtendedCase[index + i];
+        for (i = 0; i < n; i++) {
+            if (res != NULL) {
+                res[i] = _PyUnicode_ExtendedCase[index + i];
+            }
+        }
         return n;
     }
-    res[0] = ch + ctype->lower;
+
+    if (res != NULL) {
+        res[0] = ch + ctype->lower;
+    }
     return 1;
 }
 
-int _PyUnicode_ToTitleFull(Py_UCS4 ch, Py_UCS4 *res)
+int PyUnicode_ToTitle(Py_UCS4 ch, Py_UCS4 *res)
 {
     const _PyUnicode_TypeRecord *ctype = gettyperecord(ch);
 
@@ -222,15 +228,20 @@ int _PyUnicode_ToTitleFull(Py_UCS4 ch, Py_UCS4 *res)
         int index = ctype->title & 0xFFFF;
         int n = ctype->title >> 24;
         int i;
-        for (i = 0; i < n; i++)
-            res[i] = _PyUnicode_ExtendedCase[index + i];
+        for (i = 0; i < n; i++) {
+            if (res != NULL) {
+                res[i] = _PyUnicode_ExtendedCase[index + i];
+            }
+        }
         return n;
     }
-    res[0] = ch + ctype->title;
+    if (res != NULL) {
+        res[0] = ch + ctype->title;
+    }
     return 1;
 }
 
-int _PyUnicode_ToUpperFull(Py_UCS4 ch, Py_UCS4 *res)
+int PyUnicode_ToUpper(Py_UCS4 ch, Py_UCS4 *res)
 {
     const _PyUnicode_TypeRecord *ctype = gettyperecord(ch);
 
@@ -238,11 +249,16 @@ int _PyUnicode_ToUpperFull(Py_UCS4 ch, Py_UCS4 *res)
         int index = ctype->upper & 0xFFFF;
         int n = ctype->upper >> 24;
         int i;
-        for (i = 0; i < n; i++)
-            res[i] = _PyUnicode_ExtendedCase[index + i];
+        for (i = 0; i < n; i++) {
+            if (res != NULL) {
+                res[i] = _PyUnicode_ExtendedCase[index + i];
+            }
+        }
         return n;
     }
-    res[0] = ch + ctype->upper;
+    if (res != NULL) {
+        res[0] = ch + ctype->upper;
+    }
     return 1;
 }
 
@@ -258,7 +274,7 @@ int _PyUnicode_ToFoldedFull(Py_UCS4 ch, Py_UCS4 *res)
             res[i] = _PyUnicode_ExtendedCase[index + i];
         return n;
     }
-    return _PyUnicode_ToLowerFull(ch, res);
+    return PyUnicode_ToLowerFull(ch, res);
 }
 
 int _PyUnicode_IsCased(Py_UCS4 ch)
