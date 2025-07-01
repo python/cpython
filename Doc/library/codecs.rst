@@ -1515,6 +1515,18 @@ This module implements the following functions:
    are registered for future use.
 
 
+.. function:: win32_code_page_search_function(encoding)
+
+   Search for a Windows code page encoding *encoding* of the form ``cpXXXX``.
+
+   If the code page is valid and supported, return a :class:`codecs.CodecInfo`
+   object for it.
+
+   .. availability:: Windows.
+
+   .. versionadded:: 3.14
+
+
 This module implements the following exception:
 
 .. exception:: CodecRegistryError
