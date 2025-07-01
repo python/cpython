@@ -1621,10 +1621,12 @@ finalize_remove_modules(PyObject *modules, int verbose)
         }
     }
 
-    if (PyList_Extend(weaklist, weak_ext) < 0) {
-        PyErr_FormatUnraisable("Exception ignored while removing modules");
+    if (weaklist != NULL) {
+        if (PyList_Extend(weaklist, weak_ext) < 0) {
+            PyErr_FormatUnraisable("Exception ignored while removing modules");
+        }
+        Py_DECREF(weak_ext);
     }
-    Py_DECREF(weak_ext);
 
 #undef CLEAR_MODULE
 #undef STORE_MODULE_WEAKREF
