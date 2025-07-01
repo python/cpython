@@ -252,6 +252,13 @@ platform
   (Contributed by Alexey Makridenko in :gh:`133604`.)
 
 
+sre_*
+-----
+
+* Removed :mod:`!sre_compile`, :mod:`!sre_constants` and :mod:`!sre_parse` modules.
+  (Contributed by Stan Ulbrych in :gh:`135994`.)
+
+
 sysconfig
 ---------
 
