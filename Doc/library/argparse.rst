@@ -844,21 +844,6 @@ Only actions that consume command-line arguments (e.g. ``'store'``,
 also specify an arbitrary action by passing an :class:`Action` subclass or
 other object that implements the same interface.
 
-.. class:: BooleanOptionalAction
-
-   A subclass of :class:`Action` for handling boolean flags with positive
-   and negative options. Adding a single argument such as ``--foo`` automatically
-   creates both ``--foo`` and ``--no-foo`` options, storing ``True`` and ``False``
-   respectively::
-
-       >>> import argparse
-       >>> parser = argparse.ArgumentParser()
-       >>> parser.add_argument('--foo', action=argparse.BooleanOptionalAction)
-       >>> parser.parse_args(['--no-foo'])
-       Namespace(foo=False)
-
-   .. versionadded:: 3.9
-
 The recommended way to create a custom action is to extend :class:`Action`,
 overriding the :meth:`!__call__` method and optionally the :meth:`!__init__` and
 :meth:`!format_usage` methods. You can also register custom actions using the
@@ -1431,6 +1416,20 @@ this API may be passed as the ``action`` parameter to
       and return a string which will be used when printing the usage of the program.
       If such method is not provided, a sensible default will be used.
 
+.. class:: BooleanOptionalAction
+
+   A subclass of :class:`Action` for handling boolean flags with positive
+   and negative options. Adding a single argument such as ``--foo`` automatically
+   creates both ``--foo`` and ``--no-foo`` options, storing ``True`` and ``False``
+   respectively::
+
+       >>> import argparse
+       >>> parser = argparse.ArgumentParser()
+       >>> parser.add_argument('--foo', action=argparse.BooleanOptionalAction)
+       >>> parser.parse_args(['--no-foo'])
+       Namespace(foo=False)
+
+   .. versionadded:: 3.9
 
 The parse_args() method
 -----------------------
