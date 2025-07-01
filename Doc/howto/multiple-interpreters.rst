@@ -486,31 +486,30 @@ or use it incrementally::
     from textwrap import dedent
     from concurrent import interpreters
 
-    if __name__ == '__main__':
-        interp = interpreters.create()
+    interp = interpreters.create()
 
-        # Prepare the interpreter.
+    # Prepare the interpreter.
+    interp.exec(dedent("""
+        # We will need this later.
+        import math
+
+        # Initialize the value.
+        value = 1
+
+        def double(val):
+            return val + val
+        """))
+
+    # Do the work.
+    for _ in range(9):
         interp.exec(dedent("""
-            # We will need this later.
-            import math
-
-            # Initialize the value.
-            value = 1
-
-            def double(val):
-                return val + val
+            assert math.factorial(value + 1) >= double(value)
+            value = double(value)
             """))
 
-        # Do the work.
-        for _ in range(9):
-            interp.exec(dedent("""
-                assert math.factorial(value + 1) >= double(value)
-                value = double(value)
-                """))
-
-        # Show the result.
-        interp.exec('print(value)')
-        # prints: 1024
+    # Show the result.
+    interp.exec('print(value)')
+    # prints: 1024
 
 In case you're curious, in a little while we'll look at how to pass
 data in and out of an interpreter (instead of just printing things).
