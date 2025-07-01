@@ -11,9 +11,10 @@ module.
 
 This document has 2 parts: first a brief introduction and then a tutorial.
 
-The tutorial covers the basics of using multiple interpreters
-(:ref:`interp-tutorial-basics`), as well as how to communicate between
-interpreters (:ref:`interp-tutorial-communicating`).
+The tutorial covers :ref:`the basics <interp-tutorial-basics>` of using
+multiple interpreters, as well as how :ref:`to communicate
+<interp-tutorial-communicating>` between interpreters.  It finishes with
+some :ref:`extra information <interp-tutorial-misc>`.
 
 .. currentmodule:: concurrent.interpreters
 
@@ -620,24 +621,6 @@ can explicitly clean it up sooner::
     finally:
         interp.close()
 
-concurrent.futures.InterpreterPoolExecutor
-------------------------------------------
-
-The :mod:`concurrent.futures` module is a simple, popular concurrency
-framework that wraps both threading and multiprocessing.  You can also
-use it with multiple interpreters, via
-:class:`~concurrent.futures.InterpreterPoolExecutor`::
-
-    from concurrent.futures import InterpreterPoolExecutor
-
-    def script():
-        return 'spam!'
-
-    with InterpreterPoolExecutor(max_workers=5) as executor:
-        fut = executor.submit(script)
-    res = fut.result()
-    # res: 'spam!'
-
 
 .. _interp-tutorial-communicating:
 
@@ -1014,6 +997,30 @@ You can also close the pipe ends and join the thread to synchronize.
 
 Using :func:`os.pipe` (or similar) to communicate between interpreters
 is a little awkward, as well as inefficient.
+
+
+.. _interp-tutorial-misc:
+
+Tutorial: Miscellaneous
+=======================
+
+concurrent.futures.InterpreterPoolExecutor
+------------------------------------------
+
+The :mod:`concurrent.futures` module is a simple, popular concurrency
+framework that wraps both threading and multiprocessing.  You can also
+use it with multiple interpreters, via
+:class:`~concurrent.futures.InterpreterPoolExecutor`::
+
+    from concurrent.futures import InterpreterPoolExecutor
+
+    def script():
+        return 'spam!'
+
+    with InterpreterPoolExecutor(max_workers=5) as executor:
+        fut = executor.submit(script)
+    res = fut.result()
+    # res: 'spam!'
 
 Capturing an interpreter's stdout
 ---------------------------------
