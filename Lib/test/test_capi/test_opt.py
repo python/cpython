@@ -2454,7 +2454,7 @@ class TestUopsOptimization(unittest.TestCase):
     def test_binary_op_constant_evaluate(self):
         def testfunc(n):
             for _ in range(n):
-                a = 2 ** 65
+                2 ** 65
 
         testfunc(TIER2_THRESHOLD)
 
