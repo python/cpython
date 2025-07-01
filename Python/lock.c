@@ -58,7 +58,7 @@ _PyMutex_LockTimed(PyMutex *m, PyTime_t timeout, _PyLockFlags flags)
             return PY_LOCK_ACQUIRED;
         }
     }
-    else if (timeout == 0) {
+    if (timeout == 0) {
         return PY_LOCK_FAILURE;
     }
 
@@ -93,6 +93,18 @@ _PyMutex_LockTimed(PyMutex *m, PyTime_t timeout, _PyLockFlags flags)
         }
 
         if (timeout == 0) {
+            return PY_LOCK_FAILURE;
+        }
+        if ((flags & _PY_LOCK_PYTHONLOCK) && Py_IsFinalizing()) {
+            // At this phase of runtime shutdown, only the finalization thread
+            // can have attached thread state; others hang if they try
+            // attaching. And since operations on this lock requires attached
+            // thread state (_PY_LOCK_PYTHONLOCK), the finalization thread is
+            // running this code, and no other thread can unlock.
+            // Raise rather than hang. (_PY_LOCK_PYTHONLOCK allows raising
+            // exceptons.)
+            PyErr_SetString(PyExc_PythonFinalizationError,
+                            "cannot acquire lock at interpreter finalization");
             return PY_LOCK_FAILURE;
         }
 

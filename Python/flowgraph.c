@@ -2870,9 +2870,11 @@ optimize_load_fast(cfg_builder *g)
                 // how many inputs should be left on the stack.
 
                 // Opcodes that consume no inputs
+                case FORMAT_SIMPLE:
                 case GET_ANEXT:
                 case GET_ITER:
                 case GET_LEN:
+                case GET_YIELD_FROM_ITER:
                 case IMPORT_FROM:
                 case MATCH_KEYS:
                 case MATCH_MAPPING:
@@ -2907,6 +2909,16 @@ optimize_load_fast(cfg_builder *g)
                     break;
                 }
 
+                case END_SEND:
+                case SET_FUNCTION_ATTRIBUTE: {
+                    assert(_PyOpcode_num_popped(opcode, oparg) == 2);
+                    assert(_PyOpcode_num_pushed(opcode, oparg) == 1);
+                    ref tos = ref_stack_pop(&refs);
+                    ref_stack_pop(&refs);
+                    PUSH_REF(tos.instr, tos.local);
+                    break;
+                }
+
                 // Opcodes that consume some inputs and push new values
                 case CHECK_EXC_MATCH: {
                     ref_stack_pop(&refs);
@@ -2933,6 +2945,14 @@ optimize_load_fast(cfg_builder *g)
                         // back onto the stack
                         PUSH_REF(self.instr, self.local);
                     }
+                    break;
+                }
+
+                case LOAD_SPECIAL:
+                case PUSH_EXC_INFO: {
+                    ref tos = ref_stack_pop(&refs);
+                    PUSH_REF(i, NOT_LOCAL);
+                    PUSH_REF(tos.instr, tos.local);
                     break;
                 }
 

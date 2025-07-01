@@ -1190,6 +1190,36 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
                 self.loop.run_until_complete(coro)
             self.assertTrue(sock.close.called)
 
+    @patch_socket
+    def test_create_connection_happy_eyeballs_empty_exceptions(self, m_socket):
+        # See gh-135836: Fix IndexError when Happy Eyeballs algorithm
+        # results in empty exceptions list
+
+        async def getaddrinfo(*args, **kw):
+            return [(socket.AF_INET, socket.SOCK_STREAM, 0, '', ('127.0.0.1', 80)),
+                    (socket.AF_INET6, socket.SOCK_STREAM, 0, '', ('::1', 80))]
+
+        def getaddrinfo_task(*args, **kwds):
+            return self.loop.create_task(getaddrinfo(*args, **kwds))
+
+        self.loop.getaddrinfo = getaddrinfo_task
+
+        # Mock staggered_race to return empty exceptions list
+        # This simulates the scenario where Happy Eyeballs algorithm
+        # cancels all attempts but doesn't properly collect exceptions
+        with mock.patch('asyncio.staggered.staggered_race') as mock_staggered:
+            # Return (None, []) - no winner, empty exceptions list
+            async def mock_race(coro_fns, delay, loop):
+                return None, []
+            mock_staggered.side_effect = mock_race
+
+            coro = self.loop.create_connection(
+                MyProto, 'example.com', 80, happy_eyeballs_delay=0.1)
+
+            # Should raise TimeoutError instead of IndexError
+            with self.assertRaisesRegex(TimeoutError, "create_connection failed"):
+                self.loop.run_until_complete(coro)
+
     def test_create_connection_host_port_sock(self):
         coro = self.loop.create_connection(
             MyProto, 'example.com', 80, sock=object())
