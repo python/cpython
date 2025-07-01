@@ -814,17 +814,18 @@ passing data between interpreters::
 
 .. _interp-script-args:
 
-Initializing Values for a Script
---------------------------------
+Initializing Globals for a Script
+---------------------------------
 
-When you call a function in Python, sometimes that function requires
-arguments and sometimes it doesn't.  In the same way, sometimes a
-script you want to run in another interpreter requires some values.
-Providing such values to the interpreter, for the script to use,
+When you call a function in Python, sometimes that function depends on
+arguments, globals, and non-locals, and sometimes it doesn't.  In the
+same way, sometimes a script you want to run in another interpreter
+depends on some global variables.  Setting them ahead of time on the
+interpreter's :mod:`!__main__` module, where the script will run,
 is the simplest kind of communication between interpreters.
 
 There's a method that supports this: :meth:`Interpreter.prepare_main`.
-It binds values to names in the interpreter's ``__main__`` module,
+It binds values to names in the interpreter's :mod:`!__main__` module,
 which makes them available to any scripts that run in the interpreter
 after that::
 
