@@ -108,17 +108,24 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
-    - uses: actions/checkout@v4
+    - name: 'Check out latest PR branch commit'
+      uses: actions/checkout@v4
       with:
         persist-credentials: false
-    - uses: actions/cache@v4
+        ref: >-
+          ${{
+            github.event_name == 'pull_request'
+            && github.event.pull_request.head.sha
+            || ''
+          }}
+    - name: 'Set up Python'
+      uses: actions/setup-python@v5
       with:
-        path: ~/.cache/pip
-        key: ubuntu-doc-${{ hashFiles('Doc/requirements.txt') }}
-        restore-keys: |
-          ubuntu-doc-
+        python-version: '3'
+        cache: 'pip'
+        cache-dependency-path: 'Doc/requirements.txt'
     - name: 'Install build dependencies'
-      run: make -C Doc/ PYTHON=../python venv
+      run: make -C Doc/ venv
     - name: 'Build and load EPUB checks to file'
       continue-on-error: true
       run: |
