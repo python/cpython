@@ -1365,9 +1365,7 @@ static void
 localdummy_dealloc(PyObject *op)
 {
     localdummyobject *self = localdummyobject_CAST(op);
-    if (self->weakreflist != NULL) {
-        PyObject_ClearWeakRefs(op);
-    }
+    FT_CLEAR_WEAKREFS(op, self->weakreflist);
     PyTypeObject *tp = Py_TYPE(self);
     tp->tp_free(self);
     Py_DECREF(tp);
