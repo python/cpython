@@ -137,12 +137,13 @@ Calling a simple function in an interpreter works the same way::
 
     from concurrent import interpreters
 
-    interp = interpreters.create()
-
     def script():
         print('spam!')
-    interp.call(script)
-    # prints: spam!
+
+    if __name__ == '__main__':
+        interp = interpreters.create()
+        interp.call(script)
+        # prints: spam!
 
 (See :meth:`Interpreter.call`.)
 
@@ -172,8 +173,8 @@ In fact, a comparison with ``python -c`` is quite direct::
 
 It's also fairly easy to simulate the other forms of the Python CLI::
 
-    from textwrap import dedent
     from concurrent import interpreters
+    from textwrap import dedent
 
     SCRIPT = """
     print('spam!')
@@ -196,6 +197,7 @@ It's also fairly easy to simulate the other forms of the Python CLI::
     ##################
 
     interp = interpreters.create()
+    interp.exec('import os, sys; sys.path.insert(0, os.getcwd())')
     interp.exec(dedent("""
         import runpy
         runpy.run_module('script')
@@ -211,12 +213,13 @@ You can just as easily call a function in another interpreter::
 
     from concurrent import interpreters
 
-    interp = interpreters.create()
-
     def spam():
         print('spam!')
-    interp.call(spam)
-    # prints: spam!
+
+    if __name__ == '__main__':
+        interp = interpreters.create()
+        interp.call(spam)
+        # prints: spam!
 
 In fact, nearly all Python functions and callables are supported,
 with the notable exception of closures.  Support includes arguments
@@ -239,13 +242,14 @@ The same is true for Python functions that don't use any globals::
 
     from concurrent import interpreters
 
-    interp = interpreters.create()
-
     def spam():
         # globals is a builtin.
         print(globals()['__name__'])
-    interp.call(spam)
-    # prints: __main__
+
+    if __name__ == '__main__':
+        interp = interpreters.create()
+        interp.call(spam)
+        # prints: __main__
 
 There are very few cases where that matters, though.
 
@@ -255,9 +259,10 @@ in that module::
     from concurrent import interpreters
     from mymod import spam
 
-    interp = interpreters.create()
-    interp.call(spam)
-    # prints: mymod
+    if __name__ == '__main__':
+        interp = interpreters.create()
+        interp.call(spam)
+        # prints: mymod
 
     ##########
     # mymod.py
@@ -272,12 +277,13 @@ the :mod:`!__main__` module::
 
     from concurrent import interpreters
 
-    interp = interpreters.create()
-
     def spam():
         print(__name__)
-    interp.call(spam)
-    # prints: '<fake __main__>'
+
+    if __name__ == '__main__':
+        interp = interpreters.create()
+        interp.call(spam)
+        # prints: '<fake __main__>'
 
 This means global state used in such a function won't be reflected
 in the interpreter's :mod:`!__main__` module::
@@ -285,43 +291,49 @@ in the interpreter's :mod:`!__main__` module::
     from textwrap import dedent
     from concurrent import interpreters
 
-    interp = interpreters.create()
-
     total = 0
 
     def inc():
         global total
         total += 1
+
     def show_total():
         print(total)
 
-    interp.call(show_total)
-    # prints: 0
-    interp.call(inc)
-    interp.call(show_total)
-    # prints: 1
-    interp.exec(dedent("""'
-        try:
-            print(total)
-        except NameError:
-            pass
-        else:
-            raise AssertionError('expected NameError')
-        """))
+    if __name__ == '__main__':
+        interp = interpreters.create()
 
-    interp.exec('total = -1')
-    interp.exec('print(total)')
-    # prints: -1
-    interp.call(show_total)
-    # prints: 1
-    interp.call(inc)
-    interp.call(show_total)
-    # prints: 2
-    interp.exec('print(total)')
-    # prints: -1
+        interp.call(show_total)
+        # prints: 0
 
-    print(total)
-    # prints: 0
+        interp.call(inc)
+        interp.call(show_total)
+        # prints: 1
+
+        interp.exec(dedent("""
+            try:
+                print(total)
+            except NameError:
+                pass
+            else:
+                raise AssertionError('expected NameError')
+            """))
+        interp.exec('total = -1')
+        interp.exec('print(total)')
+        # prints: -1
+
+        interp.call(show_total)
+        # prints: 1
+
+        interp.call(inc)
+        interp.call(show_total)
+        # prints: 2
+
+        interp.exec('print(total)')
+        # prints: -1
+
+        print(total)
+        # prints: 0
 
 
 Calling Methods and Other Objects in an Interpreter
@@ -333,16 +345,6 @@ the same rules as functions::
     from concurrent import interpreters
     from mymod import Spam
 
-    interp = interpreters.create()
-
-    spam = Spam()
-    interp.call(Spam.modname)
-    # prints: mymod
-    interp.call(spam)
-    # prints: mymod
-    interp.call(spam.spam)
-    # prints: mymod
-
     class Eggs:
         @classmethod
         def modname(cls):
@@ -352,13 +354,28 @@ the same rules as functions::
         def eggs(self):
             print(__name__)
 
-    eggs = Eggs()
-    res = interp.call(Eggs.modname)
-    # prints: <fake __main__>
-    res = interp.call(eggs)
-    # prints: <fake __main__>
-    res = interp.call(eggs.eggs)
-    # prints: <fake __main__>
+    if __name__ == '__main__':
+        interp = interpreters.create()
+
+        spam = Spam()
+        interp.call(Spam.modname)
+        # prints: mymod
+
+        interp.call(spam)
+        # prints: mymod
+
+        interp.call(spam.spam)
+        # prints: mymod
+
+        eggs = Eggs()
+        res = interp.call(Eggs.modname)
+        # prints: <fake __main__>
+
+        res = interp.call(eggs)
+        # prints: <fake __main__>
+
+        res = interp.call(eggs.eggs)
+        # prints: <fake __main__>
 
     ##########
     # mymod.py
@@ -384,8 +401,6 @@ the other interpreter and never automatically synchronized::
 
     from concurrent import interpreters
 
-    interp = interpreters.create()
-
     class Counter:
         def __init__(self, initial=0):
             self.value = initial
@@ -395,30 +410,33 @@ the other interpreter and never automatically synchronized::
             self.value -= 1
         def show(self):
             print(self.value)
-    counter = Counter(17)
 
-    interp.call(counter.show)
-    # prints: 17
-    counter.show()
-    # prints: 17
+    if __name__ == '__main__':
+        counter = Counter(17)
+        interp = interpreters.create()
 
-    interp.call(counter.inc)
-    interp.call(counter.show)
-    # prints: 18
-    counter.show()
-    # prints: 17
+        interp.call(counter.show)
+        # prints: 17
+        counter.show()
+        # prints: 17
 
-    interp.call(counter.inc)
-    interp.call(counter.show)
-    # prints: 18
-    counter.show()
-    # prints: 17
+        interp.call(counter.inc)
+        interp.call(counter.show)
+        # prints: 18
+        counter.show()
+        # prints: 17
 
-    interp.call(counter.inc)
-    interp.call(counter.show)
-    # prints: 18
-    counter.show()
-    # prints: 17
+        interp.call(counter.inc)
+        interp.call(counter.show)
+        # prints: 18
+        counter.show()
+        # prints: 17
+
+        interp.call(counter.inc)
+        interp.call(counter.show)
+        # prints: 18
+        counter.show()
+        # prints: 17
 
 Preparing and Reusing an Interpreter
 ------------------------------------
@@ -436,16 +454,31 @@ left it::
     from concurrent import interpreters
 
     interp = interpreters.create()
-    interp.exec("""if True
+
+    interp.exec("""if True:
         answer = 42
         """)
-    interp.exec("""if True
+    interp.exec("""if True:
         assert answer == 42
         """)
 
-    def script():
-        assert answer == 42
-    interp.call(script)
+Similarly::
+
+    from concurrent import interpreters
+
+    def set(value):
+        assert __name__ == '<fake __main__>', __name__
+        global answer
+        answer = value
+
+    def check(expected):
+        assert answer == expected
+
+    if __name__ == '__main__':
+        interp = interpreters.create()
+        interp.call(set, 100)
+        interp.call(check, 100)
+
 
 You can take advantage of this to prepare an interpreter ahead of time
 or use it incrementally::
@@ -453,30 +486,31 @@ or use it incrementally::
     from textwrap import dedent
     from concurrent import interpreters
 
-    interp = interpreters.create()
+    if __name__ == '__main__':
+        interp = interpreters.create()
 
-    # Prepare the interpreter.
-    interp.exec(dedent("""
-        # We will need this later.
-        import math
-
-        # Initialize the value.
-        value = 1
-
-        def double(val):
-            return val + val
-        """))
-
-    # Do the work.
-    for _ in range(9):
+        # Prepare the interpreter.
         interp.exec(dedent("""
-            assert math.factorial(value + 1) >= double(value)
-            value = double(value)
+            # We will need this later.
+            import math
+
+            # Initialize the value.
+            value = 1
+
+            def double(val):
+                return val + val
             """))
 
-    # Show the result.
-    interp.exec('print(value)')
-    # prints: 1024
+        # Do the work.
+        for _ in range(9):
+            interp.exec(dedent("""
+                assert math.factorial(value + 1) >= double(value)
+                value = double(value)
+                """))
+
+        # Show the result.
+        interp.exec('print(value)')
+        # prints: 1024
 
 In case you're curious, in a little while we'll look at how to pass
 data in and out of an interpreter (instead of just printing things).
@@ -521,12 +555,13 @@ There's also a helper method for that::
 
     from concurrent import interpreters
 
-    interp = interpreters.create()
-
     def script():
         print('spam!')
-    t = interp.call_in_thread(script)
-    t.join()
+
+    if __name__ == '__main__':
+        interp = interpreters.create()
+        t = interp.call_in_thread(script)
+        t.join()
 
 Handling Uncaught Exceptions
 ----------------------------
@@ -588,22 +623,26 @@ exceptions that can be pickled::
     interp = interpreters.create()
 
     try:
-        interp.exec(dedent("""
-            try:
-                1/0
-            except Exception as exc:
+        try:
+            interp.exec(dedent("""
+                try:
+                    1/0
+                except Exception as exc:
+                    import pickle
+                    data = pickle.dumps(exc)
+                    class PickledException(Exception):
+                        pass
+                    raise PickledException(data)
+                """))
+        except interpreters.ExecutionFailed as exc:
+            if exc.excinfo.type.__name__ == 'PickledException':
                 import pickle
-                data = pickle.dumps(exc)
-                class PickledException(Exception):
-                    pass
-                raise PickledException(data)
-            """))
-    except interpreters.ExecutionFailed as exc:
-        if exc.excinfo.type.__name__ == 'PickledException':
-            import pickle
-            raise pickle.loads(exc.excinfo.msg)
-        else:
-            raise  # re-raise
+                raise pickle.loads(eval(exc.excinfo.msg))
+            else:
+                raise  # re-raise
+    except ZeroDivisionError:
+        # Handle it!
+        ...
 
 Managing Interpreter Lifetime
 -----------------------------
@@ -645,47 +684,56 @@ Arguments provide a way to send information to an interpreter::
 
     from concurrent import interpreters
 
-    interp = interpreters.create()
-
     def show(arg):
         print(arg)
-    interp.call(show, 'spam!')
-    # prints: spam!
 
     def ident_full(a, /, b, c=42, *args, d, e='eggs', **kwargs):
         print([a, b, c, d, e], args, kwargs)
-    interp.call(ident_full, 1, 2, 3, 4, 5, d=6, e=7, f=8, g=9)
-    # prints: [1, 2, 3, 6, 7] (4, 5) {'f': 8, 'g': 9}
 
     def handle_request(req):
         # do the work
         ...
-    req = ...
-    interp.call(handle_request, req)
+
+    if __name__ == '__main__':
+        interp = interpreters.create()
+
+        interp.call(show, 'spam!')
+        # prints: spam!
+
+        interp.call(ident_full, 1, 2, 3, 4, 5, d=6, e=7, f=8, g=9)
+        # prints: [1, 2, 3, 6, 7] (4, 5) {'f': 8, 'g': 9}
+
+        req = ...
+        interp.call(handle_request, req)
 
 Return values are a way an interpreter can send information back::
 
     from concurrent import interpreters
 
-    interp = interpreters.create()
-
     data = {}
 
     def put(key, value):
         data[key] = value
+
     def get(key, default=None):
         return data.get(key, default)
 
-    res = interp.call(get, 'spam')
-    # res: None
-    res = interp.call(get, 'spam', -1)
-    # res: -1
-    interp.call(put, 'spam', True)
-    res = interp.call(get, 'spam')
-    # res: True
-    interp.call(put, 'spam', 42)
-    res = interp.call(get, 'spam')
-    # res: 42
+    if __name__ == '__main__':
+        interp = interpreters.create()
+
+        res = interp.call(get, 'spam')
+        # res: None
+
+        res = interp.call(get, 'spam', -1)
+        # res: -1
+
+        interp.call(put, 'spam', True)
+        res = interp.call(get, 'spam')
+        # res: True
+
+        interp.call(put, 'spam', 42)
+        res = interp.call(get, 'spam')
+        # res: 42
 
 Don't forget that the underlying data of few objects is actually shared
 between interpreters.  That means that, nearly always, arguments are
@@ -697,34 +745,35 @@ For example::
 
     from concurrent import interpreters
 
-    interp = interpreters.create()
-
     data = {
         'a': 1,
         'b': 2,
         'c': 3,
     }
 
-    interp.call(data.clear)
-    assert data == dict(a=1, b=2, c=3)
+    if __name__ == '__main__':
+        interp = interpreters.create()
 
-    def update_and_copy(data, **updates):
-        data.update(updates)
-        return dict(data)
+        interp.call(data.clear)
+        assert data == dict(a=1, b=2, c=3)
 
-    res = interp.call(update_and_copy, data)
-    assert res == dict(a=1, b=2, c=3)
-    assert res is not data
-    assert data == dict(a=1, b=2, c=3)
+        def update_and_copy(data, **updates):
+            data.update(updates)
+            return dict(data)
 
-    res = interp.call(update_and_copy, data, d=4, e=5)
-    assert res == dict(a=1, b=2, c=3, d=4, e=5)
-    assert data == dict(a=1, b=2, c=3)
+        res = interp.call(update_and_copy, data)
+        assert res == dict(a=1, b=2, c=3)
+        assert res is not data
+        assert data == dict(a=1, b=2, c=3)
 
-    res = interp.call(update_and_copy, data)
-    assert res == dict(a=1, b=2, c=3)
-    assert res is not data
-    assert data == dict(a=1, b=2, c=3)
+        res = interp.call(update_and_copy, data, d=4, e=5)
+        assert res == dict(a=1, b=2, c=3, d=4, e=5)
+        assert data == dict(a=1, b=2, c=3)
+
+        res = interp.call(update_and_copy, data)
+        assert res == dict(a=1, b=2, c=3)
+        assert res is not data
+        assert data == dict(a=1, b=2, c=3)
 
 Supported and Unsupported Objects
 ---------------------------------
@@ -758,13 +807,14 @@ unpickle in the original interpreter, due to the fake module name::
         def __init__(self, x):
             self.x = x
 
-    interp = interpreters.create()
-    try:
-        spam = interp.call(Spam, 10)
-    except interpreters.NotShareableError:
-        pass
-    else:
-        raise AssertionError('unexpected success')
+    if __name__ == '__main__':
+        interp = interpreters.create()
+        try:
+            spam = interp.call(Spam, 10)
+        except interpreters.NotShareableError:
+            pass
+        else:
+            raise AssertionError('unexpected success')
 
 Sharing Data
 ------------
@@ -798,19 +848,20 @@ passing data between interpreters::
                 time.sleep(delay)
             queue.put(val)
 
-    def pop(queue, count=1, timeout=-1):
+    def pop(queue, count=1, timeout=None):
         return tuple(queue.get(timeout=timeout)
                      for _ in range(count))
 
-    interp1 = interpreters.create()
-    interp2 = interpreters.create()
-    queue = interpreters.create_queue()
+    if __name__ == '__main__':
+        interp1 = interpreters.create()
+        interp2 = interpreters.create()
+        queue = interpreters.create_queue()
 
-    t = interp1.call_in_thread(push, queue,
-                               'spam!', 42, 'eggs')
-    res = interp2.call(pop, queue)
-    # res: ('spam!', 42, 'eggs')
-    t.join()
+        t = interp1.call_in_thread(push, queue,
+                                   'spam!', 42, 'eggs')
+        res = interp2.call(pop, queue)
+        # res: ('spam!', 42, 'eggs')
+        t.join()
 
 .. _interp-script-args:
 
@@ -830,14 +881,15 @@ which makes them available to any scripts that run in the interpreter
 after that::
 
     from concurrent import interpreters
+    from textwrap import dedent
 
     interp = interpreters.create()
 
     def run_interp(interp, name, value):
         interp.prepare_main(**{name: value})
-        interp.exec(f"""
+        interp.exec(dedent(f"""
             ...
-            """)
+            """))
     run_interp(interp, 'spam', 42)
 
     try:
@@ -847,7 +899,7 @@ after that::
     else:
         with infile:
             interp.prepare_main(fd=infile.fileno())
-            interp.exec(f"""
+            interp.exec(dedent(f"""
                 import os
                 for line in os.fdopen(fd):
                     print(line)
@@ -865,7 +917,7 @@ This is particularly useful when you want to use a queue in a script::
     queue.put('spam!')
 
     interp.exec(dedent("""
-        obj = queue.get()
+        msg = queue.get()
         print(msg)
         """))
     # prints: spam!
@@ -926,22 +978,22 @@ to another::
         # Ready!
         os.write(fd_data, msg)
 
-    interp = interpreters.create()
-
-    r_tokens, s_tokens = os.pipe()
-    r_data, s_data = os.pipe()
-    try:
-        t = interp.call_in_thread(
-                send, r_tokens, s_data, 'spam!')
-        os.write(s_tokens, READY)
-        msg = os.read(r_data, 20)
-        # msg: 'spam!'
-        t.join()
-    finally:
-        os.close(r_tokens)
-        os.close(s_tokens)
-        os.close(r_data)
-        os.close(s_data)
+    if __name__ == '__main__':
+        interp = interpreters.create()
+        r_tokens, s_tokens = os.pipe()
+        r_data, s_data = os.pipe()
+        try:
+            t = interp.call_in_thread(
+                    send, r_tokens, s_data, b'spam!')
+            os.write(s_tokens, READY)
+            msg = os.read(r_data, 20)
+            # msg: b'spam!'
+            t.join()
+        finally:
+            os.close(r_tokens)
+            os.close(s_tokens)
+            os.close(r_data)
+            os.close(s_data)
 
 One interesting part of that is how the subthread blocked until
 we sent the "ready" token.  In addition to delivering the message,
@@ -951,6 +1003,7 @@ We can actually make use of that to synchronize execution between the
 interpreters (and use :class:`Queue` the same way)::
 
     from concurrent import interpreters
+    import os
 
     STOP = b'\0'
     READY = b'\1'
@@ -972,27 +1025,27 @@ interpreters (and use :class:`Queue` the same way)::
 
     steps = [...]
 
-    interp = interpreters.create()
+    if __name__ == '__main__':
+        interp = interpreters.create()
+        r1, s1 = os.pipe()
+        r2, s2 = os.pipe()
+        try:
+            t = interp.call_in_thread(task, (r1, s2))
+            for step in steps:
+                # Do the step.
+                ...
 
-    r1, s1 = os.pipe()
-    r2, s2 = os.pipe()
-    try:
-        t = interp.call_in_thread(task, (r1, s2))
-        for step in steps:
-            # Do the step.
-            ...
-
-            # Synchronize!
-            os.write(s1, READY)
+                # Synchronize!
+                os.write(s1, READY)
+                os.read(r2, 1)
+            os.write(s1, STOP)
             os.read(r2, 1)
-        os.write(s1, STOP)
-        os.read(r2, 1)
-        t.join()
-    finally:
-        os.close(r1)
-        os.close(s1)
-        os.close(r2)
-        os.close(s2)
+            t.join()
+        finally:
+            os.close(r1)
+            os.close(s1)
+            os.close(r2)
+            os.close(s2)
 
 You can also close the pipe ends and join the thread to synchronize.
 
@@ -1045,9 +1098,10 @@ interpreter manually.  Here's a basic example::
             ...
         return stdout.getvalue()
 
-    interp = interpreters.create()
-    output = interp.call(task)
-    ...
+    if __name__ == '__main__':
+        interp = interpreters.create()
+        output = interp.call(task)
+        ...
 
 Here's a more elaborate example::
 
@@ -1083,7 +1137,7 @@ Here's a more elaborate example::
         try:
             bg = threading.Thread(target=background, args=(r,))
             bg.start()
-            t = interp.call_in_thread(run_and_capture, s, args, kwargs)
+            t = interp.call_in_thread(run_and_capture, s, task, args, kwargs)
             try:
                 yield
             finally:
@@ -1098,9 +1152,10 @@ Here's a more elaborate example::
         # Do stuff in worker!
         ...
 
-    interp = interpreters.create()
-    with running_captured(interp, task):
-        # Do stuff in main!
-        ...
+    if __name__ == '__main__':
+        interp = interpreters.create()
+        with running_captured(interp, task):
+            # Do stuff in main!
+            ...
 
 Using a :mod:`logger <logging>` can also help.
