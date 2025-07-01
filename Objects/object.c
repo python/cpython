@@ -1213,17 +1213,17 @@ PyObject_HasAttrString(PyObject *obj, const char *name)
 int
 PyObject_SetAttrString(PyObject *v, const char *name, PyObject *w)
 {
-    if (Py_TYPE(v)->tp_setattr != NULL) {
-        PyThreadState *tstate = _PyThreadState_GET();
-        if (w == NULL && _PyErr_Occurred(tstate)) {
-            PyObject *exc = _PyErr_GetRaisedException(tstate);
-            _PyErr_SetString(tstate, PyExc_SystemError,
-                "PyObject_SetAttrString() must not be called with NULL value "
-                "and an exception set");
-            _PyErr_ChainExceptions1Tstate(tstate, exc);
-            return -1;
-        }
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (w == NULL && _PyErr_Occurred(tstate)) {
+        PyObject *exc = _PyErr_GetRaisedException(tstate);
+        _PyErr_SetString(tstate, PyExc_SystemError,
+            "PyObject_SetAttrString() must not be called with NULL value "
+            "and an exception set");
+        _PyErr_ChainExceptions1Tstate(tstate, exc);
+        return -1;
+    }
 
+    if (Py_TYPE(v)->tp_setattr != NULL) {
         return (*Py_TYPE(v)->tp_setattr)(v, (char*)name, w);
     }
 
