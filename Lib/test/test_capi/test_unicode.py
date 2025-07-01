@@ -1753,6 +1753,55 @@ class CAPITest(unittest.TestCase):
         # impl detail: ASCII string hashes are equal to bytes ones
         self.assertEqual(unicode_GET_CACHED_HASH(obj), hash(content_bytes))
 
+    @support.cpython_only
+    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
+    def test_tolower(self):
+        import string
+        from _testcapi import unicode_tolower
+
+        for i, c in enumerate(string.ascii_uppercase):
+            with self.subTest(c):
+                self.assertEqual(unicode_tolower(c), string.ascii_lowercase[i])
+
+        # Test unicode character
+        self.assertEqual(unicode_tolower("Č"), "č")
+
+    @support.cpython_only
+    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
+    def test_toupper(self):
+        import string
+        from _testcapi import unicode_toupper
+
+        for i, c in enumerate(string.ascii_lowercase):
+            with self.subTest(c):
+                self.assertEqual(unicode_toupper(c), string.ascii_uppercase[i])
+
+        # Test unicode character
+        self.assertEqual(unicode_toupper("č"), "Č")
+
+    @support.cpython_only
+    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
+    def test_totitle(self):
+        from _testcapi import unicode_totitle
+
+        self.assertEqual(unicode_totitle("t"), "T")
+
+        # Test unicode character
+        self.assertEqual(unicode_totitle("ł"), "Ł")
+
+    @support.cpython_only
+    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
+    def test_tofolded(self):
+        from _testcapi import unicode_tofolded
+
+        self.assertEqual(unicode_tofolded("T"), "t")
+
+        # Test unicode character
+        self.assertEqual(unicode_tofolded("Ł"), "ł")
+
+        # Test case-ignorable character
+        self.assertEqual(unicode_tofolded("👍"), "👍")
+
 
 class PyUnicodeWriterTest(unittest.TestCase):
     def create_writer(self, size):
