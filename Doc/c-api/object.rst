@@ -197,6 +197,8 @@ Object Protocol
    in favour of using :c:func:`PyObject_DelAttr`, but there are currently no
    plans to remove it.
 
+   The function must not be called with ``NULL`` *v* and an an exception set.
+
 
 .. c:function:: int PyObject_SetAttrString(PyObject *o, const char *attr_name, PyObject *v)
 
@@ -206,6 +208,8 @@ Object Protocol
 
    If *v* is ``NULL``, the attribute is deleted, but this feature is
    deprecated in favour of using :c:func:`PyObject_DelAttrString`.
+
+   The function must not be called with ``NULL`` *v* and an an exception set.
 
    The number of different attribute names passed to this function
    should be kept small, usually by using a statically allocated string

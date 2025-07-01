@@ -247,5 +247,20 @@ class CAPITest(unittest.TestCase):
 
         func(object())
 
+    def test_object_setattr_null_exc(self):
+        class Obj:
+            pass
+        obj = Obj()
+
+        obj.attr = 123
+        with self.assertRaises(SystemError):
+            _testcapi.object_setattr_null_exc(obj, 'attr')
+        self.assertTrue(hasattr(obj, 'attr'))
+
+        with self.assertRaises(SystemError):
+            _testcapi.object_setattrstring_null_exc(obj, 'attr')
+        self.assertTrue(hasattr(obj, 'attr'))
+
+
 if __name__ == "__main__":
     unittest.main()
