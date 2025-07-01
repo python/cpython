@@ -1558,18 +1558,23 @@ finalize_remove_modules(PyObject *modules, int verbose)
         if (weaklist != NULL) { \
             PyObject *wr = PyWeakref_NewRef(mod, NULL); \
             if (wr) { \
-                PyObject *list = Py_REFCNT(wr) <= 1 ? weaklist : weak_ext; \
-                PyObject *tup = PyTuple_Pack(2, name, wr); \
-                if (!tup || PyList_Append(list, tup) < 0) { \
-                    PyErr_FormatUnraisable("Exception ignored while removing modules"); \
-                } \
-                if (list == weak_ext) { \
+                PyObject *list; \
+                PyObject *tup; \
+                if (Py_REFCNT(wr) > 1) { \
                     /* gh-132413: When the weakref is already used elsewhere,
                      * finalize_modules_clear_weaklist() rather than the GC
                      * should clear the referenced module since the GC tries
                      * to clear the wrakref first.  The weaklist requires the
                      * order in which such modules are cleared first. */ \
-                    _PyObject_GC_UNTRACK(mod); \
+                    tup = PyTuple_Pack(3, name, wr, mod); \
+                    list = weak_ext; \
+                } \
+                else { \
+                    tup = PyTuple_Pack(2, name, wr); \
+                    list = weaklist; \
+                } \
+                if (!tup || PyList_Append(list, tup) < 0) { \
+                    PyErr_FormatUnraisable("Exception ignored while removing modules"); \
                 } \
                 Py_XDECREF(tup); \
                 Py_DECREF(wr); \
@@ -1678,9 +1683,6 @@ finalize_modules_clear_weaklist(PyInterpreterState *interp,
             continue;
         }
         assert(PyModule_Check(mod));
-        if (!_PyObject_GC_IS_TRACKED(mod)) {
-            _PyObject_GC_TRACK(mod);
-        }
         PyObject *dict = _PyModule_GetDict(mod);  // borrowed reference
         if (dict == interp->builtins || dict == interp->sysdict) {
             Py_DECREF(mod);
