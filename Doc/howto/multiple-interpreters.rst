@@ -61,10 +61,10 @@ completely isolated from the others.
    isolated from one another since there are few restrictions on memory
    access within the same process.  The Python runtime makes a best
    effort at isolation but extension modules may easily violate that.
-   Therefore, do not use multiple interpreters in security-senstive
+   Therefore, do not use multiple interpreters in security-sensitive
    situations, where they shouldn't have access to each other's data.
 
-That isolation facilitates a concurrency model based an independent
+That isolation facilitates a concurrency model based on independent
 logical threads of execution, like CSP or the actor model.
 
 Each actual thread in Python, even if you're only running in the main
@@ -86,7 +86,7 @@ There are some downsides and temporary limitations:
   discipline about how the isolated components in your program interact
 * not all PyPI extension modules support multiple interpreters yet
 * the existing tools for passing data between interpreters safely
-  is still relatively inefficient and limited
+  are still relatively inefficient and limited
 * actually *sharing* data safely is tricky (true for free-threading too)
 * all necessary modules must be imported separately in each interpreter
 * relatively slow startup time per interpreter
@@ -103,7 +103,7 @@ Tutorial: Basics
 First of all, keep in mind that using multiple interpreters is like
 using multiple processes.  They are isolated and independent from each
 other.  The main difference is that multiple interpreters live in the
-same process, which makes it all more efficient and use fewer
+same process, which makes it all more efficient and uses fewer
 system resources.
 
 Each interpreter has its own :mod:`!__main__` module, its own
@@ -375,7 +375,7 @@ the same rules as functions::
 Mutable State is not Shared
 ---------------------------
 
-Just be be clear, the underlying data of very few mutable objects is
+Just to be clear, the underlying data of very few mutable objects is
 actually shared between interpreters.  The notable exceptions are
 :class:`Queue` and :class:`memoryview`, which we will explore in a
 little while.  In nearly every case, the raw data is copied in
@@ -428,7 +428,7 @@ the builtin :func:`exec`, it doesn't reset the namespace it uses
 to run the code.
 
 In the same way, running code in an interpreter does not reset that
-interpreter..  The next time you run code in that interpreter, the
+interpreter.  The next time you run code in that interpreter, the
 :mod:`!__main__` module will be in exactly the state in which you
 left it::
 
@@ -535,7 +535,7 @@ and there's an unhandled exception.  In that case, Python will print
 the traceback and the process will exit with a failure code.
 
 The behavior is very similar when code is run in an interpreter.
-The traceback get printed and, rather than a failure code,
+The traceback gets printed and, rather than a failure code,
 an :class:`ExecutionFailed` exception is raised::
 
     from concurrent import interpreters
