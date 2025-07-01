@@ -1546,9 +1546,12 @@ static PyObject*
 finalize_remove_modules(PyObject *modules, int verbose)
 {
     PyObject *weaklist = PyList_New(0);
-    PyObject *weak_ext = PyList_New(0);  // for extending the weaklist
-    if (weak_ext == NULL) {
-        Py_CLEAR(weaklist);
+    PyObject *weak_ext = NULL;  // for extending the weaklist
+    if (weaklist != NULL) {
+        weak_ext = PyList_New(0);
+        if (weak_ext == NULL) {
+            Py_CLEAR(weaklist);
+        }
     }
     if (weaklist == NULL) {
         PyErr_FormatUnraisable("Exception ignored while removing modules");
