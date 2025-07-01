@@ -1161,7 +1161,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                         raise ExceptionGroup("create_connection failed", exceptions)
                     if len(exceptions) == 1:
                         raise exceptions[0]
-                    elif len(exceptions) > 1:
+                    elif exceptions:
                         # If they all have the same str(), raise one.
                         model = str(exceptions[0])
                         if all(str(exc) == model for exc in exceptions):
