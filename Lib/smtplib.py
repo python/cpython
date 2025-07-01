@@ -743,6 +743,10 @@ class SMTP:
                     return (code, resp)
             except SMTPAuthenticationError as e:
                 last_exception = e
+            except ValueError as e:
+                last_exception = e
+                if 'unsupported' in str(e).lower():
+                    continue
 
         # We could not login successfully.  Return result of last attempt.
         raise last_exception
