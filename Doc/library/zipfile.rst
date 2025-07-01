@@ -544,37 +544,39 @@ ZipFile Objects
 .. method:: ZipFile.repack(removed=None, *, \
                            strict_descriptor=False[, chunk_size])
 
-   Rewrites the archive to remove stale local file entries, shrinking its file
-   size.  The archive must be opened with mode ``'a'``.
+   Rewrites the archive to remove unreferenced local file entries, shrinking
+   its file size.  The archive must be opened with mode ``'a'``.
 
    If *removed* is provided, it must be a sequence of :class:`ZipInfo` objects
-   representing removed entries; only their corresponding local file entries
-   will be removed.
-
-   If *removed* is not provided, the archive is scanned to identify and remove
-   local file entries that are no longer referenced in the central directory.
-   The algorithm assumes that local file entries (and the central directory,
-   which is mostly treated as the "last entry") are stored consecutively:
-
-   #. Data before the first referenced entry is removed only when it appears to
-      be a sequence of consecutive entries with no extra following bytes; extra
-      preceding bytes are preserved.
-   #. Data between referenced entries is removed only when it appears to
-      be a sequence of consecutive entries with no extra preceding bytes; extra
-      following bytes are preserved.
-   #. Entries must not overlap. If any entry's data overlaps with another, a
-      :exc:`BadZipFile` error is raised and no changes are made.
+   representing the recently removed members, and only their corresponding
+   local file entries will be removed.  Otherwise, the archive is scanned to
+   locate and remove local file entries that are no longer referenced in the
+   central directory.
 
    When scanning, setting ``strict_descriptor=True`` disables detection of any
-   entry using an unsigned data descriptor (deprecated in the ZIP specification
-   since version 6.3.0, released on 2006-09-29, and used only by some legacy
-   tools). This improves performance, but may cause some stale entries to be
-   preserved.
+   entry using an unsigned data descriptor (a format deprecated by the ZIP
+   specification since version 6.3.0, released on 2006-09-29, and used only by
+   some legacy tools), which is significantly slower to scan (around 100 to
+   1000 times). This does not affect performance on entries without such
+   feature.
 
    *chunk_size* may be specified to control the buffer size when moving
    entry data (default is 1 MiB).
 
    Calling :meth:`repack` on a closed ZipFile will raise a :exc:`ValueError`.
+
+   .. note::
+      The scanning algorithm is heuristic-based and assumes that the ZIP file
+      is normally structured—for example, with local file entries stored
+      consecutively, without overlap or interleaved binary data.  Prepended
+      binary data, such as a self-extractor stub, is recognized and preserved
+      unless it happens to contain bytes that coincidentally resemble a valid
+      local file entry in multiple respects—an extremely rare case. Embedded
+      ZIP payloads are also handled correctly, as long as they follow normal
+      structure.  However, the algorithm does not guarantee correctness or
+      safety on untrusted or intentionally crafted input.  It is generally
+      recommended to provide the *removed* argument for better reliability and
+      performance.
 
    .. versionadded:: next
 
