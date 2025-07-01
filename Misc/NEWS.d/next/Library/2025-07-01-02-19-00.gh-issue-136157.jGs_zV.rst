@@ -1,1 +1,1 @@
-Optimized :func:`asyncio.to_thread`to avoid unnecessary performance overhead from calling :meth:`contextvars.Context.run` when the context is empty.
+Optimized :func:`asyncio.to_thread` to avoid unnecessary performance overhead from calling :meth:`contextvars.Context.run` when the context is empty.
