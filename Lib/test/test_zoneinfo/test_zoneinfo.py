@@ -58,6 +58,10 @@ def tearDownModule():
     shutil.rmtree(TEMP_DIR)
 
 
+class CustomError(Exception):
+    pass
+
+
 class TzPathUserMixin:
     """
     Adds a setUp() and tearDown() to make TZPATH manipulations thread-safe.
@@ -405,18 +409,23 @@ class ZoneInfoTest(TzPathUserMixin, ZoneInfoTestBase):
                 self.assertEqual(t.dst(), offset.dst)
 
     def test_cache_exception(self):
-        class ComparisonError(Exception):
-            pass
-
         class Incomparable(str):
+            eq_called = False
             def __eq__(self, other):
-                raise ComparisonError
-            def __hash__(self):
-                return id(self)
+                self.eq_called = True
+                raise CustomError
+            __hash__ = str.__hash__
 
-        key = Incomparable("America/Los_Angeles")
-        with self.assertRaises(ComparisonError):
-            self.klass(key)
+        key = "America/Los_Angeles"
+        tz1 = self.klass(key)
+        key = Incomparable(key)
+        try:
+            tz2 = self.klass(key)
+        except CustomError:
+            self.assertTrue(key.eq_called)
+        else:
+            self.assertFalse(key.eq_called)
+            self.assertIs(tz2, tz1)
 
 
 class CZoneInfoTest(ZoneInfoTest):
@@ -1522,20 +1531,13 @@ class ZoneInfoCacheTest(TzPathUserMixin, ZoneInfoTestBase):
         self.assertIs(tok0, tok1)
 
     def test_clear_cache_refleak(self):
-        class ComparisonError(Exception):
-            pass
-
         class Stringy(str):
-            def __new__(cls, value):
-                rv = super().__new__(cls, value)
-                rv.allow_comparisons = True
-                return rv
+            allow_comparisons = True
             def __eq__(self, other):
                 if not self.allow_comparisons:
-                    raise ComparisonError
+                    raise CustomError
                 return super().__eq__(other)
-            def __hash__(self):
-                return hash(self[:])
+            __hash__ = str.__hash__
 
         key = Stringy("America/Los_Angeles")
         self.klass(key)
@@ -1545,7 +1547,7 @@ class ZoneInfoCacheTest(TzPathUserMixin, ZoneInfoTestBase):
             # there is no guarantee that the key is even still in the cache,
             # or that the key for the cache is the original `key` object.
             self.klass.clear_cache(only_keys="America/Los_Angeles")
-        except ComparisonError:
+        except CustomError:
             pass
 
 
