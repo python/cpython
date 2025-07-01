@@ -115,6 +115,9 @@ math
 * Add :func:`math.isnormal` and :func:`math.issubnormal` functions.
   (Contributed by Sergey B Kirpichev in :gh:`132908`.)
 
+* Add :func:`math.signbit` function.
+  (Contributed by Bénédikt Tran in :gh:`135853`.)
+
 
 os.path
 -------
@@ -137,8 +140,15 @@ shelve
 sqlite3
 -------
 
-* Support SQL keyword completion in the :mod:`sqlite3` command-line interface.
-  (Contributed by Long Tan in :gh:`133393`.)
+* The :ref:`command-line interface <sqlite3-cli>` has several new features:
+
+   * SQL keyword completion on <tab>.
+     (Contributed by Long Tan in :gh:`133393`.)
+
+   * Prompts, error messages, and help text are now colored.
+     This is enabled by default, see :ref:`using-on-controlling-color` for
+     details.
+     (Contributed by Stan Ulbrych and Łukasz Langa in :gh:`133461`)
 
 
 ssl

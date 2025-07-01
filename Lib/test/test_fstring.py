@@ -1336,9 +1336,9 @@ x = (
 
     def test_conversions(self):
         self.assertEqual(f'{3.14:10.10}', '      3.14')
-        self.assertEqual(f'{3.14!s:10.10}', '3.14      ')
-        self.assertEqual(f'{3.14!r:10.10}', '3.14      ')
-        self.assertEqual(f'{3.14!a:10.10}', '3.14      ')
+        self.assertEqual(f'{1.25!s:10.10}', '1.25      ')
+        self.assertEqual(f'{1.25!r:10.10}', '1.25      ')
+        self.assertEqual(f'{1.25!a:10.10}', '1.25      ')
 
         self.assertEqual(f'{"a"}', 'a')
         self.assertEqual(f'{"a"!r}', "'a'")
@@ -1347,7 +1347,7 @@ x = (
         # Conversions can have trailing whitespace after them since it
         # does not provide any significance
         self.assertEqual(f"{3!s  }", "3")
-        self.assertEqual(f'{3.14!s  :10.10}', '3.14      ')
+        self.assertEqual(f'{1.25!s  :10.10}', '1.25      ')
 
         # Not a conversion.
         self.assertEqual(f'{"a!r"}', "a!r")
