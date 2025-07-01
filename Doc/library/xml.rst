@@ -54,37 +54,15 @@ An attacker can abuse XML features to carry out denial of service attacks,
 access local files, generate network connections to other machines, or
 circumvent firewalls.
 
-The following table gives an overview of the known attacks and whether
-the various modules are vulnerable to them.
+Expat versions lower that 2.6.0 may be vulnerable to "billion laughs",
+"quadratic blowup" and "large tokens". Python may be vulnerable if it uses such
+older versions of Expat as a system-provided library, it may be vulnerable.
+Check :const:`!pyexpat.EXPAT_VERSION`.
 
-=========================  ==================  ==================  ==================  ==================  ==================
-kind                       sax                 etree               minidom             pulldom             xmlrpc
-=========================  ==================  ==================  ==================  ==================  ==================
-billion laughs             Safe (1)            Safe (1)            Safe (1)            Safe (1)            Safe (1)
-quadratic blowup           Safe (1)            Safe (1)            Safe (1)            Safe (1)            Safe (1)
-external entity expansion  Safe (5)            Safe (2)            Safe (3)            Safe (5)            Safe (4)
-`DTD`_ retrieval           Safe (5)            Safe                Safe                Safe (5)            Safe
-decompression bomb         Safe                Safe                Safe                Safe                **Vulnerable**
-large tokens               Safe (6)            Safe (6)            Safe (6)            Safe (6)            Safe (6)
-=========================  ==================  ==================  ==================  ==================  ==================
+xmlrpc is **vulnerable** to "decompression bomb".
 
-1. Expat 2.4.1 and newer is not vulnerable to the "billion laughs" and
-   "quadratic blowup" vulnerabilities. Items still listed as vulnerable due to
-   potential reliance on system-provided libraries. Check
-   :const:`!pyexpat.EXPAT_VERSION`.
-2. :mod:`xml.etree.ElementTree` doesn't expand external entities and raises a
-   :exc:`~xml.etree.ElementTree.ParseError` when an entity occurs.
-3. :mod:`xml.dom.minidom` doesn't expand external entities and simply returns
-   the unexpanded entity verbatim.
-4. :mod:`xmlrpc.client` doesn't expand external entities and omits them.
-5. Since Python 3.7.1, external general entities are no longer processed by
-   default.
-6. Expat 2.6.0 and newer is not vulnerable to denial of service
-   through quadratic runtime caused by parsing large tokens.
-   Items still listed as vulnerable due to
-   potential reliance on system-provided libraries. Check
-   :const:`!pyexpat.EXPAT_VERSION`.
-
+Since Python 3.7.1, external general entities are no longer processed by
+default.
 
 billion laughs / exponential entity expansion
   The `Billion Laughs`_ attack -- also known as exponential entity expansion --
@@ -99,16 +77,6 @@ quadratic blowup entity expansion
   with a couple of thousand chars over and over again. The attack isn't as
   efficient as the exponential case but it avoids triggering parser countermeasures
   that forbid deeply nested entities.
-
-external entity expansion
-  Entity declarations can contain more than just text for replacement. They can
-  also point to external resources or local files. The XML
-  parser accesses the resource and embeds the content into the XML document.
-
-`DTD`_ retrieval
-  Some XML libraries like Python's :mod:`xml.dom.pulldom` retrieve document type
-  definitions from remote or local locations. The feature has similar
-  implications as the external entity expansion issue.
 
 decompression bomb
   Decompression bombs (aka `ZIP bomb`_) apply to all XML libraries
@@ -125,4 +93,3 @@ large tokens
 
 .. _Billion Laughs: https://en.wikipedia.org/wiki/Billion_laughs
 .. _ZIP bomb: https://en.wikipedia.org/wiki/Zip_bomb
-.. _DTD: https://en.wikipedia.org/wiki/Document_type_definition
