@@ -1191,7 +1191,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             self.assertTrue(sock.close.called)
 
     @patch_socket
-    async def test_create_connection_happy_eyeballs_empty_exceptions(self, m_socket):
+    def test_create_connection_happy_eyeballs_empty_exceptions(self, m_socket):
         # Test for gh-135836: Fix IndexError when Happy Eyeballs algorithm
         # results in empty exceptions list
 
@@ -1221,8 +1221,8 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
                 MyProto, 'example.com', 80, happy_eyeballs_delay=0.1)
 
             # Should raise TimeoutError instead of IndexError
-            with self.assertRaisesRegex(TimeoutError, "connection timed out"):
-                await coro
+            with self.assertRaisesRegex(TimeoutError, "create_connection failed"):
+                self.loop.run_until_complete(coro)
 
     def test_create_connection_host_port_sock(self):
         # host, port and sock are specified
