@@ -1094,14 +1094,6 @@ iterations of the loop.
    .. versionadded:: 3.14
 
 
-.. opcode:: LOAD_CONST_IMMORTAL (consti)
-
-   Pushes ``co_consts[consti]`` onto the stack.
-   Can be used when the constant value is known to be immortal.
-
-   .. versionadded:: 3.14
-
-
 .. opcode:: LOAD_NAME (namei)
 
    Pushes the value associated with ``co_names[namei]`` onto the stack.
@@ -1667,7 +1659,7 @@ iterations of the loop.
    * ``oparg == 2``: call :func:`repr` on *value*
    * ``oparg == 3``: call :func:`ascii` on *value*
 
-   Used for implementing formatted literal strings (f-strings).
+   Used for implementing formatted string literals (f-strings).
 
    .. versionadded:: 3.13
 
@@ -1680,7 +1672,7 @@ iterations of the loop.
       result = value.__format__("")
       STACK.append(result)
 
-   Used for implementing formatted literal strings (f-strings).
+   Used for implementing formatted string literals (f-strings).
 
    .. versionadded:: 3.13
 
@@ -1693,7 +1685,7 @@ iterations of the loop.
       result = value.__format__(spec)
       STACK.append(result)
 
-   Used for implementing formatted literal strings (f-strings).
+   Used for implementing formatted string literals (f-strings).
 
    .. versionadded:: 3.13
 

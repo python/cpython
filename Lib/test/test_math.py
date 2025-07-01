@@ -475,6 +475,19 @@ class MathTests(unittest.TestCase):
         # similarly, copysign(2., NAN) could be 2. or -2.
         self.assertEqual(abs(math.copysign(2., NAN)), 2.)
 
+    def test_signbit(self):
+        self.assertRaises(TypeError, math.signbit)
+        self.assertRaises(TypeError, math.signbit, '1.0')
+
+        # C11, §7.12.3.6 requires signbit() to return a nonzero value
+        # if and only if the sign of its argument value is negative,
+        # but in practice, we are only interested in a boolean value.
+        self.assertIsInstance(math.signbit(1.0), bool)
+
+        for arg in [0., 1., INF, NAN]:
+            self.assertFalse(math.signbit(arg))
+            self.assertTrue(math.signbit(-arg))
+
     def testCos(self):
         self.assertRaises(TypeError, math.cos)
         self.ftest('cos(-pi/2)', math.cos(-math.pi/2), 0, abs_tol=math.ulp(1))
@@ -1214,6 +1227,12 @@ class MathTests(unittest.TestCase):
             self.assertEqual(math.ldexp(NINF, n), NINF)
             self.assertTrue(math.isnan(math.ldexp(NAN, n)))
 
+    @requires_IEEE_754
+    def testLdexp_denormal(self):
+        # Denormal output incorrectly rounded (truncated)
+        # on some Windows.
+        self.assertEqual(math.ldexp(6993274598585239, -1126), 1e-323)
+
     def testLog(self):
         self.assertRaises(TypeError, math.log)
         self.assertRaises(TypeError, math.log, 1, 2, 3)
@@ -1380,7 +1399,6 @@ class MathTests(unittest.TestCase):
         # Error cases that arose during development
         args = ((-5, -5, 10), (1.5, 4611686018427387904, 2305843009213693952))
         self.assertEqual(sumprod(*args), 0.0)
-
 
     @requires_IEEE_754
     @unittest.skipIf(HAVE_DOUBLE_ROUNDING,
@@ -1967,6 +1985,28 @@ class MathTests(unittest.TestCase):
         self.assertFalse(math.isfinite(float("inf")))
         self.assertFalse(math.isfinite(float("-inf")))
 
+    def testIsnormal(self):
+        self.assertTrue(math.isnormal(1.25))
+        self.assertTrue(math.isnormal(-1.0))
+        self.assertFalse(math.isnormal(0.0))
+        self.assertFalse(math.isnormal(-0.0))
+        self.assertFalse(math.isnormal(INF))
+        self.assertFalse(math.isnormal(NINF))
+        self.assertFalse(math.isnormal(NAN))
+        self.assertFalse(math.isnormal(FLOAT_MIN/2))
+        self.assertFalse(math.isnormal(-FLOAT_MIN/2))
+
+    def testIssubnormal(self):
+        self.assertFalse(math.issubnormal(1.25))
+        self.assertFalse(math.issubnormal(-1.0))
+        self.assertFalse(math.issubnormal(0.0))
+        self.assertFalse(math.issubnormal(-0.0))
+        self.assertFalse(math.issubnormal(INF))
+        self.assertFalse(math.issubnormal(NINF))
+        self.assertFalse(math.issubnormal(NAN))
+        self.assertTrue(math.issubnormal(FLOAT_MIN/2))
+        self.assertTrue(math.issubnormal(-FLOAT_MIN/2))
+
     def testIsnan(self):
         self.assertTrue(math.isnan(float("nan")))
         self.assertTrue(math.isnan(float("-nan")))
@@ -2458,7 +2498,6 @@ class MathTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             math.nextafter(1.0, INF, steps=-1)
 
-
     @requires_IEEE_754
     def test_ulp(self):
         self.assertEqual(math.ulp(1.0), sys.float_info.epsilon)
@@ -2539,7 +2578,7 @@ class MathTests(unittest.TestCase):
                                     "expected a positive input$"):
             math.log(x)
         with self.assertRaisesRegex(ValueError,
-                                    f"expected a float or nonnegative integer, got {x}"):
+                                    f"expected a noninteger or positive integer, got {x}"):
             math.gamma(x)
         x = 1.0
         with self.assertRaisesRegex(ValueError,

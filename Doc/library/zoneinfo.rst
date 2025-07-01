@@ -195,7 +195,7 @@ The ``ZoneInfo`` class
 
 The ``ZoneInfo`` class has two alternate constructors:
 
-.. classmethod:: ZoneInfo.from_file(fobj, /, key=None)
+.. classmethod:: ZoneInfo.from_file(file_obj, /, key=None)
 
     Constructs a ``ZoneInfo`` object from a file-like object returning bytes
     (e.g. a file opened in binary mode or an :class:`io.BytesIO` object).
@@ -325,7 +325,7 @@ The behavior of a ``ZoneInfo`` file depends on how it was constructed:
        >>> a is b
        False
 
-3. ``ZoneInfo.from_file(fobj, /, key=None)``: When constructed from a file, the
+3. ``ZoneInfo.from_file(file_obj, /, key=None)``: When constructed from a file, the
    ``ZoneInfo`` object raises an exception on pickling. If an end user wants to
    pickle a ``ZoneInfo`` constructed from a file, it is recommended that they
    use a wrapper type or a custom serialization function: either serializing by

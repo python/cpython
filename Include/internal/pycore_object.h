@@ -313,7 +313,7 @@ extern int _PyDict_CheckConsistency(PyObject *mp, int check_content);
 // Fast inlined version of PyType_HasFeature()
 static inline int
 _PyType_HasFeature(PyTypeObject *type, unsigned long feature) {
-    return ((FT_ATOMIC_LOAD_ULONG_RELAXED(type->tp_flags) & feature) != 0);
+    return ((type->tp_flags) & feature) != 0;
 }
 
 extern void _PyType_InitCache(PyInterpreterState *interp);
@@ -767,6 +767,27 @@ _Py_TryIncref(PyObject *op)
 #endif
 }
 
+// Enqueue an object to be freed possibly after some delay
+#ifdef Py_GIL_DISABLED
+PyAPI_FUNC(void) _PyObject_XDecRefDelayed(PyObject *obj);
+#else
+static inline void _PyObject_XDecRefDelayed(PyObject *obj)
+{
+    Py_XDECREF(obj);
+}
+#endif
+
+#ifdef Py_GIL_DISABLED
+// Same as `Py_XSETREF` but in free-threading, it stores the object atomically
+// and queues the old object to be decrefed at a safe point using QSBR.
+PyAPI_FUNC(void) _PyObject_XSetRefDelayed(PyObject **p_obj, PyObject *obj);
+#else
+static inline void _PyObject_XSetRefDelayed(PyObject **p_obj, PyObject *obj)
+{
+    Py_XSETREF(*p_obj, obj);
+}
+#endif
+
 #ifdef Py_REF_DEBUG
 extern void _PyInterpreterState_FinalizeRefTotal(PyInterpreterState *);
 extern void _Py_FinalizeRefTotal(_PyRuntimeState *);
@@ -897,6 +918,9 @@ extern PyObject *_PyType_LookupRefAndVersion(PyTypeObject *, PyObject *,
 extern unsigned int
 _PyType_LookupStackRefAndVersion(PyTypeObject *type, PyObject *name, _PyStackRef *out);
 
+PyAPI_FUNC(int) _PyObject_GetMethodStackRef(PyThreadState *ts, PyObject *obj,
+                                       PyObject *name, _PyStackRef *method);
+
 // Cache the provided init method in the specialization cache of type if the
 // provided type version matches the current version of the type.
 //
@@ -950,7 +974,7 @@ extern int _PyObject_IsInstanceDictEmpty(PyObject *);
 
 // Export for 'math' shared extension
 PyAPI_FUNC(PyObject*) _PyObject_LookupSpecial(PyObject *, PyObject *);
-PyAPI_FUNC(PyObject*) _PyObject_LookupSpecialMethod(PyObject *self, PyObject *attr, PyObject **self_or_null);
+PyAPI_FUNC(int) _PyObject_LookupSpecialMethod(PyObject *attr, _PyStackRef *method_and_self);
 
 // Calls the method named `attr` on `self`, but does not set an exception if
 // the attribute does not exist.
@@ -1006,6 +1030,8 @@ enum _PyAnnotateFormat {
     _Py_ANNOTATE_FORMAT_FORWARDREF = 3,
     _Py_ANNOTATE_FORMAT_STRING = 4,
 };
+
+int _PyObject_SetDict(PyObject *obj, PyObject *value);
 
 #ifdef __cplusplus
 }

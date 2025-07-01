@@ -53,6 +53,14 @@ any codec:
    :exc:`UnicodeDecodeError`). Refer to :ref:`codec-base-classes` for more
    information on codec error handling.
 
+.. function:: charmap_build(string)
+
+   Return a mapping suitable for encoding with a custom single-byte encoding.
+   Given a :class:`str` *string* of up to 256 characters representing a
+   decoding table, returns either a compact internal mapping object
+   ``EncodingMap`` or a :class:`dictionary <dict>` mapping character ordinals
+   to byte values. Raises a :exc:`TypeError` on invalid input.
+
 The full details for each codec can also be looked up directly:
 
 .. function:: lookup(encoding, /)
@@ -207,6 +215,10 @@ wider range of codecs when working with binary files:
 
    .. versionchanged:: 3.11
       The ``'U'`` mode has been removed.
+
+   .. deprecated:: 3.14
+
+      :func:`codecs.open` has been superseded by :func:`open`.
 
 
 .. function:: EncodedFile(file, data_encoding, file_encoding=None, errors='strict')
