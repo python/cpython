@@ -1019,12 +1019,6 @@ clear_weakrefs(PyGC_Head *unreachable)
     PyGC_Head *gc;
     PyGC_Head *next;
 
-    /* Clear all weakrefs to the objects in unreachable.  If such a weakref
-     * also has a callback, move it into `wrcb_to_call` if the callback
-     * needs to be invoked.  Note that we cannot call `tp_clear` until
-     * all weakrefs to unreachable objects are cleared, lest finalizers
-     * resurrect an unreachable object via a still-active weakref.
-     */
     for (gc = GC_NEXT(unreachable); gc != unreachable; gc = next) {
         PyWeakReference **wrlist;
 
