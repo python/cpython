@@ -1,0 +1,1 @@
+Make :c:func:`PyUnicode_ToLower`, :c:func:`PyUnicode_ToUpper`, :c:func:`PyUnicode_ToTitle` and :c:func:`PyUnicode_ToFolded` public.
