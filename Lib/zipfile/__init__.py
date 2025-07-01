@@ -1535,10 +1535,6 @@ class ZipFile:
         # self.start_dir:  Position of start of central directory
         self.start_dir = offset_cd + concat
 
-        # store the offset to the beginning of data for the
-        # .data_offset property
-        self._data_offset = concat
-
         if self.start_dir < 0:
             raise BadZipFile("Bad offset for central directory")
         fp.seek(self.start_dir, 0)
@@ -1594,10 +1590,18 @@ class ZipFile:
                 print("total", total)
 
         end_offset = self.start_dir
+        zinfo = None
         for zinfo in reversed(sorted(self.filelist,
                                      key=lambda zinfo: zinfo.header_offset)):
             zinfo._end_offset = end_offset
             end_offset = zinfo.header_offset
+
+        # store the offset to the beginning of data for the
+        # .data_offset property
+        if zinfo is None:
+            self._data_offset = self.start_dir
+        else:
+            self._data_offset = zinfo.header_offset
 
     @property
     def data_offset(self):

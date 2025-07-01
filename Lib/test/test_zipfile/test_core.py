@@ -3505,11 +3505,27 @@ class TestDataOffsetZipWrite(unittest.TestCase):
             fp.write(b"this is a prefix")
             with zipfile.ZipFile(fp, "w") as zipfp:
                 self.assertEqual(zipfp.data_offset, 16)
+            fp.seek(0)
+            with zipfile.ZipFile(fp) as zipfp:
+                self.assertEqual(zipfp.data_offset, 16)
+
+    def test_data_offset_write_with_prefix_and_entry(self):
+        with io.BytesIO() as fp:
+            fp.write(b"this is a prefix")
+            with zipfile.ZipFile(fp, "w") as zipfp:
+                self.assertEqual(zipfp.data_offset, 16)
+                zipfp.writestr("test.txt", "content")
+            fp.seek(0)
+            with zipfile.ZipFile(fp) as zipfp:
+                self.assertEqual(zipfp.data_offset, 16)
 
     def test_data_offset_append_with_bad_zip(self):
         with io.BytesIO() as fp:
             fp.write(b"this is a prefix")
             with zipfile.ZipFile(fp, "a") as zipfp:
+                self.assertEqual(zipfp.data_offset, 16)
+            fp.seek(0)
+            with zipfile.ZipFile(fp) as zipfp:
                 self.assertEqual(zipfp.data_offset, 16)
 
     def test_data_offset_write_no_tell(self):
