@@ -146,9 +146,9 @@ Calling a simple function in an interpreter works the same way::
 
 (See :meth:`Interpreter.call`.)
 
-When it runs, the code is executed using the interpreter's ``__main__``
-module, just like a Python process normally does when invoked from
-the command-line::
+When it runs, the code is executed using the interpreter's
+:mod:`!__main__` module, just like a Python process normally does when
+invoked from the command-line::
 
     from concurrent import interpreters
 
