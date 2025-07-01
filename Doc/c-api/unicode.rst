@@ -313,7 +313,7 @@ These APIs can be used for fast direct character conversions:
    able to hold as many characters needed for *ch* to be lower cased, and
    return the number of characters stored. Passing a ``NULL`` buffer returns
    the buffer size needed. If at some point a buffer overflow is detected,
-   an :exc:`OverflowError` is raised and ``-1`` is returned.
+   an :exc:`ValueError` is raised and ``-1`` is returned.
 
    .. versionadded:: next
 
@@ -324,7 +324,7 @@ These APIs can be used for fast direct character conversions:
    able to hold as many characters needed for *ch* to be upper cased, and
    return the number of characters stored. Passing a ``NULL`` buffer returns
    the buffer size needed. If at some point a buffer overflow is detected,
-   an :exc:`OverflowError` is raised and ``-1`` is returned.
+   an :exc:`ValueError` is raised and ``-1`` is returned.
 
    .. versionadded:: next
 
@@ -335,7 +335,7 @@ These APIs can be used for fast direct character conversions:
    able to hold as many characters needed for *ch* to be title cased, and
    return the number of characters stored. Passing a ``NULL`` buffer returns
    the buffer size needed. If at some point a buffer overflow is detected,
-   an :exc:`OverflowError` is raised and ``-1`` is returned.
+   an :exc:`ValueError` is raised and ``-1`` is returned.
 
    .. versionadded:: next
 
@@ -346,7 +346,7 @@ These APIs can be used for fast direct character conversions:
    able to hold as many characters needed for *ch* to be foldcased, and
    return the number of characters stored. Passing a ``NULL`` buffer returns
    the buffer size needed. If at some point a buffer overflow is detected,
-   an :exc:`OverflowError` is raised and ``-1`` is returned.
+   an :exc:`ValueError` is raised and ``-1`` is returned.
 
    .. versionadded:: next
 

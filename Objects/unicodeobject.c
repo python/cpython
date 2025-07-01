@@ -10014,14 +10014,16 @@ do_capitalize(int kind, const void *data, Py_ssize_t length, Py_UCS4 *res, Py_UC
     Py_UCS4 c, mapped[3];
 
     c = PyUnicode_READ(kind, data, 0);
-    n_res = PyUnicode_ToTitle(c, mapped, 3);
+    n_res = PyUnicode_ToTitle(c, mapped, Py_ARRAY_LENGTH(mapped));
+    assert(n_res >= 1);
     for (j = 0; j < n_res; j++) {
         *maxchar = Py_MAX(*maxchar, mapped[j]);
         res[k++] = mapped[j];
     }
     for (i = 1; i < length; i++) {
         c = PyUnicode_READ(kind, data, i);
-        n_res = lower_ucs4(kind, data, length, i, c, mapped, 3);
+        n_res = lower_ucs4(kind, data, length, i, c, mapped, Py_ARRAY_LENGTH(mapped));
+        assert(n_res >= 1);
         for (j = 0; j < n_res; j++) {
             *maxchar = Py_MAX(*maxchar, mapped[j]);
             res[k++] = mapped[j];
@@ -10038,15 +10040,16 @@ do_swapcase(int kind, const void *data, Py_ssize_t length, Py_UCS4 *res, Py_UCS4
         Py_UCS4 c = PyUnicode_READ(kind, data, i), mapped[3];
         int n_res, j;
         if (Py_UNICODE_ISUPPER(c)) {
-            n_res = lower_ucs4(kind, data, length, i, c, mapped, 3);
+            n_res = lower_ucs4(kind, data, length, i, c, mapped, Py_ARRAY_LENGTH(mapped));
         }
         else if (Py_UNICODE_ISLOWER(c)) {
-            n_res = PyUnicode_ToUpper(c, mapped, 3);
+            n_res = PyUnicode_ToUpper(c, mapped, Py_ARRAY_LENGTH(mapped));
         }
         else {
             n_res = 1;
             mapped[0] = c;
         }
+        assert(n_res >= 1);
         for (j = 0; j < n_res; j++) {
             *maxchar = Py_MAX(*maxchar, mapped[j]);
             res[k++] = mapped[j];
@@ -10065,9 +10068,10 @@ do_upper_or_lower(int kind, const void *data, Py_ssize_t length, Py_UCS4 *res,
         Py_UCS4 c = PyUnicode_READ(kind, data, i), mapped[3];
         int n_res, j;
         if (lower)
-            n_res = lower_ucs4(kind, data, length, i, c, mapped, 3);
+            n_res = lower_ucs4(kind, data, length, i, c, mapped, Py_ARRAY_LENGTH(mapped));
         else
-            n_res = PyUnicode_ToUpper(c, mapped, 3);
+            n_res = PyUnicode_ToUpper(c, mapped, Py_ARRAY_LENGTH(mapped));
+        assert(n_res >= 1);
         for (j = 0; j < n_res; j++) {
             *maxchar = Py_MAX(*maxchar, mapped[j]);
             res[k++] = mapped[j];
@@ -10096,7 +10100,8 @@ do_casefold(int kind, const void *data, Py_ssize_t length, Py_UCS4 *res, Py_UCS4
     for (i = 0; i < length; i++) {
         Py_UCS4 c = PyUnicode_READ(kind, data, i);
         Py_UCS4 mapped[3];
-        int j, n_res = PyUnicode_ToFolded(c, mapped, 3);
+        int j, n_res = PyUnicode_ToFolded(c, mapped, Py_ARRAY_LENGTH(mapped));
+        assert(n_res >= 1);
         for (j = 0; j < n_res; j++) {
             *maxchar = Py_MAX(*maxchar, mapped[j]);
             res[k++] = mapped[j];
@@ -10118,10 +10123,10 @@ do_title(int kind, const void *data, Py_ssize_t length, Py_UCS4 *res, Py_UCS4 *m
         int n_res, j;
 
         if (previous_is_cased)
-            n_res = lower_ucs4(kind, data, length, i, c, mapped, 3);
+            n_res = lower_ucs4(kind, data, length, i, c, mapped, Py_ARRAY_LENGTH(mapped));
         else
-            n_res = PyUnicode_ToTitle(c, mapped, 3);
-
+            n_res = PyUnicode_ToTitle(c, mapped, Py_ARRAY_LENGTH(mapped));
+        assert(n_res >= 1);
         for (j = 0; j < n_res; j++) {
             *maxchar = Py_MAX(*maxchar, mapped[j]);
             res[k++] = mapped[j];
