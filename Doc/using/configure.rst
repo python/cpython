@@ -290,8 +290,8 @@ General Options
 
 .. option:: --disable-gil
 
-   Enables **experimental** support for running Python without the
-   :term:`global interpreter lock` (GIL): free threading build.
+   Enables support for running Python without the :term:`global interpreter
+   lock` (GIL): free threading build.
 
    Defines the ``Py_GIL_DISABLED`` macro and adds ``"t"`` to
    :data:`sys.abiflags`.

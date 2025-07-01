@@ -134,8 +134,7 @@ Literals
 Python supports string and bytes literals and various numeric literals:
 
 .. productionlist:: python-grammar
-   literal: `stringliteral` | `bytesliteral`
-          : | `integer` | `floatnumber` | `imagnumber`
+   literal: `stringliteral` | `bytesliteral` | `NUMBER`
 
 Evaluation of a literal yields an object of the given type (string, bytes,
 integer, floating-point number, complex number) with the given value.  The value
@@ -626,8 +625,10 @@ is already executing raises a :exc:`ValueError` exception.
 
 .. method:: generator.close()
 
-   Raises a :exc:`GeneratorExit` at the point where the generator function was
-   paused.  If the generator function catches the exception and returns a
+   Raises a :exc:`GeneratorExit` exception at the point where the generator
+   function was paused (equivalent to calling ``throw(GeneratorExit)``).
+   The exception is raised by the yield expression where the generator was paused.
+   If the generator function catches the exception and returns a
    value, this value is returned from :meth:`close`.  If the generator function
    is already closed, or raises :exc:`GeneratorExit` (by not catching the
    exception), :meth:`close` returns :const:`None`.  If the generator yields a
@@ -1024,7 +1025,7 @@ series of :term:`arguments <argument>`:
                 :   ["," `keywords_arguments`]
                 : | `starred_and_keywords` ["," `keywords_arguments`]
                 : | `keywords_arguments`
-   positional_arguments: positional_item ("," positional_item)*
+   positional_arguments: `positional_item` ("," `positional_item`)*
    positional_item: `assignment_expression` | "*" `expression`
    starred_and_keywords: ("*" `expression` | `keyword_item`)
                 : ("," "*" `expression` | "," `keyword_item`)*

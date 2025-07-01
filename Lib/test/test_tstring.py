@@ -219,6 +219,7 @@ class TestTString(unittest.TestCase, TStringBaseCase):
             ("t'{lambda:1}'", "t-string: lambda expressions are not allowed "
                               "without parentheses"),
             ("t'{x:{;}}'", "t-string: expecting a valid expression after '{'"),
+            ("t'{1:d\n}'", "t-string: newlines are not allowed in format specifiers")
         ):
             with self.subTest(case), self.assertRaisesRegex(SyntaxError, err):
                 eval(case)
