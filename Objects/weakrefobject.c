@@ -1,5 +1,7 @@
 #include "Python.h"
 #include "pycore_critical_section.h"
+#include "pycore_global_objects.h" // _Py_INTERP_STATIC_OBJECT()
+#include "pycore_interp_structs.h" // _PyInterpreterState_GET()
 #include "pycore_lock.h"
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_object.h"        // _PyObject_GET_WEAKREFS_LISTPTR()
@@ -72,7 +74,6 @@ init_weakref(PyWeakReference *self, PyObject *ob, PyObject *callback)
     _PyObject_SetMaybeWeakref(ob);
     _PyObject_SetMaybeWeakref((PyObject *)self);
 #endif
-    self->is_subclass = 0;
 }
 
 // Clear the weakref and steal its callback into `callback`, if provided.
@@ -1132,4 +1133,56 @@ int
 _PyWeakref_IsDead(PyObject *weakref)
 {
     return _PyWeakref_IS_DEAD(weakref);
+}
+
+int
+_PyWeakref_InitSubclassSentinel(PyInterpreterState *interp)
+{
+    PyObject *code =  (PyObject *)PyCode_NewEmpty(
+        "<generated>",
+        "<subclasses_weakref_sentinel>",
+        0);
+    if (code == NULL) {
+        return -1;
+    }
+
+    PyObject *globals = PyDict_New();
+    if (globals == NULL) {
+        Py_DECREF(code);
+        return -1;
+    }
+
+    PyObject *func = PyFunction_New(code, globals);
+    Py_DECREF(globals);
+    Py_DECREF(code);
+    if (func == NULL) {
+        return -1;
+    }
+
+    _Py_INTERP_SINGLETON(interp, subclasses_weakref_sentinel) = func;
+    return 0;
+}
+
+PyObject *
+_PyWeakref_NewSubclassRef(PyObject *ob)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (interp != interp->runtime->interpreters.main) {
+        interp = interp->runtime->interpreters.main;
+    }
+    PyObject *func = _Py_INTERP_SINGLETON(interp, subclasses_weakref_sentinel);
+    return PyWeakref_NewRef(ob, func);
+}
+
+int
+_PyWeakref_IsSubclassRef(PyWeakReference *weakref)
+{
+    assert(weakref != NULL);
+
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (interp != interp->runtime->interpreters.main) {
+        interp = interp->runtime->interpreters.main;
+    }
+    PyObject *func = _Py_INTERP_SINGLETON(interp, subclasses_weakref_sentinel);
+    return weakref->wr_callback == func;
 }

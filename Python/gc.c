@@ -907,7 +907,7 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
              * will run and potentially cause a crash.  See bpo-38006 for
              * one example.
              */
-            if (!((PyWeakReference *)op)->is_subclass) {
+            if (!_PyWeakref_IsSubclassRef((PyWeakReference *)op)) {
                 _PyWeakref_ClearRef((PyWeakReference *)op);
             }
             else {
@@ -935,7 +935,7 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
             PyGC_Head *wrasgc;                  /* AS_GC(wr) */
 
             wr_next = wr->wr_next;
-            if (wr->is_subclass == 1) {
+            if (_PyWeakref_IsSubclassRef(wr) == 1) {
                 continue;
             }
 

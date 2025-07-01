@@ -1376,6 +1376,12 @@ init_interp_main(PyThreadState *tstate)
         return _PyStatus_ERR("failed to set builtin dict watcher");
     }
 
+    if (is_main_interp) {
+        if (_PyWeakref_InitSubclassSentinel(interp) < 0) {
+            return _PyStatus_ERR("failed to create subclasses weakref sentinel");
+        }
+    }
+
     assert(!_PyErr_Occurred(tstate));
 
     return _PyStatus_OK();

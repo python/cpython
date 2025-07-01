@@ -701,6 +701,7 @@ struct _Py_interp_static_objects {
         _PyGC_Head_UNUSED _hamt_empty_gc_not_used;
         PyHamtObject hamt_empty;
         PyBaseExceptionObject last_resort_memory_error;
+        PyObject *subclasses_weakref_sentinel;
     } singletons;
 };
 

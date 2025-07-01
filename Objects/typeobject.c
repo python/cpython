@@ -9259,14 +9259,11 @@ add_subclass(PyTypeObject *base, PyTypeObject *type)
     if (key == NULL)
         return -1;
 
-    PyObject *ref = PyWeakref_NewRef((PyObject *)type, NULL);
+    PyObject *ref = _PyWeakref_NewSubclassRef((PyObject *)type);
     if (ref == NULL) {
         Py_DECREF(key);
         return -1;
     }
-
-    ((PyWeakReference*)ref)->is_subclass = 1;
-
 
     // Only get tp_subclasses after creating the key and value.
     // PyWeakref_NewRef() can trigger a garbage collection which can execute

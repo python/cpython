@@ -9,6 +9,7 @@ extern "C" {
 #endif
 
 #include "pycore_critical_section.h" // Py_BEGIN_CRITICAL_SECTION()
+#include "pycore_interp_structs.h"   // PyInterpreterState
 #include "pycore_lock.h"             // PyMutex_LockFlags()
 #include "pycore_object.h"           // _Py_REF_IS_MERGED()
 #include "pycore_pyatomic_ft_wrappers.h"
@@ -126,6 +127,10 @@ extern Py_ssize_t _PyWeakref_GetWeakrefCount(PyObject *obj);
 extern void _PyWeakref_ClearWeakRefsNoCallbacks(PyObject *obj);
 
 PyAPI_FUNC(int) _PyWeakref_IsDead(PyObject *weakref);
+
+int _PyWeakref_InitSubclassSentinel(PyInterpreterState *interp);
+PyObject * _PyWeakref_NewSubclassRef(PyObject *ob);
+int _PyWeakref_IsSubclassRef(PyWeakReference *weakref);
 
 #ifdef __cplusplus
 }

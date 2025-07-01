@@ -38,7 +38,6 @@ struct _PyWeakReference {
      */
     PyMutex *weakrefs_lock;
 #endif
-    uint8_t is_subclass;
 };
 
 PyAPI_FUNC(void) _PyWeakref_ClearRef(PyWeakReference *self);
