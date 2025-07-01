@@ -2,13 +2,14 @@
 
 import asyncio
 import unittest
+import functools
 
 from contextvars import ContextVar
 from unittest import mock
 
 
 def tearDownModule():
-    asyncio._set_event_loop_policy(None)
+    asyncio.set_event_loop_policy(None)
 
 
 class ToThreadTests(unittest.IsolatedAsyncioTestCase):
@@ -60,6 +61,41 @@ class ToThreadTests(unittest.IsolatedAsyncioTestCase):
         result = await asyncio.to_thread(get_ctx)
 
         self.assertEqual(result, 'parrot')
+
+    @mock.patch('asyncio.base_events.BaseEventLoop.run_in_executor')
+    async def test_to_thread_optimization_path(self, run_in_executor):
+        # This test ensures that `to_thread` uses the correct execution path
+        # based on whether the context is empty or not.
+
+        # `to_thread` awaits the future returned by `run_in_executor`.
+        # We need to provide a completed future as a return value for the mock.
+        fut = asyncio.Future()
+        fut.set_result(None)
+        run_in_executor.return_value = fut
+
+        def myfunc():
+            pass
+
+        # Test with an empty context (optimized path)
+        await asyncio.to_thread(myfunc)
+        run_in_executor.assert_called_once()
+
+        callback = run_in_executor.call_args.args[1]
+        self.assertIsInstance(callback, functools.partial)
+        self.assertIs(callback.func, myfunc)
+        run_in_executor.reset_mock()
+
+        # Test with a non-empty context (standard path)
+        var = ContextVar('var')
+        var.set('value')
+
+        await asyncio.to_thread(myfunc)
+        run_in_executor.assert_called_once()
+
+        callback = run_in_executor.call_args.args[1]
+        self.assertIsInstance(callback, functools.partial)
+        self.assertIsNot(callback.func, myfunc)  # Should be ctx.run
+        self.assertIs(callback.args[0], myfunc)
 
 
 if __name__ == "__main__":
