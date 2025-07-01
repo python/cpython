@@ -307,34 +307,49 @@ These APIs can be used for fast direct character conversions:
    possible.  This function does not raise exceptions.
 
 
-.. c:function:: Py_ssize_t PyUnicode_ToLower(Py_UCS4 ch, Py_UCS4 *buffer)
+.. c:function:: Py_ssize_t PyUnicode_ToLower(Py_UCS4 ch, Py_UCS4 *buffer, int size)
 
    Convert *ch* to lower case, store result in *buffer*, which should be
-   able to hold as many characters needed for *ch* to be lower cased
-   (maximum three), and return the number of characters stored.
-   Passing a ``NULL`` buffer returns the buffer size needed.
+   able to hold as many characters needed for *ch* to be lower cased, and
+   return the number of characters stored. Passing a ``NULL`` buffer returns
+   the buffer size needed. If at some point a buffer overflow is detected,
+   an :exc:`OverflowError` is raised and ``-1`` is returned.
 
    .. versionadded:: next
 
 
-.. c:function:: Py_ssize_t PyUnicode_ToUpper(Py_UCS4 ch, Py_UCS4 *buffer)
+.. c:function:: Py_ssize_t PyUnicode_ToUpper(Py_UCS4 ch, Py_UCS4 *buffer, int size)
 
-   Convert *ch* to lower case, store result in *buffer*, which should be
-   able to hold as many characters needed for *ch* to be lower cased
-   (maximum three), and return the number of characters stored.
-   Passing a ``NULL`` buffer returns the buffer size needed.
+   Convert *ch* to upper case, store result in *buffer*, which should be
+   able to hold as many characters needed for *ch* to be upper cased, and
+   return the number of characters stored. Passing a ``NULL`` buffer returns
+   the buffer size needed. If at some point a buffer overflow is detected,
+   an :exc:`OverflowError` is raised and ``-1`` is returned.
+
+   .. versionadded:: next
+
+
+.. c:function:: Py_ssize_t PyUnicode_ToTitle(Py_UCS4 ch, Py_UCS4 *buffer, int size)
+
+   Convert *ch* to title case, store result in *buffer*, which should be
+   able to hold as many characters needed for *ch* to be title cased, and
+   return the number of characters stored. Passing a ``NULL`` buffer returns
+   the buffer size needed. If at some point a buffer overflow is detected,
+   an :exc:`OverflowError` is raised and ``-1`` is returned.
 
    .. versionadded:: next
 
 
-.. c:function:: Py_ssize_t PyUnicode_ToTitle(Py_UCS4 ch, Py_UCS4 *buffer)
+.. c:function:: Py_ssize_t PyUnicode_ToFolded(Py_UCS4 ch, Py_UCS4 *buffer, int size)
 
-   Convert *ch* to lower case, store result in *buffer*, which should be
-   able to hold as many characters needed for *ch* to be lower cased
-   (maximum three), and return the number of characters stored.
-   Passing a ``NULL`` buffer returns the buffer size needed.
+   Foldcase *ch*, store result in *buffer*, which should be
+   able to hold as many characters needed for *ch* to be foldcased, and
+   return the number of characters stored. Passing a ``NULL`` buffer returns
+   the buffer size needed. If at some point a buffer overflow is detected,
+   an :exc:`OverflowError` is raised and ``-1`` is returned.
 
    .. versionadded:: next
+
 
 
 These APIs can be used to work with surrogates:
