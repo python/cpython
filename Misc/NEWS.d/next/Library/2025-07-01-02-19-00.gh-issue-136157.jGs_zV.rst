@@ -1,0 +1,1 @@
+Optimized ``asyncio.to_thread`` to avoid unnecessary performance overhead from calling ``contextvars.copy_context().run`` when the context is empty.
