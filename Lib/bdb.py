@@ -583,8 +583,9 @@ class Bdb:
 
     def set_step(self):
         """Stop after one line of code."""
+        # set_step() could be called from signal handler so enterframe might be None
         self._set_stopinfo(None, None, startframe=self.enterframe,
-                           startlineno=self.enterframe.f_lineno)
+                           startlineno=getattr(self.enterframe, 'f_lineno', None))
 
     def set_stepinstr(self):
         """Stop before the next instruction."""
