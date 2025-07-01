@@ -181,11 +181,10 @@ def _strip_ipv6_iface(enc_name: bytes) -> bytes:
     return enc_name
 
 class HTTPMessage(email.message.Message):
-    # XXX The only usage of this method is in
-    # http.server.CGIHTTPRequestHandler.  Maybe move the code there so
-    # that it doesn't need to be part of the public API.  The API has
-    # never been defined so this could cause backwards compatibility
-    # issues.
+
+    # The getallmatchingheaders() method was only used by the CGI handler
+    # that was removed in Python 3.15. However, since the public API was not
+    # properly defined, it will be kept for backwards compatibility reasons.
 
     def getallmatchingheaders(self, name):
         """Find all header lines matching a given header name.
@@ -472,7 +471,7 @@ class HTTPResponse(io.BufferedIOBase):
         if self.chunked:
             return self._read_chunked(amt)
 
-        if amt is not None:
+        if amt is not None and amt >= 0:
             if self.length is not None and amt > self.length:
                 # clip the read to the "end of response"
                 amt = self.length
@@ -590,6 +589,8 @@ class HTTPResponse(io.BufferedIOBase):
 
     def _read_chunked(self, amt=None):
         assert self.chunked != _UNKNOWN
+        if amt is not None and amt < 0:
+            amt = None
         value = []
         try:
             while (chunk_left := self._get_chunk_left()) is not None:
@@ -936,17 +937,23 @@ class HTTPConnection:
                 host = host[:i]
             else:
                 port = self.default_port
-            if host and host[0] == '[' and host[-1] == ']':
-                host = host[1:-1]
+        if host and host[0] == '[' and host[-1] == ']':
+            host = host[1:-1]
 
         return (host, port)
 
     def set_debuglevel(self, level):
         self.debuglevel = level
 
+    def _wrap_ipv6(self, ip):
+        if b':' in ip and ip[0] != b'['[0]:
+            return b"[" + ip + b"]"
+        return ip
+
     def _tunnel(self):
         connect = b"CONNECT %s:%d %s\r\n" % (
-            self._tunnel_host.encode("idna"), self._tunnel_port,
+            self._wrap_ipv6(self._tunnel_host.encode("idna")),
+            self._tunnel_port,
             self._http_vsn_str.encode("ascii"))
         headers = [connect]
         for header, value in self._tunnel_headers.items():
@@ -1019,7 +1026,7 @@ class HTTPConnection:
                 response.close()
 
     def send(self, data):
-        """Send `data' to the server.
+        """Send 'data' to the server.
         ``data`` can be a string object, a bytes object, an array object, a
         file-like object that supports a .read() method, or an iterable object.
         """
@@ -1131,10 +1138,10 @@ class HTTPConnection:
                    skip_accept_encoding=False):
         """Send a request to the server.
 
-        `method' specifies an HTTP request method, e.g. 'GET'.
-        `url' specifies the object being requested, e.g. '/index.html'.
-        `skip_host' if True does not add automatically a 'Host:' header
-        `skip_accept_encoding' if True does not add automatically an
+        'method' specifies an HTTP request method, e.g. 'GET'.
+        'url' specifies the object being requested, e.g. '/index.html'.
+        'skip_host' if True does not add automatically a 'Host:' header
+        'skip_accept_encoding' if True does not add automatically an
            'Accept-Encoding:' header
         """
 
@@ -1221,9 +1228,8 @@ class HTTPConnection:
 
                     # As per RFC 273, IPv6 address should be wrapped with []
                     # when used as Host header
-
+                    host_enc = self._wrap_ipv6(host_enc)
                     if ":" in host:
-                        host_enc = b'[' + host_enc + b']'
                         host_enc = _strip_ipv6_iface(host_enc)
 
                     if port == self.default_port:

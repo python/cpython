@@ -138,7 +138,7 @@ Replaced :opcode:`JUMP_ABSOLUTE` by the relative jump
 .. nonce: SwrrFO
 .. section: Core and Builtins
 
-:c:func:`PyFrame_FastToLocalsWithError` and :c:func:`PyFrame_LocalsToFast`
+:c:func:`!PyFrame_FastToLocalsWithError` and :c:func:`!PyFrame_LocalsToFast`
 are no longer called during profiling nor tracing. C code can access the
 ``f_locals`` attribute of :c:type:`PyFrameObject` by calling
 :c:func:`PyFrame_GetLocals`.
@@ -224,7 +224,7 @@ Kumar Aditya.
 .. nonce: ZI05b5
 .. section: Core and Builtins
 
-Improved the performance of :meth:`list.append()` and list comprehensions by
+Improved the performance of :meth:`list.append` and list comprehensions by
 optimizing for the common case, where no resize is needed. Patch by Dennis
 Sweeney.
 
@@ -295,7 +295,7 @@ oparg) as an adaptive counter.
 .. nonce: O12Pba
 .. section: Core and Builtins
 
-Use inline caching for :opcode:`PRECALL` and :opcode:`CALL`, and remove the
+Use inline caching for :opcode:`!PRECALL` and :opcode:`CALL`, and remove the
 internal machinery for managing the (now unused) non-inline caches.
 
 ..
@@ -1127,7 +1127,7 @@ Raise more accurate and :pep:`249` compatible exceptions in :mod:`sqlite3`.
 * Don't overwrite :exc:`BufferError` with :exc:`ValueError` when conversion to
   BLOB fails.
 * Raise :exc:`~sqlite3.ProgrammingError` instead of :exc:`~sqlite3.Warning` if
-  user tries to :meth:`~sqlite3.Cursor.execute()` more than one SQL statement.
+  user tries to :meth:`~sqlite3.Cursor.execute` more than one SQL statement.
 * Raise :exc:`~sqlite3.ProgrammingError` instead of :exc:`ValueError` if an SQL
   query contains null characters.
 
@@ -1173,7 +1173,7 @@ implemented.
 .. section: Library
 
 Add an Barrier object in synchronization primitives of *asyncio* Lib in
-order to be consistant with Barrier from *threading* and *multiprocessing*
+order to be consistent with Barrier from *threading* and *multiprocessing*
 libs*
 
 ..
@@ -1211,7 +1211,7 @@ Update PEP URLs to :pep:`676`'s new canonical form.
 .. nonce: 4Dn48U
 .. section: Documentation
 
-Clarified the old Python versions compatiblity note of
+Clarified the old Python versions compatibility note of
 :func:`binascii.crc32` / :func:`zlib.adler32` / :func:`zlib.crc32`
 functions.
 
@@ -1401,7 +1401,7 @@ Christian's container image ``quay.io/tiran/cpython_autoconf:269``.
 .. nonce: fry4aK
 .. section: Build
 
-Building Python now requires support of IEEE 754 floating point numbers.
+Building Python now requires support of IEEE 754 floating-point numbers.
 Patch by Victor Stinner.
 
 ..
@@ -1421,7 +1421,7 @@ Patch by Victor Stinner.
 .. nonce: IB0XL4
 .. section: Windows
 
-Update ``zlib`` to v1.2.12 to resolve CVE-2018-25032.
+Update ``zlib`` to v1.2.12 to resolve :cve:`2018-25032`.
 
 ..
 
@@ -1472,8 +1472,8 @@ Update Windows installer to use SQLite 3.38.1.
 .. nonce: SPrGS9
 .. section: Windows
 
-Update bzip2 to 1.0.8 in Windows builds to mitigate CVE-2016-3189 and
-CVE-2019-12900
+Update bzip2 to 1.0.8 in Windows builds to mitigate :cve:`2016-3189` and
+:cve:`2019-12900`.
 
 ..
 
@@ -1482,7 +1482,7 @@ CVE-2019-12900
 .. nonce: Ufd4tG
 .. section: Windows
 
-Prevent CVE-2022-26488 by ensuring the Add to PATH option in the Windows
+Prevent :cve:`2022-26488` by ensuring the Add to PATH option in the Windows
 installer uses the correct path when being repaired.
 
 ..

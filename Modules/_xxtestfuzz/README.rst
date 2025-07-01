@@ -23,7 +23,7 @@ Add the test name on a new line in ``fuzz_tests.txt``.
 
 In ``fuzzer.c``, add a function to be run::
 
-    int $test_name (const char* data, size_t size) {
+    static int $fuzz_test_name(const char* data, size_t size) {
         ...
         return 0;
     }
@@ -31,9 +31,11 @@ In ``fuzzer.c``, add a function to be run::
 
 And invoke it from ``LLVMFuzzerTestOneInput``::
 
-    #if _Py_FUZZ_YES(fuzz_builtin_float)
-        rv |= _run_fuzz(data, size, fuzz_builtin_float);
+    #if !defined(_Py_FUZZ_ONE) || defined(_Py_FUZZ_$fuzz_test_name)
+        rv |= _run_fuzz(data, size, $fuzz_test_name);
     #endif
+
+Don't forget to replace ``$fuzz_test_name`` with your actual test name.
 
 ``LLVMFuzzerTestOneInput`` will run in oss-fuzz, with each test in
 ``fuzz_tests.txt`` run separately.

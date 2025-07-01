@@ -7,7 +7,7 @@ from asyncio import tasks
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio._set_event_loop_policy(None)
 
 
 class FutureTests:

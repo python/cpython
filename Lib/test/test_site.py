@@ -7,6 +7,8 @@ executing have not been removed.
 import unittest
 import test.support
 from test import support
+from test.support.script_helper import assert_python_ok
+from test.support import import_helper
 from test.support import os_helper
 from test.support import socket_helper
 from test.support import captured_stderr
@@ -18,6 +20,7 @@ import io
 import os
 import re
 import shutil
+import stat
 import subprocess
 import sys
 import sysconfig
@@ -194,6 +197,45 @@ class HelperFunctionsTests(unittest.TestCase):
         finally:
             pth_file.cleanup()
 
+    def test_addsitedir_dotfile(self):
+        pth_file = PthFile('.dotfile')
+        pth_file.cleanup(prep=True)
+        try:
+            pth_file.create()
+            site.addsitedir(pth_file.base_dir, set())
+            self.assertNotIn(site.makepath(pth_file.good_dir_path)[0], sys.path)
+            self.assertIn(pth_file.base_dir, sys.path)
+        finally:
+            pth_file.cleanup()
+
+    @unittest.skipUnless(hasattr(os, 'chflags'), 'test needs os.chflags()')
+    def test_addsitedir_hidden_flags(self):
+        pth_file = PthFile()
+        pth_file.cleanup(prep=True)
+        try:
+            pth_file.create()
+            st = os.stat(pth_file.file_path)
+            os.chflags(pth_file.file_path, st.st_flags | stat.UF_HIDDEN)
+            site.addsitedir(pth_file.base_dir, set())
+            self.assertNotIn(site.makepath(pth_file.good_dir_path)[0], sys.path)
+            self.assertIn(pth_file.base_dir, sys.path)
+        finally:
+            pth_file.cleanup()
+
+    @unittest.skipUnless(sys.platform == 'win32', 'test needs Windows')
+    @support.requires_subprocess()
+    def test_addsitedir_hidden_file_attribute(self):
+        pth_file = PthFile()
+        pth_file.cleanup(prep=True)
+        try:
+            pth_file.create()
+            subprocess.check_call(['attrib', '+H', pth_file.file_path])
+            site.addsitedir(pth_file.base_dir, set())
+            self.assertNotIn(site.makepath(pth_file.good_dir_path)[0], sys.path)
+            self.assertIn(pth_file.base_dir, sys.path)
+        finally:
+            pth_file.cleanup()
+
     # This tests _getuserbase, hence the double underline
     # to distinguish from a test for getuserbase
     def test__getuserbase(self):
@@ -265,8 +307,7 @@ class HelperFunctionsTests(unittest.TestCase):
 
         with EnvironmentVarGuard() as environ:
             environ['PYTHONUSERBASE'] = 'xoxo'
-            self.assertTrue(site.getuserbase().startswith('xoxo'),
-                            site.getuserbase())
+            self.assertStartsWith(site.getuserbase(), 'xoxo')
 
     @unittest.skipUnless(HAS_USER_SITE, 'need user site')
     def test_getusersitepackages(self):
@@ -276,7 +317,7 @@ class HelperFunctionsTests(unittest.TestCase):
 
         # the call sets USER_BASE *and* USER_SITE
         self.assertEqual(site.USER_SITE, user_site)
-        self.assertTrue(user_site.startswith(site.USER_BASE), user_site)
+        self.assertStartsWith(user_site, site.USER_BASE)
         self.assertEqual(site.USER_BASE, site.getuserbase())
 
     def test_getsitepackages(self):
@@ -287,13 +328,13 @@ class HelperFunctionsTests(unittest.TestCase):
             if sys.platlibdir != "lib":
                 self.assertEqual(len(dirs), 2)
                 wanted = os.path.join('xoxo', sys.platlibdir,
-                                      'python%d.%d' % sys.version_info[:2],
+                                      f'python{sysconfig._get_python_version_abi()}',
                                       'site-packages')
                 self.assertEqual(dirs[0], wanted)
             else:
                 self.assertEqual(len(dirs), 1)
             wanted = os.path.join('xoxo', 'lib',
-                                  'python%d.%d' % sys.version_info[:2],
+                                  f'python{sysconfig._get_python_version_abi()}',
                                   'site-packages')
             self.assertEqual(dirs[-1], wanted)
         else:
@@ -314,16 +355,13 @@ class HelperFunctionsTests(unittest.TestCase):
 
         with EnvironmentVarGuard() as environ, \
              mock.patch('os.path.expanduser', lambda path: path):
-
-            del environ['PYTHONUSERBASE']
-            del environ['APPDATA']
+            environ.unset('PYTHONUSERBASE', 'APPDATA')
 
             user_base = site.getuserbase()
-            self.assertTrue(user_base.startswith('~' + os.sep),
-                            user_base)
+            self.assertStartsWith(user_base, '~' + os.sep)
 
             user_site = site.getusersitepackages()
-            self.assertTrue(user_site.startswith(user_base), user_site)
+            self.assertStartsWith(user_site, user_base)
 
         with mock.patch('os.path.isdir', return_value=False) as mock_isdir, \
              mock.patch.object(site, 'addsitedir') as mock_addsitedir, \
@@ -337,6 +375,19 @@ class HelperFunctionsTests(unittest.TestCase):
             mock_isdir.assert_called_once_with(user_site)
             mock_addsitedir.assert_not_called()
             self.assertFalse(known_paths)
+
+    def test_gethistoryfile(self):
+        filename = 'file'
+        rc, out, err = assert_python_ok('-c',
+            f'import site; assert site.gethistoryfile() == "{filename}"',
+            PYTHON_HISTORY=filename)
+        self.assertEqual(rc, 0)
+
+        # Check that PYTHON_HISTORY is ignored in isolated mode.
+        rc, out, err = assert_python_ok('-I', '-c',
+            f'import site; assert site.gethistoryfile() != "{filename}"',
+            PYTHON_HISTORY=filename)
+        self.assertEqual(rc, 0)
 
     def test_trace(self):
         message = "bla-bla-bla"
@@ -442,24 +493,24 @@ class ImportSideEffectTests(unittest.TestCase):
 
     def test_setting_quit(self):
         # 'quit' and 'exit' should be injected into builtins
-        self.assertTrue(hasattr(builtins, "quit"))
-        self.assertTrue(hasattr(builtins, "exit"))
+        self.assertHasAttr(builtins, "quit")
+        self.assertHasAttr(builtins, "exit")
 
     def test_setting_copyright(self):
         # 'copyright', 'credits', and 'license' should be in builtins
-        self.assertTrue(hasattr(builtins, "copyright"))
-        self.assertTrue(hasattr(builtins, "credits"))
-        self.assertTrue(hasattr(builtins, "license"))
+        self.assertHasAttr(builtins, "copyright")
+        self.assertHasAttr(builtins, "credits")
+        self.assertHasAttr(builtins, "license")
 
     def test_setting_help(self):
         # 'help' should be set in builtins
-        self.assertTrue(hasattr(builtins, "help"))
+        self.assertHasAttr(builtins, "help")
 
     def test_sitecustomize_executed(self):
         # If sitecustomize is available, it should have been imported.
         if "sitecustomize" not in sys.modules:
             try:
-                import sitecustomize
+                import sitecustomize  # noqa: F401
             except ImportError:
                 pass
             else:
@@ -521,6 +572,17 @@ class ImportSideEffectTests(unittest.TestCase):
         except urllib.error.HTTPError as e:
             code = e.code
         self.assertEqual(code, 200, msg="Can't find " + url)
+
+    @support.cpython_only
+    def test_lazy_imports(self):
+        import_helper.ensure_lazy_imports("site", [
+            "io",
+            "locale",
+            "traceback",
+            "atexit",
+            "warnings",
+            "textwrap",
+        ])
 
 
 class StartupImportTests(unittest.TestCase):

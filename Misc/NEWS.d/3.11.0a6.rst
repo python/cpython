@@ -248,7 +248,7 @@ Don't un-adapt :opcode:`COMPARE_OP` when collecting specialization stats.
 .. nonce: RX_AzJ
 .. section: Core and Builtins
 
-Fix specialization stats gathering for :opcode:`PRECALL` instructions.
+Fix specialization stats gathering for :opcode:`!PRECALL` instructions.
 
 ..
 
@@ -1034,7 +1034,7 @@ if zlib uses the s390x hardware accelerator. Patch by Victor Stinner.
 .. nonce: jfciLG
 .. section: Build
 
-Respect `--with-suffix` when building on case-insensitive file systems.
+Respect ``--with-suffix`` when building on case-insensitive file systems.
 
 ..
 
@@ -1054,7 +1054,7 @@ Patch by Victor Stinner.
 .. nonce: ajJjkh
 .. section: Build
 
-Building Python now requires support for floating point Not-a-Number (NaN):
+Building Python now requires support for floating-point Not-a-Number (NaN):
 remove the ``Py_NO_NAN`` macro. Patch by Victor Stinner.
 
 ..
@@ -1088,7 +1088,7 @@ Patch by Kumar Aditya.
 
 Fix wasm32-emscripten test failures and platform issues. - Disable syscalls
 that are not supported or don't work, e.g.   wait, getrusage, prlimit,
-mkfifo, mknod, setres[gu]id, setgroups. - Use fd_count to cound open fds. -
+mkfifo, mknod, setres[gu]id, setgroups. - Use fd_count to count open fds. -
 Add more checks for subprocess and fork. - Add workarounds for missing
 _multiprocessing and failing socket.accept(). - Enable bzip2. - Disable
 large file support. - Disable signal.alarm.
@@ -1151,7 +1151,7 @@ Make query dialogs on Windows start with a cursor in the entry box.
 .. nonce: FhiH5P
 .. section: IDLE
 
-Apply IDLE syntax highlighting to `.pyi` files. Patch by Alex Waygood and
+Apply IDLE syntax highlighting to ``.pyi`` files. Patch by Alex Waygood and
 Terry Jan Reedy.
 
 ..
@@ -1162,7 +1162,7 @@ Terry Jan Reedy.
 .. section: C API
 
 Python's public headers no longer import ``<stdbool.h>``, leaving code that
-embedd/extends Python free to define ``bool``, ``true`` and ``false``.
+embeds/extends Python free to define ``bool``, ``true`` and ``false``.
 
 ..
 
@@ -1182,7 +1182,7 @@ internal C API ``pycore_frame.h`` header file. Patch by Victor Stinner.
 .. section: C API
 
 Rename ``Include/buffer.h`` header file to ``Include/pybuffer.h`` to avoid
-conflits with projects having an existing ``buffer.h`` header file. Patch by
+conflicts with projects having an existing ``buffer.h`` header file. Patch by
 Victor Stinner.
 
 ..
@@ -1202,5 +1202,5 @@ API). Patch by Victor Stinner.
 .. nonce: __ZdpH
 .. section: C API
 
-Added function :c:func:`PyType_GetModuleByDef`, which allows accesss to
+Added function :c:func:`PyType_GetModuleByDef`, which allows access to
 module state when a method's defining class is not available.

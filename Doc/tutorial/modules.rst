@@ -27,14 +27,16 @@ called :file:`fibo.py` in the current directory with the following contents::
 
    # Fibonacci numbers module
 
-   def fib(n):    # write Fibonacci series up to n
+   def fib(n):
+       """Write Fibonacci series up to n."""
        a, b = 0, 1
        while a < n:
            print(a, end=' ')
            a, b = b, a+b
        print()
 
-   def fib2(n):   # return Fibonacci series up to n
+   def fib2(n):
+       """Return Fibonacci series up to n."""
        result = []
        a, b = 0, 1
        while a < n:
@@ -585,8 +587,9 @@ as the main module of a Python application must always use absolute imports.
 Packages in Multiple Directories
 --------------------------------
 
-Packages support one more special attribute, :attr:`__path__`.  This is
-initialized to be a list containing the name of the directory holding the
+Packages support one more special attribute, :attr:`~module.__path__`.  This is
+initialized to be a :term:`sequence` of strings containing the name of the
+directory holding the
 package's :file:`__init__.py` before the code in that file is executed.  This
 variable can be modified; doing so affects future searches for modules and
 subpackages contained in the package.

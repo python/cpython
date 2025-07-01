@@ -1,5 +1,5 @@
-:mod:`shelve` --- Python object persistence
-===========================================
+:mod:`!shelve` --- Python object persistence
+============================================
 
 .. module:: shelve
    :synopsis: Python object persistence.
@@ -75,8 +75,15 @@ Two additional methods are supported:
 
    Write back all entries in the cache if the shelf was opened with *writeback*
    set to :const:`True`.  Also empty the cache and synchronize the persistent
-   dictionary on disk, if feasible.  This is called automatically when the shelf
-   is closed with :meth:`close`.
+   dictionary on disk, if feasible.  This is called automatically when
+   :meth:`reorganize` is called or the shelf is closed with :meth:`close`.
+
+.. method:: Shelf.reorganize()
+
+   Calls :meth:`sync` and attempts to shrink space used on disk by removing empty
+   space resulting from deletions.
+
+   .. versionadded:: next
 
 .. method:: Shelf.close()
 
@@ -86,7 +93,7 @@ Two additional methods are supported:
 
 .. seealso::
 
-   `Persistent dictionary recipe <https://code.activestate.com/recipes/576642/>`_
+   `Persistent dictionary recipe <https://code.activestate.com/recipes/576642-persistent-dict-with-multiple-standard-file-format/>`_
    with widely supported storage formats and having the speed of native
    dictionaries.
 
@@ -115,6 +122,11 @@ Restrictions
 
 * On macOS :mod:`dbm.ndbm` can silently corrupt the database file on updates,
   which can cause hard crashes when trying to read from the database.
+
+* :meth:`Shelf.reorganize` may not be available for all database packages and
+  may temporarely increase resource usage (especially disk space) when called.
+  Additionally, it will never run automatically and instead needs to be called
+  explicitly.
 
 
 .. class:: Shelf(dict, protocol=None, writeback=False, keyencoding='utf-8')

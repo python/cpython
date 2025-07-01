@@ -1,4 +1,4 @@
-# Copyright (C) 2003-2013 Python Software Foundation
+# Copyright (C) 2003 Python Software Foundation
 import copy
 import operator
 import pickle
@@ -13,7 +13,6 @@ import codecs
 import subprocess
 import binascii
 import collections
-import time
 import zoneinfo
 from test import support
 from test.support import os_helper
@@ -510,6 +509,19 @@ class TestPlistlib(unittest.TestCase):
         data2 = plistlib.dumps(pl2)
         self.assertEqual(data, data2)
 
+    def test_loads_str_with_xml_fmt(self):
+        pl = self._create()
+        b = plistlib.dumps(pl)
+        s = b.decode()
+        self.assertIsInstance(s, str)
+        pl2 = plistlib.loads(s)
+        self.assertEqual(pl, pl2)
+
+    def test_loads_str_with_binary_fmt(self):
+        msg = "value must be bytes-like object when fmt is FMT_BINARY"
+        with self.assertRaisesRegex(TypeError, msg):
+            plistlib.loads('test', fmt=plistlib.FMT_BINARY)
+
     def test_indentation_array(self):
         data = [[[[[[[[{'test': b'aaaaaa'}]]]]]]]]
         self.assertEqual(plistlib.loads(plistlib.dumps(data)), data)
@@ -958,12 +970,12 @@ class TestBinaryPlistlib(unittest.TestCase):
         self.assertIs(b['x'], b)
 
     def test_deep_nesting(self):
-        for N in [300, 100000]:
+        for N in [50, 300, 100_000]:
             chunks = [b'\xa1' + (i + 1).to_bytes(4, 'big') for i in range(N)]
             try:
                 result = self.decode(*chunks, b'\x54seed', offset_size=4, ref_size=4)
             except RecursionError:
-                pass
+                self.assertGreater(N, sys.getrecursionlimit())
             else:
                 for i in range(N):
                     self.assertIsInstance(result, list)
