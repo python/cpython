@@ -21,7 +21,7 @@ async def to_thread(func, /, *args, **kwargs):
     """
     loop = events.get_running_loop()
     ctx = contextvars.copy_context()
-    if len(ctx) == 0:
+    if not ctx:
         callback = functools.partial(func, *args, **kwargs)
     else:
         callback = functools.partial(ctx.run, func, *args, **kwargs)
