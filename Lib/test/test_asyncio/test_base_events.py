@@ -1192,7 +1192,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
 
     @patch_socket
     def test_create_connection_happy_eyeballs_empty_exceptions(self, m_socket):
-        # Test for gh-135836: Fix IndexError when Happy Eyeballs algorithm
+        # See gh-135836: Fix IndexError when Happy Eyeballs algorithm
         # results in empty exceptions list
 
         async def getaddrinfo(*args, **kw):
