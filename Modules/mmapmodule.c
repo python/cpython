@@ -26,6 +26,7 @@
 #include "pycore_abstract.h"      // _Py_convert_optional_to_ssize_t()
 #include "pycore_bytesobject.h"   // _PyBytes_Find()
 #include "pycore_fileutils.h"     // _Py_stat_struct
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 #include <stddef.h>               // offsetof()
 #ifndef MS_WINDOWS
@@ -161,8 +162,7 @@ mmap_object_dealloc(mmap_object *m_obj)
     Py_END_ALLOW_THREADS
 #endif /* UNIX */
 
-    if (m_obj->weakreflist != NULL)
-        PyObject_ClearWeakRefs((PyObject *) m_obj);
+    FT_CLEAR_WEAKREFS((PyObject *) m_obj, m_obj->weakreflist);
 
     tp->tp_free(m_obj);
     Py_DECREF(tp);

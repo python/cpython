@@ -14,6 +14,7 @@
 #include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_*
 #include "pycore_pyerrors.h"      // _PyErr_ClearExcState()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 #include "pystats.h"
 
@@ -138,8 +139,7 @@ gen_dealloc(PyGenObject *gen)
 
     _PyObject_GC_UNTRACK(gen);
 
-    if (gen->gi_weakreflist != NULL)
-        PyObject_ClearWeakRefs(self);
+    FT_CLEAR_WEAKREFS(self, gen->gi_weakreflist);
 
     _PyObject_GC_TRACK(self);
 
