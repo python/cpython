@@ -150,6 +150,9 @@ sqlite3
      details.
      (Contributed by Stan Ulbrych and Łukasz Langa in :gh:`133461`)
 
+   * Table, index, trigger, view, column, function, and schema completion on <tab>.
+     (Contributed by Long Tan in :gh:`136101`.)
+
 
 ssl
 ---
