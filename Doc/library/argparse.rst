@@ -1130,13 +1130,13 @@ Any sequence can be passed as the *choices* value, so :class:`list` objects,
 Use of :class:`enum.Enum` is not recommended because it is difficult to
 control its appearance in usage, help, and error messages.
 
-Note that *choices* are checked after any type_ 
-conversions have been performed, so objects in *choices* 
-should match the type_ specified. This can make *choices* 
+Note that *choices* are checked after any type_
+conversions have been performed, so objects in *choices*
+should match the type_ specified. This can make *choices*
 appear unfamiliar in usage, help, or error messages.
 
-To keep *choices* user-friendly, consider a custom type wrapper that 
-converts and formats values, or omit type_ and handle conversion in 
+To keep *choices* user-friendly, consider a custom type wrapper that
+converts and formats values, or omit type_ and handle conversion in
 your application code.
 Formatted choices override the default *metavar* which is normally derived
 from *dest*.  This is usually what you want because the user never sees the
