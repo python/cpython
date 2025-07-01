@@ -1191,14 +1191,17 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             self.assertTrue(sock.close.called)
 
     @patch_socket
-    def test_create_connection_happy_eyeballs_empty_exceptions(self, m_socket):
+    async def test_create_connection_happy_eyeballs_empty_exceptions(self, m_socket):
         # Test for gh-135836: Fix IndexError when Happy Eyeballs algorithm
         # results in empty exceptions list
-        from unittest import mock
 
         async def getaddrinfo(*args, **kw):
-            return [(socket.AF_INET, socket.SOCK_STREAM, 0, '', ('127.0.0.1', 80)),
-                    (socket.AF_INET6, socket.SOCK_STREAM, 0, '', ('::1', 80))]
+            return [
+                (socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP,
+                 '', ('127.0.0.1', 80)),
+                (socket.AF_INET6, socket.SOCK_STREAM, socket.IPPROTO_TCP,
+                 '', ('::1', 80)),
+            ]
 
         def getaddrinfo_task(*args, **kwds):
             return self.loop.create_task(getaddrinfo(*args, **kwds))
@@ -1218,12 +1221,13 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
                 MyProto, 'example.com', 80, happy_eyeballs_delay=0.1)
 
             # Should raise TimeoutError instead of IndexError
-            with self.assertRaises(TimeoutError):
-                self.loop.run_until_complete(coro)
+            with self.assertRaisesRegex(TimeoutError, "connection timed out"):
+                await coro
 
     def test_create_connection_host_port_sock(self):
+        # host, port and sock are specified
         coro = self.loop.create_connection(
-            MyProto, 'example.com', 80, sock=object())
+            MyProto, 'example.com', 80, sock=mock.Mock())
         self.assertRaises(ValueError, self.loop.run_until_complete, coro)
 
     def test_create_connection_wrong_sock(self):
