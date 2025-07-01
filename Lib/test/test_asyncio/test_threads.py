@@ -3,13 +3,16 @@
 import asyncio
 import unittest
 import functools
+import warnings
 
 from contextvars import ContextVar
 from unittest import mock
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        asyncio.set_event_loop_policy(None)
 
 
 class ToThreadTests(unittest.IsolatedAsyncioTestCase):
