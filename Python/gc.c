@@ -906,6 +906,8 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
              * reference cycle.  If we don't clear the weakref, the callback
              * will run and potentially cause a crash.  See bpo-38006 for
              * one example.
+             *
+             * If this is a subclass weakref we can safely ignore it's cleanup.
              */
             if (!_PyWeakref_IsSubclassRef((PyWeakReference *)op)) {
                 _PyWeakref_ClearRef((PyWeakReference *)op);
@@ -935,6 +937,11 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
             PyGC_Head *wrasgc;                  /* AS_GC(wr) */
 
             wr_next = wr->wr_next;
+
+            /* If this is a subclass weakref we can safely ignore it's cleanup.
+             * It has only sentinel callback (no-op) and we also can safely
+             * not invoke them.
+             */
             if (_PyWeakref_IsSubclassRef(wr) == 1) {
                 continue;
             }
