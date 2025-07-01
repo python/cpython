@@ -839,7 +839,7 @@ how the command-line arguments should be handled. The supplied actions are:
     >>> parser.parse_args(['--version'])
     PROG 2.0
 
-Note that only actions that consume command-line arguments (e.g. ``'store'``,
+Only actions that consume command-line arguments (e.g. ``'store'``,
 ``'append'`` or ``'extend'``) can be used with positional arguments. You may
 also specify an arbitrary action by passing an :class:`Action` subclass or
 other object that implements the same interface.
