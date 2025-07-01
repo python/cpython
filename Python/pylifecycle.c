@@ -1546,6 +1546,10 @@ static PyObject*
 finalize_remove_modules(PyObject *modules, int verbose)
 {
     PyObject *weaklist = PyList_New(0);
+    PyObject *weak_ext = PyList_New(0);  // for extending the weaklist
+    if (weak_ext == NULL) {
+        Py_CLEAR(weaklist);
+    }
     if (weaklist == NULL) {
         PyErr_FormatUnraisable("Exception ignored while removing modules");
     }
@@ -1554,16 +1558,18 @@ finalize_remove_modules(PyObject *modules, int verbose)
         if (weaklist != NULL) { \
             PyObject *wr = PyWeakref_NewRef(mod, NULL); \
             if (wr) { \
-                if (Py_REFCNT(wr) > 1) { \
+                PyObject *list = Py_REFCNT(wr) <= 1 ? weaklist : weak_ext; \
+                PyObject *tup = PyTuple_Pack(2, name, wr); \
+                if (!tup || PyList_Append(list, tup) < 0) { \
+                    PyErr_FormatUnraisable("Exception ignored while removing modules"); \
+                } \
+                if (list == weak_ext) { \
                     /* gh-132413: When the weakref is already used elsewhere,
                      * finalize_modules_clear_weaklist() rather than the GC
                      * should clear the referenced module since the GC tries
-                     * to clear the wrakref first. */ \
+                     * to clear the wrakref first.  The weaklist requires the
+                     * order in which such modules are cleared first. */ \
                     _PyObject_GC_UNTRACK(mod); \
-                } \
-                PyObject *tup = PyTuple_Pack(2, name, wr); \
-                if (!tup || PyList_Append(weaklist, tup) < 0) { \
-                    PyErr_FormatUnraisable("Exception ignored while removing modules"); \
                 } \
                 Py_XDECREF(tup); \
                 Py_DECREF(wr); \
@@ -1614,6 +1620,12 @@ finalize_remove_modules(PyObject *modules, int verbose)
             Py_DECREF(iterator);
         }
     }
+
+    if (PyList_Extend(weaklist, weak_ext) < 0) {
+        PyErr_FormatUnraisable("Exception ignored while removing modules");
+    }
+    Py_DECREF(weak_ext);
+
 #undef CLEAR_MODULE
 #undef STORE_MODULE_WEAKREF
 
