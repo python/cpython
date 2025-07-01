@@ -310,6 +310,11 @@ that may require changes to your code.
 Build changes
 =============
 
+* Removed implicit fallback to the bundled copy of the ``libmpdec`` library.
+  Now this should be explicitly enabled with :option:`--with-system-libmpdec`
+  set to ``no`` or with :option:`!--without-system-libmpdec`.
+  (Contributed by Sergey B Kirpichev in :gh:`115119`.)
+
 
 C API changes
 =============
