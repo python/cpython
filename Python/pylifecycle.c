@@ -1560,10 +1560,11 @@ finalize_remove_modules(PyObject *modules, int verbose)
                      * elsewhere, keep the referenced module alive
                      * until finalize_modules_clear_weaklist() finishes.
                      */ \
-                    tup = PyTuple_Pack(3, name, wr, mod); \
+                    Py_INCREF(mod); \
+                    tup = PyTuple_Pack(3, name, wr, Py_True); \
                 } \
                 else { \
-                    tup = PyTuple_Pack(2, name, wr); \
+                    tup = PyTuple_Pack(3, name, wr, Py_False); \
                 } \
                 if (!tup || PyList_Append(weaklist, tup) < 0) { \
                     PyErr_FormatUnraisable("Exception ignored while removing modules"); \
@@ -1677,6 +1678,9 @@ finalize_modules_clear_weaklist(PyInterpreterState *interp,
         }
         _PyModule_Clear(mod);
         Py_DECREF(mod);
+        if (PyTuple_GET_ITEM(tup, 2) == Py_True) {
+            Py_DECREF(mod);
+        }
     }
 }
 
