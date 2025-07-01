@@ -776,7 +776,7 @@ Optimizations
   :pep:`590` vectorcall protocol.
   (Contributed by Donghee Na, Mark Shannon, Jeroen Demeyer and Petr Viktorin in :issue:`37207`.)
 
-* Optimized :meth:`~set.difference_update` for the case when the other set
+* Optimized :meth:`!set.difference_update` for the case when the other set
   is much larger than the base set.
   (Suggested by Evgeny Kapun with code contributed by Michele Orrù in :issue:`8425`.)
 
