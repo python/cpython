@@ -57,13 +57,11 @@ circumvent firewalls.
 
 Expat versions lower that 2.6.0 may be vulnerable to "billion laughs",
 "quadratic blowup" and "large tokens". Python may be vulnerable if it uses such
-older versions of Expat as a system-provided library, it may be vulnerable.
+older versions of Expat as a system-provided library.
 Check :const:`!pyexpat.EXPAT_VERSION`.
 
-xmlrpc is **vulnerable** to "decompression bomb".
+:mod:`xmlrpc` is **vulnerable** to the "decompression bomb" attack.
 
-Since Python 3.7.1, external general entities are no longer processed by
-default.
 
 billion laughs / exponential entity expansion
   The `Billion Laughs`_ attack -- also known as exponential entity expansion --
