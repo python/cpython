@@ -1049,6 +1049,9 @@ class BaseEventLoop(events.AbstractEventLoop):
                 try:
                     sock.close()
                 except OSError:
+                    # An error when closing a newly created socket is
+                    # not important, but it can overwrite more important
+                    # non-OSError error. So ignore it.
                     pass
             raise
         finally:
