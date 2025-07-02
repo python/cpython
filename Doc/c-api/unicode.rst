@@ -191,6 +191,22 @@ access to internal read-only data of Unicode objects:
    .. versionadded:: 3.2
 
 
+.. c:function:: Py_hash_t PyUnstable_Unicode_GET_CACHED_HASH(PyObject *str)
+
+   If the hash of *str*, as returned by :c:func:`PyObject_Hash`, has been
+   cached and is immediately available, return it.
+   Otherwise, return ``-1`` *without* setting an exception.
+
+   If *str* is not a string (that is, if ``PyUnicode_Check(obj)``
+   is false), the behavior is undefined.
+
+   This function never fails with an exception.
+
+   Note that there are no guarantees on when an object's hash is cached,
+   and the (non-)existence of a cached hash does not imply that the string has
+   any other properties.
+
+
 Unicode Character Properties
 """"""""""""""""""""""""""""
 
@@ -1811,7 +1827,7 @@ object.
    On success, return ``0``.
    On error, set an exception, leave the writer unchanged, and return ``-1``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 .. c:function:: int PyUnicodeWriter_WriteWideChar(PyUnicodeWriter *writer, const wchar_t *str, Py_ssize_t size)
 
