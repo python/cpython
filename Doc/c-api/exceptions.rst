@@ -1002,16 +1002,16 @@ For completeness, here are all the variables:
      * Notes
    * * .. c:var:: PyObject *PyExc_BaseException
      * :exc:`BaseException`
-     * [base]_
+     *
    * * .. c:var:: PyObject *PyExc_BaseExceptionGroup
      * :exc:`BaseExceptionGroup`
-     * [base]_
+     *
    * * .. c:var:: PyObject *PyExc_Exception
      * :exc:`Exception`
-     * [base]_
+     *
    * * .. c:var:: PyObject *PyExc_ArithmeticError
      * :exc:`ArithmeticError`
-     * [base]_
+     *
    * * .. c:var:: PyObject *PyExc_AssertionError
      * :exc:`AssertionError`
      *
@@ -1080,7 +1080,7 @@ For completeness, here are all the variables:
      *
    * * .. c:var:: PyObject *PyExc_LookupError
      * :exc:`LookupError`
-     * [base]_
+     *
    * * .. c:var:: PyObject *PyExc_MemoryError
      * :exc:`MemoryError`
      *
@@ -1098,7 +1098,7 @@ For completeness, here are all the variables:
      *
    * * .. c:var:: PyObject *PyExc_OSError
      * :exc:`OSError`
-     * [base]_
+     *
    * * .. c:var:: PyObject *PyExc_OverflowError
      * :exc:`OverflowError`
      *
@@ -1178,7 +1178,7 @@ For completeness, here are all the variables:
 
    * * .. c:var:: PyObject *PyExc_Warning
      * :exc:`Warning`
-     * [base]_
+     *
    * * .. c:var:: PyObject *PyExc_BytesWarning
      * :exc:`BytesWarning`
      *
@@ -1240,9 +1240,6 @@ For completeness, here are all the variables:
    :c:data:`PyExc_BaseExceptionGroup`.
 
 Notes:
-
-.. [base]
-   This is a base class for other standard exceptions or warning categories.
 
 .. [win]
    Only defined on Windows; protect code that uses this by testing that the
