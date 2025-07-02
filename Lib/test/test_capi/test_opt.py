@@ -2462,7 +2462,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
 
-        # For now.. until we constant propagte it away.
+        # For now... until we constant propagate it away.
         self.assertIn("_BINARY_OP", uops)
 
 
