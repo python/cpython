@@ -752,7 +752,7 @@ class SMTP:
                 last_exception = e
             except SMTPAuthHashUnsupportedError as e:
                 # Some environments (e.g., FIPS) disable certain hashing algorithms like MD5,
-                # which are required by CRAM-MD5. This raises a ValueError when trying to use HMAC.
+                # which are required by CRAM-MD5. This raises a SMTPAuthHashUnsupportedError when trying to use HMAC.
                 # If this happens, we catch the exception and continue trying the next auth method.
                 last_exception = e
                 continue
