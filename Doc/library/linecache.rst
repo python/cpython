@@ -13,7 +13,7 @@
 The :mod:`linecache` module allows one to get any line from a Python source file, while
 attempting to optimize internally, using a cache, the common case where many
 lines are read from a single file.  This is used by the :mod:`traceback` module
-to retrieve source lines for inclusion in  the formatted traceback.
+to retrieve source lines for inclusion in the formatted traceback.
 
 The :func:`tokenize.open` function is used to open files. This
 function uses :func:`tokenize.detect_encoding` to get the encoding of the
@@ -55,7 +55,7 @@ The :mod:`linecache` module defines the following functions:
 
 .. function:: checkcache(filename=None)
 
-   Check the cache for validity.  Use this function if files in the cache  may have
+   Check the cache for validity.  Use this function if files in the cache may have
    changed on disk, and you require the updated version.  If *filename* is omitted,
    it will check all the entries in the cache.
 
