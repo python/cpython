@@ -235,7 +235,19 @@
                                     this.input + this.writeLine("\n"),
                                 );
                                 this.input = "";
+                                this.cursorPosition = 0;
                                 this.activeInput = false;
+                                break;
+                            case "\x03": // CTRL+C
+                                this.input = "";
+                                this.xterm.write("\n")
+                                // this is a real hack.  the hard-coded 4... :\
+                                this.xterm.write('\x1b[' + (this.cursorPosition + 4) + 'D');
+                                this.cursorPosition = 0;
+                                this.resolveInput("" + '\n');
+                                break;
+                            case "\x09": // TAB
+                                this.handleTab();
                                 break;
                             case "\x7F": // BACKSPACE
                             case "\x08": // CTRL+H
@@ -245,6 +257,7 @@
                                 // Send empty input
                                 if (this.input === "") {
                                     this.resolveInput("");
+                                    this.cursorPosition = 0;
                                     this.activeInput = false;
                                 }
                         }
@@ -374,6 +387,26 @@
                         this.xterm.write('\x1b[' + (this.input.length - this.cursorPosition) + 'C');
                         this.cursorPosition = this.input.length;
                     }
+                }
+
+                handleTab() {
+                    // handle tabs: from the current position, add spaces until
+                    // this.cursorPosition is a multiple of 4.
+                    const prefix = this.input.slice(0, this.cursorPosition);
+                    const suffix = this.input.slice(this.cursorPosition);
+                    const count = 4 - (this.cursorPosition % 4);
+                    const toAdd = " ".repeat(count);
+                    this.input = prefix + toAdd + suffix;
+                    if (this.cursorPosition > 0){
+                        this.xterm.write('\x1b[' + (this.cursorPosition) + 'D');
+                    }
+                    // clear the line
+                    this.xterm.write('\x1b[K')
+                    this.xterm.write(this.input);
+                    if (suffix){
+                        this.xterm.write('\x1b[' + suffix.length + 'D');
+                    }
+                    this.cursorPosition += count;
                 }
 
                 prompt = async () => {
