@@ -1381,10 +1381,10 @@ class MappingProxyTests(unittest.TestCase):
         mp1_2 = self.mappingproxy({'a': 1})
         mp2 = self.mappingproxy({'a': 2})
 
-        self.assertEqual(mp1, mp1_2)
+        self.assertTrue(mp1 == mp1_2)
         self.assertFalse(mp1 != mp1_2)
         self.assertFalse(mp1 == mp2)
-        self.assertNotEqual(mp1, mp2)
+        self.assertTrue(mp1 != mp2)
 
         msg = "not supported between instances of 'mappingproxy' and 'mappingproxy'"
 
