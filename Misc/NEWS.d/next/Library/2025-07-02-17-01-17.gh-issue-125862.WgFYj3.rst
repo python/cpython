@@ -1,0 +1,1 @@
+Improved ``@contextmanager`` and ``@asynccontextmanager`` to work correctly with generators, coroutine functions and async generators when the wrapped callables are used as decorators
