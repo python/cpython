@@ -181,12 +181,12 @@ sequence_fast_get_item(PyObject *self, PyObject *args)
 static PyObject *
 object_setattr_null_exc(PyObject *self, PyObject *args)
 {
-    PyObject *obj, *name;
-    if (!PyArg_ParseTuple(args, "OO", &obj, &name)) {
+    PyObject *obj, *name, *exc;
+    if (!PyArg_ParseTuple(args, "OOO", &obj, &name, &exc)) {
         return NULL;
     }
 
-    PyErr_SetString(PyExc_ValueError, "error");
+    PyErr_SetObject((PyObject*)Py_TYPE(exc), exc);
     if (PyObject_SetAttr(obj, name, NULL) < 0) {
         return NULL;
     }
@@ -198,13 +198,13 @@ object_setattr_null_exc(PyObject *self, PyObject *args)
 static PyObject *
 object_setattrstring_null_exc(PyObject *self, PyObject *args)
 {
-    PyObject *obj;
+    PyObject *obj, *exc;
     const char *name;
-    if (!PyArg_ParseTuple(args, "Os", &obj, &name)) {
+    if (!PyArg_ParseTuple(args, "OsO", &obj, &name, &exc)) {
         return NULL;
     }
 
-    PyErr_SetString(PyExc_ValueError, "error");
+    PyErr_SetObject((PyObject*)Py_TYPE(exc), exc);
     if (PyObject_SetAttrString(obj, name, NULL) < 0) {
         return NULL;
     }

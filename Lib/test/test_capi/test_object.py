@@ -251,15 +251,20 @@ class CAPITest(unittest.TestCase):
         class Obj:
             pass
         obj = Obj()
-
         obj.attr = 123
-        with self.assertRaises(SystemError):
-            _testcapi.object_setattr_null_exc(obj, 'attr')
-        self.assertTrue(hasattr(obj, 'attr'))
 
-        with self.assertRaises(SystemError):
-            _testcapi.object_setattrstring_null_exc(obj, 'attr')
-        self.assertTrue(hasattr(obj, 'attr'))
+        exc = ValueError("error")
+        with self.assertRaises(SystemError) as cm:
+            _testcapi.object_setattr_null_exc(obj, 'attr', exc)
+        self.assertIs(cm.exception.__context__, exc)
+        self.assertIsNone(cm.exception.__cause__)
+        self.assertHasAttr(obj, 'attr')
+
+        with self.assertRaises(SystemError) as cm:
+            _testcapi.object_setattrstring_null_exc(obj, 'attr', exc)
+        self.assertIs(cm.exception.__context__, exc)
+        self.assertIsNone(cm.exception.__cause__)
+        self.assertHasAttr(obj, 'attr')
 
 
 if __name__ == "__main__":
