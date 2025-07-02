@@ -280,9 +280,8 @@ class SelfCycleFinalizationTest(TestBase, unittest.TestCase):
             gc.collect()
             self.assert_del_calls(ids)
             self.assert_survivors(ids)
-            # This used to be None because weakrefs were cleared before
-            # calling finalizers.  Now they are cleared after.
-            self.assertIsNot(wr(), None)
+            # XXX is this desirable?
+            self.assertIs(wr(), None)
             # When trying to destroy the object a second time, __del__
             # isn't called anymore (and the object isn't resurrected).
             self.clear_survivors()
@@ -389,10 +388,8 @@ class CycleChainFinalizationTest(TestBase, unittest.TestCase):
             gc.collect()
             self.assert_del_calls(ids)
             self.assert_survivors(survivor_ids)
-            for wr in wrs:
-                # These values used to be None because weakrefs were cleared
-                # before calling finalizers.  Now they are cleared after.
-                self.assertIsNotNone(wr())
+            # XXX desirable?
+            self.assertEqual([wr() for wr in wrs], [None] * N)
             self.clear_survivors()
             gc.collect()
             self.assert_del_calls(ids)

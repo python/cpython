@@ -1513,6 +1513,30 @@ find_weakref_callbacks(struct collection_state *state)
         for (PyWeakReference *wr = *wrlist; wr != NULL; wr = next_wr) {
             next_wr = wr->wr_next;
 
+            // Since Python 2.3, weakrefs to cyclic garbage have been cleared
+            // *before* calling finalizers.  However, since tp_subclasses
+            // started being necessary to invalidate caches (e.g. by
+            // PyType_Modified()), that clearing has created a bug.  If the
+            // weakref to the subclass is cleared before a finalizer is
+            // called, the cache may not be correctly invalidated.  That can
+            // lead to segfaults since the caches can refer to deallocated
+            // objects.  Delaying the clear of weakrefs until *after*
+            // finalizers have been called fixes that bug.  However, that can
+            // introduce other problems since some finalizer code expects that
+            // the weakrefs will be cleared first.  The "multiprocessing"
+            // package contains finalizer logic like this, for example.  So,
+            // we have the PyType_Check() test above and only defer the clear
+            // of types.  That solves the issue for tp_subclasses.  In a
+            // future version of Python, we should likely defer the weakref
+            // clear for all objects, not just types.
+            if (!PyType_Check(wr->wr_object)) {
+                // _PyWeakref_ClearRef clears the weakref but leaves the
+                // callback pointer intact.  Obscure: it also changes *wrlist.
+                _PyObject_ASSERT((PyObject *)wr, wr->wr_object == op);
+                _PyWeakref_ClearRef(wr);
+                _PyObject_ASSERT((PyObject *)wr, wr->wr_object == Py_None);
+            }
+
             // We do not invoke callbacks for weakrefs that are themselves
             // unreachable. This is partly for historical reasons: weakrefs
             // predate safe object finalization, and a weakref that is itself
