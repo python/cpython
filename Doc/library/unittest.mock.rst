@@ -1487,7 +1487,7 @@ patch
 
     Patch will raise a :exc:`RuntimeError` if passed some common misspellings of
     the arguments autospec and spec_set. Pass the argument *unsafe* with the
-    value True to disable that check.
+    value ``True`` to disable that check.
 
     Patch can be used as a context manager, with the with statement. Here the
     patching applies to the indented block after the with statement. If you
@@ -2427,7 +2427,7 @@ create_autospec
 
     :func:`create_autospec` will raise a :exc:`RuntimeError` if passed some common
     misspellings of the arguments autospec and spec_set. Pass the argument
-    `unsafe` with the value True to disable that check.
+    *unsafe* with the value ``True`` to disable that check.
 
     :func:`create_autospec` also takes arbitrary keyword arguments that are passed to
     the constructor of the created mock.
