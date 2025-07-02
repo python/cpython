@@ -1,5 +1,4 @@
 """Unit tests for contextlib.py, and other context managers."""
-import asyncio
 import io
 import os
 import sys
@@ -713,7 +712,10 @@ class TestContextDecorator(unittest.TestCase):
             self.assertEqual(state, [1])
             state.append(x)
 
-        asyncio.run(test('something'))
+        coro = test('something')
+        with self.assertRaises(StopIteration):
+            coro.send(None)
+
         self.assertEqual(state, [1, 'something', 999])
 
 
@@ -736,7 +738,12 @@ class TestContextDecorator(unittest.TestCase):
             async for _ in test("something"):
                 self.assertEqual(state, [1, "something"])
 
-        asyncio.run(run_test())
+        agen = test('something')
+        with self.assertRaises(StopIteration):
+            agen.asend(None).send(None)
+        with self.assertRaises(StopAsyncIteration):
+            agen.asend(None).send(None)
+
         self.assertEqual(state, [1, 'something', "second item", 999])
 
 
