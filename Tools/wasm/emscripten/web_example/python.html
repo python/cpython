@@ -132,11 +132,7 @@
 
             class WasmTerminal {
                 constructor() {
-                    this.inputBuffer = new BufferQueue();
-                    this.input = "";
-                    this.resolveInput = null;
-                    this.activeInput = false;
-                    this.inputStartCursor = null;
+                    this.reset()
 
                     this.xterm = new Terminal({
                         scrollback: 10000,
@@ -153,6 +149,19 @@
                     });
 
                     this.xterm.onData(this.handleTermData);
+                }
+
+                reset(){
+                    this.inputBuffer = new BufferQueue();
+                    this.input = "";
+                    this.resolveInput = null;
+                    this.activeInput = false;
+                    this.inputStartCursor = null;
+
+                    this.cursorPosition = 0;
+                    this.history = [];
+                    this.historyIndex = -1;
+                    this.beforeHistoryNav = "";
                 }
 
                 open(container) {
@@ -186,9 +195,34 @@
                         if (!(ord === 0x1b || ord == 0x7f || ord < 32)) {
                             this.inputBuffer.addData(data);
                         }
-                        // TODO: Handle ANSI escape sequences
+                    // TODO: Handle more escape sequences?
                     } else if (ord === 0x1b) {
                         // Handle special characters
+                        switch(data.slice(1)){
+                            case '[A': // up
+                                this.historyBack();
+                                break;
+                            case '[B': // down
+                                this.historyForward();
+                                break;
+                            case '[C': // right
+                                this.cursorRight();
+                                break;
+                            case '[D': // left
+                                this.cursorLeft();
+                                break;
+                            case '[H': // home key
+                                this.cursorHome();
+                                break;
+                            case '[F': // end key
+                                this.cursorEnd();
+                                break;
+                            case '[3~': // delete key
+                                this.deleteAtCursor();
+                                break;
+                            default:
+                                break;
+                        }
                     } else if (ord < 32 || ord === 0x7f) {
                         switch (data) {
                             case "\x0c": // CTRL+L
@@ -226,8 +260,14 @@
                 }
 
                 handleCursorInsert(data) {
-                    this.input += data;
+                    const trailing = this.input.slice(this.cursorPosition);
+                    this.input = this.input.slice(0, this.cursorPosition) + data + trailing;
+                    this.cursorPosition += data.length;
                     this.xterm.write(data);
+                    if (trailing.length !== 0){
+                        this.xterm.write(trailing);
+                        this.xterm.write('\x1b[' + trailing.length + 'D');
+                    }
                 }
 
                 handleCursorErase() {
@@ -238,9 +278,102 @@
                     ) {
                         return;
                     }
-                    this.input = this.input.slice(0, -1);
+                    const trailing = this.input.slice(this.cursorPosition);
+                    this.input = this.input.slice(0, this.cursorPosition - 1) + trailing;
+                    this.cursorPosition -= 1;
                     this.xterm.write("\x1B[D");
-                    this.xterm.write("\x1B[P");
+                    this.xterm.write("\x1B[K");
+                    if (trailing){
+                        this.xterm.write(trailing);
+                        this.xterm.write('\x1b[' + trailing.length + 'D');
+                    }
+                }
+
+                deleteAtCursor(){
+                    if (this.cursorPosition < this.input.length){
+                        const trailing = this.input.slice(this.cursorPosition + 1);
+                        this.input = this.input.slice(0, this.cursorPosition) + trailing;
+                        this.xterm.write("\x1B[K");
+                        if (trailing){
+                            this.xterm.write(trailing);
+                            this.xterm.write('\x1b[' + trailing.length + 'D');
+                        }
+                    }
+                }
+
+                historyBack(){
+                    if (this.history.length === 0){
+                        return;
+                    }else if (this.historyIndex === -1){
+                        // we're not currently navigating the history; store
+                        // the current command and then look at the end of our
+                        // history buffer
+                        this.beforeHistoryNav = this.input;
+                        this.historyIndex = this.history.length - 1;
+                    }else if (this.historyIndex > 0){
+                        this.historyIndex -= 1;
+                    }
+                    this.input = this.history[this.historyIndex];
+                    // jump back to the start of the line
+                    if (this.cursorPosition > 0){
+                        this.xterm.write('\x1b[' + (this.cursorPosition) + 'D');
+                    }
+                    // clear the line
+                    this.xterm.write('\x1b[K')
+                    this.xterm.write(this.input);
+                    this.cursorPosition = this.input.length;
+                }
+
+                historyForward(){
+                    if (this.history.length === 0 || this.historyIndex === -1){
+                        // we're not currently navigating the history; NOP.
+                        return;
+                    }else if (this.historyIndex < this.history.length - 1){
+                        this.historyIndex += 1;
+                        this.input = this.history[this.historyIndex];
+                    }else if (this.historyIndex == this.history.length - 1){
+                        // we're coming back from the last history value; reset
+                        // the input to whatever it was when we started going
+                        // through the history
+                        this.input = this.beforeHistoryNav;
+                        this.historyIndex = -1;
+                    }
+                    // jump back to the start of the line
+                    if (this.cursorPosition > 0){
+                        this.xterm.write('\x1b[' + (this.cursorPosition) + 'D');
+                    }
+                    // clear the line
+                    this.xterm.write('\x1b[K')
+                    this.xterm.write(this.input);
+                    this.cursorPosition = this.input.length;
+                }
+
+                cursorRight(){
+                     if (this.cursorPosition < this.input.length){
+                         this.cursorPosition += 1;
+                         this.xterm.write('\x1b[C');
+                     }
+                }
+
+                cursorLeft(){
+                    if (this.cursorPosition > 0){
+                        this.cursorPosition -= 1;
+                        this.xterm.write('\x1b[D');
+                    }
+                }
+
+                cursorHome() {
+                    if (this.cursorPosition > 0){
+                        this.xterm.write('\x1b[' + this.cursorPosition + 'D');
+                        this.cursorPosition = 0;
+                    }
+                }
+
+                cursorEnd() {
+                    if (this.cursorPosition < this.input.length){
+                        this.xterm.write('\x1b[' + (this.input.length - this.cursorPosition) + 'C');
+                        this.cursorPosition = this.input.length;
+                    }
                 }
 
                 prompt = async () => {
@@ -269,6 +402,11 @@
                     }
                     return new Promise((resolve, reject) => {
                         this.resolveInput = (value) => {
+                            if (value !== ""){
+                                this.history.push(value.slice(0, -1));
+                                this.historyIndex = -1;
+                                this.cursorPosition = 0;
+                            }
                             resolve(value);
                         };
                     });
@@ -362,6 +500,7 @@
 
                 runButton.addEventListener("click", (e) => {
                     terminal.clear();
+                    terminal.reset(); // reset the history
                     programRunning(true);
                     const code = codeBox.value;
                     pythonWorkerManager.run({
@@ -372,6 +511,7 @@
 
                 replButton.addEventListener("click", (e) => {
                     terminal.clear();
+                    terminal.reset(); // reset the history
                     programRunning(true);
                     // Need to use "-i -" to force interactive mode.
                     // Looks like isatty always returns false in emscripten
