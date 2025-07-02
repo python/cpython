@@ -200,7 +200,8 @@ object_setattrstring_null_exc(PyObject *self, PyObject *args)
 {
     PyObject *obj, *exc;
     const char *name;
-    if (!PyArg_ParseTuple(args, "OsO", &obj, &name, &exc)) {
+    Py_ssize_t size;
+    if (!PyArg_ParseTuple(args, "Oz#O", &obj, &name, &size, &exc)) {
         return NULL;
     }
 
