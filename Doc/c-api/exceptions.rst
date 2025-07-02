@@ -980,15 +980,17 @@ these are the C equivalent to :func:`reprlib.recursive_repr`.
    invocation of :c:func:`Py_ReprEnter` that returns zero.
 
 
+.. _standardwarningcategories:
 .. _standardexceptions:
 
-Standard Exceptions
-===================
+Exception and warning types
+===========================
 
-All standard Python exceptions are available as global variables whose names are
-``PyExc_`` followed by the Python exception name.  These have the type
-:c:expr:`PyObject*`; they are all class objects.  For completeness, here are all
-the variables:
+All standard Python exceptions and warning categories are available as global
+variables whose names are ``PyExc_`` followed by the Python exception name.
+These have the type :c:expr:`PyObject*`; they are all class objects.
+
+For completeness, here are all the variables:
 
 .. list-table::
    :align: left
@@ -1164,76 +1166,19 @@ the variables:
      * :exc:`ZeroDivisionError`
      *
 
-
-.. versionadded:: 3.3
-   :c:data:`PyExc_BlockingIOError`, :c:data:`PyExc_BrokenPipeError`,
-   :c:data:`PyExc_ChildProcessError`, :c:data:`PyExc_ConnectionError`,
-   :c:data:`PyExc_ConnectionAbortedError`, :c:data:`PyExc_ConnectionRefusedError`,
-   :c:data:`PyExc_ConnectionResetError`, :c:data:`PyExc_FileExistsError`,
-   :c:data:`PyExc_FileNotFoundError`, :c:data:`PyExc_InterruptedError`,
-   :c:data:`PyExc_IsADirectoryError`, :c:data:`PyExc_NotADirectoryError`,
-   :c:data:`PyExc_PermissionError`, :c:data:`PyExc_ProcessLookupError`
-   and :c:data:`PyExc_TimeoutError` were introduced following :pep:`3151`.
-
-.. versionadded:: 3.5
-   :c:data:`PyExc_StopAsyncIteration` and :c:data:`PyExc_RecursionError`.
-
-.. versionadded:: 3.6
-   :c:data:`PyExc_ModuleNotFoundError`.
-
-.. versionadded:: 3.11
-   :c:data:`PyExc_BaseExceptionGroup`.
-
-These are compatibility aliases to :c:data:`PyExc_OSError`:
-
-
-.. list-table::
-   :widths: auto
-   :align: left
-   :header-rows: 1
-
-   * * C name
-     * Notes
    * * .. c:var:: PyObject *PyExc_EnvironmentError
-     *
+     * :exc:`OSError`
+     * [3]_
    * * .. c:var:: PyObject *PyExc_IOError
-     *
+     * :exc:`OSError`
+     * [3]_
    * * .. c:var:: PyObject *PyExc_WindowsError
-     * [2]_
+     * :exc:`OSError`
+     * [2]_ [3]_
 
-.. versionchanged:: 3.3
-   These aliases used to be separate exception types.
-
-Notes:
-
-.. [1]
-   This is a base class for other standard exceptions.
-
-.. [2]
-   Only defined on Windows; protect code that uses this by testing that the
-   preprocessor macro ``MS_WINDOWS`` is defined.
-
-.. _standardwarningcategories:
-
-Standard Warning Categories
-===========================
-
-All standard Python warning categories are available as global variables whose
-names are ``PyExc_`` followed by the Python exception name. These have the type
-:c:expr:`PyObject*`; they are all class objects. For completeness, here are all
-the variables:
-
-.. list-table::
-   :widths: auto
-   :align: left
-   :header-rows: 1
-
-   * * C name
-     * Python name
-     * Notes
    * * .. c:var:: PyObject *PyExc_Warning
      * :exc:`Warning`
-     * [3]_
+     * [4]_
    * * .. c:var:: PyObject *PyExc_BytesWarning
      * :exc:`BytesWarning`
      *
@@ -1268,13 +1213,46 @@ the variables:
      * :exc:`UserWarning`
      *
 
+
 .. versionadded:: 3.2
    :c:data:`PyExc_ResourceWarning`.
+
+.. versionadded:: 3.3
+   :c:data:`PyExc_BlockingIOError`, :c:data:`PyExc_BrokenPipeError`,
+   :c:data:`PyExc_ChildProcessError`, :c:data:`PyExc_ConnectionError`,
+   :c:data:`PyExc_ConnectionAbortedError`, :c:data:`PyExc_ConnectionRefusedError`,
+   :c:data:`PyExc_ConnectionResetError`, :c:data:`PyExc_FileExistsError`,
+   :c:data:`PyExc_FileNotFoundError`, :c:data:`PyExc_InterruptedError`,
+   :c:data:`PyExc_IsADirectoryError`, :c:data:`PyExc_NotADirectoryError`,
+   :c:data:`PyExc_PermissionError`, :c:data:`PyExc_ProcessLookupError`
+   and :c:data:`PyExc_TimeoutError` were introduced following :pep:`3151`.
+
+.. versionadded:: 3.5
+   :c:data:`PyExc_StopAsyncIteration` and :c:data:`PyExc_RecursionError`.
+
+.. versionadded:: 3.6
+   :c:data:`PyExc_ModuleNotFoundError`.
 
 .. versionadded:: 3.10
    :c:data:`PyExc_EncodingWarning`.
 
+.. versionadded:: 3.11
+   :c:data:`PyExc_BaseExceptionGroup`.
+
 Notes:
 
+.. [1]
+   This is a base class for other standard exceptions.
+
+.. [2]
+   Only defined on Windows; protect code that uses this by testing that the
+   preprocessor macro ``MS_WINDOWS`` is defined.
+
 .. [3]
+   This are compatibility alias to :c:data:`PyExc_OSError`.
+
+   .. versionchanged:: 3.3
+      These aliases used to be separate exception types.
+
+.. [4]
    This is a base class for other standard warning categories.
