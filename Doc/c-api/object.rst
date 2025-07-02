@@ -202,7 +202,7 @@ Object Protocol
    attribute.
 
    .. versionchanged:: next
-      Raise an exception if called with ``NULL`` *v* and an an exception set.
+      Must not be called with NULL value if an exception is set.
 
 
 .. c:function:: int PyObject_SetAttrString(PyObject *o, const char *attr_name, PyObject *v)
@@ -227,7 +227,8 @@ Object Protocol
    used internally to create a key object.
 
    .. versionchanged:: next
-      Raise an exception if called with ``NULL`` *v* and an an exception set.
+      Must not be called with NULL value if an exception is set.
+
 
 .. c:function:: int PyObject_GenericSetAttr(PyObject *o, PyObject *name, PyObject *value)
 
