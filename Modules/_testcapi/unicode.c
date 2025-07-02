@@ -237,7 +237,7 @@ unicode_case_operation(PyObject *str, int (*function)(Py_UCS4, Py_UCS4 *, int))
 
     Py_UCS4 buf[3];
     int chars = function(c, buf, Py_ARRAY_LENGTH(buf));
-    if (chars <= 0) {
+    if (chars < 0) {
         return NULL;
     }
 
