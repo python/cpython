@@ -221,7 +221,7 @@ unicode_copycharacters(PyObject *self, PyObject *args)
 }
 
 static PyObject *
-unicode_case_operation(PyObject *str, int (*function)(Py_UCS4, Py_UCS4 *, int))
+unicode_case_operation(PyObject *str, Py_ssize_t (*function)(Py_UCS4, Py_UCS4 *, Py_ssize_t))
 {
     if (!PyUnicode_Check(str)) {
         PyErr_Format(PyExc_TypeError, "expect str type, got %T", str);
@@ -236,7 +236,7 @@ unicode_case_operation(PyObject *str, int (*function)(Py_UCS4, Py_UCS4 *, int))
     Py_UCS4 c = PyUnicode_READ_CHAR(str, 0);
 
     Py_UCS4 buf[3];
-    int chars = function(c, buf, Py_ARRAY_LENGTH(buf));
+    Py_ssize_t chars = function(c, buf, Py_ARRAY_LENGTH(buf));
     if (chars < 0) {
         return NULL;
     }
