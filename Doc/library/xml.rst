@@ -46,6 +46,7 @@ The XML handling submodules are:
 
 
 .. _xml-security:
+.. _xml-vulnerabilities:
 
 XML security
 ------------
