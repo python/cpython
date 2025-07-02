@@ -1,0 +1,22 @@
+SPDXVersion: SPDX-2.3
+DataLicense: CC0-1.0
+SPDXID: SPDXRef-DOCUMENT
+DocumentName: CPython
+DocumentNamespace: http://spdx.org/spdxdocs/cpython-2025
+
+PackageName: CPython
+SPDXID: SPDXRef-Package-CPython
+PackageVersion: 3.12
+PackageDownloadLocation: https://github.com/python/cpython
+PackageHomePage: https://www.python.org/
+PackageLicenseConcluded: Python-2.0
+PackageLicenseDeclared: Python-2.0
+PackageLicenseInfoFromFiles: Python-2.0
+
+FileName: ./LICENSE
+SPDXID: SPDXRef-License-File
+FileType: TEXT
+FileChecksum: SHA1: 9262d8bcd2323925dab371ca17265d1d6f42fed5
+LicenseConcluded: Python-2.0
+LicenseInfoInFile: Python-2.0
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-Package-CPython
