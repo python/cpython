@@ -1359,13 +1359,13 @@ _PyType_LookupByVersion(unsigned int version)
 #endif
 
 static inline unsigned int
-get_next_global_version_tag(void)
+next_global_version_tag(void)
 {
     unsigned int old;
     do {
         old = _Py_atomic_load_uint_relaxed(&_PyRuntime.types.next_version_tag);
         if (old >= _Py_MAX_GLOBAL_TYPE_VERSION_TAG) {
-            return (unsigned int)-1;
+            return 0;
         }
     } while (!_Py_atomic_compare_exchange_uint(&_PyRuntime.types.next_version_tag, &old, old + 1));
     return old + 1;
@@ -1401,8 +1401,8 @@ assign_version_tag(PyInterpreterState *interp, PyTypeObject *type)
     }
     if (type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) {
         /* static types */
-        unsigned int next_version_tag = get_next_global_version_tag();
-        if (next_version_tag == (unsigned int)-1) {
+        unsigned int next_version_tag = next_global_version_tag();
+        if (next_version_tag == 0) {
             /* We have run out of version numbers */
             return 0;
         }
@@ -9238,8 +9238,8 @@ init_static_type(PyInterpreterState *interp, PyTypeObject *self,
         type_add_flags(self, Py_TPFLAGS_IMMUTABLETYPE);
 
         if (self->tp_version_tag == 0) {
-            unsigned int next_version_tag = get_next_global_version_tag();
-            assert(next_version_tag != (unsigned int)-1);
+            unsigned int next_version_tag = next_global_version_tag();
+            assert(next_version_tag != 0);
             _PyType_SetVersion(self, next_version_tag);
         }
     }
