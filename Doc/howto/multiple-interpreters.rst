@@ -223,7 +223,8 @@ You can just as easily call a function in another interpreter::
 
 In fact, nearly all Python functions and callables are supported,
 with the notable exception of closures.  Support includes arguments
-and return values, which we'll explore soon.
+and return values, which we'll
+:ref:`explore soon <interp-tutorial-return-values>`.
 
 Builtin functions always execute in the target interpreter's
 :mod:`!__main__` module::
@@ -672,6 +673,8 @@ there has to be a simple and efficient way to communicate
 between interpreters.
 
 In this half of the tutorial, we explore various ways you can do so.
+
+.. _interp-tutorial-return-values:
 
 Call Args and Return Values
 ---------------------------
