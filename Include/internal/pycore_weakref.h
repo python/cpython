@@ -131,6 +131,9 @@ PyAPI_FUNC(int) _PyWeakref_IsDead(PyObject *weakref);
 // Create sentinel callback object for subclasses weakrefs
 int _PyWeakref_InitSubclassSentinel(PyInterpreterState *interp);
 
+// Clear sentinel callback object
+void _PyWeakref_ClearSubclassSentinel(PyInterpreterState *interp);
+
 // Create new PyWeakReference object with sentinel callback
 PyObject * _PyWeakref_NewSubclassRef(PyObject *ob);
 

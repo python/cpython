@@ -1266,6 +1266,7 @@ _PyWeakref_InitSubclassSentinel(PyInterpreterState *interp)
     Py_DECREF(result);
 #endif
 
+    _Py_SetImmortal(func);
     _Py_INTERP_SINGLETON(interp, subclasses_weakref_sentinel) = func;
 
 failed:
@@ -1273,6 +1274,14 @@ failed:
     Py_XDECREF(globals);
 
     return status;
+}
+
+void
+_PyWeakref_ClearSubclassSentinel(PyInterpreterState *interp)
+{
+    if (interp == interp->runtime->interpreters.main) {
+        Py_CLEAR(_Py_INTERP_SINGLETON(interp, subclasses_weakref_sentinel));
+    }
 }
 
 PyObject *

@@ -24,6 +24,7 @@
 #include "pycore_stackref.h"      // Py_STACKREF_DEBUG
 #include "pycore_time.h"          // _PyTime_Init()
 #include "pycore_uniqueid.h"      // _PyObject_FinalizePerThreadRefcounts()
+#include "pycore_weakref.h"       // _PyWeakref_ClearSubclassSentinel()
 
 
 /* --------------------------------------------------------------------------
@@ -760,7 +761,7 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 
     Py_CLEAR(interp->audit_hooks);
 
-    Py_CLEAR(_Py_INTERP_SINGLETON(interp, subclasses_weakref_sentinel));
+    _PyWeakref_ClearSubclassSentinel(interp);
 
     // At this time, all the threads should be cleared so we don't need atomic
     // operations for instrumentation_version or eval_breaker.
