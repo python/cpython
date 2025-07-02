@@ -761,8 +761,6 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 
     Py_CLEAR(interp->audit_hooks);
 
-    _PyWeakref_ClearSubclassSentinel(interp);
-
     // At this time, all the threads should be cleared so we don't need atomic
     // operations for instrumentation_version or eval_breaker.
     interp->ceval.instrumentation_version = 0;

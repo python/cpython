@@ -1280,6 +1280,12 @@ void
 _PyWeakref_ClearSubclassSentinel(PyInterpreterState *interp)
 {
     if (interp == interp->runtime->interpreters.main) {
+        PyObject *func = _Py_INTERP_SINGLETON(interp, subclasses_weakref_sentinel);
+
+        assert(PyObject_GC_IsTracked(func) == 0);
+        _Py_SetMortal(_Py_INTERP_SINGLETON(interp, subclasses_weakref_sentinel), 1);
+        PyObject_GC_Track(func);
+
         Py_CLEAR(_Py_INTERP_SINGLETON(interp, subclasses_weakref_sentinel));
     }
 }

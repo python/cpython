@@ -1876,6 +1876,10 @@ finalize_interp_types(PyInterpreterState *interp)
     _PyObject_FinalizeUniqueIdPool(interp);
 #endif
 
+    // We clear subclass sentinel here because some weakrefs may
+    // hold reference to it (for example, type's subclasses)
+    _PyWeakref_ClearSubclassSentinel(interp);
+
     _PyCode_Fini(interp);
 
     // Call _PyUnicode_ClearInterned() before _PyDict_Fini() since it uses
