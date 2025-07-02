@@ -931,17 +931,62 @@ f-strings
 A :dfn:`formatted string literal` or :dfn:`f-string` is a string literal
 that is prefixed with ``'f'`` or ``'F'``.
 Unlike other string literals, f-strings do not have a constant value.
-They may contain *replacement fields*, which are expressions delimited by
-curly braces ``{}``, which are evaluated at run time.
+They may contain *replacement fields* delimited by curly braces ``{}``.
+Replacement fields contain expressions which are evaluated at run time.
 For example::
 
    >>> f'One plus one is {1 + 1}.'
    'One plus one is 2.'
 
+The parts of the string outside curly braces are treated literally,
+except that any doubled curly braces ``'{{'`` or ``'}}'`` are replaced
+with the corresponding single curly brace::
+
+   >>> print(f'{{...}}')
+   {...}
 
 Escape sequences are decoded like in ordinary string literals (except when
-a literal is also marked as a raw string).  After decoding, the grammar
-for the contents of the string is:
+a literal is also marked as a raw string)::
+
+   >>> name = 'Galahad'
+   >>> favorite_color = 'blue'
+   >>> print(f'{name}:\t{favorite_color}')
+   Galahad:       blue
+   >>> print(rf'C:\Users\{name}')
+   C:\Users\Galahad
+
+In addition to the expression, replacement fields may contain:
+
+* a *debug specifier* -- an equal sign (``=``);
+* a *conversion specifier* -- ``!s``, ``!r`` or ``!a``; and/or
+* a *format specifier* prefixed with a colon (``:``).
+
+See :ref:`stdtypes-fstrings` for how these specifiers are interpreted.
+
+Note that whitespace on both sides of a debug specifier (``=``) is
+significant --- it is retained in the result::
+
+   >>> print(f'{name=}')
+   name='Galahad'
+   >>> print(f'{name = }')
+   name = 'Galahad'
+
+Expressions in formatted string literals are treated like regular
+Python expressions surrounded by parentheses, with a few exceptions.
+An empty expression is not allowed, and both :keyword:`lambda`  and
+assignment expressions ``:=`` must be surrounded by explicit parentheses.
+Each expression is evaluated in the context where the formatted string literal
+appears, in order from left to right.  Replacement expressions can contain
+newlines in both single-quoted and triple-quoted f-strings and they can contain
+comments.  Everything that comes after a ``#`` inside a replacement field
+is a comment (even closing braces and quotes). In that case, replacement fields
+must be closed in a different line.
+
+.. code-block:: text
+
+   >>> f"abc{a # This is a comment }"
+   ... + 3}"
+   'abc5'
 
 .. grammar-snippet:: python-grammar
    :group: python-grammar
@@ -979,38 +1024,6 @@ for the contents of the string is:
       | `yield_expression`
 
 
----------------
-
-
-
-
-The parts of the string outside curly braces are treated literally,
-except that any doubled curly braces ``'{{'`` or ``'}}'`` are replaced
-with the corresponding single curly brace.  A single opening curly
-bracket ``'{'`` marks a replacement field, which starts with a
-Python expression. To display both the expression text and its value after
-evaluation, (useful in debugging), an equal sign ``'='`` may be added after the
-expression. A conversion field, introduced by an exclamation point ``'!'`` may
-follow.  A format specifier may also be appended, introduced by a colon ``':'``.
-A replacement field ends with a closing curly bracket ``'}'``.
-
-Expressions in formatted string literals are treated like regular
-Python expressions surrounded by parentheses, with a few exceptions.
-An empty expression is not allowed, and both :keyword:`lambda`  and
-assignment expressions ``:=`` must be surrounded by explicit parentheses.
-Each expression is evaluated in the context where the formatted string literal
-appears, in order from left to right.  Replacement expressions can contain
-newlines in both single-quoted and triple-quoted f-strings and they can contain
-comments.  Everything that comes after a ``#`` inside a replacement field
-is a comment (even closing braces and quotes). In that case, replacement fields
-must be closed in a different line.
-
-.. code-block:: text
-
-   >>> f"abc{a # This is a comment }"
-   ... + 3}"
-   'abc5'
-
 .. versionchanged:: 3.7
    Prior to Python 3.7, an :keyword:`await` expression and comprehensions
    containing an :keyword:`async for` clause were illegal in the expressions
@@ -1019,6 +1032,11 @@ must be closed in a different line.
 .. versionchanged:: 3.12
    Prior to Python 3.12, comments were not allowed inside f-string replacement
    fields.
+
+---------------
+
+
+
 
 When the equal sign ``'='`` is provided, the output will have the expression
 text, the ``'='`` and the evaluated value. Spaces after the opening brace

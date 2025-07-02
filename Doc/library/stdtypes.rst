@@ -2526,6 +2526,8 @@ expression support in the :mod:`re` module).
    single: : (colon); in formatted string literal
    single: = (equals); for help in debugging using string literals
 
+.. _stdtypes-fstrings:
+
 Formatted String Literals (f-strings)
 -------------------------------------
 
