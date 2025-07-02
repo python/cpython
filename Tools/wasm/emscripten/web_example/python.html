@@ -535,6 +535,7 @@
 
                 const finishedCallback = () => {
                     programRunning(false);
+                    pythonWorkerManager.reset();
                 };
 
                 const pythonWorkerManager = new WorkerManager(
