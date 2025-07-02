@@ -207,24 +207,20 @@ int PyUnicode_ToLower(Py_UCS4 ch, Py_UCS4 *res, int size)
         int n = ctype->lower >> 24;
         int i;
         for (i = 0; i < n; i++) {
-            if (res != NULL) {
-                if (i >= size) {
-                    PyErr_SetString(PyExc_ValueError, "output buffer is too small");
-                    return -1;
-                }
-                res[i] = _PyUnicode_ExtendedCase[index + i];
+            if (i >= size) {
+                PyErr_SetString(PyExc_ValueError, "output buffer is too small");
+                return -1;
             }
+            res[i] = _PyUnicode_ExtendedCase[index + i];
         }
         return n;
     }
 
-    if (res != NULL) {
-        if (0 >= size) {
-            PyErr_SetString(PyExc_ValueError, "output buffer is too small");
-            return -1;
-        }
-        res[0] = ch + ctype->lower;
+    if (0 >= size) {
+        PyErr_SetString(PyExc_ValueError, "output buffer is too small");
+        return -1;
     }
+    res[0] = ch + ctype->lower;
     return 1;
 }
 
@@ -237,23 +233,20 @@ int PyUnicode_ToTitle(Py_UCS4 ch, Py_UCS4 *res, int size)
         int n = ctype->title >> 24;
         int i;
         for (i = 0; i < n; i++) {
-            if (res != NULL) {
-                if (i >= size) {
-                    PyErr_SetString(PyExc_ValueError, "output buffer is too small");
-                    return -1;
-                }
-                res[i] = _PyUnicode_ExtendedCase[index + i];
+            if (i >= size) {
+                PyErr_SetString(PyExc_ValueError, "output buffer is too small");
+                return -1;
             }
+            res[i] = _PyUnicode_ExtendedCase[index + i];
         }
         return n;
     }
-    if (res != NULL) {
-        if (0 >= size) {
-            PyErr_SetString(PyExc_ValueError, "output buffer is too small");
-            return -1;
-        }
-        res[0] = ch + ctype->title;
+
+    if (0 >= size) {
+        PyErr_SetString(PyExc_ValueError, "output buffer is too small");
+        return -1;
     }
+    res[0] = ch + ctype->title;
     return 1;
 }
 
@@ -266,23 +259,20 @@ int PyUnicode_ToUpper(Py_UCS4 ch, Py_UCS4 *res, int size)
         int n = ctype->upper >> 24;
         int i;
         for (i = 0; i < n; i++) {
-            if (res != NULL) {
-                if (i >= size) {
-                    PyErr_SetString(PyExc_ValueError, "output buffer is too small");
-                    return -1;
-                }
-                res[i] = _PyUnicode_ExtendedCase[index + i];
+            if (i >= size) {
+                PyErr_SetString(PyExc_ValueError, "output buffer is too small");
+                return -1;
             }
+            res[i] = _PyUnicode_ExtendedCase[index + i];
         }
         return n;
     }
-    if (res != NULL) {
-        if (0 >= size) {
-            PyErr_SetString(PyExc_ValueError, "output buffer is too small");
-            return -1;
-        }
-        res[0] = ch + ctype->upper;
+
+    if (0 >= size) {
+        PyErr_SetString(PyExc_ValueError, "output buffer is too small");
+        return -1;
     }
+    res[0] = ch + ctype->upper;
     return 1;
 }
 
@@ -295,16 +285,15 @@ int PyUnicode_ToFolded(Py_UCS4 ch, Py_UCS4 *res, int size)
         int n = (ctype->lower >> 20) & 7;
         int i;
         for (i = 0; i < n; i++) {
-            if (res != NULL) {
-                if (i >= size) {
-                    PyErr_SetString(PyExc_ValueError, "output buffer is too small");
-                    return -1;
-                }
-                res[i] = _PyUnicode_ExtendedCase[index + i];
+            if (i >= size) {
+                PyErr_SetString(PyExc_ValueError, "output buffer is too small");
+                return -1;
             }
+            res[i] = _PyUnicode_ExtendedCase[index + i];
         }
         return n;
     }
+
     return PyUnicode_ToLower(ch, res, size);
 }
 
