@@ -1497,8 +1497,8 @@ This module implements the following functions:
 
 
 .. note::
-   These functions should not be used directly, except for testing purposes;
-   :func:`codecs.lookup` should be used instead.
+   The following functions should not be used directly, except for testing
+   purposes; :func:`codecs.lookup` should be used instead.
 
 
 .. function:: search_function(encoding)
