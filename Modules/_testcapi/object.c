@@ -485,41 +485,6 @@ is_uniquely_referenced(PyObject *self, PyObject *op)
 }
 
 
-static PyObject *
-object_setattr_null_exc(PyObject *self, PyObject *args)
-{
-    PyObject *obj, *name;
-    if (!PyArg_ParseTuple(args, "OO", &obj, &name)) {
-        return NULL;
-    }
-
-    PyErr_SetString(PyExc_ValueError, "error");
-    if (PyObject_SetAttr(obj, name, NULL) < 0) {
-        return NULL;
-    }
-    assert(PyErr_Occurred());
-    return NULL;
-}
-
-
-static PyObject *
-object_setattrstring_null_exc(PyObject *self, PyObject *args)
-{
-    PyObject *obj;
-    const char *name;
-    if (!PyArg_ParseTuple(args, "Os", &obj, &name)) {
-        return NULL;
-    }
-
-    PyErr_SetString(PyExc_ValueError, "error");
-    if (PyObject_SetAttrString(obj, name, NULL) < 0) {
-        return NULL;
-    }
-    assert(PyErr_Occurred());
-    return NULL;
-}
-
-
 static PyMethodDef test_methods[] = {
     {"call_pyobject_print", call_pyobject_print, METH_VARARGS},
     {"pyobject_print_null", pyobject_print_null, METH_VARARGS},
@@ -546,8 +511,6 @@ static PyMethodDef test_methods[] = {
     {"test_py_is_funcs", test_py_is_funcs, METH_NOARGS},
     {"clear_managed_dict", clear_managed_dict, METH_O, NULL},
     {"is_uniquely_referenced", is_uniquely_referenced, METH_O},
-    {"object_setattr_null_exc", object_setattr_null_exc, METH_VARARGS},
-    {"object_setattrstring_null_exc", object_setattrstring_null_exc, METH_VARARGS},
     {NULL},
 };
 

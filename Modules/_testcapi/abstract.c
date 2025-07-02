@@ -178,6 +178,41 @@ sequence_fast_get_item(PyObject *self, PyObject *args)
 }
 
 
+static PyObject *
+object_setattr_null_exc(PyObject *self, PyObject *args)
+{
+    PyObject *obj, *name;
+    if (!PyArg_ParseTuple(args, "OO", &obj, &name)) {
+        return NULL;
+    }
+
+    PyErr_SetString(PyExc_ValueError, "error");
+    if (PyObject_SetAttr(obj, name, NULL) < 0) {
+        return NULL;
+    }
+    assert(PyErr_Occurred());
+    return NULL;
+}
+
+
+static PyObject *
+object_setattrstring_null_exc(PyObject *self, PyObject *args)
+{
+    PyObject *obj;
+    const char *name;
+    if (!PyArg_ParseTuple(args, "Os", &obj, &name)) {
+        return NULL;
+    }
+
+    PyErr_SetString(PyExc_ValueError, "error");
+    if (PyObject_SetAttrString(obj, name, NULL) < 0) {
+        return NULL;
+    }
+    assert(PyErr_Occurred());
+    return NULL;
+}
+
+
 static PyMethodDef test_methods[] = {
     {"object_getoptionalattr", object_getoptionalattr, METH_VARARGS},
     {"object_getoptionalattrstring", object_getoptionalattrstring, METH_VARARGS},
@@ -191,6 +226,8 @@ static PyMethodDef test_methods[] = {
 
     {"sequence_fast_get_size", sequence_fast_get_size, METH_O},
     {"sequence_fast_get_item", sequence_fast_get_item, METH_VARARGS},
+    {"object_setattr_null_exc", object_setattr_null_exc, METH_VARARGS},
+    {"object_setattrstring_null_exc", object_setattrstring_null_exc, METH_VARARGS},
     {NULL},
 };
 
