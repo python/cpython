@@ -361,7 +361,7 @@ the same library that the Python runtime is using.
       :py:mod:`!ast` Python module, which exports these constants under
       the same names.
 
-   The "``Py_CF``" flags above can be combined with "``CO_FUTURE``" flags such
+   The "``PyCF``" flags above can be combined with "``CO_FUTURE``" flags such
    as :c:macro:`CO_FUTURE_ANNOTATIONS` to enable features normally
    selectable using :ref:`future statements <future>`.
    See :ref:`c_codeobject_flags` for a complete list.
