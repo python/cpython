@@ -1178,8 +1178,7 @@ Test cases
       .. versionadded:: 3.4
 
       .. versionchanged:: next
-         Now accepts a *formatter* so your assertions can match
-         a custom format where you are using one.
+         Now accepts a *formatter* to control how messages are formatted.
 
    .. method:: assertNoLogs(logger=None, level=None)
 
