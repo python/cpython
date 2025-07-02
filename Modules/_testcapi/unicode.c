@@ -221,10 +221,15 @@ unicode_copycharacters(PyObject *self, PyObject *args)
 }
 
 static PyObject *
-unicode_case_operation(PyObject *str, int (*function)(Py_UCS4, Py_UCS4 *, int), const char *name)
+unicode_case_operation(PyObject *str, int (*function)(Py_UCS4, Py_UCS4 *, int))
 {
+    if (!PyUnicode_Check(str)) {
+        PyErr_Format(PyExc_TypeError, "expect str type, got %T", str);
+        return NULL;
+    }
+
     if (PyUnicode_GET_LENGTH(str) != 1) {
-        PyErr_Format(PyExc_ValueError, "%s only accepts 1-character strings", name);
+        PyErr_SetString(PyExc_ValueError, "expecting 1-character strings only");
         return NULL;
     }
 
@@ -233,33 +238,24 @@ unicode_case_operation(PyObject *str, int (*function)(Py_UCS4, Py_UCS4 *, int), 
     Py_UCS4 buf[3];
     int chars = function(c, buf, Py_ARRAY_LENGTH(buf));
     if (chars <= 0) {
-        PyErr_BadInternalCall();
         return NULL;
     }
 
-    PyUnicodeWriter *writer = PyUnicodeWriter_Create(1);
-    if (writer == NULL) {
-        return NULL;
-    }
-    if (PyUnicodeWriter_WriteUCS4(writer, buf, chars) < 0) {
-        PyUnicodeWriter_Discard(writer);
-        return NULL;
-    }
-    return PyUnicodeWriter_Finish(writer);
+    return PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, buf, chars);
 }
 
 /* Test PyUnicode_ToLower() */
 static PyObject *
 unicode_tolower(PyObject *self, PyObject *arg)
 {
-    return unicode_case_operation(arg, PyUnicode_ToLower, "unicode_tolower");
+    return unicode_case_operation(arg, PyUnicode_ToLower);
 }
 
 /* Test PyUnicode_ToUpper() */
 static PyObject *
 unicode_toupper(PyObject *self, PyObject *arg)
 {
-    return unicode_case_operation(arg, PyUnicode_ToUpper, "unicode_toupper");
+    return unicode_case_operation(arg, PyUnicode_ToUpper);
 }
 
 
@@ -267,14 +263,14 @@ unicode_toupper(PyObject *self, PyObject *arg)
 static PyObject *
 unicode_totitle(PyObject *self, PyObject *arg)
 {
-    return unicode_case_operation(arg, PyUnicode_ToTitle, "unicode_totitle");
+    return unicode_case_operation(arg, PyUnicode_ToTitle);
 }
 
 /* Test PyUnicode_ToLower() */
 static PyObject *
 unicode_tofolded(PyObject *self, PyObject *arg)
 {
-    return unicode_case_operation(arg, PyUnicode_ToFolded, "unicode_tofolded");
+    return unicode_case_operation(arg, PyUnicode_ToFolded);
 }
 
 
