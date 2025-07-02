@@ -33180,13 +33180,13 @@ printf "%s\n" "$py_cv_module__decimal" >&6; }
 
 if test "x$with_system_libmpdec" = xno
 then :
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: the bundled copy of libmpdecimal is scheduled for removal in Python 3.16; consider using a system installed mpdecimal library." >&5
-printf "%s\n" "$as_me: WARNING: the bundled copy of libmpdecimal is scheduled for removal in Python 3.16; consider using a system installed mpdecimal library." >&2;}
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: the bundled copy of libmpdec is scheduled for removal in Python 3.16; consider using a system installed mpdecimal library." >&5
+printf "%s\n" "$as_me: WARNING: the bundled copy of libmpdec is scheduled for removal in Python 3.16; consider using a system installed mpdecimal library." >&2;}
 fi
 if test "$with_system_libmpdec" = "yes" && test "$have_mpdec" = "no"
 then :
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: no system libmpdecimal found; falling back to pure-Python version for the decimal module" >&5
-printf "%s\n" "$as_me: WARNING: no system libmpdecimal found; falling back to pure-Python version for the decimal module" >&2;}
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: no system libmpdec found; falling back to pure-Python version for the decimal module" >&5
+printf "%s\n" "$as_me: WARNING: no system libmpdec found; falling back to pure-Python version for the decimal module" >&2;}
 fi
 
 
