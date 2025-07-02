@@ -556,9 +556,9 @@ ZipFile Objects
    When scanning, setting ``strict_descriptor=True`` disables detection of any
    entry using an unsigned data descriptor (a format deprecated by the ZIP
    specification since version 6.3.0, released on 2006-09-29, and used only by
-   some legacy tools), which is significantly slower to scan (around 100 to
-   1000 times). This does not affect performance on entries without such
-   feature.
+   some legacy tools), which is significantly slower to scan—around 100 to
+   1000 times in the worst case. This does not affect performance on entries
+   without such feature.
 
    *chunk_size* may be specified to control the buffer size when moving
    entry data (default is 1 MiB).
