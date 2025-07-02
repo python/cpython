@@ -104,9 +104,8 @@ class ThreadSafetyMixin:
         self.check([truncate] + [getbuffer] * 10, self.ioclass(b'0\n'*204800))
         self.check([truncate] + [iter] * 10, self.ioclass(b'0\n'*20480))
         self.check([truncate] + [getstate] * 10, self.ioclass(b'0\n'*204800))
-        # _pyio uses default __setstate__
-        if hasattr(self.ioclass, '__setstate__'):
-            self.check([truncate] + [setstate] * 10, self.ioclass(b'0\n'*204800), (b'123', 0, None))
+        state = self.ioclass(b'123').__getstate__()
+        self.check([truncate] + [setstate] * 10, self.ioclass(b'0\n'*204800), state)
         self.check([truncate] + [sizeof] * 10, self.ioclass(b'0\n'*204800))
 
         # no tests for seek or tell because they don't break anything
