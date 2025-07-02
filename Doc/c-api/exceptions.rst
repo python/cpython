@@ -1002,16 +1002,16 @@ For completeness, here are all the variables:
      * Notes
    * * .. c:var:: PyObject *PyExc_BaseException
      * :exc:`BaseException`
-     * [1]_
+     * [base]_
    * * .. c:var:: PyObject *PyExc_BaseExceptionGroup
      * :exc:`BaseExceptionGroup`
-     * [1]_
+     * [base]_
    * * .. c:var:: PyObject *PyExc_Exception
      * :exc:`Exception`
-     * [1]_
+     * [base]_
    * * .. c:var:: PyObject *PyExc_ArithmeticError
      * :exc:`ArithmeticError`
-     * [1]_
+     * [base]_
    * * .. c:var:: PyObject *PyExc_AssertionError
      * :exc:`AssertionError`
      *
@@ -1080,7 +1080,7 @@ For completeness, here are all the variables:
      *
    * * .. c:var:: PyObject *PyExc_LookupError
      * :exc:`LookupError`
-     * [1]_
+     * [base]_
    * * .. c:var:: PyObject *PyExc_MemoryError
      * :exc:`MemoryError`
      *
@@ -1098,7 +1098,7 @@ For completeness, here are all the variables:
      *
    * * .. c:var:: PyObject *PyExc_OSError
      * :exc:`OSError`
-     * [1]_
+     * [base]_
    * * .. c:var:: PyObject *PyExc_OverflowError
      * :exc:`OverflowError`
      *
@@ -1168,17 +1168,17 @@ For completeness, here are all the variables:
 
    * * .. c:var:: PyObject *PyExc_EnvironmentError
      * :exc:`OSError`
-     * [3]_
+     * [oserror]_
    * * .. c:var:: PyObject *PyExc_IOError
      * :exc:`OSError`
-     * [3]_
+     * [oserror]_
    * * .. c:var:: PyObject *PyExc_WindowsError
      * :exc:`OSError`
-     * [2]_ [3]_
+     * [oserror]_ [win]_
 
    * * .. c:var:: PyObject *PyExc_Warning
      * :exc:`Warning`
-     * [4]_
+     * [base]_
    * * .. c:var:: PyObject *PyExc_BytesWarning
      * :exc:`BytesWarning`
      *
@@ -1241,18 +1241,15 @@ For completeness, here are all the variables:
 
 Notes:
 
-.. [1]
-   This is a base class for other standard exceptions.
+.. [base]
+   This is a base class for other standard exceptions or warning categories.
 
-.. [2]
+.. [win]
    Only defined on Windows; protect code that uses this by testing that the
    preprocessor macro ``MS_WINDOWS`` is defined.
 
-.. [3]
-   This are compatibility alias to :c:data:`PyExc_OSError`.
+.. [oserror]
+   This is a compatibility alias to :c:data:`PyExc_OSError`.
 
    .. versionchanged:: 3.3
       These aliases used to be separate exception types.
-
-.. [4]
-   This is a base class for other standard warning categories.
