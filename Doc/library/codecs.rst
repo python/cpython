@@ -1484,10 +1484,6 @@ mapping. It is not supported by :meth:`str.encode` (which only produces
 
 This module implements the following functions:
 
-.. note::
-   These functions should not be used directly, except for testing purposes;
-   :func:`codecs.lookup` should be used instead.
-
 .. function:: normalize_encoding(encoding)
 
    Normalize encoding name *encoding*.
@@ -1498,6 +1494,11 @@ This module implements the following functions:
    For example, ``'  -;#'`` becomes ``'_'``.
 
    Note that *encoding* should be ASCII only.
+
+
+.. note::
+   These functions should not be used directly, except for testing purposes;
+   :func:`codecs.lookup` should be used instead.
 
 
 .. function:: search_function(encoding)
