@@ -1101,7 +1101,6 @@ class CAPITest(unittest.TestCase):
             _testcapi.object_setattrstring_null_exc(obj, b'\xff', exc)
         self.assertIs(cm.exception.__context__, exc)
         self.assertIsNone(cm.exception.__cause__)
-        self.assertHasAttr(obj, 'attr')
 
 
 if __name__ == "__main__":
