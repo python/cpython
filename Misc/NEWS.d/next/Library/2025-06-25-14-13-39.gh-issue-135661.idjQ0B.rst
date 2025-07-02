@@ -9,12 +9,12 @@ according to the HTML5 standard.
 
 * Null character (U+0000) no longer ends the tag name.
 
-* Attributes and slashes after the tag name in end tags are now correctly
-  parsed as comments, instead of terminating after the first ``>``
-  in quoted attribute value. E.g. ``</script/foo=">"/>``.
+* Attributes and slashes after the tag name in end tags are now ignored,
+  instead of terminating after the first ``>`` in quoted attribute value.
+  E.g. ``</script/foo=">"/>``.
 
 * Multiple slashes and whitespaces between the last attribute and closing ``>``
-  are now accepted in both start and end tags. E.g. ``<a foo=bar/ //>``.
+  are now ignored in both start and end tags. E.g. ``<a foo=bar/ //>``.
 
 * Multiple ``=`` between attribute name and value are no longer collapsed.
   E.g. ``<a foo==bar>`` produces attribute "foo" with value "=bar".

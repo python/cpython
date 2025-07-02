@@ -31,11 +31,14 @@ endtagopen = re.compile('</[a-zA-Z]')
 piclose = re.compile('>')
 commentclose = re.compile(r'--\s*>')
 # Note:
-#  1) if you change tagfind/attrfind remember to update locatestarttagend too;
-#  2) if you change tagfind/attrfind and/or locatestarttagend the parser will
+#  1) if you change tagfind/attrfind remember to update locatetagend too;
+#  2) if you change tagfind/attrfind and/or locatetagend the parser will
 #     explode, so don't do it.
-# see http://www.w3.org/TR/html5/tokenization.html#tag-open-state
-# and http://www.w3.org/TR/html5/tokenization.html#tag-name-state
+# see the HTML5 specs section "13.2.5.6 Tag open state",
+# "13.2.5.8 Tag name state" and "13.2.5.33 Attribute name state".
+# https://html.spec.whatwg.org/multipage/parsing.html#tag-open-state
+# https://html.spec.whatwg.org/multipage/parsing.html#tag-name-state
+# https://html.spec.whatwg.org/multipage/parsing.html#attribute-name-state
 tagfind_tolerant = re.compile(r'([a-zA-Z][^\t\n\r\f />]*)(?:[\t\n\r\f ]|/(?!>))*')
 attrfind_tolerant = re.compile(r"""
   (
@@ -49,7 +52,7 @@ attrfind_tolerant = re.compile(r"""
    )?
   (?:[\t\n\r\f ]|/(?!>))*           # possibly followed by a space
 """, re.VERBOSE)
-locatetagend_tolerant = re.compile(r"""
+locatetagend = re.compile(r"""
   [a-zA-Z][^\t\n\r\f />]*           # tag name
   [\t\n\r\f /]*                     # optional whitespace before attribute name
   (?:(?<=['"\t\n\r\f /])[^\t\n\r\f />][^\t\n\r\f /=>]*  # attribute name
@@ -63,6 +66,25 @@ locatetagend_tolerant = re.compile(r"""
    )*
    >?
 """, re.VERBOSE)
+# The following variables are not used, but are temporarily left for
+# backward compatibility.
+locatestarttagend_tolerant = re.compile(r"""
+  <[a-zA-Z][^\t\n\r\f />\x00]*       # tag name
+  (?:[\s/]*                          # optional whitespace before attribute name
+    (?:(?<=['"\s/])[^\s/>][^\s/=>]*  # attribute name
+      (?:\s*=+\s*                    # value indicator
+        (?:'[^']*'                   # LITA-enclosed value
+          |"[^"]*"                   # LIT-enclosed value
+          |(?!['"])[^>\s]*           # bare value
+         )
+        \s*                          # possibly followed by a space
+       )?(?:\s|/(?!>))*
+     )*
+   )?
+  \s*                                # trailing whitespace
+""", re.VERBOSE)
+endendtag = re.compile('>')
+endtagfind = re.compile(r'</\s*([a-zA-Z][-.a-zA-Z0-9:_]*)\s*>')
 
 # Character reference processing logic specific to attribute values
 # See: https://html.spec.whatwg.org/multipage/parsing.html#named-character-reference-state
@@ -315,7 +337,7 @@ class HTMLParser(_markupbase.ParserBase):
             return self.parse_bogus_comment(i)
 
     # Internal -- parse bogus comment, return length or -1 if not terminated
-    # see http://www.w3.org/TR/html5/tokenization.html#bogus-comment-state
+    # see https://html.spec.whatwg.org/multipage/parsing.html#bogus-comment-state
     def parse_bogus_comment(self, i, report=1):
         rawdata = self.rawdata
         assert rawdata[i:i+2] in ('<!', '</'), ('unexpected call to '
@@ -341,6 +363,8 @@ class HTMLParser(_markupbase.ParserBase):
 
     # Internal -- handle starttag, return end or -1 if not terminated
     def parse_starttag(self, i):
+        # See the HTML5 specs section "13.2.5.8 Tag name state"
+        # https://html.spec.whatwg.org/multipage/parsing.html#tag-name-state
         self.__starttag_text = None
         endpos = self.check_for_whole_start_tag(i)
         if endpos < 0:
@@ -386,7 +410,7 @@ class HTMLParser(_markupbase.ParserBase):
     # or -1 if incomplete.
     def check_for_whole_start_tag(self, i):
         rawdata = self.rawdata
-        match = locatetagend_tolerant.match(rawdata, i+1)
+        match = locatetagend.match(rawdata, i+1)
         assert match
         j = match.end()
         if rawdata[j-1] != ">":
@@ -395,24 +419,27 @@ class HTMLParser(_markupbase.ParserBase):
 
     # Internal -- parse endtag, return end or -1 if incomplete
     def parse_endtag(self, i):
+        # See the HTML5 specs section "13.2.5.7 End tag open state"
+        # https://html.spec.whatwg.org/multipage/parsing.html#end-tag-open-state
         rawdata = self.rawdata
         assert rawdata[i:i+2] == "</", "unexpected call to parse_endtag"
-        if rawdata.find('>', i+2) < 0:
+        if rawdata.find('>', i+2) < 0:  # fast check
             return -1
         if not endtagopen.match(rawdata, i):  # </ + letter
-            # w3.org/TR/html5/tokenization.html#end-tag-open-state
             if rawdata[i+2:i+3] == '>':  # </> is ignored
+                # "missing-end-tag-name" parser error
                 return i+3
             else:
                 return self.parse_bogus_comment(i)
 
-        match = locatetagend_tolerant.match(rawdata, i+2)
+        match = locatetagend.match(rawdata, i+2)
         assert match
         j = match.end()
         if rawdata[j-1] != ">":
             return -1
 
-        # find the name: w3.org/TR/html5/tokenization.html#tag-name-state
+        # find the name: "13.2.5.8 Tag name state"
+        # https://html.spec.whatwg.org/multipage/parsing.html#tag-name-state
         match = tagfind_tolerant.match(rawdata, i+2)
         assert match
         tag = match.group(1).lower()
