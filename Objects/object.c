@@ -1131,11 +1131,14 @@ PyObject_RichCompareBool(PyObject *v, PyObject *w, int op)
     res = PyObject_RichCompare(v, w, op);
     if (res == NULL)
         return -1;
-    if (PyBool_Check(res))
+    if (PyBool_Check(res)) {
         ok = (res == Py_True);
-    else
+        assert(_Py_IsImmortal(res));
+    }
+    else {
         ok = PyObject_IsTrue(res);
-    Py_DECREF(res);
+        Py_DECREF(res);
+    }
     return ok;
 }
 

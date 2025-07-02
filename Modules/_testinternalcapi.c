@@ -21,6 +21,7 @@
 #include "pycore_fileutils.h"     // _Py_normpath()
 #include "pycore_flowgraph.h"     // _PyCompile_OptimizeCfg()
 #include "pycore_frame.h"         // _PyInterpreterFrame
+#include "pycore_function.h"      // _PyFunction_GET_BUILTINS
 #include "pycore_gc.h"            // PyGC_Head
 #include "pycore_hashtable.h"     // _Py_hashtable_new()
 #include "pycore_import.h"        // _PyImport_ClearExtension()
@@ -120,7 +121,7 @@ get_c_recursion_remaining(PyObject *self, PyObject *Py_UNUSED(args))
     PyThreadState *tstate = _PyThreadState_GET();
     uintptr_t here_addr = _Py_get_machine_stack_pointer();
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
-    int remaining = (int)((here_addr - _tstate->c_stack_soft_limit)/PYOS_STACK_MARGIN_BYTES * 50);
+    int remaining = (int)((here_addr - _tstate->c_stack_soft_limit) / _PyOS_STACK_MARGIN_BYTES * 50);
     return PyLong_FromLong(remaining);
 }
 
@@ -1022,7 +1023,7 @@ get_code_var_counts(PyObject *self, PyObject *_args, PyObject *_kwargs)
             globalsns = PyFunction_GET_GLOBALS(codearg);
         }
         if (builtinsns == NULL) {
-            builtinsns = PyFunction_GET_BUILTINS(codearg);
+            builtinsns = _PyFunction_GET_BUILTINS(codearg);
         }
         codearg = PyFunction_GET_CODE(codearg);
     }
@@ -1190,7 +1191,7 @@ verify_stateless_code(PyObject *self, PyObject *args, PyObject *kwargs)
             globalsns = PyFunction_GET_GLOBALS(codearg);
         }
         if (builtinsns == NULL) {
-            builtinsns = PyFunction_GET_BUILTINS(codearg);
+            builtinsns = _PyFunction_GET_BUILTINS(codearg);
         }
         codearg = PyFunction_GET_CODE(codearg);
     }

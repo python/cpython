@@ -12,6 +12,8 @@ from analyzer import (
     analyze_files,
     StackItem,
     analysis_error,
+    CodeSection,
+    Label,
 )
 from generators_common import (
     DEFAULT_INPUT,
@@ -19,6 +21,7 @@ from generators_common import (
     write_header,
     Emitter,
     TokenIterator,
+    always_true,
 )
 from cwriter import CWriter
 from typing import TextIO
@@ -75,6 +78,9 @@ def type_name(var: StackItem) -> str:
         return "JitOptRef *"
     return "JitOptRef "
 
+def stackref_type_name(var: StackItem) -> str:
+    assert not var.is_array(), "Unsafe to convert a symbol to an array-like StackRef."
+    return "_PyStackRef "
 
 def declare_variables(uop: Uop, out: CWriter, skip_inputs: bool) -> None:
     variables = {"unused"}
@@ -135,6 +141,12 @@ def emit_default(out: CWriter, uop: Uop, stack: Stack) -> None:
 
 class OptimizerEmitter(Emitter):
 
+    def __init__(self, out: CWriter, labels: dict[str, Label], original_uop: Uop, stack: Stack):
+        super().__init__(out, labels)
+        self._replacers["REPLACE_OPCODE_IF_EVALUATES_PURE"] = self.replace_opcode_if_evaluates_pure
+        self.original_uop = original_uop
+        self.stack = stack
+
     def emit_save(self, storage: Storage) -> None:
         storage.flush(self.out)
 
@@ -144,6 +156,186 @@ class OptimizerEmitter(Emitter):
     def goto_label(self, goto: Token, label: Token, storage: Storage) -> None:
         self.out.emit(goto)
         self.out.emit(label)
+
+    def replace_opcode_if_evaluates_pure(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        assert isinstance(uop, Uop)
+        input_identifiers = []
+        for token in tkn_iter:
+            if token.kind == "IDENTIFIER":
+                input_identifiers.append(token)
+            if token.kind == "SEMI":
+                break
+
+        if len(input_identifiers) == 0:
+            raise analysis_error(
+                "To evaluate an operation as pure, it must have at least 1 input",
+                tkn
+            )
+        # Check that the input identifiers belong to the uop's
+        # input stack effect
+        uop_stack_effect_input_identifers = {inp.name for inp in uop.stack.inputs}
+        for input_tkn in input_identifiers:
+            if input_tkn.text not in uop_stack_effect_input_identifers:
+                raise analysis_error(f"{input_tkn.text} referenced in "
+                                     f"REPLACE_OPCODE_IF_EVALUATES_PURE but does not "
+                                     f"exist in the base uop's input stack effects",
+                                     input_tkn)
+        input_identifiers_as_str = {tkn.text for tkn in input_identifiers}
+        used_stack_inputs = [inp for inp in uop.stack.inputs if inp.name in input_identifiers_as_str]
+        assert len(used_stack_inputs) > 0
+        emitter = OptimizerConstantEmitter(self.out, {}, self.original_uop, self.stack.copy())
+        emitter.emit("if (\n")
+        for inp in used_stack_inputs[:-1]:
+            emitter.emit(f"sym_is_safe_const(ctx, {inp.name}) &&\n")
+        emitter.emit(f"sym_is_safe_const(ctx, {used_stack_inputs[-1].name})\n")
+        emitter.emit(') {\n')
+        # Declare variables, before they are shadowed.
+        for inp in used_stack_inputs:
+            if inp.used:
+                emitter.emit(f"{type_name(inp)}{inp.name}_sym = {inp.name};\n")
+        # Shadow the symbolic variables with stackrefs.
+        for inp in used_stack_inputs:
+            if inp.is_array():
+                raise analysis_error("Pure evaluation cannot take array-like inputs.", tkn)
+            if inp.used:
+                emitter.emit(f"{stackref_type_name(inp)}{inp.name} = sym_get_const_as_stackref(ctx, {inp.name}_sym);\n")
+        # Rename all output variables to stackref variant.
+        for outp in self.original_uop.stack.outputs:
+            if outp.is_array():
+                raise analysis_error(
+                    "Array output StackRefs not supported for evaluating pure ops.",
+                    self.original_uop.body.open
+                )
+            emitter.emit(f"_PyStackRef {outp.name}_stackref;\n")
+
+
+        storage = Storage.for_uop(self.stack, self.original_uop, CWriter.null(), check_liveness=False)
+        # No reference management of outputs needed.
+        for var in storage.outputs:
+            var.in_local = True
+        emitter.emit("/* Start of uop copied from bytecodes for constant evaluation */\n")
+        emitter.emit_tokens(self.original_uop, storage, inst=None, emit_braces=False)
+        self.out.start_line()
+        emitter.emit("/* End of uop copied from bytecodes for constant evaluation */\n")
+        # Finally, assign back the output stackrefs to symbolics.
+        for outp in self.original_uop.stack.outputs:
+            # All new stackrefs are created from new references.
+            # That's how the stackref contract works.
+            if not outp.peek:
+                emitter.emit(f"{outp.name} = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal({outp.name}_stackref));\n")
+            else:
+                emitter.emit(f"{outp.name} = sym_new_const(ctx, PyStackRef_AsPyObjectBorrow({outp.name}_stackref));\n")
+        storage.flush(self.out)
+        emitter.emit("break;\n")
+        emitter.emit("}\n")
+        return True
+
+class OptimizerConstantEmitter(OptimizerEmitter):
+    def __init__(self, out: CWriter, labels: dict[str, Label], original_uop: Uop, stack: Stack):
+        super().__init__(out, labels, original_uop, stack)
+        # Replace all outputs to point to their stackref versions.
+        overrides = {
+            outp.name: self.emit_stackref_override for outp in self.original_uop.stack.outputs
+        }
+        self._replacers = {**self._replacers, **overrides}
+        self.cannot_escape = True
+
+    def emit_to_with_replacement(
+        self,
+        out: CWriter,
+        tkn_iter: TokenIterator,
+        end: str,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None
+    ) -> Token:
+        parens = 0
+        for tkn in tkn_iter:
+            if tkn.kind == end and parens == 0:
+                return tkn
+            if tkn.kind == "LPAREN":
+                parens += 1
+            if tkn.kind == "RPAREN":
+                parens -= 1
+            if tkn.text in self._replacers:
+                self._replacers[tkn.text](tkn, tkn_iter, uop, storage, inst)
+            else:
+                out.emit(tkn)
+        raise analysis_error(f"Expecting {end}. Reached end of file", tkn)
+
+    def emit_stackref_override(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        self.out.emit(tkn)
+        self.out.emit("_stackref ")
+        return True
+
+    def deopt_if(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        self.out.start_line()
+        self.out.emit("if (")
+        lparen = next(tkn_iter)
+        assert lparen.kind == "LPAREN"
+        first_tkn = tkn_iter.peek()
+        self.emit_to_with_replacement(self.out, tkn_iter, "RPAREN", uop, storage, inst)
+        self.emit(") {\n")
+        next(tkn_iter)  # Semi colon
+        # We guarantee this will deopt in real-world code
+        # via constants analysis. So just bail.
+        self.emit("ctx->done = true;\n")
+        self.emit("break;\n")
+        self.emit("}\n")
+        return not always_true(first_tkn)
+
+    exit_if = deopt_if
+
+    def error_if(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        lparen = next(tkn_iter)
+        assert lparen.kind == "LPAREN"
+        first_tkn = tkn_iter.peek()
+        unconditional = always_true(first_tkn)
+        if unconditional:
+            next(tkn_iter)
+            next(tkn_iter)  # RPAREN
+            self.out.start_line()
+        else:
+            self.out.emit_at("if ", tkn)
+            self.emit(lparen)
+            self.emit_to_with_replacement(self.out, tkn_iter, "RPAREN", uop, storage, inst)
+            self.out.emit(") {\n")
+        next(tkn_iter)  # Semi colon
+        storage.clear_inputs("at ERROR_IF")
+
+        self.out.emit("goto error;\n")
+        if not unconditional:
+            self.out.emit("}\n")
+        return not unconditional
+
 
 def write_uop(
     override: Uop | None,
@@ -175,13 +367,14 @@ def write_uop(
                         cast = f"uint{cache.size*16}_t"
                     out.emit(f"{type}{cache.name} = ({cast})this_instr->operand0;\n")
         if override:
-            emitter = OptimizerEmitter(out, {})
+            emitter = OptimizerEmitter(out, {}, uop, stack.copy())
             # No reference management of inputs needed.
             for var in storage.inputs:  # type: ignore[possibly-undefined]
                 var.in_local = False
             _, storage = emitter.emit_tokens(override, storage, None, False)
             out.start_line()
             storage.flush(out)
+            out.start_line()
         else:
             emit_default(out, uop, stack)
             out.start_line()
