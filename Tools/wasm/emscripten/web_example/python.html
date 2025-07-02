@@ -19,9 +19,11 @@
                 max-width: 800px;
                 margin: 0 auto;
             }
-            #code {
+            #editor {
+                padding:5px;
+                border: 1px solid black;
                 width: 100%;
-                height: 180px;
+                height: 300px;
             }
             #info {
                 padding-top: 20px;
@@ -41,6 +43,11 @@
             src="https://unpkg.com/xterm@4.18.0/lib/xterm.js"
             crossorigin
             integrity="sha384-yYdNmem1ioP5Onm7RpXutin5A8TimLheLNQ6tnMi01/ZpxXdAwIm2t4fJMx1Djs+"
+        ></script>
+        <script
+            src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.43.1/ace.js"
+            crossorigin
+            integrity="sha512-kmA5vhcxOkZI0ReiKJMGNb8/KKbgbExIlnt6aXuPtl86AgHBEi6OHHOz2wsTazBDGZKxe7fmiE+pIuZJQks4+A=="
         ></script>
         <script type="module">
             class WorkerManager {
@@ -498,8 +505,6 @@
             const stopButton = document.getElementById("stop");
             const clearButton = document.getElementById("clear");
 
-            const codeBox = document.getElementById("codebox");
-
             window.onload = () => {
                 const terminal = new WasmTerminal();
                 terminal.open(document.getElementById("terminal"));
@@ -535,7 +540,7 @@
                     terminal.clear();
                     terminal.reset(); // reset the history
                     programRunning(true);
-                    const code = codeBox.value;
+                    const code = editor.getValue();
                     pythonWorkerManager.run({
                         args: ["main.py"],
                         files: { "main.py": code },
@@ -578,14 +583,15 @@
                     finishedCallback,
                 );
             };
+        document.addEventListener('DOMContentLoaded', () => {
+            editor = ace.edit("editor");
+            editor.session.setMode("ace/mode/python");
+        });
         </script>
     </head>
     <body>
         <h1>Simple REPL for Python WASM</h1>
-        <textarea id="codebox" cols="108" rows="16">
-print('Welcome to WASM!')
-</textarea
-        >
+        <div id="editor">print('Welcome to WASM!')</div>
         <div class="button-container">
             <button id="run" disabled>Run</button>
             <button id="repl" disabled>Start REPL</button>
