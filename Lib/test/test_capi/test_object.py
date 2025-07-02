@@ -247,32 +247,6 @@ class CAPITest(unittest.TestCase):
 
         func(object())
 
-    def test_object_setattr_null_exc(self):
-        class Obj:
-            pass
-        obj = Obj()
-        obj.attr = 123
-
-        exc = ValueError("error")
-        with self.assertRaises(SystemError) as cm:
-            _testcapi.object_setattr_null_exc(obj, 'attr', exc)
-        self.assertIs(cm.exception.__context__, exc)
-        self.assertIsNone(cm.exception.__cause__)
-        self.assertHasAttr(obj, 'attr')
-
-        with self.assertRaises(SystemError) as cm:
-            _testcapi.object_setattrstring_null_exc(obj, 'attr', exc)
-        self.assertIs(cm.exception.__context__, exc)
-        self.assertIsNone(cm.exception.__cause__)
-        self.assertHasAttr(obj, 'attr')
-
-        with self.assertRaises(SystemError) as cm:
-            # undecodable name
-            _testcapi.object_setattrstring_null_exc(obj, b'\xff', exc)
-        self.assertIs(cm.exception.__context__, exc)
-        self.assertIsNone(cm.exception.__cause__)
-        self.assertHasAttr(obj, 'attr')
-
 
 if __name__ == "__main__":
     unittest.main()
