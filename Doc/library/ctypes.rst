@@ -2965,7 +2965,7 @@ fields, or any other data types containing pointer type fields.
    .. attribute:: is_anonymous
 
       True if this field is anonymous, that is, it contains nested sub-fields
-      that should be be merged into a containing structure or union.
+      that should be merged into a containing structure or union.
 
 
 .. _ctypes-arrays-pointers:

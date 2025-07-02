@@ -17,6 +17,7 @@
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "pycore_unicodeobject.h" // _PyUnicode_InternImmortal()
 #include "pycore_uniqueid.h"      // _PyObject_AssignUniqueId()
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 #include "clinic/codeobject.c.h"
 #include <stdbool.h>
@@ -2436,9 +2437,7 @@ code_dealloc(PyObject *self)
         Py_XDECREF(co->_co_cached->_co_varnames);
         PyMem_Free(co->_co_cached);
     }
-    if (co->co_weakreflist != NULL) {
-        PyObject_ClearWeakRefs(self);
-    }
+    FT_CLEAR_WEAKREFS(self, co->co_weakreflist);
     free_monitoring_data(co->_co_monitoring);
 #ifdef Py_GIL_DISABLED
     // The first element always points to the mutable bytecode at the end of
@@ -3369,7 +3368,7 @@ create_tlbc_lock_held(PyCodeObject *co, Py_ssize_t idx)
         }
         memcpy(new_tlbc->entries, tlbc->entries, tlbc->size * sizeof(void *));
         _Py_atomic_store_ptr_release(&co->co_tlbc, new_tlbc);
-        _PyMem_FreeDelayed(tlbc);
+        _PyMem_FreeDelayed(tlbc, tlbc->size * sizeof(void *));
         tlbc = new_tlbc;
     }
     char *bc = PyMem_Calloc(1, _PyCode_NBYTES(co));

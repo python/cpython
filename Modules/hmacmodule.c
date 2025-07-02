@@ -31,14 +31,15 @@
 #endif
 
 #if defined(__APPLE__) && defined(__arm64__)
-#  undef HACL_CAN_COMPILE_SIMD128
-#  undef HACL_CAN_COMPILE_SIMD256
+#  undef _Py_HACL_CAN_COMPILE_VEC128
+#  undef _Py_HACL_CAN_COMPILE_VEC256
 #endif
 
-// Small mismatch between the variable names Python defines as part of configure
-// at the ones HACL* expects to be set in order to enable those headers.
-#define HACL_CAN_COMPILE_VEC128 HACL_CAN_COMPILE_SIMD128
-#define HACL_CAN_COMPILE_VEC256 HACL_CAN_COMPILE_SIMD256
+// HACL* expects HACL_CAN_COMPILE_VEC* macros to be set in order to enable
+// the corresponding SIMD instructions so we need to "forward" the values
+// we just deduced above.
+#define HACL_CAN_COMPILE_VEC128 _Py_HACL_CAN_COMPILE_VEC128
+#define HACL_CAN_COMPILE_VEC256 _Py_HACL_CAN_COMPILE_VEC256
 
 #include "_hacl/Hacl_HMAC.h"
 #include "_hacl/Hacl_Streaming_HMAC.h"  // Hacl_Agile_Hash_* identifiers
@@ -361,7 +362,7 @@ narrow_hmac_hash_kind(hmacmodule_state *state, HMAC_Hash_Kind kind)
 {
     switch (kind) {
         case Py_hmac_kind_hmac_blake2s_32: {
-#if HACL_CAN_COMPILE_SIMD128
+#if _Py_HACL_CAN_COMPILE_VEC128
             if (state->can_run_simd128) {
                 return Py_hmac_kind_hmac_vectorized_blake2s_32;
             }
@@ -369,7 +370,7 @@ narrow_hmac_hash_kind(hmacmodule_state *state, HMAC_Hash_Kind kind)
             return kind;
         }
         case Py_hmac_kind_hmac_blake2b_32: {
-#if HACL_CAN_COMPILE_SIMD256
+#if _Py_HACL_CAN_COMPILE_VEC256
             if (state->can_run_simd256) {
                 return Py_hmac_kind_hmac_vectorized_blake2b_32;
             }
@@ -1601,7 +1602,7 @@ hmacmodule_init_cpu_features(hmacmodule_state *state)
 #undef ECX_SSE3
 #undef EBX_AVX2
 
-#if HACL_CAN_COMPILE_SIMD128
+#if _Py_HACL_CAN_COMPILE_VEC128
     // TODO(picnixz): use py_cpuid_features (gh-125022) to improve detection
     state->can_run_simd128 = sse && sse2 && sse3 && sse41 && sse42 && cmov;
 #else
@@ -1611,7 +1612,7 @@ hmacmodule_init_cpu_features(hmacmodule_state *state)
     state->can_run_simd128 = false;
 #endif
 
-#if HACL_CAN_COMPILE_SIMD256
+#if _Py_HACL_CAN_COMPILE_VEC256
     // TODO(picnixz): use py_cpuid_features (gh-125022) to improve detection
     state->can_run_simd256 = state->can_run_simd128 && avx && avx2;
 #else
