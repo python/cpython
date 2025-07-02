@@ -1376,6 +1376,27 @@ class MappingProxyTests(unittest.TestCase):
         view = self.mappingproxy(mapping)
         self.assertEqual(hash(view), hash(mapping))
 
+    def test_richcompare(self):
+        mp1 = self.mappingproxy({'a': 1})
+        mp1_2 = self.mappingproxy({'a': 1})
+        mp2 = self.mappingproxy({'a': 2})
+
+        self.assertEqual(mp1, mp1_2)
+        self.assertFalse(mp1 != mp1_2)
+        self.assertFalse(mp1 == mp2)
+        self.assertNotEqual(mp1, mp2)
+
+        msg = "not supported between instances of 'mappingproxy' and 'mappingproxy'"
+
+        with self.assertRaisesRegex(TypeError, msg):
+            mp1 > mp2
+        with self.assertRaisesRegex(TypeError, msg):
+            mp1 < mp1_2
+        with self.assertRaisesRegex(TypeError, msg):
+            mp2 >= mp2
+        with self.assertRaisesRegex(TypeError, msg):
+            mp1_2 <= mp1
+
 
 class ClassCreationTests(unittest.TestCase):
 
