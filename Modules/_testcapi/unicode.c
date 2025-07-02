@@ -220,56 +220,46 @@ unicode_copycharacters(PyObject *self, PyObject *args)
     return Py_BuildValue("(Nn)", to_copy, copied);
 }
 
-/* Test PyUnicode_ToLower() */
 static PyObject *
-unicode_tolower(PyObject *self, PyObject *arg)
+unicode_case_operation(PyObject *str, int (*function)(Py_UCS4, Py_UCS4 *, int), const char *name)
 {
-    if (PyUnicode_GET_LENGTH(arg) != 1) {
-        PyErr_SetString(PyExc_ValueError, "unicode_tolower only accepts 1-character strings");
+    if (PyUnicode_GET_LENGTH(str) != 1) {
+        PyErr_Format(PyExc_ValueError, "%s only accepts 1-character strings", name);
         return NULL;
     }
 
-    Py_UCS4 c = PyUnicode_READ_CHAR(arg, 0);
+    Py_UCS4 c = PyUnicode_READ_CHAR(str, 0);
 
-    Py_UCS4 lower[3];
-    int chars = PyUnicode_ToLower(c, lower, Py_ARRAY_LENGTH(lower));
-    assert(chars >= 1);
+    Py_UCS4 buf[3];
+    int chars = function(c, buf, Py_ARRAY_LENGTH(buf));
+    if (chars <= 0) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
 
     PyUnicodeWriter *writer = PyUnicodeWriter_Create(1);
     if (writer == NULL) {
         return NULL;
     }
-    if (PyUnicodeWriter_WriteUCS4(writer, lower, chars) < 0) {
+    if (PyUnicodeWriter_WriteUCS4(writer, buf, chars) < 0) {
         PyUnicodeWriter_Discard(writer);
         return NULL;
     }
     return PyUnicodeWriter_Finish(writer);
 }
 
+/* Test PyUnicode_ToLower() */
+static PyObject *
+unicode_tolower(PyObject *self, PyObject *arg)
+{
+    return unicode_case_operation(arg, PyUnicode_ToLower, "unicode_tolower");
+}
+
 /* Test PyUnicode_ToUpper() */
 static PyObject *
 unicode_toupper(PyObject *self, PyObject *arg)
 {
-    if (PyUnicode_GET_LENGTH(arg) != 1) {
-        PyErr_SetString(PyExc_ValueError, "unicode_toupper only accepts 1-character strings");
-        return NULL;
-    }
-
-    Py_UCS4 c = PyUnicode_READ_CHAR(arg, 0);
-
-    Py_UCS4 upper[3];
-    int chars = PyUnicode_ToUpper(c, upper, Py_ARRAY_LENGTH(upper));
-    assert(chars >= 1);
-
-    PyUnicodeWriter *writer = PyUnicodeWriter_Create(1);
-    if (writer == NULL) {
-        return NULL;
-    }
-    if (PyUnicodeWriter_WriteUCS4(writer, upper, chars) < 0) {
-        PyUnicodeWriter_Discard(writer);
-        return NULL;
-    }
-    return PyUnicodeWriter_Finish(writer);
+    return unicode_case_operation(arg, PyUnicode_ToUpper, "unicode_toupper");
 }
 
 
@@ -277,52 +267,14 @@ unicode_toupper(PyObject *self, PyObject *arg)
 static PyObject *
 unicode_totitle(PyObject *self, PyObject *arg)
 {
-    if (PyUnicode_GET_LENGTH(arg) != 1) {
-        PyErr_SetString(PyExc_ValueError, "unicode_totitle only accepts 1-character strings");
-        return NULL;
-    }
-
-    Py_UCS4 c = PyUnicode_READ_CHAR(arg, 0);
-
-    Py_UCS4 title[3];
-    int chars = PyUnicode_ToTitle(c, title, Py_ARRAY_LENGTH(title));
-    assert(chars >= 1);
-
-    PyUnicodeWriter *writer = PyUnicodeWriter_Create(1);
-    if (writer == NULL) {
-        return NULL;
-    }
-    if (PyUnicodeWriter_WriteUCS4(writer, title, chars) < 0) {
-        PyUnicodeWriter_Discard(writer);
-        return NULL;
-    }
-    return PyUnicodeWriter_Finish(writer);
+    return unicode_case_operation(arg, PyUnicode_ToTitle, "unicode_totitle");
 }
 
 /* Test PyUnicode_ToLower() */
 static PyObject *
 unicode_tofolded(PyObject *self, PyObject *arg)
 {
-    if (PyUnicode_GET_LENGTH(arg) != 1) {
-        PyErr_SetString(PyExc_ValueError, "unicode_tofolded only accepts 1-character strings");
-        return NULL;
-    }
-
-    Py_UCS4 c = PyUnicode_READ_CHAR(arg, 0);
-
-    Py_UCS4 folded[3];
-    int chars = PyUnicode_ToFolded(c, folded, Py_ARRAY_LENGTH(folded));
-    assert(chars >= 1);
-
-    PyUnicodeWriter *writer = PyUnicodeWriter_Create(1);
-    if (writer == NULL) {
-        return NULL;
-    }
-    if (PyUnicodeWriter_WriteUCS4(writer, folded, chars) < 0) {
-        PyUnicodeWriter_Discard(writer);
-        return NULL;
-    }
-    return PyUnicodeWriter_Finish(writer);
+    return unicode_case_operation(arg, PyUnicode_ToFolded, "unicode_tofolded");
 }
 
 

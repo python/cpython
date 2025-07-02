@@ -1765,6 +1765,7 @@ class CAPITest(unittest.TestCase):
 
         # Test unicode character
         self.assertEqual(unicode_tolower("Č"), "č")
+        self.assertEqual(unicode_tolower("Σ"), "σ")
 
     @support.cpython_only
     @unittest.skipIf(_testcapi is None, 'need _testcapi module')
@@ -1778,6 +1779,8 @@ class CAPITest(unittest.TestCase):
 
         # Test unicode character
         self.assertEqual(unicode_toupper("č"), "Č")
+        self.assertEqual(unicode_toupper("ß"), "SS")
+        self.assertEqual(unicode_toupper("ΐ"), "Ϊ́")
 
     @support.cpython_only
     @unittest.skipIf(_testcapi is None, 'need _testcapi module')
@@ -1788,6 +1791,8 @@ class CAPITest(unittest.TestCase):
 
         # Test unicode character
         self.assertEqual(unicode_totitle("ł"), "Ł")
+        self.assertEqual(unicode_totitle("ß"), "Ss")
+        self.assertEqual(unicode_totitle("ΐ"), "Ϊ́")
 
     @support.cpython_only
     @unittest.skipIf(_testcapi is None, 'need _testcapi module')
@@ -1798,6 +1803,7 @@ class CAPITest(unittest.TestCase):
 
         # Test unicode character
         self.assertEqual(unicode_tofolded("Ł"), "ł")
+        self.assertEqual(unicode_tofolded("Σ"), "σ")
 
         # Test case-ignorable character
         self.assertEqual(unicode_tofolded("👍"), "👍")
