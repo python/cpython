@@ -1572,7 +1572,7 @@ class SMTPAUTHInitialResponseSimTests(unittest.TestCase):
 
 class TestSMTPLoginValueError(unittest.TestCase):
     def broken_hmac(*args, **kwargs):
-        raise ValueError("[digital envelope routines] unsupported")
+        raise smtplib.SMTPAuthHashUnsupportedError("CRAM-MD5 failed: [digital envelope routines] unsupported")
 
     def test_login_raises_valueerror_when_cram_md5_fails(self):
         with patch("hmac.HMAC", self.broken_hmac):
@@ -1593,7 +1593,7 @@ class TestSMTPLoginValueError(unittest.TestCase):
                     return 334, b"Y2hhbGxlbmdl"
 
             smtp = FakeSMTP()
-            with self.assertRaises(ValueError) as ctx:
+            with self.assertRaises(smtplib.SMTPAuthHashUnsupportedError) as ctx:
                 smtp.login("user", "pass")
             self.assertIn("unsupported", str(ctx.exception).lower())
 
