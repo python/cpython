@@ -1161,7 +1161,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                         raise ExceptionGroup("create_connection failed", exceptions)
                     if len(exceptions) == 1:
                         raise exceptions[0]
-                    else:
+                    elif exceptions:
                         # If they all have the same str(), raise one.
                         model = str(exceptions[0])
                         if all(str(exc) == model for exc in exceptions):
@@ -1170,6 +1170,9 @@ class BaseEventLoop(events.AbstractEventLoop):
                         # the various error messages.
                         raise OSError('Multiple exceptions: {}'.format(
                             ', '.join(str(exc) for exc in exceptions)))
+                    else:
+                        # No exceptions were collected, raise a timeout error
+                        raise TimeoutError('create_connection failed')
                 finally:
                     exceptions = None
 
