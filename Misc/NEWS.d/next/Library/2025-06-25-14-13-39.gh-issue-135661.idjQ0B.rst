@@ -1,4 +1,5 @@
-Fix parsing start and end tags in :class:`html.parser.HTMLParser`.
+Fix parsing start and end tags in :class:`html.parser.HTMLParser`
+according to the HTML5 standard.
 
 * Whitespaces no longer accepted between ``</`` and the tag name.
   E.g. ``</ script>`` does not end the script section.
@@ -8,8 +9,9 @@ Fix parsing start and end tags in :class:`html.parser.HTMLParser`.
 
 * Null character (U+0000) no longer ends the tag name.
 
-* End tag can have attributes and slashes after tag name. It no longer ends
-  after the first ``>`` in quoted attribute value. E.g. ``</script/foo=">"/>``.
+* Attributes and slashes after the tag name in end tags are now correctly
+  parsed as comments, instead of terminating after the first ``>``
+  in quoted attribute value. E.g. ``</script/foo=">"/>``.
 
 * Multiple slashes and whitespaces between the last attribute and closing ``>``
   are now accepted in both start and end tags. E.g. ``<a foo=bar/ //>``.

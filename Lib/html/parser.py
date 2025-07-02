@@ -401,7 +401,7 @@ class HTMLParser(_markupbase.ParserBase):
             return -1
         if not endtagopen.match(rawdata, i):  # </ + letter
             # w3.org/TR/html5/tokenization.html#end-tag-open-state
-            if rawdata[i+2:i+3] == '>':
+            if rawdata[i+2:i+3] == '>':  # </> is ignored
                 return i+3
             else:
                 return self.parse_bogus_comment(i)
