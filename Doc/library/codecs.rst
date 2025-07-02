@@ -1485,7 +1485,8 @@ mapping. It is not supported by :meth:`str.encode` (which only produces
 This module implements the following functions:
 
 .. note::
-   These functions should not be used directly, except for testing purposes.
+   These functions should not be used directly, except for testing purposes;
+   :func:`codecs.lookup` should be used instead.
 
 .. function:: normalize_encoding(encoding)
 
