@@ -1839,14 +1839,14 @@ are always available.  They are listed here in alphabetical order.
    ``range(start, stop, step)``.  The *start* and *step* arguments default to
    ``None``.
 
+   Slice objects have read-only data attributes :attr:`!start`,
+   :attr:`!stop`, and :attr:`!step` which merely return the argument
+   values (or their default).  They have no other explicit functionality;
+   however, they are used by NumPy and other third-party packages.
+
    .. attribute:: slice.start
    .. attribute:: slice.stop
    .. attribute:: slice.step
-
-      Slice objects have read-only data attributes :attr:`!start`,
-      :attr:`!stop`, and :attr:`!step` which merely return the argument
-      values (or their default).  They have no other explicit functionality;
-      however, they are used by NumPy and other third-party packages.
 
    Slice objects are also generated when extended indexing syntax is used.  For
    example: ``a[start:stop:step]`` or ``a[start:stop, i]``.  See

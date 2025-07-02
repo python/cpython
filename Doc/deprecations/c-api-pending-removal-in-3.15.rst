@@ -1,7 +1,6 @@
 Pending removal in Python 3.15
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* The bundled copy of ``libmpdecimal``.
 * The :c:func:`!PyImport_ImportModuleNoBlock`:
   Use :c:func:`PyImport_ImportModule` instead.
 * :c:func:`PyWeakref_GetObject` and :c:func:`PyWeakref_GET_OBJECT`:

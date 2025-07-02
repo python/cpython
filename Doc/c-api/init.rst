@@ -1250,7 +1250,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 .. c:function:: void PyInterpreterState_Clear(PyInterpreterState *interp)
 
    Reset all information in an interpreter state object.  There must be
-   an :term:`attached thread state` for the the interpreter.
+   an :term:`attached thread state` for the interpreter.
 
    .. audit-event:: cpython.PyInterpreterState_Clear "" c.PyInterpreterState_Clear
 
@@ -2276,6 +2276,18 @@ The C-API provides a basic mutual exclusion lock.
    issue a fatal error.
 
    .. versionadded:: 3.13
+
+.. c:function:: int PyMutex_IsLocked(PyMutex *m)
+
+   Returns non-zero if the mutex *m* is currently locked, zero otherwise.
+
+   .. note::
+
+      This function is intended for use in assertions and debugging only and
+      should not be used to make concurrency control decisions, as the lock
+      state may change immediately after the check.
+
+   .. versionadded:: next
 
 .. _python-critical-section-api:
 
