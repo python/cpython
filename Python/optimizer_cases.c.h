@@ -1414,16 +1414,16 @@
 
         case _LOAD_ATTR: {
             JitOptRef owner;
-            JitOptRef attr;
+            JitOptRef *attr;
             JitOptRef *self_or_null;
             owner = stack_pointer[-1];
+            attr = &stack_pointer[-1];
             self_or_null = &stack_pointer[0];
             (void)owner;
-            attr = sym_new_not_null(ctx);
+            *attr = sym_new_not_null(ctx);
             if (oparg & 1) {
                 self_or_null[0] = sym_new_unknown(ctx);
             }
-            stack_pointer[-1] = attr;
             stack_pointer += (oparg&1);
             assert(WITHIN_STACK_BOUNDS());
             break;

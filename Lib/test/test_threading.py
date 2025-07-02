@@ -1247,6 +1247,61 @@ class ThreadTests(BaseTestCase):
         self.assertEqual(err, b"")
         self.assertIn(b"all clear", out)
 
+    @support.subTests('lock_class_name', ['Lock', 'RLock'])
+    def test_acquire_daemon_thread_lock_in_finalization(self, lock_class_name):
+        # gh-123940: Py_Finalize() prevents other threads from running Python
+        # code (and so, releasing locks), so acquiring a locked lock can not
+        # succeed.
+        # We raise an exception rather than hang.
+        code = textwrap.dedent(f"""
+            import threading
+            import time
+
+            thread_started_event = threading.Event()
+
+            lock = threading.{lock_class_name}()
+            def loop():
+                if {lock_class_name!r} == 'RLock':
+                    lock.acquire()
+                with lock:
+                    thread_started_event.set()
+                    while True:
+                        time.sleep(1)
+
+            uncontested_lock = threading.{lock_class_name}()
+
+            class Cycle:
+                def __init__(self):
+                    self.self_ref = self
+                    self.thr = threading.Thread(
+                        target=loop, daemon=True)
+                    self.thr.start()
+                    thread_started_event.wait()
+
+                def __del__(self):
+                    assert self.thr.is_alive()
+
+                    # We *can* acquire an unlocked lock
+                    uncontested_lock.acquire()
+                    if {lock_class_name!r} == 'RLock':
+                        uncontested_lock.acquire()
+
+                    # Acquiring a locked one fails
+                    try:
+                        lock.acquire()
+                    except PythonFinalizationError:
+                        assert self.thr.is_alive()
+                        print('got the correct exception!')
+
+            # Cycle holds a reference to itself, which ensures it is
+            # cleaned up during the GC that runs after daemon threads
+            # have been forced to exit during finalization.
+            Cycle()
+        """)
+        rc, out, err = assert_python_ok("-c", code)
+        self.assertEqual(err, b"")
+        self.assertIn(b"got the correct exception", out)
+
     def test_start_new_thread_failed(self):
         # gh-109746: if Python fails to start newly created thread
         # due to failure of underlying PyThread_start_new_thread() call,
