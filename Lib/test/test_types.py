@@ -2010,7 +2010,7 @@ class SimpleNamespaceTests(unittest.TestCase):
         self.assertEqual(ns1, ns2)
         self.assertNotEqual(ns2, types.SimpleNamespace())
 
-    def test_richcompare(self):
+    def test_richcompare_unsupported(self):
         ns1 = types.SimpleNamespace(x=1)
         ns2 = types.SimpleNamespace(y=2)
 
