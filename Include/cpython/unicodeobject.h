@@ -733,28 +733,28 @@ PyAPI_FUNC(int) _PyUnicode_IsAlpha(
     Py_UCS4 ch       /* Unicode character */
     );
 
-PyAPI_FUNC(int) PyUnicode_ToLower(
+PyAPI_FUNC(Py_ssize_t) PyUnicode_ToLower(
     Py_UCS4 ch,     /* Unicode character */
     Py_UCS4 *res,   /* Output buffer */
-    int size        /* Buffer size */
+    Py_ssize_t size        /* Buffer size */
     );
 
-PyAPI_FUNC(int) PyUnicode_ToUpper(
+PyAPI_FUNC(Py_ssize_t) PyUnicode_ToUpper(
     Py_UCS4 ch,     /* Unicode character */
     Py_UCS4 *res,   /* Output buffer */
-    int size        /* Buffer size */
+    Py_ssize_t size        /* Buffer size */
     );
 
-PyAPI_FUNC(int) PyUnicode_ToTitle(
+PyAPI_FUNC(Py_ssize_t) PyUnicode_ToTitle(
     Py_UCS4 ch,     /* Unicode character */
     Py_UCS4 *res,   /* Output buffer */
-    int size        /* Buffer size */
+    Py_ssize_t size        /* Buffer size */
     );
 
-PyAPI_FUNC(int) PyUnicode_ToFolded(
+PyAPI_FUNC(Py_ssize_t) PyUnicode_ToFolded(
     Py_UCS4 ch,     /* Unicode character */
     Py_UCS4 *res,   /* Output buffer */
-    int size        /* Buffer size */
+    Py_ssize_t size        /* Buffer size */
     );
 
 
