@@ -39,7 +39,7 @@ under :ref:`reference counting <countingrefs>`.
       Do not use this field directly; instead use functions and macros such as
       :c:macro:`!Py_REFCNT`, :c:func:`Py_INCREF` and :c:func:`Py_DecRef`.
 
-      The field type may be different from `Py_ssize_t`, depending on
+      The field type may be different from ``Py_ssize_t``, depending on
       build configuration and platform.
 
    .. c:member:: PyTypeObject* ob_type
