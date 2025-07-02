@@ -1485,8 +1485,8 @@ patch
     By default this is ``'test'``, which matches the way :mod:`unittest` finds tests.
     You can specify an alternative prefix by setting ``patch.TEST_PREFIX``.
 
-    Patch will raise a `RuntimeError` if passed some common misspellings of
-    the arguments autospec and spec_set. Pass the argument `unsafe` with the
+    Patch will raise a :exc:`RuntimeError` if passed some common misspellings of
+    the arguments autospec and spec_set. Pass the argument *unsafe* with the
     value True to disable that check.
 
     Patch can be used as a context manager, with the with statement. Here the
@@ -2425,7 +2425,7 @@ create_autospec
     spec for an instance object by passing ``instance=True``. The returned mock
     will only be callable if instances of the mock are callable.
 
-    `create_autospec` will raise a `RuntimeError` if passed some common
+    :func:`create_autospec` will raise a :exc:`RuntimeError` if passed some common
     misspellings of the arguments autospec and spec_set. Pass the argument
     `unsafe` with the value True to disable that check.
 
