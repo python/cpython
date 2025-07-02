@@ -5,9 +5,12 @@
 #include "pycore_lock.h"
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_object.h"        // _PyObject_GET_WEAKREFS_LISTPTR()
+#include "pycore_opcode_metadata.h" // RESUME
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_pystate.h"
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
+
+
 
 #ifdef Py_GIL_DISABLED
 /*
@@ -1135,32 +1138,141 @@ _PyWeakref_IsDead(PyObject *weakref)
     return _PyWeakref_IS_DEAD(weakref);
 }
 
+static const uint8_t noop_func_bytecode[6] = {
+    RESUME, RESUME_AT_FUNC_START,
+    LOAD_CONST, 0,
+    RETURN_VALUE, 0
+};
+
+static const uint8_t noop_func_linetable[2] = {
+    (1 << 7)  // New entry.
+    | (PY_CODE_LOCATION_INFO_NO_COLUMNS << 3)
+    | (3 - 1),  // Three code units.
+    0,  // Offset from co_firstlineno.
+};
+
+PyCodeObject *
+create_new_noop_code(const char *filename, const char *funcname, int firstlineno)
+{
+    PyObject *nulltuple = NULL;
+    PyObject *filename_str = NULL;
+    PyObject *funcname_str = NULL;
+    PyObject *code_bytes = NULL;
+    PyObject *linetable_bytes = NULL;
+    PyObject *wr_str = NULL;
+    PyObject *consts = NULL;
+    PyObject *varnames = NULL;
+    PyCodeObject *result = NULL;
+
+    nulltuple = PyTuple_New(0);
+    if (nulltuple == NULL) {
+        goto failed;
+    }
+    funcname_str = PyUnicode_FromString(funcname);
+    if (funcname_str == NULL) {
+        goto failed;
+    }
+    filename_str = PyUnicode_FromString(filename);
+    if (filename_str == NULL) {
+        goto failed;
+    }
+    code_bytes = PyBytes_FromStringAndSize((const char *)noop_func_bytecode, 6);
+    if (code_bytes == NULL) {
+        goto failed;
+    }
+    linetable_bytes = PyBytes_FromStringAndSize((const char *)noop_func_linetable, 2);
+    if (linetable_bytes == NULL) {
+        goto failed;
+    }
+
+    consts = PyTuple_Pack(1, Py_None);
+    if (consts == NULL) {
+        goto failed;
+    }
+
+    wr_str = PyUnicode_FromString("wr");
+    if (wr_str == NULL) {
+        goto failed;
+    }
+
+    varnames = PyTuple_Pack(1, wr_str);
+    if (varnames == NULL) {
+        goto failed;
+    }
+
+#define emptybytes (PyObject *)&_Py_SINGLETON(bytes_empty)
+
+    int argcount = 1;
+    int posonlyargcount = 0;
+    int kwonlyargcount = 0;
+    int nlocals = 1;
+    int stacksize = 1;
+    int flags = CO_OPTIMIZED | CO_NEWLOCALS;
+
+    result = PyUnstable_Code_NewWithPosOnlyArgs(
+        argcount, posonlyargcount, kwonlyargcount, nlocals, stacksize, flags,
+        code_bytes, consts, nulltuple, varnames, nulltuple, nulltuple,
+        filename_str, funcname_str, funcname_str, firstlineno,
+        linetable_bytes, emptybytes);
+
+#undef emptybytes
+
+failed:
+    Py_XDECREF(nulltuple);
+    Py_XDECREF(funcname_str);
+    Py_XDECREF(filename_str);
+    Py_XDECREF(code_bytes);
+    Py_XDECREF(linetable_bytes);
+    Py_XDECREF(consts);
+    Py_XDECREF(varnames);
+    Py_XDECREF(wr_str);
+
+    return result;
+}
+
 int
 _PyWeakref_InitSubclassSentinel(PyInterpreterState *interp)
 {
-    PyObject *code =  (PyObject *)PyCode_NewEmpty(
+    int status = 0;
+
+    PyObject *globals = NULL;
+    PyObject *func = NULL;
+    PyObject *code = (PyObject *)create_new_noop_code(
         "<generated>",
         "<subclasses_weakref_sentinel>",
-        0);
+        1);
     if (code == NULL) {
         return -1;
     }
 
-    PyObject *globals = PyDict_New();
+    globals = PyDict_New();
     if (globals == NULL) {
-        Py_DECREF(code);
-        return -1;
+        status = -1;
+        goto failed;
     }
 
-    PyObject *func = PyFunction_New(code, globals);
-    Py_DECREF(globals);
-    Py_DECREF(code);
+    func = PyFunction_New(code, globals);
     if (func == NULL) {
-        return -1;
+        status = -1;
+        goto failed;
     }
+
+#ifdef Py_DEBUG
+    PyObject *result = PyObject_CallOneArg(func, Py_None);
+    if (!result) {
+        status = -1;
+        goto failed;
+    }
+    Py_DECREF(result);
+#endif
 
     _Py_INTERP_SINGLETON(interp, subclasses_weakref_sentinel) = func;
-    return 0;
+
+failed:
+    Py_XDECREF(code);
+    Py_XDECREF(globals);
+
+    return status;
 }
 
 PyObject *
@@ -1184,5 +1296,5 @@ _PyWeakref_IsSubclassRef(PyWeakReference *weakref)
         interp = interp->runtime->interpreters.main;
     }
     PyObject *func = _Py_INTERP_SINGLETON(interp, subclasses_weakref_sentinel);
-    return weakref->wr_callback == func;
+    return func != NULL && weakref->wr_callback == func;
 }
