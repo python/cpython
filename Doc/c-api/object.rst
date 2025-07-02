@@ -201,6 +201,9 @@ Object Protocol
    This case can arise from forgetting ``NULL`` checks and would delete the
    attribute.
 
+   .. versionchanged:: next
+      Raise an exception if called with ``NULL`` *v* and an an exception set.
+
 
 .. c:function:: int PyObject_SetAttrString(PyObject *o, const char *attr_name, PyObject *v)
 
@@ -222,6 +225,9 @@ Object Protocol
    :c:func:`PyUnicode_FromString` and :c:func:`PyObject_SetAttr` directly.
    For more details, see :c:func:`PyUnicode_InternFromString`, which may be
    used internally to create a key object.
+
+   .. versionchanged:: next
+      Raise an exception if called with ``NULL`` *v* and an an exception set.
 
 .. c:function:: int PyObject_GenericSetAttr(PyObject *o, PyObject *name, PyObject *value)
 
