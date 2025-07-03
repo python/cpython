@@ -6123,7 +6123,7 @@ _parse_format_specifier_regex = re.compile(r"""\A
 (?P<minimumwidth>\d+)?
 (?P<thousands_sep>[,_])?
 (?:\.
-    (?=\d|[,_])  # lookahead for digit or separator
+    (?=[\d,_])  # lookahead for digit or separator
     (?P<precision>\d+)?
     (?P<frac_separators>[,_])?
 )?
