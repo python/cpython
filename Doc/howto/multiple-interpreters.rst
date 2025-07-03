@@ -420,6 +420,12 @@ executed with :data:`!__name__` set to something other than
 put it in the if block.  You will probably only want functions or
 classes outside the if block.
 
+Another thing to keep in mind is that, when you run the REPL or run
+``python -c ...``, the code that runs is essentially unrecoverable.  The
+contents of the :mod:`__main__` module cannot be reproduced by executing
+a script (or module) file.  Consequently, calling a function defined
+in :mod:`__main__` in these cases will probably fail.
+
 Calling Methods and Other Objects in an Interpreter
 ---------------------------------------------------
 
