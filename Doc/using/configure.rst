@@ -29,6 +29,9 @@ Features and minimum versions required to build CPython:
 
 * Tcl/Tk 8.5.12 for the :mod:`tkinter` module.
 
+* `libmpdec <https://www.bytereef.org/mpdecimal/doc/libmpdec/>`_ 2.5.0
+  for the :mod:`decimal` module.
+
 * Autoconf 2.71 and aclocal 1.16.5 are required to regenerate the
   :file:`configure` script.
 
