@@ -242,7 +242,7 @@ highlighting in your editor.  With script text you probably don't.
 Calling a Function in an Interpreter
 ------------------------------------
 
-You can just as easily call a function in another interpreter::
+You can just as easily *call* a function in another interpreter::
 
     from concurrent import interpreters
 
@@ -254,13 +254,30 @@ You can just as easily call a function in another interpreter::
         interp.call(spam)
         # prints: spam!
 
-In fact, nearly all Python functions and callables are supported,
-with the notable exception of closures.  Support includes arguments
-and return values, which we'll
-:ref:`explore soon <interp-tutorial-return-values>`.
+(See :meth:`Interpreter.call`.)
 
-Builtin functions always execute in the target interpreter's
-:mod:`!__main__` module::
+In fact, nearly all Python functions and callables are supported, with
+the notable exclusion of closures.  We'll focus on plain functions
+for the moment.
+
+Relative to :meth:`Interpreter.call`, there are five kinds of functions:
+
+1. builtin functions
+2. extension module functions
+3. "stateless" user functions
+4. stateful user functions, defined in :mod:`!__main__`
+5. stateful user functions, not defined in :mod:`!__main__`
+
+A "stateless" function is one that doesn't use any globals.  It also
+can't be a closure.  It can have parameters but not argument defaults.
+It can have return values.  We'll cover
+:ref:`arguments and returning <interp-tutorial-return-values>` soon.
+
+Some builtin functions, like :func:`exec` and :func:`eval`, use the
+current globals as a default (or :func:`implicit <globals>`) argument
+value.  When such functions are called directly with
+:meth:`Interpreter.call`, they use the :mod:`!__main__` module's
+:data:`!__dict__` as the default/implicit "globals"::
 
     from concurrent import interpreters
 
@@ -272,23 +289,29 @@ Builtin functions always execute in the target interpreter's
     interp.call(eval, 'print(__name__)')
     # prints: __main__
 
-The same is true for Python functions that don't use any globals::
+Note that, for some of those builtin functions, like :func:`globals`
+and even :func:`eval` (for some expressions), the return value may
+be :ref:`"unshareable" <interp-tutorial-shareable>` and the call will
+fail.
 
-    from concurrent import interpreters
+In each of the above cases, the function is more-or-less copied, when
+sent to the other interpreter.  For most of the cases, the function's
+module is imported in the target interpreter and the function is pulled
+from there.  The exceptions are cases (3) and (4).
 
-    def spam():
-        # globals is a builtin.
-        print(globals()['__name__'])
+In case (3), the function is also copied, but efficiently and only
+temporarily (long enough to be called) and is not actually bound to
+any module.  This temporary function object's :data:`!__name__` will
+be set to match the code object, but the :data:`!__module__`,
+:data:`!__qualname__`, and other attributes are not guaranteed to
+be set.  This shouldn't be a problem in practice, though, since
+introspecting the currently running function is fairly rare.
 
-    if __name__ == '__main__':
-        interp = interpreters.create()
-        interp.call(spam)
-        # prints: __main__
+We'll cover case (4) in
+:ref:`the next section <interp-tutorial-funcs-in-main>`.
 
-There are very few cases where that matters, though.
-
-Otherwise, functions defined in modules other than :mod:`!__main__` run
-in that module::
+In all the cases, the function will get any global variables from the
+module (in the target interpreter), like normal::
 
     from concurrent import interpreters
     from mymod import spam
@@ -305,9 +328,25 @@ in that module::
     def spam():
         print(__name__)
 
-For a function actually defined in the :mod:`!__main__` module,
-it executes in a separate dummy module, in order to not pollute
-the :mod:`!__main__` module::
+Note, however, that in case (3) functions rarely look up any globals.
+
+.. _interp-tutorial-funcs-in-main:
+
+Functions Defined in __main__
+-----------------------------
+
+Functions defined in :mod:`!__main__` are treated specially by
+:meth:`Interpreter.call`.  This is because the script or module that
+ran in the main interpreter will have not run in other interpreters,
+so any functions defined in the script would only be accessible by
+running it in the target interpreter first.  That is essentially
+how :meth:`Interpreter.call` handles it.
+
+If the function isn't found in the target interpreter's :mod:`!__main__`
+module then the script that ran in the main interpreter gets run in the
+target interpreter, though under a different name than "__main__".
+The function is then looked up on that resulting fake __main__ module.
+For example::
 
     from concurrent import interpreters
 
@@ -319,7 +358,12 @@ the :mod:`!__main__` module::
         interp.call(spam)
         # prints: '<fake __main__>'
 
-This means global state used in such a function won't be reflected
+The dummy module is never added to :data:`sys.modules`, though it may
+be cached away internally.
+
+This approach with a fake :mod:`!__main__` module means we can avoid
+polluting the :mod:`!__main__` module of the target interpreter.  It
+also means global state used in such a function won't be reflected
 in the interpreter's :mod:`!__main__` module::
 
     from textwrap import dedent
@@ -369,6 +413,12 @@ in the interpreter's :mod:`!__main__` module::
         print(total)
         # prints: 0
 
+Note that the recommended ``if __name__ == '__main__`:`` idiom is
+especially important for such functions, since the script will be
+executed with :data:`!__name__` set to something other than
+:mod:`!__main__`.  Thus, for any code you don't want run repeatedly,
+put it in the if block.  You will probably only want functions or
+classes outside the if block.
 
 Calling Methods and Other Objects in an Interpreter
 ---------------------------------------------------
@@ -809,6 +859,8 @@ For example::
         assert res == dict(a=1, b=2, c=3)
         assert res is not data
         assert data == dict(a=1, b=2, c=3)
+
+.. _interp-tutorial-shareable:
 
 Supported and Unsupported Objects
 ---------------------------------
