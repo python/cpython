@@ -244,20 +244,6 @@ PyAPI_FUNC(void) Py_DecRef(PyObject *);
 PyAPI_FUNC(void) _Py_IncRef(PyObject *);
 PyAPI_FUNC(void) _Py_DecRef(PyObject *);
 
-#ifndef Py_GIL_DISABLED
-static inline Py_ALWAYS_INLINE void Py_INCREF_MORTAL(PyObject *op)
-{
-    assert(!_Py_IsStaticImmortal(op));
-    op->ob_refcnt++;
-    _Py_INCREF_STAT_INC();
-#if defined(Py_REF_DEBUG) && !defined(Py_LIMITED_API)
-    if (!_Py_IsImmortal(op)) {
-        _Py_INCREF_IncRefTotal();
-    }
-#endif
-}
-#endif
-
 static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
 {
 #if defined(Py_LIMITED_API) && (Py_LIMITED_API+0 >= 0x030c0000 || defined(Py_REF_DEBUG))
