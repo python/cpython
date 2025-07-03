@@ -528,9 +528,7 @@ class ElementTree:
     """
     def __init__(self, element=None, file=None):
         if element is not None and not iselement(element):
-            raise TypeError(f"expected an xml.etree.ElementTree.Element or "
-                            f"Element-like object, not "
-                            f"{type(element).__name__}")
+            raise TypeError('expected an Element, not %s' % type(e).__name__)
         self._root = element # first node
         if file:
             self.parse(file)
@@ -547,9 +545,7 @@ class ElementTree:
 
         """
         if not iselement(element):
-            raise TypeError(f"expected an xml.etree.ElementTree.Element or "
-                            f"Element-like object, not "
-                            f"{type(element).__name__}")
+            raise TypeError('expected an Element, not %s' % type(e).__name__)
         self._root = element
 
     def parse(self, source, parser=None):
