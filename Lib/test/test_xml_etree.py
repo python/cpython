@@ -226,25 +226,24 @@ class ElementTreeTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             tree = ET.ElementTree(ET.ElementTree())
 
-        # Test _setroot as well, since it also sets the _root object.
+    def test_setroot(self):
+        # Test _setroot behavior.
+
+        tree = ET.ElementTree()
+        element = ET.Element("tag")
+        tree._setroot(element)
+        self.assertEqual(tree.getroot().tag, "tag")
+        self.assertEqual(tree.getroot(), element)
+
+        # Test behavior with an invalid root element
 
         tree = ET.ElementTree()
         with self.assertRaises(TypeError):
             tree._setroot("")
         with self.assertRaises(TypeError):
             tree._setroot(ET.ElementTree())
-
-        # Make sure it accepts an Element-like object.
-
-        class ElementLike:
-            def __init__(self):
-                self.tag = "tag"
-
-        element_like = ElementLike()
-        try:
-            tree = ET.ElementTree(element_like)
-        except Exception as err:
-            self.fail(err)
+        with self.assertRaises(TypeError):
+            tree._setroot(None)
 
     def test_interface(self):
         # Test element tree interface.
