@@ -899,6 +899,9 @@ handle_weakref_callbacks(PyGC_Head *unreachable, PyGC_Head *old)
          */
         PyWeakReference *next_wr;
         for (PyWeakReference *wr = *wrlist; wr != NULL; wr = next_wr) {
+            // Get the next list element to get iterator progress if we omit
+            // clearing of the weakref (because _PyWeakref_ClearRef changes
+            // next pointer in the wrlist).
             next_wr = wr->wr_next;
 
             // Weakrefs with callbacks always need to be cleared before
