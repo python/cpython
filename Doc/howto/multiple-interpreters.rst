@@ -133,23 +133,12 @@ builtin :func:`exec` using that interpreter::
 
 (See :meth:`Interpreter.exec`.)
 
-Calling a simple function in an interpreter works the same way::
+Calls are also supported.
+See :ref:`the next section <interp-tutorial-calls>`.
 
-    from concurrent import interpreters
-
-    def script():
-        print('spam!')
-
-    if __name__ == '__main__':
-        interp = interpreters.create()
-        interp.call(script)
-        # prints: spam!
-
-(See :meth:`Interpreter.call`.)
-
-When it runs, the code is executed using the interpreter's
-:mod:`!__main__` module, just like a Python process normally does when
-invoked from the command-line::
+When :meth:`Interpreter.exec` runs, the code is executed using the
+interpreter's :mod:`!__main__` module, just like a Python process
+normally does when invoked from the command-line::
 
     from concurrent import interpreters
 
@@ -205,6 +194,50 @@ It's also fairly easy to simulate the other forms of the Python CLI::
 
 That's more or less what the ``python`` executable is doing for each
 of those cases.
+
+You can also exec any function that doesn't take any arguments, nor
+returns anything.  Closures are not allowed but other nested functions
+are.  It works the same as if you had passed the script corresponding
+to the function's body::
+
+    from concurrent import interpreters
+
+    def script():
+        print('spam!')
+
+    def get_script():
+        def nested():
+            print('eggs!')
+        return nested
+
+    if __name__ == '__main__':
+        interp = interpreters.create()
+
+        interp.exec(script)
+        # prints: spam!
+
+        script2 = get_script()
+        interp.exec(script2)
+        # prints: eggs!
+
+Any referenced globals are resolved relative to the interpreter's
+:mod:`!__main__` module, just like happens for scripts, rather than
+the original function's module::
+
+    from concurrent import interpreters
+
+    def script():
+        print(__name__)
+
+    if __name__ == '__main__':
+        interp = interpreters.create()
+        interp.exec(script)
+        # prints: __main__
+
+One practical difference is that with a script function you get syntax
+highlighting in your editor.  With script text you probably don't.
+
+.. _interp-tutorial-calls:
 
 Calling a Function in an Interpreter
 ------------------------------------
