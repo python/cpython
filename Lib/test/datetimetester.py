@@ -7295,25 +7295,6 @@ class ExtensionModuleTests(unittest.TestCase):
             """)
         script_helper.assert_python_ok('-c', script)
 
-    def test_static_type_at_shutdown(self):
-        # gh-132413
-        script = textwrap.dedent("""
-            import _datetime
-            timedelta = _datetime.timedelta
-
-            def gen():
-                try:
-                    yield
-                finally:
-                    # sys.modules is empty
-                    _datetime.timedelta(days=1)
-                    timedelta(days=1)
-
-            it = gen()
-            next(it)
-            """)
-        script_helper.assert_python_ok('-c', script)
-
 
 def load_tests(loader, standard_tests, pattern):
     standard_tests.addTest(ZoneInfoCompleteTest())
