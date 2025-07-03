@@ -426,6 +426,11 @@ contents of the :mod:`__main__` module cannot be reproduced by executing
 a script (or module) file.  Consequently, calling a function defined
 in :mod:`__main__` in these cases will probably fail.
 
+Here's one last tip before we move on.  You can avoid the extra
+complexity involved with functions (and classes) defined in
+:mod:`__main__` by simply not defining them in :mod:`__main__`.
+Instead, put them in another module and import them in your script.
+
 Calling Methods and Other Objects in an Interpreter
 ---------------------------------------------------
 
