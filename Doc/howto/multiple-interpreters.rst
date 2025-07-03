@@ -480,8 +480,8 @@ Mutable State is not Shared
 Just to be clear, the underlying data of very few mutable objects is
 actually shared between interpreters.  The notable exceptions are
 :class:`Queue` and :class:`memoryview`, which we will explore in a
-little while.  In nearly every case, the raw data is copied in
-the other interpreter and never automatically synchronized::
+little while.  In nearly every case, the raw data is only copied in
+the other interpreter and thus never automatically synchronized::
 
     from concurrent import interpreters
 
