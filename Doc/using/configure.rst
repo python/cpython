@@ -25,6 +25,9 @@ Features and minimum versions required to build CPython:
 * OpenSSL 1.1.1 is the minimum version and OpenSSL 3.0.16 is the recommended
   minimum version for the :mod:`ssl` and :mod:`hashlib` extension modules.
 
+* `libmpdec <https://www.bytereef.org/mpdecimal/>`__ 2.5.1
+  for the :mod:`decimal` module.
+
 * SQLite 3.15.2 for the :mod:`sqlite3` extension module.
 
 * Tcl/Tk 8.5.12 for the :mod:`tkinter` module.
