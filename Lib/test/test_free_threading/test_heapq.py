@@ -30,7 +30,7 @@ class TestHeapq(unittest.TestCase):
         shuffle(heap)
 
         run_concurrently(
-            worker_func=heapq.heapify, args=(heap,), nthreads=NTHREADS
+            worker_func=heapq.heapify, nthreads=NTHREADS, args=(heap,)
         )
         self.test_heapq.check_invariant(heap)
 
@@ -42,7 +42,7 @@ class TestHeapq(unittest.TestCase):
                 heapq.heappush(heap, item)
 
         run_concurrently(
-            worker_func=heappush_func, args=(heap,), nthreads=NTHREADS
+            worker_func=heappush_func, nthreads=NTHREADS, args=(heap,)
         )
         self.test_heapq.check_invariant(heap)
 
@@ -64,8 +64,8 @@ class TestHeapq(unittest.TestCase):
 
         run_concurrently(
             worker_func=heappop_func,
-            args=(heap, per_thread_pop_count),
             nthreads=NTHREADS,
+            args=(heap, per_thread_pop_count),
         )
         self.assertEqual(len(heap), 0)
 
@@ -80,8 +80,8 @@ class TestHeapq(unittest.TestCase):
 
         run_concurrently(
             worker_func=heappushpop_func,
-            args=(heap, pushpop_items),
             nthreads=NTHREADS,
+            args=(heap, pushpop_items),
         )
         self.assertEqual(len(heap), OBJECT_COUNT)
         self.test_heapq.check_invariant(heap)
@@ -96,8 +96,8 @@ class TestHeapq(unittest.TestCase):
 
         run_concurrently(
             worker_func=heapreplace_func,
-            args=(heap, replace_items),
             nthreads=NTHREADS,
+            args=(heap, replace_items),
         )
         self.assertEqual(len(heap), OBJECT_COUNT)
         self.test_heapq.check_invariant(heap)
@@ -107,7 +107,7 @@ class TestHeapq(unittest.TestCase):
         shuffle(max_heap)
 
         run_concurrently(
-            worker_func=heapq.heapify_max, args=(max_heap,), nthreads=NTHREADS
+            worker_func=heapq.heapify_max, nthreads=NTHREADS, args=(max_heap,)
         )
         self.test_heapq.check_max_invariant(max_heap)
 
@@ -119,7 +119,7 @@ class TestHeapq(unittest.TestCase):
                 heapq.heappush_max(max_heap, item)
 
         run_concurrently(
-            worker_func=heappush_max_func, args=(max_heap,), nthreads=NTHREADS
+            worker_func=heappush_max_func, nthreads=NTHREADS, args=(max_heap,)
         )
         self.test_heapq.check_max_invariant(max_heap)
 
@@ -141,8 +141,8 @@ class TestHeapq(unittest.TestCase):
 
         run_concurrently(
             worker_func=heappop_max_func,
-            args=(max_heap, per_thread_pop_count),
             nthreads=NTHREADS,
+            args=(max_heap, per_thread_pop_count),
         )
         self.assertEqual(len(max_heap), 0)
 
@@ -157,8 +157,8 @@ class TestHeapq(unittest.TestCase):
 
         run_concurrently(
             worker_func=heappushpop_max_func,
-            args=(max_heap, pushpop_items),
             nthreads=NTHREADS,
+            args=(max_heap, pushpop_items),
         )
         self.assertEqual(len(max_heap), OBJECT_COUNT)
         self.test_heapq.check_max_invariant(max_heap)
@@ -173,8 +173,8 @@ class TestHeapq(unittest.TestCase):
 
         run_concurrently(
             worker_func=heapreplace_max_func,
-            args=(max_heap, replace_items),
             nthreads=NTHREADS,
+            args=(max_heap, replace_items),
         )
         self.assertEqual(len(max_heap), OBJECT_COUNT)
         self.test_heapq.check_max_invariant(max_heap)
@@ -204,7 +204,7 @@ class TestHeapq(unittest.TestCase):
                     except IndexError:
                         pass
 
-        run_concurrently(worker, (), n_threads * 2)
+        run_concurrently(worker, n_threads * 2)
 
     @staticmethod
     def is_sorted_ascending(lst):

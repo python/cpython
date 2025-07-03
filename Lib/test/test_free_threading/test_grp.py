@@ -19,7 +19,7 @@ class TestGrp(unittest.TestCase):
     def test_racing_test_values(self):
         # test_grp.test_values() calls grp.getgrall() and checks the entries
         run_concurrently(
-            worker_func=self.test_grp.test_values, args=(), nthreads=NTHREADS
+            worker_func=self.test_grp.test_values, nthreads=NTHREADS
         )
 
     def test_racing_test_values_extended(self):
@@ -27,7 +27,6 @@ class TestGrp(unittest.TestCase):
         # grp.getgrnam() and checks the entries
         run_concurrently(
             worker_func=self.test_grp.test_values_extended,
-            args=(),
             nthreads=NTHREADS,
         )
 
