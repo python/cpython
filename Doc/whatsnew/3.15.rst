@@ -252,6 +252,13 @@ platform
   (Contributed by Alexey Makridenko in :gh:`133604`.)
 
 
+sre_*
+-----
+
+* Removed :mod:`!sre_compile`, :mod:`!sre_constants` and :mod:`!sre_parse` modules.
+  (Contributed by Stan Ulbrych in :gh:`135994`.)
+
+
 sysconfig
 ---------
 
@@ -284,6 +291,15 @@ typing
   (Contributed by Bénédikt Tran in :gh:`133823`.)
 
 
+unittest
+--------
+
+* Lets users specify formatter in TestCase.assertLogs.
+  :func:`unittest.TestCase.assertLogs` will now accept a formatter
+  to control how messages are formatted.
+  (Contributed by Garry Cairns in :gh:`134567`.)
+
+
 wave
 ----
 
@@ -302,6 +318,11 @@ that may require changes to your code.
 
 Build changes
 =============
+
+* Removed implicit fallback to the bundled copy of the ``libmpdec`` library.
+  Now this should be explicitly enabled with :option:`--with-system-libmpdec`
+  set to ``no`` or with :option:`!--without-system-libmpdec`.
+  (Contributed by Sergey B Kirpichev in :gh:`115119`.)
 
 
 C API changes
@@ -333,6 +354,13 @@ Porting to Python 3.15
     :meth:`~sqlite3.Connection.set_trace_callback` is now positional-only.
 
   (Contributed by Serhiy Storchaka in :gh:`133595`.)
+
+* Private functions promoted to public C APIs:
+
+  * ``PyMutex_IsLocked()`` : :c:func:`PyMutex_IsLocked`
+
+  The |pythoncapi_compat_project| can be used to get most of these new
+  functions on Python 3.14 and older.
 
 Deprecated C APIs
 -----------------

@@ -1414,16 +1414,16 @@
 
         case _LOAD_ATTR: {
             JitOptRef owner;
-            JitOptRef attr;
+            JitOptRef *attr;
             JitOptRef *self_or_null;
             owner = stack_pointer[-1];
+            attr = &stack_pointer[-1];
             self_or_null = &stack_pointer[0];
             (void)owner;
-            attr = sym_new_not_null(ctx);
+            *attr = sym_new_not_null(ctx);
             if (oparg & 1) {
                 self_or_null[0] = sym_new_unknown(ctx);
             }
-            stack_pointer[-1] = attr;
             stack_pointer += (oparg&1);
             assert(WITHIN_STACK_BOUNDS());
             break;
@@ -2723,9 +2723,6 @@
                 PyObject *lhs_o = PyStackRef_AsPyObjectBorrow(lhs);
                 PyObject *rhs_o = PyStackRef_AsPyObjectBorrow(rhs);
                 assert(_PyEval_BinaryOps[oparg]);
-                stack_pointer[-2] = res;
-                stack_pointer += -1;
-                assert(WITHIN_STACK_BOUNDS());
                 PyObject *res_o = _PyEval_BinaryOps[oparg](lhs_o, rhs_o);
                 if (res_o == NULL) {
                     JUMP_TO_LABEL(error);
@@ -2733,6 +2730,9 @@
                 res_stackref = PyStackRef_FromPyObjectSteal(res_o);
                 /* End of uop copied from bytecodes for constant evaluation */
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
+                stack_pointer[-2] = res;
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
                 break;
             }
             bool lhs_int = sym_matches_type(lhs, &PyLong_Type);

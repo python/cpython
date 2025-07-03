@@ -24,6 +24,10 @@ import warnings
 MOCK_ANY = mock.ANY
 
 
+class CustomError(Exception):
+    pass
+
+
 def tearDownModule():
     asyncio._set_event_loop_policy(None)
 
@@ -1325,6 +1329,31 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         self.assertIsInstance(cm.exception, ExceptionGroup)
         self.assertEqual(len(cm.exception.exceptions), 1)
         self.assertIsInstance(cm.exception.exceptions[0], OSError)
+
+    @patch_socket
+    def test_create_connection_connect_non_os_err_close_err(self, m_socket):
+        # Test the case when sock_connect() raises non-OSError exception
+        # and sock.close() raises OSError.
+        async def getaddrinfo(*args, **kw):
+            return [(2, 1, 6, '', ('107.6.106.82', 80))]
+
+        def getaddrinfo_task(*args, **kwds):
+            return self.loop.create_task(getaddrinfo(*args, **kwds))
+
+        self.loop.getaddrinfo = getaddrinfo_task
+        self.loop.sock_connect = mock.Mock()
+        self.loop.sock_connect.side_effect = CustomError
+        sock = mock.Mock()
+        m_socket.socket.return_value = sock
+        sock.close.side_effect = OSError
+
+        coro = self.loop.create_connection(MyProto, 'example.com', 80)
+        self.assertRaises(
+            CustomError, self.loop.run_until_complete, coro)
+
+        coro = self.loop.create_connection(MyProto, 'example.com', 80, all_errors=True)
+        self.assertRaises(
+            CustomError, self.loop.run_until_complete, coro)
 
     def test_create_connection_multiple(self):
         async def getaddrinfo(*args, **kw):
