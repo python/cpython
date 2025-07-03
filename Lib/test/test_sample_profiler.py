@@ -11,13 +11,23 @@ import time
 import unittest
 from unittest import mock
 
-import profile.sample
 from profile.pstats_collector import PstatsCollector
 from profile.stack_collectors import (
     CollapsedStackCollector,
 )
 
 from test.support.os_helper import unlink
+
+PROCESS_VM_READV_SUPPORTED = False
+
+try:
+    from _remote_debugging import PROCESS_VM_READV_SUPPORTED
+except ImportError:
+    raise unittest.SkipTest(
+        "Test only runs when _remote_debugging is available"
+    )
+else:
+    import profile.sample
 
 
 class MockFrameInfo:
@@ -256,11 +266,13 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertEqual(func1_stats[3], 2.0)  # ct (cumulative time)
 
 
+@unittest.skipIf(
+    sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+    "Test only runs on Linux with process_vm_readv support",
+)
 class TestSampleProfilerIntegration(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.python_exe = sys.executable
-
         cls.test_script = '''
 import time
 import os
@@ -472,6 +484,10 @@ if __name__ == "__main__":
         # We're not testing output format here
 
 
+@unittest.skipIf(
+    sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+    "Test only runs on Linux with process_vm_readv support",
+)
 class TestSampleProfilerErrorHandling(unittest.TestCase):
     def test_invalid_pid(self):
         with self.assertRaises((OSError, RuntimeError)):
