@@ -1005,7 +1005,7 @@ _Py_unset_eval_breaker_bit_all(PyInterpreterState *interp, uintptr_t bit)
     _Py_FOR_EACH_TSTATE_END(interp);
 }
 
-int
+void
 _Py_FinishPendingCalls(PyThreadState *tstate)
 {
     _Py_AssertHoldsTstate();
@@ -1024,15 +1024,11 @@ _Py_FinishPendingCalls(PyThreadState *tstate)
 #endif
     int called = 0;
     do {
-        int res = make_pending_calls_with_count(tstate);
-        if (res < 0) {
+        if (make_pending_calls(tstate) < 0) {
             PyObject *exc = _PyErr_GetRaisedException(tstate);
             PyErr_BadInternalCall();
             _PyErr_ChainExceptions1(exc);
             _PyErr_Print(tstate);
-        }
-        if (res != 0) {
-            called = 1;
         }
 
         npending = _Py_atomic_load_int32_relaxed(&pending->npending);
@@ -1045,7 +1041,7 @@ _Py_FinishPendingCalls(PyThreadState *tstate)
 #endif
     } while (npending > 0);
 
-    return called;
+    return;
 }
 
 int
