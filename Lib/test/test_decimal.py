@@ -1173,6 +1173,7 @@ class FormatTest:
 
         # precision or fractional part separator should follow after dot
         self.assertRaises(ValueError, format, Decimal(1), '.f')
+        self.assertRaises(ValueError, format, Decimal(1), '._6f')
 
     def test_negative_zero_format_directed_rounding(self):
         with self.decimal.localcontext() as ctx:
