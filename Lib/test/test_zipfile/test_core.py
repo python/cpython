@@ -2685,10 +2685,10 @@ class ZipRepackerTests(unittest.TestCase):
         m_sddnsbd.assert_not_called()
         m_sddns.assert_not_called()
 
-        # return None if no sufficient header length
+        # return None if truncated local file header
         bytes_ = self._generate_local_file_entry(
             'file.txt', b'dummy', compression=method)
-        bytes_ = bytes_[:29]
+        bytes_ = bytes_[:zipfile.sizeFileHeader - 1]
         fz = io.BytesIO(bytes_)
         with mock.patch.object(repacker, '_scan_data_descriptor',
                                wraps=repacker._scan_data_descriptor) as m_sdd, \
