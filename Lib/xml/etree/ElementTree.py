@@ -711,10 +711,8 @@ class ElementTree:
                                     of start/end tags
 
         """
-        if not iselement(self._root):
-            raise TypeError(f"Root element must be "
-                            f"xml.etree.ElementTree.Element "
-                            f"or Element-like object")
+        if self._root is None:
+            raise TypeError('ElementTree not initialized')
         if not method:
             method = "xml"
         elif method not in _serialize:
