@@ -1,6 +1,6 @@
 //  This implements the reference cycle garbage collector.
 //  The Python module interface to the collector is in gcmodule.c.
-//  See https://devguide.python.org/internals/garbage-collector/
+//  See InternalDocs/garbage_collector.md for more infromation.
 
 #include "Python.h"
 #include "pycore_ceval.h"         // _Py_set_eval_breaker_bit()

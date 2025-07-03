@@ -986,7 +986,7 @@ class NonCallableMock(Base):
 
 
     def assert_called_once_with(self, /, *args, **kwargs):
-        """assert that the mock was called exactly once and that that call was
+        """assert that the mock was called exactly once and that call was
         with the specified arguments."""
         if not self.call_count == 1:
             msg = ("Expected '%s' to be called once. Called %s times.%s"

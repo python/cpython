@@ -5,7 +5,6 @@ from test.support import (gc_collect, bigmemtest, _2G,
 import locale
 import re
 import string
-import sys
 import unittest
 import warnings
 from re import Scanner
@@ -2926,33 +2925,6 @@ class ImplementationTest(unittest.TestCase):
         check_disallow_instantiation(self, re.Pattern)
         pat = re.compile("")
         check_disallow_instantiation(self, type(pat.scanner("")))
-
-    def test_deprecated_modules(self):
-        deprecated = {
-            'sre_compile': ['compile', 'error',
-                            'SRE_FLAG_IGNORECASE', 'SUBPATTERN',
-                            '_compile_info'],
-            'sre_constants': ['error', 'SRE_FLAG_IGNORECASE', 'SUBPATTERN',
-                              '_NamedIntConstant'],
-            'sre_parse': ['SubPattern', 'parse',
-                          'SRE_FLAG_IGNORECASE', 'SUBPATTERN',
-                          '_parse_sub'],
-        }
-        for name in deprecated:
-            with self.subTest(module=name):
-                sys.modules.pop(name, None)
-                with self.assertWarns(DeprecationWarning) as w:
-                    __import__(name)
-                self.assertEqual(str(w.warning),
-                                 f"module {name!r} is deprecated")
-                self.assertEqual(w.filename, __file__)
-                self.assertIn(name, sys.modules)
-                mod = sys.modules[name]
-                self.assertEqual(mod.__name__, name)
-                self.assertEqual(mod.__package__, '')
-                for attr in deprecated[name]:
-                    self.assertHasAttr(mod, attr)
-                del sys.modules[name]
 
     @cpython_only
     def test_case_helpers(self):

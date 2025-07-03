@@ -978,6 +978,23 @@ be specified by the build backend, as it will no longer be determined
 automatically by the C compiler. For a running interpreter, the setting that
 was used at compile time can be found using :func:`sysconfig.get_config_var`.
 
+A new flag has been added, :data:`~sys.flags.context_aware_warnings`.  This
+flag defaults to true for the free-threaded build and false for the GIL-enabled
+build. If the flag is true then the :class:`warnings.catch_warnings` context
+manager uses a context variable for warning filters.  This makes the context
+manager behave predicably when used with multiple threads or asynchronous
+tasks.
+
+A new flag has been added, :data:`~sys.flags.thread_inherit_context`. This flag
+defaults to true for the free-threaded build and false for the GIL-enabled
+build. If the flag is true then threads created with :class:`threading.Thread`
+start with a copy of the :class:`~contextvars.Context()` of the caller of
+:meth:`~threading.Thread.start`.  Most significantly, this makes the warning
+filtering context established by :class:`~warnings.catch_warnings` be
+"inherited" by threads (or asyncio tasks) started within that context.  It also
+affects other modules that use context variables, such as the :mod:`decimal`
+context manager.
+
 
 .. _whatsnew314-pyrepl-highlighting:
 
@@ -1028,6 +1045,18 @@ Please report any bugs or major performance regressions that you encounter!
 
 .. seealso:: :pep:`744`
 
+Concurrent safe warnings control
+--------------------------------
+
+The :class:`warnings.catch_warnings` context manager will now optionally
+use a context variable for warning filters.  This is enabled by setting
+the :data:`~sys.flags.context_aware_warnings` flag, either with the ``-X``
+command-line option or an environment variable.  This gives predicable
+warnings control when using :class:`~warnings.catch_warnings` combined with
+multiple threads or asynchronous tasks. The flag defaults to true for the
+free-threaded build and false for the GIL-enabled build.
+
+(Contributed by Neil Schemenauer and Kumar Aditya in :gh:`130010`.)
 
 Other language changes
 ======================
@@ -2611,7 +2640,9 @@ pty
 sqlite3
 -------
 
-* Remove :data:`!version` and :data:`!version_info` from :mod:`sqlite3`.
+* Remove :data:`!version` and :data:`!version_info` from :mod:`sqlite3`;
+  use :data:`~sqlite3.sqlite_version` and :data:`~sqlite3.sqlite_version_info`
+  for the actual version number of the runtime SQLite library.
   (Contributed by Hugo van Kemenade in :gh:`118924`.)
 
 * Disallow using a sequence of parameters with named placeholders.
@@ -3021,6 +3052,8 @@ Deprecated
   (Contributed by Victor Stinner in :gh:`128863`.)
 
 .. include:: ../deprecations/c-api-pending-removal-in-3.15.rst
+
+.. include:: ../deprecations/c-api-pending-removal-in-3.16.rst
 
 .. include:: ../deprecations/c-api-pending-removal-in-3.18.rst
 
