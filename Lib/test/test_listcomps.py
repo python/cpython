@@ -750,28 +750,6 @@ class ListComprehensionTest(unittest.TestCase):
                 self.assertEqual(f.line[f.colno - indent : f.end_colno - indent],
                                  expected)
 
-    def test_only_calls_dunder_iter_once(self):
-
-        class Iterator:
-
-            def __init__(self):
-                self.val = 0
-
-            def __next__(self):
-                if self.val == 2:
-                    raise StopIteration
-                self.val += 1
-                return self.val
-
-            # No __iter__ method
-
-        class C:
-
-            def __iter__(self):
-                return Iterator()
-
-        self.assertEqual([1,2], [i for i in C()])
-
 __test__ = {'doctests' : doctests}
 
 def load_tests(loader, tests, pattern):

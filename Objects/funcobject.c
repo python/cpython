@@ -8,6 +8,7 @@
 #include "pycore_modsupport.h"          // _PyArg_NoKeywords()
 #include "pycore_object.h"              // _PyObject_GC_UNTRACK()
 #include "pycore_pyerrors.h"            // _PyErr_Occurred()
+#include "pycore_weakref.h"             // FT_CLEAR_WEAKREFS()
 
 
 static const char *
@@ -1034,9 +1035,7 @@ func_dealloc(PyFunctionObject *op)
         return;
     }
     _PyObject_GC_UNTRACK(op);
-    if (op->func_weakreflist != NULL) {
-        PyObject_ClearWeakRefs((PyObject *) op);
-    }
+    FT_CLEAR_WEAKREFS((PyObject *) op, op->func_weakreflist);
     _PyFunction_SetVersion(op, 0);
     (void)func_clear(op);
     // These aren't cleared by func_clear().

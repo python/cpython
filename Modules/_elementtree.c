@@ -18,6 +18,7 @@
 #include "Python.h"
 #include "pycore_import.h"        // _PyImport_GetModuleAttrString()
 #include "pycore_pyhash.h"        // _Py_HashSecret
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 #include <stddef.h>               // offsetof()
 #include "expat.h"
@@ -688,8 +689,7 @@ element_dealloc(ElementObject* self)
     PyObject_GC_UnTrack(self);
     Py_TRASHCAN_BEGIN(self, element_dealloc)
 
-    if (self->weakreflist != NULL)
-        PyObject_ClearWeakRefs((PyObject *) self);
+    FT_CLEAR_WEAKREFS((PyObject*)self, self->weakreflist);
 
     /* element_gc_clear clears all references and deallocates extra
     */

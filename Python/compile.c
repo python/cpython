@@ -5501,9 +5501,9 @@ compiler_async_comprehension_generator(struct compiler *c, location loc,
         else {
             /* Sub-iter - calculate on the fly */
             VISIT(c, expr, gen->iter);
+            ADDOP(c, LOC(gen->iter), GET_AITER);
         }
     }
-    ADDOP(c, LOC(gen->iter), GET_AITER);
 
     USE_LABEL(c, start);
     /* Runtime will push a block here, so we need to account for that */
@@ -5790,6 +5790,19 @@ pop_inlined_comprehension_state(struct compiler *c, location loc,
     return SUCCESS;
 }
 
+static inline int
+compiler_comprehension_iter(struct compiler *c, comprehension_ty comp)
+{
+    VISIT(c, expr, comp->iter);
+    if (comp->is_async) {
+        ADDOP(c, LOC(comp->iter), GET_AITER);
+    }
+    else {
+        ADDOP(c, LOC(comp->iter), GET_ITER);
+    }
+    return SUCCESS;
+}
+
 static int
 compiler_comprehension(struct compiler *c, expr_ty e, int type,
                        identifier name, asdl_comprehension_seq *generators, expr_ty elt,
@@ -5811,7 +5824,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
 
     outermost = (comprehension_ty) asdl_seq_GET(generators, 0);
     if (is_inlined) {
-        if (compiler_visit_expr(c, outermost->iter) < 0) {
+        if (compiler_comprehension_iter(c, outermost)) {
             goto error;
         }
         if (push_inlined_comprehension_state(c, loc, entry, &inline_state)) {
@@ -5897,7 +5910,9 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     }
     Py_CLEAR(co);
 
-    VISIT(c, expr, outermost->iter);
+    if (compiler_comprehension_iter(c, outermost)) {
+        goto error;
+    }
 
     ADDOP_I(c, loc, CALL, 0);
 

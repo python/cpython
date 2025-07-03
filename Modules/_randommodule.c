@@ -495,20 +495,26 @@ _random_Random_setstate_impl(RandomObject *self, PyObject *state)
 _random.Random.getrandbits
 
   self: self(type="RandomObject *")
-  k: unsigned_long_long(bitwise=False)
+  k: long_long
   /
 
 getrandbits(k) -> x.  Generates an int with k random bits.
 [clinic start generated code]*/
 
 static PyObject *
-_random_Random_getrandbits_impl(RandomObject *self, unsigned long long k)
-/*[clinic end generated code: output=25a604fab95885d4 input=88e51091eea2f042]*/
+_random_Random_getrandbits_impl(RandomObject *self, long long k)
+/*[clinic end generated code: output=c2c02a7b0bfdf7f7 input=834d0fe668b981e4]*/
 {
     Py_ssize_t i, words;
     uint32_t r;
     uint32_t *wordarray;
     PyObject *result;
+
+    if (k < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "number of bits must be non-negative");
+        return NULL;
+    }
 
     if (k == 0)
         return PyLong_FromLong(0);

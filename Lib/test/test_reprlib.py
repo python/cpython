@@ -150,14 +150,38 @@ class ReprTests(unittest.TestCase):
         eq(r(frozenset({1, 2, 3, 4, 5, 6, 7})), "frozenset({1, 2, 3, 4, 5, 6, ...})")
 
     def test_numbers(self):
-        eq = self.assertEqual
-        eq(r(123), repr(123))
-        eq(r(123), repr(123))
-        eq(r(1.0/3), repr(1.0/3))
+        for x in [123, 1.0 / 3]:
+            self.assertEqual(r(x), repr(x))
 
-        n = 10**100
-        expected = repr(n)[:18] + "..." + repr(n)[-19:]
-        eq(r(n), expected)
+        max_digits = sys.get_int_max_str_digits()
+        for k in [100, max_digits - 1]:
+            with self.subTest(f'10 ** {k}', k=k):
+                n = 10 ** k
+                expected = repr(n)[:18] + "..." + repr(n)[-19:]
+                self.assertEqual(r(n), expected)
+
+        def re_msg(n, d):
+            return (rf'<{n.__class__.__name__} instance with roughly {d} '
+                    rf'digits \(limit at {max_digits}\) at 0x[a-f0-9]+>')
+
+        k = max_digits
+        with self.subTest(f'10 ** {k}', k=k):
+            n = 10 ** k
+            self.assertRaises(ValueError, repr, n)
+            self.assertRegex(r(n), re_msg(n, k + 1))
+
+        for k in [max_digits + 1, 2 * max_digits]:
+            self.assertGreater(k, 100)
+            with self.subTest(f'10 ** {k}', k=k):
+                n = 10 ** k
+                self.assertRaises(ValueError, repr, n)
+                self.assertRegex(r(n), re_msg(n, k + 1))
+            with self.subTest(f'10 ** {k} - 1', k=k):
+                n = 10 ** k - 1
+                # Here, since math.log10(n) == math.log10(n-1),
+                # the number of digits of n - 1 is overestimated.
+                self.assertRaises(ValueError, repr, n)
+                self.assertRegex(r(n), re_msg(n, k + 1))
 
     def test_instance(self):
         eq = self.assertEqual
@@ -372,20 +396,20 @@ class ReprTests(unittest.TestCase):
                 'object': {
                     1: 'two',
                     b'three': [
-                        (4.5, 6.7),
+                        (4.5, 6.25),
                         [set((8, 9)), frozenset((10, 11))],
                     ],
                 },
                 'tests': (
                     (dict(indent=None), '''\
-                        {1: 'two', b'three': [(4.5, 6.7), [{8, 9}, frozenset({10, 11})]]}'''),
+                        {1: 'two', b'three': [(4.5, 6.25), [{8, 9}, frozenset({10, 11})]]}'''),
                     (dict(indent=False), '''\
                         {
                         1: 'two',
                         b'three': [
                         (
                         4.5,
-                        6.7,
+                        6.25,
                         ),
                         [
                         {
@@ -405,7 +429,7 @@ class ReprTests(unittest.TestCase):
                          b'three': [
                           (
                            4.5,
-                           6.7,
+                           6.25,
                           ),
                           [
                            {
@@ -425,7 +449,7 @@ class ReprTests(unittest.TestCase):
                         b'three': [
                         (
                         4.5,
-                        6.7,
+                        6.25,
                         ),
                         [
                         {
@@ -445,7 +469,7 @@ class ReprTests(unittest.TestCase):
                          b'three': [
                           (
                            4.5,
-                           6.7,
+                           6.25,
                           ),
                           [
                            {
@@ -465,7 +489,7 @@ class ReprTests(unittest.TestCase):
                             b'three': [
                                 (
                                     4.5,
-                                    6.7,
+                                    6.25,
                                 ),
                                 [
                                     {
@@ -493,7 +517,7 @@ class ReprTests(unittest.TestCase):
                         b'three': [
                         (
                         4.5,
-                        6.7,
+                        6.25,
                         ),
                         [
                         {
@@ -513,7 +537,7 @@ class ReprTests(unittest.TestCase):
                         -->b'three': [
                         -->-->(
                         -->-->-->4.5,
-                        -->-->-->6.7,
+                        -->-->-->6.25,
                         -->-->),
                         -->-->[
                         -->-->-->{
@@ -533,7 +557,7 @@ class ReprTests(unittest.TestCase):
                         ....b'three': [
                         ........(
                         ............4.5,
-                        ............6.7,
+                        ............6.25,
                         ........),
                         ........[
                         ............{

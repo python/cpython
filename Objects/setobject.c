@@ -40,6 +40,7 @@
 #include "pycore_pyatomic_ft_wrappers.h"  // FT_ATOMIC_LOAD_SSIZE_RELAXED()
 #include "pycore_pyerrors.h"            // _PyErr_SetKeyError()
 #include "pycore_setobject.h"           // _PySet_NextEntry() definition
+#include "pycore_weakref.h"             // FT_CLEAR_WEAKREFS()
 #include <stddef.h>                     // offsetof()
 #include "clinic/setobject.c.h"
 
@@ -498,8 +499,7 @@ set_dealloc(PySetObject *so)
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(so);
     Py_TRASHCAN_BEGIN(so, set_dealloc)
-    if (so->weakreflist != NULL)
-        PyObject_ClearWeakRefs((PyObject *) so);
+    FT_CLEAR_WEAKREFS((PyObject *) so, so->weakreflist);
 
     for (entry = so->table; used > 0; entry++) {
         if (entry->key && entry->key != dummy) {
