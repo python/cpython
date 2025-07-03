@@ -28,7 +28,9 @@ SETUP = os.path.join(os.path.dirname(__file__), 'setup.py')
 @support.requires_venv_with_pip()
 @support.requires_subprocess()
 @support.requires_resource('cpu')
-class TestExt(unittest.TestCase):
+class BaseTests:
+    TEST_INTERNAL_C_API = False
+
     # Default build with no options
     def test_build(self):
         self.check_build('_test_cext')
@@ -42,14 +44,6 @@ class TestExt(unittest.TestCase):
         # in practice we do maintain C99 compatibility in public headers.
         # Please ask the C API WG before adding a new C11-only feature.
         self.check_build('_test_c99_cext', std='c99')
-
-    @support.requires_gil_enabled('incompatible with Free Threading')
-    def test_build_limited(self):
-        self.check_build('_test_limited_cext', limited=True)
-
-    @support.requires_gil_enabled('broken for now with Free Threading')
-    def test_build_limited_c11(self):
-        self.check_build('_test_limited_c11_cext', limited=True, std='c11')
 
     def check_build(self, extension_name, std=None, limited=False):
         venv_dir = 'env'
@@ -70,6 +64,7 @@ class TestExt(unittest.TestCase):
             if limited:
                 env['CPYTHON_TEST_LIMITED'] = '1'
             env['CPYTHON_TEST_EXT_NAME'] = extension_name
+            env['TEST_INTERNAL_C_API'] = str(int(self.TEST_INTERNAL_C_API))
             if support.verbose:
                 print('Run:', ' '.join(map(shlex.quote, cmd)))
                 subprocess.run(cmd, check=True, env=env)
@@ -108,6 +103,20 @@ class TestExt(unittest.TestCase):
                '-X', 'showrefcount',
                '-c', f"import {extension_name}"]
         run_cmd('Import', cmd)
+
+
+class TestPublicCAPI(BaseTests, unittest.TestCase):
+    @support.requires_gil_enabled('incompatible with Free Threading')
+    def test_build_limited(self):
+        self.check_build('_test_limited_cext', limited=True)
+
+    @support.requires_gil_enabled('broken for now with Free Threading')
+    def test_build_limited_c11(self):
+        self.check_build('_test_limited_c11_cext', limited=True, std='c11')
+
+
+class TestInteralCAPI(BaseTests, unittest.TestCase):
+    TEST_INTERNAL_C_API = True
 
 
 if __name__ == "__main__":

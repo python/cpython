@@ -1,10 +1,30 @@
 // gh-116869: Basic C test extension to check that the Python C API
 // does not emit C compiler warnings.
+//
+// Test also the internal C API if the TEST_INTERNAL_C_API macro is defined.
 
 // Always enable assertions
 #undef NDEBUG
 
+#ifdef TEST_INTERNAL_C_API
+#  define Py_BUILD_CORE 1
+#endif
+
 #include "Python.h"
+
+#ifdef TEST_INTERNAL_C_API
+   // gh-135906: Check for compiler warnings in the internal C API.
+   // - Cython uses pycore_frame.h.
+   // - greenlet uses pycore_frame.h, pycore_interpframe_structs.h and
+   //   pycore_interpframe.h.
+#  include "internal/pycore_frame.h"
+#  include "internal/pycore_gc.h"
+#  include "internal/pycore_interp.h"
+#  include "internal/pycore_interpframe.h"
+#  include "internal/pycore_interpframe_structs.h"
+#  include "internal/pycore_object.h"
+#  include "internal/pycore_pystate.h"
+#endif
 
 #ifndef MODULE_NAME
 #  error "MODULE_NAME macro must be defined"
