@@ -890,7 +890,8 @@ class BytesIO(BufferedIOBase):
     def __getstate__(self):
         if self.closed:
             raise ValueError("__getstate__ on closed file")
-        state = self.__dict__.copy()
+        with self._lock:
+            state = self.__dict__.copy()
         del state['_lock']
         return state
 
@@ -920,17 +921,17 @@ class BytesIO(BufferedIOBase):
     def read(self, size=-1):
         if self.closed:
             raise ValueError("read from closed file")
+        if size is None:
+            size = -1
+        else:
+            try:
+                size_index = size.__index__
+            except AttributeError:
+                raise TypeError(f"{size!r} is not an integer")
+            else:
+                size = size_index()
 
         with self._lock:
-            if size is None:
-                size = -1
-            else:
-                try:
-                    size_index = size.__index__
-                except AttributeError:
-                    raise TypeError(f"{size!r} is not an integer")
-                else:
-                    size = size_index()
             if size < 0:
                 size = len(self._buffer)
             if len(self._buffer) <= self._pos:
@@ -978,9 +979,11 @@ class BytesIO(BufferedIOBase):
                 raise ValueError("negative seek position %r" % (pos,))
             self._pos = pos
         elif whence == 1:
-            self._pos = max(0, self._pos + pos)
+            with self._lock:
+                self._pos = max(0, self._pos + pos)
         elif whence == 2:
-            self._pos = max(0, len(self._buffer) + pos)
+            with self._lock:
+                self._pos = max(0, len(self._buffer) + pos)
         else:
             raise ValueError("unsupported whence value")
         return self._pos
