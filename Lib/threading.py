@@ -1573,7 +1573,7 @@ def _shutdown():
         _main_thread._os_thread_handle._set_done()
 
     # Wait for all non-daemon threads to exit.
-    return _thread_shutdown()
+    _thread_shutdown()
 
 
 def main_thread():

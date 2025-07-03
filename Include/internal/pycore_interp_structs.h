@@ -971,6 +971,10 @@ struct _is {
 #  endif
 #endif
 
+    /* The "pre-finalization" lock, which protects against things like starting
+     * threads. The exclusive writer is only used when the interpreter finalizes. */
+    _PyRWMutex prefini_mutex;
+
     /* the initial PyInterpreterState.threads.head */
     _PyThreadStateImpl _initial_thread;
     // _initial_thread should be the last field of PyInterpreterState.

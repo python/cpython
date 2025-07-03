@@ -99,7 +99,7 @@ _PyAtExit_Fini(PyInterpreterState *interp)
     }
 }
 
-static int
+static void
 atexit_callfuncs(struct atexit_state *state)
 {
     assert(!PyErr_Occurred());
@@ -112,13 +112,10 @@ atexit_callfuncs(struct atexit_state *state)
     {
         PyErr_FormatUnraisable("Exception ignored while "
                                "copying atexit callbacks");
-        return 0;
+        return;
     }
 
-    int called = 0;
-
     for (Py_ssize_t i = 0; i < PyList_GET_SIZE(copy); ++i) {
-        called = 1;
         // We don't have to worry about evil borrowed references, because
         // no other threads can access this list.
         PyObject *tuple = PyList_GET_ITEM(copy, i);
@@ -144,15 +141,14 @@ atexit_callfuncs(struct atexit_state *state)
     atexit_cleanup(state);
 
     assert(!PyErr_Occurred());
-    return called;
 }
 
 
-int
+void
 _PyAtExit_Call(PyInterpreterState *interp)
 {
     struct atexit_state *state = &interp->atexit;
-    return atexit_callfuncs(state);
+    atexit_callfuncs(state);
 }
 
 
@@ -200,9 +196,15 @@ atexit_register(PyObject *module, PyObject *args, PyObject *kwargs)
         return NULL;
     }
 
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    assert(interp != NULL);
     struct atexit_state *state = get_atexit_state();
+    _PyRWMutex_RLock(&interp->prefini_mutex);
     // atexit callbacks go in a LIFO order
-    if (PyList_Insert(state->callbacks, 0, callback) < 0)
+    int res = PyList_Insert(state->callbacks, 0, callback);
+    _PyRWMutex_RUnlock(&interp->prefini_mutex);
+
+    if (res < 0)
     {
         Py_DECREF(callback);
         return NULL;

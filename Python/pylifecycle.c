@@ -96,7 +96,7 @@ static PyStatus init_android_streams(PyThreadState *tstate);
 #if defined(__APPLE__) && HAS_APPLE_SYSTEM_LOG
 static PyStatus init_apple_streams(PyThreadState *tstate);
 #endif
-static int wait_for_thread_shutdown(PyThreadState *tstate);
+static void wait_for_thread_shutdown(PyThreadState *tstate);
 static void finalize_subinterpreters(void);
 static void call_ll_exitfuncs(_PyRuntimeState *runtime);
 
@@ -2010,15 +2010,11 @@ make_pre_finalization_calls(PyThreadState *tstate)
      * could start a thread or vice versa. To ensure that we properly clean
      * call everything, we run these in a loop until none of them run anything. */
     for (;;) {
-        int called = 0;
-
         // Wrap up existing "threading"-module-created, non-daemon threads.
-        int threads_joined = wait_for_thread_shutdown(tstate);
-        called = Py_MAX(called, threads_joined);
+        wait_for_thread_shutdown(tstate);
 
         // Make any remaining pending calls.
-        int made_pending_calls = _Py_FinishPendingCalls(tstate);
-        called = Py_MAX(called, made_pending_calls);
+        _Py_FinishPendingCalls(tstate);
 
         /* The interpreter is still entirely intact at this point, and the
         * exit funcs may be relying on that.  In particular, if some thread
@@ -2030,9 +2026,9 @@ make_pre_finalization_calls(PyThreadState *tstate)
         * the threads created via Threading.
         */
 
-        int called_atexit = _PyAtExit_Call(tstate->interp);
-        called = Py_MAX(called, called_atexit);
+        _PyAtExit_Call(tstate->interp);
 
+        _PyRWMutex_Unlock(&tstate->interp->prefini_mutex);
         if (called == 0) {
             break;
         }
@@ -3456,7 +3452,7 @@ Py_ExitStatusException(PyStatus status)
    the threading module was imported in the first place.
    The shutdown routine will wait until all non-daemon
    "threading" threads have completed. */
-static int
+static void
 wait_for_thread_shutdown(PyThreadState *tstate)
 {
     PyObject *result;
@@ -3466,19 +3462,16 @@ wait_for_thread_shutdown(PyThreadState *tstate)
             PyErr_FormatUnraisable("Exception ignored on threading shutdown");
         }
         /* else: threading not imported */
-        return 0;
+        return;
     }
     int called = 0;
     result = PyObject_CallMethodNoArgs(threading, &_Py_ID(_shutdown));
     if (result == NULL) {
         PyErr_FormatUnraisable("Exception ignored on threading shutdown");
     }
-    else {
-        assert(PyBool_Check(result) && _Py_IsImmortal(result));
-        called = result == Py_True;
-    }
+    Py_XDECREF(result);
     Py_DECREF(threading);
-    return called;
+    return;
 }
 
 int Py_AtExit(void (*func)(void))

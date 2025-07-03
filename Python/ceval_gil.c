@@ -785,8 +785,10 @@ _PyEval_AddPendingCall(PyInterpreterState *interp,
     }
 
     PyMutex_Lock(&pending->mutex);
+    _PyRWMutex_RLock(&interp->prefini_mutex);
     _Py_add_pending_call_result result =
         _push_pending_call(pending, func, arg, flags);
+    _PyRWMutex_RUnlock(&interp->prefini_mutex);
     PyMutex_Unlock(&pending->mutex);
 
     if (main_only) {
@@ -837,11 +839,10 @@ handle_signals(PyThreadState *tstate)
 }
 
 static int
-_make_pending_calls(struct _pending_calls *pending, int32_t *p_npending, int *p_called)
+_make_pending_calls(struct _pending_calls *pending, int32_t *p_npending)
 {
     int res = 0;
     int32_t npending = -1;
-    int called = 0;
 
     assert(sizeof(pending->max) <= sizeof(size_t)
             && ((size_t)pending->max) <= Py_ARRAY_LENGTH(pending->calls));
@@ -869,8 +870,6 @@ _make_pending_calls(struct _pending_calls *pending, int32_t *p_npending, int *p_
             break;
         }
 
-        called = 1;
-
         /* having released the lock, perform the callback */
         res = func(arg);
         if ((flags & _Py_PENDING_RAWFREE) && arg != NULL) {
@@ -884,7 +883,6 @@ _make_pending_calls(struct _pending_calls *pending, int32_t *p_npending, int *p_
 
 finally:
     *p_npending = npending;
-    *p_called = called;
     return res;
 }
 
@@ -921,7 +919,7 @@ clear_pending_handling_thread(struct _pending_calls *pending)
 }
 
 static int
-make_pending_calls_with_count(PyThreadState *tstate)
+make_pending_calls_lock_held(PyThreadState *tstate)
 {
     PyInterpreterState *interp = tstate->interp;
     struct _pending_calls *pending = &interp->ceval.pending;
@@ -951,8 +949,7 @@ make_pending_calls_with_count(PyThreadState *tstate)
     unsignal_pending_calls(tstate, interp);
 
     int32_t npending;
-    int called;
-    if (_make_pending_calls(pending, &npending, &called) != 0) {
+    if (_make_pending_calls(pending, &npending) != 0) {
         clear_pending_handling_thread(pending);
         /* There might not be more calls to make, but we play it safe. */
         signal_pending_calls(tstate, interp);
@@ -963,9 +960,8 @@ make_pending_calls_with_count(PyThreadState *tstate)
         signal_pending_calls(tstate, interp);
     }
 
-    int main_called = 0;
     if (_Py_IsMainThread() && _Py_IsMainInterpreter(interp)) {
-        if (_make_pending_calls(pending_main, &npending, &main_called) != 0) {
+        if (_make_pending_calls(pending_main, &npending) != 0) {
             clear_pending_handling_thread(pending);
             /* There might not be more calls to make, but we play it safe. */
             signal_pending_calls(tstate, interp);
@@ -978,17 +974,16 @@ make_pending_calls_with_count(PyThreadState *tstate)
     }
 
     clear_pending_handling_thread(pending);
-    return Py_MAX(called, main_called);
+    return 0;
 }
 
 static int
 make_pending_calls(PyThreadState *tstate)
 {
-    if (make_pending_calls_with_count(tstate) < 0) {
-        return -1;
-    }
-
-    return 0;
+    _PyRWMutex_RLock(&tstate->interp->prefini_mutex);
+    int res = make_pending_calls_lock_held(tstate);
+    _PyRWMutex_RUnlock(&tstate->interp->prefini_mutex);
+    return res;
 }
 
 

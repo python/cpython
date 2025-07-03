@@ -176,11 +176,13 @@ ThreadHandle_get_os_handle(ThreadHandle *handle, PyThread_handle_t *os_handle)
 }
 
 static void
-add_to_shutdown_handles(thread_module_state *state, ThreadHandle *handle)
+add_to_shutdown_handles(thread_module_state *state, ThreadHandle *handle, PyInterpreterState *interp)
 {
+    _PyRWMutex_RLock(&interp->prefini_mutex);
     HEAD_LOCK(&_PyRuntime);
     llist_insert_tail(&state->shutdown_handles, &handle->shutdown_node);
     HEAD_UNLOCK(&_PyRuntime);
+    _PyRWMutex_RUnlock(&interp->prefini_mutex);
 }
 
 static void
@@ -195,13 +197,16 @@ clear_shutdown_handles(thread_module_state *state)
 }
 
 static void
-remove_from_shutdown_handles(ThreadHandle *handle)
+remove_from_shutdown_handles(ThreadHandle *handle, PyInterpreterState *interp)
 {
+    assert(interp != NULL);
+    _PyRWMutex_RLock(&interp->prefini_mutex);
     HEAD_LOCK(&_PyRuntime);
     if (handle->shutdown_node.next != NULL) {
         llist_remove(&handle->shutdown_node);
     }
     HEAD_UNLOCK(&_PyRuntime);
+    _PyRWMutex_RUnlock(&interp->prefini_mutex);
 }
 
 static ThreadHandle *
@@ -309,7 +314,7 @@ _PyThread_AfterFork(struct _pythread_runtime_state *state)
         handle->mutex = (PyMutex){_Py_UNLOCKED};
         _PyEvent_Notify(&handle->thread_is_exiting);
         llist_remove(node);
-        remove_from_shutdown_handles(handle);
+        remove_from_shutdown_handles(handle, _PyInterpreterState_GET());
     }
 }
 
@@ -392,7 +397,7 @@ thread_run(void *boot_raw)
 
 exit:
     // Don't need to wait for this thread anymore
-    remove_from_shutdown_handles(handle);
+    remove_from_shutdown_handles(handle, _PyInterpreterState_GET());
 
     _PyEvent_Notify(&handle->thread_is_exiting);
     ThreadHandle_decref(handle);
@@ -1863,12 +1868,12 @@ do_start_new_thread(thread_module_state *state, PyObject *func, PyObject *args,
         // Add the handle before starting the thread to avoid adding a handle
         // to a thread that has already finished (i.e. if the thread finishes
         // before the call to `ThreadHandle_start()` below returns).
-        add_to_shutdown_handles(state, handle);
+        add_to_shutdown_handles(state, handle, interp);
     }
 
     if (ThreadHandle_start(handle, func, args, kwargs) < 0) {
         if (!daemon) {
-            remove_from_shutdown_handles(handle);
+            remove_from_shutdown_handles(handle, _PyInterpreterState_GET());
         }
         return -1;
     }
@@ -2345,7 +2350,6 @@ thread_shutdown(PyObject *self, PyObject *args)
 {
     PyThread_ident_t ident = PyThread_get_thread_ident_ex();
     thread_module_state *state = get_thread_state(self);
-    int found_thread = 0;
 
     for (;;) {
         ThreadHandle *handle = NULL;
@@ -2354,7 +2358,6 @@ thread_shutdown(PyObject *self, PyObject *args)
         HEAD_LOCK(&_PyRuntime);
         struct llist_node *node;
         llist_for_each_safe(node, &state->shutdown_handles) {
-            found_thread = 1;
             ThreadHandle *cur = llist_data(node, ThreadHandle, shutdown_node);
             if (cur->ident != ident) {
                 ThreadHandle_incref(cur);
@@ -2375,13 +2378,13 @@ thread_shutdown(PyObject *self, PyObject *args)
             PyErr_FormatUnraisable("Exception ignored while joining a thread "
                                    "in _thread._shutdown()");
             ThreadHandle_decref(handle);
-            return PyBool_FromLong(found_thread);
+            Py_RETURN_NONE;
         }
 
         ThreadHandle_decref(handle);
     }
 
-    return PyBool_FromLong(found_thread);
+    Py_RETURN_NONE;
 }
 
 PyDoc_STRVAR(shutdown_doc,
