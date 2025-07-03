@@ -559,9 +559,9 @@ error:
     }
     _Py_uop_abstractcontext_fini(ctx);
 
-    if (PyErr_Occurred()) {
-        PyErr_Clear();
-    }
+    assert(PyErr_Occurred());
+    PyErr_Clear();
+    
     return 0;
 
 }
