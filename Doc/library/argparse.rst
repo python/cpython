@@ -839,10 +839,11 @@ how the command-line arguments should be handled. The supplied actions are:
     >>> parser.parse_args(['--version'])
     PROG 2.0
 
-Only actions that consume command-line arguments (e.g. ``'store'``,
-``'append'`` or ``'extend'``) can be used with positional arguments. You may
-also specify an arbitrary action by passing an :class:`Action` subclass or
-other object that implements the same interface.
+You may also specify an arbitrary action by passing an :class:`Action` subclass
+(e.g. :class:`BooleanOptionalAction`) or other object that implements the same
+interface. Only actions that consume command-line arguments (e.g. ``'store'``,
+``'append'``, ``'extend'``, or custom actions with non-zero ``nargs``) can be used
+with positional arguments.
 
 The recommended way to create a custom action is to extend :class:`Action`,
 overriding the :meth:`!__call__` method and optionally the :meth:`!__init__` and
