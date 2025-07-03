@@ -2356,7 +2356,7 @@ code triggered by the finalizer blocks and calls :c:func:`PyEval_SaveThread`.
           PyCriticalSection_BeginMutex(&_py_cs, m)
 
    Note that unlike :c:macro:`Py_BEGIN_CRITICAL_SECTION`, there is no cast for
-   the second argument - it must be a :c:type:`PyMutex`.
+   the argument of the macro - it must be a :c:type:`PyMutex` pointer.
 
    On the default build, this macro expands to ``{``.
 
@@ -2402,7 +2402,7 @@ code triggered by the finalizer blocks and calls :c:func:`PyEval_SaveThread`.
           PyCriticalSection2_BeginMutex(&_py_cs2, m1, m2)
 
    Note that unlike :c:macro:`Py_BEGIN_CRITICAL_SECTION2`, there is no cast for
-   the second and third arguments - they must be :c:type:`PyMutex` pointers.
+   the arguments of the macro - they must be :c:type:`PyMutex` pointers.
 
    On the default build, this macro expands to ``{``.
 
