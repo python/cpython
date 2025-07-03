@@ -901,23 +901,30 @@ handle_weakref_callbacks(PyGC_Head *unreachable, PyGC_Head *old)
         for (PyWeakReference *wr = *wrlist; wr != NULL; wr = next_wr) {
             next_wr = wr->wr_next;
 
-            // Since Python 2.3, weakrefs to cyclic garbage have been cleared
-            // *before* calling finalizers.  However, since tp_subclasses
-            // started being necessary to invalidate caches (e.g. by
-            // PyType_Modified()), that clearing has created a bug.  If the
-            // weakref to the subclass is cleared before a finalizer is
-            // called, the cache may not be correctly invalidated.  That can
-            // lead to segfaults since the caches can refer to deallocated
+            // Weakrefs with callbacks always need to be cleared before
+            // executing the callback.  Sometimes the callback will call
+            // the ref object, to check if it's actually a dead reference
+            // (KeyedRef does this, for example).  We want to indicate that it
+            // is dead, even though it is possible a finalizer might resurrect
+            // it.  Clearing also prevents the callback from being executing
+            // more than once.
+            //
+            // Since Python 2.3, all weakrefs to cyclic garbage have
+            // been cleared *before* calling finalizers.  However, since
+            // tp_subclasses started being necessary to invalidate caches
+            // (e.g. by PyType_Modified()), that clearing has created a bug.
+            // If the weakref to the subclass is cleared before a finalizer
+            // is called, the cache may not be correctly invalidated.  That
+            // can lead to segfaults since the caches can refer to deallocated
             // objects.  Delaying the clear of weakrefs until *after*
-            // finalizers have been called fixes that bug.  However, that can
-            // introduce other problems since some finalizer code expects that
-            // the weakrefs will be cleared first.  The "multiprocessing"
-            // package contains finalizer logic like this, for example.  So,
-            // we have the PyType_Check() test above and only defer the clear
-            // of types.  That solves the issue for tp_subclasses.  In a
-            // future version of Python, we should likely defer the weakref
-            // clear for all objects, not just types.
-            if (!PyType_Check(wr->wr_object)) {
+            // finalizers have been called fixes that bug.  However, that
+            // deferral could introduce other problems if some finalizer
+            // code expects that the weakrefs will be cleared first.  So, we
+            // have the PyType_Check() test below to only defer the clear of
+            // weakrefs to types.  That solves the issue for tp_subclasses.
+            // In a future version of Python, we should likely defer the
+            // weakref clear for all objects, not just types.
+            if (wr->wr_callback != NULL || !PyType_Check(wr->wr_object)) {
                 // _PyWeakref_ClearRef clears the weakref but leaves the
                 // callback pointer intact.  Obscure: it also changes *wrlist.
                 _PyObject_ASSERT((PyObject *)wr, wr->wr_object == op);
@@ -962,11 +969,6 @@ handle_weakref_callbacks(PyGC_Head *unreachable, PyGC_Head *old)
                 continue;
             }
 
-            if (_PyGC_FINALIZED((PyObject *)wr)) {
-                /* Callback was already run (weakref must have been resurrected). */
-                continue;
-            }
-
             /* Create a new reference so that wr can't go away
              * before we can process it again.
              */
@@ -994,10 +996,6 @@ handle_weakref_callbacks(PyGC_Head *unreachable, PyGC_Head *old)
         PyWeakReference *wr = (PyWeakReference *)op;
         callback = wr->wr_callback;
         _PyObject_ASSERT(op, callback != NULL);
-
-        /* Ensure we don't execute the callback again if the weakref is
-         * resurrected. */
-        _PyGC_SET_FINALIZED(op);
 
         /* copy-paste of weakrefobject.c's handle_callback() */
         temp = PyObject_CallOneArg(callback, (PyObject *)wr);
