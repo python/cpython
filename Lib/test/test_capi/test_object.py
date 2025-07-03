@@ -247,6 +247,5 @@ class CAPITest(unittest.TestCase):
 
         func(object())
 
-
 if __name__ == "__main__":
     unittest.main()
