@@ -561,7 +561,7 @@ error:
 
     assert(PyErr_Occurred());
     PyErr_Clear();
-    
+
     return 0;
 
 }
