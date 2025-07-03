@@ -1,0 +1,16 @@
+Fix two bugs related to the interaction of weakrefs and the garbage
+collector. The weakrefs in the ``tp_subclasses`` dictionary are needed in
+order to correctly invalidate type caches (for example, by calling
+``PyType_Modified()``).  Clearing weakrefs before calling finalizers causes
+the caches to not be correctly invalidated. That can cause crashes since the
+caches can refer to invalid objects.  This is fixed by deferring the
+clearing of weakrefs to classes and without callbacks until after finalizers
+are executed.
+
+The second bug is caused by weakrefs created while running finalizers. Those
+weakrefs can be outside the set of unreachable garbage and therefore survive
+the ``delete_garbage()`` phase (where ``tp_clear()`` is called on objects).
+Those weakrefs can expose to Python-level code objects that have had
+``tp_clear()`` called on them.  See GH-91636 as an example of this kind of
+bug. This is fixes be clearing all weakrefs to unreachable objects after
+finalizers have been executed.
