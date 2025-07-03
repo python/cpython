@@ -346,13 +346,13 @@ _Py_ReachedRecursionLimitWithMargin(PyThreadState *tstate, int margin_count)
 {
     uintptr_t here_addr = _Py_get_machine_stack_pointer();
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
-    if (here_addr > _tstate->c_stack_soft_limit + margin_count * PYOS_STACK_MARGIN_BYTES) {
+    if (here_addr > _tstate->c_stack_soft_limit + margin_count * _PyOS_STACK_MARGIN_BYTES) {
         return 0;
     }
     if (_tstate->c_stack_hard_limit == 0) {
         _Py_InitializeRecursionLimits(tstate);
     }
-    return here_addr <= _tstate->c_stack_soft_limit + margin_count * PYOS_STACK_MARGIN_BYTES;
+    return here_addr <= _tstate->c_stack_soft_limit + margin_count * _PyOS_STACK_MARGIN_BYTES;
 }
 
 void
@@ -448,8 +448,8 @@ _Py_InitializeRecursionLimits(PyThreadState *tstate)
     _tstate->c_stack_top = (uintptr_t)high;
     ULONG guarantee = 0;
     SetThreadStackGuarantee(&guarantee);
-    _tstate->c_stack_hard_limit = ((uintptr_t)low) + guarantee + PYOS_STACK_MARGIN_BYTES;
-    _tstate->c_stack_soft_limit = _tstate->c_stack_hard_limit + PYOS_STACK_MARGIN_BYTES;
+    _tstate->c_stack_hard_limit = ((uintptr_t)low) + guarantee + _PyOS_STACK_MARGIN_BYTES;
+    _tstate->c_stack_soft_limit = _tstate->c_stack_hard_limit + _PyOS_STACK_MARGIN_BYTES;
 #else
     uintptr_t here_addr = _Py_get_machine_stack_pointer();
 #  if defined(HAVE_PTHREAD_GETATTR_NP) && !defined(_AIX) && !defined(__NetBSD__)
@@ -469,9 +469,9 @@ _Py_InitializeRecursionLimits(PyThreadState *tstate)
         // Thread sanitizer crashes if we use a bit more than half the stack.
         _tstate->c_stack_soft_limit = base + (stack_size / 2);
 #else
-        _tstate->c_stack_soft_limit = base + PYOS_STACK_MARGIN_BYTES * 2;
+        _tstate->c_stack_soft_limit = base + _PyOS_STACK_MARGIN_BYTES * 2;
 #endif
-        _tstate->c_stack_hard_limit = base + PYOS_STACK_MARGIN_BYTES;
+        _tstate->c_stack_hard_limit = base + _PyOS_STACK_MARGIN_BYTES;
         assert(_tstate->c_stack_soft_limit < here_addr);
         assert(here_addr < _tstate->c_stack_top);
         return;
@@ -479,7 +479,7 @@ _Py_InitializeRecursionLimits(PyThreadState *tstate)
 #  endif
     _tstate->c_stack_top = _Py_SIZE_ROUND_UP(here_addr, 4096);
     _tstate->c_stack_soft_limit = _tstate->c_stack_top - Py_C_STACK_SIZE;
-    _tstate->c_stack_hard_limit = _tstate->c_stack_top - (Py_C_STACK_SIZE + PYOS_STACK_MARGIN_BYTES);
+    _tstate->c_stack_hard_limit = _tstate->c_stack_top - (Py_C_STACK_SIZE + _PyOS_STACK_MARGIN_BYTES);
 #endif
 }
 

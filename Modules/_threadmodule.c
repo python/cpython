@@ -839,9 +839,14 @@ lock_PyThread_acquire_lock(PyObject *op, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    PyLockStatus r = _PyMutex_LockTimed(&self->lock, timeout,
-                                        _PY_LOCK_HANDLE_SIGNALS | _PY_LOCK_DETACH);
+    PyLockStatus r = _PyMutex_LockTimed(
+        &self->lock, timeout,
+        _PY_LOCK_PYTHONLOCK | _PY_LOCK_HANDLE_SIGNALS | _PY_LOCK_DETACH);
     if (r == PY_LOCK_INTR) {
+        assert(PyErr_Occurred());
+        return NULL;
+    }
+    if (r == PY_LOCK_FAILURE && PyErr_Occurred()) {
         return NULL;
     }
 
@@ -1059,9 +1064,14 @@ rlock_acquire(PyObject *op, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    PyLockStatus r = _PyRecursiveMutex_LockTimed(&self->lock, timeout,
-                                                 _PY_LOCK_HANDLE_SIGNALS | _PY_LOCK_DETACH);
+    PyLockStatus r = _PyRecursiveMutex_LockTimed(
+        &self->lock, timeout,
+        _PY_LOCK_PYTHONLOCK | _PY_LOCK_HANDLE_SIGNALS | _PY_LOCK_DETACH);
     if (r == PY_LOCK_INTR) {
+        assert(PyErr_Occurred());
+        return NULL;
+    }
+    if (r == PY_LOCK_FAILURE && PyErr_Occurred()) {
         return NULL;
     }
 
@@ -1370,9 +1380,7 @@ static void
 localdummy_dealloc(PyObject *op)
 {
     localdummyobject *self = localdummyobject_CAST(op);
-    if (self->weakreflist != NULL) {
-        PyObject_ClearWeakRefs(op);
-    }
+    FT_CLEAR_WEAKREFS(op, self->weakreflist);
     PyTypeObject *tp = Py_TYPE(self);
     tp->tp_free(self);
     Py_DECREF(tp);
