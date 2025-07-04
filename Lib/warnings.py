@@ -145,8 +145,9 @@ def filterwarnings(action, message="", category=Warning, module="", lineno=0,
     assert action in ("error", "ignore", "always", "default", "module",
                       "once"), "invalid action: %r" % (action,)
     assert isinstance(message, str), "message must be a string"
-    assert isinstance(category, type), "category must be a class"
-    assert issubclass(category, Warning), "category must be a Warning subclass"
+    if not (isinstance(category, type) and issubclass(category, Warning)):
+        raise TypeError("category must be a Warning subclass, "
+                        "not '{:s}'".format(type(category).__name__))
     assert isinstance(module, str), "module must be a string"
     assert isinstance(lineno, int) and lineno >= 0, \
            "lineno must be an int >= 0"
@@ -177,6 +178,9 @@ def simplefilter(action, category=Warning, lineno=0, append=False):
     """
     assert action in ("error", "ignore", "always", "default", "module",
                       "once"), "invalid action: %r" % (action,)
+    if not (isinstance(category, type) and issubclass(category, Warning)):
+        raise TypeError("category must be a Warning subclass, "
+                        "not '{:s}'".format(type(category).__name__))
     assert isinstance(lineno, int) and lineno >= 0, \
            "lineno must be an int >= 0"
     _add_filter(action, None, category, None, lineno, append=append)
