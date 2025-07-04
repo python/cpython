@@ -3896,7 +3896,7 @@ static void object_dealloc(PyObject *);
 static PyObject *object_new(PyTypeObject *, PyObject *, PyObject *);
 static int object_init(PyObject *, PyObject *, PyObject *);
 static int update_slot(PyTypeObject *, PyObject *, slot_update_t *update);
-static void fixup_slot_dispatchers(PyTypeObject *);
+static int fixup_slot_dispatchers(PyTypeObject *);
 static int type_new_set_names(PyTypeObject *);
 static int type_new_init_subclass(PyTypeObject *, PyObject *);
 static bool has_slotdef(PyObject *);
@@ -4857,7 +4857,9 @@ type_new_impl(type_new_ctx *ctx)
     }
 
     // Put the proper slots in place
-    fixup_slot_dispatchers(type);
+    if (fixup_slot_dispatchers(type) < 0) {
+        goto error;
+    }
 
     if (!_PyDict_HasOnlyStringKeys(type->tp_dict)) {
         if (PyErr_WarnFormat(
@@ -5890,7 +5892,7 @@ PyObject_GetItemData(PyObject *obj)
 }
 
 /* Internal API to look for a name through the MRO, bypassing the method cache.
-   This returns a borrowed reference, and might set an exception.
+   This returns a strong reference, and might set an exception.
    'error' is set to: -1: error with exception; 1: error without exception; 0: ok */
 static PyObject *
 find_name_in_mro(PyTypeObject *type, PyObject *name, int *error)
@@ -5937,6 +5939,23 @@ find_name_in_mro(PyTypeObject *type, PyObject *name, int *error)
     *error = 0;
 done:
     Py_DECREF(mro);
+    return res;
+}
+
+/* Internal API to look for a name through the prebuilt MRO dict.
+   This returns a strong reference, and might set an exception.
+   'error' is set to: -1: error with exception; 0: ok */
+static PyObject *
+find_name_in_mro_new(PyTypeObject *type, PyObject *mro_dict, PyObject *name, int *error)
+{
+    ASSERT_NEW_TYPE_OR_LOCKED(type);
+
+    PyObject *res = NULL;
+    if (PyDict_GetItemRef(mro_dict, name, &res) < 0) {
+        *error = -1;
+    } else {
+        *error = 0;
+    }
     return res;
 }
 
@@ -11515,7 +11534,7 @@ has_slotdef(PyObject *name)
  * occur internally are ignored, such as when looking up descriptors. */
 static int
 update_one_slot(PyTypeObject *type, pytype_slotdef *p, pytype_slotdef **next_p,
-                slot_update_t *queued_updates)
+                slot_update_t *queued_updates, PyObject *mro_dict)
 {
     ASSERT_NEW_TYPE_OR_LOCKED(type);
 
@@ -11549,7 +11568,11 @@ update_one_slot(PyTypeObject *type, pytype_slotdef *p, pytype_slotdef **next_p,
     assert(!PyErr_Occurred());
     do {
         /* Use faster uncached lookup as we won't get any cache hits during type setup. */
-        descr = find_name_in_mro(type, p->name_strobj, &error);
+        if (mro_dict == NULL) {
+            descr = find_name_in_mro(type, p->name_strobj, &error);
+        } else {
+            descr = find_name_in_mro_new(type, mro_dict, p->name_strobj, &error);
+        }
         if (descr == NULL) {
             if (error == -1) {
                 /* It is unlikely but not impossible that there has been an exception
@@ -11673,7 +11696,8 @@ update_slots_callback(PyTypeObject *type, void *data)
     update_callback_data_t *update_data = (update_callback_data_t *)data;
     pytype_slotdef **pp = update_data->defs;
     for (; *pp; pp++) {
-        if (update_one_slot(type, *pp, NULL, update_data->queued_updates) < 0) {
+        slot_update_t *queued_updates = update_data->queued_updates;
+        if (update_one_slot(type, *pp, NULL, queued_updates, NULL) < 0) {
             return -1;
         }
     }
@@ -11723,14 +11747,59 @@ update_slot(PyTypeObject *type, PyObject *name, slot_update_t *queued_updates)
 
 /* Store the proper functions in the slot dispatches at class (type)
    definition time, based upon which operations the class overrides in its
-   dict. */
-static void
+   dict. Returns -1 and exception set on error or 0 otherwise.*/
+static int
 fixup_slot_dispatchers(PyTypeObject *type)
 {
+    int res = 0;
+
+    // This lock isn't strictly necessary because the type has not been
+    // exposed to anyone else yet, but update_ont_slot calls find_name_in_mro
+    // where we'd like to assert that the type is locked.
+    ASSERT_NEW_TYPE_OR_LOCKED(type);
+
+    PyObject *mro = Py_NewRef(lookup_tp_mro(type));
+
+    // Build MRO dict. We build it in bottom-top manner,
+    // from bottom base to the top one, because the bottommost base
+    // has more items then other and copying it is preferable than
+    // merging.
+    // If we fails, then stop init type.
+    PyObject *mro_dict = NULL;
+    Py_ssize_t n = PyTuple_GET_SIZE(mro);
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyObject *base = PyTuple_GET_ITEM(mro, n-i-1);
+        PyObject *dict = lookup_tp_dict(_PyType_CAST(base));
+        assert(dict && PyDict_Check(dict));
+
+        if (i == 0) {
+            mro_dict = PyDict_Copy(dict);
+            if (!mro_dict) {
+                res = -1;
+                goto finish;
+            }
+        } else {
+            if (PyDict_Merge(mro_dict, dict, 1) < 0) {
+                res = -1;
+                goto finish;
+            }
+        }
+    }
+
+    assert(!res);
+    assert(mro_dict);
     assert(!PyErr_Occurred());
     for (pytype_slotdef *p = slotdefs; p->name; ) {
-        update_one_slot(type, p, &p, NULL);
+        update_one_slot(type, p, &p, NULL, mro_dict);
     }
+
+    assert(!PyErr_Occurred());
+
+finish:
+    Py_XDECREF(mro_dict);
+    Py_DECREF(mro);
+
+    return res;
 }
 
 #ifdef Py_GIL_DISABLED
