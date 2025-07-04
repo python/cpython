@@ -1644,7 +1644,8 @@ to speed up repeated connections from the same clients.
 .. method:: SSLContext.get_groups()
 
    Get a list of groups implemented for key agreement, taking into account
-   the SSLContext's current TLS `minimum_version` and `maximum_version` values.
+   the SSLContext's current TLS ``minimum_version`` and ``maximum_version``
+   values.
 
    Example::
 

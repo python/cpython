@@ -1005,6 +1005,7 @@ extern "C" {
     INIT_ID(imag), \
     INIT_ID(importlib), \
     INIT_ID(in_fd), \
+    INIT_ID(include_aliases), \
     INIT_ID(incoming), \
     INIT_ID(index), \
     INIT_ID(indexgroup), \
