@@ -1156,6 +1156,51 @@ class GCTests(unittest.TestCase):
         # this test checks regular garbage collection
         assert_python_ok("-c", code_inside_function)
 
+    def test_type_weakref_with_callback_should_be_none(self):
+        # This test checks that weakrefs for types with callbacks
+        # are cleared before the finalizer is called
+        code = """
+            import weakref
+            def test():
+                class Class:
+                    def __init__(self):
+                        self._self = self
+                        self._z = weakref.ref(Class, lambda x: None)
+
+                    def __del__(self):
+                        assert self._z() is None, "Type weakref is not None"
+
+                Class()
+
+            test()
+        """
+        _, _, stderr = assert_python_ok("-c", code)
+        assert b"Type weakref is not None" not in stderr
+
+    def test_type_weakref_without_callback_should_be_not_none(self):
+        # This test checks that weakrefs for types without callbacks
+        # are cleared after the finalizer is called
+        code = """
+            import weakref
+            def test():
+                class Class:
+                    def __init__(self):
+                        self._self = self
+                        self._x = weakref.ref(self)
+                        self._z = weakref.ref(Class)
+
+                    def __del__(self):
+                        assert self._x() is None, "Instance weakref is not None"
+                        assert self._z() is Class, "Type weakref is not Class"
+
+                Class()
+
+            test()
+        """
+        _, _, stderr = assert_python_ok("-c", code)
+        assert b"Instance weakref is not None" not in stderr
+        assert b"Type weakref is not Class" not in stderr
+
 
 class IncrementalGCTests(unittest.TestCase):
     @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
