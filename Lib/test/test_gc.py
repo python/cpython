@@ -1542,7 +1542,6 @@ class PythonFinalizationTests(unittest.TestCase):
         assert_python_ok("-c", code)
 
 
-
 def setUpModule():
     global enabled, debug
     enabled = gc.isenabled()
