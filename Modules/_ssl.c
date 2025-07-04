@@ -2144,6 +2144,31 @@ _ssl__SSLSocket_cipher_impl(PySSLSocket *self)
 
 /*[clinic input]
 @critical_section
+_ssl._SSLSocket.group
+[clinic start generated code]*/
+
+static PyObject *
+_ssl__SSLSocket_group_impl(PySSLSocket *self)
+/*[clinic end generated code: output=9c168ee877017b95 input=5f187d8bf0d433b7]*/
+{
+#if OPENSSL_VERSION_NUMBER >= 0x30200000L
+    const char *group_name;
+
+    if (self->ssl == NULL)
+        Py_RETURN_NONE;
+    group_name = SSL_get0_group_name(self->ssl);
+    if (group_name == NULL)
+        Py_RETURN_NONE;
+    return PyUnicode_DecodeFSDefault(group_name);
+#else
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "Getting selected group requires OpenSSL 3.2 or later.");
+    return NULL;
+#endif
+}
+
+/*[clinic input]
+@critical_section
 _ssl._SSLSocket.version
 [clinic start generated code]*/
 
@@ -3023,6 +3048,7 @@ static PyMethodDef PySSLMethods[] = {
     _SSL__SSLSOCKET_GETPEERCERT_METHODDEF
     _SSL__SSLSOCKET_GET_CHANNEL_BINDING_METHODDEF
     _SSL__SSLSOCKET_CIPHER_METHODDEF
+    _SSL__SSLSOCKET_GROUP_METHODDEF
     _SSL__SSLSOCKET_SHARED_CIPHERS_METHODDEF
     _SSL__SSLSOCKET_VERSION_METHODDEF
     _SSL__SSLSOCKET_SELECTED_ALPN_PROTOCOL_METHODDEF
@@ -3402,6 +3428,73 @@ _ssl__SSLContext_get_ciphers_impl(PySSLContext *self)
 
 }
 
+/*[clinic input]
+@critical_section
+_ssl._SSLContext.set_groups
+    grouplist: str
+    /
+[clinic start generated code]*/
+
+static PyObject *
+_ssl__SSLContext_set_groups_impl(PySSLContext *self, const char *grouplist)
+/*[clinic end generated code: output=0b5d05dfd371ffd0 input=2cc64cef21930741]*/
+{
+    if (!SSL_CTX_set1_groups_list(self->ctx, grouplist)) {
+        _setSSLError(get_state_ctx(self), "unrecognized group", 0, __FILE__, __LINE__);
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+@critical_section
+_ssl._SSLContext.get_groups
+    *
+    include_aliases: bool = False
+[clinic start generated code]*/
+
+static PyObject *
+_ssl__SSLContext_get_groups_impl(PySSLContext *self, int include_aliases)
+/*[clinic end generated code: output=6d6209dd1051529b input=3e8ee5deb277dcc5]*/
+{
+#if OPENSSL_VERSION_NUMBER >= 0x30500000L
+    STACK_OF(OPENSSL_CSTRING) *groups;
+    const char *group;
+    size_t i, num;
+    PyObject *result = NULL;
+
+    if ((groups = sk_OPENSSL_CSTRING_new_null()) == NULL) {
+        _setSSLError(get_state_ctx(self), "Can't allocate stack", 0, __FILE__, __LINE__);
+        return NULL;
+    }
+
+    if (!SSL_CTX_get0_implemented_groups(self->ctx, include_aliases, groups)) {
+        _setSSLError(get_state_ctx(self), "Can't get groups", 0, __FILE__, __LINE__);
+        sk_OPENSSL_CSTRING_free(groups);
+        return NULL;
+    }
+
+    num = sk_OPENSSL_CSTRING_num(groups);
+    result = PyList_New(num);
+    if (result == NULL) {
+        _setSSLError(get_state_ctx(self), "Can't allocate list", 0, __FILE__, __LINE__);
+        sk_OPENSSL_CSTRING_free(groups);
+        return NULL;
+    }
+
+    for (i = 0; i < num; ++i) {
+        group = sk_OPENSSL_CSTRING_value(groups, i);
+        PyList_SET_ITEM(result, i, PyUnicode_DecodeFSDefault(group));
+    }
+
+    sk_OPENSSL_CSTRING_free(groups);
+    return result;
+#else
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "Getting implemented groups requires OpenSSL 3.5 or later.");
+    return NULL;
+#endif
+}
 
 static int
 do_protocol_selection(int alpn, unsigned char **out, unsigned char *outlen,
@@ -5249,6 +5342,7 @@ static struct PyMethodDef context_methods[] = {
     _SSL__SSLCONTEXT__WRAP_SOCKET_METHODDEF
     _SSL__SSLCONTEXT__WRAP_BIO_METHODDEF
     _SSL__SSLCONTEXT_SET_CIPHERS_METHODDEF
+    _SSL__SSLCONTEXT_SET_GROUPS_METHODDEF
     _SSL__SSLCONTEXT__SET_ALPN_PROTOCOLS_METHODDEF
     _SSL__SSLCONTEXT_LOAD_CERT_CHAIN_METHODDEF
     _SSL__SSLCONTEXT_LOAD_DH_PARAMS_METHODDEF
@@ -5259,6 +5353,7 @@ static struct PyMethodDef context_methods[] = {
     _SSL__SSLCONTEXT_CERT_STORE_STATS_METHODDEF
     _SSL__SSLCONTEXT_GET_CA_CERTS_METHODDEF
     _SSL__SSLCONTEXT_GET_CIPHERS_METHODDEF
+    _SSL__SSLCONTEXT_GET_GROUPS_METHODDEF
     _SSL__SSLCONTEXT_SET_PSK_CLIENT_CALLBACK_METHODDEF
     _SSL__SSLCONTEXT_SET_PSK_SERVER_CALLBACK_METHODDEF
     {NULL, NULL}        /* sentinel */

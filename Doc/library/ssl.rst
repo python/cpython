@@ -1641,6 +1641,21 @@ to speed up repeated connections from the same clients.
 
    .. versionadded:: 3.6
 
+.. method:: SSLContext.get_groups()
+
+   Get a list of groups implemented for key agreement, taking into account
+   the SSLContext's current TLS `minimum_version` and `maximum_version` values.
+
+   Example::
+
+       >>> ctx = ssl.create_default_context()
+       >>> ctx.minimum_version=ssl.TLSVersion.TLSv1_3
+       >>> ctx.maximum_version=ssl.TLSVersion.TLSv1_3
+       >>> ctx.get_groups()
+       ['secp256r1', 'secp384r1', 'secp521r1', 'x25519', 'x448', 'brainpoolP256r1tls13', 'brainpoolP384r1tls13', 'brainpoolP512r1tls13', 'ffdhe2048', 'ffdhe3072', 'ffdhe4096', 'ffdhe6144', 'ffdhe8192', 'MLKEM512', 'MLKEM768', 'MLKEM1024', 'SecP256r1MLKEM768', 'X25519MLKEM768', 'SecP384r1MLKEM1024'
+
+   .. versionadded:: 3.15
+
 .. method:: SSLContext.set_default_verify_paths()
 
    Load a set of default "certification authority" (CA) certificates from
@@ -1665,6 +1680,18 @@ to speed up repeated connections from the same clients.
 
       TLS 1.3 cipher suites cannot be disabled with
       :meth:`~SSLContext.set_ciphers`.
+
+.. method:: SSLContext.set_groups(groups)
+
+   Set the groups allowed for key agreement for sockets created with this
+   context.  It should be a string in the `OpenSSL group list format
+   <https://docs.openssl.org/master/man3/SSL_CTX_set1_groups_list/>`_.
+
+   .. note::
+      when connected, the :meth:`SSLSocket.group` method of SSL sockets will
+      return the group used for key agreement on that connection.
+
+   .. versionadded:: 3.15
 
 .. method:: SSLContext.set_alpn_protocols(protocols)
 
@@ -1788,6 +1815,10 @@ to speed up repeated connections from the same clients.
    This method is not available if :data:`HAS_ECDH` is ``False``.
 
    .. versionadded:: 3.3
+
+   .. deprecated:: 3.15
+
+      This method has been replaced by :math:`set_groups`.
 
    .. seealso::
       `SSL/TLS & Perfect Forward Secrecy <https://vincent.bernat.ch/en/blog/2011-ssl-perfect-forward-secrecy>`_
