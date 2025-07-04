@@ -183,7 +183,7 @@ protocols. Two of the simplest are :mod:`urllib.request` for retrieving data
 from URLs and :mod:`smtplib` for sending mail::
 
    >>> from urllib.request import urlopen
-   >>> with urlopen('http://worldtimeapi.org/api/timezone/etc/UTC.txt') as response:
+   >>> with urlopen('https://worldtimeapi.org/api/timezone/etc/UTC.txt') as response:
    ...     for line in response:
    ...         line = line.decode()             # Convert bytes to a str
    ...         if line.startswith('datetime'):
