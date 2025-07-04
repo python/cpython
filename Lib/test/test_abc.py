@@ -270,29 +270,102 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             class C(metaclass=meta):
                 pass
 
+        def test_isinstance_direct_inheritance(self):
+            class A(metaclass=abc_ABCMeta):
+                pass
+            class B(A):
+                pass
+            class C(A):
+                pass
+
+            a = A()
+            b = B()
+            c = C()
+            # trigger caching
+            for _ in range(2):
+                self.assertIsInstance(a, A)
+                self.assertIsInstance(a, (A,))
+                self.assertNotIsInstance(a, B)
+                self.assertNotIsInstance(a, (B,))
+                self.assertNotIsInstance(a, C)
+                self.assertNotIsInstance(a, (C,))
+
+                self.assertIsInstance(b, B)
+                self.assertIsInstance(b, (B,))
+                self.assertIsInstance(b, A)
+                self.assertIsInstance(b, (A,))
+                self.assertNotIsInstance(b, C)
+                self.assertNotIsInstance(b, (C,))
+
+                self.assertIsInstance(c, C)
+                self.assertIsInstance(c, (C,))
+                self.assertIsInstance(c, A)
+                self.assertIsInstance(c, (A,))
+                self.assertNotIsInstance(c, B)
+                self.assertNotIsInstance(c, (B,))
+
+                self.assertIsSubclass(B, A)
+                self.assertIsSubclass(B, (A,))
+                self.assertIsSubclass(C, A)
+                self.assertIsSubclass(C, (A,))
+                self.assertNotIsSubclass(B, C)
+                self.assertNotIsSubclass(B, (C,))
+                self.assertNotIsSubclass(C, B)
+                self.assertNotIsSubclass(C, (B,))
+                self.assertNotIsSubclass(A, B)
+                self.assertNotIsSubclass(A, (B,))
+                self.assertNotIsSubclass(A, C)
+                self.assertNotIsSubclass(A, (C,))
+
         def test_registration_basics(self):
             class A(metaclass=abc_ABCMeta):
                 pass
             class B(object):
                 pass
+
+            a = A()
             b = B()
-            self.assertNotIsSubclass(B, A)
-            self.assertNotIsSubclass(B, (A,))
-            self.assertNotIsInstance(b, A)
-            self.assertNotIsInstance(b, (A,))
+            # trigger caching
+            for _ in range(2):
+                self.assertNotIsSubclass(B, A)
+                self.assertNotIsSubclass(B, (A,))
+                self.assertNotIsInstance(b, A)
+                self.assertNotIsInstance(b, (A,))
+
+                self.assertNotIsSubclass(A, B)
+                self.assertNotIsSubclass(A, (B,))
+                self.assertNotIsInstance(a, B)
+                self.assertNotIsInstance(a, (B,))
+
             B1 = A.register(B)
-            self.assertIsSubclass(B, A)
-            self.assertIsSubclass(B, (A,))
-            self.assertIsInstance(b, A)
-            self.assertIsInstance(b, (A,))
-            self.assertIs(B1, B)
+            # trigger caching
+            for _ in range(2):
+                self.assertIsSubclass(B, A)
+                self.assertIsSubclass(B, (A,))
+                self.assertIsInstance(b, A)
+                self.assertIsInstance(b, (A,))
+                self.assertIs(B1, B)
+
+                self.assertNotIsSubclass(A, B)
+                self.assertNotIsSubclass(A, (B,))
+                self.assertNotIsInstance(a, B)
+                self.assertNotIsInstance(a, (B,))
+
             class C(B):
                 pass
+
             c = C()
-            self.assertIsSubclass(C, A)
-            self.assertIsSubclass(C, (A,))
-            self.assertIsInstance(c, A)
-            self.assertIsInstance(c, (A,))
+            # trigger caching
+            for _ in range(2):
+                self.assertIsSubclass(C, A)
+                self.assertIsSubclass(C, (A,))
+                self.assertIsInstance(c, A)
+                self.assertIsInstance(c, (A,))
+
+                self.assertNotIsSubclass(A, C)
+                self.assertNotIsSubclass(A, (C,))
+                self.assertNotIsInstance(a, C)
+                self.assertNotIsInstance(a, (C,))
 
         def test_register_as_class_deco(self):
             class A(metaclass=abc_ABCMeta):
@@ -377,39 +450,73 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
                 pass
             self.assertIsSubclass(A, A)
             self.assertIsSubclass(A, (A,))
+
             class B(metaclass=abc_ABCMeta):
                 pass
             self.assertNotIsSubclass(A, B)
             self.assertNotIsSubclass(A, (B,))
             self.assertNotIsSubclass(B, A)
             self.assertNotIsSubclass(B, (A,))
+
             class C(metaclass=abc_ABCMeta):
                 pass
             A.register(B)
             class B1(B):
                 pass
-            self.assertIsSubclass(B1, A)
-            self.assertIsSubclass(B1, (A,))
+            # trigger caching
+            for _ in range(2):
+                self.assertIsSubclass(B1, A)
+                self.assertIsSubclass(B1, (A,))
+
             class C1(C):
                 pass
             B1.register(C1)
-            self.assertNotIsSubclass(C, B)
-            self.assertNotIsSubclass(C, (B,))
-            self.assertNotIsSubclass(C, B1)
-            self.assertNotIsSubclass(C, (B1,))
-            self.assertIsSubclass(C1, A)
-            self.assertIsSubclass(C1, (A,))
-            self.assertIsSubclass(C1, B)
-            self.assertIsSubclass(C1, (B,))
-            self.assertIsSubclass(C1, B1)
-            self.assertIsSubclass(C1, (B1,))
+            # trigger caching
+            for _ in range(2):
+                self.assertNotIsSubclass(C, B)
+                self.assertNotIsSubclass(C, (B,))
+                self.assertNotIsSubclass(C, B1)
+                self.assertNotIsSubclass(C, (B1,))
+                self.assertIsSubclass(C1, A)
+                self.assertIsSubclass(C1, (A,))
+                self.assertIsSubclass(C1, B)
+                self.assertIsSubclass(C1, (B,))
+                self.assertIsSubclass(C1, B1)
+                self.assertIsSubclass(C1, (B1,))
+
             C1.register(int)
             class MyInt(int):
                 pass
-            self.assertIsSubclass(MyInt, A)
-            self.assertIsSubclass(MyInt, (A,))
-            self.assertIsInstance(42, A)
-            self.assertIsInstance(42, (A,))
+            # trigger caching
+            for _ in range(2):
+                self.assertIsSubclass(MyInt, A)
+                self.assertIsSubclass(MyInt, (A,))
+                self.assertIsInstance(42, A)
+                self.assertIsInstance(42, (A,))
+
+        def test_custom_subclasses(self):
+            class A: pass
+            class B: pass
+
+            class Parent1(metaclass=abc_ABCMeta):
+                @classmethod
+                def __subclasses__(cls):
+                    return [A]
+
+            class Parent2(metaclass=abc_ABCMeta):
+                __subclasses__ = lambda: [A]
+
+            # trigger caching
+            for _ in range(2):
+                self.assertIsInstance(A(), Parent1)
+                self.assertIsSubclass(A, Parent1)
+                self.assertNotIsInstance(B(), Parent1)
+                self.assertNotIsSubclass(B, Parent1)
+
+                self.assertIsInstance(A(), Parent2)
+                self.assertIsSubclass(A, Parent2)
+                self.assertNotIsInstance(B(), Parent2)
+                self.assertNotIsSubclass(B, Parent2)
 
         def test_issubclass_bad_arguments(self):
             class A(metaclass=abc_ABCMeta):
@@ -521,7 +628,6 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
 
             self.assertEqual(A.__abstractmethods__, set())
             A()
-
 
         def test_update_new_abstractmethods(self):
             class A(metaclass=abc_ABCMeta):
