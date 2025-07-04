@@ -63,8 +63,8 @@ Some facts and figures:
    +------------------+---------------------------------------------+
    | mode             | action                                      |
    +==================+=============================================+
-   | ``'r' or 'r:*'`` | Open for reading with transparent           |
-   |                  | compression (recommended).                  |
+   | ``'r'`` or       | Open for reading with transparent           |
+   | ``'r:*'``        | compression (recommended).                  |
    +------------------+---------------------------------------------+
    | ``'r:'``         | Open for reading exclusively without        |
    |                  | compression.                                |
@@ -98,10 +98,11 @@ Some facts and figures:
    |                  | Raise a :exc:`FileExistsError` exception    |
    |                  | if it already exists.                       |
    +------------------+---------------------------------------------+
-   | ``'a' or 'a:'``  | Open for appending with no compression. The |
-   |                  | file is created if it does not exist.       |
+   | ``'a'`` or       | Open for appending with no compression. The |
+   | ``'a:'``         | file is created if it does not exist.       |
    +------------------+---------------------------------------------+
-   | ``'w' or 'w:'``  | Open for uncompressed writing.              |
+   | ``'w'`` or       | Open for uncompressed writing.              |
+   | ``'w:'``         |                                             |
    +------------------+---------------------------------------------+
    | ``'w:gz'``       | Open for gzip compressed writing.           |
    +------------------+---------------------------------------------+
