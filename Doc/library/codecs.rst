@@ -1579,3 +1579,35 @@ This module implements a variant of the UTF-8 codec. On encoding, a UTF-8 encode
 BOM will be prepended to the UTF-8 encoded bytes. For the stateful encoder this
 is only done once (on the first write to the byte stream). On decoding, an
 optional UTF-8 encoded BOM at the start of the data will be skipped.
+
+
+
+Escape Encoding and Decoding
+----------------------------
+
+The functions ``codecs.escape_encode()`` and ``codecs.escape_decode()`` provide
+a mechanism to encode and decode byte sequences with escape sequences. This is
+similar in behavior to how ``str(bytes)`` and ``repr(bytes)`` produce escaped
+string representations of bytes.
+
+These APIs are primarily used by the ``pickle`` module to safely handle
+escaped byte sequences.
+
+Example usage:
+
+.. code-block:: python
+
+    import codecs
+    b = b"example\nbytes\tdata"
+    encoded_bytes, _ = codecs.escape_encode(b)
+    decoded_bytes, _ = codecs.escape_decode(encoded_bytes)
+    assert decoded_bytes == b
+
+Background:
+~~~~~~~~~~~
+In Python 2, these functions were part of the now-removed ``string_escape`` codec.
+There is consideration to revive this functionality under a new codec called
+``bytes_escape``.
+
+References:
+- Related discussion: https://bugs.python.org/issue136278
