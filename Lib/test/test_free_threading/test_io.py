@@ -1,12 +1,13 @@
+import io
+import _pyio as pyio
 import threading
 from unittest import TestCase
 from test.support import threading_helper
 from random import randint
-from io import BytesIO
 from sys import getsizeof
 
 
-class TestBytesIO(TestCase):
+class ThreadSafetyMixin:
     # Test pretty much everything that can break under free-threading.
     # Non-deterministic, but at least one of these things will fail if
     # BytesIO object is not free-thread safe.
@@ -90,20 +91,27 @@ class TestBytesIO(TestCase):
             barrier.wait()
             getsizeof(b)
 
-        self.check([write] * 10, BytesIO())
-        self.check([writelines] * 10, BytesIO())
-        self.check([write] * 10 + [truncate] * 10, BytesIO())
-        self.check([truncate] + [read] * 10, BytesIO(b'0\n'*204800))
-        self.check([truncate] + [read1] * 10, BytesIO(b'0\n'*204800))
-        self.check([truncate] + [readline] * 10, BytesIO(b'0\n'*20480))
-        self.check([truncate] + [readlines] * 10, BytesIO(b'0\n'*20480))
-        self.check([truncate] + [readinto] * 10, BytesIO(b'0\n'*204800), bytearray(b'0\n'*204800))
-        self.check([close] + [write] * 10, BytesIO())
-        self.check([truncate] + [getvalue] * 10, BytesIO(b'0\n'*204800))
-        self.check([truncate] + [getbuffer] * 10, BytesIO(b'0\n'*204800))
-        self.check([truncate] + [iter] * 10, BytesIO(b'0\n'*20480))
-        self.check([truncate] + [getstate] * 10, BytesIO(b'0\n'*204800))
-        self.check([truncate] + [setstate] * 10, BytesIO(b'0\n'*204800), (b'123', 0, None))
-        self.check([truncate] + [sizeof] * 10, BytesIO(b'0\n'*204800))
+        self.check([write] * 10, self.ioclass())
+        self.check([writelines] * 10, self.ioclass())
+        self.check([write] * 10 + [truncate] * 10, self.ioclass())
+        self.check([truncate] + [read] * 10, self.ioclass(b'0\n'*204800))
+        self.check([truncate] + [read1] * 10, self.ioclass(b'0\n'*204800))
+        self.check([truncate] + [readline] * 10, self.ioclass(b'0\n'*20480))
+        self.check([truncate] + [readlines] * 10, self.ioclass(b'0\n'*20480))
+        self.check([truncate] + [readinto] * 10, self.ioclass(b'0\n'*204800), bytearray(b'0\n'*204800))
+        self.check([close] + [write] * 10, self.ioclass())
+        self.check([truncate] + [getvalue] * 10, self.ioclass(b'0\n'*204800))
+        self.check([truncate] + [getbuffer] * 10, self.ioclass(b'0\n'*204800))
+        self.check([truncate] + [iter] * 10, self.ioclass(b'0\n'*20480))
+        self.check([truncate] + [getstate] * 10, self.ioclass(b'0\n'*204800))
+        state = self.ioclass(b'123').__getstate__()
+        self.check([truncate] + [setstate] * 10, self.ioclass(b'0\n'*204800), state)
+        self.check([truncate] + [sizeof] * 10, self.ioclass(b'0\n'*204800))
 
         # no tests for seek or tell because they don't break anything
+
+class CBytesIOTest(ThreadSafetyMixin, TestCase):
+    ioclass = io.BytesIO
+
+class PyBytesIOTest(ThreadSafetyMixin, TestCase):
+     ioclass = pyio.BytesIO
