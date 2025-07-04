@@ -1,0 +1,1 @@
+Added ``--statistics`` option to :program:`msgfmt`.
