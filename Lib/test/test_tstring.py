@@ -161,9 +161,8 @@ class TestTString(unittest.TestCase, TStringBaseCase):
 
         # Test template + string
         t1 = t"Hello"
-        combined = t1 + ", world"
-        self.assertTStringEqual(combined, ("Hello, world",), ())
-        self.assertEqual(fstring(combined), "Hello, world")
+        with self.assertRaises(TypeError):
+            _ = t1 + ", world"
 
         # Test template + template with interpolation
         name = "Python"
@@ -174,9 +173,8 @@ class TestTString(unittest.TestCase, TStringBaseCase):
         self.assertEqual(fstring(combined), "Hello, Python")
 
         # Test string + template
-        t = "Hello, " + t"{name}"
-        self.assertTStringEqual(t, ("Hello, ", ""), [(name, "name")])
-        self.assertEqual(fstring(t), "Hello, Python")
+        with self.assertRaises(TypeError):
+            _ = "Hello, " + t"{name}"
 
     def test_nested_templates(self):
         # Test a template inside another template expression
@@ -241,45 +239,20 @@ class TestTString(unittest.TestCase, TStringBaseCase):
         self.assertTStringEqual(t, ("Hello, ", ""), [(name, "name")])
         self.assertEqual(fstring(t), "Hello, Python")
 
-        # Test concatenation with string literal
-        name = "Python"
-        t = t"Hello, {name}" "and welcome!"
-        self.assertTStringEqual(
-            t, ("Hello, ", "and welcome!"), [(name, "name")]
-        )
-        self.assertEqual(fstring(t), "Hello, Pythonand welcome!")
-
-        # Test concatenation with Unicode literal
-        name = "Python"
-        t = t"Hello, {name}" u"and welcome!"
-        self.assertTStringEqual(
-            t, ("Hello, ", "and welcome!"), [(name, "name")]
-        )
-        self.assertEqual(fstring(t), "Hello, Pythonand welcome!")
-
-        # Test concatenation with f-string literal
-        tab = '\t'
-        t = t"Tab: {tab}. " f"f-tab: {tab}."
-        self.assertTStringEqual(t, ("Tab: ", ". f-tab: \t."), [(tab, "tab")])
-        self.assertEqual(fstring(t), "Tab: \t. f-tab: \t.")
-
-        # Test concatenation with raw string literal
-        tab = '\t'
-        t = t"Tab: {tab}. " r"Raw tab: \t."
-        self.assertTStringEqual(
-            t, ("Tab: ", r". Raw tab: \t."), [(tab, "tab")]
-        )
-        self.assertEqual(fstring(t), "Tab: \t. Raw tab: \\t.")
-
-        # Test concatenation with raw f-string literal
-        tab = '\t'
-        t = t"Tab: {tab}. " rf"f-tab: {tab}. Raw tab: \t."
-        self.assertTStringEqual(
-            t, ("Tab: ", ". f-tab: \t. Raw tab: \\t."), [(tab, "tab")]
-        )
-        self.assertEqual(fstring(t), "Tab: \t. f-tab: \t. Raw tab: \\t.")
-
+        # Test disallowed mix of t-string and string
         what = 't'
+        expected_msg = 'cannot mix str and Template literals'
+        for case in (
+            "t'{what}-string literal' 'str literal'",
+            "t'{what}-string literal' u'unicode literal'",
+            "t'{what}-string literal' f'f-string literal'",
+            "t'{what}-string literal' r'raw string literal'",
+            "t'{what}-string literal' rf'raw f-string literal'",
+        ):
+            with self.assertRaisesRegex(SyntaxError, expected_msg):
+                eval(case)
+
+        # Test disallowed mix of t-string and bytes
         expected_msg = 'cannot mix bytes and nonbytes literals'
         for case in (
             "t'{what}-string literal' b'bytes literal'",
