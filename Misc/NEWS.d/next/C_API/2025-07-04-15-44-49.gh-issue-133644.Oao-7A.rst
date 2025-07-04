@@ -1,2 +1,2 @@
 Remove deprecated function :c:func:`!PySys_SetArgv` and
-:c:func:`!PySys_SetArgvEx`. Set Set :c:member:`PyConfig.argv` instead.
+:c:func:`!PySys_SetArgvEx`. Set :c:member:`PyConfig.argv` instead.
