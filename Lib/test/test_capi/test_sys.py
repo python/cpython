@@ -12,11 +12,6 @@ except ImportError:
 NULL = None
 
 class CAPITest(unittest.TestCase):
-    # TODO: Test the following functions:
-    #
-    #   PySys_Audit()
-    #   PySys_AuditTuple()
-
     maxDiff = None
 
     @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
@@ -210,6 +205,142 @@ class CAPITest(unittest.TestCase):
     def test_sys_writestderr(self):
         # Test PySys_WriteStderr()
         self._test_sys_writestream('PySys_WriteStderr', 'stderr')
+
+    @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
+    def test_sys_audit(self):
+        sys_audit = _testlimitedcapi.sys_audit
+
+        audit_events = []
+        def audit_hook(event, args):
+            audit_events.append((event, args))
+            return None
+
+        import sys
+        sys.addaudithook(audit_hook)
+
+        try:
+            result = sys_audit("cpython.run_command", "")
+            self.assertEqual(result, 0)
+            self.assertEqual(len(audit_events), 1)
+            self.assertEqual(audit_events[-1][0], "cpython.run_command")
+            self.assertEqual(audit_events[-1][1], ())
+
+            result = sys_audit("open", "OOO", "test.txt", "r", 0)
+            self.assertEqual(result, 0)
+            self.assertEqual(len(audit_events), 2)
+            self.assertEqual(audit_events[-1][0], "open")
+            self.assertEqual(len(audit_events[-1][1]), 3)
+            self.assertEqual(audit_events[-1][1][0], "test.txt")
+            self.assertEqual(audit_events[-1][1][1], "r")
+            self.assertEqual(audit_events[-1][1][2], 0)
+
+            test_dict = {"key": "value"}
+            test_list = [1, 2, 3]
+            result = sys_audit("test.objects", "OO", test_dict, test_list)
+            self.assertEqual(result, 0)
+            self.assertEqual(len(audit_events), 3)
+            self.assertEqual(audit_events[-1][0], "test.objects")
+            self.assertEqual(audit_events[-1][1][0], test_dict)
+            self.assertEqual(audit_events[-1][1][1], test_list)
+
+            result = sys_audit("test.mixed_types", "OOO", "string", 42, 123456789)
+            self.assertEqual(result, 0)
+            self.assertEqual(len(audit_events), 4)
+            self.assertEqual(audit_events[-1][0], "test.mixed_types")
+            self.assertEqual(audit_events[-1][1][0], "string")
+            self.assertEqual(audit_events[-1][1][1], 42)
+            self.assertEqual(audit_events[-1][1][2], 123456789)
+
+        finally:
+            sys.audit_hooks = []
+
+        result = sys_audit("cpython.run_file", "")
+        self.assertEqual(result, 0)
+
+        result = sys_audit("os.chdir", "(O)", "/tmp")
+        self.assertEqual(result, 0)
+
+        result = sys_audit("ctypes.dlopen", "O", "libc.so.6")
+        self.assertEqual(result, 0)
+
+        self.assertRaises(TypeError, sys_audit, 123, "O", "arg")
+        self.assertRaises(TypeError, sys_audit, None, "O", "arg")
+        self.assertRaises(TypeError, sys_audit, ["not", "a", "string"], "O", "arg")
+
+        self.assertRaises(TypeError, sys_audit, "test.event", 456, "arg")
+        self.assertRaises(TypeError, sys_audit, "test.event", None, "arg")
+        self.assertRaises(TypeError, sys_audit, "test.event", {"format": "string"}, "arg")
+
+    @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
+    def test_sys_audittuple(self):
+        sys_audittuple = _testlimitedcapi.sys_audittuple
+
+        # Test with audit hook to verify internal behavior
+        audit_events = []
+        def audit_hook(event, args):
+            audit_events.append((event, args))
+            return None
+
+        import sys
+        sys.addaudithook(audit_hook)
+
+        try:
+            result = sys_audittuple("cpython.run_command", ())
+            self.assertEqual(result, 0)
+            self.assertEqual(len(audit_events), 1)
+            self.assertEqual(audit_events[-1][0], "cpython.run_command")
+            self.assertEqual(audit_events[-1][1], ())
+
+            result = sys_audittuple("os.chdir", ("/tmp",))
+            self.assertEqual(result, 0)
+            self.assertEqual(len(audit_events), 2)
+            self.assertEqual(audit_events[-1][0], "os.chdir")
+            self.assertEqual(audit_events[-1][1], ("/tmp",))
+
+            result = sys_audittuple("open", ("test.txt", "r", 0))
+            self.assertEqual(result, 0)
+            self.assertEqual(len(audit_events), 3)
+            self.assertEqual(audit_events[-1][0], "open")
+            self.assertEqual(audit_events[-1][1], ("test.txt", "r", 0))
+
+            test_dict = {"key": "value"}
+            test_list = [1, 2, 3]
+            result = sys_audittuple("test.objects", (test_dict, test_list))
+            self.assertEqual(result, 0)
+            self.assertEqual(len(audit_events), 4)
+            self.assertEqual(audit_events[-1][0], "test.objects")
+            self.assertEqual(audit_events[-1][1][0], test_dict)
+            self.assertEqual(audit_events[-1][1][1], test_list)
+
+            result = sys_audittuple("test.complex", ("text", 3.14, True, None))
+            self.assertEqual(result, 0)
+            self.assertEqual(len(audit_events), 5)
+            self.assertEqual(audit_events[-1][0], "test.complex")
+            self.assertEqual(audit_events[-1][1][0], "text")
+            self.assertEqual(audit_events[-1][1][1], 3.14)
+            self.assertEqual(audit_events[-1][1][2], True)
+            self.assertEqual(audit_events[-1][1][3], None)
+
+        finally:
+            sys.audit_hooks = []
+
+        result = sys_audittuple("cpython.run_file", ())
+        self.assertEqual(result, 0)
+
+        result = sys_audittuple("ctypes.dlopen", ("libc.so.6",))
+        self.assertEqual(result, 0)
+
+        result = sys_audittuple("sqlite3.connect", ("test.db",))
+        self.assertEqual(result, 0)
+
+        self.assertRaises(TypeError, sys_audittuple, 123, ("arg",))
+        self.assertRaises(TypeError, sys_audittuple, None, ("arg",))
+        self.assertRaises(TypeError, sys_audittuple, ["not", "a", "string"], ("arg",))
+
+        self.assertRaises(TypeError, sys_audittuple, "test.event", "not_a_tuple")
+        self.assertRaises(TypeError, sys_audittuple, "test.event", ["list", "not", "tuple"])
+        self.assertRaises(TypeError, sys_audittuple, "test.event", {"dict": "not_tuple"})
+        self.assertRaises(TypeError, sys_audittuple, "test.event", None)
 
 
 if __name__ == "__main__":
