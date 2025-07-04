@@ -3504,6 +3504,20 @@ To let the script run up to a given line X in the debugged file, use
 "-c 'until X'"."""
 
 
+def exit_with_permission_help_text():
+    """
+    Prints a message pointing to platform-specific permission help text and exits the program.
+    This function is called when a PermissionError is encountered while trying
+    to attach to a process.
+    """
+    print(
+        "Error: The specified process cannot be attached to due to insufficient permissions.\n"
+        "See the Python documentation for details on required privileges and troubleshooting:\n"
+        "https://docs.python.org/3.14/howto/remote_debugging.html#permission-requirements\n"
+    )
+    sys.exit(1)
+
+
 def main():
     import argparse
 
@@ -3537,7 +3551,10 @@ def main():
         opts = parser.parse_args()
         if opts.module:
             parser.error("argument -m: not allowed with argument --pid")
-        attach(opts.pid, opts.commands)
+        try:
+            attach(opts.pid, opts.commands)
+        except PermissionError as e:
+            exit_with_permission_help_text()
         return
     elif opts.module:
         # If a module is being debugged, we consider the arguments after "-m module" to
