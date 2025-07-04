@@ -151,7 +151,7 @@ class ZoneInfoPickleTest(ZoneInfoTestBase):
                 pkl_str = pickle.dumps(zi, proto)
                 zi_rt = pickle.loads(pkl_str)
 
-        self.assertIs(zi, zi_rt)
+                self.assertIs(zi, zi_rt)
 
     @hypothesis.given(key=valid_keys())
     @add_key_examples
@@ -162,8 +162,8 @@ class ZoneInfoPickleTest(ZoneInfoTestBase):
                 pkl_str = pickle.dumps(zi, proto)
                 zi_rt = pickle.loads(pkl_str)
 
-        self.assertIsNot(zi, zi_rt)
-        self.assertEqual(str(zi), str(zi_rt))
+                self.assertIsNot(zi, zi_rt)
+                self.assertEqual(str(zi), str(zi_rt))
 
     @hypothesis.given(key=valid_keys())
     @add_key_examples
