@@ -711,8 +711,8 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
             ignore_keys |= {'prefix', 'exec_prefix', 'base', 'platbase', 'installed_base', 'installed_platbase'}
 
         for key in ignore_keys:
-            json_config_vars.pop(key)
-            system_config_vars.pop(key)
+            json_config_vars.pop(key, None)
+            system_config_vars.pop(key, None)
 
         self.assertEqual(system_config_vars, json_config_vars)
 

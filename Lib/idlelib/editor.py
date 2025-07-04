@@ -1644,7 +1644,7 @@ class IndentSearcher:
             self.finished = 1
 
     def run(self):
-        """Return 2 lines containing block opener and and indent.
+        """Return 2 lines containing block opener and indent.
 
         Either the indent line or both may be None.
         """

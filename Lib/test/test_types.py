@@ -2,7 +2,7 @@
 
 from test.support import (
     run_with_locale, cpython_only, no_rerun,
-    MISSING_C_DOCSTRINGS, EqualToForwardRef,
+    MISSING_C_DOCSTRINGS, EqualToForwardRef, check_disallow_instantiation,
 )
 from test.support.script_helper import assert_python_ok
 from test.support.import_helper import import_fresh_module
@@ -21,6 +21,7 @@ import types
 import unittest.mock
 import weakref
 import typing
+import re
 
 c_types = import_fresh_module('types', fresh=['_types'])
 py_types = import_fresh_module('types', blocked=['_types'])
@@ -517,8 +518,8 @@ class TypesTests(unittest.TestCase):
         # and a number after the decimal.  This is tricky, because
         # a totally empty format specifier means something else.
         # So, just use a sign flag
-        test(1e200, '+g', '+1e+200')
-        test(1e200, '+', '+1e+200')
+        test(1.25e200, '+g', '+1.25e+200')
+        test(1.25e200, '+', '+1.25e+200')
 
         test(1.1e200, '+g', '+1.1e+200')
         test(1.1e200, '+', '+1.1e+200')
@@ -1148,8 +1149,7 @@ class UnionTests(unittest.TestCase):
                              msg='Check for union reference leak.')
 
     def test_instantiation(self):
-        with self.assertRaises(TypeError):
-            types.UnionType()
+        check_disallow_instantiation(self, types.UnionType)
         self.assertIs(int, types.UnionType[int])
         self.assertIs(int, types.UnionType[int, int])
         self.assertEqual(int | str, types.UnionType[int, str])
@@ -1375,6 +1375,27 @@ class MappingProxyTests(unittest.TestCase):
         mapping = HashableDict({'a': 1, 'b': 2})
         view = self.mappingproxy(mapping)
         self.assertEqual(hash(view), hash(mapping))
+
+    def test_richcompare(self):
+        mp1 = self.mappingproxy({'a': 1})
+        mp1_2 = self.mappingproxy({'a': 1})
+        mp2 = self.mappingproxy({'a': 2})
+
+        self.assertTrue(mp1 == mp1_2)
+        self.assertFalse(mp1 != mp1_2)
+        self.assertFalse(mp1 == mp2)
+        self.assertTrue(mp1 != mp2)
+
+        msg = "not supported between instances of 'mappingproxy' and 'mappingproxy'"
+
+        with self.assertRaisesRegex(TypeError, msg):
+            mp1 > mp2
+        with self.assertRaisesRegex(TypeError, msg):
+            mp1 < mp1_2
+        with self.assertRaisesRegex(TypeError, msg):
+            mp2 >= mp2
+        with self.assertRaisesRegex(TypeError, msg):
+            mp1_2 <= mp1
 
 
 class ClassCreationTests(unittest.TestCase):
@@ -2009,6 +2030,24 @@ class SimpleNamespaceTests(unittest.TestCase):
         self.assertEqual(types.SimpleNamespace(), types.SimpleNamespace())
         self.assertEqual(ns1, ns2)
         self.assertNotEqual(ns2, types.SimpleNamespace())
+
+    def test_richcompare_unsupported(self):
+        ns1 = types.SimpleNamespace(x=1)
+        ns2 = types.SimpleNamespace(y=2)
+
+        msg = re.escape(
+            "not supported between instances of "
+            "'types.SimpleNamespace' and 'types.SimpleNamespace'"
+        )
+
+        with self.assertRaisesRegex(TypeError, msg):
+            ns1 > ns2
+        with self.assertRaisesRegex(TypeError, msg):
+            ns1 >= ns2
+        with self.assertRaisesRegex(TypeError, msg):
+            ns1 < ns2
+        with self.assertRaisesRegex(TypeError, msg):
+            ns1 <= ns2
 
     def test_nested(self):
         ns1 = types.SimpleNamespace(a=1, b=2)

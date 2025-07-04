@@ -882,7 +882,7 @@ invalid non-\ ``NULL`` pointers would crash Python)::
 Thread safety without the GIL
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In Python 3.13, the :term:`GIL` may be disabled on :term:`experimental free threaded <free threading>` builds.
+From Python 3.13 onward, the :term:`GIL` can be disabled on :term:`free threaded <free threading>` builds.
 In ctypes, reads and writes to a single object concurrently is safe, but not across multiple objects:
 
    .. code-block:: pycon
@@ -2965,7 +2965,7 @@ fields, or any other data types containing pointer type fields.
    .. attribute:: is_anonymous
 
       True if this field is anonymous, that is, it contains nested sub-fields
-      that should be be merged into a containing structure or union.
+      that should be merged into a containing structure or union.
 
 
 .. _ctypes-arrays-pointers:
