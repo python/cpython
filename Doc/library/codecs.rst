@@ -265,6 +265,21 @@ wider range of codecs when working with binary files:
    :func:`iterencode`.
 
 
+.. function:: readbuffer_encode(buffer, errors=None, /)
+
+   Return a :class:`tuple` containing the raw bytes of *buffer*, a
+   :ref:`buffer-compatible object <bufferobjects>` or :class:`str`, and their
+   length.
+
+   The *errors* argument is ignored and exists only for compatibility with
+   other functions.
+
+   .. code-block:: pycon
+
+      >>> codecs.readbuffer_encode(b"Zito")
+      (b'Zito', 4)
+
+
 The module also provides the following constants which are useful for reading
 and writing to platform dependent files:
 
