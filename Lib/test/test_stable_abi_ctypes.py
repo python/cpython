@@ -666,6 +666,8 @@ SYMBOL_NAMES = (
     "PySys_GetXOptions",
     "PySys_HasWarnOptions",
     "PySys_ResetWarnOptions",
+    "PySys_SetArgv",
+    "PySys_SetArgvEx",
     "PySys_SetObject",
     "PySys_SetPath",
     "PySys_WriteStderr",
