@@ -1127,11 +1127,15 @@ class GCTests(unittest.TestCase):
 
     def test_do_not_cleanup_type_subclasses_before_finalization(self):
         # https://github.com/python/cpython/issues/135552
+        # If we cleanup weakrefs for tp_subclasses before calling
+        # the finalizer (__del__) then the line `fail = BaseNode.next.next`
+        # should fail because we are trying to access a subclass
+        # atribute. But subclass type cache was not properly invalidated.
         code = """
             class BaseNode:
                 def __del__(self):
                     BaseNode.next = BaseNode.next.next
-                    BaseNode.next.next
+                    fail = BaseNode.next.next
 
             class Node(BaseNode):
                 pass
@@ -1139,6 +1143,8 @@ class GCTests(unittest.TestCase):
             BaseNode.next = Node()
             BaseNode.next.next = Node()
         """
+        # this test checks garbage collection while interp
+        # finalization
         assert_python_ok("-c", textwrap.dedent(code))
 
         code_inside_function = textwrap.dedent(F"""
@@ -1147,6 +1153,7 @@ class GCTests(unittest.TestCase):
 
             test()
         """)
+        # this test checks regular garbage collection
         assert_python_ok("-c", code_inside_function)
 
 
