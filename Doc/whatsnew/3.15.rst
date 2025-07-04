@@ -391,6 +391,10 @@ Removed C APIs
   of :c:func:`PyImport_ImportModule`.
   (Contributed by Bénédikt Tran in :gh:`133644`.)
 
+* :c:func:`!PyWeakref_GetObject` and :c:macro:`!PyWeakref_GET_OBJECT`:
+  use :c:func:`PyWeakref_GetRef` instead. The |pythoncapi_compat_project|
+  can be used to get :c:func:`!PyWeakref_GetRef` on Python 3.12 and older.
+
 The following functions are removed in favor of :c:func:`PyConfig_Get`.
 The |pythoncapi_compat_project| can be used to get :c:func:`!PyConfig_Get`
 on Python 3.13 and older.
