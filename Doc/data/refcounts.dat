@@ -2242,15 +2242,6 @@ PySys_GetObject:const char*:name::
 
 PySys_GetXOptions:PyObject*::0:
 
-PySys_SetArgv:void:::
-PySys_SetArgv:int:argc::
-PySys_SetArgv:wchar_t**:argv::
-
-PySys_SetArgvEx:void:::
-PySys_SetArgvEx:int:argc::
-PySys_SetArgvEx:wchar_t**:argv::
-PySys_SetArgvEx:int:updatepath::
-
 PySys_SetObject:int:::
 PySys_SetObject:const char*:name::
 PySys_SetObject:PyObject*:v:+1:

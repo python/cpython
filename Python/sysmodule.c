@@ -4235,7 +4235,8 @@ make_sys_argv(int argc, wchar_t * const * argv)
     return list;
 }
 
-void
+/* removed in 3.15, but kept for stable ABI compatibility */
+PyAPI_FUNC(void)
 PySys_SetArgvEx(int argc, wchar_t **argv, int updatepath)
 {
     wchar_t* empty_argv[1] = {L""};
@@ -4282,7 +4283,8 @@ PySys_SetArgvEx(int argc, wchar_t **argv, int updatepath)
     }
 }
 
-void
+/* removed in 3.15, but kept for stable ABI compatibility */
+PyAPI_FUNC(void)
 PySys_SetArgv(int argc, wchar_t **argv)
 {
 _Py_COMP_DIAG_PUSH
