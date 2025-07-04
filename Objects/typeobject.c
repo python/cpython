@@ -9018,9 +9018,13 @@ type_ready_set_new(PyTypeObject *type, int initial)
        default also inherit object.__new__. */
     if (type->tp_new == NULL
         && base == &PyBaseObject_Type
-        && !(type->tp_flags & Py_TPFLAGS_HEAPTYPE) && initial)
+        && !(type->tp_flags & Py_TPFLAGS_HEAPTYPE))
     {
-        type_add_flags(type, Py_TPFLAGS_DISALLOW_INSTANTIATION);
+        if (initial) {
+            type_add_flags(type, Py_TPFLAGS_DISALLOW_INSTANTIATION);
+        } else {
+            assert(type->tp_flags & Py_TPFLAGS_DISALLOW_INSTANTIATION);
+        }
     }
 
     if (!(type->tp_flags & Py_TPFLAGS_DISALLOW_INSTANTIATION)) {
