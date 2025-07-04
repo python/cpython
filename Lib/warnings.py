@@ -130,6 +130,12 @@ def _formatwarnmsg(msg):
                       msg.filename, msg.lineno, msg.line)
     return _formatwarnmsg_impl(msg)
 
+def _valid_warning_category(category):
+    """Return True if category is a Warning subclass or tuple of such."""
+    if isinstance(category, tuple):
+        return all(isinstance(c, type) and issubclass(c, Warning) for c in category)
+    return isinstance(category, type) and issubclass(category, Warning)
+
 def filterwarnings(action, message="", category=Warning, module="", lineno=0,
                    append=False):
     """Insert an entry into the list of warnings filters (at the front).
@@ -145,7 +151,7 @@ def filterwarnings(action, message="", category=Warning, module="", lineno=0,
     assert action in ("error", "ignore", "always", "default", "module",
                       "once"), "invalid action: %r" % (action,)
     assert isinstance(message, str), "message must be a string"
-    if not (isinstance(category, type) and issubclass(category, Warning)):
+    if not _valid_warning_category(category):
         raise TypeError("category must be a Warning subclass, "
                         "not '{:s}'".format(type(category).__name__))
     assert isinstance(module, str), "module must be a string"
@@ -178,7 +184,7 @@ def simplefilter(action, category=Warning, lineno=0, append=False):
     """
     assert action in ("error", "ignore", "always", "default", "module",
                       "once"), "invalid action: %r" % (action,)
-    if not (isinstance(category, type) and issubclass(category, Warning)):
+    if not _valid_warning_category(category):
         raise TypeError("category must be a Warning subclass, "
                         "not '{:s}'".format(type(category).__name__))
     assert isinstance(lineno, int) and lineno >= 0, \
