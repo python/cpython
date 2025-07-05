@@ -447,6 +447,11 @@ Alternative Generator
       Override this method in subclasses to customise the
       :meth:`~random.getrandbits` behaviour of :class:`!Random` instances.
 
+   .. method:: Random.randbytes(n)
+
+      Override this method in subclasses to customise the
+      :meth:`~random.randbytes` behaviour of :class:`!Random` instances.
+
 
 .. class:: SystemRandom([seed])
 
