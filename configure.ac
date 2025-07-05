@@ -7405,7 +7405,7 @@ WITH_SAVE_ENV([
   #  endif
   #endif
   "
-  AC_CHECK_FUNCS([shm_open shm_unlink], [have_posix_shmem=yes], [have_posix_shmem=no])
+  AC_CHECK_FUNCS([shm_open shm_rename shm_unlink], [have_posix_shmem=yes], [have_posix_shmem=no])
   _RESTORE_VAR([ac_includes_default])
 ])
 
