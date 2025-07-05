@@ -5927,15 +5927,16 @@
 
         case _CALL_LEN: {
             _PyStackRef arg;
-            _PyStackRef null;
             _PyStackRef callable;
             _PyStackRef res;
+            _PyStackRef a;
+            _PyStackRef c;
             arg = stack_pointer[-1];
-            null = stack_pointer[-2];
             callable = stack_pointer[-3];
-            (void)null;
             STAT_INC(CALL, hit);
             PyObject *arg_o = PyStackRef_AsPyObjectBorrow(arg);
+            stack_pointer += -3;
+            assert(WITHIN_STACK_BOUNDS());
             _PyFrame_SetStackPointer(frame, stack_pointer);
             Py_ssize_t len_i = PyObject_Length(arg_o);
             stack_pointer = _PyFrame_GetStackPointer(frame);
@@ -5947,19 +5948,13 @@
             if (res_o == NULL) {
                 JUMP_TO_ERROR();
             }
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyStackRef_CLOSE(arg);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            stack_pointer += -2;
-            assert(WITHIN_STACK_BOUNDS());
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyStackRef_CLOSE(callable);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
             res = PyStackRef_FromPyObjectSteal(res_o);
+            a = arg;
+            c = callable;
             stack_pointer[0] = res;
-            stack_pointer += 1;
+            stack_pointer[1] = a;
+            stack_pointer[2] = c;
+            stack_pointer += 3;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
