@@ -756,26 +756,20 @@ class StackSummary(list):
         """
         colorize = kwargs.get("colorize", False)
         result = []
-        last_file = None
-        last_line = None
-        last_name = None
+        last_formatted_frame = None
         count = 0
         for frame_summary in self:
             formatted_frame = self.format_frame_summary(frame_summary, colorize=colorize)
             if formatted_frame is None:
                 continue
-            if (last_file is None or last_file != frame_summary.filename or
-                last_line is None or last_line != frame_summary.lineno or
-                last_name is None or last_name != frame_summary.name):
+            if last_formatted_frame is None or last_formatted_frame != formatted_frame:
                 if count > _RECURSIVE_CUTOFF:
                     count -= _RECURSIVE_CUTOFF
                     result.append(
                         f'  [Previous line repeated {count} more '
                         f'time{"s" if count > 1 else ""}]\n'
                     )
-                last_file = frame_summary.filename
-                last_line = frame_summary.lineno
-                last_name = frame_summary.name
+                last_formatted_frame = formatted_frame
                 count = 0
             count += 1
             if count > _RECURSIVE_CUTOFF:

@@ -2074,15 +2074,101 @@ class TracebackFormatMixin:
         actual = stderr_g.getvalue().splitlines()
         self.assertEqual(actual, expected)
 
+    def _check_previous_line_repeated(self, render_exc):
+        # See https://github.com/python/cpython/issues/128327
+        def fib(number: int) -> int:
+            # wrong implementation
+            assert number > 0
+            if number == 1:
+                return 1
+            return fib(number - 1) + fib(number - 2)
+
+        lineno_fib = fib.__code__.co_firstlineno
+
+        with captured_output("stderr") as stderr_fib5:
+            try:
+                fib(5)
+            except AssertionError:
+                render_exc()
+            else:
+                self.fail("no error raised")
+        result_fib5 = [
+            'Traceback (most recent call last):',
+            f'  File "{__file__}", line {lineno_fib + 11}, in _check_previous_line_repeated',
+            '    fib(5)',
+            '    ~~~^^^',
+            f'  File "{__file__}", line {lineno_fib + 5}, in fib',
+            '    return fib(number - 1) + fib(number - 2)',
+            '           ~~~^^^^^^^^^^^^',
+            f'  File "{__file__}", line {lineno_fib + 5}, in fib',
+            '    return fib(number - 1) + fib(number - 2)',
+            '           ~~~^^^^^^^^^^^^',
+            f'  File "{__file__}", line {lineno_fib + 5}, in fib',
+            '    return fib(number - 1) + fib(number - 2)',
+            '           ~~~^^^^^^^^^^^^',
+        ]
+        if self.DEBUG_RANGES:
+            result_fib5.append(f'  File "{__file__}", line {lineno_fib + 5}, in fib')
+            result_fib5.append('    return fib(number - 1) + fib(number - 2)')
+            result_fib5.append('                             ~~~^^^^^^^^^^^^')
+        else:
+            result_fib5.append('  [Previous line repeated 1 more time]')
+        result_fib5.append(f'  File "{__file__}", line {lineno_fib + 2}, in fib')
+        result_fib5.append('    assert number > 0')
+        result_fib5.append('           ^^^^^^^^^^')
+        result_fib5.append('AssertionError')
+        expected = self._maybe_filter_debug_ranges(result_fib5)
+        actual = stderr_fib5.getvalue().splitlines()
+        self.assertEqual(actual, expected)
+
+        with captured_output("stderr") as stderr_fib6:
+            try:
+                fib(6)
+            except AssertionError:
+                render_exc()
+            else:
+                self.fail("no error raised")
+        result_fib6 = [
+            'Traceback (most recent call last):',
+            f'  File "{__file__}", line {lineno_fib + 47}, in _check_previous_line_repeated',
+            '    fib(6)',
+            '    ~~~^^^',
+            f'  File "{__file__}", line {lineno_fib + 5}, in fib',
+            '    return fib(number - 1) + fib(number - 2)',
+            '           ~~~^^^^^^^^^^^^',
+            f'  File "{__file__}", line {lineno_fib + 5}, in fib',
+            '    return fib(number - 1) + fib(number - 2)',
+            '           ~~~^^^^^^^^^^^^',
+            f'  File "{__file__}", line {lineno_fib + 5}, in fib',
+            '    return fib(number - 1) + fib(number - 2)',
+            '           ~~~^^^^^^^^^^^^',
+        ]
+        if self.DEBUG_RANGES:
+            result_fib6.append('  [Previous line repeated 1 more time]')
+            result_fib6.append(f'  File "{__file__}", line {lineno_fib + 5}, in fib')
+            result_fib6.append('    return fib(number - 1) + fib(number - 2)')
+            result_fib6.append('                             ~~~^^^^^^^^^^^^')
+        else:
+            result_fib6.append('  [Previous line repeated 2 more times]')
+        result_fib6.append(f'  File "{__file__}", line {lineno_fib + 2}, in fib')
+        result_fib6.append('    assert number > 0')
+        result_fib6.append('           ^^^^^^^^^^')
+        result_fib6.append('AssertionError')
+        expected = self._maybe_filter_debug_ranges(result_fib6)
+        actual = stderr_fib6.getvalue().splitlines()
+        self.assertEqual(actual, expected)
+
     @requires_debug_ranges()
     def test_recursive_traceback(self):
         if self.DEBUG_RANGES:
             self._check_recursive_traceback_display(traceback.print_exc)
+            self._check_previous_line_repeated(traceback.print_exc)
         else:
             from _testcapi import exception_print
             def render_exc():
                 exception_print(sys.exception())
             self._check_recursive_traceback_display(render_exc)
+            self._check_previous_line_repeated(render_exc)
 
     def test_format_stack(self):
         def fmt():
