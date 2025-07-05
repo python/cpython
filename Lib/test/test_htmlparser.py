@@ -34,12 +34,16 @@ class EventCollector(html.parser.HTMLParser):
 
     def handle_starttag(self, tag, attrs):
         self.append(("starttag", tag, attrs))
+        if tag == 'svg':
+            self.support_cdata(True)
 
     def handle_startendtag(self, tag, attrs):
         self.append(("startendtag", tag, attrs))
 
     def handle_endtag(self, tag):
         self.append(("endtag", tag))
+        if tag == 'svg':
+            self.support_cdata(False)
 
     # all other markup
 
@@ -643,10 +647,22 @@ text
             ('<!', [('comment', '')]),
             ('<!-', [('comment', '-')]),
             ('<![', [('comment', '[')]),
-            ('<![CDATA[', [('unknown decl', 'CDATA[')]),
-            ('<![CDATA[x', [('unknown decl', 'CDATA[x')]),
-            ('<![CDATA[x]', [('unknown decl', 'CDATA[x]')]),
-            ('<![CDATA[x]]', [('unknown decl', 'CDATA[x]]')]),
+            ('<![CDATA[', [('comment', '![CDATA[')]),
+            ('<![CDATA[x', [('comment', '![CDATA[x')]),
+            ('<![CDATA[x]', [('comment', '![CDATA[x]')]),
+            ('<![CDATA[x]]', [('comment', '![CDATA[x]]')]),
+            ('<svg><text y="100"><![CDATA[',
+             [('starttag', 'svg', []), ('starttag', 'text', [('y', '100')]),
+              ('unknown decl', 'CDATA[')]),
+            ('<svg><text y="100"><![CDATA[x',
+             [('starttag', 'svg', []), ('starttag', 'text', [('y', '100')]),
+              ('unknown decl', 'CDATA[x')]),
+            ('<svg><text y="100"><![CDATA[x]',
+             [('starttag', 'svg', []), ('starttag', 'text', [('y', '100')]),
+              ('unknown decl', 'CDATA[x]')]),
+            ('<svg><text y="100"><![CDATA[x]]',
+             [('starttag', 'svg', []), ('starttag', 'text', [('y', '100')]),
+              ('unknown decl', 'CDATA[x]]')]),
             ('<!DOCTYPE', [('decl', 'DOCTYPE')]),
             ('<!DOCTYPE ', [('decl', 'DOCTYPE ')]),
             ('<!DOCTYPE html', [('decl', 'DOCTYPE html')]),
@@ -737,11 +753,35 @@ text
          '        printf("[<marquee>How?</marquee>]");\n'
          '    }\n'),
     ])
-    def test_cdata_section(self, content):
+    def test_cdata_section_content(self, content):
         # See "13.2.5.42 Markup declaration open state",
         # "13.2.5.69 CDATA section state", and issue bpo-32876.
-        html = f'<![CDATA[{content}]]>'
-        expected = [('unknown decl', 'CDATA[' + content)]
+        html = f'<svg><text y="100"><![CDATA[{content}]]></text></svg>'
+        expected = [
+            ('starttag', 'svg', []),
+            ('starttag', 'text', [('y', '100')]),
+            ('unknown decl', 'CDATA[' + content),
+            ('endtag', 'text'),
+            ('endtag', 'svg'),
+        ]
+        self._run_check(html, expected)
+
+    def test_cdata_section(self):
+        # See "13.2.5.42 Markup declaration open state".
+        html = ('<![CDATA[foo<br>bar]]>'
+                '<svg><text y="100"><![CDATA[foo<br>bar]]></text></svg>'
+                '<![CDATA[foo<br>bar]]>')
+        expected = [
+            ('comment', '[CDATA[foo<br'),
+            ('data', 'bar]]>'),
+            ('starttag', 'svg', []),
+            ('starttag', 'text', [('y', '100')]),
+            ('unknown decl', 'CDATA[foo<br>bar'),
+            ('endtag', 'text'),
+            ('endtag', 'svg'),
+            ('comment', '[CDATA[foo<br'),
+            ('data', 'bar]]>'),
+        ]
         self._run_check(html, expected)
 
     def test_convert_charrefs_dropped_text(self):
