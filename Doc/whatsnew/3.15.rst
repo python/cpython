@@ -181,6 +181,21 @@ tarfile
   and :cve:`2025-4435`.)
 
 
+traceback
+----------
+
+* Add new *show_lines* and *recent_first* keyword only arguments to
+  the :mod:`traceback` functions.
+
+  The *show_lines* argument controls whether source code lines are displayed.
+  It is default to ``True``.
+
+  The *recent_first* argument controls whether the most recent frames are
+  displayed first or last in the traceback. It affects whether the exception
+  is displayed at the top or bottom of the traceback. It is default to ``False``.
+  (Contributed by Inada Naoki in :gh:`135751`)
+
+
 zlib
 ----
 
