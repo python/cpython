@@ -5946,6 +5946,9 @@ The limit is applied to the number of digit characters in the input or output
 string when a non-linear conversion algorithm would be involved.  Underscores
 and the sign are not counted towards the limit.
 
+For integer to string conversions, the limit is applied to an estimated
+size of the result.
+
 When an operation would exceed the limit, a :exc:`ValueError` is raised:
 
 .. doctest::
