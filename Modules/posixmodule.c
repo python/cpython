@@ -17752,6 +17752,8 @@ all_ins(PyObject *m)
 #ifdef HAVE_GETRANDOM_SYSCALL
     if (PyModule_AddIntMacro(m, GRND_RANDOM)) return -1;
     if (PyModule_AddIntMacro(m, GRND_NONBLOCK)) return -1;
+    /* Linux 5.6+ */
+    if (PyModule_AddIntMacro(m, GRND_INSECURE)) return -1;
 #endif
 #ifdef HAVE_MEMFD_CREATE
     if (PyModule_AddIntMacro(m, MFD_CLOEXEC)) return -1;
