@@ -154,6 +154,21 @@ long_normalize(PyLongObject *v)
 # define MAX_LONG_DIGITS ((INT64_MAX-1) / PyLong_SHIFT)
 #endif
 
+static inline int
+maybe_freelist_push(PyObject *self)
+{
+    assert(PyLong_CheckExact(self));
+
+    PyLongObject *op = (PyLongObject *)self;
+    Py_ssize_t ndigits = _PyLong_DigitCount(op);
+
+    if (ndigits < PyLong_MAXSAVESIZE) {
+        return _Py_FREELIST_PUSH(ints[ndigits], self, Py_ints_MAXFREELIST);
+    }
+    return 0;
+}
+
+
 static PyLongObject *
 long_alloc(Py_ssize_t size)
 {
@@ -168,8 +183,8 @@ long_alloc(Py_ssize_t size)
      * assume that there is always at least one digit present. */
     Py_ssize_t ndigits = size ? size : 1;
 
-    if (ndigits == 1) {
-        result = (PyLongObject *)_Py_FREELIST_POP(PyLongObject, ints);
+    if (ndigits < PyLong_MAXSAVESIZE ) {
+        result = (PyLongObject *)_Py_FREELIST_POP(PyLongObject, ints[ndigits]);
     }
     if (result == NULL) {
         /* Number of bytes needed is: offsetof(PyLongObject, ob_digit) +
@@ -249,7 +264,7 @@ _PyLong_FromMedium(sdigit x)
     assert(!IS_SMALL_INT(x));
     assert(is_medium_int(x));
 
-    PyLongObject *v = (PyLongObject *)_Py_FREELIST_POP(PyLongObject, ints);
+    PyLongObject *v = (PyLongObject *)_Py_FREELIST_POP(PyLongObject, ints[1]);
     if (v == NULL) {
         v = PyObject_Malloc(sizeof(PyLongObject));
         if (v == NULL) {
@@ -3592,11 +3607,10 @@ _PyLong_ExactDealloc(PyObject *self)
         _Py_SetImmortal(self);
         return;
     }
-    if (_PyLong_IsCompact((PyLongObject *)self)) {
-        _Py_FREELIST_FREE(ints, self, PyObject_Free);
-        return;
+
+    if (!maybe_freelist_push(self)) {
+        PyObject_Free(self);
     }
-    PyObject_Free(self);
 }
 
 static void
@@ -3612,10 +3626,13 @@ long_dealloc(PyObject *self)
         _Py_SetImmortal(self);
         return;
     }
-    if (PyLong_CheckExact(self) && _PyLong_IsCompact((PyLongObject *)self)) {
-        _Py_FREELIST_FREE(ints, self, PyObject_Free);
+    if (PyLong_CheckExact(self))  {
+        if (!maybe_freelist_push(self)) {
+            PyObject_Free(self);
+        }
         return;
     }
+
     Py_TYPE(self)->tp_free(self);
 }
 
