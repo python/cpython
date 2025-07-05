@@ -1620,6 +1620,10 @@ DocTestRunner objects
       output checker, and the results are formatted by the
       :meth:`!DocTestRunner.report_\*` methods.
 
+      .. versionchanged:: 3.13
+          Added support for testing examples with a customized
+          :func:`sys.displayhook` value.  Previously, this wasn't allowed and
+          the method was always using the :func:`sys.__displayhook__`.
 
    .. method:: summarize(verbose=None)
 
