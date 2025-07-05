@@ -357,8 +357,9 @@ anextawaitable_getiter(anextawaitableobject *obj)
         }
         Py_SETREF(awaitable, new_awaitable);
         if (!PyIter_Check(awaitable)) {
-            PyErr_SetString(PyExc_TypeError,
-                            "__await__ returned a non-iterable");
+            PyErr_Format(PyExc_TypeError,
+                         "%T.__await__() must return an iterable, not %T",
+                         obj, awaitable);
             Py_DECREF(awaitable);
             return NULL;
         }
