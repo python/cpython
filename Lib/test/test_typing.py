@@ -7327,6 +7327,12 @@ class EvaluateForwardRefTests(BaseTestCase):
             list[EqualToForwardRef('A')],
         )
 
+    def test_with_module(self):
+        from test.typinganndata import fwdref_module
+
+        typing.evaluate_forward_ref(
+            fwdref_module.fw,)
+
 
 class CollectionsAbcTests(BaseTestCase):
 
