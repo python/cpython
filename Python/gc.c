@@ -1077,12 +1077,14 @@ handle_legacy_finalizers(PyThreadState *tstate,
 /* Run first-time finalizers (if any) on all the objects in collectable.
  * Note that this may remove some (or even all) of the objects from the
  * list, due to refcounts falling to 0.
+ * Return 1 if any finalizers were run.
  */
-static void
+static int
 finalize_garbage(PyThreadState *tstate, PyGC_Head *collectable)
 {
     destructor finalize;
     PyGC_Head seen;
+    int finalizer_run = 0;
 
     /* While we're going through the loop, `finalize(op)` may cause op, or
      * other objects, to be reclaimed via refcounts falling to zero.  So
@@ -1101,6 +1103,7 @@ finalize_garbage(PyThreadState *tstate, PyGC_Head *collectable)
         if (!_PyGC_FINALIZED(op) &&
             (finalize = Py_TYPE(op)->tp_finalize) != NULL)
         {
+            finalizer_run = 1;
             _PyGC_SET_FINALIZED(op);
             Py_INCREF(op);
             finalize(op);
@@ -1109,6 +1112,7 @@ finalize_garbage(PyThreadState *tstate, PyGC_Head *collectable)
         }
     }
     gc_list_merge(&seen, collectable);
+    return finalizer_run;
 }
 
 /* Break reference cycles by clearing the containers involved.  This is
@@ -1743,20 +1747,29 @@ gc_collect_region(PyThreadState *tstate,
     validate_list(&unreachable, collecting_set_unreachable_clear);
 
     /* Call tp_finalize on objects which have one. */
-    finalize_garbage(tstate, &unreachable);
-    /* Handle any objects that may have resurrected after the call
-     * to 'finalize_garbage' and continue the collection with the
-     * objects that are still unreachable */
+    int check_resurrected = finalize_garbage(tstate, &unreachable);
+
+    /* If no finalizers have run, no objects can have been resurrected: in that
+     * case skip the resurrection check and just use the existing unreachable
+     * list. Otherwise we need to check and handle any objects that may have
+     * resurrected after the call to 'finalize_garbage' and continue the
+     * collection with the objects that are still unreachable. */
     PyGC_Head final_unreachable;
-    gc_list_init(&final_unreachable);
-    handle_resurrected_objects(&unreachable, &final_unreachable, to);
+    PyGC_Head *to_delete;
+    if (check_resurrected) {
+        gc_list_init(&final_unreachable);
+        handle_resurrected_objects(&unreachable, &final_unreachable, to);
+        to_delete = &final_unreachable;
+    } else {
+        to_delete = &unreachable;
+    }
 
     /* Call tp_clear on objects in the final_unreachable set.  This will cause
     * the reference cycles to be broken.  It may also cause some objects
     * in finalizers to be freed.
     */
-    stats->collected += gc_list_size(&final_unreachable);
-    delete_garbage(tstate, gcstate, &final_unreachable, to);
+    stats->collected += gc_list_size(to_delete);
+    delete_garbage(tstate, gcstate, to_delete, to);
 
     /* Collect statistics on uncollectable objects found and print
      * debugging information. */
