@@ -318,6 +318,18 @@ class FilterTests(BaseTest):
             self.module.warn("something completely different")
             self.assertEqual(w, [])
 
+    def test_message_matching_regex(self):
+        with original_warnings.catch_warnings(record=True,
+                module=self.module) as w:
+            self.module.simplefilter("ignore", UserWarning)
+            self.module.filterwarnings("error", ".*match", UserWarning)
+            self.assertRaises(UserWarning, self.module.warn, "match")
+            self.assertRaises(UserWarning, self.module.warn, "match prefix")
+            self.assertRaises(UserWarning, self.module.warn, "suffix match")
+            self.assertEqual(w, [])
+            self.module.warn("not a m4tch")
+            self.assertEqual(w, [])
+
     def test_mutate_filter_list(self):
         class X:
             def match(self, a):
@@ -1351,6 +1363,18 @@ class EnvironmentVariableTests(BaseTest):
             PYTHONWARNINGS="ignore::DeprecationWarning",
             PYTHONDEVMODE="")
         self.assertEqual(stdout, b"['ignore::DeprecationWarning']")
+
+    def test_string_literals(self):
+        # Ensure message/module are treated as string literals
+        rc, stdout, stderr = assert_python_ok("-c",
+            "import sys, warnings; "
+            "sys.stdout.write(warnings.filters[0][1].pattern); "
+            "sys.stderr.write(warnings.filters[0][3].pattern)",
+            PYTHONWARNINGS="ignore:.generic::yourmodule.submodule",
+            PYTHONDEVMODE="")
+        self.assertEqual(stdout, rb"\.generic")
+        # '\Z' is added to the module name, so check start of pattern:
+        self.assertTrue(stderr.startswith(rb"yourmodule\.submodule"))
 
     def test_comma_separated_warnings(self):
         rc, stdout, stderr = assert_python_ok("-c",
