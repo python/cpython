@@ -27,6 +27,7 @@ static struct PyModuleDef thread_module;
 // Module state
 typedef struct {
     PyTypeObject *excepthook_type;
+    PyTypeObject *iter_locked_type;
     PyTypeObject *lock_type;
     PyTypeObject *rlock_type;
     PyTypeObject *local_type;
@@ -68,10 +69,12 @@ static PF_SET_THREAD_DESCRIPTION pSetThreadDescription = NULL;
 
 /*[clinic input]
 module _thread
+class _thread.iter_locked "iter_locked_object *" "clinic_state()->iter_locked_type"
 class _thread.lock "lockobject *" "clinic_state()->lock_type"
 class _thread.RLock "rlockobject *" "clinic_state()->rlock_type"
+
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=c5a0f8c492a0c263]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=1a4bf65233f83eae]*/
 
 #define clinic_state() get_thread_state_by_cls(type)
 #include "clinic/_threadmodule.c.h"
@@ -749,6 +752,103 @@ static PyType_Spec ThreadHandle_Type_spec = {
     0,
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_HAVE_GC,
     ThreadHandle_Type_slots,
+};
+
+/* iter_locked object **************************************************************/
+
+typedef struct {
+    PyObject_HEAD
+    PyObject *it;
+    PyMutex lock;
+} iter_locked_object;
+
+#define iter_locked_object_CAST(op)    ((iter_locked_object *)(op))
+
+/*[clinic input]
+@classmethod
+_thread.iter_locked.__new__
+    iterable: object
+    /
+Make an iterator thread-safe.
+[clinic start generated code]*/
+
+static PyObject *
+_thread_iter_locked_impl(PyTypeObject *type, PyObject *iterable)
+/*[clinic end generated code: output=4a8ad5a25f7c09ba input=ae6124177726e809]*/
+{
+    /* Get iterator. */
+    PyObject *it = PyObject_GetIter(iterable);
+    if (it == NULL)
+        return NULL;
+
+    iter_locked_object *il = (iter_locked_object *)type->tp_alloc(type, 0);
+    if (il == NULL) {
+        Py_DECREF(it);
+        return NULL;
+    }
+    il->it = it;
+    il->lock = (PyMutex){0};
+
+    return (PyObject *)il;
+}
+
+static void
+iter_locked_dealloc(PyObject *op)
+{
+    iter_locked_object *il = iter_locked_object_CAST(op);
+    PyTypeObject *tp = Py_TYPE(il);
+    PyObject_GC_UnTrack(il);
+    Py_DECREF(il->it);
+    tp->tp_free(il);
+    Py_DECREF(tp);
+}
+
+static int
+iter_locked_traverse(PyObject *op, visitproc visit, void *arg)
+{
+    iter_locked_object *lz = iter_locked_object_CAST(op);
+    Py_VISIT(Py_TYPE(lz));
+    Py_VISIT(lz->it);
+    return 0;
+}
+
+static PyObject *
+iter_locked_next(PyObject *op)
+{
+    iter_locked_object *lz = iter_locked_object_CAST(op);
+    PyObject *result = NULL;
+
+    // we cannot use Py_BEGIN_CRITICAL_SECTION as it is not available in the normal build
+    PyMutex_Lock(&(lz->lock));
+
+    int v = PyIter_NextItem(lz->it, &result);
+    if (v == -1) {
+        /* Note:  StopIteration is already cleared by PyIter_Next() */
+        /* If PyErr_Occurred() we will also return NULL*/
+    }
+    PyMutex_Unlock(&(lz->lock));
+
+    return result;
+}
+
+static PyType_Slot iter_locked_slots[] = {
+    {Py_tp_dealloc, iter_locked_dealloc},
+    {Py_tp_getattro, PyObject_GenericGetAttr},
+    {Py_tp_doc, (void *)_thread_iter_locked__doc__},
+    {Py_tp_traverse, iter_locked_traverse},
+    {Py_tp_iter, PyObject_SelfIter},
+    {Py_tp_iternext, iter_locked_next},
+    {Py_tp_new, _thread_iter_locked},
+    {Py_tp_free, PyObject_GC_Del},
+    {0, NULL},
+};
+
+static PyType_Spec iter_locked_spec = {
+    .name = "threading.iter_locked",
+    .basicsize = sizeof(iter_locked_object),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = iter_locked_slots,
 };
 
 /* Lock objects */
@@ -2660,6 +2760,15 @@ thread_module_exec(PyObject *module)
         return -1;
     }
 
+    // iter_locked
+    state->iter_locked_type = (PyTypeObject *)PyType_FromModuleAndSpec(module, &iter_locked_spec, NULL);
+    if (state->iter_locked_type == NULL) {
+        return -1;
+    }
+    if (PyModule_AddType(module, state->iter_locked_type) < 0) {
+        return -1;
+    }
+
     // Lock
     state->lock_type = (PyTypeObject *)PyType_FromModuleAndSpec(module, &lock_type_spec, NULL);
     if (state->lock_type == NULL) {
@@ -2766,6 +2875,7 @@ thread_module_traverse(PyObject *module, visitproc visit, void *arg)
 {
     thread_module_state *state = get_thread_state(module);
     Py_VISIT(state->excepthook_type);
+    Py_VISIT(state->iter_locked_type);
     Py_VISIT(state->lock_type);
     Py_VISIT(state->rlock_type);
     Py_VISIT(state->local_type);
@@ -2779,6 +2889,7 @@ thread_module_clear(PyObject *module)
 {
     thread_module_state *state = get_thread_state(module);
     Py_CLEAR(state->excepthook_type);
+    Py_CLEAR(state->iter_locked_type);
     Py_CLEAR(state->lock_type);
     Py_CLEAR(state->rlock_type);
     Py_CLEAR(state->local_type);
