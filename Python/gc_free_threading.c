@@ -1491,8 +1491,82 @@ move_legacy_finalizer_reachable(struct collection_state *state)
     return 0;
 }
 
-// Clear all weakrefs to unreachable objects. Weakrefs with callbacks are
-// enqueued in `wrcb_to_call`, but not invoked yet.
+// Weakrefs with callbacks are enqueued in `wrcb_to_call`, but not invoked
+// yet.
+static void
+find_weakref_callbacks(struct collection_state *state)
+{
+    PyObject *op;
+    WORKSTACK_FOR_EACH(&state->unreachable, op) {
+        if (!_PyType_SUPPORTS_WEAKREFS(Py_TYPE(op))) {
+            continue;
+        }
+
+        // NOTE: This is never triggered for static types so we can avoid the
+        // (slightly) more costly _PyObject_GET_WEAKREFS_LISTPTR().
+        PyWeakReference **wrlist = _PyObject_GET_WEAKREFS_LISTPTR_FROM_OFFSET(op);
+
+        // `op` may have some weakrefs.  March over the list, clear
+        // all the weakrefs, and enqueue the weakrefs with callbacks
+        // that must be called into wrcb_to_call.
+        PyWeakReference *next_wr;
+        for (PyWeakReference *wr = *wrlist; wr != NULL; wr = next_wr) {
+            // Get the next list element to get iterator progress if we omit
+            // clearing of the weakref (because _PyWeakref_ClearRef changes
+            // next pointer in the wrlist).
+            next_wr = wr->wr_next;
+
+            // Weakrefs with callbacks always need to be cleared before
+            // executing the callback.  Sometimes the callback will call
+            // the ref object, to check if it's actually a dead reference
+            // (KeyedRef does this, for example).  We want to indicate that it
+            // is dead, even though it is possible a finalizer might resurrect
+            // it.  Clearing also prevents the callback from being executing
+            // more than once.
+            //
+            // Since Python 2.3, all weakrefs to cyclic garbage have
+            // been cleared *before* calling finalizers.  However, since
+            // tp_subclasses started being necessary to invalidate caches
+            // (e.g. by PyType_Modified()), that clearing has created a bug.
+            // If the weakref to the subclass is cleared before a finalizer
+            // is called, the cache may not be correctly invalidated.  That
+            // can lead to segfaults since the caches can refer to deallocated
+            // objects.  Delaying the clear of weakrefs until *after*
+            // finalizers have been called fixes that bug.  However, that
+            // deferral could introduce other problems if some finalizer
+            // code expects that the weakrefs will be cleared first.  So, we
+            // have the PyType_Check() test below to only defer the clear of
+            // weakrefs to types.  That solves the issue for tp_subclasses.
+            // In a future version of Python, we should likely defer the
+            // weakref clear for all objects, not just types.
+            if (wr->wr_callback != NULL || !PyType_Check(wr->wr_object)) {
+                // _PyWeakref_ClearRef clears the weakref but leaves the
+                // callback pointer intact.  Obscure: it also changes *wrlist.
+                _PyObject_ASSERT((PyObject *)wr, wr->wr_object == op);
+                _PyWeakref_ClearRef(wr);
+                _PyObject_ASSERT((PyObject *)wr, wr->wr_object == Py_None);
+            }
+
+            // We do not invoke callbacks for weakrefs that are themselves
+            // unreachable. This is partly for historical reasons: weakrefs
+            // predate safe object finalization, and a weakref that is itself
+            // unreachable may have a callback that resurrects other
+            // unreachable objects.
+            if (wr->wr_callback == NULL || gc_is_unreachable((PyObject *)wr)) {
+                continue;
+            }
+
+            // Create a new reference so that wr can't go away before we can
+            // process it again.
+            merge_refcount((PyObject *)wr, 1);
+
+            // Enqueue weakref to be called later.
+            worklist_push(&state->wrcb_to_call, (PyObject *)wr);
+        }
+    }
+}
+
+// Clear all weakrefs to unreachable objects.
 static void
 clear_weakrefs(struct collection_state *state)
 {
@@ -1525,22 +1599,6 @@ clear_weakrefs(struct collection_state *state)
             _PyObject_ASSERT((PyObject *)wr, wr->wr_object == op);
             _PyWeakref_ClearRef(wr);
             _PyObject_ASSERT((PyObject *)wr, wr->wr_object == Py_None);
-
-            // We do not invoke callbacks for weakrefs that are themselves
-            // unreachable. This is partly for historical reasons: weakrefs
-            // predate safe object finalization, and a weakref that is itself
-            // unreachable may have a callback that resurrects other
-            // unreachable objects.
-            if (wr->wr_callback == NULL || gc_is_unreachable((PyObject *)wr)) {
-                continue;
-            }
-
-            // Create a new reference so that wr can't go away before we can
-            // process it again.
-            merge_refcount((PyObject *)wr, 1);
-
-            // Enqueue weakref to be called later.
-            worklist_push(&state->wrcb_to_call, (PyObject *)wr);
         }
     }
 }
@@ -2210,8 +2268,8 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
     // Record the number of live GC objects
     interp->gc.long_lived_total = state->long_lived_total;
 
-    // Clear weakrefs and enqueue callbacks (but do not call them).
-    clear_weakrefs(state);
+    // Find weakref callbacks we will honor (but do not call them).
+    find_weakref_callbacks(state);
     _PyEval_StartTheWorld(interp);
 
     // Deallocate any object from the refcount merge step
@@ -2222,11 +2280,28 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
     call_weakref_callbacks(state);
     finalize_garbage(state);
 
-    // Handle any objects that may have resurrected after the finalization.
     _PyEval_StopTheWorld(interp);
+    // Handle any objects that may have resurrected after the finalization.
     err = handle_resurrected_objects(state);
     // Clear free lists in all threads
     _PyGC_ClearAllFreeLists(interp);
+    if (err == 0) {
+        // Clear weakrefs to objects in the unreachable set.  No Python-level
+        // code must be allowed to access those unreachable objects.  During
+        // delete_garbage(), finalizers outside the unreachable set might
+        // run and if those weakrefs were not cleared, that could reveal
+        // unreachable objects.
+        //
+        // We used to clear weakrefs earlier, before calling finalizers.
+        // That causes at least two problems.  First, the finalizers could
+        // create new weakrefs, that refer to unreachable objects.  Those
+        // would not be cleared and could cause the problem described above
+        // (see GH-91636 as an example).  Second, we need the weakrefs in the
+        // tp_subclasses to *not* be cleared so that caches based on the type
+        // version are correctly invalidated (see GH-135552 as a bug caused by
+        // this).
+        clear_weakrefs(state);
+    }
     _PyEval_StartTheWorld(interp);
 
     if (err < 0) {
