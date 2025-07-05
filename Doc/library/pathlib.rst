@@ -982,6 +982,24 @@ Expanding and resolving paths
       strict mode, and no exception is raised in non-strict mode. In previous
       versions, :exc:`RuntimeError` is raised no matter the value of *strict*.
 
+   .. note::
+
+      Even with ``strict=False``, ``Path.resolve()`` internally calls
+      :func:`os.getcwd` to obtain the current working directory (cwd).
+      If the cwd has been removed (for example, by unlinking it externally),
+      :func:`os.getcwd` will raise :exc:`FileNotFoundError`, causing
+      ``resolve()`` to fail.
+
+      Therefore:
+
+      - Do **not** rely solely on ``Path.exists()`` as a pre-check for
+        ``resolve()``: ``exists()`` only reflects the existence of the
+        *target* path in the filesystem, and does not detect whether the cwd
+        has been deleted.
+      - In multi-threaded or multi-process environments, a successful
+        ``exists()`` check may still race with filesystem changes that occur
+        before calling ``resolve()``.
+
 
 .. method:: Path.readlink()
 
