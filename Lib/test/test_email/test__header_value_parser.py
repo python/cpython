@@ -3174,6 +3174,11 @@ class TestFolding(TestEmailBase):
              'A =?utf-8?q?v=C3=A9ry?= long name\n'
              ' containing =?utf-8?q?a=2C?= comma\n'
              ' <to@example.com>\n'),
+            ('=?utf-8?Q?a=2C=20123456789012345678901234567890123456?='
+                ' <abc@example.com>',
+             '=?utf-8?q?a=2C?=\n'
+             ' 123456789012345678901234567890123456\n'
+             ' <abc@example.com>\n'),
         ]
         for (to, folded) in cases:
             with self.subTest(to=to):
