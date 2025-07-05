@@ -2512,11 +2512,9 @@
                     out = Py_True;
                 }
                 sym_set_const(res, out);
-                REPLACE_OP(this_instr, _POP_CALL_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)out);
+                REPLACE_OP(this_instr, _SWAP_CALL_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)out);
             }
             stack_pointer[-4] = res;
-            stack_pointer += -3;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
@@ -2990,6 +2988,29 @@
             stack_pointer[-4] = value;
             stack_pointer += -3;
             assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _SWAP_CALL_TWO_LOAD_CONST_INLINE_BORROW: {
+            JitOptRef cls;
+            JitOptRef instance;
+            JitOptRef callable;
+            JitOptRef value;
+            JitOptRef c1;
+            JitOptRef i;
+            JitOptRef c2;
+            cls = stack_pointer[-1];
+            instance = stack_pointer[-2];
+            callable = stack_pointer[-4];
+            PyObject *ptr = (PyObject *)this_instr->operand0;
+            value = PyJitRef_Borrow(sym_new_const(ctx, ptr));
+            c1 = callable;
+            i = instance;
+            c2 = cls;
+            stack_pointer[-4] = value;
+            stack_pointer[-3] = c1;
+            stack_pointer[-2] = i;
+            stack_pointer[-1] = c2;
             break;
         }
 
