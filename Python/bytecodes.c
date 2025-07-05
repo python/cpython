@@ -4048,17 +4048,14 @@ dummy_func(
             DEOPT_IF(callable_o != (PyObject *)&PyUnicode_Type);
         }
 
-        op(_CALL_STR_1, (callable, null, arg -- res)) {
+        op(_CALL_STR_1, (callable, null, arg -- res, a)) {
             PyObject *arg_o = PyStackRef_AsPyObjectBorrow(arg);
 
             assert(oparg == 1);
             STAT_INC(CALL, hit);
+            INPUTS_DEAD();
             PyObject *res_o = PyObject_Str(arg_o);
-            DEAD(null);
-            DEAD(callable);
-            (void)callable; // Silence compiler warnings about unused variables
-            (void)null;
-            PyStackRef_CLOSE(arg);
+            a = arg;
             ERROR_IF(res_o == NULL);
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
@@ -4069,6 +4066,7 @@ dummy_func(
             _GUARD_NOS_NULL +
             _GUARD_CALLABLE_STR_1 +
             _CALL_STR_1 +
+            POP_TOP +
             _CHECK_PERIODIC;
 
         op(_GUARD_CALLABLE_TUPLE_1, (callable, unused, unused -- callable, unused, unused)) {
