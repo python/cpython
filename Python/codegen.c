@@ -686,13 +686,14 @@ codegen_setup_annotations_scope(compiler *c, location loc,
     PyObject *value_with_fake_globals = PyLong_FromLong(_Py_ANNOTATE_FORMAT_VALUE_WITH_FAKE_GLOBALS);
     assert(!SYMTABLE_ENTRY(c)->ste_has_docstring);
     _Py_DECLARE_STR(format, ".format");
-    ADDOP_I(c, loc, LOAD_FAST, 0);
-    ADDOP_LOAD_CONST(c, loc, value_with_fake_globals);
-    ADDOP_I(c, loc, COMPARE_OP, (Py_GT << 5) | compare_masks[Py_GT]);
+
+    ADDOP_I(c, NO_LOCATION, LOAD_FAST, 0);
+    ADDOP_LOAD_CONST(c, NO_LOCATION, value_with_fake_globals);
+    ADDOP_I(c, NO_LOCATION, COMPARE_OP, (Py_GT << 5) | compare_masks[Py_GT]);
     NEW_JUMP_TARGET_LABEL(c, body);
-    ADDOP_JUMP(c, loc, POP_JUMP_IF_FALSE, body);
-    ADDOP_I(c, loc, LOAD_COMMON_CONSTANT, CONSTANT_NOTIMPLEMENTEDERROR);
-    ADDOP_I(c, loc, RAISE_VARARGS, 1);
+    ADDOP_JUMP(c, NO_LOCATION, POP_JUMP_IF_FALSE, body);
+    ADDOP_I(c, NO_LOCATION, LOAD_COMMON_CONSTANT, CONSTANT_NOTIMPLEMENTEDERROR);
+    ADDOP_I(c, NO_LOCATION, RAISE_VARARGS, 1);
     USE_LABEL(c, body);
     return SUCCESS;
 }
@@ -751,7 +752,7 @@ codegen_deferred_annotations_body(compiler *c, location loc,
     assert(PyList_CheckExact(conditional_annotation_indices));
     assert(annotations_len == PyList_Size(conditional_annotation_indices));
 
-    ADDOP_I(c, loc, BUILD_MAP, 0); // stack now contains <annos>
+    ADDOP_I(c, NO_LOCATION, BUILD_MAP, 0); // stack now contains <annos>
 
     for (Py_ssize_t i = 0; i < annotations_len; i++) {
         PyObject *ptr = PyList_GET_ITEM(deferred_anno, i);

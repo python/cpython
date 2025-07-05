@@ -1124,6 +1124,43 @@ class DisTests(DisTestBase):
         # Test that negative operargs are handled properly
         self.do_disassembly_test(bug46724, dis_bug46724)
 
+    def test_annotate_source_locations(self):
+        # See gh-135700
+        issue_135700 = "1\nx: int"
+        issue_135700_class = "class A:\n    1\n    x: int"
+
+        test_cases = [
+            ("module", compile(issue_135700, "<string>", "exec").co_consts[1]),
+            (
+                "class",
+                compile(ast.parse(issue_135700_class), "?", "exec")
+                .co_consts[0]
+                .co_consts[1],
+            ),
+        ]
+
+        for case_name, annotate_code in test_cases:
+            with self.subTest(case=case_name):
+                line_starts_iterator = dis.findlinestarts(annotate_code)
+                valid_line_starts = [
+                    item[0]
+                    for item in line_starts_iterator
+                    if item[1] is not None
+                ]  # The first item is not RESUME in class case
+                setup_scope_begin = valid_line_starts[0]
+                setup_scope_end = valid_line_starts[1]
+                setup_annotations_scope_positions = {
+                    instr.positions
+                    for instr in dis.get_instructions(annotate_code)
+                    if setup_scope_begin <= instr.offset < setup_scope_end
+                    and instr.positions
+                }
+                self.assertEqual(
+                    len(setup_annotations_scope_positions),
+                    1,
+                    f"{case_name}: Expected uniform positions, found {len(setup_annotations_scope_positions)}: {setup_annotations_scope_positions}",
+                )
+
     def test_kw_names(self):
         # Test that value is displayed for keyword argument names:
         self.do_disassembly_test(wrap_func_w_kwargs, dis_kw_names)
