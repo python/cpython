@@ -1484,6 +1484,66 @@ mapping. It is not supported by :meth:`str.encode` (which only produces
    Restoration of the ``rot13`` alias.
 
 
+:mod:`encodings` --- Encodings package
+--------------------------------------
+
+.. module:: encodings
+   :synopsis: Encodings package
+
+This module implements the following functions:
+
+.. function:: normalize_encoding(encoding)
+
+   Normalize encoding name *encoding*.
+
+   Normalization works as follows: all non-alphanumeric characters except the
+   dot used for Python package names are collapsed and replaced with a single
+   underscore, leading and trailing underscores are removed.
+   For example, ``'  -;#'`` becomes ``'_'``.
+
+   Note that *encoding* should be ASCII only.
+
+
+.. note::
+   The following functions should not be used directly, except for testing
+   purposes; :func:`codecs.lookup` should be used instead.
+
+
+.. function:: search_function(encoding)
+
+   Search for the codec module corresponding to the given encoding name
+   *encoding*.
+
+   This function first normalizes the *encoding* using
+   :func:`normalize_encoding`, then looks for a corresponding alias.
+   It attempts to import a codec module from the encodings package using either
+   the alias or the normalized name. If the module is found and defines a valid
+   ``getregentry()`` function that returns a :class:`codecs.CodecInfo` object,
+   the codec is cached and returned.
+
+   If the codec module defines a ``getaliases()`` function any returned aliases
+   are registered for future use.
+
+
+.. function:: win32_code_page_search_function(encoding)
+
+   Search for a Windows code page encoding *encoding* of the form ``cpXXXX``.
+
+   If the code page is valid and supported, return a :class:`codecs.CodecInfo`
+   object for it.
+
+   .. availability:: Windows.
+
+   .. versionadded:: 3.14
+
+
+This module implements the following exception:
+
+.. exception:: CodecRegistryError
+
+   Raised when a codec is invalid or incompatible.
+
+
 :mod:`encodings.idna` --- Internationalized Domain Names in Applications
 ------------------------------------------------------------------------
 
