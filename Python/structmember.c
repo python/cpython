@@ -7,6 +7,8 @@
 #include "pycore_object.h"        // _Py_TryIncrefCompare(), FT_ATOMIC_*()
 #include "pycore_critical_section.h"
 
+#include <stddef.h>
+
 
 static inline PyObject *
 member_get_object(const char *addr, const char *obj_addr, PyMemberDef *l)
@@ -62,6 +64,9 @@ PyMember_GetOne(const char *obj_addr, PyMemberDef *l)
         break;
     case Py_T_PYSSIZET:
         v = PyLong_FromSsize_t(FT_ATOMIC_LOAD_SSIZE_RELAXED(*(Py_ssize_t*)addr));
+        break;
+    case Py_T_SIZE:
+        v = PyLong_FromSize_t(*(size_t*)addr);
         break;
     case Py_T_FLOAT:
         v = PyFloat_FromDouble((double)FT_ATOMIC_LOAD_FLOAT_RELAXED(*(float*)addr));
@@ -127,6 +132,48 @@ PyMember_GetOne(const char *obj_addr, PyMemberDef *l)
         // doesn't require free-threading code path
         v = Py_NewRef(Py_None);
         break;
+    case Py_T_INT8:
+    case Py_T_INT8|Py_T_UINT8:
+        v = PyLong_FromLong(*(int8_t*)addr);
+        break;
+    case Py_T_UINT8:
+        v = PyLong_FromUnsignedLong(*(uint8_t*)addr);
+        break;
+    case Py_T_INT16:
+    case Py_T_INT16|Py_T_UINT16:
+        v = PyLong_FromLong(*(int16_t*)addr);
+        break;
+    case Py_T_UINT16:
+        v = PyLong_FromUnsignedLong(*(uint16_t*)addr);
+        break;
+    case Py_T_INT32:
+    case Py_T_INT32|Py_T_UINT32:
+        v = PyLong_FromLong(*(int32_t*)addr);
+        break;
+    case Py_T_UINT32:
+        v = PyLong_FromUnsignedLong(*(uint32_t*)addr);
+        break;
+    case Py_T_INT64:
+    case Py_T_INT64|Py_T_UINT64:
+        v = PyLong_FromLongLong(*(int64_t*)addr);
+        break;
+    case Py_T_UINT64:
+        v = PyLong_FromUnsignedLongLong(*(uint64_t*)addr);
+        break;
+    case Py_T_INTPTR:
+        v = PyLong_FromNativeBytes(addr, sizeof(intptr_t), -1);
+        break;
+    case Py_T_UINTPTR:
+        v = PyLong_FromUnsignedNativeBytes(addr, sizeof(uintptr_t), -1);
+        break;
+#ifndef MS_WINDOWS
+    case Py_T_OFF:
+        v = PyLong_FromNativeBytes(addr, sizeof(off_t), -1);
+        break;
+#endif
+    case Py_T_PID:
+        v = PyLong_FromPid(*(pid_t*)addr);
+        break;
     default:
         PyErr_SetString(PyExc_SystemError, "bad memberdescr type");
         v = NULL;
@@ -138,6 +185,48 @@ PyMember_GetOne(const char *obj_addr, PyMemberDef *l)
     do {                                                        \
     if (PyErr_WarnEx(PyExc_RuntimeWarning, msg, 1) < 0)         \
         return -1;                                              \
+    } while (0)
+
+#define SET_UNSIGNED_INT(N)  do {                                           \
+        Py_ssize_t bytes = PyLong_AsNativeBytes(v, addr, (N),               \
+            Py_ASNATIVEBYTES_NATIVE_ENDIAN |                                \
+            Py_ASNATIVEBYTES_ALLOW_INDEX |                                  \
+            Py_ASNATIVEBYTES_UNSIGNED_BUFFER |                              \
+            Py_ASNATIVEBYTES_REJECT_NEGATIVE);                              \
+        if (bytes < 0) {                                                    \
+            return -1;                                                      \
+        }                                                                   \
+        if ((size_t)bytes > (N)) {                                          \
+            PyErr_SetString(PyExc_OverflowError, "int too big to convert"); \
+            return -1;                                                      \
+        }                                                                   \
+    } while (0)
+
+#define SET_SIGNED_INT(N)  do {                                             \
+        Py_ssize_t bytes = PyLong_AsNativeBytes(v, addr, (N),               \
+            Py_ASNATIVEBYTES_NATIVE_ENDIAN |                                \
+            Py_ASNATIVEBYTES_ALLOW_INDEX);                                  \
+        if (bytes < 0) {                                                    \
+            return -1;                                                      \
+        }                                                                   \
+        if ((size_t)bytes > (N)) {                                          \
+            PyErr_SetString(PyExc_OverflowError, "int too big to convert"); \
+            return -1;                                                      \
+        }                                                                   \
+    } while (0)
+
+#define SET_COMBINED_INT(N)  do {                                             \
+        Py_ssize_t bytes = PyLong_AsNativeBytes(v, addr, (N),               \
+            Py_ASNATIVEBYTES_NATIVE_ENDIAN |                                \
+            Py_ASNATIVEBYTES_ALLOW_INDEX |                                  \
+            Py_ASNATIVEBYTES_UNSIGNED_BUFFER);                              \
+        if (bytes < 0) {                                                    \
+            return -1;                                                      \
+        }                                                                   \
+        if ((size_t)bytes > (N)) {                                          \
+            PyErr_SetString(PyExc_OverflowError, "int too big to convert"); \
+            return -1;                                                      \
+        }                                                                   \
     } while (0)
 
 int
@@ -304,6 +393,14 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
         FT_ATOMIC_STORE_SSIZE_RELAXED(*(Py_ssize_t*)addr, ssize_val);
         break;
     }
+    case Py_T_SIZE: {
+        size_t value = PyLong_AsSize_t(v);
+        if (value == (size_t)-1 && PyErr_Occurred()) {
+            return -1;
+        }
+        *(size_t*)addr = value;
+        break;
+    }
     case Py_T_FLOAT:{
         double double_val = PyFloat_AsDouble(v);
         if ((double_val == -1) && PyErr_Occurred())
@@ -371,6 +468,61 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
             }
             FT_ATOMIC_STORE_ULLONG_RELAXED(*(unsigned long long *)addr, ulonglong_val);
         }
+        break;
+    }
+    case Py_T_INT8:
+        SET_SIGNED_INT(1);
+        break;
+    case Py_T_UINT8:
+        SET_UNSIGNED_INT(1);
+        break;
+    case Py_T_INT8|Py_T_UINT8:
+        SET_COMBINED_INT(1);
+        break;
+    case Py_T_INT16:
+        SET_SIGNED_INT(2);
+        break;
+    case Py_T_UINT16:
+        SET_UNSIGNED_INT(2);
+        break;
+    case Py_T_INT16|Py_T_UINT16:
+        SET_COMBINED_INT(2);
+        break;
+    case Py_T_INT32:
+        SET_SIGNED_INT(4);
+        break;
+    case Py_T_UINT32:
+        SET_UNSIGNED_INT(4);
+        break;
+    case Py_T_INT32|Py_T_UINT32:
+        SET_COMBINED_INT(4);
+        break;
+    case Py_T_INT64:
+        SET_SIGNED_INT(8);
+        break;
+    case Py_T_UINT64:
+        SET_UNSIGNED_INT(8);
+        break;
+    case Py_T_INT64|Py_T_UINT64:
+        SET_COMBINED_INT(8);
+        break;
+    case Py_T_INTPTR:
+        SET_SIGNED_INT(sizeof(intptr_t));
+        break;
+    case Py_T_UINTPTR:
+        SET_UNSIGNED_INT(sizeof(uintptr_t));
+        break;
+#ifndef MS_WINDOWS
+    case Py_T_OFF:
+        SET_SIGNED_INT(sizeof(off_t));
+        break;
+#endif
+    case Py_T_PID: {
+        pid_t value = PyLong_AsPid(v);
+        if (value == (pid_t)-1 && PyErr_Occurred()) {
+            return -1;
+        }
+        *(pid_t*)addr = value;
         break;
     }
     default:
