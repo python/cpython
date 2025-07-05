@@ -23178,6 +23178,129 @@ fi
 
 
 
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for getservbyname_r" >&5
+printf %s "checking for getservbyname_r... " >&6; }
+if test ${ac_cv_func_getservbyname_r+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <netdb.h>
+int
+main (void)
+{
+void *x=getservbyname_r
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_func_getservbyname_r=yes
+else case e in #(
+  e) ac_cv_func_getservbyname_r=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_getservbyname_r" >&5
+printf "%s\n" "$ac_cv_func_getservbyname_r" >&6; }
+  if test "x$ac_cv_func_getservbyname_r" = xyes
+then :
+
+printf "%s\n" "#define HAVE_GETSERVBYNAME_R 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for getservbyport_r" >&5
+printf %s "checking for getservbyport_r... " >&6; }
+if test ${ac_cv_func_getservbyport_r+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <netdb.h>
+int
+main (void)
+{
+void *x=getservbyport_r
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_func_getservbyport_r=yes
+else case e in #(
+  e) ac_cv_func_getservbyport_r=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_getservbyport_r" >&5
+printf "%s\n" "$ac_cv_func_getservbyport_r" >&6; }
+  if test "x$ac_cv_func_getservbyport_r" = xyes
+then :
+
+printf "%s\n" "#define HAVE_GETSERVBYPORT_R 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for getprotobyname_r" >&5
+printf %s "checking for getprotobyname_r... " >&6; }
+if test ${ac_cv_func_getprotobyname_r+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <netdb.h>
+int
+main (void)
+{
+void *x=getprotobyname_r
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_func_getprotobyname_r=yes
+else case e in #(
+  e) ac_cv_func_getprotobyname_r=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_getprotobyname_r" >&5
+printf "%s\n" "$ac_cv_func_getprotobyname_r" >&6; }
+  if test "x$ac_cv_func_getprotobyname_r" = xyes
+then :
+
+printf "%s\n" "#define HAVE_GETPROTOBYNAME_R 1" >>confdefs.h
+
+fi
+
+
+
+
+
 
 
 

@@ -5492,6 +5492,9 @@ PY_CHECK_NETDB_FUNC([getservbyport])
 PY_CHECK_NETDB_FUNC([gethostbyname])
 PY_CHECK_NETDB_FUNC([gethostbyaddr])
 PY_CHECK_NETDB_FUNC([getprotobyname])
+PY_CHECK_NETDB_FUNC([getservbyname_r])
+PY_CHECK_NETDB_FUNC([getservbyport_r])
+PY_CHECK_NETDB_FUNC([getprotobyname_r])
 
 dnl PY_CHECK_SOCKET_FUNC(FUNCTION)
 AC_DEFUN([PY_CHECK_SOCKET_FUNC], [PY_CHECK_FUNC([$1], [
