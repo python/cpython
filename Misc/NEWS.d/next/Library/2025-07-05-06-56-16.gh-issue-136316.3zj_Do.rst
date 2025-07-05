@@ -1,0 +1,2 @@
+Improve support for evaluating nested forward references in
+:func:`typing.evaluate_forward_ref`.
