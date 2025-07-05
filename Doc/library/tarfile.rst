@@ -408,7 +408,7 @@ be finalized; only the internally used file object will be closed. See the
 .. versionadded:: 3.2
    Added support for the context management protocol.
 
-.. class:: TarFile(name=None, mode='r', fileobj=None, format=DEFAULT_FORMAT, tarinfo=TarInfo, dereference=False, ignore_zeros=False, encoding=ENCODING, errors='surrogateescape', pax_headers=None, debug=0, errorlevel=1, stream=False)
+.. class:: TarFile(name=None, mode='r', fileobj=None, format=DEFAULT_FORMAT, tarinfo=TarInfo, dereference=False, ignore_zeros=False, encoding=ENCODING, errors='surrogateescape', pax_headers=None, debug=0, errorlevel=1, stream=False, blocking_factor=None)
 
    All following arguments are optional and can be accessed as instance attributes
    as well.
@@ -462,6 +462,11 @@ be finalized; only the internally used file object will be closed. See the
    If *stream* is set to :const:`True` then while reading the archive info about files
    in the archive are not cached, saving memory.
 
+   If *blocking_factor* is given, the record size will be blocking_factor * 512 bytes.
+   After writing to an archive, the size will be padded with zeros to an integer number
+   of records. The default blocking factor is 20, corresponding to a record size of
+   10240 bytes.
+
    .. versionchanged:: 3.2
       Use ``'surrogateescape'`` as the default for the *errors* argument.
 
@@ -473,6 +478,9 @@ be finalized; only the internally used file object will be closed. See the
 
    .. versionchanged:: 3.13
       Add the *stream* parameter.
+
+   .. versionchanged:: 3.14
+      Add the *blocking_factor* parameter.
 
 .. classmethod:: TarFile.open(...)
 
