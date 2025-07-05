@@ -517,6 +517,7 @@ latex_appendices = ['glossary', 'about', 'license', 'copyright']
 
 epub_author = 'Python Documentation Authors'
 epub_publisher = 'Python Software Foundation'
+epub_exclude_files = ('index.xhtml', 'download.xhtml')
 
 # index pages are not valid xhtml
 # https://github.com/sphinx-doc/sphinx/issues/12359
