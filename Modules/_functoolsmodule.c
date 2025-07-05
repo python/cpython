@@ -758,6 +758,44 @@ static PyMethodDef partial_methods[] = {
     {NULL,              NULL}           /* sentinel */
 };
 
+static PyObject *
+partial_richcompare(PyObject *self, PyObject *other, int op)
+{
+    partialobject *a, *b;
+    PyObject *res;
+    int eq;
+
+    if ((op != Py_EQ && op != Py_NE) ||
+        !Py_IS_TYPE(self, Py_TYPE(other)))
+    {
+        Py_RETURN_NOTIMPLEMENTED;
+    }
+    a = (partialobject *) self;
+    b = (partialobject *) other;
+
+    eq = PyObject_RichCompareBool(a->fn, b->fn, Py_EQ);
+    if (eq == 1) {
+        eq = PyObject_RichCompareBool(a->args, b->args, Py_EQ);
+        if (eq == 1) {
+            eq = PyObject_RichCompareBool(a->kw, b->kw, Py_EQ);
+        }
+    }
+
+    if (eq < 0) {
+        return NULL;
+    }
+
+    if (op == Py_EQ) {
+        res = eq ? Py_True : Py_False;
+    }
+    else {
+        res = eq ? Py_False : Py_True;
+    }
+
+    Py_INCREF(res);
+    return res;
+}
+
 static PyType_Slot partial_type_slots[] = {
     {Py_tp_dealloc, partial_dealloc},
     {Py_tp_repr, partial_repr},
@@ -767,6 +805,7 @@ static PyType_Slot partial_type_slots[] = {
     {Py_tp_doc, (void *)partial_doc},
     {Py_tp_traverse, partial_traverse},
     {Py_tp_clear, partial_clear},
+    {Py_tp_richcompare, partial_richcompare},
     {Py_tp_methods, partial_methods},
     {Py_tp_members, partial_memberlist},
     {Py_tp_getset, partial_getsetlist},
