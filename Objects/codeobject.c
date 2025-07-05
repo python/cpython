@@ -2405,7 +2405,7 @@ code_dealloc(PyObject *self)
         for (Py_ssize_t i = 0; i < co_extra->ce_size; i++) {
             freefunc free_extra = interp->co_extra_freefuncs[i];
 
-            if (free_extra != NULL) {
+            if (free_extra != NULL && co_extra->ce_extras[i] != NULL) {
                 free_extra(co_extra->ce_extras[i]);
             }
         }
