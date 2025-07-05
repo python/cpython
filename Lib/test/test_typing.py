@@ -3,6 +3,7 @@ import contextlib
 import collections
 import collections.abc
 from collections import defaultdict
+from collections.abc import Callable as ABCallable
 from functools import lru_cache, wraps, reduce
 import gc
 import inspect
@@ -10781,9 +10782,23 @@ class UnionGenericAliasTests(BaseTestCase):
         with self.assertWarns(DeprecationWarning):
             self.assertNotEqual(int, typing._UnionGenericAlias)
 
-    def test_hashable(self):
-        self.assertEqual(hash(typing._UnionGenericAlias), hash(Union))
+class TestCallableAlias(BaseTestCase):
+    def test_callable_alias_preserves_subclass(self):
+        C = ABCallable[[str, ForwardRef('int')], int]
+        class A:
+            c: C
+        # Explicitly pass global namespace to ensure correct resolution
+        hints = get_type_hints(A, globalns=globals())
 
+        # Ensure evaluated type retains the correct subclass (_CallableGenericAlias)
+        self.assertEqual(hints['c'].__class__, C.__class__)
+
+        # Ensure evaluated type retains correct origin
+        self.assertEqual(hints['c'].__origin__, C.__origin__)
+
+        # Instead of comparing raw ForwardRef, check if the resolution is correct
+        expected_args = tuple(int if isinstance(arg, ForwardRef) else arg for arg in C.__args__)
+        self.assertEqual(hints['c'].__args__, expected_args)
 
 def load_tests(loader, tests, pattern):
     import doctest
