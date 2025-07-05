@@ -1647,11 +1647,11 @@ to speed up repeated connections from the same clients.
    the SSLContext's current TLS ``minimum_version`` and ``maximum_version``
    values.  For example::
 
-   >>> ctx = ssl.create_default_context()
-   >>> ctx.minimum_version=ssl.TLSVersion.TLSv1_3
-   >>> ctx.maximum_version=ssl.TLSVersion.TLSv1_3
-   >>> ctx.get_groups()
-   ['secp256r1', 'secp384r1', 'secp521r1', 'x25519', 'x448', 'brainpoolP256r1tls13', 'brainpoolP384r1tls13', 'brainpoolP512r1tls13', 'ffdhe2048', 'ffdhe3072', 'ffdhe4096', 'ffdhe6144', 'ffdhe8192', 'MLKEM512', 'MLKEM768', 'MLKEM1024', 'SecP256r1MLKEM768', 'X25519MLKEM768', 'SecP384r1MLKEM1024']
+       >>> ctx = ssl.create_default_context()
+       >>> ctx.minimum_version=ssl.TLSVersion.TLSv1_3
+       >>> ctx.maximum_version=ssl.TLSVersion.TLSv1_3
+       >>> ctx.get_groups()
+       ['secp256r1', 'secp384r1', 'secp521r1', 'x25519', 'x448', 'brainpoolP256r1tls13', 'brainpoolP384r1tls13', 'brainpoolP512r1tls13', 'ffdhe2048', 'ffdhe3072', 'ffdhe4096', 'ffdhe6144', 'ffdhe8192', 'MLKEM512', 'MLKEM768', 'MLKEM1024', 'SecP256r1MLKEM768', 'X25519MLKEM768', 'SecP384r1MLKEM1024']
 
    .. versionadded:: next
 
