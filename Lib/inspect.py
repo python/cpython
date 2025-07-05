@@ -1391,7 +1391,7 @@ def _missing_arguments(f_name, argnames, pos, values):
         s = ", ".join(names) + tail
     raise TypeError("%s() missing %i required %s argument%s: %s" %
                     (f_name, missing,
-                      "positional" if pos else "keyword-only",
+                      "positional" if pos else "keyword",
                       "" if missing == 1 else "s", s))
 
 def _too_many(f_name, args, kwonly, varargs, defcount, given, values):
@@ -1408,7 +1408,7 @@ def _too_many(f_name, args, kwonly, varargs, defcount, given, values):
         sig = str(len(args))
     kwonly_sig = ""
     if kwonly_given:
-        msg = " positional argument%s (and %d keyword-only argument%s)"
+        msg = " positional argument%s (and %d keyword argument%s)"
         kwonly_sig = (msg % ("s" if given != 1 else "", kwonly_given,
                              "s" if kwonly_given != 1 else ""))
     raise TypeError("%s() takes %s positional argument%s but %d%s %s given" %
@@ -3107,7 +3107,7 @@ class Signature:
                     elif param.name in kwargs:
                         if param.kind == _POSITIONAL_ONLY:
                             if param.default is _empty:
-                                msg = f'missing a required positional-only argument: {param.name!r}'
+                                msg = f'missing a required positional argument: {param.name!r}'
                                 raise TypeError(msg)
                             # Raise a TypeError once we are sure there is no
                             # **kwargs param later.
@@ -3130,7 +3130,7 @@ class Signature:
                             break
                         else:
                             if param.kind == _KEYWORD_ONLY:
-                                argtype = ' keyword-only'
+                                argtype = ' keyword'
                             else:
                                 argtype = ''
                             msg = 'missing a required{argtype} argument: {arg!r}'
