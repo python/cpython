@@ -1890,6 +1890,16 @@ platform
   (Contributed by Bénédikt Tran in :gh:`122549`.)
 
 
+pprint
+------
+
+* Add a *block_style* keyword argument for :func:`pprint.pprint`,
+  :func:`pprint.pformat`, :func:`pprint.pp`. If true, the output will be
+  formatted in a block style similar to pretty-printed :func:`json.dumps` when
+  *indent* is supplied.
+  (Contributed by Stefan Todoran in :gh:`129274`.)
+
+
 pydoc
 -----
 
@@ -2418,7 +2428,7 @@ Deprecated
 .. include:: ../deprecations/pending-removal-in-future.rst
 
 Removed
-=======
+========
 
 argparse
 --------
