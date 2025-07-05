@@ -48,6 +48,8 @@ Py_DEBUG_WIN32 = support.Py_DEBUG and sys.platform == 'win32'
 PROTOCOLS = sorted(ssl._PROTOCOL_NAMES)
 HOST = socket_helper.HOST
 IS_OPENSSL_3_0_0 = ssl.OPENSSL_VERSION_INFO >= (3, 0, 0)
+CAN_GET_SELECTED_OPENSSL_GROUP = ssl.OPENSSL_VERSION_INFO >= (3, 2)
+CAN_GET_AVAILABLE_OPENSSL_GROUPS = ssl.OPENSSL_VERSION_INFO >= (3, 5)
 PY_SSL_DEFAULT_CIPHERS = sysconfig.get_config_var('PY_SSL_DEFAULT_CIPHERS')
 
 PROTOCOL_TO_TLS_VERSION = {}
@@ -960,14 +962,25 @@ class ContextTests(unittest.TestCase):
             len(intersection), 2, f"\ngot: {sorted(names)}\nexpected: {sorted(expected)}"
         )
 
-    def test_groups(self):
+    def test_set_groups(self):
         ctx = ssl.create_default_context()
-        self.assertIsNone(ctx.set_groups('P-256'))
+
+        # Test valid group list
         self.assertIsNone(ctx.set_groups('P-256:X25519'))
 
-        if ssl.OPENSSL_VERSION_INFO >= (3, 5):
-            self.assertNotIn('P-256', ctx.get_groups())
-            self.assertIn('P-256', ctx.get_groups(include_aliases=True))
+        # Test invalid group list
+        self.assertRaises(ssl.SSLError, ctx.set_groups, 'P-256:xxx')
+
+    @unittest.skipUnless(CAN_GET_AVAILABLE_OPENSSL_GROUPS,
+                         "OpenSSL version doesn't support getting groups")
+    def test_get_groups(self):
+        ctx = ssl.create_default_context()
+
+        # P-256 isn't an IANA name, so it shouldn't be returned by default
+        self.assertNotIn('P-256', ctx.get_groups())
+
+        # Aliases like P-256 sbould be returned when include_aliases is set
+        self.assertIn('P-256', ctx.get_groups(include_aliases=True))
 
     def test_options(self):
         # Test default SSLContext options
@@ -2710,7 +2723,7 @@ def server_params_test(client_context, server_context, indata=b"FOO\n",
                 'session_reused': s.session_reused,
                 'session': s.session,
             })
-            if ssl.OPENSSL_VERSION_INFO >= (3, 2):
+            if CAN_GET_SELECTED_OPENSSL_GROUP:
                 stats.update({'group': s.group()})
             s.close()
         stats['server_alpn_protocols'] = server.selected_alpn_protocols
@@ -4146,7 +4159,7 @@ class ThreadedTests(unittest.TestCase):
         stats = server_params_test(client_context, server_context,
                                    chatty=True, connectionchatty=True,
                                    sni_name=hostname)
-        if ssl.OPENSSL_VERSION_INFO >= (3, 2):
+        if CAN_GET_SELECTED_OPENSSL_GROUP:
             self.assertEqual(stats['group'], "secp384r1")
 
         # server auto, client secp384r1
@@ -4156,7 +4169,7 @@ class ThreadedTests(unittest.TestCase):
         stats = server_params_test(client_context, server_context,
                                    chatty=True, connectionchatty=True,
                                    sni_name=hostname)
-        if ssl.OPENSSL_VERSION_INFO >= (3, 2):
+        if CAN_GET_SELECTED_OPENSSL_GROUP:
             self.assertEqual(stats['group'], "secp384r1")
 
         # server / client curve mismatch

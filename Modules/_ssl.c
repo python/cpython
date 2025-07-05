@@ -3462,46 +3462,55 @@ _ssl__SSLContext_get_groups_impl(PySSLContext *self, int include_aliases)
 /*[clinic end generated code: output=6d6209dd1051529b input=3e8ee5deb277dcc5]*/
 {
 #if OPENSSL_VERSION_NUMBER >= 0x30500000L
-    STACK_OF(OPENSSL_CSTRING) *groups;
+    STACK_OF(OPENSSL_CSTRING) *groups = NULL;
     const char *group;
     size_t i, num;
-    PyObject *item, *result;
+    PyObject *item, *result = NULL;
 
     if ((groups = sk_OPENSSL_CSTRING_new_null()) == NULL) {
         _setSSLError(get_state_ctx(self), "Can't allocate stack", 0, __FILE__, __LINE__);
-        return NULL;
+	goto error;
     }
+
+    /*
+     * Note: The "groups" stack is dynamically allocated, but the strings
+     * returned in the stack are references to internal constants which
+     * should NOT be modified or freed. They should also be plain ASCII,
+     * so there should be no decoding issue when converting to Unicode.
+     */
 
     if (!SSL_CTX_get0_implemented_groups(self->ctx, include_aliases, groups)) {
         _setSSLError(get_state_ctx(self), "Can't get groups", 0, __FILE__, __LINE__);
-        sk_OPENSSL_CSTRING_free(groups);
-        return NULL;
+        goto error;
     }
 
     num = sk_OPENSSL_CSTRING_num(groups);
     result = PyList_New(num);
     if (result == NULL) {
         _setSSLError(get_state_ctx(self), "Can't allocate list", 0, __FILE__, __LINE__);
-        sk_OPENSSL_CSTRING_free(groups);
-        return NULL;
+        goto error;
     }
 
     for (i = 0; i < num; ++i) {
         group = sk_OPENSSL_CSTRING_value(groups, i);
+	assert(group != NULL);
+
         item = PyUnicode_DecodeFSDefault(group);
 
         if (item == NULL) {
             _setSSLError(get_state_ctx(self), "Can't allocate group name", 0, __FILE__, __LINE__);
-            Py_XDECREF(result);
-            sk_OPENSSL_CSTRING_free(groups);
-            return NULL;
+            goto error;
         }
 
-        PyList_SET_ITEM(result, i, PyUnicode_DecodeFSDefault(group));
+        PyList_SET_ITEM(result, i, item);
     }
 
     sk_OPENSSL_CSTRING_free(groups);
     return result;
+error:
+    Py_XDECREF(result);
+    sk_OPENSSL_CSTRING_free(groups);
+    return NULL;
 #else
     PyErr_SetString(PyExc_NotImplementedError,
                     "Getting implemented groups requires OpenSSL 3.5 or later.");

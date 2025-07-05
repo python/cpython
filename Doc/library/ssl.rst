@@ -1641,7 +1641,7 @@ to speed up repeated connections from the same clients.
 
    .. versionadded:: 3.6
 
-.. method:: SSLContext.get_groups()
+.. method:: SSLContext.get_groups(*, include_aliases=False)
 
    Get a list of groups implemented for key agreement, taking into account
    the SSLContext's current TLS ``minimum_version`` and ``maximum_version``
@@ -1652,6 +1652,11 @@ to speed up repeated connections from the same clients.
        >>> ctx.maximum_version=ssl.TLSVersion.TLSv1_3
        >>> ctx.get_groups()
        ['secp256r1', 'secp384r1', 'secp521r1', 'x25519', 'x448', 'brainpoolP256r1tls13', 'brainpoolP384r1tls13', 'brainpoolP512r1tls13', 'ffdhe2048', 'ffdhe3072', 'ffdhe4096', 'ffdhe6144', 'ffdhe8192', 'MLKEM512', 'MLKEM768', 'MLKEM1024', 'SecP256r1MLKEM768', 'X25519MLKEM768', 'SecP384r1MLKEM1024']
+
+   By default, this method returns only the preferred IANA names for the
+   available groups. However, if the ``include_aliases`` parameter is set to
+   :const:`True` this method will also return any associated aliases such as
+   the ECDH curve names supported in older versions of OpenSSL.
 
    .. versionadded:: next
 
