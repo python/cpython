@@ -539,7 +539,7 @@ The :class:`Future` class encapsulates the asynchronous execution of a callable.
       running.
 
       Added callables are called in the order that they were added and are
-      always called in a thread belonging to the process that added them.  If
+      always called in :meth:`Future.set_result` is called according to its source.  If
       the callable raises an :exc:`Exception` subclass, it will be logged and
       ignored.  If the callable raises a :exc:`BaseException` subclass, the
       behavior is undefined.
