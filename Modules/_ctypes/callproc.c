@@ -578,7 +578,7 @@ PyCArg_repr(PyObject *op)
 }
 
 static PyMemberDef PyCArgType_members[] = {
-    { "_obj", _Py_T_OBJECT,
+    { "_obj", Py_T_OBJECT_EX,
       offsetof(PyCArgObject, obj), Py_READONLY,
       "the wrapped object" },
     { NULL },

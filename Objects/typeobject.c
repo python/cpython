@@ -1440,7 +1440,7 @@ static PyMemberDef type_members[] = {
        since the memory at this offset will always be NULL. */
     {"__weakrefoffset__", Py_T_PYSSIZET,
      offsetof(PyTypeObject, tp_weaklistoffset), Py_READONLY},
-    {"__base__", _Py_T_OBJECT, offsetof(PyTypeObject, tp_base), Py_READONLY},
+    {"__base__", Py_T_OBJECT_EX, offsetof(PyTypeObject, tp_base), Py_READONLY},
     {"__dictoffset__", Py_T_PYSSIZET,
      offsetof(PyTypeObject, tp_dictoffset), Py_READONLY},
     {0}
@@ -12069,11 +12069,11 @@ typedef struct {
 #define superobject_CAST(op)    ((superobject *)(op))
 
 static PyMemberDef super_members[] = {
-    {"__thisclass__", _Py_T_OBJECT, offsetof(superobject, type), Py_READONLY,
+    {"__thisclass__", Py_T_OBJECT_EX, offsetof(superobject, type), Py_READONLY,
      "the class invoking super()"},
-    {"__self__",  _Py_T_OBJECT, offsetof(superobject, obj), Py_READONLY,
+    {"__self__",  Py_T_OBJECT_EX, offsetof(superobject, obj), Py_READONLY,
      "the instance invoking super(); may be None"},
-    {"__self_class__", _Py_T_OBJECT, offsetof(superobject, obj_type), Py_READONLY,
+    {"__self_class__", Py_T_OBJECT_EX, offsetof(superobject, obj_type), Py_READONLY,
      "the type of the instance invoking super(); may be None"},
     {0}
 };

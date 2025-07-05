@@ -2623,14 +2623,14 @@ static PyMemberDef code_memberlist[] = {
     {"co_stacksize",       Py_T_INT,     OFF(co_stacksize),       Py_READONLY},
     {"co_flags",           Py_T_INT,     OFF(co_flags),           Py_READONLY},
     {"co_nlocals",         Py_T_INT,     OFF(co_nlocals),         Py_READONLY},
-    {"co_consts",          _Py_T_OBJECT, OFF(co_consts),          Py_READONLY},
-    {"co_names",           _Py_T_OBJECT, OFF(co_names),           Py_READONLY},
-    {"co_filename",        _Py_T_OBJECT, OFF(co_filename),        Py_READONLY},
-    {"co_name",            _Py_T_OBJECT, OFF(co_name),            Py_READONLY},
-    {"co_qualname",        _Py_T_OBJECT, OFF(co_qualname),        Py_READONLY},
+    {"co_consts",          Py_T_OBJECT_EX, OFF(co_consts),          Py_READONLY},
+    {"co_names",           Py_T_OBJECT_EX, OFF(co_names),           Py_READONLY},
+    {"co_filename",        Py_T_OBJECT_EX, OFF(co_filename),        Py_READONLY},
+    {"co_name",            Py_T_OBJECT_EX, OFF(co_name),            Py_READONLY},
+    {"co_qualname",        Py_T_OBJECT_EX, OFF(co_qualname),        Py_READONLY},
     {"co_firstlineno",     Py_T_INT,     OFF(co_firstlineno),     Py_READONLY},
-    {"co_linetable",       _Py_T_OBJECT, OFF(co_linetable),       Py_READONLY},
-    {"co_exceptiontable",  _Py_T_OBJECT, OFF(co_exceptiontable),  Py_READONLY},
+    {"co_linetable",       Py_T_OBJECT_EX, OFF(co_linetable),       Py_READONLY},
+    {"co_exceptiontable",  Py_T_OBJECT_EX, OFF(co_exceptiontable),  Py_READONLY},
     {NULL}      /* Sentinel */
 };
 
