@@ -1125,6 +1125,71 @@ class GCTests(unittest.TestCase):
         """)
         assert_python_ok("-c", source)
 
+    def test_do_not_cleanup_type_subclasses_before_finalization(self):
+        # https://github.com/python/cpython/issues/135552
+        # If we cleanup weakrefs for tp_subclasses before calling
+        # the finalizer (__del__) then the line `fail = BaseNode.next.next`
+        # should fail because we are trying to access a subclass
+        # atribute. But subclass type cache was not properly invalidated.
+        code = """
+            class BaseNode:
+                def __del__(self):
+                    BaseNode.next = BaseNode.next.next
+                    fail = BaseNode.next.next
+
+            class Node(BaseNode):
+                pass
+
+            BaseNode.next = Node()
+            BaseNode.next.next = Node()
+        """
+        # this test checks garbage collection while interp
+        # finalization
+        assert_python_ok("-c", textwrap.dedent(code))
+
+        code_inside_function = textwrap.dedent(F"""
+            def test():
+                {textwrap.indent(code, '    ')}
+
+            test()
+        """)
+        # this test checks regular garbage collection
+        assert_python_ok("-c", code_inside_function)
+
+    def test_clearing_weakrefs_in_gc(self):
+        # This test checks that:
+        # 1. weakrefs for types with callbacks are cleared before the
+        # finalizer is called
+        # 2. weakrefs for types without callbacks are cleared after the
+        # finalizer is called
+        # 3. other weakrefs cleared before the finalizer is called
+        code = """
+            import weakref
+            def test():
+                class Class:
+                    def __init__(self):
+                        self._self = self
+                        self._1 = weakref.ref(Class, lambda x: None)
+                        self._2 = weakref.ref(Class)
+                        self._3 = weakref.ref(self)
+
+                    def __del__(self):
+                        if self._1() is None:
+                            print("Type weakref with callback is None as expected")
+                        if self._2() is Class:
+                            print("Type weakref is Class as expected")
+                        if self._3() is None:
+                            print("Instance weakref is None as expected")
+
+                Class()
+
+            test()
+        """
+        _, stdout, _ = assert_python_ok("-c", code)
+        assert b"Type weakref with callback is None as expected" in stdout
+        assert b"Type weakref is Class as expected" in stdout
+        assert b"Instance weakref is None as expected" in stdout
+
 
 class IncrementalGCTests(unittest.TestCase):
     @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
