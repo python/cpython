@@ -8253,6 +8253,9 @@ socket_exec(PyObject *m)
 #ifdef  SO_BINDTODEVICE
     ADD_INT_MACRO(m, SO_BINDTODEVICE);
 #endif
+#ifdef  SO_PASSRIGHTS
+    ADD_INT_MACRO(m, SO_PASSRIGHTS);
+#endif
 #ifdef  SO_BINDTOIFINDEX
     ADD_INT_MACRO(m, SO_BINDTOIFINDEX);
 #endif
