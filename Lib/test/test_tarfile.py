@@ -1358,6 +1358,17 @@ class WriteTestBase(TarTest):
         with self.open(tmpname, "rb") as fobj:
             self.assertEqual(len(fobj.read()), tarfile.RECORDSIZE * 2)
 
+    def test_offset_on_close(self):
+        # Check the offset after calling close matches the total number of
+        # bytes written.
+        tar = tarfile.open(tmpname, self.mode)
+        t = tarfile.TarInfo("foo")
+        tar.addfile(t)
+        tar.close()
+
+        with self.open(tmpname, "rb") as fobj:
+            self.assertEqual(len(fobj.read()), tar.offset)
+
 
 class WriteTest(WriteTestBase, unittest.TestCase):
 
