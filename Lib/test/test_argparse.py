@@ -2749,7 +2749,8 @@ class TestAddSubparsers(TestCase):
             main description
 
             positional arguments:
-              foo         \n
+              foo
+
             options:
               -h, --help  show this help message and exit
         '''))
@@ -2920,18 +2921,18 @@ class TestAddSubparsers(TestCase):
             main description
 
             positional arguments:
-              bar                   bar help
+              bar         bar help
 
             options:
-              -h, --help            show this help message and exit
-              --foo                 foo help
+              -h, --help  show this help message and exit
+              --foo       foo help
 
             commands:
               COMMAND
                 1 (1alias1, 1alias2)
-                                    1 help
-                2                   2 help
-                3                   3 help
+                          1 help
+                2         2 help
+                3         3 help
             """))
 
 # ============
@@ -3293,7 +3294,7 @@ class TestMutuallyExclusiveGroupErrors(TestCase):
                             [{longopt} {longmeta}]
 
             options:
-              -h, --help            show this help message and exit
+              -h, --help  show this help message and exit
               {longopt} {longmeta}
               '''
         self.assertEqual(cmd_foo.format_help(), textwrap.dedent(expected))
@@ -4349,27 +4350,23 @@ DD DD DD
 
         positional arguments:
           yyyyyyyyyyyyyyyyyyyyyyyyy
-                                YH YHYH YHYH YHYH YHYH YHYH YHYH YHYH YHYH \
-YHYH YHYH
-                                YHYH YHYH YHYH YHYH YHYH YHYH YHYH YHYH YHYH YH
+                         YH YHYH YHYH YHYH YHYH YHYH YHYH YHYH YHYH YHYH YHYH YHYH
+                         YHYH YHYH YHYH YHYH YHYH YHYH YHYH YHYH YH
 
         options:
-          -h, --help            show this help message and exit
-          -v, --version         show program's version number and exit
+          -h, --help     show this help message and exit
+          -v, --version  show program's version number and exit
           -x XXXXXXXXXXXXXXXXXXXXXXXXX
-                                XH XHXH XHXH XHXH XHXH XHXH XHXH XHXH XHXH \
-XHXH XHXH
-                                XHXH XHXH XHXH XHXH XHXH XHXH XHXH XHXH XHXH XH
+                         XH XHXH XHXH XHXH XHXH XHXH XHXH XHXH XHXH XHXH XHXH XHXH
+                         XHXH XHXH XHXH XHXH XHXH XHXH XHXH XHXH XH
 
         ALPHAS:
           -a AAAAAAAAAAAAAAAAAAAAAAAAA
-                                AH AHAH AHAH AHAH AHAH AHAH AHAH AHAH AHAH \
-AHAH AHAH
-                                AHAH AHAH AHAH AHAH AHAH AHAH AHAH AHAH AHAH AH
+                         AH AHAH AHAH AHAH AHAH AHAH AHAH AHAH AHAH AHAH AHAH AHAH
+                         AHAH AHAH AHAH AHAH AHAH AHAH AHAH AHAH AH
           zzzzzzzzzzzzzzzzzzzzzzzzz
-                                ZH ZHZH ZHZH ZHZH ZHZH ZHZH ZHZH ZHZH ZHZH \
-ZHZH ZHZH
-                                ZHZH ZHZH ZHZH ZHZH ZHZH ZHZH ZHZH ZHZH ZHZH ZH
+                         ZH ZHZH ZHZH ZHZH ZHZH ZHZH ZHZH ZHZH ZHZH ZHZH ZHZH ZHZH
+                         ZHZH ZHZH ZHZH ZHZH ZHZH ZHZH ZHZH ZHZH ZH
         '''
     version = '''\
         V VV VV VV VV VV VV VV VV VV VV VV VV VV VV VV VV VV VV VV VV VV VV \
@@ -4413,24 +4410,24 @@ class TestHelpUsage(HelpTestCase):
     help = usage + '''\
 
         positional arguments:
-          a                     a
-          b                     b
-          c                     c
+          a                  a
+          b                  b
+          c                  c
 
         options:
-          -h, --help            show this help message and exit
-          -w W [W ...]          w
-          -x [X ...]            x
-          --foo, --no-foo       Whether to foo
-          --bar, --no-bar       Whether to bar
+          -h, --help         show this help message and exit
+          -w W [W ...]       w
+          -x [X ...]         x
+          --foo, --no-foo    Whether to foo
+          --bar, --no-bar    Whether to bar
           -f, --foobar, --no-foobar, --barfoo, --no-barfoo
-          --bazz, --no-bazz     Bazz!
+          --bazz, --no-bazz  Bazz!
 
         group:
-          -y [Y]                y
-          -z Z Z Z              z
-          d                     d
-          e                     e
+          -y [Y]             y
+          -z Z Z Z           z
+          d                  d
+          e                  e
         '''
     version = ''
 
@@ -4544,7 +4541,7 @@ class TestHelpUsageLongProgOptionsWrap(HelpTestCase):
           b
 
         options:
-          -h, --help            show this help message and exit
+          -h, --help  show this help message and exit
           -w WWWWWWWWWWWWWWWWWWWWWWWWW
           -x XXXXXXXXXXXXXXXXXXXXXXXXX
           -y YYYYYYYYYYYYYYYYYYYYYYYYY
@@ -4607,7 +4604,7 @@ class TestHelpUsageOptionalsWrap(HelpTestCase):
           c
 
         options:
-          -h, --help            show this help message and exit
+          -h, --help  show this help message and exit
           -w WWWWWWWWWWWWWWWWWWWWWWWWW
           -x XXXXXXXXXXXXXXXXXXXXXXXXX
           -y YYYYYYYYYYYYYYYYYYYYYYYYY
@@ -4642,7 +4639,7 @@ class TestHelpUsagePositionalsWrap(HelpTestCase):
           ccccccccccccccccccccccccc
 
         options:
-          -h, --help            show this help message and exit
+          -h, --help  show this help message and exit
           -x X
           -y Y
           -z Z
@@ -4678,7 +4675,7 @@ class TestHelpUsageOptionalsPositionalsWrap(HelpTestCase):
           ccccccccccccccccccccccccc
 
         options:
-          -h, --help            show this help message and exit
+          -h, --help  show this help message and exit
           -x XXXXXXXXXXXXXXXXXXXXXXXXX
           -y YYYYYYYYYYYYYYYYYYYYYYYYY
           -z ZZZZZZZZZZZZZZZZZZZZZZZZZ
@@ -4704,7 +4701,7 @@ class TestHelpUsageOptionalsOnlyWrap(HelpTestCase):
     help = usage + '''\
 
         options:
-          -h, --help            show this help message and exit
+          -h, --help  show this help message and exit
           -x XXXXXXXXXXXXXXXXXXXXXXXXX
           -y YYYYYYYYYYYYYYYYYYYYYYYYY
           -z ZZZZZZZZZZZZZZZZZZZZZZZZZ
@@ -5548,13 +5545,14 @@ class TestHelpCustomHelpFormatter(TestCase):
             usage: PROG [-h] CMD ...
 
             options:
-              -h, --help             show this help message and exit
+              -h, --help  show this help message and exit
 
             commands:
-              CMD                    command to use
-                add                  add something
-                remove               remove something
-                a-very-long-command  command that does something
+              CMD         command to use
+                add       add something
+                remove    remove something
+                a-very-long-command
+                          command that does something
         '''))
 
 
@@ -6836,7 +6834,7 @@ class TestWrappingMetavar(TestCase):
                    [-h] [--proxy <http[s]://example:1234>]
 
             options:
-              -h, --help            show this help message and exit
+              -h, --help  show this help message and exit
               --proxy <http[s]://example:1234>
             '''))
 
@@ -7199,24 +7197,24 @@ class TestColorized(TestCase):
                 Colorful help
 
                 {heading}positional arguments:{reset}
-                  {pos_b}x{reset}                     the base
-                  {pos_b}y{reset}                     the exponent
+                  {pos_b}x{reset}                    the base
+                  {pos_b}y{reset}                    the exponent
                   {pos_b}this_indeed_is_a_very_long_action_name{reset}
-                                        the exponent
+                                       the exponent
 
                 {heading}options:{reset}
-                  {short_b}-h{reset}, {long_b}--help{reset}            show this help message and exit
-                  {short_b}-v{reset}, {long_b}--verbose{reset}         more spam (default: False)
-                  {short_b}-q{reset}, {long_b}--quiet{reset}           less spam (default: False)
+                  {short_b}-h{reset}, {long_b}--help{reset}           show this help message and exit
+                  {short_b}-v{reset}, {long_b}--verbose{reset}        more spam (default: False)
+                  {short_b}-q{reset}, {long_b}--quiet{reset}          less spam (default: False)
                   {short_b}-o{reset}, {long_b}--optional1{reset}
                   {long_b}--optional2{reset} {label_b}OPTIONAL2{reset}
-                                        pick one (default: None)
+                                       pick one (default: None)
                   {long_b}--optional3{reset} {label_b}{{X,Y,Z}}{reset}
-                  {long_b}--optional4{reset} {label_b}{{X,Y,Z}}{reset}   pick one (default: None)
-                  {long_b}--optional5{reset} {label_b}{{X,Y,Z}}{reset}   pick one (default: None)
-                  {long_b}--optional6{reset} {label_b}{{X,Y,Z}}{reset}   pick one (default: None)
+                  {long_b}--optional4{reset} {label_b}{{X,Y,Z}}{reset}  pick one (default: None)
+                  {long_b}--optional5{reset} {label_b}{{X,Y,Z}}{reset}  pick one (default: None)
+                  {long_b}--optional6{reset} {label_b}{{X,Y,Z}}{reset}  pick one (default: None)
                   {short_b}-p{reset}, {long_b}--optional7{reset} {label_b}{{Aaaaa,Bbbbb,Ccccc,Ddddd}}{reset}
-                                        pick one (default: None)
+                                       pick one (default: None)
                   {short_b}+f{reset} {label_b}F{reset}
                   {long_b}++bar{reset} {label_b}BAR{reset}
                   {long_b}-+baz{reset} {label_b}BAZ{reset}
@@ -7225,9 +7223,9 @@ class TestColorized(TestCase):
                 {heading}subcommands:{reset}
                   valid subcommands
 
-                  {pos_b}{{sub1,sub2}}{reset}           additional help
-                    {pos_b}sub1{reset}                sub1 help
-                    {pos_b}sub2{reset}                sub2 help
+                  {pos_b}{{sub1,sub2}}{reset}          additional help
+                    {pos_b}sub1{reset}               sub1 help
+                    {pos_b}sub2{reset}               sub2 help
                 """
             ),
         )
@@ -7290,11 +7288,11 @@ class TestColorized(TestCase):
             {heading}usage: {reset}{prog}PROG{reset} [{short}-h{reset}] [{short}+f {label}FOO{reset}] {pos}spam{reset}
 
             {heading}positional arguments:{reset}
-                 {pos_b}spam{reset}               spam help
+                 {pos_b}spam{reset}           spam help
 
             {heading}options:{reset}
-                 {short_b}-h{reset}, {long_b}--help{reset}         show this help message and exit
-                 {short_b}+f{reset}, {long_b}++foo{reset} {label_b}FOO{reset}      foo help
+                 {short_b}-h{reset}, {long_b}--help{reset}     show this help message and exit
+                 {short_b}+f{reset}, {long_b}++foo{reset} {label_b}FOO{reset}  foo help
         '''))
 
     def test_custom_formatter_class(self):
@@ -7327,11 +7325,11 @@ class TestColorized(TestCase):
             {heading}usage: {reset}{prog}PROG{reset} [{short}-h{reset}] [{short}+f {label}FOO{reset}] {pos}spam{reset}
 
             {heading}positional arguments:{reset}
-                 {pos_b}spam{reset}               spam help
+                 {pos_b}spam{reset}           spam help
 
             {heading}options:{reset}
-                 {short_b}-h{reset}, {long_b}--help{reset}         show this help message and exit
-                 {short_b}+f{reset}, {long_b}++foo{reset} {label_b}FOO{reset}      foo help
+                 {short_b}-h{reset}, {long_b}--help{reset}     show this help message and exit
+                 {short_b}+f{reset}, {long_b}++foo{reset} {label_b}FOO{reset}  foo help
         '''))
 
 
