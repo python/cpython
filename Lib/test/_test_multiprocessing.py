@@ -982,6 +982,44 @@ class _TestProcess(BaseTestCase):
         proc.start()
         proc.join()
 
+    @staticmethod
+    def _wait_for_barrier(barrier):
+        barrier.wait()
+
+    def _wait_on_proc(self, barrier, proc, errs):
+        barrier.wait()
+        proc.join()
+        if proc.is_alive():
+            errs.append("process alive after join")
+        if proc.exitcode != 0:
+            errs.append("process reported non-zero exit code")
+
+    def test_racing_joins(self):
+        if self.TYPE == "threads":
+            self.skipTest(f"test not appropriate for {self.TYPE}")
+
+        N = 5
+        ITERATIONS = 10
+        for _ in range(ITERATIONS):
+            barrier = self.Barrier(N+1)
+            proc = self.Process(target=self._wait_for_barrier, args=(barrier,))
+
+            errs = []
+            threads = [threading.Thread(target=self._wait_on_proc,
+                                        args=(barrier, proc, errs))
+                       for _ in range(N)]
+            for t in threads:
+                t.start()
+
+            proc.start()
+            for t in threads:
+                t.join()
+
+            # On failure(s), report the first since they are likely the same
+            # error reported from multiple threads
+            if errs:
+                raise AssertionError(errs[0])
+
 #
 #
 #
