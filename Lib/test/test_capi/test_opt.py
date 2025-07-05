@@ -2143,13 +2143,13 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_BUILD_TUPLE", uops)
         self.assertIn("_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW", uops)
 
-    def test_call_isinstance_tuple_of_classes_true_unknown(self):
+    def test_call_isinstance_tuple_of_classes_true_unknown_1(self):
         def testfunc(n):
             x = 0
             for _ in range(n):
-                # One of the classes is unknown, but we can still
-                # narrow to True
-                y = isinstance(42, (eval('str'), int))
+                # One of the classes is unknown, but it comes
+                # after a known class, so we can narrow to True
+                y = isinstance(42, (int, eval('str')))
                 if y:
                     x += 1
             return x
@@ -2160,17 +2160,55 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertNotIn("_CALL_ISINSTANCE", uops)
         self.assertNotIn("_TO_BOOL_BOOL", uops)
-        self.assertNotIn("_GUARD_IS_TRUE_POP", uops)
+        self.assertNotIn("_GUARD_IS_FALSE_POP", uops)
         self.assertIn("_BUILD_TUPLE", uops)
         self.assertIn("_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW", uops)
 
-    def test_call_isinstance_tuple_of_classes_unknown_not_narrowed(self):
+    def test_call_isinstance_tuple_of_classes_true_unknown_2(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                # One of the classes is unknown, so we can't narrow
+                # to True or False, only bool
+                y = isinstance(42, (eval('str'), int))
+                if y:
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_CALL_ISINSTANCE", uops)
+        self.assertNotIn("_TO_BOOL_BOOL", uops)
+        self.assertIn("_GUARD_IS_TRUE_POP", uops)
+
+    def test_call_isinstance_tuple_of_classes_true_unknown_3(self):
         def testfunc(n):
             x = 0
             for _ in range(n):
                 # One of the classes is unknown, so we can't narrow
                 # to True or False, only bool
                 y = isinstance(42, (str, eval('int')))
+                if y:
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_CALL_ISINSTANCE", uops)
+        self.assertNotIn("_TO_BOOL_BOOL", uops)
+        self.assertIn("_GUARD_IS_TRUE_POP", uops)
+
+    def test_call_isinstance_tuple_of_classes_true_unknown_4(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                # One of the classes is unknown, so we can't narrow
+                # to True or False, only bool
+                y = isinstance(42, (eval('int'), str))
                 if y:
                     x += 1
             return x
@@ -2242,6 +2280,36 @@ class TestUopsOptimization(unittest.TestCase):
 
         res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
         self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_CALL_ISINSTANCE", uops)
+        self.assertNotIn("_TO_BOOL_BOOL", uops)
+        self.assertIn("_GUARD_IS_TRUE_POP", uops)
+
+    def test_call_isinstance_tuple_metaclass(self):
+        calls = 0
+
+        class Meta(type):
+            def __instancecheck__(self, _):
+                nonlocal calls
+                calls += 1
+                return False
+
+        class Unknown(metaclass=Meta):
+            pass
+
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                # Only narrowed to bool
+                y = isinstance(42, (Unknown, int))
+                if y:
+                    x += 1
+            return x, calls
+
+        (res, calls), ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertEqual(calls, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertIn("_CALL_ISINSTANCE", uops)

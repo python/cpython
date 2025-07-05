@@ -2201,14 +2201,12 @@
             JitOptSymbol *res;
             cls = stack_pointer[-1];
             instance = stack_pointer[-2];
-            #define sym_IS_SUBTYPE(inst, cls) ((inst) == (cls) || PyType_IsSubtype(inst, cls))
-
             res = sym_new_type(ctx, &PyBool_Type);
             PyTypeObject *inst_type = sym_get_type(instance);
             PyTypeObject *cls_o = (PyTypeObject *)sym_get_const(ctx, cls);
             if (inst_type && cls_o && sym_matches_type(cls, &PyType_Type)) {
                 PyObject *out = Py_False;
-                if (sym_IS_SUBTYPE(inst_type, cls_o)) {
+                if (inst_type == cls_o || PyType_IsSubtype(inst_type, cls_o)) {
                     out = Py_True;
                 }
                 sym_set_const(res, out);
@@ -2223,18 +2221,18 @@
                         JitOptSymbol *item = sym_tuple_getitem(ctx, cls, i);
                         if (!sym_has_type(item)) {
                             all_items_known = false;
-                            continue;
+                            break;
                         }
                         PyTypeObject *cls_o = (PyTypeObject *)sym_get_const(ctx, item);
                         if (cls_o &&
                             sym_matches_type(item, &PyType_Type) &&
-                            sym_IS_SUBTYPE(inst_type, cls_o))
+                            (inst_type == cls_o || PyType_IsSubtype(inst_type, cls_o)))
                         {
                             out = Py_True;
                             break;
                         }
                     }
-                    if (!out && all_items_known) {
+                    if (out == NULL && all_items_known) {
                         out = Py_False;
                     }
                     if (out) {
@@ -2243,7 +2241,6 @@
                     }
                 }
             }
-            #undef sym_IS_SUBTYPE
             stack_pointer[-4] = res;
             stack_pointer += -3;
             assert(WITHIN_STACK_BOUNDS());

@@ -938,9 +938,6 @@ dummy_func(void) {
     }
 
     op(_CALL_ISINSTANCE, (unused, unused, instance, cls -- res)) {
-// The below define is equivalent to PyObject_TypeCheck(inst, cls)
-#define sym_IS_SUBTYPE(inst, cls) ((inst) == (cls) || PyType_IsSubtype(inst, cls))
-
         // the result is always a bool, but sometimes we can
         // narrow it down to True or False
         res = sym_new_type(ctx, &PyBool_Type);
@@ -951,7 +948,7 @@ dummy_func(void) {
             // known types, meaning we can deduce either True or False
 
             PyObject *out = Py_False;
-            if (sym_IS_SUBTYPE(inst_type, cls_o)) {
+            if (inst_type == cls_o || PyType_IsSubtype(inst_type, cls_o)) {
                 out = Py_True;
             }
             sym_set_const(res, out);
@@ -972,23 +969,24 @@ dummy_func(void) {
                 for (int i = 0; i < length; i++) {
                     JitOptSymbol *item = sym_tuple_getitem(ctx, cls, i);
                     if (!sym_has_type(item)) {
-                        // There is an unknown item in the tuple,
-                        // we can no longer deduce False.
+                        // There is an unknown item in the tuple.
+                        // It could potentially define its own __instancecheck__
+                        // method so we can only deduce bool.
                         all_items_known = false;
-                        continue;
+                        break;
                     }
                     PyTypeObject *cls_o = (PyTypeObject *)sym_get_const(ctx, item);
                     if (cls_o &&
                         sym_matches_type(item, &PyType_Type) &&
-                        sym_IS_SUBTYPE(inst_type, cls_o))
+                        (inst_type == cls_o || PyType_IsSubtype(inst_type, cls_o)))
                     {
                         out = Py_True;
                         break;
                     }
                 }
-                if (!out && all_items_known) {
+                if (out == NULL && all_items_known) {
                     // We haven't deduced True, but all items in the tuple are known
-                    // so we can deduce False
+                    // so we can deduce False.
                     out = Py_False;
                 }
                 if (out) {
@@ -997,7 +995,6 @@ dummy_func(void) {
                 }
             }
         }
-#undef sym_IS_SUBTYPE
     }
 
     op(_GUARD_IS_TRUE_POP, (flag -- )) {
