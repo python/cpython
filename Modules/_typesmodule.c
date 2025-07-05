@@ -26,6 +26,9 @@ _types_exec(PyObject *m)
     EXPORT_STATIC_TYPE("ClassMethodDescriptorType", PyClassMethodDescr_Type);
     EXPORT_STATIC_TYPE("CodeType", PyCode_Type);
     EXPORT_STATIC_TYPE("CoroutineType", PyCoro_Type);
+    EXPORT_STATIC_TYPE("DictItemsType", PyDictItems_Type);
+    EXPORT_STATIC_TYPE("DictKeysType", PyDictKeys_Type);
+    EXPORT_STATIC_TYPE("DictValuesType", PyDictValues_Type);
     EXPORT_STATIC_TYPE("EllipsisType", PyEllipsis_Type);
     EXPORT_STATIC_TYPE("FrameType", PyFrame_Type);
     EXPORT_STATIC_TYPE("FunctionType", PyFunction_Type);
