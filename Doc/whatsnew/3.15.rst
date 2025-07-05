@@ -275,6 +275,14 @@ threading
   (Contributed by Bénédikt Tran in :gh:`134087`.)
 
 
+types
+-----
+
+* Removed deprecated in :pep:`626` since Python 3.12
+  :attr:`!codeobject.co_lnotab` from :class:`types.CodeType`.
+  (Contributed by Nikita Sobolev in :gh:`134690`.)
+
+
 typing
 ------
 

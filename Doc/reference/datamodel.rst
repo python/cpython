@@ -1429,7 +1429,6 @@ indirectly) to mutable objects.
    single: co_filename (code object attribute)
    single: co_firstlineno (code object attribute)
    single: co_flags (code object attribute)
-   single: co_lnotab (code object attribute)
    single: co_name (code object attribute)
    single: co_names (code object attribute)
    single: co_nlocals (code object attribute)
@@ -1501,14 +1500,6 @@ Special read-only attributes
 
    * - .. attribute:: codeobject.co_firstlineno
      - The line number of the first line of the function
-
-   * - .. attribute:: codeobject.co_lnotab
-     - A string encoding the mapping from :term:`bytecode` offsets to line
-       numbers. For details, see the source code of the interpreter.
-
-       .. deprecated:: 3.12
-          This attribute of code objects is deprecated, and may be removed in
-          Python 3.15.
 
    * - .. attribute:: codeobject.co_stacksize
      - The required stack size of the code object
