@@ -734,11 +734,20 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
                   values allowed */
         unsigned char *p = va_arg(*p_va, unsigned char *);
         HANDLE_NULLABLE;
-        unsigned long ival = PyLong_AsUnsignedLongMask(arg);
-        if (ival == (unsigned long)-1 && PyErr_Occurred())
+        Py_ssize_t bytes = PyLong_AsNativeBytes(arg, p, sizeof(unsigned char),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (bytes < 0) {
             RETURN_ERR_OCCURRED;
-        else
-            *p = (unsigned char) ival;
+        }
+        if ((size_t)bytes > sizeof(unsigned char)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                RETURN_ERR_OCCURRED;
+            }
+        }
         break;
     }
 
@@ -767,11 +776,20 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
                    unsigned allowed */
         unsigned short *p = va_arg(*p_va, unsigned short *);
         HANDLE_NULLABLE;
-        unsigned long ival = PyLong_AsUnsignedLongMask(arg);
-        if (ival == (unsigned long)-1 && PyErr_Occurred())
+        Py_ssize_t bytes = PyLong_AsNativeBytes(arg, p, sizeof(unsigned short),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (bytes < 0) {
             RETURN_ERR_OCCURRED;
-        else
-            *p = (unsigned short) ival;
+        }
+        if ((size_t)bytes > sizeof(unsigned short)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                RETURN_ERR_OCCURRED;
+            }
+        }
         break;
     }
 
@@ -800,11 +818,20 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
                    unsigned allowed */
         unsigned int *p = va_arg(*p_va, unsigned int *);
         HANDLE_NULLABLE;
-        unsigned long ival = PyLong_AsUnsignedLongMask(arg);
-        if (ival == (unsigned long)-1 && PyErr_Occurred())
+        Py_ssize_t bytes = PyLong_AsNativeBytes(arg, p, sizeof(unsigned int),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (bytes < 0) {
             RETURN_ERR_OCCURRED;
-        else
-            *p = (unsigned int) ival;
+        }
+        if ((size_t)bytes > sizeof(unsigned int)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                RETURN_ERR_OCCURRED;
+            }
+        }
         break;
     }
 
@@ -838,15 +865,23 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
     case 'k': { /* long sized bitfield */
         unsigned long *p = va_arg(*p_va, unsigned long *);
         HANDLE_NULLABLE;
-        unsigned long ival;
         if (!PyIndex_Check(arg)) {
             return converterr(nullable, "int", arg, msgbuf, bufsize);
         }
-        ival = PyLong_AsUnsignedLongMask(arg);
-        if (ival == (unsigned long)(long)-1 && PyErr_Occurred()) {
+        Py_ssize_t bytes = PyLong_AsNativeBytes(arg, p, sizeof(unsigned long),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (bytes < 0) {
             RETURN_ERR_OCCURRED;
         }
-        *p = ival;
+        if ((size_t)bytes > sizeof(unsigned long)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                RETURN_ERR_OCCURRED;
+            }
+        }
         break;
     }
 
@@ -864,15 +899,23 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
     case 'K': { /* long long sized bitfield */
         unsigned long long *p = va_arg(*p_va, unsigned long long *);
         HANDLE_NULLABLE;
-        unsigned long long ival;
         if (!PyIndex_Check(arg)) {
             return converterr(nullable, "int", arg, msgbuf, bufsize);
         }
-        ival = PyLong_AsUnsignedLongLongMask(arg);
-        if (ival == (unsigned long long)(long long)-1 && PyErr_Occurred()) {
+        Py_ssize_t bytes = PyLong_AsNativeBytes(arg, p, sizeof(unsigned long long),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (bytes < 0) {
             RETURN_ERR_OCCURRED;
         }
-        *p = ival;
+        if ((size_t)bytes > sizeof(unsigned long long)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                RETURN_ERR_OCCURRED;
+            }
+        }
         break;
     }
 
