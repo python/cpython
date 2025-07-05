@@ -23,7 +23,7 @@ from test.support import socket_helper
 from test.support import threading_helper
 from test.support import asyncore
 from test.support import smtpd
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 
 support.requires_working_socket(module=True)
@@ -1568,6 +1568,61 @@ class SMTPAUTHInitialResponseSimTests(unittest.TestCase):
         code, response = smtp.auth('plain', smtp.auth_plain)
         smtp.close()
         self.assertEqual(code, 235)
+
+
+class TestSMTPLoginValueError(unittest.TestCase):
+    def broken_hmac(*args, **kwargs):
+        raise smtplib.SMTPAuthHashUnsupportedError("CRAM-MD5 failed: [digital envelope routines] unsupported")
+
+    def test_login_raises_valueerror_when_cram_md5_fails(self):
+        with patch("hmac.HMAC", self.broken_hmac):
+            class FakeSMTP(smtplib.SMTP):
+                def __init__(self):
+                    super().__init__(host='', port=0)
+                    self.esmtp_features = {"auth": "CRAM-MD5"}
+                    self._host = "localhost"
+
+                def ehlo_or_helo_if_needed(self):
+                    pass
+
+                def has_extn(self, ext):
+                    return ext.lower() == "auth"
+
+                def docmd(self, *args, **kwargs):
+                    # Retorna uma challenge base64 válida
+                    return 334, b"Y2hhbGxlbmdl"
+
+            smtp = FakeSMTP()
+            with self.assertRaises(smtplib.SMTPAuthHashUnsupportedError) as ctx:
+                smtp.login("user", "pass")
+            self.assertIn("unsupported", str(ctx.exception).lower())
+
+    def test_login_fallbacks_when_cram_md5_raises_valueerror(self):
+        with patch("hmac.HMAC", self.broken_hmac):
+            class FakeSMTP(smtplib.SMTP):
+                def __init__(self):
+                    super().__init__(host='', port=0)
+                    self.esmtp_features = {"auth": "CRAM-MD5 LOGIN"}
+                    self._host = "localhost"
+
+                def ehlo_or_helo_if_needed(self):
+                    pass
+
+                def has_extn(self, ext):
+                    return ext.lower() == "auth"
+
+                def docmd(self, *args, **kwargs):
+                    if args[0] == "AUTH" and args[1].startswith("CRAM-MD5"):
+                        return 334, b"Y2hhbGxlbmdl"  # base64('challenge')
+                    return 235, b"Authentication successful"
+
+                def auth_login(self, challenge=None):
+                    return "login response"
+
+            smtp = FakeSMTP()
+            code, resp = smtp.login("user", "pass")
+            self.assertEqual(code, 235)
+            self.assertEqual(resp, b"Authentication successful")
 
 
 if __name__ == '__main__':

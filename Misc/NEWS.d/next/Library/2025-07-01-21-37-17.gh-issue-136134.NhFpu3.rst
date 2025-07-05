@@ -1,0 +1,2 @@
+Make smtplib fallback to next auth method if CRAM-MD5 fails due to
+unsupported hash (e.g. FIPS). Contributed by Raphael Rodrigues.

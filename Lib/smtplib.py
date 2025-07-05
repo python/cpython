@@ -54,7 +54,7 @@ from email.base64mime import body_encode as encode_base64
 
 __all__ = ["SMTPException", "SMTPNotSupportedError", "SMTPServerDisconnected", "SMTPResponseException",
            "SMTPSenderRefused", "SMTPRecipientsRefused", "SMTPDataError",
-           "SMTPConnectError", "SMTPHeloError", "SMTPAuthenticationError",
+           "SMTPConnectError", "SMTPHeloError", "SMTPAuthenticationError", "SMTPAuthHashUnsupportedError",
            "quoteaddr", "quotedata", "SMTP"]
 
 SMTP_PORT = 25
@@ -140,6 +140,10 @@ class SMTPAuthenticationError(SMTPResponseException):
     Most probably the server didn't accept the username/password
     combination provided.
     """
+
+class SMTPAuthHashUnsupportedError(SMTPException):
+    """Raised when the authentication mechanism uses a hash algorithm unsupported by the system."""
+
 
 def quoteaddr(addrstring):
     """Quote a subset of the email addresses defined by RFC 821.
@@ -665,8 +669,11 @@ class SMTP:
         # CRAM-MD5 does not support initial-response.
         if challenge is None:
             return None
-        return self.user + " " + hmac.HMAC(
-            self.password.encode('ascii'), challenge, 'md5').hexdigest()
+        try:
+            return self.user + " " + hmac.HMAC(
+                self.password.encode('ascii'), challenge, 'md5').hexdigest()
+        except ValueError as e:
+            raise SMTPAuthHashUnsupportedError(f'CRAM-MD5 failed: {e}') from e
 
     def auth_plain(self, challenge=None):
         """ Authobject to use with PLAIN authentication. Requires self.user and
@@ -743,6 +750,12 @@ class SMTP:
                     return (code, resp)
             except SMTPAuthenticationError as e:
                 last_exception = e
+            except SMTPAuthHashUnsupportedError as e:
+                # Some environments (e.g., FIPS) disable certain hashing algorithms like MD5,
+                # which are required by CRAM-MD5. This raises a SMTPAuthHashUnsupportedError when trying to use HMAC.
+                # If this happens, we catch the exception and continue trying the next auth method.
+                last_exception = e
+                continue
 
         # We could not login successfully.  Return result of last attempt.
         raise last_exception
