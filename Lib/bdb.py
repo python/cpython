@@ -307,10 +307,10 @@ class Bdb:
         Return self.trace_dispatch to continue tracing in this scope.
         """
         # GH-136057
-        # For line events, besides whether we should stop at the frame, we
-        # also need to check if it's the same line as we issue the command.
+        # For line events, we don't want to stop at the same line where
+        # we issue the previous next/step command.
         if (self.stop_here(frame) or self.break_here(frame)) and not (
-            self.startframe == frame and self.startlineno == frame.f_lineno
+            self.cmdframe == frame and self.cmdlineno == frame.f_lineno
         ):
             self.user_line(frame)
             self.restart_events()
@@ -541,7 +541,7 @@ class Bdb:
                 self.monitoring_tracer.update_local_events()
 
     def _set_stopinfo(self, stopframe, returnframe, stoplineno=0, opcode=False,
-                      startframe=None, startlineno=None):
+                      cmdframe=None, cmdlineno=None):
         """Set the attributes for stopping.
 
         If stoplineno is greater than or equal to 0, then stop at line
@@ -554,10 +554,11 @@ class Bdb:
         # stoplineno >= 0 means: stop at line >= the stoplineno
         # stoplineno -1 means: don't stop at all
         self.stoplineno = stoplineno
-        # startframe/startlineno is the frame/line number when the user does
-        # step or next. We don't want to stop at the same line for those commands.
-        self.startframe = startframe
-        self.startlineno = startlineno
+        # cmdframe/cmdlineno is the frame/line number when the user issue 
+        # step/next commands. We don't want to stop at the same line for
+        # those commands.
+        self.cmdframe = cmdframe
+        self.cmdlineno = cmdlineno
         self._set_trace_opcodes(opcode)
 
     def _set_caller_tracefunc(self, current_frame):
@@ -584,8 +585,8 @@ class Bdb:
     def set_step(self):
         """Stop after one line of code."""
         # set_step() could be called from signal handler so enterframe might be None
-        self._set_stopinfo(None, None, startframe=self.enterframe,
-                           startlineno=getattr(self.enterframe, 'f_lineno', None))
+        self._set_stopinfo(None, None, cmdframe=self.enterframe,
+                           cmdlineno=getattr(self.enterframe, 'f_lineno', None))
 
     def set_stepinstr(self):
         """Stop before the next instruction."""
@@ -593,7 +594,7 @@ class Bdb:
 
     def set_next(self, frame):
         """Stop on the next line in or below the given frame."""
-        self._set_stopinfo(frame, None, startframe=frame, startlineno=frame.f_lineno)
+        self._set_stopinfo(frame, None, cmdframe=frame, cmdlineno=frame.f_lineno)
 
     def set_return(self, frame):
         """Stop when returning from the given frame."""
