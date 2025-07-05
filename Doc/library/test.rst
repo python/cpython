@@ -62,25 +62,25 @@ A basic boilerplate is often used::
        # Only use setUp() and tearDown() if necessary
 
        def setUp(self):
-           ... code to execute in preparation for tests ...
+           ...  # code to execute in preparation for tests
 
        def tearDown(self):
-           ... code to execute to clean up after tests ...
+           ...  # code to execute to clean up after tests
 
        def test_feature_one(self):
            # Test feature one.
-           ... testing code ...
+           ...  # testing code
 
        def test_feature_two(self):
            # Test feature two.
-           ... testing code ...
+           ...  # testing code
 
-       ... more test methods ...
+       # more test methods
 
    class MyTestCase2(unittest.TestCase):
-       ... same structure as MyTestCase1 ...
+       ...  # same structure as MyTestCase1
 
-   ... more test classes ...
+   # more test classes
 
    if __name__ == '__main__':
        unittest.main()
@@ -1714,7 +1714,7 @@ The :mod:`test.support.warnings_helper` module provides support for warnings tes
 
       @warning_helper.ignore_warnings(category=DeprecationWarning)
       def test_suppress_warning():
-          # do something
+          ...  # do something
 
    .. versionadded:: 3.8
 

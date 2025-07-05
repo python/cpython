@@ -1707,7 +1707,7 @@ Do not instantiate the :class:`Server` class directly.
       srv = await loop.create_server(...)
 
       async with srv:
-          # some code
+          ...  # some code
 
       # At this point, srv is closed and no longer accepts new connections.
 
