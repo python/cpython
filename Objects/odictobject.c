@@ -1475,7 +1475,8 @@ odict_tp_clear(PyObject *op)
 {
     PyODictObject *od = _PyODictObject_CAST(op);
     Py_CLEAR(od->od_inst_dict);
-    _PyDict_Clear_LockHeld((PyObject *)od);
+    // cannot use lock held variant as critical section is not held here
+    PyDict_Clear(op);
     _odict_clear_nodes(od);
     return 0;
 }
