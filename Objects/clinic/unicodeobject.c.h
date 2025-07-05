@@ -725,6 +725,24 @@ unicode_isprintable(PyObject *self, PyObject *Py_UNUSED(ignored))
     return unicode_isprintable_impl(self);
 }
 
+PyDoc_STRVAR(unicode_contains_surrogate__doc__,
+"contains_surrogate($self, /)\n"
+"--\n"
+"\n"
+"Return True if the string contains any surrogate code points, False otherwise.");
+
+#define UNICODE_CONTAINS_SURROGATE_METHODDEF    \
+    {"contains_surrogate", (PyCFunction)unicode_contains_surrogate, METH_NOARGS, unicode_contains_surrogate__doc__},
+
+static PyObject *
+unicode_contains_surrogate_impl(PyObject *self);
+
+static PyObject *
+unicode_contains_surrogate(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return unicode_contains_surrogate_impl(self);
+}
+
 PyDoc_STRVAR(unicode_join__doc__,
 "join($self, iterable, /)\n"
 "--\n"
@@ -1908,4 +1926,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=238917fe66120bde input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1ff52eb2d684cb1e input=a9049054013a1b77]*/
