@@ -619,9 +619,9 @@ define in order to be compatible with the Python codec registry.
    object.
 
 
-   .. method:: encode(object, final=False)
+   .. method:: encode(input, final=False)
 
-      Encodes *object* (taking the current state of the encoder into account)
+      Encodes *input* (taking the current state of the encoder into account)
       and returns the resulting encoded object. If this is the last call to
       :meth:`encode` *final* must be true (the default is false).
 
@@ -676,9 +676,9 @@ define in order to be compatible with the Python codec registry.
    object.
 
 
-   .. method:: decode(object, final=False)
+   .. method:: decode(input, final=False)
 
-      Decodes *object* (taking the current state of the decoder into account)
+      Decodes *input* (taking the current state of the decoder into account)
       and returns the resulting decoded object. If this is the last call to
       :meth:`decode` *final* must be true (the default is false). If *final* is
       true the decoder must decode the input completely and must flush all
