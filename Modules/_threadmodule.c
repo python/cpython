@@ -2353,6 +2353,7 @@ thread_shutdown(PyObject *self, PyObject *args)
 {
     PyThread_ident_t ident = PyThread_get_thread_ident_ex();
     thread_module_state *state = get_thread_state(self);
+    int found_thread = 0;
 
     for (;;) {
         ThreadHandle *handle = NULL;
@@ -2361,6 +2362,7 @@ thread_shutdown(PyObject *self, PyObject *args)
         HEAD_LOCK(&_PyRuntime);
         struct llist_node *node;
         llist_for_each_safe(node, &state->shutdown_handles) {
+            found_thread = 1;
             ThreadHandle *cur = llist_data(node, ThreadHandle, shutdown_node);
             if (cur->ident != ident) {
                 ThreadHandle_incref(cur);
@@ -2381,13 +2383,13 @@ thread_shutdown(PyObject *self, PyObject *args)
             PyErr_FormatUnraisable("Exception ignored while joining a thread "
                                    "in _thread._shutdown()");
             ThreadHandle_decref(handle);
-            Py_RETURN_NONE;
+            return PyBool_FromLong(found_thread);
         }
 
         ThreadHandle_decref(handle);
     }
 
-    Py_RETURN_NONE;
+    return PyBool_FromLong(found_thread);
 }
 
 PyDoc_STRVAR(shutdown_doc,

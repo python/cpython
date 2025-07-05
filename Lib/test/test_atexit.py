@@ -79,6 +79,29 @@ class FunctionalTest(unittest.TestCase):
         # want them to affect the rest of the tests.
         script_helper.assert_python_ok("-c", textwrap.dedent(source))
 
+    @threading_helper.requires_working_threading()
+    def test_thread_created_in_atexit(self):
+        source = """
+        import atexit
+        import threading
+        import time
+
+
+        def run():
+            print(24)
+            time.sleep(1)
+            print(42)
+
+        @atexit.register
+        def start_thread():
+            threading.Thread(target=run).start()
+        """
+
+        return_code, stdout, stderr = script_helper.assert_python_ok("-c", textwrap.dedent(source))
+        self.assertEqual(return_code, 0)
+        self.assertEqual(stdout, f"24{os.linesep}42{os.linesep}".encode("utf-8"))
+        self.assertEqual(stderr, b"")
+
 
 @support.cpython_only
 class SubinterpreterTest(unittest.TestCase):

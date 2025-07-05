@@ -43,7 +43,7 @@ PyAPI_FUNC(int) _PyEval_MakePendingCalls(PyThreadState *);
 #  define Py_DEFAULT_RECURSION_LIMIT 1000
 #endif
 
-extern void _Py_FinishPendingCalls(PyThreadState *tstate);
+extern int _Py_FinishPendingCalls(PyThreadState *tstate);
 extern void _PyEval_InitState(PyInterpreterState *);
 extern void _PyEval_SignalReceived(void);
 
