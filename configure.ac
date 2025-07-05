@@ -1855,7 +1855,7 @@ AC_ARG_VAR([PROFILE_TASK], [Python args for PGO generation task])
 AC_MSG_CHECKING([PROFILE_TASK])
 if test -z "$PROFILE_TASK"
 then
-	PROFILE_TASK='-m test --pgo --timeout=$(TESTTIMEOUT)'
+	PROFILE_TASK='-m test.pgo_task'
 fi
 AC_MSG_RESULT([$PROFILE_TASK])
 
