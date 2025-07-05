@@ -225,7 +225,7 @@ type_from_ref(PyObject *ref)
 }
 
 
-/* helpers for for static builtin types */
+/* helpers for static builtin types */
 
 #ifndef NDEBUG
 static inline int

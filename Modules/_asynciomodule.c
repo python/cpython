@@ -821,7 +821,7 @@ future_add_done_callback(asyncio_state *state, FutureObj *fut, PyObject *arg,
            Invariants:
 
             * callbacks != NULL:
-                There are some callbacks in in the list.  Just
+                There are some callbacks in the list.  Just
                 add the new callback to it.
 
             * callbacks == NULL and callback0 == NULL:
