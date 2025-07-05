@@ -2115,6 +2115,9 @@ delta_to_microseconds(PyDateTime_Delta *self)
 
     PyObject *current_mod = NULL;
     datetime_state *st = GET_CURRENT_STATE(current_mod);
+    if (st == NULL) {
+        return NULL;
+    }
 
     x1 = PyLong_FromLong(GET_TD_DAYS(self));
     if (x1 == NULL)
@@ -2194,6 +2197,9 @@ microseconds_to_delta_ex(PyObject *pyus, PyTypeObject *type)
 
     PyObject *current_mod = NULL;
     datetime_state *st = GET_CURRENT_STATE(current_mod);
+    if (st == NULL) {
+        return NULL;
+    }
 
     tuple = checked_divmod(pyus, CONST_US_PER_SECOND(st));
     if (tuple == NULL) {
@@ -2779,6 +2785,9 @@ delta_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 
     PyObject *current_mod = NULL;
     datetime_state *st = GET_CURRENT_STATE(current_mod);
+    if (st == NULL) {
+        return NULL;
+    }
 
     /* Argument objects. */
     PyObject *day = NULL;
@@ -2998,6 +3007,10 @@ delta_total_seconds(PyObject *op, PyObject *Py_UNUSED(dummy))
 
     PyObject *current_mod = NULL;
     datetime_state *st = GET_CURRENT_STATE(current_mod);
+    if (st == NULL) {
+        Py_DECREF(total_microseconds);
+        return NULL;
+    }
 
     total_seconds = PyNumber_TrueDivide(total_microseconds, CONST_US_PER_SECOND(st));
 
@@ -3781,6 +3794,9 @@ date_isocalendar(PyObject *self, PyObject *Py_UNUSED(dummy))
 
     PyObject *current_mod = NULL;
     datetime_state *st = GET_CURRENT_STATE(current_mod);
+    if (st == NULL) {
+        return NULL;
+    }
 
     PyObject *v = iso_calendar_date_new_impl(ISOCALENDAR_DATE_TYPE(st),
                                              year, week + 1, day + 1);
@@ -6616,6 +6632,9 @@ local_timezone(PyDateTime_DateTime *utc_time)
 
     PyObject *current_mod = NULL;
     datetime_state *st = GET_CURRENT_STATE(current_mod);
+    if (st == NULL) {
+        return NULL;
+    }
 
     delta = datetime_subtract((PyObject *)utc_time, CONST_EPOCH(st));
     RELEASE_CURRENT_STATE(st, current_mod);
@@ -6860,6 +6879,9 @@ datetime_timestamp(PyObject *op, PyObject *Py_UNUSED(dummy))
     if (HASTZINFO(self) && self->tzinfo != Py_None) {
         PyObject *current_mod = NULL;
         datetime_state *st = GET_CURRENT_STATE(current_mod);
+        if (st == NULL) {
+            return NULL;
+        }
 
         PyObject *delta;
         delta = datetime_subtract(op, CONST_EPOCH(st));
