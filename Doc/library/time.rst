@@ -327,7 +327,8 @@ Functions
    clock with the highest available resolution to measure a short duration.  It
    does include time elapsed during sleep and is system-wide.  The reference
    point of the returned value is undefined, so that only the difference between
-   the results of two calls is valid.
+   the results of two calls is valid. This counter, like :func:`monotonic`, cannot
+   go backwards.
 
    .. impl-detail::
 
