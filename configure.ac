@@ -1226,9 +1226,10 @@ AS_CASE([$host/$ac_cv_cc_name],
   [s390x-*-linux-gnu/gcc],           [PY_SUPPORT_TIER=3], dnl Linux on 64bit s390x (big endian), glibc, gcc
   [x86_64-*-freebsd*/clang],         [PY_SUPPORT_TIER=3], dnl FreeBSD on AMD64
   [aarch64-apple-ios*-simulator/clang],   [PY_SUPPORT_TIER=3], dnl iOS Simulator on arm64
-  [aarch64-apple-ios*/clang],             [PY_SUPPORT_TIER=3], dnl iOS on ARM64
+  [aarch64-apple-ios*/clang],        [PY_SUPPORT_TIER=3], dnl iOS on ARM64
   [aarch64-*-linux-android/clang],   [PY_SUPPORT_TIER=3], dnl Android on ARM64
   [x86_64-*-linux-android/clang],    [PY_SUPPORT_TIER=3], dnl Android on AMD64
+  [wasm32-*-emscripten/emcc],        [PY_SUPPORT_TIER=3], dnl Emscripten
 
   [PY_SUPPORT_TIER=0]
 )
