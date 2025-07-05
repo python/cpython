@@ -767,6 +767,40 @@ class BaseTest:
         self.checkraises(TypeError, 'hello', 'replace', 42, 'h')
         self.checkraises(TypeError, 'hello', 'replace', 'h', 42)
 
+    def test_replacement_on_buffer_boundary(self):
+
+        # gh-127971: Check we don't read past the end of the buffer when a
+        # potential match misses on the last character. Note this will likely
+        # not cause a failure unless ASAN is enabled, and even that may be
+        # dependent on implementation details subject to change.
+        any_3_nonblank_codepoints = '!!!'
+        seven_codepoints = any_3_nonblank_codepoints + ' ' + any_3_nonblank_codepoints
+        a = (' ' * 243) + seven_codepoints + (' ' * 7)
+        b = ' ' * 6 + chr(256)
+        a.replace(seven_codepoints, b)
+
+    def test_adaptive_find_on_buffer_boundary(self):
+
+        # gh-127971: This exercises the adaptive search algorithm to trigger a
+        # corner-case where it might examine the character *after* the last
+        # position that could be the start of the pattern.
+        #
+        # Unfortunately there is nothing to *test* to confirm whether the
+        # character is read or not, nor in fact does it matter for correctness
+        # with the implementation at time of writing: the adaptive algorithm is
+        # only triggered if the input is over a certain size and with a pattern
+        # with more than one character, so with the current implementation even
+        # though the final character read is not necessary or significant, it
+        # won't cause a fault.
+        #
+        # This test at least intentionally exercises this path, and might
+        # possibly catch a regression if the implementation changes and breaks
+        # those assumptions.
+        prefix = ' ' * (1024 * 4)
+        haystack = prefix + 'x'
+        needle = prefix + 'y'
+        self.assertEqual(haystack.find(needle), -1)
+
     def test_replace_uses_two_way_maxcount(self):
         # Test that maxcount works in _two_way_count in fastsearch.h
         A, B = "A"*1000, "B"*1000
