@@ -273,6 +273,7 @@ class NetrcTestCase(unittest.TestCase):
 
     @unittest.skipUnless(os.name == 'posix', 'POSIX only test')
     @unittest.skipUnless(hasattr(os, 'getuid'), "os.getuid is required")
+    @unittest.skipIf(support.is_emscripten, "Doesn't work")
     @os_helper.skip_unless_working_chmod
     def test_security(self):
         # This test is incomplete since we are normally not run as root and
