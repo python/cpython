@@ -461,7 +461,7 @@ const uint16_t op_without_decref_inputs[MAX_UOP_ID + 1] = {
     [_BINARY_OP_SUBTRACT_FLOAT] = _BINARY_OP_SUBTRACT_FLOAT__NO_DECREF_INPUTS,
 };
 
-/* 1 for success, 0 for not ready, cannot error at the moment. */
+/* 1 for success, 0 for not ready, clears all possible errors. */
 static int
 optimize_uops(
     PyCodeObject *co,
@@ -471,6 +471,7 @@ optimize_uops(
     _PyBloomFilter *dependencies
 )
 {
+    assert(!PyErr_Occurred());
 
     JitOptContext context;
     JitOptContext *ctx = &context;
@@ -483,7 +484,7 @@ optimize_uops(
     _Py_uop_abstractcontext_init(ctx);
     _Py_UOpsAbstractFrame *frame = _Py_uop_frame_new(ctx, co, curr_stacklen, NULL, 0);
     if (frame == NULL) {
-        return -1;
+        return 0;
     }
     ctx->curr_frame_depth++;
     ctx->frame = frame;
@@ -557,7 +558,11 @@ error:
         OPT_ERROR_IN_OPCODE(opcode);
     }
     _Py_uop_abstractcontext_fini(ctx);
-    return -1;
+
+    assert(PyErr_Occurred());
+    PyErr_Clear();
+
+    return 0;
 
 }
 
@@ -704,9 +709,11 @@ _Py_uop_analyze_and_optimize(
         _PyFrame_GetCode(frame), buffer,
         length, curr_stacklen, dependencies);
 
-    if (length <= 0) {
+    if (length == 0) {
         return length;
     }
+
+    assert(length > 0);
 
     length = remove_unneeded_uops(buffer, length);
     assert(length > 0);
