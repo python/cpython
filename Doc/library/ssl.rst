@@ -1003,6 +1003,13 @@ Constants
 
    .. versionadded:: 3.6
 
+.. class:: ECHStatus
+
+   :class:`enum.IntEnum` collection of Encrypted Client Hello (ECH) statuses
+   returned by :meth:`SSLSocket.get_ech_status`.
+
+   .. versionadded:: next
+
 .. data:: Purpose.SERVER_AUTH
 
    Option for :func:`create_default_context` and
@@ -1307,6 +1314,22 @@ SSL sockets also have the following additional methods and attributes:
 
    .. versionadded:: 3.3
 
+.. method:: SSLSocket.get_ech_retry_config()
+
+   When the status returned by :meth:`SSLSocket.get_ech_status` after completion of the
+   handshake is :data:`ECHStatus.ECH_STATUS_GREASE_ECH`, this method returns the
+   configuration value provided by the server to be used for a new connection using
+   ECH.
+
+   .. versionadded:: next
+
+.. method:: SSLSocket.get_ech_status()
+
+   Gets the status of Encrypted Client Hello (ECH) processing. Returns an
+   :class:`ECHStatus` instance.
+
+   .. versionadded:: next
+
 .. method:: SSLSocket.selected_alpn_protocol()
 
    Return the protocol that was selected during the TLS handshake.  If
@@ -1378,6 +1401,15 @@ SSL sockets also have the following additional methods and attributes:
    The :class:`SSLContext` object this SSL socket is tied to.
 
    .. versionadded:: 3.2
+
+.. attribute:: SSLSocket.outer_server_hostname
+
+   Hostname of the server name used in the outer ClientHello when Encrypted Client
+   Hello (ECH) is used: :class:`str` type, or ``None`` for server-side socket or
+   if the outer server name was not specified in the constructor or the ECH
+   configuration.
+
+   .. versionadded:: next
 
 .. attribute:: SSLSocket.server_side
 
@@ -1680,6 +1712,24 @@ to speed up repeated connections from the same clients.
 
    .. versionadded:: 3.5
 
+.. method:: SSLContext.set_ech_config(ech_config)
+
+   Sets an Encrypted Client Hello (ECH) configuration, which may be discovered from
+   an HTTPS resource record in DNS or from :meth:`SSLSocket.get_ech_retry_config`.
+   Multiple calls to this functions will accumulate the set of values available for
+   a connection.
+
+   If the input value provided contains no suitable value (e.g. if it only contains
+   ECH configuration versions that are not supported), an :class:`SSLError` will be
+   raised.
+
+   The ech_config parameter should be a bytes-like object containing the raw ECH
+   configuration.
+
+   This method will raise :exc:`NotImplementedError` if :data:`HAS_ECH` is ``False``.
+
+   .. versionadded:: next
+
 .. method:: SSLContext.set_npn_protocols(protocols)
 
    Specify which protocols the socket should advertise during the SSL/TLS
@@ -1698,6 +1748,28 @@ to speed up repeated connections from the same clients.
    .. deprecated:: 3.10
 
       NPN has been superseded by ALPN
+
+.. method:: SSLContext.set_outer_alpn_protocols(protocols)
+
+   Specify which protocols the socket should advertise during the TLS
+   handshake in the outer ClientHello when ECH is used. The *protocols*
+   argument accepts the same values as for
+   :meth:`~SSLContext.set_alpn_protocols`.
+
+   This method will raise :exc:`NotImplementedError` if :data:`HAS_ECH` is
+   ``False``.
+
+   .. versionadded:: next
+
+.. method:: SSLContext.set_outer_server_hostname(server_hostname)
+
+   Specify which hostname the socket should advertise during the TLS
+   handshake in the outer ClientHello when ECH is used.
+
+   This method will raise :exc:`NotImplementedError` if :data:`HAS_ECH` is
+   ``False``.
+
+   .. versionadded:: next
 
 .. attribute:: SSLContext.sni_callback
 
@@ -2594,6 +2666,8 @@ provided.
    - :meth:`~SSLSocket.verify_client_post_handshake`
    - :meth:`~SSLSocket.unwrap`
    - :meth:`~SSLSocket.get_channel_binding`
+   - :meth:`~SSLSocket.get_ech_retry_config`
+   - :meth:`~SSLSocket.get_ech_status`
    - :meth:`~SSLSocket.version`
 
    When compared to :class:`SSLSocket`, this object lacks the following
@@ -2813,6 +2887,52 @@ of TLS/SSL. Some new TLS 1.3 features are not yet available.
 - TLS 1.3 features like early data, deferred TLS client cert request,
   signature algorithm configuration, and rekeying are not supported yet.
 
+Encrypted Client Hello
+^^^^^^^^^^^^^^^^^^^^^^
+
+.. versionadded:: next
+
+Encrypted Client Hello (ECH) allows for encrypting values that have previously only been
+included unencrypted in the ClientHello records when establishing a TLS connection. To use
+ECH it is necessary to provide configuration values that contain a version, algorithm
+parameters, the public key to use for HPKE encryption and the "public_name" that is by
+default used for the unencrypted (outer) SNI when ECH is attempted. These configuration
+values may be discovered through DNS or through the "retry config" mechanism.
+
+The following example assumes that you have discovered a set of ECH configuration values
+from DNS, or *ech_configs* may be an empty list to rely on the "retry config" mechanism::
+
+    import socket
+    import ssl
+
+
+    def connect_with_tls_ech(hostname: str, ech_configs: List[str],
+                         use_retry_config: bool=True) -> ssl.SSLSocket:
+        context = ssl.create_default_context()
+        for ech_config in ech_configs:
+            context.set_ech_config(ech_config)
+        with socket.create_connection((hostname, 443)) as sock:
+            with context.wrap_socket(sock, server_hostname=hostname) as ssock:
+                if (ssock.get_ech_status == ECHStatus.ECH_STATUS_GREASE_ECH
+                        and use_retry_config):
+                    return connect_with_ech(hostname, [ssock.get_ech_retry_config()],
+                                            False)
+                return ssock
+
+    hostname = "www.python.org"
+    ech_configs = []  # Replace with a call to a function to lookup
+                      # ECH configurations in DNS
+
+    ssock = connect_with_tls_ech(hostname, ech_configs)
+
+The following classes, methods, and attributes will be useful for using ECH:
+
+ - :class:`ECHStatus`
+ - :meth:`SSLContext.set_ech_config`
+ - :meth:`SSLContext.set_outer_alpn_protocols`
+ - :meth:`SSLContext.set_outer_server_hostname`
+ - :meth:`SSLSocket.get_ech_status`
+ - :meth:`SSLSocket.get_ech_retry_config`
 
 .. seealso::
 

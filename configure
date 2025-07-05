@@ -30876,6 +30876,63 @@ LIBS=$save_LIBS
 
 
 
+save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+  CFLAGS="$CFLAGS $OPENSSL_INCLUDES"
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for SSL_ech_get1_status" >&5
+printf %s "checking for SSL_ech_get1_status... " >&6; }
+if test ${ac_cv_func_SSL_ech_get1_status+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <openssl/ech.h>
+int
+main (void)
+{
+void *x=SSL_ech_get1_status
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_func_SSL_ech_get1_status=yes
+else case e in #(
+  e) ac_cv_func_SSL_ech_get1_status=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_SSL_ech_get1_status" >&5
+printf "%s\n" "$ac_cv_func_SSL_ech_get1_status" >&6; }
+  if test "x$ac_cv_func_SSL_ech_get1_status" = xyes
+then :
+
+printf "%s\n" "#define HAVE_OPENSSL_ECH 1" >>confdefs.h
+
+fi
+
+
+
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
+
 # ssl module default cipher suite string
 
 

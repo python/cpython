@@ -7535,6 +7535,12 @@ WITH_SAVE_ENV([
   ])
 ])
 
+WITH_SAVE_ENV([
+  CFLAGS="$CFLAGS $OPENSSL_INCLUDES"
+
+  PY_CHECK_FUNC([SSL_ech_get1_status], [@%:@include <openssl/ech.h>], [HAVE_OPENSSL_ECH])
+])
+
 # ssl module default cipher suite string
 AH_TEMPLATE([PY_SSL_DEFAULT_CIPHERS],
   [Default cipher suites list for ssl module.
