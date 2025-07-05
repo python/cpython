@@ -10059,7 +10059,51 @@ fi
 if test "x$ac_cv_gcc_compat" = xyes
 then :
 
-    CFLAGS_NODIST="$CFLAGS_NODIST -std=c11"
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -std=c11" >&5
+printf %s "checking whether C compiler accepts -std=c11... " >&6; }
+if test ${ax_cv_check_cflags__Werror__std_c11+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e)
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS -Werror -std=c11"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags__Werror__std_c11=yes
+else case e in #(
+  e) ax_cv_check_cflags__Werror__std_c11=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__std_c11" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__std_c11" >&6; }
+if test "x$ax_cv_check_cflags__Werror__std_c11" = xyes
+then :
+
+      as_fn_append CFLAGS_NODIST " -std=c11"
+
+else case e in #(
+  e)
+      as_fn_error $? "Python requires -std=c11 on gcc" "$LINENO" 5
+     ;;
+esac
+fi
+
 
 
 
