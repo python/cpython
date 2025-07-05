@@ -123,7 +123,7 @@ Some facts and figures:
 
    For modes ``'w:gz'``, ``'x:gz'``, ``'w|gz'``, ``'w:bz2'``, ``'x:bz2'``,
    ``'w|bz2'``, :func:`tarfile.open` accepts the keyword argument
-   *compresslevel* (default ``9``) to specify the compression level of the file.
+   *compresslevel* (default ``6``) to specify the compression level of the file.
 
    For modes ``'w:xz'``, ``'x:xz'`` and ``'w|xz'``, :func:`tarfile.open` accepts the
    keyword argument *preset* to specify the compression level of the file.
@@ -198,6 +198,10 @@ Some facts and figures:
    .. versionchanged:: 3.14
       The *preset* keyword argument also works for streams.
 
+   .. versionchanged:: 3.14
+      The default compression level was reduced to 6 (down from 9).
+      It is the default level used by most compression tools and a better
+      tradeoff between speed and performance.
 
 .. class:: TarFile
    :noindex:
