@@ -1284,6 +1284,11 @@ SSL sockets also have the following additional methods and attributes:
 
    .. versionadded:: 3.5
 
+.. method:: SSLSocket.group()
+
+   Return the group used for doing key agreement on this connection. If no
+   connection has been established, returns ``None``.
+
 .. method:: SSLSocket.compression()
 
    Return the compression algorithm being used as a string, or ``None``
