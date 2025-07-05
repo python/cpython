@@ -119,6 +119,13 @@ math
   (Contributed by Bénédikt Tran in :gh:`135853`.)
 
 
+netrc
+-----
+
+* Added support for the :envvar:`!NETRC` environment variable in :func:`netrc.netrc`.
+  (Contributed by Berthin Torres in :gh:`135788`.)
+
+
 os.path
 -------
 
