@@ -115,7 +115,7 @@ math
 * Add :func:`math.isnormal` and :func:`math.issubnormal` functions.
   (Contributed by Sergey B Kirpichev in :gh:`132908`.)
 
-* Add :func:`math.signbit` function.
+* Add :func:`math.fmax`, :func:`math.fmin` and :func:`math.signbit` functions.
   (Contributed by Bénédikt Tran in :gh:`135853`.)
 
 
