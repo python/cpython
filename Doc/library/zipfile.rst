@@ -937,6 +937,11 @@ Instances have the following methods and attributes:
 
    Size of the uncompressed file.
 
+.. attribute:: ZipInfo.extended_mtime
+
+   Extended modified timestamp of the uncompressed file.
+
+   .. versionadded:: 3.14
 
 .. _zipfile-commandline:
 .. program:: zipfile
