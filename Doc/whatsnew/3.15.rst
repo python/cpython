@@ -160,16 +160,17 @@ ssl
 
 * Added new methods for managing groups used for SSL key agreement
 
-   * :meth:`SSLContext.set_groups` sets the groups allowed for doing
-     key agreement, extending the previous :meth:`set_ecdh_curve` method.
+   * :meth:`ssl.SSLContext.set_groups` sets the groups allowed for doing
+     key agreement, extending the previous
+     :meth:`ssl.SSLContext.set_ecdh_curve` method.
      This new API provides the ability to list multiple groups and
      supports fixed-field and post-quantum groups in addition to ECDH
      curves. This method can also be used to control what key shares
      are sent in the TLS handshake.
-   * :meth:`SSLSocket.group` returns the group selected for doing key
+   * :meth:`ssl.SSLSocket.group` returns the group selected for doing key
      agreement on the current connection after the TLS handshake completes.
      This call requires OpenSSL 3.2 or later.
-   * :meth:`SSLContext.get_groups` returns a list of all available key
+   * :meth:`ssl.SSLContext.get_groups` returns a list of all available key
      agreement groups compatible with the minimum and maximum TLS versions
      currently set in the context. This call requires OpenSSL 3.5 or later.
 
