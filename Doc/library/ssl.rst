@@ -1645,17 +1645,15 @@ to speed up repeated connections from the same clients.
 
    Get a list of groups implemented for key agreement, taking into account
    the SSLContext's current TLS ``minimum_version`` and ``maximum_version``
-   values.
+   values.  For example::
 
-   Example::
+   >>> ctx = ssl.create_default_context()
+   >>> ctx.minimum_version=ssl.TLSVersion.TLSv1_3
+   >>> ctx.maximum_version=ssl.TLSVersion.TLSv1_3
+   >>> ctx.get_groups()
+   ['secp256r1', 'secp384r1', 'secp521r1', 'x25519', 'x448', 'brainpoolP256r1tls13', 'brainpoolP384r1tls13', 'brainpoolP512r1tls13', 'ffdhe2048', 'ffdhe3072', 'ffdhe4096', 'ffdhe6144', 'ffdhe8192', 'MLKEM512', 'MLKEM768', 'MLKEM1024', 'SecP256r1MLKEM768', 'X25519MLKEM768', 'SecP384r1MLKEM1024']
 
-       >>> ctx = ssl.create_default_context()
-       >>> ctx.minimum_version=ssl.TLSVersion.TLSv1_3
-       >>> ctx.maximum_version=ssl.TLSVersion.TLSv1_3
-       >>> ctx.get_groups()
-       ['secp256r1', 'secp384r1', 'secp521r1', 'x25519', 'x448', 'brainpoolP256r1tls13', 'brainpoolP384r1tls13', 'brainpoolP512r1tls13', 'ffdhe2048', 'ffdhe3072', 'ffdhe4096', 'ffdhe6144', 'ffdhe8192', 'MLKEM512', 'MLKEM768', 'MLKEM1024', 'SecP256r1MLKEM768', 'X25519MLKEM768', 'SecP384r1MLKEM1024'
-
-   .. versionadded:: 3.15
+   .. versionadded:: next
 
 .. method:: SSLContext.set_default_verify_paths()
 
@@ -1689,7 +1687,7 @@ to speed up repeated connections from the same clients.
    <https://docs.openssl.org/master/man3/SSL_CTX_set1_groups_list/>`_.
 
    .. note::
-      when connected, the :meth:`SSLSocket.group` method of SSL sockets will
+      When connected, the :meth:`SSLSocket.group` method of SSL sockets will
       return the group used for key agreement on that connection.
 
    .. versionadded:: 3.15
@@ -1816,10 +1814,6 @@ to speed up repeated connections from the same clients.
    This method is not available if :data:`HAS_ECDH` is ``False``.
 
    .. versionadded:: 3.3
-
-   .. deprecated:: 3.15
-
-      This method has been replaced by :math:`set_groups`.
 
    .. seealso::
       `SSL/TLS & Perfect Forward Secrecy <https://vincent.bernat.ch/en/blog/2011-ssl-perfect-forward-secrecy>`_

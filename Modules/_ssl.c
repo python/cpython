@@ -2154,11 +2154,15 @@ _ssl__SSLSocket_group_impl(PySSLSocket *self)
 #if OPENSSL_VERSION_NUMBER >= 0x30200000L
     const char *group_name;
 
-    if (self->ssl == NULL)
+    if (self->ssl == NULL) {
         Py_RETURN_NONE;
+    }
+
     group_name = SSL_get0_group_name(self->ssl);
-    if (group_name == NULL)
+    if (group_name == NULL) {
         Py_RETURN_NONE;
+    }
+
     return PyUnicode_DecodeFSDefault(group_name);
 #else
     PyErr_SetString(PyExc_NotImplementedError,
