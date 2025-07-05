@@ -1475,7 +1475,7 @@ odict_tp_clear(PyObject *op)
 {
     PyODictObject *od = _PyODictObject_CAST(op);
     Py_CLEAR(od->od_inst_dict);
-    PyDict_Clear((PyObject *)od);
+    _PyDict_Clear_LockHeld((PyObject *)od);
     _odict_clear_nodes(od);
     return 0;
 }
@@ -1721,13 +1721,12 @@ odictiter_traverse(PyObject *op, visitproc visit, void *arg)
 static PyObject *
 odictiter_nextkey_lock_held(odictiterobject *di)
 {
+    assert(di->di_odict != NULL);
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(di->di_odict);
     PyObject *key = NULL;
     _ODictNode *node;
     int reversed = di->kind & _odict_ITER_REVERSED;
 
-    if (di->di_odict == NULL)
-        return NULL;
     if (di->di_current == NULL)
         goto done;  /* We're already done. */
 
@@ -1768,10 +1767,23 @@ odictiter_nextkey_lock_held(odictiterobject *di)
     return key;
 
 done:
-#ifndef Py_GIL_DISABLED
     Py_CLEAR(di->di_odict);
-#endif
     return key;
+}
+
+
+static PyObject *
+odictiter_nextkey(odictiterobject *di)
+{
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(di);
+    if (di->di_odict == NULL) {
+        return NULL;
+    }
+    PyObject *res;
+    Py_BEGIN_CRITICAL_SECTION(di->di_odict);
+    res = odictiter_nextkey_lock_held(di);
+    Py_END_CRITICAL_SECTION();
+    return res;
 }
 
 static PyObject *
@@ -1779,7 +1791,7 @@ odictiter_iternext_lock_held(PyObject *op)
 {
     odictiterobject *di = (odictiterobject*)op;
     PyObject *result, *value;
-    PyObject *key = odictiter_nextkey_lock_held(di);  /* new reference */
+    PyObject *key = odictiter_nextkey(di);  /* new reference */
 
     if (key == NULL)
         return NULL;
@@ -1789,14 +1801,12 @@ odictiter_iternext_lock_held(PyObject *op)
         return key;
     }
 
-    value = PyODict_GetItem((PyObject *)di->di_odict, key);  /* borrowed */
-    if (value == NULL) {
+    if (PyDict_GetItemRef((PyObject *)di->di_odict, key, &value) != 1) {
         if (!PyErr_Occurred())
             PyErr_SetObject(PyExc_KeyError, key);
         Py_DECREF(key);
         goto done;
     }
-    Py_INCREF(value);
 
     /* Handle the values case. */
     if (!(di->kind & _odict_ITER_KEYS)) {
@@ -1832,9 +1842,7 @@ odictiter_iternext_lock_held(PyObject *op)
 
 done:
     Py_CLEAR(di->di_current);
-#ifndef Py_GIL_DISABLED
     Py_CLEAR(di->di_odict);
-#endif
     return NULL;
 }
 
@@ -1842,7 +1850,7 @@ static PyObject *
 odictiter_iternext(PyObject *op)
 {
     PyObject *res;
-    Py_BEGIN_CRITICAL_SECTION(((odictiterobject*)op)->di_odict);
+    Py_BEGIN_CRITICAL_SECTION(op);
     res = odictiter_iternext_lock_held(op);
     Py_END_CRITICAL_SECTION();
     return res;
