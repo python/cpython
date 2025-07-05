@@ -2687,6 +2687,10 @@ Others
   integer must implement either :meth:`~object.__int__` or
   :meth:`~object.__index__`. (Contributed by Mark Dickinson in :gh:`119743`.)
 
+* Converting negative Python integer to a C unsigned integer type now raises
+  :exc:`ValueError`, not :exc:`OverflowError`.
+  (Contributed by Serhiy Storchaka in :gh:`74020`.)
+
 
 CPython bytecode changes
 ========================
