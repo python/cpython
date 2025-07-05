@@ -1168,14 +1168,15 @@ class GCTests(unittest.TestCase):
                         self._z = weakref.ref(Class, lambda x: None)
 
                     def __del__(self):
-                        assert self._z() is None, "Type weakref is not None"
+                        if self._z() is None:
+                            print("Type weakref is None as expected")
 
                 Class()
 
             test()
         """
-        _, _, stderr = assert_python_ok("-c", code)
-        assert b"Type weakref is not None" not in stderr
+        _, stdout, _ = assert_python_ok("-c", code)
+        assert b"Type weakref is None as expected" in stdout
 
     def test_type_weakref_without_callback_should_be_not_none(self):
         # This test checks that weakrefs for types without callbacks
@@ -1190,16 +1191,18 @@ class GCTests(unittest.TestCase):
                         self._z = weakref.ref(Class)
 
                     def __del__(self):
-                        assert self._x() is None, "Instance weakref is not None"
-                        assert self._z() is Class, "Type weakref is not Class"
+                        if self._x() is None:
+                            print("Instance weakref is None as expected")
+                        if self._z() is Class:
+                            print("Type weakref is Class as expected")
 
                 Class()
 
             test()
         """
-        _, _, stderr = assert_python_ok("-c", code)
-        assert b"Instance weakref is not None" not in stderr
-        assert b"Type weakref is not Class" not in stderr
+        _, stdout, _ = assert_python_ok("-c", code)
+        assert b"Instance weakref is None as expected" in stdout
+        assert b"Type weakref is Class as expected" in stdout
 
 
 class IncrementalGCTests(unittest.TestCase):
