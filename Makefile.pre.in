@@ -1096,7 +1096,7 @@ $(DLLLIBRARY) libpython$(LDVERSION).dll.a: $(LIBRARY_OBJS)
 # wasm32-emscripten browser web example
 
 WEBEX_DIR=$(srcdir)/Tools/wasm/emscripten/web_example/
-web_example/python.html: $(WEBEX_DIR)/python.html
+web_example/index.html: $(WEBEX_DIR)/index.html
 	@mkdir -p web_example
 	@cp $< $@
 
@@ -1124,7 +1124,7 @@ web_example/python.mjs web_example/python.wasm: $(BUILDPYTHON)
 	cp python.wasm web_example/python.wasm
 
 .PHONY: web_example
-web_example: web_example/python.mjs web_example/python.worker.mjs web_example/python.html web_example/server.py $(WEB_STDLIB)
+web_example: web_example/python.mjs web_example/python.worker.mjs web_example/index.html web_example/server.py $(WEB_STDLIB)
 
 ############################################################################
 # Header files
