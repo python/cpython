@@ -608,7 +608,7 @@ Archiving operations
 High-level utilities to create and read compressed and archived files are also
 provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 
-.. function:: make_archive(base_name, format, [root_dir, [base_dir, [verbose, [dry_run, [owner, [group, [logger]]]]]]])
+.. function:: make_archive(base_name, format, root_dir=None, base_dir=None, verbose=0, dry_run=False, owner=None, group=None, logger=None)
 
    Create an archive file (such as zip or tar) and return its name.
 
@@ -621,17 +621,19 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    available), "xztar" (if the :mod:`lzma` module is available), or "zstdtar"
    (if the :mod:`compression.zstd` module is available).
 
-   *root_dir* is a directory that will be the root directory of the
-   archive, all paths in the archive will be relative to it; for example,
-   we typically chdir into *root_dir* before creating the archive.
+   If specified, *root_dir* is a directory that will be the root directory of the
+   archive, all paths in the archive will be relative to it; it is equivalent
+   to chdir into *root_dir* before creating the archive.
+   By default the current directory is used.
 
-   *base_dir* is the directory where we start archiving from;
+   If specified, *base_dir* is the directory where we start archiving from;
    i.e. *base_dir* will be the common prefix of all files and
    directories in the archive.  *base_dir* must be given relative
-   to *root_dir*.  See :ref:`shutil-archiving-example-with-basedir` for how to
+   to *root_dir*.
+   By default all entries in the *root_dir* directory or the current directory
+   are added without prefix.
+   See :ref:`shutil-archiving-example-with-basedir` for how to
    use *base_dir* and *root_dir* together.
-
-   *root_dir* and *base_dir* both default to the current directory.
 
    If *dry_run* is true, no archive is created, but the operations that would be
    executed are logged to *logger*.
@@ -661,6 +663,13 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    .. versionchanged:: 3.10.6
       This function is now made thread-safe during creation of standard
       ``.zip`` and tar archives.
+
+   .. versionchanged:: 3.14
+      The ``'.'`` entry no longer added to tar arhives and the ``'./'`` prefix
+      no longer added to tar entries unless ``base_dir='.'`` is
+      explicitly specified.
+      The ``'.'`` entry is now added to zip arhives if ``base_dir='.'``
+      is explicitly specified.
 
 .. function:: get_archive_formats()
 
