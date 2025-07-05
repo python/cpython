@@ -1686,6 +1686,8 @@ keynames = {
  'bracketleft': '[',
  'bracketright': ']',
  'slash': '/',
+ 'backslash': '\\',
+ 'space': 'Space' if macosx.isCocoaTk() else 'space',  # GH-88564.
 }
 
 def get_accelerator(keydefs, eventname):
