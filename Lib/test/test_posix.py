@@ -34,6 +34,10 @@ except ImportError:
 _DUMMY_SYMLINK = os.path.join(tempfile.gettempdir(),
                               os_helper.TESTFN + '-dummy-symlink')
 
+root_in_posix = False
+if hasattr(os, 'geteuid'):
+    root_in_posix = (os.geteuid() == 0)
+
 requires_32b = unittest.skipUnless(
     # Emscripten/WASI have 32 bits pointers, but support 64 bits syscall args.
     sys.maxsize < 2**32 and not (support.is_emscripten or support.is_wasi),
@@ -1688,6 +1692,37 @@ class TestPosixDirFd(unittest.TestCase):
             # should have same inodes
             self.assertEqual(posix.stat(fullname)[1],
                 posix.stat(fulllinkname)[1])
+
+    @unittest.skipIf(
+        support.is_wasi,
+        "WASI: symlink following on path_link is not supported"
+    )
+    @unittest.skipUnless(
+        hasattr(os, "link") and os.link in os.supports_fd,
+        "test needs fd support in os.link()"
+    )
+    @unittest.skipUnless(root_in_posix,
+        "requires the CAP_DAC_READ_SEARCH capability")
+    def test_link_fd(self):
+        with self.prepare_file() as (dir_fd, name, fullname), \
+             self.prepare() as (dir_fd2, linkname, fulllinkname):
+            fd = posix.open(fullname, posix.O_PATH)
+            try:
+                with self.assertRaises(ValueError):
+                    posix.link(fd, linkname, src_dir_fd=dir_fd, dst_dir_fd=dir_fd2)
+                with self.assertRaises(FileNotFoundError):
+                    posix.stat(fulllinkname)
+
+                try:
+                    posix.link(fd, linkname, dst_dir_fd=dir_fd2)
+                except PermissionError as e:
+                    self.skipTest('posix.link(): %s' % e)
+                self.addCleanup(posix.unlink, fulllinkname)
+                # should have same inodes
+                self.assertEqual(posix.stat(fullname)[1],
+                    posix.stat(fulllinkname)[1])
+            finally:
+                posix.close(fd)
 
     @unittest.skipUnless(os.mkdir in os.supports_dir_fd, "test needs dir_fd support in os.mkdir()")
     def test_mkdir_dir_fd(self):

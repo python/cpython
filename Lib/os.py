@@ -152,6 +152,7 @@ if _exists("_have_functions"):
     _add("HAVE_FPATHCONF",  "pathconf")
     if _exists("statvfs") and _exists("fstatvfs"): # mac os x10.3
         _add("HAVE_FSTATVFS", "statvfs")
+    _add("HAVE_LINKAT_AT_EMPTY_PATH",  "link")
     supports_fd = _set
 
     _set = set()

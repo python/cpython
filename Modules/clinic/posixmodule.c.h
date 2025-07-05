@@ -1526,7 +1526,7 @@ os_link(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwn
     #undef KWTUPLE
     PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
-    path_t src = PATH_T_INITIALIZE_P("link", "src", 0, 0, 0, 0);
+    path_t src = PATH_T_INITIALIZE_P("link", "src", 0, 0, 0, HAVE_LINKAT_AT_EMPTY_PATH);
     path_t dst = PATH_T_INITIALIZE_P("link", "dst", 0, 0, 0, 0);
     int src_dir_fd = DEFAULT_DIR_FD;
     int dst_dir_fd = DEFAULT_DIR_FD;
@@ -13398,4 +13398,4 @@ os__emscripten_debugger(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__EMSCRIPTEN_DEBUGGER_METHODDEF
     #define OS__EMSCRIPTEN_DEBUGGER_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_DEBUGGER_METHODDEF) */
-/*[clinic end generated code: output=ae64df0389746258 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=03f4d119f9d75955 input=a9049054013a1b77]*/
