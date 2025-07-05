@@ -34,12 +34,27 @@ printing space-separated values. There are several ways to format output.
      >>> f'Results of the {year} {event}'
      'Results of the 2016 Referendum'
 
+* When greater control is needed, :ref:`template string literals <tut-t-strings>`
+  can be useful. T-strings -- which begin with ``t`` or ``T`` -- share the
+  same syntax as f-strings but, unlike f-strings, produce a
+  :class:`~string.templatelib.Template` instance rather than a simple ``str``.
+  Templates give you access to the static and interpolated (in curly braces)
+  parts of the string *before* they are combined into a final string.
+
+  ::
+
+     >>> name = "World"
+     >>> template = t"Hello {name}!"
+     >>> template.strings
+     ('Hello ', '!')
+     >>> template.values
+     ('World',)
+
 * The :meth:`str.format` method of strings requires more manual
   effort.  You'll still use ``{`` and ``}`` to mark where a variable
   will be substituted and can provide detailed formatting directives,
   but you'll also need to provide the information to be formatted. In the following code
   block there are two examples of how to format variables:
-
 
   ::
 
@@ -95,10 +110,11 @@ Some examples::
    >>> repr((x, y, ('spam', 'eggs')))
    "(32.5, 40000, ('spam', 'eggs'))"
 
-The :mod:`string` module contains a :class:`~string.Template` class that offers
-yet another way to substitute values into strings, using placeholders like
-``$x`` and replacing them with values from a dictionary, but offers much less
-control of the formatting.
+The :mod:`string` module also contains support for so-called
+:ref:`$-strings <template-strings-pep292>` that offer yet another way to
+substitute values into strings, using placeholders like ``$x`` and replacing
+them with values from a dictionary. This syntax is easy to use, although
+it offers much less control of the formatting.
 
 .. index::
    single: formatted string literal
@@ -159,6 +175,185 @@ expression, an equal sign, then the representation of the evaluated expression:
 See :ref:`self-documenting expressions <bpo-36817-whatsnew>` for more information
 on the ``=`` specifier. For a reference on these format specifications, see
 the reference guide for the :ref:`formatspec`.
+
+
+.. _tut-t-strings:
+
+Template String Literals
+-------------------------
+
+:ref:`Template string literals <t-strings>` (also called t-strings for short)
+are an extension of :ref:`f-strings <tut-f-strings>` that let you access the
+static and interpolated parts of a string *before* they are combined into a
+final string. This provides for greater control over how the string is
+formatted.
+
+The most common way to create a :class:`~string.templatelib.Template` instance
+is to use the :ref:`t-string literal syntax <t-strings>`. This syntax is
+identical to that of :ref:`f-strings` except that it uses a ``t`` instead of
+an ``f``:
+
+     >>> name = "World"
+     >>> template = t"Hello {name}!"
+     >>> template.strings
+     ('Hello ', '!')
+     >>> template.values
+     ('World',)
+
+:class:`!Template` instances are iterable, yielding each
+string and :class:`~string.templatelib.Interpolation` in order:
+
+.. testsetup::
+
+   name = "World"
+   template = t"Hello {name}!"
+
+.. doctest::
+
+     >>> list(template)
+     ['Hello ', Interpolation('World', 'name', None, ''), '!']
+
+Interpolations represent expressions inside a t-string. They contain the
+evaluated value of the expression (``'World'`` in this example), the text of
+the original expression (``'name'``), and optional conversion and format
+specification attributes.
+
+Templates can be processed in a variety of ways. For instance, here's code that
+converts static strings to lowercase and interpolated values to uppercase:
+
+     >>> from string.templatelib import Template
+     >>>
+     >>> def lower_upper(template: Template) -> str:
+     ...     return ''.join(
+     ...         part.lower() if isinstance(part, str) else part.value.upper()
+     ...         for part in template
+     ...     )
+     ...
+     >>> name = "World"
+     >>> template = t"Hello {name}!"
+     >>> lower_upper(template)
+     'hello WORLD!'
+
+Template strings are particularly useful for sanitizing user input. Imagine
+we're building a web application that has user profile pages. Perhaps the
+``User`` class is defined like this:
+
+     >>> from dataclasses import dataclass
+     >>>
+     >>> @dataclass
+     ... class User:
+     ...     name: str
+     ...
+
+Imagine using f-strings in to generate HTML for the ``User``:
+
+.. testsetup::
+
+     class User:
+         name: str
+         def __init__(self, name: str):
+             self.name = name
+
+
+.. doctest::
+
+     >>> # Warning: this is dangerous code. Don't do this!
+     >>> def user_html(user: User) -> str:
+     ...     return f"<div><h1>{user.name}</h1></div>"
+     ...
+
+This code is dangerous because our website lets users type in their own names.
+If a user types in a name like ``"<script>alert('evil');</script>"``, the
+browser will execute that script when someone else visits their profile page.
+This is called a *cross-site scripting (XSS) vulnerability*, and it is a form
+of *injection vulnerability*. Injection vulnerabilities occur when user input
+is included in a program without proper sanitization, allowing malicious code
+to be executed. The same sorts of vulnerabilities can occur when user input is
+included in SQL queries, command lines, or other contexts where the input is
+interpreted as code.
+
+To prevent this, instead of using f-strings, we can use t-strings. Let's
+update our ``user_html()`` function to return a :class:`~string.templatelib.Template`:
+
+     >>> from string.templatelib import Template
+     >>>
+     >>> def user_html(user: User) -> Template:
+     ...     return t"<div><h1>{user.name}</h1></div>"
+
+Now let's implement a function that sanitizes *any* HTML :class:`!Template`:
+
+     >>> from html import escape
+     >>> from string.templatelib import Template
+     >>>
+     >>> def sanitize_html_template(template: Template) -> str:
+     ...     return ''.join(
+     ...         part if isinstance(part, str) else escape(part.value)
+     ...         for part in template
+     ...     )
+     ...
+
+This function iterates over the parts of the :class:`!Template`, escaping any
+interpolated values using the :func:`html.escape` function, which converts
+special characters like ``<``, ``>``, and ``&`` into their HTML-safe
+equivalents.
+
+Now we can tie it all together:
+
+.. testsetup::
+
+     from dataclasses import dataclass
+     from string.templatelib import Template
+     from html import escape
+     @dataclass
+     class User:
+         name: str
+     def sanitize_html_template(template: Template) -> str:
+         return ''.join(
+             part if isinstance(part, str) else escape(part.value)
+             for part in template
+         )
+     def user_html(user: User) -> Template:
+         return t"<div><h1>{user.name}</h1></div>"
+
+.. doctest::
+
+     >>> evil_user = User(name="<script>alert('evil');</script>")
+     >>> template = user_html(evil_user)
+     >>> safe = sanitize_html_template(template)
+     >>> print(safe)
+     <div><h1>&lt;script&gt;alert(&#x27;evil&#x27;);&lt;/script&gt;</h1></div>
+
+We are no longer vulnerable to XSS attacks because we are escaping the
+interpolated values before they are included in the rendered HTML.
+
+Of course, there's no need for code that processes :class:`!Template` instances
+to be limited to returning a simple string. For instance, we could imagine
+defining a more complex ``html()`` function that returns a structured
+representation of the HTML:
+
+     >>> from dataclasses import dataclass
+     >>> from string.templatelib import Template
+     >>> from html.parser import HTMLParser
+     >>>
+     >>> @dataclass
+     ... class Element:
+     ...     tag: str
+     ...     attributes: dict[str, str]
+     ...     children: list[str | Element]
+     ...
+     >>> def parse_html(template: Template) -> Element:
+     ...     """
+     ...     Uses python's built-in HTMLParser to parse the template,
+     ...     handle any interpolated values, and return a tree of
+     ...     Element instances.
+     ...     """
+     ...     pass
+     ...
+
+A full implementation of this function would be quite complex and is not
+provided here. That said, the fact that it is possible to implement a method
+like ``parse_html()`` showcases the flexibility and power of t-strings.
+
 
 .. _tut-string-format:
 
