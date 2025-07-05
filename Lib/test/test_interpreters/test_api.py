@@ -412,7 +412,7 @@ class InterpreterObjectTests(TestBase):
 
     def test_pickle(self):
         interp = interpreters.create()
-        for protocol in range(2, pickle.HIGHEST_PROTOCOL + 1):
+        for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
             with self.subTest(protocol=protocol):
                 data = pickle.dumps(interp, protocol)
                 unpickled = pickle.loads(data)
