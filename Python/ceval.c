@@ -452,7 +452,11 @@ _Py_InitializeRecursionLimits(PyThreadState *tstate)
     _tstate->c_stack_soft_limit = _tstate->c_stack_hard_limit + _PyOS_STACK_MARGIN_BYTES;
 #else
     uintptr_t here_addr = _Py_get_machine_stack_pointer();
-#  if defined(HAVE_PTHREAD_GETATTR_NP) && !defined(_AIX) && !defined(__NetBSD__)
+/// XXX musl supports HAVE_PTHRED_GETATTR_NP, but the resulting stack size
+/// (on alpine at least) is much smaller than expected and imposes undue limits
+/// compared to the old stack size estimation.  (We assume musl if not glibc.)
+#  if defined(HAVE_PTHREAD_GETATTR_NP) && !defined(_AIX) && \
+        !defined(__NetBSD__) && (defined(__GLIBC__) || !defined(__linux__))
     size_t stack_size, guard_size;
     void *stack_addr;
     pthread_attr_t attr;
