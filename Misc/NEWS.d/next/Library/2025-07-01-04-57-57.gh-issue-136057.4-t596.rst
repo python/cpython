@@ -1,0 +1,1 @@
+Fixed the bug in :mod:`pdb` and :mod:`bdb` where ``next`` and ``step`` can't go over the line if a loop exists in the line.
