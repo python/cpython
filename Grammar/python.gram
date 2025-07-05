@@ -1323,6 +1323,8 @@ invalid_parameters:
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "/ must be ahead of *") }
     | param_maybe_default+ '/' a='*' {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "expected comma between / and *") }
+    | a=NAME b=NAME {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "expected comma between parameters") }
 invalid_default:
     | a='=' &(')'|',') { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "expected default value expression") }
 invalid_star_etc:
@@ -1351,6 +1353,8 @@ invalid_lambda_parameters:
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "/ must be ahead of *") }
     | lambda_param_maybe_default+ '/' a='*' {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "expected comma between / and *") }
+    | a=NAME b=NAME {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "expected comma between parameters") }
 invalid_lambda_parameters_helper:
     | a=lambda_slash_with_default { _PyPegen_singleton_seq(p, a) }
     | lambda_param_with_default+
