@@ -308,7 +308,7 @@ class Bdb:
         """
         # GH-136057
         # For line events, we don't want to stop at the same line where
-        # we issue the previous next/step command.
+        # the latest next/step command was issued.
         if (self.stop_here(frame) or self.break_here(frame)) and not (
             self.cmdframe == frame and self.cmdlineno == frame.f_lineno
         ):
@@ -554,9 +554,8 @@ class Bdb:
         # stoplineno >= 0 means: stop at line >= the stoplineno
         # stoplineno -1 means: don't stop at all
         self.stoplineno = stoplineno
-        # cmdframe/cmdlineno is the frame/line number when the user issues
-        # step/next commands. We don't want to stop at the same line for
-        # those commands.
+        # cmdframe/cmdlineno is the frame/line number when the user issued
+        # step/next commands.
         self.cmdframe = cmdframe
         self.cmdlineno = cmdlineno
         self._set_trace_opcodes(opcode)
