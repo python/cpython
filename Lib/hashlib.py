@@ -187,7 +187,8 @@ except ImportError:
 
 try:
     # OpenSSL's scrypt requires OpenSSL 1.1+
-    from _hashlib import scrypt  # noqa: F401
+    from _hashlib import scrypt
+    __all__ += ('scrypt',)
 except ImportError:
     pass
 
