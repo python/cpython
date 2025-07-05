@@ -1767,10 +1767,7 @@ class SubinterpThreadingTests(BaseTestCase):
 
             _testcapi.run_in_subinterp(%r)
             """ % (subinterp_code,)
-        with test.support.SuppressCrashReport():
-            rc, out, err = assert_python_failure("-c", script)
-        self.assertIn("Fatal Python error: Py_EndInterpreter: "
-                      "not the last thread", err.decode())
+        assert_python_ok("-c", script)
 
     def _check_allowed(self, before_start='', *,
                        allowed=True,
