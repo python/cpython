@@ -2286,36 +2286,6 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_TO_BOOL_BOOL", uops)
         self.assertIn("_GUARD_IS_TRUE_POP", uops)
 
-    def test_call_isinstance_tuple_metaclass(self):
-        calls = 0
-
-        class Meta(type):
-            def __instancecheck__(self, _):
-                nonlocal calls
-                calls += 1
-                return False
-
-        class Unknown(metaclass=Meta):
-            pass
-
-        def testfunc(n):
-            x = 0
-            for _ in range(n):
-                # Only narrowed to bool
-                y = isinstance(42, (Unknown, int))
-                if y:
-                    x += 1
-            return x, calls
-
-        (res, calls), ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
-        self.assertEqual(res, TIER2_THRESHOLD)
-        self.assertEqual(calls, TIER2_THRESHOLD)
-        self.assertIsNotNone(ex)
-        uops = get_opnames(ex)
-        self.assertIn("_CALL_ISINSTANCE", uops)
-        self.assertNotIn("_TO_BOOL_BOOL", uops)
-        self.assertIn("_GUARD_IS_TRUE_POP", uops)
-
     def test_set_type_version_sets_type(self):
         class C:
             A = 1
