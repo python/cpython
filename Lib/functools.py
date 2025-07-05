@@ -872,15 +872,7 @@ def _find_impl(cls, registry):
             match = t
     return registry.get(match)
 
-def singledispatch(func):
-    """Single-dispatch generic function decorator.
-
-    Transforms a function into a generic function, which can have different
-    behaviours depending upon the type of its first argument. The decorated
-    function acts as the default implementation, and additional
-    implementations can be registered using the register() attribute of the
-    generic function.
-    """
+def _singledispatchimpl(func, *, is_method):
     # There are many programs that use functools without singledispatch, so we
     # trade-off making singledispatch marginally slower for the benefit of
     # making start-up of such applications slightly faster.
@@ -919,6 +911,32 @@ def singledispatch(func):
         return (isinstance(cls, UnionType) and
                 all(isinstance(arg, type) for arg in cls.__args__))
 
+    def _skip_self_type(argname, cls, hints_iter):
+        # GH-130827: Methods are sometimes annotated with
+        # typing.Self. We should skip that when it's a valid type.
+        from typing import Self
+        if cls is not Self:
+            return argname, cls
+        if not is_method:
+            # typing.Self is not valid in a normal function
+            raise TypeError(
+                f"Invalid annotation for {argname!r}. "
+                "typing.Self can only be used with singledispatchmethod()"
+            )
+        try:
+            argname, cls = next(hints_iter)
+            return argname, cls
+        except StopIteration:
+            # The method is one of some invalid edge cases:
+            # 1. method(self: Self) -> ...
+            # 2. method(self, weird: Self) -> ...
+            # 3. method(self: Self, unannotated) -> ...
+            raise TypeError(
+                f"Invalid annotation for {argname!r}. "
+                "typing.Self must be the first annotation and must "
+                "have a second parameter with an annotation"
+            ) from None
+
     def register(cls, func=None):
         """generic_func.register(cls, func) -> func
 
@@ -947,7 +965,10 @@ def singledispatch(func):
             # only import typing if annotation parsing is necessary
             from typing import get_type_hints
             from annotationlib import Format, ForwardRef
-            argname, cls = next(iter(get_type_hints(func, format=Format.FORWARDREF).items()))
+            hints_iter = iter(get_type_hints(func, format=Format.FORWARDREF).items())
+            argname, cls = next(hints_iter)
+            argname, cls = _skip_self_type(argname, cls, hints_iter)
+
             if not _is_valid_dispatch_type(cls):
                 if isinstance(cls, UnionType):
                     raise TypeError(
@@ -990,6 +1011,16 @@ def singledispatch(func):
     update_wrapper(wrapper, func)
     return wrapper
 
+def singledispatch(func):
+    """Single-dispatch generic function decorator.
+
+    Transforms a function into a generic function, which can have different
+    behaviours depending upon the type of its first argument. The decorated
+    function acts as the default implementation, and additional
+    implementations can be registered using the register() attribute of the
+    generic function.
+    """
+    return _singledispatchimpl(func, is_method=False)
 
 # Descriptor version
 class singledispatchmethod:
@@ -1003,7 +1034,7 @@ class singledispatchmethod:
         if not callable(func) and not hasattr(func, "__get__"):
             raise TypeError(f"{func!r} is not callable or a descriptor")
 
-        self.dispatcher = singledispatch(func)
+        self.dispatcher = _singledispatchimpl(func, is_method=True)
         self.func = func
 
     def register(self, cls, method=None):
