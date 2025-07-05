@@ -525,7 +525,7 @@ given type object has a specified feature.
 #define Py_TPFLAGS_INLINE_VALUES (1 << 2)
 
 /* Placement of weakref pointers are managed by the VM, not by the type.
- * The VM will automatically set tp_weaklistoffset.
+ * The VM will automatically set tp_weaklistoffset. Implies Py_TPFLAGS_HAVE_GC.
  */
 #define Py_TPFLAGS_MANAGED_WEAKREF (1 << 3)
 
