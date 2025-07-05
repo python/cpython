@@ -392,6 +392,56 @@ Object Protocol
    class, are considered classes.  However, objects can override this by having
    a :attr:`~type.__bases__` attribute (which must be a tuple of base classes).
 
+   Another function, :attr:`~class.__base__` that is specific to CPython and also
+   exists in Jython and PyPy can also be used on a class inheriting from one
+   or more classes.
+
+   ``__base__`` corresponds to the :c:member:`~PyTypeObject.tp_base` in a
+   type object.  At the C level, Python has a single inheritance model
+   that determines the memory layout of instances.  There is a chain
+   involving base classes that contribute to the instance layout.
+   ``__base__`` is the base class that is involved in that chain.
+   When such a class takes arguments in the correct order, then starting leftmost.
+
+   Let's look at the example cases;
+
+   >>> class A(object): pass
+   ...
+   >>> class B(A): pass
+   ...
+   >>> class C(int): pass
+   ...
+
+   The first user-defined class that either inherits from the instance
+   of a built-in type other than object or inherits from another user
+   defined class (single or multiple inheritance) that does so or in the
+   absence of the above class.
+
+   >>> class D(B, A, C): pass
+   ...
+   >>> D.__base__
+   <class 'C'>
+   >>>
+
+   A built-in type that is not an object or in the absence of the above class.
+
+   >>> class D(B, A, int): pass
+   ...
+   >>> D.__base__
+   <class 'int'>
+
+   The first user defined class that inherits  either an object or
+   derives from a class (directly or indirectly) that inherits an
+   object is the value returned by the :attr:`~class.__base__` function.
+
+   >>> class D(B, A): pass
+   ...
+   >>> D.__base__
+   <class 'B'>
+
+   .. impl-detail::
+      Note that behavior of the ``__base__`` attribute is dependent on the :term:`CPython` implementation.
+
 
 .. c:function:: int PyObject_IsInstance(PyObject *inst, PyObject *cls)
 
