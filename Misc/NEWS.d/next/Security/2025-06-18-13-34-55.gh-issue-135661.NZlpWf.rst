@@ -1,0 +1,2 @@
+Fix CDATA section parsing in :class:`html.parser.HTMLParser` according to
+the HTML5 standard: ``] ]>`` and ``]] >`` no longer end the CDATA section.

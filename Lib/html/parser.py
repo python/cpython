@@ -145,6 +145,7 @@ class HTMLParser(_markupbase.ParserBase):
         self.lasttag = '???'
         self.interesting = interesting_normal
         self.cdata_elem = None
+        self._support_cdata = False
         super().reset()
 
     def feed(self, data):
@@ -174,6 +175,9 @@ class HTMLParser(_markupbase.ParserBase):
     def clear_cdata_mode(self):
         self.interesting = interesting_normal
         self.cdata_elem = None
+
+    def support_cdata(self, flag=True):
+        self._support_cdata = flag
 
     # Internal -- handle data as far as reasonable.  May leave state
     # and data to be processed by a subsequent call.  If 'end' is
@@ -250,7 +254,10 @@ class HTMLParser(_markupbase.ParserBase):
                                 break
                         self.handle_comment(rawdata[i+4:j])
                     elif startswith("<![CDATA[", i):
-                        self.unknown_decl(rawdata[i+3:])
+                        if self._support_cdata:
+                            self.unknown_decl(rawdata[i+3:])
+                        else:
+                            self.handle_comment(rawdata[i+1:])
                     elif rawdata[i:i+9].lower() == '<!doctype':
                         self.handle_decl(rawdata[i+2:])
                     elif startswith("<!", i):
@@ -326,7 +333,14 @@ class HTMLParser(_markupbase.ParserBase):
             # this case is actually already handled in goahead()
             return self.parse_comment(i)
         elif rawdata[i:i+9] == '<![CDATA[':
-            return self.parse_marked_section(i)
+            if self._support_cdata:
+                j = rawdata.find(']]>', i+9)
+                if j < 0:
+                    return -1
+                self.unknown_decl(rawdata[i+3: j])
+                return j + 3
+            else:
+                return self.parse_bogus_comment(i)
         elif rawdata[i:i+9].lower() == '<!doctype':
             # find the closing >
             gtpos = rawdata.find('>', i+9)
