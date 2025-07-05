@@ -1470,13 +1470,13 @@ to :class:`bytes` mappings. They are not supported by :meth:`bytes.decode`
 |                      |                  | gzip.                        | :meth:`zlib.decompress`      |
 +----------------------+------------------+------------------------------+------------------------------+
 
-.. function:: codecs.escape_encode(input, errors='strict')
+.. function:: codecs.escape_encode(input, errors=None)
 
    Encode *input* using escape sequences. Similar to how :func:`repr` on bytes
    produces escaped byte values. Returns a tuple of the encoded bytes and
    the length consumed.
 
-.. function:: codecs.escape_decode(input, errors='strict')
+.. function:: codecs.escape_decode(input, errors=None)
 
    Decode *input* from escape sequences back to the original bytes.
    Returns a tuple of the decoded bytes and the length consumed.
