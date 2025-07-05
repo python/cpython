@@ -155,6 +155,8 @@ class _Target(typing.Generic[_S, _R]):
             "-fno-plt",
             # Don't call stack-smashing canaries that we can't find or patch:
             "-fno-stack-protector",
+            # Error if symbols above the deployment target without guards
+            "-Werror=unguarded-availability",
             "-std=c11",
             "-o",
             f"{s}",
