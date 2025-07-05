@@ -6,7 +6,16 @@
 // Always enable assertions
 #undef NDEBUG
 
+#ifdef TEST_INTERNAL_C_API
+#  define Py_BUILD_CORE 1
+#endif
+
 #include "Python.h"
+
+#ifdef TEST_INTERNAL_C_API
+   // gh-135906: Check for compiler warnings in the internal C API
+#  include "internal/pycore_frame.h"
+#endif
 
 #ifndef MODULE_NAME
 #  error "MODULE_NAME macro must be defined"

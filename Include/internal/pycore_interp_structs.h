@@ -129,8 +129,6 @@ struct _atexit_runtime_state {
 //###################
 // interpreter atexit
 
-typedef void (*atexit_datacallbackfunc)(void *);
-
 typedef struct atexit_callback {
     atexit_datacallbackfunc func;
     void *data;
