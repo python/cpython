@@ -4390,8 +4390,8 @@ Popa.
 .. nonce: v0Vs9V
 .. section: Library
 
-RE pattern methods now accept the string keyword parameters as documented.
-The pattern and source keyword parameters are left as deprecated aliases.
+RE pattern methods now accept the *string* keyword arguments as documented.
+The *pattern* and *source* keyword parameters are left as deprecated aliases.
 
 ..
 
@@ -4466,7 +4466,7 @@ Improve repr of inspect.Signature and inspect.Parameter.
 .. section: Library
 
 Fix inspect.getcallargs() to raise correct TypeError for missing
-keyword-only arguments. Patch by Jeremiah Lowin.
+arguments for keyword-only parameters. Patch by Jeremiah Lowin.
 
 ..
 

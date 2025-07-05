@@ -1016,7 +1016,7 @@ class Unparser(NodeVisitor):
 
     def visit_arguments(self, node):
         first = True
-        # normal arguments
+        # normal parameters
         all_args = node.posonlyargs + node.args
         defaults = [None] * (len(all_args) - len(node.defaults)) + node.defaults
         for index, elements in enumerate(zip(all_args, defaults), 1):
@@ -1032,7 +1032,7 @@ class Unparser(NodeVisitor):
             if index == len(node.posonlyargs):
                 self.write(", /")
 
-        # varargs, or bare '*' if no varargs but keyword-only arguments present
+        # varargs, or bare '*' if no varargs but keyword-only parameters present
         if node.vararg or node.kwonlyargs:
             if first:
                 first = False
@@ -1045,7 +1045,7 @@ class Unparser(NodeVisitor):
                     self.write(": ")
                     self.traverse(node.vararg.annotation)
 
-        # keyword-only arguments
+        # keyword-only parameters
         if node.kwonlyargs:
             for a, d in zip(node.kwonlyargs, node.kw_defaults):
                 self.write(", ")

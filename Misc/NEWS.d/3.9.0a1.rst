@@ -2791,9 +2791,9 @@ Abhilash Raj.
 .. nonce: RUcxaK
 .. section: Library
 
-The *dist* argument for statistics.quantiles() is now positional only. The
+The *dist* parameter in :func:`statistics.quantiles` is now positional-only. The
 current name doesn't reflect that the argument can be either a dataset or a
-distribution.  Marking the parameter as positional avoids confusion and
+distribution.  Marking the parameter as positional-only avoids confusion and
 makes it possible to change the name later.
 
 ..
@@ -5431,8 +5431,8 @@ Remove ``Tools/scripts/h2py.py``: use cffi to access a C API in Python.
 .. nonce: zbTgy8
 .. section: Tools/Demos
 
-Argument Clinic now uses the argument name on errors with keyword-only
-argument instead of their position. Patch contributed by Rémi Lapeyre.
+Argument Clinic now uses the argument name on errors with arguments for keyword-only
+parameter instead of their position. Patch contributed by Rémi Lapeyre.
 
 ..
 

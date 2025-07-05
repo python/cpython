@@ -4712,7 +4712,7 @@ written in Python, such as a mail server's external command delivery program.
       write new code. The :mod:`subprocess` module is recommended instead.
 
 
-.. function:: posix_spawn(path, argv, env, *, file_actions=None, \
+.. function:: posix_spawn(path, argv, env, /, *, file_actions=None, \
                           setpgroup=None, resetids=False, setsid=False, setsigmask=(), \
                           setsigdef=(), scheduler=None)
 
@@ -4720,7 +4720,7 @@ written in Python, such as a mail server's external command delivery program.
 
    Most users should use :func:`subprocess.run` instead of :func:`posix_spawn`.
 
-   The positional-only arguments *path*, *args*, and *env* are similar to
+   The positional-only parameters *path*, *args*, and *env* are similar to
    :func:`execve`. *env* is allowed to be ``None``, in which case current
    process' environment is used.
 

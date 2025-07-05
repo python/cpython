@@ -1198,8 +1198,8 @@ on POSIX systems and can be used to determine whether a path is a mount point.
 pdb
 ---
 
-:func:`pdb.set_trace` now takes an optional *header* keyword-only
-argument.  If given, it is printed to the console just before debugging
+:func:`pdb.set_trace` now takes optional keyword argument *header*.
+If given, it is printed to the console just before debugging
 begins.  (Contributed by Barry Warsaw in :issue:`31389`.)
 
 :mod:`pdb` command line now accepts ``-m module_name`` as an alternative to
