@@ -3465,7 +3465,7 @@ _ssl__SSLContext_get_groups_impl(PySSLContext *self, int include_aliases)
     STACK_OF(OPENSSL_CSTRING) *groups;
     const char *group;
     size_t i, num;
-    PyObject *result = NULL;
+    PyObject *item, *result;
 
     if ((groups = sk_OPENSSL_CSTRING_new_null()) == NULL) {
         _setSSLError(get_state_ctx(self), "Can't allocate stack", 0, __FILE__, __LINE__);
@@ -3488,6 +3488,15 @@ _ssl__SSLContext_get_groups_impl(PySSLContext *self, int include_aliases)
 
     for (i = 0; i < num; ++i) {
         group = sk_OPENSSL_CSTRING_value(groups, i);
+        item = PyUnicode_DecodeFSDefault(group);
+
+        if (item == NULL) {
+            _setSSLError(get_state_ctx(self), "Can't allocate group name", 0, __FILE__, __LINE__);
+            Py_XDECREF(result);
+            sk_OPENSSL_CSTRING_free(groups);
+            return NULL;
+        }
+
         PyList_SET_ITEM(result, i, PyUnicode_DecodeFSDefault(group));
     }
 
