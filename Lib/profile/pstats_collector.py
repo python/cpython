@@ -7,7 +7,7 @@ from .collector import Collector
 class PstatsCollector(Collector):
     def __init__(self, sample_interval_usec):
         self.result = collections.defaultdict(
-            lambda: dict(total_calls=0, total_rec_calls=0, inline_calls=0)
+            lambda: dict(total_rec_calls=0, direct_calls=0, cumulative_calls=0)
         )
         self.stats = {}
         self.sample_interval_usec = sample_interval_usec
@@ -20,6 +20,12 @@ class PstatsCollector(Collector):
             if not frames:
                 continue
 
+            # Process each frame in the stack to track cumulative calls
+            for frame in frames:
+                location = (frame.filename, frame.lineno, frame.funcname)
+                self.result[location]["cumulative_calls"] += 1
+
+            # The top frame gets counted as an inline call (directly executing)
             top_frame = frames[0]
             top_location = (
                 top_frame.filename,
@@ -27,9 +33,9 @@ class PstatsCollector(Collector):
                 top_frame.funcname,
             )
 
-            self.result[top_location]["inline_calls"] += 1
-            self.result[top_location]["total_calls"] += 1
+            self.result[top_location]["direct_calls"] += 1
 
+            # Track caller-callee relationships for call graph
             for i in range(1, len(frames)):
                 callee_frame = frames[i - 1]
                 caller_frame = frames[i]
@@ -47,13 +53,6 @@ class PstatsCollector(Collector):
 
                 self.callers[callee][caller] += 1
 
-            if len(frames) <= 1:
-                continue
-
-            for frame in frames[1:]:
-                location = (frame.filename, frame.lineno, frame.funcname)
-                self.result[location]["total_calls"] += 1
-
     def export(self, filename):
         self.create_stats()
         self._dump_stats(filename)
@@ -69,14 +68,13 @@ class PstatsCollector(Collector):
         sample_interval_sec = self.sample_interval_usec / 1_000_000
         callers = {}
         for fname, call_counts in self.result.items():
-            total = call_counts["inline_calls"] * sample_interval_sec
-            cumulative = call_counts["total_calls"] * sample_interval_sec
+            total = call_counts["direct_calls"] * sample_interval_sec
+            cumulative_calls = call_counts["cumulative_calls"]
+            cumulative = cumulative_calls * sample_interval_sec
             callers = dict(self.callers.get(fname, {}))
             self.stats[fname] = (
-                call_counts["total_calls"],
-                call_counts["total_rec_calls"]
-                if call_counts["total_rec_calls"]
-                else call_counts["total_calls"],
+                call_counts["direct_calls"],  # cc = direct calls for sample percentage
+                cumulative_calls,  # nc = cumulative calls for cumulative percentage
                 total,
                 cumulative,
                 callers,

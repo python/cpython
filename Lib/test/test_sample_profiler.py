@@ -126,7 +126,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
         collector.collect(test_frames)
         # Should count both occurrences
         self.assertEqual(
-            collector.result[("file.py", 10, "func1")]["total_calls"], 2
+            collector.result[("file.py", 10, "func1")]["cumulative_calls"], 2
         )
 
     def test_pstats_collector_single_frame_stacks(self):
@@ -141,8 +141,8 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertEqual(len(collector.result), 1)
         single_key = ("single.py", 10, "single_func")
         self.assertIn(single_key, collector.result)
-        self.assertEqual(collector.result[single_key]["inline_calls"], 1)
-        self.assertEqual(collector.result[single_key]["total_calls"], 1)
+        self.assertEqual(collector.result[single_key]["direct_calls"], 1)
+        self.assertEqual(collector.result[single_key]["cumulative_calls"], 1)
 
         # Test with empty frames (should also trigger <= 1 condition)
         empty_frames = [(1, [])]
@@ -177,17 +177,17 @@ class TestSampleProfilerComponents(unittest.TestCase):
         # Verify single frame handling
         single2_key = ("single2.py", 20, "single_func2")
         self.assertIn(single2_key, collector.result)
-        self.assertEqual(collector.result[single2_key]["inline_calls"], 1)
-        self.assertEqual(collector.result[single2_key]["total_calls"], 1)
+        self.assertEqual(collector.result[single2_key]["direct_calls"], 1)
+        self.assertEqual(collector.result[single2_key]["cumulative_calls"], 1)
 
         # Verify multi-frame handling still works
         multi1_key = ("multi.py", 30, "multi_func1")
         multi2_key = ("multi.py", 40, "multi_func2")
         self.assertIn(multi1_key, collector.result)
         self.assertIn(multi2_key, collector.result)
-        self.assertEqual(collector.result[multi1_key]["inline_calls"], 1)
+        self.assertEqual(collector.result[multi1_key]["direct_calls"], 1)
         self.assertEqual(
-            collector.result[multi2_key]["total_calls"], 1
+            collector.result[multi2_key]["cumulative_calls"], 1
         )  # Called from multi1
 
     def test_collapsed_stack_collector_with_empty_and_deep_stacks(self):
@@ -241,17 +241,20 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertIn(("file.py", 10, "func1"), collector.result)
         self.assertIn(("file.py", 20, "func2"), collector.result)
 
-        # Top-level function should have inline call
+        # Top-level function should have direct call
         self.assertEqual(
-            collector.result[("file.py", 10, "func1")]["inline_calls"], 1
+            collector.result[("file.py", 10, "func1")]["direct_calls"], 1
         )
         self.assertEqual(
-            collector.result[("file.py", 10, "func1")]["total_calls"], 1
+            collector.result[("file.py", 10, "func1")]["cumulative_calls"], 1
         )
 
-        # Calling function should have total call
+        # Calling function should have cumulative call but no direct calls
         self.assertEqual(
-            collector.result[("file.py", 20, "func2")]["total_calls"], 1
+            collector.result[("file.py", 20, "func2")]["cumulative_calls"], 1
+        )
+        self.assertEqual(
+            collector.result[("file.py", 20, "func2")]["direct_calls"], 0
         )
 
     def test_pstats_collector_create_stats(self):
@@ -274,18 +277,23 @@ class TestSampleProfilerComponents(unittest.TestCase):
 
         collector.create_stats()
 
-        # Check stats format: (cc, nc, tt, ct, callers)
+        # Check stats format: (direct_calls, cumulative_calls, tt, ct, callers)
         func1_stats = collector.stats[("file.py", 10, "func1")]
-        self.assertEqual(func1_stats[0], 2)  # total_calls
-        self.assertEqual(func1_stats[1], 2)  # nc (non-recursive calls)
+        self.assertEqual(func1_stats[0], 2)  # direct_calls (top of stack)
+        self.assertEqual(func1_stats[1], 2)  # cumulative_calls
         self.assertEqual(
             func1_stats[2], 2.0
         )  # tt (total time - 2 samples * 1 sec)
         self.assertEqual(func1_stats[3], 2.0)  # ct (cumulative time)
 
         func2_stats = collector.stats[("file.py", 20, "func2")]
-        self.assertEqual(func2_stats[0], 2)  # total_calls
-        self.assertEqual(func2_stats[2], 0.0)  # tt (no inline calls)
+        self.assertEqual(
+            func2_stats[0], 0
+        )  # direct_calls (never top of stack)
+        self.assertEqual(
+            func2_stats[1], 2
+        )  # cumulative_calls (appears in stack)
+        self.assertEqual(func2_stats[2], 0.0)  # tt (no direct calls)
         self.assertEqual(func2_stats[3], 2.0)  # ct (cumulative time)
 
     def test_collapsed_stack_collector_basic(self):
@@ -650,7 +658,7 @@ class TestPrintSampledStats(unittest.TestCase):
         # Capture output
         with io.StringIO() as output:
             with mock.patch("sys.stdout", output):
-                print_sampled_stats(self.mock_stats)
+                print_sampled_stats(self.mock_stats, sample_interval_usec=100)
 
             result = output.getvalue()
 
@@ -672,7 +680,9 @@ class TestPrintSampledStats(unittest.TestCase):
         # Test sort by calls
         with io.StringIO() as output:
             with mock.patch("sys.stdout", output):
-                print_sampled_stats(self.mock_stats, sort=0)
+                print_sampled_stats(
+                    self.mock_stats, sort=0, sample_interval_usec=100
+                )
 
             result = output.getvalue()
             lines = result.strip().split("\n")
@@ -685,7 +695,9 @@ class TestPrintSampledStats(unittest.TestCase):
         # Test sort by time
         with io.StringIO() as output:
             with mock.patch("sys.stdout", output):
-                print_sampled_stats(self.mock_stats, sort=1)
+                print_sampled_stats(
+                    self.mock_stats, sort=1, sample_interval_usec=100
+                )
 
             result = output.getvalue()
             lines = result.strip().split("\n")
@@ -700,7 +712,9 @@ class TestPrintSampledStats(unittest.TestCase):
 
         with io.StringIO() as output:
             with mock.patch("sys.stdout", output):
-                print_sampled_stats(self.mock_stats, limit=2)
+                print_sampled_stats(
+                    self.mock_stats, limit=2, sample_interval_usec=100
+                )
 
             result = output.getvalue()
 
@@ -727,7 +741,7 @@ class TestPrintSampledStats(unittest.TestCase):
 
         with io.StringIO() as output:
             with mock.patch("sys.stdout", output):
-                print_sampled_stats(self.mock_stats)
+                print_sampled_stats(self.mock_stats, sample_interval_usec=100)
 
             result = output.getvalue()
 
@@ -743,7 +757,7 @@ class TestPrintSampledStats(unittest.TestCase):
 
         with io.StringIO() as output:
             with mock.patch("sys.stdout", output):
-                print_sampled_stats(micro_stats)
+                print_sampled_stats(micro_stats, sample_interval_usec=100)
 
             result = output.getvalue()
 
@@ -757,16 +771,27 @@ class TestPrintSampledStats(unittest.TestCase):
 
         with io.StringIO() as output:
             with mock.patch("sys.stdout", output):
-                print_sampled_stats(self.mock_stats, show_summary=True)
+                print_sampled_stats(
+                    self.mock_stats,
+                    show_summary=True,
+                    sample_interval_usec=100,
+                )
 
             result = output.getvalue()
 
         # Check summary sections are present
         self.assertIn("Summary of Interesting Functions:", result)
-        self.assertIn("Most Time-Consuming Functions:", result)
-        self.assertIn("Most Called Functions:", result)
-        self.assertIn("Functions with Highest Per-Call Overhead:", result)
-        self.assertIn("Functions with Highest Cumulative Impact:", result)
+        self.assertIn(
+            "Functions with Highest Direct/Cumulative Ratio (Hot Spots):",
+            result,
+        )
+        self.assertIn(
+            "Functions with Highest Call Frequency (Indirect Calls):", result
+        )
+        self.assertIn(
+            "Functions with Highest Call Magnification (Cumulative/Direct):",
+            result,
+        )
 
     def test_print_sampled_stats_no_summary(self):
         """Test disabling summary output."""
@@ -774,7 +799,11 @@ class TestPrintSampledStats(unittest.TestCase):
 
         with io.StringIO() as output:
             with mock.patch("sys.stdout", output):
-                print_sampled_stats(self.mock_stats, show_summary=False)
+                print_sampled_stats(
+                    self.mock_stats,
+                    show_summary=False,
+                    sample_interval_usec=100,
+                )
 
             result = output.getvalue()
 
@@ -790,36 +819,38 @@ class TestPrintSampledStats(unittest.TestCase):
 
         with io.StringIO() as output:
             with mock.patch("sys.stdout", output):
-                print_sampled_stats(empty_stats)
+                print_sampled_stats(empty_stats, sample_interval_usec=100)
 
             result = output.getvalue()
 
         # Should still print header
         self.assertIn("Profile Stats:", result)
 
-    def test_print_sampled_stats_percall_sorting(self):
-        """Test per-call sorting options."""
+    def test_print_sampled_stats_sample_percentage_sorting(self):
+        """Test sample percentage sorting options."""
         from profile.sample import print_sampled_stats
 
-        # Add a function with high per-call time
+        # Add a function with high sample percentage (more direct calls than func3's 200)
         self.mock_stats.stats[("expensive.py", 60, "expensive_func")] = (
-            2,
-            2,
-            1.0,
-            1.0,
+            300,  # direct calls (higher than func3's 200)
+            300,  # cumulative calls
+            1.0,  # total time
+            1.0,  # cumulative time
             {},
         )
 
-        # Test sort by percall time
+        # Test sort by sample percentage
         with io.StringIO() as output:
             with mock.patch("sys.stdout", output):
-                print_sampled_stats(self.mock_stats, sort=3)  # percall
+                print_sampled_stats(
+                    self.mock_stats, sort=3, sample_interval_usec=100
+                )  # sample percentage
 
             result = output.getvalue()
             lines = result.strip().split("\n")
 
         data_lines = [l for l in lines if ".py" in l and "func" in l]
-        # expensive_func should be first (0.5s per call)
+        # expensive_func should be first (highest sample percentage)
         self.assertIn("expensive_func", data_lines[0])
 
     def test_print_sampled_stats_with_recursive_calls(self):
@@ -829,26 +860,26 @@ class TestPrintSampledStats(unittest.TestCase):
         # Create stats with recursive calls (nc != cc)
         recursive_stats = mock.MagicMock()
         recursive_stats.stats = {
-            # (cc, nc, tt, ct, callers) - recursive function with more total calls than non-recursive
+            # (direct_calls, cumulative_calls, tt, ct, callers) - recursive function
             ("recursive.py", 10, "factorial"): (
-                10,
-                5,
+                5,  # direct_calls
+                10,  # cumulative_calls (appears more times in stack due to recursion)
                 0.5,
                 0.6,
                 {},
-            ),  # 10 total, 5 non-recursive
+            ),
             ("normal.py", 20, "normal_func"): (
-                3,
-                3,
+                3,  # direct_calls
+                3,  # cumulative_calls (same as direct for non-recursive)
                 0.2,
                 0.2,
                 {},
-            ),  # normal function
+            ),
         }
 
         with io.StringIO() as output:
             with mock.patch("sys.stdout", output):
-                print_sampled_stats(recursive_stats)
+                print_sampled_stats(recursive_stats, sample_interval_usec=100)
 
             result = output.getvalue()
 
@@ -877,12 +908,12 @@ class TestPrintSampledStats(unittest.TestCase):
 
         with io.StringIO() as output:
             with mock.patch("sys.stdout", output):
-                print_sampled_stats(zero_stats)
+                print_sampled_stats(zero_stats, sample_interval_usec=100)
 
             result = output.getvalue()
 
-        # Should display "N/A" for per-call times when nc=0
-        self.assertIn("N/A", result)
+        # Should handle zero call counts gracefully
+        self.assertIn("zero_calls", result)
         self.assertIn("zero_calls", result)
         self.assertIn("normal_func", result)
 
@@ -892,7 +923,9 @@ class TestPrintSampledStats(unittest.TestCase):
 
         with io.StringIO() as output:
             with mock.patch("sys.stdout", output):
-                print_sampled_stats(self.mock_stats, sort=5)  # sort by name
+                print_sampled_stats(
+                    self.mock_stats, sort=-1, sample_interval_usec=100
+                )  # sort by name
 
             result = output.getvalue()
             lines = result.strip().split("\n")
@@ -967,7 +1000,11 @@ class TestPrintSampledStats(unittest.TestCase):
 
         with io.StringIO() as output:
             with mock.patch("sys.stdout", output):
-                print_sampled_stats(zero_time_stats, show_summary=True)
+                print_sampled_stats(
+                    zero_time_stats,
+                    show_summary=True,
+                    sample_interval_usec=100,
+                )
 
             result = output.getvalue()
 
@@ -991,7 +1028,11 @@ class TestPrintSampledStats(unittest.TestCase):
 
         with io.StringIO() as output:
             with mock.patch("sys.stdout", output):
-                print_sampled_stats(malformed_stats, show_summary=True)
+                print_sampled_stats(
+                    malformed_stats,
+                    show_summary=True,
+                    sample_interval_usec=100,
+                )
 
             result = output.getvalue()
 
@@ -1010,14 +1051,14 @@ class TestPrintSampledStats(unittest.TestCase):
         # We need to manually manipulate the collector result to test this branch
         collector.result = {
             ("recursive.py", 10, "factorial"): {
-                "total_calls": 10,
                 "total_rec_calls": 3,  # Non-zero recursive calls
-                "inline_calls": 5,
+                "direct_calls": 5,
+                "cumulative_calls": 10,
             },
             ("normal.py", 20, "normal_func"): {
-                "total_calls": 5,
                 "total_rec_calls": 0,  # Zero recursive calls
-                "inline_calls": 2,
+                "direct_calls": 2,
+                "cumulative_calls": 5,
             },
         }
 
@@ -1027,13 +1068,15 @@ class TestPrintSampledStats(unittest.TestCase):
         factorial_stats = collector.stats[("recursive.py", 10, "factorial")]
         normal_stats = collector.stats[("normal.py", 20, "normal_func")]
 
-        # factorial should use total_rec_calls (3) as nc when total_rec_calls > 0
-        self.assertEqual(factorial_stats[1], 3)  # nc should be total_rec_calls
-        self.assertEqual(factorial_stats[0], 10)  # cc should be total_calls
+        # factorial should use cumulative_calls (10) as nc
+        self.assertEqual(
+            factorial_stats[1], 10
+        )  # nc should be cumulative_calls
+        self.assertEqual(factorial_stats[0], 5)  # cc should be direct_calls
 
-        # normal_func should use total_calls as nc when total_rec_calls is 0
-        self.assertEqual(normal_stats[1], 5)  # nc should be total_calls
-        self.assertEqual(normal_stats[0], 5)  # cc should be total_calls
+        # normal_func should use cumulative_calls as nc
+        self.assertEqual(normal_stats[1], 5)  # nc should be cumulative_calls
+        self.assertEqual(normal_stats[0], 2)  # cc should be direct_calls
 
 
 @unittest.skipIf(
@@ -1094,17 +1137,18 @@ class TestRecursiveFunctionProfiling(unittest.TestCase):
 
         # Fibonacci should have many calls due to recursion
         fib_stats = collector.stats[fib_key]
-        total_calls, nc, tt, ct, callers = fib_stats
+        direct_calls, cumulative_calls, tt, ct, callers = fib_stats
 
         # Should have recorded multiple calls (9 total appearances in samples)
-        self.assertEqual(total_calls, 9)
+        self.assertEqual(cumulative_calls, 9)
         self.assertGreater(tt, 0)  # Should have some total time
         self.assertGreater(ct, 0)  # Should have some cumulative time
 
         # Main should have fewer calls
         main_stats = collector.stats[main_key]
-        main_total_calls = main_stats[0]
-        self.assertEqual(main_total_calls, 3)  # Appears in all 3 samples
+        main_direct_calls, main_cumulative_calls = main_stats[0], main_stats[1]
+        self.assertEqual(main_direct_calls, 0)  # Never directly executing
+        self.assertEqual(main_cumulative_calls, 3)  # Appears in all 3 samples
 
     def test_nested_function_hierarchy(self):
         """Test profiling of deeply nested function calls."""
@@ -1147,10 +1191,16 @@ class TestRecursiveFunctionProfiling(unittest.TestCase):
             self.assertIn(key, collector.stats)
 
             stats = collector.stats[key]
-            total_calls, nc, tt, ct, callers = stats
+            direct_calls, cumulative_calls, tt, ct, callers = stats
 
-            # Each level should have been called twice (2 samples)
-            self.assertEqual(total_calls, 2)
+            # Each level should appear in stack twice (2 samples)
+            self.assertEqual(cumulative_calls, 2)
+
+            # Only level1 (deepest) should have direct calls
+            if level == 1:
+                self.assertEqual(direct_calls, 2)
+            else:
+                self.assertEqual(direct_calls, 0)
 
             # Deeper levels should have lower cumulative time than higher levels
             # (since they don't include time from functions they call)
@@ -1212,15 +1262,19 @@ class TestRecursiveFunctionProfiling(unittest.TestCase):
         shared_key = ("module.py", 30, "shared_func")
         main_key = ("main.py", 5, "main")
 
-        # func_a and func_b should each appear twice
-        self.assertEqual(collector.stats[func_a_key][0], 2)
-        self.assertEqual(collector.stats[func_b_key][0], 2)
+        # func_a and func_b should each be directly executing twice
+        self.assertEqual(collector.stats[func_a_key][0], 2)  # direct_calls
+        self.assertEqual(collector.stats[func_a_key][1], 2)  # cumulative_calls
+        self.assertEqual(collector.stats[func_b_key][0], 2)  # direct_calls
+        self.assertEqual(collector.stats[func_b_key][1], 2)  # cumulative_calls
 
-        # shared_func should appear in all samples
-        self.assertEqual(collector.stats[shared_key][0], 4)
+        # shared_func should appear in all samples (4 times) but never directly executing
+        self.assertEqual(collector.stats[shared_key][0], 0)  # direct_calls
+        self.assertEqual(collector.stats[shared_key][1], 4)  # cumulative_calls
 
-        # main should appear in all samples
-        self.assertEqual(collector.stats[main_key][0], 4)
+        # main should appear in all samples but never directly executing
+        self.assertEqual(collector.stats[main_key][0], 0)  # direct_calls
+        self.assertEqual(collector.stats[main_key][1], 4)  # cumulative_calls
 
     def test_collapsed_stack_with_recursion(self):
         """Test collapsed stack collector with recursive patterns."""
@@ -1553,31 +1607,36 @@ class TestSampleProfilerCLI(unittest.TestCase):
         test_cases = [
             # Test sort options are invalid with collapsed
             (
-                ["profile.sample", "--collapsed", "--sort-calls", "12345"],
+                ["profile.sample", "--collapsed", "--sort-nsamples", "12345"],
                 "sort",
             ),
             (
-                ["profile.sample", "--collapsed", "--sort-time", "12345"],
+                ["profile.sample", "--collapsed", "--sort-tottime", "12345"],
                 "sort",
             ),
             (
                 [
                     "profile.sample",
                     "--collapsed",
-                    "--sort-cumulative",
+                    "--sort-cumtime",
                     "12345",
                 ],
                 "sort",
             ),
             (
-                ["profile.sample", "--collapsed", "--sort-percall", "12345"],
+                [
+                    "profile.sample",
+                    "--collapsed",
+                    "--sort-sample-pct",
+                    "12345",
+                ],
                 "sort",
             ),
             (
                 [
                     "profile.sample",
                     "--collapsed",
-                    "--sort-cumpercall",
+                    "--sort-cumul-pct",
                     "12345",
                 ],
                 "sort",
@@ -1700,12 +1759,12 @@ class TestSampleProfilerCLI(unittest.TestCase):
 
     def test_sort_options(self):
         sort_options = [
-            ("--sort-calls", 0),
-            ("--sort-time", 1),
-            ("--sort-cumulative", 2),
-            ("--sort-percall", 3),
-            ("--sort-cumpercall", 4),
-            ("--sort-name", 5),
+            ("--sort-nsamples", 0),
+            ("--sort-tottime", 1),
+            ("--sort-cumtime", 2),
+            ("--sort-sample-pct", 3),
+            ("--sort-cumul-pct", 4),
+            ("--sort-name", -1),
         ]
 
         for option, expected_sort_value in sort_options:

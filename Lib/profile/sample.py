@@ -123,97 +123,130 @@ def _determine_best_unit(max_value):
         return "μs", 1000000.0
 
 
-def print_sampled_stats(stats, sort=-1, limit=None, show_summary=True):
+def print_sampled_stats(
+    stats, sort=-1, limit=None, show_summary=True, sample_interval_usec=100
+):
     # Get the stats data
     stats_list = []
-    for func, (cc, nc, tt, ct, callers) in stats.stats.items():
-        stats_list.append((func, cc, nc, tt, ct, callers))
+    for func, (
+        direct_calls,
+        cumulative_calls,
+        total_time,
+        cumulative_time,
+        callers,
+    ) in stats.stats.items():
+        stats_list.append(
+            (
+                func,
+                direct_calls,
+                cumulative_calls,
+                total_time,
+                cumulative_time,
+                callers,
+            )
+        )
+
+    # Calculate total samples for percentage calculations (using direct_calls)
+    total_samples = sum(
+        direct_calls for _, direct_calls, _, _, _, _ in stats_list
+    )
 
     # Sort based on the requested field
     sort_field = sort
     if sort_field == -1:  # stdname
         stats_list.sort(key=lambda x: str(x[0]))
-    elif sort_field == 0:  # calls
-        stats_list.sort(key=lambda x: x[2], reverse=True)
-    elif sort_field == 1:  # time
-        stats_list.sort(key=lambda x: x[3], reverse=True)
-    elif sort_field == 2:  # cumulative
-        stats_list.sort(key=lambda x: x[4], reverse=True)
-    elif sort_field == 3:  # percall
+    elif sort_field == 0:  # nsamples (direct samples)
+        stats_list.sort(key=lambda x: x[1], reverse=True)  # direct_calls
+    elif sort_field == 1:  # tottime
+        stats_list.sort(key=lambda x: x[3], reverse=True)  # total_time
+    elif sort_field == 2:  # cumtime
+        stats_list.sort(key=lambda x: x[4], reverse=True)  # cumulative_time
+    elif sort_field == 3:  # sample%
         stats_list.sort(
-            key=lambda x: x[3] / x[2] if x[2] > 0 else 0, reverse=True
+            key=lambda x: (x[1] / total_samples * 100)
+            if total_samples > 0
+            else 0,
+            reverse=True,  # direct_calls percentage
         )
-    elif sort_field == 4:  # cumpercall
+    elif sort_field == 4:  # cumul%
         stats_list.sort(
-            key=lambda x: x[4] / x[2] if x[2] > 0 else 0, reverse=True
+            key=lambda x: (x[2] / total_samples * 100)
+            if total_samples > 0
+            else 0,
+            reverse=True,  # cumulative_calls percentage
         )
+    elif sort_field == 5:  # nsamples (cumulative samples)
+        stats_list.sort(key=lambda x: x[2], reverse=True)  # cumulative_calls
 
     # Apply limit if specified
     if limit is not None:
         stats_list = stats_list[:limit]
 
-    # Determine the best unit for each column based on maximum values
-    max_tt = max((tt for _, _, _, tt, _, _ in stats_list), default=0)
-    max_ct = max((ct for _, _, _, _, ct, _ in stats_list), default=0)
-    max_percall = max(
-        (tt / nc if nc > 0 else 0 for _, _, nc, tt, _, _ in stats_list),
-        default=0,
+    # Determine the best unit for time columns based on maximum values
+    max_total_time = max(
+        (total_time for _, _, _, total_time, _, _ in stats_list), default=0
     )
-    max_cumpercall = max(
-        (ct / nc if nc > 0 else 0 for _, _, nc, _, ct, _ in stats_list),
+    max_cumulative_time = max(
+        (cumulative_time for _, _, _, _, cumulative_time, _ in stats_list),
         default=0,
     )
 
-    tt_unit, tt_scale = _determine_best_unit(max_tt)
-    ct_unit, ct_scale = _determine_best_unit(max_ct)
-    percall_unit, percall_scale = _determine_best_unit(max_percall)
-    cumpercall_unit, cumpercall_scale = _determine_best_unit(max_cumpercall)
+    total_time_unit, total_time_scale = _determine_best_unit(max_total_time)
+    cumulative_time_unit, cumulative_time_scale = _determine_best_unit(
+        max_cumulative_time
+    )
 
-    # Define column widths for consistent alignment, accounting for unit labels
+    # Define column widths for consistent alignment
     col_widths = {
-        "nsamples": 10,
-        "tottime": max(12, len(f"tottime ({tt_unit})")),
-        "percall": max(12, len(f"percall ({percall_unit})")),
-        "cumtime": max(12, len(f"cumtime ({ct_unit})")),
-        "cumpercall": max(14, len(f"cumpercall ({cumpercall_unit})")),
+        "nsamples": 15,  # "nsamples" column (inline/cumulative format)
+        "sample_pct": 8,  # "sample%" column
+        "tottime": max(12, len(f"tottime ({total_time_unit})")),
+        "cum_pct": 8,  # "cumul%" column
+        "cumtime": max(12, len(f"cumtime ({cumulative_time_unit})")),
     }
 
     # Print header with colors and proper alignment
     print(f"{ANSIColors.BOLD_BLUE}Profile Stats:{ANSIColors.RESET}")
 
     header_nsamples = f"{ANSIColors.BOLD_BLUE}{'nsamples':>{col_widths['nsamples']}}{ANSIColors.RESET}"
-    header_tottime = f"{ANSIColors.BOLD_BLUE}{f'tottime ({tt_unit})':>{col_widths['tottime']}}{ANSIColors.RESET}"
-    header_percall = f"{ANSIColors.BOLD_BLUE}{f'percall ({percall_unit})':>{col_widths['percall']}}{ANSIColors.RESET}"
-    header_cumtime = f"{ANSIColors.BOLD_BLUE}{f'cumtime ({ct_unit})':>{col_widths['cumtime']}}{ANSIColors.RESET}"
-    header_cumpercall = f"{ANSIColors.BOLD_BLUE}{f'cumpercall ({cumpercall_unit})':>{col_widths['cumpercall']}}{ANSIColors.RESET}"
+    header_sample_pct = f"{ANSIColors.BOLD_BLUE}{'sample%':>{col_widths['sample_pct']}}{ANSIColors.RESET}"
+    header_tottime = f"{ANSIColors.BOLD_BLUE}{f'tottime ({total_time_unit})':>{col_widths['tottime']}}{ANSIColors.RESET}"
+    header_cum_pct = f"{ANSIColors.BOLD_BLUE}{'cumul%':>{col_widths['cum_pct']}}{ANSIColors.RESET}"
+    header_cumtime = f"{ANSIColors.BOLD_BLUE}{f'cumtime ({cumulative_time_unit})':>{col_widths['cumtime']}}{ANSIColors.RESET}"
     header_filename = (
         f"{ANSIColors.BOLD_BLUE}filename:lineno(function){ANSIColors.RESET}"
     )
 
     print(
-        f"{header_nsamples}  {header_tottime}  {header_percall}  {header_cumtime}  {header_cumpercall}  {header_filename}"
+        f"{header_nsamples}  {header_sample_pct}  {header_tottime}  {header_cum_pct}  {header_cumtime}  {header_filename}"
     )
 
     # Print each line with proper alignment
-    for func, cc, nc, tt, ct, callers in stats_list:
-        if nc != cc:
-            ncalls = f"{nc}/{cc}"
-        else:
-            ncalls = str(nc)
+    for (
+        func,
+        direct_calls,
+        cumulative_calls,
+        total_time,
+        cumulative_time,
+        callers,
+    ) in stats_list:
+        # Calculate percentages
+        sample_pct = (
+            (direct_calls / total_samples * 100) if total_samples > 0 else 0
+        )
+        cum_pct = (
+            (cumulative_calls / total_samples * 100)
+            if total_samples > 0
+            else 0
+        )
 
-        # Format time values with column-specific units (no unit suffix since it's in header)
-        tottime = f"{tt * tt_scale:{col_widths['tottime']}.3f}"
-        percall = (
-            f"{(tt / nc) * percall_scale:{col_widths['percall']}.3f}"
-            if nc > 0
-            else f"{'N/A':>{col_widths['percall']}}"
-        )
-        cumtime = f"{ct * ct_scale:{col_widths['cumtime']}.3f}"
-        cumpercall = (
-            f"{(ct / nc) * cumpercall_scale:{col_widths['cumpercall']}.3f}"
-            if nc > 0
-            else f"{'N/A':>{col_widths['cumpercall']}}"
-        )
+        # Format values with proper alignment - always use A/B format
+        nsamples_str = f"{direct_calls}/{cumulative_calls}"
+        nsamples_str = f"{nsamples_str:>{col_widths['nsamples']}}"
+        sample_pct_str = f"{sample_pct:{col_widths['sample_pct']}.1f}"
+        tottime = f"{total_time * total_time_scale:{col_widths['tottime']}.3f}"
+        cum_pct_str = f"{cum_pct:{col_widths['cum_pct']}.1f}"
+        cumtime = f"{cumulative_time * cumulative_time_scale:{col_widths['cumtime']}.3f}"
 
         # Format the function name with colors
         func_name = (
@@ -224,8 +257,29 @@ def print_sampled_stats(stats, sort=-1, limit=None, show_summary=True):
 
         # Print the formatted line with consistent spacing
         print(
-            f"{ncalls:>{col_widths['nsamples']}}  {tottime}  {percall}  {cumtime}  {cumpercall}  {func_name}"
+            f"{nsamples_str}  {sample_pct_str}  {tottime}  {cum_pct_str}  {cumtime}  {func_name}"
         )
+
+    # Print legend
+    print(f"\n{ANSIColors.BOLD_BLUE}Legend:{ANSIColors.RESET}")
+    print(
+        f"  {ANSIColors.YELLOW}nsamples{ANSIColors.RESET}: Direct/Cumulative samples (direct executing / on call stack)"
+    )
+    print(
+        f"  {ANSIColors.YELLOW}sample%{ANSIColors.RESET}: Percentage of total samples this function was directly executing"
+    )
+    print(
+        f"  {ANSIColors.YELLOW}tottime{ANSIColors.RESET}: Estimated total time spent directly in this function"
+    )
+    print(
+        f"  {ANSIColors.YELLOW}cumul%{ANSIColors.RESET}: Percentage of total samples when this function was on the call stack"
+    )
+    print(
+        f"  {ANSIColors.YELLOW}cumtime{ANSIColors.RESET}: Estimated cumulative time (including time in called functions)"
+    )
+    print(
+        f"  {ANSIColors.YELLOW}filename:lineno(function){ANSIColors.RESET}: Function location and name"
+    )
 
     def _format_func_name(func):
         """Format function name with colors."""
@@ -253,8 +307,8 @@ def print_sampled_stats(stats, sort=-1, limit=None, show_summary=True):
         func_aggregated = {}
         for (
             func,
-            prim_calls,
-            total_calls,
+            direct_calls,
+            cumulative_calls,
             total_time,
             cumulative_time,
             callers,
@@ -267,9 +321,9 @@ def print_sampled_stats(stats, sort=-1, limit=None, show_summary=True):
                     0,
                     0,
                     0,
-                ]  # prim_calls, total_calls, total_time, cumulative_time
-            func_aggregated[qualified_name][0] += prim_calls
-            func_aggregated[qualified_name][1] += total_calls
+                ]  # direct_calls, cumulative_calls, total_time, cumulative_time
+            func_aggregated[qualified_name][0] += direct_calls
+            func_aggregated[qualified_name][1] += cumulative_calls
             func_aggregated[qualified_name][2] += total_time
             func_aggregated[qualified_name][3] += cumulative_time
 
@@ -311,97 +365,77 @@ def print_sampled_stats(stats, sort=-1, limit=None, show_summary=True):
             ),
             default=0,
         )
-        max_per_call_time = max(
-            (
-                total_time / total_calls if total_calls > 0 else 0
-                for _, _, total_calls, total_time, _, _ in aggregated_stats
-            ),
-            default=0,
-        )
-        max_cumulative_per_call = max(
-            (
-                cumulative_time / total_calls if total_calls > 0 else 0
-                for _, _, total_calls, _, cumulative_time, _ in aggregated_stats
-            ),
-            default=0,
-        )
 
         total_unit, total_scale = _determine_best_unit(max_total_time)
         cumulative_unit, cumulative_scale = _determine_best_unit(
             max_cumulative_time
         )
-        per_call_unit, per_call_scale = _determine_best_unit(max_per_call_time)
-        cumulative_per_call_unit, cumulative_per_call_scale = (
-            _determine_best_unit(max_cumulative_per_call)
-        )
 
-        # Most time-consuming functions (by total time)
-        def format_time_consuming(stat):
-            func, _, total_calls, total_time, _, _ = stat
-            if total_time > 0:
+        # Functions with highest direct/cumulative ratio (hot spots)
+        def format_hotspots(stat):
+            func, direct_calls, cumulative_calls, total_time, _, _ = stat
+            if direct_calls > 0 and cumulative_calls > 0:
+                ratio = direct_calls / cumulative_calls
+                direct_pct = (
+                    (direct_calls / total_samples * 100)
+                    if total_samples > 0
+                    else 0
+                )
                 return (
-                    f"{total_time * total_scale:.3f} {total_unit} total time, "
-                    f"{(total_time / total_calls) * per_call_scale:.3f} {per_call_unit} per call: {_format_func_name(func)}"
+                    f"{ratio:.3f} direct/cumulative ratio, "
+                    f"{direct_pct:.1f}% direct samples: {_format_func_name(func)}"
                 )
             return None
 
         _print_top_functions(
             aggregated_stats,
-            "Most Time-Consuming Functions",
-            key_func=lambda x: x[3],
-            format_line=format_time_consuming,
+            "Functions with Highest Direct/Cumulative Ratio (Hot Spots)",
+            key_func=lambda x: (x[1] / x[2]) if x[2] > 0 else 0,
+            format_line=format_hotspots,
         )
 
-        # Most called functions
-        def format_most_called(stat):
-            func, _, total_calls, total_time, _, _ = stat
-            if total_calls > 0:
+        # Functions with highest call frequency (cumulative/direct difference)
+        def format_call_frequency(stat):
+            func, direct_calls, cumulative_calls, total_time, _, _ = stat
+            if cumulative_calls > direct_calls:
+                call_frequency = cumulative_calls - direct_calls
+                cum_pct = (
+                    (cumulative_calls / total_samples * 100)
+                    if total_samples > 0
+                    else 0
+                )
                 return (
-                    f"{total_calls:d} calls, {(total_time / total_calls) * per_call_scale:.3f} {per_call_unit} "
-                    f"per call: {_format_func_name(func)}"
+                    f"{call_frequency:d} indirect calls, "
+                    f"{cum_pct:.1f}% total stack presence: {_format_func_name(func)}"
                 )
             return None
 
         _print_top_functions(
             aggregated_stats,
-            "Most Called Functions",
-            key_func=lambda x: x[2],
-            format_line=format_most_called,
+            "Functions with Highest Call Frequency (Indirect Calls)",
+            key_func=lambda x: x[2] - x[1],  # Sort by (cumulative - direct)
+            format_line=format_call_frequency,
         )
 
-        # Functions with highest per-call overhead
-        def format_overhead(stat):
-            func, _, total_calls, total_time, _, _ = stat
-            if total_calls > 0 and total_time > 0:
+        # Functions with highest cumulative-to-direct multiplier (call magnification)
+        def format_call_magnification(stat):
+            func, direct_calls, cumulative_calls, total_time, _, _ = stat
+            if direct_calls > 0 and cumulative_calls > direct_calls:
+                multiplier = cumulative_calls / direct_calls
+                indirect_calls = cumulative_calls - direct_calls
                 return (
-                    f"{(total_time / total_calls) * per_call_scale:.3f} {per_call_unit} per call, "
-                    f"{total_calls:d} calls: {_format_func_name(func)}"
+                    f"{multiplier:.1f}x call magnification, "
+                    f"{indirect_calls:d} indirect calls from {direct_calls:d} direct: {_format_func_name(func)}"
                 )
             return None
 
         _print_top_functions(
             aggregated_stats,
-            "Functions with Highest Per-Call Overhead",
-            key_func=lambda x: x[3] / x[2] if x[2] > 0 else 0,
-            format_line=format_overhead,
-        )
-
-        # Functions with highest cumulative impact
-        def format_cumulative(stat):
-            func, _, total_calls, _, cumulative_time, _ = stat
-            if cumulative_time > 0:
-                return (
-                    f"{cumulative_time * cumulative_scale:.3f} {cumulative_unit} cumulative time, "
-                    f"{(cumulative_time / total_calls) * cumulative_per_call_scale:.3f} {cumulative_per_call_unit} per call: "
-                    f"{_format_func_name(func)}"
-                )
-            return None
-
-        _print_top_functions(
-            aggregated_stats,
-            "Functions with Highest Cumulative Impact",
-            key_func=lambda x: x[4],
-            format_line=format_cumulative,
+            "Functions with Highest Call Magnification (Cumulative/Direct)",
+            key_func=lambda x: (x[2] / x[1])
+            if x[1] > 0
+            else 0,  # Sort by cumulative/direct ratio
+            format_line=format_call_magnification,
         )
 
 
@@ -437,7 +471,9 @@ def sample(
 
     if output_format == "pstats" and not filename:
         stats = pstats.SampledStats(collector).strip_dirs()
-        print_sampled_stats(stats, sort, limit, show_summary)
+        print_sampled_stats(
+            stats, sort, limit, show_summary, sample_interval_usec
+        )
     else:
         collector.export(filename)
 
@@ -489,19 +525,25 @@ def main():
             "  python -m profile.sample --collapsed 1234\n"
             "\n"
             "  # Profile all threads, sort by total time\n"
-            "  python -m profile.sample -a --sort-time 1234\n"
+            "  python -m profile.sample -a --sort-tottime 1234\n"
             "\n"
             "  # Profile for 1 minute with 1ms sampling interval\n"
             "  python -m profile.sample -i 1000 -d 60 1234\n"
             "\n"
-            "  # Show only top 20 functions sorted by calls\n"
-            "  python -m profile.sample --sort-calls -l 20 1234\n"
+            "  # Show only top 20 functions sorted by direct samples\n"
+            "  python -m profile.sample --sort-nsamples -l 20 1234\n"
             "\n"
             "  # Profile all threads and save collapsed stacks\n"
             "  python -m profile.sample -a --collapsed -o stacks.txt 1234\n"
             "\n"
             "  # Profile with real-time sampling statistics\n"
-            "  python -m profile.sample --realtime-stats 1234"
+            "  python -m profile.sample --realtime-stats 1234\n"
+            "\n"
+            "  # Sort by sample percentage to find most sampled functions\n"
+            "  python -m profile.sample --sort-sample-pct 1234\n"
+            "\n"
+            "  # Sort by cumulative samples to find functions most on call stack\n"
+            "  python -m profile.sample --sort-nsamples-cumul 1234"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
@@ -568,44 +610,51 @@ def main():
     pstats_group = parser.add_argument_group("pstats format options")
     sort_group = pstats_group.add_mutually_exclusive_group()
     sort_group.add_argument(
-        "--sort-calls",
+        "--sort-nsamples",
         action="store_const",
         const=0,
         dest="sort",
-        help="Sort by number of calls",
+        help="Sort by number of direct samples (nsamples column)",
     )
     sort_group.add_argument(
-        "--sort-time",
+        "--sort-tottime",
         action="store_const",
         const=1,
         dest="sort",
-        help="Sort by total time",
+        help="Sort by total time (tottime column)",
     )
     sort_group.add_argument(
-        "--sort-cumulative",
+        "--sort-cumtime",
         action="store_const",
         const=2,
         dest="sort",
-        help="Sort by cumulative time (default)",
+        help="Sort by cumulative time (cumtime column, default)",
     )
     sort_group.add_argument(
-        "--sort-percall",
+        "--sort-sample-pct",
         action="store_const",
         const=3,
         dest="sort",
-        help="Sort by time per call",
+        help="Sort by sample percentage (sample%% column)",
     )
     sort_group.add_argument(
-        "--sort-cumpercall",
+        "--sort-cumul-pct",
         action="store_const",
         const=4,
         dest="sort",
-        help="Sort by cumulative time per call",
+        help="Sort by cumulative sample percentage (cumul%% column)",
+    )
+    sort_group.add_argument(
+        "--sort-nsamples-cumul",
+        action="store_const",
+        const=5,
+        dest="sort",
+        help="Sort by cumulative samples (nsamples column, cumulative part)",
     )
     sort_group.add_argument(
         "--sort-name",
         action="store_const",
-        const=5,
+        const=-1,
         dest="sort",
         help="Sort by function name",
     )
