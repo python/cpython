@@ -93,7 +93,7 @@ regular intervals to build a statistical picture of where the program spends
 its time.
 
 The sampling profiler uses process memory reading (via system calls like
-`process_vm_readv` on Linux, `vm_read` on macOS, and `ReadProcessMemory` on
+``process_vm_readv`` on Linux, ``vm_read`` on macOS, and ``ReadProcessMemory`` on
 Windows) to attach to a running Python process and extract stack trace
 information without requiring any code modification or restart of the target
 process. This approach provides several key advantages over traditional
@@ -330,8 +330,8 @@ The statistical profiler produces output similar to deterministic profilers but 
 
 **Column Meanings:**
 
-- **nsamples**: `direct/cumulative` - Times function was directly executing / on call stack
-- **sample%**: Percentage of total samples where function was directly executing  
+- **nsamples**: ``direct/cumulative`` - Times function was directly executing / on call stack
+- **sample%**: Percentage of total samples where function was directly executing
 - **tottime**: Estimated time spent directly in this function
 - **cumul%**: Percentage of samples where function was anywhere on call stack
 - **cumtime**: Estimated cumulative time including called functions
