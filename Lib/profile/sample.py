@@ -15,8 +15,9 @@ class SampleProfiler:
         self.pid = pid
         self.sample_interval_usec = sample_interval_usec
         self.all_threads = all_threads
+        only_active_threads = bool(self.all_threads)
         self.unwinder = _remote_debugging.RemoteUnwinder(
-            self.pid, all_threads=self.all_threads
+            self.pid, only_active_thread=only_active_threads
         )
         # Track sample intervals and total sample count
         self.sample_intervals = deque(maxlen=100)
