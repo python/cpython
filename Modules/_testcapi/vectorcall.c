@@ -179,14 +179,14 @@ _testcapi_VectorCallClass_set_vectorcall_impl(PyObject *self,
     if (!PyObject_TypeCheck(self, type)) {
         return PyErr_Format(
             PyExc_TypeError,
-            "expected %s instance",
-            PyType_GetName(type));
+            "expected %N instance",
+            type);
     }
     if (!type->tp_vectorcall_offset) {
         return PyErr_Format(
             PyExc_TypeError,
-            "type %s has no vectorcall offset",
-            PyType_GetName(type));
+            "type %N has no vectorcall offset",
+            type);
     }
     *(vectorcallfunc*)((char*)self + type->tp_vectorcall_offset) = (
         VectorCallClass_vectorcall);

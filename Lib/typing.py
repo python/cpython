@@ -407,6 +407,17 @@ def _tp_cache(func=None, /, *, typed=False):
     return decorator
 
 
+def _rebuild_generic_alias(alias: GenericAlias, args: tuple[object, ...]) -> GenericAlias:
+    is_unpacked = alias.__unpacked__
+    if _should_unflatten_callable_args(alias, args):
+        t = alias.__origin__[(args[:-1], args[-1])]
+    else:
+        t = alias.__origin__[args]
+    if is_unpacked:
+        t = Unpack[t]
+    return t
+
+
 def _deprecation_warning_for_no_type_params_passed(funcname: str) -> None:
     import warnings
 
@@ -454,25 +465,20 @@ def _eval_type(t, globalns, localns, type_params=_sentinel, *, recursive_guard=f
                 _make_forward_ref(arg) if isinstance(arg, str) else arg
                 for arg in t.__args__
             )
-            is_unpacked = t.__unpacked__
-            if _should_unflatten_callable_args(t, args):
-                t = t.__origin__[(args[:-1], args[-1])]
-            else:
-                t = t.__origin__[args]
-            if is_unpacked:
-                t = Unpack[t]
+        else:
+            args = t.__args__
 
         ev_args = tuple(
             _eval_type(
                 a, globalns, localns, type_params, recursive_guard=recursive_guard,
                 format=format, owner=owner,
             )
-            for a in t.__args__
+            for a in args
         )
         if ev_args == t.__args__:
             return t
         if isinstance(t, GenericAlias):
-            return GenericAlias(t.__origin__, ev_args)
+            return _rebuild_generic_alias(t, ev_args)
         if isinstance(t, Union):
             return functools.reduce(operator.or_, ev_args)
         else:
@@ -1860,7 +1866,9 @@ def _allow_reckless_class_checks(depth=2):
     The abc and functools modules indiscriminately call isinstance() and
     issubclass() on the whole MRO of a user class, which may contain protocols.
     """
-    return _caller(depth) in {'abc', 'functools', None}
+    # gh-136047: When `_abc` module is not available, `_py_abc` is required to
+    # allow `_py_abc.ABCMeta` fallback.
+    return _caller(depth) in {'abc', '_py_abc', 'functools', None}
 
 
 _PROTO_ALLOWLIST = {
@@ -2404,7 +2412,7 @@ def _strip_annotations(t):
         stripped_args = tuple(_strip_annotations(a) for a in t.__args__)
         if stripped_args == t.__args__:
             return t
-        return GenericAlias(t.__origin__, stripped_args)
+        return _rebuild_generic_alias(t, stripped_args)
     if isinstance(t, Union):
         stripped_args = tuple(_strip_annotations(a) for a in t.__args__)
         if stripped_args == t.__args__:
