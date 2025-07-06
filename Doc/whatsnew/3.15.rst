@@ -72,23 +72,23 @@ New features
 
 .. _whatsnew314-sampling-profiler:
 
-High frequency statistical sampling profiler 
+High frequency statistical sampling profiler
 --------------------------------------------
 
-A new statistical sampling profiler has been added to the :mod:`profile` module as 
-:mod:`profile.sample`. This profiler enables low-overhead performance analysis of 
+A new statistical sampling profiler has been added to the :mod:`profile` module as
+:mod:`profile.sample`. This profiler enables low-overhead performance analysis of
 running Python processes without requiring code modification or process restart.
 
-Unlike deterministic profilers (:mod:`cProfile` and :mod:`profile`) that instrument 
-every function call, the sampling profiler periodically captures stack traces from 
-running processes.  This approach provides virtually zero overhead while achieving 
-sampling rates of **up to 200,000 Hz**, making it the fastest sampling profiler 
+Unlike deterministic profilers (:mod:`cProfile` and :mod:`profile`) that instrument
+every function call, the sampling profiler periodically captures stack traces from
+running processes.  This approach provides virtually zero overhead while achieving
+sampling rates of **up to 200,000 Hz**, making it the fastest sampling profiler
 available for Python (at the time of its contribution) and ideal for debugging
 performance issues in production environments.
 
 Key features include:
 
-* **Zero-overhead profiling**: Attach to any running Python process without 
+* **Zero-overhead profiling**: Attach to any running Python process without
   affecting its performance
 * **No code modification required**: Profile existing applications without restart
 * **Real-time statistics**: Monitor sampling quality during data collection
@@ -160,10 +160,10 @@ The profiler generates statistical estimates of where time is spent::
     10581.7x call magnification, 116388 indirect calls from 11 direct: test_ast.py:(AST_Tests.test_ast_recursion_limit)
     9740.9x call magnification, 418815 indirect calls from 43 direct: case.py:(TestCase.run)
 
-The profiler automatically identifies performance bottlenecks through statistical 
+The profiler automatically identifies performance bottlenecks through statistical
 analysis, highlighting functions with high CPU usage and call frequency patterns.
 
-This capability is particularly valuable for debugging performance issues in 
+This capability is particularly valuable for debugging performance issues in
 production systems where traditional profiling approaches would be too intrusive.
 
 (Contributed by Pablo Galindo and László Kiss Kollár in :gh:`135953`.)
