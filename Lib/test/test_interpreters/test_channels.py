@@ -120,13 +120,12 @@ class TestRecvChannelAttrs(TestBase):
         self.assertNotEqual(ch1, ch2)
 
     def test_pickle(self):
-        recv, send = channels.create()
-        for ch in [recv, send]:
-            for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
-                with self.subTest(ch=ch, protocol=protocol):
-                    data = pickle.dumps(ch, protocol)
-                    unpickled = pickle.loads(data)
-                    self.assertEqual(unpickled, ch)
+        ch, _ = channels.create()
+        for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(protocol=protocol):
+                data = pickle.dumps(ch, protocol)
+                unpickled = pickle.loads(data)
+                self.assertEqual(unpickled, ch)
 
 
 class TestSendChannelAttrs(TestBase):
