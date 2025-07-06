@@ -290,7 +290,25 @@ typing
   or ``TD = TypedDict("TD", {})`` instead.
   (Contributed by Bénédikt Tran in :gh:`133823`.)
 
-  
+
+unittest
+--------
+
+* Lets users specify formatter in TestCase.assertLogs.
+  :func:`unittest.TestCase.assertLogs` will now accept a formatter
+  to control how messages are formatted.
+  (Contributed by Garry Cairns in :gh:`134567`.)
+
+
+wave
+----
+
+* Removed the ``getmark()``, ``setmark()`` and ``getmarkers()`` methods
+  of the :class:`~wave.Wave_read` and :class:`~wave.Wave_write` classes,
+  which were deprecated since Python 3.13.
+  (Contributed by Bénédikt Tran in :gh:`133873`.)
+
+
 zipimport
 ---------
 
