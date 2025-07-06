@@ -119,9 +119,9 @@ def win_getpass(prompt='Password: ', stream=None, *, echo_char=None):
             raise KeyboardInterrupt
         if c == '\b':
             if echo_char and pw:
-                msvcrt.putch('\b')
-                msvcrt.putch(' ')
-                msvcrt.putch('\b')
+                msvcrt.putwch('\b')
+                msvcrt.putwch(' ')
+                msvcrt.putwch('\b')
             pw = pw[:-1]
         else:
             pw = pw + c
@@ -132,14 +132,15 @@ def win_getpass(prompt='Password: ', stream=None, *, echo_char=None):
     return pw
 
 
-def fallback_getpass(prompt='Password: ', stream=None):
+def fallback_getpass(prompt='Password: ', stream=None, *, echo_char=None):
+    _check_echo_char(echo_char)
     import warnings
     warnings.warn("Can not control echo on the terminal.", GetPassWarning,
                   stacklevel=2)
     if not stream:
         stream = sys.stderr
     print("Warning: Password input may be echoed.", file=stream)
-    return _raw_input(prompt, stream)
+    return _raw_input(prompt, stream, echo_char=echo_char)
 
 
 def _check_echo_char(echo_char):
