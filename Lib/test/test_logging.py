@@ -61,7 +61,7 @@ import warnings
 import weakref
 
 from http.server import HTTPServer, BaseHTTPRequestHandler
-from unittest.mock import patch
+from unittest.mock import call, Mock, patch
 from urllib.parse import urlparse, parse_qs
 from socketserver import (ThreadingUDPServer, DatagramRequestHandler,
                           ThreadingTCPServer, StreamRequestHandler)
@@ -1036,7 +1036,7 @@ class TestTCPServer(ControlMixin, ThreadingTCPServer):
     """
 
     allow_reuse_address = True
-    allow_reuse_port = True
+    allow_reuse_port = False
 
     def __init__(self, addr, handler, poll_interval=0.5,
                  bind_and_activate=True):
@@ -5572,12 +5572,19 @@ class BasicConfigTest(unittest.TestCase):
         assertRaises = self.assertRaises
         handlers = [logging.StreamHandler()]
         stream = sys.stderr
+        formatter = logging.Formatter()
         assertRaises(ValueError, logging.basicConfig, filename='test.log',
                                                       stream=stream)
         assertRaises(ValueError, logging.basicConfig, filename='test.log',
                                                       handlers=handlers)
         assertRaises(ValueError, logging.basicConfig, stream=stream,
                                                       handlers=handlers)
+        assertRaises(ValueError, logging.basicConfig, formatter=formatter,
+                                                      format='%(message)s')
+        assertRaises(ValueError, logging.basicConfig, formatter=formatter,
+                                                      datefmt='%H:%M:%S')
+        assertRaises(ValueError, logging.basicConfig, formatter=formatter,
+                                                      style='%')
         # Issue 23207: test for invalid kwargs
         assertRaises(ValueError, logging.basicConfig, loglevel=logging.INFO)
         # Should pop both filename and filemode even if filename is None
@@ -5711,6 +5718,20 @@ class BasicConfigTest(unittest.TestCase):
             os.remove('test.log')
             # didn't write anything due to the encoding error
             self.assertEqual(data, r'')
+
+    def test_formatter_given(self):
+        mock_formatter = Mock()
+        mock_handler = Mock(formatter=None)
+        with patch("logging.Formatter") as mock_formatter_init:
+            logging.basicConfig(formatter=mock_formatter, handlers=[mock_handler])
+        self.assertEqual(mock_handler.setFormatter.call_args_list, [call(mock_formatter)])
+        self.assertEqual(mock_formatter_init.call_count, 0)
+
+    def test_formatter_not_given(self):
+        mock_handler = Mock(formatter=None)
+        with patch("logging.Formatter") as mock_formatter_init:
+            logging.basicConfig(handlers=[mock_handler])
+        self.assertEqual(mock_formatter_init.call_count, 1)
 
     @support.requires_working_socket()
     def test_log_taskName(self):

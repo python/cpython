@@ -1,7 +1,0 @@
-Fix :func:`os.link` on platforms (like Linux) where the
-system :c:func:`!link` function does not follow symlinks. On Linux,
-it now follows symlinks by default or if
-``follow_symlinks=True`` is specified. On Windows, it now raises an error if
-``follow_symlinks=True`` is passed. On macOS, it now raises an error if
-``follow_symlinks=False`` is passed and the system :c:func:`!linkat`
-function is not available at runtime.

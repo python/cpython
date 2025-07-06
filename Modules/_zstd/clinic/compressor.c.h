@@ -8,30 +8,30 @@ preserve
 #endif
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
-PyDoc_STRVAR(_zstd_ZstdCompressor___init____doc__,
+PyDoc_STRVAR(_zstd_ZstdCompressor_new__doc__,
 "ZstdCompressor(level=None, options=None, zstd_dict=None)\n"
 "--\n"
 "\n"
 "Create a compressor object for compressing data incrementally.\n"
 "\n"
 "  level\n"
-"    The compression level to use, defaults to ZSTD_CLEVEL_DEFAULT.\n"
+"    The compression level to use. Defaults to COMPRESSION_LEVEL_DEFAULT.\n"
 "  options\n"
 "    A dict object that contains advanced compression parameters.\n"
 "  zstd_dict\n"
-"    A ZstdDict object, a pre-trained zstd dictionary.\n"
+"    A ZstdDict object, a pre-trained Zstandard dictionary.\n"
 "\n"
 "Thread-safe at method level. For one-shot compression, use the compress()\n"
 "function instead.");
 
-static int
-_zstd_ZstdCompressor___init___impl(ZstdCompressor *self, PyObject *level,
-                                   PyObject *options, PyObject *zstd_dict);
+static PyObject *
+_zstd_ZstdCompressor_new_impl(PyTypeObject *type, PyObject *level,
+                              PyObject *options, PyObject *zstd_dict);
 
-static int
-_zstd_ZstdCompressor___init__(PyObject *self, PyObject *args, PyObject *kwargs)
+static PyObject *
+_zstd_ZstdCompressor_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
-    int return_value = -1;
+    PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     #define NUM_KEYWORDS 3
@@ -89,7 +89,7 @@ _zstd_ZstdCompressor___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     }
     zstd_dict = fastargs[2];
 skip_optional_pos:
-    return_value = _zstd_ZstdCompressor___init___impl((ZstdCompressor *)self, level, options, zstd_dict);
+    return_value = _zstd_ZstdCompressor_new_impl(type, level, options, zstd_dict);
 
 exit:
     return return_value;
@@ -189,9 +189,9 @@ PyDoc_STRVAR(_zstd_ZstdCompressor_flush__doc__,
 "    Can be these 2 values ZstdCompressor.FLUSH_FRAME,\n"
 "    ZstdCompressor.FLUSH_BLOCK\n"
 "\n"
-"Flush any remaining data left in internal buffers. Since zstd data consists\n"
-"of one or more independent frames, the compressor object can still be used\n"
-"after this method is called.");
+"Flush any remaining data left in internal buffers. Since Zstandard data\n"
+"consists of one or more independent frames, the compressor object can still\n"
+"be used after this method is called.");
 
 #define _ZSTD_ZSTDCOMPRESSOR_FLUSH_METHODDEF    \
     {"flush", _PyCFunction_CAST(_zstd_ZstdCompressor_flush), METH_FASTCALL|METH_KEYWORDS, _zstd_ZstdCompressor_flush__doc__},
@@ -252,4 +252,43 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ef69eab155be39f6 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_zstd_ZstdCompressor_set_pledged_input_size__doc__,
+"set_pledged_input_size($self, size, /)\n"
+"--\n"
+"\n"
+"Set the uncompressed content size to be written into the frame header.\n"
+"\n"
+"  size\n"
+"    The size of the uncompressed data to be provided to the compressor.\n"
+"\n"
+"This method can be used to ensure the header of the frame about to be written\n"
+"includes the size of the data, unless the CompressionParameter.content_size_flag\n"
+"is set to False. If last_mode != FLUSH_FRAME, then a RuntimeError is raised.\n"
+"\n"
+"It is important to ensure that the pledged data size matches the actual data\n"
+"size. If they do not match the compressed output data may be corrupted and the\n"
+"final chunk written may be lost.");
+
+#define _ZSTD_ZSTDCOMPRESSOR_SET_PLEDGED_INPUT_SIZE_METHODDEF    \
+    {"set_pledged_input_size", (PyCFunction)_zstd_ZstdCompressor_set_pledged_input_size, METH_O, _zstd_ZstdCompressor_set_pledged_input_size__doc__},
+
+static PyObject *
+_zstd_ZstdCompressor_set_pledged_input_size_impl(ZstdCompressor *self,
+                                                 unsigned long long size);
+
+static PyObject *
+_zstd_ZstdCompressor_set_pledged_input_size(PyObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    unsigned long long size;
+
+    if (!zstd_contentsize_converter(arg, &size)) {
+        goto exit;
+    }
+    return_value = _zstd_ZstdCompressor_set_pledged_input_size_impl((ZstdCompressor *)self, size);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=c1d5c2cf06a8becd input=a9049054013a1b77]*/

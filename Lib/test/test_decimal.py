@@ -28,7 +28,6 @@ import logging
 import math
 import os, sys
 import operator
-import warnings
 import pickle, copy
 import unittest
 import numbers
@@ -982,6 +981,7 @@ class FormatTest:
             ('.0f', '0e-2', '0'),
             ('.0f', '3.14159265', '3'),
             ('.1f', '3.14159265', '3.1'),
+            ('.01f', '3.14159265', '3.1'), # leading zero in precision
             ('.4f', '3.14159265', '3.1416'),
             ('.6f', '3.14159265', '3.141593'),
             ('.7f', '3.14159265', '3.1415926'), # round-half-even!
@@ -1067,6 +1067,7 @@ class FormatTest:
             ('8,', '123456', ' 123,456'),
             ('08,', '123456', '0,123,456'), # special case: extra 0 needed
             ('+08,', '123456', '+123,456'), # but not if there's a sign
+            ('008,', '123456', '0,123,456'), # leading zero in width
             (' 08,', '123456', ' 123,456'),
             ('08,', '-123456', '-123,456'),
             ('+09,', '123456', '+0,123,456'),

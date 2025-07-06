@@ -2962,8 +2962,6 @@ config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
             /* option handled by _PyPreCmdline_Read() */
             break;
 
-        /* case 'J': reserved for Jython */
-
         case 'O':
             config->optimization_level++;
             break;
@@ -3649,7 +3647,7 @@ _Py_DumpPathConfig(PyThreadState *tstate)
 #define DUMP_SYS(NAME) \
         do { \
             PySys_FormatStderr("  sys.%s = ", #NAME); \
-            if (_PySys_GetOptionalAttrString(#NAME, &obj) < 0) { \
+            if (PySys_GetOptionalAttrString(#NAME, &obj) < 0) { \
                 PyErr_Clear(); \
             } \
             if (obj != NULL) { \
@@ -3673,7 +3671,7 @@ _Py_DumpPathConfig(PyThreadState *tstate)
 #undef DUMP_SYS
 
     PyObject *sys_path;
-    (void) _PySys_GetOptionalAttrString("path", &sys_path);
+    (void) PySys_GetOptionalAttrString("path", &sys_path);
     if (sys_path != NULL && PyList_Check(sys_path)) {
         PySys_WriteStderr("  sys.path = [\n");
         Py_ssize_t len = PyList_GET_SIZE(sys_path);
@@ -4296,7 +4294,7 @@ _PyConfig_CreateXOptionsDict(const PyConfig *config)
 static int
 config_get_sys_write_bytecode(const PyConfig *config, int *value)
 {
-    PyObject *attr = _PySys_GetRequiredAttrString("dont_write_bytecode");
+    PyObject *attr = PySys_GetAttrString("dont_write_bytecode");
     if (attr == NULL) {
         return -1;
     }
@@ -4317,7 +4315,7 @@ config_get(const PyConfig *config, const PyConfigSpec *spec,
 {
     if (use_sys) {
         if (spec->sys.attr != NULL) {
-            return _PySys_GetRequiredAttrString(spec->sys.attr);
+            return PySys_GetAttrString(spec->sys.attr);
         }
 
         if (strcmp(spec->name, "write_bytecode") == 0) {

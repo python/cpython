@@ -1,3 +1,0 @@
-Fix attribute caching issue when setting :attr:`ctypes._Pointer._type_` in
-the undocumented and deprecated :func:`!ctypes.SetPointerType` function and the
-undocumented :meth:`!set_type` method.

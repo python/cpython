@@ -10,6 +10,7 @@
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_stats.h"
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 
 static const char *
@@ -1149,9 +1150,7 @@ func_dealloc(PyObject *self)
         return;
     }
     _PyObject_GC_UNTRACK(op);
-    if (op->func_weakreflist != NULL) {
-        PyObject_ClearWeakRefs((PyObject *) op);
-    }
+    FT_CLEAR_WEAKREFS(self, op->func_weakreflist);
     (void)func_clear((PyObject*)op);
     // These aren't cleared by func_clear().
     _Py_DECREF_CODE((PyCodeObject *)op->func_code);
@@ -1257,7 +1256,7 @@ _PyFunction_VerifyStateless(PyThreadState *tstate, PyObject *func)
         return -1;
     }
     // Check the builtins.
-    PyObject *builtinsns = PyFunction_GET_BUILTINS(func);
+    PyObject *builtinsns = _PyFunction_GET_BUILTINS(func);
     if (builtinsns != NULL && !PyDict_Check(builtinsns)) {
         _PyErr_Format(tstate, PyExc_TypeError,
                       "unsupported builtins %R", builtinsns);
@@ -1265,26 +1264,32 @@ _PyFunction_VerifyStateless(PyThreadState *tstate, PyObject *func)
     }
     // Disallow __defaults__.
     PyObject *defaults = PyFunction_GET_DEFAULTS(func);
-    if (defaults != NULL && defaults != Py_None && PyDict_Size(defaults) > 0)
-    {
-        _PyErr_SetString(tstate, PyExc_ValueError, "defaults not supported");
-        return -1;
+    if (defaults != NULL) {
+        assert(PyTuple_Check(defaults));  // per PyFunction_New()
+        if (PyTuple_GET_SIZE(defaults) > 0) {
+            _PyErr_SetString(tstate, PyExc_ValueError,
+                             "defaults not supported");
+            return -1;
+        }
     }
     // Disallow __kwdefaults__.
     PyObject *kwdefaults = PyFunction_GET_KW_DEFAULTS(func);
-    if (kwdefaults != NULL && kwdefaults != Py_None
-            && PyDict_Size(kwdefaults) > 0)
-    {
-        _PyErr_SetString(tstate, PyExc_ValueError,
-                         "keyword defaults not supported");
-        return -1;
+    if (kwdefaults != NULL) {
+        assert(PyDict_Check(kwdefaults));  // per PyFunction_New()
+        if (PyDict_Size(kwdefaults) > 0) {
+            _PyErr_SetString(tstate, PyExc_ValueError,
+                             "keyword defaults not supported");
+            return -1;
+        }
     }
     // Disallow __closure__.
     PyObject *closure = PyFunction_GET_CLOSURE(func);
-    if (closure != NULL && closure != Py_None && PyTuple_GET_SIZE(closure) > 0)
-    {
-        _PyErr_SetString(tstate, PyExc_ValueError, "closures not supported");
-        return -1;
+    if (closure != NULL) {
+        assert(PyTuple_Check(closure));  // per PyFunction_New()
+        if (PyTuple_GET_SIZE(closure) > 0) {
+            _PyErr_SetString(tstate, PyExc_ValueError, "closures not supported");
+            return -1;
+        }
     }
     // Check the code.
     PyCodeObject *co = (PyCodeObject *)PyFunction_GET_CODE(func);

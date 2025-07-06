@@ -262,6 +262,8 @@ Booleans (:class:`bool`)
    a string, the strings ``"False"`` or ``"True"`` are returned, respectively.
 
 
+.. _datamodel-float:
+
 :class:`numbers.Real` (:class:`float`)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -1228,9 +1230,21 @@ Special attributes
        :attr:`__annotations__ attributes <object.__annotations__>`.
 
        For best practices on working with :attr:`~object.__annotations__`,
-       please see :mod:`annotationlib`. Where possible, use
+       please see :mod:`annotationlib`. Use
        :func:`annotationlib.get_annotations` instead of accessing this
        attribute directly.
+
+       .. warning::
+
+          Accessing the :attr:`!__annotations__` attribute directly
+          on a class object may return annotations for the wrong class, specifically
+          in certain cases where the class, its base class, or a metaclass
+          is defined under ``from __future__ import annotations``.
+          See :pep:`749 <749#pep749-metaclasses>` for details.
+
+          This attribute does not exist on certain builtin classes. On
+          user-defined classes without ``__annotations__``, it is an
+          empty dictionary.
 
        .. versionchanged:: 3.14
           Annotations are now :ref:`lazily evaluated <lazy-evaluation>`.
@@ -3346,7 +3360,7 @@ left undefined.
    argument if the three-argument version of the built-in :func:`pow` function
    is to be supported.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
 
       Three-argument :func:`pow` now try calling :meth:`~object.__rpow__` if necessary.
       Previously it was only called in two-argument :func:`!pow` and the binary

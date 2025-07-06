@@ -313,7 +313,7 @@ extern void _Py_Specialize_CompareOp(_PyStackRef lhs, _PyStackRef rhs,
                                      _Py_CODEUNIT *instr, int oparg);
 extern void _Py_Specialize_UnpackSequence(_PyStackRef seq, _Py_CODEUNIT *instr,
                                           int oparg);
-extern void _Py_Specialize_ForIter(_PyStackRef iter, _Py_CODEUNIT *instr, int oparg);
+extern void _Py_Specialize_ForIter(_PyStackRef iter, _PyStackRef null_or_index, _Py_CODEUNIT *instr, int oparg);
 extern void _Py_Specialize_Send(_PyStackRef receiver, _Py_CODEUNIT *instr);
 extern void _Py_Specialize_ToBool(_PyStackRef value, _Py_CODEUNIT *instr);
 extern void _Py_Specialize_ContainsOp(_PyStackRef value, _Py_CODEUNIT *instr);
@@ -451,6 +451,9 @@ write_location_entry_start(uint8_t *ptr, int code, int length)
 #define ADAPTIVE_COOLDOWN_BACKOFF 0
 
 // Can't assert this in pycore_backoff.h because of header order dependencies
+#if JUMP_BACKWARD_INITIAL_VALUE <= ADAPTIVE_COOLDOWN_VALUE
+#  error  "JIT threshold value should be larger than adaptive cooldown value"
+#endif
 #if SIDE_EXIT_INITIAL_VALUE <= ADAPTIVE_COOLDOWN_VALUE
 #  error  "Cold exit value should be larger than adaptive cooldown value"
 #endif
@@ -480,18 +483,13 @@ adaptive_counter_backoff(_Py_BackoffCounter counter) {
 /* Specialization Extensions */
 
 /* callbacks for an external specialization */
-
-struct _PyBinopSpecializationDescr;
-
 typedef int (*binaryopguardfunc)(PyObject *lhs, PyObject *rhs);
-typedef PyObject* (*binaryopactionfunc)(PyObject *lhs, PyObject *rhs);
-typedef void (*binaryopfreefunc)(struct _PyBinopSpecializationDescr *descr);
+typedef PyObject *(*binaryopactionfunc)(PyObject *lhs, PyObject *rhs);
 
-typedef struct _PyBinopSpecializationDescr {
+typedef struct {
     int oparg;
     binaryopguardfunc guard;
     binaryopactionfunc action;
-    binaryopfreefunc free;
 } _PyBinaryOpSpecializationDescr;
 
 /* Comparison bit masks. */
@@ -639,7 +637,7 @@ PyAPI_FUNC(int) _PyCode_SetUnboundVarCounts(
  * Stateless code that takes no arguments and doesn't return anything
  * may be treated like a script.
  *
- * We consider stateless code to be "portable" if it does not return any
+ * We consider stateless code to be "portable" if it does not return
  * any object that holds a reference to any of the code's locals.  Thus
  * generators and coroutines are not portable.  Likewise a function
  * that returns a closure is not portable.  The concept of

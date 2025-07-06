@@ -1,2 +1,0 @@
-Avoid eagerly evaluating annotations in functions decorated with
-:func:`reprlib.recursive_repr`.

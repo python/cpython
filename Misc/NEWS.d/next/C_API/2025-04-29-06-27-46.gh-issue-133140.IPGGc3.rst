@@ -1,3 +1,0 @@
-Add :c:func:`PyUnstable_Object_IsUniquelyReferenced` as a replacement for
-``Py_REFNCT(op) == 1`` on :term:`free threaded <free threading>`
-builds of Python.

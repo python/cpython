@@ -13,8 +13,7 @@
 #include "pycore_ceval.h"         // _PyEval_GetBuiltin()
 #include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
-
-#include "opcode.h"               // binary op opargs (NB_*)
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 #include <stddef.h>               // offsetof()
 #include <stdbool.h>
@@ -730,9 +729,7 @@ array_dealloc(PyObject *op)
     PyObject_GC_UnTrack(op);
 
     arrayobject *self = arrayobject_CAST(op);
-    if (self->weakreflist != NULL) {
-        PyObject_ClearWeakRefs(op);
-    }
+    FT_CLEAR_WEAKREFS(op, self->weakreflist);
     if (self->ob_item != NULL) {
         PyMem_Free(self->ob_item);
     }
@@ -849,10 +846,6 @@ array_richcompare(PyObject *v, PyObject *w, int op)
     Py_DECREF(wi);
     return res;
 }
-
-static int
-array_binop_specialize(PyObject *v, PyObject *w, int oparg,
-                       _PyBinaryOpSpecializationDescr **descr);
 
 static Py_ssize_t
 array_length(PyObject *op)
@@ -2969,8 +2962,6 @@ static PyType_Slot array_slots[] = {
     {Py_tp_alloc, PyType_GenericAlloc},
     {Py_tp_new, array_new},
     {Py_tp_traverse, array_tp_traverse},
-    {Py_tp_token, Py_TP_USE_SPEC},
-    {Py_tp_binop_specialize, array_binop_specialize},
 
     /* as sequence */
     {Py_sq_length, array_length},
@@ -3002,70 +2993,6 @@ static PyType_Spec array_spec = {
               Py_TPFLAGS_SEQUENCE),
     .slots = array_slots,
 };
-
-static inline int
-array_subscr_guard(PyObject *lhs, PyObject *rhs)
-{
-    PyObject *exc = PyErr_GetRaisedException();
-    int ret = PyType_GetBaseByToken(Py_TYPE(lhs), &array_spec, NULL);
-    if (ret < 0) {
-        if (PyErr_ExceptionMatches(PyExc_TypeError)) {
-            PyErr_Clear();
-            ret = 0;
-        }
-    }
-    _PyErr_ChainExceptions1(exc);
-    return ret;
-}
-
-static PyObject *
-array_subscr_action(PyObject *lhs, PyObject *rhs)
-{
-    return array_subscr(lhs, rhs);
-}
-
-static void
-array_subscr_free(_PyBinaryOpSpecializationDescr* descr)
-{
-    if (descr != NULL) {
-        PyMem_Free(descr);
-    }
-}
-
-static int
-array_binop_specialize(PyObject *v, PyObject *w, int oparg,
-                       _PyBinaryOpSpecializationDescr **descr)
-{
-    array_state *state = find_array_state_by_type(Py_TYPE(v));
-
-    if (!array_Check(v, state)) {
-        return 0;
-    }
-
-    *descr = NULL;
-    switch(oparg) {
-        case NB_SUBSCR:
-            if (array_subscr_guard(v, w)) {
-                *descr = (_PyBinaryOpSpecializationDescr*)PyMem_Malloc(
-                             sizeof(_PyBinaryOpSpecializationDescr));
-                if (*descr == NULL) {
-                    PyErr_NoMemory();
-                    return -1;
-                }
-                **descr = (_PyBinaryOpSpecializationDescr) {
-                    .oparg = oparg,
-                    .guard = array_subscr_guard,
-                    .action = array_subscr_action,
-                    .free = array_subscr_free,
-                };
-                return 1;
-            }
-            break;
-    }
-
-    return 0;
-}
-
 
 /*********************** Array Iterator **************************/
 

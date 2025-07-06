@@ -1,1 +1,0 @@
-Split ``CALL_LEN`` into several uops allowing the JIT to remove them when optimizing. Patch by Diego Russo.

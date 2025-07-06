@@ -118,6 +118,7 @@ _Py_GetSpecializationStats(void) {
     err += add_stat_dict(stats, LOAD_GLOBAL, "load_global");
     err += add_stat_dict(stats, STORE_SUBSCR, "store_subscr");
     err += add_stat_dict(stats, STORE_ATTR, "store_attr");
+    err += add_stat_dict(stats, JUMP_BACKWARD, "jump_backward");
     err += add_stat_dict(stats, CALL, "call");
     err += add_stat_dict(stats, CALL_KW, "call_kw");
     err += add_stat_dict(stats, BINARY_OP, "binary_op");
@@ -2158,7 +2159,7 @@ specialize_c_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs)
             if (nargs == 2) {
                 /* isinstance(o1, o2) */
                 PyInterpreterState *interp = _PyInterpreterState_GET();
-                if (callable == interp->callable_cache.isinstance) {
+                if (callable == interp->callable_cache.isinstance && instr->op.arg == 2) {
                     specialize(instr, CALL_ISINSTANCE);
                     return 0;
                 }
@@ -2534,7 +2535,7 @@ LONG_FLOAT_ACTION(compactlong_float_multiply, *)
 LONG_FLOAT_ACTION(compactlong_float_true_div, /)
 #undef LONG_FLOAT_ACTION
 
-static const _PyBinaryOpSpecializationDescr binaryop_extend_builtins[] = {
+static _PyBinaryOpSpecializationDescr binaryop_extend_descrs[] = {
     /* long-long arithmetic */
     {NB_OR, compactlongs_guard, compactlongs_or},
     {NB_AND, compactlongs_guard, compactlongs_and},
@@ -2560,40 +2561,13 @@ static int
 binary_op_extended_specialization(PyObject *lhs, PyObject *rhs, int oparg,
                                   _PyBinaryOpSpecializationDescr **descr)
 {
-    /* We are currently using this only for NB_SUBSCR, which is not
-     * commutative. Will need to revisit this function when we use
-     * this for operators which are.
-     */
-
-    typedef _PyBinaryOpSpecializationDescr descr_type;
-    size_t size = Py_ARRAY_LENGTH(binaryop_extend_builtins);
-    for (size_t i = 0; i < size; i++) {
-        descr_type *d = (descr_type *)&binaryop_extend_builtins[i];
-        assert(d != NULL);
-        assert(d->guard != NULL);
+    size_t n = sizeof(binaryop_extend_descrs)/sizeof(_PyBinaryOpSpecializationDescr);
+    for (size_t i = 0; i < n; i++) {
+        _PyBinaryOpSpecializationDescr *d = &binaryop_extend_descrs[i];
         if (d->oparg == oparg && d->guard(lhs, rhs)) {
             *descr = d;
             return 1;
         }
-    }
-
-    PyTypeObject *lhs_type = Py_TYPE(lhs);
-    if (lhs_type->tp_binop_specialize != NULL) {
-        int ret = lhs_type->tp_binop_specialize(lhs, rhs, oparg, descr);
-        if (ret < 0) {
-            return -1;
-        }
-        if (ret == 1) {
-            if (*descr == NULL) {
-                PyErr_Format(
-                    PyExc_ValueError,
-                    "tp_binop_specialize of '%T' returned 1 with *descr == NULL",
-                    lhs);
-                return -1;
-            }
-            (*descr)->oparg = oparg;
-        }
-        return ret;
     }
     return 0;
 }
@@ -2931,53 +2905,57 @@ int
 #endif   // Py_STATS
 
 Py_NO_INLINE void
-_Py_Specialize_ForIter(_PyStackRef iter, _Py_CODEUNIT *instr, int oparg)
+_Py_Specialize_ForIter(_PyStackRef iter, _PyStackRef null_or_index, _Py_CODEUNIT *instr, int oparg)
 {
     assert(ENABLE_SPECIALIZATION_FT);
     assert(_PyOpcode_Caches[FOR_ITER] == INLINE_CACHE_ENTRIES_FOR_ITER);
     PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
     PyTypeObject *tp = Py_TYPE(iter_o);
+
+    if (PyStackRef_IsNull(null_or_index)) {
 #ifdef Py_GIL_DISABLED
-    // Only specialize for uniquely referenced iterators, so that we know
-    // they're only referenced by this one thread. This is more limiting
-    // than we need (even `it = iter(mylist); for item in it:` won't get
-    // specialized) but we don't have a way to check whether we're the only
-    // _thread_ who has access to the object.
-    if (!_PyObject_IsUniquelyReferenced(iter_o))
-        goto failure;
-#endif
-    if (tp == &PyListIter_Type) {
-#ifdef Py_GIL_DISABLED
-        _PyListIterObject *it = (_PyListIterObject *)iter_o;
-        if (!_Py_IsOwnedByCurrentThread((PyObject *)it->it_seq) &&
-            !_PyObject_GC_IS_SHARED(it->it_seq)) {
-            // Maybe this should just set GC_IS_SHARED in a critical
-            // section, instead of leaving it to the first iteration?
+        // Only specialize for uniquely referenced iterators, so that we know
+        // they're only referenced by this one thread. This is more limiting
+        // than we need (even `it = iter(mylist); for item in it:` won't get
+        // specialized) but we don't have a way to check whether we're the only
+        // _thread_ who has access to the object.
+        if (!_PyObject_IsUniquelyReferenced(iter_o)) {
             goto failure;
         }
 #endif
-        specialize(instr, FOR_ITER_LIST);
-        return;
+        if (tp == &PyRangeIter_Type) {
+            specialize(instr, FOR_ITER_RANGE);
+            return;
+        }
+        else if (tp == &PyGen_Type && oparg <= SHRT_MAX) {
+            // Generators are very much not thread-safe, so don't worry about
+            // the specialization not being thread-safe.
+            assert(instr[oparg + INLINE_CACHE_ENTRIES_FOR_ITER + 1].op.code == END_FOR  ||
+                instr[oparg + INLINE_CACHE_ENTRIES_FOR_ITER + 1].op.code == INSTRUMENTED_END_FOR
+            );
+            /* Don't specialize if PEP 523 is active */
+            if (_PyInterpreterState_GET()->eval_frame) {
+                goto failure;
+            }
+            specialize(instr, FOR_ITER_GEN);
+            return;
+        }
     }
-    else if (tp == &PyTupleIter_Type) {
-        specialize(instr, FOR_ITER_TUPLE);
-        return;
-    }
-    else if (tp == &PyRangeIter_Type) {
-        specialize(instr, FOR_ITER_RANGE);
-        return;
-    }
-    else if (tp == &PyGen_Type && oparg <= SHRT_MAX) {
-        // Generators are very much not thread-safe, so don't worry about
-        // the specialization not being thread-safe.
-        assert(instr[oparg + INLINE_CACHE_ENTRIES_FOR_ITER + 1].op.code == END_FOR  ||
-            instr[oparg + INLINE_CACHE_ENTRIES_FOR_ITER + 1].op.code == INSTRUMENTED_END_FOR
-        );
-        /* Don't specialize if PEP 523 is active */
-        if (_PyInterpreterState_GET()->eval_frame)
-            goto failure;
-        specialize(instr, FOR_ITER_GEN);
-        return;
+    else {
+        if (tp == &PyList_Type) {
+#ifdef Py_GIL_DISABLED
+            // Only specialize for lists owned by this thread or shared
+            if (!_Py_IsOwnedByCurrentThread(iter_o) && !_PyObject_GC_IS_SHARED(iter_o)) {
+                goto failure;
+            }
+#endif
+            specialize(instr, FOR_ITER_LIST);
+            return;
+        }
+        else if (tp == &PyTuple_Type) {
+            specialize(instr, FOR_ITER_TUPLE);
+            return;
+        }
     }
 failure:
     SPECIALIZATION_FAIL(FOR_ITER,

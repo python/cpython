@@ -1,3 +1,0 @@
-Add *resolve_host* keyword-only parameter to
-:func:`urllib.request.url2pathname`, and fix handling of file URLs with
-authorities.

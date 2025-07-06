@@ -7,6 +7,7 @@ import collections
 import functools
 import itertools
 import pickle
+from string.templatelib import Template
 import typing
 import unittest
 from annotationlib import (
@@ -273,6 +274,43 @@ class TestStringFormat(unittest.TestCase):
             },
         )
 
+    def test_template_str(self):
+        def f(
+            x: t"{a}",
+            y: list[t"{a}"],
+            z: t"{a:b} {c!r} {d!s:t}",
+            a: t"a{b}c{d}e{f}g",
+            b: t"{a:{1}}",
+            c: t"{a | b * c}",
+        ): pass
+
+        annos = get_annotations(f, format=Format.STRING)
+        self.assertEqual(annos, {
+            "x": "t'{a}'",
+            "y": "list[t'{a}']",
+            "z": "t'{a:b} {c!r} {d!s:t}'",
+            "a": "t'a{b}c{d}e{f}g'",
+            # interpolations in the format spec are eagerly evaluated so we can't recover the source
+            "b": "t'{a:1}'",
+            "c": "t'{a | b * c}'",
+        })
+
+        def g(
+            x: t"{a}",
+        ): ...
+
+        annos = get_annotations(g, format=Format.FORWARDREF)
+        templ = annos["x"]
+        # Template and Interpolation don't have __eq__ so we have to compare manually
+        self.assertIsInstance(templ, Template)
+        self.assertEqual(templ.strings, ("", ""))
+        self.assertEqual(len(templ.interpolations), 1)
+        interp = templ.interpolations[0]
+        self.assertEqual(interp.value, support.EqualToForwardRef("a", owner=g))
+        self.assertEqual(interp.expression, "a")
+        self.assertIsNone(interp.conversion)
+        self.assertEqual(interp.format_spec, "")
+
     def test_getitem(self):
         def f(x: undef1[str, undef2]):
             pass
@@ -340,7 +378,7 @@ class TestStringFormat(unittest.TestCase):
 
         def g(
             w: a[[int, str], float],
-            x: a[{int, str}, 3],
+            x: a[{int}, 3],
             y: a[{int: str}, 4],
             z: a[(int, str), 5],
         ):
@@ -350,7 +388,7 @@ class TestStringFormat(unittest.TestCase):
             anno,
             {
                 "w": "a[[int, str], float]",
-                "x": "a[{int, str}, 3]",
+                "x": "a[{int}, 3]",
                 "y": "a[{int: str}, 4]",
                 "z": "a[(int, str), 5]",
             },
@@ -776,6 +814,70 @@ class TestGetAnnotations(unittest.TestCase):
             get_annotations(isa.MyClassWithLocalAnnotations, eval_str=True),
             {"x": int},
         )
+
+    def test_stringized_annotation_permutations(self):
+        def define_class(name, has_future, has_annos, base_text, extra_names=None):
+            lines = []
+            if has_future:
+                lines.append("from __future__ import annotations")
+            lines.append(f"class {name}({base_text}):")
+            if has_annos:
+                lines.append(f"    {name}_attr: int")
+            else:
+                lines.append("    pass")
+            code = "\n".join(lines)
+            ns = support.run_code(code, extra_names=extra_names)
+            return ns[name]
+
+        def check_annotations(cls, has_future, has_annos):
+            if has_annos:
+                if has_future:
+                    anno = "int"
+                else:
+                    anno = int
+                self.assertEqual(get_annotations(cls), {f"{cls.__name__}_attr": anno})
+            else:
+                self.assertEqual(get_annotations(cls), {})
+
+        for meta_future, base_future, child_future, meta_has_annos, base_has_annos, child_has_annos in itertools.product(
+            (False, True),
+            (False, True),
+            (False, True),
+            (False, True),
+            (False, True),
+            (False, True),
+        ):
+            with self.subTest(
+                meta_future=meta_future,
+                base_future=base_future,
+                child_future=child_future,
+                meta_has_annos=meta_has_annos,
+                base_has_annos=base_has_annos,
+                child_has_annos=child_has_annos,
+            ):
+                meta = define_class(
+                    "Meta",
+                    has_future=meta_future,
+                    has_annos=meta_has_annos,
+                    base_text="type",
+                )
+                base = define_class(
+                    "Base",
+                    has_future=base_future,
+                    has_annos=base_has_annos,
+                    base_text="metaclass=Meta",
+                    extra_names={"Meta": meta},
+                )
+                child = define_class(
+                    "Child",
+                    has_future=child_future,
+                    has_annos=child_has_annos,
+                    base_text="Base",
+                    extra_names={"Base": base},
+                )
+                check_annotations(meta, meta_future, meta_has_annos)
+                check_annotations(base, base_future, base_has_annos)
+                check_annotations(child, child_future, child_has_annos)
 
     def test_modify_annotations(self):
         def f(x: int):
@@ -1548,8 +1650,10 @@ class TestForwardRefClass(unittest.TestCase):
         with support.swap_attr(builtins, "int", dict):
             self.assertIs(ForwardRef("int").evaluate(), dict)
 
-        with self.assertRaises(NameError):
+        with self.assertRaises(NameError, msg="name 'doesntexist' is not defined") as exc:
             ForwardRef("doesntexist").evaluate()
+
+        self.assertEqual(exc.exception.name, "doesntexist")
 
     def test_fwdref_invalid_syntax(self):
         fr = ForwardRef("if")

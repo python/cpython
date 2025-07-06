@@ -1,6 +1,0 @@
-Add a new ``python -m asyncio ps PID`` command-line interface to inspect
-asyncio tasks in a running Python process. Displays a flat table of await
-relationships. A variant showing a tree view is also available as
-``python -m asyncio pstree PID``. Both are useful for debugging async
-code. Patch by Pablo Galindo, Łukasz Langa, Yury Selivanov, and Marta
-Gomez Macias.

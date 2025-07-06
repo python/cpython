@@ -21,6 +21,7 @@ from weakref import proxy
 import contextlib
 from inspect import Signature
 
+from test.support import ALWAYS_EQ
 from test.support import import_helper
 from test.support import threading_helper
 from test.support import cpython_only
@@ -244,6 +245,13 @@ class TestPartial:
         actual_args, actual_kwds = p('x', 'y')
         self.assertEqual(actual_args, ('x', 0, 'y', 1))
         self.assertEqual(actual_kwds, {})
+        # Checks via `is` and not `eq`
+        # thus ALWAYS_EQ isn't treated as Placeholder
+        p = self.partial(capture, ALWAYS_EQ)
+        actual_args, actual_kwds = p()
+        self.assertEqual(len(actual_args), 1)
+        self.assertIs(actual_args[0], ALWAYS_EQ)
+        self.assertEqual(actual_kwds, {})
 
     def test_placeholders_optimization(self):
         PH = self.module.Placeholder
@@ -259,6 +267,17 @@ class TestPartial:
         p2 = self.partial(p)
         self.assertEqual(p2.args, (PH, 0))
         self.assertEqual(p2(1), ((1, 0), {}))
+
+    def test_placeholders_kw_restriction(self):
+        PH = self.module.Placeholder
+        with self.assertRaisesRegex(TypeError, "Placeholder"):
+            self.partial(capture, a=PH)
+        # Passes, as checks via `is` and not `eq`
+        p = self.partial(capture, a=ALWAYS_EQ)
+        actual_args, actual_kwds = p()
+        self.assertEqual(actual_args, ())
+        self.assertEqual(len(actual_kwds), 1)
+        self.assertIs(actual_kwds['a'], ALWAYS_EQ)
 
     def test_construct_placeholder_singleton(self):
         PH = self.module.Placeholder

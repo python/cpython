@@ -1,1 +1,0 @@
-Add color to stdlib argparse CLIs. Patch by Hugo van Kemenade.

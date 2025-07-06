@@ -171,7 +171,7 @@ The :mod:`urllib.request` module defines the following functions:
       sections. For example, the path ``/etc/hosts`` is converted to
       the URL ``///etc/hosts``.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
       The *add_scheme* parameter was added.
 
 
@@ -204,13 +204,13 @@ The :mod:`urllib.request` module defines the following functions:
       characters not following a drive letter no longer cause an
       :exc:`OSError` exception to be raised on Windows.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
       The URL authority is discarded if it matches the local hostname.
       Otherwise, if the authority isn't empty or ``localhost``, then on
       Windows a UNC path is returned (as before), and on other platforms a
       :exc:`~urllib.error.URLError` is raised.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
       The *require_scheme* and *resolve_host* parameters were added.
 
 
@@ -1121,7 +1121,7 @@ HTTPHandler Objects
 .. method:: HTTPHandler.http_open(req)
 
    Send an HTTP request, which can be either GET or POST, depending on
-   ``req.has_data()``.
+   ``req.data``.
 
 
 .. _https-handler-objects:
@@ -1133,7 +1133,7 @@ HTTPSHandler Objects
 .. method:: HTTPSHandler.https_open(req)
 
    Send an HTTPS request, which can be either GET or POST, depending on
-   ``req.has_data()``.
+   ``req.data``.
 
 
 .. _file-handler-objects:

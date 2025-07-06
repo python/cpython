@@ -790,10 +790,10 @@ extern "C" {
     INIT_ID(add_done_callback), \
     INIT_ID(after_in_child), \
     INIT_ID(after_in_parent), \
-    INIT_ID(aggregate_class), \
     INIT_ID(alias), \
     INIT_ID(align), \
     INIT_ID(all), \
+    INIT_ID(all_threads), \
     INIT_ID(allow_code), \
     INIT_ID(any), \
     INIT_ID(append), \
@@ -807,7 +807,6 @@ extern "C" {
     INIT_ID(ast), \
     INIT_ID(athrow), \
     INIT_ID(attribute), \
-    INIT_ID(authorizer_callback), \
     INIT_ID(autocommit), \
     INIT_ID(backtick), \
     INIT_ID(base), \
@@ -891,6 +890,7 @@ extern "C" {
     INIT_ID(data), \
     INIT_ID(database), \
     INIT_ID(day), \
+    INIT_ID(debug), \
     INIT_ID(decode), \
     INIT_ID(decoder), \
     INIT_ID(default), \
@@ -902,7 +902,6 @@ extern "C" {
     INIT_ID(deterministic), \
     INIT_ID(device), \
     INIT_ID(dict), \
-    INIT_ID(dict_content), \
     INIT_ID(dictcomp), \
     INIT_ID(difference_update), \
     INIT_ID(digest), \
@@ -1106,7 +1105,6 @@ extern "C" {
     INIT_ID(msg), \
     INIT_ID(mutex), \
     INIT_ID(mycmp), \
-    INIT_ID(n_arg), \
     INIT_ID(n_fields), \
     INIT_ID(n_sequence_fields), \
     INIT_ID(n_unnamed_fields), \
@@ -1114,7 +1112,6 @@ extern "C" {
     INIT_ID(name_from), \
     INIT_ID(namespace_separator), \
     INIT_ID(namespaces), \
-    INIT_ID(narg), \
     INIT_ID(ndigits), \
     INIT_ID(nested), \
     INIT_ID(new_file_name), \
@@ -1137,6 +1134,7 @@ extern "C" {
     INIT_ID(offset_src), \
     INIT_ID(on_type_read), \
     INIT_ID(onceregistry), \
+    INIT_ID(only_active_thread), \
     INIT_ID(only_keys), \
     INIT_ID(oparg), \
     INIT_ID(opcode), \
@@ -1172,7 +1170,6 @@ extern "C" {
     INIT_ID(print_file_and_line), \
     INIT_ID(priority), \
     INIT_ID(progress), \
-    INIT_ID(progress_handler), \
     INIT_ID(progress_routine), \
     INIT_ID(proto), \
     INIT_ID(protocol), \
@@ -1278,7 +1275,6 @@ extern "C" {
     INIT_ID(timetuple), \
     INIT_ID(timeunit), \
     INIT_ID(top), \
-    INIT_ID(trace_callback), \
     INIT_ID(traceback), \
     INIT_ID(trailers), \
     INIT_ID(translate), \
