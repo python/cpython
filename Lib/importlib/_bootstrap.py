@@ -62,7 +62,7 @@ class _List(list):
 class _WeakValueDictionary:
 
     def __init__(self):
-        self_weakref = _weakref.ref(self)
+        # self_weakref = _weakref.ref(self)
 
         # Inlined to avoid issues with inheriting from _weakref.ref before _weakref is
         # set by _setup(). Since there's only one instance of this class, this is
@@ -81,9 +81,9 @@ class _WeakValueDictionary:
 
             @staticmethod
             def remove(wr):
-                nonlocal self_weakref
+                nonlocal self
 
-                self = self_weakref()
+                # self = self_weakref()
                 if self is not None:
                     if self._iterating:
                         self._pending_removals.append(wr.key)
