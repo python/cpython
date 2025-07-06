@@ -24,33 +24,6 @@ Python programs. A :dfn:`profile` is a set of statistics that describes how
 often and for how long various parts of the program executed. These statistics
 can be formatted into reports via the :mod:`pstats` module.
 
-**Profiler Comparison:**
-
-+-------------------+----------------------+----------------------+----------------------+
-| Feature           | Statistical          | Deterministic        | Deterministic        |
-|                   | (``profile.sample``) | (``cProfile``)       | (``profile``)        |
-+===================+======================+======================+======================+
-| **Target**        | Running process      | Code you run         | Code you run         |
-+-------------------+----------------------+----------------------+----------------------+
-| **Overhead**      | Virtually none       | Moderate             | High                 |
-+-------------------+----------------------+----------------------+----------------------+
-| **Accuracy**      | Statistical approx.  | Exact call counts    | Exact call counts    |
-+-------------------+----------------------+----------------------+----------------------+
-| **Setup**         | Attach to any PID    | Instrument code      | Instrument code      |
-+-------------------+----------------------+----------------------+----------------------+
-| **Use Case**      | Production debugging | Development/testing  | Profiler extension   |
-+-------------------+----------------------+----------------------+----------------------+
-| **Implementation**| C extension          | C extension          | Pure Python          |
-+-------------------+----------------------+----------------------+----------------------+
-
-.. note::
-
-   The statistical profiler (:mod:`profile.sample`) is recommended for most production
-   use cases due to its extremely low overhead and ability to profile running processes
-   without modification. It can attach to any Python process and collect performance 
-   data with minimal impact on execution speed, making it ideal for debugging 
-   performance issues in live applications.
-
 The Python standard library provides three different profiling implementations:
 
 **Statistical Profiler:**
@@ -79,6 +52,34 @@ The Python standard library provides three different profiling implementations:
    Python code against C code: the profilers introduce overhead for Python code,
    but not for C-level functions, and so the C code would seem faster than any
    Python one.
+
+**Profiler Comparison:**
+
++-------------------+----------------------+----------------------+----------------------+
+| Feature           | Statistical          | Deterministic        | Deterministic        |
+|                   | (``profile.sample``) | (``cProfile``)       | (``profile``)        |
++===================+======================+======================+======================+
+| **Target**        | Running process      | Code you run         | Code you run         |
++-------------------+----------------------+----------------------+----------------------+
+| **Overhead**      | Virtually none       | Moderate             | High                 |
++-------------------+----------------------+----------------------+----------------------+
+| **Accuracy**      | Statistical approx.  | Exact call counts    | Exact call counts    |
++-------------------+----------------------+----------------------+----------------------+
+| **Setup**         | Attach to any PID    | Instrument code      | Instrument code      |
++-------------------+----------------------+----------------------+----------------------+
+| **Use Case**      | Production debugging | Development/testing  | Profiler extension   |
++-------------------+----------------------+----------------------+----------------------+
+| **Implementation**| C extension          | C extension          | Pure Python          |
++-------------------+----------------------+----------------------+----------------------+
+
+.. note::
+
+   The statistical profiler (:mod:`profile.sample`) is recommended for most production
+   use cases due to its extremely low overhead and ability to profile running processes
+   without modification. It can attach to any Python process and collect performance
+   data with minimal impact on execution speed, making it ideal for debugging
+   performance issues in live applications.
+
 
 .. _statistical-profiling:
 
