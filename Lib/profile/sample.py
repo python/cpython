@@ -168,11 +168,23 @@ def print_sampled_stats(stats, sort=-1, limit=None, show_summary=True):
 
         # Aggregate stats by fully qualified function name (ignoring line numbers)
         func_aggregated = {}
-        for func, prim_calls, total_calls, total_time, cumulative_time, callers in stats_list:
+        for (
+            func,
+            prim_calls,
+            total_calls,
+            total_time,
+            cumulative_time,
+            callers,
+        ) in stats_list:
             # Use filename:function_name as the key to get fully qualified name
             qualified_name = f"{func[0]}:{func[2]}"
             if qualified_name not in func_aggregated:
-                func_aggregated[qualified_name] = [0, 0, 0, 0]  # prim_calls, total_calls, total_time, cumulative_time
+                func_aggregated[qualified_name] = [
+                    0,
+                    0,
+                    0,
+                    0,
+                ]  # prim_calls, total_calls, total_time, cumulative_time
             func_aggregated[qualified_name][0] += prim_calls
             func_aggregated[qualified_name][1] += total_calls
             func_aggregated[qualified_name][2] += total_time
@@ -180,7 +192,12 @@ def print_sampled_stats(stats, sort=-1, limit=None, show_summary=True):
 
         # Convert aggregated data back to list format for processing
         aggregated_stats = []
-        for qualified_name, (prim_calls, total_calls, total_time, cumulative_time) in func_aggregated.items():
+        for qualified_name, (
+            prim_calls,
+            total_calls,
+            total_time,
+            cumulative_time,
+        ) in func_aggregated.items():
             # Parse the qualified name back to filename and function name
             if ":" in qualified_name:
                 filename, func_name = qualified_name.rsplit(":", 1)
@@ -188,7 +205,16 @@ def print_sampled_stats(stats, sort=-1, limit=None, show_summary=True):
                 filename, func_name = "", qualified_name
             # Create a dummy func tuple with filename and function name for display
             dummy_func = (filename, "", func_name)
-            aggregated_stats.append((dummy_func, prim_calls, total_calls, total_time, cumulative_time, {}))
+            aggregated_stats.append(
+                (
+                    dummy_func,
+                    prim_calls,
+                    total_calls,
+                    total_time,
+                    cumulative_time,
+                    {},
+                )
+            )
 
         # Most time-consuming functions (by total time)
         def format_time_consuming(stat):
@@ -294,30 +320,29 @@ def sample(
     else:
         collector.export(filename)
 
+
 def _validate_collapsed_format_args(args, parser):
     # Check for incompatible pstats options
     invalid_opts = []
-    
+
     # Get list of pstats-specific options
-    pstats_options = {
-        'sort': None,
-        'limit': None,
-        'no_summary': False
-    }
+    pstats_options = {"sort": None, "limit": None, "no_summary": False}
 
     # Find the default values from the argument definitions
     for action in parser._actions:
-        if action.dest in pstats_options and hasattr(action, 'default'):
+        if action.dest in pstats_options and hasattr(action, "default"):
             pstats_options[action.dest] = action.default
 
     # Check if any pstats-specific options were provided by comparing with defaults
     for opt, default in pstats_options.items():
         if getattr(args, opt) != default:
-            invalid_opts.append(opt.replace('no_', ''))
-    
+            invalid_opts.append(opt.replace("no_", ""))
+
     if invalid_opts:
-        parser.error(f"The following options are only valid with --pstats format: {', '.join(invalid_opts)}")
-    
+        parser.error(
+            f"The following options are only valid with --pstats format: {', '.join(invalid_opts)}"
+        )
+
     # Set default output filename for collapsed format
     if not args.outfile:
         args.outfile = f"collapsed.{args.pid}.txt"
@@ -329,14 +354,14 @@ def main():
         description=(
             "Sample a process's stack frames and generate profiling data.\n"
             "Supports two output formats:\n"
-            "  - pstats: Detailed profiling statistics with sorting options\n" 
+            "  - pstats: Detailed profiling statistics with sorting options\n"
             "  - collapsed: Stack traces for generating flamegraphs\n"
             "\n"
             "Examples:\n"
             "  # Profile process 1234 for 10 seconds with default settings\n"
             "  python -m profile.sample 1234\n"
             "\n"
-            "  # Profile with custom interval and duration, save to file\n" 
+            "  # Profile with custom interval and duration, save to file\n"
             "  python -m profile.sample -i 50 -d 30 -o profile.stats 1234\n"
             "\n"
             "  # Generate collapsed stacks for flamegraph\n"
@@ -354,34 +379,33 @@ def main():
             "  # Profile all threads and save collapsed stacks\n"
             "  python -m profile.sample -a --collapsed -o stacks.txt 1234"
         ),
-        formatter_class=argparse.RawDescriptionHelpFormatter
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
 
     # Required arguments
-    parser.add_argument(
-        "pid", 
-        type=int,
-        help="Process ID to sample"
-    )
+    parser.add_argument("pid", type=int, help="Process ID to sample")
 
     # Sampling options
     sampling_group = parser.add_argument_group("Sampling configuration")
     sampling_group.add_argument(
-        "-i", "--interval",
+        "-i",
+        "--interval",
         type=int,
         default=100,
-        help="Sampling interval in microseconds (default: 100)"
+        help="Sampling interval in microseconds (default: 100)",
     )
     sampling_group.add_argument(
-        "-d", "--duration",
+        "-d",
+        "--duration",
         type=int,
         default=10,
-        help="Sampling duration in seconds (default: 10)"
+        help="Sampling duration in seconds (default: 10)",
     )
     sampling_group.add_argument(
-        "-a", "--all-threads",
+        "-a",
+        "--all-threads",
         action="store_true",
-        help="Sample all threads in the process instead of just the main thread"
+        help="Sample all threads in the process instead of just the main thread",
     )
 
     # Output format selection
@@ -393,20 +417,21 @@ def main():
         const="pstats",
         dest="format",
         default="pstats",
-        help="Generate pstats output (default)"
+        help="Generate pstats output (default)",
     )
     output_format.add_argument(
         "--collapsed",
-        action="store_const", 
+        action="store_const",
         const="collapsed",
         dest="format",
-        help="Generate collapsed stack traces for flamegraphs"
+        help="Generate collapsed stack traces for flamegraphs",
     )
-    
+
     output_group.add_argument(
-        "-o", "--outfile",
+        "-o",
+        "--outfile",
         help="Save output to a file (if omitted, prints to stdout for pstats, "
-             "or saves to collapsed.<pid>.txt for collapsed format)"
+        "or saves to collapsed.<pid>.txt for collapsed format)",
     )
 
     # pstats-specific options
@@ -417,14 +442,14 @@ def main():
         action="store_const",
         const=0,
         dest="sort",
-        help="Sort by number of calls"
+        help="Sort by number of calls",
     )
     sort_group.add_argument(
         "--sort-time",
         action="store_const",
         const=1,
         dest="sort",
-        help="Sort by total time"
+        help="Sort by total time",
     )
     sort_group.add_argument(
         "--sort-cumulative",
@@ -432,32 +457,33 @@ def main():
         const=2,
         dest="sort",
         default=2,
-        help="Sort by cumulative time (default)"
+        help="Sort by cumulative time (default)",
     )
     sort_group.add_argument(
         "--sort-percall",
         action="store_const",
         const=3,
         dest="sort",
-        help="Sort by time per call"
+        help="Sort by time per call",
     )
     sort_group.add_argument(
         "--sort-cumpercall",
         action="store_const",
         const=4,
         dest="sort",
-        help="Sort by cumulative time per call"
+        help="Sort by cumulative time per call",
     )
     sort_group.add_argument(
         "--sort-name",
         action="store_const",
         const=5,
         dest="sort",
-        help="Sort by function name"
+        help="Sort by function name",
     )
 
     pstats_group.add_argument(
-        "-l", "--limit",
+        "-l",
+        "--limit",
         type=int,
         help="Limit the number of rows in the output",
         default=15,
@@ -465,7 +491,7 @@ def main():
     pstats_group.add_argument(
         "--no-summary",
         action="store_true",
-        help="Disable the summary section in the output"
+        help="Disable the summary section in the output",
     )
 
     args = parser.parse_args()
@@ -485,5 +511,7 @@ def main():
         show_summary=not args.no_summary,
         output_format=args.format,
     )
+
+
 if __name__ == "__main__":
     main()
