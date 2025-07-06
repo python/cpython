@@ -85,17 +85,44 @@ The Python standard library provides three different profiling implementations:
 What Is Statistical Profiling?
 ==============================
 
-:dfn:`Statistical profiling` works by periodically interrupting a running program to capture its current call stack. Rather than monitoring every function entry and exit like deterministic profilers, it takes snapshots at regular intervals to build a statistical picture of where the program spends its time.
+:dfn:`Statistical profiling` works by periodically interrupting a running
+program to capture its current call stack. Rather than monitoring every
+function entry and exit like deterministic profilers, it takes snapshots at
+regular intervals to build a statistical picture of where the program spends
+its time.
 
-The sampling profiler uses process memory reading (via system calls like `process_vm_readv` on Linux, `vm_read` on macOS, and `ReadProcessMemory` on Windows) to attach to a running Python process and extract stack trace information without requiring any code modification or restart of the target process. This approach provides several key advantages over traditional profiling methods.
+The sampling profiler uses process memory reading (via system calls like
+`process_vm_readv` on Linux, `vm_read` on macOS, and `ReadProcessMemory` on
+Windows) to attach to a running Python process and extract stack trace
+information without requiring any code modification or restart of the target
+process. This approach provides several key advantages over traditional
+profiling methods.
 
-The fundamental principle is that if a function appears frequently in the collected stack samples, it is likely consuming significant CPU time. By analyzing thousands of samples, the profiler can accurately estimate the relative time spent in different parts of the program. The statistical nature means that while individual measurements may vary, the aggregate results converge to represent the true performance characteristics of the application.
+The fundamental principle is that if a function appears frequently in the
+collected stack samples, it is likely consuming significant CPU time. By
+analyzing thousands of samples, the profiler can accurately estimate the
+relative time spent in different parts of the program. The statistical nature
+means that while individual measurements may vary, the aggregate results
+converge to represent the true performance characteristics of the application.
 
-Since statistical profiling operates externally to the target process, it introduces virtually no overhead to the running program. The profiler process runs separately and reads the target process memory without interrupting its execution. This makes it suitable for profiling production systems where performance impact must be minimized.
+Since statistical profiling operates externally to the target process, it
+introduces virtually no overhead to the running program. The profiler process
+runs separately and reads the target process memory without interrupting its
+execution. This makes it suitable for profiling production systems where
+performance impact must be minimized.
 
-The accuracy of statistical profiling improves with the number of samples collected. Short-lived functions may be missed or underrepresented, while long-running functions will be captured proportionally to their execution time. This characteristic makes statistical profiling particularly effective for identifying the most significant performance bottlenecks rather than providing exhaustive coverage of all function calls.
+The accuracy of statistical profiling improves with the number of samples
+collected. Short-lived functions may be missed or underrepresented, while
+long-running functions will be captured proportionally to their execution time.
+This characteristic makes statistical profiling particularly effective for
+identifying the most significant performance bottlenecks rather than providing
+exhaustive coverage of all function calls.
 
-Statistical profiling excels at answering questions like "which functions consume the most CPU time?" and "where should I focus optimization efforts?" rather than "exactly how many times was this function called?" The trade-off between precision and practicality makes it an invaluable tool for performance analysis in real-world applications.
+Statistical profiling excels at answering questions like "which functions
+consume the most CPU time?" and "where should I focus optimization efforts?"
+rather than "exactly how many times was this function called?" The trade-off
+between precision and practicality makes it an invaluable tool for performance
+analysis in real-world applications.
 
 .. _profile-instant:
 
@@ -206,7 +233,8 @@ Profile with custom interval and duration, save to file::
 
    python -m profile.sample -i 50 -d 30 -o profile.stats 1234
 
-Generate collapsed stacks for flamegraph::
+Generate collapsed stacks to use with tools like `flamegraph.pl
+<https://github.com/brendangregg/FlameGraph>`_::
 
    python -m profile.sample --collapsed 1234
 
