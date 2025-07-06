@@ -9,7 +9,6 @@ import struct
 import time
 import unittest
 import unittest.mock
-import warnings
 
 from test import support
 from test.support import import_helper
