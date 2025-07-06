@@ -234,6 +234,17 @@ macOS platform
    Entries which cannot be determined are set to ``''``.  All tuple entries are
    strings.
 
+    .. note::
+
+        Where macOS has changed its versioning scheme, it reports the next
+        logical version assuming the old scheme to applications built with any
+        prior macOS SDK version unless a ``SYSTEM_VERSION_COMPAT=0`` environment
+        variable is set, or the application is rebuilt with a matching SDK. On
+        macOS >= 11.0, if Python is built with SDK < 11 then the ``release``
+        field is ``'10.16'``. And on macOS >= 26, it's ``'16.0'`` unless Python
+        was built with SDK >= 26.0.
+
+
 iOS platform
 ------------
 
