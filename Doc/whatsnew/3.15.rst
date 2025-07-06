@@ -95,17 +95,21 @@ Key features include:
 * **Multiple output formats**: Generate both detailed statistics and flamegraph data
 * **Thread-aware profiling**: Option to profile all threads or just the main thread
 
-Profile an existing process for 10 seconds::
+Profile process 1234 for 10 seconds with default settings::
 
-   python -m profile.sample 1234
+  python -m profile.sample 1234
 
-Profile with custom settings and real-time statistics::
+Profile with custom interval and duration, save to file::
 
-   python -m profile.sample --realtime-stats -i 50 -d 30 1234
+  python -m profile.sample -i 50 -d 30 -o profile.stats 1234
 
-Generate flamegraph data::
+Generate collapsed stacks for flamegraph::
 
-   python -m profile.sample --collapsed -o stacks.txt 1234
+  python -m profile.sample --collapsed 1234
+
+Profile all threads and sort by total time::
+
+  python -m profile.sample -a --sort-tottime 1234
 
 The profiler generates statistical estimates of where time is spent::
 
