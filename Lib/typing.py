@@ -438,7 +438,7 @@ class _Sentinel:
 
 
 def _eval_type(t, globalns, localns, type_params, *, recursive_guard=frozenset(),
-               format=None, owner=None):
+               format=None, owner=None, parent_fwdref=None):
     """Evaluate all forward references in the given type t.
 
     For use of globalns and localns see the docstring for get_type_hints().
@@ -456,7 +456,7 @@ def _eval_type(t, globalns, localns, type_params, *, recursive_guard=frozenset()
     if isinstance(t, (_GenericAlias, GenericAlias, Union)):
         if isinstance(t, GenericAlias):
             args = tuple(
-                _make_forward_ref(arg) if isinstance(arg, str) else arg
+                _make_forward_ref(arg, parent_fwdref=parent_fwdref) if isinstance(arg, str) else arg
                 for arg in t.__args__
             )
         else:
@@ -936,7 +936,12 @@ def TypeIs(self, parameters):
     return _GenericAlias(self, (item,))
 
 
-def _make_forward_ref(code, **kwargs):
+def _make_forward_ref(code, *, parent_fwdref=None, **kwargs):
+    if parent_fwdref is not None:
+        if parent_fwdref.__forward_module__ is not None:
+            kwargs['module'] = parent_fwdref.__forward_module__
+        if parent_fwdref.__owner__ is not None:
+            kwargs['owner'] = parent_fwdref.__owner__
     forward_ref = _lazy_annotationlib.ForwardRef(code, **kwargs)
     # For compatibility, eagerly compile the forwardref's code.
     forward_ref.__forward_code__
@@ -1001,6 +1006,7 @@ def evaluate_forward_ref(
         recursive_guard=_recursive_guard | {forward_ref.__forward_arg__},
         format=format,
         owner=owner,
+        parent_fwdref=forward_ref,
     )
 
 
