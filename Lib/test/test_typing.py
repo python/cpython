@@ -6309,31 +6309,6 @@ class NoTypeCheckTests(BaseTestCase):
 
 
 class InternalsTests(BaseTestCase):
-    def test_deprecation_for_no_type_params_passed_to__evaluate(self):
-        with self.assertWarnsRegex(
-            DeprecationWarning,
-            (
-                "Failing to pass a value to the 'type_params' parameter "
-                "of 'typing._eval_type' is deprecated"
-            )
-        ) as cm:
-            self.assertEqual(typing._eval_type(list["int"], globals(), {}), list[int])
-
-        self.assertEqual(cm.filename, __file__)
-
-        f = ForwardRef("int")
-
-        with self.assertWarnsRegex(
-            DeprecationWarning,
-            (
-                "Failing to pass a value to the 'type_params' parameter "
-                "of 'typing.ForwardRef._evaluate' is deprecated"
-            )
-        ) as cm:
-            self.assertIs(f._evaluate(globals(), {}, recursive_guard=frozenset()), int)
-
-        self.assertEqual(cm.filename, __file__)
-
     def test_collect_parameters(self):
         typing = import_helper.import_fresh_module("typing")
         with self.assertWarnsRegex(

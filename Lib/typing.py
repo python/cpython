@@ -437,10 +437,7 @@ class _Sentinel:
         return '<sentinel>'
 
 
-_sentinel = _Sentinel()
-
-
-def _eval_type(t, globalns, localns, type_params=_sentinel, *, recursive_guard=frozenset(),
+def _eval_type(t, globalns, localns, type_params, *, recursive_guard=frozenset(),
                format=None, owner=None):
     """Evaluate all forward references in the given type t.
 
@@ -448,9 +445,6 @@ def _eval_type(t, globalns, localns, type_params=_sentinel, *, recursive_guard=f
     recursive_guard is used to prevent infinite recursion with a recursive
     ForwardRef.
     """
-    if type_params is _sentinel:
-        _deprecation_warning_for_no_type_params_passed("typing._eval_type")
-        type_params = ()
     if isinstance(t, _lazy_annotationlib.ForwardRef):
         # If the forward_ref has __forward_module__ set, evaluate() infers the globals
         # from the module, and it will probably pick better than the globals we have here.
