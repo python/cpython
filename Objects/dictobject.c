@@ -4411,6 +4411,7 @@ dict_setdefault_ref_lock_held(PyObject *d, PyObject *key, PyObject *default_valu
             if (result) {
                 *result = NULL;
             }
+            return -1;
         }
 
         STORE_USED(mp, mp->ma_used + 1);
