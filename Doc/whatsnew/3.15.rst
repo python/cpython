@@ -72,8 +72,8 @@ New features
 
 .. _whatsnew314-sampling-profiler:
 
-Statistical sampling profiler for production debugging
-------------------------------------------------------
+High frequency statistical sampling profiler 
+--------------------------------------------
 
 A new statistical sampling profiler has been added to the :mod:`profile` module as 
 :mod:`profile.sample`. This profiler enables low-overhead performance analysis of 
