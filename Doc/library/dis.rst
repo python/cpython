@@ -598,6 +598,11 @@ operations on it as if it was a Python list. The top of the stack corresponds to
       STACK.pop()
 
 
+.. opcode:: POP_ITER
+
+   Removes the iterator from the top of the stack.
+
+
 .. opcode:: END_FOR
 
    Removes the top-of-stack item.
