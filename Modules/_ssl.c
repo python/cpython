@@ -2157,12 +2157,10 @@ _ssl__SSLSocket_group_impl(PySSLSocket *self)
     if (self->ssl == NULL) {
         Py_RETURN_NONE;
     }
-
     group_name = SSL_get0_group_name(self->ssl);
     if (group_name == NULL) {
         Py_RETURN_NONE;
     }
-
     return PyUnicode_DecodeFSDefault(group_name);
 #else
     PyErr_SetString(PyExc_NotImplementedError,
@@ -3467,17 +3465,12 @@ _ssl__SSLContext_get_groups_impl(PySSLContext *self, int include_aliases)
     size_t i, num;
     PyObject *item, *result = NULL;
 
+    // This "groups" object is dynamically allocated, but the strings inside
+    // it are internal constants which shouldn't ever be modified or freed.
     if ((groups = sk_OPENSSL_CSTRING_new_null()) == NULL) {
         _setSSLError(get_state_ctx(self), "Can't allocate stack", 0, __FILE__, __LINE__);
-	goto error;
+        goto error;
     }
-
-    /*
-     * Note: The "groups" stack is dynamically allocated, but the strings
-     * returned in the stack are references to internal constants which
-     * should NOT be modified or freed. They should also be plain ASCII,
-     * so there should be no decoding issue when converting to Unicode.
-     */
 
     if (!SSL_CTX_get0_implemented_groups(self->ctx, include_aliases, groups)) {
         _setSSLError(get_state_ctx(self), "Can't get groups", 0, __FILE__, __LINE__);
@@ -3492,11 +3485,14 @@ _ssl__SSLContext_get_groups_impl(PySSLContext *self, int include_aliases)
     }
 
     for (i = 0; i < num; ++i) {
+        // There's no allocation here, so group won't ever be NULL.
         group = sk_OPENSSL_CSTRING_value(groups, i);
-	assert(group != NULL);
+        assert(group != NULL);
 
+        // Group names are plain ASCII, so there's no chance of a decoding
+        // error here. However, an allocation failure could occur when
+        // constructing the Unicode version of the names.
         item = PyUnicode_DecodeFSDefault(group);
-
         if (item == NULL) {
             _setSSLError(get_state_ctx(self), "Can't allocate group name", 0, __FILE__, __LINE__);
             goto error;

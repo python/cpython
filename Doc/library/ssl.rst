@@ -1289,6 +1289,8 @@ SSL sockets also have the following additional methods and attributes:
    Return the group used for doing key agreement on this connection. If no
    connection has been established, returns ``None``.
 
+   .. versionadded:: next
+
 .. method:: SSLSocket.compression()
 
    Return the compression algorithm being used as a string, or ``None``
@@ -1653,10 +1655,10 @@ to speed up repeated connections from the same clients.
    values.  For example::
 
        >>> ctx = ssl.create_default_context()
-       >>> ctx.minimum_version=ssl.TLSVersion.TLSv1_3
-       >>> ctx.maximum_version=ssl.TLSVersion.TLSv1_3
-       >>> ctx.get_groups()
-       ['secp256r1', 'secp384r1', 'secp521r1', 'x25519', 'x448', 'brainpoolP256r1tls13', 'brainpoolP384r1tls13', 'brainpoolP512r1tls13', 'ffdhe2048', 'ffdhe3072', 'ffdhe4096', 'ffdhe6144', 'ffdhe8192', 'MLKEM512', 'MLKEM768', 'MLKEM1024', 'SecP256r1MLKEM768', 'X25519MLKEM768', 'SecP384r1MLKEM1024']
+       >>> ctx.minimum_version = ssl.TLSVersion.TLSv1_3
+       >>> ctx.maximum_version = ssl.TLSVersion.TLSv1_3
+       >>> ctx.get_groups() # doctest: +SKIP
+       ['secp256r1', 'secp384r1', 'secp521r1', 'x25519', 'x448', ...]
 
    By default, this method returns only the preferred IANA names for the
    available groups. However, if the ``include_aliases`` parameter is set to
@@ -1700,7 +1702,7 @@ to speed up repeated connections from the same clients.
       When connected, the :meth:`SSLSocket.group` method of SSL sockets will
       return the group used for key agreement on that connection.
 
-   .. versionadded:: 3.15
+   .. versionadded:: next
 
 .. method:: SSLContext.set_alpn_protocols(protocols)
 
