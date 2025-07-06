@@ -1186,9 +1186,9 @@ class GCTests(unittest.TestCase):
             test()
         """
         _, stdout, _ = assert_python_ok("-c", code)
-        assert b"Type weakref with callback is None as expected" in stdout
-        assert b"Type weakref is Class as expected" in stdout
-        assert b"Instance weakref is None as expected" in stdout
+        self.assertRegex(stdout, b"Type weakref with callback is None as expected")
+        self.assertRegex(stdout, b"Type weakref is Class as expected")
+        self.assertRegex(stdout, b"Instance weakref is None as expected")
 
 
 class IncrementalGCTests(unittest.TestCase):
