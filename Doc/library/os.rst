@@ -3227,6 +3227,9 @@ features:
 
       .. versionchanged:: 3.12
          ``st_birthtime`` is now available on Windows.
+      .. versionchanged:: next
+         ``st_birthtime`` is now available on Linux kernel 4.11 and later when
+         supported by the filesystem.
 
    .. attribute:: st_birthtime_ns
 
@@ -3275,6 +3278,34 @@ features:
    .. attribute:: st_flags
 
       User defined flags for file.
+
+   .. attribute:: st_attributes
+
+      Linux file attributes.
+      See the :const:`!STATX_ATTR* <stat.STATX_ATTR_COMPRESSED>`
+      constants in the :mod:`stat` module.
+
+      .. versionadded: next
+
+   .. attribute:: st_attributes_mask
+
+      Linux file attributes supported by the filesystem containing the file.
+
+      .. versionadded: next
+
+   .. attribute:: st_mnt_id
+
+      Mount ID of the mount containing the file, corresponding to the first
+      field in ``/proc/self/mountinfo``.
+
+      .. versionadded: next
+
+   .. attribute:: stx_subvol
+
+      ID for the subvolume containing the file, or None if the filesystem does
+      not support subvolumes.
+
+      .. versionadded: next
 
    On other Unix systems (such as FreeBSD), the following attributes may be
    available (but may be only filled out if root tries to use them):
@@ -3366,6 +3397,11 @@ features:
       it would contain the same as :attr:`st_dev`, which was incorrect.
 
       Added the :attr:`st_birthtime` member on Windows.
+
+   .. versionchanged:: next
+      Added the :attr:`st_birthtime`, :attr:`st_attributes`,
+      :attr:`st_attributes_mask`, :attr:`st_mnt_id`, and :attr:`st_subvol`
+      members on Linux.
 
 
 .. function:: statvfs(path)
