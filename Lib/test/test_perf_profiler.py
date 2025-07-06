@@ -506,9 +506,12 @@ def _is_perf_version_at_least(major, minor):
     # The output of perf --version looks like "perf version 6.7-3" but
     # it can also be perf version "perf version 5.15.143", or even include
     # a commit hash in the version string, like "6.12.9.g242e6068fd5c"
+    #
+    # PermissionError is raised if perf does not exist on the Windows Subsystem
+    # for Linux, see #134987
     try:
         output = subprocess.check_output(["perf", "--version"], text=True)
-    except (subprocess.CalledProcessError, FileNotFoundError):
+    except (subprocess.CalledProcessError, FileNotFoundError, PermissionError):
         return False
     version = output.split()[2]
     version = version.split("-")[0]

@@ -419,8 +419,12 @@
     <ClCompile Include="..\Modules\_abc.c" />
     <ClCompile Include="..\Modules\_bisectmodule.c" />
     <ClCompile Include="..\Modules\blake2module.c">
-      <PreprocessorDefinitions Condition="'$(Platform)' == 'x64'">HACL_CAN_COMPILE_SIMD128;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Platform)' == 'x64'">HACL_CAN_COMPILE_SIMD256;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Platform)' == 'x64'">
+        _Py_HACL_CAN_COMPILE_VEC128;%(PreprocessorDefinitions)
+      </PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Platform)' == 'x64'">
+        _Py_HACL_CAN_COMPILE_VEC256;%(PreprocessorDefinitions)
+      </PreprocessorDefinitions>
     </ClCompile>
     <ClCompile Include="..\Modules\_codecsmodule.c" />
     <ClCompile Include="..\Modules\_collectionsmodule.c" />

@@ -124,6 +124,33 @@ _PyMem_mi_page_is_safe_to_free(mi_page_t *page)
 
 }
 
+#ifdef Py_GIL_DISABLED
+
+// If we are deferring collection of more than this amount of memory for
+// mimalloc pages, advance the write sequence.  Advancing allows these
+// pages to be re-used in a different thread or for a different size class.
+#define QSBR_PAGE_MEM_LIMIT 4096*20
+
+// Return true if the global write sequence should be advanced for a mimalloc
+// page that is deferred from collection.
+static bool
+should_advance_qsbr_for_page(struct _qsbr_thread_state *qsbr, mi_page_t *page)
+{
+    size_t bsize = mi_page_block_size(page);
+    size_t page_size = page->capacity*bsize;
+    if (page_size > QSBR_PAGE_MEM_LIMIT) {
+        qsbr->deferred_page_memory = 0;
+        return true;
+    }
+    qsbr->deferred_page_memory += page_size;
+    if (qsbr->deferred_page_memory > QSBR_PAGE_MEM_LIMIT) {
+        qsbr->deferred_page_memory = 0;
+        return true;
+    }
+    return false;
+}
+#endif
+
 static bool
 _PyMem_mi_page_maybe_free(mi_page_t *page, mi_page_queue_t *pq, bool force)
 {
@@ -139,7 +166,14 @@ _PyMem_mi_page_maybe_free(mi_page_t *page, mi_page_queue_t *pq, bool force)
 
         _PyMem_mi_page_clear_qsbr(page);
         page->retire_expire = 0;
-        page->qsbr_goal = _Py_qsbr_deferred_advance(tstate->qsbr);
+
+        if (should_advance_qsbr_for_page(tstate->qsbr, page)) {
+            page->qsbr_goal = _Py_qsbr_advance(tstate->qsbr->shared);
+        }
+        else {
+            page->qsbr_goal = _Py_qsbr_shared_next(tstate->qsbr->shared);
+        }
+
         llist_insert_tail(&tstate->mimalloc.page_list, &page->qsbr_node);
         return false;
     }
@@ -1141,8 +1175,44 @@ free_work_item(uintptr_t ptr, delayed_dealloc_cb cb, void *state)
     }
 }
 
+
+#ifdef Py_GIL_DISABLED
+
+// For deferred advance on free: the number of deferred items before advancing
+// the write sequence.  This is based on WORK_ITEMS_PER_CHUNK.  We ideally
+// want to process a chunk before it overflows.
+#define QSBR_DEFERRED_LIMIT 127
+
+// If the deferred memory exceeds 1 MiB, advance the write sequence.  This
+// helps limit memory usage due to QSBR delaying frees too long.
+#define QSBR_FREE_MEM_LIMIT 1024*1024
+
+// Return true if the global write sequence should be advanced for a deferred
+// memory free.
+static bool
+should_advance_qsbr_for_free(struct _qsbr_thread_state *qsbr, size_t size)
+{
+    if (size > QSBR_FREE_MEM_LIMIT) {
+        qsbr->deferred_count = 0;
+        qsbr->deferred_memory = 0;
+        qsbr->should_process = true;
+        return true;
+    }
+    qsbr->deferred_count++;
+    qsbr->deferred_memory += size;
+    if (qsbr->deferred_count > QSBR_DEFERRED_LIMIT ||
+            qsbr->deferred_memory > QSBR_FREE_MEM_LIMIT) {
+        qsbr->deferred_count = 0;
+        qsbr->deferred_memory = 0;
+        qsbr->should_process = true;
+        return true;
+    }
+    return false;
+}
+#endif
+
 static void
-free_delayed(uintptr_t ptr)
+free_delayed(uintptr_t ptr, size_t size)
 {
 #ifndef Py_GIL_DISABLED
     free_work_item(ptr, NULL, NULL);
@@ -1200,23 +1270,32 @@ free_delayed(uintptr_t ptr)
     }
 
     assert(buf != NULL && buf->wr_idx < WORK_ITEMS_PER_CHUNK);
-    uint64_t seq = _Py_qsbr_deferred_advance(tstate->qsbr);
+    uint64_t seq;
+    if (should_advance_qsbr_for_free(tstate->qsbr, size)) {
+        seq = _Py_qsbr_advance(tstate->qsbr->shared);
+    }
+    else {
+        seq = _Py_qsbr_shared_next(tstate->qsbr->shared);
+    }
     buf->array[buf->wr_idx].ptr = ptr;
     buf->array[buf->wr_idx].qsbr_goal = seq;
     buf->wr_idx++;
 
     if (buf->wr_idx == WORK_ITEMS_PER_CHUNK) {
+        // Normally the processing of delayed items is done from the eval
+        // breaker.  Processing here is a safety measure to ensure too much
+        // work does not accumulate.
         _PyMem_ProcessDelayed((PyThreadState *)tstate);
     }
 #endif
 }
 
 void
-_PyMem_FreeDelayed(void *ptr)
+_PyMem_FreeDelayed(void *ptr, size_t size)
 {
     assert(!((uintptr_t)ptr & 0x01));
     if (ptr != NULL) {
-        free_delayed((uintptr_t)ptr);
+        free_delayed((uintptr_t)ptr, size);
     }
 }
 
@@ -1226,7 +1305,10 @@ _PyObject_XDecRefDelayed(PyObject *ptr)
 {
     assert(!((uintptr_t)ptr & 0x01));
     if (ptr != NULL) {
-        free_delayed(((uintptr_t)ptr)|0x01);
+        // We use 0 as the size since we don't have an easy way to know the
+        // actual size.  If we are freeing many objects, the write sequence
+        // will be advanced due to QSBR_DEFERRED_LIMIT.
+        free_delayed(((uintptr_t)ptr)|0x01, 0);
     }
 }
 #endif
@@ -1316,6 +1398,8 @@ _PyMem_ProcessDelayed(PyThreadState *tstate)
 {
     PyInterpreterState *interp = tstate->interp;
     _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
+
+    tstate_impl->qsbr->should_process = false;
 
     // Process thread-local work
     process_queue(&tstate_impl->mem_free_queue, tstate_impl, true, NULL, NULL);

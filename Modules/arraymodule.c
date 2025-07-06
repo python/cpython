@@ -16,6 +16,7 @@
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_pyatomic_ft_wrappers.h"
 #include "pycore_pymem.h"         // _PyMem_FreeDelayed
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 #include <stddef.h>               // offsetof()
 #include <stdbool.h>
@@ -967,9 +968,7 @@ array_dealloc(PyObject *op)
     if (self->ob_exports > 0) {
         PyErr_FormatUnraisable("deallocated array object has exported buffers");
     }
-    if (self->weakreflist != NULL) {
-        PyObject_ClearWeakRefs(op);
-    }
+    FT_CLEAR_WEAKREFS(op, self->weakreflist);
     if (self->data != NULL) {
         arraydata_free(self->data, false);
     }
