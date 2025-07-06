@@ -1692,9 +1692,10 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 filename=None,
                 all_threads=False,
                 limit=15,
-                sort=None,
+                sort=2,
                 show_summary=True,
                 output_format="pstats",
+                realtime_stats=False,
             )
 
     def test_sort_options(self):

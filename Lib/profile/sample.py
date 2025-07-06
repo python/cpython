@@ -534,6 +534,7 @@ def main():
     sampling_group.add_argument(
         "--realtime-stats",
         action="store_true",
+        default=False,
         help="Print real-time sampling statistics (Hz, mean, min, max, stdev) during profiling",
     )
 
@@ -628,27 +629,20 @@ def main():
     if args.format == "collapsed":
         _validate_collapsed_format_args(args, parser)
 
-    # Set sort value - use the specified sort or None if not specified
-    # The default sort=2 is handled by the sample function itself
-    sort_value = args.sort
+    sort_value = args.sort if args.sort is not None else 2
 
-    # Build the sample function call arguments
-    sample_kwargs = {
-        "sample_interval_usec": args.interval,
-        "duration_sec": args.duration,
-        "filename": args.outfile,
-        "all_threads": args.all_threads,
-        "limit": args.limit,
-        "sort": sort_value,
-        "show_summary": not args.no_summary,
-        "output_format": args.format,
-    }
-
-    # Only add realtime_stats if it's explicitly set to True
-    if args.realtime_stats:
-        sample_kwargs["realtime_stats"] = args.realtime_stats
-
-    sample(args.pid, **sample_kwargs)
+    sample(
+        args.pid,
+        sample_interval_usec=args.interval,
+        duration_sec=args.duration,
+        filename=args.outfile,
+        all_threads=args.all_threads,
+        limit=args.limit,
+        sort=sort_value,
+        show_summary=not args.no_summary,
+        output_format=args.format,
+        realtime_stats=args.realtime_stats,
+    )
 
 
 if __name__ == "__main__":
