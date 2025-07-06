@@ -829,17 +829,6 @@ class SimpleHTTPServerTestCase(BaseTestCase):
                          self.tempdir_name + "/?hi=1")
 
 
-class CorsHTTPServerTestCase(SimpleHTTPServerTestCase):
-    server_kwargs = {
-        'response_headers': {'Access-Control-Allow-Origin': '*'}
-    }
-
-    def test_cors(self):
-        response = self.request(self.base_url + '/test')
-        self.check_status_and_reason(response, HTTPStatus.OK)
-        self.assertEqual(response.getheader('Access-Control-Allow-Origin'), '*')
-
-
 class SocketlessRequestHandler(SimpleHTTPRequestHandler):
     def __init__(self, directory=None):
         request = mock.Mock()
@@ -1387,17 +1376,6 @@ class CommandLineTestCase(unittest.TestCase):
                     call_args = self.args | dict(protocol=protocol)
                     mock_func.assert_called_once_with(**call_args)
                     mock_func.reset_mock()
-
-    @mock.patch('http.server.test')
-    def test_cors_flag(self, mock_func):
-        self.invoke_httpd('--cors')
-        call_args = self.args | dict(
-            response_headers={
-                'Access-Control-Allow-Origin': '*'
-            }
-        )
-        mock_func.assert_called_once_with(**call_args)
-        mock_func.reset_mock()
 
     @mock.patch('http.server.test')
     def test_header_flag(self, mock_func):

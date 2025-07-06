@@ -553,15 +553,6 @@ The following options are accepted:
 
    .. versionadded:: 3.14
 
-.. option:: --cors
-
-   Adds an additional CORS (Cross-Origin Resource sharing) header to each response::
-
-     Access-Control-Allow-Origin: *
-
-   .. versionadded:: next
-
-
 .. _http.server-security:
 
 Security considerations

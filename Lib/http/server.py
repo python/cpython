@@ -1046,8 +1046,6 @@ def _main(args=None):
     parser.add_argument('port', default=8000, type=int, nargs='?',
                         help='bind to this port '
                              '(default: %(default)s)')
-    parser.add_argument('--cors', action='store_true',
-                        help='Enable Access-Control-Allow-Origin: * header')
     parser.add_argument('-H', '--header', nargs=2, action='append',
                         # metavar='HEADER VALUE',
                         metavar=('HEADER', 'VALUE'),
@@ -1091,8 +1089,6 @@ def _main(args=None):
 
     ServerClass = HTTPSDualStackServer if args.tls_cert else HTTPDualStackServer
     response_headers = {}
-    if args.cors:
-        response_headers['Access-Control-Allow-Origin'] = '*'
     for header, value in args.header or []:
         response_headers[header] = value
 
