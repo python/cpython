@@ -535,12 +535,12 @@ class TestSampleProfilerCLI(unittest.TestCase):
 
             mock_sample.assert_called_once_with(
                 12345,
-                sample_interval_usec=10,
+                sample_interval_usec=100,
                 duration_sec=10,
                 filename=None,
                 all_threads=False,
-                limit=None,
-                sort=2,
+                limit=15,
+                sort=None,
                 show_summary=True,
                 output_format="pstats",
             )
