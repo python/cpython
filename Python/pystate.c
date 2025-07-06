@@ -567,6 +567,7 @@ init_interpreter(PyInterpreterState *interp,
     }
     interp->sys_profile_initialized = false;
     interp->sys_trace_initialized = false;
+    interp->_code_object_generation = 0;
     interp->jit = false;
     interp->executor_list_head = NULL;
     interp->executor_deletion_list_head = NULL;
@@ -777,6 +778,10 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     for (int t = 0; t < PY_MONITORING_TOOL_IDS; t++) {
         Py_CLEAR(interp->monitoring_tool_names[t]);
     }
+    interp->_code_object_generation = 0;
+#ifdef Py_GIL_DISABLED
+    interp->tlbc_indices.tlbc_generation = 0;
+#endif
 
     PyConfig_Clear(&interp->config);
     _PyCodec_Fini(interp);
@@ -1137,6 +1142,7 @@ _Py_CheckMainModule(PyObject *module)
         PyObject *msg = PyUnicode_FromString("invalid __main__ module");
         if (msg != NULL) {
             (void)PyErr_SetImportError(msg, &_Py_ID(__main__), NULL);
+            Py_DECREF(msg);
         }
         return -1;
     }
@@ -1345,9 +1351,6 @@ tstate_is_alive(PyThreadState *tstate)
 //----------
 // lifecycle
 //----------
-
-/* Minimum size of data stack chunk */
-#define DATA_STACK_CHUNK_SIZE (16*1024)
 
 static _PyStackChunk*
 allocate_chunk(int size_in_bytes, _PyStackChunk* previous)
@@ -2897,7 +2900,7 @@ _PyInterpreterState_HasFeature(PyInterpreterState *interp, unsigned long feature
 static PyObject **
 push_chunk(PyThreadState *tstate, int size)
 {
-    int allocate_size = DATA_STACK_CHUNK_SIZE;
+    int allocate_size = _PY_DATA_STACK_CHUNK_SIZE;
     while (allocate_size < (int)sizeof(PyObject*)*(size + MINIMUM_OVERHEAD)) {
         allocate_size *= 2;
     }

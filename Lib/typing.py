@@ -407,6 +407,17 @@ def _tp_cache(func=None, /, *, typed=False):
     return decorator
 
 
+def _rebuild_generic_alias(alias: GenericAlias, args: tuple[object, ...]) -> GenericAlias:
+    is_unpacked = alias.__unpacked__
+    if _should_unflatten_callable_args(alias, args):
+        t = alias.__origin__[(args[:-1], args[-1])]
+    else:
+        t = alias.__origin__[args]
+    if is_unpacked:
+        t = Unpack[t]
+    return t
+
+
 def _deprecation_warning_for_no_type_params_passed(funcname: str) -> None:
     import warnings
 
@@ -426,10 +437,7 @@ class _Sentinel:
         return '<sentinel>'
 
 
-_sentinel = _Sentinel()
-
-
-def _eval_type(t, globalns, localns, type_params=_sentinel, *, recursive_guard=frozenset(),
+def _eval_type(t, globalns, localns, type_params, *, recursive_guard=frozenset(),
                format=None, owner=None):
     """Evaluate all forward references in the given type t.
 
@@ -437,9 +445,6 @@ def _eval_type(t, globalns, localns, type_params=_sentinel, *, recursive_guard=f
     recursive_guard is used to prevent infinite recursion with a recursive
     ForwardRef.
     """
-    if type_params is _sentinel:
-        _deprecation_warning_for_no_type_params_passed("typing._eval_type")
-        type_params = ()
     if isinstance(t, _lazy_annotationlib.ForwardRef):
         # If the forward_ref has __forward_module__ set, evaluate() infers the globals
         # from the module, and it will probably pick better than the globals we have here.
@@ -454,25 +459,20 @@ def _eval_type(t, globalns, localns, type_params=_sentinel, *, recursive_guard=f
                 _make_forward_ref(arg) if isinstance(arg, str) else arg
                 for arg in t.__args__
             )
-            is_unpacked = t.__unpacked__
-            if _should_unflatten_callable_args(t, args):
-                t = t.__origin__[(args[:-1], args[-1])]
-            else:
-                t = t.__origin__[args]
-            if is_unpacked:
-                t = Unpack[t]
+        else:
+            args = t.__args__
 
         ev_args = tuple(
             _eval_type(
                 a, globalns, localns, type_params, recursive_guard=recursive_guard,
                 format=format, owner=owner,
             )
-            for a in t.__args__
+            for a in args
         )
         if ev_args == t.__args__:
             return t
         if isinstance(t, GenericAlias):
-            return GenericAlias(t.__origin__, ev_args)
+            return _rebuild_generic_alias(t, ev_args)
         if isinstance(t, Union):
             return functools.reduce(operator.or_, ev_args)
         else:
@@ -956,12 +956,8 @@ def evaluate_forward_ref(
     """Evaluate a forward reference as a type hint.
 
     This is similar to calling the ForwardRef.evaluate() method,
-    but unlike that method, evaluate_forward_ref() also:
-
-    * Recursively evaluates forward references nested within the type hint.
-    * Rejects certain objects that are not valid type hints.
-    * Replaces type hints that evaluate to None with types.NoneType.
-    * Supports the *FORWARDREF* and *STRING* formats.
+    but unlike that method, evaluate_forward_ref() also
+    recursively evaluates forward references nested within the type hint.
 
     *forward_ref* must be an instance of ForwardRef. *owner*, if given,
     should be the object that holds the annotations that the forward reference
@@ -981,23 +977,24 @@ def evaluate_forward_ref(
     if forward_ref.__forward_arg__ in _recursive_guard:
         return forward_ref
 
-    try:
-        value = forward_ref.evaluate(globals=globals, locals=locals,
-                                     type_params=type_params, owner=owner)
-    except NameError:
-        if format == _lazy_annotationlib.Format.FORWARDREF:
-            return forward_ref
-        else:
-            raise
+    if format is None:
+        format = _lazy_annotationlib.Format.VALUE
+    value = forward_ref.evaluate(globals=globals, locals=locals,
+                                 type_params=type_params, owner=owner, format=format)
 
-    type_ = _type_check(
-        value,
-        "Forward references must evaluate to types.",
-        is_argument=forward_ref.__forward_is_argument__,
-        allow_special_forms=forward_ref.__forward_is_class__,
-    )
+    if (isinstance(value, _lazy_annotationlib.ForwardRef)
+            and format == _lazy_annotationlib.Format.FORWARDREF):
+        return value
+
+    if isinstance(value, str):
+        value = _make_forward_ref(value, module=forward_ref.__forward_module__,
+                                  owner=owner or forward_ref.__owner__,
+                                  is_argument=forward_ref.__forward_is_argument__,
+                                  is_class=forward_ref.__forward_is_class__)
+    if owner is None:
+        owner = forward_ref.__owner__
     return _eval_type(
-        type_,
+        value,
         globals,
         locals,
         type_params,
@@ -1863,7 +1860,9 @@ def _allow_reckless_class_checks(depth=2):
     The abc and functools modules indiscriminately call isinstance() and
     issubclass() on the whole MRO of a user class, which may contain protocols.
     """
-    return _caller(depth) in {'abc', 'functools', None}
+    # gh-136047: When `_abc` module is not available, `_py_abc` is required to
+    # allow `_py_abc.ABCMeta` fallback.
+    return _caller(depth) in {'abc', '_py_abc', 'functools', None}
 
 
 _PROTO_ALLOWLIST = {
@@ -2338,12 +2337,12 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False,
                 # This only affects ForwardRefs.
                 base_globals, base_locals = base_locals, base_globals
             for name, value in ann.items():
-                if value is None:
-                    value = type(None)
                 if isinstance(value, str):
                     value = _make_forward_ref(value, is_argument=False, is_class=True)
                 value = _eval_type(value, base_globals, base_locals, base.__type_params__,
                                    format=format, owner=obj)
+                if value is None:
+                    value = type(None)
                 hints[name] = value
         if include_extras or format == Format.STRING:
             return hints
@@ -2377,8 +2376,6 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False,
         localns = globalns
     type_params = getattr(obj, "__type_params__", ())
     for name, value in hints.items():
-        if value is None:
-            value = type(None)
         if isinstance(value, str):
             # class-level forward refs were handled above, this must be either
             # a module-level annotation or a function argument annotation
@@ -2387,7 +2384,10 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False,
                 is_argument=not isinstance(obj, types.ModuleType),
                 is_class=False,
             )
-        hints[name] = _eval_type(value, globalns, localns, type_params, format=format, owner=obj)
+        value = _eval_type(value, globalns, localns, type_params, format=format, owner=obj)
+        if value is None:
+            value = type(None)
+        hints[name] = value
     return hints if include_extras else {k: _strip_annotations(t) for k, t in hints.items()}
 
 
@@ -2406,7 +2406,7 @@ def _strip_annotations(t):
         stripped_args = tuple(_strip_annotations(a) for a in t.__args__)
         if stripped_args == t.__args__:
             return t
-        return GenericAlias(t.__origin__, stripped_args)
+        return _rebuild_generic_alias(t, stripped_args)
     if isinstance(t, Union):
         stripped_args = tuple(_strip_annotations(a) for a in t.__args__)
         if stripped_args == t.__args__:
