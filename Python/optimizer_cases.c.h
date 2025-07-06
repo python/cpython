@@ -2215,12 +2215,11 @@
             else if (inst_type && sym_matches_type(cls, &PyTuple_Type)) {
                 int length = sym_tuple_length(cls);
                 if (length != -1) {
-                    bool all_items_known = true;
-                    PyObject *out = NULL;
+                    PyObject *out = Py_False;
                     for (int i = 0; i < length; i++) {
                         JitOptSymbol *item = sym_tuple_getitem(ctx, cls, i);
                         if (!sym_has_type(item)) {
-                            all_items_known = false;
+                            out = NULL;
                             break;
                         }
                         PyTypeObject *cls_o = (PyTypeObject *)sym_get_const(ctx, item);
@@ -2231,9 +2230,6 @@
                             out = Py_True;
                             break;
                         }
-                    }
-                    if (out == NULL && all_items_known) {
-                        out = Py_False;
                     }
                     if (out) {
                         sym_set_const(res, out);

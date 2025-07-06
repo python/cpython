@@ -964,15 +964,14 @@ dummy_func(void) {
             int length = sym_tuple_length(cls);
             if (length != -1) {
                 // We cannot do anything about tuples with unknown length
-                bool all_items_known = true;
-                PyObject *out = NULL;
+                PyObject *out = Py_False;
                 for (int i = 0; i < length; i++) {
                     JitOptSymbol *item = sym_tuple_getitem(ctx, cls, i);
                     if (!sym_has_type(item)) {
                         // There is an unknown item in the tuple.
                         // It could potentially define its own __instancecheck__
                         // method so we can only deduce bool.
-                        all_items_known = false;
+                        out = NULL;
                         break;
                     }
                     PyTypeObject *cls_o = (PyTypeObject *)sym_get_const(ctx, item);
@@ -983,11 +982,6 @@ dummy_func(void) {
                         out = Py_True;
                         break;
                     }
-                }
-                if (out == NULL && all_items_known) {
-                    // We haven't deduced True, but all items in the tuple are known
-                    // so we can deduce False.
-                    out = Py_False;
                 }
                 if (out) {
                     sym_set_const(res, out);
