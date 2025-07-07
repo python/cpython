@@ -28218,7 +28218,7 @@ printf "%s\n" "$ac_cv_normalize_century" >&6; }
 if test "$ac_cv_normalize_century" = yes
 then
 
-printf "%s\n" "#define Py_NORMALIZE_CENTURY 1" >>confdefs.h
+printf "%s\n" "#define _Py_NORMALIZE_CENTURY 1" >>confdefs.h
 
 fi
 
