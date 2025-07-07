@@ -463,18 +463,12 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
                 if (pto_kw_merged == NULL) {
                     pto_kw_merged = PyDict_Copy(pto->kw);
                     if (pto_kw_merged == NULL) {
-                        if (stack != small_stack) {
-                            PyMem_Free(stack);
-                        }
-                        return NULL;
+                        goto error;
                     }
                 }
                 if (PyDict_SetItem(pto_kw_merged, key, val) < 0) {
                     Py_DECREF(pto_kw_merged);
-                    if (stack != small_stack) {
-                        PyMem_Free(stack);
-                    }
-                    return NULL;
+                    goto error;
                 }
             }
             else {
@@ -489,10 +483,8 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
         /* Create total kwnames */
         tot_kwnames = PyTuple_New(tot_nkwds - n_merges);
         if (tot_kwnames == NULL) {
-            if (stack != small_stack) {
-                PyMem_Free(stack);
-            }
-            return NULL;
+            Py_XDECREF(pto_kw_merged);
+            goto error;
         }
         for (Py_ssize_t i = 0; i < n_tail; ++i) {
             key = Py_NewRef(stack[tot_nargskw + i]);
@@ -502,14 +494,17 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
         /* Copy pto_keywords with overlapping call keywords merged */
         Py_ssize_t pos = 0, i = 0;
         while (PyDict_Next(n_merges ? pto_kw_merged : pto->kw, &pos, &key, &val)) {
+            assert(i < tot_nkwds - n_merges);
             PyTuple_SET_ITEM(tot_kwnames, i, Py_NewRef(key));
             stack[tot_nargs + i] = val;
             i++;
         }
+        assert(i == tot_nkwds - n_merges);
         Py_XDECREF(pto_kw_merged);
 
-        /* Resize Stack if the call has keywords */
-        if (nkwds && stack != small_stack) {
+        /* Resize Stack if the call has keywords
+         * Only resize if nkwds > 6 (1% of github use cases have 7 or more kwds) */
+        if (nkwds > 6 && stack != small_stack) {
             tmp_stack = PyMem_Realloc(stack, (tot_nargskw - n_merges) * sizeof(PyObject *));
             if (tmp_stack == NULL) {
                 Py_DECREF(tot_kwnames);
@@ -526,7 +521,7 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
     if (pto_phcount) {
         Py_ssize_t j = 0;       // New args index
         for (Py_ssize_t i = 0; i < pto_nargs; i++) {
-            if (pto_args[i] == pto->placeholder){
+            if (pto_args[i] == pto->placeholder) {
                 stack[i] = args[j];
                 j += 1;
             }
@@ -554,6 +549,12 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
         Py_DECREF(tot_kwnames);
     }
     return ret;
+
+ error:
+    if (stack != small_stack) {
+        PyMem_Free(stack);
+    }
+    return NULL;
 }
 
 /* Set pto->vectorcall depending on the parameters of the partial object */
