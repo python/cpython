@@ -1,0 +1,3 @@
+Raises :exc:`AttributeError` when accessing
+``concurrent.futures.InterpreterPoolExecutor`` and :mod:`_interpreter` is
+not available.
