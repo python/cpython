@@ -584,6 +584,7 @@ translate_bytecode_to_trace(
             code->co_firstlineno,
             2 * INSTR_IP(initial_instr, code));
     ADD_TO_TRACE(_START_EXECUTOR, 0, (uintptr_t)instr, INSTR_IP(instr, code));
+    ADD_TO_TRACE(_CHECK_VALIDITY, 0, 0, 0);
     ADD_TO_TRACE(_MAKE_WARM, 0, 0, 0);
     uint32_t target = 0;
 
@@ -1472,8 +1473,7 @@ _PyExecutor_GetColdExecutor(void)
         return interp->cold_executor;
     }
     _PyExecutorObject *cold = allocate_executor(0, 1);
-    assert((void *)cold->trace == (void *)cold->exits);
-    ((_PyUOpInstruction *)cold->exits)->opcode = _COLD_EXIT;
+    ((_PyUOpInstruction *)cold->trace)->opcode = _COLD_EXIT;
     if (cold == NULL) {
         Py_FatalError("Cannot allocate core JIT code");
     }
@@ -1526,16 +1526,11 @@ executor_clear(PyObject *op)
     unlink_executor(executor);
     executor->vm_data.valid = 0;
 
-    _PyExecutorObject *cold = _PyExecutor_GetColdExecutor();
-    ((_PyUOpInstruction *)executor->trace)->opcode = _COLD_EXIT;
-#ifdef _Py_JIT
-    executor->jit_code = cold->jit_code;
-#endif
-
     /* It is possible for an executor to form a reference
      * cycle with itself, so decref'ing a side exit could
      * free the executor unless we hold a strong reference to it
      */
+    _PyExecutorObject *cold = _PyExecutor_GetColdExecutor();
     Py_INCREF(executor);
     for (uint32_t i = 0; i < executor->exit_count; i++) {
         executor->exits[i].temperature = initial_unreachable_backoff_counter();

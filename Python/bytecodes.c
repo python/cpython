@@ -5352,7 +5352,6 @@ dummy_func(
             current_executor = (_PyExecutorObject*)executor;
 #endif
             tstate->current_executor = (PyObject *)executor;
-            assert(((_PyExecutorObject *)executor)->vm_data.valid);
         }
 
         tier2 op(_MAKE_WARM, (--)) {
