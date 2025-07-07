@@ -206,6 +206,18 @@ module_name
 Deprecated
 ==========
 
+CLI
+---
+
+* Deprecate :option:`-b` and :option:`!-bb`
+  and schedule them for removal in Python 3.17.
+  They were mainly a transition helpers for Python2 -> Python3 era.
+  In 3.17 no :exc:`BytesWarning` won't be raised for these cases.
+  If you want to check for the same things in the future,
+  use any type-checker of your choice.
+
+  (Contributed by Nikita Sobolev in :gh:`136355`.)
+
 hashlib
 -------
 

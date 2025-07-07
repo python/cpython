@@ -1,0 +1,2 @@
+Deprecate :option:`-b` and :option:`!-bb` and schedule them
+for removal in the future versions of Python.

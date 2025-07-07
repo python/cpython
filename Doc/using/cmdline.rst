@@ -254,6 +254,16 @@ Miscellaneous options
    .. versionchanged:: 3.5
       Affects also comparisons of :class:`bytes` with :class:`int`.
 
+   .. deprecated-removed:: 3.15 3.17
+
+      Deprecate :option:`-b` and :option:`-bb`
+      and schedule them for removal in Python 3.17.
+      They were mainly a transition helpers for Python2 -> Python3 era.
+      In 3.17 no :exc:`BytesWarning` won't be raised for these cases.
+      If you want to check for the same things in the future,
+      use any type-checker of your choice.
+
+
 .. option:: -B
 
    If given, Python won't try to write ``.pyc`` files on the
