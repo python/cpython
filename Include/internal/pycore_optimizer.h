@@ -67,8 +67,9 @@ typedef struct {
 #endif
 } _PyUOpInstruction;
 
-typedef struct {
+typedef struct _PyExitData {
     uint32_t target;
+    uint16_t index;
     _Py_BackoffCounter temperature;
     struct _PyExecutorObject *executor;
 } _PyExitData;
@@ -353,6 +354,14 @@ extern int _Py_uop_frame_pop(JitOptContext *ctx);
 PyAPI_FUNC(PyObject *) _Py_uop_symbols_test(PyObject *self, PyObject *ignored);
 
 PyAPI_FUNC(int) _PyOptimizer_Optimize(_PyInterpreterFrame *frame, _Py_CODEUNIT *start, _PyExecutorObject **exec_ptr, int chain_depth);
+
+static inline _PyExecutorObject *_PyExecutor_FromExit(_PyExitData *exit)
+{
+    _PyExitData *exit0 = exit - exit->index;
+    return (_PyExecutorObject *)(((char *)exit0) - offsetof(_PyExecutorObject, exits));
+}
+
+extern _PyExecutorObject *_PyExecutor_GetColdExecutor(void);
 
 static inline int is_terminator(const _PyUOpInstruction *uop)
 {
