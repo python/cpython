@@ -136,7 +136,7 @@ parser.add_argument(
     choices=['library', 'modules', 'tests'],
     default='tests',
     help=(
-        "Which steps to perform. 'library' downloads and compiles  a crypto"
+        "Which steps to perform. 'library' downloads and compiles a crypto"
         "library. 'module' also compiles Python modules. 'tests' builds "
         "all and runs the test suite."
     )
