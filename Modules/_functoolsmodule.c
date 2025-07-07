@@ -502,8 +502,8 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
         assert(i == tot_nkwds - n_merges);
         Py_XDECREF(pto_kw_merged);
 
-        /* Resize Stack if the call has keywords
-         * Only resize if nkwds > 6 (1% of github use cases have 7 or more kwds) */
+        /* Resize Stack if the call has more than 6 keywords
+         * (1% of github use cases have 7 or more kwds) */
         if (nkwds > 6 && stack != small_stack) {
             tmp_stack = PyMem_Realloc(stack, (tot_nargskw - n_merges) * sizeof(PyObject *));
             if (tmp_stack == NULL) {
