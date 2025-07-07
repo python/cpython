@@ -1,3 +1,1 @@
-Add a new GitHub CI job to test the :py:mod:`ssl` module with AWS-LC__ as the backing cryptography and TLS library.
-
-__ https://github.com/aws/aws-lc
+Add a new GitHub CI job to test the :py:mod:`ssl` module with `AWS-LC <https://github.com/aws/aws-lc>`_ as the backing cryptography and TLS library.
