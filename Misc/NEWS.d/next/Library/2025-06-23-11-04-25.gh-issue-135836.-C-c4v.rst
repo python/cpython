@@ -1,0 +1,1 @@
+Fix :exc:`IndexError` in :meth:`asyncio.loop.create_connection` that could occur when the Happy Eyeballs algorithm resulted in an empty exceptions list during connection attempts.
