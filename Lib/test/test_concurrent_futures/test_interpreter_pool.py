@@ -483,9 +483,6 @@ class InterpreterPoolExecutorTest(
         else:
             print('ImportError not raised!', file=sys.stderr)
             sys.exit(1)
-
-
-        from concurrent.futures import *
         """)
 
         cmd = [sys.executable, '-c', code]
