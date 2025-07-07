@@ -168,9 +168,9 @@ _FLOAT_FORMAT_SPECIFICATION_MATCHER = re.compile(r"""
     # A '0' that's *not* followed by another digit is parsed as a minimum width
     # rather than a zeropad flag.
     (?P<zeropad>0(?=[0-9]))?
-    (?P<minimumwidth>0|[1-9][0-9]*)?
+    (?P<minimumwidth>[0-9]+)?
     (?P<thousands_sep>[,_])?
-    (?:\.(?P<precision>0|[1-9][0-9]*))?
+    (?:\.(?P<precision>[0-9]+))?
     (?P<presentation_type>[eEfFgG%])
 """, re.DOTALL | re.VERBOSE).fullmatch
 
@@ -503,6 +503,9 @@ class Fraction(numbers.Rational):
         trim_zeros = presentation_type in "gG" and not alternate_form
         trim_point = not alternate_form
         exponent_indicator = "E" if presentation_type in "EFG" else "e"
+
+        if align == '=' and fill == '0':
+            zeropad = True
 
         # Round to get the digits we need, figure out where to place the point,
         # and decide whether to use scientific notation. 'point_pos' is the

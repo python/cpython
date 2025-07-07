@@ -1009,6 +1009,20 @@ enum _PyAnnotateFormat {
 
 int _PyObject_SetDict(PyObject *obj, PyObject *value);
 
+#ifndef Py_GIL_DISABLED
+static inline Py_ALWAYS_INLINE void _Py_INCREF_MORTAL(PyObject *op)
+{
+    assert(!_Py_IsStaticImmortal(op));
+    op->ob_refcnt++;
+    _Py_INCREF_STAT_INC();
+#if defined(Py_REF_DEBUG) && !defined(Py_LIMITED_API)
+    if (!_Py_IsImmortal(op)) {
+        _Py_INCREF_IncRefTotal();
+    }
+#endif
+}
+#endif
+
 #ifdef __cplusplus
 }
 #endif
