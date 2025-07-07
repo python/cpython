@@ -4,6 +4,7 @@
 #include "pycore_typevarobject.h"  // _PyTypeAlias_Type, _Py_typing_type_repr
 #include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString
 #include "pycore_unionobject.h"
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 
 typedef struct {
@@ -21,9 +22,7 @@ unionobject_dealloc(PyObject *self)
     unionobject *alias = (unionobject *)self;
 
     _PyObject_GC_UNTRACK(self);
-    if (alias->weakreflist != NULL) {
-        PyObject_ClearWeakRefs((PyObject *)alias);
-    }
+    FT_CLEAR_WEAKREFS(self, alias->weakreflist);
 
     Py_XDECREF(alias->args);
     Py_XDECREF(alias->hashable_args);
