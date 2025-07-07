@@ -491,15 +491,16 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
             PyTuple_SET_ITEM(tot_kwnames, pto_nkwds + i, key);
         }
 
-        /* Copy pto_keywords with overlapping call keywords merged */
+        /* Copy pto_keywords with overlapping call keywords merged
+         * Note, tail is already coppied. */
         Py_ssize_t pos = 0, i = 0;
         while (PyDict_Next(n_merges ? pto_kw_merged : pto->kw, &pos, &key, &val)) {
-            assert(i < tot_nkwds - n_merges);
+            assert(i < pto_nkwds);
             PyTuple_SET_ITEM(tot_kwnames, i, Py_NewRef(key));
             stack[tot_nargs + i] = val;
             i++;
         }
-        assert(i == tot_nkwds - n_merges);
+        assert(i == pto_nkwds);
         Py_XDECREF(pto_kw_merged);
 
         /* Resize Stack if the call has more than 6 keywords
