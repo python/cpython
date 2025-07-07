@@ -1538,27 +1538,24 @@ class GeneralModuleTests(unittest.TestCase):
         reuse = sock.getsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR)
         self.assertFalse(reuse == 0, "failed to set reuse mode")
 
-    @unittest.skipIf(_testcapi is None, "requires _testcapi")
     def test_setsockopt_errors(self):
         # See issue #107546.
-        from _testcapi import INT_MAX, INT_MIN
-
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.addCleanup(sock.close)
 
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)  # No error expected.
 
         with self.assertRaises(OverflowError):
-            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, INT_MAX + 1)
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 2 ** 100)
 
         with self.assertRaises(OverflowError):
-            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, INT_MIN - 1)
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, - 2 ** 100)
 
         with self.assertRaises(OverflowError):
-            sock.setsockopt(socket.SOL_SOCKET, INT_MAX + 1, 1)
+            sock.setsockopt(socket.SOL_SOCKET, 2 ** 100, 1)
 
         with self.assertRaises(OverflowError):
-            sock.setsockopt(INT_MAX + 1, socket.SO_REUSEADDR, 1)
+            sock.setsockopt(2 ** 100, socket.SO_REUSEADDR, 1)
 
         with self.assertRaises(TypeError):
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, dict())
