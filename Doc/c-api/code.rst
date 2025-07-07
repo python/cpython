@@ -255,10 +255,6 @@ For their meaning, see the linked documentation of their Python equivalents.
      * :py:data:`inspect.CO_ITERABLE_COROUTINE`
    * * .. c:macro:: CO_ASYNC_GENERATOR
      * :py:data:`inspect.CO_ASYNC_GENERATOR`
-   * * .. c:macro:: CO_HAS_DOCSTRING
-     * :py:data:`inspect.CO_HAS_DOCSTRING`
-   * * .. c:macro:: CO_METHOD
-     * :py:data:`inspect.CO_METHOD`
 
    * * .. c:macro:: CO_FUTURE_DIVISION
      * no effect (:py:data:`__future__.division`)
