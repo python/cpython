@@ -2,7 +2,9 @@ import asyncio
 import contextlib
 import io
 import os
+import subprocess
 import sys
+import textwrap
 import time
 import unittest
 from concurrent.futures.interpreter import BrokenInterpreterPool
@@ -456,6 +458,38 @@ class InterpreterPoolExecutorTest(
     def test_free_reference(self):
         # Weak references don't cross between interpreters.
         raise unittest.SkipTest('not applicable')
+
+    def test_import_interpreter_pool_executor(self):
+        # Test the import behavior normally if _interpreters is unavailable.
+        code = textwrap.dedent(f"""
+        from concurrent import futures
+        import sys
+        # Set it to None to emulate the case when _interpreter is unavailable.
+        futures._interpreters = None
+
+        try:
+            futures.InterpreterPoolExecutor
+        except AttributeError:
+            pass
+        else:
+            print('AttributeError not raised!', file=sys.stderr)
+            sys.exit(1)
+
+        try:
+            from concurrent.futures import InterpreterPoolExecutor
+        except ImportError:
+            pass
+        else:
+            print('ImportError not raised!', file=sys.stderr)
+            sys.exit(1)
+
+
+        from concurrent.futures import *
+        """)
+
+        cmd = [sys.executable, '-c', code]
+        p = subprocess.run(cmd, capture_output=True)
+        self.assertEqual(p.returncode, 0, p.stderr.decode())
 
 
 class AsyncioTest(InterpretersMixin, testasyncio_utils.TestCase):
