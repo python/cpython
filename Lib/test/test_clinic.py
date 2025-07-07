@@ -238,11 +238,11 @@ class ClinicWholeFileTest(TestCase):
         # The generated output will differ for every run, but we can check that
         # it starts with the clinic block, we check that it contains all the
         # expected fields, and we check that it contains the checksum line.
-        self.assertTrue(out.startswith(dedent("""
+        self.assertStartsWith(out, dedent("""
             /*[clinic input]
             output print 'I told you once.'
             [clinic start generated code]*/
-        """)))
+        """))
         fields = {
             "cpp_endif",
             "cpp_if",
@@ -259,9 +259,7 @@ class ClinicWholeFileTest(TestCase):
             with self.subTest(field=field):
                 self.assertIn(field, out)
         last_line = out.rstrip().split("\n")[-1]
-        self.assertTrue(
-            last_line.startswith("/*[clinic end generated code: output=")
-        )
+        self.assertStartsWith(last_line, "/*[clinic end generated code: output=")
 
     def test_directive_wrong_arg_number(self):
         raw = dedent("""
@@ -2705,8 +2703,7 @@ class ClinicExternalTest(TestCase):
             # Note, we cannot check the entire fail msg, because the path to
             # the tmp file will change for every run.
             _, err = self.expect_failure(fn)
-            self.assertTrue(err.endswith(fail_msg),
-                            f"{err!r} does not end with {fail_msg!r}")
+            self.assertEndsWith(err, fail_msg)
             # Then, force regeneration; success expected.
             out = self.expect_success("-f", fn)
             self.assertEqual(out, "")
@@ -2717,8 +2714,7 @@ class ClinicExternalTest(TestCase):
             )
             with open(fn, encoding='utf-8') as f:
                 generated = f.read()
-            self.assertTrue(generated.endswith(checksum),
-                            (generated, checksum))
+            self.assertEndsWith(generated, checksum)
 
     def test_cli_make(self):
         c_code = dedent("""
@@ -2867,8 +2863,8 @@ class ClinicExternalTest(TestCase):
         # param may change (it's a set, thus unordered). So, let's compare the
         # start and end of the expected output, and then assert that the
         # converters appear lined up in alphabetical order.
-        self.assertTrue(out.startswith(prelude), out)
-        self.assertTrue(out.endswith(finale), out)
+        self.assertStartsWith(out, prelude)
+        self.assertEndsWith(out, finale)
 
         out = out.removeprefix(prelude)
         out = out.removesuffix(finale)
@@ -2876,10 +2872,7 @@ class ClinicExternalTest(TestCase):
         for converter, line in zip(expected_converters, lines):
             line = line.lstrip()
             with self.subTest(converter=converter):
-                self.assertTrue(
-                    line.startswith(converter),
-                    f"expected converter {converter!r}, got {line!r}"
-                )
+                self.assertStartsWith(line, converter)
 
     def test_cli_fail_converters_and_filename(self):
         _, err = self.expect_failure("--converters", "test.c")

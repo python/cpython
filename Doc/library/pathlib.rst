@@ -1985,7 +1985,7 @@ The :mod:`pathlib.types` module provides types for static type checking.
 
       If *follow_symlinks* is ``False``, return ``True`` only if the path
       is a file (without following symlinks); return ``False`` if the path
-      is a directory or other other non-file, or if it doesn't exist.
+      is a directory or other non-file, or if it doesn't exist.
 
    .. method:: is_symlink()
 

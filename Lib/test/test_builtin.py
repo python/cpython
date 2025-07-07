@@ -393,7 +393,7 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertRaises(ValueError, chr, -2**1000)
 
     def test_cmp(self):
-        self.assertTrue(not hasattr(builtins, "cmp"))
+        self.assertNotHasAttr(builtins, "cmp")
 
     def test_compile(self):
         compile('print(1)\n', '', 'exec')
@@ -1120,6 +1120,7 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             self.check_iter_pickle(f1, list(f2), proto)
 
     @support.skip_wasi_stack_overflow()
+    @support.skip_emscripten_stack_overflow()
     @support.requires_resource('cpu')
     def test_filter_dealloc(self):
         # Tests recursive deallocation of nested filter objects using the
@@ -2303,7 +2304,7 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         # tests for object.__format__ really belong elsewhere, but
         #  there's no good place to put them
         x = object().__format__('')
-        self.assertTrue(x.startswith('<object object at'))
+        self.assertStartsWith(x, '<object object at')
 
         # first argument to object.__format__ must be string
         self.assertRaises(TypeError, object().__format__, 3)
@@ -2990,7 +2991,8 @@ class TestType(unittest.TestCase):
 
 def load_tests(loader, tests, pattern):
     from doctest import DocTestSuite
-    tests.addTest(DocTestSuite(builtins))
+    if sys.float_repr_style == 'short':
+        tests.addTest(DocTestSuite(builtins))
     return tests
 
 if __name__ == "__main__":

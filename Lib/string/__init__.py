@@ -191,16 +191,14 @@ class Template:
 
 
 ########################################################################
-# the Formatter class
-# see PEP 3101 for details and purpose of this class
-
-# The hard parts are reused from the C implementation.  They're exposed as "_"
-# prefixed methods of str.
-
+# The Formatter class (PEP 3101).
+#
 # The overall parser is implemented in _string.formatter_parser.
-# The field name parser is implemented in _string.formatter_field_name_split
+# The field name parser is implemented in _string.formatter_field_name_split.
 
 class Formatter:
+    """See PEP 3101 for details and purpose of this class."""
+
     def format(self, format_string, /, *args, **kwargs):
         return self.vformat(format_string, args, kwargs)
 
@@ -292,7 +290,6 @@ class Formatter:
         """
         Return an iterable that contains tuples of the form
         (literal_text, field_name, format_spec, conversion).
-
 
         *field_name* can be None, in which case there's no object
         to format and output; otherwise, it is looked up and
