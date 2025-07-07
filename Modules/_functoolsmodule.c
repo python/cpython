@@ -503,7 +503,7 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
         assert(i == pto_nkwds);
         Py_XDECREF(pto_kw_merged);
 
-        /* Resize Stack if the call has more than 6 keywords
+        /* Resize Stack if the removing overallocation saves some noticable memory
          * NOTE: This whole block can be removed without breaking anything */
         Py_ssize_t noveralloc = n_merges + nkwds;
         if (stack != small_stack && noveralloc > 6 && noveralloc * 10 > init_stack_size) {
