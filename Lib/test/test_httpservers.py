@@ -81,12 +81,11 @@ class TestSSLDisabled(unittest.TestCase):
 
 
 class TestServerThread(threading.Thread):
-    def __init__(self, test_object, request_handler, tls=None, server_kwargs=None):
+    def __init__(self, test_object, request_handler, tls=None):
         threading.Thread.__init__(self)
         self.request_handler = request_handler
         self.test_object = test_object
         self.tls = tls
-        self.server_kwargs = server_kwargs or {}
 
     def run(self):
         if self.tls:
@@ -94,11 +93,9 @@ class TestServerThread(threading.Thread):
             self.server = create_https_server(
                 certfile, keyfile, password,
                 request_handler=self.request_handler,
-                **self.server_kwargs
             )
         else:
-            self.server = HTTPServer(('localhost', 0), self.request_handler,
-                                     **self.server_kwargs)
+            self.server = HTTPServer(('localhost', 0), self.request_handler)
         self.test_object.HOST, self.test_object.PORT = self.server.socket.getsockname()
         self.test_object.server_started.set()
         self.test_object = None
@@ -116,14 +113,12 @@ class BaseTestCase(unittest.TestCase):
 
     # Optional tuple (certfile, keyfile, password) to use for HTTPS servers.
     tls = None
-    server_kwargs = None
 
     def setUp(self):
         self._threads = threading_helper.threading_setup()
         os.environ = os_helper.EnvironmentVarGuard()
         self.server_started = threading.Event()
-        self.thread = TestServerThread(self, self.request_handler, self.tls,
-                                       self.server_kwargs)
+        self.thread = TestServerThread(self, self.request_handler, self.tls)
         self.thread.start()
         self.server_started.wait()
 
@@ -470,8 +465,14 @@ class RequestHandlerLoggingTestCase(BaseTestCase):
         self.assertEndsWith(lines[1], '"ERROR / HTTP/1.1" 404 -')
 
 
+class CustomHeaderSimpleHTTPRequestHandler(SimpleHTTPRequestHandler):
+    custom_headers = None
+    def __init__(self, *args, directory=None, response_headers=None, **kwargs):
+        super().__init__(*args, response_headers=self.custom_headers, **kwargs)
+
+
 class SimpleHTTPServerTestCase(BaseTestCase):
-    class request_handler(NoLogRequestHandler, SimpleHTTPRequestHandler):
+    class request_handler(NoLogRequestHandler, CustomHeaderSimpleHTTPRequestHandler):
         pass
 
     def setUp(self):
@@ -828,6 +829,26 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         self.assertEqual(response.getheader("Location"),
                          self.tempdir_name + "/?hi=1")
 
+    def test_custom_headers_list_dir(self):
+        with mock.patch.object(self.request_handler, 'custom_headers', new={
+            'X-Test1': 'test1',
+            'X-Test2': 'test2',
+        }):
+            response = self.request(self.base_url + '/')
+            self.assertEqual(response.getheader("X-Test1"), 'test1')
+            self.assertEqual(response.getheader("X-Test2"), 'test2')
+
+    def test_custom_headers_get_file(self):
+        with mock.patch.object(self.request_handler, 'custom_headers', new={
+            'X-Test1': 'test1',
+            'X-Test2': 'test2',
+        }):
+            data = b"Dummy index file\r\n"
+            with open(os.path.join(self.tempdir_name, 'index.html'), 'wb') as f:
+                f.write(data)
+            response = self.request(self.base_url + '/')
+            self.assertEqual(response.getheader("X-Test1"), 'test1')
+            self.assertEqual(response.getheader("X-Test2"), 'test2')
 
 class SocketlessRequestHandler(SimpleHTTPRequestHandler):
     def __init__(self, directory=None):
@@ -1311,7 +1332,6 @@ class CommandLineTestCase(unittest.TestCase):
         'tls_cert': None,
         'tls_key': None,
         'tls_password': None,
-        'response_headers': None,
     }
 
     def setUp(self):
@@ -1379,13 +1399,8 @@ class CommandLineTestCase(unittest.TestCase):
 
     @mock.patch('http.server.test')
     def test_header_flag(self, mock_func):
+        call_args = self.args
         self.invoke_httpd('--header', 'h1', 'v1', '-H', 'h2', 'v2')
-        call_args = self.args | dict(
-            response_headers={
-                'h1': 'v1',
-                'h2': 'v2'
-            }
-        )
         mock_func.assert_called_once_with(**call_args)
         mock_func.reset_mock()
 

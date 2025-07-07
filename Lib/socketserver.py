@@ -757,7 +757,7 @@ class BaseRequestHandler:
 
     """
 
-    def __init__(self, request, client_address, server, **kwargs):
+    def __init__(self, request, client_address, server):
         self.request = request
         self.client_address = client_address
         self.server = server

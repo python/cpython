@@ -375,8 +375,9 @@ instantiation, of which this module provides three different variants:
       The *directory* parameter accepts a :term:`path-like object`.
 
    .. versionchanged:: next
-      The *response_headers* parameter accepts an optional dictionary of
-      additional HTTP headers to add to each response.
+      Added *response_headers*, which accepts an optional dictionary of
+      additional HTTP headers to add to each successful HTTP status 200
+      response. All other status code responses will not include these headers.
 
    A lot of the work, such as parsing the request, is done by the base class
    :class:`BaseHTTPRequestHandler`.  This class implements the :func:`do_GET`

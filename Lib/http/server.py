@@ -117,10 +117,6 @@ class HTTPServer(socketserver.TCPServer):
     allow_reuse_address = True    # Seems to make sense in testing environment
     allow_reuse_port = True
 
-    def __init__(self, *args, response_headers=None, **kwargs):
-        self.response_headers = response_headers
-        super().__init__(*args, **kwargs)
-
     def server_bind(self):
         """Override server_bind to store the server name."""
         socketserver.TCPServer.server_bind(self)
@@ -128,13 +124,6 @@ class HTTPServer(socketserver.TCPServer):
         self.server_name = socket.getfqdn(host)
         self.server_port = port
 
-    def finish_request(self, request, client_address):
-        """Finish one request by instantiating RequestHandlerClass."""
-        args = (request, client_address, self)
-        kwargs = {}
-        if hasattr(self, 'response_headers'):
-            kwargs['response_headers'] = self.response_headers
-        self.RequestHandlerClass(request, client_address, self, **kwargs)
 
 class ThreadingHTTPServer(socketserver.ThreadingMixIn, HTTPServer):
     daemon_threads = True
@@ -143,7 +132,7 @@ class ThreadingHTTPServer(socketserver.ThreadingMixIn, HTTPServer):
 class HTTPSServer(HTTPServer):
     def __init__(self, server_address, RequestHandlerClass,
                  bind_and_activate=True, *, certfile, keyfile=None,
-                 password=None, alpn_protocols=None, **http_server_kwargs):
+                 password=None, alpn_protocols=None):
         try:
             import ssl
         except ImportError:
@@ -161,8 +150,7 @@ class HTTPSServer(HTTPServer):
 
         super().__init__(server_address,
                          RequestHandlerClass,
-                         bind_and_activate,
-                         **http_server_kwargs)
+                         bind_and_activate)
 
     def server_activate(self):
         """Wrap the socket in SSLSocket."""
@@ -726,6 +714,13 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         if f:
             f.close()
 
+    def send_custom_response_headers(self):
+        """Send the headers stored in self.response_headers"""
+        # User specified response_headers
+        if self.response_headers is not None:
+            for header, value in self.response_headers.items():
+                self.send_header(header, value)
+
     def send_head(self):
         """Common code for GET and HEAD commands.
 
@@ -749,10 +744,6 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                 new_url = urllib.parse.urlunsplit(new_parts)
                 self.send_header("Location", new_url)
                 self.send_header("Content-Length", "0")
-                # User specified response_headers
-                if self.response_headers is not None:
-                    for header, value in self.response_headers.items():
-                        self.send_header(header, value)
                 self.end_headers()
                 return None
             for index in self.index_pages:
@@ -812,9 +803,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             self.send_header("Content-Length", str(fs[6]))
             self.send_header("Last-Modified",
                 self.date_time_string(fs.st_mtime))
-            if self.response_headers is not None:
-                for header, value in self.response_headers.items():
-                    self.send_header(header, value)
+            self.send_custom_response_headers()
             self.end_headers()
             return f
         except:
@@ -879,6 +868,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         self.send_response(HTTPStatus.OK)
         self.send_header("Content-type", "text/html; charset=%s" % enc)
         self.send_header("Content-Length", str(len(encoded)))
+        self.send_custom_response_headers()
         self.end_headers()
         return f
 
@@ -990,8 +980,7 @@ def _get_best_family(*address):
 def test(HandlerClass=BaseHTTPRequestHandler,
          ServerClass=ThreadingHTTPServer,
          protocol="HTTP/1.0", port=8000, bind=None,
-         tls_cert=None, tls_key=None, tls_password=None,
-         response_headers=None):
+         tls_cert=None, tls_key=None, tls_password=None):
     """Test the HTTP request handler class.
 
     This runs an HTTP server on port 8000 (or the port argument).
@@ -1002,10 +991,9 @@ def test(HandlerClass=BaseHTTPRequestHandler,
 
     if tls_cert:
         server = ServerClass(addr, HandlerClass, certfile=tls_cert,
-                             keyfile=tls_key, password=tls_password,
-                             response_headers=response_headers)
+                             keyfile=tls_key, password=tls_password)
     else:
-        server = ServerClass(addr, HandlerClass, response_headers=response_headers)
+        server = ServerClass(addr, HandlerClass)
 
     with server as httpd:
         host, port = httpd.socket.getsockname()[:2]
@@ -1067,6 +1055,10 @@ def _main(args=None):
         except OSError as e:
             parser.error(f"Failed to read TLS password file: {e}")
 
+    response_headers = {}
+    for header, value in args.header or []:
+        response_headers[header] = value
+
     # ensure dual-stack is not disabled; ref #38907
     class DualStackServerMixin:
 
@@ -1080,7 +1072,7 @@ def _main(args=None):
         def finish_request(self, request, client_address):
             self.RequestHandlerClass(request, client_address, self,
                                      directory=args.directory,
-                                     response_headers=self.response_headers)
+                                     response_headers=response_headers)
 
     class HTTPDualStackServer(DualStackServerMixin, ThreadingHTTPServer):
         pass
@@ -1088,10 +1080,6 @@ def _main(args=None):
         pass
 
     ServerClass = HTTPSDualStackServer if args.tls_cert else HTTPDualStackServer
-    response_headers = {}
-    for header, value in args.header or []:
-        response_headers[header] = value
-
 
     test(
         HandlerClass=SimpleHTTPRequestHandler,
@@ -1102,7 +1090,6 @@ def _main(args=None):
         tls_cert=args.tls_cert,
         tls_key=args.tls_key,
         tls_password=tls_key_password,
-        response_headers=response_headers or None
     )
 
 
