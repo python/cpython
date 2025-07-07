@@ -1753,19 +1753,29 @@ _PyObject_GetMethodStackRef(PyThreadState *ts, PyObject *obj,
         }
     }
     if (dict != NULL) {
-        // TODO: use _Py_dict_lookup_threadsafe_stackref
+        assert(PyUnicode_CheckExact(name));
+        Py_hash_t hash = _PyObject_HashFast(name);
+        // cannot fail for exact unicode
+        assert(hash != -1);
         Py_INCREF(dict);
-        PyObject *value;
-        if (PyDict_GetItemRef(dict, name, &value) != 0) {
-            // found or error
-            Py_DECREF(dict);
+        // ref is not visible to gc so there should be
+        // no escaping calls before assigning it to method
+        _PyStackRef ref;
+        Py_ssize_t ix = _Py_dict_lookup_threadsafe_stackref((PyDictObject *)dict,
+                                                            name, hash, &ref);
+        if (ix == DKIX_ERROR) {
+            // error
             PyStackRef_CLEAR(*method);
-            if (value != NULL) {
-                *method = PyStackRef_FromPyObjectSteal(value);
-            }
+            Py_DECREF(dict);
+            return -1;
+        } else if (!PyStackRef_IsNull(ref)) {
+            // found
+            _PyStackRef tmp = *method;
+            *method = ref;
+            PyStackRef_XCLOSE(tmp);
+            Py_DECREF(dict);
             return 0;
         }
-        // not found
         Py_DECREF(dict);
     }
 
