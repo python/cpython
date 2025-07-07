@@ -555,7 +555,7 @@ def get_target(host: str) -> _COFF | _ELF | _MachO:
     elif re.fullmatch(r"x86_64-pc-windows-msvc", host):
         args = ["-fms-runtime-lib=dll"]
         condition = "defined(_M_X64)"
-        optimizer = _optimizers.OptimizerX8664Windows
+        optimizer = _optimizers.OptimizerX86
         target = _COFF(host, condition, args=args, optimizer=optimizer)
     elif re.fullmatch(r"x86_64-.*-linux-gnu", host):
         args = ["-fno-pic", "-mcmodel=medium", "-mlarge-data-threshold=0"]

@@ -302,18 +302,3 @@ class OptimizerX86(Optimizer):  # pylint: disable = too-few-public-methods
     _re_jump = re.compile(r"\s*jmp\s+(?P<target>[\w.]+)")
     # https://www.felixcloutier.com/x86/ret
     _re_return = re.compile(r"\s*ret\b")
-
-
-class OptimizerX8664Windows(OptimizerX86):  # pylint: disable = too-few-public-methods
-    """x86_64-pc-windows-msvc"""
-
-    def _preprocess(self, text: str) -> str:
-        text = super()._preprocess(text)
-        # Before:
-        #     rex64 jmpq *__imp__JIT_CONTINUE(%rip)
-        # After:
-        #     jmp _JIT_CONTINUE
-        far_indirect_jump = (
-            rf"rex64\s+jmpq\s+\*__imp_(?P<target>{self.prefix}_JIT_\w+)\(%rip\)"
-        )
-        return re.sub(far_indirect_jump, r"jmp\t\g<target>", text)
