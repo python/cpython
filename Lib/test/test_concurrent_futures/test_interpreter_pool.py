@@ -459,6 +459,7 @@ class InterpreterPoolExecutorTest(
         # Weak references don't cross between interpreters.
         raise unittest.SkipTest('not applicable')
 
+    @support.requires_subprocess()
     def test_import_interpreter_pool_executor(self):
         # Test the import behavior normally if _interpreters is unavailable.
         code = textwrap.dedent(f"""
