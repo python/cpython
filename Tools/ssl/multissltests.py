@@ -112,9 +112,7 @@ parser.add_argument(
     '--awslc',
     nargs='+',
     default=(),
-    help=(
-        "AWS-LC versions, defaults to '{}'."
-    ).format(AWSLC_RECENT_VERSIONS)
+    help=f"AWS-LC versions, defaults to '{AWSLC_RECENT_VERSIONS}'."
 )
 parser.add_argument(
     '--tests',
