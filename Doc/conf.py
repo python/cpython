@@ -635,7 +635,7 @@ ogp_social_cards = {  # Used when matplotlib is installed
     'image': '_static/og-image.png',
     'line_color': '#3776ab',
 }
-if 'epub' not in tags:  # noqa: F821
+if 'builder_html' in tags:  # noqa: F821
     ogp_custom_meta_tags = [
         '<meta name="theme-color" content="#3776ab">',
     ]
