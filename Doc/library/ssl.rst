@@ -1699,6 +1699,7 @@ to speed up repeated connections from the same clients.
    <https://docs.openssl.org/master/man3/SSL_CTX_set1_groups_list/>`_.
 
    .. note::
+
       When connected, the :meth:`SSLSocket.group` method of SSL sockets will
       return the group used for key agreement on that connection.
 
