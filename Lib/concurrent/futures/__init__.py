@@ -64,8 +64,7 @@ def __getattr__(name):
         return te
 
     if _have__interpreters and name == 'InterpreterPoolExecutor':
-        from .interpreter import InterpreterPoolExecutor as ie
-        InterpreterPoolExecutor = ie
-        return ie
+        from .interpreter import InterpreterPoolExecutor
+        return InterpreterPoolExecutor
 
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
