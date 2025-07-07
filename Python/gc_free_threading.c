@@ -1616,12 +1616,14 @@ debug_cycle(const char *msg, PyObject *op)
 /* Run first-time finalizers (if any) on all the objects in collectable.
  * Note that this may remove some (or even all) of the objects from the
  * list, due to refcounts falling to 0.
+ * Return 1 if any finalizers were run.
  */
-static void
+static int
 finalize_garbage(struct collection_state *state)
 {
     // NOTE: the unreachable worklist holds a strong reference to the object
     // to prevent it from being deallocated while we are holding on to it.
+    int finalizer_run = 0;
     PyObject *op;
     WORKSTACK_FOR_EACH(&state->unreachable, op) {
         if (!_PyGC_FINALIZED(op)) {
@@ -1629,10 +1631,12 @@ finalize_garbage(struct collection_state *state)
             if (finalize != NULL) {
                 _PyGC_SET_FINALIZED(op);
                 finalize(op);
+                finalizer_run = 1;
                 assert(!_PyErr_Occurred(_PyThreadState_GET()));
             }
         }
     }
+    return finalizer_run;
 }
 
 // Break reference cycles by clearing the containers involved.
@@ -2220,11 +2224,13 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
     // Call weakref callbacks and finalizers after unpausing other threads to
     // avoid potential deadlocks.
     call_weakref_callbacks(state);
-    finalize_garbage(state);
+    int check_resurrected = finalize_garbage(state);
 
-    // Handle any objects that may have resurrected after the finalization.
     _PyEval_StopTheWorld(interp);
-    err = handle_resurrected_objects(state);
+    // Handle any objects that may have resurrected after finalization, if any
+    if (check_resurrected) {
+        err = handle_resurrected_objects(state);
+    }
     // Clear free lists in all threads
     _PyGC_ClearAllFreeLists(interp);
     _PyEval_StartTheWorld(interp);
