@@ -34,15 +34,14 @@ __all__ = [
 ]
 
 
-_have__interpreters = False
+_interpreters = None
 
 try:
     import _interpreters
-    _have__interpreters = True
 except ModuleNotFoundError:
     pass
 
-if _have__interpreters:
+if _interpreters:
     __all__.append('InterpreterPoolExecutor')
 
 
@@ -54,16 +53,14 @@ def __getattr__(name):
     global ProcessPoolExecutor, ThreadPoolExecutor, InterpreterPoolExecutor
 
     if name == 'ProcessPoolExecutor':
-        from .process import ProcessPoolExecutor as pe
-        ProcessPoolExecutor = pe
-        return pe
+        from .process import ProcessPoolExecutor
+        return ProcessPoolExecutor
 
     if name == 'ThreadPoolExecutor':
-        from .thread import ThreadPoolExecutor as te
-        ThreadPoolExecutor = te
-        return te
+        from .thread import ThreadPoolExecutor
+        return ThreadPoolExecutor
 
-    if _have__interpreters and name == 'InterpreterPoolExecutor':
+    if _interpreters and name == 'InterpreterPoolExecutor':
         from .interpreter import InterpreterPoolExecutor
         return InterpreterPoolExecutor
 
