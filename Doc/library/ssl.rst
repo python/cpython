@@ -1650,14 +1650,14 @@ to speed up repeated connections from the same clients.
 
 .. method:: SSLContext.get_groups(*, include_aliases=False)
 
-   Get a list of groups implemented for key agreement, taking into account
-   the SSLContext's current TLS ``minimum_version`` and ``maximum_version``
-   values.  For example::
+   Get a list of groups implemented for key agreement, taking into
+   account the current TLS :attr:`~SSLContext.minimum_version` and
+   :attr:`~SSLContext.maximum_version` values.  For example::
 
        >>> ctx = ssl.create_default_context()
        >>> ctx.minimum_version = ssl.TLSVersion.TLSv1_3
        >>> ctx.maximum_version = ssl.TLSVersion.TLSv1_3
-       >>> ctx.get_groups() # doctest: +SKIP
+       >>> ctx.get_groups()  # doctest: +SKIP
        ['secp256r1', 'secp384r1', 'secp521r1', 'x25519', 'x448', ...]
 
    By default, this method returns only the preferred IANA names for the
