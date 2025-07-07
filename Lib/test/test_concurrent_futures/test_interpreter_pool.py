@@ -463,10 +463,10 @@ class InterpreterPoolExecutorTest(
     def test_import_interpreter_pool_executor(self):
         # Test the import behavior normally if _interpreters is unavailable.
         code = textwrap.dedent(f"""
-        from concurrent import futures
         import sys
         # Set it to None to emulate the case when _interpreter is unavailable.
-        futures._interpreters = None
+        sys.modules['_interpreters'] = None
+        from concurrent import futures
 
         try:
             futures.InterpreterPoolExecutor
@@ -483,6 +483,8 @@ class InterpreterPoolExecutorTest(
         else:
             print('ImportError not raised!', file=sys.stderr)
             sys.exit(1)
+
+        from concurrent.futures import *
         """)
 
         cmd = [sys.executable, '-c', code]
