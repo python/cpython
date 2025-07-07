@@ -653,7 +653,7 @@ Miscellaneous options
      .. versionadded:: 3.13
 
    * :samp:`-X thread_inherit_context={0,1}` causes :class:`~threading.Thread`
-     to, by default, use a copy of context of of the caller of
+     to, by default, use a copy of context of the caller of
      ``Thread.start()`` when starting.  Otherwise, threads will start
      with an empty context.  If unset, the value of this option defaults
      to ``1`` on free-threaded builds and to ``0`` otherwise.  See also
@@ -666,6 +666,13 @@ Miscellaneous options
      :class:`~contextvars.ContextVar` to store warnings filter state.  If
      unset, the value of this option defaults to ``1`` on free-threaded builds
      and to ``0`` otherwise.  See also :envvar:`PYTHON_CONTEXT_AWARE_WARNINGS`.
+
+     .. versionadded:: 3.14
+
+   * :samp:`-X tlbc={0,1}` enables (1, the default) or disables (0) thread-local
+     bytecode in builds configured with :option:`--disable-gil`.  When disabled,
+     this also disables the specializing interpreter.  See also
+     :envvar:`PYTHON_TLBC`.
 
      .. versionadded:: 3.14
 
@@ -1277,7 +1284,7 @@ conflict.
 .. envvar:: PYTHON_THREAD_INHERIT_CONTEXT
 
    If this variable is set to ``1`` then :class:`~threading.Thread` will,
-   by default, use a copy of context of of the caller of ``Thread.start()``
+   by default, use a copy of context of the caller of ``Thread.start()``
    when starting.  Otherwise, new threads will start with an empty context.
    If unset, this variable defaults to ``1`` on free-threaded builds and to
    ``0`` otherwise.  See also :option:`-X thread_inherit_context<-X>`.
@@ -1301,6 +1308,16 @@ conflict.
    interpreter startup.
 
    .. versionadded:: 3.13
+
+.. envvar:: PYTHON_TLBC
+
+   If set to ``1`` enables thread-local bytecode. If set to ``0`` thread-local
+   bytecode and the specializing interpreter are disabled.  Only applies to
+   builds configured with :option:`--disable-gil`.
+
+   See also the :option:`-X tlbc <-X>` command-line option.
+
+   .. versionadded:: 3.14
 
 Debug-mode variables
 ~~~~~~~~~~~~~~~~~~~~

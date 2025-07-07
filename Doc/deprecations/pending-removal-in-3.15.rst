@@ -20,7 +20,7 @@ Pending removal in Python 3.15
 
 * :mod:`http.server`:
 
-  * The obsolete and rarely used :class:`~http.server.CGIHTTPRequestHandler`
+  * The obsolete and rarely used :class:`!CGIHTTPRequestHandler`
     has been deprecated since Python 3.13.
     No direct replacement exists.
     *Anything* is better than CGI to interface
@@ -51,7 +51,7 @@ Pending removal in Python 3.15
 
 * :mod:`platform`:
 
-  * :func:`~platform.java_ver` has been deprecated since Python 3.13.
+  * :func:`!platform.java_ver` has been deprecated since Python 3.13.
     This function is only useful for Jython support, has a confusing API,
     and is largely untested.
 
@@ -96,6 +96,8 @@ Pending removal in Python 3.15
     has been deprecated since Python 3.13.
     After eight years in the :mod:`typing` module,
     it has yet to be supported by any major type checker.
+
+* :mod:`!sre_compile`, :mod:`!sre_constants` and :mod:`!sre_parse` modules.
 
 * :mod:`wave`:
 

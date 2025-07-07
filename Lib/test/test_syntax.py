@@ -382,6 +382,13 @@ SyntaxError: invalid syntax
 Traceback (most recent call last):
 SyntaxError: invalid syntax
 
+# But prefixes of soft keywords should
+# still raise specialized errors
+
+>>> (mat x)
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Perhaps you forgot a comma?
+
 From compiler_complex_args():
 
 >>> def f(None=1):
@@ -1431,6 +1438,23 @@ Better error message for using `except as` with not a name:
    Traceback (most recent call last):
    SyntaxError: cannot use except* statement with literal
 
+Regression tests for gh-133999:
+
+   >>> try: pass
+   ... except TypeError as name: raise from None
+   Traceback (most recent call last):
+   SyntaxError: did you forget an expression between 'raise' and 'from'?
+
+   >>> try: pass
+   ... except* TypeError as name: raise from None
+   Traceback (most recent call last):
+   SyntaxError: did you forget an expression between 'raise' and 'from'?
+
+   >>> match 1:
+   ...     case 1 | 2 as abc: raise from None
+   Traceback (most recent call last):
+   SyntaxError: did you forget an expression between 'raise' and 'from'?
+
 Ensure that early = are not matched by the parser as invalid comparisons
    >>> f(2, 4, x=34); 1 $ 2
    Traceback (most recent call last):
@@ -1677,6 +1701,28 @@ Make sure that the old "raise X, Y[, Z]" form is gone:
    Traceback (most recent call last):
      ...
    SyntaxError: invalid syntax
+
+Better errors for `raise` statement:
+
+    >>> raise ValueError from
+    Traceback (most recent call last):
+    SyntaxError: did you forget an expression after 'from'?
+
+    >>> raise mod.ValueError() from
+    Traceback (most recent call last):
+    SyntaxError: did you forget an expression after 'from'?
+
+    >>> raise from exc
+    Traceback (most recent call last):
+    SyntaxError: did you forget an expression between 'raise' and 'from'?
+
+    >>> raise from None
+    Traceback (most recent call last):
+    SyntaxError: did you forget an expression between 'raise' and 'from'?
+
+    >>> raise from
+    Traceback (most recent call last):
+    SyntaxError: did you forget an expression between 'raise' and 'from'?
 
 Check that an multiple exception types with missing parentheses
 raise a custom exception only when using 'as'
@@ -2825,6 +2871,13 @@ class SyntaxErrorTestCase(unittest.TestCase):
                 global b  # SyntaxError
             """
         self._check_error(source, "parameter and nonlocal", lineno=3)
+
+    def test_raise_from_error_message(self):
+        source = """if 1:
+        raise AssertionError() from None
+        print(1,,2)
+        """
+        self._check_error(source, "invalid syntax", lineno=3)
 
     def test_yield_outside_function(self):
         self._check_error("if 0: yield",                "outside function")
