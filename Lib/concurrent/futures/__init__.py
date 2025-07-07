@@ -17,7 +17,7 @@ from concurrent.futures._base import (FIRST_COMPLETED,
                                       wait,
                                       as_completed)
 
-__all__ = (
+__all__ = [
     'FIRST_COMPLETED',
     'FIRST_EXCEPTION',
     'ALL_COMPLETED',
@@ -29,22 +29,29 @@ __all__ = (
     'Executor',
     'wait',
     'as_completed',
-    'InterpreterPoolExecutor',
     'ProcessPoolExecutor',
     'ThreadPoolExecutor',
-)
+]
+
+
+_have__interpreters = False
+
+try:
+    import _interpreters
+    _have__interpreters = True
+except ModuleNotFoundError:
+    pass
+
+if _have__interpreters:
+    __all__.append('InterpreterPoolExecutor')
 
 
 def __dir__():
     return __all__ + ('__author__', '__doc__')
 
 
-_no_interpreter_pool_executor = False
-
-
 def __getattr__(name):
     global ProcessPoolExecutor, ThreadPoolExecutor, InterpreterPoolExecutor
-    global _no_interpreter_pool_executor
 
     if name == 'ProcessPoolExecutor':
         from .process import ProcessPoolExecutor as pe
@@ -56,13 +63,9 @@ def __getattr__(name):
         ThreadPoolExecutor = te
         return te
 
-    if name == 'InterpreterPoolExecutor' and not _no_interpreter_pool_executor:
-        try:
-            from .interpreter import InterpreterPoolExecutor as ie
-        except ModuleNotFoundError:
-            _no_interpreter_pool_executor = True
-        else:
-            InterpreterPoolExecutor = ie
-            return ie
+    if _have__interpreters and name == 'InterpreterPoolExecutor':
+        from .interpreter import InterpreterPoolExecutor as ie
+        InterpreterPoolExecutor = ie
+        return ie
 
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
