@@ -1289,9 +1289,12 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
    .. c:macro:: Py_TPFLAGS_PREHEADER
 
-      This is a shorthand for checking is :c:macro:`Py_TPFLAGS_MANAGED_DICT` or
-      :c:macro:`Py_TPFLAGS_MANAGED_WEAKREF` present. Supposed only for internal
-      usage.
+      A shorthand for checking if VM-managed fields are present.
+      Currently, this macro is equivalent to
+      :c:expr:`Py_TPFLAGS_MANAGED_DICT | Py_TPFLAGS_MANAGED_WEAKREF`.
+
+      This macro is intended for internal usage only; prefer using individual
+      flags instead.
 
       .. versionadded:: 3.12
 
