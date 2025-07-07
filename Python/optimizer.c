@@ -1485,7 +1485,7 @@ _PyExecutor_GetColdExecutor(void)
     // This is initialized to true so we can prevent the executor
     // from being immediately detected as cold and invalidated.
     cold->vm_data.warm = true;
-    if (_PyJIT_Compile(cold, cold->trace, length)) {
+    if (_PyJIT_Compile(cold, cold->trace, 1)) {
         Py_DECREF(cold);
         Py_FatalError("Cannot allocate core JIT code");
     }
