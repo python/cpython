@@ -3,22 +3,30 @@ import _remote_debugging
 import pstats
 import statistics
 import time
+import sys
+import sysconfig
 from collections import deque
 from _colorize import ANSIColors
 
 from .pstats_collector import PstatsCollector
 from .stack_collectors import CollapsedStackCollector
 
+FREE_THREADED_BUILD = sysconfig.get_config_var("Py_GIL_DISABLED") is not None
 
 class SampleProfiler:
     def __init__(self, pid, sample_interval_usec, all_threads):
         self.pid = pid
         self.sample_interval_usec = sample_interval_usec
         self.all_threads = all_threads
-        only_active_threads = bool(self.all_threads)
-        self.unwinder = _remote_debugging.RemoteUnwinder(
-            self.pid, only_active_thread=only_active_threads
-        )
+        if FREE_THREADED_BUILD:
+            self.unwinder = _remote_debugging.RemoteUnwinder(
+                self.pid, all_threads=self.all_threads
+            )
+        else:
+            only_active_threads = bool(self.all_threads)
+            self.unwinder = _remote_debugging.RemoteUnwinder(
+                self.pid, only_active_thread=only_active_threads
+            )
         # Track sample intervals and total sample count
         self.sample_intervals = deque(maxlen=100)
         self.total_samples = 0
