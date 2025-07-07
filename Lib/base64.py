@@ -4,7 +4,6 @@
 # Modified 30-Dec-2003 by Barry Warsaw to add full RFC 3548 support
 # Modified 22-May-2007 by Guido van Rossum to use bytes everywhere
 
-import re
 import struct
 import binascii
 
@@ -284,7 +283,7 @@ def b16decode(s, casefold=False):
     s = _bytes_from_decode_data(s)
     if casefold:
         s = s.upper()
-    if re.search(b'[^0-9A-F]', s):
+    if s.translate(None, delete=b'0123456789ABCDEF'):
         raise binascii.Error('Non-base16 digit found')
     return binascii.unhexlify(s)
 

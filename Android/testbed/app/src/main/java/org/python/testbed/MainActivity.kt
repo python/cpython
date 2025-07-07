@@ -15,17 +15,29 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        val status = PythonTestRunner(this).run("-W -uall")
+        val status = PythonTestRunner(this).run("-m", "test", "-W -uall")
         findViewById<TextView>(R.id.tvHello).text = "Exit status $status"
     }
 }
 
 
 class PythonTestRunner(val context: Context) {
-    /** @param args Extra arguments for `python -m test`.
-     * @return The Python exit status: zero if the tests passed, nonzero if
-     * they failed. */
-    fun run(args: String = "") : Int {
+    fun run(instrumentationArgs: Bundle) = run(
+        instrumentationArgs.getString("pythonMode")!!,
+        instrumentationArgs.getString("pythonModule")!!,
+        instrumentationArgs.getString("pythonArgs") ?: "",
+    )
+
+    /** Run Python.
+     *
+     * @param mode Either "-c" or "-m".
+     * @param module Python statements for "-c" mode, or a module name for
+     *     "-m" mode.
+     * @param args Arguments to add to sys.argv. Will be parsed by `shlex.split`.
+     * @return The Python exit status: zero on success, nonzero on failure. */
+    fun run(mode: String, module: String, args: String) : Int {
+        Os.setenv("PYTHON_MODE", mode, true)
+        Os.setenv("PYTHON_MODULE", module, true)
         Os.setenv("PYTHON_ARGS", args, true)
 
         // Python needs this variable to help it find the temporary directory,
@@ -36,8 +48,9 @@ class PythonTestRunner(val context: Context) {
         System.loadLibrary("main_activity")
         redirectStdioToLogcat()
 
-        // The main module is in src/main/python/main.py.
-        return runPython(pythonHome.toString(), "main")
+        // The main module is in src/main/python. We don't simply call it
+        // "main", as that could clash with third-party test code.
+        return runPython(pythonHome.toString(), "android_testbed_main")
     }
 
     private fun extractAssets() : File {

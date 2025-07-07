@@ -1152,6 +1152,43 @@ class AsyncGenAsyncioTest(unittest.TestCase):
 
         self.loop.run_until_complete(run())
 
+    def test_async_gen_asyncio_anext_tuple_no_exceptions(self):
+        # StopAsyncIteration exceptions should be cleared.
+        # See: https://github.com/python/cpython/issues/128078.
+
+        async def foo():
+            if False:
+                yield (1, 2)
+
+        async def run():
+            it = foo().__aiter__()
+            with self.assertRaises(StopAsyncIteration):
+                await it.__anext__()
+            res = await anext(it, ('a', 'b'))
+            self.assertTupleEqual(res, ('a', 'b'))
+
+        self.loop.run_until_complete(run())
+
+    def test_sync_anext_raises_exception(self):
+        # See: https://github.com/python/cpython/issues/131670
+        msg = 'custom'
+        for exc_type in [
+            StopAsyncIteration,
+            StopIteration,
+            ValueError,
+            Exception,
+        ]:
+            exc = exc_type(msg)
+            with self.subTest(exc=exc):
+                class A:
+                    def __anext__(self):
+                        raise exc
+
+                with self.assertRaisesRegex(exc_type, msg):
+                    anext(A())
+                with self.assertRaisesRegex(exc_type, msg):
+                    anext(A(), 1)
+
     def test_async_gen_asyncio_anext_stopiteration(self):
         async def foo():
             try:
@@ -1983,6 +2020,15 @@ class TestUnawaitedWarnings(unittest.TestCase):
             g = gen()
             g.athrow(RuntimeError)
             gc_collect()
+
+    def test_athrow_throws_immediately(self):
+        async def gen():
+            yield 1
+
+        g = gen()
+        msg = "athrow expected at least 1 argument, got 0"
+        with self.assertRaisesRegex(TypeError, msg):
+            g.athrow()
 
     def test_aclose(self):
         async def gen():

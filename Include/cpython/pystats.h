@@ -29,9 +29,9 @@
 #  error "this header file must not be included directly"
 #endif
 
-#define PYSTATS_MAX_UOP_ID 512
+#define PYSTATS_MAX_UOP_ID 1024
 
-#define SPECIALIZATION_FAILURE_KINDS 36
+#define SPECIALIZATION_FAILURE_KINDS 60
 
 /* Stats for determining who is calling PyEval_EvalFrame */
 #define EVAL_CALL_TOTAL 0
@@ -129,6 +129,7 @@ typedef struct _optimization_stats {
     uint64_t inner_loop;
     uint64_t recursive_call;
     uint64_t low_confidence;
+    uint64_t unknown_callee;
     uint64_t executors_invalidated;
     UOpStats opcode[PYSTATS_MAX_UOP_ID + 1];
     uint64_t unsupported_opcode[256];
@@ -141,6 +142,14 @@ typedef struct _optimization_stats {
     uint64_t remove_globals_builtins_changed;
     uint64_t remove_globals_incorrect_keys;
     uint64_t error_in_opcode[PYSTATS_MAX_UOP_ID + 1];
+    // JIT memory stats
+    uint64_t jit_total_memory_size;
+    uint64_t jit_code_size;
+    uint64_t jit_trampoline_size;
+    uint64_t jit_data_size;
+    uint64_t jit_padding_size;
+    uint64_t jit_freed_memory_size;
+    uint64_t trace_total_memory_hist[_Py_UOP_HIST_SIZE];
 } OptimizationStats;
 
 typedef struct _rare_event_stats {

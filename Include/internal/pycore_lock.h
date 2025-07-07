@@ -25,13 +25,6 @@ PyMutex_LockFast(PyMutex *m)
     return _Py_atomic_compare_exchange_uint8(lock_bits, &expected, _Py_LOCKED);
 }
 
-// Checks if the mutex is currently locked.
-static inline int
-PyMutex_IsLocked(PyMutex *m)
-{
-    return (_Py_atomic_load_uint8(&m->_bits) & _Py_LOCKED) != 0;
-}
-
 // Re-initializes the mutex after a fork to the unlocked state.
 static inline void
 _PyMutex_at_fork_reinit(PyMutex *m)
@@ -48,11 +41,19 @@ typedef enum _PyLockFlags {
 
     // Handle signals if interrupted while waiting on the lock.
     _PY_LOCK_HANDLE_SIGNALS = 2,
+
+    // Fail if interrupted by a signal while waiting on the lock.
+    _PY_FAIL_IF_INTERRUPTED = 4,
+
+    // Locking & unlocking this lock requires attached thread state.
+    // If locking returns PY_LOCK_FAILURE, a Python exception *may* be raised.
+    // (Intended for use with _PY_LOCK_HANDLE_SIGNALS and _PY_LOCK_DETACH.)
+    _PY_LOCK_PYTHONLOCK = 8,
 } _PyLockFlags;
 
 // Lock a mutex with an optional timeout and additional options. See
 // _PyLockFlags for details.
-extern PyLockStatus
+extern PyAPI_FUNC(PyLockStatus)
 _PyMutex_LockTimed(PyMutex *m, PyTime_t timeout_ns, _PyLockFlags flags);
 
 // Lock a mutex with additional options. See _PyLockFlags for details.

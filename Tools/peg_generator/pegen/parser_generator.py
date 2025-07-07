@@ -81,6 +81,11 @@ class RuleCheckingVisitor(GrammarVisitor):
             self.tokens.add("FSTRING_START")
             self.tokens.add("FSTRING_END")
             self.tokens.add("FSTRING_MIDDLE")
+        # If python < 3.14 add the virtual tstring tokens
+        if sys.version_info < (3, 14, 0, 'beta', 1):
+            self.tokens.add("TSTRING_START")
+            self.tokens.add("TSTRING_END")
+            self.tokens.add("TSTRING_MIDDLE")
 
     def visit_NameLeaf(self, node: NameLeaf) -> None:
         if node.value not in self.rules and node.value not in self.tokens:

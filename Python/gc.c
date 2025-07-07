@@ -1,19 +1,20 @@
 //  This implements the reference cycle garbage collector.
 //  The Python module interface to the collector is in gcmodule.c.
-//  See https://devguide.python.org/internals/garbage-collector/
+//  See InternalDocs/garbage_collector.md for more infromation.
 
 #include "Python.h"
 #include "pycore_ceval.h"         // _Py_set_eval_breaker_bit()
-#include "pycore_context.h"
 #include "pycore_dict.h"          // _PyInlineValuesSize()
-#include "pycore_initconfig.h"
+#include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interp.h"        // PyInterpreterState.gc
-#include "pycore_object.h"
+#include "pycore_interpframe.h"   // _PyFrame_GetLocalsArray()
 #include "pycore_object_alloc.h"  // _PyObject_MallocWithType()
-#include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_tuple.h"         // _PyTuple_MaybeUntrack()
 #include "pycore_weakref.h"       // _PyWeakref_ClearRef()
+
 #include "pydtrace.h"
+
 
 #ifndef Py_GIL_DISABLED
 
@@ -492,6 +493,7 @@ update_refs(PyGC_Head *containers)
         next = GC_NEXT(gc);
         PyObject *op = FROM_GC(gc);
         if (_Py_IsImmortal(op)) {
+            assert(!_Py_IsStaticImmortal(op));
             _PyObject_GC_UNTRACK(op);
            gc = next;
            continue;
@@ -543,6 +545,13 @@ visit_decref(PyObject *op, void *parent)
 int
 _PyGC_VisitStackRef(_PyStackRef *ref, visitproc visit, void *arg)
 {
+    // This is a bit tricky! We want to ignore stackrefs with embedded
+    // refcounts when computing the incoming references, but otherwise treat
+    // them like normal.
+    assert(!PyStackRef_IsTaggedInt(*ref));
+    if (!PyStackRef_RefcountOnObject(*ref) && (visit == visit_decref)) {
+        return 0;
+    }
     Py_VISIT(PyStackRef_AsPyObjectBorrow(*ref));
     return 0;
 }
@@ -553,7 +562,9 @@ _PyGC_VisitFrameStack(_PyInterpreterFrame *frame, visitproc visit, void *arg)
     _PyStackRef *ref = _PyFrame_GetLocalsArray(frame);
     /* locals and stack */
     for (; ref < frame->stackpointer; ref++) {
-        Py_VISIT(PyStackRef_AsPyObjectBorrow(*ref));
+        if (!PyStackRef_IsTaggedInt(*ref)) {
+            _Py_VISIT_STACKREF(*ref);
+        }
     }
     return 0;
 }
@@ -994,7 +1005,8 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
         /* copy-paste of weakrefobject.c's handle_callback() */
         temp = PyObject_CallOneArg(callback, (PyObject *)wr);
         if (temp == NULL) {
-            PyErr_WriteUnraisable(callback);
+            PyErr_FormatUnraisable("Exception ignored on "
+                                   "calling weakref callback %R", callback);
         }
         else {
             Py_DECREF(temp);
@@ -1476,7 +1488,7 @@ mark_stacks(PyInterpreterState *interp, PyGC_Head *visited, int visited_space, b
     while (ts) {
         _PyInterpreterFrame *frame = ts->current_frame;
         while (frame) {
-            if (frame->owner == FRAME_OWNED_BY_CSTACK) {
+            if (frame->owner >= FRAME_OWNED_BY_INTERPRETER) {
                 frame = frame->previous;
                 continue;
             }
@@ -1487,11 +1499,14 @@ mark_stacks(PyInterpreterState *interp, PyGC_Head *visited, int visited_space, b
             objects_marked += move_to_reachable(func, &reachable, visited_space);
             while (sp > locals) {
                 sp--;
-                if (PyStackRef_IsNull(*sp)) {
+                if (PyStackRef_IsNullOrInt(*sp)) {
                     continue;
                 }
                 PyObject *op = PyStackRef_AsPyObjectBorrow(*sp);
-                if (!_Py_IsImmortal(op) && _PyObject_IS_GC(op)) {
+                if (_Py_IsImmortal(op)) {
+                    continue;
+                }
+                if (_PyObject_IS_GC(op)) {
                     PyGC_Head *gc = AS_GC(op);
                     if (_PyObject_GC_IS_TRACKED(op) &&
                         gc_old_space(gc) != visited_space) {
@@ -1779,7 +1794,7 @@ do_gc_callback(GCState *gcstate, const char *phase,
             "collected", stats->collected,
             "uncollectable", stats->uncollectable);
         if (info == NULL) {
-            PyErr_FormatUnraisable("Exception ignored on invoking gc callbacks");
+            PyErr_FormatUnraisable("Exception ignored while invoking gc callbacks");
             return;
         }
     }
@@ -1787,7 +1802,7 @@ do_gc_callback(GCState *gcstate, const char *phase,
     PyObject *phase_obj = PyUnicode_FromString(phase);
     if (phase_obj == NULL) {
         Py_XDECREF(info);
-        PyErr_FormatUnraisable("Exception ignored on invoking gc callbacks");
+        PyErr_FormatUnraisable("Exception ignored while invoking gc callbacks");
         return;
     }
 
@@ -1797,7 +1812,8 @@ do_gc_callback(GCState *gcstate, const char *phase,
         Py_INCREF(cb); /* make sure cb doesn't go away */
         r = PyObject_Vectorcall(cb, stack, 2, NULL);
         if (r == NULL) {
-            PyErr_WriteUnraisable(cb);
+            PyErr_FormatUnraisable("Exception ignored while "
+                                   "calling GC callback %R", cb);
         }
         else {
             Py_DECREF(r);
@@ -1994,6 +2010,7 @@ Py_ssize_t
 _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
 {
     GCState *gcstate = &tstate->interp->gc;
+    assert(tstate->current_frame == NULL || tstate->current_frame->stackpointer != NULL);
 
     int expected = 0;
     if (!_Py_atomic_compare_exchange_int(&gcstate->collecting, &expected, 1)) {
@@ -2086,13 +2103,14 @@ _PyGC_DumpShutdownStats(PyInterpreterState *interp)
                                      "gc", NULL, message,
                                      PyList_GET_SIZE(gcstate->garbage)))
         {
-            PyErr_WriteUnraisable(NULL);
+            PyErr_FormatUnraisable("Exception ignored in GC shutdown");
         }
         if (gcstate->debug & _PyGC_DEBUG_UNCOLLECTABLE) {
             PyObject *repr = NULL, *bytes = NULL;
             repr = PyObject_Repr(gcstate->garbage);
             if (!repr || !(bytes = PyUnicode_EncodeFSDefault(repr))) {
-                PyErr_WriteUnraisable(gcstate->garbage);
+                PyErr_FormatUnraisable("Exception ignored in GC shutdown "
+                                       "while formatting garbage");
             }
             else {
                 PySys_WriteStderr(
@@ -2190,9 +2208,8 @@ void
 PyObject_GC_UnTrack(void *op_raw)
 {
     PyObject *op = _PyObject_CAST(op_raw);
-    /* Obscure:  the Py_TRASHCAN mechanism requires that we be able to
-     * call PyObject_GC_UnTrack twice on an object.
-     */
+    /* The code for some objects, such as tuples, is a bit
+     * sloppy about when the object is tracked and untracked. */
     if (_PyObject_GC_IS_TRACKED(op)) {
         _PyObject_GC_UNTRACK(op);
     }
@@ -2306,11 +2323,12 @@ PyObject *
 PyUnstable_Object_GC_NewWithExtraData(PyTypeObject *tp, size_t extra_size)
 {
     size_t presize = _PyType_PreHeaderSize(tp);
-    PyObject *op = gc_alloc(tp, _PyObject_SIZE(tp) + extra_size, presize);
+    size_t size = _PyObject_SIZE(tp) + extra_size;
+    PyObject *op = gc_alloc(tp, size, presize);
     if (op == NULL) {
         return NULL;
     }
-    memset(op, 0, _PyObject_SIZE(tp) + extra_size);
+    memset((char *)op + sizeof(PyObject), 0, size - sizeof(PyObject));
     _PyObject_Init(op, tp);
     return op;
 }
@@ -2344,9 +2362,12 @@ PyObject_GC_Del(void *op)
 #ifdef Py_DEBUG
         PyObject *exc = PyErr_GetRaisedException();
         if (PyErr_WarnExplicitFormat(PyExc_ResourceWarning, "gc", 0,
-                                     "gc", NULL, "Object of type %s is not untracked before destruction",
-                                     Py_TYPE(op)->tp_name)) {
-            PyErr_WriteUnraisable(NULL);
+                                     "gc", NULL,
+                                     "Object of type %s is not untracked "
+                                     "before destruction",
+                                     Py_TYPE(op)->tp_name))
+        {
+            PyErr_FormatUnraisable("Exception ignored on object deallocation");
         }
         PyErr_SetRaisedException(exc);
 #endif
@@ -2398,17 +2419,20 @@ void
 PyUnstable_GC_VisitObjects(gcvisitobjects_t callback, void *arg)
 {
     GCState *gcstate = get_gc_state();
-    int origenstate = gcstate->enabled;
+    int original_state = gcstate->enabled;
     gcstate->enabled = 0;
-    if (visit_generation(callback, arg, &gcstate->young)) {
+    if (visit_generation(callback, arg, &gcstate->young) < 0) {
         goto done;
     }
-    if (visit_generation(callback, arg, &gcstate->old[0])) {
+    if (visit_generation(callback, arg, &gcstate->old[0]) < 0) {
         goto done;
     }
-    visit_generation(callback, arg, &gcstate->old[1]);
+    if (visit_generation(callback, arg, &gcstate->old[1]) < 0) {
+        goto done;
+    }
+    visit_generation(callback, arg, &gcstate->permanent_generation);
 done:
-    gcstate->enabled = origenstate;
+    gcstate->enabled = original_state;
 }
 
 #endif  // Py_GIL_DISABLED

@@ -1,11 +1,10 @@
 from test.support import (gc_collect, bigmemtest, _2G,
                           cpython_only, captured_stdout,
-                          check_disallow_instantiation, is_emscripten, is_wasi,
-                          warnings_helper, SHORT_TIMEOUT, CPUStopwatch, requires_resource)
+                          check_disallow_instantiation, linked_to_musl,
+                          warnings_helper, SHORT_TIMEOUT, Stopwatch, requires_resource)
 import locale
 import re
 import string
-import sys
 import unittest
 import warnings
 from re import Scanner
@@ -619,6 +618,7 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.fullmatch(r"a.*?b", "axxb").span(), (0, 4))
         self.assertIsNone(re.fullmatch(r"a+", "ab"))
         self.assertIsNone(re.fullmatch(r"abc$", "abc\n"))
+        self.assertIsNone(re.fullmatch(r"abc\z", "abc\n"))
         self.assertIsNone(re.fullmatch(r"abc\Z", "abc\n"))
         self.assertIsNone(re.fullmatch(r"(?m)abc$", "abc\n"))
         self.assertEqual(re.fullmatch(r"ab(?=c)cd", "abcd").span(), (0, 4))
@@ -802,6 +802,8 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.search(r"\B(b.)\B",
                                    "abc bcd bc abxd", re.ASCII).group(1), "bx")
         self.assertEqual(re.search(r"^abc$", "\nabc\n", re.M).group(0), "abc")
+        self.assertEqual(re.search(r"^\Aabc\z$", "abc", re.M).group(0), "abc")
+        self.assertIsNone(re.search(r"^\Aabc\z$", "\nabc\n", re.M))
         self.assertEqual(re.search(r"^\Aabc\Z$", "abc", re.M).group(0), "abc")
         self.assertIsNone(re.search(r"^\Aabc\Z$", "\nabc\n", re.M))
         self.assertEqual(re.search(br"\b(b.)\b",
@@ -813,6 +815,8 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.search(br"\B(b.)\B",
                                    b"abc bcd bc abxd", re.LOCALE).group(1), b"bx")
         self.assertEqual(re.search(br"^abc$", b"\nabc\n", re.M).group(0), b"abc")
+        self.assertEqual(re.search(br"^\Aabc\z$", b"abc", re.M).group(0), b"abc")
+        self.assertIsNone(re.search(br"^\Aabc\z$", b"\nabc\n", re.M))
         self.assertEqual(re.search(br"^\Aabc\Z$", b"abc", re.M).group(0), b"abc")
         self.assertIsNone(re.search(br"^\Aabc\Z$", b"\nabc\n", re.M))
         self.assertEqual(re.search(r"\d\D\w\W\s\S",
@@ -836,7 +840,7 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.match(r"[\^a]+", 'a^').group(), 'a^')
         self.assertIsNone(re.match(r"[\^a]+", 'b'))
         re.purge()  # for warnings
-        for c in 'ceghijklmopqyzCEFGHIJKLMNOPQRTVXY':
+        for c in 'ceghijklmopqyCEFGHIJKLMNOPQRTVXY':
             with self.subTest(c):
                 self.assertRaises(re.PatternError, re.compile, '\\%c' % c)
         for c in 'ceghijklmopqyzABCEFGHIJKLMNOPQRTVXYZ':
@@ -978,18 +982,15 @@ class ReTests(unittest.TestCase):
         self.assertIsNone(re.fullmatch(br".+\B", b"abc", re.LOCALE))
         self.assertIsNone(re.fullmatch(r".+\B", "ьюя"))
         self.assertTrue(re.fullmatch(r".+\B", "ьюя", re.ASCII))
-        # However, an empty string contains no word boundaries, and also no
-        # non-boundaries.
+        # However, an empty string contains no word boundaries.
         self.assertIsNone(re.search(r"\b", ""))
         self.assertIsNone(re.search(r"\b", "", re.ASCII))
         self.assertIsNone(re.search(br"\b", b""))
         self.assertIsNone(re.search(br"\b", b"", re.LOCALE))
-        # This one is questionable and different from the perlre behaviour,
-        # but describes current behavior.
-        self.assertIsNone(re.search(r"\B", ""))
-        self.assertIsNone(re.search(r"\B", "", re.ASCII))
-        self.assertIsNone(re.search(br"\B", b""))
-        self.assertIsNone(re.search(br"\B", b"", re.LOCALE))
+        self.assertTrue(re.search(r"\B", ""))
+        self.assertTrue(re.search(r"\B", "", re.ASCII))
+        self.assertTrue(re.search(br"\B", b""))
+        self.assertTrue(re.search(br"\B", b"", re.LOCALE))
         # A single word-character string has two boundaries, but no
         # non-boundary gaps.
         self.assertEqual(len(re.findall(r"\b", "a")), 2)
@@ -2175,10 +2176,7 @@ class ReTests(unittest.TestCase):
         # with ignore case.
         self.assertEqual(re.fullmatch('[a-c]+', 'ABC', re.I).span(), (0, 3))
 
-    @unittest.skipIf(
-        is_emscripten or is_wasi,
-        "musl libc issue on Emscripten/WASI, bpo-46390"
-    )
+    @unittest.skipIf(linked_to_musl(), "musl libc issue, bpo-46390")
     def test_locale_caching(self):
         # Issue #22410
         oldlocale = locale.setlocale(locale.LC_CTYPE)
@@ -2215,10 +2213,7 @@ class ReTests(unittest.TestCase):
         self.assertIsNone(re.match(b'(?Li)\xc5', b'\xe5'))
         self.assertIsNone(re.match(b'(?Li)\xe5', b'\xc5'))
 
-    @unittest.skipIf(
-        is_emscripten or is_wasi,
-        "musl libc issue on Emscripten/WASI, bpo-46390"
-    )
+    @unittest.skipIf(linked_to_musl(), "musl libc issue, bpo-46390")
     def test_locale_compiled(self):
         oldlocale = locale.setlocale(locale.LC_CTYPE)
         self.addCleanup(locale.setlocale, locale.LC_CTYPE, oldlocale)
@@ -2476,7 +2471,7 @@ class ReTests(unittest.TestCase):
     @requires_resource('cpu')
     def test_search_anchor_at_beginning(self):
         s = 'x'*10**7
-        with CPUStopwatch() as stopwatch:
+        with Stopwatch() as stopwatch:
             for p in r'\Ay', r'^y':
                 self.assertIsNone(re.search(p, s))
                 self.assertEqual(re.split(p, s), [s])
@@ -2617,8 +2612,8 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.findall(r'(?>(?:ab){1,3})', 'ababc'), ['abab'])
 
     def test_bug_gh91616(self):
-        self.assertTrue(re.fullmatch(r'(?s:(?>.*?\.).*)\Z', "a.txt")) # reproducer
-        self.assertTrue(re.fullmatch(r'(?s:(?=(?P<g0>.*?\.))(?P=g0).*)\Z', "a.txt"))
+        self.assertTrue(re.fullmatch(r'(?s:(?>.*?\.).*)\z', "a.txt")) # reproducer
+        self.assertTrue(re.fullmatch(r'(?s:(?=(?P<g0>.*?\.))(?P=g0).*)\z', "a.txt"))
 
     def test_bug_gh100061(self):
         # gh-100061
@@ -2872,11 +2867,11 @@ class PatternReprTests(unittest.TestCase):
         pattern = 'Very %spattern' % ('long ' * 1000)
         r = repr(re.compile(pattern))
         self.assertLess(len(r), 300)
-        self.assertEqual(r[:30], "re.compile('Very long long lon")
+        self.assertStartsWith(r, "re.compile('Very long long lon")
         r = repr(re.compile(pattern, re.I))
         self.assertLess(len(r), 300)
-        self.assertEqual(r[:30], "re.compile('Very long long lon")
-        self.assertEqual(r[-16:], ", re.IGNORECASE)")
+        self.assertStartsWith(r, "re.compile('Very long long lon")
+        self.assertEndsWith(r, ", re.IGNORECASE)")
 
     def test_flags_repr(self):
         self.assertEqual(repr(re.I), "re.IGNORECASE")
@@ -2930,33 +2925,6 @@ class ImplementationTest(unittest.TestCase):
         check_disallow_instantiation(self, re.Pattern)
         pat = re.compile("")
         check_disallow_instantiation(self, type(pat.scanner("")))
-
-    def test_deprecated_modules(self):
-        deprecated = {
-            'sre_compile': ['compile', 'error',
-                            'SRE_FLAG_IGNORECASE', 'SUBPATTERN',
-                            '_compile_info'],
-            'sre_constants': ['error', 'SRE_FLAG_IGNORECASE', 'SUBPATTERN',
-                              '_NamedIntConstant'],
-            'sre_parse': ['SubPattern', 'parse',
-                          'SRE_FLAG_IGNORECASE', 'SUBPATTERN',
-                          '_parse_sub'],
-        }
-        for name in deprecated:
-            with self.subTest(module=name):
-                sys.modules.pop(name, None)
-                with self.assertWarns(DeprecationWarning) as w:
-                    __import__(name)
-                self.assertEqual(str(w.warning),
-                                 f"module {name!r} is deprecated")
-                self.assertEqual(w.filename, __file__)
-                self.assertIn(name, sys.modules)
-                mod = sys.modules[name]
-                self.assertEqual(mod.__name__, name)
-                self.assertEqual(mod.__package__, '')
-                for attr in deprecated[name]:
-                    self.assertTrue(hasattr(mod, attr))
-                del sys.modules[name]
 
     @cpython_only
     def test_case_helpers(self):
