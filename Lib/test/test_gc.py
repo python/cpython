@@ -658,9 +658,8 @@ class GCTests(unittest.TestCase):
         gc.collect()
         self.assertEqual(len(ouch), 2)  # else the callbacks didn't run
         for x in ouch:
-            # If the callback resurrected one of these guys, the instance
-            # would be damaged, with an empty __dict__.
-            self.assertEqual(x, None)
+            # The weakref should be cleared before executing the callback.
+            self.assertIsNone(x)
 
     def test_bug21435(self):
         # This is a poor test - its only virtue is that it happened to
@@ -1047,8 +1046,8 @@ class GCTests(unittest.TestCase):
         # release references and create trash
         del a, wr_cycle
         gc.collect()
-        # if called, it means there is a bug in the GC.  The weakref should be
-        # cleared before Z dies.
+        # In older versions of Python, the weakref was cleared by the
+        # gc.  Now it is not cleared and so the callback is run.
         callback.assert_not_called()
         gc.enable()
 
@@ -1330,6 +1329,7 @@ class GCTogglingTests(unittest.TestCase):
     def tearDown(self):
         gc.disable()
 
+    @unittest.skipIf(Py_GIL_DISABLED, "requires GC generations or increments")
     def test_bug1055820c(self):
         # Corresponds to temp2c.py in the bug report.  This is pretty
         # elaborate.
@@ -1405,6 +1405,7 @@ class GCTogglingTests(unittest.TestCase):
             self.assertEqual(x, None)
 
     @gc_threshold(1000, 0, 0)
+    @unittest.skipIf(Py_GIL_DISABLED, "requires GC generations or increments")
     def test_bug1055820d(self):
         # Corresponds to temp2d.py in the bug report.  This is very much like
         # test_bug1055820c, but uses a __del__ method instead of a weakref

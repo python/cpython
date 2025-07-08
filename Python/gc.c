@@ -920,14 +920,8 @@ handle_weakref_callbacks(PyGC_Head *unreachable, PyGC_Head *old)
             // is called, the cache may not be correctly invalidated.  That
             // can lead to segfaults since the caches can refer to deallocated
             // objects.  Delaying the clear of weakrefs until *after*
-            // finalizers have been called fixes that bug.  However, that
-            // deferral could introduce other problems if some finalizer
-            // code expects that the weakrefs will be cleared first.  So, we
-            // have the PyType_Check() test below to only defer the clear of
-            // weakrefs to types.  That solves the issue for tp_subclasses.
-            // In a future version of Python, we should likely defer the
-            // weakref clear for all objects, not just types.
-            if (wr->wr_callback != NULL || !PyType_Check(wr->wr_object)) {
+            // finalizers have been called fixes that bug.
+            if (wr->wr_callback != NULL) {
                 // _PyWeakref_ClearRef clears the weakref but leaves the
                 // callback pointer intact.  Obscure: it also changes *wrlist.
                 _PyObject_ASSERT((PyObject *)wr, wr->wr_object == op);
