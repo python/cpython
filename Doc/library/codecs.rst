@@ -268,11 +268,10 @@ wider range of codecs when working with binary files:
 .. function:: readbuffer_encode(buffer, errors=None, /)
 
    Return a :class:`tuple` containing the raw bytes of *buffer*, a
-   :ref:`buffer-compatible object <bufferobjects>` or :class:`str`, and their
-   length.
+   :ref:`buffer-compatible object <bufferobjects>` or :class:`str`
+   (encoded to UTF-8 before processing), and their length.
 
-   The *errors* argument is ignored and exists only for compatibility with
-   other functions.
+   The *errors* argument is ignored.
 
    .. code-block:: pycon
 
