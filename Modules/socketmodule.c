@@ -3332,24 +3332,41 @@ sock_setsockopt(PyObject *self, PyObject *args)
 {
     PySocketSockObject *s = _PySocketSockObject_CAST(self);
 
+    Py_ssize_t arglen;
     int level;
     int optname;
     int res;
-    Py_buffer optval;
+    Py_buffer buffer;
     int flag;
     unsigned int optlen;
-    PyObject *type;
+    PyObject *optval;
 
-    if (!PyArg_ParseTuple(args, "iiO|I:setsockopt",
-                          &level, &optname, &type, &optlen)) {
-        return NULL;
+    arglen = PyTuple_Size(args);
+    switch (arglen) {
+        case 3:
+            if (!PyArg_ParseTuple(args, "iiO:setsockopt",
+                                  &level, &optname, &optval)) {
+                return NULL;
+            }
+            break;
+        case 4:
+            if (!PyArg_ParseTuple(args, "iiO!I:setsockopt",
+                                  &level, &optname, Py_TYPE(Py_None), &optval, &optlen)) {
+                return NULL;
+            }
+            break;
+        default:
+            PyErr_Format(PyExc_TypeError,
+                         "setsockopt() takes 3 or 4 arguments (%zd given)",
+                         arglen);
+            return NULL;
     }
 
 #ifdef AF_VSOCK
     if (s->sock_family == AF_VSOCK) {
         uint64_t vflag; // Must be set width of 64 bits
         /* setsockopt(level, opt, flag) */
-        if (!PyArg_Parse(type, "K", &vflag)) {
+        if (!PyArg_Parse(optval, "K", &vflag)) {
             return NULL;
         }
         // level should always be set to AF_VSOCK
@@ -3360,8 +3377,8 @@ sock_setsockopt(PyObject *self, PyObject *args)
 #endif
 
     /* setsockopt(level, opt, flag) */
-    if (PyIndex_Check(type)) {
-        if (!PyArg_Parse(type, "i", &flag)) {
+    if (PyIndex_Check(optval)) {
+        if (!PyArg_Parse(optval, "i", &flag)) {
             return NULL;
         }
 #ifdef MS_WINDOWS
@@ -3381,7 +3398,13 @@ sock_setsockopt(PyObject *self, PyObject *args)
     }
 
     /* setsockopt(level, opt, None, flag) */
-    if (type == Py_None) {
+    if (optval == Py_None) {
+        if (arglen != 4) {
+            PyErr_Format(PyExc_TypeError,
+                            "setsockopt() take 4 arguments when socket option is None (%zd given)",
+                            arglen);
+            return NULL;
+        }
         assert(sizeof(socklen_t) >= sizeof(unsigned int));
         res = setsockopt(get_sock_fd(s), level, optname,
                          NULL, (socklen_t)optlen);
@@ -3389,24 +3412,24 @@ sock_setsockopt(PyObject *self, PyObject *args)
     }
 
     /* setsockopt(level, opt, buffer) */
-    if (PyObject_CheckBuffer(type)) {
-        if (!PyArg_Parse(type, "y*", &optval)) {
+    if (PyObject_CheckBuffer(optval)) {
+        if (!PyArg_Parse(optval, "y*", &buffer)) {
             return NULL;
         }
 #ifdef MS_WINDOWS
-        if (optval.len > INT_MAX) {
-            PyBuffer_Release(&optval);
+        if (buffer.len > INT_MAX) {
+            PyBuffer_Release(&buffer);
             PyErr_Format(PyExc_OverflowError,
                             "socket option is larger than %i bytes",
                             INT_MAX);
             return NULL;
         }
         res = setsockopt(get_sock_fd(s), level, optname,
-                            optval.buf, (int)optval.len);
+                            buffer.buf, (int)buffer.len);
 #else
-        res = setsockopt(get_sock_fd(s), level, optname, optval.buf, optval.len);
+        res = setsockopt(get_sock_fd(s), level, optname, buffer.buf, buffer.len);
 #endif
-        PyBuffer_Release(&optval);
+        PyBuffer_Release(&buffer);
         goto done;
     }
 

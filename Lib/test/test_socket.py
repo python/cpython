@@ -1557,8 +1557,21 @@ class GeneralModuleTests(unittest.TestCase):
         with self.assertRaises(OverflowError):
             sock.setsockopt(2 ** 100, socket.SO_REUSEADDR, 1)
 
-        with self.assertRaises(TypeError):
+        msg = "socket option should be should be integer, bytes-like object or None"
+        with self.assertRaises(TypeError, msg=msg):
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, dict())
+
+        msg = "setsockopt() takes 3 or 4 arguments (2 given)"
+        with self.assertRaises(TypeError, msg=msg):
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR)
+
+        msg = "setsockopt() take 4 arguments when socket option is None (3 given)"
+        with self.assertRaises(TypeError, msg=msg):
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, None)
+
+        msg = "setsockopt() argument 3 must be NoneType, not int"
+        with self.assertRaises(TypeError, msg=msg):
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1, 2)
 
     def testSendAfterClose(self):
         # testing send() after close() with timeout
