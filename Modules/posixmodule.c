@@ -4482,7 +4482,8 @@ os_linkat_impl(PyObject *module, int src_dir_fd, path_t *src_path,
                         flags);
     }
     else {
-        result = ENOSYS;
+        errno = ENOSYS;
+        result = -1;
     }
     Py_END_ALLOW_THREADS
 
