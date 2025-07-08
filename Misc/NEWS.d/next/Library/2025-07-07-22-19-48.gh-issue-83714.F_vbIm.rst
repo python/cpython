@@ -1,0 +1,6 @@
+Populate :attr:`~os.stat_result.st_birthtime`,
+:attr:`~os.stat_result.st_attributes`,
+:attr:`~os.stat_result.st_attributes_mask`,
+:attr:`~os.stat_result.st_mnt_id`, and :attr:`~os.stat_result.st_subvol`
+in :class:`os.stat_result` on Linux kernel 4.11 and later using the
+statx system call.  Contributed by Jeffrey Bosboom.
