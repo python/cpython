@@ -12,4 +12,9 @@ exactly 8 characters and <BIT> has at most 2 characters.
 A C enumeration is NOT generated as the largest member may not fit
 on an 'int', which is forbidden as ISO C restricts enumerator values
 to that range.
+
+.. note::
+
+   This package must not be used directly and should only be
+   invoked from an Argument Clinic "[python input]" directive.
 """

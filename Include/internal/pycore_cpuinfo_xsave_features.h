@@ -1,6 +1,6 @@
 /**
  * @author Bénédikt Tran
- * @seealso @file Tools/cpuinfo/xsave_features_gen.py
+ * @seealso @file Tools/cpuinfo/libcpuinfo/features/xsave.py
  *
  * XSAVE state components (XCR0 control register).
  *
@@ -22,9 +22,9 @@ extern "C" {
 
 /*[python input]
 import os, sys
-sys.path.insert(0, os.path.realpath(os.path.join(os.getcwd(), "Tools")))
-from cpuinfo.xsave_features_gen import generate_xsave_features_enum
-print(generate_xsave_features_enum())
+sys.path.insert(0, os.path.realpath(os.path.join(os.getcwd(), "Tools/cpuinfo")))
+from libcpuinfo.features.xsave import make_xsave_features_constants
+print(make_xsave_features_constants())
 [python start generated code]*/
 // clang-format off
 /** Constants for XSAVE components */
@@ -34,6 +34,10 @@ print(generate_xsave_features_enum())
 #define _Py_XSAVE_MASK_XCR0_AVX512_ZMM_HI256    0x00000040  // bit = 6
 #define _Py_XSAVE_MASK_XCR0_AVX512_HI16_ZMM     0x00000080  // bit = 7
 // clang-format on
-/*[python end generated code: output=ac059b802b4317cb input=6323151855b3c9f0]*/
+/*[python end generated code: output=ac059b802b4317cb input=0a1b0774d3271477]*/
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // !Py_INTERNAL_CPUINFO_XSAVE_FEATURES_H

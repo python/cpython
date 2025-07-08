@@ -8,12 +8,12 @@ See https://en.wikipedia.org/wiki/Control_register#XCR0_and_XSS.
 
 from __future__ import annotations
 
-__all__ = ["generate_xsave_features_enum"]
+__all__ = ["make_xsave_features_constants"]
 
 from typing import TYPE_CHECKING
 
-from . import _util as util
-from ._util import DOXYGEN_STYLE
+import libcpuinfo.util as util
+from libcpuinfo.util import DOXYGEN_STYLE
 
 if TYPE_CHECKING:
     from typing import Final
@@ -39,7 +39,7 @@ _NAME_MAXSIZE: Final[int] = util.next_block(
 )
 
 
-def generate_xsave_features_enum() -> str:
+def make_xsave_features_constants() -> str:
     """Used by :file:`Include/internal/pycore_cpuinfo_xsave_features.h`."""
     writer = util.CWriter()
     writer.comment("Constants for XSAVE components", style=DOXYGEN_STYLE)

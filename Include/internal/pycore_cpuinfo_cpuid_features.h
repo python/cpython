@@ -1,6 +1,6 @@
 /**
  * @author Bénédikt Tran
- * @seealso @file Tools/cpuinfo/cpuid_features_gen.py
+ * @seealso @file Tools/cpuinfo/libcpuinfo/features/cpuid.py
  *
  * The enumeration describes masks to apply on CPUID output registers.
  *
@@ -37,9 +37,9 @@ extern "C" {
 
 /*[python input]
 import os, sys
-sys.path.insert(0, os.path.realpath(os.path.join(os.getcwd(), "Tools")))
-from cpuinfo.cpuid_features_gen import generate_cpuid_features_enum
-print(generate_cpuid_features_enum())
+sys.path.insert(0, os.path.realpath(os.path.join(os.getcwd(), "Tools/cpuinfo")))
+from libcpuinfo.features.cpuid import make_cpuid_features_constants
+print(make_cpuid_features_constants())
 [python start generated code]*/
 // clang-format off
 /** Constants for CPUID features */
@@ -92,6 +92,10 @@ print(generate_cpuid_features_enum())
 #define _Py_CPUID_MASK_EDX_L7S1_AVX_NE_CONVERT      0x00000020  // bit = 5
 #define _Py_CPUID_MASK_EDX_L7S1_AVX_VNNI_INT16      0x00000400  // bit = 10
 // clang-format on
-/*[python end generated code: output=e9112f064e2effec input=d7df15fec9f3daa2]*/
+/*[python end generated code: output=e9112f064e2effec input=71ec6b4356052ec3]*/
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // !Py_INTERNAL_CPUINFO_CPUID_FEATURES_H
