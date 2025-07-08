@@ -1461,25 +1461,9 @@ to :class:`bytes` mappings. They are not supported by :meth:`bytes.decode`
 | uu_codec             | uu               | Convert the operand using    |                              |
 |                      |                  | uuencode.                    |                              |
 +----------------------+------------------+------------------------------+------------------------------+
-| escape_codec         | escape           | Encode and decode byte       | :func:`codecs.escape_encode` |
-|                      |                  | sequences using escape       | /                            |
-|                      |                  | sequences, similar to        | :func:`codecs.escape_decode` |
-|                      |                  | :func:`repr` of bytes.       |                              |
-+----------------------+------------------+------------------------------+------------------------------+
 | zlib_codec           | zip, zlib        | Compress the operand using   | :meth:`zlib.compress` /      |
 |                      |                  | gzip.                        | :meth:`zlib.decompress`      |
 +----------------------+------------------+------------------------------+------------------------------+
-
-.. function:: codecs.escape_encode(input, errors=None)
-
-   Encode *input* using escape sequences. Similar to how :func:`repr` on bytes
-   produces escaped byte values. Returns a tuple of the encoded bytes and
-   the length consumed.
-
-.. function:: codecs.escape_decode(input, errors=None)
-
-   Decode *input* from escape sequences back to the original bytes.
-   Returns a tuple of the decoded bytes and the length consumed.
 
 .. [#b64] In addition to :term:`bytes-like objects <bytes-like object>`,
    ``'base64_codec'`` also accepts ASCII-only instances of :class:`str` for
@@ -1490,6 +1474,36 @@ to :class:`bytes` mappings. They are not supported by :meth:`bytes.decode`
 
 .. versionchanged:: 3.4
    Restoration of the aliases for the binary transforms.
+
+
+.. _standalone-codec-functions:
+
+Standalone Codec Functions
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The following functions provide encoding and decoding functionality similar to codecs,
+but are not available as named codecs through :func:`codecs.encode` or :func:`codecs.decode`.
+They are used internally (for example, by :mod:`pickle`) and behave similarly to the
+`string_escape` codec that was removed in Python 3.
+
+.. function:: codecs.escape_encode(input, errors=None)
+
+   Encode *input* using escape sequences. Similar to how :func:`repr` on bytes
+   produces escaped byte values.
+
+   *input* must be a :class:`bytes` object.
+
+   Returns a tuple ``(output, length)`` where *output* is a :class:`bytes`
+   object and *length* is the number of bytes consumed.
+
+.. function:: codecs.escape_decode(input, errors=None)
+
+   Decode *input* from escape sequences back to the original bytes.
+
+   *input* must be a :term:`bytes-like object`.
+
+   Returns a tuple ``(output, length)`` where *output* is a :class:`bytes`
+   object and *length* is the number of bytes consumed.
 
 
 .. _text-transforms:
