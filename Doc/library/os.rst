@@ -3285,27 +3285,27 @@ features:
       See the :const:`!STATX_ATTR* <stat.STATX_ATTR_COMPRESSED>`
       constants in the :mod:`stat` module.
 
-      .. versionadded: next
+      .. versionadded:: next
 
    .. attribute:: st_attributes_mask
 
       Linux file attributes supported by the filesystem containing the file.
 
-      .. versionadded: next
+      .. versionadded:: next
 
    .. attribute:: st_mnt_id
 
       Mount ID of the mount containing the file, corresponding to the first
       field in ``/proc/self/mountinfo``.
 
-      .. versionadded: next
+      .. versionadded:: next
 
    .. attribute:: stx_subvol
 
       ID for the subvolume containing the file, or None if the filesystem does
       not support subvolumes.
 
-      .. versionadded: next
+      .. versionadded:: next
 
    On other Unix systems (such as FreeBSD), the following attributes may be
    available (but may be only filled out if root tries to use them):
