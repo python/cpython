@@ -1617,7 +1617,8 @@ if tempfile.NamedTemporaryFile is not tempfile.TemporaryFile:
                             follow_symlinks=True)
                 except PermissionError as exc:
                     # gh-136156: link() fails with PermissionError on Android
-                    self.skipTest(str(exc))
+                    self.skipTest(f"os.link: {exc!r}")
+
                 with open(filename) as fp:
                     self.assertEqual(fp.read(), "hello")
 
