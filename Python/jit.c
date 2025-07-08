@@ -434,7 +434,7 @@ void patch_aarch64_trampoline(unsigned char *location, int ordinal, jit_state *s
     #define DATA_ALIGN 8
 #else
     #define TRAMPOLINE_SIZE 0
-    #define DATA_ALIGN 0
+    #define DATA_ALIGN 1
 #endif
 
 // Generate and patch AArch64 trampolines. The symbols to jump to are stored
@@ -524,7 +524,7 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     // Round up to the nearest page:
     size_t page_size = get_page_size();
     assert((page_size & (page_size - 1)) == 0);
-    size_t code_padding = DATA_ALIGN - ((code_size + state.trampolines.size) & (DATA_ALIGN - 1))
+    size_t code_padding = DATA_ALIGN - ((code_size + state.trampolines.size) & (DATA_ALIGN - 1));
     size_t padding = page_size - ((code_size + state.trampolines.size + code_padding + data_size) & (page_size - 1));
     size_t total_size = code_size + state.trampolines.size + data_size  + padding;
     unsigned char *memory = jit_alloc(total_size);
