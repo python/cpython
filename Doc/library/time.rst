@@ -306,10 +306,11 @@ Functions
    .. versionadded:: 3.3
 
    .. versionchanged:: 3.5
-      The function is now always available and always system-wide.
+      The function is now always available and the clock is now the same for
+      all processes.
 
    .. versionchanged:: 3.10
-      On macOS, the function is now system-wide.
+      On macOS, the clock is now the same for all processes.
 
 
 .. function:: monotonic_ns() -> int
