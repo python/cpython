@@ -430,7 +430,7 @@ class _MachO(
         name = name.removeprefix(self.prefix)
         if "Debug" in flags:
             return
-        if "SomeInstructions" in flags:
+        if "PureInstructions" in flags:
             value = _stencils.HoleValue.CODE
             stencil = group.code
             start_address = 0

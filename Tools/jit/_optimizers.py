@@ -77,7 +77,7 @@ class Optimizer:
     _labels: dict[str, _Block] = dataclasses.field(init=False, default_factory=dict)
     # No groups:
     _re_noninstructions: typing.ClassVar[re.Pattern[str]] = re.compile(
-        r"\s*(?:\.|#|//|$)"
+        r"\s*(?:\.|#|//|;|$)"
     )
     # One group (label):
     _re_label: typing.ClassVar[re.Pattern[str]] = re.compile(
