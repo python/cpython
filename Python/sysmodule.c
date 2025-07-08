@@ -2487,6 +2487,11 @@ sys_remote_exec_impl(PyObject *module, int pid, PyObject *script)
     if (PyUnicode_FSConverter(script, &path) == 0) {
         return NULL;
     }
+
+    if (PySys_Audit("sys.remote_exec", "iO", pid, script) < 0) {
+        return NULL;
+    }
+
     debugger_script_path = PyBytes_AS_STRING(path);
 #ifdef MS_WINDOWS
     PyObject *unicode_path;
@@ -3600,6 +3605,18 @@ make_impl_info(PyObject *version_info)
     if (res < 0)
         goto error;
 #endif
+
+    // PEP-734
+#if defined(__wasi__) || defined(__EMSCRIPTEN__)
+    // It is not enabled on WASM builds just yet
+    value = Py_False;
+#else
+    value = Py_True;
+#endif
+    res = PyDict_SetItemString(impl_info, "supports_isolated_interpreters", value);
+    if (res < 0) {
+        goto error;
+    }
 
     /* dict ready */
 

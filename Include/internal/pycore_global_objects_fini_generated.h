@@ -1140,6 +1140,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(offset_src));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(on_type_read));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(onceregistry));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(only_active_thread));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(only_keys));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(oparg));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(opcode));

@@ -28,7 +28,7 @@ from test import lock_tests
 from test import support
 
 try:
-    from test.support import interpreters
+    from concurrent import interpreters
 except ImportError:
     interpreters = None
 

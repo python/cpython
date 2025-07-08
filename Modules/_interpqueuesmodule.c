@@ -136,13 +136,10 @@ idarg_int64_converter(PyObject *arg, void *ptr)
 static int
 ensure_highlevel_module_loaded(void)
 {
-    PyObject *highlevel = PyImport_ImportModule("interpreters.queues");
+    PyObject *highlevel =
+            PyImport_ImportModule("concurrent.interpreters._queues");
     if (highlevel == NULL) {
-        PyErr_Clear();
-        highlevel = PyImport_ImportModule("test.support.interpreters.queues");
-        if (highlevel == NULL) {
-            return -1;
-        }
+        return -1;
     }
     Py_DECREF(highlevel);
     return 0;
@@ -299,7 +296,7 @@ add_QueueError(PyObject *mod)
 {
     module_state *state = get_module_state(mod);
 
-#define PREFIX "test.support.interpreters."
+#define PREFIX "concurrent.interpreters."
 #define ADD_EXCTYPE(NAME, BASE, DOC)                                    \
     assert(state->NAME == NULL);                                        \
     if (add_exctype(mod, &state->NAME, PREFIX #NAME, DOC, BASE) < 0) {  \
@@ -710,8 +707,11 @@ _queue_is_full(_queue *queue, int *p_is_full)
         return err;
     }
 
-    assert(queue->items.count <= queue->items.maxsize);
-    *p_is_full = queue->items.count == queue->items.maxsize;
+    assert(queue->items.maxsize <= 0
+           || queue->items.count <= queue->items.maxsize);
+    *p_is_full = queue->items.maxsize > 0
+        ? queue->items.count == queue->items.maxsize
+        : 0;
 
     _queue_unlock(queue);
     return 0;
@@ -1952,8 +1952,7 @@ static int
 module_traverse(PyObject *mod, visitproc visit, void *arg)
 {
     module_state *state = get_module_state(mod);
-    (void)traverse_module_state(state, visit, arg);
-    return 0;
+    return traverse_module_state(state, visit, arg);
 }
 
 static int
@@ -1962,8 +1961,7 @@ module_clear(PyObject *mod)
     module_state *state = get_module_state(mod);
 
     // Now we clear the module state.
-    (void)clear_module_state(state);
-    return 0;
+    return clear_module_state(state);
 }
 
 static void

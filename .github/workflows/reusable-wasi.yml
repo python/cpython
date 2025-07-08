@@ -64,9 +64,9 @@ jobs:
         # (Make sure to keep the key in sync with the other config.cache step below.)
         key: ${{ github.job }}-${{ env.IMAGE_OS_VERSION }}-${{ env.WASI_SDK_VERSION }}-${{ env.WASMTIME_VERSION }}-${{ inputs.config_hash }}-${{ hashFiles('Tools/wasm/wasi.py') }}-${{ env.pythonLocation }}
     - name: "Configure build Python"
-      run: python3 Tools/wasm/wasi.py configure-build-python -- --config-cache --with-pydebug
+      run: python3 Tools/wasm/wasi configure-build-python -- --config-cache --with-pydebug
     - name: "Make build Python"
-      run: python3 Tools/wasm/wasi.py make-build-python
+      run: python3 Tools/wasm/wasi make-build-python
     - name: "Restore host config.cache"
       uses: actions/cache@v4
       with:
@@ -75,9 +75,9 @@ jobs:
         key: ${{ github.job }}-${{ env.IMAGE_OS_VERSION }}-${{ env.WASI_SDK_VERSION }}-${{ env.WASMTIME_VERSION }}-${{ inputs.config_hash }}-${{ hashFiles('Tools/wasm/wasi.py') }}-${{ env.pythonLocation }}
     - name: "Configure host"
       # `--with-pydebug` inferred from configure-build-python
-      run: python3 Tools/wasm/wasi.py configure-host -- --config-cache
+      run: python3 Tools/wasm/wasi configure-host -- --config-cache
     - name: "Make host"
-      run: python3 Tools/wasm/wasi.py make-host
+      run: python3 Tools/wasm/wasi make-host
     - name: "Display build info"
       run: make --directory "${CROSS_BUILD_WASI}" pythoninfo
     - name: "Test"

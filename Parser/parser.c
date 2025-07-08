@@ -14,7 +14,7 @@
 #    define MAXSTACK 4000
 #  endif
 #else
-#  define MAXSTACK 4000
+#  define MAXSTACK 6000
 #endif
 static const int n_keyword_lists = 9;
 static KeywordToken *reserved_keywords[] = {
@@ -1677,7 +1677,7 @@ simple_stmt_rule(Parser *p)
         D(fprintf(stderr, "%*c> simple_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "&('import' | 'from') import_stmt"));
         stmt_ty import_stmt_var;
         if (
-            _PyPegen_lookahead(1, (void *(*)(Parser *)) _tmp_5_rule, p)
+            _PyPegen_lookahead(1, _tmp_5_rule, p)
             &&
             (import_stmt_var = import_stmt_rule(p))  // import_stmt
         )
@@ -1915,7 +1915,7 @@ compound_stmt_rule(Parser *p)
         D(fprintf(stderr, "%*c> compound_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "&('def' | '@' | 'async') function_def"));
         stmt_ty function_def_var;
         if (
-            _PyPegen_lookahead(1, (void *(*)(Parser *)) _tmp_6_rule, p)
+            _PyPegen_lookahead(1, _tmp_6_rule, p)
             &&
             (function_def_var = function_def_rule(p))  // function_def
         )
@@ -1957,7 +1957,7 @@ compound_stmt_rule(Parser *p)
         D(fprintf(stderr, "%*c> compound_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "&('class' | '@') class_def"));
         stmt_ty class_def_var;
         if (
-            _PyPegen_lookahead(1, (void *(*)(Parser *)) _tmp_7_rule, p)
+            _PyPegen_lookahead(1, _tmp_7_rule, p)
             &&
             (class_def_var = class_def_rule(p))  // class_def
         )
@@ -1978,7 +1978,7 @@ compound_stmt_rule(Parser *p)
         D(fprintf(stderr, "%*c> compound_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "&('with' | 'async') with_stmt"));
         stmt_ty with_stmt_var;
         if (
-            _PyPegen_lookahead(1, (void *(*)(Parser *)) _tmp_8_rule, p)
+            _PyPegen_lookahead(1, _tmp_8_rule, p)
             &&
             (with_stmt_var = with_stmt_rule(p))  // with_stmt
         )
@@ -1999,7 +1999,7 @@ compound_stmt_rule(Parser *p)
         D(fprintf(stderr, "%*c> compound_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "&('for' | 'async') for_stmt"));
         stmt_ty for_stmt_var;
         if (
-            _PyPegen_lookahead(1, (void *(*)(Parser *)) _tmp_9_rule, p)
+            _PyPegen_lookahead(1, _tmp_9_rule, p)
             &&
             (for_stmt_var = for_stmt_rule(p))  // for_stmt
         )
@@ -3213,7 +3213,7 @@ del_stmt_rule(Parser *p)
             &&
             (a = del_targets_rule(p))  // del_targets
             &&
-            _PyPegen_lookahead(1, (void *(*)(Parser *)) _tmp_16_rule, p)
+            _PyPegen_lookahead(1, _tmp_16_rule, p)
         )
         {
             D(fprintf(stderr, "%*c+ del_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'del' del_targets &(';' | NEWLINE)"));
@@ -6856,7 +6856,7 @@ with_item_rule(Parser *p)
             &&
             (t = star_target_rule(p))  // star_target
             &&
-            _PyPegen_lookahead(1, (void *(*)(Parser *)) _tmp_36_rule, p)
+            _PyPegen_lookahead(1, _tmp_36_rule, p)
         )
         {
             D(fprintf(stderr, "%*c+ with_item[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "expression 'as' star_target &(',' | ')' | ':')"));
@@ -8445,7 +8445,7 @@ literal_pattern_rule(Parser *p)
         if (
             (value = signed_number_rule(p))  // signed_number
             &&
-            _PyPegen_lookahead(0, (void *(*)(Parser *)) _tmp_42_rule, p)
+            _PyPegen_lookahead(0, _tmp_42_rule, p)
         )
         {
             D(fprintf(stderr, "%*c+ literal_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "signed_number !('+' | '-')"));
@@ -8679,7 +8679,7 @@ literal_expr_rule(Parser *p)
         if (
             (signed_number_var = signed_number_rule(p))  // signed_number
             &&
-            _PyPegen_lookahead(0, (void *(*)(Parser *)) _tmp_42_rule, p)
+            _PyPegen_lookahead(0, _tmp_42_rule, p)
         )
         {
             D(fprintf(stderr, "%*c+ literal_expr[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "signed_number !('+' | '-')"));
@@ -8717,7 +8717,7 @@ literal_expr_rule(Parser *p)
         D(fprintf(stderr, "%*c> literal_expr[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "&(STRING | FSTRING_START | TSTRING_START) strings"));
         expr_ty strings_var;
         if (
-            _PyPegen_lookahead(1, (void *(*)(Parser *)) _tmp_43_rule, p)
+            _PyPegen_lookahead(1, _tmp_43_rule, p)
             &&
             (strings_var = strings_rule(p))  // strings
         )
@@ -9281,7 +9281,7 @@ pattern_capture_target_rule(Parser *p)
             &&
             (name = _PyPegen_name_token(p))  // NAME
             &&
-            _PyPegen_lookahead(0, (void *(*)(Parser *)) _tmp_44_rule, p)
+            _PyPegen_lookahead(0, _tmp_44_rule, p)
         )
         {
             D(fprintf(stderr, "%*c+ pattern_capture_target[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "!\"_\" NAME !('.' | '(' | '=')"));
@@ -9396,7 +9396,7 @@ value_pattern_rule(Parser *p)
         if (
             (attr = attr_rule(p))  // attr
             &&
-            _PyPegen_lookahead(0, (void *(*)(Parser *)) _tmp_44_rule, p)
+            _PyPegen_lookahead(0, _tmp_44_rule, p)
         )
         {
             D(fprintf(stderr, "%*c+ value_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "attr !('.' | '(' | '=')"));
@@ -15049,7 +15049,7 @@ atom_rule(Parser *p)
         D(fprintf(stderr, "%*c> atom[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "&(STRING | FSTRING_START | TSTRING_START) strings"));
         expr_ty strings_var;
         if (
-            _PyPegen_lookahead(1, (void *(*)(Parser *)) _tmp_43_rule, p)
+            _PyPegen_lookahead(1, _tmp_43_rule, p)
             &&
             (strings_var = strings_rule(p))  // strings
         )
@@ -19078,7 +19078,7 @@ target_with_star_atom_rule(Parser *p)
             &&
             (b = _PyPegen_name_token(p))  // NAME
             &&
-            _PyPegen_lookahead(0, (void *(*)(Parser *)) t_lookahead_rule, p)
+            _PyPegen_lookahead(0, t_lookahead_rule, p)
         )
         {
             D(fprintf(stderr, "%*c+ target_with_star_atom[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "t_primary '.' NAME !t_lookahead"));
@@ -19122,7 +19122,7 @@ target_with_star_atom_rule(Parser *p)
             &&
             (_literal_1 = _PyPegen_expect_token(p, 10))  // token=']'
             &&
-            _PyPegen_lookahead(0, (void *(*)(Parser *)) t_lookahead_rule, p)
+            _PyPegen_lookahead(0, t_lookahead_rule, p)
         )
         {
             D(fprintf(stderr, "%*c+ target_with_star_atom[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "t_primary '[' slices ']' !t_lookahead"));
@@ -19469,7 +19469,7 @@ single_subscript_attribute_target_rule(Parser *p)
             &&
             (b = _PyPegen_name_token(p))  // NAME
             &&
-            _PyPegen_lookahead(0, (void *(*)(Parser *)) t_lookahead_rule, p)
+            _PyPegen_lookahead(0, t_lookahead_rule, p)
         )
         {
             D(fprintf(stderr, "%*c+ single_subscript_attribute_target[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "t_primary '.' NAME !t_lookahead"));
@@ -19513,7 +19513,7 @@ single_subscript_attribute_target_rule(Parser *p)
             &&
             (_literal_1 = _PyPegen_expect_token(p, 10))  // token=']'
             &&
-            _PyPegen_lookahead(0, (void *(*)(Parser *)) t_lookahead_rule, p)
+            _PyPegen_lookahead(0, t_lookahead_rule, p)
         )
         {
             D(fprintf(stderr, "%*c+ single_subscript_attribute_target[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "t_primary '[' slices ']' !t_lookahead"));
@@ -19623,7 +19623,7 @@ t_primary_raw(Parser *p)
             &&
             (b = _PyPegen_name_token(p))  // NAME
             &&
-            _PyPegen_lookahead(1, (void *(*)(Parser *)) t_lookahead_rule, p)
+            _PyPegen_lookahead(1, t_lookahead_rule, p)
         )
         {
             D(fprintf(stderr, "%*c+ t_primary[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "t_primary '.' NAME &t_lookahead"));
@@ -19667,7 +19667,7 @@ t_primary_raw(Parser *p)
             &&
             (_literal_1 = _PyPegen_expect_token(p, 10))  // token=']'
             &&
-            _PyPegen_lookahead(1, (void *(*)(Parser *)) t_lookahead_rule, p)
+            _PyPegen_lookahead(1, t_lookahead_rule, p)
         )
         {
             D(fprintf(stderr, "%*c+ t_primary[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "t_primary '[' slices ']' &t_lookahead"));
@@ -19705,7 +19705,7 @@ t_primary_raw(Parser *p)
             &&
             (b = genexp_rule(p))  // genexp
             &&
-            _PyPegen_lookahead(1, (void *(*)(Parser *)) t_lookahead_rule, p)
+            _PyPegen_lookahead(1, t_lookahead_rule, p)
         )
         {
             D(fprintf(stderr, "%*c+ t_primary[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "t_primary genexp &t_lookahead"));
@@ -19749,7 +19749,7 @@ t_primary_raw(Parser *p)
             &&
             (_literal_1 = _PyPegen_expect_token(p, 8))  // token=')'
             &&
-            _PyPegen_lookahead(1, (void *(*)(Parser *)) t_lookahead_rule, p)
+            _PyPegen_lookahead(1, t_lookahead_rule, p)
         )
         {
             D(fprintf(stderr, "%*c+ t_primary[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "t_primary '(' arguments? ')' &t_lookahead"));
@@ -19784,7 +19784,7 @@ t_primary_raw(Parser *p)
         if (
             (a = atom_rule(p))  // atom
             &&
-            _PyPegen_lookahead(1, (void *(*)(Parser *)) t_lookahead_rule, p)
+            _PyPegen_lookahead(1, t_lookahead_rule, p)
         )
         {
             D(fprintf(stderr, "%*c+ t_primary[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "atom &t_lookahead"));
@@ -19974,7 +19974,7 @@ del_target_rule(Parser *p)
             &&
             (b = _PyPegen_name_token(p))  // NAME
             &&
-            _PyPegen_lookahead(0, (void *(*)(Parser *)) t_lookahead_rule, p)
+            _PyPegen_lookahead(0, t_lookahead_rule, p)
         )
         {
             D(fprintf(stderr, "%*c+ del_target[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "t_primary '.' NAME !t_lookahead"));
@@ -20018,7 +20018,7 @@ del_target_rule(Parser *p)
             &&
             (_literal_1 = _PyPegen_expect_token(p, 10))  // token=']'
             &&
-            _PyPegen_lookahead(0, (void *(*)(Parser *)) t_lookahead_rule, p)
+            _PyPegen_lookahead(0, t_lookahead_rule, p)
         )
         {
             D(fprintf(stderr, "%*c+ del_target[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "t_primary '[' slices ']' !t_lookahead"));
@@ -20506,7 +20506,7 @@ func_type_comment_rule(Parser *p)
             &&
             (t = _PyPegen_expect_token(p, TYPE_COMMENT))  // token='TYPE_COMMENT'
             &&
-            _PyPegen_lookahead(1, (void *(*)(Parser *)) _tmp_104_rule, p)
+            _PyPegen_lookahead(1, _tmp_104_rule, p)
         )
         {
             D(fprintf(stderr, "%*c+ func_type_comment[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "NEWLINE TYPE_COMMENT &(NEWLINE INDENT)"));
@@ -20700,7 +20700,7 @@ invalid_arguments_rule(Parser *p)
             &&
             (b = _PyPegen_expect_token(p, 22))  // token='='
             &&
-            _PyPegen_lookahead(1, (void *(*)(Parser *)) _tmp_110_rule, p)
+            _PyPegen_lookahead(1, _tmp_110_rule, p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_arguments[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "[(args ',')] NAME '=' &(',' | ')')"));
@@ -20898,7 +20898,7 @@ invalid_kwarg_rule(Parser *p)
         expr_ty a;
         Token * b;
         if (
-            _PyPegen_lookahead(0, (void *(*)(Parser *)) _tmp_112_rule, p)
+            _PyPegen_lookahead(0, _tmp_112_rule, p)
             &&
             (a = expression_rule(p))  // expression
             &&
@@ -21273,7 +21273,7 @@ invalid_expression_rule(Parser *p)
         expr_ty a;
         expr_ty b;
         if (
-            _PyPegen_lookahead(0, (void *(*)(Parser *)) _tmp_114_rule, p)
+            _PyPegen_lookahead(0, _tmp_114_rule, p)
             &&
             (a = disjunction_rule(p))  // disjunction
             &&
@@ -21309,7 +21309,7 @@ invalid_expression_rule(Parser *p)
             &&
             (b = disjunction_rule(p))  // disjunction
             &&
-            _PyPegen_lookahead(0, (void *(*)(Parser *)) _tmp_115_rule, p)
+            _PyPegen_lookahead(0, _tmp_115_rule, p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_expression[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "disjunction 'if' disjunction !('else' | ':')"));
@@ -21344,7 +21344,7 @@ invalid_expression_rule(Parser *p)
             &&
             (_keyword_1 = _PyPegen_expect_token(p, 686))  // token='else'
             &&
-            _PyPegen_lookahead(0, (void *(*)(Parser *)) expression_rule, p)
+            _PyPegen_lookahead_for_expr(0, expression_rule, p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_expression[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "disjunction 'if' disjunction 'else' !expression"));
@@ -21534,7 +21534,7 @@ invalid_named_expression_rule(Parser *p)
             &&
             (b = bitwise_or_rule(p))  // bitwise_or
             &&
-            _PyPegen_lookahead(0, (void *(*)(Parser *)) _tmp_117_rule, p)
+            _PyPegen_lookahead(0, _tmp_117_rule, p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_named_expression[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "NAME '=' bitwise_or !('=' | ':=')"));
@@ -21560,7 +21560,7 @@ invalid_named_expression_rule(Parser *p)
         Token * b;
         expr_ty bitwise_or_var;
         if (
-            _PyPegen_lookahead(0, (void *(*)(Parser *)) _tmp_118_rule, p)
+            _PyPegen_lookahead(0, _tmp_118_rule, p)
             &&
             (a = bitwise_or_rule(p))  // bitwise_or
             &&
@@ -21568,7 +21568,7 @@ invalid_named_expression_rule(Parser *p)
             &&
             (bitwise_or_var = bitwise_or_rule(p))  // bitwise_or
             &&
-            _PyPegen_lookahead(0, (void *(*)(Parser *)) _tmp_117_rule, p)
+            _PyPegen_lookahead(0, _tmp_117_rule, p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_named_expression[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "!(list | tuple | genexp | 'True' | 'None' | 'False') bitwise_or '=' bitwise_or !('=' | ':=')"));
@@ -22402,7 +22402,7 @@ invalid_default_rule(Parser *p)
         if (
             (a = _PyPegen_expect_token(p, 22))  // token='='
             &&
-            _PyPegen_lookahead(1, (void *(*)(Parser *)) _tmp_125_rule, p)
+            _PyPegen_lookahead(1, _tmp_125_rule, p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_default[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'=' &(')' | ',')"));
@@ -23351,7 +23351,7 @@ invalid_with_item_rule(Parser *p)
             &&
             (a = expression_rule(p))  // expression
             &&
-            _PyPegen_lookahead(1, (void *(*)(Parser *)) _tmp_36_rule, p)
+            _PyPegen_lookahead(1, _tmp_36_rule, p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_with_item[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "expression 'as' expression &(',' | ')' | ':')"));
@@ -23663,7 +23663,7 @@ invalid_dotted_as_name_rule(Parser *p)
             &&
             (_keyword = _PyPegen_expect_token(p, 680))  // token='as'
             &&
-            _PyPegen_lookahead(0, (void *(*)(Parser *)) _tmp_138_rule, p)
+            _PyPegen_lookahead(0, _tmp_138_rule, p)
             &&
             (a = expression_rule(p))  // expression
         )
@@ -23714,7 +23714,7 @@ invalid_import_from_as_name_rule(Parser *p)
             &&
             (_keyword = _PyPegen_expect_token(p, 680))  // token='as'
             &&
-            _PyPegen_lookahead(0, (void *(*)(Parser *)) _tmp_138_rule, p)
+            _PyPegen_lookahead(0, _tmp_138_rule, p)
             &&
             (a = expression_rule(p))  // expression
         )
@@ -24084,7 +24084,7 @@ invalid_try_stmt_rule(Parser *p)
             &&
             (block_var = block_rule(p))  // block
             &&
-            _PyPegen_lookahead(0, (void *(*)(Parser *)) _tmp_143_rule, p)
+            _PyPegen_lookahead(0, _tmp_143_rule, p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_try_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'try' ':' block !('except' | 'finally')"));
@@ -25876,7 +25876,7 @@ invalid_double_starred_kvpairs_rule(Parser *p)
             &&
             (a = _PyPegen_expect_token(p, 11))  // token=':'
             &&
-            _PyPegen_lookahead(1, (void *(*)(Parser *)) _tmp_148_rule, p)
+            _PyPegen_lookahead(1, _tmp_148_rule, p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_double_starred_kvpairs[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "expression ':' &('}' | ',')"));
@@ -25986,7 +25986,7 @@ invalid_kvpair_rule(Parser *p)
             &&
             (a = _PyPegen_expect_token(p, 11))  // token=':'
             &&
-            _PyPegen_lookahead(1, (void *(*)(Parser *)) _tmp_148_rule, p)
+            _PyPegen_lookahead(1, _tmp_148_rule, p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_kvpair[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "expression ':' &('}' | ',')"));
@@ -26245,7 +26245,7 @@ invalid_fstring_replacement_field_rule(Parser *p)
         if (
             (_literal = _PyPegen_expect_token(p, 25))  // token='{'
             &&
-            _PyPegen_lookahead(0, (void *(*)(Parser *)) annotated_rhs_rule, p)
+            _PyPegen_lookahead_for_expr(0, annotated_rhs_rule, p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_fstring_replacement_field[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'{' !annotated_rhs"));
@@ -26274,7 +26274,7 @@ invalid_fstring_replacement_field_rule(Parser *p)
             &&
             (annotated_rhs_var = annotated_rhs_rule(p))  // annotated_rhs
             &&
-            _PyPegen_lookahead(0, (void *(*)(Parser *)) _tmp_149_rule, p)
+            _PyPegen_lookahead(0, _tmp_149_rule, p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_fstring_replacement_field[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'{' annotated_rhs !('=' | '!' | ':' | '}')"));
@@ -26306,7 +26306,7 @@ invalid_fstring_replacement_field_rule(Parser *p)
             &&
             (_literal_1 = _PyPegen_expect_token(p, 22))  // token='='
             &&
-            _PyPegen_lookahead(0, (void *(*)(Parser *)) _tmp_150_rule, p)
+            _PyPegen_lookahead(0, _tmp_150_rule, p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_fstring_replacement_field[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'{' annotated_rhs '=' !('!' | ':' | '}')"));
@@ -26372,7 +26372,7 @@ invalid_fstring_replacement_field_rule(Parser *p)
             &&
             (_opt_var_1 = _tmp_151_rule(p), !p->error_indicator)  // ['!' NAME]
             &&
-            _PyPegen_lookahead(0, (void *(*)(Parser *)) _tmp_152_rule, p)
+            _PyPegen_lookahead(0, _tmp_152_rule, p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_fstring_replacement_field[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'{' annotated_rhs '='? ['!' NAME] !(':' | '}')"));
@@ -26497,7 +26497,7 @@ invalid_fstring_conversion_character_rule(Parser *p)
         if (
             (_literal = _PyPegen_expect_token(p, 54))  // token='!'
             &&
-            _PyPegen_lookahead(1, (void *(*)(Parser *)) _tmp_152_rule, p)
+            _PyPegen_lookahead(1, _tmp_152_rule, p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_fstring_conversion_character[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'!' &(':' | '}')"));
@@ -26523,7 +26523,7 @@ invalid_fstring_conversion_character_rule(Parser *p)
         if (
             (_literal = _PyPegen_expect_token(p, 54))  // token='!'
             &&
-            _PyPegen_lookahead_with_name(0, _PyPegen_name_token, p)
+            _PyPegen_lookahead_for_expr(0, _PyPegen_name_token, p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_fstring_conversion_character[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'!' !NAME"));
@@ -26687,7 +26687,7 @@ invalid_tstring_replacement_field_rule(Parser *p)
         if (
             (_literal = _PyPegen_expect_token(p, 25))  // token='{'
             &&
-            _PyPegen_lookahead(0, (void *(*)(Parser *)) annotated_rhs_rule, p)
+            _PyPegen_lookahead_for_expr(0, annotated_rhs_rule, p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_tstring_replacement_field[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'{' !annotated_rhs"));
@@ -26716,7 +26716,7 @@ invalid_tstring_replacement_field_rule(Parser *p)
             &&
             (annotated_rhs_var = annotated_rhs_rule(p))  // annotated_rhs
             &&
-            _PyPegen_lookahead(0, (void *(*)(Parser *)) _tmp_149_rule, p)
+            _PyPegen_lookahead(0, _tmp_149_rule, p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_tstring_replacement_field[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'{' annotated_rhs !('=' | '!' | ':' | '}')"));
@@ -26748,7 +26748,7 @@ invalid_tstring_replacement_field_rule(Parser *p)
             &&
             (_literal_1 = _PyPegen_expect_token(p, 22))  // token='='
             &&
-            _PyPegen_lookahead(0, (void *(*)(Parser *)) _tmp_150_rule, p)
+            _PyPegen_lookahead(0, _tmp_150_rule, p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_tstring_replacement_field[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'{' annotated_rhs '=' !('!' | ':' | '}')"));
@@ -26814,7 +26814,7 @@ invalid_tstring_replacement_field_rule(Parser *p)
             &&
             (_opt_var_1 = _tmp_151_rule(p), !p->error_indicator)  // ['!' NAME]
             &&
-            _PyPegen_lookahead(0, (void *(*)(Parser *)) _tmp_152_rule, p)
+            _PyPegen_lookahead(0, _tmp_152_rule, p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_tstring_replacement_field[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'{' annotated_rhs '='? ['!' NAME] !(':' | '}')"));
@@ -26939,7 +26939,7 @@ invalid_tstring_conversion_character_rule(Parser *p)
         if (
             (_literal = _PyPegen_expect_token(p, 54))  // token='!'
             &&
-            _PyPegen_lookahead(1, (void *(*)(Parser *)) _tmp_152_rule, p)
+            _PyPegen_lookahead(1, _tmp_152_rule, p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_tstring_conversion_character[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'!' &(':' | '}')"));
@@ -26965,7 +26965,7 @@ invalid_tstring_conversion_character_rule(Parser *p)
         if (
             (_literal = _PyPegen_expect_token(p, 54))  // token='!'
             &&
-            _PyPegen_lookahead_with_name(0, _PyPegen_name_token, p)
+            _PyPegen_lookahead_for_expr(0, _PyPegen_name_token, p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_tstring_conversion_character[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'!' !NAME"));
@@ -37404,7 +37404,7 @@ _tmp_168_rule(Parser *p)
         D(fprintf(stderr, "%*c> _tmp_168[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "!STRING expression_without_invalid"));
         expr_ty expression_without_invalid_var;
         if (
-            _PyPegen_lookahead(0, (void *(*)(Parser *)) _PyPegen_string_token, p)
+            _PyPegen_lookahead(0, _PyPegen_string_token, p)
             &&
             (expression_without_invalid_var = expression_without_invalid_rule(p))  // expression_without_invalid
         )

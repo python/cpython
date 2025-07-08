@@ -1716,7 +1716,7 @@ ABI_THREAD=""
 # --disable-gil
 AC_MSG_CHECKING([for --disable-gil])
 AC_ARG_ENABLE([gil],
-  [AS_HELP_STRING([--disable-gil], [enable experimental support for running without the GIL (default is no)])],
+  [AS_HELP_STRING([--disable-gil], [enable support for running without the GIL (default is no)])],
   [AS_VAR_IF([enable_gil], [yes], [disable_gil=no], [disable_gil=yes])], [disable_gil=no]
 )
 AC_MSG_RESULT([$disable_gil])
@@ -2776,7 +2776,7 @@ AS_VAR_IF([jit_flags],
           [],
           [AS_VAR_APPEND([CFLAGS_NODIST], [" $jit_flags"])
            AS_VAR_SET([REGEN_JIT_COMMAND],
-                      ["\$(PYTHON_FOR_REGEN) \$(srcdir)/Tools/jit/build.py ${ARCH_TRIPLES:-$host} --output-dir . --pyconfig-dir ."])
+                      ["\$(PYTHON_FOR_REGEN) \$(srcdir)/Tools/jit/build.py ${ARCH_TRIPLES:-$host} --output-dir . --pyconfig-dir . --cflags=\"$CFLAGS_JIT\""])
            AS_VAR_SET([JIT_STENCILS_H], ["jit_stencils.h"])
            AS_VAR_IF([Py_DEBUG],
                      [true],
@@ -3172,10 +3172,6 @@ if test "$ac_cv_sizeof_off_t" -gt "$ac_cv_sizeof_long" -a \
 else
   have_largefile_support="no"
 fi
-dnl LFS does not work with Emscripten 3.1
-AS_CASE([$ac_sys_system],
-  [Emscripten], [have_largefile_support="no"]
-)
 AS_VAR_IF([have_largefile_support], [yes], [
   AC_DEFINE([HAVE_LARGEFILE_SUPPORT], [1],
   [Defined to enable large file support when an off_t is bigger than a long
@@ -4167,7 +4163,7 @@ int main(void)
 [ac_cv_ffi_complex_double_supported=no])
 ])])
 if test "$ac_cv_ffi_complex_double_supported" = "yes"; then
-    AC_DEFINE([Py_FFI_SUPPORT_C_COMPLEX], [1],
+    AC_DEFINE([_Py_FFI_SUPPORT_C_COMPLEX], [1],
               [Defined if _Complex C type can be used with libffi.])
 fi
 
@@ -4215,13 +4211,13 @@ AS_VAR_IF([with_system_libmpdec], [yes],
       [have_mpdec=no])
   ])],
   [AC_MSG_WARN([m4_normalize([
-     the bundled copy of libmpdecimal is scheduled for removal in Python 3.15;
+     the bundled copy of libmpdec is scheduled for removal in Python 3.16;
      consider using a system installed mpdecimal library.])])])
 
 AS_IF([test "$with_system_libmpdec" = "yes" && test "$have_mpdec" = "no"],
       [AC_MSG_WARN([m4_normalize([
-         no system libmpdecimal found; falling back to bundled libmpdecimal
-         (deprecated and scheduled for removal in Python 3.15)])])
+         no system libmpdec found; falling back to bundled libmpdec
+         (deprecated and scheduled for removal in Python 3.16)])])
        USE_BUNDLED_LIBMPDEC()])
 
 # Disable forced inlining in debug builds, see GH-94847
@@ -5219,7 +5215,7 @@ AC_CHECK_FUNCS([ \
   faccessat fchmod fchmodat fchown fchownat fdopendir fdwalk fexecve \
   fork fork1 fpathconf fstatat ftime ftruncate futimens futimes futimesat \
   gai_strerror getegid geteuid getgid getgrent getgrgid getgrgid_r \
-  getgrnam_r getgrouplist gethostname getitimer getloadavg getlogin \
+  getgrnam_r getgrouplist gethostname getitimer getloadavg getlogin getlogin_r \
   getpeername getpgid getpid getppid getpriority _getpty \
   getpwent getpwnam_r getpwuid getpwuid_r getresgid getresuid getrusage getsid getspent \
   getspnam getuid getwd grantpt if_nameindex initgroups kill killpg lchown linkat \
@@ -5537,6 +5533,18 @@ PY_CHECK_FUNC([setgroups], [
 #include <grp.h>
 #endif
 ])
+
+AC_CHECK_DECL([MAXLOGNAME],
+              [AC_DEFINE([HAVE_MAXLOGNAME], [1],
+                         [Define if you have the 'MAXLOGNAME' constant.])],
+              [],
+              [@%:@include <sys/param.h>])
+
+AC_CHECK_DECLS([UT_NAMESIZE],
+              [AC_DEFINE([HAVE_UT_NAMESIZE], [1],
+                         [Define if you have the 'HAVE_UT_NAMESIZE' constant.])],
+              [],
+              [@%:@include <utmp.h>])
 
 # check for openpty, login_tty, and forkpty
 
@@ -7160,8 +7168,6 @@ if test "$with_remote_debug" = yes; then
     [Define if you want to enable remote debugging support.])
   AC_MSG_RESULT([yes])
 else
-  AC_DEFINE([Py_REMOTE_DEBUG], [0],
-    [Define if you want to enable remote debugging support.])
   AC_MSG_RESULT([no])
 fi
 
@@ -8020,7 +8026,8 @@ then
   AX_CHECK_COMPILE_FLAG([-msse -msse2 -msse3 -msse4.1 -msse4.2],[
     [LIBHACL_SIMD128_FLAGS="-msse -msse2 -msse3 -msse4.1 -msse4.2"]
 
-    AC_DEFINE([HACL_CAN_COMPILE_SIMD128], [1], [HACL* library can compile SIMD128 implementations])
+    AC_DEFINE([_Py_HACL_CAN_COMPILE_VEC128], [1], [
+      HACL* library can compile SIMD128 implementations])
 
     # macOS universal2 builds *support* the -msse etc flags because they're
     # available on x86_64. However, performance of the HACL SIMD128 implementation
@@ -8051,7 +8058,8 @@ if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "WASI" || \
 then
   AX_CHECK_COMPILE_FLAG([-mavx2],[
     [LIBHACL_SIMD256_FLAGS="-mavx2"]
-    AC_DEFINE([HACL_CAN_COMPILE_SIMD256], [1], [HACL* library can compile SIMD256 implementations])
+    AC_DEFINE([_Py_HACL_CAN_COMPILE_VEC256], [1], [
+      HACL* library can compile SIMD256 implementations])
 
     # macOS universal2 builds *support* the -mavx2 compiler flag because it's
     # available on x86_64; but the HACL SIMD256 build then fails because the

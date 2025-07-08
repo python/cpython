@@ -1476,13 +1476,13 @@ encoder_listencode_obj(PyEncoderObject *s, PyUnicodeWriter *writer,
     int rv;
 
     if (obj == Py_None) {
-      return PyUnicodeWriter_WriteUTF8(writer, "null", 4);
+      return PyUnicodeWriter_WriteASCII(writer, "null", 4);
     }
     else if (obj == Py_True) {
-      return PyUnicodeWriter_WriteUTF8(writer, "true", 4);
+      return PyUnicodeWriter_WriteASCII(writer, "true", 4);
     }
     else if (obj == Py_False) {
-      return PyUnicodeWriter_WriteUTF8(writer, "false", 5);
+      return PyUnicodeWriter_WriteASCII(writer, "false", 5);
     }
     else if (PyUnicode_Check(obj)) {
         PyObject *encoded = encoder_encode_string(s, obj);
@@ -1609,6 +1609,12 @@ encoder_encode_key_value(PyEncoderObject *s, PyUnicodeWriter *writer, bool *firs
 
     if (*first) {
         *first = false;
+        if (s->indent != Py_None) {
+            if (write_newline_indent(writer, indent_level, indent_cache) < 0) {
+                Py_DECREF(keystr);
+                return -1;
+            }
+        }
     }
     else {
         if (PyUnicodeWriter_WriteStr(writer, item_separator) < 0) {
@@ -1649,7 +1655,7 @@ encoder_listencode_dict(PyEncoderObject *s, PyUnicodeWriter *writer,
 
     if (PyDict_GET_SIZE(dct) == 0) {
         /* Fast path */
-        return PyUnicodeWriter_WriteUTF8(writer, "{}", 2);
+        return PyUnicodeWriter_WriteASCII(writer, "{}", 2);
     }
 
     if (s->markers != Py_None) {
@@ -1676,11 +1682,8 @@ encoder_listencode_dict(PyEncoderObject *s, PyUnicodeWriter *writer,
     if (s->indent != Py_None) {
         indent_level++;
         separator = get_item_separator(s, indent_level, indent_cache);
-        if (separator == NULL ||
-            write_newline_indent(writer, indent_level, indent_cache) < 0)
-        {
+        if (separator == NULL)
             goto bail;
-        }
     }
 
     if (s->sort_keys || !PyDict_CheckExact(dct)) {
@@ -1720,7 +1723,7 @@ encoder_listencode_dict(PyEncoderObject *s, PyUnicodeWriter *writer,
             goto bail;
         Py_CLEAR(ident);
     }
-    if (s->indent != Py_None) {
+    if (s->indent != Py_None && !first) {
         indent_level--;
         if (write_newline_indent(writer, indent_level, indent_cache) < 0) {
             goto bail;
@@ -1753,7 +1756,7 @@ encoder_listencode_list(PyEncoderObject *s, PyUnicodeWriter *writer,
         return -1;
     if (PySequence_Fast_GET_SIZE(s_fast) == 0) {
         Py_DECREF(s_fast);
-        return PyUnicodeWriter_WriteUTF8(writer, "[]", 2);
+        return PyUnicodeWriter_WriteASCII(writer, "[]", 2);
     }
 
     if (s->markers != Py_None) {

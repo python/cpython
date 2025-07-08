@@ -1798,9 +1798,24 @@ object.
 
    See also :c:func:`PyUnicodeWriter_DecodeUTF8Stateful`.
 
+.. c:function:: int PyUnicodeWriter_WriteASCII(PyUnicodeWriter *writer, const char *str, Py_ssize_t size)
+
+   Write the ASCII string *str* into *writer*.
+
+   *size* is the string length in bytes. If *size* is equal to ``-1``, call
+   ``strlen(str)`` to get the string length.
+
+   *str* must only contain ASCII characters. The behavior is undefined if
+   *str* contains non-ASCII characters.
+
+   On success, return ``0``.
+   On error, set an exception, leave the writer unchanged, and return ``-1``.
+
+   .. versionadded:: 3.14
+
 .. c:function:: int PyUnicodeWriter_WriteWideChar(PyUnicodeWriter *writer, const wchar_t *str, Py_ssize_t size)
 
-   Writer the wide string *str* into *writer*.
+   Write the wide string *str* into *writer*.
 
    *size* is a number of wide characters. If *size* is equal to ``-1``, call
    ``wcslen(str)`` to get the string length.

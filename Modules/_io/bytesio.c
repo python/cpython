@@ -1,6 +1,7 @@
 #include "Python.h"
 #include "pycore_object.h"
 #include "pycore_sysmodule.h"     // _PySys_GetSizeOf()
+#include "pycore_weakref.h"           // FT_CLEAR_WEAKREFS()
 
 #include <stddef.h>               // offsetof()
 #include "_iomodule.h"
@@ -903,8 +904,7 @@ bytesio_dealloc(PyObject *op)
     }
     Py_CLEAR(self->buf);
     Py_CLEAR(self->dict);
-    if (self->weakreflist != NULL)
-        PyObject_ClearWeakRefs(op);
+    FT_CLEAR_WEAKREFS(op, self->weakreflist);
     tp->tp_free(self);
     Py_DECREF(tp);
 }

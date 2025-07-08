@@ -333,6 +333,27 @@ writer_write_utf8(PyObject *self_raw, PyObject *args)
 
 
 static PyObject*
+writer_write_ascii(PyObject *self_raw, PyObject *args)
+{
+    WriterObject *self = (WriterObject *)self_raw;
+    if (writer_check(self) < 0) {
+        return NULL;
+    }
+
+    char *str;
+    Py_ssize_t size;
+    if (!PyArg_ParseTuple(args, "yn", &str, &size)) {
+        return NULL;
+    }
+
+    if (PyUnicodeWriter_WriteASCII(self->writer, str, size) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
+static PyObject*
 writer_write_widechar(PyObject *self_raw, PyObject *args)
 {
     WriterObject *self = (WriterObject *)self_raw;
@@ -513,6 +534,7 @@ writer_finish(PyObject *self_raw, PyObject *Py_UNUSED(args))
 static PyMethodDef writer_methods[] = {
     {"write_char", _PyCFunction_CAST(writer_write_char), METH_VARARGS},
     {"write_utf8", _PyCFunction_CAST(writer_write_utf8), METH_VARARGS},
+    {"write_ascii", _PyCFunction_CAST(writer_write_ascii), METH_VARARGS},
     {"write_widechar", _PyCFunction_CAST(writer_write_widechar), METH_VARARGS},
     {"write_ucs4", _PyCFunction_CAST(writer_write_ucs4), METH_VARARGS},
     {"write_str", _PyCFunction_CAST(writer_write_str), METH_VARARGS},

@@ -716,7 +716,7 @@ class ListComprehensionTest(unittest.TestCase):
 
     def test_exception_locations(self):
         # The location of an exception raised from __init__ or
-        # __next__ should should be the iterator expression
+        # __next__ should be the iterator expression
 
         def init_raises():
             try:
@@ -770,7 +770,7 @@ class ListComprehensionTest(unittest.TestCase):
             def __iter__(self):
                 return Iterator()
 
-        self.assertEqual([1,2], [i for i in C()])
+        self.assertEqual([1, 2], [i for i in C()])
 
 __test__ = {'doctests' : doctests}
 

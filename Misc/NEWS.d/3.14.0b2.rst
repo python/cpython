@@ -512,7 +512,7 @@ Bénédikt Tran.
 .. section: Library
 
 Ignore log messages generated during handling of log messages, to avoid
-deadlock or infinite recursion.
+deadlock or infinite recursion. [NOTE: This change has since been reverted.]
 
 ..
 

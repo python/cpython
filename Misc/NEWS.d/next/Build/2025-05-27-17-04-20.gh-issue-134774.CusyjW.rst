@@ -1,2 +1,0 @@
-Fix :c:macro:`Py_DEBUG` macro redefinition warnings on Windows debug builds.
-Patch by Chris Eibl.

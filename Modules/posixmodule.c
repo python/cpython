@@ -685,7 +685,8 @@ static void
 reset_remotedebug_data(PyThreadState *tstate)
 {
     tstate->remote_debugger_support.debugger_pending_call = 0;
-    memset(tstate->remote_debugger_support.debugger_script_path, 0, MAX_SCRIPT_PATH_SIZE);
+    memset(tstate->remote_debugger_support.debugger_script_path, 0,
+           Py_MAX_SCRIPT_PATH_SIZE);
 }
 
 
@@ -8806,14 +8807,14 @@ os_ptsname_impl(PyObject *module, int fd)
 #if defined(HAVE_OPENPTY) || defined(HAVE_FORKPTY) || defined(HAVE_LOGIN_TTY) || defined(HAVE_DEV_PTMX)
 #ifdef HAVE_PTY_H
 #include <pty.h>
-#ifdef HAVE_UTMP_H
-#include <utmp.h>
-#endif /* HAVE_UTMP_H */
 #elif defined(HAVE_LIBUTIL_H)
 #include <libutil.h>
 #elif defined(HAVE_UTIL_H)
 #include <util.h>
 #endif /* HAVE_PTY_H */
+#ifdef HAVE_UTMP_H
+#include <utmp.h>
+#endif /* HAVE_UTMP_H */
 #ifdef HAVE_STROPTS_H
 #include <stropts.h>
 #endif
@@ -9548,6 +9549,24 @@ os_getlogin_impl(PyObject *module)
     }
     else
         result = PyErr_SetFromWindowsErr(GetLastError());
+#elif defined (HAVE_GETLOGIN_R)
+# if defined (HAVE_MAXLOGNAME)
+    char name[MAXLOGNAME + 1];
+# elif defined (HAVE_UT_NAMESIZE)
+    char name[UT_NAMESIZE + 1];
+# else
+    char name[256];
+# endif
+    int err = getlogin_r(name, sizeof(name));
+    if (err) {
+        int old_errno = errno;
+        errno = -err;
+        posix_error();
+        errno = old_errno;
+    }
+    else {
+        result = PyUnicode_DecodeFSDefault(name);
+    }
 #else
     char *name;
     int old_errno = errno;
