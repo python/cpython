@@ -7344,11 +7344,16 @@ init_static_types(PyInterpreterState *interp, int reloading)
 
     /* Bases classes must be initialized before subclasses,
      * so capi_types must have the types in the appropriate order. */
+    static PyMutex mutex = {0};
     for (size_t i = 0; i < Py_ARRAY_LENGTH(capi_types); i++) {
         PyTypeObject *type = capi_types[i];
-        if (_PyStaticType_InitForExtension(interp, type) < 0) {
+        PyMutex_Lock(&mutex);
+        int ret = _PyStaticType_InitForExtension(interp, type);
+        if (ret < 0) {
+            PyMutex_Unlock(&mutex);
             return -1;
         }
+        PyMutex_Unlock(&mutex);
     }
 
     return 0;
