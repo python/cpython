@@ -2762,6 +2762,7 @@ _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self
     }
 
 exit:
+   _Py_RemoteDebug_ClearCache(&self->handle);
     return result;
 }
 
@@ -2885,9 +2886,11 @@ _remote_debugging_RemoteUnwinder_get_all_awaited_by_impl(RemoteUnwinderObject *s
         goto result_err;
     }
 
+    _Py_RemoteDebug_ClearCache(&self->handle);
     return result;
 
 result_err:
+    _Py_RemoteDebug_ClearCache(&self->handle);
     Py_XDECREF(result);
     return NULL;
 }
@@ -2954,9 +2957,11 @@ _remote_debugging_RemoteUnwinder_get_async_stack_trace_impl(RemoteUnwinderObject
         goto cleanup;
     }
 
+    _Py_RemoteDebug_ClearCache(&self->handle);
     return result;
 
 cleanup:
+    _Py_RemoteDebug_ClearCache(&self->handle);
     Py_XDECREF(result);
     return NULL;
 }
@@ -2982,6 +2987,7 @@ RemoteUnwinder_dealloc(PyObject *op)
     }
 #endif
     if (self->handle.pid != 0) {
+        _Py_RemoteDebug_ClearCache(&self->handle);
         _Py_RemoteDebug_CleanupProcHandle(&self->handle);
     }
     PyObject_Del(self);
