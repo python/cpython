@@ -485,11 +485,18 @@ class InterpreterPoolExecutorTest(
             sys.exit(1)
 
         from concurrent.futures import *
+
+        if 'InterpreterPoolExecutor' in globals():
+            print('InterpreterPoolExecutor should not be imported!',
+                  file=sys.stderr)
+            sys.exit(1)
         """)
 
         cmd = [sys.executable, '-c', code]
         p = subprocess.run(cmd, capture_output=True)
         self.assertEqual(p.returncode, 0, p.stderr.decode())
+        self.assertEqual(p.stdout.decode(), '')
+        self.assertEqual(p.stderr.decode(), '')
 
 
 class AsyncioTest(InterpretersMixin, testasyncio_utils.TestCase):
