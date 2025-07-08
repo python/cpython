@@ -1907,7 +1907,6 @@ _PyPegen_concatenate_strings(Parser *p, asdl_expr_seq *strings,
         }
     }
 
-
     if (t_string_found) {
         return _build_concatenated_template_str(p, strings, lineno,
             col_offset, end_lineno, end_col_offset, arena);
