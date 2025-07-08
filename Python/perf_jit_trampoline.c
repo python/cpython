@@ -66,7 +66,9 @@
 #ifdef PY_HAVE_PERF_TRAMPOLINE
 
 /* Standard library includes for perf jitdump implementation */
-#include <elf.h>                  // ELF architecture constants
+#if defined(__linux__)
+#  include <elf.h>                // ELF architecture constants
+#endif
 #include <fcntl.h>                // File control operations
 #include <stdio.h>                // Standard I/O operations
 #include <stdlib.h>               // Standard library functions
@@ -74,7 +76,9 @@
 #include <sys/types.h>            // System data types
 #include <unistd.h>               // System calls (sysconf, getpid)
 #include <sys/time.h>             // Time functions (gettimeofday)
-#include <sys/syscall.h>          // System call interface
+#if defined(__linux__)
+#  include <sys/syscall.h>        // System call interface
+#endif
 
 // =============================================================================
 //                           CONSTANTS AND CONFIGURATION
@@ -100,6 +104,16 @@
  * The padding size is now calculated automatically during initialization
  * based on the actual unwind information requirements.
  */
+
+
+/* These constants are defined inside <elf.h>, which we can't use outside of linux. */
+#if !defined(__linux__)
+#  define EM_386      3
+#  define EM_X86_64   62
+#  define EM_ARM      40
+#  define EM_AARCH64  183
+#  define EM_RISCV    243
+#endif
 
 /* Convenient access to the global trampoline API state */
 #define trampoline_api _PyRuntime.ceval.perf.trampoline_api
@@ -194,7 +208,7 @@ struct BaseEvent {
 typedef struct {
     struct BaseEvent base;   // Common event header
     uint32_t process_id;     // Process ID where code was generated
-    uint32_t thread_id;      // Thread ID where code was generated
+    uint64_t thread_id;      // Thread ID where code was generated
     uint64_t vma;            // Virtual memory address where code is loaded
     uint64_t code_address;   // Address of the actual machine code
     uint64_t code_size;      // Size of the machine code in bytes
@@ -1263,7 +1277,11 @@ static void perf_map_jit_write_entry(void *state, const void *code_addr,
     ev.base.size = sizeof(ev) + (name_length+1) + size;
     ev.base.time_stamp = get_current_monotonic_ticks();
     ev.process_id = getpid();
+#if defined(__APPLE__)
+    pthread_threadid_np(NULL, &ev.thread_id);
+#else
     ev.thread_id = syscall(SYS_gettid);  // Get thread ID via system call
+#endif
     ev.vma = base;                       // Virtual memory address
     ev.code_address = base;              // Same as VMA for our use case
     ev.code_size = size;

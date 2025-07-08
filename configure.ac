@@ -3692,12 +3692,13 @@ case "$ac_sys_system" in
 esac
 AC_MSG_RESULT([$SHLIBS])
 
-dnl perf trampoline is Linux specific and requires an arch-specific
+dnl perf trampoline is Linux and macOS specific and requires an arch-specific
 dnl trampoline in assembly.
 AC_MSG_CHECKING([perf trampoline])
 AS_CASE([$PLATFORM_TRIPLET],
   [x86_64-linux-gnu], [perf_trampoline=yes],
   [aarch64-linux-gnu], [perf_trampoline=yes],
+  [darwin], [perf_trampoline=yes],
   [perf_trampoline=no]
 )
 AC_MSG_RESULT([$perf_trampoline])
