@@ -1520,9 +1520,9 @@ move_legacy_finalizer_reachable(struct collection_state *state)
 }
 
 // Clear all weakrefs to unreachable objects. Weakrefs with callbacks are
-// enqueued in `wrcb_to_call`, but not invoked yet.
+// optionally enqueued in `wrcb_to_call`, but not invoked yet.
 static void
-clear_weakrefs(struct collection_state *state)
+clear_weakrefs(struct collection_state *state, bool enqueue_callbacks)
 {
     PyObject *op;
     WORKSTACK_FOR_EACH(&state->unreachable, op) {
@@ -1553,6 +1553,10 @@ clear_weakrefs(struct collection_state *state)
             _PyObject_ASSERT((PyObject *)wr, wr->wr_object == op);
             _PyWeakref_ClearRef(wr);
             _PyObject_ASSERT((PyObject *)wr, wr->wr_object == Py_None);
+
+            if (!enqueue_callbacks) {
+                continue;
+            }
 
             // We do not invoke callbacks for weakrefs that are themselves
             // unreachable. This is partly for historical reasons: weakrefs
@@ -2249,7 +2253,7 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
     }
 
     // Clear weakrefs and enqueue callbacks (but do not call them).
-    clear_weakrefs(state);
+    clear_weakrefs(state, true);
     _PyEval_StartTheWorld(interp);
 
     // Deallocate any object from the refcount merge step
@@ -2260,11 +2264,19 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
     call_weakref_callbacks(state);
     finalize_garbage(state);
 
-    // Handle any objects that may have resurrected after the finalization.
     _PyEval_StopTheWorld(interp);
+    // Handle any objects that may have resurrected after the finalization.
     err = handle_resurrected_objects(state);
     // Clear free lists in all threads
     _PyGC_ClearAllFreeLists(interp);
+    if (err == 0) {
+        // Clear weakrefs to objects in the unreachable set.  No Python-level
+        // code must be allowed to access those unreachable objects.  During
+        // delete_garbage(), finalizers outside the unreachable set might
+        // run and create new weakrefs.  If those weakrefs were not cleared,
+        // they could reveal unreachable objects.
+        clear_weakrefs(state, false);
+    }
     // Record the number of live GC objects
     interp->gc.long_lived_total = state->long_lived_total;
     _PyEval_StartTheWorld(interp);
