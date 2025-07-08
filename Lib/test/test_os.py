@@ -2681,6 +2681,7 @@ class LinkAtTests(unittest.TestCase):
         with self.assertRaises(FileExistsError):
             os.linkat(os.AT_FDCWD, src2, os.AT_FDCWD, dst)  # flags=0
 
+    @unittest.skipUnless(hasattr(os, 'O_TMPFILE'), 'need os.O_TMPFILE')
     def check_flag(self, flag):
         filename = os_helper.TESTFN
         self.addCleanup(os_helper.unlink, filename)
@@ -2700,9 +2701,13 @@ class LinkAtTests(unittest.TestCase):
         with open(filename, encoding='utf8') as fp:
             self.assertEqual(fp.read(), 'hello')
 
+    @unittest.skipUnless(hasattr(os, 'AT_EMPTY_PATH'),
+                         'need os.AT_EMPTY_PATH')
     def test_empty_path(self):
         self.check_flag(os.AT_EMPTY_PATH)
 
+    @unittest.skipUnless(hasattr(os, 'AT_SYMLINK_FOLLOW'),
+                         'need os.AT_SYMLINK_FOLLOW')
     def test_symlink_follow(self):
         self.check_flag(os.AT_SYMLINK_FOLLOW)
 
