@@ -4448,7 +4448,7 @@ os_link_impl(PyObject *module, path_t *src, path_t *dst, int src_dir_fd,
 #endif
 
 
-#ifdef HAVE_LINK
+#ifdef HAVE_LINKAT
 /*[clinic input]
 
 os.linkat
