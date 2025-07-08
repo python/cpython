@@ -84,7 +84,6 @@ class Optimizer:
         r'\s*(?P<label>[\w."$?@]+):'
     )
     # Override everything that follows in subclasses:
-    _alignment: typing.ClassVar[int] = 1
     _branches: typing.ClassVar[dict[str, str | None]] = {}
     # Two groups (instruction and target):
     _re_branch: typing.ClassVar[re.Pattern[str]] = _RE_NEVER_MATCH
@@ -197,15 +196,12 @@ class Optimizer:
         #    jmp FOO
         # After:
         #    jmp FOO
-        #    .balign 8
         #    _JIT_CONTINUE:
         # This lets the assembler encode _JIT_CONTINUE jumps at build time!
-        align = _Block()
-        align.noninstructions.append(f"\t.balign\t{self._alignment}")
         continuation = self._lookup_label(f"{self.prefix}_JIT_CONTINUE")
         assert continuation.label
         continuation.noninstructions.append(f"{continuation.label}:")
-        end.link, align.link, continuation.link = align, continuation, end.link
+        end.link, continuation.link = continuation, end.link
 
     def _mark_hot_blocks(self) -> None:
         # Start with the last block, and perform a DFS to find all blocks that
@@ -285,8 +281,6 @@ class Optimizer:
 class OptimizerAArch64(Optimizer):  # pylint: disable = too-few-public-methods
     """aarch64-apple-darwin/aarch64-pc-windows-msvc/aarch64-unknown-linux-gnu"""
 
-    # TODO: @diegorusso
-    _alignment = 8
     # https://developer.arm.com/documentation/ddi0602/2025-03/Base-Instructions/B--Branch-
     _re_jump = re.compile(r"\s*b\s+(?P<target>[\w.]+)")
 
