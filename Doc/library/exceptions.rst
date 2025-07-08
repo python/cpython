@@ -213,7 +213,7 @@ The following exceptions are the exceptions that are usually raised.
 
    .. attribute:: obj
 
-      The object that was accessed for said attribute.
+      The object that was accessed for the named attribute.
 
    .. versionchanged:: 3.10
       Added the :attr:`name` and :attr:`obj` attributes.
