@@ -1307,7 +1307,7 @@ Glossary
    t-string
       String literals prefixed with ``'t'`` or ``'T'`` are commonly called
       "t-strings" which is short for
-      :ref:`template string literals <t-strings>`.  See also :pep:`750`.
+      :ref:`template string literals <t-strings>`.
 
    text encoding
       A string in Python is a sequence of Unicode code points (in range

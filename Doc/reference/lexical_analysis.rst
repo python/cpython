@@ -938,6 +938,10 @@ the following differences:
 
 - Format specifiers containing nested replacement fields are evaluated eagerly,
   prior to being passed to the :class:`~string.templatelib.Interpolation` object.
+  For instance, an interpolation of the form ``{amount:.{precision}f}`` will
+  evaluate the expression ``{precision}`` before setting the ``format_spec``
+  attribute of the resulting :class:`!Interpolation` object; if ``precision``
+  is (for example) ``2``, the resulting format specifier will be ``'.2f'``.
 
 - When the equal sign ``'='`` is provided in an interpolation expression, the
   resulting :class:`~string.templatelib.Template` object will have the expression
