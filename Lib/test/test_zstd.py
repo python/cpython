@@ -2675,7 +2675,7 @@ class FreeThreadingMethodTests(unittest.TestCase):
 
         comp = ZstdCompressor()
         parts = []
-        for _ in range(num_threads):
+        for _ in range(num_threads + 1):
             res = comp.compress(input, ZstdCompressor.FLUSH_BLOCK)
             if res:
                 parts.append(res)
@@ -2683,7 +2683,9 @@ class FreeThreadingMethodTests(unittest.TestCase):
         expected = b''.join(parts) + rest1
 
         comp = ZstdCompressor()
-        output = []
+        # Compress the first block to add the Zstandard header. This ensures
+        # that the parallel portion of the test is thread order independent.
+        output = [comp.compress(input, ZstdCompressor.FLUSH_BLOCK)]
         def run_method(method, input_data, output_data):
             res = method(input_data, ZstdCompressor.FLUSH_BLOCK)
             if res:
