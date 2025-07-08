@@ -526,7 +526,7 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     assert((page_size & (page_size - 1)) == 0);
     size_t code_padding = DATA_ALIGN - ((code_size + state.trampolines.size) & (DATA_ALIGN - 1));
     size_t padding = page_size - ((code_size + state.trampolines.size + code_padding + data_size) & (page_size - 1));
-    size_t total_size = code_size + state.trampolines.size + data_size  + padding;
+    size_t total_size = code_size + state.trampolines.size + code_padding + data_size + padding;
     unsigned char *memory = jit_alloc(total_size);
     if (memory == NULL) {
         return -1;
