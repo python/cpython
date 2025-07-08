@@ -1660,7 +1660,7 @@ processes.
    attributes which allow one to use it to store and retrieve strings -- see
    documentation for :mod:`ctypes`.
 
-.. function:: Array(typecode_or_type, size_or_initializer, *, lock=True)
+.. function:: Array(typecode_or_type, size_or_initializer, *, lock=True, ctx=None)
 
    The same as :func:`RawArray` except that depending on the value of *lock* a
    process-safe synchronization wrapper may be returned instead of a raw ctypes
@@ -1674,9 +1674,14 @@ processes.
    automatically protected by a lock, so it will not necessarily be
    "process-safe".
 
+   *ctx* is a context object, or ``None`` (use the current context). If ``None``,
+   calling this function will have the side effect of setting the current global
+   start method if it has not been set already. See the :func:`get_context`
+   function.
+
    Note that *lock* is a keyword-only argument.
 
-.. function:: Value(typecode_or_type, *args, lock=True)
+.. function:: Value(typecode_or_type, *args, lock=True, ctx=None)
 
    The same as :func:`RawValue` except that depending on the value of *lock* a
    process-safe synchronization wrapper may be returned instead of a raw ctypes
@@ -1689,6 +1694,11 @@ processes.
    automatically protected by a lock, so it will not necessarily be
    "process-safe".
 
+   *ctx* is a context object, or ``None`` (use the current context). If ``None``,
+   calling this function will have the side effect of setting the current global
+   start method if it has not been set already. See the :func:`get_context`
+   function.
+
    Note that *lock* is a keyword-only argument.
 
 .. function:: copy(obj)
@@ -1696,11 +1706,16 @@ processes.
    Return a ctypes object allocated from shared memory which is a copy of the
    ctypes object *obj*.
 
-.. function:: synchronized(obj[, lock])
+.. function:: synchronized(obj, lock=None, ctx=None)
 
    Return a process-safe wrapper object for a ctypes object which uses *lock* to
    synchronize access.  If *lock* is ``None`` (the default) then a
    :class:`multiprocessing.RLock` object is created automatically.
+
+   *ctx* is a context object, or ``None`` (use the current context). If ``None``,
+   calling this function will have the side effect of setting the current global
+   start method if it has not been set already. See the :func:`get_context`
+   function.
 
    A synchronized wrapper will have two methods in addition to those of the
    object it wraps: :meth:`get_obj` returns the wrapped object and
@@ -1819,8 +1834,10 @@ their parent process exits.  The manager classes are defined in the
    *serializer* must be ``'pickle'`` (use :mod:`pickle` serialization) or
    ``'xmlrpclib'`` (use :mod:`xmlrpc.client` serialization).
 
-   *ctx* is a context object, or ``None`` (use the current context). See the
-   :func:`get_context` function.
+   *ctx* is a context object, or ``None`` (use the current context). If ``None``,
+   calling this function will have the side effect of setting the current global
+   start method if it has not been set already. See the :func:`get_context`
+   function.
 
    *shutdown_timeout* is a timeout in seconds used to wait until the process
    used by the manager completes in the :meth:`shutdown` method. If the
