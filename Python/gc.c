@@ -870,7 +870,7 @@ move_legacy_finalizer_reachable(PyGC_Head *finalizers)
  * no object in `unreachable` is weakly referenced anymore.
  */
 static int
-handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
+handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old, bool allow_callbacks)
 {
     PyGC_Head *gc;
     PyObject *op;               /* generally FROM_GC(gc) */
@@ -879,7 +879,9 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
     PyGC_Head *next;
     int num_freed = 0;
 
-    gc_list_init(&wrcb_to_call);
+    if (allow_callbacks) {
+        gc_list_init(&wrcb_to_call);
+    }
 
     /* Clear all weakrefs to the objects in unreachable.  If such a weakref
      * also has a callback, move it into `wrcb_to_call` if the callback
@@ -935,6 +937,11 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
             _PyObject_ASSERT((PyObject *)wr, wr->wr_object == op);
             _PyWeakref_ClearRef(wr);
             _PyObject_ASSERT((PyObject *)wr, wr->wr_object == Py_None);
+
+            if (!allow_callbacks) {
+                continue;
+            }
+
             if (wr->wr_callback == NULL) {
                 /* no callback */
                 continue;
@@ -987,6 +994,10 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
         }
     }
 
+    if (!allow_callbacks) {
+        return 0;
+    }
+
     /* Invoke the callbacks we decided to honor.  It's safe to invoke them
      * because they can't reference unreachable objects.
      */
@@ -1035,62 +1046,6 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
     }
 
     return num_freed;
-}
-
-/* Clear all weakrefs to unreachable objects.  When this returns, no object in
- * `unreachable` is weakly referenced anymore.
- */
-static void
-clear_weakrefs(PyGC_Head *unreachable)
-{
-    PyGC_Head *gc;
-    PyGC_Head *next;
-
-    for (gc = GC_NEXT(unreachable); gc != unreachable; gc = next) {
-        PyWeakReference **wrlist;
-
-        PyObject *op = FROM_GC(gc);
-        next = GC_NEXT(gc);
-
-        if (PyWeakref_Check(op)) {
-            /* A weakref inside the unreachable set must be cleared.  If we
-             * allow its callback to execute inside delete_garbage(), it
-             * could expose objects that have tp_clear already called on
-             * them.  Or, it could resurrect unreachable objects.  One way
-             * this can happen is if some container objects do not implement
-             * tp_traverse.  Then, wr_object can be outside the unreachable
-             * set but can be deallocated as a result of breaking the
-             * reference cycle.  If we don't clear the weakref, the callback
-             * will run and potentially cause a crash.  See bpo-38006 for
-             * one example.
-             */
-            _PyWeakref_ClearRef((PyWeakReference *)op);
-        }
-
-        if (! _PyType_SUPPORTS_WEAKREFS(Py_TYPE(op))) {
-            continue;
-        }
-
-        /* It supports weakrefs.  Does it have any?
-         *
-         * This is never triggered for static types so we can avoid the
-         * (slightly) more costly _PyObject_GET_WEAKREFS_LISTPTR().
-         */
-        wrlist = _PyObject_GET_WEAKREFS_LISTPTR_FROM_OFFSET(op);
-
-        /* `op` may have some weakrefs.  March over the list, clear
-         * all the weakrefs.
-         */
-        for (PyWeakReference *wr = *wrlist; wr != NULL; wr = *wrlist) {
-            /* _PyWeakref_ClearRef clears the weakref but leaves
-             * the callback pointer intact.  Obscure:  it also
-             * changes *wrlist.
-             */
-            _PyObject_ASSERT((PyObject *)wr, wr->wr_object == op);
-            _PyWeakref_ClearRef(wr);
-            _PyObject_ASSERT((PyObject *)wr, wr->wr_object == Py_None);
-        }
-    }
 }
 
 static void
@@ -1793,7 +1748,7 @@ gc_collect_region(PyThreadState *tstate,
     }
 
     /* Clear weakrefs and invoke callbacks as necessary. */
-    stats->collected += handle_weakrefs(&unreachable, to);
+    stats->collected += handle_weakrefs(&unreachable, to, true);
     gc_list_validate_space(to, gcstate->visited_space);
     validate_list(to, collecting_clear_unreachable_clear);
     validate_list(&unreachable, collecting_set_unreachable_clear);
@@ -1811,9 +1766,9 @@ gc_collect_region(PyThreadState *tstate,
      * code must be allowed to access those unreachable objects.  During
      * delete_garbage(), finalizers outside the unreachable set might run
      * and create new weakrefs.  If those weakrefs were not cleared, they
-     * could reveal unreachable objects.
+     * could reveal unreachable objects.  Callbacks are not executed.
      */
-    clear_weakrefs(&final_unreachable);
+    handle_weakrefs(&final_unreachable, NULL, false);
 
     /* Call tp_clear on objects in the final_unreachable set.  This will cause
     * the reference cycles to be broken.  It may also cause some objects
