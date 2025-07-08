@@ -506,7 +506,7 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
         /* Resize Stack if the removing overallocation saves some noticable memory
          * NOTE: This whole block can be removed without breaking anything */
         Py_ssize_t noveralloc = n_merges + nkwds;
-        if (stack != small_stack && noveralloc > 6 && noveralloc * 10 > init_stack_size) {
+        if (stack != small_stack && noveralloc > 6 && noveralloc > init_stack_size / 10) {
             tmp_stack = PyMem_Realloc(stack, (tot_nargskw - n_merges) * sizeof(PyObject *));
             if (tmp_stack == NULL) {
                 Py_DECREF(tot_kwnames);
