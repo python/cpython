@@ -309,6 +309,26 @@ class GCTests(unittest.TestCase):
         self.assertRegex(stdout, rb"""\A\s*func=None""")
         self.assertFalse(stderr)
 
+    def test_datetime_weakref_cycle(self):
+        # https://github.com/python/cpython/issues/132413
+        # If the weakref used by the datetime extension gets cleared by the GC (due to being
+        # in an unreachable cycle) then datetime functions would crash (get_module_state()
+        # was returning a NULL pointer).  This bug is fixed by clearing weakrefs without
+        # callbacks *after* running finalizers.
+        code = """if 1:
+        import _datetime
+        class C:
+            def __del__(self):
+                print('__del__ called')
+                _datetime.timedelta(days=1)  # crash?
+
+        l = [C()]
+        l.append(l)
+        """
+        rc, stdout, stderr = assert_python_ok("-c", code)
+        self.assertEqual(rc, 0)
+        self.assertEqual(stdout.strip(), b'__del__ called')
+
     @refcount_test
     def test_frame(self):
         def f():
