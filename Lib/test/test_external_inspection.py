@@ -5,6 +5,7 @@ import importlib
 import sys
 import socket
 import threading
+import time
 from asyncio import staggered, taskgroups, base_events, tasks
 from unittest.mock import ANY
 from test.support import os_helper, SHORT_TIMEOUT, busy_retry, requires_gil_enabled
@@ -930,9 +931,6 @@ class TestGetStackTrace(unittest.TestCase):
             # Signal threads to start waiting
             ready_event.set()
 
-            # Give threads time to start sleeping
-            time.sleep(0.1)
-
             # Now do busy work to hold the GIL
             main_work()
             """
@@ -967,7 +965,23 @@ class TestGetStackTrace(unittest.TestCase):
 
                 # Get stack trace with all threads
                 unwinder_all = RemoteUnwinder(p.pid, all_threads=True)
-                all_traces = unwinder_all.get_stack_trace()
+                for _ in range(10):
+                    # Wait for the main thread to start its busy work
+                    all_traces = unwinder_all.get_stack_trace()
+                    found = False
+                    for thread_id, stack in all_traces:
+                        if not stack:
+                            continue
+                        current_frame = stack[0]
+                        if current_frame.funcname == "main_work" and current_frame.lineno >15:
+                            found = True
+
+                    if found:
+                        break
+                    # Give a bit of time to take the next sample
+                    time.sleep(0.1)
+                else:
+                    self.fail("Main thread did not start its busy work on time")
 
                 # Get stack trace with only GIL holder
                 unwinder_gil = RemoteUnwinder(p.pid, only_active_thread=True)
