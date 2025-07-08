@@ -7,6 +7,7 @@ from email.message import Message
 from test.test_email import TestEmailBase, parameterize
 from email import headerregistry
 from email.headerregistry import Address, Group
+from test.support import ALWAYS_EQ
 
 
 DITTO = object()
@@ -202,6 +203,22 @@ class TestDateHeader(TestHeaderBase):
         h = self.make_header('date', '')
         self.assertEqual(len(h.defects), 1)
         self.assertIsInstance(h.defects[0], errors.HeaderMissingRequiredValue)
+
+    def test_invalid_date_format(self):
+        s = 'Not a date header'
+        h = self.make_header('date', s)
+        self.assertEqual(h, s)
+        self.assertIsNone(h.datetime)
+        self.assertEqual(len(h.defects), 1)
+        self.assertIsInstance(h.defects[0], errors.InvalidDateDefect)
+
+    def test_invalid_date_value(self):
+        s = 'Tue, 06 Jun 2017 27:39:33 +0600'
+        h = self.make_header('date', s)
+        self.assertEqual(h, s)
+        self.assertIsNone(h.datetime)
+        self.assertEqual(len(h.defects), 1)
+        self.assertIsInstance(h.defects[0], errors.InvalidDateDefect)
 
     def test_datetime_read_only(self):
         h = self.make_header('date', self.datestring)
@@ -697,6 +714,18 @@ class TestContentTypeHeader(TestHeaderBase):
             " charset*=unknown-8bit''utf-8%E2%80%9D\n",
             ),
 
+        'rfc2231_nonascii_in_charset_of_charset_parameter_value': (
+            "text/plain; charset*=utf-8”''utf-8%E2%80%9D",
+            'text/plain',
+            'text',
+            'plain',
+            {'charset': 'utf-8”'},
+            [],
+            'text/plain; charset="utf-8”"',
+            "Content-Type: text/plain;"
+            " charset*=utf-8''utf-8%E2%80%9D\n",
+            ),
+
         'rfc2231_encoded_then_unencoded_segments': (
             ('application/x-foo;'
                 '\tname*0*="us-ascii\'en-us\'My";'
@@ -808,6 +837,11 @@ class TestContentTransferEncoding(TestHeaderBase):
             '7bit',
             [errors.InvalidHeaderDefect]),
 
+        'extra_space_after_cte': (
+            'base64 ',
+            'base64',
+            []),
+
     }
 
 
@@ -872,6 +906,25 @@ class TestContentDisposition(TestHeaderBase):
             {'filename': 'foo'},
             [errors.InvalidHeaderDefect]),
 
+        'invalid_parameter_value_with_fws_between_ew': (
+            'attachment; filename="=?UTF-8?Q?Schulbesuchsbest=C3=A4ttigung=2E?='
+            '               =?UTF-8?Q?pdf?="',
+            'attachment',
+            {'filename': 'Schulbesuchsbestättigung.pdf'},
+            [errors.InvalidHeaderDefect]*3,
+            ('attachment; filename="Schulbesuchsbestättigung.pdf"'),
+            ('Content-Disposition: attachment;\n'
+             ' filename*=utf-8\'\'Schulbesuchsbest%C3%A4ttigung.pdf\n'),
+            ),
+
+        'parameter_value_with_fws_between_tokens': (
+            'attachment; filename="File =?utf-8?q?Name?= With Spaces.pdf"',
+            'attachment',
+            {'filename': 'File Name With Spaces.pdf'},
+            [errors.InvalidHeaderDefect],
+            'attachment; filename="File Name With Spaces.pdf"',
+            ('Content-Disposition: attachment; filename="File Name With Spaces.pdf"\n'),
+            )
     }
 
 
@@ -1189,6 +1242,26 @@ class TestAddressHeader(TestHeaderBase):
             'example.com',
             None),
 
+        'name_ending_with_dot_without_space':
+            ('John X.<jxd@example.com>',
+             [errors.ObsoleteHeaderDefect],
+             '"John X." <jxd@example.com>',
+             'John X.',
+             'jxd@example.com',
+             'jxd',
+             'example.com',
+             None),
+
+        'name_starting_with_dot':
+            ('. Doe <jxd@example.com>',
+             [errors.InvalidHeaderDefect, errors.ObsoleteHeaderDefect],
+             '". Doe" <jxd@example.com>',
+             '. Doe',
+             'jxd@example.com',
+             'jxd',
+             'example.com',
+             None),
+
         }
 
         # XXX: Need many more examples, and in particular some with names in
@@ -1436,6 +1509,25 @@ class TestAddressAndGroup(TestEmailBase):
     #    with self.assertRaises(ValueError):
     #        Address('foo', 'wők', 'example.com')
 
+    def test_crlf_in_constructor_args_raises(self):
+        cases = (
+            dict(display_name='foo\r'),
+            dict(display_name='foo\n'),
+            dict(display_name='foo\r\n'),
+            dict(domain='example.com\r'),
+            dict(domain='example.com\n'),
+            dict(domain='example.com\r\n'),
+            dict(username='wok\r'),
+            dict(username='wok\n'),
+            dict(username='wok\r\n'),
+            dict(addr_spec='wok@example.com\r'),
+            dict(addr_spec='wok@example.com\n'),
+            dict(addr_spec='wok@example.com\r\n')
+        )
+        for kwargs in cases:
+            with self.subTest(kwargs=kwargs), self.assertRaisesRegex(ValueError, "invalid arguments"):
+                Address(**kwargs)
+
     def test_non_ascii_username_in_addr_spec_raises(self):
         with self.assertRaises(ValueError):
             Address('foo', addr_spec='wők@example.com')
@@ -1525,8 +1617,50 @@ class TestAddressAndGroup(TestEmailBase):
         self.assertEqual(m['to'], 'foo bar:;')
         self.assertEqual(m['to'].addresses, g.addresses)
 
+    def test_address_comparison(self):
+        a = Address('foo', 'bar', 'example.com')
+        self.assertEqual(Address('foo', 'bar', 'example.com'), a)
+        self.assertNotEqual(Address('baz', 'bar', 'example.com'), a)
+        self.assertNotEqual(Address('foo', 'baz', 'example.com'), a)
+        self.assertNotEqual(Address('foo', 'bar', 'baz'), a)
+        self.assertFalse(a == object())
+        self.assertTrue(a == ALWAYS_EQ)
+
+    def test_group_comparison(self):
+        a = Address('foo', 'bar', 'example.com')
+        g = Group('foo bar', [a])
+        self.assertEqual(Group('foo bar', (a,)), g)
+        self.assertNotEqual(Group('baz', [a]), g)
+        self.assertNotEqual(Group('foo bar', []), g)
+        self.assertFalse(g == object())
+        self.assertTrue(g == ALWAYS_EQ)
+
 
 class TestFolding(TestHeaderBase):
+
+    def test_address_display_names(self):
+        """Test the folding and encoding of address headers."""
+        for name, result in (
+                ('Foo Bar, France', '"Foo Bar, France"'),
+                ('Foo Bar (France)', '"Foo Bar (France)"'),
+                ('Foo Bar, España', 'Foo =?utf-8?q?Bar=2C_Espa=C3=B1a?='),
+                ('Foo Bar (España)', 'Foo Bar =?utf-8?b?KEVzcGHDsWEp?='),
+                ('Foo, Bar España', '=?utf-8?q?Foo=2C_Bar_Espa=C3=B1a?='),
+                ('Foo, Bar [España]', '=?utf-8?q?Foo=2C_Bar_=5BEspa=C3=B1a=5D?='),
+                ('Foo Bär, France', 'Foo =?utf-8?q?B=C3=A4r=2C?= France'),
+                ('Foo Bär <France>', 'Foo =?utf-8?q?B=C3=A4r_=3CFrance=3E?='),
+                (
+                    'Lôrem ipsum dôlôr sit amet, cônsectetuer adipiscing. '
+                    'Suspendisse pôtenti. Aliquam nibh. Suspendisse pôtenti.',
+                    '=?utf-8?q?L=C3=B4rem_ipsum_d=C3=B4l=C3=B4r_sit_amet=2C_c'
+                    '=C3=B4nsectetuer?=\n =?utf-8?q?_adipiscing=2E_Suspendisse'
+                    '_p=C3=B4tenti=2E_Aliquam_nibh=2E?=\n Suspendisse =?utf-8'
+                    '?q?p=C3=B4tenti=2E?=',
+                    ),
+                ):
+            h = self.make_header('To', Address(name, addr_spec='a@b.com'))
+            self.assertEqual(h.fold(policy=policy.default),
+                                    'To: %s <a@b.com>\n' % result)
 
     def test_short_unstructured(self):
         h = self.make_header('subject', 'this is a test')

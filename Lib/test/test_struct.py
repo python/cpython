@@ -1,17 +1,26 @@
 from collections import abc
+from itertools import combinations
 import array
+import gc
 import math
 import operator
 import unittest
 import struct
 import sys
+import weakref
 
 from test import support
+from test.support import import_helper
+from test.support.script_helper import assert_python_ok
+from test.support.testcase import ComplexesAreIdenticalMixin
 
 ISBIGENDIAN = sys.byteorder == "big"
 
 integer_codes = 'b', 'B', 'h', 'H', 'i', 'I', 'l', 'L', 'q', 'Q', 'n', 'N'
 byteorders = '', '@', '=', '<', '>', '!'
+
+INF = float('inf')
+NAN = float('nan')
 
 def iter_integer_formats(byteorders=byteorders):
     for code in integer_codes:
@@ -29,7 +38,7 @@ def bigendian_to_native(value):
     else:
         return string_reverse(value)
 
-class StructTest(unittest.TestCase):
+class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
     def test_isbigendian(self):
         self.assertEqual((struct.pack('=i', 1)[0] == 0), ISBIGENDIAN)
 
@@ -92,6 +101,13 @@ class StructTest(unittest.TestCase):
             ('10s', b'helloworld', b'helloworld', b'helloworld', 0),
             ('11s', b'helloworld', b'helloworld\0', b'helloworld\0', 1),
             ('20s', b'helloworld', b'helloworld'+10*b'\0', b'helloworld'+10*b'\0', 1),
+            ('0p', b'helloworld', b'', b'', 1),
+            ('1p', b'helloworld', b'\x00', b'\x00', 1),
+            ('2p', b'helloworld', b'\x01h', b'\x01h', 1),
+            ('10p', b'helloworld', b'\x09helloworl', b'\x09helloworl', 1),
+            ('11p', b'helloworld', b'\x0Ahelloworld', b'\x0Ahelloworld', 0),
+            ('12p', b'helloworld', b'\x0Ahelloworld\0', b'\x0Ahelloworld\0', 1),
+            ('20p', b'helloworld', b'\x0Ahelloworld'+9*b'\0', b'\x0Ahelloworld'+9*b'\0', 1),
             ('b', 7, b'\7', b'\7', 0),
             ('b', -7, b'\371', b'\371', 0),
             ('B', 7, b'\7', b'\7', 0),
@@ -335,6 +351,7 @@ class StructTest(unittest.TestCase):
     def test_p_code(self):
         # Test p ("Pascal string") code.
         for code, input, expected, expectedback in [
+                ('0p', b'abc', b'',                b''),
                 ('p',  b'abc', b'\x00',            b''),
                 ('1p', b'abc', b'\x00',            b''),
                 ('2p', b'abc', b'\x01a',           b'a'),
@@ -517,6 +534,9 @@ class StructTest(unittest.TestCase):
 
         for c in [b'\x01', b'\x7f', b'\xff', b'\x0f', b'\xf0']:
             self.assertTrue(struct.unpack('>?', c)[0])
+            self.assertTrue(struct.unpack('<?', c)[0])
+            self.assertTrue(struct.unpack('=?', c)[0])
+            self.assertTrue(struct.unpack('@?', c)[0])
 
     def test_count_overflow(self):
         hugecount = '{}b'.format(sys.maxsize+1)
@@ -576,6 +596,7 @@ class StructTest(unittest.TestCase):
         self.check_sizeof('187s', 1)
         self.check_sizeof('20p', 1)
         self.check_sizeof('0s', 1)
+        self.check_sizeof('0p', 1)
         self.check_sizeof('0c', 0)
 
     def test_boundary_error_message(self):
@@ -652,6 +673,132 @@ class StructTest(unittest.TestCase):
         s2 = struct.Struct(s.format.encode())
         self.assertEqual(s2.format, s.format)
 
+    def test_struct_cleans_up_at_runtime_shutdown(self):
+        code = """if 1:
+            import struct
+
+            class C:
+                def __init__(self):
+                    self.pack = struct.pack
+                def __del__(self):
+                    self.pack('I', -42)
+
+            struct.x = C()
+            """
+        rc, stdout, stderr = assert_python_ok("-c", code)
+        self.assertEqual(rc, 0)
+        self.assertEqual(stdout.rstrip(), b"")
+        self.assertIn(b"Exception ignored while calling deallocator", stderr)
+        self.assertIn(b"C.__del__", stderr)
+
+    def test__struct_reference_cycle_cleaned_up(self):
+        # Regression test for python/cpython#94207.
+
+        # When we create a new struct module, trigger use of its cache,
+        # and then delete it ...
+        _struct_module = import_helper.import_fresh_module("_struct")
+        module_ref = weakref.ref(_struct_module)
+        _struct_module.calcsize("b")
+        del _struct_module
+
+        # Then the module should have been garbage collected.
+        gc.collect()
+        self.assertIsNone(
+            module_ref(), "_struct module was not garbage collected")
+
+    @support.cpython_only
+    def test__struct_types_immutable(self):
+        # See https://github.com/python/cpython/issues/94254
+
+        Struct = struct.Struct
+        unpack_iterator = type(struct.iter_unpack("b", b'x'))
+        for cls in (Struct, unpack_iterator):
+            with self.subTest(cls=cls):
+                with self.assertRaises(TypeError):
+                    cls.x = 1
+
+
+    def test_issue35714(self):
+        # Embedded null characters should not be allowed in format strings.
+        for s in '\0', '2\0i', b'\0':
+            with self.assertRaisesRegex(struct.error,
+                                        'embedded null character'):
+                struct.calcsize(s)
+
+    @support.cpython_only
+    def test_issue98248(self):
+        def test_error_msg(prefix, int_type, is_unsigned):
+            fmt_str = prefix + int_type
+            size = struct.calcsize(fmt_str)
+            if is_unsigned:
+                max_ = 2 ** (size * 8) - 1
+                min_ = 0
+            else:
+                max_ = 2 ** (size * 8 - 1) - 1
+                min_ = -2 ** (size * 8 - 1)
+            error_msg = f"'{int_type}' format requires {min_} <= number <= {max_}"
+            for number in [int(-1e50), min_ - 1, max_ + 1, int(1e50)]:
+                with self.subTest(format_str=fmt_str, number=number):
+                    with self.assertRaisesRegex(struct.error, error_msg):
+                        struct.pack(fmt_str, number)
+            error_msg = "required argument is not an integer"
+            not_number = ""
+            with self.subTest(format_str=fmt_str, number=not_number):
+                with self.assertRaisesRegex(struct.error, error_msg):
+                    struct.pack(fmt_str, not_number)
+
+        for prefix in '@=<>':
+            for int_type in 'BHILQ':
+                test_error_msg(prefix, int_type, True)
+            for int_type in 'bhilq':
+                test_error_msg(prefix, int_type, False)
+
+        int_type = 'N'
+        test_error_msg('@', int_type, True)
+
+        int_type = 'n'
+        test_error_msg('@', int_type, False)
+
+    @support.cpython_only
+    def test_issue98248_error_propagation(self):
+        class Div0:
+            def __index__(self):
+                1 / 0
+
+        def test_error_propagation(fmt_str):
+            with self.subTest(format_str=fmt_str, exception="ZeroDivisionError"):
+                with self.assertRaises(ZeroDivisionError):
+                    struct.pack(fmt_str, Div0())
+
+        for prefix in '@=<>':
+            for int_type in 'BHILQbhilq':
+                test_error_propagation(prefix + int_type)
+
+        test_error_propagation('N')
+        test_error_propagation('n')
+
+    def test_struct_subclass_instantiation(self):
+        # Regression test for https://github.com/python/cpython/issues/112358
+        class MyStruct(struct.Struct):
+            def __init__(self):
+                super().__init__('>h')
+
+        my_struct = MyStruct()
+        self.assertEqual(my_struct.pack(12345), b'\x30\x39')
+
+    def test_repr(self):
+        s = struct.Struct('=i2H')
+        self.assertEqual(repr(s), f'Struct({s.format!r})')
+
+    def test_c_complex_round_trip(self):
+        values = [complex(*_) for _ in combinations([1, -1, 0.0, -0.0, 2,
+                                                     -3, INF, -INF, NAN], 2)]
+        for z in values:
+            for f in ['F', 'D', '>F', '>D', '<F', '<D']:
+                with self.subTest(z=z, format=f):
+                    round_trip = struct.unpack(f, struct.pack(f, z))[0]
+                    self.assertComplexesAreIdentical(z, round_trip)
+
 
 class UnpackIteratorTest(unittest.TestCase):
     """
@@ -678,6 +825,10 @@ class UnpackIteratorTest(unittest.TestCase):
             s.iter_unpack(b"")
         with self.assertRaises(struct.error):
             s.iter_unpack(b"12")
+
+    def test_uninstantiable(self):
+        iter_unpack_type = type(struct.Struct(">ibcp").iter_unpack(b""))
+        self.assertRaises(TypeError, iter_unpack_type)
 
     def test_iterate(self):
         s = struct.Struct('>IB')

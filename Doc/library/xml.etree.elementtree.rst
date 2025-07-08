@@ -1,5 +1,5 @@
-:mod:`xml.etree.ElementTree` --- The ElementTree XML API
-========================================================
+:mod:`!xml.etree.ElementTree` --- The ElementTree XML API
+=========================================================
 
 .. module:: xml.etree.ElementTree
    :synopsis: Implementation of the ElementTree API.
@@ -15,14 +15,15 @@ for parsing and creating XML data.
 
 .. versionchanged:: 3.3
    This module will use a fast implementation whenever available.
-   The :mod:`xml.etree.cElementTree` module is deprecated.
+
+.. deprecated:: 3.3
+   The :mod:`!xml.etree.cElementTree` module is deprecated.
 
 
-.. warning::
+.. note::
 
-   The :mod:`xml.etree.ElementTree` module is not secure against
-   maliciously constructed data.  If you need to parse untrusted or
-   unauthenticated data see :ref:`xml-vulnerabilities`.
+   If you need to parse untrusted or unauthenticated data, see
+   :ref:`xml-security`.
 
 Tutorial
 --------
@@ -47,7 +48,7 @@ and its sub-elements are done on the :class:`Element` level.
 Parsing XML
 ^^^^^^^^^^^
 
-We'll be using the following XML document as the sample data for this section:
+We'll be using the fictive :file:`country_data.xml` XML document as the sample data for this section:
 
 .. code-block:: xml
 
@@ -152,6 +153,7 @@ elements, call :meth:`XMLPullParser.read_events`.  Here is an example::
    ...     print(elem.tag, 'text=', elem.text)
    ...
    end
+   mytag text= sometext more text
 
 The obvious use case is applications that operate in a non-blocking fashion
 where the XML data is being received from a socket or read incrementally from
@@ -162,6 +164,11 @@ simpler use-cases.  If you don't mind your application blocking on reading XML
 data but would still like to have incremental parsing capabilities, take a look
 at :func:`iterparse`.  It can be useful when you're reading a large XML document
 and don't want to hold it wholly in memory.
+
+Where *immediate* feedback through events is wanted, calling method
+:meth:`XMLPullParser.flush` can help reduce delay;
+please make sure to study the related security notes.
+
 
 Finding interesting elements
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -249,11 +256,17 @@ We can remove elements using :meth:`Element.remove`.  Let's say we want to
 remove all countries with a rank higher than 50::
 
    >>> for country in root.findall('country'):
+   ...     # using root.findall() to avoid removal during traversal
    ...     rank = int(country.find('rank').text)
    ...     if rank > 50:
    ...         root.remove(country)
    ...
    >>> tree.write('output.xml')
+
+Note that concurrent modification while iterating can lead to problems,
+just like when iterating and modifying Python lists or dicts.
+Therefore, the example first collects all matching elements with
+``root.findall()``, and only then iterates over the list of matches.
 
 Our XML now looks like this:
 
@@ -355,13 +368,6 @@ These two approaches both output::
      |--> Commander Clement
 
 
-Additional resources
-^^^^^^^^^^^^^^^^^^^^
-
-See http://effbot.org/zone/element-index.htm for tutorials and links to other
-docs.
-
-
 .. _elementtree-xpath:
 
 XPath support
@@ -447,6 +453,12 @@ Supported XPath syntax
 |                       | has the given value.  The value cannot contain       |
 |                       | quotes.                                              |
 +-----------------------+------------------------------------------------------+
+| ``[@attrib!='value']``| Selects all elements for which the given attribute   |
+|                       | does not have the given value. The value cannot      |
+|                       | contain quotes.                                      |
+|                       |                                                      |
+|                       | .. versionadded:: 3.10                               |
++-----------------------+------------------------------------------------------+
 | ``[tag]``             | Selects all elements that have a child named         |
 |                       | ``tag``.  Only immediate children are supported.     |
 +-----------------------+------------------------------------------------------+
@@ -455,9 +467,21 @@ Supported XPath syntax
 |                       |                                                      |
 |                       | .. versionadded:: 3.7                                |
 +-----------------------+------------------------------------------------------+
+| ``[.!='text']``       | Selects all elements whose complete text content,    |
+|                       | including descendants, does not equal the given      |
+|                       | ``text``.                                            |
+|                       |                                                      |
+|                       | .. versionadded:: 3.10                               |
++-----------------------+------------------------------------------------------+
 | ``[tag='text']``      | Selects all elements that have a child named         |
 |                       | ``tag`` whose complete text content, including       |
 |                       | descendants, equals the given ``text``.              |
++-----------------------+------------------------------------------------------+
+| ``[tag!='text']``     | Selects all elements that have a child named         |
+|                       | ``tag`` whose complete text content, including       |
+|                       | descendants, does not equal the given ``text``.      |
+|                       |                                                      |
+|                       | .. versionadded:: 3.10                               |
 +-----------------------+------------------------------------------------------+
 | ``[position]``        | Selects all elements that are located at the given   |
 |                       | position.  The position can be either an integer     |
@@ -483,7 +507,7 @@ Functions
    `C14N 2.0 <https://www.w3.org/TR/xml-c14n2/>`_ transformation function.
 
    Canonicalization is a way to normalise XML output in a way that allows
-   byte-by-byte comparisons and digital signatures.  It reduced the freedom
+   byte-by-byte comparisons and digital signatures.  It reduces the freedom
    that XML serializers have and instead generates a more constrained XML
    representation.  The main restrictions regard the placement of namespace
    declarations, the ordering of attributes, and ignorable whitespace.
@@ -572,10 +596,22 @@ Functions
    .. versionadded:: 3.2
 
 
+.. function:: indent(tree, space="  ", level=0)
+
+   Appends whitespace to the subtree to indent the tree visually.
+   This can be used to generate pretty-printed XML output.
+   *tree* can be an Element or ElementTree.  *space* is the whitespace
+   string that will be inserted for each indentation level, two space
+   characters by default.  For indenting partial subtrees inside of an
+   already indented tree, pass the initial indentation level as *level*.
+
+   .. versionadded:: 3.9
+
+
 .. function:: iselement(element)
 
-   Checks if an object appears to be a valid element object.  *element* is an
-   element instance.  Returns a true value if this is an element object.
+   Check if an object appears to be a valid element object.  *element* is an
+   element instance.  Return ``True`` if this is an element object.
 
 
 .. function:: iterparse(source, events=None, parser=None)
@@ -590,7 +626,11 @@ Functions
    *parser* is an optional parser instance.  If not given, the standard
    :class:`XMLParser` parser is used.  *parser* must be a subclass of
    :class:`XMLParser` and can only use the default :class:`TreeBuilder` as a
-   target.  Returns an :term:`iterator` providing ``(event, elem)`` pairs.
+   target. Returns an :term:`iterator` providing ``(event, elem)`` pairs;
+   it has a ``root`` attribute that references the root element of the
+   resulting XML tree once *source* is fully read.
+   The iterator has the :meth:`!close` method that closes the internal
+   file object if *source* is a filename.
 
    Note that while :func:`iterparse` builds the tree incrementally, it issues
    blocking reads on *source* (or the file it names).  As such, it's unsuitable
@@ -613,6 +653,9 @@ Functions
    .. versionchanged:: 3.8
       The ``comment`` and ``pi`` events were added.
 
+   .. versionchanged:: 3.13
+      Added the :meth:`!close` method.
+
 
 .. function:: parse(source, parser=None)
 
@@ -630,7 +673,7 @@ Functions
    given.  Returns an element instance, representing a processing instruction.
 
    Note that :class:`XMLParser` skips over processing instructions
-   in the input instead of creating comment objects for them. An
+   in the input instead of creating PI objects for them. An
    :class:`ElementTree` will only contain processing instruction nodes if
    they have been inserted into to the tree using one of the
    :class:`Element` methods.
@@ -659,7 +702,7 @@ Functions
 
 
 .. function:: tostring(element, encoding="us-ascii", method="xml", *, \
-                       xml_declaration=None, default_namespace=None,
+                       xml_declaration=None, default_namespace=None, \
                        short_empty_elements=True)
 
    Generates a string representation of an XML element, including all
@@ -671,15 +714,19 @@ Functions
    meaning as in :meth:`ElementTree.write`. Returns an (optionally) encoded string
    containing the XML data.
 
-   .. versionadded:: 3.4
-      The *short_empty_elements* parameter.
+   .. versionchanged:: 3.4
+      Added the *short_empty_elements* parameter.
 
-   .. versionadded:: 3.8
-      The *xml_declaration* and *default_namespace* parameters.
+   .. versionchanged:: 3.8
+      Added the *xml_declaration* and *default_namespace* parameters.
+
+   .. versionchanged:: 3.8
+      The :func:`tostring` function now preserves the attribute order
+      specified by the user.
 
 
 .. function:: tostringlist(element, encoding="us-ascii", method="xml", *, \
-                           xml_declaration=None, default_namespace=None,
+                           xml_declaration=None, default_namespace=None, \
                            short_empty_elements=True)
 
    Generates a string representation of an XML element, including all
@@ -694,11 +741,15 @@ Functions
 
    .. versionadded:: 3.2
 
-   .. versionadded:: 3.4
-      The *short_empty_elements* parameter.
+   .. versionchanged:: 3.4
+      Added the *short_empty_elements* parameter.
 
-   .. versionadded:: 3.8
-      The *xml_declaration* and *default_namespace* parameters.
+   .. versionchanged:: 3.8
+      Added the *xml_declaration* and *default_namespace* parameters.
+
+   .. versionchanged:: 3.8
+      The :func:`tostringlist` function now preserves the attribute order
+      specified by the user.
 
 
 .. function:: XML(text, parser=None)
@@ -718,10 +769,111 @@ Functions
    :class:`Element` instance and a dictionary.
 
 
+.. _elementtree-xinclude:
+
+XInclude support
+----------------
+
+This module provides limited support for
+`XInclude directives <https://www.w3.org/TR/xinclude/>`_, via the :mod:`xml.etree.ElementInclude` helper module.  This module can be used to insert subtrees and text strings into element trees, based on information in the tree.
+
+Example
+^^^^^^^
+
+Here's an example that demonstrates use of the XInclude module. To include an XML document in the current document, use the ``{http://www.w3.org/2001/XInclude}include`` element and set the **parse** attribute to ``"xml"``, and use the **href** attribute to specify the document to include.
+
+.. code-block:: xml
+
+    <?xml version="1.0"?>
+    <document xmlns:xi="http://www.w3.org/2001/XInclude">
+      <xi:include href="source.xml" parse="xml" />
+    </document>
+
+By default, the **href** attribute is treated as a file name. You can use custom loaders to override this behaviour. Also note that the standard helper does not support XPointer syntax.
+
+To process this file, load it as usual, and pass the root element to the :mod:`xml.etree.ElementTree` module:
+
+.. code-block:: python
+
+   from xml.etree import ElementTree, ElementInclude
+
+   tree = ElementTree.parse("document.xml")
+   root = tree.getroot()
+
+   ElementInclude.include(root)
+
+The ElementInclude module replaces the ``{http://www.w3.org/2001/XInclude}include`` element with the root element from the **source.xml** document. The result might look something like this:
+
+.. code-block:: xml
+
+    <document xmlns:xi="http://www.w3.org/2001/XInclude">
+      <para>This is a paragraph.</para>
+    </document>
+
+If the **parse** attribute is omitted, it defaults to "xml". The href attribute is required.
+
+To include a text document, use the ``{http://www.w3.org/2001/XInclude}include`` element, and set the **parse** attribute to "text":
+
+.. code-block:: xml
+
+    <?xml version="1.0"?>
+    <document xmlns:xi="http://www.w3.org/2001/XInclude">
+      Copyright (c) <xi:include href="year.txt" parse="text" />.
+    </document>
+
+The result might look something like:
+
+.. code-block:: xml
+
+    <document xmlns:xi="http://www.w3.org/2001/XInclude">
+      Copyright (c) 2003.
+    </document>
+
+Reference
+---------
+
+.. _elementinclude-functions:
+
+Functions
+^^^^^^^^^
+
+.. module:: xml.etree.ElementInclude
+
+.. function:: default_loader(href, parse, encoding=None)
+
+   Default loader. This default loader reads an included resource from disk.
+   *href* is a URL.  *parse* is for parse mode either "xml" or "text".
+   *encoding* is an optional text encoding.  If not given, encoding is ``utf-8``.
+   Returns the expanded resource.
+   If the parse mode is ``"xml"``, this is an :class:`~xml.etree.ElementTree.Element` instance.
+   If the parse mode is ``"text"``, this is a string.
+   If the loader fails, it can return ``None`` or raise an exception.
+
+
+.. function:: include(elem, loader=None, base_url=None, max_depth=6)
+
+   This function expands XInclude directives in-place in tree pointed by *elem*.
+   *elem* is either the root :class:`~xml.etree.ElementTree.Element` or an
+   :class:`~xml.etree.ElementTree.ElementTree` instance to find such element.
+   *loader* is an optional resource loader.  If omitted, it defaults to :func:`default_loader`.
+   If given, it should be a callable that implements the same interface as
+   :func:`default_loader`.  *base_url* is base URL of the original file, to resolve
+   relative include file references.  *max_depth* is the maximum number of recursive
+   inclusions.  Limited to reduce the risk of malicious content explosion.
+   Pass ``None`` to disable the limitation.
+
+   .. versionchanged:: 3.9
+      Added the *base_url* and *max_depth* parameters.
+
+
 .. _elementtree-element-objects:
 
 Element Objects
 ^^^^^^^^^^^^^^^
+
+.. module:: xml.etree.ElementTree
+   :noindex:
+   :no-index:
 
 .. class:: Element(tag, attrib={}, **extra)
 
@@ -818,7 +970,7 @@ Element Objects
 
    .. method:: extend(subelements)
 
-      Appends *subelements* from a sequence object with zero or more elements.
+      Appends *subelements* from an iterable of elements.
       Raises :exc:`TypeError` if a subelement is not an :class:`Element`.
 
       .. versionadded:: 3.2
@@ -851,18 +1003,6 @@ Element Objects
       is returned. *namespaces* is an optional mapping from namespace prefix
       to full name.  Pass ``''`` as prefix to move all unprefixed tag names
       in the expression into the given namespace.
-
-
-   .. method:: getchildren()
-
-      .. deprecated-removed:: 3.2 3.9
-         Use ``list(elem)`` or iteration.
-
-
-   .. method:: getiterator(tag=None)
-
-      .. deprecated-removed:: 3.2 3.9
-         Use method :meth:`Element.iter` instead.
 
 
    .. method:: insert(index, subelement)
@@ -918,9 +1058,10 @@ Element Objects
    :meth:`~object.__getitem__`, :meth:`~object.__setitem__`,
    :meth:`~object.__len__`.
 
-   Caution: Elements with no subelements will test as ``False``.  This behavior
-   will change in future versions.  Use specific ``len(elem)`` or ``elem is
-   None`` test instead. ::
+   Caution: Elements with no subelements will test as ``False``.  In a future
+   release of Python, all elements will test as ``True`` regardless of whether
+   subelements exist.  Instead, prefer explicit ``len(elem)`` or
+   ``elem is not None`` tests.::
 
      element = root.find('foo')
 
@@ -929,6 +1070,39 @@ Element Objects
 
      if element is None:
          print("element not found")
+
+   .. versionchanged:: 3.12
+      Testing the truth value of an Element emits :exc:`DeprecationWarning`.
+
+   Prior to Python 3.8, the serialisation order of the XML attributes of
+   elements was artificially made predictable by sorting the attributes by
+   their name. Based on the now guaranteed ordering of dicts, this arbitrary
+   reordering was removed in Python 3.8 to preserve the order in which
+   attributes were originally parsed or created by user code.
+
+   In general, user code should try not to depend on a specific ordering of
+   attributes, given that the `XML Information Set
+   <https://www.w3.org/TR/xml-infoset/>`_ explicitly excludes the attribute
+   order from conveying information. Code should be prepared to deal with
+   any ordering on input. In cases where deterministic XML output is required,
+   e.g. for cryptographic signing or test data sets, canonical serialisation
+   is available with the :func:`canonicalize` function.
+
+   In cases where canonical output is not applicable but a specific attribute
+   order is still desirable on output, code should aim for creating the
+   attributes directly in the desired order, to avoid perceptual mismatches
+   for readers of the code. In cases where this is difficult to achieve, a
+   recipe like the following can be applied prior to serialisation to enforce
+   an order independently from the Element creation::
+
+     def reorder_attributes(root):
+         for el in root.iter():
+             attrib = el.attrib
+             if len(attrib) > 1:
+                 # adjust attribute order, e.g. by sorting
+                 attribs = sorted(attrib.items())
+                 attrib.clear()
+                 attrib.update(attribs)
 
 
 .. _elementtree-elementtree-objects:
@@ -967,12 +1141,6 @@ ElementTree Objects
    .. method:: findtext(match, default=None, namespaces=None)
 
       Same as :meth:`Element.findtext`, starting at the root of the tree.
-
-
-   .. method:: getiterator(tag=None)
-
-      .. deprecated-removed:: 3.2 3.9
-         Use method :meth:`ElementTree.iter` instead.
 
 
    .. method:: getroot()
@@ -1027,8 +1195,8 @@ ElementTree Objects
       :term:`file object`; make sure you do not try to write a string to a
       binary stream and vice versa.
 
-      .. versionadded:: 3.4
-         The *short_empty_elements* parameter.
+      .. versionchanged:: 3.4
+         Added the *short_empty_elements* parameter.
 
       .. versionchanged:: 3.8
          The :meth:`write` method now preserves the attribute order specified
@@ -1061,6 +1229,7 @@ Example of changing the attribute "target" of every link in first paragraph::
     [<Element 'a' at 0xb77ec2ac>, <Element 'a' at 0xb77ec1cc>]
     >>> for i in links:             # Iterates through all found links
     ...     i.attrib["target"] = "blank"
+    ...
     >>> tree.write("output.xhtml")
 
 .. _elementtree-qname-objects:
@@ -1139,8 +1308,8 @@ TreeBuilder Objects
 
    .. method:: pi(target, text)
 
-      Creates a comment with the given *target* name and *text*.  If
-      ``insert_pis`` is true, this will also add it to the tree.
+      Creates a process instruction with the given *target* name and *text*.
+      If ``insert_pis`` is true, this will also add it to the tree.
 
       .. versionadded:: 3.8
 
@@ -1205,7 +1374,7 @@ XMLParser Objects
 
    .. versionchanged:: 3.8
       Parameters are now :ref:`keyword-only <keyword-only_parameter>`.
-      The *html* argument no longer supported.
+      The *html* argument is no longer supported.
 
 
    .. method:: close()
@@ -1218,6 +1387,24 @@ XMLParser Objects
    .. method:: feed(data)
 
       Feeds data to the parser.  *data* is encoded data.
+
+
+   .. method:: flush()
+
+      Triggers parsing of any previously fed unparsed data, which can be
+      used to ensure more immediate feedback, in particular with Expat >=2.6.0.
+      The implementation of :meth:`flush` temporarily disables reparse deferral
+      with Expat (if currently enabled) and triggers a reparse.
+      Disabling reparse deferral has security consequences; please see
+      :meth:`xml.parsers.expat.xmlparser.SetReparseDeferralEnabled` for details.
+
+      Note that :meth:`flush` has been backported to some prior releases of
+      CPython as a security fix.  Check for availability of :meth:`flush`
+      using :func:`hasattr` if used in code running across a variety of Python
+      versions.
+
+      .. versionadded:: 3.13
+
 
    :meth:`XMLParser.feed` calls *target*\'s ``start(tag, attrs_dict)`` method
    for each opening tag, its ``end(tag)`` method for each closing tag, and data
@@ -1279,6 +1466,22 @@ XMLPullParser Objects
    .. method:: feed(data)
 
       Feed the given bytes data to the parser.
+
+   .. method:: flush()
+
+      Triggers parsing of any previously fed unparsed data, which can be
+      used to ensure more immediate feedback, in particular with Expat >=2.6.0.
+      The implementation of :meth:`flush` temporarily disables reparse deferral
+      with Expat (if currently enabled) and triggers a reparse.
+      Disabling reparse deferral has security consequences; please see
+      :meth:`xml.parsers.expat.xmlparser.SetReparseDeferralEnabled` for details.
+
+      Note that :meth:`flush` has been backported to some prior releases of
+      CPython as a security fix.  Check for availability of :meth:`flush`
+      using :func:`hasattr` if used in code running across a variety of Python
+      versions.
+
+      .. versionadded:: 3.13
 
    .. method:: close()
 

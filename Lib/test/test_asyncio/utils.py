@@ -1,5 +1,6 @@
 """Utilities shared by tests."""
 
+import asyncio
 import collections
 import contextlib
 import io
@@ -10,12 +11,10 @@ import selectors
 import socket
 import socketserver
 import sys
-import tempfile
 import threading
-import time
 import unittest
 import weakref
-
+from ast import literal_eval
 from unittest import mock
 
 from http.server import HTTPServer
@@ -29,45 +28,35 @@ except ImportError:  # pragma: no cover
 from asyncio import base_events
 from asyncio import events
 from asyncio import format_helpers
-from asyncio import futures
 from asyncio import tasks
 from asyncio.log import logger
 from test import support
+from test.support import socket_helper
+from test.support import threading_helper
 
 
-def data_file(filename):
-    if hasattr(support, 'TEST_HOME_DIR'):
-        fullname = os.path.join(support.TEST_HOME_DIR, filename)
-        if os.path.isfile(fullname):
-            return fullname
-    fullname = os.path.join(os.path.dirname(__file__), '..', filename)
+# Use the maximum known clock resolution (gh-75191, gh-110088): Windows
+# GetTickCount64() has a resolution of 15.6 ms. Use 50 ms to tolerate rounding
+# issues.
+CLOCK_RES = 0.050
+
+
+def data_file(*filename):
+    fullname = os.path.join(support.TEST_HOME_DIR, *filename)
     if os.path.isfile(fullname):
         return fullname
-    raise FileNotFoundError(filename)
+    fullname = os.path.join(os.path.dirname(__file__), '..', *filename)
+    if os.path.isfile(fullname):
+        return fullname
+    raise FileNotFoundError(os.path.join(filename))
 
 
-ONLYCERT = data_file('ssl_cert.pem')
-ONLYKEY = data_file('ssl_key.pem')
-SIGNED_CERTFILE = data_file('keycert3.pem')
-SIGNING_CA = data_file('pycacert.pem')
-PEERCERT = {
-    'OCSP': ('http://testca.pythontest.net/testca/ocsp/',),
-    'caIssuers': ('http://testca.pythontest.net/testca/pycacert.cer',),
-    'crlDistributionPoints': ('http://testca.pythontest.net/testca/revocation.crl',),
-    'issuer': ((('countryName', 'XY'),),
-            (('organizationName', 'Python Software Foundation CA'),),
-            (('commonName', 'our-ca-server'),)),
-    'notAfter': 'Jul  7 14:23:16 2028 GMT',
-    'notBefore': 'Aug 29 14:23:16 2018 GMT',
-    'serialNumber': 'CB2D80995A69525C',
-    'subject': ((('countryName', 'XY'),),
-             (('localityName', 'Castle Anthrax'),),
-             (('organizationName', 'Python Software Foundation'),),
-             (('commonName', 'localhost'),)),
-    'subjectAltName': (('DNS', 'localhost'),),
-    'version': 3
-}
-
+ONLYCERT = data_file('certdata', 'ssl_cert.pem')
+ONLYKEY = data_file('certdata', 'ssl_key.pem')
+SIGNED_CERTFILE = data_file('certdata', 'keycert3.pem')
+SIGNING_CA = data_file('certdata', 'pycacert.pem')
+with open(data_file('certdata', 'keycert3.pem.reference')) as file:
+    PEERCERT = literal_eval(file.read())
 
 def simple_server_sslcontext():
     server_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
@@ -89,7 +78,7 @@ def dummy_ssl_context():
     if ssl is None:
         return None
     else:
-        return ssl.SSLContext(ssl.PROTOCOL_TLS)
+        return simple_client_sslcontext(disable_verify=True)
 
 
 def run_briefly(loop):
@@ -106,14 +95,15 @@ def run_briefly(loop):
         gen.close()
 
 
-def run_until(loop, pred, timeout=30):
-    deadline = time.monotonic() + timeout
-    while not pred():
-        if timeout is not None:
-            timeout = deadline - time.monotonic()
-            if timeout <= 0:
-                raise futures.TimeoutError()
-        loop.run_until_complete(tasks.sleep(0.001))
+def run_until(loop, pred, timeout=support.SHORT_TIMEOUT):
+    delay = 0.001
+    for _ in support.busy_retry(timeout, error=False):
+        if pred():
+            break
+        loop.run_until_complete(tasks.sleep(delay))
+        delay = max(delay * 2, 1.0)
+    else:
+        raise TimeoutError()
 
 
 def run_once(loop):
@@ -138,7 +128,7 @@ class SilentWSGIRequestHandler(WSGIRequestHandler):
 
 class SilentWSGIServer(WSGIServer):
 
-    request_timeout = 2
+    request_timeout = support.LOOPBACK_TIMEOUT
 
     def get_request(self):
         request, client_addr = super().get_request()
@@ -156,7 +146,7 @@ class SSLWSGIServerMixin:
         # contains the ssl key and certificate files) differs
         # between the stdlib and stand-alone asyncio.
         # Prefer our own if we can find it.
-        context = ssl.SSLContext()
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         context.load_cert_chain(ONLYCERT, ONLYKEY)
 
         ssock = context.wrap_socket(request, server_side=True)
@@ -219,7 +209,7 @@ if hasattr(socket, 'AF_UNIX'):
 
     class UnixWSGIServer(UnixHTTPServer, WSGIServer):
 
-        request_timeout = 2
+        request_timeout = support.LOOPBACK_TIMEOUT
 
         def server_bind(self):
             UnixHTTPServer.server_bind(self)
@@ -248,8 +238,7 @@ if hasattr(socket, 'AF_UNIX'):
 
 
     def gen_unix_socket_path():
-        with tempfile.NamedTemporaryFile() as file:
-            return file.name
+        return socket_helper.create_unix_domain_name()
 
 
     @contextlib.contextmanager
@@ -277,6 +266,36 @@ def run_test_server(*, host='127.0.0.1', port=0, use_ssl=False):
     yield from _run_test_server(address=(host, port), use_ssl=use_ssl,
                                 server_cls=SilentWSGIServer,
                                 server_ssl_cls=SSLWSGIServer)
+
+
+def echo_datagrams(sock):
+    while True:
+        data, addr = sock.recvfrom(4096)
+        if data == b'STOP':
+            sock.close()
+            break
+        else:
+            sock.sendto(data, addr)
+
+
+@contextlib.contextmanager
+def run_udp_echo_server(*, host='127.0.0.1', port=0):
+    addr_info = socket.getaddrinfo(host, port, type=socket.SOCK_DGRAM)
+    family, type, proto, _, sockaddr = addr_info[0]
+    sock = socket.socket(family, type, proto)
+    sock.bind((host, port))
+    sockname = sock.getsockname()
+    thread = threading.Thread(target=lambda: echo_datagrams(sock))
+    thread.start()
+    try:
+        yield sockname
+    finally:
+        # gh-122187: use a separate socket to send the stop message to avoid
+        # TSan reported race on the same socket.
+        sock2 = socket.socket(family, type, proto)
+        sock2.sendto(b'STOP', sockname)
+        sock2.close()
+        thread.join()
 
 
 def make_test_protocol(base):
@@ -407,12 +426,13 @@ class TestLoop(base_events.BaseEventLoop):
             return False
 
     def assert_writer(self, fd, callback, *args):
-        assert fd in self.writers, 'fd {} is not registered'.format(fd)
+        if fd not in self.writers:
+            raise AssertionError(f'fd {fd} is not registered')
         handle = self.writers[fd]
-        assert handle._callback == callback, '{!r} != {!r}'.format(
-            handle._callback, callback)
-        assert handle._args == args, '{!r} != {!r}'.format(
-            handle._args, args)
+        if handle._callback != callback:
+            raise AssertionError(f'{handle._callback!r} != {callback!r}')
+        if handle._args != args:
+            raise AssertionError(f'{handle._args!r} != {args!r}')
 
     def _ensure_fd_no_transport(self, fd):
         if not isinstance(fd, int):
@@ -508,13 +528,16 @@ def get_function_source(func):
 class TestCase(unittest.TestCase):
     @staticmethod
     def close_loop(loop):
-        executor = loop._default_executor
-        if executor is not None:
-            executor.shutdown(wait=True)
+        if loop._default_executor is not None:
+            if not loop.is_closed():
+                loop.run_until_complete(loop.shutdown_default_executor())
+            else:
+                loop._default_executor.shutdown(wait=True)
         loop.close()
 
     def set_event_loop(self, loop, *, cleanup=True):
-        assert loop is not None
+        if loop is None:
+            raise AssertionError('loop is None')
         # ensure that the event loop is passed explicitly in asyncio
         events.set_event_loop(None)
         if cleanup:
@@ -525,25 +548,18 @@ class TestCase(unittest.TestCase):
         self.set_event_loop(loop)
         return loop
 
-    def unpatch_get_running_loop(self):
-        events._get_running_loop = self._get_running_loop
-
     def setUp(self):
-        self._get_running_loop = events._get_running_loop
-        events._get_running_loop = lambda: None
-        self._thread_cleanup = support.threading_setup()
+        self._thread_cleanup = threading_helper.threading_setup()
 
     def tearDown(self):
-        self.unpatch_get_running_loop()
-
         events.set_event_loop(None)
 
         # Detect CPython bug #23353: ensure that yield/yield-from is not used
         # in an except block of a generator
-        self.assertEqual(sys.exc_info(), (None, None, None))
+        self.assertIsNone(sys.exception())
 
         self.doCleanups()
-        support.threading_cleanup(*self._thread_cleanup)
+        threading_helper.threading_cleanup(*self._thread_cleanup)
         support.reap_children()
 
 
@@ -570,3 +586,18 @@ def mock_nonblocking_socket(proto=socket.IPPROTO_TCP, type=socket.SOCK_STREAM,
     sock.family = family
     sock.gettimeout.return_value = 0.0
     return sock
+
+
+async def await_without_task(coro):
+    exc = None
+    def func():
+        try:
+            for _ in coro.__await__():
+                pass
+        except BaseException as err:
+            nonlocal exc
+            exc = err
+    asyncio.get_running_loop().call_soon(func)
+    await asyncio.sleep(0)
+    if exc is not None:
+        raise exc

@@ -63,7 +63,8 @@ class KeywordOnlyArgTestCase(unittest.TestCase):
             pass
         with self.assertRaises(TypeError) as exc:
             f(1, 2, 3)
-        expected = "f() takes from 1 to 2 positional arguments but 3 were given"
+        expected = (f"{f.__qualname__}() takes from 1 to 2 "
+                    "positional arguments but 3 were given")
         self.assertEqual(str(exc.exception), expected)
 
     def testSyntaxErrorForFunctionCall(self):
@@ -169,7 +170,7 @@ class KeywordOnlyArgTestCase(unittest.TestCase):
                 pass
         self.assertEqual(str(err.exception), "name 'b' is not defined")
         with self.assertRaises(NameError) as err:
-            f = lambda v=a, x=b, *, y=c, z=d: None
+            g = lambda v=a, x=b, *, y=c, z=d: None
         self.assertEqual(str(err.exception), "name 'b' is not defined")
 
 

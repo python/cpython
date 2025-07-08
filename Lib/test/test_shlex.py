@@ -3,7 +3,8 @@ import itertools
 import shlex
 import string
 import unittest
-
+from test.support import cpython_only
+from test.support import import_helper
 
 
 # The original test data set was from shellwords, by Hartmut Goebel.
@@ -161,6 +162,10 @@ class ShlexTest(unittest.TestCase):
             ret.append(tok)
             tok = lex.get_token()
         return ret
+
+    def testSplitNone(self):
+        with self.assertRaises(ValueError):
+            shlex.split(None)
 
     def testSplitPosix(self):
         """Test data splitting with posix parser"""
@@ -352,6 +357,17 @@ class ShlexTest(unittest.TestCase):
                 joined = shlex.join(split_command)
                 resplit = shlex.split(joined)
                 self.assertEqual(split_command, resplit)
+
+    def testPunctuationCharsReadOnly(self):
+        punctuation_chars = "/|$%^"
+        shlex_instance = shlex.shlex(punctuation_chars=punctuation_chars)
+        self.assertEqual(shlex_instance.punctuation_chars, punctuation_chars)
+        with self.assertRaises(AttributeError):
+            shlex_instance.punctuation_chars = False
+
+    @cpython_only
+    def test_lazy_imports(self):
+        import_helper.ensure_lazy_imports('shlex', {'collections', 're', 'os'})
 
 
 # Allow this test to be used with old shlex.py

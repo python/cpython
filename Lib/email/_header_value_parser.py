@@ -92,9 +92,19 @@ TOKEN_ENDS = TSPECIALS | WSP
 ASPECIALS = TSPECIALS | set("*'%")
 ATTRIBUTE_ENDS = ASPECIALS | WSP
 EXTENDED_ATTRIBUTE_ENDS = ATTRIBUTE_ENDS - set('%')
+NLSET = {'\n', '\r'}
+SPECIALSNL = SPECIALS | NLSET
+
+
+def make_quoted_pairs(value):
+    """Escape dquote and backslash for use within a quoted-string."""
+    return str(value).replace('\\', '\\\\').replace('"', '\\"')
+
 
 def quote_string(value):
-    return '"'+str(value).replace('\\', '\\\\').replace('"', r'\"')+'"'
+    escaped = make_quoted_pairs(value)
+    return f'"{escaped}"'
+
 
 # Match a RFC 2047 word, looks like =?utf-8?q?someword?=
 rfc2047_matcher = re.compile(r'''
@@ -561,15 +571,19 @@ class DisplayName(Phrase):
     @property
     def display_name(self):
         res = TokenList(self)
+        if len(res) == 0:
+            return res.value
         if res[0].token_type == 'cfws':
             res.pop(0)
         else:
-            if res[0][0].token_type == 'cfws':
+            if (isinstance(res[0], TokenList) and
+                    res[0][0].token_type == 'cfws'):
                 res[0] = TokenList(res[0][1:])
         if res[-1].token_type == 'cfws':
             res.pop()
         else:
-            if res[-1][-1].token_type == 'cfws':
+            if (isinstance(res[-1], TokenList) and
+                    res[-1][-1].token_type == 'cfws'):
                 res[-1] = TokenList(res[-1][:-1])
         return res.value
 
@@ -582,11 +596,15 @@ class DisplayName(Phrase):
             for x in self:
                 if x.token_type == 'quoted-string':
                     quote = True
-        if quote:
+        if len(self) != 0 and quote:
             pre = post = ''
-            if self[0].token_type=='cfws' or self[0][0].token_type=='cfws':
+            if (self[0].token_type == 'cfws' or
+                isinstance(self[0], TokenList) and
+                self[0][0].token_type == 'cfws'):
                 pre = ' '
-            if self[-1].token_type=='cfws' or self[-1][-1].token_type=='cfws':
+            if (self[-1].token_type == 'cfws' or
+                isinstance(self[-1], TokenList) and
+                self[-1][-1].token_type == 'cfws'):
                 post = ' '
             return pre+quote_string(self.display_name)+post
         else:
@@ -779,7 +797,7 @@ class MimeParameters(TokenList):
                     else:
                         try:
                             value = value.decode(charset, 'surrogateescape')
-                        except LookupError:
+                        except (LookupError, UnicodeEncodeError):
                             # XXX: there should really be a custom defect for
                             # unknown character set to make it easy to find,
                             # because otherwise unknown charset is a silent
@@ -848,8 +866,13 @@ class MsgID(TokenList):
         # message-id tokens may not be folded.
         return str(self) + policy.linesep
 
+
 class MessageID(MsgID):
     token_type = 'message-id'
+
+
+class InvalidMessageID(MessageID):
+    token_type = 'invalid-message-id'
 
 
 class Header(TokenList):
@@ -933,11 +956,17 @@ class EWWhiteSpaceTerminal(WhiteSpaceTerminal):
         return ''
 
 
+class _InvalidEwError(errors.HeaderParseError):
+    """Invalid encoded word found while parsing headers."""
+
+
 # XXX these need to become classes and used as instances so
 # that a program can't change them in a parse tree and screw
 # up other parse trees.  Maybe should have  tests for that, too.
 DOT = ValueTerminal('.', 'dot')
 ListSeparator = ValueTerminal(',', 'list-separator')
+ListSeparator.as_ew_allowed = False
+ListSeparator.syntactic_break = False
 RouteComponentMarker = ValueTerminal('@', 'route-component-marker')
 
 #
@@ -991,6 +1020,8 @@ def _get_ptext_to_endchars(value, endchars):
     a flag that is True iff there were any quoted printables decoded.
 
     """
+    if not value:
+        return '', '', False
     fragment, *remainder = _wsp_splitter(value, 1)
     vchars = []
     escape = False
@@ -1024,7 +1055,7 @@ def get_fws(value):
     fws = WhiteSpaceTerminal(value[:len(value)-len(newvalue)], 'fws')
     return fws, newvalue
 
-def get_encoded_word(value):
+def get_encoded_word(value, terminal_type='vtext'):
     """ encoded-word = "=?" charset "?" encoding "?" encoded-text "?="
 
     """
@@ -1037,7 +1068,10 @@ def get_encoded_word(value):
         raise errors.HeaderParseError(
             "expected encoded word but found {}".format(value))
     remstr = ''.join(remainder)
-    if len(remstr) > 1 and remstr[0] in hexdigits and remstr[1] in hexdigits:
+    if (len(remstr) > 1 and
+        remstr[0] in hexdigits and
+        remstr[1] in hexdigits and
+        tok.count('?') < 2):
         # The ? after the CTE was followed by an encoded word escape (=XX).
         rest, *remainder = remstr.split('?=', 1)
         tok = tok + '?=' + rest
@@ -1048,8 +1082,8 @@ def get_encoded_word(value):
     value = ''.join(remainder)
     try:
         text, charset, lang, defects = _ew.decode('=?' + tok + '?=')
-    except ValueError:
-        raise errors.HeaderParseError(
+    except (ValueError, KeyError):
+        raise _InvalidEwError(
             "encoded word format invalid: '{}'".format(ew.cte))
     ew.charset = charset
     ew.lang = lang
@@ -1060,7 +1094,7 @@ def get_encoded_word(value):
             ew.append(token)
             continue
         chars, *remainder = _wsp_splitter(text, 1)
-        vtext = ValueTerminal(chars, 'vtext')
+        vtext = ValueTerminal(chars, terminal_type)
         _validate_xtext(vtext)
         ew.append(vtext)
         text = ''.join(remainder)
@@ -1099,9 +1133,12 @@ def get_unstructured(value):
             token, value = get_fws(value)
             unstructured.append(token)
             continue
+        valid_ew = True
         if value.startswith('=?'):
             try:
-                token, value = get_encoded_word(value)
+                token, value = get_encoded_word(value, 'utext')
+            except _InvalidEwError:
+                valid_ew = False
             except errors.HeaderParseError:
                 # XXX: Need to figure out how to register defects when
                 # appropriate here.
@@ -1123,9 +1160,12 @@ def get_unstructured(value):
         # Split in the middle of an atom if there is a rfc2047 encoded word
         # which does not have WSP on both sides. The defect will be registered
         # the next time through the loop.
-        if rfc2047_matcher.search(tok):
+        # This needs to only be performed when the encoded word is valid;
+        # otherwise, performing it on an invalid encoded word can cause
+        # the parser to go in an infinite loop.
+        if valid_ew and rfc2047_matcher.search(tok):
             tok, *remainder = value.partition('=?')
-        vtext = ValueTerminal(tok, 'vtext')
+        vtext = ValueTerminal(tok, 'utext')
         _validate_xtext(vtext)
         unstructured.append(vtext)
         value = ''.join(remainder)
@@ -1186,24 +1226,33 @@ def get_bare_quoted_string(value):
     value is the text between the quote marks, with whitespace
     preserved and quoted pairs decoded.
     """
-    if value[0] != '"':
+    if not value or value[0] != '"':
         raise errors.HeaderParseError(
             "expected '\"' but found '{}'".format(value))
     bare_quoted_string = BareQuotedString()
     value = value[1:]
-    if value[0] == '"':
+    if value and value[0] == '"':
         token, value = get_qcontent(value)
         bare_quoted_string.append(token)
     while value and value[0] != '"':
         if value[0] in WSP:
             token, value = get_fws(value)
         elif value[:2] == '=?':
+            valid_ew = False
             try:
                 token, value = get_encoded_word(value)
                 bare_quoted_string.defects.append(errors.InvalidHeaderDefect(
                     "encoded word inside quoted string"))
+                valid_ew = True
             except errors.HeaderParseError:
                 token, value = get_qcontent(value)
+            # Collapse the whitespace between two encoded words that occur in a
+            # bare-quoted-string.
+            if valid_ew and len(bare_quoted_string) > 1:
+                if (bare_quoted_string[-1].token_type == 'fws' and
+                        bare_quoted_string[-2].token_type == 'encoded-word'):
+                    bare_quoted_string[-1] = EWWhiteSpaceTerminal(
+                        bare_quoted_string[-1], 'fws')
         else:
             token, value = get_qcontent(value)
         bare_quoted_string.append(token)
@@ -1360,6 +1409,9 @@ def get_word(value):
         leader, value = get_cfws(value)
     else:
         leader = None
+    if not value:
+        raise errors.HeaderParseError(
+            "Expected 'atom' or 'quoted-string' but found nothing.")
     if value[0]=='"':
         token, value = get_quoted_string(value)
     elif value[0] in SPECIALS:
@@ -1415,7 +1467,7 @@ def get_local_part(value):
     """
     local_part = LocalPart()
     leader = None
-    if value[0] in CFWS_LEADER:
+    if value and value[0] in CFWS_LEADER:
         leader, value = get_cfws(value)
     if not value:
         raise errors.HeaderParseError(
@@ -1481,13 +1533,18 @@ def get_obs_local_part(value):
                 raise
             token, value = get_cfws(value)
         obs_local_part.append(token)
+    if not obs_local_part:
+        raise errors.HeaderParseError(
+            "expected obs-local-part but found '{}'".format(value))
     if (obs_local_part[0].token_type == 'dot' or
             obs_local_part[0].token_type=='cfws' and
+            len(obs_local_part) > 1 and
             obs_local_part[1].token_type=='dot'):
         obs_local_part.defects.append(errors.InvalidHeaderDefect(
             "Invalid leading '.' in local part"))
     if (obs_local_part[-1].token_type == 'dot' or
             obs_local_part[-1].token_type=='cfws' and
+            len(obs_local_part) > 1 and
             obs_local_part[-2].token_type=='dot'):
         obs_local_part.defects.append(errors.InvalidHeaderDefect(
             "Invalid trailing '.' in local part"))
@@ -1518,7 +1575,7 @@ def get_dtext(value):
 def _check_for_early_dl_end(value, domain_literal):
     if value:
         return False
-    domain_literal.append(errors.InvalidHeaderDefect(
+    domain_literal.defects.append(errors.InvalidHeaderDefect(
         "end of input inside domain-literal"))
     domain_literal.append(ValueTerminal(']', 'domain-literal-end'))
     return True
@@ -1537,9 +1594,9 @@ def get_domain_literal(value):
         raise errors.HeaderParseError("expected '[' at start of domain-literal "
                 "but found '{}'".format(value))
     value = value[1:]
+    domain_literal.append(ValueTerminal('[', 'domain-literal-start'))
     if _check_for_early_dl_end(value, domain_literal):
         return domain_literal, value
-    domain_literal.append(ValueTerminal('[', 'domain-literal-start'))
     if value[0] in WSP:
         token, value = get_fws(value)
         domain_literal.append(token)
@@ -1569,7 +1626,7 @@ def get_domain(value):
     """
     domain = Domain()
     leader = None
-    if value[0] in CFWS_LEADER:
+    if value and value[0] in CFWS_LEADER:
         leader, value = get_cfws(value)
     if not value:
         raise errors.HeaderParseError(
@@ -1584,6 +1641,8 @@ def get_domain(value):
         token, value = get_dot_atom(value)
     except errors.HeaderParseError:
         token, value = get_atom(value)
+    if value and value[0] == '@':
+        raise errors.HeaderParseError('Invalid Domain')
     if leader is not None:
         token[:0] = [leader]
     domain.append(token)
@@ -1643,6 +1702,8 @@ def get_obs_route(value):
         if value[0] in CFWS_LEADER:
             token, value = get_cfws(value)
             obs_route.append(token)
+        if not value:
+            break
         if value[0] == '@':
             obs_route.append(RouteComponentMarker)
             token, value = get_domain(value[1:])
@@ -1661,7 +1722,7 @@ def get_angle_addr(value):
 
     """
     angle_addr = AngleAddr()
-    if value[0] in CFWS_LEADER:
+    if value and value[0] in CFWS_LEADER:
         token, value = get_cfws(value)
         angle_addr.append(token)
     if not value or value[0] != '<':
@@ -1671,7 +1732,7 @@ def get_angle_addr(value):
     value = value[1:]
     # Although it is not legal per RFC5322, SMTP uses '<>' in certain
     # circumstances.
-    if value[0] == '>':
+    if value and value[0] == '>':
         angle_addr.append(ValueTerminal('>', 'angle-addr-end'))
         angle_addr.defects.append(errors.InvalidHeaderDefect(
             "null addr-spec in angle-addr"))
@@ -1723,6 +1784,9 @@ def get_name_addr(value):
     name_addr = NameAddr()
     # Both the optional display name and the angle-addr can start with cfws.
     leader = None
+    if not value:
+        raise errors.HeaderParseError(
+            "expected name-addr but found '{}'".format(value))
     if value[0] in CFWS_LEADER:
         leader, value = get_cfws(value)
         if not value:
@@ -1737,7 +1801,10 @@ def get_name_addr(value):
             raise errors.HeaderParseError(
                 "expected name-addr but found '{}'".format(token))
         if leader is not None:
-            token[0][:0] = [leader]
+            if isinstance(token[0], TokenList):
+                token[0][:0] = [leader]
+            else:
+                token[:0] = [leader]
             leader = None
         name_addr.append(token)
     token, value = get_angle_addr(value)
@@ -1953,7 +2020,7 @@ def get_address_list(value):
         try:
             token, value = get_address(value)
             address_list.append(token)
-        except errors.HeaderParseError as err:
+        except errors.HeaderParseError:
             leader = None
             if value[0] in CFWS_LEADER:
                 leader, value = get_cfws(value)
@@ -1988,7 +2055,7 @@ def get_address_list(value):
             address_list.defects.append(errors.InvalidHeaderDefect(
                 "invalid address in address-list"))
         if value:  # Must be a , at this point.
-            address_list.append(ValueTerminal(',', 'list-separator'))
+            address_list.append(ListSeparator)
             value = value[1:]
     return address_list, value
 
@@ -2022,7 +2089,7 @@ def get_msg_id(value):
        no-fold-literal = "[" *dtext "]"
     """
     msg_id = MsgID()
-    if value[0] in CFWS_LEADER:
+    if value and value[0] in CFWS_LEADER:
         token, value = get_cfws(value)
         msg_id.append(token)
     if not value or value[0] != '<':
@@ -2062,7 +2129,7 @@ def get_msg_id(value):
     except errors.HeaderParseError:
         try:
             token, value = get_no_fold_literal(value)
-        except errors.HeaderParseError as e:
+        except errors.HeaderParseError:
             try:
                 token, value = get_domain(value)
                 msg_id.defects.append(errors.ObsoleteHeaderDefect(
@@ -2090,10 +2157,18 @@ def parse_message_id(value):
     message_id = MessageID()
     try:
         token, value = get_msg_id(value)
-    except errors.HeaderParseError:
-        message_id.defects.append(errors.InvalidHeaderDefect(
-            "Expected msg-id but found {!r}".format(value)))
-    message_id.append(token)
+        message_id.append(token)
+    except errors.HeaderParseError as ex:
+        token = get_unstructured(value)
+        message_id = InvalidMessageID(token)
+        message_id.defects.append(
+            errors.InvalidHeaderDefect("Invalid msg-id: {!r}".format(ex)))
+    else:
+        # Value after parsing a valid msg_id should be None.
+        if value:
+            message_id.defects.append(errors.InvalidHeaderDefect(
+                "Unexpected {!r}".format(value)))
+
     return message_id
 
 #
@@ -2337,7 +2412,7 @@ def get_section(value):
         digits += value[0]
         value = value[1:]
     if digits[0] == '0' and digits != '0':
-        section.defects.append(errors.InvalidHeaderError(
+        section.defects.append(errors.InvalidHeaderDefect(
                 "section number has an invalid leading 0"))
     section.number = int(digits)
     section.append(ValueTerminal(digits, 'digits'))
@@ -2401,7 +2476,6 @@ def get_parameter(value):
         raise errors.HeaderParseError("Parameter not followed by '='")
     param.append(ValueTerminal('=', 'parameter-separator'))
     value = value[1:]
-    leader = None
     if value and value[0] in CFWS_LEADER:
         token, value = get_cfws(value)
         param.append(token)
@@ -2493,6 +2567,9 @@ def get_parameter(value):
         while value:
             if value[0] in WSP:
                 token, value = get_fws(value)
+            elif value[0] == '"':
+                token = ValueTerminal('"', 'DQUOTE')
+                value = value[1:]
             else:
                 token, value = get_qcontent(value)
             v.append(token)
@@ -2523,7 +2600,7 @@ def parse_mime_parameters(value):
         try:
             token, value = get_parameter(value)
             mime_parameters.append(token)
-        except errors.HeaderParseError as err:
+        except errors.HeaderParseError:
             leader = None
             if value[0] in CFWS_LEADER:
                 leader, value = get_cfws(value)
@@ -2581,7 +2658,6 @@ def parse_content_type_header(value):
     don't do that.
     """
     ctype = ContentType()
-    recover = False
     if not value:
         ctype.defects.append(errors.HeaderMissingRequiredValue(
             "Missing content type specification"))
@@ -2721,10 +2797,15 @@ def _refold_parse_tree(parse_tree, *, policy):
     # max_line_length 0/None means no limit, ie: infinitely long.
     maxlen = policy.max_line_length or sys.maxsize
     encoding = 'utf-8' if policy.utf8 else 'us-ascii'
-    lines = ['']
-    last_ew = None
+    lines = ['']  # Folded lines to be output
+    leading_whitespace = ''  # When we have whitespace between two encoded
+                             # words, we may need to encode the whitespace
+                             # at the beginning of the second word.
+    last_ew = None  # Points to the last encoded character if there's an ew on
+                    # the line
+    last_charset = None
     wrap_as_ew_blocked = 0
-    want_encoding = False
+    want_encoding = False  # This is set to True if we need to encode this part
     end_ew_not_allowed = Terminal('', 'wrap_as_ew_blocked')
     parts = list(parse_tree)
     while parts:
@@ -2733,6 +2814,13 @@ def _refold_parse_tree(parse_tree, *, policy):
             wrap_as_ew_blocked -= 1
             continue
         tstr = str(part)
+        if not want_encoding:
+            if part.token_type in ('ptext', 'vtext'):
+                # Encode if tstr contains special characters.
+                want_encoding = not SPECIALSNL.isdisjoint(tstr)
+            else:
+                # Encode if tstr contains newlines.
+                want_encoding = not NLSET.isdisjoint(tstr)
         try:
             tstr.encode(encoding)
             charset = encoding
@@ -2745,10 +2833,12 @@ def _refold_parse_tree(parse_tree, *, policy):
                 # 'charset' property on the policy.
                 charset = 'utf-8'
             want_encoding = True
+
         if part.token_type == 'mime-parameters':
             # Mime parameter folding (using RFC2231) is extra special.
             _fold_mime_parameters(part, lines, maxlen, encoding)
             continue
+
         if want_encoding and not wrap_as_ew_blocked:
             if not part.as_ew_allowed:
                 want_encoding = False
@@ -2771,29 +2861,69 @@ def _refold_parse_tree(parse_tree, *, policy):
             if not hasattr(part, 'encode'):
                 # It's not a Terminal, do each piece individually.
                 parts = list(part) + parts
-            else:
+                want_encoding = False
+                continue
+            elif part.as_ew_allowed:
                 # It's a terminal, wrap it as an encoded word, possibly
                 # combining it with previously encoded words if allowed.
+                if (last_ew is not None and
+                    charset != last_charset and
+                    (last_charset == 'unknown-8bit' or
+                     last_charset == 'utf-8' and charset != 'us-ascii')):
+                    last_ew = None
                 last_ew = _fold_as_ew(tstr, lines, maxlen, last_ew,
-                                      part.ew_combine_allowed, charset)
-            want_encoding = False
-            continue
+                                      part.ew_combine_allowed, charset, leading_whitespace)
+                # This whitespace has been added to the lines in _fold_as_ew()
+                # so clear it now.
+                leading_whitespace = ''
+                last_charset = charset
+                want_encoding = False
+                continue
+            else:
+                # It's a terminal which should be kept non-encoded
+                # (e.g. a ListSeparator).
+                last_ew = None
+                want_encoding = False
+                # fall through
+
         if len(tstr) <= maxlen - len(lines[-1]):
             lines[-1] += tstr
             continue
+
         # This part is too long to fit.  The RFC wants us to break at
         # "major syntactic breaks", so unless we don't consider this
         # to be one, check if it will fit on the next line by itself.
+        leading_whitespace = ''
         if (part.syntactic_break and
                 len(tstr) + 1 <= maxlen):
             newline = _steal_trailing_WSP_if_exists(lines)
             if newline or part.startswith_fws():
+                # We're going to fold the data onto a new line here.  Due to
+                # the way encoded strings handle continuation lines, we need to
+                # be prepared to encode any whitespace if the next line turns
+                # out to start with an encoded word.
                 lines.append(newline + tstr)
+
+                whitespace_accumulator = []
+                for char in lines[-1]:
+                    if char not in WSP:
+                        break
+                    whitespace_accumulator.append(char)
+                leading_whitespace = ''.join(whitespace_accumulator)
                 last_ew = None
                 continue
         if not hasattr(part, 'encode'):
             # It's not a terminal, try folding the subparts.
             newparts = list(part)
+            if part.token_type == 'bare-quoted-string':
+                # To fold a quoted string we need to create a list of terminal
+                # tokens that will render the leading and trailing quotes
+                # and use quoted pairs in the value as appropriate.
+                newparts = (
+                    [ValueTerminal('"', 'ptext')] +
+                    [ValueTerminal(make_quoted_pairs(p), 'ptext')
+                     for p in newparts] +
+                    [ValueTerminal('"', 'ptext')])
             if not part.as_ew_allowed:
                 wrap_as_ew_blocked += 1
                 newparts.append(end_ew_not_allowed)
@@ -2812,9 +2942,10 @@ def _refold_parse_tree(parse_tree, *, policy):
         else:
             # We can't fold it onto the next line either...
             lines[-1] += tstr
+
     return policy.linesep.join(lines) + policy.linesep
 
-def _fold_as_ew(to_encode, lines, maxlen, last_ew, ew_combine_allowed, charset):
+def _fold_as_ew(to_encode, lines, maxlen, last_ew, ew_combine_allowed, charset, leading_whitespace):
     """Fold string to_encode into lines as encoded word, combining if allowed.
     Return the new value for last_ew, or None if ew_combine_allowed is False.
 
@@ -2829,7 +2960,7 @@ def _fold_as_ew(to_encode, lines, maxlen, last_ew, ew_combine_allowed, charset):
         to_encode = str(
             get_unstructured(lines[-1][last_ew:] + to_encode))
         lines[-1] = lines[-1][:last_ew]
-    if to_encode[0] in WSP:
+    elif to_encode[0] in WSP:
         # We're joining this to non-encoded text, so don't encode
         # the leading blank.
         leading_wsp = to_encode[0]
@@ -2837,22 +2968,39 @@ def _fold_as_ew(to_encode, lines, maxlen, last_ew, ew_combine_allowed, charset):
         if (len(lines[-1]) == maxlen):
             lines.append(_steal_trailing_WSP_if_exists(lines))
         lines[-1] += leading_wsp
+
     trailing_wsp = ''
     if to_encode[-1] in WSP:
         # Likewise for the trailing space.
         trailing_wsp = to_encode[-1]
         to_encode = to_encode[:-1]
     new_last_ew = len(lines[-1]) if last_ew is None else last_ew
+
+    encode_as = 'utf-8' if charset == 'us-ascii' else charset
+
+    # The RFC2047 chrome takes up 7 characters plus the length
+    # of the charset name.
+    chrome_len = len(encode_as) + 7
+
+    if (chrome_len + 1) >= maxlen:
+        raise errors.HeaderParseError(
+            "max_line_length is too small to fit an encoded word")
+
     while to_encode:
         remaining_space = maxlen - len(lines[-1])
-        # The RFC2047 chrome takes up 7 characters plus the length
-        # of the charset name.
-        encode_as = 'utf-8' if charset == 'us-ascii' else charset
-        text_space = remaining_space - len(encode_as) - 7
+        text_space = remaining_space - chrome_len - len(leading_whitespace)
         if text_space <= 0:
             lines.append(' ')
-            # XXX We'll get an infinite loop here if maxlen is <= 7
             continue
+
+        # If we are at the start of a continuation line, prepend whitespace
+        # (we only want to do this when the line starts with an encoded word
+        # but if we're folding in this helper function, then we know that we
+        # are going to be writing out an encoded word.)
+        if len(lines) > 1 and len(lines[-1]) == 1 and leading_whitespace:
+            encoded_word = _ew.encode(leading_whitespace, charset=encode_as)
+            lines[-1] += encoded_word
+            leading_whitespace = ''
 
         to_encode_word = to_encode[:text_space]
         encoded_word = _ew.encode(to_encode_word, charset=encode_as)
@@ -2865,6 +3013,7 @@ def _fold_as_ew(to_encode, lines, maxlen, last_ew, ew_combine_allowed, charset):
             excess = len(encoded_word) - remaining_space
         lines[-1] += encoded_word
         to_encode = to_encode[len(to_encode_word):]
+        leading_whitespace = ''
 
         if to_encode:
             lines.append(' ')

@@ -17,8 +17,7 @@ return_self(PyObject *self)
 {
 #if !STRINGLIB_MUTABLE
     if (STRINGLIB_CHECK_EXACT(self)) {
-        Py_INCREF(self);
-        return self;
+        return Py_NewRef(self);
     }
 #endif
     return STRINGLIB_NEW(STRINGLIB_STR(self), STRINGLIB_LEN(self));
@@ -680,9 +679,13 @@ stringlib_replace(PyObject *self,
                   const char *to_s, Py_ssize_t to_len,
                   Py_ssize_t maxcount)
 {
+    if (STRINGLIB_LEN(self) < from_len) {
+        /* nothing to do; return the original bytes */
+        return return_self(self);
+    }
     if (maxcount < 0) {
         maxcount = PY_SSIZE_T_MAX;
-    } else if (maxcount == 0 || STRINGLIB_LEN(self) == 0) {
+    } else if (maxcount == 0) {
         /* nothing to do; return the original bytes */
         return return_self(self);
     }
@@ -697,13 +700,6 @@ stringlib_replace(PyObject *self,
         /*    >>> b"Python".replace(b"", b".")  */
         /*    b'.P.y.t.h.o.n.'                  */
         return stringlib_replace_interleave(self, to_s, to_len, maxcount);
-    }
-
-    /* Except for b"".replace(b"", b"A") == b"A" there is no way beyond this */
-    /* point for an empty self bytes to generate a non-empty bytes */
-    /* Special case so the remaining code always gets a non-empty bytes */
-    if (STRINGLIB_LEN(self) == 0) {
-        return return_self(self);
     }
 
     if (to_len == 0) {

@@ -1,68 +1,79 @@
 """
 Define names for built-in types that aren't directly accessible as a builtin.
 """
-import sys
 
 # Iterators in Python aren't a matter of type but of protocol.  A large
 # and changing number of builtin types implement *some* flavor of
 # iterator.  Don't check the type!  Use hasattr to check for both
 # "__iter__" and "__next__" attributes instead.
 
-def _f(): pass
-FunctionType = type(_f)
-LambdaType = type(lambda: None)         # Same as FunctionType
-CodeType = type(_f.__code__)
-MappingProxyType = type(type.__dict__)
-SimpleNamespace = type(sys.implementation)
-
-def _cell_factory():
-    a = 1
-    def f():
-        nonlocal a
-    return f.__closure__[0]
-CellType = type(_cell_factory())
-
-def _g():
-    yield 1
-GeneratorType = type(_g())
-
-async def _c(): pass
-_c = _c()
-CoroutineType = type(_c)
-_c.close()  # Prevent ResourceWarning
-
-async def _ag():
-    yield
-_ag = _ag()
-AsyncGeneratorType = type(_ag)
-
-class _C:
-    def _m(self): pass
-MethodType = type(_C()._m)
-
-BuiltinFunctionType = type(len)
-BuiltinMethodType = type([].append)     # Same as BuiltinFunctionType
-
-WrapperDescriptorType = type(object.__init__)
-MethodWrapperType = type(object().__str__)
-MethodDescriptorType = type(str.join)
-ClassMethodDescriptorType = type(dict.__dict__['fromkeys'])
-
-ModuleType = type(sys)
-
 try:
-    raise TypeError
-except TypeError:
-    tb = sys.exc_info()[2]
-    TracebackType = type(tb)
-    FrameType = type(tb.tb_frame)
-    tb = None; del tb
+    from _types import *
+except ImportError:
+    import sys
 
-# For Jython, the following two types are identical
-GetSetDescriptorType = type(FunctionType.__code__)
-MemberDescriptorType = type(FunctionType.__globals__)
+    def _f(): pass
+    FunctionType = type(_f)
+    LambdaType = type(lambda: None)  # Same as FunctionType
+    CodeType = type(_f.__code__)
+    MappingProxyType = type(type.__dict__)
+    SimpleNamespace = type(sys.implementation)
 
-del sys, _f, _g, _C, _c, _ag  # Not for export
+    def _cell_factory():
+        a = 1
+        def f():
+            nonlocal a
+        return f.__closure__[0]
+    CellType = type(_cell_factory())
+
+    def _g():
+        yield 1
+    GeneratorType = type(_g())
+
+    async def _c(): pass
+    _c = _c()
+    CoroutineType = type(_c)
+    _c.close()  # Prevent ResourceWarning
+
+    async def _ag():
+        yield
+    _ag = _ag()
+    AsyncGeneratorType = type(_ag)
+
+    class _C:
+        def _m(self): pass
+    MethodType = type(_C()._m)
+
+    BuiltinFunctionType = type(len)
+    BuiltinMethodType = type([].append)  # Same as BuiltinFunctionType
+
+    WrapperDescriptorType = type(object.__init__)
+    MethodWrapperType = type(object().__str__)
+    MethodDescriptorType = type(str.join)
+    ClassMethodDescriptorType = type(dict.__dict__['fromkeys'])
+
+    ModuleType = type(sys)
+
+    try:
+        raise TypeError
+    except TypeError as exc:
+        TracebackType = type(exc.__traceback__)
+        FrameType = type(exc.__traceback__.tb_frame)
+
+    GetSetDescriptorType = type(FunctionType.__code__)
+    MemberDescriptorType = type(FunctionType.__globals__)
+
+    GenericAlias = type(list[int])
+    UnionType = type(int | str)
+
+    EllipsisType = type(Ellipsis)
+    NoneType = type(None)
+    NotImplementedType = type(NotImplemented)
+
+    # CapsuleType cannot be accessed from pure Python,
+    # so there is no fallback definition.
+
+    del sys, _f, _g, _C, _c, _ag, _cell_factory  # Not for export
 
 
 # Provide a PEP 3115 compliant mechanism for class creation
@@ -146,6 +157,35 @@ def _calculate_meta(meta, bases):
                         "of the metaclasses of all its bases")
     return winner
 
+
+def get_original_bases(cls, /):
+    """Return the class's "original" bases prior to modification by `__mro_entries__`.
+
+    Examples::
+
+        from typing import TypeVar, Generic, NamedTuple, TypedDict
+
+        T = TypeVar("T")
+        class Foo(Generic[T]): ...
+        class Bar(Foo[int], float): ...
+        class Baz(list[str]): ...
+        Eggs = NamedTuple("Eggs", [("a", int), ("b", str)])
+        Spam = TypedDict("Spam", {"a": int, "b": str})
+
+        assert get_original_bases(Bar) == (Foo[int], float)
+        assert get_original_bases(Baz) == (list[str],)
+        assert get_original_bases(Eggs) == (NamedTuple,)
+        assert get_original_bases(Spam) == (TypedDict,)
+        assert get_original_bases(int) == (object,)
+    """
+    try:
+        return cls.__dict__.get("__orig_bases__", cls.__bases__)
+    except AttributeError:
+        raise TypeError(
+            f"Expected an instance of type, not {type(cls).__name__!r}"
+        ) from None
+
+
 class DynamicClassAttribute:
     """Route attribute access on a class to __getattr__.
 
@@ -155,7 +195,12 @@ class DynamicClassAttribute:
     class's __getattr__ method; this is done by raising AttributeError.
 
     This allows one to have properties active on an instance, and have virtual
-    attributes on the class with the same name (see Enum for an example).
+    attributes on the class with the same name.  (Enum used this between Python
+    versions 3.4 - 3.9 .)
+
+    Subclass from this to use a different method of accessing virtual attributes
+    and still be treated properly by the inspect module. (Enum uses this since
+    Python 3.10 .)
 
     """
     def __init__(self, fget=None, fset=None, fdel=None, doc=None):
@@ -205,7 +250,6 @@ class DynamicClassAttribute:
 
 
 class _GeneratorWrapper:
-    # TODO: Implement this in C.
     def __init__(self, gen):
         self.__wrapped = gen
         self.__isgen = gen.__class__ is GeneratorType
@@ -260,7 +304,6 @@ def coroutine(func):
         # Check if 'func' is a generator function.
         # (0x20 == CO_GENERATOR)
         if co_flags & 0x20:
-            # TODO: Implement this in C.
             co = func.__code__
             # 0x100 == CO_ITERABLE_COROUTINE
             func.__code__ = co.replace(co_flags=co.co_flags | 0x100)
@@ -292,5 +335,4 @@ def coroutine(func):
 
     return wrapped
 
-
-__all__ = [n for n in globals() if n[:1] != '_']
+__all__ = [n for n in globals() if not n.startswith('_')]  # for pydoc

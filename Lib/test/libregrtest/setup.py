@@ -1,19 +1,33 @@
-import atexit
 import faulthandler
+import gc
+import io
 import os
+import random
 import signal
 import sys
 import unittest
 from test import support
-try:
-    import gc
-except ImportError:
-    gc = None
+from test.support.os_helper import TESTFN_UNDECODABLE, FS_NONASCII
 
-from test.libregrtest.utils import setup_unraisable_hook
+from .filter import set_match_tests
+from .runtests import RunTests
+from .utils import (
+    setup_unraisable_hook, setup_threading_excepthook,
+    adjust_rlimit_nofile)
 
 
-def setup_tests(ns):
+UNICODE_GUARD_ENV = "PYTHONREGRTEST_UNICODE_GUARD"
+
+
+def setup_test_dir(testdir: str | None) -> None:
+    if testdir:
+        # Prepend test directory to sys.path, so runtest() will be able
+        # to locate tests
+        sys.path.insert(0, os.path.abspath(testdir))
+
+
+def setup_process() -> None:
+    assert sys.__stderr__ is not None, "sys.__stderr__ is None"
     try:
         stderr_fd = sys.__stderr__.fileno()
     except (ValueError, AttributeError):
@@ -21,13 +35,13 @@ def setup_tests(ns):
         # and ValueError on a closed stream.
         #
         # Catch AttributeError for stderr being None.
-        stderr_fd = None
+        pass
     else:
         # Display the Python traceback on fatal errors (e.g. segfault)
         faulthandler.enable(all_threads=True, file=stderr_fd)
 
         # Display the Python traceback on SIGALRM or SIGUSR1 signal
-        signals = []
+        signals: list[signal.Signals] = []
         if hasattr(signal, 'SIGALRM'):
             signals.append(signal.SIGALRM)
         if hasattr(signal, 'SIGUSR1'):
@@ -35,13 +49,17 @@ def setup_tests(ns):
         for signum in signals:
             faulthandler.register(signum, chain=True, file=stderr_fd)
 
-    replace_stdout()
+    adjust_rlimit_nofile()
+
     support.record_original_stdout(sys.stdout)
 
-    if ns.testdir:
-        # Prepend test directory to sys.path, so runtest() will be able
-        # to locate tests
-        sys.path.insert(0, os.path.abspath(ns.testdir))
+    # Set sys.stdout encoder error handler to backslashreplace,
+    # similar to sys.stderr error handler, to avoid UnicodeEncodeError
+    # when printing a traceback or any other non-encodable character.
+    #
+    # Use an assertion to fix mypy error.
+    assert isinstance(sys.stdout, io.TextIOWrapper)
+    sys.stdout.reconfigure(errors="backslashreplace")
 
     # Some times __path__ and __file__ are not absolute (e.g. while running from
     # Lib/) and, if we change the CWD to run the tests in a temporary dir, some
@@ -58,36 +76,7 @@ def setup_tests(ns):
             for index, path in enumerate(module.__path__):
                 module.__path__[index] = os.path.abspath(path)
         if getattr(module, '__file__', None):
-            module.__file__ = os.path.abspath(module.__file__)
-
-    # MacOSX (a.k.a. Darwin) has a default stack size that is too small
-    # for deeply recursive regular expressions.  We see this as crashes in
-    # the Python test suite when running test_re.py and test_sre.py.  The
-    # fix is to set the stack limit to 2048.
-    # This approach may also be useful for other Unixy platforms that
-    # suffer from small default stack limits.
-    if sys.platform == 'darwin':
-        try:
-            import resource
-        except ImportError:
-            pass
-        else:
-            soft, hard = resource.getrlimit(resource.RLIMIT_STACK)
-            newsoft = min(hard, max(soft, 1024*2048))
-            resource.setrlimit(resource.RLIMIT_STACK, (newsoft, hard))
-
-    if ns.huntrleaks:
-        unittest.BaseTestSuite._cleanup = False
-
-    if ns.memlimit is not None:
-        support.set_memlimit(ns.memlimit)
-
-    if ns.threshold is not None:
-        gc.set_threshold(ns.threshold)
-
-    suppress_msvcrt_asserts(ns.verbose and ns.verbose >= 2)
-
-    support.use_resources = ns.use_resources
+            module.__file__ = os.path.abspath(module.__file__)  # type: ignore[type-var]
 
     if hasattr(sys, 'addaudithook'):
         # Add an auditing hook for all tests to ensure PySys_Audit is tested
@@ -96,54 +85,57 @@ def setup_tests(ns):
         sys.addaudithook(_test_audit_hook)
 
     setup_unraisable_hook()
+    setup_threading_excepthook()
+
+    # Ensure there's a non-ASCII character in env vars at all times to force
+    # tests consider this case. See BPO-44647 for details.
+    if TESTFN_UNDECODABLE and os.supports_bytes_environ:
+        os.environb.setdefault(UNICODE_GUARD_ENV.encode(), TESTFN_UNDECODABLE)
+    elif FS_NONASCII:
+        os.environ.setdefault(UNICODE_GUARD_ENV, FS_NONASCII)
 
 
-def suppress_msvcrt_asserts(verbose):
-    try:
-        import msvcrt
-    except ImportError:
-        return
+def setup_tests(runtests: RunTests) -> None:
+    support.verbose = runtests.verbose
+    support.failfast = runtests.fail_fast
+    support.PGO = runtests.pgo
+    support.PGO_EXTENDED = runtests.pgo_extended
 
-    msvcrt.SetErrorMode(msvcrt.SEM_FAILCRITICALERRORS|
-                        msvcrt.SEM_NOALIGNMENTFAULTEXCEPT|
-                        msvcrt.SEM_NOGPFAULTERRORBOX|
-                        msvcrt.SEM_NOOPENFILEERRORBOX)
-    try:
-        msvcrt.CrtSetReportMode
-    except AttributeError:
-        # release build
-        return
+    set_match_tests(runtests.match_tests)
 
-    for m in [msvcrt.CRT_WARN, msvcrt.CRT_ERROR, msvcrt.CRT_ASSERT]:
-        if verbose:
-            msvcrt.CrtSetReportMode(m, msvcrt.CRTDBG_MODE_FILE)
-            msvcrt.CrtSetReportFile(m, msvcrt.CRTDBG_FILE_STDERR)
-        else:
-            msvcrt.CrtSetReportMode(m, 0)
+    if runtests.use_junit:
+        support.junit_xml_list = []
+        from .testresult import RegressionTestResult
+        RegressionTestResult.USE_XML = True
+    else:
+        support.junit_xml_list = None
 
+    if runtests.memory_limit is not None:
+        support.set_memlimit(runtests.memory_limit)
 
+    support.suppress_msvcrt_asserts(runtests.verbose >= 2)
 
-def replace_stdout():
-    """Set stdout encoder error handler to backslashreplace (as stderr error
-    handler) to avoid UnicodeEncodeError when printing a traceback"""
-    stdout = sys.stdout
-    try:
-        fd = stdout.fileno()
-    except ValueError:
-        # On IDLE, sys.stdout has no file descriptor and is not a TextIOWrapper
-        # object. Leaving sys.stdout unchanged.
-        #
-        # Catch ValueError to catch io.UnsupportedOperation on TextIOBase
-        # and ValueError on a closed stream.
-        return
+    support.use_resources = runtests.use_resources
 
-    sys.stdout = open(fd, 'w',
-        encoding=stdout.encoding,
-        errors="backslashreplace",
-        closefd=False,
-        newline='\n')
+    timeout = runtests.timeout
+    if timeout is not None:
+        # For a slow buildbot worker, increase SHORT_TIMEOUT and LONG_TIMEOUT
+        support.LOOPBACK_TIMEOUT = max(support.LOOPBACK_TIMEOUT, timeout / 120)
+        # don't increase INTERNET_TIMEOUT
+        support.SHORT_TIMEOUT = max(support.SHORT_TIMEOUT, timeout / 40)
+        support.LONG_TIMEOUT = max(support.LONG_TIMEOUT, timeout / 4)
 
-    def restore_stdout():
-        sys.stdout.close()
-        sys.stdout = stdout
-    atexit.register(restore_stdout)
+        # If --timeout is short: reduce timeouts
+        support.LOOPBACK_TIMEOUT = min(support.LOOPBACK_TIMEOUT, timeout)
+        support.INTERNET_TIMEOUT = min(support.INTERNET_TIMEOUT, timeout)
+        support.SHORT_TIMEOUT = min(support.SHORT_TIMEOUT, timeout)
+        support.LONG_TIMEOUT = min(support.LONG_TIMEOUT, timeout)
+
+    if runtests.hunt_refleak:
+        # private attribute that mypy doesn't know about:
+        unittest.BaseTestSuite._cleanup = False  # type: ignore[attr-defined]
+
+    if runtests.gc_threshold is not None:
+        gc.set_threshold(runtests.gc_threshold)
+
+    random.seed(runtests.random_seed)

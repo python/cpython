@@ -288,7 +288,7 @@ class TestRawDataManager(TestEmailBase):
 
             The real body is in another message.
             """))
-        self.assertEqual(raw_data_manager.get_content(m)[:10], b'To: foo@ex')
+        self.assertStartsWith(raw_data_manager.get_content(m), b'To: foo@ex')
 
     def test_set_text_plain(self):
         m = self._make_message()
@@ -302,6 +302,19 @@ class TestRawDataManager(TestEmailBase):
             """))
         self.assertEqual(m.get_payload(decode=True).decode('utf-8'), content)
         self.assertEqual(m.get_content(), content)
+
+    def test_set_text_plain_null(self):
+        m = self._make_message()
+        content = ''
+        raw_data_manager.set_content(m, content)
+        self.assertEqual(str(m), textwrap.dedent("""\
+            Content-Type: text/plain; charset="utf-8"
+            Content-Transfer-Encoding: 7bit
+
+
+            """))
+        self.assertEqual(m.get_payload(decode=True).decode('utf-8'), '\n')
+        self.assertEqual(m.get_content(), '\n')
 
     def test_set_text_html(self):
         m = self._make_message()
@@ -325,6 +338,21 @@ class TestRawDataManager(TestEmailBase):
             Content-Transfer-Encoding: 7bit
 
             Simple message.
+            """))
+        self.assertEqual(m.get_payload(decode=True).decode('utf-8'), content)
+        self.assertEqual(m.get_content(), content)
+
+    def test_set_text_plain_long_line_heuristics(self):
+        m = self._make_message()
+        content = ("Simple but long message that is over 78 characters"
+                   " long to force transfer encoding.\n")
+        raw_data_manager.set_content(m, content)
+        self.assertEqual(str(m), textwrap.dedent("""\
+            Content-Type: text/plain; charset="utf-8"
+            Content-Transfer-Encoding: quoted-printable
+
+            Simple but long message that is over 78 characters long to =
+            force transfer encoding.
             """))
         self.assertEqual(m.get_payload(decode=True).decode('utf-8'), content)
         self.assertEqual(m.get_content(), content)
@@ -747,6 +775,18 @@ class TestRawDataManager(TestEmailBase):
 
             foo
             """).encode('ascii'))
+
+    def test_set_content_bytes_cte_7bit(self):
+        m = self._make_message()
+        m.set_content(b'ASCII-only message.\n',
+            maintype='application', subtype='octet-stream', cte='7bit')
+        self.assertEqual(str(m), textwrap.dedent("""\
+            Content-Type: application/octet-stream
+            Content-Transfer-Encoding: 7bit
+            MIME-Version: 1.0
+
+            ASCII-only message.
+            """))
 
     content_object_params = {
         'text_plain': ('content', ()),
