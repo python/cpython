@@ -151,6 +151,14 @@ The :mod:`functools` module defines the following functions:
 .. decorator:: lru_cache(user_function)
                lru_cache(maxsize=128, typed=False)
 
+   .. method:: cache_info()
+      :no-typesetting:
+
+
+   .. method:: cache_clear()
+      :no-typesetting:
+
+
    Decorator to wrap a function with a memoizing callable that saves up to the
    *maxsize* most recent calls.  It can save time when an expensive or I/O bound
    function is periodically called with the same arguments.
@@ -200,11 +208,11 @@ The :mod:`functools` module defines the following functions:
    has no effect.
 
    To help measure the effectiveness of the cache and tune the *maxsize*
-   parameter, the wrapped function is instrumented with a :func:`!cache_info`
+   parameter, the wrapped function is instrumented with a :func:`cache_info`
    function that returns a :term:`named tuple` showing *hits*, *misses*,
    *maxsize* and *currsize*.
 
-   The decorator also provides a :func:`!cache_clear` function for clearing or
+   The decorator also provides a :func:`cache_clear` function for clearing or
    invalidating the cache.
 
    The original underlying function is accessible through the
@@ -485,6 +493,9 @@ The :mod:`functools` module defines the following functions:
 
 .. decorator:: singledispatch
 
+   .. method:: register()
+      :no-typesetting:
+
    Transform a function into a :term:`single-dispatch <single
    dispatch>` :term:`generic function`.
 
@@ -499,7 +510,7 @@ The :mod:`functools` module defines the following functions:
      ...         print("Let me just say,", end=" ")
      ...     print(arg)
 
-   To add overloaded implementations to the function, use the :func:`!register`
+   To add overloaded implementations to the function, use the :func:`register`
    attribute of the generic function, which can be used as a decorator.  For
    functions annotated with types, the decorator will infer the type of the
    first argument automatically::
@@ -565,14 +576,14 @@ The :mod:`functools` module defines the following functions:
       runtime impact.
 
    To enable registering :term:`lambdas<lambda>` and pre-existing functions,
-   the :func:`!register` attribute can also be used in a functional form::
+   the :func:`register` attribute can also be used in a functional form::
 
      >>> def nothing(arg, verbose=False):
      ...     print("Nothing.")
      ...
      >>> fun.register(type(None), nothing)
 
-   The :func:`!register` attribute returns the undecorated function. This
+   The :func:`register` attribute returns the undecorated function. This
    enables decorator stacking, :mod:`pickling<pickle>`, and the creation
    of unit tests for each variant independently::
 
@@ -650,10 +661,10 @@ The :mod:`functools` module defines the following functions:
    .. versionadded:: 3.4
 
    .. versionchanged:: 3.7
-      The :func:`!register` attribute now supports using type annotations.
+      The :func:`register` attribute now supports using type annotations.
 
    .. versionchanged:: 3.11
-      The :func:`!register` attribute now supports
+      The :func:`register` attribute now supports
       :class:`typing.Union` as a type annotation.
 
 
