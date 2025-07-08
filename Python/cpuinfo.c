@@ -110,6 +110,15 @@
 #  define SHOULD_PARSE_CPUID_L7S1
 #endif
 
+#if defined(SHOULD_PARSE_CPUID_L7S1) && !defined(SHOULD_PARSE_CPUID_L7)
+#error "SHOULD_PARSE_CPUID_L7S1 requires SHOULD_PARSE_CPUID_L7"
+#endif
+#if defined(SHOULD_PARSE_CPUID_L7S0) && !defined(SHOULD_PARSE_CPUID_L7)
+#error "SHOULD_PARSE_CPUID_L7S0 requires SHOULD_PARSE_CPUID_L7"
+#endif
+
+#undef SHOULD_PARSE_CPUID_L1
+
 /*
  * Call __cpuid_count() or equivalent and get
  * its EAX, EBX, ECX and EDX output registers.
@@ -133,7 +142,8 @@ get_cpuid_info(uint32_t level /* input eax */,
 #endif
 }
 
-static uint64_t
+#if defined(HAS_XGETBV_SUPPORT) && defined(SHOULD_PARSE_CPUID_L1)
+static uint64_t /* should only be used after calling cpuid(1, 0, ...) */
 get_xgetbv(uint32_t index)
 {
     assert(index == 0); // only XCR0 is supported for now
@@ -148,6 +158,7 @@ get_xgetbv(uint32_t index)
     return 0;
 #endif
 }
+#endif
 
 /* Highest Function Parameter and Manufacturer ID (LEAF=0, SUBLEAF=0). */
 static uint32_t
@@ -159,7 +170,8 @@ detect_cpuid_maxleaf(void)
 }
 
 /* Processor Info and Feature Bits (LEAF=1, SUBLEAF=0). */
-static void
+#ifdef SHOULD_PARSE_CPUID_L1
+static void /* should only be used after calling cpuid(1, 0, ...) */
 detect_cpuid_features(_Py_cpuid_features *flags, uint32_t ecx, uint32_t edx)
 {
     assert(flags->ready == 0);
@@ -203,9 +215,11 @@ detect_cpuid_features(_Py_cpuid_features *flags, uint32_t ecx, uint32_t edx)
     flags->osxsave = CPUID_CHECK_REG(ecx, ECX_L1_OSXSAVE);
 #endif
 }
+#endif
 
 /* Extended Feature Bits (LEAF=7, SUBLEAF=0). */
-static void
+#ifdef SHOULD_PARSE_CPUID_L7S0
+static void /* should only be used after calling cpuid(7, 0, ...) */
 detect_cpuid_extended_features_L7S0(_Py_cpuid_features *flags,
                                     uint32_t ebx, uint32_t ecx, uint32_t edx)
 {
@@ -278,9 +292,11 @@ detect_cpuid_extended_features_L7S0(_Py_cpuid_features *flags,
 #endif
 #endif // SIMD_AVX512_INSTRUCTIONS_DETECTION_GUARD
 }
+#endif
 
 /* Extended Feature Bits (LEAF=7, SUBLEAF=1). */
-static void
+#ifdef SHOULD_PARSE_CPUID_L7S1
+static void /* should only be used after calling cpuid(7, 1, ...) */
 detect_cpuid_extended_features_L7S1(_Py_cpuid_features *flags,
                                     uint32_t eax,
                                     uint32_t ebx,
@@ -311,23 +327,24 @@ detect_cpuid_extended_features_L7S1(_Py_cpuid_features *flags,
 #endif
 #endif // SIMD_AVX_INSTRUCTIONS_DETECTION_GUARD
 }
+#endif
 
-static void
+#ifdef SHOULD_PARSE_CPUID_L1
+static void /* should only be used after calling cpuid(1, 0, ...) */
 detect_cpuid_xsave_state(_Py_cpuid_features *flags)
 {
     assert(flags->ready == 0);
     assert(flags->maxleaf >= 1);
     (void)flags;
     // Keep the ordering and newlines as they are declared in the structure.
-#ifdef HAS_XGETBV_SUPPORT
     uint64_t xcr0 = flags->osxsave ? get_xgetbv(0) : 0;
     flags->xcr0_sse = XSAVE_CHECK_REG(xcr0, XCR0_SSE);
     flags->xcr0_avx = XSAVE_CHECK_REG(xcr0, XCR0_AVX);
     flags->xcr0_avx512_opmask = XSAVE_CHECK_REG(xcr0, XCR0_AVX512_OPMASK);
     flags->xcr0_avx512_zmm_hi256 = XSAVE_CHECK_REG(xcr0, XCR0_AVX512_ZMM_HI256);
     flags->xcr0_avx512_hi16_zmm = XSAVE_CHECK_REG(xcr0, XCR0_AVX512_HI16_ZMM);
-#endif
 }
+#endif
 
 static void
 cpuid_features_finalize(_Py_cpuid_features *flags)
@@ -493,9 +510,7 @@ cpuid_detect_l1_features(_Py_cpuid_features *flags)
         uint32_t eax = 0, ebx = 0, ecx = 0, edx = 0;
         get_cpuid_info(1, 0, &eax, &ebx, &ecx, &edx);
         detect_cpuid_features(flags, ecx, edx);
-        if (flags->osxsave) {
-            detect_cpuid_xsave_state(flags);
-        }
+        detect_cpuid_xsave_state(flags);
     }
 }
 #else
@@ -551,9 +566,6 @@ _Py_cpuid_detect_features(_Py_cpuid_features *flags)
         return;
     }
     _Py_cpuid_disable_features(flags);
-#ifndef HAS_CPUID_SUPPORT
-    flags->ready = 1;
-#else
     flags->maxleaf = detect_cpuid_maxleaf();
     cpuid_detect_l1_features(flags);
     cpuid_detect_l7_features(flags);
@@ -561,5 +573,4 @@ _Py_cpuid_detect_features(_Py_cpuid_features *flags)
     if (!_Py_cpuid_check_features(flags)) {
         _Py_cpuid_disable_features(flags);
     }
-#endif // !HAS_CPUID_SUPPORT
 }
