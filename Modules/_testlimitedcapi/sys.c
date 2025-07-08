@@ -111,11 +111,17 @@ static PyObject *
 sys_audit(PyObject *Py_UNUSED(module), PyObject *args)
 {
     const char *event;
+    Py_ssize_t event_len;
     const char *argFormat;
+    Py_ssize_t format_len;
     PyObject *arg1 = NULL, *arg2 = NULL, *arg3 = NULL;
 
-    if (!PyArg_ParseTuple(args, "ss|OOO", &event, &argFormat, &arg1, &arg2, &arg3)) {
+    if (!PyArg_ParseTuple(args, "z#z#|OOO", &event, &event_len, &argFormat, &format_len, &arg1, &arg2, &arg3)) {
         return NULL;
+    }
+
+    if (event == NULL) {
+        RETURN_INT(0);
     }
 
     int result;
@@ -136,13 +142,18 @@ static PyObject *
 sys_audittuple(PyObject *Py_UNUSED(module), PyObject *args)
 {
     const char *event;
-    PyObject *tuple_args;
+    Py_ssize_t event_len;
+    PyObject *tuple_args = NULL;
 
-    if (!PyArg_ParseTuple(args, "sO", &event, &tuple_args)) {
+    if (!PyArg_ParseTuple(args, "z#|O", &event, &event_len, &tuple_args)) {
         return NULL;
     }
 
-    if (!PyTuple_Check(tuple_args)) {
+    if (event == NULL) {
+        RETURN_INT(0);
+    }
+
+    if (tuple_args != NULL && !PyTuple_Check(tuple_args)) {
         PyErr_SetString(PyExc_TypeError, "second argument must be a tuple");
         return NULL;
     }
