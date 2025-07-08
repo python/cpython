@@ -627,12 +627,14 @@ _PyEval_MatchKeys(PyThreadState *tstate, PyObject *map, PyObject *keys)
     PyObject *seen = NULL;
     PyObject *dummy = NULL;
     PyObject *values = NULL;
-    PyObject *get = NULL;
     // We use the two argument form of map.get(key, default) for two reasons:
     // - Atomically check for a key and get its value without error handling.
     // - Don't cause key creation or resizing in dict subclasses like
     //   collections.defaultdict that define __missing__ (or similar).
-    int meth_found = _PyObject_GetMethod(map, &_Py_ID(get), &get);
+    _PyCStackRef cref;
+    _PyThreadState_PushCStackRef(tstate, &cref);
+    int meth_found = _PyObject_GetMethodStackRef(tstate, map, &_Py_ID(get), &cref.ref);
+    PyObject *get = PyStackRef_AsPyObjectBorrow(cref.ref);
     if (get == NULL) {
         goto fail;
     }
@@ -682,12 +684,12 @@ _PyEval_MatchKeys(PyThreadState *tstate, PyObject *map, PyObject *keys)
     }
     // Success:
 done:
-    Py_DECREF(get);
+    _PyThreadState_PopCStackRef(tstate, &cref);
     Py_DECREF(seen);
     Py_DECREF(dummy);
     return values;
 fail:
-    Py_XDECREF(get);
+    _PyThreadState_PopCStackRef(tstate, &cref);
     Py_XDECREF(seen);
     Py_XDECREF(dummy);
     Py_XDECREF(values);
