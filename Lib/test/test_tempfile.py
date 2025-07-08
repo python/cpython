@@ -1611,9 +1611,13 @@ if tempfile.NamedTemporaryFile is not tempfile.TemporaryFile:
                 tmp.flush()
                 fd = tmp.fileno()
 
-                os.link(f'/proc/self/fd/{fd}',
-                        filename,
-                        follow_symlinks=True)
+                try:
+                    os.link(f'/proc/self/fd/{fd}',
+                            filename,
+                            follow_symlinks=True)
+                except PermissionError as exc:
+                    # gh-136156: link() fails with PermissionError on Android
+                    self.skipTest(str(exc))
                 with open(filename) as fp:
                     self.assertEqual(fp.read(), "hello")
 
