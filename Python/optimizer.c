@@ -1130,7 +1130,7 @@ sanity_check(_PyExecutorObject *executor)
     }
     bool ended = false;
     uint32_t i = 0;
-    CHECK(executor->trace[0].opcode == _START_EXECUTOR || trace[0].opcode == _COLD_EXIT);
+    CHECK(executor->trace[0].opcode == _START_EXECUTOR || executor->trace[0].opcode == _COLD_EXIT);
     for (; i < executor->code_size; i++) {
         const _PyUOpInstruction *inst = &executor->trace[i];
         uint16_t opcode = inst->opcode;
