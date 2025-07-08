@@ -7349,11 +7349,10 @@ init_static_types(PyInterpreterState *interp, int reloading)
         PyTypeObject *type = capi_types[i];
         PyMutex_Lock(&mutex);
         int ret = _PyStaticType_InitForExtension(interp, type);
+        PyMutex_Unlock(&mutex);
         if (ret < 0) {
-            PyMutex_Unlock(&mutex);
             return -1;
         }
-        PyMutex_Unlock(&mutex);
     }
 
     return 0;
