@@ -1887,6 +1887,7 @@ _PyPegen_concatenate_strings(Parser *p, asdl_expr_seq *strings,
         return NULL;
     }
 
+    // Cannot mix strings/f-strings and t-strings
     if ((unicode_string_found || f_string_found) && t_string_found) {
         RAISE_SYNTAX_ERROR("cannot mix str and Template literals");
         return NULL;
