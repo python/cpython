@@ -34,12 +34,10 @@ __all__ = [
 ]
 
 
-_interpreters = None
-
 try:
     import _interpreters
-except ModuleNotFoundError:
-    pass
+except ImportError:
+    _interpreters = None
 
 if _interpreters:
     __all__.append('InterpreterPoolExecutor')
