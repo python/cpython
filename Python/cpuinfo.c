@@ -117,8 +117,6 @@
 #error "SHOULD_PARSE_CPUID_L7S0 requires SHOULD_PARSE_CPUID_L7"
 #endif
 
-#undef SHOULD_PARSE_CPUID_L1
-
 /*
  * Call __cpuid_count() or equivalent and get
  * its EAX, EBX, ECX and EDX output registers.
