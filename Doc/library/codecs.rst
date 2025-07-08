@@ -1484,7 +1484,7 @@ Standalone Codec Functions
 The following functions provide encoding and decoding functionality similar to codecs,
 but are not available as named codecs through :func:`codecs.encode` or :func:`codecs.decode`.
 They are used internally (for example, by :mod:`pickle`) and behave similarly to the
-`string_escape` codec that was removed in Python 3.
+``string_escape`` codec that was removed in Python 3.
 
 .. function:: codecs.escape_encode(input, errors=None)
 
