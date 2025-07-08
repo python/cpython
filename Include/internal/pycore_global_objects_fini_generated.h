@@ -919,6 +919,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(dont_inherit));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(dst));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(dst_dir_fd));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(dst_path));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(eager_start));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(effective_ids));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(element_factory));
@@ -1238,6 +1239,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(spam));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(src));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(src_dir_fd));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(src_path));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(stacklevel));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(start));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(statement));

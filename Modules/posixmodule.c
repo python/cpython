@@ -4448,6 +4448,52 @@ os_link_impl(PyObject *module, path_t *src, path_t *dst, int src_dir_fd,
 #endif
 
 
+#ifdef HAVE_LINK
+/*[clinic input]
+
+os.linkat
+
+    src_dir_fd : dir_fd
+    src_path : path_t
+    dst_dir_fd : dir_fd
+    dst_path : path_t
+    flags : int = 0
+
+Create a hard link to a file with flags.
+[clinic start generated code]*/
+
+static PyObject *
+os_linkat_impl(PyObject *module, int src_dir_fd, path_t *src_path,
+               int dst_dir_fd, path_t *dst_path, int flags)
+/*[clinic end generated code: output=8582ba3975d7ac3f input=f9b7d4b37ce271ef]*/
+{
+    if (PySys_Audit("os.linkat", "iOiOi",
+                    src_dir_fd, src_path->object,
+                    dst_dir_fd, dst_path->object,
+                    flags) < 0) {
+        return NULL;
+    }
+
+    int result;
+    Py_BEGIN_ALLOW_THREADS
+    if (HAVE_LINKAT_RUNTIME) {
+        result = linkat(src_dir_fd, src_path->narrow,
+                        dst_dir_fd, dst_path->narrow,
+                        flags);
+    }
+    else {
+        result = ENOSYS;
+    }
+    Py_END_ALLOW_THREADS
+
+    if (result)
+        return path_error2(src_path, dst_path);
+
+    Py_RETURN_NONE;
+}
+#endif
+
+
 #if defined(MS_WINDOWS) && !defined(HAVE_OPENDIR)
 static PyObject *
 _listdir_windows_no_opendir(path_t *path, PyObject *list)
@@ -16992,6 +17038,7 @@ static PyMethodDef posix_methods[] = {
     OS_GETCWD_METHODDEF
     OS_GETCWDB_METHODDEF
     OS_LINK_METHODDEF
+    OS_LINKAT_METHODDEF
     OS_LISTDIR_METHODDEF
     OS_LISTDRIVES_METHODDEF
     OS_LISTMOUNTS_METHODDEF
@@ -17826,6 +17873,16 @@ all_ins(PyObject *m)
     if (PyModule_AddIntConstant(m, "_LOAD_LIBRARY_SEARCH_SYSTEM32", LOAD_LIBRARY_SEARCH_SYSTEM32)) return -1;
     if (PyModule_AddIntConstant(m, "_LOAD_LIBRARY_SEARCH_USER_DIRS", LOAD_LIBRARY_SEARCH_USER_DIRS)) return -1;
     if (PyModule_AddIntConstant(m, "_LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR", LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR)) return -1;
+#endif
+
+#ifdef AT_FDCWD
+    if (PyModule_AddIntMacro(m, AT_FDCWD)) return -1;
+#endif
+#ifdef AT_EMPTY_PATH
+    if (PyModule_AddIntMacro(m, AT_EMPTY_PATH)) return -1;
+#endif
+#ifdef AT_SYMLINK_FOLLOW
+    if (PyModule_AddIntMacro(m, AT_SYMLINK_FOLLOW)) return -1;
 #endif
 
     return 0;

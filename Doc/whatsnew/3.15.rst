@@ -119,6 +119,14 @@ math
   (Contributed by Bénédikt Tran in :gh:`135853`.)
 
 
+os
+--
+
+* Added :func:`os.linkat` to create a hard link with flags.
+  Added also constants :data:`os.AT_EMPTY_PATH`, :data:`os.AT_FDCWD` and
+  :data:`os.AT_SYMLINK_FOLLOW`.
+  (Contributed by Victor Stinner in :gh:`136413`.)
+
 os.path
 -------
 

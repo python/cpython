@@ -2655,6 +2655,58 @@ class LinkTests(unittest.TestCase):
         self.file2 = self.file1 + "2"
         self._test_link(self.file1, self.file2)
 
+
+@unittest.skipUnless(hasattr(os, 'linkat'), 'requires os.linkat')
+class LinkAtTests(unittest.TestCase):
+    def test_no_flags(self):
+        # create hard link with no flags
+        src = "linkat_src"
+        self.addCleanup(os_helper.unlink, src)
+        with open(src, "w", encoding='utf8') as fp:
+            fp.write("hello")
+
+        dst = "linkat_dst"
+        self.addCleanup(os_helper.unlink, dst)
+        os.linkat(os.AT_FDCWD, src, os.AT_FDCWD, dst)  # flags=0
+
+        with open(dst, encoding='utf8') as fp:
+            self.assertEqual(fp.read(), 'hello')
+
+        # destination already exists
+        src2 = "linkat_src2"
+        self.addCleanup(os_helper.unlink, src2)
+        with open(src2, "w", encoding='utf8') as fp:
+            fp.write("PYTHON")
+
+        with self.assertRaises(FileExistsError):
+            os.linkat(os.AT_FDCWD, src2, os.AT_FDCWD, dst)  # flags=0
+
+    def check_flag(self, flag):
+        filename = os_helper.TESTFN
+        self.addCleanup(os_helper.unlink, filename)
+
+        fd = os.open(os.path.curdir, os.O_WRONLY | os.O_TMPFILE, 0o600)
+        os.write(fd, b"hello")
+        if flag == os.AT_EMPTY_PATH:
+            os.linkat(fd, b"",
+                      os.AT_FDCWD, filename,
+                      os.AT_EMPTY_PATH)
+        else:
+            os.linkat(fd, f"/proc/self/fd/{fd}",
+                      os.AT_FDCWD, filename,
+                      os.AT_SYMLINK_FOLLOW)
+        os.close(fd)
+
+        with open(filename, encoding='utf8') as fp:
+            self.assertEqual(fp.read(), 'hello')
+
+    def test_empty_path(self):
+        self.check_flag(os.AT_EMPTY_PATH)
+
+    def test_symlink_follow(self):
+        self.check_flag(os.AT_SYMLINK_FOLLOW)
+
+
 @unittest.skipIf(sys.platform == "win32", "Posix specific tests")
 class PosixUidGidTests(unittest.TestCase):
     # uid_t and gid_t are 32-bit unsigned integers on Linux

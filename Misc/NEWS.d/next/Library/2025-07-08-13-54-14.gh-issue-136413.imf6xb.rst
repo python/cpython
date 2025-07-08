@@ -1,0 +1,4 @@
+Added :func:`os.linkat` to create a hard link with flags. Patch by Victor
+Added also constants :data:`os.AT_EMPTY_PATH`, :data:`os.AT_FDCWD` and
+:data:`os.AT_SYMLINK_FOLLOW`.
+Stinner.

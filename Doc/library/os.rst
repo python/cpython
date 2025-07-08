@@ -2046,6 +2046,39 @@ features:
   If it's unavailable, using it will raise a :exc:`NotImplementedError`.
 
 
+.. data:: AT_FDCWD
+
+   .. availability:: Linux.
+
+.. data:: AT_EMPTY_PATH
+
+   If *src_path* is an empty string, create a link to the file referenced by
+   *src_dir_fd* (which may have been obtained using the open(2) :data:`O_PATH`
+   flag).  In this case, *src_dir_fd* can refer to any type of file except a
+   directory.  This will generally not work if the file has a link count of
+   zero (files created with :data:`O_TMPFILE` and without :data:`O_EXCL` are an
+   exception).
+
+   The caller must have the ``CAP_DAC_READ_SEARCH`` capability in order to use
+   this flag.
+
+   .. availability:: Linux >= 2.6.39.
+
+.. data:: AT_SYMLINK_FOLLOW
+
+   By default, :func:`linkat`, does not dereference *src_path* if it is a
+   symbolic link (like :func:`link`). The flag :data:`!AT_SYMLINK_FOLLOW` can
+   be specified in flags to cause *src_path* to be dereferenced if it is a
+   symbolic link.
+
+   If procfs is mounted, this can be used as an alternative to
+   :data:`AT_EMPTY_PATH`, like this::
+
+       os.linkat(os.AT_FDCWD, "/proc/self/fd/<fd>",
+                 dst_dir_fd, dst_name, os.AT_SYMLINK_FOLLOW)
+
+   .. availability:: Linux >= 2.6.18.
+
 
 .. function:: access(path, mode, *, dir_fd=None, effective_ids=False, follow_symlinks=True)
 
@@ -2352,6 +2385,36 @@ features:
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object` for *src* and *dst*.
+
+
+.. function:: linkat(src_dir_fd, src_path, dst_dir_fd, dst_path, flags, /)
+
+   The :func:`!linkat` function operates in exactly the same way as
+   :func:`link`, except for the differences described here.
+
+   If the pathname given in *src_path* is relative, then it is interpreted
+   relative to the directory referred to by the file descriptor *src_dir_fd*
+   (rather than relative to the current working directory of the calling
+   process, as is done by link() for a relative pathname).
+
+   If *src_path* is relative and *src_dir_fd* is the special value
+   :data:`AT_FDCWD`, then *src_path* is interpreted relative to the current
+   working directory of the calling process (like :func:`link`).
+
+   If *src_path* is absolute, then *src_dir_fd* is ignored.
+
+   The interpretation of *dst_path* is as for *src_path*, except that a
+   relative pathname is interpreted relative to the directory referred to
+   by the file descriptor *dst_dir_fd*.
+
+   The following values can be bitwise ORed in flags:
+
+   * :data:`AT_EMPTY_PATH`
+   * :data:`AT_SYMLINK_FOLLOW`
+
+   .. audit-event:: os.linkat src_dir_fd,src_path,dst_dir_fd,dst_path,flags os.linkat
+
+   .. availability:: Unix.
 
 
 .. function:: listdir(path='.')

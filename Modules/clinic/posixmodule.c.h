@@ -1580,6 +1580,98 @@ exit:
 
 #endif /* defined(HAVE_LINK) */
 
+#if defined(HAVE_LINK)
+
+PyDoc_STRVAR(os_linkat__doc__,
+"linkat($module, /, src_dir_fd, src_path, dst_dir_fd, dst_path, flags=0)\n"
+"--\n"
+"\n"
+"Create a hard link to a file.");
+
+#define OS_LINKAT_METHODDEF    \
+    {"linkat", _PyCFunction_CAST(os_linkat), METH_FASTCALL|METH_KEYWORDS, os_linkat__doc__},
+
+static PyObject *
+os_linkat_impl(PyObject *module, int src_dir_fd, path_t *src_path,
+               int dst_dir_fd, path_t *dst_path, int flags);
+
+static PyObject *
+os_linkat(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 5
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(src_dir_fd), &_Py_ID(src_path), &_Py_ID(dst_dir_fd), &_Py_ID(dst_path), &_Py_ID(flags), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"src_dir_fd", "src_path", "dst_dir_fd", "dst_path", "flags", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "linkat",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[5];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 4;
+    int src_dir_fd = DEFAULT_DIR_FD;
+    path_t src_path = PATH_T_INITIALIZE_P("linkat", "src_path", 0, 0, 0, 0);
+    int dst_dir_fd = DEFAULT_DIR_FD;
+    path_t dst_path = PATH_T_INITIALIZE_P("linkat", "dst_path", 0, 0, 0, 0);
+    int flags = 0;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 4, /*maxpos*/ 5, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!dir_fd_converter(args[0], &src_dir_fd)) {
+        goto exit;
+    }
+    if (!path_converter(args[1], &src_path)) {
+        goto exit;
+    }
+    if (!dir_fd_converter(args[2], &dst_dir_fd)) {
+        goto exit;
+    }
+    if (!path_converter(args[3], &dst_path)) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    flags = PyLong_AsInt(args[4]);
+    if (flags == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_pos:
+    return_value = os_linkat_impl(module, src_dir_fd, &src_path, dst_dir_fd, &dst_path, flags);
+
+exit:
+    /* Cleanup for src_path */
+    path_cleanup(&src_path);
+    /* Cleanup for dst_path */
+    path_cleanup(&dst_path);
+
+    return return_value;
+}
+
+#endif /* defined(HAVE_LINK) */
+
 PyDoc_STRVAR(os_listdir__doc__,
 "listdir($module, /, path=None)\n"
 "--\n"
@@ -12787,6 +12879,10 @@ os__emscripten_debugger(PyObject *module, PyObject *Py_UNUSED(ignored))
     #define OS_LINK_METHODDEF
 #endif /* !defined(OS_LINK_METHODDEF) */
 
+#ifndef OS_LINKAT_METHODDEF
+    #define OS_LINKAT_METHODDEF
+#endif /* !defined(OS_LINKAT_METHODDEF) */
+
 #ifndef OS_LISTDRIVES_METHODDEF
     #define OS_LISTDRIVES_METHODDEF
 #endif /* !defined(OS_LISTDRIVES_METHODDEF) */
@@ -13398,4 +13494,4 @@ os__emscripten_debugger(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__EMSCRIPTEN_DEBUGGER_METHODDEF
     #define OS__EMSCRIPTEN_DEBUGGER_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_DEBUGGER_METHODDEF) */
-/*[clinic end generated code: output=ae64df0389746258 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9e2feff720128973 input=a9049054013a1b77]*/

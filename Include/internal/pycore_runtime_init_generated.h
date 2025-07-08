@@ -917,6 +917,7 @@ extern "C" {
     INIT_ID(dont_inherit), \
     INIT_ID(dst), \
     INIT_ID(dst_dir_fd), \
+    INIT_ID(dst_path), \
     INIT_ID(eager_start), \
     INIT_ID(effective_ids), \
     INIT_ID(element_factory), \
@@ -1236,6 +1237,7 @@ extern "C" {
     INIT_ID(spam), \
     INIT_ID(src), \
     INIT_ID(src_dir_fd), \
+    INIT_ID(src_path), \
     INIT_ID(stacklevel), \
     INIT_ID(start), \
     INIT_ID(statement), \
