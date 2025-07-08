@@ -1044,6 +1044,50 @@ class ReferencesTestCase(TestBase):
         stderr = res.err.decode("ascii", "backslashreplace")
         self.assertNotRegex(stderr, "_Py_Dealloc: Deallocator of type 'TestObj'")
 
+    def test_module_at_shutdown(self):
+        # gh-132413: Weakref gets cleared by gc before modules are finalized
+        code = textwrap.dedent("""
+            import os  # any module other than sys
+            import weakref
+            wr = weakref.ref(os)
+
+            def gen():
+                try:
+                    yield
+                finally:
+                    print(
+                        os is not None,
+                        os is wr()
+                    )
+
+            it = gen()
+            next(it)
+            print('fini', end=' ')
+            """)
+        with self.subTest("gen"):
+            res = script_helper.assert_python_ok('-c', code)
+            self.assertEqual(res.out.rstrip(), b'fini True True')
+
+        code = textwrap.dedent("""
+            import os
+            import weakref
+            wr = weakref.ref(os)
+
+            class C:
+                def __del__(self):
+                    print(
+                        os is not None,
+                        os is wr()
+                    )
+
+            l = [C()]
+            l.append(l)
+            print('fini', end=' ')
+            """)
+        with self.subTest("del"):
+            res = script_helper.assert_python_ok('-c', code)
+            self.assertEqual(res.out.rstrip(), b'fini True True')
+
 
 class SubclassableWeakrefTestCase(TestBase):
 

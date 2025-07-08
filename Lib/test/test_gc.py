@@ -1517,29 +1517,6 @@ class PythonFinalizationTests(unittest.TestCase):
         """)
         assert_python_ok("-c", code)
 
-    def test_weakref_to_module_at_shutdown(self):
-        # gh-132413: Weakref gets cleared before modules are finalized
-        code = textwrap.dedent("""
-            import os  # any module other than sys
-
-            def gen():
-                import weakref
-                wr = weakref.ref(os)
-                try:
-                    yield
-                finally:
-                    print(
-                        os is not None,
-                        os is wr()
-                    )
-
-            it = gen()
-            next(it)
-            # quirk: Shutdown starts, then the finally block above follows
-            """)
-        res = assert_python_ok('-c', code)
-        self.assertEqual(res.out.rstrip(), b'True True')
-
 
 def setUpModule():
     global enabled, debug
