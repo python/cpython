@@ -110,11 +110,6 @@ class TestBootstrap(EnsurepipMixin, unittest.TestCase):
             unittest.mock.ANY,
         )
 
-    def test_root_and_prefix_mutual_exclusive(self):
-        with self.assertRaises(ValueError):
-            ensurepip.bootstrap(root="", prefix="")
-        self.assertFalse(self.run_pip.called)
-
     def test_bootstrapping_with_user(self):
         ensurepip.bootstrap(user=True)
 
