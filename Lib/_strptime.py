@@ -42,6 +42,14 @@ def _findall(haystack, needle):
         yield i
         i += len(needle)
 
+def _fixmonths(months):
+    yield from months
+    # The lower case of 'İ' ('\u0130') is 'i\u0307'.
+    # The re module only supports 1-to-1 character matching in
+    # case-insensitive mode.
+    for s in months:
+        if 'i\u0307' in s:
+            yield s.replace('i\u0307', '\u0130')
 
 lzh_TW_alt_digits = (
     # 〇:一:二:三:四:五:六:七:八:九
@@ -366,8 +374,8 @@ class TimeRE(dict):
             'z': r"(?P<z>([+-]\d\d:?[0-5]\d(:?[0-5]\d(\.\d{1,6})?)?)|(?-i:Z))?",
             'A': self.__seqToRE(self.locale_time.f_weekday, 'A'),
             'a': self.__seqToRE(self.locale_time.a_weekday, 'a'),
-            'B': self.__seqToRE(self.locale_time.f_month[1:], 'B'),
-            'b': self.__seqToRE(self.locale_time.a_month[1:], 'b'),
+            'B': self.__seqToRE(_fixmonths(self.locale_time.f_month[1:]), 'B'),
+            'b': self.__seqToRE(_fixmonths(self.locale_time.a_month[1:]), 'b'),
             'p': self.__seqToRE(self.locale_time.am_pm, 'p'),
             'Z': self.__seqToRE((tz for tz_names in self.locale_time.timezone
                                         for tz in tz_names),

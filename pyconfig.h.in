@@ -50,12 +50,6 @@
 /* Define if getpgrp() must be called as getpgrp(0). */
 #undef GETPGRP_HAVE_ARG
 
-/* HACL* library can compile SIMD128 implementations */
-#undef HACL_CAN_COMPILE_SIMD128
-
-/* HACL* library can compile SIMD256 implementations */
-#undef HACL_CAN_COMPILE_SIMD256
-
 /* Define if you have the 'accept' function. */
 #undef HAVE_ACCEPT
 
@@ -2022,6 +2016,12 @@
 
 /* Defined if _Complex C type can be used with libffi. */
 #undef _Py_FFI_SUPPORT_C_COMPLEX
+
+/* HACL* library can compile SIMD128 implementations */
+#undef _Py_HACL_CAN_COMPILE_VEC128
+
+/* HACL* library can compile SIMD256 implementations */
+#undef _Py_HACL_CAN_COMPILE_VEC256
 
 /* Define to force use of thread-safe errno, h_errno, and other functions */
 #undef _REENTRANT
