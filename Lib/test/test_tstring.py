@@ -150,7 +150,6 @@ class TestTString(unittest.TestCase, TStringBaseCase):
         t = tr"{path}\Documents"
         self.assertTStringEqual(t, ("", r"\Documents"), [(path, "path")])
 
-
     def test_template_concatenation(self):
         # Test template + template
         t1 = t"Hello, "
@@ -161,7 +160,8 @@ class TestTString(unittest.TestCase, TStringBaseCase):
 
         # Test template + string
         t1 = t"Hello"
-        with self.assertRaises(TypeError):
+        expected_msg = 'can only concatenate Template (not "str") to Template'
+        with self.assertRaises(TypeError, msg=expected_msg):
             _ = t1 + ", world"
 
         # Test template + template with interpolation
@@ -173,7 +173,8 @@ class TestTString(unittest.TestCase, TStringBaseCase):
         self.assertEqual(fstring(combined), "Hello, Python")
 
         # Test string + template
-        with self.assertRaises(TypeError):
+        expected_msg = 'can only concatenate str (not "string.templatelib.Template") to str'
+        with self.assertRaises(TypeError, msg=expected_msg):
             _ = "Hello, " + t"{name}"
 
     def test_nested_templates(self):
