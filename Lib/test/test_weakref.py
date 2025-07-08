@@ -1044,6 +1044,38 @@ class ReferencesTestCase(TestBase):
         stderr = res.err.decode("ascii", "backslashreplace")
         self.assertNotRegex(stderr, "_Py_Dealloc: Deallocator of type 'TestObj'")
 
+    def test_clearing_weakrefs_in_gc(self):
+        # This test checks that:
+        # 1. weakrefs for types with callbacks are cleared before the
+        # finalizer is called
+        # 2. weakrefs for types without callbacks are cleared after the
+        # finalizer is called
+        # 3. other weakrefs cleared before the finalizer is called
+        errors = []
+        def test():
+            class Class:
+                def __init__(self):
+                    self._self = self
+                    self.wr1 = weakref.ref(Class, lambda x: None)
+                    self.wr2 = weakref.ref(Class)
+                    self.wr3 = weakref.ref(self)
+
+                def __del__(self):
+                    # we can't use assert* here, because gc will swallow
+                    # exceptions
+                    if self.wr1() is not None:
+                        errors.append("Type weakref with callback is not None")
+                    if self.wr2() is not Class:
+                        errors.append("Type weakref is not Class")
+                    if self.wr3() is not None:
+                        errors.append("Instance weakref is not None")
+
+            Class()
+
+        test()
+        gc.collect()
+        self.assertEqual(errors, [])
+
 
 class SubclassableWeakrefTestCase(TestBase):
 

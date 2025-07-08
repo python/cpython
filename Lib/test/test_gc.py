@@ -1156,40 +1156,6 @@ class GCTests(unittest.TestCase):
         # this test checks regular garbage collection
         assert_python_ok("-c", code_inside_function)
 
-    def test_clearing_weakrefs_in_gc(self):
-        # This test checks that:
-        # 1. weakrefs for types with callbacks are cleared before the
-        # finalizer is called
-        # 2. weakrefs for types without callbacks are cleared after the
-        # finalizer is called
-        # 3. other weakrefs cleared before the finalizer is called
-        code = """
-            import weakref
-            def test():
-                class Class:
-                    def __init__(self):
-                        self._self = self
-                        self._1 = weakref.ref(Class, lambda x: None)
-                        self._2 = weakref.ref(Class)
-                        self._3 = weakref.ref(self)
-
-                    def __del__(self):
-                        if self._1() is None:
-                            print("Type weakref with callback is None as expected")
-                        if self._2() is Class:
-                            print("Type weakref is Class as expected")
-                        if self._3() is None:
-                            print("Instance weakref is None as expected")
-
-                Class()
-
-            test()
-        """
-        _, stdout, _ = assert_python_ok("-c", code)
-        self.assertRegex(stdout, b"Type weakref with callback is None as expected")
-        self.assertRegex(stdout, b"Type weakref is Class as expected")
-        self.assertRegex(stdout, b"Instance weakref is None as expected")
-
 
 class IncrementalGCTests(unittest.TestCase):
     @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
