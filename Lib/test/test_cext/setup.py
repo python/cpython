@@ -36,16 +36,23 @@ if not support.MS_WINDOWS:
             # with the -Werror=declaration-after-statement compiler flag.
             '-Werror=declaration-after-statement',
         )
+    INTERNAL_CFLAGS = [*BASE_CFLAGS]
 else:
     # MSVC compiler flags
     BASE_CFLAGS = [
-        # Display warnings level 1 to 4
-        '/W4',
         # Treat all compiler warnings as compiler errors
         '/WX',
     ]
-    PUBLIC_CFLAGS = [*BASE_CFLAGS]
-INTERNAL_CFLAGS = [*BASE_CFLAGS]
+    PUBLIC_CFLAGS = [
+        *BASE_CFLAGS,
+        # Display warnings level 1 to 4
+        '/W4',
+    ]
+    INTERNAL_CFLAGS = [
+        *BASE_CFLAGS,
+        # Display warnings level 1 to 3
+        '/W3',
+    ]
 
 
 def main():
