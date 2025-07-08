@@ -1,2 +1,0 @@
-Restore support of integer-like objects with :meth:`!__index__` in
-:func:`random.getrandbits`.

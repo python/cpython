@@ -1411,11 +1411,8 @@ class FractionTest(unittest.TestCase):
             (F('-1234.5678'), '08,.0f', '-001,235'),
             (F('-1234.5678'), '09,.0f', '-0,001,235'),
             # Corner-case - zero-padding specified through fill and align
-            # instead of the zero-pad character - in this case, treat '0' as a
-            # regular fill character and don't attempt to insert commas into
-            # the filled portion. This differs from the int and float
-            # behaviour.
-            (F('1234.5678'), '0=12,.2f', '00001,234.57'),
+            # instead of the zero-pad character.
+            (F('1234.5678'), '0=12,.2f', '0,001,234.57'),
             # Corner case where it's not clear whether the '0' indicates zero
             # padding or gives the minimum width, but there's still an obvious
             # answer to give. We want this to work in case the minimum width

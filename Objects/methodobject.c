@@ -7,6 +7,7 @@
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 
 /* undefine macro trampoline to PyCFunction_NewEx */
@@ -162,9 +163,7 @@ meth_dealloc(PyCFunctionObject *m)
     // call PyObject_GC_UnTrack twice on an object.
     PyObject_GC_UnTrack(m);
     Py_TRASHCAN_BEGIN(m, meth_dealloc);
-    if (m->m_weakreflist != NULL) {
-        PyObject_ClearWeakRefs((PyObject*) m);
-    }
+    FT_CLEAR_WEAKREFS((PyObject*) m, m->m_weakreflist);
     // Dereference class before m_self: PyCFunction_GET_CLASS accesses
     // PyMethodDef m_ml, which could be kept alive by m_self
     Py_XDECREF(PyCFunction_GET_CLASS(m));

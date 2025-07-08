@@ -1,1 +1,0 @@
-Roll back changes to generator and list comprehensions that went into 3.13.4 to fix GH-127682, but which involved semantic and bytecode changes not appropriate for a bugfix release.

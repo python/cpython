@@ -1704,6 +1704,7 @@ _PyXI_Enter(_PyXI_session *session,
     // Convert the attrs for cross-interpreter use.
     _PyXI_namespace *sharedns = NULL;
     if (nsupdates != NULL) {
+        assert(PyDict_Check(nsupdates));
         sharedns = _PyXI_NamespaceFromDict(nsupdates, NULL);
         if (sharedns == NULL && PyErr_Occurred()) {
             assert(session->error == NULL);

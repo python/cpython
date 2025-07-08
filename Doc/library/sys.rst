@@ -919,6 +919,8 @@ always available. Unless explicitly noted otherwise, all variables are read-only
       This function should be used for internal and specialized purposes only.
       It is not guaranteed to exist in all implementations of Python.
 
+   .. versionadded:: 3.12
+
 
 .. function:: getobjects(limit[, type])
 

@@ -186,6 +186,12 @@ class Regrtest:
 
         strip_py_suffix(tests)
 
+        exclude_tests = set()
+        if self.exclude:
+            for arg in self.cmdline_args:
+                exclude_tests.add(arg)
+            self.cmdline_args = []
+
         if self.pgo:
             # add default PGO tests if no tests are specified
             setup_pgo_tests(self.cmdline_args, self.pgo_extended)
@@ -193,17 +199,15 @@ class Regrtest:
         if self.tsan:
             setup_tsan_tests(self.cmdline_args)
 
-        exclude_tests = set()
-        if self.exclude:
-            for arg in self.cmdline_args:
-                exclude_tests.add(arg)
-            self.cmdline_args = []
-
         alltests = findtests(testdir=self.test_dir,
                              exclude=exclude_tests)
 
         if not self.fromfile:
             selected = tests or self.cmdline_args
+            if exclude_tests:
+                # Support "--pgo/--tsan -x test_xxx" command
+                selected = [name for name in selected
+                            if name not in exclude_tests]
             if selected:
                 selected = split_test_packages(selected)
             else:

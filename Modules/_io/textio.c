@@ -15,6 +15,7 @@
 #include "pycore_object.h"            // _PyObject_GC_UNTRACK()
 #include "pycore_pyerrors.h"          // _PyErr_ChainExceptions1()
 #include "pycore_pystate.h"           // _PyInterpreterState_GET()
+#include "pycore_weakref.h"           // FT_CLEAR_WEAKREFS()
 
 #include "_iomodule.h"
 
@@ -1460,8 +1461,7 @@ textiowrapper_dealloc(textio *self)
         return;
     self->ok = 0;
     _PyObject_GC_UNTRACK(self);
-    if (self->weakreflist != NULL)
-        PyObject_ClearWeakRefs((PyObject *)self);
+    FT_CLEAR_WEAKREFS((PyObject *)self, self->weakreflist);
     (void)textiowrapper_clear(self);
     tp->tp_free((PyObject *)self);
     Py_DECREF(tp);

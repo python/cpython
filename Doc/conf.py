@@ -78,6 +78,10 @@ version, release = import_module('patchlevel').get_version_info()
 rst_epilog = f"""
 .. |python_version_literal| replace:: ``Python {version}``
 .. |python_x_dot_y_literal| replace:: ``python{version}``
+.. |python_x_dot_y_t_literal| replace:: ``python{version}t``
+.. |python_x_dot_y_t_literal_config| replace:: ``python{version}t-config``
+.. |x_dot_y_b2_literal| replace:: ``{version}.0b2``
+.. |applications_python_version_literal| replace:: ``/Applications/Python {version}/``
 .. |usr_local_bin_python_x_dot_y_literal| replace:: ``/usr/local/bin/python{version}``
 """
 
@@ -623,13 +627,14 @@ ogp_social_cards = {  # Used when matplotlib is installed
     'image': '_static/og-image.png',
     'line_color': '#3776ab',
 }
-ogp_custom_meta_tags = [
-    '<meta name="theme-color" content="#3776ab">',
-]
-if 'create-social-cards' not in tags:  # noqa: F821
-    # Define a static preview image when not creating social cards
-    ogp_image = '_static/og-image.png'
-    ogp_custom_meta_tags += [
-        '<meta property="og:image:width" content="200">',
-        '<meta property="og:image:height" content="200">',
+if 'builder_html' in tags:  # noqa: F821
+    ogp_custom_meta_tags = [
+        '<meta name="theme-color" content="#3776ab">',
     ]
+    if 'create-social-cards' not in tags:  # noqa: F821
+        # Define a static preview image when not creating social cards
+        ogp_image = '_static/og-image.png'
+        ogp_custom_meta_tags += [
+            '<meta property="og:image:width" content="200">',
+            '<meta property="og:image:height" content="200">',
+        ]
