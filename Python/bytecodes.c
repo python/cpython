@@ -2964,7 +2964,7 @@ dummy_func(
                 else {
                     this_instr[1].counter = initial_jump_backoff_counter();
                     assert(tstate->current_executor == NULL);
-                    tstate->jit_exit = NULL;
+                    assert(executor != tstate->interp->cold_executor);
                     GOTO_TIER_TWO(executor);
                 }
             }
@@ -3029,7 +3029,7 @@ dummy_func(
                 }
                 DISPATCH_GOTO();
             }
-            tstate->jit_exit = NULL;
+            assert(executor != tstate->interp->cold_executor);
             GOTO_TIER_TWO(executor);
             #else
             Py_FatalError("ENTER_EXECUTOR is not supported in this build");
@@ -5238,7 +5238,7 @@ dummy_func(
             #endif
         }
 
-        tier2 op(_EXIT_TRACE, (exit_p/4 -- )) {
+        tier2 op(_EXIT_TRACE, (exit_p/4 --)) {
             _PyExitData *exit = (_PyExitData *)exit_p;
         #if defined(Py_DEBUG) && !defined(_Py_JIT)
             _Py_CODEUNIT *target = _PyFrame_GetBytecode(frame) + exit->target;
