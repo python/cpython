@@ -1776,6 +1776,7 @@ _PyObject_GetMethodStackRef(PyThreadState *ts, PyObject *obj,
             Py_DECREF(dict);
             return 0;
         }
+        // not found
         Py_DECREF(dict);
     }
 
