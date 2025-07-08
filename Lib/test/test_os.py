@@ -2658,6 +2658,15 @@ class LinkTests(unittest.TestCase):
 
 @unittest.skipUnless(hasattr(os, 'linkat'), 'requires os.linkat')
 class LinkAtTests(unittest.TestCase):
+    @staticmethod
+    def linkat(*args):
+        try:
+            os.linkat(*args)
+        except OSError as exc:
+            if exc.errno == errno.ENOSYS:
+                self.skipTest(str(exc))
+            raise
+
     def test_no_flags(self):
         src = "linkat_src"
         self.addCleanup(os_helper.unlink, src)
@@ -2666,13 +2675,11 @@ class LinkAtTests(unittest.TestCase):
 
         dst = "linkat_dst"
         self.addCleanup(os_helper.unlink, dst)
-        os.linkat(os.AT_FDCWD, src, os.AT_FDCWD, dst)  # flags=0
+        self.linkat(os.AT_FDCWD, src, os.AT_FDCWD, dst)  # flags=0
 
         with open(dst, encoding='utf8') as fp:
             self.assertEqual(fp.read(), 'hello')
 
-    # linkat() fails with "OSError: [Errno 0]" on WASI
-    @unittest.skipIf(support.is_wasi, 'test broken on WASI')
     def test_destination_exists(self):
         src = "linkat_src"
         self.addCleanup(os_helper.unlink, src)
@@ -2683,7 +2690,7 @@ class LinkAtTests(unittest.TestCase):
         open(dst, "w").close()
 
         with self.assertRaises(FileExistsError):
-            os.linkat(os.AT_FDCWD, src, os.AT_FDCWD, dst)  # flags=0
+            self.linkat(os.AT_FDCWD, src, os.AT_FDCWD, dst)  # flags=0
 
     @unittest.skipUnless(hasattr(os, 'O_TMPFILE'), 'need os.O_TMPFILE')
     def check_flag(self, flag):
