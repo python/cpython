@@ -1086,7 +1086,7 @@ readability::
 
 Either of these parts, but not both, can be empty. For example::
 
-   1.   # (equivalent to 10.0)
+   10.  # (equivalent to 10.0)
    .001  # (equivalent to 0.001)
 
 Optionally, the integer and fraction may be followed by an *exponent*:
