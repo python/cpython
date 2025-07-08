@@ -445,7 +445,7 @@ the *new_callable* argument to :func:`patch`.
         Child mocks are reset as well.
 
         .. versionchanged:: 3.6
-           Added two keyword-only arguments to the reset_mock function.
+           Added two keyword-only parameters to the reset_mock function.
 
     .. method:: mock_add_spec(spec, spec_set=False)
 

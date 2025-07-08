@@ -122,7 +122,7 @@ Runner context manager
 
       If the argument is a coroutine, it is wrapped in a Task.
 
-      An optional keyword-only *context* argument allows specifying a
+      An optional keyword argument *context* allows specifying a
       custom :class:`contextvars.Context` for the code to run in.
       The runner's default context is used if context is ``None``.
 

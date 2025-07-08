@@ -529,7 +529,7 @@ The :mod:`multiprocessing` package mostly replicates the API of the
    called. *name* is the process name (see :attr:`name` for more details).
    *args* is the argument tuple for the target invocation.  *kwargs* is a
    dictionary of keyword arguments for the target invocation.  If provided,
-   the keyword-only *daemon* argument sets the process :attr:`daemon` flag
+   the keyword argument *daemon* sets the process :attr:`daemon` flag
    to ``True`` or ``False``.  If ``None`` (the default), this flag will be
    inherited from the creating process.
 
@@ -1584,7 +1584,7 @@ inherited by child processes.
        with counter.get_lock():
            counter.value += 1
 
-   Note that *lock* is a keyword-only argument.
+   Note that *lock* is a keyword-only parameter.
 
 .. function:: Array(typecode_or_type, size_or_initializer, *, lock=True)
 
@@ -1605,7 +1605,7 @@ inherited by child processes.
    automatically protected by a lock, so it will not necessarily be
    "process-safe".
 
-   Note that *lock* is a keyword only argument.
+   Note that *lock* is a keyword-only parameter.
 
    Note that an array of :data:`ctypes.c_char` has *value* and *raw*
    attributes which allow one to use it to store and retrieve strings.
@@ -1674,7 +1674,7 @@ processes.
    automatically protected by a lock, so it will not necessarily be
    "process-safe".
 
-   Note that *lock* is a keyword-only argument.
+   Note that *lock* is a keyword-only parameter.
 
 .. function:: Value(typecode_or_type, *args, lock=True)
 
@@ -1689,7 +1689,7 @@ processes.
    automatically protected by a lock, so it will not necessarily be
    "process-safe".
 
-   Note that *lock* is a keyword-only argument.
+   Note that *lock* is a keyword-only parameter.
 
 .. function:: copy(obj)
 

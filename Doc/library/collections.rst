@@ -889,7 +889,7 @@ they add the ability to access fields by name instead of position index.
 
     .. versionchanged:: 3.6
        The *verbose* and *rename* parameters became
-       :ref:`keyword-only arguments <keyword-only_parameter>`.
+       :ref:`keyword-only parameters <keyword-only_parameter>`.
 
     .. versionchanged:: 3.6
        Added the *module* parameter.

@@ -958,10 +958,7 @@ on Windows.
    Partial support of the Windows
    `STARTUPINFO <https://msdn.microsoft.com/en-us/library/ms686331(v=vs.85).aspx>`__
    structure is used for :class:`Popen` creation.  The following attributes can
-   be set by passing them as keyword-only arguments.
-
-   .. versionchanged:: 3.7
-      Keyword-only argument support was added.
+   be set by passing them as keyword arguments.
 
    .. attribute:: dwFlags
 
@@ -971,12 +968,16 @@ on Windows.
          si = subprocess.STARTUPINFO()
          si.dwFlags = subprocess.STARTF_USESTDHANDLES | subprocess.STARTF_USESHOWWINDOW
 
+      .. versionadded:: 3.7
+
    .. attribute:: hStdInput
 
       If :attr:`dwFlags` specifies :data:`STARTF_USESTDHANDLES`, this attribute
       is the standard input handle for the process. If
       :data:`STARTF_USESTDHANDLES` is not specified, the default for standard
       input is the keyboard buffer.
+
+      .. versionadded:: 3.7
 
    .. attribute:: hStdOutput
 
@@ -985,11 +986,15 @@ on Windows.
       is ignored and the default for standard output is the console window's
       buffer.
 
+      .. versionadded:: 3.7
+
    .. attribute:: hStdError
 
       If :attr:`dwFlags` specifies :data:`STARTF_USESTDHANDLES`, this attribute
       is the standard error handle for the process. Otherwise, this attribute is
       ignored and the default for standard error is the console window's buffer.
+
+      .. versionadded:: 3.7
 
    .. attribute:: wShowWindow
 
@@ -1002,6 +1007,8 @@ on Windows.
 
       :data:`SW_HIDE` is provided for this attribute. It is used when
       :class:`Popen` is called with ``shell=True``.
+
+      .. versionadded:: 3.7
 
    .. attribute:: lpAttributeList
 

@@ -1348,12 +1348,12 @@ Reading directories
    .. seealso::
       :ref:`pathlib-pattern-language` documentation.
 
-   By default, or when the *case_sensitive* keyword-only argument is set to
+   By default, or when the *case_sensitive* keyword argument is set to
    ``None``, this method matches paths using platform-specific casing rules:
    typically, case-sensitive on POSIX, and case-insensitive on Windows.
    Set *case_sensitive* to ``True`` or ``False`` to override this behaviour.
 
-   By default, or when the *recurse_symlinks* keyword-only argument is set to
+   By default, or when the *recurse_symlinks* keyword argument is set to
    ``False``, this method follows symlinks except when expanding "``**``"
    wildcards. Set *recurse_symlinks* to ``True`` to always follow symlinks.
 

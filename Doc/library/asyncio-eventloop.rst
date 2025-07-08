@@ -232,7 +232,7 @@ Scheduling callbacks
    Callbacks are called in the order in which they are registered.
    Each callback will be called exactly once.
 
-   The optional keyword-only *context* argument specifies a
+   The optional keyword argument *context* specifies a
    custom :class:`contextvars.Context` for the *callback* to run in.
    Callbacks use the current context when no *context* is provided.
 
@@ -296,11 +296,11 @@ clocks to track time.
    scheduled for exactly the same time, the order in which they
    are called is undefined.
 
-   The optional positional *args* will be passed to the callback when
+   The optional positional arguments *args* will be passed to the callback when
    it is called. If you want the callback to be called with keyword
    arguments use :func:`functools.partial`.
 
-   An optional keyword-only *context* argument allows specifying a
+   An optional keyword argument *context* allows specifying a
    custom :class:`contextvars.Context` for the *callback* to run in.
    The current context is used when no *context* is provided.
 
@@ -377,11 +377,11 @@ Creating Futures and Tasks
    If the *name* argument is provided and not ``None``, it is set as
    the name of the task using :meth:`Task.set_name`.
 
-   An optional keyword-only *context* argument allows specifying a
+   An optional keyword argument *context* allows specifying a
    custom :class:`contextvars.Context` for the *coro* to run in.
    The current context copy is created when no *context* is provided.
 
-   An optional keyword-only *eager_start* argument allows specifying
+   An optional keyword argument *eager_start* allows specifying
    if the task should execute eagerly during the call to create_task,
    or be scheduled later. If *eager_start* is not passed the mode set
    by :meth:`loop.set_task_factory` will be used.

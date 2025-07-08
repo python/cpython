@@ -1499,8 +1499,8 @@ getopt
 getpass
 -------
 
-* Support keyboard feedback by :func:`getpass.getpass` via the keyword-only
-  optional argument ``echo_char``. Placeholder characters are rendered whenever
+* Support keyboard feedback by :func:`getpass.getpass` via optional keyword
+  argument ``echo_char``. Placeholder characters are rendered whenever
   a character is entered, and removed when a character is deleted.
   (Contributed by Semyon Moroz in :gh:`77065`.)
 

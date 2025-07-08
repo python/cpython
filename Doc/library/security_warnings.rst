@@ -9,7 +9,7 @@ The following modules have specific security considerations:
 
 * :mod:`base64`: :ref:`base64 security considerations <base64-security>` in
   :rfc:`4648`
-* :mod:`hashlib`: :ref:`all constructors take a "usedforsecurity" keyword-only
+* :mod:`hashlib`: :ref:`all constructors take a "usedforsecurity" keyword
   argument disabling known insecure and blocked algorithms
   <hashlib-usedforsecurity>`
 * :mod:`http.server` is not suitable for production use, only implementing

@@ -99,7 +99,7 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
       *tabsize* is an optional keyword argument to specify tab stop spacing and
       defaults to ``8``.
 
-      *wrapcolumn* is an optional keyword to specify column number where lines are
+      *wrapcolumn* is an optional keyword argument to specify column number where lines are
       broken and wrapped, defaults to ``None`` where lines are not wrapped.
 
       *linejunk* and *charjunk* are optional keyword arguments passed into :func:`ndiff`
@@ -133,7 +133,7 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
          properly escaped while receiving input from untrusted sources.
 
       .. versionchanged:: 3.5
-         *charset* keyword-only argument was added.  The default charset of
+         *charset* keyword-only parameter was added.  The default charset of
          HTML document changed from ``'ISO-8859-1'`` to ``'utf-8'``.
 
    .. method:: make_table(fromlines, tolines, fromdesc='', todesc='', context=False, numlines=5)
@@ -225,7 +225,7 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
    Compare *a* and *b* (lists of strings); return a :class:`Differ`\ -style
    delta (a :term:`generator` generating the delta lines).
 
-   Optional keyword parameters *linejunk* and *charjunk* are filtering functions
+   Optional keyword arguments *linejunk* and *charjunk* are filtering functions
    (or ``None``):
 
    *linejunk*: A function that accepts a single string argument, and returns
@@ -652,7 +652,7 @@ The :class:`Differ` class has this constructor:
 .. class:: Differ(linejunk=None, charjunk=None)
    :noindex:
 
-   Optional keyword parameters *linejunk* and *charjunk* are for filter functions
+   Optional keyword arguments *linejunk* and *charjunk* are for filter functions
    (or ``None``):
 
    *linejunk*: A function that accepts a single string argument, and returns true

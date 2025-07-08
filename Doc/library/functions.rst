@@ -1232,7 +1232,7 @@ are always available.  They are listed here in alphabetical order.
    arguments are provided, the largest of the positional arguments is
    returned.
 
-   There are two optional keyword-only arguments. The *key* argument specifies
+   Two optional keyword arguments are supported.  The *key* argument specifies
    a one-argument ordering function like that used for :meth:`list.sort`. The
    *default* argument specifies an object to return if the provided iterable is
    empty. If the iterable is empty and *default* is not provided, a
@@ -1270,7 +1270,7 @@ are always available.  They are listed here in alphabetical order.
    arguments are provided, the smallest of the positional arguments is
    returned.
 
-   There are two optional keyword-only arguments. The *key* argument specifies
+   Two optional keyword arguments are supported. The *key* argument specifies
    a one-argument ordering function like that used for :meth:`list.sort`. The
    *default* argument specifies an object to return if the provided iterable is
    empty. If the iterable is empty and *default* is not provided, a
@@ -2221,7 +2221,7 @@ are always available.  They are listed here in alphabetical order.
         True
 
    .. versionchanged:: 3.10
-      Added the ``strict`` argument.
+      Added the ``strict`` parameter.
 
 
 .. function:: __import__(name, globals=None, locals=None, fromlist=(), level=0)

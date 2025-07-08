@@ -5133,7 +5133,7 @@ sock_sendmsg_afalg(PyObject *s, PyObject *args, PyObject *kwds)
 
     memset(&msg, 0, sizeof(msg));
 
-    /* op is a required, keyword-only argument >= 0 */
+    /* op is a required keyword argument >= 0 */
     if (opobj != NULL) {
         op = PyLong_AsInt(opobj);
     }

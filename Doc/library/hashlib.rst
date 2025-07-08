@@ -80,7 +80,7 @@ accessible by name via :func:`new`.  See :data:`algorithms_available`.
 .. _hashlib-usedforsecurity:
 
 .. versionchanged:: 3.9
-   All hashlib constructors take a keyword-only argument *usedforsecurity*
+   All hashlib constructors have a keyword-only parameter *usedforsecurity*
    with default value ``True``. A false value allows the use of insecure and
    blocked hashing algorithms in restricted environments. ``False`` indicates
    that the hashing algorithm is not used in a security context, e.g. as a

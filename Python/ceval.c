@@ -1363,7 +1363,7 @@ too_many_positional(PyThreadState *tstate, PyCodeObject *co,
     Py_ssize_t co_argcount = co->co_argcount;
 
     assert((co->co_flags & CO_VARARGS) == 0);
-    /* Count missing keyword-only args. */
+    /* Count missing arguments for keyword-only parameters. */
     for (i = co_argcount; i < co_argcount + co->co_kwonlyargcount; i++) {
         if (PyStackRef_AsPyObjectBorrow(localsplus[i]) != NULL) {
             kwonly_given++;

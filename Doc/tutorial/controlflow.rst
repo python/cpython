@@ -764,9 +764,9 @@ parameter by how the arguments may be passed to the function:
 positional-only, positional-or-keyword, and keyword-only. Keyword parameters
 are also referred to as named parameters.
 
--------------------------------
-Positional-or-Keyword Arguments
--------------------------------
+--------------------------------
+Positional-or-Keyword Parameters
+--------------------------------
 
 If ``/`` and ``*`` are not present in the function definition, arguments may
 be passed to a function by position or by keyword.
@@ -785,12 +785,12 @@ parameters.
 
 Parameters following the ``/`` may be *positional-or-keyword* or *keyword-only*.
 
-----------------------
-Keyword-Only Arguments
-----------------------
+-----------------------
+Keyword-Only Parameters
+-----------------------
 
-To mark parameters as *keyword-only*, indicating the parameters must be passed
-by keyword argument, place an ``*`` in the arguments list just before the first
+To mark parameters as *keyword-only*, indicating the arguments must be passed
+by keyword, place an ``*`` in the parameters list just before the first
 *keyword-only* parameter.
 
 -----------------
@@ -879,7 +879,7 @@ will always bind to the first parameter. For example::
     TypeError: foo() got multiple values for argument 'name'
     >>>
 
-But using ``/`` (positional only arguments), it is possible since it allows ``name`` as a positional argument and ``'name'`` as a key in the keyword arguments::
+But using ``/`` (positional-only parameters), it is possible since it allows ``name`` as a positional argument and ``'name'`` as a key in the keyword arguments::
 
     >>> def foo(name, /, **kwds):
     ...     return 'name' in kwds
@@ -903,7 +903,7 @@ As guidance:
 * Use positional-only if you want the name of the parameters to not be
   available to the user. This is useful when parameter names have no real
   meaning, if you want to enforce the order of the arguments when the function
-  is called or if you need to take some positional parameters and arbitrary
+  is called or if you need to take some positional arguments and arbitrary
   keywords.
 * Use keyword-only when names have meaning and the function definition is
   more understandable by being explicit with names or you want to prevent

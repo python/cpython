@@ -360,11 +360,11 @@ New Syntax
   the :attr:`~object.__annotations__` attribute.  The intent is to
   encourage experimentation through metaclasses, decorators or frameworks.
 
-* :pep:`3102`: Keyword-only arguments.  Named parameters occurring
+* :pep:`3102`: Keyword-only parameters.  Named parameters occurring
   after ``*args`` in the parameter list *must* be specified using
   keyword syntax in the call.  You can also use a bare ``*`` in the
   parameter list to indicate that you don't accept a variable-length
-  argument list, but you do have keyword-only arguments.
+  argument list, but you do have keyword-only parameters.
 
 * Keyword arguments are allowed after the list of base classes in a
   class definition.  This is used by the new convention for specifying

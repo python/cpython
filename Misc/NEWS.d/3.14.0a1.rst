@@ -3697,7 +3697,7 @@ Prepare Tkinter for C API changes in Tcl 8.7/9.0 to avoid
 .. section: Library
 
 Fixed handling in :meth:`inspect.Signature.bind` of keyword arguments having
-the same name as positional-only arguments when a variadic keyword argument
+the same name as positional-only parameters when a variadic keyword parameter
 (e.g. ``**kwargs``) is present.
 
 ..

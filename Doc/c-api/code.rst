@@ -71,7 +71,7 @@ bound into a function.
 
 .. c:function:: PyCodeObject* PyUnstable_Code_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount, int nlocals, int stacksize, int flags, PyObject *code, PyObject *consts, PyObject *names, PyObject *varnames, PyObject *freevars, PyObject *cellvars, PyObject *filename, PyObject *name, PyObject *qualname, int firstlineno, PyObject *linetable, PyObject *exceptiontable)
 
-   Similar to :c:func:`PyUnstable_Code_New`, but with an extra "posonlyargcount" for positional-only arguments.
+   Similar to :c:func:`PyUnstable_Code_New`, but with an extra "posonlyargcount" for positional-only parameters.
    The same caveats that apply to ``PyUnstable_Code_New`` also apply to this function.
 
    .. index:: single: PyCode_NewWithPosOnlyArgs (C function)
