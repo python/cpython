@@ -426,7 +426,7 @@ jobs:
         #
         # (GH-104097) test_sysconfig is skipped because it has tests that are
         # failing when executed from inside a virtual environment.
-        "${VENV_PYTHON}" -We -m test \
+        "${VENV_PYTHON}" -m test \
           -W \
           --slowest \
           -j4 \
