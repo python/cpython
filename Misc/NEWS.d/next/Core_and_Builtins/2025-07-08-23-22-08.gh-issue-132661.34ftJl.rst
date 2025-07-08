@@ -1,3 +1,2 @@
-Disallow concatenation of `string.templatelib.Template` and `str`. Also,
-disallow implicit concatenation of t-string literals with string or f-string
-literals.
+Disallow concatenation of ``Template`` and ``str``. Also, disallow implicit
+concatenation of t-string literals with string or f-string literals.
