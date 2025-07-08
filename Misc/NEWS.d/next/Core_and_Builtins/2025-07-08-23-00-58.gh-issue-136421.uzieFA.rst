@@ -1,2 +1,2 @@
-Fix a crash when :mod:`_datetime` is being initialized in multiple
+Fix a crash when ``_datetime`` is being imported in multiple
 sub-interpreters at the same time.
