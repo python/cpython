@@ -2925,7 +2925,7 @@ class TestDateTime(TestDate):
         with self.assertRaises(ValueError): strptime("z", "%z")
 
     def test_strptime_ampm(self):
-        dt = datetime(1999, 3, 17, 0, 44, 55, 2, 76, 0)
+        dt = datetime(1999, 3, 17, 0, 44, 55, 2)
         for hour in range(0, 24):
             with self.subTest(hour=hour):
                 new_dt = dt.replace(hour=hour)
