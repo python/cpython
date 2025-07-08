@@ -1473,10 +1473,10 @@ _PyExecutor_GetColdExecutor(void)
         return interp->cold_executor;
     }
     _PyExecutorObject *cold = allocate_executor(0, 1);
-    ((_PyUOpInstruction *)cold->trace)->opcode = _COLD_EXIT;
     if (cold == NULL) {
         Py_FatalError("Cannot allocate core JIT code");
     }
+    ((_PyUOpInstruction *)cold->trace)->opcode = _COLD_EXIT;
     _Py_SetImmortal((PyObject *)cold);
 #ifdef _Py_JIT
     cold->jit_code = NULL;
