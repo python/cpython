@@ -1580,13 +1580,13 @@ exit:
 
 #endif /* defined(HAVE_LINK) */
 
-#if defined(HAVE_LINK)
+#if defined(HAVE_LINKAT)
 
 PyDoc_STRVAR(os_linkat__doc__,
 "linkat($module, /, src_dir_fd, src_path, dst_dir_fd, dst_path, flags=0)\n"
 "--\n"
 "\n"
-"Create a hard link to a file.");
+"Create a hard link to a file with flags.");
 
 #define OS_LINKAT_METHODDEF    \
     {"linkat", _PyCFunction_CAST(os_linkat), METH_FASTCALL|METH_KEYWORDS, os_linkat__doc__},
@@ -1670,7 +1670,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_LINK) */
+#endif /* defined(HAVE_LINKAT) */
 
 PyDoc_STRVAR(os_listdir__doc__,
 "listdir($module, /, path=None)\n"
@@ -13494,4 +13494,4 @@ os__emscripten_debugger(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__EMSCRIPTEN_DEBUGGER_METHODDEF
     #define OS__EMSCRIPTEN_DEBUGGER_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_DEBUGGER_METHODDEF) */
-/*[clinic end generated code: output=9e2feff720128973 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3bf4693908acf071 input=a9049054013a1b77]*/

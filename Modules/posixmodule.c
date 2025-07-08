@@ -4465,7 +4465,7 @@ Create a hard link to a file with flags.
 static PyObject *
 os_linkat_impl(PyObject *module, int src_dir_fd, path_t *src_path,
                int dst_dir_fd, path_t *dst_path, int flags)
-/*[clinic end generated code: output=8582ba3975d7ac3f input=f9b7d4b37ce271ef]*/
+/*[clinic end generated code: output=8582ba3975d7ac3f input=82fe7b9292aa5e10]*/
 {
     if (PySys_Audit("os.linkat", "iOiOi",
                     src_dir_fd, src_path->object,
