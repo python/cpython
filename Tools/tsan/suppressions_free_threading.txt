@@ -48,3 +48,6 @@ race_top:slot_tp_descr_get
 race_top:type_set_name
 race_top:set_tp_bases
 race_top:type_set_bases_unlocked
+
+# gh-128050
+race:partial_vectorcall_fallback
