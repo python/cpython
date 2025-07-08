@@ -3300,7 +3300,7 @@ features:
 
       .. versionadded:: next
 
-   .. attribute:: stx_subvol
+   .. attribute:: st_subvol
 
       ID for the subvolume containing the file, or None if the filesystem does
       not support subvolumes.
