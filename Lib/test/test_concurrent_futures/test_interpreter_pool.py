@@ -462,7 +462,7 @@ class InterpreterPoolExecutorTest(
     @support.requires_subprocess()
     def test_import_interpreter_pool_executor(self):
         # Test the import behavior normally if _interpreters is unavailable.
-        code = textwrap.dedent(f"""
+        code = textwrap.dedent("""
         import sys
         # Set it to None to emulate the case when _interpreter is unavailable.
         sys.modules['_interpreters'] = None
