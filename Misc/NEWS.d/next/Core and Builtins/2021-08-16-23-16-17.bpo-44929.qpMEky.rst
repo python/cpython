@@ -1,2 +1,0 @@
-Fix some edge cases of ``enum.Flag`` string representation in the REPL.
-Patch by Pablo Galindo.

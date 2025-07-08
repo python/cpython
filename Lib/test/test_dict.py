@@ -3,11 +3,13 @@ import collections.abc
 import gc
 import pickle
 import random
+import re
 import string
 import sys
 import unittest
 import weakref
 from test import support
+from test.support import import_helper
 
 
 class DictTest(unittest.TestCase):
@@ -264,6 +266,63 @@ class DictTest(unittest.TestCase):
 
         self.assertRaises(ValueError, {}.update, [(1, 2, 3)])
 
+    def test_update_type_error(self):
+        with self.assertRaises(TypeError) as cm:
+            {}.update([object() for _ in range(3)])
+
+        self.assertEqual(str(cm.exception), "object is not iterable")
+        self.assertEqual(
+            cm.exception.__notes__,
+            ['Cannot convert dictionary update sequence element #0 to a sequence'],
+        )
+
+        def badgen():
+            yield "key"
+            raise TypeError("oops")
+            yield "value"
+
+        with self.assertRaises(TypeError) as cm:
+            dict([badgen() for _ in range(3)])
+
+        self.assertEqual(str(cm.exception), "oops")
+        self.assertEqual(
+            cm.exception.__notes__,
+            ['Cannot convert dictionary update sequence element #0 to a sequence'],
+        )
+
+    def test_update_shared_keys(self):
+        class MyClass: pass
+
+        # Subclass str to enable us to create an object during the
+        # dict.update() call.
+        class MyStr(str):
+            def __hash__(self):
+                return super().__hash__()
+
+            def __eq__(self, other):
+                # Create an object that shares the same PyDictKeysObject as
+                # obj.__dict__.
+                obj2 = MyClass()
+                obj2.a = "a"
+                obj2.b = "b"
+                obj2.c = "c"
+                return super().__eq__(other)
+
+        obj = MyClass()
+        obj.a = "a"
+        obj.b = "b"
+
+        x = {}
+        x[MyStr("a")] = MyStr("a")
+
+        # gh-132617: this previously raised "dict mutated during update" error
+        x.update(obj.__dict__)
+
+        self.assertEqual(x, {
+            MyStr("a"): "a",
+            "b": "b",
+        })
+
     def test_fromkeys(self):
         self.assertEqual(dict.fromkeys('abc'), {'a':None, 'b':None, 'c':None})
         d = {}
@@ -311,16 +370,33 @@ class DictTest(unittest.TestCase):
         self.assertRaises(Exc, baddict2.fromkeys, [1])
 
         # test fast path for dictionary inputs
+        res = dict(zip(range(6), [0]*6))
         d = dict(zip(range(6), range(6)))
-        self.assertEqual(dict.fromkeys(d, 0), dict(zip(range(6), [0]*6)))
+        self.assertEqual(dict.fromkeys(d, 0), res)
+        # test fast path for set inputs
+        d = set(range(6))
+        self.assertEqual(dict.fromkeys(d, 0), res)
+        # test slow path for other iterable inputs
+        d = list(range(6))
+        self.assertEqual(dict.fromkeys(d, 0), res)
 
+        # test fast path when object's constructor returns large non-empty dict
         class baddict3(dict):
             def __new__(cls):
                 return d
-        d = {i : i for i in range(10)}
+        d = {i : i for i in range(1000)}
         res = d.copy()
         res.update(a=None, b=None, c=None)
         self.assertEqual(baddict3.fromkeys({"a", "b", "c"}), res)
+
+        # test slow path when object is a proper subclass of dict
+        class baddict4(dict):
+            def __init__(self):
+                dict.__init__(self, d)
+        d = {i : i for i in range(1000)}
+        res = d.copy()
+        res.update(a=None, b=None, c=None)
+        self.assertEqual(baddict4.fromkeys({"a", "b", "c"}), res)
 
     def test_copy(self):
         d = {1: 1, 2: 2, 3: 3}
@@ -593,9 +669,11 @@ class DictTest(unittest.TestCase):
         d = {1: BadRepr()}
         self.assertRaises(Exc, repr, d)
 
+    @support.skip_wasi_stack_overflow()
+    @support.skip_emscripten_stack_overflow()
     def test_repr_deep(self):
         d = {}
-        for i in range(sys.getrecursionlimit() + 100):
+        for i in range(support.exceeds_recursion_limit()):
             d = {1: d}
         self.assertRaises(RecursionError, repr, d)
 
@@ -741,8 +819,8 @@ class DictTest(unittest.TestCase):
 
     def test_missing(self):
         # Make sure dict doesn't have a __missing__ method
-        self.assertFalse(hasattr(dict, "__missing__"))
-        self.assertFalse(hasattr({}, "__missing__"))
+        self.assertNotHasAttr(dict, "__missing__")
+        self.assertNotHasAttr({}, "__missing__")
         # Test several cases:
         # (D) subclass defines __missing__ method returning a value
         # (E) subclass defines __missing__ method raising RuntimeError
@@ -879,107 +957,6 @@ class DictTest(unittest.TestCase):
             gc.collect()
             self.assertIs(ref(), None, "Cycle was not collected")
 
-    def _not_tracked(self, t):
-        # Nested containers can take several collections to untrack
-        gc.collect()
-        gc.collect()
-        self.assertFalse(gc.is_tracked(t), t)
-
-    def _tracked(self, t):
-        self.assertTrue(gc.is_tracked(t), t)
-        gc.collect()
-        gc.collect()
-        self.assertTrue(gc.is_tracked(t), t)
-
-    @support.cpython_only
-    def test_track_literals(self):
-        # Test GC-optimization of dict literals
-        x, y, z, w = 1.5, "a", (1, None), []
-
-        self._not_tracked({})
-        self._not_tracked({x:(), y:x, z:1})
-        self._not_tracked({1: "a", "b": 2})
-        self._not_tracked({1: 2, (None, True, False, ()): int})
-        self._not_tracked({1: object()})
-
-        # Dicts with mutable elements are always tracked, even if those
-        # elements are not tracked right now.
-        self._tracked({1: []})
-        self._tracked({1: ([],)})
-        self._tracked({1: {}})
-        self._tracked({1: set()})
-
-    @support.cpython_only
-    def test_track_dynamic(self):
-        # Test GC-optimization of dynamically-created dicts
-        class MyObject(object):
-            pass
-        x, y, z, w, o = 1.5, "a", (1, object()), [], MyObject()
-
-        d = dict()
-        self._not_tracked(d)
-        d[1] = "a"
-        self._not_tracked(d)
-        d[y] = 2
-        self._not_tracked(d)
-        d[z] = 3
-        self._not_tracked(d)
-        self._not_tracked(d.copy())
-        d[4] = w
-        self._tracked(d)
-        self._tracked(d.copy())
-        d[4] = None
-        self._not_tracked(d)
-        self._not_tracked(d.copy())
-
-        # dd isn't tracked right now, but it may mutate and therefore d
-        # which contains it must be tracked.
-        d = dict()
-        dd = dict()
-        d[1] = dd
-        self._not_tracked(dd)
-        self._tracked(d)
-        dd[1] = d
-        self._tracked(dd)
-
-        d = dict.fromkeys([x, y, z])
-        self._not_tracked(d)
-        dd = dict()
-        dd.update(d)
-        self._not_tracked(dd)
-        d = dict.fromkeys([x, y, z, o])
-        self._tracked(d)
-        dd = dict()
-        dd.update(d)
-        self._tracked(dd)
-
-        d = dict(x=x, y=y, z=z)
-        self._not_tracked(d)
-        d = dict(x=x, y=y, z=z, w=w)
-        self._tracked(d)
-        d = dict()
-        d.update(x=x, y=y, z=z)
-        self._not_tracked(d)
-        d.update(w=w)
-        self._tracked(d)
-
-        d = dict([(x, y), (z, 1)])
-        self._not_tracked(d)
-        d = dict([(x, y), (z, w)])
-        self._tracked(d)
-        d = dict()
-        d.update([(x, y), (z, 1)])
-        self._not_tracked(d)
-        d.update([(x, y), (z, w)])
-        self._tracked(d)
-
-    @support.cpython_only
-    def test_track_subtypes(self):
-        # Dict subtypes are always tracked
-        class MyDict(dict):
-            pass
-        self._tracked(MyDict())
-
     def make_shared_key_dict(self, n):
         class C:
             pass
@@ -994,8 +971,8 @@ class DictTest(unittest.TestCase):
 
     @support.cpython_only
     def test_splittable_setdefault(self):
-        """split table must be combined when setdefault()
-        breaks insertion order"""
+        """split table must keep correct insertion
+        order when attributes are adding using setdefault()"""
         a, b = self.make_shared_key_dict(2)
 
         a['a'] = 1
@@ -1005,7 +982,6 @@ class DictTest(unittest.TestCase):
         size_b = sys.getsizeof(b)
         b['a'] = 1
 
-        self.assertGreater(size_b, size_a)
         self.assertEqual(list(a), ['x', 'y', 'z', 'a', 'b'])
         self.assertEqual(list(b), ['x', 'y', 'z', 'b', 'a'])
 
@@ -1020,7 +996,6 @@ class DictTest(unittest.TestCase):
         with self.assertRaises(KeyError):
             del a['y']
 
-        self.assertGreater(sys.getsizeof(a), orig_size)
         self.assertEqual(list(a), ['x', 'z'])
         self.assertEqual(list(b), ['x', 'y', 'z'])
 
@@ -1031,16 +1006,12 @@ class DictTest(unittest.TestCase):
 
     @support.cpython_only
     def test_splittable_pop(self):
-        """split table must be combined when d.pop(k)"""
         a, b = self.make_shared_key_dict(2)
 
-        orig_size = sys.getsizeof(a)
-
-        a.pop('y')  # split table is combined
+        a.pop('y')
         with self.assertRaises(KeyError):
             a.pop('y')
 
-        self.assertGreater(sys.getsizeof(a), orig_size)
         self.assertEqual(list(a), ['x', 'z'])
         self.assertEqual(list(b), ['x', 'y', 'z'])
 
@@ -1051,7 +1022,7 @@ class DictTest(unittest.TestCase):
 
     @support.cpython_only
     def test_splittable_pop_pending(self):
-        """pop a pending key in a splitted table should not crash"""
+        """pop a pending key in a split table should not crash"""
         a, b = self.make_shared_key_dict(2)
 
         a['a'] = 4
@@ -1075,34 +1046,34 @@ class DictTest(unittest.TestCase):
         self.assertEqual(list(b), ['x', 'y', 'z'])
 
     @support.cpython_only
-    def test_splittable_setattr_after_pop(self):
-        """setattr() must not convert combined table into split table."""
-        # Issue 28147
-        import _testcapi
+    def test_splittable_update(self):
+        """dict.update(other) must preserve order in other."""
+        class C:
+            def __init__(self, order):
+                if order:
+                    self.a, self.b, self.c = 1, 2, 3
+                else:
+                    self.c, self.b, self.a = 1, 2, 3
+        o = C(True)
+        o = C(False)  # o.__dict__ has reversed order.
+        self.assertEqual(list(o.__dict__), ["c", "b", "a"])
 
+        d = {}
+        d.update(o.__dict__)
+        self.assertEqual(list(d), ["c", "b", "a"])
+
+    @support.cpython_only
+    def test_splittable_to_generic_combinedtable(self):
+        """split table must be correctly resized and converted to generic combined table"""
         class C:
             pass
+
         a = C()
+        a.x = 1
+        d = a.__dict__
+        d[2] = 2 # split table is resized to a generic combined table
 
-        a.a = 1
-        self.assertTrue(_testcapi.dict_hassplittable(a.__dict__))
-
-        # dict.pop() convert it to combined table
-        a.__dict__.pop('a')
-        self.assertFalse(_testcapi.dict_hassplittable(a.__dict__))
-
-        # But C should not convert a.__dict__ to split table again.
-        a.a = 1
-        self.assertFalse(_testcapi.dict_hassplittable(a.__dict__))
-
-        # Same for popitem()
-        a = C()
-        a.a = 2
-        self.assertTrue(_testcapi.dict_hassplittable(a.__dict__))
-        a.__dict__.popitem()
-        self.assertFalse(_testcapi.dict_hassplittable(a.__dict__))
-        a.a = 3
-        self.assertFalse(_testcapi.dict_hassplittable(a.__dict__))
+        self.assertEqual(list(d), ['x', 2])
 
     def test_iterator_pickling(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
@@ -1398,7 +1369,7 @@ class DictTest(unittest.TestCase):
         self.assertRaises(StopIteration, next, r)
 
     def test_reverse_iterator_for_empty_dict(self):
-        # bpo-38525: revered iterator should work properly
+        # bpo-38525: reversed iterator should work properly
 
         # empty dict is directly used for reference count test
         self.assertEqual(list(reversed({})), [])
@@ -1465,11 +1436,29 @@ class DictTest(unittest.TestCase):
         self.assertTrue(gc.is_tracked(next(it)))
 
     @support.cpython_only
-    def test_dict_items_result_gc(self):
+    def test_dict_items_result_gc_reversed(self):
         # Same as test_dict_items_result_gc above, but reversed.
         it = reversed({None: []}.items())
         gc.collect()
         self.assertTrue(gc.is_tracked(next(it)))
+
+    def test_store_evilattr(self):
+        class EvilAttr:
+            def __init__(self, d):
+                self.d = d
+
+            def __del__(self):
+                if 'attr' in self.d:
+                    del self.d['attr']
+                gc.collect()
+
+        class Obj:
+            pass
+
+        obj = Obj()
+        obj.__dict__ = {}
+        for _ in range(10):
+            obj.attr = EvilAttr(obj.__dict__)
 
     def test_str_nonstr(self):
         # cpython uses a different lookup function if the dict only contains
@@ -1571,13 +1560,55 @@ class DictTest(unittest.TestCase):
                 self.assertEqual(d.get(key3_3), 44)
                 self.assertGreaterEqual(eq_count, 1)
 
+    def test_unhashable_key(self):
+        d = {'a': 1}
+        key = [1, 2, 3]
+
+        def check_unhashable_key():
+            msg = "cannot use 'list' as a dict key (unhashable type: 'list')"
+            return self.assertRaisesRegex(TypeError, re.escape(msg))
+
+        with check_unhashable_key():
+            key in d
+        with check_unhashable_key():
+            d[key]
+        with check_unhashable_key():
+            d[key] = 2
+        with check_unhashable_key():
+            d.setdefault(key, 2)
+        with check_unhashable_key():
+            d.pop(key)
+        with check_unhashable_key():
+            d.get(key)
+
+        # Only TypeError exception is overriden,
+        # other exceptions are left unchanged.
+        class HashError:
+            def __hash__(self):
+                raise KeyError('error')
+
+        key2 = HashError()
+        with self.assertRaises(KeyError):
+            key2 in d
+        with self.assertRaises(KeyError):
+            d[key2]
+        with self.assertRaises(KeyError):
+            d[key2] = 2
+        with self.assertRaises(KeyError):
+            d.setdefault(key2, 2)
+        with self.assertRaises(KeyError):
+            d.pop(key2)
+        with self.assertRaises(KeyError):
+            d.get(key2)
+
 
 class CAPITest(unittest.TestCase):
 
     # Test _PyDict_GetItem_KnownHash()
     @support.cpython_only
     def test_getitem_knownhash(self):
-        from _testcapi import dict_getitem_knownhash
+        _testinternalcapi = import_helper.import_module('_testinternalcapi')
+        dict_getitem_knownhash = _testinternalcapi.dict_getitem_knownhash
 
         d = {'x': 1, 'y': 2, 'z': 3}
         self.assertEqual(dict_getitem_knownhash(d, 'x', hash('x')), 1)

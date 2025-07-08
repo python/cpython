@@ -166,7 +166,7 @@ class TestBasic(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             n in d
 
-    def test_contains_count_stop_crashes(self):
+    def test_contains_count_index_stop_crashes(self):
         class A:
             def __eq__(self, other):
                 d.clear()
@@ -177,6 +177,10 @@ class TestBasic(unittest.TestCase):
         d = deque([A(), A()])
         with self.assertRaises(RuntimeError):
             _ = d.count(3)
+
+        d = deque([A()])
+        with self.assertRaises(RuntimeError):
+            d.index(0)
 
     def test_extend(self):
         d = deque('a')
@@ -781,6 +785,9 @@ class TestVariousIteratorArgs(unittest.TestCase):
 class Deque(deque):
     pass
 
+class DequeWithSlots(deque):
+    __slots__ = ('x', 'y', '__dict__')
+
 class DequeWithBadIter(deque):
     def __iter__(self):
         raise TypeError
@@ -810,40 +817,28 @@ class TestSubclass(unittest.TestCase):
         self.assertEqual(len(d), 0)
 
     def test_copy_pickle(self):
+        for cls in Deque, DequeWithSlots:
+            for d in cls('abc'), cls('abcde', maxlen=4):
+                d.x = ['x']
+                d.z = ['z']
 
-        d = Deque('abc')
+                e = d.__copy__()
+                self.assertEqual(type(d), type(e))
+                self.assertEqual(list(d), list(e))
 
-        e = d.__copy__()
-        self.assertEqual(type(d), type(e))
-        self.assertEqual(list(d), list(e))
+                e = cls(d)
+                self.assertEqual(type(d), type(e))
+                self.assertEqual(list(d), list(e))
 
-        e = Deque(d)
-        self.assertEqual(type(d), type(e))
-        self.assertEqual(list(d), list(e))
-
-        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            s = pickle.dumps(d, proto)
-            e = pickle.loads(s)
-            self.assertNotEqual(id(d), id(e))
-            self.assertEqual(type(d), type(e))
-            self.assertEqual(list(d), list(e))
-
-        d = Deque('abcde', maxlen=4)
-
-        e = d.__copy__()
-        self.assertEqual(type(d), type(e))
-        self.assertEqual(list(d), list(e))
-
-        e = Deque(d)
-        self.assertEqual(type(d), type(e))
-        self.assertEqual(list(d), list(e))
-
-        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            s = pickle.dumps(d, proto)
-            e = pickle.loads(s)
-            self.assertNotEqual(id(d), id(e))
-            self.assertEqual(type(d), type(e))
-            self.assertEqual(list(d), list(e))
+                for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                    s = pickle.dumps(d, proto)
+                    e = pickle.loads(s)
+                    self.assertNotEqual(id(d), id(e))
+                    self.assertEqual(type(d), type(e))
+                    self.assertEqual(list(d), list(e))
+                    self.assertEqual(e.x, d.x)
+                    self.assertEqual(e.z, d.z)
+                    self.assertNotHasAttr(e, 'y')
 
     def test_pickle_recursive(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):

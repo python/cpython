@@ -3,7 +3,9 @@
    of int.__float__, etc., that take and return unicode objects */
 
 #include "Python.h"
-#include "pycore_fileutils.h"
+#include "pycore_fileutils.h"     // _Py_GetLocaleconvNumeric()
+#include "pycore_long.h"          // _PyLong_FormatWriter()
+#include "pycore_unicodeobject.h" // PyUnicode_MAX_CHAR_VALUE()
 #include <locale.h>
 
 /* Raises an exception about an unknown presentation type for this
@@ -129,30 +131,14 @@ typedef struct {
     Py_UCS4 fill_char;
     Py_UCS4 align;
     int alternate;
+    int no_neg_0;
     Py_UCS4 sign;
     Py_ssize_t width;
     enum LocaleType thousands_separators;
     Py_ssize_t precision;
+    enum LocaleType frac_thousands_separator;
     Py_UCS4 type;
 } InternalFormatSpec;
-
-#if 0
-/* Occasionally useful for debugging. Should normally be commented out. */
-static void
-DEBUG_PRINT_FORMAT_SPEC(InternalFormatSpec *format)
-{
-    printf("internal format spec: fill_char %d\n", format->fill_char);
-    printf("internal format spec: align %d\n", format->align);
-    printf("internal format spec: alternate %d\n", format->alternate);
-    printf("internal format spec: sign %d\n", format->sign);
-    printf("internal format spec: width %zd\n", format->width);
-    printf("internal format spec: thousands_separators %d\n",
-           format->thousands_separators);
-    printf("internal format spec: precision %zd\n", format->precision);
-    printf("internal format spec: type %c\n", format->type);
-    printf("\n");
-}
-#endif
 
 
 /*
@@ -162,7 +148,8 @@ DEBUG_PRINT_FORMAT_SPEC(InternalFormatSpec *format)
   if failure, sets the exception
 */
 static int
-parse_internal_render_format_spec(PyObject *format_spec,
+parse_internal_render_format_spec(PyObject *obj,
+                                  PyObject *format_spec,
                                   Py_ssize_t start, Py_ssize_t end,
                                   InternalFormatSpec *format,
                                   char default_type,
@@ -182,9 +169,11 @@ parse_internal_render_format_spec(PyObject *format_spec,
     format->fill_char = ' ';
     format->align = default_align;
     format->alternate = 0;
+    format->no_neg_0 = 0;
     format->sign = '\0';
     format->width = -1;
     format->thousands_separators = LT_NO_LOCALE;
+    format->frac_thousands_separator = LT_NO_LOCALE;
     format->precision = -1;
     format->type = default_type;
 
@@ -206,6 +195,13 @@ parse_internal_render_format_spec(PyObject *format_spec,
     /* Parse the various sign options */
     if (end-pos >= 1 && is_sign_element(READ_spec(pos))) {
         format->sign = READ_spec(pos);
+        ++pos;
+    }
+
+    /* If the next character is z, request coercion of negative 0.
+       Applies only to floats. */
+    if (end-pos >= 1 && READ_spec(pos) == 'z') {
+        format->no_neg_0 = 1;
         ++pos;
     }
 
@@ -267,7 +263,35 @@ parse_internal_render_format_spec(PyObject *format_spec,
             /* Overflow error. Exception already set. */
             return 0;
 
-        /* Not having a precision after a dot is an error. */
+        if (end-pos && READ_spec(pos) == ',') {
+            if (consumed == 0) {
+                format->precision = -1;
+            }
+            format->frac_thousands_separator = LT_DEFAULT_LOCALE;
+            ++pos;
+            ++consumed;
+        }
+        if (end-pos && READ_spec(pos) == '_') {
+            if (format->frac_thousands_separator != LT_NO_LOCALE) {
+                invalid_comma_and_underscore();
+                return 0;
+            }
+            if (consumed == 0) {
+                format->precision = -1;
+            }
+            format->frac_thousands_separator = LT_UNDERSCORE_LOCALE;
+            ++pos;
+            ++consumed;
+        }
+        if (end-pos && READ_spec(pos) == ',') {
+            if (format->frac_thousands_separator == LT_UNDERSCORE_LOCALE) {
+                invalid_comma_and_underscore();
+                return 0;
+            }
+        }
+
+        /* Not having a precision or underscore/comma after a dot
+           is an error. */
         if (consumed == 0) {
             PyErr_Format(PyExc_ValueError,
                          "Format specifier missing precision");
@@ -279,8 +303,19 @@ parse_internal_render_format_spec(PyObject *format_spec,
     /* Finally, parse the type field. */
 
     if (end-pos > 1) {
-        /* More than one char remain, invalid format specifier. */
-        PyErr_Format(PyExc_ValueError, "Invalid format specifier");
+        /* More than one char remains, so this is an invalid format
+           specifier. */
+        /* Create a temporary object that contains the format spec we're
+           operating on.  It's format_spec[start:end] (in Python syntax). */
+        PyObject* actual_format_spec = PyUnicode_FromKindAndData(kind,
+                                         (char*)data + kind*start,
+                                         end-start);
+        if (actual_format_spec != NULL) {
+            PyErr_Format(PyExc_ValueError,
+                "Invalid format specifier '%U' for object of type '%.200s'",
+                actual_format_spec, Py_TYPE(obj)->tp_name);
+            Py_DECREF(actual_format_spec);
+        }
         return 0;
     }
 
@@ -316,11 +351,19 @@ parse_internal_render_format_spec(PyObject *format_spec,
                 format->thousands_separators = LT_UNDER_FOUR_LOCALE;
                 break;
             }
-            /* fall through */
+            _Py_FALLTHROUGH;
         default:
             invalid_thousands_separator_type(format->thousands_separators, format->type);
             return 0;
         }
+    }
+
+    if (format->type == 'n'
+        && format->frac_thousands_separator != LT_NO_LOCALE)
+    {
+        invalid_thousands_separator_type(format->frac_thousands_separator,
+                                         format->type);
+        return 0;
     }
 
     assert (format->align <= 127);
@@ -398,6 +441,7 @@ fill_padding(_PyUnicodeWriter *writer,
 typedef struct {
     PyObject *decimal_point;
     PyObject *thousands_sep;
+    PyObject *frac_thousands_sep;
     const char *grouping;
     char *grouping_buffer;
 } LocaleInfo;
@@ -419,6 +463,8 @@ typedef struct {
     Py_ssize_t n_remainder; /* Digits in decimal and/or exponent part,
                                excluding the decimal itself, if
                                present. */
+    Py_ssize_t n_frac;
+    Py_ssize_t n_grouped_frac_digits;
 
     /* These 2 are not the widths of fields, but are needed by
        STRINGLIB_GROUPING. */
@@ -441,24 +487,32 @@ typedef struct {
 */
 static void
 parse_number(PyObject *s, Py_ssize_t pos, Py_ssize_t end,
-             Py_ssize_t *n_remainder, int *has_decimal)
+             Py_ssize_t *n_remainder, Py_ssize_t *n_frac, int *has_decimal)
 {
-    Py_ssize_t remainder;
+    Py_ssize_t frac;
     int kind = PyUnicode_KIND(s);
     const void *data = PyUnicode_DATA(s);
 
-    while (pos<end && Py_ISDIGIT(PyUnicode_READ(kind, data, pos)))
+    while (pos<end && Py_ISDIGIT(PyUnicode_READ(kind, data, pos))) {
         ++pos;
-    remainder = pos;
+    }
+    frac = pos;
 
     /* Does remainder start with a decimal point? */
-    *has_decimal = pos<end && PyUnicode_READ(kind, data, remainder) == '.';
+    *has_decimal = pos<end && PyUnicode_READ(kind, data, frac) == '.';
 
     /* Skip the decimal point. */
-    if (*has_decimal)
-        remainder++;
+    if (*has_decimal) {
+        frac++;
+        pos++;
+    }
 
-    *n_remainder = end - remainder;
+    while (pos<end && Py_ISDIGIT(PyUnicode_READ(kind, data, pos))) {
+        ++pos;
+    }
+
+    *n_frac = pos - frac;
+    *n_remainder = end - pos;
 }
 
 /* not all fields of format are used.  for example, precision is
@@ -469,18 +523,19 @@ parse_number(PyObject *s, Py_ssize_t pos, Py_ssize_t end,
 static Py_ssize_t
 calc_number_widths(NumberFieldWidths *spec, Py_ssize_t n_prefix,
                    Py_UCS4 sign_char, Py_ssize_t n_start,
-                   Py_ssize_t n_end, Py_ssize_t n_remainder,
+                   Py_ssize_t n_end, Py_ssize_t n_remainder, Py_ssize_t n_frac,
                    int has_decimal, const LocaleInfo *locale,
                    const InternalFormatSpec *format, Py_UCS4 *maxchar)
 {
     Py_ssize_t n_non_digit_non_padding;
     Py_ssize_t n_padding;
 
-    spec->n_digits = n_end - n_start - n_remainder - (has_decimal?1:0);
+    spec->n_digits = n_end - n_start - n_frac - n_remainder - (has_decimal?1:0);
     spec->n_lpadding = 0;
     spec->n_prefix = n_prefix;
     spec->n_decimal = has_decimal ? PyUnicode_GET_LENGTH(locale->decimal_point) : 0;
     spec->n_remainder = n_remainder;
+    spec->n_frac = n_frac;
     spec->n_spadding = 0;
     spec->n_rpadding = 0;
     spec->sign = '\0';
@@ -524,14 +579,31 @@ calc_number_widths(NumberFieldWidths *spec, Py_ssize_t n_prefix,
         }
     }
 
+    if (spec->n_frac == 0) {
+        spec->n_grouped_frac_digits = 0;
+    }
+    else {
+        Py_UCS4 grouping_maxchar;
+        spec->n_grouped_frac_digits = _PyUnicode_InsertThousandsGrouping(
+            NULL, 0,
+            NULL, 0, spec->n_frac,
+            spec->n_frac,
+            locale->grouping, locale->frac_thousands_sep, &grouping_maxchar, 1);
+        if (spec->n_grouped_frac_digits == -1) {
+            return -1;
+        }
+        *maxchar = Py_MAX(*maxchar, grouping_maxchar);
+    }
+
     /* The number of chars used for non-digits and non-padding. */
     n_non_digit_non_padding = spec->n_sign + spec->n_prefix + spec->n_decimal +
-        spec->n_remainder;
+        + spec->n_frac + spec->n_remainder;
 
     /* min_width can go negative, that's okay. format->width == -1 means
        we don't care. */
     if (format->fill_char == '0' && format->align == '=')
-        spec->n_min_width = format->width - n_non_digit_non_padding;
+        spec->n_min_width = (format->width - n_non_digit_non_padding
+                             + spec->n_frac - spec->n_grouped_frac_digits);
     else
         spec->n_min_width = 0;
 
@@ -546,7 +618,7 @@ calc_number_widths(NumberFieldWidths *spec, Py_ssize_t n_prefix,
             NULL, 0,
             NULL, 0, spec->n_digits,
             spec->n_min_width,
-            locale->grouping, locale->thousands_sep, &grouping_maxchar);
+            locale->grouping, locale->thousands_sep, &grouping_maxchar, 0);
         if (spec->n_grouped_digits == -1) {
             return -1;
         }
@@ -558,7 +630,8 @@ calc_number_widths(NumberFieldWidths *spec, Py_ssize_t n_prefix,
        be negative (meaning no padding), but this code still works in
        that case. */
     n_padding = format->width -
-                        (n_non_digit_non_padding + spec->n_grouped_digits);
+                        (n_non_digit_non_padding + spec->n_grouped_digits
+                         + spec->n_grouped_frac_digits - spec->n_frac);
     if (n_padding > 0) {
         /* Some padding is needed. Determine if it's left, space, or right. */
         switch (format->align) {
@@ -589,7 +662,7 @@ calc_number_widths(NumberFieldWidths *spec, Py_ssize_t n_prefix,
 
     return spec->n_lpadding + spec->n_sign + spec->n_prefix +
         spec->n_spadding + spec->n_grouped_digits + spec->n_decimal +
-        spec->n_remainder + spec->n_rpadding;
+        spec->n_grouped_frac_digits + spec->n_remainder + spec->n_rpadding;
 }
 
 /* Fill in the digit parts of a number's string representation,
@@ -604,7 +677,7 @@ fill_number(_PyUnicodeWriter *writer, const NumberFieldWidths *spec,
 {
     /* Used to keep track of digits, decimal, and remainder. */
     Py_ssize_t d_pos = d_start;
-    const unsigned int kind = writer->kind;
+    const int kind = writer->kind;
     const void *data = writer->data;
     Py_ssize_t r;
 
@@ -645,7 +718,7 @@ fill_number(_PyUnicodeWriter *writer, const NumberFieldWidths *spec,
                 writer, spec->n_grouped_digits,
                 digits, d_pos, spec->n_digits,
                 spec->n_min_width,
-                locale->grouping, locale->thousands_sep, NULL);
+                locale->grouping, locale->thousands_sep, NULL, 0);
         if (r == -1)
             return -1;
         assert(r == spec->n_grouped_digits);
@@ -673,6 +746,19 @@ fill_number(_PyUnicodeWriter *writer, const NumberFieldWidths *spec,
         d_pos += 1;
     }
 
+    if (spec->n_frac) {
+        r = _PyUnicode_InsertThousandsGrouping(
+                writer, spec->n_grouped_frac_digits,
+                digits, d_pos, spec->n_frac, spec->n_frac,
+                locale->grouping, locale->frac_thousands_sep, NULL, 1);
+        if (r == -1) {
+            return -1;
+        }
+        assert(r == spec->n_grouped_frac_digits);
+        d_pos += spec->n_frac;
+        writer->pos += spec->n_grouped_frac_digits;
+    }
+
     if (spec->n_remainder) {
         _PyUnicode_FastCopyCharacters(
             writer->buffer, writer->pos,
@@ -697,7 +783,8 @@ static const char no_grouping[1] = {CHAR_MAX};
    LT_CURRENT_LOCALE, a hard-coded locale if LT_DEFAULT_LOCALE or
    LT_UNDERSCORE_LOCALE/LT_UNDER_FOUR_LOCALE, or none if LT_NO_LOCALE. */
 static int
-get_locale_info(enum LocaleType type, LocaleInfo *locale_info)
+get_locale_info(enum LocaleType type, enum LocaleType frac_type,
+                LocaleInfo *locale_info)
 {
     switch (type) {
     case LT_CURRENT_LOCALE: {
@@ -736,11 +823,24 @@ get_locale_info(enum LocaleType type, LocaleInfo *locale_info)
         break;
     case LT_NO_LOCALE:
         locale_info->decimal_point = PyUnicode_FromOrdinal('.');
-        locale_info->thousands_sep = PyUnicode_New(0, 0);
+        locale_info->thousands_sep = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
         if (!locale_info->decimal_point || !locale_info->thousands_sep)
             return -1;
         locale_info->grouping = no_grouping;
         break;
+    }
+    if (frac_type != LT_NO_LOCALE) {
+        locale_info->frac_thousands_sep = PyUnicode_FromOrdinal(
+            frac_type == LT_DEFAULT_LOCALE ? ',' : '_');
+        if (!locale_info->frac_thousands_sep) {
+            return -1;
+        }
+        if (locale_info->grouping == no_grouping) {
+            locale_info->grouping = "\3";
+        }
+    }
+    else {
+        locale_info->frac_thousands_sep = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     }
     return 0;
 }
@@ -750,6 +850,7 @@ free_locale_info(LocaleInfo *locale_info)
 {
     Py_XDECREF(locale_info->decimal_point);
     Py_XDECREF(locale_info->thousands_sep);
+    Py_XDECREF(locale_info->frac_thousands_sep);
     PyMem_Free(locale_info->grouping_buffer);
 }
 
@@ -768,7 +869,6 @@ format_string_internal(PyObject *value, const InternalFormatSpec *format,
     int result = -1;
     Py_UCS4 maxchar;
 
-    assert(PyUnicode_IS_READY(value));
     len = PyUnicode_GET_LENGTH(value);
 
     /* sign is not allowed on strings */
@@ -781,6 +881,14 @@ format_string_internal(PyObject *value, const InternalFormatSpec *format,
             PyErr_SetString(PyExc_ValueError,
                 "Sign not allowed in string format specifier");
         }
+        goto done;
+    }
+
+    /* negative 0 coercion is not allowed on strings */
+    if (format->no_neg_0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "Negative zero coercion (z) not allowed in string format "
+                        "specifier");
         goto done;
     }
 
@@ -877,6 +985,13 @@ format_long_internal(PyObject *value, const InternalFormatSpec *format,
                         "Precision not allowed in integer format specifier");
         goto done;
     }
+    /* no negative zero coercion on integers */
+    if (format->no_neg_0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "Negative zero coercion (z) not allowed in integer"
+                        " format specifier");
+        goto done;
+    }
 
     /* special case for character formatting */
     if (format->type == 'c') {
@@ -963,7 +1078,7 @@ format_long_internal(PyObject *value, const InternalFormatSpec *format,
 
         /* Do the hard part, converting to a string in a given base */
         tmp = _PyLong_Format(value, base);
-        if (tmp == NULL || PyUnicode_READY(tmp) == -1)
+        if (tmp == NULL)
             goto done;
 
         inumeric_chars = 0;
@@ -986,13 +1101,13 @@ format_long_internal(PyObject *value, const InternalFormatSpec *format,
 
     /* Determine the grouping, separator, and decimal point, if any. */
     if (get_locale_info(format->type == 'n' ? LT_CURRENT_LOCALE :
-                        format->thousands_separators,
+                        format->thousands_separators, 0,
                         &locale) == -1)
         goto done;
 
     /* Calculate how much memory we'll need. */
     n_total = calc_number_widths(&spec, n_prefix, sign_char, inumeric_chars,
-                                 inumeric_chars + n_digits, n_remainder, 0,
+                                 inumeric_chars + n_digits, n_remainder, 0, 0,
                                  &locale, format, &maxchar);
     if (n_total == -1) {
         goto done;
@@ -1027,6 +1142,7 @@ format_float_internal(PyObject *value,
     char *buf = NULL;       /* buffer returned from PyOS_double_to_string */
     Py_ssize_t n_digits;
     Py_ssize_t n_remainder;
+    Py_ssize_t n_frac;
     Py_ssize_t n_total;
     int has_decimal;
     double val;
@@ -1054,6 +1170,8 @@ format_float_internal(PyObject *value,
 
     if (format->alternate)
         flags |= Py_DTSF_ALT;
+    if (format->no_neg_0)
+        flags |= Py_DTSF_NO_NEG_0;
 
     if (type == '\0') {
         /* Omitted type specifier.  Behaves in the same way as repr(x)
@@ -1104,7 +1222,8 @@ format_float_internal(PyObject *value,
     if (format->sign != '+' && format->sign != ' '
         && format->width == -1
         && format->type != 'n'
-        && !format->thousands_separators)
+        && !format->thousands_separators
+        && !format->frac_thousands_separator)
     {
         /* Fast path */
         result = _PyUnicodeWriter_WriteASCIIString(writer, buf, n_digits);
@@ -1130,18 +1249,20 @@ format_float_internal(PyObject *value,
 
     /* Determine if we have any "remainder" (after the digits, might include
        decimal or exponent or both (or neither)) */
-    parse_number(unicode_tmp, index, index + n_digits, &n_remainder, &has_decimal);
+    parse_number(unicode_tmp, index, index + n_digits,
+                 &n_remainder, &n_frac, &has_decimal);
 
     /* Determine the grouping, separator, and decimal point, if any. */
     if (get_locale_info(format->type == 'n' ? LT_CURRENT_LOCALE :
                         format->thousands_separators,
+                        format->frac_thousands_separator,
                         &locale) == -1)
         goto done;
 
     /* Calculate how much memory we'll need. */
     n_total = calc_number_widths(&spec, 0, sign_char, index,
-                                 index + n_digits, n_remainder, has_decimal,
-                                 &locale, format, &maxchar);
+                                 index + n_digits, n_remainder, n_frac,
+                                 has_decimal, &locale, format, &maxchar);
     if (n_total == -1) {
         goto done;
     }
@@ -1181,6 +1302,8 @@ format_complex_internal(PyObject *value,
     Py_ssize_t n_im_digits;
     Py_ssize_t n_re_remainder;
     Py_ssize_t n_im_remainder;
+    Py_ssize_t n_re_frac;
+    Py_ssize_t n_im_frac;
     Py_ssize_t n_re_total;
     Py_ssize_t n_im_total;
     int re_has_decimal;
@@ -1194,7 +1317,7 @@ format_complex_internal(PyObject *value,
     int flags = 0;
     int result = -1;
     Py_UCS4 maxchar = 127;
-    enum PyUnicode_Kind rkind;
+    int rkind;
     void *rdata;
     Py_UCS4 re_sign_char = '\0';
     Py_UCS4 im_sign_char = '\0';
@@ -1243,6 +1366,8 @@ format_complex_internal(PyObject *value,
 
     if (format->alternate)
         flags |= Py_DTSF_ALT;
+    if (format->no_neg_0)
+        flags |= Py_DTSF_NO_NEG_0;
 
     if (type == '\0') {
         /* Omitted type specifier. Should be like str(self). */
@@ -1307,13 +1432,14 @@ format_complex_internal(PyObject *value,
     /* Determine if we have any "remainder" (after the digits, might include
        decimal or exponent or both (or neither)) */
     parse_number(re_unicode_tmp, i_re, i_re + n_re_digits,
-                 &n_re_remainder, &re_has_decimal);
+                 &n_re_remainder, &n_re_frac, &re_has_decimal);
     parse_number(im_unicode_tmp, i_im, i_im + n_im_digits,
-                 &n_im_remainder, &im_has_decimal);
+                 &n_im_remainder, &n_im_frac, &im_has_decimal);
 
     /* Determine the grouping, separator, and decimal point, if any. */
     if (get_locale_info(format->type == 'n' ? LT_CURRENT_LOCALE :
                         format->thousands_separators,
+                        format->frac_thousands_separator,
                         &locale) == -1)
         goto done;
 
@@ -1326,8 +1452,8 @@ format_complex_internal(PyObject *value,
     /* Calculate how much memory we'll need. */
     n_re_total = calc_number_widths(&re_spec, 0, re_sign_char,
                                     i_re, i_re + n_re_digits, n_re_remainder,
-                                    re_has_decimal, &locale, &tmp_format,
-                                    &maxchar);
+                                    n_re_frac, re_has_decimal, &locale,
+                                    &tmp_format, &maxchar);
     if (n_re_total == -1) {
         goto done;
     }
@@ -1339,8 +1465,8 @@ format_complex_internal(PyObject *value,
         tmp_format.sign = '+';
     n_im_total = calc_number_widths(&im_spec, 0, im_sign_char,
                                     i_im, i_im + n_im_digits, n_im_remainder,
-                                    im_has_decimal, &locale, &tmp_format,
-                                    &maxchar);
+                                    n_im_frac, im_has_decimal, &locale,
+                                    &tmp_format, &maxchar);
     if (n_im_total == -1) {
         goto done;
     }
@@ -1444,7 +1570,7 @@ _PyUnicode_FormatAdvancedWriter(_PyUnicodeWriter *writer,
     }
 
     /* parse the format_spec */
-    if (!parse_internal_render_format_spec(format_spec, start, end,
+    if (!parse_internal_render_format_spec(obj, format_spec, start, end,
                                            &format, 's', '<'))
         return -1;
 
@@ -1480,7 +1606,7 @@ _PyLong_FormatAdvancedWriter(_PyUnicodeWriter *writer,
     }
 
     /* parse the format_spec */
-    if (!parse_internal_render_format_spec(format_spec, start, end,
+    if (!parse_internal_render_format_spec(obj, format_spec, start, end,
                                            &format, 'd', '>'))
         goto done;
 
@@ -1536,7 +1662,7 @@ _PyFloat_FormatAdvancedWriter(_PyUnicodeWriter *writer,
         return format_obj(obj, writer);
 
     /* parse the format_spec */
-    if (!parse_internal_render_format_spec(format_spec, start, end,
+    if (!parse_internal_render_format_spec(obj, format_spec, start, end,
                                            &format, '\0', '>'))
         return -1;
 
@@ -1575,7 +1701,7 @@ _PyComplex_FormatAdvancedWriter(_PyUnicodeWriter *writer,
         return format_obj(obj, writer);
 
     /* parse the format_spec */
-    if (!parse_internal_render_format_spec(format_spec, start, end,
+    if (!parse_internal_render_format_spec(obj, format_spec, start, end,
                                            &format, '\0', '>'))
         return -1;
 

@@ -416,6 +416,8 @@ def findall(elem, path, namespaces=None):
 def findtext(elem, path, default=None, namespaces=None):
     try:
         elem = next(iterfind(elem, path, namespaces))
-        return elem.text or ""
+        if elem.text is None:
+            return ""
+        return elem.text
     except StopIteration:
         return default

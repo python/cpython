@@ -2,6 +2,13 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
+#endif
+#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+
 PyDoc_STRVAR(zlib_compress__doc__,
 "compress($module, data, /, level=Z_DEFAULT_COMPRESSION, wbits=MAX_WBITS)\n"
 "--\n"
@@ -16,7 +23,7 @@ PyDoc_STRVAR(zlib_compress__doc__,
 "    The window buffer size and container format.");
 
 #define ZLIB_COMPRESS_METHODDEF    \
-    {"compress", (PyCFunction)(void(*)(void))zlib_compress, METH_FASTCALL|METH_KEYWORDS, zlib_compress__doc__},
+    {"compress", _PyCFunction_CAST(zlib_compress), METH_FASTCALL|METH_KEYWORDS, zlib_compress__doc__},
 
 static PyObject *
 zlib_compress_impl(PyObject *module, Py_buffer *data, int level, int wbits);
@@ -25,30 +32,52 @@ static PyObject *
 zlib_compress(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(level), &_Py_ID(wbits), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"", "level", "wbits", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "compress", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "compress",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     Py_buffer data = {NULL, NULL};
     int level = Z_DEFAULT_COMPRESSION;
     int wbits = MAX_WBITS;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("compress", "argument 1", "contiguous buffer", args[0]);
-        goto exit;
-    }
     if (!noptargs) {
         goto skip_optional_pos;
     }
     if (args[1]) {
-        level = _PyLong_AsInt(args[1]);
+        level = PyLong_AsInt(args[1]);
         if (level == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -56,7 +85,7 @@ zlib_compress(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
             goto skip_optional_pos;
         }
     }
-    wbits = _PyLong_AsInt(args[2]);
+    wbits = PyLong_AsInt(args[2]);
     if (wbits == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -86,7 +115,7 @@ PyDoc_STRVAR(zlib_decompress__doc__,
 "    The initial output buffer size.");
 
 #define ZLIB_DECOMPRESS_METHODDEF    \
-    {"decompress", (PyCFunction)(void(*)(void))zlib_decompress, METH_FASTCALL|METH_KEYWORDS, zlib_decompress__doc__},
+    {"decompress", _PyCFunction_CAST(zlib_decompress), METH_FASTCALL|METH_KEYWORDS, zlib_decompress__doc__},
 
 static PyObject *
 zlib_decompress_impl(PyObject *module, Py_buffer *data, int wbits,
@@ -96,30 +125,52 @@ static PyObject *
 zlib_decompress(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(wbits), &_Py_ID(bufsize), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"", "wbits", "bufsize", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "decompress", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "decompress",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     Py_buffer data = {NULL, NULL};
     int wbits = MAX_WBITS;
     Py_ssize_t bufsize = DEF_BUF_SIZE;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("decompress", "argument 1", "contiguous buffer", args[0]);
-        goto exit;
-    }
     if (!noptargs) {
         goto skip_optional_pos;
     }
     if (args[1]) {
-        wbits = _PyLong_AsInt(args[1]);
+        wbits = PyLong_AsInt(args[1]);
         if (wbits == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -182,7 +233,7 @@ PyDoc_STRVAR(zlib_compressobj__doc__,
 "    containing subsequences that are likely to occur in the input data.");
 
 #define ZLIB_COMPRESSOBJ_METHODDEF    \
-    {"compressobj", (PyCFunction)(void(*)(void))zlib_compressobj, METH_FASTCALL|METH_KEYWORDS, zlib_compressobj__doc__},
+    {"compressobj", _PyCFunction_CAST(zlib_compressobj), METH_FASTCALL|METH_KEYWORDS, zlib_compressobj__doc__},
 
 static PyObject *
 zlib_compressobj_impl(PyObject *module, int level, int method, int wbits,
@@ -192,8 +243,33 @@ static PyObject *
 zlib_compressobj(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 6
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(level), &_Py_ID(method), &_Py_ID(wbits), &_Py_ID(memLevel), &_Py_ID(strategy), &_Py_ID(zdict), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"level", "method", "wbits", "memLevel", "strategy", "zdict", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "compressobj", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "compressobj",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[6];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int level = Z_DEFAULT_COMPRESSION;
@@ -203,7 +279,8 @@ zlib_compressobj(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     int strategy = Z_DEFAULT_STRATEGY;
     Py_buffer zdict = {NULL, NULL};
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 6, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 6, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -211,7 +288,7 @@ zlib_compressobj(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
         goto skip_optional_pos;
     }
     if (args[0]) {
-        level = _PyLong_AsInt(args[0]);
+        level = PyLong_AsInt(args[0]);
         if (level == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -220,7 +297,7 @@ zlib_compressobj(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
         }
     }
     if (args[1]) {
-        method = _PyLong_AsInt(args[1]);
+        method = PyLong_AsInt(args[1]);
         if (method == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -229,7 +306,7 @@ zlib_compressobj(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
         }
     }
     if (args[2]) {
-        wbits = _PyLong_AsInt(args[2]);
+        wbits = PyLong_AsInt(args[2]);
         if (wbits == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -238,7 +315,7 @@ zlib_compressobj(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
         }
     }
     if (args[3]) {
-        memLevel = _PyLong_AsInt(args[3]);
+        memLevel = PyLong_AsInt(args[3]);
         if (memLevel == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -247,7 +324,7 @@ zlib_compressobj(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
         }
     }
     if (args[4]) {
-        strategy = _PyLong_AsInt(args[4]);
+        strategy = PyLong_AsInt(args[4]);
         if (strategy == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -256,10 +333,6 @@ zlib_compressobj(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
         }
     }
     if (PyObject_GetBuffer(args[5], &zdict, PyBUF_SIMPLE) != 0) {
-        goto exit;
-    }
-    if (!PyBuffer_IsContiguous(&zdict, 'C')) {
-        _PyArg_BadArgument("compressobj", "argument 'zdict'", "contiguous buffer", args[5]);
         goto exit;
     }
 skip_optional_pos:
@@ -287,7 +360,7 @@ PyDoc_STRVAR(zlib_decompressobj__doc__,
 "    dictionary as used by the compressor that produced the input data.");
 
 #define ZLIB_DECOMPRESSOBJ_METHODDEF    \
-    {"decompressobj", (PyCFunction)(void(*)(void))zlib_decompressobj, METH_FASTCALL|METH_KEYWORDS, zlib_decompressobj__doc__},
+    {"decompressobj", _PyCFunction_CAST(zlib_decompressobj), METH_FASTCALL|METH_KEYWORDS, zlib_decompressobj__doc__},
 
 static PyObject *
 zlib_decompressobj_impl(PyObject *module, int wbits, PyObject *zdict);
@@ -296,14 +369,40 @@ static PyObject *
 zlib_decompressobj(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(wbits), &_Py_ID(zdict), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"wbits", "zdict", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "decompressobj", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "decompressobj",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int wbits = MAX_WBITS;
     PyObject *zdict = NULL;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -311,7 +410,7 @@ zlib_decompressobj(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
         goto skip_optional_pos;
     }
     if (args[0]) {
-        wbits = _PyLong_AsInt(args[0]);
+        wbits = PyLong_AsInt(args[0]);
         if (wbits == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -341,25 +440,41 @@ PyDoc_STRVAR(zlib_Compress_compress__doc__,
 "Call the flush() method to clear these buffers.");
 
 #define ZLIB_COMPRESS_COMPRESS_METHODDEF    \
-    {"compress", (PyCFunction)(void(*)(void))zlib_Compress_compress, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, zlib_Compress_compress__doc__},
+    {"compress", _PyCFunction_CAST(zlib_Compress_compress), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, zlib_Compress_compress__doc__},
 
 static PyObject *
 zlib_Compress_compress_impl(compobject *self, PyTypeObject *cls,
                             Py_buffer *data);
 
 static PyObject *
-zlib_Compress_compress(compobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+zlib_Compress_compress(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
     static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {"y*:compress", _keywords, 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "compress",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
     Py_buffer data = {NULL, NULL};
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &data)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
         goto exit;
     }
-    return_value = zlib_Compress_compress_impl(self, cls, &data);
+    if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    return_value = zlib_Compress_compress_impl((compobject *)self, cls, &data);
 
 exit:
     /* Cleanup for data */
@@ -388,26 +503,73 @@ PyDoc_STRVAR(zlib_Decompress_decompress__doc__,
 "Call the flush() method to clear these buffers.");
 
 #define ZLIB_DECOMPRESS_DECOMPRESS_METHODDEF    \
-    {"decompress", (PyCFunction)(void(*)(void))zlib_Decompress_decompress, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, zlib_Decompress_decompress__doc__},
+    {"decompress", _PyCFunction_CAST(zlib_Decompress_decompress), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, zlib_Decompress_decompress__doc__},
 
 static PyObject *
 zlib_Decompress_decompress_impl(compobject *self, PyTypeObject *cls,
                                 Py_buffer *data, Py_ssize_t max_length);
 
 static PyObject *
-zlib_Decompress_decompress(compobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+zlib_Decompress_decompress(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(max_length), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"", "max_length", NULL};
-    static _PyArg_Parser _parser = {"y*|n:decompress", _keywords, 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "decompress",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     Py_buffer data = {NULL, NULL};
     Py_ssize_t max_length = 0;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &data, &max_length)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
         goto exit;
     }
-    return_value = zlib_Decompress_decompress_impl(self, cls, &data, max_length);
+    if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[1]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        max_length = ival;
+    }
+skip_optional_pos:
+    return_value = zlib_Decompress_decompress_impl((compobject *)self, cls, &data, max_length);
 
 exit:
     /* Cleanup for data */
@@ -431,24 +593,45 @@ PyDoc_STRVAR(zlib_Compress_flush__doc__,
 "    can still be compressed.");
 
 #define ZLIB_COMPRESS_FLUSH_METHODDEF    \
-    {"flush", (PyCFunction)(void(*)(void))zlib_Compress_flush, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, zlib_Compress_flush__doc__},
+    {"flush", _PyCFunction_CAST(zlib_Compress_flush), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, zlib_Compress_flush__doc__},
 
 static PyObject *
 zlib_Compress_flush_impl(compobject *self, PyTypeObject *cls, int mode);
 
 static PyObject *
-zlib_Compress_flush(compobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+zlib_Compress_flush(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
     static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {"|i:flush", _keywords, 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "flush",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
     int mode = Z_FINISH;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &mode)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
         goto exit;
     }
-    return_value = zlib_Compress_flush_impl(self, cls, mode);
+    if (nargs < 1) {
+        goto skip_optional_posonly;
+    }
+    mode = PyLong_AsInt(args[0]);
+    if (mode == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_posonly:
+    return_value = zlib_Compress_flush_impl((compobject *)self, cls, mode);
 
 exit:
     return return_value;
@@ -463,26 +646,19 @@ PyDoc_STRVAR(zlib_Compress_copy__doc__,
 "Return a copy of the compression object.");
 
 #define ZLIB_COMPRESS_COPY_METHODDEF    \
-    {"copy", (PyCFunction)(void(*)(void))zlib_Compress_copy, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, zlib_Compress_copy__doc__},
+    {"copy", _PyCFunction_CAST(zlib_Compress_copy), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, zlib_Compress_copy__doc__},
 
 static PyObject *
 zlib_Compress_copy_impl(compobject *self, PyTypeObject *cls);
 
 static PyObject *
-zlib_Compress_copy(compobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+zlib_Compress_copy(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    PyObject *return_value = NULL;
-    static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {":copy", _keywords, 0};
-
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
-        )) {
-        goto exit;
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
+        PyErr_SetString(PyExc_TypeError, "copy() takes no arguments");
+        return NULL;
     }
-    return_value = zlib_Compress_copy_impl(self, cls);
-
-exit:
-    return return_value;
+    return zlib_Compress_copy_impl((compobject *)self, cls);
 }
 
 #endif /* defined(HAVE_ZLIB_COPY) */
@@ -495,26 +671,19 @@ PyDoc_STRVAR(zlib_Compress___copy____doc__,
 "\n");
 
 #define ZLIB_COMPRESS___COPY___METHODDEF    \
-    {"__copy__", (PyCFunction)(void(*)(void))zlib_Compress___copy__, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, zlib_Compress___copy____doc__},
+    {"__copy__", _PyCFunction_CAST(zlib_Compress___copy__), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, zlib_Compress___copy____doc__},
 
 static PyObject *
 zlib_Compress___copy___impl(compobject *self, PyTypeObject *cls);
 
 static PyObject *
-zlib_Compress___copy__(compobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+zlib_Compress___copy__(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    PyObject *return_value = NULL;
-    static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {":__copy__", _keywords, 0};
-
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
-        )) {
-        goto exit;
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
+        PyErr_SetString(PyExc_TypeError, "__copy__() takes no arguments");
+        return NULL;
     }
-    return_value = zlib_Compress___copy___impl(self, cls);
-
-exit:
-    return return_value;
+    return zlib_Compress___copy___impl((compobject *)self, cls);
 }
 
 #endif /* defined(HAVE_ZLIB_COPY) */
@@ -527,25 +696,39 @@ PyDoc_STRVAR(zlib_Compress___deepcopy____doc__,
 "\n");
 
 #define ZLIB_COMPRESS___DEEPCOPY___METHODDEF    \
-    {"__deepcopy__", (PyCFunction)(void(*)(void))zlib_Compress___deepcopy__, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, zlib_Compress___deepcopy____doc__},
+    {"__deepcopy__", _PyCFunction_CAST(zlib_Compress___deepcopy__), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, zlib_Compress___deepcopy____doc__},
 
 static PyObject *
 zlib_Compress___deepcopy___impl(compobject *self, PyTypeObject *cls,
                                 PyObject *memo);
 
 static PyObject *
-zlib_Compress___deepcopy__(compobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+zlib_Compress___deepcopy__(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
     static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {"O:__deepcopy__", _keywords, 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "__deepcopy__",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
     PyObject *memo;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &memo)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
         goto exit;
     }
-    return_value = zlib_Compress___deepcopy___impl(self, cls, memo);
+    memo = args[0];
+    return_value = zlib_Compress___deepcopy___impl((compobject *)self, cls, memo);
 
 exit:
     return return_value;
@@ -562,26 +745,19 @@ PyDoc_STRVAR(zlib_Decompress_copy__doc__,
 "Return a copy of the decompression object.");
 
 #define ZLIB_DECOMPRESS_COPY_METHODDEF    \
-    {"copy", (PyCFunction)(void(*)(void))zlib_Decompress_copy, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, zlib_Decompress_copy__doc__},
+    {"copy", _PyCFunction_CAST(zlib_Decompress_copy), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, zlib_Decompress_copy__doc__},
 
 static PyObject *
 zlib_Decompress_copy_impl(compobject *self, PyTypeObject *cls);
 
 static PyObject *
-zlib_Decompress_copy(compobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+zlib_Decompress_copy(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    PyObject *return_value = NULL;
-    static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {":copy", _keywords, 0};
-
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
-        )) {
-        goto exit;
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
+        PyErr_SetString(PyExc_TypeError, "copy() takes no arguments");
+        return NULL;
     }
-    return_value = zlib_Decompress_copy_impl(self, cls);
-
-exit:
-    return return_value;
+    return zlib_Decompress_copy_impl((compobject *)self, cls);
 }
 
 #endif /* defined(HAVE_ZLIB_COPY) */
@@ -594,26 +770,19 @@ PyDoc_STRVAR(zlib_Decompress___copy____doc__,
 "\n");
 
 #define ZLIB_DECOMPRESS___COPY___METHODDEF    \
-    {"__copy__", (PyCFunction)(void(*)(void))zlib_Decompress___copy__, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, zlib_Decompress___copy____doc__},
+    {"__copy__", _PyCFunction_CAST(zlib_Decompress___copy__), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, zlib_Decompress___copy____doc__},
 
 static PyObject *
 zlib_Decompress___copy___impl(compobject *self, PyTypeObject *cls);
 
 static PyObject *
-zlib_Decompress___copy__(compobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+zlib_Decompress___copy__(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    PyObject *return_value = NULL;
-    static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {":__copy__", _keywords, 0};
-
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
-        )) {
-        goto exit;
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
+        PyErr_SetString(PyExc_TypeError, "__copy__() takes no arguments");
+        return NULL;
     }
-    return_value = zlib_Decompress___copy___impl(self, cls);
-
-exit:
-    return return_value;
+    return zlib_Decompress___copy___impl((compobject *)self, cls);
 }
 
 #endif /* defined(HAVE_ZLIB_COPY) */
@@ -626,25 +795,39 @@ PyDoc_STRVAR(zlib_Decompress___deepcopy____doc__,
 "\n");
 
 #define ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF    \
-    {"__deepcopy__", (PyCFunction)(void(*)(void))zlib_Decompress___deepcopy__, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, zlib_Decompress___deepcopy____doc__},
+    {"__deepcopy__", _PyCFunction_CAST(zlib_Decompress___deepcopy__), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, zlib_Decompress___deepcopy____doc__},
 
 static PyObject *
 zlib_Decompress___deepcopy___impl(compobject *self, PyTypeObject *cls,
                                   PyObject *memo);
 
 static PyObject *
-zlib_Decompress___deepcopy__(compobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+zlib_Decompress___deepcopy__(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
     static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {"O:__deepcopy__", _keywords, 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "__deepcopy__",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
     PyObject *memo;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &memo)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
         goto exit;
     }
-    return_value = zlib_Decompress___deepcopy___impl(self, cls, memo);
+    memo = args[0];
+    return_value = zlib_Decompress___deepcopy___impl((compobject *)self, cls, memo);
 
 exit:
     return return_value;
@@ -662,27 +845,153 @@ PyDoc_STRVAR(zlib_Decompress_flush__doc__,
 "    the initial size of the output buffer.");
 
 #define ZLIB_DECOMPRESS_FLUSH_METHODDEF    \
-    {"flush", (PyCFunction)(void(*)(void))zlib_Decompress_flush, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, zlib_Decompress_flush__doc__},
+    {"flush", _PyCFunction_CAST(zlib_Decompress_flush), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, zlib_Decompress_flush__doc__},
 
 static PyObject *
 zlib_Decompress_flush_impl(compobject *self, PyTypeObject *cls,
                            Py_ssize_t length);
 
 static PyObject *
-zlib_Decompress_flush(compobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+zlib_Decompress_flush(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
     static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {"|n:flush", _keywords, 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "flush",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
     Py_ssize_t length = DEF_BUF_SIZE;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &length)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
         goto exit;
     }
-    return_value = zlib_Decompress_flush_impl(self, cls, length);
+    if (nargs < 1) {
+        goto skip_optional_posonly;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[0]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        length = ival;
+    }
+skip_optional_posonly:
+    return_value = zlib_Decompress_flush_impl((compobject *)self, cls, length);
 
 exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(zlib_ZlibDecompressor_decompress__doc__,
+"decompress($self, /, data, max_length=-1)\n"
+"--\n"
+"\n"
+"Decompress *data*, returning uncompressed data as bytes.\n"
+"\n"
+"If *max_length* is nonnegative, returns at most *max_length* bytes of\n"
+"decompressed data. If this limit is reached and further output can be\n"
+"produced, *self.needs_input* will be set to ``False``. In this case, the next\n"
+"call to *decompress()* may provide *data* as b\'\' to obtain more of the output.\n"
+"\n"
+"If all of the input data was decompressed and returned (either because this\n"
+"was less than *max_length* bytes, or because *max_length* was negative),\n"
+"*self.needs_input* will be set to True.\n"
+"\n"
+"Attempting to decompress data after the end of stream is reached raises an\n"
+"EOFError.  Any data found after the end of the stream is ignored and saved in\n"
+"the unused_data attribute.");
+
+#define ZLIB_ZLIBDECOMPRESSOR_DECOMPRESS_METHODDEF    \
+    {"decompress", _PyCFunction_CAST(zlib_ZlibDecompressor_decompress), METH_FASTCALL|METH_KEYWORDS, zlib_ZlibDecompressor_decompress__doc__},
+
+static PyObject *
+zlib_ZlibDecompressor_decompress_impl(ZlibDecompressor *self,
+                                      Py_buffer *data, Py_ssize_t max_length);
+
+static PyObject *
+zlib_ZlibDecompressor_decompress(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(data), &_Py_ID(max_length), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"data", "max_length", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "decompress",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    Py_buffer data = {NULL, NULL};
+    Py_ssize_t max_length = -1;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[1]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        max_length = ival;
+    }
+skip_optional_pos:
+    return_value = zlib_ZlibDecompressor_decompress_impl((ZlibDecompressor *)self, &data, max_length);
+
+exit:
+    /* Cleanup for data */
+    if (data.obj) {
+       PyBuffer_Release(&data);
+    }
+
     return return_value;
 }
 
@@ -698,7 +1007,7 @@ PyDoc_STRVAR(zlib_adler32__doc__,
 "The returned checksum is an integer.");
 
 #define ZLIB_ADLER32_METHODDEF    \
-    {"adler32", (PyCFunction)(void(*)(void))zlib_adler32, METH_FASTCALL, zlib_adler32__doc__},
+    {"adler32", _PyCFunction_CAST(zlib_adler32), METH_FASTCALL, zlib_adler32__doc__},
 
 static PyObject *
 zlib_adler32_impl(PyObject *module, Py_buffer *data, unsigned int value);
@@ -714,10 +1023,6 @@ zlib_adler32(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
-        goto exit;
-    }
-    if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("adler32", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (nargs < 2) {
@@ -739,6 +1044,65 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(zlib_adler32_combine__doc__,
+"adler32_combine($module, adler1, adler2, len2, /)\n"
+"--\n"
+"\n"
+"Combine two Adler-32 checksums into one.\n"
+"\n"
+"  adler1\n"
+"    Adler-32 checksum for sequence A\n"
+"  adler2\n"
+"    Adler-32 checksum for sequence B\n"
+"  len2\n"
+"    Length of sequence B\n"
+"\n"
+"Given the Adler-32 checksum \'adler1\' of a sequence A and the\n"
+"Adler-32 checksum \'adler2\' of a sequence B of length \'len2\',\n"
+"return the Adler-32 checksum of A and B concatenated.");
+
+#define ZLIB_ADLER32_COMBINE_METHODDEF    \
+    {"adler32_combine", _PyCFunction_CAST(zlib_adler32_combine), METH_FASTCALL, zlib_adler32_combine__doc__},
+
+static unsigned int
+zlib_adler32_combine_impl(PyObject *module, unsigned int adler1,
+                          unsigned int adler2, PyObject *len2);
+
+static PyObject *
+zlib_adler32_combine(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    unsigned int adler1;
+    unsigned int adler2;
+    PyObject *len2;
+    unsigned int _return_value;
+
+    if (!_PyArg_CheckPositional("adler32_combine", nargs, 3, 3)) {
+        goto exit;
+    }
+    adler1 = (unsigned int)PyLong_AsUnsignedLongMask(args[0]);
+    if (adler1 == (unsigned int)-1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    adler2 = (unsigned int)PyLong_AsUnsignedLongMask(args[1]);
+    if (adler2 == (unsigned int)-1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (!PyLong_Check(args[2])) {
+        _PyArg_BadArgument("adler32_combine", "argument 3", "int", args[2]);
+        goto exit;
+    }
+    len2 = args[2];
+    _return_value = zlib_adler32_combine_impl(module, adler1, adler2, len2);
+    if ((_return_value == (unsigned int)-1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromUnsignedLong((unsigned long)_return_value);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(zlib_crc32__doc__,
 "crc32($module, data, value=0, /)\n"
 "--\n"
@@ -751,9 +1115,9 @@ PyDoc_STRVAR(zlib_crc32__doc__,
 "The returned checksum is an integer.");
 
 #define ZLIB_CRC32_METHODDEF    \
-    {"crc32", (PyCFunction)(void(*)(void))zlib_crc32, METH_FASTCALL, zlib_crc32__doc__},
+    {"crc32", _PyCFunction_CAST(zlib_crc32), METH_FASTCALL, zlib_crc32__doc__},
 
-static PyObject *
+static unsigned int
 zlib_crc32_impl(PyObject *module, Py_buffer *data, unsigned int value);
 
 static PyObject *
@@ -762,15 +1126,12 @@ zlib_crc32(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
     unsigned int value = 0;
+    unsigned int _return_value;
 
     if (!_PyArg_CheckPositional("crc32", nargs, 1, 2)) {
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
-        goto exit;
-    }
-    if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("crc32", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (nargs < 2) {
@@ -781,7 +1142,11 @@ zlib_crc32(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
 skip_optional:
-    return_value = zlib_crc32_impl(module, &data, value);
+    _return_value = zlib_crc32_impl(module, &data, value);
+    if ((_return_value == (unsigned int)-1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromUnsignedLong((unsigned long)_return_value);
 
 exit:
     /* Cleanup for data */
@@ -789,6 +1154,65 @@ exit:
        PyBuffer_Release(&data);
     }
 
+    return return_value;
+}
+
+PyDoc_STRVAR(zlib_crc32_combine__doc__,
+"crc32_combine($module, crc1, crc2, len2, /)\n"
+"--\n"
+"\n"
+"Combine two CRC-32 checksums into one.\n"
+"\n"
+"  crc1\n"
+"    CRC-32 checksum for sequence A\n"
+"  crc2\n"
+"    CRC-32 checksum for sequence B\n"
+"  len2\n"
+"    Length of sequence B\n"
+"\n"
+"Given the CRC-32 checksum \'crc1\' of a sequence A and the\n"
+"CRC-32 checksum \'crc2\' of a sequence B of length \'len2\',\n"
+"return the CRC-32 checksum of A and B concatenated.");
+
+#define ZLIB_CRC32_COMBINE_METHODDEF    \
+    {"crc32_combine", _PyCFunction_CAST(zlib_crc32_combine), METH_FASTCALL, zlib_crc32_combine__doc__},
+
+static unsigned int
+zlib_crc32_combine_impl(PyObject *module, unsigned int crc1,
+                        unsigned int crc2, PyObject *len2);
+
+static PyObject *
+zlib_crc32_combine(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    unsigned int crc1;
+    unsigned int crc2;
+    PyObject *len2;
+    unsigned int _return_value;
+
+    if (!_PyArg_CheckPositional("crc32_combine", nargs, 3, 3)) {
+        goto exit;
+    }
+    crc1 = (unsigned int)PyLong_AsUnsignedLongMask(args[0]);
+    if (crc1 == (unsigned int)-1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    crc2 = (unsigned int)PyLong_AsUnsignedLongMask(args[1]);
+    if (crc2 == (unsigned int)-1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (!PyLong_Check(args[2])) {
+        _PyArg_BadArgument("crc32_combine", "argument 3", "int", args[2]);
+        goto exit;
+    }
+    len2 = args[2];
+    _return_value = zlib_crc32_combine_impl(module, crc1, crc2, len2);
+    if ((_return_value == (unsigned int)-1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromUnsignedLong((unsigned long)_return_value);
+
+exit:
     return return_value;
 }
 
@@ -815,4 +1239,4 @@ exit:
 #ifndef ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
     #define ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
 #endif /* !defined(ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF) */
-/*[clinic end generated code: output=e3e8a6142ea045a7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3f7692eb3b5d5a0c input=a9049054013a1b77]*/

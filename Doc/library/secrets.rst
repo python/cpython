@@ -1,5 +1,5 @@
-:mod:`secrets` --- Generate secure random numbers for managing secrets
-======================================================================
+:mod:`!secrets` --- Generate secure random numbers for managing secrets
+=======================================================================
 
 .. module:: secrets
    :synopsis: Generate secure random numbers for managing secrets.
@@ -42,17 +42,17 @@ randomness that your operating system provides.
    sources provided by the operating system.  See
    :class:`random.SystemRandom` for additional details.
 
-.. function:: choice(sequence)
+.. function:: choice(seq)
 
-   Return a randomly-chosen element from a non-empty sequence.
+   Return a randomly chosen element from a non-empty sequence.
 
-.. function:: randbelow(n)
+.. function:: randbelow(exclusive_upper_bound)
 
-   Return a random int in the range [0, *n*).
+   Return a random int in the range [0, *exclusive_upper_bound*).
 
 .. function:: randbits(k)
 
-   Return an int with *k* random bits.
+   Return a non-negative int with *k* random bits.
 
 
 Generating tokens
@@ -128,8 +128,10 @@ Other functions
 
 .. function:: compare_digest(a, b)
 
-   Return ``True`` if strings *a* and *b* are equal, otherwise ``False``,
-   in such a way as to reduce the risk of
+   Return ``True`` if strings or
+   :term:`bytes-like objects <bytes-like object>`
+   *a* and *b* are equal, otherwise ``False``,
+   using a "constant-time compare" to reduce the risk of
    `timing attacks <https://codahale.com/a-lesson-in-timing-attacks/>`_.
    See :func:`hmac.compare_digest` for additional details.
 
@@ -153,9 +155,9 @@ Generate an eight-character alphanumeric password:
 .. note::
 
    Applications should not
-   `store passwords in a recoverable format <http://cwe.mitre.org/data/definitions/257.html>`_,
+   :cwe:`store passwords in a recoverable format <257>`,
    whether plain text or encrypted.  They should be salted and hashed
-   using a cryptographically-strong one-way (irreversible) hash function.
+   using a cryptographically strong one-way (irreversible) hash function.
 
 
 Generate a ten-character alphanumeric password with at least one
@@ -193,7 +195,7 @@ suitable for password recovery applications:
 .. testcode::
 
    import secrets
-   url = 'https://mydomain.com/reset=' + secrets.token_urlsafe()
+   url = 'https://example.com/reset=' + secrets.token_urlsafe()
 
 
 

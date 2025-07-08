@@ -1,6 +1,7 @@
 """Tests for sendfile functionality."""
 
 import asyncio
+import errno
 import os
 import socket
 import sys
@@ -21,7 +22,7 @@ except ImportError:
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio._set_event_loop_policy(None)
 
 
 class MySendfileProto(asyncio.Protocol):
@@ -36,25 +37,29 @@ class MySendfileProto(asyncio.Protocol):
         self.data = bytearray()
         self.close_after = close_after
 
+    def _assert_state(self, *expected):
+        if self.state not in expected:
+            raise AssertionError(f'state: {self.state!r}, expected: {expected!r}')
+
     def connection_made(self, transport):
         self.transport = transport
-        assert self.state == 'INITIAL', self.state
+        self._assert_state('INITIAL')
         self.state = 'CONNECTED'
         if self.connected:
             self.connected.set_result(None)
 
     def eof_received(self):
-        assert self.state == 'CONNECTED', self.state
+        self._assert_state('CONNECTED')
         self.state = 'EOF'
 
     def connection_lost(self, exc):
-        assert self.state in ('CONNECTED', 'EOF'), self.state
+        self._assert_state('CONNECTED', 'EOF')
         self.state = 'CLOSED'
         if self.done:
             self.done.set_result(None)
 
     def data_received(self, data):
-        assert self.state == 'CONNECTED', self.state
+        self._assert_state('CONNECTED')
         self.nbytes += len(data)
         self.data.extend(data)
         super().data_received(data)
@@ -88,9 +93,10 @@ class MyProto(asyncio.Protocol):
 
 class SendfileBase:
 
-      # 128 KiB plus small unaligned to buffer chunk
-    DATA = b"SendfileBaseData" * (1024 * 8 + 1)
-
+    # Linux >= 6.10 seems buffering up to 17 pages of data.
+    # So DATA should be large enough to make this test reliable even with a
+    # 64 KiB page configuration.
+    DATA = b"x" * (1024 * 17 * 64 + 1)
     # Reduce socket buffer size to test on relative small data sets.
     BUF_SIZE = 4 * 1024   # 4 KiB
 
@@ -461,8 +467,11 @@ class SendfileMixin(SendfileBase):
 
         self.assertTrue(1024 <= srv_proto.nbytes < len(self.DATA),
                         srv_proto.nbytes)
-        self.assertTrue(1024 <= self.file.tell() < len(self.DATA),
-                        self.file.tell())
+        if not (sys.platform == 'win32'
+                and isinstance(self.loop, asyncio.ProactorEventLoop)):
+            # On Windows, Proactor uses transmitFile, which does not update tell()
+            self.assertTrue(1024 <= self.file.tell() < len(self.DATA),
+                            self.file.tell())
         self.assertTrue(cli_proto.transport.is_closing())
 
     def test_sendfile_fallback_close_peer_in_the_middle_of_receiving(self):
@@ -476,8 +485,17 @@ class SendfileMixin(SendfileBase):
 
         srv_proto, cli_proto = self.prepare_sendfile(close_after=1024)
         with self.assertRaises(ConnectionError):
-            self.run_loop(
-                self.loop.sendfile(cli_proto.transport, self.file))
+            try:
+                self.run_loop(
+                    self.loop.sendfile(cli_proto.transport, self.file))
+            except OSError as e:
+                # macOS may raise OSError of EPROTOTYPE when writing to a
+                # socket that is in the process of closing down.
+                if e.errno == errno.EPROTOTYPE and sys.platform == "darwin":
+                    raise ConnectionError
+                else:
+                    raise
+
         self.run_loop(srv_proto.done)
 
         self.assertTrue(1024 <= srv_proto.nbytes < len(self.DATA),
@@ -561,3 +579,7 @@ else:
 
         def create_event_loop(self):
             return asyncio.SelectorEventLoop(selectors.SelectSelector())
+
+
+if __name__ == '__main__':
+    unittest.main()

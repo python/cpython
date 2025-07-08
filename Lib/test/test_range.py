@@ -407,11 +407,7 @@ class RangeTest(unittest.TestCase):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             with self.subTest(proto=proto):
                 it = iter(range(2**32 + 2))
-                _, _, idx = it.__reduce__()
-                self.assertEqual(idx, 0)
-                it.__setstate__(2**32 + 1)  # undocumented way to set r->index
-                _, _, idx = it.__reduce__()
-                self.assertEqual(idx, 2**32 + 1)
+                it.__setstate__(2**32 + 1)  # undocumented way to advance an iterator
                 d = pickle.dumps(it, proto)
                 it = pickle.loads(d)
                 self.assertEqual(next(it), 2**32 + 1)
@@ -441,6 +437,38 @@ class RangeTest(unittest.TestCase):
             i2 = pickle.loads(d)
             self.assertEqual(list(i), [])
             self.assertEqual(list(i2), [])
+
+    def test_iterator_unpickle_compat(self):
+        testcases = [
+            b'c__builtin__\niter\n(c__builtin__\nxrange\n(I10\nI20\nI2\ntRtRI2\nb.',
+            b'c__builtin__\niter\n(c__builtin__\nxrange\n(K\nK\x14K\x02tRtRK\x02b.',
+            b'\x80\x02c__builtin__\niter\nc__builtin__\nxrange\nK\nK\x14K\x02\x87R\x85RK\x02b.',
+            b'\x80\x03cbuiltins\niter\ncbuiltins\nrange\nK\nK\x14K\x02\x87R\x85RK\x02b.',
+            b'\x80\x04\x951\x00\x00\x00\x00\x00\x00\x00\x8c\x08builtins\x8c\x04iter\x93\x8c\x08builtins\x8c\x05range\x93K\nK\x14K\x02\x87R\x85RK\x02b.',
+
+            b'c__builtin__\niter\n(c__builtin__\nxrange\n(L-36893488147419103232L\nI20\nI2\ntRtRL18446744073709551623L\nb.',
+            b'c__builtin__\niter\n(c__builtin__\nxrange\n(L-36893488147419103232L\nK\x14K\x02tRtRL18446744073709551623L\nb.',
+            b'\x80\x02c__builtin__\niter\nc__builtin__\nxrange\n\x8a\t\x00\x00\x00\x00\x00\x00\x00\x00\xfeK\x14K\x02\x87R\x85R\x8a\t\x07\x00\x00\x00\x00\x00\x00\x00\x01b.',
+            b'\x80\x03cbuiltins\niter\ncbuiltins\nrange\n\x8a\t\x00\x00\x00\x00\x00\x00\x00\x00\xfeK\x14K\x02\x87R\x85R\x8a\t\x07\x00\x00\x00\x00\x00\x00\x00\x01b.',
+            b'\x80\x04\x95C\x00\x00\x00\x00\x00\x00\x00\x8c\x08builtins\x8c\x04iter\x93\x8c\x08builtins\x8c\x05range\x93\x8a\t\x00\x00\x00\x00\x00\x00\x00\x00\xfeK\x14K\x02\x87R\x85R\x8a\t\x07\x00\x00\x00\x00\x00\x00\x00\x01b.',
+        ]
+        for t in testcases:
+            it = pickle.loads(t)
+            self.assertEqual(list(it), [14, 16, 18])
+
+    def test_iterator_setstate(self):
+        it = iter(range(10, 20, 2))
+        it.__setstate__(2)
+        self.assertEqual(list(it), [14, 16, 18])
+        it = reversed(range(10, 20, 2))
+        it.__setstate__(3)
+        self.assertEqual(list(it), [12, 10])
+        it = iter(range(-2**65, 20, 2))
+        it.__setstate__(2**64 + 7)
+        self.assertEqual(list(it), [14, 16, 18])
+        it = reversed(range(10, 2**65, 2))
+        it.__setstate__(2**64 - 7)
+        self.assertEqual(list(it), [12, 10])
 
     def test_odd_bug(self):
         # This used to raise a "SystemError: NULL result without error"
@@ -514,6 +542,7 @@ class RangeTest(unittest.TestCase):
                        for start in limits
                        for end in limits
                        for step in (-2**63, -2**31, -2, -1, 1, 2)]
+        test_ranges += [(-2**63, 2**63-2, 1)] # regression test for gh-100810
 
         for start, end, step in test_ranges:
             iter1 = range(start, end, step)

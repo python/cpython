@@ -11,10 +11,14 @@
    Copyright (c) 2000-2005 Fred L. Drake, Jr. <fdrake@users.sourceforge.net>
    Copyright (c) 2001-2002 Greg Stein <gstein@users.sourceforge.net>
    Copyright (c) 2002-2016 Karl Waclawek <karl@waclawek.net>
-   Copyright (c) 2016-2021 Sebastian Pipping <sebastian@pipping.org>
+   Copyright (c) 2016-2025 Sebastian Pipping <sebastian@pipping.org>
    Copyright (c) 2016      Cristian Rodríguez <crrodriguez@opensuse.org>
    Copyright (c) 2016      Thomas Beutlich <tc@tbeu.de>
    Copyright (c) 2017      Rhodri James <rhodri@wildebeest.org.uk>
+   Copyright (c) 2022      Thijs Schreijer <thijs@thijsschreijer.nl>
+   Copyright (c) 2023      Hanno Böck <hanno@gentoo.org>
+   Copyright (c) 2023      Sony Corporation / Snild Dolkow <snild@sony.com>
+   Copyright (c) 2024      Taichi Haradaguchi <20001722@ymail.ne.jp>
    Licensed under the MIT license:
 
    Permission is  hereby granted,  free of charge,  to any  person obtaining
@@ -126,7 +130,9 @@ enum XML_Error {
   /* Added in 2.3.0. */
   XML_ERROR_NO_BUFFER,
   /* Added in 2.4.0. */
-  XML_ERROR_AMPLIFICATION_LIMIT_BREACH
+  XML_ERROR_AMPLIFICATION_LIMIT_BREACH,
+  /* Added in 2.6.4. */
+  XML_ERROR_NOT_STARTED,
 };
 
 enum XML_Content_Type {
@@ -174,8 +180,10 @@ struct XML_cp {
 };
 
 /* This is called for an element declaration. See above for
-   description of the model argument. It's the caller's responsibility
-   to free model when finished with it.
+   description of the model argument. It's the user code's responsibility
+   to free model when finished with it. See XML_FreeContentModel.
+   There is no need to free the model from the handler, it can be kept
+   around and freed at a later stage.
 */
 typedef void(XMLCALL *XML_ElementDeclHandler)(void *userData,
                                               const XML_Char *name,
@@ -237,6 +245,17 @@ XML_ParserCreate(const XML_Char *encoding);
    and the local part will be concatenated without any separator.
    It is a programming error to use the separator '\0' with namespace
    triplets (see XML_SetReturnNSTriplet).
+   If a namespace separator is chosen that can be part of a URI or
+   part of an XML name, splitting an expanded name back into its
+   1, 2 or 3 original parts on application level in the element handler
+   may end up vulnerable, so these are advised against;  sane choices for
+   a namespace separator are e.g. '\n' (line feed) and '|' (pipe).
+
+   Note that Expat does not validate namespace URIs (beyond encoding)
+   against RFC 3986 today (and is not required to do so with regard to
+   the XML 1.0 namespaces specification) but it may start doing that
+   in future releases.  Before that, an application using Expat must
+   be ready to receive namespace URIs containing non-URI characters.
 */
 XMLPARSEAPI(XML_Parser)
 XML_ParserCreateNS(const XML_Char *encoding, XML_Char namespaceSeparator);
@@ -255,7 +274,7 @@ XML_ParserCreate_MM(const XML_Char *encoding,
                     const XML_Memory_Handling_Suite *memsuite,
                     const XML_Char *namespaceSeparator);
 
-/* Prepare a parser object to be re-used.  This is particularly
+/* Prepare a parser object to be reused.  This is particularly
    valuable when memory allocation overhead is disproportionately high,
    such as when a large number of small documnents need to be parsed.
    All handlers are cleared from the parser, except for the
@@ -317,7 +336,7 @@ typedef void(XMLCALL *XML_StartDoctypeDeclHandler)(void *userData,
                                                    const XML_Char *pubid,
                                                    int has_internal_subset);
 
-/* This is called for the start of the DOCTYPE declaration when the
+/* This is called for the end of the DOCTYPE declaration when the
    closing > is encountered, but after processing any external
    subset.
 */
@@ -937,7 +956,7 @@ XMLPARSEAPI(XML_Index) XML_GetCurrentByteIndex(XML_Parser parser);
 XMLPARSEAPI(int)
 XML_GetCurrentByteCount(XML_Parser parser);
 
-/* If XML_CONTEXT_BYTES is defined, returns the input buffer, sets
+/* If XML_CONTEXT_BYTES is >=1, returns the input buffer, sets
    the integer pointed to by offset to the offset within this buffer
    of the current parse position, and sets the integer pointed to by size
    to the size of this buffer (the number of input bytes). Otherwise
@@ -1011,7 +1030,9 @@ enum XML_FeatureEnum {
   XML_FEATURE_ATTR_INFO,
   /* Added in Expat 2.4.0. */
   XML_FEATURE_BILLION_LAUGHS_ATTACK_PROTECTION_MAXIMUM_AMPLIFICATION_DEFAULT,
-  XML_FEATURE_BILLION_LAUGHS_ATTACK_PROTECTION_ACTIVATION_THRESHOLD_DEFAULT
+  XML_FEATURE_BILLION_LAUGHS_ATTACK_PROTECTION_ACTIVATION_THRESHOLD_DEFAULT,
+  /* Added in Expat 2.6.0. */
+  XML_FEATURE_GE
   /* Additional features must be added to the end of this enum. */
 };
 
@@ -1024,23 +1045,29 @@ typedef struct {
 XMLPARSEAPI(const XML_Feature *)
 XML_GetFeatureList(void);
 
-#ifdef XML_DTD
-/* Added in Expat 2.4.0. */
+#if defined(XML_DTD) || (defined(XML_GE) && XML_GE == 1)
+/* Added in Expat 2.4.0 for XML_DTD defined and
+ * added in Expat 2.6.0 for XML_GE == 1. */
 XMLPARSEAPI(XML_Bool)
 XML_SetBillionLaughsAttackProtectionMaximumAmplification(
     XML_Parser parser, float maximumAmplificationFactor);
 
-/* Added in Expat 2.4.0. */
+/* Added in Expat 2.4.0 for XML_DTD defined and
+ * added in Expat 2.6.0 for XML_GE == 1. */
 XMLPARSEAPI(XML_Bool)
 XML_SetBillionLaughsAttackProtectionActivationThreshold(
     XML_Parser parser, unsigned long long activationThresholdBytes);
 #endif
 
+/* Added in Expat 2.6.0. */
+XMLPARSEAPI(XML_Bool)
+XML_SetReparseDeferralEnabled(XML_Parser parser, XML_Bool enabled);
+
 /* Expat follows the semantic versioning convention.
-   See http://semver.org.
+   See https://semver.org
 */
 #define XML_MAJOR_VERSION 2
-#define XML_MINOR_VERSION 4
+#define XML_MINOR_VERSION 7
 #define XML_MICRO_VERSION 1
 
 #ifdef __cplusplus

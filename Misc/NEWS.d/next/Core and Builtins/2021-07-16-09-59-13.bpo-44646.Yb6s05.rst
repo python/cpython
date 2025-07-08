@@ -1,2 +1,0 @@
-Fix the hash of the union type: it no longer depends on the order of
-arguments.

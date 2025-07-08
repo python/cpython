@@ -1,5 +1,5 @@
-:mod:`string` --- Common string operations
-==========================================
+:mod:`!string` --- Common string operations
+===========================================
 
 .. module:: string
    :synopsis: Common string operations.
@@ -7,6 +7,7 @@
 **Source code:** :source:`Lib/string.py`
 
 --------------
+
 
 .. seealso::
 
@@ -58,11 +59,18 @@ The constants defined in this module are:
    String of ASCII characters which are considered punctuation characters
    in the ``C`` locale: ``!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~``.
 
+
 .. data:: printable
 
-   String of ASCII characters which are considered printable.  This is a
-   combination of :const:`digits`, :const:`ascii_letters`, :const:`punctuation`,
-   and :const:`whitespace`.
+   String of ASCII characters which are considered printable by Python.
+   This is a combination of :const:`digits`, :const:`ascii_letters`,
+   :const:`punctuation`, and :const:`whitespace`.
+
+   .. note::
+
+      By design, :meth:`string.printable.isprintable() <str.isprintable>`
+      returns :const:`False`. In particular, ``string.printable`` is not
+      printable in the POSIX sense (see :manpage:`LC_CTYPE <locale(5)>`).
 
 
 .. data:: whitespace
@@ -123,16 +131,18 @@ implementation as the built-in :meth:`~str.format` method.
       (which can happen if two replacement fields occur consecutively), then
       *literal_text* will be a zero-length string.  If there is no replacement
       field, then the values of *field_name*, *format_spec* and *conversion*
-      will be ``None``.
+      will be ``None``. The value of *field_name* is unmodified and
+      auto-numbering of non-numbered positional fields is done by :meth:`vformat`.
 
    .. method:: get_field(field_name, args, kwargs)
 
-      Given *field_name* as returned by :meth:`parse` (see above), convert it to
-      an object to be formatted.  Returns a tuple (obj, used_key).  The default
-      version takes strings of the form defined in :pep:`3101`, such as
-      "0[name]" or "label.title".  *args* and *kwargs* are as passed in to
-      :meth:`vformat`.  The return value *used_key* has the same meaning as the
-      *key* parameter to :meth:`get_value`.
+      Given *field_name*, convert it to an object to be formatted.
+      Auto-numbering of *field_name* returned from :meth:`parse` is done by
+      :meth:`vformat` before calling this method.  Returns a tuple (obj, used_key).
+      The default version takes strings of the form defined in :pep:`3101`,
+      such as "0[name]" or "label.title". *args* and *kwargs* are as passed in to
+      :meth:`vformat`. The return value *used_key* has the same meaning
+      as the *key* parameter to :meth:`get_value`.
 
    .. method:: get_value(key, args, kwargs)
 
@@ -205,15 +215,15 @@ literal text, it can be escaped by doubling: ``{{`` and ``}}``.
 
 The grammar for a replacement field is as follows:
 
-   .. productionlist:: format-string
-      replacement_field: "{" [`field_name`] ["!" `conversion`] [":" `format_spec`] "}"
-      field_name: arg_name ("." `attribute_name` | "[" `element_index` "]")*
-      arg_name: [`identifier` | `digit`+]
-      attribute_name: `identifier`
-      element_index: `digit`+ | `index_string`
-      index_string: <any source character except "]"> +
-      conversion: "r" | "s" | "a"
-      format_spec: <described in the next section>
+.. productionlist:: format-string
+   replacement_field: "{" [`field_name`] ["!" `conversion`] [":" `format_spec`] "}"
+   field_name: `arg_name` ("." `attribute_name` | "[" `element_index` "]")*
+   arg_name: [`~python-grammar:identifier` | `~python-grammar:digit`+]
+   attribute_name: `~python-grammar:identifier`
+   element_index: `~python-grammar:digit`+ | `index_string`
+   index_string: <any source character except "]"> +
+   conversion: "r" | "s" | "a"
+   format_spec: `format-spec:format_spec`
 
 In less formal terms, the replacement field can start with a *field_name* that specifies
 the object whose value is to be formatted and inserted
@@ -226,7 +236,9 @@ See also the :ref:`formatspec` section.
 
 The *field_name* itself begins with an *arg_name* that is either a number or a
 keyword.  If it's a number, it refers to a positional argument, and if it's a keyword,
-it refers to a named keyword argument.  If the numerical arg_names in a format string
+it refers to a named keyword argument. An *arg_name* is treated as a number if
+a call to :meth:`str.isdecimal` on the string would return true.
+If the numerical arg_names in a format string
 are 0, 1, 2, ... in sequence, they can all be omitted (not just some)
 and the numbers 0, 1, 2, ... will be automatically inserted in that order.
 Because *arg_name* is not quote-delimited, it is not possible to specify arbitrary
@@ -234,7 +246,7 @@ dictionary keys (e.g., the strings ``'10'`` or ``':-]'``) within a format string
 The *arg_name* can be followed by any number of index or
 attribute expressions. An expression of the form ``'.name'`` selects the named
 attribute using :func:`getattr`, while an expression of the form ``'[index]'``
-does an index lookup using :func:`__getitem__`.
+does an index lookup using :meth:`~object.__getitem__`.
 
 .. versionchanged:: 3.1
    The positional argument specifiers can be omitted for :meth:`str.format`,
@@ -253,10 +265,10 @@ Some simple format string examples::
    "Units destroyed: {players[0]}"   # First element of keyword argument 'players'.
 
 The *conversion* field causes a type coercion before formatting.  Normally, the
-job of formatting a value is done by the :meth:`__format__` method of the value
+job of formatting a value is done by the :meth:`~object.__format__` method of the value
 itself.  However, in some cases it is desirable to force a type to be formatted
 as a string, overriding its own definition of formatting.  By converting the
-value to a string before calling :meth:`__format__`, the normal formatting logic
+value to a string before calling :meth:`~object.__format__`, the normal formatting logic
 is bypassed.
 
 Three conversion flags are currently supported: ``'!s'`` which calls :func:`str`
@@ -309,14 +321,19 @@ non-empty format specification typically modifies the result.
 The general form of a *standard format specifier* is:
 
 .. productionlist:: format-spec
-   format_spec: [[`fill`]`align`][`sign`][#][0][`width`][`grouping_option`][.`precision`][`type`]
+   format_spec: [`options`][`width_and_precision`][`type`]
+   options: [[`fill`]`align`][`sign`]["z"]["#"]["0"]
    fill: <any character>
    align: "<" | ">" | "=" | "^"
    sign: "+" | "-" | " "
-   width: `digit`+
-   grouping_option: "_" | ","
-   precision: `digit`+
-   type: "b" | "c" | "d" | "e" | "E" | "f" | "F" | "g" | "G" | "n" | "o" | "s" | "x" | "X" | "%"
+   width_and_precision: [`width_with_grouping`][`precision_with_grouping`]
+   width_with_grouping: [`width`][`grouping`]
+   precision_with_grouping: "." [`precision`][`grouping`] | "." `grouping`
+   width: `~python-grammar:digit`+
+   precision: `~python-grammar:digit`+
+   grouping: "," | "_"
+   type: "b" | "c" | "d" | "e" | "E" | "f" | "F" | "g"
+       : | "G" | "n" | "o" | "s" | "x" | "X" | "%"
 
 If a valid *align* value is specified, it can be preceded by a *fill*
 character that can be any character and defaults to a space if omitted.
@@ -329,30 +346,31 @@ affect the :func:`format` function.
 
 The meaning of the various alignment options is as follows:
 
-   .. index::
-      single: < (less); in string formatting
-      single: > (greater); in string formatting
-      single: = (equals); in string formatting
-      single: ^ (caret); in string formatting
+.. index::
+   single: < (less); in string formatting
+   single: > (greater); in string formatting
+   single: = (equals); in string formatting
+   single: ^ (caret); in string formatting
 
-   +---------+----------------------------------------------------------+
-   | Option  | Meaning                                                  |
-   +=========+==========================================================+
-   | ``'<'`` | Forces the field to be left-aligned within the available |
-   |         | space (this is the default for most objects).            |
-   +---------+----------------------------------------------------------+
-   | ``'>'`` | Forces the field to be right-aligned within the          |
-   |         | available space (this is the default for numbers).       |
-   +---------+----------------------------------------------------------+
-   | ``'='`` | Forces the padding to be placed after the sign (if any)  |
-   |         | but before the digits.  This is used for printing fields |
-   |         | in the form '+000000120'. This alignment option is only  |
-   |         | valid for numeric types.  It becomes the default for     |
-   |         | numbers when '0' immediately precedes the field width.   |
-   +---------+----------------------------------------------------------+
-   | ``'^'`` | Forces the field to be centered within the available     |
-   |         | space.                                                   |
-   +---------+----------------------------------------------------------+
++---------+----------------------------------------------------------+
+| Option  | Meaning                                                  |
++=========+==========================================================+
+| ``'<'`` | Forces the field to be left-aligned within the available |
+|         | space (this is the default for most objects).            |
++---------+----------------------------------------------------------+
+| ``'>'`` | Forces the field to be right-aligned within the          |
+|         | available space (this is the default for numbers).       |
++---------+----------------------------------------------------------+
+| ``'='`` | Forces the padding to be placed after the sign (if any)  |
+|         | but before the digits.  This is used for printing fields |
+|         | in the form '+000000120'. This alignment option is only  |
+|         | valid for numeric types, excluding :class:`complex`.     |
+|         | It becomes the default for numbers when '0' immediately  |
+|         | precedes the field width.                                |
++---------+----------------------------------------------------------+
+| ``'^'`` | Forces the field to be centered within the available     |
+|         | space.                                                   |
++---------+----------------------------------------------------------+
 
 Note that unless a minimum field width is defined, the field width will always
 be the same size as the data to fill it, so that the alignment option has no
@@ -361,24 +379,33 @@ meaning in this case.
 The *sign* option is only valid for number types, and can be one of the
 following:
 
-   .. index::
-      single: + (plus); in string formatting
-      single: - (minus); in string formatting
-      single: space; in string formatting
+.. index::
+   single: + (plus); in string formatting
+   single: - (minus); in string formatting
+   single: space; in string formatting
 
-   +---------+----------------------------------------------------------+
-   | Option  | Meaning                                                  |
-   +=========+==========================================================+
-   | ``'+'`` | indicates that a sign should be used for both            |
-   |         | positive as well as negative numbers.                    |
-   +---------+----------------------------------------------------------+
-   | ``'-'`` | indicates that a sign should be used only for negative   |
-   |         | numbers (this is the default behavior).                  |
-   +---------+----------------------------------------------------------+
-   | space   | indicates that a leading space should be used on         |
-   |         | positive numbers, and a minus sign on negative numbers.  |
-   +---------+----------------------------------------------------------+
++---------+----------------------------------------------------------+
+| Option  | Meaning                                                  |
++=========+==========================================================+
+| ``'+'`` | Indicates that a sign should be used for both            |
+|         | positive as well as negative numbers.                    |
++---------+----------------------------------------------------------+
+| ``'-'`` | Indicates that a sign should be used only for negative   |
+|         | numbers (this is the default behavior).                  |
++---------+----------------------------------------------------------+
+| space   | Indicates that a leading space should be used on         |
+|         | positive numbers, and a minus sign on negative numbers.  |
++---------+----------------------------------------------------------+
 
+
+.. index:: single: z; in string formatting
+
+The ``'z'`` option coerces negative zero floating-point values to positive
+zero after rounding to the format precision.  This option is only valid for
+floating-point presentation types.
+
+.. versionchanged:: 3.11
+   Added the ``'z'`` option (see also :pep:`682`).
 
 .. index:: single: # (hash); in string formatting
 
@@ -394,46 +421,64 @@ decimal-point character appears in the result of these conversions
 only if a digit follows it. In addition, for ``'g'`` and ``'G'``
 conversions, trailing zeros are not removed from the result.
 
-.. index:: single: , (comma); in string formatting
-
-The ``','`` option signals the use of a comma for a thousands separator.
-For a locale aware separator, use the ``'n'`` integer presentation type
-instead.
-
-.. versionchanged:: 3.1
-   Added the ``','`` option (see also :pep:`378`).
-
-.. index:: single: _ (underscore); in string formatting
-
-The ``'_'`` option signals the use of an underscore for a thousands
-separator for floating point presentation types and for integer
-presentation type ``'d'``.  For integer presentation types ``'b'``,
-``'o'``, ``'x'``, and ``'X'``, underscores will be inserted every 4
-digits.  For other presentation types, specifying this option is an
-error.
-
-.. versionchanged:: 3.6
-   Added the ``'_'`` option (see also :pep:`515`).
-
-*width* is a decimal integer defining the minimum total field width,
+The *width* is a decimal integer defining the minimum total field width,
 including any prefixes, separators, and other formatting characters.
 If not specified, then the field width will be determined by the content.
 
 When no explicit alignment is given, preceding the *width* field by a zero
-(``'0'``) character enables
-sign-aware zero-padding for numeric types.  This is equivalent to a *fill*
-character of ``'0'`` with an *alignment* type of ``'='``.
+(``'0'``) character enables sign-aware zero-padding for numeric types,
+excluding :class:`complex`.  This is equivalent to a *fill* character of
+``'0'`` with an *alignment* type of ``'='``.
 
 .. versionchanged:: 3.10
    Preceding the *width* field by ``'0'`` no longer affects the default
    alignment for strings.
 
-The *precision* is a decimal number indicating how many digits should be
-displayed after the decimal point for a floating point value formatted with
-``'f'`` and ``'F'``, or before and after the decimal point for a floating point
-value formatted with ``'g'`` or ``'G'``.  For non-number types the field
+The *precision* is a decimal integer indicating how many digits should be
+displayed after the decimal point for presentation types
+``'f'`` and ``'F'``, or before and after the decimal point for presentation
+types ``'g'`` or ``'G'``.  For string presentation types the field
 indicates the maximum field size - in other words, how many characters will be
-used from the field content. The *precision* is not allowed for integer values.
+used from the field content.  The *precision* is not allowed for integer
+presentation types.
+
+The *grouping* option after *width* and *precision* fields specifies
+a digit group separator for the integral and fractional parts
+of a number respectively. It can be one of the following:
+
+.. index::
+   single: , (comma); in string formatting
+   single: _ (underscore); in string formatting
+
++---------+----------------------------------------------------------+
+| Option  | Meaning                                                  |
++=========+==========================================================+
+| ``','`` | Inserts a comma every 3 digits for                       |
+|         | integer presentation type ``'d'`` and                    |
+|         | floating-point presentation types, excluding ``'n'``.    |
+|         | For other presentation types,                            |
+|         | this option is not supported.                            |
++---------+----------------------------------------------------------+
+| ``'_'`` | Inserts an underscore every 3 digits for                 |
+|         | integer presentation type ``'d'`` and                    |
+|         | floating-point presentation types, excluding ``'n'``.    |
+|         | For integer presentation types                           |
+|         | ``'b'``, ``'o'``, ``'x'``, and ``'X'``,                  |
+|         | underscores are inserted every 4 digits.                 |
+|         | For other presentation types,                            |
+|         | this option is not supported.                            |
++---------+----------------------------------------------------------+
+
+For a locale aware separator, use the ``'n'`` presentation type instead.
+
+.. versionchanged:: 3.1
+   Added the ``','`` option (see also :pep:`378`).
+
+.. versionchanged:: 3.6
+   Added the ``'_'`` option (see also :pep:`515`).
+
+.. versionchanged:: 3.14
+   Support the *grouping* option for the fractional part.
 
 Finally, the *type* determines how the data should be presented.
 
@@ -472,15 +517,15 @@ The available integer presentation types are:
    +---------+----------------------------------------------------------+
    | ``'n'`` | Number. This is the same as ``'d'``, except that it uses |
    |         | the current locale setting to insert the appropriate     |
-   |         | number separator characters.                             |
+   |         | digit group separators.                                  |
    +---------+----------------------------------------------------------+
    | None    | The same as ``'d'``.                                     |
    +---------+----------------------------------------------------------+
 
 In addition to the above presentation types, integers can be formatted
-with the floating point presentation types listed below (except
+with the floating-point presentation types listed below (except
 ``'n'`` and ``None``). When doing so, :func:`float` is used to convert the
-integer to a floating point number before formatting.
+integer to a floating-point number before formatting.
 
 The available presentation types for :class:`float` and
 :class:`~decimal.Decimal` values are:
@@ -496,9 +541,8 @@ The available presentation types for :class:`float` and
    |         | significant digits. With no precision given, uses a      |
    |         | precision of ``6`` digits after the decimal point for    |
    |         | :class:`float`, and shows all coefficient digits         |
-   |         | for :class:`~decimal.Decimal`. If no digits follow the   |
-   |         | decimal point, the decimal point is also removed unless  |
-   |         | the ``#`` option is used.                                |
+   |         | for :class:`~decimal.Decimal`.  If ``p=0``, the decimal  |
+   |         | point is omitted unless the ``#`` option is used.        |
    +---------+----------------------------------------------------------+
    | ``'E'`` | Scientific notation. Same as ``'e'`` except it uses      |
    |         | an upper case 'E' as the separator character.            |
@@ -509,9 +553,8 @@ The available presentation types for :class:`float` and
    |         | precision given, uses a precision of ``6`` digits after  |
    |         | the decimal point for :class:`float`, and uses a         |
    |         | precision large enough to show all coefficient digits    |
-   |         | for :class:`~decimal.Decimal`. If no digits follow the   |
-   |         | decimal point, the decimal point is also removed unless  |
-   |         | the ``#`` option is used.                                |
+   |         | for :class:`~decimal.Decimal`.  If ``p=0``, the decimal  |
+   |         | point is omitted unless the ``#`` option is used.        |
    +---------+----------------------------------------------------------+
    | ``'F'`` | Fixed-point notation. Same as ``'f'``, but converts      |
    |         | ``nan`` to  ``NAN`` and ``inf`` to ``INF``.              |
@@ -556,16 +599,19 @@ The available presentation types for :class:`float` and
    +---------+----------------------------------------------------------+
    | ``'n'`` | Number. This is the same as ``'g'``, except that it uses |
    |         | the current locale setting to insert the appropriate     |
-   |         | number separator characters.                             |
+   |         | digit group separators                                   |
+   |         | for the integral part of a number.                       |
    +---------+----------------------------------------------------------+
    | ``'%'`` | Percentage. Multiplies the number by 100 and displays    |
    |         | in fixed (``'f'``) format, followed by a percent sign.   |
    +---------+----------------------------------------------------------+
-   | None    | For :class:`float` this is the same as ``'g'``, except   |
+   | None    | For :class:`float` this is like the ``'g'`` type, except |
    |         | that when fixed-point notation is used to format the     |
    |         | result, it always includes at least one digit past the   |
-   |         | decimal point. The precision used is as large as needed  |
-   |         | to represent the given value faithfully.                 |
+   |         | decimal point, and switches to the scientific notation   |
+   |         | when ``exp >= p - 1``.  When the precision is not        |
+   |         | specified, the latter will be as large as needed to      |
+   |         | represent the given value faithfully.                    |
    |         |                                                          |
    |         | For :class:`~decimal.Decimal`, this is the same as       |
    |         | either ``'g'`` or ``'G'`` depending on the value of      |
@@ -574,6 +620,20 @@ The available presentation types for :class:`float` and
    |         | The overall effect is to match the output of :func:`str` |
    |         | as altered by the other format modifiers.                |
    +---------+----------------------------------------------------------+
+
+The result should be correctly rounded to a given precision ``p`` of digits
+after the decimal point.  The rounding mode for :class:`float` matches that
+of the :func:`round` builtin.  For :class:`~decimal.Decimal`, the rounding
+mode of the current :ref:`context <decimal-context>` will be used.
+
+The available presentation types for :class:`complex` are the same as those for
+:class:`float` (``'%'`` is not allowed).  Both the real and imaginary components
+of a complex number are formatted as floating-point numbers, according to the
+specified presentation type.  They are separated by the mandatory sign of the
+imaginary part, the latter being terminated by a ``j`` suffix.  If the presentation
+type is missing, the result will match the output of :func:`str` (complex numbers with
+a non-zero real part are also surrounded by parentheses), possibly altered by
+other format modifiers.
 
 
 .. _formatexamples:
@@ -667,10 +727,22 @@ Replacing ``%x`` and ``%o`` and converting the value to different bases::
    >>> "int: {0:d};  hex: {0:#x};  oct: {0:#o};  bin: {0:#b}".format(42)
    'int: 42;  hex: 0x2a;  oct: 0o52;  bin: 0b101010'
 
-Using the comma as a thousands separator::
+Using the comma or the underscore as a digit group separator::
 
    >>> '{:,}'.format(1234567890)
    '1,234,567,890'
+   >>> '{:_}'.format(1234567890)
+   '1_234_567_890'
+   >>> '{:_b}'.format(1234567890)
+   '100_1001_1001_0110_0000_0010_1101_0010'
+   >>> '{:_x}'.format(1234567890)
+   '4996_02d2'
+   >>> '{:_}'.format(123456789.123456789)
+   '123_456_789.12345679'
+   >>> '{:.,}'.format(123456789.123456789)
+   '123456789.123,456,79'
+   >>> '{:,._}'.format(123456789.123456789)
+   '123,456,789.123_456_79'
 
 Expressing a percentage::
 
@@ -728,7 +800,7 @@ internationalization (i18n) since in that context, the simpler syntax and
 functionality makes it easier to translate than other built-in string
 formatting facilities in Python.  As an example of a library built on template
 strings for i18n, see the
-`flufl.i18n <http://flufli18n.readthedocs.io/en/latest/>`_ package.
+`flufl.i18n <https://flufli18n.readthedocs.io/en/latest/>`_ package.
 
 .. index:: single: $ (dollar); in template strings
 
@@ -782,6 +854,22 @@ these rules.  The methods of :class:`Template` are:
       anything other than safe, since it will silently ignore malformed
       templates containing dangling delimiters, unmatched braces, or
       placeholders that are not valid Python identifiers.
+
+
+   .. method:: is_valid()
+
+      Returns ``False`` if the template has invalid placeholders that will cause
+      :meth:`substitute` to raise :exc:`ValueError`.
+
+      .. versionadded:: 3.11
+
+
+   .. method:: get_identifiers()
+
+      Returns a list of the valid identifiers in the template, in the order
+      they first appear, ignoring any invalid identifiers.
+
+      .. versionadded:: 3.11
 
    :class:`Template` instances also provide one public data attribute:
 
@@ -868,6 +956,9 @@ rule:
 
 * *invalid* -- This group matches any other delimiter pattern (usually a single
   delimiter), and it should appear last in the regular expression.
+
+The methods on this class will raise :exc:`ValueError` if the pattern matches
+the template without one of these named groups matching.
 
 
 Helper functions

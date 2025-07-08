@@ -12,7 +12,10 @@ import token
 import traceback
 from typing import Tuple
 
-from pegen.build import Grammar, Parser, ParserGenerator, Tokenizer
+from pegen.grammar import Grammar
+from pegen.parser import Parser
+from pegen.parser_generator import ParserGenerator
+from pegen.tokenizer import Tokenizer
 from pegen.validator import validate_grammar
 
 
@@ -104,7 +107,10 @@ c_parser.add_argument(
     help="Suppress code emission for rule actions",
 )
 
-python_parser = subparsers.add_parser("python", help="Generate Python code")
+python_parser = subparsers.add_parser(
+    "python",
+    help="Generate Python code, needs grammar definition with Python actions",
+)
 python_parser.set_defaults(func=generate_python_code)
 python_parser.add_argument("grammar_filename", help="Grammar description")
 python_parser.add_argument(

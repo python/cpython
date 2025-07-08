@@ -481,7 +481,7 @@ def customize_compiler(_config_vars):
 
     This customization is performed when the first
     extension module build is requested
-    in distutils.sysconfig.customize_compiler).
+    in distutils.sysconfig.customize_compiler.
     """
 
     # Find a compiler to use for extension module builds
@@ -507,6 +507,11 @@ def get_platform_osx(_config_vars, osname, release, machine):
     # MACOSX_DEPLOYMENT_TARGET.
 
     macver = _config_vars.get('MACOSX_DEPLOYMENT_TARGET', '')
+    if macver and '.' not in macver:
+        # Ensure that the version includes at least a major
+        # and minor version, even if MACOSX_DEPLOYMENT_TARGET
+        # is set to a single-label version like "14".
+        macver += '.0'
     macrelease = _get_system_version() or macver
     macver = macver or macrelease
 

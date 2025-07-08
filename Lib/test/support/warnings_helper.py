@@ -1,8 +1,16 @@
 import contextlib
 import functools
+import importlib
 import re
 import sys
 import warnings
+
+
+def import_deprecated(name):
+    """Import *name* while suppressing DeprecationWarning."""
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', category=DeprecationWarning)
+        return importlib.import_module(name)
 
 
 def check_syntax_warning(testcase, statement, errtext='',
@@ -15,8 +23,7 @@ def check_syntax_warning(testcase, statement, errtext='',
     testcase.assertEqual(len(warns), 1, warns)
 
     warn, = warns
-    testcase.assertTrue(issubclass(warn.category, SyntaxWarning),
-                        warn.category)
+    testcase.assertIsSubclass(warn.category, SyntaxWarning)
     if errtext:
         testcase.assertRegex(str(warn.message), errtext)
     testcase.assertEqual(warn.filename, '<testcase>')
@@ -36,7 +43,7 @@ def check_syntax_warning(testcase, statement, errtext='',
 
 
 def ignore_warnings(*, category):
-    """Decorator to suppress deprecation warnings.
+    """Decorator to suppress warnings.
 
     Use of context managers to hide warnings make diffs
     more noisy and tools like 'git blame' less useful.
@@ -152,11 +159,12 @@ def _filterwarnings(filters, quiet=False):
     registry = frame.f_globals.get('__warningregistry__')
     if registry:
         registry.clear()
-    with warnings.catch_warnings(record=True) as w:
-        # Set filter "always" to record all warnings.  Because
-        # test_warnings swap the module, we need to look up in
-        # the sys.modules dictionary.
-        sys.modules['warnings'].simplefilter("always")
+    # Because test_warnings swap the module, we need to look up in the
+    # sys.modules dictionary.
+    wmod = sys.modules['warnings']
+    with wmod.catch_warnings(record=True) as w:
+        # Set filter "always" to record all warnings.
+        wmod.simplefilter("always")
         yield WarningsRecorder(w)
     # Filter the recorded warnings
     reraise = list(w)

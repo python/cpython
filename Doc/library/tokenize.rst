@@ -1,5 +1,5 @@
-:mod:`tokenize` --- Tokenizer for Python source
-===============================================
+:mod:`!tokenize` --- Tokenizer for Python source
+================================================
 
 .. module:: tokenize
    :synopsis: Lexical scanner for Python source code.
@@ -21,6 +21,15 @@ To simplify token stream handling, all :ref:`operator <operators>` and
 the generic :data:`~token.OP` token type.  The exact
 type can be determined by checking the ``exact_type`` property on the
 :term:`named tuple` returned from :func:`tokenize.tokenize`.
+
+
+.. warning::
+
+   Note that the functions in this module are only designed to parse
+   syntactically valid Python code (code that does not raise when parsed
+   using :func:`ast.parse`).  The behavior of the functions in this module is
+   **undefined** when providing invalid Python code and it can change at any
+   point.
 
 Tokenizing Input
 ----------------
@@ -82,11 +91,10 @@ write back the modified script.
     sequences with at least two elements, the token type and the token string.
     Any additional sequence elements are ignored.
 
-    The reconstructed script is returned as a single string.  The result is
-    guaranteed to tokenize back to match the input so that the conversion is
-    lossless and round-trips are assured.  The guarantee applies only to the
-    token type and token string as the spacing between tokens (column
-    positions) may change.
+    The result is guaranteed to tokenize back to match the input so that the
+    conversion is lossless and round-trips are assured.  The guarantee applies
+    only to the token type and token string as the spacing between tokens
+    (column positions) may change.
 
     It returns bytes, encoded using the :data:`~token.ENCODING` token, which
     is the first token sequence output by :func:`.tokenize`. If there is no
@@ -139,11 +147,6 @@ function it uses to do this is available:
        2,
        3
 
-Note that unclosed single-quoted strings do not cause an error to be
-raised. They are tokenized as :data:`~token.ERRORTOKEN`, followed by the
-tokenization of their contents.
-
-
 .. _tokenize-cli:
 
 Command-Line Usage
@@ -162,11 +165,11 @@ The following options are accepted:
 
 .. program:: tokenize
 
-.. cmdoption:: -h, --help
+.. option:: -h, --help
 
    show this help message and exit
 
-.. cmdoption:: -e, --exact
+.. option:: -e, --exact
 
    display token names using the exact type
 

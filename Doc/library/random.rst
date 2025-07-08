@@ -1,5 +1,5 @@
-:mod:`random` --- Generate pseudo-random numbers
-================================================
+:mod:`!random` --- Generate pseudo-random numbers
+=================================================
 
 .. module:: random
    :synopsis: Generate pseudo-random numbers with various common distributions.
@@ -21,8 +21,8 @@ lognormal, negative exponential, gamma, and beta distributions. For generating
 distributions of angles, the von Mises distribution is available.
 
 Almost all module functions depend on the basic function :func:`.random`, which
-generates a random float uniformly in the semi-open range [0.0, 1.0).  Python
-uses the Mersenne Twister as the core generator.  It produces 53-bit precision
+generates a random float uniformly in the half-open range ``0.0 <= X < 1.0``.
+Python uses the Mersenne Twister as the core generator.  It produces 53-bit precision
 floats and has a period of 2\*\*19937-1.  The underlying implementation in C is
 both fast and threadsafe.  The Mersenne Twister is one of the most extensively
 tested random number generators in existence.  However, being completely
@@ -34,10 +34,8 @@ instance of the :class:`random.Random` class.  You can instantiate your own
 instances of :class:`Random` to get generators that don't share state.
 
 Class :class:`Random` can also be subclassed if you want to use a different
-basic generator of your own devising: in that case, override the :meth:`~Random.random`,
-:meth:`~Random.seed`, :meth:`~Random.getstate`, and :meth:`~Random.setstate` methods.
-Optionally, a new generator can supply a :meth:`~Random.getrandbits` method --- this
-allows :meth:`randrange` to produce selections over an arbitrarily large range.
+basic generator of your own devising: see the documentation on that class for
+more details.
 
 The :mod:`random` module also provides the :class:`SystemRandom` class which
 uses the system function :func:`os.urandom` to generate random numbers
@@ -57,9 +55,15 @@ from sources provided by the operating system.
 
 
    `Complementary-Multiply-with-Carry recipe
-   <https://code.activestate.com/recipes/576707/>`_ for a compatible alternative
+   <https://code.activestate.com/recipes/576707-long-period-random-number-generator/>`_ for a compatible alternative
    random number generator with a long period and comparatively simple update
    operations.
+
+.. note::
+   The global random number generator and instances of :class:`Random` are thread-safe.
+   However, in the free-threaded build, concurrent calls to the global generator or
+   to the same instance of :class:`Random` may encounter contention and poor performance.
+   Consider using separate instances of :class:`Random` per thread instead.
 
 
 Bookkeeping functions
@@ -88,7 +92,7 @@ Bookkeeping functions
 
    .. versionchanged:: 3.11
       The *seed* must be one of the following types:
-      *NoneType*, :class:`int`, :class:`float`, :class:`str`,
+      ``None``, :class:`int`, :class:`float`, :class:`str`,
       :class:`bytes`, or :class:`bytearray`.
 
 .. function:: getstate()
@@ -123,27 +127,26 @@ Functions for integers
 .. function:: randrange(stop)
               randrange(start, stop[, step])
 
-   Return a randomly selected element from ``range(start, stop, step)``.  This is
-   equivalent to ``choice(range(start, stop, step))``, but doesn't actually build a
-   range object.
+   Return a randomly selected element from ``range(start, stop, step)``.
 
-   The positional argument pattern matches that of :func:`range`.  Keyword arguments
-   should not be used because the function may use them in unexpected ways.
+   This is roughly equivalent to ``choice(range(start, stop, step))`` but
+   supports arbitrarily large ranges and is optimized for common cases.
+
+   The positional argument pattern matches the :func:`range` function.
+
+   Keyword arguments should not be used because they can be interpreted
+   in unexpected ways. For example ``randrange(start=100)`` is interpreted
+   as ``randrange(0, 100, 1)``.
 
    .. versionchanged:: 3.2
       :meth:`randrange` is more sophisticated about producing equally distributed
       values.  Formerly it used a style like ``int(random()*n)`` which could produce
       slightly uneven distributions.
 
-   .. deprecated:: 3.10
-      The automatic conversion of non-integer types to equivalent integers is
-      deprecated.  Currently ``randrange(10.0)`` is losslessly converted to
-      ``randrange(10)``.  In the future, this will raise a :exc:`TypeError`.
-
-   .. deprecated:: 3.10
-      The exception raised for non-integral values such as ``randrange(10.5)``
-      or ``randrange('10')`` will be changed from :exc:`ValueError` to
-      :exc:`TypeError`.
+   .. versionchanged:: 3.12
+      Automatic conversion of non-integer types is no longer supported.
+      Calls such as ``randrange(10.0)`` and ``randrange(Fraction(10, 1))``
+      now raise a :exc:`TypeError`.
 
 .. function:: randint(a, b)
 
@@ -153,7 +156,7 @@ Functions for integers
 .. function:: getrandbits(k)
 
    Returns a non-negative Python integer with *k* random bits. This method
-   is supplied with the MersenneTwister generator and some other generators
+   is supplied with the Mersenne Twister generator and some other generators
    may also provide it as an optional part of the API. When available,
    :meth:`getrandbits` enables :meth:`randrange` to handle arbitrarily large
    ranges.
@@ -197,8 +200,8 @@ Functions for sequences
 
    For a given seed, the :func:`choices` function with equal weighting
    typically produces a different sequence than repeated calls to
-   :func:`choice`.  The algorithm used by :func:`choices` uses floating
-   point arithmetic for internal consistency and speed.  The algorithm used
+   :func:`choice`.  The algorithm used by :func:`choices` uses floating-point
+   arithmetic for internal consistency and speed.  The algorithm used
    by :func:`choice` defaults to integer arithmetic with repeated selections
    to avoid small biases from round-off error.
 
@@ -221,8 +224,8 @@ Functions for sequences
    generated.  For example, a sequence of length 2080 is the largest that
    can fit within the period of the Mersenne Twister random number generator.
 
-   .. deprecated-removed:: 3.9 3.11
-      The optional parameter *random*.
+   .. versionchanged:: 3.11
+      Removed the optional parameter *random*.
 
 
 .. function:: sample(population, k, *, counts=None)
@@ -257,7 +260,29 @@ Functions for sequences
    .. versionchanged:: 3.11
 
       The *population* must be a sequence.  Automatic conversion of sets
-      to lists is longer supported.
+      to lists is no longer supported.
+
+Discrete distributions
+----------------------
+
+The following function generates a discrete distribution.
+
+.. function:: binomialvariate(n=1, p=0.5)
+
+   `Binomial distribution
+   <https://mathworld.wolfram.com/BinomialDistribution.html>`_.
+   Return the number of successes for *n* independent trials with the
+   probability of success in each trial being *p*:
+
+   Mathematically equivalent to::
+
+       sum(random() < p for i in range(n))
+
+   The number of trials *n* should be a non-negative integer.
+   The probability of success *p* should be between ``0.0 <= p <= 1.0``.
+   The result is an integer in the range ``0 <= X <= n``.
+
+   .. versionadded:: 3.12
 
 
 .. _real-valued-distributions:
@@ -273,21 +298,22 @@ be found in any statistics text.
 
 .. function:: random()
 
-   Return the next random floating point number in the range [0.0, 1.0).
+   Return the next random floating-point number in the range ``0.0 <= X < 1.0``
 
 
 .. function:: uniform(a, b)
 
-   Return a random floating point number *N* such that ``a <= N <= b`` for
+   Return a random floating-point number *N* such that ``a <= N <= b`` for
    ``a <= b`` and ``b <= N <= a`` for ``b < a``.
 
    The end-point value ``b`` may or may not be included in the range
-   depending on floating-point rounding in the equation ``a + (b-a) * random()``.
+   depending on floating-point rounding in the expression
+   ``a + (b-a) * random()``.
 
 
 .. function:: triangular(low, high, mode)
 
-   Return a random floating point number *N* such that ``low <= N <= high`` and
+   Return a random floating-point number *N* such that ``low <= N <= high`` and
    with the specified *mode* between those bounds.  The *low* and *high* bounds
    default to zero and one.  The *mode* argument defaults to the midpoint
    between the bounds, giving a symmetric distribution.
@@ -299,7 +325,7 @@ be found in any statistics text.
    ``beta > 0``. Returned values range between 0 and 1.
 
 
-.. function:: expovariate(lambd)
+.. function:: expovariate(lambd = 1.0)
 
    Exponential distribution.  *lambd* is 1.0 divided by the desired
    mean.  It should be nonzero.  (The parameter would be called
@@ -307,11 +333,16 @@ be found in any statistics text.
    range from 0 to positive infinity if *lambd* is positive, and from
    negative infinity to 0 if *lambd* is negative.
 
+   .. versionchanged:: 3.12
+      Added the default value for ``lambd``.
+
 
 .. function:: gammavariate(alpha, beta)
 
-   Gamma distribution.  (*Not* the gamma function!)  Conditions on the
-   parameters are ``alpha > 0`` and ``beta > 0``.
+   Gamma distribution.  (*Not* the gamma function!)  The shape and
+   scale parameters, *alpha* and *beta*, must have positive values.
+   (Calling conventions vary and some sources define 'beta'
+   as the inverse of the scale).
 
    The probability distribution function is::
 
@@ -320,9 +351,10 @@ be found in any statistics text.
                    math.gamma(alpha) * beta ** alpha
 
 
-.. function:: gauss(mu, sigma)
+.. function:: gauss(mu=0.0, sigma=1.0)
 
-   Normal distribution, also called the Gaussian distribution.  *mu* is the mean,
+   Normal distribution, also called the Gaussian distribution.
+   *mu* is the mean,
    and *sigma* is the standard deviation.  This is slightly faster than
    the :func:`normalvariate` function defined below.
 
@@ -333,6 +365,9 @@ be found in any statistics text.
    number generator. 2) Put locks around all calls. 3) Use the
    slower, but thread-safe :func:`normalvariate` function instead.
 
+   .. versionchanged:: 3.11
+      *mu* and *sigma* now have default arguments.
+
 
 .. function:: lognormvariate(mu, sigma)
 
@@ -342,9 +377,12 @@ be found in any statistics text.
    zero.
 
 
-.. function:: normalvariate(mu, sigma)
+.. function:: normalvariate(mu=0.0, sigma=1.0)
 
    Normal distribution.  *mu* is the mean, and *sigma* is the standard deviation.
+
+   .. versionchanged:: 3.11
+      *mu* and *sigma* now have default arguments.
 
 
 .. function:: vonmisesvariate(mu, kappa)
@@ -374,10 +412,46 @@ Alternative Generator
    Class that implements the default pseudo-random number generator used by the
    :mod:`random` module.
 
-   .. deprecated:: 3.9
-      In the future, the *seed* must be one of the following types:
-      :class:`NoneType`, :class:`int`, :class:`float`, :class:`str`,
+   .. versionchanged:: 3.11
+      Formerly the *seed* could be any hashable object.  Now it is limited to:
+      ``None``, :class:`int`, :class:`float`, :class:`str`,
       :class:`bytes`, or :class:`bytearray`.
+
+   Subclasses of :class:`!Random` should override the following methods if they
+   wish to make use of a different basic generator:
+
+   .. method:: Random.seed(a=None, version=2)
+
+      Override this method in subclasses to customise the :meth:`~random.seed`
+      behaviour of :class:`!Random` instances.
+
+   .. method:: Random.getstate()
+
+      Override this method in subclasses to customise the :meth:`~random.getstate`
+      behaviour of :class:`!Random` instances.
+
+   .. method:: Random.setstate(state)
+
+      Override this method in subclasses to customise the :meth:`~random.setstate`
+      behaviour of :class:`!Random` instances.
+
+   .. method:: Random.random()
+
+      Override this method in subclasses to customise the :meth:`~random.random`
+      behaviour of :class:`!Random` instances.
+
+   Optionally, a custom generator subclass can also supply the following method:
+
+   .. method:: Random.getrandbits(k)
+
+      Override this method in subclasses to customise the
+      :meth:`~random.getrandbits` behaviour of :class:`!Random` instances.
+
+   .. method:: Random.randbytes(n)
+
+      Override this method in subclasses to customise the
+      :meth:`~random.randbytes` behaviour of :class:`!Random` instances.
+
 
 .. class:: SystemRandom([seed])
 
@@ -393,7 +467,7 @@ Notes on Reproducibility
 ------------------------
 
 Sometimes it is useful to be able to reproduce the sequences given by a
-pseudo-random number generator.  By re-using a seed value, the same sequence should be
+pseudo-random number generator.  By reusing a seed value, the same sequence should be
 reproducible from run to run as long as multiple threads are not running.
 
 Most of the random module's algorithms and seeding functions are subject to
@@ -412,30 +486,30 @@ Examples
 
 Basic examples::
 
-   >>> random()                             # Random float:  0.0 <= x < 1.0
+   >>> random()                          # Random float:  0.0 <= x < 1.0
    0.37444887175646646
 
-   >>> uniform(2.5, 10.0)                   # Random float:  2.5 <= x <= 10.0
+   >>> uniform(2.5, 10.0)                # Random float:  2.5 <= x <= 10.0
    3.1800146073117523
 
-   >>> expovariate(1 / 5)                   # Interval between arrivals averaging 5 seconds
+   >>> expovariate(1 / 5)                # Interval between arrivals averaging 5 seconds
    5.148957571865031
 
-   >>> randrange(10)                        # Integer from 0 to 9 inclusive
+   >>> randrange(10)                     # Integer from 0 to 9 inclusive
    7
 
-   >>> randrange(0, 101, 2)                 # Even integer from 0 to 100 inclusive
+   >>> randrange(0, 101, 2)              # Even integer from 0 to 100 inclusive
    26
 
-   >>> choice(['win', 'lose', 'draw'])      # Single random element from a sequence
+   >>> choice(['win', 'lose', 'draw'])   # Single random element from a sequence
    'draw'
 
    >>> deck = 'ace two three four'.split()
-   >>> shuffle(deck)                        # Shuffle a list
+   >>> shuffle(deck)                     # Shuffle a list
    >>> deck
    ['four', 'two', 'ace', 'three']
 
-   >>> sample([10, 20, 30, 40, 50], k=4)    # Four samples without replacement
+   >>> sample([10, 20, 30, 40, 50], k=4) # Four samples without replacement
    [40, 10, 50, 30]
 
 Simulations::
@@ -447,16 +521,13 @@ Simulations::
    >>> # Deal 20 cards without replacement from a deck
    >>> # of 52 playing cards, and determine the proportion of cards
    >>> # with a ten-value:  ten, jack, queen, or king.
-   >>> dealt = sample(['tens', 'low cards'], counts=[16, 36], k=20)
-   >>> dealt.count('tens') / 20
+   >>> deal = sample(['tens', 'low cards'], counts=[16, 36], k=20)
+   >>> deal.count('tens') / 20
    0.15
 
    >>> # Estimate the probability of getting 5 or more heads from 7 spins
    >>> # of a biased coin that settles on heads 60% of the time.
-   >>> def trial():
-   ...     return choices('HT', cum_weights=(0.60, 1.00), k=7).count('H') >= 5
-   ...
-   >>> sum(trial() for i in range(10_000)) / 10_000
+   >>> sum(binomialvariate(n=7, p=0.6) >= 5 for i in range(10_000)) / 10_000
    0.4169
 
    >>> # Probability of the median of 5 samples being in middle two quartiles
@@ -470,7 +541,7 @@ Example of `statistical bootstrapping
 <https://en.wikipedia.org/wiki/Bootstrapping_(statistics)>`_ using resampling
 with replacement to estimate a confidence interval for the mean of a sample::
 
-   # http://statistics.about.com/od/Applications/a/Example-Of-Bootstrapping.htm
+   # https://www.thoughtco.com/example-of-bootstrapping-3126155
    from statistics import fmean as mean
    from random import choices
 
@@ -508,7 +579,7 @@ between the effects of a drug versus a placebo::
 
 Simulation of arrival times and service deliveries for a multiserver queue::
 
-    from heapq import heappush, heappop
+    from heapq import heapify, heapreplace
     from random import expovariate, gauss
     from statistics import mean, quantiles
 
@@ -520,14 +591,15 @@ Simulation of arrival times and service deliveries for a multiserver queue::
     waits = []
     arrival_time = 0.0
     servers = [0.0] * num_servers  # time when each server becomes available
-    for i in range(100_000):
+    heapify(servers)
+    for i in range(1_000_000):
         arrival_time += expovariate(1.0 / average_arrival_interval)
-        next_server_available = heappop(servers)
+        next_server_available = servers[0]
         wait = max(0.0, next_server_available - arrival_time)
         waits.append(wait)
-        service_duration = gauss(average_service_time, stdev_service_time)
+        service_duration = max(0.0, gauss(average_service_time, stdev_service_time))
         service_completed = arrival_time + wait + service_duration
-        heappush(servers, service_completed)
+        heapreplace(servers, service_completed)
 
     print(f'Mean wait: {mean(waits):.1f}   Max wait: {max(waits):.1f}')
     print('Quartiles:', [round(q, 1) for q in quantiles(waits)])
@@ -541,21 +613,53 @@ Simulation of arrival times and service deliveries for a multiserver queue::
    including simulation, sampling, shuffling, and cross-validation.
 
    `Economics Simulation
-   <http://nbviewer.jupyter.org/url/norvig.com/ipython/Economics.ipynb>`_
+   <https://nbviewer.org/url/norvig.com/ipython/Economics.ipynb>`_
    a simulation of a marketplace by
-   `Peter Norvig <http://norvig.com/bio.html>`_ that shows effective
+   `Peter Norvig <https://norvig.com/bio.html>`_ that shows effective
    use of many of the tools and distributions provided by this module
    (gauss, uniform, sample, betavariate, choice, triangular, and randrange).
 
    `A Concrete Introduction to Probability (using Python)
-   <http://nbviewer.jupyter.org/url/norvig.com/ipython/Probability.ipynb>`_
-   a tutorial by `Peter Norvig <http://norvig.com/bio.html>`_ covering
+   <https://nbviewer.org/url/norvig.com/ipython/Probability.ipynb>`_
+   a tutorial by `Peter Norvig <https://norvig.com/bio.html>`_ covering
    the basics of probability theory, how to write simulations, and
    how to perform data analysis using Python.
 
 
 Recipes
 -------
+
+These recipes show how to efficiently make random selections
+from the combinatoric iterators in the :mod:`itertools` module:
+
+.. testcode::
+   import random
+
+   def random_product(*args, repeat=1):
+       "Random selection from itertools.product(*args, **kwds)"
+       pools = [tuple(pool) for pool in args] * repeat
+       return tuple(map(random.choice, pools))
+
+   def random_permutation(iterable, r=None):
+       "Random selection from itertools.permutations(iterable, r)"
+       pool = tuple(iterable)
+       r = len(pool) if r is None else r
+       return tuple(random.sample(pool, r))
+
+   def random_combination(iterable, r):
+       "Random selection from itertools.combinations(iterable, r)"
+       pool = tuple(iterable)
+       n = len(pool)
+       indices = sorted(random.sample(range(n), r))
+       return tuple(pool[i] for i in indices)
+
+   def random_combination_with_replacement(iterable, r):
+       "Choose r elements with replacement.  Order the result to match the iterable."
+       # Result will be in set(itertools.combinations_with_replacement(iterable, r)).
+       pool = tuple(iterable)
+       n = len(pool)
+       indices = sorted(random.choices(range(n), k=r))
+       return tuple(pool[i] for i in indices)
 
 The default :func:`.random` returns multiples of 2⁻⁵³ in the range
 *0.0 ≤ x < 1.0*.  All such numbers are evenly spaced and are exactly
@@ -607,3 +711,83 @@ positive unnormalized float and is equal to ``math.ulp(0.0)``.)
    <https://allendowney.com/research/rand/downey07randfloat.pdf>`_ a
    paper by Allen B. Downey describing ways to generate more
    fine-grained floats than normally generated by :func:`.random`.
+
+.. _random-cli:
+
+Command-line usage
+------------------
+
+.. versionadded:: 3.13
+
+The :mod:`!random` module can be executed from the command line.
+
+.. code-block:: sh
+
+   python -m random [-h] [-c CHOICE [CHOICE ...] | -i N | -f N] [input ...]
+
+The following options are accepted:
+
+.. program:: random
+
+.. option:: -h, --help
+
+   Show the help message and exit.
+
+.. option:: -c CHOICE [CHOICE ...]
+            --choice CHOICE [CHOICE ...]
+
+   Print a random choice, using :meth:`choice`.
+
+.. option:: -i <N>
+            --integer <N>
+
+   Print a random integer between 1 and N inclusive, using :meth:`randint`.
+
+.. option:: -f <N>
+            --float <N>
+
+   Print a random floating-point number between 0 and N inclusive,
+   using :meth:`uniform`.
+
+If no options are given, the output depends on the input:
+
+* String or multiple: same as :option:`--choice`.
+* Integer: same as :option:`--integer`.
+* Float: same as :option:`--float`.
+
+.. _random-cli-example:
+
+Command-line example
+--------------------
+
+Here are some examples of the :mod:`!random` command-line interface:
+
+.. code-block:: console
+
+   $ # Choose one at random
+   $ python -m random egg bacon sausage spam "Lobster Thermidor aux crevettes with a Mornay sauce"
+   Lobster Thermidor aux crevettes with a Mornay sauce
+
+   $ # Random integer
+   $ python -m random 6
+   6
+
+   $ # Random floating-point number
+   $ python -m random 1.8
+   1.7080016272295635
+
+   $ # With explicit arguments
+   $ python  -m random --choice egg bacon sausage spam "Lobster Thermidor aux crevettes with a Mornay sauce"
+   egg
+
+   $ python -m random --integer 6
+   3
+
+   $ python -m random --float 1.8
+   1.5666339105010318
+
+   $ python -m random --integer 6
+   5
+
+   $ python -m random --float 6
+   3.1942323316565915

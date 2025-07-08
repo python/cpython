@@ -13,11 +13,13 @@ import time
 import shutil
 import threading
 import unittest
-from unittest import mock
+from test import support
 from test.support import verbose
-from test.support.import_helper import forget
+from test.support.import_helper import forget, mock_register_at_fork
 from test.support.os_helper import (TESTFN, unlink, rmtree)
 from test.support import script_helper, threading_helper
+
+threading_helper.requires_working_threading(module=True)
 
 def task(N, done, done_tasks, errors):
     try:
@@ -38,12 +40,6 @@ def task(N, done, done_tasks, errors):
         finished = len(done_tasks) == N
         if finished:
             done.set()
-
-def mock_register_at_fork(func):
-    # bpo-30599: Mock os.register_at_fork() when importing the random module,
-    # since this function doesn't allow to unregister callbacks and would leak
-    # memory.
-    return mock.patch('os.register_at_fork', create=True)(func)
 
 # Create a circular import structure: A -> C -> B -> D -> A
 # NOTE: `time` is already loaded and therefore doesn't threaten to deadlock.
@@ -139,10 +135,12 @@ class ThreadedImportTests(unittest.TestCase):
             if verbose:
                 print("OK.")
 
-    def test_parallel_module_init(self):
+    @support.bigmemtest(size=50, memuse=76*2**20, dry_run=False)
+    def test_parallel_module_init(self, size):
         self.check_parallel_module_init()
 
-    def test_parallel_meta_path(self):
+    @support.bigmemtest(size=50, memuse=76*2**20, dry_run=False)
+    def test_parallel_meta_path(self, size):
         finder = Finder()
         sys.meta_path.insert(0, finder)
         try:
@@ -152,7 +150,8 @@ class ThreadedImportTests(unittest.TestCase):
         finally:
             sys.meta_path.remove(finder)
 
-    def test_parallel_path_hooks(self):
+    @support.bigmemtest(size=50, memuse=76*2**20, dry_run=False)
+    def test_parallel_path_hooks(self, size):
         # Here the Finder instance is only used to check concurrent calls
         # to path_hook().
         finder = Finder()
@@ -242,16 +241,19 @@ class ThreadedImportTests(unittest.TestCase):
         self.addCleanup(forget, TESTFN)
         self.addCleanup(rmtree, '__pycache__')
         importlib.invalidate_caches()
-        __import__(TESTFN)
+        with threading_helper.wait_threads_exit():
+            __import__(TESTFN)
         del sys.modules[TESTFN]
 
-    def test_concurrent_futures_circular_import(self):
+    @support.bigmemtest(size=1, memuse=1.8*2**30, dry_run=False)
+    def test_concurrent_futures_circular_import(self, size):
         # Regression test for bpo-43515
         fn = os.path.join(os.path.dirname(__file__),
                           'partial', 'cfimport.py')
         script_helper.assert_python_ok(fn)
 
-    def test_multiprocessing_pool_circular_import(self):
+    @support.bigmemtest(size=1, memuse=1.8*2**30, dry_run=False)
+    def test_multiprocessing_pool_circular_import(self, size):
         # Regression test for bpo-41567
         fn = os.path.join(os.path.dirname(__file__),
                           'partial', 'pool_in_threads.py')
@@ -264,10 +266,10 @@ def setUpModule():
     try:
         old_switchinterval = sys.getswitchinterval()
         unittest.addModuleCleanup(sys.setswitchinterval, old_switchinterval)
-        sys.setswitchinterval(1e-5)
+        support.setswitchinterval(1e-5)
     except AttributeError:
         pass
 
 
 if __name__ == "__main__":
-    unittets.main()
+    unittest.main()
