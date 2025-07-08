@@ -2659,7 +2659,6 @@ class LinkTests(unittest.TestCase):
 @unittest.skipUnless(hasattr(os, 'linkat'), 'requires os.linkat')
 class LinkAtTests(unittest.TestCase):
     def test_no_flags(self):
-        # create hard link with no flags
         src = "linkat_src"
         self.addCleanup(os_helper.unlink, src)
         with open(src, "w", encoding='utf8') as fp:
@@ -2672,14 +2671,19 @@ class LinkAtTests(unittest.TestCase):
         with open(dst, encoding='utf8') as fp:
             self.assertEqual(fp.read(), 'hello')
 
-        # destination already exists
-        src2 = "linkat_src2"
-        self.addCleanup(os_helper.unlink, src2)
-        with open(src2, "w", encoding='utf8') as fp:
-            fp.write("PYTHON")
+    # linkat() fails with "OSError: [Errno 0]" on WASI
+    @unittest.skipIf(support.is_wasi, 'test broken on WASI')
+    def test_destination_exists(self):
+        src = "linkat_src"
+        self.addCleanup(os_helper.unlink, src)
+        open(src, "w").close()
+
+        dst = "linkat_dst"
+        self.addCleanup(os_helper.unlink, dst)
+        open(dst, "w").close()
 
         with self.assertRaises(FileExistsError):
-            os.linkat(os.AT_FDCWD, src2, os.AT_FDCWD, dst)  # flags=0
+            os.linkat(os.AT_FDCWD, src, os.AT_FDCWD, dst)  # flags=0
 
     @unittest.skipUnless(hasattr(os, 'O_TMPFILE'), 'need os.O_TMPFILE')
     def check_flag(self, flag):
