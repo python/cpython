@@ -1001,215 +1001,425 @@ For completeness, here are all the variables:
      * Python name
      * Notes
    * * .. c:var:: PyObject *PyExc_BaseException
+          :no-typesetting:
+
+       :c:var:`!PyExc_BaseException`
      * :exc:`BaseException`
      *
    * * .. c:var:: PyObject *PyExc_BaseExceptionGroup
+          :no-typesetting:
+
+       :c:var:`!PyExc_BaseExceptionGroup`
      * :exc:`BaseExceptionGroup`
      *
    * * .. c:var:: PyObject *PyExc_Exception
+          :no-typesetting:
+
+       :c:var:`!PyExc_Exception`
      * :exc:`Exception`
      *
    * * .. c:var:: PyObject *PyExc_ArithmeticError
+          :no-typesetting:
+
+       :c:var:`!PyExc_ArithmeticError`
      * :exc:`ArithmeticError`
      *
    * * .. c:var:: PyObject *PyExc_AssertionError
+          :no-typesetting:
+
+       :c:var:`!PyExc_AssertionError`
      * :exc:`AssertionError`
      *
    * * .. c:var:: PyObject *PyExc_AttributeError
+          :no-typesetting:
+
+       :c:var:`!PyExc_AttributeError`
      * :exc:`AttributeError`
      *
    * * .. c:var:: PyObject *PyExc_BlockingIOError
+          :no-typesetting:
+
+       :c:var:`!PyExc_BlockingIOError`
      * :exc:`BlockingIOError`
      *
    * * .. c:var:: PyObject *PyExc_BrokenPipeError
+          :no-typesetting:
+
+       :c:var:`!PyExc_BrokenPipeError`
      * :exc:`BrokenPipeError`
      *
    * * .. c:var:: PyObject *PyExc_BufferError
+          :no-typesetting:
+
+       :c:var:`!PyExc_BufferError`
      * :exc:`BufferError`
      *
    * * .. c:var:: PyObject *PyExc_ChildProcessError
+          :no-typesetting:
+
+       :c:var:`!PyExc_ChildProcessError`
      * :exc:`ChildProcessError`
      *
    * * .. c:var:: PyObject *PyExc_ConnectionAbortedError
+          :no-typesetting:
+
+       :c:var:`!PyExc_ConnectionAbortedError`
      * :exc:`ConnectionAbortedError`
      *
    * * .. c:var:: PyObject *PyExc_ConnectionError
+          :no-typesetting:
+
+       :c:var:`!PyExc_ConnectionError`
      * :exc:`ConnectionError`
      *
    * * .. c:var:: PyObject *PyExc_ConnectionRefusedError
+          :no-typesetting:
+
+       :c:var:`!PyExc_ConnectionRefusedError`
      * :exc:`ConnectionRefusedError`
      *
    * * .. c:var:: PyObject *PyExc_ConnectionResetError
+          :no-typesetting:
+
+       :c:var:`!PyExc_ConnectionResetError`
      * :exc:`ConnectionResetError`
      *
    * * .. c:var:: PyObject *PyExc_EOFError
+          :no-typesetting:
+
+       :c:var:`!PyExc_EOFError`
      * :exc:`EOFError`
      *
    * * .. c:var:: PyObject *PyExc_FileExistsError
+          :no-typesetting:
+
+       :c:var:`!PyExc_FileExistsError`
      * :exc:`FileExistsError`
      *
    * * .. c:var:: PyObject *PyExc_FileNotFoundError
+          :no-typesetting:
+
+       :c:var:`!PyExc_FileNotFoundError`
      * :exc:`FileNotFoundError`
      *
    * * .. c:var:: PyObject *PyExc_FloatingPointError
+          :no-typesetting:
+
+       :c:var:`!PyExc_FloatingPointError`
      * :exc:`FloatingPointError`
      *
    * * .. c:var:: PyObject *PyExc_GeneratorExit
+          :no-typesetting:
+
+       :c:var:`!PyExc_GeneratorExit`
      * :exc:`GeneratorExit`
      *
    * * .. c:var:: PyObject *PyExc_ImportError
+          :no-typesetting:
+
+       :c:var:`!PyExc_ImportError`
      * :exc:`ImportError`
      *
    * * .. c:var:: PyObject *PyExc_IndentationError
+          :no-typesetting:
+
+       :c:var:`!PyExc_IndentationError`
      * :exc:`IndentationError`
      *
    * * .. c:var:: PyObject *PyExc_IndexError
+          :no-typesetting:
+
+       :c:var:`!PyExc_IndexError`
      * :exc:`IndexError`
      *
    * * .. c:var:: PyObject *PyExc_InterruptedError
+          :no-typesetting:
+
+       :c:var:`!PyExc_InterruptedError`
      * :exc:`InterruptedError`
      *
    * * .. c:var:: PyObject *PyExc_IsADirectoryError
+          :no-typesetting:
+
+       :c:var:`!PyExc_IsADirectoryError`
      * :exc:`IsADirectoryError`
      *
    * * .. c:var:: PyObject *PyExc_KeyError
+          :no-typesetting:
+
+       :c:var:`!PyExc_KeyError`
      * :exc:`KeyError`
      *
    * * .. c:var:: PyObject *PyExc_KeyboardInterrupt
+          :no-typesetting:
+
+       :c:var:`!PyExc_KeyboardInterrupt`
      * :exc:`KeyboardInterrupt`
      *
    * * .. c:var:: PyObject *PyExc_LookupError
+          :no-typesetting:
+
+       :c:var:`!PyExc_LookupError`
      * :exc:`LookupError`
      *
    * * .. c:var:: PyObject *PyExc_MemoryError
+          :no-typesetting:
+
+       :c:var:`!PyExc_MemoryError`
      * :exc:`MemoryError`
      *
    * * .. c:var:: PyObject *PyExc_ModuleNotFoundError
+          :no-typesetting:
+
+       :c:var:`!PyExc_ModuleNotFoundError`
      * :exc:`ModuleNotFoundError`
      *
    * * .. c:var:: PyObject *PyExc_NameError
+          :no-typesetting:
+
+       :c:var:`!PyExc_NameError`
      * :exc:`NameError`
      *
    * * .. c:var:: PyObject *PyExc_NotADirectoryError
+          :no-typesetting:
+
+       :c:var:`!PyExc_NotADirectoryError`
      * :exc:`NotADirectoryError`
      *
    * * .. c:var:: PyObject *PyExc_NotImplementedError
+          :no-typesetting:
+
+       :c:var:`!PyExc_NotImplementedError`
      * :exc:`NotImplementedError`
      *
    * * .. c:var:: PyObject *PyExc_OSError
+          :no-typesetting:
+
+       :c:var:`!PyExc_OSError`
      * :exc:`OSError`
      *
    * * .. c:var:: PyObject *PyExc_OverflowError
+          :no-typesetting:
+
+       :c:var:`!PyExc_OverflowError`
      * :exc:`OverflowError`
      *
    * * .. c:var:: PyObject *PyExc_PermissionError
+          :no-typesetting:
+
+       :c:var:`!PyExc_PermissionError`
      * :exc:`PermissionError`
      *
    * * .. c:var:: PyObject *PyExc_ProcessLookupError
+          :no-typesetting:
+
+       :c:var:`!PyExc_ProcessLookupError`
      * :exc:`ProcessLookupError`
      *
    * * .. c:var:: PyObject *PyExc_PythonFinalizationError
+          :no-typesetting:
+
+       :c:var:`!PyExc_PythonFinalizationError`
      * :exc:`PythonFinalizationError`
      *
    * * .. c:var:: PyObject *PyExc_RecursionError
+          :no-typesetting:
+
+       :c:var:`!PyExc_RecursionError`
      * :exc:`RecursionError`
      *
    * * .. c:var:: PyObject *PyExc_ReferenceError
+          :no-typesetting:
+
+       :c:var:`!PyExc_ReferenceError`
      * :exc:`ReferenceError`
      *
    * * .. c:var:: PyObject *PyExc_RuntimeError
+          :no-typesetting:
+
+       :c:var:`!PyExc_RuntimeError`
      * :exc:`RuntimeError`
      *
    * * .. c:var:: PyObject *PyExc_StopAsyncIteration
+          :no-typesetting:
+
+       :c:var:`!PyExc_StopAsyncIteration`
      * :exc:`StopAsyncIteration`
      *
    * * .. c:var:: PyObject *PyExc_StopIteration
+          :no-typesetting:
+
+       :c:var:`!PyExc_StopIteration`
      * :exc:`StopIteration`
      *
    * * .. c:var:: PyObject *PyExc_SyntaxError
+          :no-typesetting:
+
+       :c:var:`!PyExc_SyntaxError`
      * :exc:`SyntaxError`
      *
    * * .. c:var:: PyObject *PyExc_SystemError
+          :no-typesetting:
+
+       :c:var:`!PyExc_SystemError`
      * :exc:`SystemError`
      *
    * * .. c:var:: PyObject *PyExc_SystemExit
+          :no-typesetting:
+
+       :c:var:`!PyExc_SystemExit`
      * :exc:`SystemExit`
      *
    * * .. c:var:: PyObject *PyExc_TabError
+          :no-typesetting:
+
+       :c:var:`!PyExc_TabError`
      * :exc:`TabError`
      *
    * * .. c:var:: PyObject *PyExc_TimeoutError
+          :no-typesetting:
+
+       :c:var:`!PyExc_TimeoutError`
      * :exc:`TimeoutError`
      *
    * * .. c:var:: PyObject *PyExc_TypeError
+          :no-typesetting:
+
+       :c:var:`!PyExc_TypeError`
      * :exc:`TypeError`
      *
    * * .. c:var:: PyObject *PyExc_UnboundLocalError
+          :no-typesetting:
+
+       :c:var:`!PyExc_UnboundLocalError`
      * :exc:`UnboundLocalError`
      *
    * * .. c:var:: PyObject *PyExc_UnicodeDecodeError
+          :no-typesetting:
+
+       :c:var:`!PyExc_UnicodeDecodeError`
      * :exc:`UnicodeDecodeError`
      *
    * * .. c:var:: PyObject *PyExc_UnicodeEncodeError
+          :no-typesetting:
+
+       :c:var:`!PyExc_UnicodeEncodeError`
      * :exc:`UnicodeEncodeError`
      *
    * * .. c:var:: PyObject *PyExc_UnicodeError
+          :no-typesetting:
+
+       :c:var:`!PyExc_UnicodeError`
      * :exc:`UnicodeError`
      *
    * * .. c:var:: PyObject *PyExc_UnicodeTranslateError
+          :no-typesetting:
+
+       :c:var:`!PyExc_UnicodeTranslateError`
      * :exc:`UnicodeTranslateError`
      *
    * * .. c:var:: PyObject *PyExc_ValueError
+          :no-typesetting:
+
+       :c:var:`!PyExc_ValueError`
      * :exc:`ValueError`
      *
    * * .. c:var:: PyObject *PyExc_ZeroDivisionError
+          :no-typesetting:
+
+       :c:var:`!PyExc_ZeroDivisionError`
      * :exc:`ZeroDivisionError`
      *
 
    * * .. c:var:: PyObject *PyExc_EnvironmentError
+          :no-typesetting:
+
+       :c:var:`!PyExc_EnvironmentError`
      * :exc:`OSError`
      * [oserror]_
    * * .. c:var:: PyObject *PyExc_IOError
+          :no-typesetting:
+
+       :c:var:`!PyExc_IOError`
      * :exc:`OSError`
      * [oserror]_
    * * .. c:var:: PyObject *PyExc_WindowsError
+          :no-typesetting:
+
+       :c:var:`!PyExc_WindowsError`
      * :exc:`OSError`
      * [oserror]_ [win]_
 
    * * .. c:var:: PyObject *PyExc_Warning
+          :no-typesetting:
+
+       :c:var:`!PyExc_Warning`
      * :exc:`Warning`
      *
    * * .. c:var:: PyObject *PyExc_BytesWarning
+          :no-typesetting:
+
+       :c:var:`!PyExc_BytesWarning`
      * :exc:`BytesWarning`
      *
    * * .. c:var:: PyObject *PyExc_DeprecationWarning
+          :no-typesetting:
+
+       :c:var:`!PyExc_DeprecationWarning`
      * :exc:`DeprecationWarning`
      *
    * * .. c:var:: PyObject *PyExc_EncodingWarning
+          :no-typesetting:
+
+       :c:var:`!PyExc_EncodingWarning`
      * :exc:`EncodingWarning`
      *
    * * .. c:var:: PyObject *PyExc_FutureWarning
+          :no-typesetting:
+
+       :c:var:`!PyExc_FutureWarning`
      * :exc:`FutureWarning`
      *
    * * .. c:var:: PyObject *PyExc_ImportWarning
+          :no-typesetting:
+
+       :c:var:`!PyExc_ImportWarning`
      * :exc:`ImportWarning`
      *
    * * .. c:var:: PyObject *PyExc_PendingDeprecationWarning
+          :no-typesetting:
+
+       :c:var:`!PyExc_PendingDeprecationWarning`
      * :exc:`PendingDeprecationWarning`
      *
    * * .. c:var:: PyObject *PyExc_ResourceWarning
+          :no-typesetting:
+
+       :c:var:`!PyExc_ResourceWarning`
      * :exc:`ResourceWarning`
      *
    * * .. c:var:: PyObject *PyExc_RuntimeWarning
+          :no-typesetting:
+
+       :c:var:`!PyExc_RuntimeWarning`
      * :exc:`RuntimeWarning`
      *
    * * .. c:var:: PyObject *PyExc_SyntaxWarning
+          :no-typesetting:
+
+       :c:var:`!PyExc_SyntaxWarning`
      * :exc:`SyntaxWarning`
      *
    * * .. c:var:: PyObject *PyExc_UnicodeWarning
+          :no-typesetting:
+
+       :c:var:`!PyExc_UnicodeWarning`
      * :exc:`UnicodeWarning`
      *
    * * .. c:var:: PyObject *PyExc_UserWarning
+          :no-typesetting:
+
+       :c:var:`!PyExc_UserWarning`
      * :exc:`UserWarning`
      *
 
