@@ -2608,17 +2608,18 @@ test_thread_state_ensure_nested(PyObject *self, PyObject *unused)
     PyInterpreterRef ref = get_strong_ref();
     PyThreadState *save_tstate = PyThreadState_Swap(NULL);
     assert(PyGILState_GetThisThreadState() == save_tstate);
+    PyThreadRef refs[10];
 
     for (int i = 0; i < 10; ++i) {
         // Test reactivation of the detached tstate.
-        if (PyThreadState_Ensure(ref) < 0) {
+        if (PyThreadState_Ensure(ref, &refs[i]) < 0) {
             PyInterpreterRef_Close(ref);
             return PyErr_NoMemory();
         }
 
         // No new thread state should've been created.
         assert(PyThreadState_Get() == save_tstate);
-        PyThreadState_Release();
+        PyThreadState_Release(refs[i]);
     }
 
     assert(PyThreadState_GetUnchecked() == NULL);
@@ -2627,7 +2628,7 @@ test_thread_state_ensure_nested(PyObject *self, PyObject *unused)
     // If the (detached) gilstate matches the interpreter, then it shouldn't
     // create a new thread state.
     for (int i = 0; i < 10; ++i) {
-        if (PyThreadState_Ensure(ref) < 0) {
+        if (PyThreadState_Ensure(ref, &refs[i]) < 0) {
             // This will technically leak other thread states, but it doesn't
             // matter because this is a test.
             PyInterpreterRef_Close(ref);
@@ -2639,7 +2640,7 @@ test_thread_state_ensure_nested(PyObject *self, PyObject *unused)
 
     for (int i = 0; i < 10; ++i) {
         assert(PyThreadState_Get() == save_tstate);
-        PyThreadState_Release();
+        PyThreadState_Release(refs[i]);
     }
 
     assert(PyThreadState_GetUnchecked() == NULL);
@@ -2672,7 +2673,9 @@ test_thread_state_ensure_crossinterp(PyObject *self, PyObject *unused)
        interp = interpreters.create()
        interp.exec(some_func)
        */
-    if (PyThreadState_Ensure(ref) < 0) {
+    PyThreadRef thread_ref;
+    PyThreadRef other_thread_ref;
+    if (PyThreadState_Ensure(ref, &thread_ref) < 0) {
         PyInterpreterRef_Close(ref);
         return PyErr_NoMemory();
     }
@@ -2683,16 +2686,16 @@ test_thread_state_ensure_crossinterp(PyObject *self, PyObject *unused)
     assert(PyGILState_GetThisThreadState() == ensured_tstate);
 
     // Now though, we should reactivate the thread state
-    if (PyThreadState_Ensure(ref) < 0) {
+    if (PyThreadState_Ensure(ref, &other_thread_ref) < 0) {
         PyInterpreterRef_Close(ref);
         return PyErr_NoMemory();
     }
 
     assert(PyThreadState_Get() == ensured_tstate);
-    PyThreadState_Release();
+    PyThreadState_Release(other_thread_ref);
 
     // Ensure that we're restoring the prior thread state
-    PyThreadState_Release();
+    PyThreadState_Release(thread_ref);
     assert(PyThreadState_Get() == interp_tstate);
     assert(PyGILState_GetThisThreadState() == interp_tstate);
 

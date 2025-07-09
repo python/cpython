@@ -2332,19 +2332,20 @@ static void
 do_tstate_ensure(void *arg)
 {
     ThreadData *data = (ThreadData *)arg;
-    int res = PyThreadState_Ensure(data->ref);
+    PyThreadRef refs[4];
+    int res = PyThreadState_Ensure(data->ref, &refs[0]);
     assert(res == 0);
-    PyThreadState_Ensure(data->ref);
-    PyThreadState_Ensure(data->ref);
+    PyThreadState_Ensure(data->ref, &refs[1]);
+    PyThreadState_Ensure(data->ref, &refs[2]);
     PyGILState_STATE gstate = PyGILState_Ensure();
-    PyThreadState_Ensure(data->ref);
+    PyThreadState_Ensure(data->ref, &refs[3]);
     res = PyRun_SimpleString(THREAD_CODE);
-    PyThreadState_Release();
+    PyThreadState_Release(refs[3]);
     PyGILState_Release(gstate);
-    PyThreadState_Release();
-    PyThreadState_Release();
+    PyThreadState_Release(refs[2]);
+    PyThreadState_Release(refs[1]);
     assert(res == 0);
-    PyThreadState_Release();
+    PyThreadState_Release(refs[0]);
     PyInterpreterRef_Close(data->ref);
     data->done = 1;
 }

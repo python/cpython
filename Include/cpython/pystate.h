@@ -213,9 +213,6 @@ struct _ts {
         /* Number of nested PyThreadState_Ensure() calls on this thread state */
         Py_ssize_t counter;
 
-        /* Thread state that was active before PyThreadState_Ensure() was called. */
-        PyThreadState *prior_tstate;
-
         /* Should this thread state be deleted upon calling
            PyThreadState_Release() (with the counter at 1)?
 
@@ -311,6 +308,10 @@ PyAPI_FUNC(void) PyInterpreterWeakRef_Close(PyInterpreterWeakRef wref);
 } while (0)
 
 
-PyAPI_FUNC(int) PyThreadState_Ensure(PyInterpreterRef interp_ref);
+/* Thread references */
 
-PyAPI_FUNC(void) PyThreadState_Release(void);
+typedef uintptr_t PyThreadRef;
+
+PyAPI_FUNC(int) PyThreadState_Ensure(PyInterpreterRef interp_ref, PyThreadRef *thread_ref);
+
+PyAPI_FUNC(void) PyThreadState_Release(PyThreadRef thread_ref);

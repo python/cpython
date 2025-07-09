@@ -3319,10 +3319,11 @@ PyInterpreterRef_Main(PyInterpreterRef *strong_ptr)
 }
 
 int
-PyThreadState_Ensure(PyInterpreterRef interp_ref)
+PyThreadState_Ensure(PyInterpreterRef interp_ref, PyThreadRef *thread_ref)
 {
     PyInterpreterState *interp = ref_as_interp(interp_ref);
     PyThreadState *attached_tstate = current_fast_get();
+    *thread_ref = 0;
     if (attached_tstate != NULL && attached_tstate->interp == interp) {
         /* Yay! We already have an attached thread state that matches. */
         ++attached_tstate->ensure.counter;
@@ -3347,7 +3348,7 @@ PyThreadState_Ensure(PyInterpreterRef interp_ref)
     fresh_tstate->ensure.delete_on_release = 1;
 
     if (attached_tstate != NULL) {
-        fresh_tstate->ensure.prior_tstate = PyThreadState_Swap(fresh_tstate);
+        *thread_ref = (PyThreadRef)PyThreadState_Swap(fresh_tstate);
     } else {
         _PyThreadState_Attach(fresh_tstate);
     }
@@ -3356,7 +3357,7 @@ PyThreadState_Ensure(PyInterpreterRef interp_ref)
 }
 
 void
-PyThreadState_Release(void)
+PyThreadState_Release(PyThreadRef thread_ref)
 {
     PyThreadState *tstate = current_fast_get();
     _Py_EnsureTstateNotNULL(tstate);
@@ -3364,7 +3365,9 @@ PyThreadState_Release(void)
     if (remaining < 0) {
         Py_FatalError("PyThreadState_Release() called more times than PyThreadState_Ensure()");
     }
-    PyThreadState *to_restore = tstate->ensure.prior_tstate;
+    // The thread reference might be NULL
+    assert(thread_ref >= 0);
+    PyThreadState *to_restore = (PyThreadState *)thread_ref;
     if (remaining == 0) {
         if (tstate->ensure.delete_on_release) {
             PyThreadState_Clear(tstate);
