@@ -249,18 +249,27 @@ class TestTString(unittest.TestCase, TStringBaseCase):
             "t'{what}-string literal' f'f-string literal'",
             "t'{what}-string literal' r'raw string literal'",
             "t'{what}-string literal' rf'raw f-string literal'",
+            "'str literal' t'{what}-string literal'",
+            "u'unicode literal' t'{what}-string literal'",
+            "f'f-string literal' t'{what}-string literal'",
+            "r'raw string literal' t'{what}-string literal'",
+            "rf'raw f-string literal' t'{what}-string literal'",
         ):
-            with self.assertRaisesRegex(SyntaxError, expected_msg):
-                eval(case)
+            with self.subTest(case):
+                with self.assertRaisesRegex(SyntaxError, expected_msg):
+                    eval(case)
 
         # Test disallowed mix of t-string and bytes
         expected_msg = 'cannot mix bytes and nonbytes literals'
         for case in (
             "t'{what}-string literal' b'bytes literal'",
             "t'{what}-string literal' br'raw bytes literal'",
+            "b'bytes literal' t'{what}-string literal'",
+            "br'raw bytes literal' t'{what}-string literal'",
         ):
-            with self.assertRaisesRegex(SyntaxError, expected_msg):
-                eval(case)
+            with self.subTest(case):
+                with self.assertRaisesRegex(SyntaxError, expected_msg):
+                    eval(case)
 
     def test_triple_quoted(self):
         # Test triple-quoted t-strings
