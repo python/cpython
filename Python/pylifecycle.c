@@ -3497,7 +3497,8 @@ wait_for_thread_shutdown(PyThreadState *tstate)
     result = PyObject_CallMethodNoArgs(threading, &_Py_ID(_shutdown));
     if (result == NULL) {
         PyErr_FormatUnraisable("Exception ignored on threading shutdown");
-    } else {
+    }
+    else {
         Py_DECREF(result);
     }
     Py_DECREF(threading);
