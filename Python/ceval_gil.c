@@ -1022,7 +1022,6 @@ _Py_FinishPendingCalls(PyThreadState *tstate)
 #ifndef NDEBUG
     int32_t npending_prev = INT32_MAX;
 #endif
-    int called = 0;
     do {
         if (make_pending_calls(tstate) < 0) {
             PyObject *exc = _PyErr_GetRaisedException(tstate);
@@ -1040,8 +1039,6 @@ _Py_FinishPendingCalls(PyThreadState *tstate)
         npending_prev = npending;
 #endif
     } while (npending > 0);
-
-    return;
 }
 
 int
