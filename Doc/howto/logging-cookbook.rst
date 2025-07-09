@@ -4141,7 +4141,7 @@ The script, when run, prints something like:
     2025-07-02 13:54:47,234 DEBUG     can't get fooled again
 
 If, on the other hand, you are concerned about `log injection
-<https://owasp.org/www-community/attacks/Log_Injection>`, you can use a
+<https://owasp.org/www-community/attacks/Log_Injection>`_, you can use a
 formatter which escapes newlines, as per the following example:
 
 .. code-block:: python
