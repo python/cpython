@@ -1760,7 +1760,8 @@ _PyObject_GetMethodStackRef(PyThreadState *ts, PyObject *obj,
         // ref is not visible to gc so there should be
         // no escaping calls before assigning it to method
         PyDictObject *mp = (PyDictObject *)dict;
-        bool unicode_keys = DK_IS_UNICODE(FT_ATOMIC_LOAD_PTR_ACQUIRE(mp->ma_keys));
+        PyDictKeysObject *keys = FT_ATOMIC_LOAD_PTR_ACQUIRE(mp->ma_keys);
+        bool unicode_keys = DK_IS_UNICODE(keys);
         _PyStackRef ref;
         if (!unicode_keys) {
             Py_INCREF(mp);
