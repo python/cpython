@@ -614,7 +614,7 @@ Functions
    ``True`` if this is an element object or type.
 
    Because ``iselement`` behaves identically for both objects and types, code
-   requiring an object should check for this, see :func:`iselement`.
+   requiring an object should check for this, see :func:`isinstance`.
 
 
 .. function:: iterparse(source, events=None, parser=None)
