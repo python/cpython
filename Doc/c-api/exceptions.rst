@@ -1249,4 +1249,4 @@ Notes:
    This is a compatibility alias to :c:data:`PyExc_OSError`.
 
    .. versionchanged:: 3.3
-      These aliases used to be separate exception types.
+      These aliases to :c:data:`PyExc_OSError` used to be separate exception types.
