@@ -158,9 +158,9 @@ class ReadOnlyFilesystem(unittest.TestCase):
         os.chmod(self.test_dir, stat.S_IREAD | stat.S_IEXEC)
 
         with self.assertRaises(OSError):
-            db = dbm_sqlite3.open(self.db_path, "w")
-            db[b"newkey"] = b"newvalue"
-            db.close()
+            with dbm_sqlite3.open(self.db_path, "w") as db:
+                db[b"newkey"] = b"newvalue"
+
 
     def test_open_readonly_dir_fail_rw_with_writable_db(self):
         os.chmod(self.db_path, stat.S_IREAD | stat.S_IWRITE)
@@ -170,9 +170,8 @@ class ReadOnlyFilesystem(unittest.TestCase):
         os.chmod(self.test_dir, stat.S_IREAD | stat.S_IEXEC)
 
         with self.assertRaises(OSError):
-            db = dbm_sqlite3.open(self.db_path, "w")
-            db[b"newkey"] = b"newvalue"
-            db.close()
+            with dbm_sqlite3.open(self.db_path, "w") as db:
+                db[b"newkey"] = b"newvalue"
 
 
 class ReadWrite(_SQLiteDbmTests):
