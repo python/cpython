@@ -120,10 +120,6 @@ sys_audit(PyObject *Py_UNUSED(module), PyObject *args)
         return NULL;
     }
 
-    if (event == NULL) {
-        RETURN_INT(0);
-    }
-
     int result;
     if (arg1 == NULL) {
         result = PySys_Audit(event, argFormat);
@@ -146,15 +142,6 @@ sys_audittuple(PyObject *Py_UNUSED(module), PyObject *args)
     PyObject *tuple_args = NULL;
 
     if (!PyArg_ParseTuple(args, "z#|O", &event, &event_len, &tuple_args)) {
-        return NULL;
-    }
-
-    if (event == NULL) {
-        RETURN_INT(0);
-    }
-
-    if (tuple_args != NULL && !PyTuple_Check(tuple_args)) {
-        PyErr_SetString(PyExc_TypeError, "second argument must be a tuple");
         return NULL;
     }
 
