@@ -502,6 +502,13 @@ class InterpreterPoolExecutorTest(
         self.assertStartsWith(self.executor._thread_name_prefix,
                               "InterpreterPoolExecutor-")
 
+        def f():
+            import _thread
+            return _thread._get_name()
+
+        self.assertStartsWith(self.executor.submit(f).result(),
+                              "InterpreterPoolExecutor-")
+
 
 class AsyncioTest(InterpretersMixin, testasyncio_utils.TestCase):
 
