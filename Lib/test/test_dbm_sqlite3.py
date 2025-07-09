@@ -150,7 +150,7 @@ class ReadOnlyFilesystem(unittest.TestCase):
         with dbm_sqlite3.open(self.db_path, "w") as db:
             with self.assertRaises(OSError):
                 db[b"newkey"] = b"newvalue"
-
+    @unittest.skipUnless(sys.platform == "darwin", "SQLite fallback behavior differs on non-macOS")
     def test_open_readonly_dir_fail_rw_missing_wal_shm(self):
         for suffix in ("-wal", "-shm"):
             os_helper.unlink(self.db_path + suffix)
@@ -161,7 +161,7 @@ class ReadOnlyFilesystem(unittest.TestCase):
             with dbm_sqlite3.open(self.db_path, "w") as db:
                 db[b"newkey"] = b"newvalue"
 
-
+    @unittest.skipUnless(sys.platform == "darwin", "SQLite fallback behavior differs on non-macOS")
     def test_open_readonly_dir_fail_rw_with_writable_db(self):
         os.chmod(self.db_path, stat.S_IREAD | stat.S_IWRITE)
         for suffix in ("-wal", "-shm"):
