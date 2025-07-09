@@ -2673,9 +2673,9 @@ class FreeThreadingMethodTests(unittest.TestCase):
         input = b'a'* (16*_1K)
         num_threads = 8
 
-        # gh-136394: the first output of comp.compress includes the frame header
-        # so it is different than the others
-        # this is why it is added outside of the threading part
+        # gh-136394: the first output of .compress() includes the frame header
+        # we run the first .compress() call outside of the threaded portion
+        # to make the test order-independent
 
         comp = ZstdCompressor()
         parts = [comp.compress(input, ZstdCompressor.FLUSH_BLOCK)]
