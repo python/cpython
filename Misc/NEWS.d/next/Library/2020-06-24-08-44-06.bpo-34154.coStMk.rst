@@ -1,0 +1,1 @@
+Improve the docstrings in the :mod:`tkinter` module.
