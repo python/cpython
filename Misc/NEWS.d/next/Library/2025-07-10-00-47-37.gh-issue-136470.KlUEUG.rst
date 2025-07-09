@@ -1,2 +1,2 @@
-Fix :class:`concurrent.futures.InterpreterPoolExecutor`'s custom thread
+Correct :class:`concurrent.futures.InterpreterPoolExecutor`'s default thread
 name.
