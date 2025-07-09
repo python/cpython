@@ -1066,8 +1066,8 @@ class GCTests(unittest.TestCase):
         # release references and create trash
         del a, wr_cycle
         gc.collect()
-        # In older versions of Python, the weakref was cleared by the
-        # gc.  Now it is not cleared and so the callback is run.
+        # if called, it means there is a bug in the GC.  The weakref should be
+        # cleared before Z dies.
         callback.assert_not_called()
         gc.enable()
 
