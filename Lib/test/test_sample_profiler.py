@@ -4,10 +4,10 @@ import contextlib
 import io
 import marshal
 import os
+import socket
 import subprocess
 import sys
 import tempfile
-import time
 import unittest
 from unittest import mock
 
@@ -17,7 +17,8 @@ from profile.stack_collector import (
 )
 
 from test.support.os_helper import unlink
-from test.support import force_not_colorized_test_class
+from test.support import force_not_colorized_test_class, SHORT_TIMEOUT
+from test.support.socket_helper import find_unused_port
 
 PROCESS_VM_READV_SUPPORTED = False
 
@@ -47,18 +48,47 @@ class MockFrameInfo:
 
 
 @contextlib.contextmanager
-def test_subprocess(script, startup_delay=0.1):
+def test_subprocess(script):
+    # Find an unused port for socket communication
+    port = find_unused_port()
+
+    # Inject socket connection code at the beginning of the script
+    socket_code = f'''
+import socket
+_test_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+_test_sock.connect(('localhost', {port}))
+_test_sock.sendall(b"ready")
+'''
+
+    # Combine socket code with user script
+    full_script = socket_code + script
+
+    # Create server socket to wait for process to be ready
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    server_socket.bind(("localhost", port))
+    server_socket.settimeout(SHORT_TIMEOUT)
+    server_socket.listen(1)
+
     proc = subprocess.Popen(
-        [sys.executable, "-c", script],
+        [sys.executable, "-c", full_script],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
 
+    client_socket = None
     try:
-        if startup_delay > 0:
-            time.sleep(startup_delay)
+        # Wait for process to connect and send ready signal
+        client_socket, _ = server_socket.accept()
+        server_socket.close()
+        response = client_socket.recv(1024)
+        if response != b"ready":
+            raise RuntimeError(f"Unexpected response from subprocess: {response}")
+
         yield proc
     finally:
+        if client_socket is not None:
+            client_socket.close()
         if proc.poll() is None:
             proc.kill()
         proc.wait()
@@ -1604,22 +1634,24 @@ class TestSampleProfilerErrorHandling(unittest.TestCase):
             )
 
     def test_is_process_running(self):
-        with (test_subprocess("import time; time.sleep(0.2)") as proc,
+        with (test_subprocess("import time; time.sleep(1000)") as proc,
               mock.patch("_remote_debugging.RemoteUnwinder") as mock_unwinder_class):
                 mock_unwinder_class.return_value = mock.MagicMock()
                 profiler = SampleProfiler(pid=proc.pid, sample_interval_usec=1000, all_threads=False)
-
                 self.assertTrue(profiler._is_process_running())
+                proc.kill()
 
         # Exit the context manager to ensure the process is terminated
         self.assertFalse(profiler._is_process_running())
 
     @unittest.skipUnless(sys.platform == "linux", "Only valid on Linux")
     def test_esrch_signal_handling(self):
-        with test_subprocess("import time; time.sleep(0.1)") as proc:
+        with test_subprocess("import time; time.sleep(1000)") as proc:
             unwinder = _remote_debugging.RemoteUnwinder(proc.pid)
             initial_trace = unwinder.get_stack_trace()
             self.assertIsNotNone(initial_trace)
+
+            proc.kill()
 
             # Wait for the process to die and try to get another trace
             proc.wait()

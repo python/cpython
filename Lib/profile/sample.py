@@ -51,7 +51,7 @@ class SampleProfiler:
                     collector.collect(stack_frames)
                 except ProcessLookupError:
                     break
-                except (RuntimeError, UnicodeDecodeError, MemoryError):
+                except (RuntimeError, UnicodeDecodeError, MemoryError, OSError):
                     errors += 1
                 except Exception as e:
                     if not self._is_process_running():
