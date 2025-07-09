@@ -2457,5 +2457,35 @@ class IterLockedTests(unittest.TestCase):
             for arg in [1, None, True, sys]:
                 self.assertRaises(TypeError, threading.iter_locked, arg)
 
+     def test_iter_locked_recursive_generator(self):
+            def g():
+                yield next(it)
+
+            it = threading.iter_locked(g())
+            with self.assertRaises(ValueError):
+                next(it)
+
+     def test_iter_locked_recursive_iterator(self):
+        class evil_it:
+            def __init__(self):
+                self.it = iter(range(100))
+                self.it2 = None
+
+            def __iter__(self):
+                return self
+
+            def __next__(self):
+                if self.it2 is not None:
+                    it2, self.it2 = self.it2, None
+                    return next(it2), next(it2)
+                return next(self.it)
+
+        a = evil_it()
+        il = threading.iter_locked(a)
+        assert next(il) == 0
+        a.it2 = il
+        assert next(il) == (1, 2)
+
+
 if __name__ == "__main__":
     unittest.main()
