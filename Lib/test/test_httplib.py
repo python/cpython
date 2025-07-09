@@ -273,7 +273,7 @@ class HeaderTests(TestCase):
         sock = FakeSocket('')
         conn.sock = sock
         conn.request('GET', '/foo')
-        self.assertTrue(sock.data.startswith(expected))
+        self.assertStartsWith(sock.data, expected)
 
         expected = b'GET /foo HTTP/1.1\r\nHost: [2001:102A::]\r\n' \
                    b'Accept-Encoding: identity\r\n\r\n'
@@ -281,7 +281,7 @@ class HeaderTests(TestCase):
         sock = FakeSocket('')
         conn.sock = sock
         conn.request('GET', '/foo')
-        self.assertTrue(sock.data.startswith(expected))
+        self.assertStartsWith(sock.data, expected)
 
         expected = b'GET /foo HTTP/1.1\r\nHost: [fe80::]\r\n' \
                    b'Accept-Encoding: identity\r\n\r\n'
@@ -289,7 +289,7 @@ class HeaderTests(TestCase):
         sock = FakeSocket('')
         conn.sock = sock
         conn.request('GET', '/foo')
-        self.assertTrue(sock.data.startswith(expected))
+        self.assertStartsWith(sock.data, expected)
 
         expected = b'GET /foo HTTP/1.1\r\nHost: [fe80::]:81\r\n' \
                    b'Accept-Encoding: identity\r\n\r\n'
@@ -297,7 +297,7 @@ class HeaderTests(TestCase):
         sock = FakeSocket('')
         conn.sock = sock
         conn.request('GET', '/foo')
-        self.assertTrue(sock.data.startswith(expected))
+        self.assertStartsWith(sock.data, expected)
 
     def test_malformed_headers_coped_with(self):
         # Issue 19996
@@ -335,9 +335,9 @@ class HeaderTests(TestCase):
         self.assertIsNotNone(resp.getheader('obs-text'))
         self.assertIn('obs-text', resp.msg)
         for folded in (resp.getheader('obs-fold'), resp.msg['obs-fold']):
-            self.assertTrue(folded.startswith('text'))
+            self.assertStartsWith(folded, 'text')
             self.assertIn(' folded with space', folded)
-            self.assertTrue(folded.endswith('folded with tab'))
+            self.assertEndsWith(folded, 'folded with tab')
 
     def test_invalid_headers(self):
         conn = client.HTTPConnection('example.com')
@@ -594,8 +594,9 @@ class BasicTest(TestCase):
             CONTINUE = 100, 'Continue', 'Request received, please continue'
             SWITCHING_PROTOCOLS = (101, 'Switching Protocols',
                     'Switching to new protocol; obey Upgrade header')
-            PROCESSING = 102, 'Processing'
-            EARLY_HINTS = 103, 'Early Hints'
+            PROCESSING = 102, 'Processing', 'Server is processing the request'
+            EARLY_HINTS = (103, 'Early Hints',
+                'Headers sent to prepare for the response')
             # success
             OK = 200, 'OK', 'Request fulfilled, document follows'
             CREATED = 201, 'Created', 'Document created, URL follows'
@@ -606,9 +607,11 @@ class BasicTest(TestCase):
             NO_CONTENT = 204, 'No Content', 'Request fulfilled, nothing follows'
             RESET_CONTENT = 205, 'Reset Content', 'Clear input form for further input'
             PARTIAL_CONTENT = 206, 'Partial Content', 'Partial content follows'
-            MULTI_STATUS = 207, 'Multi-Status'
-            ALREADY_REPORTED = 208, 'Already Reported'
-            IM_USED = 226, 'IM Used'
+            MULTI_STATUS = (207, 'Multi-Status',
+                'Response contains multiple statuses in the body')
+            ALREADY_REPORTED = (208, 'Already Reported',
+                'Operation has already been reported')
+            IM_USED = 226, 'IM Used', 'Request completed using instance manipulations'
             # redirection
             MULTIPLE_CHOICES = (300, 'Multiple Choices',
                 'Object has several resources -- see URI list')
@@ -665,15 +668,19 @@ class BasicTest(TestCase):
             EXPECTATION_FAILED = (417, 'Expectation Failed',
                 'Expect condition could not be satisfied')
             IM_A_TEAPOT = (418, 'I\'m a Teapot',
-                'Server refuses to brew coffee because it is a teapot.')
+                'Server refuses to brew coffee because it is a teapot')
             MISDIRECTED_REQUEST = (421, 'Misdirected Request',
                 'Server is not able to produce a response')
-            UNPROCESSABLE_CONTENT = 422, 'Unprocessable Content'
+            UNPROCESSABLE_CONTENT = (422, 'Unprocessable Content',
+                'Server is not able to process the contained instructions')
             UNPROCESSABLE_ENTITY = UNPROCESSABLE_CONTENT
-            LOCKED = 423, 'Locked'
-            FAILED_DEPENDENCY = 424, 'Failed Dependency'
-            TOO_EARLY = 425, 'Too Early'
-            UPGRADE_REQUIRED = 426, 'Upgrade Required'
+            LOCKED = 423, 'Locked', 'Resource of a method is locked'
+            FAILED_DEPENDENCY = (424, 'Failed Dependency',
+                'Dependent action of the request failed')
+            TOO_EARLY = (425, 'Too Early',
+                'Server refuses to process a request that might be replayed')
+            UPGRADE_REQUIRED = (426, 'Upgrade Required',
+                'Server refuses to perform the request using the current protocol')
             PRECONDITION_REQUIRED = (428, 'Precondition Required',
                 'The origin server requires the request to be conditional')
             TOO_MANY_REQUESTS = (429, 'Too Many Requests',
@@ -700,10 +707,14 @@ class BasicTest(TestCase):
                 'The gateway server did not receive a timely response')
             HTTP_VERSION_NOT_SUPPORTED = (505, 'HTTP Version Not Supported',
                 'Cannot fulfill request')
-            VARIANT_ALSO_NEGOTIATES = 506, 'Variant Also Negotiates'
-            INSUFFICIENT_STORAGE = 507, 'Insufficient Storage'
-            LOOP_DETECTED = 508, 'Loop Detected'
-            NOT_EXTENDED = 510, 'Not Extended'
+            VARIANT_ALSO_NEGOTIATES = (506, 'Variant Also Negotiates',
+                'Server has an internal configuration error')
+            INSUFFICIENT_STORAGE = (507, 'Insufficient Storage',
+                'Server is not able to store the representation')
+            LOOP_DETECTED = (508, 'Loop Detected',
+                'Server encountered an infinite loop while processing a request')
+            NOT_EXTENDED = (510, 'Not Extended',
+                'Request does not meet the resource access policy')
             NETWORK_AUTHENTICATION_REQUIRED = (511,
                 'Network Authentication Required',
                 'The client needs to authenticate to gain network access')
@@ -989,8 +1000,7 @@ class BasicTest(TestCase):
             sock = FakeSocket(body)
             conn.sock = sock
             conn.request('GET', '/foo', body)
-            self.assertTrue(sock.data.startswith(expected), '%r != %r' %
-                    (sock.data[:len(expected)], expected))
+            self.assertStartsWith(sock.data, expected)
 
     def test_send(self):
         expected = b'this is a test this is only a test'
@@ -1080,6 +1090,25 @@ class BasicTest(TestCase):
         resp.begin()
         self.assertEqual(resp.read(), expected)
         resp.close()
+
+        # Explicit full read
+        for n in (-123, -1, None):
+            with self.subTest('full read', n=n):
+                sock = FakeSocket(chunked_start + last_chunk + chunked_end)
+                resp = client.HTTPResponse(sock, method="GET")
+                resp.begin()
+                self.assertTrue(resp.chunked)
+                self.assertEqual(resp.read(n), expected)
+                resp.close()
+
+        # Read first chunk
+        with self.subTest('read1(-1)'):
+            sock = FakeSocket(chunked_start + last_chunk + chunked_end)
+            resp = client.HTTPResponse(sock, method="GET")
+            resp.begin()
+            self.assertTrue(resp.chunked)
+            self.assertEqual(resp.read1(-1), b"hello worl")
+            resp.close()
 
         # Various read sizes
         for n in range(1, 12):
@@ -1534,7 +1563,7 @@ class ExtendedReadTest(TestCase):
                 # then unbounded peek
                 p2 = resp.peek()
                 self.assertGreaterEqual(len(p2), len(p))
-                self.assertTrue(p2.startswith(p))
+                self.assertStartsWith(p2, p)
                 next = resp.read(len(p2))
                 self.assertEqual(next, p2)
             else:
@@ -1559,7 +1588,7 @@ class ExtendedReadTest(TestCase):
             line = readline(limit)
             if line and line != b"foo":
                 if len(line) < 5:
-                    self.assertTrue(line.endswith(b"\n"))
+                    self.assertEndsWith(line, b"\n")
             all.append(line)
             if not line:
                 break
@@ -1754,7 +1783,7 @@ class OfflineTest(TestCase):
         ]
         for const in expected:
             with self.subTest(constant=const):
-                self.assertTrue(hasattr(client, const))
+                self.assertHasAttr(client, const)
 
 
 class SourceAddressTest(TestCase):
@@ -2073,8 +2102,8 @@ class HTTPSTest(TestCase):
 
     def test_tls13_pha(self):
         import ssl
-        if not ssl.HAS_TLSv1_3:
-            self.skipTest('TLS 1.3 support required')
+        if not ssl.HAS_TLSv1_3 or not ssl.HAS_PHA:
+            self.skipTest('TLS 1.3 PHA support required')
         # just check status of PHA flag
         h = client.HTTPSConnection('localhost', 443)
         self.assertTrue(h._context.post_handshake_auth)
@@ -2396,8 +2425,7 @@ class TunnelTests(TestCase):
                 msg=f'unexpected number of send calls: {mock_send.mock_calls}')
         proxy_setup_data_sent = mock_send.mock_calls[0][1][0]
         self.assertIn(b'CONNECT destination.com', proxy_setup_data_sent)
-        self.assertTrue(
-                proxy_setup_data_sent.endswith(b'\r\n\r\n'),
+        self.assertEndsWith(proxy_setup_data_sent, b'\r\n\r\n',
                 msg=f'unexpected proxy data sent {proxy_setup_data_sent!r}')
 
     def test_connect_put_request(self):

@@ -16,7 +16,8 @@ import pickle
 import struct
 
 from itertools import product
-from test.support import import_helper
+from test import support
+from test.support import import_helper, threading_helper
 
 
 class MyObject:
@@ -731,6 +732,34 @@ class OtherTest(unittest.TestCase):
         del pb, o
         gc.collect()
         self.assertIsNone(wr())
+
+
+@threading_helper.requires_working_threading()
+@support.requires_resource("cpu")
+class RacingTest(unittest.TestCase):
+    def test_racing_getbuf_and_releasebuf(self):
+        """Repeatly access the memoryview for racing."""
+        try:
+            from multiprocessing.managers import SharedMemoryManager
+        except ImportError:
+            self.skipTest("Test requires multiprocessing")
+        from threading import Thread, Event
+
+        start = Event()
+        with SharedMemoryManager() as smm:
+            obj = smm.ShareableList(range(100))
+            def test():
+                # Issue gh-127085, the `ShareableList.count` is just a
+                # convenient way to mess the `exports` counter of `memoryview`,
+                # this issue has no direct relation with `ShareableList`.
+                start.wait(support.SHORT_TIMEOUT)
+                for i in range(10):
+                    obj.count(1)
+            threads = [Thread(target=test) for _ in range(10)]
+            with threading_helper.start_threads(threads):
+                start.set()
+
+            del obj
 
 
 if __name__ == "__main__":

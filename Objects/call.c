@@ -834,12 +834,15 @@ PyObject_VectorcallMethod(PyObject *name, PyObject *const *args,
     assert(PyVectorcall_NARGS(nargsf) >= 1);
 
     PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *callable = NULL;
+    _PyCStackRef method;
+    _PyThreadState_PushCStackRef(tstate, &method);
     /* Use args[0] as "self" argument */
-    int unbound = _PyObject_GetMethod(args[0], name, &callable);
-    if (callable == NULL) {
+    int unbound = _PyObject_GetMethodStackRef(tstate, args[0], name, &method.ref);
+    if (PyStackRef_IsNull(method.ref)) {
+        _PyThreadState_PopCStackRef(tstate, &method);
         return NULL;
     }
+    PyObject *callable = PyStackRef_AsPyObjectBorrow(method.ref);
 
     if (unbound) {
         /* We must remove PY_VECTORCALL_ARGUMENTS_OFFSET since
@@ -855,7 +858,7 @@ PyObject_VectorcallMethod(PyObject *name, PyObject *const *args,
     EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_METHOD, callable);
     PyObject *result = _PyObject_VectorcallTstate(tstate, callable,
                                                   args, nargsf, kwnames);
-    Py_DECREF(callable);
+    _PyThreadState_PopCStackRef(tstate, &method);
     return result;
 }
 
@@ -868,11 +871,14 @@ PyObject_CallMethodObjArgs(PyObject *obj, PyObject *name, ...)
         return null_error(tstate);
     }
 
-    PyObject *callable = NULL;
-    int is_method = _PyObject_GetMethod(obj, name, &callable);
-    if (callable == NULL) {
+    _PyCStackRef method;
+    _PyThreadState_PushCStackRef(tstate, &method);
+    int is_method = _PyObject_GetMethodStackRef(tstate, obj, name, &method.ref);
+    if (PyStackRef_IsNull(method.ref)) {
+        _PyThreadState_PopCStackRef(tstate, &method);
         return NULL;
     }
+    PyObject *callable = PyStackRef_AsPyObjectBorrow(method.ref);
     obj = is_method ? obj : NULL;
 
     va_list vargs;
@@ -880,7 +886,7 @@ PyObject_CallMethodObjArgs(PyObject *obj, PyObject *name, ...)
     PyObject *result = object_vacall(tstate, obj, callable, vargs);
     va_end(vargs);
 
-    Py_DECREF(callable);
+    _PyThreadState_PopCStackRef(tstate, &method);
     return result;
 }
 
@@ -897,12 +903,15 @@ _PyObject_CallMethodIdObjArgs(PyObject *obj, _Py_Identifier *name, ...)
     if (!oname) {
         return NULL;
     }
-
-    PyObject *callable = NULL;
-    int is_method = _PyObject_GetMethod(obj, oname, &callable);
-    if (callable == NULL) {
+    _PyCStackRef method;
+    _PyThreadState_PushCStackRef(tstate, &method);
+    int is_method = _PyObject_GetMethodStackRef(tstate, obj, oname, &method.ref);
+    if (PyStackRef_IsNull(method.ref)) {
+        _PyThreadState_PopCStackRef(tstate, &method);
         return NULL;
     }
+    PyObject *callable = PyStackRef_AsPyObjectBorrow(method.ref);
+
     obj = is_method ? obj : NULL;
 
     va_list vargs;
@@ -910,7 +919,7 @@ _PyObject_CallMethodIdObjArgs(PyObject *obj, _Py_Identifier *name, ...)
     PyObject *result = object_vacall(tstate, obj, callable, vargs);
     va_end(vargs);
 
-    Py_DECREF(callable);
+    _PyThreadState_PopCStackRef(tstate, &method);
     return result;
 }
 

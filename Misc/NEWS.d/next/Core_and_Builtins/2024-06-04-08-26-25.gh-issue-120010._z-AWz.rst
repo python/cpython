@@ -1,2 +1,0 @@
-Correct invalid corner cases which resulted in ``(nan+nanj)`` output in complex
-multiplication, e.g., ``(1e300+1j)*(nan+infj)``.  Patch by Sergey B Kirpichev.

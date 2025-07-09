@@ -1,3 +1,0 @@
-Fix :exc:`TypeError` when a :class:`ctypes.Structure` has a field size
-that doesn't fit into an unsigned 16-bit integer.
-Instead, the maximum number of *bits* is :data:`sys.maxsize`.

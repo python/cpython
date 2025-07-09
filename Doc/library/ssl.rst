@@ -934,6 +934,19 @@ Constants
 
    .. versionadded:: 3.13
 
+.. data:: HAS_PSK_TLS13
+
+   Whether the OpenSSL library has built-in support for External PSKs in TLS
+   1.3 as described in :rfc:`9258`.
+
+   .. versionadded:: next
+
+.. data:: HAS_PHA
+
+   Whether the OpenSSL library has built-in support for TLS-PHA.
+
+   .. versionadded:: 3.14
+
 .. data:: CHANNEL_BINDING_TYPES
 
    List of supported TLS channel binding types.  Strings in this list
@@ -1931,8 +1944,8 @@ to speed up repeated connections from the same clients.
 
    A :class:`TLSVersion` enum member representing the highest supported
    TLS version. The value defaults to :attr:`TLSVersion.MAXIMUM_SUPPORTED`.
-   The attribute is read-only for protocols other than :attr:`PROTOCOL_TLS`,
-   :attr:`PROTOCOL_TLS_CLIENT`, and :attr:`PROTOCOL_TLS_SERVER`.
+   The attribute is read-only for protocols other than :const:`PROTOCOL_TLS`,
+   :const:`PROTOCOL_TLS_CLIENT`, and :const:`PROTOCOL_TLS_SERVER`.
 
    The attributes :attr:`~SSLContext.maximum_version`,
    :attr:`~SSLContext.minimum_version` and
@@ -1955,7 +1968,7 @@ to speed up repeated connections from the same clients.
 .. attribute:: SSLContext.num_tickets
 
    Control the number of TLS 1.3 session tickets of a
-   :attr:`PROTOCOL_TLS_SERVER` context. The setting has no impact on TLS
+   :const:`PROTOCOL_TLS_SERVER` context. The setting has no impact on TLS
    1.0 to 1.2 connections.
 
    .. versionadded:: 3.8
@@ -2508,8 +2521,8 @@ thus several things you need to be aware of:
 .. seealso::
 
    The :mod:`asyncio` module supports :ref:`non-blocking SSL sockets
-   <ssl-nonblocking>` and provides a
-   higher level API. It polls for events using the :mod:`selectors` module and
+   <ssl-nonblocking>` and provides a higher level :ref:`Streams API <asyncio-streams>`.
+   It polls for events using the :mod:`selectors` module and
    handles :exc:`SSLWantWriteError`, :exc:`SSLWantReadError` and
    :exc:`BlockingIOError` exceptions. It runs the SSL handshake asynchronously
    as well.

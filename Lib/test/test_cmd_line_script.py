@@ -88,6 +88,8 @@ def _make_test_zip_pkg(zip_dir, zip_basename, pkg_name, script_basename,
     importlib.invalidate_caches()
     return to_return
 
+
+@support.force_not_colorized_test_class
 class CmdLineTest(unittest.TestCase):
     def _check_output(self, script_name, exit_code, data,
                              expected_file, expected_argv0,
@@ -551,9 +553,9 @@ class CmdLineTest(unittest.TestCase):
             exitcode, stdout, stderr = assert_python_failure(script_name)
             text = stderr.decode('ascii').split('\n')
             self.assertEqual(len(text), 5)
-            self.assertTrue(text[0].startswith('Traceback'))
-            self.assertTrue(text[1].startswith('  File '))
-            self.assertTrue(text[3].startswith('NameError'))
+            self.assertStartsWith(text[0], 'Traceback')
+            self.assertStartsWith(text[1], '  File ')
+            self.assertStartsWith(text[3], 'NameError')
 
     def test_non_ascii(self):
         # Apple platforms deny the creation of a file with an invalid UTF-8 name.
@@ -658,8 +660,9 @@ class CmdLineTest(unittest.TestCase):
             self.assertEqual(
                 stderr.splitlines()[-3:],
                 [   b'    foo = """\\q"""',
-                    b'          ^^^^^^^^',
-                    b'SyntaxError: invalid escape sequence \'\\q\''
+                    b'             ^^',
+                    b'SyntaxError: "\\q" is an invalid escape sequence. '
+                    b'Did you mean "\\\\q"? A raw string is also an option.'
                 ],
             )
 
@@ -705,9 +708,8 @@ class CmdLineTest(unittest.TestCase):
             exitcode, stdout, stderr = assert_python_failure(script_name)
             text = io.TextIOWrapper(io.BytesIO(stderr), 'ascii').read()
             # It used to crash in https://github.com/python/cpython/issues/111132
-            self.assertTrue(text.endswith(
-                'SyntaxError: nonlocal declaration not allowed at module level\n',
-            ), text)
+            self.assertEndsWith(text,
+                'SyntaxError: nonlocal declaration not allowed at module level\n')
 
     def test_consistent_sys_path_for_direct_execution(self):
         # This test case ensures that the following all give the same

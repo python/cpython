@@ -1,2 +1,0 @@
-Include ``<sys/pidfd.h>`` to get ``os.PIDFD_NONBLOCK`` constant. Patch by
-Victor Stinner.

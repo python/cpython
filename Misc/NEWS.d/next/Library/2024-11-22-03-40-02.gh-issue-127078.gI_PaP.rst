@@ -1,2 +1,0 @@
-Fix issue where :func:`urllib.request.url2pathname` failed to discard an
-extra slash before a UNC drive in the URL path on Windows.

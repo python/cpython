@@ -1,1 +1,0 @@
-Support PyREPL history on Windows. Patch by devdanzin and Victor Stinner.

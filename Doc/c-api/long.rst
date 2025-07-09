@@ -439,7 +439,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    All *n_bytes* of the buffer are written: large buffers are padded with
    zeroes.
 
-   If the returned value is greater than than *n_bytes*, the value was
+   If the returned value is greater than *n_bytes*, the value was
    truncated: as many of the lowest bits of the value as could fit are written,
    and the higher bits are ignored. This matches the typical behavior
    of a C-style downcast.
@@ -657,7 +657,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 Export API
 ^^^^^^^^^^
 
-.. versionadded:: next
+.. versionadded:: 3.14
 
 .. c:struct:: PyLongLayout
 
@@ -769,7 +769,7 @@ PyLongWriter API
 
 The :c:type:`PyLongWriter` API can be used to import an integer.
 
-.. versionadded:: next
+.. versionadded:: 3.14
 
 .. c:struct:: PyLongWriter
 
@@ -824,6 +824,6 @@ The :c:type:`PyLongWriter` API can be used to import an integer.
 
    Discard a :c:type:`PyLongWriter` created by :c:func:`PyLongWriter_Create`.
 
-   *writer* must not be ``NULL``.
+   If *writer* is ``NULL``, no operation is performed.
 
    The writer instance and the *digits* array are invalid after the call.

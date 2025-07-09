@@ -70,12 +70,9 @@ const emscriptenSettings = {
     postMessage({ type: "ready", stdinBuffer: stdinBuffer.sab });
   },
   async preRun(Module) {
-    const versionHex = Module.HEAPU32[Module._Py_Version / 4].toString(16);
-    const versionTuple = versionHex
-      .padStart(8, "0")
-      .match(/.{1,2}/g)
-      .map((x) => parseInt(x, 16));
-    const [major, minor, ..._] = versionTuple;
+    const versionInt = Module.HEAPU32[Module._Py_Version >>> 2];
+    const major = (versionInt >>> 24) & 0xff;
+    const minor = (versionInt >>> 16) & 0xff;
     // Prevent complaints about not finding exec-prefix by making a lib-dynload directory
     Module.FS.mkdirTree(`/lib/python${major}.${minor}/lib-dynload/`);
     Module.addRunDependency("install-stdlib");

@@ -1,0 +1,2 @@
+Fix a use-after-free bug that occurs when an imported module isn't
+in :data:`sys.modules` after its initial import. Patch by Nico-Posada.

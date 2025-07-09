@@ -1,5 +1,0 @@
-Fixed :func:`sysconfig.get_config_vars`, :func:`sysconfig.get_paths`, and
-siblings, returning outdated cached data if the value  of :data:`sys.prefix`
-or :data:`sys.exec_prefix` changes. Overwriting :data:`sys.prefix` or
-:data:`sys.exec_prefix` still is discouraged, as that might break other
-parts of the code.

@@ -1,1 +1,0 @@
-If :func:`!_thread.start_new_thread` fails to start a new thread, it deletes its state from interpreter and thus avoids its repeated cleanup on finalization.

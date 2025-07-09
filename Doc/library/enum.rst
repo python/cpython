@@ -110,6 +110,10 @@ Module Contents
       ``KEEP`` which allows for more fine-grained control over how invalid values
       are dealt with in an enumeration.
 
+   :class:`EnumDict`
+
+      A subclass of :class:`dict` for use when subclassing :class:`EnumType`.
+
    :class:`auto`
 
       Instances are replaced with an appropriate value for Enum members.
@@ -152,6 +156,7 @@ Module Contents
 
 .. versionadded:: 3.6  ``Flag``, ``IntFlag``, ``auto``
 .. versionadded:: 3.11  ``StrEnum``, ``EnumCheck``, ``ReprEnum``, ``FlagBoundary``, ``property``, ``member``, ``nonmember``, ``global_enum``, ``show_flag_values``
+.. versionadded:: 3.13  ``EnumDict``
 
 ---------------
 
@@ -663,7 +668,7 @@ Data Types
    * the result is a valid *IntFlag*: an *IntFlag* is returned
    * the result is not a valid *IntFlag*: the result depends on the :class:`FlagBoundary` setting
 
-   The :func:`repr` of unnamed zero-valued flags has changed.  It is now:
+   The :func:`repr` of unnamed zero-valued flags has changed.  It is now::
 
       >>> Color(0)
       <Color: 0>
@@ -821,7 +826,27 @@ Data Types
          >>> KeepFlag(2**2 + 2**4)
          <KeepFlag.BLUE|16: 20>
 
-.. versionadded:: 3.11
+   .. versionadded:: 3.11
+
+.. class:: EnumDict
+
+   *EnumDict* is a subclass of :class:`dict` that is used as the namespace
+   for defining enum classes (see :ref:`prepare`).
+   It is exposed to allow subclasses of :class:`EnumType` with advanced
+   behavior like having multiple values per member.
+   It should be called with the name of the enum class being created, otherwise
+   private names and internal classes will not be handled correctly.
+
+   Note that only the :class:`~collections.abc.MutableMapping` interface
+   (:meth:`~object.__setitem__` and :meth:`~dict.update`) is overridden.
+   It may be possible to bypass the checks using other :class:`!dict`
+   operations like :meth:`|= <object.__ior__>`.
+
+   .. attribute:: EnumDict.member_names
+
+      A list of member names.
+
+   .. versionadded:: 3.13
 
 ---------------
 
