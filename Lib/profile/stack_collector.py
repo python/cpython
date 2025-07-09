@@ -11,7 +11,7 @@ class StackTraceCollector(Collector):
 
     def collect(self, stack_frames):
         for thread_id, frames in stack_frames:
-            if frames and len(frames) > 0:
+            if frames:
                 # Store the complete call stack (reverse order - root first)
                 call_tree = list(reversed(frames))
                 self.call_trees.append(call_tree)
