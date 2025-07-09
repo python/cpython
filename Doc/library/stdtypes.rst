@@ -2536,123 +2536,98 @@ Formatted String Literals (f-strings)
    The :keyword:`await` and :keyword:`async for` can be used in expressions
    within f-strings.
 .. versionchanged:: 3.8
-   Added the debugging operator (``=``)
+   Added the debug specifier (``=``)
 .. versionchanged:: 3.12
    Many restrictions on expressions within f-strings have been removed.
    Notably, nested strings, comments, and backslashes are now permitted.
 
 An :dfn:`f-string` (formally a :dfn:`formatted string literal`) is
 a string literal that is prefixed with ``f`` or ``F``.
-This type of string literal allows embedding arbitrary Python expressions
-within *replacement fields*, which are delimited by curly brackets (``{}``).
-These expressions are evaluated at runtime, similarly to :meth:`str.format`,
-and are converted into regular :class:`str` objects.
-For example:
+This type of string literal allows embedding the results of arbitrary Python
+expressions within *replacement fields*, which are delimited by curly
+brackets (``{}``).
+Each replacement field must contain an expression, optionally followed by:
 
-.. doctest::
+* a *debug specifier* -- an equal sign (``=``);
+* a *conversion specifier* -- ``!s``, ``!r`` or ``!a``; and/or
+* a *format specifier* prefixed with a colon (``:``).
 
-   >>> who = 'nobody'
-   >>> nationality = 'Spanish'
-   >>> f'{who.title()} expects the {nationality} Inquisition!'
-   'Nobody expects the Spanish Inquisition!'
+See the :ref:`Lexical Analysis section on f-strings <f-strings>` for details
+on the syntax of these fields.
 
-It is also possible to use a multi line f-string:
+Debug specifier
+^^^^^^^^^^^^^^^
 
-.. doctest::
+.. versionadded:: 3.8
 
-   >>> f'''This is a string
-   ... on two lines'''
-   'This is a string\non two lines'
+If a debug specifier -- an equal sign (``=``) -- appears after the replacement
+field expression, the resulting f-string will contain the expression's source,
+the equal sign, and the value of the expression.
+This is often useful for debugging::
 
-A single opening curly bracket, ``'{'``, marks a *replacement field* that
-can contain any Python expression:
+   >>> print(f'{name=}')
+   name='Galahad'
 
-.. doctest::
+Whitespace on both sides of the equal sign is significant --- it is retained
+in the result::
 
-   >>> nationality = 'Spanish'
-   >>> f'The {nationality} Inquisition!'
-   'The Spanish Inquisition!'
+   >>> print(f'{name = }')
+   name = 'Galahad'
 
-To include a literal ``{`` or ``}``, use a double bracket:
 
-.. doctest::
+Conversion specifier
+^^^^^^^^^^^^^^^^^^^^
 
-   >>> x = 42
-   >>> f'{{x}} is {x}'
-   '{x} is 42'
-
-Functions can also be used, and :ref:`format specifiers <formatstrings>`:
-
-.. doctest::
-
-   >>> from math import sqrt
-   >>> f'√2 \N{ALMOST EQUAL TO} {sqrt(2):.5f}'
-   '√2 ≈ 1.41421'
-
-Any non-string expression is converted using :func:`str`, by default:
-
-.. doctest::
+By default, the value of a replacement field expression is converted to
+string using :func:`str`::
 
    >>> from fractions import Fraction
-   >>> f'{Fraction(1, 3)}'
+   >>> one_third = Fraction(1, 3)
+   >>> f'{one_third}'
    '1/3'
 
-To use an explicit conversion, use the ``!`` (exclamation mark) operator,
-followed by any of the valid formats, which are:
+When a debug specifier but no format specifier is used, the default conversion
+instead uses :func:`repr`::
 
-========== ==============
-Conversion  Meaning
-========== ==============
-``!a``      :func:`ascii`
-``!r``      :func:`repr`
-``!s``      :func:`str`
-========== ==============
+   >>> f'{one_third = }'
+   'one_third = Fraction(1, 3)'
 
-For example:
+The conversion can be specified explicitly using one of these specifiers:
 
-.. doctest::
+* ``!s`` for :func:`str`
+* ``!r`` for :func:`repr`
+* ``!a`` for :func:`ascii`
 
-   >>> from fractions import Fraction
-   >>> f'{Fraction(1, 3)!s}'
-   '1/3'
-   >>> f'{Fraction(1, 3)!r}'
-   'Fraction(1, 3)'
-   >>> question = '¿Dónde está el Presidente?'
-   >>> print(f'{question!a}')
-   '\xbfD\xf3nde est\xe1 el Presidente?'
+For example::
 
-While debugging it may be helpful to see both the expression and its value,
-by using the equals sign (``=``) after the expression.
-This preserves spaces within the brackets, and can be used with a converter.
-By default, the debugging operator uses the :func:`repr` (``!r``) conversion.
-For example:
+   >>> f'{one_third!r} is {one_third!s}'
+   'Fraction(1, 3) is 1/3'
 
-.. doctest::
+   >>> string = "¡kočka 😸!"
+   >>> f'{string = !a}'
+   "string = '\\xa1ko\\u010dka \\U0001f638!'"
 
-   >>> from fractions import Fraction
-   >>> calculation = Fraction(1, 3)
-   >>> f'{calculation=}'
-   'calculation=Fraction(1, 3)'
-   >>> f'{calculation = }'
-   'calculation = Fraction(1, 3)'
-   >>> f'{calculation = !s}'
-   'calculation = 1/3'
 
-Once the output has been evaluated, it can be formatted using a
-:ref:`format specifier <formatstrings>` following a colon (``':'``).
-After the expression has been evaluated, and possibly converted to a string,
-the :meth:`!__format__` method of the result is called with the format specifier,
-or the empty string if no format specifier is given.
-The formatted result is then used as the final value for the replacement field.
-For example:
+Format specifier
+^^^^^^^^^^^^^^^^
 
-.. doctest::
+After the expression has been evaluated, and possibly converted using an
+explicit conversion specifier, it is formatted using the :func:`format` function.
+If the replacement field includes a *format specifier* introduced by a colon
+(``:``), the specifier is passed to :func:`!format` as the second argument.
+The result of :func:`!format` is then used as the final value for the
+replacement field. For example::
 
    >>> from fractions import Fraction
-   >>> f'{Fraction(1, 7):.6f}'
-   '0.142857'
-   >>> f'{Fraction(1, 7):_^+10}'
-   '___+1/7___'
+   >>> one_third = Fraction(1, 3)
+   >>> f'{one_third:.6f}'
+   '0.333333'
+   >>> f'{one_third:_^+10}'
+   '___+1/3___'
+   >>> >>> f'{one_third!r:_^20}'
+   '___Fraction(1, 3)___'
+   >>> f'{one_third = :~>10}~'
+   'one_third = ~~~~~~~1/3~'
 
 
 .. _old-string-formatting:

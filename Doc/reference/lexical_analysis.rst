@@ -927,6 +927,14 @@ f-strings
 ---------
 
 .. versionadded:: 3.6
+.. versionchanged:: 3.7
+   The :keyword:`await` and :keyword:`async for` can be used in expressions
+   within f-strings.
+.. versionchanged:: 3.8
+   Added the debug specifier (``=``)
+.. versionchanged:: 3.12
+   Many restrictions on expressions within f-strings have been removed.
+   Notably, nested strings, comments, and backslashes are now permitted.
 
 A :dfn:`formatted string literal` or :dfn:`f-string` is a string literal
 that is prefixed with ``'f'`` or ``'F'``.
@@ -989,80 +997,49 @@ different line:
 
 After the expression, replacement fields may optionally contain:
 
-* a *debug specifier* -- an equal sign (``=``);
+* a *debug specifier* -- an equal sign (``=``), optionally surrounded by
+  whitespace on one or both sides;
 * a *conversion specifier* -- ``!s``, ``!r`` or ``!a``; and/or
 * a *format specifier* prefixed with a colon (``:``).
 
-Debug specifier
-^^^^^^^^^^^^^^^
+See the :ref:`Standard Library section on f-strings <stdtypes-fstrings>`
+for details on how these fields are evaluated.
 
-If a debug specifier -- an equal sign (``=``) -- appears after the replacement
-field expression, the resulting f-string will contain the expression's source,
-the equal sign, and the value of the expression.
-This is often useful for debugging::
+As that section explains, *format specifiers* are passed as the second argument
+to the :func:`format` function to format a replacement field value.
+For example, they can be used to specify a field width and padding characters
+using the :ref:`Format Specification Mini-Language <formatspec>`::
 
-   >>> print(f'{name=}')
-   name='Galahad'
+   >>> color = 'blue'
+   >>> f'{color:-^20s}'
+   '--------blue--------'
 
-Whitespace on both sides of the equal sign is significant --- it is retained
-in the result::
+Top-level format specifiers may include nested replacement fields::
 
-   >>> print(f'{name = }')
-   name = 'Galahad'
+   >>> field_size = 20
+   >>> f'{color:-^{field_size}s}'
+   '--------blue--------'
 
+These nested fields may include their own conversion fields and
+:ref:`format specifiers <formatspec>`::
 
-Conversion specifier
-^^^^^^^^^^^^^^^^^^^^
+   >>> number = 3
+   >>> f'{number:{field_size}}'
+   '                   3'
+   >>> f'{number:{field_size:05}}'
+   '00000000000000000003'
 
-By default, the value of a replacement field expression is converted to
-string using :func:`str`::
+However, these nested fields may not include more deeply nested replacement
+fields.
 
-   >>> from fractions import Fraction
-   >>> one_third = Fraction(1, 3)
-   >>> f'{one_third}'
-   '1/3'
+Formatted string literals may be concatenated, but replacement fields
+cannot be split across literals.
+For example, the following is a single f-string::
 
-When a debug specifier but no format specifier is used, the default conversion
-instead uses :func:`repr`::
+   >>> f'{' '}'
+   ' '
 
-   >>> f'{one_third = }'
-   'one_third = Fraction(1, 3)'
-
-The conversion can be specified explicitly using one of these specifiers:
-
-* ``!s`` for :func:`str`
-* ``!r`` for :func:`repr`
-* ``!a`` for :func:`ascii`
-
-For example::
-
-   >>> f'{one_third!r} is {one_third!s}'
-   'Fraction(1, 3) is 1/3'
-
-   >>> string = "¡kočka 😸!"
-   >>> f'{string = !a}'
-   "string = '\\xa1ko\\u010dka \\U0001f638!'"
-
-
-Format specifier
-^^^^^^^^^^^^^^^^
-
-After the expression has been evaluated, and possibly converted using an
-explicit conversion specifier, it is formatted using the :func:`format` function.
-If the replacement field includes a *format specifier*, an arbitrary string
-introduced by a colon (``:``), the specifier is passed to :func:`!format`
-as the second argument.
-The result of :func:`!format` is then used as the final value for the
-replacement field. For example::
-
-   >>> f'{one_third:.6f}'
-   '0.333333'
-   >>> f'{one_third:_^+10}'
-   '___+1/3___'
-   >>> >>> f'{one_third!r:_^20}'
-   '___Fraction(1, 3)___'
-   >>> f'{one_third = :~>10}~'
-   'one_third = ~~~~~~~1/3~'
+It is equivalent to ``f'{" "}'``, rather than ``f'{' "}"``.
 
 
 Formal grammar
@@ -1115,38 +1092,6 @@ Formal grammar
 
 ---------------
 
-
-
-
-When the equal sign ``'='`` is provided, the output will have the expression
-text, the ``'='`` and the evaluated value. Spaces after the opening brace
-``'{'``, within the expression and after the ``'='`` are all retained in the
-output. By default, the ``'='`` causes the :func:`repr` of the expression to be
-provided, unless there is a format specified. When a format is specified it
-defaults to the :func:`str` of the expression unless a conversion ``'!r'`` is
-declared.
-
-.. versionadded:: 3.8
-   The equal sign ``'='``.
-
-If a conversion is specified, the result of evaluating the expression
-is converted before formatting.  Conversion ``'!s'`` calls :func:`str` on
-the result, ``'!r'`` calls :func:`repr`, and ``'!a'`` calls :func:`ascii`.
-
-The result is then formatted using the :func:`format` protocol.  The
-format specifier is passed to the :meth:`~object.__format__` method of the
-expression or conversion result.  An empty string is passed when the
-format specifier is omitted.  The formatted result is then included in
-the final value of the whole string.
-
-Top-level format specifiers may include nested replacement fields. These nested
-fields may include their own conversion fields and :ref:`format specifiers
-<formatspec>`, but may not include more deeply nested replacement fields. The
-:ref:`format specifier mini-language <formatspec>` is the same as that used by
-the :meth:`str.format` method.
-
-Formatted string literals may be concatenated, but replacement fields
-cannot be split across literals.
 
 Some examples of formatted string literals::
 
@@ -1218,6 +1163,7 @@ include expressions.
 
 See also :pep:`498` for the proposal that added formatted string literals,
 and :meth:`str.format`, which uses a related format string mechanism.
+
 
 .. _t-strings:
 .. _template-string-literals:
