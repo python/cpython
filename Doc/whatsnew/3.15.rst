@@ -70,7 +70,7 @@ Summary --- release highlights
 New features
 ============
 
-.. _whatsnew314-sampling-profiler:
+.. _whatsnew315-sampling-profiler:
 
 High frequency statistical sampling profiler
 --------------------------------------------
