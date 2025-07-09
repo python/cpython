@@ -133,6 +133,9 @@ class ReadOnlyFilesystem(unittest.TestCase):
         os_helper.rmtree(self.test_dir)
 
     def test_open_readonly_dir_success_ro(self):
+        files = os.listdir(self.test_dir)
+        self.assertEqual(sorted(files), ["test.db"])
+
         os.chmod(self.test_dir, stat.S_IREAD | stat.S_IEXEC)
         with dbm_sqlite3.open(self.db_path, "r") as db:
             self.assertEqual(db[b"key"], b"value")
@@ -148,6 +151,28 @@ class ReadOnlyFilesystem(unittest.TestCase):
             with self.assertRaises(OSError):
                 db[b"newkey"] = b"newvalue"
 
+    def test_open_readonly_dir_fail_rw_missing_wal_shm(self):
+        for suffix in ("-wal", "-shm"):
+            os_helper.unlink(self.db_path + suffix)
+
+        os.chmod(self.test_dir, stat.S_IREAD | stat.S_IEXEC)
+
+        with self.assertRaises(OSError):
+            db = dbm_sqlite3.open(self.db_path, "w")
+            db[b"newkey"] = b"newvalue"
+            db.close()
+
+    def test_open_readonly_dir_fail_rw_with_writable_db(self):
+        os.chmod(self.db_path, stat.S_IREAD | stat.S_IWRITE)
+        for suffix in ("-wal", "-shm"):
+            os_helper.unlink(self.db_path + suffix)
+
+        os.chmod(self.test_dir, stat.S_IREAD | stat.S_IEXEC)
+
+        with self.assertRaises(OSError):
+            db = dbm_sqlite3.open(self.db_path, "w")
+            db[b"newkey"] = b"newvalue"
+            db.close()
 
 
 class ReadWrite(_SQLiteDbmTests):
