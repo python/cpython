@@ -301,12 +301,12 @@ _PyTemplate_Concat(PyObject *self, PyObject *other)
 {
     if (_PyTemplate_CheckExact(self) && _PyTemplate_CheckExact(other)) {
         return template_concat_templates((templateobject *) self, (templateobject *) other);
-    } else {
-        PyErr_Format(PyExc_TypeError,
-            "can only concatenate Template (not \"%.200s\") to Template",
-            Py_TYPE(other)->tp_name);
-        return NULL;
     }
+
+    PyErr_Format(PyExc_TypeError,
+        "can only concatenate Template (not \"%T\") to Template",
+        tp_name);
+    return NULL;
 }
 
 static PyObject *
