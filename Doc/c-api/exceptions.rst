@@ -1336,8 +1336,8 @@ The following are a compatibility aliases to :c:data:`PyExc_OSError`.
 Notes:
 
 .. [win]
-   Only defined on Windows; protect code that uses this by testing that the
-   preprocessor macro ``MS_WINDOWS`` is defined.
+   :c:var:`!PyExc_WindowsError` is only defined on Windows; protect code that
+   uses this by testing that the preprocessor macro ``MS_WINDOWS`` is defined.
 
 
 Warning types
