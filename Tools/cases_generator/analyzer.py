@@ -596,6 +596,7 @@ NON_ESCAPING_FUNCTIONS = (
     "PyStackRef_IsNull",
     "PyStackRef_MakeHeapSafe",
     "PyStackRef_None",
+    "PyStackRef_RefcountOnObject",
     "PyStackRef_TYPE",
     "PyStackRef_True",
     "PyTuple_GET_ITEM",

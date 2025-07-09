@@ -1703,8 +1703,10 @@ finalize_modules(PyThreadState *tstate)
 #endif
 
     // Stop watching __builtin__ modifications
-    PyDict_Unwatch(0, interp->builtins);
-
+    if (PyDict_Unwatch(0, interp->builtins) < 0) {
+        // might happen if interp is cleared before watching the __builtin__
+        PyErr_Clear();
+    }
     PyObject *modules = _PyImport_GetModules(interp);
     if (modules == NULL) {
         // Already done
@@ -2381,15 +2383,13 @@ new_interpreter(PyThreadState **tstate_p,
 error:
     *tstate_p = NULL;
     if (tstate != NULL) {
-        PyThreadState_Clear(tstate);
-        _PyThreadState_Detach(tstate);
-        PyThreadState_Delete(tstate);
+        Py_EndInterpreter(tstate);
+    } else {
+        PyInterpreterState_Delete(interp);
     }
     if (save_tstate != NULL) {
         _PyThreadState_Attach(save_tstate);
     }
-    PyInterpreterState_Delete(interp);
-
     return status;
 }
 

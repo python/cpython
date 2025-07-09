@@ -142,7 +142,7 @@ another rational number, or from a string.
 
       .. versionadded:: 3.12
 
-   .. classmethod:: from_float(flt)
+   .. classmethod:: from_float(f)
 
       Alternative constructor which only accepts instances of
       :class:`float` or :class:`numbers.Integral`. Beware that
