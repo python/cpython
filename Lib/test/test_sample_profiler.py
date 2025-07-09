@@ -1635,7 +1635,12 @@ class TestSampleProfilerErrorHandling(unittest.TestCase):
 
     def test_is_process_running(self):
         with test_subprocess("import time; time.sleep(1000)") as proc:
-            profiler = SampleProfiler(pid=proc.pid, sample_interval_usec=1000, all_threads=False)
+            try:
+                profiler = SampleProfiler(pid=proc.pid, sample_interval_usec=1000, all_threads=False)
+            except PermissionError:
+                self.skipTest(
+                    "Insufficient permissions to read the stack trace"
+                )
             self.assertTrue(profiler._is_process_running())
             self.assertIsNotNone(profiler.unwinder.get_stack_trace())
             proc.kill()
@@ -1650,7 +1655,12 @@ class TestSampleProfilerErrorHandling(unittest.TestCase):
     @unittest.skipUnless(sys.platform == "linux", "Only valid on Linux")
     def test_esrch_signal_handling(self):
         with test_subprocess("import time; time.sleep(1000)") as proc:
-            unwinder = _remote_debugging.RemoteUnwinder(proc.pid)
+            try:
+                unwinder = _remote_debugging.RemoteUnwinder(proc.pid)
+            except PermissionError:
+                self.skipTest(
+                    "Insufficient permissions to read the stack trace"
+                )
             initial_trace = unwinder.get_stack_trace()
             self.assertIsNotNone(initial_trace)
 
