@@ -1774,7 +1774,8 @@ _PyObject_GetMethodStackRef(PyThreadState *ts, PyObject *obj,
             // error
             PyStackRef_CLEAR(*method);
             return -1;
-        } else if (!PyStackRef_IsNull(ref)) {
+        }
+        else if (!PyStackRef_IsNull(ref)) {
             // found
             _PyStackRef tmp = *method;
             *method = ref;
