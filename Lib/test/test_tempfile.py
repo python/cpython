@@ -1594,6 +1594,7 @@ if tempfile.NamedTemporaryFile is not tempfile.TemporaryFile:
             mock_close.assert_called()
             self.assertEqual(os.listdir(dir), [])
 
+        @os_helper.skip_unless_hardlink
         @unittest.skipUnless(tempfile._O_TMPFILE_WORKS, 'need os.O_TMPFILE')
         @unittest.skipUnless(os.path.exists('/proc/self/fd'),
                              'need /proc/self/fd')
@@ -1611,14 +1612,9 @@ if tempfile.NamedTemporaryFile is not tempfile.TemporaryFile:
                 tmp.flush()
                 fd = tmp.fileno()
 
-                try:
-                    os.link(f'/proc/self/fd/{fd}',
-                            filename,
-                            follow_symlinks=True)
-                except PermissionError as exc:
-                    # gh-136156: link() fails with PermissionError on Android
-                    self.skipTest(f"os.link: {exc!r}")
-
+                os.link(f'/proc/self/fd/{fd}',
+                        filename,
+                        follow_symlinks=True)
                 with open(filename) as fp:
                     self.assertEqual(fp.read(), "hello")
 
