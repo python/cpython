@@ -269,7 +269,7 @@ wider range of codecs when working with binary files:
 
    Return a :class:`tuple` containing the raw bytes of *buffer*, a
    :ref:`buffer-compatible object <bufferobjects>` or :class:`str`
-   (encoded to UTF-8 before processing), and their length.
+   (encoded to UTF-8 before processing), and their length in bytes.
 
    The *errors* argument is ignored.
 
