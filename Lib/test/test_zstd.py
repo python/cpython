@@ -62,15 +62,18 @@ SAMPLES = None
 
 TRAINED_DICT = None
 
-SUPPORT_MULTITHREADING = False
+# Cannot be deferred to setup as it is used to check whether or not to skip
+# tests
+try:
+    SUPPORT_MULTITHREADING = CompressionParameter.nb_workers.bounds() != (0, 0)
+except Exception:
+    SUPPORT_MULTITHREADING = False
 
 C_INT_MIN = -(2**31)
 C_INT_MAX = (2**31) - 1
 
 
 def setUpModule():
-    global SUPPORT_MULTITHREADING
-    SUPPORT_MULTITHREADING = CompressionParameter.nb_workers.bounds() != (0, 0)
     # uncompressed size 130KB, more than a zstd block.
     # with a frame epilogue, 4 bytes checksum.
     global DAT_130K_D
