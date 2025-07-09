@@ -1,0 +1,2 @@
+Fix :class:`concurrent.futures.InterpreterPoolExecutor`'s custom thread
+name.

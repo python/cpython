@@ -498,6 +498,10 @@ class InterpreterPoolExecutorTest(
         self.assertEqual(p.stdout.decode(), '')
         self.assertEqual(p.stderr.decode(), '')
 
+    def test_thread_name_prefix(self):
+        self.assertStartsWith(self.executor._thread_name_prefix,
+                              "InterpreterPoolExecutor-")
+
 
 class AsyncioTest(InterpretersMixin, testasyncio_utils.TestCase):
 
