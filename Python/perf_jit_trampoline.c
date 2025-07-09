@@ -108,11 +108,17 @@
 
 /* These constants are defined inside <elf.h>, which we can't use outside of linux. */
 #if !defined(__linux__)
-#  define EM_386      3
-#  define EM_X86_64   62
-#  define EM_ARM      40
-#  define EM_AARCH64  183
-#  define EM_RISCV    243
+#  if defined(__i386__) || defined(_M_IX86)
+#    define EM_386      3
+#  elif defined(__arm__) || defined(_M_ARM)
+#    define EM_ARM      40
+#  elif defined(__x86_64__) || defined(_M_X64)
+#    define EM_X86_64   62
+#  elif defined(__aarch64__)
+#    define EM_AARCH64  183
+#  elif defined(__riscv)
+#    define EM_RISCV    243
+#  endif
 #endif
 
 /* Convenient access to the global trampoline API state */
