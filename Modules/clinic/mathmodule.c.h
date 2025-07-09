@@ -84,6 +84,40 @@ PyDoc_STRVAR(math_floor__doc__,
 #define MATH_FLOOR_METHODDEF    \
     {"floor", (PyCFunction)math_floor, METH_O, math_floor__doc__},
 
+PyDoc_STRVAR(math_signbit__doc__,
+"signbit($module, x, /)\n"
+"--\n"
+"\n"
+"Return True if the sign of x is negative and False otherwise.");
+
+#define MATH_SIGNBIT_METHODDEF    \
+    {"signbit", (PyCFunction)math_signbit, METH_O, math_signbit__doc__},
+
+static PyObject *
+math_signbit_impl(PyObject *module, double x);
+
+static PyObject *
+math_signbit(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    double x;
+
+    if (PyFloat_CheckExact(arg)) {
+        x = PyFloat_AS_DOUBLE(arg);
+    }
+    else
+    {
+        x = PyFloat_AsDouble(arg);
+        if (x == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    return_value = math_signbit_impl(module, x);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(math_fsum__doc__,
 "fsum($module, seq, /)\n"
 "--\n"
@@ -628,6 +662,74 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(math_isnormal__doc__,
+"isnormal($module, x, /)\n"
+"--\n"
+"\n"
+"Return True if x is normal, and False otherwise.");
+
+#define MATH_ISNORMAL_METHODDEF    \
+    {"isnormal", (PyCFunction)math_isnormal, METH_O, math_isnormal__doc__},
+
+static PyObject *
+math_isnormal_impl(PyObject *module, double x);
+
+static PyObject *
+math_isnormal(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    double x;
+
+    if (PyFloat_CheckExact(arg)) {
+        x = PyFloat_AS_DOUBLE(arg);
+    }
+    else
+    {
+        x = PyFloat_AsDouble(arg);
+        if (x == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    return_value = math_isnormal_impl(module, x);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(math_issubnormal__doc__,
+"issubnormal($module, x, /)\n"
+"--\n"
+"\n"
+"Return True if x is subnormal, and False otherwise.");
+
+#define MATH_ISSUBNORMAL_METHODDEF    \
+    {"issubnormal", (PyCFunction)math_issubnormal, METH_O, math_issubnormal__doc__},
+
+static PyObject *
+math_issubnormal_impl(PyObject *module, double x);
+
+static PyObject *
+math_issubnormal(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    double x;
+
+    if (PyFloat_CheckExact(arg)) {
+        x = PyFloat_AS_DOUBLE(arg);
+    }
+    else
+    {
+        x = PyFloat_AsDouble(arg);
+        if (x == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    return_value = math_issubnormal_impl(module, x);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(math_isnan__doc__,
 "isnan($module, x, /)\n"
 "--\n"
@@ -1110,4 +1212,4 @@ math_ulp(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=77e7b8c161c39843 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4e3fa94d026f027b input=a9049054013a1b77]*/

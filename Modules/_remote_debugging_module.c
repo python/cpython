@@ -39,6 +39,8 @@
  * ============================================================================ */
 
 #define GET_MEMBER(type, obj, offset) (*(type*)((char*)(obj) + (offset)))
+#define CLEAR_PTR_TAG(ptr) (((uintptr_t)(ptr) & ~Py_TAG_BITS))
+#define GET_MEMBER_NO_TAG(type, obj, offset) (type)(CLEAR_PTR_TAG(*(type*)((char*)(obj) + (offset))))
 
 /* Size macros for opaque buffers */
 #define SIZEOF_BYTES_OBJ sizeof(PyBytesObject)
@@ -62,12 +64,14 @@
 #endif
 
 #ifdef Py_GIL_DISABLED
-#define INTERP_STATE_MIN_SIZE MAX(MAX(offsetof(PyInterpreterState, _code_object_generation) + sizeof(uint64_t), \
-                                      offsetof(PyInterpreterState, tlbc_indices.tlbc_generation) + sizeof(uint32_t)), \
-                                  offsetof(PyInterpreterState, threads.head) + sizeof(void*))
+#define INTERP_STATE_MIN_SIZE MAX(MAX(MAX(offsetof(PyInterpreterState, _code_object_generation) + sizeof(uint64_t), \
+                                          offsetof(PyInterpreterState, tlbc_indices.tlbc_generation) + sizeof(uint32_t)), \
+                                      offsetof(PyInterpreterState, threads.head) + sizeof(void*)), \
+                                  offsetof(PyInterpreterState, _gil.last_holder) + sizeof(PyThreadState*))
 #else
-#define INTERP_STATE_MIN_SIZE MAX(offsetof(PyInterpreterState, _code_object_generation) + sizeof(uint64_t), \
-                                  offsetof(PyInterpreterState, threads.head) + sizeof(void*))
+#define INTERP_STATE_MIN_SIZE MAX(MAX(offsetof(PyInterpreterState, _code_object_generation) + sizeof(uint64_t), \
+                                      offsetof(PyInterpreterState, threads.head) + sizeof(void*)), \
+                                  offsetof(PyInterpreterState, _gil.last_holder) + sizeof(PyThreadState*))
 #endif
 #define INTERP_STATE_BUFFER_SIZE MAX(INTERP_STATE_MIN_SIZE, 256)
 
@@ -97,24 +101,82 @@ struct _Py_AsyncioModuleDebugOffsets {
     } asyncio_thread_state;
 };
 
-typedef struct {
-    PyObject_HEAD
-    proc_handle_t handle;
-    uintptr_t runtime_start_address;
-    struct _Py_DebugOffsets debug_offsets;
-    int async_debug_offsets_available;
-    struct _Py_AsyncioModuleDebugOffsets async_debug_offsets;
-    uintptr_t interpreter_addr;
-    uintptr_t tstate_addr;
-    uint64_t code_object_generation;
-    _Py_hashtable_t *code_object_cache;
-    int debug;
-#ifdef Py_GIL_DISABLED
-    // TLBC cache invalidation tracking
-    uint32_t tlbc_generation;  // Track TLBC index pool changes
-    _Py_hashtable_t *tlbc_cache;  // Cache of TLBC arrays by code object address
-#endif
-} RemoteUnwinderObject;
+/* ============================================================================
+ * STRUCTSEQ TYPE DEFINITIONS
+ * ============================================================================ */
+
+// TaskInfo structseq type - replaces 4-tuple (task_id, task_name, coroutine_stack, awaited_by)
+static PyStructSequence_Field TaskInfo_fields[] = {
+    {"task_id", "Task ID (memory address)"},
+    {"task_name", "Task name"},
+    {"coroutine_stack", "Coroutine call stack"},
+    {"awaited_by", "Tasks awaiting this task"},
+    {NULL}
+};
+
+static PyStructSequence_Desc TaskInfo_desc = {
+    "_remote_debugging.TaskInfo",
+    "Information about an asyncio task",
+    TaskInfo_fields,
+    4
+};
+
+// FrameInfo structseq type - replaces 3-tuple (filename, lineno, funcname)
+static PyStructSequence_Field FrameInfo_fields[] = {
+    {"filename", "Source code filename"},
+    {"lineno", "Line number"},
+    {"funcname", "Function name"},
+    {NULL}
+};
+
+static PyStructSequence_Desc FrameInfo_desc = {
+    "_remote_debugging.FrameInfo",
+    "Information about a frame",
+    FrameInfo_fields,
+    3
+};
+
+// CoroInfo structseq type - replaces 2-tuple (call_stack, task_name)
+static PyStructSequence_Field CoroInfo_fields[] = {
+    {"call_stack", "Coroutine call stack"},
+    {"task_name", "Task name"},
+    {NULL}
+};
+
+static PyStructSequence_Desc CoroInfo_desc = {
+    "_remote_debugging.CoroInfo",
+    "Information about a coroutine",
+    CoroInfo_fields,
+    2
+};
+
+// ThreadInfo structseq type - replaces 2-tuple (thread_id, frame_info)
+static PyStructSequence_Field ThreadInfo_fields[] = {
+    {"thread_id", "Thread ID"},
+    {"frame_info", "Frame information"},
+    {NULL}
+};
+
+static PyStructSequence_Desc ThreadInfo_desc = {
+    "_remote_debugging.ThreadInfo",
+    "Information about a thread",
+    ThreadInfo_fields,
+    2
+};
+
+// AwaitedInfo structseq type - replaces 2-tuple (tid, awaited_by_list)
+static PyStructSequence_Field AwaitedInfo_fields[] = {
+    {"thread_id", "Thread ID"},
+    {"awaited_by", "List of tasks awaited by this thread"},
+    {NULL}
+};
+
+static PyStructSequence_Desc AwaitedInfo_desc = {
+    "_remote_debugging.AwaitedInfo",
+    "Information about what a thread is awaiting",
+    AwaitedInfo_fields,
+    2
+};
 
 typedef struct {
     PyObject *func_name;
@@ -127,7 +189,35 @@ typedef struct {
 typedef struct {
     /* Types */
     PyTypeObject *RemoteDebugging_Type;
+    PyTypeObject *TaskInfo_Type;
+    PyTypeObject *FrameInfo_Type;
+    PyTypeObject *CoroInfo_Type;
+    PyTypeObject *ThreadInfo_Type;
+    PyTypeObject *AwaitedInfo_Type;
 } RemoteDebuggingState;
+
+typedef struct {
+    PyObject_HEAD
+    proc_handle_t handle;
+    uintptr_t runtime_start_address;
+    struct _Py_DebugOffsets debug_offsets;
+    int async_debug_offsets_available;
+    struct _Py_AsyncioModuleDebugOffsets async_debug_offsets;
+    uintptr_t interpreter_addr;
+    uintptr_t tstate_addr;
+    uint64_t code_object_generation;
+    _Py_hashtable_t *code_object_cache;
+    int debug;
+    int only_active_thread;
+    RemoteDebuggingState *cached_state;  // Cached module state
+#ifdef Py_GIL_DISABLED
+    // TLBC cache invalidation tracking
+    uint32_t tlbc_generation;  // Track TLBC index pool changes
+    _Py_hashtable_t *tlbc_cache;  // Cache of TLBC arrays by code object address
+#endif
+} RemoteUnwinderObject;
+
+#define RemoteUnwinder_CAST(op) ((RemoteUnwinderObject *)(op))
 
 typedef struct
 {
@@ -159,6 +249,13 @@ module _remote_debugging
 /* ============================================================================
  * FORWARD DECLARATIONS
  * ============================================================================ */
+
+static inline int
+is_frame_valid(
+    RemoteUnwinderObject *unwinder,
+    uintptr_t frame_addr,
+    uintptr_t code_object_addr
+);
 
 static int
 parse_tasks_in_set(
@@ -216,6 +313,24 @@ RemoteDebugging_GetState(PyObject *module)
     void *state = _PyModule_GetState(module);
     assert(state != NULL);
     return (RemoteDebuggingState *)state;
+}
+
+static inline RemoteDebuggingState *
+RemoteDebugging_GetStateFromType(PyTypeObject *type)
+{
+    PyObject *module = PyType_GetModule(type);
+    assert(module != NULL);
+    return RemoteDebugging_GetState(module);
+}
+
+static inline RemoteDebuggingState *
+RemoteDebugging_GetStateFromObject(PyObject *obj)
+{
+    RemoteUnwinderObject *unwinder = (RemoteUnwinderObject *)obj;
+    if (unwinder->cached_state == NULL) {
+        unwinder->cached_state = RemoteDebugging_GetStateFromType(Py_TYPE(obj));
+    }
+    return unwinder->cached_state;
 }
 
 static inline int
@@ -633,8 +748,7 @@ parse_task_name(
         return NULL;
     }
 
-    uintptr_t task_name_addr = GET_MEMBER(uintptr_t, task_obj, unwinder->async_debug_offsets.asyncio_task_object.task_name);
-    task_name_addr &= ~Py_TAG_BITS;
+    uintptr_t task_name_addr = GET_MEMBER_NO_TAG(uintptr_t, task_obj, unwinder->async_debug_offsets.asyncio_task_object.task_name);
 
     // The task name can be a long or a string so we need to check the type
     char task_name_obj[SIZEOF_PYOBJECT];
@@ -697,8 +811,7 @@ static int parse_task_awaited_by(
         return -1;
     }
 
-    uintptr_t task_ab_addr = GET_MEMBER(uintptr_t, task_obj, unwinder->async_debug_offsets.asyncio_task_object.task_awaited_by);
-    task_ab_addr &= ~Py_TAG_BITS;
+    uintptr_t task_ab_addr = GET_MEMBER_NO_TAG(uintptr_t, task_obj, unwinder->async_debug_offsets.asyncio_task_object.task_awaited_by);
 
     if ((void*)task_ab_addr == NULL) {
         return 0;
@@ -748,8 +861,7 @@ handle_yield_from_frame(
         return -1;
     }
 
-    uintptr_t stackpointer_addr = GET_MEMBER(uintptr_t, iframe, unwinder->debug_offsets.interpreter_frame.stackpointer);
-    stackpointer_addr &= ~Py_TAG_BITS;
+    uintptr_t stackpointer_addr = GET_MEMBER_NO_TAG(uintptr_t, iframe, unwinder->debug_offsets.interpreter_frame.stackpointer);
 
     if ((void*)stackpointer_addr != NULL) {
         uintptr_t gi_await_addr;
@@ -816,6 +928,11 @@ parse_coro_chain(
         return -1;
     }
 
+    int8_t frame_state = GET_MEMBER(int8_t, gen_object, unwinder->debug_offsets.gen_object.gi_frame_state);
+    if (frame_state == FRAME_CLEARED) {
+        return 0;
+    }
+
     uintptr_t gen_type_addr = GET_MEMBER(uintptr_t, gen_object, unwinder->debug_offsets.pyobject.ob_type);
 
     PyObject* name = NULL;
@@ -828,6 +945,10 @@ parse_coro_chain(
         return -1;
     }
 
+    if (name == NULL) {
+        return 0;
+    }
+
     if (PyList_Append(render_to, name)) {
         Py_DECREF(name);
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to append frame to coro chain");
@@ -835,7 +956,7 @@ parse_coro_chain(
     }
     Py_DECREF(name);
 
-    if (GET_MEMBER(int8_t, gen_object, unwinder->debug_offsets.gen_object.gi_frame_state) == FRAME_SUSPENDED_YIELD_FROM) {
+    if (frame_state == FRAME_SUSPENDED_YIELD_FROM) {
         return handle_yield_from_frame(unwinder, gi_iframe_addr, gen_type_addr, render_to);
     }
 
@@ -854,24 +975,14 @@ create_task_result(
     char task_obj[SIZEOF_TASK_OBJ];
     uintptr_t coro_addr;
 
-    result = PyList_New(0);
-    if (result == NULL) {
-        set_exception_cause(unwinder, PyExc_MemoryError, "Failed to create task result list");
-        goto error;
-    }
-
+    // Create call_stack first since it's the first tuple element
     call_stack = PyList_New(0);
     if (call_stack == NULL) {
         set_exception_cause(unwinder, PyExc_MemoryError, "Failed to create call stack list");
         goto error;
     }
 
-    if (PyList_Append(result, call_stack)) {
-        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to append call stack to task result");
-        goto error;
-    }
-    Py_CLEAR(call_stack);
-
+    // Create task name/address for second tuple element
     if (recurse_task) {
         tn = parse_task_name(unwinder, task_address);
     } else {
@@ -882,12 +993,6 @@ create_task_result(
         goto error;
     }
 
-    if (PyList_Append(result, tn)) {
-        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to append task name to result");
-        goto error;
-    }
-    Py_CLEAR(tn);
-
     // Parse coroutine chain
     if (_Py_RemoteDebug_PagedReadRemoteMemory(&unwinder->handle, task_address,
                                               unwinder->async_debug_offsets.asyncio_task_object.size,
@@ -896,34 +1001,31 @@ create_task_result(
         goto error;
     }
 
-    coro_addr = GET_MEMBER(uintptr_t, task_obj, unwinder->async_debug_offsets.asyncio_task_object.task_coro);
-    coro_addr &= ~Py_TAG_BITS;
+    coro_addr = GET_MEMBER_NO_TAG(uintptr_t, task_obj, unwinder->async_debug_offsets.asyncio_task_object.task_coro);
 
     if ((void*)coro_addr != NULL) {
-        call_stack = PyList_New(0);
-        if (call_stack == NULL) {
-            set_exception_cause(unwinder, PyExc_MemoryError, "Failed to create coro call stack list");
-            goto error;
-        }
-
         if (parse_coro_chain(unwinder, coro_addr, call_stack) < 0) {
-            Py_DECREF(call_stack);
             set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to parse coroutine chain");
             goto error;
         }
 
         if (PyList_Reverse(call_stack)) {
-            Py_DECREF(call_stack);
             set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to reverse call stack");
             goto error;
         }
-
-        if (PyList_SetItem(result, 0, call_stack) < 0) {
-            Py_DECREF(call_stack);
-            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to set call stack in result");
-            goto error;
-        }
     }
+
+    // Create final CoroInfo result
+    RemoteDebuggingState *state = RemoteDebugging_GetStateFromObject((PyObject*)unwinder);
+    result = PyStructSequence_New(state->CoroInfo_Type);
+    if (result == NULL) {
+        set_exception_cause(unwinder, PyExc_MemoryError, "Failed to create CoroInfo");
+        goto error;
+    }
+
+    // PyStructSequence_SetItem steals references, so we don't need to DECREF on success
+    PyStructSequence_SetItem(result, 0, call_stack);  // This steals the reference
+    PyStructSequence_SetItem(result, 1, tn);  // This steals the reference
 
     return result;
 
@@ -943,7 +1045,6 @@ parse_task(
 ) {
     char is_task;
     PyObject* result = NULL;
-    PyObject* awaited_by = NULL;
     int err;
 
     err = read_char(
@@ -962,48 +1063,37 @@ parse_task(
             goto error;
         }
     } else {
-        result = PyList_New(0);
+        // Create an empty CoroInfo for non-task objects
+        RemoteDebuggingState *state = RemoteDebugging_GetStateFromObject((PyObject*)unwinder);
+        result = PyStructSequence_New(state->CoroInfo_Type);
         if (result == NULL) {
-            set_exception_cause(unwinder, PyExc_MemoryError, "Failed to create empty task result");
+            set_exception_cause(unwinder, PyExc_MemoryError, "Failed to create empty CoroInfo");
             goto error;
         }
+        PyObject *empty_list = PyList_New(0);
+        if (empty_list == NULL) {
+            set_exception_cause(unwinder, PyExc_MemoryError, "Failed to create empty list");
+            goto error;
+        }
+        PyObject *task_name = PyLong_FromUnsignedLongLong(task_address);
+        if (task_name == NULL) {
+            Py_DECREF(empty_list);
+            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to create task name");
+            goto error;
+        }
+        PyStructSequence_SetItem(result, 0, empty_list);  // This steals the reference
+        PyStructSequence_SetItem(result, 1, task_name);  // This steals the reference
     }
 
     if (PyList_Append(render_to, result)) {
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to append task result to render list");
         goto error;
     }
-
-    if (recurse_task) {
-        awaited_by = PyList_New(0);
-        if (awaited_by == NULL) {
-            set_exception_cause(unwinder, PyExc_MemoryError, "Failed to create awaited_by list");
-            goto error;
-        }
-
-        if (PyList_Append(result, awaited_by)) {
-            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to append awaited_by to result");
-            goto error;
-        }
-        Py_DECREF(awaited_by);
-
-        /* awaited_by is borrowed from 'result' to simplify cleanup */
-        if (parse_task_awaited_by(unwinder, task_address, awaited_by, 1) < 0) {
-            // Clear the pointer so the cleanup doesn't try to decref it since
-            // it's borrowed from 'result' and will be decrefed when result is
-            // deleted.
-            awaited_by = NULL;
-            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to parse task awaited_by relationships");
-            goto error;
-        }
-    }
     Py_DECREF(result);
-
     return 0;
 
 error:
     Py_XDECREF(result);
-    Py_XDECREF(awaited_by);
     return -1;
 }
 
@@ -1161,6 +1251,7 @@ process_single_task_node(
     PyObject *current_awaited_by = NULL;
     PyObject *task_id = NULL;
     PyObject *result_item = NULL;
+    PyObject *coroutine_stack = NULL;
 
     tn = parse_task_name(unwinder, task_addr);
     if (tn == NULL) {
@@ -1174,25 +1265,40 @@ process_single_task_node(
         goto error;
     }
 
+    // Extract the coroutine stack for this task
+    coroutine_stack = PyList_New(0);
+    if (coroutine_stack == NULL) {
+        set_exception_cause(unwinder, PyExc_MemoryError, "Failed to create coroutine stack list in single task node");
+        goto error;
+    }
+
+    if (parse_task(unwinder, task_addr, coroutine_stack, 0) < 0) {
+        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to parse task coroutine stack in single task node");
+        goto error;
+    }
+
     task_id = PyLong_FromUnsignedLongLong(task_addr);
     if (task_id == NULL) {
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to create task ID in single task node");
         goto error;
     }
 
-    result_item = PyTuple_New(3);
+    RemoteDebuggingState *state = RemoteDebugging_GetStateFromObject((PyObject*)unwinder);
+    result_item = PyStructSequence_New(state->TaskInfo_Type);
     if (result_item == NULL) {
-        set_exception_cause(unwinder, PyExc_MemoryError, "Failed to create result tuple in single task node");
+        set_exception_cause(unwinder, PyExc_MemoryError, "Failed to create TaskInfo in single task node");
         goto error;
     }
 
-    PyTuple_SET_ITEM(result_item, 0, task_id);  // steals ref
-    PyTuple_SET_ITEM(result_item, 1, tn);  // steals ref
-    PyTuple_SET_ITEM(result_item, 2, current_awaited_by);  // steals ref
+    PyStructSequence_SetItem(result_item, 0, task_id);  // steals ref
+    PyStructSequence_SetItem(result_item, 1, tn);  // steals ref
+    PyStructSequence_SetItem(result_item, 2, coroutine_stack);  // steals ref
+    PyStructSequence_SetItem(result_item, 3, current_awaited_by);  // steals ref
 
     // References transferred to tuple
     task_id = NULL;
     tn = NULL;
+    coroutine_stack = NULL;
     current_awaited_by = NULL;
 
     if (PyList_Append(result, result_item)) {
@@ -1203,9 +1309,11 @@ process_single_task_node(
     Py_DECREF(result_item);
 
     // Get back current_awaited_by reference for parse_task_awaited_by
-    current_awaited_by = PyTuple_GET_ITEM(result_item, 2);
+    current_awaited_by = PyStructSequence_GetItem(result_item, 3);
     if (parse_task_awaited_by(unwinder, task_addr, current_awaited_by, 0) < 0) {
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to parse awaited_by in single task node");
+        // No cleanup needed here since all references were transferred to result_item
+        // and result_item was already added to result list and decreffed
         return -1;
     }
 
@@ -1216,6 +1324,7 @@ error:
     Py_XDECREF(current_awaited_by);
     Py_XDECREF(task_id);
     Py_XDECREF(result_item);
+    Py_XDECREF(coroutine_stack);
     return -1;
 }
 
@@ -1554,17 +1663,18 @@ done_tlbc:
         goto error;
     }
 
-    tuple = PyTuple_New(3);
+    RemoteDebuggingState *state = RemoteDebugging_GetStateFromObject((PyObject*)unwinder);
+    tuple = PyStructSequence_New(state->FrameInfo_Type);
     if (!tuple) {
-        set_exception_cause(unwinder, PyExc_MemoryError, "Failed to create result tuple for code object");
+        set_exception_cause(unwinder, PyExc_MemoryError, "Failed to create FrameInfo for code object");
         goto error;
     }
 
     Py_INCREF(meta->func_name);
     Py_INCREF(meta->file_name);
-    PyTuple_SET_ITEM(tuple, 0, meta->file_name);
-    PyTuple_SET_ITEM(tuple, 1, lineno);
-    PyTuple_SET_ITEM(tuple, 2, meta->func_name);
+    PyStructSequence_SetItem(tuple, 0, meta->file_name);
+    PyStructSequence_SetItem(tuple, 1, lineno);
+    PyStructSequence_SetItem(tuple, 2, meta->func_name);
 
     *result = tuple;
     return 0;
@@ -1725,10 +1835,10 @@ parse_frame_from_chunks(
 
     char *frame = (char *)frame_ptr;
     *previous_frame = GET_MEMBER(uintptr_t, frame, unwinder->debug_offsets.interpreter_frame.previous);
-
-    if (GET_MEMBER(char, frame, unwinder->debug_offsets.interpreter_frame.owner) >= FRAME_OWNED_BY_INTERPRETER ||
-        !GET_MEMBER(uintptr_t, frame, unwinder->debug_offsets.interpreter_frame.executable)) {
-        return 0;
+    uintptr_t code_object = GET_MEMBER_NO_TAG(uintptr_t, frame_ptr, unwinder->debug_offsets.interpreter_frame.executable);
+    int frame_valid = is_frame_valid(unwinder, (uintptr_t)frame, code_object);
+    if (frame_valid != 1) {
+        return frame_valid;
     }
 
     uintptr_t instruction_pointer = GET_MEMBER(uintptr_t, frame, unwinder->debug_offsets.interpreter_frame.instr_ptr);
@@ -1741,9 +1851,7 @@ parse_frame_from_chunks(
     }
 #endif
 
-    return parse_code_object(
-        unwinder, result, GET_MEMBER(uintptr_t, frame, unwinder->debug_offsets.interpreter_frame.executable),
-        instruction_pointer, previous_frame, tlbc_index);
+    return parse_code_object(unwinder, result, code_object, instruction_pointer, previous_frame, tlbc_index);
 }
 
 /* ============================================================================
@@ -1986,6 +2094,33 @@ find_running_task_and_coro(
  * FRAME PARSING FUNCTIONS
  * ============================================================================ */
 
+static inline int
+is_frame_valid(
+    RemoteUnwinderObject *unwinder,
+    uintptr_t frame_addr,
+    uintptr_t code_object_addr
+) {
+    if ((void*)code_object_addr == NULL) {
+        return 0;
+    }
+
+    void* frame = (void*)frame_addr;
+
+    if (GET_MEMBER(char, frame, unwinder->debug_offsets.interpreter_frame.owner) == FRAME_OWNED_BY_CSTACK ||
+        GET_MEMBER(char, frame, unwinder->debug_offsets.interpreter_frame.owner) == FRAME_OWNED_BY_INTERPRETER) {
+        return 0;  // C frame
+    }
+
+    if (GET_MEMBER(char, frame, unwinder->debug_offsets.interpreter_frame.owner) != FRAME_OWNED_BY_GENERATOR
+        && GET_MEMBER(char, frame, unwinder->debug_offsets.interpreter_frame.owner) != FRAME_OWNED_BY_THREAD) {
+        PyErr_Format(PyExc_RuntimeError, "Unhandled frame owner %d.\n",
+                    GET_MEMBER(char, frame, unwinder->debug_offsets.interpreter_frame.owner));
+        set_exception_cause(unwinder, PyExc_RuntimeError, "Unhandled frame owner type in async frame");
+        return -1;
+    }
+    return 1;
+}
+
 static int
 parse_frame_object(
     RemoteUnwinderObject *unwinder,
@@ -2007,13 +2142,10 @@ parse_frame_object(
     }
 
     *previous_frame = GET_MEMBER(uintptr_t, frame, unwinder->debug_offsets.interpreter_frame.previous);
-
-    if (GET_MEMBER(char, frame, unwinder->debug_offsets.interpreter_frame.owner) >= FRAME_OWNED_BY_INTERPRETER) {
-        return 0;
-    }
-
-    if ((void*)GET_MEMBER(uintptr_t, frame, unwinder->debug_offsets.interpreter_frame.executable) == NULL) {
-        return 0;
+    uintptr_t code_object = GET_MEMBER_NO_TAG(uintptr_t, frame, unwinder->debug_offsets.interpreter_frame.executable);
+    int frame_valid = is_frame_valid(unwinder, (uintptr_t)frame, code_object);
+    if (frame_valid != 1) {
+        return frame_valid;
     }
 
     uintptr_t instruction_pointer = GET_MEMBER(uintptr_t, frame, unwinder->debug_offsets.interpreter_frame.instr_ptr);
@@ -2026,9 +2158,7 @@ parse_frame_object(
     }
 #endif
 
-    return parse_code_object(
-        unwinder, result, GET_MEMBER(uintptr_t, frame, unwinder->debug_offsets.interpreter_frame.executable),
-        instruction_pointer, previous_frame, tlbc_index);
+    return parse_code_object(unwinder, result, code_object,instruction_pointer, previous_frame, tlbc_index);
 }
 
 static int
@@ -2053,26 +2183,10 @@ parse_async_frame_object(
     }
 
     *previous_frame = GET_MEMBER(uintptr_t, frame, unwinder->debug_offsets.interpreter_frame.previous);
-
-    *code_object = GET_MEMBER(uintptr_t, frame, unwinder->debug_offsets.interpreter_frame.executable);
-    // Strip tag bits for consistent comparison
-    *code_object &= ~Py_TAG_BITS;
-    assert(code_object != NULL);
-    if ((void*)*code_object == NULL) {
-        return 0;
-    }
-
-    if (GET_MEMBER(char, frame, unwinder->debug_offsets.interpreter_frame.owner) == FRAME_OWNED_BY_CSTACK ||
-        GET_MEMBER(char, frame, unwinder->debug_offsets.interpreter_frame.owner) == FRAME_OWNED_BY_INTERPRETER) {
-        return 0;  // C frame
-    }
-
-    if (GET_MEMBER(char, frame, unwinder->debug_offsets.interpreter_frame.owner) != FRAME_OWNED_BY_GENERATOR
-        && GET_MEMBER(char, frame, unwinder->debug_offsets.interpreter_frame.owner) != FRAME_OWNED_BY_THREAD) {
-        PyErr_Format(PyExc_RuntimeError, "Unhandled frame owner %d.\n",
-                    GET_MEMBER(char, frame, unwinder->debug_offsets.interpreter_frame.owner));
-        set_exception_cause(unwinder, PyExc_RuntimeError, "Unhandled frame owner type in async frame");
-        return -1;
+    *code_object = GET_MEMBER_NO_TAG(uintptr_t, frame, unwinder->debug_offsets.interpreter_frame.executable);
+    int frame_valid = is_frame_valid(unwinder, (uintptr_t)frame, *code_object);
+    if (frame_valid != 1) {
+        return frame_valid;
     }
 
     uintptr_t instruction_pointer = GET_MEMBER(uintptr_t, frame, unwinder->debug_offsets.interpreter_frame.instr_ptr);
@@ -2212,23 +2326,24 @@ append_awaited_by(
         return -1;
     }
 
-    PyObject *result_item = PyTuple_New(2);
-    if (result_item == NULL) {
-        Py_DECREF(tid_py);
-        set_exception_cause(unwinder, PyExc_MemoryError, "Failed to create awaited_by result tuple");
-        return -1;
-    }
-
     PyObject* awaited_by_for_thread = PyList_New(0);
     if (awaited_by_for_thread == NULL) {
         Py_DECREF(tid_py);
-        Py_DECREF(result_item);
         set_exception_cause(unwinder, PyExc_MemoryError, "Failed to create awaited_by thread list");
         return -1;
     }
 
-    PyTuple_SET_ITEM(result_item, 0, tid_py);  // steals ref
-    PyTuple_SET_ITEM(result_item, 1, awaited_by_for_thread);  // steals ref
+    RemoteDebuggingState *state = RemoteDebugging_GetStateFromObject((PyObject*)unwinder);
+    PyObject *result_item = PyStructSequence_New(state->AwaitedInfo_Type);
+    if (result_item == NULL) {
+        Py_DECREF(tid_py);
+        Py_DECREF(awaited_by_for_thread);
+        set_exception_cause(unwinder, PyExc_MemoryError, "Failed to create AwaitedInfo");
+        return -1;
+    }
+
+    PyStructSequence_SetItem(result_item, 0, tid_py);  // steals ref
+    PyStructSequence_SetItem(result_item, 1, awaited_by_for_thread);  // steals ref
     if (PyList_Append(result, result_item)) {
         Py_DECREF(result_item);
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to append awaited_by result item");
@@ -2352,14 +2467,15 @@ unwind_stack_for_thread(
         goto error;
     }
 
-    result = PyTuple_New(2);
+    RemoteDebuggingState *state = RemoteDebugging_GetStateFromObject((PyObject*)unwinder);
+    result = PyStructSequence_New(state->ThreadInfo_Type);
     if (result == NULL) {
-        set_exception_cause(unwinder, PyExc_MemoryError, "Failed to create thread unwind result tuple");
+        set_exception_cause(unwinder, PyExc_MemoryError, "Failed to create ThreadInfo");
         goto error;
     }
 
-    PyTuple_SET_ITEM(result, 0, thread_id);  // Steals reference
-    PyTuple_SET_ITEM(result, 1, frame_info); // Steals reference
+    PyStructSequence_SetItem(result, 0, thread_id);  // Steals reference
+    PyStructSequence_SetItem(result, 1, frame_info); // Steals reference
 
     cleanup_stack_chunks(&chunks);
     return result;
@@ -2387,6 +2503,7 @@ _remote_debugging.RemoteUnwinder.__init__
     pid: int
     *
     all_threads: bool = False
+    only_active_thread: bool = False
     debug: bool = False
 
 Initialize a new RemoteUnwinder object for debugging a remote Python process.
@@ -2395,6 +2512,8 @@ Args:
     pid: Process ID of the target Python process to debug
     all_threads: If True, initialize state for all threads in the process.
                 If False, only initialize for the main thread.
+    only_active_thread: If True, only sample the thread holding the GIL.
+                       Cannot be used together with all_threads=True.
     debug: If True, chain exceptions to explain the sequence of events that
            lead to the exception.
 
@@ -2405,15 +2524,34 @@ Raises:
     PermissionError: If access to the target process is denied
     OSError: If unable to attach to the target process or access its memory
     RuntimeError: If unable to read debug information from the target process
+    ValueError: If both all_threads and only_active_thread are True
 [clinic start generated code]*/
 
 static int
 _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
                                                int pid, int all_threads,
+                                               int only_active_thread,
                                                int debug)
-/*[clinic end generated code: output=3982f2a7eba49334 input=48a762566b828e91]*/
+/*[clinic end generated code: output=13ba77598ecdcbe1 input=8f8f12504e17da04]*/
 {
+    // Validate that all_threads and only_active_thread are not both True
+    if (all_threads && only_active_thread) {
+        PyErr_SetString(PyExc_ValueError,
+                       "all_threads and only_active_thread cannot both be True");
+        return -1;
+    }
+
+#ifdef Py_GIL_DISABLED
+    if (only_active_thread) {
+        PyErr_SetString(PyExc_ValueError,
+                       "only_active_thread is not supported when Py_GIL_DISABLED is not defined");
+        return -1;
+    }
+#endif
+
     self->debug = debug;
+    self->only_active_thread = only_active_thread;
+    self->cached_state = NULL;
     if (_Py_RemoteDebug_InitProcHandle(&self->handle, pid) < 0) {
         set_exception_cause(self, PyExc_RuntimeError, "Failed to initialize process handle");
         return -1;
@@ -2492,12 +2630,17 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
 @critical_section
 _remote_debugging.RemoteUnwinder.get_stack_trace
 
-Returns a list of stack traces for all threads in the target process.
+Returns a list of stack traces for threads in the target process.
 
 Each element in the returned list is a tuple of (thread_id, frame_list), where:
 - thread_id is the OS thread identifier
 - frame_list is a list of tuples (function_name, filename, line_number) representing
   the Python stack frames for that thread, ordered from most recent to oldest
+
+The threads returned depend on the initialization parameters:
+- If only_active_thread was True: returns only the thread holding the GIL
+- If all_threads was True: returns all threads
+- Otherwise: returns only the main thread
 
 Example:
     [
@@ -2522,7 +2665,7 @@ Raises:
 
 static PyObject *
 _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self)
-/*[clinic end generated code: output=666192b90c69d567 input=331dbe370578badf]*/
+/*[clinic end generated code: output=666192b90c69d567 input=f756f341206f9116]*/
 {
     PyObject* result = NULL;
     // Read interpreter state into opaque buffer
@@ -2545,6 +2688,28 @@ _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self
         _Py_hashtable_clear(self->code_object_cache);
     }
 
+    // If only_active_thread is true, we need to determine which thread holds the GIL
+    PyThreadState* gil_holder = NULL;
+    if (self->only_active_thread) {
+        // The GIL state is already in interp_state_buffer, just read from there
+        // Check if GIL is locked
+        int gil_locked = GET_MEMBER(int, interp_state_buffer,
+            self->debug_offsets.interpreter_state.gil_runtime_state_locked);
+
+        if (gil_locked) {
+            // Get the last holder (current holder when GIL is locked)
+            gil_holder = GET_MEMBER(PyThreadState*, interp_state_buffer,
+                self->debug_offsets.interpreter_state.gil_runtime_state_holder);
+        } else {
+            // GIL is not locked, return empty list
+            result = PyList_New(0);
+            if (!result) {
+                set_exception_cause(self, PyExc_MemoryError, "Failed to create empty result list");
+            }
+            goto exit;
+        }
+    }
+
 #ifdef Py_GIL_DISABLED
     // Check TLBC generation and invalidate cache if needed
     uint32_t current_tlbc_generation = GET_MEMBER(uint32_t, interp_state_buffer,
@@ -2556,7 +2721,10 @@ _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self
 #endif
 
     uintptr_t current_tstate;
-    if (self->tstate_addr == 0) {
+    if (self->only_active_thread && gil_holder != NULL) {
+        // We have the GIL holder, process only that thread
+        current_tstate = (uintptr_t)gil_holder;
+    } else if (self->tstate_addr == 0) {
         // Get threads head from buffer
         current_tstate = GET_MEMBER(uintptr_t, interp_state_buffer,
                 self->debug_offsets.interpreter_state.threads_head);
@@ -2588,6 +2756,11 @@ _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self
 
         // We are targeting a single tstate, break here
         if (self->tstate_addr) {
+            break;
+        }
+
+        // If we're only processing the GIL holder, we're done after one iteration
+        if (self->only_active_thread && gil_holder != NULL) {
             break;
         }
     }
@@ -2805,8 +2978,9 @@ static PyMethodDef RemoteUnwinder_methods[] = {
 };
 
 static void
-RemoteUnwinder_dealloc(RemoteUnwinderObject *self)
+RemoteUnwinder_dealloc(PyObject *op)
 {
+    RemoteUnwinderObject *self = RemoteUnwinder_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
     if (self->code_object_cache) {
         _Py_hashtable_destroy(self->code_object_cache);
@@ -2860,6 +3034,47 @@ _remote_debugging_exec(PyObject *m)
     if (PyModule_AddType(m, st->RemoteDebugging_Type) < 0) {
         return -1;
     }
+
+    // Initialize structseq types
+    st->TaskInfo_Type = PyStructSequence_NewType(&TaskInfo_desc);
+    if (st->TaskInfo_Type == NULL) {
+        return -1;
+    }
+    if (PyModule_AddType(m, st->TaskInfo_Type) < 0) {
+        return -1;
+    }
+
+    st->FrameInfo_Type = PyStructSequence_NewType(&FrameInfo_desc);
+    if (st->FrameInfo_Type == NULL) {
+        return -1;
+    }
+    if (PyModule_AddType(m, st->FrameInfo_Type) < 0) {
+        return -1;
+    }
+
+    st->CoroInfo_Type = PyStructSequence_NewType(&CoroInfo_desc);
+    if (st->CoroInfo_Type == NULL) {
+        return -1;
+    }
+    if (PyModule_AddType(m, st->CoroInfo_Type) < 0) {
+        return -1;
+    }
+
+    st->ThreadInfo_Type = PyStructSequence_NewType(&ThreadInfo_desc);
+    if (st->ThreadInfo_Type == NULL) {
+        return -1;
+    }
+    if (PyModule_AddType(m, st->ThreadInfo_Type) < 0) {
+        return -1;
+    }
+
+    st->AwaitedInfo_Type = PyStructSequence_NewType(&AwaitedInfo_desc);
+    if (st->AwaitedInfo_Type == NULL) {
+        return -1;
+    }
+    if (PyModule_AddType(m, st->AwaitedInfo_Type) < 0) {
+        return -1;
+    }
 #ifdef Py_GIL_DISABLED
     PyUnstable_Module_SetGIL(m, Py_MOD_GIL_NOT_USED);
 #endif
@@ -2878,6 +3093,11 @@ remote_debugging_traverse(PyObject *mod, visitproc visit, void *arg)
 {
     RemoteDebuggingState *state = RemoteDebugging_GetState(mod);
     Py_VISIT(state->RemoteDebugging_Type);
+    Py_VISIT(state->TaskInfo_Type);
+    Py_VISIT(state->FrameInfo_Type);
+    Py_VISIT(state->CoroInfo_Type);
+    Py_VISIT(state->ThreadInfo_Type);
+    Py_VISIT(state->AwaitedInfo_Type);
     return 0;
 }
 
@@ -2886,6 +3106,11 @@ remote_debugging_clear(PyObject *mod)
 {
     RemoteDebuggingState *state = RemoteDebugging_GetState(mod);
     Py_CLEAR(state->RemoteDebugging_Type);
+    Py_CLEAR(state->TaskInfo_Type);
+    Py_CLEAR(state->FrameInfo_Type);
+    Py_CLEAR(state->CoroInfo_Type);
+    Py_CLEAR(state->ThreadInfo_Type);
+    Py_CLEAR(state->AwaitedInfo_Type);
     return 0;
 }
 

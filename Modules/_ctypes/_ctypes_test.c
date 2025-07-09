@@ -23,7 +23,7 @@
 #  define _Py_thread_local __thread
 #endif
 
-#if defined(Py_FFI_SUPPORT_C_COMPLEX)
+#if defined(_Py_FFI_SUPPORT_C_COMPLEX)
 #  include <complex.h>            // csqrt()
 #  undef I                        // for _ctypes_test_generated.c.h
 #endif
@@ -457,7 +457,7 @@ EXPORT(double) my_sqrt(double a)
     return sqrt(a);
 }
 
-#if defined(Py_FFI_SUPPORT_C_COMPLEX)
+#if defined(_Py_FFI_SUPPORT_C_COMPLEX)
 EXPORT(double complex) my_csqrt(double complex a)
 {
     return csqrt(a);

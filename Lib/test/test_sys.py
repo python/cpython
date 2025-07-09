@@ -24,7 +24,7 @@ from test.support import import_helper
 from test.support import force_not_colorized
 from test.support import SHORT_TIMEOUT
 try:
-    from test.support import interpreters
+    from concurrent import interpreters
 except ImportError:
     interpreters = None
 import textwrap
@@ -869,12 +869,7 @@ class SysModuleTest(unittest.TestCase):
     def assert_raise_on_new_sys_type(self, sys_attr):
         # Users are intentionally prevented from creating new instances of
         # sys.flags, sys.version_info, and sys.getwindowsversion.
-        arg = sys_attr
-        attr_type = type(sys_attr)
-        with self.assertRaises(TypeError):
-            attr_type(arg)
-        with self.assertRaises(TypeError):
-            attr_type.__new__(attr_type, arg)
+        support.check_disallow_instantiation(self, type(sys_attr), sys_attr)
 
     def test_sys_flags_no_instantiation(self):
         self.assert_raise_on_new_sys_type(sys.flags)
@@ -1074,6 +1069,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertHasAttr(sys.implementation, 'version')
         self.assertHasAttr(sys.implementation, 'hexversion')
         self.assertHasAttr(sys.implementation, 'cache_tag')
+        self.assertHasAttr(sys.implementation, 'supports_isolated_interpreters')
 
         version = sys.implementation.version
         self.assertEqual(version[:2], (version.major, version.minor))
@@ -1086,6 +1082,15 @@ class SysModuleTest(unittest.TestCase):
         # PEP 421 requires that .name be lower case.
         self.assertEqual(sys.implementation.name,
                          sys.implementation.name.lower())
+
+        # https://peps.python.org/pep-0734
+        sii = sys.implementation.supports_isolated_interpreters
+        self.assertIsInstance(sii, bool)
+        if test.support.check_impl_detail(cpython=True):
+            if test.support.is_emscripten or test.support.is_wasi:
+                self.assertFalse(sii)
+            else:
+                self.assertTrue(sii)
 
     @test.support.cpython_only
     def test_debugmallocstats(self):
@@ -1135,23 +1140,12 @@ class SysModuleTest(unittest.TestCase):
         b = sys.getallocatedblocks()
         self.assertLessEqual(b, a)
         try:
-            # While we could imagine a Python session where the number of
-            # multiple buffer objects would exceed the sharing of references,
-            # it is unlikely to happen in a normal test run.
-            #
-            # In free-threaded builds each code object owns an array of
-            # pointers to copies of the bytecode. When the number of
-            # code objects is a large fraction of the total number of
-            # references, this can cause the total number of allocated
-            # blocks to exceed the total number of references.
-            #
-            # For some reason, iOS seems to trigger the "unlikely to happen"
-            # case reliably under CI conditions. It's not clear why; but as
-            # this test is checking the behavior of getallocatedblock()
-            # under garbage collection, we can skip this pre-condition check
-            # for now. See GH-130384.
-            if not support.Py_GIL_DISABLED and not support.is_apple_mobile:
-                self.assertLess(a, sys.gettotalrefcount())
+            # The reported blocks will include immortalized strings, but the
+            # total ref count will not. This will sanity check that among all
+            # other objects (those eligible for garbage collection) there
+            # are more references being tracked than allocated blocks.
+            interned_immortal = sys.getunicodeinternedsize(_only_immortal=True)
+            self.assertLess(a - interned_immortal, sys.gettotalrefcount())
         except AttributeError:
             # gettotalrefcount() not available
             pass
@@ -1954,22 +1948,7 @@ class SizeofTest(unittest.TestCase):
         self.assertEqual(out, b"")
         self.assertEqual(err, b"")
 
-
-def _supports_remote_attaching():
-    PROCESS_VM_READV_SUPPORTED = False
-
-    try:
-        from _remote_debugging import PROCESS_VM_READV_SUPPORTED
-    except ImportError:
-        pass
-
-    return PROCESS_VM_READV_SUPPORTED
-
-@unittest.skipIf(not sys.is_remote_debug_enabled(), "Remote debugging is not enabled")
-@unittest.skipIf(sys.platform != "darwin" and sys.platform != "linux" and sys.platform != "win32",
-                    "Test only runs on Linux, Windows and MacOS")
-@unittest.skipIf(sys.platform == "linux" and not _supports_remote_attaching(),
-                    "Test only runs on Linux with process_vm_readv support")
+@test.support.support_remote_exec_only
 @test.support.cpython_only
 class TestRemoteExec(unittest.TestCase):
     def tearDown(self):
@@ -2128,7 +2107,7 @@ print("Remote script executed successfully!")
         returncode, stdout, stderr = self._run_remote_exec_test(script, prologue=prologue)
         self.assertEqual(returncode, 0)
         self.assertIn(b"Remote script executed successfully!", stdout)
-        self.assertIn(b"Audit event: remote_debugger_script, arg: ", stdout)
+        self.assertIn(b"Audit event: cpython.remote_debugger_script, arg: ", stdout)
         self.assertEqual(stderr, b"")
 
     def test_remote_exec_with_exception(self):

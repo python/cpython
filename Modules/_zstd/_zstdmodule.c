@@ -72,6 +72,9 @@ set_zstd_error(const _zstd_state *state, error_type type, size_t zstd_ret)
         case ERR_COMPRESS:
             msg = "Unable to compress Zstandard data: %s";
             break;
+        case ERR_SET_PLEDGED_INPUT_SIZE:
+            msg = "Unable to set pledged uncompressed content size: %s";
+            break;
 
         case ERR_LOAD_D_DICT:
             msg = "Unable to load Zstandard dictionary or prefix for "

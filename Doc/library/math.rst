@@ -53,10 +53,13 @@ noted otherwise, all return values are floats.
 :func:`frexp(x) <frexp>`                              Mantissa and exponent of *x*
 :func:`isclose(a, b, rel_tol, abs_tol) <isclose>`     Check if the values *a* and *b* are close to each other
 :func:`isfinite(x) <isfinite>`                        Check if *x* is neither an infinity nor a NaN
+:func:`isnormal(x) <isnormal>`                        Check if *x* is a normal number
+:func:`issubnormal(x) <issubnormal>`                  Check if *x* is a subnormal number
 :func:`isinf(x) <isinf>`                              Check if *x* is a positive or negative infinity
 :func:`isnan(x) <isnan>`                              Check if *x* is a NaN  (not a number)
 :func:`ldexp(x, i) <ldexp>`                           ``x * (2**i)``, inverse of function :func:`frexp`
 :func:`nextafter(x, y, steps) <nextafter>`            Floating-point value *steps* steps after *x* towards *y*
+:func:`signbit(x) <signbit>`                          Check if *x* is a negative number
 :func:`ulp(x) <ulp>`                                  Value of the least significant bit of *x*
 
 **Power, exponential and logarithmic functions**
@@ -373,6 +376,24 @@ Floating point manipulation functions
    .. versionadded:: 3.2
 
 
+.. function:: isnormal(x)
+
+   Return ``True`` if *x* is a normal number, that is a finite
+   nonzero number that is not a subnormal (see :func:`issubnormal`).
+   Return ``False`` otherwise.
+
+   .. versionadded:: next
+
+
+.. function:: issubnormal(x)
+
+   Return ``True`` if *x* is a subnormal number, that is a finite
+   nonzero number with a magnitude smaller than :data:`sys.float_info.min`.
+   Return ``False`` otherwise.
+
+   .. versionadded:: next
+
+
 .. function:: isinf(x)
 
    Return ``True`` if *x* is a positive or negative infinity, and
@@ -409,6 +430,15 @@ Floating point manipulation functions
 
    .. versionchanged:: 3.12
       Added the *steps* argument.
+
+
+.. function:: signbit(x)
+
+   Return ``True`` if the sign of *x* is negative and ``False`` otherwise.
+
+   This is useful to detect the sign bit of zeroes, infinities and NaNs.
+
+   .. versionadded:: next
 
 
 .. function:: ulp(x)
@@ -774,7 +804,7 @@ Constants
    The mathematical constant *τ* = 6.283185..., to available precision.
    Tau is a circle constant equal to 2\ *π*, the ratio of a circle's circumference to
    its radius. To learn more about Tau, check out Vi Hart's video `Pi is (still)
-   Wrong <https://www.youtube.com/watch?v=jG7vhMMXagQ>`_, and start celebrating
+   Wrong <https://vimeo.com/147792667>`_, and start celebrating
    `Tau day <https://tauday.com/>`_ by eating twice as much pie!
 
    .. versionadded:: 3.6
