@@ -2224,5 +2224,249 @@ class TestGeneratedAbstractCases(unittest.TestCase):
                                     "Inputs must have equal sizes"):
             self.run_cases_test(input, input2, output)
 
+    def test_pure_uop_body_copied_in(self):
+        # Note: any non-escaping call works.
+        # In this case, we use PyStackRef_IsNone.
+        input = """
+        pure op(OP, (foo -- res)) {
+            res = PyStackRef_IsNone(foo);
+        }
+        """
+        input2 = """
+        op(OP, (foo -- res)) {
+            REPLACE_OPCODE_IF_EVALUATES_PURE(foo);
+            res = sym_new_known(ctx, foo);
+        }
+        """
+        output = """
+        case OP: {
+            JitOptRef foo;
+            JitOptRef res;
+            foo = stack_pointer[-1];
+            if (
+                sym_is_safe_const(ctx, foo)
+            ) {
+                JitOptRef foo_sym = foo;
+                _PyStackRef foo = sym_get_const_as_stackref(ctx, foo_sym);
+                _PyStackRef res_stackref;
+                /* Start of uop copied from bytecodes for constant evaluation */
+                res_stackref = PyStackRef_IsNone(foo);
+                /* End of uop copied from bytecodes for constant evaluation */
+                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
+                stack_pointer[-1] = res;
+                break;
+            }
+            res = sym_new_known(ctx, foo);
+            stack_pointer[-1] = res;
+            break;
+        }
+        """
+        self.run_cases_test(input, input2, output)
+
+    def test_pure_uop_body_copied_in_deopt(self):
+        # Note: any non-escaping call works.
+        # In this case, we use PyStackRef_IsNone.
+        input = """
+        pure op(OP, (foo -- res)) {
+            DEOPT_IF(PyStackRef_IsNull(foo));
+            res = foo;
+        }
+        """
+        input2 = """
+        op(OP, (foo -- res)) {
+            REPLACE_OPCODE_IF_EVALUATES_PURE(foo);
+            res = foo;
+        }
+        """
+        output = """
+        case OP: {
+            JitOptRef foo;
+            JitOptRef res;
+            foo = stack_pointer[-1];
+            if (
+                sym_is_safe_const(ctx, foo)
+            ) {
+                JitOptRef foo_sym = foo;
+                _PyStackRef foo = sym_get_const_as_stackref(ctx, foo_sym);
+                _PyStackRef res_stackref;
+                /* Start of uop copied from bytecodes for constant evaluation */
+                if (PyStackRef_IsNull(foo)) {
+                    ctx->done = true;
+                    break;
+                }
+                res_stackref = foo;
+                /* End of uop copied from bytecodes for constant evaluation */
+                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
+                stack_pointer[-1] = res;
+                break;
+            }
+            res = foo;
+            stack_pointer[-1] = res;
+            break;
+        }
+        """
+        self.run_cases_test(input, input2, output)
+
+    def test_pure_uop_body_copied_in_error_if(self):
+        # Note: any non-escaping call works.
+        # In this case, we use PyStackRef_IsNone.
+        input = """
+        pure op(OP, (foo -- res)) {
+            ERROR_IF(PyStackRef_IsNull(foo));
+            res = foo;
+        }
+        """
+        input2 = """
+        op(OP, (foo -- res)) {
+            REPLACE_OPCODE_IF_EVALUATES_PURE(foo);
+            res = foo;
+        }
+        """
+        output = """
+        case OP: {
+            JitOptRef foo;
+            JitOptRef res;
+            foo = stack_pointer[-1];
+            if (
+                sym_is_safe_const(ctx, foo)
+            ) {
+                JitOptRef foo_sym = foo;
+                _PyStackRef foo = sym_get_const_as_stackref(ctx, foo_sym);
+                _PyStackRef res_stackref;
+                /* Start of uop copied from bytecodes for constant evaluation */
+                if (PyStackRef_IsNull(foo)) {
+                    goto error;
+                }
+                res_stackref = foo;
+                /* End of uop copied from bytecodes for constant evaluation */
+                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
+                stack_pointer[-1] = res;
+                break;
+            }
+            res = foo;
+            stack_pointer[-1] = res;
+            break;
+        }
+        """
+        self.run_cases_test(input, input2, output)
+
+
+    def test_replace_opcode_uop_body_copied_in_complex(self):
+        input = """
+        pure op(OP, (foo -- res)) {
+            if (foo) {
+                res = PyStackRef_IsNone(foo);
+            }
+            else {
+                res = 1;
+            }
+        }
+        """
+        input2 = """
+        op(OP, (foo -- res)) {
+            REPLACE_OPCODE_IF_EVALUATES_PURE(foo);
+            res = sym_new_known(ctx, foo);
+        }
+        """
+        output = """
+        case OP: {
+            JitOptRef foo;
+            JitOptRef res;
+            foo = stack_pointer[-1];
+            if (
+                sym_is_safe_const(ctx, foo)
+            ) {
+                JitOptRef foo_sym = foo;
+                _PyStackRef foo = sym_get_const_as_stackref(ctx, foo_sym);
+                _PyStackRef res_stackref;
+                /* Start of uop copied from bytecodes for constant evaluation */
+                if (foo) {
+                    res_stackref = PyStackRef_IsNone(foo);
+                }
+                else {
+                    res_stackref = 1;
+                }
+                /* End of uop copied from bytecodes for constant evaluation */
+                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
+                stack_pointer[-1] = res;
+                break;
+            }
+            res = sym_new_known(ctx, foo);
+            stack_pointer[-1] = res;
+            break;
+        }
+        """
+        self.run_cases_test(input, input2, output)
+
+    def test_replace_opcode_escaping_uop_body_copied_in_complex(self):
+        input = """
+        pure op(OP, (foo -- res)) {
+            if (foo) {
+                res = ESCAPING_CODE(foo);
+            }
+            else {
+                res = 1;
+            }
+        }
+        """
+        input2 = """
+        op(OP, (foo -- res)) {
+            REPLACE_OPCODE_IF_EVALUATES_PURE(foo);
+            res = sym_new_known(ctx, foo);
+        }
+        """
+        output = """
+        case OP: {
+            JitOptRef foo;
+            JitOptRef res;
+            foo = stack_pointer[-1];
+            if (
+                sym_is_safe_const(ctx, foo)
+            ) {
+                JitOptRef foo_sym = foo;
+                _PyStackRef foo = sym_get_const_as_stackref(ctx, foo_sym);
+                _PyStackRef res_stackref;
+                /* Start of uop copied from bytecodes for constant evaluation */
+                if (foo) {
+                    res_stackref = ESCAPING_CODE(foo);
+                }
+                else {
+                    res_stackref = 1;
+                }
+                /* End of uop copied from bytecodes for constant evaluation */
+                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
+                stack_pointer[-1] = res;
+                break;
+            }
+            res = sym_new_known(ctx, foo);
+            stack_pointer[-1] = res;
+            break;
+        }
+        """
+        self.run_cases_test(input, input2, output)
+
+    def test_replace_opocode_uop_reject_array_effects(self):
+        input = """
+        pure op(OP, (foo[2] -- res)) {
+            if (foo) {
+                res = PyStackRef_IsNone(foo);
+            }
+            else {
+                res = 1;
+            }
+        }
+        """
+        input2 = """
+        op(OP, (foo[2] -- res)) {
+            REPLACE_OPCODE_IF_EVALUATES_PURE(foo);
+            res = sym_new_unknown(ctx);
+        }
+        """
+        output = """
+        """
+        with self.assertRaisesRegex(SyntaxError,
+                                    "Pure evaluation cannot take array-like inputs"):
+            self.run_cases_test(input, input2, output)
+
 if __name__ == "__main__":
     unittest.main()

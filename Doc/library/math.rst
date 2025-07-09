@@ -59,6 +59,7 @@ noted otherwise, all return values are floats.
 :func:`isnan(x) <isnan>`                              Check if *x* is a NaN  (not a number)
 :func:`ldexp(x, i) <ldexp>`                           ``x * (2**i)``, inverse of function :func:`frexp`
 :func:`nextafter(x, y, steps) <nextafter>`            Floating-point value *steps* steps after *x* towards *y*
+:func:`signbit(x) <signbit>`                          Check if *x* is a negative number
 :func:`ulp(x) <ulp>`                                  Value of the least significant bit of *x*
 
 **Power, exponential and logarithmic functions**
@@ -431,6 +432,15 @@ Floating point manipulation functions
       Added the *steps* argument.
 
 
+.. function:: signbit(x)
+
+   Return ``True`` if the sign of *x* is negative and ``False`` otherwise.
+
+   This is useful to detect the sign bit of zeroes, infinities and NaNs.
+
+   .. versionadded:: next
+
+
 .. function:: ulp(x)
 
    Return the value of the least significant bit of the float *x*:
@@ -794,7 +804,7 @@ Constants
    The mathematical constant *τ* = 6.283185..., to available precision.
    Tau is a circle constant equal to 2\ *π*, the ratio of a circle's circumference to
    its radius. To learn more about Tau, check out Vi Hart's video `Pi is (still)
-   Wrong <https://www.youtube.com/watch?v=jG7vhMMXagQ>`_, and start celebrating
+   Wrong <https://vimeo.com/147792667>`_, and start celebrating
    `Tau day <https://tauday.com/>`_ by eating twice as much pie!
 
    .. versionadded:: 3.6
