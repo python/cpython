@@ -30,7 +30,8 @@ templateiter_next(PyObject *op)
             Py_SETREF(item, PyIter_Next(self->interpolationsiter));
             self->from_strings = 1;
         }
-    } else {
+    }
+    else {
         item = PyIter_Next(self->interpolationsiter);
         self->from_strings = 1;
     }
@@ -305,7 +306,7 @@ _PyTemplate_Concat(PyObject *self, PyObject *other)
 
     PyErr_Format(PyExc_TypeError,
         "can only concatenate Template (not \"%T\") to Template",
-        tp_name);
+        other);
     return NULL;
 }
 
