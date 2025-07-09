@@ -2306,6 +2306,13 @@ is resumed, and its locks reacquired.  This means the critical section API
 provides weaker guarantees than traditional locks -- they are useful because
 their behavior is similar to the :term:`GIL`.
 
+Critical sections are appropriate for protecting custom types defined by your
+C-API extensions. They should generally not be used with built-in types like
+:c:struct:`PyDictObject` or :c:struct:`PyListObject` because their public APIs
+already use critical sections internally, with the :ref:`notable
+exception<PyDict_Next>` of :c:func:`PyDict_Next`, which requires external
+locking.
+
 The functions and structs used by the macros are exposed for cases
 where C macros are not available. They should only be used as in the
 given macro expansions. Note that the sizes and contents of the structures may
