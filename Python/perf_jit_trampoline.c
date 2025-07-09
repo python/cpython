@@ -1055,6 +1055,10 @@ static void* perf_map_jit_init(void) {
         return NULL;  // Failed to get page size
     }
 
+#if defined(__APPLE__)
+    // On macOS, samply uses a preload to find jitdumps and this mmap can be slow.
+    perf_jit_map_state.mapped_buffer = NULL;
+#else
     /*
      * Map the first page of the jitdump file
      *
@@ -1077,6 +1081,7 @@ static void* perf_map_jit_init(void) {
         close(fd);
         return NULL;  // Memory mapping failed
     }
+#endif
 
     perf_jit_map_state.mapped_size = page_size;
 
