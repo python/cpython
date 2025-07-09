@@ -1634,15 +1634,18 @@ class TestSampleProfilerErrorHandling(unittest.TestCase):
             )
 
     def test_is_process_running(self):
-        with (test_subprocess("import time; time.sleep(1000)") as proc,
-              mock.patch("_remote_debugging.RemoteUnwinder") as mock_unwinder_class):
-                mock_unwinder_class.return_value = mock.MagicMock()
-                profiler = SampleProfiler(pid=proc.pid, sample_interval_usec=1000, all_threads=False)
-                self.assertTrue(profiler._is_process_running())
-                proc.kill()
+        with test_subprocess("import time; time.sleep(1000)") as proc:
+            profiler = SampleProfiler(pid=proc.pid, sample_interval_usec=1000, all_threads=False)
+            self.assertTrue(profiler._is_process_running())
+            self.assertIsNotNone(profiler.unwinder.get_stack_trace())
+            proc.kill()
+            proc.wait()
+            # ValueError on MacOS (yeah I know), ProcessLookupError on Linux and Windows
+            self.assertRaises((ValueError, ProcessLookupError), profiler.unwinder.get_stack_trace)
 
         # Exit the context manager to ensure the process is terminated
         self.assertFalse(profiler._is_process_running())
+        self.assertRaises((ValueError, ProcessLookupError), profiler.unwinder.get_stack_trace)
 
     @unittest.skipUnless(sys.platform == "linux", "Only valid on Linux")
     def test_esrch_signal_handling(self):
