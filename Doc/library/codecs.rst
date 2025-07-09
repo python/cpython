@@ -1508,7 +1508,7 @@ This module implements the following functions:
 
 
 .. note::
-   The following functions should not be used directly, except for testing
+   The following function should not be used directly, except for testing
    purposes; :func:`codecs.lookup` should be used instead.
 
 
@@ -1526,18 +1526,6 @@ This module implements the following functions:
 
    If the codec module defines a ``getaliases()`` function any returned aliases
    are registered for future use.
-
-
-.. function:: win32_code_page_search_function(encoding)
-
-   Search for a Windows code page encoding *encoding* of the form ``cpXXXX``.
-
-   If the code page is valid and supported, return a :class:`codecs.CodecInfo`
-   object for it.
-
-   .. availability:: Windows.
-
-   .. versionadded:: 3.14
 
 
 This module implements the following exception:
