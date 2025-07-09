@@ -12,7 +12,7 @@ import unittest
 from unittest import mock
 
 from profile.pstats_collector import PstatsCollector
-from profile.stack_collectors import (
+from profile.stack_collector import (
     CollapsedStackCollector,
 )
 

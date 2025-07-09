@@ -3,13 +3,12 @@ import _remote_debugging
 import pstats
 import statistics
 import time
-import sys
 import sysconfig
 from collections import deque
 from _colorize import ANSIColors
 
 from .pstats_collector import PstatsCollector
-from .stack_collectors import CollapsedStackCollector
+from .stack_collector import CollapsedStackCollector
 
 FREE_THREADED_BUILD = sysconfig.get_config_var("Py_GIL_DISABLED") is not None
 
