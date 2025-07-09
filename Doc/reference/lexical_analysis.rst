@@ -935,58 +935,138 @@ They may contain *replacement fields* delimited by curly braces ``{}``.
 Replacement fields contain expressions which are evaluated at run time.
 For example::
 
-   >>> f'One plus one is {1 + 1}.'
-   'One plus one is 2.'
+   >>> who = 'nobody'
+   >>> nationality = 'Spanish'
+   >>> f'{who.title()} expects the {nationality} Inquisition!'
+   'Nobody expects the Spanish Inquisition!'
 
-The parts of the string outside curly braces are treated literally,
-except that any doubled curly braces ``'{{'`` or ``'}}'`` are replaced
-with the corresponding single curly brace::
+Any doubled curly braces (``{{`` or ``}}``) outside replacement fields
+are replaced with the corresponding single curly brace::
 
    >>> print(f'{{...}}')
    {...}
 
-Escape sequences are decoded like in ordinary string literals (except when
-a literal is also marked as a raw string)::
+Other characters outside replacement fields are treated like in ordinary
+string literals.
+This means that escape sequences are decoded (except when a literal is
+also marked as a raw string), and newlines are possible in triple-quoted
+f-strings::
 
    >>> name = 'Galahad'
    >>> favorite_color = 'blue'
    >>> print(f'{name}:\t{favorite_color}')
    Galahad:       blue
-   >>> print(rf'C:\Users\{name}')
+   >>> print(rf"C:\Users\{name}")
    C:\Users\Galahad
+   >>> print(f'''Three shall be the number of the counting
+   ... and the number of the counting shall be three.''')
+   Three shall be the number of the counting
+   and the number of the counting shall be three.
 
-In addition to the expression, replacement fields may contain:
+Expressions in formatted string literals are treated like regular
+Python expressions.
+Each expression is evaluated in the context where the formatted string literal
+appears, in order from left to right.
+An empty expression is not allowed, and both :keyword:`lambda` and
+assignment expressions ``:=`` must be surrounded by explicit parentheses::
+
+   >>> f'{(half := 1/2)}, {half * 42}'
+   '0.5, 21.0'
+
+Replacement expressions can contain newlines in both single-quoted and
+triple-quoted f-strings and they can contain comments.
+Everything that comes after a ``#`` inside a replacement field
+is a comment (even closing braces and quotes).
+This means that replacement fields with comments must be closed in a
+different line:
+
+.. code-block:: text
+
+   >>> a = 2
+   >>> f"abc{a  # This comment  }"  continues until the end of the line
+   ...       + 3}"
+   'abc5'
+
+After the expression, replacement fields may optionally contain:
 
 * a *debug specifier* -- an equal sign (``=``);
 * a *conversion specifier* -- ``!s``, ``!r`` or ``!a``; and/or
 * a *format specifier* prefixed with a colon (``:``).
 
-See :ref:`stdtypes-fstrings` for how these specifiers are interpreted.
+Debug specifier
+^^^^^^^^^^^^^^^
 
-Note that whitespace on both sides of a debug specifier (``=``) is
-significant --- it is retained in the result::
+If a debug specifier -- an equal sign (``=``) -- appears after the replacement
+field expression, the resulting f-string will contain the expression's source,
+the equal sign, and the value of the expression.
+This is often useful for debugging::
 
    >>> print(f'{name=}')
    name='Galahad'
+
+Whitespace on both sides of the equal sign is significant --- it is retained
+in the result::
+
    >>> print(f'{name = }')
    name = 'Galahad'
 
-Expressions in formatted string literals are treated like regular
-Python expressions surrounded by parentheses, with a few exceptions.
-An empty expression is not allowed, and both :keyword:`lambda`  and
-assignment expressions ``:=`` must be surrounded by explicit parentheses.
-Each expression is evaluated in the context where the formatted string literal
-appears, in order from left to right.  Replacement expressions can contain
-newlines in both single-quoted and triple-quoted f-strings and they can contain
-comments.  Everything that comes after a ``#`` inside a replacement field
-is a comment (even closing braces and quotes). In that case, replacement fields
-must be closed in a different line.
 
-.. code-block:: text
+Conversion specifier
+^^^^^^^^^^^^^^^^^^^^
 
-   >>> f"abc{a # This is a comment }"
-   ... + 3}"
-   'abc5'
+By default, the value of a replacement field expression is converted to
+string using :func:`str`::
+
+   >>> from fractions import Fraction
+   >>> one_third = Fraction(1, 3)
+   >>> f'{one_third}'
+   '1/3'
+
+When a debug specifier but no format specifier is used, the default conversion
+instead uses :func:`repr`::
+
+   >>> f'{one_third = }'
+   'one_third = Fraction(1, 3)'
+
+The conversion can be specified explicitly using one of these specifiers:
+
+* ``!s`` for :func:`str`
+* ``!r`` for :func:`repr`
+* ``!a`` for :func:`ascii`
+
+For example::
+
+   >>> f'{one_third!r} is {one_third!s}'
+   'Fraction(1, 3) is 1/3'
+
+   >>> string = "¡kočka 😸!"
+   >>> f'{string = !a}'
+   "string = '\\xa1ko\\u010dka \\U0001f638!'"
+
+
+Format specifier
+^^^^^^^^^^^^^^^^
+
+After the expression has been evaluated, and possibly converted using an
+explicit conversion specifier, it is formatted using the :func:`format` function.
+If the replacement field includes a *format specifier*, an arbitrary string
+introduced by a colon (``:``), the specifier is passed to :func:`!format`
+as the second argument.
+The result of :func:`!format` is then used as the final value for the
+replacement field. For example::
+
+   >>> f'{one_third:.6f}'
+   '0.333333'
+   >>> f'{one_third:_^+10}'
+   '___+1/3___'
+   >>> >>> f'{one_third!r:_^20}'
+   '___Fraction(1, 3)___'
+   >>> f'{one_third = :~>10}~'
+   'one_third = ~~~~~~~1/3~'
+
+
+Formal grammar
+^^^^^^^^^^^^^^
 
 .. grammar-snippet:: python-grammar
    :group: python-grammar
