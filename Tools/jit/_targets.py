@@ -44,7 +44,8 @@ class _Target(typing.Generic[_S, _R]):
     _: dataclasses.KW_ONLY
     args: typing.Sequence[str] = ()
     optimizer: type[_optimizers.Optimizer] = _optimizers.Optimizer
-    prefix: str = ""
+    label_prefix: typing.ClassVar[str]
+    symbol_prefix: typing.ClassVar[str]
     stable: bool = False
     debug: bool = False
     verbose: bool = False
@@ -164,7 +165,9 @@ class _Target(typing.Generic[_S, _R]):
             *shlex.split(self.cflags),
         ]
         await _llvm.run("clang", args_s, echo=self.verbose)
-        self.optimizer(s, prefix=self.prefix).run()
+        self.optimizer(
+            s, label_prefix=self.label_prefix, symbol_prefix=self.symbol_prefix
+        ).run()
         args_o = [f"--target={self.triple}", "-c", "-o", f"{o}", f"{s}"]
         await _llvm.run("clang", args_o, echo=self.verbose)
         return await self._parse(o)
@@ -266,7 +269,7 @@ class _COFF(
             symbol = wrapped_symbol["Symbol"]
             offset = base + symbol["Value"]
             name = symbol["Name"]
-            name = name.removeprefix(self.prefix)
+            name = name.removeprefix(self.symbol_prefix)
             if name not in group.symbols:
                 group.symbols[name] = value, offset
         for wrapped_relocation in section["Relocations"]:
@@ -277,9 +280,9 @@ class _COFF(
     def _unwrap_dllimport(self, name: str) -> tuple[_stencils.HoleValue, str | None]:
         if name.startswith("__imp_"):
             name = name.removeprefix("__imp_")
-            name = name.removeprefix(self.prefix)
+            name = name.removeprefix(self.symbol_prefix)
             return _stencils.HoleValue.GOT, name
-        name = name.removeprefix(self.prefix)
+        name = name.removeprefix(self.symbol_prefix)
         return _stencils.symbol_to_value(name)
 
     def _handle_relocation(
@@ -327,9 +330,24 @@ class _COFF(
         return _stencils.Hole(offset, kind, value, symbol, addend)
 
 
+class _COFF32(_COFF):
+    # These mangle like Mach-O and other "older" formats:
+    label_prefix: str = "L"
+    symbol_prefix: str = "_"
+
+
+class _COFF64(_COFF):
+    # These mangle like ELF and other "newer" formats:
+    label_prefix: str = ".L"
+    symbol_prefix: str = ""
+
+
 class _ELF(
     _Target[_schema.ELFSection, _schema.ELFRelocation]
 ):  # pylint: disable = too-few-public-methods
+    label_prefix = ".L"
+    symbol_prefix = ""
+
     def _handle_section(
         self, section: _schema.ELFSection, group: _stencils.StencilGroup
     ) -> None:
@@ -366,7 +384,7 @@ class _ELF(
                 symbol = wrapped_symbol["Symbol"]
                 offset = len(stencil.body) + symbol["Value"]
                 name = symbol["Name"]["Name"]
-                name = name.removeprefix(self.prefix)
+                name = name.removeprefix(self.symbol_prefix)
                 group.symbols[name] = value, offset
             stencil.body.extend(section["SectionData"]["Bytes"])
             assert not section["Relocations"]
@@ -401,7 +419,7 @@ class _ELF(
                 },
             }:
                 offset += base
-                s = s.removeprefix(self.prefix)
+                s = s.removeprefix(self.symbol_prefix)
                 value, symbol = _stencils.HoleValue.GOT, s
             case {
                 "Addend": addend,
@@ -410,7 +428,7 @@ class _ELF(
                 "Type": {"Name": kind},
             }:
                 offset += base
-                s = s.removeprefix(self.prefix)
+                s = s.removeprefix(self.symbol_prefix)
                 value, symbol = _stencils.symbol_to_value(s)
             case _:
                 raise NotImplementedError(relocation)
@@ -420,6 +438,9 @@ class _ELF(
 class _MachO(
     _Target[_schema.MachOSection, _schema.MachORelocation]
 ):  # pylint: disable = too-few-public-methods
+    label_prefix = "L"
+    symbol_prefix = "_"
+
     def _handle_section(
         self, section: _schema.MachOSection, group: _stencils.StencilGroup
     ) -> None:
@@ -427,7 +448,7 @@ class _MachO(
         assert "SectionData" in section
         flags = {flag["Name"] for flag in section["Attributes"]["Flags"]}
         name = section["Name"]["Value"]
-        name = name.removeprefix(self.prefix)
+        name = name.removeprefix(self.symbol_prefix)
         if "Debug" in flags:
             return
         if "PureInstructions" in flags:
@@ -451,7 +472,7 @@ class _MachO(
             symbol = wrapped_symbol["Symbol"]
             offset = symbol["Value"] - start_address
             name = symbol["Name"]["Name"]
-            name = name.removeprefix(self.prefix)
+            name = name.removeprefix(self.symbol_prefix)
             group.symbols[name] = value, offset
         assert "Relocations" in section
         for wrapped_relocation in section["Relocations"]:
@@ -476,7 +497,7 @@ class _MachO(
                 },
             }:
                 offset += base
-                s = s.removeprefix(self.prefix)
+                s = s.removeprefix(self.symbol_prefix)
                 value, symbol = _stencils.HoleValue.GOT, s
                 addend = 0
             case {
@@ -485,7 +506,7 @@ class _MachO(
                 "Type": {"Name": "X86_64_RELOC_GOT" | "X86_64_RELOC_GOT_LOAD" as kind},
             }:
                 offset += base
-                s = s.removeprefix(self.prefix)
+                s = s.removeprefix(self.symbol_prefix)
                 value, symbol = _stencils.HoleValue.GOT, s
                 addend = (
                     int.from_bytes(raw[offset : offset + 4], "little", signed=True) - 4
@@ -500,7 +521,7 @@ class _MachO(
                 "Type": {"Name": "X86_64_RELOC_BRANCH" | "X86_64_RELOC_SIGNED" as kind},
             }:
                 offset += base
-                s = s.removeprefix(self.prefix)
+                s = s.removeprefix(self.symbol_prefix)
                 value, symbol = _stencils.symbol_to_value(s)
                 addend = (
                     int.from_bytes(raw[offset : offset + 4], "little", signed=True) - 4
@@ -515,7 +536,7 @@ class _MachO(
                 "Type": {"Name": kind},
             }:
                 offset += base
-                s = s.removeprefix(self.prefix)
+                s = s.removeprefix(self.symbol_prefix)
                 value, symbol = _stencils.symbol_to_value(s)
                 addend = 0
             case _:
@@ -523,19 +544,19 @@ class _MachO(
         return _stencils.Hole(offset, kind, value, symbol, addend)
 
 
-def get_target(host: str) -> _COFF | _ELF | _MachO:
+def get_target(host: str) -> _COFF32 | _COFF64 | _ELF | _MachO:
     """Build a _Target for the given host "triple" and options."""
     optimizer: type[_optimizers.Optimizer]
-    target: _COFF | _ELF | _MachO
+    target: _COFF32 | _COFF64 | _ELF | _MachO
     if re.fullmatch(r"aarch64-apple-darwin.*", host):
         condition = "defined(__aarch64__) && defined(__APPLE__)"
         optimizer = _optimizers.OptimizerAArch64
-        target = _MachO(host, condition, optimizer=optimizer, prefix="_")
+        target = _MachO(host, condition, optimizer=optimizer)
     elif re.fullmatch(r"aarch64-pc-windows-msvc", host):
         args = ["-fms-runtime-lib=dll", "-fplt"]
         condition = "defined(_M_ARM64)"
         optimizer = _optimizers.OptimizerAArch64
-        target = _COFF(host, condition, args=args, optimizer=optimizer)
+        target = _COFF64(host, condition, args=args, optimizer=optimizer)
     elif re.fullmatch(r"aarch64-.*-linux-gnu", host):
         # -mno-outline-atomics: Keep intrinsics from being emitted.
         args = ["-fpic", "-mno-outline-atomics"]
@@ -547,16 +568,16 @@ def get_target(host: str) -> _COFF | _ELF | _MachO:
         args = ["-DPy_NO_ENABLE_SHARED", "-Wno-ignored-attributes"]
         optimizer = _optimizers.OptimizerX86
         condition = "defined(_M_IX86)"
-        target = _COFF(host, condition, args=args, optimizer=optimizer, prefix="_")
+        target = _COFF32(host, condition, args=args, optimizer=optimizer)
     elif re.fullmatch(r"x86_64-apple-darwin.*", host):
         condition = "defined(__x86_64__) && defined(__APPLE__)"
         optimizer = _optimizers.OptimizerX86
-        target = _MachO(host, condition, optimizer=optimizer, prefix="_")
+        target = _MachO(host, condition, optimizer=optimizer)
     elif re.fullmatch(r"x86_64-pc-windows-msvc", host):
         args = ["-fms-runtime-lib=dll"]
         condition = "defined(_M_X64)"
         optimizer = _optimizers.OptimizerX86
-        target = _COFF(host, condition, args=args, optimizer=optimizer)
+        target = _COFF64(host, condition, args=args, optimizer=optimizer)
     elif re.fullmatch(r"x86_64-.*-linux-gnu", host):
         args = ["-fno-pic", "-mcmodel=medium", "-mlarge-data-threshold=0"]
         condition = "defined(__x86_64__) && defined(__linux__)"

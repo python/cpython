@@ -70,8 +70,9 @@ class Optimizer:
 
     path: pathlib.Path
     _: dataclasses.KW_ONLY
-    # prefix used to mangle symbols on some platforms:
-    prefix: str = ""
+    # Prefixes used to mangle local labels and symbols:
+    label_prefix: str
+    symbol_prefix: str
     # The first block in the linked list:
     _root: _Block = dataclasses.field(init=False, default_factory=_Block)
     _labels: dict[str, _Block] = dataclasses.field(init=False, default_factory=dict)
@@ -130,8 +131,12 @@ class Optimizer:
                 block.fallthrough = False
 
     def _preprocess(self, text: str) -> str:
-        # Override this method to do preprocessing of the textual assembly:
-        return text
+        # Override this method to do preprocessing of the textual assembly.
+        # In all cases, replace references to the _JIT_CONTINUE symbol with
+        # references to a local _JIT_CONTINUE label (which we will add later):
+        continue_symbol = rf"\b{re.escape(self.symbol_prefix)}_JIT_CONTINUE\b"
+        continue_label = f"{self.label_prefix}_JIT_CONTINUE"
+        return re.sub(continue_symbol, continue_label, text)
 
     @classmethod
     def _invert_branch(cls, line: str, target: str) -> str | None:
@@ -198,7 +203,7 @@ class Optimizer:
         #    jmp FOO
         #    _JIT_CONTINUE:
         # This lets the assembler encode _JIT_CONTINUE jumps at build time!
-        continuation = self._lookup_label(f"{self.prefix}_JIT_CONTINUE")
+        continuation = self._lookup_label(f"{self.label_prefix}_JIT_CONTINUE")
         assert continuation.label
         continuation.noninstructions.append(f"{continuation.label}:")
         end.link, continuation.link = continuation, end.link
