@@ -583,18 +583,19 @@ class TestSpecifics(unittest.TestCase):
         with open(fname, encoding='utf-8') as f:
             fcontents = f.read()
         sample_code = [
-            ['<assign>', 'x = 5'],
-            ['<ifblock>', """if True:\n    pass\n"""],
-            ['<forblock>', """for n in [1, 2, 3]:\n    print(n)\n"""],
-            ['<deffunc>', """def foo():\n    pass\nfoo()\n"""],
-            [fname, fcontents],
+            [2, '<assign>', 'x = 5'],
+            [2, '<ifblock>', """if True:\n    pass\n"""],
+            [1, '<forblock>', """for n in [1, 2, 3]:\n    print(n)\n"""],
+            [1, '<deffunc>', """def foo():\n    pass\nfoo()\n"""],
+            [0, fname, fcontents],
         ]
 
-        for fname, code in sample_code:
-            co1 = compile(code, '%s1' % fname, 'exec')
-            ast = compile(code, '%s2' % fname, 'exec', _ast.PyCF_ONLY_AST)
+        for optval, fname, code in sample_code:
+            co1 = compile(code, '%s1' % fname, 'exec', optimize=optval)
+            ast = compile(code, '%s2' % fname, 'exec', _ast.PyCF_ONLY_AST,
+                          optimize=optval)
             self.assertTrue(type(ast) == _ast.Module)
-            co2 = compile(ast, '%s3' % fname, 'exec')
+            co2 = compile(ast, '%s3' % fname, 'exec', optimize=optval)
             self.assertEqual(co1, co2)
             # the code object's filename comes from the second compilation step
             self.assertEqual(co2.co_filename, '%s3' % fname)
@@ -823,8 +824,10 @@ class TestSpecifics(unittest.TestCase):
             else:
                 return "unused"
 
-        self.assertEqual(f.__code__.co_consts,
-                         (f.__doc__, "used"))
+        if f.__doc__ is None:
+            self.assertEqual(f.__code__.co_consts, (True, "used"))
+        else:
+            self.assertEqual(f.__code__.co_consts, (f.__doc__, "used"))
 
     @support.cpython_only
     def test_remove_unused_consts_no_docstring(self):
@@ -862,14 +865,17 @@ class TestSpecifics(unittest.TestCase):
 
     # Stripping unused constants is not a strict requirement for the
     # Python semantics, it's a more an implementation detail.
-    @support.cpython_only
     def test_strip_unused_None(self):
         # Python 3.10rc1 appended None to co_consts when None is not used
         # at all. See bpo-45056.
         def f1():
             "docstring"
             return 42
-        self.assertEqual(f1.__code__.co_consts, (f1.__doc__,))
+
+        if f1.__doc__ is None:
+            self.assertEqual(f1.__code__.co_consts, (42,))
+        else:
+            self.assertEqual(f1.__code__.co_consts, (f1.__doc__,))
 
     # This is a regression test for a CPython specific peephole optimizer
     # implementation bug present in a few releases.  It's assertion verifies
