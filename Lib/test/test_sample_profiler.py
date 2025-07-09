@@ -1610,8 +1610,9 @@ class TestSampleProfilerErrorHandling(unittest.TestCase):
                 profiler = SampleProfiler(pid=proc.pid, sample_interval_usec=1000, all_threads=False)
 
                 self.assertTrue(profiler._is_process_running())
-                proc.wait()
-                self.assertFalse(profiler._is_process_running())
+
+        # Exit the context manager to ensure the process is terminated
+        self.assertFalse(profiler._is_process_running())
 
     @unittest.skipUnless(sys.platform == "linux", "Only valid on Linux")
     def test_esrch_signal_handling(self):
