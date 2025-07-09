@@ -1284,7 +1284,7 @@ Glossary
       The collection of :term:`packages <package>`, :term:`modules <module>`
       and :term:`extension modules <extension module>` distributed as a part
       of the official Python interpreter package.  The exact membership of the
-      collection may vary based on platform, available system packages, or
+      collection may vary based on platform, available system libraries, or
       other criteria.  Documentation can be found at :ref:`library-index`.
 
       See also :data:`sys.stdlib_module_names` for a list of all possible
