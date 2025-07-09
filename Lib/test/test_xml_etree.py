@@ -213,7 +213,7 @@ class ElementTestCase:
 # --------------------------------------------------------------------
 # element tree tests
 
-class ElementTreeTest(unittest.TestCase):
+class ElementTreeTest(ElementTestCase, unittest.TestCase):
 
     def serialize_check(self, elem, expected):
         self.assertEqual(serialize(elem), expected)
@@ -1380,6 +1380,79 @@ class ElementTreeTest(unittest.TestCase):
         self.assertNotEqual(q1, 'ns:tag')
         self.assertEqual(q1, '{ns}tag')
 
+    def test_namespace_attribs(self):
+        # Unprefixed attributes are unqualified even if a default
+        # namespace is in effect. (This is a little unclear in some
+        # versions of the XML TR but is clarified in errata and other
+        # versions.) See bugs.python.org issue 17088.
+        #
+        # The reasoning behind this, alluded to in the spec, is that
+        # attribute meanings already depend on the element they're
+        # attached to; attributes have always lived in per-element
+        # namespaces even before explicit XML namespaces were
+        # introduced.  For that reason qualified attribute names are
+        # only really needed when one XML module defines attributes
+        # that can be placed on elements defined in a different module
+        # (such as happens with XLINK or, for that matter, the XML
+        # namespace spec itself).
+        e = ET.XML(
+            '<pf:elt xmlns:pf="space1" xmlns:pf2="space2" foo="value">'
+            '<pf:foo foo="value2" pf2:foo="value3"/>'
+            '<pf2:foo foo="value4" pf:foo="value5" pf2:foo="value6"/>'
+            '<foo foo="value7" pf:foo="value8"/>'
+            '</pf:elt>')
+        self.assertEqual(e.tag, '{space1}elt')
+        self.assertEqual(e.get('foo'), 'value')
+        self.assertIsNone(e.get('{space1}foo'))
+        self.assertIsNone(e.get('{space2}foo'))
+        self.assertEqual(e[0].tag, '{space1}foo')
+        self.assertEqual(e[0].attrib, { 'foo': 'value2',
+                                        '{space2}foo': 'value3' })
+        self.assertEqual(e[1].tag, '{space2}foo')
+        self.assertEqual(e[1].attrib, { 'foo': 'value4',
+                                        '{space1}foo': 'value5',
+                                        '{space2}foo': 'value6' })
+        self.assertEqual(e[2].tag, 'foo')
+        self.assertEqual(e[2].attrib, { 'foo': 'value7',
+                                        '{space1}foo': 'value8' })
+
+        serialized1 = (
+            '<ns0:elt xmlns:ns0="space1" xmlns:ns1="space2" foo="value">'
+            '<ns0:foo foo="value2" ns1:foo="value3" />'
+            '<ns1:foo foo="value4" ns0:foo="value5" ns1:foo="value6" />'
+            '<foo foo="value7" ns0:foo="value8" />'
+            '</ns0:elt>')
+        self.assertEqual(serialize(e), serialized1)
+        self.assertEqualElements(e, ET.XML(serialized1))
+
+        # Test writing with a default namespace.
+        with self.assertRaisesRegex(ValueError,
+                'cannot use non-qualified name.* with default_namespace option'):
+            serialize(e, default_namespace="space1")
+
+        # Remove the unqualified element from the tree so we can test
+        # further.
+        del e[2]
+
+        # Serialization can require a namespace prefix to be declared for
+        # space1 even if no elements use that prefix, in order to
+        # write an attribute name in that namespace.
+        serialized2 = (
+            '<ns0:elt xmlns="space2" xmlns:ns0="space1" xmlns:ns1="space2" foo="value">'
+            '<ns0:foo foo="value2" ns1:foo="value3" />'
+            '<foo foo="value4" ns0:foo="value5" ns1:foo="value6" />'
+            '</ns0:elt>')
+        self.assertEqual(serialize(e, default_namespace="space2"), serialized2)
+        self.assertEqualElements(e, ET.XML(serialized2))
+
+        serialized3 = (
+            '<elt xmlns="space1" xmlns:ns0="space2" xmlns:ns1="space1" foo="value">'
+            '<foo foo="value2" ns0:foo="value3" />'
+            '<ns0:foo foo="value4" ns1:foo="value5" ns0:foo="value6" />'
+            '</elt>')
+        self.assertEqual(serialize(e, default_namespace="space1"), serialized3)
+        self.assertEqualElements(e, ET.XML(serialized3))
+
     def test_doctype_public(self):
         # Test PUBLIC doctype.
 
@@ -2287,18 +2360,17 @@ class BugsTest(unittest.TestCase):
         s = ET.SubElement(e, "{default}elem")
         s = ET.SubElement(e, "{not-default}elem")
         self.assertEqual(serialize(e, default_namespace="default"), # 2
-            '<elem xmlns="default" xmlns:ns1="not-default">'
+            '<elem xmlns="default" xmlns:ns0="not-default">'
             '<elem />'
-            '<ns1:elem />'
+            '<ns0:elem />'
             '</elem>')
 
         e = ET.Element("{default}elem")
         s = ET.SubElement(e, "{default}elem")
         s = ET.SubElement(e, "elem") # unprefixed name
-        with self.assertRaises(ValueError) as cm:
+        with self.assertRaisesRegex(ValueError,
+                'cannot use non-qualified name.* with default_namespace option'):
             serialize(e, default_namespace="default") # 3
-        self.assertEqual(str(cm.exception),
-                'cannot use non-qualified names with default_namespace option')
 
     def test_bug_200709_register_namespace(self):
         e = ET.Element("{http://namespace.invalid/does/not/exist/}title")
