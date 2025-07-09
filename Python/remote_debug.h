@@ -982,6 +982,9 @@ _Py_RemoteDebug_ReadRemoteMemory(proc_handle_t *handle, uintptr_t remote_address
                 return read_remote_memory_fallback(handle, remote_address, len, dst);
             }
             PyErr_SetFromErrno(PyExc_OSError);
+            if (errno == ESRCH) {
+                return -1;
+            }
             _set_debug_exception_cause(PyExc_OSError,
                 "process_vm_readv failed for PID %d at address 0x%lx "
                 "(size %zu, partial read %zd bytes): %s",

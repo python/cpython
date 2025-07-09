@@ -1,9 +1,11 @@
 import argparse
 import _remote_debugging
+import os
 import pstats
 import statistics
-import time
+import sys
 import sysconfig
+import time
 from collections import deque
 from _colorize import ANSIColors
 
@@ -47,8 +49,14 @@ class SampleProfiler:
                 try:
                     stack_frames = self.unwinder.get_stack_trace()
                     collector.collect(stack_frames)
-                except (RuntimeError, UnicodeDecodeError, OSError):
+                except ProcessLookupError:
+                    break
+                except (RuntimeError, UnicodeDecodeError, MemoryError):
                     errors += 1
+                except Exception as e:
+                    if not self._is_process_running():
+                        break
+                    raise e from None
 
                 # Track actual sampling intervals for real-time stats
                 if num_samples > 0:
@@ -88,6 +96,22 @@ class SampleProfiler:
                 f"from the expected total of {expected_samples} "
                 f"({(expected_samples - num_samples) / expected_samples * 100:.2f}%)"
             )
+
+    def _is_process_running(self):
+        if sys.platform == "linux" or sys.platform == "darwin":
+            try:
+                os.kill(self.pid, 0)
+                return True
+            except ProcessLookupError:
+                return False
+        elif sys.platform == "win32":
+            try:
+                _remote_debugging.RemoteUnwinder(self.pid)
+            except Exception:
+                return False
+            return True
+        else:
+            raise ValueError(f"Unsupported platform: {sys.platform}")
 
     def _print_realtime_stats(self):
         """Print real-time sampling statistics."""

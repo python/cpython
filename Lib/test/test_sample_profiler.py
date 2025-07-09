@@ -23,12 +23,15 @@ PROCESS_VM_READV_SUPPORTED = False
 
 try:
     from _remote_debugging import PROCESS_VM_READV_SUPPORTED
+    import _remote_debugging
 except ImportError:
     raise unittest.SkipTest(
         "Test only runs when _remote_debugging is available"
     )
 else:
     import profile.sample
+    from profile.sample import SampleProfiler
+
 
 
 class MockFrameInfo:
@@ -1599,6 +1602,30 @@ class TestSampleProfilerErrorHandling(unittest.TestCase):
             self.assertIn(
                 "Invalid output format: unknown_format", str(cm.exception)
             )
+
+    def test_is_process_running(self):
+        with (test_subprocess("import time; time.sleep(0.2)") as proc,
+              mock.patch("_remote_debugging.RemoteUnwinder") as mock_unwinder_class):
+                mock_unwinder_class.return_value = mock.MagicMock()
+                profiler = SampleProfiler(pid=proc.pid, sample_interval_usec=1000, all_threads=False)
+
+                self.assertTrue(profiler._is_process_running())
+                proc.wait()
+                self.assertFalse(profiler._is_process_running())
+
+    @unittest.skipUnless(sys.platform == "linux", "Only valid on Linux")
+    def test_esrch_signal_handling(self):
+        with test_subprocess("import time; time.sleep(0.1)") as proc:
+            unwinder = _remote_debugging.RemoteUnwinder(proc.pid)
+            initial_trace = unwinder.get_stack_trace()
+            self.assertIsNotNone(initial_trace)
+
+            # Wait for the process to die and try to get another trace
+            proc.wait()
+
+            with self.assertRaises(ProcessLookupError):
+                unwinder.get_stack_trace()
+
 
 
 class TestSampleProfilerCLI(unittest.TestCase):
