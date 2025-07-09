@@ -25,7 +25,7 @@ Runtime Objects
 
 - [Code Objects](code_objects.md)
 
-- [Generators (coming soon)](generators.md)
+- [Generators](generators.md)
 
 - [Frames](frames.md)
 
@@ -34,10 +34,17 @@ Runtime Objects
 Program Execution
 ---
 
-- [The Interpreter](interpreter.md)
+- [The Bytecode Interpreter](interpreter.md)
 
-- [Adaptive Instruction Families](adaptive.md)
+- [The JIT](jit.md)
 
 - [Garbage Collector Design](garbage_collector.md)
 
 - [Exception Handling](exception_handling.md)
+
+- [Quiescent-State Based Reclamation (QSBR)](qsbr.md)
+
+Modules
+---
+
+- [asyncio](asyncio.md)

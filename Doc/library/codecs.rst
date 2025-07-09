@@ -53,9 +53,17 @@ any codec:
    :exc:`UnicodeDecodeError`). Refer to :ref:`codec-base-classes` for more
    information on codec error handling.
 
+.. function:: charmap_build(string)
+
+   Return a mapping suitable for encoding with a custom single-byte encoding.
+   Given a :class:`str` *string* of up to 256 characters representing a
+   decoding table, returns either a compact internal mapping object
+   ``EncodingMap`` or a :class:`dictionary <dict>` mapping character ordinals
+   to byte values. Raises a :exc:`TypeError` on invalid input.
+
 The full details for each codec can also be looked up directly:
 
-.. function:: lookup(encoding)
+.. function:: lookup(encoding, /)
 
    Looks up the codec info in the Python codec registry and returns a
    :class:`CodecInfo` object as defined below.
@@ -156,7 +164,7 @@ these additional functions which use :func:`lookup` for the codec lookup:
 Custom codecs are made available by registering a suitable codec search
 function:
 
-.. function:: register(search_function)
+.. function:: register(search_function, /)
 
    Register a codec search function. Search functions are expected to take one
    argument, being the encoding name in all lower case letters with hyphens
@@ -168,7 +176,7 @@ function:
       Hyphens and spaces are converted to underscore.
 
 
-.. function:: unregister(search_function)
+.. function:: unregister(search_function, /)
 
    Unregister a codec search function and clear the registry's cache.
    If the search function is not registered, do nothing.
@@ -207,6 +215,10 @@ wider range of codecs when working with binary files:
 
    .. versionchanged:: 3.11
       The ``'U'`` mode has been removed.
+
+   .. deprecated:: 3.14
+
+      :func:`codecs.open` has been superseded by :func:`open`.
 
 
 .. function:: EncodedFile(file, data_encoding, file_encoding=None, errors='strict')
@@ -416,7 +428,7 @@ In addition, the following error handler is specific to the given codecs:
 The set of allowed values can be extended by registering a new named error
 handler:
 
-.. function:: register_error(name, error_handler)
+.. function:: register_error(name, error_handler, /)
 
    Register the error handling function *error_handler* under the name *name*.
    The *error_handler* argument will be called during encoding and decoding
@@ -442,7 +454,7 @@ handler:
 Previously registered error handlers (including the standard error handlers)
 can be looked up by name:
 
-.. function:: lookup_error(name)
+.. function:: lookup_error(name, /)
 
    Return the error handler previously registered under the name *name*.
 
@@ -1107,7 +1119,7 @@ particular, the following variants typically exist:
 +-----------------+--------------------------------+--------------------------------+
 | cp852           | 852, IBM852                    | Central and Eastern Europe     |
 +-----------------+--------------------------------+--------------------------------+
-| cp855           | 855, IBM855                    | Bulgarian, Byelorussian,       |
+| cp855           | 855, IBM855                    | Belarusian, Bulgarian,         |
 |                 |                                | Macedonian, Russian, Serbian   |
 +-----------------+--------------------------------+--------------------------------+
 | cp856           |                                | Hebrew                         |
@@ -1155,7 +1167,7 @@ particular, the following variants typically exist:
 +-----------------+--------------------------------+--------------------------------+
 | cp1250          | windows-1250                   | Central and Eastern Europe     |
 +-----------------+--------------------------------+--------------------------------+
-| cp1251          | windows-1251                   | Bulgarian, Byelorussian,       |
+| cp1251          | windows-1251                   | Belarusian, Bulgarian,         |
 |                 |                                | Macedonian, Russian, Serbian   |
 +-----------------+--------------------------------+--------------------------------+
 | cp1252          | windows-1252                   | Western Europe                 |
@@ -1220,7 +1232,7 @@ particular, the following variants typically exist:
 +-----------------+--------------------------------+--------------------------------+
 | iso8859_4       | iso-8859-4, latin4, L4         | Baltic languages               |
 +-----------------+--------------------------------+--------------------------------+
-| iso8859_5       | iso-8859-5, cyrillic           | Bulgarian, Byelorussian,       |
+| iso8859_5       | iso-8859-5, cyrillic           | Belarusian, Bulgarian,         |
 |                 |                                | Macedonian, Russian, Serbian   |
 +-----------------+--------------------------------+--------------------------------+
 | iso8859_6       | iso-8859-6, arabic             | Arabic                         |
@@ -1257,7 +1269,7 @@ particular, the following variants typically exist:
 |                 |                                |                                |
 |                 |                                | .. versionadded:: 3.5          |
 +-----------------+--------------------------------+--------------------------------+
-| mac_cyrillic    | maccyrillic                    | Bulgarian, Byelorussian,       |
+| mac_cyrillic    | maccyrillic                    | Belarusian, Bulgarian,         |
 |                 |                                | Macedonian, Russian, Serbian   |
 +-----------------+--------------------------------+--------------------------------+
 | mac_greek       | macgreek                       | Greek                          |
@@ -1470,6 +1482,66 @@ mapping. It is not supported by :meth:`str.encode` (which only produces
 
 .. versionchanged:: 3.4
    Restoration of the ``rot13`` alias.
+
+
+:mod:`encodings` --- Encodings package
+--------------------------------------
+
+.. module:: encodings
+   :synopsis: Encodings package
+
+This module implements the following functions:
+
+.. function:: normalize_encoding(encoding)
+
+   Normalize encoding name *encoding*.
+
+   Normalization works as follows: all non-alphanumeric characters except the
+   dot used for Python package names are collapsed and replaced with a single
+   underscore, leading and trailing underscores are removed.
+   For example, ``'  -;#'`` becomes ``'_'``.
+
+   Note that *encoding* should be ASCII only.
+
+
+.. note::
+   The following functions should not be used directly, except for testing
+   purposes; :func:`codecs.lookup` should be used instead.
+
+
+.. function:: search_function(encoding)
+
+   Search for the codec module corresponding to the given encoding name
+   *encoding*.
+
+   This function first normalizes the *encoding* using
+   :func:`normalize_encoding`, then looks for a corresponding alias.
+   It attempts to import a codec module from the encodings package using either
+   the alias or the normalized name. If the module is found and defines a valid
+   ``getregentry()`` function that returns a :class:`codecs.CodecInfo` object,
+   the codec is cached and returned.
+
+   If the codec module defines a ``getaliases()`` function any returned aliases
+   are registered for future use.
+
+
+.. function:: win32_code_page_search_function(encoding)
+
+   Search for a Windows code page encoding *encoding* of the form ``cpXXXX``.
+
+   If the code page is valid and supported, return a :class:`codecs.CodecInfo`
+   object for it.
+
+   .. availability:: Windows.
+
+   .. versionadded:: 3.14
+
+
+This module implements the following exception:
+
+.. exception:: CodecRegistryError
+
+   Raised when a codec is invalid or incompatible.
 
 
 :mod:`encodings.idna` --- Internationalized Domain Names in Applications

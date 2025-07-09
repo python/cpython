@@ -1,2 +1,0 @@
-Improve import time of :mod:`mimetypes` by around 11-16 times. Patch by Hugo
-van Kemenade.

@@ -30,11 +30,6 @@ For instance, SML provides a tabulation tool: ``tabulate(f)`` which produces a
 sequence ``f(0), f(1), ...``.  The same effect can be achieved in Python
 by combining :func:`map` and :func:`count` to form ``map(f, count())``.
 
-These tools and their built-in counterparts also work well with the high-speed
-functions in the :mod:`operator` module.  For example, the multiplication
-operator can be mapped across two vectors to form an efficient dot-product:
-``sum(starmap(operator.mul, zip(vec1, vec2, strict=True)))``.
-
 
 **Infinite iterators:**
 
@@ -84,7 +79,7 @@ Examples                                         Results
 ``product('ABCD', repeat=2)``                    ``AA AB AC AD BA BB BC BD CA CB CC CD DA DB DC DD``
 ``permutations('ABCD', 2)``                      ``AB AC AD BA BC BD CA CB CD DA DB DC``
 ``combinations('ABCD', 2)``                      ``AB AC AD BC BD CD``
-``combinations_with_replacement('ABCD', 2)``     ``AA AB AC AD BB BC BD CC CD DD``
+``combinations_with_replacement('ABCD', 2)``     ``AA AB AC AD BB BC BD CC CD DD``
 ==============================================   =============================================================
 
 
@@ -686,7 +681,7 @@ loops that truncate the stream.
    consumed from the input iterator and there is no way to access it.
    This could be an issue if an application wants to further consume the
    input iterator after *takewhile* has been run to exhaustion.  To work
-   around this problem, consider using `more-iterools before_and_after()
+   around this problem, consider using `more-itertools before_and_after()
    <https://more-itertools.readthedocs.io/en/stable/api.html#more_itertools.before_and_after>`_
    instead.
 
@@ -843,12 +838,11 @@ and :term:`generators <generator>` which incur interpreter overhead.
 
 .. testcode::
 
-   import collections
-   import contextlib
-   import functools
-   import math
-   import operator
-   import random
+   from collections import Counter, deque
+   from contextlib import suppress
+   from functools import reduce
+   from math import comb, prod, sumprod, isqrt
+   from operator import itemgetter, getitem, mul, neg
 
    def take(n, iterable):
        "Return first n items of the iterable as a list."
@@ -863,11 +857,11 @@ and :term:`generators <generator>` which incur interpreter overhead.
        "Return function(0), function(1), ..."
        return map(function, count(start))
 
-   def repeatfunc(func, times=None, *args):
-       "Repeat calls to func with specified arguments."
+   def repeatfunc(function, times=None, *args):
+       "Repeat calls to a function with specified arguments."
        if times is None:
-           return starmap(func, repeat(args))
-       return starmap(func, repeat(args, times))
+           return starmap(function, repeat(args))
+       return starmap(function, repeat(args, times))
 
    def flatten(list_of_lists):
        "Flatten one level of nesting."
@@ -877,16 +871,21 @@ and :term:`generators <generator>` which incur interpreter overhead.
        "Returns the sequence elements n times."
        return chain.from_iterable(repeat(tuple(iterable), n))
 
+   def loops(n):
+       "Loop n times. Like range(n) but without creating integers."
+       # for _ in loops(100): ...
+       return repeat(None, n)
+
    def tail(n, iterable):
        "Return an iterator over the last n items."
        # tail(3, 'ABCDEFG') → E F G
-       return iter(collections.deque(iterable, maxlen=n))
+       return iter(deque(iterable, maxlen=n))
 
    def consume(iterator, n=None):
        "Advance the iterator n-steps ahead. If n is None, consume entirely."
        # Use functions that consume iterators at C speed.
        if n is None:
-           collections.deque(iterator, maxlen=0)
+           deque(iterator, maxlen=0)
        else:
            next(islice(iterator, n, n), None)
 
@@ -914,8 +913,8 @@ and :term:`generators <generator>` which incur interpreter overhead.
        # unique_justseen('AAAABBBCCDAABBB') → A B C D A B
        # unique_justseen('ABBcCAD', str.casefold) → A B c A D
        if key is None:
-           return map(operator.itemgetter(0), groupby(iterable))
-       return map(next, map(operator.itemgetter(1), groupby(iterable, key)))
+           return map(itemgetter(0), groupby(iterable))
+       return map(next, map(itemgetter(1), groupby(iterable, key)))
 
    def unique_everseen(iterable, key=None):
        "Yield unique elements, preserving order. Remember all elements ever seen."
@@ -936,13 +935,14 @@ and :term:`generators <generator>` which incur interpreter overhead.
    def unique(iterable, key=None, reverse=False):
       "Yield unique elements in sorted order. Supports unhashable inputs."
       # unique([[1, 2], [3, 4], [1, 2]]) → [1, 2] [3, 4]
-      return unique_justseen(sorted(iterable, key=key, reverse=reverse), key=key)
+      sequenced = sorted(iterable, key=key, reverse=reverse)
+      return unique_justseen(sequenced, key=key)
 
    def sliding_window(iterable, n):
        "Collect data into overlapping fixed-length chunks or blocks."
        # sliding_window('ABCDEFG', 4) → ABCD BCDE CDEF DEFG
        iterator = iter(iterable)
-       window = collections.deque(islice(iterator, n - 1), maxlen=n)
+       window = deque(islice(iterator, n - 1), maxlen=n)
        for x in iterator:
            window.append(x)
            yield tuple(window)
@@ -976,7 +976,7 @@ and :term:`generators <generator>` which incur interpreter overhead.
        "Return all contiguous non-empty subslices of a sequence."
        # subslices('ABCD') → A AB ABC ABCD B BC BCD C CD D
        slices = starmap(slice, combinations(range(len(seq) + 1), 2))
-       return map(operator.getitem, repeat(seq), slices)
+       return map(getitem, repeat(seq), slices)
 
    def iter_index(iterable, value, start=0, stop=None):
        "Return indices where a value occurs in a sequence or iterable."
@@ -990,39 +990,46 @@ and :term:`generators <generator>` which incur interpreter overhead.
        else:
            stop = len(iterable) if stop is None else stop
            i = start
-           with contextlib.suppress(ValueError):
+           with suppress(ValueError):
                while True:
                    yield (i := seq_index(value, i, stop))
                    i += 1
 
-   def iter_except(func, exception, first=None):
+   def iter_except(function, exception, first=None):
        "Convert a call-until-exception interface to an iterator interface."
        # iter_except(d.popitem, KeyError) → non-blocking dictionary iterator
-       with contextlib.suppress(exception):
+       with suppress(exception):
            if first is not None:
                yield first()
            while True:
-               yield func()
+               yield function()
 
 
 The following recipes have a more mathematical flavor:
 
 .. testcode::
 
+   def multinomial(*counts):
+       "Number of distinct arrangements of a multiset."
+       # Counter('abracadabra').values() → 5 2 2 1 1
+       # multinomial(5, 2, 2, 1, 1) → 83160
+       return prod(map(comb, accumulate(counts), counts))
+
    def powerset(iterable):
-       "powerset([1,2,3]) → () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
+       "Subsequences of the iterable from shortest to longest."
+       # powerset([1,2,3]) → () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)
        s = list(iterable)
        return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
 
    def sum_of_squares(iterable):
        "Add up the squares of the input values."
        # sum_of_squares([10, 20, 30]) → 1400
-       return math.sumprod(*tee(iterable))
+       return sumprod(*tee(iterable))
 
-   def reshape(matrix, cols):
+   def reshape(matrix, columns):
        "Reshape a 2-D matrix to have a given number of columns."
        # reshape([(0, 1), (2, 3), (4, 5)], 3) →  (0, 1, 2), (3, 4, 5)
-       return batched(chain.from_iterable(matrix), cols, strict=True)
+       return batched(chain.from_iterable(matrix), columns, strict=True)
 
    def transpose(matrix):
        "Swap the rows and columns of a 2-D matrix."
@@ -1033,7 +1040,7 @@ The following recipes have a more mathematical flavor:
        "Multiply two matrices."
        # matmul([(7, 5), (3, 5)], [(2, 5), (7, 9)]) → (49, 80), (41, 60)
        n = len(m2[0])
-       return batched(starmap(math.sumprod, product(m1, transpose(m2))), n)
+       return batched(starmap(sumprod, product(m1, transpose(m2))), n)
 
    def convolve(signal, kernel):
        """Discrete linear convolution of two iterables.
@@ -1054,7 +1061,7 @@ The following recipes have a more mathematical flavor:
        n = len(kernel)
        padded_signal = chain(repeat(0, n-1), signal, repeat(0, n-1))
        windowed_signal = sliding_window(padded_signal, n)
-       return map(math.sumprod, repeat(kernel), windowed_signal)
+       return map(sumprod, repeat(kernel), windowed_signal)
 
    def polynomial_from_roots(roots):
        """Compute a polynomial's coefficients from its roots.
@@ -1062,8 +1069,8 @@ The following recipes have a more mathematical flavor:
           (x - 5) (x + 4) (x - 3)  expands to:   x³ -4x² -17x + 60
        """
        # polynomial_from_roots([5, -4, 3]) → [1, -4, -17, 60]
-       factors = zip(repeat(1), map(operator.neg, roots))
-       return list(functools.reduce(convolve, factors, [1]))
+       factors = zip(repeat(1), map(neg, roots))
+       return list(reduce(convolve, factors, [1]))
 
    def polynomial_eval(coefficients, x):
        """Evaluate a polynomial at a specific value.
@@ -1076,7 +1083,7 @@ The following recipes have a more mathematical flavor:
        if not n:
            return type(x)(0)
        powers = map(pow, repeat(x), reversed(range(n)))
-       return math.sumprod(coefficients, powers)
+       return sumprod(coefficients, powers)
 
    def polynomial_derivative(coefficients):
        """Compute the first derivative of a polynomial.
@@ -1087,7 +1094,7 @@ The following recipes have a more mathematical flavor:
        # polynomial_derivative([1, -4, -17, 60]) → [3, -8, -17]
        n = len(coefficients)
        powers = reversed(range(1, n))
-       return list(map(operator.mul, coefficients, powers))
+       return list(map(mul, coefficients, powers))
 
    def sieve(n):
        "Primes less than n."
@@ -1095,7 +1102,7 @@ The following recipes have a more mathematical flavor:
        if n > 2:
            yield 2
        data = bytearray((0, 1)) * (n // 2)
-       for p in iter_index(data, 1, start=3, stop=math.isqrt(n) + 1):
+       for p in iter_index(data, 1, start=3, stop=isqrt(n) + 1):
            data[p*p : n : p+p] = bytes(len(range(p*p, n, p+p)))
        yield from iter_index(data, 1, start=3)
 
@@ -1104,7 +1111,7 @@ The following recipes have a more mathematical flavor:
        # factor(99) → 3 3 11
        # factor(1_000_000_000_000_007) → 47 59 360620266859
        # factor(1_000_000_000_000_403) → 1000000000000403
-       for prime in sieve(math.isqrt(n) + 1):
+       for prime in sieve(isqrt(n) + 1):
            while not n % prime:
                yield prime
                n //= prime
@@ -1112,6 +1119,11 @@ The following recipes have a more mathematical flavor:
                    return
        if n > 1:
            yield n
+
+   def is_prime(n):
+       "Return True if n is prime."
+       # is_prime(1_000_000_000_000_403) → True
+       return n > 1 and next(factor(n)) == n
 
    def totient(n):
        "Count of natural numbers up to n that are coprime to n."
@@ -1200,6 +1212,16 @@ The following recipes have a more mathematical flavor:
 
     >>> list(islice(tabulate(lambda x: 2*x), 4))
     [0, 2, 4, 6]
+
+
+    >>> for _ in loops(5):
+    ...     print('hi')
+    ...
+    hi
+    hi
+    hi
+    hi
+    hi
 
 
     >>> list(tail(3, 'ABCDEFG'))
@@ -1475,6 +1497,23 @@ The following recipes have a more mathematical flavor:
     True
 
 
+    >>> small_primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97]
+    >>> list(filter(is_prime, range(-100, 100))) == small_primes
+    True
+    >>> carmichael = {561, 1105, 1729, 2465, 2821, 6601, 8911}  # https://oeis.org/A002997
+    >>> any(map(is_prime, carmichael))
+    False
+    >>> # https://www.wolframalpha.com/input?i=is+128884753939+prime
+    >>> is_prime(128_884_753_939)           # large prime
+    True
+    >>> is_prime(999953 * 999983)           # large semiprime
+    False
+    >>> is_prime(1_000_000_000_000_007)     # factor() example
+    False
+    >>> is_prime(1_000_000_000_000_403)     # factor() example
+    True
+
+
     >>> list(factor(99))                    # Code example 1
     [3, 3, 11]
     >>> list(factor(1_000_000_000_000_007)) # Code example 2
@@ -1697,13 +1736,19 @@ The following recipes have a more mathematical flavor:
     >>> ''.join(it)
     'DEF1'
 
+    >>> multinomial(5, 2, 2, 1, 1)
+    83160
+    >>> word = 'coffee'
+    >>> multinomial(*Counter(word).values()) == len(set(permutations(word)))
+    True
+
 
 .. testcode::
     :hide:
 
     # Old recipes and their tests which are guaranteed to continue to work.
 
-    def sumprod(vec1, vec2):
+    def old_sumprod_recipe(vec1, vec2):
         "Compute a sum of products."
         return sum(starmap(operator.mul, zip(vec1, vec2, strict=True)))
 
@@ -1786,7 +1831,7 @@ The following recipes have a more mathematical flavor:
     32
 
 
-    >>> sumprod([1,2,3], [4,5,6])
+    >>> old_sumprod_recipe([1,2,3], [4,5,6])
     32
 
 

@@ -413,7 +413,7 @@ Querying the error indicator
    own a reference to the return value, so you do not need to :c:func:`Py_DECREF`
    it.
 
-   The caller must hold the GIL.
+   The caller must have an :term:`attached thread state`.
 
    .. note::
 
@@ -675,7 +675,7 @@ Signal Handling
 
    .. note::
       This function is async-signal-safe.  It can be called without
-      the :term:`GIL` and from a C signal handler.
+      an :term:`attached thread state` and from a C signal handler.
 
 
 .. c:function:: int PyErr_SetInterruptEx(int signum)
@@ -702,7 +702,7 @@ Signal Handling
 
    .. note::
       This function is async-signal-safe.  It can be called without
-      the :term:`GIL` and from a C signal handler.
+      an :term:`attached thread state` and from a C signal handler.
 
    .. versionadded:: 3.10
 
@@ -747,6 +747,16 @@ Exception Classes
    docstring for the exception class.
 
    .. versionadded:: 3.2
+
+
+.. c:function:: int PyExceptionClass_Check(PyObject *ob)
+
+   Return non-zero if *ob* is an exception class, zero otherwise. This function always succeeds.
+
+
+.. c:function:: const char *PyExceptionClass_Name(PyObject *ob)
+
+   Return :c:member:`~PyTypeObject.tp_name` of the exception class *ob*.
 
 
 Exception Objects
@@ -853,12 +863,23 @@ The following functions are used to create and modify Unicode exceptions from C.
    *\*start*.  *start* must not be ``NULL``.  Return ``0`` on success, ``-1`` on
    failure.
 
+   If the :attr:`UnicodeError.object` is an empty sequence, the resulting
+   *start* is ``0``. Otherwise, it is clipped to ``[0, len(object) - 1]``.
+
+   .. seealso:: :attr:`UnicodeError.start`
+
 .. c:function:: int PyUnicodeDecodeError_SetStart(PyObject *exc, Py_ssize_t start)
                 int PyUnicodeEncodeError_SetStart(PyObject *exc, Py_ssize_t start)
                 int PyUnicodeTranslateError_SetStart(PyObject *exc, Py_ssize_t start)
 
-   Set the *start* attribute of the given exception object to *start*.  Return
-   ``0`` on success, ``-1`` on failure.
+   Set the *start* attribute of the given exception object to *start*.
+   Return ``0`` on success, ``-1`` on failure.
+
+   .. note::
+
+      While passing a negative *start* does not raise an exception,
+      the corresponding getters will not consider it as a relative
+      offset.
 
 .. c:function:: int PyUnicodeDecodeError_GetEnd(PyObject *exc, Py_ssize_t *end)
                 int PyUnicodeEncodeError_GetEnd(PyObject *exc, Py_ssize_t *end)
@@ -868,12 +889,17 @@ The following functions are used to create and modify Unicode exceptions from C.
    *\*end*.  *end* must not be ``NULL``.  Return ``0`` on success, ``-1`` on
    failure.
 
+   If the :attr:`UnicodeError.object` is an empty sequence, the resulting
+   *end* is ``0``. Otherwise, it is clipped to ``[1, len(object)]``.
+
 .. c:function:: int PyUnicodeDecodeError_SetEnd(PyObject *exc, Py_ssize_t end)
                 int PyUnicodeEncodeError_SetEnd(PyObject *exc, Py_ssize_t end)
                 int PyUnicodeTranslateError_SetEnd(PyObject *exc, Py_ssize_t end)
 
    Set the *end* attribute of the given exception object to *end*.  Return ``0``
    on success, ``-1`` on failure.
+
+   .. seealso:: :attr:`UnicodeError.end`
 
 .. c:function:: PyObject* PyUnicodeDecodeError_GetReason(PyObject *exc)
                 PyObject* PyUnicodeEncodeError_GetReason(PyObject *exc)
@@ -905,11 +931,7 @@ because the :ref:`call protocol <call>` takes care of recursion handling.
 
    Marks a point where a recursive C-level call is about to be performed.
 
-   If :c:macro:`!USE_STACKCHECK` is defined, this function checks if the OS
-   stack overflowed using :c:func:`PyOS_CheckStack`.  If this is the case, it
-   sets a :exc:`MemoryError` and returns a nonzero value.
-
-   The function then checks if the recursion limit is reached.  If this is the
+   The function then checks if the stack limit is reached.  If this is the
    case, a :exc:`RecursionError` is set and a nonzero value is returned.
    Otherwise, zero is returned.
 
@@ -970,6 +992,7 @@ the variables:
 
 .. index::
    single: PyExc_BaseException (C var)
+   single: PyExc_BaseExceptionGroup (C var)
    single: PyExc_Exception (C var)
    single: PyExc_ArithmeticError (C var)
    single: PyExc_AssertionError (C var)
@@ -1028,6 +1051,8 @@ the variables:
 | C Name                                  | Python Name                     | Notes    |
 +=========================================+=================================+==========+
 | :c:data:`PyExc_BaseException`           | :exc:`BaseException`            | [1]_     |
++-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_BaseExceptionGroup`      | :exc:`BaseExceptionGroup`       | [1]_     |
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_Exception`               | :exc:`Exception`                | [1]_     |
 +-----------------------------------------+---------------------------------+----------+
@@ -1152,6 +1177,9 @@ the variables:
 .. versionadded:: 3.6
    :c:data:`PyExc_ModuleNotFoundError`.
 
+.. versionadded:: 3.11
+   :c:data:`PyExc_BaseExceptionGroup`.
+
 These are compatibility aliases to :c:data:`PyExc_OSError`:
 
 .. index::
@@ -1195,6 +1223,7 @@ the variables:
    single: PyExc_Warning (C var)
    single: PyExc_BytesWarning (C var)
    single: PyExc_DeprecationWarning (C var)
+   single: PyExc_EncodingWarning (C var)
    single: PyExc_FutureWarning (C var)
    single: PyExc_ImportWarning (C var)
    single: PyExc_PendingDeprecationWarning (C var)
@@ -1212,6 +1241,8 @@ the variables:
 | :c:data:`PyExc_BytesWarning`             | :exc:`BytesWarning`             |          |
 +------------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_DeprecationWarning`       | :exc:`DeprecationWarning`       |          |
++------------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_EncodingWarning`          | :exc:`EncodingWarning`          |          |
 +------------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_FutureWarning`            | :exc:`FutureWarning`            |          |
 +------------------------------------------+---------------------------------+----------+
@@ -1232,6 +1263,9 @@ the variables:
 
 .. versionadded:: 3.2
    :c:data:`PyExc_ResourceWarning`.
+
+.. versionadded:: 3.10
+   :c:data:`PyExc_EncodingWarning`.
 
 Notes:
 

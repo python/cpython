@@ -1,5 +1,0 @@
-:func:`urllib.request.pathname2url` now adds an empty authority when
-generating a URL for a path that begins with exactly one slash. For example,
-the path ``/etc/hosts`` is converted to the scheme-less URL ``///etc/hosts``.
-As a result of this change, URLs without authorities are only generated for
-relative paths.

@@ -15,6 +15,11 @@
     PyStatus status;
     PyPreConfig preconfig;
     PyConfig config;
+    PyObject *app_packages_path;
+    PyObject *method_args;
+    PyObject *result;
+    PyObject *site_module;
+    PyObject *site_addsitedir_attr;
     PyObject *sys_module;
     PyObject *sys_path_attr;
     NSArray *test_args;
@@ -24,8 +29,11 @@
 
     NSString *resourcePath = [[NSBundle mainBundle] resourcePath];
 
-    // Disable all color, as the Xcode log can't display color
+    // Set some other common environment indicators to disable color, as the
+    // Xcode log can't display color. Stdout will report that it is *not* a
+    // TTY.
     setenv("NO_COLOR", "1", true);
+    setenv("PYTHON_COLORS", "0", true);
 
     // Arguments to pass into the test suite runner.
     // argv[0] must identify the process; any subsequent arg
@@ -50,6 +58,8 @@
     // Enforce UTF-8 encoding for stderr, stdout, file-system encoding and locale.
     // See https://docs.python.org/3/library/os.html#python-utf-8-mode.
     preconfig.utf8_mode = 1;
+    // Use the system logger for stdout/err
+    config.use_system_logger = 1;
     // Don't buffer stdio. We want output to appears in the log immediately
     config.buffered_stdio = 0;
     // Don't write bytecode; we can't modify the app bundle
@@ -106,6 +116,43 @@
         return;
     }
 
+    // Add app_packages as a site directory. This both adds to sys.path,
+    // and ensures that any .pth files in that directory will be executed.
+    site_module = PyImport_ImportModule("site");
+    if (site_module == NULL) {
+        XCTFail(@"Could not import site module");
+        return;
+    }
+
+    site_addsitedir_attr = PyObject_GetAttrString(site_module, "addsitedir");
+    if (site_addsitedir_attr == NULL || !PyCallable_Check(site_addsitedir_attr)) {
+        XCTFail(@"Could not access site.addsitedir");
+        return;
+    }
+
+    path = [NSString stringWithFormat:@"%@/app_packages", resourcePath, nil];
+    NSLog(@"App packages path: %@", path);
+    wtmp_str = Py_DecodeLocale([path UTF8String], NULL);
+    app_packages_path = PyUnicode_FromWideChar(wtmp_str, wcslen(wtmp_str));
+    if (app_packages_path == NULL) {
+        XCTFail(@"Could not convert app_packages path to unicode");
+        return;
+    }
+    PyMem_RawFree(wtmp_str);
+
+    method_args = Py_BuildValue("(O)", app_packages_path);
+    if (method_args == NULL) {
+        XCTFail(@"Could not create arguments for site.addsitedir");
+        return;
+    }
+
+    result = PyObject_CallObject(site_addsitedir_attr, method_args);
+    if (result == NULL) {
+        XCTFail(@"Could not add app_packages directory using site.addsitedir");
+        return;
+    }
+
+    // Add test code to sys.path
     sys_module = PyImport_ImportModule("sys");
     if (sys_module == NULL) {
         XCTFail(@"Could not import sys module");
@@ -117,17 +164,6 @@
         XCTFail(@"Could not access sys.path");
         return;
     }
-
-    // Add the app packages path
-    path = [NSString stringWithFormat:@"%@/app_packages", resourcePath, nil];
-    NSLog(@"App packages path: %@", path);
-    wtmp_str = Py_DecodeLocale([path UTF8String], NULL);
-    failed = PyList_Insert(sys_path_attr, 0, PyUnicode_FromString([path UTF8String]));
-    if (failed) {
-        XCTFail(@"Unable to add app packages to sys.path");
-        return;
-    }
-    PyMem_RawFree(wtmp_str);
 
     path = [NSString stringWithFormat:@"%@/app", resourcePath, nil];
     NSLog(@"App path: %@", path);

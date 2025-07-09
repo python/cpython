@@ -401,7 +401,7 @@ Emission of bytecode is handled by the following macros:
   add the `LOAD_CONST` opcode with the proper argument based on the
   position of the specified PyObject in the consts table.
 * `ADDOP_LOAD_CONST_NEW(struct compiler *, location, PyObject *)`:
-  just like `ADDOP_LOAD_CONST_NEW`, but steals a reference to PyObject
+  just like `ADDOP_LOAD_CONST`, but steals a reference to PyObject
 * `ADDOP_JUMP(struct compiler *, location, int, basicblock *)`:
   create a jump to a basic block
 
@@ -505,8 +505,8 @@ Important files
   * [Python/ast.c](../Python/ast.c):
     Used for validating the AST.
 
-  * [Python/ast_opt.c](../Python/ast_opt.c):
-    Optimizes the AST.
+  * [Python/ast_preprocess.c](../Python/ast_preprocess.c):
+    Preprocesses the AST before compiling.
 
   * [Python/ast_unparse.c](../Python/ast_unparse.c):
     Converts the AST expression node back into a string (for string annotations).
@@ -593,16 +593,6 @@ Objects
 * [Frames](frames.md): Describes frames and the frame stack
 * [Objects/object_layout.md](../Objects/object_layout.md): Describes object layout for 3.11 and later
 * [Exception Handling](exception_handling.md): Describes the exception table
-
-
-Specializing Adaptive Interpreter
-=================================
-
-Adding a specializing, adaptive interpreter to CPython will bring significant
-performance improvements. These documents provide more information:
-
-* [PEP 659: Specializing Adaptive Interpreter](https://peps.python.org/pep-0659/).
-* [Adding or extending a family of adaptive instructions](adaptive.md)
 
 
 References

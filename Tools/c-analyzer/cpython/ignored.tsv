@@ -28,11 +28,13 @@ Python/thread_pthread.h	PyThread__init_thread	lib_initialized	-
 ##-----------------------
 ## other values (not Python-specific)
 
+# static tables computed by external script
+Objects/longobject.c	-	log_base_BASE	-
+Objects/longobject.c	-	convwidth_base	-
+Objects/longobject.c	-	convmultmax_base	-
+
 ## cached computed data - set lazily (*after* first init)
 # XXX Are these safe relative to write races?
-Objects/longobject.c	long_from_non_binary_base	log_base_BASE	-
-Objects/longobject.c	long_from_non_binary_base	convwidth_base	-
-Objects/longobject.c	long_from_non_binary_base	convmultmax_base	-
 Objects/unicodeobject.c	-	bloom_linebreak	-
 # This is safe:
 Objects/unicodeobject.c	_init_global_state	initialized	-
@@ -52,6 +54,9 @@ Python/pyhash.c	-	_Py_HashSecret	-
 
 ## thread-safe hashtable (internal locks)
 Python/parking_lot.c	-	buckets	-
+
+## data needed for introspecting asyncio state from debuggers and profilers
+Modules/_asynciomodule.c	-	_AsyncioDebug	-
 
 
 ##################################
@@ -161,6 +166,7 @@ Python/sysmodule.c	-	_preinit_xoptions	-
 # thread-safety
 # XXX need race protection?
 Modules/faulthandler.c	faulthandler_dump_traceback	reentrant	-
+Modules/faulthandler.c	faulthandler_dump_c_stack	reentrant	-
 Python/pylifecycle.c	_Py_FatalErrorFormat	reentrant	-
 Python/pylifecycle.c	fatal_error	reentrant	-
 
@@ -185,6 +191,7 @@ Python/pyfpe.c	-	PyFPE_counter	-
 
 Python/import.c	-	pkgcontext	-
 Python/pystate.c	-	_Py_tss_tstate	-
+Python/pystate.c	-	_Py_tss_gilstate	-
 
 ##-----------------------
 ## should be const
@@ -303,6 +310,7 @@ Modules/cmathmodule.c	-	tanh_special_values	-
 Modules/config.c	-	_PyImport_Inittab	-
 Modules/faulthandler.c	-	faulthandler_handlers	-
 Modules/getnameinfo.c	-	gni_afdl	-
+Modules/hmacmodule.c	-	py_hmac_static_hinfo	-
 Modules/posixmodule.c	os_getxattr_impl	buffer_sizes	-
 Modules/posixmodule.c	os_listxattr_impl	buffer_sizes	-
 Modules/posixmodule.c	-	posix_constants_confstr	-
@@ -319,6 +327,7 @@ Objects/exceptions.c	-	static_exceptions	-
 Objects/genobject.c	-	ASYNC_GEN_IGNORED_EXIT_MSG	-
 Objects/genobject.c	-	NON_INIT_CORO_MSG	-
 Objects/longobject.c	-	_PyLong_DigitValue	-
+Objects/longobject.c	-	PyLong_LAYOUT	-
 Objects/object.c	-	_Py_SwappedOp	-
 Objects/object.c	-	_Py_abstract_hack	-
 Objects/object.c	-	last_final_reftotal	-
@@ -341,7 +350,6 @@ Objects/unicodeobject.c	unicode_translate_call_errorhandler	argparse	-
 Parser/parser.c	-	reserved_keywords	-
 Parser/parser.c	-	soft_keywords	-
 Parser/lexer/lexer.c	-	type_comment_prefix	-
-Python/ast_opt.c	fold_unaryop	ops	-
 Python/ceval.c	-	_PyEval_BinaryOps	-
 Python/ceval.c	-	_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS	-
 Python/codecs.c	-	Py_hexdigits	-
@@ -377,16 +385,13 @@ Python/pylifecycle.c	-	INTERPRETER_TRAMPOLINE_CODEDEF	-
 Python/pystate.c	-	initial	-
 Python/specialize.c	-	adaptive_opcodes	-
 Python/specialize.c	-	cache_requirements	-
+Python/specialize.c	-	binaryop_extend_descrs	-
 Python/stdlib_module_names.h	-	_Py_stdlib_module_names	-
 Python/sysmodule.c	-	perf_map_state	-
 Python/sysmodule.c	-	_PySys_ImplCacheTag	-
 Python/sysmodule.c	-	_PySys_ImplName	-
 Python/sysmodule.c	-	whatstrings	-
-Python/optimizer.c	-	_PyDefaultOptimizer_Type	-
-Python/optimizer.c	-	_PyCounterExecutor_Type	-
-Python/optimizer.c	-	_PyCounterOptimizer_Type	-
 Python/optimizer.c	-	_PyUOpExecutor_Type	-
-Python/optimizer.c	-	_PyUOpOptimizer_Type	-
 Python/optimizer.c	-	_PyOptimizer_Default	-
 Python/optimizer.c	-	_ColdExit_Type	-
 Python/optimizer.c	-	Py_FatalErrorExecutor	-
@@ -443,6 +448,8 @@ Modules/_testcapi/exceptions.c	-	PyRecursingInfinitelyError_Type	-
 Modules/_testcapi/heaptype.c	-	_testcapimodule	-
 Modules/_testcapi/mem.c	-	FmData	-
 Modules/_testcapi/mem.c	-	FmHook	-
+Modules/_testcapi/object.c	-	MyObject_dealloc_called	-
+Modules/_testcapi/object.c	-	MyType	-
 Modules/_testcapi/structmember.c	-	test_structmembersType_OldAPI	-
 Modules/_testcapi/watchers.c	-	g_dict_watch_events	-
 Modules/_testcapi/watchers.c	-	g_dict_watchers_installed	-
@@ -741,6 +748,7 @@ Modules/expat/xmlrole.c	-	error	-
 ## other
 Modules/_io/_iomodule.c	-	_PyIO_Module	-
 Modules/_sqlite/module.c	-	_sqlite3module	-
+Modules/_zstd/_zstdmodule.c	-	_zstdmodule	-
 Modules/clinic/md5module.c.h	_md5_md5	_keywords	-
 Modules/clinic/grpmodule.c.h	grp_getgrgid	_keywords	-
 Modules/clinic/grpmodule.c.h	grp_getgrnam	_keywords	-
