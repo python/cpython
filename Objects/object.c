@@ -1757,27 +1757,30 @@ _PyObject_GetMethodStackRef(PyThreadState *ts, PyObject *obj,
         Py_hash_t hash = _PyObject_HashFast(name);
         // cannot fail for exact unicode
         assert(hash != -1);
-        Py_INCREF(dict);
         // ref is not visible to gc so there should be
         // no escaping calls before assigning it to method
+        PyDictObject *mp = (PyDictObject *)dict;
+        bool unicode_keys = DK_IS_UNICODE(FT_ATOMIC_LOAD_PTR_ACQUIRE(mp->ma_keys));
         _PyStackRef ref;
-        Py_ssize_t ix = _Py_dict_lookup_threadsafe_stackref((PyDictObject *)dict,
-                                                            name, hash, &ref);
+        if (!unicode_keys) {
+            Py_INCREF(mp);
+        }
+        Py_ssize_t ix = _Py_dict_lookup_threadsafe_stackref(mp, name,
+                                                            hash, &ref);
+        if (!unicode_keys) {
+            Py_DECREF(mp);
+        }
         if (ix == DKIX_ERROR) {
             // error
             PyStackRef_CLEAR(*method);
-            Py_DECREF(dict);
             return -1;
         } else if (!PyStackRef_IsNull(ref)) {
             // found
             _PyStackRef tmp = *method;
             *method = ref;
             PyStackRef_XCLOSE(tmp);
-            Py_DECREF(dict);
             return 0;
         }
-        // not found
-        Py_DECREF(dict);
     }
 
     if (meth_found) {
