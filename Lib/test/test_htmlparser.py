@@ -363,6 +363,14 @@ text
                             ("data", content if end else content + tail)],
                         collector=EventCollectorNoNormalize(convert_charrefs=False))
 
+    def test_cdata_decl(self):
+        self._run_check('<math><ms><![CDATA[x<y]]></ms></math>',
+                        [('starttag', 'math', []),
+                         ('starttag', 'ms', []),
+                         ('unknown decl', 'CDATA[x<y]'),
+                         ('endtag', 'ms'),
+                         ('endtag', 'math')])
+
     def test_comments(self):
         html = ("<!-- I'm a valid comment -->"
                 '<!--me too!-->'
