@@ -2003,9 +2003,35 @@ resolve_final_tstate(_PyRuntimeState *runtime)
     return main_tstate;
 }
 
+static int
+interp_has_threads(PyInterpreterState *interp)
+{
+    assert(interp != NULL);
+    assert(interp->threads.head != NULL);
+    return interp->threads.head->next != NULL;
+}
+
+static int
+interp_has_pending_calls(PyInterpreterState *interp)
+{
+    assert(interp != NULL);
+    return interp->ceval.pending.npending != 0;
+}
+
+static int
+interp_has_atexit_callbacks(PyInterpreterState *interp)
+{
+    assert(interp != NULL);
+    assert(interp->atexit.callbacks != NULL);
+    assert(PyList_CheckExact(interp->atexit.callbacks));
+    return PyList_GET_SIZE(interp->atexit.callbacks) != 0;
+}
+
 static void
 make_pre_finalization_calls(PyThreadState *tstate)
 {
+    assert(tstate != NULL);
+    PyInterpreterState *interp = tstate->interp;
     /* Each of these functions can start one another, e.g. a pending call
      * could start a thread or vice versa. To ensure that we properly clean
      * call everything, we run these in a loop until none of them run anything. */
@@ -2028,7 +2054,14 @@ make_pre_finalization_calls(PyThreadState *tstate)
 
         _PyAtExit_Call(tstate->interp);
 
+        _PyRWMutex_Lock(&tstate->interp->prefini_mutex);
+        int should_continue = (interp_has_threads(interp)
+                              || interp_has_atexit_callbacks(interp)
+                              || interp_has_pending_calls(interp));
         _PyRWMutex_Unlock(&tstate->interp->prefini_mutex);
+        if (!should_continue) {
+            break;
+        }
     }
 }
 
