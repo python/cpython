@@ -1,0 +1,3 @@
+:func:`!pydoc.replace` now raises a :exc:`TypeError` instead of an
+:exc:`IndexError` when the number of variadic arguments is odd (or
+equivalently, if the total number of arguments is even).

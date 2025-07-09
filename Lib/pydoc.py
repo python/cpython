@@ -262,9 +262,11 @@ def isdata(object):
 
 def replace(text, *pairs):
     """Do a series of global replacements on a string."""
-    while pairs:
-        text = pairs[1].join(text.split(pairs[0]))
-        pairs = pairs[2:]
+    if len(pairs) % 2:
+        # len(pairs) must be even, so len(pairs) + 1 must be odd
+        raise TypeError("an odd number of arguments must be given")
+    for ind in range(0, len(pairs), 2):
+        text = pairs[ind + 1].join(text.split(pairs[ind]))
     return text
 
 def cram(text, maxlen):
