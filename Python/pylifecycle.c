@@ -2029,9 +2029,6 @@ make_pre_finalization_calls(PyThreadState *tstate)
         _PyAtExit_Call(tstate->interp);
 
         _PyRWMutex_Unlock(&tstate->interp->prefini_mutex);
-        if (called == 0) {
-            break;
-        }
     }
 }
 
@@ -3464,14 +3461,12 @@ wait_for_thread_shutdown(PyThreadState *tstate)
         /* else: threading not imported */
         return;
     }
-    int called = 0;
     result = PyObject_CallMethodNoArgs(threading, &_Py_ID(_shutdown));
     if (result == NULL) {
         PyErr_FormatUnraisable("Exception ignored on threading shutdown");
     }
     Py_XDECREF(result);
     Py_DECREF(threading);
-    return;
 }
 
 int Py_AtExit(void (*func)(void))
