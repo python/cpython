@@ -1855,8 +1855,7 @@ ndarray_subscript(PyObject *op, PyObject *key)
 
 type_error:
     PyErr_Format(PyExc_TypeError,
-        "cannot index memory using \"%T\"",
-        key);
+        "cannot index memory using \"%T\"", key);
 err_occurred:
     Py_DECREF(nd);
     return NULL;

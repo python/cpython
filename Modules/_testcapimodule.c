@@ -515,8 +515,7 @@ test_thread_state(PyObject *self, PyObject *args)
         return NULL;
 
     if (!PyCallable_Check(fn)) {
-        PyErr_Format(PyExc_TypeError, "'%T' object is not callable",
-            fn);
+        PyErr_Format(PyExc_TypeError, "'%T' object is not callable", fn);
         return NULL;
     }
 

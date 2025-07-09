@@ -2207,8 +2207,7 @@ get_code(PyObject *obj)
         return (PyCodeObject *)PyFunction_GetCode(obj);
     }
     return (PyCodeObject *)PyErr_Format(
-        PyExc_TypeError, "expected function or code object, got %T",
-        obj);
+        PyExc_TypeError, "expected function or code object, got %T", obj);
 }
 
 static PyObject *
