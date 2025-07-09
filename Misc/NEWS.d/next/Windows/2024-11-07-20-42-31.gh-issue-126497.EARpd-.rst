@@ -1,2 +1,0 @@
-Fixes venv failure due to missing redirector executables in experimental
-free-threaded installs.

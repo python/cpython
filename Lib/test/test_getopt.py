@@ -13,8 +13,7 @@ sentinel = object()
 class GetoptTests(unittest.TestCase):
     def setUp(self):
         self.env = self.enterContext(EnvironmentVarGuard())
-        if "POSIXLY_CORRECT" in self.env:
-            del self.env["POSIXLY_CORRECT"]
+        del self.env["POSIXLY_CORRECT"]
 
     def assertError(self, *args, **kwargs):
         self.assertRaises(getopt.GetoptError, *args, **kwargs)
@@ -172,6 +171,12 @@ class GetoptTests(unittest.TestCase):
         opts, args = getopt.gnu_getopt(['-a', '-', '-b', '-'], 'ab:', [])
         self.assertEqual(args, ['-'])
         self.assertEqual(opts, [('-a', ''), ('-b', '-')])
+
+        # Return positional arguments intermixed with options.
+        opts, args = getopt.gnu_getopt(cmdline, '-ab:', ['alpha', 'beta='])
+        self.assertEqual(args, ['arg2'])
+        self.assertEqual(opts, [('-a', ''), (None, ['arg1']), ('-b', '1'), ('--alpha', ''),
+                                ('--beta', '2'), ('--beta', '3')])
 
         # Posix style via +
         opts, args = getopt.gnu_getopt(cmdline, '+ab:', ['alpha', 'beta='])

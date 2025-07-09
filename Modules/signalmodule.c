@@ -8,7 +8,7 @@
 #include "pycore_ceval.h"         // _PyEval_SignalReceived()
 #include "pycore_emscripten_signal.h"  // _Py_CHECK_EMSCRIPTEN_SIGNALS
 #include "pycore_fileutils.h"     // _Py_BEGIN_SUPPRESS_IPH
-#include "pycore_frame.h"         // _PyInterpreterFrame
+#include "pycore_interpframe.h"   // _PyThreadState_GetFrame()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_pyerrors.h"      // _PyErr_SetString()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
@@ -245,7 +245,8 @@ report_wakeup_write_error(void *data)
     errno = (int) (intptr_t) data;
     PyObject *exc = PyErr_GetRaisedException();
     PyErr_SetFromErrno(PyExc_OSError);
-    PyErr_FormatUnraisable("Exception ignored when trying to write to the signal wakeup fd");
+    PyErr_FormatUnraisable("Exception ignored while "
+                           "trying to write to the signal wakeup fd");
     PyErr_SetRaisedException(exc);
     errno = save_errno;
     return 0;
@@ -262,7 +263,8 @@ report_wakeup_send_error(void* data)
        recognizes the error codes used by both GetLastError() and
        WSAGetLastError */
     PyErr_SetExcFromWindowsErr(PyExc_OSError, send_errno);
-    PyErr_FormatUnraisable("Exception ignored when trying to send to the signal wakeup fd");
+    PyErr_FormatUnraisable("Exception ignored while "
+                           "trying to send to the signal wakeup fd");
     PyErr_SetRaisedException(exc);
     return 0;
 }
@@ -1775,6 +1777,10 @@ PyErr_CheckSignals(void)
         _Py_RunGC(tstate);
     }
 
+#if defined(Py_REMOTE_DEBUG) && defined(Py_SUPPORTS_REMOTE_DEBUG)
+    _PyRunRemoteDebugger(tstate);
+#endif
+
     if (!_Py_ThreadCanHandleSignals(tstate->interp)) {
         return 0;
     }
@@ -1837,7 +1843,8 @@ _PyErr_CheckSignalsTstate(PyThreadState *tstate)
             PyErr_Format(PyExc_OSError,
                          "Signal %i ignored due to race condition",
                          i);
-            PyErr_WriteUnraisable(Py_None);
+            PyErr_FormatUnraisable("Exception ignored while "
+                                   "calling signal handler");
             continue;
         }
         PyObject *arglist = NULL;

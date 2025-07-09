@@ -1,3 +1,0 @@
-The Python implementation of :mod:`pickle` no longer calls
-:meth:`pickle.Pickler.persistent_id` for the result of
-:meth:`!persistent_id`.

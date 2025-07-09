@@ -40,9 +40,9 @@
 	<key>CFBundleExecutable</key>
 	<string>Python Launcher</string>
 	<key>NSHumanReadableCopyright</key>
-	<string>Copyright © 2001-2024 Python Software Foundation</string>
+	<string>Copyright © 2001 Python Software Foundation</string>
 	<key>CFBundleGetInfoString</key>
-	<string>%VERSION%, © 2001-2024 Python Software Foundation</string>
+	<string>%VERSION%, © 2001 Python Software Foundation</string>
 	<key>CFBundleIconFile</key>
 	<string>PythonLauncher.icns</string>
 	<key>CFBundleIdentifier</key>

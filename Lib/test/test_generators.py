@@ -83,7 +83,7 @@ class FinalizationTest(unittest.TestCase):
         g = gen()
         next(g)
         g.send(g)
-        self.assertGreater(sys.getrefcount(g), 2)
+        self.assertGreaterEqual(sys.getrefcount(g), 2)
         self.assertFalse(finalized)
         del g
         support.gc_collect()
@@ -267,6 +267,28 @@ class GeneratorTest(unittest.TestCase):
 
         #This should not raise
         loop()
+
+    def test_genexpr_only_calls_dunder_iter_once(self):
+
+        class Iterator:
+
+            def __init__(self):
+                self.val = 0
+
+            def __next__(self):
+                if self.val == 2:
+                    raise StopIteration
+                self.val += 1
+                return self.val
+
+            # No __iter__ method
+
+        class C:
+
+            def __iter__(self):
+                return Iterator()
+
+        self.assertEqual([1,2], list(i for i in C()))
 
 
 class ModifyUnderlyingIterableTest(unittest.TestCase):
@@ -652,6 +674,89 @@ class GeneratorCloseTest(unittest.TestCase):
         self.assertIsNone(f_wr())
 
 
+# See https://github.com/python/cpython/issues/125723
+class GeneratorDeallocTest(unittest.TestCase):
+    def test_frame_outlives_generator(self):
+        def g1():
+            a = 42
+            yield sys._getframe()
+
+        def g2():
+            a = 42
+            yield
+
+        def g3(obj):
+            a = 42
+            obj.frame = sys._getframe()
+            yield
+
+        class ObjectWithFrame():
+            def __init__(self):
+                self.frame = None
+
+        def get_frame(index):
+            if index == 1:
+                return next(g1())
+            elif index == 2:
+                gen = g2()
+                next(gen)
+                return gen.gi_frame
+            elif index == 3:
+                obj = ObjectWithFrame()
+                next(g3(obj))
+                return obj.frame
+            else:
+                return None
+
+        for index in (1, 2, 3):
+            with self.subTest(index=index):
+                frame = get_frame(index)
+                frame_locals = frame.f_locals
+                self.assertIn('a', frame_locals)
+                self.assertEqual(frame_locals['a'], 42)
+
+    def test_frame_locals_outlive_generator(self):
+        frame_locals1 = None
+
+        def g1():
+            nonlocal frame_locals1
+            frame_locals1 = sys._getframe().f_locals
+            a = 42
+            yield
+
+        def g2():
+            a = 42
+            yield sys._getframe().f_locals
+
+        def get_frame_locals(index):
+            if index == 1:
+                nonlocal frame_locals1
+                next(g1())
+                return frame_locals1
+            if index == 2:
+                return next(g2())
+            else:
+                return None
+
+        for index in (1, 2):
+            with self.subTest(index=index):
+                frame_locals = get_frame_locals(index)
+                self.assertIn('a', frame_locals)
+                self.assertEqual(frame_locals['a'], 42)
+
+    def test_frame_locals_outlive_generator_with_exec(self):
+        def g():
+            a = 42
+            yield locals(), sys._getframe().f_locals
+
+        locals_ = {'g': g}
+        for i in range(10):
+            exec("snapshot, live_locals = next(g())", locals=locals_)
+            for l in (locals_['snapshot'], locals_['live_locals']):
+                self.assertIn('a', l)
+                self.assertEqual(l['a'], 42)
+
+
 class GeneratorThrowTest(unittest.TestCase):
 
     def test_exception_context_with_yield(self):
@@ -758,7 +863,8 @@ class GeneratorStackTraceTest(unittest.TestCase):
         while frame:
             name = frame.f_code.co_name
             # Stop checking frames when we get to our test helper.
-            if name.startswith('check_') or name.startswith('call_'):
+            if (name.startswith('check_') or name.startswith('call_')
+                    or name.startswith('test')):
                 break
 
             names.append(name)
@@ -798,6 +904,25 @@ class GeneratorStackTraceTest(unittest.TestCase):
             gen.throw(RuntimeError)
 
         self.check_yield_from_example(call_throw)
+
+    def test_throw_with_yield_from_custom_generator(self):
+
+        class CustomGen:
+            def __init__(self, test):
+                self.test = test
+            def throw(self, *args):
+                self.test.check_stack_names(sys._getframe(), ['throw', 'g'])
+            def __iter__(self):
+                return self
+            def __next__(self):
+                return 42
+
+        def g(target):
+            yield from target
+
+        gen = g(CustomGen(self))
+        gen.send(None)
+        gen.throw(RuntimeError)
 
 
 class YieldFromTests(unittest.TestCase):
@@ -2561,11 +2686,15 @@ Our ill-behaved code should be invoked during GC:
 >>> with support.catch_unraisable_exception() as cm:
 ...     g = f()
 ...     next(g)
+...     gen_repr = repr(g)
 ...     del g
 ...
+...     cm.unraisable.err_msg == (f'Exception ignored while closing '
+...                               f'generator {gen_repr}')
 ...     cm.unraisable.exc_type == RuntimeError
 ...     "generator ignored GeneratorExit" in str(cm.unraisable.exc_value)
 ...     cm.unraisable.exc_traceback is not None
+True
 True
 True
 True
@@ -2673,10 +2802,12 @@ to test.
 ...         invoke("del failed")
 ...
 >>> with support.catch_unraisable_exception() as cm:
-...     l = Leaker()
-...     del l
+...     leaker = Leaker()
+...     del_repr = repr(type(leaker).__del__)
+...     del leaker
 ...
-...     cm.unraisable.object == Leaker.__del__
+...     cm.unraisable.err_msg == (f'Exception ignored while '
+...                               f'calling deallocator {del_repr}')
 ...     cm.unraisable.exc_type == RuntimeError
 ...     str(cm.unraisable.exc_value) == "del failed"
 ...     cm.unraisable.exc_traceback is not None

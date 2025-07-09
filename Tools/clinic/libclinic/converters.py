@@ -17,6 +17,54 @@ from libclinic.converter import (
 TypeSet = set[bltns.type[object]]
 
 
+class BaseUnsignedIntConverter(CConverter):
+
+    def use_converter(self) -> None:
+        if self.converter:
+            self.add_include('pycore_long.h',
+                             f'{self.converter}()')
+
+    def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
+        if not limited_capi:
+            return super().parse_arg(argname, displayname, limited_capi=limited_capi)
+        return self.format_code("""
+            {{{{
+                Py_ssize_t _bytes = PyLong_AsNativeBytes({argname}, &{paramname}, sizeof({type}),
+                        Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                        Py_ASNATIVEBYTES_ALLOW_INDEX |
+                        Py_ASNATIVEBYTES_REJECT_NEGATIVE |
+                        Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+                if (_bytes < 0) {{{{
+                    goto exit;
+                }}}}
+                if ((size_t)_bytes > sizeof({type})) {{{{
+                    PyErr_SetString(PyExc_OverflowError,
+                                    "Python int too large for C {type}");
+                    goto exit;
+                }}}}
+            }}}}
+            """,
+            argname=argname,
+            type=self.type)
+
+
+class uint8_converter(BaseUnsignedIntConverter):
+    type = "uint8_t"
+    converter = '_PyLong_UInt8_Converter'
+
+class uint16_converter(BaseUnsignedIntConverter):
+    type = "uint16_t"
+    converter = '_PyLong_UInt16_Converter'
+
+class uint32_converter(BaseUnsignedIntConverter):
+    type = "uint32_t"
+    converter = '_PyLong_UInt32_Converter'
+
+class uint64_converter(BaseUnsignedIntConverter):
+    type = "uint64_t"
+    converter = '_PyLong_UInt64_Converter'
+
+
 class bool_converter(CConverter):
     type = 'int'
     default_type = bool
@@ -30,7 +78,8 @@ class bool_converter(CConverter):
             fail(f"bool_converter: illegal 'accept' argument {accept!r}")
         if self.default is not unspecified and self.default is not unknown:
             self.default = bool(self.default)
-            self.c_default = str(int(self.default))
+            if self.c_default in {'Py_True', 'Py_False'}:
+                self.c_default = str(int(self.default))
 
     def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
         if self.format_unit == 'i':
@@ -60,6 +109,7 @@ class defining_class_converter(CConverter):
     type = 'PyTypeObject *'
     format_unit = ''
     show_in_signature = False
+    specified_type: str | None = None
 
     def converter_init(self, *, type: str | None = None) -> None:
         self.specified_type = type
@@ -209,7 +259,7 @@ class short_converter(CConverter):
         return super().parse_arg(argname, displayname, limited_capi=limited_capi)
 
 
-class unsigned_short_converter(CConverter):
+class unsigned_short_converter(BaseUnsignedIntConverter):
     type = 'unsigned short'
     default_type = int
     c_ignored_default = "0"
@@ -220,11 +270,6 @@ class unsigned_short_converter(CConverter):
         else:
             self.converter = '_PyLong_UnsignedShort_Converter'
 
-    def use_converter(self) -> None:
-        if self.converter == '_PyLong_UnsignedShort_Converter':
-            self.add_include('pycore_long.h',
-                             '_PyLong_UnsignedShort_Converter()')
-
     def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
         if self.format_unit == 'H':
             return self.format_code("""
@@ -234,24 +279,7 @@ class unsigned_short_converter(CConverter):
                 }}}}
                 """,
                 argname=argname)
-        if not limited_capi:
-            return super().parse_arg(argname, displayname, limited_capi=limited_capi)
-        # NOTE: Raises OverflowError for negative integer.
-        return self.format_code("""
-            {{{{
-                unsigned long uval = PyLong_AsUnsignedLong({argname});
-                if (uval == (unsigned long)-1 && PyErr_Occurred()) {{{{
-                    goto exit;
-                }}}}
-                if (uval > USHRT_MAX) {{{{
-                    PyErr_SetString(PyExc_OverflowError,
-                                    "Python int too large for C unsigned short");
-                    goto exit;
-                }}}}
-                {paramname} = (unsigned short) uval;
-            }}}}
-            """,
-            argname=argname)
+        return super().parse_arg(argname, displayname, limited_capi=limited_capi)
 
 
 @add_legacy_c_converter('C', accept={str})
@@ -302,7 +330,7 @@ class int_converter(CConverter):
         return super().parse_arg(argname, displayname, limited_capi=limited_capi)
 
 
-class unsigned_int_converter(CConverter):
+class unsigned_int_converter(BaseUnsignedIntConverter):
     type = 'unsigned int'
     default_type = int
     c_ignored_default = "0"
@@ -313,11 +341,6 @@ class unsigned_int_converter(CConverter):
         else:
             self.converter = '_PyLong_UnsignedInt_Converter'
 
-    def use_converter(self) -> None:
-        if self.converter == '_PyLong_UnsignedInt_Converter':
-            self.add_include('pycore_long.h',
-                             '_PyLong_UnsignedInt_Converter()')
-
     def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
         if self.format_unit == 'I':
             return self.format_code("""
@@ -327,24 +350,7 @@ class unsigned_int_converter(CConverter):
                 }}}}
                 """,
                 argname=argname)
-        if not limited_capi:
-            return super().parse_arg(argname, displayname, limited_capi=limited_capi)
-        # NOTE: Raises OverflowError for negative integer.
-        return self.format_code("""
-            {{{{
-                unsigned long uval = PyLong_AsUnsignedLong({argname});
-                if (uval == (unsigned long)-1 && PyErr_Occurred()) {{{{
-                    goto exit;
-                }}}}
-                if (uval > UINT_MAX) {{{{
-                    PyErr_SetString(PyExc_OverflowError,
-                                    "Python int too large for C unsigned int");
-                    goto exit;
-                }}}}
-                {paramname} = (unsigned int) uval;
-            }}}}
-            """,
-            argname=argname)
+        return super().parse_arg(argname, displayname, limited_capi=limited_capi)
 
 
 class long_converter(CConverter):
@@ -365,7 +371,7 @@ class long_converter(CConverter):
         return super().parse_arg(argname, displayname, limited_capi=limited_capi)
 
 
-class unsigned_long_converter(CConverter):
+class unsigned_long_converter(BaseUnsignedIntConverter):
     type = 'unsigned long'
     default_type = int
     c_ignored_default = "0"
@@ -376,15 +382,10 @@ class unsigned_long_converter(CConverter):
         else:
             self.converter = '_PyLong_UnsignedLong_Converter'
 
-    def use_converter(self) -> None:
-        if self.converter == '_PyLong_UnsignedLong_Converter':
-            self.add_include('pycore_long.h',
-                             '_PyLong_UnsignedLong_Converter()')
-
     def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
         if self.format_unit == 'k':
             return self.format_code("""
-                if (!PyLong_Check({argname})) {{{{
+                if (!PyIndex_Check({argname})) {{{{
                     {bad_argument}
                     goto exit;
                 }}}}
@@ -393,16 +394,7 @@ class unsigned_long_converter(CConverter):
                 argname=argname,
                 bad_argument=self.bad_argument(displayname, 'int', limited_capi=limited_capi),
             )
-        if not limited_capi:
-            return super().parse_arg(argname, displayname, limited_capi=limited_capi)
-        # NOTE: Raises OverflowError for negative integer.
-        return self.format_code("""
-            {paramname} = PyLong_AsUnsignedLong({argname});
-            if ({paramname} == (unsigned long)-1 && PyErr_Occurred()) {{{{
-                goto exit;
-            }}}}
-            """,
-            argname=argname)
+        return super().parse_arg(argname, displayname, limited_capi=limited_capi)
 
 
 class long_long_converter(CConverter):
@@ -423,7 +415,7 @@ class long_long_converter(CConverter):
         return super().parse_arg(argname, displayname, limited_capi=limited_capi)
 
 
-class unsigned_long_long_converter(CConverter):
+class unsigned_long_long_converter(BaseUnsignedIntConverter):
     type = 'unsigned long long'
     default_type = int
     c_ignored_default = "0"
@@ -434,15 +426,10 @@ class unsigned_long_long_converter(CConverter):
         else:
             self.converter = '_PyLong_UnsignedLongLong_Converter'
 
-    def use_converter(self) -> None:
-        if self.converter == '_PyLong_UnsignedLongLong_Converter':
-            self.add_include('pycore_long.h',
-                             '_PyLong_UnsignedLongLong_Converter()')
-
     def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
         if self.format_unit == 'K':
             return self.format_code("""
-                if (!PyLong_Check({argname})) {{{{
+                if (!PyIndex_Check({argname})) {{{{
                     {bad_argument}
                     goto exit;
                 }}}}
@@ -451,16 +438,7 @@ class unsigned_long_long_converter(CConverter):
                 argname=argname,
                 bad_argument=self.bad_argument(displayname, 'int', limited_capi=limited_capi),
             )
-        if not limited_capi:
-            return super().parse_arg(argname, displayname, limited_capi=limited_capi)
-        # NOTE: Raises OverflowError for negative integer.
-        return self.format_code("""
-            {paramname} = PyLong_AsUnsignedLongLong({argname});
-            if ({paramname} == (unsigned long long)-1 && PyErr_Occurred()) {{{{
-                goto exit;
-            }}}}
-            """,
-            argname=argname)
+        return super().parse_arg(argname, displayname, limited_capi=limited_capi)
 
 
 class Py_ssize_t_converter(CConverter):
@@ -577,14 +555,10 @@ class slice_index_converter(CConverter):
                 argname=argname)
 
 
-class size_t_converter(CConverter):
+class size_t_converter(BaseUnsignedIntConverter):
     type = 'size_t'
     converter = '_PyLong_Size_t_Converter'
     c_ignored_default = "0"
-
-    def use_converter(self) -> None:
-        self.add_include('pycore_long.h',
-                         '_PyLong_Size_t_Converter()')
 
     def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
         if self.format_unit == 'n':
@@ -595,16 +569,7 @@ class size_t_converter(CConverter):
                 }}}}
                 """,
                 argname=argname)
-        if not limited_capi:
-            return super().parse_arg(argname, displayname, limited_capi=limited_capi)
-        # NOTE: Raises OverflowError for negative integer.
-        return self.format_code("""
-            {paramname} = PyLong_AsSize_t({argname});
-            if ({paramname} == (size_t)-1 && PyErr_Occurred()) {{{{
-                goto exit;
-            }}}}
-            """,
-            argname=argname)
+        return super().parse_arg(argname, displayname, limited_capi=limited_capi)
 
 
 class fildes_converter(CConverter):
@@ -1106,15 +1071,24 @@ class Py_buffer_converter(CConverter):
 
 
 def correct_name_for_self(
-        f: Function
+        f: Function,
+        parser: bool = False
 ) -> tuple[str, str]:
     if f.kind in {CALLABLE, METHOD_INIT, GETTER, SETTER}:
         if f.cls:
             return "PyObject *", "self"
         return "PyObject *", "module"
     if f.kind is STATIC_METHOD:
-        return "void *", "null"
-    if f.kind in (CLASS_METHOD, METHOD_NEW):
+        if parser:
+            return "PyObject *", "null"
+        else:
+            return "void *", "null"
+    if f.kind == CLASS_METHOD:
+        if parser:
+            return "PyObject *", "type"
+        else:
+            return "PyTypeObject *", "type"
+    if f.kind == METHOD_NEW:
         return "PyTypeObject *", "type"
     raise AssertionError(f"Unhandled type of function f: {f.kind!r}")
 
@@ -1126,6 +1100,7 @@ class self_converter(CConverter):
     """
     type: str | None = None
     format_unit = ''
+    specified_type: str | None = None
 
     def converter_init(self, *, type: str | None = None) -> None:
         self.specified_type = type
@@ -1182,10 +1157,8 @@ class self_converter(CConverter):
     @property
     def parser_type(self) -> str:
         assert self.type is not None
-        if self.function.kind in {METHOD_INIT, METHOD_NEW, STATIC_METHOD, CLASS_METHOD}:
-            tp, _ = correct_name_for_self(self.function)
-            return tp
-        return self.type
+        tp, _ = correct_name_for_self(self.function, parser=True)
+        return tp
 
     def render(self, parameter: Parameter, data: CRenderData) -> None:
         """
@@ -1228,6 +1201,13 @@ class self_converter(CConverter):
             type_object = cls.type_object
             type_ptr = f'PyTypeObject *base_tp = {type_object};'
             template_dict['base_type_ptr'] = type_ptr
+
+    def use_pyobject_self(self, func: Function) -> bool:
+        conv_type = self.type
+        if conv_type is None:
+            conv_type, _ = correct_name_for_self(func)
+        return (conv_type in ('PyObject *', None)
+                and self.specified_type in ('PyObject *', None))
 
 
 # Converters for var-positional parameter.

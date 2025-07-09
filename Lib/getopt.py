@@ -24,9 +24,6 @@ option involved with the exception.
 # TODO for gnu_getopt():
 #
 # - GNU getopt_long_only mechanism
-# - allow the caller to specify ordering
-# - RETURN_IN_ORDER option
-# - GNU extension with '-' as first character of option string
 # - an option string with a W followed by semicolon should
 #   treat "-W foo" as "--foo"
 
@@ -63,7 +60,7 @@ def getopt(args, shortopts, longopts = []):
     long options which should be supported.  The leading '--'
     characters should not be included in the option name.  Options
     which require an argument should be followed by an equal sign
-    ('=').  Options which acept an optional argument should be
+    ('=').  Options which accept an optional argument should be
     followed by an equal sign and question mark ('=?').
 
     The return value consists of two elements: the first is a list of
@@ -116,8 +113,13 @@ def gnu_getopt(args, shortopts, longopts = []):
     else:
         longopts = list(longopts)
 
+    return_in_order = False
+    if shortopts.startswith('-'):
+        shortopts = shortopts[1:]
+        all_options_first = False
+        return_in_order = True
     # Allow options after non-option arguments?
-    if shortopts.startswith('+'):
+    elif shortopts.startswith('+'):
         shortopts = shortopts[1:]
         all_options_first = True
     elif os.environ.get("POSIXLY_CORRECT"):
@@ -131,8 +133,14 @@ def gnu_getopt(args, shortopts, longopts = []):
             break
 
         if args[0][:2] == '--':
+            if return_in_order and prog_args:
+                opts.append((None, prog_args))
+                prog_args = []
             opts, args = do_longs(opts, args[0][2:], longopts, args[1:])
         elif args[0][:1] == '-' and args[0] != '-':
+            if return_in_order and prog_args:
+                opts.append((None, prog_args))
+                prog_args = []
             opts, args = do_shorts(opts, args[0][1:], shortopts, args[1:])
         else:
             if all_options_first:
@@ -177,11 +185,13 @@ def long_has_args(opt, longopts):
         return True, opt
     elif opt + '=?' in possibilities:
         return '?', opt
-    # No exact match, so better be unique.
+    # Possibilities must be unique to be accepted
     if len(possibilities) > 1:
-        # XXX since possibilities contains all valid continuations, might be
-        # nice to work them into the error msg
-        raise GetoptError(_('option --%s not a unique prefix') % opt, opt)
+        raise GetoptError(
+            _("option --%s not a unique prefix; possible options: %s")
+            % (opt, ", ".join(possibilities)),
+            opt,
+        )
     assert len(possibilities) == 1
     unique_match = possibilities[0]
     if unique_match.endswith('=?'):

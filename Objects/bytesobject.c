@@ -13,6 +13,7 @@
 #include "pycore_object.h"        // _PyObject_GC_TRACK
 #include "pycore_pymem.h"         // PYMEM_CLEANBYTE
 #include "pycore_strhex.h"        // _Py_strhex_with_sep()
+#include "pycore_unicodeobject.h" // _PyUnicode_FormatLong()
 
 #include <stddef.h>
 
@@ -48,6 +49,33 @@ static inline PyObject* bytes_get_empty(void)
     PyObject *empty = &EMPTY->ob_base.ob_base;
     assert(_Py_IsImmortal(empty));
     return empty;
+}
+
+
+static inline void
+set_ob_shash(PyBytesObject *a, Py_hash_t hash)
+{
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
+#ifdef Py_GIL_DISABLED
+    _Py_atomic_store_ssize_relaxed(&a->ob_shash, hash);
+#else
+    a->ob_shash = hash;
+#endif
+_Py_COMP_DIAG_POP
+}
+
+static inline Py_hash_t
+get_ob_shash(PyBytesObject *a)
+{
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
+#ifdef Py_GIL_DISABLED
+    return _Py_atomic_load_ssize_relaxed(&a->ob_shash);
+#else
+    return a->ob_shash;
+#endif
+_Py_COMP_DIAG_POP
 }
 
 
@@ -98,10 +126,7 @@ _PyBytes_FromSize(Py_ssize_t size, int use_calloc)
         return PyErr_NoMemory();
     }
     _PyObject_InitVar((PyVarObject*)op, &PyBytes_Type, size);
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
-    op->ob_shash = -1;
-_Py_COMP_DIAG_POP
+    set_ob_shash(op, -1);
     if (!use_calloc) {
         op->ob_sval[size] = '\0';
     }
@@ -165,10 +190,7 @@ PyBytes_FromString(const char *str)
         return PyErr_NoMemory();
     }
     _PyObject_InitVar((PyVarObject*)op, &PyBytes_Type, size);
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
-    op->ob_shash = -1;
-_Py_COMP_DIAG_POP
+    set_ob_shash(op, -1);
     memcpy(op->ob_sval, str, size+1);
     return (PyObject *) op;
 }
@@ -447,8 +469,6 @@ static PyObject *
 formatlong(PyObject *v, int flags, int prec, int type)
 {
     PyObject *result, *iobj;
-    if (type == 'i')
-        type = 'd';
     if (PyLong_Check(v))
         return _PyUnicode_FormatLong(v, flags & F_ALT, prec, type);
     if (PyNumber_Check(v)) {
@@ -1055,10 +1075,11 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
 }
 
 /* Unescape a backslash-escaped string. */
-PyObject *_PyBytes_DecodeEscape(const char *s,
+PyObject *_PyBytes_DecodeEscape2(const char *s,
                                 Py_ssize_t len,
                                 const char *errors,
-                                const char **first_invalid_escape)
+                                int *first_invalid_escape_char,
+                                const char **first_invalid_escape_ptr)
 {
     int c;
     char *p;
@@ -1072,7 +1093,8 @@ PyObject *_PyBytes_DecodeEscape(const char *s,
         return NULL;
     writer.overallocate = 1;
 
-    *first_invalid_escape = NULL;
+    *first_invalid_escape_char = -1;
+    *first_invalid_escape_ptr = NULL;
 
     end = s + len;
     while (s < end) {
@@ -1110,9 +1132,10 @@ PyObject *_PyBytes_DecodeEscape(const char *s,
                     c = (c<<3) + *s++ - '0';
             }
             if (c > 0377) {
-                if (*first_invalid_escape == NULL) {
-                    *first_invalid_escape = s-3; /* Back up 3 chars, since we've
-                                                    already incremented s. */
+                if (*first_invalid_escape_char == -1) {
+                    *first_invalid_escape_char = c;
+                    /* Back up 3 chars, since we've already incremented s. */
+                    *first_invalid_escape_ptr = s - 3;
                 }
             }
             *p++ = c;
@@ -1153,9 +1176,10 @@ PyObject *_PyBytes_DecodeEscape(const char *s,
             break;
 
         default:
-            if (*first_invalid_escape == NULL) {
-                *first_invalid_escape = s-1; /* Back up one char, since we've
-                                                already incremented s. */
+            if (*first_invalid_escape_char == -1) {
+                *first_invalid_escape_char = (unsigned char)s[-1];
+                /* Back up one char, since we've already incremented s. */
+                *first_invalid_escape_ptr = s - 1;
             }
             *p++ = '\\';
             s--;
@@ -1175,17 +1199,19 @@ PyObject *PyBytes_DecodeEscape(const char *s,
                                 Py_ssize_t Py_UNUSED(unicode),
                                 const char *Py_UNUSED(recode_encoding))
 {
-    const char* first_invalid_escape;
-    PyObject *result = _PyBytes_DecodeEscape(s, len, errors,
-                                             &first_invalid_escape);
+    int first_invalid_escape_char;
+    const char *first_invalid_escape_ptr;
+    PyObject *result = _PyBytes_DecodeEscape2(s, len, errors,
+                                             &first_invalid_escape_char,
+                                             &first_invalid_escape_ptr);
     if (result == NULL)
         return NULL;
-    if (first_invalid_escape != NULL) {
-        unsigned char c = *first_invalid_escape;
-        if ('4' <= c && c <= '7') {
+    if (first_invalid_escape_char != -1) {
+        if (first_invalid_escape_char > 0xff) {
             if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-                                 "invalid octal escape sequence '\\%.3s'",
-                                 first_invalid_escape) < 0)
+                                 "b\"\\%o\" is an invalid octal escape sequence. "
+                                 "Such sequences will not work in the future. ",
+                                 first_invalid_escape_char) < 0)
             {
                 Py_DECREF(result);
                 return NULL;
@@ -1193,8 +1219,9 @@ PyObject *PyBytes_DecodeEscape(const char *s,
         }
         else {
             if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-                                 "invalid escape sequence '\\%c'",
-                                 c) < 0)
+                                 "b\"\\%c\" is an invalid escape sequence. "
+                                 "Such sequences will not work in the future. ",
+                                 first_invalid_escape_char) < 0)
             {
                 Py_DECREF(result);
                 return NULL;
@@ -1202,7 +1229,6 @@ PyObject *PyBytes_DecodeEscape(const char *s,
         }
     }
     return result;
-
 }
 /* -------------------------------------------------------------------- */
 /* object api */
@@ -1485,10 +1511,7 @@ bytes_repeat(PyObject *self, Py_ssize_t n)
         return PyErr_NoMemory();
     }
     _PyObject_InitVar((PyVarObject*)op, &PyBytes_Type, size);
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
-    op->ob_shash = -1;
-_Py_COMP_DIAG_POP
+    set_ob_shash(op, -1);
     op->ob_sval[size] = '\0';
 
     _PyBytes_Repeat(op->ob_sval, size, a->ob_sval, Py_SIZE(a));
@@ -1597,14 +1620,13 @@ static Py_hash_t
 bytes_hash(PyObject *self)
 {
     PyBytesObject *a = _PyBytes_CAST(self);
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
-    if (a->ob_shash == -1) {
+    Py_hash_t hash = get_ob_shash(a);
+    if (hash == -1) {
         /* Can't fail */
-        a->ob_shash = Py_HashBuffer(a->ob_sval, Py_SIZE(a));
+        hash = Py_HashBuffer(a->ob_sval, Py_SIZE(a));
+        set_ob_shash(a, hash);
     }
-    return a->ob_shash;
-_Py_COMP_DIAG_POP
+    return hash;
 }
 
 static PyObject*
@@ -1865,8 +1887,8 @@ Example: b'.'.join([b'ab', b'pq', b'rs']) -> b'ab.pq.rs'.
 [clinic start generated code]*/
 
 static PyObject *
-bytes_join(PyBytesObject *self, PyObject *iterable_of_bytes)
-/*[clinic end generated code: output=a046f379f626f6f8 input=7fe377b95bd549d2]*/
+bytes_join_impl(PyBytesObject *self, PyObject *iterable_of_bytes)
+/*[clinic end generated code: output=0687abb94d7d438e input=7fe377b95bd549d2]*/
 {
     return stringlib_bytes_join((PyObject*)self, iterable_of_bytes);
 }
@@ -2466,7 +2488,7 @@ bytes_splitlines_impl(PyBytesObject *self, int keepends)
 @classmethod
 bytes.fromhex
 
-    string: unicode
+    string: object
     /
 
 Create a bytes object from a string of hexadecimal numbers.
@@ -2477,7 +2499,7 @@ Example: bytes.fromhex('B9 01EF') -> b'\\xb9\\x01\\xef'.
 
 static PyObject *
 bytes_fromhex_impl(PyTypeObject *type, PyObject *string)
-/*[clinic end generated code: output=0973acc63661bb2e input=bf4d1c361670acd3]*/
+/*[clinic end generated code: output=0973acc63661bb2e input=f37d98ed51088a21]*/
 {
     PyObject *result = _PyBytes_FromHex(string, 0);
     if (type != &PyBytes_Type && result != NULL) {
@@ -2492,37 +2514,55 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
     char *buf;
     Py_ssize_t hexlen, invalid_char;
     unsigned int top, bot;
-    const Py_UCS1 *str, *end;
+    const Py_UCS1 *str, *start, *end;
     _PyBytesWriter writer;
+    Py_buffer view;
+    view.obj = NULL;
 
     _PyBytesWriter_Init(&writer);
     writer.use_bytearray = use_bytearray;
 
-    assert(PyUnicode_Check(string));
-    hexlen = PyUnicode_GET_LENGTH(string);
+    if (PyUnicode_Check(string)) {
+        hexlen = PyUnicode_GET_LENGTH(string);
 
-    if (!PyUnicode_IS_ASCII(string)) {
-        const void *data = PyUnicode_DATA(string);
-        int kind = PyUnicode_KIND(string);
-        Py_ssize_t i;
+        if (!PyUnicode_IS_ASCII(string)) {
+            const void *data = PyUnicode_DATA(string);
+            int kind = PyUnicode_KIND(string);
+            Py_ssize_t i;
 
-        /* search for the first non-ASCII character */
-        for (i = 0; i < hexlen; i++) {
-            if (PyUnicode_READ(kind, data, i) >= 128)
-                break;
+            /* search for the first non-ASCII character */
+            for (i = 0; i < hexlen; i++) {
+                if (PyUnicode_READ(kind, data, i) >= 128)
+                    break;
+            }
+            invalid_char = i;
+            goto error;
         }
-        invalid_char = i;
-        goto error;
-    }
 
-    assert(PyUnicode_KIND(string) == PyUnicode_1BYTE_KIND);
-    str = PyUnicode_1BYTE_DATA(string);
+        assert(PyUnicode_KIND(string) == PyUnicode_1BYTE_KIND);
+        str = PyUnicode_1BYTE_DATA(string);
+    }
+    else if (PyObject_CheckBuffer(string)) {
+        if (PyObject_GetBuffer(string, &view, PyBUF_SIMPLE) != 0) {
+            return NULL;
+        }
+        hexlen = view.len;
+        str = view.buf;
+    }
+    else {
+        PyErr_Format(PyExc_TypeError,
+                     "fromhex() argument must be str or bytes-like, not %T",
+                     string);
+        return NULL;
+    }
 
     /* This overestimates if there are spaces */
     buf = _PyBytesWriter_Alloc(&writer, hexlen / 2);
-    if (buf == NULL)
-        return NULL;
+    if (buf == NULL) {
+        goto release_buffer;
+    }
 
+    start = str;
     end = str + hexlen;
     while (str < end) {
         /* skip over spaces in the input */
@@ -2536,14 +2576,19 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
 
         top = _PyLong_DigitValue[*str];
         if (top >= 16) {
-            invalid_char = str - PyUnicode_1BYTE_DATA(string);
+            invalid_char = str - start;
             goto error;
         }
         str++;
 
         bot = _PyLong_DigitValue[*str];
         if (bot >= 16) {
-            invalid_char = str - PyUnicode_1BYTE_DATA(string);
+            /* Check if we had a second digit */
+            if (str >= end){
+                invalid_char = -1;
+            } else {
+                invalid_char = str - start;
+            }
             goto error;
         }
         str++;
@@ -2551,13 +2596,26 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
         *buf++ = (unsigned char)((top << 4) + bot);
     }
 
+    if (view.obj != NULL) {
+       PyBuffer_Release(&view);
+    }
     return _PyBytesWriter_Finish(&writer, buf);
 
   error:
-    PyErr_Format(PyExc_ValueError,
-                 "non-hexadecimal number found in "
-                 "fromhex() arg at position %zd", invalid_char);
+    if (invalid_char == -1) {
+        PyErr_SetString(PyExc_ValueError,
+                        "fromhex() arg must contain an even number of hexadecimal digits");
+    } else {
+        PyErr_Format(PyExc_ValueError,
+                     "non-hexadecimal number found in "
+                     "fromhex() arg at position %zd", invalid_char);
+    }
     _PyBytesWriter_Dealloc(&writer);
+
+  release_buffer:
+    if (view.obj != NULL) {
+        PyBuffer_Release(&view);
+    }
     return NULL;
 }
 
@@ -2594,15 +2652,16 @@ bytes_hex_impl(PyBytesObject *self, PyObject *sep, int bytes_per_sep)
 }
 
 static PyObject *
-bytes_getnewargs(PyBytesObject *v, PyObject *Py_UNUSED(ignored))
+bytes_getnewargs(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
+    PyBytesObject *v = _PyBytes_CAST(op);
     return Py_BuildValue("(y#)", v->ob_sval, Py_SIZE(v));
 }
 
 
 static PyMethodDef
 bytes_methods[] = {
-    {"__getnewargs__",          (PyCFunction)bytes_getnewargs,  METH_NOARGS},
+    {"__getnewargs__", bytes_getnewargs,  METH_NOARGS},
     BYTES___BYTES___METHODDEF
     {"capitalize", stringlib_capitalize, METH_NOARGS,
      _Py_capitalize__doc__},
@@ -2994,10 +3053,7 @@ bytes_alloc(PyTypeObject *self, Py_ssize_t nitems)
     if (obj == NULL) {
         return NULL;
     }
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
-    obj->ob_shash = -1;
-_Py_COMP_DIAG_POP
+    set_ob_shash(obj, -1);
     return (PyObject*)obj;
 }
 
@@ -3014,11 +3070,8 @@ bytes_subtype_new(PyTypeObject *type, PyObject *tmp)
     if (pnew != NULL) {
         memcpy(PyBytes_AS_STRING(pnew),
                   PyBytes_AS_STRING(tmp), n+1);
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
-        ((PyBytesObject *)pnew)->ob_shash =
-            ((PyBytesObject *)tmp)->ob_shash;
-_Py_COMP_DIAG_POP
+        set_ob_shash((PyBytesObject *)pnew,
+            get_ob_shash((PyBytesObject *)tmp));
     }
     return pnew;
 }
@@ -3064,7 +3117,7 @@ PyTypeObject PyBytes_Type = {
     bytes_doc,                                  /* tp_doc */
     0,                                          /* tp_traverse */
     0,                                          /* tp_clear */
-    (richcmpfunc)bytes_richcompare,             /* tp_richcompare */
+    bytes_richcompare,                          /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
     bytes_iter,                                 /* tp_iter */
     0,                                          /* tp_iternext */
@@ -3196,6 +3249,7 @@ _PyBytes_Resize(PyObject **pv, Py_ssize_t newsize)
 #ifdef Py_TRACE_REFS
     _Py_ForgetReference(v);
 #endif
+    _PyReftracerTrack(v, PyRefTracer_DESTROY);
     *pv = (PyObject *)
         PyObject_Realloc(v, PyBytesObject_SIZE + newsize);
     if (*pv == NULL) {
@@ -3210,10 +3264,7 @@ _PyBytes_Resize(PyObject **pv, Py_ssize_t newsize)
     sv = (PyBytesObject *) *pv;
     Py_SET_SIZE(sv, newsize);
     sv->ob_sval[newsize] = '\0';
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
-    sv->ob_shash = -1;          /* invalidate cached hash value */
-_Py_COMP_DIAG_POP
+    set_ob_shash(sv, -1);          /* invalidate cached hash value */
     return 0;
 }
 
@@ -3226,24 +3277,29 @@ typedef struct {
     PyBytesObject *it_seq; /* Set to NULL when iterator is exhausted */
 } striterobject;
 
+#define _striterobject_CAST(op)  ((striterobject *)(op))
+
 static void
-striter_dealloc(striterobject *it)
+striter_dealloc(PyObject *op)
 {
+    striterobject *it = _striterobject_CAST(op);
     _PyObject_GC_UNTRACK(it);
     Py_XDECREF(it->it_seq);
     PyObject_GC_Del(it);
 }
 
 static int
-striter_traverse(striterobject *it, visitproc visit, void *arg)
+striter_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    striterobject *it = _striterobject_CAST(op);
     Py_VISIT(it->it_seq);
     return 0;
 }
 
 static PyObject *
-striter_next(striterobject *it)
+striter_next(PyObject *op)
 {
+    striterobject *it = _striterobject_CAST(op);
     PyBytesObject *seq;
 
     assert(it != NULL);
@@ -3263,8 +3319,9 @@ striter_next(striterobject *it)
 }
 
 static PyObject *
-striter_len(striterobject *it, PyObject *Py_UNUSED(ignored))
+striter_len(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
+    striterobject *it = _striterobject_CAST(op);
     Py_ssize_t len = 0;
     if (it->it_seq)
         len = PyBytes_GET_SIZE(it->it_seq) - it->it_index;
@@ -3275,14 +3332,14 @@ PyDoc_STRVAR(length_hint_doc,
              "Private method returning an estimate of len(list(it)).");
 
 static PyObject *
-striter_reduce(striterobject *it, PyObject *Py_UNUSED(ignored))
+striter_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
     PyObject *iter = _PyEval_GetBuiltin(&_Py_ID(iter));
 
     /* _PyEval_GetBuiltin can invoke arbitrary code,
      * call must be before access of iterator pointers.
      * see issue #101765 */
-
+    striterobject *it = _striterobject_CAST(op);
     if (it->it_seq != NULL) {
         return Py_BuildValue("N(O)n", iter, it->it_seq, it->it_index);
     } else {
@@ -3293,11 +3350,12 @@ striter_reduce(striterobject *it, PyObject *Py_UNUSED(ignored))
 PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
 
 static PyObject *
-striter_setstate(striterobject *it, PyObject *state)
+striter_setstate(PyObject *op, PyObject *state)
 {
     Py_ssize_t index = PyLong_AsSsize_t(state);
     if (index == -1 && PyErr_Occurred())
         return NULL;
+    striterobject *it = _striterobject_CAST(op);
     if (it->it_seq != NULL) {
         if (index < 0)
             index = 0;
@@ -3311,12 +3369,9 @@ striter_setstate(striterobject *it, PyObject *state)
 PyDoc_STRVAR(setstate_doc, "Set state information for unpickling.");
 
 static PyMethodDef striter_methods[] = {
-    {"__length_hint__", (PyCFunction)striter_len, METH_NOARGS,
-     length_hint_doc},
-    {"__reduce__",      (PyCFunction)striter_reduce, METH_NOARGS,
-     reduce_doc},
-    {"__setstate__",    (PyCFunction)striter_setstate, METH_O,
-     setstate_doc},
+    {"__length_hint__", striter_len, METH_NOARGS, length_hint_doc},
+    {"__reduce__",      striter_reduce, METH_NOARGS, reduce_doc},
+    {"__setstate__",    striter_setstate, METH_O, setstate_doc},
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -3326,7 +3381,7 @@ PyTypeObject PyBytesIter_Type = {
     sizeof(striterobject),                      /* tp_basicsize */
     0,                                          /* tp_itemsize */
     /* methods */
-    (destructor)striter_dealloc,                /* tp_dealloc */
+    striter_dealloc,                            /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
@@ -3343,12 +3398,12 @@ PyTypeObject PyBytesIter_Type = {
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
     0,                                          /* tp_doc */
-    (traverseproc)striter_traverse,     /* tp_traverse */
+    striter_traverse,                           /* tp_traverse */
     0,                                          /* tp_clear */
     0,                                          /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
     PyObject_SelfIter,                          /* tp_iter */
-    (iternextfunc)striter_next,                 /* tp_iternext */
+    striter_next,                               /* tp_iternext */
     striter_methods,                            /* tp_methods */
     0,
 };

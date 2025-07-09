@@ -1,6 +1,7 @@
 import re
 import sys
 import textwrap
+import os
 import unittest
 from dataclasses import dataclass
 from functools import cache
@@ -37,7 +38,7 @@ class StraceResult:
 
         This assumes the program under inspection doesn't print any non-utf8
         strings which would mix into the strace output."""
-        decoded_events = self.event_bytes.decode('utf-8')
+        decoded_events = self.event_bytes.decode('utf-8', 'surrogateescape')
         matches = [
             _syscall_regex.match(event)
             for event in decoded_events.splitlines()
@@ -70,6 +71,27 @@ class StraceResult:
 
         return sections
 
+def _filter_memory_call(call):
+    # mmap can operate on a fd or "MAP_ANONYMOUS" which gives a block of memory.
+    # Ignore "MAP_ANONYMOUS + the "MAP_ANON" alias.
+    if call.syscall == "mmap" and "MAP_ANON" in call.args[3]:
+        return True
+
+    if call.syscall in ("munmap", "mprotect"):
+        return True
+
+    return False
+
+
+def filter_memory(syscalls):
+    """Filter out memory allocation calls from File I/O calls.
+
+    Some calls (mmap, munmap, etc) can be used on files or to just get a block
+    of memory. Use this function to filter out the memory related calls from
+    other calls."""
+
+    return [call for call in syscalls if not _filter_memory_call(call)]
+
 
 @support.requires_subprocess()
 def strace_python(code, strace_flags, check=True):
@@ -82,7 +104,7 @@ def strace_python(code, strace_flags, check=True):
         return StraceResult(
             strace_returncode=-1,
             python_returncode=-1,
-            event_bytes=f"error({reason},details={details}) = -1".encode('utf-8'),
+            event_bytes= f"error({reason},details={details!r}) = -1".encode('utf-8'),
             stdout=res.out if res else b"",
             stderr=res.err if res else b"")
 
@@ -91,7 +113,8 @@ def strace_python(code, strace_flags, check=True):
         res, cmd_line = run_python_until_end(
             "-c",
             textwrap.dedent(code),
-            __run_using_command=[_strace_binary] + strace_flags)
+            __run_using_command=[_strace_binary] + strace_flags,
+        )
     except OSError as err:
         return _make_error("Caught OSError", err)
 
@@ -141,24 +164,40 @@ print("MARK __shutdown", flush=True)
     return all_sections['code']
 
 
-def get_syscalls(code, strace_flags, prelude="", cleanup=""):
+def get_syscalls(code, strace_flags, prelude="", cleanup="",
+                 ignore_memory=True):
     """Get the syscalls which a given chunk of python code generates"""
     events = get_events(code, strace_flags, prelude=prelude, cleanup=cleanup)
+
+    if ignore_memory:
+        events = filter_memory(events)
+
     return [ev.syscall for ev in events]
 
 
 # Moderately expensive (spawns a subprocess), so share results when possible.
 @cache
 def _can_strace():
-    res = strace_python("import sys; sys.exit(0)", [], check=False)
-    assert res.events(), "Should have parsed multiple calls"
-
-    return res.strace_returncode == 0 and res.python_returncode == 0
+    res = strace_python("import sys; sys.exit(0)",
+                        # --trace option needs strace 5.5 (gh-133741)
+                        ["--trace=%process"],
+                        check=False)
+    if res.strace_returncode == 0 and res.python_returncode == 0:
+        assert res.events(), "Should have parsed multiple calls"
+        return True
+    return False
 
 
 def requires_strace():
     if sys.platform != "linux":
         return unittest.skip("Linux only, requires strace.")
+
+    if "LD_PRELOAD" in os.environ:
+        # Distribution packaging (ex. Debian `fakeroot` and Gentoo `sandbox`)
+        # use LD_PRELOAD to intercept system calls, which changes the overall
+        # set of system calls which breaks tests expecting a specific set of
+        # system calls).
+        return unittest.skip("Not supported when LD_PRELOAD is intercepting system calls.")
 
     if support.check_sanitizer(address=True, memory=True):
         return unittest.skip("LeakSanitizer does not work under ptrace (strace, gdb, etc)")
@@ -166,5 +205,5 @@ def requires_strace():
     return unittest.skipUnless(_can_strace(), "Requires working strace")
 
 
-__all__ = ["get_events", "get_syscalls", "requires_strace", "strace_python",
-           "StraceEvent", "StraceResult"]
+__all__ = ["filter_memory", "get_events", "get_syscalls", "requires_strace",
+           "strace_python", "StraceEvent", "StraceResult"]

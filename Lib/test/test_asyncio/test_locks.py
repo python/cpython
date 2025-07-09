@@ -14,24 +14,24 @@ STR_RGX_REPR = (
     r'(, value:\d)?'
     r'(, waiters:\d+)?'
     r'(, waiters:\d+\/\d+)?' # barrier
-    r')\]>\Z'
+    r')\]>\z'
 )
 RGX_REPR = re.compile(STR_RGX_REPR)
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio._set_event_loop_policy(None)
 
 
 class LockTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_repr(self):
         lock = asyncio.Lock()
-        self.assertTrue(repr(lock).endswith('[unlocked]>'))
+        self.assertEndsWith(repr(lock), '[unlocked]>')
         self.assertTrue(RGX_REPR.match(repr(lock)))
 
         await lock.acquire()
-        self.assertTrue(repr(lock).endswith('[locked]>'))
+        self.assertEndsWith(repr(lock), '[locked]>')
         self.assertTrue(RGX_REPR.match(repr(lock)))
 
     async def test_lock(self):
@@ -286,12 +286,12 @@ class EventTests(unittest.IsolatedAsyncioTestCase):
 
     def test_repr(self):
         ev = asyncio.Event()
-        self.assertTrue(repr(ev).endswith('[unset]>'))
+        self.assertEndsWith(repr(ev), '[unset]>')
         match = RGX_REPR.match(repr(ev))
         self.assertEqual(match.group('extras'), 'unset')
 
         ev.set()
-        self.assertTrue(repr(ev).endswith('[set]>'))
+        self.assertEndsWith(repr(ev), '[set]>')
         self.assertTrue(RGX_REPR.match(repr(ev)))
 
         ev._waiters.append(mock.Mock())
@@ -916,11 +916,11 @@ class SemaphoreTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_repr(self):
         sem = asyncio.Semaphore()
-        self.assertTrue(repr(sem).endswith('[unlocked, value:1]>'))
+        self.assertEndsWith(repr(sem), '[unlocked, value:1]>')
         self.assertTrue(RGX_REPR.match(repr(sem)))
 
         await sem.acquire()
-        self.assertTrue(repr(sem).endswith('[locked]>'))
+        self.assertEndsWith(repr(sem), '[locked]>')
         self.assertTrue('waiters' not in repr(sem))
         self.assertTrue(RGX_REPR.match(repr(sem)))
 

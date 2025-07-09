@@ -65,9 +65,11 @@ def declare_parser(
             static struct {{
                 PyGC_Head _this_is_not_used;
                 PyObject_VAR_HEAD
+                Py_hash_t ob_hash;
                 PyObject *ob_item[NUM_KEYWORDS];
             }} _kwtuple = {{
                 .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+                .ob_hash = -1,
                 .ob_item = {{ {keywords_py} }},
             }};
             #undef NUM_KEYWORDS
@@ -134,7 +136,7 @@ PARSER_PROTOTYPE_SETTER: Final[str] = libclinic.normalize_snippet("""
 """)
 METH_O_PROTOTYPE: Final[str] = libclinic.normalize_snippet("""
     static PyObject *
-    {c_basename}({impl_parameters})
+    {c_basename}({self_type}{self_name}, {parser_parameters})
 """)
 DOCSTRING_PROTOTYPE_VAR: Final[str] = libclinic.normalize_snippet("""
     PyDoc_VAR({c_basename}__doc__);
@@ -146,7 +148,10 @@ DOCSTRING_PROTOTYPE_STRVAR: Final[str] = libclinic.normalize_snippet("""
 GETSET_DOCSTRING_PROTOTYPE_STRVAR: Final[str] = libclinic.normalize_snippet("""
     PyDoc_STRVAR({getset_basename}__doc__,
     {docstring});
-    #define {getset_basename}_HAS_DOCSTR
+    #if defined({getset_basename}_DOCSTR)
+    #   undef {getset_basename}_DOCSTR
+    #endif
+    #define {getset_basename}_DOCSTR {getset_basename}__doc__
 """)
 IMPL_DEFINITION_PROTOTYPE: Final[str] = libclinic.normalize_snippet("""
     static {impl_return_type}
@@ -157,9 +162,7 @@ METHODDEF_PROTOTYPE_DEFINE: Final[str] = libclinic.normalize_snippet(r"""
         {{"{name}", {methoddef_cast}{c_basename}{methoddef_cast_end}, {methoddef_flags}, {c_basename}__doc__}},
 """)
 GETTERDEF_PROTOTYPE_DEFINE: Final[str] = libclinic.normalize_snippet(r"""
-    #if defined({getset_basename}_HAS_DOCSTR)
-    #  define {getset_basename}_DOCSTR {getset_basename}__doc__
-    #else
+    #if !defined({getset_basename}_DOCSTR)
     #  define {getset_basename}_DOCSTR NULL
     #endif
     #if defined({getset_name}_GETSETDEF)
@@ -170,9 +173,7 @@ GETTERDEF_PROTOTYPE_DEFINE: Final[str] = libclinic.normalize_snippet(r"""
     #endif
 """)
 SETTERDEF_PROTOTYPE_DEFINE: Final[str] = libclinic.normalize_snippet(r"""
-    #if defined({getset_name}_HAS_DOCSTR)
-    #  define {getset_basename}_DOCSTR {getset_basename}__doc__
-    #else
+    #if !defined({getset_basename}_DOCSTR)
     #  define {getset_basename}_DOCSTR NULL
     #endif
     #if defined({getset_name}_GETSETDEF)
@@ -196,6 +197,7 @@ class ParseArgsCodeGen:
 
     # Function parameters
     parameters: list[Parameter]
+    self_parameter_converter: self_converter
     converters: list[CConverter]
 
     # Is 'defining_class' used for the first parameter?
@@ -237,9 +239,10 @@ class ParseArgsCodeGen:
         self.codegen = codegen
 
         self.parameters = list(self.func.parameters.values())
-        first_param = self.parameters.pop(0)
-        if not isinstance(first_param.converter, self_converter):
+        self_parameter = self.parameters.pop(0)
+        if not isinstance(self_parameter.converter, self_converter):
             raise ValueError("the first parameter must use self_converter")
+        self.self_parameter_converter = self_parameter.converter
 
         self.requires_defining_class = False
         if self.parameters and isinstance(self.parameters[0].converter, defining_class_converter):
@@ -257,7 +260,10 @@ class ParseArgsCodeGen:
         if self.func.critical_section:
             self.codegen.add_include('pycore_critical_section.h',
                                      'Py_BEGIN_CRITICAL_SECTION()')
-        self.fastcall = not self.is_new_or_init()
+        if self.func.disable_fastcall:
+            self.fastcall = False
+        else:
+            self.fastcall = not self.is_new_or_init()
 
         self.pos_only = 0
         self.min_pos = 0
@@ -293,6 +299,9 @@ class ParseArgsCodeGen:
     def use_simple_return(self) -> bool:
         return (self.func.return_converter.type == 'PyObject *'
                 and not self.func.critical_section)
+
+    def use_pyobject_self(self) -> bool:
+        return self.self_parameter_converter.use_pyobject_self(self.func)
 
     def select_prototypes(self) -> None:
         self.docstring_prototype = ''
@@ -404,7 +413,7 @@ class ParseArgsCodeGen:
             self.converters[0].format_unit == 'O'):
             meth_o_prototype = METH_O_PROTOTYPE
 
-            if self.use_simple_return():
+            if self.use_simple_return() and self.use_pyobject_self():
                 # maps perfectly to METH_O, doesn't need a return converter.
                 # so we skip making a parse function
                 # and call directly into the impl function.

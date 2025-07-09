@@ -1,3 +1,0 @@
-Use ``wasm32-wasip1`` as the target triple for WASI instead of
-``wasm32-wasi``. The latter will eventually be reclaimed for WASI 1.0 while
-CPython currently only supports WASI preview1.

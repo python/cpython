@@ -33,9 +33,11 @@ Struct___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(format), },
     };
     #undef NUM_KEYWORDS
@@ -87,7 +89,7 @@ static PyObject *
 Struct_unpack_impl(PyStructObject *self, Py_buffer *buffer);
 
 static PyObject *
-Struct_unpack(PyStructObject *self, PyObject *arg)
+Struct_unpack(PyObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
     Py_buffer buffer = {NULL, NULL};
@@ -95,7 +97,7 @@ Struct_unpack(PyStructObject *self, PyObject *arg)
     if (PyObject_GetBuffer(arg, &buffer, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    return_value = Struct_unpack_impl(self, &buffer);
+    return_value = Struct_unpack_impl((PyStructObject *)self, &buffer);
 
 exit:
     /* Cleanup for buffer */
@@ -127,7 +129,7 @@ Struct_unpack_from_impl(PyStructObject *self, Py_buffer *buffer,
                         Py_ssize_t offset);
 
 static PyObject *
-Struct_unpack_from(PyStructObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+Struct_unpack_from(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -136,9 +138,11 @@ Struct_unpack_from(PyStructObject *self, PyObject *const *args, Py_ssize_t nargs
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(buffer), &_Py_ID(offset), },
     };
     #undef NUM_KEYWORDS
@@ -184,7 +188,7 @@ Struct_unpack_from(PyStructObject *self, PyObject *const *args, Py_ssize_t nargs
         offset = ival;
     }
 skip_optional_pos:
-    return_value = Struct_unpack_from_impl(self, &buffer, offset);
+    return_value = Struct_unpack_from_impl((PyStructObject *)self, &buffer, offset);
 
 exit:
     /* Cleanup for buffer */
@@ -208,6 +212,19 @@ PyDoc_STRVAR(Struct_iter_unpack__doc__,
 
 #define STRUCT_ITER_UNPACK_METHODDEF    \
     {"iter_unpack", (PyCFunction)Struct_iter_unpack, METH_O, Struct_iter_unpack__doc__},
+
+static PyObject *
+Struct_iter_unpack_impl(PyStructObject *self, PyObject *buffer);
+
+static PyObject *
+Struct_iter_unpack(PyObject *self, PyObject *buffer)
+{
+    PyObject *return_value = NULL;
+
+    return_value = Struct_iter_unpack_impl((PyStructObject *)self, buffer);
+
+    return return_value;
+}
 
 PyDoc_STRVAR(_clearcache__doc__,
 "_clearcache($module, /)\n"
@@ -334,9 +351,11 @@ unpack_from(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(buffer), &_Py_ID(offset), },
     };
     #undef NUM_KEYWORDS
@@ -439,4 +458,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=faff90f99c6bd09f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=caa7f36443e91cb9 input=a9049054013a1b77]*/
