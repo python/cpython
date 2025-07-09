@@ -945,6 +945,10 @@ parse_coro_chain(
         return -1;
     }
 
+    if (name == NULL) {
+        return 0;
+    }
+
     if (PyList_Append(render_to, name)) {
         Py_DECREF(name);
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to append frame to coro chain");
