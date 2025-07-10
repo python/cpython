@@ -733,7 +733,7 @@ class GCTests(unittest.TestCase):
                       b"shutdown; use", stderr)
         self.assertNotIn(b"<X 'first'>", stderr)
         one_line_re = b"gc: uncollectable <X 0x[0-9A-Fa-f]+>"
-        expected_re = one_line_re + b".*" + one_line_re
+        expected_re = one_line_re + b"\r?\n" + one_line_re
         self.assertNotRegex(stderr, expected_re)
         # With DEBUG_UNCOLLECTABLE, the garbage list gets printed
         stderr = run_command(code % "gc.DEBUG_UNCOLLECTABLE")
