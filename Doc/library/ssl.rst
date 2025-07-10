@@ -1279,8 +1279,8 @@ SSL sockets also have the following additional methods and attributes:
    entry of the returned list is a three-value tuple containing the name of the
    cipher, the version of the SSL protocol that defines its use, and the number
    of secret bits the cipher uses.  :meth:`~SSLSocket.shared_ciphers` returns
-   ``None`` if no connection has been established or the socket is a client
-   socket.
+   ``None`` if no connection has been established, the socket is a client
+   socket, or the session has been reused.
 
    .. versionadded:: 3.5
 
