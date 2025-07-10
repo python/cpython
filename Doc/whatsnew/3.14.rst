@@ -2797,6 +2797,16 @@ New features
 
   (Contributed by Victor Stinner in :gh:`120389`.)
 
+* Add support of new member types for :c:member:`PyMemberDef.type`:
+  :c:macro:`Py_T_SSIZE` (as alias of :c:macro:`Py_T_PYSSIZET`),
+  :c:macro:`Py_T_SIZE`, :c:macro:`Py_T_INT8`, :c:macro:`Py_T_UINT8`,
+  :c:macro:`Py_T_INT16`, :c:macro:`Py_T_UINT16`,
+  :c:macro:`Py_T_INT32`, :c:macro:`Py_T_UINT32`,
+  :c:macro:`Py_T_INT64`, :c:macro:`Py_T_UINT64`,
+  :c:macro:`Py_T_INTPTR`, :c:macro:`Py_T_UINTPTR`,
+  :c:macro:`Py_T_OFF`, and :c:macro:`Py_T_PID`.
+  (Contributed by Serhiy Storchaka in :gh:`117031`.)
+
 * Add :c:func:`PyBytes_Join(sep, iterable) <PyBytes_Join>` function,
   similar to ``sep.join(iterable)`` in Python.
   (Contributed by Victor Stinner in :gh:`121645`.)
