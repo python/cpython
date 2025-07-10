@@ -830,25 +830,27 @@ class SimpleHTTPServerTestCase(BaseTestCase):
                          self.tempdir_name + "/?hi=1")
 
     def test_custom_headers_list_dir(self):
-        with mock.patch.object(self.request_handler, 'custom_headers', new={
-            'X-Test1': 'test1',
-            'X-Test2': 'test2',
-        }):
+        with mock.patch.object(self.request_handler, 'custom_headers', new=[
+            ('X-Test1', 'test1'),
+            ('X-Test2', 'test2'),
+        ]):
             response = self.request(self.base_url + '/')
             self.assertEqual(response.getheader("X-Test1"), 'test1')
             self.assertEqual(response.getheader("X-Test2"), 'test2')
 
     def test_custom_headers_get_file(self):
-        with mock.patch.object(self.request_handler, 'custom_headers', new={
-            'X-Test1': 'test1',
-            'X-Test2': 'test2',
-        }):
+        with mock.patch.object(self.request_handler, 'custom_headers', new=[
+            ('Set-Cookie', 'test1=value1'),
+            ('Set-Cookie', 'test2=value2'),
+            ('X-Test1', 'value3'),
+        ]):
             data = b"Dummy index file\r\n"
             with open(os.path.join(self.tempdir_name, 'index.html'), 'wb') as f:
                 f.write(data)
             response = self.request(self.base_url + '/')
-            self.assertEqual(response.getheader("X-Test1"), 'test1')
-            self.assertEqual(response.getheader("X-Test2"), 'test2')
+            self.assertEqual(response.getheader("Set-Cookie"),
+                                                'test1=value1, test2=value2')
+            self.assertEqual(response.getheader("X-Test1"), 'value3')
 
 class SocketlessRequestHandler(SimpleHTTPRequestHandler):
     def __init__(self, directory=None):
@@ -1498,7 +1500,7 @@ class CommandLineTestCase(unittest.TestCase):
             HTTPServer, 'serve_forever'
         ) as mock_serve_forever:
             httpd = server._main(
-                ['-H', 'X-Test1', 'Test1', '-H', 'X-Test2', 'Test2', '8080']
+                ['-H', 'Set-Cookie', 'k=v', '-H', 'Set-Cookie', 'k2=v2', '8080']
             )
             request_handler_class = httpd.RequestHandlerClass
             with mock.patch.object(
@@ -1510,9 +1512,9 @@ class CommandLineTestCase(unittest.TestCase):
                 httpd.finish_request(mock.Mock(), '127.0.0.1')
                 mock_handler_init.assert_called_once_with(
                     mock.ANY, mock.ANY, mock.ANY, directory=mock.ANY,
-                    response_headers={
-                        'X-Test1': 'Test1', 'X-Test2': 'Test2'
-                    }
+                    response_headers=[
+                        ('Set-Cookie', 'k=v'), ('Set-Cookie', 'k2=v2')
+                    ]
                 )
 
 

@@ -375,8 +375,8 @@ instantiation, of which this module provides three different variants:
       The *directory* parameter accepts a :term:`path-like object`.
 
    .. versionchanged:: next
-      Added *response_headers*, which accepts an optional dictionary of
-      additional HTTP headers to add to each successful HTTP status 200
+      Added *response_headers*, which accepts an optional iterable of
+      name/value pairs of HTTP headers to add to each successful HTTP status 200
       response. All other status code responses will not include these headers.
 
    A lot of the work, such as parsing the request, is done by the base class
@@ -433,8 +433,8 @@ instantiation, of which this module provides three different variants:
       followed by a ``'Content-Length:'`` header with the file's size and a
       ``'Last-Modified:'`` header with the file's modification time.
 
-      The headers specified in the dictionary instance argument
-      ``response_headers`` are each individually sent in the response.
+      The instance attribute ``response_headers`` is used as an iterable of
+      name/value pairs to set user specified custom response headers.
 
       Then follows a blank line signifying the end of the headers, and then the
       contents of the file are output.

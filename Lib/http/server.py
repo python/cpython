@@ -718,7 +718,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         """Send the headers stored in self.response_headers"""
         # User specified response_headers
         if self.response_headers is not None:
-            for header, value in self.response_headers.items():
+            for header, value in self.response_headers:
                 self.send_header(header, value)
 
     def send_head(self):
@@ -1056,9 +1056,9 @@ def _main(args=None):
         except OSError as e:
             parser.error(f"Failed to read TLS password file: {e}")
 
-    response_headers = {}
+    response_headers = []
     for header, value in args.header or []:
-        response_headers[header] = value
+        response_headers.append((header, value))
 
     # ensure dual-stack is not disabled; ref #38907
     class DualStackServerMixin:
