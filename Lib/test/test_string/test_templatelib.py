@@ -45,6 +45,19 @@ world"""
         self.assertEqual(len(t.interpolations), 0)
         self.assertEqual(fstring(t), 'Hello,\nworld')
 
+    def test_interpolation_creation(self):
+        i = Interpolation('Maria', 'name', 'a', 'fmt')
+        self.assertInterpolationEqual(i, ('Maria', 'name', 'a', 'fmt'))
+
+        i = Interpolation('Maria', 'name', 'a')
+        self.assertInterpolationEqual(i, ('Maria', 'name', 'a'))
+
+        i = Interpolation('Maria', 'name')
+        self.assertInterpolationEqual(i, ('Maria', 'name'))
+
+        i = Interpolation('Maria')
+        self.assertInterpolationEqual(i, ('Maria',))
+
     def test_creation_interleaving(self):
         # Should add strings on either side
         t = Template(Interpolation('Maria', 'name', None, ''))
