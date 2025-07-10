@@ -2036,6 +2036,8 @@ make_pre_finalization_calls(PyThreadState *tstate)
      * could start a thread or vice versa. To ensure that we properly clean
      * call everything, we run these in a loop until none of them run anything. */
     for (;;) {
+        assert(!interp->runtime->stoptheworld.world_stopped);
+
         // Wrap up existing "threading"-module-created, non-daemon threads.
         wait_for_thread_shutdown(tstate);
 
@@ -2054,15 +2056,18 @@ make_pre_finalization_calls(PyThreadState *tstate)
 
         _PyAtExit_Call(tstate->interp);
 
-        _PyRWMutex_Lock(&tstate->interp->prefini_mutex);
+        // XXX Why does _PyThreadState_DeleteList() rely on all interpreters
+        // being stopped?
+        _PyEval_StopTheWorldAll(interp->runtime);
         int should_continue = (interp_has_threads(interp)
                               || interp_has_atexit_callbacks(interp)
                               || interp_has_pending_calls(interp));
-        _PyRWMutex_Unlock(&tstate->interp->prefini_mutex);
         if (!should_continue) {
             break;
         }
+        _PyEval_StartTheWorldAll(interp->runtime);
     }
+    assert(interp->runtime->stoptheworld.world_stopped);
 }
 
 static int
@@ -2099,7 +2104,7 @@ _Py_Finalize(_PyRuntimeState *runtime)
 #endif
 
     /* Ensure that remaining threads are detached */
-    _PyEval_StopTheWorldAll(runtime);
+    assert(tstate->interp->runtime->stoptheworld.world_stopped);
 
     /* Remaining daemon threads will be trapped in PyThread_hang_thread
        when they attempt to take the GIL (ex: PyEval_RestoreThread()). */
@@ -2490,6 +2495,7 @@ Py_EndInterpreter(PyThreadState *tstate)
     /* Remaining daemon threads will automatically exit
        when they attempt to take the GIL (ex: PyEval_RestoreThread()). */
     _PyInterpreterState_SetFinalizing(interp, tstate);
+    _PyEval_StartTheWorldAll(interp->runtime);
 
     // XXX Call something like _PyImport_Disable() here?
 

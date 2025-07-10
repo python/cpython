@@ -785,10 +785,8 @@ _PyEval_AddPendingCall(PyInterpreterState *interp,
     }
 
     PyMutex_Lock(&pending->mutex);
-    _PyRWMutex_RLock(&interp->prefini_mutex);
     _Py_add_pending_call_result result =
         _push_pending_call(pending, func, arg, flags);
-    _PyRWMutex_RUnlock(&interp->prefini_mutex);
     PyMutex_Unlock(&pending->mutex);
 
     if (main_only) {
@@ -919,7 +917,7 @@ clear_pending_handling_thread(struct _pending_calls *pending)
 }
 
 static int
-make_pending_calls_lock_held(PyThreadState *tstate)
+make_pending_calls(PyThreadState *tstate)
 {
     PyInterpreterState *interp = tstate->interp;
     struct _pending_calls *pending = &interp->ceval.pending;
@@ -975,15 +973,6 @@ make_pending_calls_lock_held(PyThreadState *tstate)
 
     clear_pending_handling_thread(pending);
     return 0;
-}
-
-static int
-make_pending_calls(PyThreadState *tstate)
-{
-    _PyRWMutex_RLock(&tstate->interp->prefini_mutex);
-    int res = make_pending_calls_lock_held(tstate);
-    _PyRWMutex_RUnlock(&tstate->interp->prefini_mutex);
-    return res;
 }
 
 

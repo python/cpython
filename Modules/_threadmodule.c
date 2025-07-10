@@ -176,13 +176,11 @@ ThreadHandle_get_os_handle(ThreadHandle *handle, PyThread_handle_t *os_handle)
 }
 
 static void
-add_to_shutdown_handles(thread_module_state *state, ThreadHandle *handle, PyInterpreterState *interp)
+add_to_shutdown_handles(thread_module_state *state, ThreadHandle *handle)
 {
-    _PyRWMutex_RLock(&interp->prefini_mutex);
     HEAD_LOCK(&_PyRuntime);
     llist_insert_tail(&state->shutdown_handles, &handle->shutdown_node);
     HEAD_UNLOCK(&_PyRuntime);
-    _PyRWMutex_RUnlock(&interp->prefini_mutex);
 }
 
 static void
@@ -197,16 +195,13 @@ clear_shutdown_handles(thread_module_state *state)
 }
 
 static void
-remove_from_shutdown_handles(ThreadHandle *handle, PyInterpreterState *interp)
+remove_from_shutdown_handles(ThreadHandle *handle)
 {
-    assert(interp != NULL);
-    _PyRWMutex_RLock(&interp->prefini_mutex);
     HEAD_LOCK(&_PyRuntime);
     if (handle->shutdown_node.next != NULL) {
         llist_remove(&handle->shutdown_node);
     }
     HEAD_UNLOCK(&_PyRuntime);
-    _PyRWMutex_RUnlock(&interp->prefini_mutex);
 }
 
 static ThreadHandle *
@@ -314,7 +309,7 @@ _PyThread_AfterFork(struct _pythread_runtime_state *state)
         handle->mutex = (PyMutex){_Py_UNLOCKED};
         _PyEvent_Notify(&handle->thread_is_exiting);
         llist_remove(node);
-        remove_from_shutdown_handles(handle, _PyInterpreterState_GET());
+        remove_from_shutdown_handles(handle);
     }
 }
 
@@ -347,7 +342,6 @@ thread_run(void *boot_raw)
 {
     struct bootstate *boot = (struct bootstate *) boot_raw;
     PyThreadState *tstate = boot->tstate;
-    PyInterpreterState *interp = tstate->interp;
 
     // Wait until the handle is marked as running
     PyEvent_Wait(&boot->handle_ready);
@@ -374,7 +368,7 @@ thread_run(void *boot_raw)
 
     _PyThreadState_Bind(tstate);
     PyEval_AcquireThread(tstate);
-    _Py_atomic_add_ssize(&interp->threads.count, 1);
+    _Py_atomic_add_ssize(&tstate->interp->threads.count, 1);
 
     PyObject *res = PyObject_Call(boot->func, boot->args, boot->kwargs);
     if (res == NULL) {
@@ -392,13 +386,13 @@ thread_run(void *boot_raw)
 
     thread_bootstate_free(boot, 1);
 
-    _Py_atomic_add_ssize(&interp->threads.count, -1);
+    _Py_atomic_add_ssize(&tstate->interp->threads.count, -1);
     PyThreadState_Clear(tstate);
     _PyThreadState_DeleteCurrent(tstate);
 
 exit:
     // Don't need to wait for this thread anymore
-    remove_from_shutdown_handles(handle, interp);
+    remove_from_shutdown_handles(handle);
 
     _PyEvent_Notify(&handle->thread_is_exiting);
     ThreadHandle_decref(handle);
@@ -1877,12 +1871,12 @@ do_start_new_thread(thread_module_state *state, PyObject *func, PyObject *args,
         // Add the handle before starting the thread to avoid adding a handle
         // to a thread that has already finished (i.e. if the thread finishes
         // before the call to `ThreadHandle_start()` below returns).
-        add_to_shutdown_handles(state, handle, interp);
+        add_to_shutdown_handles(state, handle);
     }
 
     if (ThreadHandle_start(handle, func, args, kwargs) < 0) {
         if (!daemon) {
-            remove_from_shutdown_handles(handle, interp);
+            remove_from_shutdown_handles(handle);
         }
         return -1;
     }

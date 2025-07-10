@@ -196,15 +196,9 @@ atexit_register(PyObject *module, PyObject *args, PyObject *kwargs)
         return NULL;
     }
 
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    assert(interp != NULL);
     struct atexit_state *state = get_atexit_state();
-    _PyRWMutex_RLock(&interp->prefini_mutex);
     // atexit callbacks go in a LIFO order
-    int res = PyList_Insert(state->callbacks, 0, callback);
-    _PyRWMutex_RUnlock(&interp->prefini_mutex);
-
-    if (res < 0)
+    if (PyList_Insert(state->callbacks, 0, callback) < 0)
     {
         Py_DECREF(callback);
         return NULL;
