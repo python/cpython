@@ -1774,7 +1774,8 @@ class SuppressCrashReport:
 
             self.old_value = msvcrt.GetErrorMode()
 
-            msvcrt.SetErrorMode(self.old_value | msvcrt.SEM_NOGPFAULTERRORBOX)
+            msvcrt.SetErrorMode(self.old_value | msvcrt.SEM_NOGPFAULTERRORBOX
+                                               | msvcrt.SEM_FAILCRITICALERRORS)
 
             # bpo-23314: Suppress assert dialogs in debug builds.
             # CrtSetReportMode() is only available in debug build.
