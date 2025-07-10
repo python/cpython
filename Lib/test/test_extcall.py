@@ -287,8 +287,7 @@ What about willful misconduct?
     >>> nothing(*h)
     Traceback (most recent call last):
       ...
-    TypeError: Value after * must be an iterable, \
-not function
+    TypeError: Value after * must be an iterable, not function
 
     >>> h(**h)
     Traceback (most recent call last):
@@ -328,8 +327,7 @@ not function
     >>> nothing(**h)
     Traceback (most recent call last):
       ...
-    TypeError: Value after ** must be a mapping, \
-not function
+    TypeError: Value after ** must be a mapping, not function
 
     >>> dir(b=1, **{'b': 1})
     Traceback (most recent call last):
