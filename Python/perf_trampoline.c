@@ -494,9 +494,6 @@ _PyPerfTrampoline_Init(int activate)
     }
     else {
         _PyInterpreterState_SetEvalFrameFunc(tstate->interp, py_trampoline_evaluator);
-        if (new_code_arena() < 0) {
-            return -1;
-        }
         extra_code_index = _PyEval_RequestCodeExtraIndex(NULL);
         if (extra_code_index == -1) {
             return -1;
