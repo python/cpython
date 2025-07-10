@@ -511,6 +511,17 @@ Reference
 The :mod:`multiprocessing` package mostly replicates the API of the
 :mod:`threading` module.
 
+.. _global-start-method:
+
+Global start method
+^^^^^^^^^^^^^^^^^^^
+
+Calling some functions or methods, or creating some objects, will implicitly
+set the global start method to the system's default if it is not already
+set. This can only be done once. Therefore, if you need to change the
+start method, you must do so before calling these functions or methods, or
+creating these objects.
+
 
 :class:`Process` and exceptions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -867,9 +878,8 @@ For an example of the usage of queues for interprocess communication see
    locks/semaphores.  When a process first puts an item on the queue a feeder
    thread is started which transfers objects from a buffer into the pipe.
 
-   If the global start method has not been set, calling this function will
-   have the side effect of setting the current global start method.
-   See the :func:`get_context` function.
+   Calling this may set the global start method. See
+   :ref:`global-start-method` for more details.
 
    The usual :exc:`queue.Empty` and :exc:`queue.Full` exceptions from the
    standard library's :mod:`queue` module are raised to signal timeouts.
@@ -981,9 +991,8 @@ For an example of the usage of queues for interprocess communication see
 
    It is a simplified :class:`Queue` type, very close to a locked :class:`Pipe`.
 
-   If the global start method has not been set, calling this function will
-   have the side effect of setting the current global start method.
-   See the :func:`get_context` function.
+   Calling this may set the global start method. See
+   :ref:`global-start-method` for more details.
 
    .. method:: close()
 
@@ -1015,9 +1024,8 @@ For an example of the usage of queues for interprocess communication see
    :class:`JoinableQueue`, a :class:`Queue` subclass, is a queue which
    additionally has :meth:`task_done` and :meth:`join` methods.
 
-   If the global start method has not been set, calling this function will
-   have the side effect of setting the current global start method.
-   See the :func:`get_context` function.
+   Calling this may set the global start method. See
+   :ref:`global-start-method` for more details.
 
    .. method:: task_done()
 
@@ -1131,8 +1139,8 @@ Miscellaneous
    :mod:`multiprocessing` module.
 
    If *method* is ``None`` then the default context is returned. Note that if
-   the global start method has not been set, this will set it to the
-   default method.
+   the global start method has not been set, this will set it.
+   See :ref:`global-start-method` for more details.
    Otherwise *method* should be ``'fork'``, ``'spawn'``,
    ``'forkserver'``.  :exc:`ValueError` is raised if the specified
    start method is not available.  See :ref:`multiprocessing-start-methods`.
@@ -1143,10 +1151,9 @@ Miscellaneous
 
    Return the name of start method used for starting processes.
 
-   If the global start method has not been set and *allow_none* is
-   ``False``, then the start method is set to the default and the name
-   is returned. If the start method has not been set and *allow_none* is
-   ``True`` then ``None`` is returned.
+   If the start method is not set and *allow_none* is ``False``, the start
+   method is set to the default, and its name is returned. See
+   :ref:`global-start-method` for more details.
 
    The return value can be ``'fork'``, ``'spawn'``, ``'forkserver'``
    or ``None``.  See :ref:`multiprocessing-start-methods`.
@@ -1373,9 +1380,8 @@ object -- see :ref:`multiprocessing-managers`.
 
    A barrier object: a clone of :class:`threading.Barrier`.
 
-   If the global start method has not been set, calling this function will
-   have the side effect of setting the current global start method.
-   See the :func:`get_context` function.
+   Calling this may set the global start method. See
+   :ref:`global-start-method` for more details.
 
    .. versionadded:: 3.3
 
@@ -1384,9 +1390,8 @@ object -- see :ref:`multiprocessing-managers`.
    A bounded semaphore object: a close analog of
    :class:`threading.BoundedSemaphore`.
 
-   If the global start method has not been set, calling this function will
-   have the side effect of setting the current global start method.
-   See the :func:`get_context` function.
+   Calling this may set the global start method. See
+   :ref:`global-start-method` for more details.
 
    A solitary difference from its close analog exists: its ``acquire`` method's
    first argument is named *block*, as is consistent with :meth:`Lock.acquire`.
@@ -1408,9 +1413,8 @@ object -- see :ref:`multiprocessing-managers`.
    If *lock* is specified then it should be a :class:`Lock` or :class:`RLock`
    object from :mod:`multiprocessing`.
 
-   If the global start method has not been set, calling this function will
-   have the side effect of setting the current global start method.
-   See the :func:`get_context` function.
+   Calling this may set the global start method. See
+   :ref:`global-start-method` for more details.
 
    .. versionchanged:: 3.3
       The :meth:`~threading.Condition.wait_for` method was added.
@@ -1419,9 +1423,8 @@ object -- see :ref:`multiprocessing-managers`.
 
    A clone of :class:`threading.Event`.
 
-   If the global start method has not been set, calling this function will
-   have the side effect of setting the current global start method.
-   See the :func:`get_context` function.
+   Calling this may set the global start method. See
+   :ref:`global-start-method` for more details.
 
 .. class:: Lock()
 
@@ -1437,9 +1440,8 @@ object -- see :ref:`multiprocessing-managers`.
    instance of ``multiprocessing.synchronize.Lock`` initialized with a
    default context.
 
-   If the global start method has not been set, calling this function will
-   have the side effect of setting the current global start method.
-   See the :func:`get_context` function.
+   Calling this may set the global start method. See
+   :ref:`global-start-method` for more details.
 
    :class:`Lock` supports the :term:`context manager` protocol and thus may be
    used in :keyword:`with` statements.
@@ -1498,9 +1500,8 @@ object -- see :ref:`multiprocessing-managers`.
    instance of ``multiprocessing.synchronize.RLock`` initialized with a
    default context.
 
-   If the global start method has not been set, calling this function will
-   have the side effect of setting the current global start method.
-   See the :func:`get_context` function.
+   Calling this may set the global start method. See
+   :ref:`global-start-method` for more details.
 
    :class:`RLock` supports the :term:`context manager` protocol and thus may be
    used in :keyword:`with` statements.
@@ -1561,9 +1562,8 @@ object -- see :ref:`multiprocessing-managers`.
 
    A semaphore object: a close analog of :class:`threading.Semaphore`.
 
-   If the global start method has not been set, calling this function will
-   have the side effect of setting the current global start method.
-   See the :func:`get_context` function.
+   Calling this may set the global start method. See
+   :ref:`global-start-method` for more details.
 
    A solitary difference from its close analog exists: its ``acquire`` method's
    first argument is named *block*, as is consistent with :meth:`Lock.acquire`.
@@ -1714,9 +1714,8 @@ processes.
    "process-safe".
 
    *ctx* is a context object, or ``None`` (use the current context). If ``None``,
-   calling this function will have the side effect of setting the current global
-   start method if it has not been set already. See the :func:`get_context`
-   function.
+   calling this may set the global start method. See
+   :ref:`global-start-method` for more details.
 
    Note that *lock* and *ctx* are keyword-only parameters.
 
@@ -1734,9 +1733,8 @@ processes.
    "process-safe".
 
    *ctx* is a context object, or ``None`` (use the current context). If ``None``,
-   calling this function will have the side effect of setting the current global
-   start method if it has not been set already. See the :func:`get_context`
-   function.
+   calling this may set the global start method. See
+   :ref:`global-start-method` for more details.
 
    Note that *lock* and *ctx* are keyword-only parameters.
 
@@ -1752,9 +1750,8 @@ processes.
    :class:`multiprocessing.RLock` object is created automatically.
 
    *ctx* is a context object, or ``None`` (use the current context). If ``None``,
-   calling this function will have the side effect of setting the current global
-   start method if it has not been set already. See the :func:`get_context`
-   function.
+   calling this may set the global start method. See
+   :ref:`global-start-method` for more details.
 
    A synchronized wrapper will have two methods in addition to those of the
    object it wraps: :meth:`get_obj` returns the wrapped object and
@@ -1874,9 +1871,8 @@ their parent process exits.  The manager classes are defined in the
    ``'xmlrpclib'`` (use :mod:`xmlrpc.client` serialization).
 
    *ctx* is a context object, or ``None`` (use the current context). If ``None``,
-   calling this function will have the side effect of setting the current global
-   start method if it has not been set already. See the :func:`get_context`
-   function.
+   calling this may set the global start method. See
+   :ref:`global-start-method` for more details.
 
    *shutdown_timeout* is a timeout in seconds used to wait until the process
    used by the manager completes in the :meth:`shutdown` method. If the
