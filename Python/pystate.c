@@ -1447,7 +1447,7 @@ init_threadstate(_PyThreadStateImpl *_tstate,
     assert(tstate->prev == NULL);
 
     assert(tstate->_whence == _PyThreadState_WHENCE_NOTSET);
-    assert(whence >= 0 && whence <= _PyThreadState_WHENCE_EXEC);
+    assert(whence >= 0 && whence <= _PyThreadState_WHENCE_THREADING_DAEMON);
     tstate->_whence = whence;
 
     assert(id > 0);

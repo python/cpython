@@ -2006,15 +2006,32 @@ resolve_final_tstate(_PyRuntimeState *runtime)
 static int
 interp_has_threads(PyInterpreterState *interp)
 {
+    /* This needs to check for non-daemon threads only, otherwise we get stuck
+     * in an infinite loop. */
     assert(interp != NULL);
+    assert(interp->runtime->stoptheworld.world_stopped);
     assert(interp->threads.head != NULL);
-    return interp->threads.head->next != NULL;
+    if (interp->threads.head->next == NULL) {
+        // No other threads active, easy way out.
+        return 0;
+    }
+
+    // We don't have to worry about locking this because the
+    // world is stopped.
+    _Py_FOR_EACH_TSTATE_UNLOCKED(interp, tstate) {
+        if (tstate->_whence == _PyThreadState_WHENCE_THREADING) {
+            return 1;
+        }
+    }
+
+    return 0;
 }
 
 static int
 interp_has_pending_calls(PyInterpreterState *interp)
 {
     assert(interp != NULL);
+    assert(interp->runtime->stoptheworld.world_stopped);
     return interp->ceval.pending.npending != 0;
 }
 
@@ -2023,6 +2040,7 @@ interp_has_atexit_callbacks(PyInterpreterState *interp)
 {
     assert(interp != NULL);
     assert(interp->atexit.callbacks != NULL);
+    assert(interp->runtime->stoptheworld.world_stopped);
     assert(PyList_CheckExact(interp->atexit.callbacks));
     return PyList_GET_SIZE(interp->atexit.callbacks) != 0;
 }
