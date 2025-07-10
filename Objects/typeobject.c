@@ -4455,16 +4455,13 @@ type_new_set_module(PyObject *dict)
     }
 
     PyObject *globals = PyEval_GetGlobals();
-    if (globals == NULL) {
-        return 0;
-    }
-
     PyObject *module;
-    r = PyDict_GetItemRef(globals, &_Py_ID(__name__), &module);
-    if (module) {
+    if (globals != NULL &&
+        PyDict_GetItemRef(globals, &_Py_ID(__name__), &module) == 1 && module) {
         r = PyDict_SetItem(dict, &_Py_ID(__module__), module);
         Py_DECREF(module);
-    }
+    } else
+        r = PyDict_SetItem(dict, &_Py_ID(__module__), Py_None);
     return r;
 }
 
