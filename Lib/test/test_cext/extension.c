@@ -7,7 +7,7 @@
 #undef NDEBUG
 
 #ifdef TEST_INTERNAL_C_API
-#  define Py_BUILD_CORE 1
+#  define Py_BUILD_CORE_MODULE 1
 #endif
 
 #include "Python.h"
