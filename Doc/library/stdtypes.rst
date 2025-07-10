@@ -2545,51 +2545,39 @@ This type of string literal allows embedding arbitrary Python expressions
 within *replacement fields*, which are delimited by curly brackets (``{}``).
 These expressions are evaluated at runtime, similarly to :meth:`str.format`,
 and are converted into regular :class:`str` objects.
-For example:
-
-.. doctest::
+For example::
 
    >>> who = 'nobody'
    >>> nationality = 'Spanish'
    >>> f'{who.title()} expects the {nationality} Inquisition!'
    'Nobody expects the Spanish Inquisition!'
 
-It is also possible to use a multi line f-string:
-
-.. doctest::
+It is also possible to use a multi line f-string::
 
    >>> f'''This is a string
    ... on two lines'''
    'This is a string\non two lines'
 
 A single opening curly bracket, ``'{'``, marks a *replacement field* that
-can contain any Python expression:
-
-.. doctest::
+can contain any Python expression::
 
    >>> nationality = 'Spanish'
    >>> f'The {nationality} Inquisition!'
    'The Spanish Inquisition!'
 
-To include a literal ``{`` or ``}``, use a double bracket:
-
-.. doctest::
+To include a literal ``{`` or ``}``, use a double bracket::
 
    >>> x = 42
    >>> f'{{x}} is {x}'
    '{x} is 42'
 
-Functions can also be used, and :ref:`format specifiers <formatstrings>`:
-
-.. doctest::
+Functions can also be used, and :ref:`format specifiers <formatstrings>`::
 
    >>> from math import sqrt
    >>> f'√2 \N{ALMOST EQUAL TO} {sqrt(2):.5f}'
    '√2 ≈ 1.41421'
 
-Any non-string expression is converted using :func:`str`, by default:
-
-.. doctest::
+Any non-string expression is converted using :func:`str`, by default::
 
    >>> from fractions import Fraction
    >>> f'{Fraction(1, 3)}'
@@ -2606,9 +2594,7 @@ Conversion  Meaning
 ``!s``      :func:`str`
 ========== ==============
 
-For example:
-
-.. doctest::
+For example::
 
    >>> from fractions import Fraction
    >>> f'{Fraction(1, 3)!s}'
@@ -2623,9 +2609,7 @@ While debugging it may be helpful to see both the expression and its value,
 by using the equals sign (``=``) after the expression.
 This preserves spaces within the brackets, and can be used with a converter.
 By default, the debugging operator uses the :func:`repr` (``!r``) conversion.
-For example:
-
-.. doctest::
+For example::
 
    >>> from fractions import Fraction
    >>> calculation = Fraction(1, 3)
@@ -2642,9 +2626,7 @@ After the expression has been evaluated, and possibly converted to a string,
 the :meth:`!__format__` method of the result is called with the format specifier,
 or the empty string if no format specifier is given.
 The formatted result is then used as the final value for the replacement field.
-For example:
-
-.. doctest::
+For example::
 
    >>> from fractions import Fraction
    >>> f'{Fraction(1, 7):.6f}'
@@ -2682,9 +2664,7 @@ This is also known as the string *formatting* or *interpolation* operator.
 Given ``format % values`` (where *format* is a string), ``%`` conversion
 specifications in *format* are replaced with zero or more elements of *values*.
 The effect is similar to using the :c:func:`sprintf` function in the C language.
-For example:
-
-.. doctest::
+For example::
 
    >>> print('%s has %d quote types.' % ('Python', 2))
    Python has 2 quote types.
@@ -4162,7 +4142,7 @@ copying.
     >>> v[-1]
     103
     >>> v[1:4]
-    <memory at 0x7f3ddc9f4350>
+    <memory at 0x...>
     >>> bytes(v[1:4])
     b'bce'
 
@@ -5649,9 +5629,7 @@ The user-exposed type for the union object can be accessed from
 .. note::
    The :meth:`!__or__` method for type objects was added to support the syntax
    ``X | Y``.  If a metaclass implements :meth:`!__or__`, the Union may
-   override it:
-
-   .. doctest::
+   override it::
 
       >>> class M(type):
       ...     def __or__(self, other):
@@ -5763,9 +5741,7 @@ attributes.  However, since method attributes are actually stored on the
 underlying function object (:attr:`method.__func__`), setting method attributes on
 bound methods is disallowed.  Attempting to set an attribute on a method
 results in an :exc:`AttributeError` being raised.  In order to set a method
-attribute, you need to explicitly set it on the underlying function object:
-
-.. doctest::
+attribute, you need to explicitly set it on the underlying function object::
 
    >>> class C:
    ...     def method(self):
@@ -5775,7 +5751,7 @@ attribute, you need to explicitly set it on the underlying function object:
    >>> c.method.whoami = 'my name is method'  # can't set on the method
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   AttributeError: 'method' object has no attribute 'whoami'
+   AttributeError: 'method' object has no attribute 'whoami' and no __dict__ for setting new attributes
    >>> c.method.__func__.whoami = 'my name is method'
    >>> c.method.whoami
    'my name is method'
@@ -5946,9 +5922,7 @@ The limit is applied to the number of digit characters in the input or output
 string when a non-linear conversion algorithm would be involved.  Underscores
 and the sign are not counted towards the limit.
 
-When an operation would exceed the limit, a :exc:`ValueError` is raised:
-
-.. doctest::
+When an operation would exceed the limit, a :exc:`ValueError` is raised::
 
    >>> import sys
    >>> sys.set_int_max_str_digits(4300)  # Illustrative, this is the default.
@@ -5973,9 +5947,7 @@ The default limit is 4300 digits as provided in
 The lowest limit that can be configured is 640 digits as provided in
 :data:`sys.int_info.str_digits_check_threshold <sys.int_info>`.
 
-Verification:
-
-.. doctest::
+Verification::
 
    >>> import sys
    >>> assert sys.int_info.default_max_str_digits == 4300, sys.int_info
