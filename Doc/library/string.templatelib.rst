@@ -144,7 +144,7 @@ reassigned.
        ``interpolations`` tuple. It is equivalent to
        ``tuple(i.value for i in template.interpolations)``.
 
-   .. method:: __iter__()
+   .. describe:: iter(template)
 
        Iterate over the template, yielding each string and
        :class:`Interpolation` in order.
@@ -159,7 +159,8 @@ reassigned.
        >>> list(t"Hello {name}{name}")
        ['Hello ', Interpolation('World', 'name', None, ''), Interpolation('World', 'name', None, '')]
 
-   .. method:: __add__(other)
+   .. describe:: template + other
+   .. describe:: template += other
 
        Concatenate this template with another, returning a new
        :class:`!Template` instance:
@@ -197,7 +198,7 @@ reassigned.
    :type expression: str
 
    :param conversion: The optional :ref:`conversion <formatstrings>` to be used, one of r, s, and a.
-   :type conversion: Literal["a", "r", "s"] | None
+   :type conversion: ``Literal["a", "r", "s"] | None``
 
    :param format_spec: An optional, arbitrary string used as the :ref:`format specification <formatspec>` to present the value.
    :type format_spec: str
@@ -207,7 +208,7 @@ reassigned.
    :class:`!Interpolation` instances are shallow immutable: their attributes cannot be
    reassigned.
 
-   .. property:: value
+   .. attribute:: value
 
        :returns: The evaluated value of the interpolation.
        :rtype: object
@@ -215,7 +216,7 @@ reassigned.
        >>> t"{1 + 2}".interpolations[0].value
        3
 
-   .. property:: expression
+   .. attribute:: expression
 
        :returns: The text of a valid Python expression, or an empty string.
        :rtype: str
@@ -229,7 +230,7 @@ reassigned.
        >>> t"{1 + 2}".interpolations[0].expression
        '1 + 2'
 
-   .. property:: conversion
+   .. attribute:: conversion
 
        :returns: The conversion to apply to the value, or ``None``.
        :rtype: ``Literal["a", "r", "s"] | None``
@@ -247,7 +248,7 @@ reassigned.
          :class:`!Template` will decide how to interpret and whether to apply
          the :attr:`!Interpolation.conversion`.
 
-   .. property:: format_spec
+   .. attribute:: format_spec
 
        :returns: The format specification to apply to the value.
        :rtype: str
@@ -269,10 +270,13 @@ reassigned.
          do not necessarily conform to the rules of Python's :func:`format`
          protocol.
 
-   .. property:: __match_args__
+   Interpolations support pattern matching, allowing you to match against
+   their attributes with the :ref:`match statement <match>`:
 
-       :returns: A tuple of the attributes to use for structural pattern matching.
-
-       The tuple returned is ``('value', 'expression', 'conversion', 'format_spec')``.
-       This allows for :ref:`pattern matching <match>` on :class:`!Interpolation` instances.
-
+   >>> from string.templatelib import Interpolation
+   >>> interpolation = Interpolation(3.0, "1 + 2", None, ".2f")
+   >>> match interpolation:
+   ...     case Interpolation(value, expression, conversion, format_spec):
+   ...         print(value, expression, conversion, format_spec)
+   ...
+   3.0 1 + 2 None .2f
