@@ -1,0 +1,2 @@
+Fixed a typo that prevented printing of uncollectable objects when the
+DEBUG_UNCOLLECTABLE mode was set
