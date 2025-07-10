@@ -2213,12 +2213,6 @@ static int
         return -1;
     }
 
-    PyObject *frames = PyList_New(0);
-    if (frames == NULL) {
-        set_exception_cause(unwinder, PyExc_MemoryError, "Failed to create frames list");
-        return -1;
-    }
-
     while ((void*)address_of_current_frame != NULL) {
         PyObject* frame_info = NULL;
         uintptr_t address_of_code_object;
