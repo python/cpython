@@ -504,6 +504,9 @@ _PyPerfTrampoline_Init(int activate)
         if (trampoline_api.state == NULL && trampoline_api.init_state != NULL) {
             trampoline_api.state = trampoline_api.init_state();
         }
+        if (new_code_arena() < 0) {
+            return -1;
+        }
         perf_status = PERF_STATUS_OK;
     }
 #endif
