@@ -618,7 +618,7 @@ class StreamReader(Codec):
             method and are included in the list entries.
 
             sizehint, if given, is ignored since there is no efficient
-            way to find the true end-of-line.
+            way of finding the true end-of-line.
 
         """
         data = self.read()
