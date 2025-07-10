@@ -1389,6 +1389,9 @@ Test cases
    | :meth:`assertSetEqual(a, b)             | sets or frozensets          | 3.1          |
    | <TestCase.assertSetEqual>`              |                             |              |
    +-----------------------------------------+-----------------------------+--------------+
+   | :meth:`assertMappingEqual(a, b)         | mappings                    | 3.14         |
+   | <TestCase.assertMappingEqual>`          |                             |              |
+   +-----------------------------------------+-----------------------------+--------------+
    | :meth:`assertDictEqual(a, b)            | dicts                       | 3.1          |
    | <TestCase.assertDictEqual>`             |                             |              |
    +-----------------------------------------+-----------------------------+--------------+
@@ -1441,6 +1444,16 @@ Test cases
       method.
 
       .. versionadded:: 3.1
+
+
+   .. method:: assertMappingEqual(first, second, msg=None, mapping_type=None)
+
+      Test that two mappings are equal.  If not, an error message is constructed
+      that shows the differences in the mappings. If a *mapping_type* is
+      supplied, both *first* and *second* must be instances of *mapping_type* or
+      a failure will be raised.
+
+      .. versionadded:: 3.14
 
 
    .. method:: assertDictEqual(first, second, msg=None)
