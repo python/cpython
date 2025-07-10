@@ -3759,7 +3759,7 @@ insert_prefix_instructions(_PyCompile_CodeUnitMetadata *umd, basicblock *entrybl
             }
             cfg_instr make_cell = {
                 .i_opcode = MAKE_CELL,
-                // This will get fixed in offset_derefs().
+                // This will get fixed in fix_cell_offsets().
                 .i_oparg = oldindex,
                 .i_loc = NO_LOCATION,
                 .i_target = NULL,
