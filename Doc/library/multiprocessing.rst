@@ -2853,7 +2853,7 @@ returns an instance of :class:`ThreadPool`, which is a subclass of
 worker threads rather than worker processes.
 
 
-.. class:: ThreadPool([processes[, initializer[, initargs]]])
+.. class:: ThreadPool([processes[, initializer[, initargs[, name]]]])
 
    A thread pool object which controls a pool of worker threads to which jobs
    can be submitted.  :class:`ThreadPool` instances are fully interface
