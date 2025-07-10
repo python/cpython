@@ -1110,7 +1110,7 @@ def _generic_class_getitem(cls, args):
         args = (args,)
 
     args = tuple(_type_convert(p) for p in args)
-    is_generic_or_protocol = cls in (Generic, Protocol)
+    is_generic_or_protocol = cls is Generic or cls is Protocol
 
     if is_generic_or_protocol:
         # Generic and Protocol can only be subscripted with unique type variables.
@@ -1317,7 +1317,7 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
             args = (args,)
         self.__args__ = tuple(... if a is _TypingEllipsis else
                               a for a in args)
-        enforce_default_ordering = origin in (Generic, Protocol)
+        enforce_default_ordering = origin is Generic or origin is Protocol
         self.__parameters__ = _collect_type_parameters(
             args,
             enforce_default_ordering=enforce_default_ordering,

@@ -5482,6 +5482,18 @@ class GenericTests(BaseTestCase):
         self.assertEqual(A[T], A[T])
         self.assertNotEqual(A[T], B[T])
 
+    def test_buggy_eq(self):
+        class BrokenEq(abc.ABCMeta):
+            def __eq__(self, other):
+                raise TypeError("I'm broken")
+
+        class G(Generic[T], metaclass=BrokenEq):
+            pass
+
+        alias = G[int]
+        self.assertIs(get_origin(alias), G)
+        self.assertEqual(get_args(alias), (int,))
+
     def test_multiple_inheritance(self):
 
         class A(Generic[T, VT]):
