@@ -173,12 +173,18 @@ static PyObject *
 load_timedelta(zoneinfo_state *state, long seconds);
 
 static int
-get_local_timestamp(PyObject *dt, int64_t *local_ts);
+get_local_timestamp(PyObject *dt, int64_t *local_ts, int *ordinal);
 static _ttinfo *
 find_ttinfo(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self, PyObject *dt);
 
 static int
+days_in_month(int year, int month);
+static int
+days_before_month(int year, int month);
+static int
 ymd_to_ord(int y, int m, int d);
+static void
+ord_to_ymd(int ordinal, int *year, int *month, int *day);
 static int
 is_leap_year(int year);
 
@@ -634,22 +640,30 @@ zoneinfo_fromutc(PyObject *obj_self, PyObject *dt)
 
     PyZoneInfo_ZoneInfo *self = PyZoneInfo_ZoneInfo_CAST(obj_self);
 
+    int ord;
     int64_t timestamp;
-    if (get_local_timestamp(dt, &timestamp)) {
+    if (get_local_timestamp(dt, &timestamp, &ord)) {
         return NULL;
     }
     size_t num_trans = self->num_transitions;
 
     _ttinfo *tti = NULL;
+    int year;
     unsigned char fold = 0;
+
+    if (PyDateTime_Check(dt)) {
+        year = PyDateTime_GET_YEAR(dt);
+    } else {
+        ord_to_ymd(ord, &year, NULL, NULL);
+    }
 
     if (num_trans >= 1 && timestamp < self->trans_list_utc[0]) {
         tti = self->ttinfo_before;
     }
     else if (num_trans == 0 ||
              timestamp > self->trans_list_utc[num_trans - 1]) {
-        tti = find_tzrule_ttinfo_fromutc(&(self->tzrule_after), timestamp,
-                                         PyDateTime_GET_YEAR(dt), &fold);
+        tti = find_tzrule_ttinfo_fromutc(&(self->tzrule_after), timestamp, year,
+                                         &fold);
 
         // Immediately after the last manual transition, the fold/gap is
         // between self->trans_ttinfos[num_transitions - 1] and whatever
@@ -2189,12 +2203,21 @@ find_ttinfo(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self, PyObject *dt)
         }
     }
 
+    int ord;
     int64_t ts;
-    if (get_local_timestamp(dt, &ts)) {
+    if (get_local_timestamp(dt, &ts, &ord)) {
         return NULL;
     }
 
-    unsigned char fold = PyDateTime_DATE_GET_FOLD(dt);
+    int year;
+    unsigned char fold;
+    if (PyDateTime_Check(dt)) {
+        year = PyDateTime_GET_YEAR(dt);
+        fold = PyDateTime_DATE_GET_FOLD(dt);
+    } else {
+        ord_to_ymd(ord, &year, NULL, NULL);
+        fold = 0;
+    }
     assert(fold < 2);
     int64_t *local_transitions = self->trans_list_wall[fold];
     size_t num_trans = self->num_transitions;
@@ -2203,8 +2226,7 @@ find_ttinfo(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self, PyObject *dt)
         return self->ttinfo_before;
     }
     else if (!num_trans || ts > local_transitions[self->num_transitions - 1]) {
-        return find_tzrule_ttinfo(&(self->tzrule_after), ts, fold,
-                                  PyDateTime_GET_YEAR(dt));
+        return find_tzrule_ttinfo(&(self->tzrule_after), ts, fold, year);
     }
     else {
         size_t idx = _bisect(ts, local_transitions, self->num_transitions) - 1;
@@ -2226,12 +2248,98 @@ ymd_to_ord(int y, int m, int d)
 {
     y -= 1;
     int days_before_year = (y * 365) + (y / 4) - (y / 100) + (y / 400);
-    int yearday = DAYS_BEFORE_MONTH[m];
-    if (m > 2 && is_leap_year(y + 1)) {
-        yearday += 1;
-    }
+    int yearday = days_before_month(y + 1, m);
 
     return days_before_year + yearday + d;
+}
+
+/* year, month -> number of days in that month in that year */
+static int
+days_in_month(int year, int month)
+{
+    assert(month >= 1);
+    assert(month <= 12);
+    if (month == 2 && is_leap_year(year))
+        return 29;
+    else
+        return DAYS_IN_MONTH[month];
+}
+
+/* year, month -> number of days in year preceding first day of month */
+static int
+days_before_month(int year, int month)
+{
+    int days;
+
+    assert(month >= 1);
+    assert(month <= 12);
+    days = DAYS_BEFORE_MONTH[month];
+    if (month > 2 && is_leap_year(year))
+        ++days;
+    return days;
+}
+
+/* Number of days in 4, 100, and 400 year cycles.  That these have
+ * the correct values is asserted in the module init function.
+ */
+#define DI4Y    1461    /* days_before_year(5); days in 4 years */
+#define DI100Y  36524   /* days_before_year(101); days in 100 years */
+#define DI400Y  146097  /* days_before_year(401); days in 400 years  */
+
+/* Calculates year, month and day from an ordinal. */
+static void
+ord_to_ymd(int ordinal, int *year, int *month, int *day)
+{
+    int y, m, d;
+    int n, n1, n4, n100, n400, leapyear, preceding;
+
+    assert(ordinal >= 1);
+    --ordinal;
+    n400 = ordinal / DI400Y;
+    n = ordinal % DI400Y;
+    y = n400 * 400 + 1;
+
+    n100 = n / DI100Y;
+    n = n % DI100Y;
+
+    n4 = n / DI4Y;
+    n = n % DI4Y;
+
+    n1 = n / 365;
+    n = n % 365;
+
+    y += n100 * 100 + n4 * 4 + n1;
+    if (n1 == 4 || n100 == 4) {
+        assert(n == 0);
+        y -= 1;
+        m = 12;
+        d = 31;
+        return;
+    }
+
+    leapyear = n1 == 3 && (n4 != 24 || n100 == 3);
+    assert(leapyear == is_leap_year(y));
+    m = (n + 50) >> 5;
+    preceding = (DAYS_BEFORE_MONTH[m] + (m > 2 && leapyear));
+    if (preceding > n) {
+        m -= 1;
+        preceding -= days_in_month(y, m);
+    }
+    n -= preceding;
+    assert(0 <= n);
+    assert(n < days_in_month(y, m));
+
+    d = n + 1;
+
+    if (year != NULL) {
+        *year = y;
+    }
+    if (month != NULL) {
+        *month = m;
+    }
+    if (day != NULL) {
+        *day = d;
+    }
 }
 
 /* Calculate the number of seconds since 1970-01-01 in local time.
@@ -2241,7 +2349,7 @@ ymd_to_ord(int y, int m, int d)
  * comment above ts_to_local for more information.
  * */
 static int
-get_local_timestamp(PyObject *dt, int64_t *local_ts)
+get_local_timestamp(PyObject *dt, int64_t *local_ts, int *ordinal)
 {
     assert(local_ts != NULL);
 
@@ -2302,6 +2410,10 @@ get_local_timestamp(PyObject *dt, int64_t *local_ts)
 
     *local_ts = (int64_t)(ord - EPOCHORDINAL) * 86400L +
                 (int64_t)(hour * 3600L + minute * 60 + second);
+
+    if (ordinal != NULL) {
+        *ordinal = ord;
+    }
 
     return 0;
 }
