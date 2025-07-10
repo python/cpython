@@ -251,10 +251,18 @@ def _formatwarnmsg(msg):
     return _wm._formatwarnmsg_impl(msg)
 
 def _valid_warning_category(category):
-    """Return True if category is a Warning subclass or tuple of such."""
+    """
+    Return True if category is a Warning subclass or tuple of such.
+    Always perform class checks; only perform tuple iteration in debug mode.
+    """
+    if isinstance(category, type) and issubclass(category, Warning):
+        return True
     if isinstance(category, tuple):
-        return all(isinstance(c, type) and issubclass(c, Warning) for c in category)
-    return isinstance(category, type) and issubclass(category, Warning)
+        if __debug__:
+            return all(isinstance(c, type) and issubclass(c, Warning)
+                       for c in category)
+        return True
+    return False
 
 def filterwarnings(action, message="", category=Warning, module="", lineno=0,
                    append=False):

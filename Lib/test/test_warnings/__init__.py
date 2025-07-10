@@ -398,6 +398,33 @@ class FilterTests(BaseTest):
         with self.assertRaises(ValueError):
             self.module.simplefilter('ignore', lineno=-1)
 
+    def test_invalid_category_types(self):
+        with self.assertRaises(TypeError):
+            self.module.filterwarnings("ignore", category="notawarning")
+        with self.assertRaises(TypeError):
+            self.module.filterwarnings("ignore", category=123)
+        with self.assertRaises(TypeError):
+            self.module.filterwarnings("ignore", category=17.02)
+        with self.assertRaises(TypeError):
+            self.module.filterwarnings("ignore", category=True)
+        with self.assertRaises(TypeError):
+            self.module.filterwarnings(
+                "ignore", category=(UserWarning, 17)
+            )
+
+        with self.assertRaises(TypeError):
+            self.module.simplefilter("ignore", category="notawarning")
+        with self.assertRaises(TypeError):
+            self.module.simplefilter("ignore", category=123)
+        with self.assertRaises(TypeError):
+            self.module.filterwarnings("ignore", category=17.02)
+        with self.assertRaises(TypeError):
+            self.module.filterwarnings("ignore", category=True)
+        with self.assertRaises(TypeError):
+            self.module.simplefilter(
+                "ignore", category=(UserWarning, 'abc')
+            )
+
     def test_catchwarnings_with_simplefilter_ignore(self):
         with self.module.catch_warnings(module=self.module):
             self.module.resetwarnings()
