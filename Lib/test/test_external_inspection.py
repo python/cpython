@@ -997,5 +997,20 @@ class TestGetStackTrace(unittest.TestCase):
                          "GIL holder should be among all threads")
 
 
+class TestUnsupportedPlatformHandling(unittest.TestCase):
+    @unittest.skipIf(
+        sys.platform in ("linux", "darwin", "win32"),
+        "Test only runs on unsupported platforms (not Linux, macOS, or Windows)",
+    )
+    def test_unsupported_platform_error(self):
+        with self.assertRaises(RuntimeError) as cm:
+            RemoteUnwinder(os.getpid())
+
+        self.assertIn(
+            "Reading the PyRuntime section is not supported on this platform",
+            str(cm.exception)
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

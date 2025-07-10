@@ -888,7 +888,9 @@ _Py_RemoteDebug_GetPyRuntimeAddress(proc_handle_t* handle)
         _PyErr_ChainExceptions1(exc);
     }
 #else
-    Py_UNREACHABLE();
+    _set_debug_exception_cause(PyExc_RuntimeError,
+        "Reading the PyRuntime section is not supported on this platform");
+    return 0;
 #endif
 
     return address;
