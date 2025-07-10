@@ -47,6 +47,16 @@ class MockFrameInfo:
         return f"MockFrameInfo(filename='{self.filename}', lineno={self.lineno}, funcname='{self.funcname}')"
 
 
+skip_if_not_supported = unittest.skipIf(
+    (
+        sys.platform != "darwin"
+        and sys.platform != "linux"
+        and sys.platform != "win32"
+    ),
+    "Test only runs on Linux, Windows and MacOS",
+)
+
+
 @contextlib.contextmanager
 def test_subprocess(script):
     # Find an unused port for socket communication
@@ -1112,6 +1122,7 @@ class TestPrintSampledStats(unittest.TestCase):
         self.assertEqual(normal_stats[0], 2)  # cc should be direct_calls
 
 
+@skip_if_not_supported
 @unittest.skipIf(
     sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
     "Test only runs on Linux with process_vm_readv support",
@@ -1575,6 +1586,7 @@ if __name__ == "__main__":
         # We're not testing output format here
 
 
+@skip_if_not_supported
 @unittest.skipIf(
     sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
     "Test only runs on Linux with process_vm_readv support",
