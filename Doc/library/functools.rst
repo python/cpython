@@ -151,14 +151,6 @@ The :mod:`functools` module defines the following functions:
 .. decorator:: lru_cache(user_function)
                lru_cache(maxsize=128, typed=False)
 
-   .. method:: cache_info()
-      :no-typesetting:
-
-
-   .. method:: cache_clear()
-      :no-typesetting:
-
-
    Decorator to wrap a function with a memoizing callable that saves up to the
    *maxsize* most recent calls.  It can save time when an expensive or I/O bound
    function is periodically called with the same arguments.
@@ -207,12 +199,18 @@ The :mod:`functools` module defines the following functions:
    and *typed*.  This is for information purposes only.  Mutating the values
    has no effect.
 
+   .. method:: functools.cache_info()
+      :no-typesetting:
+
    To help measure the effectiveness of the cache and tune the *maxsize*
-   parameter, the wrapped function is instrumented with a :func:`cache_info`
+   parameter, the wrapped function is instrumented with a :func:`!cache_info`
    function that returns a :term:`named tuple` showing *hits*, *misses*,
    *maxsize* and *currsize*.
 
-   The decorator also provides a :func:`cache_clear` function for clearing or
+   .. method:: functools.cache_clear()
+      :no-typesetting:
+
+   The decorator also provides a :func:`!cache_clear` function for clearing or
    invalidating the cache.
 
    The original underlying function is accessible through the
