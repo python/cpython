@@ -2270,6 +2270,12 @@ Loading and running tests
    .. versionchanged:: 3.12
       Added the *durations* keyword parameter.
 
+   .. method:: getName(test)
+
+      Return a test name used in test results.
+
+      .. versionadded:: 3.14
+
 .. data:: defaultTestLoader
 
    Instance of the :class:`TestLoader` class intended to be shared.  If no
