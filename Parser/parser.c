@@ -27202,16 +27202,16 @@ invalid_string_tstring_concat_rule(Parser *p)
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_string_tstring_concat[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "((fstring | string))+ tstring"));
-        asdl_seq * _loop1_80_var;
-        expr_ty a;
+        asdl_seq * a;
+        expr_ty b;
         if (
-            (_loop1_80_var = _loop1_80_rule(p))  // ((fstring | string))+
+            (a = _loop1_80_rule(p))  // ((fstring | string))+
             &&
-            (a = (expr_ty)tstring_rule(p))  // tstring
+            (b = (expr_ty)tstring_rule(p))  // tstring
         )
         {
             D(fprintf(stderr, "%*c+ invalid_string_tstring_concat[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "((fstring | string))+ tstring"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "cannot mix t-strings with strings or f-strings" );
+            _res = RAISE_SYNTAX_ERROR_KNOWN_RANGE ( PyPegen_last_item ( a , expr_ty ) , b , "cannot mix t-strings with strings or f-strings" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -27229,16 +27229,16 @@ invalid_string_tstring_concat_rule(Parser *p)
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_string_tstring_concat[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "tstring+ (fstring | string)"));
-        asdl_seq * _loop1_81_var;
-        expr_ty a;
+        asdl_seq * a;
+        expr_ty b;
         if (
-            (_loop1_81_var = _loop1_81_rule(p))  // tstring+
+            (a = _loop1_81_rule(p))  // tstring+
             &&
-            (a = (expr_ty)_tmp_153_rule(p))  // fstring | string
+            (b = (expr_ty)_tmp_153_rule(p))  // fstring | string
         )
         {
             D(fprintf(stderr, "%*c+ invalid_string_tstring_concat[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "tstring+ (fstring | string)"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "cannot mix t-strings with strings or f-strings" );
+            _res = RAISE_SYNTAX_ERROR_KNOWN_RANGE ( PyPegen_last_item ( a , expr_ty ) , b , "cannot mix t-strings with strings or f-strings" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
