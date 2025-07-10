@@ -1,3 +1,4 @@
+import _thread
 import asyncio
 import contextlib
 import io
@@ -502,6 +503,8 @@ class InterpreterPoolExecutorTest(
         self.assertStartsWith(self.executor._thread_name_prefix,
                               "InterpreterPoolExecutor-")
 
+    @unittest.skipUnless(hasattr(_thread, '_get_name'), "missing _thread._get_name")
+    def test_thread_name_prefix_with_thread_get_name(self):
         def f():
             import _thread
             return _thread._get_name()
