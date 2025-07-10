@@ -1487,6 +1487,34 @@ class CommandLineTestCase(unittest.TestCase):
         self.assertEqual(stdout.getvalue(), '')
         self.assertIn('error', stderr.getvalue())
 
+    def test_response_headers_arg(self):
+        # with mock.patch.object(
+        #     SimpleHTTPRequestHandler, '__init__'
+        # ) as mock_handler, \
+        # mock.patch.object(
+        #     HTTPServer, 'serve_forever'
+        # ) as mock_serve_forever:
+        with mock.patch.object(
+            HTTPServer, 'serve_forever'
+        ) as mock_serve_forever:
+            httpd = server._main(
+                ['-H', 'X-Test1', 'Test1', '-H', 'X-Test2', 'Test2', '8080']
+            )
+            request_handler_class = httpd.RequestHandlerClass
+            with mock.patch.object(
+                    request_handler_class, '__init__'
+            ) as mock_handler_init:
+                mock_handler_init.return_value = None
+                # finish_request instantiates a request handler class,
+                # ensure response_headers are passed to it
+                httpd.finish_request(mock.Mock(), '127.0.0.1')
+                mock_handler_init.assert_called_once_with(
+                    mock.ANY, mock.ANY, mock.ANY, directory=mock.ANY,
+                    response_headers={
+                        'X-Test1': 'Test1', 'X-Test2': 'Test2'
+                    }
+                )
+
 
 class CommandLineRunTimeTestCase(unittest.TestCase):
     served_data = os.urandom(32)

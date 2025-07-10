@@ -1008,6 +1008,7 @@ def test(HandlerClass=BaseHTTPRequestHandler,
         except KeyboardInterrupt:
             print("\nKeyboard interrupt received, exiting.")
             sys.exit(0)
+    return server
 
 
 def _main(args=None):
@@ -1081,7 +1082,7 @@ def _main(args=None):
 
     ServerClass = HTTPSDualStackServer if args.tls_cert else HTTPDualStackServer
 
-    test(
+    return test(
         HandlerClass=SimpleHTTPRequestHandler,
         ServerClass=ServerClass,
         port=args.port,
