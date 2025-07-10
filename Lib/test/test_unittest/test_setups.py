@@ -54,7 +54,7 @@ class TestSetups(unittest.TestCase):
             def setUpClass(cls):
                 Test.setUpCalled += 1
                 unittest.TestCase.setUpClass()
-                raise Exception("error")
+                raise Exception
             def test_one(self):
                 pass
             def test_two(self):
@@ -65,6 +65,7 @@ class TestSetups(unittest.TestCase):
         self.assertEqual(Test.setUpCalled, 1)
         self.assertEqual(result.testsRun, 0)
         self.assertEqual(len(result.errors), 1)
+        self.assertEqual(len(result.skipped), 0)
 
     def test_teardown_class(self):
         class Test(unittest.TestCase):
