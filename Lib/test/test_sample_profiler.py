@@ -19,6 +19,7 @@ from profile.stack_collector import (
 from test.support.os_helper import unlink
 from test.support import force_not_colorized_test_class, SHORT_TIMEOUT
 from test.support.socket_helper import find_unused_port
+from test.support import requires_subprocess
 
 PROCESS_VM_READV_SUPPORTED = False
 
@@ -1372,6 +1373,7 @@ class TestRecursiveFunctionProfiling(unittest.TestCase):
         self.assertEqual(collector.function_samples[main_key], 2)
 
 
+@requires_subprocess()
 class TestSampleProfilerIntegration(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
