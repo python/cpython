@@ -1111,6 +1111,14 @@ Other language changes
   ASCII :class:`bytes` and :term:`bytes-like objects <bytes-like object>`.
   (Contributed by Daniel Pope in :gh:`129349`.)
 
+* :func:`str`, :func:`repr` and :func:`ascii` now always return an instance
+  of :class:`str`, even if the special methods ``__str__()`` or ``__repr__()``
+  return an instance of a subclass of :class:`!str`.
+  :func:`bytes` now always returns an instance of :class:`bytes`, even
+  if the special method ``__bytes__()`` returns an instance of a subclass of
+  :class:`!bytes`.
+  (Contributed by Serhiy Storchaka in :gh:`104231`.)
+
 * Support ``\z`` as a synonym for ``\Z`` in :mod:`regular expressions <re>`.
   It is interpreted unambiguously in many other regular expression engines,
   unlike ``\Z``, which has subtly different behavior.
@@ -2919,6 +2927,15 @@ Limited C API changes
   macros from the limited C API, since these macros never worked in the limited
   C API. Keep :c:func:`PySequence_Fast` in the limited C API.
   (Contributed by Victor Stinner in :gh:`91417`.)
+
+* :c:func:`PyObject_Str`, :c:func:`PyObject_Repr` and :c:func:`PyObject_ASCII`
+  now always return an instance of :class:`str`, even if the special methods
+  ``__str__()`` or ``__repr__()`` return an instance of a subclass of
+  :class:`!str`.
+  :c:func:`PyObject_Bytes` now always returns an instance of :class:`bytes`,
+  even if the special method ``__bytes__()`` returns an instance of a subclass
+  of :class:`!bytes`.
+  (Contributed by Serhiy Storchaka in :gh:`104231`.)
 
 
 Porting to Python 3.14
