@@ -1,0 +1,2 @@
+Remove support for returning non-:class:`complex` or non-:class:`float`
+objects in :meth:`~object.__complex__` and :meth:`~object.__float__`.
