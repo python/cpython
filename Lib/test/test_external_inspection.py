@@ -1002,6 +1002,7 @@ class TestUnsupportedPlatformHandling(unittest.TestCase):
         sys.platform in ("linux", "darwin", "win32"),
         "Test only runs on unsupported platforms (not Linux, macOS, or Windows)",
     )
+    @unittest.skipIf(sys.platform == "android", "Android raises Linux-specific exception")
     def test_unsupported_platform_error(self):
         with self.assertRaises(RuntimeError) as cm:
             RemoteUnwinder(os.getpid())
