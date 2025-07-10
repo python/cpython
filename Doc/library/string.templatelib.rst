@@ -23,10 +23,13 @@ Template strings
 
 .. versionadded:: 3.14
 
-Template strings are an extension of :ref:`f-strings <f-strings>`
-that allow for greater control of formatting behavior. The :class:`Template`
-class gives you access to the static and interpolated (in curly braces)
-parts of a string *before* they are combined into a final string.
+Template strings are a formatting mechanism that allows for deep control over
+how strings are processed. You can create Templates using
+:ref:`t-string literal syntax <t-strings>`, which is identical to
+:ref:`f-string syntax <f-strings>` but uses a ``t`` instead of an ``f``.
+While f-strings evaluate to ``str``, t-strings create a :class:`Template`
+instance that gives you access to the static and interpolated (in curly braces)
+parts of a string *before* they are combined.
 
 See the :ref:`t-strings tutorial <tut-t-strings>` for an introduction.
 
@@ -50,7 +53,7 @@ reassigned.
 
    The most common way to create a :class:`!Template` instance is to use the
    :ref:`t-string literal syntax <t-strings>`. This syntax is identical to that of
-   :ref:`f-strings` except that it uses a ``t`` instead of an ``f``:
+   :ref:`f-strings <f-strings>` except that it uses a ``t`` instead of an ``f``:
 
    >>> name = "World"
    >>> template = t"Hello {name}!"
