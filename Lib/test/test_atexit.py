@@ -102,9 +102,8 @@ class FunctionalTest(unittest.TestCase):
         self.assertEqual(stderr, b"")
 
     @threading_helper.requires_working_threading()
+    @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     def test_thread_created_in_atexit_subinterpreter(self):
-        import os
-
         try:
             from concurrent import interpreters
         except ImportError:
