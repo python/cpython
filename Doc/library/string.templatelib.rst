@@ -1,4 +1,4 @@
-:mod:`!string.templatelib` --- Templates and Interpolations for t-strings
+:mod:`!string.templatelib` --- Templates and interpolations for t-strings
 =========================================================================
 
 .. module:: string.templatelib
@@ -11,9 +11,9 @@
 
 .. seealso::
 
-   :ref:`T-strings tutorial <tut-t-strings>`
-   :ref:`Format strings <f-strings>`
-   :ref:`T-string literal syntax <t-strings>`
+   * :ref:`T-strings tutorial <tut-t-strings>`
+   * :ref:`Format strings <f-strings>`
+   * :ref:`T-string literal syntax <t-strings>`
 
 
 .. _template-strings:
@@ -109,6 +109,8 @@ reassigned.
 
        >>> t"".strings
        ('',)
+       >>> t"".values
+       ()
        >>> t"{'cheese'}".strings
        ('', '')
        >>> t"{'cheese'}".values
@@ -191,10 +193,10 @@ reassigned.
    :param value: The evaluated, in-scope result of the interpolation.
    :type value: object
 
-   :param expression: The text of a valid Python expression, or an empty string
+   :param expression: The text of a valid Python expression, or an empty string.
    :type expression: str
 
-   :param conversion: The optional :ref:`conversion <formatstrings>` to be used, one of r, s, and a,.
+   :param conversion: The optional :ref:`conversion <formatstrings>` to be used, one of r, s, and a.
    :type conversion: Literal["a", "r", "s"] | None
 
    :param format_spec: An optional, arbitrary string used as the :ref:`format specification <formatspec>` to present the value.
@@ -229,8 +231,8 @@ reassigned.
 
    .. property:: conversion
 
-       :returns: The conversion to apply to the value, or ``None``
-       :rtype: Literal["a", "r", "s"] | None
+       :returns: The conversion to apply to the value, or ``None``.
+       :rtype: ``Literal["a", "r", "s"] | None``
 
        The :attr:`!Interpolation.conversion` is the optional conversion to apply
        to the value:

@@ -1147,7 +1147,7 @@ iterations of the loop.
 
    If ``format >> 2`` is non-zero, it indicates that the interpolation
    contains a conversion. The value of ``format >> 2`` is the conversion type
-   (e.g. ``0`` for no conversion, ``1`` for ``!s``, ``2`` for ``!r``, and
+   (``0`` for no conversion, ``1`` for ``!s``, ``2`` for ``!r``, and
    ``3`` for ``!a``)::
 
       conversion = format >> 2

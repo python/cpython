@@ -561,9 +561,9 @@ escapes are not treated specially.
    single: f'; formatted string literal
    single: f"; formatted string literal
 
-A string literal with ``'f'`` or ``'F'`` in its prefix is a
-:dfn:`formatted string literal`; see :ref:`f-strings`.  The ``'f'`` may be
-combined with ``'r'``, but not with ``'b'`` or ``'u'``, therefore raw
+A string literal with ``f`` or ``F`` in its prefix is a
+:dfn:`formatted string literal`; see :ref:`f-strings`.  The ``f`` may be
+combined with ``r``, but not with ``b`` or ``u``, therefore raw
 formatted strings are possible, but formatted bytes literals are not.
 
 In triple-quoted literals, unescaped newlines and quotes are allowed (and are
@@ -756,7 +756,7 @@ f-strings
 .. versionadded:: 3.6
 
 A :dfn:`formatted string literal` or :dfn:`f-string` is a string literal
-that is prefixed with ``'f'`` or ``'F'``.  These strings may contain
+that is prefixed with ``f`` or ``F``.  These strings may contain
 replacement fields, which are expressions delimited by curly braces ``{}``.
 While other string literals always have a constant value, formatted strings
 are really expressions evaluated at run time.
@@ -922,7 +922,7 @@ t-strings
 .. versionadded:: 3.14
 
 A :dfn:`template string literal` or :dfn:`t-string` is a string literal
-that is prefixed with ``'t'`` or ``'T'``.  These strings follow the same
+that is prefixed with ``t`` or ``T``.  These strings follow the same
 syntax and evaluation rules as :ref:`formatted string literals <f-strings>`, with
 the following differences:
 
@@ -950,9 +950,9 @@ the following differences:
   :attr:`~string.templatelib.Template.interpolations` attribute will also
   contain an ``Interpolation`` instance for the expression. By default, the
   :attr:`~string.templatelib.Interpolation.conversion` attribute will be set to
-  ``'r'`` (i.e. :func:`repr`), unless there is a conversion explicitly specified
-  (in which case it overrides the default) or a format specifier is provided (in
-  which case, the ``conversion`` defaults to ``None``).
+  ``'r'`` (that is, :func:`repr`), unless there is a conversion explicitly
+  specified (in which case it overrides the default) or a format specifier is
+  provided (in which case, the ``conversion`` defaults to ``None``).
 
 
 .. _numbers:

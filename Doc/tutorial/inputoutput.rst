@@ -343,11 +343,11 @@ representation of the HTML:
      ...
      >>> def parse_html(template: Template) -> Element:
      ...     """
-     ...     Uses python's built-in HTMLParser to parse the template,
+     ...     Uses Python's built-in HTMLParser to parse the template,
      ...     handle any interpolated values, and return a tree of
      ...     Element instances.
      ...     """
-     ...     pass
+     ...     ...
      ...
 
 A full implementation of this function would be quite complex and is not

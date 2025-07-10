@@ -462,7 +462,7 @@ Glossary
       core and with user code.
 
    f-string
-      String literals prefixed with ``'f'`` or ``'F'`` are commonly called
+      String literals prefixed with ``f`` or ``F`` are commonly called
       "f-strings" which is short for
       :ref:`formatted string literals <f-strings>`.  See also :pep:`498`.
 
@@ -1318,7 +1318,7 @@ Glossary
       See also :term:`borrowed reference`.
 
    t-string
-      String literals prefixed with ``'t'`` or ``'T'`` are commonly called
+      String literals prefixed with ``t`` or ``T`` are commonly called
       "t-strings" which is short for
       :ref:`template string literals <t-strings>`.
 
