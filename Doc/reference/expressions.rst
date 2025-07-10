@@ -1976,18 +1976,35 @@ Evaluation order
 
 .. index:: pair: evaluation; order
 
-Python evaluates expressions from left to right.  Notice that while evaluating
-an assignment, the right-hand side is evaluated before the left-hand side.
+Python evaluates expressions from left to right (except for conditional_expression).
+Notice that while evaluating an assignment, the right-hand side is evaluated before
+the left-hand side.
+
+Examples for left to right:
+
+   .. code-block:: python
+
+      2 + 3 * 4 / 2 - 1
+      7
+
+Following is an example of right to left conditional_expression evaluation example:
+
+   .. code-block:: python
+
+       'foo' if 1 else 'bar' if 0 else 'baz'
+       'foo'
 
 In the following lines, expressions will be evaluated in the arithmetic order of
-their suffixes::
+their suffixes:
 
-   expr1, expr2, expr3, expr4
-   (expr1, expr2, expr3, expr4)
-   {expr1: expr2, expr3: expr4}
-   expr1 + expr2 * (expr3 - expr4)
-   expr1(expr2, expr3, *expr4, **expr5)
-   expr3, expr4 = expr1, expr2
+   .. code-block:: python
+
+      expr1, expr2, expr3, expr4
+      (expr1, expr2, expr3, expr4)
+      {expr1: expr2, expr3: expr4}
+      expr1 + expr2 * (expr3 - expr4)
+      expr1(expr2, expr3, *expr4, **expr5)
+      expr3, expr4 = expr1, expr2
 
 
 .. _operator-summary:
@@ -2001,8 +2018,11 @@ Operator precedence
 The following table summarizes the operator precedence in Python, from highest
 precedence (most binding) to lowest precedence (least binding).  Operators in
 the same box have the same precedence.  Unless the syntax is explicitly given,
-operators are binary.  Operators in the same box group left to right (except for
-exponentiation and conditional expressions, which group from right to left).
+operators are binary. Operators in the same box group left to right (except for
+comparisons, including tests, exponentiation and conditional expressions, which
+group from right to left which all have the same precedence and chain from left
+to right — see section Comparisons — and exponentiation, which groups from right
+to left)
 
 Note that comparisons, membership tests, and identity tests, all have the same
 precedence and have a left-to-right chaining feature as described in the
