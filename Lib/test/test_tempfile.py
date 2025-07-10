@@ -1594,6 +1594,7 @@ if tempfile.NamedTemporaryFile is not tempfile.TemporaryFile:
             mock_close.assert_called()
             self.assertEqual(os.listdir(dir), [])
 
+        @os_helper.skip_unless_hardlink
         @unittest.skipUnless(tempfile._O_TMPFILE_WORKS, 'need os.O_TMPFILE')
         @unittest.skipUnless(os.path.exists('/proc/self/fd'),
                              'need /proc/self/fd')

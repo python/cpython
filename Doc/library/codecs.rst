@@ -243,8 +243,8 @@ wider range of codecs when working with binary files:
 .. function:: iterencode(iterator, encoding, errors='strict', **kwargs)
 
    Uses an incremental encoder to iteratively encode the input provided by
-   *iterator*. This function is a :term:`generator`.
-   The *errors* argument (as well as any
+   *iterator*. *iterator* must yield :class:`str` objects.
+   This function is a :term:`generator`. The *errors* argument (as well as any
    other keyword argument) is passed through to the incremental encoder.
 
    This function requires that the codec accept text :class:`str` objects
@@ -255,14 +255,28 @@ wider range of codecs when working with binary files:
 .. function:: iterdecode(iterator, encoding, errors='strict', **kwargs)
 
    Uses an incremental decoder to iteratively decode the input provided by
-   *iterator*. This function is a :term:`generator`.
-   The *errors* argument (as well as any
+   *iterator*. *iterator* must yield :class:`bytes` objects.
+   This function is a :term:`generator`. The *errors* argument (as well as any
    other keyword argument) is passed through to the incremental decoder.
 
    This function requires that the codec accept :class:`bytes` objects
    to decode. Therefore it does not support text-to-text encoders such as
    ``rot_13``, although ``rot_13`` may be used equivalently with
    :func:`iterencode`.
+
+
+.. function:: readbuffer_encode(buffer, errors=None, /)
+
+   Return a :class:`tuple` containing the raw bytes of *buffer*, a
+   :ref:`buffer-compatible object <bufferobjects>` or :class:`str`
+   (encoded to UTF-8 before processing), and their length in bytes.
+
+   The *errors* argument is ignored.
+
+   .. code-block:: pycon
+
+      >>> codecs.readbuffer_encode(b"Zito")
+      (b'Zito', 4)
 
 
 The module also provides the following constants which are useful for reading
