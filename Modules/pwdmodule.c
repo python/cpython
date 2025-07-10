@@ -185,22 +185,25 @@ pwd_getpwuid(PyObject *module, PyObject *uidobj)
     p = getpwuid(uid);
 #endif
     if (p == NULL) {
-        PyMem_RawFree(buf);
         if (nomem == 1) {
-            return PyErr_NoMemory();
+            retval = PyErr_NoMemory();
         }
-        PyObject *uid_obj = _PyLong_FromUid(uid);
-        if (uid_obj == NULL)
-            return NULL;
-        PyErr_Format(PyExc_KeyError,
-                     "getpwuid(): uid not found: %S", uid_obj);
-        Py_DECREF(uid_obj);
-        return NULL;
+        else if (errno == 0) {
+            PyObject *uid_obj = _PyLong_FromUid(uid);
+            if (uid_obj == NULL)
+                return NULL;
+            retval = PyErr_Format(PyExc_KeyError,
+                                  "getpwuid(): uid not found: %S", uid_obj);
+            Py_DECREF(uid_obj);
+        }
+        else {
+            retval = PyErr_SetFromErrno(PyExc_OSError);
+        }
     }
-    retval = mkpwent(module, p);
-#ifdef HAVE_GETPWUID_R
+    else {
+        retval = mkpwent(module, p);
+    }
     PyMem_RawFree(buf);
-#endif
     return retval;
 }
 
@@ -269,15 +272,19 @@ pwd_getpwnam_impl(PyObject *module, PyObject *name)
 #endif
     if (p == NULL) {
         if (nomem == 1) {
-            PyErr_NoMemory();
+            retval = PyErr_NoMemory();
+        }
+        else if (errno == 0) {
+            retval = PyErr_Format(PyExc_KeyError,
+                                  "getpwnam(): name not found: %R", name);
         }
         else {
-            PyErr_Format(PyExc_KeyError,
-                         "getpwnam(): name not found: %R", name);
+            retval = PyErr_SetFromErrno(PyExc_OSError);
         }
-        goto out;
     }
-    retval = mkpwent(module, p);
+    else {
+        retval = mkpwent(module, p);
+    }
 out:
     PyMem_RawFree(buf);
     Py_DECREF(bytes);
