@@ -240,30 +240,22 @@ class TestTString(unittest.TestCase, TStringBaseCase):
         self.assertTStringEqual(t, ("Hello, ", ""), [(name, "name")])
         self.assertEqual(fstring(t), "Hello, Python")
 
-        # Test disallowed mix of t-string and string
+        # Test disallowed mix of t-string and string/f-string (incl. bytes)
         what = 't'
-        expected_msg = 'cannot mix str and Template literals'
+        expected_msg = 'cannot mix t-strings with strings or f-strings'
         for case in (
             "t'{what}-string literal' 'str literal'",
             "t'{what}-string literal' u'unicode literal'",
             "t'{what}-string literal' f'f-string literal'",
             "t'{what}-string literal' r'raw string literal'",
             "t'{what}-string literal' rf'raw f-string literal'",
+            "t'{what}-string literal' b'bytes literal'",
+            "t'{what}-string literal' br'raw bytes literal'",
             "'str literal' t'{what}-string literal'",
             "u'unicode literal' t'{what}-string literal'",
             "f'f-string literal' t'{what}-string literal'",
             "r'raw string literal' t'{what}-string literal'",
             "rf'raw f-string literal' t'{what}-string literal'",
-        ):
-            with self.subTest(case):
-                with self.assertRaisesRegex(SyntaxError, expected_msg):
-                    eval(case)
-
-        # Test disallowed mix of t-string and bytes
-        expected_msg = 'cannot mix bytes and nonbytes literals'
-        for case in (
-            "t'{what}-string literal' b'bytes literal'",
-            "t'{what}-string literal' br'raw bytes literal'",
             "b'bytes literal' t'{what}-string literal'",
             "br'raw bytes literal' t'{what}-string literal'",
         ):
