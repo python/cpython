@@ -6824,9 +6824,18 @@ local_to_seconds(int year, int month, int day,
             u2 = u1 + max_fold_seconds;
         else
             u2 = u1 - max_fold_seconds;
+#ifdef MS_WINDOWS
+        u2 += max_fold_seconds;
+#endif
+
         lt = local(u2);
         if (lt == -1)
             return -1;
+#ifdef MS_WINDOWS
+        u2 -= max_fold_seconds;
+        lt -= max_fold_seconds;
+#endif
+
         b = lt - u2;
         if (a == b)
             return u1;
