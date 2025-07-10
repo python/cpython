@@ -980,7 +980,6 @@ these are the C equivalent to :func:`reprlib.recursive_repr`.
    invocation of :c:func:`Py_ReprEnter` that returns zero.
 
 
-.. _standardwarningcategories:
 .. _standardexceptions:
 
 Exception and warning types
@@ -1339,6 +1338,8 @@ Notes:
    :c:var:`!PyExc_WindowsError` is only defined on Windows; protect code that
    uses this by testing that the preprocessor macro ``MS_WINDOWS`` is defined.
 
+
+.. _standardwarningcategories:
 
 Warning types
 -------------
