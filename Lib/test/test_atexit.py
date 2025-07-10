@@ -81,7 +81,7 @@ class FunctionalTest(unittest.TestCase):
 
     @threading_helper.requires_working_threading()
     def test_thread_created_in_atexit(self):
-        source = """
+        source =  """if True:
         import atexit
         import threading
         import time
@@ -96,12 +96,46 @@ class FunctionalTest(unittest.TestCase):
         def start_thread():
             threading.Thread(target=run).start()
         """
-
-        return_code, stdout, stderr = script_helper.assert_python_ok("-c", textwrap.dedent(source))
+        return_code, stdout, stderr = script_helper.assert_python_ok("-c", source)
         self.assertEqual(return_code, 0)
         self.assertEqual(stdout, f"24{os.linesep}42{os.linesep}".encode("utf-8"))
         self.assertEqual(stderr, b"")
 
+    @threading_helper.requires_working_threading()
+    def test_thread_created_in_atexit_subinterpreter(self):
+        import os
+
+        try:
+            from concurrent import interpreters
+        except ImportError:
+            self.skipTest("subinterpreters are not available")
+
+        read, write = os.pipe()
+        source = f"""if True:
+        import atexit
+        import threading
+        import time
+        import os
+
+        def run():
+            os.write({write}, b'spanish')
+            time.sleep(1)
+            os.write({write}, b'inquisition')
+
+        @atexit.register
+        def start_thread():
+            threading.Thread(target=run).start()
+        """
+        interp = interpreters.create()
+        try:
+            interp.exec(source)
+
+            # Close the interpreter to invoke atexit callbacks
+            interp.close()
+            self.assertEqual(os.read(read, 100), b"spanishinquisition")
+        finally:
+            os.close(read)
+            os.close(write)
 
 @support.cpython_only
 class SubinterpreterTest(unittest.TestCase):
