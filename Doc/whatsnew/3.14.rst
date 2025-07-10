@@ -1747,6 +1747,8 @@ multiprocessing
      ``d |= {'b': 2}`` for proxies of :class:`dict`
 
   (Contributed by Roy Hyunjin Han for :gh:`103134`.)
+* Add :meth:`multiprocessing.Queue.shutdown` for queue termination.
+  (Contributed by Laurie Opperman in :gh:`104230`.)
 
 * Add support for shared :class:`set` objects via
   :meth:`SyncManager.set() <multiprocessing.managers.SyncManager.set>`.
