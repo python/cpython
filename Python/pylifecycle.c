@@ -2056,8 +2056,15 @@ make_pre_finalization_calls(PyThreadState *tstate)
 
         _PyAtExit_Call(tstate->interp);
 
+        /* Stop the world to prevent other threads from creating threads or
+         * atexit callbacks. On the default build, this is simply locked by
+         * the GIL. For pending calls, we acquire the dedicated mutex, because
+         * Py_AddPendingCall() can be called without an attached thread state.
+         */
+
         // XXX Why does _PyThreadState_DeleteList() rely on all interpreters
         // being stopped?
+        PyMutex_Lock(&interp->ceval.pending.mutex);
         _PyEval_StopTheWorldAll(interp->runtime);
         int should_continue = (interp_has_threads(interp)
                               || interp_has_atexit_callbacks(interp)
@@ -2066,6 +2073,7 @@ make_pre_finalization_calls(PyThreadState *tstate)
             break;
         }
         _PyEval_StartTheWorldAll(interp->runtime);
+        PyMutex_Unlock(&interp->ceval.pending.mutex);
     }
     assert(interp->runtime->stoptheworld.world_stopped);
 }
@@ -2125,6 +2133,7 @@ _Py_Finalize(_PyRuntimeState *runtime)
         _PyThreadState_SetShuttingDown(p);
     }
     _PyEval_StartTheWorldAll(runtime);
+    PyMutex_Unlock(&tstate->interp->ceval.pending.mutex);
 
     /* Clear frames of other threads to call objects destructors. Destructors
        will be called in the current Python thread. Since
@@ -2496,6 +2505,7 @@ Py_EndInterpreter(PyThreadState *tstate)
        when they attempt to take the GIL (ex: PyEval_RestoreThread()). */
     _PyInterpreterState_SetFinalizing(interp, tstate);
     _PyEval_StartTheWorldAll(interp->runtime);
+    PyMutex_Unlock(&interp->ceval.pending.mutex);
 
     // XXX Call something like _PyImport_Disable() here?
 
