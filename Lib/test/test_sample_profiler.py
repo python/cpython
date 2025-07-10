@@ -1564,6 +1564,7 @@ if __name__ == "__main__":
                         # Each part should be file:function:line
                         self.assertIn(":", part)
 
+    @skip_if_not_supported
     def test_sampling_all_threads(self):
         with (
             test_subprocess(self.test_script) as proc,
