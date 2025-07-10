@@ -503,6 +503,18 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.findall(r"(a|(b))", "aba"),
                          [("a", ""),("b", "b"),("a", "")])
 
+    def test_bug_7940_raises_future_warnings(self):
+        """Test to ensure the FutureWarnings are raised."""
+        pat = re.compile(".")
+        with self.assertWarns(FutureWarning) as cm:
+            pat.findall("abcd", -1, 1)
+        self.assertEqual(str(cm.warning), "Negative start index will not "
+                "be truncated to zero in Python 3.15")
+        with self.assertWarns(FutureWarning) as cm:
+            pat.findall("abcd", 1, -1)
+        self.assertEqual(str(cm.warning), "Negative end index will not "
+                "be truncated to zero in Python 3.15")
+
     def test_re_match(self):
         for string in 'a', S('a'):
             self.assertEqual(re.match('a', string).groups(), ())
