@@ -82,5 +82,11 @@
                 }
             }
         }
+    },
+    "features": {
+        "ghcr.io/nikiforovall/devcontainer-features/dotnet-csharpier:1": {},
+        "ghcr.io/dotnet/aspire-devcontainer-feature/dotnetaspire:1": {
+            "version": "9.0"
+        }
     }
 }
