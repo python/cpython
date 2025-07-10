@@ -239,8 +239,8 @@ wider range of codecs when working with binary files:
 .. function:: iterencode(iterator, encoding, errors='strict', **kwargs)
 
    Uses an incremental encoder to iteratively encode the input provided by
-   *iterator*. This function is a :term:`generator`.
-   The *errors* argument (as well as any
+   *iterator*. *iterator* must yield :class:`str` objects.
+   This function is a :term:`generator`. The *errors* argument (as well as any
    other keyword argument) is passed through to the incremental encoder.
 
    This function requires that the codec accept text :class:`str` objects
@@ -251,8 +251,8 @@ wider range of codecs when working with binary files:
 .. function:: iterdecode(iterator, encoding, errors='strict', **kwargs)
 
    Uses an incremental decoder to iteratively decode the input provided by
-   *iterator*. This function is a :term:`generator`.
-   The *errors* argument (as well as any
+   *iterator*. *iterator* must yield :class:`bytes` objects.
+   This function is a :term:`generator`. The *errors* argument (as well as any
    other keyword argument) is passed through to the incremental decoder.
 
    This function requires that the codec accept :class:`bytes` objects
