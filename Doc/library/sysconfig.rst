@@ -434,7 +434,10 @@ Other functions
 Command-line usage
 ------------------
 
-You can use :mod:`sysconfig` as a script with Python's *-m* option:
+You can use :mod:`sysconfig` as a script with Python's ``-m`` option,
+to print to the standard output information
+about the ``platform``, ``python_version`` and ``installation_scheme``,
+as well as two additional sets of ``paths`` and ``variables``:
 
 .. code-block:: shell-session
 
@@ -460,6 +463,23 @@ You can use :mod:`sysconfig` as a script with Python's *-m* option:
             ARFLAGS = "rc"
             ...
 
-This call will print in the standard output the information returned by
-:func:`get_platform`, :func:`get_python_version`, :func:`get_path` and
-:func:`get_config_vars`.
+To retrieve these, the above mentioned :func:`get_platform`, :func:`get_python_version`, :func:`get_path` and
+:func:`get_config_vars` functions are used.
+
+You can also pass a ``--json`` flag to have a JSON-formatted output:
+
+.. code-block:: shell-session
+
+   $ python -m sysconfig --json
+   {
+       "platform": "macosx-14.6-arm64",
+       "python_version": "3.14",
+       "installation_scheme": "posix_prefix",
+       "paths": {
+           ...
+       },
+       "variables": {
+           ...
+       }
+   }
+
