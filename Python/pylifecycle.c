@@ -1734,16 +1734,16 @@ finalize_modules(PyThreadState *tstate)
     // Clear the modules dict
     finalize_clear_modules_dict(modules);
 
-    // Restore the original builtins dict, to ensure that any
-    // user data gets cleared.
-    finalize_restore_builtins(tstate);
-
-    // Collect garbage
+    // Collect garbage before builtins are restored
     _PyGC_CollectNoFail(tstate);
 
     // Dump GC stats before it's too late, since it uses the warnings
     // machinery.
     _PyGC_DumpShutdownStats(interp);
+
+    // Restore the original builtins dict, to ensure that any
+    // user data gets cleared.
+    finalize_restore_builtins(tstate);
 
     if (weaklist != NULL) {
         // Now, if there are any modules left alive, clear their globals to
