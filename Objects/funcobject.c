@@ -633,9 +633,9 @@ PyFunction_SetAnnotations(PyObject *op, PyObject *annotations)
 static PyMemberDef func_memberlist[] = {
     {"__closure__",   _Py_T_OBJECT,     OFF(func_closure), Py_READONLY},
     {"__doc__",       _Py_T_OBJECT,     OFF(func_doc), 0},
-    {"__globals__",   _Py_T_OBJECT,     OFF(func_globals), Py_READONLY},
+    {"__globals__",   Py_T_OBJECT_EX,     OFF(func_globals), Py_READONLY},
     {"__module__",    _Py_T_OBJECT,     OFF(func_module), 0},
-    {"__builtins__",  _Py_T_OBJECT,     OFF(func_builtins), Py_READONLY},
+    {"__builtins__",  Py_T_OBJECT_EX,     OFF(func_builtins), Py_READONLY},
     {NULL}  /* Sentinel */
 };
 
@@ -1489,8 +1489,8 @@ cm_init(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 static PyMemberDef cm_memberlist[] = {
-    {"__func__", _Py_T_OBJECT, offsetof(classmethod, cm_callable), Py_READONLY},
-    {"__wrapped__", _Py_T_OBJECT, offsetof(classmethod, cm_callable), Py_READONLY},
+    {"__func__", Py_T_OBJECT_EX, offsetof(classmethod, cm_callable), Py_READONLY},
+    {"__wrapped__", Py_T_OBJECT_EX, offsetof(classmethod, cm_callable), Py_READONLY},
     {NULL}  /* Sentinel */
 };
 
@@ -1727,8 +1727,8 @@ sm_call(PyObject *callable, PyObject *args, PyObject *kwargs)
 }
 
 static PyMemberDef sm_memberlist[] = {
-    {"__func__", _Py_T_OBJECT, offsetof(staticmethod, sm_callable), Py_READONLY},
-    {"__wrapped__", _Py_T_OBJECT, offsetof(staticmethod, sm_callable), Py_READONLY},
+    {"__func__", Py_T_OBJECT_EX, offsetof(staticmethod, sm_callable), Py_READONLY},
+    {"__wrapped__", Py_T_OBJECT_EX, offsetof(staticmethod, sm_callable), Py_READONLY},
     {NULL}  /* Sentinel */
 };
 

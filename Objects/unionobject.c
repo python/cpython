@@ -317,7 +317,7 @@ error:
 }
 
 static PyMemberDef union_members[] = {
-        {"__args__", _Py_T_OBJECT, offsetof(unionobject, args), Py_READONLY},
+        {"__args__", Py_T_OBJECT_EX, offsetof(unionobject, args), Py_READONLY},
         {0}
 };
 

@@ -2747,7 +2747,7 @@ tuplegetter_repr(PyObject *op)
 
 
 static PyMemberDef tuplegetter_members[] = {
-    {"__doc__",  _Py_T_OBJECT, offsetof(_tuplegetterobject, doc), 0},
+    {"__doc__",  Py_T_OBJECT_EX, offsetof(_tuplegetterobject, doc), 0},
     {0}
 };
 
