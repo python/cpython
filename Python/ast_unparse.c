@@ -700,62 +700,11 @@ append_templatestr(PyUnicodeWriter *writer, expr_ty e)
         return -1;
     }
 
-    Py_ssize_t last_idx = 0;
     Py_ssize_t len = asdl_seq_LEN(e->v.TemplateStr.values);
-    if (len == 0) {
-        int result = _write_values_subarray(writer, e->v.TemplateStr.values,
-                0, len - 1, 't', arena);
-        _PyArena_Free(arena);
-        return result;
-    }
-
-    for (Py_ssize_t i = 0; i < len; i++) {
-        expr_ty value = asdl_seq_GET(e->v.TemplateStr.values, i);
-
-        // Handle implicit concat of t-strings with f-strings
-        if (value->kind == FormattedValue_kind) {
-            if (i > last_idx) {
-                // Create a new TemplateStr with the values between last_idx and i
-                // and append it to the writer.
-                if (_write_values_subarray(writer, e->v.TemplateStr.values,
-                        last_idx, i - 1, 't', arena) == -1) {
-                    goto error;
-                }
-
-                if (append_charp(writer, " ") == -1) {
-                    goto error;
-                }
-            }
-
-            // Append the FormattedValue to the writer.
-            if (_write_values_subarray(writer, e->v.TemplateStr.values,
-                    i, i, 'f', arena) == -1) {
-                goto error;
-            }
-
-            if (i + 1 < len) {
-                if (append_charp(writer, " ") == -1) {
-                    goto error;
-                }
-            }
-
-            last_idx = i + 1;
-        }
-    }
-
-    if (last_idx < len) {
-        if (_write_values_subarray(writer, e->v.TemplateStr.values,
-                last_idx, len - 1, 't', arena) == -1) {
-            goto error;
-        }
-    }
+    int result = _write_values_subarray(writer, e->v.TemplateStr.values,
+            0, len - 1, 't', arena);
     _PyArena_Free(arena);
-
-    return 0;
-
-error:
-    _PyArena_Free(arena);
-    return -1;
+    return result;
 }
 
 static int
