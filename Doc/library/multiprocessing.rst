@@ -1609,6 +1609,9 @@ inherited by child processes.
 
    Note that an array of :data:`ctypes.c_char` has *value* and *raw*
    attributes which allow one to use it to store and retrieve strings.
+   While *raw* allows interaction with a bytes-object the full size of the
+   array, reading *value* will terminate after a null-byte, like most
+   programming languages handle strings.
 
 
 The :mod:`multiprocessing.sharedctypes` module
