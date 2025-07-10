@@ -1718,7 +1718,7 @@ processes.
    start method if it has not been set already. See the :func:`get_context`
    function.
 
-   Note that *lock* and *ctx* are keyword-only argument.
+   Note that *lock* and *ctx* are keyword-only parameters.
 
 .. function:: Value(typecode_or_type, *args, lock=True, ctx=None)
 
@@ -1738,7 +1738,7 @@ processes.
    start method if it has not been set already. See the :func:`get_context`
    function.
 
-   Note that *lock* and *ctx* are keyword-only argument.
+   Note that *lock* and *ctx* are keyword-only parameters.
 
 .. function:: copy(obj)
 
