@@ -1,3 +1,4 @@
+import contextlib
 import io
 import mimetypes
 import os
@@ -476,7 +477,11 @@ class CommandLineTest(unittest.TestCase):
             ("-e image/jpeg", ".jpg"),
             ("-l foo.webp", "type: image/webp encoding: None"),
         ]:
-            self.assertEqual(mimetypes._main(shlex.split(command)), expected)
+            with self.subTest(command=command):
+                out = io.StringIO()
+                with contextlib.redirect_stdout(out):
+                    mimetypes._main(shlex.split(command))
+                self.assertEqual(out.getvalue().strip(), expected)
 
     def test_invocation_error(self):
         for command, expected in [
@@ -484,8 +489,10 @@ class CommandLineTest(unittest.TestCase):
             ("foo.bar_ext", "error: media type unknown for foo.bar_ext"),
         ]:
             with self.subTest(command=command):
-                with self.assertRaisesRegex(SystemExit, expected):
+                err = io.StringIO()
+                with contextlib.redirect_stderr(err):
                     mimetypes._main(shlex.split(command))
+                self.assertIn(expected, err.getvalue().strip())
 
 
 if __name__ == "__main__":
