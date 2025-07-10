@@ -31,7 +31,7 @@ import urllib.parse
 import warnings
 
 from test.support import (
-    SHORT_TIMEOUT, check_disallow_instantiation, requires_subprocess
+    SHORT_TIMEOUT, check_disallow_instantiation, requires_subprocess, is_emscripten
 )
 from test.support import gc_collect
 from test.support import threading_helper, import_helper
@@ -694,6 +694,7 @@ class OpenTests(unittest.TestCase):
                 cx.execute(self._sql)
 
     @unittest.skipIf(sys.platform == "win32", "skipped on Windows")
+    @unittest.skipIf(is_emscripten, "not supported on Emscripten")
     def test_open_undecodable_uri(self):
         path = self.get_undecodable_path()
         self.addCleanup(unlink, path)
