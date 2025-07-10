@@ -717,25 +717,29 @@ def _parse_args(args):
 
 
 def _main(args=None):
-    """Run the mimetypes command-line interface and return a text to print."""
+    """Run the mimetypes command-line interface."""
     import sys
 
     args, help_text = _parse_args(args)
+    if not args.type:
+        print(help_text)
+        return
 
     if args.extension:
         for gtype in args.type:
             guess = guess_extension(gtype, not args.lenient)
             if guess:
-                return str(guess)
-            sys.exit(f"error: unknown type {gtype}")
+                print(str(guess))
+            else:
+                print(f"error: unknown type {gtype}", file=sys.stderr)
     else:
         for gtype in args.type:
             guess, encoding = guess_type(gtype, not args.lenient)
             if guess:
-                return f"type: {guess} encoding: {encoding}"
-            sys.exit(f"error: media type unknown for {gtype}")
-    return help_text
+                print(f"type: {guess} encoding: {encoding}")
+            else:
+                print(f"error: media type unknown for {gtype}", file=sys.stderr)
 
 
 if __name__ == '__main__':
-    print(_main())
+    _main()
