@@ -73,7 +73,6 @@ struct trampoline_api_st {
     int (*free_state)(void* state);
     void *state;
     Py_ssize_t code_padding;
-    Py_ssize_t code_alignment;
 };
 #endif
 

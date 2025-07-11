@@ -162,6 +162,8 @@ static void invalidate_icache(char* begin, char*end) {
 }
 #endif
 
+#define CODE_ALIGNMENT 32
+
 /* The function pointer is passed as last argument. The other three arguments
  * are passed in the same order as the function requires. This results in
  * shorter, more efficient ASM code for trampoline.
@@ -230,7 +232,6 @@ perf_map_init_state(void)
 {
     PyUnstable_PerfMapState_Init();
     trampoline_api.code_padding = 0;
-    trampoline_api.code_alignment = 32;
     perf_trampoline_type = PERF_TRAMPOLINE_TYPE_MAP;
     return NULL;
 }
@@ -293,8 +294,8 @@ new_code_arena(void)
     void *end = &_Py_trampoline_func_end;
     size_t code_size = end - start;
     size_t unaligned_size = code_size + trampoline_api.code_padding;
-    size_t chunk_size = round_up(unaligned_size, trampoline_api.code_alignment);
-    assert(chunk_size % trampoline_api.code_alignment == 0);
+    size_t chunk_size = round_up(unaligned_size, CODE_ALIGNMENT);
+    assert(chunk_size % CODE_ALIGNMENT == 0);
     // TODO: Check the effect of alignment of the code chunks. Initial investigation
     // showed that this has no effect on performance in x86-64 or aarch64 and the current
     // version has the advantage that the unwinder in GDB can unwind across JIT-ed code.
@@ -360,8 +361,8 @@ code_arena_new_code(code_arena_t *code_arena)
 {
     py_trampoline trampoline = (py_trampoline)code_arena->current_addr;
     size_t total_code_size = round_up(code_arena->code_size + trampoline_api.code_padding,
-                                  trampoline_api.code_alignment);
-    assert(total_code_size % trampoline_api.code_alignment == 0);
+                                  CODE_ALIGNMENT);
+    assert(total_code_size % CODE_ALIGNMENT == 0);
     code_arena->size_left -= total_code_size;
     code_arena->current_addr += total_code_size;
     return trampoline;

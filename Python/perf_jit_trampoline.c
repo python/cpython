@@ -1099,7 +1099,6 @@ static void* perf_map_jit_init(void) {
     size_t eh_frame_size = calculate_eh_frame_size();
     size_t unwind_data_size = sizeof(EhFrameHeader) + eh_frame_size;
     trampoline_api.code_padding = round_up(unwind_data_size, 16);
-    trampoline_api.code_alignment = 32;
 
     return &perf_jit_map_state;
 }
