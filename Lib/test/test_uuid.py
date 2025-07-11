@@ -1141,7 +1141,7 @@ class BaseTestUUID:
         self.assertIs(strong, weak())
 
 
-class TestUUIDCli(unittest.TestCase):
+class TestUUIDCommandLineRunTime(unittest.TestCase):
     uuid = py_uuid
 
     def do_test_standalone_uuid(self, version):
