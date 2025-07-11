@@ -1244,12 +1244,12 @@ class CommandLineTestCases:
         self.do_test_standalone_uuid(8)
 
 
-class TestUUIDWithoutExtModule(CommandLineRunTime, BaseTestUUID, unittest.TestCase):
+class TestUUIDWithoutExtModule(CommandLineTestCases, BaseTestUUID, unittest.TestCase):
     uuid = py_uuid
 
 
 @unittest.skipUnless(c_uuid, 'requires the C _uuid module')
-class TestUUIDWithExtModule(CommandLineRunTime, BaseTestUUID, unittest.TestCase):
+class TestUUIDWithExtModule(CommandLineTestCases, BaseTestUUID, unittest.TestCase):
     uuid = c_uuid
 
     def check_has_stable_libuuid_extractable_node(self):
