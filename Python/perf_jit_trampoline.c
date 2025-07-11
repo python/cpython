@@ -851,19 +851,31 @@ static void elf_init_ehframe(ELFObjectContext* ctx) {
         DWRF_U32(0);                           // CIE ID (0 indicates this is a CIE)
         DWRF_U8(DWRF_CIE_VERSION);            // CIE version (1)
         DWRF_STR("zR");                       // Augmentation string ("zR" = has LSDA)
-        DWRF_UV(1);                           // Code alignment factor
+#ifdef __x86_64__
+        DWRF_UV(1);                           // Code alignment factor (x86_64: 1 byte)
+#elif defined(__aarch64__) && defined(__AARCH64EL__) && !defined(__ILP32__)
+        DWRF_UV(4);                           // Code alignment factor (AArch64: 4 bytes per instruction)
+#endif
         DWRF_SV(-(int64_t)sizeof(uintptr_t)); // Data alignment factor (negative)
         DWRF_U8(DWRF_REG_RA);                 // Return address register number
         DWRF_UV(1);                           // Augmentation data length
         DWRF_U8(DWRF_EH_PE_pcrel | DWRF_EH_PE_sdata4); // FDE pointer encoding
 
         /* Initial CFI instructions - describe default calling convention */
+#ifdef __x86_64__
+        /* x86_64 initial CFI state */
         DWRF_U8(DWRF_CFA_def_cfa);            // Define CFA (Call Frame Address)
         DWRF_UV(DWRF_REG_SP);                 // CFA = SP register
         DWRF_UV(sizeof(uintptr_t));           // CFA = SP + pointer_size
         DWRF_U8(DWRF_CFA_offset|DWRF_REG_RA); // Return address is saved
         DWRF_UV(1);                           // At offset 1 from CFA
-
+#elif defined(__aarch64__) && defined(__AARCH64EL__) && !defined(__ILP32__)
+        /* AArch64 initial CFI state */
+        DWRF_U8(DWRF_CFA_def_cfa);            // Define CFA (Call Frame Address)
+        DWRF_UV(DWRF_REG_SP);                 // CFA = SP register
+        DWRF_UV(0);                           // CFA = SP + 0 (AArch64 starts with offset 0)
+        // No initial register saves in AArch64 CIE
+#endif
         DWRF_ALIGNNOP(sizeof(uintptr_t));     // Align to pointer boundary
     )
 
@@ -911,19 +923,18 @@ static void elf_init_ehframe(ELFObjectContext* ctx) {
         DWRF_UV(8);                           // New offset: SP + 8
 #elif defined(__aarch64__) && defined(__AARCH64EL__) && !defined(__ILP32__)
         /* AArch64 calling convention unwinding rules */
-        DWRF_U8(DWRF_CFA_advance_loc | 1);        // Advance location by 1 instruction (stp x29, x30)
-        DWRF_U8(DWRF_CFA_def_cfa_offset);         // Redefine CFA offset
-        DWRF_UV(16);                              // CFA = SP + 16 (stack pointer after push)
-        DWRF_U8(DWRF_CFA_offset | DWRF_REG_FP);   // Frame pointer (x29) saved
-        DWRF_UV(2);                               // At offset 2 from CFA (2 * 8 = 16 bytes)
-        DWRF_U8(DWRF_CFA_offset | DWRF_REG_RA);   // Link register (x30) saved
-        DWRF_UV(1);                               // At offset 1 from CFA (1 * 8 = 8 bytes)
-        DWRF_U8(DWRF_CFA_advance_loc | 3);        // Advance by 3 instructions (mov x16, x3; mov x29, sp; ldp...)
-        DWRF_U8(DWRF_CFA_offset | DWRF_REG_FP);   // Restore frame pointer (x29)
-        DWRF_U8(DWRF_CFA_offset | DWRF_REG_RA);   // Restore link register (x30)
-        DWRF_U8(DWRF_CFA_def_cfa_offset);         // Final CFA adjustment
-        DWRF_UV(0);                               // CFA = SP + 0 (stack restored)
-
+        DWRF_U8(DWRF_CFA_advance_loc | 1);        // Advance by 1 instruction (4 bytes)
+        DWRF_U8(DWRF_CFA_def_cfa_offset);         // CFA = SP + 16
+        DWRF_UV(16);                              // Stack pointer moved by 16 bytes
+        DWRF_U8(DWRF_CFA_offset | DWRF_REG_FP);   // x29 (frame pointer) saved
+        DWRF_UV(2);                               // At CFA-16 (2 * 8 = 16 bytes from CFA)
+        DWRF_U8(DWRF_CFA_offset | DWRF_REG_RA);   // x30 (link register) saved
+        DWRF_UV(1);                               // At CFA-8 (1 * 8 = 8 bytes from CFA)
+        DWRF_U8(DWRF_CFA_advance_loc | 3);        // Advance by 3 instructions (12 bytes)
+        DWRF_U8(DWRF_CFA_restore | DWRF_REG_RA);  // Restore x30 - NO DWRF_UV() after this!
+        DWRF_U8(DWRF_CFA_restore | DWRF_REG_FP);  // Restore x29 - NO DWRF_UV() after this!
+        DWRF_U8(DWRF_CFA_def_cfa_offset);         // CFA = SP + 0 (stack restored)
+        DWRF_UV(0);                               // Back to original stack position
 #else
 #    error "Unsupported target architecture"
 #endif
