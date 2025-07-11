@@ -5788,9 +5788,11 @@ class TestSignatureDefinitions(unittest.TestCase):
             'GeneratorType': {'throw'},
             'FrameLocalsProxyType': {'setdefault', 'pop', 'get'}
         }
+        no_signature = {'FrameLocalsProxyType'}
         self._test_module_has_signatures(types,
                 unsupported_signature=unsupported_signature,
-                methods_no_signature=methods_no_signature)
+                methods_no_signature=methods_no_signature,
+                no_signature=no_signature)
 
     def test_sys_module_has_signatures(self):
         no_signature = {'getsizeof', 'set_asyncgen_hooks'}
