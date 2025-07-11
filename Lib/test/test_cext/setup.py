@@ -45,7 +45,7 @@ def main():
     std = os.environ.get("CPYTHON_TEST_STD", "")
     module_name = os.environ["CPYTHON_TEST_EXT_NAME"]
     limited = bool(os.environ.get("CPYTHON_TEST_LIMITED", ""))
-    opaque = bool(os.environ.get("CPYTHON_TEST_OPAQUE_PYOBJECT", ""))
+    opaque_pyobject = bool(os.environ.get("CPYTHON_TEST_OPAQUE_PYOBJECT", ""))
 
     sources = [SOURCE]
 
@@ -79,8 +79,7 @@ def main():
         cflags.append(f'-DPy_LIMITED_API={version:#x}')
 
     # Define _Py_OPAQUE_PYOBJECT macro
-    if opaque:
-        version = sys.hexversion
+    if opaque_pyobject:
         cflags.append(f'-D_Py_OPAQUE_PYOBJECT')
         sources.append('create_moduledef.c')
 
