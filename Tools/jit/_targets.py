@@ -332,14 +332,14 @@ class _COFF(
 
 class _COFF32(_COFF):
     # These mangle like Mach-O and other "older" formats:
-    label_prefix: str = "L"
-    symbol_prefix: str = "_"
+    label_prefix = "L"
+    symbol_prefix = "_"
 
 
 class _COFF64(_COFF):
     # These mangle like ELF and other "newer" formats:
-    label_prefix: str = ".L"
-    symbol_prefix: str = ""
+    label_prefix = ".L"
+    symbol_prefix = ""
 
 
 class _ELF(
