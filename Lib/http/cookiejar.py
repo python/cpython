@@ -658,7 +658,7 @@ def request_path(request):
 def request_port(request):
     match = cut_port_re.search(request.host)
     if match:
-        port = match.group(0).removeprefix(':')
+        port = match[0].removeprefix(':')
         try:
             int(port)
         except ValueError:
