@@ -491,7 +491,7 @@ The :mod:`functools` module defines the following functions:
 
 .. decorator:: singledispatch
 
-   .. method:: register()
+   .. method:: singledispatch.register()
       :no-typesetting:
 
    Transform a function into a :term:`single-dispatch <single
@@ -508,7 +508,7 @@ The :mod:`functools` module defines the following functions:
      ...         print("Let me just say,", end=" ")
      ...     print(arg)
 
-   To add overloaded implementations to the function, use the :func:`register`
+   To add overloaded implementations to the function, use the :func:`!register`
    attribute of the generic function, which can be used as a decorator.  For
    functions annotated with types, the decorator will infer the type of the
    first argument automatically::
@@ -574,14 +574,14 @@ The :mod:`functools` module defines the following functions:
       runtime impact.
 
    To enable registering :term:`lambdas<lambda>` and pre-existing functions,
-   the :func:`register` attribute can also be used in a functional form::
+   the :func:`!register` attribute can also be used in a functional form::
 
      >>> def nothing(arg, verbose=False):
      ...     print("Nothing.")
      ...
      >>> fun.register(type(None), nothing)
 
-   The :func:`register` attribute returns the undecorated function. This
+   The :func:`!register` attribute returns the undecorated function. This
    enables decorator stacking, :mod:`pickling<pickle>`, and the creation
    of unit tests for each variant independently::
 
@@ -659,10 +659,10 @@ The :mod:`functools` module defines the following functions:
    .. versionadded:: 3.4
 
    .. versionchanged:: 3.7
-      The :func:`register` attribute now supports using type annotations.
+      The :func:`!register` attribute now supports using type annotations.
 
    .. versionchanged:: 3.11
-      The :func:`register` attribute now supports
+      The :func:`!register` attribute now supports
       :class:`typing.Union` as a type annotation.
 
 
