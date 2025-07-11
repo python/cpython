@@ -1,0 +1,1 @@
+Fix :func:`wave.Wave_write.__del__` raising :exc:`AttributeError` when attempting to open an unwritable file.
