@@ -491,9 +491,6 @@ The :mod:`functools` module defines the following functions:
 
 .. decorator:: singledispatch
 
-   .. method:: singledispatch.register()
-      :no-typesetting:
-
    Transform a function into a :term:`single-dispatch <single
    dispatch>` :term:`generic function`.
 
@@ -507,6 +504,9 @@ The :mod:`functools` module defines the following functions:
      ...     if verbose:
      ...         print("Let me just say,", end=" ")
      ...     print(arg)
+
+   .. method:: singledispatch.register()
+      :no-typesetting:
 
    To add overloaded implementations to the function, use the :func:`!register`
    attribute of the generic function, which can be used as a decorator.  For
