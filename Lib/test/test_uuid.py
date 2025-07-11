@@ -1143,6 +1143,20 @@ class BaseTestUUID:
 
 class TestUUIDCli(BaseTestUUID, unittest.TestCase):
     uuid = py_uuid
+
+    def do_test_standalone_uuid(self, version):
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            self.uuid.main()
+        output = stdout.getvalue().strip()
+        u = self.uuid.UUID(output)
+        self.assertEqual(output, str(u))
+        self.assertEqual(u.version, version)
+
+    @mock.patch.object(sys, "argv", ["", "-u", "uuid1"])
+    def test_uuid1(self):
+        self.do_test_standalone_uuid(1)
+
     @mock.patch.object(sys, "argv", ["", "-u", "uuid3", "-n", "@dns"])
     @mock.patch('sys.stderr', new_callable=io.StringIO)
     def test_cli_namespace_required_for_uuid3(self, mock_err):
@@ -1217,61 +1231,17 @@ class TestUUIDCli(BaseTestUUID, unittest.TestCase):
         self.assertEqual(output, str(uuid_output))
         self.assertEqual(uuid_output.version, 5)
 
-    @mock.patch.object(sys, "argv",
-                       ["", "-u", "uuid1"])
-    def test_cli_uuid1(self):
-        stdout = io.StringIO()
-        with contextlib.redirect_stdout(stdout):
-            self.uuid.main()
+    @mock.patch.object(sys, "argv", ["", "-u", "uuid6"])
+    def test_uuid1(self):
+        self.do_test_standalone_uuid(6)
 
-        output = stdout.getvalue().strip()
-        uuid_output = self.uuid.UUID(output)
+    @mock.patch.object(sys, "argv", ["", "-u", "uuid7"])
+    def test_uuid1(self):
+        self.do_test_standalone_uuid(7)
 
-        # Output should be in the form of uuid1
-        self.assertEqual(output, str(uuid_output))
-        self.assertEqual(uuid_output.version, 1)
-
-    @mock.patch.object(sys, "argv",
-                       ["", "-u", "uuid6"])
-    def test_cli_uuid6(self):
-        stdout = io.StringIO()
-        with contextlib.redirect_stdout(stdout):
-            self.uuid.main()
-
-        output = stdout.getvalue().strip()
-        uuid_output = self.uuid.UUID(output)
-
-        # Output should be in the form of uuid6
-        self.assertEqual(output, str(uuid_output))
-        self.assertEqual(uuid_output.version, 6)
-
-    @mock.patch.object(sys, "argv",
-                       ["", "-u", "uuid7"])
-    def test_cli_uuid7(self):
-        stdout = io.StringIO()
-        with contextlib.redirect_stdout(stdout):
-            self.uuid.main()
-
-        output = stdout.getvalue().strip()
-        uuid_output = self.uuid.UUID(output)
-
-        # Output should be in the form of uuid7
-        self.assertEqual(output, str(uuid_output))
-        self.assertEqual(uuid_output.version, 7)
-
-    @mock.patch.object(sys, "argv",
-                       ["", "-u", "uuid8"])
-    def test_cli_uuid8(self):
-        stdout = io.StringIO()
-        with contextlib.redirect_stdout(stdout):
-            self.uuid.main()
-
-        output = stdout.getvalue().strip()
-        uuid_output = self.uuid.UUID(output)
-
-        # Output should be in the form of uuid8
-        self.assertEqual(output, str(uuid_output))
-        self.assertEqual(uuid_output.version, 8)
+    @mock.patch.object(sys, "argv", ["", "-u", "uuid8"])
+    def test_uuid1(self):
+        self.do_test_standalone_uuid(8)
 
 
 class TestUUIDWithoutExtModule(BaseTestUUID, unittest.TestCase):
