@@ -412,9 +412,11 @@ class InterpreterObjectTests(TestBase):
 
     def test_pickle(self):
         interp = interpreters.create()
-        data = pickle.dumps(interp)
-        unpickled = pickle.loads(data)
-        self.assertEqual(unpickled, interp)
+        for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(protocol=protocol):
+                data = pickle.dumps(interp, protocol)
+                unpickled = pickle.loads(data)
+                self.assertEqual(unpickled, interp)
 
 
 class TestInterpreterIsRunning(TestBase):

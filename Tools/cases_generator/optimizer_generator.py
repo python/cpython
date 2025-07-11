@@ -245,6 +245,7 @@ class OptimizerConstantEmitter(OptimizerEmitter):
             outp.name: self.emit_stackref_override for outp in self.original_uop.stack.outputs
         }
         self._replacers = {**self._replacers, **overrides}
+        self.cannot_escape = True
 
     def emit_to_with_replacement(
         self,
