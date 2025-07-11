@@ -1,1 +1,0 @@
-Fix possible crash when mutating list of callbacks returned by :attr:`!asyncio.Future._callbacks`. It now always returns a new copy in C implementation :mod:`!_asyncio`. Patch by Kumar Aditya.

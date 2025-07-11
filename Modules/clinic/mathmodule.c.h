@@ -8,6 +8,60 @@ preserve
 #endif
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
+PyDoc_STRVAR(math_gcd__doc__,
+"gcd($module, /, *integers)\n"
+"--\n"
+"\n"
+"Greatest Common Divisor.");
+
+#define MATH_GCD_METHODDEF    \
+    {"gcd", _PyCFunction_CAST(math_gcd), METH_FASTCALL, math_gcd__doc__},
+
+static PyObject *
+math_gcd_impl(PyObject *module, PyObject * const *args,
+              Py_ssize_t args_length);
+
+static PyObject *
+math_gcd(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject * const *__clinic_args;
+    Py_ssize_t args_length;
+
+    __clinic_args = args;
+    args_length = nargs;
+    return_value = math_gcd_impl(module, __clinic_args, args_length);
+
+    return return_value;
+}
+
+PyDoc_STRVAR(math_lcm__doc__,
+"lcm($module, /, *integers)\n"
+"--\n"
+"\n"
+"Least Common Multiple.");
+
+#define MATH_LCM_METHODDEF    \
+    {"lcm", _PyCFunction_CAST(math_lcm), METH_FASTCALL, math_lcm__doc__},
+
+static PyObject *
+math_lcm_impl(PyObject *module, PyObject * const *args,
+              Py_ssize_t args_length);
+
+static PyObject *
+math_lcm(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject * const *__clinic_args;
+    Py_ssize_t args_length;
+
+    __clinic_args = args;
+    args_length = nargs;
+    return_value = math_lcm_impl(module, __clinic_args, args_length);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(math_ceil__doc__,
 "ceil($module, x, /)\n"
 "--\n"
@@ -29,6 +83,40 @@ PyDoc_STRVAR(math_floor__doc__,
 
 #define MATH_FLOOR_METHODDEF    \
     {"floor", (PyCFunction)math_floor, METH_O, math_floor__doc__},
+
+PyDoc_STRVAR(math_signbit__doc__,
+"signbit($module, x, /)\n"
+"--\n"
+"\n"
+"Return True if the sign of x is negative and False otherwise.");
+
+#define MATH_SIGNBIT_METHODDEF    \
+    {"signbit", (PyCFunction)math_signbit, METH_O, math_signbit__doc__},
+
+static PyObject *
+math_signbit_impl(PyObject *module, double x);
+
+static PyObject *
+math_signbit(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    double x;
+
+    if (PyFloat_CheckExact(arg)) {
+        x = PyFloat_AS_DOUBLE(arg);
+    }
+    else
+    {
+        x = PyFloat_AsDouble(arg);
+        if (x == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    return_value = math_signbit_impl(module, x);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(math_fsum__doc__,
 "fsum($module, seq, /)\n"
@@ -54,9 +142,7 @@ PyDoc_STRVAR(math_factorial__doc__,
 "factorial($module, n, /)\n"
 "--\n"
 "\n"
-"Find n!.\n"
-"\n"
-"Raise a ValueError if x is negative or non-integral.");
+"Find n!.");
 
 #define MATH_FACTORIAL_METHODDEF    \
     {"factorial", (PyCFunction)math_factorial, METH_O, math_factorial__doc__},
@@ -351,6 +437,44 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(math_hypot__doc__,
+"hypot($module, /, *coordinates)\n"
+"--\n"
+"\n"
+"Multidimensional Euclidean distance from the origin to a point.\n"
+"\n"
+"Roughly equivalent to:\n"
+"    sqrt(sum(x**2 for x in coordinates))\n"
+"\n"
+"For a two dimensional point (x, y), gives the hypotenuse\n"
+"using the Pythagorean theorem:  sqrt(x*x + y*y).\n"
+"\n"
+"For example, the hypotenuse of a 3/4/5 right triangle is:\n"
+"\n"
+"    >>> hypot(3.0, 4.0)\n"
+"    5.0");
+
+#define MATH_HYPOT_METHODDEF    \
+    {"hypot", _PyCFunction_CAST(math_hypot), METH_FASTCALL, math_hypot__doc__},
+
+static PyObject *
+math_hypot_impl(PyObject *module, PyObject * const *args,
+                Py_ssize_t args_length);
+
+static PyObject *
+math_hypot(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject * const *__clinic_args;
+    Py_ssize_t args_length;
+
+    __clinic_args = args;
+    args_length = nargs;
+    return_value = math_hypot_impl(module, __clinic_args, args_length);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(math_sumprod__doc__,
 "sumprod($module, p, q, /)\n"
 "--\n"
@@ -359,7 +483,7 @@ PyDoc_STRVAR(math_sumprod__doc__,
 "\n"
 "Roughly equivalent to:\n"
 "\n"
-"    sum(itertools.starmap(operator.mul, zip(p, q, strict=True)))\n"
+"    sum(map(operator.mul, p, q, strict=True))\n"
 "\n"
 "For float and mixed int/float inputs, the intermediate products\n"
 "and sums are computed with extended precision.");
@@ -538,6 +662,74 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(math_isnormal__doc__,
+"isnormal($module, x, /)\n"
+"--\n"
+"\n"
+"Return True if x is normal, and False otherwise.");
+
+#define MATH_ISNORMAL_METHODDEF    \
+    {"isnormal", (PyCFunction)math_isnormal, METH_O, math_isnormal__doc__},
+
+static PyObject *
+math_isnormal_impl(PyObject *module, double x);
+
+static PyObject *
+math_isnormal(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    double x;
+
+    if (PyFloat_CheckExact(arg)) {
+        x = PyFloat_AS_DOUBLE(arg);
+    }
+    else
+    {
+        x = PyFloat_AsDouble(arg);
+        if (x == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    return_value = math_isnormal_impl(module, x);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(math_issubnormal__doc__,
+"issubnormal($module, x, /)\n"
+"--\n"
+"\n"
+"Return True if x is subnormal, and False otherwise.");
+
+#define MATH_ISSUBNORMAL_METHODDEF    \
+    {"issubnormal", (PyCFunction)math_issubnormal, METH_O, math_issubnormal__doc__},
+
+static PyObject *
+math_issubnormal_impl(PyObject *module, double x);
+
+static PyObject *
+math_issubnormal(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    double x;
+
+    if (PyFloat_CheckExact(arg)) {
+        x = PyFloat_AS_DOUBLE(arg);
+    }
+    else
+    {
+        x = PyFloat_AsDouble(arg);
+        if (x == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    return_value = math_issubnormal_impl(module, x);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(math_isnan__doc__,
 "isnan($module, x, /)\n"
 "--\n"
@@ -645,9 +837,11 @@ math_isclose(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { _Py_LATIN1_CHR('a'), _Py_LATIN1_CHR('b'), &_Py_ID(rel_tol), &_Py_ID(abs_tol), },
     };
     #undef NUM_KEYWORDS
@@ -672,7 +866,8 @@ math_isclose(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     double abs_tol = 0.0;
     int _return_value;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -763,9 +958,11 @@ math_prod(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(start), },
     };
     #undef NUM_KEYWORDS
@@ -787,7 +984,8 @@ math_prod(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
     PyObject *iterable;
     PyObject *start = NULL;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -913,9 +1111,11 @@ math_nextafter(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(steps), },
     };
     #undef NUM_KEYWORDS
@@ -938,7 +1138,8 @@ math_nextafter(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     double y;
     PyObject *steps = Py_None;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -1011,4 +1212,4 @@ math_ulp(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=755da3b1dbd9e45f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4e3fa94d026f027b input=a9049054013a1b77]*/

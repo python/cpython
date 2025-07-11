@@ -1,1 +1,0 @@
-Emscripten builds now require node >= 18.

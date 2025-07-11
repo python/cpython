@@ -1,2 +1,0 @@
-Fix a crash in :func:`sys.audit` when passing a non-string as first argument
-and Python was compiled in debug mode.

@@ -11,6 +11,18 @@
 
 **Source code:** :source:`Lib/argparse.py`
 
+.. note::
+
+   While :mod:`argparse` is the default recommended standard library module
+   for implementing basic command line applications, authors with more
+   exacting requirements for exactly how their command line applications
+   behave may find it doesn't provide the necessary level of control.
+   Refer to :ref:`choosing-an-argument-parser` for alternatives to
+   consider when ``argparse`` doesn't support behaviors that the application
+   requires (such as entirely disabling support for interspersed options and
+   positional arguments, or accepting option parameter values that start
+   with ``-`` even when they correspond to another defined option).
+
 --------------
 
 .. sidebar:: Tutorial
@@ -62,7 +74,7 @@ ArgumentParser objects
                           prefix_chars='-', fromfile_prefix_chars=None, \
                           argument_default=None, conflict_handler='error', \
                           add_help=True, allow_abbrev=True, exit_on_error=True, \
-                          suggest_on_error=False)
+                          *, suggest_on_error=False, color=False)
 
    Create a new :class:`ArgumentParser` object. All parameters should be passed
    as keyword arguments. Each parameter has its own more detailed description
@@ -99,7 +111,7 @@ ArgumentParser objects
    * add_help_ - Add a ``-h/--help`` option to the parser (default: ``True``)
 
    * allow_abbrev_ - Allows long options to be abbreviated if the
-     abbreviation is unambiguous. (default: ``True``)
+     abbreviation is unambiguous (default: ``True``)
 
    * exit_on_error_ - Determines whether or not :class:`!ArgumentParser` exits with
      error info when an error occurs. (default: ``True``)
@@ -107,6 +119,7 @@ ArgumentParser objects
    * suggest_on_error_ - Enables suggestions for mistyped argument choices
      and subparser names (default: ``False``)
 
+   * color_ - Allow color output (default: ``False``)
 
    .. versionchanged:: 3.5
       *allow_abbrev* parameter was added.
@@ -117,6 +130,9 @@ ArgumentParser objects
 
    .. versionchanged:: 3.9
       *exit_on_error* parameter was added.
+
+   .. versionchanged:: 3.14
+      *suggest_on_error* and *color* parameters were added.
 
 The following sections describe how each of these are used.
 
@@ -191,6 +207,12 @@ arguments it contains. The default message can be overridden with the
 
 The ``%(prog)s`` format specifier is available to fill in the program name in
 your usage messages.
+
+When a custom usage message is specified for the main parser, you may also want to
+consider passing  the ``prog`` argument to :meth:`~ArgumentParser.add_subparsers`
+or the ``prog`` and the ``usage`` arguments to
+:meth:`~_SubParsersAction.add_parser`, to ensure consistent command prefixes and
+usage information across subparsers.
 
 
 .. _description:
@@ -576,12 +598,48 @@ subparser names, the feature can be enabled by setting ``suggest_on_error`` to
 ``True``. Note that this only applies for arguments when the choices specified
 are strings::
 
-   >>> parser = argparse.ArgumentParser(description='Process some integers.', suggest_on_error=True)
+   >>> parser = argparse.ArgumentParser(description='Process some integers.',
+                                        suggest_on_error=True)
    >>> parser.add_argument('--action', choices=['sum', 'max'])
    >>> parser.add_argument('integers', metavar='N', type=int, nargs='+',
    ...                     help='an integer for the accumulator')
    >>> parser.parse_args(['--action', 'sumn', 1, 2, 3])
    tester.py: error: argument --action: invalid choice: 'sumn', maybe you meant 'sum'? (choose from 'sum', 'max')
+
+If you're writing code that needs to be compatible with older Python versions
+and want to opportunistically use ``suggest_on_error`` when it's available, you
+can set it as an attribute after initializing the parser instead of using the
+keyword argument::
+
+   >>> parser = argparse.ArgumentParser(description='Process some integers.')
+   >>> parser.suggest_on_error = True
+
+.. versionadded:: 3.14
+
+
+color
+^^^^^
+
+By default, the help message is printed in plain text. If you want to allow
+color in help messages, you can enable it by setting ``color`` to ``True``::
+
+   >>> parser = argparse.ArgumentParser(description='Process some integers.',
+   ...                                  color=True)
+   >>> parser.add_argument('--action', choices=['sum', 'max'])
+   >>> parser.add_argument('integers', metavar='N', type=int, nargs='+',
+   ...                     help='an integer for the accumulator')
+   >>> parser.parse_args(['--help'])
+
+Even if a CLI author has enabled color, it can be
+:ref:`controlled using environment variables <using-on-controlling-color>`.
+
+If you're writing code that needs to be compatible with older Python versions
+and want to opportunistically use ``color`` when it's available, you
+can set it as an attribute after initializing the parser instead of using the
+keyword argument::
+
+   >>> parser = argparse.ArgumentParser(description='Process some integers.')
+   >>> parser.color = True
 
 .. versionadded:: 3.14
 
@@ -781,27 +839,16 @@ how the command-line arguments should be handled. The supplied actions are:
     >>> parser.parse_args(['--version'])
     PROG 2.0
 
-Only actions that consume command-line arguments (e.g. ``'store'``,
-``'append'`` or ``'extend'``) can be used with positional arguments.
-
-.. class:: BooleanOptionalAction
-
-   You may also specify an arbitrary action by passing an :class:`Action` subclass or
-   other object that implements the same interface. The :class:`!BooleanOptionalAction`
-   is available in :mod:`!argparse` and adds support for boolean actions such as
-   ``--foo`` and ``--no-foo``::
-
-       >>> import argparse
-       >>> parser = argparse.ArgumentParser()
-       >>> parser.add_argument('--foo', action=argparse.BooleanOptionalAction)
-       >>> parser.parse_args(['--no-foo'])
-       Namespace(foo=False)
-
-   .. versionadded:: 3.9
+You may also specify an arbitrary action by passing an :class:`Action` subclass
+(e.g. :class:`BooleanOptionalAction`) or other object that implements the same
+interface. Only actions that consume command-line arguments (e.g. ``'store'``,
+``'append'``, ``'extend'``, or custom actions with non-zero ``nargs``) can be used
+with positional arguments.
 
 The recommended way to create a custom action is to extend :class:`Action`,
 overriding the :meth:`!__call__` method and optionally the :meth:`!__init__` and
-:meth:`!format_usage` methods.
+:meth:`!format_usage` methods. You can also register custom actions using the
+:meth:`~ArgumentParser.register` method and reference them by their registered name.
 
 An example of a custom action::
 
@@ -896,7 +943,7 @@ See also :ref:`specifying-ambiguous-arguments`. The supported values are:
 
 .. index:: single: + (plus); in argparse module
 
-* ``'+'``. Just like ``'*'``, all command-line args present are gathered into a
+* ``'+'``. Just like ``'*'``, all command-line arguments present are gathered into a
   list.  Additionally, an error message will be generated if there wasn't at
   least one command-line argument present.  For example::
 
@@ -1020,10 +1067,11 @@ necessary type-checking and type conversions to be performed.
 If the type_ keyword is used with the default_ keyword, the type converter
 is only applied if the default is a string.
 
-The argument to ``type`` can be any callable that accepts a single string.
+The argument to ``type`` can be a callable that accepts a single string or
+the name of a registered type (see :meth:`~ArgumentParser.register`)
 If the function raises :exc:`ArgumentTypeError`, :exc:`TypeError`, or
 :exc:`ValueError`, the exception is caught and a nicely formatted error
-message is displayed.  No other exception types are handled.
+message is displayed. Other exception types are not handled.
 
 Common built-in types and functions can be used as type converters:
 
@@ -1368,6 +1416,21 @@ this API may be passed as the ``action`` parameter to
       :class:`!Action` subclasses can define a :meth:`!format_usage` method that takes no argument
       and return a string which will be used when printing the usage of the program.
       If such method is not provided, a sensible default will be used.
+
+.. class:: BooleanOptionalAction
+
+   A subclass of :class:`Action` for handling boolean flags with positive
+   and negative options. Adding a single argument such as ``--foo`` automatically
+   creates both ``--foo`` and ``--no-foo`` options, storing ``True`` and ``False``
+   respectively::
+
+       >>> import argparse
+       >>> parser = argparse.ArgumentParser()
+       >>> parser.add_argument('--foo', action=argparse.BooleanOptionalAction)
+       >>> parser.parse_args(['--no-foo'])
+       Namespace(foo=False)
+
+   .. versionadded:: 3.9
 
 
 The parse_args() method
@@ -1808,6 +1871,10 @@ Sub-commands
    .. versionchanged:: 3.7
       New *required* keyword-only parameter.
 
+   .. versionchanged:: 3.14
+      Subparser's *prog* is no longer affected by a custom usage message in
+      the main parser.
+
 
 FileType objects
 ^^^^^^^^^^^^^^^^
@@ -1906,11 +1973,10 @@ Argument groups
    Note that any arguments not in your user-defined groups will end up back
    in the usual "positional arguments" and "optional arguments" sections.
 
-   .. versionchanged:: 3.11
-    Calling :meth:`add_argument_group` on an argument group is deprecated.
-    This feature was never supported and does not always work correctly.
-    The function exists on the API by accident through inheritance and
-    will be removed in the future.
+   .. deprecated-removed:: 3.11 3.14
+      Calling :meth:`add_argument_group` on an argument group now raises an
+      exception. This nesting was never supported, often failed to work
+      correctly, and was unintentionally exposed through inheritance.
 
    .. deprecated:: 3.14
       Passing prefix_chars_ to :meth:`add_argument_group`
@@ -1973,11 +2039,11 @@ Mutual exclusion
        --foo FOO   foo help
        --bar BAR   bar help
 
-   .. versionchanged:: 3.11
-    Calling :meth:`add_argument_group` or :meth:`add_mutually_exclusive_group`
-    on a mutually exclusive group is deprecated. These features were never
-    supported and do not always work correctly. The functions exist on the
-    API by accident through inheritance and will be removed in the future.
+   .. deprecated-removed:: 3.11 3.14
+      Calling :meth:`add_argument_group` or :meth:`add_mutually_exclusive_group`
+      on a mutually exclusive group now raises an exception. This nesting was
+      never supported, often failed to work correctly, and was unintentionally
+      exposed through inheritance.
 
 
 Parser defaults
@@ -2059,12 +2125,15 @@ Partial parsing
 
 .. method:: ArgumentParser.parse_known_args(args=None, namespace=None)
 
-   Sometimes a script may only parse a few of the command-line arguments, passing
-   the remaining arguments on to another script or program. In these cases, the
-   :meth:`~ArgumentParser.parse_known_args` method can be useful.  It works much like
-   :meth:`~ArgumentParser.parse_args` except that it does not produce an error when
-   extra arguments are present.  Instead, it returns a two item tuple containing
-   the populated namespace and the list of remaining argument strings.
+   Sometimes a script only needs to handle a specific set of command-line
+   arguments, leaving any unrecognized arguments for another script or program.
+   In these cases, the :meth:`~ArgumentParser.parse_known_args` method can be
+   useful.
+
+   This method works similarly to :meth:`~ArgumentParser.parse_args`, but it does
+   not raise an error for extra, unrecognized arguments. Instead, it parses the
+   known arguments and returns a two item tuple that contains the populated
+   namespace and the list of any unrecognized arguments.
 
    ::
 
@@ -2162,6 +2231,34 @@ Intermixed parsing
 
    .. versionadded:: 3.7
 
+
+Registering custom types or actions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. method:: ArgumentParser.register(registry_name, value, object)
+
+   Sometimes it's desirable to use a custom string in error messages to provide
+   more user-friendly output. In these cases, :meth:`!register` can be used to
+   register custom actions or types with a parser and allow you to reference the
+   type by their registered name instead of their callable name.
+
+   The :meth:`!register` method accepts three arguments - a *registry_name*,
+   specifying the internal registry where the object will be stored (e.g.,
+   ``action``, ``type``), *value*, which is the key under which the object will
+   be registered, and object, the callable to be registered.
+
+   The following example shows how to register a custom type with a parser::
+
+      >>> import argparse
+      >>> parser = argparse.ArgumentParser()
+      >>> parser.register('type', 'hexadecimal integer', lambda s: int(s, 16))
+      >>> parser.add_argument('--foo', type='hexadecimal integer')
+      _StoreAction(option_strings=['--foo'], dest='foo', nargs=None, const=None, default=None, type='hexadecimal integer', choices=None, required=False, help=None, metavar=None, deprecated=False)
+      >>> parser.parse_args(['--foo', '0xFA'])
+      Namespace(foo=250)
+      >>> parser.parse_args(['--foo', '1.2'])
+      usage: PROG [-h] [--foo FOO]
+      PROG: error: argument --foo: invalid 'hexadecimal integer' value: '1.2'
 
 Exceptions
 ----------

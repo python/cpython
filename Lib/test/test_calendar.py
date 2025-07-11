@@ -417,7 +417,7 @@ class OutputTestCase(unittest.TestCase):
         self.check_htmlcalendar_encoding('utf-8', 'utf-8')
 
     def test_output_htmlcalendar_encoding_default(self):
-        self.check_htmlcalendar_encoding(None, sys.getdefaultencoding())
+        self.check_htmlcalendar_encoding(None, 'utf-8')
 
     def test_yeardatescalendar(self):
         def shrink(cal):
@@ -457,6 +457,11 @@ class OutputTestCase(unittest.TestCase):
             calendar.TextCalendar().formatmonth(0, 2),
             result_0_02_text
         )
+    def test_formatmonth_with_invalid_month(self):
+        with self.assertRaises(calendar.IllegalMonthError):
+            calendar.TextCalendar().formatmonth(2017, 13)
+        with self.assertRaises(calendar.IllegalMonthError):
+            calendar.TextCalendar().formatmonth(2017, -1)
 
     def test_formatmonthname_with_year(self):
         self.assertEqual(
@@ -982,6 +987,7 @@ class CommandLineTestCase(unittest.TestCase):
         self.assertCLIFails(*args)
         self.assertCmdFails(*args)
 
+    @support.force_not_colorized
     def test_help(self):
         stdout = self.run_cmd_ok('-h')
         self.assertIn(b'usage:', stdout)
@@ -1092,7 +1098,7 @@ class CommandLineTestCase(unittest.TestCase):
             output = run('--type', 'text', '2004')
             self.assertEqual(output, conv(result_2004_text))
             output = run('--type', 'html', '2004')
-            self.assertEqual(output[:6], b'<?xml ')
+            self.assertStartsWith(output, b'<?xml ')
             self.assertIn(b'<title>Calendar for 2004</title>', output)
 
     def test_html_output_current_year(self):
@@ -1121,7 +1127,7 @@ class MiscTestCase(unittest.TestCase):
         not_exported = {
             'mdays', 'January', 'February', 'EPOCH',
             'different_locale', 'c', 'prweek', 'week', 'format',
-            'formatstring', 'main', 'monthlen', 'prevmonth', 'nextmonth'}
+            'formatstring', 'main', 'monthlen', 'prevmonth', 'nextmonth', ""}
         support.check__all__(self, calendar, not_exported=not_exported)
 
 
@@ -1148,6 +1154,13 @@ class TestSubClassingCase(unittest.TestCase):
     def test_formatmonth(self):
         self.assertIn('class="text-center month"',
                       self.cal.formatmonth(2017, 5))
+
+    def test_formatmonth_with_invalid_month(self):
+        with self.assertRaises(calendar.IllegalMonthError):
+            self.cal.formatmonth(2017, 13)
+        with self.assertRaises(calendar.IllegalMonthError):
+            self.cal.formatmonth(2017, -1)
+
 
     def test_formatweek(self):
         weeks = self.cal.monthdays2calendar(2017, 5)

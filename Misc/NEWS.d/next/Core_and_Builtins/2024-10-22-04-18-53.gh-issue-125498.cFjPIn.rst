@@ -1,4 +1,0 @@
-The JIT has been updated to leverage Clang 19’s new ``preserve_none`` attribute,
-which supports more platforms and is more useful than LLVM's existing ``ghccc``
-calling convention. This also removes the need to manually patch the calling
-convention in LLVM IR, simplifying the JIT compilation process.

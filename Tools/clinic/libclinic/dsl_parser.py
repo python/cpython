@@ -260,6 +260,7 @@ class DSLParser:
     preserve_output: bool
     critical_section: bool
     target_critical_section: list[str]
+    disable_fastcall: bool
     from_version_re = re.compile(r'([*/]) +\[from +(.+)\]')
 
     def __init__(self, clinic: Clinic) -> None:
@@ -296,6 +297,7 @@ class DSLParser:
         self.preserve_output = False
         self.critical_section = False
         self.target_critical_section = []
+        self.disable_fastcall = False
 
     def directive_module(self, name: str) -> None:
         fields = name.split('.')[:-1]
@@ -422,6 +424,18 @@ class DSLParser:
             fail("Up to 2 critical section variables are supported")
         self.target_critical_section.extend(args)
         self.critical_section = True
+
+    def at_disable(self, *args: str) -> None:
+        if self.kind is not CALLABLE:
+            fail("Can't set @disable, function is not a normal callable")
+        if not args:
+            fail("@disable expects at least one argument")
+        features = list(args)
+        if 'fastcall' in features:
+            features.remove('fastcall')
+            self.disable_fastcall = True
+        if features:
+            fail("invalid argument for @disable:", features[0])
 
     def at_getter(self) -> None:
         match self.kind:
@@ -691,6 +705,7 @@ class DSLParser:
             kind=self.kind,
             coexist=self.coexist,
             critical_section=self.critical_section,
+            disable_fastcall=self.disable_fastcall,
             target_critical_section=self.target_critical_section,
             forced_text_signature=self.forced_text_signature
         )
@@ -925,16 +940,17 @@ class DSLParser:
 
         parameter_name = parameter.arg
         name, legacy, kwargs = self.parse_converter(parameter.annotation)
+        if is_vararg:
+            name = 'varpos_' + name
 
         value: object
         if not default:
-            if self.parameter_state is ParamState.OPTIONAL:
-                fail(f"Can't have a parameter without a default ({parameter_name!r}) "
-                      "after a parameter with a default!")
             if is_vararg:
                 value = NULL
-                kwargs.setdefault('c_default', "NULL")
             else:
+                if self.parameter_state is ParamState.OPTIONAL:
+                    fail(f"Can't have a parameter without a default ({parameter_name!r}) "
+                          "after a parameter with a default!")
                 value = unspecified
             if 'py_default' in kwargs:
                 fail("You can't specify py_default without specifying a default value!")
