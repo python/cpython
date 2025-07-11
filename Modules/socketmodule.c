@@ -3355,8 +3355,8 @@ sock_setsockopt(PyObject *self, PyObject *args)
     }
     if (arglen == 4 && optval != Py_None) {
         PyErr_Format(PyExc_TypeError,
-                        "setsockopt() argument 3 must be NoneType, not %s",
-                        Py_TYPE(optval)->tp_name);
+                        "setsockopt() argument 3 must be NoneType, not %T",
+                        optval);
         return NULL;
     }
 
@@ -3426,8 +3426,8 @@ sock_setsockopt(PyObject *self, PyObject *args)
     }
 
     PyErr_Format(PyExc_TypeError,
-                    "socket option should be int, bytes-like object or None (got %s)",
-                    Py_TYPE(optval)->tp_name);
+                    "socket option should be int, bytes-like object or None (got %T)",
+                    optval);
     return NULL;
 
 done:
