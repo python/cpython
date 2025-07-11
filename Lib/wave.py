@@ -429,15 +429,15 @@ class Wave_write:
 
     def __init__(self, f):
         self._i_opened_the_file = None
-        if isinstance(f, str):
-            f = builtins.open(f, 'wb')
-            self._i_opened_the_file = f
         try:
-            self.initfp(f)
+            if isinstance(f, str):
+                f = builtins.open(f, 'wb')
+                self._i_opened_the_file = f
         except:
-            if self._i_opened_the_file:
-                f.close()
+            f = None
             raise
+        finally:
+            self.initfp(f)
 
     def initfp(self, file):
         self._file = file

@@ -169,6 +169,26 @@ def make_bad_fd():
         unlink(TESTFN)
 
 
+@contextlib.contextmanager
+def unwritable_filepath():
+    """
+    Create a filepath that is not writable by the current user.
+    """
+    import tempfile
+    fd, path = tempfile.mkstemp()
+    original_permissions = stat.S_IMODE(os.lstat(path).st_mode)
+    os.close(fd)
+
+    try:
+        os.chmod(path, stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
+        yield path
+    finally:
+        try:
+            os.chmod(path, original_permissions)
+            os.remove(path)
+        except OSError as e:
+            pass
+
 _can_symlink = None
 
 
