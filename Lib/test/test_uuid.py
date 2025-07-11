@@ -1141,9 +1141,7 @@ class BaseTestUUID:
         self.assertIs(strong, weak())
 
 
-class TestUUIDCommandLineRunTime(unittest.TestCase):
-    uuid = py_uuid
-
+class TestUUIDCommandLineRunTimeMixin:
     def do_test_standalone_uuid(self, version):
         stdout = io.StringIO()
         with contextlib.redirect_stdout(stdout):
@@ -1244,12 +1242,12 @@ class TestUUIDCommandLineRunTime(unittest.TestCase):
         self.do_test_standalone_uuid(8)
 
 
-class TestUUIDWithoutExtModule(BaseTestUUID, unittest.TestCase):
+class TestUUIDWithoutExtModule(TestUUIDCommandLineRunTimeMixin, BaseTestUUID, unittest.TestCase):
     uuid = py_uuid
 
 
 @unittest.skipUnless(c_uuid, 'requires the C _uuid module')
-class TestUUIDWithExtModule(BaseTestUUID, unittest.TestCase):
+class TestUUIDWithExtModule(TestUUIDCommandLineRunTimeMixin, BaseTestUUID, unittest.TestCase):
     uuid = c_uuid
 
     def check_has_stable_libuuid_extractable_node(self):
