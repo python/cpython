@@ -335,10 +335,13 @@ Standard names are defined for the following types:
 
 .. data:: FrameLocalsProxyType
 
-   The type of frame :func:`locals` proxy objects, as found on the
-   :attr:`frame.f_locals` attribute. See :pep:`667` for more information.
+   The type of frame locals proxy objects, as found on the
+   :attr:`frame.f_locals` attribute.
 
    .. versionadded:: next
+
+   .. seealso::
+      :pep:`667`
 
 
 .. data:: GetSetDescriptorType
