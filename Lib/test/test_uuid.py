@@ -1154,7 +1154,7 @@ class TestUUIDCli(BaseTestUUID, unittest.TestCase):
         self.assertEqual(u.version, version)
 
     @mock.patch.object(sys, "argv", ["", "-u", "uuid1"])
-    def test_uuid1(self):
+    def test_cli_uuid1(self):
         self.do_test_standalone_uuid(1)
 
     @mock.patch.object(sys, "argv", ["", "-u", "uuid3", "-n", "@dns"])
@@ -1232,15 +1232,15 @@ class TestUUIDCli(BaseTestUUID, unittest.TestCase):
         self.assertEqual(uuid_output.version, 5)
 
     @mock.patch.object(sys, "argv", ["", "-u", "uuid6"])
-    def test_uuid1(self):
+    def test_cli_uuid6(self):
         self.do_test_standalone_uuid(6)
 
     @mock.patch.object(sys, "argv", ["", "-u", "uuid7"])
-    def test_uuid1(self):
+    def test_cli_uuid7(self):
         self.do_test_standalone_uuid(7)
 
     @mock.patch.object(sys, "argv", ["", "-u", "uuid8"])
-    def test_uuid1(self):
+    def test_cli_uuid8(self):
         self.do_test_standalone_uuid(8)
 
 
