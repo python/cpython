@@ -505,7 +505,7 @@ class InterpreterPoolExecutorTest(
 
     @unittest.skipUnless(hasattr(_thread, '_get_name'), "missing _thread._get_name")
     def test_thread_name_prefix_with_thread_get_name(self):
-        def f():
+        def get_thread_name():
             import _thread
             return _thread._get_name()
 
