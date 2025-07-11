@@ -8094,7 +8094,40 @@ class NamedTupleTests(BaseTestCase):
 
     def test_multiple_inheritance(self):
         class A:
-            pass
+            @property
+            def x(self):
+                return 4
+            @property
+            def y(self):
+                return 5
+            def __len__(self):
+                return 10
+
+        class X(NamedTuple, A):
+            x: int
+        self.assertEqual(X.__bases__, (tuple, A))
+        self.assertEqual(X.__orig_bases__, (NamedTuple, A))
+        self.assertEqual(X.__mro__, (X, tuple, A, object))
+
+        a = X(3)
+        self.assertEqual(a.x, 3)
+        self.assertEqual(a.y, 5)
+        self.assertEqual(len(a), 1)
+
+        class Y(A, NamedTuple):
+            x: int
+        self.assertEqual(Y.__bases__, (A, tuple))
+        self.assertEqual(Y.__orig_bases__, (A, NamedTuple))
+        self.assertEqual(Y.__mro__, (Y, A, tuple, object))
+
+        a = Y(3)
+        self.assertEqual(a.x, 3)
+        self.assertEqual(a.y, 5)
+        self.assertEqual(len(a), 10)
+
+    def test_multiple_inheritance_errors(self):
+        class A(NamedTuple):
+            x: int
         with self.assertRaises(TypeError):
             class X(NamedTuple, A):
                 x: int

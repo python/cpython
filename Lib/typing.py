@@ -2906,10 +2906,6 @@ class NamedTupleMeta(type):
         if "__classcell__" in ns:
             raise TypeError(
                 "uses of super() and __class__ are unsupported in methods of NamedTuple subclasses")
-        for base in bases:
-            if base is not _NamedTuple and base is not Generic:
-                raise TypeError(
-                    'can only inherit from a NamedTuple type and Generic')
         bases = tuple(tuple if base is _NamedTuple else base for base in bases)
         if "__annotations__" in ns:
             types = ns["__annotations__"]

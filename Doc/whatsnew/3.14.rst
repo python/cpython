@@ -2656,6 +2656,11 @@ typing
 * Remove :class:`!typing.ByteString`. It had previously raised a
   :exc:`DeprecationWarning` since Python 3.12.
 
+* Add support of multiple inheritance with :class:`~typing.NamedTuple`.
+  Previously, multiple inheritance was only supported if there was exactly
+  one other base and the base was :class:`typing.Generic`.
+  (Contributed by Serhiy Storchaka in :gh:`116241`.)
+
 * :class:`typing.TypeAliasType` now supports star unpacking.
 
 urllib
