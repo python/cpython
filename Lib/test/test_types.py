@@ -57,7 +57,7 @@ class TypesTests(unittest.TestCase):
             'LambdaType', 'MappingProxyType', 'MemberDescriptorType',
             'MethodDescriptorType', 'MethodType', 'MethodWrapperType',
             'ModuleType', 'NoneType', 'NotImplementedType', 'SimpleNamespace',
-            'TracebackType', 'UnionType', 'WrapperDescriptorType',
+            'TracebackType', 'UnionType', 'WrapperDescriptorType', 'FrameLocalsProxyType'
         }
         self.assertEqual(all_names, set(c_types.__all__))
         self.assertEqual(all_names - c_only_names, set(py_types.__all__))
@@ -714,7 +714,7 @@ class TypesTests(unittest.TestCase):
     def test_frame_locals_proxy(self):
         frame = inspect.currentframe()
         self.assertIsNotNone(frame)
-        self.assertIsInstance(frame.f_locals, types.FrameLocalsProxy)
+        self.assertIsInstance(frame.f_locals, types.FrameLocalsProxyType)
 
 
 class UnionTests(unittest.TestCase):
