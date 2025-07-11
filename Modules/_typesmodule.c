@@ -28,6 +28,7 @@ _types_exec(PyObject *m)
     EXPORT_STATIC_TYPE("CoroutineType", PyCoro_Type);
     EXPORT_STATIC_TYPE("EllipsisType", PyEllipsis_Type);
     EXPORT_STATIC_TYPE("FrameType", PyFrame_Type);
+    EXPORT_STATIC_TYPE("FrameLocalsProxyType", PyFrameLocalsProxy_Type);
     EXPORT_STATIC_TYPE("FunctionType", PyFunction_Type);
     EXPORT_STATIC_TYPE("GeneratorType", PyGen_Type);
     EXPORT_STATIC_TYPE("GenericAlias", Py_GenericAliasType);
@@ -46,7 +47,6 @@ _types_exec(PyObject *m)
     EXPORT_STATIC_TYPE("TracebackType", PyTraceBack_Type);
     EXPORT_STATIC_TYPE("UnionType", _PyUnion_Type);
     EXPORT_STATIC_TYPE("WrapperDescriptorType", PyWrapperDescr_Type);
-    EXPORT_STATIC_TYPE("FrameLocalsProxyType", PyFrameLocalsProxy_Type);
 #undef EXPORT_STATIC_TYPE
     return 0;
 }
