@@ -508,7 +508,7 @@ The :mod:`functools` module defines the following functions:
    .. method:: singledispatch.register()
       :no-typesetting:
 
-   To add overloaded implementations to the function, use the :func:`~singledispatch.register`
+   To add overloaded implementations to the function, use the :func:`!register`
    attribute of the generic function, which can be used as a decorator.  For
    functions annotated with types, the decorator will infer the type of the
    first argument automatically::
