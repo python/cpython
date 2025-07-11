@@ -199,7 +199,7 @@ The :mod:`functools` module defines the following functions:
    and *typed*.  This is for information purposes only.  Mutating the values
    has no effect.
 
-   .. method:: functools.cache_info()
+   .. method:: lru_cache.cache_info()
       :no-typesetting:
 
    To help measure the effectiveness of the cache and tune the *maxsize*
@@ -207,7 +207,7 @@ The :mod:`functools` module defines the following functions:
    function that returns a :term:`named tuple` showing *hits*, *misses*,
    *maxsize* and *currsize*.
 
-   .. method:: functools.cache_clear()
+   .. method:: lru_cache.cache_clear()
       :no-typesetting:
 
    The decorator also provides a :func:`!cache_clear` function for clearing or
