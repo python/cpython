@@ -508,7 +508,7 @@ The :mod:`functools` module defines the following functions:
    .. method:: singledispatch.register()
       :no-typesetting:
 
-   To add overloaded implementations to the function, use the :func:`!register`
+   To add overloaded implementations to the function, use the :func:`~singledispatch.register`
    attribute of the generic function, which can be used as a decorator.  For
    functions annotated with types, the decorator will infer the type of the
    first argument automatically::
@@ -581,7 +581,7 @@ The :mod:`functools` module defines the following functions:
      ...
      >>> fun.register(type(None), nothing)
 
-   The :func:`!register` attribute returns the undecorated function. This
+   The :func:`~singledispatch.register` attribute returns the undecorated function. This
    enables decorator stacking, :mod:`pickling<pickle>`, and the creation
    of unit tests for each variant independently::
 
@@ -659,10 +659,10 @@ The :mod:`functools` module defines the following functions:
    .. versionadded:: 3.4
 
    .. versionchanged:: 3.7
-      The :func:`!register` attribute now supports using type annotations.
+      The :func:`~singledispatch.register` attribute now supports using type annotations.
 
    .. versionchanged:: 3.11
-      The :func:`!register` attribute now supports
+      The :func:`~singledispatch.register` attribute now supports
       :class:`typing.Union` as a type annotation.
 
 
