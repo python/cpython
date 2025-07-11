@@ -3341,25 +3341,23 @@ sock_setsockopt(PyObject *self, PyObject *args)
     unsigned int optlen;
     PyObject *optval;
 
+    if (!PyArg_ParseTuple(args, "iiO|I:setsockopt",
+			  &level, &optname, &optval, &optlen)) {
+	return NULL;
+    }
+
     arglen = PyTuple_Size(args);
-    switch (arglen) {
-        case 3:
-            if (!PyArg_ParseTuple(args, "iiO:setsockopt",
-                                  &level, &optname, &optval)) {
-                return NULL;
-            }
-            break;
-        case 4:
-            if (!PyArg_ParseTuple(args, "iiO!I:setsockopt",
-                                  &level, &optname, Py_TYPE(Py_None), &optval, &optlen)) {
-                return NULL;
-            }
-            break;
-        default:
-            PyErr_Format(PyExc_TypeError,
-                         "setsockopt() takes 3 or 4 arguments (%zd given)",
-                         arglen);
-            return NULL;
+    if (arglen == 3 && optval == Py_None) {
+        PyErr_Format(PyExc_TypeError,
+                        "setsockopt() take 4 arguments when socket option is None (%zd given)",
+                        arglen);
+        return NULL;
+    }
+    if (arglen == 4 && optval != Py_None) {
+        PyErr_Format(PyExc_TypeError,
+                        "setsockopt() argument 3 must be NoneType, not %s",
+                        Py_TYPE(optval)->tp_name);
+        return NULL;
     }
 
 #ifdef AF_VSOCK
@@ -3397,14 +3395,8 @@ sock_setsockopt(PyObject *self, PyObject *args)
         goto done;
     }
 
-    /* setsockopt(level, opt, None, flag) */
+    /* setsockopt(level, opt, None, optlen) */
     if (optval == Py_None) {
-        if (arglen != 4) {
-            PyErr_Format(PyExc_TypeError,
-                            "setsockopt() take 4 arguments when socket option is None (%zd given)",
-                            arglen);
-            return NULL;
-        }
         assert(sizeof(socklen_t) >= sizeof(unsigned int));
         res = setsockopt(get_sock_fd(s), level, optname,
                          NULL, (socklen_t)optlen);
@@ -3425,7 +3417,7 @@ sock_setsockopt(PyObject *self, PyObject *args)
             return NULL;
         }
         res = setsockopt(get_sock_fd(s), level, optname,
-                            buffer.buf, (int)buffer.len);
+                         buffer.buf, (int)buffer.len);
 #else
         res = setsockopt(get_sock_fd(s), level, optname, buffer.buf, buffer.len);
 #endif
@@ -3434,7 +3426,8 @@ sock_setsockopt(PyObject *self, PyObject *args)
     }
 
     PyErr_Format(PyExc_TypeError,
-                    "socket option should be integer, bytes-like object or None");
+                    "socket option should be int, bytes-like object or None (got %s)",
+                    Py_TYPE(optval)->tp_name);
     return NULL;
 
 done:
