@@ -42,20 +42,24 @@ class TestSet(TestCase):
         s = set()
         done = False
 
+        NUM_ITEMS = 2_000
+        NUM_LOOPS = 20
+
         def read_set():
             barrier.wait()
             while not done:
-                for i in range(64):
-                    result = (i % 16) in s
+                for i in range(NUM_ITEMS):
+                    item = i >> 1
+                    result = item in s
 
         def mutate_set():
             nonlocal done
             barrier.wait()
-            for i in range(10):
+            for i in range(NUM_LOOPS):
                 s.clear()
-                for j in range(16):
+                for j in range(NUM_ITEMS):
                     s.add(j)
-                for j in range(16):
+                for j in range(NUM_ITEMS):
                     s.discard(j)
                 # executes the set_swap_bodies() function
                 s.__iand__(set(k for k in range(10, 20)))
