@@ -226,13 +226,6 @@ os.path
   (Contributed by Petr Viktorin for :cve:`2025-4517`.)
 
 
-types
-------
-
-* Added :data:`types.FrameLocalsProxyType` for representing the type of
-  the :attr:`frame.f_locals` attribute, as determined in :pep:`667`.
-
-
 shelve
 ------
 
@@ -283,6 +276,13 @@ tarfile
   :func:`~tarfile.TarFile.errorlevel` is zero.
   (Contributed by Matt Prodani and Petr Viktorin in :gh:`112887`
   and :cve:`2025-4435`.)
+
+
+types
+------
+
+* Added :data:`types.FrameLocalsProxyType` for representing the type of
+  the :attr:`frame.f_locals` attribute, as determined in :pep:`667`.
 
 
 zlib
