@@ -1214,6 +1214,64 @@ class BaseTestUUID:
         self.assertEqual(output, str(uuid_output))
         self.assertEqual(uuid_output.version, 5)
 
+    @mock.patch.object(sys, "argv",
+                       ["", "-u", "uuid1"])
+    def test_cli_uuid1(self):
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            self.uuid.main()
+
+        output = stdout.getvalue().strip()
+        uuid_output = self.uuid.UUID(output)
+
+        # Output should be in the form of uuid1
+        self.assertEqual(output, str(uuid_output))
+        self.assertEqual(uuid_output.version, 1)
+
+
+    @mock.patch.object(sys, "argv",
+                       ["", "-u", "uuid6"])
+    def test_cli_uuid6(self):
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            self.uuid.main()
+
+        output = stdout.getvalue().strip()
+        uuid_output = self.uuid.UUID(output)
+
+        # Output should be in the form of uuid6
+        self.assertEqual(output, str(uuid_output))
+        self.assertEqual(uuid_output.version, 6)
+
+
+    @mock.patch.object(sys, "argv",
+                       ["", "-u", "uuid7"])
+    def test_cli_uuid7(self):
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            self.uuid.main()
+
+        output = stdout.getvalue().strip()
+        uuid_output = self.uuid.UUID(output)
+
+        # Output should be in the form of uuid7
+        self.assertEqual(output, str(uuid_output))
+        self.assertEqual(uuid_output.version, 7)
+
+
+    @mock.patch.object(sys, "argv",
+                       ["", "-u", "uuid8"])
+    def test_cli_uuid8(self):
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            self.uuid.main()
+
+        output = stdout.getvalue().strip()
+        uuid_output = self.uuid.UUID(output)
+
+        # Output should be in the form of uuid8
+        self.assertEqual(output, str(uuid_output))
+        self.assertEqual(uuid_output.version, 8)
 
 class TestUUIDWithoutExtModule(BaseTestUUID, unittest.TestCase):
     uuid = py_uuid
