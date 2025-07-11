@@ -490,7 +490,7 @@ class BuildAWSLC(AbstractBuilder):
             "-DFIPS=OFF",
         ]
         self._subprocess_call(cmd, cwd=cwd, env=env)
-        self._subprocess_call(["make", f"-j{self.jobs}"], cwd=cwd, env=env)
+        self._subprocess_call(["make", "-j{}".format(self.jobs)], cwd=cwd, env=env)
 
 
 def configure_make():
