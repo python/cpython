@@ -69,7 +69,7 @@ except ImportError:
     EllipsisType = type(Ellipsis)
     NoneType = type(None)
     NotImplementedType = type(NotImplemented)
-    FrameLocalsProxy = (lambda: type(sys._getframe().f_locals)()
+    FrameLocalsProxy = (lambda: type(sys._getframe().f_locals))()
 
     # CapsuleType cannot be accessed from pure Python,
     # so there is no fallback definition.
