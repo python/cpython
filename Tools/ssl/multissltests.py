@@ -110,7 +110,9 @@ parser.add_argument(
     '--awslc',
     nargs='+',
     default=(),
-    help=f"AWS-LC versions, defaults to '{AWSLC_RECENT_VERSIONS}'."
+    help=(
+        "AWS-LC versions, defaults to '{}' if no crypto library versions are given."
+    ).format(AWSLC_RECENT_VERSIONS)
 )
 parser.add_argument(
     '--tests',
