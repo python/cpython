@@ -1,0 +1,1 @@
+Add :data:`~types.FrameLocalsProxyType` to the :mod:`types` module.
