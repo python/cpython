@@ -1140,6 +1140,9 @@ class BaseTestUUID:
         weak = weakref.ref(strong)
         self.assertIs(strong, weak())
 
+
+class TestUUIDCli(BaseTestUUID, unittest.TestCase):
+    uuid = py_uuid
     @mock.patch.object(sys, "argv", ["", "-u", "uuid3", "-n", "@dns"])
     @mock.patch('sys.stderr', new_callable=io.StringIO)
     def test_cli_namespace_required_for_uuid3(self, mock_err):
@@ -1228,7 +1231,6 @@ class BaseTestUUID:
         self.assertEqual(output, str(uuid_output))
         self.assertEqual(uuid_output.version, 1)
 
-
     @mock.patch.object(sys, "argv",
                        ["", "-u", "uuid6"])
     def test_cli_uuid6(self):
@@ -1242,7 +1244,6 @@ class BaseTestUUID:
         # Output should be in the form of uuid6
         self.assertEqual(output, str(uuid_output))
         self.assertEqual(uuid_output.version, 6)
-
 
     @mock.patch.object(sys, "argv",
                        ["", "-u", "uuid7"])
@@ -1258,7 +1259,6 @@ class BaseTestUUID:
         self.assertEqual(output, str(uuid_output))
         self.assertEqual(uuid_output.version, 7)
 
-
     @mock.patch.object(sys, "argv",
                        ["", "-u", "uuid8"])
     def test_cli_uuid8(self):
@@ -1272,7 +1272,6 @@ class BaseTestUUID:
         # Output should be in the form of uuid8
         self.assertEqual(output, str(uuid_output))
         self.assertEqual(uuid_output.version, 8)
-
 
 class TestUUIDWithoutExtModule(BaseTestUUID, unittest.TestCase):
     uuid = py_uuid
