@@ -1384,7 +1384,11 @@ encodings.
 |                    |         | It is used in the Python  |
 |                    |         | pickle protocol.          |
 +--------------------+---------+---------------------------+
-| undefined          |         | Raise an exception for    |
+| undefined          |         | This Codec should only    |
+|                    |         | be used for testing       |
+|                    |         | purposes.                 |
+|                    |         |                           |
+|                    |         | Raise an exception for    |
 |                    |         | all conversions, even     |
 |                    |         | empty strings. The error  |
 |                    |         | handler is ignored.       |
