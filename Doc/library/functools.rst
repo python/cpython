@@ -574,7 +574,7 @@ The :mod:`functools` module defines the following functions:
       runtime impact.
 
    To enable registering :term:`lambdas<lambda>` and pre-existing functions,
-   the :func:`!register` attribute can also be used in a functional form::
+   the :func:`~singledispatch.register` attribute can also be used in a functional form::
 
      >>> def nothing(arg, verbose=False):
      ...     print("Nothing.")
