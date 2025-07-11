@@ -859,7 +859,10 @@ class ClassTests(unittest.TestCase):
 
 from _testinternalcapi import has_inline_values
 
-Py_TPFLAGS_MANAGED_DICT = (1 << 2)
+Py_TPFLAGS_MANAGED_DICT = (1 << 4)
+
+class NoManagedDict:
+    __slots__ = ('a',)
 
 class Plain:
     pass
@@ -873,6 +876,13 @@ class WithAttrs:
         self.c = 3
         self.d = 4
 
+class TestNoManagedValues(unittest.TestCase):
+    def test_flags(self):
+        self.assertEqual(NoManagedDict.__flags__ & Py_TPFLAGS_MANAGED_DICT, 0)
+
+    def test_no_inline_values_for_slots_class(self):
+        c = NoManagedDict()
+        self.assertFalse(has_inline_values(c))
 
 class TestInlineValues(unittest.TestCase):
 
