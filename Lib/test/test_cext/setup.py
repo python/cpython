@@ -14,10 +14,15 @@ SOURCE = 'extension.c'
 
 if not support.MS_WINDOWS:
     # C compiler flags for GCC and clang
-    CFLAGS = [
+    BASE_CFLAGS = [
         # The purpose of test_cext extension is to check that building a C
         # extension using the Python C API does not emit C compiler warnings.
         '-Werror',
+    ]
+
+    # C compiler flags for GCC and clang
+    PUBLIC_CFLAGS = [
+        *BASE_CFLAGS,
 
         # gh-120593: Check the 'const' qualifier
         '-Wcast-qual',
@@ -26,18 +31,27 @@ if not support.MS_WINDOWS:
         '-pedantic-errors',
     ]
     if not support.Py_GIL_DISABLED:
-        CFLAGS.append(
+        PUBLIC_CFLAGS.append(
             # gh-116869: The Python C API must be compatible with building
             # with the -Werror=declaration-after-statement compiler flag.
             '-Werror=declaration-after-statement',
         )
+    INTERNAL_CFLAGS = [*BASE_CFLAGS]
 else:
     # MSVC compiler flags
-    CFLAGS = [
-        # Display warnings level 1 to 4
-        '/W4',
+    BASE_CFLAGS = [
         # Treat all compiler warnings as compiler errors
         '/WX',
+    ]
+    PUBLIC_CFLAGS = [
+        *BASE_CFLAGS,
+        # Display warnings level 1 to 4
+        '/W4',
+    ]
+    INTERNAL_CFLAGS = [
+        *BASE_CFLAGS,
+        # Display warnings level 1 to 3
+        '/W3',
     ]
 
 
@@ -45,8 +59,12 @@ def main():
     std = os.environ.get("CPYTHON_TEST_STD", "")
     module_name = os.environ["CPYTHON_TEST_EXT_NAME"]
     limited = bool(os.environ.get("CPYTHON_TEST_LIMITED", ""))
+    internal = bool(int(os.environ.get("TEST_INTERNAL_C_API", "0")))
 
-    cflags = list(CFLAGS)
+    if not internal:
+        cflags = list(PUBLIC_CFLAGS)
+    else:
+        cflags = list(INTERNAL_CFLAGS)
     cflags.append(f'-DMODULE_NAME={module_name}')
 
     # Add -std=STD or /std:STD (MSVC) compiler flag
@@ -74,6 +92,9 @@ def main():
     if limited:
         version = sys.hexversion
         cflags.append(f'-DPy_LIMITED_API={version:#x}')
+
+    if internal:
+        cflags.append('-DTEST_INTERNAL_C_API=1')
 
     # On Windows, add PCbuild\amd64\ to include and library directories
     include_dirs = []
