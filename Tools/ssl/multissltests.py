@@ -77,8 +77,6 @@ parser = argparse.ArgumentParser(
         "Run CPython tests with multiple cryptography libraries"
         "versions."
     ),
-    color=True,
-    suggest_on_error=True,
 )
 parser.add_argument(
     '--debug',
