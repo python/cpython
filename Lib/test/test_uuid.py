@@ -1141,7 +1141,9 @@ class BaseTestUUID:
         self.assertIs(strong, weak())
 
 
-class CommandLineRunTime:
+class CommandLineTestCases:
+    uuid = None  # to be defined in subclasses
+
     def do_test_standalone_uuid(self, version):
         stdout = io.StringIO()
         with contextlib.redirect_stdout(stdout):
