@@ -137,7 +137,15 @@ class _Target(typing.Generic[_S, _R]):
             f"-I{CPYTHON / 'Include' / 'internal' / 'mimalloc'}",
             f"-I{CPYTHON / 'Python'}",
             f"-I{CPYTHON / 'Tools' / 'jit'}",
-            "-O3",
+            # -O2 and -O3 include some optimizations that make sense for
+            # standalone functions, but not for snippets of code that are going
+            # to be laid out end-to-end (like ours)... common examples include
+            # passes like tail-duplication, or aligning jump targets with nops.
+            # -Os is equivalent to -O2 with many of these problematic passes
+            # disabled. Based on manual review, for *our* purposes it usually
+            # generates better code than -O2 (and -O2 usually generates better
+            # code than -O3). As a nice benefit, it uses less memory too:
+            "-Os",
             "-S",
             # Shorten full absolute file paths in the generated code (like the
             # __FILE__ macro and assert failure messages) for reproducibility:
