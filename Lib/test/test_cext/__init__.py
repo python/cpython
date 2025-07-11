@@ -35,16 +35,6 @@ class BaseTests:
     def test_build(self):
         self.check_build('_test_cext')
 
-    def test_build_c11(self):
-        self.check_build('_test_c11_cext', std='c11')
-
-    @unittest.skipIf(support.MS_WINDOWS, "MSVC doesn't support /std:c99")
-    def test_build_c99(self):
-        # In public docs, we say C API is compatible with C11. However,
-        # in practice we do maintain C99 compatibility in public headers.
-        # Please ask the C API WG before adding a new C11-only feature.
-        self.check_build('_test_c99_cext', std='c99')
-
     def check_build(self, extension_name, std=None, limited=False):
         venv_dir = 'env'
         with support.setup_venv_with_pip_setuptools(venv_dir) as python_exe:
@@ -113,6 +103,16 @@ class TestPublicCAPI(BaseTests, unittest.TestCase):
     @support.requires_gil_enabled('broken for now with Free Threading')
     def test_build_limited_c11(self):
         self.check_build('_test_limited_c11_cext', limited=True, std='c11')
+
+    def test_build_c11(self):
+        self.check_build('_test_c11_cext', std='c11')
+
+    @unittest.skipIf(support.MS_WINDOWS, "MSVC doesn't support /std:c99")
+    def test_build_c99(self):
+        # In public docs, we say C API is compatible with C11. However,
+        # in practice we do maintain C99 compatibility in public headers.
+        # Please ask the C API WG before adding a new C11-only feature.
+        self.check_build('_test_c99_cext', std='c99')
 
 
 class TestInteralCAPI(BaseTests, unittest.TestCase):
