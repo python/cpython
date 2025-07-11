@@ -1,0 +1,484 @@
+.. date: 2025-06-26-15-58-13
+.. gh-issue: 135968
+.. nonce: C4v_-W
+.. release date: 2025-07-08
+.. section: Tools/Demos
+
+Stubs for ``strip`` are now provided as part of an iOS install.
+
+..
+
+.. date: 2025-06-25-10-36-22
+.. gh-issue: 133600
+.. nonce: bkdgHC
+.. section: Tools/Demos
+
+Backport file reorganization for Tools/wasm/wasi.
+
+This should make backporting future code changes easier. It also simplifies
+instructions around how to do WASI builds in the devguide.
+
+..
+
+.. date: 2025-06-26-15-15-35
+.. gh-issue: 135966
+.. nonce: EBpF8Y
+.. section: Tests
+
+The iOS testbed now handles the ``app_packages`` folder as a site directory.
+
+..
+
+.. date: 2025-06-19-15-29-38
+.. gh-issue: 135494
+.. nonce: FVl9a0
+.. section: Tests
+
+Fix regrtest to support excluding tests from ``--pgo`` tests. Patch by
+Victor Stinner.
+
+..
+
+.. date: 2025-06-27-21-23-19
+.. gh-issue: 136053
+.. nonce: QZxcee
+.. section: Security
+
+:mod:`marshal`: fix a possible crash when deserializing :class:`slice`
+objects.
+
+..
+
+.. date: 2025-06-25-14-13-39
+.. gh-issue: 135661
+.. nonce: idjQ0B
+.. section: Security
+
+Fix parsing start and end tags in :class:`html.parser.HTMLParser` according
+to the HTML5 standard.
+
+* Whitespaces no longer accepted between ``</`` and the tag name.
+  E.g. ``</ script>`` does not end the script section.
+
+* Vertical tabulation (``\v``) and non-ASCII whitespaces no longer recognized
+  as whitespaces. The only whitespaces are ``\t\n\r\f`` and space.
+
+* Null character (U+0000) no longer ends the tag name.
+
+* Attributes and slashes after the tag name in end tags are now ignored,
+  instead of terminating after the first ``>`` in quoted attribute value.
+  E.g. ``</script/foo=">"/>``.
+
+* Multiple slashes and whitespaces between the last attribute and closing ``>``
+  are now ignored in both start and end tags. E.g. ``<a foo=bar/ //>``.
+
+* Multiple ``=`` between attribute name and value are no longer collapsed.
+  E.g. ``<a foo==bar>`` produces attribute "foo" with value "=bar".
+
+* Whitespaces between the ``=`` separator and attribute name or value are no
+  longer ignored. E.g. ``<a foo =bar>`` produces two attributes "foo" and
+  "=bar", both with value None; ``<a foo= bar>`` produces two attributes:
+  "foo" with value "" and "bar" with value None.
+
+..
+
+.. date: 2025-06-18-13-28-08
+.. gh-issue: 102555
+.. nonce: nADrzJ
+.. section: Security
+
+Fix comment parsing in :class:`html.parser.HTMLParser` according to the
+HTML5 standard. ``--!>`` now ends the comment. ``-- >`` no longer ends the
+comment. Support abnormally ended empty comments ``<-->`` and ``<--->``.
+
+..
+
+.. date: 2025-07-05-09-45-04
+.. gh-issue: 136286
+.. nonce: N67Amr
+.. section: Library
+
+Fix pickling failures for protocols 0 and 1 for many objects realted to
+subinterpreters.
+
+..
+
+.. date: 2025-07-05-06-56-16
+.. gh-issue: 136316
+.. nonce: 3zj_Do
+.. section: Library
+
+Improve support for evaluating nested forward references in
+:func:`typing.evaluate_forward_ref`.
+
+..
+
+.. date: 2025-06-30-11-12-24
+.. gh-issue: 85702
+.. nonce: 0Lrbwu
+.. section: Library
+
+If ``zoneinfo._common.load_tzdata`` is given a package without a resource a
+:exc:`zoneinfo.ZoneInfoNotFoundError` is raised rather than a
+:exc:`PermissionError`. Patch by Victor Stinner.
+
+..
+
+.. date: 2025-06-27-13-34-28
+.. gh-issue: 136028
+.. nonce: RY727g
+.. section: Library
+
+Fix parsing month names containing "İ" (U+0130, LATIN CAPITAL LETTER I WITH
+DOT ABOVE) in :func:`time.strptime`. This affects locales az_AZ, ber_DZ,
+ber_MA and crh_UA.
+
+..
+
+.. date: 2025-06-26-17-28-49
+.. gh-issue: 135995
+.. nonce: pPrDCt
+.. section: Library
+
+In the palmos encoding, make byte ``0x9b`` decode to ``›`` (U+203A - SINGLE
+RIGHT-POINTING ANGLE QUOTATION MARK).
+
+..
+
+.. date: 2025-06-26-11-52-40
+.. gh-issue: 53203
+.. nonce: TMigBr
+.. section: Library
+
+Fix :func:`time.strptime` for ``%c`` and ``%x`` formats on locales byn_ER,
+wal_ET and lzh_TW, and for ``%X`` format on locales ar_SA, bg_BG and lzh_TW.
+
+..
+
+.. date: 2025-06-25-17-25-53
+.. gh-issue: 91555
+.. nonce: xUpTLD
+.. section: Library
+
+An earlier change, which was introduced in 3.14.0b2, has been reverted. It
+disabled logging for a logger during handling of log messages for that
+logger. Since the reversion, the behaviour should be as it was before
+3.14.0b2.
+
+..
+
+.. date: 2025-06-24-14-43-24
+.. gh-issue: 135878
+.. nonce: Db4roX
+.. section: Library
+
+Fixes a crash of :class:`types.SimpleNamespace` on :term:`free threading`
+builds, when several threads were calling its :meth:`~object.__repr__`
+method at the same time.
+
+..
+
+.. date: 2025-06-24-10-52-35
+.. gh-issue: 135836
+.. nonce: s37351
+.. section: Library
+
+Fix :exc:`IndexError` in :meth:`asyncio.loop.create_connection` that could
+occur when non-\ :exc:`OSError` exception is raised during connection and
+socket's ``close()`` raises :exc:`!OSError`.
+
+..
+
+.. date: 2025-06-23-11-04-25
+.. gh-issue: 135836
+.. nonce: -C-c4v
+.. section: Library
+
+Fix :exc:`IndexError` in :meth:`asyncio.loop.create_connection` that could
+occur when the Happy Eyeballs algorithm resulted in an empty exceptions list
+during connection attempts.
+
+..
+
+.. date: 2025-06-23-10-19-11
+.. gh-issue: 135855
+.. nonce: -J0AGF
+.. section: Library
+
+Raise :exc:`TypeError` instead of :exc:`SystemError` when
+:func:`!_interpreters.set___main___attrs` is passed a non-dict object. Patch
+by Brian Schubert.
+
+..
+
+.. date: 2025-06-22-16-23-44
+.. gh-issue: 135815
+.. nonce: 0DandH
+.. section: Library
+
+:mod:`netrc`: skip security checks if :func:`os.getuid` is missing. Patch by
+Bénédikt Tran.
+
+..
+
+.. date: 2025-06-22-02-16-17
+.. gh-issue: 135640
+.. nonce: FXyFL6
+.. section: Library
+
+Address bug where it was possible to call
+:func:`xml.etree.ElementTree.ElementTree.write` on an ElementTree object
+with an invalid root element. This behavior blanked the file passed to
+``write`` if it already existed.
+
+..
+
+.. date: 2025-06-18-13-58-13
+.. gh-issue: 135645
+.. nonce: 109nff
+.. section: Library
+
+Added ``supports_isolated_interpreters`` field to
+:data:`sys.implementation`.
+
+..
+
+.. date: 2025-06-18-11-43-17
+.. gh-issue: 135646
+.. nonce: r7ekEn
+.. section: Library
+
+Raise consistent :exc:`NameError` exceptions in
+:func:`annotationlib.ForwardRef.evaluate`
+
+..
+
+.. date: 2025-06-17-23-13-56
+.. gh-issue: 135557
+.. nonce: Bfcy4v
+.. section: Library
+
+Fix races on :mod:`heapq` updates and :class:`list` reads on the :term:`free
+threaded <free threading>` build.
+
+..
+
+.. date: 2025-06-17-22-44-19
+.. gh-issue: 119180
+.. nonce: Ogv8Nj
+.. section: Library
+
+Only fetch globals and locals if necessary in
+:func:`annotationlib.get_annotations`
+
+..
+
+.. date: 2025-06-16-15-03-03
+.. gh-issue: 135561
+.. nonce: mJCN8D
+.. section: Library
+
+Fix a crash on DEBUG builds when an HACL* HMAC routine fails. Patch by
+Bénédikt Tran.
+
+..
+
+.. date: 2025-06-14-12-06-55
+.. gh-issue: 135487
+.. nonce: KdVFff
+.. section: Library
+
+Fix :meth:`!reprlib.Repr.repr_int` when given integers with more than
+:func:`sys.get_int_max_str_digits` digits. Patch by Bénédikt Tran.
+
+..
+
+.. date: 2025-06-10-21-42-04
+.. gh-issue: 135335
+.. nonce: WnUqb_
+.. section: Library
+
+:mod:`multiprocessing`: Flush ``stdout`` and ``stderr`` after preloading
+modules in the ``forkserver``.
+
+..
+
+.. date: 2025-06-03-12-59-17
+.. gh-issue: 135069
+.. nonce: xop30V
+.. section: Library
+
+Fix the "Invalid error handling" exception in
+:class:`!encodings.idna.IncrementalDecoder` to correctly replace the
+'errors' parameter.
+
+..
+
+.. date: 2025-06-02-14-36-28
+.. gh-issue: 130662
+.. nonce: Gpr2GB
+.. section: Library
+
++Accept leading zeros in precision and width fields for
++:class:`~decimal.Decimal` formatting, for example ``format(Decimal(1.25),
+'.016f')``.
+
+..
+
+.. date: 2025-06-02-14-28-30
+.. gh-issue: 130662
+.. nonce: EIgIR8
+.. section: Library
+
+Accept leading zeros in precision and width fields for
+:class:`~fractions.Fraction` formatting, for example ``format(Fraction(1,
+3), '.016f')``.
+
+..
+
+.. date: 2025-04-07-10-20-16
+.. gh-issue: 87790
+.. nonce: X2SjJe
+.. section: Library
+
+Support underscore and comma as thousands separators in the fractional part
+for :class:`~fractions.Fraction`'s formatting.  Patch by Sergey B Kirpichev.
+
+..
+
+.. date: 2025-04-07-09-53-54
+.. gh-issue: 87790
+.. nonce: 6nj3zQ
+.. section: Library
+
+Support underscore and comma as thousands separators in the fractional part
+for :class:`~decimal.Decimal`'s formatting.  Patch by Sergey B Kirpichev.
+
+..
+
+.. date: 2025-03-11-05-24-14
+.. gh-issue: 130664
+.. nonce: g0yNMm
+.. section: Library
+
+Handle corner-case for :class:`~fractions.Fraction`'s formatting: treat
+zero-padding (preceding the width field by a zero (``'0'``) character) as an
+equivalent to a fill character of ``'0'`` with an alignment type of ``'='``,
+just as in case of :class:`float`'s.
+
+..
+
+.. date: 2025-07-01-21-04-47
+.. gh-issue: 136155
+.. nonce: ufmH4Q
+.. section: Documentation
+
+EPUB builds are fixed by excluding non-XHTML-compatible tags.
+
+..
+
+.. date: 2025-07-06-14-53-19
+.. gh-issue: 109700
+.. nonce: KVNQQi
+.. section: Core and Builtins
+
+Fix memory error handling in :c:func:`PyDict_SetDefault`.
+
+..
+
+.. date: 2025-06-26-15-25-51
+.. gh-issue: 78465
+.. nonce: MbDN8X
+.. section: Core and Builtins
+
+Fix error message for ``cls.__new__(cls, ...)`` where ``cls`` is not
+instantiable builtin or extension type (with ``tp_new`` set to ``NULL``).
+
+..
+
+.. date: 2025-06-24-06-41-47
+.. gh-issue: 129958
+.. nonce: EaJuS0
+.. section: Core and Builtins
+
+Differentiate between t-strings and f-strings in syntax error for newlines
+in format specifiers of single-quoted interpolated strings.
+
+..
+
+.. date: 2025-06-23-18-08-32
+.. gh-issue: 135871
+.. nonce: 50C528
+.. section: Core and Builtins
+
+Non-blocking mutex lock attempts now return immediately when the lock is
+busy instead of briefly spinning in the :term:`free threading` build.
+
+..
+
+.. date: 2025-06-18-16-45-36
+.. gh-issue: 135106
+.. nonce: cpl6Aq
+.. section: Core and Builtins
+
+Restrict the trashcan mechanism to GC'ed objects and untrack them while in
+the trashcan to prevent the GC and trashcan mechanisms conflicting.
+
+..
+
+.. date: 2025-06-17-22-34-58
+.. gh-issue: 135607
+.. nonce: ucsLVu
+.. section: Core and Builtins
+
+Fix potential :mod:`weakref` races in an object's destructor on the
+:term:`free threaded <free threading>` build.
+
+..
+
+.. date: 2025-06-17-12-50-48
+.. gh-issue: 135608
+.. nonce: PnHckD
+.. section: Core and Builtins
+
+Fix a crash in the JIT involving attributes of modules.
+
+..
+
+.. date: 2025-06-16-02-31-42
+.. gh-issue: 135543
+.. nonce: 6b0HOF
+.. section: Core and Builtins
+
+Emit ``sys.remote_exec`` audit event when :func:`sys.remote_exec` is called
+and migrate ``remote_debugger_script`` to
+``cpython.remote_debugger_script``.
+
+..
+
+.. date: 2025-05-31-19-24-54
+.. gh-issue: 134280
+.. nonce: NDVbzY
+.. section: Core and Builtins
+
+Disable constant folding for ``~`` with a boolean argument. This moves the
+deprecation warning from compile time to runtime.
+
+..
+
+.. date: 2025-06-25-01-03-10
+.. gh-issue: 135906
+.. nonce: UBrCWq
+.. section: C API
+
+Fix compilation errors when compiling the internal headers with a C++
+compiler.
+
+..
+
+.. date: 2025-05-19-18-09-20
+.. gh-issue: 134273
+.. nonce: ZAliyy
+.. section: Build
+
+Add support for configuring compiler flags for the JIT with ``CFLAGS_JIT``

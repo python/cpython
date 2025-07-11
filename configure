@@ -7254,6 +7254,8 @@ case $host/$ac_cv_cc_name in #(
     PY_SUPPORT_TIER=3 ;; #(
     x86_64-*-linux-android/clang) :
     PY_SUPPORT_TIER=3 ;; #(
+    wasm32-*-emscripten/emcc) :
+    PY_SUPPORT_TIER=3 ;; #(
   *) :
 
   PY_SUPPORT_TIER=0
@@ -28234,7 +28236,7 @@ printf "%s\n" "$ac_cv_normalize_century" >&6; }
 if test "$ac_cv_normalize_century" = yes
 then
 
-printf "%s\n" "#define Py_NORMALIZE_CENTURY 1" >>confdefs.h
+printf "%s\n" "#define _Py_NORMALIZE_CENTURY 1" >>confdefs.h
 
 fi
 
