@@ -878,7 +878,7 @@ For an example of the usage of queues for interprocess communication see
    locks/semaphores.  When a process first puts an item on the queue a feeder
    thread is started which transfers objects from a buffer into the pipe.
 
-   Calling this may set the global start method. See
+   Instantiating this class may set the global start method. See
    :ref:`global-start-method` for more details.
 
    The usual :exc:`queue.Empty` and :exc:`queue.Full` exceptions from the
@@ -991,7 +991,7 @@ For an example of the usage of queues for interprocess communication see
 
    It is a simplified :class:`Queue` type, very close to a locked :class:`Pipe`.
 
-   Calling this may set the global start method. See
+   Instantiating this class may set the global start method. See
    :ref:`global-start-method` for more details.
 
    .. method:: close()
@@ -1024,7 +1024,7 @@ For an example of the usage of queues for interprocess communication see
    :class:`JoinableQueue`, a :class:`Queue` subclass, is a queue which
    additionally has :meth:`task_done` and :meth:`join` methods.
 
-   Calling this may set the global start method. See
+   Instantiating this class may set the global start method. See
    :ref:`global-start-method` for more details.
 
    .. method:: task_done()
@@ -1380,7 +1380,7 @@ object -- see :ref:`multiprocessing-managers`.
 
    A barrier object: a clone of :class:`threading.Barrier`.
 
-   Calling this may set the global start method. See
+   Instantiating this class may set the global start method. See
    :ref:`global-start-method` for more details.
 
    .. versionadded:: 3.3
@@ -1390,7 +1390,7 @@ object -- see :ref:`multiprocessing-managers`.
    A bounded semaphore object: a close analog of
    :class:`threading.BoundedSemaphore`.
 
-   Calling this may set the global start method. See
+   Instantiating this class may set the global start method. See
    :ref:`global-start-method` for more details.
 
    A solitary difference from its close analog exists: its ``acquire`` method's
@@ -1413,7 +1413,7 @@ object -- see :ref:`multiprocessing-managers`.
    If *lock* is specified then it should be a :class:`Lock` or :class:`RLock`
    object from :mod:`multiprocessing`.
 
-   Calling this may set the global start method. See
+   Instantiating this class may set the global start method. See
    :ref:`global-start-method` for more details.
 
    .. versionchanged:: 3.3
@@ -1423,7 +1423,7 @@ object -- see :ref:`multiprocessing-managers`.
 
    A clone of :class:`threading.Event`.
 
-   Calling this may set the global start method. See
+   Instantiating this class may set the global start method. See
    :ref:`global-start-method` for more details.
 
 .. class:: Lock()
@@ -1440,7 +1440,7 @@ object -- see :ref:`multiprocessing-managers`.
    instance of ``multiprocessing.synchronize.Lock`` initialized with a
    default context.
 
-   Calling this may set the global start method. See
+   Instantiating this class may set the global start method. See
    :ref:`global-start-method` for more details.
 
    :class:`Lock` supports the :term:`context manager` protocol and thus may be
@@ -1500,7 +1500,7 @@ object -- see :ref:`multiprocessing-managers`.
    instance of ``multiprocessing.synchronize.RLock`` initialized with a
    default context.
 
-   Calling this may set the global start method. See
+   Instantiating this class may set the global start method. See
    :ref:`global-start-method` for more details.
 
    :class:`RLock` supports the :term:`context manager` protocol and thus may be
@@ -1562,7 +1562,7 @@ object -- see :ref:`multiprocessing-managers`.
 
    A semaphore object: a close analog of :class:`threading.Semaphore`.
 
-   Calling this may set the global start method. See
+   Instantiating this class may set the global start method. See
    :ref:`global-start-method` for more details.
 
    A solitary difference from its close analog exists: its ``acquire`` method's
