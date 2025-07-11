@@ -1345,7 +1345,9 @@ config_dict_get_ulong(PyObject *dict, const char *name, unsigned long *result)
         if (PyErr_ExceptionMatches(PyExc_TypeError)) {
             config_dict_invalid_type(name);
         }
-        else if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+        else if (PyErr_ExceptionMatches(PyExc_OverflowError) ||
+                 PyErr_ExceptionMatches(PyExc_ValueError))
+        {
             config_dict_invalid_value(name);
         }
         return -1;

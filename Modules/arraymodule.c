@@ -215,20 +215,23 @@ b_getitem(arrayobject *ap, Py_ssize_t i)
 static int
 b_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 {
-    short x;
-    /* PyArg_Parse's 'b' formatter is for an unsigned char, therefore
-       must use the next size up that is signed ('h') and manually do
-       the overflow checking */
-    if (!PyArg_Parse(v, "h;array item must be integer", &x))
-        return -1;
-    else if (x < -128) {
-        PyErr_SetString(PyExc_OverflowError,
-            "signed char is less than minimum");
+    int overflow;
+    long x = PyLong_AsLongAndOverflow(v, &overflow);
+    if (x == -1 && PyErr_Occurred()) {
+        if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+            PyErr_SetString(PyExc_TypeError,
+                "array item must be integer");
+        }
         return -1;
     }
-    else if (x > 127) {
+    if (overflow > 0 || x > 127) {
         PyErr_SetString(PyExc_OverflowError,
             "signed char is greater than maximum");
+        return -1;
+    }
+    if (overflow < 0 || x < -128) {
+        PyErr_SetString(PyExc_OverflowError,
+            "signed char is less than minimum");
         return -1;
     }
     if (i >= 0)
@@ -356,19 +359,23 @@ HH_getitem(arrayobject *ap, Py_ssize_t i)
 static int
 HH_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 {
-    int x;
-    /* PyArg_Parse's 'h' formatter is for a signed short, therefore
-       must use the next size up and manually do the overflow checking */
-    if (!PyArg_Parse(v, "i;array item must be integer", &x))
-        return -1;
-    else if (x < 0) {
-        PyErr_SetString(PyExc_OverflowError,
-            "unsigned short is less than minimum");
+    int overflow;
+    long x = PyLong_AsLongAndOverflow(v, &overflow);
+    if (x == -1 && PyErr_Occurred()) {
+        if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+            PyErr_SetString(PyExc_TypeError,
+                "array item must be integer");
+        }
         return -1;
     }
-    else if (x > USHRT_MAX) {
+    if (overflow > 0 || x > USHRT_MAX) {
         PyErr_SetString(PyExc_OverflowError,
             "unsigned short is greater than maximum");
+        return -1;
+    }
+    if (overflow < 0 || x < 0) {
+        PyErr_SetString(PyExc_ValueError,
+            "unsigned short is less than minimum");
         return -1;
     }
     if (i >= 0)

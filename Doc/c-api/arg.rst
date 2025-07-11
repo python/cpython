@@ -249,6 +249,10 @@ small to receive the value.
    Convert a nonnegative Python integer to an unsigned tiny integer, stored in a C
    :c:expr:`unsigned char`.
 
+   .. versionchanged:: next
+      A negative Python integer now raises :exc:`ValueError`,
+      not :exc:`OverflowError`.
+
 ``B`` (:class:`int`) [unsigned char]
    Convert a Python integer to a tiny integer without overflow checking, stored in a C
    :c:expr:`unsigned char`.

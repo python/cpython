@@ -141,9 +141,12 @@ pwd_getpwuid(PyObject *module, PyObject *uidobj)
     char *buf = NULL, *buf2 = NULL;
 
     if (!_Py_Uid_Converter(uidobj, &uid)) {
-        if (PyErr_ExceptionMatches(PyExc_OverflowError))
+        if (PyErr_ExceptionMatches(PyExc_OverflowError) ||
+            PyErr_ExceptionMatches(PyExc_ValueError))
+        {
             PyErr_Format(PyExc_KeyError,
                          "getpwuid(): uid not found");
+        }
         return NULL;
     }
 #ifdef HAVE_GETPWUID_R

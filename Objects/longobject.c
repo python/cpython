@@ -776,7 +776,7 @@ PyLong_AsUnsignedLong(PyObject *vv)
 #endif
     }
     if (_PyLong_IsNegative(v)) {
-        PyErr_SetString(PyExc_OverflowError,
+        PyErr_SetString(PyExc_ValueError,
                         "can't convert negative value to unsigned int");
         return (unsigned long) -1;
     }
@@ -820,7 +820,7 @@ PyLong_AsSize_t(PyObject *vv)
         return (size_t)_PyLong_CompactValue(v);
     }
     if (_PyLong_IsNegative(v)) {
-        PyErr_SetString(PyExc_OverflowError,
+        PyErr_SetString(PyExc_ValueError,
                    "can't convert negative value to size_t");
         return (size_t) -1;
     }
@@ -1120,7 +1120,7 @@ _PyLong_AsByteArray(PyLongObject* v,
     if (_PyLong_IsNegative(v)) {
         if (!is_signed) {
             if (with_exceptions) {
-                PyErr_SetString(PyExc_OverflowError,
+                PyErr_SetString(PyExc_ValueError,
                                 "can't convert negative int to unsigned");
             }
             return -1;

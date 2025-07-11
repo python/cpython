@@ -182,7 +182,7 @@ class Unsigned_TestCase(unittest.TestCase):
         self.assertRaises(TypeError, getargs_b, BadInt2())
         self.assertEqual(0, getargs_b(BadInt3()))
 
-        self.assertRaises(OverflowError, getargs_b, -1)
+        self.assertRaises(ValueError, getargs_b, -1)
         self.assertEqual(0, getargs_b(0))
         self.assertEqual(UCHAR_MAX, getargs_b(UCHAR_MAX))
         self.assertRaises(OverflowError, getargs_b, UCHAR_MAX + 1)
