@@ -1055,6 +1055,81 @@ class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
         # AttributeError: 'str' object has no attribute 'is_attachment'
         m.get_body()
 
+    def test_long_references_header(self):
+        msg = textwrap.dedent("""\
+            Message-ID: <long-but-perfectly-valid-message-id-that-does-not-end-up-qp-encoded@example.com>
+            References: <reference-to-long-but-perfectly-valid-message-id-that-gets-qp-encoded@example.com>
+            From: Foo Bar <email@email.au>
+
+            No content
+            """)
+        m = self._str_msg(msg)
+        msg_bytes = (b'Message-ID:'
+                     b' <long-but-perfectly-valid-message-id-that-does-not-end-up-qp-encoded@example.com>\n'
+                     b'References:'
+                     b' <reference-to-long-but-perfectly-valid-message-id-that-gets-qp-encoded@example.com>\n'
+                     b'From: Foo Bar <email@email.au>\n\nNo content\n')
+        self.assertEqual(m.as_bytes(), msg_bytes)
+
+    def test_long_in_reply_to_header(self):
+        msg = textwrap.dedent("""\
+            Message-ID: <long-but-perfectly-valid-message-id-that-does-not-end-up-qp-encoded@example.com>
+            In-Reply-To: <reference-to-long-but-perfectly-valid-message-id-that-gets-qp-encoded@example.com>
+            From: Foo Bar <email@email.au>
+
+            No content
+            """)
+        m = self._str_msg(msg)
+        msg_bytes = (b'Message-ID:'
+                     b' <long-but-perfectly-valid-message-id-that-does-not-end-up-qp-encoded@example.com>\n'
+                     b'In-Reply-To:'
+                     b' <reference-to-long-but-perfectly-valid-message-id-that-gets-qp-encoded@example.com>\n'
+                     b'From: Foo Bar <email@email.au>\n\nNo content\n')
+        self.assertEqual(m.as_bytes(), msg_bytes)
+
+    def test_msg_id_list_in_header(self):
+        msg_ids = " ".join(["<reference-to-long-but-perfectly-valid-message-id-that-gets-qp-encoded@example.com>"] * 5)
+        msg = textwrap.dedent(f"""\
+            Message-ID: <long-but-perfectly-valid-message-id-that-does-not-end-up-qp-encoded@example.com>
+            In-Reply-To: {msg_ids}
+            References: {msg_ids}
+            From: Foo Bar <email@email.au>
+
+            No content
+            """)
+        m = self._str_msg(msg)
+        msg_bytes = (b'Message-ID:'
+                     b' <long-but-perfectly-valid-message-id-that-does-not-end-up-qp-encoded@example.com>\n'
+                     b'In-Reply-To:'
+                     b' <reference-to-long-but-perfectly-valid-message-id-that-gets-qp-encoded@example.com>\n'
+                     b' <reference-to-long-but-perfectly-valid-message-id-that-gets-qp-encoded@example.com>\n'
+                     b' <reference-to-long-but-perfectly-valid-message-id-that-gets-qp-encoded@example.com>\n'
+                     b' <reference-to-long-but-perfectly-valid-message-id-that-gets-qp-encoded@example.com>\n'
+                     b' <reference-to-long-but-perfectly-valid-message-id-that-gets-qp-encoded@example.com>\n'
+                     b'References:'
+                     b' <reference-to-long-but-perfectly-valid-message-id-that-gets-qp-encoded@example.com>\n'
+                     b' <reference-to-long-but-perfectly-valid-message-id-that-gets-qp-encoded@example.com>\n'
+                     b' <reference-to-long-but-perfectly-valid-message-id-that-gets-qp-encoded@example.com>\n'
+                     b' <reference-to-long-but-perfectly-valid-message-id-that-gets-qp-encoded@example.com>\n'
+                     b' <reference-to-long-but-perfectly-valid-message-id-that-gets-qp-encoded@example.com>\n'
+                     b'From: Foo Bar <email@email.au>\n\nNo content\n')
+        self.assertEqual(m.as_bytes(), msg_bytes)
+
+    def test_no_references_value(self):
+        msg = textwrap.dedent("""\
+            Message-ID: <long-but-perfectly-valid-message-id-that-does-not-end-up-qp-encoded@example.com>
+            References:
+            From: Foo Bar <email@email.au>
+
+            No content
+            """)
+        m = self._str_msg(msg)
+        msg_bytes = (b'Message-ID:'
+                     b' <long-but-perfectly-valid-message-id-that-does-not-end-up-qp-encoded@example.com>\n'
+                     b'References: \n'
+                     b'From: Foo Bar <email@email.au>\n\nNo content\n')
+        self.assertEqual(m.as_bytes(), msg_bytes)
+
 
 class TestMIMEPart(TestEmailMessageBase, TestEmailBase):
     # Doing the full test run here may seem a bit redundant, since the two
