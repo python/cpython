@@ -150,6 +150,11 @@ _IntEnum._convert_(
     lambda name: name.startswith('CERT_'),
     source=_ssl)
 
+_IntEnum._convert_(
+    'ECHStatus', __name__,
+    lambda name: name.startswith('ECH_STATUS_'),
+    source=_ssl)
+
 PROTOCOL_SSLv23 = _SSLMethod.PROTOCOL_SSLv23 = _SSLMethod.PROTOCOL_TLS
 _PROTOCOL_NAMES = {value: name for name, value in _SSLMethod.__members__.items()}
 
@@ -502,15 +507,12 @@ class SSLContext(_SSLContext):
             self.sni_callback = shim_cb
 
     def set_alpn_protocols(self, alpn_protocols):
-        protos = bytearray()
-        for protocol in alpn_protocols:
-            b = bytes(protocol, 'ascii')
-            if len(b) == 0 or len(b) > 255:
-                raise SSLError('ALPN protocols must be 1 to 255 in length')
-            protos.append(len(b))
-            protos.extend(b)
-
+        protos = encode_alpn_protocol_list(alpn_protocols)
         self._set_alpn_protocols(protos)
+
+    def set_outer_alpn_protocols(self, alpn_protocols):
+        protos = encode_alpn_protocol_list(alpn_protocols)
+        self._set_outer_alpn_protocols(protos)
 
     def _load_windows_store_certs(self, storename, purpose):
         try:
@@ -832,6 +834,11 @@ class SSLObject:
         self._sslobj.context = ctx
 
     @property
+    def outer_server_hostname(self):
+        """The server name used in the outer ClientHello."""
+        return self._sslobj.get_ech_status()[2]
+
+    @property
     def session(self):
         """The SSLSession for client socket."""
         return self._sslobj.session
@@ -968,6 +975,9 @@ class SSLObject:
     def verify_client_post_handshake(self):
         return self._sslobj.verify_client_post_handshake()
 
+    def get_ech_status(self):
+        return ECHStatus(self._sslobj.get_ech_status()[0])
+
 
 def _sslcopydoc(func):
     """Copy docstring from SSLObject to SSLSocket"""
@@ -990,12 +1000,15 @@ class SSLSocket(socket):
     @classmethod
     def _create(cls, sock, server_side=False, do_handshake_on_connect=True,
                 suppress_ragged_eofs=True, server_hostname=None,
-                context=None, session=None):
+                context=None, session=None, outer_server_hostname=None):
         if sock.getsockopt(SOL_SOCKET, SO_TYPE) != SOCK_STREAM:
             raise NotImplementedError("only stream sockets are supported")
         if server_side:
             if server_hostname:
                 raise ValueError("server_hostname can only be specified "
+                                 "in client mode")
+            if outer_server_hostname:
+                raise ValueError("outer_server_hostname can only be specified "
                                  "in client mode")
             if session is not None:
                 raise ValueError("session can only be specified in "
@@ -1091,6 +1104,11 @@ class SSLSocket(socket):
     def context(self, ctx):
         self._context = ctx
         self._sslobj.context = ctx
+
+    @property
+    def outer_server_hostname(self):
+        """The server name used in the outer ClientHello."""
+        return self._sslobj.get_ech_status()[2]
 
     @property
     @_sslcopydoc
@@ -1358,6 +1376,9 @@ class SSLSocket(socket):
         else:
             raise ValueError("No SSL wrapper around " + str(self))
 
+    def get_ech_status(self):
+        return ECHStatus(self._sslobj.get_ech_status()[0])
+
     def _real_close(self):
         self._sslobj = None
         super()._real_close()
@@ -1527,3 +1548,13 @@ def get_server_certificate(addr, ssl_version=PROTOCOL_TLS_CLIENT,
 
 def get_protocol_name(protocol_code):
     return _PROTOCOL_NAMES.get(protocol_code, '<unknown>')
+
+def encode_alpn_protocol_list(alpn_protocols):
+    protos = bytearray()
+    for protocol in alpn_protocols:
+        b = bytes(protocol, 'ascii')
+        if not b or len(b) > 255:
+            raise SSLError('ALPN protocols must be 1 to 255 in length')
+        protos.append(len(b))
+        protos.extend(b)
+    return protos

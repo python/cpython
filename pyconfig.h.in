@@ -920,6 +920,9 @@
 /* Define to 1 if you have the 'openpty' function. */
 #undef HAVE_OPENPTY
 
+/* Define if you have the 'SSL_ech_get1_status' function. */
+#undef HAVE_OPENSSL_ECH
+
 /* Define if you have the 'panel' library */
 #undef HAVE_PANEL
 
