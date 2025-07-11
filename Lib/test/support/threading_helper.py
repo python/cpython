@@ -262,10 +262,10 @@ def run_concurrently(worker_func, nthreads, args=(), kwargs={}):
         worker_func(*args, **kwargs)
 
     with catch_threading_exception() as cm:
-        workers = (
+        workers = [
             threading.Thread(target=wrapper_func, args=args, kwargs=kwargs)
             for _ in range(nthreads)
-        )
+        ]
         with start_threads(workers):
             pass
 
