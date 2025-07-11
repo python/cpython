@@ -186,6 +186,8 @@ struct code_arena_st {
         *prev;  // Pointer to the arena  or NULL if this is the first arena.
 };
 
+#define CODE_ALIGNMENT 32
+
 typedef struct code_arena_st code_arena_t;
 typedef struct trampoline_api_st trampoline_api_t;
 
@@ -291,7 +293,9 @@ new_code_arena(void)
     void *start = &_Py_trampoline_func_start;
     void *end = &_Py_trampoline_func_end;
     size_t code_size = end - start;
-    size_t chunk_size = round_up(code_size + trampoline_api.code_padding, 16);
+    size_t unaligned_size = code_size + trampoline_api.code_padding;
+    size_t chunk_size = round_up(unaligned_size, CODE_ALIGNMENT);
+    assert(chunk_size % CODE_ALIGNMENT == 0);
     // TODO: Check the effect of alignment of the code chunks. Initial investigation
     // showed that this has no effect on performance in x86-64 or aarch64 and the current
     // version has the advantage that the unwinder in GDB can unwind across JIT-ed code.
@@ -356,7 +360,9 @@ static inline py_trampoline
 code_arena_new_code(code_arena_t *code_arena)
 {
     py_trampoline trampoline = (py_trampoline)code_arena->current_addr;
-    size_t total_code_size = round_up(code_arena->code_size + trampoline_api.code_padding, 16);
+    size_t total_code_size = round_up(code_arena->code_size + trampoline_api.code_padding,
+                                  CODE_ALIGNMENT);
+    assert(total_code_size % CODE_ALIGNMENT == 0);
     code_arena->size_left -= total_code_size;
     code_arena->current_addr += total_code_size;
     return trampoline;
@@ -489,15 +495,15 @@ _PyPerfTrampoline_Init(int activate)
     }
     else {
         tstate->interp->eval_frame = py_trampoline_evaluator;
-        if (new_code_arena() < 0) {
-            return -1;
-        }
         extra_code_index = _PyEval_RequestCodeExtraIndex(NULL);
         if (extra_code_index == -1) {
             return -1;
         }
         if (trampoline_api.state == NULL && trampoline_api.init_state != NULL) {
             trampoline_api.state = trampoline_api.init_state();
+        }
+        if (new_code_arena() < 0) {
+            return -1;
         }
         perf_status = PERF_STATUS_OK;
     }
