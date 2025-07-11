@@ -1273,6 +1273,7 @@ class TestUUIDCli(BaseTestUUID, unittest.TestCase):
         self.assertEqual(output, str(uuid_output))
         self.assertEqual(uuid_output.version, 8)
 
+
 class TestUUIDWithoutExtModule(BaseTestUUID, unittest.TestCase):
     uuid = py_uuid
 
