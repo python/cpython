@@ -1141,7 +1141,7 @@ class BaseTestUUID:
         self.assertIs(strong, weak())
 
 
-class TestUUIDCommandLineRunTimeMixin:
+class CommandLineRunTime:
     def do_test_standalone_uuid(self, version):
         stdout = io.StringIO()
         with contextlib.redirect_stdout(stdout):
