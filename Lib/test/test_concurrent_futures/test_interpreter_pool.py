@@ -511,7 +511,7 @@ class InterpreterPoolExecutorTest(
 
         # Some platforms (Linux) are using 16 bytes to store the thread name,
         # so only compare the first 15 bytes (without the trailing \n).
-        self.assertStartsWith(self.executor.submit(f).result(),
+        self.assertStartsWith(self.executor.submit(get_thread_name).result(),
                               "InterpreterPoolExecutor-"[:15])
 
 class AsyncioTest(InterpretersMixin, testasyncio_utils.TestCase):
