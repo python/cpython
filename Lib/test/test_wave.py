@@ -1,7 +1,7 @@
 import unittest
 from test import audiotests
 from test import support
-from test.support.os_helper import unwritable_filepath
+from test.support.os_helper import unwritable_filepath, skip_unless_working_chmod
 import io
 import struct
 import sys
@@ -197,6 +197,7 @@ class WaveLowLevelTest(unittest.TestCase):
         with self.assertRaisesRegex(wave.Error, 'bad sample width'):
             wave.open(io.BytesIO(b))
 
+    @skip_unless_working_chmod
     def test_write_to_protected_file(self):
         # gh-136523: Wave_write.__del__ should not throw
         stderr = io.StringIO()
