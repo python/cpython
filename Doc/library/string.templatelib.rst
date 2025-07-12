@@ -163,7 +163,7 @@ reassigned.
        ['Hello ', Interpolation('World', 'name', None, ''), Interpolation('World', 'name', None, '')]
 
    .. describe:: template + other
-   .. describe:: template += other
+                 template += other
 
        Concatenate this template with another, returning a new
        :class:`!Template` instance:
