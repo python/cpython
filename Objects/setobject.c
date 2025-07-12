@@ -462,11 +462,11 @@ set_lookkey_threadsafe(PySetObject *so, PyObject *key, Py_hash_t hash)
 }
 #endif
 
-static void free_entries(setentry *entries, bool use_qsbr)
+static void free_entries(setentry *entries, size_t size, bool use_qsbr)
 {
 #ifdef Py_GIL_DISABLED
     if (use_qsbr) {
-        _PyMem_FreeDelayed(entries);
+        _PyMem_FreeDelayed(entries, size * sizeof(setentry));
         return;
     }
 #endif
@@ -483,6 +483,7 @@ set_table_resize(PySetObject *so, Py_ssize_t minused)
 {
     setentry *oldtable, *newtable, *entry;
     Py_ssize_t oldmask = so->mask;
+    Py_ssize_t oldsize = (size_t)oldmask + 1;
     size_t newmask;
     int is_oldtable_malloced;
     setentry small_copy[PySet_MINSIZE];
@@ -555,7 +556,7 @@ set_table_resize(PySetObject *so, Py_ssize_t minused)
     FT_ATOMIC_STORE_PTR_RELEASE(so->table, newtable);
 
     if (is_oldtable_malloced)
-        free_entries(oldtable, SET_IS_SHARED(so));
+        free_entries(oldtable, oldsize, SET_IS_SHARED(so));
     return 0;
 }
 
@@ -647,6 +648,7 @@ set_clear_internal(PyObject *self)
     setentry *table = so->table;
     Py_ssize_t fill = so->fill;
     Py_ssize_t used = so->used;
+    Py_ssize_t oldsize = (size_t)so->mask + 1;
     int table_is_malloced = table != so->smalltable;
     setentry small_copy[PySet_MINSIZE];
 
@@ -685,7 +687,7 @@ set_clear_internal(PyObject *self)
     }
 
     if (table_is_malloced)
-        free_entries(table, SET_IS_SHARED(so));
+        free_entries(table, oldsize, SET_IS_SHARED(so));
     return 0;
 }
 
@@ -732,6 +734,7 @@ set_dealloc(PyObject *self)
     PySetObject *so = _PySet_CAST(self);
     setentry *entry;
     Py_ssize_t used = so->used;
+    Py_ssize_t oldsize = (size_t)so->mask + 1;
 
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(so);
@@ -744,7 +747,7 @@ set_dealloc(PyObject *self)
         }
     }
     if (so->table != so->smalltable)
-        free_entries(so->table, SET_IS_SHARED(so));
+        free_entries(so->table, oldsize, SET_IS_SHARED(so));
     Py_TYPE(so)->tp_free(so);
 }
 
