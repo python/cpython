@@ -153,7 +153,7 @@ about a 10% improvement.
 .. section: Core and Builtins
 
 Guard ``assert(tstate->thread_id > 0)`` with ``#ifndef HAVE_PTHREAD_STUBS``.
-This allows for for pydebug builds to work under WASI which (currently)
+This allows for pydebug builds to work under WASI which (currently)
 lacks thread support.
 
 ..

@@ -21,6 +21,7 @@
 #include "pycore_fileutils.h"     // _Py_normpath()
 #include "pycore_flowgraph.h"     // _PyCompile_OptimizeCfg()
 #include "pycore_frame.h"         // _PyInterpreterFrame
+#include "pycore_function.h"      // _PyFunction_GET_BUILTINS
 #include "pycore_gc.h"            // PyGC_Head
 #include "pycore_hashtable.h"     // _Py_hashtable_new()
 #include "pycore_import.h"        // _PyImport_ClearExtension()
@@ -120,7 +121,7 @@ get_c_recursion_remaining(PyObject *self, PyObject *Py_UNUSED(args))
     PyThreadState *tstate = _PyThreadState_GET();
     uintptr_t here_addr = _Py_get_machine_stack_pointer();
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
-    int remaining = (int)((here_addr - _tstate->c_stack_soft_limit)/PYOS_STACK_MARGIN_BYTES * 50);
+    int remaining = (int)((here_addr - _tstate->c_stack_soft_limit) / _PyOS_STACK_MARGIN_BYTES * 50);
     return PyLong_FromLong(remaining);
 }
 
@@ -1022,7 +1023,7 @@ get_code_var_counts(PyObject *self, PyObject *_args, PyObject *_kwargs)
             globalsns = PyFunction_GET_GLOBALS(codearg);
         }
         if (builtinsns == NULL) {
-            builtinsns = PyFunction_GET_BUILTINS(codearg);
+            builtinsns = _PyFunction_GET_BUILTINS(codearg);
         }
         codearg = PyFunction_GET_CODE(codearg);
     }
@@ -1045,6 +1046,9 @@ get_code_var_counts(PyObject *self, PyObject *_args, PyObject *_kwargs)
 #define SET_COUNT(DICT, STRUCT, NAME) \
     do { \
         PyObject *count = PyLong_FromLong(STRUCT.NAME); \
+        if (count == NULL) { \
+            goto error; \
+        } \
         int res = PyDict_SetItemString(DICT, #NAME, count); \
         Py_DECREF(count); \
         if (res < 0) { \
@@ -1187,7 +1191,7 @@ verify_stateless_code(PyObject *self, PyObject *args, PyObject *kwargs)
             globalsns = PyFunction_GET_GLOBALS(codearg);
         }
         if (builtinsns == NULL) {
-            builtinsns = PyFunction_GET_BUILTINS(codearg);
+            builtinsns = _PyFunction_GET_BUILTINS(codearg);
         }
         codearg = PyFunction_GET_CODE(codearg);
     }
@@ -1785,9 +1789,9 @@ finally:
 
 /* To run some code in a sub-interpreter.
 
-Generally you can use test.support.interpreters,
+Generally you can use the interpreters module,
 but we keep this helper as a distinct implementation.
-That's especially important for testing test.support.interpreters.
+That's especially important for testing the interpreters module.
 */
 static PyObject *
 run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
@@ -1991,7 +1995,14 @@ get_crossinterp_data(PyObject *self, PyObject *args, PyObject *kwargs)
         return NULL;
     }
     if (strcmp(mode, "xidata") == 0) {
-        if (_PyObject_GetXIData(tstate, obj, xidata) != 0) {
+        if (_PyObject_GetXIDataNoFallback(tstate, obj, xidata) != 0) {
+            goto error;
+        }
+    }
+    else if (strcmp(mode, "fallback") == 0) {
+        xidata_fallback_t fallback = _PyXIDATA_FULL_FALLBACK;
+        if (_PyObject_GetXIData(tstate, obj, fallback, xidata) != 0)
+        {
             goto error;
         }
     }
@@ -2196,8 +2207,7 @@ get_code(PyObject *obj)
         return (PyCodeObject *)PyFunction_GetCode(obj);
     }
     return (PyCodeObject *)PyErr_Format(
-        PyExc_TypeError, "expected function or code object, got %s",
-        Py_TYPE(obj)->tp_name);
+        PyExc_TypeError, "expected function or code object, got %T", obj);
 }
 
 static PyObject *

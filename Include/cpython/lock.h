@@ -36,6 +36,9 @@ PyAPI_FUNC(void) PyMutex_Lock(PyMutex *m);
 // exported function for unlocking the mutex
 PyAPI_FUNC(void) PyMutex_Unlock(PyMutex *m);
 
+// exported function for checking if the mutex is locked
+PyAPI_FUNC(int) PyMutex_IsLocked(PyMutex *m);
+
 // Locks the mutex.
 //
 // If the mutex is currently locked, the calling thread will be parked until
@@ -61,3 +64,11 @@ _PyMutex_Unlock(PyMutex *m)
     }
 }
 #define PyMutex_Unlock _PyMutex_Unlock
+
+// Checks if the mutex is currently locked.
+static inline int
+_PyMutex_IsLocked(PyMutex *m)
+{
+    return (_Py_atomic_load_uint8(&m->_bits) & _Py_LOCKED) != 0;
+}
+#define PyMutex_IsLocked _PyMutex_IsLocked
