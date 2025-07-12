@@ -516,11 +516,13 @@ The :mod:`multiprocessing` package mostly replicates the API of the
 Global start method
 ^^^^^^^^^^^^^^^^^^^
 
-Calling some functions or methods, or creating some objects, will implicitly
-set the global start method to the system's default if it is not already
-set. This can only be done once. Therefore, if you need to change the
-start method, you must do so before calling these functions or methods, or
-creating these objects.
+Python supports several ways to create and initialize a process. The global start method sets the default mechanism for creating a process.
+
+Several multiprocessing functions and methods, as well as creating some objects, will implicitly
+set the global start method to the system's default, if the global start method is not already
+set. The global start method can only be done once. If you need to change the
+start method from the system default, you must proactively set the global start method
+before calling functions or methods, or creating these objects.
 
 
 :class:`Process` and exceptions
