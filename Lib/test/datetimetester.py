@@ -3651,6 +3651,35 @@ class TestDateTime(TestDate):
         td = SubclassDatetime(2010, 10, 2, second=3)
         self.assertEqual(repr(td), "SubclassDatetime(2010, 10, 2, 0, 0, 3)")
 
+    @support.cpython_only
+    def test_concurrent_initialization(self):
+        try:
+            from concurrent.futures import InterpreterPoolExecutor as _
+        except ImportError:
+            self.skipTest("requires subinterpreters")
+
+        try:
+            import _datetime as _
+        except ImportError:
+            self.skipTest("requires C implementation of datetime")
+
+        # Run in a subprocess to ensure we get a clean version of _datetime
+        script = """if True:
+        from concurrent.futures import InterpreterPoolExecutor
+
+        def func():
+            import _datetime
+            print('a', end='')
+
+        with InterpreterPoolExecutor() as executor:
+            for _ in range(8):
+                executor.submit(func)
+        """
+        rc, out, err = script_helper.assert_python_ok("-c", script)
+        self.assertEqual(rc, 0)
+        self.assertEqual(out, b"a" * 8)
+        self.assertEqual(err, b"")
+
 
 class TestSubclassDateTime(TestDateTime):
     theclass = SubclassDatetime
