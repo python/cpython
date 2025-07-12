@@ -175,7 +175,12 @@ Other language changes
 * Several error messages incorrectly using the term "argument" have been corrected.
   (Contributed by Stan Ulbrych in :gh:`133382`.)
 
-* The interpreter now provides helpful suggestions when :func:`delattr` fails due to a missing attribute. When an attribute name that closely resembles an existing attribute is used, the interpreter will suggest the correct attribute name in the error message. For example:
+* The interpreter now provides helpful suggestions
+when :func:`delattr` fails due to a missing attribute.
+
+When an attribute name that closely resembles an existing attribute is used,
+the interpreter will suggest the correct attribute
+name in the error message. For example:
 
 .. doctest::
 
@@ -183,12 +188,12 @@ Other language changes
    ...     pass
    >>> a = A()
    >>> a.abcde = 1
-   >>> del a.abcdf
+   >>> del a.abcdf  # doctest: +ELLIPSIS
    Traceback (most recent call last):
      ...
    AttributeError: 'A' object has no attribute 'abcdf'. Did you mean: 'abcde'?
 
-(Contributed by [sobolevn] and Pranjal Prajapati in :gh:`136588`.)
+(Contributed by Nikita Sobolev and Pranjal Prajapati in :gh:`136588`.)
 
 
 New modules
