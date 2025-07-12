@@ -3682,6 +3682,10 @@ long_hash(PyObject *obj)
     --i;
     x = v->long_value.ob_digit[i];
     assert(x < _PyHASH_MODULUS);
+    --i;
+    x = ((x << PyLong_SHIFT));
+    x += v->long_value.ob_digit[i];
+    assert(x < _PyHASH_MODULUS);
 
     while (--i >= 0) {
         /* Here x is a quantity in the range [0, _PyHASH_MODULUS); we
