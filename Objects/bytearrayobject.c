@@ -807,7 +807,7 @@ bytearray_ass_subscript_lock_held(PyObject *op, PyObject *index, PyObject *value
             /* Delete slice */
             size_t cur;
             Py_ssize_t i;
-            char* buf = PyByteArray_AS_STRING(self);
+            char *buf = PyByteArray_AS_STRING(self);
 
             if (!_canresize(self))
                 return -1;
@@ -848,7 +848,7 @@ bytearray_ass_subscript_lock_held(PyObject *op, PyObject *index, PyObject *value
             /* Assign slice */
             Py_ssize_t i;
             size_t cur;
-            char* buf = PyByteArray_AS_STRING(self);
+            char *buf = PyByteArray_AS_STRING(self);
 
             if (needed != slicelen) {
                 PyErr_Format(PyExc_ValueError,
