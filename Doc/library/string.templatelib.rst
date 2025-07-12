@@ -59,10 +59,24 @@ reassigned.
    >>> template = t"Hello {name}!"
    >>> type(template)
    <class 'string.templatelib.Template'>
+
+   Templates ars stored as sequences of literal :attr:`~Template.strings`
+   and dynamic :attr:`~Template.interpolations`.
+   A :attr:`~Template.values` attribute holds the interpolation values:
+
    >>> template.strings
    ('Hello ', '!')
+   >>> template.interpolations
+   (Interpolation('World', ...),)
    >>> template.values
    ('World',)
+
+   The :attr:`!strings` tuple has one more element than :attr:`!interpolations`
+   and :attr:`!values`; the interpolations “belong” between the strings.
+   This may be easier to understand when tuples are aligned::
+
+      template.strings:  ('Hello ',          '!')
+      template.values:   (          'World',    )
 
    While literal syntax is the most common way to create :class:`!Template`
    instances, it is also possible to create them directly using the constructor:
