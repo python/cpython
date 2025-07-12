@@ -2,6 +2,7 @@ import unittest
 from test import audiotests
 from test import support
 from test.support import os_helper
+import contextlib
 import io
 import struct
 import sys
@@ -200,11 +201,9 @@ class WaveLowLevelTest(unittest.TestCase):
     def test_write_to_protected_location(self):
         # gh-136523: Wave_write.__del__ should not throw
         with support.catch_unraisable_exception() as cm:
-            try:
+            with contextlib.suppress(OSError):
                 with os_helper.temp_dir() as path:
                     wave.open(path, "wb")
-            except IsADirectoryError:
-                pass
             support.gc_collect()
             self.assertIsNone(cm.unraisable)
 
