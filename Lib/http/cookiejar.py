@@ -1080,11 +1080,6 @@ class DefaultCookiePolicy(CookiePolicy):
             else:
                 req_port = str(req_port)
             for p in cookie.port.split(","):
-                try:
-                    int(p)
-                except ValueError:
-                    _debug("   bad port %s (not numeric)", p)
-                    return False
                 if p == req_port:
                     break
             else:
