@@ -68,6 +68,9 @@ static PyObject _dummy_struct;
 #define SET_LOOKKEY_CHANGED (-2)
 #define SET_LOOKKEY_EMPTY (-3)
 
+typedef int (*compare_func)(PySetObject *so, setentry *table, setentry *ep,
+                            PyObject *key, Py_hash_t hash);
+
 #ifdef Py_GIL_DISABLED
 
 #define SET_IS_SHARED(so) _PyObject_GC_IS_SHARED(so)
@@ -159,6 +162,36 @@ set_compare_entry(PySetObject *so, setentry *table, setentry *entry,
     return SET_LOOKKEY_NO_MATCH;
 }
 
+// This is similar to set_compare_entry() but we don't need to incref startkey
+// before comparing and we don't need to check if the set has changed.
+static inline Py_ALWAYS_INLINE int
+set_compare_frozenset(PySetObject *so, setentry *table, setentry *ep,
+                                 PyObject *key, Py_hash_t hash)
+{
+    assert(PyFrozenSet_CheckExact(so));
+    PyObject *startkey = ep->key;
+    if (startkey == NULL) {
+        return SET_LOOKKEY_EMPTY;
+    }
+    if (startkey == key) {
+        return SET_LOOKKEY_FOUND;
+    }
+    Py_ssize_t ep_hash = ep->hash;
+    if (ep_hash == hash) {
+        if (PyUnicode_CheckExact(startkey)
+            && PyUnicode_CheckExact(key)
+            && unicode_eq(startkey, key))
+            return SET_LOOKKEY_FOUND;
+        int cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
+        if (cmp < 0) {
+            return SET_LOOKKEY_ERROR;
+        }
+        assert(cmp == SET_LOOKKEY_FOUND || cmp == SET_LOOKKEY_NO_MATCH);
+        return cmp;
+    }
+    return SET_LOOKKEY_NO_MATCH;
+}
+
 static void
 set_zero_table(setentry *table, size_t size)
 {
@@ -186,9 +219,7 @@ set_zero_table(setentry *table, size_t size)
 
 static int
 set_do_lookup(PySetObject *so, setentry *table, size_t mask, PyObject *key,
-              Py_hash_t hash, setentry **epp,
-              int (*compare_entry)(PySetObject *so, setentry *table, setentry *ep,
-                                   PyObject *key, Py_hash_t hash))
+              Py_hash_t hash, setentry **epp, compare_func compare_entry)
 {
     setentry *entry;
     size_t perturb = hash;
@@ -363,11 +394,18 @@ static int
 set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash, setentry **epp)
 {
     int status;
-    Py_BEGIN_CRITICAL_SECTION(so);
-    do {
-        status = set_do_lookup(so, so->table, so->mask, key, hash, epp, set_compare_entry);
-    } while (status == SET_LOOKKEY_CHANGED);
-    Py_END_CRITICAL_SECTION();
+    if (PyFrozenSet_CheckExact(so)) {
+        status = set_do_lookup(so, so->table, so->mask, key, hash, epp,
+                               set_compare_frozenset);
+    }
+    else {
+        Py_BEGIN_CRITICAL_SECTION(so);
+        do {
+            status = set_do_lookup(so, so->table, so->mask, key, hash, epp,
+                                   set_compare_entry);
+        } while (status == SET_LOOKKEY_CHANGED);
+        Py_END_CRITICAL_SECTION();
+    }
     assert(status == SET_LOOKKEY_FOUND ||
            status == SET_LOOKKEY_NO_MATCH ||
            status == SET_LOOKKEY_ERROR);
@@ -380,13 +418,22 @@ set_lookkey_threadsafe(PySetObject *so, PyObject *key, Py_hash_t hash)
 {
     int status;
     setentry *entry;
+    if (PyFrozenSet_CheckExact(so)) {
+        status = set_do_lookup(so, so->table, so->mask, key, hash, &entry,
+                               set_compare_frozenset);
+        assert(status == SET_LOOKKEY_FOUND ||
+               status == SET_LOOKKEY_NO_MATCH ||
+               status == SET_LOOKKEY_ERROR);
+        return status;
+    }
     ensure_shared_on_read(so);
     setentry *table = FT_ATOMIC_LOAD_PTR_ACQUIRE(so->table);
     size_t mask = FT_ATOMIC_LOAD_SSIZE_RELAXED(so->mask);
     if (table == NULL || table != FT_ATOMIC_LOAD_PTR_ACQUIRE(so->table)) {
         return set_lookkey(so, key, hash, &entry);
     }
-    status = set_do_lookup(so, table, mask, key, hash, &entry, set_compare_threadsafe);
+    status = set_do_lookup(so, table, mask, key, hash, &entry,
+                           set_compare_threadsafe);
     if (status == SET_LOOKKEY_CHANGED) {
         return set_lookkey(so, key, hash, &entry);
     }
