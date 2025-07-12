@@ -589,27 +589,31 @@ def _block_builtin_hmac_constructor(name):
 
 
 @contextlib.contextmanager
-def block_algorithm(*names, allow_openssl=False, allow_builtin=False):
-    """Block a hash algorithm for both hashing and HMAC."""
+def block_algorithm(name, *, allow_openssl=False, allow_builtin=False):
+    """Block a hash algorithm for both hashing and HMAC.
+
+    Be careful with this helper as a function may be allowed, but can
+    still raise a ValueError at runtime if the OpenSSL security policy
+    disables it, e.g., if allow_openssl=True and FIPS mode is on.
+    """
     with contextlib.ExitStack() as stack:
-        for name in names:
-            if not (allow_openssl or allow_builtin):
-                # If one of the private interface is allowed, then the
-                # public interface will fallback to it even though the
-                # comment in hashlib.py says otherwise.
-                #
-                # So we should only block it if the private interfaces
-                # are blocked as well.
-                stack.enter_context(_block_hashlib_hash_constructor(name))
-            if not allow_openssl:
-                stack.enter_context(_block_openssl_hash_new(name))
-                stack.enter_context(_block_openssl_hmac_new(name))
-                stack.enter_context(_block_openssl_hmac_digest(name))
-                stack.enter_context(_block_openssl_hash_constructor(name))
-            if not allow_builtin:
-                stack.enter_context(_block_builtin_hash_new(name))
-                stack.enter_context(_block_builtin_hmac_new(name))
-                stack.enter_context(_block_builtin_hmac_digest(name))
-                stack.enter_context(_block_builtin_hash_constructor(name))
-                stack.enter_context(_block_builtin_hmac_constructor(name))
+        if not (allow_openssl or allow_builtin):
+            # If one of the private interface is allowed, then the
+            # public interface will fallback to it even though the
+            # comment in hashlib.py says otherwise.
+            #
+            # So we should only block it if the private interfaces
+            # are blocked as well.
+            stack.enter_context(_block_hashlib_hash_constructor(name))
+        if not allow_openssl:
+            stack.enter_context(_block_openssl_hash_new(name))
+            stack.enter_context(_block_openssl_hmac_new(name))
+            stack.enter_context(_block_openssl_hmac_digest(name))
+            stack.enter_context(_block_openssl_hash_constructor(name))
+        if not allow_builtin:
+            stack.enter_context(_block_builtin_hash_new(name))
+            stack.enter_context(_block_builtin_hmac_new(name))
+            stack.enter_context(_block_builtin_hmac_digest(name))
+            stack.enter_context(_block_builtin_hash_constructor(name))
+            stack.enter_context(_block_builtin_hmac_constructor(name))
         yield

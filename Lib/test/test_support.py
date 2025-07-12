@@ -935,6 +935,11 @@ class TestHashlibSupport(unittest.TestCase):
         )
     )
     def test_disable_hash(self, name, allow_openssl, allow_builtin):
+        # In FIPS mode, the function may be available but would still need
+        # to raise a ValueError. For simplicity, we don't test the helper
+        # when we're in FIPS mode.
+        if self._hashlib.get_fips_mode():
+            self.skipTest("hash functions may still be blocked in FIPS mode")
         flags = dict(allow_openssl=allow_openssl, allow_builtin=allow_builtin)
         is_simple_disabled = not allow_builtin and not allow_openssl
 
