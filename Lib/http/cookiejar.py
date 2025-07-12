@@ -659,11 +659,6 @@ def request_port(request):
     match = cut_port_re.search(request.host)
     if match:
         port = match[0].removeprefix(':')
-        try:
-            int(port)
-        except ValueError:
-            _debug("nonnumeric port: '%s'", port)
-            return None
     else:
         port = DEFAULT_HTTP_PORT
     return port
@@ -1080,6 +1075,11 @@ class DefaultCookiePolicy(CookiePolicy):
             else:
                 req_port = str(req_port)
             for p in cookie.port.split(","):
+                try:
+                    int(p)
+                except ValueError:
+                    _debug("   bad port %s (not numeric)", p)
+                    return False
                 if p == req_port:
                     break
             else:
