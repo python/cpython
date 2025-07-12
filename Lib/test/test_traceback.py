@@ -4200,9 +4200,10 @@ class GetattrSuggestionTests(BaseSuggestionTests):
             def method(self, name):
                 getattr(self, name)
 
-        self.assertIn("'_bluch'", self.get_suggestion(partial(B().method, '_blach')))
-        self.assertIn("'_bluch'", self.get_suggestion(partial(B().method, '_luch')))
-        self.assertIn("'_bluch'", self.get_suggestion(partial(B().method, 'bluch')))
+        obj = B()
+        self.assertIn("'_bluch'", self.get_suggestion(partial(obj.method, '_blach')))
+        self.assertIn("'_bluch'", self.get_suggestion(partial(obj.method, '_luch')))
+        self.assertIn("'_bluch'", self.get_suggestion(partial(obj.method, 'bluch')))
 
 
 class DelattrSuggestionTests(BaseSuggestionTests):
