@@ -4032,7 +4032,7 @@ class SuggestionFormattingTestBaseParent:
             callable, slice_start=-1, slice_end=None
         )
         return result_lines[0]
-    
+
 class BaseSuggestionTests(SuggestionFormattingTestBaseParent):
     """
     Subclasses need to implement the get_suggestion method.
@@ -4138,7 +4138,7 @@ class BaseSuggestionTests(SuggestionFormattingTestBaseParent):
 
         obj = A()
         actual = self.get_suggestion(obj, 'bluch')
-        self.assertNotIn("blech", actual)  
+        self.assertNotIn("blech", actual)
 
 class GetattrSuggestionTests(BaseSuggestionTests):
     def get_suggestion(self, obj, attr_name=None):
