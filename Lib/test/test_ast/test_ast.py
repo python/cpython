@@ -2537,7 +2537,7 @@ class ConstantTests(unittest.TestCase):
                          "to in Store context")
 
     def test_get_docstring(self):
-        tree = ast.parse("'docstring'\nx = 1")
+        tree = ast.parse("'docstring'\nx = 1", optimize=False)
         self.assertEqual(ast.get_docstring(tree), 'docstring')
 
     def get_load_const(self, tree):
