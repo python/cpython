@@ -24,7 +24,7 @@ Template strings
 .. versionadded:: 3.14
 
 Template strings are a formatting mechanism that allows for deep control over
-how strings are processed. You can create Templates using
+how strings are processed. You can create templates using
 :ref:`t-string literal syntax <t-strings>`, which is identical to
 :ref:`f-string syntax <f-strings>` but uses a ``t`` instead of an ``f``.
 While f-strings evaluate to ``str``, t-strings create a :class:`Template`
@@ -84,8 +84,8 @@ reassigned.
 
    If two or more consecutive interpolations are passed, they will be treated
    as separate interpolations and an empty string will be inserted between them.
-   For example, the following code creates a template with a single value in
-   the :attr:`~Template.strings` attribute:
+   For example, the following code creates a template with empty placeholders
+   in the :attr:`~Template.strings` attribute:
 
    >>> from string.templatelib import Interpolation, Template
    >>> template = Template(Interpolation("World", "name"), Interpolation("!", "punctuation"))
