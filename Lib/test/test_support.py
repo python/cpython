@@ -828,18 +828,11 @@ class TestHashlibSupport(unittest.TestCase):
         cls.hashlib = import_helper.import_module("hashlib")
         cls.hmac = import_helper.import_module("hmac")
 
-        try:
-            import _hashlib
-        except ImportError:
-            cls._hashlib = None
-        else:
-            cls._hashlib = _hashlib
-        try:
-            import _hmac
-        except ImportError:
-            cls._hmac = None
-        else:
-            cls._hmac = _hmac
+        # We required the extension modules to be present since blocking
+        # HACL* implementations while allowing OpenSSL ones would still
+        # result in failures.
+        cls._hashlib = import_helper.import_module("_hashlib")
+        cls._hmac = import_helper.import_module("_hmac")
 
     def check_context(self, disabled=True):
         if disabled:
@@ -886,9 +879,6 @@ class TestHashlibSupport(unittest.TestCase):
 
     def check_openssl_hash(self, name, *, disabled=True):
         """Check that OpenSSL HASH interface is enabled/disabled."""
-        if self._hashlib is None:
-            return
-
         with self.check_context(disabled):
             _ = self._hashlib.new(name)
         if do_hash := self.fetch_hash_function(name, "openssl"):
@@ -898,9 +888,6 @@ class TestHashlibSupport(unittest.TestCase):
 
     def check_openssl_hmac(self, name, *, disabled=True):
         """Check that OpenSSL HMAC interface is enabled/disabled."""
-        if self._hashlib is None:
-            return
-
         if name in hashlib_helper.NON_HMAC_DIGEST_NAMES:
             # HMAC-BLAKE and HMAC-SHAKE raise a ValueError as they are not
             # supported at all (they do not make any sense in practice).
@@ -920,9 +907,6 @@ class TestHashlibSupport(unittest.TestCase):
 
     def check_builtin_hmac(self, name, *, disabled=True):
         """Check that HACL* HMAC interface is enabled/disabled."""
-        if self._hmac is None:
-            return
-
         if name in hashlib_helper.NON_HMAC_DIGEST_NAMES:
             # HMAC-BLAKE and HMAC-SHAKE raise a ValueError as they are not
             # supported at all (they do not make any sense in practice).
