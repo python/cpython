@@ -427,17 +427,19 @@ class Wave_write:
     _datawritten -- the size of the audio samples actually written
     """
 
+    _file = None
+
     def __init__(self, f):
         self._i_opened_the_file = None
+        if isinstance(f, str):
+            f = builtins.open(f, 'wb')
+            self._i_opened_the_file = f
         try:
-            if isinstance(f, str):
-                f = builtins.open(f, 'wb')
-                self._i_opened_the_file = f
-        except:
-            f = None
-            raise
-        finally:
             self.initfp(f)
+        except:
+            if self._i_opened_the_file:
+                f.close()
+            raise
 
     def initfp(self, file):
         self._file = file

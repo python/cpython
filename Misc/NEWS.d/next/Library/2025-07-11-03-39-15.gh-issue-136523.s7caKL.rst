@@ -1,1 +1,1 @@
-Fix ``wave.Wave_write.__del__`` raising :exc:`AttributeError` when attempting to open an unwritable file.
+Fix :class:`wave.Wave_write` emitting an unraisable :exc:`AttributeError` when attempting to open an unwritable file.

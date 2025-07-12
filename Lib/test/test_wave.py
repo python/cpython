@@ -1,7 +1,7 @@
 import unittest
 from test import audiotests
 from test import support
-from test.support.os_helper import unwritable_filepath, skip_unless_working_chmod
+from test.support import os_helper
 import io
 import struct
 import sys
@@ -197,21 +197,16 @@ class WaveLowLevelTest(unittest.TestCase):
         with self.assertRaisesRegex(wave.Error, 'bad sample width'):
             wave.open(io.BytesIO(b))
 
-    @skip_unless_working_chmod
-    def test_write_to_protected_file(self):
+    def test_write_to_protected_location(self):
         # gh-136523: Wave_write.__del__ should not throw
-        stderr = io.StringIO()
-        sys.stderr = stderr
-        try:
+        with support.catch_unraisable_exception() as cm:
             try:
-                with unwritable_filepath() as path:
-                    with wave.open(path, "wb"):
-                        pass
-            except PermissionError:
+                with os_helper.temp_dir() as path:
+                    wave.open(path, "wb")
+            except IsADirectoryError:
                 pass
-            self.assertEqual(stderr.getvalue(), "")
-        finally:
-            sys.stderr = sys.__stderr__
+            support.gc_collect()
+            self.assertIsNone(cm.unraisable)
 
 
 if __name__ == '__main__':
