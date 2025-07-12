@@ -4020,7 +4020,8 @@ class TestTracebackException_ExceptionGroups(unittest.TestCase):
 
 global_for_suggestions = None
 
-class SuggestionFormattingTestBaseParent:
+
+class SuggestionFormattingTestMixin:
     def get_suggestion(self, obj, attr_name=None):
         if attr_name is not None:
             def callable():
@@ -4033,10 +4034,12 @@ class SuggestionFormattingTestBaseParent:
         )
         return result_lines[0]
 
-class BaseSuggestionTests(SuggestionFormattingTestBaseParent):
+
+class BaseSuggestionTests(SuggestionFormattingTestMixin):
     """
     Subclasses need to implement the get_suggestion method.
     """
+
     def test_suggestions(self):
         class Substitution:
             noise = more_noise = a = bc = None
@@ -4077,50 +4080,40 @@ class BaseSuggestionTests(SuggestionFormattingTestBaseParent):
             (EliminationOverAddition, "'bluc'?"),
             (CaseChangeOverSubstitution, "'BLuch'?"),
         ]:
-            obj = cls()
-            actual = self.get_suggestion(obj, 'bluch')
+            actual = self.get_suggestion(cls(), 'bluch')
             self.assertIn(suggestion, actual)
 
     def test_suggestions_underscored(self):
         class A:
             bluch = None
 
-        obj = A()
-        self.assertIn("'bluch'", self.get_suggestion(obj, 'blach'))
-        self.assertIn("'bluch'", self.get_suggestion(obj, '_luch'))
-        self.assertIn("'bluch'", self.get_suggestion(obj, '_bluch'))
+        self.assertIn("'bluch'", self.get_suggestion(A(), 'blach'))
+        self.assertIn("'bluch'", self.get_suggestion(A(), '_luch'))
+        self.assertIn("'bluch'", self.get_suggestion(A(), '_bluch'))
 
         class B:
             _bluch = None
             def method(self, name):
                 getattr(self, name)
 
-        obj = B()
-        self.assertIn("'_bluch'", self.get_suggestion(obj, '_blach'))
-        self.assertIn("'_bluch'", self.get_suggestion(obj, '_luch'))
-        self.assertNotIn("'_bluch'", self.get_suggestion(obj, 'bluch'))
-
-        if hasattr(self, 'test_with_method_call'):
-            self.assertIn("'_bluch'", self.get_suggestion(partial(obj.method, '_blach')))
-            self.assertIn("'_bluch'", self.get_suggestion(partial(obj.method, '_luch')))
-            self.assertIn("'_bluch'", self.get_suggestion(partial(obj.method, 'bluch')))
+        self.assertIn("'_bluch'", self.get_suggestion(B(), '_blach'))
+        self.assertIn("'_bluch'", self.get_suggestion(B(), '_luch'))
+        self.assertNotIn("'_bluch'", self.get_suggestion(B(), 'bluch'))
 
     def test_do_not_trigger_for_long_attributes(self):
         class A:
             blech = None
 
-        obj = A()
-        actual = self.get_suggestion(obj, 'somethingverywrong')
+        actual = self.get_suggestion(A(), 'somethingverywrong')
         self.assertNotIn("blech", actual)
 
     def test_do_not_trigger_for_small_names(self):
         class MyClass:
             vvv = mom = w = id = pytho = None
 
-        obj = MyClass()
         for name in ("b", "v", "m", "py"):
             with self.subTest(name=name):
-                actual = self.get_suggestion(obj, name)
+                actual = self.get_suggestion(MyClass(), name)
                 self.assertNotIn("Did you mean", actual)
                 self.assertNotIn("'vvv", actual)
                 self.assertNotIn("'mom'", actual)
@@ -4136,9 +4129,9 @@ class BaseSuggestionTests(SuggestionFormattingTestBaseParent):
         for index in range(2000):
             setattr(A, f"index_{index}", None)
 
-        obj = A()
-        actual = self.get_suggestion(obj, 'bluch')
+        actual = self.get_suggestion(A(), 'bluch')
         self.assertNotIn("blech", actual)
+
 
 class GetattrSuggestionTests(BaseSuggestionTests):
     def get_suggestion(self, obj, attr_name=None):
@@ -4152,11 +4145,6 @@ class GetattrSuggestionTests(BaseSuggestionTests):
             callable, slice_start=-1, slice_end=None
         )
         return result_lines[0]
-
-    def test_with_method_call(self):
-        # This is a placeholder method to make
-        # hasattr(self, 'test_with_method_call') return True
-        pass
 
     def test_suggestions_no_args(self):
         class A:
@@ -4206,6 +4194,17 @@ class GetattrSuggestionTests(BaseSuggestionTests):
         actual = self.get_suggestion(A(), 'blech')
         self.assertNotIn("Did you mean", actual)
 
+    def test_suggestions_with_method_call(self):
+        class B:
+            _bluch = None
+            def method(self, name):
+                getattr(self, name)
+
+        self.assertIn("'_bluch'", self.get_suggestion(partial(B().method, '_blach')))
+        self.assertIn("'_bluch'", self.get_suggestion(partial(B().method, '_luch')))
+        self.assertIn("'_bluch'", self.get_suggestion(partial(B().method, 'bluch')))
+
+
 class DelattrSuggestionTests(BaseSuggestionTests):
     def get_suggestion(self, obj, attr_name):
         def callable():
@@ -4216,7 +4215,8 @@ class DelattrSuggestionTests(BaseSuggestionTests):
         )
         return result_lines[0]
 
-class SuggestionFormattingTestBase(SuggestionFormattingTestBaseParent):
+
+class SuggestionFormattingTestBase(SuggestionFormattingTestMixin):
     def test_attribute_error_with_failing_dict(self):
         class T:
             bluch = 1
