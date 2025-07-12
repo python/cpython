@@ -27,7 +27,8 @@ charref = re.compile('&#(?:[0-9]+|[xX][0-9a-fA-F]+)[^0-9a-fA-F]')
 starttagopen = re.compile('<[a-zA-Z]')
 endtagopen = re.compile('</[a-zA-Z]')
 piclose = re.compile('>')
-commentclose = re.compile(r'--\s*>')
+commentclose = re.compile(r'--!?>')
+commentabruptclose = re.compile(r'-?>')
 # Note:
 #  1) if you change tagfind/attrfind remember to update locatetagend too;
 #  2) if you change tagfind/attrfind and/or locatetagend the parser will
@@ -317,6 +318,21 @@ class HTMLParser(_markupbase.ParserBase):
             return gtpos+1
         else:
             return self.parse_bogus_comment(i)
+
+    # Internal -- parse comment, return length or -1 if not terminated
+    # see https://html.spec.whatwg.org/multipage/parsing.html#comment-start-state
+    def parse_comment(self, i, report=True):
+        rawdata = self.rawdata
+        assert rawdata.startswith('<!--', i), 'unexpected call to parse_comment()'
+        match = commentclose.search(rawdata, i+4)
+        if not match:
+            match = commentabruptclose.match(rawdata, i+4)
+            if not match:
+                return -1
+        if report:
+            j = match.start()
+            self.handle_comment(rawdata[i+4: j])
+        return match.end()
 
     # Internal -- parse bogus comment, return length or -1 if not terminated
     # see https://html.spec.whatwg.org/multipage/parsing.html#bogus-comment-state
