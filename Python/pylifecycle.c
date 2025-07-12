@@ -760,6 +760,11 @@ pycore_init_types(PyInterpreterState *interp)
         return status;
     }
 
+    status = _PyDateTime_InitTypes(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
     return _PyStatus_OK();
 }
 
@@ -911,11 +916,6 @@ pycore_interp_init(PyThreadState *tstate)
     }
 
     status = _PyXI_Init(interp);
-    if (_PyStatus_EXCEPTION(status)) {
-        goto done;
-    }
-
-    status = _PyDateTime_Init(tstate->interp);
     if (_PyStatus_EXCEPTION(status)) {
         goto done;
     }

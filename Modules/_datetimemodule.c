@@ -7331,7 +7331,7 @@ clear_state(datetime_state *st)
 
 
 PyStatus
-_PyDateTime_Init(PyInterpreterState *interp)
+_PyDateTime_InitTypes(PyInterpreterState *interp)
 {
     // `&...` is not a constant expression according to a strict reading
     // of C standards. Fill tp_base at run-time rather than statically.
