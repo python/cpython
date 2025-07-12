@@ -169,7 +169,7 @@ static inline Py_ALWAYS_INLINE int
 set_compare_frozenset(PySetObject *so, setentry *table, setentry *ep,
                                  PyObject *key, Py_hash_t hash)
 {
-    assert(PyFrozenSet_CheckExact(so));
+    assert(PyFrozenSet_Check(so));
     PyObject *startkey = ep->key;
     if (startkey == NULL) {
         return SET_LOOKKEY_EMPTY;
@@ -2434,6 +2434,7 @@ _PySet_Contains(PySetObject *so, PyObject *key)
     Py_hash_t hash = _PyObject_HashFast(key);
     if (hash == -1) {
         if (!PySet_Check(key) || !PyErr_ExceptionMatches(PyExc_TypeError)) {
+            set_unhashable_type(key);
             return -1;
         }
         PyErr_Clear();
@@ -2488,12 +2489,23 @@ static PyObject *
 frozenset___contains___impl(PySetObject *so, PyObject *key)
 /*[clinic end generated code: output=2301ed91bc3a6dd5 input=2f04922a98d8bab7]*/
 {
-    long result;
-
-    result = set_contains_lock_held(so, key);
-    if (result < 0)
+    Py_hash_t hash = _PyObject_HashFast(key);
+    if (hash == -1) {
+        if (!PySet_Check(key) || !PyErr_ExceptionMatches(PyExc_TypeError)) {
+            set_unhashable_type(key);
+            return NULL;
+        }
+        PyErr_Clear();
+        Py_BEGIN_CRITICAL_SECTION(key);
+        hash = frozenset_hash_impl(key);
+        Py_END_CRITICAL_SECTION();
+    }
+    setentry *entry; // unused
+    int status = set_do_lookup(so, so->table, so->mask, key, hash, &entry,
+                           set_compare_frozenset);
+    if (status < 0)
         return NULL;
-    return PyBool_FromLong(result);
+    return PyBool_FromLong(status);
 }
 
 /*[clinic input]
