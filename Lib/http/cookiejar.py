@@ -1069,11 +1069,7 @@ class DefaultCookiePolicy(CookiePolicy):
 
     def set_ok_port(self, cookie, request):
         if cookie.port_specified:
-            req_port = request_port(request)
-            if req_port is None:
-                req_port = "80"
-            else:
-                req_port = str(req_port)
+            req_port = str(request_port(request))
             for p in cookie.port.split(","):
                 try:
                     int(p)
@@ -1142,8 +1138,6 @@ class DefaultCookiePolicy(CookiePolicy):
     def return_ok_port(self, cookie, request):
         if cookie.port:
             req_port = request_port(request)
-            if req_port is None:
-                req_port = "80"
             for p in cookie.port.split(","):
                 if p == req_port:
                     break
