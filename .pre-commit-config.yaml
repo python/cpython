@@ -26,6 +26,13 @@ repos:
         name: Run Black on Tools/jit/
         files: ^Tools/jit/
 
+  - repo: https://github.com/Lucas-C/pre-commit-hooks
+    rev: v1.5.5
+    hooks:
+      - id: remove-tabs
+        types: [python]
+        exclude: ^Tools/c-analyzer/cpython/_parser.py
+
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
@@ -35,12 +42,14 @@ repos:
         exclude: ^Lib/test/test_tomllib/
       - id: check-yaml
       - id: end-of-file-fixer
-        types: [python]
+        types_or: [python, yaml]
         exclude: Lib/test/tokenizedata/coding20731.py
+      - id: end-of-file-fixer
+        files: '^\.github/CODEOWNERS$'
       - id: trailing-whitespace
-        types_or: [c, inc, python, rst]
+        types_or: [c, inc, python, rst, yaml]
       - id: trailing-whitespace
-        files: '\.(gram)$'
+        files: '^\.github/CODEOWNERS|\.(gram)$'
 
   - repo: https://github.com/woodruffw/zizmor-pre-commit
     rev: v1.6.0

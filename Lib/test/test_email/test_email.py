@@ -210,8 +210,8 @@ class TestMessageAPI(TestEmailBase):
         self.assertEqual(msg.items()[0][1], 'multipart/form-data')
         # Trigger creation of boundary
         msg.as_string()
-        self.assertEqual(msg.items()[0][1][:33],
-                        'multipart/form-data; boundary="==')
+        self.assertStartsWith(msg.items()[0][1],
+                              'multipart/form-data; boundary="==')
         # XXX: there ought to be tests of the uniqueness of the boundary, too.
 
     def test_message_rfc822_only(self):
@@ -303,7 +303,7 @@ class TestMessageAPI(TestEmailBase):
         self.assertEqual(text, str(msg))
         fullrepr = msg.as_string(unixfrom=True)
         lines = fullrepr.split('\n')
-        self.assertTrue(lines[0].startswith('From '))
+        self.assertStartsWith(lines[0], 'From ')
         self.assertEqual(text, NL.join(lines[1:]))
 
     def test_as_string_policy(self):
@@ -372,7 +372,7 @@ class TestMessageAPI(TestEmailBase):
         self.assertEqual(data, bytes(msg))
         fullrepr = msg.as_bytes(unixfrom=True)
         lines = fullrepr.split(b'\n')
-        self.assertTrue(lines[0].startswith(b'From '))
+        self.assertStartsWith(lines[0], b'From ')
         self.assertEqual(data, b'\n'.join(lines[1:]))
 
     def test_as_bytes_policy(self):
@@ -388,6 +388,24 @@ class TestMessageAPI(TestEmailBase):
     def test_bad_param(self):
         msg = email.message_from_string("Content-Type: blarg; baz; boo\n")
         self.assertEqual(msg.get_param('baz'), '')
+
+    def test_continuation_sorting_part_order(self):
+        msg = email.message_from_string(
+            "Content-Disposition: attachment; "
+            "filename*=\"ignored\"; "
+            "filename*0*=\"utf-8''foo%20\"; "
+            "filename*1*=\"bar.txt\"\n"
+        )
+        filename = msg.get_filename()
+        self.assertEqual(filename, 'foo bar.txt')
+
+    def test_sorting_no_continuations(self):
+        msg = email.message_from_string(
+            "Content-Disposition: attachment; "
+            "filename*=\"bar.txt\"; "
+        )
+        filename = msg.get_filename()
+        self.assertEqual(filename, 'bar.txt')
 
     def test_missing_filename(self):
         msg = email.message_from_string("From: foo\n")
@@ -2203,7 +2221,7 @@ class TestNonConformant(TestEmailBase):
         msg = self._msgobj('msg_15.txt')
         # XXX We can probably eventually do better
         inner = msg.get_payload(0)
-        self.assertTrue(hasattr(inner, 'defects'))
+        self.assertHasAttr(inner, 'defects')
         self.assertEqual(len(inner.defects), 1)
         self.assertIsInstance(inner.defects[0],
                               errors.StartBoundaryNotFoundDefect)
@@ -2315,7 +2333,7 @@ counter to RFC 2822, there's no separating newline here
     # test_defect_handling
     def test_lying_multipart(self):
         msg = self._msgobj('msg_41.txt')
-        self.assertTrue(hasattr(msg, 'defects'))
+        self.assertHasAttr(msg, 'defects')
         self.assertEqual(len(msg.defects), 2)
         self.assertIsInstance(msg.defects[0],
                               errors.NoBoundaryInMultipartDefect)
@@ -2524,6 +2542,18 @@ Re: =?mac-iceland?q?r=8Aksm=9Arg=8Cs?= baz foo bar =?mac-iceland?q?r=8Aksm?=
                          ''.join(s.splitlines()))
         self.assertEqual(str(make_header(decode_header(s))),
                          '"Müller T" <T.Mueller@xxx.com>')
+
+    def test_unencoded_ascii(self):
+        # bpo-22833/gh-67022: returns [(str, None)] rather than [(bytes, None)]
+        s = 'header without encoded words'
+        self.assertEqual(decode_header(s),
+            [('header without encoded words', None)])
+
+    def test_unencoded_utf8(self):
+        # bpo-22833/gh-67022: returns [(str, None)] rather than [(bytes, None)]
+        s = 'header with unexpected non ASCII caract\xe8res'
+        self.assertEqual(decode_header(s),
+            [('header with unexpected non ASCII caract\xe8res', None)])
 
 
 # Test the MIMEMessage class
@@ -3659,9 +3689,7 @@ multipart/report
     def test_make_msgid_default_domain(self):
         with patch('socket.getfqdn') as mock_getfqdn:
             mock_getfqdn.return_value = domain = 'pythontest.example.com'
-            self.assertTrue(
-                email.utils.make_msgid().endswith(
-                    '@' + domain + '>'))
+            self.assertEndsWith(email.utils.make_msgid(), '@' + domain + '>')
 
     def test_Generator_linend(self):
         # Issue 14645.
@@ -4128,7 +4156,7 @@ Here's the message body
             "--BOUNDARY--\n"
           )
         msg = email.message_from_string(m)
-        self.assertTrue(msg.get_payload(0).get_payload().endswith('\r\n'))
+        self.assertEndsWith(msg.get_payload(0).get_payload(), '\r\n')
 
 
 class Test8BitBytesHandling(TestEmailBase):

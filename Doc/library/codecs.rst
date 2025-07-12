@@ -53,6 +53,14 @@ any codec:
    :exc:`UnicodeDecodeError`). Refer to :ref:`codec-base-classes` for more
    information on codec error handling.
 
+.. function:: charmap_build(string)
+
+   Return a mapping suitable for encoding with a custom single-byte encoding.
+   Given a :class:`str` *string* of up to 256 characters representing a
+   decoding table, returns either a compact internal mapping object
+   ``EncodingMap`` or a :class:`dictionary <dict>` mapping character ordinals
+   to byte values. Raises a :exc:`TypeError` on invalid input.
+
 The full details for each codec can also be looked up directly:
 
 .. function:: lookup(encoding)
@@ -231,8 +239,8 @@ wider range of codecs when working with binary files:
 .. function:: iterencode(iterator, encoding, errors='strict', **kwargs)
 
    Uses an incremental encoder to iteratively encode the input provided by
-   *iterator*. This function is a :term:`generator`.
-   The *errors* argument (as well as any
+   *iterator*. *iterator* must yield :class:`str` objects.
+   This function is a :term:`generator`. The *errors* argument (as well as any
    other keyword argument) is passed through to the incremental encoder.
 
    This function requires that the codec accept text :class:`str` objects
@@ -243,14 +251,28 @@ wider range of codecs when working with binary files:
 .. function:: iterdecode(iterator, encoding, errors='strict', **kwargs)
 
    Uses an incremental decoder to iteratively decode the input provided by
-   *iterator*. This function is a :term:`generator`.
-   The *errors* argument (as well as any
+   *iterator*. *iterator* must yield :class:`bytes` objects.
+   This function is a :term:`generator`. The *errors* argument (as well as any
    other keyword argument) is passed through to the incremental decoder.
 
    This function requires that the codec accept :class:`bytes` objects
    to decode. Therefore it does not support text-to-text encoders such as
    ``rot_13``, although ``rot_13`` may be used equivalently with
    :func:`iterencode`.
+
+
+.. function:: readbuffer_encode(buffer, errors=None, /)
+
+   Return a :class:`tuple` containing the raw bytes of *buffer*, a
+   :ref:`buffer-compatible object <bufferobjects>` or :class:`str`
+   (encoded to UTF-8 before processing), and their length in bytes.
+
+   The *errors* argument is ignored.
+
+   .. code-block:: pycon
+
+      >>> codecs.readbuffer_encode(b"Zito")
+      (b'Zito', 4)
 
 
 The module also provides the following constants which are useful for reading
@@ -1362,7 +1384,11 @@ encodings.
 |                    |         | It is used in the Python  |
 |                    |         | pickle protocol.          |
 +--------------------+---------+---------------------------+
-| undefined          |         | Raise an exception for    |
+| undefined          |         | This Codec should only    |
+|                    |         | be used for testing       |
+|                    |         | purposes.                 |
+|                    |         |                           |
+|                    |         | Raise an exception for    |
 |                    |         | all conversions, even     |
 |                    |         | empty strings. The error  |
 |                    |         | handler is ignored.       |
@@ -1463,6 +1489,54 @@ mapping. It is not supported by :meth:`str.encode` (which only produces
 
 .. versionchanged:: 3.4
    Restoration of the ``rot13`` alias.
+
+
+:mod:`encodings` --- Encodings package
+--------------------------------------
+
+.. module:: encodings
+   :synopsis: Encodings package
+
+This module implements the following functions:
+
+.. function:: normalize_encoding(encoding)
+
+   Normalize encoding name *encoding*.
+
+   Normalization works as follows: all non-alphanumeric characters except the
+   dot used for Python package names are collapsed and replaced with a single
+   underscore, leading and trailing underscores are removed.
+   For example, ``'  -;#'`` becomes ``'_'``.
+
+   Note that *encoding* should be ASCII only.
+
+
+.. note::
+   The following function should not be used directly, except for testing
+   purposes; :func:`codecs.lookup` should be used instead.
+
+
+.. function:: search_function(encoding)
+
+   Search for the codec module corresponding to the given encoding name
+   *encoding*.
+
+   This function first normalizes the *encoding* using
+   :func:`normalize_encoding`, then looks for a corresponding alias.
+   It attempts to import a codec module from the encodings package using either
+   the alias or the normalized name. If the module is found and defines a valid
+   ``getregentry()`` function that returns a :class:`codecs.CodecInfo` object,
+   the codec is cached and returned.
+
+   If the codec module defines a ``getaliases()`` function any returned aliases
+   are registered for future use.
+
+
+This module implements the following exception:
+
+.. exception:: CodecRegistryError
+
+   Raised when a codec is invalid or incompatible.
 
 
 :mod:`encodings.idna` --- Internationalized Domain Names in Applications

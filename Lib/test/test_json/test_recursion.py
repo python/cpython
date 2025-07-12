@@ -79,6 +79,7 @@ class TestRecursion:
             with support.infinite_recursion():
                 self.loads('[' * 100000 + '1' + ']' * 100000)
 
+    @support.requires_resource('cpu')
     def test_highly_nested_objects_encoding(self):
         # See #12051
         l, d = [], {}

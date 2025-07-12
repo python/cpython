@@ -1,2 +1,0 @@
-Add warnings to :ref:`launcher` about use of subcommands belonging to the
-Python install manager.

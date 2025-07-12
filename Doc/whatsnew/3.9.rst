@@ -423,8 +423,8 @@ digests. It skips MD5 on platforms that block MD5 digest.
 fcntl
 -----
 
-Added constants :const:`~fcntl.F_OFD_GETLK`, :const:`~fcntl.F_OFD_SETLK`
-and :const:`~fcntl.F_OFD_SETLKW`.
+Added constants :const:`!fcntl.F_OFD_GETLK`, :const:`!fcntl.F_OFD_SETLK`
+and :const:`!fcntl.F_OFD_SETLKW`.
 (Contributed by Donghee Na in :issue:`38602`.)
 
 ftplib
@@ -644,7 +644,7 @@ attribute.
 random
 ------
 
-Added a new :attr:`random.Random.randbytes` method: generate random bytes.
+Added a new :meth:`random.Random.randbytes` method: generate random bytes.
 (Contributed by Victor Stinner in :issue:`40286`.)
 
 signal
@@ -776,7 +776,7 @@ Optimizations
   :pep:`590` vectorcall protocol.
   (Contributed by Donghee Na, Mark Shannon, Jeroen Demeyer and Petr Viktorin in :issue:`37207`.)
 
-* Optimized :func:`~set.difference_update` for the case when the other set
+* Optimized :meth:`!set.difference_update` for the case when the other set
   is much larger than the base set.
   (Suggested by Evgeny Kapun with code contributed by Michele Orrù in :issue:`8425`.)
 

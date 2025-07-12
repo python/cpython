@@ -246,28 +246,6 @@ class GeneratorTest(unittest.TestCase):
         #This should not raise
         loop()
 
-    def test_genexpr_only_calls_dunder_iter_once(self):
-
-        class Iterator:
-
-            def __init__(self):
-                self.val = 0
-
-            def __next__(self):
-                if self.val == 2:
-                    raise StopIteration
-                self.val += 1
-                return self.val
-
-            # No __iter__ method
-
-        class C:
-
-            def __iter__(self):
-                return Iterator()
-
-        self.assertEqual([1,2], list(i for i in C()))
-
 
 class ModifyUnderlyingIterableTest(unittest.TestCase):
     iterables = [
@@ -650,6 +628,89 @@ class GeneratorCloseTest(unittest.TestCase):
         g.close()
         support.gc_collect()
         self.assertIsNone(f_wr())
+
+
+# See https://github.com/python/cpython/issues/125723
+class GeneratorDeallocTest(unittest.TestCase):
+    def test_frame_outlives_generator(self):
+        def g1():
+            a = 42
+            yield sys._getframe()
+
+        def g2():
+            a = 42
+            yield
+
+        def g3(obj):
+            a = 42
+            obj.frame = sys._getframe()
+            yield
+
+        class ObjectWithFrame():
+            def __init__(self):
+                self.frame = None
+
+        def get_frame(index):
+            if index == 1:
+                return next(g1())
+            elif index == 2:
+                gen = g2()
+                next(gen)
+                return gen.gi_frame
+            elif index == 3:
+                obj = ObjectWithFrame()
+                next(g3(obj))
+                return obj.frame
+            else:
+                return None
+
+        for index in (1, 2, 3):
+            with self.subTest(index=index):
+                frame = get_frame(index)
+                frame_locals = frame.f_locals
+                self.assertIn('a', frame_locals)
+                self.assertEqual(frame_locals['a'], 42)
+
+    def test_frame_locals_outlive_generator(self):
+        frame_locals1 = None
+
+        def g1():
+            nonlocal frame_locals1
+            frame_locals1 = sys._getframe().f_locals
+            a = 42
+            yield
+
+        def g2():
+            a = 42
+            yield sys._getframe().f_locals
+
+        def get_frame_locals(index):
+            if index == 1:
+                nonlocal frame_locals1
+                next(g1())
+                return frame_locals1
+            if index == 2:
+                return next(g2())
+            else:
+                return None
+
+        for index in (1, 2):
+            with self.subTest(index=index):
+                frame_locals = get_frame_locals(index)
+                self.assertIn('a', frame_locals)
+                self.assertEqual(frame_locals['a'], 42)
+
+    def test_frame_locals_outlive_generator_with_exec(self):
+        def g():
+            a = 42
+            yield locals(), sys._getframe().f_locals
+
+        locals_ = {'g': g}
+        for i in range(10):
+            exec("snapshot, live_locals = next(g())", locals=locals_)
+            for l in (locals_['snapshot'], locals_['live_locals']):
+                self.assertIn('a', l)
+                self.assertEqual(l['a'], 42)
 
 
 class GeneratorThrowTest(unittest.TestCase):

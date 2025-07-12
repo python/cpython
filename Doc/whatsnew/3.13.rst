@@ -2005,7 +2005,7 @@ New Deprecations
     (Contributed by Alex Waygood in :gh:`105566` and :gh:`105570`.)
 
   * Deprecate the :func:`typing.no_type_check_decorator` decorator function,
-    to be removed in in Python 3.15.
+    to be removed in Python 3.15.
     After eight years in the :mod:`typing` module,
     it has yet to be supported by any major type checker.
     (Contributed by Alex Waygood in :gh:`106309`.)
@@ -2554,6 +2554,8 @@ Deprecated C APIs
 
 .. include:: ../deprecations/c-api-pending-removal-in-3.15.rst
 
+.. include:: ../deprecations/c-api-pending-removal-in-3.16.rst
+
 .. include:: ../deprecations/c-api-pending-removal-in-future.rst
 
 .. _pythoncapi-compat project: https://github.com/python/pythoncapi-compat/
@@ -2598,7 +2600,7 @@ Build Changes
 
 * The :file:`configure` option :option:`--with-system-libmpdec`
   now defaults to ``yes``.
-  The bundled copy of ``libmpdecimal`` will be removed in Python 3.15.
+  The bundled copy of ``libmpdec`` will be removed in Python 3.16.
 
 * Python built with :file:`configure` :option:`--with-trace-refs`
   (tracing references) is now ABI compatible with the Python release build
@@ -2829,3 +2831,36 @@ sys
 * The previously undocumented special function :func:`sys.getobjects`,
   which only exists in specialized builds of Python, may now return objects
   from other interpreters than the one it's called in.
+
+Notable changes in 3.13.4
+=========================
+
+os.path
+-------
+
+* The *strict* parameter to :func:`os.path.realpath` accepts a new value,
+  :data:`os.path.ALLOW_MISSING`.
+  If used, errors other than :exc:`FileNotFoundError` will be re-raised;
+  the resulting path can be missing but it will be free of symlinks.
+  (Contributed by Petr Viktorin for :cve:`2025-4517`.)
+
+tarfile
+-------
+
+* :func:`~tarfile.data_filter` now normalizes symbolic link targets in order to
+  avoid path traversal attacks.Add commentMore actions
+  (Contributed by Petr Viktorin in :gh:`127987` and :cve:`2025-4138`.)
+* :func:`~tarfile.TarFile.extractall` now skips fixing up directory attributes
+  when a directory was removed or replaced by another kind of file.
+  (Contributed by Petr Viktorin in :gh:`127987` and :cve:`2024-12718`.)
+* :func:`~tarfile.TarFile.extract` and :func:`~tarfile.TarFile.extractall`
+  now (re-)apply the extraction filter when substituting a link (hard or
+  symbolic) with a copy of another archive member, and when fixing up
+  directory attributes.
+  The former raises a new exception, :exc:`~tarfile.LinkFallbackError`.
+  (Contributed by Petr Viktorin for :cve:`2025-4330` and :cve:`2024-12718`.)
+* :func:`~tarfile.TarFile.extract` and :func:`~tarfile.TarFile.extractall`
+  no longer extract rejected members when
+  :func:`~tarfile.TarFile.errorlevel` is zero.
+  (Contributed by Matt Prodani and Petr Viktorin in :gh:`112887`
+  and :cve:`2025-4435`.)

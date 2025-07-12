@@ -495,17 +495,17 @@ _random_Random_setstate_impl(RandomObject *self, PyObject *state)
 _random.Random.getrandbits
 
   self: self(type="RandomObject *")
-  k: int
+  k: long_long
   /
 
 getrandbits(k) -> x.  Generates an int with k random bits.
 [clinic start generated code]*/
 
 static PyObject *
-_random_Random_getrandbits_impl(RandomObject *self, int k)
-/*[clinic end generated code: output=b402f82a2158887f input=87603cd60f79f730]*/
+_random_Random_getrandbits_impl(RandomObject *self, long long k)
+/*[clinic end generated code: output=c2c02a7b0bfdf7f7 input=834d0fe668b981e4]*/
 {
-    int i, words;
+    Py_ssize_t i, words;
     uint32_t r;
     uint32_t *wordarray;
     PyObject *result;
@@ -522,7 +522,11 @@ _random_Random_getrandbits_impl(RandomObject *self, int k)
     if (k <= 32)  /* Fast path */
         return PyLong_FromUnsignedLong(genrand_uint32(self) >> (32 - k));
 
-    words = (k - 1) / 32 + 1;
+    if ((k - 1u) / 32u + 1u > PY_SSIZE_T_MAX / 4u) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    words = (k - 1u) / 32u + 1u;
     wordarray = (uint32_t *)PyMem_Malloc(words * 4);
     if (wordarray == NULL) {
         PyErr_NoMemory();

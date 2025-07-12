@@ -1,2 +1,0 @@
-Fix support of unicode characters with two or more codepoints on Windows in
-the new REPL.

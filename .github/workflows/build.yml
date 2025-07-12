@@ -15,7 +15,13 @@ permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}-reusable
+  # https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#concurrency
+  # 'group' must be a key uniquely representing a PR or push event.
+  # github.workflow is the workflow name
+  # github.actor is the user invoking the workflow
+  # github.head_ref is the source branch of the PR or otherwise blank
+  # github.run_id is a unique number for the current run
+  group: ${{ github.workflow }}-${{ github.actor }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
 env:

@@ -124,15 +124,15 @@ PyDoc_STRVAR(_random_Random_getrandbits__doc__,
     {"getrandbits", (PyCFunction)_random_Random_getrandbits, METH_O, _random_Random_getrandbits__doc__},
 
 static PyObject *
-_random_Random_getrandbits_impl(RandomObject *self, int k);
+_random_Random_getrandbits_impl(RandomObject *self, long long k);
 
 static PyObject *
 _random_Random_getrandbits(RandomObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    int k;
+    long long k;
 
-    k = PyLong_AsInt(arg);
+    k = PyLong_AsLongLong(arg);
     if (k == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -143,4 +143,4 @@ _random_Random_getrandbits(RandomObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=bf49ece1d341b1b6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d3a199bc869e5c63 input=a9049054013a1b77]*/

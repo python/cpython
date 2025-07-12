@@ -32,7 +32,7 @@ optionally support installing free-threaded Python binaries.  The installers
 are available at https://www.python.org/downloads/.
 
 For information on other platforms, see the `Installing a Free-Threaded Python
-<https://py-free-threading.github.io/installing_cpython/>`_, a
+<https://py-free-threading.github.io/installing-cpython/>`_, a
 community-maintained installation guide for installing free-threaded Python.
 
 When building CPython from source, the :option:`--disable-gil` configure option

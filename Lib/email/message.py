@@ -313,6 +313,8 @@ class Message:
                 # If it does happen, turn the string into bytes in a way
                 # guaranteed not to fail.
                 bpayload = payload.encode('raw-unicode-escape')
+        else:
+            bpayload = payload
         if cte == 'quoted-printable':
             return quopri.decodestring(bpayload)
         elif cte == 'base64':
@@ -564,7 +566,7 @@ class Message:
 
         msg.add_header('content-disposition', 'attachment', filename='bud.gif')
         msg.add_header('content-disposition', 'attachment',
-                       filename=('utf-8', '', Fußballer.ppt'))
+                       filename=('utf-8', '', 'Fußballer.ppt'))
         msg.add_header('content-disposition', 'attachment',
                        filename='Fußballer.ppt'))
         """

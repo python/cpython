@@ -11,6 +11,7 @@
 #include "pycore_pyerrors.h"      // _PyErr_FormatFromCause()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_sysmodule.h"     // _PySys_GetOptionalAttrString()
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 #include "osdefs.h"               // MAXPATHLEN
 
@@ -766,8 +767,7 @@ module_dealloc(PyModuleObject *m)
     if (verbose && m->md_name) {
         PySys_FormatStderr("# destroy %U\n", m->md_name);
     }
-    if (m->md_weaklist != NULL)
-        PyObject_ClearWeakRefs((PyObject *) m);
+    FT_CLEAR_WEAKREFS((PyObject *) m, m->md_weaklist);
     /* bpo-39824: Don't call m_free() if m_size > 0 and md_state=NULL */
     if (m->md_def && m->md_def->m_free
         && (m->md_def->m_size <= 0 || m->md_state != NULL))

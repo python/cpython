@@ -1,2 +1,0 @@
-Fix crash upon setting an attribute with a :class:`dict` subclass.
-Patch by Victor Stinner.
