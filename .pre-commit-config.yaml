@@ -34,6 +34,13 @@ repos:
         name: Run Black on Tools/jit/
         files: ^Tools/jit/
 
+  - repo: https://github.com/Lucas-C/pre-commit-hooks
+    rev: v1.5.5
+    hooks:
+      - id: remove-tabs
+        types: [python]
+        exclude: ^Tools/c-analyzer/cpython/_parser.py
+
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:

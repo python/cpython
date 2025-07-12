@@ -627,6 +627,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(offset_src)
         STRUCT_FOR_ID(on_type_read)
         STRUCT_FOR_ID(onceregistry)
+        STRUCT_FOR_ID(only_active_thread)
         STRUCT_FOR_ID(only_keys)
         STRUCT_FOR_ID(oparg)
         STRUCT_FOR_ID(opcode)
