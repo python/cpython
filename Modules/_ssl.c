@@ -3462,7 +3462,7 @@ _ssl__SSLContext_get_groups_impl(PySSLContext *self, int include_aliases)
 #if OPENSSL_VERSION_NUMBER >= 0x30500000L
     STACK_OF(OPENSSL_CSTRING) *groups = NULL;
     const char *group;
-    size_t i, num;
+    int i, num;
     PyObject *item, *result = NULL;
 
     // This "groups" object is dynamically allocated, but the strings inside
@@ -3492,7 +3492,7 @@ _ssl__SSLContext_get_groups_impl(PySSLContext *self, int include_aliases)
         // Group names are plain ASCII, so there's no chance of a decoding
         // error here. However, an allocation failure could occur when
         // constructing the Unicode version of the names.
-        item = PyUnicode_DecodeFSDefault(group);
+        item = PyUnicode_DecodeASCII(group, strlen(group), "strict");
         if (item == NULL) {
             _setSSLError(get_state_ctx(self), "Can't allocate group name", 0, __FILE__, __LINE__);
             goto error;

@@ -964,22 +964,15 @@ class ContextTests(unittest.TestCase):
 
     def test_set_groups(self):
         ctx = ssl.create_default_context()
-
-        # Test valid group list
         self.assertIsNone(ctx.set_groups('P-256:X25519'))
-
-        # Test invalid group list
         self.assertRaises(ssl.SSLError, ctx.set_groups, 'P-256:xxx')
 
     @unittest.skipUnless(CAN_GET_AVAILABLE_OPENSSL_GROUPS,
                          "OpenSSL version doesn't support getting groups")
     def test_get_groups(self):
         ctx = ssl.create_default_context()
-
-        # P-256 isn't an IANA name, so it shouldn't be returned by default
+        # By default, only return official IANA names.
         self.assertNotIn('P-256', ctx.get_groups())
-
-        # Aliases like P-256 sbould be returned when include_aliases is set
         self.assertIn('P-256', ctx.get_groups(include_aliases=True))
 
     def test_options(self):
