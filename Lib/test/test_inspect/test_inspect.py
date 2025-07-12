@@ -5830,6 +5830,19 @@ class TestSignatureDefinitions(unittest.TestCase):
         import collections.abc
         self._test_module_has_signatures(collections.abc)
 
+    def test_datetime_module_has_signatures(self):
+        import datetime
+        no_signature = {'tzinfo'}
+        unsupported_signature = {'timezone'}
+        methods_unsupported_signature = {
+            'date': {'replace'},
+            'time': {'replace'},
+            'datetime': {'replace', 'combine'},
+        }
+        self._test_module_has_signatures(datetime,
+                no_signature, unsupported_signature,
+                methods_unsupported_signature=methods_unsupported_signature)
+
     def test_errno_module_has_signatures(self):
         import errno
         self._test_module_has_signatures(errno)
