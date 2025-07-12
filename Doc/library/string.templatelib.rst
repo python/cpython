@@ -11,7 +11,6 @@
 
 .. seealso::
 
-   * :ref:`T-strings tutorial <tut-t-strings>`
    * :ref:`Format strings <f-strings>`
    * :ref:`T-string literal syntax <t-strings>`
 
@@ -30,8 +29,6 @@ how strings are processed. You can create templates using
 While f-strings evaluate to ``str``, t-strings create a :class:`Template`
 instance that gives you access to the static and interpolated (in curly braces)
 parts of a string *before* they are combined.
-
-See the :ref:`t-strings tutorial <tut-t-strings>` for an introduction.
 
 
 .. _templatelib-template:
