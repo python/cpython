@@ -1467,7 +1467,7 @@ Positional-only arguments: 0
 Kw-only arguments: 0
 Number of locals:  1
 Stack size:        \\d+
-Flags:             OPTIMIZED, NEWLOCALS(, HAS_DOCSTRING|)
+Flags:             OPTIMIZED, NEWLOCALS(, HAS_DOCSTRING)?
 Constants:
    {code_info_consts}
 Names:
