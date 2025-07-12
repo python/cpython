@@ -278,15 +278,15 @@ set_add_entry_takeref(PySetObject *so, PyObject *key, Py_hash_t hash)
     if (freeslot == NULL)
         goto found_unused;
     FT_ATOMIC_STORE_SSIZE_RELAXED(so->used, so->used + 1);
-    FT_ATOMIC_STORE_PTR_RELEASE(freeslot->key, key);
     FT_ATOMIC_STORE_SSIZE_RELAXED(freeslot->hash, hash);
+    FT_ATOMIC_STORE_PTR_RELEASE(freeslot->key, key);
     return 0;
 
   found_unused:
     so->fill++;
     FT_ATOMIC_STORE_SSIZE_RELAXED(so->used, so->used + 1);
-    FT_ATOMIC_STORE_PTR_RELEASE(entry->key, key);
     FT_ATOMIC_STORE_SSIZE_RELAXED(entry->hash, hash);
+    FT_ATOMIC_STORE_PTR_RELEASE(entry->key, key);
     if ((size_t)so->fill*5 < mask*3)
         return 0;
     return set_table_resize(so, so->used>50000 ? so->used*2 : so->used*4);
@@ -352,8 +352,8 @@ set_insert_clean(setentry *table, size_t mask, PyObject *key, Py_hash_t hash)
         i = (i * 5 + 1 + perturb) & mask;
     }
   found_null:
-    FT_ATOMIC_STORE_PTR_RELEASE(entry->key, key);
     FT_ATOMIC_STORE_SSIZE_RELAXED(entry->hash, hash);
+    FT_ATOMIC_STORE_PTR_RELEASE(entry->key, key);
 }
 
 /* ======== End logic for probing the hash table ========================== */
@@ -522,9 +522,9 @@ set_discard_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
     }
     assert(status == SET_LOOKKEY_FOUND);
     old_key = entry->key;
-    FT_ATOMIC_STORE_PTR_RELEASE(entry->key, dummy);
     FT_ATOMIC_STORE_SSIZE_RELAXED(entry->hash, -1);
     FT_ATOMIC_STORE_SSIZE_RELAXED(so->used, so->used - 1);
+    FT_ATOMIC_STORE_PTR_RELEASE(entry->key, dummy);
     Py_DECREF(old_key);
     return DISCARD_FOUND;
 }
@@ -790,8 +790,8 @@ set_merge_lock_held(PySetObject *so, PyObject *otherset)
             key = other_entry->key;
             if (key != NULL) {
                 assert(so_entry->key == NULL);
-                FT_ATOMIC_STORE_PTR_RELEASE(so_entry->key, Py_NewRef(key));
                 FT_ATOMIC_STORE_SSIZE_RELAXED(so_entry->hash, other_entry->hash);
+                FT_ATOMIC_STORE_PTR_RELEASE(so_entry->key, Py_NewRef(key));
             }
         }
         so->fill = other->fill;
@@ -855,10 +855,10 @@ set_pop_impl(PySetObject *so)
         if (entry > limit)
             entry = so->table;
     }
-    key = entry->key;
-    FT_ATOMIC_STORE_PTR_RELEASE(entry->key, dummy);
     FT_ATOMIC_STORE_SSIZE_RELAXED(entry->hash, -1);
     FT_ATOMIC_STORE_SSIZE_RELAXED(so->used, so->used - 1);
+    key = entry->key;
+    FT_ATOMIC_STORE_PTR_RELEASE(entry->key, dummy);
     so->finger = entry - so->table + 1;   /* next place to start */
     return key;
 }
