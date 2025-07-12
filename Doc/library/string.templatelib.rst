@@ -24,7 +24,7 @@ Template strings
 .. versionadded:: 3.14
 
 Template strings are a formatting mechanism that allows for deep control over
-how strings are processed. You can create Templates using
+how strings are processed. You can create templates using
 :ref:`t-string literal syntax <t-strings>`, which is identical to
 :ref:`f-string syntax <f-strings>` but uses a ``t`` instead of an ``f``.
 While f-strings evaluate to ``str``, t-strings create a :class:`Template`
