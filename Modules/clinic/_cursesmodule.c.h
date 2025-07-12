@@ -768,7 +768,7 @@ PyDoc_STRVAR(_curses_window_getch__doc__,
 #define _CURSES_WINDOW_GETCH_METHODDEF    \
     {"getch", (PyCFunction)_curses_window_getch, METH_VARARGS, _curses_window_getch__doc__},
 
-static int
+static PyObject *
 _curses_window_getch_impl(PyCursesWindowObject *self, int group_right_1,
                           int y, int x);
 
@@ -779,7 +779,6 @@ _curses_window_getch(PyCursesWindowObject *self, PyObject *args)
     int group_right_1 = 0;
     int y = 0;
     int x = 0;
-    int _return_value;
 
     switch (PyTuple_GET_SIZE(args)) {
         case 0:
@@ -794,11 +793,7 @@ _curses_window_getch(PyCursesWindowObject *self, PyObject *args)
             PyErr_SetString(PyExc_TypeError, "_curses.window.getch requires 0 to 2 arguments");
             goto exit;
     }
-    _return_value = _curses_window_getch_impl(self, group_right_1, y, x);
-    if ((_return_value == -1) && PyErr_Occurred()) {
-        goto exit;
-    }
-    return_value = PyLong_FromLong((long)_return_value);
+    return_value = _curses_window_getch_impl(self, group_right_1, y, x);
 
 exit:
     return return_value;
@@ -4378,4 +4373,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_USE_DEFAULT_COLORS_METHODDEF
     #define _CURSES_USE_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_USE_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=8745c1562b537fb4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=39a35d730a47ea72 input=a9049054013a1b77]*/

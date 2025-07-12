@@ -43,6 +43,7 @@ static const char copyright[] =
 #include "pycore_dict.h"             // _PyDict_Next()
 #include "pycore_long.h"             // _PyLong_GetZero()
 #include "pycore_moduleobject.h"     // _PyModule_GetState()
+#include "pycore_weakref.h"          // FT_CLEAR_WEAKREFS()
 
 #include "sre.h"                     // SRE_CODE
 
@@ -729,9 +730,7 @@ pattern_dealloc(PatternObject* self)
     PyTypeObject *tp = Py_TYPE(self);
 
     PyObject_GC_UnTrack(self);
-    if (self->weakreflist != NULL) {
-        PyObject_ClearWeakRefs((PyObject *) self);
-    }
+    FT_CLEAR_WEAKREFS((PyObject *) self, self->weakreflist);
     (void)pattern_clear(self);
     tp->tp_free(self);
     Py_DECREF(tp);

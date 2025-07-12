@@ -12,6 +12,7 @@
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 #include "clinic/codeobject.c.h"
 
 #include <stdbool.h>
@@ -1927,9 +1928,7 @@ code_dealloc(PyCodeObject *co)
         Py_XDECREF(co->_co_cached->_co_varnames);
         PyMem_Free(co->_co_cached);
     }
-    if (co->co_weakreflist != NULL) {
-        PyObject_ClearWeakRefs((PyObject*)co);
-    }
+    FT_CLEAR_WEAKREFS((PyObject*)co, co->co_weakreflist);
     free_monitoring_data(co->_co_monitoring);
     PyObject_Free(co);
 }

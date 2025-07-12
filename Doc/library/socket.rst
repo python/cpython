@@ -470,7 +470,7 @@ The AF_* and SOCK_* constants are now :class:`AddressFamily` and
    .. versionchanged:: 3.11
       NetBSD support was added.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.13.4
       Restored missing ``CAN_RAW_ERR_FILTER`` on Linux.
 
 .. data:: CAN_BCM
@@ -1380,7 +1380,7 @@ The :mod:`socket` module also offers various network-related services:
    The *fds* parameter is a sequence of file descriptors.
    Consult :meth:`~socket.sendmsg` for the documentation of these parameters.
 
-   .. availability:: Unix, Windows, not WASI.
+   .. availability:: Unix, not WASI.
 
       Unix platforms supporting :meth:`~socket.sendmsg`
       and :const:`SCM_RIGHTS` mechanism.
@@ -1394,9 +1394,9 @@ The :mod:`socket` module also offers various network-related services:
    Return ``(msg, list(fds), flags, addr)``.
    Consult :meth:`~socket.recvmsg` for the documentation of these parameters.
 
-   .. availability:: Unix, Windows, not WASI.
+   .. availability:: Unix, not WASI.
 
-      Unix platforms supporting :meth:`~socket.sendmsg`
+      Unix platforms supporting :meth:`~socket.recvmsg`
       and :const:`SCM_RIGHTS` mechanism.
 
    .. versionadded:: 3.9

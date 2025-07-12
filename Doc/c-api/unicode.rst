@@ -1403,10 +1403,6 @@ the user settings on the machine running the codec.
    .. versionadded:: 3.3
 
 
-Methods & Slots
-"""""""""""""""
-
-
 .. _unicodemethodsandslots:
 
 Methods and Slot Functions
@@ -1642,9 +1638,5 @@ They all return ``NULL`` or ``-1`` if an exception occurs.
    For interning an unbounded number of different strings, such as ones coming
    from user input, prefer calling :c:func:`PyUnicode_FromString` and
    :c:func:`PyUnicode_InternInPlace` directly.
-
-   .. impl-detail::
-
-      Strings interned this way are made :term:`immortal`.
 
 

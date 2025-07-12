@@ -263,9 +263,9 @@ Literals
 .. class:: Constant(value)
 
    A constant value. The ``value`` attribute of the ``Constant`` literal contains the
-   Python object it represents. The values represented can be simple types
-   such as a number, string or ``None``, but also immutable container types
-   (tuples and frozensets) if all of their elements are constant.
+   Python object it represents. The values represented can be instances of :class:`str`,
+   :class:`bytes`, :class:`int`, :class:`float`, :class:`complex`, and :class:`bool`,
+   and the constants :data:`None` and :data:`Ellipsis`.
 
    .. doctest::
 
@@ -2440,8 +2440,9 @@ and classes for traversing abstract syntax trees:
    indents that many spaces per level.  If *indent* is a string (such as ``"\t"``),
    that string is used to indent each level.
 
-   If *show_empty* is ``False`` (the default), empty lists and fields that are ``None``
-   will be omitted from the output.
+   If *show_empty* is false (the default), optional empty lists will be
+   omitted from the output.
+   Optional ``None`` values are always omitted.
 
    .. versionchanged:: 3.9
       Added the *indent* option.

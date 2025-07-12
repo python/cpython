@@ -5910,7 +5910,9 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     }
     Py_CLEAR(co);
 
-    VISIT(c, expr, outermost->iter);
+    if (compiler_comprehension_iter(c, outermost)) {
+        goto error;
+    }
 
     ADDOP_I(c, loc, CALL, 0);
 

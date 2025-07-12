@@ -1,2 +1,0 @@
-Fix crash in the :term:`free threading` build when accessing an object
-attribute that may be concurrently inserted or deleted.

@@ -60,7 +60,7 @@ typedef struct _Py_AuditHookEntry {
 } _Py_AuditHookEntry;
 
 typedef struct _Py_DebugOffsets {
-    char cookie[8];
+    char cookie[8] _Py_NONSTRING;
     uint64_t version;
     uint64_t free_threaded;
     // Runtime state offset;

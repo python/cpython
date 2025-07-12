@@ -564,7 +564,7 @@ class Message:
 
         msg.add_header('content-disposition', 'attachment', filename='bud.gif')
         msg.add_header('content-disposition', 'attachment',
-                       filename=('utf-8', '', Fußballer.ppt'))
+                       filename=('utf-8', '', 'Fußballer.ppt'))
         msg.add_header('content-disposition', 'attachment',
                        filename='Fußballer.ppt'))
         """

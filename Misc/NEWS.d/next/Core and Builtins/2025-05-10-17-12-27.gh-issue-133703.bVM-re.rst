@@ -1,1 +1,0 @@
-Fix hashtable in dict can be bigger than intended in some situations.

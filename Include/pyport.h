@@ -541,6 +541,14 @@ extern "C" {
 #  define _Py__has_builtin(x) 0
 #endif
 
+// Preprocessor check for a compiler __attribute__. Always return 0
+// if __has_attribute() macro is not defined.
+#ifdef __has_attribute
+#  define _Py__has_attribute(x) __has_attribute(x)
+#else
+#  define _Py__has_attribute(x) 0
+#endif
+
 // _Py_TYPEOF(expr) gets the type of an expression.
 //
 // Example: _Py_TYPEOF(x) x_copy = (x);
@@ -605,5 +613,21 @@ extern "C" {
 #if defined(__sgi) && !defined(_SGI_MP_SOURCE)
 #  define _SGI_MP_SOURCE
 #endif
+
+
+// _Py_NONSTRING: The nonstring variable attribute specifies that an object or
+// member declaration with type array of char, signed char, or unsigned char,
+// or pointer to such a type is intended to store character arrays that do not
+// necessarily contain a terminating NUL.
+//
+// Usage:
+//
+//   char name [8] _Py_NONSTRING;
+#if _Py__has_attribute(nonstring)
+#  define _Py_NONSTRING __attribute__((nonstring))
+#else
+#  define _Py_NONSTRING
+#endif
+
 
 #endif /* Py_PYPORT_H */

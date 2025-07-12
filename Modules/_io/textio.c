@@ -15,6 +15,7 @@
 #include "pycore_object.h"            // _PyObject_GC_UNTRACK()
 #include "pycore_pyerrors.h"          // _PyErr_ChainExceptions1()
 #include "pycore_pystate.h"           // _PyInterpreterState_GET()
+#include "pycore_weakref.h"           // FT_CLEAR_WEAKREFS()
 
 #include "_iomodule.h"
 
@@ -1460,8 +1461,7 @@ textiowrapper_dealloc(textio *self)
         return;
     self->ok = 0;
     _PyObject_GC_UNTRACK(self);
-    if (self->weakreflist != NULL)
-        PyObject_ClearWeakRefs((PyObject *)self);
+    FT_CLEAR_WEAKREFS((PyObject *)self, self->weakreflist);
     (void)textiowrapper_clear(self);
     tp->tp_free((PyObject *)self);
     Py_DECREF(tp);
@@ -1568,6 +1568,8 @@ _io_TextIOWrapper_detach_impl(textio *self)
 static int
 _textiowrapper_writeflush(textio *self)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
+
     if (self->pending_bytes == NULL)
         return 0;
 
@@ -3157,9 +3159,11 @@ _io_TextIOWrapper_close_impl(textio *self)
 }
 
 static PyObject *
-textiowrapper_iternext(textio *self)
+textiowrapper_iternext_lock_held(PyObject *op)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
     PyObject *line;
+    textio *self = (textio *)op;
 
     CHECK_ATTACHED(self);
 
@@ -3192,6 +3196,16 @@ textiowrapper_iternext(textio *self)
     }
 
     return line;
+}
+
+static PyObject *
+textiowrapper_iternext(PyObject *op)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = textiowrapper_iternext_lock_held(op);
+    Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 /*[clinic input]
