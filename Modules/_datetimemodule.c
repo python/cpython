@@ -4816,7 +4816,7 @@ datetime_time_isoformat_impl(PyDateTime_Time *self, const char *timespec)
 
     PyObject *result;
     int us = TIME_GET_MICROSECOND(self);
-    static const char *specs[][2] = {
+    static const char * const specs[][2] = {
         {"hours", "%02d"},
         {"minutes", "%02d:%02d"},
         {"seconds", "%02d:%02d:%02d"},
@@ -6371,7 +6371,7 @@ datetime_datetime_isoformat_impl(PyDateTime_DateTime *self, int sep,
 
     PyObject *result = NULL;
     int us = DATE_GET_MICROSECOND(self);
-    static const char *specs[][2] = {
+    static const char * const specs[][2] = {
         {"hours", "%04d-%02d-%02d%c%02d"},
         {"minutes", "%04d-%02d-%02d%c%02d:%02d"},
         {"seconds", "%04d-%02d-%02d%c%02d:%02d:%02d"},
