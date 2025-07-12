@@ -1695,6 +1695,6 @@ class LongTest(unittest.TestCase):
 
     def test_long_hash(self):
         assert hash(-2**61) != -1
-        
+
 if __name__ == "__main__":
     unittest.main()
