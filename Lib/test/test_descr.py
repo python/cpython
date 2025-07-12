@@ -409,7 +409,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
 
     def test_python_dicts(self):
         # Testing Python subclass of dict...
-        self.assertTrue(issubclass(dict, dict))
+        self.assertIsSubclass(dict, dict)
         self.assertIsInstance({}, dict)
         d = dict()
         self.assertEqual(d, {})
@@ -433,7 +433,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
                 self.state = state
             def getstate(self):
                 return self.state
-        self.assertTrue(issubclass(C, dict))
+        self.assertIsSubclass(C, dict)
         a1 = C(12)
         self.assertEqual(a1.state, 12)
         a2 = C(foo=1, bar=2)
@@ -1048,15 +1048,15 @@ class ClassPropertiesAndMethods(unittest.TestCase):
 
         m = types.ModuleType("m")
         self.assertTrue(m.__class__ is types.ModuleType)
-        self.assertFalse(hasattr(m, "a"))
+        self.assertNotHasAttr(m, "a")
 
         m.__class__ = SubType
         self.assertTrue(m.__class__ is SubType)
-        self.assertTrue(hasattr(m, "a"))
+        self.assertHasAttr(m, "a")
 
         m.__class__ = types.ModuleType
         self.assertTrue(m.__class__ is types.ModuleType)
-        self.assertFalse(hasattr(m, "a"))
+        self.assertNotHasAttr(m, "a")
 
         # Make sure that builtin immutable objects don't support __class__
         # assignment, because the object instances may be interned.
@@ -1192,10 +1192,9 @@ class ClassPropertiesAndMethods(unittest.TestCase):
             pass
         else:
             self.fail("[''] slots not caught")
-        class C(object):
+
+        class WithValidIdentifiers(object):
             __slots__ = ["a", "a_b", "_a", "A0123456789Z"]
-        # XXX(nnorwitz): was there supposed to be something tested
-        # from the class above?
 
         # Test a single string is not expanded as a sequence.
         class C(object):
@@ -1590,7 +1589,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         cm = classmethod(f)
         cm_dict = {'__doc__': (
                        "f docstring"
-                       if support.HAVE_DOCSTRINGS
+                       if support.HAVE_PY_DOCSTRINGS
                        else None
                     ),
                    '__module__': __name__,
@@ -1781,7 +1780,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         class E: # *not* subclassing from C
             foo = C.foo
         self.assertEqual(E().foo.__func__, C.foo) # i.e., unbound
-        self.assertTrue(repr(C.foo.__get__(C())).startswith("<bound method "))
+        self.assertStartsWith(repr(C.foo.__get__(C())), "<bound method ")
 
     def test_compattr(self):
         # Testing computed attributes...
@@ -2059,7 +2058,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         class E(object):
             foo = C.foo
         self.assertEqual(E().foo.__func__, C.foo) # i.e., unbound
-        self.assertTrue(repr(C.foo.__get__(C(1))).startswith("<bound method "))
+        self.assertStartsWith(repr(C.foo.__get__(C(1))), "<bound method ")
 
     @support.impl_detail("testing error message from implementation")
     def test_methods_in_c(self):
@@ -3515,6 +3514,10 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         self.assertEqual(repr(2 ** I(3)), "I(8)")
         self.assertEqual(repr(I(2) ** 3), "I(8)")
         self.assertEqual(repr(pow(I(2), I(3), I(5))), "I(3)")
+        self.assertEqual(repr(pow(I(2), I(3), 5)), "I(3)")
+        self.assertEqual(repr(pow(I(2), 3, 5)), "I(3)")
+        self.assertEqual(repr(pow(2, I(3), 5)), "I(3)")
+        self.assertEqual(repr(pow(2, 3, I(5))), "3")
         class S(str):
             def __eq__(self, other):
                 return self.lower() == other.lower()
@@ -3940,6 +3943,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         del C.__del__
 
     @unittest.skipIf(support.is_emscripten, "Seems to works in Pyodide?")
+    @support.skip_wasi_stack_overflow()
     def test_slots_trash(self):
         # Testing slot trash...
         # Deallocating deeply nested slotted trash caused stack overflows
@@ -4109,6 +4113,34 @@ class ClassPropertiesAndMethods(unittest.TestCase):
             pass
         else:
             self.fail("shouldn't be able to create inheritance cycles")
+
+    def test_assign_bases_many_subclasses(self):
+        # This is intended to check that typeobject.c:queue_slot_update() can
+        # handle updating many subclasses when a slot method is re-assigned.
+        class A:
+            x = 'hello'
+            def __call__(self):
+                return 123
+            def __getitem__(self, index):
+                return None
+
+        class X:
+            x = 'bye'
+
+        class B(A):
+            pass
+
+        subclasses = []
+        for i in range(1000):
+            sc = type(f'Sub{i}', (B,), {})
+            subclasses.append(sc)
+
+        self.assertEqual(subclasses[0]()(), 123)
+        self.assertEqual(subclasses[0]().x, 'hello')
+        B.__bases__ = (X,)
+        with self.assertRaises(TypeError):
+            subclasses[0]()()
+        self.assertEqual(subclasses[0]().x, 'bye')
 
     def test_builtin_bases(self):
         # Make sure all the builtin types can have their base queried without
@@ -4520,6 +4552,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         del o
 
     @support.skip_wasi_stack_overflow()
+    @support.skip_emscripten_stack_overflow()
     @support.requires_resource('cpu')
     def test_wrapper_segfault(self):
         # SF 927248: deeply nested wrappers could cause stack overflow
@@ -4864,6 +4897,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
                 deque.append(thing, thing)
 
     @support.skip_emscripten_stack_overflow()
+    @support.skip_wasi_stack_overflow()
     def test_repr_as_str(self):
         # Issue #11603: crash or infinite loop when rebinding __str__ as
         # __repr__.
@@ -5191,8 +5225,8 @@ class DictProxyTests(unittest.TestCase):
         # We can't blindly compare with the repr of another dict as ordering
         # of keys and values is arbitrary and may differ.
         r = repr(self.C.__dict__)
-        self.assertTrue(r.startswith('mappingproxy('), r)
-        self.assertTrue(r.endswith(')'), r)
+        self.assertStartsWith(r, 'mappingproxy(')
+        self.assertEndsWith(r, ')')
         for k, v in self.C.__dict__.items():
             self.assertIn('{!r}: {!r}'.format(k, v), r)
 

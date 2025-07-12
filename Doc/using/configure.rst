@@ -22,12 +22,15 @@ Features and minimum versions required to build CPython:
 
 * Support for threads.
 
-* OpenSSL 1.1.1 is the minimum version and OpenSSL 3.0.9 is the recommended
+* OpenSSL 1.1.1 is the minimum version and OpenSSL 3.0.16 is the recommended
   minimum version for the :mod:`ssl` and :mod:`hashlib` extension modules.
 
 * SQLite 3.15.2 for the :mod:`sqlite3` extension module.
 
 * Tcl/Tk 8.5.12 for the :mod:`tkinter` module.
+
+* `libmpdec <https://www.bytereef.org/mpdecimal/doc/libmpdec/>`_ 2.5.0
+  for the :mod:`decimal` module.
 
 * Autoconf 2.72 and aclocal 1.16.5 are required to regenerate the
   :file:`configure` script.
@@ -290,8 +293,8 @@ General Options
 
 .. option:: --disable-gil
 
-   Enables **experimental** support for running Python without the
-   :term:`global interpreter lock` (GIL): free threading build.
+   Enables support for running Python without the :term:`global interpreter
+   lock` (GIL): free threading build.
 
    Defines the ``Py_GIL_DISABLED`` macro and adds ``"t"`` to
    :data:`sys.abiflags`.
@@ -302,14 +305,21 @@ General Options
 
 .. option:: --enable-experimental-jit=[no|yes|yes-off|interpreter]
 
-   Indicate how to integrate the :ref:`JIT compiler <whatsnew313-jit-compiler>`.
+   Indicate how to integrate the :ref:`experimental just-in-time compiler <whatsnew314-jit-compiler>`.
 
-   * ``no`` - build the interpreter without the JIT.
-   * ``yes`` - build the interpreter with the JIT.
-   * ``yes-off`` - build the interpreter with the JIT but disable it by default.
-   * ``interpreter`` - build the interpreter without the JIT, but with the tier 2 enabled interpreter.
+   * ``no``: Don't build the JIT.
+   * ``yes``: Enable the JIT. To disable it at runtime, set the environment
+     variable :envvar:`PYTHON_JIT=0 <PYTHON_JIT>`.
+   * ``yes-off``: Build the JIT, but disable it by default. To enable it at
+     runtime, set the environment variable :envvar:`PYTHON_JIT=1 <PYTHON_JIT>`.
+   * ``interpreter``: Enable the "JIT interpreter" (only useful for those
+     debugging the JIT itself). To disable it at runtime, set the environment
+     variable :envvar:`PYTHON_JIT=0 <PYTHON_JIT>`.
 
-   By convention, ``--enable-experimental-jit`` is a shorthand for ``--enable-experimental-jit=yes``.
+   ``--enable-experimental-jit=no`` is the default behavior if the option is not
+   provided, and ``--enable-experimental-jit`` is shorthand for
+   ``--enable-experimental-jit=yes``.  See :file:`Tools/jit/README.md` for more
+   information, including how to install the necessary build-time dependencies.
 
    .. note::
 
@@ -437,6 +447,14 @@ Options for third-party dependencies
 
    C compiler and linker flags for ``libuuid``, used by :mod:`uuid` module,
    overriding ``pkg-config``.
+
+.. option:: LIBZSTD_CFLAGS
+.. option:: LIBZSTD_LIBS
+
+   C compiler and linker flags for ``libzstd``, used by :mod:`compression.zstd` module,
+   overriding ``pkg-config``.
+
+   .. versionadded:: 3.14
 
 .. option:: PANEL_CFLAGS
 .. option:: PANEL_LIBS
@@ -668,6 +686,13 @@ also be used to improve performance.
    not compiled. This includes both the functionality to schedule code to be executed
    and the functionality to receive code to be executed.
 
+   .. c:macro:: Py_REMOTE_DEBUG
+
+      This macro is defined by default, unless Python is configured with
+      :option:`--without-remote-debug`.
+
+      Note that even if the macro is defined, remote debugging may not be
+      available (for example, on an incompatible platform).
 
    .. versionadded:: 3.14
 

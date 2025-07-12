@@ -1,6 +1,6 @@
-=================================
-:mod:`turtle` --- Turtle graphics
-=================================
+==================================
+:mod:`!turtle` --- Turtle graphics
+==================================
 
 .. module:: turtle
    :synopsis: An educational framework for simple graphics applications

@@ -46,7 +46,7 @@
       Please see GH-131691 for details.
       -->
       <ExceptionHandling>Async</ExceptionHandling>
-      <AdditionalOptions>-Wno-deprecated-non-prototype -Wno-unused-label -Wno-pointer-sign -Wno-incompatible-pointer-types-discards-qualifiers -Wno-unused-function %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>-Wno-pointer-sign -Wno-incompatible-pointer-types-discards-qualifiers -Wno-unused-function %(AdditionalOptions)</AdditionalOptions>
       <AdditionalOptions Condition="'$(Platform)' == 'Win32'">-m32 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalOptions Condition="'$(Platform)' == 'x64'">-m64 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalOptions Condition="$(Configuration) != 'Debug'">-flto=thin %(AdditionalOptions)</AdditionalOptions>

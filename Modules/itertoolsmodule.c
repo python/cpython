@@ -1124,7 +1124,6 @@ typedef struct {
     PyObject *it;
     PyObject *saved;
     Py_ssize_t index;
-    int firstpass;
 } cycleobject;
 
 #define cycleobject_CAST(op)    ((cycleobject *)(op))
@@ -1165,8 +1164,7 @@ itertools_cycle_impl(PyTypeObject *type, PyObject *iterable)
     }
     lz->it = it;
     lz->saved = saved;
-    lz->index = 0;
-    lz->firstpass = 0;
+    lz->index = -1;
 
     return (PyObject *)lz;
 }
@@ -1199,11 +1197,11 @@ cycle_next(PyObject *op)
     cycleobject *lz = cycleobject_CAST(op);
     PyObject *item;
 
-    if (lz->it != NULL) {
+    Py_ssize_t index = FT_ATOMIC_LOAD_SSIZE_RELAXED(lz->index);
+
+    if (index < 0) {
         item = PyIter_Next(lz->it);
         if (item != NULL) {
-            if (lz->firstpass)
-                return item;
             if (PyList_Append(lz->saved, item)) {
                 Py_DECREF(item);
                 return NULL;
@@ -1213,15 +1211,22 @@ cycle_next(PyObject *op)
         /* Note:  StopIteration is already cleared by PyIter_Next() */
         if (PyErr_Occurred())
             return NULL;
+        index = 0;
+        FT_ATOMIC_STORE_SSIZE_RELAXED(lz->index, 0);
+#ifndef Py_GIL_DISABLED
         Py_CLEAR(lz->it);
+#endif
     }
     if (PyList_GET_SIZE(lz->saved) == 0)
         return NULL;
-    item = PyList_GET_ITEM(lz->saved, lz->index);
-    lz->index++;
-    if (lz->index >= PyList_GET_SIZE(lz->saved))
-        lz->index = 0;
-    return Py_NewRef(item);
+    item = PyList_GetItemRef(lz->saved, index);
+    assert(item);
+    index++;
+    if (index >= PyList_GET_SIZE(lz->saved)) {
+        index = 0;
+    }
+    FT_ATOMIC_STORE_SSIZE_RELAXED(lz->index, index);
+    return item;
 }
 
 static PyType_Slot cycle_slots[] = {
@@ -1875,8 +1880,8 @@ chain_traverse(PyObject *op, visitproc visit, void *arg)
     return 0;
 }
 
-static PyObject *
-chain_next(PyObject *op)
+static inline PyObject *
+chain_next_lock_held(PyObject *op)
 {
     chainobject *lz = chainobject_CAST(op);
     PyObject *item;
@@ -1912,6 +1917,16 @@ chain_next(PyObject *op)
     }
     /* Everything had been consumed already. */
     return NULL;
+}
+
+static PyObject *
+chain_next(PyObject *op)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = chain_next_lock_held(op);
+    Py_END_CRITICAL_SECTION()
+    return result;
 }
 
 PyDoc_STRVAR(chain_doc,
@@ -2081,7 +2096,7 @@ product_traverse(PyObject *op, visitproc visit, void *arg)
 }
 
 static PyObject *
-product_next(PyObject *op)
+product_next_lock_held(PyObject *op)
 {
     productobject *lz = productobject_CAST(op);
     PyObject *pool;
@@ -2165,6 +2180,16 @@ product_next(PyObject *op)
 empty:
     lz->stopped = 1;
     return NULL;
+}
+
+static PyObject *
+product_next(PyObject *op)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = product_next_lock_held(op);
+    Py_END_CRITICAL_SECTION()
+    return result;
 }
 
 static PyMethodDef product_methods[] = {
@@ -2314,7 +2339,7 @@ combinations_traverse(PyObject *op, visitproc visit, void *arg)
 }
 
 static PyObject *
-combinations_next(PyObject *op)
+combinations_next_lock_held(PyObject *op)
 {
     combinationsobject *co = combinationsobject_CAST(op);
     PyObject *elem;
@@ -2397,6 +2422,16 @@ combinations_next(PyObject *op)
 empty:
     co->stopped = 1;
     return NULL;
+}
+
+static PyObject *
+combinations_next(PyObject *op)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = combinations_next_lock_held(op);
+    Py_END_CRITICAL_SECTION()
+    return result;
 }
 
 static PyMethodDef combinations_methods[] = {
@@ -3628,10 +3663,14 @@ static PyObject *
 repeat_next(PyObject *op)
 {
     repeatobject *ro = repeatobject_CAST(op);
-    if (ro->cnt == 0)
+    Py_ssize_t cnt = FT_ATOMIC_LOAD_SSIZE_RELAXED(ro->cnt);
+    if (cnt == 0) {
         return NULL;
-    if (ro->cnt > 0)
-        ro->cnt--;
+    }
+    if (cnt > 0) {
+        cnt--;
+        FT_ATOMIC_STORE_SSIZE_RELAXED(ro->cnt, cnt);
+    }
     return Py_NewRef(ro->element);
 }
 

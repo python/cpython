@@ -85,10 +85,22 @@ PyMember_GetOne(const char *obj_addr, PyMemberDef *l)
         break;
     }
     case _Py_T_OBJECT:
-        v = *(PyObject **)addr;
-        if (v == NULL)
+        v = FT_ATOMIC_LOAD_PTR(*(PyObject **) addr);
+        if (v != NULL) {
+#ifdef Py_GIL_DISABLED
+            if (!_Py_TryIncrefCompare((PyObject **) addr, v)) {
+                Py_BEGIN_CRITICAL_SECTION((PyObject *) obj_addr);
+                v = FT_ATOMIC_LOAD_PTR(*(PyObject **) addr);
+                Py_XINCREF(v);
+                Py_END_CRITICAL_SECTION();
+            }
+#else
+            Py_INCREF(v);
+#endif
+        }
+        if (v == NULL) {
             v = Py_None;
-        Py_INCREF(v);
+        }
         break;
     case Py_T_OBJECT_EX:
         v = member_get_object(addr, obj_addr, l);

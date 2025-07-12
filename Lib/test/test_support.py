@@ -54,23 +54,23 @@ def _caplog():
 class TestSupport(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        orig_filter_len = len(warnings.filters)
+        orig_filter_len = len(warnings._get_filters())
         cls._warnings_helper_token = support.ignore_deprecations_from(
             "test.support.warnings_helper", like=".*used in test_support.*"
         )
         cls._test_support_token = support.ignore_deprecations_from(
             __name__, like=".*You should NOT be seeing this.*"
         )
-        assert len(warnings.filters) == orig_filter_len + 2
+        assert len(warnings._get_filters()) == orig_filter_len + 2
 
     @classmethod
     def tearDownClass(cls):
-        orig_filter_len = len(warnings.filters)
+        orig_filter_len = len(warnings._get_filters())
         support.clear_ignored_deprecations(
             cls._warnings_helper_token,
             cls._test_support_token,
         )
-        assert len(warnings.filters) == orig_filter_len - 2
+        assert len(warnings._get_filters()) == orig_filter_len - 2
 
     def test_ignored_deprecations_are_silent(self):
         """Test support.ignore_deprecations_from() silences warnings"""
@@ -407,10 +407,10 @@ class TestSupport(unittest.TestCase):
         with support.swap_attr(obj, "y", 5) as y:
             self.assertEqual(obj.y, 5)
             self.assertIsNone(y)
-        self.assertFalse(hasattr(obj, 'y'))
+        self.assertNotHasAttr(obj, 'y')
         with support.swap_attr(obj, "y", 5):
             del obj.y
-        self.assertFalse(hasattr(obj, 'y'))
+        self.assertNotHasAttr(obj, 'y')
 
     def test_swap_item(self):
         D = {"x":1}
@@ -561,6 +561,7 @@ class TestSupport(unittest.TestCase):
             ['-Wignore', '-X', 'dev'],
             ['-X', 'faulthandler'],
             ['-X', 'importtime'],
+            ['-X', 'importtime=2'],
             ['-X', 'showrefcount'],
             ['-X', 'tracemalloc'],
             ['-X', 'tracemalloc=3'],

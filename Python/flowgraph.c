@@ -295,30 +295,38 @@ dump_instr(cfg_instr *i)
 static inline int
 basicblock_returns(const basicblock *b) {
     cfg_instr *last = basicblock_last_instr(b);
-    return last && last->i_opcode == RETURN_VALUE;
+    return last && IS_RETURN_OPCODE(last->i_opcode);
 }
 
 static void
-dump_basicblock(const basicblock *b)
+dump_basicblock(const basicblock *b, bool highlight)
 {
     const char *b_return = basicblock_returns(b) ? "return " : "";
+    if (highlight) {
+        fprintf(stderr, ">>> ");
+    }
     fprintf(stderr, "%d: [EH=%d CLD=%d WRM=%d NO_FT=%d %p] used: %d, depth: %d, preds: %d %s\n",
         b->b_label.id, b->b_except_handler, b->b_cold, b->b_warm, BB_NO_FALLTHROUGH(b), b, b->b_iused,
         b->b_startdepth, b->b_predecessors, b_return);
+    int depth = b->b_startdepth;
     if (b->b_instr) {
         int i;
         for (i = 0; i < b->b_iused; i++) {
-            fprintf(stderr, "  [%02d] ", i);
+            fprintf(stderr, "  [%02d] depth: %d ", i, depth);
             dump_instr(b->b_instr + i);
+
+            int popped = _PyOpcode_num_popped(b->b_instr[i].i_opcode, b->b_instr[i].i_oparg);
+            int pushed = _PyOpcode_num_pushed(b->b_instr[i].i_opcode, b->b_instr[i].i_oparg);
+            depth += (pushed - popped);
         }
     }
 }
 
 void
-_PyCfgBuilder_DumpGraph(const basicblock *entryblock)
+_PyCfgBuilder_DumpGraph(const basicblock *entryblock, const basicblock *mark)
 {
     for (const basicblock *b = entryblock; b != NULL; b = b->b_next) {
-        dump_basicblock(b);
+        dump_basicblock(b, b == mark);
     }
 }
 
@@ -1884,6 +1892,10 @@ eval_const_unaryop(PyObject *operand, int opcode, int oparg)
             result = PyNumber_Negative(operand);
             break;
         case UNARY_INVERT:
+            // XXX: This should be removed once the ~bool depreciation expires.
+            if (PyBool_Check(operand)) {
+                return NULL;
+            }
             result = PyNumber_Invert(operand);
             break;
         case UNARY_NOT: {
@@ -2795,6 +2807,11 @@ optimize_load_fast(cfg_builder *g)
             assert(opcode != EXTENDED_ARG);
             switch (opcode) {
                 // Opcodes that load and store locals
+                case DELETE_FAST: {
+                    kill_local(instr_flags, &refs, oparg);
+                    break;
+                }
+
                 case LOAD_FAST: {
                     PUSH_REF(i, oparg);
                     break;
@@ -2857,8 +2874,11 @@ optimize_load_fast(cfg_builder *g)
                 // how many inputs should be left on the stack.
 
                 // Opcodes that consume no inputs
+                case FORMAT_SIMPLE:
                 case GET_ANEXT:
+                case GET_ITER:
                 case GET_LEN:
+                case GET_YIELD_FROM_ITER:
                 case IMPORT_FROM:
                 case MATCH_KEYS:
                 case MATCH_MAPPING:
@@ -2893,6 +2913,16 @@ optimize_load_fast(cfg_builder *g)
                     break;
                 }
 
+                case END_SEND:
+                case SET_FUNCTION_ATTRIBUTE: {
+                    assert(_PyOpcode_num_popped(opcode, oparg) == 2);
+                    assert(_PyOpcode_num_pushed(opcode, oparg) == 1);
+                    ref tos = ref_stack_pop(&refs);
+                    ref_stack_pop(&refs);
+                    PUSH_REF(tos.instr, tos.local);
+                    break;
+                }
+
                 // Opcodes that consume some inputs and push new values
                 case CHECK_EXC_MATCH: {
                     ref_stack_pop(&refs);
@@ -2919,6 +2949,14 @@ optimize_load_fast(cfg_builder *g)
                         // back onto the stack
                         PUSH_REF(self.instr, self.local);
                     }
+                    break;
+                }
+
+                case LOAD_SPECIAL:
+                case PUSH_EXC_INFO: {
+                    ref tos = ref_stack_pop(&refs);
+                    PUSH_REF(i, NOT_LOCAL);
+                    PUSH_REF(tos.instr, tos.local);
                     break;
                 }
 
@@ -3847,16 +3885,38 @@ _PyCfg_FromInstructionSequence(_PyInstructionSequence *seq)
             seq->s_instrs[instr->i_oparg].i_target = 1;
         }
     }
+    int offset = 0;
     for (int i = 0; i < seq->s_used; i++) {
         _PyInstruction *instr = &seq->s_instrs[i];
+        if (instr->i_opcode == ANNOTATIONS_PLACEHOLDER) {
+            if (seq->s_annotations_code != NULL) {
+                assert(seq->s_annotations_code->s_labelmap_size == 0
+                    && seq->s_annotations_code->s_nested == NULL);
+                for (int j = 0; j < seq->s_annotations_code->s_used; j++) {
+                    _PyInstruction *ann_instr = &seq->s_annotations_code->s_instrs[j];
+                    assert(!HAS_TARGET(ann_instr->i_opcode));
+                    if (_PyCfgBuilder_Addop(g, ann_instr->i_opcode, ann_instr->i_oparg, ann_instr->i_loc) < 0) {
+                        goto error;
+                    }
+                }
+                offset += seq->s_annotations_code->s_used - 1;
+            }
+            else {
+                offset -= 1;
+            }
+            continue;
+        }
         if (instr->i_target) {
-            jump_target_label lbl_ = {i};
+            jump_target_label lbl_ = {i + offset};
             if (_PyCfgBuilder_UseLabel(g, lbl_) < 0) {
                 goto error;
             }
         }
         int opcode = instr->i_opcode;
         int oparg = instr->i_oparg;
+        if (HAS_TARGET(opcode)) {
+            oparg += offset;
+        }
         if (_PyCfgBuilder_Addop(g, opcode, oparg, instr->i_loc) < 0) {
             goto error;
         }
