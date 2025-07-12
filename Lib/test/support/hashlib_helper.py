@@ -29,12 +29,10 @@ CANONICAL_DIGEST_NAMES = frozenset((
 ))
 
 NON_HMAC_DIGEST_NAMES = frozenset({
-    'shake_128', 'shake_256', 'blake2s', 'blake2b'
+    'shake_128', 'shake_256',
+    'blake2s', 'blake2b',
 })
 
-# Mapping from a "canonical" name to a pair (HACL*, _hashlib.*, hashlib.*)
-# constructors. If the constructor name is None, then this means that the
-# algorithm can only be used by the "agile" new() interfaces.
 
 class HashAPI(namedtuple("HashAPI", "builtin openssl hashlib")):
 
@@ -50,6 +48,9 @@ class HashAPI(namedtuple("HashAPI", "builtin openssl hashlib")):
                 raise AssertionError(f"unknown type: {typ}")
 
 
+# Mapping from a "canonical" name to a pair (HACL*, _hashlib.*, hashlib.*)
+# constructors. If the constructor name is None, then this means that the
+# algorithm can only be used by the "agile" new() interfaces.
 _EXPLICIT_CONSTRUCTORS = MappingProxyType({
     "md5": HashAPI("_md5.md5", "openssl_md5", "md5"),
     "sha1": HashAPI("_sha1.sha1", "openssl_sha1", "sha1"),
@@ -66,7 +67,6 @@ _EXPLICIT_CONSTRUCTORS = MappingProxyType({
     "blake2s": HashAPI("_blake2.blake2s", None, "blake2s"),
     "blake2b": HashAPI("_blake2.blake2b", None, "blake2b"),
 })
-
 assert _EXPLICIT_CONSTRUCTORS.keys() == CANONICAL_DIGEST_NAMES
 
 _EXPLICIT_HMAC_CONSTRUCTORS = {
@@ -78,6 +78,8 @@ _EXPLICIT_HMAC_CONSTRUCTORS = {
 }
 _EXPLICIT_HMAC_CONSTRUCTORS['shake_128'] = None
 _EXPLICIT_HMAC_CONSTRUCTORS['shake_256'] = None
+# Strictly speaking, HMAC-BLAKE is meaningless as BLAKE2 is already a
+# keyed hash function. However, as it's exposed by HACL*, we test it.
 _EXPLICIT_HMAC_CONSTRUCTORS['blake2s'] = '_hmac.compute_blake2s_32'
 _EXPLICIT_HMAC_CONSTRUCTORS['blake2b'] = '_hmac.compute_blake2b_32'
 _EXPLICIT_HMAC_CONSTRUCTORS = MappingProxyType(_EXPLICIT_HMAC_CONSTRUCTORS)
