@@ -282,7 +282,7 @@ types
 ------
 
 * Added :data:`types.FrameLocalsProxyType` for representing the type of
-  the :attr:`frame.f_locals` attribute, as determined in :pep:`667`.
+  the :attr:`frame.f_locals` attribute, as described in :pep:`667`.
 
 
 zlib
