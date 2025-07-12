@@ -1694,7 +1694,10 @@ class LongTest(unittest.TestCase):
         object.__sizeof__(1)
 
     def test_long_hash(self):
+        # gh-136599
+        assert hash(10) == 10
+        assert hash(-1) == -2
         assert hash(-2**61) != -1
-        
+
 if __name__ == "__main__":
     unittest.main()
