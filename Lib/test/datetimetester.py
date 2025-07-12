@@ -3653,16 +3653,6 @@ class TestDateTime(TestDate):
 
     @support.cpython_only
     def test_concurrent_initialization(self):
-        try:
-            from concurrent.futures import InterpreterPoolExecutor as _
-        except ImportError:
-            self.skipTest("requires subinterpreters")
-
-        try:
-            import _datetime as _
-        except ImportError:
-            self.skipTest("requires C implementation of datetime")
-
         # Run in a subprocess to ensure we get a clean version of _datetime
         script = """if True:
         from concurrent.futures import InterpreterPoolExecutor
