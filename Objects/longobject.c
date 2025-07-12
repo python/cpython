@@ -3676,7 +3676,13 @@ long_hash(PyObject *obj)
     }
     i = _PyLong_DigitCount(v);
     sign = _PyLong_NonCompactSign(v);
-    x = 0;
+
+    // unroll first two digits
+    assert(i>=2);
+    --i;
+    x = v->long_value.ob_digit[i];
+    assert(x < _PyHASH_MODULUS);
+
     while (--i >= 0) {
         /* Here x is a quantity in the range [0, _PyHASH_MODULUS); we
            want to compute x * 2**PyLong_SHIFT + v->long_value.ob_digit[i] modulo
