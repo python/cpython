@@ -84,8 +84,8 @@ reassigned.
 
    If two or more consecutive interpolations are passed, they will be treated
    as separate interpolations and an empty string will be inserted between them.
-   For example, the following code creates a template with a single value in
-   the :attr:`~Template.strings` attribute:
+   For example, the following code creates a template with empty placeholders
+   in the :attr:`~Template.strings` attribute:
 
    >>> from string.templatelib import Interpolation, Template
    >>> template = Template(Interpolation("World", "name"), Interpolation("!", "punctuation"))
