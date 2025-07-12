@@ -1,0 +1,2 @@
+For the free-threaded build, avoid locking the set object for the
+``__contains__`` method.
