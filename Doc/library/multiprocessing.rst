@@ -519,7 +519,7 @@ Global start method
 Python supports several ways to create and initialize a process. The global start method sets the default mechanism for creating a process.
 
 Several multiprocessing functions and methods that may also instantiate
-certain objects will implicitly set the global start method to the system's default, 
+certain objects will implicitly set the global start method to the system's default,
 if it hasn’t been set already. The global start method can only be set once. If you need to change the
 start method from the system default, you must proactively set the global start method
 before calling functions or methods, or creating these objects.
