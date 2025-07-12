@@ -14,6 +14,7 @@
 #include "pycore_object.h"        // _PyObject_Init()
 #include "pycore_time.h"          // _PyTime_ObjectToTime_t()
 #include "pycore_unicodeobject.h" // _PyUnicode_Copy()
+#include "pycore_initconfig.h"    // _PyStatus_OK()
 
 #include "datetime.h"
 
@@ -7329,13 +7330,9 @@ clear_state(datetime_state *st)
 }
 
 
-static int
-init_static_types(PyInterpreterState *interp, int reloading)
+PyStatus
+_PyDateTime_Init(PyInterpreterState *interp)
 {
-    if (reloading) {
-        return 0;
-    }
-
     // `&...` is not a constant expression according to a strict reading
     // of C standards. Fill tp_base at run-time rather than statically.
     // See https://bugs.python.org/issue40777
@@ -7347,11 +7344,11 @@ init_static_types(PyInterpreterState *interp, int reloading)
     for (size_t i = 0; i < Py_ARRAY_LENGTH(capi_types); i++) {
         PyTypeObject *type = capi_types[i];
         if (_PyStaticType_InitForExtension(interp, type) < 0) {
-            return -1;
+            return _PyStatus_ERR("could not initialize static types");
         }
     }
 
-    return 0;
+    return _PyStatus_OK();
 }
 
 
@@ -7378,10 +7375,6 @@ _datetime_exec(PyObject *module)
         goto error;
     }
     /* We actually set the "current" module right before a successful return. */
-
-    if (init_static_types(interp, reloading) < 0) {
-        goto error;
-    }
 
     for (size_t i = 0; i < Py_ARRAY_LENGTH(capi_types); i++) {
         PyTypeObject *type = capi_types[i];

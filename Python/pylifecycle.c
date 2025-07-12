@@ -915,6 +915,11 @@ pycore_interp_init(PyThreadState *tstate)
         goto done;
     }
 
+    status = _PyDateTime_Init(tstate->interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        goto done;
+    }
+
     const PyConfig *config = _PyInterpreterState_GetConfig(interp);
 
     status = _PyImport_InitCore(tstate, sysmod, config->_install_importlib);
