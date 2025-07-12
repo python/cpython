@@ -27,7 +27,6 @@ Doc/library/multiprocessing.rst
 Doc/library/optparse.rst
 Doc/library/os.rst
 Doc/library/pickletools.rst
-Doc/library/platform.rst
 Doc/library/profile.rst
 Doc/library/pyexpat.rst
 Doc/library/resource.rst
