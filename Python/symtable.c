@@ -141,6 +141,7 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
     ste->ste_needs_classdict = 0;
     ste->ste_has_conditional_annotations = 0;
     ste->ste_in_conditional_block = 0;
+    ste->ste_in_unevaluated_annotation = 0;
     ste->ste_annotation_block = NULL;
 
     ste->ste_has_docstring = 0;
@@ -379,8 +380,8 @@ static void dump_symtable(PySTEntryObject* ste)
 }
 #endif
 
-#define DUPLICATE_ARGUMENT \
-"duplicate argument '%U' in function definition"
+#define DUPLICATE_PARAMETER \
+"duplicate parameter '%U' in function definition"
 
 static struct symtable *
 symtable_new(void)
@@ -1393,7 +1394,7 @@ symtable_exit_block(struct symtable *st)
 }
 
 static int
-symtable_enter_existing_block(struct symtable *st, PySTEntryObject* ste)
+symtable_enter_existing_block(struct symtable *st, PySTEntryObject* ste, bool add_to_children)
 {
     if (PyList_Append(st->st_stack, (PyObject *)ste) < 0) {
         return 0;
@@ -1424,7 +1425,7 @@ symtable_enter_existing_block(struct symtable *st, PySTEntryObject* ste)
     if (ste->ste_type == ModuleBlock)
         st->st_global = st->st_cur->ste_symbols;
 
-    if (prev) {
+    if (add_to_children && prev) {
         if (PyList_Append(prev->ste_children, (PyObject *)ste) < 0) {
             return 0;
         }
@@ -1439,7 +1440,7 @@ symtable_enter_block(struct symtable *st, identifier name, _Py_block_ty block,
     PySTEntryObject *ste = ste_new(st, name, block, ast, loc);
     if (ste == NULL)
         return 0;
-    int result = symtable_enter_existing_block(st, ste);
+    int result = symtable_enter_existing_block(st, ste, /* add_to_children */true);
     Py_DECREF(ste);
     if (block == AnnotationBlock || block == TypeVariableBlock || block == TypeAliasBlock) {
         _Py_DECLARE_STR(format, ".format");
@@ -1493,7 +1494,7 @@ symtable_add_def_helper(struct symtable *st, PyObject *name, int flag, struct _s
         }
         if ((flag & DEF_PARAM) && (val & DEF_PARAM)) {
             /* Is it better to use 'mangled' or 'name' here? */
-            PyErr_Format(PyExc_SyntaxError, DUPLICATE_ARGUMENT, name);
+            PyErr_Format(PyExc_SyntaxError, DUPLICATE_PARAMETER, name);
             SET_ERROR_LOCATION(st->st_filename, loc);
             goto error;
         }
@@ -1865,7 +1866,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             Py_DECREF(new_ste);
             return 0;
         }
-        if (!symtable_enter_existing_block(st, new_ste)) {
+        if (!symtable_enter_existing_block(st, new_ste, /* add_to_children */true)) {
             Py_DECREF(new_ste);
             return 0;
         }
@@ -2222,7 +2223,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             Py_DECREF(new_ste);
             return 0;
         }
-        if (!symtable_enter_existing_block(st, new_ste)) {
+        if (!symtable_enter_existing_block(st, new_ste, /* add_to_children */true)) {
             Py_DECREF(new_ste);
             return 0;
         }
@@ -2509,8 +2510,16 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         if (e->v.FormattedValue.format_spec)
             VISIT(st, expr, e->v.FormattedValue.format_spec);
         break;
+    case Interpolation_kind:
+        VISIT(st, expr, e->v.Interpolation.value);
+        if (e->v.Interpolation.format_spec)
+            VISIT(st, expr, e->v.Interpolation.format_spec);
+        break;
     case JoinedStr_kind:
         VISIT_SEQ(st, expr, e->v.JoinedStr.values);
+        break;
+    case TemplateStr_kind:
+        VISIT_SEQ(st, expr, e->v.TemplateStr.values);
         break;
     case Constant_kind:
         /* Nothing to do here. */
@@ -2538,17 +2547,19 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
             VISIT(st, expr, e->v.Slice.step);
         break;
     case Name_kind:
-        if (!symtable_add_def_ctx(st, e->v.Name.id,
-                                  e->v.Name.ctx == Load ? USE : DEF_LOCAL,
-                                  LOCATION(e), e->v.Name.ctx)) {
-            return 0;
-        }
-        /* Special-case super: it counts as a use of __class__ */
-        if (e->v.Name.ctx == Load &&
-            _PyST_IsFunctionLike(st->st_cur) &&
-            _PyUnicode_EqualToASCIIString(e->v.Name.id, "super")) {
-            if (!symtable_add_def(st, &_Py_ID(__class__), USE, LOCATION(e)))
+        if (!st->st_cur->ste_in_unevaluated_annotation) {
+            if (!symtable_add_def_ctx(st, e->v.Name.id,
+                                    e->v.Name.ctx == Load ? USE : DEF_LOCAL,
+                                    LOCATION(e), e->v.Name.ctx)) {
                 return 0;
+            }
+            /* Special-case super: it counts as a use of __class__ */
+            if (e->v.Name.ctx == Load &&
+                _PyST_IsFunctionLike(st->st_cur) &&
+                _PyUnicode_EqualToASCIIString(e->v.Name.id, "super")) {
+                if (!symtable_add_def(st, &_Py_ID(__class__), USE, LOCATION(e)))
+                    return 0;
+            }
         }
         break;
     /* child nodes of List and Tuple will have expr_context set */
@@ -2566,11 +2577,21 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
 static int
 symtable_visit_type_param_bound_or_default(
     struct symtable *st, expr_ty e, identifier name,
-    void *key, const char *ste_scope_info)
+    type_param_ty tp, const char *ste_scope_info)
 {
+    if (_PyUnicode_Equal(name, &_Py_ID(__classdict__))) {
+
+        PyObject *error_msg = PyUnicode_FromFormat("reserved name '%U' cannot be "
+                                                   "used for type parameter", name);
+        PyErr_SetObject(PyExc_SyntaxError, error_msg);
+        Py_DECREF(error_msg);
+        SET_ERROR_LOCATION(st->st_filename, LOCATION(tp));
+        return 0;
+    }
+
     if (e) {
         int is_in_class = st->st_cur->ste_can_see_class_scope;
-        if (!symtable_enter_block(st, name, TypeVariableBlock, key, LOCATION(e))) {
+        if (!symtable_enter_block(st, name, TypeVariableBlock, (void *)tp, LOCATION(e))) {
             return 0;
         }
 
@@ -2612,12 +2633,12 @@ symtable_visit_type_param(struct symtable *st, type_param_ty tp)
         // The only requirement for the key is that it is unique and it matches the logic in
         // compile.c where the scope is retrieved.
         if (!symtable_visit_type_param_bound_or_default(st, tp->v.TypeVar.bound, tp->v.TypeVar.name,
-                                                        (void *)tp, ste_scope_info)) {
+                                                        tp, ste_scope_info)) {
             return 0;
         }
 
         if (!symtable_visit_type_param_bound_or_default(st, tp->v.TypeVar.default_value, tp->v.TypeVar.name,
-                                                        (void *)((uintptr_t)tp + 1), "a TypeVar default")) {
+                                                        (type_param_ty)((uintptr_t)tp + 1), "a TypeVar default")) {
             return 0;
         }
         break;
@@ -2627,7 +2648,7 @@ symtable_visit_type_param(struct symtable *st, type_param_ty tp)
         }
 
         if (!symtable_visit_type_param_bound_or_default(st, tp->v.TypeVarTuple.default_value, tp->v.TypeVarTuple.name,
-                                                        (void *)tp, "a TypeVarTuple default")) {
+                                                        tp, "a TypeVarTuple default")) {
             return 0;
         }
         break;
@@ -2637,7 +2658,7 @@ symtable_visit_type_param(struct symtable *st, type_param_ty tp)
         }
 
         if (!symtable_visit_type_param_bound_or_default(st, tp->v.ParamSpec.default_value, tp->v.ParamSpec.name,
-                                                        (void *)tp, "a ParamSpec default")) {
+                                                        tp, "a ParamSpec default")) {
             return 0;
         }
         break;
@@ -2733,8 +2754,13 @@ symtable_visit_params(struct symtable *st, asdl_arg_seq *args)
 static int
 symtable_visit_annotation(struct symtable *st, expr_ty annotation, void *key)
 {
-    if ((st->st_cur->ste_type == ClassBlock || st->st_cur->ste_type == ModuleBlock)
-            && st->st_cur->ste_in_conditional_block
+    // Annotations in local scopes are not executed and should not affect the symtable
+    bool is_unevaluated = st->st_cur->ste_type == FunctionBlock;
+
+    // Module-level annotations are always considered conditional because the module
+    // may be partially executed.
+    if ((((st->st_cur->ste_type == ClassBlock && st->st_cur->ste_in_conditional_block)
+            || st->st_cur->ste_type == ModuleBlock))
             && !st->st_cur->ste_has_conditional_annotations)
     {
         st->st_cur->ste_has_conditional_annotations = 1;
@@ -2760,15 +2786,22 @@ symtable_visit_annotation(struct symtable *st, expr_ty annotation, void *key)
         }
     }
     else {
-        if (!symtable_enter_existing_block(st, parent_ste->ste_annotation_block)) {
+        if (!symtable_enter_existing_block(st, parent_ste->ste_annotation_block,
+                                           /* add_to_children */false)) {
             return 0;
         }
     }
-    VISIT(st, expr, annotation);
+    if (is_unevaluated) {
+        st->st_cur->ste_in_unevaluated_annotation = 1;
+    }
+    int rc = symtable_visit_expr(st, annotation);
+    if (is_unevaluated) {
+        st->st_cur->ste_in_unevaluated_annotation = 0;
+    }
     if (!symtable_exit_block(st)) {
         return 0;
     }
-    return 1;
+    return rc;
 }
 
 static int

@@ -7,6 +7,7 @@
 #include "pycore_typevarobject.h" // _Py_typing_type_repr
 #include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
 #include "pycore_unionobject.h"   // _Py_union_type_or, _PyGenericAlias_Check
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 
 #include <stdbool.h>
@@ -33,9 +34,7 @@ ga_dealloc(PyObject *self)
     gaobject *alias = (gaobject *)self;
 
     _PyObject_GC_UNTRACK(self);
-    if (alias->weakreflist != NULL) {
-        PyObject_ClearWeakRefs((PyObject *)alias);
-    }
+    FT_CLEAR_WEAKREFS(self, alias->weakreflist);
     Py_XDECREF(alias->origin);
     Py_XDECREF(alias->args);
     Py_XDECREF(alias->parameters);
@@ -65,7 +64,7 @@ ga_repr_items_list(PyUnicodeWriter *writer, PyObject *p)
 
     for (Py_ssize_t i = 0; i < len; i++) {
         if (i > 0) {
-            if (PyUnicodeWriter_WriteUTF8(writer, ", ", 2) < 0) {
+            if (PyUnicodeWriter_WriteASCII(writer, ", ", 2) < 0) {
                 return -1;
             }
         }
@@ -109,7 +108,7 @@ ga_repr(PyObject *self)
     }
     for (Py_ssize_t i = 0; i < len; i++) {
         if (i > 0) {
-            if (PyUnicodeWriter_WriteUTF8(writer, ", ", 2) < 0) {
+            if (PyUnicodeWriter_WriteASCII(writer, ", ", 2) < 0) {
                 goto error;
             }
         }
@@ -126,7 +125,7 @@ ga_repr(PyObject *self)
     }
     if (len == 0) {
         // for something like tuple[()] we should print a "()"
-        if (PyUnicodeWriter_WriteUTF8(writer, "()", 2) < 0) {
+        if (PyUnicodeWriter_WriteASCII(writer, "()", 2) < 0) {
             goto error;
         }
     }
@@ -824,8 +823,8 @@ ga_unpacked_tuple_args(PyObject *self, void *unused)
 }
 
 static PyGetSetDef ga_properties[] = {
-    {"__parameters__", ga_parameters, (setter)NULL, PyDoc_STR("Type variables in the GenericAlias."), NULL},
-    {"__typing_unpacked_tuple_args__", ga_unpacked_tuple_args, (setter)NULL, NULL},
+    {"__parameters__", ga_parameters, NULL, PyDoc_STR("Type variables in the GenericAlias."), NULL},
+    {"__typing_unpacked_tuple_args__", ga_unpacked_tuple_args, NULL, NULL},
     {0}
 };
 
@@ -1000,7 +999,7 @@ PyTypeObject Py_GenericAliasType = {
     .tp_new = ga_new,
     .tp_free = PyObject_GC_Del,
     .tp_getset = ga_properties,
-    .tp_iter = (getiterfunc)ga_iter,
+    .tp_iter = ga_iter,
     .tp_vectorcall_offset = offsetof(gaobject, vectorcall),
 };
 

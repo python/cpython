@@ -216,6 +216,33 @@ framelocalsproxy_getitem(PyObject *self, PyObject *key)
 }
 
 static int
+add_overwritten_fast_local(PyFrameObject *frame, PyObject *obj)
+{
+    Py_ssize_t new_size;
+    if (frame->f_overwritten_fast_locals == NULL) {
+        new_size = 1;
+    }
+    else {
+        Py_ssize_t size = PyTuple_Size(frame->f_overwritten_fast_locals);
+        if (size == -1) {
+            return -1;
+        }
+        new_size = size + 1;
+    }
+    PyObject *new_tuple = PyTuple_New(new_size);
+    if (new_tuple == NULL) {
+        return -1;
+    }
+    for (Py_ssize_t i = 0; i < new_size - 1; i++) {
+        PyObject *o = PyTuple_GET_ITEM(frame->f_overwritten_fast_locals, i);
+        PyTuple_SET_ITEM(new_tuple, i, Py_NewRef(o));
+    }
+    PyTuple_SET_ITEM(new_tuple, new_size - 1, Py_NewRef(obj));
+    Py_XSETREF(frame->f_overwritten_fast_locals, new_tuple);
+    return 0;
+}
+
+static int
 framelocalsproxy_setitem(PyObject *self, PyObject *key, PyObject *value)
 {
     /* Merge locals into fast locals */
@@ -253,7 +280,13 @@ framelocalsproxy_setitem(PyObject *self, PyObject *key, PyObject *value)
             Py_XINCREF(value);
             PyCell_SetTakeRef((PyCellObject *)cell, value);
         } else if (value != PyStackRef_AsPyObjectBorrow(oldvalue)) {
-            PyStackRef_XCLOSE(fast[i]);
+            PyObject *old_obj = PyStackRef_AsPyObjectBorrow(fast[i]);
+            if (old_obj != NULL && !_Py_IsImmortal(old_obj)) {
+                if (add_overwritten_fast_local(frame, old_obj) < 0) {
+                    return -1;
+                }
+                PyStackRef_CLOSE(fast[i]);
+            }
             fast[i] = PyStackRef_FromPyObjectNew(value);
         }
         return 0;
@@ -1353,6 +1386,10 @@ mark_stacks(PyCodeObject *code_obj, int len)
                     stacks[j] = next_stack;
                     break;
                 case GET_ITER:
+                    next_stack = push_value(pop_value(next_stack), Iterator);
+                    next_stack = push_value(next_stack, Iterator);
+                    stacks[next_i] = next_stack;
+                    break;
                 case GET_AITER:
                     next_stack = push_value(pop_value(next_stack), Iterator);
                     stacks[next_i] = next_stack;
@@ -1780,15 +1817,16 @@ frame_lineno_set_impl(PyFrameObject *self, PyObject *value)
         start_stack = pop_value(start_stack);
     }
     while (start_stack > best_stack) {
+        _PyStackRef popped = _PyFrame_StackPop(self->f_frame);
         if (top_of_stack(start_stack) == Except) {
             /* Pop exception stack as well as the evaluation stack */
-            PyObject *exc = PyStackRef_AsPyObjectBorrow(_PyFrame_StackPop(self->f_frame));
+            PyObject *exc = PyStackRef_AsPyObjectBorrow(popped);
             assert(PyExceptionInstance_Check(exc) || exc == Py_None);
             PyThreadState *tstate = _PyThreadState_GET();
             Py_XSETREF(tstate->exc_info->exc_value, exc == Py_None ? NULL : exc);
         }
         else {
-            PyStackRef_XCLOSE(_PyFrame_StackPop(self->f_frame));
+            PyStackRef_XCLOSE(popped);
         }
         start_stack = pop_value(start_stack);
     }
@@ -1883,7 +1921,6 @@ frame_dealloc(PyObject *op)
         _PyObject_GC_UNTRACK(f);
     }
 
-    Py_TRASHCAN_BEGIN(f, frame_dealloc);
     /* GH-106092: If f->f_frame was on the stack and we reached the maximum
      * nesting depth for deallocations, the trashcan may have delayed this
      * deallocation until after f->f_frame is freed. Avoid dereferencing
@@ -1906,8 +1943,8 @@ frame_dealloc(PyObject *op)
     Py_CLEAR(f->f_trace);
     Py_CLEAR(f->f_extra_locals);
     Py_CLEAR(f->f_locals_cache);
+    Py_CLEAR(f->f_overwritten_fast_locals);
     PyObject_GC_Del(f);
-    Py_TRASHCAN_END;
 }
 
 static int
@@ -1918,6 +1955,7 @@ frame_traverse(PyObject *op, visitproc visit, void *arg)
     Py_VISIT(f->f_trace);
     Py_VISIT(f->f_extra_locals);
     Py_VISIT(f->f_locals_cache);
+    Py_VISIT(f->f_overwritten_fast_locals);
     if (f->f_frame->owner != FRAME_OWNED_BY_FRAME_OBJECT) {
         return 0;
     }
@@ -1932,6 +1970,7 @@ frame_tp_clear(PyObject *op)
     Py_CLEAR(f->f_trace);
     Py_CLEAR(f->f_extra_locals);
     Py_CLEAR(f->f_locals_cache);
+    Py_CLEAR(f->f_overwritten_fast_locals);
 
     /* locals and stack */
     _PyStackRef *locals = _PyFrame_GetLocalsArray(f->f_frame);
@@ -2081,6 +2120,7 @@ _PyFrame_New_NoTrack(PyCodeObject *code)
     f->f_lineno = 0;
     f->f_extra_locals = NULL;
     f->f_locals_cache = NULL;
+    f->f_overwritten_fast_locals = NULL;
     return f;
 }
 

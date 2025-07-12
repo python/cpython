@@ -8,8 +8,6 @@
 PyAPI_FUNC(int) _PyInterpreterState_RequiresIDRef(PyInterpreterState *);
 PyAPI_FUNC(void) _PyInterpreterState_RequireIDRef(PyInterpreterState *, int);
 
-PyAPI_FUNC(PyObject *) PyUnstable_InterpreterState_GetMainModule(PyInterpreterState *);
-
 /* State unique per thread */
 
 /* Py_tracefunc return -1 when raising an exception, or 0 for success. */
@@ -28,6 +26,13 @@ typedef int (*Py_tracefunc)(PyObject *, PyFrameObject *, int, PyObject *);
 #define PyTrace_C_EXCEPTION 5
 #define PyTrace_C_RETURN 6
 #define PyTrace_OPCODE 7
+
+/* Remote debugger support */
+#define Py_MAX_SCRIPT_PATH_SIZE 512
+typedef struct {
+    int32_t debugger_pending_call;
+    char debugger_script_path[Py_MAX_SCRIPT_PATH_SIZE];
+} _PyRemoteDebuggerSupport;
 
 typedef struct _err_stackitem {
     /* This struct represents a single execution context where we might
@@ -56,6 +61,8 @@ typedef struct _stack_chunk {
     PyObject * data[1]; /* Variable sized */
 } _PyStackChunk;
 
+/* Minimum size of data stack chunk */
+#define _PY_DATA_STACK_CHUNK_SIZE (16*1024)
 struct _ts {
     /* See Python/ceval.c for comments explaining most fields */
 
@@ -113,8 +120,6 @@ struct _ts {
 
     int py_recursion_remaining;
     int py_recursion_limit;
-
-    int c_recursion_remaining; /* Retained for backwards compatibility. Do not use */
     int recursion_headroom; /* Allow 50 more calls to handle any errors. */
 
     /* 'tracing' keeps track of the execution depth when tracing/profiling.
@@ -191,7 +196,7 @@ struct _ts {
     /* The thread's exception stack entry.  (Always the last entry.) */
     _PyErr_StackItem exc_state;
 
-    PyObject *previous_executor;
+    PyObject *current_executor;
 
     uint64_t dict_global_version;
 
@@ -202,9 +207,8 @@ struct _ts {
        The PyThreadObject must hold the only reference to this value.
     */
     PyObject *threading_local_sentinel;
+    _PyRemoteDebuggerSupport remote_debugger_support;
 };
-
-# define Py_C_RECURSION_LIMIT 5000
 
 /* other API */
 

@@ -14,6 +14,7 @@ from unittest import mock
 
 from test import support
 from test.support import import_helper
+from test.support.script_helper import assert_python_ok
 
 py_uuid = import_helper.import_fresh_module('uuid', blocked=['_uuid'])
 c_uuid = import_helper.import_fresh_module('uuid', fresh=['_uuid'])
@@ -913,6 +914,7 @@ class BaseTestUUID:
                 equal(self.uuid._last_counter_v7, counter)
 
                 unix_ts_ms = timestamp_ms & 0xffff_ffff_ffff
+                equal(u.time, unix_ts_ms)
                 equal((u.int >> 80) & 0xffff_ffff_ffff, unix_ts_ms)
 
                 equal((u.int >> 75) & 1, 0)  # check that the MSB is 0
@@ -966,6 +968,7 @@ class BaseTestUUID:
                 urand.assert_called_once_with(10)
                 equal(self.uuid._last_timestamp_v7, timestamp_ms)
                 equal(self.uuid._last_counter_v7, counter)
+                equal(u1.time, timestamp_ms)
                 equal((u1.int >> 64) & 0xfff, counter_hi)
                 equal((u1.int >> 32) & 0x3fff_ffff, counter_lo)
                 equal(u1.int & 0xffff_ffff, tail)
@@ -988,6 +991,7 @@ class BaseTestUUID:
                 equal(self.uuid._last_timestamp_v7, timestamp_ms)
                 # 42-bit counter advanced by 1
                 equal(self.uuid._last_counter_v7, counter + 1)
+                equal(u2.time, timestamp_ms)
                 equal((u2.int >> 64) & 0xfff, counter_hi)
                 equal((u2.int >> 32) & 0x3fff_ffff, counter_lo + 1)
                 equal(u2.int & 0xffff_ffff, next_fail)
@@ -1025,6 +1029,7 @@ class BaseTestUUID:
             equal(u.version, 7)
             equal(self.uuid._last_timestamp_v7, fake_last_timestamp_v7 + 1)
             unix_ts_ms = (fake_last_timestamp_v7 + 1) & 0xffff_ffff_ffff
+            equal(u.time, unix_ts_ms)
             equal((u.int >> 80) & 0xffff_ffff_ffff, unix_ts_ms)
             # 42-bit counter advanced by 1
             equal(self.uuid._last_counter_v7, counter + 1)
@@ -1064,6 +1069,7 @@ class BaseTestUUID:
             # timestamp advanced due to overflow
             equal(self.uuid._last_timestamp_v7, timestamp_ms + 1)
             unix_ts_ms = (timestamp_ms + 1) & 0xffff_ffff_ffff
+            equal(u.time, unix_ts_ms)
             equal((u.int >> 80) & 0xffff_ffff_ffff, unix_ts_ms)
             # counter overflowed, so we picked a new one
             equal(self.uuid._last_counter_v7, new_counter)
@@ -1133,6 +1139,23 @@ class BaseTestUUID:
         strong = self.uuid.uuid4()
         weak = weakref.ref(strong)
         self.assertIs(strong, weak())
+
+
+class CommandLineTestCases:
+    uuid = None  # to be defined in subclasses
+
+    def do_test_standalone_uuid(self, version):
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            self.uuid.main()
+        output = stdout.getvalue().strip()
+        u = self.uuid.UUID(output)
+        self.assertEqual(output, str(u))
+        self.assertEqual(u.version, version)
+
+    @mock.patch.object(sys, "argv", ["", "-u", "uuid1"])
+    def test_cli_uuid1(self):
+        self.do_test_standalone_uuid(1)
 
     @mock.patch.object(sys, "argv", ["", "-u", "uuid3", "-n", "@dns"])
     @mock.patch('sys.stderr', new_callable=io.StringIO)
@@ -1208,13 +1231,52 @@ class BaseTestUUID:
         self.assertEqual(output, str(uuid_output))
         self.assertEqual(uuid_output.version, 5)
 
+    @mock.patch.object(sys, "argv", ["", "-u", "uuid6"])
+    def test_cli_uuid6(self):
+        self.do_test_standalone_uuid(6)
 
-class TestUUIDWithoutExtModule(BaseTestUUID, unittest.TestCase):
+    @mock.patch.object(sys, "argv", ["", "-u", "uuid7"])
+    def test_cli_uuid7(self):
+        self.do_test_standalone_uuid(7)
+
+    @mock.patch.object(sys, "argv", ["", "-u", "uuid8"])
+    def test_cli_uuid8(self):
+        self.do_test_standalone_uuid(8)
+
+
+class TestUUIDWithoutExtModule(CommandLineTestCases, BaseTestUUID, unittest.TestCase):
     uuid = py_uuid
 
+
 @unittest.skipUnless(c_uuid, 'requires the C _uuid module')
-class TestUUIDWithExtModule(BaseTestUUID, unittest.TestCase):
+class TestUUIDWithExtModule(CommandLineTestCases, BaseTestUUID, unittest.TestCase):
     uuid = c_uuid
+
+    def check_has_stable_libuuid_extractable_node(self):
+        if not self.uuid._has_stable_extractable_node:
+            self.skipTest("libuuid cannot deduce MAC address")
+
+    @unittest.skipUnless(os.name == 'posix', 'POSIX only')
+    def test_unix_getnode_from_libuuid(self):
+        self.check_has_stable_libuuid_extractable_node()
+        script = 'import uuid; print(uuid._unix_getnode())'
+        _, n_a, _ = assert_python_ok('-c', script)
+        _, n_b, _ = assert_python_ok('-c', script)
+        n_a, n_b = n_a.decode().strip(), n_b.decode().strip()
+        self.assertTrue(n_a.isdigit())
+        self.assertTrue(n_b.isdigit())
+        self.assertEqual(n_a, n_b)
+
+    @unittest.skipUnless(os.name == 'nt', 'Windows only')
+    def test_windows_getnode_from_libuuid(self):
+        self.check_has_stable_libuuid_extractable_node()
+        script = 'import uuid; print(uuid._windll_getnode())'
+        _, n_a, _ = assert_python_ok('-c', script)
+        _, n_b, _ = assert_python_ok('-c', script)
+        n_a, n_b = n_a.decode().strip(), n_b.decode().strip()
+        self.assertTrue(n_a.isdigit())
+        self.assertTrue(n_b.isdigit())
+        self.assertEqual(n_a, n_b)
 
 
 class BaseTestInternals:

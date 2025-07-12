@@ -197,6 +197,13 @@ Object Protocol
    in favour of using :c:func:`PyObject_DelAttr`, but there are currently no
    plans to remove it.
 
+   The function must not be called with ``NULL`` *v* and an an exception set.
+   This case can arise from forgetting ``NULL`` checks and would delete the
+   attribute.
+
+   .. versionchanged:: next
+      Must not be called with NULL value if an exception is set.
+
 
 .. c:function:: int PyObject_SetAttrString(PyObject *o, const char *attr_name, PyObject *v)
 
@@ -207,6 +214,10 @@ Object Protocol
    If *v* is ``NULL``, the attribute is deleted, but this feature is
    deprecated in favour of using :c:func:`PyObject_DelAttrString`.
 
+   The function must not be called with ``NULL`` *v* and an an exception set.
+   This case can arise from forgetting ``NULL`` checks and would delete the
+   attribute.
+
    The number of different attribute names passed to this function
    should be kept small, usually by using a statically allocated string
    as *attr_name*.
@@ -214,6 +225,10 @@ Object Protocol
    :c:func:`PyUnicode_FromString` and :c:func:`PyObject_SetAttr` directly.
    For more details, see :c:func:`PyUnicode_InternFromString`, which may be
    used internally to create a key object.
+
+   .. versionchanged:: next
+      Must not be called with NULL value if an exception is set.
+
 
 .. c:function:: int PyObject_GenericSetAttr(PyObject *o, PyObject *name, PyObject *value)
 
@@ -613,6 +628,38 @@ Object Protocol
 
    .. versionadded:: 3.14
 
+.. c:function:: int PyUnstable_Object_IsUniqueReferencedTemporary(PyObject *obj)
+
+   Check if *obj* is a unique temporary object.
+   Returns ``1`` if *obj* is known to be a unique temporary object,
+   and ``0`` otherwise.  This function cannot fail, but the check is
+   conservative, and may return ``0`` in some cases even if *obj* is a unique
+   temporary object.
+
+   If an object is a unique temporary, it is guaranteed that the current code
+   has the only reference to the object. For arguments to C functions, this
+   should be used instead of checking if the reference count is ``1``. Starting
+   with Python 3.14, the interpreter internally avoids some reference count
+   modifications when loading objects onto the operands stack by
+   :term:`borrowing <borrowed reference>` references when possible, which means
+   that a reference count of ``1`` by itself does not guarantee that a function
+   argument uniquely referenced.
+
+   In the example below, ``my_func`` is called with a unique temporary object
+   as its argument::
+
+      my_func([1, 2, 3])
+
+   In the example below, ``my_func`` is **not** called with a unique temporary
+   object as its argument, even if its refcount is ``1``::
+
+      my_list = [1, 2, 3]
+      my_func(my_list)
+
+   See also the function :c:func:`Py_REFCNT`.
+
+   .. versionadded:: 3.14
+
 .. c:function:: int PyUnstable_IsImmortal(PyObject *obj)
 
    This function returns non-zero if *obj* is :term:`immortal`, and zero
@@ -703,5 +750,23 @@ Object Protocol
 
    Enables subsequent uses of :c:func:`PyUnstable_TryIncRef` on *obj*.  The
    caller must hold a :term:`strong reference` to *obj* when calling this.
+
+   .. versionadded:: 3.14
+
+.. c:function:: int PyUnstable_Object_IsUniquelyReferenced(PyObject *op)
+
+   Determine if *op* only has one reference.
+
+   On GIL-enabled builds, this function is equivalent to
+   :c:expr:`Py_REFCNT(op) == 1`.
+
+   On a :term:`free threaded <free threading>` build, this checks if *op*'s
+   :term:`reference count` is equal to one and additionally checks if *op*
+   is only used by this thread. :c:expr:`Py_REFCNT(op) == 1` is **not**
+   thread-safe on free threaded builds; prefer this function.
+
+   The caller must hold an :term:`attached thread state`, despite the fact
+   that this function doesn't call into the Python interpreter. This function
+   cannot fail.
 
    .. versionadded:: 3.14
