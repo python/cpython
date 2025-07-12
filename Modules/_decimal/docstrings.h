@@ -149,19 +149,6 @@ Return the negation of the argument.  This operation is unaffected by context\n\
 and is quiet: no flags are changed and no rounding is performed.\n\
 \n");
 
-PyDoc_STRVAR(doc_copy_sign,
-"copy_sign($self, /, other, context=None)\n--\n\n\
-Return a copy of the first operand with the sign set to be the same as the\n\
-sign of the second operand. For example:\n\
-\n\
-    >>> Decimal('2.3').copy_sign(Decimal('-1.5'))\n\
-    Decimal('-2.3')\n\
-\n\
-This operation is unaffected by context and is quiet: no flags are changed\n\
-and no rounding is performed. As an exception, the C version may raise\n\
-InvalidOperation if the second operand cannot be converted exactly.\n\
-\n");
-
 PyDoc_STRVAR(doc_exp,
 "exp($self, /, context=None)\n--\n\n\
 Return the value of the (natural) exponential function e**x at the given\n\
@@ -381,28 +368,6 @@ is one of the following ten strings:\n\
     * 'NaN', indicating that the operand is a quiet NaN (Not a Number).\n\
     * 'sNaN', indicating that the operand is a signaling NaN.\n\
 \n\
-\n");
-
-PyDoc_STRVAR(doc_quantize,
-"quantize($self, /, exp, rounding=None, context=None)\n--\n\n\
-Return a value equal to the first operand after rounding and having the\n\
-exponent of the second operand.\n\
-\n\
-    >>> Decimal('1.41421356').quantize(Decimal('1.000'))\n\
-    Decimal('1.414')\n\
-\n\
-Unlike other operations, if the length of the coefficient after the quantize\n\
-operation would be greater than precision, then an InvalidOperation is signaled.\n\
-This guarantees that, unless there is an error condition, the quantized exponent\n\
-is always equal to that of the right-hand operand.\n\
-\n\
-Also unlike other operations, quantize never signals Underflow, even if the\n\
-result is subnormal and inexact.\n\
-\n\
-If the exponent of the second operand is larger than that of the first, then\n\
-rounding may be necessary. In this case, the rounding mode is determined by the\n\
-rounding argument if given, else by the given context argument; if neither\n\
-argument is given, the rounding mode of the current thread's context is used.\n\
 \n");
 
 PyDoc_STRVAR(doc_radix,

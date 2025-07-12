@@ -58,6 +58,14 @@
   #define _PY_DEC_ROUND_GUARD (MPD_ROUND_GUARD-1)
 #endif
 
+#include "clinic/_decimal.c.h"
+
+/*[clinic input]
+module _decimal
+class _decimal.Decimal "PyObject *" "&dec_spec"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=e0e1f68f1f413f5f]*/
+
 struct PyDecContextObject;
 struct DecCondMap;
 
@@ -4648,20 +4656,33 @@ dec_mpd_to_eng(PyObject *self, PyObject *args, PyObject *kwds)
 Dec_BinaryFuncVA_NO_CTX(mpd_compare_total)
 Dec_BinaryFuncVA_NO_CTX(mpd_compare_total_mag)
 
+/*[clinic input]
+_decimal.Decimal.copy_sign
+
+    other: object
+    context: object = None
+
+Returns self with the sign of other.
+
+For example:
+
+    >>> Decimal('2.3').copy_sign(Decimal('-1.5'))
+    Decimal('-2.3')
+
+This operation is unaffected by context and is quiet: no flags are changed
+and no rounding is performed.  As an exception, the C version may raise
+InvalidOperation if the second operand cannot be converted exactly.
+[clinic start generated code]*/
+
 static PyObject *
-dec_mpd_qcopy_sign(PyObject *self, PyObject *args, PyObject *kwds)
+_decimal_Decimal_copy_sign_impl(PyObject *self, PyObject *other,
+                                PyObject *context)
+/*[clinic end generated code: output=72c62177763e012e input=f02ebb5d7489c502]*/
 {
-    static char *kwlist[] = {"other", "context", NULL};
-    PyObject *other;
     PyObject *a, *b;
     PyObject *result;
-    PyObject *context = Py_None;
     uint32_t status = 0;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|O", kwlist,
-                                     &other, &context)) {
-        return NULL;
-    }
     decimal_state *state = get_module_state_by_def(Py_TYPE(self));
     CONTEXT_CHECK_VA(state, context);
     CONVERT_BINOP_RAISE(&a, &b, self, other, context);
@@ -4717,22 +4738,46 @@ Dec_BinaryFuncVA(mpd_qrotate)
 Dec_BinaryFuncVA(mpd_qscaleb)
 Dec_BinaryFuncVA(mpd_qshift)
 
+/*[clinic input]
+_decimal.Decimal.quantize
+
+    exp as w: object
+    rounding: object = None
+    context: object = None
+
+Quantize self so its exponent is the same as that of exp.
+
+Return a value equal to the first operand after rounding and having the
+exponent of the second operand.
+
+    >>> Decimal('1.41421356').quantize(Decimal('1.000'))
+    Decimal('1.414')
+
+Unlike other operations, if the length of the coefficient after the quantize
+operation would be greater than precision, then an InvalidOperation is signaled.
+This guarantees that, unless there is an error condition, the quantized exponent
+is always equal to that of the right-hand operand.
+
+Also unlike other operations, quantize never signals Underflow, even if the
+result is subnormal and inexact.
+
+If the exponent of the second operand is larger than that of the first, then
+rounding may be necessary. In this case, the rounding mode is determined by the
+rounding argument if given, else by the given context argument; if neither
+argument is given, the rounding mode of the current thread's context is used.
+[clinic start generated code]*/
+
 static PyObject *
-dec_mpd_qquantize(PyObject *v, PyObject *args, PyObject *kwds)
+_decimal_Decimal_quantize_impl(PyObject *self, PyObject *w,
+                               PyObject *rounding, PyObject *context)
+/*[clinic end generated code: output=5e84581f96dc685c input=eed2fdd8d65fce21]*/
 {
-    static char *kwlist[] = {"exp", "rounding", "context", NULL};
-    PyObject *rounding = Py_None;
-    PyObject *context = Py_None;
-    PyObject *w, *a, *b;
+    PyObject *a, *b;
     PyObject *result;
     uint32_t status = 0;
     mpd_context_t workctx;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|OO", kwlist,
-                                     &w, &rounding, &context)) {
-        return NULL;
-    }
-    decimal_state *state = get_module_state_by_def(Py_TYPE(v));
+    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
     CONTEXT_CHECK_VA(state, context);
 
     workctx = *CTX(context);
@@ -4746,7 +4791,7 @@ dec_mpd_qquantize(PyObject *v, PyObject *args, PyObject *kwds)
         }
     }
 
-    CONVERT_BINOP_RAISE(&a, &b, v, w, context);
+    CONVERT_BINOP_RAISE(&a, &b, self, w, context);
 
     result = dec_alloc(state);
     if (result == NULL) {
@@ -5094,7 +5139,7 @@ static PyMethodDef dec_methods [] =
   { "min", _PyCFunction_CAST(dec_mpd_qmin), METH_VARARGS|METH_KEYWORDS, doc_min },
   { "min_mag", _PyCFunction_CAST(dec_mpd_qmin_mag), METH_VARARGS|METH_KEYWORDS, doc_min_mag },
   { "next_toward", _PyCFunction_CAST(dec_mpd_qnext_toward), METH_VARARGS|METH_KEYWORDS, doc_next_toward },
-  { "quantize", _PyCFunction_CAST(dec_mpd_qquantize), METH_VARARGS|METH_KEYWORDS, doc_quantize },
+  _DECIMAL_DECIMAL_QUANTIZE_METHODDEF
   { "remainder_near", _PyCFunction_CAST(dec_mpd_qrem_near), METH_VARARGS|METH_KEYWORDS, doc_remainder_near },
 
   /* Ternary arithmetic functions, optional context arg */
@@ -5133,7 +5178,7 @@ static PyMethodDef dec_methods [] =
   /* Binary functions, optional context arg for conversion errors */
   { "compare_total", _PyCFunction_CAST(dec_mpd_compare_total), METH_VARARGS|METH_KEYWORDS, doc_compare_total },
   { "compare_total_mag", _PyCFunction_CAST(dec_mpd_compare_total_mag), METH_VARARGS|METH_KEYWORDS, doc_compare_total_mag },
-  { "copy_sign", _PyCFunction_CAST(dec_mpd_qcopy_sign), METH_VARARGS|METH_KEYWORDS, doc_copy_sign },
+  _DECIMAL_DECIMAL_COPY_SIGN_METHODDEF
   { "same_quantum", _PyCFunction_CAST(dec_mpd_same_quantum), METH_VARARGS|METH_KEYWORDS, doc_same_quantum },
 
   /* Binary functions, optional context arg */
