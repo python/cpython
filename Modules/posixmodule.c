@@ -593,6 +593,12 @@ extern char *ctermid_r(char *);
 #  define HAVE_PTSNAME_R_RUNTIME 1
 #endif
 
+#if defined(HAVE_LINKAT) && defined(AT_EMPTY_PATH)
+# define HAVE_LINKAT_AT_EMPTY_PATH 1
+#else
+# define HAVE_LINKAT_AT_EMPTY_PATH 0
+#endif
+
 
 // --- os module ------------------------------------------------------------
 
@@ -4346,7 +4352,7 @@ os_getcwdb_impl(PyObject *module)
 
 os.link
 
-    src : path_t
+    src : path_t(allow_fd='HAVE_LINKAT_AT_EMPTY_PATH')
     dst : path_t
     *
     src_dir_fd : dir_fd = None
@@ -4369,7 +4375,7 @@ src_dir_fd, dst_dir_fd, and follow_symlinks may not be implemented on your
 static PyObject *
 os_link_impl(PyObject *module, path_t *src, path_t *dst, int src_dir_fd,
              int dst_dir_fd, int follow_symlinks)
-/*[clinic end generated code: output=7f00f6007fd5269a input=1d5e602d115fed7b]*/
+/*[clinic end generated code: output=7f00f6007fd5269a input=7806074f9b44fb8c]*/
 {
 #ifdef MS_WINDOWS
     BOOL result = FALSE;
@@ -4379,6 +4385,11 @@ os_link_impl(PyObject *module, path_t *src, path_t *dst, int src_dir_fd,
 
 #ifdef HAVE_LINKAT
     if (HAVE_LINKAT_RUNTIME) {
+        if ((src_dir_fd != DEFAULT_DIR_FD) && (src->fd != -1)) {
+            PyErr_SetString(PyExc_ValueError,
+                            "link: can't specify both src_dir_fd and fd");
+            return NULL;
+        }
         if (follow_symlinks < 0) {
             follow_symlinks = 1;
         }
@@ -4388,6 +4399,10 @@ os_link_impl(PyObject *module, path_t *src, path_t *dst, int src_dir_fd,
     {
         if ((src_dir_fd != DEFAULT_DIR_FD) || (dst_dir_fd != DEFAULT_DIR_FD)) {
             argument_unavailable_error("link", "src_dir_fd and dst_dir_fd");
+            return NULL;
+        }
+        if (src->fd != -1) {
+            argument_unavailable_error("link", "fd");
             return NULL;
         }
 /* See issue 85527: link() on Linux works like linkat without AT_SYMLINK_FOLLOW,
@@ -4427,9 +4442,20 @@ os_link_impl(PyObject *module, path_t *src, path_t *dst, int src_dir_fd,
     Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_LINKAT
     if (HAVE_LINKAT_RUNTIME) {
-        result = linkat(src_dir_fd, src->narrow,
-            dst_dir_fd, dst->narrow,
-            follow_symlinks ? AT_SYMLINK_FOLLOW : 0);
+        int flags = follow_symlinks ? AT_SYMLINK_FOLLOW : 0;
+#if HAVE_LINKAT_AT_EMPTY_PATH
+        if (src->fd != -1) {
+            result = linkat(src->fd, "",
+                dst_dir_fd, dst->narrow,
+                flags | AT_EMPTY_PATH);
+        }
+        else
+#endif
+        {
+            result = linkat(src_dir_fd, src->narrow,
+                dst_dir_fd, dst->narrow,
+                flags);
+        }
     }
     else
 #endif
@@ -17988,6 +18014,10 @@ static const struct have_function {
 
 #ifdef HAVE_LINKAT
     { "HAVE_LINKAT", probe_linkat },
+#endif
+
+#if HAVE_LINKAT_AT_EMPTY_PATH
+    { "HAVE_LINKAT_AT_EMPTY_PATH", NULL },
 #endif
 
 #ifdef HAVE_LCHFLAGS
