@@ -3355,8 +3355,7 @@ datetime_date_fromordinal_impl(PyTypeObject *type, int ordinal)
     int day;
 
     if (ordinal < 1) {
-        PyErr_SetString(PyExc_ValueError, "ordinal must be "
-                                            ">= 1");
+        PyErr_SetString(PyExc_ValueError, "ordinal must be >= 1");
         return NULL;
     }
     ord_to_ymd(ordinal, &year, &month, &day);
@@ -6547,8 +6546,7 @@ datetime_richcompare(PyObject *self, PyObject *other, int op)
         PyDateTime_Delta *delta;
 
         assert(offset1 != offset2); /* else last "if" handled it */
-        delta = (PyDateTime_Delta *)datetime_subtract((PyObject *)self,
-                                                       other);
+        delta = (PyDateTime_Delta *)datetime_subtract(self, other);
         if (delta == NULL)
             goto done;
         diff = GET_TD_DAYS(delta);
