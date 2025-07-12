@@ -667,17 +667,8 @@ STRINGLIB(adaptive_find)(const STRINGLIB_CHAR* s, Py_ssize_t n,
                     return res + count;
                 }
             }
-
-            /* Miss: check if next character is part of pattern.
-               Note that in contrast to default_find and default_rfind we do
-               *not* need to prevent the algorithm from reading one character
-               beyond the last character in the input that the pattern could
-               start in. I.e. if i == w it is safe to read ss[i + 1] since the
-               input and pattern length requirements on when this variant
-               algorithm will be called ensure it will always be a valid part
-               of the input. In that case it doesn't matter what the character
-               read is since the loop will terminate regardless. */
-            if (!STRINGLIB_BLOOM(mask, ss[i+1])) {
+            /* miss: check if next character is part of pattern */
+            if (i + 1 <= w && !STRINGLIB_BLOOM(mask, ss[i+1])) {
                 i = i + m;
             }
             else {
@@ -685,10 +676,8 @@ STRINGLIB(adaptive_find)(const STRINGLIB_CHAR* s, Py_ssize_t n,
             }
         }
         else {
-            /* Skip: check if next character is part of pattern.
-               See comment above re safety of accessing ss[i+1] when i == w.
-             */
-            if (!STRINGLIB_BLOOM(mask, ss[i+1])) {
+            /* skip: check if next character is part of pattern */
+            if (i + 1 <= w && !STRINGLIB_BLOOM(mask, ss[i+1])) {
                 i = i + m;
             }
         }
