@@ -1022,7 +1022,7 @@ class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
         msg.set_content(body)
 
         raw = msg.as_bytes()
-        self.assertNotIn(b"\r\n ", raw,
+        self.assertNotIn(b"=\n", raw,
                          "Found fold indicator; wrapping not disabled")
 
         parsed = message_from_bytes(raw, policy=policy.default)

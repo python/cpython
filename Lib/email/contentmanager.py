@@ -143,7 +143,7 @@ def _encode_base64(data, max_line_length):
 
 
 def _encode_text(string, charset, cte, policy):
-    # max_line_length 0/None means no limit, ie: infinitely long.
+    # If max_line_length is 0 or None, there is no limit.
     maxlen = policy.max_line_length or sys.maxsize
     lines = string.encode(charset).splitlines()
     linesep = policy.linesep.encode('ascii')
