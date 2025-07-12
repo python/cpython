@@ -3868,6 +3868,8 @@ class ThreadedTests(unittest.TestCase):
                 with self.assertRaises(OSError):
                     s.connect((HOST, server.port))
         self.assertIn("NO_SHARED_CIPHER", server.conn_errors[0])
+        self.assertIsNone(s.cipher())
+        self.assertIsNone(s.group())
 
     def test_version_basic(self):
         """
