@@ -518,9 +518,9 @@ Global start method
 
 Python supports several ways to create and initialize a process. The global start method sets the default mechanism for creating a process.
 
-Several multiprocessing functions and methods, as well as creating some objects, will implicitly
-set the global start method to the system's default, if the global start method is not already
-set. The global start method can only be done once. If you need to change the
+Several multiprocessing functions and methods that may also instantiate
+certain objects will implicitly set the global start method to the system's default, 
+if it hasn’t been set already. The global start method can only be set once. If you need to change the
 start method from the system default, you must proactively set the global start method
 before calling functions or methods, or creating these objects.
 
@@ -1141,7 +1141,7 @@ Miscellaneous
    :mod:`multiprocessing` module.
 
    If *method* is ``None`` then the default context is returned. Note that if
-   the global start method has not been set, this will set it.
+   the global start method has not been set, this will set it to the system default
    See :ref:`global-start-method` for more details.
    Otherwise *method* should be ``'fork'``, ``'spawn'``,
    ``'forkserver'``.  :exc:`ValueError` is raised if the specified
@@ -1153,7 +1153,7 @@ Miscellaneous
 
    Return the name of start method used for starting processes.
 
-   If the start method is not set and *allow_none* is ``False``, the start
+   If the global start method is not set and *allow_none* is ``False``, the global start
    method is set to the default, and its name is returned. See
    :ref:`global-start-method` for more details.
 
