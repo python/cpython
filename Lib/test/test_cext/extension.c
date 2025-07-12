@@ -78,6 +78,9 @@ _testcext_exec(
     return 0;
 }
 
+#define _FUNC_NAME(NAME) PyInit_ ## NAME
+#define FUNC_NAME(NAME) _FUNC_NAME(NAME)
+
 // Converting from function pointer to void* has undefined behavior, but
 // works on all known platforms, and CPython's module and type slots currently
 // need it.
@@ -96,8 +99,9 @@ static PyModuleDef_Slot _testcext_slots[] = {
 
 _Py_COMP_DIAG_POP
 
-
 PyDoc_STRVAR(_testcext_doc, "C test extension.");
+
+#ifndef _Py_OPAQUE_PYOBJECT
 
 static struct PyModuleDef _testcext_module = {
     PyModuleDef_HEAD_INIT,  // m_base
@@ -112,11 +116,30 @@ static struct PyModuleDef _testcext_module = {
 };
 
 
-#define _FUNC_NAME(NAME) PyInit_ ## NAME
-#define FUNC_NAME(NAME) _FUNC_NAME(NAME)
-
 PyMODINIT_FUNC
 FUNC_NAME(MODULE_NAME)(void)
 {
     return PyModuleDef_Init(&_testcext_module);
 }
+
+#else  // _Py_OPAQUE_PYOBJECT
+
+// Opaque PyObject means that PyModuleDef is also opaque and cannot be
+// declared statically. See PEP 793.
+// So, this part of module creation is split into a separate source file
+// which uses non-limited API.
+
+// (repeated definition to avoid creating a header)
+extern PyObject *testcext_create_moduledef(
+    const char *name, const char *doc,
+    PyMethodDef *methods, PyModuleDef_Slot *slots);
+
+
+PyMODINIT_FUNC
+FUNC_NAME(MODULE_NAME)(void)
+{
+    return testcext_create_moduledef(
+        STR(MODULE_NAME), _testcext_doc, _testcext_methods, _testcext_slots);
+}
+
+#endif  // _Py_OPAQUE_PYOBJECT
