@@ -883,6 +883,10 @@ class VarSizedSubclass(tuple):
 
 class TestInlineValues(unittest.TestCase):
 
+    def test_flags(self):
+        self.assertEqual(Plain.__flags__ & Py_TPFLAGS_MANAGED_DICT, Py_TPFLAGS_MANAGED_DICT)
+        self.assertEqual(WithAttrs.__flags__ & Py_TPFLAGS_MANAGED_DICT, Py_TPFLAGS_MANAGED_DICT)
+
     def test_no_flags_for_slots_class(self):
         flags = NoManagedDict.__flags__
         self.assertEqual(flags & Py_TPFLAGS_MANAGED_DICT, 0)
