@@ -4,7 +4,6 @@ Common tests shared by test_unicode, test_userstring and test_bytes.
 
 import unittest, string, sys, struct
 from test import support
-from test.support import check_sanitizer
 from test.support import import_helper
 from collections import UserList
 import random
@@ -768,7 +767,6 @@ class BaseTest:
         self.checkraises(TypeError, 'hello', 'replace', 42, 'h')
         self.checkraises(TypeError, 'hello', 'replace', 'h', 42)
 
-    @unittest.skipUnless(check_sanitizer(address=True), "AddressSanitizer required")
     def test_replacement_on_buffer_boundary(self):
         # gh-127971: Check we don't read past the end of the buffer when a
         # potential match misses on the last character.
