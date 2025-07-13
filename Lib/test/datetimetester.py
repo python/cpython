@@ -7306,7 +7306,7 @@ class ExtensionModuleTests(unittest.TestCase):
                 _interpreters.exec(id, "import _datetime; print('a', end='')")
                 _interpreters.destroy(id)
 
-            ids = [_interpreters.create() for i in range(5)]
+            ids = [_interpreters.create() for i in range(10)]
             ts = [threading.Thread(target=run, args=(id,)) for id in ids]
             for t in ts:
                 t.start()
@@ -7314,7 +7314,7 @@ class ExtensionModuleTests(unittest.TestCase):
                 t.join()
             """)
         res = script_helper.assert_python_ok('-c', script)
-        self.assertEqual(res.out, b'a' * 5)
+        self.assertEqual(res.out, b'a' * 10)
 
 
 def load_tests(loader, standard_tests, pattern):
