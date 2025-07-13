@@ -346,7 +346,7 @@ the following constants:
    The version of the lzma C library actually loaded at runtime, in both
    integer and string forms.
 
-   .. versionadded:: 3.13
+   .. versionadded:: 3.15
 
 .. data:: LZMA_HEADER_VERSION
 .. data:: LZMA_HEADER_VERSION_STRING
@@ -355,7 +355,7 @@ the following constants:
    both integer and string forms.  This may be different from the lzma library
    actually used at runtime.
 
-   .. versionadded:: 3.13
+   .. versionadded:: 3.15
 
 The version number and string formats are as defined in by C library. The
 integer is represented in decimal digits as ``jmmmppps`` where ``j`` is the
@@ -403,13 +403,13 @@ options. Valid filter IDs are as follows:
 
     Only works if the lzma version is 5.4.0 or later.
 
-    .. versionadded:: 3.13
+    .. versionadded:: 3.15
 
   * :const:`!FILTER_RISCV`
 
     Only works if the lzma version is 5.6.0 or later.
 
-    .. versionadded:: 3.13
+    .. versionadded:: 3.15
 
 A filter chain can consist of up to 4 filters, and cannot be empty. The last
 filter in the chain must be a compression filter, and any other filters must be
