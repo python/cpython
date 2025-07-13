@@ -67,6 +67,65 @@ if os.name == "nt":
                 return fname
         return None
 
+    # Listing loaded DLLs on Windows relies on the following APIs:
+    # https://learn.microsoft.com/windows/win32/api/psapi/nf-psapi-enumprocessmodules
+    # https://learn.microsoft.com/windows/win32/api/libloaderapi/nf-libloaderapi-getmodulefilenamew
+    import ctypes
+    from ctypes import wintypes
+
+    _kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
+    _get_current_process = _kernel32["GetCurrentProcess"]
+    _get_current_process.restype = wintypes.HANDLE
+
+    _k32_get_module_file_name = _kernel32["GetModuleFileNameW"]
+    _k32_get_module_file_name.restype = wintypes.DWORD
+    _k32_get_module_file_name.argtypes = (
+        wintypes.HMODULE,
+        wintypes.LPWSTR,
+        wintypes.DWORD,
+    )
+
+    _psapi = ctypes.WinDLL('psapi', use_last_error=True)
+    _enum_process_modules = _psapi["EnumProcessModules"]
+    _enum_process_modules.restype = wintypes.BOOL
+    _enum_process_modules.argtypes = (
+        wintypes.HANDLE,
+        ctypes.POINTER(wintypes.HMODULE),
+        wintypes.DWORD,
+        wintypes.LPDWORD,
+    )
+
+    def _get_module_filename(module: wintypes.HMODULE):
+        name = (wintypes.WCHAR * 32767)() # UNICODE_STRING_MAX_CHARS
+        if _k32_get_module_file_name(module, name, len(name)):
+            return name.value
+        return None
+
+
+    def _get_module_handles():
+        process = _get_current_process()
+        space_needed = wintypes.DWORD()
+        n = 1024
+        while True:
+            modules = (wintypes.HMODULE * n)()
+            if not _enum_process_modules(process,
+                                         modules,
+                                         ctypes.sizeof(modules),
+                                         ctypes.byref(space_needed)):
+                err = ctypes.get_last_error()
+                msg = ctypes.FormatError(err).strip()
+                raise ctypes.WinError(err, f"EnumProcessModules failed: {msg}")
+            n = space_needed.value // ctypes.sizeof(wintypes.HMODULE)
+            if n <= len(modules):
+                return modules[:n]
+
+    def dllist():
+        """Return a list of loaded shared libraries in the current process."""
+        modules = _get_module_handles()
+        libraries = [name for h in modules
+                        if (name := _get_module_filename(h)) is not None]
+        return libraries
+
 elif os.name == "posix" and sys.platform in {"darwin", "ios", "tvos", "watchos"}:
     from ctypes.macholib.dyld import dyld_find as _dyld_find
     def find_library(name):
@@ -79,6 +138,22 @@ elif os.name == "posix" and sys.platform in {"darwin", "ios", "tvos", "watchos"}
             except ValueError:
                 continue
         return None
+
+    # Listing loaded libraries on Apple systems relies on the following API:
+    # https://developer.apple.com/library/archive/documentation/System/Conceptual/ManPages_iPhoneOS/man3/dyld.3.html
+    import ctypes
+
+    _libc = ctypes.CDLL(find_library("c"))
+    _dyld_get_image_name = _libc["_dyld_get_image_name"]
+    _dyld_get_image_name.restype = ctypes.c_char_p
+
+    def dllist():
+        """Return a list of loaded shared libraries in the current process."""
+        num_images = _libc._dyld_image_count()
+        libraries = [os.fsdecode(name) for i in range(num_images)
+                        if (name := _dyld_get_image_name(i)) is not None]
+
+        return libraries
 
 elif sys.platform.startswith("aix"):
     # AIX has two styles of storing shared libraries
@@ -341,6 +416,55 @@ elif os.name == "posix":
             return _findSoname_ldconfig(name) or \
                    _get_soname(_findLib_gcc(name)) or _get_soname(_findLib_ld(name))
 
+
+# Listing loaded libraries on other systems will try to use
+# functions common to Linux and a few other Unix-like systems.
+# See the following for several platforms' documentation of the same API:
+# https://man7.org/linux/man-pages/man3/dl_iterate_phdr.3.html
+# https://man.freebsd.org/cgi/man.cgi?query=dl_iterate_phdr
+# https://man.openbsd.org/dl_iterate_phdr
+# https://docs.oracle.com/cd/E88353_01/html/E37843/dl-iterate-phdr-3c.html
+if (os.name == "posix" and
+    sys.platform not in {"darwin", "ios", "tvos", "watchos"}):
+    import ctypes
+    if hasattr((_libc := ctypes.CDLL(None)), "dl_iterate_phdr"):
+
+        class _dl_phdr_info(ctypes.Structure):
+            _fields_ = [
+                ("dlpi_addr", ctypes.c_void_p),
+                ("dlpi_name", ctypes.c_char_p),
+                ("dlpi_phdr", ctypes.c_void_p),
+                ("dlpi_phnum", ctypes.c_ushort),
+            ]
+
+        _dl_phdr_callback = ctypes.CFUNCTYPE(
+            ctypes.c_int,
+            ctypes.POINTER(_dl_phdr_info),
+            ctypes.c_size_t,
+            ctypes.POINTER(ctypes.py_object),
+        )
+
+        @_dl_phdr_callback
+        def _info_callback(info, _size, data):
+            libraries = data.contents.value
+            name = os.fsdecode(info.contents.dlpi_name)
+            libraries.append(name)
+            return 0
+
+        _dl_iterate_phdr = _libc["dl_iterate_phdr"]
+        _dl_iterate_phdr.argtypes = [
+            _dl_phdr_callback,
+            ctypes.POINTER(ctypes.py_object),
+        ]
+        _dl_iterate_phdr.restype = ctypes.c_int
+
+        def dllist():
+            """Return a list of loaded shared libraries in the current process."""
+            libraries = []
+            _dl_iterate_phdr(_info_callback,
+                             ctypes.byref(ctypes.py_object(libraries)))
+            return libraries
+
 ################################################################
 # test code
 
@@ -383,6 +507,13 @@ def test():
             print(cdll.LoadLibrary("libm.so"))
             print(cdll.LoadLibrary("libcrypt.so"))
             print(find_library("crypt"))
+
+    try:
+        dllist
+    except NameError:
+        print('dllist() not available')
+    else:
+        print(dllist())
 
 if __name__ == "__main__":
     test()

@@ -1,5 +1,5 @@
-:mod:`zipimport` --- Import modules from Zip archives
-=====================================================
+:mod:`!zipimport` --- Import modules from Zip archives
+======================================================
 
 .. module:: zipimport
    :synopsis: Support for importing Python modules from ZIP archives.
@@ -148,7 +148,7 @@ zipimporter Objects
       qualified (dotted) module name. Returns the imported module on success,
       raises :exc:`ZipImportError` on failure.
 
-      .. deprecated:: 3.10
+      .. deprecated-removed:: 3.10 3.15
 
          Use :meth:`exec_module` instead.
 

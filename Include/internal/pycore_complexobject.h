@@ -19,6 +19,15 @@ extern int _PyComplex_FormatAdvancedWriter(
     Py_ssize_t start,
     Py_ssize_t end);
 
+// Operations on complex numbers.
+PyAPI_FUNC(Py_complex) _Py_cr_sum(Py_complex, double);
+PyAPI_FUNC(Py_complex) _Py_cr_diff(Py_complex, double);
+PyAPI_FUNC(Py_complex) _Py_rc_diff(double, Py_complex);
+PyAPI_FUNC(Py_complex) _Py_cr_prod(Py_complex, double);
+PyAPI_FUNC(Py_complex) _Py_cr_quot(Py_complex, double);
+PyAPI_FUNC(Py_complex) _Py_rc_quot(double, Py_complex);
+
+
 #ifdef __cplusplus
 }
 #endif

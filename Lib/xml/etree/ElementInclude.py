@@ -79,8 +79,8 @@ class LimitedRecursiveIncludeError(FatalIncludeError):
 # @param parse Parse mode.  Either "xml" or "text".
 # @param encoding Optional text encoding (UTF-8 by default for "text").
 # @return The expanded resource.  If the parse mode is "xml", this
-#    is an ElementTree instance.  If the parse mode is "text", this
-#    is a Unicode string.  If the loader fails, it can return None
+#    is an Element instance.  If the parse mode is "text", this
+#    is a string.  If the loader fails, it can return None
 #    or raise an OSError exception.
 # @throws OSError If the loader fails to load the resource.
 
@@ -98,7 +98,7 @@ def default_loader(href, parse, encoding=None):
 ##
 # Expand XInclude directives.
 #
-# @param elem Root element.
+# @param elem Root Element or any ElementTree of a tree to be expanded
 # @param loader Optional resource loader.  If omitted, it defaults
 #     to {@link default_loader}.  If given, it should be a callable
 #     that implements the same interface as <b>default_loader</b>.
@@ -106,12 +106,13 @@ def default_loader(href, parse, encoding=None):
 #     relative include file references.
 # @param max_depth The maximum number of recursive inclusions.
 #     Limited to reduce the risk of malicious content explosion.
-#     Pass a negative value to disable the limitation.
+#     Pass None to disable the limitation.
 # @throws LimitedRecursiveIncludeError If the {@link max_depth} was exceeded.
 # @throws FatalIncludeError If the function fails to include a given
 #     resource, or if the tree contains malformed XInclude elements.
-# @throws IOError If the function fails to load a given resource.
-# @returns the node or its replacement if it was an XInclude node
+# @throws OSError If the function fails to load a given resource.
+# @throws ValueError If negative {@link max_depth} is passed.
+# @returns None. Modifies tree pointed by {@link elem}
 
 def include(elem, loader=None, base_url=None,
             max_depth=DEFAULT_MAX_INCLUSION_DEPTH):

@@ -6,12 +6,13 @@ machinery = util.import_importlib('importlib.machinery')
 importlib_util = util.import_importlib('importlib.util')
 
 import importlib.util
+from importlib import _bootstrap_external
 import os
 import pathlib
-import re
 import string
 import sys
 from test import support
+from test.support import os_helper
 import textwrap
 import types
 import unittest
@@ -27,7 +28,7 @@ try:
 except ImportError:
     _testmultiphase = None
 try:
-    import _xxsubinterpreters as _interpreters
+    import _interpreters
 except ModuleNotFoundError:
     _interpreters = None
 
@@ -319,7 +320,7 @@ class MagicNumberTests:
 
     def test_incorporates_rn(self):
         # The magic number uses \r\n to come out wrong when splitting on lines.
-        self.assertTrue(self.util.MAGIC_NUMBER.endswith(b'\r\n'))
+        self.assertEndsWith(self.util.MAGIC_NUMBER, b'\r\n')
 
 
 (Frozen_MagicNumberTests,
@@ -634,7 +635,7 @@ class MagicNumberTests(unittest.TestCase):
         # stakeholders such as OS package maintainers must be notified
         # in advance. Such exceptional releases will then require an
         # adjustment to this test case.
-        EXPECTED_MAGIC_NUMBER = 3495
+        EXPECTED_MAGIC_NUMBER = 3625
         actual = int.from_bytes(importlib.util.MAGIC_NUMBER[:2], 'little')
 
         msg = (
@@ -656,7 +657,7 @@ class MagicNumberTests(unittest.TestCase):
 class IncompatibleExtensionModuleRestrictionsTests(unittest.TestCase):
 
     def run_with_own_gil(self, script):
-        interpid = _interpreters.create(isolated=True)
+        interpid = _interpreters.create('isolated')
         def ensure_destroyed():
             try:
                 _interpreters.destroy(interpid)
@@ -669,7 +670,7 @@ class IncompatibleExtensionModuleRestrictionsTests(unittest.TestCase):
                 raise ImportError(excsnap.msg)
 
     def run_with_shared_gil(self, script):
-        interpid = _interpreters.create(isolated=False)
+        interpid = _interpreters.create('legacy')
         def ensure_destroyed():
             try:
                 _interpreters.destroy(interpid)
@@ -682,6 +683,9 @@ class IncompatibleExtensionModuleRestrictionsTests(unittest.TestCase):
                 raise ImportError(excsnap.msg)
 
     @unittest.skipIf(_testsinglephase is None, "test requires _testsinglephase module")
+    # gh-117649: single-phase init modules are not currently supported in
+    # subinterpreters in the free-threaded build
+    @support.expected_failure_if_gil_disabled()
     def test_single_phase_init_module(self):
         script = textwrap.dedent('''
             from importlib.util import _incompatible_extension_module_restrictions
@@ -706,6 +710,7 @@ class IncompatibleExtensionModuleRestrictionsTests(unittest.TestCase):
                 self.run_with_own_gil(script)
 
     @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
+    @support.requires_gil_enabled("gh-117649: not supported in free-threaded build")
     def test_incomplete_multi_phase_init_module(self):
         # Apple extensions must be distributed as frameworks. This requires
         # a specialist loader.
@@ -769,6 +774,36 @@ class IncompatibleExtensionModuleRestrictionsTests(unittest.TestCase):
             self.run_with_shared_gil(script)
         with self.subTest('check enabled, per-interpreter GIL'):
             self.run_with_own_gil(script)
+
+
+class MiscTests(unittest.TestCase):
+    def test_atomic_write_should_notice_incomplete_writes(self):
+        import _pyio
+
+        oldwrite = os.write
+        seen_write = False
+
+        truncate_at_length = 100
+
+        # Emulate an os.write that only writes partial data.
+        def write(fd, data):
+            nonlocal seen_write
+            seen_write = True
+            return oldwrite(fd, data[:truncate_at_length])
+
+        # Need to patch _io to be _pyio, so that io.FileIO is affected by the
+        # os.write patch.
+        with (support.swap_attr(_bootstrap_external, '_io', _pyio),
+              support.swap_attr(os, 'write', write)):
+            with self.assertRaises(OSError):
+                # Make sure we write something longer than the point where we
+                # truncate.
+                content = b'x' * (truncate_at_length * 2)
+                _bootstrap_external._write_atomic(os_helper.TESTFN, content)
+        assert seen_write
+
+        with self.assertRaises(OSError):
+            os.stat(support.os_helper.TESTFN) # Check that the file did not get written.
 
 
 if __name__ == '__main__':

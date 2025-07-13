@@ -1,12 +1,21 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+import itertools
 import lexer
 import parser
 import re
-from typing import Optional
+from typing import Optional, Callable
 
+from parser import Stmt, SimpleStmt, BlockStmt, IfStmt, WhileStmt
+
+@dataclass
+class EscapingCall:
+    stmt: SimpleStmt
+    call: lexer.Token
+    kills: lexer.Token | None
 
 @dataclass
 class Properties:
+    escaping_calls: dict[SimpleStmt, EscapingCall]
     escapes: bool
     error_with_pop: bool
     error_without_pop: bool
@@ -14,7 +23,6 @@ class Properties:
     oparg: bool
     jumps: bool
     eval_breaker: bool
-    ends_with_eval_breaker: bool
     needs_this: bool
     always_exits: bool
     stores_sp: bool
@@ -24,46 +32,55 @@ class Properties:
     has_free: bool
     side_exit: bool
     pure: bool
-    passthrough: bool
+    uses_opcode: bool
     tier: int | None = None
-    oparg_and_1: bool = False
     const_oparg: int = -1
+    needs_prev: bool = False
+    no_save_ip: bool = False
 
     def dump(self, indent: str) -> None:
-        print(indent, end="")
-        text = ", ".join([f"{key}: {value}" for (key, value) in self.__dict__.items()])
+        simple_properties = self.__dict__.copy()
+        del simple_properties["escaping_calls"]
+        text = "escaping_calls:\n"
+        for tkns in self.escaping_calls.values():
+            text += f"{indent}    {tkns}\n"
+        text += ", ".join([f"{key}: {value}" for (key, value) in simple_properties.items()])
         print(indent, text, sep="")
 
     @staticmethod
     def from_list(properties: list["Properties"]) -> "Properties":
+        escaping_calls: dict[SimpleStmt, EscapingCall] = {}
+        for p in properties:
+            escaping_calls.update(p.escaping_calls)
         return Properties(
-            escapes=any(p.escapes for p in properties),
+            escaping_calls=escaping_calls,
+            escapes = any(p.escapes for p in properties),
             error_with_pop=any(p.error_with_pop for p in properties),
             error_without_pop=any(p.error_without_pop for p in properties),
             deopts=any(p.deopts for p in properties),
             oparg=any(p.oparg for p in properties),
             jumps=any(p.jumps for p in properties),
             eval_breaker=any(p.eval_breaker for p in properties),
-            ends_with_eval_breaker=any(p.ends_with_eval_breaker for p in properties),
             needs_this=any(p.needs_this for p in properties),
             always_exits=any(p.always_exits for p in properties),
             stores_sp=any(p.stores_sp for p in properties),
             uses_co_consts=any(p.uses_co_consts for p in properties),
             uses_co_names=any(p.uses_co_names for p in properties),
             uses_locals=any(p.uses_locals for p in properties),
+            uses_opcode=any(p.uses_opcode for p in properties),
             has_free=any(p.has_free for p in properties),
             side_exit=any(p.side_exit for p in properties),
             pure=all(p.pure for p in properties),
-            passthrough=all(p.passthrough for p in properties),
+            needs_prev=any(p.needs_prev for p in properties),
+            no_save_ip=all(p.no_save_ip for p in properties),
         )
 
     @property
     def infallible(self) -> bool:
         return not self.error_with_pop and not self.error_without_pop
 
-
-
 SKIP_PROPERTIES = Properties(
+    escaping_calls={},
     escapes=False,
     error_with_pop=False,
     error_without_pop=False,
@@ -71,17 +88,17 @@ SKIP_PROPERTIES = Properties(
     oparg=False,
     jumps=False,
     eval_breaker=False,
-    ends_with_eval_breaker=False,
     needs_this=False,
     always_exits=False,
     stores_sp=False,
     uses_co_consts=False,
     uses_co_names=False,
     uses_locals=False,
+    uses_opcode=False,
     has_free=False,
     side_exit=False,
-    pure=False,
-    passthrough=False,
+    pure=True,
+    no_save_ip=False,
 )
 
 
@@ -99,25 +116,38 @@ class Skip:
         return SKIP_PROPERTIES
 
 
+class Flush:
+    @property
+    def properties(self) -> Properties:
+        return SKIP_PROPERTIES
+
+    @property
+    def name(self) -> str:
+        return "flush"
+
+    @property
+    def size(self) -> int:
+        return 0
+
+
+
+
 @dataclass
 class StackItem:
     name: str
-    type: str | None
-    condition: str | None
     size: str
     peek: bool = False
-    type_prop: None | tuple[str, None | str] = field(
-        default_factory=lambda: None, init=True, compare=False, hash=False
-    )
+    used: bool = False
 
     def __str__(self) -> str:
-        cond = f" if ({self.condition})" if self.condition else ""
-        size = f"[{self.size}]" if self.size != "1" else ""
-        type = "" if self.type is None else f"{self.type} "
-        return f"{type}{self.name}{size}{cond} {self.peek}"
+        size = f"[{self.size}]" if self.size else ""
+        return f"{self.name}{size} {self.peek}"
 
     def is_array(self) -> bool:
-        return self.type == "PyObject **"
+        return self.size != ""
+
+    def get_size(self) -> str:
+        return self.size if self.size else "1"
 
 
 @dataclass
@@ -145,12 +175,15 @@ class Uop:
     annotations: list[str]
     stack: StackEffect
     caches: list[CacheEntry]
-    body: list[lexer.Token]
+    local_stores: list[lexer.Token]
+    body: BlockStmt
     properties: Properties
     _size: int = -1
     implicitly_created: bool = False
-    replicated = 0
-    replicates : "Uop | None" = None
+    replicated = range(0)
+    replicates: "Uop | None" = None
+    # Size of the instruction(s), only set for uops containing the INSTRUCTION_SIZE macro
+    instruction_size: int | None = None
 
     def dump(self, indent: str) -> None:
         print(
@@ -176,34 +209,45 @@ class Uop:
             return "has tier 1 control flow"
         if self.properties.needs_this:
             return "uses the 'this_instr' variable"
-        if len([c for c in self.caches if c.name != "unused"]) > 1:
-            return "has unused cache entries"
+        if len([c for c in self.caches if c.name != "unused"]) > 2:
+            return "has too many cache entries"
         if self.properties.error_with_pop and self.properties.error_without_pop:
             return "has both popping and not-popping errors"
-        if self.properties.eval_breaker:
-            if self.properties.error_with_pop or self.properties.error_without_pop:
-                return "has error handling and eval-breaker check"
-            if self.properties.side_exit:
-                return "exits and eval-breaker check"
-            if self.properties.deopts:
-                return "deopts and eval-breaker check"
         return None
 
     def is_viable(self) -> bool:
         return self.why_not_viable() is None
 
     def is_super(self) -> bool:
-        for tkn in self.body:
+        for tkn in self.body.tokens():
             if tkn.kind == "IDENTIFIER" and tkn.text == "oparg1":
                 return True
         return False
 
 
-Part = Uop | Skip
+class Label:
+
+    def __init__(self, name: str, spilled: bool, body: BlockStmt, properties: Properties):
+        self.name = name
+        self.spilled = spilled
+        self.body = body
+        self.properties = properties
+
+    size:int = 0
+    local_stores: list[lexer.Token] = []
+    instruction_size = None
+
+    def __str__(self) -> str:
+        return f"label({self.name})"
+
+
+Part = Uop | Skip | Flush
+CodeSection = Uop | Label
 
 
 @dataclass
 class Instruction:
+    where: lexer.Token
     name: str
     parts: list[Part]
     _properties: Properties | None
@@ -241,7 +285,9 @@ class Instruction:
 @dataclass
 class PseudoInstruction:
     name: str
+    stack: StackEffect
     targets: list[Instruction]
+    as_sequence: bool
     flags: list[str]
     opcode: int = -1
 
@@ -269,6 +315,7 @@ class Analysis:
     uops: dict[str, Uop]
     families: dict[str, Family]
     pseudos: dict[str, PseudoInstruction]
+    labels: dict[str, Label]
     opmap: dict[str, int]
     have_arg: int
     min_instrumented: int
@@ -293,22 +340,67 @@ def override_error(
     )
 
 
-def convert_stack_item(item: parser.StackEffect, replace_op_arg_1: str | None) -> StackItem:
-    cond = item.cond
-    if replace_op_arg_1 and OPARG_AND_1.match(item.cond):
-        cond = replace_op_arg_1
-    return StackItem(
-        item.name, item.type, cond, (item.size or "1")
-    )
+def convert_stack_item(
+    item: parser.StackEffect, replace_op_arg_1: str | None
+) -> StackItem:
+    return StackItem(item.name, item.size)
 
-def analyze_stack(op: parser.InstDef, replace_op_arg_1: str | None = None) -> StackEffect:
+def check_unused(stack: list[StackItem], input_names: dict[str, lexer.Token]) -> None:
+    "Unused items cannot be on the stack above used, non-peek items"
+    seen_unused = False
+    for item in reversed(stack):
+        if item.name == "unused":
+            seen_unused = True
+        elif item.peek:
+            break
+        elif seen_unused:
+            raise analysis_error(f"Cannot have used input '{item.name}' below an unused value on the stack", input_names[item.name])
+
+
+def analyze_stack(
+    op: parser.InstDef | parser.Pseudo, replace_op_arg_1: str | None = None
+) -> StackEffect:
     inputs: list[StackItem] = [
-        convert_stack_item(i, replace_op_arg_1) for i in op.inputs if isinstance(i, parser.StackEffect)
+        convert_stack_item(i, replace_op_arg_1)
+        for i in op.inputs
+        if isinstance(i, parser.StackEffect)
     ]
-    outputs: list[StackItem] = [convert_stack_item(i, replace_op_arg_1) for i in op.outputs]
-    for input, output in zip(inputs, outputs):
-        if input.name == output.name:
-            input.peek = output.peek = True
+    outputs: list[StackItem] = [
+        convert_stack_item(i, replace_op_arg_1) for i in op.outputs
+    ]
+    # Mark variables with matching names at the base of the stack as "peek"
+    modified = False
+    input_names: dict[str, lexer.Token] = { i.name : i.first_token for i in op.inputs if i.name != "unused" }
+    for input, output in itertools.zip_longest(inputs, outputs):
+        if output is None:
+            pass
+        elif input is None:
+            if output.name in input_names:
+                raise analysis_error(
+                    f"Reuse of variable '{output.name}' at different stack location",
+                    input_names[output.name])
+        elif input.name == output.name:
+            if not modified:
+                input.peek = output.peek = True
+        else:
+            modified = True
+            if output.name in input_names:
+                raise analysis_error(
+                    f"Reuse of variable '{output.name}' at different stack location",
+                    input_names[output.name])
+    if isinstance(op, parser.InstDef):
+        output_names = [out.name for out in outputs]
+        for input in inputs:
+            if (
+                variable_used(op, input.name)
+                or variable_used(op, "DECREF_INPUTS")
+                or (not input.peek and input.name in output_names)
+            ):
+                input.used = True
+        for output in outputs:
+            if variable_used(op, output.name):
+                output.used = True
+    check_unused(inputs, input_names)
     return StackEffect(inputs, outputs)
 
 
@@ -316,22 +408,127 @@ def analyze_caches(inputs: list[parser.InputEffect]) -> list[CacheEntry]:
     caches: list[parser.CacheEffect] = [
         i for i in inputs if isinstance(i, parser.CacheEffect)
     ]
-    for cache in caches:
-        if cache.name == "unused":
-            raise analysis_error(
-                "Unused cache entry in op. Move to enclosing macro.", cache.tokens[0]
-            )
+    if caches:
+        # Middle entries are allowed to be unused. Check first and last caches.
+        for index in (0, -1):
+            cache = caches[index]
+            if cache.name == "unused":
+                position = "First" if index == 0 else "Last"
+                msg = f"{position} cache entry in op is unused. Move to enclosing macro."
+                raise analysis_error(msg, cache.tokens[0])
     return [CacheEntry(i.name, int(i.size)) for i in caches]
 
 
-def variable_used(node: parser.InstDef, name: str) -> bool:
+def find_variable_stores(node: parser.InstDef) -> list[lexer.Token]:
+    res: list[lexer.Token] = []
+    outnames = { out.name for out in node.outputs }
+    innames = { out.name for out in node.inputs }
+
+    def find_stores_in_tokens(tokens: list[lexer.Token], callback: Callable[[lexer.Token], None]) -> None:
+        while tokens and tokens[0].kind == "COMMENT":
+            tokens = tokens[1:]
+        if len(tokens) < 4:
+            return
+        if tokens[1].kind == "EQUALS":
+            if tokens[0].kind == "IDENTIFIER":
+                name = tokens[0].text
+                if name in outnames or name in innames:
+                    callback(tokens[0])
+        #Passing the address of a local is also a definition
+        for idx, tkn in enumerate(tokens):
+            if tkn.kind == "AND":
+                name_tkn = tokens[idx+1]
+                if name_tkn.text in outnames:
+                    callback(name_tkn)
+
+    def visit(stmt: Stmt) -> None:
+        if isinstance(stmt, IfStmt):
+            def error(tkn: lexer.Token) -> None:
+                raise analysis_error("Cannot define variable in 'if' condition", tkn)
+            find_stores_in_tokens(stmt.condition, error)
+        elif isinstance(stmt, SimpleStmt):
+            find_stores_in_tokens(stmt.contents, res.append)
+
+    node.block.accept(visit)
+    return res
+
+
+#def analyze_deferred_refs(node: parser.InstDef) -> dict[lexer.Token, str | None]:
+    #"""Look for PyStackRef_FromPyObjectNew() calls"""
+
+    #def in_frame_push(idx: int) -> bool:
+        #for tkn in reversed(node.block.tokens[: idx - 1]):
+            #if tkn.kind in {"SEMI", "LBRACE", "RBRACE"}:
+                #return False
+            #if tkn.kind == "IDENTIFIER" and tkn.text == "_PyFrame_PushUnchecked":
+                #return True
+        #return False
+
+    #refs: dict[lexer.Token, str | None] = {}
+    #for idx, tkn in enumerate(node.block.tokens):
+        #if tkn.kind != "IDENTIFIER" or tkn.text != "PyStackRef_FromPyObjectNew":
+            #continue
+
+        #if idx == 0 or node.block.tokens[idx - 1].kind != "EQUALS":
+            #if in_frame_push(idx):
+                ## PyStackRef_FromPyObjectNew() is called in _PyFrame_PushUnchecked()
+                #refs[tkn] = None
+                #continue
+            #raise analysis_error("Expected '=' before PyStackRef_FromPyObjectNew", tkn)
+
+        #lhs = find_assignment_target(node, idx - 1)
+        #if len(lhs) == 0:
+            #raise analysis_error(
+                #"PyStackRef_FromPyObjectNew() must be assigned to an output", tkn
+            #)
+
+        #if lhs[0].kind == "TIMES" or any(
+            #t.kind == "ARROW" or t.kind == "LBRACKET" for t in lhs[1:]
+        #):
+            ## Don't handle: *ptr = ..., ptr->field = ..., or ptr[field] = ...
+            ## Assume that they are visible to the GC.
+            #refs[tkn] = None
+            #continue
+
+        #if len(lhs) != 1 or lhs[0].kind != "IDENTIFIER":
+            #raise analysis_error(
+                #"PyStackRef_FromPyObjectNew() must be assigned to an output", tkn
+            #)
+
+        #name = lhs[0].text
+        #match = (
+            #any(var.name == name for var in node.inputs)
+            #or any(var.name == name for var in node.outputs)
+        #)
+        #if not match:
+            #raise analysis_error(
+                #f"PyStackRef_FromPyObjectNew() must be assigned to an input or output, not '{name}'",
+                #tkn,
+            #)
+
+        #refs[tkn] = name
+
+    #return refs
+
+
+def variable_used(node: parser.CodeDef, name: str) -> bool:
     """Determine whether a variable with a given name is used in a node."""
     return any(
-        token.kind == "IDENTIFIER" and token.text == name for token in node.tokens
+        token.kind == "IDENTIFIER" and token.text == name for token in node.block.tokens()
     )
 
-def tier_variable(node: parser.InstDef) -> int | None:
+
+def oparg_used(node: parser.CodeDef) -> bool:
+    """Determine whether `oparg` is used in a node."""
+    return any(
+        token.kind == "IDENTIFIER" and token.text == "oparg" for token in node.tokens
+    )
+
+
+def tier_variable(node: parser.CodeDef) -> int | None:
     """Determine whether a tier variable is used in a node."""
+    if isinstance(node, parser.LabelDef):
+        return None
     for token in node.tokens:
         if token.kind == "ANNOTATION":
             if token.text == "specializing":
@@ -340,128 +537,254 @@ def tier_variable(node: parser.InstDef) -> int | None:
                 return int(token.text[-1])
     return None
 
-def has_error_with_pop(op: parser.InstDef) -> bool:
+
+def has_error_with_pop(op: parser.CodeDef) -> bool:
     return (
         variable_used(op, "ERROR_IF")
-        or variable_used(op, "pop_1_error")
         or variable_used(op, "exception_unwind")
-        or variable_used(op, "resume_with_error")
     )
 
-def has_error_without_pop(op: parser.InstDef) -> bool:
+
+def has_error_without_pop(op: parser.CodeDef) -> bool:
     return (
         variable_used(op, "ERROR_NO_POP")
-        or variable_used(op, "pop_1_error")
         or variable_used(op, "exception_unwind")
-        or variable_used(op, "resume_with_error")
     )
 
 
 NON_ESCAPING_FUNCTIONS = (
+    "PyCFunction_GET_FLAGS",
+    "PyCFunction_GET_FUNCTION",
+    "PyCFunction_GET_SELF",
+    "PyCell_GetRef",
+    "PyCell_New",
+    "PyCell_SwapTakeRef",
+    "PyExceptionInstance_Class",
+    "PyException_GetCause",
+    "PyException_GetContext",
+    "PyException_GetTraceback",
+    "PyFloat_AS_DOUBLE",
+    "PyFloat_FromDouble",
+    "PyFunction_GET_CODE",
+    "PyFunction_GET_GLOBALS",
+    "PyList_GET_ITEM",
+    "PyList_GET_SIZE",
+    "PyList_SET_ITEM",
+    "PyLong_AsLong",
+    "PyLong_FromLong",
+    "PyLong_FromSsize_t",
+    "PySlice_New",
+    "PyStackRef_AsPyObjectBorrow",
+    "PyStackRef_AsPyObjectNew",
+    "PyStackRef_FromPyObjectNewMortal",
+    "PyStackRef_AsPyObjectSteal",
+    "PyStackRef_Borrow",
+    "PyStackRef_CLEAR",
+    "PyStackRef_CLOSE_SPECIALIZED",
+    "PyStackRef_DUP",
+    "PyStackRef_False",
+    "PyStackRef_FromPyObjectBorrow",
+    "PyStackRef_FromPyObjectNew",
+    "PyStackRef_FromPyObjectSteal",
+    "PyStackRef_IsExactly",
+    "PyStackRef_FromPyObjectStealMortal",
+    "PyStackRef_IsNone",
+    "PyStackRef_Is",
+    "PyStackRef_IsHeapSafe",
+    "PyStackRef_IsTrue",
+    "PyStackRef_IsFalse",
+    "PyStackRef_IsNull",
+    "PyStackRef_MakeHeapSafe",
+    "PyStackRef_None",
+    "PyStackRef_RefcountOnObject",
+    "PyStackRef_TYPE",
+    "PyStackRef_True",
+    "PyTuple_GET_ITEM",
+    "PyTuple_GET_SIZE",
+    "PyType_HasFeature",
+    "PyUnicode_Concat",
+    "PyUnicode_GET_LENGTH",
+    "PyUnicode_READ_CHAR",
+    "Py_ARRAY_LENGTH",
+    "Py_FatalError",
     "Py_INCREF",
-    "_PyDictOrValues_IsValues",
-    "_PyObject_DictOrValuesPointer",
-    "_PyDictOrValues_GetValues",
-    "_PyDictValues_AddToInsertionOrder",
-    "_PyObject_MakeInstanceAttributesFromDict",
-    "Py_DECREF",
-    "_Py_DECREF_SPECIALIZED",
-    "DECREF_INPUTS_AND_REUSE_FLOAT",
-    "PyUnicode_Append",
-    "_PyLong_IsZero",
+    "Py_IS_TYPE",
+    "Py_NewRef",
+    "Py_REFCNT",
     "Py_SIZE",
     "Py_TYPE",
-    "PyList_GET_ITEM",
-    "PyTuple_GET_ITEM",
-    "PyList_GET_SIZE",
-    "PyTuple_GET_SIZE",
-    "Py_ARRAY_LENGTH",
+    "Py_UNREACHABLE",
     "Py_Unicode_GET_LENGTH",
-    "PyUnicode_READ_CHAR",
-    "_Py_SINGLETON",
-    "PyUnicode_GET_LENGTH",
-    "_PyLong_IsCompact",
-    "_PyLong_IsNonNegativeCompact",
+    "_PyCode_CODE",
+    "_PyDictValues_AddToInsertionOrder",
+    "_PyErr_Occurred",
+    "_PyFloat_FromDouble_ConsumeInputs",
+    "_PyFrame_GetBytecode",
+    "_PyFrame_GetCode",
+    "_PyFrame_IsIncomplete",
+    "_PyFrame_PushUnchecked",
+    "_PyFrame_SetStackPointer",
+    "_PyFrame_StackPush",
+    "_PyFunction_SetVersion",
+    "_PyGen_GetGeneratorFromFrame",
+    "_PyInterpreterState_GET",
+    "_PyList_AppendTakeRef",
+    "_PyList_ITEMS",
     "_PyLong_CompactValue",
     "_PyLong_DigitCount",
-    "_Py_NewRef",
-    "_Py_IsImmortal",
-    "PyLong_FromLong",
-    "_Py_STR",
-    "_PyLong_Add",
-    "_PyLong_Multiply",
-    "_PyLong_Subtract",
-    "Py_NewRef",
-    "_PyList_ITEMS",
-    "_PyTuple_ITEMS",
-    "_PyList_AppendTakeRef",
-    "_Py_atomic_load_uintptr_relaxed",
-    "_PyFrame_GetCode",
+    "_PyLong_IsCompact",
+    "_PyLong_IsNegative",
+    "_PyLong_IsNonNegativeCompact",
+    "_PyLong_IsZero",
+    "_PyLong_BothAreCompact",
+    "_PyCompactLong_Add",
+    "_PyCompactLong_Multiply",
+    "_PyCompactLong_Subtract",
+    "_PyManagedDictPointer_IsValues",
+    "_PyObject_GC_IS_SHARED",
+    "_PyObject_GC_IS_TRACKED",
+    "_PyObject_GC_MAY_BE_TRACKED",
+    "_PyObject_GC_TRACK",
+    "_PyObject_GetManagedDict",
+    "_PyObject_InlineValues",
+    "_PyObject_IsUniquelyReferenced",
+    "_PyObject_ManagedDictPointer",
     "_PyThreadState_HasStackSpace",
-    "_PyUnicode_Equal",
-    "_PyFrame_SetStackPointer",
+    "_PyTuple_FromStackRefStealOnSuccess",
+    "_PyTuple_ITEMS",
     "_PyType_HasFeature",
-    "PyUnicode_Concat",
-    "_PyList_FromArraySteal",
-    "_PyTuple_FromArraySteal",
-    "PySlice_New",
-    "_Py_LeaveRecursiveCallPy",
-    "CALL_STAT_INC",
-    "maybe_lltrace_resume_frame",
+    "_PyType_NewManagedObject",
+    "_PyUnicode_Equal",
     "_PyUnicode_JoinArray",
+    "_Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY",
+    "_Py_DECREF_NO_DEALLOC",
+    "_Py_ID",
+    "_Py_IsImmortal",
+    "_Py_IsOwnedByCurrentThread",
+    "_Py_LeaveRecursiveCallPy",
+    "_Py_LeaveRecursiveCallTstate",
+    "_Py_NewRef",
+    "_Py_SINGLETON",
+    "_Py_STR",
+    "_Py_TryIncrefCompare",
+    "_Py_TryIncrefCompareStackRef",
+    "_Py_atomic_compare_exchange_uint8",
+    "_Py_atomic_load_ptr_acquire",
+    "_Py_atomic_load_uintptr_relaxed",
+    "_Py_set_eval_breaker_bit",
+    "advance_backoff_counter",
+    "assert",
+    "backoff_counter_triggers",
+    "initial_temperature_backoff_counter",
+    "JUMP_TO_LABEL",
+    "restart_backoff_counter",
+    "_Py_ReachedRecursionLimit",
+    "PyStackRef_IsTaggedInt",
+    "PyStackRef_TagInt",
+    "PyStackRef_UntagInt",
+    "PyStackRef_IncrementTaggedIntNoOverflow",
+    "PyStackRef_IsNullOrInt",
+    "PyStackRef_IsError",
+    "PyStackRef_IsValid",
+    "PyStackRef_Wrap",
+    "PyStackRef_Unwrap",
+    "_PyLong_CheckExactAndCompact",
 )
 
-ESCAPING_FUNCTIONS = (
-    "import_name",
-    "import_from",
-)
+
+def check_escaping_calls(instr: parser.CodeDef, escapes: dict[SimpleStmt, EscapingCall]) -> None:
+    error: lexer.Token | None = None
+    calls = {e.call for e in escapes.values()}
+
+    def visit(stmt: Stmt) -> None:
+        nonlocal error
+        if isinstance(stmt, IfStmt) or isinstance(stmt, WhileStmt):
+            for tkn in stmt.condition:
+                if tkn in calls:
+                    error = tkn
+        elif isinstance(stmt, SimpleStmt):
+            in_if = 0
+            tkn_iter = iter(stmt.contents)
+            for tkn in tkn_iter:
+                if tkn.kind == "IDENTIFIER" and tkn.text in ("DEOPT_IF", "ERROR_IF", "EXIT_IF"):
+                    in_if = 1
+                    next(tkn_iter)
+                elif tkn.kind == "LPAREN":
+                    if in_if:
+                        in_if += 1
+                elif tkn.kind == "RPAREN":
+                    if in_if:
+                        in_if -= 1
+                elif tkn in calls and in_if:
+                    error = tkn
 
 
-def makes_escaping_api_call(instr: parser.InstDef) -> bool:
-    if "CALL_INTRINSIC" in instr.name:
-        return True
-    if instr.name == "_BINARY_OP":
-        return True
-    tkns = iter(instr.tokens)
-    for tkn in tkns:
-        if tkn.kind != lexer.IDENTIFIER:
-            continue
-        try:
-            next_tkn = next(tkns)
-        except StopIteration:
-            return False
-        if next_tkn.kind != lexer.LPAREN:
-            continue
-        if tkn.text in ESCAPING_FUNCTIONS:
-            return True
-        if not tkn.text.startswith("Py") and not tkn.text.startswith("_Py"):
-            continue
-        if tkn.text.endswith("Check"):
-            continue
-        if tkn.text.startswith("Py_Is"):
-            continue
-        if tkn.text.endswith("CheckExact"):
-            continue
-        if tkn.text in NON_ESCAPING_FUNCTIONS:
-            continue
-        return True
-    return False
+    instr.block.accept(visit)
+    if error is not None:
+        raise analysis_error(f"Escaping call '{error.text} in condition", error)
+
+def find_escaping_api_calls(instr: parser.CodeDef) -> dict[SimpleStmt, EscapingCall]:
+    result: dict[SimpleStmt, EscapingCall] = {}
+
+    def visit(stmt: Stmt) -> None:
+        if not isinstance(stmt, SimpleStmt):
+            return
+        tokens = stmt.contents
+        for idx, tkn in enumerate(tokens):
+            try:
+                next_tkn = tokens[idx+1]
+            except IndexError:
+                break
+            if next_tkn.kind != lexer.LPAREN:
+                continue
+            if tkn.kind == lexer.IDENTIFIER:
+                if tkn.text.upper() == tkn.text:
+                    # simple macro
+                    continue
+                #if not tkn.text.startswith(("Py", "_Py", "monitor")):
+                #    continue
+                if tkn.text.startswith(("sym_", "optimize_", "PyJitRef")):
+                    # Optimize functions
+                    continue
+                if tkn.text.endswith("Check"):
+                    continue
+                if tkn.text.startswith("Py_Is"):
+                    continue
+                if tkn.text.endswith("CheckExact"):
+                    continue
+                if tkn.text in NON_ESCAPING_FUNCTIONS:
+                    continue
+            elif tkn.kind == "RPAREN":
+                prev = tokens[idx-1]
+                if prev.text.endswith("_t") or prev.text == "*" or prev.text == "int":
+                    #cast
+                    continue
+            elif tkn.kind != "RBRACKET":
+                continue
+            if tkn.text in ("PyStackRef_CLOSE", "PyStackRef_XCLOSE"):
+                if len(tokens) <= idx+2:
+                    raise analysis_error("Unexpected end of file", next_tkn)
+                kills = tokens[idx+2]
+                if kills.kind != "IDENTIFIER":
+                    raise analysis_error(f"Expected identifier, got '{kills.text}'", kills)
+            else:
+                kills = None
+            result[stmt] = EscapingCall(stmt, tkn, kills)
+
+    instr.block.accept(visit)
+    check_escaping_calls(instr, result)
+    return result
 
 
 EXITS = {
     "DISPATCH",
-    "GO_TO_INSTRUCTION",
     "Py_UNREACHABLE",
     "DISPATCH_INLINED",
     "DISPATCH_GOTO",
 }
 
 
-def eval_breaker_at_end(op: parser.InstDef) -> bool:
-    return op.tokens[-5].text == "CHECK_EVAL_BREAKER"
-
-
-def always_exits(op: parser.InstDef) -> bool:
+def always_exits(op: parser.CodeDef) -> bool:
     depth = 0
     tkn_iter = iter(op.tokens)
     for tkn in tkn_iter:
@@ -482,7 +805,7 @@ def always_exits(op: parser.InstDef) -> bool:
             if tkn.text == "DEOPT_IF" or tkn.text == "ERROR_IF":
                 next(tkn_iter)  # '('
                 t = next(tkn_iter)
-                if t.text == "true":
+                if t.text in ("true", "1"):
                     return True
     return False
 
@@ -493,31 +816,14 @@ def stack_effect_only_peeks(instr: parser.InstDef) -> bool:
         return False
     if len(stack_inputs) == 0:
         return False
-    if any(s.cond for s in stack_inputs) or any(s.cond for s in instr.outputs):
-        return False
     return all(
-        (s.name == other.name and s.type == other.type and s.size == other.size)
+        (s.name == other.name and s.size == other.size)
         for s, other in zip(stack_inputs, instr.outputs)
     )
 
-OPARG_AND_1 = re.compile("\\(*oparg *& *1")
 
-def effect_depends_on_oparg_1(op: parser.InstDef) -> bool:
-    for effect in op.inputs:
-        if isinstance(effect, parser.CacheEffect):
-            continue
-        if not effect.cond:
-            continue
-        if OPARG_AND_1.match(effect.cond):
-            return True
-    for effect in op.outputs:
-        if not effect.cond:
-            continue
-        if OPARG_AND_1.match(effect.cond):
-            return True
-    return False
-
-def compute_properties(op: parser.InstDef) -> Properties:
+def compute_properties(op: parser.CodeDef) -> Properties:
+    escaping_calls = find_escaping_api_calls(op)
     has_free = (
         variable_used(op, "PyCell_New")
         or variable_used(op, "PyCell_GetRef")
@@ -537,79 +843,97 @@ def compute_properties(op: parser.InstDef) -> Properties:
         )
     error_with_pop = has_error_with_pop(op)
     error_without_pop = has_error_without_pop(op)
-    infallible = not error_with_pop and not error_without_pop
-    passthrough = stack_effect_only_peeks(op) and infallible
+    escapes = bool(escaping_calls) or variable_used(op, "DECREF_INPUTS")
+    pure = False if isinstance(op, parser.LabelDef) else "pure" in op.annotations
+    no_save_ip = False if isinstance(op, parser.LabelDef) else "no_save_ip" in op.annotations
     return Properties(
-        escapes=makes_escaping_api_call(op),
+        escaping_calls=escaping_calls,
+        escapes=escapes,
         error_with_pop=error_with_pop,
         error_without_pop=error_without_pop,
         deopts=deopts_if,
         side_exit=exits_if,
-        oparg=variable_used(op, "oparg"),
+        oparg=oparg_used(op),
         jumps=variable_used(op, "JUMPBY"),
-        eval_breaker=variable_used(op, "CHECK_EVAL_BREAKER"),
-        ends_with_eval_breaker=eval_breaker_at_end(op),
+        eval_breaker="CHECK_PERIODIC" in op.name,
         needs_this=variable_used(op, "this_instr"),
         always_exits=always_exits(op),
         stores_sp=variable_used(op, "SYNC_SP"),
         uses_co_consts=variable_used(op, "FRAME_CO_CONSTS"),
         uses_co_names=variable_used(op, "FRAME_CO_NAMES"),
-        uses_locals=(variable_used(op, "GETLOCAL") or variable_used(op, "SETLOCAL"))
-        and not has_free,
+        uses_locals=variable_used(op, "GETLOCAL") and not has_free,
+        uses_opcode=variable_used(op, "opcode"),
         has_free=has_free,
-        pure="pure" in op.annotations,
-        passthrough=passthrough,
+        pure=pure,
+        no_save_ip=no_save_ip,
         tier=tier_variable(op),
+        needs_prev=variable_used(op, "prev_instr"),
     )
 
+def expand(items: list[StackItem], oparg: int) -> list[StackItem]:
+    # Only replace array item with scalar if no more than one item is an array
+    index = -1
+    for i, item in enumerate(items):
+        if "oparg" in item.size:
+            if index >= 0:
+                return items
+            index = i
+    if index < 0:
+        return items
+    try:
+        count = int(eval(items[index].size.replace("oparg", str(oparg))))
+    except ValueError:
+        return items
+    return items[:index] + [
+        StackItem(items[index].name + f"_{i}", "", items[index].peek, items[index].used) for i in range(count)
+        ] + items[index+1:]
 
-def make_uop(name: str, op: parser.InstDef, inputs: list[parser.InputEffect], uops: dict[str, Uop]) -> Uop:
+def scalarize_stack(stack: StackEffect, oparg: int) -> StackEffect:
+    stack.inputs = expand(stack.inputs, oparg)
+    stack.outputs = expand(stack.outputs, oparg)
+    return stack
+
+def make_uop(
+    name: str,
+    op: parser.InstDef,
+    inputs: list[parser.InputEffect],
+    uops: dict[str, Uop],
+) -> Uop:
     result = Uop(
         name=name,
         context=op.context,
         annotations=op.annotations,
         stack=analyze_stack(op),
         caches=analyze_caches(inputs),
-        body=op.block.tokens,
+        local_stores=find_variable_stores(op),
+        body=op.block,
         properties=compute_properties(op),
     )
-    if effect_depends_on_oparg_1(op) and "split" in op.annotations:
-        result.properties.oparg_and_1 = True
-        for bit in ("0", "1"):
-            name_x = name + "_" + bit
-            properties = compute_properties(op)
-            if properties.oparg:
-                # May not need oparg anymore
-                properties.oparg = any(token.text == "oparg" for token in op.block.tokens)
-            rep = Uop(
-                name=name_x,
-                context=op.context,
-                annotations=op.annotations,
-                stack=analyze_stack(op, bit),
-                caches=analyze_caches(inputs),
-                body=op.block.tokens,
-                properties=properties,
-            )
-            rep.replicates = result
-            uops[name_x] = rep
     for anno in op.annotations:
         if anno.startswith("replicate"):
-            result.replicated = int(anno[10:-1])
+            text = anno[10:-1]
+            start, stop = text.split(":")
+            result.replicated = range(int(start), int(stop))
             break
     else:
         return result
-    for oparg in range(result.replicated):
+    for oparg in result.replicated:
         name_x = name + "_" + str(oparg)
         properties = compute_properties(op)
         properties.oparg = False
-        properties.const_oparg = oparg
+        stack = analyze_stack(op)
+        if not variable_used(op, "oparg"):
+            stack = scalarize_stack(stack, oparg)
+        else:
+            properties.const_oparg = oparg
         rep = Uop(
             name=name_x,
             context=op.context,
             annotations=op.annotations,
-            stack=analyze_stack(op),
+            stack=stack,
             caches=analyze_caches(inputs),
-            body=op.block.tokens,
+            local_stores=find_variable_stores(op),
+            body=op.block,
             properties=properties,
         )
         rep.replicates = result
@@ -629,9 +953,12 @@ def add_op(op: parser.InstDef, uops: dict[str, Uop]) -> None:
 
 
 def add_instruction(
-    name: str, parts: list[Part], instructions: dict[str, Instruction]
+    where: lexer.Token,
+    name: str,
+    parts: list[Part],
+    instructions: dict[str, Instruction],
 ) -> None:
-    instructions[name] = Instruction(name, parts, None)
+    instructions[name] = Instruction(where, name, parts, None)
 
 
 def desugar_inst(
@@ -659,25 +986,30 @@ def desugar_inst(
         parts.append(uop)
     else:
         parts[uop_index] = uop
-    add_instruction(name, parts, instructions)
+    add_instruction(inst.first_token, name, parts, instructions)
 
 
 def add_macro(
     macro: parser.Macro, instructions: dict[str, Instruction], uops: dict[str, Uop]
 ) -> None:
-    parts: list[Uop | Skip] = []
+    parts: list[Part] = []
     for part in macro.uops:
         match part:
             case parser.OpName():
-                if part.name not in uops:
-                    analysis_error(f"No Uop named {part.name}", macro.tokens[0])
-                parts.append(uops[part.name])
+                if part.name == "flush":
+                    parts.append(Flush())
+                else:
+                    if part.name not in uops:
+                        raise analysis_error(
+                            f"No Uop named {part.name}", macro.tokens[0]
+                        )
+                    parts.append(uops[part.name])
             case parser.CacheEffect():
                 parts.append(Skip(part.size))
             case _:
                 assert False
     assert parts
-    add_instruction(macro.name, parts, instructions)
+    add_instruction(macro.first_token, macro.name, parts, instructions)
 
 
 def add_family(
@@ -704,9 +1036,19 @@ def add_pseudo(
 ) -> None:
     pseudos[pseudo.name] = PseudoInstruction(
         pseudo.name,
+        analyze_stack(pseudo),
         [instructions[target] for target in pseudo.targets],
+        pseudo.as_sequence,
         pseudo.flags,
     )
+
+
+def add_label(
+    label: parser.LabelDef,
+    labels: dict[str, Label],
+) -> None:
+    properties = compute_properties(label)
+    labels[label.name] = Label(label.name, label.spilled, label.block, properties)
 
 
 def assign_opcodes(
@@ -725,21 +1067,16 @@ def assign_opcodes(
     # This helps catch cases where we attempt to execute a cache.
     instmap["RESERVED"] = 17
 
-    # 149 is RESUME - it is hard coded as such in Tools/build/deepfreeze.py
-    instmap["RESUME"] = 149
+    # 128 is RESUME - it is hard coded as such in Tools/build/deepfreeze.py
+    instmap["RESUME"] = 128
 
     # This is an historical oddity.
     instmap["BINARY_OP_INPLACE_ADD_UNICODE"] = 3
 
     instmap["INSTRUMENTED_LINE"] = 254
+    instmap["ENTER_EXECUTOR"] = 255
 
     instrumented = [name for name in instructions if name.startswith("INSTRUMENTED")]
-
-    # Special case: this instruction is implemented in ceval.c
-    # rather than bytecodes.c, so we need to add it explicitly
-    # here (at least until we add something to bytecodes.c to
-    # declare external instructions).
-    instrumented.append("INSTRUMENTED_LINE")
 
     specialized: set[str] = set()
     no_arg: list[str] = []
@@ -761,7 +1098,7 @@ def assign_opcodes(
 
     # Specialized ops appear in their own section
     # Instrumented opcodes are at the end of the valid range
-    min_internal = 150
+    min_internal = instmap["RESUME"] + 1
     min_instrumented = 254 - (len(instrumented) - 1)
     assert min_internal + len(specialized) < min_instrumented
 
@@ -798,11 +1135,41 @@ def assign_opcodes(
     return instmap, len(no_arg), min_instrumented
 
 
+def get_instruction_size_for_uop(instructions: dict[str, Instruction], uop: Uop) -> int | None:
+    """Return the size of the instruction that contains the given uop or
+    `None` if the uop does not contains the `INSTRUCTION_SIZE` macro.
+
+    If there is more than one instruction that contains the uop,
+    ensure that they all have the same size.
+    """
+    for tkn in uop.body.tokens():
+        if tkn.text == "INSTRUCTION_SIZE":
+            break
+    else:
+        return None
+
+    size = None
+    for inst in instructions.values():
+        if uop in inst.parts:
+            if size is None:
+                size = inst.size
+            if size != inst.size:
+                raise analysis_error(
+                    "All instructions containing a uop with the `INSTRUCTION_SIZE` macro "
+                    f"must have the same size: {size} != {inst.size}",
+                    tkn
+                )
+    if size is None:
+        raise analysis_error(f"No instruction containing the uop '{uop.name}' was found", tkn)
+    return size
+
+
 def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
     instructions: dict[str, Instruction] = {}
     uops: dict[str, Uop] = {}
     families: dict[str, Family] = {}
     pseudos: dict[str, PseudoInstruction] = {}
+    labels: dict[str, Label] = {}
     for node in forest:
         match node:
             case parser.InstDef(name):
@@ -817,6 +1184,8 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
                 pass
             case parser.Pseudo():
                 pass
+            case parser.LabelDef():
+                pass
             case _:
                 assert False
     for node in forest:
@@ -828,19 +1197,12 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
                 add_family(node, instructions, families)
             case parser.Pseudo():
                 add_pseudo(node, instructions, pseudos)
+            case parser.LabelDef():
+                add_label(node, labels)
             case _:
                 pass
     for uop in uops.values():
-        tkn_iter = iter(uop.body)
-        for tkn in tkn_iter:
-            if tkn.kind == "IDENTIFIER" and tkn.text == "GO_TO_INSTRUCTION":
-                if next(tkn_iter).kind != "LPAREN":
-                    continue
-                target = next(tkn_iter)
-                if target.kind != "IDENTIFIER":
-                    continue
-                if target.text in instructions:
-                    instructions[target.text].is_target = True
+        uop.instruction_size = get_instruction_size_for_uop(instructions, uop)
     # Special case BINARY_OP_INPLACE_ADD_UNICODE
     # BINARY_OP_INPLACE_ADD_UNICODE is not a normal family member,
     # as it is the wrong size, but we need it to maintain an
@@ -851,7 +1213,7 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
         families["BINARY_OP"].members.append(inst)
     opmap, first_arg, min_instrumented = assign_opcodes(instructions, families, pseudos)
     return Analysis(
-        instructions, uops, families, pseudos, opmap, first_arg, min_instrumented
+        instructions, uops, families, pseudos, labels, opmap, first_arg, min_instrumented
     )
 
 

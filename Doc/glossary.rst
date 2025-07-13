@@ -9,13 +9,14 @@ Glossary
 .. glossary::
 
    ``>>>``
-      The default Python prompt of the interactive shell.  Often seen for code
-      examples which can be executed interactively in the interpreter.
+      The default Python prompt of the :term:`interactive` shell.  Often
+      seen for code examples which can be executed interactively in the
+      interpreter.
 
    ``...``
       Can refer to:
 
-      * The default Python prompt of the interactive shell when entering the
+      * The default Python prompt of the :term:`interactive` shell when entering the
         code for an indented code block, when within a pair of matching left and
         right delimiters (parentheses, square brackets, curly braces or triple
         quotes), or after specifying a decorator.
@@ -35,6 +36,12 @@ Glossary
       and loaders (in the :mod:`importlib.abc` module).  You can create your own
       ABCs with the :mod:`abc` module.
 
+   annotate function
+      A function that can be called to retrieve the :term:`annotations <annotation>`
+      of an object. This function is accessible as the :attr:`~object.__annotate__`
+      attribute of functions, classes, and modules. Annotate functions are a
+      subset of :term:`evaluate functions <evaluate function>`.
+
    annotation
       A label associated with a variable, a class
       attribute or a function parameter or return value,
@@ -42,12 +49,11 @@ Glossary
 
       Annotations of local variables cannot be accessed at runtime, but
       annotations of global variables, class attributes, and functions
-      are stored in the :attr:`__annotations__`
-      special attribute of modules, classes, and functions,
-      respectively.
+      can be retrieved by calling :func:`annotationlib.get_annotations`
+      on modules, classes, and functions, respectively.
 
-      See :term:`variable annotation`, :term:`function annotation`, :pep:`484`
-      and :pep:`526`, which describe this functionality.
+      See :term:`variable annotation`, :term:`function annotation`, :pep:`484`,
+      :pep:`526`, and :pep:`649`, which describe this functionality.
       Also see :ref:`annotations-howto`
       for best practices on working with annotations.
 
@@ -109,7 +115,7 @@ Glossary
       :keyword:`yield` expression.
 
       Each :keyword:`yield` temporarily suspends processing, remembering the
-      location execution state (including local variables and pending
+      execution state (including local variables and pending
       try-statements).  When the *asynchronous generator iterator* effectively
       resumes with another awaitable returned by :meth:`~object.__anext__`, it
       picks up where it left off.  See :pep:`492` and :pep:`525`.
@@ -125,6 +131,28 @@ Glossary
       :keyword:`async for` resolves the awaitables returned by an asynchronous
       iterator's :meth:`~object.__anext__` method until it raises a
       :exc:`StopAsyncIteration` exception.  Introduced by :pep:`492`.
+
+   attached thread state
+
+      A :term:`thread state` that is active for the current OS thread.
+
+      When a :term:`thread state` is attached, the OS thread has
+      access to the full Python C API and can safely invoke the
+      bytecode interpreter.
+
+      Unless a function explicitly notes otherwise, attempting to call
+      the C API without an attached thread state will result in a fatal
+      error or undefined behavior.  A thread state can be attached and detached
+      explicitly by the user through the C API, or implicitly by the runtime,
+      including during blocking C calls and by the bytecode interpreter in between
+      calls.
+
+      On most builds of Python, having an attached thread state implies that the
+      caller holds the :term:`GIL` for the current interpreter, so only
+      one OS thread can have an attached thread state at a given moment. In
+      :term:`free-threaded <free threading>` builds of Python, threads can concurrently
+      hold an attached thread state, allowing for true parallelism of the bytecode
+      interpreter.
 
    attribute
       A value associated with an object which is usually referenced by name
@@ -225,6 +253,28 @@ Glossary
       A variable defined in a class and intended to be modified only at
       class level (i.e., not in an instance of the class).
 
+   closure variable
+      A :term:`free variable` referenced from a :term:`nested scope` that is defined in an outer
+      scope rather than being resolved at runtime from the globals or builtin namespaces.
+      May be explicitly defined with the :keyword:`nonlocal` keyword to allow write access,
+      or implicitly defined if the variable is only being read.
+
+      For example, in the ``inner`` function in the following code, both ``x`` and ``print`` are
+      :term:`free variables <free variable>`, but only ``x`` is a *closure variable*::
+
+          def outer():
+              x = 0
+              def inner():
+                  nonlocal x
+                  x += 1
+                  print(x)
+              return inner
+
+      Due to the :attr:`codeobject.co_freevars` attribute (which, despite its name, only
+      includes the names of closure variables rather than listing all referenced free
+      variables), the more general :term:`free variable` term is sometimes used even
+      when the intended meaning is to refer specifically to closure variables.
+
    complex number
       An extension of the familiar real number system in which all numbers are
       expressed as a sum of a real part and an imaginary part.  Imaginary
@@ -237,19 +287,33 @@ Glossary
       advanced mathematical feature.  If you're not aware of a need for them,
       it's almost certain you can safely ignore them.
 
+   context
+      This term has different meanings depending on where and how it is used.
+      Some common meanings:
+
+      * The temporary state or environment established by a :term:`context
+        manager` via a :keyword:`with` statement.
+      * The collection of key­value bindings associated with a particular
+        :class:`contextvars.Context` object and accessed via
+        :class:`~contextvars.ContextVar` objects.  Also see :term:`context
+        variable`.
+      * A :class:`contextvars.Context` object.  Also see :term:`current
+        context`.
+
+   context management protocol
+      The :meth:`~object.__enter__` and :meth:`~object.__exit__` methods called
+      by the :keyword:`with` statement.  See :pep:`343`.
+
    context manager
-      An object which controls the environment seen in a :keyword:`with`
-      statement by defining :meth:`~object.__enter__` and :meth:`~object.__exit__` methods.
-      See :pep:`343`.
+      An object which implements the :term:`context management protocol` and
+      controls the environment seen in a :keyword:`with` statement.  See
+      :pep:`343`.
 
    context variable
-      A variable which can have different values depending on its context.
-      This is similar to Thread-Local Storage in which each execution
-      thread may have a different value for a variable. However, with context
-      variables, there may be several contexts in one execution thread and the
-      main usage for context variables is to keep track of variables in
+      A variable whose value depends on which context is the :term:`current
+      context`.  Values are accessed via :class:`contextvars.ContextVar`
+      objects.  Context variables are primarily used to isolate state between
       concurrent asynchronous tasks.
-      See :mod:`contextvars`.
 
    contiguous
       .. index:: C-contiguous, Fortran contiguous
@@ -282,6 +346,20 @@ Glossary
       distributed on `python.org <https://www.python.org>`_.  The term "CPython"
       is used when necessary to distinguish this implementation from others
       such as Jython or IronPython.
+
+   current context
+      The :term:`context` (:class:`contextvars.Context` object) that is
+      currently used by :class:`~contextvars.ContextVar` objects to access (get
+      or set) the values of :term:`context variables <context variable>`.  Each
+      thread has its own current context.  Frameworks for executing asynchronous
+      tasks (see :mod:`asyncio`) associate each task with a context which
+      becomes the current context whenever the task starts or resumes execution.
+
+   cyclic isolate
+      A subgroup of one or more objects that reference each other in a reference
+      cycle, but are not referenced by objects outside the group.  The goal of
+      the :term:`cyclic garbage collector <garbage collection>` is to identify these groups and break the reference
+      cycles so that the memory can be reclaimed.
 
    decorator
       A function returning another function, usually applied as a function
@@ -341,7 +419,7 @@ Glossary
    docstring
       A string literal which appears as the first expression in a class,
       function or module.  While ignored when the suite is executed, it is
-      recognized by the compiler and put into the :attr:`!__doc__` attribute
+      recognized by the compiler and put into the :attr:`~definition.__doc__` attribute
       of the enclosing class, function or module.  Since it is available via
       introspection, it is the canonical place for documentation of the
       object.
@@ -364,6 +442,11 @@ Glossary
       characterized by the presence of many :keyword:`try` and :keyword:`except`
       statements.  The technique contrasts with the :term:`LBYL` style
       common to many other languages such as C.
+
+   evaluate function
+      A function that can be called to evaluate a lazily evaluated attribute
+      of an object, such as the value of type aliases created with the :keyword:`type`
+      statement.
 
    expression
       A piece of syntax which can be evaluated to some value.  In other words,
@@ -424,11 +507,11 @@ Glossary
       An object that tries to find the :term:`loader` for a module that is
       being imported.
 
-      Since Python 3.3, there are two types of finder: :term:`meta path finders
+      There are two types of finder: :term:`meta path finders
       <meta path finder>` for use with :data:`sys.meta_path`, and :term:`path
       entry finders <path entry finder>` for use with :data:`sys.path_hooks`.
 
-      See :pep:`302`, :pep:`420` and :pep:`451` for much more detail.
+      See :ref:`finders-and-loaders` and :mod:`importlib` for much more detail.
 
    floor division
       Mathematical division that rounds down to nearest integer.  The floor
@@ -436,6 +519,19 @@ Glossary
       evaluates to ``2`` in contrast to the ``2.75`` returned by float true
       division.  Note that ``(-11) // 4`` is ``-3`` because that is ``-2.75``
       rounded *downward*. See :pep:`238`.
+
+   free threading
+      A threading model where multiple threads can run Python bytecode
+      simultaneously within the same interpreter.  This is in contrast to
+      the :term:`global interpreter lock` which allows only one thread to
+      execute Python bytecode at a time.  See :pep:`703`.
+
+   free variable
+      Formally, as defined in the :ref:`language execution model <bind_names>`, a free
+      variable is any variable used in a namespace which is not a local variable in that
+      namespace. See :term:`closure variable` for an example.
+      Pragmatically, due to the name of the :attr:`codeobject.co_freevars` attribute,
+      the term is also sometimes used as a synonym for :term:`closure variable`.
 
    function
       A series of statements which returns some value to a caller. It can also
@@ -496,7 +592,7 @@ Glossary
       An object created by a :term:`generator` function.
 
       Each :keyword:`yield` temporarily suspends processing, remembering the
-      location execution state (including local variables and pending
+      execution state (including local variables and pending
       try-statements).  When the *generator iterator* resumes, it picks up where
       it left off (in contrast to functions which start fresh on every
       invocation).
@@ -547,12 +643,16 @@ Glossary
       tasks such as compression or hashing.  Also, the GIL is always released
       when doing I/O.
 
-      Past efforts to create a "free-threaded" interpreter (one which locks
-      shared data at a much finer granularity) have not been successful
-      because performance suffered in the common single-processor case. It
-      is believed that overcoming this performance issue would make the
-      implementation much more complicated and therefore costlier to maintain.
+      As of Python 3.13, the GIL can be disabled using the :option:`--disable-gil`
+      build configuration. After building Python with this option, code must be
+      run with :option:`-X gil=0 <-X>` or after setting the :envvar:`PYTHON_GIL=0 <PYTHON_GIL>`
+      environment variable. This feature enables improved performance for
+      multi-threaded applications and makes it easier to use multi-core CPUs
+      efficiently. For more details, see :pep:`703`.
 
+      In prior versions of Python's C API, a function might declare that it
+      requires the GIL to be held in order to use it. This refers to having an
+      :term:`attached thread state`.
 
    hash-based pyc
       A bytecode cache file that uses the hash rather than the last-modified
@@ -583,14 +683,15 @@ Glossary
       which ships with the standard distribution of Python.
 
    immortal
-      If an object is immortal, its reference count is never modified, and
-      therefore it is never deallocated.
+      *Immortal objects* are a CPython implementation detail introduced
+      in :pep:`683`.
 
-      Built-in strings and singletons are immortal objects. For example,
-      :const:`True` and :const:`None` singletons are immmortal.
+      If an object is immortal, its :term:`reference count` is never modified,
+      and therefore it is never deallocated while the interpreter is running.
+      For example, :const:`True` and :const:`None` are immortal in CPython.
 
-      See `PEP 683 – Immortal Objects, Using a Fixed Refcount
-      <https://peps.python.org/pep-0683/>`_ for more information.
+      Immortal objects can be identified via :func:`sys._is_immortal`, or
+      via :c:func:`PyUnstable_IsImmortal` in the C API.
 
    immutable
       An object with a fixed value.  Immutable objects include numbers, strings and
@@ -620,7 +721,8 @@ Glossary
       execute them and see their results.  Just launch ``python`` with no
       arguments (possibly by selecting it from your computer's main
       menu). It is a very powerful way to test out new ideas or inspect
-      modules and packages (remember ``help(x)``).
+      modules and packages (remember ``help(x)``). For more on interactive
+      mode, see :ref:`tut-interac`.
 
    interpreted
       Python is an interpreted language, as opposed to a compiled one,
@@ -649,7 +751,7 @@ Glossary
       iterables include all sequence types (such as :class:`list`, :class:`str`,
       and :class:`tuple`) and some non-sequence types like :class:`dict`,
       :term:`file objects <file object>`, and objects of any classes you define
-      with an :meth:`~iterator.__iter__` method or with a
+      with an :meth:`~object.__iter__` method or with a
       :meth:`~object.__getitem__` method
       that implements :term:`sequence` semantics.
 
@@ -686,6 +788,9 @@ Glossary
 
          CPython does not consistently apply the requirement that an iterator
          define :meth:`~iterator.__iter__`.
+         And also please note that the free-threading CPython does not guarantee
+         the thread-safety of iterator operations.
+
 
    key function
       A key function or collation function is a callable that returns a value
@@ -727,6 +832,10 @@ Glossary
       thread removes *key* from *mapping* after the test, but before the lookup.
       This issue can be solved with locks or by using the EAFP approach.
 
+   lexical analyzer
+
+      Formal name for the *tokenizer*; see :term:`token`.
+
    list
       A built-in Python :term:`sequence`.  Despite its name it is more akin
       to an array in other languages than to a linked list since access to
@@ -741,10 +850,15 @@ Glossary
       processed.
 
    loader
-      An object that loads a module. It must define a method named
-      :meth:`load_module`. A loader is typically returned by a
-      :term:`finder`. See :pep:`302` for details and
-      :class:`importlib.abc.Loader` for an :term:`abstract base class`.
+      An object that loads a module.
+      It must define the :meth:`!exec_module` and :meth:`!create_module` methods
+      to implement the :class:`~importlib.abc.Loader` interface.
+      A loader is typically returned by a :term:`finder`.
+      See also:
+
+      * :ref:`finders-and-loaders`
+      * :class:`importlib.abc.Loader`
+      * :pep:`302`
 
    locale encoding
       On Unix, it is the encoding of the LC_CTYPE locale. It can be set with
@@ -800,8 +914,7 @@ Glossary
 
    method resolution order
       Method Resolution Order is the order in which base classes are searched
-      for a member during lookup. See `The Python 2.3 Method Resolution Order
-      <https://www.python.org/download/releases/2.3/mro/>`_ for details of the
+      for a member during lookup. See :ref:`python_2.3_mro` for details of the
       algorithm used by the Python interpreter since the 2.3 release.
 
    module
@@ -814,6 +927,8 @@ Glossary
    module spec
       A namespace containing the import-related information used to load a
       module. An instance of :class:`importlib.machinery.ModuleSpec`.
+
+      See also :ref:`module-specs`.
 
    MRO
       See :term:`method resolution order`.
@@ -860,10 +975,15 @@ Glossary
       modules, respectively.
 
    namespace package
-      A :pep:`420` :term:`package` which serves only as a container for
-      subpackages.  Namespace packages may have no physical representation,
+      A :term:`package` which serves only as a container for subpackages.
+      Namespace packages may have no physical representation,
       and specifically are not like a :term:`regular package` because they
       have no ``__init__.py`` file.
+
+      Namespace packages allow several individually installable packages to have a common parent package.
+      Otherwise, it is recommended to use a :term:`regular package`.
+
+      For more information, see :pep:`420` and :ref:`reference-namespace-package`.
 
       See also :term:`module`.
 
@@ -887,6 +1007,15 @@ Glossary
       Any data with state (attributes or value) and defined behavior
       (methods).  Also the ultimate base class of any :term:`new-style
       class`.
+
+   optimized scope
+      A scope where target local variable names are reliably known to the
+      compiler when the code is compiled, allowing optimization of read and
+      write access to these names. The local namespaces for functions,
+      generators, coroutines, comprehensions, and generator expressions are
+      optimized in this fashion. Note: most interpreter optimizations are
+      applied to all scopes, only those relying on a known set of local
+      and nonlocal variable names are restricted to optimized scopes.
 
    package
       A Python :term:`module` which can contain submodules or recursively,
@@ -1085,6 +1214,10 @@ Glossary
 
       See also :term:`namespace package`.
 
+   REPL
+      An acronym for the "read–eval–print loop", another name for the
+      :term:`interactive` interpreter shell.
+
    __slots__
       A declaration inside a class that saves memory by pre-declaring space for
       instance attributes and eliminating instance dictionaries.  Though
@@ -1100,7 +1233,7 @@ Glossary
       :class:`tuple`, and :class:`bytes`. Note that :class:`dict` also
       supports :meth:`~object.__getitem__` and :meth:`!__len__`, but is considered a
       mapping rather than a sequence because the lookups use arbitrary
-      :term:`immutable` keys rather than integers.
+      :term:`hashable` keys rather than integers.
 
       The :class:`collections.abc.Sequence` abstract base class
       defines a much richer interface that goes beyond just
@@ -1129,16 +1262,12 @@ Glossary
       (subscript) notation uses :class:`slice` objects internally.
 
    soft deprecated
-      A soft deprecation can be used when using an API which should no longer
-      be used to write new code, but it remains safe to continue using it in
-      existing code. The API remains documented and tested, but will not be
-      developed further (no enhancement).
+      A soft deprecated API should not be used in new code,
+      but it is safe for already existing code to use it.
+      The API remains documented and tested, but will not be enhanced further.
 
-      The main difference between a "soft" and a (regular) "hard" deprecation
-      is that the soft deprecation does not imply scheduling the removal of the
-      deprecated API.
-
-      Another difference is that a soft deprecation does not issue a warning.
+      Soft deprecation, unlike normal deprecation, does not plan on removing the API
+      and will not emit warnings.
 
       See `PEP 387: Soft Deprecation
       <https://peps.python.org/pep-0387/#soft-deprecation>`_.
@@ -1151,6 +1280,16 @@ Glossary
       and ending with double underscores.  Special methods are documented in
       :ref:`specialnames`.
 
+   standard library
+      The collection of :term:`packages <package>`, :term:`modules <module>`
+      and :term:`extension modules <extension module>` distributed as a part
+      of the official Python interpreter package.  The exact membership of the
+      collection may vary based on platform, available system libraries, or
+      other criteria.  Documentation can be found at :ref:`library-index`.
+
+      See also :data:`sys.stdlib_module_names` for a list of all possible
+      standard library module names.
+
    statement
       A statement is part of a suite (a "block" of code).  A statement is either
       an :term:`expression` or one of several constructs with a keyword, such
@@ -1160,6 +1299,9 @@ Glossary
       An external tool that reads Python code and analyzes it, looking for
       issues such as incorrect types. See also :term:`type hints <type hint>`
       and the :mod:`typing` module.
+
+   stdlib
+      An abbreviation of :term:`standard library`.
 
    strong reference
       In Python's C API, a strong reference is a reference to an object
@@ -1198,6 +1340,40 @@ Glossary
       See also :term:`binary file` for a file object able to read and write
       :term:`bytes-like objects <bytes-like object>`.
 
+   thread state
+
+      The information used by the :term:`CPython` runtime to run in an OS thread.
+      For example, this includes the current exception, if any, and the
+      state of the bytecode interpreter.
+
+      Each thread state is bound to a single OS thread, but threads may have
+      many thread states available.  At most, one of them may be
+      :term:`attached <attached thread state>` at once.
+
+      An :term:`attached thread state` is required to call most
+      of Python's C API, unless a function explicitly documents otherwise.
+      The bytecode interpreter only runs under an attached thread state.
+
+      Each thread state belongs to a single interpreter, but each interpreter
+      may have many thread states, including multiple for the same OS thread.
+      Thread states from multiple interpreters may be bound to the same
+      thread, but only one can be :term:`attached <attached thread state>` in
+      that thread at any given moment.
+
+      See :ref:`Thread State and the Global Interpreter Lock <threads>` for more
+      information.
+
+   token
+
+      A small unit of source code, generated by the
+      :ref:`lexical analyzer <lexical>` (also called the *tokenizer*).
+      Names, numbers, strings, operators,
+      newlines and similar are represented by tokens.
+
+      The :mod:`tokenize` module exposes Python's lexical analyzer.
+      The :mod:`token` module contains information on the various types
+      of tokens.
+
    triple-quoted string
       A string which is bound by three instances of either a quotation mark
       (") or an apostrophe (').  While they don't provide any functionality
@@ -1210,7 +1386,7 @@ Glossary
    type
       The type of a Python object determines what kind of object it is; every
       object has a type.  An object's type is accessible as its
-      :attr:`~instance.__class__` attribute or can be retrieved with
+      :attr:`~object.__class__` attribute or can be retrieved with
       ``type(obj)``.
 
    type alias

@@ -5,7 +5,7 @@
 from functools import partial
 from test import support, test_tools
 from test.support import os_helper
-from test.support.os_helper import TESTFN, unlink
+from test.support.os_helper import TESTFN, unlink, rmtree
 from textwrap import dedent
 from unittest import TestCase
 import inspect
@@ -17,14 +17,35 @@ import unittest
 test_tools.skip_if_missing('clinic')
 with test_tools.imports_under_tool('clinic'):
     import libclinic
+    from libclinic import ClinicError, unspecified, NULL, fail
+    from libclinic.converters import int_converter, str_converter, self_converter
+    from libclinic.function import (
+        Module, Class, Function, FunctionKind, Parameter,
+        permute_optional_groups, permute_right_option_groups,
+        permute_left_option_groups)
     import clinic
-    from clinic import DSLParser
+    from libclinic.clanguage import CLanguage
+    from libclinic.converter import converters, legacy_converters
+    from libclinic.return_converters import return_converters, int_return_converter
+    from libclinic.block_parser import Block, BlockParser
+    from libclinic.codegen import BlockPrinter, Destination
+    from libclinic.dsl_parser import DSLParser
+    from libclinic.cli import parse_file, Clinic
 
+
+def repeat_fn(*functions):
+    def wrapper(test):
+        def wrapped(self):
+            for fn in functions:
+                with self.subTest(fn=fn):
+                    test(self, fn)
+        return wrapped
+    return wrapper
 
 def _make_clinic(*, filename='clinic_tests', limited_capi=False):
-    clang = clinic.CLanguage(filename)
-    c = clinic.Clinic(clang, filename=filename, limited_capi=limited_capi)
-    c.block_parser = clinic.BlockParser('', clang)
+    clang = CLanguage(filename)
+    c = Clinic(clang, filename=filename, limited_capi=limited_capi)
+    c.block_parser = BlockParser('', clang)
     return c
 
 
@@ -43,7 +64,7 @@ def _expect_failure(tc, parser, code, errmsg, *, filename=None, lineno=None,
     if strip:
         code = code.strip()
     errmsg = re.escape(errmsg)
-    with tc.assertRaisesRegex(clinic.ClinicError, errmsg) as cm:
+    with tc.assertRaisesRegex(ClinicError, errmsg) as cm:
         parser(code)
     if filename is not None:
         tc.assertEqual(cm.exception.filename, filename)
@@ -58,12 +79,12 @@ def restore_dict(converters, old_converters):
 
 
 def save_restore_converters(testcase):
-    testcase.addCleanup(restore_dict, clinic.converters,
-                        clinic.converters.copy())
-    testcase.addCleanup(restore_dict, clinic.legacy_converters,
-                        clinic.legacy_converters.copy())
-    testcase.addCleanup(restore_dict, clinic.return_converters,
-                        clinic.return_converters.copy())
+    testcase.addCleanup(restore_dict, converters,
+                        converters.copy())
+    testcase.addCleanup(restore_dict, legacy_converters,
+                        legacy_converters.copy())
+    testcase.addCleanup(restore_dict, return_converters,
+                        return_converters.copy())
 
 
 class ClinicWholeFileTest(TestCase):
@@ -136,11 +157,11 @@ class ClinicWholeFileTest(TestCase):
         self.expect_failure(raw, err, filename="test.c", lineno=2)
 
     def test_parse_with_body_prefix(self):
-        clang = clinic.CLanguage(None)
+        clang = CLanguage(None)
         clang.body_prefix = "//"
         clang.start_line = "//[{dsl_name} start]"
         clang.stop_line = "//[{dsl_name} stop]"
-        cl = clinic.Clinic(clang, filename="test.c", limited_capi=False)
+        cl = Clinic(clang, filename="test.c", limited_capi=False)
         raw = dedent("""
             //[clinic start]
             //module test
@@ -217,11 +238,11 @@ class ClinicWholeFileTest(TestCase):
         # The generated output will differ for every run, but we can check that
         # it starts with the clinic block, we check that it contains all the
         # expected fields, and we check that it contains the checksum line.
-        self.assertTrue(out.startswith(dedent("""
+        self.assertStartsWith(out, dedent("""
             /*[clinic input]
             output print 'I told you once.'
             [clinic start generated code]*/
-        """)))
+        """))
         fields = {
             "cpp_endif",
             "cpp_if",
@@ -238,9 +259,7 @@ class ClinicWholeFileTest(TestCase):
             with self.subTest(field=field):
                 self.assertIn(field, out)
         last_line = out.rstrip().split("\n")[-1]
-        self.assertTrue(
-            last_line.startswith("/*[clinic end generated code: output=")
-        )
+        self.assertStartsWith(last_line, "/*[clinic end generated code: output=")
 
     def test_directive_wrong_arg_number(self):
         raw = dedent("""
@@ -310,15 +329,29 @@ class ClinicWholeFileTest(TestCase):
         """
         self.expect_failure(block, err, lineno=8)
 
-    def test_multiple_star_in_args(self):
+    def test_star_after_vararg(self):
         err = "'my_test_func' uses '*' more than once."
         block = """
             /*[clinic input]
             my_test_func
 
                 pos_arg: object
-                *args: object
+                *args: tuple
                 *
+                kw_arg: object
+            [clinic start generated code]*/
+        """
+        self.expect_failure(block, err, lineno=6)
+
+    def test_vararg_after_star(self):
+        err = "'my_test_func' uses '*' more than once."
+        block = """
+            /*[clinic input]
+            my_test_func
+
+                pos_arg: object
+                *
+                *args: tuple
                 kw_arg: object
             [clinic start generated code]*/
         """
@@ -650,14 +683,79 @@ class ClinicWholeFileTest(TestCase):
         err = "Illegal C basename: '.illegal.'"
         self.expect_failure(block, err, lineno=7)
 
+    def test_cloned_forced_text_signature(self):
+        block = dedent("""
+            /*[clinic input]
+            @text_signature "($module, a[, b])"
+            src
+                a: object
+                    param a
+                b: object = NULL
+                /
+
+            docstring
+            [clinic start generated code]*/
+
+            /*[clinic input]
+            dst = src
+            [clinic start generated code]*/
+        """)
+        self.clinic.parse(block)
+        self.addCleanup(rmtree, "clinic")
+        funcs = self.clinic.functions
+        self.assertEqual(len(funcs), 2)
+
+        src_docstring_lines = funcs[0].docstring.split("\n")
+        dst_docstring_lines = funcs[1].docstring.split("\n")
+
+        # Signatures are copied.
+        self.assertEqual(src_docstring_lines[0], "src($module, a[, b])")
+        self.assertEqual(dst_docstring_lines[0], "dst($module, a[, b])")
+
+        # Param docstrings are copied.
+        self.assertIn("    param a", src_docstring_lines)
+        self.assertIn("    param a", dst_docstring_lines)
+
+        # Docstrings are not copied.
+        self.assertIn("docstring", src_docstring_lines)
+        self.assertNotIn("docstring", dst_docstring_lines)
+
+    def test_cloned_forced_text_signature_illegal(self):
+        block = """
+            /*[clinic input]
+            @text_signature "($module, a[, b])"
+            src
+                a: object
+                b: object = NULL
+                /
+            [clinic start generated code]*/
+
+            /*[clinic input]
+            @text_signature "($module, a_override[, b])"
+            dst = src
+            [clinic start generated code]*/
+        """
+        err = "Cannot use @text_signature when cloning a function"
+        self.expect_failure(block, err, lineno=11)
+
+    def test_ignore_preprocessor_in_comments(self):
+        for dsl in "clinic", "python":
+            raw = dedent(f"""\
+                /*[{dsl} input]
+                # CPP directives, valid or not, should be ignored in C comments.
+                #
+                [{dsl} start generated code]*/
+            """)
+            self.clinic.parse(raw)
+
 
 class ParseFileUnitTest(TestCase):
     def expect_parsing_failure(
         self, *, filename, expected_error, verify=True, output=None
     ):
         errmsg = re.escape(dedent(expected_error).strip())
-        with self.assertRaisesRegex(clinic.ClinicError, errmsg):
-            clinic.parse_file(filename, limited_capi=False)
+        with self.assertRaisesRegex(ClinicError, errmsg):
+            parse_file(filename, limited_capi=False)
 
     def test_parse_file_no_extension(self) -> None:
         self.expect_parsing_failure(
@@ -678,7 +776,7 @@ class ParseFileUnitTest(TestCase):
 
 class ClinicGroupPermuterTest(TestCase):
     def _test(self, l, m, r, output):
-        computed = clinic.permute_optional_groups(l, m, r)
+        computed = permute_optional_groups(l, m, r)
         self.assertEqual(output, computed)
 
     def test_range(self):
@@ -720,7 +818,7 @@ class ClinicGroupPermuterTest(TestCase):
 
     def test_have_left_options_but_required_is_empty(self):
         def fn():
-            clinic.permute_optional_groups(['a'], [], [])
+            permute_optional_groups(['a'], [], [])
         self.assertRaises(ValueError, fn)
 
 
@@ -778,13 +876,13 @@ class ClinicLinearFormatTest(TestCase):
 
     def test_text_before_block_marker(self):
         regex = re.escape("found before '{marker}'")
-        with self.assertRaisesRegex(clinic.ClinicError, regex):
+        with self.assertRaisesRegex(ClinicError, regex):
             libclinic.linear_format("no text before marker for you! {marker}",
                                     marker="not allowed!")
 
     def test_text_after_block_marker(self):
         regex = re.escape("found after '{marker}'")
-        with self.assertRaisesRegex(clinic.ClinicError, regex):
+        with self.assertRaisesRegex(ClinicError, regex):
             libclinic.linear_format("{marker} no text after marker for you!",
                                     marker="not allowed!")
 
@@ -806,13 +904,12 @@ class CopyParser:
 
 class ClinicBlockParserTest(TestCase):
     def _test(self, input, output):
-        language = clinic.CLanguage(None)
+        language = CLanguage(None)
 
-        blocks = list(clinic.BlockParser(input, language))
-        writer = clinic.BlockPrinter(language)
-        c = _make_clinic()
+        blocks = list(BlockParser(input, language))
+        writer = BlockPrinter(language)
         for block in blocks:
-            writer.print_block(block, limited_capi=c.limited_capi, header_includes=c.includes)
+            writer.print_block(block)
         output = writer.f.getvalue()
         assert output == input, "output != input!\n\noutput " + repr(output) + "\n\n input " + repr(input)
 
@@ -837,8 +934,8 @@ xyz
 """)
 
     def _test_clinic(self, input, output):
-        language = clinic.CLanguage(None)
-        c = clinic.Clinic(language, filename="file", limited_capi=False)
+        language = CLanguage(None)
+        c = Clinic(language, filename="file", limited_capi=False)
         c.parsers['inert'] = InertParser(c)
         c.parsers['copy'] = CopyParser(c)
         computed = c.parse(input)
@@ -871,7 +968,7 @@ class ClinicParserTest(TestCase):
     def parse(self, text):
         c = _make_clinic()
         parser = DSLParser(c)
-        block = clinic.Block(text)
+        block = Block(text)
         parser.parse(block)
         return block
 
@@ -879,8 +976,8 @@ class ClinicParserTest(TestCase):
         block = self.parse(text)
         s = block.signatures
         self.assertEqual(len(s), signatures_in_block)
-        assert isinstance(s[0], clinic.Module)
-        assert isinstance(s[function_index], clinic.Function)
+        assert isinstance(s[0], Module)
+        assert isinstance(s[function_index], Function)
         return s[function_index]
 
     def expect_failure(self, block, err, *,
@@ -895,7 +992,7 @@ class ClinicParserTest(TestCase):
 
     def test_trivial(self):
         parser = DSLParser(_make_clinic())
-        block = clinic.Block("""
+        block = Block("""
             module os
             os.access
         """)
@@ -924,7 +1021,7 @@ class ClinicParserTest(TestCase):
         self.assertEqual(2, len(function.parameters))
         p = function.parameters['path']
         self.assertEqual('path', p.name)
-        self.assertIsInstance(p.converter, clinic.int_converter)
+        self.assertIsInstance(p.converter, int_converter)
 
     def test_param_default(self):
         function = self.parse_function("""
@@ -1023,7 +1120,7 @@ class ClinicParserTest(TestCase):
         """)
         self.assertEqual(3, len(function.parameters))
         conv = function.parameters['something_else'].converter
-        self.assertIsInstance(conv, clinic.str_converter)
+        self.assertIsInstance(conv, str_converter)
 
     def test_param_default_parameters_out_of_order(self):
         err = (
@@ -1184,7 +1281,7 @@ class ClinicParserTest(TestCase):
             Function 'stat' has an invalid parameter declaration:
             \s+'invalid syntax: int = 42'
         """).strip()
-        with self.assertRaisesRegex(clinic.ClinicError, err):
+        with self.assertRaisesRegex(ClinicError, err):
             self.parse_function(block)
 
     def test_param_default_invalid_syntax(self):
@@ -1216,7 +1313,7 @@ class ClinicParserTest(TestCase):
             module os
             os.stat -> int
         """)
-        self.assertIsInstance(function.return_converter, clinic.int_return_converter)
+        self.assertIsInstance(function.return_converter, int_return_converter)
 
     def test_return_converter_invalid_syntax(self):
         block = """
@@ -1721,13 +1818,43 @@ class ClinicParserTest(TestCase):
         )
         self.expect_failure(block, err, lineno=4)
 
+    def test_parameters_required_after_depr_star3(self):
+        block = """
+            module foo
+            foo.bar
+                a: int
+                * [from 3.14]
+                *args: tuple
+                b: int
+            Docstring.
+        """
+        err = (
+            "Function 'bar' specifies '* [from ...]' without "
+            "following parameters."
+        )
+        self.expect_failure(block, err, lineno=4)
+
     def test_depr_star_must_come_before_star(self):
         block = """
             module foo
             foo.bar
-                this: int
+                a: int
                 *
                 * [from 3.14]
+                b: int
+            Docstring.
+        """
+        err = "Function 'bar': '* [from ...]' must precede '*'"
+        self.expect_failure(block, err, lineno=4)
+
+    def test_depr_star_must_come_before_vararg(self):
+        block = """
+            module foo
+            foo.bar
+                a: int
+                *args: tuple
+                * [from 3.14]
+                b: int
             Docstring.
         """
         err = "Function 'bar': '* [from ...]' must precede '*'"
@@ -1842,13 +1969,26 @@ class ClinicParserTest(TestCase):
         err = "Function 'bar' uses '/' more than once."
         self.expect_failure(block, err)
 
-    def test_mix_star_and_slash(self):
+    def test_slash_after_star(self):
         block = """
             module foo
             foo.bar
                x: int
                y: int
                *
+               z: int
+               /
+        """
+        err = "Function 'bar': '/' must precede '*'"
+        self.expect_failure(block, err)
+
+    def test_slash_after_vararg(self):
+        block = """
+            module foo
+            foo.bar
+               x: int
+               y: int
+               *args: tuple
                z: int
                /
         """
@@ -1894,6 +2034,19 @@ class ClinicParserTest(TestCase):
         err = "Function 'bar': '/ [from ...]' must precede '*'"
         self.expect_failure(block, err, lineno=4)
 
+    def test_vararg_must_come_after_depr_slash(self):
+        block = """
+            module foo
+            foo.bar
+                a: int
+                *args: tuple
+                / [from 3.14]
+                b: int
+            Docstring.
+        """
+        err = "Function 'bar': '/ [from ...]' must precede '*'"
+        self.expect_failure(block, err, lineno=4)
+
     def test_depr_slash_must_come_after_slash(self):
         block = """
             module foo
@@ -1921,12 +2074,12 @@ class ClinicParserTest(TestCase):
         self.expect_failure(block, err)
 
     def test_parameters_no_more_than_one_vararg(self):
-        err = "Too many var args"
+        err = "Function 'bar' uses '*' more than once."
         block = """
             module foo
             foo.bar
-               *vararg1: object
-               *vararg2: object
+               *vararg1: tuple
+               *vararg2: tuple
         """
         self.expect_failure(block, err, lineno=3)
 
@@ -2011,11 +2164,11 @@ class ClinicParserTest(TestCase):
         block = """
             module foo
             foo.bar
-               *vararg1: object
-            \t*vararg2: object
+               *vararg1: tuple
+            \t*vararg2: tuple
         """
         err = ("Tab characters are illegal in the Clinic DSL: "
-               r"'\t*vararg2: object'")
+               r"'\t*vararg2: tuple'")
         self.expect_failure(block, err)
 
     def test_indent_stack_illegal_outdent(self):
@@ -2032,7 +2185,7 @@ class ClinicParserTest(TestCase):
         parser = DSLParser(_make_clinic())
         parser.flag = False
         parser.directives['setflag'] = lambda : setattr(parser, 'flag', True)
-        block = clinic.Block("setflag")
+        block = Block("setflag")
         parser.parse(block)
         self.assertTrue(parser.flag)
 
@@ -2040,7 +2193,7 @@ class ClinicParserTest(TestCase):
         block = self.parse('module os\nos.access\n   path: "s"')
         module, function = block.signatures
         conv = (function.parameters['path']).converter
-        self.assertIsInstance(conv, clinic.str_converter)
+        self.assertIsInstance(conv, str_converter)
 
     def test_legacy_converters_non_string_constant_annotation(self):
         err = "Annotations must be either a name, a function call, or a string"
@@ -2297,14 +2450,14 @@ class ClinicParserTest(TestCase):
 
     def test_scaffolding(self):
         # test repr on special values
-        self.assertEqual(repr(clinic.unspecified), '<Unspecified>')
-        self.assertEqual(repr(clinic.NULL), '<Null>')
+        self.assertEqual(repr(unspecified), '<Unspecified>')
+        self.assertEqual(repr(NULL), '<Null>')
 
         # test that fail fails
         with support.captured_stdout() as stdout:
             errmsg = 'The igloos are melting'
-            with self.assertRaisesRegex(clinic.ClinicError, errmsg) as cm:
-                clinic.fail(errmsg, filename='clown.txt', line_number=69)
+            with self.assertRaisesRegex(ClinicError, errmsg) as cm:
+                fail(errmsg, filename='clown.txt', line_number=69)
             exc = cm.exception
             self.assertEqual(exc.filename, 'clown.txt')
             self.assertEqual(exc.lineno, 69)
@@ -2360,7 +2513,7 @@ class ClinicParserTest(TestCase):
         err = "Vararg can't take a default value!"
         block = """
             fn
-                *args: object = None
+                *args: tuple = None
         """
         self.expect_failure(block, err, lineno=1)
 
@@ -2441,6 +2594,25 @@ class ClinicParserTest(TestCase):
                 {parameters}
         """
         self.expect_failure(block, err, lineno=7)
+
+    def test_kind_defining_class(self):
+        function = self.parse_function("""
+            module m
+            class m.C "PyObject *" ""
+            m.C.meth
+                cls: defining_class
+        """, signatures_in_block=3, function_index=2)
+        p = function.parameters['cls']
+        self.assertEqual(p.kind, inspect.Parameter.POSITIONAL_ONLY)
+
+    def test_disallow_defining_class_at_module_level(self):
+        err = "A 'defining_class' parameter cannot be defined at module level."
+        block = """
+            module m
+            m.func
+                cls: defining_class
+        """
+        self.expect_failure(block, err, lineno=2)
 
 
 class ClinicExternalTest(TestCase):
@@ -2531,20 +2703,18 @@ class ClinicExternalTest(TestCase):
             # Note, we cannot check the entire fail msg, because the path to
             # the tmp file will change for every run.
             _, err = self.expect_failure(fn)
-            self.assertTrue(err.endswith(fail_msg),
-                            f"{err!r} does not end with {fail_msg!r}")
+            self.assertEndsWith(err, fail_msg)
             # Then, force regeneration; success expected.
             out = self.expect_success("-f", fn)
             self.assertEqual(out, "")
             # Verify by checking the checksum.
             checksum = (
                 "/*[clinic end generated code: "
-                "output=c16447c01510dfb3 input=9543a8d2da235301]*/\n"
+                "output=a2957bc4d43a3c2f input=9543a8d2da235301]*/\n"
             )
             with open(fn, encoding='utf-8') as f:
                 generated = f.read()
-            self.assertTrue(generated.endswith(checksum),
-                            (generated, checksum))
+            self.assertEndsWith(generated, checksum)
 
     def test_cli_make(self):
         c_code = dedent("""
@@ -2661,6 +2831,10 @@ class ClinicExternalTest(TestCase):
             "size_t",
             "slice_index",
             "str",
+            "uint16",
+            "uint32",
+            "uint64",
+            "uint8",
             "unicode",
             "unsigned_char",
             "unsigned_int",
@@ -2689,8 +2863,8 @@ class ClinicExternalTest(TestCase):
         # param may change (it's a set, thus unordered). So, let's compare the
         # start and end of the expected output, and then assert that the
         # converters appear lined up in alphabetical order.
-        self.assertTrue(out.startswith(prelude), out)
-        self.assertTrue(out.endswith(finale), out)
+        self.assertStartsWith(out, prelude)
+        self.assertEndsWith(out, finale)
 
         out = out.removeprefix(prelude)
         out = out.removesuffix(finale)
@@ -2698,10 +2872,7 @@ class ClinicExternalTest(TestCase):
         for converter, line in zip(expected_converters, lines):
             line = line.lstrip()
             with self.subTest(converter=converter):
-                self.assertTrue(
-                    line.startswith(converter),
-                    f"expected converter {converter!r}, got {line!r}"
-                )
+                self.assertStartsWith(line, converter)
 
     def test_cli_fail_converters_and_filename(self):
         _, err = self.expect_failure("--converters", "test.c")
@@ -2811,7 +2982,7 @@ class ClinicFunctionalTest(unittest.TestCase):
         regex = (
             fr"Passing( more than)?( [0-9]+)? positional argument(s)? to "
             fr"{re.escape(name)}\(\) is deprecated. Parameters? {pnames} will "
-            fr"become( a)? keyword-only parameters? in Python 3\.14"
+            fr"become( a)? keyword-only parameters? in Python 3\.37"
         )
         self.check_depr(regex, fn, *args, **kwds)
 
@@ -2824,7 +2995,7 @@ class ClinicFunctionalTest(unittest.TestCase):
         regex = (
             fr"Passing keyword argument{pl} {pnames} to "
             fr"{re.escape(name)}\(\) is deprecated. Parameter{pl} {pnames} "
-            fr"will become positional-only in Python 3\.14."
+            fr"will become positional-only in Python 3\.37."
         )
         self.check_depr(regex, fn, *args, **kwds)
 
@@ -2857,6 +3028,11 @@ class ClinicFunctionalTest(unittest.TestCase):
         self.assertEqual(ac_tester.bool_converter(), (True, True, True))
         self.assertEqual(ac_tester.bool_converter('', [], 5), (False, False, True))
         self.assertEqual(ac_tester.bool_converter(('not empty',), {1: 2}, 0), (True, True, False))
+
+    def test_bool_converter_c_default(self):
+        self.assertEqual(ac_tester.bool_converter_c_default(), (1, 0, -2, -3))
+        self.assertEqual(ac_tester.bool_converter_c_default(False, True, False, True),
+                         (0, 1, 0, 1))
 
     def test_char_converter(self):
         with self.assertRaises(TypeError):
@@ -3223,44 +3399,111 @@ class ClinicFunctionalTest(unittest.TestCase):
             ac_tester.keyword_only_parameter(1)
         self.assertEqual(ac_tester.keyword_only_parameter(a=1), (1,))
 
-    def test_posonly_vararg(self):
-        with self.assertRaises(TypeError):
-            ac_tester.posonly_vararg()
-        self.assertEqual(ac_tester.posonly_vararg(1, 2), (1, 2, ()))
-        self.assertEqual(ac_tester.posonly_vararg(1, b=2), (1, 2, ()))
-        self.assertEqual(ac_tester.posonly_vararg(1, 2, 3, 4), (1, 2, (3, 4)))
-        with self.assertRaises(TypeError):
-            ac_tester.posonly_vararg(b=4)
-        with self.assertRaises(TypeError):
-            ac_tester.posonly_vararg(1, 2, 3, b=4)
+    if ac_tester is not None:
+        @repeat_fn(ac_tester.varpos,
+                   ac_tester.varpos_array,
+                   ac_tester.TestClass.varpos_no_fastcall,
+                   ac_tester.TestClass.varpos_array_no_fastcall)
+        def test_varpos(self, fn):
+            # fn(*args)
+            self.assertEqual(fn(), ())
+            self.assertEqual(fn(1, 2), (1, 2))
 
-    def test_vararg_and_posonly(self):
-        with self.assertRaises(TypeError):
-            ac_tester.vararg_and_posonly()
-        with self.assertRaises(TypeError):
-            ac_tester.vararg_and_posonly(1, b=2)
-        self.assertEqual(ac_tester.vararg_and_posonly(1, 2, 3, 4), (1, (2, 3, 4)))
+        @repeat_fn(ac_tester.posonly_varpos,
+                   ac_tester.posonly_varpos_array,
+                   ac_tester.TestClass.posonly_varpos_no_fastcall,
+                   ac_tester.TestClass.posonly_varpos_array_no_fastcall)
+        def test_posonly_varpos(self, fn):
+            # fn(a, b, /, *args)
+            self.assertRaises(TypeError, fn)
+            self.assertRaises(TypeError, fn, 1)
+            self.assertRaises(TypeError, fn, 1, b=2)
+            self.assertEqual(fn(1, 2), (1, 2, ()))
+            self.assertEqual(fn(1, 2, 3, 4), (1, 2, (3, 4)))
 
-    def test_vararg(self):
-        with self.assertRaises(TypeError):
-            ac_tester.vararg()
-        with self.assertRaises(TypeError):
-            ac_tester.vararg(1, b=2)
-        self.assertEqual(ac_tester.vararg(1, 2, 3, 4), (1, (2, 3, 4)))
+        @repeat_fn(ac_tester.posonly_req_opt_varpos,
+                   ac_tester.posonly_req_opt_varpos_array,
+                   ac_tester.TestClass.posonly_req_opt_varpos_no_fastcall,
+                   ac_tester.TestClass.posonly_req_opt_varpos_array_no_fastcall)
+        def test_posonly_req_opt_varpos(self, fn):
+            # fn(a, b=False, /, *args)
+            self.assertRaises(TypeError, fn)
+            self.assertRaises(TypeError, fn, a=1)
+            self.assertEqual(fn(1), (1, False, ()))
+            self.assertEqual(fn(1, 2), (1, 2, ()))
+            self.assertEqual(fn(1, 2, 3, 4), (1, 2, (3, 4)))
 
-    def test_vararg_with_default(self):
-        with self.assertRaises(TypeError):
-            ac_tester.vararg_with_default()
-        self.assertEqual(ac_tester.vararg_with_default(1, b=False), (1, (), False))
-        self.assertEqual(ac_tester.vararg_with_default(1, 2, 3, 4), (1, (2, 3, 4), False))
-        self.assertEqual(ac_tester.vararg_with_default(1, 2, 3, 4, b=True), (1, (2, 3, 4), True))
+        @repeat_fn(ac_tester.posonly_poskw_varpos,
+                   ac_tester.posonly_poskw_varpos_array,
+                   ac_tester.TestClass.posonly_poskw_varpos_no_fastcall,
+                   ac_tester.TestClass.posonly_poskw_varpos_array_no_fastcall)
+        def test_posonly_poskw_varpos(self, fn):
+            # fn(a, /, b, *args)
+            self.assertRaises(TypeError, fn)
+            self.assertEqual(fn(1, 2), (1, 2, ()))
+            self.assertEqual(fn(1, b=2), (1, 2, ()))
+            self.assertEqual(fn(1, 2, 3, 4), (1, 2, (3, 4)))
+            self.assertRaises(TypeError, fn, b=4)
+            errmsg = re.escape("given by name ('b') and position (2)")
+            self.assertRaisesRegex(TypeError, errmsg, fn, 1, 2, 3, b=4)
 
-    def test_vararg_with_only_defaults(self):
-        self.assertEqual(ac_tester.vararg_with_only_defaults(), ((), None))
-        self.assertEqual(ac_tester.vararg_with_only_defaults(b=2), ((), 2))
-        self.assertEqual(ac_tester.vararg_with_only_defaults(1, b=2), ((1, ), 2))
-        self.assertEqual(ac_tester.vararg_with_only_defaults(1, 2, 3, 4), ((1, 2, 3, 4), None))
-        self.assertEqual(ac_tester.vararg_with_only_defaults(1, 2, 3, 4, b=5), ((1, 2, 3, 4), 5))
+    def test_poskw_varpos(self):
+        # fn(a, *args)
+        fn = ac_tester.poskw_varpos
+        self.assertRaises(TypeError, fn)
+        self.assertRaises(TypeError, fn, 1, b=2)
+        self.assertEqual(fn(a=1), (1, ()))
+        errmsg = re.escape("given by name ('a') and position (1)")
+        self.assertRaisesRegex(TypeError, errmsg, fn, 1, a=2)
+        self.assertEqual(fn(1), (1, ()))
+        self.assertEqual(fn(1, 2, 3, 4), (1, (2, 3, 4)))
+
+    def test_poskw_varpos_kwonly_opt(self):
+        # fn(a, *args, b=False)
+        fn = ac_tester.poskw_varpos_kwonly_opt
+        self.assertRaises(TypeError, fn)
+        errmsg = re.escape("given by name ('a') and position (1)")
+        self.assertRaisesRegex(TypeError, errmsg, fn, 1, a=2)
+        self.assertEqual(fn(1, b=2), (1, (), True))
+        self.assertEqual(fn(1, 2, 3, 4), (1, (2, 3, 4), False))
+        self.assertEqual(fn(1, 2, 3, 4, b=5), (1, (2, 3, 4), True))
+        self.assertEqual(fn(a=1), (1, (), False))
+        self.assertEqual(fn(a=1, b=2), (1, (), True))
+
+    def test_poskw_varpos_kwonly_opt2(self):
+        # fn(a, *args, b=False, c=False)
+        fn = ac_tester.poskw_varpos_kwonly_opt2
+        self.assertRaises(TypeError, fn)
+        errmsg = re.escape("given by name ('a') and position (1)")
+        self.assertRaisesRegex(TypeError, errmsg, fn, 1, a=2)
+        self.assertEqual(fn(1, b=2), (1, (), 2, False))
+        self.assertEqual(fn(1, b=2, c=3), (1, (), 2, 3))
+        self.assertEqual(fn(1, 2, 3), (1, (2, 3), False, False))
+        self.assertEqual(fn(1, 2, 3, b=4), (1, (2, 3), 4, False))
+        self.assertEqual(fn(1, 2, 3, b=4, c=5), (1, (2, 3), 4, 5))
+        self.assertEqual(fn(a=1), (1, (), False, False))
+        self.assertEqual(fn(a=1, b=2), (1, (), 2, False))
+        self.assertEqual(fn(a=1, b=2, c=3), (1, (), 2, 3))
+
+    def test_varpos_kwonly_opt(self):
+        # fn(*args, b=False)
+        fn = ac_tester.varpos_kwonly_opt
+        self.assertEqual(fn(), ((), False))
+        self.assertEqual(fn(b=2), ((), 2))
+        self.assertEqual(fn(1, b=2), ((1, ), 2))
+        self.assertEqual(fn(1, 2, 3, 4), ((1, 2, 3, 4), False))
+        self.assertEqual(fn(1, 2, 3, 4, b=5), ((1, 2, 3, 4), 5))
+
+    def test_varpos_kwonly_req_opt(self):
+        fn = ac_tester.varpos_kwonly_req_opt
+        self.assertRaises(TypeError, fn)
+        self.assertEqual(fn(a=1), ((), 1, False, False))
+        self.assertEqual(fn(a=1, b=2), ((), 1, 2, False))
+        self.assertEqual(fn(a=1, b=2, c=3), ((), 1, 2, 3))
+        self.assertRaises(TypeError, fn, 1)
+        self.assertEqual(fn(1, a=2), ((1,), 2, False, False))
+        self.assertEqual(fn(1, a=2, b=3), ((1,), 2, 3, False))
+        self.assertEqual(fn(1, a=2, b=3, c=4), ((1,), 2, 3, 4))
 
     def test_gh_32092_oob(self):
         ac_tester.gh_32092_oob(1, 2, 3, 4, kw1=5, kw2=6)
@@ -3284,35 +3527,20 @@ class ClinicFunctionalTest(unittest.TestCase):
             ac_tester.gh_99240_double_free('a', '\0b')
 
     def test_null_or_tuple_for_varargs(self):
+        # fn(name, *constraints, covariant=False)
+        fn = ac_tester.null_or_tuple_for_varargs
         # All of these should not crash:
-        valid_args_for_test = [
-            (('a',), {},
-             ('a', (), False)),
-            (('a', 1, 2, 3), {'covariant': True},
-             ('a', (1, 2, 3), True)),
-            ((), {'name': 'a'},
-             ('a', (), False)),
-            ((), {'name': 'a', 'covariant': True},
-             ('a', (), True)),
-            ((), {'covariant': True, 'name': 'a'},
-             ('a', (), True)),
-        ]
-        for args, kwargs, expected in valid_args_for_test:
-            with self.subTest(args=args, kwargs=kwargs):
-                self.assertEqual(
-                    ac_tester.null_or_tuple_for_varargs(*args, **kwargs),
-                    expected,
-                )
+        self.assertEqual(fn('a'), ('a', (), False))
+        self.assertEqual(fn('a', 1, 2, 3, covariant=True), ('a', (1, 2, 3), True))
+        self.assertEqual(fn(name='a'), ('a', (), False))
+        self.assertEqual(fn(name='a', covariant=True), ('a', (), True))
+        self.assertEqual(fn(covariant=True, name='a'), ('a', (), True))
 
-    def test_null_or_tuple_for_varargs_error(self):
-        with self.assertRaises(TypeError):
-            ac_tester.null_or_tuple_for_varargs(covariant=True)
-        with self.assertRaises(TypeError):
-            ac_tester.null_or_tuple_for_varargs(1, name='a')
-        with self.assertRaises(TypeError):
-            ac_tester.null_or_tuple_for_varargs(1, 2, 3, name='a', covariant=True)
-        with self.assertRaises(TypeError):
-            ac_tester.null_or_tuple_for_varargs(1, 2, 3, covariant=True, name='a')
+        self.assertRaises(TypeError, fn, covariant=True)
+        errmsg = re.escape("given by name ('name') and position (1)")
+        self.assertRaisesRegex(TypeError, errmsg, fn, 1, name='a')
+        self.assertRaisesRegex(TypeError, errmsg, fn, 1, 2, 3, name='a', covariant=True)
+        self.assertRaisesRegex(TypeError, errmsg, fn, 1, 2, 3, covariant=True, name='a')
 
     def test_cloned_func_exception_message(self):
         incorrect_arg = -1  # f1() and f2() accept a single str
@@ -3327,25 +3555,78 @@ class ClinicFunctionalTest(unittest.TestCase):
                 func = getattr(ac_tester, name)
                 self.assertEqual(func(), name)
 
-    def test_meth_method_no_params(self):
+    def test_get_defining_class(self):
         obj = ac_tester.TestClass()
-        meth = obj.meth_method_no_params
+        meth = obj.get_defining_class
+        self.assertIs(obj.get_defining_class(), ac_tester.TestClass)
+
+        # 'defining_class' argument is a positional only argument
+        with self.assertRaises(TypeError):
+            obj.get_defining_class_arg(cls=ac_tester.TestClass)
+
         check = partial(self.assertRaisesRegex, TypeError, "no arguments")
         check(meth, 1)
         check(meth, a=1)
 
-    def test_meth_method_no_params_capi(self):
+    def test_get_defining_class_capi(self):
         from _testcapi import pyobject_vectorcall
         obj = ac_tester.TestClass()
-        meth = obj.meth_method_no_params
+        meth = obj.get_defining_class
         pyobject_vectorcall(meth, None, None)
         pyobject_vectorcall(meth, (), None)
         pyobject_vectorcall(meth, (), ())
         pyobject_vectorcall(meth, None, ())
+        self.assertIs(pyobject_vectorcall(meth, (), ()), ac_tester.TestClass)
 
         check = partial(self.assertRaisesRegex, TypeError, "no arguments")
         check(pyobject_vectorcall, meth, (1,), None)
         check(pyobject_vectorcall, meth, (1,), ("a",))
+
+    def test_get_defining_class_arg(self):
+        obj = ac_tester.TestClass()
+        self.assertEqual(obj.get_defining_class_arg("arg"),
+                         (ac_tester.TestClass, "arg"))
+        self.assertEqual(obj.get_defining_class_arg(arg=123),
+                         (ac_tester.TestClass, 123))
+
+        # 'defining_class' argument is a positional only argument
+        with self.assertRaises(TypeError):
+            obj.get_defining_class_arg(cls=ac_tester.TestClass, arg="arg")
+
+        # wrong number of arguments
+        with self.assertRaises(TypeError):
+            obj.get_defining_class_arg()
+        with self.assertRaises(TypeError):
+            obj.get_defining_class_arg("arg1", "arg2")
+
+    def test_defclass_varpos(self):
+        # fn(*args)
+        cls = ac_tester.TestClass
+        obj = cls()
+        fn = obj.defclass_varpos
+        self.assertEqual(fn(), (cls, ()))
+        self.assertEqual(fn(1, 2), (cls, (1, 2)))
+        fn = cls.defclass_varpos
+        self.assertRaises(TypeError, fn)
+        self.assertEqual(fn(obj), (cls, ()))
+        self.assertEqual(fn(obj, 1, 2), (cls, (1, 2)))
+
+    def test_defclass_posonly_varpos(self):
+        # fn(a, b, /, *args)
+        cls = ac_tester.TestClass
+        obj = cls()
+        fn = obj.defclass_posonly_varpos
+        errmsg = 'takes at least 2 positional arguments'
+        self.assertRaisesRegex(TypeError, errmsg, fn)
+        self.assertRaisesRegex(TypeError, errmsg, fn, 1)
+        self.assertEqual(fn(1, 2), (cls, 1, 2, ()))
+        self.assertEqual(fn(1, 2, 3, 4), (cls, 1, 2, (3, 4)))
+        fn = cls.defclass_posonly_varpos
+        self.assertRaises(TypeError, fn)
+        self.assertRaisesRegex(TypeError, errmsg, fn, obj)
+        self.assertRaisesRegex(TypeError, errmsg, fn, obj, 1)
+        self.assertEqual(fn(obj, 1, 2), (cls, 1, 2, ()))
+        self.assertEqual(fn(obj, 1, 2, 3, 4), (cls, 1, 2, (3, 4)))
 
     def test_depr_star_new(self):
         cls = ac_tester.DeprStarNew
@@ -3498,9 +3779,9 @@ class ClinicFunctionalTest(unittest.TestCase):
         fn("a", b="b", c="c", d="d", e="e", f="f", g="g", h="h")
         errmsg = (
             "Passing more than 1 positional argument to depr_star_multi() is deprecated. "
-            "Parameter 'b' will become a keyword-only parameter in Python 3.16. "
-            "Parameters 'c' and 'd' will become keyword-only parameters in Python 3.15. "
-            "Parameters 'e', 'f' and 'g' will become keyword-only parameters in Python 3.14.")
+            "Parameter 'b' will become a keyword-only parameter in Python 3.39. "
+            "Parameters 'c' and 'd' will become keyword-only parameters in Python 3.38. "
+            "Parameters 'e', 'f' and 'g' will become keyword-only parameters in Python 3.37.")
         check = partial(self.check_depr, re.escape(errmsg), fn)
         check("a", "b", c="c", d="d", e="e", f="f", g="g", h="h")
         check("a", "b", "c", d="d", e="e", f="f", g="g", h="h")
@@ -3599,9 +3880,9 @@ class ClinicFunctionalTest(unittest.TestCase):
         fn("a", "b", "c", "d", "e", "f", "g", h="h")
         errmsg = (
             "Passing keyword arguments 'b', 'c', 'd', 'e', 'f' and 'g' to depr_kwd_multi() is deprecated. "
-            "Parameter 'b' will become positional-only in Python 3.14. "
-            "Parameters 'c' and 'd' will become positional-only in Python 3.15. "
-            "Parameters 'e', 'f' and 'g' will become positional-only in Python 3.16.")
+            "Parameter 'b' will become positional-only in Python 3.37. "
+            "Parameters 'c' and 'd' will become positional-only in Python 3.38. "
+            "Parameters 'e', 'f' and 'g' will become positional-only in Python 3.39.")
         check = partial(self.check_depr, re.escape(errmsg), fn)
         check("a", "b", "c", "d", "e", "f", g="g", h="h")
         check("a", "b", "c", "d", "e", f="f", g="g", h="h")
@@ -3616,8 +3897,8 @@ class ClinicFunctionalTest(unittest.TestCase):
         self.assertRaises(TypeError, fn, "a", "b", "c", "d", "e", "f", "g")
         errmsg = (
             "Passing more than 4 positional arguments to depr_multi() is deprecated. "
-            "Parameter 'e' will become a keyword-only parameter in Python 3.15. "
-            "Parameter 'f' will become a keyword-only parameter in Python 3.14.")
+            "Parameter 'e' will become a keyword-only parameter in Python 3.38. "
+            "Parameter 'f' will become a keyword-only parameter in Python 3.37.")
         check = partial(self.check_depr, re.escape(errmsg), fn)
         check("a", "b", "c", "d", "e", "f", g="g")
         check("a", "b", "c", "d", "e", f="f", g="g")
@@ -3625,8 +3906,8 @@ class ClinicFunctionalTest(unittest.TestCase):
         fn("a", "b", "c", d="d", e="e", f="f", g="g")
         errmsg = (
             "Passing keyword arguments 'b' and 'c' to depr_multi() is deprecated. "
-            "Parameter 'b' will become positional-only in Python 3.14. "
-            "Parameter 'c' will become positional-only in Python 3.15.")
+            "Parameter 'b' will become positional-only in Python 3.37. "
+            "Parameter 'c' will become positional-only in Python 3.38.")
         check = partial(self.check_depr, re.escape(errmsg), fn)
         check("a", "b", c="c", d="d", e="e", f="f", g="g")
         check("a", b="b", c="c", d="d", e="e", f="f", g="g")
@@ -3763,7 +4044,7 @@ class PermutationTests(unittest.TestCase):
             (1, 2, 3),
         )
         data = list(zip([1, 2, 3]))  # Generate a list of 1-tuples.
-        actual = tuple(clinic.permute_left_option_groups(data))
+        actual = tuple(permute_left_option_groups(data))
         self.assertEqual(actual, expected)
 
     def test_permute_right_option_groups(self):
@@ -3774,7 +4055,7 @@ class PermutationTests(unittest.TestCase):
             (1, 2, 3),
         )
         data = list(zip([1, 2, 3]))  # Generate a list of 1-tuples.
-        actual = tuple(clinic.permute_right_option_groups(data))
+        actual = tuple(permute_right_option_groups(data))
         self.assertEqual(actual, expected)
 
     def test_permute_optional_groups(self):
@@ -3853,7 +4134,7 @@ class PermutationTests(unittest.TestCase):
         for params in dataset:
             with self.subTest(**params):
                 left, required, right, expected = params.values()
-                permutations = clinic.permute_optional_groups(left, required, right)
+                permutations = permute_optional_groups(left, required, right)
                 actual = tuple(permutations)
                 self.assertEqual(actual, expected)
 
@@ -3994,15 +4275,15 @@ class FormatHelperTests(unittest.TestCase):
 
 class ClinicReprTests(unittest.TestCase):
     def test_Block_repr(self):
-        block = clinic.Block("foo")
+        block = Block("foo")
         expected_repr = "<clinic.Block 'text' input='foo' output=None>"
         self.assertEqual(repr(block), expected_repr)
 
-        block2 = clinic.Block("bar", "baz", [], "eggs", "spam")
+        block2 = Block("bar", "baz", [], "eggs", "spam")
         expected_repr_2 = "<clinic.Block 'baz' input='bar' output='eggs'>"
         self.assertEqual(repr(block2), expected_repr_2)
 
-        block3 = clinic.Block(
+        block3 = Block(
             input="longboi_" * 100,
             dsl_name="wow_so_long",
             signatures=[],
@@ -4017,47 +4298,44 @@ class ClinicReprTests(unittest.TestCase):
     def test_Destination_repr(self):
         c = _make_clinic()
 
-        destination = clinic.Destination(
+        destination = Destination(
             "foo", type="file", clinic=c, args=("eggs",)
         )
         self.assertEqual(
             repr(destination), "<clinic.Destination 'foo' type='file' file='eggs'>"
         )
 
-        destination2 = clinic.Destination("bar", type="buffer", clinic=c)
+        destination2 = Destination("bar", type="buffer", clinic=c)
         self.assertEqual(repr(destination2), "<clinic.Destination 'bar' type='buffer'>")
 
     def test_Module_repr(self):
-        module = clinic.Module("foo", _make_clinic())
+        module = Module("foo", _make_clinic())
         self.assertRegex(repr(module), r"<clinic.Module 'foo' at \d+>")
 
     def test_Class_repr(self):
-        cls = clinic.Class("foo", _make_clinic(), None, 'some_typedef', 'some_type_object')
+        cls = Class("foo", _make_clinic(), None, 'some_typedef', 'some_type_object')
         self.assertRegex(repr(cls), r"<clinic.Class 'foo' at \d+>")
 
     def test_FunctionKind_repr(self):
         self.assertEqual(
-            repr(clinic.FunctionKind.INVALID), "<clinic.FunctionKind.INVALID>"
-        )
-        self.assertEqual(
-            repr(clinic.FunctionKind.CLASS_METHOD), "<clinic.FunctionKind.CLASS_METHOD>"
+            repr(FunctionKind.CLASS_METHOD), "<clinic.FunctionKind.CLASS_METHOD>"
         )
 
     def test_Function_and_Parameter_reprs(self):
-        function = clinic.Function(
+        function = Function(
             name='foo',
             module=_make_clinic(),
             cls=None,
             c_basename=None,
             full_name='foofoo',
-            return_converter=clinic.int_return_converter(),
-            kind=clinic.FunctionKind.METHOD_INIT,
+            return_converter=int_return_converter(),
+            kind=FunctionKind.METHOD_INIT,
             coexist=False
         )
         self.assertEqual(repr(function), "<clinic.Function 'foo'>")
 
-        converter = clinic.self_converter('bar', 'bar', function)
-        parameter = clinic.Parameter(
+        converter = self_converter('bar', 'bar', function)
+        parameter = Parameter(
             "bar",
             kind=inspect.Parameter.POSITIONAL_OR_KEYWORD,
             function=function,

@@ -1,1 +1,0 @@
-The :mod:`zipimport` module can now read ZIP64 files.

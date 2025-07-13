@@ -1,5 +1,5 @@
-:mod:`http.client` --- HTTP protocol client
-===========================================
+:mod:`!http.client` --- HTTP protocol client
+============================================
 
 .. module:: http.client
    :synopsis: HTTP and HTTPS protocol client (requires sockets).

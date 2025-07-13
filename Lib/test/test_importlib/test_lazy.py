@@ -125,12 +125,12 @@ class LazyLoaderTests(unittest.TestCase):
         # Deleting an attribute should stay deleted.
         module = self.new_module()
         del module.attr
-        self.assertFalse(hasattr(module, 'attr'))
+        self.assertNotHasAttr(module, 'attr')
 
     def test_delete_preexisting_attr(self):
         module = self.new_module()
         del module.__name__
-        self.assertFalse(hasattr(module, '__name__'))
+        self.assertNotHasAttr(module, '__name__')
 
     def test_module_substitution_error(self):
         with test_util.uncache(TestingImporter.module_name):
@@ -195,6 +195,34 @@ class LazyLoaderTests(unittest.TestCase):
             # Trigger load with attribute lookup, ensure expected behavior
             test_load = module.loads('{}')
             self.assertEqual(test_load, {})
+
+    def test_lazy_module_type_override(self):
+        # Verify that lazy loading works with a module that modifies
+        # its __class__ to be a custom type.
+
+        # Example module from PEP 726
+        module = self.new_module(source_code="""\
+import sys
+from types import ModuleType
+
+CONSTANT = 3.14
+
+class ImmutableModule(ModuleType):
+    def __setattr__(self, name, value):
+        raise AttributeError('Read-only attribute!')
+
+    def __delattr__(self, name):
+        raise AttributeError('Read-only attribute!')
+
+sys.modules[__name__].__class__ = ImmutableModule
+""")
+        sys.modules[TestingImporter.module_name] = module
+        self.assertIsInstance(module, util._LazyModule)
+        self.assertEqual(module.CONSTANT, 3.14)
+        with self.assertRaises(AttributeError):
+            module.CONSTANT = 2.71
+        with self.assertRaises(AttributeError):
+            del module.CONSTANT
 
 
 if __name__ == '__main__':

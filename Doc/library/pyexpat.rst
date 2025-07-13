@@ -1,5 +1,5 @@
-:mod:`xml.parsers.expat` --- Fast XML parsing using Expat
-=========================================================
+:mod:`!xml.parsers.expat` --- Fast XML parsing using Expat
+==========================================================
 
 .. module:: xml.parsers.expat
    :synopsis: An interface to the Expat non-validating XML parser.
@@ -16,11 +16,10 @@
    references to these attributes should be marked using the :member: role.
 
 
-.. warning::
+.. note::
 
-   The :mod:`pyexpat` module is not secure against maliciously
-   constructed data.  If you need to parse untrusted or unauthenticated data see
-   :ref:`xml-vulnerabilities`.
+   If you need to parse untrusted or unauthenticated data, see
+   :ref:`xml-security`.
 
 
 .. index:: single: Expat
@@ -210,7 +209,7 @@ XMLParser Objects
    by default until a sufficient amount of input is reached.
    Due to this delay, registered handlers may — depending of the sizing of
    input chunks pushed to Expat — no longer be called right after pushing new
-   input to the parser.  Where immediate feedback and taking over responsiblity
+   input to the parser.  Where immediate feedback and taking over responsibility
    of protecting against denial of service from large tokens are both wanted,
    calling ``SetReparseDeferralEnabled(False)`` disables reparse deferral
    for the current Expat parser instance, temporarily or altogether.
@@ -939,6 +938,13 @@ The ``errors`` module has the following attributes:
 
    The limit on input amplification factor (from DTD and entities)
    has been breached.
+
+
+.. data:: XML_ERROR_NOT_STARTED
+
+   The parser was tried to be stopped or suspended before it started.
+
+   .. versionadded:: 3.14
 
 
 .. rubric:: Footnotes

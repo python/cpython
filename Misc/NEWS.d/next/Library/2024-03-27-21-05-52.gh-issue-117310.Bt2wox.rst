@@ -1,4 +1,0 @@
-Fixed an unlikely early & extra ``Py_DECREF`` triggered crash in :mod:`ssl`
-when creating a new ``_ssl._SSLContext`` if CPython was built implausibly such
-that the default cipher list is empty **or** the SSL library it was linked
-against reports a failure from its C ``SSL_CTX_set_cipher_list()`` API.

@@ -1,5 +1,5 @@
-:mod:`locale` --- Internationalization services
-===============================================
+:mod:`!locale` --- Internationalization services
+================================================
 
 .. module:: locale
    :synopsis: Internationalization services.
@@ -281,7 +281,8 @@ The :mod:`locale` module defines the following exception and functions:
 
    .. data:: ERA
 
-      Get a string that represents the era used in the current locale.
+      Get a string which describes how years are counted and displayed for
+      each era in a locale.
 
       Most locales do not define this value.  An example of a locale which does
       define this value is the Japanese one.  In Japan, the traditional
@@ -290,9 +291,10 @@ The :mod:`locale` module defines the following exception and functions:
 
       Normally it should not be necessary to use this value directly. Specifying
       the ``E`` modifier in their format strings causes the :func:`time.strftime`
-      function to use this information.  The format of the returned string is not
-      specified, and therefore you should not assume knowledge of it on different
-      systems.
+      function to use this information.
+      The format of the returned string is specified in *The Open Group Base
+      Specifications Issue 8*, paragraph `7.3.5.2 LC_TIME C-Language Access
+      <https://pubs.opengroup.org/onlinepubs/9799919799/basedefs/V1_chap07.html#tag_07_03_05_02>`_.
 
    .. data:: ERA_D_T_FMT
 
@@ -311,8 +313,18 @@ The :mod:`locale` module defines the following exception and functions:
 
    .. data:: ALT_DIGITS
 
-      Get a representation of up to 100 values used to represent the values
-      0 to 99.
+      Get a string consisting of up to 100 semicolon-separated symbols used
+      to represent the values 0 to 99 in a locale-specific way.
+      In most locales this is an empty string.
+
+   The function temporarily sets the ``LC_CTYPE`` locale to the locale
+   of the category that determines the requested value (``LC_TIME``,
+   ``LC_NUMERIC``, ``LC_MONETARY`` or ``LC_MESSAGES``) if locales are
+   different and the resulting string is non-ASCII.
+   This temporary change affects other threads.
+
+   .. versionchanged:: 3.14
+      The function now temporarily sets the ``LC_CTYPE`` locale in some cases.
 
 
 .. function:: getdefaultlocale([envvars])
@@ -424,7 +436,7 @@ The :mod:`locale` module defines the following exception and functions:
 .. function:: format_string(format, val, grouping=False, monetary=False)
 
    Formats a number *val* according to the current :const:`LC_NUMERIC` setting.
-   The format follows the conventions of the ``%`` operator.  For floating point
+   The format follows the conventions of the ``%`` operator.  For floating-point
    values, the decimal point is modified if appropriate.  If *grouping* is ``True``,
    also takes the grouping into account.
 
@@ -455,7 +467,7 @@ The :mod:`locale` module defines the following exception and functions:
 
 .. function:: str(float)
 
-   Formats a floating point number using the same format as the built-in function
+   Formats a floating-point number using the same format as the built-in function
    ``str(float)``, but takes the decimal point into account.
 
 

@@ -2,12 +2,11 @@
 # to ensure the Queue locks remain stable.
 import itertools
 import random
-import sys
 import threading
 import time
 import unittest
 import weakref
-from test.support import gc_collect
+from test.support import gc_collect, bigmemtest
 from test.support import import_helper
 from test.support import threading_helper
 
@@ -486,7 +485,7 @@ class BaseQueueTestMixin(BlockingTestMixin):
         else:
             thrds = (
                 # on shutdown(immediate=False)
-                # one of these threads shoud raise Shutdown
+                # one of these threads should raise Shutdown
                 (self._get, (q, go, results)),
                 (self._get, (q, go, results)),
                 (self._get, (q, go, results)),
@@ -635,6 +634,23 @@ class BaseQueueTestMixin(BlockingTestMixin):
             t.join()
 
         self.assertEqual(results, [True]*len(thrds))
+
+    def test_shutdown_pending_get(self):
+        def get():
+            try:
+                results.append(q.get())
+            except Exception as e:
+                results.append(e)
+
+        q = self.type2test()
+        results = []
+        get_thread = threading.Thread(target=get)
+        get_thread.start()
+        q.shutdown(immediate=False)
+        get_thread.join(timeout=10.0)
+        self.assertFalse(get_thread.is_alive())
+        self.assertEqual(len(results), 1)
+        self.assertIsInstance(results[0], self.queue.ShutDown)
 
 
 class QueueTest(BaseQueueTestMixin):
@@ -947,33 +963,33 @@ class BaseSimpleQueueTest:
         # One producer, one consumer => results appended in well-defined order
         self.assertEqual(results, inputs)
 
-    def test_many_threads(self):
+    @bigmemtest(size=50, memuse=100*2**20, dry_run=False)
+    def test_many_threads(self, size):
         # Test multiple concurrent put() and get()
-        N = 50
         q = self.q
         inputs = list(range(10000))
-        results = self.run_threads(N, q, inputs, self.feed, self.consume)
+        results = self.run_threads(size, q, inputs, self.feed, self.consume)
 
         # Multiple consumers without synchronization append the
         # results in random order
         self.assertEqual(sorted(results), inputs)
 
-    def test_many_threads_nonblock(self):
+    @bigmemtest(size=50, memuse=100*2**20, dry_run=False)
+    def test_many_threads_nonblock(self, size):
         # Test multiple concurrent put() and get(block=False)
-        N = 50
         q = self.q
         inputs = list(range(10000))
-        results = self.run_threads(N, q, inputs,
+        results = self.run_threads(size, q, inputs,
                                    self.feed, self.consume_nonblock)
 
         self.assertEqual(sorted(results), inputs)
 
-    def test_many_threads_timeout(self):
+    @bigmemtest(size=50, memuse=100*2**20, dry_run=False)
+    def test_many_threads_timeout(self, size):
         # Test multiple concurrent put() and get(timeout=...)
-        N = 50
         q = self.q
         inputs = list(range(1000))
-        results = self.run_threads(N, q, inputs,
+        results = self.run_threads(size, q, inputs,
                                    self.feed, self.consume_timeout)
 
         self.assertEqual(sorted(results), inputs)

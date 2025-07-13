@@ -1,5 +1,5 @@
-:mod:`email.parser`: Parsing email messages
--------------------------------------------
+:mod:`!email.parser`: Parsing email messages
+--------------------------------------------
 
 .. module:: email.parser
    :synopsis: Parse flat text email messages to produce a message object structure.
@@ -48,8 +48,8 @@ methods.
 FeedParser API
 ^^^^^^^^^^^^^^
 
-The :class:`BytesFeedParser`, imported from the :mod:`email.feedparser` module,
-provides an API that is conducive to incremental parsing of email messages,
+The :class:`BytesFeedParser`, imported from the :mod:`email.parser.FeedParser`
+module, provides an API that is conducive to incremental parsing of email messages,
 such as would be necessary when reading the text of an email message from a
 source that can block (such as a socket).  The :class:`BytesFeedParser` can of
 course be used to parse an email message fully contained in a :term:`bytes-like
@@ -116,7 +116,7 @@ Here is the API for the :class:`BytesFeedParser`:
    Works like :class:`BytesFeedParser` except that the input to the
    :meth:`~BytesFeedParser.feed` method must be a string.  This is of limited
    utility, since the only way for such a message to be valid is for it to
-   contain only ASCII text or, if :attr:`~email.policy.Policy.utf8` is
+   contain only ASCII text or, if :attr:`~email.policy.EmailPolicy.utf8` is
    ``True``, no binary attachments.
 
    .. versionchanged:: 3.3 Added the *policy* keyword.
@@ -155,11 +155,11 @@ message body, instead setting the payload to the raw body.
 
       Read all the data from the binary file-like object *fp*, parse the
       resulting bytes, and return the message object.  *fp* must support
-      both the :meth:`~io.IOBase.readline` and the :meth:`~io.IOBase.read`
+      both the :meth:`~io.IOBase.readline` and the :meth:`~io.TextIOBase.read`
       methods.
 
       The bytes contained in *fp* must be formatted as a block of :rfc:`5322`
-      (or, if :attr:`~email.policy.Policy.utf8` is ``True``, :rfc:`6532`)
+      (or, if :attr:`~email.policy.EmailPolicy.utf8` is ``True``, :rfc:`6532`)
       style headers and header continuation lines, optionally preceded by an
       envelope header.  The header block is terminated either by the end of the
       data or by a blank line.  Following the header block is the body of the

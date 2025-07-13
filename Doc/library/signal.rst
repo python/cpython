@@ -1,5 +1,5 @@
-:mod:`signal` --- Set handlers for asynchronous events
-======================================================
+:mod:`!signal` --- Set handlers for asynchronous events
+=======================================================
 
 .. module:: signal
    :synopsis: Set handlers for asynchronous events.
@@ -211,8 +211,8 @@ The variables defined in the :mod:`signal` module are:
 
 .. data:: SIGSTKFLT
 
-    Stack fault on coprocessor. The Linux kernel does not raise this signal: it
-    can only be raised in user space.
+   Stack fault on coprocessor. The Linux kernel does not raise this signal: it
+   can only be raised in user space.
 
    .. availability:: Linux.
 
@@ -411,7 +411,7 @@ The :mod:`signal` module defines the following functions:
 
    See the :manpage:`pidfd_send_signal(2)` man page for more information.
 
-   .. availability:: Linux >= 5.1
+   .. availability:: Linux >= 5.1, Android >= :func:`build-time <sys.getandroidapilevel>` API level 31
    .. versionadded:: 3.9
 
 
@@ -425,7 +425,7 @@ The :mod:`signal` module defines the following functions:
    signal to a particular Python thread would be to force a running system call
    to fail with :exc:`InterruptedError`.
 
-   Use :func:`threading.get_ident()` or the :attr:`~threading.Thread.ident`
+   Use :func:`threading.get_ident` or the :attr:`~threading.Thread.ident`
    attribute of :class:`threading.Thread` objects to get a suitable value
    for *thread_id*.
 
@@ -510,10 +510,12 @@ The :mod:`signal` module defines the following functions:
 
 .. function:: set_wakeup_fd(fd, *, warn_on_full_buffer=True)
 
-   Set the wakeup file descriptor to *fd*.  When a signal is received, the
-   signal number is written as a single byte into the fd.  This can be used by
-   a library to wakeup a poll or select call, allowing the signal to be fully
-   processed.
+   Set the wakeup file descriptor to *fd*.  When a signal your program has
+   registered a signal handler for is received, the signal number is written as
+   a single byte into the fd.  If you haven't registered a signal handler for
+   the signals you care about, then nothing will be written to the wakeup fd.
+   This can be used by a library to wakeup a poll or select call, allowing the
+   signal to be fully processed.
 
    The old wakeup fd is returned (or -1 if file descriptor wakeup was not
    enabled).  If *fd* is -1, file descriptor wakeup is disabled.
