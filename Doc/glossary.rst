@@ -1205,8 +1205,7 @@ Glossary
       In :term:`CPython`, reference counts are not considered to be stable
       or well-defined values; the number of references to an object, and how
       that number is affected by Python code, may be different between
-      versions. Consequently, don't rely on an object's reference count to be
-      a value other than 0 or 1.
+      versions. 
 
    regular package
       A traditional :term:`package`, such as a directory containing an
