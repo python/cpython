@@ -11,11 +11,13 @@ import binascii
 ### Codec APIs
 
 def hex_encode(input, errors='strict'):
-    assert errors == 'strict'
+    if errors != 'strict':
+        raise ValueError(f'Unsupported error handling mode: "{errors}" - must be "strict"')
     return (binascii.b2a_hex(input), len(input))
 
 def hex_decode(input, errors='strict'):
-    assert errors == 'strict'
+    if errors != 'strict':
+        raise ValueError(f'Unsupported error handling mode: "{errors}" - must be "strict"')
     return (binascii.a2b_hex(input), len(input))
 
 class Codec(codecs.Codec):

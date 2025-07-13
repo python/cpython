@@ -3128,6 +3128,18 @@ class TransformCodecTest(unittest.TestCase):
         # Missing "begin" line
         self.assertRaises(ValueError, codecs.decode, b"", "uu-codec")
 
+    def test_invalid_error_input(self):
+        # decoders/encoders require errors == 'strict'
+
+        for encoding in bytes_transform_encodings:
+            with self.subTest(encoding=encoding):
+                encoder = codecs.getencoder(encoding)
+                decoder = codecs.getdecoder(encoding)
+
+                self.assertRaises(ValueError, encoder, 'in', errors='notstrict')
+                self.assertRaises(ValueError, decoder, 'in', errors='notstrict')
+
+
 
 # The codec system tries to add notes to exceptions in order to ensure
 # the error mentions the operation being performed and the codec involved.
