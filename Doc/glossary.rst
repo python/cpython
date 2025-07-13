@@ -355,6 +355,12 @@ Glossary
       tasks (see :mod:`asyncio`) associate each task with a context which
       becomes the current context whenever the task starts or resumes execution.
 
+   cyclic isolate
+      A subgroup of one or more objects that reference each other in a reference
+      cycle, but are not referenced by objects outside the group.  The goal of
+      the :term:`cyclic garbage collector <garbage collection>` is to identify these groups and break the reference
+      cycles so that the memory can be reclaimed.
+
    decorator
       A function returning another function, usually applied as a function
       transformation using the ``@wrapper`` syntax.  Common examples for
@@ -1279,6 +1285,16 @@ Glossary
       and ending with double underscores.  Special methods are documented in
       :ref:`specialnames`.
 
+   standard library
+      The collection of :term:`packages <package>`, :term:`modules <module>`
+      and :term:`extension modules <extension module>` distributed as a part
+      of the official Python interpreter package.  The exact membership of the
+      collection may vary based on platform, available system libraries, or
+      other criteria.  Documentation can be found at :ref:`library-index`.
+
+      See also :data:`sys.stdlib_module_names` for a list of all possible
+      standard library module names.
+
    statement
       A statement is part of a suite (a "block" of code).  A statement is either
       an :term:`expression` or one of several constructs with a keyword, such
@@ -1288,6 +1304,9 @@ Glossary
       An external tool that reads Python code and analyzes it, looking for
       issues such as incorrect types. See also :term:`type hints <type hint>`
       and the :mod:`typing` module.
+
+   stdlib
+      An abbreviation of :term:`standard library`.
 
    strong reference
       In Python's C API, a strong reference is a reference to an object

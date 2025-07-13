@@ -6,7 +6,6 @@
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_sysmodule.h"     // _PySys_GetOptionalAttr()
 #include "pycore_traceback.h"     // _Py_DisplaySourceLine()
 #include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
 
@@ -678,7 +677,7 @@ show_warning(PyThreadState *tstate, PyObject *filename, int lineno,
         goto error;
     }
 
-    if (_PySys_GetOptionalAttr(&_Py_ID(stderr), &f_stderr) <= 0) {
+    if (PySys_GetOptionalAttr(&_Py_ID(stderr), &f_stderr) <= 0) {
         fprintf(stderr, "lost sys.stderr\n");
         goto error;
     }
@@ -1477,6 +1476,28 @@ PyErr_WarnExplicitObject(PyObject *category, PyObject *message,
         return -1;
     Py_DECREF(res);
     return 0;
+}
+
+/* Like PyErr_WarnExplicitObject, but automatically sets up context */
+int
+_PyErr_WarnExplicitObjectWithContext(PyObject *category, PyObject *message,
+                                     PyObject *filename, int lineno)
+{
+    PyObject *unused_filename, *module, *registry;
+    int unused_lineno;
+    int stack_level = 1;
+
+    if (!setup_context(stack_level, NULL, &unused_filename, &unused_lineno,
+                       &module, &registry)) {
+        return -1;
+    }
+
+    int rc = PyErr_WarnExplicitObject(category, message, filename, lineno,
+                                      module, registry);
+    Py_DECREF(unused_filename);
+    Py_DECREF(registry);
+    Py_DECREF(module);
+    return rc;
 }
 
 int

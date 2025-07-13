@@ -167,11 +167,12 @@ def make_build_python(context, working_dir):
 @subdir(HOST_BUILD_DIR, clean_ok=True)
 def make_emscripten_libffi(context, working_dir):
     shutil.rmtree(working_dir / "libffi-3.4.6", ignore_errors=True)
-    with tempfile.NamedTemporaryFile(suffix=".tar.gz") as tmp_file:
+    with tempfile.NamedTemporaryFile(suffix=".tar.gz", delete_on_close=False) as tmp_file:
         with urlopen(
             "https://github.com/libffi/libffi/releases/download/v3.4.6/libffi-3.4.6.tar.gz"
         ) as response:
             shutil.copyfileobj(response, tmp_file)
+        tmp_file.close()
         shutil.unpack_archive(tmp_file.name, working_dir)
     call(
         [EMSCRIPTEN_DIR / "make_libffi.sh"],
@@ -248,10 +249,10 @@ def configure_emscripten_python(context, working_dir):
 
             # Macs come with FreeBSD coreutils which doesn't have the -s option
             # so feature detect and work around it.
-            if which grealpath > /dev/null; then
+            if which grealpath > /dev/null 2>&1; then
                 # It has brew installed gnu core utils, use that
                 REALPATH="grealpath -s"
-            elif which realpath > /dev/null && realpath --version > /dev/null 2> /dev/null && realpath --version | grep GNU > /dev/null; then
+            elif which realpath > /dev/null 2>&1 && realpath --version > /dev/null 2>&1 && realpath --version | grep GNU > /dev/null 2>&1; then
                 # realpath points to GNU realpath so use it.
                 REALPATH="realpath -s"
             else
