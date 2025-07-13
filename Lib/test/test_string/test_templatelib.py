@@ -45,6 +45,19 @@ world"""
         self.assertEqual(len(t.interpolations), 0)
         self.assertEqual(fstring(t), 'Hello,\nworld')
 
+    def test_interpolation_creation(self):
+        i = Interpolation('Maria', 'name', 'a', 'fmt')
+        self.assertInterpolationEqual(i, ('Maria', 'name', 'a', 'fmt'))
+
+        i = Interpolation('Maria', 'name', 'a')
+        self.assertInterpolationEqual(i, ('Maria', 'name', 'a'))
+
+        i = Interpolation('Maria', 'name')
+        self.assertInterpolationEqual(i, ('Maria', 'name'))
+
+        i = Interpolation('Maria')
+        self.assertInterpolationEqual(i, ('Maria',))
+
     def test_creation_interleaving(self):
         # Should add strings on either side
         t = Template(Interpolation('Maria', 'name', None, ''))
@@ -147,6 +160,13 @@ class TemplateIterTests(unittest.TestCase):
         self.assertEqual(res[1].conversion, None)
         self.assertEqual(res[1].format_spec, '')
         self.assertEqual(res[2], ' yz')
+
+    def test_exhausted(self):
+        # See https://github.com/python/cpython/issues/134119.
+        template_iter = iter(t"{1}")
+        self.assertIsInstance(next(template_iter), Interpolation)
+        self.assertRaises(StopIteration, next, template_iter)
+        self.assertRaises(StopIteration, next, template_iter)
 
 
 if __name__ == '__main__':

@@ -4749,7 +4749,9 @@ class TestREPLSession(unittest.TestCase):
 @support.force_not_colorized_test_class
 @support.requires_subprocess()
 class PdbTestReadline(unittest.TestCase):
-    def setUpClass():
+
+    @classmethod
+    def setUpClass(cls):
         # Ensure that the readline module is loaded
         # If this fails, the test is skipped because SkipTest will be raised
         readline = import_module('readline')
@@ -4848,6 +4850,8 @@ class PdbTestReadline(unittest.TestCase):
 
         self.assertIn(b'I love Python', output)
 
+    @unittest.skipIf(sys.platform.startswith('freebsd'),
+                     '\\x08 is not interpreted as backspace on FreeBSD')
     def test_multiline_auto_indent(self):
         script = textwrap.dedent("""
             import pdb; pdb.Pdb().set_trace()
@@ -4886,6 +4890,8 @@ class PdbTestReadline(unittest.TestCase):
 
         self.assertIn(b'42', output)
 
+    @unittest.skipIf(sys.platform.startswith('freebsd'),
+                     '\\x08 is not interpreted as backspace on FreeBSD')
     def test_multiline_indent_completion(self):
         script = textwrap.dedent("""
             import pdb; pdb.Pdb().set_trace()

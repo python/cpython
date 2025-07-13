@@ -31,6 +31,7 @@ import weakref
 import platform
 import sysconfig
 import functools
+from contextlib import nullcontext
 try:
     import ctypes
 except ImportError:
@@ -539,9 +540,9 @@ class BasicSocketTests(unittest.TestCase):
             openssl_ver = f"OpenSSL {major:d}.{minor:d}.{patch:d}"
         else:
             openssl_ver = f"OpenSSL {major:d}.{minor:d}.{fix:d}"
-        self.assertTrue(
-            s.startswith((openssl_ver, libressl_ver, "AWS-LC")),
-            (s, t, hex(n))
+        self.assertStartsWith(
+            s, (openssl_ver, libressl_ver, "AWS-LC"),
+            (t, hex(n))
         )
 
     @support.cpython_only
@@ -1668,7 +1669,7 @@ class SSLErrorTests(unittest.TestCase):
         regex = "(NO_START_LINE|UNSUPPORTED_PUBLIC_KEY_TYPE)"
         self.assertRegex(cm.exception.reason, regex)
         s = str(cm.exception)
-        self.assertTrue("NO_START_LINE" in s, s)
+        self.assertIn("NO_START_LINE", s)
 
     def test_subclass(self):
         # Check that the appropriate SSLError subclass is raised
@@ -1683,7 +1684,7 @@ class SSLErrorTests(unittest.TestCase):
                 with self.assertRaises(ssl.SSLWantReadError) as cm:
                     c.do_handshake()
                 s = str(cm.exception)
-                self.assertTrue(s.startswith("The operation did not complete (read)"), s)
+                self.assertStartsWith(s, "The operation did not complete (read)")
                 # For compatibility
                 self.assertEqual(cm.exception.errno, ssl.SSL_ERROR_WANT_READ)
 
@@ -2843,6 +2844,7 @@ class ThreadedTests(unittest.TestCase):
         # See GH-124984: OpenSSL is not thread safe.
         threads = []
 
+        warnings_filters = sys.flags.context_aware_warnings
         global USE_SAME_TEST_CONTEXT
         USE_SAME_TEST_CONTEXT = True
         try:
@@ -2851,7 +2853,10 @@ class ThreadedTests(unittest.TestCase):
                 self.test_alpn_protocols,
                 self.test_getpeercert,
                 self.test_crl_check,
-                self.test_check_hostname_idn,
+                functools.partial(
+                    self.test_check_hostname_idn,
+                    warnings_filters=warnings_filters,
+                ),
                 self.test_wrong_cert_tls12,
                 self.test_wrong_cert_tls13,
             ):
@@ -3097,7 +3102,7 @@ class ThreadedTests(unittest.TestCase):
                 cipher = s.cipher()[0].split('-')
                 self.assertTrue(cipher[:2], ('ECDHE', 'ECDSA'))
 
-    def test_check_hostname_idn(self):
+    def test_check_hostname_idn(self, warnings_filters=True):
         if support.verbose:
             sys.stdout.write("\n")
 
@@ -3152,16 +3157,30 @@ class ThreadedTests(unittest.TestCase):
                                      server_hostname="python.example.org") as s:
                 with self.assertRaises(ssl.CertificateError):
                     s.connect((HOST, server.port))
-        with ThreadedEchoServer(context=server_context, chatty=True) as server:
-            with warnings_helper.check_no_resource_warning(self):
-                with self.assertRaises(UnicodeError):
-                    context.wrap_socket(socket.socket(),
-                            server_hostname='.pythontest.net')
-        with ThreadedEchoServer(context=server_context, chatty=True) as server:
-            with warnings_helper.check_no_resource_warning(self):
-                with self.assertRaises(UnicodeDecodeError):
-                    context.wrap_socket(socket.socket(),
-                            server_hostname=b'k\xf6nig.idn.pythontest.net')
+        with (
+            ThreadedEchoServer(context=server_context, chatty=True) as server,
+            (
+                warnings_helper.check_no_resource_warning(self)
+                if warnings_filters
+                else nullcontext()
+            ),
+            self.assertRaises(UnicodeError),
+        ):
+            context.wrap_socket(socket.socket(), server_hostname='.pythontest.net')
+
+        with (
+            ThreadedEchoServer(context=server_context, chatty=True) as server,
+            (
+                warnings_helper.check_no_resource_warning(self)
+                if warnings_filters
+                else nullcontext()
+            ),
+            self.assertRaises(UnicodeDecodeError),
+        ):
+            context.wrap_socket(
+                socket.socket(),
+                server_hostname=b'k\xf6nig.idn.pythontest.net',
+            )
 
     def test_wrong_cert_tls12(self):
         """Connecting when the server rejects the client's certificate
@@ -4297,19 +4316,30 @@ class ThreadedTests(unittest.TestCase):
             self.assertRaises(ValueError, s.write, b'hello')
 
     def test_sendfile(self):
+        """Try to send a file using kTLS if possible."""
         TEST_DATA = b"x" * 512
         with open(os_helper.TESTFN, 'wb') as f:
             f.write(TEST_DATA)
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
         client_context, server_context, hostname = testing_context()
+        client_context.options |= getattr(ssl, 'OP_ENABLE_KTLS', 0)
         server = ThreadedEchoServer(context=server_context, chatty=False)
-        with server:
-            with client_context.wrap_socket(socket.socket(),
-                                            server_hostname=hostname) as s:
-                s.connect((HOST, server.port))
+        # kTLS seems to work only with a connection created before
+        # wrapping `sock` by the SSL context in contrast to calling
+        # `sock.connect()` after the wrapping.
+        with server, socket.create_connection((HOST, server.port)) as sock:
+            with client_context.wrap_socket(
+                sock, server_hostname=hostname
+            ) as ssock:
+                if support.verbose:
+                    ktls_used = ssock._sslobj.uses_ktls_for_send()
+                    print(
+                        'kTLS is',
+                        'available' if ktls_used else 'unavailable',
+                    )
                 with open(os_helper.TESTFN, 'rb') as file:
-                    s.sendfile(file)
-                    self.assertEqual(s.recv(1024), TEST_DATA)
+                    ssock.sendfile(file)
+                self.assertEqual(ssock.recv(1024), TEST_DATA)
 
     def test_session(self):
         client_context, server_context, hostname = testing_context()
@@ -4488,6 +4518,7 @@ class ThreadedTests(unittest.TestCase):
 
     @requires_tls_version('TLSv1_3')
     @unittest.skipUnless(ssl.HAS_PSK, 'TLS-PSK disabled on this OpenSSL build')
+    @unittest.skipUnless(ssl.HAS_PSK_TLS13, 'TLS 1.3 PSK disabled on this OpenSSL build')
     def test_psk_tls1_3(self):
         psk = bytes.fromhex('deadbeef')
         identity_hint = 'identity-hint'

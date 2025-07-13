@@ -220,6 +220,7 @@ try:
     import _testinternalcapi
 except ModuleNotFoundError:
     _testinternalcapi = None
+import test._code_definitions as defs
 
 COPY_FREE_VARS = opmap['COPY_FREE_VARS']
 
@@ -671,8 +672,21 @@ class CodeTest(unittest.TestCase):
         VARARGS = CO_FAST_LOCAL | CO_FAST_ARG_VAR | CO_FAST_ARG_POS
         VARKWARGS = CO_FAST_LOCAL | CO_FAST_ARG_VAR | CO_FAST_ARG_KW
 
-        import test._code_definitions as defs
         funcs = {
+            defs.simple_script: {},
+            defs.complex_script: {
+                'obj': CO_FAST_LOCAL,
+                'pickle': CO_FAST_LOCAL,
+                'spam_minimal': CO_FAST_LOCAL,
+                'data': CO_FAST_LOCAL,
+                'res': CO_FAST_LOCAL,
+            },
+            defs.script_with_globals: {
+                'obj1': CO_FAST_LOCAL,
+                'obj2': CO_FAST_LOCAL,
+            },
+            defs.script_with_explicit_empty_return: {},
+            defs.script_with_return: {},
             defs.spam_minimal: {},
             defs.spam_with_builtins: {
                 'x': CO_FAST_LOCAL,
@@ -687,6 +701,27 @@ class CodeTest(unittest.TestCase):
                 'checks': CO_FAST_LOCAL,
                 'res': CO_FAST_LOCAL,
             },
+            defs.spam_with_global_and_attr_same_name: {},
+            defs.spam_full_args: {
+                'a': POSONLY,
+                'b': POSONLY,
+                'c': POSORKW,
+                'd': POSORKW,
+                'e': KWONLY,
+                'f': KWONLY,
+                'args': VARARGS,
+                'kwargs': VARKWARGS,
+            },
+            defs.spam_full_args_with_defaults: {
+                'a': POSONLY,
+                'b': POSONLY,
+                'c': POSORKW,
+                'd': POSORKW,
+                'e': KWONLY,
+                'f': KWONLY,
+                'args': VARARGS,
+                'kwargs': VARKWARGS,
+            },
             defs.spam_args_attrs_and_builtins: {
                 'a': POSONLY,
                 'b': POSONLY,
@@ -700,6 +735,7 @@ class CodeTest(unittest.TestCase):
             defs.spam_returns_arg: {
                 'x': POSORKW,
             },
+            defs.spam_raises: {},
             defs.spam_with_inner_not_closure: {
                 'eggs': CO_FAST_LOCAL,
             },
@@ -897,8 +933,20 @@ class CodeTest(unittest.TestCase):
                 },
             }
 
-        import test._code_definitions as defs
         funcs = {
+            defs.simple_script: new_var_counts(),
+            defs.complex_script: new_var_counts(
+                purelocals=5,
+                globalvars=1,
+                attrs=2,
+            ),
+            defs.script_with_globals: new_var_counts(
+                purelocals=2,
+                globalvars=1,
+            ),
+            defs.script_with_explicit_empty_return: new_var_counts(),
+            defs.script_with_return: new_var_counts(),
+            defs.spam_minimal: new_var_counts(),
             defs.spam_minimal: new_var_counts(),
             defs.spam_with_builtins: new_var_counts(
                 purelocals=4,
@@ -907,6 +955,24 @@ class CodeTest(unittest.TestCase):
             defs.spam_with_globals_and_builtins: new_var_counts(
                 purelocals=5,
                 globalvars=6,
+            ),
+            defs.spam_with_global_and_attr_same_name: new_var_counts(
+                globalvars=2,
+                attrs=1,
+            ),
+            defs.spam_full_args: new_var_counts(
+                posonly=2,
+                posorkw=2,
+                kwonly=2,
+                varargs=1,
+                varkwargs=1,
+            ),
+            defs.spam_full_args_with_defaults: new_var_counts(
+                posonly=2,
+                posorkw=2,
+                kwonly=2,
+                varargs=1,
+                varkwargs=1,
             ),
             defs.spam_args_attrs_and_builtins: new_var_counts(
                 posonly=2,
@@ -918,6 +984,9 @@ class CodeTest(unittest.TestCase):
             ),
             defs.spam_returns_arg: new_var_counts(
                 posorkw=1,
+            ),
+            defs.spam_raises: new_var_counts(
+                globalvars=1,
             ),
             defs.spam_with_inner_not_closure: new_var_counts(
                 purelocals=1,
@@ -1025,42 +1094,35 @@ class CodeTest(unittest.TestCase):
                 counts = _testinternalcapi.get_code_var_counts(func.__code__)
                 self.assertEqual(counts, expected)
 
-        def func_with_globals_and_builtins():
-            mod1 = _testinternalcapi
-            mod2 = dis
-            mods = (mod1, mod2)
-            checks = tuple(callable(m) for m in mods)
-            return callable(mod2), tuple(mods), list(mods), checks
-
-        func = func_with_globals_and_builtins
+        func = defs.spam_with_globals_and_builtins
         with self.subTest(f'{func} code'):
             expected = new_var_counts(
-                purelocals=4,
-                globalvars=5,
+                purelocals=5,
+                globalvars=6,
             )
             counts = _testinternalcapi.get_code_var_counts(func.__code__)
             self.assertEqual(counts, expected)
 
         with self.subTest(f'{func} with own globals and builtins'):
             expected = new_var_counts(
-                purelocals=4,
-                globalvars=(2, 3),
+                purelocals=5,
+                globalvars=(2, 4),
             )
             counts = _testinternalcapi.get_code_var_counts(func)
             self.assertEqual(counts, expected)
 
         with self.subTest(f'{func} without globals'):
             expected = new_var_counts(
-                purelocals=4,
-                globalvars=(0, 3, 2),
+                purelocals=5,
+                globalvars=(0, 4, 2),
             )
             counts = _testinternalcapi.get_code_var_counts(func, globalsns={})
             self.assertEqual(counts, expected)
 
         with self.subTest(f'{func} without both'):
             expected = new_var_counts(
-                purelocals=4,
-                globalvars=5,
+                purelocals=5,
+                globalvars=6,
             )
             counts = _testinternalcapi.get_code_var_counts(func, globalsns={},
                   builtinsns={})
@@ -1068,11 +1130,39 @@ class CodeTest(unittest.TestCase):
 
         with self.subTest(f'{func} without builtins'):
             expected = new_var_counts(
-                purelocals=4,
-                globalvars=(2, 0, 3),
+                purelocals=5,
+                globalvars=(2, 0, 4),
             )
             counts = _testinternalcapi.get_code_var_counts(func, builtinsns={})
             self.assertEqual(counts, expected)
+
+    @unittest.skipIf(_testinternalcapi is None, "missing _testinternalcapi")
+    def test_stateless(self):
+        self.maxDiff = None
+
+        STATELESS_FUNCTIONS = [
+            *defs.STATELESS_FUNCTIONS,
+            # stateless with defaults
+            defs.spam_full_args_with_defaults,
+        ]
+
+        for func in defs.STATELESS_CODE:
+            with self.subTest((func, '(code)')):
+                _testinternalcapi.verify_stateless_code(func.__code__)
+        for func in STATELESS_FUNCTIONS:
+            with self.subTest((func, '(func)')):
+                _testinternalcapi.verify_stateless_code(func)
+
+        for func in defs.FUNCTIONS:
+            if func not in defs.STATELESS_CODE:
+                with self.subTest((func, '(code)')):
+                    with self.assertRaises(Exception):
+                        _testinternalcapi.verify_stateless_code(func.__code__)
+
+            if func not in STATELESS_FUNCTIONS:
+                with self.subTest((func, '(func)')):
+                    with self.assertRaises(Exception):
+                        _testinternalcapi.verify_stateless_code(func)
 
 
 def isinterned(s):

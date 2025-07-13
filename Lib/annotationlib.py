@@ -27,6 +27,9 @@ class Format(enum.IntEnum):
 
 
 _sentinel = object()
+# Following `NAME_ERROR_MSG` in `ceval_macros.h`:
+_NAME_ERROR_MSG = "name '{name:.200}' is not defined"
+
 
 # Slots shared by ForwardRef and _Stringifier. The __forward__ names must be
 # preserved for compatibility with the old typing.ForwardRef class. The remaining
@@ -184,7 +187,7 @@ class ForwardRef:
             elif is_forwardref_format:
                 return self
             else:
-                raise NameError(arg)
+                raise NameError(_NAME_ERROR_MSG.format(name=arg), name=arg)
         else:
             code = self.__forward_code__
             try:
@@ -305,6 +308,9 @@ class ForwardRef:
         return f"ForwardRef({self.__forward_arg__!r}{''.join(extra)})"
 
 
+_Template = type(t"")
+
+
 class _Stringifier:
     # Must match the slots on ForwardRef, so we can turn an instance of one into an
     # instance of the other in place.
@@ -341,6 +347,8 @@ class _Stringifier:
             if isinstance(other.__ast_node__, str):
                 return ast.Name(id=other.__ast_node__), other.__extra_names__
             return other.__ast_node__, other.__extra_names__
+        elif type(other) is _Template:
+            return _template_to_ast(other), None
         elif (
             # In STRING format we don't bother with the create_unique_name() dance;
             # it's better to emit the repr() of the object instead of an opaque name.
@@ -558,6 +566,32 @@ class _Stringifier:
     __neg__ = _make_unary_op(ast.USub())
 
     del _make_unary_op
+
+
+def _template_to_ast(template):
+    values = []
+    for part in template:
+        match part:
+            case str():
+                values.append(ast.Constant(value=part))
+            # Interpolation, but we don't want to import the string module
+            case _:
+                interp = ast.Interpolation(
+                    str=part.expression,
+                    value=ast.parse(part.expression),
+                    conversion=(
+                        ord(part.conversion)
+                        if part.conversion is not None
+                        else -1
+                    ),
+                    format_spec=(
+                        ast.Constant(value=part.format_spec)
+                        if part.format_spec != ""
+                        else None
+                    ),
+                )
+                values.append(interp)
+    return ast.TemplateStr(values=values)
 
 
 class _StringifierDict(dict):
@@ -784,6 +818,8 @@ def _stringify_single(anno):
     # We have to handle str specially to support PEP 563 stringified annotations.
     elif isinstance(anno, str):
         return anno
+    elif isinstance(anno, _Template):
+        return ast.unparse(_template_to_ast(anno))
     else:
         return repr(anno)
 
@@ -906,48 +942,49 @@ def get_annotations(
     if not eval_str:
         return dict(ann)
 
-    if isinstance(obj, type):
-        # class
-        obj_globals = None
-        module_name = getattr(obj, "__module__", None)
-        if module_name:
-            module = sys.modules.get(module_name, None)
-            if module:
-                obj_globals = getattr(module, "__dict__", None)
-        obj_locals = dict(vars(obj))
-        unwrap = obj
-    elif isinstance(obj, types.ModuleType):
-        # module
-        obj_globals = getattr(obj, "__dict__")
-        obj_locals = None
-        unwrap = None
-    elif callable(obj):
-        # this includes types.Function, types.BuiltinFunctionType,
-        # types.BuiltinMethodType, functools.partial, functools.singledispatch,
-        # "class funclike" from Lib/test/test_inspect... on and on it goes.
-        obj_globals = getattr(obj, "__globals__", None)
-        obj_locals = None
-        unwrap = obj
-    else:
-        obj_globals = obj_locals = unwrap = None
+    if globals is None or locals is None:
+        if isinstance(obj, type):
+            # class
+            obj_globals = None
+            module_name = getattr(obj, "__module__", None)
+            if module_name:
+                module = sys.modules.get(module_name, None)
+                if module:
+                    obj_globals = getattr(module, "__dict__", None)
+            obj_locals = dict(vars(obj))
+            unwrap = obj
+        elif isinstance(obj, types.ModuleType):
+            # module
+            obj_globals = getattr(obj, "__dict__")
+            obj_locals = None
+            unwrap = None
+        elif callable(obj):
+            # this includes types.Function, types.BuiltinFunctionType,
+            # types.BuiltinMethodType, functools.partial, functools.singledispatch,
+            # "class funclike" from Lib/test/test_inspect... on and on it goes.
+            obj_globals = getattr(obj, "__globals__", None)
+            obj_locals = None
+            unwrap = obj
+        else:
+            obj_globals = obj_locals = unwrap = None
 
-    if unwrap is not None:
-        while True:
-            if hasattr(unwrap, "__wrapped__"):
-                unwrap = unwrap.__wrapped__
-                continue
-            if functools := sys.modules.get("functools"):
-                if isinstance(unwrap, functools.partial):
-                    unwrap = unwrap.func
+        if unwrap is not None:
+            while True:
+                if hasattr(unwrap, "__wrapped__"):
+                    unwrap = unwrap.__wrapped__
                     continue
-            break
-        if hasattr(unwrap, "__globals__"):
-            obj_globals = unwrap.__globals__
+                if functools := sys.modules.get("functools"):
+                    if isinstance(unwrap, functools.partial):
+                        unwrap = unwrap.func
+                        continue
+                break
+            if hasattr(unwrap, "__globals__"):
+                obj_globals = unwrap.__globals__
 
-    if globals is None:
-        globals = obj_globals
-    if locals is None:
-        locals = obj_locals
+        if globals is None:
+            globals = obj_globals
+        if locals is None:
+            locals = obj_locals
 
     # "Inject" type parameters into the local namespace
     # (unless they are shadowed by assignments *in* the local namespace),
@@ -976,6 +1013,9 @@ def type_repr(value):
         if value.__module__ == "builtins":
             return value.__qualname__
         return f"{value.__module__}.{value.__qualname__}"
+    elif isinstance(value, _Template):
+        tree = _template_to_ast(value)
+        return ast.unparse(tree)
     if value is ...:
         return "..."
     return repr(value)
@@ -1006,14 +1046,27 @@ def _get_and_call_annotate(obj, format):
     return None
 
 
+_BASE_GET_ANNOTATIONS = type.__dict__["__annotations__"].__get__
+
+
 def _get_dunder_annotations(obj):
     """Return the annotations for an object, checking that it is a dictionary.
 
     Does not return a fresh dictionary.
     """
-    ann = getattr(obj, "__annotations__", None)
-    if ann is None:
-        return None
+    # This special case is needed to support types defined under
+    # from __future__ import annotations, where accessing the __annotations__
+    # attribute directly might return annotations for the wrong class.
+    if isinstance(obj, type):
+        try:
+            ann = _BASE_GET_ANNOTATIONS(obj)
+        except AttributeError:
+            # For static types, the descriptor raises AttributeError.
+            return None
+    else:
+        ann = getattr(obj, "__annotations__", None)
+        if ann is None:
+            return None
 
     if not isinstance(ann, dict):
         raise ValueError(f"{obj!r}.__annotations__ is neither a dict nor None")

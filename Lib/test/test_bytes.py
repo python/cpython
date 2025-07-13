@@ -1899,6 +1899,8 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         self.assertEqual(b3, b'xcxcxc')
 
     def test_mutating_index(self):
+        # bytearray slice assignment can call into python code
+        # that reallocates the internal buffer
         # See gh-91153
 
         class Boom:
@@ -1915,6 +1917,39 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
             b = bytearray(b'Now you see me...')
             with self.assertRaises(IndexError):
                 self._testlimitedcapi.sequence_setitem(b, 0, Boom())
+
+    def test_mutating_index_inbounds(self):
+        # gh-91153 continued
+        # Ensure buffer is not broken even if length is correct
+
+        class MutatesOnIndex:
+            def __init__(self):
+                self.ba = bytearray(0x180)
+
+            def __index__(self):
+                self.ba.clear()
+                self.new_ba = bytearray(0x180)  # to catch out-of-bounds writes
+                self.ba.extend([0] * 0x180)     # to check bounds checks
+                return 0
+
+        with self.subTest("skip_bounds_safety"):
+            instance = MutatesOnIndex()
+            instance.ba[instance] = ord("?")
+            self.assertEqual(instance.ba[0], ord("?"), "Assigned bytearray not altered")
+            self.assertEqual(instance.new_ba, bytearray(0x180), "Wrong object altered")
+
+        with self.subTest("skip_bounds_safety_capi"):
+            instance = MutatesOnIndex()
+            instance.ba[instance] = ord("?")
+            self._testlimitedcapi.sequence_setitem(instance.ba, instance, ord("?"))
+            self.assertEqual(instance.ba[0], ord("?"), "Assigned bytearray not altered")
+            self.assertEqual(instance.new_ba, bytearray(0x180), "Wrong object altered")
+
+        with self.subTest("skip_bounds_safety_slice"):
+            instance = MutatesOnIndex()
+            instance.ba[instance:1] = [ord("?")]
+            self.assertEqual(instance.ba[0], ord("?"), "Assigned bytearray not altered")
+            self.assertEqual(instance.new_ba, bytearray(0x180), "Wrong object altered")
 
 
 class AssortedBytesTest(unittest.TestCase):
@@ -1974,9 +2009,9 @@ class AssortedBytesTest(unittest.TestCase):
     @test.support.requires_docstrings
     def test_doc(self):
         self.assertIsNotNone(bytearray.__doc__)
-        self.assertTrue(bytearray.__doc__.startswith("bytearray("), bytearray.__doc__)
+        self.assertStartsWith(bytearray.__doc__, "bytearray(")
         self.assertIsNotNone(bytes.__doc__)
-        self.assertTrue(bytes.__doc__.startswith("bytes("), bytes.__doc__)
+        self.assertStartsWith(bytes.__doc__, "bytes(")
 
     def test_from_bytearray(self):
         sample = bytes(b"Hello world\n\x80\x81\xfe\xff")
@@ -2107,7 +2142,7 @@ class BytesAsStringTest(FixedStringTest, unittest.TestCase):
 class SubclassTest:
 
     def test_basic(self):
-        self.assertTrue(issubclass(self.type2test, self.basetype))
+        self.assertIsSubclass(self.type2test, self.basetype)
         self.assertIsInstance(self.type2test(), self.basetype)
 
         a, b = b"abcd", b"efgh"
@@ -2155,7 +2190,7 @@ class SubclassTest:
             self.assertEqual(a.z, b.z)
             self.assertEqual(type(a), type(b))
             self.assertEqual(type(a.z), type(b.z))
-            self.assertFalse(hasattr(b, 'y'))
+            self.assertNotHasAttr(b, 'y')
 
     def test_copy(self):
         a = self.type2test(b"abcd")
@@ -2169,7 +2204,7 @@ class SubclassTest:
             self.assertEqual(a.z, b.z)
             self.assertEqual(type(a), type(b))
             self.assertEqual(type(a.z), type(b.z))
-            self.assertFalse(hasattr(b, 'y'))
+            self.assertNotHasAttr(b, 'y')
 
     def test_fromhex(self):
         b = self.type2test.fromhex('1a2B30')

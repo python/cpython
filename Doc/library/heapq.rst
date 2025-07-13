@@ -314,15 +314,11 @@ that ``a[0]`` is always its smallest element. Max-heaps satisfy the reverse inva
 The strange min-heap invariant is meant to be an efficient memory representation
 for a tournament.  The numbers below are *k*, not ``a[k]``::
 
-                                  0
 
-                 1                                 2
-
-         3               4                5               6
-
-     7       8       9       10      11      12      13      14
-
-   15 16   17 18   19 20   21 22   23 24   25 26   27 28   29 30
+.. figure:: heapq-binary-tree.svg
+   :class: invert-in-dark-mode
+   :align: center
+   :alt: Example (min-heap) binary tree.
 
 In the tree above, each cell *k* is topping ``2*k+1`` and ``2*k+2``. In a usual
 binary tournament we see in sports, each cell is the winner over the two cells
