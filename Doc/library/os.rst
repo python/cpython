@@ -112,7 +112,7 @@ Python UTF-8 Mode
 
    Python UTF-8 mode is now enabled by default (:pep:`686`).
    It may be disabled with by setting :envvar:`PYTHONUTF8=0 <PYTHONUTF8>` as
-   an environment variable or by using the :option:`-X utf8=0 <-X>` flag.
+   an environment variable or by using the :option:`-X utf8=0 <-X>` command line option.
 
 The Python UTF-8 Mode ignores the :term:`locale encoding` and forces the usage
 of the UTF-8 encoding:
