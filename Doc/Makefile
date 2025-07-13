@@ -7,8 +7,8 @@
 PYTHON       = python3
 VENVDIR      = ./venv
 UV           = uv
-SPHINXBUILD  = env PATH=$(VENVDIR)/bin:$$PATH sphinx-build
-BLURB        = env PATH=$(VENVDIR)/bin:$$PATH blurb
+SPHINXBUILD  = PATH=$(VENVDIR)/bin:$$PATH sphinx-build
+BLURB        = PATH=$(VENVDIR)/bin:$$PATH blurb
 JOBS         = auto
 PAPER        =
 SOURCES      =
@@ -58,7 +58,7 @@ build:
 	@if [ -f  ../Misc/NEWS ] ; then \
 		echo "Using existing Misc/NEWS file"; \
 		cp ../Misc/NEWS build/NEWS; \
-	elif which $(BLURB); which $(SPHINXBUILD); $(BLURB) help >/dev/null 2>&1 && $(SPHINXBUILD) --version >/dev/null 2>&1; then \
+	elif $(BLURB) help >/dev/null 2>&1 && $(SPHINXBUILD) --version >/dev/null 2>&1; then \
 		if [ -d ../Misc/NEWS.d ]; then \
 			echo "Building NEWS from Misc/NEWS.d with blurb"; \
 			$(BLURB) merge -f build/NEWS; \
