@@ -895,28 +895,6 @@ static inline size_t mi_clz(size_t x) {
 #endif
 }
 
-
-static inline size_t mi_clz(uintptr_t x) {
-  if (x==0) return MI_INTPTR_BITS;
-#if (MI_INTPTR_BITS <= 32)
-  return mi_clz32((uint32_t)x);
-#else
-  size_t count = mi_clz32((uint32_t)(x >> 32));
-  if (count < 32) return count;
-  return (32 + mi_clz32((uint32_t)x));
-#endif
-}
-static inline size_t mi_ctz(uintptr_t x) {
-  if (x==0) return MI_INTPTR_BITS;
-#if (MI_INTPTR_BITS <= 32)
-  return mi_ctz32((uint32_t)x);
-#else
-  size_t count = mi_ctz32((uint32_t)x);
-  if (count < 32) return count;
-  return (32 + mi_ctz32((uint32_t)(x>>32)));
-#endif
-}
-
 #endif
 
 // "bit scan reverse": Return index of the highest bit (or MI_INTPTR_BITS if `x` is zero)
