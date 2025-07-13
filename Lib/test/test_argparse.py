@@ -1829,7 +1829,7 @@ BIN_STDERR_SENTINEL = object()
 class StdStreamComparer:
     def __init__(self, attr):
         # We try to use the actual stdXXX.buffer attribute as our
-        # marker, but but under some test environments,
+        # marker, but under some test environments,
         # sys.stdout/err are replaced by io.StringIO which won't have .buffer,
         # so we use a sentinel simply to show that the tests do the right thing
         # for any buffer supporting object
