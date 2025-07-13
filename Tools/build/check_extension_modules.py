@@ -471,7 +471,7 @@ def main():
     if args.debug:
         args.verbose = True
     logging.basicConfig(
-        level=logging.DEBUG if args.debug else logging.INFO,
+        level=logging.DEBUG,
         format="[%(levelname)s] %(message)s",
     )
 
