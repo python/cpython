@@ -3817,7 +3817,7 @@ def bœr():
         self.assertIn('(Pdb) 42', lines)
 
     def test_issue135700(self):
-        """https://github.com/python/cpython/issues/135700"""
+        # See gh-135700
         module_code = """\
             22
 
