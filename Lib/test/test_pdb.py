@@ -3818,21 +3818,21 @@ def bœr():
 
     def test_issue135700(self):
         # See gh-135700
-        module_code = """\
+        module_code = textwrap.dedent("""\
             22
 
             class ClassVar:
                 pass
             __dataclass_fields__: ClassVar
-        """
+        """)
         with open("testmod.py", "w") as f:
             f.write(module_code)
         self.addCleanup(os_helper.unlink, "testmod.py")
 
-        script = """
+        script = textwrap.dedent("""
             import testmod
             print(testmod.__annotations__)
-        """
+        """)
         commands = """
             b testmod.py:1
             c

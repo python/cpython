@@ -788,7 +788,7 @@ codegen_deferred_annotations_body(compiler *c, location loc,
         ADDOP_I(c, LOC(st), COPY, 2);
         ADDOP_LOAD_CONST_NEW(c, LOC(st), mangled);
         // stack now contains <annos> <name> <annos> <value>
-        ADDOP(c, loc, STORE_SUBSCR);
+        ADDOP(c, LOC(st), STORE_SUBSCR);
         // stack now contains <annos>
 
         USE_LABEL(c, not_set);
@@ -823,7 +823,14 @@ codegen_process_deferred_annotations(compiler *c, location loc)
     PySTEntryObject *ste = SYMTABLE_ENTRY(c);
     assert(ste->ste_annotation_block != NULL);
     void *key = (void *)((uintptr_t)ste->ste_id + 1);
-    if (codegen_setup_annotations_scope(c, loc, key,
+
+    // Get the first annotation location
+    PyObject* ptr = PyList_GET_ITEM(deferred_anno, 0);
+    stmt_ty st = (stmt_ty)PyLong_AsVoidPtr(ptr);
+    if (st == NULL) {
+        goto error;
+    }
+    if (codegen_setup_annotations_scope(c, LOC(st), key,
                                         ste->ste_annotation_block->ste_name) < 0) {
         goto error;
     }
@@ -836,12 +843,11 @@ codegen_process_deferred_annotations(compiler *c, location loc)
     Py_DECREF(deferred_anno);
     Py_DECREF(conditional_annotation_indices);
 
-    RETURN_IF_ERROR(codegen_leave_annotations_scope(c, loc));
+    RETURN_IF_ERROR(codegen_leave_annotations_scope(c, LOC(st)));
     RETURN_IF_ERROR(codegen_nameop(
-        c, loc,
+        c, LOC(st),
         ste->ste_type == ClassBlock ? &_Py_ID(__annotate_func__) : &_Py_ID(__annotate__),
         Store));
-
     if (need_separate_block) {
         RETURN_IF_ERROR(_PyCompile_EndAnnotationSetup(c));
     }
@@ -868,8 +874,8 @@ int
 _PyCodegen_Module(compiler *c, location loc, asdl_stmt_seq *stmts, bool is_interactive)
 {
     if (SYMTABLE_ENTRY(c)->ste_has_conditional_annotations) {
-        ADDOP_I(c, loc, BUILD_SET, 0);
-        ADDOP_N(c, loc, STORE_NAME, &_Py_ID(__conditional_annotations__), names);
+        ADDOP_I(c, NO_LOCATION, BUILD_SET, 0);
+        ADDOP_N(c, NO_LOCATION, STORE_NAME, &_Py_ID(__conditional_annotations__), names);
     }
     return codegen_body(c, loc, stmts, is_interactive);
 }
@@ -1562,8 +1568,8 @@ codegen_class_body(compiler *c, stmt_ty s, int firstlineno)
         ADDOP_N_IN_SCOPE(c, loc, STORE_DEREF, &_Py_ID(__classdict__), cellvars);
     }
     if (SYMTABLE_ENTRY(c)->ste_has_conditional_annotations) {
-        ADDOP_I(c, loc, BUILD_SET, 0);
-        ADDOP_N_IN_SCOPE(c, loc, STORE_DEREF, &_Py_ID(__conditional_annotations__), cellvars);
+        ADDOP_I(c, NO_LOCATION, BUILD_SET, 0);
+        ADDOP_N_IN_SCOPE(c, NO_LOCATION, STORE_DEREF, &_Py_ID(__conditional_annotations__), cellvars);
     }
     /* compile the body proper */
     RETURN_IF_ERROR_IN_SCOPE(c, codegen_body(c, loc, s->v.ClassDef.body, false));
