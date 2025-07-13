@@ -14,8 +14,8 @@ def main() -> int:
 
     if fatal_errors:
         print("\nError: must not contain fatal errors:\n")
-        for warning in fatal_errors:
-            print(" - ".join(warning))
+        for error in fatal_errors:
+            print(" - ".join(error))
 
     return len(fatal_errors)
 
