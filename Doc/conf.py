@@ -6,27 +6,34 @@
 # The contents of this file are pickled, so don't put values in the namespace
 # that aren't pickleable (module imports are okay, they're removed automatically).
 
-import importlib
 import os
 import sys
-import time
+from importlib import import_module
+from importlib.util import find_spec
 
-import sphinx
-
+# Make our custom extensions available to Sphinx
 sys.path.append(os.path.abspath('tools/extensions'))
 sys.path.append(os.path.abspath('includes'))
 
+# Python specific content from Doc/Tools/extensions/pyspecific.py
 from pyspecific import SOURCE_URI
 
 # General configuration
 # ---------------------
 
+# Our custom Sphinx extensions are found in Doc/Tools/extensions/
 extensions = [
     'audit_events',
     'availability',
     'c_annotations',
+    'changes',
     'glossary_search',
+    'grammar_snippet',
+    'implementation_detail',
+    'issue_role',
     'lexers',
+    'misc_news',
+    'pydoc_topics',
     'pyspecific',
     'sphinx.ext.coverage',
     'sphinx.ext.doctest',
@@ -34,19 +41,17 @@ extensions = [
 ]
 
 # Skip if downstream redistributors haven't installed them
-try:
-    import notfound.extension  # noqa: F401
-except ImportError:
-    pass
-else:
-    extensions.append('notfound.extension')
-try:
-    import sphinxext.opengraph  # noqa: F401
-except ImportError:
-    pass
-else:
-    extensions.append('sphinxext.opengraph')
-
+_OPTIONAL_EXTENSIONS = (
+    'notfound.extension',
+    'sphinxext.opengraph',
+)
+for optional_ext in _OPTIONAL_EXTENSIONS:
+    try:
+        if find_spec(optional_ext) is not None:
+            extensions.append(optional_ext)
+    except (ImportError, ValueError):
+        pass
+del _OPTIONAL_EXTENSIONS
 
 doctest_global_setup = '''
 try:
@@ -54,7 +59,7 @@ try:
 except ImportError:
     _tkinter = None
 # Treat warnings as errors, done here to prevent warnings in Sphinx code from
-# causing spurious test failures.
+# causing spurious CPython test failures.
 import warnings
 warnings.simplefilter('error')
 del warnings
@@ -64,41 +69,49 @@ manpages_url = 'https://manpages.debian.org/{path}'
 
 # General substitutions.
 project = 'Python'
-if sphinx.version_info[:2] >= (8, 1):
-    copyright = "2001-%Y, Python Software Foundation"
-else:
-    copyright = f"2001-{time.strftime('%Y')}, Python Software Foundation"
+copyright = "2001 Python Software Foundation"
 
 # We look for the Include/patchlevel.h file in the current Python source tree
 # and replace the values accordingly.
 # See Doc/tools/extensions/patchlevel.py
-version, release = importlib.import_module('patchlevel').get_version_info()
+version, release = import_module('patchlevel').get_version_info()
 
 rst_epilog = f"""
 .. |python_version_literal| replace:: ``Python {version}``
 .. |python_x_dot_y_literal| replace:: ``python{version}``
+.. |python_x_dot_y_t_literal| replace:: ``python{version}t``
+.. |python_x_dot_y_t_literal_config| replace:: ``python{version}t-config``
+.. |x_dot_y_b2_literal| replace:: ``{version}.0b2``
+.. |applications_python_version_literal| replace:: ``/Applications/Python {version}/``
 .. |usr_local_bin_python_x_dot_y_literal| replace:: ``/usr/local/bin/python{version}``
+
+.. Apparently this how you hack together a formatted link:
+   (https://www.docutils.org/docs/ref/rst/directives.html#replacement-text)
+.. |FORCE_COLOR| replace:: ``FORCE_COLOR``
+.. _FORCE_COLOR: https://force-color.org/
+.. |NO_COLOR| replace:: ``NO_COLOR``
+.. _NO_COLOR: https://no-color.org/
 """
 
-# There are two options for replacing |today|: either, you set today to some
-# non-false value, then it is used:
+# There are two options for replacing |today|. Either, you set today to some
+# non-false value and use it.
 today = ''
-# Else, today_fmt is used as the format for a strftime call.
+# Or else, today_fmt is used as the format for a strftime call.
 today_fmt = '%B %d, %Y'
 
 # By default, highlight as Python 3.
 highlight_language = 'python3'
 
 # Minimum version of sphinx required
-needs_sphinx = '7.2.6'
+# Keep this version in sync with ``Doc/requirements.txt``.
+needs_sphinx = '8.2.0'
 
 # Create table of contents entries for domain objects (e.g. functions, classes,
 # attributes, etc.). Default is True.
-toc_object_entries = True
-toc_object_entries_show_parents = 'hide'
+toc_object_entries = False
 
 # Ignore any .rst files in the includes/ directory;
-# they're embedded in pages but not rendered individually.
+# they're embedded in pages but not rendered as individual pages.
 # Ignore any .rst files in the venv/ directory.
 exclude_patterns = ['includes/*.rst', 'venv/*', 'README.rst']
 venvdir = os.getenv('VENVDIR')
@@ -195,6 +208,7 @@ nitpick_ignore = [
     ('envvar', 'LC_TIME'),
     ('envvar', 'LINES'),
     ('envvar', 'LOGNAME'),
+    ('envvar', 'MANPAGER'),
     ('envvar', 'PAGER'),
     ('envvar', 'PATH'),
     ('envvar', 'PATHEXT'),
@@ -219,73 +233,6 @@ nitpick_ignore = [
 # Temporary undocumented names.
 # In future this list must be empty.
 nitpick_ignore += [
-    # C API: Standard Python exception classes
-    ('c:data', 'PyExc_ArithmeticError'),
-    ('c:data', 'PyExc_AssertionError'),
-    ('c:data', 'PyExc_AttributeError'),
-    ('c:data', 'PyExc_BaseException'),
-    ('c:data', 'PyExc_BlockingIOError'),
-    ('c:data', 'PyExc_BrokenPipeError'),
-    ('c:data', 'PyExc_BufferError'),
-    ('c:data', 'PyExc_ChildProcessError'),
-    ('c:data', 'PyExc_ConnectionAbortedError'),
-    ('c:data', 'PyExc_ConnectionError'),
-    ('c:data', 'PyExc_ConnectionRefusedError'),
-    ('c:data', 'PyExc_ConnectionResetError'),
-    ('c:data', 'PyExc_EOFError'),
-    ('c:data', 'PyExc_Exception'),
-    ('c:data', 'PyExc_FileExistsError'),
-    ('c:data', 'PyExc_FileNotFoundError'),
-    ('c:data', 'PyExc_FloatingPointError'),
-    ('c:data', 'PyExc_GeneratorExit'),
-    ('c:data', 'PyExc_ImportError'),
-    ('c:data', 'PyExc_IndentationError'),
-    ('c:data', 'PyExc_IndexError'),
-    ('c:data', 'PyExc_InterruptedError'),
-    ('c:data', 'PyExc_IsADirectoryError'),
-    ('c:data', 'PyExc_KeyboardInterrupt'),
-    ('c:data', 'PyExc_KeyError'),
-    ('c:data', 'PyExc_LookupError'),
-    ('c:data', 'PyExc_MemoryError'),
-    ('c:data', 'PyExc_ModuleNotFoundError'),
-    ('c:data', 'PyExc_NameError'),
-    ('c:data', 'PyExc_NotADirectoryError'),
-    ('c:data', 'PyExc_NotImplementedError'),
-    ('c:data', 'PyExc_OSError'),
-    ('c:data', 'PyExc_OverflowError'),
-    ('c:data', 'PyExc_PermissionError'),
-    ('c:data', 'PyExc_ProcessLookupError'),
-    ('c:data', 'PyExc_PythonFinalizationError'),
-    ('c:data', 'PyExc_RecursionError'),
-    ('c:data', 'PyExc_ReferenceError'),
-    ('c:data', 'PyExc_RuntimeError'),
-    ('c:data', 'PyExc_StopAsyncIteration'),
-    ('c:data', 'PyExc_StopIteration'),
-    ('c:data', 'PyExc_SyntaxError'),
-    ('c:data', 'PyExc_SystemError'),
-    ('c:data', 'PyExc_SystemExit'),
-    ('c:data', 'PyExc_TabError'),
-    ('c:data', 'PyExc_TimeoutError'),
-    ('c:data', 'PyExc_TypeError'),
-    ('c:data', 'PyExc_UnboundLocalError'),
-    ('c:data', 'PyExc_UnicodeDecodeError'),
-    ('c:data', 'PyExc_UnicodeEncodeError'),
-    ('c:data', 'PyExc_UnicodeError'),
-    ('c:data', 'PyExc_UnicodeTranslateError'),
-    ('c:data', 'PyExc_ValueError'),
-    ('c:data', 'PyExc_ZeroDivisionError'),
-    # C API: Standard Python warning classes
-    ('c:data', 'PyExc_BytesWarning'),
-    ('c:data', 'PyExc_DeprecationWarning'),
-    ('c:data', 'PyExc_FutureWarning'),
-    ('c:data', 'PyExc_ImportWarning'),
-    ('c:data', 'PyExc_PendingDeprecationWarning'),
-    ('c:data', 'PyExc_ResourceWarning'),
-    ('c:data', 'PyExc_RuntimeWarning'),
-    ('c:data', 'PyExc_SyntaxWarning'),
-    ('c:data', 'PyExc_UnicodeWarning'),
-    ('c:data', 'PyExc_UserWarning'),
-    ('c:data', 'PyExc_Warning'),
     # Undocumented public C macros
     ('c:macro', 'Py_BUILD_ASSERT'),
     ('c:macro', 'Py_BUILD_ASSERT_EXPR'),
@@ -298,7 +245,6 @@ nitpick_ignore += [
     ('py:attr', '__annotations__'),
     ('py:meth', '__missing__'),
     ('py:attr', '__wrapped__'),
-    ('py:attr', 'decimal.Context.clamp'),
     ('py:meth', 'index'),  # list.index, tuple.index, etc.
 ]
 
@@ -329,8 +275,9 @@ gettext_additional_targets = [
 # Options for HTML output
 # -----------------------
 
-# Use our custom theme.
+# Use our custom theme: https://github.com/python/python-docs-theme
 html_theme = 'python_docs_theme'
+# Location of overrides for theme templates and static files
 html_theme_path = ['tools']
 html_theme_options = {
     'collapsiblesidebar': True,
@@ -368,15 +315,9 @@ html_context = {
 
 # This 'Last updated on:' timestamp is inserted at the bottom of every page.
 html_last_updated_fmt = '%b %d, %Y (%H:%M UTC)'
-if sphinx.version_info[:2] >= (8, 1):
-    html_last_updated_use_utc = True
-else:
-    html_time = int(os.environ.get('SOURCE_DATE_EPOCH', time.time()))
-    html_last_updated_fmt = time.strftime(
-        html_last_updated_fmt, time.gmtime(html_time)
-    )
+html_last_updated_use_utc = True
 
-# Path to find HTML templates.
+# Path to find HTML templates to override theme
 templates_path = ['tools/templates']
 
 # Custom sidebar templates, filenames relative to this file.
@@ -558,8 +499,6 @@ linkcheck_allowed_redirects = {
     r'https://github.com/python/cpython/tree/.*': 'https://github.com/python/cpython/blob/.*',
     # Intentional HTTP use at Misc/NEWS.d/3.5.0a1.rst
     r'http://www.python.org/$': 'https://www.python.org/$',
-    # Used in license page, keep as is
-    r'https://www.zope.org/': r'https://www.zope.dev/',
     # Microsoft's redirects to learn.microsoft.com
     r'https://msdn.microsoft.com/.*': 'https://learn.microsoft.com/.*',
     r'https://docs.microsoft.com/.*': 'https://learn.microsoft.com/.*',
@@ -611,18 +550,8 @@ extlinks = {
 }
 extlinks_detect_hardcoded_links = True
 
-if sphinx.version_info[:2] < (8, 1):
-    # Sphinx 8.1 has in-built CVE and CWE roles.
-    extlinks |= {
-        "cve": (
-            "https://www.cve.org/CVERecord?id=CVE-%s",
-            "CVE-%s",
-        ),
-        "cwe": ("https://cwe.mitre.org/data/definitions/%s.html", "CWE-%s"),
-    }
-
-# Options for c_annotations
-# -------------------------
+# Options for c_annotations extension
+# -----------------------------------
 
 # Relative filename of the data files
 refcount_file = 'data/refcounts.dat'
@@ -631,11 +560,20 @@ stable_abi_file = 'data/stable_abi.dat'
 # Options for sphinxext-opengraph
 # -------------------------------
 
-ogp_site_url = 'https://docs.python.org/3/'
+ogp_canonical_url = 'https://docs.python.org/3/'
 ogp_site_name = 'Python documentation'
-ogp_image = '_static/og-image.png'
-ogp_custom_meta_tags = [
-    '<meta property="og:image:width" content="200" />',
-    '<meta property="og:image:height" content="200" />',
-    '<meta name="theme-color" content="#3776ab" />',
-]
+ogp_social_cards = {  # Used when matplotlib is installed
+    'image': '_static/og-image.png',
+    'line_color': '#3776ab',
+}
+if 'builder_html' in tags:  # noqa: F821
+    ogp_custom_meta_tags = [
+        '<meta name="theme-color" content="#3776ab">',
+    ]
+    if 'create-social-cards' not in tags:  # noqa: F821
+        # Define a static preview image when not creating social cards
+        ogp_image = '_static/og-image.png'
+        ogp_custom_meta_tags += [
+            '<meta property="og:image:width" content="200">',
+            '<meta property="og:image:height" content="200">',
+        ]

@@ -10,8 +10,10 @@ import re
 import sys
 import tempfile
 import typing
+import shlex
 
 import _llvm
+import _optimizers
 import _schema
 import _stencils
 import _writer
@@ -23,9 +25,11 @@ TOOLS_JIT_BUILD = pathlib.Path(__file__).resolve()
 TOOLS_JIT = TOOLS_JIT_BUILD.parent
 TOOLS = TOOLS_JIT.parent
 CPYTHON = TOOLS.parent
+EXTERNALS = CPYTHON / "externals"
 PYTHON_EXECUTOR_CASES_C_H = CPYTHON / "Python" / "executor_cases.c.h"
 TOOLS_JIT_TEMPLATE_C = TOOLS_JIT / "template.c"
 
+ASYNCIO_RUNNER = asyncio.Runner()
 
 _S = typing.TypeVar("_S", _schema.COFFSection, _schema.ELFSection, _schema.MachOSection)
 _R = typing.TypeVar(
@@ -36,23 +40,35 @@ _R = typing.TypeVar(
 @dataclasses.dataclass
 class _Target(typing.Generic[_S, _R]):
     triple: str
+    condition: str
     _: dataclasses.KW_ONLY
-    alignment: int = 1
     args: typing.Sequence[str] = ()
-    ghccc: bool = False
+    optimizer: type[_optimizers.Optimizer] = _optimizers.Optimizer
     prefix: str = ""
     stable: bool = False
     debug: bool = False
     verbose: bool = False
+    cflags: str = ""
     known_symbols: dict[str, int] = dataclasses.field(default_factory=dict)
+    pyconfig_dir: pathlib.Path = pathlib.Path.cwd().resolve()
 
-    def _compute_digest(self, out: pathlib.Path) -> str:
+    def _get_nop(self) -> bytes:
+        if re.fullmatch(r"aarch64-.*", self.triple):
+            nop = b"\x1f\x20\x03\xd5"
+        elif re.fullmatch(r"x86_64-.*|i686.*", self.triple):
+            nop = b"\x90"
+        else:
+            raise ValueError(f"NOP not defined for {self.triple}")
+        return nop
+
+    def _compute_digest(self) -> str:
         hasher = hashlib.sha256()
         hasher.update(self.triple.encode())
         hasher.update(self.debug.to_bytes())
+        hasher.update(self.cflags.encode())
         # These dependencies are also reflected in _JITSources in regen.targets:
         hasher.update(PYTHON_EXECUTOR_CASES_C_H.read_bytes())
-        hasher.update((out / "pyconfig.h").read_bytes())
+        hasher.update((self.pyconfig_dir / "pyconfig.h").read_bytes())
         for dirpath, _, filenames in sorted(os.walk(TOOLS_JIT)):
             for filename in filenames:
                 hasher.update(pathlib.Path(dirpath, filename).read_bytes())
@@ -63,10 +79,11 @@ class _Target(typing.Generic[_S, _R]):
         args = ["--disassemble", "--reloc", f"{path}"]
         output = await _llvm.maybe_run("llvm-objdump", args, echo=self.verbose)
         if output is not None:
+            # Make sure that full paths don't leak out (for reproducibility):
+            long, short = str(path), str(path.name)
             group.code.disassembly.extend(
-                line.expandtabs().strip()
+                line.expandtabs().strip().replace(long, short)
                 for line in output.splitlines()
-                if not line.isspace()
             )
         args = [
             "--elf-output-style=JSON",
@@ -88,48 +105,52 @@ class _Target(typing.Generic[_S, _R]):
         sections: list[dict[typing.Literal["Section"], _S]] = json.loads(output)
         for wrapped_section in sections:
             self._handle_section(wrapped_section["Section"], group)
-        # The trampoline's entry point is just named "_ENTRY", since on some
-        # platforms we later assume that any function starting with "_JIT_" uses
-        # the GHC calling convention:
-        entry_symbol = "_JIT_ENTRY" if "_JIT_ENTRY" in group.symbols else "_ENTRY"
-        assert group.symbols[entry_symbol] == (_stencils.HoleValue.CODE, 0)
+        assert group.symbols["_JIT_ENTRY"] == (_stencils.HoleValue.CODE, 0)
         if group.data.body:
             line = f"0: {str(bytes(group.data.body)).removeprefix('b')}"
             group.data.disassembly.append(line)
-        group.process_relocations(
-            known_symbols=self.known_symbols, alignment=self.alignment
-        )
         return group
 
     def _handle_section(self, section: _S, group: _stencils.StencilGroup) -> None:
         raise NotImplementedError(type(self))
 
     def _handle_relocation(
-        self, base: int, relocation: _R, raw: bytes
+        self, base: int, relocation: _R, raw: bytes | bytearray
     ) -> _stencils.Hole:
         raise NotImplementedError(type(self))
 
     async def _compile(
         self, opname: str, c: pathlib.Path, tempdir: pathlib.Path
     ) -> _stencils.StencilGroup:
-        # "Compile" the trampoline to an empty stencil group if it's not needed:
-        if opname == "trampoline" and not self.ghccc:
-            return _stencils.StencilGroup()
+        s = tempdir / f"{opname}.s"
         o = tempdir / f"{opname}.o"
-        args = [
+        args_s = [
             f"--target={self.triple}",
             "-DPy_BUILD_CORE_MODULE",
             "-D_DEBUG" if self.debug else "-DNDEBUG",
             f"-D_JIT_OPCODE={opname}",
             "-D_PyJIT_ACTIVE",
             "-D_Py_JIT",
-            "-I.",
+            f"-I{self.pyconfig_dir}",
             f"-I{CPYTHON / 'Include'}",
             f"-I{CPYTHON / 'Include' / 'internal'}",
             f"-I{CPYTHON / 'Include' / 'internal' / 'mimalloc'}",
             f"-I{CPYTHON / 'Python'}",
-            "-O3",
-            "-c",
+            f"-I{CPYTHON / 'Tools' / 'jit'}",
+            # -O2 and -O3 include some optimizations that make sense for
+            # standalone functions, but not for snippets of code that are going
+            # to be laid out end-to-end (like ours)... common examples include
+            # passes like tail-duplication, or aligning jump targets with nops.
+            # -Os is equivalent to -O2 with many of these problematic passes
+            # disabled. Based on manual review, for *our* purposes it usually
+            # generates better code than -O2 (and -O2 usually generates better
+            # code than -O3). As a nice benefit, it uses less memory too:
+            "-Os",
+            "-S",
+            # Shorten full absolute file paths in the generated code (like the
+            # __FILE__ macro and assert failure messages) for reproducibility:
+            f"-ffile-prefix-map={CPYTHON}=.",
+            f"-ffile-prefix-map={tempdir}=.",
             # This debug info isn't necessary, and bloats out the JIT'ed code.
             # We *may* be able to re-enable this, process it, and JIT it for a
             # nicer debugging experience... but that needs a lot more research:
@@ -143,43 +164,16 @@ class _Target(typing.Generic[_S, _R]):
             # Don't call stack-smashing canaries that we can't find or patch:
             "-fno-stack-protector",
             "-std=c11",
+            "-o",
+            f"{s}",
+            f"{c}",
             *self.args,
+            # Allow user-provided CFLAGS to override any defaults
+            *shlex.split(self.cflags),
         ]
-        if self.ghccc:
-            # This is a bit of an ugly workaround, but it makes the code much
-            # smaller and faster, so it's worth it. We want to use the GHC
-            # calling convention, but Clang doesn't support it. So, we *first*
-            # compile the code to LLVM IR, perform some text replacements on the
-            # IR to change the calling convention(!), and then compile *that*.
-            # Once we have access to Clang 19, we can get rid of this and use
-            # __attribute__((preserve_none)) directly in the C code instead:
-            ll = tempdir / f"{opname}.ll"
-            args_ll = args + [
-                # -fomit-frame-pointer is necessary because the GHC calling
-                # convention uses RBP to pass arguments:
-                "-S",
-                "-emit-llvm",
-                "-fomit-frame-pointer",
-                "-o",
-                f"{ll}",
-                f"{c}",
-            ]
-            await _llvm.run("clang", args_ll, echo=self.verbose)
-            ir = ll.read_text()
-            # This handles declarations, definitions, and calls to named symbols
-            # starting with "_JIT_":
-            ir = re.sub(
-                r"(((noalias|nonnull|noundef) )*ptr @_JIT_\w+\()", r"ghccc \1", ir
-            )
-            # This handles calls to anonymous callees, since anything with
-            # "musttail" needs to use the same calling convention:
-            ir = ir.replace("musttail call", "musttail call ghccc")
-            # Sometimes *both* replacements happen at the same site, so fix it:
-            ir = ir.replace("ghccc ghccc", "ghccc")
-            ll.write_text(ir)
-            args_o = args + ["-Wno-unused-command-line-argument", "-o", f"{o}", f"{ll}"]
-        else:
-            args_o = args + ["-o", f"{o}", f"{c}"]
+        await _llvm.run("clang", args_s, echo=self.verbose)
+        self.optimizer(s, prefix=self.prefix).run()
+        args_o = [f"--target={self.triple}", "-c", "-o", f"{o}", f"{s}"]
         await _llvm.run("clang", args_o, echo=self.verbose)
         return await self._parse(o)
 
@@ -194,8 +188,8 @@ class _Target(typing.Generic[_S, _R]):
         with tempfile.TemporaryDirectory() as tempdir:
             work = pathlib.Path(tempdir).resolve()
             async with asyncio.TaskGroup() as group:
-                coro = self._compile("trampoline", TOOLS_JIT / "trampoline.c", work)
-                tasks.append(group.create_task(coro, name="trampoline"))
+                coro = self._compile("shim", TOOLS_JIT / "shim.c", work)
+                tasks.append(group.create_task(coro, name="shim"))
                 template = TOOLS_JIT_TEMPLATE_C.read_text()
                 for case, opname in cases_and_opnames:
                     # Write out a copy of the template with *only* this case
@@ -207,27 +201,34 @@ class _Target(typing.Generic[_S, _R]):
                     c.write_text(template.replace("CASE", case))
                     coro = self._compile(opname, c, work)
                     tasks.append(group.create_task(coro, name=opname))
-        return {task.get_name(): task.result() for task in tasks}
+        stencil_groups = {task.get_name(): task.result() for task in tasks}
+        for stencil_group in stencil_groups.values():
+            stencil_group.process_relocations(self.known_symbols)
+        return stencil_groups
 
     def build(
-        self, out: pathlib.Path, *, comment: str = "", force: bool = False
+        self,
+        *,
+        comment: str = "",
+        force: bool = False,
+        jit_stencils: pathlib.Path,
     ) -> None:
         """Build jit_stencils.h in the given directory."""
+        jit_stencils.parent.mkdir(parents=True, exist_ok=True)
         if not self.stable:
             warning = f"JIT support for {self.triple} is still experimental!"
             request = "Please report any issues you encounter.".center(len(warning))
             outline = "=" * len(warning)
             print("\n".join(["", outline, warning, request, outline, ""]))
-        digest = f"// {self._compute_digest(out)}\n"
-        jit_stencils = out / "jit_stencils.h"
+        digest = f"// {self._compute_digest()}\n"
         if (
             not force
             and jit_stencils.exists()
             and jit_stencils.read_text().startswith(digest)
         ):
             return
-        stencil_groups = asyncio.run(self._build_stencils())
-        jit_stencils_new = out / "jit_stencils.h.new"
+        stencil_groups = ASYNCIO_RUNNER.run(self._build_stencils())
+        jit_stencils_new = jit_stencils.parent / "jit_stencils.h.new"
         try:
             with jit_stencils_new.open("w") as file:
                 file.write(digest)
@@ -290,7 +291,10 @@ class _COFF(
         return _stencils.symbol_to_value(name)
 
     def _handle_relocation(
-        self, base: int, relocation: _schema.COFFRelocation, raw: bytes
+        self,
+        base: int,
+        relocation: _schema.COFFRelocation,
+        raw: bytes | bytearray,
     ) -> _stencils.Hole:
         match relocation:
             case {
@@ -342,7 +346,11 @@ class _ELF(
         if section_type == "SHT_RELA":
             assert "SHF_INFO_LINK" in flags, flags
             assert not section["Symbols"]
-            value, base = group.symbols[section["Info"]]
+            maybe_symbol = group.symbols.get(section["Info"])
+            if maybe_symbol is None:
+                # These are relocations for a section we're not emitting. Skip:
+                return
+            value, base = maybe_symbol
             if value is _stencils.HoleValue.CODE:
                 stencil = group.code
             else:
@@ -381,7 +389,10 @@ class _ELF(
             }, section_type
 
     def _handle_relocation(
-        self, base: int, relocation: _schema.ELFRelocation, raw: bytes
+        self,
+        base: int,
+        relocation: _schema.ELFRelocation,
+        raw: bytes | bytearray,
     ) -> _stencils.Hole:
         symbol: str | None
         match relocation:
@@ -457,7 +468,10 @@ class _MachO(
             stencil.holes.append(hole)
 
     def _handle_relocation(
-        self, base: int, relocation: _schema.MachORelocation, raw: bytes
+        self,
+        base: int,
+        relocation: _schema.MachORelocation,
+        raw: bytes | bytearray,
     ) -> _stencils.Hole:
         symbol: str | None
         match relocation:
@@ -519,32 +533,43 @@ class _MachO(
 
 def get_target(host: str) -> _COFF | _ELF | _MachO:
     """Build a _Target for the given host "triple" and options."""
-    # ghccc currently crashes Clang when combined with musttail on aarch64. :(
+    optimizer: type[_optimizers.Optimizer]
     target: _COFF | _ELF | _MachO
     if re.fullmatch(r"aarch64-apple-darwin.*", host):
-        target = _MachO(host, alignment=8, prefix="_")
+        condition = "defined(__aarch64__) && defined(__APPLE__)"
+        optimizer = _optimizers.OptimizerAArch64
+        target = _MachO(host, condition, optimizer=optimizer, prefix="_")
     elif re.fullmatch(r"aarch64-pc-windows-msvc", host):
-        args = ["-fms-runtime-lib=dll"]
-        target = _COFF(host, alignment=8, args=args)
+        args = ["-fms-runtime-lib=dll", "-fplt"]
+        condition = "defined(_M_ARM64)"
+        optimizer = _optimizers.OptimizerAArch64
+        target = _COFF(host, condition, args=args, optimizer=optimizer)
     elif re.fullmatch(r"aarch64-.*-linux-gnu", host):
-        args = [
-            "-fpic",
-            # On aarch64 Linux, intrinsics were being emitted and this flag
-            # was required to disable them.
-            "-mno-outline-atomics",
-        ]
-        target = _ELF(host, alignment=8, args=args)
+        # -mno-outline-atomics: Keep intrinsics from being emitted.
+        args = ["-fpic", "-mno-outline-atomics"]
+        condition = "defined(__aarch64__) && defined(__linux__)"
+        optimizer = _optimizers.OptimizerAArch64
+        target = _ELF(host, condition, args=args, optimizer=optimizer)
     elif re.fullmatch(r"i686-pc-windows-msvc", host):
-        args = ["-DPy_NO_ENABLE_SHARED"]
-        target = _COFF(host, args=args, ghccc=True, prefix="_")
+        # -Wno-ignored-attributes: __attribute__((preserve_none)) is not supported here.
+        args = ["-DPy_NO_ENABLE_SHARED", "-Wno-ignored-attributes"]
+        optimizer = _optimizers.OptimizerX86
+        condition = "defined(_M_IX86)"
+        target = _COFF(host, condition, args=args, optimizer=optimizer, prefix="_")
     elif re.fullmatch(r"x86_64-apple-darwin.*", host):
-        target = _MachO(host, ghccc=True, prefix="_")
+        condition = "defined(__x86_64__) && defined(__APPLE__)"
+        optimizer = _optimizers.OptimizerX86
+        target = _MachO(host, condition, optimizer=optimizer, prefix="_")
     elif re.fullmatch(r"x86_64-pc-windows-msvc", host):
         args = ["-fms-runtime-lib=dll"]
-        target = _COFF(host, args=args, ghccc=True)
+        condition = "defined(_M_X64)"
+        optimizer = _optimizers.OptimizerX8664Windows
+        target = _COFF(host, condition, args=args, optimizer=optimizer)
     elif re.fullmatch(r"x86_64-.*-linux-gnu", host):
-        args = ["-fpic"]
-        target = _ELF(host, args=args, ghccc=True)
+        args = ["-fno-pic", "-mcmodel=medium", "-mlarge-data-threshold=0"]
+        condition = "defined(__x86_64__) && defined(__linux__)"
+        optimizer = _optimizers.OptimizerX86
+        target = _ELF(host, condition, args=args, optimizer=optimizer)
     else:
         raise ValueError(host)
     return target

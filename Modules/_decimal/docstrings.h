@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001-2012 Python Software Foundation. All Rights Reserved.
+ * Copyright (c) 2001 Python Software Foundation. All Rights Reserved.
  * Modified and extended by Stefan Krah.
  */
 
@@ -37,15 +37,12 @@ exiting the with-statement. If no context is specified, a copy of the current\n\
 default context is used.\n\
 \n");
 
-#ifdef EXTRA_FUNCTIONALITY
 PyDoc_STRVAR(doc_ieee_context,
 "IEEEContext($module, bits, /)\n--\n\n\
 Return a context object initialized to the proper values for one of the\n\
 IEEE interchange formats.  The argument must be a multiple of 32 and less\n\
-than IEEE_CONTEXT_MAX_BITS.  For the most common values, the constants\n\
-DECIMAL32, DECIMAL64 and DECIMAL128 are provided.\n\
+than IEEE_CONTEXT_MAX_BITS.\n\
 \n");
-#endif
 
 
 /******************************************************************************/

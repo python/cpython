@@ -1,6 +1,7 @@
 import os
 import sys
 import unittest
+from collections.abc import Container
 
 from test import support
 
@@ -34,7 +35,7 @@ def findtestdir(path: StrPath | None = None) -> StrPath:
     return path or os.path.dirname(os.path.dirname(__file__)) or os.curdir
 
 
-def findtests(*, testdir: StrPath | None = None, exclude=(),
+def findtests(*, testdir: StrPath | None = None, exclude: Container[str] = (),
               split_test_dirs: set[TestName] = SPLITTESTDIRS,
               base_mod: str = "") -> TestList:
     """Return a list of all applicable test modules."""
@@ -60,8 +61,9 @@ def findtests(*, testdir: StrPath | None = None, exclude=(),
     return sorted(tests)
 
 
-def split_test_packages(tests, *, testdir: StrPath | None = None, exclude=(),
-                        split_test_dirs=SPLITTESTDIRS):
+def split_test_packages(tests, *, testdir: StrPath | None = None,
+                        exclude: Container[str] = (),
+                        split_test_dirs=SPLITTESTDIRS) -> list[TestName]:
     testdir = findtestdir(testdir)
     splitted = []
     for name in tests:
@@ -75,9 +77,9 @@ def split_test_packages(tests, *, testdir: StrPath | None = None, exclude=(),
     return splitted
 
 
-def _list_cases(suite):
+def _list_cases(suite: unittest.TestSuite) -> None:
     for test in suite:
-        if isinstance(test, unittest.loader._FailedTest):
+        if isinstance(test, unittest.loader._FailedTest):  # type: ignore[attr-defined]
             continue
         if isinstance(test, unittest.TestSuite):
             _list_cases(test)
@@ -87,7 +89,7 @@ def _list_cases(suite):
 
 def list_cases(tests: TestTuple, *,
                match_tests: TestFilter | None = None,
-               test_dir: StrPath | None = None):
+               test_dir: StrPath | None = None) -> None:
     support.verbose = False
     set_match_tests(match_tests)
 

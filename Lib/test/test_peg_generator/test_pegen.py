@@ -91,10 +91,8 @@ class TestPegen(unittest.TestCase):
         """
         rules = parse_string(grammar, GrammarParser).rules
         self.assertEqual(str(rules["start"]), "start: ','.thing+ NEWLINE")
-        self.assertTrue(
-            repr(rules["start"]).startswith(
-                "Rule('start', None, Rhs([Alt([NamedItem(None, Gather(StringLeaf(\"','\"), NameLeaf('thing'"
-            )
+        self.assertStartsWith(repr(rules["start"]),
+            "Rule('start', None, Rhs([Alt([NamedItem(None, Gather(StringLeaf(\"','\"), NameLeaf('thing'"
         )
         self.assertEqual(str(rules["thing"]), "thing: NUMBER")
         parser_class = make_parser(grammar)
@@ -505,6 +503,14 @@ class TestPegen(unittest.TestCase):
         code = compile(node, "", "eval")
         val = eval(code)
         self.assertEqual(val, 3.0)
+
+    def test_f_string_in_action(self) -> None:
+        grammar = """
+        start: n=NAME NEWLINE? $ { f"name -> {n.string}" }
+        """
+        parser_class = make_parser(grammar)
+        node = parse_string("a", parser_class)
+        self.assertEqual(node.strip(), "name ->  a")
 
     def test_nullable(self) -> None:
         grammar_source = """
