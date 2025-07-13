@@ -1605,7 +1605,10 @@ class TypeVarTupleTests(BaseTestCase):
         self.assertEqual(gth(func1), {'args': Unpack[Ts]})
 
         def func2(*args: *tuple[int, str]): pass
-        self.assertEqual(gth(func2), {'args': Unpack[tuple[int, str]]})
+        hint = gth(func2)['args']
+        self.assertIsInstance(hint, types.GenericAlias)
+        self.assertEqual(hint.__args__[0], int)
+        self.assertIs(hint.__unpacked__, True)
 
         class CustomVariadic(Generic[*Ts]): pass
 
@@ -1620,7 +1623,10 @@ class TypeVarTupleTests(BaseTestCase):
                         {'args': Unpack[Ts]})
 
         def func2(*args: '*tuple[int, str]'): pass
-        self.assertEqual(gth(func2), {'args': Unpack[tuple[int, str]]})
+        hint = gth(func2)['args']
+        self.assertIsInstance(hint, types.GenericAlias)
+        self.assertEqual(hint.__args__[0], int)
+        self.assertIs(hint.__unpacked__, True)
 
         class CustomVariadic(Generic[*Ts]): pass
 
@@ -6303,31 +6309,6 @@ class NoTypeCheckTests(BaseTestCase):
 
 
 class InternalsTests(BaseTestCase):
-    def test_deprecation_for_no_type_params_passed_to__evaluate(self):
-        with self.assertWarnsRegex(
-            DeprecationWarning,
-            (
-                "Failing to pass a value to the 'type_params' parameter "
-                "of 'typing._eval_type' is deprecated"
-            )
-        ) as cm:
-            self.assertEqual(typing._eval_type(list["int"], globals(), {}), list[int])
-
-        self.assertEqual(cm.filename, __file__)
-
-        f = ForwardRef("int")
-
-        with self.assertWarnsRegex(
-            DeprecationWarning,
-            (
-                "Failing to pass a value to the 'type_params' parameter "
-                "of 'typing.ForwardRef._evaluate' is deprecated"
-            )
-        ) as cm:
-            self.assertIs(f._evaluate(globals(), {}, recursive_guard=frozenset()), int)
-
-        self.assertEqual(cm.filename, __file__)
-
     def test_collect_parameters(self):
         typing = import_helper.import_fresh_module("typing")
         with self.assertWarnsRegex(
@@ -7114,6 +7095,24 @@ class GetTypeHintsTests(BaseTestCase):
         right_hints = get_type_hints(t.add_right, globals(), locals())
         self.assertEqual(right_hints['node'], Node[T])
 
+    def test_get_type_hints_preserve_generic_alias_subclasses(self):
+        # https://github.com/python/cpython/issues/130870
+        # A real world example of this is `collections.abc.Callable`. When parameterized,
+        # the result is a subclass of `types.GenericAlias`.
+        class MyAlias(types.GenericAlias):
+            pass
+
+        class MyClass:
+            def __class_getitem__(cls, args):
+                return MyAlias(cls, args)
+
+        # Using a forward reference is important, otherwise it works as expected.
+        # `y` tests that the `GenericAlias` subclass is preserved when stripping `Annotated`.
+        def func(x: MyClass['int'], y: MyClass[Annotated[int, ...]]): ...
+
+        assert isinstance(get_type_hints(func)['x'], MyAlias)
+        assert isinstance(get_type_hints(func)['y'], MyAlias)
+
 
 class GetUtilitiesTestCase(TestCase):
     def test_get_origin(self):
@@ -7326,6 +7325,12 @@ class EvaluateForwardRefTests(BaseTestCase):
             typing.evaluate_forward_ref(ref, format=annotationlib.Format.FORWARDREF),
             list[EqualToForwardRef('A')],
         )
+
+    def test_with_module(self):
+        from test.typinganndata import fwdref_module
+
+        typing.evaluate_forward_ref(
+            fwdref_module.fw,)
 
 
 class CollectionsAbcTests(BaseTestCase):

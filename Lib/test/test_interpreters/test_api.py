@@ -13,11 +13,11 @@ from test.support import script_helper
 from test.support import import_helper
 # Raise SkipTest if subinterpreters not supported.
 _interpreters = import_helper.import_module('_interpreters')
+from concurrent import interpreters
 from test.support import Py_GIL_DISABLED
-from test.support import interpreters
 from test.support import force_not_colorized
 import test._crossinterp_definitions as defs
-from test.support.interpreters import (
+from concurrent.interpreters import (
     InterpreterError, InterpreterNotFoundError, ExecutionFailed,
 )
 from .utils import (
@@ -133,7 +133,7 @@ class CreateTests(TestBase):
         main, = interpreters.list_all()
         interp = interpreters.create()
         out = _run_output(interp, dedent("""
-            from test.support import interpreters
+            from concurrent import interpreters
             interp = interpreters.create()
             print(interp.id)
             """))
@@ -196,7 +196,7 @@ class GetCurrentTests(TestBase):
         main = interpreters.get_main()
         interp = interpreters.create()
         out = _run_output(interp, dedent("""
-            from test.support import interpreters
+            from concurrent import interpreters
             cur = interpreters.get_current()
             print(cur.id)
             """))
@@ -213,7 +213,7 @@ class GetCurrentTests(TestBase):
         with self.subTest('subinterpreter'):
             interp = interpreters.create()
             out = _run_output(interp, dedent("""
-                from test.support import interpreters
+                from concurrent import interpreters
                 cur = interpreters.get_current()
                 print(id(cur))
                 cur = interpreters.get_current()
@@ -225,7 +225,7 @@ class GetCurrentTests(TestBase):
         with self.subTest('per-interpreter'):
             interp = interpreters.create()
             out = _run_output(interp, dedent("""
-                from test.support import interpreters
+                from concurrent import interpreters
                 cur = interpreters.get_current()
                 print(id(cur))
                 """))
@@ -412,9 +412,11 @@ class InterpreterObjectTests(TestBase):
 
     def test_pickle(self):
         interp = interpreters.create()
-        data = pickle.dumps(interp)
-        unpickled = pickle.loads(data)
-        self.assertEqual(unpickled, interp)
+        for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(protocol=protocol):
+                data = pickle.dumps(interp, protocol)
+                unpickled = pickle.loads(data)
+                self.assertEqual(unpickled, interp)
 
 
 class TestInterpreterIsRunning(TestBase):
@@ -582,7 +584,7 @@ class TestInterpreterClose(TestBase):
         main, = interpreters.list_all()
         interp = interpreters.create()
         out = _run_output(interp, dedent(f"""
-            from test.support import interpreters
+            from concurrent import interpreters
             interp = interpreters.Interpreter({interp.id})
             try:
                 interp.close()
@@ -599,7 +601,7 @@ class TestInterpreterClose(TestBase):
         self.assertEqual(set(interpreters.list_all()),
                          {main, interp1, interp2})
         interp1.exec(dedent(f"""
-            from test.support import interpreters
+            from concurrent import interpreters
             interp2 = interpreters.Interpreter({interp2.id})
             interp2.close()
             interp3 = interpreters.create()
@@ -806,7 +808,7 @@ class TestInterpreterExec(TestBase):
                 ham()
             """)
         scriptfile = self.make_script('script.py', tempdir, text="""
-            from test.support import interpreters
+            from concurrent import interpreters
 
             def script():
                 import spam
@@ -827,7 +829,7 @@ class TestInterpreterExec(TestBase):
                 ~~~~~~~~~~~^^^^^^^^
               {interpmod_line.strip()}
                 raise ExecutionFailed(excinfo)
-            test.support.interpreters.ExecutionFailed: RuntimeError: uh-oh!
+            concurrent.interpreters.ExecutionFailed: RuntimeError: uh-oh!
 
             Uncaught in the interpreter:
 
@@ -943,6 +945,22 @@ class TestInterpreterExec(TestBase):
         with self.interpreter_obj_from_capi() as (interp, _):
             with self.assertRaisesRegex(InterpreterError, 'unrecognized'):
                 interp.exec('raise Exception("it worked!")')
+
+    def test_list_comprehension(self):
+        # gh-135450: List comprehensions caused an assertion failure
+        # in _PyCode_CheckNoExternalState()
+        import string
+        r_interp, w_interp = self.pipe()
+
+        interp = interpreters.create()
+        interp.exec(f"""if True:
+            import os
+            comp = [str(i) for i in range(10)]
+            os.write({w_interp}, ''.join(comp).encode())
+        """)
+        self.assertEqual(os.read(r_interp, 10).decode(), string.digits)
+        interp.close()
+
 
     # test__interpreters covers the remaining
     # Interpreter.exec() behavior.
@@ -1281,7 +1299,7 @@ class TestInterpreterCall(TestBase):
             # no module indirection
             with self.subTest('no indirection'):
                 text = run(f"""
-                    from test.support import interpreters
+                    from concurrent import interpreters
 
                     def spam():
                         # This a global var...
@@ -1301,7 +1319,7 @@ class TestInterpreterCall(TestBase):
                 """)
             with self.subTest('indirect as func, direct interp'):
                 text = run(f"""
-                    from test.support import interpreters
+                    from concurrent import interpreters
                     import mymod
 
                     def spam():
@@ -1317,7 +1335,7 @@ class TestInterpreterCall(TestBase):
 
             # indirect as func, indirect interp
             new_mod('mymod', f"""
-                from test.support import interpreters
+                from concurrent import interpreters
                 def run(func):
                     interp = interpreters.create()
                     return interp.call(func)
@@ -1355,6 +1373,187 @@ class TestInterpreterCall(TestBase):
             with defined_in___main__(funcname, script, remove=True) as arg:
                 with self.assertRaises(interpreters.NotShareableError):
                     interp.call(defs.spam_returns_arg, arg)
+
+    def test_func_in___main___hidden(self):
+        # When a top-level function that uses global variables is called
+        # through Interpreter.call(), it will be pickled, sent over,
+        # and unpickled.  That requires that it be found in the other
+        # interpreter's __main__ module.  However, the original script
+        # that defined the function is only run in the main interpreter,
+        # so pickle.loads() would normally fail.
+        #
+        # We work around this by running the script in the other
+        # interpreter.  However, this is a one-off solution for the sake
+        # of unpickling, so we avoid modifying that interpreter's
+        # __main__ module by running the script in a hidden module.
+        #
+        # In this test we verify that the function runs with the hidden
+        # module as its __globals__ when called in the other interpreter,
+        # and that the interpreter's __main__ module is unaffected.
+        text = dedent("""
+            eggs = True
+
+            def spam(*, explicit=False):
+                if explicit:
+                    import __main__
+                    ns = __main__.__dict__
+                else:
+                    # For now we have to have a LOAD_GLOBAL in the
+                    # function in order for globals() to actually return
+                    # spam.__globals__.  Maybe it doesn't go through pickle?
+                    # XXX We will fix this later.
+                    spam
+                    ns = globals()
+
+                func = ns.get('spam')
+                return [
+                    id(ns),
+                    ns.get('__name__'),
+                    ns.get('__file__'),
+                    id(func),
+                    None if func is None else repr(func),
+                    ns.get('eggs'),
+                    ns.get('ham'),
+                ]
+
+            if __name__ == "__main__":
+                from concurrent import interpreters
+                interp = interpreters.create()
+
+                ham = True
+                print([
+                    [
+                        spam(explicit=True),
+                        spam(),
+                    ],
+                    [
+                        interp.call(spam, explicit=True),
+                        interp.call(spam),
+                    ],
+                ])
+           """)
+        with os_helper.temp_dir() as tempdir:
+            filename = script_helper.make_script(tempdir, 'my-script', text)
+            res = script_helper.assert_python_ok(filename)
+        stdout = res.out.decode('utf-8').strip()
+        local, remote = eval(stdout)
+
+        # In the main interpreter.
+        main, unpickled = local
+        nsid, _, _, funcid, func, _, _ = main
+        self.assertEqual(main, [
+            nsid,
+            '__main__',
+            filename,
+            funcid,
+            func,
+            True,
+            True,
+        ])
+        self.assertIsNot(func, None)
+        self.assertRegex(func, '^<function spam at 0x.*>$')
+        self.assertEqual(unpickled, main)
+
+        # In the subinterpreter.
+        main, unpickled = remote
+        nsid1, _, _, funcid1, _, _, _ = main
+        self.assertEqual(main, [
+            nsid1,
+            '__main__',
+            None,
+            funcid1,
+            None,
+            None,
+            None,
+        ])
+        nsid2, _, _, funcid2, func, _, _ = unpickled
+        self.assertEqual(unpickled, [
+            nsid2,
+            '<fake __main__>',
+            filename,
+            funcid2,
+            func,
+            True,
+            None,
+        ])
+        self.assertIsNot(func, None)
+        self.assertRegex(func, '^<function spam at 0x.*>$')
+        self.assertNotEqual(nsid2, nsid1)
+        self.assertNotEqual(funcid2, funcid1)
+
+    def test_func_in___main___uses_globals(self):
+        # See the note in test_func_in___main___hidden about pickle
+        # and the __main__ module.
+        #
+        # Additionally, the solution to that problem must provide
+        # for global variables on which a pickled function might rely.
+        #
+        # To check that, we run a script that has two global functions
+        # and a global variable in the __main__ module.  One of the
+        # functions sets the global variable and the other returns
+        # the value.
+        #
+        # The script calls those functions multiple times in another
+        # interpreter, to verify the following:
+        #
+        #  * the global variable is properly initialized
+        #  * the global variable retains state between calls
+        #  * the setter modifies that persistent variable
+        #  * the getter uses the variable
+        #  * the calls in the other interpreter do not modify
+        #    the main interpreter
+        #  * those calls don't modify the interpreter's __main__ module
+        #  * the functions and variable do not actually show up in the
+        #    other interpreter's __main__ module
+        text = dedent("""
+            count = 0
+
+            def inc(x=1):
+                global count
+                count += x
+
+            def get_count():
+                return count
+
+            if __name__ == "__main__":
+                counts = []
+                results = [count, counts]
+
+                from concurrent import interpreters
+                interp = interpreters.create()
+
+                val = interp.call(get_count)
+                counts.append(val)
+
+                interp.call(inc)
+                val = interp.call(get_count)
+                counts.append(val)
+
+                interp.call(inc, 3)
+                val = interp.call(get_count)
+                counts.append(val)
+
+                results.append(count)
+
+                modified = {name: interp.call(eval, f'{name!r} in vars()')
+                            for name in ('count', 'inc', 'get_count')}
+                results.append(modified)
+
+                print(results)
+           """)
+        with os_helper.temp_dir() as tempdir:
+            filename = script_helper.make_script(tempdir, 'my-script', text)
+            res = script_helper.assert_python_ok(filename)
+        stdout = res.out.decode('utf-8').strip()
+        before, counts, after, modified = eval(stdout)
+        self.assertEqual(modified, {
+            'count': False,
+            'inc': False,
+            'get_count': False,
+        })
+        self.assertEqual(before, 0)
+        self.assertEqual(after, 0)
+        self.assertEqual(counts, [0, 1, 4])
 
     def test_raises(self):
         interp = interpreters.create()
@@ -1413,6 +1612,113 @@ class TestInterpreterCall(TestBase):
         with self.subTest(f'{func} ({op})'):
             with self.assertRaises(interpreters.NotShareableError):
                 interp.call(func, op, 'eggs!')
+
+    def test_callable_requires_frame(self):
+        # There are various functions that require a current frame.
+        interp = interpreters.create()
+        for call, expected in [
+            ((eval, '[1, 2, 3]'),
+                [1, 2, 3]),
+            ((eval, 'sum([1, 2, 3])'),
+                6),
+            ((exec, '...'),
+                None),
+        ]:
+            with self.subTest(str(call)):
+                res = interp.call(*call)
+                self.assertEqual(res, expected)
+
+        result_not_pickleable = [
+            globals,
+            locals,
+            vars,
+        ]
+        for func, expectedtype in {
+            globals: dict,
+            locals: dict,
+            vars: dict,
+            dir: list,
+        }.items():
+            with self.subTest(str(func)):
+                if func in result_not_pickleable:
+                    with self.assertRaises(interpreters.NotShareableError):
+                        interp.call(func)
+                else:
+                    res = interp.call(func)
+                    self.assertIsInstance(res, expectedtype)
+                    self.assertIn('__builtins__', res)
+
+    def test_globals_from_builtins(self):
+        # The builtins  exec(), eval(), globals(), locals(), vars(),
+        # and dir() each runs relative to the target interpreter's
+        # __main__ module, when called directly.  However,
+        # globals(), locals(), and vars() don't work when called
+        # directly so we don't check them.
+        from _frozen_importlib import BuiltinImporter
+        interp = interpreters.create()
+
+        names = interp.call(dir)
+        self.assertEqual(names, [
+            '__builtins__',
+            '__doc__',
+            '__loader__',
+            '__name__',
+            '__package__',
+            '__spec__',
+        ])
+
+        values = {name: interp.call(eval, name)
+                  for name in names if name != '__builtins__'}
+        self.assertEqual(values, {
+            '__name__': '__main__',
+            '__doc__': None,
+            '__spec__': None,  # It wasn't imported, so no module spec?
+            '__package__': None,
+            '__loader__': BuiltinImporter,
+        })
+        with self.assertRaises(ExecutionFailed):
+            interp.call(eval, 'spam'),
+
+        interp.call(exec, f'assert dir() == {names}')
+
+        # Update the interpreter's __main__.
+        interp.prepare_main(spam=42)
+        expected = names + ['spam']
+
+        names = interp.call(dir)
+        self.assertEqual(names, expected)
+
+        value = interp.call(eval, 'spam')
+        self.assertEqual(value, 42)
+
+        interp.call(exec, f'assert dir() == {expected}, dir()')
+
+    def test_globals_from_stateless_func(self):
+        # A stateless func, which doesn't depend on any globals,
+        # doesn't go through pickle, so it runs in __main__.
+        def set_global(name, value):
+            globals()[name] = value
+
+        def get_global(name):
+            return globals().get(name)
+
+        interp = interpreters.create()
+
+        modname = interp.call(get_global, '__name__')
+        self.assertEqual(modname, '__main__')
+
+        res = interp.call(get_global, 'spam')
+        self.assertIsNone(res)
+
+        interp.exec('spam = True')
+        res = interp.call(get_global, 'spam')
+        self.assertTrue(res)
+
+        interp.call(set_global, 'spam', 42)
+        res = interp.call(get_global, 'spam')
+        self.assertEqual(res, 42)
+
+        interp.exec('assert spam == 42, repr(spam)')
 
     def test_call_in_thread(self):
         interp = interpreters.create()
