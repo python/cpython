@@ -9,7 +9,7 @@
 
 .. versionadded:: 3.14
 
-**Source code:** :source:`Lib/concurrent/interpreters.py`
+**Source code:** :source:`Lib/concurrent/interpreters`
 
 --------------
 
