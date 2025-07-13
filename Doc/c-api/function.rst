@@ -20,13 +20,13 @@ There are a few functions specific to Python functions.
    .. index:: single: MethodType (in module types)
 
    This is an instance of :c:type:`PyTypeObject` and represents the Python function
-   type.  It is exposed to Python programmers as ``types.FunctionType``.
+   type. It is exposed to Python programmers as ``types.FunctionType``.
 
 
 .. c:function:: int PyFunction_Check(PyObject *o)
 
    Return true if *o* is a function object (has type :c:data:`PyFunction_Type`).
-   The parameter must not be ``NULL``.  This function always succeeds.
+   The parameter must not be ``NULL``. This function always succeeds.
 
 
 .. c:function:: PyObject* PyFunction_New(PyObject *code, PyObject *globals)
@@ -158,7 +158,7 @@ There are a few functions specific to Python functions.
    Clear watcher identified by *watcher_id* previously returned from
    :c:func:`PyFunction_AddWatcher` for the current interpreter.
    Return ``0`` on success, or ``-1`` and set an exception on error
-   (e.g.  if the given *watcher_id* was never registered.)
+   (e.g. if the given *watcher_id* was never registered.)
 
    .. versionadded:: 3.12
 
@@ -197,7 +197,7 @@ There are a few functions specific to Python functions.
    runtime behavior depending on optimization decisions, it does not change
    the semantics of the Python code being executed.
 
-   If *event* is ``PyFunction_EVENT_DESTROY``,  Taking a reference in the
+   If *event* is ``PyFunction_EVENT_DESTROY``, Taking a reference in the
    callback to the about-to-be-destroyed function will resurrect it, preventing
    it from being freed at this time. When the resurrected object is destroyed
    later, any watcher callbacks active at that time will be called again.

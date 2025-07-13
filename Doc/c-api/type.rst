@@ -22,14 +22,14 @@ Type Objects
 .. c:function:: int PyType_Check(PyObject *o)
 
    Return non-zero if the object *o* is a type object, including instances of
-   types derived from the standard type object.  Return 0 in all other cases.
+   types derived from the standard type object. Return 0 in all other cases.
    This function always succeeds.
 
 
 .. c:function:: int PyType_CheckExact(PyObject *o)
 
    Return non-zero if the object *o* is a type object, but not a subtype of
-   the standard type object.  Return 0 in all other cases.  This function
+   the standard type object. Return 0 in all other cases. This function
    always succeeds.
 
 
@@ -71,7 +71,7 @@ Type Objects
 .. c:function:: void PyType_Modified(PyTypeObject *type)
 
    Invalidate the internal lookup cache for the type and all of its
-   subtypes.  This function must be called after any manual
+   subtypes. This function must be called after any manual
    modification of the attributes or base classes of the type.
 
 
@@ -144,7 +144,7 @@ Type Objects
    Return true if *a* is a subtype of *b*.
 
    This function only checks for actual subtypes, which means that
-   :meth:`~type.__subclasscheck__` is not called on *b*.  Call
+   :meth:`~type.__subclasscheck__` is not called on *b*. Call
    :c:func:`PyObject_IsSubclass` to do the same check that :func:`issubclass`
    would do.
 
@@ -152,7 +152,7 @@ Type Objects
 .. c:function:: PyObject* PyType_GenericAlloc(PyTypeObject *type, Py_ssize_t nitems)
 
    Generic handler for the :c:member:`~PyTypeObject.tp_alloc` slot of a type
-   object.  Uses Python's default memory allocation mechanism to allocate memory
+   object. Uses Python's default memory allocation mechanism to allocate memory
    for a new instance, zeros the memory, then initializes the memory as if by
    calling :c:func:`PyObject_Init` or :c:func:`PyObject_InitVar`.
 
@@ -172,14 +172,14 @@ Type Objects
 .. c:function:: PyObject* PyType_GenericNew(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
    Generic handler for the :c:member:`~PyTypeObject.tp_new` slot of a type
-   object.  Creates a new instance using the type's
+   object. Creates a new instance using the type's
    :c:member:`~PyTypeObject.tp_alloc` slot and returns the resulting object.
 
 .. c:function:: int PyType_Ready(PyTypeObject *type)
 
-   Finalize a type object.  This should be called on all type objects to finish
-   their initialization.  This function is responsible for adding inherited slots
-   from a type's base class.  Return ``0`` on success, or return ``-1`` and sets an
+   Finalize a type object. This should be called on all type objects to finish
+   their initialization. This function is responsible for adding inherited slots
+   from a type's base class. Return ``0`` on success, or return ``-1`` and sets an
    exception on error.
 
    .. note::
@@ -378,7 +378,7 @@ The following functions and structs are used to create
    .. versionchanged:: 3.12
 
       The function now finds and uses a metaclass corresponding to the provided
-      base classes.  Previously, only :class:`type` instances were returned.
+      base classes. Previously, only :class:`type` instances were returned.
 
       The :c:member:`~PyTypeObject.tp_new` of the metaclass is *ignored*.
       which may result in incomplete initialization.
@@ -399,7 +399,7 @@ The following functions and structs are used to create
    .. versionchanged:: 3.12
 
       The function now finds and uses a metaclass corresponding to the provided
-      base classes.  Previously, only :class:`type` instances were returned.
+      base classes. Previously, only :class:`type` instances were returned.
 
       The :c:member:`~PyTypeObject.tp_new` of the metaclass is *ignored*.
       which may result in incomplete initialization.
@@ -588,7 +588,7 @@ The following functions and structs are used to create
 
       .. versionchanged:: 3.14
          The field :c:member:`~PyTypeObject.tp_vectorcall` can now set
-         using ``Py_tp_vectorcall``.  See the field's documentation
+         using ``Py_tp_vectorcall``. See the field's documentation
          for details.
 
    .. c:member:: void *pfunc

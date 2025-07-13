@@ -15,7 +15,7 @@ bound into a function.
 
 .. c:type:: PyCodeObject
 
-   The C structure of the objects used to describe code objects.  The
+   The C structure of the objects used to describe code objects. The
    fields of this type are subject to change at any time.
 
 
@@ -48,7 +48,7 @@ bound into a function.
 
 .. c:function:: PyCodeObject* PyUnstable_Code_New(int argcount, int kwonlyargcount, int nlocals, int stacksize, int flags, PyObject *code, PyObject *consts, PyObject *names, PyObject *varnames, PyObject *freevars, PyObject *cellvars, PyObject *filename, PyObject *name, PyObject *qualname, int firstlineno, PyObject *linetable, PyObject *exceptiontable)
 
-   Return a new code object.  If you need a dummy code object to create a frame,
+   Return a new code object. If you need a dummy code object to create a frame,
    use :c:func:`PyCode_NewEmpty` instead.
 
    Since the definition of the bytecode changes often, calling
@@ -79,7 +79,7 @@ bound into a function.
    .. versionadded:: 3.8 as ``PyCode_NewWithPosOnlyArgs``
 
    .. versionchanged:: 3.11
-      Added ``qualname`` and  ``exceptiontable`` parameters.
+      Added ``qualname`` and ``exceptiontable`` parameters.
 
    .. versionchanged:: 3.12
 

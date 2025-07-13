@@ -8,21 +8,21 @@ Slice Objects
 
 .. c:var:: PyTypeObject PySlice_Type
 
-   The type object for slice objects.  This is the same as :class:`slice` in the
+   The type object for slice objects. This is the same as :class:`slice` in the
    Python layer.
 
 
 .. c:function:: int PySlice_Check(PyObject *ob)
 
-   Return true if *ob* is a slice object; *ob* must not be ``NULL``.  This
+   Return true if *ob* is a slice object; *ob* must not be ``NULL``. This
    function always succeeds.
 
 
 .. c:function:: PyObject* PySlice_New(PyObject *start, PyObject *stop, PyObject *step)
 
-   Return a new slice object with the given values.  The *start*, *stop*, and
+   Return a new slice object with the given values. The *start*, *stop*, and
    *step* parameters are used as the values of the slice object attributes of
-   the same names.  Any of the values may be ``NULL``, in which case the
+   the same names. Any of the values may be ``NULL``, in which case the
    ``None`` will be used for the corresponding attribute.
 
    Return ``NULL`` with an exception set if
@@ -48,9 +48,9 @@ Slice Objects
 
 .. c:function:: int PySlice_GetIndicesEx(PyObject *slice, Py_ssize_t length, Py_ssize_t *start, Py_ssize_t *stop, Py_ssize_t *step, Py_ssize_t *slicelength)
 
-   Usable replacement for :c:func:`PySlice_GetIndices`.  Retrieve the start,
+   Usable replacement for :c:func:`PySlice_GetIndices`. Retrieve the start,
    stop, and step indices from the slice object *slice* assuming a sequence of
-   length *length*, and store the length of the slice in *slicelength*.  Out
+   length *length*, and store the length of the slice in *slicelength*. Out
    of bounds indices are clipped in a manner consistent with the handling of
    normal slices.
 
@@ -92,7 +92,7 @@ Slice Objects
 .. c:function:: int PySlice_Unpack(PyObject *slice, Py_ssize_t *start, Py_ssize_t *stop, Py_ssize_t *step)
 
    Extract the start, stop and step data members from a slice object as
-   C integers.  Silently reduce values larger than ``PY_SSIZE_T_MAX`` to
+   C integers. Silently reduce values larger than ``PY_SSIZE_T_MAX`` to
    ``PY_SSIZE_T_MAX``, silently boost the start and stop values less than
    ``PY_SSIZE_T_MIN`` to ``PY_SSIZE_T_MIN``, and silently boost the step
    values less than ``-PY_SSIZE_T_MAX`` to ``-PY_SSIZE_T_MAX``.
@@ -108,7 +108,7 @@ Slice Objects
    Out of bounds indices are clipped in a manner consistent with the handling
    of normal slices.
 
-   Return the length of the slice.  Always successful.  Doesn't call Python
+   Return the length of the slice. Always successful. Doesn't call Python
    code.
 
    .. versionadded:: 3.6.1
@@ -120,13 +120,13 @@ Ellipsis Object
 
 .. c:var:: PyTypeObject PyEllipsis_Type
 
-   The type of Python :const:`Ellipsis` object.  Same as :class:`types.EllipsisType`
+   The type of Python :const:`Ellipsis` object. Same as :class:`types.EllipsisType`
    in the Python layer.
 
 
 .. c:var:: PyObject *Py_Ellipsis
 
-   The Python ``Ellipsis`` object.  This object has no methods.  Like
+   The Python ``Ellipsis`` object. This object has no methods. Like
    :c:data:`Py_None`, it is an :term:`immortal` singleton object.
 
    .. versionchanged:: 3.12

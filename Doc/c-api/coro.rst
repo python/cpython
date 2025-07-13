@@ -31,5 +31,5 @@ return.
 
    Create and return a new coroutine object based on the *frame* object,
    with ``__name__`` and ``__qualname__`` set to *name* and *qualname*.
-   A reference to *frame* is stolen by this function.  The *frame* argument
+   A reference to *frame* is stolen by this function. The *frame* argument
    must not be ``NULL``.

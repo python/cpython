@@ -15,10 +15,10 @@ Allocating Objects on the Heap
 .. c:function:: PyObject* PyObject_Init(PyObject *op, PyTypeObject *type)
 
    Initialize a newly allocated object *op* with its type and initial
-   reference.  Returns the initialized object.  Other fields of the object are
-   not initialized.  Despite its name, this function is unrelated to the
+   reference. Returns the initialized object. Other fields of the object are
+   not initialized. Despite its name, this function is unrelated to the
    object's :meth:`~object.__init__` method (:c:member:`~PyTypeObject.tp_init`
-   slot).  Specifically, this function does **not** call the object's
+   slot). Specifically, this function does **not** call the object's
    :meth:`!__init__` method.
 
    In general, consider this function to be a low-level routine. Use
@@ -29,7 +29,7 @@ Allocating Objects on the Heap
    .. note::
 
       This function only initializes the object's memory corresponding to the
-      initial :c:type:`PyObject` structure.  It does not zero the rest.
+      initial :c:type:`PyObject` structure. It does not zero the rest.
 
 
 .. c:function:: PyVarObject* PyObject_InitVar(PyVarObject *op, PyTypeObject *type, Py_ssize_t size)
@@ -39,7 +39,7 @@ Allocating Objects on the Heap
 
    .. note::
 
-      This function only initializes some of the object's memory.  It does not
+      This function only initializes some of the object's memory. It does not
       zero the rest.
 
 
@@ -48,7 +48,7 @@ Allocating Objects on the Heap
    Allocates a new Python object using the C structure type *TYPE* and the
    Python type object *typeobj* (``PyTypeObject*``) by calling
    :c:func:`PyObject_Malloc` to allocate memory and initializing it like
-   :c:func:`PyObject_Init`.  The caller will own the only reference to the
+   :c:func:`PyObject_Init`. The caller will own the only reference to the
    object (i.e. its reference count will be one).
 
    Avoid calling this directly to allocate memory for an object; call the type's
@@ -77,8 +77,8 @@ Allocating Objects on the Heap
 
       This macro does not construct a fully initialized object of the given
       type; it merely allocates memory and prepares it for further
-      initialization by :c:member:`~PyTypeObject.tp_init`.  To construct a
-      fully initialized object, call *typeobj* instead.  For example::
+      initialization by :c:member:`~PyTypeObject.tp_init`. To construct a
+      fully initialized object, call *typeobj* instead. For example::
 
          PyObject *foo = PyObject_CallNoArgs((PyObject *)&PyFoo_Type);
 
@@ -100,7 +100,7 @@ Allocating Objects on the Heap
    * The memory is initialized like :c:func:`PyObject_InitVar`.
 
    This is useful for implementing objects like tuples, which are able to
-   determine their size at construction time.  Embedding the array of fields
+   determine their size at construction time. Embedding the array of fields
    into the same allocation decreases the number of allocations, improving the
    memory management efficiency.
 
@@ -127,8 +127,8 @@ Allocating Objects on the Heap
 
       This macro does not construct a fully initialized object of the given
       type; it merely allocates memory and prepares it for further
-      initialization by :c:member:`~PyTypeObject.tp_init`.  To construct a
-      fully initialized object, call *typeobj* instead.  For example::
+      initialization by :c:member:`~PyTypeObject.tp_init`. To construct a
+      fully initialized object, call *typeobj* instead. For example::
 
          PyObject *list_instance = PyObject_CallNoArgs((PyObject *)&PyList_Type);
 
@@ -146,7 +146,7 @@ Allocating Objects on the Heap
 
 .. c:var:: PyObject _Py_NoneStruct
 
-   Object which is visible in Python as ``None``.  This should only be accessed
+   Object which is visible in Python as ``None``. This should only be accessed
    using the :c:macro:`Py_None` macro, which evaluates to a pointer to this
    object.
 

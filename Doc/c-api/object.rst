@@ -79,8 +79,8 @@ Object Protocol
 
 .. c:function:: int PyObject_Print(PyObject *o, FILE *fp, int flags)
 
-   Print an object *o*, on file *fp*.  Returns ``-1`` on error.  The flags argument
-   is used to enable certain printing options.  The only option currently supported
+   Print an object *o*, on file *fp*. Returns ``-1`` on error. he flags argument
+   is used to enable certain printing options. The only option currently supported
    is :c:macro:`Py_PRINT_RAW`; if given, the :func:`str` of the object is written
    instead of the :func:`repr`.
 
@@ -136,7 +136,7 @@ Object Protocol
 .. c:function:: PyObject* PyObject_GetAttr(PyObject *o, PyObject *attr_name)
 
    Retrieve an attribute named *attr_name* from object *o*. Returns the attribute
-   value on success, or ``NULL`` on failure.  This is the equivalent of the Python
+   value on success, or ``NULL`` on failure. This is the equivalent of the Python
    expression ``o.attr_name``.
 
    If the missing attribute should not be treated as a failure, you can use
@@ -179,18 +179,18 @@ Object Protocol
 .. c:function:: PyObject* PyObject_GenericGetAttr(PyObject *o, PyObject *name)
 
    Generic attribute getter function that is meant to be put into a type
-   object's ``tp_getattro`` slot.  It looks for a descriptor in the dictionary
+   object's ``tp_getattro`` slot. It looks for a descriptor in the dictionary
    of classes in the object's MRO as well as an attribute in the object's
-   :attr:`~object.__dict__` (if present).  As outlined in :ref:`descriptors`,
+   :attr:`~object.__dict__` (if present). As outlined in :ref:`descriptors`,
    data descriptors take preference over instance attributes, while non-data
-   descriptors don't.  Otherwise, an :exc:`AttributeError` is raised.
+   descriptors don't. Otherwise, an :exc:`AttributeError` is raised.
 
 
 .. c:function:: int PyObject_SetAttr(PyObject *o, PyObject *attr_name, PyObject *v)
 
    Set the value of the attribute named *attr_name*, for object *o*, to the value
    *v*. Raise an exception and return ``-1`` on failure;
-   return ``0`` on success.  This is the equivalent of the Python statement
+   return ``0`` on success. This is the equivalent of the Python statement
    ``o.attr_name = v``.
 
    If *v* is ``NULL``, the attribute is deleted. This behaviour is deprecated
@@ -234,7 +234,7 @@ Object Protocol
 
    Generic attribute setter and deleter function that is meant
    to be put into a type object's :c:member:`~PyTypeObject.tp_setattro`
-   slot.  It looks for a data descriptor in the
+   slot. It looks for a data descriptor in the
    dictionary of classes in the object's MRO, and if found it takes preference
    over setting or deleting the attribute in the instance dictionary. Otherwise, the
    attribute is set or deleted in the object's :attr:`~object.__dict__` (if present).
@@ -330,9 +330,9 @@ Object Protocol
 
    .. index:: pair: built-in function; repr
 
-   Compute a string representation of object *o*.  Returns the string
-   representation on success, ``NULL`` on failure.  This is the equivalent of the
-   Python expression ``repr(o)``.  Called by the :func:`repr` built-in function.
+   Compute a string representation of object *o*. Returns the string
+   representation on success, ``NULL`` on failure. This is the equivalent of the
+   Python expression ``repr(o)``. Called by the :func:`repr` built-in function.
 
    .. versionchanged:: 3.4
       This function now includes a debug assertion to help ensure that it
@@ -344,7 +344,7 @@ Object Protocol
 
    As :c:func:`PyObject_Repr`, compute a string representation of object *o*, but
    escape the non-ASCII characters in the string returned by
-   :c:func:`PyObject_Repr` with ``\x``, ``\u`` or ``\U`` escapes.  This generates
+   :c:func:`PyObject_Repr` with ``\x``, ``\u`` or ``\U`` escapes. This generates
    a string similar to that returned by :c:func:`PyObject_Repr` in Python 2.
    Called by the :func:`ascii` built-in function.
 
@@ -353,9 +353,9 @@ Object Protocol
 
 .. c:function:: PyObject* PyObject_Str(PyObject *o)
 
-   Compute a string representation of object *o*.  Returns the string
-   representation on success, ``NULL`` on failure.  This is the equivalent of the
-   Python expression ``str(o)``.  Called by the :func:`str` built-in function
+   Compute a string representation of object *o*. Returns the string
+   representation on success, ``NULL`` on failure. This is the equivalent of the
+   Python expression ``str(o)``. Called by the :func:`str` built-in function
    and, therefore, by the :func:`print` function.
 
    .. versionchanged:: 3.4
@@ -367,9 +367,9 @@ Object Protocol
 
    .. index:: pair: built-in function; bytes
 
-   Compute a bytes representation of object *o*.  ``NULL`` is returned on
-   failure and a bytes object on success.  This is equivalent to the Python
-   expression ``bytes(o)``, when *o* is not an integer.  Unlike ``bytes(o)``,
+   Compute a bytes representation of object *o*. ``NULL`` is returned on
+   failure and a bytes object on success. This is equivalent to the Python
+   expression ``bytes(o)``, when *o* is not an integer. Unlike ``bytes(o)``,
    a TypeError is raised when *o* is an integer instead of a zero-initialized
    bytes object.
 
@@ -377,33 +377,33 @@ Object Protocol
 .. c:function:: int PyObject_IsSubclass(PyObject *derived, PyObject *cls)
 
    Return ``1`` if the class *derived* is identical to or derived from the class
-   *cls*, otherwise return ``0``.  In case of an error, return ``-1``.
+   *cls*, otherwise return ``0``. In case of an error, return ``-1``.
 
    If *cls* is a tuple, the check will be done against every entry in *cls*.
    The result will be ``1`` when at least one of the checks returns ``1``,
    otherwise it will be ``0``.
 
    If *cls* has a :meth:`~type.__subclasscheck__` method, it will be called to
-   determine the subclass status as described in :pep:`3119`.  Otherwise,
+   determine the subclass status as described in :pep:`3119`. Otherwise,
    *derived* is a subclass of *cls* if it is a direct or indirect subclass,
    i.e. contained in :attr:`cls.__mro__ <type.__mro__>`.
 
    Normally only class objects, i.e. instances of :class:`type` or a derived
-   class, are considered classes.  However, objects can override this by having
+   class, are considered classes. However, objects can override this by having
    a :attr:`~type.__bases__` attribute (which must be a tuple of base classes).
 
 
 .. c:function:: int PyObject_IsInstance(PyObject *inst, PyObject *cls)
 
    Return ``1`` if *inst* is an instance of the class *cls* or a subclass of
-   *cls*, or ``0`` if not.  On error, returns ``-1`` and sets an exception.
+   *cls*, or ``0`` if not. On error, returns ``-1`` and sets an exception.
 
    If *cls* is a tuple, the check will be done against every entry in *cls*.
    The result will be ``1`` when at least one of the checks returns ``1``,
    otherwise it will be ``0``.
 
    If *cls* has a :meth:`~type.__instancecheck__` method, it will be called to
-   determine the subclass status as described in :pep:`3119`.  Otherwise, *inst*
+   determine the subclass status as described in :pep:`3119`. Otherwise, *inst*
    is an instance of *cls* if its class is a subclass of *cls*.
 
    An instance *inst* can override what is considered its class by having a
@@ -418,11 +418,11 @@ Object Protocol
 
    .. index:: pair: built-in function; hash
 
-   Compute and return the hash value of an object *o*.  On failure, return ``-1``.
+   Compute and return the hash value of an object *o*. On failure, return ``-1``.
    This is the equivalent of the Python expression ``hash(o)``.
 
    .. versionchanged:: 3.2
-      The return type is now Py_hash_t.  This is a signed integer the same size
+      The return type is now Py_hash_t. This is a signed integer the same size
       as :c:type:`Py_ssize_t`.
 
 
@@ -437,14 +437,14 @@ Object Protocol
 .. c:function:: int PyObject_IsTrue(PyObject *o)
 
    Returns ``1`` if the object *o* is considered to be true, and ``0`` otherwise.
-   This is equivalent to the Python expression ``not not o``.  On failure, return
+   This is equivalent to the Python expression ``not not o``. On failure, return
    ``-1``.
 
 
 .. c:function:: int PyObject_Not(PyObject *o)
 
    Returns ``0`` if the object *o* is considered to be true, and ``1`` otherwise.
-   This is equivalent to the Python expression ``not o``.  On failure, return
+   This is equivalent to the Python expression ``not o``. On failure, return
    ``-1``.
 
 
@@ -453,7 +453,7 @@ Object Protocol
    .. index:: pair: built-in function; type
 
    When *o* is non-``NULL``, returns a type object corresponding to the object type
-   of object *o*. On failure, raises :exc:`SystemError` and returns ``NULL``.  This
+   of object *o*. On failure, raises :exc:`SystemError` and returns ``NULL``. This
    is equivalent to the Python expression ``type(o)``.
    This function creates a new :term:`strong reference` to the return value.
    There's really no reason to use this
@@ -465,7 +465,7 @@ Object Protocol
 .. c:function:: int PyObject_TypeCheck(PyObject *o, PyTypeObject *type)
 
    Return non-zero if the object *o* is of type *type* or a subtype of *type*, and
-   ``0`` otherwise.  Both parameters must be non-``NULL``.
+   ``0`` otherwise. Both parameters must be non-``NULL``.
 
 
 .. c:function:: Py_ssize_t PyObject_Size(PyObject *o)
@@ -473,9 +473,9 @@ Object Protocol
 
    .. index:: pair: built-in function; len
 
-   Return the length of object *o*.  If the object *o* provides either the sequence
-   and mapping protocols, the sequence length is returned.  On error, ``-1`` is
-   returned.  This is the equivalent to the Python expression ``len(o)``.
+   Return the length of object *o*. If the object *o* provides either the sequence
+   and mapping protocols, the sequence length is returned. On error, ``-1`` is
+   returned. This is the equivalent to the Python expression ``len(o)``.
 
 
 .. c:function:: Py_ssize_t PyObject_LengthHint(PyObject *o, Py_ssize_t defaultvalue)
@@ -496,16 +496,16 @@ Object Protocol
 
 .. c:function:: int PyObject_SetItem(PyObject *o, PyObject *key, PyObject *v)
 
-   Map the object *key* to the value *v*.  Raise an exception and
-   return ``-1`` on failure; return ``0`` on success.  This is the
-   equivalent of the Python statement ``o[key] = v``.  This function *does
+   Map the object *key* to the value *v*. Raise an exception and
+   return ``-1`` on failure; return ``0`` on success. This is the
+   equivalent of the Python statement ``o[key] = v``. This function *does
    not* steal a reference to *v*.
 
 
 .. c:function:: int PyObject_DelItem(PyObject *o, PyObject *key)
 
-   Remove the mapping for the object *key* from the object *o*.  Return ``-1``
-   on failure.  This is equivalent to the Python statement ``del o[key]``.
+   Remove the mapping for the object *key* from the object *o*. Return ``-1``
+   on failure. This is equivalent to the Python statement ``del o[key]``.
 
 
 .. c:function:: int PyObject_DelItemString(PyObject *o, const char *key)
@@ -519,7 +519,7 @@ Object Protocol
 
    This is equivalent to the Python expression ``dir(o)``, returning a (possibly
    empty) list of strings appropriate for the object argument, or ``NULL`` if there
-   was an error.  If the argument is ``NULL``, this is like the Python ``dir()``,
+   was an error. If the argument is ``NULL``, this is like the Python ``dir()``,
    returning the names of the current locals; in this case, if no execution frame
    is active then ``NULL`` is returned but :c:func:`PyErr_Occurred` will return false.
 
@@ -527,8 +527,8 @@ Object Protocol
 .. c:function:: PyObject* PyObject_GetIter(PyObject *o)
 
    This is equivalent to the Python expression ``iter(o)``. It returns a new
-   iterator for the object argument, or the object  itself if the object is already
-   an iterator.  Raises :exc:`TypeError` and returns ``NULL`` if the object cannot be
+   iterator for the object argument, or the object itself if the object is already
+   an iterator. Raises :exc:`TypeError` and returns ``NULL`` if the object cannot be
    iterated.
 
 
@@ -608,9 +608,9 @@ Object Protocol
 .. c:function:: int PyUnstable_Object_EnableDeferredRefcount(PyObject *obj)
 
    Enable `deferred reference counting <https://peps.python.org/pep-0703/#deferred-reference-counting>`_ on *obj*,
-   if supported by the runtime.  In the :term:`free-threaded <free threading>` build,
+   if supported by the runtime. In the :term:`free-threaded <free threading>` build,
    this allows the interpreter to avoid reference count adjustments to *obj*,
-   which may improve multi-threaded performance.  The tradeoff is
+   which may improve multi-threaded performance. The tradeoff is
    that *obj* will only be deallocated by the tracing garbage collector, and
    not when the interpreter no longer has any references to it.
 
@@ -634,7 +634,7 @@ Object Protocol
 
    Check if *obj* is a unique temporary object.
    Returns ``1`` if *obj* is known to be a unique temporary object,
-   and ``0`` otherwise.  This function cannot fail, but the check is
+   and ``0`` otherwise. This function cannot fail, but the check is
    conservative, and may return ``0`` in some cases even if *obj* is a unique
    temporary object.
 
@@ -676,7 +676,7 @@ Object Protocol
 
 .. c:function:: int PyUnstable_TryIncRef(PyObject *obj)
 
-   Increments the reference count of *obj* if it is not zero.  Returns ``1``
+   Increments the reference count of *obj* if it is not zero. Returns ``1``
    if the object's reference count was successfully incremented. Otherwise,
    this function returns ``0``.
 
@@ -750,7 +750,7 @@ Object Protocol
 
 .. c:function:: void PyUnstable_EnableTryIncRef(PyObject *obj)
 
-   Enables subsequent uses of :c:func:`PyUnstable_TryIncRef` on *obj*.  The
+   Enables subsequent uses of :c:func:`PyUnstable_TryIncRef` on *obj*. The
    caller must hold a :term:`strong reference` to *obj* when calling this.
 
    .. versionadded:: 3.14

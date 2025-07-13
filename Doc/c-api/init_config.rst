@@ -554,7 +554,7 @@ Runtime Python configuration API
 ================================
 
 At runtime, it's possible to get and set configuration options using
-:c:func:`PyConfig_Get` and  :c:func:`PyConfig_Set` functions.
+:c:func:`PyConfig_Get` and :c:func:`PyConfig_Set` functions.
 
 The configuration option *name* parameter must be a non-NULL null-terminated
 UTF-8 encoded string. See :ref:`Configuration Options <pyinitconfig-opts>`.
@@ -802,7 +802,7 @@ PyStatus
    .. c:function:: void Py_ExitStatusException(PyStatus status)
 
       Call ``exit(exitcode)`` if *status* is an exit. Print the error
-      message and exit with a non-zero exit code if *status* is an error.  Must
+      message and exit with a non-zero exit code if *status* is an error. Must
       only be called if ``PyStatus_Exception(status)`` is non-zero.
 
 .. note::
@@ -1183,10 +1183,10 @@ PyConfig
          single: argv (in module sys)
 
       Set :data:`sys.argv` command line arguments based on
-      :c:member:`~PyConfig.argv`.  These parameters are similar to those passed
+      :c:member:`~PyConfig.argv`. These parameters are similar to those passed
       to the program's :c:func:`main` function with the difference that the
       first entry should refer to the script file to be executed rather than
-      the executable hosting the Python interpreter.  If there isn't a script
+      the executable hosting the Python interpreter. If there isn't a script
       that will be run, the first entry in :c:member:`~PyConfig.argv` can be an
       empty string.
 
@@ -1210,7 +1210,7 @@ PyConfig
       * If :c:member:`argv[0] <PyConfig.argv>` is equal to ``L"-m"``
         (``python -m module``), prepend the current working directory.
       * If running a script (``python script.py``), prepend the script's
-        directory.  If it's a symbolic link, resolve symbolic links.
+        directory. If it's a symbolic link, resolve symbolic links.
       * Otherwise (``python -c code`` and ``python``), prepend an empty string,
         which means the current working directory.
 
@@ -1428,7 +1428,7 @@ PyConfig
       :term:`Filesystem error handler <filesystem encoding and error handler>`:
       :func:`sys.getfilesystemencodeerrors`.
 
-      On Windows: use ``"surrogatepass"`` by default, or ``"replace"``  if
+      On Windows: use ``"surrogatepass"`` by default, or ``"replace"`` if
       :c:member:`~PyPreConfig.legacy_windows_fs_encoding` of
       :c:type:`PyPreConfig` is non-zero.
 
@@ -1521,17 +1521,17 @@ PyConfig
    .. c:member:: int int_max_str_digits
 
       Configures the :ref:`integer string conversion length limitation
-      <int_max_str_digits>`.  An initial value of ``-1`` means the value will
+      <int_max_str_digits>`. An initial value of ``-1`` means the value will
       be taken from the command line or environment or otherwise default to
-      4300 (:data:`sys.int_info.default_max_str_digits`).  A value of ``0``
-      disables the limitation.  Values greater than zero but less than 640
+      4300 (:data:`sys.int_info.default_max_str_digits`). A value of ``0``
+      disables the limitation. Values greater than zero but less than 640
       (:data:`sys.int_info.str_digits_check_threshold`) are unsupported and
       will produce an error.
 
       Configured by the :option:`-X int_max_str_digits <-X>` command line
       flag or the :envvar:`PYTHONINTMAXSTRDIGITS` environment variable.
 
-      Default: ``-1`` in Python mode.  4300
+      Default: ``-1`` in Python mode. 4300
       (:data:`sys.int_info.default_max_str_digits`) in isolated mode.
 
       .. versionadded:: 3.12

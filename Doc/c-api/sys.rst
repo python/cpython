@@ -22,8 +22,8 @@ Operating System Utilities
 .. c:function:: int Py_FdIsInteractive(FILE *fp, const char *filename)
 
    Return true (nonzero) if the standard I/O file *fp* with name *filename* is
-   deemed interactive.  This is the case for files for which ``isatty(fileno(fp))``
-   is true.  If the :c:member:`PyConfig.interactive` is non-zero, this function
+   deemed interactive. This is the case for files for which ``isatty(fileno(fp))``
+   is true. If the :c:member:`PyConfig.interactive` is non-zero, this function
    also returns true if the *filename* pointer is ``NULL`` or if the name is equal to
    one of the strings ``'<stdin>'`` or ``'???'``.
 
@@ -32,7 +32,7 @@ Operating System Utilities
 
 .. c:function:: void PyOS_BeforeFork()
 
-   Function to prepare some internal state before a process fork.  This
+   Function to prepare some internal state before a process fork. This
    should be called before calling :c:func:`fork` or any similar function
    that clones the current process.
    Only available on systems where :c:func:`fork` is defined.
@@ -40,7 +40,7 @@ Operating System Utilities
    .. warning::
       The C :c:func:`fork` call should only be made from the
       :ref:`"main" thread <fork-and-threads>` (of the
-      :ref:`"main" interpreter <sub-interpreter-support>`).  The same is
+      :ref:`"main" interpreter <sub-interpreter-support>`). The same is
       true for ``PyOS_BeforeFork()``.
 
    .. versionadded:: 3.7
@@ -48,7 +48,7 @@ Operating System Utilities
 
 .. c:function:: void PyOS_AfterFork_Parent()
 
-   Function to update some internal state after a process fork.  This
+   Function to update some internal state after a process fork. This
    should be called from the parent process after calling :c:func:`fork`
    or any similar function that clones the current process, regardless
    of whether process cloning was successful.
@@ -57,7 +57,7 @@ Operating System Utilities
    .. warning::
       The C :c:func:`fork` call should only be made from the
       :ref:`"main" thread <fork-and-threads>` (of the
-      :ref:`"main" interpreter <sub-interpreter-support>`).  The same is
+      :ref:`"main" interpreter <sub-interpreter-support>`). The same is
       true for ``PyOS_AfterFork_Parent()``.
 
    .. versionadded:: 3.7
@@ -74,7 +74,7 @@ Operating System Utilities
    .. warning::
       The C :c:func:`fork` call should only be made from the
       :ref:`"main" thread <fork-and-threads>` (of the
-      :ref:`"main" interpreter <sub-interpreter-support>`).  The same is
+      :ref:`"main" interpreter <sub-interpreter-support>`). The same is
       true for ``PyOS_AfterFork_Child()``.
 
    .. versionadded:: 3.7
@@ -82,7 +82,7 @@ Operating System Utilities
    .. seealso::
       :func:`os.register_at_fork` allows registering custom Python functions
       to be called by :c:func:`PyOS_BeforeFork()`,
-      :c:func:`PyOS_AfterFork_Parent` and  :c:func:`PyOS_AfterFork_Child`.
+      :c:func:`PyOS_AfterFork_Parent` and :c:func:`PyOS_AfterFork_Child`.
 
 
 .. c:function:: void PyOS_AfterFork()
@@ -100,27 +100,27 @@ Operating System Utilities
 
    .. index:: single: USE_STACKCHECK (C macro)
 
-   Return true when the interpreter runs out of stack space.  This is a reliable
+   Return true when the interpreter runs out of stack space. This is a reliable
    check, but is only available when :c:macro:`!USE_STACKCHECK` is defined (currently
    on certain versions of Windows using the Microsoft Visual C++ compiler).
    :c:macro:`!USE_STACKCHECK` will be defined automatically; you should never
    change the definition in your own code.
 
 
-.. c:type::  void (*PyOS_sighandler_t)(int)
+.. c:type:: void (*PyOS_sighandler_t)(int)
 
 
 .. c:function:: PyOS_sighandler_t PyOS_getsig(int i)
 
-   Return the current signal handler for signal *i*.  This is a thin wrapper around
-   either :c:func:`!sigaction` or :c:func:`!signal`.  Do not call those functions
+   Return the current signal handler for signal *i*. This is a thin wrapper around
+   either :c:func:`!sigaction` or :c:func:`!signal`. Do not call those functions
    directly!
 
 
 .. c:function:: PyOS_sighandler_t PyOS_setsig(int i, PyOS_sighandler_t h)
 
    Set the signal handler for signal *i* to be *h*; return the old signal handler.
-   This is a thin wrapper around either :c:func:`!sigaction` or :c:func:`!signal`.  Do
+   This is a thin wrapper around either :c:func:`!sigaction` or :c:func:`!signal`. Do
    not call those functions directly!
 
 .. c:function:: wchar_t* Py_DecodeLocale(const char* arg, size_t *size)
@@ -187,7 +187,7 @@ Operating System Utilities
    error.
 
    If error_pos is not ``NULL``, ``*error_pos`` is set to ``(size_t)-1`` on
-   success,  or set to the index of the invalid character on encoding error.
+   success, or set to the index of the invalid character on encoding error.
 
    The :term:`filesystem encoding and error handler` are selected by
    :c:func:`PyConfig_Read`: see :c:member:`~PyConfig.filesystem_encoding` and
@@ -255,7 +255,7 @@ System Functions
 ================
 
 These are utility functions that make functionality from the :mod:`sys` module
-accessible to C code.  They all work with the current interpreter thread's
+accessible to C code. They all work with the current interpreter thread's
 :mod:`sys` module's dict, which is contained in the internal thread state structure.
 
 .. c:function:: PyObject *PySys_GetAttr(PyObject *name)
@@ -326,7 +326,7 @@ accessible to C code.  They all work with the current interpreter thread's
 
 .. c:function:: void PySys_WriteStdout(const char *format, ...)
 
-   Write the output string described by *format* to :data:`sys.stdout`.  No
+   Write the output string described by *format* to :data:`sys.stdout`. No
    exceptions are raised, even if truncation occurs (see below).
 
    *format* should limit the total size of the formatted output string to
@@ -334,7 +334,7 @@ accessible to C code.  They all work with the current interpreter thread's
    In particular, this means that no unrestricted "%s" formats should occur;
    these should be limited using "%.<N>s" where <N> is a decimal number
    calculated so that <N> plus the maximum size of other formatted text does not
-   exceed 1000 bytes.  Also watch out for "%f", which can print hundreds of
+   exceed 1000 bytes. Also watch out for "%f", which can print hundreds of
    digits for very large numbers.
 
    If a problem occurs, or :data:`sys.stdout` is unset, the formatted message
@@ -363,7 +363,7 @@ accessible to C code.  They all work with the current interpreter thread's
 .. c:function:: PyObject *PySys_GetXOptions()
 
    Return the current dictionary of :option:`-X` options, similarly to
-   :data:`sys._xoptions`.  On error, ``NULL`` is returned and an exception is
+   :data:`sys._xoptions`. On error, ``NULL`` is returned and an exception is
    set.
 
    .. versionadded:: 3.2
@@ -428,7 +428,7 @@ accessible to C code.  They all work with the current interpreter thread's
    The hook function is always called with an :term:`attached thread state` by
    the Python interpreter that raised the event.
 
-   See :pep:`578` for a detailed description of auditing.  Functions in the
+   See :pep:`578` for a detailed description of auditing. Functions in the
    runtime and standard library that raise events are listed in the
    :ref:`audit events table <audit-events>`.
    Details are in each function's documentation.
@@ -463,10 +463,10 @@ Process Control
 
    .. index:: single: abort (C function)
 
-   Print a fatal error message and kill the process.  No cleanup is performed.
+   Print a fatal error message and kill the process. No cleanup is performed.
    This function should only be invoked when a condition is detected that would
    make it dangerous to continue using the Python interpreter; e.g., when the
-   object administration appears to be corrupted.  On Unix, the standard C library
+   object administration appears to be corrupted. On Unix, the standard C library
    function :c:func:`!abort` is called which will attempt to produce a :file:`core`
    file.
 
@@ -484,8 +484,8 @@ Process Control
       single: Py_FinalizeEx (C function)
       single: exit (C function)
 
-   Exit the current process.  This calls :c:func:`Py_FinalizeEx` and then calls the
-   standard C library function ``exit(status)``.  If :c:func:`Py_FinalizeEx`
+   Exit the current process. This calls :c:func:`Py_FinalizeEx` and then calls the
+   standard C library function ``exit(status)``. If :c:func:`Py_FinalizeEx`
    indicates an error, the exit status is set to 120.
 
    .. versionchanged:: 3.6
@@ -498,12 +498,12 @@ Process Control
       single: Py_FinalizeEx (C function)
       single: cleanup functions
 
-   Register a cleanup function to be called by :c:func:`Py_FinalizeEx`.  The cleanup
-   function will be called with no arguments and should return no value.  At most
-   32 cleanup functions can be registered.  When the registration is successful,
-   :c:func:`Py_AtExit` returns ``0``; on failure, it returns ``-1``.  The cleanup
+   Register a cleanup function to be called by :c:func:`Py_FinalizeEx`. The cleanup
+   function will be called with no arguments and should return no value. At most
+   32 cleanup functions can be registered. When the registration is successful,
+   :c:func:`Py_AtExit` returns ``0``; on failure, it returns ``-1``. The cleanup
    function registered last is called first. Each cleanup function will be called
-   at most once.  Since Python's internal finalization will have completed before
+   at most once. Since Python's internal finalization will have completed before
    the cleanup function, no Python APIs should be called by *func*.
 
    .. seealso::

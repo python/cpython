@@ -101,6 +101,6 @@ Reflection
 
    Return a description string, depending on the type of *func*.
    Return values include "()" for functions and methods, " constructor",
-   " instance", and " object".  Concatenated with the result of
+   " instance", and " object". Concatenated with the result of
    :c:func:`PyEval_GetFuncName`, the result will be a description of
    *func*.

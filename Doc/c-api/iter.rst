@@ -16,7 +16,7 @@ There are two functions specifically for working with iterators.
 .. c:function:: int PyAIter_Check(PyObject *o)
 
    Return non-zero if the object *o* provides the :class:`AsyncIterator`
-   protocol, and ``0`` otherwise.  This function always succeeds.
+   protocol, and ``0`` otherwise. This function always succeeds.
 
    .. versionadded:: 3.10
 
@@ -35,7 +35,7 @@ There are two functions specifically for working with iterators.
    which is retained for backwards compatibility.
    Prefer :c:func:`PyIter_NextItem`.
 
-   Return the next value from the iterator *o*.  The object must be an iterator
+   Return the next value from the iterator *o*. The object must be an iterator
    according to :c:func:`PyIter_Check` (it is up to the caller to check this).
    If there are no remaining values, returns ``NULL`` with no exception set.
    If an error occurs while retrieving the item, returns ``NULL`` and passes

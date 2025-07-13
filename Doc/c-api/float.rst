@@ -16,19 +16,19 @@ Floating-Point Objects
 .. c:var:: PyTypeObject PyFloat_Type
 
    This instance of :c:type:`PyTypeObject` represents the Python floating-point
-   type.  This is the same object as :class:`float` in the Python layer.
+   type. This is the same object as :class:`float` in the Python layer.
 
 
 .. c:function:: int PyFloat_Check(PyObject *p)
 
    Return true if its argument is a :c:type:`PyFloatObject` or a subtype of
-   :c:type:`PyFloatObject`.  This function always succeeds.
+   :c:type:`PyFloatObject`. This function always succeeds.
 
 
 .. c:function:: int PyFloat_CheckExact(PyObject *p)
 
    Return true if its argument is a :c:type:`PyFloatObject`, but not a subtype of
-   :c:type:`PyFloatObject`.  This function always succeeds.
+   :c:type:`PyFloatObject`. This function always succeeds.
 
 
 .. c:function:: PyObject* PyFloat_FromString(PyObject *str)
@@ -44,7 +44,7 @@ Floating-Point Objects
 
 .. c:function:: double PyFloat_AsDouble(PyObject *pyfloat)
 
-   Return a C :c:expr:`double` representation of the contents of *pyfloat*.  If
+   Return a C :c:expr:`double` representation of the contents of *pyfloat*. If
    *pyfloat* is not a Python floating-point object but has a :meth:`~object.__float__`
    method, this method will first be called to convert *pyfloat* into a float.
    If :meth:`!__float__` is not defined then it falls back to :meth:`~object.__index__`.
@@ -140,14 +140,14 @@ There are two problems on non-IEEE platforms:
 Unpack functions
 ^^^^^^^^^^^^^^^^
 
-The unpack routines read 2, 4 or 8 bytes, starting at *p*.  *le* is an
+The unpack routines read 2, 4 or 8 bytes, starting at *p*. *le* is an
 :c:expr:`int` argument, non-zero if the bytes string is in little-endian format
 (exponent last, at ``p+1``, ``p+3`` or ``p+6`` and ``p+7``), zero if big-endian
 (exponent first, at *p*). The :c:macro:`PY_BIG_ENDIAN` constant can be used to
 use the native endian: it is equal to ``1`` on big endian processor, or ``0``
 on little endian processor.
 
-Return value: The unpacked double.  On error, this is ``-1.0`` and
+Return value: The unpacked double. On error, this is ``-1.0`` and
 :c:func:`PyErr_Occurred` is true (and an exception is set, most likely
 :exc:`OverflowError`).
 

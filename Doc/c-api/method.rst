@@ -21,7 +21,7 @@ to bind a :c:type:`PyCFunction` to a class object. It replaces the former call
 .. c:function:: int PyInstanceMethod_Check(PyObject *o)
 
    Return true if *o* is an instance method object (has type
-   :c:data:`PyInstanceMethod_Type`).  The parameter must not be ``NULL``.
+   :c:data:`PyInstanceMethod_Type`). The parameter must not be ``NULL``.
    This function always succeeds.
 
 
@@ -58,14 +58,14 @@ no longer available.
 
    .. index:: single: MethodType (in module types)
 
-   This instance of :c:type:`PyTypeObject` represents the Python method type.  This
+   This instance of :c:type:`PyTypeObject` represents the Python method type. This
    is exposed to Python programs as ``types.MethodType``.
 
 
 .. c:function:: int PyMethod_Check(PyObject *o)
 
-   Return true if *o* is a method object (has type :c:data:`PyMethod_Type`).  The
-   parameter must not be ``NULL``.  This function always succeeds.
+   Return true if *o* is a method object (has type :c:data:`PyMethod_Type`). The
+   parameter must not be ``NULL``. This function always succeeds.
 
 
 .. c:function:: PyObject* PyMethod_New(PyObject *func, PyObject *self)

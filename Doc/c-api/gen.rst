@@ -22,14 +22,14 @@ than explicitly calling :c:func:`PyGen_New` or :c:func:`PyGen_NewWithQualName`.
 
 .. c:function:: int PyGen_Check(PyObject *ob)
 
-   Return true if *ob* is a generator object; *ob* must not be ``NULL``.  This
+   Return true if *ob* is a generator object; *ob* must not be ``NULL``. This
    function always succeeds.
 
 
 .. c:function:: int PyGen_CheckExact(PyObject *ob)
 
    Return true if *ob*'s type is :c:type:`PyGen_Type`; *ob* must not be
-   ``NULL``.  This function always succeeds.
+   ``NULL``. This function always succeeds.
 
 
 .. c:function:: PyObject* PyGen_New(PyFrameObject *frame)
@@ -42,5 +42,5 @@ than explicitly calling :c:func:`PyGen_New` or :c:func:`PyGen_NewWithQualName`.
 
    Create and return a new generator object based on the *frame* object,
    with ``__name__`` and ``__qualname__`` set to *name* and *qualname*.
-   A reference to *frame* is stolen by this function.  The *frame* argument
+   A reference to *frame* is stolen by this function. The *frame* argument
    must not be ``NULL``.

@@ -6,7 +6,7 @@ Common Object Structures
 ========================
 
 There are a large number of structures which are used in the definition of
-object types for Python.  This section describes these structures and how they
+object types for Python. This section describes these structures and how they
 are used.
 
 
@@ -14,18 +14,18 @@ Base object types and macros
 ----------------------------
 
 All Python objects ultimately share a small number of fields at the beginning
-of the object's representation in memory.  These are represented by the
+of the object's representation in memory. These are represented by the
 :c:type:`PyObject` and :c:type:`PyVarObject` types, which are defined, in turn,
 by the expansions of some macros also used, whether directly or indirectly, in
-the definition of all other Python objects.  Additional macros can be found
+the definition of all other Python objects. Additional macros can be found
 under :ref:`reference counting <countingrefs>`.
 
 
 .. c:type:: PyObject
 
-   All object types are extensions of this type.  This is a type which
+   All object types are extensions of this type. This is a type which
    contains the information Python needs to treat a pointer to an object as an
-   object.  In a normal "release" build, it contains only the object's
+   object. In a normal "release" build, it contains only the object's
    reference count and a pointer to the corresponding type object.
    Nothing is actually declared to be a :c:type:`PyObject`, but every pointer
    to a Python object can be cast to a :c:expr:`PyObject*`.
@@ -79,7 +79,7 @@ under :ref:`reference counting <countingrefs>`.
 .. c:macro:: PyObject_HEAD
 
    This is a macro used when declaring new types which represent objects
-   without a varying length.  The PyObject_HEAD macro expands to::
+   without a varying length. The PyObject_HEAD macro expands to::
 
       PyObject ob_base;
 
@@ -191,7 +191,7 @@ under :ref:`reference counting <countingrefs>`.
 .. c:macro:: PyObject_HEAD_INIT(type)
 
    This is a macro which expands to initialization values for a new
-   :c:type:`PyObject` type.  This macro expands to::
+   :c:type:`PyObject` type. This macro expands to::
 
       _PyObject_EXTRA_INIT
       1, type,
@@ -214,9 +214,9 @@ Implementing functions and methods
 
    Type of the functions used to implement most Python callables in C.
    Functions of this type take two :c:expr:`PyObject*` parameters and return
-   one such value.  If the return value is ``NULL``, an exception shall have
-   been set.  If not ``NULL``, the return value is interpreted as the return
-   value of the function as exposed in Python.  The function must return a new
+   one such value. If the return value is ``NULL``, an exception shall have
+   been set. If not ``NULL``, the return value is interpreted as the return
+   value of the function as exposed in Python. The function must return a new
    reference.
 
    The function signature is::
@@ -273,7 +273,7 @@ Implementing functions and methods
 
 .. c:type:: PyMethodDef
 
-   Structure used to describe a method of an extension type.  This structure has
+   Structure used to describe a method of an extension type. This structure has
    four fields:
 
    .. c:member:: const char *ml_name
@@ -294,7 +294,7 @@ Implementing functions and methods
 
 The :c:member:`~PyMethodDef.ml_meth` is a C function pointer.
 The functions may be of different
-types, but they always return :c:expr:`PyObject*`.  If the function is not of
+types, but they always return :c:expr:`PyObject*`. If the function is not of
 the :c:type:`PyCFunction`, the compiler will require a cast in the method table.
 Even though :c:type:`PyCFunction` defines the first parameter as
 :c:expr:`PyObject*`, it is common that the method implementation uses the
@@ -312,7 +312,7 @@ There are these calling conventions:
    This is the typical calling convention, where the methods have the type
    :c:type:`PyCFunction`. The function expects two :c:expr:`PyObject*` values.
    The first one is the *self* object for methods; for module functions, it is
-   the module object.  The second parameter (often called *args*) is a tuple
+   the module object. The second parameter (often called *args*) is a tuple
    object representing all arguments. This parameter is typically processed
    using :c:func:`PyArg_ParseTuple` or :c:func:`PyArg_UnpackTuple`.
 
@@ -331,7 +331,7 @@ There are these calling conventions:
    Methods with these flags must be of type :c:type:`PyCFunctionWithKeywords`.
    The function expects three parameters: *self*, *args*, *kwargs* where
    *kwargs* is a dictionary of all the keyword arguments or possibly ``NULL``
-   if there are no keyword arguments.  The parameters are typically processed
+   if there are no keyword arguments. The parameters are typically processed
    using :c:func:`PyArg_ParseTupleAndKeywords`.
 
 
@@ -360,7 +360,7 @@ There are these calling conventions:
    there is an additional fourth :c:expr:`PyObject*` parameter
    which is a tuple representing the names of the keyword arguments
    (which are guaranteed to be strings)
-   or possibly ``NULL`` if there are no keywords.  The values of the keyword
+   or possibly ``NULL`` if there are no keywords. The values of the keyword
    arguments are stored in the *args* array, after the positional arguments.
 
    .. versionadded:: 3.7
@@ -390,9 +390,9 @@ There are these calling conventions:
 .. c:macro:: METH_NOARGS
 
    Methods without parameters don't need to check whether arguments are given if
-   they are listed with the :c:macro:`METH_NOARGS` flag.  They need to be of type
-   :c:type:`PyCFunction`.  The first parameter is typically named *self* and will
-   hold a reference to the module or object instance.  In all cases the second
+   they are listed with the :c:macro:`METH_NOARGS` flag. They need to be of type
+   :c:type:`PyCFunction`. The first parameter is typically named *self* and will
+   hold a reference to the module or object instance. In all cases the second
    parameter will be ``NULL``.
 
    The function must have 2 parameters. Since the second parameter is unused,
@@ -408,8 +408,8 @@ There are these calling conventions:
 
 
 These two constants are not used to indicate the calling convention but the
-binding when use with methods of classes.  These may not be used for functions
-defined for modules.  At most one of these flags may be set for any given
+binding when use with methods of classes. These may not be used for functions
+defined for modules. At most one of these flags may be set for any given
 method.
 
 
@@ -418,7 +418,7 @@ method.
    .. index:: pair: built-in function; classmethod
 
    The method will be passed the type object as the first parameter rather
-   than an instance of the type.  This is used to create *class methods*,
+   than an instance of the type. This is used to create *class methods*,
    similar to what is created when using the :func:`classmethod` built-in
    function.
 
@@ -428,7 +428,7 @@ method.
    .. index:: pair: built-in function; staticmethod
 
    The method will be passed ``NULL`` as the first parameter rather than an
-   instance of the type.  This is used to create *static methods*, similar to
+   instance of the type. This is used to create *static methods*, similar to
    what is created when using the :func:`staticmethod` built-in function.
 
 One other constant controls whether a method is loaded in place of another
@@ -437,14 +437,14 @@ definition with the same method name.
 
 .. c:macro:: METH_COEXIST
 
-   The method will be loaded in place of existing definitions.  Without
-   *METH_COEXIST*, the default is to skip repeated definitions.  Since slot
+   The method will be loaded in place of existing definitions. Without
+   *METH_COEXIST*, the default is to skip repeated definitions. Since slot
    wrappers are loaded before the method table, the existence of a
    *sq_contains* slot, for example, would generate a wrapped method named
    :meth:`~object.__contains__` and preclude the loading of a corresponding
-   PyCFunction with the same name.  With the flag defined, the PyCFunction
+   PyCFunction with the same name. With the flag defined, the PyCFunction
    will be loaded in place of the wrapper object and will co-exist with the
-   slot.  This is helpful because calls to PyCFunctions are optimized more
+   slot. This is helpful because calls to PyCFunctions are optimized more
    than wrapper object calls.
 
 .. c:function:: PyObject * PyCMethod_New(PyMethodDef *ml, PyObject *self, PyObject *module, PyTypeObject *cls)
@@ -539,7 +539,7 @@ Accessing attributes of extension types
       static PyMemberDef spam_type_members[] = {
           {"__vectorcalloffset__", Py_T_PYSSIZET,
            offsetof(Spam_object, vectorcall), Py_READONLY},
-          {NULL}  /* Sentinel */
+          {NULL} /* Sentinel */
       };
 
    (You may need to ``#include <stddef.h>`` for :c:func:`!offsetof`.)
@@ -563,8 +563,8 @@ Accessing attributes of extension types
 
 .. c:function:: PyObject* PyMember_GetOne(const char *obj_addr, struct PyMemberDef *m)
 
-   Get an attribute belonging to the object at address *obj_addr*.  The
-   attribute is described by ``PyMemberDef`` *m*.  Returns ``NULL``
+   Get an attribute belonging to the object at address *obj_addr*. The
+   attribute is described by ``PyMemberDef`` *m*. Returns ``NULL``
    on error.
 
    .. versionchanged:: 3.12
@@ -575,7 +575,7 @@ Accessing attributes of extension types
 .. c:function:: int PyMember_SetOne(char *obj_addr, struct PyMemberDef *m, PyObject *o)
 
    Set an attribute belonging to the object at address *obj_addr* to object *o*.
-   The attribute to set is described by ``PyMemberDef`` *m*.  Returns ``0``
+   The attribute to set is described by ``PyMemberDef`` *m*. Returns ``0``
    if successful and a negative value on failure.
 
    .. versionchanged:: 3.12

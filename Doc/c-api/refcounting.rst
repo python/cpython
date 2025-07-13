@@ -16,9 +16,9 @@ of Python objects.
    Get the reference count of the Python object *o*.
 
    Note that the returned value may not actually reflect how many
-   references to the object are actually held.  For example, some
+   references to the object are actually held. For example, some
    objects are :term:`immortal` and have a very high refcount that does not
-   reflect the actual number of references.  Consequently, do not rely
+   reflect the actual number of references. Consequently, do not rely
    on the returned value to be accurate, other than a value of 0 or 1.
 
    Use the :c:func:`Py_SET_REFCNT()` function to set an object reference count.
@@ -145,11 +145,11 @@ of Python objects.
    .. warning::
 
       The deallocation function can cause arbitrary Python code to be invoked (e.g.
-      when a class instance with a :meth:`~object.__del__` method is deallocated).  While
+      when a class instance with a :meth:`~object.__del__` method is deallocated). While
       exceptions in such code are not propagated, the executed code has free access to
-      all Python global variables.  This means that any object that is reachable from
+      all Python global variables. This means that any object that is reachable from
       a global variable should be in a consistent state before :c:func:`Py_DECREF` is
-      invoked.  For example, code to delete an object from a list should copy a
+      invoked. For example, code to delete an object from a list should copy a
       reference to the deleted object in a temporary variable, update the list data
       structure, and then call :c:func:`Py_DECREF` for the temporary variable.
 
@@ -169,7 +169,7 @@ of Python objects.
    Release a :term:`strong reference` for object *o*.
    The object may be ``NULL``, in
    which case the macro has no effect; otherwise the effect is the same as for
-   :c:func:`Py_DECREF`, except that the argument is also set to ``NULL``.  The warning
+   :c:func:`Py_DECREF`, except that the argument is also set to ``NULL``. The warning
    for :c:func:`Py_DECREF` does not apply with respect to the object passed because
    the macro carefully uses a temporary variable and sets the argument to ``NULL``
    before releasing the reference.

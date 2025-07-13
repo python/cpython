@@ -12,13 +12,13 @@ file or a buffer, but they will not let you interact in a more detailed way with
 the interpreter.
 
 Several of these functions accept a start symbol from the grammar as a
-parameter.  The available start symbols are :c:data:`Py_eval_input`,
-:c:data:`Py_file_input`, and :c:data:`Py_single_input`.  These are described
+parameter. The available start symbols are :c:data:`Py_eval_input`,
+:c:data:`Py_file_input`, and :c:data:`Py_single_input`. These are described
 following the functions which accept them as parameters.
 
-Note also that several of these functions take :c:expr:`FILE*` parameters.  One
+Note also that several of these functions take :c:expr:`FILE*` parameters. One
 particular issue which needs to be handled carefully is that the :c:type:`FILE`
-structure for different C libraries can be different and incompatible.  Under
+structure for different C libraries can be different and incompatible. Under
 Windows (at least), it is possible for dynamically linked extensions to actually
 use different libraries, so care should be taken that :c:expr:`FILE*` parameters
 are only passed to these functions if it is certain that they were created by
@@ -48,8 +48,8 @@ the same library that the Python runtime is using.
    If *fp* refers to a file associated with an interactive device (console or
    terminal input or Unix pseudo-terminal), return the value of
    :c:func:`PyRun_InteractiveLoop`, otherwise return the result of
-   :c:func:`PyRun_SimpleFile`.  *filename* is decoded from the filesystem
-   encoding (:func:`sys.getfilesystemencoding`).  If *filename* is ``NULL``, this
+   :c:func:`PyRun_SimpleFile`. *filename* is decoded from the filesystem
+   encoding (:func:`sys.getfilesystemencoding`). If *filename* is ``NULL``, this
    function uses ``"???"`` as the filename.
    If *closeit* is true, the file is closed before
    ``PyRun_SimpleFileExFlags()`` returns.
@@ -65,7 +65,7 @@ the same library that the Python runtime is using.
 
    Executes the Python source code from *command* in the :mod:`__main__` module
    according to the *flags* argument. If :mod:`__main__` does not already exist, it
-   is created.  Returns ``0`` on success or ``-1`` if an exception was raised.  If
+   is created. Returns ``0`` on success or ``-1`` if an exception was raised. f
    there was an error, there is no way to get the exception information. For the
    meaning of *flags*, see below.
 
@@ -108,14 +108,14 @@ the same library that the Python runtime is using.
 .. c:function:: int PyRun_InteractiveOneFlags(FILE *fp, const char *filename, PyCompilerFlags *flags)
 
    Read and execute a single statement from a file associated with an
-   interactive device according to the *flags* argument.  The user will be
-   prompted using ``sys.ps1`` and ``sys.ps2``.  *filename* is decoded from the
+   interactive device according to the *flags* argument. The user will be
+   prompted using ``sys.ps1`` and ``sys.ps2``. *filename* is decoded from the
    :term:`filesystem encoding and error handler`.
 
    Returns ``0`` when the input was
    executed successfully, ``-1`` if there was an exception, or an error code
    from the :file:`errcode.h` include file distributed as part of Python if
-   there was a parse error.  (Note that :file:`errcode.h` is not included by
+   there was a parse error. (Note that :file:`errcode.h` is not included by
    :file:`Python.h`, so must be included specifically if needed.)
 
 
@@ -128,17 +128,17 @@ the same library that the Python runtime is using.
 .. c:function:: int PyRun_InteractiveLoopFlags(FILE *fp, const char *filename, PyCompilerFlags *flags)
 
    Read and execute statements from a file associated with an interactive device
-   until EOF is reached.  The user will be prompted using ``sys.ps1`` and
-   ``sys.ps2``.  *filename* is decoded from the :term:`filesystem encoding and
-   error handler`.  Returns ``0`` at EOF or a negative number upon failure.
+   until EOF is reached. The user will be prompted using ``sys.ps1`` and
+   ``sys.ps2``. *filename* is decoded from the :term:`filesystem encoding and
+   error handler`. Returns ``0`` at EOF or a negative number upon failure.
 
 
 .. c:var:: int (*PyOS_InputHook)(void)
 
    Can be set to point to a function with the prototype
-   ``int func(void)``.  The function will be called when Python's
+   ``int func(void)``. The function will be called when Python's
    interpreter prompt is about to become idle and wait for user input
-   from the terminal.  The return value is ignored.  Overriding this
+   from the terminal. The return value is ignored. verriding this
    hook can be used to integrate the interpreter's prompt with other
    event loops, as done in the :file:`Modules/_tkinter.c` in the
    Python source code.
@@ -153,10 +153,10 @@ the same library that the Python runtime is using.
    Can be set to point to a function with the prototype
    ``char *func(FILE *stdin, FILE *stdout, char *prompt)``,
    overriding the default function used to read a single line of input
-   at the interpreter's prompt.  The function is expected to output
+   at the interpreter's prompt. The function is expected to output
    the string *prompt* if it's not ``NULL``, and then read a line of
    input from the provided standard input file, returning the
-   resulting string.  For example, The :mod:`readline` module sets
+   resulting string. For example, The :mod:`readline` module sets
    this hook to provide line-editing and tab-completion features.
 
    The result must be a string allocated by :c:func:`PyMem_RawMalloc` or
@@ -181,8 +181,8 @@ the same library that the Python runtime is using.
 
    Execute Python source code from *str* in the context specified by the
    objects *globals* and *locals* with the compiler flags specified by
-   *flags*.  *globals* must be a dictionary; *locals* can be any object
-   that implements the mapping protocol.  The parameter *start* specifies
+   *flags*. *globals* must be a dictionary; *locals* can be any object
+   that implements the mapping protocol. The parameter *start* specifies
    the start token that should be used to parse the source code.
 
    Returns the result of executing the code as a Python object, or ``NULL`` if an
@@ -231,16 +231,16 @@ the same library that the Python runtime is using.
 .. c:function:: PyObject* Py_CompileStringObject(const char *str, PyObject *filename, int start, PyCompilerFlags *flags, int optimize)
 
    Parse and compile the Python source code in *str*, returning the resulting code
-   object.  The start token is given by *start*; this can be used to constrain the
+   object. The start token is given by *start*; this can be used to constrain the
    code which can be compiled and should be :c:data:`Py_eval_input`,
-   :c:data:`Py_file_input`, or :c:data:`Py_single_input`.  The filename specified by
+   :c:data:`Py_file_input`, or :c:data:`Py_single_input`. The filename specified by
    *filename* is used to construct the code object and may appear in tracebacks or
-   :exc:`SyntaxError` exception messages.  This returns ``NULL`` if the code
+   :exc:`SyntaxError` exception messages. This returns ``NULL`` if the code
    cannot be parsed or compiled.
 
    The integer *optimize* specifies the optimization level of the compiler; a
    value of ``-1`` selects the optimization level of the interpreter as given by
-   :option:`-O` options.  Explicit levels are ``0`` (no optimization;
+   :option:`-O` options. Explicit levels are ``0`` (no optimization;
    ``__debug__`` is true), ``1`` (asserts are removed, ``__debug__`` is false)
    or ``2`` (docstrings are removed too).
 
@@ -257,14 +257,14 @@ the same library that the Python runtime is using.
 .. c:function:: PyObject* PyEval_EvalCode(PyObject *co, PyObject *globals, PyObject *locals)
 
    This is a simplified interface to :c:func:`PyEval_EvalCodeEx`, with just
-   the code object, and global and local variables.  The other arguments are
+   the code object, and global and local variables. The other arguments are
    set to ``NULL``.
 
 
 .. c:function:: PyObject* PyEval_EvalCodeEx(PyObject *co, PyObject *globals, PyObject *locals, PyObject *const *args, int argcount, PyObject *const *kws, int kwcount, PyObject *const *defs, int defcount, PyObject *kwdefs, PyObject *closure)
 
    Evaluate a precompiled code object, given a particular environment for its
-   evaluation.  This environment consists of a dictionary of global variables,
+   evaluation. This environment consists of a dictionary of global variables,
    a mapping object of local variables, arrays of arguments, keywords and
    defaults, a dictionary of default values for :ref:`keyword-only
    <keyword-only_parameter>` arguments and a closure tuple of cells.
@@ -272,15 +272,15 @@ the same library that the Python runtime is using.
 
 .. c:function:: PyObject* PyEval_EvalFrame(PyFrameObject *f)
 
-   Evaluate an execution frame.  This is a simplified interface to
+   Evaluate an execution frame. This is a simplified interface to
    :c:func:`PyEval_EvalFrameEx`, for backward compatibility.
 
 
 .. c:function:: PyObject* PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 
-   This is the main, unvarnished function of Python interpretation.  The code
+   This is the main, unvarnished function of Python interpretation. The code
    object associated with the execution frame *f* is executed, interpreting
-   bytecode and executing calls as needed.  The additional *throwflag*
+   bytecode and executing calls as needed. The additional *throwflag*
    parameter can mostly be ignored - if true, then it causes an exception
    to immediately be thrown; this is used for the :meth:`~generator.throw`
    methods of generator objects.
@@ -309,7 +309,7 @@ the same library that the Python runtime is using.
    .. index:: single: Py_CompileString (C function)
 
    The start symbol from the Python grammar for sequences of statements as read
-   from a file or other source; for use with :c:func:`Py_CompileString`.  This is
+   from a file or other source; for use with :c:func:`Py_CompileString`. This is
    the symbol to use when compiling arbitrarily long Python source code.
 
 
@@ -324,9 +324,9 @@ the same library that the Python runtime is using.
 
 .. c:struct:: PyCompilerFlags
 
-   This is the structure used to hold compiler flags.  In cases where code is only
+   This is the structure used to hold compiler flags. In cases where code is only
    being compiled, it is passed as ``int flags``, and in cases where code is being
-   executed, it is passed as ``PyCompilerFlags *flags``.  In this case, ``from
+   executed, it is passed as ``PyCompilerFlags *flags``. In this case, ``from
    __future__ import`` can modify *flags*.
 
    Whenever ``PyCompilerFlags *flags`` is ``NULL``, :c:member:`~PyCompilerFlags.cf_flags` is treated as

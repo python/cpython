@@ -9,7 +9,7 @@ Various date and time objects are supplied by the :mod:`datetime` module.
 Before using any of these functions, the header file :file:`datetime.h` must be
 included in your source (note that this is not included by :file:`Python.h`),
 and the macro :c:macro:`!PyDateTime_IMPORT` must be invoked, usually as part of
-the module initialisation function.  The macro puts a pointer to a C structure
+the module initialisation function. The macro puts a pointer to a C structure
 into a static variable, :c:data:`!PyDateTimeAPI`, that is used by the following
 macros.
 
@@ -71,66 +71,66 @@ Type-check macros:
 .. c:function:: int PyDate_Check(PyObject *ob)
 
    Return true if *ob* is of type :c:data:`PyDateTime_DateType` or a subtype of
-   :c:data:`!PyDateTime_DateType`.  *ob* must not be ``NULL``.  This function always
+   :c:data:`!PyDateTime_DateType`. *ob* must not be ``NULL``. This function always
    succeeds.
 
 
 .. c:function:: int PyDate_CheckExact(PyObject *ob)
 
    Return true if *ob* is of type :c:data:`PyDateTime_DateType`. *ob* must not be
-   ``NULL``.  This function always succeeds.
+   ``NULL``. This function always succeeds.
 
 
 .. c:function:: int PyDateTime_Check(PyObject *ob)
 
    Return true if *ob* is of type :c:data:`PyDateTime_DateTimeType` or a subtype of
-   :c:data:`!PyDateTime_DateTimeType`.  *ob* must not be ``NULL``.  This function always
+   :c:data:`!PyDateTime_DateTimeType`. *ob* must not be ``NULL``. This function always
    succeeds.
 
 
 .. c:function:: int PyDateTime_CheckExact(PyObject *ob)
 
    Return true if *ob* is of type :c:data:`PyDateTime_DateTimeType`. *ob* must not
-   be ``NULL``.  This function always succeeds.
+   be ``NULL``. This function always succeeds.
 
 
 .. c:function:: int PyTime_Check(PyObject *ob)
 
    Return true if *ob* is of type :c:data:`PyDateTime_TimeType` or a subtype of
-   :c:data:`!PyDateTime_TimeType`.  *ob* must not be ``NULL``.  This function always
+   :c:data:`!PyDateTime_TimeType`. *ob* must not be ``NULL``. This function always
    succeeds.
 
 
 .. c:function:: int PyTime_CheckExact(PyObject *ob)
 
    Return true if *ob* is of type :c:data:`PyDateTime_TimeType`. *ob* must not be
-   ``NULL``.  This function always succeeds.
+   ``NULL``. This function always succeeds.
 
 
 .. c:function:: int PyDelta_Check(PyObject *ob)
 
    Return true if *ob* is of type :c:data:`PyDateTime_DeltaType` or a subtype of
-   :c:data:`!PyDateTime_DeltaType`.  *ob* must not be ``NULL``.  This function always
+   :c:data:`!PyDateTime_DeltaType`. *ob* must not be ``NULL``. This function always
    succeeds.
 
 
 .. c:function:: int PyDelta_CheckExact(PyObject *ob)
 
    Return true if *ob* is of type :c:data:`PyDateTime_DeltaType`. *ob* must not be
-   ``NULL``.  This function always succeeds.
+   ``NULL``. This function always succeeds.
 
 
 .. c:function:: int PyTZInfo_Check(PyObject *ob)
 
    Return true if *ob* is of type :c:data:`PyDateTime_TZInfoType` or a subtype of
-   :c:data:`!PyDateTime_TZInfoType`.  *ob* must not be ``NULL``.  This function always
+   :c:data:`!PyDateTime_TZInfoType`. *ob* must not be ``NULL``. This function always
    succeeds.
 
 
 .. c:function:: int PyTZInfo_CheckExact(PyObject *ob)
 
    Return true if *ob* is of type :c:data:`PyDateTime_TZInfoType`. *ob* must not be
-   ``NULL``.  This function always succeeds.
+   ``NULL``. This function always succeeds.
 
 
 Macros to create objects:
@@ -171,7 +171,7 @@ Macros to create objects:
 .. c:function:: PyObject* PyDelta_FromDSU(int days, int seconds, int useconds)
 
    Return a :class:`datetime.timedelta` object representing the given number
-   of days, seconds and microseconds.  Normalization is performed so that the
+   of days, seconds and microseconds. Normalization is performed so that the
    resulting number of microseconds and seconds lie in the ranges documented for
    :class:`datetime.timedelta` objects.
 
@@ -192,9 +192,9 @@ Macros to create objects:
    .. versionadded:: 3.7
 
 
-Macros to extract fields from date objects.  The argument must be an instance of
+Macros to extract fields from date objects. The argument must be an instance of
 :c:type:`PyDateTime_Date`, including subclasses (such as
-:c:type:`PyDateTime_DateTime`).  The argument must not be ``NULL``, and the type is
+:c:type:`PyDateTime_DateTime`). The argument must not be ``NULL``, and the type is
 not checked:
 
 .. c:function:: int PyDateTime_GET_YEAR(PyDateTime_Date *o)
@@ -212,7 +212,7 @@ not checked:
    Return the day, as an int from 1 through 31.
 
 
-Macros to extract fields from datetime objects.  The argument must be an
+Macros to extract fields from datetime objects. The argument must be an
 instance of :c:type:`PyDateTime_DateTime`, including subclasses. The argument
 must not be ``NULL``, and the type is not checked:
 
@@ -250,7 +250,7 @@ must not be ``NULL``, and the type is not checked:
    .. versionadded:: 3.10
 
 
-Macros to extract fields from time objects.  The argument must be an instance of
+Macros to extract fields from time objects. The argument must be an instance of
 :c:type:`PyDateTime_Time`, including subclasses. The argument must not be ``NULL``,
 and the type is not checked:
 
@@ -288,7 +288,7 @@ and the type is not checked:
    .. versionadded:: 3.10
 
 
-Macros to extract fields from time delta objects.  The argument must be an
+Macros to extract fields from time delta objects. The argument must be an
 instance of :c:type:`PyDateTime_Delta`, including subclasses. The argument must
 not be ``NULL``, and the type is not checked:
 

@@ -12,7 +12,7 @@ See also :c:func:`PyObject_GetItem`, :c:func:`PyObject_SetItem` and
 .. c:function:: int PyMapping_Check(PyObject *o)
 
    Return ``1`` if the object provides the mapping protocol or supports slicing,
-   and ``0`` otherwise.  Note that it returns ``1`` for Python classes with
+   and ``0`` otherwise. Note that it returns ``1`` for Python classes with
    a :meth:`~object.__getitem__` method, since in general it is impossible to
    determine what type of keys the class supports. This function always succeeds.
 
@@ -126,7 +126,7 @@ See also :c:func:`PyObject_GetItem`, :c:func:`PyObject_SetItem` and
 
 .. c:function:: PyObject* PyMapping_Keys(PyObject *o)
 
-   On success, return a list of the keys in object *o*.  On failure, return
+   On success, return a list of the keys in object *o*. On failure, return
    ``NULL``.
 
    .. versionchanged:: 3.7
@@ -135,7 +135,7 @@ See also :c:func:`PyObject_GetItem`, :c:func:`PyObject_SetItem` and
 
 .. c:function:: PyObject* PyMapping_Values(PyObject *o)
 
-   On success, return a list of the values in object *o*.  On failure, return
+   On success, return a list of the values in object *o*. On failure, return
    ``NULL``.
 
    .. versionchanged:: 3.7
@@ -145,7 +145,7 @@ See also :c:func:`PyObject_GetItem`, :c:func:`PyObject_SetItem` and
 .. c:function:: PyObject* PyMapping_Items(PyObject *o)
 
    On success, return a list of the items in object *o*, where each item is a
-   tuple containing a key-value pair.  On failure, return ``NULL``.
+   tuple containing a key-value pair. On failure, return ``NULL``.
 
    .. versionchanged:: 3.7
       Previously, the function returned a list or a tuple.

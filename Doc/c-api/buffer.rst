@@ -16,18 +16,18 @@ Buffer Protocol
 
 
 Certain objects available in Python wrap access to an underlying memory
-array or *buffer*.  Such objects include the built-in :class:`bytes` and
+array or *buffer*. Such objects include the built-in :class:`bytes` and
 :class:`bytearray`, and some extension types like :class:`array.array`.
 Third-party libraries may define their own types for special purposes, such
 as image processing or numeric analysis.
 
 While each of these types have their own semantics, they share the common
-characteristic of being backed by a possibly large memory buffer.  It is
+characteristic of being backed by a possibly large memory buffer. It is
 then desirable, in some situations, to access that buffer directly and
 without intermediate copying.
 
 Python provides such a facility at the C and Python level in the form of the
-:ref:`buffer protocol <bufferobjects>`.  This protocol has two sides:
+:ref:`buffer protocol <bufferobjects>`. This protocol has two sides:
 
 .. index:: single: PyBufferProcs (C type)
 
@@ -41,15 +41,15 @@ Python provides such a facility at the C and Python level in the form of the
   Python see :class:`memoryview`.
 
 Simple objects such as :class:`bytes` and :class:`bytearray` expose their
-underlying buffer in byte-oriented form.  Other forms are possible; for example,
+underlying buffer in byte-oriented form. Other forms are possible; for example,
 the elements exposed by an :class:`array.array` can be multi-byte values.
 
 An example consumer of the buffer interface is the :meth:`~io.BufferedIOBase.write`
 method of file objects: any object that can export a series of bytes through
-the buffer interface can be written to a file.  While :meth:`!write` only
+the buffer interface can be written to a file. While :meth:`!write` only
 needs read-only access to the internal contents of the object passed to it,
 other methods such as :meth:`~io.BufferedIOBase.readinto` need write access
-to the contents of their argument.  The buffer interface allows objects to
+to the contents of their argument. The buffer interface allows objects to
 selectively allow or reject exporting of read-write and read-only buffers.
 
 There are two ways for a consumer of the buffer interface to acquire a buffer
@@ -61,7 +61,7 @@ over a target object:
   ``y*``, ``w*`` or ``s*`` :ref:`format codes <arg-parsing>`.
 
 In both cases, :c:func:`PyBuffer_Release` must be called when the buffer
-isn't needed anymore.  Failure to do so could lead to various issues such as
+isn't needed anymore. Failure to do so could lead to various issues such as
 resource leaks.
 
 .. versionadded:: 3.12
@@ -75,17 +75,17 @@ Buffer structure
 ================
 
 Buffer structures (or simply "buffers") are useful as a way to expose the
-binary data from another object to the Python programmer.  They can also be
-used as a zero-copy slicing mechanism.  Using their ability to reference a
+binary data from another object to the Python programmer. They can also be
+used as a zero-copy slicing mechanism. Using their ability to reference a
 block of memory, it is possible to expose any data to the Python programmer
-quite easily.  The memory could be a large, constant array in a C extension,
+quite easily. The memory could be a large, constant array in a C extension,
 it could be a raw block of memory for manipulation before passing to an
 operating system library, or it could be used to pass around structured data
 in its native, in-memory format.
 
 Contrary to most data types exposed by the Python interpreter, buffers
-are not :c:type:`PyObject` pointers but rather simple C structures.  This
-allows them to be created and copied very simply.  When a generic wrapper
+are not :c:type:`PyObject` pointers but rather simple C structures. This
+allows them to be created and copied very simply. When a generic wrapper
 around a buffer is needed, a :ref:`memoryview <memoryview-objects>` object
 can be created.
 
@@ -142,7 +142,7 @@ a buffer, see :c:func:`PyObject_GetBuffer`.
 
       Important exception: If a consumer requests a buffer without the
       :c:macro:`PyBUF_FORMAT` flag, :c:member:`~Py_buffer.format` will
-      be set to  ``NULL``,  but :c:member:`~Py_buffer.itemsize` still has
+      be set to ``NULL``, ut :c:member:`~Py_buffer.itemsize` still has
       the value for the original format.
 
       If :c:member:`~Py_buffer.shape` is present, the equality

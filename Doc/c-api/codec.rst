@@ -21,15 +21,15 @@ Codec registry and support functions
 .. c:function:: int PyCodec_KnownEncoding(const char *encoding)
 
    Return ``1`` or ``0`` depending on whether there is a registered codec for
-   the given *encoding*.  This function always succeeds.
+   the given *encoding*. This function always succeeds.
 
 .. c:function:: PyObject* PyCodec_Encode(PyObject *object, const char *encoding, const char *errors)
 
    Generic codec based encoding API.
 
    *object* is passed through the encoder function found for the given
-   *encoding* using the error handling method defined by *errors*.  *errors* may
-   be ``NULL`` to use the default method defined for the codec.  Raises a
+   *encoding* using the error handling method defined by *errors*. *errors* may
+   be ``NULL`` to use the default method defined for the codec. Raises a
    :exc:`LookupError` if no encoder can be found.
 
 .. c:function:: PyObject* PyCodec_Decode(PyObject *object, const char *encoding, const char *errors)
@@ -37,8 +37,8 @@ Codec registry and support functions
    Generic codec based decoding API.
 
    *object* is passed through the decoder function found for the given
-   *encoding* using the error handling method defined by *errors*.  *errors* may
-   be ``NULL`` to use the default method defined for the codec.  Raises a
+   *encoding* using the error handling method defined by *errors*. *errors* may
+   be ``NULL`` to use the default method defined for the codec. Raises a
    :exc:`LookupError` if no encoder can be found.
 
 
@@ -47,7 +47,7 @@ Codec lookup API
 
 In the following functions, the *encoding* string is looked up converted to all
 lower-case characters, which makes encodings looked up through this mechanism
-effectively case-insensitive.  If no codec is found, a :exc:`KeyError` is set
+effectively case-insensitive. If no codec is found, a :exc:`KeyError` is set
 and ``NULL`` returned.
 
 .. c:function:: PyObject* PyCodec_Encoder(const char *encoding)
@@ -89,7 +89,7 @@ Registry API for Unicode encoding error handlers
    :exc:`UnicodeEncodeError`, :exc:`UnicodeDecodeError` or
    :exc:`UnicodeTranslateError` that holds information about the problematic
    sequence of characters or bytes and their offset in the original string (see
-   :ref:`unicodeexceptions` for functions to extract this information).  The
+   :ref:`unicodeexceptions` for functions to extract this information). The
    callback must either raise the given exception, or return a two-item tuple
    containing the replacement for the problematic sequence, and an integer
    giving the offset in the original string at which encoding/decoding should be
@@ -99,7 +99,7 @@ Registry API for Unicode encoding error handlers
 
 .. c:function:: PyObject* PyCodec_LookupError(const char *name)
 
-   Lookup the error handling callback function registered under *name*.  As a
+   Lookup the error handling callback function registered under *name*. As a
    special case ``NULL`` can be passed, in which case the error handling callback
    for "strict" will be returned.
 

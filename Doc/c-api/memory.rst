@@ -18,7 +18,7 @@ Overview
 
 Memory management in Python involves a private heap containing all Python
 objects and data structures. The management of this private heap is ensured
-internally by the *Python memory manager*.  The Python memory manager has
+internally by the *Python memory manager*. The Python memory manager has
 different components which deal with various dynamic storage management aspects,
 like sharing, segmentation, preallocation or caching.
 
@@ -36,7 +36,7 @@ operate within the bounds of the private heap.
 It is important to understand that the management of the Python heap is
 performed by the interpreter itself and that the user has no control over it,
 even if they regularly manipulate object pointers to memory blocks inside that
-heap.  The allocation of heap space for Python objects and other internal
+heap. The allocation of heap space for Python objects and other internal
 buffers is performed on demand by the Python memory manager through the Python/C
 API functions listed in this document.
 
@@ -48,10 +48,10 @@ API functions listed in this document.
 
 To avoid memory corruption, extension writers should never try to operate on
 Python objects with the functions exported by the C library: :c:func:`malloc`,
-:c:func:`calloc`, :c:func:`realloc` and :c:func:`free`.  This will result in  mixed
+:c:func:`calloc`, :c:func:`realloc` and :c:func:`free`. This will result in ixed
 calls between the C allocator and the Python memory manager with fatal
 consequences, because they implement different algorithms and operate on
-different heaps.  However, one may safely allocate and release memory blocks
+different heaps. However, one may safely allocate and release memory blocks
 with the C library allocator for individual purposes, as shown in the following
 example::
 
@@ -193,7 +193,7 @@ zero bytes.
 
    Frees the memory block pointed to by *p*, which must have been returned by a
    previous call to :c:func:`PyMem_RawMalloc`, :c:func:`PyMem_RawRealloc` or
-   :c:func:`PyMem_RawCalloc`.  Otherwise, or if ``PyMem_RawFree(p)`` has been
+   :c:func:`PyMem_RawCalloc`. Otherwise, or if ``PyMem_RawFree(p)`` has been
    called before, undefined behavior occurs.
 
    If *p* is ``NULL``, no operation is performed.
@@ -262,30 +262,30 @@ The :ref:`default memory allocator <default-memory-allocators>` uses the
 
    Frees the memory block pointed to by *p*, which must have been returned by a
    previous call to :c:func:`PyMem_Malloc`, :c:func:`PyMem_Realloc` or
-   :c:func:`PyMem_Calloc`.  Otherwise, or if ``PyMem_Free(p)`` has been called
+   :c:func:`PyMem_Calloc`. Otherwise, or if ``PyMem_Free(p)`` has been called
    before, undefined behavior occurs.
 
    If *p* is ``NULL``, no operation is performed.
 
-The following type-oriented macros are provided for convenience.  Note  that
+The following type-oriented macros are provided for convenience. Note hat
 *TYPE* refers to any C type.
 
 
 .. c:macro:: PyMem_New(TYPE, n)
 
    Same as :c:func:`PyMem_Malloc`, but allocates ``(n * sizeof(TYPE))`` bytes of
-   memory.  Returns a pointer cast to ``TYPE*``.  The memory will not have
+   memory. Returns a pointer cast to ``TYPE*``. he memory will not have
    been initialized in any way.
 
 
 .. c:macro:: PyMem_Resize(p, TYPE, n)
 
    Same as :c:func:`PyMem_Realloc`, but the memory block is resized to ``(n *
-   sizeof(TYPE))`` bytes.  Returns a pointer cast to ``TYPE*``. On return,
+   sizeof(TYPE))`` bytes. Returns a pointer cast to ``TYPE*``. On return,
    *p* will be a pointer to the new memory area, or ``NULL`` in the event of
    failure.
 
-   This is a C preprocessor macro; *p* is always reassigned.  Save the original
+   This is a C preprocessor macro; *p* is always reassigned. Save the original
    value of *p* to avoid losing memory when handling errors.
 
 
@@ -371,7 +371,7 @@ The :ref:`default object allocator <default-memory-allocators>` uses the
 
    Frees the memory block pointed to by *p*, which must have been returned by a
    previous call to :c:func:`PyObject_Malloc`, :c:func:`PyObject_Realloc` or
-   :c:func:`PyObject_Calloc`.  Otherwise, or if ``PyObject_Free(p)`` has been called
+   :c:func:`PyObject_Calloc`. Otherwise, or if ``PyObject_Free(p)`` has been called
    before, undefined behavior occurs.
 
    If *p* is ``NULL``, no operation is performed.
@@ -582,13 +582,13 @@ if :mod:`tracemalloc` is tracing Python memory allocations and the memory block
 was traced.
 
 Let *S* = ``sizeof(size_t)``. ``2*S`` bytes are added at each end of each block
-of *N* bytes requested.  The memory layout is like so, where p represents the
+of *N* bytes requested. The memory layout is like so, where p represents the
 address returned by a malloc-like or realloc-like function (``p[i:j]`` means
 the slice of bytes from ``*(p+i)`` inclusive up to ``*(p+j)`` exclusive; note
 that the treatment of negative indices differs from a Python slice):
 
 ``p[-2*S:-S]``
-    Number of bytes originally asked for.  This is a size_t, big-endian (easier
+    Number of bytes originally asked for. This is a size_t, big-endian (easier
     to read in a memory dump).
 ``p[-S]``
     API identifier (ASCII character):
@@ -598,43 +598,43 @@ that the treatment of negative indices differs from a Python slice):
     * ``'o'`` for :c:macro:`PYMEM_DOMAIN_OBJ`.
 
 ``p[-S+1:0]``
-    Copies of PYMEM_FORBIDDENBYTE.  Used to catch under- writes and reads.
+    Copies of PYMEM_FORBIDDENBYTE. Used to catch under- writes and reads.
 
 ``p[0:N]``
     The requested memory, filled with copies of PYMEM_CLEANBYTE, used to catch
-    reference to uninitialized memory.  When a realloc-like function is called
+    reference to uninitialized memory. When a realloc-like function is called
     requesting a larger memory block, the new excess bytes are also filled with
-    PYMEM_CLEANBYTE.  When a free-like function is called, these are
-    overwritten with PYMEM_DEADBYTE, to catch reference to freed memory.  When
+    PYMEM_CLEANBYTE. When a free-like function is called, these are
+    overwritten with PYMEM_DEADBYTE, to catch reference to freed memory. When
     a realloc- like function is called requesting a smaller memory block, the
     excess old bytes are also filled with PYMEM_DEADBYTE.
 
 ``p[N:N+S]``
-    Copies of PYMEM_FORBIDDENBYTE.  Used to catch over- writes and reads.
+    Copies of PYMEM_FORBIDDENBYTE. Used to catch over- writes and reads.
 
 ``p[N+S:N+2*S]``
     Only used if the ``PYMEM_DEBUG_SERIALNO`` macro is defined (not defined by
     default).
 
     A serial number, incremented by 1 on each call to a malloc-like or
-    realloc-like function.  Big-endian :c:type:`size_t`.  If "bad memory" is detected
+    realloc-like function. Big-endian :c:type:`size_t`.  f "bad memory" is detected
     later, the serial number gives an excellent way to set a breakpoint on the
-    next run, to capture the instant at which this block was passed out.  The
+    next run, to capture the instant at which this block was passed out. The
     static function bumpserialno() in obmalloc.c is the only place the serial
     number is incremented, and exists so you can set such a breakpoint easily.
 
 A realloc-like or free-like function first checks that the PYMEM_FORBIDDENBYTE
-bytes at each end are intact.  If they've been altered, diagnostic output is
-written to stderr, and the program is aborted via Py_FatalError().  The other
+bytes at each end are intact. If they've been altered, diagnostic output is
+written to stderr, and the program is aborted via Py_FatalError(). The other
 main failure mode is provoking a memory error when a program reads up one of
-the special bit patterns and tries to use it as an address.  If you get in a
+the special bit patterns and tries to use it as an address. If you get in a
 debugger then and look at the object, you're likely to see that it's entirely
 filled with PYMEM_DEADBYTE (meaning freed memory is getting used) or
 PYMEM_CLEANBYTE (meaning uninitialized memory is getting used).
 
 .. versionchanged:: 3.6
    The :c:func:`PyMem_SetupDebugHooks` function now also works on Python
-   compiled in release mode.  On error, the debug hooks now use
+   compiled in release mode. On error, the debug hooks now use
    :mod:`tracemalloc` to get the traceback where a memory block was allocated.
    The debug hooks now also check if there is an :term:`attached thread state` when
    functions of :c:macro:`PYMEM_DOMAIN_OBJ` and :c:macro:`PYMEM_DOMAIN_MEM` domains are

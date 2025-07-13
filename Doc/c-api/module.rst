@@ -12,7 +12,7 @@ Module Objects
 
    .. index:: single: ModuleType (in module types)
 
-   This instance of :c:type:`PyTypeObject` represents the Python module type.  This
+   This instance of :c:type:`PyTypeObject` represents the Python module type. This
    is exposed to Python programs as ``types.ModuleType``.
 
 
@@ -25,7 +25,7 @@ Module Objects
 .. c:function:: int PyModule_CheckExact(PyObject *p)
 
    Return true if *p* is a module object, but not a subtype of
-   :c:data:`PyModule_Type`.  This function always succeeds.
+   :c:data:`PyModule_Type`. This function always succeeds.
 
 
 .. c:function:: PyObject* PyModule_NewObject(PyObject *name)
@@ -78,7 +78,7 @@ Module Objects
       single: __name__ (module attribute)
       single: SystemError (built-in exception)
 
-   Return *module*'s :attr:`~module.__name__` value.  If the module does not
+   Return *module*'s :attr:`~module.__name__` value. If the module does not
    provide one, or if it is not a string, :exc:`SystemError` is raised and
    ``NULL`` is returned.
 
@@ -93,7 +93,7 @@ Module Objects
 .. c:function:: void* PyModule_GetState(PyObject *module)
 
    Return the "state" of the module, that is, a pointer to the block of memory
-   allocated at module creation time, or ``NULL``.  See
+   allocated at module creation time, or ``NULL``. See
    :c:member:`PyModuleDef.m_size`.
 
 
@@ -110,7 +110,7 @@ Module Objects
       single: SystemError (built-in exception)
 
    Return the name of the file from which *module* was loaded using *module*'s
-   :attr:`~module.__file__` attribute.  If this is not defined, or if it is not a
+   :attr:`~module.__file__` attribute. If this is not defined, or if it is not a
    string, raise :exc:`SystemError` and return ``NULL``; otherwise return
    a reference to a Unicode object.
 
@@ -196,7 +196,7 @@ data stored in module state.
    .. c:member:: PyMethodDef* m_methods
 
       A pointer to a table of module-level functions, described by
-      :c:type:`PyMethodDef` values.  Can be ``NULL`` if no functions are present.
+      :c:type:`PyMethodDef` values. Can be ``NULL`` if no functions are present.
 
    .. c:member:: PyModuleDef_Slot* m_slots
 
@@ -377,7 +377,7 @@ The available slot types are:
       The module is safe to run without an active GIL.
 
    This slot is ignored by Python builds not configured with
-   :option:`--disable-gil`.  Otherwise, it determines whether or not importing
+   :option:`--disable-gil`. Otherwise, it determines whether or not importing
    this module will cause the GIL to be automatically enabled. See
    :ref:`whatsnew313-free-threaded-cpython` for more detail.
 
@@ -410,7 +410,7 @@ They are also used in
 .. c:function:: PyObject* PyModule_Create2(PyModuleDef *def, int module_api_version)
 
    Create a new module object, given the definition in *def*, assuming the
-   API version *module_api_version*.  If that version does not match the version
+   API version *module_api_version*. If that version does not match the version
    of the running interpreter, a :exc:`RuntimeWarning` is emitted.
 
    Return ``NULL`` with an exception set on error.
@@ -485,7 +485,7 @@ or code that creates modules dynamically.
 
 .. c:function:: int PyModule_AddObjectRef(PyObject *module, const char *name, PyObject *value)
 
-   Add an object to *module* as *name*.  This is a convenience function which
+   Add an object to *module* as *name*. This is a convenience function which
    can be used from the module's initialization function.
 
    On success, return ``0``. On error, raise an exception and return ``-1``.
@@ -588,7 +588,7 @@ or code that creates modules dynamically.
 
 .. c:function:: int PyModule_AddIntConstant(PyObject *module, const char *name, long value)
 
-   Add an integer constant to *module* as *name*.  This convenience function can be
+   Add an integer constant to *module* as *name*. This convenience function can be
    used from the module's initialization function.
    Return ``-1`` with an exception set on error, ``0`` on success.
 
@@ -598,8 +598,8 @@ or code that creates modules dynamically.
 
 .. c:function:: int PyModule_AddStringConstant(PyObject *module, const char *name, const char *value)
 
-   Add a string constant to *module* as *name*.  This convenience function can be
-   used from the module's initialization function.  The string *value* must be
+   Add a string constant to *module* as *name*. This convenience function can be
+   used from the module's initialization function. The string *value* must be
    ``NULL``-terminated.
    Return ``-1`` with an exception set on error, ``0`` on success.
 

@@ -5,48 +5,48 @@
 Weak Reference Objects
 ----------------------
 
-Python supports *weak references* as first-class objects.  There are two
-specific object types which directly implement weak references.  The first is a
+Python supports *weak references* as first-class objects. There are two
+specific object types which directly implement weak references. The first is a
 simple reference object, and the second acts as a proxy for the original object
 as much as it can.
 
 
 .. c:function:: int PyWeakref_Check(PyObject *ob)
 
-   Return non-zero if *ob* is either a reference or proxy object.  This function
+   Return non-zero if *ob* is either a reference or proxy object. This function
    always succeeds.
 
 
 .. c:function:: int PyWeakref_CheckRef(PyObject *ob)
 
-   Return non-zero if *ob* is a reference object.  This function always succeeds.
+   Return non-zero if *ob* is a reference object. This function always succeeds.
 
 
 .. c:function:: int PyWeakref_CheckProxy(PyObject *ob)
 
-   Return non-zero if *ob* is a proxy object.  This function always succeeds.
+   Return non-zero if *ob* is a proxy object. This function always succeeds.
 
 
 .. c:function:: PyObject* PyWeakref_NewRef(PyObject *ob, PyObject *callback)
 
-   Return a weak reference object for the object *ob*.  This will always return
+   Return a weak reference object for the object *ob*. This will always return
    a new reference, but is not guaranteed to create a new object; an existing
-   reference object may be returned.  The second parameter, *callback*, can be a
+   reference object may be returned. The second parameter, *callback*, can be a
    callable object that receives notification when *ob* is garbage collected; it
    should accept a single parameter, which will be the weak reference object
-   itself. *callback* may also be ``None`` or ``NULL``.  If *ob* is not a
+   itself. *callback* may also be ``None`` or ``NULL``. If *ob* is not a
    weakly referenceable object, or if *callback* is not callable, ``None``, or
    ``NULL``, this will return ``NULL`` and raise :exc:`TypeError`.
 
 
 .. c:function:: PyObject* PyWeakref_NewProxy(PyObject *ob, PyObject *callback)
 
-   Return a weak reference proxy object for the object *ob*.  This will always
+   Return a weak reference proxy object for the object *ob*. This will always
    return a new reference, but is not guaranteed to create a new object; an
-   existing proxy object may be returned.  The second parameter, *callback*, can
+   existing proxy object may be returned. The second parameter, *callback*, can
    be a callable object that receives notification when *ob* is garbage
    collected; it should accept a single parameter, which will be the weak
-   reference object itself. *callback* may also be ``None`` or ``NULL``.  If *ob*
+   reference object itself. *callback* may also be ``None`` or ``NULL``. If *ob*
    is not a weakly referenceable object, or if *callback* is not callable,
    ``None``, or ``NULL``, this will return ``NULL`` and raise :exc:`TypeError`.
 
@@ -67,7 +67,7 @@ as much as it can.
 .. c:function:: PyObject* PyWeakref_GetObject(PyObject *ref)
 
    Return a :term:`borrowed reference` to the referenced object from a weak
-   reference, *ref*.  If the referent is no longer live, returns ``Py_None``.
+   reference, *ref*. If the referent is no longer live, returns ``Py_None``.
 
    .. note::
 
@@ -112,7 +112,7 @@ as much as it can.
    Clears the weakrefs for *object* without calling the callbacks.
 
    This function is called by the :c:member:`~PyTypeObject.tp_dealloc` handler
-   for types with finalizers (i.e., :meth:`~object.__del__`).  The handler for
+   for types with finalizers (i.e., :meth:`~object.__del__`). The handler for
    those objects first calls :c:func:`PyObject_ClearWeakRefs` to clear weakrefs
    and call their callbacks, then the finalizer, and finally this function to
    clear any weakrefs that may have been created by the finalizer.

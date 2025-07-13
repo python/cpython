@@ -6,7 +6,7 @@ Type Object Structures
 ======================
 
 Perhaps one of the most important structures of the Python object system is the
-structure that defines a new type: the :c:type:`PyTypeObject` structure.  Type
+structure that defines a new type: the :c:type:`PyTypeObject` structure. Type
 objects can be handled using any of the ``PyObject_*`` or
 ``PyType_*`` functions, but do not offer much that's interesting to most
 Python applications. These objects are fundamental to how objects behave, so
@@ -16,8 +16,8 @@ that implements new types.
 Type objects are fairly large compared to most of the standard types. The reason
 for the size is that each type object stores a large number of values, mostly C
 function pointers, each of which implements a small part of the type's
-functionality.  The fields of the type object are examined in detail in this
-section.  The fields will be described in the order in which they occur in the
+functionality. The fields of the type object are examined in detail in this
+section. The fields will be described in the order in which they occur in the
 structure.
 
 In addition to the following quick reference, the :ref:`typedef-examples`
@@ -474,7 +474,7 @@ PyTypeObject Definition
 -----------------------
 
 The structure definition for :c:type:`PyTypeObject` can be found in
-:file:`Include/cpython/object.h`.  For convenience of reference, this repeats the
+:file:`Include/cpython/object.h`. For convenience of reference, this repeats the
 definition found there:
 
 .. XXX Drop this?
@@ -495,9 +495,9 @@ type objects) *must* have the :c:member:`~PyVarObject.ob_size` field.
 :c:member:`PyObject.ob_refcnt`
 
    The type object's reference count is initialized to ``1`` by the
-   ``PyObject_HEAD_INIT`` macro.  Note that for :ref:`statically allocated type
+   ``PyObject_HEAD_INIT`` macro. Note that for :ref:`statically allocated type
    objects <static-types>`, the type's instances (objects whose :c:member:`~PyObject.ob_type`
-   points back to the type) do *not* count as references.  But for
+   points back to the type) do *not* count as references. But for
    :ref:`dynamically allocated type objects <heap-types>`, the instances *do*
    count as references.
 
@@ -508,13 +508,13 @@ type objects) *must* have the :c:member:`~PyVarObject.ob_size` field.
 
 :c:member:`PyObject.ob_type`
 
-   This is the type's type, in other words its metatype.  It is initialized by the
+   This is the type's type, in other words its metatype. It is initialized by the
    argument to the ``PyObject_HEAD_INIT`` macro, and its value should normally be
-   ``&PyType_Type``.  However, for dynamically loadable extension modules that must
+   ``&PyType_Type``. However, for dynamically loadable extension modules that must
    be usable on Windows (at least), the compiler complains that this is not a valid
-   initializer.  Therefore, the convention is to pass ``NULL`` to the
+   initializer. Therefore, the convention is to pass ``NULL`` to the
    ``PyObject_HEAD_INIT`` macro and to initialize this field explicitly at the
-   start of the module's initialization function, before doing anything else.  This
+   start of the module's initialization function, before doing anything else. This
    is typically done like this::
 
       Foo_Type.ob_type = &PyType_Type;
@@ -548,9 +548,9 @@ PyVarObject Slots
 PyTypeObject Slots
 ------------------
 
-Each slot has a section describing inheritance.  If :c:func:`PyType_Ready`
+Each slot has a section describing inheritance. If :c:func:`PyType_Ready`
 may set a value when the field is set to ``NULL`` then there will also be
-a "Default" section.  (Note that many fields set on :c:data:`PyBaseObject_Type`
+a "Default" section. (Note that many fields set on :c:data:`PyBaseObject_Type`
 and :c:data:`PyType_Type` effectively act as defaults.)
 
 .. c:member:: const char* PyTypeObject.tp_name
@@ -558,8 +558,8 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    Pointer to a NUL-terminated string containing the name of the type. For types
    that are accessible as module globals, the string should be the full module
    name, followed by a dot, followed by the type name; for built-in types, it
-   should be just the type name.  If the module is a submodule of a package, the
-   full package name is part of the full module name.  For example, a type named
+   should be just the type name. If the module is a submodule of a package, the
+   full package name is part of the full module name. For example, a type named
    :class:`!T` defined in module :mod:`!M` in subpackage :mod:`!Q` in package :mod:`!P`
    should have the :c:member:`~PyTypeObject.tp_name` initializer ``"P.Q.M.T"``.
 
@@ -576,11 +576,11 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
    If no dot is present, the entire :c:member:`~PyTypeObject.tp_name` field is made accessible as the
    :attr:`~type.__name__` attribute, and the :attr:`~type.__module__` attribute is undefined
-   (unless explicitly set in the dictionary, as explained above).  This means your
-   type will be impossible to pickle.  Additionally, it will not be listed in
+   (unless explicitly set in the dictionary, as explained above). This means your
+   type will be impossible to pickle. Additionally, it will not be listed in
    module documentations created with pydoc.
 
-   This field must not be ``NULL``.  It is the only required field
+   This field must not be ``NULL``. It is the only required field
    in :c:func:`PyTypeObject` (other than potentially
    :c:member:`~PyTypeObject.tp_itemsize`).
 
@@ -596,7 +596,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
    There are two kinds of types: types with fixed-length instances have a zero
    :c:member:`!tp_itemsize` field, types with variable-length instances have a non-zero
-   :c:member:`!tp_itemsize` field.  For a type with fixed-length instances, all
+   :c:member:`!tp_itemsize` field. For a type with fixed-length instances, all
    instances have the same size, given in :c:member:`!tp_basicsize`.
    (Exceptions to this rule can be made using
    :c:func:`PyUnstable_Object_GC_NewWithExtraData`.)
@@ -630,7 +630,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    :c:member:`~PyTypeObject.tp_base`, plus any extra data needed
    by each instance.
 
-   The  correct way to set :c:member:`!tp_basicsize` is to use the
+   The correct way to set :c:member:`!tp_basicsize` is to use the
    ``sizeof`` operator on the struct used to declare the instance layout.
    This struct must include the struct used to declare the base type.
    In other words, :c:member:`!tp_basicsize` must be greater than or equal
@@ -676,7 +676,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
 .. c:member:: destructor PyTypeObject.tp_dealloc
 
-   A pointer to the instance destructor function.  The function signature is::
+   A pointer to the instance destructor function. The function signature is::
 
       void tp_dealloc(PyObject *self);
 
@@ -729,12 +729,12 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
    It is permissible to call :c:member:`~PyTypeObject.tp_clear` from
    :c:member:`!tp_dealloc` to reduce code duplication and to guarantee that the
-   object is always cleared before destruction.  Beware that
+   object is always cleared before destruction. Beware that
    :c:member:`!tp_clear` might have already been called.
 
    If the type is heap allocated (:c:macro:`Py_TPFLAGS_HEAPTYPE`), the
    deallocator should release the owned reference to its type object (via
-   :c:func:`Py_DECREF`) after calling the type deallocator.  See the example
+   :c:func:`Py_DECREF`) after calling the type deallocator. See the example
    code below.::
 
       static void
@@ -746,7 +746,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
          Py_TYPE(self)->tp_free(self);
       }
 
-   :c:member:`!tp_dealloc` must leave the exception status unchanged.  If it
+   :c:member:`!tp_dealloc` must leave the exception status unchanged. If it
    needs to call something that might raise an exception, the exception state
    must be backed up first and restored later (after logging any exceptions
    with :c:func:`PyErr_WriteUnraisable`).
@@ -777,7 +777,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
           // Any additional destruction goes here.
 
           tp->tp_free(self);
-          self = NULL;  // In case PyErr_WriteUnraisable() is called below.
+          self = NULL; // In case PyErr_WriteUnraisable() is called below.
 
           if (tp->tp_flags & Py_TPFLAGS_HEAPTYPE) {
               Py_CLEAR(tp);
@@ -795,9 +795,9 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    :c:member:`!tp_dealloc` may be called from
    any Python thread, not just the thread which created the object (if the
    object becomes part of a refcount cycle, that cycle might be collected by
-   a garbage collection on any thread).  This is not a problem for Python
+   a garbage collection on any thread). This is not a problem for Python
    API calls, since the thread on which :c:member:`!tp_dealloc` is called
-   with an :term:`attached thread state`.  However, if the object being
+   with an :term:`attached thread state`. However, if the object being
    destroyed in turn destroys objects from some other C library, care
    should be taken to ensure that destroying those objects on the thread
    which called :c:member:`!tp_dealloc` will not violate any assumptions of
@@ -862,7 +862,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
    An optional pointer to the get-attribute-string function.
 
-   This field is deprecated.  When it is defined, it should point to a function
+   This field is deprecated. When it is defined, it should point to a function
    that acts the same as the :c:member:`~PyTypeObject.tp_getattro` function, but taking a C string
    instead of a Python string object to give the attribute name.
 
@@ -879,7 +879,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
    An optional pointer to the function for setting and deleting attributes.
 
-   This field is deprecated.  When it is defined, it should point to a function
+   This field is deprecated. When it is defined, it should point to a function
    that acts the same as the :c:member:`~PyTypeObject.tp_setattro` function, but taking a C string
    instead of a Python string object to give the attribute name.
 
@@ -896,7 +896,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
    Pointer to an additional structure that contains fields relevant only to
    objects which implement :term:`awaitable` and :term:`asynchronous iterator`
-   protocols at the C-level.  See :ref:`async-structs` for details.
+   protocols at the C-level. See :ref:`async-structs` for details.
 
    .. versionadded:: 3.5
       Formerly known as ``tp_compare`` and ``tp_reserved``.
@@ -918,10 +918,10 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
       PyObject *tp_repr(PyObject *self);
 
-   The function must return a string or a Unicode object.  Ideally,
+   The function must return a string or a Unicode object. Ideally,
    this function should return a string that, when passed to
    :func:`eval`, given a suitable environment, returns an object with the
-   same value.  If this is not feasible, it should return a string starting with
+   same value. If this is not feasible, it should return a string starting with
    ``'<'`` and ending with ``'>'`` from which both the type and the value of the
    object can be deduced.
 
@@ -939,7 +939,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 .. c:member:: PyNumberMethods* PyTypeObject.tp_as_number
 
    Pointer to an additional structure that contains fields relevant only to
-   objects which implement the number protocol.  These fields are documented in
+   objects which implement the number protocol. These fields are documented in
    :ref:`number-structs`.
 
    **Inheritance:**
@@ -951,7 +951,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 .. c:member:: PySequenceMethods* PyTypeObject.tp_as_sequence
 
    Pointer to an additional structure that contains fields relevant only to
-   objects which implement the sequence protocol.  These fields are documented
+   objects which implement the sequence protocol. These fields are documented
    in :ref:`sequence-structs`.
 
    **Inheritance:**
@@ -963,7 +963,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 .. c:member:: PyMappingMethods* PyTypeObject.tp_as_mapping
 
    Pointer to an additional structure that contains fields relevant only to
-   objects which implement the mapping protocol.  These fields are documented in
+   objects which implement the mapping protocol. These fields are documented in
    :ref:`mapping-structs`.
 
    **Inheritance:**
@@ -1015,8 +1015,8 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
 .. c:member:: ternaryfunc PyTypeObject.tp_call
 
-   An optional pointer to a function that implements calling the object.  This
-   should be ``NULL`` if the object is not callable.  The signature is the same as
+   An optional pointer to a function that implements calling the object. This
+   should be ``NULL`` if the object is not callable. The signature is the same as
    for :c:func:`PyObject_Call`::
 
       PyObject *tp_call(PyObject *self, PyObject *args, PyObject *kwargs);
@@ -1029,15 +1029,15 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 .. c:member:: reprfunc PyTypeObject.tp_str
 
    An optional pointer to a function that implements the built-in operation
-   :func:`str`.  (Note that :class:`str` is a type now, and :func:`str` calls the
-   constructor for that type.  This constructor calls :c:func:`PyObject_Str` to do
+   :func:`str`. (Note that :class:`str` is a type now, and :func:`str` calls the
+   constructor for that type. This constructor calls :c:func:`PyObject_Str` to do
    the actual work, and :c:func:`PyObject_Str` will call this handler.)
 
    The signature is the same as for :c:func:`PyObject_Str`::
 
       PyObject *tp_str(PyObject *self);
 
-   The function must return a string or a Unicode object.  It should be a "friendly" string
+   The function must return a string or a Unicode object. It should be a "friendly" string
    representation of the object, as this is the representation that will be used,
    among other things, by the :func:`print` function.
 
@@ -1084,7 +1084,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
       int tp_setattro(PyObject *self, PyObject *attr, PyObject *value);
 
    In addition, setting *value* to ``NULL`` to delete an attribute must be
-   supported.  It is usually convenient to set this field to
+   supported. It is usually convenient to set this field to
    :c:func:`PyObject_GenericSetAttr`, which implements the normal
    way of setting object attributes.
 
@@ -1104,7 +1104,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 .. c:member:: PyBufferProcs* PyTypeObject.tp_as_buffer
 
    Pointer to an additional structure that contains fields relevant only to objects
-   which implement the buffer interface.  These fields are documented in
+   which implement the buffer interface. These fields are documented in
    :ref:`buffer-structs`.
 
    **Inheritance:**
@@ -1115,7 +1115,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
 .. c:member:: unsigned long PyTypeObject.tp_flags
 
-   This field is a bit mask of various flags.  Some flags indicate variant
+   This field is a bit mask of various flags. Some flags indicate variant
    semantics for certain situations; others are used to indicate that certain
    fields in the type object (or in the extension structures referenced via
    :c:member:`~PyTypeObject.tp_as_number`, :c:member:`~PyTypeObject.tp_as_sequence`, :c:member:`~PyTypeObject.tp_as_mapping`, and
@@ -1125,12 +1125,12 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
    **Inheritance:**
 
-   Inheritance of this field is complicated.  Most flag bits are inherited
+   Inheritance of this field is complicated. Most flag bits are inherited
    individually, i.e. if the base type has a flag bit set, the subtype inherits
-   this flag bit.  The flag bits that pertain to extension structures are strictly
+   this flag bit. The flag bits that pertain to extension structures are strictly
    inherited if the extension structure is inherited, i.e. the base type's value of
    the flag bit is copied into the subtype together with a pointer to the extension
-   structure.  The :c:macro:`Py_TPFLAGS_HAVE_GC` flag bit is inherited together with
+   structure. The :c:macro:`Py_TPFLAGS_HAVE_GC` flag bit is inherited together with
    the :c:member:`~PyTypeObject.tp_traverse` and :c:member:`~PyTypeObject.tp_clear` fields, i.e. if the
    :c:macro:`Py_TPFLAGS_HAVE_GC` flag bit is clear in the subtype and the
    :c:member:`~PyTypeObject.tp_traverse` and :c:member:`~PyTypeObject.tp_clear` fields in the subtype exist and have
@@ -1148,14 +1148,14 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    .. c:namespace:: NULL
 
    The following bit masks are currently defined; these can be ORed together using
-   the ``|`` operator to form the value of the :c:member:`~PyTypeObject.tp_flags` field.  The macro
+   the ``|`` operator to form the value of the :c:member:`~PyTypeObject.tp_flags` field. The macro
    :c:func:`PyType_HasFeature` takes a type and a flags value, *tp* and *f*, and
    checks whether ``tp->tp_flags & f`` is non-zero.
 
    .. c:macro:: Py_TPFLAGS_HEAPTYPE
 
       This bit is set when the type object itself is allocated on the heap, for
-      example, types created dynamically using :c:func:`PyType_FromSpec`.  In this
+      example, types created dynamically using :c:func:`PyType_FromSpec`. In this
       case, the :c:member:`~PyObject.ob_type` field of its instances is considered a reference to
       the type, and the type object is INCREF'ed when a new instance is created, and
       DECREF'ed when an instance is destroyed (this does not apply to instances of
@@ -1170,7 +1170,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
    .. c:macro:: Py_TPFLAGS_BASETYPE
 
-      This bit is set when the type can be used as the base type of another type.  If
+      This bit is set when the type can be used as the base type of another type. If
       this bit is clear, the type cannot be subtyped (similar to a "final" class in
       Java).
 
@@ -1201,11 +1201,11 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
    .. c:macro:: Py_TPFLAGS_HAVE_GC
 
-      This bit is set when the object supports garbage collection.  If this bit
+      This bit is set when the object supports garbage collection. If this bit
       is set, memory for new instances (see :c:member:`~PyTypeObject.tp_alloc`)
       must be allocated using :c:macro:`PyObject_GC_New` or
       :c:func:`PyType_GenericAlloc` and deallocated (see
-      :c:member:`~PyTypeObject.tp_free`) using :c:func:`PyObject_GC_Del`.  More
+      :c:member:`~PyTypeObject.tp_free`) using :c:func:`PyObject_GC_Del`. More
       information in section :ref:`supporting-cycle-detection`.
 
       **Inheritance:**
@@ -1214,7 +1214,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
       The :c:macro:`Py_TPFLAGS_HAVE_GC` flag bit is inherited
       together with the :c:member:`~PyTypeObject.tp_traverse` and :c:member:`~PyTypeObject.tp_clear`
-      fields, i.e.  if the :c:macro:`Py_TPFLAGS_HAVE_GC` flag bit is
+      fields, i.e. if the :c:macro:`Py_TPFLAGS_HAVE_GC` flag bit is
       clear in the subtype and the :c:member:`~PyTypeObject.tp_traverse` and
       :c:member:`~PyTypeObject.tp_clear` fields in the subtype exist and have ``NULL``
       values.
@@ -1252,7 +1252,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
       **Inheritance:**
 
       This flag is never inherited by types without the
-      :c:macro:`Py_TPFLAGS_IMMUTABLETYPE` flag set.  For extension types, it is
+      :c:macro:`Py_TPFLAGS_IMMUTABLETYPE` flag set. For extension types, it is
       inherited whenever :c:member:`~PyTypeObject.tp_descr_get` is inherited.
 
    .. c:macro:: Py_TPFLAGS_MANAGED_DICT
@@ -1461,7 +1461,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 .. c:member:: const char* PyTypeObject.tp_doc
 
    An optional pointer to a NUL-terminated C string giving the docstring for this
-   type object.  This is exposed as the :attr:`~type.__doc__` attribute on the
+   type object. This is exposed as the :attr:`~type.__doc__` attribute on the
    type and instances of the type.
 
    **Inheritance:**
@@ -1471,8 +1471,8 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
 .. c:member:: traverseproc PyTypeObject.tp_traverse
 
-   An optional pointer to a traversal function for the garbage collector.  This is
-   only used if the :c:macro:`Py_TPFLAGS_HAVE_GC` flag bit is set.  The signature is::
+   An optional pointer to a traversal function for the garbage collector. This is
+   only used if the :c:macro:`Py_TPFLAGS_HAVE_GC` flag bit is set. The signature is::
 
       int tp_traverse(PyObject *self, visitproc visit, void *arg);
 
@@ -1496,7 +1496,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
       }
 
    Note that :c:func:`Py_VISIT` is called only on those members that can participate
-   in reference cycles.  Although there is also a ``self->key`` member, it can only
+   in reference cycles. Although there is also a ``self->key`` member, it can only
    be ``NULL`` or a Python string and therefore cannot be part of a reference cycle.
 
    On the other hand, even if you know a member can never be part of a cycle, as a
@@ -1551,7 +1551,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    .. versionchanged:: 3.9
 
       Heap-allocated types are expected to visit ``Py_TYPE(self)`` in
-      ``tp_traverse``.  In earlier versions of Python, due to
+      ``tp_traverse``. In earlier versions of Python, due to
       `bug 40217 <https://bugs.python.org/issue40217>`_, doing this
       may lead to crashes in subclasses.
 
@@ -1567,20 +1567,20 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
 .. c:member:: inquiry PyTypeObject.tp_clear
 
-   An optional pointer to a clear function.  The signature is::
+   An optional pointer to a clear function. The signature is::
 
       int tp_clear(PyObject *);
 
    The purpose of this function is to break reference cycles that are causing a
-   :term:`cyclic isolate` so that the objects can be safely destroyed.  A
+   :term:`cyclic isolate` so that the objects can be safely destroyed. A
    cleared object is a partially destroyed object; the object is not obligated
    to satisfy design invariants held during normal use.
 
    :c:member:`!tp_clear` does not need to delete references to objects that
    can't participate in reference cycles, such as Python strings or Python
-   integers.  However, it may be convenient to clear all references, and write
+   integers. However, it may be convenient to clear all references, and write
    the type's :c:member:`~PyTypeObject.tp_dealloc` function to invoke
-   :c:member:`!tp_clear` to avoid code duplication.  (Beware that
+   :c:member:`!tp_clear` to avoid code duplication. (Beware that
    :c:member:`!tp_clear` might have already been called. Prefer calling
    idempotent functions like :c:func:`Py_CLEAR`.)
 
@@ -1591,7 +1591,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
       If :c:member:`!tp_clear` fails to break a reference cycle then the
       objects in the :term:`cyclic isolate` may remain indefinitely
-      uncollectable ("leak").  See :data:`gc.garbage`.
+      uncollectable ("leak"). See :data:`gc.garbage`.
 
    .. note::
 
@@ -1612,18 +1612,18 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    (:c:member:`~PyTypeObject.tp_dealloc`) in the following ways:
 
    * The purpose of clearing an object is to remove references to other objects
-     that might participate in a reference cycle.  The purpose of the
+     that might participate in a reference cycle. The purpose of the
      destructor, on the other hand, is a superset: it must release *all*
      resources it owns, including references to objects that cannot participate
      in a reference cycle (e.g., integers) as well as the object's own memory
      (by calling :c:member:`~PyTypeObject.tp_free`).
    * When :c:member:`!tp_clear` is called, other objects might still hold
-     references to the object being cleared.  Because of this,
+     references to the object being cleared. Because of this,
      :c:member:`!tp_clear` must not deallocate the object's own memory
-     (:c:member:`~PyTypeObject.tp_free`).  The destructor, on the other hand,
+     (:c:member:`~PyTypeObject.tp_free`). The destructor, on the other hand,
      is only called when no (strong) references exist, and as such, must
      safely destroy the object itself by deallocating it.
-   * :c:member:`!tp_clear` might never be automatically called.  An object's
+   * :c:member:`!tp_clear` might never be automatically called. An object's
      destructor, on the other hand, will be automatically called some time
      after the object becomes unreachable (i.e., either there are no references
      to the object or the object is a member of a :term:`cyclic isolate`).
@@ -1635,14 +1635,14 @@ and :c:data:`PyType_Type` effectively act as defaults.)
      there is a reference to it and it is not a member of a :term:`cyclic
      isolate`.
    * Python will not automatically clear an object if it has not been
-     automatically finalized (see :c:member:`~PyTypeObject.tp_finalize`).  (If
+     automatically finalized (see :c:member:`~PyTypeObject.tp_finalize`). (If
      the finalizer resurrected the object, the object may or may not be
      automatically finalized again before it is cleared.)
    * If an object is a member of a :term:`cyclic isolate`, Python will not
      automatically clear it if any member of the cyclic isolate has not yet
      been automatically finalized (:c:member:`~PyTypeObject.tp_finalize`).
    * Python will not destroy an object until after any automatic calls to its
-     :c:member:`!tp_clear` function have returned.  This ensures that the act
+     :c:member:`!tp_clear` function have returned. This ensures that the act
      of breaking a reference cycle does not invalidate the ``self`` pointer
      while :c:member:`!tp_clear` is still executing.
    * Python will not automatically call :c:member:`!tp_clear` multiple times
@@ -1653,13 +1653,13 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    clear objects regularly before their destruction.
 
    Taken together, all :c:member:`~PyTypeObject.tp_clear` functions in the
-   system must combine to break all reference cycles.  This is subtle, and if
-   in any doubt supply a :c:member:`~PyTypeObject.tp_clear` function.  For
+   system must combine to break all reference cycles. This is subtle, and if
+   in any doubt supply a :c:member:`~PyTypeObject.tp_clear` function. For
    example, the tuple type does not implement a
    :c:member:`~PyTypeObject.tp_clear` function, because it's possible to prove
-   that no reference cycle can be composed entirely of tuples.  Therefore the
+   that no reference cycle can be composed entirely of tuples. Therefore the
    :c:member:`~PyTypeObject.tp_clear` functions of other types are responsible
-   for breaking any cycle containing a tuple.  This isn't immediately obvious,
+   for breaking any cycle containing a tuple. This isn't immediately obvious,
    and there's rarely a good reason to avoid implementing
    :c:member:`~PyTypeObject.tp_clear`.
 
@@ -1679,15 +1679,15 @@ and :c:data:`PyType_Type` effectively act as defaults.)
       }
 
    The :c:func:`Py_CLEAR` macro should be used, because clearing references is
-   delicate:  the reference to the contained object must not be released
+   delicate: the reference to the contained object must not be released
    (via :c:func:`Py_DECREF`) until
-   after the pointer to the contained object is set to ``NULL``.  This is because
+   after the pointer to the contained object is set to ``NULL``. This is because
    releasing the reference may cause the contained object to become trash,
    triggering a chain of reclamation activity that may include invoking arbitrary
    Python code (due to finalizers, or weakref callbacks, associated with the
    contained object). If it's possible for such code to reference *self* again,
    it's important that the pointer to the contained object be ``NULL`` at that time,
-   so that *self* knows the contained object can no longer be used.  The
+   so that *self* knows the contained object can no longer be used. The
    :c:func:`Py_CLEAR` macro performs the operations in a safe order.
 
    If the :c:macro:`Py_TPFLAGS_MANAGED_DICT` bit is set in the
@@ -1723,7 +1723,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    that is defined by :c:type:`PyTypeObject`.
 
    The function should return the result of the comparison (usually ``Py_True``
-   or ``Py_False``).  If the comparison is undefined, it must return
+   or ``Py_False``). If the comparison is undefined, it must return
    ``Py_NotImplemented``, if another error occurred it must return ``NULL`` and
    set an exception condition.
 
@@ -1776,7 +1776,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    **Default:**
 
    :c:data:`PyBaseObject_Type` provides a :c:member:`~PyTypeObject.tp_richcompare`
-   implementation, which may be inherited.  However, if only
+   implementation, which may be inherited. However, if only
    :c:member:`~PyTypeObject.tp_hash` is defined, not even the inherited function is used
    and instances of the type will not be able to participate in any
    comparisons.
@@ -1790,7 +1790,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    If the instances of this type are weakly referenceable, this field is greater
    than zero and contains the offset in the instance structure of the weak
    reference list head (ignoring the GC header, if present); this offset is used by
-   :c:func:`PyObject_ClearWeakRefs` and the ``PyWeakref_*`` functions.  The
+   :c:func:`PyObject_ClearWeakRefs` and the ``PyWeakref_*`` functions. The
    instance structure needs to include a field of type :c:expr:`PyObject*` which is
    initialized to ``NULL``.
 
@@ -1804,7 +1804,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
    This field is inherited by subtypes, but see the rules listed below. A subtype
    may override this offset; this means that the subtype uses a different weak
-   reference list head than the base type.  Since the list head is always found via
+   reference list head than the base type. Since the list head is always found via
    :c:member:`~PyTypeObject.tp_weaklistoffset`, this should not be a problem.
 
    **Default:**
@@ -1818,7 +1818,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 .. c:member:: getiterfunc PyTypeObject.tp_iter
 
    An optional pointer to a function that returns an :term:`iterator` for the
-   object.  Its presence normally signals that the instances of this type are
+   object. Its presence normally signals that the instances of this type are
    :term:`iterable` (although sequences may be iterable without this function).
 
    This function has the same signature as :c:func:`PyObject_GetIter`::
@@ -1838,8 +1838,8 @@ and :c:data:`PyType_Type` effectively act as defaults.)
       PyObject *tp_iternext(PyObject *self);
 
    When the iterator is exhausted, it must return ``NULL``; a :exc:`StopIteration`
-   exception may or may not be set.  When another error occurs, it must return
-   ``NULL`` too.  Its presence signals that the instances of this type are
+   exception may or may not be set. When another error occurs, it must return
+   ``NULL`` too. Its presence signals that the instances of this type are
    iterators.
 
    Iterator types should also define the :c:member:`~PyTypeObject.tp_iter` function, and that
@@ -1898,7 +1898,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
 .. c:member:: PyTypeObject* PyTypeObject.tp_base
 
-   An optional pointer to a base type from which type properties are inherited.  At
+   An optional pointer to a base type from which type properties are inherited. At
    this level, only single inheritance is supported; multiple inheritance require
    dynamically creating a type object by calling the metatype.
 
@@ -1907,13 +1907,13 @@ and :c:data:`PyType_Type` effectively act as defaults.)
        .. from Modules/xxmodule.c
 
        Slot initialization is subject to the rules of initializing globals.
-       C99 requires the initializers to be "address constants".  Function
+       C99 requires the initializers to be "address constants". Function
        designators like :c:func:`PyType_GenericNew`, with implicit conversion
        to a pointer, are valid C99 address constants.
 
        However, the unary '&' operator applied to a non-static variable
        like :c:data:`PyBaseObject_Type` is not required to produce an address
-       constant.  Compilers may support this (gcc does), MSVC does not.
+       constant. Compilers may support this (gcc does), MSVC does not.
        Both compilers are strictly standard conforming in this particular
        behavior.
 
@@ -1936,9 +1936,9 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
    This field should normally be initialized to ``NULL`` before PyType_Ready is
    called; it may also be initialized to a dictionary containing initial attributes
-   for the type.  Once :c:func:`PyType_Ready` has initialized the type, extra
+   for the type. Once :c:func:`PyType_Ready` has initialized the type, extra
    attributes for the type may be added to this dictionary only if they don't
-   correspond to overloaded operations (like :meth:`~object.__add__`).  Once
+   correspond to overloaded operations (like :meth:`~object.__add__`). Once
    initialization for the type has finished, this field should be
    treated as read-only.
 
@@ -2034,7 +2034,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
    **Default:**
 
-   This slot has no default.  For :ref:`static types <static-types>`, if the
+   This slot has no default. For :ref:`static types <static-types>`, if the
    field is ``NULL`` then no :attr:`~object.__dict__` gets created for instances.
 
    If the :c:macro:`Py_TPFLAGS_MANAGED_DICT` bit is set in the
@@ -2047,7 +2047,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
    An optional pointer to an instance initialization function.
 
-   This function corresponds to the :meth:`~object.__init__` method of classes.  Like
+   This function corresponds to the :meth:`~object.__init__` method of classes. Like
    :meth:`!__init__`, it is possible to create an instance without calling
    :meth:`!__init__`, and it is possible to reinitialize an instance by calling its
    :meth:`!__init__` method again.
@@ -2062,7 +2062,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
    The :c:member:`~PyTypeObject.tp_init` function, if not ``NULL``, is called when an instance is
    created normally by calling its type, after the type's :c:member:`~PyTypeObject.tp_new` function
-   has returned an instance of the type.  If the :c:member:`~PyTypeObject.tp_new` function returns an
+   has returned an instance of the type. If the :c:member:`~PyTypeObject.tp_new` function returns an
    instance of some other type that is not a subtype of the original type, no
    :c:member:`~PyTypeObject.tp_init` function is called; if :c:member:`~PyTypeObject.tp_new` returns an instance of a
    subtype of the original type, the subtype's :c:member:`~PyTypeObject.tp_init` is called.
@@ -2111,14 +2111,14 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
    The *subtype* argument is the type of the object being created; the *args* and
    *kwds* arguments represent positional and keyword arguments of the call to the
-   type.  Note that *subtype* doesn't have to equal the type whose :c:member:`~PyTypeObject.tp_new`
+   type. Note that *subtype* doesn't have to equal the type whose :c:member:`~PyTypeObject.tp_new`
    function is called; it may be a subtype of that type (but not an unrelated
    type).
 
    The :c:member:`~PyTypeObject.tp_new` function should call ``subtype->tp_alloc(subtype, nitems)``
    to allocate space for the object, and then do only as much further
-   initialization as is absolutely necessary.  Initialization that can safely be
-   ignored or repeated should be placed in the :c:member:`~PyTypeObject.tp_init` handler.  A good
+   initialization as is absolutely necessary. Initialization that can safely be
+   ignored or repeated should be placed in the :c:member:`~PyTypeObject.tp_init` handler. A good
    rule of thumb is that for immutable types, all initialization should take place
    in :c:member:`~PyTypeObject.tp_new`, while for mutable types, most initialization should be
    deferred to :c:member:`~PyTypeObject.tp_init`.
@@ -2142,7 +2142,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
 .. c:member:: freefunc PyTypeObject.tp_free
 
-   An optional pointer to an instance deallocation function.  Its signature is::
+   An optional pointer to an instance deallocation function. Its signature is::
 
       void tp_free(void *self);
 
@@ -2152,7 +2152,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    **Inheritance:**
 
    Static subtypes inherit this slot, which will be :c:func:`PyObject_Free` if
-   inherited from :class:`object`.  Exception: If the type supports garbage
+   inherited from :class:`object`. Exception: If the type supports garbage
    collection (i.e., the :c:macro:`Py_TPFLAGS_HAVE_GC` flag is set in
    :c:member:`~PyTypeObject.tp_flags`) and it would inherit
    :c:func:`PyObject_Free`, then this slot is not inherited but instead defaults
@@ -2174,16 +2174,16 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    An optional pointer to a function called by the garbage collector.
 
    The garbage collector needs to know whether a particular object is collectible
-   or not.  Normally, it is sufficient to look at the object's type's
-   :c:member:`~PyTypeObject.tp_flags` field, and check the :c:macro:`Py_TPFLAGS_HAVE_GC` flag bit.  But
+   or not. Normally, it is sufficient to look at the object's type's
+   :c:member:`~PyTypeObject.tp_flags` field, and check the :c:macro:`Py_TPFLAGS_HAVE_GC` flag bit. But
    some types have a mixture of statically and dynamically allocated instances, and
-   the statically allocated instances are not collectible.  Such types should
+   the statically allocated instances are not collectible. Such types should
    define this function; it should return ``1`` for a collectible instance, and
    ``0`` for a non-collectible instance. The signature is::
 
       int tp_is_gc(PyObject *self);
 
-   (The only example of this are types themselves.  The metatype,
+   (The only example of this are types themselves. The metatype,
    :c:data:`PyType_Type`, defines this function to distinguish between statically
    and :ref:`dynamically allocated types <heap-types>`.)
 
@@ -2193,7 +2193,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
    **Default:**
 
-   This slot has no default.  If this field is ``NULL``,
+   This slot has no default. If this field is ``NULL``,
    :c:macro:`Py_TPFLAGS_HAVE_GC` is used as the functional equivalent.
 
 
@@ -2236,7 +2236,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
 .. c:member:: PyObject* PyTypeObject.tp_cache
 
-   Unused.  Internal use only.
+   Unused. Internal use only.
 
    **Inheritance:**
 
@@ -2245,7 +2245,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
 .. c:member:: void* PyTypeObject.tp_subclasses
 
-   A collection of subclasses.  Internal use only.  May be an invalid pointer.
+   A collection of subclasses. Internal use only.  ay be an invalid pointer.
 
    To get a list of subclasses, call the Python method
    :py:meth:`~type.__subclasses__`.
@@ -2262,14 +2262,14 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
 .. c:member:: PyObject* PyTypeObject.tp_weaklist
 
-   Weak reference list head, for weak references to this type object.  Not
-   inherited.  Internal use only.
+   Weak reference list head, for weak references to this type object. Not
+   inherited. Internal use only.
 
    .. versionchanged:: 3.12
 
       Internals detail: For the static builtin types this is always ``NULL``,
-      even if weakrefs are added.  Instead, the weakrefs for each are stored
-      on ``PyInterpreterState``.  Use the public C-API or the internal
+      even if weakrefs are added. Instead, the weakrefs for each are stored
+      on ``PyInterpreterState``. Use the public C-API or the internal
       ``_PyObject_GET_WEAKREFS_LISTPTR()`` macro to avoid the distinction.
 
    **Inheritance:**
@@ -2279,12 +2279,12 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
 .. c:member:: destructor PyTypeObject.tp_del
 
-   This field is deprecated.  Use :c:member:`~PyTypeObject.tp_finalize` instead.
+   This field is deprecated. Use :c:member:`~PyTypeObject.tp_finalize` instead.
 
 
 .. c:member:: unsigned int PyTypeObject.tp_version_tag
 
-   Used to index into the method cache.  Internal use only.
+   Used to index into the method cache. Internal use only.
 
    **Inheritance:**
 
@@ -2293,8 +2293,8 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
 .. c:member:: destructor PyTypeObject.tp_finalize
 
-   An optional pointer to an instance finalization function.  This is the C
-   implementation of the :meth:`~object.__del__` special method.  Its signature
+   An optional pointer to an instance finalization function. This is the C
+   implementation of the :meth:`~object.__del__` special method. Its signature
    is::
 
       void tp_finalize(PyObject *self);
@@ -2302,7 +2302,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    The primary purpose of finalization is to perform any non-trivial cleanup
    that must be performed before the object is destroyed, while the object and
    any other objects it directly or indirectly references are still in a
-   consistent state.  The finalizer is allowed to execute
+   consistent state. The finalizer is allowed to execute
    arbitrary Python code.
 
    Before Python automatically finalizes an object, some of the object's direct
@@ -2318,14 +2318,14 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
       After Python automatically finalizes an object, Python might start
       automatically clearing (:c:member:`~PyTypeObject.tp_clear`) the object
-      and its referents (direct and indirect).  Cleared objects are not
+      and its referents (direct and indirect). Cleared objects are not
       guaranteed to be in a consistent state; a finalized object must be able
       to tolerate cleared referents.
 
    .. note::
 
       An object is not guaranteed to be automatically finalized before its
-      destructor (:c:member:`~PyTypeObject.tp_dealloc`) is called.  It is
+      destructor (:c:member:`~PyTypeObject.tp_dealloc`) is called. It is
       recommended to call :c:func:`PyObject_CallFinalizerFromDealloc` at the
       beginning of :c:member:`!tp_dealloc` to guarantee that the object is
       always finalized before destruction.
@@ -2338,12 +2338,12 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    .. note::
 
       The :c:member:`!tp_finalize` function can be called during shutdown,
-      after some global variables have been deleted.  See the documentation of
+      after some global variables have been deleted. See the documentation of
       the :meth:`~object.__del__` method for details.
 
    When Python finalizes an object, it behaves like the following algorithm:
 
-   #. Python might mark the object as *finalized*.  Currently, Python always
+   #. Python might mark the object as *finalized*. Currently, Python always
       marks objects whose type supports garbage collection (i.e., the
       :c:macro:`Py_TPFLAGS_HAVE_GC` flag is set in
       :c:member:`~PyTypeObject.tp_flags`) and never marks other types of
@@ -2354,27 +2354,27 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    #. If the finalizer function was called and the finalizer made the object
       reachable (i.e., there is a reference to the object and it is not a
       member of a :term:`cyclic isolate`), then the finalizer is said to have
-      *resurrected* the object.  It is unspecified whether the finalizer can
+      *resurrected* the object. It is unspecified whether the finalizer can
       also resurrect the object by adding a new reference to the object that
       does not make it reachable, i.e., the object is (still) a member of a
       cyclic isolate.
    #. If the finalizer resurrected the object, the object's pending destruction
       is canceled and the object's *finalized* mark might be removed if
-      present.  Currently, Python never removes the *finalized* mark; this
+      present. Currently, Python never removes the *finalized* mark; this
       might change in a future version.
 
    *Automatic finalization* refers to any finalization performed by Python
    except via calls to :c:func:`PyObject_CallFinalizer` or
-   :c:func:`PyObject_CallFinalizerFromDealloc`.  No guarantees are made about
+   :c:func:`PyObject_CallFinalizerFromDealloc`. No guarantees are made about
    when, if, or how often an object is automatically finalized, except:
 
    * Python will not automatically finalize an object if it is reachable, i.e.,
      there is a reference to it and it is not a member of a :term:`cyclic
      isolate`.
    * Python will not automatically finalize an object if finalizing it would
-     not mark the object as *finalized*.  Currently, this applies to objects
+     not mark the object as *finalized*. Currently, this applies to objects
      whose type does not support garbage collection, i.e., the
-     :c:macro:`Py_TPFLAGS_HAVE_GC` flag is not set.  Such objects can still be
+     :c:macro:`Py_TPFLAGS_HAVE_GC` flag is not set. Such objects can still be
      manually finalized by calling :c:func:`PyObject_CallFinalizer` or
      :c:func:`PyObject_CallFinalizerFromDealloc`.
    * Python will not automatically finalize any two members of a :term:`cyclic
@@ -2400,12 +2400,12 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    :c:func:`PyObject_CallFinalizerFromDealloc` instead.
 
    :c:member:`~PyTypeObject.tp_finalize` should leave the current exception
-   status unchanged.  The recommended way to write a non-trivial finalizer is
+   status unchanged. The recommended way to write a non-trivial finalizer is
    to back up the exception at the beginning by calling
    :c:func:`PyErr_GetRaisedException` and restore the exception at the end by
-   calling :c:func:`PyErr_SetRaisedException`.  If an exception is encountered
+   calling :c:func:`PyErr_SetRaisedException`. If an exception is encountered
    in the middle of the finalizer, log and clear it with
-   :c:func:`PyErr_WriteUnraisable` or :c:func:`PyErr_FormatUnraisable`.  For
+   :c:func:`PyErr_WriteUnraisable` or :c:func:`PyErr_FormatUnraisable`. For
    example::
 
       static void
@@ -2422,7 +2422,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
           }
 
       done:
-          // Restore the saved exception.  This silently discards any exception
+          // Restore the saved exception. This silently discards any exception
           // raised above, so be sure to call PyErr_WriteUnraisable first if
           // necessary.
           PyErr_SetRaisedException(exc);
@@ -2438,7 +2438,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
       Before version 3.8 it was necessary to set the
       :c:macro:`Py_TPFLAGS_HAVE_FINALIZE` flags bit in order for this field to be
-      used.  This is no longer required.
+      used. This is no longer required.
 
    .. seealso::
 
@@ -2550,7 +2550,7 @@ Number Object Structures
 .. c:type:: PyNumberMethods
 
    This structure holds pointers to the functions which an object uses to
-   implement the number protocol.  Each function is used by the function of
+   implement the number protocol. Each function is used by the function of
    similar name documented in the :ref:`number` section.
 
    .. XXX Drop the definition?
@@ -2604,14 +2604,14 @@ Number Object Structures
 
       Binary and ternary functions must check the type of all their operands,
       and implement the necessary conversions (at least one of the operands is
-      an instance of the defined type).  If the operation is not defined for the
+      an instance of the defined type). If the operation is not defined for the
       given operands, binary and ternary functions must return
       ``Py_NotImplemented``, if another error occurred they must return ``NULL``
       and set an exception.
 
    .. note::
 
-      The :c:member:`~PyNumberMethods.nb_reserved` field should always be ``NULL``.  It
+      The :c:member:`~PyNumberMethods.nb_reserved` field should always be ``NULL``. It
       was previously called :c:member:`!nb_long`, and was renamed in
       Python 3.0.1.
 
@@ -2664,19 +2664,19 @@ Mapping Object Structures
 .. c:type:: PyMappingMethods
 
    This structure holds pointers to the functions which an object uses to
-   implement the mapping protocol.  It has three members:
+   implement the mapping protocol. It has three members:
 
 .. c:member:: lenfunc PyMappingMethods.mp_length
 
    This function is used by :c:func:`PyMapping_Size` and
-   :c:func:`PyObject_Size`, and has the same signature.  This slot may be set to
+   :c:func:`PyObject_Size`, and has the same signature. This slot may be set to
    ``NULL`` if the object has no defined length.
 
 .. c:member:: binaryfunc PyMappingMethods.mp_subscript
 
    This function is used by :c:func:`PyObject_GetItem` and
    :c:func:`PySequence_GetSlice`, and has the same signature as
-   :c:func:`!PyObject_GetItem`.  This slot must be filled for the
+   :c:func:`!PyObject_GetItem`. This slot must be filled for the
    :c:func:`PyMapping_Check` function to return ``1``, it can be ``NULL``
    otherwise.
 
@@ -2684,9 +2684,9 @@ Mapping Object Structures
 
    This function is used by :c:func:`PyObject_SetItem`,
    :c:func:`PyObject_DelItem`, :c:func:`PySequence_SetSlice` and
-   :c:func:`PySequence_DelSlice`.  It has the same signature as
+   :c:func:`PySequence_DelSlice`. It has the same signature as
    :c:func:`!PyObject_SetItem`, but *v* can also be set to ``NULL`` to delete
-   an item.  If this slot is ``NULL``, the object does not support item
+   an item. If this slot is ``NULL``, the object does not support item
    assignment and deletion.
 
 
@@ -2706,39 +2706,39 @@ Sequence Object Structures
 .. c:member:: lenfunc PySequenceMethods.sq_length
 
    This function is used by :c:func:`PySequence_Size` and
-   :c:func:`PyObject_Size`, and has the same signature.  It is also used for
+   :c:func:`PyObject_Size`, and has the same signature. It is also used for
    handling negative indices via the :c:member:`~PySequenceMethods.sq_item`
    and the :c:member:`~PySequenceMethods.sq_ass_item` slots.
 
 .. c:member:: binaryfunc PySequenceMethods.sq_concat
 
    This function is used by :c:func:`PySequence_Concat` and has the same
-   signature.  It is also used by the ``+`` operator, after trying the numeric
+   signature. It is also used by the ``+`` operator, after trying the numeric
    addition via the :c:member:`~PyNumberMethods.nb_add` slot.
 
 .. c:member:: ssizeargfunc PySequenceMethods.sq_repeat
 
    This function is used by :c:func:`PySequence_Repeat` and has the same
-   signature.  It is also used by the ``*`` operator, after trying numeric
+   signature. It is also used by the ``*`` operator, after trying numeric
    multiplication via the :c:member:`~PyNumberMethods.nb_multiply` slot.
 
 .. c:member:: ssizeargfunc PySequenceMethods.sq_item
 
    This function is used by :c:func:`PySequence_GetItem` and has the same
-   signature.  It is also used by :c:func:`PyObject_GetItem`, after trying
+   signature. It is also used by :c:func:`PyObject_GetItem`, after trying
    the subscription via the :c:member:`~PyMappingMethods.mp_subscript` slot.
    This slot must be filled for the :c:func:`PySequence_Check`
    function to return ``1``, it can be ``NULL`` otherwise.
 
    Negative indexes are handled as follows: if the :c:member:`~PySequenceMethods.sq_length` slot is
    filled, it is called and the sequence length is used to compute a positive
-   index which is passed to  :c:member:`~PySequenceMethods.sq_item`.  If :c:member:`!sq_length` is ``NULL``,
+   index which is passed to :c:member:`~PySequenceMethods.sq_item`.  f :c:member:`!sq_length` is ``NULL``,
    the index is passed as is to the function.
 
 .. c:member:: ssizeobjargproc PySequenceMethods.sq_ass_item
 
    This function is used by :c:func:`PySequence_SetItem` and has the same
-   signature.  It is also used by :c:func:`PyObject_SetItem` and
+   signature. It is also used by :c:func:`PyObject_SetItem` and
    :c:func:`PyObject_DelItem`, after trying the item assignment and deletion
    via the :c:member:`~PyMappingMethods.mp_ass_subscript` slot.
    This slot may be left to ``NULL`` if the object does not support
@@ -2747,25 +2747,25 @@ Sequence Object Structures
 .. c:member:: objobjproc PySequenceMethods.sq_contains
 
    This function may be used by :c:func:`PySequence_Contains` and has the same
-   signature.  This slot may be left to ``NULL``, in this case
+   signature. This slot may be left to ``NULL``, in this case
    :c:func:`!PySequence_Contains` simply traverses the sequence until it
    finds a match.
 
 .. c:member:: binaryfunc PySequenceMethods.sq_inplace_concat
 
    This function is used by :c:func:`PySequence_InPlaceConcat` and has the same
-   signature.  It should modify its first operand, and return it.  This slot
+   signature. It should modify its first operand, and return it.  his slot
    may be left to ``NULL``, in this case :c:func:`!PySequence_InPlaceConcat`
-   will fall back to :c:func:`PySequence_Concat`.  It is also used by the
+   will fall back to :c:func:`PySequence_Concat`. It is also used by the
    augmented assignment ``+=``, after trying numeric in-place addition
    via the :c:member:`~PyNumberMethods.nb_inplace_add` slot.
 
 .. c:member:: ssizeargfunc PySequenceMethods.sq_inplace_repeat
 
    This function is used by :c:func:`PySequence_InPlaceRepeat` and has the same
-   signature.  It should modify its first operand, and return it.  This slot
+   signature. It should modify its first operand, and return it.  his slot
    may be left to ``NULL``, in this case :c:func:`!PySequence_InPlaceRepeat`
-   will fall back to :c:func:`PySequence_Repeat`.  It is also used by the
+   will fall back to :c:func:`PySequence_Repeat`. It is also used by the
    augmented assignment ``*=``, after trying numeric in-place multiplication
    via the :c:member:`~PyNumberMethods.nb_inplace_multiply` slot.
 
@@ -2941,9 +2941,9 @@ Slot Type typedefs
 .. c:type:: PyObject *(*allocfunc)(PyTypeObject *cls, Py_ssize_t nitems)
 
    The purpose of this function is to separate memory allocation from memory
-   initialization.  It should return a pointer to a block of memory of adequate
+   initialization. It should return a pointer to a block of memory of adequate
    length for the instance, suitably aligned, and initialized to zeros, but with
-   :c:member:`~PyObject.ob_refcnt` set to ``1`` and :c:member:`~PyObject.ob_type` set to the type argument.  If
+   :c:member:`~PyObject.ob_refcnt` set to ``1`` and :c:member:`~PyObject.ob_type` set to the type argument. If
    the type's :c:member:`~PyTypeObject.tp_itemsize` is non-zero, the object's :c:member:`~PyVarObject.ob_size` field
    should be initialized to *nitems* and the length of the allocated memory block
    should be ``tp_basicsize + nitems*tp_itemsize``, rounded up to a multiple of
@@ -3047,9 +3047,9 @@ Slot Type typedefs
 Examples
 --------
 
-The following are simple examples of Python type definitions.  They
-include common usage you may encounter.  Some demonstrate tricky corner
-cases.  For more examples, practical info, and a tutorial, see
+The following are simple examples of Python type definitions. They
+include common usage you may encounter. Some demonstrate tricky corner
+cases. For more examples, practical info, and a tutorial, see
 :ref:`defining-new-types` and :ref:`new-types-topics`.
 
 A basic :ref:`static type <static-types>`::

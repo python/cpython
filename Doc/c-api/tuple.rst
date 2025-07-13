@@ -22,13 +22,13 @@ Tuple Objects
 .. c:function:: int PyTuple_Check(PyObject *p)
 
    Return true if *p* is a tuple object or an instance of a subtype of the
-   tuple type.  This function always succeeds.
+   tuple type. This function always succeeds.
 
 
 .. c:function:: int PyTuple_CheckExact(PyObject *p)
 
    Return true if *p* is a tuple object, but not an instance of a subtype of the
-   tuple type.  This function always succeeds.
+   tuple type. This function always succeeds.
 
 
 .. c:function:: PyObject* PyTuple_New(Py_ssize_t len)
@@ -58,7 +58,7 @@ Tuple Objects
 
 .. c:function:: PyObject* PyTuple_GetItem(PyObject *p, Py_ssize_t pos)
 
-   Return the object at position *pos* in the tuple pointed to by *p*.  If *pos* is
+   Return the object at position *pos* in the tuple pointed to by *p*. If *pos* is
    negative or out of bounds, return ``NULL`` and set an :exc:`IndexError` exception.
 
    The returned reference is borrowed from the tuple *p*
@@ -85,7 +85,7 @@ Tuple Objects
 .. c:function:: int PyTuple_SetItem(PyObject *p, Py_ssize_t pos, PyObject *o)
 
    Insert a reference to object *o* at position *pos* of the tuple pointed to by
-   *p*.  Return ``0`` on success.  If *pos* is out of bounds, return ``-1``
+   *p*. Return ``0`` on success. If *pos* is out of bounds, return ``-1``
    and set an :exc:`IndexError` exception.
 
    .. note::
@@ -118,15 +118,15 @@ Tuple Objects
 
 .. c:function:: int _PyTuple_Resize(PyObject **p, Py_ssize_t newsize)
 
-   Can be used to resize a tuple.  *newsize* will be the new length of the tuple.
+   Can be used to resize a tuple. *newsize* will be the new length of the tuple.
    Because tuples are *supposed* to be immutable, this should only be used if there
-   is only one reference to the object.  Do *not* use this if the tuple may already
-   be known to some other part of the code.  The tuple will always grow or shrink
-   at the end.  Think of this as destroying the old tuple and creating a new one,
-   only more efficiently.  Returns ``0`` on success. Client code should never
+   is only one reference to the object. Do *not* use this if the tuple may already
+   be known to some other part of the code. The tuple will always grow or shrink
+   at the end. Think of this as destroying the old tuple and creating a new one,
+   only more efficiently. Returns ``0`` on success. Client code should never
    assume that the resulting value of ``*p`` will be the same as before calling
    this function. If the object referenced by ``*p`` is replaced, the original
-   ``*p`` is destroyed.  On failure, returns ``-1`` and sets ``*p`` to ``NULL``, and
+   ``*p`` is destroyed. On failure, returns ``-1`` and sets ``*p`` to ``NULL``, and
    raises :exc:`MemoryError` or :exc:`SystemError`.
 
 
@@ -186,7 +186,7 @@ type.
 .. c:type:: PyStructSequence_Field
 
    Describes a field of a struct sequence. As a struct sequence is modeled as a
-   tuple, all fields are typed as :c:expr:`PyObject*`.  The index in the
+   tuple, all fields are typed as :c:expr:`PyObject*`. The index in the
    :c:member:`~PyStructSequence_Desc.fields` array of
    the :c:type:`PyStructSequence_Desc` determines which
    field of the struct sequence is described.
@@ -235,7 +235,7 @@ type.
 
 .. c:function:: void PyStructSequence_SetItem(PyObject *p, Py_ssize_t pos, PyObject *o)
 
-   Sets the field at index *pos* of the struct sequence *p* to value *o*.  Like
+   Sets the field at index *pos* of the struct sequence *p* to value *o*. Like
    :c:func:`PyTuple_SET_ITEM`, this should only be used to fill in brand new
    instances.
 

@@ -8,7 +8,7 @@ Complex Number Objects
 .. index:: pair: object; complex number
 
 Python's complex number objects are implemented as two distinct types when
-viewed from the C API:  one is the Python object exposed to Python programs, and
+viewed from the C API: one is the Python object exposed to Python programs, and
 the other is a C structure which represents the actual complex number value.
 The API provides functions for working with both.
 
@@ -18,13 +18,13 @@ Complex Numbers as C Structures
 
 Note that the functions which accept these structures as parameters and return
 them as results do so *by value* rather than dereferencing them through
-pointers.  This is consistent throughout the API.
+pointers. This is consistent throughout the API.
 
 
 .. c:type:: Py_complex
 
    The C structure which corresponds to the value portion of a Python complex
-   number object.  Most of the functions for dealing with complex number objects
+   number object. Most of the functions for dealing with complex number objects
    use structures of this type as input or output values, as appropriate.
 
    .. c:member:: double real
@@ -100,13 +100,13 @@ Complex Numbers as Python Objects
 .. c:function:: int PyComplex_Check(PyObject *p)
 
    Return true if its argument is a :c:type:`PyComplexObject` or a subtype of
-   :c:type:`PyComplexObject`.  This function always succeeds.
+   :c:type:`PyComplexObject`. This function always succeeds.
 
 
 .. c:function:: int PyComplex_CheckExact(PyObject *p)
 
    Return true if its argument is a :c:type:`PyComplexObject`, but not a subtype of
-   :c:type:`PyComplexObject`.  This function always succeeds.
+   :c:type:`PyComplexObject`. This function always succeeds.
 
 
 .. c:function:: PyObject* PyComplex_FromCComplex(Py_complex v)
@@ -127,7 +127,7 @@ Complex Numbers as Python Objects
 
    If *op* is not a Python complex number object but has a
    :meth:`~object.__complex__` method, this method will first be called to
-   convert *op* to a Python complex number object.  If :meth:`!__complex__` is
+   convert *op* to a Python complex number object. If :meth:`!__complex__` is
    not defined then it falls back to call :c:func:`PyFloat_AsDouble` and
    returns its result.
 
@@ -143,7 +143,7 @@ Complex Numbers as Python Objects
 
    If *op* is not a Python complex number object but has a
    :meth:`~object.__complex__` method, this method will first be called to
-   convert *op* to a Python complex number object.  If :meth:`!__complex__` is
+   convert *op* to a Python complex number object. If :meth:`!__complex__` is
    not defined then it falls back to call :c:func:`PyFloat_AsDouble` and
    returns ``0.0`` on success.
 
@@ -159,8 +159,8 @@ Complex Numbers as Python Objects
 
    If *op* is not a Python complex number object but has a :meth:`~object.__complex__`
    method, this method will first be called to convert *op* to a Python complex
-   number object.  If :meth:`!__complex__` is not defined then it falls back to
-   :meth:`~object.__float__`.  If :meth:`!__float__` is not defined then it falls back
+   number object. If :meth:`!__complex__` is not defined then it falls back to
+   :meth:`~object.__float__`. If :meth:`!__float__` is not defined then it falls back
    to :meth:`~object.__index__`.
 
    Upon failure, this method returns :c:type:`Py_complex`

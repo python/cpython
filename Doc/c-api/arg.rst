@@ -6,23 +6,23 @@ Parsing arguments and building values
 =====================================
 
 These functions are useful when creating your own extension functions and
-methods.  Additional information and examples are available in
+methods. Additional information and examples are available in
 :ref:`extending-index`.
 
 The first three of these functions described, :c:func:`PyArg_ParseTuple`,
 :c:func:`PyArg_ParseTupleAndKeywords`, and :c:func:`PyArg_Parse`, all use *format
-strings* which are used to tell the function about the expected arguments.  The
+strings* which are used to tell the function about the expected arguments. The
 format strings use the same syntax for each of these functions.
 
 -----------------
 Parsing arguments
 -----------------
 
-A format string consists of zero or more "format units."  A format unit
+A format string consists of zero or more "format units." A format unit
 describes one Python object; it is usually a single character or a parenthesized
-sequence of format units.  With a few exceptions, a format unit that is not a
+sequence of format units. With a few exceptions, a format unit that is not a
 parenthesized sequence normally corresponds to a single address argument to
-these functions.  In the following description, the quoted form is the format
+these functions. In the following description, the quoted form is the format
 unit; the entry in (round) parentheses is the Python object type that matches
 the format unit; and the entry in [square] brackets is the type of the C
 variable(s) whose address should be passed.
@@ -47,18 +47,18 @@ Unless otherwise stated, buffers are not NUL-terminated.
 
 There are three ways strings and buffers can be converted to C:
 
-*  Formats such as ``y*`` and ``s*`` fill a :c:type:`Py_buffer` structure.
+* Formats such as ``y*`` and ``s*`` fill a :c:type:`Py_buffer` structure.
    This locks the underlying buffer so that the caller can subsequently use
    the buffer even inside a :c:type:`Py_BEGIN_ALLOW_THREADS`
    block without the risk of mutable data being resized or destroyed.
    As a result, **you have to call** :c:func:`PyBuffer_Release` after you have
    finished processing the data (or in any early abort case).
 
-*  The ``es``, ``es#``, ``et`` and ``et#`` formats allocate the result buffer.
+* The ``es``, ``es#``, ``et`` and ``et#`` formats allocate the result buffer.
    **You have to call** :c:func:`PyMem_Free` after you have finished
    processing the data (or in any early abort case).
 
-*  .. _c-arg-borrowed-buffer:
+* .. _c-arg-borrowed-buffer:
 
    Other formats take a :class:`str` or a read-only :term:`bytes-like object`,
    such as :class:`bytes`, and provide a ``const char *`` pointer to
@@ -80,7 +80,7 @@ There are three ways strings and buffers can be converted to C:
 ``s`` (:class:`str`) [const char \*]
    Convert a Unicode object to a C pointer to a character string.
    A pointer to an existing string is stored in the character pointer
-   variable whose address you pass.  The C string is NUL-terminated.
+   variable whose address you pass. The C string is NUL-terminated.
    The Python string must not contain embedded null code points; if it does,
    a :exc:`ValueError` exception is raised. Unicode objects are converted
    to C strings using ``'utf-8'`` encoding. If this conversion fails, a
@@ -88,7 +88,7 @@ There are three ways strings and buffers can be converted to C:
 
    .. note::
       This format does not accept :term:`bytes-like objects
-      <bytes-like object>`.  If you want to accept
+      <bytes-like object>`. If you want to accept
       filesystem paths and convert them to C character strings, it is
       preferable to use the ``O&`` format with :c:func:`PyUnicode_FSConverter`
       as *converter*.
@@ -129,7 +129,7 @@ There are three ways strings and buffers can be converted to C:
 ``y`` (read-only :term:`bytes-like object`) [const char \*]
    This format converts a bytes-like object to a C pointer to a
    :ref:`borrowed <c-arg-borrowed-buffer>` character string;
-   it does not accept Unicode objects.  The bytes buffer must not
+   it does not accept Unicode objects. The bytes buffer must not
    contain embedded null bytes; if it does, a :exc:`ValueError`
    exception is raised.
 
@@ -139,7 +139,7 @@ There are three ways strings and buffers can be converted to C:
 
 ``y*`` (:term:`bytes-like object`) [Py_buffer]
    This variant on ``s*`` doesn't accept Unicode objects, only
-   bytes-like objects.  **This is the recommended way to accept
+   bytes-like objects. **This is the recommended way to accept
    binary data.**
 
 ``y#`` (read-only :term:`bytes-like object`) [const char \*, :c:type:`Py_ssize_t`]
@@ -148,18 +148,18 @@ There are three ways strings and buffers can be converted to C:
 
 ``S`` (:class:`bytes`) [PyBytesObject \*]
    Requires that the Python object is a :class:`bytes` object, without
-   attempting any conversion.  Raises :exc:`TypeError` if the object is not
-   a bytes object.  The C variable may also be declared as :c:expr:`PyObject*`.
+   attempting any conversion. Raises :exc:`TypeError` if the object is not
+   a bytes object. The C variable may also be declared as :c:expr:`PyObject*`.
 
 ``Y`` (:class:`bytearray`) [PyByteArrayObject \*]
    Requires that the Python object is a :class:`bytearray` object, without
-   attempting any conversion.  Raises :exc:`TypeError` if the object is not
+   attempting any conversion. Raises :exc:`TypeError` if the object is not
    a :class:`bytearray` object. The C variable may also be declared as :c:expr:`PyObject*`.
 
 ``U`` (:class:`str`) [PyObject \*]
    Requires that the Python object is a Unicode object, without attempting
-   any conversion.  Raises :exc:`TypeError` if the object is not a Unicode
-   object.  The C variable may also be declared as :c:expr:`PyObject*`.
+   any conversion. Raises :exc:`TypeError` if the object is not a Unicode
+   object. The C variable may also be declared as :c:expr:`PyObject*`.
 
 ``w*`` (read-write :term:`bytes-like object`) [Py_buffer]
    This format accepts any object which implements the read-write buffer
@@ -171,22 +171,22 @@ There are three ways strings and buffers can be converted to C:
    This variant on ``s`` is used for encoding Unicode into a character buffer.
    It only works for encoded data without embedded NUL bytes.
 
-   This format requires two arguments.  The first is only used as input, and
+   This format requires two arguments. The first is only used as input, and
    must be a :c:expr:`const char*` which points to the name of an encoding as a
    NUL-terminated string, or ``NULL``, in which case ``'utf-8'`` encoding is used.
-   An exception is raised if the named encoding is not known to Python.  The
+   An exception is raised if the named encoding is not known to Python. The
    second argument must be a :c:expr:`char**`; the value of the pointer it
    references will be set to a buffer with the contents of the argument text.
    The text will be encoded in the encoding specified by the first argument.
 
    :c:func:`PyArg_ParseTuple` will allocate a buffer of the needed size, copy the
    encoded data into this buffer and adjust *\*buffer* to reference the newly
-   allocated storage.  The caller is responsible for calling :c:func:`PyMem_Free` to
+   allocated storage. The caller is responsible for calling :c:func:`PyMem_Free` to
    free the allocated buffer after use.
 
 ``et`` (:class:`str`, :class:`bytes` or :class:`bytearray`) [const char \*encoding, char \*\*buffer]
    Same as ``es`` except that byte string objects are passed through without
-   recoding them.  Instead, the implementation assumes that the byte string object uses
+   recoding them. Instead, the implementation assumes that the byte string object uses
    the encoding passed in as parameter.
 
 ``es#`` (:class:`str`) [const char \*encoding, char \*\*buffer, :c:type:`Py_ssize_t` \*buffer_length]
@@ -194,10 +194,10 @@ There are three ways strings and buffers can be converted to C:
    Unlike the ``es`` format, this variant allows input data which contains NUL
    characters.
 
-   It requires three arguments.  The first is only used as input, and must be a
+   It requires three arguments. The first is only used as input, and must be a
    :c:expr:`const char*` which points to the name of an encoding as a
    NUL-terminated string, or ``NULL``, in which case ``'utf-8'`` encoding is used.
-   An exception is raised if the named encoding is not known to Python.  The
+   An exception is raised if the named encoding is not known to Python. The
    second argument must be a :c:expr:`char**`; the value of the pointer it
    references will be set to a buffer with the contents of the argument text.
    The text will be encoded in the encoding specified by the first argument.
@@ -208,13 +208,13 @@ There are three ways strings and buffers can be converted to C:
 
    If *\*buffer* points a ``NULL`` pointer, the function will allocate a buffer of
    the needed size, copy the encoded data into this buffer and set *\*buffer* to
-   reference the newly allocated storage.  The caller is responsible for calling
+   reference the newly allocated storage. The caller is responsible for calling
    :c:func:`PyMem_Free` to free the allocated buffer after usage.
 
    If *\*buffer* points to a non-``NULL`` pointer (an already allocated buffer),
    :c:func:`PyArg_ParseTuple` will use this location as the buffer and interpret the
-   initial value of *\*buffer_length* as the buffer size.  It will then copy the
-   encoded data into the buffer and NUL-terminate it.  If the buffer is not large
+   initial value of *\*buffer_length* as the buffer size. It will then copy the
+   encoded data into the buffer and NUL-terminate it. If the buffer is not large
    enough, a :exc:`ValueError` will be set.
 
    In both cases, *\*buffer_length* is set to the length of the encoded data
@@ -321,25 +321,25 @@ Other objects
 -------------
 
 ``O`` (object) [PyObject \*]
-   Store a Python object (without any conversion) in a C object pointer.  The C
-   program thus receives the actual object that was passed.  A new
+   Store a Python object (without any conversion) in a C object pointer. The C
+   program thus receives the actual object that was passed. A new
    :term:`strong reference` to the object is not created
    (i.e. its reference count is not increased).
    The pointer stored is not ``NULL``.
 
 ``O!`` (object) [*typeobject*, PyObject \*]
-   Store a Python object in a C object pointer.  This is similar to ``O``, but
+   Store a Python object in a C object pointer. This is similar to ``O``, but
    takes two C arguments: the first is the address of a Python type object, the
    second is the address of the C variable (of type :c:expr:`PyObject*`) into which
-   the object pointer is stored.  If the Python object does not have the required
+   the object pointer is stored. If the Python object does not have the required
    type, :exc:`TypeError` is raised.
 
 .. _o_ampersand:
 
 ``O&`` (object) [*converter*, *address*]
-   Convert a Python object to a C variable through a *converter* function.  This
+   Convert a Python object to a C variable through a *converter* function. This
    takes two arguments: the first is a function, the second is the address of a C
-   variable (of arbitrary type), converted to :c:expr:`void *`.  The *converter*
+   variable (of arbitrary type), converted to :c:expr:`void *`. The *converter*
    function in turn is called as follows::
 
       status = converter(object, address);
@@ -347,7 +347,7 @@ Other objects
    where *object* is the Python object to be converted and *address* is the
    :c:expr:`void*` argument that was passed to the ``PyArg_Parse*`` function.
    The returned *status* should be ``1`` for a successful conversion and ``0`` if
-   the conversion has failed.  When the conversion fails, the *converter* function
+   the conversion has failed. When the conversion fails, the *converter* function
    should raise an exception and leave the content of *address* unmodified.
 
    .. c:macro:: Py_CLEANUP_SUPPORTED
@@ -369,7 +369,7 @@ Other objects
    Tests the value passed in for truth (a boolean **p**\ redicate) and converts
    the result to its equivalent C true/false integer value.
    Sets the int to ``1`` if the expression was true and ``0`` if it was false.
-   This accepts any valid Python value.  See :ref:`truth` for more
+   This accepts any valid Python value. See :ref:`truth` for more
    information about how Python tests values for truth.
 
    .. versionadded:: 3.3
@@ -377,8 +377,8 @@ Other objects
 ``(items)`` (sequence) [*matching-items*]
    The object must be a Python sequence (except :class:`str`, :class:`bytes`
    or :class:`bytearray`) whose length is the number of format units
-   in *items*.  The C arguments must correspond to the individual format units in
-   *items*.  Format units for sequences may be nested.
+   in *items*. The C arguments must correspond to the individual format units in
+   *items*. Format units for sequences may be nested.
 
    If *items* contains format units which store a :ref:`borrowed buffer
    <c-arg-borrowed-buffer>` (``s``, ``s#``, ``z``, ``z#``, ``y``, or ``y#``)
@@ -405,8 +405,8 @@ Other objects
 
    .. versionadded:: 3.14
 
-A few other characters have a meaning in a format string.  These may not occur
-inside nested parentheses.  They are:
+A few other characters have a meaning in a format string. These may not occur
+inside nested parentheses. They are:
 
 ``|``
    Indicates that the remaining arguments in the Python argument list are optional.
@@ -418,7 +418,7 @@ inside nested parentheses.  They are:
 ``$``
    :c:func:`PyArg_ParseTupleAndKeywords` only:
    Indicates that the remaining arguments in the Python argument list are
-   keyword-only.  Currently, all keyword-only arguments must also be optional
+   keyword-only. Currently, all keyword-only arguments must also be optional
    arguments, so ``|`` must always be specified before ``$`` in the format
    string.
 
@@ -431,7 +431,7 @@ inside nested parentheses.  They are:
 
 ``;``
    The list of format units ends here; the string after the semicolon is used as
-   the error message *instead* of the default error message.  ``:`` and ``;``
+   the error message *instead* of the default error message. ``:`` and ``;``
    mutually exclude each other.
 
 Note that any Python object references which are provided to the caller are
@@ -440,12 +440,12 @@ Note that any Python object references which are provided to the caller are
 
 Additional arguments passed to these functions must be addresses of variables
 whose type is determined by the format string; these are used to store values
-from the input tuple.  There are a few cases, as described in the list of format
+from the input tuple. There are a few cases, as described in the list of format
 units above, where these parameters are used as input values; they should match
 what is specified for the corresponding format unit in that case.
 
 For the conversion to succeed, the *arg* object must match the format
-and the format must be exhausted.  On success, the
+and the format must be exhausted. On success, the
 ``PyArg_Parse*`` functions return true, otherwise they return
 false and raise an appropriate exception. When the
 ``PyArg_Parse*`` functions fail due to conversion failure in one
@@ -458,7 +458,7 @@ API Functions
 .. c:function:: int PyArg_ParseTuple(PyObject *args, const char *format, ...)
 
    Parse the parameters of a function that takes only positional parameters into
-   local variables.  Returns true on success; on failure, it returns false and
+   local variables. Returns true on success; on failure, it returns false and
    raises the appropriate exception.
 
 
@@ -504,7 +504,7 @@ API Functions
 
 .. c:function:: int PyArg_ValidateKeywordArguments(PyObject *)
 
-   Ensure that the keys in the keywords argument dictionary are strings.  This
+   Ensure that the keys in the keywords argument dictionary are strings. This
    is only needed if :c:func:`PyArg_ParseTupleAndKeywords` is not used, since the
    latter already does this check.
 
@@ -514,7 +514,7 @@ API Functions
 .. c:function:: int PyArg_Parse(PyObject *args, const char *format, ...)
 
    Parse the parameter of a function that takes a single positional parameter
-   into a local variable.  Returns true on success; on failure, it returns
+   into a local variable. Returns true on success; on failure, it returns
    false and raises the appropriate exception.
 
    Example::
@@ -534,11 +534,11 @@ API Functions
 .. c:function:: int PyArg_UnpackTuple(PyObject *args, const char *name, Py_ssize_t min, Py_ssize_t max, ...)
 
    A simpler form of parameter retrieval which does not use a format string to
-   specify the types of the arguments.  Functions which use this method to retrieve
+   specify the types of the arguments. Functions which use this method to retrieve
    their parameters should be declared as :c:macro:`METH_VARARGS` in function or
-   method tables.  The tuple containing the actual parameters should be passed as
-   *args*; it must actually be a tuple.  The length of the tuple must be at least
-   *min* and no more than *max*; *min* and *max* may be equal.  Additional
+   method tables. The tuple containing the actual parameters should be passed as
+   *args*; it must actually be a tuple. The length of the tuple must be at least
+   *min* and no more than *max*; *min* and *max* may be equal. Additional
    arguments must be passed to the function, each of which should be a pointer to a
    :c:expr:`PyObject*` variable; these will be filled in with the values from
    *args*; they will contain :term:`borrowed references <borrowed reference>`.
@@ -590,20 +590,20 @@ Building values
 .. c:function:: PyObject* Py_BuildValue(const char *format, ...)
 
    Create a new value based on a format string similar to those accepted by the
-   ``PyArg_Parse*`` family of functions and a sequence of values.  Returns
+   ``PyArg_Parse*`` family of functions and a sequence of values. Returns
    the value or ``NULL`` in the case of an error; an exception will be raised if
    ``NULL`` is returned.
 
-   :c:func:`Py_BuildValue` does not always build a tuple.  It builds a tuple only if
-   its format string contains two or more format units.  If the format string is
+   :c:func:`Py_BuildValue` does not always build a tuple. It builds a tuple only if
+   its format string contains two or more format units. If the format string is
    empty, it returns ``None``; if it contains exactly one format unit, it returns
-   whatever object is described by that format unit.  To force it to return a tuple
+   whatever object is described by that format unit. To force it to return a tuple
    of size 0 or one, parenthesize the format string.
 
    When memory buffers are passed as parameters to supply data to build objects, as
-   for the ``s`` and ``s#`` formats, the required data is copied.  Buffers provided
+   for the ``s`` and ``s#`` formats, the required data is copied. Buffers provided
    by the caller are never referenced by the objects created by
-   :c:func:`Py_BuildValue`.  In other words, if your code invokes :c:func:`malloc`
+   :c:func:`Py_BuildValue`. In other words, if your code invokes :c:func:`malloc`
    and passes the allocated memory to :c:func:`Py_BuildValue`, your code is
    responsible for calling :c:func:`free` for that memory once
    :c:func:`Py_BuildValue` returns.
@@ -613,7 +613,7 @@ Building values
    and the entry in [square] brackets is the type of the C value(s) to be passed.
 
    The characters space, tab, colon and comma are ignored in format strings (but
-   not within format units such as ``s#``).  This can be used to make long format
+   not within format units such as ``s#``). This can be used to make long format
    strings a tad more readable.
 
    ``s`` (:class:`str` or ``None``) [const char \*]
@@ -626,11 +626,11 @@ Building values
       ``None`` is returned.
 
    ``y`` (:class:`bytes`) [const char \*]
-      This converts a C string to a Python :class:`bytes` object.  If the C
+      This converts a C string to a Python :class:`bytes` object. If the C
       string pointer is ``NULL``, ``None`` is returned.
 
    ``y#`` (:class:`bytes`) [const char \*, :c:type:`Py_ssize_t`]
-      This converts a C string and its lengths to a Python object.  If the C
+      This converts a C string and its lengths to a Python object. If the C
       string pointer is ``NULL``, ``None`` is returned.
 
    ``z`` (:class:`str` or ``None``) [const char \*]
@@ -641,12 +641,12 @@ Building values
 
    ``u`` (:class:`str`) [const wchar_t \*]
       Convert a null-terminated :c:type:`wchar_t` buffer of Unicode (UTF-16 or UCS-4)
-      data to a Python Unicode object.  If the Unicode buffer pointer is ``NULL``,
+      data to a Python Unicode object. If the Unicode buffer pointer is ``NULL``,
       ``None`` is returned.
 
    ``u#`` (:class:`str`) [const wchar_t \*, :c:type:`Py_ssize_t`]
       Convert a Unicode (UTF-16 or UCS-4) data buffer and its length to a Python
-      Unicode object.   If the Unicode buffer pointer is ``NULL``, the length is ignored
+      Unicode object. If the Unicode buffer pointer is ``NULL``, the length is ignored
       and ``None`` is returned.
 
    ``U`` (:class:`str` or ``None``) [const char \*]
@@ -725,7 +725,7 @@ Building values
       If the object passed in is a ``NULL`` pointer, it is assumed
       that this was caused because the call producing the argument found an error and
       set an exception. Therefore, :c:func:`Py_BuildValue` will return ``NULL`` but won't
-      raise an exception.  If no exception has been raised yet, :exc:`SystemError` is
+      raise an exception. If no exception has been raised yet, :exc:`SystemError` is
       set.
 
    ``S`` (object) [PyObject \*]
@@ -737,7 +737,7 @@ Building values
       argument list.
 
    ``O&`` (object) [*converter*, *anything*]
-      Convert *anything* to a Python object through a *converter* function.  The
+      Convert *anything* to a Python object through a *converter* function. The
       function is called with *anything* (which should be compatible with :c:expr:`void*`)
       as its argument and should return a "new" Python object, or ``NULL`` if an
       error occurred.
@@ -749,7 +749,7 @@ Building values
       Convert a sequence of C values to a Python list with the same number of items.
 
    ``{items}`` (:class:`dict`) [*matching-items*]
-      Convert a sequence of C values to a Python dictionary.  Each pair of consecutive
+      Convert a sequence of C values to a Python dictionary. Each pair of consecutive
       C values adds one item to the dictionary, serving as key and value,
       respectively.
 
