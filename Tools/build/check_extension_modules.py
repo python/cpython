@@ -470,8 +470,9 @@ def main():
     args = parser.parse_args()
     if args.debug:
         args.verbose = True
+    args.verbose = args.debug = True
     logging.basicConfig(
-        level=logging.DEBUG,
+        level=logging.DEBUG if args.debug else logging.INFO,
         format="[%(levelname)s] %(message)s",
     )
 
