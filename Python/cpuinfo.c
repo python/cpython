@@ -506,8 +506,12 @@ cpuid_detect_l1_features(_Py_cpuid_features *flags)
     assert(flags->ready == 0);
     if (flags->maxleaf >= 1) {
         uint32_t eax = 0, ebx = 0, ecx = 0, edx = 0;
+        printf("[L1::get_cpuid_info(1, 0)]\n");
         get_cpuid_info(1, 0, &eax, &ebx, &ecx, &edx);
+        printf("RES: eax=%u, ebx=%u, ecx=%u, edx=%u\n", eax, ebx, ecx, edx);
+        printf("[L1::detect_cpuid_features]\n");
         detect_cpuid_features(flags, ecx, edx);
+        printf("[L1::detect_cpuid_xsave_state]\n");
         detect_cpuid_xsave_state(flags);
     }
 }
@@ -522,7 +526,9 @@ cpuid_detect_l7s0_features(_Py_cpuid_features *flags)
     assert(flags->ready == 0);
     assert(flags->maxleaf >= 7);
     uint32_t _eax = 0, ebx = 0, ecx = 0, edx = 0;
+    printf("[L1::get_cpuid_info(7, 0)]\n");
     get_cpuid_info(7, 0, &_eax, &ebx, &ecx, &edx);
+    printf("RES: eax=%u, ebx=%u, ecx=%u, edx=%u\n", _eax, ebx, ecx, edx);
     detect_cpuid_extended_features_L7S0(flags, ebx, ecx, edx);
 }
 #else
@@ -536,7 +542,9 @@ cpuid_detect_l7s1_features(_Py_cpuid_features *flags)
     assert(flags->ready == 0);
     assert(flags->maxleaf >= 7);
     uint32_t eax = 0, ebx = 0, ecx = 0, edx = 0;
+    printf("[L1::get_cpuid_info(7, 1)]\n");
     get_cpuid_info(7, 1, &eax, &ebx, &ecx, &edx);
+    printf("RES: eax=%u, ebx=%u, ecx=%u, edx=%u\n", eax, ebx, ecx, edx);
     detect_cpuid_extended_features_L7S1(flags, eax, ebx, ecx, edx);
 }
 #else
@@ -563,12 +571,19 @@ _Py_cpuid_detect_features(_Py_cpuid_features *flags)
     if (flags->ready) {
         return;
     }
+    printf("[disable features]\n");
     _Py_cpuid_disable_features(flags);
+    printf("[detect MAXLEAF]\n");
     flags->maxleaf = detect_cpuid_maxleaf();
+    printf("[L1, maxleaf=%d]\n", flags->maxleaf);
     cpuid_detect_l1_features(flags);
+    printf("[L7, maxleaf=%d]\n", flags->maxleaf);
     cpuid_detect_l7_features(flags);
+    printf("finalize\n");
     cpuid_features_finalize(flags);
     if (!_Py_cpuid_check_features(flags)) {
+        printf("invalid check\n");
         _Py_cpuid_disable_features(flags);
     }
+    printf("done\n");
 }
