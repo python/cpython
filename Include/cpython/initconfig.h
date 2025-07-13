@@ -105,8 +105,8 @@ typedef struct PyPreConfig {
       If equal to 1, use the UTF-8 encoding and use "surrogateescape" for the
       stdin & stdout error handlers.
 
-       Enabled by default (equal to 1; PEP 686), or if Py_UTF8Mode=1,
-       or if "-X utf8=1" or PYTHONUTF8=1.
+      Enabled by default (equal to 1; PEP 686), or if Py_UTF8Mode=1,
+      or if "-X utf8=1" or PYTHONUTF8=1.
 
        Set to 0 by "-X utf8=0" or PYTHONUTF8=0.
     */
