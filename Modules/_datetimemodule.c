@@ -7335,6 +7335,11 @@ init_static_types(PyInterpreterState *interp, int reloading)
     if (reloading) {
         return 0;
     }
+    if (_Py_IsMainInterpreter(interp)
+        && PyType_HasFeature(&PyDateTime_DateType, Py_TPFLAGS_READY)) {
+        // This function was already called from PyInit__datetime()
+        return 0;
+    }
 
     // `&...` is not a constant expression according to a strict reading
     // of C standards. Fill tp_base at run-time rather than statically.
@@ -7564,6 +7569,11 @@ static PyModuleDef datetimemodule = {
 PyMODINIT_FUNC
 PyInit__datetime(void)
 {
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    // gh-136421: Ensure static types are fully finalized at the shutdown of
+    // the main interpreter rather than subinterpreters for concurrency.
+    assert(_Py_IsMainInterpreter(interp));
+    init_static_types(interp, 0);
     return PyModuleDef_Init(&datetimemodule);
 }
 
