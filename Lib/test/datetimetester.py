@@ -7295,6 +7295,27 @@ class ExtensionModuleTests(unittest.TestCase):
             """)
         script_helper.assert_python_ok('-c', script)
 
+    @unittest.skipIf(_interpreters is None, "missing _interpreters module")
+    def test_static_type_concurrent_init_fini(self):
+        # gh-136421
+        script = textwrap.dedent("""
+            import threading
+            import _interpreters
+
+            def run(id):
+                _interpreters.exec(id, "import _datetime; print('a', end='')")
+                _interpreters.destroy(id)
+
+            ids = [_interpreters.create() for i in range(5)]
+            ts = [threading.Thread(target=run, args=(id,)) for id in ids]
+            for t in ts:
+                t.start()
+            for t in ts:
+                t.join()
+            """)
+        res = script_helper.assert_python_ok('-c', script)
+        self.assertEqual(res.out, b'a' * 5)
+
 
 def load_tests(loader, standard_tests, pattern):
     standard_tests.addTest(ZoneInfoCompleteTest())
