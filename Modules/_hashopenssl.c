@@ -63,11 +63,15 @@
 #define PY_EVP_MD_fetch(algorithm, properties) EVP_MD_fetch(NULL, algorithm, properties)
 #define PY_EVP_MD_up_ref(md) EVP_MD_up_ref(md)
 #define PY_EVP_MD_free(md) EVP_MD_free(md)
+
+#define PY_EVP_MD_CTX_md(CTX)   EVP_MD_CTX_get0_md(CTX)
 #else
 #define PY_EVP_MD const EVP_MD
 #define PY_EVP_MD_fetch(algorithm, properties) EVP_get_digestbyname(algorithm)
 #define PY_EVP_MD_up_ref(md) do {} while(0)
 #define PY_EVP_MD_free(md) do {} while(0)
+
+#define PY_EVP_MD_CTX_md(CTX)   EVP_MD_CTX_md(CTX)
 #endif
 
 /* hash alias map and fast lookup
@@ -307,6 +311,14 @@ class _hashlib.HMAC "HMACobject *" "&PyType_Type"
 
 /* LCOV_EXCL_START */
 
+/* Thin wrapper around ERR_reason_error_string() returning non-NULL text. */
+static const char *
+py_wrapper_ERR_reason_error_string(unsigned long errcode)
+{
+    const char *reason = ERR_reason_error_string(errcode);
+    return reason ? reason : "no reason";
+}
+
 /* Set an exception of given type using the given OpenSSL error code. */
 static void
 set_ssl_exception_from_errcode(PyObject *exc_type, unsigned long errcode)
@@ -316,8 +328,13 @@ set_ssl_exception_from_errcode(PyObject *exc_type, unsigned long errcode)
 
     /* ERR_ERROR_STRING(3) ensures that the messages below are ASCII */
     const char *lib = ERR_lib_error_string(errcode);
+#ifdef Py_HAS_OPENSSL3_SUPPORT
+    // Since OpenSSL 3.0, ERR_func_error_string() always returns NULL.
+    const char *func = NULL;
+#else
     const char *func = ERR_func_error_string(errcode);
-    const char *reason = ERR_reason_error_string(errcode);
+#endif
+    const char *reason = py_wrapper_ERR_reason_error_string(errcode);
 
     if (lib && func) {
         PyErr_Format(exc_type, "[%s: %s] %s", lib, func, reason);
@@ -837,7 +854,7 @@ static PyObject *
 _hashlib_HASH_get_name(PyObject *op, void *Py_UNUSED(closure))
 {
     HASHobject *self = HASHobject_CAST(op);
-    const EVP_MD *md = EVP_MD_CTX_md(self->ctx);
+    const EVP_MD *md = PY_EVP_MD_CTX_md(self->ctx);
     if (md == NULL) {
         notify_ssl_error_occurred("missing EVP_MD for HASH context");
         return NULL;
