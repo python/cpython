@@ -1,3 +1,5 @@
+#include "emscripten.h"
+
 // If we're running in node, report the UID of the user in the native system as
 // the UID of the user. Since the nodefs will report the uid correctly, if we
 // don't make getuid report it correctly too we'll see some permission errors.
