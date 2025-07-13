@@ -286,7 +286,7 @@ object, the GC does not process it twice.
 
 Notice that an object that was marked as "tentatively unreachable" and was later
 moved back to the reachable list will be visited again by the garbage collector
-as now all the references that that object has need to be processed as well. This
+as now all the references that the object has need to be processed as well. This
 process is really a breadth first search over the object graph. Once all the objects
 are scanned, the GC knows that all container objects in the tentatively unreachable
 list are really unreachable and can thus be garbage collected.
@@ -622,7 +622,7 @@ used as follows.  If the buffer has reached the maximum size, new object
 pointers found while following references are pushed to the stack, rather than
 put in the buffer.  When dequeuing objects from the buffer, we will "prime" the
 buffer if the current length drops below the low threshold.  Priming means
-popping objects from the stack and enqueing them into the buffer.  While
+popping objects from the stack and enqueuing them into the buffer.  While
 priming, we will fill it only until the high threshold is reached.
 
 To measure the effectiveness of the buffer, some benchmark programs were run

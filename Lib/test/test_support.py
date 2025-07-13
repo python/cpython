@@ -1,6 +1,7 @@
 import contextlib
 import errno
 import importlib
+import itertools
 import io
 import logging
 import os
@@ -17,6 +18,7 @@ import unittest
 import warnings
 
 from test import support
+from test.support import hashlib_helper
 from test.support import import_helper
 from test.support import os_helper
 from test.support import script_helper
@@ -407,10 +409,10 @@ class TestSupport(unittest.TestCase):
         with support.swap_attr(obj, "y", 5) as y:
             self.assertEqual(obj.y, 5)
             self.assertIsNone(y)
-        self.assertFalse(hasattr(obj, 'y'))
+        self.assertNotHasAttr(obj, 'y')
         with support.swap_attr(obj, "y", 5):
             del obj.y
-        self.assertFalse(hasattr(obj, 'y'))
+        self.assertNotHasAttr(obj, 'y')
 
     def test_swap_item(self):
         D = {"x":1}
@@ -561,6 +563,7 @@ class TestSupport(unittest.TestCase):
             ['-Wignore', '-X', 'dev'],
             ['-X', 'faulthandler'],
             ['-X', 'importtime'],
+            ['-X', 'importtime=2'],
             ['-X', 'showrefcount'],
             ['-X', 'tracemalloc'],
             ['-X', 'tracemalloc=3'],
@@ -815,6 +818,160 @@ class TestSupport(unittest.TestCase):
     # can_symlink
     # skip_unless_symlink
     # SuppressCrashReport
+
+
+class TestHashlibSupport(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.hashlib = import_helper.import_module("hashlib")
+        cls.hmac = import_helper.import_module("hmac")
+
+        # We required the extension modules to be present since blocking
+        # HACL* implementations while allowing OpenSSL ones would still
+        # result in failures.
+        cls._hashlib = import_helper.import_module("_hashlib")
+        cls._hmac = import_helper.import_module("_hmac")
+
+    def check_context(self, disabled=True):
+        if disabled:
+            return self.assertRaises(ValueError)
+        return contextlib.nullcontext()
+
+    def try_import_attribute(self, fullname, default=None):
+        if fullname is None:
+            return default
+        assert fullname.count('.') == 1, fullname
+        module_name, attribute = fullname.split('.', maxsplit=1)
+        try:
+            module = importlib.import_module(module_name)
+        except ImportError:
+            return default
+        try:
+            return getattr(module, attribute, default)
+        except TypeError:
+            return default
+
+    def validate_modules(self):
+        if hasattr(hashlib_helper, 'hashlib'):
+            self.assertIs(hashlib_helper.hashlib, self.hashlib)
+        if hasattr(hashlib_helper, 'hmac'):
+            self.assertIs(hashlib_helper.hmac, self.hmac)
+
+    def fetch_hash_function(self, name, typ):
+        entry = hashlib_helper._EXPLICIT_CONSTRUCTORS[name]
+        match typ:
+            case "hashlib":
+                assert entry.hashlib is not None, entry
+                return getattr(self.hashlib, entry.hashlib)
+            case "openssl":
+                try:
+                    return getattr(self._hashlib, entry.openssl, None)
+                except TypeError:
+                    return None
+            case "builtin":
+                return self.try_import_attribute(entry.fullname(typ))
+
+    def fetch_hmac_function(self, name):
+        fullname = hashlib_helper._EXPLICIT_HMAC_CONSTRUCTORS[name]
+        return self.try_import_attribute(fullname)
+
+    def check_openssl_hash(self, name, *, disabled=True):
+        """Check that OpenSSL HASH interface is enabled/disabled."""
+        with self.check_context(disabled):
+            _ = self._hashlib.new(name)
+        if do_hash := self.fetch_hash_function(name, "openssl"):
+            self.assertStartsWith(do_hash.__name__, 'openssl_')
+            with self.check_context(disabled):
+                _ = do_hash(b"")
+
+    def check_openssl_hmac(self, name, *, disabled=True):
+        """Check that OpenSSL HMAC interface is enabled/disabled."""
+        if name in hashlib_helper.NON_HMAC_DIGEST_NAMES:
+            # HMAC-BLAKE and HMAC-SHAKE raise a ValueError as they are not
+            # supported at all (they do not make any sense in practice).
+            with self.assertRaises(ValueError):
+                self._hashlib.hmac_digest(b"", b"", name)
+        else:
+            with self.check_context(disabled):
+                _ = self._hashlib.hmac_digest(b"", b"", name)
+        # OpenSSL does not provide one-shot explicit HMAC functions
+
+    def check_builtin_hash(self, name, *, disabled=True):
+        """Check that HACL* HASH interface is enabled/disabled."""
+        if do_hash := self.fetch_hash_function(name, "builtin"):
+            self.assertEqual(do_hash.__name__, name)
+            with self.check_context(disabled):
+                _ = do_hash(b"")
+
+    def check_builtin_hmac(self, name, *, disabled=True):
+        """Check that HACL* HMAC interface is enabled/disabled."""
+        if name in hashlib_helper.NON_HMAC_DIGEST_NAMES:
+            # HMAC-BLAKE and HMAC-SHAKE raise a ValueError as they are not
+            # supported at all (they do not make any sense in practice).
+            with self.assertRaises(ValueError):
+                self._hmac.compute_digest(b"", b"", name)
+        else:
+            with self.check_context(disabled):
+                _ = self._hmac.compute_digest(b"", b"", name)
+
+        with self.check_context(disabled):
+            _ = self._hmac.new(b"", b"", name)
+
+        if do_hmac := self.fetch_hmac_function(name):
+            self.assertStartsWith(do_hmac.__name__, 'compute_')
+            with self.check_context(disabled):
+                _ = do_hmac(b"", b"")
+        else:
+            self.assertIn(name, hashlib_helper.NON_HMAC_DIGEST_NAMES)
+
+    @support.subTests(
+        ('name', 'allow_openssl', 'allow_builtin'),
+        itertools.product(
+            hashlib_helper.CANONICAL_DIGEST_NAMES,
+            [True, False],
+            [True, False],
+        )
+    )
+    def test_disable_hash(self, name, allow_openssl, allow_builtin):
+        # In FIPS mode, the function may be available but would still need
+        # to raise a ValueError. For simplicity, we don't test the helper
+        # when we're in FIPS mode.
+        if self._hashlib.get_fips_mode():
+            self.skipTest("hash functions may still be blocked in FIPS mode")
+        flags = dict(allow_openssl=allow_openssl, allow_builtin=allow_builtin)
+        is_simple_disabled = not allow_builtin and not allow_openssl
+
+        with hashlib_helper.block_algorithm(name, **flags):
+            self.validate_modules()
+
+            # OpenSSL's blake2s and blake2b are unknown names
+            # when only the OpenSSL interface is available.
+            if allow_openssl and not allow_builtin:
+                aliases = {'blake2s': 'blake2s256', 'blake2b': 'blake2b512'}
+                name_for_hashlib_new = aliases.get(name, name)
+            else:
+                name_for_hashlib_new = name
+
+            with self.check_context(is_simple_disabled):
+                _ = self.hashlib.new(name_for_hashlib_new)
+            with self.check_context(is_simple_disabled):
+                _ = getattr(self.hashlib, name)(b"")
+
+            self.check_openssl_hash(name, disabled=not allow_openssl)
+            self.check_builtin_hash(name, disabled=not allow_builtin)
+
+            if name not in hashlib_helper.NON_HMAC_DIGEST_NAMES:
+                with self.check_context(is_simple_disabled):
+                    _ = self.hmac.new(b"", b"", name)
+                with self.check_context(is_simple_disabled):
+                    _ = self.hmac.HMAC(b"", b"", name)
+                with self.check_context(is_simple_disabled):
+                    _ = self.hmac.digest(b"", b"", name)
+
+                self.check_openssl_hmac(name, disabled=not allow_openssl)
+                self.check_builtin_hmac(name, disabled=not allow_builtin)
 
 
 if __name__ == '__main__':

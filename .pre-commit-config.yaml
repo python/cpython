@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.11.6
+    rev: v0.11.8
     hooks:
       - id: ruff
         name: Run Ruff (lint) on Doc/
@@ -22,17 +22,24 @@ repos:
         name: Run Ruff (format) on Doc/
         args: [--check]
         files: ^Doc/
+      - id: ruff-format
+        name: Run Ruff (format) on Tools/build/check_warnings.py
+        args: [--check, --config=Tools/build/.ruff.toml]
+        files: ^Tools/build/check_warnings.py
 
   - repo: https://github.com/psf/black-pre-commit-mirror
     rev: 25.1.0
     hooks:
       - id: black
-        name: Run Black on Tools/build/check_warnings.py
-        files: ^Tools/build/check_warnings.py
-        args: [--line-length=79]
-      - id: black
         name: Run Black on Tools/jit/
         files: ^Tools/jit/
+
+  - repo: https://github.com/Lucas-C/pre-commit-hooks
+    rev: v1.5.5
+    hooks:
+      - id: remove-tabs
+        types: [python]
+        exclude: ^Tools/c-analyzer/cpython/_parser.py
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
@@ -43,10 +50,14 @@ repos:
         exclude: ^Lib/test/test_tomllib/
       - id: check-yaml
       - id: end-of-file-fixer
-        types: [python]
+        types_or: [python, yaml]
         exclude: Lib/test/tokenizedata/coding20731.py
+      - id: end-of-file-fixer
+        files: '^\.github/CODEOWNERS$'
       - id: trailing-whitespace
-        types_or: [c, inc, python, rst]
+        types_or: [c, inc, python, rst, yaml]
+      - id: trailing-whitespace
+        files: '^\.github/CODEOWNERS|\.(gram)$'
 
   - repo: https://github.com/python-jsonschema/check-jsonschema
     rev: 0.33.0

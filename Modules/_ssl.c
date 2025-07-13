@@ -27,6 +27,7 @@
 
 #include "Python.h"
 #include "pycore_fileutils.h"     // _PyIsSelectable_fd()
+#include "pycore_long.h"          // _PyLong_UnsignedLongLong_Converter()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_time.h"          // _PyDeadline_Init()
 
@@ -74,6 +75,33 @@
 #endif
 
 
+#ifdef BIO_get_ktls_send
+#  ifdef MS_WINDOWS
+typedef long long Py_off_t;
+#  else
+typedef off_t Py_off_t;
+#  endif
+
+static int
+Py_off_t_converter(PyObject *arg, void *addr)
+{
+#ifdef HAVE_LARGEFILE_SUPPORT
+    *((Py_off_t *)addr) = PyLong_AsLongLong(arg);
+#else
+    *((Py_off_t *)addr) = PyLong_AsLong(arg);
+#endif
+    return PyErr_Occurred() ? 0 : 1;
+}
+
+/*[python input]
+
+class Py_off_t_converter(CConverter):
+    type = 'Py_off_t'
+    converter = 'Py_off_t_converter'
+
+[python start generated code]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=3fd9ca8ca6f0cbb8]*/
+#endif /* BIO_get_ktls_send */
 
 struct py_ssl_error_code {
     const char *mnemonic;
@@ -562,7 +590,7 @@ fill_and_set_sslerror(_sslmodulestate *state,
                 goto fail;
             }
         }
-        if (PyUnicodeWriter_WriteUTF8(writer, "] ", 2) < 0) {
+        if (PyUnicodeWriter_WriteASCII(writer, "] ", 2) < 0) {
             goto fail;
         }
     }
@@ -2443,6 +2471,184 @@ PySSL_select(PySocketSockObject *s, int writing, PyTime_t timeout)
 
 /*[clinic input]
 @critical_section
+_ssl._SSLSocket.uses_ktls_for_send
+
+Check if the Kernel TLS data-path is used for sending.
+[clinic start generated code]*/
+
+static PyObject *
+_ssl__SSLSocket_uses_ktls_for_send_impl(PySSLSocket *self)
+/*[clinic end generated code: output=f9d95fbefceb5068 input=8d1ce4a131190e6b]*/
+{
+#ifdef BIO_get_ktls_send
+    int uses = BIO_get_ktls_send(SSL_get_wbio(self->ssl));
+    // BIO_get_ktls_send() returns 1 if kTLS is used and 0 if not.
+    // Also, it returns -1 for failure before OpenSSL 3.0.4.
+    return Py_NewRef(uses == 1 ? Py_True : Py_False);
+#else
+    Py_RETURN_FALSE;
+#endif
+}
+
+/*[clinic input]
+@critical_section
+_ssl._SSLSocket.uses_ktls_for_recv
+
+Check if the Kernel TLS data-path is used for receiving.
+[clinic start generated code]*/
+
+static PyObject *
+_ssl__SSLSocket_uses_ktls_for_recv_impl(PySSLSocket *self)
+/*[clinic end generated code: output=ce38b00317a1f681 input=a13778a924fc7d44]*/
+{
+#ifdef BIO_get_ktls_recv
+    int uses = BIO_get_ktls_recv(SSL_get_rbio(self->ssl));
+    // BIO_get_ktls_recv() returns 1 if kTLS is used and 0 if not.
+    // Also, it returns -1 for failure before OpenSSL 3.0.4.
+    return Py_NewRef(uses == 1 ? Py_True : Py_False);
+#else
+    Py_RETURN_FALSE;
+#endif
+}
+
+#ifdef BIO_get_ktls_send
+/*[clinic input]
+@critical_section
+_ssl._SSLSocket.sendfile
+    fd: int
+    offset: Py_off_t
+    size: size_t
+    flags: int = 0
+    /
+
+Write size bytes from offset in the file descriptor fd to the SSL connection.
+
+This method uses the zero-copy technique and returns the number of bytes
+written. It should be called only when Kernel TLS is used for sending data in
+the connection.
+
+The meaning of flags is platform dependent.
+[clinic start generated code]*/
+
+static PyObject *
+_ssl__SSLSocket_sendfile_impl(PySSLSocket *self, int fd, Py_off_t offset,
+                              size_t size, int flags)
+/*[clinic end generated code: output=0c6815b0719ca8d5 input=dfc1b162bb020de1]*/
+{
+    Py_ssize_t retval;
+    int sockstate;
+    _PySSLError err;
+    PySocketSockObject *sock = GET_SOCKET(self);
+    PyTime_t timeout, deadline = 0;
+    int has_timeout;
+
+    if (sock != NULL) {
+        if ((PyObject *)sock == Py_None) {
+            _setSSLError(get_state_sock(self),
+                         "Underlying socket connection gone",
+                         PY_SSL_ERROR_NO_SOCKET, __FILE__, __LINE__);
+            return NULL;
+        }
+        Py_INCREF(sock);
+        /* just in case the blocking state of the socket has been changed */
+        int nonblocking = (sock->sock_timeout >= 0);
+        BIO_set_nbio(SSL_get_rbio(self->ssl), nonblocking);
+        BIO_set_nbio(SSL_get_wbio(self->ssl), nonblocking);
+    }
+
+    timeout = GET_SOCKET_TIMEOUT(sock);
+    has_timeout = (timeout > 0);
+    if (has_timeout) {
+        deadline = _PyDeadline_Init(timeout);
+    }
+
+    sockstate = PySSL_select(sock, 1, timeout);
+    switch (sockstate) {
+        case SOCKET_HAS_TIMED_OUT:
+            PyErr_SetString(PyExc_TimeoutError,
+                            "The write operation timed out");
+            goto error;
+        case SOCKET_HAS_BEEN_CLOSED:
+            PyErr_SetString(get_state_sock(self)->PySSLErrorObject,
+                            "Underlying socket has been closed.");
+            goto error;
+        case SOCKET_TOO_LARGE_FOR_SELECT:
+            PyErr_SetString(get_state_sock(self)->PySSLErrorObject,
+                            "Underlying socket too large for select().");
+            goto error;
+    }
+
+    do {
+        PySSL_BEGIN_ALLOW_THREADS
+        retval = SSL_sendfile(self->ssl, fd, (off_t)offset, size, flags);
+        err = _PySSL_errno(retval < 0, self->ssl, (int)retval);
+        PySSL_END_ALLOW_THREADS
+        self->err = err;
+
+        if (PyErr_CheckSignals()) {
+            goto error;
+        }
+
+        if (has_timeout) {
+            timeout = _PyDeadline_Get(deadline);
+        }
+
+        switch (err.ssl) {
+            case SSL_ERROR_WANT_READ:
+                sockstate = PySSL_select(sock, 0, timeout);
+                break;
+            case SSL_ERROR_WANT_WRITE:
+                sockstate = PySSL_select(sock, 1, timeout);
+                break;
+            default:
+                sockstate = SOCKET_OPERATION_OK;
+                break;
+        }
+
+        if (sockstate == SOCKET_HAS_TIMED_OUT) {
+            PyErr_SetString(PyExc_TimeoutError,
+                            "The sendfile operation timed out");
+            goto error;
+        }
+        else if (sockstate == SOCKET_HAS_BEEN_CLOSED) {
+            PyErr_SetString(get_state_sock(self)->PySSLErrorObject,
+                            "Underlying socket has been closed.");
+            goto error;
+        }
+        else if (sockstate == SOCKET_IS_NONBLOCKING) {
+            break;
+        }
+    } while (err.ssl == SSL_ERROR_WANT_READ
+             || err.ssl == SSL_ERROR_WANT_WRITE);
+
+    if (err.ssl == SSL_ERROR_SSL
+        && ERR_GET_REASON(ERR_peek_error()) == SSL_R_UNINITIALIZED)
+    {
+        /* OpenSSL fails to return SSL_ERROR_SYSCALL if an error
+         * happens in sendfile(), and returns SSL_ERROR_SSL with
+         * SSL_R_UNINITIALIZED reason instead. */
+        _setSSLError(get_state_sock(self),
+                     "Some I/O error occurred in sendfile()",
+                     PY_SSL_ERROR_SYSCALL, __FILE__, __LINE__);
+        goto error;
+    }
+    Py_XDECREF(sock);
+    if (retval < 0) {
+        return PySSL_SetError(self, __FILE__, __LINE__);
+    }
+    if (PySSL_ChainExceptions(self) < 0) {
+        return NULL;
+    }
+    return PyLong_FromSize_t(retval);
+error:
+    Py_XDECREF(sock);
+    (void)PySSL_ChainExceptions(self);
+    return NULL;
+}
+#endif /* BIO_get_ktls_send */
+
+/*[clinic input]
+@critical_section
 _ssl._SSLSocket.write
     b: Py_buffer
     /
@@ -3016,6 +3222,9 @@ static PyGetSetDef ssl_getsetlist[] = {
 
 static PyMethodDef PySSLMethods[] = {
     _SSL__SSLSOCKET_DO_HANDSHAKE_METHODDEF
+    _SSL__SSLSOCKET_USES_KTLS_FOR_SEND_METHODDEF
+    _SSL__SSLSOCKET_USES_KTLS_FOR_RECV_METHODDEF
+    _SSL__SSLSOCKET_SENDFILE_METHODDEF
     _SSL__SSLSOCKET_WRITE_METHODDEF
     _SSL__SSLSOCKET_READ_METHODDEF
     _SSL__SSLSOCKET_PENDING_METHODDEF
@@ -3812,7 +4021,6 @@ static int
 _ssl__SSLContext_options_set_impl(PySSLContext *self, PyObject *value)
 /*[clinic end generated code: output=92ca34731ece5dbb input=2b94bf789e9ae5dd]*/
 {
-    PyObject *new_opts_obj;
     unsigned long long new_opts_arg;
     uint64_t new_opts, opts, clear, set;
     uint64_t opt_no = (
@@ -3820,11 +4028,7 @@ _ssl__SSLContext_options_set_impl(PySSLContext *self, PyObject *value)
         SSL_OP_NO_TLSv1_1 | SSL_OP_NO_TLSv1_2 | SSL_OP_NO_TLSv1_3
     );
 
-    if (!PyArg_Parse(value, "O!", &PyLong_Type, &new_opts_obj)) {
-        return -1;
-    }
-    new_opts_arg = PyLong_AsUnsignedLongLong(new_opts_obj);
-    if (new_opts_arg == (unsigned long long)-1 && PyErr_Occurred()) {
+    if (!PyArg_Parse(value, "O&", _PyLong_UnsignedLongLong_Converter, &new_opts_arg)) {
         return -1;
     }
     Py_BUILD_ASSERT(sizeof(new_opts) >= sizeof(new_opts_arg));
@@ -4431,7 +4635,7 @@ _ssl__SSLContext_load_dh_params_impl(PySSLContext *self, PyObject *filepath)
     FILE *f;
     DH *dh;
 
-#if defined(MS_WINDOWS) && defined(_DEBUG)
+#if defined(MS_WINDOWS) && defined(Py_DEBUG)
     PyErr_SetString(PyExc_NotImplementedError,
                     "load_dh_params: unavailable on Windows debug build");
     return NULL;
@@ -6628,6 +6832,12 @@ sslmodule_init_constants(PyObject *m)
     addbool(m, "HAS_PSK", 0);
 #else
     addbool(m, "HAS_PSK", 1);
+#endif
+
+#ifdef OPENSSL_NO_EXTERNAL_PSK_TLS13
+    addbool(m, "HAS_PSK_TLS13", 0);
+#else
+    addbool(m, "HAS_PSK_TLS13", 1);
 #endif
 
 #ifdef SSL_VERIFY_POST_HANDSHAKE

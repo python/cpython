@@ -1,4 +1,0 @@
-:func:`fcntl.fcntl` now supports arbitrary :term:`bytes-like objects
-<bytes-like object>`, not only :class:`bytes`. :func:`fcntl.ioctl` now
-automatically retries system calls failing with EINTR and releases the GIL
-during a system call even for large bytes-like object.

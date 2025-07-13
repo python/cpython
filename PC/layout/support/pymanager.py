@@ -58,6 +58,7 @@ def calculate_install_json(ns, *, for_embed=False, for_test=False):
         COMPANY = "PythonEmbed"
         TARGETW = None
         ALIAS_PREFIX = None
+        ALIAS_WPREFIX = None
         DISPLAY_TAGS.append("embeddable")
         # Deliberately name the file differently from the existing distro
         # so we can republish old versions without replacing files.
@@ -67,7 +68,7 @@ def calculate_install_json(ns, *, for_embed=False, for_test=False):
         TAG_SUFFIX = "t"
         TARGET = f"python{VER_MAJOR}.{VER_MINOR}t.exe"
         TARGETW = f"pythonw{VER_MAJOR}.{VER_MINOR}t.exe"
-        DISPLAY_TAGS.append("freethreaded")
+        DISPLAY_TAGS.append("free-threaded")
         FILE_SUFFIX = f"t-{ns.arch}"
 
     FULL_TAG = f"{VER_MAJOR}.{VER_MINOR}.{VER_MICRO}{VER_SUFFIX}{TAG_SUFFIX}"
@@ -81,6 +82,8 @@ def calculate_install_json(ns, *, for_embed=False, for_test=False):
     ID_TAG = XY_ARCH_TAG
     # Tag shown in 'py list' output
     DISPLAY_TAG = f"{XY_TAG}-dev{TAG_ARCH}" if VER_SUFFIX else XY_ARCH_TAG
+    # Tag used for PEP 514 registration
+    SYS_WINVER = XY_TAG + (TAG_ARCH if TAG_ARCH != '-64' else '')
 
     DISPLAY_SUFFIX = ", ".join(i for i in DISPLAY_TAGS if i)
     if DISPLAY_SUFFIX:
@@ -126,43 +129,45 @@ def calculate_install_json(ns, *, for_embed=False, for_test=False):
     # Generate alias entries for each target. We need both arch and non-arch
     # versions as well as windowed/non-windowed versions to make sure that all
     # necessary aliases are created.
-    if ALIAS_PREFIX:
-        for prefix, base in [
-            (ALIAS_PREFIX, {"target": TARGET}),
-            (f"{ALIAS_PREFIX}w", {"target": TARGETW, "windowed": 1}),
-        ]:
-            if not base["target"]:
-                continue
-            if XY_TAG:
-                STD_ALIAS.extend([
-                    {**base, "name": f"{prefix}{XY_TAG}.exe"},
-                    {**base, "name": f"{prefix}{XY_ARCH_TAG}.exe"},
-                ])
-            if X_TAG:
-                STD_ALIAS.extend([
-                    {**base, "name": f"{prefix}{X_TAG}.exe"},
-                    {**base, "name": f"{prefix}{X_ARCH_TAG}.exe"},
-                ])
+    for prefix, base in (
+        (ALIAS_PREFIX, {"target": TARGET}),
+        (ALIAS_WPREFIX, {"target": TARGETW, "windowed": 1}),
+    ):
+        if not prefix:
+            continue
+        if not base["target"]:
+            continue
+        if XY_TAG:
+            STD_ALIAS.extend([
+                {**base, "name": f"{prefix}{XY_TAG}.exe"},
+                {**base, "name": f"{prefix}{XY_ARCH_TAG}.exe"},
+            ])
+        if X_TAG:
+            STD_ALIAS.extend([
+                {**base, "name": f"{prefix}{X_TAG}.exe"},
+                {**base, "name": f"{prefix}{X_ARCH_TAG}.exe"},
+            ])
 
-    STD_PEP514.append({
-        "kind": "pep514",
-        "Key": rf"{COMPANY}\{ID_TAG}",
-        "DisplayName": f"{DISPLAY_NAME} {DISPLAY_VERSION}",
-        "SupportUrl": "https://www.python.org/",
-        "SysArchitecture": SYS_ARCH,
-        "SysVersion": VER_DOT,
-        "Version": FULL_VERSION,
-        "InstallPath": {
-            "_": "%PREFIX%",
-            "ExecutablePath": f"%PREFIX%{TARGET}",
-            # WindowedExecutablePath is added below
-        },
-        "Help": {
-            "Online Python Documentation": {
-                "_": f"https://docs.python.org/{VER_DOT}/"
+    if SYS_WINVER:
+        STD_PEP514.append({
+            "kind": "pep514",
+            "Key": rf"{COMPANY}\{SYS_WINVER}",
+            "DisplayName": f"{DISPLAY_NAME} {DISPLAY_VERSION}",
+            "SupportUrl": "https://www.python.org/",
+            "SysArchitecture": SYS_ARCH,
+            "SysVersion": VER_DOT,
+            "Version": FULL_VERSION,
+            "InstallPath": {
+                "_": "%PREFIX%",
+                "ExecutablePath": f"%PREFIX%{TARGET}",
+                # WindowedExecutablePath is added below
             },
-        },
-    })
+            "Help": {
+                "Online Python Documentation": {
+                    "_": f"https://docs.python.org/{VER_DOT}/"
+                },
+            },
+        })
 
     STD_START.append({
         "kind": "start",
@@ -183,7 +188,7 @@ def calculate_install_json(ns, *, for_embed=False, for_test=False):
         ],
     })
 
-    if TARGETW:
+    if TARGETW and STD_PEP514:
         STD_PEP514[0]["InstallPath"]["WindowedExecutablePath"] = f"%PREFIX%{TARGETW}"
 
     if ns.include_idle:
@@ -201,6 +206,8 @@ def calculate_install_json(ns, *, for_embed=False, for_test=False):
             "Icon": r"%PREFIX%Lib\idlelib\Icons\idle.ico",
             "IconIndex": 0,
         })
+        if STD_PEP514:
+            STD_PEP514[0]["InstallPath"]["IdlePath"] = f"%PREFIX%Lib\\idlelib\\idle.pyw"
 
     if ns.include_html_doc:
         STD_PEP514[0]["Help"]["Main Python Documentation"] = {

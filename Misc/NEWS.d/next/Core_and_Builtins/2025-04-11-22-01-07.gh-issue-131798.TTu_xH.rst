@@ -1,2 +1,0 @@
-Split ``CALL_TYPE_1`` into several uops allowing the JIT to remove some of
-them.

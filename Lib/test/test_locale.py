@@ -1,12 +1,17 @@
 from decimal import Decimal
-from test.support import verbose, is_android, linked_to_musl, os_helper
+from test.support import cpython_only, verbose, is_android, linked_to_musl, os_helper
 from test.support.warnings_helper import check_warnings
-from test.support.import_helper import import_fresh_module
+from test.support.import_helper import ensure_lazy_imports, import_fresh_module
 from unittest import mock
 import unittest
 import locale
 import sys
 import codecs
+
+class LazyImportTest(unittest.TestCase):
+    @cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("locale", {"re", "warnings"})
 
 
 class BaseLocalizedTest(unittest.TestCase):
@@ -381,6 +386,10 @@ class NormalizeTest(unittest.TestCase):
     def test_c(self):
         self.check('c', 'C')
         self.check('posix', 'C')
+
+    def test_c_utf8(self):
+        self.check('c.utf8', 'C.UTF-8')
+        self.check('C.UTF-8', 'C.UTF-8')
 
     def test_english(self):
         self.check('en', 'en_US.ISO8859-1')

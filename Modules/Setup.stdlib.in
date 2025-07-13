@@ -41,6 +41,7 @@
 @MODULE__PICKLE_TRUE@_pickle _pickle.c
 @MODULE__QUEUE_TRUE@_queue _queuemodule.c
 @MODULE__RANDOM_TRUE@_random _randommodule.c
+@MODULE__REMOTE_DEBUGGING_TRUE@_remote_debugging _remote_debugging_module.c
 @MODULE__STRUCT_TRUE@_struct _struct.c
 
 # build supports subinterpreters
@@ -64,10 +65,11 @@
 @MODULE__DECIMAL_TRUE@_decimal _decimal/_decimal.c
 
 # compression libs and binascii (optional CRC32 from zlib)
-# bindings need -lbz2, -lz, or -llzma, respectively
+# bindings need -lbz2, -llzma, -lzstd, or -lz, respectively
 @MODULE_BINASCII_TRUE@binascii binascii.c
 @MODULE__BZ2_TRUE@_bz2 _bz2module.c
 @MODULE__LZMA_TRUE@_lzma _lzmamodule.c
+@MODULE__ZSTD_TRUE@_zstd _zstd/_zstdmodule.c _zstd/zstddict.c _zstd/compressor.c _zstd/decompressor.c
 @MODULE_ZLIB_TRUE@zlib zlibmodule.c
 
 # dbm/gdbm
@@ -186,7 +188,6 @@
 @MODULE__TESTIMPORTMULTIPLE_TRUE@_testimportmultiple _testimportmultiple.c
 @MODULE__TESTMULTIPHASE_TRUE@_testmultiphase _testmultiphase.c
 @MODULE__TESTSINGLEPHASE_TRUE@_testsinglephase _testsinglephase.c
-@MODULE__TESTEXTERNALINSPECTION_TRUE@_testexternalinspection _testexternalinspection.c
 @MODULE__CTYPES_TEST_TRUE@_ctypes_test _ctypes/_ctypes_test.c
 
 # Limited API template modules; must be built as shared modules.

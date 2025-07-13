@@ -13,8 +13,6 @@ although there is currently no date scheduled for their removal.
     deprecated.
   * The :class:`argparse.FileType` type converter is deprecated.
 
-* :mod:`array`'s ``'u'`` format code (:gh:`57281`)
-
 * :mod:`builtins`:
 
   * ``bool(NotImplemented)``.
@@ -48,6 +46,8 @@ although there is currently no date scheduled for their removal.
   deprecated and replaced by :data:`calendar.JANUARY` and
   :data:`calendar.FEBRUARY`.
   (Contributed by Prince Roshan in :gh:`103636`.)
+
+* :mod:`codecs`: use :func:`open` instead of :func:`codecs.open`. (:gh:`133038`)
 
 * :attr:`codeobject.co_lnotab`: use the :meth:`codeobject.co_lines` method
   instead.
@@ -88,8 +88,6 @@ although there is currently no date scheduled for their removal.
   replacement strings can now only contain ASCII letters and digits and
   underscore.
   (Contributed by Serhiy Storchaka in :gh:`91760`.)
-
-* :mod:`!sre_compile`, :mod:`!sre_constants` and :mod:`!sre_parse` modules.
 
 * :mod:`shutil`: :func:`~shutil.rmtree`'s *onerror* parameter is deprecated in
   Python 3.12; use the *onexc* parameter instead.
