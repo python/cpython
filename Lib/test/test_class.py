@@ -865,6 +865,7 @@ Py_TPFLAGS_MANAGED_DICT = (1 << 4)
 class NoManagedDict:
     __slots__ = ('a',)
 
+
 class Plain:
     pass
 
@@ -876,6 +877,7 @@ class WithAttrs:
         self.b = 2
         self.c = 3
         self.d = 4
+
 
 class VarSizedSubclass(tuple):
     pass
