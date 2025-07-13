@@ -3,6 +3,8 @@ import sqlite3
 import sys
 import textwrap
 import unittest
+import unittest.mock
+import os
 
 from sqlite3.__main__ import main as cli
 from test.support.import_helper import import_module
@@ -14,6 +16,7 @@ from test.support import (
     captured_stdin,
     force_not_colorized_test_class,
     requires_subprocess,
+    verbose,
 )
 
 
@@ -135,7 +138,7 @@ class InteractiveSession(unittest.TestCase):
         self.assertEndsWith(out, self.PS1)
         self.assertEqual(out.count(self.PS1), 2)
         self.assertEqual(out.count(self.PS2), 0)
-        self.assertIn("Error", err)
+        self.assertIn('Error: unknown command: "', err)
         # test "unknown_command" is pointed out in the error message
         self.assertIn("unknown_command", err)
 
@@ -253,7 +256,7 @@ class Completion(unittest.TestCase):
     def test_complete_no_match(self):
         input_ = b"xyzzy\t\t\b\b\b\b\b\b\b.quit\n"
         # Set NO_COLOR to disable coloring for self.PS1.
-        output = self.write_input(input_, env={"NO_COLOR": "1"})
+        output = self.write_input(input_, env={**os.environ, "NO_COLOR": "1"})
         lines = output.decode().splitlines()
         indices = (
             i for i, line in enumerate(lines, 1)
@@ -282,20 +285,30 @@ class Completion(unittest.TestCase):
             readline.parse_and_bind("set completion-query-items 0")
             readline.parse_and_bind("set page-completions off")
             readline.parse_and_bind("set completion-display-width 0")
+            readline.parse_and_bind("set show-all-if-ambiguous off")
+            readline.parse_and_bind("set show-all-if-unmodified off")
 
             main()
         """)
         input_ = b"\t\t.quit\n"
-        output = run_pty(script, input_, env={"NO_COLOR": "1"})
-        lines = output.decode().splitlines()
-        indices = [
-            i for i, line in enumerate(lines)
-            if line.startswith(self.PS1)
-        ]
-        self.assertEqual(len(indices), 2)
-        start, end = indices
-        candidates = [l.strip() for l in lines[start+1:end]]
-        self.assertEqual(candidates, sorted(SQLITE_KEYWORDS))
+        output = run_pty(script, input_, env={**os.environ, "NO_COLOR": "1"})
+        try:
+            lines = output.decode().splitlines()
+            indices = [
+                i for i, line in enumerate(lines)
+                if line.startswith(self.PS1)
+            ]
+            self.assertEqual(len(indices), 2)
+            start, end = indices
+            candidates = [l.strip() for l in lines[start+1:end]]
+            self.assertEqual(candidates, sorted(SQLITE_KEYWORDS))
+        except:
+            if verbose:
+                print(' PTY output: '.center(30, '-'))
+                print(output.decode(errors='replace'))
+                print(' end PTY output '.center(30, '-'))
+            raise
+
 
 
 if __name__ == "__main__":
