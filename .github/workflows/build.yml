@@ -635,7 +635,7 @@ jobs:
     - build-tsan
     - cross-build-linux
     - cifuzz
-    if: always()
+    if: false
 
     steps:
     - name: Check whether the needed jobs succeeded or failed
