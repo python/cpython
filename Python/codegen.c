@@ -13,6 +13,7 @@
  */
 
 #include "Python.h"
+#include "listobject.h"
 #include "opcode.h"
 #include "pycore_ast.h"           // _PyAST_GetDocString()
 #define NEED_OPCODE_TABLES
@@ -825,9 +826,7 @@ codegen_process_deferred_annotations(compiler *c, location loc)
     void *key = (void *)((uintptr_t)ste->ste_id + 1);
 
     // Get the first annotation location
-    if (PyList_GET_SIZE(deferred_anno) == 0) {
-        goto error;
-    }
+    assert(PyList_GET_SIZE(deferred_anno) > 0);
     PyObject* ptr = PyList_GET_ITEM(deferred_anno, 0);
     stmt_ty st = (stmt_ty)PyLong_AsVoidPtr(ptr);
     if (st == NULL) {
