@@ -10,14 +10,14 @@ def main() -> int:
     with Path("Doc/epubcheck.txt").open(encoding="UTF-8") as f:
         warnings = [warning.split(" - ") for warning in f.read().splitlines()]
 
-    fatal_warnings = [warning for warning in warnings if warning[0] == "FATAL"]
+    fatal_errors = [warning for warning in warnings if warning[0] == "FATAL"]
 
-    if fatal_warnings:
+    if fatal_errors:
         print("\nError: must not contain fatal errors:\n")
-        for warning in fatal_warnings:
+        for warning in fatal_errors:
             print(" - ".join(warning))
 
-    return len(fatal_warnings)
+    return len(fatal_errors)
 
 
 if __name__ == "__main__":
