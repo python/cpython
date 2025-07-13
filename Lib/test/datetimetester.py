@@ -7295,26 +7295,21 @@ class ExtensionModuleTests(unittest.TestCase):
             """)
         script_helper.assert_python_ok('-c', script)
 
+    @support.skip_if_pgo_task
     @unittest.skipIf(_interpreters is None, "missing _interpreters module")
     def test_static_type_concurrent_init_fini(self):
-        # gh-136421
         script = textwrap.dedent("""
-            import threading
-            import _interpreters
-
-            def run(id):
-                _interpreters.exec(id, "import _datetime; print('a', end='')")
-                _interpreters.destroy(id)
-
-            ids = [_interpreters.create() for i in range(10)]
-            ts = [threading.Thread(target=run, args=(id,)) for id in ids]
-            for t in ts:
-                t.start()
-            for t in ts:
-                t.join()
-            """)
-        res = script_helper.assert_python_ok('-c', script)
-        self.assertEqual(res.out, b'a' * 10)
+        from concurrent.futures import InterpreterPoolExecutor
+        def func():
+            import _datetime
+            print('a', end='')
+        with InterpreterPoolExecutor() as executor:
+            for _ in range(8):
+                executor.submit(func)
+        """)
+        _, out, err = script_helper.assert_python_ok("-c", script)
+        self.assertEqual(out, b'a' * 8)
+        self.assertEqual(err, b'')
 
 
 def load_tests(loader, standard_tests, pattern):
