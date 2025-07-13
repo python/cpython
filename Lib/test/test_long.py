@@ -1697,7 +1697,7 @@ class LongTest(unittest.TestCase):
         # gh-136599
         self.assertEqual(hash(-1), -2)
         self.assertEqual(hash(10), 10)
-        self.assertEqual(hash(2**31 -1), 2**31 - 1)
+        self.assertEqual(hash(2**31 - 2), 2**31 - 2)
         self.assertNotEqual(hash(-2**31), -1)
         self.assertNotEqual(hash(-2**61), -1)
 
