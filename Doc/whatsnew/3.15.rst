@@ -278,6 +278,14 @@ tarfile
   and :cve:`2025-4435`.)
 
 
+unittest
+--------
+
+* :func:`unittest.TestCase.assertLogs` will now accept a formatter
+  to control how messages are formatted.
+  (Contributed by Garry Cairns in :gh:`134567`.)
+
+
 zlib
 ----
 
@@ -386,15 +394,6 @@ typing
   longer supported. Use ``class TD(TypedDict): pass``
   or ``TD = TypedDict("TD", {})`` instead.
   (Contributed by Bénédikt Tran in :gh:`133823`.)
-
-
-unittest
---------
-
-* Lets users specify formatter in TestCase.assertLogs.
-  :func:`unittest.TestCase.assertLogs` will now accept a formatter
-  to control how messages are formatted.
-  (Contributed by Garry Cairns in :gh:`134567`.)
 
 
 wave
