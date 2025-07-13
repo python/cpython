@@ -1061,8 +1061,15 @@ or with dictionaries as mapping tables. The following table lists the codecs by
 name, together with a few common aliases, and the languages for which the
 encoding is likely used. Neither the list of aliases nor the list of languages
 is meant to be exhaustive. Notice that spelling alternatives that only differ in
-case or use a hyphen instead of an underscore are also valid aliases; therefore,
-e.g. ``'utf-8'`` is a valid alias for the ``'utf_8'`` codec.
+case or use a hyphen instead of an underscore are also valid aliases
+because they are equivalent when normalized by
+:func:`~encodings.normalize_encoding`. For example, ``'utf-8'`` is a valid
+alias for the ``'utf_8'`` codec.
+
+.. note::
+
+   The below table lists the most common aliases, for a complete list
+   refer to the source :source:`aliases.py <Lib/encodings/aliases.py>` file.
 
 .. impl-detail::
 
