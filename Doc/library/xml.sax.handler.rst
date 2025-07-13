@@ -248,7 +248,7 @@ events in the input document:
 
    The *name* parameter contains the raw XML 1.0 name of the element type as a
    string and the *attrs* parameter holds an object of the
-   :class:`~xml.sax.xmlreader.Attributes`
+   :class:`~xml.sax.xmlreader.AttributesImpl`
    interface (see :ref:`attributes-objects`) containing the attributes of
    the element.  The object passed as *attrs* may be re-used by the parser; holding
    on to a reference to it is not a reliable way to keep a copy of the attributes.
@@ -271,7 +271,7 @@ events in the input document:
    The *name* parameter contains the name of the element type as a ``(uri,
    localname)`` tuple, the *qname* parameter contains the raw XML 1.0 name used in
    the source document, and the *attrs* parameter holds an instance of the
-   :class:`~xml.sax.xmlreader.AttributesNS` interface (see
+   :class:`~xml.sax.xmlreader.AttributesNSImpl` interface (see
    :ref:`attributes-ns-objects`)
    containing the attributes of the element.  If no namespace is associated with
    the element, the *uri* component of *name* will be ``None``.  The object passed
