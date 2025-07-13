@@ -7300,23 +7300,17 @@ class ExtensionModuleTests(unittest.TestCase):
     def test_static_type_concurrent_init_fini(self):
         # gh-136421
         script = textwrap.dedent("""
-            import threading
-            import _interpreters
-
-            def run(id):
-                _interpreters.exec(id, "import _datetime; print('a', end='')")
-                _interpreters.destroy(id)
-
-            ids = [_interpreters.create() for i in range(20)]
-            ts = [threading.Thread(target=run, args=(id,)) for id in ids]
-            for t in ts:
-                t.start()
-            for t in ts:
-                t.join()
-            """)
-        _, out, err = script_helper.assert_python_ok('-c', script)
-        self.assertEqual(out, b'a' * 20)
-        self.assertEqual(err, b'')
+            from concurrent.futures import InterpreterPoolExecutor
+            def func():
+                import _datetime
+                print('a', end='')
+            with InterpreterPoolExecutor(max_workers=10) as executor:
+                for _ in range(10):
+                    executor.submit(func)
+        """)
+        res = script_helper.assert_python_ok("-c", script)
+        self.assertEqual(res.out, b'a' * 10)
+        self.assertEqual(res.err, b'')
 
 
 def load_tests(loader, standard_tests, pattern):
