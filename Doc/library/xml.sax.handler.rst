@@ -248,8 +248,8 @@ events in the input document:
 
    The *name* parameter contains the raw XML 1.0 name of the element type as a
    string and the *attrs* parameter holds an object of the
-   :ref:`Attributes <attributes-object>` interface
-   (see :ref:`attributes-objects`) containing the attributes of
+   :ref:`Attributes <attributes-object>`
+   interface (see :ref:`attributes-objects`) containing the attributes of
    the element.  The object passed as *attrs* may be re-used by the parser; holding
    on to a reference to it is not a reliable way to keep a copy of the attributes.
    To keep a copy of the attributes, use the :meth:`copy` method of the *attrs*
