@@ -1026,7 +1026,7 @@ extern int _Py_normalize_encoding(const char *, char *, size_t, int);
 
 /*[clinic input]
 _codecs._normalize_encoding
-    encoding: str(encoding='ascii')
+    encoding: unicode
 
 Normalize an encoding name *encoding*.
 
@@ -1034,10 +1034,15 @@ Used for encodings.normalize_encoding. Does not convert to lower case.
 [clinic start generated code]*/
 
 static PyObject *
-_codecs__normalize_encoding_impl(PyObject *module, char *encoding)
-/*[clinic end generated code: output=d5e3a4b5266fbe96 input=cdb53c013b2400e3]*/
+_codecs__normalize_encoding_impl(PyObject *module, PyObject *encoding)
+/*[clinic end generated code: output=d27465d81e361f8e input=3ff3f4d64995b988]*/
 {
-    size_t len = strlen(encoding);
+    const char *cstr = PyUnicode_AsUTF8(encoding);
+    if (cstr == NULL) {
+        return NULL;
+    }
+
+    size_t len = strlen(cstr);
     if (len > PY_SSIZE_T_MAX) {
         PyErr_SetString(PyExc_OverflowError, "encoding is too large");
         return NULL;
@@ -1048,7 +1053,7 @@ _codecs__normalize_encoding_impl(PyObject *module, char *encoding)
         return PyErr_NoMemory();
     }
 
-    if (!_Py_normalize_encoding(encoding, normalized, len + 1, 0)) {
+    if (!_Py_normalize_encoding(cstr, normalized, len + 1, 0)) {
         PyErr_SetString(PyExc_RuntimeError, "_Py_normalize_encoding() failed");
         PyMem_Free(normalized);
         return NULL;

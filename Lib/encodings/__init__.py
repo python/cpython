@@ -29,6 +29,7 @@ Written by Marc-Andre Lemburg (mal@lemburg.com).
 """
 
 import codecs
+from _codecs import _normalize_encoding
 import sys
 from . import aliases
 
@@ -36,18 +37,6 @@ _cache = {}
 _unknown = '--unknown--'
 _import_tail = ['*']
 _aliases = aliases.aliases
-
-
-_norm_encoding_map = (
-    #0123456789ABCDEF0123456789ABCDEF
-    '                                '
-    '              . 0123456789      '
-    ' ABCDEFGHIJKLMNOPQRSTUVWXYZ     '
-    ' abcdefghijklmnopqrstuvwxyz     '
-    '                                '
-    '                                '
-    '                                '
-    '                                ')
 
 
 class CodecRegistryError(LookupError, SystemError):
@@ -68,10 +57,7 @@ def normalize_encoding(encoding):
     if isinstance(encoding, bytes):
         encoding = str(encoding, "ascii")
 
-    s = encoding.translate(_norm_encoding_map)
-    return '_'.join(s.split())
-
-from _codecs import _normalize_encoding as normalize_encoding
+    return _normalize_encoding(encoding)
 
 def search_function(encoding):
 

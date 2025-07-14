@@ -2791,7 +2791,7 @@ PyDoc_STRVAR(_codecs__normalize_encoding__doc__,
     {"_normalize_encoding", _PyCFunction_CAST(_codecs__normalize_encoding), METH_FASTCALL|METH_KEYWORDS, _codecs__normalize_encoding__doc__},
 
 static PyObject *
-_codecs__normalize_encoding_impl(PyObject *module, char *encoding);
+_codecs__normalize_encoding_impl(PyObject *module, PyObject *encoding);
 
 static PyObject *
 _codecs__normalize_encoding(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -2820,19 +2820,24 @@ _codecs__normalize_encoding(PyObject *module, PyObject *const *args, Py_ssize_t 
     static const char * const _keywords[] = {"encoding", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
-        .format = "es:_normalize_encoding",
+        .fname = "_normalize_encoding",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    char *encoding = NULL;
+    PyObject *argsbuf[1];
+    PyObject *encoding;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        "ascii", &encoding)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("_normalize_encoding", "argument 'encoding'", "str", args[0]);
+        goto exit;
+    }
+    encoding = args[0];
     return_value = _codecs__normalize_encoding_impl(module, encoding);
-    /* Post parse cleanup for encoding */
-    PyMem_FREE(encoding);
 
 exit:
     return return_value;
@@ -2861,4 +2866,4 @@ exit:
 #ifndef _CODECS_CODE_PAGE_ENCODE_METHODDEF
     #define _CODECS_CODE_PAGE_ENCODE_METHODDEF
 #endif /* !defined(_CODECS_CODE_PAGE_ENCODE_METHODDEF) */
-/*[clinic end generated code: output=0859b218fa612efd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a968c493bb28be3e input=a9049054013a1b77]*/
