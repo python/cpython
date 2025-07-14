@@ -8200,11 +8200,9 @@ static PyObject *
 os_sched_get_priority_max_impl(PyObject *module, int policy)
 /*[clinic end generated code: output=9e465c6e43130521 input=2097b7998eca6874]*/
 {
-    int max;
-
     /* make sure that errno is cleared before the call */
     errno = 0;
-    max = sched_get_priority_max(policy);
+    int max = sched_get_priority_max(policy);
     if (max == -1 && errno)
         return posix_error();
     return PyLong_FromLong(max);
