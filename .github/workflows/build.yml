@@ -275,7 +275,7 @@ jobs:
           - { os: ubuntu-24.04, ssl: openssl, ssl_ver: 3.2.4 }
           - { os: ubuntu-24.04, ssl: openssl, ssl_ver: 3.3.3 }
           - { os: ubuntu-24.04, ssl: openssl, ssl_ver: 3.4.1 }
-          - { os: ubuntu-24.04, ssl: aws-lc,  ssl_ver: 1.55.0 }
+          - { os: ubuntu-24.04, ssl: awslc,  ssl_ver: 1.55.0 }
         # See Tools/ssl/make_ssl_data.py for notes on adding a new version
     env:
       SSL_VER: ${{ matrix.ssl_ver }}
