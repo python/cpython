@@ -25,6 +25,8 @@
 #  undef HAS_XGETBV_SUPPORT
 #endif
 
+#undef HAS_XGETBV_SUPPORT
+
 // Below, we declare macros for guarding the detection of SSE, AVX/AVX2
 // and AVX-512 instructions. If the compiler does not even recognize the
 // corresponding flags or if we are not on an 64-bit platform we do not
