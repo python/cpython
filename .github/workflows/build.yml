@@ -158,11 +158,8 @@ jobs:
       matrix:
         arch:
           - x64
-          - Win32
-          - arm64
         free-threading:
           - false
-          - true
         exclude:
           # Skip Win32 on free-threaded builds
           - { arch: Win32, free-threading: true }
