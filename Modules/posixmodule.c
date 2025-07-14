@@ -8221,11 +8221,9 @@ static PyObject *
 os_sched_get_priority_min_impl(PyObject *module, int policy)
 /*[clinic end generated code: output=7595c1138cc47a6d input=21bc8fa0d70983bf]*/
 {
-    int min;
-
     /* make sure that errno is cleared before the call */
     errno = 0;
-    min = sched_get_priority_min(policy);
+    int min = sched_get_priority_min(policy);
     if (min == -1 && errno)
         return posix_error();
     return PyLong_FromLong(min);
