@@ -134,9 +134,7 @@ get_cpuid_info(uint32_t level /* input eax */,
 {
     *eax = *ebx = *ecx = *edx = 0; // ensure the output to be initialized
 #if defined(HAS_CPUID_SUPPORT) && defined(__x86_64__) && defined(__GNUC__)
-    uint32_t r_eax = 0, r_ebx = 0, r_ecx = 0, r_edx = 0;
-    __cpuid_count(level, count, r_eax, r_ebx, r_ecx, r_edx);
-    *eax = r_eax, *ebx = r_ebx, *ecx = r_ecx, *edx = r_edx;
+    __cpuid_count(level, count, *eax, *ebx, *ecx, *edx);
 #elif defined(HAS_CPUID_SUPPORT) && defined(_M_X64)
     uint32_t info[4] = {0};
     __cpuidex(info, level, count);
