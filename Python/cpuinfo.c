@@ -25,7 +25,6 @@
 #  undef HAS_XGETBV_SUPPORT
 #endif
 
-#undef HAS_CPUID_SUPPORT
 #undef HAS_XGETBV_SUPPORT
 
 // Below, we declare macros for guarding the detection of SSE, AVX/AVX2
@@ -115,6 +114,11 @@
 #  define SHOULD_PARSE_CPUID_L7
 #  define SHOULD_PARSE_CPUID_L7S1
 #endif
+
+#undef SHOULD_PARSE_CPUID_L1
+#undef SHOULD_PARSE_CPUID_L7
+#undef SHOULD_PARSE_CPUID_L7S0
+#undef SHOULD_PARSE_CPUID_L7S1
 
 #if defined(SHOULD_PARSE_CPUID_L7S0) && !defined(SHOULD_PARSE_CPUID_L7)
 #error "SHOULD_PARSE_CPUID_L7S0 requires SHOULD_PARSE_CPUID_L7"
