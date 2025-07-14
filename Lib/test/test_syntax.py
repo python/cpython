@@ -2686,6 +2686,57 @@ Invalid expressions in type scopes:
     >>> f(x = 5, *:)
     Traceback (most recent call last):
     SyntaxError: Invalid star expression
+
+Asserts:
+
+    >>> assert 1 = 2
+    Traceback (most recent call last):
+    SyntaxError: cannot assign to literal here. Maybe you meant '==' instead of '='?
+
+    >>> assert (1 = 2)
+    Traceback (most recent call last):
+    SyntaxError: cannot assign to literal here. Maybe you meant '==' instead of '='?
+
+    >>> assert 'a' = a
+    Traceback (most recent call last):
+    SyntaxError: cannot assign to literal here. Maybe you meant '==' instead of '='?
+
+    >>> assert x[0] = 1
+    Traceback (most recent call last):
+    SyntaxError: cannot assign to subscript here. Maybe you meant '==' instead of '='?
+
+    >>> assert (yield a) = 2
+    Traceback (most recent call last):
+    SyntaxError: cannot assign to yield expression here. Maybe you meant '==' instead of '='?
+
+    >>> assert a = 2
+    Traceback (most recent call last):
+    SyntaxError: invalid syntax. Maybe you meant '==' or ':=' instead of '='?
+
+    >>> assert (a = 2)
+    Traceback (most recent call last):
+    SyntaxError: invalid syntax. Maybe you meant '==' or ':=' instead of '='?
+
+    >>> assert a = b
+    Traceback (most recent call last):
+    SyntaxError: invalid syntax. Maybe you meant '==' or ':=' instead of '='?
+
+    >>> assert 1, 1 = b
+    Traceback (most recent call last):
+    SyntaxError: cannot assign to literal here. Maybe you meant '==' instead of '='?
+
+    >>> assert 1, (1 = b)
+    Traceback (most recent call last):
+    SyntaxError: cannot assign to literal here. Maybe you meant '==' instead of '='?
+
+    >>> assert 1, a = 1
+    Traceback (most recent call last):
+    SyntaxError: invalid syntax. Maybe you meant '==' or ':=' instead of '='?
+
+    >>> assert 1, (a = 1)
+    Traceback (most recent call last):
+    SyntaxError: invalid syntax. Maybe you meant '==' or ':=' instead of '='?
+
 """
 
 import re
