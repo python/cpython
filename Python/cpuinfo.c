@@ -150,7 +150,11 @@ get_xgetbv(uint32_t index)
     assert(index == 0); // only XCR0 is supported for now
 #if defined(HAS_CPUID_SUPPORT) && defined(__x86_64__) && defined(__GNUC__)
 #  if defined(__clang__)
+#    if defined(_MSC_VER) && _Py__has_builtin(__builtin_ia32_xgetbv)
     return (uint64_t)_xgetbv(index);
+#    else
+    return 0;
+#    endif
 #  else
     uint32_t eax = 0, edx = 0;
     __asm__ volatile(
