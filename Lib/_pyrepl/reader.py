@@ -40,7 +40,7 @@ from .types import Callback, SimpleContextManager, KeySpec, CommandName
 # syntax classes
 SYNTAX_WHITESPACE, SYNTAX_WORD, SYNTAX_SYMBOL = range(3)
 
-def normalize_surrogates(s):
+def normalize_surrogates(s: str) -> str:
     # Encode with surrogatepass, decode to normalize surrogate pairs
     try:
         return s.encode('utf-16', 'surrogatepass').decode('utf-16')
