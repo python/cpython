@@ -16,6 +16,7 @@ Doc/library/ast.rst
 Doc/library/asyncio-extending.rst
 Doc/library/asyncio-policy.rst
 Doc/library/email.charset.rst
+Doc/library/email.parser.rst
 Doc/library/http.cookiejar.rst
 Doc/library/http.server.rst
 Doc/library/importlib.rst
