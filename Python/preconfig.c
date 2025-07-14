@@ -700,7 +700,7 @@ preconfig_init_coerce_c_locale(PyPreConfig *config)
 
     /* Test if coerce_c_locale equals to -1 or equals to 1:
        PYTHONCOERCECLOCALE=1 doesn't imply that the C locale is always coerced.
-       It is only coerced if if the LC_CTYPE locale is "C". */
+       It is only coerced if the LC_CTYPE locale is "C". */
     if (config->coerce_c_locale < 0 || config->coerce_c_locale == 1) {
         /* The C locale enables the C locale coercion (PEP 538) */
         if (_Py_LegacyLocaleDetected(0)) {
