@@ -1022,6 +1022,44 @@ _codecs_lookup_error_impl(PyObject *module, const char *name)
     return PyCodec_LookupError(name);
 }
 
+extern int _Py_normalize_encoding(const char *, char *, size_t, int);
+
+/*[clinic input]
+_codecs._normalize_encoding
+    encoding: str(encoding='ascii')
+    /
+
+Normalize an encoding name, while not converting to lower case (to_lower == 1).
+Used for encodings.normalize_encoding.
+[clinic start generated code]*/
+
+static PyObject *
+_codecs__normalize_encoding_impl(PyObject *module, char *encoding)
+/*[clinic end generated code: output=d5e3a4b5266fbe96 input=ca002bbc262228f1]*/
+{
+    size_t len = strlen(encoding);
+    if (len > PY_SSIZE_T_MAX) {
+        PyErr_SetString(PyExc_OverflowError, "encoding is too large");
+        return NULL;
+    }
+
+    char *normalized = PyMem_Malloc(len + 1);
+    if (normalized == NULL) {
+        return PyErr_NoMemory();
+    }
+
+    if (!_Py_normalize_encoding(encoding, normalized, len + 1, 0)) {
+        PyErr_SetString(PyExc_RuntimeError, "_Py_normalize_encoding() failed");
+        PyMem_Free(normalized);
+        return NULL;
+    }
+
+    PyObject *v = PyUnicode_FromString(normalized);
+    PyMem_Free(normalized);
+    return v;
+}
+
+
 /* --- Module API --------------------------------------------------------- */
 
 static PyMethodDef _codecs_functions[] = {
@@ -1071,6 +1109,7 @@ static PyMethodDef _codecs_functions[] = {
     _CODECS_REGISTER_ERROR_METHODDEF
     _CODECS__UNREGISTER_ERROR_METHODDEF
     _CODECS_LOOKUP_ERROR_METHODDEF
+    _CODECS__NORMALIZE_ENCODING_METHODDEF
     {NULL, NULL}                /* sentinel */
 };
 

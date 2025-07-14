@@ -2779,6 +2779,35 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_codecs__normalize_encoding__doc__,
+"_normalize_encoding($module, encoding, /)\n"
+"--\n"
+"\n"
+"Normalize an encoding name. Used for encodings.normalize_encoding.");
+
+#define _CODECS__NORMALIZE_ENCODING_METHODDEF    \
+    {"_normalize_encoding", (PyCFunction)_codecs__normalize_encoding, METH_O, _codecs__normalize_encoding__doc__},
+
+static PyObject *
+_codecs__normalize_encoding_impl(PyObject *module, char *encoding);
+
+static PyObject *
+_codecs__normalize_encoding(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    char *encoding = NULL;
+
+    if (!PyArg_Parse(arg, "es:_normalize_encoding", "ascii", &encoding)) {
+        goto exit;
+    }
+    return_value = _codecs__normalize_encoding_impl(module, encoding);
+    /* Post parse cleanup for encoding */
+    PyMem_FREE(encoding);
+
+exit:
+    return return_value;
+}
+
 #ifndef _CODECS_MBCS_DECODE_METHODDEF
     #define _CODECS_MBCS_DECODE_METHODDEF
 #endif /* !defined(_CODECS_MBCS_DECODE_METHODDEF) */
@@ -2802,4 +2831,4 @@ exit:
 #ifndef _CODECS_CODE_PAGE_ENCODE_METHODDEF
     #define _CODECS_CODE_PAGE_ENCODE_METHODDEF
 #endif /* !defined(_CODECS_CODE_PAGE_ENCODE_METHODDEF) */
-/*[clinic end generated code: output=ed13f20dfb09e306 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=aa3636e281f5268f input=a9049054013a1b77]*/
