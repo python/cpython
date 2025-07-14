@@ -364,7 +364,7 @@ the :mod:`glob` module.)
 
    If a segment is an absolute path (which on Windows requires both a drive and
    a root), then all previous segments are ignored and joining continues from the
-   absolute path segment. For example::
+   absolute path segment. On Linux, for example::
 
       >>> os.path.join('/home/foo', 'bar')
       '/home/foo/bar'
