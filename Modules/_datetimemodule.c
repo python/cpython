@@ -7335,17 +7335,17 @@ init_static_types(PyInterpreterState *interp, int reloading)
     if (reloading) {
         return 0;
     }
-    if (_Py_IsMainInterpreter(interp)
-        && PyType_HasFeature(&PyDateTime_DateType, Py_TPFLAGS_READY)) {
-        // This function was already called from PyInit__datetime()
-        return 0;
+    if (_Py_IsMainInterpreter(interp)) {
+        if (PyType_HasFeature(&PyDateTime_DateType, Py_TPFLAGS_READY)) {
+            // This function was already called from PyInit__datetime()
+            return 0;
+        }
+        // `&...` is not a constant expression according to a strict reading
+        // of C standards. Fill tp_base at run-time rather than statically.
+        // See https://bugs.python.org/issue40777
+        PyDateTime_TimeZoneType.tp_base = &PyDateTime_TZInfoType;
+        PyDateTime_DateTimeType.tp_base = &PyDateTime_DateType;
     }
-
-    // `&...` is not a constant expression according to a strict reading
-    // of C standards. Fill tp_base at run-time rather than statically.
-    // See https://bugs.python.org/issue40777
-    PyDateTime_TimeZoneType.tp_base = &PyDateTime_TZInfoType;
-    PyDateTime_DateTimeType.tp_base = &PyDateTime_DateType;
 
     /* Bases classes must be initialized before subclasses,
      * so capi_types must have the types in the appropriate order. */
@@ -7569,11 +7569,13 @@ static PyModuleDef datetimemodule = {
 PyMODINIT_FUNC
 PyInit__datetime(void)
 {
-    PyInterpreterState *interp = PyInterpreterState_Get();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     // gh-136421: Ensure static types are fully finalized at the shutdown of
     // the main interpreter rather than subinterpreters for concurrency.
-    assert(_Py_IsMainInterpreter(interp));
-    init_static_types(interp, 0);
+    assert(interp != NULL && _Py_IsMainInterpreter(interp));
+    if (init_static_types(interp, 0) < 0) {
+        return NULL;
+    }
     return PyModuleDef_Init(&datetimemodule);
 }
 
