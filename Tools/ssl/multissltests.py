@@ -24,6 +24,7 @@ Please keep this script compatible with Python 2.7, and 3.4 to 3.7.
 """
 from __future__ import print_function
 
+import abc
 import argparse
 from datetime import datetime
 import logging
@@ -146,17 +147,33 @@ parser.add_argument(
 )
 
 
-class AbstractBuilder(object):
-    library = None
-    url_templates = None
-    src_template = None
-    build_template = None
+class AbstractBuilder(object, metaclass=abc.ABCMeta):
     depend_target = None
     install_target = 'install'
     if hasattr(os, 'process_cpu_count'):
         jobs = os.process_cpu_count()
     else:
         jobs = os.cpu_count()
+
+    @property
+    @abstractmethod
+    def library(self):
+        pass
+
+    @property
+    @abstractmethod
+    def url_templates(self):
+        pass
+
+    @property
+    @abstractmethod
+    def src_template(self):
+        pass
+
+    @property
+    @abstractmethod
+    def build_template(self):
+        pass
 
     module_files = (
         os.path.join(PYTHONROOT, "Modules/_ssl.c"),
@@ -167,9 +184,10 @@ class AbstractBuilder(object):
     def __init__(self, version, args):
         self.version = version
         self.args = args
+        libdir = self.library.lower().replace("-", "")
         # installation directory
         self.install_dir = os.path.join(
-            os.path.join(args.base_directory, self.library.lower()), version
+            os.path.join(args.base_directory, libdir), version
         )
         # source file
         self.src_dir = os.path.join(args.base_directory, 'src')
@@ -396,17 +414,29 @@ class AbstractBuilder(object):
 
 
 class BuildOpenSSL(AbstractBuilder):
-    library = "OpenSSL"
-    url_templates = (
-        "https://github.com/openssl/openssl/releases/download/openssl-{v}/openssl-{v}.tar.gz",
-        "https://www.openssl.org/source/openssl-{v}.tar.gz",
-        "https://www.openssl.org/source/old/{s}/openssl-{v}.tar.gz"
-    )
-    src_template = "openssl-{}.tar.gz"
-    build_template = "openssl-{}"
     # only install software, skip docs
     install_target = 'install_sw'
     depend_target = 'depend'
+
+    @property
+    def library(self):
+        return "OpenSSL"
+
+    @property
+    def url_templates(self):
+        return (
+            "https://github.com/openssl/openssl/releases/download/openssl-{v}/openssl-{v}.tar.gz",
+            "https://www.openssl.org/source/openssl-{v}.tar.gz",
+            "https://www.openssl.org/source/old/{s}/openssl-{v}.tar.gz",
+        )
+
+    @property
+    def src_template(self):
+        return "openssl-{}.tar.gz"
+
+    @property
+    def build_template(self):
+        return "openssl-{}"
 
     def _post_install(self):
         if self.version.startswith("3."):
@@ -443,21 +473,43 @@ class BuildOpenSSL(AbstractBuilder):
 
 
 class BuildLibreSSL(AbstractBuilder):
-    library = "LibreSSL"
-    url_templates = (
-        "https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-{v}.tar.gz",
-    )
-    src_template = "libressl-{}.tar.gz"
-    build_template = "libressl-{}"
+    @property
+    def library(self):
+        return "LibreSSL"
+
+    @property
+    def url_templates(self):
+        return (
+            "https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-{v}.tar.gz",
+        )
+
+    @property
+    def src_template(self):
+        return "libressl-{}.tar.gz"
+
+    @property
+    def build_template(self):
+        "libressl-{}"
 
 
 class BuildAWSLC(AbstractBuilder):
-    library = "AWS-LC"
-    url_templates = (
-        "https://github.com/aws/aws-lc/archive/refs/tags/v{v}.tar.gz",
-    )
-    src_template = "aws-lc-{}.tar.gz"
-    build_template = "aws-lc-{}"
+    @property
+    def library(self):
+        return "AWS-LC"
+
+    @property
+    def url_templates(self):
+        return (
+            "https://github.com/aws/aws-lc/archive/refs/tags/v{v}.tar.gz",
+        )
+
+    @property
+    def src_template(self):
+        return "aws-lc-{}.tar.gz"
+
+    @property
+    def build_template(self):
+        return "aws-lc-{}"
 
     def _build_src(self, config_args=()):
         cwd = self.build_dir
