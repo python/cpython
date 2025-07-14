@@ -1,1 +1,2 @@
-Fix a bug in html parser related to escapable raw text mode.
+Fix support of escapable raw text mode (elements "textarea" and "title")
+in :class:`http.parser.HTMLParser`.
