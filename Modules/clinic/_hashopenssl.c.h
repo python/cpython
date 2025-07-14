@@ -1492,8 +1492,6 @@ exit:
     return return_value;
 }
 
-#if defined(PY_OPENSSL_HAS_SCRYPT)
-
 PyDoc_STRVAR(_hashlib_scrypt__doc__,
 "scrypt($module, /, password, *, salt, n, r, p, maxmem=0, dklen=64)\n"
 "--\n"
@@ -1600,8 +1598,6 @@ exit:
 
     return return_value;
 }
-
-#endif /* defined(PY_OPENSSL_HAS_SCRYPT) */
 
 PyDoc_STRVAR(_hashlib_hmac_singleshot__doc__,
 "hmac_digest($module, /, key, msg, digest)\n"
@@ -1980,8 +1976,4 @@ exit:
 #ifndef _HASHLIB_OPENSSL_SHAKE_256_METHODDEF
     #define _HASHLIB_OPENSSL_SHAKE_256_METHODDEF
 #endif /* !defined(_HASHLIB_OPENSSL_SHAKE_256_METHODDEF) */
-
-#ifndef _HASHLIB_SCRYPT_METHODDEF
-    #define _HASHLIB_SCRYPT_METHODDEF
-#endif /* !defined(_HASHLIB_SCRYPT_METHODDEF) */
-/*[clinic end generated code: output=29f4aaf01714778e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=cd5ff436f6dc2938 input=a9049054013a1b77]*/
