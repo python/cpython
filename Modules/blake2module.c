@@ -122,7 +122,8 @@ blake2module_init_cpu_features(Blake2State *state)
 #endif
 
 #if _Py_HACL_CAN_COMPILE_VEC256
-    state->can_run_simd256 = flags.avx && flags.avx2;
+    state->can_run_simd256 = state->can_run_simd128
+                             && flags.avx && flags.avx2;
 #else
     state->can_run_simd256 = false;
 #endif
