@@ -1029,8 +1029,10 @@ _codecs._normalize_encoding
     encoding: str(encoding='ascii')
     /
 
-Normalize an encoding name, while not converting to lower case (to_lower == 1).
+Normalize an encoding name *encoding*.
+
 Used for encodings.normalize_encoding.
+Does not convert to lower case (to_lower == 1).
 [clinic start generated code]*/
 
 static PyObject *
