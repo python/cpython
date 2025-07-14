@@ -8,21 +8,15 @@
 // For now, we only try to enable SIMD instructions for x86-64 Intel CPUs.
 // In the future, we should carefully enable support for ARM NEON and POWER
 // as well as AMD. See https://sourceforge.net/p/predef/wiki/Architectures.
+#define HAS_CPUID_SUPPORT
 #if defined(__x86_64__) && defined(__GNUC__)
 #  include <cpuid.h>            // __cpuid_count()
-#  define HAS_CPUID_SUPPORT
-#  if defined(__clang__)
-#    include <immintrin.h>      // _xgetbv()
-#  endif
-#  define HAS_XGETBV_SUPPORT
+#  include <immintrin.h>        // _xgetbv()
 #elif defined(_M_X64) || defined(__amd64__) || defined(_M_AMD64)
 #  include <intrin.h>           // __cpuidex()
-#  define HAS_CPUID_SUPPORT
 #  include <immintrin.h>        // _xgetbv()
-#  define HAS_XGETBV_SUPPORT
 #else
 #  undef HAS_CPUID_SUPPORT
-#  undef HAS_XGETBV_SUPPORT
 #endif
 
 // Below, we declare macros for guarding the detection of SSE, AVX/AVX2
@@ -30,6 +24,11 @@
 // corresponding flags or if we are not on an 64-bit platform we do not
 // even try to inspect the output of CPUID for those specific features.
 #ifdef HAS_CPUID_SUPPORT
+#if defined(_Py_CPUINFO_USE_XGETBV_FUNC)        \
+    || defined(_Py_CPUINFO_USE_XGETBV_OPCODE)
+#  define HAS_XGETBV_SUPPORT
+#endif
+
 #if defined(_Py_CAN_COMPILE_SIMD_SSE_INSTRUCTIONS)          \
     || defined(_Py_CAN_COMPILE_SIMD_SSE2_INSTRUCTIONS)      \
     || defined(_Py_CAN_COMPILE_SIMD_SSE3_INSTRUCTIONS)      \
@@ -159,19 +158,10 @@ static uint64_t /* should only be used after calling cpuid(1, 0, ...) */
 get_xgetbv(uint32_t index)
 {
     assert(index == 0); // only XCR0 is supported for now
-#  if defined(HAS_CPUID_SUPPORT) && defined(__x86_64__) && defined(__GNUC__)
-#    if defined(__clang__)
-#       if _Py__has_builtin(__builtin_ia32_xgetbv)
+#if defined(_Py_CPUINFO_USE_XGETBV_FUNC)
+    /* directly use the compiler's helper if -mxsave is available */
     return (uint64_t)_xgetbv(index);
-#       else
-    /*
-     * Without -mxsave support, directly using xgetbv() with raw opcode
-     * may still fail on some platforms (e.g., AMD64 + FreeBSD + clang).
-     * To be on the safe side, we assume that XGETBV is not supported.
-     */
-    return 0;
-#       endif
-#    else /* gcc & icc */
+#elif defined(__x86_64__) && defined(__GNUC__)
     uint32_t eax = 0, edx = 0;
     __asm__ volatile(
         /* raw opcode for xgetbv for compatibility with older toolchains */
@@ -180,14 +170,15 @@ get_xgetbv(uint32_t index)
         : "c" (index)
     );
     return ((uint64_t)edx << 32) | eax;
-#    endif
-#  elif defined(HAS_CPUID_SUPPORT) && defined(_M_X64)
+#elif defined(_M_X64)
     return (uint64_t)_xgetbv(index);
-#  else
+#else
     (void)index;
     return 0;
-#  endif
+#endif
 }
+#else
+#define get_xgetbv(_INDEX)  0
 #endif
 
 /* Highest Function Parameter and Manufacturer ID (LEAF=0, SUBLEAF=0). */
@@ -364,14 +355,12 @@ detect_cpuid_xsave_state(_Py_cpuid_features *flags)
     assert(flags->maxleaf >= 1);
     (void)flags;
     // Keep the ordering and newlines as they are declared in the structure.
-#ifdef HAS_XGETBV_SUPPORT
     uint64_t xcr0 = flags->xsave && flags->osxsave ? get_xgetbv(0) : 0;
     flags->xcr0_sse = XSAVE_CHECK_REG(xcr0, XCR0_SSE);
     flags->xcr0_avx = XSAVE_CHECK_REG(xcr0, XCR0_AVX);
     flags->xcr0_avx512_opmask = XSAVE_CHECK_REG(xcr0, XCR0_AVX512_OPMASK);
     flags->xcr0_avx512_zmm_hi256 = XSAVE_CHECK_REG(xcr0, XCR0_AVX512_ZMM_HI256);
     flags->xcr0_avx512_hi16_zmm = XSAVE_CHECK_REG(xcr0, XCR0_AVX512_HI16_ZMM);
-#endif
 }
 #endif
 

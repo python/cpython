@@ -34209,6 +34209,120 @@ fi
 
 
 
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking _xgetbv() is natively supported" >&5
+printf %s "checking _xgetbv() is natively supported... " >&6; }
+if test ${ac_cv_use_xgetbv_func+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e)
+  save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+    CFLAGS="$CFLAGS -Werror -mxsave"
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <immintrin.h>
+int
+main (void)
+{
+_xgetbv(0)
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_use_xgetbv_func=yes
+else case e in #(
+  e) ac_cv_use_xgetbv_func=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+ ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_use_xgetbv_func" >&5
+printf "%s\n" "$ac_cv_use_xgetbv_func" >&6; }
+if test "$ac_cv_use_xgetbv_func" = "yes" ; then
+
+printf "%s\n" "#define _Py_CPUINFO_USE_XGETBV_FUNC 1" >>confdefs.h
+
+fi
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking xgetbv opcode is supported" >&5
+printf %s "checking xgetbv opcode is supported... " >&6; }
+if test ${ac_cv_use_xgetbv_opcode+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e)
+  save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+    CFLAGS="$CFLAGS -Werror"
+    if test "$cross_compiling" = yes
+then :
+  ac_cv_use_xgetbv_opcode=no
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <stdint.h>
+int
+main (void)
+{
+
+      int main(void)
+      {
+        uint32_t eax = 0, edx = 0, index = 0;
+        __asm__ __volatile__(
+          ".byte 0x0f, 0x01, 0xd0" : "=a" (eax), "=d" (edx) : "c" (index));
+        return 0;
+      }
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_run "$LINENO"
+then :
+  ac_cv_use_xgetbv_opcode=yes
+else case e in #(
+  e) ac_cv_use_xgetbv_opcode=no ;;
+esac
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext ;;
+esac
+fi
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+ ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_use_xgetbv_opcode" >&5
+printf "%s\n" "$ac_cv_use_xgetbv_opcode" >&6; }
+if test "$ac_cv_use_xgetbv_opcode" = "yes" ; then
+
+printf "%s\n" "#define _Py_CPUINFO_USE_XGETBV_OPCODE 1" >>confdefs.h
+
+fi
+
 ###############################################################################
 # HACL* compilation and linking configuration (contact: @picnixz)
 #

@@ -2104,6 +2104,12 @@
 /* Define if '-mssse3' is a valid compiler flag. */
 #undef _Py_CAN_COMPILE_SIMD_SSSE3_INSTRUCTIONS
 
+/* _xgetbv() is preferred */
+#undef _Py_CPUINFO_USE_XGETBV_FUNC
+
+/* XGETBV opcode is preferred */
+#undef _Py_CPUINFO_USE_XGETBV_OPCODE
+
 /* Defined if _Complex C type can be used with libffi. */
 #undef _Py_FFI_SUPPORT_C_COMPLEX
 
