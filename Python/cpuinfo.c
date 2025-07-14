@@ -7,7 +7,7 @@
 
 // For now, we only try to enable SIMD instructions for x86-64 Intel CPUs.
 // In the future, we should carefully enable support for ARM NEON and POWER
-// as well as AMD.
+// as well as AMD. See https://sourceforge.net/p/predef/wiki/Architectures.
 #if defined(__x86_64__) && defined(__GNUC__)
 #  include <cpuid.h>            // __cpuid_count()
 #  define HAS_CPUID_SUPPORT
@@ -15,7 +15,7 @@
 #    include <immintrin.h>      // _xgetbv()
 #  endif
 #  define HAS_XGETBV_SUPPORT
-#elif defined(_M_X64)
+#elif defined(_M_X64) || defined(__amd64__) || defined(_M_AMD64)
 #  include <intrin.h>           // __cpuidex()
 #  define HAS_CPUID_SUPPORT
 #  include <immintrin.h>        // _xgetbv()
@@ -24,8 +24,6 @@
 #  undef HAS_CPUID_SUPPORT
 #  undef HAS_XGETBV_SUPPORT
 #endif
-
-#undef HAS_XGETBV_SUPPORT
 
 // Below, we declare macros for guarding the detection of SSE, AVX/AVX2
 // and AVX-512 instructions. If the compiler does not even recognize the
@@ -115,6 +113,8 @@
 #  define SHOULD_PARSE_CPUID_L7S1
 #endif
 
+#undef  SHOULD_PARSE_CPUID_L7S1
+
 #if defined(SHOULD_PARSE_CPUID_L7S0) && !defined(SHOULD_PARSE_CPUID_L7)
 #error "SHOULD_PARSE_CPUID_L7S0 requires SHOULD_PARSE_CPUID_L7"
 #endif
@@ -150,14 +150,7 @@ static uint64_t /* should only be used after calling cpuid(1, 0, ...) */
 get_xgetbv(uint32_t index)
 {
     assert(index == 0); // only XCR0 is supported for now
-#if defined(HAS_CPUID_SUPPORT) && defined(__x86_64__) && defined(__GNUC__)
-#  if defined(__clang__)
-#    if defined(_MSC_VER) && _Py__has_builtin(__builtin_ia32_xgetbv)
-    return (uint64_t)_xgetbv(index);
-#    else
-    return 0;
-#    endif
-#  else
+#  if defined(HAS_CPUID_SUPPORT) && defined(__x86_64__) && defined(__GNUC__)
     uint32_t eax = 0, edx = 0;
     __asm__ volatile(
         /* raw opcode for xgetbv for compatibility with older toolchains */
@@ -166,13 +159,12 @@ get_xgetbv(uint32_t index)
         : "c" (index)
     );
     return ((uint64_t)edx << 32) | eax;
-#   endif
-#elif defined(HAS_CPUID_SUPPORT) && defined(_M_X64)
+#  elif defined(HAS_CPUID_SUPPORT) && defined(_M_X64)
     return (uint64_t)_xgetbv(index);
-#else
+#  else
     (void)index;
     return 0;
-#endif
+#  endif
 }
 #endif
 
@@ -314,14 +306,11 @@ detect_cpuid_extended_features_L7S0(_Py_cpuid_features *flags,
 #ifdef SHOULD_PARSE_CPUID_L7S1
 static void /* should only be used after calling cpuid(7, 1, ...) */
 detect_cpuid_extended_features_L7S1(_Py_cpuid_features *flags,
-                                    uint32_t eax,
-                                    uint32_t ebx,
-                                    uint32_t ecx,
-                                    uint32_t edx)
+                                    uint32_t eax, uint32_t edx)
 {
     assert(flags->ready == 0);
     assert(flags->maxleaf >= 7);
-    (void)flags, (void)eax, (void)ebx, (void)ecx, (void)edx;
+    (void)flags, (void)eax, (void)edx;
     // Keep the ordering and newlines as they are declared in the structure.
 #ifdef SIMD_AVX_INSTRUCTIONS_DETECTION_GUARD
 #ifdef _Py_CAN_COMPILE_SIMD_AVX_NE_CONVERT_INSTRUCTIONS
@@ -526,12 +515,8 @@ cpuid_detect_l1_features(_Py_cpuid_features *flags)
     assert(flags->ready == 0);
     if (flags->maxleaf >= 1) {
         uint32_t eax = 0, ebx = 0, ecx = 0, edx = 0;
-        printf("[L1::get_cpuid_info(1, 0)]\n");
         get_cpuid_info(1, 0, &eax, &ebx, &ecx, &edx);
-        printf("RES: eax=%u, ebx=%u, ecx=%u, edx=%u\n", eax, ebx, ecx, edx);
-        printf("[L1::detect_cpuid_features]\n");
         detect_cpuid_features(flags, ecx, edx);
-        printf("[L1::detect_cpuid_xsave_state]\n");
         detect_cpuid_xsave_state(flags);
     }
 }
@@ -546,9 +531,7 @@ cpuid_detect_l7s0_features(_Py_cpuid_features *flags)
     assert(flags->ready == 0);
     assert(flags->maxleaf >= 7);
     uint32_t _eax = 0, ebx = 0, ecx = 0, edx = 0;
-    printf("[L1::get_cpuid_info(7, 0)]\n");
     get_cpuid_info(7, 0, &_eax, &ebx, &ecx, &edx);
-    printf("RES: eax=%u, ebx=%u, ecx=%u, edx=%u\n", _eax, ebx, ecx, edx);
     detect_cpuid_extended_features_L7S0(flags, ebx, ecx, edx);
 }
 #else
@@ -561,11 +544,9 @@ cpuid_detect_l7s1_features(_Py_cpuid_features *flags)
 {
     assert(flags->ready == 0);
     assert(flags->maxleaf >= 7);
-    uint32_t eax = 0, ebx = 0, ecx = 0, edx = 0;
-    printf("[L1::get_cpuid_info(7, 1)]\n");
-    get_cpuid_info(7, 1, &eax, &ebx, &ecx, &edx);
-    printf("RES: eax=%u, ebx=%u, ecx=%u, edx=%u\n", eax, ebx, ecx, edx);
-    detect_cpuid_extended_features_L7S1(flags, eax, ebx, ecx, edx);
+    uint32_t eax = 0, _ebx = 0, _ecx = 0, edx = 0;
+    get_cpuid_info(7, 1, &eax, &_ebx, &_ecx, &edx);
+    detect_cpuid_extended_features_L7S1(flags, eax, edx);
 }
 #else
 #define cpuid_detect_l7s1_features(FLAGS)
@@ -591,19 +572,12 @@ _Py_cpuid_detect_features(_Py_cpuid_features *flags)
     if (flags->ready) {
         return;
     }
-    printf("[disable features]\n");
     _Py_cpuid_disable_features(flags);
-    printf("[detect MAXLEAF]\n");
     flags->maxleaf = detect_cpuid_maxleaf();
-    printf("[L1, maxleaf=%d]\n", flags->maxleaf);
     cpuid_detect_l1_features(flags);
-    printf("[L7, maxleaf=%d]\n", flags->maxleaf);
     cpuid_detect_l7_features(flags);
-    printf("finalize\n");
     cpuid_features_finalize(flags);
     if (!_Py_cpuid_check_features(flags)) {
-        printf("invalid check\n");
         _Py_cpuid_disable_features(flags);
     }
-    printf("done\n");
 }
