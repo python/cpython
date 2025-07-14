@@ -34209,8 +34209,8 @@ fi
 
 
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking _xgetbv() is natively supported" >&5
-printf %s "checking _xgetbv() is natively supported... " >&6; }
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking _xgetbv(0) is natively supported" >&5
+printf %s "checking _xgetbv(0) is natively supported... " >&6; }
 if test ${ac_cv_use_xgetbv_func+y}
 then :
   printf %s "(cached) " >&6
@@ -34258,8 +34258,8 @@ printf "%s\n" "#define _Py_CPUINFO_USE_XGETBV_FUNC 1" >>confdefs.h
 
 fi
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking xgetbv opcode is supported" >&5
-printf %s "checking xgetbv opcode is supported... " >&6; }
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking xgetbv(0) opcode is supported" >&5
+printf %s "checking xgetbv(0) opcode is supported... " >&6; }
 if test ${ac_cv_use_xgetbv_opcode+y}
 then :
   printf %s "(cached) " >&6
@@ -34285,9 +34285,9 @@ main (void)
 
       int main(void)
       {
-        uint32_t eax = 0, edx = 0, index = 0;
+        uint32_t eax = 0, edx = 0;
         __asm__ __volatile__(
-          ".byte 0x0f, 0x01, 0xd0" : "=a" (eax), "=d" (edx) : "c" (index));
+          ".byte 0x0f, 0x01, 0xd0" : "=a" (eax), "=d" (edx) : "c" (0));
         return 0;
       }
 
