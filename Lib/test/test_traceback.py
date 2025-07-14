@@ -4701,8 +4701,8 @@ class PurePythonGetattrSuggestionFormattingTests(
     unittest.TestCase,
 ):
     """
-    Same set of tests (for attribute access) as above using the pure Python implementation of
-    traceback printing in traceback.py.
+    Same set of tests (for attribute access) as above using the pure Python
+    implementation of traceback printing in traceback.py.
     """
 
 
@@ -4712,8 +4712,8 @@ class PurePythonDelattrSuggestionFormattingTests(
     unittest.TestCase,
 ):
     """
-    Same set of tests (for attribute deletion) as above using the pure Python implementation of
-    traceback printing in traceback.py.
+    Same set of tests (for attribute deletion) as above using the pure Python
+    implementation of traceback printing in traceback.py.
     """
 
 
@@ -4724,7 +4724,8 @@ class CPythonGetattrSuggestionFormattingTests(
     unittest.TestCase,
 ):
     """
-    Same set of tests (for attribute access) as above but with Python's internal traceback printing.
+    Same set of tests (for attribute access) as above but with Python's
+    internal traceback printing.
     """
 
 
@@ -4735,7 +4736,8 @@ class CPythonDelattrSuggestionFormattingTests(
     unittest.TestCase,
 ):
     """
-    Same set of tests (for attribute deletion) as above but with Python's internal traceback printing.
+    Same set of tests (for attribute deletion) as above but with Python's
+    internal traceback printing.
     """
 
 class MiscTest(unittest.TestCase):

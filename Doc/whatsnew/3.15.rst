@@ -175,8 +175,8 @@ Other language changes
 * Several error messages incorrectly using the term "argument" have been corrected.
   (Contributed by Stan Ulbrych in :gh:`133382`.)
 
-* The interpreter now provides a suggestion
-  when :func:`delattr` fails due to a missing attribute.
+* The interpreter now provides a suggestion tries to provide a suggestion when
+  :func:`delattr` fails due to a missing attribute.
   When an attribute name that closely resembles an existing attribute is used,
   the interpreter will suggest the correct attribute
   name in the error message. For example:
