@@ -25,13 +25,13 @@ Type check macros
 .. c:function:: int PyByteArray_Check(PyObject *o)
 
    Return true if the object *o* is a bytearray object or an instance of a
-   subtype of the bytearray type.  This function always succeeds.
+   subtype of the bytearray type. This function always succeeds.
 
 
 .. c:function:: int PyByteArray_CheckExact(PyObject *o)
 
    Return true if the object *o* is a bytearray object, but not an instance of a
-   subtype of the bytearray type.  This function always succeeds.
+   subtype of the bytearray type. This function always succeeds.
 
 
 Direct API functions
@@ -67,7 +67,7 @@ Direct API functions
 .. c:function:: char* PyByteArray_AsString(PyObject *bytearray)
 
    Return the contents of *bytearray* as a char array after checking for a
-   ``NULL`` pointer.  The returned array always has an extra
+   ``NULL`` pointer. The returned array always has an extra
    null byte appended.
 
 

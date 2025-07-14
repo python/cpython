@@ -351,7 +351,7 @@ Initializing and finalizing the interpreter
       triple: module; search; path
       single: Py_FinalizeEx (C function)
 
-   Initialize the Python interpreter. In an application embedding ython,
+   Initialize the Python interpreter. In an application embedding Python,
    this should be called before using any other Python/C API functions; see
    :ref:`Before Python Initialization <pre-init-safe>` for the few exceptions.
 
@@ -613,7 +613,7 @@ Process-wide parameters
    formed from the "official" name of the operating system, converted to lower
    case, followed by the major revision number; e.g., for Solaris 2.x, which is
    also known as SunOS 5.x, the value is ``'sunos5'``. On macOS, it is
-   ``'darwin'``. On Windows, it is ``'win'``. he returned string points into
+   ``'darwin'``. On Windows, it is ``'win'``. The returned string points into
    static storage; the caller should not modify its value. The value is available
    to Python code as ``sys.platform``.
 

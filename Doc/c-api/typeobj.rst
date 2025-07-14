@@ -163,11 +163,11 @@ Quick Reference
 
 .. [#cols] Columns:
 
-   **"O"**:  set on :c:data:`PyBaseObject_Type`
+   **"O"**: set on :c:data:`PyBaseObject_Type`
 
-   **"T"**:  set on :c:data:`PyType_Type`
+   **"T"**: set on :c:data:`PyType_Type`
 
-   **"D"**:  default (if slot is set to ``NULL``)
+   **"D"**: default (if slot is set to ``NULL``)
 
    .. code-block:: none
 
@@ -177,7 +177,7 @@ Quick Reference
 
       Also see the inheritance column ("I").
 
-   **"I"**:  inheritance
+   **"I"**: inheritance
 
    .. code-block:: none
 
@@ -2245,7 +2245,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
 .. c:member:: void* PyTypeObject.tp_subclasses
 
-   A collection of subclasses. Internal use only.  ay be an invalid pointer.
+   A collection of subclasses. Internal use only. May be an invalid pointer.
 
    To get a list of subclasses, call the Python method
    :py:meth:`~type.__subclasses__`.
@@ -2732,7 +2732,7 @@ Sequence Object Structures
 
    Negative indexes are handled as follows: if the :c:member:`~PySequenceMethods.sq_length` slot is
    filled, it is called and the sequence length is used to compute a positive
-   index which is passed to :c:member:`~PySequenceMethods.sq_item`.  f :c:member:`!sq_length` is ``NULL``,
+   index which is passed to :c:member:`~PySequenceMethods.sq_item`. If :c:member:`!sq_length` is ``NULL``,
    the index is passed as is to the function.
 
 .. c:member:: ssizeobjargproc PySequenceMethods.sq_ass_item
@@ -2754,7 +2754,7 @@ Sequence Object Structures
 .. c:member:: binaryfunc PySequenceMethods.sq_inplace_concat
 
    This function is used by :c:func:`PySequence_InPlaceConcat` and has the same
-   signature. It should modify its first operand, and return it.  his slot
+   signature. It should modify its first operand, and return it. This slot
    may be left to ``NULL``, in this case :c:func:`!PySequence_InPlaceConcat`
    will fall back to :c:func:`PySequence_Concat`. It is also used by the
    augmented assignment ``+=``, after trying numeric in-place addition
@@ -2763,7 +2763,7 @@ Sequence Object Structures
 .. c:member:: ssizeargfunc PySequenceMethods.sq_inplace_repeat
 
    This function is used by :c:func:`PySequence_InPlaceRepeat` and has the same
-   signature. It should modify its first operand, and return it.  his slot
+   signature. It should modify its first operand, and return it. This slot
    may be left to ``NULL``, in this case :c:func:`!PySequence_InPlaceRepeat`
    will fall back to :c:func:`PySequence_Repeat`. It is also used by the
    augmented assignment ``*=``, after trying numeric in-place multiplication

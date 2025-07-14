@@ -79,7 +79,7 @@ Object Protocol
 
 .. c:function:: int PyObject_Print(PyObject *o, FILE *fp, int flags)
 
-   Print an object *o*, on file *fp*. Returns ``-1`` on error. he flags argument
+   Print an object *o*, on file *fp*. Returns ``-1`` on error. The flags argument
    is used to enable certain printing options. The only option currently supported
    is :c:macro:`Py_PRINT_RAW`; if given, the :func:`str` of the object is written
    instead of the :func:`repr`.

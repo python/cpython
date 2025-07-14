@@ -25,26 +25,26 @@ called with a non-bytes parameter.
 .. c:function:: int PyBytes_Check(PyObject *o)
 
    Return true if the object *o* is a bytes object or an instance of a subtype
-   of the bytes type.  This function always succeeds.
+   of the bytes type. This function always succeeds.
 
 
 .. c:function:: int PyBytes_CheckExact(PyObject *o)
 
    Return true if the object *o* is a bytes object, but not an instance of a
-   subtype of the bytes type.  This function always succeeds.
+   subtype of the bytes type. This function always succeeds.
 
 
 .. c:function:: PyObject* PyBytes_FromString(const char *v)
 
    Return a new bytes object with a copy of the string *v* as value on success,
-   and ``NULL`` on failure.  The parameter *v* must not be ``NULL``; it will not be
+   and ``NULL`` on failure. The parameter *v* must not be ``NULL``; it will not be
    checked.
 
 
 .. c:function:: PyObject* PyBytes_FromStringAndSize(const char *v, Py_ssize_t len)
 
    Return a new bytes object with a copy of the string *v* as value and length
-   *len* on success, and ``NULL`` on failure.  If *v* is ``NULL``, the contents of
+   *len* on success, and ``NULL`` on failure. If *v* is ``NULL``, the contents of
    the bytes object are uninitialized.
 
 
@@ -52,9 +52,9 @@ called with a non-bytes parameter.
 
    Take a C :c:func:`printf`\ -style *format* string and a variable number of
    arguments, calculate the size of the resulting Python bytes object and return
-   a bytes object with the values formatted into it.  The variable arguments
+   a bytes object with the values formatted into it. The variable arguments
    must be C types and must correspond exactly to the format characters in the
-   *format* string.  The following format characters are allowed:
+   *format* string. The following format characters are allowed:
 
    .. % XXX: This should be exactly the same as the table in PyErr_Format.
    .. % One should just refer to the other.
@@ -136,12 +136,12 @@ called with a non-bytes parameter.
 
 .. c:function:: char* PyBytes_AsString(PyObject *o)
 
-   Return a pointer to the contents of *o*.  The pointer
+   Return a pointer to the contents of *o*. The pointer
    refers to the internal buffer of *o*, which consists of ``len(o) + 1``
-   bytes.  The last byte in the buffer is always null, regardless of
-   whether there are any other null bytes.  The data must not be
+   bytes. The last byte in the buffer is always null, regardless of
+   whether there are any other null bytes. The data must not be
    modified in any way, unless the object was just created using
-   ``PyBytes_FromStringAndSize(NULL, size)``. It must not be deallocated.  If
+   ``PyBytes_FromStringAndSize(NULL, size)``. It must not be deallocated. If
    *o* is not a bytes object at all, :c:func:`PyBytes_AsString` returns ``NULL``
    and raises :exc:`TypeError`.
 
@@ -162,9 +162,9 @@ called with a non-bytes parameter.
    if it does, the function returns ``-1`` and a :exc:`ValueError` is raised.
 
    The buffer refers to an internal buffer of *obj*, which includes an
-   additional null byte at the end (not counted in *length*).  The data
+   additional null byte at the end (not counted in *length*). The data
    must not be modified in any way, unless the object was just created using
-   ``PyBytes_FromStringAndSize(NULL, size)``.  It must not be deallocated.  If
+   ``PyBytes_FromStringAndSize(NULL, size)``. It must not be deallocated. If
    *obj* is not a bytes object at all, :c:func:`PyBytes_AsStringAndSize`
    returns ``-1`` and raises :exc:`TypeError`.
 
@@ -176,8 +176,8 @@ called with a non-bytes parameter.
 .. c:function:: void PyBytes_Concat(PyObject **bytes, PyObject *newpart)
 
    Create a new bytes object in *\*bytes* containing the contents of *newpart*
-   appended to *bytes*; the caller will own the new reference.  The reference to
-   the old value of *bytes* will be stolen.  If the new object cannot be
+   appended to *bytes*; the caller will own the new reference. The reference to
+   the old value of *bytes* will be stolen. If the new object cannot be
    created, the old reference to *bytes* will still be discarded and the value
    of *\*bytes* will be set to ``NULL``; the appropriate exception will be set.
 
@@ -185,7 +185,7 @@ called with a non-bytes parameter.
 .. c:function:: void PyBytes_ConcatAndDel(PyObject **bytes, PyObject *newpart)
 
    Create a new bytes object in *\*bytes* containing the contents of *newpart*
-   appended to *bytes*.  This version releases the :term:`strong reference`
+   appended to *bytes*. This version releases the :term:`strong reference`
    to *newpart* (i.e. decrements its reference count).
 
 
@@ -214,8 +214,8 @@ called with a non-bytes parameter.
    one, only more efficiently.
    Pass the address of an
    existing bytes object as an lvalue (it may be written into), and the new size
-   desired.  On success, *\*bytes* holds the resized bytes object and ``0`` is
-   returned; the address in *\*bytes* may differ from its input value.  If the
+   desired. On success, *\*bytes* holds the resized bytes object and ``0`` is
+   returned; the address in *\*bytes* may differ from its input value. If the
    reallocation fails, the original bytes object at *\*bytes* is deallocated,
    *\*bytes* is set to ``NULL``, :exc:`MemoryError` is set, and ``-1`` is
    returned.

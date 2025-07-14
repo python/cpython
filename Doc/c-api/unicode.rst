@@ -1117,7 +1117,7 @@ These are the UTF-8 codec APIs:
 .. c:function:: PyObject* PyUnicode_AsUTF8String(PyObject *unicode)
 
    Encode a Unicode object using UTF-8 and return the result as Python bytes
-   object. Error handling is "strict". eturn ``NULL`` if an exception was
+   object. Error handling is "strict". Return ``NULL`` if an exception was
    raised by the codec.
 
    The function fails if the string contains surrogate code points
@@ -1309,7 +1309,7 @@ These are the "Unicode Escape" codec APIs:
 .. c:function:: PyObject* PyUnicode_AsUnicodeEscapeString(PyObject *unicode)
 
    Encode a Unicode object using Unicode-Escape and return the result as a
-   bytes object. Error handling is "strict". eturn ``NULL`` if an exception was
+   bytes object. Error handling is "strict". Return ``NULL`` if an exception was
    raised by the codec.
 
 
@@ -1329,7 +1329,7 @@ These are the "Raw Unicode Escape" codec APIs:
 .. c:function:: PyObject* PyUnicode_AsRawUnicodeEscapeString(PyObject *unicode)
 
    Encode a Unicode object using Raw-Unicode-Escape and return the result as
-   a bytes object. Error handling is "strict". eturn ``NULL`` if an exception
+   a bytes object. Error handling is "strict". Return ``NULL`` if an exception
    was raised by the codec.
 
 
@@ -1349,7 +1349,7 @@ ordinals and only these are accepted by the codecs during encoding.
 .. c:function:: PyObject* PyUnicode_AsLatin1String(PyObject *unicode)
 
    Encode a Unicode object using Latin-1 and return the result as Python bytes
-   object. Error handling is "strict". eturn ``NULL`` if an exception was
+   object. Error handling is "strict". Return ``NULL`` if an exception was
    raised by the codec.
 
 
@@ -1369,7 +1369,7 @@ codes generate errors.
 .. c:function:: PyObject* PyUnicode_AsASCIIString(PyObject *unicode)
 
    Encode a Unicode object using ASCII and return the result as Python bytes
-   object. Error handling is "strict". eturn ``NULL`` if an exception was
+   object. Error handling is "strict". Return ``NULL`` if an exception was
    raised by the codec.
 
 
@@ -1403,7 +1403,7 @@ These are the mapping codec APIs:
 .. c:function:: PyObject* PyUnicode_AsCharmapString(PyObject *unicode, PyObject *mapping)
 
    Encode a Unicode object using the given *mapping* object and return the
-   result as a bytes object. Error handling is "strict". eturn ``NULL`` if an
+   result as a bytes object. Error handling is "strict". Return ``NULL`` if an
    exception was raised by the codec.
 
    The *mapping* object must map Unicode ordinal integers to bytes objects,
@@ -1464,7 +1464,7 @@ the user settings on the machine running the codec.
 .. c:function:: PyObject* PyUnicode_AsMBCSString(PyObject *unicode)
 
    Encode a Unicode object using MBCS and return the result as Python bytes
-   object. Error handling is "strict". eturn ``NULL`` if an exception was
+   object. Error handling is "strict". Return ``NULL`` if an exception was
    raised by the codec.
 
 
@@ -1498,7 +1498,7 @@ They all return ``NULL`` or ``-1`` if an exception occurs.
 
    Split a string giving a list of Unicode strings. If *sep* is ``NULL``, splitting
    will be done at all whitespace substrings. Otherwise, splits occur at the given
-   separator. At most *maxsplit* splits will be done. f negative, no limit is
+   separator. At most *maxsplit* splits will be done. If negative, no limit is
    set. Separators are not included in the resulting list.
 
    On error, return ``NULL`` with an exception set.

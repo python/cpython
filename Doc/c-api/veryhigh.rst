@@ -65,7 +65,7 @@ the same library that the Python runtime is using.
 
    Executes the Python source code from *command* in the :mod:`__main__` module
    according to the *flags* argument. If :mod:`__main__` does not already exist, it
-   is created. Returns ``0`` on success or ``-1`` if an exception was raised. f
+   is created. Returns ``0`` on success or ``-1`` if an exception was raised. If
    there was an error, there is no way to get the exception information. For the
    meaning of *flags*, see below.
 
@@ -138,7 +138,7 @@ the same library that the Python runtime is using.
    Can be set to point to a function with the prototype
    ``int func(void)``. The function will be called when Python's
    interpreter prompt is about to become idle and wait for user input
-   from the terminal. The return value is ignored. verriding this
+   from the terminal. The return value is ignored. Overriding this
    hook can be used to integrate the interpreter's prompt with other
    event loops, as done in the :file:`Modules/_tkinter.c` in the
    Python source code.

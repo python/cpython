@@ -142,7 +142,7 @@ a buffer, see :c:func:`PyObject_GetBuffer`.
 
       Important exception: If a consumer requests a buffer without the
       :c:macro:`PyBUF_FORMAT` flag, :c:member:`~Py_buffer.format` will
-      be set to ``NULL``, ut :c:member:`~Py_buffer.itemsize` still has
+      be set to ``NULL``, but :c:member:`~Py_buffer.itemsize` still has
       the value for the original format.
 
       If :c:member:`~Py_buffer.shape` is present, the equality
@@ -446,14 +446,14 @@ Buffer-related functions
 
 .. c:function:: int PyObject_CheckBuffer(PyObject *obj)
 
-   Return ``1`` if *obj* supports the buffer interface otherwise ``0``.  When ``1`` is
+   Return ``1`` if *obj* supports the buffer interface otherwise ``0``. When ``1`` is
    returned, it doesn't guarantee that :c:func:`PyObject_GetBuffer` will
-   succeed.  This function always succeeds.
+   succeed. This function always succeeds.
 
 
 .. c:function:: int PyObject_GetBuffer(PyObject *exporter, Py_buffer *view, int flags)
 
-   Send a request to *exporter* to fill in *view* as specified by  *flags*.
+   Send a request to *exporter* to fill in *view* as specified by *flags*.
    If the exporter cannot provide a buffer of the exact type, it MUST raise
    :exc:`BufferError`, set ``view->obj`` to ``NULL`` and
    return ``-1``.
@@ -492,7 +492,7 @@ Buffer-related functions
 
    Return ``1`` if the memory defined by the *view* is C-style (*order* is
    ``'C'``) or Fortran-style (*order* is ``'F'``) :term:`contiguous` or either one
-   (*order* is ``'A'``).  Return ``0`` otherwise.  This function always succeeds.
+   (*order* is ``'A'``). Return ``0`` otherwise. This function always succeeds.
 
 
 .. c:function:: void* PyBuffer_GetPointer(const Py_buffer *view, const Py_ssize_t *indices)

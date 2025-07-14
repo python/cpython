@@ -48,7 +48,7 @@ API functions listed in this document.
 
 To avoid memory corruption, extension writers should never try to operate on
 Python objects with the functions exported by the C library: :c:func:`malloc`,
-:c:func:`calloc`, :c:func:`realloc` and :c:func:`free`. This will result in ixed
+:c:func:`calloc`, :c:func:`realloc` and :c:func:`free`. This will result in mixed
 calls between the C allocator and the Python memory manager with fatal
 consequences, because they implement different algorithms and operate on
 different heaps. However, one may safely allocate and release memory blocks
@@ -267,14 +267,14 @@ The :ref:`default memory allocator <default-memory-allocators>` uses the
 
    If *p* is ``NULL``, no operation is performed.
 
-The following type-oriented macros are provided for convenience. Note hat
+The following type-oriented macros are provided for convenience. Note that
 *TYPE* refers to any C type.
 
 
 .. c:macro:: PyMem_New(TYPE, n)
 
    Same as :c:func:`PyMem_Malloc`, but allocates ``(n * sizeof(TYPE))`` bytes of
-   memory. Returns a pointer cast to ``TYPE*``. he memory will not have
+   memory. Returns a pointer cast to ``TYPE*``. The memory will not have
    been initialized in any way.
 
 
@@ -417,7 +417,7 @@ Legend:
 * ``malloc``: system allocators from the standard C library, C functions:
   :c:func:`malloc`, :c:func:`calloc`, :c:func:`realloc` and :c:func:`free`.
 * ``pymalloc``: :ref:`pymalloc memory allocator <pymalloc>`.
-* ``mimalloc``: :ref:`mimalloc memory allocator <mimalloc>`.  The pymalloc
+* ``mimalloc``: :ref:`mimalloc memory allocator <mimalloc>`. The pymalloc
   allocator will be used if mimalloc support isn't available.
 * "+ debug": with :ref:`debug hooks on the Python memory allocators
   <pymem-debug-hooks>`.
@@ -617,7 +617,7 @@ that the treatment of negative indices differs from a Python slice):
     default).
 
     A serial number, incremented by 1 on each call to a malloc-like or
-    realloc-like function. Big-endian :c:type:`size_t`.  f "bad memory" is detected
+    realloc-like function. Big-endian :c:type:`size_t`. If "bad memory" is detected
     later, the serial number gives an excellent way to set a breakpoint on the
     next run, to capture the instant at which this block was passed out. The
     static function bumpserialno() in obmalloc.c is the only place the serial
@@ -776,7 +776,7 @@ allocators operating on different heaps. ::
    ...
    PyMem_Del(buf3);  /* Wrong -- should be PyMem_Free() */
    free(buf2);       /* Right -- allocated via malloc() */
-   free(buf1);       /* Fatal -- should be PyMem_Free()  */
+   free(buf1);       /* Fatal -- should be PyMem_Free() */
 
 In addition to the functions aimed at handling raw memory blocks from the Python
 heap, objects in Python are allocated and released with :c:macro:`PyObject_New`,

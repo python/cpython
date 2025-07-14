@@ -254,7 +254,7 @@ please see individual documentation for details.
 .. c:function:: PyObject* PyObject_CallObject(PyObject *callable, PyObject *args)
 
    Call a callable Python object *callable*, with arguments given by the
-   tuple *args*.  If no arguments are needed, then *args* can be *NULL*.
+   tuple *args*. If no arguments are needed, then *args* can be *NULL*.
 
    Return the result of the call on success, or raise an exception and return
    *NULL* on failure.
@@ -266,7 +266,7 @@ please see individual documentation for details.
 
    Call a callable Python object *callable*, with a variable number of C arguments.
    The C arguments are described using a :c:func:`Py_BuildValue` style format
-   string.  The format can be *NULL*, indicating that no arguments are provided.
+   string. The format can be *NULL*, indicating that no arguments are provided.
 
    Return the result of the call on success, or raise an exception and return
    *NULL* on failure.
@@ -283,7 +283,7 @@ please see individual documentation for details.
 .. c:function:: PyObject* PyObject_CallMethod(PyObject *obj, const char *name, const char *format, ...)
 
    Call the method named *name* of object *obj* with a variable number of C
-   arguments.  The C arguments are described by a :c:func:`Py_BuildValue` format
+   arguments. The C arguments are described by a :c:func:`Py_BuildValue` format
    string that should produce a tuple.
 
    The format can be *NULL*, indicating that no arguments are provided.
@@ -304,7 +304,7 @@ please see individual documentation for details.
 .. c:function:: PyObject* PyObject_CallFunctionObjArgs(PyObject *callable, ...)
 
    Call a callable Python object *callable*, with a variable number of
-   :c:expr:`PyObject *` arguments.  The arguments are provided as a variable number
+   :c:expr:`PyObject *` arguments. The arguments are provided as a variable number
    of parameters followed by *NULL*.
 
    Return the result of the call on success, or raise an exception and return
@@ -317,8 +317,8 @@ please see individual documentation for details.
 .. c:function:: PyObject* PyObject_CallMethodObjArgs(PyObject *obj, PyObject *name, ...)
 
    Call a method of the Python object *obj*, where the name of the method is given as a
-   Python string object in *name*.  It is called with a variable number of
-   :c:expr:`PyObject *` arguments.  The arguments are provided as a variable number
+   Python string object in *name*. It is called with a variable number of
+   :c:expr:`PyObject *` arguments. The arguments are provided as a variable number
    of parameters followed by *NULL*.
 
    Return the result of the call on success, or raise an exception and return
@@ -400,5 +400,5 @@ Call Support API
 
 .. c:function:: int PyCallable_Check(PyObject *o)
 
-   Determine if the object *o* is callable.  Return ``1`` if the object is callable
-   and ``0`` otherwise.  This function always succeeds.
+   Determine if the object *o* is callable. Return ``1`` if the object is callable
+   and ``0`` otherwise. This function always succeeds.
