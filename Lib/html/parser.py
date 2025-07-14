@@ -169,9 +169,10 @@ class HTMLParser(_markupbase.ParserBase):
 
     def set_cdata_mode(self, elem):
         self.cdata_elem = elem.lower()
-        if self.cdata_elem in ["textarea", "title"]:
-            self._raw_escapable = True
-            self.interesting = re.compile('[&]')
+        self._raw_escapable = self.cdata_elem in ("textarea", "title")
+        if self._raw_escapable and not self.convert_charrefs:
+            self.interesting = re.compile(r'&|</%s(?=[\t\n\r\f />])' % self.cdata_elem,
+                                          re.IGNORECASE|re.ASCII)
         else:
             self.interesting = re.compile(r'</%s(?=[\t\n\r\f />])' % self.cdata_elem,
                                           re.IGNORECASE|re.ASCII)
@@ -189,7 +190,7 @@ class HTMLParser(_markupbase.ParserBase):
         i = 0
         n = len(rawdata)
         while i < n:
-            if self.convert_charrefs and (not self.cdata_elem or self._raw_escapable):
+            if self.convert_charrefs and not self.cdata_elem:
                 j = rawdata.find('<', i)
                 if j < 0:
                     # if we can't find the next <, either we are at the end

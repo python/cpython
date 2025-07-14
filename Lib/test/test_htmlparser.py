@@ -317,63 +317,48 @@ text
                             ("data", content),
                             ("endtag", "style")])
 
-    def test_raw_text_content(self):
-        # Tags should be treated as text in raw text and escapable raw text content.
-        content = """<h1>tagshould be handled as text"""
-        elements = [
-            "script",
-            "style",
-            "title",
-            "textarea",
-            "SCRIPT",
-            "STYLE",
-            "TITLE",
-            "TEXTAREA",
-            "Script",
-            "Style",
-            "Title",
-            "Textarea",
-        ]
-        for element in elements:
-            source = f"<{element}>{content}"
-            self._run_check(source, [
-                ("starttag", element.lower(), []),
-                ("data", content)
-            ])
+    @support.subTests('content', [
+            '<!-- not a comment -->',
+            "<not a='start tag'>",
+            '<![CDATA[not a cdata]]>',
+            '<!not a bogus comment>',
+            '</not a bogus comment>',
+            '\u2603',
+            '< /title>',
+            '</ title>',
+            '</titled>',
+            '</title\v>',
+            '</title\xa0>',
+            '</tıtle>',
+        ])
+    def test_title_content(self, content):
+        source = f"<title>{content}</title>"
+        self._run_check(source, [
+            ("starttag", "title", []),
+            ("data", content),
+            ("endtag", "title"),
+        ])
 
-    def test_escapable_raw_text_content(self):
-        # Charrefs should be escaped in esacapable raw text content.
-        class Collector(EventCollector):
-            pass
-
-        content = "Timon &amp; Pumba"
-        expected = "Timon & Pumba"
-        elements = [
-            "title",
-            "textarea",
-            "TITLE",
-            "TEXTAREA",
-            "Title",
-            "Textarea",
-        ]
-        for element in elements:
-            source = f"<{element}>{content}"
-            self._run_check(
-                source, [
-                  ("starttag", element.lower(), []),
-                  ('data', expected),
-                ],
-                collector=Collector(convert_charrefs=True),
-            )
-            # test with convert_charrefs=False
-            self._run_check(
-                source, [
-                  ("starttag", element.lower(), []),
-                  ('data', 'Timon '),
-                  ('entityref', 'amp'),
-                  ('data', ' Pumba')
-                ],
-            )
+    @support.subTests('content', [
+            '<!-- not a comment -->',
+            "<not a='start tag'>",
+            '<![CDATA[not a cdata]]>',
+            '<!not a bogus comment>',
+            '</not a bogus comment>',
+            '\u2603',
+            '< /textarea>',
+            '</ textarea>',
+            '</textareable>',
+            '</textarea\v>',
+            '</textarea\xa0>',
+        ])
+    def test_textarea_content(self, content):
+        source = f"<textarea>{content}</textarea>"
+        self._run_check(source, [
+            ("starttag", "textarea", []),
+            ("data", content),
+            ("endtag", "textarea"),
+        ])
 
     @support.subTests('endtag', ['script', 'SCRIPT', 'script ', 'script\n',
                                  'script/', 'script foo=bar', 'script foo=">"'])
@@ -404,6 +389,38 @@ text
                             ("endtag", "style")],
                         collector=EventCollectorNoNormalize(convert_charrefs=False))
 
+    @support.subTests('endtag', ['title', 'TITLE', 'title ', 'title\n',
+                                 'title/', 'title foo=bar', 'title foo=">"'])
+    def test_title_closing_tag(self, endtag):
+        content = "<!-- not a comment --><i>Egg &amp; Spam</i>"
+        s = f'<TitLe>{content}</{endtag}>'
+        self._run_check(s, [("starttag", "title", []),
+                            ('data', '<!-- not a comment --><i>Egg & Spam</i>'),
+                            ("endtag", "title")],
+                        collector=EventCollectorNoNormalize(convert_charrefs=True))
+        self._run_check(s, [("starttag", "title", []),
+                            ('data', '<!-- not a comment --><i>Egg '),
+                            ('entityref', 'amp'),
+                            ('data', ' Spam</i>'),
+                            ("endtag", "title")],
+                        collector=EventCollectorNoNormalize(convert_charrefs=False))
+
+    @support.subTests('endtag', ['textarea', 'TEXTAREA', 'textarea ', 'textarea\n',
+                                 'textarea/', 'textarea foo=bar', 'textarea foo=">"'])
+    def test_textarea_closing_tag(self, endtag):
+        content = "<!-- not a comment --><i>Egg &amp; Spam</i>"
+        s = f'<TexTarEa>{content}</{endtag}>'
+        self._run_check(s, [("starttag", "textarea", []),
+                            ('data', '<!-- not a comment --><i>Egg & Spam</i>'),
+                            ("endtag", "textarea")],
+                        collector=EventCollectorNoNormalize(convert_charrefs=True))
+        self._run_check(s, [("starttag", "textarea", []),
+                            ('data', '<!-- not a comment --><i>Egg '),
+                            ('entityref', 'amp'),
+                            ('data', ' Spam</i>'),
+                            ("endtag", "textarea")],
+                        collector=EventCollectorNoNormalize(convert_charrefs=False))
+
     @support.subTests('tail,end', [
         ('', False),
         ('<', False),
@@ -419,6 +436,27 @@ text
         s = f'<ScrIPt>{content}{tail}'
         self._run_check(s, [("starttag", "script", []),
                             ("data", content if end else content + tail)],
+                        collector=EventCollectorNoNormalize(convert_charrefs=False))
+
+    @support.subTests('tail,end', [
+        ('', False),
+        ('<', False),
+        ('</', False),
+        ('</t', False),
+        ('</title', False),
+        ('</title ', True),
+        ('</title foo=bar', True),
+        ('</title foo=">', True),
+    ])
+    def test_eof_in_title(self, tail, end):
+        s = f'<TitLe>Egg &amp; Spam{tail}'
+        self._run_check(s, [("starttag", "title", []),
+                            ("data", "Egg & Spam" + ('' if end else tail))],
+                        collector=EventCollectorNoNormalize(convert_charrefs=True))
+        self._run_check(s, [("starttag", "title", []),
+                            ('data', 'Egg '),
+                            ('entityref', 'amp'),
+                            ('data', ' Spam' + ('' if end else tail))],
                         collector=EventCollectorNoNormalize(convert_charrefs=False))
 
     def test_comments(self):
