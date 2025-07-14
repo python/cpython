@@ -662,7 +662,8 @@ def request_port(request):
     else:
         i = request.host.rfind(':')
         if (i >= 0
-            and not ']' in request.host[i+1:]): # to prevent IPv6 addresses
+            and not ']' in request.host[i+1:]
+            and not request.host.startswith('[')): # to prevent IPv6 addresses
                 _debug("nonnumeric port: '%s'", request.host[i+1:])
         port = DEFAULT_HTTP_PORT
     return port
