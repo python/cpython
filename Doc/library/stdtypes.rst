@@ -1223,7 +1223,9 @@ accepts integers that meet the value restriction ``0 <= x <= 255``).
 |                              | is replaced by the contents of |                     |
 |                              | the iterable *t*               |                     |
 +------------------------------+--------------------------------+---------------------+
-| ``del s[i:j]``               | same as ``s[i:j] = []``        |                     |
+| ``del s[i:j]``               | removes the elements of        |                     |
+|                              | ``s[i:j]`` from the list       |                     |
+|                              | (same as ``s[i:j] = []``)      |                     |
 +------------------------------+--------------------------------+---------------------+
 | ``s[i:j:k] = t``             | the elements of ``s[i:j:k]``   | \(1)                |
 |                              | are replaced by those of *t*   |                     |
@@ -1841,6 +1843,14 @@ expression support in the :mod:`re` module).
    unless an encoding error actually occurs,
    :ref:`devmode` is enabled
    or a :ref:`debug build <debug-build>` is used.
+   For example::
+
+      >>> encoded_str_to_bytes = 'Python'.encode()
+      >>> type(encoded_str_to_bytes)
+      <class 'bytes'>
+      >>> encoded_str_to_bytes
+      b'Python'
+
 
    .. versionchanged:: 3.1
       Added support for keyword arguments.
@@ -1855,7 +1865,19 @@ expression support in the :mod:`re` module).
    Return ``True`` if the string ends with the specified *suffix*, otherwise return
    ``False``.  *suffix* can also be a tuple of suffixes to look for.  With optional
    *start*, test beginning at that position.  With optional *end*, stop comparing
-   at that position.
+   at that position. Using *start* and *end* is equivalent to
+   ``str[start:end].endswith(suffix)``. For example::
+
+      >>> 'Python'.endswith('on')
+      True
+      >>> 'a tuple of suffixes'.endswith(('at', 'in'))
+      False
+      >>> 'a tuple of suffixes'.endswith(('at', 'es'))
+      True
+      >>> 'Python is amazing'.endswith('is', 0, 9)
+      True
+
+   See also :meth:`startswith` and :meth:`removesuffix`.
 
 
 .. method:: str.expandtabs(tabsize=8)
@@ -1871,12 +1893,15 @@ expression support in the :mod:`re` module).
    (``\n``) or return (``\r``), it is copied and the current column is reset to
    zero.  Any other character is copied unchanged and the current column is
    incremented by one regardless of how the character is represented when
-   printed.
+   printed. For example::
 
       >>> '01\t012\t0123\t01234'.expandtabs()
       '01      012     0123    01234'
       >>> '01\t012\t0123\t01234'.expandtabs(4)
       '01  012 0123    01234'
+      >>> print('01\t012\n0123\t01234'.expandtabs(4))
+      01  012
+      0123    01234
 
 
 .. method:: str.find(sub[, start[, end]])
