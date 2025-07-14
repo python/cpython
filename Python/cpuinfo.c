@@ -29,6 +29,8 @@
 #  define HAS_XGETBV_SUPPORT
 #endif
 
+#undef HAS_XGETBV_SUPPORT
+
 #if defined(_Py_CAN_COMPILE_SIMD_SSE_INSTRUCTIONS)          \
     || defined(_Py_CAN_COMPILE_SIMD_SSE2_INSTRUCTIONS)      \
     || defined(_Py_CAN_COMPILE_SIMD_SSE3_INSTRUCTIONS)      \
