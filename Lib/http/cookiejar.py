@@ -660,9 +660,12 @@ def request_port(request):
     if match:
         port = match[0].removeprefix(':')
     else:
+        i = request.host.rfind(':')
+        if (i >= 0 
+            and not ']' in request.host[i+1:]): # to prevent IPv6 addresses
+                _debug("nonnumeric port: '%s'", request.host[i+1:])
         port = DEFAULT_HTTP_PORT
     return port
-
 # Characters in addition to A-Z, a-z, 0-9, '_', '.', and '-' that don't
 # need to be escaped to form a valid HTTP URL (RFCs 2396 and 1738).
 HTTP_PATH_SAFE = "%/;:@&=+$,!~*'()"
