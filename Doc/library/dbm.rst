@@ -24,6 +24,10 @@ the Oracle Berkeley DB.
    the database file. However, :mod:`dbm.sqlite3`, :mod:`dbm.gnu` and :mod:`dbm.dumb`
    provide a :meth:`!reorganize` method that can be used for this purpose.
 
+.. seealso::
+
+   Module :mod:`shelve`
+      Persistence module which stores non-string data.
 
 .. exception:: error
 
@@ -140,12 +144,6 @@ then prints out the contents of the database::
        db['www.yahoo.com'] = 4
 
    # db is automatically closed when leaving the with statement.
-
-
-.. seealso::
-
-   Module :mod:`shelve`
-      Persistence module which stores non-string data.
 
 
 The individual submodules are described in the following sections.
