@@ -1938,6 +1938,9 @@ Python/sysmodule.o: $(srcdir)/Python/sysmodule.c Makefile $(srcdir)/Include/pydt
 		$(MULTIARCH_CPPFLAGS) \
 		-o $@ $(srcdir)/Python/sysmodule.c
 
+Python/cpuinfo.o: $(srcdir)/Python/cpuinfo.c Makefile
+	$(CC) -c $(PY_CORE_CFLAGS) @CORE_CPUINFO_CFLAGS@ -o $@ $(srcdir)/Python/cpuinfo.c
+
 $(IO_OBJS): $(IO_H)
 
 .PHONY: regen-pegen-metaparser

@@ -725,6 +725,7 @@ LIBHACL_BLAKE2_SIMD128_OBJS
 LIBHACL_SIMD128_FLAGS
 LIBHACL_LDFLAGS
 LIBHACL_CFLAGS
+CORE_CPUINFO_CFLAGS
 MODULE_UNICODEDATA_FALSE
 MODULE_UNICODEDATA_TRUE
 MODULE__MULTIBYTECODEC_FALSE
@@ -32544,7 +32545,7 @@ fi
 # we do not necessarily know which instruction sets will be used,
 # we disable SIMD support on some older Android platforms.
 #
-# See py_cpuid_features in pycore_cpuinfo.h for how to order fields
+# See _Py_cpuid_features in pycore_cpuinfo.h for how to order fields
 # and where to put blank lines to separate processor generations for
 # AVX-512 instructions.
 #
@@ -34164,6 +34165,49 @@ fi
 
 
 fi
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mxsave" >&5
+printf %s "checking whether C compiler accepts -mxsave... " >&6; }
+if test ${ax_cv_check_cflags__Werror__mxsave+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e)
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS -Werror -mxsave"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags__Werror__mxsave=yes
+else case e in #(
+  e) ax_cv_check_cflags__Werror__mxsave=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__mxsave" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__mxsave" >&6; }
+if test "x$ax_cv_check_cflags__Werror__mxsave" = xyes
+then :
+  CORE_CPUINFO_CFLAGS=-mxsave
+else case e in #(
+  e) CORE_CPUINFO_CFLAGS= ;;
+esac
+fi
+
+
 
 ###############################################################################
 # HACL* compilation and linking configuration (contact: @picnixz)

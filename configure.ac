@@ -8003,7 +8003,7 @@ AC_DEFUN([PY_SIMD_DETECT], [
 # we do not necessarily know which instruction sets will be used,
 # we disable SIMD support on some older Android platforms.
 #
-# See py_cpuid_features in pycore_cpuinfo.h for how to order fields
+# See _Py_cpuid_features in pycore_cpuinfo.h for how to order fields
 # and where to put blank lines to separate processor generations for
 # AVX-512 instructions.
 #
@@ -8057,6 +8057,14 @@ then
   #
   PY_SIMD_DETECT([AVX512_VP2INTERSECT], [-mavx512vp2intersect])
 fi
+
+dnl Check that -mxsave can be used for cpuinfo.c as the latter
+dnl requires to be compiled with this option for xgetbv() support.
+AX_CHECK_COMPILE_FLAG([-mxsave],
+    [AS_VAR_SET([CORE_CPUINFO_CFLAGS], [-mxsave])],
+    [AS_VAR_SET([CORE_CPUINFO_CFLAGS], [])],
+    [-Werror])
+AC_SUBST([CORE_CPUINFO_CFLAGS])
 
 ###############################################################################
 # HACL* compilation and linking configuration (contact: @picnixz)

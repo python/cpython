@@ -25,8 +25,6 @@
 #  undef HAS_XGETBV_SUPPORT
 #endif
 
-#undef HAS_XGETBV_SUPPORT
-
 // Below, we declare macros for guarding the detection of SSE, AVX/AVX2
 // and AVX-512 instructions. If the compiler does not even recognize the
 // corresponding flags or if we are not on an 64-bit platform we do not
@@ -162,6 +160,18 @@ get_xgetbv(uint32_t index)
 {
     assert(index == 0); // only XCR0 is supported for now
 #  if defined(HAS_CPUID_SUPPORT) && defined(__x86_64__) && defined(__GNUC__)
+#    if defined(__clang__)
+#       if _Py__has_builtin(__builtin_ia32_xgetbv)
+    return (uint64_t)_xgetbv(index);
+#       else
+    /*
+     * Without -mxsave support, directly using xgetbv() with raw opcode
+     * may still fail on some platforms (e.g., AMD64 + FreeBSD + clang).
+     * To be on the safe side, we assume that XGETBV is not supported.
+     */
+    return 0;
+#       endif
+#    else /* gcc & icc */
     uint32_t eax = 0, edx = 0;
     __asm__ volatile(
         /* raw opcode for xgetbv for compatibility with older toolchains */
@@ -170,6 +180,7 @@ get_xgetbv(uint32_t index)
         : "c" (index)
     );
     return ((uint64_t)edx << 32) | eax;
+#    endif
 #  elif defined(HAS_CPUID_SUPPORT) && defined(_M_X64)
     return (uint64_t)_xgetbv(index);
 #  else
