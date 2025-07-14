@@ -7,6 +7,8 @@
 #include "pycore_ceval.h"         // _PyEval_SetProfile()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_time.h"          // _PyTime_FromLong()
+#include "pycore_typeobject.h"    // _PyType_GetModuleState()
+#include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
 
 #include "rotatingtree.h"
 
@@ -630,6 +632,27 @@ _lsprof_Profiler__pystart_callback_impl(ProfilerObject *self, PyObject *code,
 }
 
 /*[clinic input]
+_lsprof.Profiler._pythrow_callback
+
+    code: object
+    instruction_offset: object
+    exception: object
+    /
+
+[clinic start generated code]*/
+
+static PyObject *
+_lsprof_Profiler__pythrow_callback_impl(ProfilerObject *self, PyObject *code,
+                                        PyObject *instruction_offset,
+                                        PyObject *exception)
+/*[clinic end generated code: output=0a32988919dfb94c input=fd728fc2c074f5e6]*/
+{
+    ptrace_enter_call((PyObject*)self, (void *)code, code);
+
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
 _lsprof.Profiler._pyreturn_callback
 
     code: object
@@ -669,6 +692,7 @@ PyObject* get_cfunc_from_callable(PyObject* callable, PyObject* self_arg, PyObje
         PyObject *meth = Py_TYPE(callable)->tp_descr_get(
             callable, self_arg, (PyObject*)Py_TYPE(self_arg));
         if (meth == NULL) {
+            PyErr_Clear();
             return NULL;
         }
         if (PyCFunction_Check(meth)) {
@@ -744,7 +768,7 @@ static const struct {
 } callback_table[] = {
     {PY_MONITORING_EVENT_PY_START, "_pystart_callback"},
     {PY_MONITORING_EVENT_PY_RESUME, "_pystart_callback"},
-    {PY_MONITORING_EVENT_PY_THROW, "_pystart_callback"},
+    {PY_MONITORING_EVENT_PY_THROW, "_pythrow_callback"},
     {PY_MONITORING_EVENT_PY_RETURN, "_pyreturn_callback"},
     {PY_MONITORING_EVENT_PY_YIELD, "_pyreturn_callback"},
     {PY_MONITORING_EVENT_PY_UNWIND, "_pyreturn_callback"},
@@ -779,7 +803,7 @@ _lsprof_Profiler_enable_impl(ProfilerObject *self, int subcalls,
         return NULL;
     }
 
-    PyObject* monitoring = PyImport_ImportModuleAttrString("sys", "monitoring");
+    PyObject* monitoring = PySys_GetAttrString("monitoring");
     if (!monitoring) {
         return NULL;
     }
@@ -861,7 +885,7 @@ _lsprof_Profiler_disable_impl(ProfilerObject *self)
     }
     if (self->flags & POF_ENABLED) {
         PyObject* result = NULL;
-        PyObject* monitoring = PyImport_ImportModuleAttrString("sys", "monitoring");
+        PyObject* monitoring = PySys_GetAttrString("monitoring");
 
         if (!monitoring) {
             return NULL;
@@ -980,7 +1004,7 @@ profiler_init_impl(ProfilerObject *self, PyObject *timer, double timeunit,
     Py_XSETREF(self->externalTimer, Py_XNewRef(timer));
     self->tool_id = PY_MONITORING_PROFILER_ID;
 
-    PyObject* monitoring = PyImport_ImportModuleAttrString("sys", "monitoring");
+    PyObject* monitoring = PySys_GetAttrString("monitoring");
     if (!monitoring) {
         return -1;
     }
@@ -999,6 +1023,7 @@ static PyMethodDef profiler_methods[] = {
     _LSPROF_PROFILER_DISABLE_METHODDEF
     _LSPROF_PROFILER_CLEAR_METHODDEF
     _LSPROF_PROFILER__PYSTART_CALLBACK_METHODDEF
+    _LSPROF_PROFILER__PYTHROW_CALLBACK_METHODDEF
     _LSPROF_PROFILER__PYRETURN_CALLBACK_METHODDEF
     _LSPROF_PROFILER__CCALL_CALLBACK_METHODDEF
     _LSPROF_PROFILER__CRETURN_CALLBACK_METHODDEF

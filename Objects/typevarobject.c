@@ -1,9 +1,11 @@
-// TypeVar, TypeVarTuple, and ParamSpec
+// TypeVar, TypeVarTuple, ParamSpec, and TypeAlias
 #include "Python.h"
+#include "pycore_interpframe.h"   // _PyInterpreterFrame
 #include "pycore_object.h"        // _PyObject_GC_TRACK/UNTRACK, PyAnnotateFormat
 #include "pycore_typevarobject.h"
-#include "pycore_unionobject.h"   // _Py_union_type_or
-
+#include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
+#include "pycore_unionobject.h"   // _Py_union_type_or, _Py_union_from_tuple
+#include "structmember.h"
 
 /*[clinic input]
 class typevar "typevarobject *" "&_PyTypeVar_Type"
@@ -190,7 +192,7 @@ constevaluator_call(PyObject *self, PyObject *args, PyObject *kwargs)
             for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(value); i++) {
                 PyObject *item = PyTuple_GET_ITEM(value, i);
                 if (i > 0) {
-                    if (PyUnicodeWriter_WriteUTF8(writer, ", ", 2) < 0) {
+                    if (PyUnicodeWriter_WriteASCII(writer, ", ", 2) < 0) {
                         PyUnicodeWriter_Discard(writer);
                         return NULL;
                     }
@@ -271,7 +273,7 @@ _Py_typing_type_repr(PyUnicodeWriter *writer, PyObject *p)
     }
 
     if (p == (PyObject *)&_PyNone_Type) {
-        return PyUnicodeWriter_WriteUTF8(writer, "None", 4);
+        return PyUnicodeWriter_WriteASCII(writer, "None", 4);
     }
 
     if ((rc = PyObject_HasAttrWithError(p, &_Py_ID(__origin__))) > 0 &&
@@ -370,9 +372,13 @@ type_check(PyObject *arg, const char *msg)
 static PyObject *
 make_union(PyObject *self, PyObject *other)
 {
-    PyObject *args[2] = {self, other};
-    PyObject *result = call_typing_func_object("_make_union", args, 2);
-    return result;
+    PyObject *args = PyTuple_Pack(2, self, other);
+    if (args == NULL) {
+        return NULL;
+    }
+    PyObject *u = _Py_union_from_tuple(args);
+    Py_DECREF(args);
+    return u;
 }
 
 static PyObject *
@@ -394,7 +400,7 @@ caller(void)
 }
 
 static PyObject *
-typevartuple_unpack(PyObject *tvt)
+unpack(PyObject *self)
 {
     PyObject *typing = PyImport_ImportModule("typing");
     if (typing == NULL) {
@@ -405,7 +411,7 @@ typevartuple_unpack(PyObject *tvt)
         Py_DECREF(typing);
         return NULL;
     }
-    PyObject *unpacked = PyObject_GetItem(unpack, tvt);
+    PyObject *unpacked = PyObject_GetItem(unpack, self);
     Py_DECREF(typing);
     Py_DECREF(unpack);
     return unpacked;
@@ -440,7 +446,7 @@ unpack_typevartuples(PyObject *params)
         for (Py_ssize_t i = 0; i < n; i++) {
             PyObject *param = PyTuple_GET_ITEM(params, i);
             if (Py_IS_TYPE(param, tp)) {
-                PyObject *unpacked = typevartuple_unpack(param);
+                PyObject *unpacked = unpack(param);
                 if (unpacked == NULL) {
                     Py_DECREF(new_params);
                     return NULL;
@@ -745,8 +751,8 @@ typevar.__typing_subst__ as typevar_typing_subst
 [clinic start generated code]*/
 
 static PyObject *
-typevar_typing_subst(typevarobject *self, PyObject *arg)
-/*[clinic end generated code: output=0773735e8ce18968 input=9e87b57f0fc59b92]*/
+typevar_typing_subst_impl(typevarobject *self, PyObject *arg)
+/*[clinic end generated code: output=c76ced134ed8f4e1 input=9e87b57f0fc59b92]*/
 {
     PyObject *args[2] = {(PyObject *)self, arg};
     PyObject *result = call_typing_func_object("_typevar_subst", args, 2);
@@ -1354,8 +1360,8 @@ paramspec.__typing_subst__ as paramspec_typing_subst
 [clinic start generated code]*/
 
 static PyObject *
-paramspec_typing_subst(paramspecobject *self, PyObject *arg)
-/*[clinic end generated code: output=4c5b4aaada1c5814 input=2d5b5e3d4a717189]*/
+paramspec_typing_subst_impl(paramspecobject *self, PyObject *arg)
+/*[clinic end generated code: output=803e1ade3f13b57d input=2d5b5e3d4a717189]*/
 {
     PyObject *args[2] = {(PyObject *)self, arg};
     PyObject *result = call_typing_func_object("_paramspec_subst", args, 2);
@@ -1524,9 +1530,9 @@ typevartuple_dealloc(PyObject *self)
 }
 
 static PyObject *
-typevartuple_iter(PyObject *self)
+unpack_iter(PyObject *self)
 {
-    PyObject *unpacked = typevartuple_unpack(self);
+    PyObject *unpacked = unpack(self);
     if (unpacked == NULL) {
         return NULL;
     }
@@ -1608,8 +1614,8 @@ typevartuple.__typing_subst__ as typevartuple_typing_subst
 [clinic start generated code]*/
 
 static PyObject *
-typevartuple_typing_subst(typevartupleobject *self, PyObject *arg)
-/*[clinic end generated code: output=237054c6d7484eea input=3fcf2dfd9eee7945]*/
+typevartuple_typing_subst_impl(typevartupleobject *self, PyObject *arg)
+/*[clinic end generated code: output=814316519441cd76 input=3fcf2dfd9eee7945]*/
 {
     PyErr_SetString(PyExc_TypeError, "Substitution of bare TypeVarTuple is not supported");
     return NULL;
@@ -1782,7 +1788,7 @@ PyType_Slot typevartuple_slots[] = {
     {Py_tp_methods, typevartuple_methods},
     {Py_tp_getset, typevartuple_getset},
     {Py_tp_new, typevartuple},
-    {Py_tp_iter, typevartuple_iter},
+    {Py_tp_iter, unpack_iter},
     {Py_tp_repr, typevartuple_repr},
     {Py_tp_dealloc, typevartuple_dealloc},
     {Py_tp_alloc, PyType_GenericAlloc},
@@ -2158,6 +2164,7 @@ PyTypeObject _PyTypeAlias_Type = {
     .tp_dealloc = typealias_dealloc,
     .tp_new = typealias_new,
     .tp_free = PyObject_GC_Del,
+    .tp_iter = unpack_iter,
     .tp_traverse = typealias_traverse,
     .tp_clear = typealias_clear,
     .tp_repr = typealias_repr,
@@ -2249,15 +2256,17 @@ error:
 }
 
 static PyObject *
-generic_init_subclass(PyTypeObject *cls, PyObject *args, PyObject *kwargs)
+generic_init_subclass(PyObject *cls, PyObject *args, PyObject *kwargs)
 {
-    return call_typing_args_kwargs("_generic_init_subclass", cls, args, kwargs);
+    return call_typing_args_kwargs("_generic_init_subclass",
+                                   (PyTypeObject*)cls, args, kwargs);
 }
 
 static PyObject *
-generic_class_getitem(PyTypeObject *cls, PyObject *args, PyObject *kwargs)
+generic_class_getitem(PyObject *cls, PyObject *args, PyObject *kwargs)
 {
-    return call_typing_args_kwargs("_generic_class_getitem", cls, args, kwargs);
+    return call_typing_args_kwargs("_generic_class_getitem",
+                                   (PyTypeObject*)cls, args, kwargs);
 }
 
 PyObject *

@@ -1020,6 +1020,8 @@ def _get_ptext_to_endchars(value, endchars):
     a flag that is True iff there were any quoted printables decoded.
 
     """
+    if not value:
+        return '', '', False
     fragment, *remainder = _wsp_splitter(value, 1)
     vchars = []
     escape = False
@@ -1053,7 +1055,7 @@ def get_fws(value):
     fws = WhiteSpaceTerminal(value[:len(value)-len(newvalue)], 'fws')
     return fws, newvalue
 
-def get_encoded_word(value):
+def get_encoded_word(value, terminal_type='vtext'):
     """ encoded-word = "=?" charset "?" encoding "?" encoded-text "?="
 
     """
@@ -1092,7 +1094,7 @@ def get_encoded_word(value):
             ew.append(token)
             continue
         chars, *remainder = _wsp_splitter(text, 1)
-        vtext = ValueTerminal(chars, 'vtext')
+        vtext = ValueTerminal(chars, terminal_type)
         _validate_xtext(vtext)
         ew.append(vtext)
         text = ''.join(remainder)
@@ -1134,7 +1136,7 @@ def get_unstructured(value):
         valid_ew = True
         if value.startswith('=?'):
             try:
-                token, value = get_encoded_word(value)
+                token, value = get_encoded_word(value, 'utext')
             except _InvalidEwError:
                 valid_ew = False
             except errors.HeaderParseError:
@@ -1163,7 +1165,7 @@ def get_unstructured(value):
         # the parser to go in an infinite loop.
         if valid_ew and rfc2047_matcher.search(tok):
             tok, *remainder = value.partition('=?')
-        vtext = ValueTerminal(tok, 'vtext')
+        vtext = ValueTerminal(tok, 'utext')
         _validate_xtext(vtext)
         unstructured.append(vtext)
         value = ''.join(remainder)
@@ -1573,7 +1575,7 @@ def get_dtext(value):
 def _check_for_early_dl_end(value, domain_literal):
     if value:
         return False
-    domain_literal.append(errors.InvalidHeaderDefect(
+    domain_literal.defects.append(errors.InvalidHeaderDefect(
         "end of input inside domain-literal"))
     domain_literal.append(ValueTerminal(']', 'domain-literal-end'))
     return True
@@ -1592,9 +1594,9 @@ def get_domain_literal(value):
         raise errors.HeaderParseError("expected '[' at start of domain-literal "
                 "but found '{}'".format(value))
     value = value[1:]
+    domain_literal.append(ValueTerminal('[', 'domain-literal-start'))
     if _check_for_early_dl_end(value, domain_literal):
         return domain_literal, value
-    domain_literal.append(ValueTerminal('[', 'domain-literal-start'))
     if value[0] in WSP:
         token, value = get_fws(value)
         domain_literal.append(token)
@@ -2813,7 +2815,7 @@ def _refold_parse_tree(parse_tree, *, policy):
             continue
         tstr = str(part)
         if not want_encoding:
-            if part.token_type == 'ptext':
+            if part.token_type in ('ptext', 'vtext'):
                 # Encode if tstr contains special characters.
                 want_encoding = not SPECIALSNL.isdisjoint(tstr)
             else:

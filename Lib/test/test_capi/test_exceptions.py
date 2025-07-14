@@ -85,9 +85,7 @@ class Test_Exceptions(unittest.TestCase):
         warnings = proc.err.splitlines()
         self.assertEqual(warnings, [
             b'<string>:6: RuntimeWarning: Testing PyErr_WarnEx',
-            b'  foo()  # line 6',
             b'<string>:9: RuntimeWarning: Testing PyErr_WarnEx',
-            b'  foo()  # line 9',
         ])
 
     def test_warn_during_finalization(self):

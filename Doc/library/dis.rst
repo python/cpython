@@ -76,7 +76,7 @@ the following command can be used to display the disassembly of
      2           RESUME                   0
    <BLANKLINE>
      3           LOAD_GLOBAL              1 (len + NULL)
-                 LOAD_FAST                0 (alist)
+                 LOAD_FAST_BORROW         0 (alist)
                  CALL                     1
                  RETURN_VALUE
 
@@ -215,7 +215,7 @@ Example:
     ...
     RESUME
     LOAD_GLOBAL
-    LOAD_FAST
+    LOAD_FAST_BORROW
     CALL
     RETURN_VALUE
 
@@ -535,7 +535,7 @@ details of bytecode instructions as :class:`Instruction` instances:
       :class:`dis.Positions` object holding the
       start and end locations that are covered by this instruction.
 
-   .. data::cache_info
+   .. data:: cache_info
 
       Information about the cache entries of this instruction, as
       triplets of the form ``(name, size, data)``, where the ``name``
@@ -1094,14 +1094,6 @@ iterations of the loop.
    .. versionadded:: 3.14
 
 
-.. opcode:: LOAD_CONST_IMMORTAL (consti)
-
-   Pushes ``co_consts[consti]`` onto the stack.
-   Can be used when the constant value is known to be immortal.
-
-   .. versionadded:: 3.14
-
-
 .. opcode:: LOAD_NAME (namei)
 
    Pushes the value associated with ``co_names[namei]`` onto the stack.
@@ -1354,9 +1346,6 @@ iterations of the loop.
    If ``STACK[-1]`` is not ``None``, increments the bytecode counter by *delta*.
    ``STACK[-1]`` is popped.
 
-   This opcode is a pseudo-instruction, replaced in final bytecode by
-   the directed versions (forward/backward).
-
    .. versionadded:: 3.11
 
    .. versionchanged:: 3.12
@@ -1367,9 +1356,6 @@ iterations of the loop.
 
    If ``STACK[-1]`` is ``None``, increments the bytecode counter by *delta*.
    ``STACK[-1]`` is popped.
-
-   This opcode is a pseudo-instruction, replaced in final bytecode by
-   the directed versions (forward/backward).
 
    .. versionadded:: 3.11
 
@@ -1402,12 +1388,27 @@ iterations of the loop.
       This opcode is now only used in situations where the local variable is
       guaranteed to be initialized. It cannot raise :exc:`UnboundLocalError`.
 
+.. opcode:: LOAD_FAST_BORROW (var_num)
+
+   Pushes a borrowed reference to the local ``co_varnames[var_num]`` onto the
+   stack.
+
+   .. versionadded:: 3.14
+
 .. opcode:: LOAD_FAST_LOAD_FAST (var_nums)
 
    Pushes references to ``co_varnames[var_nums >> 4]`` and
    ``co_varnames[var_nums & 15]`` onto the stack.
 
    .. versionadded:: 3.13
+
+
+.. opcode:: LOAD_FAST_BORROW_LOAD_FAST_BORROW (var_nums)
+
+   Pushes borrowed references to ``co_varnames[var_nums >> 4]`` and
+   ``co_varnames[var_nums & 15]`` onto the stack.
+
+   .. versionadded:: 3.14
 
 .. opcode:: LOAD_FAST_CHECK (var_num)
 
@@ -1658,7 +1659,7 @@ iterations of the loop.
    * ``oparg == 2``: call :func:`repr` on *value*
    * ``oparg == 3``: call :func:`ascii` on *value*
 
-   Used for implementing formatted literal strings (f-strings).
+   Used for implementing formatted string literals (f-strings).
 
    .. versionadded:: 3.13
 
@@ -1671,7 +1672,7 @@ iterations of the loop.
       result = value.__format__("")
       STACK.append(result)
 
-   Used for implementing formatted literal strings (f-strings).
+   Used for implementing formatted string literals (f-strings).
 
    .. versionadded:: 3.13
 
@@ -1684,7 +1685,7 @@ iterations of the loop.
       result = value.__format__(spec)
       STACK.append(result)
 
-   Used for implementing formatted literal strings (f-strings).
+   Used for implementing formatted string literals (f-strings).
 
    .. versionadded:: 3.13
 
@@ -2023,4 +2024,3 @@ instructions:
 
    .. deprecated:: 3.13
       All jumps are now relative. This list is empty.
-

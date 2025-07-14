@@ -591,7 +591,7 @@ nfd_nfkd(PyObject *self, PyObject *input, int k)
     PyMem_Free(output);
     if (!result)
         return NULL;
-    /* result is guaranteed to be ready, as it is compact. */
+
     kind = PyUnicode_KIND(result);
     data = PyUnicode_DATA(result);
 
@@ -655,7 +655,7 @@ nfc_nfkc(PyObject *self, PyObject *input, int k)
     result = nfd_nfkd(self, input, k);
     if (!result)
         return NULL;
-    /* result will be "ready". */
+
     kind = PyUnicode_KIND(result);
     data = PyUnicode_DATA(result);
     len = PyUnicode_GET_LENGTH(result);

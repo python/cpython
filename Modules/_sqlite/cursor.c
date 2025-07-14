@@ -31,6 +31,7 @@
 #include "util.h"
 
 #include "pycore_pyerrors.h"      // _PyErr_FormatFromCause()
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 typedef enum {
     TYPE_LONG,
@@ -185,9 +186,7 @@ cursor_dealloc(PyObject *op)
     pysqlite_Cursor *self = _pysqlite_Cursor_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
-    if (self->in_weakreflist != NULL) {
-        PyObject_ClearWeakRefs(op);
-    }
+    FT_CLEAR_WEAKREFS(op, self->in_weakreflist);
     (void)tp->tp_clear(op);
     tp->tp_free(self);
     Py_DECREF(tp);
@@ -1243,8 +1242,8 @@ Required by DB-API. Does nothing in sqlite3.
 [clinic start generated code]*/
 
 static PyObject *
-pysqlite_cursor_setinputsizes(pysqlite_Cursor *self, PyObject *sizes)
-/*[clinic end generated code: output=893c817afe9d08ad input=de7950a3aec79bdf]*/
+pysqlite_cursor_setinputsizes_impl(pysqlite_Cursor *self, PyObject *sizes)
+/*[clinic end generated code: output=a06c12790bd05f2e input=de7950a3aec79bdf]*/
 {
     Py_RETURN_NONE;
 }

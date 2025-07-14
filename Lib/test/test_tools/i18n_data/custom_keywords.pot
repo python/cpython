@@ -15,31 +15,37 @@ msgstr ""
 "Generated-By: pygettext.py 1.5\n"
 
 
-#: custom_keywords.py:9 custom_keywords.py:10
+#: custom_keywords.py:10 custom_keywords.py:11
 msgid "bar"
 msgstr ""
 
-#: custom_keywords.py:12
+#: custom_keywords.py:13
 msgid "cat"
 msgid_plural "cats"
 msgstr[0] ""
 msgstr[1] ""
 
-#: custom_keywords.py:13
+#: custom_keywords.py:14
 msgid "dog"
 msgid_plural "dogs"
 msgstr[0] ""
 msgstr[1] ""
 
-#: custom_keywords.py:15
+#: custom_keywords.py:16
 msgctxt "context"
 msgid "bar"
 msgstr ""
 
-#: custom_keywords.py:17
+#: custom_keywords.py:18
 msgctxt "context"
 msgid "cat"
 msgid_plural "cats"
+msgstr[0] ""
+msgstr[1] ""
+
+#: custom_keywords.py:34
+msgid "overridden"
+msgid_plural "default"
 msgstr[0] ""
 msgstr[1] ""
 

@@ -34,9 +34,11 @@ _multiprocessing_SemLock_acquire(PyObject *self, PyObject *const *args, Py_ssize
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(block), &_Py_ID(timeout), },
     };
     #undef NUM_KEYWORDS
@@ -140,9 +142,11 @@ _multiprocessing_SemLock_acquire(PyObject *self, PyObject *const *args, Py_ssize
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(block), &_Py_ID(timeout), },
     };
     #undef NUM_KEYWORDS
@@ -237,9 +241,11 @@ _multiprocessing_SemLock(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(kind), &_Py_ID(value), &_Py_ID(maxvalue), &_Py_ID(name), &_Py_ID(unlink), },
     };
     #undef NUM_KEYWORDS
@@ -323,7 +329,7 @@ _multiprocessing_SemLock__rebuild_impl(PyTypeObject *type, SEM_HANDLE handle,
                                        const char *name);
 
 static PyObject *
-_multiprocessing_SemLock__rebuild(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs)
+_multiprocessing_SemLock__rebuild(PyObject *type, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     SEM_HANDLE handle;
@@ -335,7 +341,7 @@ _multiprocessing_SemLock__rebuild(PyTypeObject *type, PyObject *const *args, Py_
         &handle, &kind, &maxvalue, &name)) {
         goto exit;
     }
-    return_value = _multiprocessing_SemLock__rebuild_impl(type, handle, kind, maxvalue, name);
+    return_value = _multiprocessing_SemLock__rebuild_impl((PyTypeObject *)type, handle, kind, maxvalue, name);
 
 exit:
     return return_value;
@@ -576,4 +582,4 @@ exit:
 #ifndef _MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF
     #define _MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF
 #endif /* !defined(_MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF) */
-/*[clinic end generated code: output=e28d0fdbfefd1235 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d1e349d4ee3d4bbf input=a9049054013a1b77]*/

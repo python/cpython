@@ -1,15 +1,20 @@
+import _ast_unparse
 import ast
 import builtins
+import contextlib
 import copy
 import dis
 import enum
+import itertools
 import os
 import re
 import sys
+import tempfile
 import textwrap
 import types
 import unittest
 import weakref
+from io import StringIO
 from pathlib import Path
 from textwrap import dedent
 try:
@@ -18,9 +23,10 @@ except ImportError:
     _testinternalcapi = None
 
 from test import support
-from test.support import os_helper, script_helper
+from test.support import os_helper
 from test.support import skip_emscripten_stack_overflow, skip_wasi_stack_overflow
 from test.support.ast_helper import ASTTestMixin
+from test.support.import_helper import ensure_lazy_imports
 from test.test_ast.utils import to_tuple
 from test.test_ast.snippets import (
     eval_tests, eval_results, exec_tests, exec_results, single_tests, single_results
@@ -40,6 +46,12 @@ def ast_repr_get_test_cases() -> list[str]:
 def ast_repr_update_snapshots() -> None:
     data = [repr(ast.parse(test)) for test in ast_repr_get_test_cases()]
     AST_REPR_DATA_FILE.write_text("\n".join(data))
+
+
+class LazyImportTest(unittest.TestCase):
+    @support.cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("ast", {"contextlib", "enum", "inspect", "re", "collections", "argparse"})
 
 
 class AST_Tests(unittest.TestCase):
@@ -153,22 +165,6 @@ class AST_Tests(unittest.TestCase):
                         self.assertIsInstance(res.body[0].value, ast.Name)
                         self.assertEqual(res.body[0].value.id, expected)
 
-    def test_optimization_levels_const_folding(self):
-        folded = ('Expr', (1, 0, 1, 6), ('Constant', (1, 0, 1, 6), (1, 2), None))
-        not_folded = ('Expr', (1, 0, 1, 6),
-                         ('Tuple', (1, 0, 1, 6),
-                             [('Constant', (1, 1, 1, 2), 1, None),
-                             ('Constant', (1, 4, 1, 5), 2, None)], ('Load',)))
-
-        cases = [(-1, not_folded), (0, not_folded), (1, folded), (2, folded)]
-        for (optval, expected) in cases:
-            with self.subTest(optval=optval):
-                tree1 = ast.parse("(1, 2)", optimize=optval)
-                tree2 = ast.parse(ast.parse("(1, 2)"), optimize=optval)
-                for tree in [tree1, tree2]:
-                    res = to_tuple(tree.body[0])
-                    self.assertEqual(res, expected)
-
     def test_invalid_position_information(self):
         invalid_linenos = [
             (10, 1), (-10, -11), (10, -11), (-5, -2), (-5, 1)
@@ -203,6 +199,26 @@ class AST_Tests(unittest.TestCase):
 
         # Check that compilation doesn't crash. Note: this may crash explicitly only on debug mode.
         compile(tree, "<string>", "exec")
+
+    def test_negative_locations_for_compile(self):
+        # See https://github.com/python/cpython/issues/130775
+        alias = ast.alias(name='traceback', lineno=0, col_offset=0)
+        for attrs in (
+            {'lineno': -2, 'col_offset': 0},
+            {'lineno': 0, 'col_offset': -2},
+            {'lineno': 0, 'col_offset': -2, 'end_col_offset': -2},
+            {'lineno': -2, 'end_lineno': -2, 'col_offset': 0},
+        ):
+            with self.subTest(attrs=attrs):
+                tree = ast.Module(body=[
+                    ast.Import(names=[alias], **attrs)
+                ], type_ignores=[])
+
+                # It used to crash on this step:
+                compile(tree, "<string>", "exec")
+
+                # This also must not crash:
+                ast.parse(tree, optimize=2)
 
     def test_slice(self):
         slc = ast.parse("x[::]").body[0].value.slice
@@ -259,12 +275,12 @@ class AST_Tests(unittest.TestCase):
         self.assertEqual(alias.end_col_offset, 17)
 
     def test_base_classes(self):
-        self.assertTrue(issubclass(ast.For, ast.stmt))
-        self.assertTrue(issubclass(ast.Name, ast.expr))
-        self.assertTrue(issubclass(ast.stmt, ast.AST))
-        self.assertTrue(issubclass(ast.expr, ast.AST))
-        self.assertTrue(issubclass(ast.comprehension, ast.AST))
-        self.assertTrue(issubclass(ast.Gt, ast.AST))
+        self.assertIsSubclass(ast.For, ast.stmt)
+        self.assertIsSubclass(ast.Name, ast.expr)
+        self.assertIsSubclass(ast.stmt, ast.AST)
+        self.assertIsSubclass(ast.expr, ast.AST)
+        self.assertIsSubclass(ast.comprehension, ast.AST)
+        self.assertIsSubclass(ast.Gt, ast.AST)
 
     def test_field_attr_existence(self):
         for name, item in ast.__dict__.items():
@@ -293,7 +309,7 @@ class AST_Tests(unittest.TestCase):
         x = ast.arguments()
         self.assertEqual(x._fields, ('posonlyargs', 'args', 'vararg', 'kwonlyargs',
                                      'kw_defaults', 'kwarg', 'defaults'))
-        self.assertEqual(x.__annotations__, {
+        self.assertEqual(ast.arguments.__annotations__, {
             'posonlyargs': list[ast.arg],
             'args': list[ast.arg],
             'vararg': ast.arg | None,
@@ -670,6 +686,91 @@ class AST_Tests(unittest.TestCase):
         with self.assertRaises(SyntaxError):
             ast.parse('(x := 0)', feature_version=(3, 7))
 
+    def test_pep750_tstring(self):
+        code = 't""'
+        ast.parse(code, feature_version=(3, 14))
+        with self.assertRaises(SyntaxError):
+            ast.parse(code, feature_version=(3, 13))
+
+    def test_pep758_except_without_parens(self):
+        code = textwrap.dedent("""
+            try:
+                ...
+            except ValueError, TypeError:
+                ...
+        """)
+        ast.parse(code, feature_version=(3, 14))
+        with self.assertRaises(SyntaxError):
+            ast.parse(code, feature_version=(3, 13))
+
+    def test_pep758_except_with_single_expr(self):
+        single_expr = textwrap.dedent("""
+            try:
+                ...
+            except{0} TypeError:
+                ...
+        """)
+
+        single_expr_with_as = textwrap.dedent("""
+            try:
+                ...
+            except{0} TypeError as exc:
+                ...
+        """)
+
+        single_tuple_expr = textwrap.dedent("""
+            try:
+                ...
+            except{0} (TypeError,):
+                ...
+        """)
+
+        single_tuple_expr_with_as = textwrap.dedent("""
+            try:
+                ...
+            except{0} (TypeError,) as exc:
+                ...
+        """)
+
+        single_parens_expr = textwrap.dedent("""
+            try:
+                ...
+            except{0} (TypeError):
+                ...
+        """)
+
+        single_parens_expr_with_as = textwrap.dedent("""
+            try:
+                ...
+            except{0} (TypeError) as exc:
+                ...
+        """)
+
+        for code in [
+            single_expr,
+            single_expr_with_as,
+            single_tuple_expr,
+            single_tuple_expr_with_as,
+            single_parens_expr,
+            single_parens_expr_with_as,
+        ]:
+            for star in [True, False]:
+                code = code.format('*' if star else '')
+                with self.subTest(code=code, star=star):
+                    ast.parse(code, feature_version=(3, 14))
+                    ast.parse(code, feature_version=(3, 13))
+
+    def test_pep758_except_star_without_parens(self):
+        code = textwrap.dedent("""
+            try:
+                ...
+            except* ValueError, TypeError:
+                ...
+        """)
+        ast.parse(code, feature_version=(3, 14))
+        with self.assertRaises(SyntaxError):
+            ast.parse(code, feature_version=(3, 13))
+
     def test_conditional_context_managers_parse_with_low_feature_version(self):
         # regression test for gh-115881
         ast.parse('with (x() if y else z()): ...', feature_version=(3, 8))
@@ -720,6 +821,17 @@ class AST_Tests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, f"identifier field can't represent '{constant}' constant"):
                 compile(expr, "<test>", "eval")
 
+    def test_constant_as_unicode_name(self):
+        constants = [
+            ("True", b"Tru\xe1\xb5\x89"),
+            ("False", b"Fal\xc5\xbfe"),
+            ("None", b"N\xc2\xbane"),
+        ]
+        for constant in constants:
+            with self.assertRaisesRegex(ValueError,
+                f"identifier field can't represent '{constant[0]}' constant"):
+                ast.parse(constant[1], mode="eval")
+
     def test_precedence_enum(self):
         class _Precedence(enum.IntEnum):
             """Precedence table that originated from python grammar."""
@@ -748,7 +860,7 @@ class AST_Tests(unittest.TestCase):
                     return self.__class__(self + 1)
                 except ValueError:
                     return self
-        enum._test_simple_enum(_Precedence, ast._Precedence)
+        enum._test_simple_enum(_Precedence, _ast_unparse._Precedence)
 
     @support.cpython_only
     @skip_wasi_stack_overflow()
@@ -819,6 +931,80 @@ class AST_Tests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,
                                     r"Exceeds the limit \(\d+ digits\)"):
             repr(ast.Constant(value=eval(source)))
+
+    def test_pep_765_warnings(self):
+        srcs = [
+            textwrap.dedent("""
+                 def f():
+                     try:
+                         pass
+                     finally:
+                         return 42
+                 """),
+            textwrap.dedent("""
+                 for x in y:
+                     try:
+                         pass
+                     finally:
+                         break
+                 """),
+            textwrap.dedent("""
+                 for x in y:
+                     try:
+                         pass
+                     finally:
+                         continue
+                 """),
+        ]
+        for src in srcs:
+            with self.assertWarnsRegex(SyntaxWarning, 'finally'):
+                ast.parse(src)
+
+    def test_pep_765_no_warnings(self):
+        srcs = [
+            textwrap.dedent("""
+                 try:
+                     pass
+                 finally:
+                     def f():
+                         return 42
+                 """),
+            textwrap.dedent("""
+                 try:
+                     pass
+                 finally:
+                     for x in y:
+                         break
+                 """),
+            textwrap.dedent("""
+                 try:
+                     pass
+                 finally:
+                     for x in y:
+                         continue
+                 """),
+        ]
+        for src in srcs:
+            ast.parse(src)
+
+    def test_tstring(self):
+        # Test AST structure for simple t-string
+        tree = ast.parse('t"Hello"')
+        self.assertIsInstance(tree.body[0].value, ast.TemplateStr)
+        self.assertIsInstance(tree.body[0].value.values[0], ast.Constant)
+
+        # Test AST for t-string with interpolation
+        tree = ast.parse('t"Hello {name}"')
+        self.assertIsInstance(tree.body[0].value, ast.TemplateStr)
+        self.assertIsInstance(tree.body[0].value.values[0], ast.Constant)
+        self.assertIsInstance(tree.body[0].value.values[1], ast.Interpolation)
+
+        # Test AST for implicit concat of t-string with f-string
+        tree = ast.parse('t"Hello {name}" f"{name}"')
+        self.assertIsInstance(tree.body[0].value, ast.TemplateStr)
+        self.assertIsInstance(tree.body[0].value.values[0], ast.Constant)
+        self.assertIsInstance(tree.body[0].value.values[1], ast.Interpolation)
+        self.assertIsInstance(tree.body[0].value.values[2], ast.FormattedValue)
 
 
 class CopyTests(unittest.TestCase):
@@ -915,7 +1101,7 @@ class CopyTests(unittest.TestCase):
     def test_replace_interface(self):
         for klass in self.iter_ast_classes():
             with self.subTest(klass=klass):
-                self.assertTrue(hasattr(klass, '__replace__'))
+                self.assertHasAttr(klass, '__replace__')
 
             fields = set(klass._fields)
             with self.subTest(klass=klass, fields=fields):
@@ -1129,13 +1315,22 @@ class CopyTests(unittest.TestCase):
         self.assertIs(repl.id, 'y')
         self.assertIs(repl.ctx, context)
 
+    def test_replace_accept_missing_field_with_default(self):
+        node = ast.FunctionDef(name="foo", args=ast.arguments())
+        self.assertIs(node.returns, None)
+        self.assertEqual(node.decorator_list, [])
+        node2 = copy.replace(node, name="bar")
+        self.assertEqual(node2.name, "bar")
+        self.assertIs(node2.returns, None)
+        self.assertEqual(node2.decorator_list, [])
+
     def test_replace_reject_known_custom_instance_fields_commits(self):
         node = ast.parse('x').body[0].value
         node.extra = extra = object()  # add instance 'extra' field
         context = node.ctx
 
         # explicit rejection of known instance fields
-        self.assertTrue(hasattr(node, 'extra'))
+        self.assertHasAttr(node, 'extra')
         msg = "Name.__replace__ got an unexpected keyword argument 'extra'."
         with self.assertRaisesRegex(TypeError, re.escape(msg)):
             copy.replace(node, extra=1)
@@ -1177,17 +1372,17 @@ class ASTHelpers_Test(unittest.TestCase):
     def test_dump(self):
         node = ast.parse('spam(eggs, "and cheese")')
         self.assertEqual(ast.dump(node),
-            "Module(body=[Expr(value=Call(func=Name(id='spam', ctx=Load()), "
-            "args=[Name(id='eggs', ctx=Load()), Constant(value='and cheese')]))])"
+            "Module(body=[Expr(value=Call(func=Name(id='spam'), "
+            "args=[Name(id='eggs'), Constant(value='and cheese')]))])"
         )
         self.assertEqual(ast.dump(node, annotate_fields=False),
-            "Module([Expr(Call(Name('spam', Load()), [Name('eggs', Load()), "
+            "Module([Expr(Call(Name('spam'), [Name('eggs'), "
             "Constant('and cheese')]))])"
         )
         self.assertEqual(ast.dump(node, include_attributes=True),
-            "Module(body=[Expr(value=Call(func=Name(id='spam', ctx=Load(), "
+            "Module(body=[Expr(value=Call(func=Name(id='spam', "
             "lineno=1, col_offset=0, end_lineno=1, end_col_offset=4), "
-            "args=[Name(id='eggs', ctx=Load(), lineno=1, col_offset=5, "
+            "args=[Name(id='eggs', lineno=1, col_offset=5, "
             "end_lineno=1, end_col_offset=9), Constant(value='and cheese', "
             "lineno=1, col_offset=11, end_lineno=1, end_col_offset=23)], "
             "lineno=1, col_offset=0, end_lineno=1, end_col_offset=24), "
@@ -1201,18 +1396,18 @@ Module(
    body=[
       Expr(
          value=Call(
-            func=Name(id='spam', ctx=Load()),
+            func=Name(id='spam'),
             args=[
-               Name(id='eggs', ctx=Load()),
+               Name(id='eggs'),
                Constant(value='and cheese')]))])""")
         self.assertEqual(ast.dump(node, annotate_fields=False, indent='\t'), """\
 Module(
 \t[
 \t\tExpr(
 \t\t\tCall(
-\t\t\t\tName('spam', Load()),
+\t\t\t\tName('spam'),
 \t\t\t\t[
-\t\t\t\t\tName('eggs', Load()),
+\t\t\t\t\tName('eggs'),
 \t\t\t\t\tConstant('and cheese')]))])""")
         self.assertEqual(ast.dump(node, include_attributes=True, indent=3), """\
 Module(
@@ -1221,7 +1416,6 @@ Module(
          value=Call(
             func=Name(
                id='spam',
-               ctx=Load(),
                lineno=1,
                col_offset=0,
                end_lineno=1,
@@ -1229,7 +1423,6 @@ Module(
             args=[
                Name(
                   id='eggs',
-                  ctx=Load(),
                   lineno=1,
                   col_offset=5,
                   end_lineno=1,
@@ -1259,23 +1452,23 @@ Module(
         )
         node = ast.Raise(exc=ast.Name(id='e', ctx=ast.Load()), lineno=3, col_offset=4)
         self.assertEqual(ast.dump(node),
-            "Raise(exc=Name(id='e', ctx=Load()))"
+            "Raise(exc=Name(id='e'))"
         )
         self.assertEqual(ast.dump(node, annotate_fields=False),
-            "Raise(Name('e', Load()))"
+            "Raise(Name('e'))"
         )
         self.assertEqual(ast.dump(node, include_attributes=True),
-            "Raise(exc=Name(id='e', ctx=Load()), lineno=3, col_offset=4)"
+            "Raise(exc=Name(id='e'), lineno=3, col_offset=4)"
         )
         self.assertEqual(ast.dump(node, annotate_fields=False, include_attributes=True),
-            "Raise(Name('e', Load()), lineno=3, col_offset=4)"
+            "Raise(Name('e'), lineno=3, col_offset=4)"
         )
         node = ast.Raise(cause=ast.Name(id='e', ctx=ast.Load()))
         self.assertEqual(ast.dump(node),
-            "Raise(cause=Name(id='e', ctx=Load()))"
+            "Raise(cause=Name(id='e'))"
         )
         self.assertEqual(ast.dump(node, annotate_fields=False),
-            "Raise(cause=Name('e', Load()))"
+            "Raise(cause=Name('e'))"
         )
         # Arguments:
         node = ast.arguments(args=[ast.arg("x")])
@@ -1307,10 +1500,10 @@ Module(
             [ast.Name('dataclass', ctx=ast.Load())],
         )
         self.assertEqual(ast.dump(node),
-            "ClassDef(name='T', keywords=[keyword(arg='a', value=Constant(value=None))], decorator_list=[Name(id='dataclass', ctx=Load())])",
+            "ClassDef(name='T', keywords=[keyword(arg='a', value=Constant(value=None))], decorator_list=[Name(id='dataclass')])",
         )
         self.assertEqual(ast.dump(node, annotate_fields=False),
-            "ClassDef('T', [], [keyword('a', Constant(None))], [], [Name('dataclass', Load())])",
+            "ClassDef('T', [], [keyword('a', Constant(None))], [], [Name('dataclass')])",
         )
 
     def test_dump_show_empty(self):
@@ -1338,7 +1531,7 @@ Module(
         check_node(
             # Corner case: there are no real `Name` instances with `id=''`:
             ast.Name(id='', ctx=ast.Load()),
-            empty="Name(id='', ctx=Load())",
+            empty="Name(id='')",
             full="Name(id='', ctx=Load())",
         )
 
@@ -1349,9 +1542,21 @@ Module(
         )
 
         check_node(
+            ast.MatchSingleton(value=[]),
+            empty="MatchSingleton(value=[])",
+            full="MatchSingleton(value=[])",
+        )
+
+        check_node(
             ast.Constant(value=None),
             empty="Constant(value=None)",
             full="Constant(value=None)",
+        )
+
+        check_node(
+            ast.Constant(value=[]),
+            empty="Constant(value=[])",
+            full="Constant(value=[])",
         )
 
         check_node(
@@ -1360,28 +1565,40 @@ Module(
             full="Constant(value='')",
         )
 
+        check_node(
+            ast.Interpolation(value=ast.Constant(42), str=None, conversion=-1),
+            empty="Interpolation(value=Constant(value=42), str=None, conversion=-1)",
+            full="Interpolation(value=Constant(value=42), str=None, conversion=-1)",
+        )
+
+        check_node(
+            ast.Interpolation(value=ast.Constant(42), str=[], conversion=-1),
+            empty="Interpolation(value=Constant(value=42), str=[], conversion=-1)",
+            full="Interpolation(value=Constant(value=42), str=[], conversion=-1)",
+        )
+
         check_text(
             "def a(b: int = 0, *, c): ...",
-            empty="Module(body=[FunctionDef(name='a', args=arguments(args=[arg(arg='b', annotation=Name(id='int', ctx=Load()))], kwonlyargs=[arg(arg='c')], kw_defaults=[None], defaults=[Constant(value=0)]), body=[Expr(value=Constant(value=Ellipsis))])])",
+            empty="Module(body=[FunctionDef(name='a', args=arguments(args=[arg(arg='b', annotation=Name(id='int'))], kwonlyargs=[arg(arg='c')], kw_defaults=[None], defaults=[Constant(value=0)]), body=[Expr(value=Constant(value=Ellipsis))])])",
             full="Module(body=[FunctionDef(name='a', args=arguments(posonlyargs=[], args=[arg(arg='b', annotation=Name(id='int', ctx=Load()))], kwonlyargs=[arg(arg='c')], kw_defaults=[None], defaults=[Constant(value=0)]), body=[Expr(value=Constant(value=Ellipsis))], decorator_list=[], type_params=[])], type_ignores=[])",
         )
 
         check_text(
             "def a(b: int = 0, *, c): ...",
-            empty="Module(body=[FunctionDef(name='a', args=arguments(args=[arg(arg='b', annotation=Name(id='int', ctx=Load(), lineno=1, col_offset=9, end_lineno=1, end_col_offset=12), lineno=1, col_offset=6, end_lineno=1, end_col_offset=12)], kwonlyargs=[arg(arg='c', lineno=1, col_offset=21, end_lineno=1, end_col_offset=22)], kw_defaults=[None], defaults=[Constant(value=0, lineno=1, col_offset=15, end_lineno=1, end_col_offset=16)]), body=[Expr(value=Constant(value=Ellipsis, lineno=1, col_offset=25, end_lineno=1, end_col_offset=28), lineno=1, col_offset=25, end_lineno=1, end_col_offset=28)], lineno=1, col_offset=0, end_lineno=1, end_col_offset=28)])",
+            empty="Module(body=[FunctionDef(name='a', args=arguments(args=[arg(arg='b', annotation=Name(id='int', lineno=1, col_offset=9, end_lineno=1, end_col_offset=12), lineno=1, col_offset=6, end_lineno=1, end_col_offset=12)], kwonlyargs=[arg(arg='c', lineno=1, col_offset=21, end_lineno=1, end_col_offset=22)], kw_defaults=[None], defaults=[Constant(value=0, lineno=1, col_offset=15, end_lineno=1, end_col_offset=16)]), body=[Expr(value=Constant(value=Ellipsis, lineno=1, col_offset=25, end_lineno=1, end_col_offset=28), lineno=1, col_offset=25, end_lineno=1, end_col_offset=28)], lineno=1, col_offset=0, end_lineno=1, end_col_offset=28)])",
             full="Module(body=[FunctionDef(name='a', args=arguments(posonlyargs=[], args=[arg(arg='b', annotation=Name(id='int', ctx=Load(), lineno=1, col_offset=9, end_lineno=1, end_col_offset=12), lineno=1, col_offset=6, end_lineno=1, end_col_offset=12)], kwonlyargs=[arg(arg='c', lineno=1, col_offset=21, end_lineno=1, end_col_offset=22)], kw_defaults=[None], defaults=[Constant(value=0, lineno=1, col_offset=15, end_lineno=1, end_col_offset=16)]), body=[Expr(value=Constant(value=Ellipsis, lineno=1, col_offset=25, end_lineno=1, end_col_offset=28), lineno=1, col_offset=25, end_lineno=1, end_col_offset=28)], decorator_list=[], type_params=[], lineno=1, col_offset=0, end_lineno=1, end_col_offset=28)], type_ignores=[])",
             include_attributes=True,
         )
 
         check_text(
             'spam(eggs, "and cheese")',
-            empty="Module(body=[Expr(value=Call(func=Name(id='spam', ctx=Load()), args=[Name(id='eggs', ctx=Load()), Constant(value='and cheese')]))])",
+            empty="Module(body=[Expr(value=Call(func=Name(id='spam'), args=[Name(id='eggs'), Constant(value='and cheese')]))])",
             full="Module(body=[Expr(value=Call(func=Name(id='spam', ctx=Load()), args=[Name(id='eggs', ctx=Load()), Constant(value='and cheese')], keywords=[]))], type_ignores=[])",
         )
 
         check_text(
             'spam(eggs, text="and cheese")',
-            empty="Module(body=[Expr(value=Call(func=Name(id='spam', ctx=Load()), args=[Name(id='eggs', ctx=Load())], keywords=[keyword(arg='text', value=Constant(value='and cheese'))]))])",
+            empty="Module(body=[Expr(value=Call(func=Name(id='spam'), args=[Name(id='eggs')], keywords=[keyword(arg='text', value=Constant(value='and cheese'))]))])",
             full="Module(body=[Expr(value=Call(func=Name(id='spam', ctx=Load()), args=[Name(id='eggs', ctx=Load())], keywords=[keyword(arg='text', value=Constant(value='and cheese'))]))], type_ignores=[])",
         )
 
@@ -1415,12 +1632,12 @@ Module(
         self.assertEqual(src, ast.fix_missing_locations(src))
         self.maxDiff = None
         self.assertEqual(ast.dump(src, include_attributes=True),
-            "Module(body=[Expr(value=Call(func=Name(id='write', ctx=Load(), "
+            "Module(body=[Expr(value=Call(func=Name(id='write', "
             "lineno=1, col_offset=0, end_lineno=1, end_col_offset=5), "
             "args=[Constant(value='spam', lineno=1, col_offset=6, end_lineno=1, "
             "end_col_offset=12)], lineno=1, col_offset=0, end_lineno=1, "
             "end_col_offset=13), lineno=1, col_offset=0, end_lineno=1, "
-            "end_col_offset=13), Expr(value=Call(func=Name(id='spam', ctx=Load(), "
+            "end_col_offset=13), Expr(value=Call(func=Name(id='spam', "
             "lineno=1, col_offset=0, end_lineno=1, end_col_offset=0), "
             "args=[Constant(value='eggs', lineno=1, col_offset=0, end_lineno=1, "
             "end_col_offset=0)], lineno=1, col_offset=0, end_lineno=1, "
@@ -2876,7 +3093,7 @@ class ASTConstructorTests(unittest.TestCase):
         with self.assertWarnsRegex(DeprecationWarning,
                                    r"FunctionDef\.__init__ missing 1 required positional argument: 'name'"):
             node = ast.FunctionDef(args=args)
-        self.assertFalse(hasattr(node, "name"))
+        self.assertNotHasAttr(node, "name")
         self.assertEqual(node.decorator_list, [])
         node = ast.FunctionDef(name='foo', args=args)
         self.assertEqual(node.name, 'foo')
@@ -3068,23 +3285,263 @@ class ModuleStateTests(unittest.TestCase):
         self.assertEqual(res, 0)
 
 
-class ASTMainTests(unittest.TestCase):
-    # Tests `ast.main()` function.
+class CommandLineTests(unittest.TestCase):
+    def setUp(self):
+        self.filename = tempfile.mktemp()
+        self.addCleanup(os_helper.unlink, self.filename)
 
-    def test_cli_file_input(self):
-        code = "print(1, 2, 3)"
-        expected = ast.dump(ast.parse(code), indent=3)
+    @staticmethod
+    def text_normalize(string):
+        return textwrap.dedent(string).strip()
 
-        with os_helper.temp_dir() as tmp_dir:
-            filename = os.path.join(tmp_dir, "test_module.py")
-            with open(filename, 'w', encoding='utf-8') as f:
-                f.write(code)
-            res, _ = script_helper.run_python_until_end("-m", "ast", filename)
+    def set_source(self, content):
+        Path(self.filename).write_text(self.text_normalize(content))
 
-        self.assertEqual(res.err, b"")
-        self.assertEqual(expected.splitlines(),
-                         res.out.decode("utf8").splitlines())
-        self.assertEqual(res.rc, 0)
+    def invoke_ast(self, *flags):
+        stderr = StringIO()
+        stdout = StringIO()
+        with (
+            contextlib.redirect_stdout(stdout),
+            contextlib.redirect_stderr(stderr),
+        ):
+            ast.main(args=[*flags, self.filename])
+        self.assertEqual(stderr.getvalue(), '')
+        return stdout.getvalue().strip()
+
+    def check_output(self, source, expect, *flags):
+        self.set_source(source)
+        res = self.invoke_ast(*flags)
+        expect = self.text_normalize(expect)
+        self.assertEqual(res, expect)
+
+    @support.requires_resource('cpu')
+    def test_invocation(self):
+        # test various combinations of parameters
+        base_flags = (
+            ('-m=exec', '--mode=exec'),
+            ('--no-type-comments', '--no-type-comments'),
+            ('-a', '--include-attributes'),
+            ('-i=4', '--indent=4'),
+            ('--feature-version=3.13', '--feature-version=3.13'),
+            ('-O=-1', '--optimize=-1'),
+            ('--show-empty', '--show-empty'),
+        )
+        self.set_source('''
+            print(1, 2, 3)
+            def f(x: int) -> int:
+                x -= 1
+                return x
+        ''')
+
+        for r in range(1, len(base_flags) + 1):
+            for choices in itertools.combinations(base_flags, r=r):
+                for args in itertools.product(*choices):
+                    with self.subTest(flags=args):
+                        self.invoke_ast(*args)
+
+    @support.force_not_colorized
+    def test_help_message(self):
+        for flag in ('-h', '--help', '--unknown'):
+            with self.subTest(flag=flag):
+                output = StringIO()
+                with self.assertRaises(SystemExit):
+                    with contextlib.redirect_stderr(output):
+                        ast.main(args=flag)
+                self.assertStartsWith(output.getvalue(), 'usage: ')
+
+    def test_exec_mode_flag(self):
+        # test 'python -m ast -m/--mode exec'
+        source = 'x: bool = 1 # type: ignore[assignment]'
+        expect = '''
+            Module(
+               body=[
+                  AnnAssign(
+                     target=Name(id='x', ctx=Store()),
+                     annotation=Name(id='bool'),
+                     value=Constant(value=1),
+                     simple=1)],
+               type_ignores=[
+                  TypeIgnore(lineno=1, tag='[assignment]')])
+        '''
+        for flag in ('-m=exec', '--mode=exec'):
+            with self.subTest(flag=flag):
+                self.check_output(source, expect, flag)
+
+    def test_single_mode_flag(self):
+        # test 'python -m ast -m/--mode single'
+        source = 'pass'
+        expect = '''
+            Interactive(
+               body=[
+                  Pass()])
+        '''
+        for flag in ('-m=single', '--mode=single'):
+            with self.subTest(flag=flag):
+                self.check_output(source, expect, flag)
+
+    def test_eval_mode_flag(self):
+        # test 'python -m ast -m/--mode eval'
+        source = 'print(1, 2, 3)'
+        expect = '''
+            Expression(
+               body=Call(
+                  func=Name(id='print'),
+                  args=[
+                     Constant(value=1),
+                     Constant(value=2),
+                     Constant(value=3)]))
+        '''
+        for flag in ('-m=eval', '--mode=eval'):
+            with self.subTest(flag=flag):
+                self.check_output(source, expect, flag)
+
+    def test_func_type_mode_flag(self):
+        # test 'python -m ast -m/--mode func_type'
+        source = '(int, str) -> list[int]'
+        expect = '''
+            FunctionType(
+               argtypes=[
+                  Name(id='int'),
+                  Name(id='str')],
+               returns=Subscript(
+                  value=Name(id='list'),
+                  slice=Name(id='int')))
+        '''
+        for flag in ('-m=func_type', '--mode=func_type'):
+            with self.subTest(flag=flag):
+                self.check_output(source, expect, flag)
+
+    def test_no_type_comments_flag(self):
+        # test 'python -m ast --no-type-comments'
+        source = 'x: bool = 1 # type: ignore[assignment]'
+        expect = '''
+            Module(
+               body=[
+                  AnnAssign(
+                     target=Name(id='x', ctx=Store()),
+                     annotation=Name(id='bool'),
+                     value=Constant(value=1),
+                     simple=1)])
+        '''
+        self.check_output(source, expect, '--no-type-comments')
+
+    def test_include_attributes_flag(self):
+        # test 'python -m ast -a/--include-attributes'
+        source = 'pass'
+        expect = '''
+            Module(
+               body=[
+                  Pass(
+                     lineno=1,
+                     col_offset=0,
+                     end_lineno=1,
+                     end_col_offset=4)])
+        '''
+        for flag in ('-a', '--include-attributes'):
+            with self.subTest(flag=flag):
+                self.check_output(source, expect, flag)
+
+    def test_indent_flag(self):
+        # test 'python -m ast -i/--indent 0'
+        source = 'pass'
+        expect = '''
+            Module(
+            body=[
+            Pass()])
+        '''
+        for flag in ('-i=0', '--indent=0'):
+            with self.subTest(flag=flag):
+                self.check_output(source, expect, flag)
+
+    def test_feature_version_flag(self):
+        # test 'python -m ast --feature-version 3.9/3.10'
+        source = '''
+            match x:
+                case 1:
+                    pass
+        '''
+        expect = '''
+            Module(
+               body=[
+                  Match(
+                     subject=Name(id='x'),
+                     cases=[
+                        match_case(
+                           pattern=MatchValue(
+                              value=Constant(value=1)),
+                           body=[
+                              Pass()])])])
+        '''
+        self.check_output(source, expect, '--feature-version=3.10')
+        with self.assertRaises(SyntaxError):
+            self.invoke_ast('--feature-version=3.9')
+
+    def test_no_optimize_flag(self):
+        # test 'python -m ast -O/--optimize -1/0'
+        source = '''
+            match a:
+                case 1+2j:
+                    pass
+        '''
+        expect = '''
+            Module(
+               body=[
+                  Match(
+                     subject=Name(id='a'),
+                     cases=[
+                        match_case(
+                           pattern=MatchValue(
+                              value=BinOp(
+                                 left=Constant(value=1),
+                                 op=Add(),
+                                 right=Constant(value=2j))),
+                           body=[
+                              Pass()])])])
+        '''
+        for flag in ('-O=-1', '--optimize=-1', '-O=0', '--optimize=0'):
+            with self.subTest(flag=flag):
+                self.check_output(source, expect, flag)
+
+    def test_optimize_flag(self):
+        # test 'python -m ast -O/--optimize 1/2'
+        source = '''
+            match a:
+                case 1+2j:
+                    pass
+        '''
+        expect = '''
+            Module(
+               body=[
+                  Match(
+                     subject=Name(id='a'),
+                     cases=[
+                        match_case(
+                           pattern=MatchValue(
+                              value=Constant(value=(1+2j))),
+                           body=[
+                              Pass()])])])
+        '''
+        for flag in ('-O=1', '--optimize=1', '-O=2', '--optimize=2'):
+            with self.subTest(flag=flag):
+                self.check_output(source, expect, flag)
+
+    def test_show_empty_flag(self):
+        # test 'python -m ast --show-empty'
+        source = 'print(1, 2, 3)'
+        expect = '''
+            Module(
+               body=[
+                  Expr(
+                     value=Call(
+                        func=Name(id='print', ctx=Load()),
+                        args=[
+                           Constant(value=1),
+                           Constant(value=2),
+                           Constant(value=3)],
+                        keywords=[]))],
+               type_ignores=[])
+        '''
+        self.check_output(source, expect, '--show-empty')
 
 
 class ASTOptimiziationTests(unittest.TestCase):
@@ -3137,101 +3594,6 @@ class ASTOptimiziationTests(unittest.TestCase):
         )
 
         self.assert_ast(code, non_optimized_target, optimized_target)
-
-
-    def test_folding_tuple(self):
-        code = "(1,)"
-
-        non_optimized_target = self.wrap_expr(ast.Tuple(elts=[ast.Constant(1)]))
-        optimized_target = self.wrap_expr(ast.Constant(value=(1,)))
-
-        self.assert_ast(code, non_optimized_target, optimized_target)
-
-    def test_folding_type_param_in_function_def(self):
-        code = "def foo[%s = (1, 2)](): pass"
-
-        unoptimized_tuple = ast.Tuple(elts=[ast.Constant(1), ast.Constant(2)])
-        unoptimized_type_params = [
-            ("T", "T", ast.TypeVar),
-            ("**P", "P", ast.ParamSpec),
-            ("*Ts", "Ts", ast.TypeVarTuple),
-        ]
-
-        for type, name, type_param in unoptimized_type_params:
-            result_code = code % type
-            optimized_target = self.wrap_statement(
-                ast.FunctionDef(
-                    name='foo',
-                    args=ast.arguments(),
-                    body=[ast.Pass()],
-                    type_params=[type_param(name=name, default_value=ast.Constant((1, 2)))]
-                )
-            )
-            non_optimized_target = self.wrap_statement(
-                ast.FunctionDef(
-                    name='foo',
-                    args=ast.arguments(),
-                    body=[ast.Pass()],
-                    type_params=[type_param(name=name, default_value=unoptimized_tuple)]
-                )
-            )
-            self.assert_ast(result_code, non_optimized_target, optimized_target)
-
-    def test_folding_type_param_in_class_def(self):
-        code = "class foo[%s = (1, 2)]: pass"
-
-        unoptimized_tuple = ast.Tuple(elts=[ast.Constant(1), ast.Constant(2)])
-        unoptimized_type_params = [
-            ("T", "T", ast.TypeVar),
-            ("**P", "P", ast.ParamSpec),
-            ("*Ts", "Ts", ast.TypeVarTuple),
-        ]
-
-        for type, name, type_param in unoptimized_type_params:
-            result_code = code % type
-            optimized_target = self.wrap_statement(
-                ast.ClassDef(
-                    name='foo',
-                    body=[ast.Pass()],
-                    type_params=[type_param(name=name, default_value=ast.Constant((1, 2)))]
-                )
-            )
-            non_optimized_target = self.wrap_statement(
-                ast.ClassDef(
-                    name='foo',
-                    body=[ast.Pass()],
-                    type_params=[type_param(name=name, default_value=unoptimized_tuple)]
-                )
-            )
-            self.assert_ast(result_code, non_optimized_target, optimized_target)
-
-    def test_folding_type_param_in_type_alias(self):
-        code = "type foo[%s = (1, 2)] = 1"
-
-        unoptimized_tuple = ast.Tuple(elts=[ast.Constant(1), ast.Constant(2)])
-        unoptimized_type_params = [
-            ("T", "T", ast.TypeVar),
-            ("**P", "P", ast.ParamSpec),
-            ("*Ts", "Ts", ast.TypeVarTuple),
-        ]
-
-        for type, name, type_param in unoptimized_type_params:
-            result_code = code % type
-            optimized_target = self.wrap_statement(
-                ast.TypeAlias(
-                    name=ast.Name(id='foo', ctx=ast.Store()),
-                    type_params=[type_param(name=name, default_value=ast.Constant((1, 2)))],
-                    value=ast.Constant(value=1),
-                )
-            )
-            non_optimized_target = self.wrap_statement(
-                ast.TypeAlias(
-                    name=ast.Name(id='foo', ctx=ast.Store()),
-                    type_params=[type_param(name=name, default_value=unoptimized_tuple)],
-                    value=ast.Constant(value=1),
-                )
-            )
-            self.assert_ast(result_code, non_optimized_target, optimized_target)
 
     def test_folding_match_case_allowed_expressions(self):
         def get_match_case_values(node):
@@ -3293,6 +3655,18 @@ class ASTOptimiziationTests(unittest.TestCase):
                 case = match_stmt.cases[0]
                 values = get_match_case_values(case.pattern)
                 self.assertListEqual(constants, values)
+
+    def test_match_case_not_folded_in_unoptimized_ast(self):
+        src = textwrap.dedent("""
+            match a:
+                case 1+2j:
+                    pass
+            """)
+
+        unfolded = "MatchValue(value=BinOp(left=Constant(value=1), op=Add(), right=Constant(value=2j))"
+        folded = "MatchValue(value=Constant(value=(1+2j)))"
+        for optval in (0, 1, 2):
+            self.assertIn(folded if optval else unfolded, ast.dump(ast.parse(src, optimize=optval)))
 
 
 if __name__ == '__main__':

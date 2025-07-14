@@ -10,8 +10,7 @@ from test.support.os_helper import EnvironmentVarGuard
 @contextlib.contextmanager
 def clear_env():
     with EnvironmentVarGuard() as mock_env:
-        for var in "FORCE_COLOR", "NO_COLOR", "PYTHON_COLORS", "TERM":
-            mock_env.unset(var)
+        mock_env.unset("FORCE_COLOR", "NO_COLOR", "PYTHON_COLORS", "TERM")
         yield mock_env
 
 

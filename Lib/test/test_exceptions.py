@@ -357,7 +357,7 @@ class ExceptionTests(unittest.TestCase):
             except TypeError as err:
                 co = err.__traceback__.tb_frame.f_code
                 self.assertEqual(co.co_name, "test_capi1")
-                self.assertTrue(co.co_filename.endswith('test_exceptions.py'))
+                self.assertEndsWith(co.co_filename, 'test_exceptions.py')
             else:
                 self.fail("Expected exception")
 
@@ -369,7 +369,7 @@ class ExceptionTests(unittest.TestCase):
                 tb = err.__traceback__.tb_next
                 co = tb.tb_frame.f_code
                 self.assertEqual(co.co_name, "__init__")
-                self.assertTrue(co.co_filename.endswith('test_exceptions.py'))
+                self.assertEndsWith(co.co_filename, 'test_exceptions.py')
                 co2 = tb.tb_frame.f_back.f_code
                 self.assertEqual(co2.co_name, "test_capi2")
             else:
@@ -598,7 +598,7 @@ class ExceptionTests(unittest.TestCase):
     def test_notes(self):
         for e in [BaseException(1), Exception(2), ValueError(3)]:
             with self.subTest(e=e):
-                self.assertFalse(hasattr(e, '__notes__'))
+                self.assertNotHasAttr(e, '__notes__')
                 e.add_note("My Note")
                 self.assertEqual(e.__notes__, ["My Note"])
 
@@ -610,7 +610,7 @@ class ExceptionTests(unittest.TestCase):
                 self.assertEqual(e.__notes__, ["My Note", "Your Note"])
 
                 del e.__notes__
-                self.assertFalse(hasattr(e, '__notes__'))
+                self.assertNotHasAttr(e, '__notes__')
 
                 e.add_note("Our Note")
                 self.assertEqual(e.__notes__, ["Our Note"])
@@ -1360,6 +1360,43 @@ class ExceptionTests(unittest.TestCase):
                 exc = UnicodeDecodeError('utf-8', encoded, start, end, '')
                 self.assertIsInstance(str(exc), str)
 
+    def test_unicode_error_evil_str_set_none_object(self):
+        def side_effect(exc):
+            exc.object = None
+        self.do_test_unicode_error_mutate(side_effect)
+
+    def test_unicode_error_evil_str_del_self_object(self):
+        def side_effect(exc):
+            del exc.object
+        self.do_test_unicode_error_mutate(side_effect)
+
+    def do_test_unicode_error_mutate(self, side_effect):
+        # Test that str(UnicodeError(...)) does not crash when
+        # side-effects mutate the underlying 'object' attribute.
+        # See https://github.com/python/cpython/issues/128974.
+
+        class Evil(str):
+            def __str__(self):
+                side_effect(exc)
+                return self
+
+        for reason, encoding in [
+            ("reason", Evil("utf-8")),
+            (Evil("reason"), "utf-8"),
+            (Evil("reason"), Evil("utf-8")),
+        ]:
+            with self.subTest(encoding=encoding, reason=reason):
+                with self.subTest(UnicodeEncodeError):
+                    exc = UnicodeEncodeError(encoding, "x", 0, 1, reason)
+                    self.assertRaises(TypeError, str, exc)
+                with self.subTest(UnicodeDecodeError):
+                    exc = UnicodeDecodeError(encoding, b"x", 0, 1, reason)
+                    self.assertRaises(TypeError, str, exc)
+
+        with self.subTest(UnicodeTranslateError):
+            exc = UnicodeTranslateError("x", 0, 1, Evil("reason"))
+            self.assertRaises(TypeError, str, exc)
+
     @no_tracing
     def test_badisinstance(self):
         # Bug #2542: if issubclass(e, MyException) raises an exception,
@@ -1392,6 +1429,7 @@ class ExceptionTests(unittest.TestCase):
         self.assertIn("maximum recursion depth exceeded", str(exc))
 
     @support.skip_wasi_stack_overflow()
+    @support.skip_emscripten_stack_overflow()
     @cpython_only
     @support.requires_resource('cpu')
     def test_trashcan_recursion(self):
@@ -1407,6 +1445,7 @@ class ExceptionTests(unittest.TestCase):
         foo()
         support.gc_collect()
 
+    @support.skip_emscripten_stack_overflow()
     @cpython_only
     def test_recursion_normalizing_exception(self):
         import_module("_testinternalcapi")
@@ -1484,6 +1523,7 @@ class ExceptionTests(unittest.TestCase):
         self.assertIn(b'Done.', out)
 
 
+    @support.skip_emscripten_stack_overflow()
     def test_recursion_in_except_handler(self):
 
         def set_relative_recursion_limit(n):
@@ -1589,7 +1629,7 @@ class ExceptionTests(unittest.TestCase):
         # test basic usage of PyErr_NewException
         error1 = _testcapi.make_exception_with_doc("_testcapi.error1")
         self.assertIs(type(error1), type)
-        self.assertTrue(issubclass(error1, Exception))
+        self.assertIsSubclass(error1, Exception)
         self.assertIsNone(error1.__doc__)
 
         # test with given docstring
@@ -1599,21 +1639,21 @@ class ExceptionTests(unittest.TestCase):
         # test with explicit base (without docstring)
         error3 = _testcapi.make_exception_with_doc("_testcapi.error3",
                                                    base=error2)
-        self.assertTrue(issubclass(error3, error2))
+        self.assertIsSubclass(error3, error2)
 
         # test with explicit base tuple
         class C(object):
             pass
         error4 = _testcapi.make_exception_with_doc("_testcapi.error4", doc4,
                                                    (error3, C))
-        self.assertTrue(issubclass(error4, error3))
-        self.assertTrue(issubclass(error4, C))
+        self.assertIsSubclass(error4, error3)
+        self.assertIsSubclass(error4, C)
         self.assertEqual(error4.__doc__, doc4)
 
         # test with explicit dictionary
         error5 = _testcapi.make_exception_with_doc("_testcapi.error5", "",
                                                    error4, {'a': 1})
-        self.assertTrue(issubclass(error5, error4))
+        self.assertIsSubclass(error5, error4)
         self.assertEqual(error5.a, 1)
         self.assertEqual(error5.__doc__, "")
 
@@ -1706,7 +1746,7 @@ class ExceptionTests(unittest.TestCase):
                     self.assertIn("<exception str() failed>", report)
                 else:
                     self.assertIn("test message", report)
-                self.assertTrue(report.endswith("\n"))
+                self.assertEndsWith(report, "\n")
 
     @cpython_only
     # Python built with Py_TRACE_REFS fail with a fatal error in
@@ -2425,7 +2465,7 @@ class SyntaxErrorTests(unittest.TestCase):
         args = ("bad.py", 1, 2)
         self.assertRaises(TypeError, SyntaxError, "bad bad", args)
 
-        args = ("bad.py", 1, 2, 4, 5, 6, 7)
+        args = ("bad.py", 1, 2, 4, 5, 6, 7, 8)
         self.assertRaises(TypeError, SyntaxError, "bad bad", args)
 
         args = ("bad.py", 1, 2, "abcdefg", 1)
