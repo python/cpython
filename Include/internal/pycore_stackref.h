@@ -626,7 +626,7 @@ _PyStackRef_FromPyObjectNew(PyObject *obj)
     if (_Py_IsImmortal(obj)) {
         return (_PyStackRef){ .bits = ((uintptr_t)obj) | Py_TAG_REFCNT};
     }
-    Py_INCREF_MORTAL(obj);
+    _Py_INCREF_MORTAL(obj);
     _PyStackRef ref = (_PyStackRef){ .bits = (uintptr_t)obj };
     PyStackRef_CheckValid(ref);
     return ref;
@@ -637,7 +637,7 @@ static inline _PyStackRef
 _PyStackRef_FromPyObjectNewMortal(PyObject *obj)
 {
     assert(obj != NULL);
-    Py_INCREF_MORTAL(obj);
+    _Py_INCREF_MORTAL(obj);
     _PyStackRef ref = (_PyStackRef){ .bits = (uintptr_t)obj };
     PyStackRef_CheckValid(ref);
     return ref;
@@ -654,14 +654,14 @@ PyStackRef_FromPyObjectBorrow(PyObject *obj)
 /* WARNING: This macro evaluates its argument more than once */
 #ifdef _WIN32
 #define PyStackRef_DUP(REF) \
-    (PyStackRef_RefcountOnObject(REF) ? (Py_INCREF_MORTAL(BITS_TO_PTR(REF)), (REF)) : (REF))
+    (PyStackRef_RefcountOnObject(REF) ? (_Py_INCREF_MORTAL(BITS_TO_PTR(REF)), (REF)) : (REF))
 #else
 static inline _PyStackRef
 PyStackRef_DUP(_PyStackRef ref)
 {
     assert(!PyStackRef_IsNull(ref));
     if (PyStackRef_RefcountOnObject(ref)) {
-        Py_INCREF_MORTAL(BITS_TO_PTR(ref));
+        _Py_INCREF_MORTAL(BITS_TO_PTR(ref));
     }
     return ref;
 }
@@ -829,7 +829,7 @@ _Py_TryIncrefCompareStackRef(PyObject **src, PyObject *op, _PyStackRef *out)
 static inline int
 _Py_TryXGetStackRef(PyObject **src, _PyStackRef *out)
 {
-    PyObject *op = _Py_atomic_load_ptr_relaxed(src);
+    PyObject *op = _PyObject_CAST(_Py_atomic_load_ptr_relaxed(src));
     if (op == NULL) {
         *out = PyStackRef_NULL;
         return 1;

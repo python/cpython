@@ -97,10 +97,9 @@
  * /tmp/jitted-PID-0.so: [headers][.text][unwind_info][padding]
  * /tmp/jitted-PID-1.so:                                       [headers][.text][unwind_info][padding]
  *
- * The padding size (0x100) is chosen to accommodate typical unwind info sizes
- * while maintaining 16-byte alignment requirements.
+ * The padding size is now calculated automatically during initialization
+ * based on the actual unwind information requirements.
  */
-#define PERF_JIT_CODE_PADDING 0x100
 
 /* Convenient access to the global trampoline API state */
 #define trampoline_api _PyRuntime.ceval.perf.trampoline_api
@@ -401,10 +400,12 @@ enum {
     DWRF_CFA_nop = 0x0,                    // No operation
     DWRF_CFA_offset_extended = 0x5,        // Extended offset instruction
     DWRF_CFA_def_cfa = 0xc,               // Define CFA rule
+    DWRF_CFA_def_cfa_register = 0xd,      // Define CFA register
     DWRF_CFA_def_cfa_offset = 0xe,        // Define CFA offset
     DWRF_CFA_offset_extended_sf = 0x11,   // Extended signed offset
     DWRF_CFA_advance_loc = 0x40,          // Advance location counter
-    DWRF_CFA_offset = 0x80                // Simple offset instruction
+    DWRF_CFA_offset = 0x80,               // Simple offset instruction
+    DWRF_CFA_restore = 0xc0               // Restore register
 };
 
 /* DWARF Exception Handling pointer encodings */
@@ -519,6 +520,7 @@ typedef struct ELFObjectContext {
     uint8_t* p;            // Current write position in buffer
     uint8_t* startp;       // Start of buffer (for offset calculations)
     uint8_t* eh_frame_p;   // Start of EH frame data (for relative offsets)
+    uint8_t* fde_p;        // Start of FDE data (for PC-relative calculations)
     uint32_t code_size;    // Size of the code being described
 } ELFObjectContext;
 
@@ -643,6 +645,8 @@ static void elfctx_append_uleb128(ELFObjectContext* ctx, uint32_t v) {
 //                              DWARF EH FRAME GENERATION
 // =============================================================================
 
+static void elf_init_ehframe(ELFObjectContext* ctx);
+
 /*
  * Initialize DWARF .eh_frame section for a code region
  *
@@ -657,6 +661,23 @@ static void elfctx_append_uleb128(ELFObjectContext* ctx, uint32_t v) {
  * Args:
  *   ctx: ELF object context containing code size and buffer pointers
  */
+static size_t calculate_eh_frame_size(void) {
+    /* Calculate the EH frame size for the trampoline function */
+    extern void *_Py_trampoline_func_start;
+    extern void *_Py_trampoline_func_end;
+
+    size_t code_size = (char*)&_Py_trampoline_func_end - (char*)&_Py_trampoline_func_start;
+
+    ELFObjectContext ctx;
+    char buffer[1024];  // Buffer for DWARF data (1KB should be sufficient)
+    ctx.code_size = code_size;
+    ctx.startp = ctx.p = (uint8_t*)buffer;
+    ctx.fde_p = NULL;
+
+    elf_init_ehframe(&ctx);
+    return ctx.p - ctx.startp;
+}
+
 static void elf_init_ehframe(ELFObjectContext* ctx) {
     uint8_t* p = ctx->p;
     uint8_t* framep = p;  // Remember start of frame data
@@ -784,7 +805,7 @@ static void elf_init_ehframe(ELFObjectContext* ctx) {
     *
     *     DWRF_SECTION(FDE,
     *         DWRF_U32((uint32_t)(p - framep));       // Offset to CIE (relative from here)
-    *         DWRF_U32(-0x30);                        // Initial PC-relative location of the code
+    *         DWRF_U32(pc_relative_offset);           // PC-relative location of the code (calculated dynamically)
     *         DWRF_U32(ctx->code_size);               // Code range covered by this FDE
     *         DWRF_U8(0);                             // Augmentation data length (none)
     *
@@ -830,19 +851,31 @@ static void elf_init_ehframe(ELFObjectContext* ctx) {
         DWRF_U32(0);                           // CIE ID (0 indicates this is a CIE)
         DWRF_U8(DWRF_CIE_VERSION);            // CIE version (1)
         DWRF_STR("zR");                       // Augmentation string ("zR" = has LSDA)
-        DWRF_UV(1);                           // Code alignment factor
+#ifdef __x86_64__
+        DWRF_UV(1);                           // Code alignment factor (x86_64: 1 byte)
+#elif defined(__aarch64__) && defined(__AARCH64EL__) && !defined(__ILP32__)
+        DWRF_UV(4);                           // Code alignment factor (AArch64: 4 bytes per instruction)
+#endif
         DWRF_SV(-(int64_t)sizeof(uintptr_t)); // Data alignment factor (negative)
         DWRF_U8(DWRF_REG_RA);                 // Return address register number
         DWRF_UV(1);                           // Augmentation data length
         DWRF_U8(DWRF_EH_PE_pcrel | DWRF_EH_PE_sdata4); // FDE pointer encoding
 
         /* Initial CFI instructions - describe default calling convention */
+#ifdef __x86_64__
+        /* x86_64 initial CFI state */
         DWRF_U8(DWRF_CFA_def_cfa);            // Define CFA (Call Frame Address)
         DWRF_UV(DWRF_REG_SP);                 // CFA = SP register
         DWRF_UV(sizeof(uintptr_t));           // CFA = SP + pointer_size
         DWRF_U8(DWRF_CFA_offset|DWRF_REG_RA); // Return address is saved
         DWRF_UV(1);                           // At offset 1 from CFA
-
+#elif defined(__aarch64__) && defined(__AARCH64EL__) && !defined(__ILP32__)
+        /* AArch64 initial CFI state */
+        DWRF_U8(DWRF_CFA_def_cfa);            // Define CFA (Call Frame Address)
+        DWRF_UV(DWRF_REG_SP);                 // CFA = SP register
+        DWRF_UV(0);                           // CFA = SP + 0 (AArch64 starts with offset 0)
+        // No initial register saves in AArch64 CIE
+#endif
         DWRF_ALIGNNOP(sizeof(uintptr_t));     // Align to pointer boundary
     )
 
@@ -853,11 +886,15 @@ static void elf_init_ehframe(ELFObjectContext* ctx) {
      *
      * The FDE describes unwinding information specific to this function.
      * It references the CIE and provides function-specific CFI instructions.
+     *
+     * The PC-relative offset is calculated after the entire EH frame is built
+     * to ensure accurate positioning relative to the synthesized DSO layout.
      */
     DWRF_SECTION(FDE,
         DWRF_U32((uint32_t)(p - framep));     // Offset to CIE (backwards reference)
-        DWRF_U32(-0x30);                      // Machine code offset relative to .text
-        DWRF_U32(ctx->code_size);             // Address range covered by this FDE (code lenght)
+        ctx->fde_p = p;                        // Remember where PC offset field is located for later calculation
+        DWRF_U32(0);                           // Placeholder for PC-relative offset (calculated at end of elf_init_ehframe)
+        DWRF_U32(ctx->code_size);             // Address range covered by this FDE (code length)
         DWRF_U8(0);                           // Augmentation data length (none)
 
         /*
@@ -868,32 +905,36 @@ static void elf_init_ehframe(ELFObjectContext* ctx) {
          * conventions and register usage patterns.
          */
 #ifdef __x86_64__
-        /* x86_64 calling convention unwinding rules */
+        /* x86_64 calling convention unwinding rules with frame pointer */
 #  if defined(__CET__) && (__CET__ & 1)
-        DWRF_U8(DWRF_CFA_advance_loc | 8);    // Advance location by 8 bytes when CET protection is enabled
-#  else
-        DWRF_U8(DWRF_CFA_advance_loc | 4);    // Advance location by 4 bytes
+        DWRF_U8(DWRF_CFA_advance_loc | 4);    // Advance past endbr64 (4 bytes)
 #  endif
-        DWRF_U8(DWRF_CFA_def_cfa_offset);     // Redefine CFA offset
+        DWRF_U8(DWRF_CFA_advance_loc | 1);    // Advance past push %rbp (1 byte)
+        DWRF_U8(DWRF_CFA_def_cfa_offset);     // def_cfa_offset 16
         DWRF_UV(16);                          // New offset: SP + 16
-        DWRF_U8(DWRF_CFA_advance_loc | 6);    // Advance location by 6 bytes
-        DWRF_U8(DWRF_CFA_def_cfa_offset);     // Redefine CFA offset
+        DWRF_U8(DWRF_CFA_offset | DWRF_REG_BP); // offset r6 at cfa-16
+        DWRF_UV(2);                           // Offset factor: 2 * 8 = 16 bytes
+        DWRF_U8(DWRF_CFA_advance_loc | 3);    // Advance past mov %rsp,%rbp (3 bytes)
+        DWRF_U8(DWRF_CFA_def_cfa_register);   // def_cfa_register r6
+        DWRF_UV(DWRF_REG_BP);                 // Use base pointer register
+        DWRF_U8(DWRF_CFA_advance_loc | 3);    // Advance past call *%rcx (2 bytes) + pop %rbp (1 byte) = 3
+        DWRF_U8(DWRF_CFA_def_cfa);            // def_cfa r7 ofs 8
+        DWRF_UV(DWRF_REG_SP);                 // Use stack pointer register
         DWRF_UV(8);                           // New offset: SP + 8
 #elif defined(__aarch64__) && defined(__AARCH64EL__) && !defined(__ILP32__)
         /* AArch64 calling convention unwinding rules */
-        DWRF_U8(DWRF_CFA_advance_loc | 1);        // Advance location by 1 instruction (stp x29, x30)
-        DWRF_U8(DWRF_CFA_def_cfa_offset);         // Redefine CFA offset
-        DWRF_UV(16);                              // CFA = SP + 16 (stack pointer after push)
-        DWRF_U8(DWRF_CFA_offset | DWRF_REG_FP);   // Frame pointer (x29) saved
-        DWRF_UV(2);                               // At offset 2 from CFA (2 * 8 = 16 bytes)
-        DWRF_U8(DWRF_CFA_offset | DWRF_REG_RA);   // Link register (x30) saved
-        DWRF_UV(1);                               // At offset 1 from CFA (1 * 8 = 8 bytes)
-        DWRF_U8(DWRF_CFA_advance_loc | 3);        // Advance by 3 instructions (mov x16, x3; mov x29, sp; ldp...)
-        DWRF_U8(DWRF_CFA_offset | DWRF_REG_FP);   // Restore frame pointer (x29)
-        DWRF_U8(DWRF_CFA_offset | DWRF_REG_RA);   // Restore link register (x30)
-        DWRF_U8(DWRF_CFA_def_cfa_offset);         // Final CFA adjustment
-        DWRF_UV(0);                               // CFA = SP + 0 (stack restored)
-
+        DWRF_U8(DWRF_CFA_advance_loc | 1);        // Advance by 1 instruction (4 bytes)
+        DWRF_U8(DWRF_CFA_def_cfa_offset);         // CFA = SP + 16
+        DWRF_UV(16);                              // Stack pointer moved by 16 bytes
+        DWRF_U8(DWRF_CFA_offset | DWRF_REG_FP);   // x29 (frame pointer) saved
+        DWRF_UV(2);                               // At CFA-16 (2 * 8 = 16 bytes from CFA)
+        DWRF_U8(DWRF_CFA_offset | DWRF_REG_RA);   // x30 (link register) saved
+        DWRF_UV(1);                               // At CFA-8 (1 * 8 = 8 bytes from CFA)
+        DWRF_U8(DWRF_CFA_advance_loc | 3);        // Advance by 3 instructions (12 bytes)
+        DWRF_U8(DWRF_CFA_restore | DWRF_REG_RA);  // Restore x30 - NO DWRF_UV() after this!
+        DWRF_U8(DWRF_CFA_restore | DWRF_REG_FP);  // Restore x29 - NO DWRF_UV() after this!
+        DWRF_U8(DWRF_CFA_def_cfa_offset);         // CFA = SP + 0 (stack restored)
+        DWRF_UV(0);                               // Back to original stack position
 #else
 #    error "Unsupported target architecture"
 #endif
@@ -902,6 +943,58 @@ static void elf_init_ehframe(ELFObjectContext* ctx) {
     )
 
     ctx->p = p;  // Update context pointer to end of generated data
+
+    /* Calculate and update the PC-relative offset in the FDE
+     *
+     * When perf processes the jitdump, it creates a synthesized DSO with this layout:
+     *
+     *     Synthesized DSO Memory Layout:
+     *     ┌─────────────────────────────────────────────────────────────┐ < code_start
+     *     │                        Code Section                         │
+     *     │                    (round_up(code_size, 8) bytes)           │
+     *     ├─────────────────────────────────────────────────────────────┤ < start of EH frame data
+     *     │                      EH Frame Data                          │
+     *     │  ┌─────────────────────────────────────────────────────┐    │
+     *     │  │                 CIE data                            │    │
+     *     │  └─────────────────────────────────────────────────────┘    │
+     *     │  ┌─────────────────────────────────────────────────────┐    │
+     *     │  │ FDE Header:                                         │    │
+     *     │  │   - CIE offset (4 bytes)                            │    │
+     *     │  │   - PC offset (4 bytes) <─ fde_offset_in_frame ─────┼────┼─> points to code_start
+     *     │  │   - address range (4 bytes)                         │    │   (this specific field)
+     *     │  │ CFI Instructions...                                 │    │
+     *     │  └─────────────────────────────────────────────────────┘    │
+     *     ├─────────────────────────────────────────────────────────────┤ < reference_point
+     *     │                    EhFrameHeader                            │
+     *     │                 (navigation metadata)                       │
+     *     └─────────────────────────────────────────────────────────────┘
+     *
+     * The PC offset field in the FDE must contain the distance from itself to code_start:
+     *
+     *   distance = code_start - fde_pc_field
+     *
+     * Where:
+     *   fde_pc_field_location = reference_point - eh_frame_size + fde_offset_in_frame
+     *   code_start_location = reference_point - eh_frame_size - round_up(code_size, 8)
+     *
+     * Therefore:
+     *   distance = code_start_location - fde_pc_field_location
+     *            = (ref - eh_frame_size - rounded_code_size) - (ref - eh_frame_size + fde_offset_in_frame)
+     *            = -rounded_code_size - fde_offset_in_frame
+     *            = -(round_up(code_size, 8) + fde_offset_in_frame)
+     *
+     * Note: fde_offset_in_frame is the offset from EH frame start to the PC offset field,
+     *
+     */
+    if (ctx->fde_p != NULL) {
+        int32_t fde_offset_in_frame = (ctx->fde_p - ctx->startp);
+        int32_t rounded_code_size = round_up(ctx->code_size, 8);
+        int32_t pc_relative_offset = -(rounded_code_size + fde_offset_in_frame);
+
+
+        // Update the PC-relative offset in the FDE
+        *(int32_t*)ctx->fde_p = pc_relative_offset;
+    }
 }
 
 // =============================================================================
@@ -1002,8 +1095,11 @@ static void* perf_map_jit_init(void) {
     /* Initialize code ID counter */
     perf_jit_map_state.code_id = 0;
 
-    /* Configure trampoline API with padding information */
-    trampoline_api.code_padding = PERF_JIT_CODE_PADDING;
+    /* Calculate padding size based on actual unwind info requirements */
+    size_t eh_frame_size = calculate_eh_frame_size();
+    size_t unwind_data_size = sizeof(EhFrameHeader) + eh_frame_size;
+    trampoline_api.code_padding = round_up(unwind_data_size, 16);
+    trampoline_api.code_alignment = 32;
 
     return &perf_jit_map_state;
 }
@@ -1092,6 +1188,7 @@ static void perf_map_jit_write_entry(void *state, const void *code_addr,
     char buffer[1024];  // Buffer for DWARF data (1KB should be sufficient)
     ctx.code_size = code_size;
     ctx.startp = ctx.p = (uint8_t*)buffer;
+    ctx.fde_p = NULL;  // Initialize to NULL, will be set when FDE is written
 
     /* Generate EH frame (Exception Handling frame) data */
     elf_init_ehframe(&ctx);
@@ -1110,7 +1207,7 @@ static void perf_map_jit_write_entry(void *state, const void *code_addr,
     ev2.unwind_data_size = sizeof(EhFrameHeader) + eh_frame_size;
 
     /* Verify we don't exceed our padding budget */
-    assert(ev2.unwind_data_size <= PERF_JIT_CODE_PADDING);
+    assert(ev2.unwind_data_size <= (uint64_t)trampoline_api.code_padding);
 
     ev2.eh_frame_hdr_size = sizeof(EhFrameHeader);
     ev2.mapped_size = round_up(ev2.unwind_data_size, 16);  // 16-byte alignment
