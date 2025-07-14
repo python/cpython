@@ -8058,44 +8058,6 @@ then
   PY_SIMD_DETECT([AVX512_VP2INTERSECT], [-mavx512vp2intersect])
 fi
 
-dnl Check that -mxsave can be used for cpuinfo.c as the latter
-dnl requires to be compiled with this option for xgetbv() support.
-AX_CHECK_COMPILE_FLAG([-mxsave],
-  [AS_VAR_SET([CORE_CPUINFO_CFLAGS], [-mxsave])],
-  [AS_VAR_SET([CORE_CPUINFO_CFLAGS], [])],
-  [-Werror])
-AC_SUBST([CORE_CPUINFO_CFLAGS])
-
-AC_CACHE_CHECK([_xgetbv(0) is natively supported], [ac_cv_use_xgetbv_func], [
-  WITH_SAVE_ENV([
-    CFLAGS="$CFLAGS -Werror -mxsave"
-    AC_COMPILE_IFELSE(
-      [AC_LANG_PROGRAM([[@%:@include <immintrin.h>]], [[_xgetbv(0)]])],
-      [ac_cv_use_xgetbv_func=yes],
-      [ac_cv_use_xgetbv_func=no])])])
-if test "$ac_cv_use_xgetbv_func" = "yes" ; then
-  AC_DEFINE([_Py_CPUINFO_USE_XGETBV_FUNC], [1], [_xgetbv() is preferred])
-fi
-
-AC_CACHE_CHECK([xgetbv(0) opcode is supported], [ac_cv_use_xgetbv_opcode], [
-  WITH_SAVE_ENV([
-    CFLAGS="$CFLAGS -Werror"
-    AC_RUN_IFELSE([AC_LANG_PROGRAM([[@%:@include <stdint.h>]], [[
-      int main(void)
-      {
-        uint32_t eax = 0, edx = 0;
-        __asm__ __volatile__(
-          ".byte 0x0f, 0x01, 0xd0" : "=a" (eax), "=d" (edx) : "c" (0));
-        return 0;
-      }
-    ]])],
-    [ac_cv_use_xgetbv_opcode=yes],
-    [ac_cv_use_xgetbv_opcode=no],
-    [ac_cv_use_xgetbv_opcode=no])])])
-if test "$ac_cv_use_xgetbv_opcode" = "yes" ; then
-  AC_DEFINE([_Py_CPUINFO_USE_XGETBV_OPCODE], [1], [XGETBV opcode is preferred])
-fi
-
 ###############################################################################
 # HACL* compilation and linking configuration (contact: @picnixz)
 #

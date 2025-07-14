@@ -1297,7 +1297,6 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_context.h \
 		$(srcdir)/Include/internal/pycore_cpuinfo.h \
 		$(srcdir)/Include/internal/pycore_cpuinfo_cpuid_features.h \
-		$(srcdir)/Include/internal/pycore_cpuinfo_xsave_features.h \
 		$(srcdir)/Include/internal/pycore_critical_section.h \
 		$(srcdir)/Include/internal/pycore_crossinterp.h \
 		$(srcdir)/Include/internal/pycore_crossinterp_data_registry.h \
@@ -1937,9 +1936,6 @@ Python/sysmodule.o: $(srcdir)/Python/sysmodule.c Makefile $(srcdir)/Include/pydt
 		-DABIFLAGS='"$(ABIFLAGS)"' \
 		$(MULTIARCH_CPPFLAGS) \
 		-o $@ $(srcdir)/Python/sysmodule.c
-
-Python/cpuinfo.o: $(srcdir)/Python/cpuinfo.c Makefile
-	$(CC) -c $(PY_CORE_CFLAGS) @CORE_CPUINFO_CFLAGS@ -o $@ $(srcdir)/Python/cpuinfo.c
 
 $(IO_OBJS): $(IO_H)
 

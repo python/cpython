@@ -25,7 +25,6 @@ extern "C" {
 
 #include "Python.h"
 #include "pycore_cpuinfo_cpuid_features.h"
-#include "pycore_cpuinfo_xsave_features.h"
 
 typedef struct _Py_cpuid_features_s {
     uint32_t maxleaf;
@@ -101,21 +100,11 @@ typedef struct _Py_cpuid_features_s {
     _Py_CPUID_DECL_FLAG(xsave);   // XSAVE/XRSTOR/XSETBV/XGETBV
     _Py_CPUID_DECL_FLAG(osxsave); // XSAVE is enabled by the OS
 
-    // --- XCR0 register bits -------------------------------------------------
-    _Py_CPUID_DECL_FLAG(xcr0_sse);
-    // On some Intel CPUs, it is possible for the CPU to support AVX2
-    // instructions even though the underlying OS does not know about
-    // AVX. In particular, only (SSE) XMM registers will be saved and
-    // restored on context-switch, but not (AVX) YMM registers.
-    _Py_CPUID_DECL_FLAG(xcr0_avx);
-    _Py_CPUID_DECL_FLAG(xcr0_avx512_opmask);
-    _Py_CPUID_DECL_FLAG(xcr0_avx512_zmm_hi256);
-    _Py_CPUID_DECL_FLAG(xcr0_avx512_hi16_zmm);
 #undef _Py_CPUID_DECL_FLAG
     // Whenever a field is added or removed above, update the
-    // number of fields (40) and adjust the bitsize of 'ready'
+    // number of fields (35) and adjust the bitsize of 'ready'
     // so that the size of this structure is a multiple of 8.
-    uint8_t ready; // set if the structure is ready for usage
+    uint8_t ready: 5;  // set if the structure is ready for usage
 } _Py_cpuid_features;
 
 /*

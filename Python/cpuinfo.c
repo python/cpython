@@ -11,10 +11,8 @@
 #define HAS_CPUID_SUPPORT
 #if defined(__x86_64__) && defined(__GNUC__)
 #  include <cpuid.h>            // __cpuid_count()
-#  include <immintrin.h>        // _xgetbv()
 #elif defined(_M_X64) || defined(__amd64__) || defined(_M_AMD64)
 #  include <intrin.h>           // __cpuidex()
-#  include <immintrin.h>        // _xgetbv()
 #else
 #  undef HAS_CPUID_SUPPORT
 #endif
@@ -24,13 +22,6 @@
 // corresponding flags or if we are not on an 64-bit platform we do not
 // even try to inspect the output of CPUID for those specific features.
 #ifdef HAS_CPUID_SUPPORT
-#if defined(_Py_CPUINFO_USE_XGETBV_FUNC)        \
-    || defined(_Py_CPUINFO_USE_XGETBV_OPCODE)
-#  define HAS_XGETBV_SUPPORT
-#endif
-
-#undef HAS_XGETBV_SUPPORT
-
 #if defined(_Py_CAN_COMPILE_SIMD_SSE_INSTRUCTIONS)          \
     || defined(_Py_CAN_COMPILE_SIMD_SSE2_INSTRUCTIONS)      \
     || defined(_Py_CAN_COMPILE_SIMD_SSE3_INSTRUCTIONS)      \
@@ -154,34 +145,6 @@ get_cpuid_info(uint32_t level /* input eax */,
     (void)level, (void)count;
 #endif
 }
-
-#if defined(HAS_XGETBV_SUPPORT) && defined(SHOULD_PARSE_CPUID_L1)
-static uint64_t /* should only be used after calling cpuid(1, 0, ...) */
-get_xgetbv(uint32_t index)
-{
-    assert(index == 0); // only XCR0 is supported for now
-#if defined(_Py_CPUINFO_USE_XGETBV_FUNC)
-    /* directly use the compiler's helper if -mxsave is available */
-    return (uint64_t)_xgetbv(index);
-#elif defined(__x86_64__) && defined(__GNUC__)
-    uint32_t eax = 0, edx = 0;
-    __asm__ volatile(
-        /* raw opcode for xgetbv for compatibility with older toolchains */
-        ".byte 0x0f, 0x01, 0xd0"
-        : "=a" (eax), "=d" (edx)
-        : "c" (index)
-    );
-    return ((uint64_t)edx << 32) | eax;
-#elif defined(_M_X64)
-    return (uint64_t)_xgetbv(index);
-#else
-    (void)index;
-    return 0;
-#endif
-}
-#else
-#define get_xgetbv(_INDEX)  0
-#endif
 
 /* Highest Function Parameter and Manufacturer ID (LEAF=0, SUBLEAF=0). */
 static uint32_t
@@ -349,23 +312,6 @@ detect_cpuid_extended_features_L7S1(_Py_cpuid_features *flags,
 }
 #endif
 
-#ifdef SHOULD_PARSE_CPUID_L1
-static void /* should only be used after calling cpuid(1, 0, ...) */
-detect_cpuid_xsave_state(_Py_cpuid_features *flags)
-{
-    assert(flags->ready == 0);
-    assert(flags->maxleaf >= 1);
-    (void)flags;
-    // Keep the ordering and newlines as they are declared in the structure.
-    uint64_t xcr0 = flags->xsave && flags->osxsave ? get_xgetbv(0) : 0;
-    flags->xcr0_sse = XSAVE_CHECK_REG(xcr0, XCR0_SSE);
-    flags->xcr0_avx = XSAVE_CHECK_REG(xcr0, XCR0_AVX);
-    flags->xcr0_avx512_opmask = XSAVE_CHECK_REG(xcr0, XCR0_AVX512_OPMASK);
-    flags->xcr0_avx512_zmm_hi256 = XSAVE_CHECK_REG(xcr0, XCR0_AVX512_ZMM_HI256);
-    flags->xcr0_avx512_hi16_zmm = XSAVE_CHECK_REG(xcr0, XCR0_AVX512_HI16_ZMM);
-}
-#endif
-
 static void
 cpuid_features_finalize(_Py_cpuid_features *flags)
 {
@@ -460,12 +406,6 @@ _Py_cpuid_check_features(const _Py_cpuid_features *flags)
                                         \
         MACRO(xsave);                   \
         MACRO(osxsave);                 \
-                                        \
-        MACRO(xcr0_sse);                \
-        MACRO(xcr0_avx);                \
-        MACRO(xcr0_avx512_opmask);      \
-        MACRO(xcr0_avx512_zmm_hi256);   \
-        MACRO(xcr0_avx512_hi16_zmm);    \
     } while (0)
 
 void
@@ -530,7 +470,6 @@ cpuid_detect_l1_features(_Py_cpuid_features *flags)
         uint32_t eax = 0, ebx = 0, ecx = 0, edx = 0;
         get_cpuid_info(1, 0, &eax, &ebx, &ecx, &edx);
         detect_cpuid_features(flags, ecx, edx);
-        detect_cpuid_xsave_state(flags);
     }
 }
 #else
