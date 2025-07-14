@@ -86,33 +86,19 @@ parser.add_argument(
 parser.add_argument(
     '--disable-ancient',
     action='store_true',
-    help="Don't test OpenSSL and LibreSSL versions without upstream support",
+    help="Don't test SSL versions without upstream support",
 )
 parser.add_argument(
-    '--openssl',
-    nargs='+',
-    default=(),
-    help=(
-        "OpenSSL versions, defaults to '{}' (ancient: '{}') if no "
-        "OpenSSL and LibreSSL versions are given."
-    ).format(OPENSSL_RECENT_VERSIONS, OPENSSL_OLD_VERSIONS)
+    '--ssl',
+    choices=['openssl', 'awslc', 'libressl'],
+    default=None,
+    help="Which SSL lib to test. If not specified, all are tested.",
 )
 parser.add_argument(
-    '--libressl',
+    '--ssl-versions',
     nargs='+',
-    default=(),
-    help=(
-        "LibreSSL versions, defaults to '{}' (ancient: '{}') if no "
-        "OpenSSL and LibreSSL versions are given."
-    ).format(LIBRESSL_RECENT_VERSIONS, LIBRESSL_OLD_VERSIONS)
-)
-parser.add_argument(
-    '--awslc',
-    nargs='+',
-    default=(),
-    help=(
-        "AWS-LC versions, defaults to '{}' if no crypto library versions are given."
-    ).format(AWSLC_RECENT_VERSIONS)
+    default=None,
+    help="SSL lib version(s), default depends on value passed to --ssl",
 )
 parser.add_argument(
     '--tests',
@@ -507,19 +493,6 @@ def configure_make():
 
 def main():
     args = parser.parse_args()
-    if not args.openssl and not args.libressl and not args.awslc:
-        args.openssl = list(OPENSSL_RECENT_VERSIONS)
-        args.libressl = list(LIBRESSL_RECENT_VERSIONS)
-        args.awslc = list(AWSLC_RECENT_VERSIONS)
-        if not args.disable_ancient:
-            args.openssl.extend(OPENSSL_OLD_VERSIONS)
-            args.libressl.extend(LIBRESSL_OLD_VERSIONS)
-
-    logging.basicConfig(
-        level=logging.DEBUG if args.debug else logging.INFO,
-        format="*** %(levelname)s %(message)s"
-    )
-
     start = datetime.now()
 
     if args.steps in {'modules', 'tests'}:
@@ -535,13 +508,34 @@ def main():
         # check for configure and run make
         configure_make()
 
+    logging.basicConfig(
+        level=logging.DEBUG if args.debug else logging.INFO,
+        format="*** %(levelname)s %(message)s"
+    )
+
+    ssl_libs = {
+        "openssl": [
+            BuildOpenSSL, OPENSSL_OLD_VERSIONS, OPENSSL_RECENT_VERSIONS, []
+        ],
+        "libressl": [
+            BuildLibreSSL, LIBRESSL_OLD_VERSIONS, LIBRESSL_RECENT_VERSIONS, []
+        ],
+        "awslc": [BuildAWSLC, [], AWSLC_RECENT_VERSIONS, []],
+    }
+    if args.ssl and args.ssl_versions:
+        ssl_libs[args.ssl][3] += args.ssl_versions
+    elif args.ssl:
+        ssl_libs[args.ssl][3] += ssl_libs[args.ssl][2]
+    else:
+        ssl_libs["openssl"][3] += ssl_libs["openssl"][2]
+        ssl_libs["libressl"][3] += ssl_libs["libressl"][2]
+        ssl_libs["awslc"][3] += ssl_libs["awslc"][2]
+        if not args.disable_ancient:
+            ssl_libs["openssl"][3] += ssl_libs["openssl"][1]
+            ssl_libs["libressl"][3] += ssl_libs["libressl"][1]
     # download and register builder
     builds = []
-    for build_class, versions in [
-        (BuildOpenSSL, args.openssl),
-        (BuildLibreSSL, args.libressl),
-        (BuildAWSLC, args.awslc),
-    ]:
+    for build_class, _, _, versions in ssl_libs.values():
         for version in versions:
             build = build_class(version, args)
             build.install()
