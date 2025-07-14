@@ -26,7 +26,8 @@ Modules/Setup*                @erlend-aasland
 **/*context*                  @1st1
 **/*genobject*                @markshannon
 **/*hamt*                     @1st1
-**/*jit*                      @brandtbucher @savannahostrowski
+**/*jit*                      @brandtbucher @savannahostrowski @diegorusso
+Python/perf_jit_trampoline.c  # Exclude the owners of "**/*jit*", above.
 Objects/set*                  @rhettinger
 Objects/dict*                 @methane @markshannon
 Objects/typevarobject.c       @JelleZijlstra
