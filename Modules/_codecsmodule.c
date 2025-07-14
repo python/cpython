@@ -1054,7 +1054,6 @@ _codecs__normalize_encoding_impl(PyObject *module, PyObject *encoding)
     }
 
     if (!_Py_normalize_encoding(cstr, normalized, len + 1, 0)) {
-        PyErr_SetString(PyExc_RuntimeError, "_Py_normalize_encoding() failed");
         PyMem_Free(normalized);
         return NULL;
     }
@@ -1063,7 +1062,6 @@ _codecs__normalize_encoding_impl(PyObject *module, PyObject *encoding)
     PyMem_Free(normalized);
     return v;
 }
-
 
 /* --- Module API --------------------------------------------------------- */
 
