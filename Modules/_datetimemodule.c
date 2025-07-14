@@ -7570,8 +7570,8 @@ PyMODINIT_FUNC
 PyInit__datetime(void)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    // gh-136421: Ensure static types are fully finalized at the shutdown of
-    // the main interpreter rather than subinterpreters for concurrency.
+    // gh-136421: Ensure static types' runtime state gets cleared in shutting
+    // down the main interpreter rather than subinterpreters for concurrency.
     assert(interp != NULL && _Py_IsMainInterpreter(interp));
     if (init_static_types(interp, 0) < 0) {
         return NULL;
