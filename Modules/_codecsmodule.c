@@ -1027,17 +1027,15 @@ extern int _Py_normalize_encoding(const char *, char *, size_t, int);
 /*[clinic input]
 _codecs._normalize_encoding
     encoding: str(encoding='ascii')
-    /
 
 Normalize an encoding name *encoding*.
 
-Used for encodings.normalize_encoding.
-Does not convert to lower case (to_lower == 1).
+Used for encodings.normalize_encoding. Does not convert to lower case.
 [clinic start generated code]*/
 
 static PyObject *
 _codecs__normalize_encoding_impl(PyObject *module, char *encoding)
-/*[clinic end generated code: output=d5e3a4b5266fbe96 input=ca002bbc262228f1]*/
+/*[clinic end generated code: output=d5e3a4b5266fbe96 input=cdb53c013b2400e3]*/
 {
     size_t len = strlen(encoding);
     if (len > PY_SSIZE_T_MAX) {

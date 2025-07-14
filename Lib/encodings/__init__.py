@@ -53,7 +53,7 @@ _norm_encoding_map = (
 class CodecRegistryError(LookupError, SystemError):
     pass
 
-def normalize_encoding(encoding, /):
+def normalize_encoding(encoding):
 
     """ Normalize an encoding name.
 

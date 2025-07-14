@@ -2780,24 +2780,54 @@ exit:
 }
 
 PyDoc_STRVAR(_codecs__normalize_encoding__doc__,
-"_normalize_encoding($module, encoding, /)\n"
+"_normalize_encoding($module, /, encoding)\n"
 "--\n"
 "\n"
-"Normalize an encoding name. Used for encodings.normalize_encoding.");
+"Normalize an encoding name *encoding*.\n"
+"\n"
+"Used for encodings.normalize_encoding. Does not convert to lower case.");
 
 #define _CODECS__NORMALIZE_ENCODING_METHODDEF    \
-    {"_normalize_encoding", (PyCFunction)_codecs__normalize_encoding, METH_O, _codecs__normalize_encoding__doc__},
+    {"_normalize_encoding", _PyCFunction_CAST(_codecs__normalize_encoding), METH_FASTCALL|METH_KEYWORDS, _codecs__normalize_encoding__doc__},
 
 static PyObject *
 _codecs__normalize_encoding_impl(PyObject *module, char *encoding);
 
 static PyObject *
-_codecs__normalize_encoding(PyObject *module, PyObject *arg)
+_codecs__normalize_encoding(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(encoding), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"encoding", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .format = "es:_normalize_encoding",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     char *encoding = NULL;
 
-    if (!PyArg_Parse(arg, "es:_normalize_encoding", "ascii", &encoding)) {
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        "ascii", &encoding)) {
         goto exit;
     }
     return_value = _codecs__normalize_encoding_impl(module, encoding);
@@ -2831,4 +2861,4 @@ exit:
 #ifndef _CODECS_CODE_PAGE_ENCODE_METHODDEF
     #define _CODECS_CODE_PAGE_ENCODE_METHODDEF
 #endif /* !defined(_CODECS_CODE_PAGE_ENCODE_METHODDEF) */
-/*[clinic end generated code: output=aa3636e281f5268f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0859b218fa612efd input=a9049054013a1b77]*/

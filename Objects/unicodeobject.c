@@ -3588,7 +3588,7 @@ PyUnicode_FromEncodedObject(PyObject *obj,
 }
 
 /* Normalize an encoding name like encodings.normalize_encoding()
-   Optionally covert convert to lowercase by setting *to_lower* to 1.
+   but allow to convert to lowercase if *to_lower* is true.
    Return 1 on success, or 0 on error (encoding is longer than lower_len-1). */
 int
 _Py_normalize_encoding(const char *encoding,
