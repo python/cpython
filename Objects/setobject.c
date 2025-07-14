@@ -164,7 +164,9 @@ set_compare_entry(PySetObject *so, setentry *table, setentry *entry,
 }
 
 // This is similar to set_compare_entry() but we don't need to incref startkey
-// before comparing and we don't need to check if the set has changed.
+// before comparing and we don't need to check if the set has changed.  This
+// also omits the PyUnicode_CheckExact() special case since it doesn't help
+// much for frozensets.
 static inline Py_ALWAYS_INLINE int
 set_compare_frozenset(PySetObject *so, setentry *table, setentry *ep,
                                  PyObject *key, Py_hash_t hash)
@@ -179,10 +181,6 @@ set_compare_frozenset(PySetObject *so, setentry *table, setentry *ep,
     }
     Py_ssize_t ep_hash = ep->hash;
     if (ep_hash == hash) {
-        if (PyUnicode_CheckExact(startkey)
-            && PyUnicode_CheckExact(key)
-            && unicode_eq(startkey, key))
-            return SET_LOOKKEY_FOUND;
         int cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
         if (cmp < 0) {
             return SET_LOOKKEY_ERROR;
