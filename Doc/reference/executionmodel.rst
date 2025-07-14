@@ -19,9 +19,9 @@ Structure of a program
 A Python program is constructed from code blocks.
 A :dfn:`block` is a piece of Python program text that is executed as a unit.
 The following are blocks: a module, a function body, and a class definition.
-Each command typed interactively is a block.  A script file (a file given as
+Each command typed interactively is a block. A script file (a file given as
 standard input to the interpreter or specified as a command line argument to the
-interpreter) is a code block.  A script command (a command specified on the
+interpreter) is a code block. A script command (a command specified on the
 interpreter command line with the :option:`-c` option) is a code block.
 A module run as a top level script (as module ``__main__``) from the command
 line using a :option:`-m` argument is also a code block. The string
@@ -30,7 +30,7 @@ code block.
 
 .. index:: pair: execution; frame
 
-A code block is executed in an :dfn:`execution frame`.  A frame contains some
+A code block is executed in an :dfn:`execution frame`. A frame contains some
 administrative information (used for debugging) and determines where and how
 execution continues after the code block's execution has completed.
 
@@ -52,7 +52,7 @@ Binding of names
    single: name
    pair: binding; name
 
-:dfn:`Names` refer to objects.  Names are introduced by name binding operations.
+:dfn:`Names` refer to objects. Names are introduced by name binding operations.
 
 .. index:: single: from; import statement
 
@@ -87,9 +87,9 @@ function definition or at the module level (the top-level code block).
 .. index:: pair: free; variable
 
 If a name is bound in a block, it is a local variable of that block, unless
-declared as :keyword:`nonlocal` or :keyword:`global`.  If a name is bound at
-the module level, it is a global variable.  (The variables of the module code
-block are local and global.)  If a variable is used in a code block but not
+declared as :keyword:`nonlocal` or :keyword:`global`. If a name is bound at
+the module level, it is a global variable. (The variables of the module code
+block are local and global.) If a variable is used in a code block but not
 defined there, it is a :term:`free variable`.
 
 Each occurrence of a name in the program text refers to the :dfn:`binding` of
@@ -102,8 +102,8 @@ Resolution of names
 
 .. index:: scope
 
-A :dfn:`scope` defines the visibility of a name within a block.  If a local
-variable is defined in a block, its scope includes that block.  If the
+A :dfn:`scope` defines the visibility of a name within a block. If a local
+variable is defined in a block, its scope includes that block. If the
 definition occurs in a function block, the scope extends to any blocks contained
 within the defining one, unless a contained block introduces a different binding
 for the name.
@@ -111,7 +111,7 @@ for the name.
 .. index:: single: environment
 
 When a name is used in a code block, it is resolved using the nearest enclosing
-scope.  The set of all such scopes visible to a code block is called the block's
+scope. The set of all such scopes visible to a code block is called the block's
 :dfn:`environment`.
 
 .. index::
@@ -125,26 +125,26 @@ used, an :exc:`UnboundLocalError` exception is raised.
 :exc:`UnboundLocalError` is a subclass of :exc:`NameError`.
 
 If a name binding operation occurs anywhere within a code block, all uses of the
-name within the block are treated as references to the current block.  This can
-lead to errors when a name is used within a block before it is bound.  This rule
-is subtle.  Python lacks declarations and allows name binding operations to
-occur anywhere within a code block.  The local variables of a code block can be
+name within the block are treated as references to the current block. This can
+lead to errors when a name is used within a block before it is bound. This rule
+is subtle. Python lacks declarations and allows name binding operations to
+occur anywhere within a code block. The local variables of a code block can be
 determined by scanning the entire text of the block for name binding operations.
 See :ref:`the FAQ entry on UnboundLocalError <faq-unboundlocalerror>`
 for examples.
 
 If the :keyword:`global` statement occurs within a block, all uses of the names
 specified in the statement refer to the bindings of those names in the top-level
-namespace.  Names are resolved in the top-level namespace by searching the
+namespace. Names are resolved in the top-level namespace by searching the
 global namespace, i.e. the namespace of the module containing the code block,
-and the builtins namespace, the namespace of the module :mod:`builtins`.  The
-global namespace is searched first.  If the names are not found there, the
+and the builtins namespace, the namespace of the module :mod:`builtins`. The
+global namespace is searched first. If the names are not found there, the
 builtins namespace is searched next. If the names are also not found in the
 builtins namespace, new variables are created in the global namespace.
 The global statement must precede all uses of the listed names.
 
 The :keyword:`global` statement has the same scope as a name binding operation
-in the same block.  If the nearest enclosing scope for a free variable contains
+in the same block. If the nearest enclosing scope for a free variable contains
 a global statement, the free variable is treated as a global.
 
 .. XXX say more about "nonlocal" semantics here
@@ -158,7 +158,7 @@ cannot be rebound with the :keyword:`!nonlocal` statement.
 .. index:: pair: module; __main__
 
 The namespace for a module is automatically created the first time a module is
-imported.  The main module for a script is always called :mod:`__main__`.
+imported. The main module for a script is always called :mod:`__main__`.
 
 Class definition blocks and arguments to :func:`exec` and :func:`eval` are
 special in the context of name resolution.
@@ -301,14 +301,14 @@ Builtins and restricted execution
 .. impl-detail::
 
    Users should not touch ``__builtins__``; it is strictly an implementation
-   detail.  Users wanting to override values in the builtins namespace should
+   detail. Users wanting to override values in the builtins namespace should
    :keyword:`import` the :mod:`builtins` module and modify its
    attributes appropriately.
 
 The builtins namespace associated with the execution of a code block
 is actually found by looking up the name ``__builtins__`` in its
 global namespace; this should be a dictionary or a module (in the
-latter case the module's dictionary is used).  By default, when in the
+latter case the module's dictionary is used). By default, when in the
 :mod:`__main__` module, ``__builtins__`` is the built-in module
 :mod:`builtins`; when in any other module, ``__builtins__`` is an
 alias for the dictionary of the :mod:`builtins` module itself.
@@ -331,11 +331,11 @@ This means that the following code will print 42::
 .. XXX from * also invalid with relative imports (at least currently)
 
 The :func:`eval` and :func:`exec` functions do not have access to the full
-environment for resolving names.  Names may be resolved in the local and global
-namespaces of the caller.  Free variables are not resolved in the nearest
-enclosing namespace, but in the global namespace.  [#]_ The :func:`exec` and
+environment for resolving names. Names may be resolved in the local and global
+namespaces of the caller. Free variables are not resolved in the nearest
+enclosing namespace, but in the global namespace. [#]_ The :func:`exec` and
 :func:`eval` functions have optional arguments to override the global and local
-namespace.  If only one namespace is specified, it is used for both.
+namespace. If only one namespace is specified, it is used for both.
 
 .. XXX(ncoghlan) above is only accurate for string execution. When executing code objects,
    closure cells may now be passed explicitly to resolve co_freevars references.
@@ -356,15 +356,15 @@ Exceptions
    single: error handling
 
 Exceptions are a means of breaking out of the normal flow of control of a code
-block in order to handle errors or other exceptional conditions.  An exception
+block in order to handle errors or other exceptional conditions. An exception
 is *raised* at the point where the error is detected; it may be *handled* by the
 surrounding code block or by any code block that directly or indirectly invoked
 the code block where the error occurred.
 
 The Python interpreter raises an exception when it detects a run-time error
-(such as division by zero).  A Python program can also explicitly raise an
+(such as division by zero). A Python program can also explicitly raise an
 exception with the :keyword:`raise` statement. Exception handlers are specified
-with the :keyword:`try` ... :keyword:`except` statement.  The :keyword:`finally`
+with the :keyword:`try` ... :keyword:`except` statement. The :keyword:`finally`
 clause of such a statement can be used to specify cleanup code which does not
 handle the exception, but is executed whether an exception occurred or not in
 the preceding code.
@@ -379,10 +379,10 @@ re-entering the offending piece of code from the top).
 .. index:: single: SystemExit (built-in exception)
 
 When an exception is not handled at all, the interpreter terminates execution of
-the program, or returns to its interactive main loop.  In either case, it prints
+the program, or returns to its interactive main loop. In either case, it prints
 a stack traceback, except when the exception is :exc:`SystemExit`.
 
-Exceptions are identified by class instances.  The :keyword:`except` clause is
+Exceptions are identified by class instances. The :keyword:`except` clause is
 selected depending on the class of the instance: it must reference the class of
 the instance or a :term:`non-virtual base class <abstract base class>` thereof.
 The instance can be received by the handler and can carry additional information
@@ -390,7 +390,7 @@ about the exceptional condition.
 
 .. note::
 
-   Exception messages are not part of the Python API.  Their contents may change
+   Exception messages are not part of the Python API. Their contents may change
    from one version of Python to the next without warning and should not be
    relied on by code which will run under multiple versions of the interpreter.
 

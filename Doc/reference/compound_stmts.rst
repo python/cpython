@@ -7,15 +7,15 @@ Compound statements
 .. index:: pair: compound; statement
 
 Compound statements contain (groups of) other statements; they affect or control
-the execution of those other statements in some way.  In general, compound
+the execution of those other statements in some way. In general, compound
 statements span multiple lines, although in simple incarnations a whole compound
 statement may be contained in one line.
 
 The :keyword:`if`, :keyword:`while` and :keyword:`for` statements implement
-traditional control flow constructs.  :keyword:`try` specifies exception
+traditional control flow constructs. :keyword:`try` specifies exception
 handlers and/or cleanup code for a group of statements, while the
 :keyword:`with` statement allows the execution of initialization and
-finalization code around a block of code.  Function and class definitions are
+finalization code around a block of code. Function and class definitions are
 also syntactically compound statements.
 
 .. index::
@@ -23,13 +23,13 @@ also syntactically compound statements.
    single: suite
    single: ; (semicolon)
 
-A compound statement consists of one or more 'clauses.'  A clause consists of a
-header and a 'suite.'  The clause headers of a particular compound statement are
+A compound statement consists of one or more 'clauses.' A clause consists of a
+header and a 'suite.' The clause headers of a particular compound statement are
 all at the same indentation level. Each clause header begins with a uniquely
-identifying keyword and ends with a colon.  A suite is a group of statements
-controlled by a clause.  A suite can be one or more semicolon-separated simple
+identifying keyword and ends with a colon. A suite is a group of statements
+controlled by a clause. A suite can be one or more semicolon-separated simple
 statements on the same line as the header, following the header's colon, or it
-can be one or more indented statements on subsequent lines.  Only the latter
+can be one or more indented statements on subsequent lines. Only the latter
 form of a suite can contain nested compound statements; the following is illegal,
 mostly because it wouldn't be clear to which :keyword:`if` clause a following
 :keyword:`else` clause would belong::
@@ -67,7 +67,7 @@ Summarizing:
    pair: dangling; else
 
 Note that statements always end in a ``NEWLINE`` possibly followed by a
-``DEDENT``.  Also note that optional continuation clauses always begin with a
+``DEDENT``. Also note that optional continuation clauses always begin with a
 keyword that cannot start a statement, thus there are no ambiguities (the
 'dangling :keyword:`else`' problem is solved in Python by requiring nested
 :keyword:`if` statements to be indented).
@@ -99,7 +99,7 @@ The :keyword:`if` statement is used for conditional execution:
 It selects exactly one of the suites by evaluating the expressions one by one
 until one is found to be true (see section :ref:`booleans` for the definition of
 true and false); then that suite is executed (and no other part of the
-:keyword:`if` statement is executed or evaluated).  If all expressions are
+:keyword:`if` statement is executed or evaluated). If all expressions are
 false, the suite of the :keyword:`else` clause, if present, is executed.
 
 
@@ -131,7 +131,7 @@ terminates.
    pair: statement; continue
 
 A :keyword:`break` statement executed in the first suite terminates the loop
-without executing the :keyword:`!else` clause's suite.  A :keyword:`continue`
+without executing the :keyword:`!else` clause's suite. A :keyword:`continue`
 statement executed in the first suite skips the rest of the suite and goes back
 to testing the expression.
 
@@ -171,7 +171,7 @@ if present, is executed, and the loop terminates.
    pair: statement; continue
 
 A :keyword:`break` statement executed in the first suite terminates the loop
-without executing the :keyword:`!else` clause's suite.  A :keyword:`continue`
+without executing the :keyword:`!else` clause's suite. A :keyword:`continue`
 statement executed in the first suite skips the rest of the suite and continues
 with the next item, or with the :keyword:`!else` clause if there is no next
 item.
@@ -191,7 +191,7 @@ those made in the suite of the for-loop::
    pair: built-in function; range
 
 Names in the target list are not deleted when the loop is finished, but if the
-sequence is empty, they will not have been assigned to at all by the loop.  Hint:
+sequence is empty, they will not have been assigned to at all by the loop. Hint:
 the built-in type :func:`range` represents immutable arithmetic sequences of integers.
 For instance, iterating ``range(3)`` successively yields 0, 1, and then 2.
 
@@ -257,7 +257,7 @@ or to a tuple that contains such a class.
 
 If no :keyword:`!except` clause matches the exception,
 the search for an exception handler
-continues in the surrounding code and on the invocation stack.  [#]_
+continues in the surrounding code and on the invocation stack. [#]_
 
 If the evaluation of an expression
 in the header of an :keyword:`!except` clause raises an exception,
@@ -279,7 +279,7 @@ and the exception occurs in the :keyword:`!try` clause of the inner handler,
 the outer handler will not handle the exception.)
 
 When an exception has been assigned using ``as target``, it is cleared at the
-end of the :keyword:`!except` clause.  This is as if ::
+end of the :keyword:`!except` clause. This is as if ::
 
    except E as N:
        foo
@@ -342,7 +342,7 @@ partial matches when the type matches some of the exceptions in the group.
 This means that multiple :keyword:`!except*` clauses can execute,
 each handling part of the exception group.
 Each clause executes at most once and handles an exception group
-of all matching exceptions.  Each exception in the group is handled by at most
+of all matching exceptions. Each exception in the group is handled by at most
 one :keyword:`!except*` clause, the first that matches it. ::
 
    >>> try:
@@ -403,7 +403,7 @@ cannot appear in an :keyword:`!except*` clause.
 
 The optional :keyword:`!else` clause is executed if the control flow leaves the
 :keyword:`try` suite, no exception was raised, and no :keyword:`return`,
-:keyword:`continue`, or :keyword:`break` statement was executed.  Exceptions in
+:keyword:`continue`, or :keyword:`break` statement was executed. Exceptions in
 the :keyword:`!else` clause are not handled by the preceding :keyword:`except`
 clauses.
 
@@ -415,12 +415,12 @@ clauses.
 :keyword:`!finally` clause
 --------------------------
 
-If :keyword:`!finally` is present, it specifies a 'cleanup' handler.  The
+If :keyword:`!finally` is present, it specifies a 'cleanup' handler. The
 :keyword:`try` clause is executed, including any :keyword:`except` and
-:keyword:`else` clauses.  If an exception occurs in any of the clauses and is
+:keyword:`else` clauses. If an exception occurs in any of the clauses and is
 not handled, the exception is temporarily saved. The :keyword:`!finally` clause
-is executed.  If there is a saved exception it is re-raised at the end of the
-:keyword:`!finally` clause.  If the :keyword:`!finally` clause raises another
+is executed. If there is a saved exception it is re-raised at the end of the
+:keyword:`!finally` clause. If the :keyword:`!finally` clause raises another
 exception, the saved exception is set as the context of the new exception.
 If the :keyword:`!finally` clause executes a :keyword:`return`, :keyword:`break`
 or :keyword:`continue` statement, the saved exception is discarded. For example,
@@ -447,7 +447,7 @@ executed in the :keyword:`try` suite of a :keyword:`!try`...\ :keyword:`!finally
 statement, the :keyword:`!finally` clause is also executed 'on the way out.'
 
 The return value of a function is determined by the last :keyword:`return`
-statement executed.  Since the :keyword:`!finally` clause always executes, a
+statement executed. Since the :keyword:`!finally` clause always executes, a
 :keyword:`!return` statement executed in the :keyword:`!finally` clause will
 always be the last one executed. The following function returns 'finally'.
 
@@ -516,13 +516,13 @@ The execution of the :keyword:`with` statement with one "item" proceeds as follo
 
 #. The suite is executed.
 
-#. The context manager's :meth:`~object.__exit__` method is invoked.  If an exception
+#. The context manager's :meth:`~object.__exit__` method is invoked. If an exception
    caused the suite to be exited, its type, value, and traceback are passed as
    arguments to :meth:`~object.__exit__`. Otherwise, three :const:`None` arguments are
    supplied.
 
    If the suite was exited due to an exception, and the return value from the
-   :meth:`~object.__exit__` method was false, the exception is reraised.  If the return
+   :meth:`~object.__exit__` method was false, the exception is reraised. If the return
    value was true, the exception is suppressed, and execution continues with the
    statement following the :keyword:`with` statement.
 
@@ -604,7 +604,7 @@ The :keyword:`!match` statement
 
 .. versionadded:: 3.10
 
-The match statement is used for pattern matching.  Syntax:
+The match statement is used for pattern matching. Syntax:
 
 .. productionlist:: python-grammar
    match_stmt: 'match' `subject_expr` ":" NEWLINE INDENT `case_block`+ DEDENT
@@ -617,12 +617,12 @@ The match statement is used for pattern matching.  Syntax:
    :ref:`soft keywords <soft-keywords>`.
 
 Pattern matching takes a pattern as input (following ``case``) and a subject
-value (following ``match``).  The pattern (which may contain subpatterns) is
-matched against the subject value.  The outcomes are:
+value (following ``match``). The pattern (which may contain subpatterns) is
+matched against the subject value. The outcomes are:
 
 * A match success or failure (also termed a pattern success or failure).
 
-* Possible binding of matched values to a name.  The prerequisites for this are
+* Possible binding of matched values to a name. The prerequisites for this are
   further discussed below.
 
 The ``match`` and ``case`` keywords are :ref:`soft keywords <soft-keywords>`.
@@ -647,15 +647,15 @@ Here's an overview of the logical flow of a match statement:
    specific rules for success or failure are described below. The match attempt can also
    bind some or all of the standalone names within the pattern. The precise
    pattern binding rules vary per pattern type and are
-   specified below.  **Name bindings made during a successful pattern match
+   specified below. **Name bindings made during a successful pattern match
    outlive the executed block and can be used after the match statement**.
 
    .. note::
 
-      During failed pattern matches, some subpatterns may succeed.  Do not
-      rely on bindings being made for a failed match.  Conversely, do not
-      rely on variables remaining unchanged after a failed match.  The exact
-      behavior is dependent on implementation and may vary.  This is an
+      During failed pattern matches, some subpatterns may succeed. Do not
+      rely on bindings being made for a failed match. Conversely, do not
+      rely on variables remaining unchanged after a failed match. The exact
+      behavior is dependent on implementation and may vary. This is an
       intentional decision made to allow different implementations to add
       optimizations.
 
@@ -671,7 +671,7 @@ Here's an overview of the logical flow of a match statement:
 
 .. note::
 
-   Users should generally never rely on a pattern being evaluated.  Depending on
+   Users should generally never rely on a pattern being evaluated. Depending on
    implementation, the interpreter may cache values or use other optimizations
    which skip repeated evaluations.
 
@@ -691,7 +691,7 @@ A sample match statement::
    Case 3, y: 200
 
 
-In this case, ``if flag`` is a guard.  Read more about that in the next section.
+In this case, ``if flag`` is a guard. Read more about that in the next section.
 
 Guards
 ------
@@ -702,13 +702,13 @@ Guards
    guard: "if" `named_expression`
 
 A ``guard`` (which is part of the ``case``) must succeed for code inside
-the ``case`` block to execute.  It takes the form: :keyword:`if` followed by an
+the ``case`` block to execute. It takes the form: :keyword:`if` followed by an
 expression.
 
 
 The logical flow of a ``case`` block with a ``guard`` follows:
 
-#. Check that the pattern in the ``case`` block succeeded.  If the pattern
+#. Check that the pattern in the ``case`` block succeeded. If the pattern
    failed, the ``guard`` is not evaluated and the next ``case`` block is
    checked.
 
@@ -723,7 +723,7 @@ The logical flow of a ``case`` block with a ``guard`` follows:
    * If the ``guard`` raises an exception during evaluation, the exception
      bubbles up.
 
-Guards are allowed to have side effects as they are expressions.  Guard
+Guards are allowed to have side effects as they are expressions. Guard
 evaluation must proceed from the first to the last case block, one at a time,
 skipping case blocks whose pattern(s) don't all succeed. (I.e.,
 guard evaluation must happen in order.) Guard evaluation must stop once a case
@@ -737,12 +737,12 @@ Irrefutable Case Blocks
 
 .. index:: irrefutable case block, case block
 
-An irrefutable case block is a match-all case block.  A match statement may have
+An irrefutable case block is a match-all case block. A match statement may have
 at most one irrefutable case block, and it must be last.
 
 A case block is considered irrefutable if it has no guard and its pattern is
-irrefutable.  A pattern is considered irrefutable if we can prove from its
-syntax alone that it will always succeed.  Only the following patterns are
+irrefutable. A pattern is considered irrefutable if we can prove from its
+syntax alone that it will always succeed. Only the following patterns are
 irrefutable:
 
 * :ref:`as-patterns` whose left-hand side is irrefutable
@@ -789,7 +789,7 @@ The descriptions below will include a description "in simple terms" of what a pa
 does for illustration purposes (credits to Raymond Hettinger for a document that
 inspired most of the descriptions). Note that these descriptions are purely for
 illustration purposes and **may not** reflect
-the underlying implementation.  Furthermore, they do not cover all valid forms.
+the underlying implementation. Furthermore, they do not cover all valid forms.
 
 
 .. _or-patterns:
@@ -798,7 +798,7 @@ OR Patterns
 ^^^^^^^^^^^
 
 An OR pattern is two or more patterns separated by vertical
-bars ``|``.  Syntax:
+bars ``|``. Syntax:
 
 .. productionlist:: python-grammar
    or_pattern: "|".`closed_pattern`+
@@ -807,7 +807,7 @@ Only the final subpattern may be :ref:`irrefutable <irrefutable_case>`, and each
 subpattern must bind the same set of names to avoid ambiguity.
 
 An OR pattern matches each of its subpatterns in turn to the subject value,
-until one succeeds.  The OR pattern is then considered successful.  Otherwise,
+until one succeeds. The OR pattern is then considered successful. Otherwise,
 if none of the subpatterns succeed, the OR pattern fails.
 
 In simple terms, ``P1 | P2 | ...`` will try to match ``P1``, if it fails it will try to
@@ -819,12 +819,12 @@ AS Patterns
 ^^^^^^^^^^^
 
 An AS pattern matches an OR pattern on the left of the :keyword:`as`
-keyword against a subject.  Syntax:
+keyword against a subject. Syntax:
 
 .. productionlist:: python-grammar
    as_pattern: `or_pattern` "as" `capture_pattern`
 
-If the OR pattern fails, the AS pattern fails.  Otherwise, the AS pattern binds
+If the OR pattern fails, the AS pattern fails. Otherwise, the AS pattern binds
 the subject to the name on the right of the as keyword and succeeds.
 ``capture_pattern`` cannot be a ``_``.
 
@@ -838,7 +838,7 @@ Literal Patterns
 ^^^^^^^^^^^^^^^^
 
 A literal pattern corresponds to most
-:ref:`literals <literals>` in Python.  Syntax:
+:ref:`literals <literals>` in Python. Syntax:
 
 .. productionlist:: python-grammar
    literal_pattern: `signed_number`
@@ -851,8 +851,8 @@ A literal pattern corresponds to most
    signed_number: ["-"] NUMBER
 
 The rule ``strings`` and the token ``NUMBER`` are defined in the
-:doc:`standard Python grammar <./grammar>`.  Triple-quoted strings are
-supported.  Raw strings and byte strings are supported.  :ref:`f-strings` are
+:doc:`standard Python grammar <./grammar>`. Triple-quoted strings are
+supported. Raw strings and byte strings are supported. :ref:`f-strings` are
 not supported.
 
 The forms ``signed_number '+' NUMBER`` and ``signed_number '-' NUMBER`` are
@@ -877,10 +877,10 @@ A single underscore ``_`` is not a capture pattern (this is what ``!'_'``
 expresses). It is instead treated as a
 :token:`~python-grammar:wildcard_pattern`.
 
-In a given pattern, a given name can only be bound once.  E.g.
+In a given pattern, a given name can only be bound once. E.g.
 ``case x, x: ...`` is invalid while ``case [x] | x: ...`` is allowed.
 
-Capture patterns always succeed.  The binding follows scoping rules
+Capture patterns always succeed. The binding follows scoping rules
 established by the assignment expression operator in :pep:`572`; the
 name becomes a local variable in the closest containing function scope unless
 there's an applicable :keyword:`global` or :keyword:`nonlocal` statement.
@@ -893,13 +893,13 @@ Wildcard Patterns
 ^^^^^^^^^^^^^^^^^
 
 A wildcard pattern always succeeds (matches anything)
-and binds no name.  Syntax:
+and binds no name. Syntax:
 
 .. productionlist:: python-grammar
    wildcard_pattern: '_'
 
 ``_`` is a :ref:`soft keyword <soft-keywords>` within any pattern,
-but only within patterns.  It is an identifier, as usual, even within
+but only within patterns. It is an identifier, as usual, even within
 ``match`` subject expressions, ``guard``\ s, and ``case`` blocks.
 
 In simple terms, ``_`` will always succeed.
@@ -918,7 +918,7 @@ Syntax:
    name_or_attr: `attr` | NAME
 
 The dotted name in the pattern is looked up using standard Python
-:ref:`name resolution rules <resolve_names>`.  The pattern succeeds if the
+:ref:`name resolution rules <resolve_names>`. The pattern succeeds if the
 value found compares equal to the subject value (using the ``==`` equality
 operator).
 
@@ -928,7 +928,7 @@ In simple terms ``NAME1.NAME2`` will succeed only if ``<subject> == NAME1.NAME2`
 
   If the same value occurs multiple times in the same match statement, the
   interpreter may cache the first value found and reuse it rather than repeat
-  the same lookup.  This cache is strictly tied to a given execution of a
+  the same lookup. This cache is strictly tied to a given execution of a
   given match statement.
 
 .. _group-patterns:
@@ -937,7 +937,7 @@ Group Patterns
 ^^^^^^^^^^^^^^
 
 A group pattern allows users to add parentheses around patterns to
-emphasize the intended grouping.  Otherwise, it has no additional syntax.
+emphasize the intended grouping. Otherwise, it has no additional syntax.
 Syntax:
 
 .. productionlist:: python-grammar
@@ -961,7 +961,7 @@ The syntax is similar to the unpacking of a list or tuple.
   maybe_star_pattern: `star_pattern` | `pattern`
   star_pattern: "*" (`capture_pattern` | `wildcard_pattern`)
 
-There is no difference if parentheses  or square brackets
+There is no difference if parentheses or square brackets
 are used for sequence patterns (i.e. ``(...)`` vs ``[...]`` ).
 
 .. note::
@@ -970,7 +970,7 @@ are used for sequence patterns (i.e. ``(...)`` vs ``[...]`` ).
    While a single pattern enclosed in square brackets (e.g. ``[3 | 4]``) is
    still a sequence pattern.
 
-At most one star subpattern may be in a sequence pattern.  The star subpattern
+At most one star subpattern may be in a sequence pattern. The star subpattern
 may occur in any position. If no star subpattern is present, the sequence
 pattern is a fixed-length sequence pattern; otherwise it is a variable-length
 sequence pattern.
@@ -993,8 +993,8 @@ subject value:
       subpatterns, the sequence pattern fails
 
    #. Subpatterns in the sequence pattern are matched to their corresponding
-      items in the subject sequence from left to right.  Matching stops as soon
-      as a subpattern fails.  If all subpatterns succeed in matching their
+      items in the subject sequence from left to right. Matching stops as soon
+      as a subpattern fails. If all subpatterns succeed in matching their
       corresponding item, the sequence pattern succeeds.
 
    Otherwise, if the sequence pattern is variable-length:
@@ -1013,7 +1013,7 @@ subject value:
       items, as for a fixed-length sequence.
 
    .. note:: The length of the subject sequence is obtained via
-      :func:`len` (i.e. via the :meth:`__len__` protocol).  This length may be
+      :func:`len` (i.e. via the :meth:`__len__` protocol). This length may be
       cached by the interpreter in a similar manner as
       :ref:`value patterns <value-patterns>`.
 
@@ -1032,7 +1032,7 @@ happens:
 Mapping Patterns
 ^^^^^^^^^^^^^^^^
 
-A mapping pattern contains one or more key-value patterns.  The syntax is
+A mapping pattern contains one or more key-value patterns. The syntax is
 similar to the construction of a dictionary.
 Syntax:
 
@@ -1043,7 +1043,7 @@ Syntax:
                     : | `double_star_pattern`
    double_star_pattern: "**" `capture_pattern`
 
-At most one double star pattern may be in a mapping pattern.  The double star
+At most one double star pattern may be in a mapping pattern. The double star
 pattern must be the last subpattern in the mapping pattern.
 
 Duplicate keys in mapping patterns are disallowed. Duplicate literal keys will
@@ -1064,7 +1064,7 @@ subject value:
    values; or a :exc:`ValueError` for named keys of the same value.
 
 .. note:: Key-value pairs are matched using the two-argument form of the mapping
-   subject's ``get()`` method.  Matched key-value pairs must already be present
+   subject's ``get()`` method. Matched key-value pairs must already be present
    in the mapping, and not created on-the-fly via :meth:`__missing__` or
    :meth:`~object.__getitem__`.
 
@@ -1083,7 +1083,7 @@ Class Patterns
 ^^^^^^^^^^^^^^
 
 A class pattern represents a class and its positional and keyword arguments
-(if any).  Syntax:
+(if any). Syntax:
 
 .. productionlist:: python-grammar
   class_pattern: `name_or_attr` "(" [`pattern_arguments` ","?] ")"
@@ -1104,7 +1104,7 @@ subject value:
 #. If the subject value is not an instance of ``name_or_attr`` (tested via
    :func:`isinstance`), the class pattern fails.
 
-#. If no pattern arguments are present, the pattern succeeds.  Otherwise,
+#. If no pattern arguments are present, the pattern succeeds. Otherwise,
    the subsequent steps depend on whether keyword or positional argument patterns
    are present.
 
@@ -1123,7 +1123,7 @@ subject value:
       * If this raises :exc:`AttributeError`, the class pattern has failed.
 
       * Else, the subpattern associated with the keyword pattern is matched
-        against the subject's attribute value.  If this fails, the class
+        against the subject's attribute value. If this fails, the class
         pattern fails; if this succeeds, the match proceeds to the next keyword.
 
 
@@ -1144,7 +1144,7 @@ subject value:
         :exc:`TypeError` is raised.
 
       * Otherwise, positional pattern ``i`` is converted to a keyword pattern
-        using ``__match_args__[i]`` as the keyword.  ``__match_args__[i]`` must
+        using ``__match_args__[i]`` as the keyword. ``__match_args__[i]`` must
         be a string; if not :exc:`TypeError` is raised.
 
       * If there are duplicate keywords, :exc:`TypeError` is raised.
@@ -1234,9 +1234,9 @@ A function definition defines a user-defined function object (see section
    funcname: `identifier`
 
 
-A function definition is an executable statement.  Its execution binds the
+A function definition is an executable statement. Its execution binds the
 function name in the current local namespace to a function object (a wrapper
-around the executable code for the function).  This function object contains a
+around the executable code for the function). This function object contains a
 reference to the current global namespace as the global namespace to be used
 when the function is called.
 
@@ -1248,9 +1248,9 @@ only when the function is called. [#]_
 
 A function definition may be wrapped by one or more :term:`decorator` expressions.
 Decorator expressions are evaluated when the function is defined, in the scope
-that contains the function definition.  The result must be a callable, which is
+that contains the function definition. The result must be a callable, which is
 invoked with the function object as the only argument. The returned value is
-bound to the function name instead of the function object.  Multiple decorators
+bound to the function name instead of the function object. Multiple decorators
 are applied in nested fashion. For example, the following code ::
 
    @f1(arg)
@@ -1285,20 +1285,20 @@ attribute. See :ref:`generic-functions` for more.
    single: = (equals); function definition
 
 When one or more :term:`parameters <parameter>` have the form *parameter* ``=``
-*expression*, the function is said to have "default parameter values."  For a
+*expression*, the function is said to have "default parameter values." For a
 parameter with a default value, the corresponding :term:`argument` may be
 omitted from a call, in which
-case the parameter's default value is substituted.  If a parameter has a default
+case the parameter's default value is substituted. If a parameter has a default
 value, all following parameters up until the "``*``" must also have a default
 value --- this is a syntactic restriction that is not expressed by the grammar.
 
 **Default parameter values are evaluated from left to right when the function
 definition is executed.** This means that the expression is evaluated once, when
 the function is defined, and that the same "pre-computed" value is used for each
-call.  This is especially important to understand when a default parameter value is a
+call. This is especially important to understand when a default parameter value is a
 mutable object, such as a list or a dictionary: if the function modifies the
 object (e.g. by appending an item to a list), the default parameter value is in effect
-modified.  This is generally not what was intended.  A way around this is to use
+modified. This is generally not what was intended. A way around this is to use
 ``None`` as the default, and explicitly test for it in the body of the function,
 e.g.::
 
@@ -1316,13 +1316,13 @@ e.g.::
 Function call semantics are described in more detail in section :ref:`calls`. A
 function call always assigns values to all parameters mentioned in the parameter
 list, either from positional arguments, from keyword arguments, or from default
-values.  If the form "``*identifier``" is present, it is initialized to a tuple
+values. If the form "``*identifier``" is present, it is initialized to a tuple
 receiving any excess positional parameters, defaulting to the empty tuple.
 If the form "``**identifier``" is present, it is initialized to a new
 ordered mapping receiving any excess keyword arguments, defaulting to a
-new empty mapping of the same type.  Parameters after "``*``" or
+new empty mapping of the same type. Parameters after "``*``" or
 "``*identifier``" are keyword-only parameters and may only be passed
-by keyword arguments.  Parameters before "``/``" are positional-only parameters
+by keyword arguments. Parameters before "``/``" are positional-only parameters
 and may only be passed by positional arguments.
 
 .. versionchanged:: 3.8
@@ -1335,11 +1335,11 @@ and may only be passed by positional arguments.
    single: : (colon); function annotations
 
 Parameters may have an :term:`annotation <function annotation>` of the form "``: expression``"
-following the parameter name.  Any parameter may have an annotation, even those of the form
+following the parameter name. Any parameter may have an annotation, even those of the form
 ``*identifier`` or ``**identifier``. (As a special case, parameters of the form
 ``*identifier`` may have an annotation "``: *expression``".) Functions may have "return" annotation of
-the form "``-> expression``" after the parameter list.  These annotations can be
-any valid Python expression.  The presence of annotations does not change the
+the form "``-> expression``" after the parameter list. These annotations can be
+any valid Python expression. The presence of annotations does not change the
 semantics of a function. See :ref:`annotations` for more information on annotations.
 
 .. versionchanged:: 3.11
@@ -1349,17 +1349,17 @@ semantics of a function. See :ref:`annotations` for more information on annotati
 .. index:: pair: lambda; expression
 
 It is also possible to create anonymous functions (functions not bound to a
-name), for immediate use in expressions.  This uses lambda expressions, described in
-section :ref:`lambda`.  Note that the lambda expression is merely a shorthand for a
+name), for immediate use in expressions. This uses lambda expressions, described in
+section :ref:`lambda`. Note that the lambda expression is merely a shorthand for a
 simplified function definition; a function defined in a ":keyword:`def`"
 statement can be passed around or assigned to another name just like a function
-defined by a lambda expression.  The ":keyword:`!def`" form is actually more powerful
+defined by a lambda expression. The ":keyword:`!def`" form is actually more powerful
 since it allows the execution of multiple statements and annotations.
 
-**Programmer's note:** Functions are first-class objects.  A "``def``" statement
+**Programmer's note:** Functions are first-class objects. A "``def``" statement
 executed inside a function definition defines a local function that can be
-returned or passed around.  Free variables used in the nested function can
-access the local variables of the function containing the def.  See section
+returned or passed around. Free variables used in the nested function can
+access the local variables of the function containing the def. See section
 :ref:`naming` for details.
 
 .. seealso::
@@ -1407,10 +1407,10 @@ A class definition defines a class object (see section :ref:`types`):
    inheritance: "(" [`argument_list`] ")"
    classname: `identifier`
 
-A class definition is an executable statement.  The inheritance list usually
+A class definition is an executable statement. The inheritance list usually
 gives a list of base classes (see :ref:`metaclasses` for more advanced uses), so
 each item in the list should evaluate to a class object which allows
-subclassing.  Classes without an inheritance list inherit, by default, from the
+subclassing. Classes without an inheritance list inherit, by default, from the
 base class :class:`object`; hence, ::
 
    class Foo:
@@ -1423,15 +1423,15 @@ is equivalent to ::
 
 The class's suite is then executed in a new execution frame (see :ref:`naming`),
 using a newly created local namespace and the original global namespace.
-(Usually, the suite contains mostly function definitions.)  When the class's
+(Usually, the suite contains mostly function definitions.) When the class's
 suite finishes execution, its execution frame is discarded but its local
 namespace is saved. [#]_ A class object is then created using the inheritance
 list for the base classes and the saved local namespace for the attribute
-dictionary.  The class name is bound to this class object in the original local
+dictionary. The class name is bound to this class object in the original local
 namespace.
 
 The order in which attributes are defined in the class body is preserved
-in the new class's :attr:`~type.__dict__`.  Note that this is reliable only right
+in the new class's :attr:`~type.__dict__`. Note that this is reliable only right
 after the class is created and only for classes that were defined using
 the definition syntax.
 
@@ -1452,7 +1452,7 @@ is roughly equivalent to ::
    Foo = f1(arg)(f2(Foo))
 
 The evaluation rules for the decorator expressions are the same as for function
-decorators.  The result is then bound to the class name.
+decorators. The result is then bound to the class name.
 
 .. versionchanged:: 3.9
    Classes may be decorated with any valid
@@ -1469,12 +1469,12 @@ the type parameters can be retrieved from the class's
    Type parameter lists are new in Python 3.12.
 
 **Programmer's note:** Variables defined in the class definition are class
-attributes; they are shared by instances.  Instance attributes can be set in a
-method with ``self.name = value``.  Both class and instance attributes are
+attributes; they are shared by instances. Instance attributes can be set in a
+method with ``self.name = value``. Both class and instance attributes are
 accessible through the notation "``self.name``", and an instance attribute hides
-a class attribute with the same name when accessed in this way.  Class
+a class attribute with the same name when accessed in this way. Class
 attributes can be used as defaults for instance attributes, but using mutable
-values there can lead to unexpected results.  :ref:`Descriptors <descriptors>`
+values there can lead to unexpected results. :ref:`Descriptors <descriptors>`
 can be used to create instance variables with different implementation details.
 
 
@@ -1486,7 +1486,7 @@ can be used to create instance variables with different implementation details.
       constructed.
 
    :pep:`3129` - Class Decorators
-      The proposal that added class decorators.  Function and method decorators
+      The proposal that added class decorators. Function and method decorators
       were introduced in :pep:`318`.
 
 

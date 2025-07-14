@@ -8,7 +8,7 @@ Simple statements
 .. index:: pair: simple; statement
 
 A simple statement is comprised within a single logical line. Several simple
-statements may occur on a single line separated by semicolons.  The syntax for
+statements may occur on a single line separated by semicolons. The syntax for
 simple statements is:
 
 .. productionlist:: python-grammar
@@ -43,8 +43,8 @@ Expression statements
 
 Expression statements are used (mostly interactively) to compute and write a
 value, or (usually) to call a procedure (a function that returns no meaningful
-result; in Python, procedures return the value ``None``).  Other uses of
-expression statements are allowed and occasionally useful.  The syntax for an
+result; in Python, procedures return the value ``None``). Other uses of
+expression statements are allowed and occasionally useful. The syntax for an
 expression statement is:
 
 .. productionlist:: python-grammar
@@ -110,7 +110,7 @@ Assignment is defined recursively depending on the form of the target (list).
 When a target is part of a mutable object (an attribute reference, subscription
 or slicing), the mutable object must ultimately perform the assignment and
 decide about its validity, and may raise an exception if the assignment is
-unacceptable.  The rules observed by various types and the exceptions raised are
+unacceptable. The rules observed by various types and the exceptions raised are
 given with the definition of the object types (see section :ref:`types`).
 
 .. index:: triple: target; list; assignment
@@ -129,10 +129,10 @@ square brackets, is recursively defined as follows.
 
   * If the target list contains one target prefixed with an asterisk, called a
     "starred" target: The object must be an iterable with at least as many items
-    as there are targets in the target list, minus one.  The first items of the
+    as there are targets in the target list, minus one. The first items of the
     iterable are assigned, from left to right, to the targets before the starred
-    target.  The final items of the iterable are assigned to the targets after
-    the starred target.  A list of the remaining items in the iterable is then
+    target. The final items of the iterable are assigned to the targets after
+    the starred target. A list of the remaining items in the iterable is then
     assigned to the starred target (the list can be empty).
 
   * Else: The object must be an iterable with the same number of items as there
@@ -152,15 +152,15 @@ Assignment of an object to a single target is recursively defined as follows.
 
   .. index:: single: destructor
 
-  The name is rebound if it was already bound.  This may cause the reference
+  The name is rebound if it was already bound. This may cause the reference
   count for the object previously bound to the name to reach zero, causing the
   object to be deallocated and its destructor (if it has one) to be called.
 
   .. index:: pair: attribute; assignment
 
 * If the target is an attribute reference: The primary expression in the
-  reference is evaluated.  It should yield an object with assignable attributes;
-  if this is not the case, :exc:`TypeError` is raised.  That object is then
+  reference is evaluated. It should yield an object with assignable attributes;
+  if this is not the case, :exc:`TypeError` is raised. That object is then
   asked to assign the assigned object to the given attribute; if it cannot
   perform the assignment, it raises an exception (usually but not necessarily
   :exc:`AttributeError`).
@@ -170,8 +170,8 @@ Assignment of an object to a single target is recursively defined as follows.
   Note: If the object is a class instance and the attribute reference occurs on
   both sides of the assignment operator, the right-hand side expression, ``a.x`` can access
   either an instance attribute or (if no instance attribute exists) a class
-  attribute.  The left-hand side target ``a.x`` is always set as an instance attribute,
-  creating it if necessary.  Thus, the two occurrences of ``a.x`` do not
+  attribute. The left-hand side target ``a.x`` is always set as an instance attribute,
+  creating it if necessary. Thus, the two occurrences of ``a.x`` do not
   necessarily refer to the same attribute: if the right-hand side expression refers to a
   class attribute, the left-hand side creates a new instance attribute as the target of the
   assignment::
@@ -189,8 +189,8 @@ Assignment of an object to a single target is recursively defined as follows.
      pair: object; mutable
 
 * If the target is a subscription: The primary expression in the reference is
-  evaluated.  It should yield either a mutable sequence object (such as a list)
-  or a mapping object (such as a dictionary).  Next, the subscript expression is
+  evaluated. It should yield either a mutable sequence object (such as a list)
+  or a mapping object (such as a dictionary). Next, the subscript expression is
   evaluated.
 
   .. index::
@@ -198,10 +198,10 @@ Assignment of an object to a single target is recursively defined as follows.
      pair: object; list
 
   If the primary is a mutable sequence object (such as a list), the subscript
-  must yield an integer.  If it is negative, the sequence's length is added to
-  it.  The resulting value must be a nonnegative integer less than the
+  must yield an integer. If it is negative, the sequence's length is added to
+  it. The resulting value must be a nonnegative integer less than the
   sequence's length, and the sequence is asked to assign the assigned object to
-  its item with that index.  If the index is out of range, :exc:`IndexError` is
+  its item with that index. If the index is out of range, :exc:`IndexError` is
   raised (assignment to a subscripted sequence cannot add new items to a list).
 
   .. index::
@@ -211,7 +211,7 @@ Assignment of an object to a single target is recursively defined as follows.
   If the primary is a mapping object (such as a dictionary), the subscript must
   have a type compatible with the mapping's key type, and the mapping is then
   asked to create a key/value pair which maps the subscript to the assigned
-  object.  This can either replace an existing key/value pair with the same key
+  object. This can either replace an existing key/value pair with the same key
   value, or insert a new key/value pair (if no key with the same value existed).
 
   For user-defined objects, the :meth:`~object.__setitem__` method is called with
@@ -220,14 +220,14 @@ Assignment of an object to a single target is recursively defined as follows.
   .. index:: pair: slicing; assignment
 
 * If the target is a slicing: The primary expression in the reference is
-  evaluated.  It should yield a mutable sequence object (such as a list).  The
-  assigned object should be a sequence object of the same type.  Next, the lower
+  evaluated. It should yield a mutable sequence object (such as a list). The
+  assigned object should be a sequence object of the same type. Next, the lower
   and upper bound expressions are evaluated, insofar they are present; defaults
-  are zero and the sequence's length.  The bounds should evaluate to integers.
-  If either bound is negative, the sequence's length is added to it.  The
+  are zero and the sequence's length. The bounds should evaluate to integers.
+  If either bound is negative, the sequence's length is added to it. The
   resulting bounds are clipped to lie between zero and the sequence's length,
-  inclusive.  Finally, the sequence object is asked to replace the slice with
-  the items of the assigned sequence.  The length of the slice may be different
+  inclusive. Finally, the sequence object is asked to replace the slice with
+  the items of the assigned sequence. The length of the slice may be different
   from the length of the assigned sequence, thus changing the length of the
   target sequence, if the target sequence allows it.
 
@@ -240,7 +240,7 @@ Assignment of an object to a single target is recursively defined as follows.
 Although the definition of assignment implies that overlaps between the
 left-hand side and the right-hand side are 'simultaneous' (for example ``a, b =
 b, a`` swaps two variables), overlaps *within* the collection of assigned-to
-variables occur left-to-right, sometimes resulting in confusion.  For instance,
+variables occur left-to-right, sometimes resulting in confusion. For instance,
 the following program prints ``[0, 2]``::
 
    x = [0, 1]
@@ -291,7 +291,7 @@ symbols.)
 An augmented assignment evaluates the target (which, unlike normal assignment
 statements, cannot be an unpacking) and the expression list, performs the binary
 operation specific to the type of assignment on the two operands, and assigns
-the result to the original target.  The target is only evaluated once.
+the result to the original target. The target is only evaluated once.
 
 An augmented assignment statement like ``x += 1`` can be rewritten as ``x = x +
 1`` to achieve a similar, but not exactly equal effect. In the augmented
@@ -300,7 +300,7 @@ is performed *in-place*, meaning that rather than creating a new object and
 assigning that to the target, the old object is modified instead.
 
 Unlike normal assignments, augmented assignments evaluate the left-hand side
-*before* evaluating the right-hand side.  For example, ``a[i] += f(x)`` first
+*before* evaluating the right-hand side. For example, ``a[i] += f(x)`` first
 looks-up ``a[i]``, then it evaluates ``f(x)`` and performs the addition, and
 lastly, it writes the result back to ``a[i]``.
 
@@ -407,15 +407,15 @@ The extended form, ``assert expression1, expression2``, is equivalent to ::
    pair: exception; AssertionError
 
 These equivalences assume that :const:`__debug__` and :exc:`AssertionError` refer to
-the built-in variables with those names.  In the current implementation, the
+the built-in variables with those names. In the current implementation, the
 built-in variable ``__debug__`` is ``True`` under normal circumstances,
-``False`` when optimization is requested (command line option :option:`-O`).  The current
+``False`` when optimization is requested (command line option :option:`-O`). The current
 code generator emits no code for an :keyword:`assert` statement when optimization is
-requested at compile time.  Note that it is unnecessary to include the source
+requested at compile time. Note that it is unnecessary to include the source
 code for the expression that failed in the error message; it will be displayed
 as part of the stack trace.
 
-Assignments to :const:`__debug__` are illegal.  The value for the built-in variable
+Assignments to :const:`__debug__` are illegal. The value for the built-in variable
 is determined when the interpreter starts.
 
 
@@ -465,7 +465,7 @@ Deletion of a target list recursively deletes each target, from left to right.
 
 Deletion of a name removes the binding of that name from the local or global
 namespace, depending on whether the name occurs in a :keyword:`global` statement
-in the same code block.  If the name is unbound, a :exc:`NameError` exception
+in the same code block. If the name is unbound, a :exc:`NameError` exception
 will be raised.
 
 .. index:: pair: attribute; deletion
@@ -514,7 +514,7 @@ becomes the :attr:`StopIteration.value` attribute.
 
 In an asynchronous generator function, an empty :keyword:`return` statement
 indicates that the asynchronous generator is done and will cause
-:exc:`StopAsyncIteration` to be raised.  A non-empty :keyword:`!return`
+:exc:`StopAsyncIteration` to be raised. A non-empty :keyword:`!return`
 statement is a syntax error in an asynchronous generator function.
 
 .. _yield:
@@ -546,7 +546,7 @@ are equivalent to the yield expression statements ::
   (yield from <expr>)
 
 Yield expressions and statements are only used when defining a :term:`generator`
-function, and are only used in the body of the generator function.  Using :keyword:`yield`
+function, and are only used in the body of the generator function. Using :keyword:`yield`
 in a function definition is sufficient to cause that definition to create a
 generator function instead of a normal function.
 
@@ -573,7 +573,7 @@ If there isn't currently an active exception, a :exc:`RuntimeError` exception is
 indicating that this is an error.
 
 Otherwise, :keyword:`raise` evaluates the first expression as the exception
-object.  It must be either a subclass or an instance of :class:`BaseException`.
+object. It must be either a subclass or an instance of :class:`BaseException`.
 If it is a class, the exception instance will be obtained when needed by
 instantiating the class with no arguments.
 
@@ -624,9 +624,9 @@ exceptions will be printed:
    RuntimeError: Something bad happened
 
 A similar mechanism works implicitly if a new exception is raised when
-an exception is already being handled.  An exception may be handled
+an exception is already being handled. An exception may be handled
 when an :keyword:`except` or :keyword:`finally` clause, or a
-:keyword:`with` statement, is used.  The previous exception is then
+:keyword:`with` statement, is used. The previous exception is then
 attached as the new exception's :attr:`~BaseException.__context__` attribute:
 
 .. code-block:: pycon
@@ -729,7 +729,7 @@ The :keyword:`!continue` statement
 
 :keyword:`continue` may only occur syntactically nested in a :keyword:`for` or
 :keyword:`while` loop, but not nested in a function or class definition within
-that loop.  It continues with the next cycle of the nearest enclosing loop.
+that loop. It continues with the next cycle of the nearest enclosing loop.
 
 When :keyword:`continue` passes control out of a :keyword:`try` statement with a
 :keyword:`finally` clause, that :keyword:`!finally` clause is executed before
@@ -833,16 +833,16 @@ where the :keyword:`import` statement occurs.
 
 The *public names* defined by a module are determined by checking the module's
 namespace for a variable named ``__all__``; if defined, it must be a sequence
-of strings which are names defined or imported by that module.  The names
-given in ``__all__`` are all considered public and are required to exist.  If
+of strings which are names defined or imported by that module. The names
+given in ``__all__`` are all considered public and are required to exist. If
 ``__all__`` is not defined, the set of public names includes all names found
 in the module's namespace which do not begin with an underscore character
-(``'_'``).  ``__all__`` should contain the entire public API. It is intended
+(``'_'``). ``__all__`` should contain the entire public API. It is intended
 to avoid accidentally exporting items that are not part of the API (such as
 library modules which were imported and used within the module).
 
 The wild card form of import --- ``from module import *`` --- is only allowed at
-the module level.  Attempting to use it in class or function definitions will
+the module level. Attempting to use it in class or function definitions will
 raise a :exc:`SyntaxError`.
 
 .. index::
@@ -881,7 +881,7 @@ module should be compiled using syntax or semantics that will be available in a
 specified future release of Python where the feature becomes standard.
 
 The future statement is intended to ease migration to future versions of Python
-that introduce incompatible changes to the language.  It allows use of the new
+that introduce incompatible changes to the language. It allows use of the new
 features on a per-module basis before the release in which the feature becomes
 standard.
 
@@ -892,7 +892,7 @@ standard.
               : ("," `feature` ["as" `identifier`])* [","] ")"
    feature: `identifier`
 
-A future statement must appear near the top of the module.  The only lines that
+A future statement must appear near the top of the module. The only lines that
 can appear before a future statement are:
 
 * the module docstring (if any),
@@ -904,17 +904,17 @@ The only feature that requires using the future statement is
 ``annotations`` (see :pep:`563`).
 
 All historical features enabled by the future statement are still recognized
-by Python 3.  The list includes ``absolute_import``, ``division``,
+by Python 3. The list includes ``absolute_import``, ``division``,
 ``generators``, ``generator_stop``, ``unicode_literals``,
-``print_function``, ``nested_scopes`` and ``with_statement``.  They are
+``print_function``, ``nested_scopes`` and ``with_statement``. They are
 all redundant because they are always enabled, and only kept for
 backwards compatibility.
 
 A future statement is recognized and treated specially at compile time: Changes
 to the semantics of core constructs are often implemented by generating
-different code.  It may even be the case that a new feature introduces new
+different code. It may even be the case that a new feature introduces new
 incompatible syntax (such as a new reserved word), in which case the compiler
-may need to parse the module differently.  Such decisions cannot be pushed off
+may need to parse the module differently. Such decisions cannot be pushed off
 until runtime.
 
 For any given release, the compiler knows which feature names have been defined,
@@ -937,12 +937,12 @@ special semantics or syntax restrictions.
 
 Code compiled by calls to the built-in functions :func:`exec` and :func:`compile`
 that occur in a module :mod:`!M` containing a future statement will, by default,
-use the new syntax or semantics associated with the future statement.  This can
+use the new syntax or semantics associated with the future statement. This can
 be controlled by optional arguments to :func:`compile` --- see the documentation
 of that function for details.
 
 A future statement typed at an interactive interpreter prompt will take effect
-for the rest of the interpreter session.  If an interpreter is started with the
+for the rest of the interpreter session. If an interpreter is started with the
 :option:`-i` option, is passed a script name to execute, and the script includes
 a future statement, it will be in effect in the interactive session started
 after the script is executed.
@@ -980,13 +980,13 @@ assigned to prior to its global declaration in the scope.
    pair: built-in function; eval
    pair: built-in function; compile
 
-**Programmer's note:** :keyword:`global` is a directive to the parser.  It
+**Programmer's note:** :keyword:`global` is a directive to the parser. It
 applies only to code parsed at the same time as the :keyword:`!global` statement.
 In particular, a :keyword:`!global` statement contained in a string or code
 object supplied to the built-in :func:`exec` function does not affect the code
 block *containing* the function call, and code contained in such a string is
 unaffected by :keyword:`!global` statements in the code containing the function
-call.  The same applies to the :func:`eval` and :func:`compile` functions.
+call. The same applies to the :func:`eval` and :func:`compile` functions.
 
 
 .. _nonlocal:
@@ -1005,7 +1005,7 @@ the definitions of other functions, its nonlocal scopes are the local
 scopes of the enclosing functions. The :keyword:`nonlocal` statement
 causes the listed identifiers to refer to names previously bound in
 nonlocal scopes. It allows encapsulated code to rebind such nonlocal
-identifiers.  If a name is bound in more than one nonlocal scope, the
+identifiers. If a name is bound in more than one nonlocal scope, the
 nearest binding is used. If a name is not bound in any nonlocal scope,
 or if there is no nonlocal scope, a :exc:`SyntaxError` is raised.
 
@@ -1019,7 +1019,7 @@ assigned to prior to its nonlocal declaration in the scope.
       The specification for the :keyword:`nonlocal` statement.
 
 **Programmer's note:** :keyword:`nonlocal` is a directive to the parser
-and applies only to code parsed along with it.  See the note for the
+and applies only to code parsed along with it. See the note for the
 :keyword:`global` statement.
 
 

@@ -15,7 +15,7 @@ Objects, values and types
    single: object
    single: data
 
-:dfn:`Objects` are Python's abstraction for data.  All data in a Python program
+:dfn:`Objects` are Python's abstraction for data. All data in a Python program
 is represented by objects or by relations between objects. (In a sense, and in
 conformance to Von Neumann's model of a "stored program computer", code is also
 represented by objects.)
@@ -32,9 +32,9 @@ represented by objects.)
 .. XXX it *is* now possible in some cases to change an object's
    type, under certain controlled conditions
 
-Every object has an identity, a type and a value.  An object's *identity* never
+Every object has an identity, a type and a value. An object's *identity* never
 changes once it has been created; you may think of it as the object's address in
-memory.  The :keyword:`is` operator compares the identity of two objects; the
+memory. The :keyword:`is` operator compares the identity of two objects; the
 :func:`id` function returns an integer representing its identity.
 
 .. impl-detail::
@@ -43,16 +43,16 @@ memory.  The :keyword:`is` operator compares the identity of two objects; the
 
 An object's type determines the operations that the object supports (e.g., "does
 it have a length?") and also defines the possible values for objects of that
-type.  The :func:`type` function returns an object's type (which is an object
-itself).  Like its identity, an object's :dfn:`type` is also unchangeable.
+type. The :func:`type` function returns an object's type (which is an object
+itself). Like its identity, an object's :dfn:`type` is also unchangeable.
 [#]_
 
-The *value* of some objects can change.  Objects whose value can
+The *value* of some objects can change. Objects whose value can
 change are said to be *mutable*; objects whose value is unchangeable once they
 are created are called *immutable*. (The value of an immutable container object
 that contains a reference to a mutable object can change when the latter's value
 is changed; however the container is still considered immutable, because the
-collection of objects it contains cannot be changed.  So, immutability is not
+collection of objects it contains cannot be changed. So, immutability is not
 strictly the same as having an unchangeable value, it is more subtle.) An
 object's mutability is determined by its type; for instance, numbers, strings
 and tuples are immutable, while dictionaries and lists are mutable.
@@ -63,7 +63,7 @@ and tuples are immutable, while dictionaries and lists are mutable.
    single: unreachable object
 
 Objects are never explicitly destroyed; however, when they become unreachable
-they may be garbage-collected.  An implementation is allowed to postpone garbage
+they may be garbage-collected. An implementation is allowed to postpone garbage
 collection or omit it altogether --- it is a matter of implementation quality
 how garbage collection is implemented, as long as no objects are collected that
 are still reachable.
@@ -73,7 +73,7 @@ are still reachable.
    CPython currently uses a reference-counting scheme with (optional) delayed
    detection of cyclically linked garbage, which collects most objects as soon
    as they become unreachable, but is not guaranteed to collect garbage
-   containing circular references.  See the documentation of the :mod:`gc`
+   containing circular references. See the documentation of the :mod:`gc`
    module for information on controlling the collection of cyclic garbage.
    Other implementations act differently and CPython may change.
    Do not depend on immediate finalization of objects when they become
@@ -85,25 +85,25 @@ an exception with a :keyword:`try`...\ :keyword:`except` statement may keep
 objects alive.
 
 Some objects contain references to "external" resources such as open files or
-windows.  It is understood that these resources are freed when the object is
+windows. It is understood that these resources are freed when the object is
 garbage-collected, but since garbage collection is not guaranteed to happen,
 such objects also provide an explicit way to release the external resource,
 usually a :meth:`!close` method. Programs are strongly recommended to explicitly
-close such objects.  The :keyword:`try`...\ :keyword:`finally` statement
+close such objects. The :keyword:`try`...\ :keyword:`finally` statement
 and the :keyword:`with` statement provide convenient ways to do this.
 
 .. index:: single: container
 
 Some objects contain references to other objects; these are called *containers*.
-Examples of containers are tuples, lists and dictionaries.  The references are
-part of a container's value.  In most cases, when we talk about the value of a
+Examples of containers are tuples, lists and dictionaries. The references are
+part of a container's value. In most cases, when we talk about the value of a
 container, we imply the values, not the identities of the contained objects;
 however, when we talk about the mutability of a container, only the identities
-of the immediately contained objects are implied.  So, if an immutable container
+of the immediately contained objects are implied. So, if an immutable container
 (like a tuple) contains a reference to a mutable object, its value changes if
 that mutable object is changed.
 
-Types affect almost all aspects of object behavior.  Even the importance of
+Types affect almost all aspects of object behavior. Even the importance of
 object identity is affected in some sense: for immutable types, operations that
 compute new values may actually return a reference to any existing object with
 the same type and value, while for mutable objects this is not allowed.
@@ -130,9 +130,9 @@ The standard type hierarchy
    pair: extension; module
    pair: C; language
 
-Below is a list of the types that are built into Python.  Extension modules
+Below is a list of the types that are built into Python. Extension modules
 (written in C, Java, or other languages, depending on the implementation) can
-define additional types.  Future versions of Python may add types to the type
+define additional types. Future versions of Python may add types to the type
 hierarchy (e.g., rational numbers, efficiently stored arrays of integers, etc.),
 although such additions will often be provided via the standard library instead.
 
@@ -142,8 +142,8 @@ although such additions will often be provided via the standard library instead.
    triple: generic; special; attribute
 
 Some of the type descriptions below contain a paragraph listing 'special
-attributes.'  These are attributes that provide access to the implementation and
-are not intended for general use.  Their definition may change in the future.
+attributes.' These are attributes that provide access to the implementation and
+are not intended for general use. Their definition may change in the future.
 
 
 None
@@ -151,7 +151,7 @@ None
 
 .. index:: pair: object; None
 
-This type has a single value.  There is a single object with this value. This
+This type has a single value. There is a single object with this value. This
 object is accessed through the built-in name ``None``. It is used to signify the
 absence of a value in many situations, e.g., it is returned from functions that
 don't explicitly return anything. Its truth value is false.
@@ -162,11 +162,11 @@ NotImplemented
 
 .. index:: pair: object; NotImplemented
 
-This type has a single value.  There is a single object with this value. This
+This type has a single value. There is a single object with this value. This
 object is accessed through the built-in name :data:`NotImplemented`. Numeric methods
 and rich comparison methods should return this value if they do not implement the
-operation for the operands provided.  (The interpreter will then try the
-reflected operation, or some other fallback, depending on the operator.)  It
+operation for the operands provided. (The interpreter will then try the
+reflected operation, or some other fallback, depending on the operator.) It
 should not be evaluated in a boolean context.
 
 See
@@ -188,9 +188,9 @@ Ellipsis
    pair: object; Ellipsis
    single: ...; ellipsis literal
 
-This type has a single value.  There is a single object with this value. This
+This type has a single value. There is a single object with this value. This
 object is accessed through the literal ``...`` or the built-in name
-``Ellipsis``.  Its truth value is true.
+``Ellipsis``. Its truth value is true.
 
 
 :class:`numbers.Number`
@@ -199,8 +199,8 @@ object is accessed through the literal ``...`` or the built-in name
 .. index:: pair: object; numeric
 
 These are created by numeric literals and returned as results by arithmetic
-operators and arithmetic built-in functions.  Numeric objects are immutable;
-once created their value never changes.  Python numbers are of course strongly
+operators and arithmetic built-in functions. Numeric objects are immutable;
+once created their value never changes. Python numbers are of course strongly
 related to mathematical numbers, but subject to the limitations of numerical
 representation in computers.
 
@@ -244,7 +244,7 @@ There are two types of integers:
 
 Integers (:class:`int`)
    These represent numbers in an unlimited range, subject to available (virtual)
-   memory only.  For the purpose of shift and mask operations, a binary
+   memory only. For the purpose of shift and mask operations, a binary
    representation is assumed, and negative numbers are represented in a variant of
    2's complement which gives the illusion of an infinite string of sign bits
    extending to the left.
@@ -255,7 +255,7 @@ Booleans (:class:`bool`)
       single: False
       single: True
 
-   These represent the truth values False and True.  The two objects representing
+   These represent the truth values False and True. The two objects representing
    the values ``False`` and ``True`` are the only Boolean objects. The Boolean type is a
    subtype of the integer type, and Boolean values behave like the values 0 and 1,
    respectively, in almost all contexts, the exception being that when converted to
@@ -290,7 +290,7 @@ language with two kinds of floating-point numbers.
    pair: complex; number
 
 These represent complex numbers as a pair of machine-level double precision
-floating-point numbers.  The same caveats apply as for floating-point numbers.
+floating-point numbers. The same caveats apply as for floating-point numbers.
 The real and imaginary parts of a complex number ``z`` can be retrieved through
 the read-only attributes ``z.real`` and ``z.imag``.
 
@@ -308,7 +308,7 @@ Sequences
 These represent finite ordered sets indexed by non-negative numbers. The
 built-in function :func:`len` returns the number of items of a sequence. When
 the length of a sequence is *n*, the index set contains the numbers 0, 1,
-..., *n*-1.  Item *i* of sequence *a* is selected by ``a[i]``. Some sequences,
+..., *n*-1. Item *i* of sequence *a* is selected by ``a[i]``. Some sequences,
 including built-in sequences, interpret negative subscripts by adding the
 sequence length. For example, ``a[-2]`` equals ``a[n-2]``, the second to last
 item of sequence a with length ``n``.
@@ -316,7 +316,7 @@ item of sequence a with length ``n``.
 .. index:: single: slicing
 
 Sequences also support slicing: ``a[i:j]`` selects all items with index *k* such
-that *i* ``<=`` *k* ``<`` *j*.  When used as an expression, a slice is a
+that *i* ``<=`` *k* ``<`` *j*. When used as an expression, a slice is a
 sequence of the same type. The comment above about negative indexes also applies
 to negative slice positions.
 
@@ -334,7 +334,7 @@ Immutable sequences
    pair: object; immutable sequence
    pair: object; immutable
 
-An object of an immutable sequence type cannot change once it is created.  (If
+An object of an immutable sequence type cannot change once it is created. (If
 the object contains references to other objects, these other objects may be
 mutable and may be changed; however, the collection of objects directly
 referenced by an immutable object cannot change.)
@@ -354,9 +354,9 @@ Strings
 
    A string is a sequence of values that represent Unicode code points.
    All the code points in the range ``U+0000 - U+10FFFF`` can be
-   represented in a string.  Python doesn't have a :c:expr:`char` type;
+   represented in a string. Python doesn't have a :c:expr:`char` type;
    instead, every code point in the string is represented as a string
-   object with length ``1``.  The built-in function :func:`ord`
+   object with length ``1``. The built-in function :func:`ord`
    converts a code point from its string form to an integer in the
    range ``0 - 10FFFF``; :func:`chr` converts an integer in the range
    ``0 - 10FFFF`` to the corresponding length ``1`` string object.
@@ -371,19 +371,19 @@ Tuples
       pair: empty; tuple
 
    The items of a tuple are arbitrary Python objects. Tuples of two or
-   more items are formed by comma-separated lists of expressions.  A tuple
+   more items are formed by comma-separated lists of expressions. A tuple
    of one item (a 'singleton') can be formed by affixing a comma to an
    expression (an expression by itself does not create a tuple, since
-   parentheses must be usable for grouping of expressions).  An empty
+   parentheses must be usable for grouping of expressions). An empty
    tuple can be formed by an empty pair of parentheses.
 
 Bytes
    .. index:: bytes, byte
 
-   A bytes object is an immutable array.  The items are 8-bit bytes,
-   represented by integers in the range 0 <= x < 256.  Bytes literals
+   A bytes object is an immutable array. The items are 8-bit bytes,
+   represented by integers in the range 0 <= x < 256. Bytes literals
    (like ``b'abc'``) and the built-in :func:`bytes` constructor
-   can be used to create bytes objects.  Also, bytes objects can be
+   can be used to create bytes objects. Also, bytes objects can be
    decoded to strings via the :meth:`~bytes.decode` method.
 
 
@@ -397,7 +397,7 @@ Mutable sequences
    single: subscription
    single: slicing
 
-Mutable sequences can be changed after they are created.  The subscription and
+Mutable sequences can be changed after they are created. The subscription and
 slicing notations can be used as the target of assignment and :keyword:`del`
 (delete) statements.
 
@@ -413,7 +413,7 @@ There are currently two intrinsic mutable sequence types:
 Lists
    .. index:: pair: object; list
 
-   The items of a list are arbitrary Python objects.  Lists are formed by
+   The items of a list are arbitrary Python objects. Lists are formed by
    placing a comma-separated list of expressions in square brackets. (Note
    that there are no special cases needed to form lists of length 0 or 1.)
 
@@ -421,7 +421,7 @@ Byte Arrays
    .. index:: bytearray
 
    A bytearray object is a mutable array. They are created by the built-in
-   :func:`bytearray` constructor.  Aside from being mutable
+   :func:`bytearray` constructor. Aside from being mutable
    (and hence unhashable), byte arrays otherwise provide the same interface
    and functionality as immutable :class:`bytes` objects.
 
@@ -459,8 +459,8 @@ Sets
 Frozen sets
    .. index:: pair: object; frozenset
 
-   These represent an immutable set.  They are created by the built-in
-   :func:`frozenset` constructor.  As a frozenset is immutable and
+   These represent an immutable set. They are created by the built-in
+   :func:`frozenset` constructor. As a frozenset is immutable and
    :term:`hashable`, it can be used again as an element of another set, or as
    a dictionary key.
 
@@ -487,7 +487,7 @@ Dictionaries
 
 .. index:: pair: object; dictionary
 
-These represent finite sets of objects indexed by nearly arbitrary values.  The
+These represent finite sets of objects indexed by nearly arbitrary values. The
 only types of values not acceptable as keys are values containing lists or
 dictionaries or other mutable types that are compared by value rather than by
 object identity, the reason being that the efficient implementation of
@@ -542,7 +542,7 @@ User-defined functions
    pair: object; user-defined function
 
 A user-defined function object is created by a function definition (see
-section :ref:`function`).  It should be called with an argument list
+section :ref:`function`). It should be called with an argument list
 containing the same number of items as the function's formal parameter
 list.
 
@@ -654,7 +654,7 @@ Most of these attributes check the type of the assigned value:
        .. versionadded:: 3.12
 
 Function objects also support getting and setting arbitrary attributes, which
-can be used, for example, to attach metadata to functions.  Regular attribute
+can be used, for example, to attach metadata to functions. Regular attribute
 dot-notation is used to get and set such attributes.
 
 .. impl-detail::
@@ -727,7 +727,7 @@ user-defined :ref:`function object <user-defined-funcs>` or a
 When an instance method object is created by retrieving a user-defined
 :ref:`function object <user-defined-funcs>` from a class via one of its
 instances, its :attr:`~method.__self__` attribute is the instance, and the
-method object is said to be *bound*.  The new method's :attr:`~method.__func__`
+method object is said to be *bound*. The new method's :attr:`~method.__func__`
 attribute is the original function object.
 
 When an instance method object is created by retrieving a :class:`classmethod`
@@ -737,7 +737,7 @@ underlying the class method.
 
 When an instance method object is called, the underlying function
 (:attr:`~method.__func__`) is called, inserting the class instance
-(:attr:`~method.__self__`) in front of the argument list.  For instance, when
+(:attr:`~method.__self__`) in front of the argument list. For instance, when
 :class:`!C` is a class which contains a definition for a function
 :meth:`!f`, and ``x`` is an instance of :class:`!C`, calling ``x.f(1)`` is
 equivalent to calling ``C.f(x, 1)``.
@@ -761,11 +761,11 @@ Generator functions
    single: generator; iterator
 
 A function or method which uses the :keyword:`yield` statement (see section
-:ref:`yield`) is called a :dfn:`generator function`.  Such a function, when
+:ref:`yield`) is called a :dfn:`generator function`. Such a function, when
 called, always returns an :term:`iterator` object which can be used to
-execute the body of the function:  calling the iterator's
+execute the body of the function: calling the iterator's
 :meth:`iterator.__next__` method will cause the function to execute until
-it provides a value using the :keyword:`!yield` statement.  When the
+it provides a value using the :keyword:`!yield` statement. When the
 function executes a :keyword:`return` statement or falls off the end, a
 :exc:`StopIteration` exception is raised and the iterator will have
 reached the end of the set of values to be returned.
@@ -778,8 +778,8 @@ Coroutine functions
    single: coroutine; function
 
 A function or method which is defined using :keyword:`async def` is called
-a :dfn:`coroutine function`.  Such a function, when called, returns a
-:term:`coroutine` object.  It may contain :keyword:`await` expressions,
+a :dfn:`coroutine function`. Such a function, when called, returns a
+:term:`coroutine` object. It may contain :keyword:`await` expressions,
 as well as :keyword:`async with` and :keyword:`async for` statements. See
 also the :ref:`coroutine-objects` section.
 
@@ -793,7 +793,7 @@ Asynchronous generator functions
 
 A function or method which is defined using :keyword:`async def` and
 which uses the :keyword:`yield` statement is called a
-:dfn:`asynchronous generator function`.  Such a function, when called,
+:dfn:`asynchronous generator function`. Such a function, when called,
 returns an :term:`asynchronous iterator` object which can be used in an
 :keyword:`async for` statement to execute the body of the function.
 
@@ -801,7 +801,7 @@ Calling the asynchronous iterator's
 :meth:`aiterator.__anext__ <object.__anext__>` method
 will return an :term:`awaitable` which when awaited
 will execute until it provides a value using the :keyword:`yield`
-expression.  When the function executes an empty :keyword:`return`
+expression. When the function executes an empty :keyword:`return`
 statement or falls off the end, a :exc:`StopAsyncIteration` exception
 is raised and the asynchronous iterator will have reached the end of
 the set of values to be yielded.
@@ -817,7 +817,7 @@ Built-in functions
    pair: object; function
    pair: C; language
 
-A built-in function object is a wrapper around a C function.  Examples of
+A built-in function object is a wrapper around a C function. Examples of
 built-in functions are :func:`len` and :func:`math.sin` (:mod:`math` is a
 standard built-in module). The number and type of the arguments are
 determined by the C function. Special read-only attributes:
@@ -842,7 +842,7 @@ Built-in methods
    pair: built-in; method
 
 This is really a different disguise of a built-in function, this time containing
-an object passed to the C function as an implicit extra argument.  An example of
+an object passed to the C function as an implicit extra argument. An example of
 a built-in method is ``alist.append()``, assuming *alist* is a list object. In
 this case, the special read-only attribute :attr:`!__self__` is set to the object
 denoted by *alist*. (The attribute has the same semantics as it does with
@@ -853,9 +853,9 @@ denoted by *alist*. (The attribute has the same semantics as it does with
 Classes
 ^^^^^^^
 
-Classes are callable.  These objects normally act as factories for new
+Classes are callable. These objects normally act as factories for new
 instances of themselves, but variations are possible for class types that
-override :meth:`~object.__new__`.  The arguments of the call are passed to
+override :meth:`~object.__new__`. The arguments of the call are passed to
 :meth:`!__new__` and, in the typical case, to :meth:`~object.__init__` to
 initialize the new instance.
 
@@ -880,10 +880,10 @@ Modules are a basic organizational unit of Python code, and are created by
 the :ref:`import system <importsystem>` as invoked either by the
 :keyword:`import` statement, or by calling
 functions such as :func:`importlib.import_module` and built-in
-:func:`__import__`.  A module object has a namespace implemented by a
+:func:`__import__`. A module object has a namespace implemented by a
 :class:`dictionary <dict>` object (this is the dictionary referenced by the
 :attr:`~function.__globals__`
-attribute of functions defined in the module).  Attribute references are
+attribute of functions defined in the module). Attribute references are
 translated to lookups in this dictionary, e.g., ``m.x`` is equivalent to
 ``m.__dict__["x"]``. A module object does not contain the code object used
 to initialize the module (since it isn't needed once the initialization is
@@ -1063,16 +1063,16 @@ this approach.
    has no semantic meaning (for example, a module loaded from a database).
 
    If :attr:`!__file__` is set then the :attr:`!__cached__` attribute might
-   also be set,  which is the path to any compiled version of
+   also be set, which is the path to any compiled version of
    the code (for example, a byte-compiled file). The file does not need to exist
    to set this attribute; the path can simply point to where the
    compiled file *would* exist (see :pep:`3147`).
 
    Note that :attr:`!__cached__` may be set even if :attr:`!__file__` is not
-   set.  However, that scenario is quite atypical.  Ultimately, the
+   set. However, that scenario is quite atypical. Ultimately, the
    :term:`loader` is what makes use of the module spec provided by the
    :term:`finder` (from which :attr:`!__file__` and :attr:`!__cached__` are
-   derived).  So if a loader can load from a cached module but otherwise does
+   derived). So if a loader can load from a cached module but otherwise does
    not load from a file, that atypical scenario may be appropriate.
 
    It is **strongly** recommended that you use
@@ -1099,7 +1099,7 @@ the following writable attributes:
 .. attribute:: module.__annotations__
 
    A dictionary containing :term:`variable annotations <variable annotation>`
-   collected during module body execution.  For best practices on working with
+   collected during module body execution. For best practices on working with
    :attr:`!__annotations__`, see :mod:`annotationlib`.
 
    .. versionchanged:: 3.14
@@ -1129,7 +1129,7 @@ Module objects also have the following special read-only attribute:
 
       Because of the way CPython clears module dictionaries, the module
       dictionary will be cleared when the module falls out of scope even if the
-      dictionary still has live references.  To avoid this, copy the dictionary
+      dictionary still has live references. To avoid this, copy the dictionary
       or keep the module around while using its dictionary directly.
 
 
@@ -1139,7 +1139,7 @@ Custom classes
 --------------
 
 Custom class types are typically created by class definitions (see section
-:ref:`class`).  A class has a namespace implemented by a dictionary object.
+:ref:`class`). A class has a namespace implemented by a dictionary object.
 Class attribute references are translated to lookups in this dictionary, e.g.,
 ``C.x`` is translated to ``C.__dict__["x"]`` (although there are a number of
 hooks which allow for other means of locating attributes). When the attribute
@@ -1291,7 +1291,7 @@ have the following two methods available:
 .. method:: type.mro
 
    This method can be overridden by a metaclass to customize the method
-   resolution order for its instances.  It is called at class instantiation,
+   resolution order for its instances. It is called at class instantiation,
    and its result is stored in :attr:`~type.__mro__`.
 
 .. method:: type.__subclasses__
@@ -1316,24 +1316,24 @@ Class instances
    pair: class; instance
    pair: class instance; attribute
 
-A class instance is created by calling a class object (see above).  A class
+A class instance is created by calling a class object (see above). A class
 instance has a namespace implemented as a dictionary which is the first place
-in which attribute references are searched.  When an attribute is not found
+in which attribute references are searched. When an attribute is not found
 there, and the instance's class has an attribute by that name, the search
-continues with the class attributes.  If a class attribute is found that is a
+continues with the class attributes. If a class attribute is found that is a
 user-defined function object, it is transformed into an instance method
-object whose :attr:`~method.__self__` attribute is the instance.  Static method and
-class method objects are also transformed; see above under "Classes".  See
+object whose :attr:`~method.__self__` attribute is the instance. Static method and
+class method objects are also transformed; see above under "Classes". See
 section :ref:`descriptors` for another way in which attributes of a class
 retrieved via its instances may differ from the objects actually stored in
-the class's :attr:`~object.__dict__`.  If no class attribute is found, and the
+the class's :attr:`~object.__dict__`. If no class attribute is found, and the
 object's class has a :meth:`~object.__getattr__` method, that is called to satisfy
 the lookup.
 
 .. index:: triple: class instance; attribute; assignment
 
 Attribute assignments and deletions update the instance's dictionary, never a
-class's dictionary.  If the class has a :meth:`~object.__setattr__` or
+class's dictionary. If the class has a :meth:`~object.__setattr__` or
 :meth:`~object.__delattr__` method, this is called instead of updating the instance
 dictionary directly.
 
@@ -1343,7 +1343,7 @@ dictionary directly.
    pair: object; mapping
 
 Class instances can pretend to be numbers, sequences, or mappings if they have
-methods with certain special names.  See section :ref:`specialnames`.
+methods with certain special names. See section :ref:`specialnames`.
 
 Special attributes
 ^^^^^^^^^^^^^^^^^^
@@ -1379,7 +1379,7 @@ I/O objects (also known as file objects)
    single: stdout (in module sys)
    single: stderr (in module sys)
 
-A :term:`file object` represents an open file.  Various shortcuts are
+A :term:`file object` represents an open file. Various shortcuts are
 available to create file objects: the :func:`open` built-in function, and
 also :func:`os.popen`, :func:`os.fdopen`, and the
 :meth:`~socket.socket.makefile` method of socket objects (and perhaps by
@@ -1416,7 +1416,7 @@ The difference between a code object and a function object is that the function
 object contains an explicit reference to the function's globals (the module in
 which it was defined), while a code object contains no context; also the default
 argument values are stored in the function object, not in the code object
-(because they represent values calculated at run-time).  Unlike function
+(because they represent values calculated at run-time). Unlike function
 objects, code objects are immutable and contain no references (directly or
 indirectly) to mutable objects.
 
@@ -1627,7 +1627,7 @@ Frame objects
 
 .. index:: pair: object; frame
 
-Frame objects represent execution frames.  They may occur in
+Frame objects represent execution frames. They may occur in
 :ref:`traceback objects <traceback-objects>`,
 and are also passed to registered trace functions.
 
@@ -1704,7 +1704,7 @@ Special writable attributes
    * - .. attribute:: frame.f_lineno
      - The current line number of the frame -- writing to this
        from within a trace function jumps to the given line (only for the bottom-most
-       frame).  A debugger can implement a Jump command (aka Set Next Statement)
+       frame). A debugger can implement a Jump command (aka Set Next Statement)
        by writing to this attribute.
 
 Frame object methods
@@ -1715,8 +1715,8 @@ Frame objects support one method:
 .. method:: frame.clear()
 
    This method clears all references to :ref:`local variables <naming>` held by the
-   frame.  Also, if the frame belonged to a :term:`generator`, the generator
-   is finalized.  This helps break reference cycles involving frame
+   frame. Also, if the frame belonged to a :term:`generator`, the generator
+   is finalized. This helps break reference cycles involving frame
    objects (for example when catching an :ref:`exception <bltin-exceptions>`
    and storing its :ref:`traceback <traceback-objects>` for later use).
 
@@ -1756,7 +1756,7 @@ created by calling :class:`types.TracebackType`.
 
 For implicitly created tracebacks, when the search for an exception handler
 unwinds the execution stack, at each unwound level a traceback object is
-inserted in front of the current traceback.  When an exception handler is
+inserted in front of the current traceback. When an exception handler is
 entered, the stack trace is made available to the program. (See section
 :ref:`try`.) It is accessible as the third item of the
 tuple returned by :func:`sys.exc_info`, and as the
@@ -1822,7 +1822,7 @@ Slice objects
 
 Slice objects are used to represent slices for
 :meth:`~object.__getitem__`
-methods.  They are also created by the built-in :func:`slice` function.
+methods. They are also created by the built-in :func:`slice` function.
 
 .. index::
    single: start (slice object attribute)
@@ -1831,7 +1831,7 @@ methods.  They are also created by the built-in :func:`slice` function.
 
 Special read-only attributes: :attr:`~slice.start` is the lower bound;
 :attr:`~slice.stop` is the upper bound; :attr:`~slice.step` is the step
-value; each is ``None`` if omitted.  These attributes can have any type.
+value; each is ``None`` if omitted. These attributes can have any type.
 
 Slice objects support one method:
 
@@ -1839,7 +1839,7 @@ Slice objects support one method:
 
    This method takes a single integer argument *length* and computes
    information about the slice that the slice object would describe if
-   applied to a sequence of *length* items.  It returns a tuple of three
+   applied to a sequence of *length* items. It returns a tuple of three
    integers; respectively these are the *start* and *stop* indices and the
    *step* or stride length of the slice. Missing or out-of-bounds indices
    are handled in a manner consistent with regular slices.
@@ -1880,23 +1880,23 @@ A class can implement certain operations that are invoked by special syntax
 (such as arithmetic operations or subscripting and slicing) by defining methods
 with special names. This is Python's approach to :dfn:`operator overloading`,
 allowing classes to define their own behavior with respect to language
-operators.  For instance, if a class defines a method named
+operators. For instance, if a class defines a method named
 :meth:`~object.__getitem__`,
 and ``x`` is an instance of this class, then ``x[i]`` is roughly equivalent
-to ``type(x).__getitem__(x, i)``.  Except where mentioned, attempts to execute an
+to ``type(x).__getitem__(x, i)``. Except where mentioned, attempts to execute an
 operation raise an exception when no appropriate method is defined (typically
 :exc:`AttributeError` or :exc:`TypeError`).
 
 Setting a special method to ``None`` indicates that the corresponding
-operation is not available.  For example, if a class sets
+operation is not available. For example, if a class sets
 :meth:`~object.__iter__` to ``None``, the class is not iterable, so calling
 :func:`iter` on its instances will raise a :exc:`TypeError` (without
 falling back to :meth:`~object.__getitem__`). [#]_
 
 When implementing a class that emulates any built-in type, it is important that
 the emulation only be implemented to the degree that it makes sense for the
-object being modelled.  For example, some sequences may work well with retrieval
-of individual elements, but extracting a slice may not make sense.  (One example
+object being modelled. For example, some sequences may work well with retrieval
+of individual elements, but extracting a slice may not make sense. (One example
 of this is the :class:`~xml.dom.NodeList` interface in the W3C's Document
 Object Model.)
 
@@ -1910,11 +1910,11 @@ Basic customization
 
    .. index:: pair: subclassing; immutable types
 
-   Called to create a new instance of class *cls*.  :meth:`__new__` is a static
+   Called to create a new instance of class *cls*. :meth:`__new__` is a static
    method (special-cased so you need not declare it as such) that takes the class
-   of which an instance was requested as its first argument.  The remaining
+   of which an instance was requested as its first argument. The remaining
    arguments are those passed to the object constructor expression (the call to the
-   class).  The return value of :meth:`__new__` should be the new object instance
+   class). The return value of :meth:`__new__` should be the new object instance
    (usually an instance of *cls*).
 
    Typical implementations create a new instance of the class by invoking the
@@ -1931,7 +1931,7 @@ Basic customization
    :meth:`__init__` method will not be invoked.
 
    :meth:`__new__` is intended mainly to allow subclasses of immutable types (like
-   int, str, or tuple) to customize instance creation.  It is also commonly
+   int, str, or tuple) to customize instance creation. It is also commonly
    overridden in custom metaclasses in order to customize class creation.
 
 
@@ -1940,8 +1940,8 @@ Basic customization
    .. index:: pair: class; constructor
 
    Called after the instance has been created (by :meth:`__new__`), but before
-   it is returned to the caller.  The arguments are those passed to the
-   class constructor expression.  If a base class has an :meth:`__init__`
+   it is returned to the caller. The arguments are those passed to the
+   class constructor expression. If a base class has an :meth:`__init__`
    method, the derived class's :meth:`__init__` method, if any, must explicitly
    call it to ensure proper initialization of the base class part of the
    instance; for example: ``super().__init__([args...])``.
@@ -1959,15 +1959,15 @@ Basic customization
       single: finalizer
       pair: statement; del
 
-   Called when the instance is about to be destroyed.  This is also called a
-   finalizer or (improperly) a destructor.  If a base class has a
+   Called when the instance is about to be destroyed. This is also called a
+   finalizer or (improperly) a destructor. If a base class has a
    :meth:`__del__` method, the derived class's :meth:`__del__` method,
    if any, must explicitly call it to ensure proper deletion of the base
    class part of the instance.
 
    It is possible (though not recommended!) for the :meth:`__del__` method
    to postpone destruction of the instance by creating a new reference to
-   it.  This is called object *resurrection*.  It is implementation-dependent
+   it. This is called object *resurrection*. It is implementation-dependent
    whether :meth:`__del__` is called a second time when a resurrected object
    is about to be destroyed; the current :term:`CPython` implementation
    only calls it once.
@@ -1985,10 +1985,10 @@ Basic customization
 
    .. impl-detail::
       It is possible for a reference cycle to prevent the reference count
-      of an object from going to zero.  In this case, the cycle will be
+      of an object from going to zero. In this case, the cycle will be
       later detected and deleted by the :term:`cyclic garbage collector
-      <garbage collection>`.  A common cause of reference cycles is when
-      an exception has been caught in a local variable.  The frame's
+      <garbage collection>`. A common cause of reference cycles is when
+      an exception has been caught in a local variable. The frame's
       locals then reference the exception, which references its own
       traceback, which references the locals of all frames caught in the
       traceback.
@@ -2000,15 +2000,15 @@ Basic customization
 
       Due to the precarious circumstances under which :meth:`__del__` methods are
       invoked, exceptions that occur during their execution are ignored, and a warning
-      is printed to ``sys.stderr`` instead.  In particular:
+      is printed to ``sys.stderr`` instead. In particular:
 
       * :meth:`__del__` can be invoked when arbitrary code is being executed,
-        including from any arbitrary thread.  If :meth:`__del__` needs to take
+        including from any arbitrary thread. If :meth:`__del__` needs to take
         a lock or invoke any other blocking resource, it may deadlock as
         the resource may already be taken by the code that gets interrupted
         to execute :meth:`__del__`.
 
-      * :meth:`__del__` can be executed during interpreter shutdown.  As a
+      * :meth:`__del__` can be executed during interpreter shutdown. As a
         consequence, the global variables it needs to access (including other
         modules) may already have been deleted or set to ``None``. Python
         guarantees that globals whose name begins with a single underscore
@@ -2024,9 +2024,9 @@ Basic customization
 .. method:: object.__repr__(self)
 
    Called by the :func:`repr` built-in function to compute the "official" string
-   representation of an object.  If at all possible, this should look like a
+   representation of an object. If at all possible, this should look like a
    valid Python expression that could be used to recreate an object with the
-   same value (given an appropriate environment).  If this is not possible, a
+   same value (given an appropriate environment). If this is not possible, a
    string of the form ``<...some useful description...>`` should be returned.
    The return value must be a string object. If a class defines :meth:`__repr__`
    but not :meth:`__str__`, then :meth:`__repr__` is also used when an
@@ -2046,7 +2046,7 @@ Basic customization
 
    Called by :func:`str(object) <str>`, the default :meth:`__format__` implementation,
    and the built-in function :func:`print`, to compute the "informal" or nicely
-   printable string representation of an object.  The return value must be a
+   printable string representation of an object. The return value must be a
    :ref:`str <textseq>` object.
 
    This method differs from :meth:`object.__repr__` in that there is no
@@ -2129,7 +2129,7 @@ Basic customization
    :data:`NotImplemented` in the case of a false comparison:
    ``True if x is y else NotImplemented``. For :meth:`__ne__`, by default it
    delegates to :meth:`__eq__` and inverts the result unless it is
-   :data:`!NotImplemented`.  There are no other implied relationships among the
+   :data:`!NotImplemented`. There are no other implied relationships among the
    comparison operators or default implementations; for example, the truth of
    ``(x<y or x==y)`` does not imply ``x<=y``. To automatically generate ordering
    operations from a single root operation, see :func:`functools.total_ordering`.
@@ -2152,7 +2152,7 @@ Basic customization
    If the operands are of different types, and the right operand's type is
    a direct or indirect subclass of the left operand's type,
    the reflected method of the right operand has priority, otherwise
-   the left operand's method has priority.  Virtual subclassing is
+   the left operand's method has priority. Virtual subclassing is
    not considered.
 
    When no appropriate method returns any value other than :data:`NotImplemented`, the
@@ -2166,7 +2166,7 @@ Basic customization
 
    Called by built-in function :func:`hash` and for operations on members of
    hashed collections including :class:`set`, :class:`frozenset`, and
-   :class:`dict`.  The ``__hash__()`` method should return an integer. The only required
+   :class:`dict`. The ``__hash__()`` method should return an integer. The only required
    property is that objects which compare equal have the same hash value; it is
    advised to mix together the hash values of the components of the object that
    also play a part in comparison of objects by packing them into a tuple and
@@ -2178,17 +2178,17 @@ Basic customization
    .. note::
 
      :func:`hash` truncates the value returned from an object's custom
-     :meth:`__hash__` method to the size of a :c:type:`Py_ssize_t`.  This is
-     typically 8 bytes on 64-bit builds and 4 bytes on 32-bit builds.  If an
-     object's   :meth:`__hash__` must interoperate on builds of different bit
-     sizes, be sure to check the width on all supported builds.  An easy way
+     :meth:`__hash__` method to the size of a :c:type:`Py_ssize_t`. This is
+     typically 8 bytes on 64-bit builds and 4 bytes on 32-bit builds. If an
+     object's :meth:`__hash__` must interoperate on builds of different bit
+     sizes, be sure to check the width on all supported builds. An easy way
      to do this is with
      ``python -c "import sys; print(sys.hash_info.width)"``.
 
    If a class does not define an :meth:`__eq__` method it should not define a
    :meth:`__hash__` operation either; if it defines :meth:`__eq__` but not
    :meth:`__hash__`, its instances will not be usable as items in hashable
-   collections.  If a class defines mutable objects and implements an
+   collections. If a class defines mutable objects and implements an
    :meth:`__eq__` method, it should not implement :meth:`__hash__`, since the
    implementation of :term:`hashable` collections requires that a key's hash value is
    immutable (if the object's hash value changes, it will be in the wrong hash
@@ -2200,7 +2200,7 @@ Basic customization
    value such that ``x == y`` implies both that ``x is y`` and ``hash(x) == hash(y)``.
 
    A class that overrides :meth:`__eq__` and does not define :meth:`__hash__`
-   will have its :meth:`__hash__` implicitly set to ``None``.  When the
+   will have its :meth:`__hash__` implicitly set to ``None``. When the
    :meth:`__hash__` method of a class is ``None``, instances of the class will
    raise an appropriate :exc:`TypeError` when a program attempts to retrieve
    their hash value, and will also be correctly identified as unhashable when
@@ -2220,13 +2220,13 @@ Basic customization
    .. note::
 
       By default, the :meth:`__hash__` values of str and bytes objects are
-      "salted" with an unpredictable random value.  Although they
+      "salted" with an unpredictable random value. Although they
       remain constant within an individual Python process, they are not
       predictable between repeated invocations of Python.
 
       This is intended to provide protection against a denial-of-service caused
       by carefully chosen inputs that exploit the worst case performance of a
-      dict insertion, *O*\ (*n*\ :sup:`2`) complexity.  See
+      dict insertion, *O*\ (*n*\ :sup:`2`) complexity. See
       http://ocert.org/advisories/ocert-2011-003.html for details.
 
       Changing hash values affects the iteration order of sets.
@@ -2244,9 +2244,9 @@ Basic customization
    .. index:: single: __len__() (mapping object method)
 
    Called to implement truth value testing and the built-in operation
-   ``bool()``; should return ``False`` or ``True``.  When this method is not
+   ``bool()``; should return ``False`` or ``True``. When this method is not
    defined, :meth:`~object.__len__` is called, if it is defined, and the object is
-   considered true if its result is nonzero.  If a class defines neither
+   considered true if its result is nonzero. If a class defines neither
    :meth:`!__len__` nor :meth:`!__bool__` (which is true of the :class:`object`
    class itself), all its instances are considered true.
 
@@ -2268,17 +2268,17 @@ access (use of, assignment to, or deletion of ``x.name``) for class instances.
    (either :meth:`__getattribute__` raises an :exc:`AttributeError` because
    *name* is not an instance attribute or an attribute in the class tree
    for ``self``; or :meth:`__get__` of a *name* property raises
-   :exc:`AttributeError`).  This method should either return the (computed)
+   :exc:`AttributeError`). This method should either return the (computed)
    attribute value or raise an :exc:`AttributeError` exception.
    The :class:`object` class itself does not provide this method.
 
    Note that if the attribute is found through the normal mechanism,
-   :meth:`__getattr__` is not called.  (This is an intentional asymmetry between
+   :meth:`__getattr__` is not called. (This is an intentional asymmetry between
    :meth:`__getattr__` and :meth:`__setattr__`.) This is done both for efficiency
    reasons and because otherwise :meth:`__getattr__` would have no way to access
-   other attributes of the instance.  Note that at least for instance variables,
+   other attributes of the instance. Note that at least for instance variables,
    you can take total control by not inserting any values in the instance attribute
-   dictionary (but instead inserting them in another object).  See the
+   dictionary (but instead inserting them in another object). See the
    :meth:`__getattribute__` method below for a way to actually get total control
    over attribute access.
 
@@ -2310,7 +2310,7 @@ access (use of, assignment to, or deletion of ``x.name``) for class instances.
 
 .. method:: object.__setattr__(self, name, value)
 
-   Called when an attribute assignment is attempted.  This is called instead of
+   Called when an attribute assignment is attempted. This is called instead of
    the normal mechanism (i.e. store the value in the instance dictionary).
    *name* is the attribute name, *value* is the value to be assigned to it.
 
@@ -2327,7 +2327,7 @@ access (use of, assignment to, or deletion of ``x.name``) for class instances.
 
 .. method:: object.__delattr__(self, name)
 
-   Like :meth:`__setattr__` but for attribute deletion instead of assignment.  This
+   Like :meth:`__setattr__` but for attribute deletion instead of assignment. This
    should only be implemented if ``del obj.name`` is meaningful for the object.
 
    .. audit-event:: object.__delattr__ obj,name object.__delattr__
@@ -2407,9 +2407,9 @@ Implementing Descriptors
 The following methods only apply when an instance of the class containing the
 method (a so-called *descriptor* class) appears in an *owner* class (the
 descriptor must be in either the owner's class dictionary or in the class
-dictionary for one of its parents).  In the examples below, "the attribute"
+dictionary for one of its parents). In the examples below, "the attribute"
 refers to the attribute whose name is the key of the property in the owner
-class' :attr:`~object.__dict__`.  The :class:`object` class itself does not
+class' :attr:`~object.__dict__`. The :class:`object` class itself does not
 implement any of these protocols.
 
 .. method:: object.__get__(self, instance, owner=None)
@@ -2424,9 +2424,9 @@ implement any of these protocols.
    :exc:`AttributeError` exception.
 
    :PEP:`252` specifies that :meth:`__get__` is callable with one or two
-   arguments.  Python's own built-in descriptors support this specification;
+   arguments. Python's own built-in descriptors support this specification;
    however, it is likely that some third-party tools have descriptors
-   that require both arguments.  Python's own :meth:`__getattribute__`
+   that require both arguments. Python's own :meth:`__getattribute__`
    implementation always passes in both arguments whether they are required
    or not.
 
@@ -2436,7 +2436,7 @@ implement any of these protocols.
    new value, *value*.
 
    Note, adding :meth:`__set__` or :meth:`__delete__` changes the kind of
-   descriptor to a "data descriptor".  See :ref:`descriptor-invocation` for
+   descriptor to a "data descriptor". See :ref:`descriptor-invocation` for
    more details.
 
 .. method:: object.__delete__(self, instance)
@@ -2463,7 +2463,7 @@ Invoking Descriptors
 
 In general, a descriptor is an object attribute with "binding behavior", one
 whose attribute access has been overridden by methods in the descriptor
-protocol:  :meth:`~object.__get__`, :meth:`~object.__set__`, and
+protocol: :meth:`~object.__get__`, :meth:`~object.__set__`, and
 :meth:`~object.__delete__`. If any of
 those methods are defined for an object, it is said to be a descriptor.
 
@@ -2474,7 +2474,7 @@ continuing through the base classes of ``type(a)`` excluding metaclasses.
 
 However, if the looked-up value is an object defining one of the descriptor
 methods, then Python may override the default behavior and invoke the descriptor
-method instead.  Where this occurs in the precedence chain depends on which
+method instead. Where this occurs in the precedence chain depends on which
 descriptor methods were defined and how they were called.
 
 The starting point for descriptor invocation is a binding, ``a.x``. How the
@@ -2482,7 +2482,7 @@ arguments are assembled depends on ``a``:
 
 Direct Call
    The simplest and least common call is when user code directly invokes a
-   descriptor method:    ``x.__get__(a)``.
+   descriptor method:  ``x.__get__(a)``.
 
 Instance Binding
    If binding to an object instance, ``a.x`` is transformed into the call:
@@ -2495,7 +2495,7 @@ Class Binding
 Super Binding
    A dotted lookup such as ``super(A, a).x`` searches
    ``a.__class__.__mro__`` for a base class ``B`` following ``A`` and then
-   returns ``B.__dict__['x'].__get__(a, A)``.  If not a descriptor, ``x`` is
+   returns ``B.__dict__['x'].__get__(a, A)``. If not a descriptor, ``x`` is
    returned unchanged.
 
 .. testcode::
@@ -2531,24 +2531,24 @@ Super Binding
     True
 
 For instance bindings, the precedence of descriptor invocation depends on
-which descriptor methods are defined.  A descriptor can define any combination
+which descriptor methods are defined. A descriptor can define any combination
 of :meth:`~object.__get__`, :meth:`~object.__set__` and
-:meth:`~object.__delete__`.  If it does not
+:meth:`~object.__delete__`. If it does not
 define :meth:`!__get__`, then accessing the attribute will return the descriptor
-object itself unless there is a value in the object's instance dictionary.  If
+object itself unless there is a value in the object's instance dictionary. If
 the descriptor defines :meth:`!__set__` and/or :meth:`!__delete__`, it is a data
-descriptor; if it defines neither, it is a non-data descriptor.  Normally, data
+descriptor; if it defines neither, it is a non-data descriptor. Normally, data
 descriptors define both :meth:`!__get__` and :meth:`!__set__`, while non-data
-descriptors have just the :meth:`!__get__` method.  Data descriptors with
+descriptors have just the :meth:`!__get__` method. Data descriptors with
 :meth:`!__get__` and :meth:`!__set__` (and/or :meth:`!__delete__`) defined
 always override a redefinition in an
-instance dictionary.  In contrast, non-data descriptors can be overridden by
+instance dictionary. In contrast, non-data descriptors can be overridden by
 instances.
 
 Python methods (including those decorated with
 :func:`@staticmethod <staticmethod>` and :func:`@classmethod <classmethod>`) are
-implemented as non-data descriptors.  Accordingly, instances can redefine and
-override methods.  This allows individual instances to acquire behaviors that
+implemented as non-data descriptors. Accordingly, instances can redefine and
+override methods. This allows individual instances to acquire behaviors that
 differ from other instances of the same class.
 
 The :func:`property` function is implemented as a data descriptor. Accordingly,
@@ -2570,7 +2570,7 @@ Attribute lookup speed can be significantly improved as well.
 .. data:: object.__slots__
 
    This class variable can be assigned a string, iterable, or sequence of
-   strings with variable names used by instances.  *__slots__* reserves space
+   strings with variable names used by instances. *__slots__* reserves space
    for the declared variables and prevents the automatic creation of
    :attr:`~object.__dict__`
    and *__weakref__* for each instance.
@@ -2586,7 +2586,7 @@ Notes on using *__slots__*:
 
 * Without a :attr:`~object.__dict__` variable, instances cannot be assigned new
   variables not
-  listed in the *__slots__* definition.  Attempts to assign to an unlisted
+  listed in the *__slots__* definition. Attempts to assign to an unlisted
   variable name raises :exc:`AttributeError`. If dynamic assignment of new
   variables is desired, then add ``'__dict__'`` to the sequence of strings in
   the *__slots__* declaration.
@@ -2598,13 +2598,13 @@ Notes on using *__slots__*:
   *__slots__* declaration.
 
 * *__slots__* are implemented at the class level by creating :ref:`descriptors <descriptors>`
-  for each variable name.  As a result, class attributes
+  for each variable name. As a result, class attributes
   cannot be used to set default values for instance variables defined by
   *__slots__*; otherwise, the class attribute would overwrite the descriptor
   assignment.
 
 * The action of a *__slots__* declaration is not limited to the class
-  where it is defined.  *__slots__* declared in parents are available in
+  where it is defined. *__slots__* declared in parents are available in
   child classes. However, instances of a child subclass will get a
   :attr:`~object.__dict__` and *__weakref__* unless the subclass also defines
   *__slots__* (which should only contain names of any *additional* slots).
@@ -2612,7 +2612,7 @@ Notes on using *__slots__*:
 * If a class defines a slot also defined in a base class, the instance variable
   defined by the base class slot is inaccessible (except by retrieving its
   descriptor directly from the base class). This renders the meaning of the
-  program undefined.  In the future, a check may be added to prevent this.
+  program undefined. In the future, a check may be added to prevent this.
 
 * :exc:`TypeError` will be raised if nonempty *__slots__* are defined for a
   class derived from a
@@ -2930,12 +2930,12 @@ ABCs.
 .. method:: type.__subclasscheck__(self, subclass)
 
    Return true if *subclass* should be considered a (direct or indirect)
-   subclass of *class*.  If defined, called to implement ``issubclass(subclass,
+   subclass of *class*. If defined, called to implement ``issubclass(subclass,
    class)``.
 
 
-Note that these methods are looked up on the type (metaclass) of a class.  They
-cannot be defined as class methods in the actual class.  This is consistent with
+Note that these methods are looked up on the type (metaclass) of a class. They
+cannot be defined as class methods in the actual class. This is consistent with
 the lookup of special methods that are called on instances, only in this
 case the instance is itself a class.
 
@@ -3115,15 +3115,15 @@ are provided by the :class:`object` class itself. Containers usually are
 :term:`sequences <sequence>` (such as :class:`lists <list>` or
 :class:`tuples <tuple>`) or :term:`mappings <mapping>` (like
 :term:`dictionaries <dictionary>`),
-but can represent other containers as well.  The first set of methods is used
+but can represent other containers as well. The first set of methods is used
 either to emulate a sequence or to emulate a mapping; the difference is that for
 a sequence, the allowable keys should be the integers *k* for which ``0 <= k <
 N`` where *N* is the length of the sequence, or :class:`slice` objects, which define a
-range of items.  It is also recommended that mappings provide the methods
+range of items. It is also recommended that mappings provide the methods
 :meth:`!keys`, :meth:`!values`, :meth:`!items`, :meth:`!get`, :meth:`!clear`,
 :meth:`!setdefault`, :meth:`!pop`, :meth:`!popitem`, :meth:`!copy`, and
 :meth:`!update` behaving similar to those for Python's standard :class:`dictionary <dict>`
-objects.  The :mod:`collections.abc` module provides a
+objects. The :mod:`collections.abc` module provides a
 :class:`~collections.abc.MutableMapping`
 :term:`abstract base class` to help create those methods from a base set of
 :meth:`~object.__getitem__`, :meth:`~object.__setitem__`,
@@ -3137,11 +3137,11 @@ multiplication (meaning repetition) by defining the methods
 :meth:`~object.__add__`, :meth:`~object.__radd__`, :meth:`~object.__iadd__`,
 :meth:`~object.__mul__`, :meth:`~object.__rmul__` and :meth:`~object.__imul__`
 described below; they should not define other numerical
-operators.  It is recommended that both mappings and sequences implement the
+operators. It is recommended that both mappings and sequences implement the
 :meth:`~object.__contains__` method to allow efficient use of the ``in``
 operator; for
 mappings, ``in`` should search the mapping's keys; for sequences, it should
-search through the values.  It is further recommended that both mappings and
+search through the values. It is further recommended that both mappings and
 sequences implement the :meth:`~object.__iter__` method to allow efficient iteration
 through the container; for mappings, :meth:`!__iter__` should iterate
 through the object's keys; for sequences, it should iterate through the values.
@@ -3152,8 +3152,8 @@ through the object's keys; for sequences, it should iterate through the values.
       pair: built-in function; len
       single: __bool__() (object method)
 
-   Called to implement the built-in function :func:`len`.  Should return the length
-   of the object, an integer ``>=`` 0.  Also, an object that doesn't define a
+   Called to implement the built-in function :func:`len`. Should return the length
+   of the object, an integer ``>=`` 0. Also, an object that doesn't define a
    :meth:`~object.__bool__` method and whose :meth:`!__len__` method returns zero is
    considered to be false in a Boolean context.
 
@@ -3161,7 +3161,7 @@ through the object's keys; for sequences, it should iterate through the values.
 
       In CPython, the length is required to be at most :data:`sys.maxsize`.
       If the length is larger than :data:`!sys.maxsize` some features (such as
-      :func:`len`) may raise :exc:`OverflowError`.  To prevent raising
+      :func:`len`) may raise :exc:`OverflowError`. To prevent raising
       :exc:`!OverflowError` by truth value testing, an object must define a
       :meth:`~object.__bool__` method.
 
@@ -3182,7 +3182,7 @@ through the object's keys; for sequences, it should iterate through the values.
 
 .. note::
 
-   Slicing is done exclusively with the following three methods.  A call like ::
+   Slicing is done exclusively with the following three methods. A call like ::
 
       a[1:2] = b
 
@@ -3190,14 +3190,14 @@ through the object's keys; for sequences, it should iterate through the values.
 
       a[slice(1, 2, None)] = b
 
-   and so forth.  Missing slice items are always filled in with ``None``.
+   and so forth. Missing slice items are always filled in with ``None``.
 
 
 .. method:: object.__getitem__(self, key)
 
    Called to implement evaluation of ``self[key]``. For :term:`sequence` types,
    the accepted keys should be integers. Optionally, they may support
-   :class:`slice` objects as well.  Negative index support is also optional.
+   :class:`slice` objects as well. Negative index support is also optional.
    If *key* is
    of an inappropriate type, :exc:`TypeError` may be raised; if *key* is a value
    outside the set of indexes for the sequence (after any special
@@ -3220,19 +3220,19 @@ through the object's keys; for sequences, it should iterate through the values.
 
 .. method:: object.__setitem__(self, key, value)
 
-   Called to implement assignment to ``self[key]``.  Same note as for
-   :meth:`__getitem__`.  This should only be implemented for mappings if the
+   Called to implement assignment to ``self[key]``. Same note as for
+   :meth:`__getitem__`. This should only be implemented for mappings if the
    objects support changes to the values for keys, or if new keys can be added, or
-   for sequences if elements can be replaced.  The same exceptions should be raised
+   for sequences if elements can be replaced. The same exceptions should be raised
    for improper *key* values as for the :meth:`__getitem__` method.
 
 
 .. method:: object.__delitem__(self, key)
 
-   Called to implement deletion of ``self[key]``.  Same note as for
-   :meth:`__getitem__`.  This should only be implemented for mappings if the
+   Called to implement deletion of ``self[key]``. Same note as for
+   :meth:`__getitem__`. This should only be implemented for mappings if the
    objects support removal of keys, or for sequences if elements can be removed
-   from the sequence.  The same exceptions should be raised for improper *key*
+   from the sequence. The same exceptions should be raised for improper *key*
    values as for the :meth:`__getitem__` method.
 
 
@@ -3246,19 +3246,19 @@ through the object's keys; for sequences, it should iterate through the values.
 
    This method is called when an :term:`iterator` is required for a container.
    This method should return a new iterator object that can iterate over all the
-   objects in the container.  For mappings, it should iterate over the keys of
+   objects in the container. For mappings, it should iterate over the keys of
    the container.
 
 
 .. method:: object.__reversed__(self)
 
    Called (if present) by the :func:`reversed` built-in to implement
-   reverse iteration.  It should return a new iterator object that iterates
+   reverse iteration. It should return a new iterator object that iterates
    over all the objects in the container in reverse order.
 
    If the :meth:`__reversed__` method is not provided, the :func:`reversed`
    built-in will fall back to using the sequence protocol (:meth:`__len__` and
-   :meth:`__getitem__`).  Objects that support the sequence protocol should
+   :meth:`__getitem__`). Objects that support the sequence protocol should
    only provide :meth:`__reversed__` if they can provide an implementation
    that is more efficient than the one provided by :func:`reversed`.
 
@@ -3270,8 +3270,8 @@ also does not require the object be iterable.
 
 .. method:: object.__contains__(self, item)
 
-   Called to implement membership test operators.  Should return true if *item*
-   is in *self*, false otherwise.  For mapping objects, this should consider the
+   Called to implement membership test operators. Should return true if *item*
+   is in *self*, false otherwise. For mapping objects, this should consider the
    keys of the mapping rather than the values or the key-item pairs.
 
    For objects that don't define :meth:`__contains__`, the membership test first
@@ -3313,12 +3313,12 @@ left undefined.
 
    These methods are called to implement the binary arithmetic operations
    (``+``, ``-``, ``*``, ``@``, ``/``, ``//``, ``%``, :func:`divmod`,
-   :func:`pow`, ``**``, ``<<``, ``>>``, ``&``, ``^``, ``|``).  For instance, to
+   :func:`pow`, ``**``, ``<<``, ``>>``, ``&``, ``^``, ``|``). For instance, to
    evaluate the expression ``x + y``, where *x* is an instance of a class that
-   has an :meth:`__add__` method, ``type(x).__add__(x, y)`` is called.  The
+   has an :meth:`__add__` method, ``type(x).__add__(x, y)`` is called. The
    :meth:`__divmod__` method should be the equivalent to using
    :meth:`__floordiv__` and :meth:`__mod__`; it should not be related to
-   :meth:`__truediv__`.  Note that :meth:`__pow__` should be defined to accept
+   :meth:`__truediv__`. Note that :meth:`__pow__` should be defined to accept
    an optional third argument if the three-argument version of the built-in :func:`pow`
    function is to be supported.
 
@@ -3348,7 +3348,7 @@ left undefined.
    These methods are called to implement the binary arithmetic operations
    (``+``, ``-``, ``*``, ``@``, ``/``, ``//``, ``%``, :func:`divmod`,
    :func:`pow`, ``**``, ``<<``, ``>>``, ``&``, ``^``, ``|``) with reflected
-   (swapped) operands.  These functions are only called if the operands
+   (swapped) operands. These functions are only called if the operands
    are of different types, when the left operand does not support the corresponding
    operation [#]_, or the right operand's class is derived from the left operand's
    class. [#]_ For instance, to evaluate the expression ``x - y``, where *y* is
@@ -3390,11 +3390,11 @@ left undefined.
 
    These methods are called to implement the augmented arithmetic assignments
    (``+=``, ``-=``, ``*=``, ``@=``, ``/=``, ``//=``, ``%=``, ``**=``, ``<<=``,
-   ``>>=``, ``&=``, ``^=``, ``|=``).  These methods should attempt to do the
+   ``>>=``, ``&=``, ``^=``, ``|=``). These methods should attempt to do the
    operation in-place (modifying *self*) and return the result (which could be,
-   but does not have to be, *self*).  If a specific method is not defined, or if
+   but does not have to be, *self*). If a specific method is not defined, or if
    that method returns :data:`NotImplemented`, the
-   augmented assignment falls back to the normal methods.  For instance, if *x*
+   augmented assignment falls back to the normal methods. For instance, if *x*
    is an instance of a class with an :meth:`__iadd__` method, ``x += y`` is
    equivalent to ``x = x.__iadd__(y)`` . If :meth:`__iadd__` does not exist, or if ``x.__iadd__(y)``
    returns :data:`!NotImplemented`, ``x.__add__(y)`` and
@@ -3425,7 +3425,7 @@ left undefined.
       pair: built-in function; float
 
    Called to implement the built-in functions :func:`complex`,
-   :func:`int` and :func:`float`.  Should return a value
+   :func:`int` and :func:`float`. Should return a value
    of the appropriate type.
 
 
@@ -3435,7 +3435,7 @@ left undefined.
    losslessly convert the numeric object to an integer object (such as in
    slicing, or in the built-in :func:`bin`, :func:`hex` and :func:`oct`
    functions). Presence of this method indicates that the numeric object is
-   an integer type.  Must return an integer.
+   an integer type. Must return an integer.
 
    If :meth:`__int__`, :meth:`__float__` and :meth:`__complex__` are not
    defined then corresponding built-in functions :func:`int`, :func:`float`
@@ -3467,7 +3467,7 @@ With Statement Context Managers
 A :dfn:`context manager` is an object that defines the runtime context to be
 established when executing a :keyword:`with` statement. The context manager
 handles the entry into, and the exit from, the desired runtime context for the
-execution of the block of code.  Context managers are normally invoked using the
+execution of the block of code. Context managers are normally invoked using the
 :keyword:`!with` statement (described in section :ref:`with`), but can also be
 used by directly invoking their methods.
 
@@ -3614,7 +3614,7 @@ with a symbol.
    :attr:`~annotationlib.Format.VALUE` format; they must not raise
    :exc:`NotImplementedError()` when called with this format.
 
-   When called with  :attr:`~annotationlib.Format.VALUE` format, an annotate function may raise
+   When called with :attr:`~annotationlib.Format.VALUE` format, an annotate function may raise
    :exc:`NameError`; it must not raise :exc:`!NameError` when called requesting any other format.
 
    If an object does not have any annotations, :attr:`~object.__annotate__` should preferably be set
@@ -3635,7 +3635,7 @@ Special method lookup
 
 For custom classes, implicit invocations of special methods are only guaranteed
 to work correctly if defined on an object's type, not in the object's instance
-dictionary.  That behaviour is the reason why the following code raises an
+dictionary. That behaviour is the reason why the following code raises an
 exception::
 
    >>> class C:
@@ -3726,8 +3726,8 @@ are awaitable.
 
 .. method:: object.__await__(self)
 
-   Must return an :term:`iterator`.  Should be used to implement
-   :term:`awaitable` objects.  For instance, :class:`asyncio.Future` implements
+   Must return an :term:`iterator`. Should be used to implement
+   :term:`awaitable` objects. For instance, :class:`asyncio.Future` implements
    this method to be compatible with the :keyword:`await` expression.
    The :class:`object` class itself is not awaitable and does not provide
    this method.
@@ -3752,14 +3752,14 @@ Coroutine Objects
 
 :term:`Coroutine objects <coroutine>` are :term:`awaitable` objects.
 A coroutine's execution can be controlled by calling :meth:`~object.__await__` and
-iterating over the result.  When the coroutine has finished executing and
+iterating over the result. When the coroutine has finished executing and
 returns, the iterator raises :exc:`StopIteration`, and the exception's
-:attr:`~StopIteration.value` attribute holds the return value.  If the
-coroutine raises an exception, it is propagated by the iterator.  Coroutines
+:attr:`~StopIteration.value` attribute holds the return value. If the
+coroutine raises an exception, it is propagated by the iterator. Coroutines
 should not directly raise unhandled :exc:`StopIteration` exceptions.
 
 Coroutines also have the methods listed below, which are analogous to
-those of generators (see :ref:`generator-methods`).  However, unlike
+those of generators (see :ref:`generator-methods`). However, unlike
 generators, coroutines do not directly support iteration.
 
 .. versionchanged:: 3.5.2
@@ -3768,24 +3768,24 @@ generators, coroutines do not directly support iteration.
 
 .. method:: coroutine.send(value)
 
-   Starts or resumes execution of the coroutine.  If *value* is ``None``,
+   Starts or resumes execution of the coroutine. If *value* is ``None``,
    this is equivalent to advancing the iterator returned by
-   :meth:`~object.__await__`.  If *value* is not ``None``, this method delegates
+   :meth:`~object.__await__`. If *value* is not ``None``, this method delegates
    to the :meth:`~generator.send` method of the iterator that caused
-   the coroutine to suspend.  The result (return value,
+   the coroutine to suspend. The result (return value,
    :exc:`StopIteration`, or other exception) is the same as when
    iterating over the :meth:`!__await__` return value, described above.
 
 .. method:: coroutine.throw(value)
             coroutine.throw(type[, value[, traceback]])
 
-   Raises the specified exception in the coroutine.  This method delegates
+   Raises the specified exception in the coroutine. This method delegates
    to the :meth:`~generator.throw` method of the iterator that caused
-   the coroutine to suspend, if it has such a method.  Otherwise,
-   the exception is raised at the suspension point.  The result
+   the coroutine to suspend, if it has such a method. Otherwise,
+   the exception is raised at the suspension point. The result
    (return value, :exc:`StopIteration`, or other exception) is the same as
    when iterating over the :meth:`~object.__await__` return value, described
-   above.  If the exception is not caught in the coroutine, it propagates
+   above. If the exception is not caught in the coroutine, it propagates
    back to the caller.
 
    .. versionchanged:: 3.12
@@ -3795,10 +3795,10 @@ generators, coroutines do not directly support iteration.
 
 .. method:: coroutine.close()
 
-   Causes the coroutine to clean itself up and exit.  If the coroutine
+   Causes the coroutine to clean itself up and exit. If the coroutine
    is suspended, this method first delegates to the :meth:`~generator.close`
    method of the iterator that caused the coroutine to suspend, if it
-   has such a method.  Then it raises :exc:`GeneratorExit` at the
+   has such a method. Then it raises :exc:`GeneratorExit` at the
    suspension point, causing the coroutine to immediately clean itself up.
    Finally, the coroutine is marked as having finished executing, even if
    it was never started.
@@ -3825,7 +3825,7 @@ The :class:`object` class itself does not provide these methods.
 
 .. method:: object.__anext__(self)
 
-   Must return an *awaitable* resulting in a next value of the iterator.  Should
+   Must return an *awaitable* resulting in a next value of the iterator. Should
    raise a :exc:`StopAsyncIteration` error when the iteration is over.
 
 An example of an asynchronous iterable object::
@@ -3851,7 +3851,7 @@ An example of an asynchronous iterable object::
    :term:`asynchronous iterator <asynchronous iterator>`.
 
    Starting with Python 3.7, :meth:`~object.__aiter__` must return an
-   asynchronous iterator object.  Returning anything else
+   asynchronous iterator object. Returning anything else
    will result in a :exc:`TypeError` error.
 
 
@@ -3903,7 +3903,7 @@ An example of an asynchronous context manager class::
    the behavior that ``None`` is not callable.
 
 .. [#] "Does not support" here means that the class has no such method, or
-   the method returns :data:`NotImplemented`.  Do not set the method to
+   the method returns :data:`NotImplemented`. Do not set the method to
    ``None`` if you want to force fallback to the right operand's reflected
    method—that will instead have the opposite effect of explicitly
    *blocking* such fallback.

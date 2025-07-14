@@ -8,22 +8,22 @@ The import system
 .. index:: single: import machinery
 
 Python code in one :term:`module` gains access to the code in another module
-by the process of :term:`importing` it.  The :keyword:`import` statement is
+by the process of :term:`importing` it. The :keyword:`import` statement is
 the most common way of invoking the import machinery, but it is not the only
-way.  Functions such as :func:`importlib.import_module` and built-in
+way. Functions such as :func:`importlib.import_module` and built-in
 :func:`__import__` can also be used to invoke the import machinery.
 
 The :keyword:`import` statement combines two operations; it searches for the
 named module, then it binds the results of that search to a name in the local
-scope.  The search operation of the :keyword:`!import` statement is defined as
+scope. The search operation of the :keyword:`!import` statement is defined as
 a call to the :func:`__import__` function, with the appropriate arguments.
 The return value of :func:`__import__` is used to perform the name
-binding operation of the :keyword:`!import` statement.  See the
+binding operation of the :keyword:`!import` statement. See the
 :keyword:`!import` statement for the exact details of that name binding
 operation.
 
 A direct call to :func:`__import__` performs only the module search and, if
-found, the module creation operation.  While certain side-effects may occur,
+found, the module creation operation. While certain side-effects may occur,
 such as the importing of parent packages, and the updating of various caches
 (including :data:`sys.modules`), only the :keyword:`import` statement performs
 a name binding operation.
@@ -34,10 +34,10 @@ import system (such as :func:`importlib.import_module`) may choose to bypass
 :func:`__import__` and use their own solutions to implement import semantics.
 
 When a module is first imported, Python searches for the module and if found,
-it creates a module object [#fnmo]_, initializing it.  If the named module
-cannot be found, a :exc:`ModuleNotFoundError` is raised.  Python implements various
+it creates a module object [#fnmo]_, initializing it. If the named module
+cannot be found, a :exc:`ModuleNotFoundError` is raised. Python implements various
 strategies to search for the named module when the import machinery is
-invoked.  These strategies can be modified and extended by using various hooks
+invoked. These strategies can be modified and extended by using various hooks
 described in the sections below.
 
 .. versionchanged:: 3.3
@@ -51,9 +51,9 @@ described in the sections below.
 ================
 
 The :mod:`importlib` module provides a rich API for interacting with the
-import system.  For example :func:`importlib.import_module` provides a
+import system. For example :func:`importlib.import_module` provides a
 recommended, simpler API than built-in :func:`__import__` for invoking the
-import machinery.  Refer to the :mod:`importlib` library documentation for
+import machinery. Refer to the :mod:`importlib` library documentation for
 additional detail.
 
 
@@ -66,24 +66,24 @@ Packages
 
 Python has only one type of module object, and all modules are of this type,
 regardless of whether the module is implemented in Python, C, or something
-else.  To help organize modules and provide a naming hierarchy, Python has a
+else. To help organize modules and provide a naming hierarchy, Python has a
 concept of :term:`packages <package>`.
 
 You can think of packages as the directories on a file system and modules as
 files within directories, but don't take this analogy too literally since
-packages and modules need not originate from the file system.  For the
+packages and modules need not originate from the file system. For the
 purposes of this documentation, we'll use this convenient analogy of
-directories and files.  Like file system directories, packages are organized
+directories and files. Like file system directories, packages are organized
 hierarchically, and packages may themselves contain subpackages, as well as
 regular modules.
 
 It's important to keep in mind that all packages are modules, but not all
-modules are packages.  Or put another way, packages are just a special kind of
-module.  Specifically, any module that contains a ``__path__`` attribute is
+modules are packages. Or put another way, packages are just a special kind of
+module. Specifically, any module that contains a ``__path__`` attribute is
 considered a package.
 
-All modules have a name.  Subpackage names are separated from their parent
-package name by a dot, akin to Python's standard attribute access syntax.  Thus
+All modules have a name. Subpackage names are separated from their parent
+package name by a dot, akin to Python's standard attribute access syntax. Thus
 you might have a package called :mod:`email`, which in turn has a subpackage
 called :mod:`email.mime` and a module within that subpackage called
 :mod:`email.mime.text`.
@@ -96,12 +96,12 @@ Regular packages
     pair: package; regular
 
 Python defines two types of packages, :term:`regular packages <regular
-package>` and :term:`namespace packages <namespace package>`.  Regular
+package>` and :term:`namespace packages <namespace package>`. Regular
 packages are traditional packages as they existed in Python 3.2 and earlier.
 A regular package is typically implemented as a directory containing an
-``__init__.py`` file.  When a regular package is imported, this
+``__init__.py`` file. When a regular package is imported, this
 ``__init__.py`` file is implicitly executed, and the objects it defines are
-bound to names in the package's namespace.  The ``__init__.py`` file can
+bound to names in the package's namespace. The ``__init__.py`` file can
 contain the same Python code that any other module can contain, and Python
 will add some additional attributes to the module when it is imported.
 
@@ -118,7 +118,7 @@ package with three subpackages::
             __init__.py
 
 Importing ``parent.one`` will implicitly execute ``parent/__init__.py`` and
-``parent/one/__init__.py``.  Subsequent imports of ``parent.two`` or
+``parent/one/__init__.py``. Subsequent imports of ``parent.two`` or
 ``parent.three`` will execute ``parent/two/__init__.py`` and
 ``parent/three/__init__.py`` respectively.
 
@@ -133,10 +133,10 @@ Namespace packages
     pair: package; portion
 
 A namespace package is a composite of various :term:`portions <portion>`,
-where each portion contributes a subpackage to the parent package.  Portions
-may reside in different locations on the file system.  Portions may also be
+where each portion contributes a subpackage to the parent package. Portions
+may reside in different locations on the file system. Portions may also be
 found in zip files, on the network, or anywhere else that Python searches
-during import.  Namespace packages may or may not correspond directly to
+during import. Namespace packages may or may not correspond directly to
 objects on the file system; they may be virtual modules that have no concrete
 representation.
 
@@ -146,10 +146,10 @@ perform a new search for package portions on the next import attempt within
 that package if the path of their parent package (or :data:`sys.path` for a
 top level package) changes.
 
-With namespace packages, there is no ``parent/__init__.py`` file.  In fact,
+With namespace packages, there is no ``parent/__init__.py`` file. In fact,
 there may be multiple ``parent`` directories found during import search, where
-each one is provided by a different portion.  Thus ``parent/one`` may not be
-physically located next to ``parent/two``.  In this case, Python will create a
+each one is provided by a different portion. Thus ``parent/one`` may not be
+physically located next to ``parent/two``. In this case, Python will create a
 namespace package for the top-level ``parent`` package whenever it or one of
 its subpackages is imported.
 
@@ -161,12 +161,12 @@ Searching
 
 To begin the search, Python needs the :term:`fully qualified <qualified name>`
 name of the module (or package, but for the purposes of this discussion, the
-difference is immaterial) being imported.  This name may come from various
+difference is immaterial) being imported. This name may come from various
 arguments to the :keyword:`import` statement, or from the parameters to the
 :func:`importlib.import_module` or :func:`__import__` functions.
 
 This name will be used in various phases of the import search, and it may be
-the dotted path to a submodule, e.g. ``foo.bar.baz``.  In this case, Python
+the dotted path to a submodule, e.g. ``foo.bar.baz``. In this case, Python
 first tries to import ``foo``, then ``foo.bar``, and finally ``foo.bar.baz``.
 If any of the intermediate imports fail, a :exc:`ModuleNotFoundError` is raised.
 
@@ -177,20 +177,20 @@ The module cache
 .. index::
     single: sys.modules
 
-The first place checked during import search is :data:`sys.modules`.  This
+The first place checked during import search is :data:`sys.modules`. This
 mapping serves as a cache of all modules that have been previously imported,
-including the intermediate paths.  So if ``foo.bar.baz`` was previously
+including the intermediate paths. So if ``foo.bar.baz`` was previously
 imported, :data:`sys.modules` will contain entries for ``foo``, ``foo.bar``,
-and ``foo.bar.baz``.  Each key will have as its value the corresponding module
+and ``foo.bar.baz``. Each key will have as its value the corresponding module
 object.
 
 During import, the module name is looked up in :data:`sys.modules` and if
 present, the associated value is the module satisfying the import, and the
-process completes.  However, if the value is ``None``, then a
-:exc:`ModuleNotFoundError` is raised.  If the module name is missing, Python will
+process completes. However, if the value is ``None``, then a
+:exc:`ModuleNotFoundError` is raised. If the module name is missing, Python will
 continue searching for the module.
 
-:data:`sys.modules` is writable.  Deleting a key may not destroy the
+:data:`sys.modules` is writable. Deleting a key may not destroy the
 associated module (as other modules may hold references to it),
 but it will invalidate the cache entry for the named module, causing
 Python to search anew for the named module upon its next
@@ -215,24 +215,24 @@ Finders and loaders
     single: module spec
 
 If the named module is not found in :data:`sys.modules`, then Python's import
-protocol is invoked to find and load the module.  This protocol consists of
+protocol is invoked to find and load the module. This protocol consists of
 two conceptual objects, :term:`finders <finder>` and :term:`loaders <loader>`.
 A finder's job is to determine whether it can find the named module using
 whatever strategy it knows about. Objects that implement both of these
 interfaces are referred to as :term:`importers <importer>` - they return
 themselves when they find that they can load the requested module.
 
-Python includes a number of default finders and importers.  The first one
+Python includes a number of default finders and importers. The first one
 knows how to locate built-in modules, and the second knows how to locate
-frozen modules.  A third default finder searches an :term:`import path`
-for modules.  The :term:`import path` is a list of locations that may
-name file system paths or zip files.  It can also be extended to search
+frozen modules. A third default finder searches an :term:`import path`
+for modules. The :term:`import path` is a list of locations that may
+name file system paths or zip files. It can also be extended to search
 for any locatable resource, such as those identified by URLs.
 
 The import machinery is extensible, so new finders can be added to extend the
 range and scope of module searching.
 
-Finders do not actually load modules.  If they can find the named module, they
+Finders do not actually load modules. If they can find the named module, they
 return a :dfn:`module spec`, an encapsulation of the module's import-related
 information, which the import machinery then uses when loading the module.
 
@@ -257,18 +257,18 @@ Import hooks
    pair: hooks; path
 
 The import machinery is designed to be extensible; the primary mechanism for
-this are the *import hooks*.  There are two types of import hooks: *meta
+this are the *import hooks*. There are two types of import hooks: *meta
 hooks* and *import path hooks*.
 
 Meta hooks are called at the start of import processing, before any other
 import processing has occurred, other than :data:`sys.modules` cache look up.
 This allows meta hooks to override :data:`sys.path` processing, frozen
-modules, or even built-in modules.  Meta hooks are registered by adding new
+modules, or even built-in modules. Meta hooks are registered by adding new
 finder objects to :data:`sys.meta_path`, as described below.
 
 Import path hooks are called as part of :data:`sys.path` (or
 ``package.__path__``) processing, at the point where their associated path
-item is encountered.  Import path hooks are registered by adding new callables
+item is encountered. Import path hooks are registered by adding new callables
 to :data:`sys.path_hooks` as described below.
 
 
@@ -281,27 +281,27 @@ The meta path
 
 When the named module is not found in :data:`sys.modules`, Python next
 searches :data:`sys.meta_path`, which contains a list of meta path finder
-objects.  These finders are queried in order to see if they know how to handle
-the named module.  Meta path finders must implement a method called
+objects. These finders are queried in order to see if they know how to handle
+the named module. Meta path finders must implement a method called
 :meth:`~importlib.abc.MetaPathFinder.find_spec` which takes three arguments:
-a name, an import path, and (optionally) a target module.  The meta path
+a name, an import path, and (optionally) a target module. The meta path
 finder can use any strategy it wants to determine whether it can handle
 the named module or not.
 
 If the meta path finder knows how to handle the named module, it returns a
-spec object.  If it cannot handle the named module, it returns ``None``.  If
+spec object. If it cannot handle the named module, it returns ``None``. If
 :data:`sys.meta_path` processing reaches the end of its list without returning
-a spec, then a :exc:`ModuleNotFoundError` is raised.  Any other exceptions
+a spec, then a :exc:`ModuleNotFoundError` is raised. Any other exceptions
 raised are simply propagated up, aborting the import process.
 
 The :meth:`~importlib.abc.MetaPathFinder.find_spec` method of meta path
-finders is called with two or three arguments.  The first is the fully
+finders is called with two or three arguments. The first is the fully
 qualified name of the module being imported, for example ``foo.bar.baz``.
-The second argument is the path entries to use for the module search.  For
+The second argument is the path entries to use for the module search. For
 top-level modules, the second argument is ``None``, but for submodules or
 subpackages, the second argument is the value of the parent package's
 ``__path__`` attribute. If the appropriate ``__path__`` attribute cannot
-be accessed, a :exc:`ModuleNotFoundError` is raised.  The third argument
+be accessed, a :exc:`ModuleNotFoundError` is raised. The third argument
 is an existing module object that will be the target of loading later.
 The import system passes in a target module only during reload.
 
@@ -327,7 +327,7 @@ modules, and one that knows how to import modules from an :term:`import path`
 .. versionchanged:: 3.4
    The :meth:`~importlib.abc.MetaPathFinder.find_spec` method of meta path
    finders replaced :meth:`!find_module`, which
-   is now deprecated.  While it will continue to work without change, the
+   is now deprecated. While it will continue to work without change, the
    import machinery will try it only if the finder does not implement
    :meth:`~importlib.abc.MetaPathFinder.find_spec`.
 
@@ -344,7 +344,7 @@ Loading
 =======
 
 If and when a module spec is found, the import machinery will use it (and
-the loader it contains) when loading the module.  Here is an approximation
+the loader it contains) when loading the module. Here is an approximation
 of what happens during the loading portion of import::
 
     module = None
@@ -382,15 +382,15 @@ Note the following details:
   :data:`sys.modules`, import will have already returned it.
 
 * The module will exist in :data:`sys.modules` before the loader
-  executes the module code.  This is crucial because the module code may
+  executes the module code. This is crucial because the module code may
   (directly or indirectly) import itself; adding it to :data:`sys.modules`
   beforehand prevents unbounded recursion in the worst case and multiple
   loading in the best.
 
 * If loading fails, the failing module -- and only the failing module --
-  gets removed from :data:`sys.modules`.  Any module already in the
+  gets removed from :data:`sys.modules`. Any module already in the
   :data:`sys.modules` cache, and any module that was successfully loaded
-  as a side-effect, must remain in the cache.  This contrasts with
+  as a side-effect, must remain in the cache. This contrasts with
   reloading where even the failing module is left in :data:`sys.modules`.
 
 * After the module is created but before execution, the import machinery
@@ -399,7 +399,7 @@ Note the following details:
   :ref:`later section <import-mod-attrs>`.
 
 * Module execution is the key moment of loading in which the module's
-  namespace gets populated.  Execution is entirely delegated to the
+  namespace gets populated. Execution is entirely delegated to the
   loader, which gets to decide what gets populated and how.
 
 * The module created during loading and passed to exec_module() may
@@ -407,7 +407,7 @@ Note the following details:
 
 .. versionchanged:: 3.4
    The import system has taken over the boilerplate responsibilities of
-   loaders.  These were previously performed by the
+   loaders. These were previously performed by the
    :meth:`importlib.abc.Loader.load_module` method.
 
 Loaders
@@ -415,7 +415,7 @@ Loaders
 
 Module loaders provide the critical function of loading: module execution.
 The import machinery calls the :meth:`importlib.abc.Loader.exec_module`
-method with a single argument, the module object to execute.  Any value
+method with a single argument, the module object to execute. Any value
 returned from :meth:`~importlib.abc.Loader.exec_module` is ignored.
 
 Loaders must satisfy the following requirements:
@@ -435,8 +435,8 @@ spec with the loader set to ``self``.
 Module loaders may opt in to creating the module object during loading
 by implementing a :meth:`~importlib.abc.Loader.create_module` method.
 It takes one argument, the module spec, and returns the new module object
-to use during loading.  ``create_module()`` does not need to set any attributes
-on the module object.  If the method returns ``None``, the
+to use during loading. ``create_module()`` does not need to set any attributes
+on the module object. If the method returns ``None``, the
 import machinery will create the new module itself.
 
 .. versionadded:: 3.4
@@ -449,16 +449,16 @@ import machinery will create the new module itself.
 
    For compatibility with existing loaders, the import machinery will use
    the ``load_module()`` method of loaders if it exists and the loader does
-   not also implement ``exec_module()``.  However, ``load_module()`` has been
+   not also implement ``exec_module()``. However, ``load_module()`` has been
    deprecated and loaders should implement ``exec_module()`` instead.
 
    The ``load_module()`` method must implement all the boilerplate loading
-   functionality described above in addition to executing the module.  All
+   functionality described above in addition to executing the module. All
    the same constraints apply, with some additional clarification:
 
    * If there is an existing module object with the given name in
      :data:`sys.modules`, the loader must use that existing module.
-     (Otherwise, :func:`importlib.reload` will not work correctly.)  If the
+     (Otherwise, :func:`importlib.reload` will not work correctly.) If the
      named module does not exist in :data:`sys.modules`, the loader
      must create a new module object and add it to :data:`sys.modules`.
 
@@ -490,7 +490,7 @@ When a submodule is loaded using any mechanism (e.g. ``importlib`` APIs, the
 binding is placed in the parent module's namespace to the submodule object.
 For example, if package ``spam`` has a submodule ``foo``, after importing
 ``spam.foo``, ``spam`` will have an attribute ``foo`` which is bound to the
-submodule.  Let's say you have the following directory structure::
+submodule. Let's say you have the following directory structure::
 
     spam/
         __init__.py
@@ -510,7 +510,7 @@ then executing the following puts name bindings for ``foo`` and ``Foo`` in the
     <class 'spam.foo.Foo'>
 
 Given Python's familiar name binding rules this might seem surprising, but
-it's actually a fundamental feature of the import system.  The invariant
+it's actually a fundamental feature of the import system. The invariant
 holding is that if you have ``sys.modules['spam']`` and
 ``sys.modules['spam.foo']`` (as you would after the above import), the latter
 must appear as the ``foo`` attribute of the former.
@@ -521,13 +521,13 @@ Module specs
 ------------
 
 The import machinery uses a variety of information about each module
-during import, especially before loading.  Most of the information is
-common to all modules.  The purpose of a module's spec is to encapsulate
+during import, especially before loading. Most of the information is
+common to all modules. The purpose of a module's spec is to encapsulate
 this import-related information on a per-module basis.
 
 Using a spec during import allows state to be transferred between import
 system components, e.g. between the finder that creates the module spec
-and the loader that executes it.  Most importantly, it allows the
+and the loader that executes it. Most importantly, it allows the
 import machinery to perform the boilerplate operations of loading,
 whereas without a module spec the loader had that responsibility.
 
@@ -566,7 +566,7 @@ consulted when traversing a package's :attr:`!__path__`.
 A package's ``__init__.py`` file may set or alter the package's
 :attr:`~module.__path__`
 attribute, and this was typically the way namespace packages were implemented
-prior to :pep:`420`.  With the adoption of :pep:`420`, namespace packages no
+prior to :pep:`420`. With the adoption of :pep:`420`, namespace packages no
 longer need to supply ``__init__.py`` files containing only :attr:`!__path__`
 manipulation code; the import machinery automatically sets :attr:`!__path__`
 correctly for the namespace package.
@@ -579,16 +579,16 @@ attributes set above, and in the module's spec, you can more explicitly
 control the repr of module objects.
 
 If the module has a spec (``__spec__``), the import machinery will try
-to generate a repr from it.  If that fails or there is no spec, the import
+to generate a repr from it. If that fails or there is no spec, the import
 system will craft a default repr using whatever information is available
-on the module.  It will try to use the ``module.__name__``,
+on the module. It will try to use the ``module.__name__``,
 ``module.__file__``, and ``module.__loader__`` as input into the repr,
 with defaults for whatever information is missing.
 
 Here are the exact rules used:
 
 * If the module has a ``__spec__`` attribute, the information in the spec
-  is used to generate the repr.  The "name", "loader", "origin", and
+  is used to generate the repr. The "name", "loader", "origin", and
   "has_location" attributes are consulted.
 
 * If the module has a ``__file__`` attribute, this is used as part of the
@@ -641,7 +641,7 @@ The Path Based Finder
 As mentioned previously, Python comes with several default meta path finders.
 One of these, called the :term:`path based finder`
 (:class:`~importlib.machinery.PathFinder`), searches an :term:`import path`,
-which contains a list of :term:`path entries <path entry>`.  Each path
+which contains a list of :term:`path entries <path entry>`. Each path
 entry names a location to search for modules.
 
 The path based finder itself doesn't know how to import anything. Instead, it
@@ -655,21 +655,21 @@ shared libraries (e.g. ``.so`` files). When supported by the :mod:`zipimport`
 module in the standard library, the default path entry finders also handle
 loading all of these file types (other than shared libraries) from zipfiles.
 
-Path entries need not be limited to file system locations.  They can refer to
+Path entries need not be limited to file system locations. They can refer to
 URLs, database queries, or any other location that can be specified as a
 string.
 
 The path based finder provides additional hooks and protocols so that you
-can extend and customize the types of searchable path entries.  For example,
+can extend and customize the types of searchable path entries. For example,
 if you wanted to support path entries as network URLs, you could write a hook
-that implements HTTP semantics to find modules on the web.  This hook (a
+that implements HTTP semantics to find modules on the web. This hook (a
 callable) would return a :term:`path entry finder` supporting the protocol
 described below, which was then used to get a loader for the module from the
 web.
 
 A word of warning: this section and the previous both use the term *finder*,
 distinguishing between them by using the terms :term:`meta path finder` and
-:term:`path entry finder`.  These two types of finders are very similar,
+:term:`path entry finder`. These two types of finders are very similar,
 support similar protocols, and function in similar ways during the import
 process, but it's important to keep in mind that they are subtly different.
 In particular, meta path finders operate at the beginning of the import
@@ -692,7 +692,7 @@ Path entry finders
 
 The :term:`path based finder` is responsible for finding and loading
 Python modules and packages whose location is specified with a string
-:term:`path entry`.  Most path entries name locations in the file system,
+:term:`path entry`. Most path entries name locations in the file system,
 but they need not be limited to this.
 
 As a meta path finder, the :term:`path based finder` implements the
@@ -701,50 +701,50 @@ described, however it exposes additional hooks that can be used to
 customize how modules are found and loaded from the :term:`import path`.
 
 Three variables are used by the :term:`path based finder`, :data:`sys.path`,
-:data:`sys.path_hooks` and :data:`sys.path_importer_cache`.  The ``__path__``
-attributes on package objects are also used.  These provide additional ways
+:data:`sys.path_hooks` and :data:`sys.path_importer_cache`. The ``__path__``
+attributes on package objects are also used. These provide additional ways
 that the import machinery can be customized.
 
 :data:`sys.path` contains a list of strings providing search locations for
-modules and packages.  It is initialized from the :envvar:`PYTHONPATH`
+modules and packages. It is initialized from the :envvar:`PYTHONPATH`
 environment variable and various other installation- and
-implementation-specific defaults.  Entries in :data:`sys.path` can name
+implementation-specific defaults. Entries in :data:`sys.path` can name
 directories on the file system, zip files, and potentially other "locations"
 (see the :mod:`site` module) that should be searched for modules, such as
-URLs, or database queries.  Only strings should be present on
+URLs, or database queries. Only strings should be present on
 :data:`sys.path`; all other data types are ignored.
 
 The :term:`path based finder` is a :term:`meta path finder`, so the import
 machinery begins the :term:`import path` search by calling the path
 based finder's :meth:`~importlib.machinery.PathFinder.find_spec` method as
-described previously.  When the ``path`` argument to
+described previously. When the ``path`` argument to
 :meth:`~importlib.machinery.PathFinder.find_spec` is given, it will be a
 list of string paths to traverse - typically a package's ``__path__``
-attribute for an import within that package.  If the ``path`` argument is
+attribute for an import within that package. If the ``path`` argument is
 ``None``, this indicates a top level import and :data:`sys.path` is used.
 
 The path based finder iterates over every entry in the search path, and
 for each of these, looks for an appropriate :term:`path entry finder`
 (:class:`~importlib.abc.PathEntryFinder`) for the
-path entry.  Because this can be an expensive operation (e.g. there may be
+path entry. Because this can be an expensive operation (e.g. there may be
 ``stat()`` call overheads for this search), the path based finder maintains
-a cache mapping path entries to path entry finders.  This cache is maintained
+a cache mapping path entries to path entry finders. This cache is maintained
 in :data:`sys.path_importer_cache` (despite the name, this cache actually
 stores finder objects rather than being limited to :term:`importer` objects).
 In this way, the expensive search for a particular :term:`path entry`
-location's :term:`path entry finder` need only be done once.  User code is
+location's :term:`path entry finder` need only be done once. User code is
 free to remove cache entries from :data:`sys.path_importer_cache` forcing
 the path based finder to perform the path entry search again.
 
 If the path entry is not present in the cache, the path based finder iterates
-over every callable in :data:`sys.path_hooks`.  Each of the :term:`path entry
+over every callable in :data:`sys.path_hooks`. Each of the :term:`path entry
 hooks <path entry hook>` in this list is called with a single argument, the
-path entry to be searched.  This callable may either return a :term:`path
+path entry to be searched. This callable may either return a :term:`path
 entry finder` that can handle the path entry, or it may raise
-:exc:`ImportError`.  An :exc:`ImportError` is used by the path based finder to
+:exc:`ImportError`. An :exc:`ImportError` is used by the path based finder to
 signal that the hook cannot find a :term:`path entry finder`
-for that :term:`path entry`.  The
-exception is ignored and :term:`import path` iteration continues.  The hook
+for that :term:`path entry`. The
+exception is ignored and :term:`import path` iteration continues. The hook
 should expect either a string or bytes object; the encoding of bytes objects
 is up to the hook (e.g. it may be a file system encoding, UTF-8, or something
 else), and if the hook cannot decode the argument, it should raise
@@ -780,7 +780,7 @@ the :meth:`~importlib.abc.PathEntryFinder.find_spec` method.
 
 :meth:`~importlib.abc.PathEntryFinder.find_spec` takes two arguments: the
 fully qualified name of the module being imported, and the (optional) target
-module.  ``find_spec()`` returns a fully populated spec for the module.
+module. ``find_spec()`` returns a fully populated spec for the module.
 This spec will always have "loader" set (with one exception).
 
 To indicate to the import machinery that the spec represents a namespace
@@ -794,12 +794,12 @@ a list containing the portion.
    are now deprecated, but will be used if ``find_spec()`` is not defined.
 
    Older path entry finders may implement one of these two deprecated methods
-   instead of ``find_spec()``.  The methods are still respected for the
-   sake of backward compatibility.  However, if ``find_spec()`` is
+   instead of ``find_spec()``. The methods are still respected for the
+   sake of backward compatibility. However, if ``find_spec()`` is
    implemented on the path entry finder, the legacy methods are ignored.
 
    :meth:`!find_loader` takes one argument, the
-   fully qualified name of the module being imported.  ``find_loader()``
+   fully qualified name of the module being imported. ``find_loader()``
    returns a 2-tuple where the first item is the loader and the second item
    is a namespace :term:`portion`.
 
@@ -812,7 +812,7 @@ a list containing the portion.
 
    The ``find_module()`` method on path entry finders is deprecated,
    as it does not allow the path entry finder to contribute portions to
-   namespace packages.  If both ``find_loader()`` and ``find_module()``
+   namespace packages. If both ``find_loader()`` and ``find_module()``
    exist on a path entry finder, the import system will always call
    ``find_loader()`` in preference to ``find_module()``.
 
@@ -892,10 +892,10 @@ Special considerations for __main__
 ===================================
 
 The :mod:`__main__` module is a special case relative to Python's import
-system.  As noted :ref:`elsewhere <programs>`, the ``__main__`` module
+system. As noted :ref:`elsewhere <programs>`, the ``__main__`` module
 is directly initialized at interpreter startup, much like :mod:`sys` and
-:mod:`builtins`.  However, unlike those two, it doesn't strictly
-qualify as a built-in module.  This is because the manner in which
+:mod:`builtins`. However, unlike those two, it doesn't strictly
+qualify as a built-in module. This is because the manner in which
 ``__main__`` is initialized depends on the flags and other options with
 which the interpreter is invoked.
 
@@ -936,7 +936,7 @@ to populate the ``__main__`` namespace, and not during normal import.
 References
 ==========
 
-The import machinery has evolved considerably since Python's early days.  The
+The import machinery has evolved considerably since Python's early days. The
 original `specification for packages
 <https://www.python.org/doc/essays/packages/>`_ is still available to read,
 although some details have changed since the writing of that document.
@@ -945,7 +945,7 @@ The original specification for :data:`sys.meta_path` was :pep:`302`, with
 subsequent extension in :pep:`420`.
 
 :pep:`420` introduced :term:`namespace packages <namespace package>` for
-Python 3.3.  :pep:`420` also introduced the :meth:`!find_loader` protocol as an
+Python 3.3. :pep:`420` also introduced the :meth:`!find_loader` protocol as an
 alternative to :meth:`!find_module`.
 
 :pep:`366` describes the addition of the ``__package__`` attribute for
@@ -958,8 +958,8 @@ proposed ``__name__`` for semantics :pep:`366` would eventually specify for
 :pep:`338` defines executing modules as scripts.
 
 :pep:`451` adds the encapsulation of per-module import state in spec
-objects.  It also off-loads most of the boilerplate responsibilities of
-loaders back onto the import machinery.  These changes allow the
+objects. It also off-loads most of the boilerplate responsibilities of
+loaders back onto the import machinery. These changes allow the
 deprecation of several APIs in the import system and also addition of new
 methods to finders and loaders.
 
@@ -969,7 +969,7 @@ methods to finders and loaders.
 
 .. [#fnlo] The importlib implementation avoids using the return value
    directly. Instead, it gets the module object by looking the module name up
-   in :data:`sys.modules`.  The indirect effect of this is that an imported
-   module may replace itself in :data:`sys.modules`.  This is
+   in :data:`sys.modules`. The indirect effect of this is that an imported
+   module may replace itself in :data:`sys.modules`. This is
    implementation-specific behavior that is not guaranteed to work in other
    Python implementations.
