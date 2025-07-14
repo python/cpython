@@ -24,7 +24,8 @@ Please keep this script compatible with Python 2.7, and 3.4 to 3.7.
 """
 from __future__ import print_function
 
-import abc
+from abc import abstractmethod
+from abc import ABCMeta
 import argparse
 from datetime import datetime
 import logging
@@ -147,7 +148,7 @@ parser.add_argument(
 )
 
 
-class AbstractBuilder(object, metaclass=abc.ABCMeta):
+class AbstractBuilder(object, metaclass=ABCMeta):
     depend_target = None
     install_target = 'install'
     if hasattr(os, 'process_cpu_count'):
