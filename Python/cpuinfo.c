@@ -353,12 +353,14 @@ detect_cpuid_xsave_state(_Py_cpuid_features *flags)
     assert(flags->maxleaf >= 1);
     (void)flags;
     // Keep the ordering and newlines as they are declared in the structure.
+#ifdef HAS_XGETBV_SUPPORT
     uint64_t xcr0 = flags->xsave && flags->osxsave ? get_xgetbv(0) : 0;
     flags->xcr0_sse = XSAVE_CHECK_REG(xcr0, XCR0_SSE);
     flags->xcr0_avx = XSAVE_CHECK_REG(xcr0, XCR0_AVX);
     flags->xcr0_avx512_opmask = XSAVE_CHECK_REG(xcr0, XCR0_AVX512_OPMASK);
     flags->xcr0_avx512_zmm_hi256 = XSAVE_CHECK_REG(xcr0, XCR0_AVX512_ZMM_HI256);
     flags->xcr0_avx512_hi16_zmm = XSAVE_CHECK_REG(xcr0, XCR0_AVX512_HI16_ZMM);
+#endif
 }
 #endif
 
