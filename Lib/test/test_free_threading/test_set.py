@@ -71,6 +71,35 @@ class TestSet(TestCase):
         for t in threads:
             t.join()
 
+    def test_contains_frozenset(self):
+        barrier = Barrier(3)
+        done = False
+
+        NUM_ITEMS = 2_000
+        NUM_LOOPS = 20
+
+        s = frozenset()
+        def make_set():
+            nonlocal s
+            barrier.wait()
+            while not done:
+                s = frozenset(range(NUM_ITEMS))
+
+        def read_set():
+            nonlocal done
+            barrier.wait()
+            for _ in range(NUM_LOOPS):
+                for i in range(NUM_ITEMS):
+                    item = i >> 1
+                    result = item in s
+            done = True
+
+        threads = [Thread(target=read_set), Thread(target=read_set), Thread(target=make_set)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
 
 if __name__ == "__main__":
     unittest.main()
