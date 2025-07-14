@@ -99,25 +99,30 @@
 #if defined(SIMD_SSE_INSTRUCTIONS_DETECTION_GUARD)      \
     || defined(SIMD_AVX_INSTRUCTIONS_DETECTION_GUARD)
 /* Indicate that cpuid should be called once with EAX=1 and ECX=0. */
+#  ifndef HAS_CPUID_SUPPORT
+#    error "HAS_CPUID_SUPPORT must be set"
+#  endif
 #  define SHOULD_PARSE_CPUID_L1
 #endif
 
 #if defined(SIMD_AVX2_INSTRUCTIONS_DETECTION_GUARD)         \
     || defined(SIMD_AVX512_INSTRUCTIONS_DETECTION_GUARD)
 /* Indicate that cpuid should be called once with EAX=7 and ECX=0. */
+#  ifndef HAS_CPUID_SUPPORT
+#    error "HAS_CPUID_SUPPORT must be set"
+#  endif
 #  define SHOULD_PARSE_CPUID_L7
 #  define SHOULD_PARSE_CPUID_L7S0
 #endif
 
 #if defined(SIMD_AVX_INSTRUCTIONS_DETECTION_GUARD)
 /* Indicate that cpuid should be called once with EAX=7 and ECX=1. */
+#  ifndef HAS_CPUID_SUPPORT
+#    error "HAS_CPUID_SUPPORT must be set"
+#  endif
 #  define SHOULD_PARSE_CPUID_L7
 #  define SHOULD_PARSE_CPUID_L7S1
 #endif
-
-#undef SHOULD_PARSE_CPUID_L7
-#undef SHOULD_PARSE_CPUID_L7S0
-#undef SHOULD_PARSE_CPUID_L7S1
 
 #if defined(SHOULD_PARSE_CPUID_L7S0) && !defined(SHOULD_PARSE_CPUID_L7)
 #error "SHOULD_PARSE_CPUID_L7S0 requires SHOULD_PARSE_CPUID_L7"
