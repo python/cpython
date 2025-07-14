@@ -9,14 +9,17 @@
 // In the future, we should carefully enable support for ARM NEON and POWER
 // as well as AMD.
 #if defined(__x86_64__) && defined(__GNUC__)
-#  include <cpuid.h>      // __cpuid_count()
+#  include <cpuid.h>            // __cpuid_count()
 #  define HAS_CPUID_SUPPORT
+#  if defined(__clang__)
+#    include <immintrin.h>      // _xgetbv()
+#  endif
 #  define HAS_XGETBV_SUPPORT
 #elif defined(_M_X64)
-#  include <immintrin.h>  // _xgetbv()
-#  define HAS_XGETBV_SUPPORT
-#  include <intrin.h>     // __cpuidex()
+#  include <intrin.h>           // __cpuidex()
 #  define HAS_CPUID_SUPPORT
+#  include <immintrin.h>        // _xgetbv()
+#  define HAS_XGETBV_SUPPORT
 #else
 #  undef HAS_CPUID_SUPPORT
 #  undef HAS_XGETBV_SUPPORT
@@ -146,9 +149,18 @@ get_xgetbv(uint32_t index)
 {
     assert(index == 0); // only XCR0 is supported for now
 #if defined(HAS_CPUID_SUPPORT) && defined(__x86_64__) && defined(__GNUC__)
+#  if defined(__clang__)
+    return (uint64_t)_xgetbv(index);
+#  else
     uint32_t eax = 0, edx = 0;
-    __asm__ __volatile__("xgetbv" : "=a" (eax), "=d" (edx) : "c" (index));
+    __asm__ volatile(
+        /* raw opcode for xgetbv for compatibility with older toolchains */
+        ".byte 0x0f, 0x01, 0xd0"
+        : "=a" (eax), "=d" (edx)
+        : "c" (index)
+    );
     return ((uint64_t)edx << 32) | eax;
+#   endif
 #elif defined(HAS_CPUID_SUPPORT) && defined(_M_X64)
     return (uint64_t)_xgetbv(index);
 #else
