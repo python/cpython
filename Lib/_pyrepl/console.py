@@ -199,7 +199,7 @@ class InteractiveColoredConsole(code.InteractiveConsole):
         except SyntaxError as e:
             # If it looks like pip install was entered (a common beginner
             # mistake), provide a hint to use the system command prompt.
-            if re.match(r"^\s*(py(thon3?)? -m pip|pip3?) install.*", source):
+            if re.match(r"^\s*(pip3?|py(thon3?)? -m pip) install.*", source):
                 e.add_note(
                     "The Python package manager (pip) can only be used"
                     " outside of the Python REPL.\n"
