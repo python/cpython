@@ -243,7 +243,10 @@ class ExecutorTest:
               for index in range(count)]
 
         self.executor.shutdown(wait=False, cancel_futures=True)
-        barrier.wait()
+        try:
+            barrier.wait()
+        except threading.BrokenBarrierError:
+            pass
 
         for future in fs:
             self.assertRaises((FalseyBoolException, futures.CancelledError),
