@@ -413,12 +413,21 @@ def field(*, default=MISSING, default_factory=MISSING, init=True, repr=True,
 
 
 def _fields_in_init_order(fields):
-    # Returns the fields as __init__ will output them.  It returns 2 tuples:
-    # the first for normal args, and the second for keyword args.
+    required_fields = []
+    optional_fields = []
+    kw_fields = []
+    for f in fields:
+        if not f.init:
+            continue
+        if f.kw_only:
+            kw_fields.append(f)
+        elif f.default is MISSING and f.default_factory is MISSING:
+            required_fields.append(f)
+        else:
+            optional_fields.append(f)
 
-    return (tuple(f for f in fields if f.init and not f.kw_only),
-            tuple(f for f in fields if f.init and f.kw_only)
-            )
+    return tuple(required_fields + optional_fields), tuple(kw_fields)
+
 
 
 def _tuple_str(obj_name, fields):
