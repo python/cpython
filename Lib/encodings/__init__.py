@@ -26,18 +26,17 @@ Written by Marc-Andre Lemburg (mal@lemburg.com).
 
 (c) Copyright CNRI, All Rights Reserved. NO WARRANTY.
 
-"""
+"""#"
 
 import codecs
-from _codecs import _normalize_encoding
 import sys
+from _codecs import _normalize_encoding
 from . import aliases
 
 _cache = {}
 _unknown = '--unknown--'
 _import_tail = ['*']
 _aliases = aliases.aliases
-
 
 class CodecRegistryError(LookupError, SystemError):
     pass

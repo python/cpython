@@ -3900,7 +3900,6 @@ class CodecNameNormalizationTest(unittest.TestCase):
         self.assertEqual(normalize('utf_8'), 'utf_8')
         self.assertEqual(normalize('utf\xE9\u20AC\U0010ffff-8'), 'utf_8')
         self.assertEqual(normalize('utf   8'), 'utf_8')
-
         # encodings.normalize_encoding() doesn't convert
         # characters to lower case.
         self.assertEqual(normalize('UTF 8'), 'UTF_8')
