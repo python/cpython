@@ -3349,19 +3349,24 @@ sock_setsockopt(PyObject *self, PyObject *args)
     arglen = PyTuple_Size(args);
     if (arglen == 3 && optval == Py_None) {
         PyErr_Format(PyExc_TypeError,
-                        "setsockopt() take 4 arguments when socket option is None (%zd given)",
+                        "setsockopt() requires 4 arguments when the third argument is None",
                         arglen);
         return NULL;
     }
     if (arglen == 4 && optval != Py_None) {
         PyErr_Format(PyExc_TypeError,
-                        "setsockopt() argument 3 must be NoneType, not %T",
+                        "setsockopt() only takes 4 arguments when the third argument is None (got %T)",
                         optval);
         return NULL;
     }
 
 #ifdef AF_VSOCK
     if (s->sock_family == AF_VSOCK) {
+        if (!PyIndex_Check(optval)) {
+            PyErr_Format(PyExc_TypeError,
+                            "setsockopt() argument 3 for AF_VSOCK must be an int (got %T)",
+                            optval);
+	}
         uint64_t vflag; // Must be set width of 64 bits
         /* setsockopt(level, opt, flag) */
         if (!PyArg_Parse(optval, "K", &vflag)) {

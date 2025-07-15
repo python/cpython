@@ -1560,10 +1560,10 @@ class GeneralModuleTests(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, "socket option should be int, bytes-like object or None"):
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, dict())
 
-        with self.assertRaisesRegex(TypeError, "take 4 arguments when socket option is None"):
+        with self.assertRaisesRegex(TypeError, "requires 4 arguments when the third argument is None"):
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, None)
 
-        with self.assertRaisesRegex(TypeError, "argument 3 must be NoneType"):
+        with self.assertRaisesRegex(TypeError, "only takes 4 arguments when the third argument is None"):
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1, 2)
 
         with self.assertRaisesRegex(TypeError, "takes at least 3 arguments"):
