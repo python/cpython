@@ -56,6 +56,10 @@ Lib/test/test_capi/test_misc.py  @markshannon
 Lib/test/test_pyrepl/*        @pablogsal @lysnikolaou @ambv
 Tools/c-analyzer/             @ericsnowcurrently
 
+# cpuinfo
+Python/cpuinfo.c              @picnixz
+Python/pycore_cpuinfo*.h      @picnixz
+
 # dbm
 **/*dbm*                      @corona10 @erlend-aasland @serhiy-storchaka
 
