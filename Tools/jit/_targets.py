@@ -51,6 +51,7 @@ class _Target(typing.Generic[_S, _R]):
     verbose: bool = False
     cflags: str = ""
     known_symbols: dict[str, int] = dataclasses.field(default_factory=dict)
+    input_file: pathlib.Path = PYTHON_EXECUTOR_CASES_C_H
     pyconfig_dir: pathlib.Path = pathlib.Path.cwd().resolve()
 
     def _get_nop(self) -> bytes:
@@ -68,7 +69,7 @@ class _Target(typing.Generic[_S, _R]):
         hasher.update(self.debug.to_bytes())
         hasher.update(self.cflags.encode())
         # These dependencies are also reflected in _JITSources in regen.targets:
-        hasher.update(PYTHON_EXECUTOR_CASES_C_H.read_bytes())
+        hasher.update(self.input_file.read_bytes())
         hasher.update((self.pyconfig_dir / "pyconfig.h").read_bytes())
         for dirpath, _, filenames in sorted(os.walk(TOOLS_JIT)):
             for filename in filenames:
@@ -82,10 +83,16 @@ class _Target(typing.Generic[_S, _R]):
         if output is not None:
             # Make sure that full paths don't leak out (for reproducibility):
             long, short = str(path), str(path.name)
-            group.code.disassembly.extend(
-                line.expandtabs().strip().replace(long, short)
-                for line in output.splitlines()
-            )
+            lines = output.splitlines()
+            started = False
+            for line in lines:
+                if not started:
+                    if "_JIT_ENTRY" not in line:
+                        continue
+                    started = True
+                cleaned = line.replace(long, short).expandtabs().strip()
+                if cleaned:
+                    group.code.disassembly.append(cleaned)
         args = [
             "--elf-output-style=JSON",
             "--expand-relocs",
@@ -181,10 +188,12 @@ class _Target(typing.Generic[_S, _R]):
         return await self._parse(o)
 
     async def _build_stencils(self) -> dict[str, _stencils.StencilGroup]:
-        generated_cases = PYTHON_EXECUTOR_CASES_C_H.read_text()
+        generated_cases = self.input_file.read_text()
         cases_and_opnames = sorted(
             re.findall(
-                r"\n {8}(case (\w+): \{\n.*?\n {8}\})", generated_cases, flags=re.DOTALL
+                r"^ {8}(case (\w+): \{\n.*?\n {8}\})",
+                generated_cases,
+                flags=re.DOTALL | re.MULTILINE,
             )
         )
         tasks = []

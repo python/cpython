@@ -23,6 +23,12 @@ if __name__ == "__main__":
         "-f", "--force", action="store_true", help="force the entire JIT to be rebuilt"
     )
     parser.add_argument(
+        "-i",
+        "--input-file",
+        help="where to find the generated executor cases",
+        type=lambda p: pathlib.Path(p).resolve(),
+    )
+    parser.add_argument(
         "-o",
         "--output-dir",
         help="where to output generated files",
@@ -48,6 +54,8 @@ if __name__ == "__main__":
         target.force = args.force
         target.verbose = args.verbose
         target.cflags = args.cflags
+        if args.input_file is not None:
+            target.input_file = args.input_file
         target.pyconfig_dir = args.pyconfig_dir
         target.build(
             comment=comment,
