@@ -1,2 +1,2 @@
-Add a ``--header`` cli option to :program:`python -m http.server`. Contributed by
+Add a ``--header`` CLI option to :program:`python -m http.server`. Contributed by
 Anton I. Sipos.
