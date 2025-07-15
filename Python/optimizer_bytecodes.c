@@ -516,6 +516,13 @@ dummy_func(void) {
         value = PyJitRef_Borrow(sym_new_const(ctx, ptr));
     }
 
+    op(_POP_TOP_INT, (value -- )) {
+        if (PyJitRef_IsBorrowed(value) ||
+            sym_is_immortal(PyJitRef_Unwrap(value))) {
+            REPLACE_OP(this_instr, _POP_TOP_NOP, 0, 0);
+        }
+    }
+
     op(_POP_TOP, (value -- )) {
         PyTypeObject *typ = sym_get_type(value);
         if (PyJitRef_IsBorrowed(value) ||
