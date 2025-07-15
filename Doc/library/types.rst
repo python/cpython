@@ -340,8 +340,7 @@ Standard names are defined for the following types:
 
    .. versionadded:: next
 
-   .. seealso::
-      :pep:`667`
+   .. seealso:: :pep:`667`
 
 
 .. data:: GetSetDescriptorType

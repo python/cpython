@@ -712,7 +712,11 @@ class TypesTests(unittest.TestCase):
         """
         assert_python_ok("-c", code)
 
-    def test_frame_locals_proxy(self):
+    def test_frame_locals_proxy_type(self):
+        self.assertIsInstance(types.FrameLocalsProxyType, type)
+        self.assertIsInstance(types.FrameLocalsProxyType.__doc__, str)
+        self.assertEqual(types.FrameLocalsProxyType.__module__, 'types')
+
         frame = inspect.currentframe()
         self.assertIsNotNone(frame)
         self.assertIsInstance(frame.f_locals, types.FrameLocalsProxyType)
