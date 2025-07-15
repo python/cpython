@@ -715,7 +715,8 @@ class TypesTests(unittest.TestCase):
     def test_frame_locals_proxy_type(self):
         self.assertIsInstance(types.FrameLocalsProxyType, type)
         self.assertIsInstance(types.FrameLocalsProxyType.__doc__, str)
-        self.assertEqual(types.FrameLocalsProxyType.__module__, 'types')
+        self.assertEqual(types.FrameLocalsProxyType.__module__, 'builtins')
+        self.assertEqual(types.FrameLocalsProxyType.__name__, 'FrameLocalsProxy')
 
         frame = inspect.currentframe()
         self.assertIsNotNone(frame)
