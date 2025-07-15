@@ -1036,7 +1036,6 @@ def _main(args=None):
                         help='bind to this port '
                              '(default: %(default)s)')
     parser.add_argument('-H', '--header', nargs=2, action='append',
-                        # metavar='HEADER VALUE',
                         metavar=('HEADER', 'VALUE'),
                         help='Add a custom response header '
                              '(can be used multiple times)')

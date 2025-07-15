@@ -1490,15 +1490,7 @@ class CommandLineTestCase(unittest.TestCase):
         self.assertIn('error', stderr.getvalue())
 
     def test_response_headers_arg(self):
-        # with mock.patch.object(
-        #     SimpleHTTPRequestHandler, '__init__'
-        # ) as mock_handler, \
-        # mock.patch.object(
-        #     HTTPServer, 'serve_forever'
-        # ) as mock_serve_forever:
-        with mock.patch.object(
-            HTTPServer, 'serve_forever'
-        ) as mock_serve_forever:
+        with mock.patch.object(HTTPServer, 'serve_forever'):
             httpd = server._main(
                 ['-H', 'Set-Cookie', 'k=v', '-H', 'Set-Cookie', 'k2=v2', '8080']
             )
