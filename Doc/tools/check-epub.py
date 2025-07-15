@@ -3,8 +3,9 @@ from pathlib import Path
 
 
 def main() -> int:
+    wrong_directory_msg = "Must run this script from the repo root"
     if not Path("Doc").exists() or not Path("Doc").is_dir():
-        raise RuntimeError("Must run this script from the repo root")
+        raise RuntimeError(wrong_directory_msg)
 
     with Path("Doc/epubcheck.txt").open(encoding="UTF-8") as f:
         warnings = [warning.split(" - ") for warning in f.read().splitlines()]
