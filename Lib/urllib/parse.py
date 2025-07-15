@@ -313,6 +313,11 @@ access to perform some operation on the resource.
 _ParseResultBase.query.__doc__ = _SplitResultBase.query.__doc__
 _ParseResultBase.fragment.__doc__ = _SplitResultBase.fragment.__doc__
 
+# Re-export these, since we don't have a 'replace' field
+# and making the user call '._replace' feels yucky
+_DefragResultBase.replace = _DefragResultBase._replace
+_SplitResultBase.replace = _SplitResultBase._replace
+_ParseResultBase.replace = _ParseResultBase._replace
 
 # For backwards compatibility, alias _NetlocResultMixinStr
 # ResultBase is no longer part of the documented API, but it is

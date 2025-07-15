@@ -1675,5 +1675,23 @@ class RequestTests(unittest.TestCase):
         self.assertEqual(request.get_method(), 'HEAD')
 
 
+class TestReplaceMethod:
+    """Testcase to test the '.replace' method"""
+
+    def test_defrag(self):
+        result = urllib.parse.defrag("http://www.python.org")
+        result = result.replace(frament="something")
+        self.assertEqual(result.fragment, "something")
+
+    def test_urlsplit(self):
+        result = urllib.parse.urlsplit("http://www.python.org")
+        result = result.replace(frament="something")
+        self.assertEqual(result.fragment, "something")
+
+    def test_urlparse(self):
+        result = urllib.parse.urlparse("http://www.python.org")
+        result = result.replace(frament="something")
+        self.assertEqual(result.fragment, "something")
+
 if __name__ == '__main__':
     unittest.main()
