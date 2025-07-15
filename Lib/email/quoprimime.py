@@ -39,8 +39,6 @@ __all__ = [
     'unquote',
     ]
 
-import re
-
 from string import ascii_letters, digits, hexdigits
 
 CRLF = '\r\n'
@@ -281,12 +279,7 @@ body_decode = decode
 decodestring = decode
 
 
-
-def _unquote_match(match):
-    """Turn a match in the form =AB to the ASCII character with value 0xab"""
-    s = match.group(0)
-    return unquote(s)
-
+_HEX_TO_CHAR = {f'{i:02x}': chr(i) for i in range(256)}
 
 # Header decoding is done a bit differently
 def header_decode(s):
@@ -296,5 +289,29 @@ def header_decode(s):
     quoted-printable (like =?iso-8859-1?q?Hello_World?=) -- please use
     the high level email.header class for that functionality.
     """
-    s = s.replace('_', ' ')
-    return re.sub(r'=[a-fA-F0-9]{2}', _unquote_match, s, flags=re.ASCII)
+    # Check for regex =[a-fA-F0-9]{2}
+    s = s.replace("_", " ")
+    
+    if '=' not in s:
+        return s
+    
+    result = ''
+    s_len = len(s)
+    i = 0
+    last_append = 0
+
+    while i < s_len:
+        if s[i] == '=' and i + 2 < s_len:
+            if (hex_str := s[i + 1:i + 3].lower()) in _HEX_TO_CHAR:
+                if last_append < i:
+                    result += s[last_append:i]
+                result += _HEX_TO_CHAR[hex_str]
+                i += 3
+                last_append = i
+                continue
+        i += 1
+
+    if last_append < s_len:
+        result += s[last_append:]
+
+    return result
