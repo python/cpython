@@ -158,7 +158,9 @@ class TemplateIterTests(unittest.TestCase):
 
 class TestFunctions(unittest.TestCase):
     def test_convert(self):
-        for obj in ('Café', None, 3.14, b'bytes'):
+        from fractions import Fraction
+
+        for obj in ('Café', None, 3.14, Fraction(1, 2)):
             with self.subTest(f'{obj=}'):
                 self.assertEqual(convert(obj, None), obj)
                 self.assertEqual(convert(obj, 's'), str(obj))
