@@ -305,7 +305,7 @@ _PyTemplate_Concat(PyObject *self, PyObject *other)
     }
 
     PyErr_Format(PyExc_TypeError,
-        "can only concatenate Template (not \"%T\") to Template",
+        "can only concatenate string.templatelib.Template (not \"%T\") to string.templatelib.Template",
         other);
     return NULL;
 }
