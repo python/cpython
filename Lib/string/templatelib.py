@@ -6,7 +6,7 @@ Interpolation = type(t.interpolations[0])
 del t
 
 def convert(obj, /, conversion):
-    """Implements formatted string literals conversion semantics."""
+    """Convert *obj* using formatted string literal semantics."""
     if conversion is None:
         return obj
     if conversion == 'r':
@@ -15,7 +15,7 @@ def convert(obj, /, conversion):
         return str(obj)
     if conversion == 'a':
         return ascii(obj)
-    raise ValueError(f'invalid conversion specifier: {conversion!r}')
+    raise ValueError(f'invalid conversion specifier: {conversion}')
 
 def _template_unpickle(*args):
     import itertools
