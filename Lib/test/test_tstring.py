@@ -242,7 +242,7 @@ class TestTString(unittest.TestCase, TStringBaseCase):
 
         # Test disallowed mix of t-string and string/f-string (incl. bytes)
         what = 't'
-        expected_msg = 'cannot mix t-strings with strings or f-strings'
+        expected_msg = 'cannot mix t-string literals with string or bytes literals'
         for case in (
             "t'{what}-string literal' 'str literal'",
             "t'{what}-string literal' u'unicode literal'",

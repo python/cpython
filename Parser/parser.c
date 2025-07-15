@@ -27211,7 +27211,7 @@ invalid_string_tstring_concat_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_string_tstring_concat[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "((fstring | string))+ tstring"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_RANGE ( PyPegen_last_item ( a , expr_ty ) , b , "cannot mix t-strings with strings or f-strings" );
+            _res = RAISE_SYNTAX_ERROR_KNOWN_RANGE ( PyPegen_last_item ( a , expr_ty ) , b , "cannot mix t-string literals with string or bytes literals" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -27238,7 +27238,7 @@ invalid_string_tstring_concat_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_string_tstring_concat[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "tstring+ (fstring | string)"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_RANGE ( PyPegen_last_item ( a , expr_ty ) , b , "cannot mix t-strings with strings or f-strings" );
+            _res = RAISE_SYNTAX_ERROR_KNOWN_RANGE ( PyPegen_last_item ( a , expr_ty ) , b , "cannot mix t-string literals with string or bytes literals" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;

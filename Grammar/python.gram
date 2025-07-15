@@ -1558,9 +1558,9 @@ invalid_tstring_conversion_character:
 
 invalid_string_tstring_concat:
     | a=(fstring|string)+ b[expr_ty]=tstring {
-        RAISE_SYNTAX_ERROR_KNOWN_RANGE(PyPegen_last_item(a, expr_ty), b, "cannot mix t-strings with strings or f-strings") }
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(PyPegen_last_item(a, expr_ty), b, "cannot mix t-string literals with string or bytes literals") }
     | a=tstring+ b[expr_ty]=(fstring|string) {
-        RAISE_SYNTAX_ERROR_KNOWN_RANGE(PyPegen_last_item(a, expr_ty), b, "cannot mix t-strings with strings or f-strings") }
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(PyPegen_last_item(a, expr_ty), b, "cannot mix t-string literals with string or bytes literals") }
 
 invalid_arithmetic:
     | sum ('+'|'-'|'*'|'/'|'%'|'//'|'@') a='not' b=inversion { RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "'not' after an operator must be parenthesized") }

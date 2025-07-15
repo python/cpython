@@ -1871,6 +1871,10 @@ _PyPegen_concatenate_strings(Parser *p, asdl_expr_seq *strings,
             case JoinedStr_kind:
                 f_string_found = 1;
                 break;
+            case TemplateStr_kind:
+                // python.gram handles this; we should never get here
+                assert(0);
+                break;
             default:
                 f_string_found = 1;
                 break;
