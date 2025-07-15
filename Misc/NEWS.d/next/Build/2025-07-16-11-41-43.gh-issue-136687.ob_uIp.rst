@@ -1,0 +1,1 @@
+Add ./configure option to manually exclude ``ncurses`` from the build.
