@@ -4034,7 +4034,7 @@ class SuggestionFormattingTestBase:
         )
         return result_lines[0]
 
-    def test_getattr_suggestions(self):
+    def run_suggestion_tests(self, operation):
         class Substitution:
             noise = more_noise = a = bc = None
             blech = None
@@ -4074,44 +4074,97 @@ class SuggestionFormattingTestBase:
             (EliminationOverAddition, "'bluc'?"),
             (CaseChangeOverSubstitution, "'BLuch'?"),
         ]:
-            actual = self.get_suggestion(cls(), 'bluch')
+            obj = cls()
+
+            if operation == "getattr":
+                actual = self.get_suggestion(obj, 'bluch')
+            elif operation == "delattr":
+                actual = self.get_suggestion(lambda: delattr(obj, 'bluch'))
+            else:
+                raise ValueError(f"operation '{operation}' not recognized")
+
             self.assertIn(suggestion, actual)
 
-    def test_getattr_suggestions_underscored(self):
+    def test_getattr_suggestions(self):
+        self.run_suggestion_tests("getattr")
+
+    def test_delattr_suggestions(self):
+        self.run_suggestion_tests("delattr")
+
+    def run_underscored_tests(self, operation):
         class A:
             bluch = None
 
-        self.assertIn("'bluch'", self.get_suggestion(A(), 'blach'))
-        self.assertIn("'bluch'", self.get_suggestion(A(), '_luch'))
-        self.assertIn("'bluch'", self.get_suggestion(A(), '_bluch'))
+        obj = A()
+        if operation == "getattr":
+            self.assertIn("'bluch'", self.get_suggestion(obj, 'blach'))
+            self.assertIn("'bluch'", self.get_suggestion(obj, '_luch'))
+            self.assertIn("'bluch'", self.get_suggestion(obj, '_bluch'))
+        elif operation == "delattr":
+            self.assertIn("'bluch'", self.get_suggestion(lambda: delattr(obj, 'blach')))
+            self.assertIn("'bluch'", self.get_suggestion(lambda: delattr(obj, '_luch')))
+            self.assertIn("'bluch'", self.get_suggestion(lambda: delattr(obj, '_bluch')))
+        else:
+            raise ValueError(f"operation '{operation}' not recognized")
 
         class B:
             _bluch = None
             def method(self, name):
                 getattr(self, name)
 
-        self.assertIn("'_bluch'", self.get_suggestion(B(), '_blach'))
-        self.assertIn("'_bluch'", self.get_suggestion(B(), '_luch'))
-        self.assertNotIn("'_bluch'", self.get_suggestion(B(), 'bluch'))
+        obj = B()
+        if operation == "getattr":
+            self.assertIn("'_bluch'", self.get_suggestion(obj, '_blach'))
+            self.assertIn("'_bluch'", self.get_suggestion(obj, '_luch'))
+            self.assertNotIn("'_bluch'", self.get_suggestion(obj, 'bluch'))
+            self.assertIn("'_bluch'", self.get_suggestion(partial(obj.method, '_blach')))
+            self.assertIn("'_bluch'", self.get_suggestion(partial(obj.method, '_luch')))
+            self.assertIn("'_bluch'", self.get_suggestion(partial(obj.method, 'bluch')))
+        elif operation == "delattr":
+            self.assertIn("'_bluch'", self.get_suggestion(lambda: delattr(obj, '_blach')))
+            self.assertIn("'_bluch'", self.get_suggestion(lambda: delattr(obj, '_luch')))
+            self.assertNotIn("'_bluch'", self.get_suggestion(lambda: delattr(obj, 'bluch')))
+        else:
+            raise ValueError(f"operation '{operation}' not recognized")
 
-        self.assertIn("'_bluch'", self.get_suggestion(partial(B().method, '_blach')))
-        self.assertIn("'_bluch'", self.get_suggestion(partial(B().method, '_luch')))
-        self.assertIn("'_bluch'", self.get_suggestion(partial(B().method, 'bluch')))
+    def test_getattr_suggestions_underscored(self):
+        self.run_underscored_tests("getattr")
 
-    def test_getattr_suggestions_do_not_trigger_for_long_attributes(self):
+    def test_delattr_suggestions_underscored(self):
+        self.run_underscored_tests("delattr")
+
+    def run_do_not_trigger_for_long_attributes_tests(self, operation):
         class A:
             blech = None
 
-        actual = self.get_suggestion(A(), 'somethingverywrong')
+        obj = A()
+        if operation == "getattr":
+            actual = self.get_suggestion(obj, 'somethingverywrong')
+        elif operation == "delattr":
+            actual = self.get_suggestion(lambda: delattr(obj, 'somethingverywrong'))
+        else:
+            raise ValueError(f"operation '{operation}' not recognized")
         self.assertNotIn("blech", actual)
 
-    def test_getattr_error_bad_suggestions_do_not_trigger_for_small_names(self):
+    def test_getattr_suggestions_do_not_trigger_for_long_attributes(self):
+        self.run_do_not_trigger_for_long_attributes_tests("getattr")
+
+    def test_delattr_suggestions_do_not_trigger_for_long_attributes(self):
+        self.run_do_not_trigger_for_long_attributes_tests("delattr")
+
+    def run_do_not_trigger_for_small_names_tests(self, operation):
         class MyClass:
             vvv = mom = w = id = pytho = None
 
+        obj = MyClass()
         for name in ("b", "v", "m", "py"):
             with self.subTest(name=name):
-                actual = self.get_suggestion(MyClass, name)
+                if operation == "getattr":
+                    actual = self.get_suggestion(MyClass, name)
+                elif operation == "delattr":
+                    actual = self.get_suggestion(lambda: delattr(obj, name))
+                else:
+                    raise ValueError(f"operation '{operation}' not recognized")
                 self.assertNotIn("Did you mean", actual)
                 self.assertNotIn("'vvv", actual)
                 self.assertNotIn("'mom'", actual)
@@ -4119,7 +4172,13 @@ class SuggestionFormattingTestBase:
                 self.assertNotIn("'w'", actual)
                 self.assertNotIn("'pytho'", actual)
 
-    def test_getattr_suggestions_do_not_trigger_for_big_dicts(self):
+    def test_getattr_error_bad_suggestions_do_not_trigger_for_small_names(self):
+        self.run_do_not_trigger_for_small_names_tests("getattr")
+
+    def test_delattr_error_bad_suggestions_do_not_trigger_for_small_names(self):
+        self.run_do_not_trigger_for_small_names_tests("delattr")
+
+    def run_do_not_trigger_for_big_dicts_tests(self, operation):
         class A:
             blech = None
         # A class with a very big __dict__ will not be considered
@@ -4127,8 +4186,20 @@ class SuggestionFormattingTestBase:
         for index in range(2000):
             setattr(A, f"index_{index}", None)
 
-        actual = self.get_suggestion(A(), 'bluch')
+        obj = A()
+        if operation == "getattr":
+            actual = self.get_suggestion(obj, 'bluch')
+        elif operation == "delattr":
+            actual = self.get_suggestion(lambda: delattr(obj, 'bluch'))
+        else:
+            raise ValueError(f"operation '{operation}' not recognized")
         self.assertNotIn("blech", actual)
+
+    def test_getattr_suggestions_do_not_trigger_for_big_dicts(self):
+        self.run_do_not_trigger_for_big_dicts_tests("getattr")
+
+    def test_delattr_suggestions_do_not_trigger_for_big_dicts(self):
+        self.run_do_not_trigger_for_big_dicts_tests("delattr")
 
     def test_getattr_suggestions_no_args(self):
         class A:
