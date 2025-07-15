@@ -1055,10 +1055,6 @@ def _main(args=None):
         except OSError as e:
             parser.error(f"Failed to read TLS password file: {e}")
 
-    response_headers = []
-    for header, value in args.header or []:
-        response_headers.append((header, value))
-
     # ensure dual-stack is not disabled; ref #38907
     class DualStackServerMixin:
 
@@ -1072,7 +1068,7 @@ def _main(args=None):
         def finish_request(self, request, client_address):
             self.RequestHandlerClass(request, client_address, self,
                                      directory=args.directory,
-                                     response_headers=response_headers)
+                                     response_headers=args.header)
 
     class HTTPDualStackServer(DualStackServerMixin, ThreadingHTTPServer):
         pass

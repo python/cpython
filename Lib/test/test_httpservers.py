@@ -1505,7 +1505,7 @@ class CommandLineTestCase(unittest.TestCase):
                 mock_handler_init.assert_called_once_with(
                     mock.ANY, mock.ANY, mock.ANY, directory=mock.ANY,
                     response_headers=[
-                        ('Set-Cookie', 'k=v'), ('Set-Cookie', 'k2=v2')
+                        ['Set-Cookie', 'k=v'], ['Set-Cookie', 'k2=v2']
                     ]
                 )
 
