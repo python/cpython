@@ -204,6 +204,9 @@
 #  include <sanitizer/msan_interface.h> // __msan_unpoison()
 #endif
 
+#ifdef HAVE_ALLOCA_H
+#include <alloca.h>
+#endif
 
 // --- More complex system includes -----------------------------------------
 
@@ -4447,6 +4450,25 @@ os_link_impl(PyObject *module, path_t *src, path_t *dst, int src_dir_fd,
 }
 #endif
 
+#ifdef MS_WINDOWS
+
+static int
+_is_dot_filename(WIN32_FIND_DATAW *entry)
+{
+    return wcscmp(entry->cFileName, L".") == 0 || wcscmp(entry->cFileName, L"..") == 0;
+}
+
+#else
+
+static int
+_is_dot_filename(struct dirent *entry)
+{
+    Py_ssize_t name_len = NAMLEN(entry);
+    return entry->d_name[0] == '.' &&
+           (name_len == 1 || (entry->d_name[1] == '.' && name_len == 2));
+}
+
+#endif
 
 #if defined(MS_WINDOWS) && !defined(HAVE_OPENDIR)
 static PyObject *
@@ -4501,8 +4523,7 @@ _listdir_windows_no_opendir(path_t *path, PyObject *list)
     }
     do {
         /* Skip over . and .. */
-        if (wcscmp(wFileData.cFileName, L".") != 0 &&
-            wcscmp(wFileData.cFileName, L"..") != 0) {
+        if (!_is_dot_filename(&wFileData)) {
             v = PyUnicode_FromWideChar(wFileData.cFileName,
                                        wcslen(wFileData.cFileName));
             if (return_bytes && v) {
@@ -15749,15 +15770,19 @@ DirEntry_fetch_stat(PyObject *module, DirEntry *self, int follow_symlinks)
 static PyObject *
 DirEntry_get_lstat(PyTypeObject *defining_class, DirEntry *self)
 {
-    if (!self->lstat) {
+    if (!FT_ATOMIC_LOAD_PTR(self->lstat)) {
         PyObject *module = PyType_GetModule(defining_class);
+        PyObject *lstat;
+        PyObject *null_ptr = NULL;
 #ifdef MS_WINDOWS
-        self->lstat = _pystat_fromstructstat(module, &self->win32_lstat);
+        lstat = _pystat_fromstructstat(module, &self->win32_lstat);
 #else /* POSIX */
-        self->lstat = DirEntry_fetch_stat(module, self, 0);
+        lstat = DirEntry_fetch_stat(module, self, 0);
 #endif
+        if (!_Py_atomic_compare_exchange_ptr(&self->lstat, &null_ptr, lstat))
+            Py_XDECREF(lstat);
     }
-    return Py_XNewRef(self->lstat);
+    return Py_XNewRef(FT_ATOMIC_LOAD_PTR(self->lstat));
 }
 
 /*[clinic input]
@@ -15775,25 +15800,28 @@ os_DirEntry_stat_impl(DirEntry *self, PyTypeObject *defining_class,
                       int follow_symlinks)
 /*[clinic end generated code: output=23f803e19c3e780e input=e816273c4e67ee98]*/
 {
-    if (!follow_symlinks) {
+    if (!follow_symlinks)
         return DirEntry_get_lstat(defining_class, self);
-    }
 
-    if (!self->stat) {
+    if (!FT_ATOMIC_LOAD_PTR(self->stat)) {
+        PyObject *stat;
+        PyObject *null_ptr = NULL;
         int result = os_DirEntry_is_symlink_impl(self, defining_class);
         if (result == -1) {
             return NULL;
         }
         if (result) {
             PyObject *module = PyType_GetModule(defining_class);
-            self->stat = DirEntry_fetch_stat(module, self, 1);
+            stat = DirEntry_fetch_stat(module, self, 1);
         }
         else {
-            self->stat = DirEntry_get_lstat(defining_class, self);
+            stat = DirEntry_get_lstat(defining_class, self);
         }
+        if (!_Py_atomic_compare_exchange_ptr(&self->stat, &null_ptr, stat))
+            Py_XDECREF(stat);
     }
 
-    return Py_XNewRef(self->stat);
+    return Py_XNewRef(FT_ATOMIC_LOAD_PTR(self->stat));
 }
 
 /* Set exception and return -1 on error, 0 for False, 1 for True */
@@ -16050,7 +16078,7 @@ join_path_filenameW(const wchar_t *path_wide, const wchar_t *filename)
 }
 
 static PyObject *
-DirEntry_from_find_data(PyObject *module, path_t *path, WIN32_FIND_DATAW *dataW)
+DirEntry_from_os(PyObject *module, path_t *path, WIN32_FIND_DATAW *dataW)
 {
     DirEntry *entry;
     BY_HANDLE_FILE_INFORMATION file_info;
@@ -16140,15 +16168,12 @@ join_path_filename(const char *path_narrow, const char* filename, Py_ssize_t fil
 }
 
 static PyObject *
-DirEntry_from_posix_info(PyObject *module, path_t *path, const char *name,
-                         Py_ssize_t name_len, ino_t d_ino
-#ifdef HAVE_DIRENT_D_TYPE
-                         , unsigned char d_type
-#endif
-                         )
+DirEntry_from_os(PyObject *module, path_t *path, struct dirent *direntp)
 {
     DirEntry *entry;
     char *joined_path;
+    const char *name = direntp->d_name;
+    Py_ssize_t name_len = NAMLEN(direntp);
 
     PyObject *DirEntryType = get_posix_state(module)->DirEntryType;
     entry = PyObject_New(DirEntry, (PyTypeObject *)DirEntryType);
@@ -16191,9 +16216,9 @@ DirEntry_from_posix_info(PyObject *module, path_t *path, const char *name,
         goto error;
 
 #ifdef HAVE_DIRENT_D_TYPE
-    entry->d_type = d_type;
+    entry->d_type = direntp->d_type;
 #endif
-    entry->d_ino = d_ino;
+    entry->d_ino = direntp->d_ino;
 
     return (PyObject *)entry;
 
@@ -16218,6 +16243,7 @@ typedef struct {
 #ifdef HAVE_FDOPENDIR
     int fd;
 #endif
+    PyMutex mutex;
 } ScandirIterator;
 
 #define ScandirIterator_CAST(op)    ((ScandirIterator *)(op))
@@ -16227,66 +16253,51 @@ typedef struct {
 static int
 ScandirIterator_is_closed(ScandirIterator *iterator)
 {
-    return iterator->handle == INVALID_HANDLE_VALUE;
+    return _Py_atomic_load_ptr_relaxed(&iterator->handle) == INVALID_HANDLE_VALUE;
 }
 
 static void
 ScandirIterator_closedir(ScandirIterator *iterator)
 {
+    PyMutex_Lock(&iterator->mutex);
     HANDLE handle = iterator->handle;
-
-    if (handle == INVALID_HANDLE_VALUE)
-        return;
-
     iterator->handle = INVALID_HANDLE_VALUE;
+    PyMutex_Unlock(&iterator->mutex);
+
+    if (handle == INVALID_HANDLE_VALUE) {
+        return;
+    }
+
     Py_BEGIN_ALLOW_THREADS
     FindClose(handle);
     Py_END_ALLOW_THREADS
 }
 
-static PyObject *
-ScandirIterator_iternext(PyObject *op)
+static BOOL
+ScandirIterator_nextdirentry(ScandirIterator *iterator, WIN32_FIND_DATAW *file_data)
 {
-    ScandirIterator *iterator = ScandirIterator_CAST(op);
-    WIN32_FIND_DATAW *file_data = &iterator->file_data;
-    BOOL success;
-    PyObject *entry;
-
-    /* Happens if the iterator is iterated twice, or closed explicitly */
-    if (iterator->handle == INVALID_HANDLE_VALUE)
-        return NULL;
-
-    while (1) {
-        if (!iterator->first_time) {
+    BOOL has_error = FALSE;
+    BOOL has_result = FALSE;
+    PyMutex_Lock(&iterator->mutex);
+    if (iterator->handle != INVALID_HANDLE_VALUE) {
+        if (iterator->first_time) {
+            has_result = TRUE;
+            memcpy(file_data, &iterator->file_data, sizeof(WIN32_FIND_DATAW));
+            iterator->first_time = 0;
+        } else {
             Py_BEGIN_ALLOW_THREADS
-            success = FindNextFileW(iterator->handle, file_data);
+            has_result = FindNextFileW(iterator->handle, file_data);
             Py_END_ALLOW_THREADS
-            if (!success) {
-                /* Error or no more files */
-                if (GetLastError() != ERROR_NO_MORE_FILES)
-                    path_error(&iterator->path);
-                break;
-            }
+            has_error = !has_result && GetLastError() != ERROR_NO_MORE_FILES;
         }
-        iterator->first_time = 0;
-
-        /* Skip over . and .. */
-        if (wcscmp(file_data->cFileName, L".") != 0 &&
-            wcscmp(file_data->cFileName, L"..") != 0)
-        {
-            PyObject *module = PyType_GetModule(Py_TYPE(iterator));
-            entry = DirEntry_from_find_data(module, &iterator->path, file_data);
-            if (!entry)
-                break;
-            return entry;
-        }
-
-        /* Loop till we get a non-dot directory or finish iterating */
     }
+    PyMutex_Unlock(&iterator->mutex);
 
     /* Error or no more files */
-    ScandirIterator_closedir(iterator);
-    return NULL;
+    if (has_error)
+        path_error(&iterator->path);
+
+    return has_result;
 }
 
 #else /* POSIX */
@@ -16294,18 +16305,21 @@ ScandirIterator_iternext(PyObject *op)
 static int
 ScandirIterator_is_closed(ScandirIterator *iterator)
 {
-    return !iterator->dirp;
+    return !_Py_atomic_load_ptr_relaxed(&iterator->dirp);
 }
 
 static void
 ScandirIterator_closedir(ScandirIterator *iterator)
 {
+    PyMutex_Lock(&iterator->mutex);
     DIR *dirp = iterator->dirp;
-
-    if (!dirp)
-        return;
-
     iterator->dirp = NULL;
+    PyMutex_Unlock(&iterator->mutex);
+
+    if (!dirp) {
+        return;
+    }
+
     Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_FDOPENDIR
     if (iterator->path.fd != -1)
@@ -16316,59 +16330,81 @@ ScandirIterator_closedir(ScandirIterator *iterator)
     return;
 }
 
+static int
+ScandirIterator_nextdirentry(ScandirIterator *iterator, struct dirent *direntp)
+{
+    int has_error = 0;
+    struct dirent *result = NULL;
+    PyMutex_Lock(&iterator->mutex);
+    if (iterator->dirp) {
+        errno = 0;
+        Py_BEGIN_ALLOW_THREADS
+        result = readdir(iterator->dirp);
+        Py_END_ALLOW_THREADS
+        has_error = !result && errno != 0;
+    }
+
+    /* We need to make a copy of the result before releasing the lock */
+    if (result) {
+
+        /* A note on calculating the size: the dirent structure may be variable
+         * length with the d_name field being a flexible array member, so we
+         * cannot just use sizeof(struct dirent). On Linux there is a d_reclen
+         * field, however that is not guaranteed to exist (and doesn't on WASI,
+         * which happens to be the platform where this is an issue). Hence we
+         * calculate the relevant record size thus. */
+        size_t reclen = offsetof(struct dirent, d_name) + strlen(result->d_name) + 1;
+        memcpy(direntp, result, reclen);
+    }
+    PyMutex_Unlock(&iterator->mutex);
+
+    /* Error or no more files */
+    if (has_error)
+        path_error(&iterator->path);
+
+    return result != NULL;
+}
+
+#endif
+
 static PyObject *
 ScandirIterator_iternext(PyObject *op)
 {
     ScandirIterator *iterator = ScandirIterator_CAST(op);
-    struct dirent *direntp;
-    Py_ssize_t name_len;
-    int is_dot;
-    PyObject *entry;
+#ifdef MS_WINDOWS
+    WIN32_FIND_DATAW dirent;
+#else
+    /*
+     * This may be a variable length structure, with the final "d_name" field
+     * possibly being a flexible array member. In that case allocate enough
+     * extra space on the stack, immediately following the structure,
+     * sufficient to handle the longest possible filename. */
+    struct dirent dirent;
+    if (sizeof(dirent) - offsetof(struct dirent, d_name) < (NAME_MAX + 1)
+        && !alloca(NAME_MAX + 1 - (sizeof(dirent) - offsetof(struct dirent, d_name)))) {
+        PyErr_NoMemory();
+        goto error;
+    }
+#endif
 
-    /* Happens if the iterator is iterated twice, or closed explicitly */
-    if (!iterator->dirp)
-        return NULL;
-
-    while (1) {
-        errno = 0;
-        Py_BEGIN_ALLOW_THREADS
-        direntp = readdir(iterator->dirp);
-        Py_END_ALLOW_THREADS
-
-        if (!direntp) {
-            /* Error or no more files */
-            if (errno != 0)
-                path_error(&iterator->path);
-            break;
-        }
+    while ((ScandirIterator_nextdirentry(iterator, &dirent))) {
 
         /* Skip over . and .. */
-        name_len = NAMLEN(direntp);
-        is_dot = direntp->d_name[0] == '.' &&
-                 (name_len == 1 || (direntp->d_name[1] == '.' && name_len == 2));
-        if (!is_dot) {
-            PyObject *module = PyType_GetModule(Py_TYPE(iterator));
-            entry = DirEntry_from_posix_info(module,
-                                             &iterator->path, direntp->d_name,
-                                             name_len, direntp->d_ino
-#ifdef HAVE_DIRENT_D_TYPE
-                                             , direntp->d_type
-#endif
-                                            );
-            if (!entry)
-                break;
-            return entry;
-        }
+        if (_is_dot_filename(&dirent))
+            continue;
 
-        /* Loop till we get a non-dot directory or finish iterating */
+        PyObject *module = PyType_GetModule(Py_TYPE(iterator));
+        PyObject *entry = DirEntry_from_os(module, &iterator->path, &dirent);
+        if (!entry)
+            break;
+        return entry;
     }
 
-    /* Error or no more files */
+    /* Already closed, error, or no more files */
+error:
     ScandirIterator_closedir(iterator);
     return NULL;
 }
-
-#endif
 
 static PyObject *
 ScandirIterator_close(PyObject *op, PyObject *Py_UNUSED(dummy))
@@ -16496,6 +16532,7 @@ os_scandir_impl(PyObject *module, path_t *path)
     if (!iterator)
         return NULL;
 
+    iterator->mutex = (PyMutex){0};
 #ifdef MS_WINDOWS
     iterator->handle = INVALID_HANDLE_VALUE;
 #else
