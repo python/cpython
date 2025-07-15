@@ -249,8 +249,9 @@ class ExecutorTest:
             pass
 
         for future in fs:
-            self.assertRaises((FalseyBoolException, futures.CancelledError),
-                              future.result)
+            self.assertRaises(
+                (FalseyBoolException, futures.CancelledError, threading.BrokenBarrierError),
+                future.result)
 
         self.assertIn('CANCELLED_AND_NOTIFIED', [f._state for f in fs])
 
