@@ -113,6 +113,7 @@ class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, BaseTestCase):
         self.assertListEqual(log, ["ident='first' started", "ident='first' stopped"])
 
     def test_shutdown_cancels_pending_futures(self):
+        # gh-109934: ensure shutdown cancels and notifies pending futures
         def waiter(barrier):
             barrier.wait(3)
         def noop():
