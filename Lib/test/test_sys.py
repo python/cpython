@@ -37,6 +37,10 @@ def requires_subinterpreters(meth):
     return unittest.skipIf(interpreters is None,
                            'subinterpreters required')(meth)
 
+class ObjectWithValue:
+    value: ObjectWithValue | None
+    def __init__(self, value):
+        self.value = value
 
 DICT_KEY_STRUCT_FORMAT = 'n2BI2n'
 
@@ -1516,6 +1520,16 @@ class SizeofTest(unittest.TestCase):
         self.assertEqual(sys.getsizeof(True), vsize('') + self.longdigit)
         # but lists are
         self.assertEqual(sys.getsizeof([]), vsize('Pn') + gc_header_size)
+
+    def test_inline_values(self):
+        vsize = test.support.calcvobjsize
+        gc_header_size = self.gc_headsize
+        inline_values_size = vsize('P')
+
+        linked_list = None
+        for i in range(28):
+            linked_list = ObjectWithValue(linked_list)
+        self.assertEqual(sys.getsizeof(linked_list), vsize('P') + gc_header_size + inline_values_size)
 
     def test_errors(self):
         class BadSizeof:
