@@ -1720,10 +1720,13 @@ class TarFile(object):
 
     extraction_filter = None    # The default filter for extraction.
 
+    record_size = RECORDSIZE    # The default record size, matches tar -b20
+
     def __init__(self, name=None, mode="r", fileobj=None, format=None,
             tarinfo=None, dereference=None, ignore_zeros=None, encoding=None,
             errors="surrogateescape", pax_headers=None, debug=None,
-            errorlevel=None, copybufsize=None, stream=False):
+            errorlevel=None, copybufsize=None, stream=False,
+            blocking_factor=None):
         """Open an (uncompressed) tar archive 'name'. 'mode' is either 'r' to
            read from an existing archive, 'a' to append data to an existing
            file or 'w' to create a new file overwriting an existing one. 'mode'
@@ -1779,6 +1782,8 @@ class TarFile(object):
             self.debug = debug
         if errorlevel is not None:
             self.errorlevel = errorlevel
+        if blocking_factor is not None:
+            self.record_size = BLOCKSIZE * blocking_factor
 
         # Init datastructures.
         self.copybufsize = copybufsize
@@ -2102,9 +2107,9 @@ class TarFile(object):
                 self.offset += (BLOCKSIZE * 2)
                 # fill up the end with zero-blocks
                 # (like option -b20 for tar does)
-                blocks, remainder = divmod(self.offset, RECORDSIZE)
+                blocks, remainder = divmod(self.offset, self.record_size)
                 if remainder > 0:
-                    self.fileobj.write(NUL * (RECORDSIZE - remainder))
+                    self.fileobj.write(NUL * (self.record_size - remainder))
         finally:
             if not self._extfileobj:
                 self.fileobj.close()
@@ -3038,6 +3043,8 @@ def main():
     parser.add_argument('--filter', metavar='<filtername>',
                         choices=_NAMED_FILTERS,
                         help='Filter for extraction')
+    parser.add_argument('--blocking-factor', metavar='<blocking_factor>', type=int,
+                       help='blocking_factor x 512 bytes per record, defaults to 20')
 
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('-l', '--list', metavar='<tarfile>',
@@ -3055,6 +3062,8 @@ def main():
 
     if args.filter and args.extract is None:
         parser.exit(1, '--filter is only valid for extraction\n')
+    if args.blocking_factor and args.create is None:
+        parser.exit(1, '--blocking-factor is only valid for creation\n')
 
     if args.test is not None:
         src = args.test
@@ -3119,7 +3128,8 @@ def main():
         tar_mode = 'w:' + compressions[ext] if ext in compressions else 'w'
         tar_files = args.create
 
-        with TarFile.open(tar_name, tar_mode) as tf:
+        with TarFile.open(tar_name, tar_mode,
+                          blocking_factor=args.blocking_factor) as tf:
             for file_name in tar_files:
                 tf.add(file_name)
 
