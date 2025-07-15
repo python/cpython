@@ -7298,8 +7298,8 @@ class ExtensionModuleTests(unittest.TestCase):
     @unittest.skipIf(_interpreters is None, "missing _interpreters module")
     def test_static_type_concurrent_init_fini(self):
         # gh-136421: When a managed static extension type is concurrently used
-        # by multiple interpreters, there was a crash due to the runtime state
-        # rather than an interpreter state being updated wrongly by misjudging
+        # by only subinterpreters, there was a crash due to the runtime state
+        # rather than an interpreter state being updated wrongly by mistaking
         # the type's first initialization stage or last finalization one.
         script = textwrap.dedent("""
             import threading
