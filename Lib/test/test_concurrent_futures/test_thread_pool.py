@@ -114,18 +114,20 @@ class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, BaseTestCase):
 
     def test_shutdown_cancels_pending_futures(self):
         # gh-109934: ensure shutdown cancels and notifies pending futures
-        def waiter(barrier):
-            barrier.wait(3)
+        def waiter(b1, b2):
+            b1.wait(3)
+            b2.wait(3)
         def noop():
             pass
-        barrier = threading.Barrier(2)
+        b1 = threading.Barrier(2)
+        b2 = threading.Barrier(2)
         called_back_1 = threading.Event()
         called_back_2 = threading.Event()
         with self.executor_type(max_workers=1) as pool:
 
             # Submit two futures, the first of which will block and prevent the
             # second from running
-            f1 = pool.submit(waiter, barrier)
+            f1 = pool.submit(waiter, b1, b2)
             f2 = pool.submit(noop)
             f1.add_done_callback(lambda f: called_back_1.set())
             f2.add_done_callback(lambda f: called_back_2.set())
@@ -134,7 +136,9 @@ class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, BaseTestCase):
             completed_iter = futures.as_completed(fs, timeout=0)
             self.assertRaises(TimeoutError, next, completed_iter)
 
-            # Shutdown the pool, cancelling unstarted task
+            # Ensure the first task has started running then shutdown the
+            # pool, cancelling the unstarted task
+            b1.wait(3)
             pool.shutdown(wait=False, cancel_futures=True)
             self.assertTrue(f1.running())
             self.assertTrue(f2.cancelled())
@@ -151,7 +155,7 @@ class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, BaseTestCase):
             self.assertEqual(result.done, {f2})
 
             # Unblock and wait for the first future to complete
-            barrier.wait(3)
+            b2.wait(3)
             called_back_1.wait(3)
             self.assertTrue(f1.done())
             self.assertTrue(called_back_1.is_set())
