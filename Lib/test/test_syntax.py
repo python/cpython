@@ -2689,6 +2689,16 @@ Invalid expressions in type scopes:
 
 Asserts:
 
+    >>> assert (a := 1)  # ok
+    >>> # TODO(@sobolevn): improve this message in the next PR
+    >>> assert a := 1
+    Traceback (most recent call last):
+    SyntaxError: invalid syntax
+
+    >>> assert 1 = 2 = 3
+    Traceback (most recent call last):
+    SyntaxError: cannot assign to literal here. Maybe you meant '==' instead of '='?
+
     >>> assert 1 = 2
     Traceback (most recent call last):
     SyntaxError: cannot assign to literal here. Maybe you meant '==' instead of '='?
@@ -2711,7 +2721,7 @@ Asserts:
 
     >>> assert a = 2
     Traceback (most recent call last):
-    SyntaxError: invalid syntax. Maybe you meant '==' or ':=' instead of '='?
+    SyntaxError: cannot assign to name here. Maybe you meant '==' instead of '='?
 
     >>> assert (a = 2)
     Traceback (most recent call last):
@@ -2719,7 +2729,7 @@ Asserts:
 
     >>> assert a = b
     Traceback (most recent call last):
-    SyntaxError: invalid syntax. Maybe you meant '==' or ':=' instead of '='?
+    SyntaxError: cannot assign to name here. Maybe you meant '==' instead of '='?
 
     >>> assert 1, 1 = b
     Traceback (most recent call last):
@@ -2731,11 +2741,15 @@ Asserts:
 
     >>> assert 1, a = 1
     Traceback (most recent call last):
-    SyntaxError: invalid syntax. Maybe you meant '==' or ':=' instead of '='?
+    SyntaxError: cannot assign to name here. Maybe you meant '==' instead of '='?
 
     >>> assert 1, (a = 1)
     Traceback (most recent call last):
     SyntaxError: invalid syntax. Maybe you meant '==' or ':=' instead of '='?
+
+    >>> assert 1 = a, a = 1
+    Traceback (most recent call last):
+    SyntaxError: cannot assign to literal here. Maybe you meant '==' instead of '='?
 
 """
 

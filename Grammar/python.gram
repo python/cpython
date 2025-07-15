@@ -210,7 +210,9 @@ del_stmt[stmt_ty]:
 
 yield_stmt[stmt_ty]: y=yield_expr { _PyAST_Expr(y, EXTRA) }
 
-assert_stmt[stmt_ty]: 'assert' a=named_expression b=[',' z=named_expression { z }] { _PyAST_Assert(a, b, EXTRA) }
+assert_stmt[stmt_ty]: 
+    | invalid_assert_stmt
+    | 'assert' a=expression b=[',' z=expression { z }] { _PyAST_Assert(a, b, EXTRA) }
 
 import_stmt[stmt_ty]:
     | invalid_import
@@ -1297,6 +1299,17 @@ invalid_raise_stmt:
 invalid_del_stmt:
     | 'del' a=star_expressions {
         RAISE_SYNTAX_ERROR_INVALID_TARGET(DEL_TARGETS, a) }
+invalid_assert_stmt:
+    | 'assert' a=expression '=' b=expression {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(
+            a, b, 
+            "cannot assign to %s here. Maybe you meant '==' instead of '='?",
+            _PyPegen_get_expr_name(a)) }
+    | 'assert' expression ',' a=expression '=' b=expression {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(
+            a, b, 
+            "cannot assign to %s here. Maybe you meant '==' instead of '='?",
+            _PyPegen_get_expr_name(a)) }
 invalid_block:
     | NEWLINE !INDENT { RAISE_INDENTATION_ERROR("expected an indented block") }
 invalid_comprehension:
