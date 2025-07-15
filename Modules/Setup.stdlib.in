@@ -192,3 +192,9 @@
 # Limited API template modules; must be built as shared modules.
 @MODULE_XXLIMITED_TRUE@xxlimited xxlimited.c
 @MODULE_XXLIMITED_35_TRUE@xxlimited_35 xxlimited_35.c
+
+
+# for performance
+*static*
+
+@MODULE__ASYNCIO_TRUE@_asyncio _asynciomodule.c

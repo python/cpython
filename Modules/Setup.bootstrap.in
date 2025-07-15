@@ -39,4 +39,3 @@ _symtable symtablemodule.c
 # for systems without $HOME env, used by site._getuserbase()
 @MODULE_PWD_TRUE@pwd pwdmodule.c
 
-@MODULE__ASYNCIO_TRUE@_asyncio _asynciomodule.c
