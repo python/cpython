@@ -125,7 +125,6 @@ set_ftstring_expr(struct tok_state* tok, struct token *token, char c) {
     int hash_detected = 0;
     int in_string = 0;
     char quote_char = 0;
-    char string_quote = 0;
 
     for (Py_ssize_t i = 0; i < tok_mode->last_expr_size - tok_mode->last_expr_end; i++) {
         char ch = tok_mode->last_expr_buffer[i];
@@ -138,6 +137,13 @@ set_ftstring_expr(struct tok_state* tok, struct token *token, char c) {
 
         // Handle quotes
         if (ch == '"' || ch == '\'') {
+            // The following if/else block works becase there is an off number
+            // of quotes in STRING tokens and the lexer only ever reaches this
+            // function with valid STRING tokens.
+            // For example: """hello"""
+            // First quote: in_string = 1
+            // Second quote: in_string = 0
+            // Third quote: in_string = 1
             if (!in_string) {
                 in_string = 1;
                 quote_char = ch;
@@ -165,7 +171,7 @@ set_ftstring_expr(struct tok_state* tok, struct token *token, char c) {
         Py_ssize_t i = 0;  // Input position
         Py_ssize_t j = 0;  // Output position
         in_string = 0;     // Whether we're in a string
-        string_quote = 0;  // Current string quote char
+        quote_char = 0;    // Current string quote char
 
         // Process each character
         while (i < tok_mode->last_expr_size - tok_mode->last_expr_end) {
@@ -173,10 +179,11 @@ set_ftstring_expr(struct tok_state* tok, struct token *token, char c) {
 
             // Handle string quotes
             if (ch == '"' || ch == '\'') {
+                // See comment above to understand this part
                 if (!in_string) {
                     in_string = 1;
-                    string_quote = ch;
-                } else if (ch == string_quote) {
+                    quote_char = ch;
+                } else if (ch == quote_char) {
                     in_string = 0;
                 }
                 result[j++] = ch;
