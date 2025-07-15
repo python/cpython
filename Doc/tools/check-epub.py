@@ -8,9 +8,9 @@ def main() -> int:
         raise RuntimeError(wrong_directory_msg)
 
     with Path("Doc/epubcheck.txt").open(encoding="UTF-8") as f:
-        warnings = [warning.split(" - ") for warning in f.read().splitlines()]
+        messages = [message.split(" - ") for message in f.read().splitlines()]
 
-    fatal_errors = [warning for warning in warnings if warning[0] == "FATAL"]
+    fatal_errors = [message for message in messages if message[0] == "FATAL"]
 
     if fatal_errors:
         print("\nError: must not contain fatal errors:\n")
