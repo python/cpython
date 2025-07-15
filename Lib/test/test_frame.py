@@ -577,9 +577,8 @@ class TestFrameLocals(unittest.TestCase):
                     proxy[obj] = 0
 
     def test_constructor(self):
-        FrameLocalsProxy = type([sys._getframe().f_locals
-                                 for x in range(1)][0])
-        self.assertEqual(FrameLocalsProxy.__name__, 'FrameLocalsProxy')
+        from types import FrameLocalsProxyType as FrameLocalsProxy
+        self.assertEqual(FrameLocalsProxy.__name__, 'FrameLocalsProxyType')
 
         def make_frame():
             x = 1
