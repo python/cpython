@@ -604,7 +604,7 @@ are strings::
    >>> parser.add_argument('integers', metavar='N', type=int, nargs='+',
    ...                     help='an integer for the accumulator')
    >>> parser.parse_args(['--action', 'sumn', 1, 2, 3])
-   tester.py: error: argument --action: invalid choice: 'sumn', maybe you meant 'sum'? (choose from 'sum', 'max')
+   tester.py: error: argument --action: invalid choice: 'sumn', maybe you meant 'sum'? (choose from sum, max)
 
 If you're writing code that needs to be compatible with older Python versions
 and want to opportunistically use ``suggest_on_error`` when it's available, you
@@ -1141,8 +1141,8 @@ if the argument was not one of the acceptable values::
    Namespace(move='rock')
    >>> parser.parse_args(['fire'])
    usage: game.py [-h] {rock,paper,scissors}
-   game.py: error: argument move: invalid choice: 'fire' (choose from 'rock',
-   'paper', 'scissors')
+   game.py: error: argument move: invalid choice: 'fire' (choose from rock,
+   paper, scissors)
 
 Note that inclusion in the *choices* sequence is checked after any type_
 conversions have been performed, so the type of the objects in the *choices*
