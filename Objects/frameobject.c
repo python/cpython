@@ -914,7 +914,7 @@ static PyMethodDef framelocalsproxy_methods[] = {
 };
 
 PyDoc_STRVAR(framelocalsproxy_doc,
-"FrameLocalsProxyType($frame)\n"
+"FrameLocalsProxy($frame)\n"
 "--\n"
 "\n"
 "Create a write-through view of the locals dictionary for a frame.\n"
@@ -924,7 +924,7 @@ PyDoc_STRVAR(framelocalsproxy_doc,
 
 PyTypeObject PyFrameLocalsProxy_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    .tp_name = "types.FrameLocalsProxyType",
+    .tp_name = "FrameLocalsProxy",
     .tp_basicsize = sizeof(PyFrameLocalsProxyObject),
     .tp_dealloc = framelocalsproxy_dealloc,
     .tp_repr = &framelocalsproxy_repr,
