@@ -1211,7 +1211,7 @@ deduce_unreachable(PyGC_Head *base, PyGC_Head *unreachable) {
      * set instead.  But most things usually turn out to be reachable,
      * so it's more efficient to move the unreachable things.  It "sounds slick"
      * to move the unreachable objects, until you think about it - the reason it
-     * pays isn't actually obvious.
+     * pays isn't actually obvious. (https://mail.python.org/pipermail/python-dev/2002-July/026062.html)
      *
      * Suppose we create objects A, B, C in that order.  They appear in the young
      * generation in the same order.  If B points to A, and C to B, and C is

@@ -302,7 +302,7 @@ Why moving unreachable objects is better
 
 It sounds logical to move the unreachable objects under the premise that most objects
 are usually reachable, until you think about it: the reason it pays isn't actually
-obvious.
+obvious ([[Python-Dev] Some dull gc stats](https://mail.python.org/pipermail/python-dev/2002-July/026062.html)).
 
 Suppose we create objects A, B, C in that order. They appear in the young generation
 in the same order. If B points to A, and C to B, and C is reachable from outside,
