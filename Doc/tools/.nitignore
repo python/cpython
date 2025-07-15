@@ -15,7 +15,7 @@ Doc/extending/extending.rst
 Doc/library/ast.rst
 Doc/library/asyncio-extending.rst
 Doc/library/email.charset.rst
-Doc/library/functools.rst
+Doc/library/email.parser.rst
 Doc/library/http.cookiejar.rst
 Doc/library/http.server.rst
 Doc/library/importlib.rst
@@ -27,7 +27,6 @@ Doc/library/multiprocessing.rst
 Doc/library/optparse.rst
 Doc/library/os.rst
 Doc/library/pickletools.rst
-Doc/library/platform.rst
 Doc/library/profile.rst
 Doc/library/pyexpat.rst
 Doc/library/resource.rst
