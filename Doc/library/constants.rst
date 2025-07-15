@@ -70,6 +70,15 @@ A small number of constants live in the built-in namespace.  They are:
    ``Ellipsis`` is the sole instance of the :data:`types.EllipsisType` type.
 
 
+.. data:: TYPE_CHECKING
+
+   This constant is same to :data:`typing.TYPE_CHECKING`.
+   It is always ``False`` at runtime, but third party static type checkers
+   assumes it to be ``True``.
+
+   .. versionadded:: next
+
+
 .. data:: __debug__
 
    This constant is true if Python was not started with an :option:`-O` option.
