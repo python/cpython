@@ -3267,19 +3267,31 @@ date_fromtimestamp(PyObject *cls, PyObject *obj)
 static PyObject *
 date_today(PyObject *cls, PyObject *Py_UNUSED(dummy))
 {
-    PyObject *time;
-    PyObject *result;
-    time = time_time();
-    if (time == NULL)
-        return NULL;
+    /* Use C implementation to boost performance for date type */
+    if ((PyTypeObject *)cls == &PyDateTime_DateType) {
+        struct tm tm;
+        time_t t;
+        time(&t);
 
-    /* Note well:  today() is a class method, so this may not call
-     * date.fromtimestamp.  For example, it may call
-     * datetime.fromtimestamp.  That's why we need all the accuracy
-     * time.time() delivers; if someone were gonzo about optimization,
-     * date.today() could get away with plain C time().
+        if (_PyTime_localtime(t, &tm) != 0) {
+            return NULL;
+        }
+
+        return new_date_ex(tm.tm_year + 1900,
+                           tm.tm_mon + 1,
+                           tm.tm_mday,
+                           (PyTypeObject *)cls);
+    }
+
+    PyObject *time = time_time();
+    if (time == NULL) {
+        return NULL;
+    }
+
+    /* Note well: since today() is a class method, it may not call
+     * date.fromtimestamp, e.g., it may call datetime.fromtimestamp.
      */
-    result = PyObject_CallMethodOneArg(cls, &_Py_ID(fromtimestamp), time);
+    PyObject *result = PyObject_CallMethodOneArg(cls, &_Py_ID(fromtimestamp), time);
     Py_DECREF(time);
     return result;
 }
