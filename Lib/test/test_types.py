@@ -53,12 +53,12 @@ class TypesTests(unittest.TestCase):
             'AsyncGeneratorType', 'BuiltinFunctionType', 'BuiltinMethodType',
             'CapsuleType', 'CellType', 'ClassMethodDescriptorType', 'CodeType',
             'CoroutineType', 'EllipsisType', 'FrameType', 'FunctionType',
-            'GeneratorType', 'GenericAlias', 'GetSetDescriptorType',
-            'LambdaType', 'MappingProxyType', 'MemberDescriptorType',
-            'MethodDescriptorType', 'MethodType', 'MethodWrapperType',
-            'ModuleType', 'NoneType', 'NotImplementedType', 'SimpleNamespace',
-            'TracebackType', 'UnionType', 'WrapperDescriptorType',
-            'FrameLocalsProxyType'
+            'FrameLocalsProxyType', 'GeneratorType', 'GenericAlias',
+            'GetSetDescriptorType', 'LambdaType', 'MappingProxyType',
+            'MemberDescriptorType', 'MethodDescriptorType', 'MethodType',
+            'MethodWrapperType', 'ModuleType', 'NoneType', 'NotImplementedType',
+            'SimpleNamespace', 'TracebackType', 'UnionType',
+            'WrapperDescriptorType',
         }
         self.assertEqual(all_names, set(c_types.__all__))
         self.assertEqual(all_names - c_only_names, set(py_types.__all__))
