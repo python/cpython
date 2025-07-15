@@ -329,6 +329,10 @@ _Py_RecursionLimit_GetMargin(PyThreadState *tstate)
     return Py_ARITHMETIC_RIGHT_SHIFT(intptr_t, here_addr - (intptr_t)_tstate->c_stack_soft_limit, _PyOS_STACK_MARGIN_SHIFT);
 }
 
+// Exports for '_testinternalcapi' shared extension
+PyAPI_FUNC(Py_ssize_t) _PyInterpreterState_Refcount(PyInterpreterState *interp);
+PyAPI_FUNC(int) _PyInterpreterState_Incref(PyInterpreterState *interp);
+
 #ifdef __cplusplus
 }
 #endif
