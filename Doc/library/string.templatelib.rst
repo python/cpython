@@ -1,13 +1,12 @@
-:mod:`!string.templatelib` --- Templates and interpolations for t-strings
-=========================================================================
+:mod:`!string.templatelib` --- Support for template string literals
+===================================================================
 
 .. module:: string.templatelib
-   :synopsis: Support for t-string literals.
+   :synopsis: Support for template string literals.
 
 **Source code:** :source:`Lib/string/templatelib.py`
 
 --------------
-
 
 .. seealso::
 
@@ -294,3 +293,21 @@ reassigned.
    ...         print(value, expression, conversion, format_spec)
    ...
    3.0 1 + 2 None .2f
+
+
+Helper functions
+----------------
+
+.. function:: convert(obj, /, conversion)
+
+   Applies formatted string literal :ref:`conversion <formatstrings-conversion>`
+   semantics to the given object *obj*.
+   This is frequently useful for custom template string processing logic.
+
+   Three conversion flags are currently supported:
+
+   * ``'!s'`` which calls :func:`str` on the value,
+   * ``'!r'`` which calls :func:`repr`, and
+   * ``'!a'`` which calls :func:`ascii`.
+
+   If the conversion flag is ``None``, *obj* is returned unchanged.
