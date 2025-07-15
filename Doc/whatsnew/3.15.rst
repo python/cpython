@@ -212,7 +212,7 @@ math
 * Add :func:`math.isnormal` and :func:`math.issubnormal` functions.
   (Contributed by Sergey B Kirpichev in :gh:`132908`.)
 
-* Add :func:`math.signbit` function.
+* Add :func:`math.fmax`, :func:`math.fmin` and :func:`math.signbit` functions.
   (Contributed by Bénédikt Tran in :gh:`135853`.)
 
 
@@ -283,6 +283,14 @@ types
 
 * Added :data:`types.FrameLocalsProxyType` for representing the type of
   the :attr:`frame.f_locals` attribute, as described in :pep:`667`.
+
+
+unittest
+--------
+
+* :func:`unittest.TestCase.assertLogs` will now accept a formatter
+  to control how messages are formatted.
+  (Contributed by Garry Cairns in :gh:`134567`.)
 
 
 zlib
@@ -395,15 +403,6 @@ typing
   (Contributed by Bénédikt Tran in :gh:`133823`.)
 
 
-unittest
---------
-
-* Lets users specify formatter in TestCase.assertLogs.
-  :func:`unittest.TestCase.assertLogs` will now accept a formatter
-  to control how messages are formatted.
-  (Contributed by Garry Cairns in :gh:`134567`.)
-
-
 wave
 ----
 
@@ -469,7 +468,11 @@ Porting to Python 3.15
 Deprecated C APIs
 -----------------
 
-* TODO
+* For unsigned integer formats in :c:func:`PyArg_ParseTuple`,
+  accepting Python integers with value that is larger than the maximal value
+  for the C type or less than the minimal value for the corresponding
+  signed integer type of the same size is now deprecated.
+  (Contributed by Serhiy Storchaka in :gh:`132629`.)
 
 .. Add C API deprecations above alphabetically, not here at the end.
 

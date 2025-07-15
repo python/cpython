@@ -199,12 +199,18 @@ The :mod:`functools` module defines the following functions:
    and *typed*.  This is for information purposes only.  Mutating the values
    has no effect.
 
+   .. method:: lru_cache.cache_info()
+      :no-typesetting:
+
    To help measure the effectiveness of the cache and tune the *maxsize*
-   parameter, the wrapped function is instrumented with a :func:`cache_info`
+   parameter, the wrapped function is instrumented with a :func:`!cache_info`
    function that returns a :term:`named tuple` showing *hits*, *misses*,
    *maxsize* and *currsize*.
 
-   The decorator also provides a :func:`cache_clear` function for clearing or
+   .. method:: lru_cache.cache_clear()
+      :no-typesetting:
+
+   The decorator also provides a :func:`!cache_clear` function for clearing or
    invalidating the cache.
 
    The original underlying function is accessible through the
@@ -284,9 +290,9 @@ The :mod:`functools` module defines the following functions:
    class decorator supplies the rest.  This simplifies the effort involved
    in specifying all of the possible rich comparison operations:
 
-   The class must define one of :meth:`__lt__`, :meth:`__le__`,
-   :meth:`__gt__`, or :meth:`__ge__`.
-   In addition, the class should supply an :meth:`__eq__` method.
+   The class must define one of :meth:`~object.__lt__`, :meth:`~object.__le__`,
+   :meth:`~object.__gt__`, or :meth:`~object.__ge__`.
+   In addition, the class should supply an :meth:`~object.__eq__` method.
 
    For example::
 
@@ -418,7 +424,7 @@ The :mod:`functools` module defines the following functions:
    like normal functions, are handled as descriptors).
 
    When *func* is a descriptor (such as a normal Python function,
-   :func:`classmethod`, :func:`staticmethod`, :func:`abstractmethod` or
+   :func:`classmethod`, :func:`staticmethod`, :func:`~abc.abstractmethod` or
    another instance of :class:`partialmethod`), calls to ``__get__`` are
    delegated to the underlying descriptor, and an appropriate
    :ref:`partial object<partial-objects>` returned as the result.
@@ -499,7 +505,10 @@ The :mod:`functools` module defines the following functions:
      ...         print("Let me just say,", end=" ")
      ...     print(arg)
 
-   To add overloaded implementations to the function, use the :func:`register`
+   .. method:: singledispatch.register()
+      :no-typesetting:
+
+   To add overloaded implementations to the function, use the :func:`!register`
    attribute of the generic function, which can be used as a decorator.  For
    functions annotated with types, the decorator will infer the type of the
    first argument automatically::
@@ -565,14 +574,14 @@ The :mod:`functools` module defines the following functions:
       runtime impact.
 
    To enable registering :term:`lambdas<lambda>` and pre-existing functions,
-   the :func:`register` attribute can also be used in a functional form::
+   the :func:`~singledispatch.register` attribute can also be used in a functional form::
 
      >>> def nothing(arg, verbose=False):
      ...     print("Nothing.")
      ...
      >>> fun.register(type(None), nothing)
 
-   The :func:`register` attribute returns the undecorated function. This
+   The :func:`~singledispatch.register` attribute returns the undecorated function. This
    enables decorator stacking, :mod:`pickling<pickle>`, and the creation
    of unit tests for each variant independently::
 
@@ -650,10 +659,10 @@ The :mod:`functools` module defines the following functions:
    .. versionadded:: 3.4
 
    .. versionchanged:: 3.7
-      The :func:`register` attribute now supports using type annotations.
+      The :func:`~singledispatch.register` attribute now supports using type annotations.
 
    .. versionchanged:: 3.11
-      The :func:`register` attribute now supports
+      The :func:`~singledispatch.register` attribute now supports
       :class:`typing.Union` as a type annotation.
 
 
@@ -783,7 +792,7 @@ The :mod:`functools` module defines the following functions:
       'Docstring'
 
    Without the use of this decorator factory, the name of the example function
-   would have been ``'wrapper'``, and the docstring of the original :func:`example`
+   would have been ``'wrapper'``, and the docstring of the original :func:`!example`
    would have been lost.
 
 

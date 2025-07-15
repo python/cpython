@@ -1,0 +1,2 @@
+Improve error messages when reporting invalid parameters in
+:func:`hashlib.scrypt`. Patch by Bénédikt Tran.
