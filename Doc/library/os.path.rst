@@ -508,9 +508,6 @@ the :mod:`glob` module.)
    .. versionchanged:: 3.4
       Added Windows support.
 
-   .. versionchanged:: 3.6
-      Accepts a :term:`path-like object`.
-
 
 .. function:: split(path)
 
