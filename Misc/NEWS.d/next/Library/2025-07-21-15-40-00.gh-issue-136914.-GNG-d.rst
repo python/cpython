@@ -1,0 +1,1 @@
+Fix retrieval of :attr:`doctest.DocTest.lineno` for :func:`functools.cache`-decorated functions.
