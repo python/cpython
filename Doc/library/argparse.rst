@@ -786,6 +786,10 @@ how the command-line arguments should be handled. The supplied actions are:
     >>> parser.add_argument('--foo', action='append')
     >>> parser.parse_args('--foo 1 --foo 2'.split())
     Namespace(foo=['1', '2'])
+    >>> parser = argparse.ArgumentParser()
+    >>> parser.add_argument('--foo', action='append', default=['0'])
+    >>> parser.parse_args('--foo 1 --foo 2'.split())
+    Namespace(foo=['0', '1', '2'])
 
 * ``'append_const'`` - This stores a list, and appends the value specified by
   the const_ keyword argument to the list; note that the const_ keyword
