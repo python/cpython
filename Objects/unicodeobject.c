@@ -12493,6 +12493,32 @@ unicode_isprintable_impl(PyObject *self)
 }
 
 /*[clinic input]
+str.contains_surrogate as unicode_contains_surrogate
+
+Return True if the string contains any surrogate code points, False otherwise.
+
+[clinic start generated code]*/
+
+static PyObject *
+unicode_contains_surrogate_impl(PyObject *self)
+/*[clinic end generated code: output=ec75cbb5265bd886 input=5853bb9f17fc5255]*/
+{
+    Py_ssize_t i, len;
+    Py_UCS4 ch;
+    PyObject *unicode = self;
+
+    len = PyUnicode_GET_LENGTH(unicode);
+
+    for (i = 0; i < len; i++) {
+        ch = PyUnicode_READ_CHAR(unicode, i);
+        if (Py_UNICODE_IS_SURROGATE(ch)) {
+            Py_RETURN_TRUE;
+        }
+    }
+    Py_RETURN_FALSE;
+}
+
+/*[clinic input]
 str.join as unicode_join
 
     iterable: object
@@ -14489,6 +14515,7 @@ static PyMethodDef unicode_methods[] = {
     UNICODE_ISALNUM_METHODDEF
     UNICODE_ISIDENTIFIER_METHODDEF
     UNICODE_ISPRINTABLE_METHODDEF
+    UNICODE_CONTAINS_SURROGATE_METHODDEF
     UNICODE_ZFILL_METHODDEF
     {"format", _PyCFunction_CAST(do_string_format), METH_VARARGS | METH_KEYWORDS, format__doc__},
     {"format_map", do_string_format_map, METH_O, format_map__doc__},

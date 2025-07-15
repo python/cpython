@@ -1617,6 +1617,8 @@ category.
 |                          |  :meth:`str.isspace`                      |  :meth:`bytes.isspace`                            |
 |                          +-------------------------------------------+---------------------------------------------------+
 |                          |  :meth:`str.isprintable`                  |                                                   |
+|                          +-------------------------------------------+---------------------------------------------------+
+|                          |  :meth:`str.contains_surrogate`           |                                                   |
 +--------------------------+-------------------------------------------+---------------------------------------------------+
 | Case Manipulation        |  :meth:`str.lower`                        |  :meth:`bytes.lower`                              |
 |                          +-------------------------------------------+---------------------------------------------------+
@@ -2106,6 +2108,15 @@ expression support in the :mod:`re` module).
       False
 
 
+.. method:: str.contains_surrogate()
+
+   Return ``True`` if the string contains any surrogate code points,
+   ``False`` otherwise.
+
+      >>> 'notasurrogate'.contains_surrogate()
+      False
+      >>> '\ud83d\udc0d'.contains_surrogates()
+      True
 
 .. _meth-str-join:
 
