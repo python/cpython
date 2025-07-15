@@ -44,17 +44,8 @@
 #  include <windows.h>
 #endif
 
-#if BUFSIZ < (8*1024)
-#  define SMALLCHUNK (8*1024)
-#elif (BUFSIZ >= (2 << 25))
-#  error "unreasonable BUFSIZ > 64 MiB defined"
-#else
-#  define SMALLCHUNK BUFSIZ
-#endif
-
-/* Size at which a buffer is considered "large" and behavior should change to
-   avoid excessive memory allocation */
-#define LARGE_BUFFER_CUTOFF_SIZE 65536
+#define LARGE_BUFFER_CUTOFF_SIZE (4096*1024)
+#define SMALL_BUFFER_SIZE (128*1024)
 
 /*[clinic input]
 module _io
@@ -708,16 +699,20 @@ new_buffersize(fileio *self, size_t currentsize)
     size_t addend;
 
     /* Expand the buffer by an amount proportional to the current size,
-       giving us amortized linear-time behavior.  For bigger sizes, use a
-       less-than-double growth factor to avoid excessive allocation. */
+       giving us amortized linear-time behavior. This heuristic is only used
+       when the file size was unknown or changed since the file was opened.
+       For smaller sizes, use exponential growth to avoid many small reads.
+       For bigger sizes, use a less-than-double growth factor to avoid
+       excessive allocation.
+    */
     assert(currentsize <= PY_SSIZE_T_MAX);
     if (currentsize > LARGE_BUFFER_CUTOFF_SIZE)
         addend = currentsize >> 3;
     else
-        addend = 256 + currentsize;
-    if (addend < SMALLCHUNK)
+        addend = 3 * currentsize;
+    if (addend < SMALL_BUFFER_SIZE)
         /* Avoid tiny read() calls. */
-        addend = SMALLCHUNK;
+        addend = SMALL_BUFFER_SIZE;
     return addend + currentsize;
 }
 
@@ -742,7 +737,6 @@ _io_FileIO_readall_impl(fileio *self)
     Py_ssize_t bytes_read = 0;
     Py_ssize_t n;
     size_t bufsize;
-
     if (self->fd < 0) {
         return err_closed();
     }
@@ -755,7 +749,7 @@ _io_FileIO_readall_impl(fileio *self)
     }
     if (end <= 0) {
         /* Use a default size and resize as needed. */
-        bufsize = SMALLCHUNK;
+        bufsize = SMALL_BUFFER_SIZE;
     }
     else {
         /* This is probably a real file. */
@@ -776,7 +770,7 @@ _io_FileIO_readall_impl(fileio *self)
            then calls readall() to get the rest, which would result in allocating
            more than required. Guard against that for larger files where we expect
            the I/O time to dominate anyways while keeping small files fast. */
-        if (bufsize > LARGE_BUFFER_CUTOFF_SIZE) {
+        if (bufsize > SMALL_BUFFER_SIZE) {
             Py_BEGIN_ALLOW_THREADS
             _Py_BEGIN_SUPPRESS_IPH
 #ifdef MS_WINDOWS
