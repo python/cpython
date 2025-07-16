@@ -52,12 +52,13 @@ class TypesTests(unittest.TestCase):
         all_names = ignored | {
             'AsyncGeneratorType', 'BuiltinFunctionType', 'BuiltinMethodType',
             'CapsuleType', 'CellType', 'ClassMethodDescriptorType', 'CodeType',
-            'CoroutineType', 'EllipsisType', 'FrameType', 'FunctionType',
-            'GeneratorType', 'GenericAlias', 'GetSetDescriptorType',
-            'LambdaType', 'MappingProxyType', 'MemberDescriptorType',
-            'MethodDescriptorType', 'MethodType', 'MethodWrapperType',
-            'ModuleType', 'NoneType', 'NotImplementedType', 'SimpleNamespace',
-            'TracebackType', 'UnionType', 'WrapperDescriptorType',
+            'CoroutineType', 'DictItemsType', 'DictKeysType', 'DictValuesType',
+            'EllipsisType', 'FrameType', 'FunctionType', 'GeneratorType',
+            'GenericAlias', 'GetSetDescriptorType', 'LambdaType',
+            'MappingProxyType', 'MemberDescriptorType', 'MethodDescriptorType',
+            'MethodType', 'MethodWrapperType', 'ModuleType', 'NoneType',
+            'NotImplementedType', 'SimpleNamespace', 'TracebackType',
+            'UnionType', 'WrapperDescriptorType',
         }
         self.assertEqual(all_names, set(c_types.__all__))
         self.assertEqual(all_names - c_only_names, set(py_types.__all__))
@@ -692,6 +693,18 @@ class TypesTests(unittest.TestCase):
 
     def test_capsule_type(self):
         self.assertIsInstance(_datetime.datetime_CAPI, types.CapsuleType)
+
+    def test_dict_items_type(self):
+        self.assertIsInstance({}.items(), types.DictItemsType)
+        self.assertIs(type({}.items()), types.DictItemsType)
+
+    def test_dict_keys_type(self):
+        self.assertIsInstance({}.keys(), types.DictKeysType)
+        self.assertIs(type({}.keys()), types.DictKeysType)
+
+    def test_dict_values_type(self):
+        self.assertIsInstance({}.values(), types.DictValuesType)
+        self.assertIs(type({}.values()), types.DictValuesType)
 
     def test_call_unbound_crash(self):
         # GH-131998: The specialized instruction would get tricked into dereferencing

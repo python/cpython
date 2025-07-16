@@ -70,6 +70,10 @@ except ImportError:
     NoneType = type(None)
     NotImplementedType = type(NotImplemented)
 
+    DictItemsType = type({}.items())
+    DictKeysType = type({}.keys())
+    DictValuesType = type({}.values())
+
     # CapsuleType cannot be accessed from pure Python,
     # so there is no fallback definition.
 
