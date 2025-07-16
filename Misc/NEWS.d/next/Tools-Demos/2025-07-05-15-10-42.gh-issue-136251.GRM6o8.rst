@@ -1,1 +1,1 @@
-Improved usability of ``Tools/wasm/emscripten/web_example``
+Fixes and usability improvements for ``Tools/wasm/emscripten/web_example``
