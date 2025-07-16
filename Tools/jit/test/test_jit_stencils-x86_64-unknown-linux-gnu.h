@@ -42,18 +42,37 @@ emit_1(
     const _PyUOpInstruction *instruction, jit_state *state)
 {
     // 0000000000000000 <_JIT_ENTRY>:
-    // 0: 48 b8 00 00 00 00 00 00 00 00 movabsq $0x0, %rax
-    // 0000000000000002:  R_X86_64_64  _JIT_OPARG
-    // a: 66 85 c0                      testw   %ax, %ax
-    // d: 0f 85 00 00 00 00             jne     0x13 <_JIT_ENTRY+0x13>
-    // 000000000000000f:  R_X86_64_PLT32       _JIT_JUMP_TARGET-0x4
-    const unsigned char code_body[19] = {
-        0x48, 0xb8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x66, 0x85, 0xc0, 0x0f, 0x85,
+    // 0: 50                            pushq   %rax
+    // 1: 48 b8 00 00 00 00 00 00 00 00 movabsq $0x0, %rax
+    // 0000000000000003:  R_X86_64_64  sausage
+    // b: 80 38 00                      cmpb    $0x0, (%rax)
+    // e: 74 08                         je      0x18 <_JIT_ENTRY+0x18>
+    // 10: ff 15 00 00 00 00             callq   *(%rip)                 # 0x16 <_JIT_ENTRY+0x16>
+    // 0000000000000012:  R_X86_64_GOTPCRELX   order_eggs_sausage_and_bacon-0x4
+    // 16: eb 06                         jmp     0x1e <_JIT_ENTRY+0x1e>
+    // 18: ff 15 00 00 00 00             callq   *(%rip)                 # 0x1e <_JIT_ENTRY+0x1e>
+    // 000000000000001a:  R_X86_64_GOTPCRELX   order_eggs_and_bacon-0x4
+    // 1e: 48 b8 00 00 00 00 00 00 00 00 movabsq $0x0, %rax
+    // 0000000000000020:  R_X86_64_64  spammed
+    // 28: c6 00 00                      movb    $0x0, (%rax)
+    // 2b: 58                            popq    %rax
+    const unsigned char code_body[44] = {
+        0x50, 0x48, 0xb8, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x80, 0x38, 0x00, 0x74, 0x08,
+        0xff, 0x15, 0x00, 0x00, 0x00, 0x00, 0xeb, 0x06,
+        0xff, 0x15, 0x00, 0x00, 0x00, 0x00, 0x48, 0xb8,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0xc6, 0x00, 0x00, 0x58,
     };
+    // 0: &order_eggs_sausage_and_bacon+0x0
+    // 8: &order_eggs_and_bacon+0x0
+    patch_64(data + 0x0, (uintptr_t)&order_eggs_sausage_and_bacon);
+    patch_64(data + 0x8, (uintptr_t)&order_eggs_and_bacon);
     memcpy(code, code_body, sizeof(code_body));
-    patch_64(code + 0x2, instruction->oparg);
-    patch_32r(code + 0xf, state->instruction_starts[instruction->jump_target] + -0x4);
+    patch_64(code + 0x3, (uintptr_t)&sausage);
+    patch_x86_64_32rx(code + 0x12, (uintptr_t)data + -0x4);
+    patch_x86_64_32rx(code + 0x1a, (uintptr_t)data + 0x4);
+    patch_64(code + 0x20, (uintptr_t)&spammed);
 }
 
 void
@@ -63,69 +82,17 @@ emit_2(
 {
     // 0000000000000000 <_JIT_ENTRY>:
     // 0: 48 b8 00 00 00 00 00 00 00 00 movabsq $0x0, %rax
-    // 0000000000000002:  R_X86_64_64  _JIT_OPARG
-    // a: 66 85 c0                      testw   %ax, %ax
-    // d: 0f 85 00 00 00 00             jne     0x13 <_JIT_ENTRY+0x13>
+    // 0000000000000002:  R_X86_64_64  spam
+    // a: 80 38 01                      cmpb    $0x1, (%rax)
+    // d: 0f 84 00 00 00 00             je      0x13 <_JIT_ENTRY+0x13>
     // 000000000000000f:  R_X86_64_PLT32       _JIT_ERROR_TARGET-0x4
     const unsigned char code_body[19] = {
         0x48, 0xb8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x66, 0x85, 0xc0, 0x0f, 0x85,
+        0x00, 0x00, 0x80, 0x38, 0x01, 0x0f, 0x84,
     };
     memcpy(code, code_body, sizeof(code_body));
-    patch_64(code + 0x2, instruction->oparg);
+    patch_64(code + 0x2, (uintptr_t)&spam);
     patch_32r(code + 0xf, state->instruction_starts[instruction->error_target] + -0x4);
-}
-
-void
-emit_3(
-    unsigned char *code, unsigned char *data, _PyExecutorObject *executor,
-    const _PyUOpInstruction *instruction, jit_state *state)
-{
-    // 0000000000000000 <_JIT_ENTRY>:
-    // 0: 49 c7 86 10 01 00 00 00 00 00 00      movq    $0x0, 0x110(%r14)
-    // b: 4d 89 6c 24 40                movq    %r13, 0x40(%r12)
-    // 10: 48 b8 00 00 00 00 00 00 00 00 movabsq $0x0, %rax
-    // 0000000000000012:  R_X86_64_64  _JIT_TARGET
-    // 1a: 89 c1                         movl    %eax, %ecx
-    // 1c: 48 b8 00 00 00 00 00 00 00 00 movabsq $0x0, %rax
-    // 000000000000001e:  R_X86_64_64  _JIT_OPERAND0
-    // 26: 48 01 c8                      addq    %rcx, %rax
-    // 29: c3                            retq
-    const unsigned char code_body[42] = {
-        0x49, 0xc7, 0x86, 0x10, 0x01, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x4d, 0x89, 0x6c, 0x24, 0x40,
-        0x48, 0xb8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x89, 0xc1, 0x48, 0xb8, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x48, 0x01,
-        0xc8, 0xc3,
-    };
-    memcpy(code, code_body, sizeof(code_body));
-    patch_64(code + 0x12, instruction->target);
-    patch_64(code + 0x1e, instruction->operand0);
-}
-
-void
-emit_4(
-    unsigned char *code, unsigned char *data, _PyExecutorObject *executor,
-    const _PyUOpInstruction *instruction, jit_state *state)
-{
-    // 0000000000000000 <_JIT_ENTRY>:
-    // 0: 48 b8 00 00 00 00 00 00 00 00 movabsq $0x0, %rax
-    // 0000000000000002:  R_X86_64_64  _JIT_OPERAND1
-    // a: 49 89 86 10 01 00 00          movq    %rax, 0x110(%r14)
-    // 11: 48 b8 00 00 00 00 00 00 00 00 movabsq $0x0, %rax
-    // 0000000000000013:  R_X86_64_64  _JIT_OPERAND1+0x78
-    // 1b: 48 8b 00                      movq    (%rax), %rax
-    // 1e: ff e0                         jmpq    *%rax
-    const unsigned char code_body[32] = {
-        0x48, 0xb8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x49, 0x89, 0x86, 0x10, 0x01, 0x00,
-        0x00, 0x48, 0xb8, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x48, 0x8b, 0x00, 0xff, 0xe0,
-    };
-    memcpy(code, code_body, sizeof(code_body));
-    patch_64(code + 0x2, instruction->operand1);
-    patch_64(code + 0x13, instruction->operand1 + 0x78);
 }
 
 static_assert(SYMBOL_MASK_WORDS >= 1, "SYMBOL_MASK_WORDS too small");
@@ -143,10 +110,8 @@ static const StencilGroup shim = {emit_shim, 33, 0, {0}};
 
 static const StencilGroup stencil_groups[MAX_UOP_ID + 1] = {
     [0] = {emit_0, 0, 0, {0}},
-    [1] = {emit_1, 19, 0, {0}},
+    [1] = {emit_1, 44, 16, {0}},
     [2] = {emit_2, 19, 0, {0}},
-    [3] = {emit_3, 42, 0, {0}},
-    [4] = {emit_4, 32, 0, {0}},
 };
 
 static const void * const symbols_map[1] = {

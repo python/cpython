@@ -61,24 +61,54 @@ emit_1(
     const _PyUOpInstruction *instruction, jit_state *state)
 {
     // 0000000000000000 <_JIT_ENTRY>:
-    // 0: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000000:  R_AARCH64_ADR_GOT_PAGE       _JIT_OPARG
-    // 4: f9400108      ldr     x8, [x8]
-    // 0000000000000004:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
-    // 8: 72003d1f      tst     w8, #0xffff
-    // c: 54000040      b.eq    0x14 <_JIT_ENTRY+0x14>
-    // 10: 14000000      b       0x10 <_JIT_ENTRY+0x10>
-    // 0000000000000010:  R_AARCH64_JUMP26     _JIT_JUMP_TARGET
-    const unsigned char code_body[20] = {
+    // 0: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
+    // 4: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000004:  R_AARCH64_ADR_GOT_PAGE       sausage
+    // 8: 910003fd      mov     x29, sp
+    // c: f9400108      ldr     x8, [x8]
+    // 000000000000000c:  R_AARCH64_LD64_GOT_LO12_NC   sausage
+    // 10: 39400108      ldrb    w8, [x8]
+    // 14: 36000088      tbz     w8, #0x0, 0x24 <_JIT_ENTRY+0x24>
+    // 18: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000018:  R_AARCH64_ADR_GOT_PAGE       order_eggs_sausage_and_bacon
+    // 1c: f9400108      ldr     x8, [x8]
+    // 000000000000001c:  R_AARCH64_LD64_GOT_LO12_NC   order_eggs_sausage_and_bacon
+    // 20: 14000003      b       0x2c <_JIT_ENTRY+0x2c>
+    // 24: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000024:  R_AARCH64_ADR_GOT_PAGE       order_eggs_and_bacon
+    // 28: f9400108      ldr     x8, [x8]
+    // 0000000000000028:  R_AARCH64_LD64_GOT_LO12_NC   order_eggs_and_bacon
+    // 2c: d63f0100      blr     x8
+    // 30: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000030:  R_AARCH64_ADR_GOT_PAGE       spammed
+    // 34: f9400108      ldr     x8, [x8]
+    // 0000000000000034:  R_AARCH64_LD64_GOT_LO12_NC   spammed
+    // 38: 3900011f      strb    wzr, [x8]
+    // 3c: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    const unsigned char code_body[64] = {
+        0xfd, 0x7b, 0xbf, 0xa9, 0x08, 0x00, 0x00, 0x90,
+        0xfd, 0x03, 0x00, 0x91, 0x08, 0x01, 0x40, 0xf9,
+        0x08, 0x01, 0x40, 0x39, 0x88, 0x00, 0x00, 0x36,
         0x08, 0x00, 0x00, 0x90, 0x08, 0x01, 0x40, 0xf9,
-        0x1f, 0x3d, 0x00, 0x72, 0x40, 0x00, 0x00, 0x54,
-        0x00, 0x00, 0x00, 0x14,
+        0x03, 0x00, 0x00, 0x14, 0x08, 0x00, 0x00, 0x90,
+        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
+        0x08, 0x00, 0x00, 0x90, 0x08, 0x01, 0x40, 0xf9,
+        0x1f, 0x01, 0x00, 0x39, 0xfd, 0x7b, 0xc1, 0xa8,
     };
-    // 0: OPARG
-    patch_64(data + 0x0, instruction->oparg);
+    // 0: &sausage+0x0
+    // 8: &order_eggs_sausage_and_bacon+0x0
+    // 10: &order_eggs_and_bacon+0x0
+    // 18: &spammed+0x0
+    patch_64(data + 0x0, (uintptr_t)&sausage);
+    patch_64(data + 0x8, (uintptr_t)&order_eggs_sausage_and_bacon);
+    patch_64(data + 0x10, (uintptr_t)&order_eggs_and_bacon);
+    patch_64(data + 0x18, (uintptr_t)&spammed);
     memcpy(code, code_body, sizeof(code_body));
-    patch_aarch64_33rx(code + 0x0, (uintptr_t)data);
-    patch_aarch64_26r(code + 0x10, state->instruction_starts[instruction->jump_target]);
+    patch_aarch64_21rx(code + 0x4, (uintptr_t)data);
+    patch_aarch64_12x(code + 0xc, (uintptr_t)data);
+    patch_aarch64_33rx(code + 0x18, (uintptr_t)data + 0x8);
+    patch_aarch64_33rx(code + 0x24, (uintptr_t)data + 0x10);
+    patch_aarch64_33rx(code + 0x30, (uintptr_t)data + 0x18);
 }
 
 void
@@ -88,82 +118,24 @@ emit_2(
 {
     // 0000000000000000 <_JIT_ENTRY>:
     // 0: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000000:  R_AARCH64_ADR_GOT_PAGE       _JIT_OPARG
+    // 0000000000000000:  R_AARCH64_ADR_GOT_PAGE       spam
     // 4: f9400108      ldr     x8, [x8]
-    // 0000000000000004:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
-    // 8: 72003d1f      tst     w8, #0xffff
-    // c: 54000040      b.eq    0x14 <_JIT_ENTRY+0x14>
-    // 10: 14000000      b       0x10 <_JIT_ENTRY+0x10>
-    // 0000000000000010:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    const unsigned char code_body[20] = {
+    // 0000000000000004:  R_AARCH64_LD64_GOT_LO12_NC   spam
+    // 8: 39400108      ldrb    w8, [x8]
+    // c: 7100051f      cmp     w8, #0x1
+    // 10: 54000041      b.ne    0x18 <_JIT_ENTRY+0x18>
+    // 14: 14000000      b       0x14 <_JIT_ENTRY+0x14>
+    // 0000000000000014:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
+    const unsigned char code_body[24] = {
         0x08, 0x00, 0x00, 0x90, 0x08, 0x01, 0x40, 0xf9,
-        0x1f, 0x3d, 0x00, 0x72, 0x40, 0x00, 0x00, 0x54,
-        0x00, 0x00, 0x00, 0x14,
+        0x08, 0x01, 0x40, 0x39, 0x1f, 0x05, 0x00, 0x71,
+        0x41, 0x00, 0x00, 0x54, 0x00, 0x00, 0x00, 0x14,
     };
-    // 0: OPARG
-    patch_64(data + 0x0, instruction->oparg);
+    // 0: &spam+0x0
+    patch_64(data + 0x0, (uintptr_t)&spam);
     memcpy(code, code_body, sizeof(code_body));
     patch_aarch64_33rx(code + 0x0, (uintptr_t)data);
-    patch_aarch64_26r(code + 0x10, state->instruction_starts[instruction->error_target]);
-}
-
-void
-emit_3(
-    unsigned char *code, unsigned char *data, _PyExecutorObject *executor,
-    const _PyUOpInstruction *instruction, jit_state *state)
-{
-    // 0000000000000000 <_JIT_ENTRY>:
-    // 0: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000000:  R_AARCH64_ADR_GOT_PAGE       _JIT_TARGET
-    // 4: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
-    // 0000000000000004:  R_AARCH64_ADR_GOT_PAGE       _JIT_OPERAND0
-    // 8: f9400108      ldr     x8, [x8]
-    // 0000000000000008:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_TARGET
-    // c: f9400129      ldr     x9, [x9]
-    // 000000000000000c:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPERAND0
-    // 10: f9008adf      str     xzr, [x22, #0x110]
-    // 14: f9002295      str     x21, [x20, #0x40]
-    // 18: 8b284120      add     x0, x9, w8, uxtw
-    // 1c: d65f03c0      ret
-    const unsigned char code_body[32] = {
-        0x08, 0x00, 0x00, 0x90, 0x09, 0x00, 0x00, 0x90,
-        0x08, 0x01, 0x40, 0xf9, 0x29, 0x01, 0x40, 0xf9,
-        0xdf, 0x8a, 0x00, 0xf9, 0x95, 0x22, 0x00, 0xf9,
-        0x20, 0x41, 0x28, 0x8b, 0xc0, 0x03, 0x5f, 0xd6,
-    };
-    // 0: TARGET
-    // 8: OPERAND0
-    patch_64(data + 0x0, instruction->target);
-    patch_64(data + 0x8, instruction->operand0);
-    memcpy(code, code_body, sizeof(code_body));
-    patch_aarch64_21rx(code + 0x0, (uintptr_t)data);
-    patch_aarch64_21rx(code + 0x4, (uintptr_t)data + 0x8);
-    patch_aarch64_12x(code + 0x8, (uintptr_t)data);
-    patch_aarch64_12x(code + 0xc, (uintptr_t)data + 0x8);
-}
-
-void
-emit_4(
-    unsigned char *code, unsigned char *data, _PyExecutorObject *executor,
-    const _PyUOpInstruction *instruction, jit_state *state)
-{
-    // 0000000000000000 <_JIT_ENTRY>:
-    // 0: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000000:  R_AARCH64_ADR_GOT_PAGE       _JIT_OPERAND1
-    // 4: f9400108      ldr     x8, [x8]
-    // 0000000000000004:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPERAND1
-    // 8: f9403d00      ldr     x0, [x8, #0x78]
-    // c: f9008ac8      str     x8, [x22, #0x110]
-    // 10: d61f0000      br      x0
-    const unsigned char code_body[20] = {
-        0x08, 0x00, 0x00, 0x90, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x3d, 0x40, 0xf9, 0xc8, 0x8a, 0x00, 0xf9,
-        0x00, 0x00, 0x1f, 0xd6,
-    };
-    // 0: OPERAND1
-    patch_64(data + 0x0, instruction->operand1);
-    memcpy(code, code_body, sizeof(code_body));
-    patch_aarch64_33rx(code + 0x0, (uintptr_t)data);
+    patch_aarch64_26r(code + 0x14, state->instruction_starts[instruction->error_target]);
 }
 
 static_assert(SYMBOL_MASK_WORDS >= 1, "SYMBOL_MASK_WORDS too small");
@@ -181,10 +153,8 @@ static const StencilGroup shim = {emit_shim, 104, 0, {0}};
 
 static const StencilGroup stencil_groups[MAX_UOP_ID + 1] = {
     [0] = {emit_0, 0, 0, {0}},
-    [1] = {emit_1, 20, 8, {0}},
-    [2] = {emit_2, 20, 8, {0}},
-    [3] = {emit_3, 32, 16, {0}},
-    [4] = {emit_4, 20, 8, {0}},
+    [1] = {emit_1, 64, 32, {0}},
+    [2] = {emit_2, 24, 8, {0}},
 };
 
 static const void * const symbols_map[1] = {

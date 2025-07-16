@@ -1,27 +1,29 @@
         case 0: {
+            // Zero-length jumps should be removed:
             break;
         }
 
         case 1: {
-            if (CURRENT_OPARG()) {
-                JUMP_TO_JUMP_TARGET();
+            // -Os duplicates less code than -O3:
+            PyAPI_DATA(bool) sausage;
+            PyAPI_DATA(bool) spammed;
+            PyAPI_FUNC(void) order_eggs_and_bacon(void);
+            PyAPI_FUNC(void) order_eggs_sausage_and_bacon(void);
+            if (!sausage) {
+                order_eggs_and_bacon();
             }
+            else {
+                order_eggs_sausage_and_bacon();
+            }
+            spammed = false;
             break;
         }
 
         case 2: {
-            if (CURRENT_OPARG()) {
+            // The assembly optimizer inverts hot branches:
+            PyAPI_DATA(bool) spam;
+            if (spam) {
                 JUMP_TO_ERROR();
             }
-            break;
-        }
-
-        case 3: {
-            GOTO_TIER_ONE((void *)CURRENT_OPERAND0() + CURRENT_TARGET());
-            break;
-        }
-
-        case 4: {
-            GOTO_TIER_TWO((void *)CURRENT_OPERAND1());
             break;
         }
