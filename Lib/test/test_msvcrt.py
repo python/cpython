@@ -151,18 +151,30 @@ class TestOther(unittest.TestCase):
                                            msvcrt.CRTDBG_MODE_DEBUG)
         self.assertIs(type(returned), int)
         self.assertNotEqual(returned, -1)
-        self.assertEqual(old, returned)
+
+        returned = msvcrt.CrtSetReportMode(msvcrt.CRT_WARN,
+                                           msvcrt.CRTDBG_REPORT_MODE)
+        self.assertIs(type(returned), int)
+        self.assertEqual(returned, msvcrt.CRTDBG_MODE_DEBUG)
 
     @unittest.skipUnless(Py_DEBUG, "only available under debug build")
     def test_CrtSetReportFile(self):
-        old = msvcrt.CrtSetReportFile(msvcrt.CRT_WARN,
-                                      msvcrt.CRTDBG_REPORT_FILE)
-        self.addCleanup(msvcrt.CrtSetReportFile, msvcrt.CRT_WARN, old)
+        # Set the report mode to CRTDBG_REPORT_FILE at first.
+        old_mode = msvcrt.CrtSetReportMode(msvcrt.CRT_WARN,
+                                           msvcrt.CRTDBG_REPORT_MODE)
+        self.addCleanup(msvcrt.CrtSetReportMode, msvcrt.CRT_WARN, old_mode)
+        old_file = msvcrt.CrtSetReportFile(msvcrt.CRT_WARN,
+                                           msvcrt.CRTDBG_REPORT_FILE)
+        self.addCleanup(msvcrt.CrtSetReportFile, msvcrt.CRT_WARN, old_file)
 
         returned = msvcrt.CrtSetReportFile(msvcrt.CRT_WARN,
                                            msvcrt.CRTDBG_FILE_STDOUT)
         self.assertIs(type(returned), int)
-        self.assertEqual(old, returned)
+
+        returned = msvcrt.CrtSetReportFile(msvcrt.CRT_WARN,
+                                           msvcrt.CRTDBG_REPORT_FILE)
+        self.assertIs(type(returned), int)
+        self.assertEqual(returned, msvcrt.get_osfhandle(sys.stdout.fileno()))
 
 
 if __name__ == "__main__":
