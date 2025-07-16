@@ -57,6 +57,7 @@ parser = argparse.ArgumentParser(
         "versions."
     ),
 )
+parser.color = True
 parser.add_argument(
     '--debug',
     action='store_true',
