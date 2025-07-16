@@ -7,7 +7,7 @@
 // defined with weak linkage so we can override it.
 EM_JS(int, __syscall_getuid32_js, (void), {
     // If we're in node and we can, report the native uid
-    if (typeof process !== "undefined" && typeof process.getuid === "function") {
+    if (ENVIRONMENT_IS_NODE) {
         return process.getuid();
     }
     // Fall back to the stub case of returning 0.
@@ -16,4 +16,24 @@ EM_JS(int, __syscall_getuid32_js, (void), {
 
 int __syscall_getuid32(void) {
     return __syscall_getuid32_js();
+}
+
+EM_JS(int, __syscall_umask_js, (int mask), {
+    // If we're in node and we can, call native process.umask()
+    if (ENVIRONMENT_IS_NODE) {
+        try {
+            return process.umask(mask);
+        } catch(e) {
+            // oops...
+            // NodeJS docs: "In Worker threads, process.umask(mask) will throw an exception."
+            // umask docs: "This system call always succeeds"
+            return 0;
+        }
+    }
+    // Fall back to the stub case of returning 0.
+    return 0;
+})
+
+int __syscall_umask(int mask) {
+    return __syscall_umask_js(mask);
 }
