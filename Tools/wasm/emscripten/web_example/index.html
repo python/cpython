@@ -28,6 +28,12 @@
             #info {
                 padding-top: 20px;
             }
+            .error {
+              border: 1px solid red;
+              background-color: #ffd9d9;
+              padding: 5px;
+              margin-top: 20px;
+            }
             .button-container {
                 display: flex;
                 justify-content: end;
@@ -633,24 +639,55 @@ code.interact(banner=banner, readfunc=_interrupt_aware_input, exitmsg='')
         </script>
     </head>
     <body>
-        <h1>Simple REPL for Python WASM</h1>
-        <div id="editor">print('Welcome to WASM!')</div>
-        <div class="button-container">
-            <button id="run" disabled>Run code</button>
-            <button id="repl" disabled>Start REPL</button>
-            <button id="stop" disabled>Stop</button>
-            <button id="clear" disabled>Clear</button>
+        <div id="repldemo">
+            <h1>Simple REPL for Python WASM</h1>
+            <div id="editor">print('Welcome to WASM!')</div>
+            <div class="button-container">
+                <button id="run" disabled>Run code</button>
+                <button id="repl" disabled>Start REPL</button>
+                <button id="stop" disabled>Stop</button>
+                <button id="clear" disabled>Clear</button>
+            </div>
+            <div id="terminal"></div>
+            <div id="info">
+                The simple REPL provides a limited Python experience in the
+                browser.
+                <a
+                    href="https://github.com/python/cpython/blob/main/Tools/wasm/README.md"
+                >
+                    Tools/wasm/README.md
+                </a>
+                contains a list of known limitations and issues. Networking,
+                subprocesses, and threading are not available.
+            </div>
         </div>
-        <div id="terminal"></div>
-        <div id="info">
-            The simple REPL provides a limited Python experience in the browser.
-            <a
-                href="https://github.com/python/cpython/blob/main/Tools/wasm/README.md"
-            >
-                Tools/wasm/README.md
-            </a>
-            contains a list of known limitations and issues. Networking,
-            subprocesses, and threading are not available.
+        <div id="buffererror" class="error" style="display: none">
+            <p>
+                <code>SharedArrayBuffer</code>, which is required for this demo,
+                is not available in your browser environment.  One common cause
+                of this failure is loading <code>index.html</code> directly in
+                your browser instead of using <code>server.py</code> as
+                described in
+                <a
+                    href="https://github.com/python/cpython/blob/main/Tools/wasm/README.md#the-web-example"
+                >
+                    Tools/wasm/README.md
+                </a>.
+            </p>
+            <p>
+                For more details about security requirements for
+                <code>SharedArrayBuffer</code>, see
+                <a
+                    href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/SharedArrayBuffer#security_requirements"
+                  >this MDN page</a
+                >.
+            </p>
+            <script>
+              if (typeof SharedArrayBuffer === 'undefined') {
+                  document.getElementById('repldemo').style.display = 'none';
+                  document.getElementById('buffererror').style.display = 'block';
+              }
+            </script>
         </div>
     </body>
 </html>
