@@ -589,6 +589,8 @@ def main():
             versions += [(cls, v) for v in args.ssl_versions]
         else:
             versions += [(cls, v) for v in cls.recent_versions.fget()]
+            if not args.disable_ancient:
+                versions += [(cls, v) for v in cls.old_versions.fget()]
     else:
         if args.ssl_versions:
             print("ERROR: SSL versions specified without specifying library")
