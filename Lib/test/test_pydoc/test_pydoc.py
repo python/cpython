@@ -1304,13 +1304,25 @@ class PydocImportTest(PydocBaseTest):
     def test_apropos_empty_doc(self):
         pkgdir = os.path.join(TESTFN, 'walkpkg')
         os.mkdir(pkgdir)
+        print()
+        print(f"{os.getcwd()=}")
+        print(f"{TESTFN=}")
+        print(f"{pkgdir=}")
+        print()
+        print(f"{os.getcwd().encode()=}")
+        print(f"{TESTFN.encode()=}")
+        print(f"{pkgdir.encode()=}")
         self.addCleanup(rmtree, pkgdir)
         init_path = os.path.join(pkgdir, '__init__.py')
         with open(init_path, 'w') as fobj:
             fobj.write("foo = 1")
         current_mode = stat.S_IMODE(os.stat(pkgdir).st_mode)
+        print()
+        print(f"{current_mode=:#o}")
         try:
             os.chmod(pkgdir, current_mode & ~stat.S_IEXEC)
+            new_mode = stat.S_IMODE(os.stat(pkgdir).st_mode)
+            print(f"{new_mode=:#o}")
             with self.restrict_walk_packages(path=[TESTFN]), captured_stdout() as stdout:
                 pydoc.apropos('')
             self.assertIn('walkpkg', stdout.getvalue())
