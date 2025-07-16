@@ -1575,6 +1575,10 @@ inspect
   :term:`package` or not.
   (Contributed by Zhikang Yan in :gh:`125634`.)
 
+* Add parameters *inherit_class_doc* and *fallback_to_class_doc*
+  for :func:`~inspect.getdoc`.
+  (Contributed by Serhiy Storchaka in :gh:`132686`.)
+
 
 io
 --
