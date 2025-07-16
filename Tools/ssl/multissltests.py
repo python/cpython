@@ -44,29 +44,6 @@ import tarfile
 
 log = logging.getLogger("multissl")
 
-OPENSSL_OLD_VERSIONS = [
-    "1.1.1w",
-]
-
-OPENSSL_RECENT_VERSIONS = [
-    "3.0.16",
-    "3.1.8",
-    "3.2.4",
-    "3.3.3",
-    "3.4.1",
-    # See make_ssl_data.py for notes on adding a new version.
-]
-
-LIBRESSL_OLD_VERSIONS = [
-]
-
-LIBRESSL_RECENT_VERSIONS = [
-]
-
-AWSLC_RECENT_VERSIONS = [
-    "1.55.0",
-]
-
 # store files in ../multissl
 HERE = os.path.dirname(os.path.abspath(__file__))
 PYTHONROOT = os.path.abspath(os.path.join(HERE, '..', '..'))
@@ -155,32 +132,40 @@ class AbstractBuilder(object, metaclass=ABCMeta):
         jobs = os.process_cpu_count()
     else:
         jobs = os.cpu_count()
-
-    @property
-    @abstractmethod
-    def library(self):
-        pass
-
-    @property
-    @abstractmethod
-    def url_templates(self):
-        pass
-
-    @property
-    @abstractmethod
-    def src_template(self):
-        pass
-
-    @property
-    @abstractmethod
-    def build_template(self):
-        pass
-
     module_files = (
         os.path.join(PYTHONROOT, "Modules/_ssl.c"),
         os.path.join(PYTHONROOT, "Modules/_hashopenssl.c"),
     )
     module_libs = ("_ssl", "_hashlib")
+
+    @property
+    @abstractmethod
+    def library(self=None):
+        pass
+
+    @property
+    @abstractmethod
+    def url_templates(self=None):
+        pass
+
+    @property
+    @abstractmethod
+    def src_template(self=None):
+        pass
+
+    @property
+    @abstractmethod
+    def build_template(self=None):
+        pass
+
+    @property
+    @abstractmethod
+    def recent_versions():
+        pass
+
+    @property
+    def old_versions():
+        return []
 
     def __init__(self, version, args):
         self.version = version
@@ -420,11 +405,11 @@ class BuildOpenSSL(AbstractBuilder):
     depend_target = 'depend'
 
     @property
-    def library(self):
+    def library(self=None):
         return "OpenSSL"
 
     @property
-    def url_templates(self):
+    def url_templates(self=None):
         return (
             "https://github.com/openssl/openssl/releases/download/openssl-{v}/openssl-{v}.tar.gz",
             "https://www.openssl.org/source/openssl-{v}.tar.gz",
@@ -432,12 +417,27 @@ class BuildOpenSSL(AbstractBuilder):
         )
 
     @property
-    def src_template(self):
+    def src_template(self=None):
         return "openssl-{}.tar.gz"
 
     @property
-    def build_template(self):
+    def build_template(self=None):
         return "openssl-{}"
+
+    @property
+    def recent_versions():
+        return [
+            "3.0.16",
+            "3.1.8",
+            "3.2.4",
+            "3.3.3",
+            "3.4.1",
+            # See make_ssl_data.py for notes on adding a new version.
+        ]
+
+    @property
+    def old_versions():
+        return [ "1.1.1w" ]
 
     def _post_install(self):
         if self.version.startswith("3."):
@@ -475,42 +475,52 @@ class BuildOpenSSL(AbstractBuilder):
 
 class BuildLibreSSL(AbstractBuilder):
     @property
-    def library(self):
+    def library(self=None):
         return "LibreSSL"
 
     @property
-    def url_templates(self):
+    def url_templates(self=None):
         return (
             "https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-{v}.tar.gz",
         )
 
     @property
-    def src_template(self):
+    def src_template(self=None):
         return "libressl-{}.tar.gz"
 
     @property
-    def build_template(self):
+    def build_template(self=None):
         "libressl-{}"
+
+    @property
+    def recent_versions():
+        return []
 
 
 class BuildAWSLC(AbstractBuilder):
     @property
-    def library(self):
+    def library(self=None):
         return "AWS-LC"
 
     @property
-    def url_templates(self):
+    def url_templates(self=None):
         return (
             "https://github.com/aws/aws-lc/archive/refs/tags/v{v}.tar.gz",
         )
 
     @property
-    def src_template(self):
+    def src_template(self=None):
         return "aws-lc-{}.tar.gz"
 
     @property
-    def build_template(self):
+    def build_template(self=None):
         return "aws-lc-{}"
+
+    @property
+    def recent_versions():
+        return [
+            "1.55.0",
+        ]
 
     def _build_src(self, config_args=()):
         cwd = self.build_dir
@@ -566,33 +576,31 @@ def main():
         format="*** %(levelname)s %(message)s"
     )
 
-    ssl_libs = {
-        "openssl": [
-            BuildOpenSSL, OPENSSL_OLD_VERSIONS, OPENSSL_RECENT_VERSIONS, []
-        ],
-        "libressl": [
-            BuildLibreSSL, LIBRESSL_OLD_VERSIONS, LIBRESSL_RECENT_VERSIONS, []
-        ],
-        "awslc": [BuildAWSLC, [], AWSLC_RECENT_VERSIONS, []],
-    }
-    if args.ssl and args.ssl_versions:
-        ssl_libs[args.ssl][3] += args.ssl_versions
-    elif args.ssl:
-        ssl_libs[args.ssl][3] += ssl_libs[args.ssl][2]
+    versions = []
+    ssl_libs = AbstractBuilder.__subclasses__()
+    if args.ssl:
+        lib_name = lambda x: x.library.fget().lower().replace("-", "")
+        libs = [l for l in ssl_libs if lib_name(l) == args.ssl]
+        assert len(libs) == 1
+        cls = libs.pop()
+        if args.ssl_versions:
+            versions += [(cls, v) for v in args.ssl_versions]
+        else:
+            versions += [(cls, v) for v in cls.recent_versions.fget()]
     else:
-        ssl_libs["openssl"][3] += ssl_libs["openssl"][2]
-        ssl_libs["libressl"][3] += ssl_libs["libressl"][2]
-        ssl_libs["awslc"][3] += ssl_libs["awslc"][2]
-        if not args.disable_ancient:
-            ssl_libs["openssl"][3] += ssl_libs["openssl"][1]
-            ssl_libs["libressl"][3] += ssl_libs["libressl"][1]
-    # download and register builder
+        if args.ssl_versions:
+            print("ERROR: SSL versions specified without specifying library")
+            exit(1)
+        for cls in ssl_libs:
+            versions += [(cls, v) for v in cls.recent_versions.fget()]
+            if not args.disable_ancient:
+                versions += [(cls, v) for v in cls.old_versions.fget()]
+
     builds = []
-    for build_class, _, _, versions in ssl_libs.values():
-        for version in versions:
-            build = build_class(version, args)
-            build.install()
-            builds.append(build)
+    for build_class, version in versions:
+        build = build_class(version, args)
+        build.install()
+        builds.append(build)
 
     if args.steps in {'modules', 'tests'}:
         for build in builds:
