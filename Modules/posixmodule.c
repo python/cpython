@@ -3482,7 +3482,7 @@ If this functionality is unavailable, using it raises an exception.
 
 static PyObject *
 os_chdir_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=3be6400eee26eaae input=1a4a15b4d12cb15d]*/
+/*[clinic end generated code: output=3be6400eee26eaae input=a74ceab5d72adf74]*/
 {
     int result;
 
