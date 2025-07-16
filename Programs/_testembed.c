@@ -1854,9 +1854,9 @@ static int test_initconfig_get_api(void)
     assert(initconfig_getint(config, "dev_mode") == 1);
 
     // test PyInitConfig_GetInt() on a PyPreConfig option
-    assert(initconfig_getint(config, "utf8_mode") == 0);
-    assert(PyInitConfig_SetInt(config, "utf8_mode", 1) == 0);
     assert(initconfig_getint(config, "utf8_mode") == 1);
+    assert(PyInitConfig_SetInt(config, "utf8_mode", 0) == 0);
+    assert(initconfig_getint(config, "utf8_mode") == 0);
 
     // test PyInitConfig_GetStr()
     char *str;
