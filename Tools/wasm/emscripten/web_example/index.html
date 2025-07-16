@@ -145,6 +145,13 @@
 
             class WasmTerminal {
                 constructor() {
+                    try {
+                        this.history = JSON.parse(sessionStorage.getItem('__python_wasm_repl.history'));
+                        this.historyBuffer = this.history.slice();
+                    } catch(e) {
+                        this.history = [];
+                        this.historyBuffer = [];
+                    }
                     this.reset();
 
                     this.xterm = new Terminal({
@@ -172,8 +179,6 @@
                     this.inputStartCursor = null;
 
                     this.cursorPosition = 0;
-                    this.history = [];
-                    this.historyBuffer = [];
                     this.historyIndex = -1;
                     this.beforeHistoryNav = "";
                 }
@@ -319,7 +324,7 @@
                         this.xterm.write("\x1b[" + suffix.length + "D");
                     }
                     this.cursorPosition += count;
-                    this.updateHistory(false);
+                    this.updateHistory();
                 }
 
                 handleCursorErase() {
@@ -477,6 +482,10 @@
                                 this.historyBuffer.push(value.slice(0, -1));
                                 this.historyIndex = -1;
                                 this.cursorPosition = 0;
+                                try {
+                                    sessionStorage.setItem('__python_wasm_repl.history', JSON.stringify(this.history));
+                                } catch(e) {
+                                }
                             }
                             resolve(value);
                         };
