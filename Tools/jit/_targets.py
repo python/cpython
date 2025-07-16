@@ -270,6 +270,8 @@ class _COFF(
         else:
             # Zeroed BSS data, seen with printf debugging calls:
             section_data_bytes = [0] * section["RawDataSize"]
+            # XXX
+            assert section["RawDataSize"] == 0, section["RawDataSize"]
         if "IMAGE_SCN_MEM_EXECUTE" in flags:
             value = _stencils.HoleValue.CODE
             stencil = group.code
