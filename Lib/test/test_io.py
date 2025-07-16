@@ -9,6 +9,7 @@
 # * test_univnewlines - tests universal newline support
 # * test_largefile - tests operations on a file greater than 2**32 bytes
 #     (only enabled with -ulargefile)
+# * test_free_threading/test_io - tests thread safety of io objects
 
 ################################################################################
 # ATTENTION TEST WRITERS!!!
@@ -902,7 +903,7 @@ class IOTest(unittest.TestCase):
             self.BytesIO()
         )
         for obj in test:
-            self.assertTrue(hasattr(obj, "__dict__"))
+            self.assertHasAttr(obj, "__dict__")
 
     def test_opener(self):
         with self.open(os_helper.TESTFN, "w", encoding="utf-8") as f:
@@ -1062,6 +1063,37 @@ class IOTest(unittest.TestCase):
         # Silence destructor error
         R.flush = lambda self: None
 
+    @threading_helper.requires_working_threading()
+    def test_write_readline_races(self):
+        # gh-134908: Concurrent iteration over a file caused races
+        thread_count = 2
+        write_count = 100
+        read_count = 100
+
+        def writer(file, barrier):
+            barrier.wait()
+            for _ in range(write_count):
+                file.write("x")
+
+        def reader(file, barrier):
+            barrier.wait()
+            for _ in range(read_count):
+                for line in file:
+                    self.assertEqual(line, "")
+
+        with self.open(os_helper.TESTFN, "w+") as f:
+            barrier = threading.Barrier(thread_count + 1)
+            reader = threading.Thread(target=reader, args=(f, barrier))
+            writers = [threading.Thread(target=writer, args=(f, barrier))
+                       for _ in range(thread_count)]
+            with threading_helper.catch_threading_exception() as cm:
+                with threading_helper.start_threads(writers + [reader]):
+                    pass
+                self.assertIsNone(cm.exc_type)
+
+        self.assertEqual(os.stat(os_helper.TESTFN).st_size,
+                         write_count * thread_count)
+
 
 class CIOTest(IOTest):
 
@@ -1117,7 +1149,7 @@ class TestIOCTypes(unittest.TestCase):
         def check_subs(types, base):
             for tp in types:
                 with self.subTest(tp=tp, base=base):
-                    self.assertTrue(issubclass(tp, base))
+                    self.assertIsSubclass(tp, base)
 
         def recursive_check(d):
             for k, v in d.items():
@@ -1870,7 +1902,7 @@ class BufferedWriterTest(unittest.TestCase, CommonBufferedTests):
         flushed = b"".join(writer._write_stack)
         # At least (total - 8) bytes were implicitly flushed, perhaps more
         # depending on the implementation.
-        self.assertTrue(flushed.startswith(contents[:-8]), flushed)
+        self.assertStartsWith(flushed, contents[:-8])
 
     def check_writes(self, intermediate_func):
         # Lots of writes, test the flushed output is as expected.
@@ -1940,7 +1972,7 @@ class BufferedWriterTest(unittest.TestCase, CommonBufferedTests):
         self.assertEqual(bufio.write(b"ABCDEFGHI"), 9)
         s = raw.pop_written()
         # Previously buffered bytes were flushed
-        self.assertTrue(s.startswith(b"01234567A"), s)
+        self.assertStartsWith(s, b"01234567A")
 
     def test_write_and_rewind(self):
         raw = self.BytesIO()
@@ -2236,7 +2268,7 @@ class BufferedRWPairTest(unittest.TestCase):
     def test_peek(self):
         pair = self.tp(self.BytesIO(b"abcdef"), self.MockRawIO())
 
-        self.assertTrue(pair.peek(3).startswith(b"abc"))
+        self.assertStartsWith(pair.peek(3), b"abc")
         self.assertEqual(pair.read(3), b"abc")
 
     def test_readable(self):
@@ -4618,10 +4650,8 @@ class MiscIOTest(unittest.TestCase):
         proc = assert_python_ok('-X', 'warn_default_encoding', '-c', code)
         warnings = proc.err.splitlines()
         self.assertEqual(len(warnings), 2)
-        self.assertTrue(
-            warnings[0].startswith(b"<string>:5: EncodingWarning: "))
-        self.assertTrue(
-            warnings[1].startswith(b"<string>:8: EncodingWarning: "))
+        self.assertStartsWith(warnings[0], b"<string>:5: EncodingWarning: ")
+        self.assertStartsWith(warnings[1], b"<string>:8: EncodingWarning: ")
 
     def test_text_encoding(self):
         # PEP 597, bpo-47000. io.text_encoding() returns "locale" or "utf-8"
@@ -4834,7 +4864,7 @@ class SignalsTest(unittest.TestCase):
                     os.read(r, len(data) * 100)
             exc = cm.exception
             if isinstance(exc, RuntimeError):
-                self.assertTrue(str(exc).startswith("reentrant call"), str(exc))
+                self.assertStartsWith(str(exc), "reentrant call")
         finally:
             signal.alarm(0)
             wio.close()

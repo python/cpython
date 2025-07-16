@@ -7,6 +7,7 @@
 #include "pycore_typevarobject.h" // _Py_typing_type_repr
 #include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
 #include "pycore_unionobject.h"   // _Py_union_type_or, _PyGenericAlias_Check
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 
 #include <stdbool.h>
@@ -33,9 +34,7 @@ ga_dealloc(PyObject *self)
     gaobject *alias = (gaobject *)self;
 
     _PyObject_GC_UNTRACK(self);
-    if (alias->weakreflist != NULL) {
-        PyObject_ClearWeakRefs((PyObject *)alias);
-    }
+    FT_CLEAR_WEAKREFS(self, alias->weakreflist);
     Py_XDECREF(alias->origin);
     Py_XDECREF(alias->args);
     Py_XDECREF(alias->parameters);
@@ -65,7 +64,7 @@ ga_repr_items_list(PyUnicodeWriter *writer, PyObject *p)
 
     for (Py_ssize_t i = 0; i < len; i++) {
         if (i > 0) {
-            if (PyUnicodeWriter_WriteUTF8(writer, ", ", 2) < 0) {
+            if (PyUnicodeWriter_WriteASCII(writer, ", ", 2) < 0) {
                 return -1;
             }
         }
@@ -109,7 +108,7 @@ ga_repr(PyObject *self)
     }
     for (Py_ssize_t i = 0; i < len; i++) {
         if (i > 0) {
-            if (PyUnicodeWriter_WriteUTF8(writer, ", ", 2) < 0) {
+            if (PyUnicodeWriter_WriteASCII(writer, ", ", 2) < 0) {
                 goto error;
             }
         }
@@ -126,7 +125,7 @@ ga_repr(PyObject *self)
     }
     if (len == 0) {
         // for something like tuple[()] we should print a "()"
-        if (PyUnicodeWriter_WriteUTF8(writer, "()", 2) < 0) {
+        if (PyUnicodeWriter_WriteASCII(writer, "()", 2) < 0) {
             goto error;
         }
     }

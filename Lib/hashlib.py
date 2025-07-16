@@ -2,7 +2,7 @@
 #  Licensed to PSF under a Contributor Agreement.
 #
 
-__doc__ = """hashlib module - A common interface to many hash functions.
+__doc__ = r"""hashlib module - A common interface to many hash functions.
 
 new(name, data=b'', **kwargs) - returns a new hash object implementing the
                                 given hash function; initializing the hash
@@ -12,7 +12,7 @@ Named constructor functions are also available, these are faster
 than using new(name):
 
 md5(), sha1(), sha224(), sha256(), sha384(), sha512(), blake2b(), blake2s(),
-sha3_224, sha3_256, sha3_384, sha3_512, shake_128, and shake_256.
+sha3_224(), sha3_256(), sha3_384(), sha3_512(), shake_128(), and shake_256().
 
 More algorithms may be available on your platform but the above are guaranteed
 to exist.  See the algorithms_guaranteed and algorithms_available attributes
@@ -21,8 +21,8 @@ to find out what algorithm names can be passed to new().
 NOTE: If you want the adler32 or crc32 hash functions they are available in
 the zlib module.
 
-Choose your hash function wisely.  Some have known collision weaknesses.
-sha384 and sha512 will be slow on 32 bit platforms.
+Choose your hash function wisely.  Some have known collision weaknesses,
+while others may be slower depending on the CPU architecture.
 
 Hash objects have these methods:
  - update(data): Update the hash object with the bytes in data. Repeated calls
@@ -36,20 +36,20 @@ Hash objects have these methods:
                  efficiently compute the digests of data that share a common
                  initial substring.
 
-For example, to obtain the digest of the byte string 'Nobody inspects the
-spammish repetition':
+Assuming that Python has been built with MD5 support, the following computes
+the MD5 digest of the byte string b'Nobody inspects the spammish repetition':
 
     >>> import hashlib
     >>> m = hashlib.md5()
     >>> m.update(b"Nobody inspects")
     >>> m.update(b" the spammish repetition")
     >>> m.digest()
-    b'\\xbbd\\x9c\\x83\\xdd\\x1e\\xa5\\xc9\\xd9\\xde\\xc9\\xa1\\x8d\\xf0\\xff\\xe9'
+    b'\xbbd\x9c\x83\xdd\x1e\xa5\xc9\xd9\xde\xc9\xa1\x8d\xf0\xff\xe9'
 
 More condensed:
 
-    >>> hashlib.sha224(b"Nobody inspects the spammish repetition").hexdigest()
-    'a4337bc45a8fc544c03f52dc550cd6e1e87021bc896588bd79e901e2'
+    >>> hashlib.md5(b"Nobody inspects the spammish repetition").hexdigest()
+    'bb649c83dd1ea5c9d9dec9a18df0ffe9'
 
 """
 
@@ -141,29 +141,29 @@ def __get_openssl_constructor(name):
         return __get_builtin_constructor(name)
 
 
-def __py_new(name, data=b'', **kwargs):
+def __py_new(name, *args, **kwargs):
     """new(name, data=b'', **kwargs) - Return a new hashing object using the
     named algorithm; optionally initialized with data (which must be
     a bytes-like object).
     """
-    return __get_builtin_constructor(name)(data, **kwargs)
+    return __get_builtin_constructor(name)(*args, **kwargs)
 
 
-def __hash_new(name, data=b'', **kwargs):
+def __hash_new(name, *args, **kwargs):
     """new(name, data=b'') - Return a new hashing object using the named algorithm;
     optionally initialized with data (which must be a bytes-like object).
     """
     if name in __block_openssl_constructor:
         # Prefer our builtin blake2 implementation.
-        return __get_builtin_constructor(name)(data, **kwargs)
+        return __get_builtin_constructor(name)(*args, **kwargs)
     try:
-        return _hashlib.new(name, data, **kwargs)
+        return _hashlib.new(name, *args, **kwargs)
     except ValueError:
         # If the _hashlib module (OpenSSL) doesn't support the named
         # hash, try using our builtin implementations.
         # This allows for SHA224/256 and SHA384/512 support even though
         # the OpenSSL library prior to 0.9.8 doesn't provide them.
-        return __get_builtin_constructor(name)(data)
+        return __get_builtin_constructor(name)(*args, **kwargs)
 
 
 try:
@@ -187,7 +187,8 @@ except ImportError:
 
 try:
     # OpenSSL's scrypt requires OpenSSL 1.1+
-    from _hashlib import scrypt  # noqa: F401
+    from _hashlib import scrypt
+    __all__ += ('scrypt',)
 except ImportError:
     pass
 
@@ -203,7 +204,7 @@ def file_digest(fileobj, digest, /, *, _bufsize=2**18):
     *digest* must either be a hash algorithm name as a *str*, a hash
     constructor, or a callable that returns a hash object.
     """
-    # On Linux we could use AF_ALG sockets and sendfile() to archive zero-copy
+    # On Linux we could use AF_ALG sockets and sendfile() to achieve zero-copy
     # hashing with hardware acceleration.
     if isinstance(digest, str):
         digestobj = new(digest)

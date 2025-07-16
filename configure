@@ -1826,8 +1826,8 @@ Optional Features:
                           no)
   --enable-profiling      enable C-level code profiling with gprof (default is
                           no)
-  --disable-gil           enable experimental support for running without the
-                          GIL (default is no)
+  --disable-gil           enable support for running without the GIL (default
+                          is no)
   --enable-pystats        enable internal statistics gathering (default is no)
   --enable-optimizations  enable expensive, stable optimizations (PGO, etc.)
                           (default is no)
@@ -7254,6 +7254,8 @@ case $host/$ac_cv_cc_name in #(
     PY_SUPPORT_TIER=3 ;; #(
     x86_64-*-linux-android/clang) :
     PY_SUPPORT_TIER=3 ;; #(
+    wasm32-*-emscripten/emcc) :
+    PY_SUPPORT_TIER=3 ;; #(
   *) :
 
   PY_SUPPORT_TIER=0
@@ -9604,6 +9606,7 @@ fi
     as_fn_append LINKFORSHARED " -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV"
     as_fn_append LINKFORSHARED " -sEXPORTED_FUNCTIONS=_main,_Py_Version,__PyRuntime,__PyEM_EMSCRIPTEN_COUNT_ARGS_OFFSET,_PyGILState_GetThisThreadState,__Py_DumpTraceback"
     as_fn_append LINKFORSHARED " -sSTACK_SIZE=5MB"
+        as_fn_append LINKFORSHARED " -sTEXTDECODER=2"
 
     if test "x$enable_wasm_dynamic_linking" = xyes
 then :
@@ -10863,7 +10866,7 @@ then :
 
 else case e in #(
   e) as_fn_append CFLAGS_NODIST " $jit_flags"
-           REGEN_JIT_COMMAND="\$(PYTHON_FOR_REGEN) \$(srcdir)/Tools/jit/build.py ${ARCH_TRIPLES:-$host} --output-dir . --pyconfig-dir ."
+           REGEN_JIT_COMMAND="\$(PYTHON_FOR_REGEN) \$(srcdir)/Tools/jit/build.py ${ARCH_TRIPLES:-$host} --output-dir . --pyconfig-dir . --cflags=\"$CFLAGS_JIT\""
            JIT_STENCILS_H="jit_stencils.h"
            if test "x$Py_DEBUG" = xtrue
 then :
@@ -12979,13 +12982,6 @@ if test "$ac_cv_sizeof_off_t" -gt "$ac_cv_sizeof_long" -a \
 else
   have_largefile_support="no"
 fi
-case $ac_sys_system in #(
-  Emscripten) :
-    have_largefile_support="no"
- ;; #(
-  *) :
-     ;;
-esac
 if test "x$have_largefile_support" = xyes
 then :
 
@@ -14052,6 +14048,7 @@ fi
 
 
 
+
 have_uuid=missing
 
        for ac_header in uuid.h
@@ -14060,6 +14057,7 @@ do :
 if test "x$ac_cv_header_uuid_h" = xyes
 then :
   printf "%s\n" "#define HAVE_UUID_H 1" >>confdefs.h
+
 
   for ac_func in uuid_create uuid_enc_be
 do :
@@ -14070,7 +14068,9 @@ then :
   cat >>confdefs.h <<_ACEOF
 #define `printf "%s\n" "HAVE_$ac_func" | sed "$as_sed_cpp"` 1
 _ACEOF
- have_uuid=yes
+
+    have_uuid=yes
+    ac_cv_have_uuid_h=yes
     LIBUUID_CFLAGS=${LIBUUID_CFLAGS-""}
     LIBUUID_LIBS=${LIBUUID_LIBS-""}
 
@@ -14160,6 +14160,7 @@ if test "x$ac_cv_header_uuid_uuid_h" = xyes
 then :
   printf "%s\n" "#define HAVE_UUID_UUID_H 1" >>confdefs.h
 
+          ac_cv_have_uuid_uuid_h=yes
           py_check_lib_save_LIBS=$LIBS
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for uuid_generate_time in -luuid" >&5
 printf %s "checking for uuid_generate_time in -luuid... " >&6; }
@@ -14257,8 +14258,9 @@ fi
 printf "%s\n" "$ac_cv_lib_uuid_uuid_generate_time_safe" >&6; }
 if test "x$ac_cv_lib_uuid_uuid_generate_time_safe" = xyes
 then :
-  have_uuid=yes
-            printf "%s\n" "#define HAVE_UUID_GENERATE_TIME_SAFE 1" >>confdefs.h
+
+            have_uuid=yes
+            ac_cv_have_uuid_generate_time_safe=yes
 
 fi
 
@@ -14302,6 +14304,7 @@ if test "x$ac_cv_header_uuid_uuid_h" = xyes
 then :
   printf "%s\n" "#define HAVE_UUID_UUID_H 1" >>confdefs.h
 
+          ac_cv_have_uuid_uuid_h=yes
           py_check_lib_save_LIBS=$LIBS
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for uuid_generate_time in -luuid" >&5
 printf %s "checking for uuid_generate_time in -luuid... " >&6; }
@@ -14399,8 +14402,9 @@ fi
 printf "%s\n" "$ac_cv_lib_uuid_uuid_generate_time_safe" >&6; }
 if test "x$ac_cv_lib_uuid_uuid_generate_time_safe" = xyes
 then :
-  have_uuid=yes
-            printf "%s\n" "#define HAVE_UUID_GENERATE_TIME_SAFE 1" >>confdefs.h
+
+            have_uuid=yes
+            ac_cv_have_uuid_generate_time_safe=yes
 
 fi
 
@@ -14431,10 +14435,16 @@ else
         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
                     have_uuid=yes
-      printf "%s\n" "#define HAVE_UUID_H 1" >>confdefs.h
-
-      printf "%s\n" "#define HAVE_UUID_GENERATE_TIME_SAFE 1" >>confdefs.h
-
+      ac_cv_have_uuid_generate_time_safe=yes
+      # The uuid.h file to include may be <uuid.h> *or* <uuid/uuid.h>.
+      # Since pkg-config --cflags uuid may return -I/usr/include/uuid,
+      # it's possible to write '#include <uuid.h>' in _uuidmodule.c,
+      # assuming that the compiler flags are properly updated.
+      #
+      # Ideally, we should have defined HAVE_UUID_H if and only if
+      # #include <uuid.h> can be written, *without* assuming extra
+      # include path.
+      ac_cv_have_uuid_h=yes
 
 fi
 
@@ -14455,6 +14465,7 @@ if test "x$ac_cv_func_uuid_generate_time" = xyes
 then :
 
       have_uuid=yes
+      ac_cv_have_uuid_uuid_h=yes
       LIBUUID_CFLAGS=${LIBUUID_CFLAGS-""}
       LIBUUID_LIBS=${LIBUUID_LIBS-""}
 
@@ -14464,6 +14475,24 @@ fi
 fi
 
 done
+
+fi
+
+if test "x$ac_cv_have_uuid_h" = xyes
+then :
+  printf "%s\n" "#define HAVE_UUID_H 1" >>confdefs.h
+
+fi
+if test "x$ac_cv_have_uuid_uuid_h" = xyes
+then :
+  printf "%s\n" "#define HAVE_UUID_UUID_H 1" >>confdefs.h
+
+fi
+if test "x$ac_cv_have_uuid_generate_time_safe" = xyes
+then :
+
+  printf "%s\n" "#define HAVE_UUID_GENERATE_TIME_SAFE 1" >>confdefs.h
+
 
 fi
 
@@ -14478,6 +14507,164 @@ fi
 if test "x$have_uuid" = xmissing
 then :
   have_uuid=no
+fi
+
+# gh-132710: The UUID node is fetched by using libuuid when possible
+# and cached. While the node is constant within the same process,
+# different interpreters may have different values as libuuid may
+# randomize the node value if the latter cannot be deduced.
+#
+# Consumers may define HAVE_UUID_GENERATE_TIME_SAFE_STABLE_MAC
+# to indicate that libuuid is unstable and should not be relied
+# upon to deduce the MAC address.
+
+
+if test "$have_uuid" = "yes" -a "$HAVE_UUID_GENERATE_TIME_SAFE" = "1"
+then
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if uuid_generate_time_safe() node value is stable" >&5
+printf %s "checking if uuid_generate_time_safe() node value is stable... " >&6; }
+  save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+  # Be sure to add the extra include path if we used pkg-config
+  # as HAVE_UUID_H may be set even though <uuid.h> is only reachable
+  # by adding extra -I flags.
+  #
+  # If the following script does not compile, we simply assume that
+  # libuuid is missing.
+  CFLAGS="$CFLAGS $LIBUUID_CFLAGS"
+  LIBS="$LIBS $LIBUUID_LIBS"
+  if test "$cross_compiling" = yes
+then :
+
+
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+    #include <inttypes.h>   // PRIu64
+    #include <stdint.h>     // uint64_t
+    #include <stdio.h>      // fopen(), fclose()
+
+    #ifdef HAVE_UUID_H
+    #include <uuid.h>
+    #else
+    #include <uuid/uuid.h>
+    #endif
+
+    #define ERR 1
+    int main(void) {
+        uuid_t uuid;  // unsigned char[16]
+        (void)uuid_generate_time_safe(uuid);
+        uint64_t node = 0;
+        for (size_t i = 0; i < 6; i++) {
+            node |= (uint64_t)uuid[15 - i] << (8 * i);
+        }
+        FILE *fp = fopen("conftest.out", "w");
+        if (fp == NULL) {
+            return ERR;
+        }
+        int rc = fprintf(fp, "%" PRIu64 "\n", node) >= 0;
+        rc |= fclose(fp);
+        return rc == 0 ? 0 : ERR;
+    }
+_ACEOF
+if ac_fn_c_try_run "$LINENO"
+then :
+
+      py_cv_uuid_node1=`cat conftest.out`
+
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext ;;
+esac
+fi
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
+  save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+  # Be sure to add the extra include path if we used pkg-config
+  # as HAVE_UUID_H may be set even though <uuid.h> is only reachable
+  # by adding extra -I flags.
+  #
+  # If the following script does not compile, we simply assume that
+  # libuuid is missing.
+  CFLAGS="$CFLAGS $LIBUUID_CFLAGS"
+  LIBS="$LIBS $LIBUUID_LIBS"
+  if test "$cross_compiling" = yes
+then :
+
+
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+    #include <inttypes.h>   // PRIu64
+    #include <stdint.h>     // uint64_t
+    #include <stdio.h>      // fopen(), fclose()
+
+    #ifdef HAVE_UUID_H
+    #include <uuid.h>
+    #else
+    #include <uuid/uuid.h>
+    #endif
+
+    #define ERR 1
+    int main(void) {
+        uuid_t uuid;  // unsigned char[16]
+        (void)uuid_generate_time_safe(uuid);
+        uint64_t node = 0;
+        for (size_t i = 0; i < 6; i++) {
+            node |= (uint64_t)uuid[15 - i] << (8 * i);
+        }
+        FILE *fp = fopen("conftest.out", "w");
+        if (fp == NULL) {
+            return ERR;
+        }
+        int rc = fprintf(fp, "%" PRIu64 "\n", node) >= 0;
+        rc |= fclose(fp);
+        return rc == 0 ? 0 : ERR;
+    }
+_ACEOF
+if ac_fn_c_try_run "$LINENO"
+then :
+
+      py_cv_uuid_node2=`cat conftest.out`
+
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext ;;
+esac
+fi
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
+  if test -n "$py_cv_uuid_node1" -a "$py_cv_uuid_node1" = "$py_cv_uuid_node2"
+  then
+    printf "%s\n" "#define HAVE_UUID_GENERATE_TIME_SAFE_STABLE_MAC 1" >>confdefs.h
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: stable" >&5
+printf "%s\n" "stable" >&6; }
+  else
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: unstable" >&5
+printf "%s\n" "unstable" >&6; }
+  fi
 fi
 
 # 'Real Time' functions on Solaris
@@ -15558,7 +15745,7 @@ fi
 printf "%s\n" "$ac_cv_ffi_complex_double_supported" >&6; }
 if test "$ac_cv_ffi_complex_double_supported" = "yes"; then
 
-printf "%s\n" "#define Py_FFI_SUPPORT_C_COMPLEX 1" >>confdefs.h
+printf "%s\n" "#define _Py_FFI_SUPPORT_C_COMPLEX 1" >>confdefs.h
 
 fi
 
@@ -15566,10 +15753,18 @@ fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-system-libmpdec" >&5
 printf %s "checking for --with-system-libmpdec... " >&6; }
 
+
 # Check whether --with-system_libmpdec was given.
 if test ${with_system_libmpdec+y}
 then :
-  withval=$with_system_libmpdec;
+  withval=$with_system_libmpdec; if test "x$with_system_libmpdec" = xno
+then :
+  LIBMPDEC_CFLAGS="-I\$(srcdir)/Modules/_decimal/libmpdec"
+          LIBMPDEC_LIBS="-lm \$(LIBMPDEC_A)"
+          LIBMPDEC_INTERNAL="\$(LIBMPDEC_HEADERS) \$(LIBMPDEC_A)"
+          have_mpdec=yes
+          with_system_libmpdec=no
+fi
 else case e in #(
   e) with_system_libmpdec="yes" ;;
 esac
@@ -15577,8 +15772,6 @@ fi
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_system_libmpdec" >&5
 printf "%s\n" "$with_system_libmpdec" >&6; }
-
-
 
 if test "x$with_system_libmpdec" = xyes
 then :
@@ -15657,13 +15850,6 @@ else
 printf "%s\n" "yes" >&6; }
 
 fi
-else case e in #(
-  e) LIBMPDEC_CFLAGS="-I\$(srcdir)/Modules/_decimal/libmpdec"
-          LIBMPDEC_LIBS="-lm \$(LIBMPDEC_A)"
-          LIBMPDEC_INTERNAL="\$(LIBMPDEC_HEADERS) \$(LIBMPDEC_A)"
-          have_mpdec=yes
-          with_system_libmpdec=no ;;
-esac
 fi
 
 if test "x$with_system_libmpdec" = xyes
@@ -15710,21 +15896,6 @@ LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
 
 
-else case e in #(
-  e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: the bundled copy of libmpdecimal is scheduled for removal in Python 3.15; consider using a system installed mpdecimal library." >&5
-printf "%s\n" "$as_me: WARNING: the bundled copy of libmpdecimal is scheduled for removal in Python 3.15; consider using a system installed mpdecimal library." >&2;} ;;
-esac
-fi
-
-if test "$with_system_libmpdec" = "yes" && test "$have_mpdec" = "no"
-then :
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: no system libmpdecimal found; falling back to bundled libmpdecimal (deprecated and scheduled for removal in Python 3.15)" >&5
-printf "%s\n" "$as_me: WARNING: no system libmpdecimal found; falling back to bundled libmpdecimal (deprecated and scheduled for removal in Python 3.15)" >&2;}
-       LIBMPDEC_CFLAGS="-I\$(srcdir)/Modules/_decimal/libmpdec"
-          LIBMPDEC_LIBS="-lm \$(LIBMPDEC_A)"
-          LIBMPDEC_INTERNAL="\$(LIBMPDEC_HEADERS) \$(LIBMPDEC_A)"
-          have_mpdec=yes
-          with_system_libmpdec=no
 fi
 
 # Disable forced inlining in debug builds, see GH-94847
@@ -18890,7 +19061,7 @@ PLATFORM_OBJS=
 case $ac_sys_system in #(
   Emscripten) :
 
-    as_fn_append PLATFORM_OBJS ' Python/emscripten_signal.o Python/emscripten_trampoline.o'
+    as_fn_append PLATFORM_OBJS ' Python/emscripten_signal.o Python/emscripten_trampoline.o Python/emscripten_syscalls.o'
     as_fn_append PLATFORM_HEADERS ' $(srcdir)/Include/internal/pycore_emscripten_signal.h $(srcdir)/Include/internal/pycore_emscripten_trampoline.h'
    ;; #(
   *) :
@@ -19266,6 +19437,12 @@ ac_fn_c_check_func "$LINENO" "getlogin" "ac_cv_func_getlogin"
 if test "x$ac_cv_func_getlogin" = xyes
 then :
   printf "%s\n" "#define HAVE_GETLOGIN 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "getlogin_r" "ac_cv_func_getlogin_r"
+if test "x$ac_cv_func_getlogin_r" = xyes
+then :
+  printf "%s\n" "#define HAVE_GETLOGIN_R 1" >>confdefs.h
 
 fi
 ac_fn_c_check_func "$LINENO" "getpeername" "ac_cv_func_getpeername"
@@ -23652,6 +23829,33 @@ fi
 
 
 
+ac_fn_check_decl "$LINENO" "MAXLOGNAME" "ac_cv_have_decl_MAXLOGNAME" "#include <sys/param.h>
+" "$ac_c_undeclared_builtin_options" "CFLAGS"
+if test "x$ac_cv_have_decl_MAXLOGNAME" = xyes
+then :
+
+printf "%s\n" "#define HAVE_MAXLOGNAME 1" >>confdefs.h
+
+fi
+
+ac_fn_check_decl "$LINENO" "UT_NAMESIZE" "ac_cv_have_decl_UT_NAMESIZE" "#include <utmp.h>
+" "$ac_c_undeclared_builtin_options" "CFLAGS"
+if test "x$ac_cv_have_decl_UT_NAMESIZE" = xyes
+then :
+  ac_have_decl=1
+else case e in #(
+  e) ac_have_decl=0 ;;
+esac
+fi
+printf "%s\n" "#define HAVE_DECL_UT_NAMESIZE $ac_have_decl" >>confdefs.h
+if test $ac_have_decl = 1
+then :
+
+printf "%s\n" "#define HAVE_UT_NAMESIZE 1" >>confdefs.h
+
+fi
+
+
 # check for openpty, login_tty, and forkpty
 
 
@@ -28017,7 +28221,7 @@ printf "%s\n" "$ac_cv_normalize_century" >&6; }
 if test "$ac_cv_normalize_century" = yes
 then
 
-printf "%s\n" "#define Py_NORMALIZE_CENTURY 1" >>confdefs.h
+printf "%s\n" "#define _Py_NORMALIZE_CENTURY 1" >>confdefs.h
 
 fi
 
@@ -29716,9 +29920,6 @@ printf "%s\n" "#define Py_REMOTE_DEBUG 1" >>confdefs.h
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
 else
-
-printf "%s\n" "#define Py_REMOTE_DEBUG 0" >>confdefs.h
-
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
 fi
@@ -30648,8 +30849,8 @@ main (void)
 
       OBJ_nid2sn(NID_md5);
       OBJ_nid2sn(NID_sha1);
+      OBJ_nid2sn(NID_sha512);
       OBJ_nid2sn(NID_sha3_512);
-      OBJ_nid2sn(NID_blake2b512);
       EVP_PBE_scrypt(NULL, 0, NULL, 0, 2, 8, 1, 0, NULL, 0);
 
   ;
@@ -32366,6 +32567,14 @@ LIBHACL_CFLAGS="${LIBHACL_FLAG_I} ${LIBHACL_FLAG_D} \$(PY_STDMODULE_CFLAGS) \$(C
 LIBHACL_LDFLAGS=  # for now, no specific linker flags are needed
 
 
+if test "$UNIVERSAL_ARCHS" = "universal2" -o \
+   \( "$build_cpu" = "aarch64" -a "$build_vendor" = "apple" \)
+then
+  use_hacl_universal2_impl=yes
+else
+  use_hacl_universal2_impl=no
+fi
+
 # The SIMD files use aligned_alloc, which is not available on older versions of
 # Android.
 # The *mmintrin.h headers are x86-family-specific, so can't be used on WASI.
@@ -32411,7 +32620,7 @@ then :
     LIBHACL_SIMD128_FLAGS="-msse -msse2 -msse3 -msse4.1 -msse4.2"
 
 
-printf "%s\n" "#define HACL_CAN_COMPILE_SIMD128 1" >>confdefs.h
+printf "%s\n" "#define _Py_HACL_CAN_COMPILE_VEC128 1" >>confdefs.h
 
 
     # macOS universal2 builds *support* the -msse etc flags because they're
@@ -32419,7 +32628,7 @@ printf "%s\n" "#define HACL_CAN_COMPILE_SIMD128 1" >>confdefs.h
     # isn't great, so it's disabled on ARM64.
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for HACL* SIMD128 implementation" >&5
 printf %s "checking for HACL* SIMD128 implementation... " >&6; }
-    if test "$UNIVERSAL_ARCHS" == "universal2"; then
+    if test "$use_hacl_universal2_impl" = "yes"; then
       LIBHACL_BLAKE2_SIMD128_OBJS="Modules/_hacl/Hacl_Hash_Blake2s_Simd128_universal2.o"
       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: universal2" >&5
 printf "%s\n" "universal2" >&6; }
@@ -32487,7 +32696,7 @@ then :
 
     LIBHACL_SIMD256_FLAGS="-mavx2"
 
-printf "%s\n" "#define HACL_CAN_COMPILE_SIMD256 1" >>confdefs.h
+printf "%s\n" "#define _Py_HACL_CAN_COMPILE_VEC256 1" >>confdefs.h
 
 
     # macOS universal2 builds *support* the -mavx2 compiler flag because it's
@@ -32496,7 +32705,7 @@ printf "%s\n" "#define HACL_CAN_COMPILE_SIMD256 1" >>confdefs.h
     # wrapped implementation if we're building for universal2.
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for HACL* SIMD256 implementation" >&5
 printf %s "checking for HACL* SIMD256 implementation... " >&6; }
-    if test "$UNIVERSAL_ARCHS" == "universal2"; then
+    if test "$use_hacl_universal2_impl" = "yes"; then
       LIBHACL_BLAKE2_SIMD256_OBJS="Modules/_hacl/Hacl_Hash_Blake2b_Simd256_universal2.o"
       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: universal2" >&5
 printf "%s\n" "universal2" >&6; }
@@ -32970,6 +33179,18 @@ fi
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__decimal" >&5
 printf "%s\n" "$py_cv_module__decimal" >&6; }
+
+
+if test "x$with_system_libmpdec" = xno
+then :
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: the bundled copy of libmpdec is scheduled for removal in Python 3.16; consider using a system installed mpdecimal library." >&5
+printf "%s\n" "$as_me: WARNING: the bundled copy of libmpdec is scheduled for removal in Python 3.16; consider using a system installed mpdecimal library." >&2;}
+fi
+if test "$with_system_libmpdec" = "yes" && test "$have_mpdec" = "no"
+then :
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: no system libmpdec found; falling back to pure-Python version for the decimal module" >&5
+printf "%s\n" "$as_me: WARNING: no system libmpdec found; falling back to pure-Python version for the decimal module" >&2;}
+fi
 
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _dbm" >&5

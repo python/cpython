@@ -527,7 +527,7 @@ class CoroutineTest(unittest.TestCase):
 
     def test_gen_1(self):
         def gen(): yield
-        self.assertFalse(hasattr(gen, '__await__'))
+        self.assertNotHasAttr(gen, '__await__')
 
     def test_func_1(self):
         async def foo():
@@ -2307,7 +2307,7 @@ class CoroAsyncIOCompatTest(unittest.TestCase):
             pass
         finally:
             loop.close()
-            asyncio._set_event_loop_policy(None)
+            asyncio.events._set_event_loop_policy(None)
 
         self.assertEqual(buffer, [1, 2, 'MyException'])
 

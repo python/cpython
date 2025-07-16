@@ -81,6 +81,7 @@ class CAPITest(unittest.TestCase):
         # Test PyBytes_FromObject()
         fromobject = _testlimitedcapi.bytes_fromobject
 
+        self.assertEqual(fromobject(b''), b'')
         self.assertEqual(fromobject(b'abc'), b'abc')
         self.assertEqual(fromobject(bytearray(b'abc')), b'abc')
         self.assertEqual(fromobject(BytesSubclass(b'abc')), b'abc')
@@ -138,6 +139,7 @@ class CAPITest(unittest.TestCase):
         # Test PyBytes_Repr()
         bytes_repr = _testlimitedcapi.bytes_repr
 
+        self.assertEqual(bytes_repr(b'', 0), r"""b''""")
         self.assertEqual(bytes_repr(b'''abc''', 0), r"""b'abc'""")
         self.assertEqual(bytes_repr(b'''abc''', 1), r"""b'abc'""")
         self.assertEqual(bytes_repr(b'''a'b"c"d''', 0), r"""b'a\'b"c"d'""")
@@ -197,6 +199,7 @@ class CAPITest(unittest.TestCase):
         """Test PyBytes_DecodeEscape()"""
         decodeescape = _testlimitedcapi.bytes_decodeescape
 
+        self.assertEqual(decodeescape(b''), b'')
         self.assertEqual(decodeescape(b'abc'), b'abc')
         self.assertEqual(decodeescape(br'\t\n\r\x0b\x0c\x00\\\'\"'),
                          b'''\t\n\r\v\f\0\\'"''')
