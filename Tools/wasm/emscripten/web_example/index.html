@@ -248,12 +248,9 @@
                                 break;
                             case "\x03": // CTRL+C
                                 this.input = "";
-                                this.xterm.write("\n");
-                                this.xterm.write(
-                                    "\x1b[" + (this.cursorPosition + 4) + "D",
-                                );
                                 this.cursorPosition = 0;
-                                this.resolveInput("" + "\n");
+                                this.historyIndex = -1;
+                                this.resolveInput("__WASM_REPL_CTRLC__\n");
                                 break;
                             case "\x09": // TAB
                                 this.handleTab();
@@ -456,13 +453,16 @@
                         // Hack to ensure cursor input start doesn't end up after user input
                         setTimeout(() => {
                             this.handleCursorInsert(
-                                this.inputBuffer.nextLine(),
+                                this.inputBuffer.nextLine()
                             );
                         }, 1);
                     }
                     return new Promise((resolve, reject) => {
                         this.resolveInput = (value) => {
-                            if (value.replace(/\s/g, "").length != 0) {
+                            if (
+                                value.replace(/\s/g, "").length != 0 &&
+                                value != "__WASM_REPL_CTRLC__\n"
+                            ) {
                                 if (this.historyIndex !== -1) {
                                     this.historyBuffer[this.historyIndex] =
                                         this.history[this.historyIndex];
@@ -575,10 +575,27 @@
                 replButton.addEventListener("click", (e) => {
                     terminal.clear();
                     terminal.reset(); // reset the history
+                    const REPL = `
+class WASMREPLKeyboardInterrupt(KeyboardInterrupt):
+    pass
+
+import sys
+import code
+import builtins
+
+def _interrupt_aware_input(prompt=''):
+    line = builtins.input(prompt)
+    if line.strip() == '__WASM_REPL_CTRLC__':
+        raise KeyboardInterrupt()
+    return line
+
+cprt = 'Type "help", "copyright", "credits" or "license" for more information.'
+banner = f'Python {sys.version} on {sys.platform}\\n{cprt}'
+
+code.interact(banner=banner, readfunc=_interrupt_aware_input, exitmsg='')
+`;
                     programRunning(true);
-                    // Need to use "-i -" to force interactive mode.
-                    // Looks like isatty always returns false in emscripten
-                    pythonWorkerManager.run({ args: ["-i", "-"], files: {} });
+                    pythonWorkerManager.run({ args: ["-c", REPL], files: {} });
                 });
 
                 stopButton.addEventListener("click", (e) => {
