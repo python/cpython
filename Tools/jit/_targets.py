@@ -86,13 +86,12 @@ class _Target(typing.Generic[_S, _R]):
             lines = output.splitlines()
             started = False
             for line in lines:
-                if not started:
-                    if "_JIT_ENTRY" not in line:
-                        continue
+                if line.lstrip().startswith("0:"):
                     started = True
-                cleaned = line.replace(long, short).expandtabs().strip()
-                if cleaned:
-                    group.code.disassembly.append(cleaned)
+                if started:
+                    cleaned = line.replace(long, short).expandtabs().strip()
+                    if cleaned:
+                        group.code.disassembly.append(cleaned)
         args = [
             "--elf-output-style=JSON",
             "--expand-relocs",

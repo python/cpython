@@ -3,7 +3,6 @@ emit_shim(
     unsigned char *code, unsigned char *data, _PyExecutorObject *executor,
     const _PyUOpInstruction *instruction, jit_state *state)
 {
-    // 0000000000000000 <_JIT_ENTRY>:
     // 0: 6db63bef      stp     d15, d14, [sp, #-0xa0]!
     // 4: a90857f6      stp     x22, x21, [sp, #0x80]
     // 8: aa0103f5      mov     x21, x1
@@ -59,7 +58,6 @@ emit_1(
     unsigned char *code, unsigned char *data, _PyExecutorObject *executor,
     const _PyUOpInstruction *instruction, jit_state *state)
 {
-    // 0000000000000000 <_JIT_ENTRY>:
     // 0: f81f0ffe      str     x30, [sp, #-0x10]!
     // 4: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 0000000000000004:  IMAGE_REL_ARM64_PAGEBASE_REL21       __imp_sausage
@@ -113,7 +111,6 @@ emit_2(
     unsigned char *code, unsigned char *data, _PyExecutorObject *executor,
     const _PyUOpInstruction *instruction, jit_state *state)
 {
-    // 0000000000000000 <_JIT_ENTRY>:
     // 0: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 0000000000000000:  IMAGE_REL_ARM64_PAGEBASE_REL21       __imp_spam
     // 4: f9400108      ldr     x8, [x8]

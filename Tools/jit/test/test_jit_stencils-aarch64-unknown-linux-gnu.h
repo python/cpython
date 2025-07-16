@@ -3,7 +3,6 @@ emit_shim(
     unsigned char *code, unsigned char *data, _PyExecutorObject *executor,
     const _PyUOpInstruction *instruction, jit_state *state)
 {
-    // 0000000000000000 <_JIT_ENTRY>:
     // 0: 6db63bef      stp     d15, d14, [sp, #-0xa0]!
     // 4: a90857f6      stp     x22, x21, [sp, #0x80]
     // 8: aa0103f5      mov     x21, x1
@@ -60,7 +59,6 @@ emit_1(
     unsigned char *code, unsigned char *data, _PyExecutorObject *executor,
     const _PyUOpInstruction *instruction, jit_state *state)
 {
-    // 0000000000000000 <_JIT_ENTRY>:
     // 0: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
     // 4: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 0000000000000004:  R_AARCH64_ADR_GOT_PAGE       sausage
@@ -116,7 +114,6 @@ emit_2(
     unsigned char *code, unsigned char *data, _PyExecutorObject *executor,
     const _PyUOpInstruction *instruction, jit_state *state)
 {
-    // 0000000000000000 <_JIT_ENTRY>:
     // 0: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 0000000000000000:  R_AARCH64_ADR_GOT_PAGE       spam
     // 4: f9400108      ldr     x8, [x8]

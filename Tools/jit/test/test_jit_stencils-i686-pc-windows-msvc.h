@@ -10,7 +10,6 @@ emit_0(
     unsigned char *code, unsigned char *data, _PyExecutorObject *executor,
     const _PyUOpInstruction *instruction, jit_state *state)
 {
-    // 00000000 <__JIT_ENTRY>:
     // 0: 8b 44 24 0c                   movl    0xc(%esp), %eax
     // 4: 8b 4c 24 08                   movl    0x8(%esp), %ecx
     // 8: 8b 54 24 04                   movl    0x4(%esp), %edx
@@ -30,7 +29,6 @@ emit_1(
     unsigned char *code, unsigned char *data, _PyExecutorObject *executor,
     const _PyUOpInstruction *instruction, jit_state *state)
 {
-    // 00000000 <__JIT_ENTRY>:
     // 0: 53                            pushl   %ebx
     // 1: 57                            pushl   %edi
     // 2: 56                            pushl   %esi
@@ -75,7 +73,6 @@ emit_2(
     unsigned char *code, unsigned char *data, _PyExecutorObject *executor,
     const _PyUOpInstruction *instruction, jit_state *state)
 {
-    // 00000000 <__JIT_ENTRY>:
     // 0: 8b 54 24 0c                   movl    0xc(%esp), %edx
     // 4: 8b 4c 24 08                   movl    0x8(%esp), %ecx
     // 8: 8b 44 24 04                   movl    0x4(%esp), %eax

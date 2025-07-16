@@ -3,7 +3,6 @@ emit_shim(
     unsigned char *code, unsigned char *data, _PyExecutorObject *executor,
     const _PyUOpInstruction *instruction, jit_state *state)
 {
-    // 0000000000000000 <_JIT_ENTRY>:
     // 0: 41 57                         pushq   %r15
     // 2: 41 56                         pushq   %r14
     // 4: 41 55                         pushq   %r13
@@ -41,7 +40,6 @@ emit_1(
     unsigned char *code, unsigned char *data, _PyExecutorObject *executor,
     const _PyUOpInstruction *instruction, jit_state *state)
 {
-    // 0000000000000000 <_JIT_ENTRY>:
     // 0: 50                            pushq   %rax
     // 1: 48 b8 00 00 00 00 00 00 00 00 movabsq $0x0, %rax
     // 0000000000000003:  R_X86_64_64  sausage
@@ -80,7 +78,6 @@ emit_2(
     unsigned char *code, unsigned char *data, _PyExecutorObject *executor,
     const _PyUOpInstruction *instruction, jit_state *state)
 {
-    // 0000000000000000 <_JIT_ENTRY>:
     // 0: 48 b8 00 00 00 00 00 00 00 00 movabsq $0x0, %rax
     // 0000000000000002:  R_X86_64_64  spam
     // a: 80 38 01                      cmpb    $0x1, (%rax)
