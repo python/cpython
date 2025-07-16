@@ -3477,12 +3477,12 @@ Change the current working directory to the specified path.
 
 path may always be specified as a string.
 On some platforms, path may also be specified as an open file descriptor.
-  If this functionality is unavailable, using it raises an exception.
+If this functionality is unavailable, using it raises an exception.
 [clinic start generated code]*/
 
 static PyObject *
 os_chdir_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=3be6400eee26eaae input=1a4a15b4d12cb15d]*/
+/*[clinic end generated code: output=3be6400eee26eaae input=a74ceab5d72adf74]*/
 {
     int result;
 
