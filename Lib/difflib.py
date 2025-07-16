@@ -365,6 +365,12 @@ class SequenceMatcher:
             ahi = len(a)
         if bhi is None:
             bhi = len(b)
+
+        # Check if both sequences are the same before executing rest of the
+        # method.
+        if a[alo:ahi] == b[blo:bhi]:
+            return Match(alo, blo, len(a[alo:ahi]))
+
         besti, bestj, bestsize = alo, blo, 0
         # find longest junk-free match
         # during an iteration of the loop, j2len[j] = length of longest
