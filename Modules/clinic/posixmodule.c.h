@@ -380,7 +380,7 @@ PyDoc_STRVAR(os_chdir__doc__,
 "\n"
 "path may always be specified as a string.\n"
 "On some platforms, path may also be specified as an open file descriptor.\n"
-"  If this functionality is unavailable, using it raises an exception.");
+"If this functionality is unavailable, using it raises an exception.");
 
 #define OS_CHDIR_METHODDEF    \
     {"chdir", _PyCFunction_CAST(os_chdir), METH_FASTCALL|METH_KEYWORDS, os_chdir__doc__},
@@ -13398,4 +13398,4 @@ os__emscripten_debugger(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__EMSCRIPTEN_DEBUGGER_METHODDEF
     #define OS__EMSCRIPTEN_DEBUGGER_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_DEBUGGER_METHODDEF) */
-/*[clinic end generated code: output=f7b5635e0b948be4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c693071966d11548 input=a9049054013a1b77]*/
