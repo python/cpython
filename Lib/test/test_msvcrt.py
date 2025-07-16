@@ -116,7 +116,9 @@ class TestOther(unittest.TestCase):
             pass
 
     def test_GetErrorMode(self):
-        msvcrt.GetErrorMode()
+        errmode = msvcrt.GetErrorMode()
+        self.assertIsInstance(errmode, int)
+        self.assertGreaterEqual(errmode, 0)
 
     def test_SetErrorMode(self):
         old = msvcrt.GetErrorMode()
