@@ -136,7 +136,10 @@ class TestOther(unittest.TestCase):
         returned = msvcrt.set_error_mode(msvcrt.OUT_TO_STDERR)
         self.assertIs(type(returned), int)
         self.assertNotEqual(returned, -1)
-        self.assertEqual(old, returned)
+
+        returned = msvcrt.set_error_mode(msvcrt.REPORT_ERRMODE)
+        self.assertIs(type(returned), int)
+        self.assertEqual(returned, msvcrt.OUT_TO_STDERR)
 
     @unittest.skipUnless(Py_DEBUG, "only available under debug build")
     def test_CrtSetReportMode(self):
