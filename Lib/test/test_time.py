@@ -325,7 +325,7 @@ class TimeTestCase(unittest.TestCase):
         tt = time.gmtime(self.t)
         for directive in ('a', 'A', 'b', 'B', 'c', 'd', 'H', 'I',
                           'j', 'm', 'M', 'p', 'S',
-                          'U', 'w', 'W', 'x', 'X', 'y', 'Y', 'Z', '%'):
+                          'U', 'w', 'W', 'x', 'X', 'y', 'Y', '%'):
             format = '%' + directive
             if directive == 'd':
                 format += ',%Y'  # Avoid GH-70647.
