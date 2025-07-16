@@ -160,8 +160,9 @@ class TestTString(unittest.TestCase, TStringBaseCase):
 
         # Test template + string
         t1 = t"Hello"
-        expected_msg = 'can only concatenate Template (not "str") to Template'
-        with self.assertRaises(TypeError, msg=expected_msg):
+        expected_msg = 'can only concatenate string.templatelib.Template ' \
+            '\\(not "str"\\) to string.templatelib.Template'
+        with self.assertRaisesRegex(TypeError, expected_msg):
             t1 + ", world"
 
         # Test template + template with interpolation
@@ -173,8 +174,9 @@ class TestTString(unittest.TestCase, TStringBaseCase):
         self.assertEqual(fstring(combined), "Hello, Python")
 
         # Test string + template
-        expected_msg = 'can only concatenate str (not "string.templatelib.Template") to str'
-        with self.assertRaises(TypeError, msg=expected_msg):
+        expected_msg = 'can only concatenate str ' \
+            '\\(not "string.templatelib.Template"\\) to str'
+        with self.assertRaisesRegex(TypeError, expected_msg):
             "Hello, " + t"{name}"
 
     def test_nested_templates(self):
