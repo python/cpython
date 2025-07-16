@@ -135,15 +135,21 @@ complex_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
     PyObject *r = NULL;
     PyObject *i = NULL;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
-            /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (kwargs || 0 > nargs || nargs > 2) {
+        PyObject *argsbuf[2];
+
+        fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+                /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    }
+    else {
+        fastargs = _PyTuple_CAST(args)->ob_item;
+    }
     if (!fastargs) {
         goto exit;
     }
@@ -185,4 +191,4 @@ complex_from_number(PyObject *type, PyObject *number)
 
     return return_value;
 }
-/*[clinic end generated code: output=05d2ff43fc409733 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e589b5de90763a32 input=a9049054013a1b77]*/

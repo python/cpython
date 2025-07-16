@@ -51,13 +51,16 @@ OrderedDict_fromkeys(PyObject *type, PyObject *const *args, Py_ssize_t nargs, Py
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *seq;
     PyObject *value = Py_None;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (kwnames || 1 > nargs || nargs > 2 || !args) {
+        PyObject *argsbuf[2];
+
+        args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+                /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    }
     if (!args) {
         goto exit;
     }
@@ -119,13 +122,16 @@ OrderedDict_setdefault(PyObject *self, PyObject *const *args, Py_ssize_t nargs, 
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *key;
     PyObject *default_value = Py_None;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (kwnames || 1 > nargs || nargs > 2 || !args) {
+        PyObject *argsbuf[2];
+
+        args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+                /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    }
     if (!args) {
         goto exit;
     }
@@ -188,13 +194,16 @@ OrderedDict_pop(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObjec
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *key;
     PyObject *default_value = NULL;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (kwnames || 1 > nargs || nargs > 2 || !args) {
+        PyObject *argsbuf[2];
+
+        args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+                /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    }
     if (!args) {
         goto exit;
     }
@@ -255,12 +264,15 @@ OrderedDict_popitem(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyO
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int last = 1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (kwnames || 0 > nargs || nargs > 1 || !args) {
+        PyObject *argsbuf[1];
+
+        args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+                /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    }
     if (!args) {
         goto exit;
     }
@@ -323,13 +335,16 @@ OrderedDict_move_to_end(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *key;
     int last = 1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (kwnames || 1 > nargs || nargs > 2 || !args) {
+        PyObject *argsbuf[2];
+
+        args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+                /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    }
     if (!args) {
         goto exit;
     }
@@ -347,4 +362,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=7d8206823bb1f419 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d13ab2895bd422e8 input=a9049054013a1b77]*/

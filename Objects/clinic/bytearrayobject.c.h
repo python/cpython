@@ -45,7 +45,6 @@ bytearray___init__(PyObject *self, PyObject *args, PyObject *kwargs)
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[3];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
@@ -53,8 +52,15 @@ bytearray___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     const char *encoding = NULL;
     const char *errors = NULL;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
-            /*minpos*/ 0, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (kwargs || 0 > nargs || nargs > 3) {
+        PyObject *argsbuf[3];
+
+        fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+                /*minpos*/ 0, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    }
+    else {
+        fastargs = _PyTuple_CAST(args)->ob_item;
+    }
     if (!fastargs) {
         goto exit;
     }
@@ -681,13 +687,16 @@ bytearray_translate(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyO
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *table;
     PyObject *deletechars = NULL;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (kwnames || 1 > nargs || nargs > 2 || !args) {
+        PyObject *argsbuf[2];
+
+        args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+                /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    }
     if (!args) {
         goto exit;
     }
@@ -875,13 +884,16 @@ bytearray_split(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObjec
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *sep = Py_None;
     Py_ssize_t maxsplit = -1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (kwnames || 0 > nargs || nargs > 2 || !args) {
+        PyObject *argsbuf[2];
+
+        args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+                /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    }
     if (!args) {
         goto exit;
     }
@@ -1032,13 +1044,16 @@ bytearray_rsplit(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *sep = Py_None;
     Py_ssize_t maxsplit = -1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (kwnames || 0 > nargs || nargs > 2 || !args) {
+        PyObject *argsbuf[2];
+
+        args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+                /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    }
     if (!args) {
         goto exit;
     }
@@ -1449,13 +1464,16 @@ bytearray_decode(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     const char *encoding = NULL;
     const char *errors = NULL;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (kwnames || 0 > nargs || nargs > 2 || !args) {
+        PyObject *argsbuf[2];
+
+        args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+                /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    }
     if (!args) {
         goto exit;
     }
@@ -1576,12 +1594,15 @@ bytearray_splitlines(PyObject *self, PyObject *const *args, Py_ssize_t nargs, Py
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int keepends = 0;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (kwnames || 0 > nargs || nargs > 1 || !args) {
+        PyObject *argsbuf[1];
+
+        args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+                /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    }
     if (!args) {
         goto exit;
     }
@@ -1686,13 +1707,16 @@ bytearray_hex(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject 
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *sep = NULL;
     int bytes_per_sep = 1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (kwnames || 0 > nargs || nargs > 2 || !args) {
+        PyObject *argsbuf[2];
+
+        args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+                /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    }
     if (!args) {
         goto exit;
     }
@@ -1796,4 +1820,4 @@ bytearray_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl((PyByteArrayObject *)self);
 }
-/*[clinic end generated code: output=be6d28193bc96a2c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=64bb08066b66c635 input=a9049054013a1b77]*/

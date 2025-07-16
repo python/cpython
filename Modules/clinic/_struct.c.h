@@ -54,13 +54,19 @@ Struct___init__(PyObject *self, PyObject *args, PyObject *kwargs)
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     PyObject *format;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (kwargs || 1 > nargs || nargs > 1) {
+        PyObject *argsbuf[1];
+
+        fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+                /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    }
+    else {
+        fastargs = _PyTuple_CAST(args)->ob_item;
+    }
     if (!fastargs) {
         goto exit;
     }
@@ -159,13 +165,16 @@ Struct_unpack_from(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     Py_buffer buffer = {NULL, NULL};
     Py_ssize_t offset = 0;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (kwnames || 1 > nargs || nargs > 2 || !args) {
+        PyObject *argsbuf[2];
+
+        args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+                /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    }
     if (!args) {
         goto exit;
     }
@@ -372,14 +381,17 @@ unpack_from(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     PyStructObject *s_object = NULL;
     Py_buffer buffer = {NULL, NULL};
     Py_ssize_t offset = 0;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 2, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (kwnames || 2 > nargs || nargs > 3 || !args) {
+        PyObject *argsbuf[3];
+
+        args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+                /*minpos*/ 2, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    }
     if (!args) {
         goto exit;
     }
@@ -458,4 +470,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=caa7f36443e91cb9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=19441321a3d3728d input=a9049054013a1b77]*/

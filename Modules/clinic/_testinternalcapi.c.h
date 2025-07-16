@@ -51,11 +51,14 @@ _testinternalcapi_compiler_cleandoc(PyObject *module, PyObject *const *args, Py_
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *doc;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (kwnames || 1 > nargs || nargs > 1 || !args) {
+        PyObject *argsbuf[1];
+
+        args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+                /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    }
     if (!args) {
         goto exit;
     }
@@ -133,15 +136,18 @@ _testinternalcapi_compiler_codegen(PyObject *module, PyObject *const *args, Py_s
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[4];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 3;
     PyObject *ast;
     PyObject *filename;
     int optimize;
     int compile_mode = 0;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 3, /*maxpos*/ 4, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (kwnames || 3 > nargs || nargs > 4 || !args) {
+        PyObject *argsbuf[4];
+
+        args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+                /*minpos*/ 3, /*maxpos*/ 4, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    }
     if (!args) {
         goto exit;
     }
@@ -209,13 +215,16 @@ _testinternalcapi_optimize_cfg(PyObject *module, PyObject *const *args, Py_ssize
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[3];
     PyObject *instructions;
     PyObject *consts;
     int nlocals;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 3, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (kwnames || 3 > nargs || nargs > 3 || !args) {
+        PyObject *argsbuf[3];
+
+        args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+                /*minpos*/ 3, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    }
     if (!args) {
         goto exit;
     }
@@ -277,13 +286,16 @@ _testinternalcapi_assemble_code_object(PyObject *module, PyObject *const *args, 
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[3];
     PyObject *filename;
     PyObject *instructions;
     PyObject *metadata;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 3, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (kwnames || 3 > nargs || nargs > 3 || !args) {
+        PyObject *argsbuf[3];
+
+        args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+                /*minpos*/ 3, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    }
     if (!args) {
         goto exit;
     }
@@ -356,12 +368,15 @@ gh_119213_getargs(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *spam = Py_None;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (kwnames || 0 > nargs || nargs > 1 || !args) {
+        PyObject *argsbuf[1];
+
+        args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+                /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    }
     if (!args) {
         goto exit;
     }
@@ -392,4 +407,4 @@ get_next_dict_keys_version(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return get_next_dict_keys_version_impl(module);
 }
-/*[clinic end generated code: output=fbd8b7e0cae8bac7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=24e5fb8a7a3cb338 input=a9049054013a1b77]*/

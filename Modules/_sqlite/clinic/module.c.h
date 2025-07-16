@@ -51,11 +51,14 @@ pysqlite_complete_statement(PyObject *module, PyObject *const *args, Py_ssize_t 
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
     const char *statement;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (kwnames || 1 > nargs || nargs > 1 || !args) {
+        PyObject *argsbuf[1];
+
+        args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+                /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    }
     if (!args) {
         goto exit;
     }
@@ -211,4 +214,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=17c4e031680a5168 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=588b7ca6f4837c6e input=a9049054013a1b77]*/

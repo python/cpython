@@ -1,0 +1,2 @@
+Optimize calling builtins, accepting positional or keyword arguments in case
+no keyword arguments provided.  Patch by Sergey B Kirpichev.

@@ -214,12 +214,15 @@ pysqlite_cursor_fetchmany(PyObject *self, PyObject *const *args, Py_ssize_t narg
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int maxrows = ((pysqlite_Cursor *)self)->arraysize;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (kwnames || 0 > nargs || nargs > 1 || !args) {
+        PyObject *argsbuf[1];
+
+        args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+                /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    }
     if (!args) {
         goto exit;
     }
@@ -329,4 +332,4 @@ pysqlite_cursor_close(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return pysqlite_cursor_close_impl((pysqlite_Cursor *)self);
 }
-/*[clinic end generated code: output=d05c7cbbc8bcab26 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fce9132d1593b58c input=a9049054013a1b77]*/

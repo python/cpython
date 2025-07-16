@@ -50,12 +50,15 @@ _ssl_Certificate_public_bytes(PyObject *self, PyObject *const *args, Py_ssize_t 
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int format = PY_SSL_ENCODING_PEM;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (kwnames || 0 > nargs || nargs > 1 || !args) {
+        PyObject *argsbuf[1];
+
+        args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+                /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    }
     if (!args) {
         goto exit;
     }
@@ -89,4 +92,4 @@ _ssl_Certificate_get_info(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _ssl_Certificate_get_info_impl((PySSLCertificate *)self);
 }
-/*[clinic end generated code: output=bab2dba7dbc1523c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=67ff321bb2bbe1fc input=a9049054013a1b77]*/

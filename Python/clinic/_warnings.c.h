@@ -102,7 +102,6 @@ warnings_warn(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *message;
     PyObject *category = Py_None;
@@ -110,8 +109,12 @@ warnings_warn(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     PyObject *source = Py_None;
     PyTupleObject *skip_file_prefixes = NULL;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 4, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (kwnames || 1 > nargs || nargs > 4 || !args) {
+        PyObject *argsbuf[5];
+
+        args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+                /*minpos*/ 1, /*maxpos*/ 4, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    }
     if (!args) {
         goto exit;
     }
@@ -212,7 +215,6 @@ warnings_warn_explicit(PyObject *module, PyObject *const *args, Py_ssize_t nargs
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[8];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 4;
     PyObject *message;
     PyObject *category;
@@ -223,8 +225,12 @@ warnings_warn_explicit(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     PyObject *module_globals = Py_None;
     PyObject *sourceobj = Py_None;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 4, /*maxpos*/ 8, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (kwnames || 4 > nargs || nargs > 8 || !args) {
+        PyObject *argsbuf[8];
+
+        args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+                /*minpos*/ 4, /*maxpos*/ 8, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    }
     if (!args) {
         goto exit;
     }
@@ -284,4 +290,4 @@ warnings_filters_mutated_lock_held(PyObject *module, PyObject *Py_UNUSED(ignored
 {
     return warnings_filters_mutated_lock_held_impl(module);
 }
-/*[clinic end generated code: output=610ed5764bf40bb5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=adea2e6cc7908afb input=a9049054013a1b77]*/

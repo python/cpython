@@ -43,10 +43,10 @@ tokenizeriter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[3];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 2;
+    PyObject *argsbuf[3];
     PyObject *readline;
     int extra_tokens;
     const char *encoding = NULL;
@@ -83,4 +83,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=4c448f34d9c835c0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=efebc406c48474a8 input=a9049054013a1b77]*/

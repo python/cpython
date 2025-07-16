@@ -204,7 +204,6 @@ code_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[18];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int co_argcount = ((PyCodeObject *)self)->co_argcount;
     int co_posonlyargcount = ((PyCodeObject *)self)->co_posonlyargcount;
@@ -225,8 +224,12 @@ code_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *
     PyObject *co_linetable = ((PyCodeObject *)self)->co_linetable;
     PyObject *co_exceptiontable = ((PyCodeObject *)self)->co_exceptiontable;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 0, /*maxpos*/ 0, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (kwnames || 0 > nargs || nargs > 0 || !args) {
+        PyObject *argsbuf[18];
+
+        args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+                /*minpos*/ 0, /*maxpos*/ 0, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    }
     if (!args) {
         goto exit;
     }
@@ -453,11 +456,14 @@ code__varname_from_oparg(PyObject *self, PyObject *const *args, Py_ssize_t nargs
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
     int oparg;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (kwnames || 1 > nargs || nargs > 1 || !args) {
+        PyObject *argsbuf[1];
+
+        args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+                /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    }
     if (!args) {
         goto exit;
     }
@@ -470,4 +476,4 @@ code__varname_from_oparg(PyObject *self, PyObject *const *args, Py_ssize_t nargs
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c5c6e40fc357defe input=a9049054013a1b77]*/
+/*[clinic end generated code: output=271916d5ae080b07 input=a9049054013a1b77]*/

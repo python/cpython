@@ -622,7 +622,6 @@ class ParseArgsCodeGen:
                 self.flags = "METH_FASTCALL|METH_KEYWORDS"
                 self.parser_prototype = PARSER_PROTOTYPE_FASTCALL_KEYWORDS
                 self.declarations = declare_parser(self.func, codegen=self.codegen)
-                self.declarations += "\nPyObject *argsbuf[%s];" % (len(self.converters) or 1)
                 if self.varpos:
                     self.declarations += "\nPyObject * const *fastargs;"
                     argsname = 'fastargs'
@@ -633,6 +632,27 @@ class ParseArgsCodeGen:
                 if has_optional_kw:
                     self.declarations += "\nPy_ssize_t noptargs = %s + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - %d;" % (nargs, self.min_pos + self.min_kw_only)
                 unpack_args = 'args, nargs, NULL, kwnames'
+                if self.min_kw_only or self.varpos:
+                    self.declarations += "\nPyObject *argsbuf[%s];" % (len(self.converters) or 1)
+                    parser_code = [libclinic.normalize_snippet(f"""
+                        {argsname} = _PyArg_UnpackKeywords({unpack_args}, &_parser,
+                                /*minpos*/ {self.min_pos}, /*maxpos*/ {self.max_pos}, /*minkw*/ {self.min_kw_only}, /*varpos*/ {1 if self.varpos else 0}, argsbuf);
+                        if (!{argsname}) {{{{
+                            goto exit;
+                        }}}}
+                        """, indent=4)]
+                else:
+                    parser_code = [libclinic.normalize_snippet(f"""
+                        if (kwnames || {self.min_pos} > nargs || nargs > {self.max_pos} || !args) {{{{
+                            PyObject *argsbuf[{len(self.converters) or 1}];
+
+                            {argsname} = _PyArg_UnpackKeywords({unpack_args}, &_parser,
+                                    /*minpos*/ {self.min_pos}, /*maxpos*/ {self.max_pos}, /*minkw*/ {self.min_kw_only}, /*varpos*/ {1 if self.varpos else 0}, argsbuf);
+                        }}}}
+                        if (!{argsname}) {{{{
+                            goto exit;
+                        }}}}
+                        """, indent=4)]
             else:
                 # positional-or-keyword arguments
                 self.flags = "METH_VARARGS|METH_KEYWORDS"
@@ -640,19 +660,35 @@ class ParseArgsCodeGen:
                 argsname = 'fastargs'
                 argname_fmt = 'fastargs[%d]'
                 self.declarations = declare_parser(self.func, codegen=self.codegen)
-                self.declarations += "\nPyObject *argsbuf[%s];" % (len(self.converters) or 1)
                 self.declarations += "\nPyObject * const *fastargs;"
                 self.declarations += "\nPy_ssize_t nargs = PyTuple_GET_SIZE(args);"
                 if has_optional_kw:
                     self.declarations += "\nPy_ssize_t noptargs = %s + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - %d;" % (nargs, self.min_pos + self.min_kw_only)
                 unpack_args = '_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL'
-            parser_code = [libclinic.normalize_snippet(f"""
-                {argsname} = _PyArg_UnpackKeywords({unpack_args}, &_parser,
-                        /*minpos*/ {self.min_pos}, /*maxpos*/ {self.max_pos}, /*minkw*/ {self.min_kw_only}, /*varpos*/ {1 if self.varpos else 0}, argsbuf);
-                if (!{argsname}) {{{{
-                    goto exit;
-                }}}}
-                """, indent=4)]
+                if self.min_kw_only:
+                    self.declarations += "\nPyObject *argsbuf[%s];" % (len(self.converters) or 1)
+                    parser_code = [libclinic.normalize_snippet(f"""
+                        {argsname} = _PyArg_UnpackKeywords({unpack_args}, &_parser,
+                                /*minpos*/ {self.min_pos}, /*maxpos*/ {self.max_pos}, /*minkw*/ {self.min_kw_only}, /*varpos*/ {1 if self.varpos else 0}, argsbuf);
+                        if (!{argsname}) {{{{
+                            goto exit;
+                        }}}}
+                        """, indent=4)]
+                else:
+                    parser_code = [libclinic.normalize_snippet(f"""
+                        if (kwargs || {self.min_pos} > nargs || nargs > {self.max_pos}) {{{{
+                            PyObject *argsbuf[{len(self.converters) or 1}];
+
+                            {argsname} = _PyArg_UnpackKeywords({unpack_args}, &_parser,
+                                    /*minpos*/ {self.min_pos}, /*maxpos*/ {self.max_pos}, /*minkw*/ {self.min_kw_only}, /*varpos*/ {1 if self.varpos else 0}, argsbuf);
+                        }}}}
+                        else {{{{
+                            {argsname} = _PyTuple_CAST(args)->ob_item;
+                        }}}}
+                        if (!{argsname}) {{{{
+                            goto exit;
+                        }}}}
+                        """, indent=4)]
 
         if self.requires_defining_class:
             self.flags = 'METH_METHOD|' + self.flags

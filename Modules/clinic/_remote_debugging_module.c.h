@@ -71,7 +71,6 @@ _remote_debugging_RemoteUnwinder___init__(PyObject *self, PyObject *args, PyObje
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[4];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
@@ -80,8 +79,15 @@ _remote_debugging_RemoteUnwinder___init__(PyObject *self, PyObject *args, PyObje
     int only_active_thread = 0;
     int debug = 0;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (kwargs || 1 > nargs || nargs > 1) {
+        PyObject *argsbuf[4];
+
+        fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+                /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    }
+    else {
+        fastargs = _PyTuple_CAST(args)->ob_item;
+    }
     if (!fastargs) {
         goto exit;
     }
@@ -288,4 +294,4 @@ _remote_debugging_RemoteUnwinder_get_async_stack_trace(PyObject *self, PyObject 
 
     return return_value;
 }
-/*[clinic end generated code: output=0dd1e6e8bab2a8b1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1c8e6dce8168fa67 input=a9049054013a1b77]*/

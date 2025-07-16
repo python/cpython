@@ -50,7 +50,6 @@ tb_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[4];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     PyObject *tb_next;
@@ -58,8 +57,15 @@ tb_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     int tb_lasti;
     int tb_lineno;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
-            /*minpos*/ 4, /*maxpos*/ 4, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (kwargs || 4 > nargs || nargs > 4) {
+        PyObject *argsbuf[4];
+
+        fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+                /*minpos*/ 4, /*maxpos*/ 4, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    }
+    else {
+        fastargs = _PyTuple_CAST(args)->ob_item;
+    }
     if (!fastargs) {
         goto exit;
     }
@@ -132,4 +138,4 @@ traceback_tb_next_set(PyObject *self, PyObject *value, void *Py_UNUSED(context))
 
     return return_value;
 }
-/*[clinic end generated code: output=5361141395da963e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c6d77dfaebaa86b0 input=a9049054013a1b77]*/

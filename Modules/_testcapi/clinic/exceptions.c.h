@@ -99,15 +99,18 @@ _testcapi_make_exception_with_doc(PyObject *module, PyObject *const *args, Py_ss
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[4];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     const char *name;
     const char *doc = NULL;
     PyObject *base = NULL;
     PyObject *dict = NULL;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 4, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (kwnames || 1 > nargs || nargs > 4 || !args) {
+        PyObject *argsbuf[4];
+
+        args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+                /*minpos*/ 1, /*maxpos*/ 4, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    }
     if (!args) {
         goto exit;
     }
@@ -459,4 +462,4 @@ _testcapi_unstable_exc_prep_reraise_star(PyObject *module, PyObject *const *args
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=357caea020348789 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8a949303d5fddcd5 input=a9049054013a1b77]*/

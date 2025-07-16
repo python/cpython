@@ -81,11 +81,14 @@ InstructionSequenceType_use_label(PyObject *self, PyObject *const *args, Py_ssiz
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
     int label;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (kwnames || 1 > nargs || nargs > 1 || !args) {
+        PyObject *argsbuf[1];
+
+        args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+                /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    }
     if (!args) {
         goto exit;
     }
@@ -145,7 +148,6 @@ InstructionSequenceType_addop(PyObject *self, PyObject *const *args, Py_ssize_t 
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[6];
     int opcode;
     int oparg;
     int lineno;
@@ -153,8 +155,12 @@ InstructionSequenceType_addop(PyObject *self, PyObject *const *args, Py_ssize_t 
     int end_lineno;
     int end_col_offset;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 6, /*maxpos*/ 6, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (kwnames || 6 > nargs || nargs > 6 || !args) {
+        PyObject *argsbuf[6];
+
+        args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+                /*minpos*/ 6, /*maxpos*/ 6, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    }
     if (!args) {
         goto exit;
     }
@@ -260,11 +266,14 @@ InstructionSequenceType_add_nested(PyObject *self, PyObject *const *args, Py_ssi
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *nested;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (kwnames || 1 > nargs || nargs > 1 || !args) {
+        PyObject *argsbuf[1];
+
+        args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+                /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    }
     if (!args) {
         goto exit;
     }
@@ -310,4 +319,4 @@ InstructionSequenceType_get_instructions(PyObject *self, PyObject *Py_UNUSED(ign
 {
     return InstructionSequenceType_get_instructions_impl((_PyInstructionSequence *)self);
 }
-/*[clinic end generated code: output=c80501a59a1a1103 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0daca6d9146af046 input=a9049054013a1b77]*/

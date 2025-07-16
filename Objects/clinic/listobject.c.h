@@ -245,13 +245,16 @@ list_sort(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwn
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *keyfunc = Py_None;
     int reverse = 0;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 0, /*maxpos*/ 0, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (kwnames || 0 > nargs || nargs > 0 || !args) {
+        PyObject *argsbuf[2];
+
+        args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+                /*minpos*/ 0, /*maxpos*/ 0, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    }
     if (!args) {
         goto exit;
     }
@@ -468,4 +471,4 @@ list___reversed__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return list___reversed___impl((PyListObject *)self);
 }
-/*[clinic end generated code: output=ae13fc2b56dc27c2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c5f3b010f042132c input=a9049054013a1b77]*/

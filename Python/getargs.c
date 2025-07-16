@@ -2412,9 +2412,6 @@ vgetargskeywordsfast(PyObject *args, PyObject *keywords,
                                      parser, p_va, flags);
 }
 
-
-#undef _PyArg_UnpackKeywords
-
 PyObject * const *
 _PyArg_UnpackKeywords(PyObject *const *args, Py_ssize_t nargs,
                       PyObject *kwargs, PyObject *kwnames,

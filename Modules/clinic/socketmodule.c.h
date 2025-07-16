@@ -228,7 +228,6 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwargs)
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[4];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
@@ -237,8 +236,15 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwargs)
     int proto = -1;
     PyObject *fdobj = NULL;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
-            /*minpos*/ 0, /*maxpos*/ 4, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (kwargs || 0 > nargs || nargs > 4) {
+        PyObject *argsbuf[4];
+
+        fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+                /*minpos*/ 0, /*maxpos*/ 4, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    }
+    else {
+        fastargs = _PyTuple_CAST(args)->ob_item;
+    }
     if (!fastargs) {
         goto exit;
     }
@@ -538,4 +544,4 @@ exit:
 #ifndef _SOCKET_IF_INDEXTONAME_METHODDEF
     #define _SOCKET_IF_INDEXTONAME_METHODDEF
 #endif /* !defined(_SOCKET_IF_INDEXTONAME_METHODDEF) */
-/*[clinic end generated code: output=0376c46b76ae2bce input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bad727cc18c580a1 input=a9049054013a1b77]*/
