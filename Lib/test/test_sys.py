@@ -1338,6 +1338,25 @@ class SysModuleTest(unittest.TestCase):
     def test_disable_gil_abi(self):
         self.assertEqual('t' in sys.abiflags, support.Py_GIL_DISABLED)
 
+    @test.support.cpython_only
+    @unittest.skipUnless(hasattr(sys, '_defer_refcount'), "requires _defer_refcount()")
+    def test_defer_refcount(self):
+        _testinternalcapi = import_helper.import_module('_testinternalcapi')
+
+        class Test:
+            pass
+
+        ref = Test()
+        if support.Py_GIL_DISABLED:
+            self.assertTrue(sys._defer_refcount(ref))
+            self.assertTrue(_testinternalcapi.has_deferred_refcount(ref))
+            self.assertFalse(sys._defer_refcount(ref))
+            self.assertFalse(sys._defer_refcount(42))
+        else:
+            self.assertFalse(sys._defer_refcount(ref))
+            self.assertFalse(_testinternalcapi.has_deferred_refcount(ref))
+            self.assertFalse(sys._defer_refcount(42))
+
 
 @test.support.cpython_only
 class UnraisableHookTest(unittest.TestCase):

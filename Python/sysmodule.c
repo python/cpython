@@ -15,6 +15,7 @@ Data members:
 */
 
 #include "Python.h"
+#include "object.h"
 #include "pycore_audit.h"         // _Py_AuditHookEntry
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_SetAsyncGenFinalizer()
@@ -2658,6 +2659,23 @@ sys__is_gil_enabled_impl(PyObject *module)
 #endif
 }
 
+/*[clinic input]
+sys._defer_refcount -> bool
+
+  op: object
+  /
+
+Defer reference counting for the object, allowing for better scaling across multiple threads.
+
+This function should be used for specialized purposes only.
+[clinic start generated code]*/
+
+static int
+sys__defer_refcount_impl(PyObject *module, PyObject *op)
+/*[clinic end generated code: output=3b965122056085f5 input=a081971a76c49e64]*/
+{
+    return PyUnstable_Object_EnableDeferredRefcount(op);
+}
 
 #ifndef MS_WINDOWS
 static PerfMapState perf_map_state;
@@ -2839,6 +2857,7 @@ static PyMethodDef sys_methods[] = {
     SYS__GET_CPU_COUNT_CONFIG_METHODDEF
     SYS__IS_GIL_ENABLED_METHODDEF
     SYS__DUMP_TRACELETS_METHODDEF
+    SYS__DEFER_REFCOUNT_METHODDEF
     {NULL, NULL}  // sentinel
 };
 
