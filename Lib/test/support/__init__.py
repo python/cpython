@@ -570,7 +570,7 @@ is_emscripten = sys.platform == "emscripten"
 is_wasi = sys.platform == "wasi"
 
 def skip_emscripten_stack_overflow():
-    return unittest.skipIf(is_emscripten, "Exhausts limited stack on Emscripten")
+    return unittest.skipIf(is_emscripten, "Exhausts stack on Emscripten")
 
 def skip_wasi_stack_overflow():
     return unittest.skipIf(is_wasi, "Exhausts stack on WASI")
