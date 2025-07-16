@@ -18,7 +18,8 @@ The script uses LD_RUN_PATH, LD_LIBRARY_PATH, CPPFLAGS and LDFLAGS to bend
 search paths for header files and shared libraries. It's known to work on
 Linux with GCC and clang.
 
-Please keep this script compatible with Python 2.7, and 3.4 to 3.7.
+Please keep this script compatible with all currently-maintained Python
+versions.
 
 (c) 2013-2017 Christian Heimes <christian@python.org>
 """
