@@ -28,8 +28,8 @@ relationship between this piece of code and the associated Python function using
 .. note::
 
     Support for profiling is available on Linux and macOS on select architectures.
-    ``perf`` is available on Linux, while ``samply`` can be used on both Linux and macOS.
-    ``samply`` support on macOS is available starting from Python 3.14.
+    Perf is available on Linux, while samply can be used on both Linux and macOS.
+    samply support on macOS is available starting from Python 3.14.
     Check the output of the ``configure`` build step or
     check the output of ``python -m sysconfig | grep HAVE_PERF_TRAMPOLINE``
     to see if your system is supported.
@@ -149,25 +149,25 @@ Instead, if we run the same experiment with ``perf`` support enabled we get:
 
 
 
-Using ``samply`` profiler
+Using the samply profiler
 -------------------------
 
-``samply`` is a modern profiler that can be used as an alternative to ``perf``.
+samply is a modern profiler that can be used as an alternative to perf.
 It uses the same perf map files that Python generates, making it compatible
-with Python's profiling support. ``samply`` is particularly useful on macOS
-where ``perf`` is not available.
+with Python's profiling support. samply is particularly useful on macOS
+where perf is not available.
 
-To use ``samply`` with Python, first install it following the instructions at
+To use samply with Python, first install it following the instructions at
 https://github.com/mstange/samply, then run::
 
     $ samply record PYTHONPERFSUPPORT=1 python my_script.py
 
 This will open a web interface where you can analyze the profiling data
-interactively. The advantage of ``samply`` is that it provides a modern
+interactively. The advantage of samply is that it provides a modern
 web-based interface for analyzing profiling data and works on both Linux
 and macOS.
 
-On macOS, ``samply`` support requires Python 3.14 or later.
+On macOS, samply support requires Python 3.14 or later.
 
 How to enable ``perf`` profiling support
 ----------------------------------------

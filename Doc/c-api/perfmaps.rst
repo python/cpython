@@ -5,7 +5,7 @@
 Support for Perf Maps
 ----------------------
 
-On supported platforms (as of this writing, Linux and macOS), the runtime can take
+On supported platforms (Linux and macOS), the runtime can take
 advantage of *perf map files* to make Python functions visible to an external
 profiling tool (such as `perf <https://perf.wiki.kernel.org/index.php/Main_Page>`_ or
 `samply <https://github.com/mstange/samply/>`_). A running process may create a
