@@ -1,9 +1,10 @@
+import asyncio
 import pathlib
 import shlex
-import sys
 import sysconfig
 import tempfile
 import test.support
+import test.test_tools
 import test.support.script_helper
 import unittest
 
@@ -13,11 +14,13 @@ _TOOLS_JIT_TEST = _TOOLS_JIT / "test"
 _TOOLS_JIT_TEST_TEST_EXECUTOR_CASES_C_H = _TOOLS_JIT_TEST / "test_executor_cases.c.h"
 _TOOLS_JIT_BUILD_PY = _TOOLS_JIT / "build.py"
 
+test.test_tools.skip_if_missing("jit")
+with test.test_tools.imports_under_tool("jit"):
+    import _llvm
 
 @test.support.cpython_only
 @unittest.skipIf(test.support.Py_DEBUG, "Debug stencils aren't tested.")
 @unittest.skipIf(test.support.Py_GIL_DISABLED, "Free-threaded stencils aren't tested.")
-@unittest.skipUnless(sysconfig.is_python_build(), "Requires a local Python build.")
 class TestJITStencils(unittest.TestCase):
 
     def _build_jit_stencils(self, target: str) -> str:
@@ -31,6 +34,9 @@ class TestJITStencils(unittest.TestCase):
                 "--pyconfig-dir", pyconfig_h.parent,
                 target,
                 __isolated=False,
+                # Windows leaks temporary files on failure because the JIT build
+                # process is async. This forces it to be "sync" for this test:
+                PYTHON_CPU_COUNT="1",
             )
             if result.rc:
                 self.skipTest(f"Build failed: {shlex.join(map(str, args))}")
@@ -54,6 +60,8 @@ class TestJITStencils(unittest.TestCase):
             raise
 
     def test_jit_stencils(self):
+        if not asyncio.run(_llvm._find_tool("clang")):
+            self.skipTest(f"LLVM {_llvm._LLVM_VERSION} isn't installed.")
         self.maxDiff = None
         found = False
         for test_jit_stencils_h in _TOOLS_JIT_TEST.glob("test_jit_stencils-*.h"):
@@ -64,7 +72,7 @@ class TestJITStencils(unittest.TestCase):
                 found = True
                 self._check_jit_stencils(expected, actual, test_jit_stencils_h)
         # This is a local build. If the JIT is available, at least one test should run:
-        assert found or not sys._jit.is_available(), "No JIT stencils built!"
+        assert found, "No JIT stencils built!"
 
 
 if __name__ == "__main__":
