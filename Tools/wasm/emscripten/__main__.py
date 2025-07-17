@@ -262,6 +262,7 @@ def configure_emscripten_python(context, working_dir):
                 }}
                 REALPATH=abs_path
             fi
+            NODEFLAGS=--inspect-brk
 
             # We compute our own path, not following symlinks and pass it in so that
             # node_entry.mjs can set sys.executable correctly.
@@ -285,7 +286,7 @@ def make_emscripten_python(context, working_dir):
     )
 
     exec_script = working_dir / "python.sh"
-    subprocess.check_call([exec_script, "--version"])
+    # subprocess.check_call([exec_script, "--version"])
 
 
 def build_all(context):

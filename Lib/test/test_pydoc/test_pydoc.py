@@ -1303,7 +1303,10 @@ class PydocImportTest(PydocBaseTest):
     @os_helper.skip_unless_working_chmod
     def test_apropos_empty_doc(self):
         pkgdir = os.path.join(TESTFN, 'walkpkg')
+        import posix
+        posix._emscripten_debugger()
         os.mkdir(pkgdir)
+        posix._emscripten_debugger()
         print()
         print(f"{os.getcwd()=}")
         print(f"{TESTFN=}")
@@ -1320,6 +1323,7 @@ class PydocImportTest(PydocBaseTest):
         print()
         print(f"{current_mode=:#o}")
         try:
+            posix._emscripten_debugger()
             os.chmod(pkgdir, current_mode & ~stat.S_IEXEC)
             new_mode = stat.S_IMODE(os.stat(pkgdir).st_mode)
             print(f"{new_mode=:#o}")
