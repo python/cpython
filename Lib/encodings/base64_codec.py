@@ -11,11 +11,13 @@ import base64
 ### Codec APIs
 
 def base64_encode(input, errors='strict'):
-    assert errors == 'strict'
+    if errors != 'strict':
+        raise ValueError(f'Unsupported error handling mode: "{errors}" - must be "strict"')
     return (base64.encodebytes(input), len(input))
 
 def base64_decode(input, errors='strict'):
-    assert errors == 'strict'
+    if errors != 'strict':
+        raise ValueError(f'Unsupported error handling mode: "{errors}" - must be "strict"')
     return (base64.decodebytes(input), len(input))
 
 class Codec(codecs.Codec):
