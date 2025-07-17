@@ -1994,6 +1994,7 @@ resolve_final_tstate(_PyRuntimeState *runtime)
             }
             else {
                 /* Fall back to the current tstate.  It's better than nothing. */
+                // XXX No it's not
                 main_tstate = tstate;
             }
         }
@@ -2038,6 +2039,16 @@ _Py_Finalize(_PyRuntimeState *runtime)
      */
 
     _PyAtExit_Call(tstate->interp);
+
+    /* Clean up any lingering subinterpreters.
+
+       Two preconditions need to be met here:
+
+        - This has to happen before _PyRuntimeState_SetFinalizing is
+          called, or else threads might get prematurely blocked.
+        - The world must not be stopped, as finalizers can run.
+    */
+    finalize_subinterpreters();
 
     assert(_PyThreadState_GET() == tstate);
 
@@ -2125,9 +2136,6 @@ _Py_Finalize(_PyRuntimeState *runtime)
     /* Destroy all modules */
     _PyImport_FiniExternal(tstate->interp);
     finalize_modules(tstate);
-
-    /* Clean up any lingering subinterpreters. */
-    finalize_subinterpreters();
 
     /* Print debug stats if any */
     _PyEval_Fini();
@@ -2410,9 +2418,8 @@ Py_NewInterpreter(void)
     return tstate;
 }
 
-/* Delete an interpreter and its last thread.  This requires that the
-   given thread state is current, that the thread has no remaining
-   frames, and that it is its interpreter's only remaining thread.
+/* Delete an interpreter.  This requires that the given thread state
+   is current, and that the thread has no remaining frames.
    It is a fatal error to violate these constraints.
 
    (Py_FinalizeEx() doesn't have these constraints -- it zaps
@@ -2442,14 +2449,19 @@ Py_EndInterpreter(PyThreadState *tstate)
     _Py_FinishPendingCalls(tstate);
 
     _PyAtExit_Call(tstate->interp);
-
-    if (tstate != interp->threads.head || tstate->next != NULL) {
-        Py_FatalError("not the last thread");
-    }
-
+    _PyRuntimeState *runtime = interp->runtime;
+    _PyEval_StopTheWorldAll(runtime);
     /* Remaining daemon threads will automatically exit
        when they attempt to take the GIL (ex: PyEval_RestoreThread()). */
     _PyInterpreterState_SetFinalizing(interp, tstate);
+
+    PyThreadState *list = _PyThreadState_RemoveExcept(tstate);
+    for (PyThreadState *p = list; p != NULL; p = p->next) {
+        _PyThreadState_SetShuttingDown(p);
+    }
+
+    _PyEval_StartTheWorldAll(runtime);
+    _PyThreadState_DeleteList(list, /*is_after_fork=*/0);
 
     // XXX Call something like _PyImport_Disable() here?
 
@@ -2480,6 +2492,8 @@ finalize_subinterpreters(void)
     PyInterpreterState *main_interp = _PyInterpreterState_Main();
     assert(final_tstate->interp == main_interp);
     _PyRuntimeState *runtime = main_interp->runtime;
+    assert(!runtime->stoptheworld.world_stopped);
+    assert(_PyRuntimeState_GetFinalizing(runtime) == NULL);
     struct pyinterpreters *interpreters = &runtime->interpreters;
 
     /* Get the first interpreter in the list. */
@@ -2508,27 +2522,17 @@ finalize_subinterpreters(void)
 
     /* Clean up all remaining subinterpreters. */
     while (interp != NULL) {
-        assert(!_PyInterpreterState_IsRunningMain(interp));
-
-        /* Find the tstate to use for fini.  We assume the interpreter
-           will have at most one tstate at this point. */
-        PyThreadState *tstate = interp->threads.head;
-        if (tstate != NULL) {
-            /* Ideally we would be able to use tstate as-is, and rely
-               on it being in a ready state: no exception set, not
-               running anything (tstate->current_frame), matching the
-               current thread ID (tstate->thread_id).  To play it safe,
-               we always delete it and use a fresh tstate instead. */
-            assert(tstate != final_tstate);
-            _PyThreadState_Attach(tstate);
-            PyThreadState_Clear(tstate);
-            _PyThreadState_Detach(tstate);
-            PyThreadState_Delete(tstate);
+        /* Make a tstate for finalization. */
+        PyThreadState *tstate = _PyThreadState_NewBound(interp, _PyThreadState_WHENCE_FINI);
+        if (tstate == NULL) {
+            // XXX Some graceful way to always get a thread state?
+            Py_FatalError("thread state allocation failed");
         }
-        tstate = _PyThreadState_NewBound(interp, _PyThreadState_WHENCE_FINI);
+
+        /* Enter the subinterpreter. */
+        _PyThreadState_Attach(tstate);
 
         /* Destroy the subinterpreter. */
-        _PyThreadState_Attach(tstate);
         Py_EndInterpreter(tstate);
         assert(_PyThreadState_GET() == NULL);
 
