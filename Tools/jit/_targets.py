@@ -268,10 +268,8 @@ class _COFF(
         if "SectionData" in section:
             section_data_bytes = section["SectionData"]["Bytes"]
         else:
-            # Zeroed BSS data, seen with printf debugging calls:
+            # Zeroed BSS data:
             section_data_bytes = [0] * section["RawDataSize"]
-            # XXX
-            assert section["RawDataSize"] == 0, (group.symbols, section["Symbols"])
         if "IMAGE_SCN_MEM_EXECUTE" in flags:
             value = _stencils.HoleValue.CODE
             stencil = group.code
@@ -280,6 +278,10 @@ class _COFF(
             stencil = group.data
         else:
             return
+        if "IMAGE_SCN_MEM_WRITE" in flags:
+            assert value is _stencils.HoleValue.DATA
+            value = _stencils.HoleValue.WRITABLE
+            section_data_bytes = []
         base = len(stencil.body)
         group.symbols[section["Number"]] = value, base
         stencil.body.extend(section_data_bytes)
@@ -382,7 +384,7 @@ class _ELF(
             if value is _stencils.HoleValue.CODE:
                 stencil = group.code
             else:
-                assert value is _stencils.HoleValue.DATA
+                assert value in (_stencils.HoleValue.DATA, _stencils.HoleValue.WRITABLE)
                 stencil = group.data
             for wrapped_relocation in section["Relocations"]:
                 relocation = wrapped_relocation["Relocation"]
@@ -397,6 +399,11 @@ class _ELF(
             else:
                 value = _stencils.HoleValue.DATA
                 stencil = group.data
+            section_data_bytes = section["SectionData"]["Bytes"]
+            if "SHF_WRITE" in flags:
+                assert value is _stencils.HoleValue.DATA
+                value = _stencils.HoleValue.WRITABLE
+                section_data_bytes = []
             group.symbols[section["Index"]] = value, len(stencil.body)
             for wrapped_symbol in section["Symbols"]:
                 symbol = wrapped_symbol["Symbol"]
@@ -404,7 +411,7 @@ class _ELF(
                 name = symbol["Name"]["Name"]
                 name = name.removeprefix(self.symbol_prefix)
                 group.symbols[name] = value, offset
-            stencil.body.extend(section["SectionData"]["Bytes"])
+            stencil.body.extend(section_data_bytes)
             assert not section["Relocations"]
         else:
             assert section_type in {
