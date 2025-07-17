@@ -345,6 +345,7 @@ globally and locally. As such, if an event could be turned on for both global
 and local events by your code then the callback needs to be written to handle
 either trigger.
 
+
 Callback function arguments
 '''''''''''''''''''''''''''
 
