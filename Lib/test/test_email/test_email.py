@@ -4020,6 +4020,44 @@ class TestParsers(TestEmailBase):
                               fp)
             self.assertFalse(fp.closed)
 
+    def test_bytes_parser_uses_policy_utf8_setting(self):
+        m = """
+            From: Nathaniel Nameson <nathan@nameson.com>
+            To: Ned Sampleson <ned@sampleson.com>
+            Subject: Sample message
+            MIME-Version: 1.0
+            Content-type: multipart/mixed; boundary="i-am-boundary"
+
+            This is the préamble.  It is to be ignored, though it
+            is a handy place for mail composers to include an
+            explanatory note to non-MIME compliant readers.
+
+            --i-am-boundary
+            Content-type: text/plain; charset=us-ascii
+
+            This is explicitly typed plain ASCII text.
+            It DOES end with a linebreak.
+
+            --i-am-boundary
+            Content-type: text/plain; charset=utf-8
+            Content-Transfer-Encoding: 8bit
+
+            This should be correctly encapsulated: Un petit café ?
+
+            --i-am-boundary--
+            This is the epilogue.  It is also to be ignored.
+
+            """.lstrip()
+        M_BYTES = BytesIO(m.encode())
+
+        msg = email.message_from_binary_file(M_BYTES, policy=email.policy.default.clone(utf8=True))
+        for i, part in enumerate(msg.iter_parts(), 1):
+            _ = part.as_string()
+
+        msg_string = msg.as_string()
+        self.assertIn("This is the préamble.", msg_string)
+        self.assertIn("Un petit café", msg_string)
+
     def test_parser_does_not_close_file(self):
         with openfile('msg_02.txt', encoding="utf-8") as fp:
             email.parser.Parser().parse(fp)
