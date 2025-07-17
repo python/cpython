@@ -58,7 +58,7 @@ _zstd_ZstdDecompressor_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    static PyObject *argsbuf[2];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
@@ -181,7 +181,7 @@ _zstd_ZstdDecompressor_decompress(PyObject *self, PyObject *const *args, Py_ssiz
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    static PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     Py_buffer data = {NULL, NULL};
     Py_ssize_t max_length = -1;
@@ -220,4 +220,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=30c12ef047027ede input=a9049054013a1b77]*/
+/*[clinic end generated code: output=efd4e41f46b75b56 input=a9049054013a1b77]*/

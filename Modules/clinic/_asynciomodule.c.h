@@ -60,7 +60,7 @@ _asyncio_Future___init__(PyObject *self, PyObject *args, PyObject *kwargs)
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    static PyObject *argsbuf[1];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
@@ -177,7 +177,7 @@ _asyncio_Future_set_result(PyObject *self, PyTypeObject *cls, PyObject *const *a
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    static PyObject *argsbuf[1];
     PyObject *result;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -227,7 +227,7 @@ _asyncio_Future_set_exception(PyObject *self, PyTypeObject *cls, PyObject *const
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    static PyObject *argsbuf[1];
     PyObject *exception;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -292,7 +292,7 @@ _asyncio_Future_add_done_callback(PyObject *self, PyTypeObject *cls, PyObject *c
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    static PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *fn;
     PyObject *context = NULL;
@@ -348,7 +348,7 @@ _asyncio_Future_remove_done_callback(PyObject *self, PyTypeObject *cls, PyObject
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    static PyObject *argsbuf[1];
     PyObject *fn;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -413,7 +413,7 @@ _asyncio_Future_cancel(PyObject *self, PyTypeObject *cls, PyObject *const *args,
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    static PyObject *argsbuf[1];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *msg = Py_None;
 
@@ -910,7 +910,7 @@ _asyncio_Task___init__(PyObject *self, PyObject *args, PyObject *kwargs)
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[5];
+    static PyObject *argsbuf[5];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
@@ -1172,7 +1172,7 @@ _asyncio_Task_cancel(PyObject *self, PyObject *const *args, Py_ssize_t nargs, Py
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    static PyObject *argsbuf[1];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *msg = Py_None;
 
@@ -1312,7 +1312,7 @@ _asyncio_Task_get_stack(PyObject *self, PyTypeObject *cls, PyObject *const *args
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    static PyObject *argsbuf[1];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *limit = Py_None;
 
@@ -1382,7 +1382,7 @@ _asyncio_Task_print_stack(PyObject *self, PyTypeObject *cls, PyObject *const *ar
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    static PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *limit = Py_None;
     PyObject *file = Py_None;
@@ -1660,7 +1660,7 @@ _asyncio__register_task(PyObject *module, PyObject *const *args, Py_ssize_t narg
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    static PyObject *argsbuf[1];
     PyObject *task;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -1720,7 +1720,7 @@ _asyncio__register_eager_task(PyObject *module, PyObject *const *args, Py_ssize_
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    static PyObject *argsbuf[1];
     PyObject *task;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -1780,7 +1780,7 @@ _asyncio__unregister_task(PyObject *module, PyObject *const *args, Py_ssize_t na
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    static PyObject *argsbuf[1];
     PyObject *task;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -1840,7 +1840,7 @@ _asyncio__unregister_eager_task(PyObject *module, PyObject *const *args, Py_ssiz
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    static PyObject *argsbuf[1];
     PyObject *task;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -1902,7 +1902,7 @@ _asyncio__enter_task(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    static PyObject *argsbuf[2];
     PyObject *loop;
     PyObject *task;
 
@@ -1966,7 +1966,7 @@ _asyncio__leave_task(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    static PyObject *argsbuf[2];
     PyObject *loop;
     PyObject *task;
 
@@ -2029,7 +2029,7 @@ _asyncio__swap_current_task(PyObject *module, PyObject *const *args, Py_ssize_t 
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    static PyObject *argsbuf[2];
     PyObject *loop;
     PyObject *task;
 
@@ -2089,7 +2089,7 @@ _asyncio_current_task(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    static PyObject *argsbuf[1];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *loop = Py_None;
 
@@ -2152,7 +2152,7 @@ _asyncio_all_tasks(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    static PyObject *argsbuf[1];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *loop = Py_None;
 
@@ -2232,4 +2232,4 @@ _asyncio_future_discard_from_awaited_by(PyObject *module, PyObject *const *args,
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b69948ed810591d9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e592fab7e2d7bb1f input=a9049054013a1b77]*/

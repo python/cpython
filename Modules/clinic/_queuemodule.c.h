@@ -85,7 +85,7 @@ _queue_SimpleQueue_put(PyObject *self, PyObject *const *args, Py_ssize_t nargs, 
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[3];
+    static PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *item;
     int block = 1;
@@ -165,7 +165,7 @@ _queue_SimpleQueue_put_nowait(PyObject *self, PyObject *const *args, Py_ssize_t 
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    static PyObject *argsbuf[1];
     PyObject *item;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -234,7 +234,7 @@ _queue_SimpleQueue_get(PyObject *self, PyTypeObject *cls, PyObject *const *args,
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    static PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int block = 1;
     PyObject *timeout_obj = Py_None;
@@ -358,4 +358,4 @@ _queue_SimpleQueue_qsize(PyObject *self, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1d3efe9df89997cf input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0b005178e182eeb6 input=a9049054013a1b77]*/

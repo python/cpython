@@ -38,7 +38,7 @@ _elementtree_Element_append(PyObject *self, PyTypeObject *cls, PyObject *const *
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    static PyObject *argsbuf[1];
     PyObject *subelement;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -196,7 +196,7 @@ _elementtree_Element___setstate__(PyObject *self, PyTypeObject *cls, PyObject *c
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    static PyObject *argsbuf[1];
     PyObject *state;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -240,7 +240,7 @@ _elementtree_Element_extend(PyObject *self, PyTypeObject *cls, PyObject *const *
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    static PyObject *argsbuf[1];
     PyObject *elements;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -298,7 +298,7 @@ _elementtree_Element_find(PyObject *self, PyTypeObject *cls, PyObject *const *ar
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    static PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *path;
     PyObject *namespaces = Py_None;
@@ -364,7 +364,7 @@ _elementtree_Element_findtext(PyObject *self, PyTypeObject *cls, PyObject *const
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[3];
+    static PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *path;
     PyObject *default_value = Py_None;
@@ -436,7 +436,7 @@ _elementtree_Element_findall(PyObject *self, PyTypeObject *cls, PyObject *const 
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    static PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *path;
     PyObject *namespaces = Py_None;
@@ -501,7 +501,7 @@ _elementtree_Element_iterfind(PyObject *self, PyTypeObject *cls, PyObject *const
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    static PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *path;
     PyObject *namespaces = Py_None;
@@ -566,7 +566,7 @@ _elementtree_Element_get(PyObject *self, PyObject *const *args, Py_ssize_t nargs
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    static PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *key;
     PyObject *default_value = Py_None;
@@ -631,7 +631,7 @@ _elementtree_Element_iter(PyObject *self, PyTypeObject *cls, PyObject *const *ar
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    static PyObject *argsbuf[1];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *tag = Py_None;
 
@@ -780,7 +780,7 @@ _elementtree_Element_makeelement(PyObject *self, PyTypeObject *cls, PyObject *co
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    static PyObject *argsbuf[2];
     PyObject *tag;
     PyObject *attrib;
 
@@ -897,7 +897,7 @@ _elementtree_TreeBuilder___init__(PyObject *self, PyObject *args, PyObject *kwar
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[5];
+    static PyObject *argsbuf[5];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
@@ -1174,7 +1174,7 @@ _elementtree_XMLParser___init__(PyObject *self, PyObject *args, PyObject *kwargs
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    static PyObject *argsbuf[2];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
@@ -1331,4 +1331,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c863ce16d8566291 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ec293543c2499e27 input=a9049054013a1b77]*/

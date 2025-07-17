@@ -48,7 +48,7 @@ memoryview(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    static PyObject *argsbuf[1];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     PyObject *object;
@@ -108,7 +108,7 @@ memoryview__from_flags(PyObject *type, PyObject *const *args, Py_ssize_t nargs, 
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    static PyObject *argsbuf[2];
     PyObject *object;
     int flags;
 
@@ -190,7 +190,7 @@ memoryview_cast(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObjec
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    static PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *format;
     PyObject *shape = NULL;
@@ -301,7 +301,7 @@ memoryview_tobytes(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    static PyObject *argsbuf[1];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     const char *order = NULL;
 
@@ -399,7 +399,7 @@ memoryview_hex(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    static PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *sep = NULL;
     int bytes_per_sep = 1;
@@ -496,4 +496,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=154f4c04263ccb24 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=66100aeac64f74de input=a9049054013a1b77]*/

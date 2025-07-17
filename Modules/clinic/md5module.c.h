@@ -132,7 +132,7 @@ _md5_md5(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[3];
+    static PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *data = NULL;
     int usedforsecurity = 1;
@@ -172,4 +172,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=920fe54b9ed06f92 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=cc46502aabf44b11 input=a9049054013a1b77]*/

@@ -732,7 +732,7 @@ _ssl__SSLSocket_get_channel_binding(PyObject *self, PyObject *const *args, Py_ss
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    static PyObject *argsbuf[1];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     const char *cb_type = "tls-unique";
 
@@ -1512,7 +1512,7 @@ _ssl__SSLContext_load_cert_chain(PyObject *self, PyObject *const *args, Py_ssize
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[3];
+    static PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *certfile;
     PyObject *keyfile = Py_None;
@@ -1588,7 +1588,7 @@ _ssl__SSLContext_load_verify_locations(PyObject *self, PyObject *const *args, Py
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[3];
+    static PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *cafile = Py_None;
     PyObject *capath = Py_None;
@@ -1692,7 +1692,7 @@ _ssl__SSLContext__wrap_socket(PyObject *self, PyObject *const *args, Py_ssize_t 
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[5];
+    static PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     PyObject *sock;
     int server_side;
@@ -1789,7 +1789,7 @@ _ssl__SSLContext__wrap_bio(PyObject *self, PyObject *const *args, Py_ssize_t nar
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[6];
+    static PyObject *argsbuf[6];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 3;
     PySSLMemoryBIO *incoming;
     PySSLMemoryBIO *outgoing;
@@ -2056,7 +2056,7 @@ _ssl__SSLContext_get_ca_certs(PyObject *self, PyObject *const *args, Py_ssize_t 
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    static PyObject *argsbuf[1];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int binary_form = 0;
 
@@ -2124,7 +2124,7 @@ _ssl__SSLContext_set_psk_client_callback(PyObject *self, PyObject *const *args, 
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    static PyObject *argsbuf[1];
     PyObject *callback;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -2185,7 +2185,7 @@ _ssl__SSLContext_set_psk_server_callback(PyObject *self, PyObject *const *args, 
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    static PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *callback;
     const char *identity_hint = NULL;
@@ -2771,7 +2771,7 @@ _ssl_txt2obj(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    static PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     const char *txt;
     int name = 0;
@@ -2891,7 +2891,7 @@ _ssl_enum_certificates(PyObject *module, PyObject *const *args, Py_ssize_t nargs
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    static PyObject *argsbuf[1];
     const char *store_name;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -2972,7 +2972,7 @@ _ssl_enum_crls(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    static PyObject *argsbuf[1];
     const char *store_name;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -3014,4 +3014,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=1adc3780d8ca682a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f5eda0a198b4d5a1 input=a9049054013a1b77]*/

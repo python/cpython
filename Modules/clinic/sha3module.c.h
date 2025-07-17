@@ -50,7 +50,7 @@ py_sha3_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[3];
+    static PyObject *argsbuf[3];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
@@ -216,7 +216,7 @@ _sha3_shake_128_digest(PyObject *self, PyObject *const *args, Py_ssize_t nargs, 
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    static PyObject *argsbuf[1];
     Py_ssize_t length;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -285,7 +285,7 @@ _sha3_shake_128_hexdigest(PyObject *self, PyObject *const *args, Py_ssize_t narg
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    static PyObject *argsbuf[1];
     Py_ssize_t length;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -310,4 +310,4 @@ _sha3_shake_128_hexdigest(PyObject *self, PyObject *const *args, Py_ssize_t narg
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=48be77f8a31e8a3e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6228734b0401b197 input=a9049054013a1b77]*/

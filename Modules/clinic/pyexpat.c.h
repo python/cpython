@@ -87,7 +87,7 @@ pyexpat_xmlparser_Parse(PyObject *self, PyTypeObject *cls, PyObject *const *args
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    static PyObject *argsbuf[2];
     PyObject *data;
     int isfinal = 0;
 
@@ -141,7 +141,7 @@ pyexpat_xmlparser_ParseFile(PyObject *self, PyTypeObject *cls, PyObject *const *
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    static PyObject *argsbuf[1];
     PyObject *file;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -265,7 +265,7 @@ pyexpat_xmlparser_ExternalEntityParserCreate(PyObject *self, PyTypeObject *cls, 
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    static PyObject *argsbuf[2];
     const char *context;
     const char *encoding = NULL;
 
@@ -384,7 +384,7 @@ pyexpat_xmlparser_UseForeignDTD(PyObject *self, PyTypeObject *cls, PyObject *con
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    static PyObject *argsbuf[1];
     int flag = 1;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -453,7 +453,7 @@ pyexpat_ParserCreate(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[3];
+    static PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     const char *encoding = NULL;
     const char *namespace_separator = NULL;
@@ -552,4 +552,4 @@ exit:
 #ifndef PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
     #define PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
 #endif /* !defined(PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF) */
-/*[clinic end generated code: output=4dbdc959c67dc2d5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a0d804ec45233cf9 input=a9049054013a1b77]*/

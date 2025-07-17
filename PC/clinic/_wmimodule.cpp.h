@@ -54,7 +54,7 @@ _wmi_exec_query(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    static PyObject *argsbuf[1];
     PyObject *query;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -72,4 +72,4 @@ _wmi_exec_query(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=802bcbcba69e8d0e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=603330216138c2b4 input=a9049054013a1b77]*/

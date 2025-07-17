@@ -102,7 +102,7 @@ warnings_warn(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[5];
+    static PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *message;
     PyObject *category = Py_None;
@@ -212,7 +212,7 @@ warnings_warn_explicit(PyObject *module, PyObject *const *args, Py_ssize_t nargs
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[8];
+    static PyObject *argsbuf[8];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 4;
     PyObject *message;
     PyObject *category;
@@ -284,4 +284,4 @@ warnings_filters_mutated_lock_held(PyObject *module, PyObject *Py_UNUSED(ignored
 {
     return warnings_filters_mutated_lock_held_impl(module);
 }
-/*[clinic end generated code: output=610ed5764bf40bb5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e2ef6d4790e1c6ca input=a9049054013a1b77]*/

@@ -58,7 +58,7 @@ _multibytecodec_MultibyteCodec_encode(PyObject *self, PyObject *const *args, Py_
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    static PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *input;
     const char *errors = NULL;
@@ -147,7 +147,7 @@ _multibytecodec_MultibyteCodec_decode(PyObject *self, PyObject *const *args, Py_
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    static PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     Py_buffer input = {NULL, NULL};
     const char *errors = NULL;
@@ -237,7 +237,7 @@ _multibytecodec_MultibyteIncrementalEncoder_encode(PyObject *self, PyObject *con
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    static PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *input;
     int final = 0;
@@ -369,7 +369,7 @@ _multibytecodec_MultibyteIncrementalDecoder_decode(PyObject *self, PyObject *con
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    static PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     Py_buffer input = {NULL, NULL};
     int final = 0;
@@ -607,7 +607,7 @@ _multibytecodec_MultibyteStreamWriter_write(PyObject *self, PyTypeObject *cls, P
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    static PyObject *argsbuf[1];
     PyObject *strobj;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -652,7 +652,7 @@ _multibytecodec_MultibyteStreamWriter_writelines(PyObject *self, PyTypeObject *c
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    static PyObject *argsbuf[1];
     PyObject *lines;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -696,4 +696,4 @@ PyDoc_STRVAR(_multibytecodec___create_codec__doc__,
 
 #define _MULTIBYTECODEC___CREATE_CODEC_METHODDEF    \
     {"__create_codec", (PyCFunction)_multibytecodec___create_codec, METH_O, _multibytecodec___create_codec__doc__},
-/*[clinic end generated code: output=014f4f6bb9d29594 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ccea31c20239b800 input=a9049054013a1b77]*/

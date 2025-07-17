@@ -926,7 +926,7 @@ cmath_isclose(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[4];
+    static PyObject *argsbuf[4];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     Py_complex a;
     Py_complex b;
@@ -985,4 +985,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=631db17fb1c79d66 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9b38dc64bba5cb7b input=a9049054013a1b77]*/

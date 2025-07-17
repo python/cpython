@@ -105,7 +105,7 @@ CDataType_from_address(PyObject *type, PyTypeObject *cls, PyObject *const *args,
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    static PyObject *argsbuf[1];
     PyObject *value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -152,7 +152,7 @@ CDataType_from_buffer(PyObject *type, PyTypeObject *cls, PyObject *const *args, 
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    static PyObject *argsbuf[2];
     PyObject *obj;
     Py_ssize_t offset = 0;
 
@@ -216,7 +216,7 @@ CDataType_from_buffer_copy(PyObject *type, PyTypeObject *cls, PyObject *const *a
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    static PyObject *argsbuf[2];
     Py_buffer buffer = {NULL, NULL};
     Py_ssize_t offset = 0;
 
@@ -287,7 +287,7 @@ CDataType_in_dll(PyObject *type, PyTypeObject *cls, PyObject *const *args, Py_ss
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    static PyObject *argsbuf[2];
     PyObject *dll;
     const char *name;
 
@@ -345,7 +345,7 @@ CDataType_from_param(PyObject *type, PyTypeObject *cls, PyObject *const *args, P
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    static PyObject *argsbuf[1];
     PyObject *value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -389,7 +389,7 @@ PyCPointerType_set_type(PyObject *self, PyTypeObject *cls, PyObject *const *args
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    static PyObject *argsbuf[1];
     PyObject *type;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -434,7 +434,7 @@ PyCPointerType_from_param(PyObject *type, PyTypeObject *cls, PyObject *const *ar
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    static PyObject *argsbuf[1];
     PyObject *value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -577,7 +577,7 @@ c_wchar_p_from_param(PyObject *type, PyTypeObject *cls, PyObject *const *args, P
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    static PyObject *argsbuf[1];
     PyObject *value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -620,7 +620,7 @@ c_char_p_from_param(PyObject *type, PyTypeObject *cls, PyObject *const *args, Py
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    static PyObject *argsbuf[1];
     PyObject *value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -663,7 +663,7 @@ c_void_p_from_param(PyObject *type, PyTypeObject *cls, PyObject *const *args, Py
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    static PyObject *argsbuf[1];
     PyObject *value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -708,7 +708,7 @@ PyCSimpleType_from_param(PyObject *type, PyTypeObject *cls, PyObject *const *arg
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    static PyObject *argsbuf[1];
     PyObject *value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -1042,4 +1042,4 @@ Simple_from_outparm(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py
     }
     return Simple_from_outparm_impl(self, cls);
 }
-/*[clinic end generated code: output=536c9bcf4e05913e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=118b49ca07b3644b input=a9049054013a1b77]*/

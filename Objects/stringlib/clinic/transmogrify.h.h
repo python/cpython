@@ -54,7 +54,7 @@ stringlib_expandtabs(PyObject *self, PyObject *const *args, Py_ssize_t nargs, Py
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    static PyObject *argsbuf[1];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int tabsize = 8;
 
@@ -324,4 +324,4 @@ stringlib_zfill(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=8363b4b6cdaad556 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6bb39a9f79d7398b input=a9049054013a1b77]*/

@@ -167,7 +167,7 @@ _bz2_BZ2Decompressor_decompress(PyObject *self, PyObject *const *args, Py_ssize_
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    static PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     Py_buffer data = {NULL, NULL};
     Py_ssize_t max_length = -1;
@@ -237,4 +237,4 @@ _bz2_BZ2Decompressor(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=552ac6d4c5a101b7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=242c6b102c37dd2c input=a9049054013a1b77]*/

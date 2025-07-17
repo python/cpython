@@ -81,7 +81,7 @@ InstructionSequenceType_use_label(PyObject *self, PyObject *const *args, Py_ssiz
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    static PyObject *argsbuf[1];
     int label;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -145,7 +145,7 @@ InstructionSequenceType_addop(PyObject *self, PyObject *const *args, Py_ssize_t 
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[6];
+    static PyObject *argsbuf[6];
     int opcode;
     int oparg;
     int lineno;
@@ -260,7 +260,7 @@ InstructionSequenceType_add_nested(PyObject *self, PyObject *const *args, Py_ssi
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    static PyObject *argsbuf[1];
     PyObject *nested;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -310,4 +310,4 @@ InstructionSequenceType_get_instructions(PyObject *self, PyObject *Py_UNUSED(ign
 {
     return InstructionSequenceType_get_instructions_impl((_PyInstructionSequence *)self);
 }
-/*[clinic end generated code: output=c80501a59a1a1103 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ea2d6cce0e60a8a1 input=a9049054013a1b77]*/

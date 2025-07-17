@@ -52,7 +52,7 @@ _io__IOBase_seek(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ss
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    static PyObject *argsbuf[2];
     int offset;
     int whence = 0;
 
@@ -130,7 +130,7 @@ _io__IOBase_truncate(PyObject *self, PyTypeObject *cls, PyObject *const *args, P
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    static PyObject *argsbuf[1];
     PyObject *size = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -443,4 +443,4 @@ _io__RawIOBase_readall(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _io__RawIOBase_readall_impl(self);
 }
-/*[clinic end generated code: output=9359e74d95534bef input=a9049054013a1b77]*/
+/*[clinic end generated code: output=034975377f7920d1 input=a9049054013a1b77]*/

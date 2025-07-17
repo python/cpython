@@ -52,7 +52,7 @@ _hmac_new(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[3];
+    static PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *keyobj;
     PyObject *msgobj = NULL;
@@ -146,7 +146,7 @@ _hmac_HMAC_update(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObj
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    static PyObject *argsbuf[1];
     PyObject *msgobj;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -304,7 +304,7 @@ _hmac_compute_digest(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[3];
+    static PyObject *argsbuf[3];
     PyObject *key;
     PyObject *msg;
     PyObject *digest;
@@ -670,4 +670,4 @@ _hmac_compute_blake2b_32(PyObject *module, PyObject *const *args, Py_ssize_t nar
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=30c0614482d963f5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=97e03c1e47b05f3e input=a9049054013a1b77]*/

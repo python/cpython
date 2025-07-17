@@ -228,7 +228,7 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwargs)
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[4];
+    static PyObject *argsbuf[4];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
@@ -538,4 +538,4 @@ exit:
 #ifndef _SOCKET_IF_INDEXTONAME_METHODDEF
     #define _SOCKET_IF_INDEXTONAME_METHODDEF
 #endif /* !defined(_SOCKET_IF_INDEXTONAME_METHODDEF) */
-/*[clinic end generated code: output=0376c46b76ae2bce input=a9049054013a1b77]*/
+/*[clinic end generated code: output=202fe929d2c97fa8 input=a9049054013a1b77]*/
