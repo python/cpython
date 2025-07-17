@@ -501,7 +501,7 @@ Module constants
 .. data:: Binary
 
    A type object used to describe columns containing :abbr:`BLOB (Binary Large Object)` data.
-   Implemented as an alias for :class:`memoryview`.
+   This is currently implemented as an alias for :class:`memoryview`.
 
    .. note::
 
