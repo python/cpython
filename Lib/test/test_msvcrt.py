@@ -2,6 +2,7 @@ import os
 import subprocess
 import sys
 import unittest
+from contextlib import contextmanager
 from textwrap import dedent
 
 from test.support import os_helper, requires_resource, Py_DEBUG
@@ -109,6 +110,18 @@ class TestConsoleIO(unittest.TestCase):
 
 
 class TestOther(unittest.TestCase):
+    # We can't suppress the msgbox with invalid input without debug build
+    @unittest.skipUnless(Py_DEBUG, "only available under debug build")
+    @contextmanager
+    def set_crt_dbg_report_to_stderr(self):
+        mode = msvcrt.CrtSetReportMode(msvcrt.CRT_ASSERT, msvcrt.CRTDBG_MODE_FILE)
+        file = msvcrt.CrtSetReportFile(msvcrt.CRT_ASSERT, msvcrt.CRTDBG_FILE_STDERR)
+        try:
+            yield
+        finally:
+            msvcrt.CrtSetReportMode(msvcrt.CRT_ASSERT, mode)
+            msvcrt.CrtSetReportFile(msvcrt.CRT_ASSERT, file)
+
     def test_heap_min(self):
         try:
             msvcrt.heapmin()
@@ -128,6 +141,10 @@ class TestOther(unittest.TestCase):
         self.assertIs(type(returned), int)
         self.assertEqual(old, returned)
 
+        msvcrt.SetErrorMode(-1)
+        msvcrt.SetErrorMode(2**32)  # max unsigned int
+        msvcrt.SetErrorMode(-2**31)
+
     @unittest.skipUnless(Py_DEBUG, "only available under debug build")
     def test_set_error_mode(self):
         old = msvcrt.set_error_mode(msvcrt.REPORT_ERRMODE)
@@ -140,6 +157,11 @@ class TestOther(unittest.TestCase):
 
         returned = msvcrt.set_error_mode(msvcrt.REPORT_ERRMODE)
         self.assertEqual(returned, msvcrt.OUT_TO_STDERR)
+
+        with self.set_crt_dbg_report_to_stderr():
+            self.assertEqual(msvcrt.set_error_mode(-1), -1)
+            self.assertEqual(msvcrt.set_error_mode(2**31-1), -1)
+            self.assertEqual(msvcrt.set_error_mode(-2**31), -1)
 
     @unittest.skipUnless(Py_DEBUG, "only available under debug build")
     def test_CrtSetReportMode(self):
@@ -156,6 +178,10 @@ class TestOther(unittest.TestCase):
         returned = msvcrt.CrtSetReportMode(msvcrt.CRT_WARN,
                                            msvcrt.CRTDBG_REPORT_MODE)
         self.assertEqual(returned, msvcrt.CRTDBG_MODE_DEBUG)
+
+        self.assertRaises(OSError, msvcrt.CrtSetReportMode, -1, -1)
+        self.assertRaises(OSError, msvcrt.CrtSetReportMode, 2**31-1, 2**31-1)
+        self.assertRaises(OSError, msvcrt.CrtSetReportMode, -2**31, -2**31)
 
     @unittest.skipUnless(Py_DEBUG, "only available under debug build")
     def test_CrtSetReportFile(self):
@@ -175,6 +201,10 @@ class TestOther(unittest.TestCase):
         returned = msvcrt.CrtSetReportFile(msvcrt.CRT_WARN,
                                            msvcrt.CRTDBG_REPORT_FILE)
         self.assertEqual(returned, msvcrt.get_osfhandle(sys.stdout.fileno()))
+
+        msvcrt.CrtSetReportFile(-1, -1)
+        msvcrt.CrtSetReportFile(2**31-1, 2**31-1)
+        msvcrt.CrtSetReportFile(-2**31, -2**31)
 
 
 if __name__ == "__main__":
