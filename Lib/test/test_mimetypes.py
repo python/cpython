@@ -470,6 +470,14 @@ class CommandLineTest(unittest.TestCase):
         self.assertFalse(args.lenient)
         self.assertEqual(args.type, ["foo.pic"])
 
+    def test_multiple_inputs(self):
+        result = mimetypes._main(shlex.split("foo.pdf foo.png"))
+        self.assertEqual(
+            result,
+            "type: application/pdf encoding: None\n"
+            "type: image/png encoding: None"
+        )
+
     def test_invocation(self):
         for command, expected in [
             ("-l -e image/jpg", ".jpg"),
