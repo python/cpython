@@ -134,8 +134,17 @@ class TestOther(unittest.TestCase):
         self.assertGreaterEqual(errmode, 0)
 
     def test_SetErrorMode(self):
+        origin = msvcrt.GetErrorMode()
+        def cleanup():
+            msvcrt.SetErrorMode(0)
+            for v in (msvcrt.SEM_FAILCRITICALERRORS, msvcrt.SEM_NOGPFAULTERRORBOX,
+                      msvcrt.SEM_NOALIGNMENTFAULTEXCEPT, msvcrt.SEM_NOOPENFILEERRORBOX):
+                if origin & v:
+                    msvcrt.SetErrorMode(v)
+        self.addCleanup(cleanup)
+
+        msvcrt.SetErrorMode(0)
         old = msvcrt.GetErrorMode()
-        self.addCleanup(msvcrt.SetErrorMode, old)
 
         returned = msvcrt.SetErrorMode(msvcrt.SEM_NOOPENFILEERRORBOX)
         self.assertEqual(returned, old)
