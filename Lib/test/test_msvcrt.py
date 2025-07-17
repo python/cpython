@@ -136,6 +136,7 @@ class TestOther(unittest.TestCase):
         returned = msvcrt.set_error_mode(msvcrt.OUT_TO_STDERR)
         self.assertIs(type(returned), int)
         self.assertNotEqual(returned, -1)
+        self.assertEqual(old, returned)
 
         returned = msvcrt.set_error_mode(msvcrt.REPORT_ERRMODE)
         self.assertIs(type(returned), int)
@@ -151,6 +152,7 @@ class TestOther(unittest.TestCase):
                                            msvcrt.CRTDBG_MODE_DEBUG)
         self.assertIs(type(returned), int)
         self.assertNotEqual(returned, -1)
+        self.assertEqual(old, returned)
 
         returned = msvcrt.CrtSetReportMode(msvcrt.CRT_WARN,
                                            msvcrt.CRTDBG_REPORT_MODE)
@@ -170,6 +172,7 @@ class TestOther(unittest.TestCase):
         returned = msvcrt.CrtSetReportFile(msvcrt.CRT_WARN,
                                            msvcrt.CRTDBG_FILE_STDOUT)
         self.assertIs(type(returned), int)
+        self.assertEqual(old_file, returned)
 
         returned = msvcrt.CrtSetReportFile(msvcrt.CRT_WARN,
                                            msvcrt.CRTDBG_REPORT_FILE)
