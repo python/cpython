@@ -2964,6 +2964,10 @@ class AbstractPickleTests:
                 got = self.loads(pickle)
                 self.assert_is_copy(value, got)
 
+    def test_float_whitespace(self):
+        self.assertEqual(self.loads(b'F 1.2 \n.'), 1.2)
+        self.assertEqual(self.loads(b'F \t9 \n.'), 9)
+
     @run_with_locales('LC_ALL', 'de_DE', 'fr_FR', '')
     def test_float_format(self):
         # make sure that floats are formatted locale independent with proto 0
