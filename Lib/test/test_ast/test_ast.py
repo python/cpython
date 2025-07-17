@@ -131,7 +131,7 @@ class AST_Tests(unittest.TestCase):
                                     (eval_tests, eval_results, "eval")):
             for i, o in zip(input, output):
                 with self.subTest(action="parsing", input=i):
-                    ast_tree = compile(i, "?", kind, ast.PyCF_ONLY_AST, optimize=0)
+                    ast_tree = compile(i, "?", kind, ast.PyCF_ONLY_AST, optimize=False)
                     self.assertEqual(to_tuple(ast_tree), o)
                     self._assertTrueorder(ast_tree, (0, 0))
                 with self.subTest(action="compiling", input=i, kind=kind):
