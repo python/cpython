@@ -26,7 +26,8 @@
 #include "pycore_hashtable.h"
 #include "pycore_strhex.h"               // _Py_strhex()
 #include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_LOAD_PTR_RELAXED
-#include "hashlib.h"
+#include "_hashlib/hashlib_buffer.h"
+#include "_hashlib/hashlib_mutex.h"
 
 /* EVP is the preferred interface to hashing in OpenSSL */
 #include <openssl/evp.h>
