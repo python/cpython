@@ -1303,6 +1303,11 @@ class PydocImportTest(PydocBaseTest):
     @os_helper.skip_unless_working_chmod
     def test_apropos_empty_doc(self):
         pkgdir = os.path.join(TESTFN, 'walkpkg')
+        if support.is_emscripten:
+            # Emscripten's readdir implementation is buggy on directories
+            # with read permission but no execute permission.
+            old_umask = os.umask(0)
+            self.addCleanup(os.umask, old_umask)
         os.mkdir(pkgdir)
         self.addCleanup(rmtree, pkgdir)
         init_path = os.path.join(pkgdir, '__init__.py')
