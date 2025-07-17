@@ -390,7 +390,7 @@ class _ELF(
                 relocation = wrapped_relocation["Relocation"]
                 hole = self._handle_relocation(base, relocation, stencil.body)
                 stencil.holes.append(hole)
-        elif section_type == "SHT_PROGBITS":
+        elif section_type in {"SHT_PROGBITS", "SHT_NOBITS"}:
             if "SHF_ALLOC" not in flags:
                 return
             if "SHF_EXECINSTR" in flags:
@@ -399,7 +399,11 @@ class _ELF(
             else:
                 value = _stencils.HoleValue.DATA
                 stencil = group.data
-            section_data_bytes = section["SectionData"]["Bytes"]
+            if section_type == "SHT_PROGBITS":
+                section_data_bytes = section["SectionData"]["Bytes"]
+            else:
+                # Zeroed BSS data:
+                section_data_bytes = [0] * section["Size"]
             if "SHF_WRITE" in flags:
                 assert value is _stencils.HoleValue.DATA
                 value = _stencils.HoleValue.WRITABLE

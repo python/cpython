@@ -102,6 +102,7 @@ class ELFSection(typing.TypedDict):
     Info: int
     Relocations: list[dict[typing.Literal["Relocation"], ELFRelocation]]
     SectionData: dict[typing.Literal["Bytes"], list[int]]
+    Size: int
     Symbols: list[dict[typing.Literal["Symbol"], _ELFSymbol]]
     Type: dict[typing.Literal["Name"], str]
 
