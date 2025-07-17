@@ -1048,6 +1048,11 @@ class _SelectorSocketTransport(_SelectorTransport):
         else:
             self.close()
 
+    def _write_after_conn_lost(self):
+        if self._conn_lost >= constants.LOG_THRESHOLD_FOR_CONNLOST_WRITES:
+            logger.warning('socket.send() raised exception.')
+        self._conn_lost += 1
+
     def write(self, data):
         if not isinstance(data, (bytes, bytearray, memoryview)):
             raise TypeError(f'data argument must be a bytes-like object, '
@@ -1060,9 +1065,7 @@ class _SelectorSocketTransport(_SelectorTransport):
             return
 
         if self._conn_lost:
-            if self._conn_lost >= constants.LOG_THRESHOLD_FOR_CONNLOST_WRITES:
-                logger.warning('socket.send() raised exception.')
-            self._conn_lost += 1
+            self._write_after_conn_lost()
             return
 
         if not self._buffer:
@@ -1174,6 +1177,11 @@ class _SelectorSocketTransport(_SelectorTransport):
             raise RuntimeError('unable to writelines; sendfile is in progress')
         if not list_of_data:
             return
+
+        if self._conn_lost:
+            self._write_after_conn_lost()
+            return
+
         self._buffer.extend([memoryview(data) for data in list_of_data])
         self._write_ready()
         # If the entire buffer couldn't be written, register a write handler
