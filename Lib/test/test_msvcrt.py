@@ -142,7 +142,7 @@ class TestOther(unittest.TestCase):
         self.assertEqual(old, returned)
 
         msvcrt.SetErrorMode(-1)
-        msvcrt.SetErrorMode(2**32)  # max unsigned int
+        msvcrt.SetErrorMode(2**32-1)  # max unsigned int
         msvcrt.SetErrorMode(-2**31)
 
     @unittest.skipUnless(Py_DEBUG, "only available under debug build")
