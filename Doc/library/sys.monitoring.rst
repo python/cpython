@@ -319,6 +319,8 @@ To register a callable for events call
 Functions can be unregistered by calling
 ``sys.monitoring.register_callback(tool_id, event, None)``.
 
+Callback functions can be registered and unregistered at any time.
+
 
 Callback function arguments
 '''''''''''''''''''''''''''
