@@ -137,9 +137,9 @@ class TestOther(unittest.TestCase):
         old = msvcrt.GetErrorMode()
         self.addCleanup(msvcrt.SetErrorMode, old)
 
-        returned = msvcrt.SetErrorMode(0)
-        self.assertIs(type(returned), int)
-        self.assertEqual(old, returned)
+        returned = msvcrt.SetErrorMode(msvcrt.SEM_NOOPENFILEERRORBOX)
+        self.assertEqual(returned, old)
+        self.assertTrue(msvcrt.GetErrorMode() & msvcrt.SEM_NOOPENFILEERRORBOX)
 
         msvcrt.SetErrorMode(-1)
         msvcrt.SetErrorMode(2**32-1)  # max unsigned int
