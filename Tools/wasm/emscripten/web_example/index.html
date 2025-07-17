@@ -56,6 +56,7 @@
             integrity="sha512-kmA5vhcxOkZI0ReiKJMGNb8/KKbgbExIlnt6aXuPtl86AgHBEi6OHHOz2wsTazBDGZKxe7fmiE+pIuZJQks4+A=="
         ></script>
         <script type="module">
+            const _magic_ctrlc_string = "__WASM_REPL_CTRLC_" + (Date.now()) + "__";
             class WorkerManager {
                 constructor(
                     workerURL,
@@ -261,7 +262,7 @@
                                 this.input = "";
                                 this.cursorPosition = 0;
                                 this.historyIndex = -1;
-                                this.resolveInput("__WASM_REPL_CTRLC__\n");
+                                this.resolveInput(_magic_ctrlc_string + "\n");
                                 break;
                             case "\x09": // TAB
                                 this.handleTab();
@@ -472,7 +473,7 @@
                         this.resolveInput = (value) => {
                             if (
                                 value.replace(/\s/g, "").length != 0 &&
-                                value != "__WASM_REPL_CTRLC__\n"
+                                value != _magic_ctrlc_string + "\n"
                             ) {
                                 if (this.historyIndex !== -1) {
                                     this.historyBuffer[this.historyIndex] =
@@ -600,7 +601,7 @@ import builtins
 
 def _interrupt_aware_input(prompt=''):
     line = builtins.input(prompt)
-    if line.strip() == '__WASM_REPL_CTRLC__':
+    if line.strip() == "${_magic_ctrlc_string}":
         raise KeyboardInterrupt()
     return line
 
