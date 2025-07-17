@@ -29,7 +29,7 @@ relationship between this piece of code and the associated Python function using
 
     Support for profiling is available on Linux and macOS on select architectures.
     Perf is available on Linux, while samply can be used on both Linux and macOS.
-    samply support on macOS is available starting from Python 3.14.
+    samply support on macOS is available starting from Python 3.15.
     Check the output of the ``configure`` build step or
     check the output of ``python -m sysconfig | grep HAVE_PERF_TRAMPOLINE``
     to see if your system is supported.
@@ -167,7 +167,12 @@ interactively. The advantage of samply is that it provides a modern
 web-based interface for analyzing profiling data and works on both Linux
 and macOS.
 
-On macOS, samply support requires Python 3.14 or later.
+On macOS, samply support requires Python 3.15 or later. Also on macOS, samply
+can't profile signed Python executables due to restrictions by macOS. You can
+profile with Python binaries that you've compiled yourself, or which are
+unsigned or locally-signed (such as anything installed by Homebrew). In
+order to attach to running processes on macOS, run ``samply setup`` once (and
+every time samply is updated) to self-sign the samply binary.
 
 How to enable ``perf`` profiling support
 ----------------------------------------
