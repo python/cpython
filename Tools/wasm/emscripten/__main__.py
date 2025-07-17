@@ -263,6 +263,10 @@ def configure_emscripten_python(context, working_dir):
                 REALPATH=abs_path
             fi
 
+            # Set umask to 0. The buildbot seems to run sometimes with a umask
+            # of 0o077 which causes one test to fail.
+            umask 0
+
             # We compute our own path, not following symlinks and pass it in so that
             # node_entry.mjs can set sys.executable correctly.
             # Intentionally allow word splitting on NODEFLAGS.
