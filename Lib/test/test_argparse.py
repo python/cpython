@@ -117,18 +117,7 @@ class Sig(object):
         self.kwargs = kwargs
 
 
-class NS(object):
-
-    def __init__(self, **kwargs):
-        self.__dict__.update(kwargs)
-
-    def __repr__(self):
-        sorted_items = sorted(self.__dict__.items())
-        kwarg_str = ', '.join(['%s=%r' % tup for tup in sorted_items])
-        return '%s(%s)' % (type(self).__name__, kwarg_str)
-
-    def __eq__(self, other):
-        return vars(self) == vars(other)
+NS = argparse.Namespace
 
 
 class ArgumentParserError(Exception):
@@ -2468,6 +2457,16 @@ class TestAddSubparsers(TestCase):
         # return the main parser
         return parser
 
+    def _get_parser_with_shared_option(self):
+        parser = ErrorRaisingArgumentParser(prog='PROG', description='main description')
+        parser.add_argument('-f', '--foo', default='0')
+        subparsers = parser.add_subparsers()
+        parser1 = subparsers.add_parser('1')
+        parser1.add_argument('-f', '--foo', default='1')
+        parser2 = subparsers.add_parser('2')
+        parser2.add_argument('-f', '--foo', default='2')
+        return parser
+
     def setUp(self):
         super().setUp()
         self.parser = self._get_parser()
@@ -2933,6 +2932,14 @@ class TestAddSubparsers(TestCase):
                 2                   2 help
                 3                   3 help
             """))
+
+    def test_subparsers_with_shared_option(self):
+        parser = self._get_parser_with_shared_option()
+        self.assertEqual(parser.parse_args([]), NS(foo='0'))
+        self.assertEqual(parser.parse_args(['1']), NS(foo='1'))
+        self.assertEqual(parser.parse_args(['2']), NS(foo='2'))
+        self.assertEqual(parser.parse_args(['-f', '10', '1', '-f', '42']), NS(foo='42'))
+        self.assertEqual(parser.parse_args(['1'], NS(foo='42')), NS(foo='42'))
 
 # ============
 # Groups tests
