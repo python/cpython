@@ -9,7 +9,7 @@ import struct
 
 
 # Terminfo constants
-MAGIC16 = 0o432    # Magic number for 16-bit terminfo format
+MAGIC16 = 0o432  # Magic number for 16-bit terminfo format
 MAGIC32 = 0o1036  # Magic number for 32-bit terminfo format
 
 # Special values for absent/cancelled capabilities
@@ -455,29 +455,31 @@ def _get_terminfo_dirs() -> list[Path]:
     """
     dirs = []
 
-    terminfo = os.environ.get('TERMINFO')
+    terminfo = os.environ.get("TERMINFO")
     if terminfo:
         dirs.append(terminfo)
 
     try:
         home = Path.home()
-        dirs.append(str(home / '.terminfo'))
+        dirs.append(str(home / ".terminfo"))
     except RuntimeError:
         pass
 
     # Check TERMINFO_DIRS
-    terminfo_dirs = os.environ.get('TERMINFO_DIRS', '')
+    terminfo_dirs = os.environ.get("TERMINFO_DIRS", "")
     if terminfo_dirs:
-        for d in terminfo_dirs.split(':'):
+        for d in terminfo_dirs.split(":"):
             if d:
                 dirs.append(d)
 
-    dirs.extend([
-        '/usr/share/terminfo',
-        '/usr/share/misc/terminfo',
-        '/usr/local/share/terminfo',
-        '/etc/terminfo',
-    ])
+    dirs.extend(
+        [
+            "/usr/share/terminfo",
+            "/usr/share/misc/terminfo",
+            "/usr/local/share/terminfo",
+            "/etc/terminfo",
+        ]
+    )
 
     return [Path(d) for d in dirs if Path(d).is_dir()]
 
@@ -503,7 +505,7 @@ def _read_terminfo_file(terminal_name: str) -> bytes:
             return path.read_bytes()
 
         # Try with hex encoding of first char (for special chars)
-        hex_dir = '%02x' % ord(first_char)
+        hex_dir = "%02x" % ord(first_char)
         path = directory / hex_dir / filename
         if path.is_file():
             return path.read_bytes()
@@ -519,110 +521,140 @@ _TERMINAL_CAPABILITIES = {
         # Bell
         "bel": b"\x07",
         # Cursor movement
-        "cub": b"\x1b[%p1%dD",      # Move cursor left N columns
-        "cud": b"\x1b[%p1%dB",      # Move cursor down N rows
-        "cuf": b"\x1b[%p1%dC",      # Move cursor right N columns
-        "cuu": b"\x1b[%p1%dA",      # Move cursor up N rows
-        "cub1": b"\x1b[D",          # Move cursor left 1 column
-        "cud1": b"\x1b[B",          # Move cursor down 1 row
-        "cuf1": b"\x1b[C",          # Move cursor right 1 column
-        "cuu1": b"\x1b[A",          # Move cursor up 1 row
+        "cub": b"\x1b[%p1%dD",  # Move cursor left N columns
+        "cud": b"\x1b[%p1%dB",  # Move cursor down N rows
+        "cuf": b"\x1b[%p1%dC",  # Move cursor right N columns
+        "cuu": b"\x1b[%p1%dA",  # Move cursor up N rows
+        "cub1": b"\x1b[D",  # Move cursor left 1 column
+        "cud1": b"\x1b[B",  # Move cursor down 1 row
+        "cuf1": b"\x1b[C",  # Move cursor right 1 column
+        "cuu1": b"\x1b[A",  # Move cursor up 1 row
         "cup": b"\x1b[%i%p1%d;%p2%dH",  # Move cursor to row, column
-        "hpa": b"\x1b[%i%p1%dG",    # Move cursor to column
+        "hpa": b"\x1b[%i%p1%dG",  # Move cursor to column
         # Clear operations
         "clear": b"\x1b[H\x1b[2J",  # Clear screen and home cursor
-        "el": b"\x1b[K",            # Clear to end of line
+        "el": b"\x1b[K",  # Clear to end of line
         # Insert/delete
-        "dch": b"\x1b[%p1%dP",      # Delete N characters
-        "dch1": b"\x1b[P",          # Delete 1 character
-        "ich": b"\x1b[%p1%d@",      # Insert N characters
-        "ich1": b"\x1b[@",          # Insert 1 character
+        "dch": b"\x1b[%p1%dP",  # Delete N characters
+        "dch1": b"\x1b[P",  # Delete 1 character
+        "ich": b"\x1b[%p1%d@",  # Insert N characters
+        "ich1": b"\x1b[@",  # Insert 1 character
         # Cursor visibility
-        "civis": b"\x1b[?25l",      # Make cursor invisible
-        "cnorm": b"\x1b[?25h",      # Make cursor normal (visible)
+        "civis": b"\x1b[?25l",  # Make cursor invisible
+        "cnorm": b"\x1b[?25h",  # Make cursor normal (visible)
         # Scrolling
-        "ind": b"\n",               # Scroll up one line
-        "ri": b"\x1bM",             # Scroll down one line
+        "ind": b"\n",  # Scroll up one line
+        "ri": b"\x1bM",  # Scroll down one line
         # Keypad mode
-        "smkx": b"\x1b[?1h\x1b=",   # Enable keypad mode
-        "rmkx": b"\x1b[?1l\x1b>",   # Disable keypad mode
+        "smkx": b"\x1b[?1h\x1b=",  # Enable keypad mode
+        "rmkx": b"\x1b[?1l\x1b>",  # Disable keypad mode
         # Padding (not used in modern terminals)
         "pad": b"",
         # Function keys and special keys
-        "kdch1": b"\x1b[3~",        # Delete key
-        "kcud1": b"\x1b[B",         # Down arrow
-        "kend": b"\x1b[F",          # End key
-        "kent": b"\x1bOM",          # Enter key
-        "khome": b"\x1b[H",         # Home key
-        "kich1": b"\x1b[2~",        # Insert key
-        "kcub1": b"\x1b[D",         # Left arrow
-        "knp": b"\x1b[6~",          # Page down
-        "kpp": b"\x1b[5~",          # Page up
-        "kcuf1": b"\x1b[C",         # Right arrow
-        "kcuu1": b"\x1b[A",         # Up arrow
+        "kdch1": b"\x1b[3~",  # Delete key
+        "kcud1": b"\x1b[B",  # Down arrow
+        "kend": b"\x1b[F",  # End key
+        "kent": b"\x1bOM",  # Enter key
+        "khome": b"\x1b[H",  # Home key
+        "kich1": b"\x1b[2~",  # Insert key
+        "kcub1": b"\x1b[D",  # Left arrow
+        "knp": b"\x1b[6~",  # Page down
+        "kpp": b"\x1b[5~",  # Page up
+        "kcuf1": b"\x1b[C",  # Right arrow
+        "kcuu1": b"\x1b[A",  # Up arrow
         # Function keys F1-F20
-        "kf1": b"\x1bOP", "kf2": b"\x1bOQ", "kf3": b"\x1bOR", "kf4": b"\x1bOS",
-        "kf5": b"\x1b[15~", "kf6": b"\x1b[17~", "kf7": b"\x1b[18~", "kf8": b"\x1b[19~",
-        "kf9": b"\x1b[20~", "kf10": b"\x1b[21~", "kf11": b"\x1b[23~", "kf12": b"\x1b[24~",
-        "kf13": b"\x1b[25~", "kf14": b"\x1b[26~", "kf15": b"\x1b[28~", "kf16": b"\x1b[29~",
-        "kf17": b"\x1b[31~", "kf18": b"\x1b[32~", "kf19": b"\x1b[33~", "kf20": b"\x1b[34~",
+        "kf1": b"\x1bOP",
+        "kf2": b"\x1bOQ",
+        "kf3": b"\x1bOR",
+        "kf4": b"\x1bOS",
+        "kf5": b"\x1b[15~",
+        "kf6": b"\x1b[17~",
+        "kf7": b"\x1b[18~",
+        "kf8": b"\x1b[19~",
+        "kf9": b"\x1b[20~",
+        "kf10": b"\x1b[21~",
+        "kf11": b"\x1b[23~",
+        "kf12": b"\x1b[24~",
+        "kf13": b"\x1b[25~",
+        "kf14": b"\x1b[26~",
+        "kf15": b"\x1b[28~",
+        "kf16": b"\x1b[29~",
+        "kf17": b"\x1b[31~",
+        "kf18": b"\x1b[32~",
+        "kf19": b"\x1b[33~",
+        "kf20": b"\x1b[34~",
     },
     # Dumb terminal - minimal capabilities
     "dumb": {
-        "bel": b"\x07",             # Bell
-        "cud1": b"\n",              # Move down 1 row (newline)
-        "ind": b"\n",               # Scroll up one line (newline)
+        "bel": b"\x07",  # Bell
+        "cud1": b"\n",  # Move down 1 row (newline)
+        "ind": b"\n",  # Scroll up one line (newline)
     },
     # Linux console
     "linux": {
         # Bell
         "bel": b"\x07",
         # Cursor movement
-        "cub": b"\x1b[%p1%dD",      # Move cursor left N columns
-        "cud": b"\x1b[%p1%dB",      # Move cursor down N rows
-        "cuf": b"\x1b[%p1%dC",      # Move cursor right N columns
-        "cuu": b"\x1b[%p1%dA",      # Move cursor up N rows
-        "cub1": b"\x08",            # Move cursor left 1 column (backspace)
-        "cud1": b"\n",              # Move cursor down 1 row (newline)
-        "cuf1": b"\x1b[C",          # Move cursor right 1 column
-        "cuu1": b"\x1b[A",          # Move cursor up 1 row
+        "cub": b"\x1b[%p1%dD",  # Move cursor left N columns
+        "cud": b"\x1b[%p1%dB",  # Move cursor down N rows
+        "cuf": b"\x1b[%p1%dC",  # Move cursor right N columns
+        "cuu": b"\x1b[%p1%dA",  # Move cursor up N rows
+        "cub1": b"\x08",  # Move cursor left 1 column (backspace)
+        "cud1": b"\n",  # Move cursor down 1 row (newline)
+        "cuf1": b"\x1b[C",  # Move cursor right 1 column
+        "cuu1": b"\x1b[A",  # Move cursor up 1 row
         "cup": b"\x1b[%i%p1%d;%p2%dH",  # Move cursor to row, column
-        "hpa": b"\x1b[%i%p1%dG",    # Move cursor to column
+        "hpa": b"\x1b[%i%p1%dG",  # Move cursor to column
         # Clear operations
-        "clear": b"\x1b[H\x1b[J",   # Clear screen and home cursor (different from ansi!)
-        "el": b"\x1b[K",            # Clear to end of line
+        "clear": b"\x1b[H\x1b[J",  # Clear screen and home cursor (different from ansi!)
+        "el": b"\x1b[K",  # Clear to end of line
         # Insert/delete
-        "dch": b"\x1b[%p1%dP",      # Delete N characters
-        "dch1": b"\x1b[P",          # Delete 1 character
-        "ich": b"\x1b[%p1%d@",      # Insert N characters
-        "ich1": b"\x1b[@",          # Insert 1 character
+        "dch": b"\x1b[%p1%dP",  # Delete N characters
+        "dch1": b"\x1b[P",  # Delete 1 character
+        "ich": b"\x1b[%p1%d@",  # Insert N characters
+        "ich1": b"\x1b[@",  # Insert 1 character
         # Cursor visibility
         "civis": b"\x1b[?25l\x1b[?1c",  # Make cursor invisible
         "cnorm": b"\x1b[?25h\x1b[?0c",  # Make cursor normal
         # Scrolling
-        "ind": b"\n",               # Scroll up one line
-        "ri": b"\x1bM",             # Scroll down one line
+        "ind": b"\n",  # Scroll up one line
+        "ri": b"\x1bM",  # Scroll down one line
         # Keypad mode
-        "smkx": b"\x1b[?1h\x1b=",   # Enable keypad mode
-        "rmkx": b"\x1b[?1l\x1b>",   # Disable keypad mode
+        "smkx": b"\x1b[?1h\x1b=",  # Enable keypad mode
+        "rmkx": b"\x1b[?1l\x1b>",  # Disable keypad mode
         # Function keys and special keys
-        "kdch1": b"\x1b[3~",        # Delete key
-        "kcud1": b"\x1b[B",         # Down arrow
-        "kend": b"\x1b[4~",         # End key (different from ansi!)
-        "khome": b"\x1b[1~",        # Home key (different from ansi!)
-        "kich1": b"\x1b[2~",        # Insert key
-        "kcub1": b"\x1b[D",         # Left arrow
-        "knp": b"\x1b[6~",          # Page down
-        "kpp": b"\x1b[5~",          # Page up
-        "kcuf1": b"\x1b[C",         # Right arrow
-        "kcuu1": b"\x1b[A",         # Up arrow
+        "kdch1": b"\x1b[3~",  # Delete key
+        "kcud1": b"\x1b[B",  # Down arrow
+        "kend": b"\x1b[4~",  # End key (different from ansi!)
+        "khome": b"\x1b[1~",  # Home key (different from ansi!)
+        "kich1": b"\x1b[2~",  # Insert key
+        "kcub1": b"\x1b[D",  # Left arrow
+        "knp": b"\x1b[6~",  # Page down
+        "kpp": b"\x1b[5~",  # Page up
+        "kcuf1": b"\x1b[C",  # Right arrow
+        "kcuu1": b"\x1b[A",  # Up arrow
         # Function keys
-        "kf1": b"\x1b[[A", "kf2": b"\x1b[[B", "kf3": b"\x1b[[C", "kf4": b"\x1b[[D",
-        "kf5": b"\x1b[[E", "kf6": b"\x1b[17~", "kf7": b"\x1b[18~", "kf8": b"\x1b[19~",
-        "kf9": b"\x1b[20~", "kf10": b"\x1b[21~", "kf11": b"\x1b[23~", "kf12": b"\x1b[24~",
-        "kf13": b"\x1b[25~", "kf14": b"\x1b[26~", "kf15": b"\x1b[28~", "kf16": b"\x1b[29~",
-        "kf17": b"\x1b[31~", "kf18": b"\x1b[32~", "kf19": b"\x1b[33~", "kf20": b"\x1b[34~",
-    }
+        "kf1": b"\x1b[[A",
+        "kf2": b"\x1b[[B",
+        "kf3": b"\x1b[[C",
+        "kf4": b"\x1b[[D",
+        "kf5": b"\x1b[[E",
+        "kf6": b"\x1b[17~",
+        "kf7": b"\x1b[18~",
+        "kf8": b"\x1b[19~",
+        "kf9": b"\x1b[20~",
+        "kf10": b"\x1b[21~",
+        "kf11": b"\x1b[23~",
+        "kf12": b"\x1b[24~",
+        "kf13": b"\x1b[25~",
+        "kf14": b"\x1b[26~",
+        "kf15": b"\x1b[28~",
+        "kf16": b"\x1b[29~",
+        "kf17": b"\x1b[31~",
+        "kf18": b"\x1b[32~",
+        "kf19": b"\x1b[33~",
+        "kf20": b"\x1b[34~",
+    },
 }
 
 # Map common TERM values to capability sets
@@ -641,6 +673,7 @@ _TERM_ALIASES = {
     "rxvt-unicode-256color": "ansi",
     "unknown": "dumb",
 }
+
 
 @dataclass
 class TermInfo:
@@ -666,10 +699,10 @@ class TermInfo:
         """
         # If termstr is None or empty, try to get from environment
         if not self.terminal_name:
-            self.terminal_name = os.environ.get('TERM') or 'ANSI'
+            self.terminal_name = os.environ.get("TERM") or "ANSI"
 
         if isinstance(self.terminal_name, bytes):
-            self.terminal_name = self.terminal_name.decode('ascii')
+            self.terminal_name = self.terminal_name.decode("ascii")
 
         try:
             self._parse_terminfo_file(self.terminal_name)
@@ -677,9 +710,11 @@ class TermInfo:
             if not self.fallback:
                 raise
 
-            term_type = _TERM_ALIASES.get(self.terminal_name, self.terminal_name)
+            term_type = _TERM_ALIASES.get(
+                self.terminal_name, self.terminal_name
+            )
             if term_type not in _TERMINAL_CAPABILITIES:
-                term_type = 'dumb'
+                term_type = "dumb"
             self._capabilities = _TERMINAL_CAPABILITIES[term_type].copy()
 
     def _parse_terminfo_file(self, terminal_name: str) -> None:
@@ -695,12 +730,12 @@ class TermInfo:
         if len(data) < 12:
             raise ValueError(too_short)
 
-        magic = struct.unpack('<H', data[offset:offset+2])[0]
+        magic = struct.unpack("<H", data[offset : offset + 2])[0]
         if magic == MAGIC16:
-            number_format = '<h'  # 16-bit signed
+            number_format = "<h"  # 16-bit signed
             number_size = 2
         elif magic == MAGIC32:
-            number_format = '<i'  # 32-bit signed
+            number_format = "<i"  # 32-bit signed
             number_size = 4
         else:
             raise ValueError(
@@ -708,24 +743,26 @@ class TermInfo:
             )
 
         # Parse header
-        name_size = struct.unpack('<h', data[2:4])[0]
-        bool_count = struct.unpack('<h', data[4:6])[0]
-        num_count = struct.unpack('<h', data[6:8])[0]
-        str_count = struct.unpack('<h', data[8:10])[0]
-        str_size = struct.unpack('<h', data[10:12])[0]
+        name_size = struct.unpack("<h", data[2:4])[0]
+        bool_count = struct.unpack("<h", data[4:6])[0]
+        num_count = struct.unpack("<h", data[6:8])[0]
+        str_count = struct.unpack("<h", data[8:10])[0]
+        str_size = struct.unpack("<h", data[10:12])[0]
 
         offset = 12
 
         # Read terminal names
         if offset + name_size > len(data):
             raise ValueError(too_short)
-        names = data[offset:offset+name_size-1].decode('ascii', errors='ignore')
+        names = data[offset : offset + name_size - 1].decode(
+            "ascii", errors="ignore"
+        )
         offset += name_size
 
         # Read boolean capabilities
         if offset + bool_count > len(data):
             raise ValueError(too_short)
-        booleans = list(data[offset:offset+bool_count])
+        booleans = list(data[offset : offset + bool_count])
         offset += bool_count
 
         # Align to even byte boundary for numbers
@@ -737,7 +774,9 @@ class TermInfo:
         for i in range(num_count):
             if offset + number_size > len(data):
                 raise ValueError(too_short)
-            num = struct.unpack(number_format, data[offset:offset+number_size])[0]
+            num = struct.unpack(
+                number_format, data[offset : offset + number_size]
+            )[0]
             numbers.append(num)
             offset += number_size
 
@@ -746,14 +785,14 @@ class TermInfo:
         for i in range(str_count):
             if offset + 2 > len(data):
                 raise ValueError(too_short)
-            off = struct.unpack('<h', data[offset:offset+2])[0]
+            off = struct.unpack("<h", data[offset : offset + 2])[0]
             string_offsets.append(off)
             offset += 2
 
         # Read string table
         if offset + str_size > len(data):
             raise ValueError(too_short)
-        string_table = data[offset:offset+str_size]
+        string_table = data[offset : offset + str_size]
 
         # Extract strings from string table
         strings: list[bytes | None] = []
@@ -772,7 +811,7 @@ class TermInfo:
             else:
                 strings.append(ABSENT_STRING)
 
-        self._names = names.split('|')
+        self._names = names.split("|")
         self._booleans = booleans
         self._numbers = numbers
         self._strings = strings
@@ -836,20 +875,20 @@ def tparm(cap_bytes: bytes, *params: int) -> bytes:
             value = params[i]
             if increment:
                 value += 1
-            result = result.replace(pattern, str(value).encode('ascii'))
+            result = result.replace(pattern, str(value).encode("ascii"))
 
     # Handle %p1%{1}%+%d (parameter plus constant)
     # Used in some cursor positioning sequences
-    pattern_re = re.compile(rb'%p(\d)%\{(\d+)\}%\+%d')
+    pattern_re = re.compile(rb"%p(\d)%\{(\d+)\}%\+%d")
     matches = list(pattern_re.finditer(result))
     for match in reversed(matches):  # reversed to maintain positions
         param_idx = int(match.group(1))
         constant = int(match.group(2))
         value = params[param_idx] + constant
         result = (
-            result[:match.start()]
-            + str(value).encode('ascii')
-            + result[match.end():]
+            result[: match.start()]
+            + str(value).encode("ascii")
+            + result[match.end() :]
         )
 
     return result
