@@ -1,0 +1,2 @@
+Fix crash in :mod:`datetime` when its static types are initialized or
+finalized by multiple interpreters concurrently.
