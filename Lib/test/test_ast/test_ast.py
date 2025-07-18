@@ -548,7 +548,7 @@ class AST_Tests(unittest.TestCase):
         )
 
     def test_compare_modified_ast(self):
-        # The ast API is a bit under-specified. The objects are mutable,
+        # The ast API is a bit underspecified. The objects are mutable,
         # and even _fields and _attributes are mutable. The compare() does
         # some simple things to accommodate mutability.
         a = ast.parse("m * x + b", mode="eval")
