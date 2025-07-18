@@ -831,7 +831,7 @@ class TermInfo:
 
         if self._capabilities:
             # Fallbacks populated, use them
-            return self._capabilities[cap]
+            return self._capabilities.get(cap)
 
         # Look up in standard capabilities first
         if cap in _STRING_CAPABILITY_NAMES:
