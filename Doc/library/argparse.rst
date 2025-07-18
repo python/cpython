@@ -1144,16 +1144,20 @@ if the argument was not one of the acceptable values::
    game.py: error: argument move: invalid choice: 'fire' (choose from 'rock',
    'paper', 'scissors')
 
-Note that inclusion in the *choices* sequence is checked after any type_
-conversions have been performed, so the type of the objects in the *choices*
-sequence should match the type_ specified.
-
 Any sequence can be passed as the *choices* value, so :class:`list` objects,
 :class:`tuple` objects, and custom sequences are all supported.
 
 Use of :class:`enum.Enum` is not recommended because it is difficult to
 control its appearance in usage, help, and error messages.
 
+Note that *choices* are checked after any type_
+conversions have been performed, so objects in *choices*
+should match the type_ specified. This can make *choices*
+appear unfamiliar in usage, help, or error messages.
+
+To keep *choices* user-friendly, consider a custom type wrapper that
+converts and formats values, or omit type_ and handle conversion in
+your application code.
 Formatted choices override the default *metavar* which is normally derived
 from *dest*.  This is usually what you want because the user never sees the
 *dest* parameter.  If this display isn't desirable (perhaps because there are
