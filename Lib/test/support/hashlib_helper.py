@@ -217,12 +217,12 @@ def _openssl_new(digestname, /, **kwargs):
         # re-import '_hashlib' in case it was mocked
         _hashlib = importlib.import_module("_hashlib")
     except ImportError as exc:
-        raise SkipNoHash(fullname, "openssl") from exc
+        raise SkipNoHash(digestname, "openssl") from exc
     constructor = partial(_hashlib.new, digestname, **kwargs)
     try:
         constructor()
     except ValueError as exc:
-        raise SkipNoHash(fullname, "_hashlib.new") from exc
+        raise SkipNoHash(digestname, "_hashlib.new") from exc
     return constructor
 
 
