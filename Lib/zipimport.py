@@ -210,52 +210,6 @@ class zipimporter(_bootstrap_external._LoaderBasics):
         return mi
 
 
-    # Load and return the module named by 'fullname'.
-    def load_module(self, fullname):
-        """load_module(fullname) -> module.
-
-        Load the module specified by 'fullname'. 'fullname' must be the
-        fully qualified (dotted) module name. It returns the imported
-        module, or raises ZipImportError if it could not be imported.
-
-        Deprecated since Python 3.10. Use exec_module() instead.
-        """
-        import warnings
-        warnings._deprecated("zipimport.zipimporter.load_module",
-                             f"{warnings._DEPRECATED_MSG}; "
-                             "use zipimport.zipimporter.exec_module() instead",
-                             remove=(3, 15))
-        code, ispackage, modpath = _get_module_code(self, fullname)
-        mod = sys.modules.get(fullname)
-        if mod is None or not isinstance(mod, _module_type):
-            mod = _module_type(fullname)
-            sys.modules[fullname] = mod
-        mod.__loader__ = self
-
-        try:
-            if ispackage:
-                # add __path__ to the module *before* the code gets
-                # executed
-                path = _get_module_path(self, fullname)
-                fullpath = _bootstrap_external._path_join(self.archive, path)
-                mod.__path__ = [fullpath]
-
-            if not hasattr(mod, '__builtins__'):
-                mod.__builtins__ = __builtins__
-            _bootstrap_external._fix_up_module(mod.__dict__, fullname, modpath)
-            exec(code, mod.__dict__)
-        except:
-            del sys.modules[fullname]
-            raise
-
-        try:
-            mod = sys.modules[fullname]
-        except KeyError:
-            raise ImportError(f'Loaded module {fullname!r} not found in sys.modules')
-        _bootstrap._verbose_message('import {} # loaded from Zip {}', fullname, modpath)
-        return mod
-
-
     def get_resource_reader(self, fullname):
         """Return the ResourceReader for a module in a zip file."""
         from importlib.readers import ZipReader
