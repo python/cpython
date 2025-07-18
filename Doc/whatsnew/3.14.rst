@@ -1273,6 +1273,13 @@ calendar
   (Contributed by Hugo van Kemenade in :gh:`128317`.)
 
 
+asyncio
+-------
+
+* Add *eager_tasks* parameter to :func:`asyncio.run` function and
+  :class:`asyncio.Runner` class constructor.
+  (Contributed by Andrew Svetlov in :gh:`128289`.)
+
 concurrent.futures
 ------------------
 
