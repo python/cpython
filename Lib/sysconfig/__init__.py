@@ -412,7 +412,13 @@ def _init_non_posix(vars):
     vars['EXE'] = '.exe'
     vars['VERSION'] = _PY_VERSION_SHORT_NO_DOT
     vars['BINDIR'] = os.path.dirname(_safe_realpath(sys.executable))
-    vars['TZPATH'] = ''
+    # No standard path exists on Windows for this, but we'll check
+    # whether someone is imitating a POSIX-like layout
+    check_tzpath = os.path.join(vars['prefix'], 'share', 'zoneinfo')
+    if os.path.exists(check_tzpath):
+        vars['TZPATH'] = check_tzpath
+    else:
+        vars['TZPATH'] = ''
 
 #
 # public APIs
