@@ -585,11 +585,22 @@ operations on it as if it was a Python list. The top of the stack corresponds to
    generate line tracing events.
 
 
+.. opcode:: NOT_TAKEN
+   Do nothing code.  Used as a hint to the interpreter that a branch was predicted
+   as not taken.
+   .. versionadded:: 3.14
+
+
 .. opcode:: POP_TOP
 
    Removes the top-of-stack item::
 
       STACK.pop()
+
+
+.. opcode:: POP_ITER
+
+   Removes the iterator from the top of the stack.
 
 
 .. opcode:: END_FOR
@@ -1161,6 +1172,27 @@ iterations of the loop.
    onto the stack.
 
    .. versionadded:: 3.6
+
+
+.. opcode:: BUILD_INTERPOLATION
+
+   It expects as stack inputs (from top of stack down):
+
+   * ``format``: ``STACK[oparg & 1]``
+   * ``str``: ``STACK[-1 - (oparg & 1)]``
+   * ``value``: ``STACK[-2 - (oparg & 1)]``
+
+   It outputs the interpolation object to ``STACK[-1]`` after consuming its inputs.
+
+   .. versionadded:: 3.14
+
+
+.. opcode:: BUILD_TEMPLATE
+
+   Consumes ``STACK[-1]`` (interpolations) and ``STACK[-2]`` (strings) and
+   outputs the template object to ``STACK[-1]``.
+
+   .. versionadded:: 3.14
 
 
 .. opcode:: LIST_EXTEND (i)
