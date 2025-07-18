@@ -140,15 +140,14 @@ def _ensure_wrapper_signature(wrapper, wrapped):
         )
 
 
-def _requires_module(name):
-    def decorator_func(func):
-        module = try_import_module(name, missing := object())
-        return unittest.skipIf(module is missing, f"requires {name}")(func)
-    return partial(_decorate_func_or_class, decorator_func)
+def requires_hashlib():
+    _hashlib = try_import_module("_hashlib")
+    return unittest.skipIf(_hashlib is None, "requires _hashlib")
 
 
-requires_hashlib = partial(_requires_module, "_hashlib")
-requires_builtin_hmac = partial(_requires_module, "_hmac")
+def requires_builtin_hmac():
+    _hmac = try_import_module("_hmac")
+    return unittest.skipIf(_hmac is None, "requires _hmac")
 
 
 class SkipNoHash(unittest.SkipTest):
