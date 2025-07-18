@@ -1,6 +1,5 @@
 import contextlib
 import functools
-import hashlib
 import importlib
 import inspect
 import unittest
