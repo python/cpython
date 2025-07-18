@@ -58,6 +58,7 @@ class TestCase(unittest.TestCase):
         scheduler.run()
         self.assertEqual(l, [0.01, 0.02, 0.03, 0.04, 0.05])
 
+    @threading_helper.requires_working_threading()
     def test_enter_concurrent(self):
         q = queue.Queue()
         fun = q.put
@@ -91,10 +92,23 @@ class TestCase(unittest.TestCase):
         l = []
         fun = lambda x: l.append(x)
         scheduler = sched.scheduler(time.time, time.sleep)
-        for priority in [1, 2, 3, 4, 5]:
-            z = scheduler.enterabs(0.01, priority, fun, (priority,))
-        scheduler.run()
-        self.assertEqual(l, [1, 2, 3, 4, 5])
+
+        cases = [
+            ([1, 2, 3, 4, 5], [1, 2, 3, 4, 5]),
+            ([5, 4, 3, 2, 1], [1, 2, 3, 4, 5]),
+            ([2, 5, 3, 1, 4], [1, 2, 3, 4, 5]),
+            ([1, 2, 3, 2, 1], [1, 1, 2, 2, 3]),
+        ]
+        for priorities, expected in cases:
+            with self.subTest(priorities=priorities, expected=expected):
+                for priority in priorities:
+                    scheduler.enterabs(0.01, priority, fun, (priority,))
+                scheduler.run()
+                self.assertEqual(l, expected)
+
+                # Cleanup:
+                self.assertTrue(scheduler.empty())
+                l.clear()
 
     def test_cancel(self):
         l = []
@@ -111,6 +125,7 @@ class TestCase(unittest.TestCase):
         scheduler.run()
         self.assertEqual(l, [0.02, 0.03, 0.04])
 
+    @threading_helper.requires_working_threading()
     def test_cancel_concurrent(self):
         q = queue.Queue()
         fun = q.put

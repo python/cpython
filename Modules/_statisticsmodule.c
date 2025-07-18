@@ -1,5 +1,11 @@
 /* statistics accelerator C extension: _statistics module. */
 
+// Need limited C API version 3.13 for Py_mod_gil
+#include "pyconfig.h"   // Py_GIL_DISABLED
+#ifndef Py_GIL_DISABLED
+#  define Py_LIMITED_API 0x030d0000
+#endif
+
 #include "Python.h"
 #include "clinic/_statisticsmodule.c.h"
 
@@ -31,7 +37,7 @@ _statistics__normal_dist_inv_cdf_impl(PyObject *module, double p, double mu,
 /*[clinic end generated code: output=02fd19ddaab36602 input=24715a74be15296a]*/
 {
     double q, num, den, r, x;
-    if (p <= 0.0 || p >= 1.0 || sigma <= 0.0) {
+    if (p <= 0.0 || p >= 1.0) {
         goto error;
     }
 
@@ -129,6 +135,8 @@ PyDoc_STRVAR(statistics_doc,
 "Accelerators for the statistics module.\n");
 
 static struct PyModuleDef_Slot _statisticsmodule_slots[] = {
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

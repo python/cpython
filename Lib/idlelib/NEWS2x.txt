@@ -1,6 +1,6 @@
 What's New in IDLE 2.7? (Merged into 3.1 before 2.7 release.)
 =======================
-*Release date: XX-XXX-2010*
+*Release date: 03-Jul-2010*
 
 - idle.py modified and simplified to better support developing experimental
   versions of IDLE which are not installed in the standard location.

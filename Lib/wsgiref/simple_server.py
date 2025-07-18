@@ -84,10 +84,6 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
 
         env['PATH_INFO'] = urllib.parse.unquote(path, 'iso-8859-1')
         env['QUERY_STRING'] = query
-
-        host = self.address_string()
-        if host != self.client_address[0]:
-            env['REMOTE_HOST'] = host
         env['REMOTE_ADDR'] = self.client_address[0]
 
         if self.headers.get('content-type') is None:

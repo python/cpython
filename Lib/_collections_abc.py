@@ -6,6 +6,32 @@
 Unit tests are in test_collections.
 """
 
+############ Maintenance notes #########################################
+#
+# ABCs are different from other standard library modules in that they
+# specify compliance tests.  In general, once an ABC has been published,
+# new methods (either abstract or concrete) cannot be added.
+#
+# Though classes that inherit from an ABC would automatically receive a
+# new mixin method, registered classes would become non-compliant and
+# violate the contract promised by ``isinstance(someobj, SomeABC)``.
+#
+# Though irritating, the correct procedure for adding new abstract or
+# mixin methods is to create a new ABC as a subclass of the previous
+# ABC.  For example, union(), intersection(), and difference() cannot
+# be added to Set but could go into a new ABC that extends Set.
+#
+# Because they are so hard to change, new ABCs should have their APIs
+# carefully thought through prior to publication.
+#
+# Since ABCMeta only checks for the presence of methods, it is possible
+# to alter the signature of a method by adding optional arguments
+# or changing parameters names.  This is still a bit dubious but at
+# least it won't cause isinstance() to return an incorrect result.
+#
+#
+#######################################################################
+
 from abc import ABCMeta, abstractmethod
 import sys
 
@@ -23,7 +49,7 @@ __all__ = ["Awaitable", "Coroutine",
            "Mapping", "MutableMapping",
            "MappingView", "KeysView", "ItemsView", "ValuesView",
            "Sequence", "MutableSequence",
-           "ByteString",
+           "Buffer",
            ]
 
 # This module has been renamed from collections.abc to _collections_abc to
@@ -59,6 +85,10 @@ dict_values = type({}.values())
 dict_items = type({}.items())
 ## misc ##
 mappingproxy = type(type.__dict__)
+def _get_framelocalsproxy():
+    return type(sys._getframe().f_locals)
+framelocalsproxy = _get_framelocalsproxy()
+del _get_framelocalsproxy
 generator = type((lambda: (yield))())
 ## coroutine ##
 async def _coro(): pass
@@ -413,6 +443,21 @@ class Collection(Sized, Iterable, Container):
         return NotImplemented
 
 
+class Buffer(metaclass=ABCMeta):
+
+    __slots__ = ()
+
+    @abstractmethod
+    def __buffer__(self, flags: int, /) -> memoryview:
+        raise NotImplementedError
+
+    @classmethod
+    def __subclasshook__(cls, C):
+        if cls is Buffer:
+            return _check_methods(C, "__buffer__")
+        return NotImplemented
+
+
 class _CallableGenericAlias(GenericAlias):
     """ Represent `Callable[argtypes, resulttype]`.
 
@@ -426,45 +471,28 @@ class _CallableGenericAlias(GenericAlias):
     __slots__ = ()
 
     def __new__(cls, origin, args):
-        return cls.__create_ga(origin, args)
-
-    @classmethod
-    def __create_ga(cls, origin, args):
-        if not isinstance(args, tuple) or len(args) != 2:
+        if not (isinstance(args, tuple) and len(args) == 2):
             raise TypeError(
                 "Callable must be used as Callable[[arg, ...], result].")
         t_args, t_result = args
-        if isinstance(t_args, (list, tuple)):
-            ga_args = tuple(t_args) + (t_result,)
-        # This relaxes what t_args can be on purpose to allow things like
-        # PEP 612 ParamSpec.  Responsibility for whether a user is using
-        # Callable[...] properly is deferred to static type checkers.
-        else:
-            ga_args = args
-        return super().__new__(cls, origin, ga_args)
-
-    @property
-    def __parameters__(self):
-        params = []
-        for arg in self.__args__:
-            # Looks like a genericalias
-            if hasattr(arg, "__parameters__") and isinstance(arg.__parameters__, tuple):
-                params.extend(arg.__parameters__)
-            else:
-                if _is_typevarlike(arg):
-                    params.append(arg)
-        return tuple(dict.fromkeys(params))
+        if isinstance(t_args, (tuple, list)):
+            args = (*t_args, t_result)
+        elif not _is_param_expr(t_args):
+            raise TypeError(f"Expected a list of types, an ellipsis, "
+                            f"ParamSpec, or Concatenate. Got {t_args}")
+        return super().__new__(cls, origin, args)
 
     def __repr__(self):
-        if _has_special_args(self.__args__):
+        if len(self.__args__) == 2 and _is_param_expr(self.__args__[0]):
             return super().__repr__()
+        from annotationlib import type_repr
         return (f'collections.abc.Callable'
-                f'[[{", ".join([_type_repr(a) for a in self.__args__[:-1]])}], '
-                f'{_type_repr(self.__args__[-1])}]')
+                f'[[{", ".join([type_repr(a) for a in self.__args__[:-1]])}], '
+                f'{type_repr(self.__args__[-1])}]')
 
     def __reduce__(self):
         args = self.__args__
-        if not _has_special_args(args):
+        if not (len(args) == 2 and _is_param_expr(args[0])):
             args = list(args[:-1]), args[-1]
         return _CallableGenericAlias, (Callable, args)
 
@@ -473,34 +501,10 @@ class _CallableGenericAlias(GenericAlias):
         # rather than the default types.GenericAlias object.  Most of the
         # code is copied from typing's _GenericAlias and the builtin
         # types.GenericAlias.
-
-        # A special case in PEP 612 where if X = Callable[P, int],
-        # then X[int, str] == X[[int, str]].
-        param_len = len(self.__parameters__)
-        if param_len == 0:
-            raise TypeError(f'There are no type or parameter specification'
-                            f'variables left in {self}')
-        if (param_len == 1
-                and isinstance(item, (tuple, list))
-                and len(item) > 1) or not isinstance(item, tuple):
+        if not isinstance(item, tuple):
             item = (item,)
-        item_len = len(item)
-        if item_len != param_len:
-            raise TypeError(f'Too {"many" if item_len > param_len else "few"}'
-                            f' arguments for {self};'
-                            f' actual {item_len}, expected {param_len}')
-        subst = dict(zip(self.__parameters__, item))
-        new_args = []
-        for arg in self.__args__:
-            if _is_typevarlike(arg):
-                arg = subst[arg]
-            # Looks like a GenericAlias
-            elif hasattr(arg, '__parameters__') and isinstance(arg.__parameters__, tuple):
-                subparams = arg.__parameters__
-                if subparams:
-                    subargs = tuple(subst[x] for x in subparams)
-                    arg = arg[subargs]
-            new_args.append(arg)
+
+        new_args = super().__getitem__(item).__args__
 
         # args[0] occurs due to things like Z[[int, str, bool]] from PEP 612
         if not isinstance(new_args[0], (tuple, list)):
@@ -509,43 +513,17 @@ class _CallableGenericAlias(GenericAlias):
             new_args = (t_args, t_result)
         return _CallableGenericAlias(Callable, tuple(new_args))
 
-def _is_typevarlike(arg):
-    obj = type(arg)
-    # looks like a TypeVar/ParamSpec
-    return (obj.__module__ == 'typing'
-            and obj.__name__ in {'ParamSpec', 'TypeVar'})
-
-def _has_special_args(args):
-    """Checks if args[0] matches either ``...``, ``ParamSpec`` or
+def _is_param_expr(obj):
+    """Checks if obj matches either a list of types, ``...``, ``ParamSpec`` or
     ``_ConcatenateGenericAlias`` from typing.py
     """
-    if len(args) != 2:
-        return False
-    obj = args[0]
     if obj is Ellipsis:
+        return True
+    if isinstance(obj, list):
         return True
     obj = type(obj)
     names = ('ParamSpec', '_ConcatenateGenericAlias')
     return obj.__module__ == 'typing' and any(obj.__name__ == name for name in names)
-
-
-def _type_repr(obj):
-    """Return the repr() of an object, special-casing types (internal helper).
-
-    Copied from :mod:`typing` since collections.abc
-    shouldn't depend on that module.
-    """
-    if isinstance(obj, GenericAlias):
-        return repr(obj)
-    if isinstance(obj, type):
-        if obj.__module__ == 'builtins':
-            return obj.__qualname__
-        return f'{obj.__module__}.{obj.__qualname__}'
-    if obj is Ellipsis:
-        return '...'
-    if isinstance(obj, FunctionType):
-        return obj.__name__
-    return repr(obj)
 
 
 class Callable(metaclass=ABCMeta):
@@ -696,6 +674,7 @@ class Set(Collection):
             hx = hash(x)
             h ^= (hx ^ (hx << 16) ^ 89869747)  * 3644798167
             h &= MASK
+        h ^= (h >> 11) ^ (h >> 25)
         h = h * 69069 + 907133923
         h &= MASK
         if h > MAX:
@@ -845,6 +824,7 @@ class Mapping(Collection):
     __reversed__ = None
 
 Mapping.register(mappingproxy)
+Mapping.register(framelocalsproxy)
 
 
 class MappingView(Sized):
@@ -868,7 +848,7 @@ class KeysView(MappingView, Set):
     __slots__ = ()
 
     @classmethod
-    def _from_iterable(self, it):
+    def _from_iterable(cls, it):
         return set(it)
 
     def __contains__(self, key):
@@ -886,7 +866,7 @@ class ItemsView(MappingView, Set):
     __slots__ = ()
 
     @classmethod
-    def _from_iterable(self, it):
+    def _from_iterable(cls, it):
         return set(it)
 
     def __contains__(self, item):
@@ -982,7 +962,7 @@ class MutableMapping(Mapping):
 
     def update(self, other=(), /, **kwds):
         ''' D.update([E, ]**F) -> None.  Update D from mapping/iterable E and F.
-            If E present and has a .keys() method, does:     for k in E: D[k] = E[k]
+            If E present and has a .keys() method, does:     for k in E.keys(): D[k] = E[k]
             If E present and lacks .keys() method, does:     for (k, v) in E: D[k] = v
             In either case, this is followed by: for k, v in F.items(): D[k] = v
         '''
@@ -1064,10 +1044,10 @@ class Sequence(Reversible, Collection):
         while stop is None or i < stop:
             try:
                 v = self[i]
-                if v is value or v == value:
-                    return i
             except IndexError:
                 break
+            if v is value or v == value:
+                return i
             i += 1
         raise ValueError
 
@@ -1077,20 +1057,9 @@ class Sequence(Reversible, Collection):
 
 Sequence.register(tuple)
 Sequence.register(str)
+Sequence.register(bytes)
 Sequence.register(range)
 Sequence.register(memoryview)
-
-
-class ByteString(Sequence):
-    """This unifies bytes and bytearray.
-
-    XXX Should add all their methods.
-    """
-
-    __slots__ = ()
-
-ByteString.register(bytes)
-ByteString.register(bytearray)
 
 
 class MutableSequence(Sequence):
@@ -1160,4 +1129,4 @@ class MutableSequence(Sequence):
 
 
 MutableSequence.register(list)
-MutableSequence.register(bytearray)  # Multiply inheriting, see ByteString
+MutableSequence.register(bytearray)

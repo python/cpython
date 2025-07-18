@@ -6,9 +6,8 @@ import unittest
 import os
 from difflib import unified_diff
 from io import StringIO
-from test.support import run_unittest
 from test.support.os_helper import TESTFN, unlink, temp_dir, change_cwd
-from contextlib import contextmanager
+from contextlib import contextmanager, redirect_stdout
 
 import profile
 from test.profilee import testfunc, timer
@@ -93,6 +92,11 @@ class ProfileTest(unittest.TestCase):
         self.profilermodule.run("int('1')", filename=TESTFN)
         self.assertTrue(os.path.exists(TESTFN))
 
+    def test_run_with_sort_by_values(self):
+        with redirect_stdout(StringIO()) as f:
+            self.profilermodule.run("int('1')", sort=('tottime', 'stdname'))
+        self.assertIn("Ordered by: internal time, standard name", f.getvalue())
+
     def test_runctx(self):
         with silent():
             self.profilermodule.runctx("testfunc()", globals(), locals())
@@ -156,12 +160,10 @@ def silent():
     finally:
         sys.stdout = stdout
 
-def test_main():
-    run_unittest(ProfileTest)
 
 def main():
     if '-r' not in sys.argv:
-        test_main()
+        unittest.main()
     else:
         regenerate_expected_output(__file__, ProfileTest)
 
@@ -181,7 +183,7 @@ _ProfileOutput['print_stats'] = """\
         8   63.976    7.997   79.960    9.995 profilee.py:98(subhelper)"""
 _ProfileOutput['print_callers'] = """\
 :0(append)                        <- profilee.py:73(helper1)(4)  119.964
-:0(exc_info)                      <- profilee.py:73(helper1)(4)  119.964
+:0(exception)                     <- profilee.py:73(helper1)(4)  119.964
 :0(hasattr)                       <- profilee.py:73(helper1)(4)  119.964
                                      profilee.py:88(helper2)(8)  399.912
 profilee.py:110(__getattr__)      <- :0(hasattr)(12)   11.964

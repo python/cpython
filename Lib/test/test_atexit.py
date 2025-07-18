@@ -1,11 +1,10 @@
 import atexit
 import os
-import sys
 import textwrap
 import unittest
 from test import support
 from test.support import script_helper
-
+from test.support import threading_helper
 
 class GeneralTest(unittest.TestCase):
     def test_general(self):
@@ -47,6 +46,39 @@ class FunctionalTest(unittest.TestCase):
         self.assertEqual(res.out.decode().splitlines(), ["atexit2", "atexit1"])
         self.assertFalse(res.err)
 
+    @threading_helper.requires_working_threading()
+    @support.requires_resource("cpu")
+    @unittest.skipUnless(support.Py_GIL_DISABLED, "only meaningful without the GIL")
+    def test_atexit_thread_safety(self):
+        # GH-126907: atexit was not thread safe on the free-threaded build
+        source = """
+        from threading import Thread
+
+        def dummy():
+            pass
+
+
+        def thready():
+            for _ in range(100):
+                atexit.register(dummy)
+                atexit._clear()
+                atexit.register(dummy)
+                atexit.unregister(dummy)
+                atexit._run_exitfuncs()
+
+
+        threads = [Thread(target=thready) for _ in range(10)]
+        for thread in threads:
+            thread.start()
+
+        for thread in threads:
+            thread.join()
+        """
+
+        # atexit._clear() has some evil side effects, and we don't
+        # want them to affect the rest of the tests.
+        script_helper.assert_python_ok("-c", textwrap.dedent(source))
+
 
 @support.cpython_only
 class SubinterpreterTest(unittest.TestCase):
@@ -82,6 +114,7 @@ class SubinterpreterTest(unittest.TestCase):
         self.assertEqual(ret, 0)
         self.assertEqual(atexit._ncallbacks(), n)
 
+    @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     def test_callback_on_subinterpreter_teardown(self):
         # This tests if a callback is called on
         # subinterpreter teardown.

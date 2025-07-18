@@ -95,15 +95,15 @@
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>version.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>shell32.lib;pathcch.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Windows</SubSystem>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\PC\launcher.c" />
+    <ClCompile Include="..\PC\launcher2.c" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\PC\launcher.ico" />
+    <None Include="..\PC\icons\launcher.ico" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\pylauncher.rc" />

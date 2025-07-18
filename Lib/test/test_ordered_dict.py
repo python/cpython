@@ -2,7 +2,9 @@ import builtins
 import contextlib
 import copy
 import gc
+import operator
 import pickle
+import re
 from random import randrange, shuffle
 import struct
 import sys
@@ -122,6 +124,17 @@ class OrderedDictTests:
         self.OrderedDict(Spam())
         self.assertEqual(calls, ['keys'])
 
+    def test_overridden_init(self):
+        # Sync-up pure Python OD class with C class where
+        # a consistent internal state is created in __new__
+        # rather than __init__.
+        OrderedDict = self.OrderedDict
+        class ODNI(OrderedDict):
+            def __init__(*args, **kwargs):
+                pass
+        od = ODNI()
+        od['a'] = 1  # This used to fail because __init__ was bypassed
+
     def test_fromkeys(self):
         OrderedDict = self.OrderedDict
         od = OrderedDict.fromkeys('abc')
@@ -134,7 +147,7 @@ class OrderedDictTests:
     def test_abc(self):
         OrderedDict = self.OrderedDict
         self.assertIsInstance(OrderedDict(), MutableMapping)
-        self.assertTrue(issubclass(OrderedDict, MutableMapping))
+        self.assertIsSubclass(OrderedDict, MutableMapping)
 
     def test_clear(self):
         OrderedDict = self.OrderedDict
@@ -287,6 +300,8 @@ class OrderedDictTests:
         # and have a repr/eval round-trip
         pairs = [('c', 1), ('b', 2), ('a', 3), ('d', 4), ('e', 5), ('f', 6)]
         od = OrderedDict(pairs)
+        od.x = ['x']
+        od.z = ['z']
         def check(dup):
             msg = "\ncopy: %s\nod: %s" % (dup, od)
             self.assertIsNot(dup, od, msg)
@@ -295,13 +310,27 @@ class OrderedDictTests:
             self.assertEqual(len(dup), len(od))
             self.assertEqual(type(dup), type(od))
         check(od.copy())
-        check(copy.copy(od))
-        check(copy.deepcopy(od))
+        dup = copy.copy(od)
+        check(dup)
+        self.assertIs(dup.x, od.x)
+        self.assertIs(dup.z, od.z)
+        self.assertNotHasAttr(dup, 'y')
+        dup = copy.deepcopy(od)
+        check(dup)
+        self.assertEqual(dup.x, od.x)
+        self.assertIsNot(dup.x, od.x)
+        self.assertEqual(dup.z, od.z)
+        self.assertIsNot(dup.z, od.z)
+        self.assertNotHasAttr(dup, 'y')
         # pickle directly pulls the module, so we have to fake it
         with replaced_module('collections', self.module):
             for proto in range(pickle.HIGHEST_PROTOCOL + 1):
                 with self.subTest(proto=proto):
-                    check(pickle.loads(pickle.dumps(od, proto)))
+                    dup = pickle.loads(pickle.dumps(od, proto))
+                    check(dup)
+                    self.assertEqual(dup.x, od.x)
+                    self.assertEqual(dup.z, od.z)
+                    self.assertNotHasAttr(dup, 'y')
         check(eval(repr(od)))
         update_test = OrderedDict()
         update_test.update(od)
@@ -346,7 +375,7 @@ class OrderedDictTests:
         OrderedDict = self.OrderedDict
         od = OrderedDict([('c', 1), ('b', 2), ('a', 3), ('d', 4), ('e', 5), ('f', 6)])
         self.assertEqual(repr(od),
-            "OrderedDict([('c', 1), ('b', 2), ('a', 3), ('d', 4), ('e', 5), ('f', 6)])")
+            "OrderedDict({'c': 1, 'b': 2, 'a': 3, 'd': 4, 'e': 5, 'f': 6})")
         self.assertEqual(eval(repr(od)), od)
         self.assertEqual(repr(OrderedDict()), "OrderedDict()")
 
@@ -356,7 +385,7 @@ class OrderedDictTests:
         od = OrderedDict.fromkeys('abc')
         od['x'] = od
         self.assertEqual(repr(od),
-            "OrderedDict([('a', None), ('b', None), ('c', None), ('x', ...)])")
+            "OrderedDict({'a': None, 'b': None, 'c': None, 'x': ...})")
 
     def test_repr_recursive_values(self):
         OrderedDict = self.OrderedDict
@@ -712,10 +741,43 @@ class OrderedDictTests:
         # when it's mutated and returned from __next__:
         self.assertTrue(gc.is_tracked(next(it)))
 
+
+class _TriggerSideEffectOnEqual:
+    count = 0   # number of calls to __eq__
+    trigger = 1 # count value when to trigger side effect
+
+    def __eq__(self, other):
+        if self.__class__.count == self.__class__.trigger:
+            self.side_effect()
+        self.__class__.count += 1
+        return True
+
+    def __hash__(self):
+        # all instances represent the same key
+        return -1
+
+    def side_effect(self):
+        raise NotImplementedError
+
 class PurePythonOrderedDictTests(OrderedDictTests, unittest.TestCase):
 
     module = py_coll
     OrderedDict = py_coll.OrderedDict
+
+    def test_issue119004_attribute_error(self):
+        class Key(_TriggerSideEffectOnEqual):
+            def side_effect(self):
+                del dict1[TODEL]
+
+        TODEL = Key()
+        dict1 = self.OrderedDict(dict.fromkeys((0, TODEL, 4.2)))
+        dict2 = self.OrderedDict(dict.fromkeys((0, Key(), 4.2)))
+        # This causes an AttributeError due to the linked list being changed
+        msg = re.escape("'NoneType' object has no attribute 'key'")
+        self.assertRaisesRegex(AttributeError, msg, operator.eq, dict1, dict2)
+        self.assertEqual(Key.count, 2)
+        self.assertDictEqual(dict1, dict.fromkeys((0, 4.2)))
+        self.assertDictEqual(dict2, dict.fromkeys((0, Key(), 4.2)))
 
 
 class CPythonBuiltinDictTests(unittest.TestCase):
@@ -737,8 +799,85 @@ for method in (
 del method
 
 
+class CPythonOrderedDictSideEffects:
+
+    def check_runtime_error_issue119004(self, dict1, dict2):
+        msg = re.escape("OrderedDict mutated during iteration")
+        self.assertRaisesRegex(RuntimeError, msg, operator.eq, dict1, dict2)
+
+    def test_issue119004_change_size_by_clear(self):
+        class Key(_TriggerSideEffectOnEqual):
+            def side_effect(self):
+                dict1.clear()
+
+        dict1 = self.OrderedDict(dict.fromkeys((0, Key(), 4.2)))
+        dict2 = self.OrderedDict(dict.fromkeys((0, Key(), 4.2)))
+        self.check_runtime_error_issue119004(dict1, dict2)
+        self.assertEqual(Key.count, 2)
+        self.assertDictEqual(dict1, {})
+        self.assertDictEqual(dict2, dict.fromkeys((0, Key(), 4.2)))
+
+    def test_issue119004_change_size_by_delete_key(self):
+        class Key(_TriggerSideEffectOnEqual):
+            def side_effect(self):
+                del dict1[TODEL]
+
+        TODEL = Key()
+        dict1 = self.OrderedDict(dict.fromkeys((0, TODEL, 4.2)))
+        dict2 = self.OrderedDict(dict.fromkeys((0, Key(), 4.2)))
+        self.check_runtime_error_issue119004(dict1, dict2)
+        self.assertEqual(Key.count, 2)
+        self.assertDictEqual(dict1, dict.fromkeys((0, 4.2)))
+        self.assertDictEqual(dict2, dict.fromkeys((0, Key(), 4.2)))
+
+    def test_issue119004_change_linked_list_by_clear(self):
+        class Key(_TriggerSideEffectOnEqual):
+            def side_effect(self):
+                dict1.clear()
+                dict1['a'] = dict1['b'] = 'c'
+
+        dict1 = self.OrderedDict(dict.fromkeys((0, Key(), 4.2)))
+        dict2 = self.OrderedDict(dict.fromkeys((0, Key(), 4.2)))
+        self.check_runtime_error_issue119004(dict1, dict2)
+        self.assertEqual(Key.count, 2)
+        self.assertDictEqual(dict1, dict.fromkeys(('a', 'b'), 'c'))
+        self.assertDictEqual(dict2, dict.fromkeys((0, Key(), 4.2)))
+
+    def test_issue119004_change_linked_list_by_delete_key(self):
+        class Key(_TriggerSideEffectOnEqual):
+            def side_effect(self):
+                del dict1[TODEL]
+                dict1['a'] = 'c'
+
+        TODEL = Key()
+        dict1 = self.OrderedDict(dict.fromkeys((0, TODEL, 4.2)))
+        dict2 = self.OrderedDict(dict.fromkeys((0, Key(), 4.2)))
+        self.check_runtime_error_issue119004(dict1, dict2)
+        self.assertEqual(Key.count, 2)
+        self.assertDictEqual(dict1, {0: None, 'a': 'c', 4.2: None})
+        self.assertDictEqual(dict2, dict.fromkeys((0, Key(), 4.2)))
+
+    def test_issue119004_change_size_by_delete_key_in_dict_eq(self):
+        class Key(_TriggerSideEffectOnEqual):
+            trigger = 0
+            def side_effect(self):
+                del dict1[TODEL]
+
+        TODEL = Key()
+        dict1 = self.OrderedDict(dict.fromkeys((0, TODEL, 4.2)))
+        dict2 = self.OrderedDict(dict.fromkeys((0, Key(), 4.2)))
+        self.assertEqual(Key.count, 0)
+        # the side effect is in dict.__eq__ and modifies the length
+        self.assertNotEqual(dict1, dict2)
+        self.assertEqual(Key.count, 2)
+        self.assertDictEqual(dict1, dict.fromkeys((0, 4.2)))
+        self.assertDictEqual(dict2, dict.fromkeys((0, Key(), 4.2)))
+
+
 @unittest.skipUnless(c_coll, 'requires the C version of the collections module')
-class CPythonOrderedDictTests(OrderedDictTests, unittest.TestCase):
+class CPythonOrderedDictTests(OrderedDictTests,
+                              CPythonOrderedDictSideEffects,
+                              unittest.TestCase):
 
     module = c_coll
     OrderedDict = c_coll.OrderedDict
@@ -752,7 +891,7 @@ class CPythonOrderedDictTests(OrderedDictTests, unittest.TestCase):
         check = self.check_sizeof
 
         basicsize = size('nQ2P' + '3PnPn2P')
-        keysize = calcsize('2nP2n')
+        keysize = calcsize('n2BI2n')
 
         entrysize = calcsize('n2P')
         p = calcsize('P')
@@ -846,6 +985,23 @@ class CPythonOrderedDictSubclassTests(CPythonOrderedDictTests):
         pass
 
 
+class PurePythonOrderedDictWithSlotsCopyingTests(unittest.TestCase):
+
+    module = py_coll
+    class OrderedDict(py_coll.OrderedDict):
+        __slots__ = ('x', 'y')
+    test_copying = OrderedDictTests.test_copying
+
+
+@unittest.skipUnless(c_coll, 'requires the C version of the collections module')
+class CPythonOrderedDictWithSlotsCopyingTests(unittest.TestCase):
+
+    module = c_coll
+    class OrderedDict(c_coll.OrderedDict):
+        __slots__ = ('x', 'y')
+    test_copying = OrderedDictTests.test_copying
+
+
 class PurePythonGeneralMappingTests(mapping_tests.BasicTestMappingProtocol):
 
     @classmethod
@@ -894,6 +1050,89 @@ class CPythonSubclassMappingTests(mapping_tests.BasicTestMappingProtocol):
     def test_popitem(self):
         d = self._empty_mapping()
         self.assertRaises(KeyError, d.popitem)
+
+
+class SimpleLRUCache:
+
+    def __init__(self, size):
+        super().__init__()
+        self.size = size
+        self.counts = dict.fromkeys(('get', 'set', 'del'), 0)
+
+    def __getitem__(self, item):
+        self.counts['get'] += 1
+        value = super().__getitem__(item)
+        self.move_to_end(item)
+        return value
+
+    def __setitem__(self, key, value):
+        self.counts['set'] += 1
+        while key not in self and len(self) >= self.size:
+            self.popitem(last=False)
+        super().__setitem__(key, value)
+        self.move_to_end(key)
+
+    def __delitem__(self, key):
+        self.counts['del'] += 1
+        super().__delitem__(key)
+
+
+class SimpleLRUCacheTests:
+
+    def test_add_after_full(self):
+        c = self.type2test(2)
+        c['t1'] = 1
+        c['t2'] = 2
+        c['t3'] = 3
+        self.assertEqual(c.counts, {'get': 0, 'set': 3, 'del': 0})
+        self.assertEqual(list(c), ['t2', 't3'])
+        self.assertEqual(c.counts, {'get': 0, 'set': 3, 'del': 0})
+
+    def test_popitem(self):
+        c = self.type2test(3)
+        for i in range(1, 4):
+            c[i] = i
+        self.assertEqual(c.popitem(last=False), (1, 1))
+        self.assertEqual(c.popitem(last=True), (3, 3))
+        self.assertEqual(c.counts, {'get': 0, 'set': 3, 'del': 0})
+
+    def test_pop(self):
+        c = self.type2test(3)
+        for i in range(1, 4):
+            c[i] = i
+        self.assertEqual(c.counts, {'get': 0, 'set': 3, 'del': 0})
+        self.assertEqual(c.pop(2), 2)
+        self.assertEqual(c.counts, {'get': 0, 'set': 3, 'del': 0})
+        self.assertEqual(c.pop(4, 0), 0)
+        self.assertEqual(c.counts, {'get': 0, 'set': 3, 'del': 0})
+        self.assertRaises(KeyError, c.pop, 4)
+        self.assertEqual(c.counts, {'get': 0, 'set': 3, 'del': 0})
+
+    def test_change_order_on_get(self):
+        c = self.type2test(3)
+        for i in range(1, 4):
+            c[i] = i
+        self.assertEqual(list(c), list(range(1, 4)))
+        self.assertEqual(c.counts, {'get': 0, 'set': 3, 'del': 0})
+        self.assertEqual(c[2], 2)
+        self.assertEqual(c.counts, {'get': 1, 'set': 3, 'del': 0})
+        self.assertEqual(list(c), [1, 3, 2])
+
+
+class PySimpleLRUCacheTests(SimpleLRUCacheTests, unittest.TestCase):
+
+    class type2test(SimpleLRUCache, py_coll.OrderedDict):
+        pass
+
+
+@unittest.skipUnless(c_coll, 'requires the C version of the collections module')
+class CSimpleLRUCacheTests(SimpleLRUCacheTests, unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        class type2test(SimpleLRUCache, c_coll.OrderedDict):
+            pass
+        cls.type2test = type2test
 
 
 if __name__ == "__main__":

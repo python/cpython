@@ -2,14 +2,13 @@ import io
 import marshal
 import os
 import sys
-from test import support
 from test.support import import_helper
 import types
 import unittest
 from unittest import mock
 import warnings
 
-from . import util as test_util
+from test.test_importlib import util as test_util
 
 init = test_util.import_importlib('importlib')
 abc = test_util.import_importlib('importlib.abc')
@@ -44,14 +43,12 @@ class InheritanceTests:
     def test_subclasses(self):
         # Test that the expected subclasses inherit.
         for subclass in self.subclasses:
-            self.assertTrue(issubclass(subclass, self.__test),
-                "{0} is not a subclass of {1}".format(subclass, self.__test))
+            self.assertIsSubclass(subclass, self.__test)
 
     def test_superclasses(self):
         # Test that the class inherits from the expected superclasses.
         for superclass in self.superclasses:
-            self.assertTrue(issubclass(self.__test, superclass),
-               "{0} is not a superclass of {1}".format(superclass, self.__test))
+            self.assertIsSubclass(self.__test, superclass)
 
 
 class MetaPathFinder(InheritanceTests):
@@ -148,19 +145,12 @@ class ABCTestHarness:
 
 class MetaPathFinder:
 
-    def find_module(self, fullname, path):
-        return super().find_module(fullname, path)
+    pass
 
 
 class MetaPathFinderDefaultsTests(ABCTestHarness):
 
     SPLIT = make_abc_subclasses(MetaPathFinder)
-
-    def test_find_module(self):
-        # Default should return None.
-        with self.assertWarns(DeprecationWarning):
-            found = self.ins.find_module('something', None)
-        self.assertIsNone(found)
 
     def test_invalidate_caches(self):
         # Calling the method is a no-op.
@@ -174,21 +164,12 @@ class MetaPathFinderDefaultsTests(ABCTestHarness):
 
 class PathEntryFinder:
 
-    def find_loader(self, fullname):
-        return super().find_loader(fullname)
+    pass
 
 
 class PathEntryFinderDefaultsTests(ABCTestHarness):
 
     SPLIT = make_abc_subclasses(PathEntryFinder)
-
-    def test_find_loader(self):
-        with self.assertWarns(DeprecationWarning):
-            found = self.ins.find_loader('something')
-        self.assertEqual(found, (None, []))
-
-    def find_module(self):
-        self.assertEqual(None, self.ins.find_module('something'))
 
     def test_invalidate_caches(self):
         # Should be a no-op.
@@ -202,8 +183,7 @@ class PathEntryFinderDefaultsTests(ABCTestHarness):
 
 class Loader:
 
-    def load_module(self, fullname):
-        return super().load_module(fullname)
+    pass
 
 
 class LoaderDefaultsTests(ABCTestHarness):
@@ -222,8 +202,6 @@ class LoaderDefaultsTests(ABCTestHarness):
         mod = types.ModuleType('blah')
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", DeprecationWarning)
-            with self.assertRaises(NotImplementedError):
-                self.ins.module_repr(mod)
             original_repr = repr(mod)
             mod.__loader__ = self.ins
             # Should still return a proper repr.
@@ -246,7 +224,15 @@ class ResourceLoaderDefaultsTests(ABCTestHarness):
     SPLIT = make_abc_subclasses(ResourceLoader)
 
     def test_get_data(self):
-        with self.assertRaises(IOError):
+        with (
+            self.assertRaises(IOError),
+            self.assertWarnsRegex(
+                DeprecationWarning,
+                r"importlib\.abc\.ResourceLoader is deprecated in favour of "
+                r"supporting resource loading through importlib\.resources"
+                r"\.abc\.TraversableResources.",
+            ),
+        ):
             self.ins.get_data('/some/path')
 
 
@@ -323,32 +309,6 @@ class ResourceReader:
         return super().contents(*args, **kwargs)
 
 
-class ResourceReaderDefaultsTests(ABCTestHarness):
-
-    SPLIT = make_abc_subclasses(ResourceReader)
-
-    def test_open_resource(self):
-        with self.assertRaises(FileNotFoundError):
-            self.ins.open_resource('dummy_file')
-
-    def test_resource_path(self):
-        with self.assertRaises(FileNotFoundError):
-            self.ins.resource_path('dummy_file')
-
-    def test_is_resource(self):
-        with self.assertRaises(FileNotFoundError):
-            self.ins.is_resource('dummy_file')
-
-    def test_contents(self):
-        with self.assertRaises(FileNotFoundError):
-            self.ins.contents()
-
-
-(Frozen_RRDefaultTests,
- Source_RRDefaultsTests
- ) = test_util.test_both(ResourceReaderDefaultsTests)
-
-
 ##### MetaPathFinder concrete methods ##########################################
 class MetaPathFinderFindModuleTests:
 
@@ -361,14 +321,6 @@ class MetaPathFinderFindModuleTests:
                 return spec
 
         return MetaPathSpecFinder()
-
-    def test_find_module(self):
-        finder = self.finder(None)
-        path = ['a', 'b', 'c']
-        name = 'blah'
-        with self.assertWarns(DeprecationWarning):
-            found = finder.find_module(name, path)
-        self.assertIsNone(found)
 
     def test_find_spec_with_explicit_target(self):
         loader = object()
@@ -397,53 +349,6 @@ class MetaPathFinderFindModuleTests:
 (Frozen_MPFFindModuleTests,
  Source_MPFFindModuleTests
  ) = test_util.test_both(MetaPathFinderFindModuleTests, abc=abc, util=util)
-
-
-##### PathEntryFinder concrete methods #########################################
-class PathEntryFinderFindLoaderTests:
-
-    @classmethod
-    def finder(cls, spec):
-        class PathEntrySpecFinder(cls.abc.PathEntryFinder):
-
-            def find_spec(self, fullname, target=None):
-                self.called_for = fullname
-                return spec
-
-        return PathEntrySpecFinder()
-
-    def test_no_spec(self):
-        finder = self.finder(None)
-        name = 'blah'
-        with self.assertWarns(DeprecationWarning):
-            found = finder.find_loader(name)
-        self.assertIsNone(found[0])
-        self.assertEqual([], found[1])
-        self.assertEqual(name, finder.called_for)
-
-    def test_spec_with_loader(self):
-        loader = object()
-        spec = self.util.spec_from_loader('blah', loader)
-        finder = self.finder(spec)
-        with self.assertWarns(DeprecationWarning):
-            found = finder.find_loader('blah')
-        self.assertIs(found[0], spec.loader)
-
-    def test_spec_with_portions(self):
-        spec = self.machinery.ModuleSpec('blah', None)
-        paths = ['a', 'b', 'c']
-        spec.submodule_search_locations = paths
-        finder = self.finder(spec)
-        with self.assertWarns(DeprecationWarning):
-            found = finder.find_loader('blah')
-        self.assertIsNone(found[0])
-        self.assertEqual(paths, found[1])
-
-
-(Frozen_PEFFindLoaderTests,
- Source_PEFFindLoaderTests
- ) = test_util.test_both(PathEntryFinderFindLoaderTests, abc=abc, util=util,
-                         machinery=machinery)
 
 
 ##### Loader concrete methods ##################################################
@@ -517,14 +422,14 @@ class InspectLoaderSourceToCodeTests:
         # Since compile() can handle strings, so should source_to_code().
         source = 'attr = 42'
         module = self.source_to_module(source)
-        self.assertTrue(hasattr(module, 'attr'))
+        self.assertHasAttr(module, 'attr')
         self.assertEqual(module.attr, 42)
 
     def test_source_to_code_bytes(self):
         # Since compile() can handle bytes, so should source_to_code().
         source = b'attr = 42'
         module = self.source_to_module(source)
-        self.assertTrue(hasattr(module, 'attr'))
+        self.assertHasAttr(module, 'attr')
         self.assertEqual(module.attr, 42)
 
     def test_source_to_code_path(self):
@@ -716,9 +621,6 @@ class SourceOnlyLoader:
     def get_filename(self, fullname):
         return self.path
 
-    def module_repr(self, module):
-        return '<module>'
-
 
 SPLIT_SOL = make_abc_subclasses(SourceOnlyLoader, 'SourceLoader')
 
@@ -803,13 +705,7 @@ class SourceLoaderTestHarness:
 
 
 class SourceOnlyLoaderTests(SourceLoaderTestHarness):
-
-    """Test importlib.abc.SourceLoader for source-only loading.
-
-    Reload testing is subsumed by the tests for
-    importlib.util.module_for_loader.
-
-    """
+    """Test importlib.abc.SourceLoader for source-only loading."""
 
     def test_get_source(self):
         # Verify the source code is returned as a string.
@@ -867,7 +763,7 @@ class SourceOnlyLoaderTests(SourceLoaderTestHarness):
                     warnings.simplefilter('ignore', DeprecationWarning)
                     module = self.loader.load_module(self.name)
                 self.verify_module(module)
-                self.assertFalse(hasattr(module, '__path__'))
+                self.assertNotHasAttr(module, '__path__')
 
     def test_get_source_encoding(self):
         # Source is considered encoded in UTF-8 by default unless otherwise
@@ -905,6 +801,9 @@ class SourceLoaderBytecodeTests(SourceLoaderTestHarness):
             data.extend(self.init._pack_uint32(0))
             data.extend(self.init._pack_uint32(self.loader.source_mtime))
             data.extend(self.init._pack_uint32(self.loader.source_size))
+            # Make sure there's > 1 reference to code_object so that the
+            # marshaled representation below matches the cached representation
+            l = [code_object]
             data.extend(marshal.dumps(code_object))
             self.assertEqual(self.loader.written[self.cached], bytes(data))
 
@@ -1022,6 +921,48 @@ class SourceLoaderGetSourceTests:
  ) = test_util.test_both(SourceLoaderGetSourceTests,
                          SourceOnlyLoaderMock=SPLIT_SOL)
 
+
+class SourceLoaderDeprecationWarningsTests(unittest.TestCase):
+    """Tests SourceLoader deprecation warnings."""
+
+    def test_deprecated_path_mtime(self):
+        from importlib.abc import SourceLoader
+        class DummySourceLoader(SourceLoader):
+            def get_data(self, path):
+                return b''
+
+            def get_filename(self, fullname):
+                return 'foo.py'
+
+            def path_stats(self, path):
+                return {'mtime': 1}
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            r"importlib\.abc\.ResourceLoader is deprecated in favour of "
+            r"supporting resource loading through importlib\.resources"
+            r"\.abc\.TraversableResources.",
+        ):
+            loader = DummySourceLoader()
+
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            r"SourceLoader\.path_mtime is deprecated in favour of "
+            r"SourceLoader\.path_stats\(\)\."
+        ):
+            loader.path_mtime('foo.py')
+
+
+class ResourceLoaderDeprecationWarningsTests(unittest.TestCase):
+    """Tests ResourceLoader deprecation warnings."""
+
+    def test_deprecated_resource_loader(self):
+        from importlib.abc import ResourceLoader
+        class DummyLoader(ResourceLoader):
+            def get_data(self, path):
+                return b''
+
+        with self.assertWarns(DeprecationWarning):
+            DummyLoader()
 
 if __name__ == '__main__':
     unittest.main()

@@ -35,8 +35,6 @@ saferepr()
 """
 
 import collections as _collections
-import dataclasses as _dataclasses
-import re
 import sys as _sys
 import types as _types
 from io import StringIO as _StringIO
@@ -50,8 +48,10 @@ def pprint(object, stream=None, indent=1, width=80, depth=None, *,
     """Pretty-print a Python object to a stream [default is sys.stdout]."""
     printer = PrettyPrinter(
         stream=stream, indent=indent, width=width, depth=depth,
-        compact=compact, sort_dicts=sort_dicts, underscore_numbers=False)
+        compact=compact, sort_dicts=sort_dicts,
+        underscore_numbers=underscore_numbers)
     printer.pprint(object)
+
 
 def pformat(object, indent=1, width=80, depth=None, *,
             compact=False, sort_dicts=True, underscore_numbers=False):
@@ -60,21 +60,26 @@ def pformat(object, indent=1, width=80, depth=None, *,
                          compact=compact, sort_dicts=sort_dicts,
                          underscore_numbers=underscore_numbers).pformat(object)
 
+
 def pp(object, *args, sort_dicts=False, **kwargs):
     """Pretty-print a Python object"""
     pprint(object, *args, sort_dicts=sort_dicts, **kwargs)
+
 
 def saferepr(object):
     """Version of repr() which can handle recursive data structures."""
     return PrettyPrinter()._safe_repr(object, {}, None, 0)[0]
 
+
 def isreadable(object):
     """Determine if saferepr(object) is readable by eval()."""
     return PrettyPrinter()._safe_repr(object, {}, None, 0)[1]
 
+
 def isrecursive(object):
     """Determine if object requires a recursive representation."""
     return PrettyPrinter()._safe_repr(object, {}, None, 0)[2]
+
 
 class _safe_key:
     """Helper function for key functions when sorting unorderable objects.
@@ -98,9 +103,11 @@ class _safe_key:
             return ((str(type(self.obj)), id(self.obj)) < \
                     (str(type(other.obj)), id(other.obj)))
 
+
 def _safe_tuple(t):
     "Helper function for comparing 2-tuples"
     return _safe_key(t[0]), _safe_key(t[1])
+
 
 class PrettyPrinter:
     def __init__(self, indent=1, width=80, depth=None, stream=None, *,
@@ -127,6 +134,9 @@ class PrettyPrinter:
         sort_dicts
             If true, dict keys are sorted.
 
+        underscore_numbers
+            If true, digit groups are separated with underscores.
+
         """
         indent = int(indent)
         width = int(width)
@@ -148,8 +158,9 @@ class PrettyPrinter:
         self._underscore_numbers = underscore_numbers
 
     def pprint(self, object):
-        self._format(object, self._stream, 0, 0, {}, 0)
-        self._stream.write("\n")
+        if self._stream is not None:
+            self._format(object, self._stream, 0, 0, {}, 0)
+            self._stream.write("\n")
 
     def pformat(self, object):
         sio = _StringIO()
@@ -174,12 +185,15 @@ class PrettyPrinter:
         max_width = self._width - indent - allowance
         if len(rep) > max_width:
             p = self._dispatch.get(type(object).__repr__, None)
+            # Lazy import to improve module import time
+            from dataclasses import is_dataclass
+
             if p is not None:
                 context[objid] = 1
                 p(self, object, stream, indent, allowance, context, level + 1)
                 del context[objid]
                 return
-            elif (_dataclasses.is_dataclass(object) and
+            elif (is_dataclass(object) and
                   not isinstance(object, type) and
                   object.__dataclass_params__.repr and
                   # Check dataclass has generated repr method.
@@ -192,9 +206,12 @@ class PrettyPrinter:
         stream.write(rep)
 
     def _pprint_dataclass(self, object, stream, indent, allowance, context, level):
+        # Lazy import to improve module import time
+        from dataclasses import fields as dataclass_fields
+
         cls_name = object.__class__.__name__
         indent += len(cls_name) + 1
-        items = [(f.name, getattr(object, f.name)) for f in _dataclasses.fields(object) if f.repr]
+        items = [(f.name, getattr(object, f.name)) for f in dataclass_fields(object) if f.repr]
         stream.write(cls_name + '(')
         self._format_namespace_items(items, stream, indent, allowance, context, level)
         stream.write(')')
@@ -230,6 +247,49 @@ class PrettyPrinter:
         stream.write(')')
 
     _dispatch[_collections.OrderedDict.__repr__] = _pprint_ordered_dict
+
+    def _pprint_dict_view(self, object, stream, indent, allowance, context, level):
+        """Pretty print dict views (keys, values, items)."""
+        if isinstance(object, self._dict_items_view):
+            key = _safe_tuple
+        else:
+            key = _safe_key
+        write = stream.write
+        write(object.__class__.__name__ + '([')
+        if self._indent_per_level > 1:
+            write((self._indent_per_level - 1) * ' ')
+        length = len(object)
+        if length:
+            if self._sort_dicts:
+                entries = sorted(object, key=key)
+            else:
+                entries = object
+            self._format_items(entries, stream, indent, allowance + 1,
+                               context, level)
+        write('])')
+
+    def _pprint_mapping_abc_view(self, object, stream, indent, allowance, context, level):
+        """Pretty print mapping views from collections.abc."""
+        write = stream.write
+        write(object.__class__.__name__ + '(')
+        # Dispatch formatting to the view's _mapping
+        self._format(object._mapping, stream, indent, allowance, context, level)
+        write(')')
+
+    _dict_keys_view = type({}.keys())
+    _dispatch[_dict_keys_view.__repr__] = _pprint_dict_view
+
+    _dict_values_view = type({}.values())
+    _dispatch[_dict_values_view.__repr__] = _pprint_dict_view
+
+    _dict_items_view = type({}.items())
+    _dispatch[_dict_items_view.__repr__] = _pprint_dict_view
+
+    _dispatch[_collections.abc.MappingView.__repr__] = _pprint_mapping_abc_view
+
+    _view_reprs = {cls.__repr__ for cls in
+                   (_dict_keys_view, _dict_values_view, _dict_items_view,
+                    _collections.abc.MappingView)}
 
     def _pprint_list(self, object, stream, indent, allowance, context, level):
         stream.write('[')
@@ -286,6 +346,9 @@ class PrettyPrinter:
             if len(rep) <= max_width1:
                 chunks.append(rep)
             else:
+                # Lazy import to improve module import time
+                import re
+
                 # A list of alternating (non-space, space) strings
                 parts = re.findall(r'\S*\s*', line)
                 assert parts
@@ -624,29 +687,54 @@ class PrettyPrinter:
             del context[objid]
             return format % ", ".join(components), readable, recursive
 
+        if issubclass(typ, _collections.abc.MappingView) and r in self._view_reprs:
+            objid = id(object)
+            if maxlevels and level >= maxlevels:
+                return "{...}", False, objid in context
+            if objid in context:
+                return _recursion(object), False, True
+            key = _safe_key
+            if issubclass(typ, (self._dict_items_view, _collections.abc.ItemsView)):
+                key = _safe_tuple
+            if hasattr(object, "_mapping"):
+                # Dispatch formatting to the view's _mapping
+                mapping_repr, readable, recursive = self.format(
+                    object._mapping, context, maxlevels, level)
+                return (typ.__name__ + '(%s)' % mapping_repr), readable, recursive
+            elif hasattr(typ, "_mapping"):
+                #  We have a view that somehow has lost its type's _mapping, raise
+                #  an error by calling repr() instead of failing cryptically later
+                return repr(object), True, False
+            if self._sort_dicts:
+                object = sorted(object, key=key)
+            context[objid] = 1
+            readable = True
+            recursive = False
+            components = []
+            append = components.append
+            level += 1
+            for val in object:
+                vrepr, vreadable, vrecur = self.format(
+                    val, context, maxlevels, level)
+                append(vrepr)
+                readable = readable and vreadable
+                if vrecur:
+                    recursive = True
+            del context[objid]
+            return typ.__name__ + '([%s])' % ", ".join(components), readable, recursive
+
         rep = repr(object)
         return rep, (rep and not rep.startswith('<')), False
 
+
 _builtin_scalars = frozenset({str, bytes, bytearray, float, complex,
                               bool, type(None)})
+
 
 def _recursion(object):
     return ("<Recursion on %s with id=%s>"
             % (type(object).__name__, id(object)))
 
-
-def _perfcheck(object=None):
-    import time
-    if object is None:
-        object = [("string", (1, 2), [3, 4], {5: 6, 7: 8})] * 100000
-    p = PrettyPrinter()
-    t1 = time.perf_counter()
-    p._safe_repr(object, {}, None, 0, True)
-    t2 = time.perf_counter()
-    p.pformat(object)
-    t3 = time.perf_counter()
-    print("_safe_repr:", t2 - t1)
-    print("pformat:", t3 - t2)
 
 def _wrap_bytes_repr(object, width, allowance):
     current = b''
@@ -664,6 +752,3 @@ def _wrap_bytes_repr(object, width, allowance):
             current = candidate
     if current:
         yield repr(current)
-
-if __name__ == "__main__":
-    _perfcheck()

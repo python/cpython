@@ -12,9 +12,16 @@ import tempfile
 import textwrap
 import unittest
 import warnings
-from test.support import no_tracing, verbose
+from test.support import (
+    force_not_colorized_test_class,
+    infinite_recursion,
+    no_tracing,
+    requires_resource,
+    requires_subprocess,
+    verbose,
+)
 from test.support.import_helper import forget, make_legacy_pyc, unload
-from test.support.os_helper import create_empty_file, temp_dir
+from test.support.os_helper import create_empty_file, temp_dir, FakePath
 from test.support.script_helper import make_script, make_zip_script
 
 
@@ -656,13 +663,14 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
             self._check_script(script_name, "<run_path>", script_name,
                                script_name, expect_spec=False)
 
-    def test_basic_script_with_path_object(self):
+    def test_basic_script_with_pathlike_object(self):
         with temp_dir() as script_dir:
             mod_name = 'script'
-            script_name = pathlib.Path(self._make_test_script(script_dir,
-                                                              mod_name))
-            self._check_script(script_name, "<run_path>", script_name,
-                               script_name, expect_spec=False)
+            script_name = self._make_test_script(script_dir, mod_name)
+            self._check_script(FakePath(script_name), "<run_path>",
+                               script_name,
+                               script_name,
+                               expect_spec=False)
 
     def test_basic_script_no_suffix(self):
         with temp_dir() as script_dir:
@@ -733,6 +741,7 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
             self._check_import_error(zip_name, msg)
 
     @no_tracing
+    @requires_resource('cpu')
     def test_main_recursion_error(self):
         with temp_dir() as script_dir, temp_dir() as dummy_dir:
             mod_name = '__main__'
@@ -740,8 +749,8 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
                       "runpy.run_path(%r)\n") % dummy_dir
             script_name = self._make_test_script(script_dir, mod_name, source)
             zip_name, fname = make_zip_script(script_dir, 'test_zip', script_name)
-            msg = "recursion depth exceeded"
-            self.assertRaisesRegex(RecursionError, msg, run_path, zip_name)
+            with infinite_recursion(25):
+                self.assertRaises(RecursionError, run_path, zip_name)
 
     def test_encoding(self):
         with temp_dir() as script_dir:
@@ -755,6 +764,7 @@ s = "non-ASCII: h\xe9"
             self.assertEqual(result['s'], "non-ASCII: h\xe9")
 
 
+@force_not_colorized_test_class
 class TestExit(unittest.TestCase):
     STATUS_CONTROL_C_EXIT = 0xC000013A
     EXPECTED_CODE = (
@@ -781,13 +791,16 @@ class TestExit(unittest.TestCase):
             )
             super().run(*args, **kwargs)
 
-    def assertSigInt(self, *args, **kwargs):
-        proc = subprocess.run(*args, **kwargs, text=True, stderr=subprocess.PIPE)
-        self.assertTrue(proc.stderr.endswith("\nKeyboardInterrupt\n"))
+    @requires_subprocess()
+    def assertSigInt(self, cmd, *args, **kwargs):
+        # Use -E to ignore PYTHONSAFEPATH
+        cmd = [sys.executable, '-E', *cmd]
+        proc = subprocess.run(cmd, *args, **kwargs, text=True, stderr=subprocess.PIPE)
+        self.assertEndsWith(proc.stderr, "\nKeyboardInterrupt\n")
         self.assertEqual(proc.returncode, self.EXPECTED_CODE)
 
     def test_pymain_run_file(self):
-        self.assertSigInt([sys.executable, self.ham])
+        self.assertSigInt([self.ham])
 
     def test_pymain_run_file_runpy_run_module(self):
         tmp = self.ham.parent
@@ -800,7 +813,7 @@ class TestExit(unittest.TestCase):
                 """
             )
         )
-        self.assertSigInt([sys.executable, run_module], cwd=tmp)
+        self.assertSigInt([run_module], cwd=tmp)
 
     def test_pymain_run_file_runpy_run_module_as_main(self):
         tmp = self.ham.parent
@@ -813,23 +826,23 @@ class TestExit(unittest.TestCase):
                 """
             )
         )
-        self.assertSigInt([sys.executable, run_module_as_main], cwd=tmp)
+        self.assertSigInt([run_module_as_main], cwd=tmp)
 
     def test_pymain_run_command_run_module(self):
         self.assertSigInt(
-            [sys.executable, "-c", "import runpy; runpy.run_module('ham')"],
+            ["-c", "import runpy; runpy.run_module('ham')"],
             cwd=self.ham.parent,
         )
 
     def test_pymain_run_command(self):
-        self.assertSigInt([sys.executable, "-c", "import ham"], cwd=self.ham.parent)
+        self.assertSigInt(["-c", "import ham"], cwd=self.ham.parent)
 
     def test_pymain_run_stdin(self):
-        self.assertSigInt([sys.executable], input="import ham", cwd=self.ham.parent)
+        self.assertSigInt([], input="import ham", cwd=self.ham.parent)
 
     def test_pymain_run_module(self):
         ham = self.ham
-        self.assertSigInt([sys.executable, "-m", ham.stem], cwd=ham.parent)
+        self.assertSigInt(["-m", ham.stem], cwd=ham.parent)
 
 
 if __name__ == "__main__":

@@ -1,10 +1,11 @@
-from test import support
-from test.support import import_helper, cpython_only
-gdbm = import_helper.import_module("dbm.gnu") #skip if not supported
-import unittest
 import os
-from test.support.os_helper import TESTFN, TESTFN_NONASCII, unlink
+import unittest
+from test import support
+from test.support import cpython_only, import_helper
+from test.support.os_helper import (TESTFN, TESTFN_NONASCII, FakePath,
+                                    create_empty_file, temp_dir, unlink)
 
+gdbm = import_helper.import_module("dbm.gnu")  # skip if not supported
 
 filename = TESTFN
 
@@ -31,8 +32,7 @@ class TestGdbm(unittest.TestCase):
     def test_disallow_instantiation(self):
         # Ensure that the type disallows instantiation (bpo-43916)
         self.g = gdbm.open(filename, 'c')
-        tp = type(self.g)
-        self.assertRaises(TypeError, tp)
+        support.check_disallow_instantiation(self, type(self.g))
 
     def test_key_methods(self):
         self.g = gdbm.open(filename, 'c')
@@ -74,12 +74,12 @@ class TestGdbm(unittest.TestCase):
         # Test the flag parameter open() by trying all supported flag modes.
         all = set(gdbm.open_flags)
         # Test standard flags (presumably "crwn").
-        modes = all - set('fsu')
+        modes = all - set('fsum')
         for mode in sorted(modes):  # put "c" mode first
             self.g = gdbm.open(filename, mode)
             self.g.close()
 
-        # Test additional flags (presumably "fsu").
+        # Test additional flags (presumably "fsum").
         flags = all - set('crwn')
         for mode in modes:
             for flag in flags:
@@ -118,6 +118,20 @@ class TestGdbm(unittest.TestCase):
             db.keys()
         self.assertEqual(str(cm.exception),
                          "GDBM object has already been closed")
+
+    def test_bool_empty(self):
+        with gdbm.open(filename, 'c') as db:
+            self.assertFalse(bool(db))
+
+    def test_bool_not_empty(self):
+        with gdbm.open(filename, 'c') as db:
+            db['a'] = 'b'
+            self.assertTrue(bool(db))
+
+    def test_bool_on_closed_db_raises(self):
+        with gdbm.open(filename, 'c') as db:
+            db['a'] = 'b'
+        self.assertRaises(gdbm.error, bool, db)
 
     def test_bytes(self):
         with gdbm.open(filename, 'c') as db:
@@ -169,6 +183,62 @@ class TestGdbm(unittest.TestCase):
             gdbm.open(nonexisting_file)
         self.assertIn(nonexisting_file, str(cm.exception))
         self.assertEqual(cm.exception.filename, nonexisting_file)
+
+    def test_open_with_pathlib_path(self):
+        gdbm.open(FakePath(filename), "c").close()
+
+    def test_open_with_bytes_path(self):
+        gdbm.open(os.fsencode(filename), "c").close()
+
+    def test_open_with_pathlib_bytes_path(self):
+        gdbm.open(FakePath(os.fsencode(filename)), "c").close()
+
+    def test_clear(self):
+        kvs = [('foo', 'bar'), ('1234', '5678')]
+        with gdbm.open(filename, 'c') as db:
+            for k, v in kvs:
+                db[k] = v
+                self.assertIn(k, db)
+            self.assertEqual(len(db), len(kvs))
+
+            db.clear()
+            for k, v in kvs:
+                self.assertNotIn(k, db)
+            self.assertEqual(len(db), 0)
+
+    @support.run_with_locale(
+        'LC_ALL',
+        'fr_FR.iso88591', 'ja_JP.sjis', 'zh_CN.gbk',
+        'fr_FR.utf8', 'en_US.utf8',
+        '',
+    )
+    def test_localized_error(self):
+        with temp_dir() as d:
+            create_empty_file(os.path.join(d, 'test'))
+            self.assertRaises(gdbm.error, gdbm.open, filename, 'r')
+
+    @unittest.skipUnless('m' in gdbm.open_flags, "requires 'm' in open_flags")
+    def test_nommap_no_crash(self):
+        self.g = g = gdbm.open(filename, 'nm')
+        os.truncate(filename, 0)
+
+        g.get(b'a', b'c')
+        g.keys()
+        g.firstkey()
+        g.nextkey(b'a')
+        with self.assertRaises(KeyError):
+            g[b'a']
+        with self.assertRaises(gdbm.error):
+            len(g)
+
+        with self.assertRaises(gdbm.error):
+            g[b'a'] = b'c'
+        with self.assertRaises(gdbm.error):
+            del g[b'a']
+        with self.assertRaises(gdbm.error):
+            g.setdefault(b'a', b'c')
+        with self.assertRaises(gdbm.error):
+            g.reorganize()
 
 
 if __name__ == '__main__':

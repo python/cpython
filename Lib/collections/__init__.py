@@ -29,6 +29,9 @@ __all__ = [
 import _collections_abc
 import sys as _sys
 
+_sys.modules['collections.abc'] = _collections_abc
+abc = _collections_abc
+
 from itertools import chain as _chain
 from itertools import repeat as _repeat
 from itertools import starmap as _starmap
@@ -46,9 +49,17 @@ else:
     _collections_abc.MutableSequence.register(deque)
 
 try:
+    # Expose _deque_iterator to support pickling deque iterators
+    from _collections import _deque_iterator  # noqa: F401
+except ImportError:
+    pass
+
+try:
     from _collections import defaultdict
 except ImportError:
     pass
+
+heapq = None  # Lazily imported
 
 
 ################################################################################
@@ -90,17 +101,19 @@ class OrderedDict(dict):
     # Individual links are kept alive by the hard reference in self.__map.
     # Those hard references disappear when a key is deleted from an OrderedDict.
 
+    def __new__(cls, /, *args, **kwds):
+        "Create the ordered dict object and set up the underlying structures."
+        self = dict.__new__(cls)
+        self.__hardroot = _Link()
+        self.__root = root = _proxy(self.__hardroot)
+        root.prev = root.next = root
+        self.__map = {}
+        return self
+
     def __init__(self, other=(), /, **kwds):
         '''Initialize an ordered dictionary.  The signature is the same as
         regular dictionaries.  Keyword argument order is preserved.
         '''
-        try:
-            self.__root
-        except AttributeError:
-            self.__hardroot = _Link()
-            self.__root = root = _proxy(self.__hardroot)
-            root.prev = root.next = root
-            self.__map = {}
         self.__update(other, **kwds)
 
     def __setitem__(self, key, value,
@@ -236,11 +249,19 @@ class OrderedDict(dict):
         is raised.
 
         '''
-        if key in self:
-            result = self[key]
-            del self[key]
+        marker = self.__marker
+        result = dict.pop(self, key, marker)
+        if result is not marker:
+            # The same as in __delitem__().
+            link = self.__map.pop(key)
+            link_prev = link.prev
+            link_next = link.next
+            link_prev.next = link_next
+            link_next.prev = link_prev
+            link.prev = None
+            link.next = None
             return result
-        if default is self.__marker:
+        if default is marker:
             raise KeyError(key)
         return default
 
@@ -259,14 +280,26 @@ class OrderedDict(dict):
         'od.__repr__() <==> repr(od)'
         if not self:
             return '%s()' % (self.__class__.__name__,)
-        return '%s(%r)' % (self.__class__.__name__, list(self.items()))
+        return '%s(%r)' % (self.__class__.__name__, dict(self.items()))
 
     def __reduce__(self):
         'Return state information for pickling'
-        inst_dict = vars(self).copy()
-        for k in vars(OrderedDict()):
-            inst_dict.pop(k, None)
-        return self.__class__, (), inst_dict or None, None, iter(self.items())
+        state = self.__getstate__()
+        if state:
+            if isinstance(state, tuple):
+                state, slots = state
+            else:
+                slots = {}
+            state = state.copy()
+            slots = slots.copy()
+            for k in vars(OrderedDict()):
+                state.pop(k, None)
+                slots.pop(k, None)
+            if slots:
+                state = state, slots
+            else:
+                state = state or None
+        return self.__class__, (), state, None, iter(self.items())
 
     def copy(self):
         'od.copy() -> a shallow copy of od'
@@ -430,7 +463,7 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
     def _replace(self, /, **kwds):
         result = self._make(_map(kwds.pop, field_names, self))
         if kwds:
-            raise ValueError(f'Got unexpected field names: {list(kwds)!r}')
+            raise TypeError(f'Got unexpected field names: {list(kwds)!r}')
         return result
 
     _replace.__doc__ = (f'Return a new {typename} object replacing specified '
@@ -468,6 +501,7 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
         '_field_defaults': field_defaults,
         '__new__': __new__,
         '_make': _make,
+        '__replace__': _replace,
         '_replace': _replace,
         '__repr__': __repr__,
         '_asdict': _asdict,
@@ -487,9 +521,12 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
     # specified a particular module.
     if module is None:
         try:
-            module = _sys._getframe(1).f_globals.get('__name__', '__main__')
-        except (AttributeError, ValueError):
-            pass
+            module = _sys._getframemodulename(1) or '__main__'
+        except AttributeError:
+            try:
+                module = _sys._getframe(1).f_globals.get('__name__', '__main__')
+            except (AttributeError, ValueError):
+                pass
     if module is not None:
         result.__module__ = module
 
@@ -558,7 +595,7 @@ class Counter(dict):
     # References:
     #   http://en.wikipedia.org/wiki/Multiset
     #   http://www.gnu.org/software/smalltalk/manual-base/html_node/Bag.html
-    #   http://www.demo2s.com/Tutorial/Cpp/0380__set-multiset/Catalog0380__set-multiset.htm
+    #   http://www.java2s.com/Tutorial/Cpp/0380__set-multiset/Catalog0380__set-multiset.htm
     #   http://code.activestate.com/recipes/259174/
     #   Knuth, TAOCP Vol. II section 4.6.3
 
@@ -598,7 +635,10 @@ class Counter(dict):
             return sorted(self.items(), key=_itemgetter(1), reverse=True)
 
         # Lazy import to speedup Python startup time
-        import heapq
+        global heapq
+        if heapq is None:
+            import heapq
+
         return heapq.nlargest(n, self.items(), key=_itemgetter(1))
 
     def elements(self):
@@ -608,12 +648,11 @@ class Counter(dict):
         >>> sorted(c.elements())
         ['A', 'A', 'B', 'B', 'C', 'C']
 
-        # Knuth's example for prime factors of 1836:  2**2 * 3**3 * 17**1
+        Knuth's example for prime factors of 1836:  2**2 * 3**3 * 17**1
+
+        >>> import math
         >>> prime_factors = Counter({2: 2, 3: 3, 17: 1})
-        >>> product = 1
-        >>> for factor in prime_factors.elements():     # loop over factors
-        ...     product *= factor                       # and multiply them
-        >>> product
+        >>> math.prod(prime_factors.elements())
         1836
 
         Note, if an element's count has been set to zero or is a negative
@@ -651,7 +690,7 @@ class Counter(dict):
 
         '''
         # The regular dict.update() operation makes no sense here because the
-        # replace behavior results in the some of original untouched counts
+        # replace behavior results in some of the original untouched counts
         # being mixed-in with all of the other counts for a mismash that
         # doesn't have a straight-forward interpretation in most counting
         # contexts.  Instead, we implement straight-addition.  Both the inputs
@@ -710,6 +749,54 @@ class Counter(dict):
         if elem in self:
             super().__delitem__(elem)
 
+    def __repr__(self):
+        if not self:
+            return f'{self.__class__.__name__}()'
+        try:
+            # dict() preserves the ordering returned by most_common()
+            d = dict(self.most_common())
+        except TypeError:
+            # handle case where values are not orderable
+            d = dict(self)
+        return f'{self.__class__.__name__}({d!r})'
+
+    # Multiset-style mathematical operations discussed in:
+    #       Knuth TAOCP Volume II section 4.6.3 exercise 19
+    #       and at http://en.wikipedia.org/wiki/Multiset
+    #
+    # Outputs guaranteed to only include positive counts.
+    #
+    # To strip negative and zero counts, add-in an empty counter:
+    #       c += Counter()
+    #
+    # Results are ordered according to when an element is first
+    # encountered in the left operand and then by the order
+    # encountered in the right operand.
+    #
+    # When the multiplicities are all zero or one, multiset operations
+    # are guaranteed to be equivalent to the corresponding operations
+    # for regular sets.
+    #
+    #     Given counter multisets such as:
+    #         cp = Counter(a=1, b=0, c=1)
+    #         cq = Counter(c=1, d=0, e=1)
+    #
+    #     The corresponding regular sets would be:
+    #         sp = {'a', 'c'}
+    #         sq = {'c', 'e'}
+    #
+    #     All of the following relations would hold:
+    #         (cp == cq) == (sp == sq)
+    #         (cp != cq) == (sp != sq)
+    #         (cp <= cq) == (sp <= sq)
+    #         (cp < cq) == (sp < sq)
+    #         (cp >= cq) == (sp >= sq)
+    #         (cp > cq) == (sp > sq)
+    #         set(cp + cq) == sp | sq
+    #         set(cp - cq) == sp - sq
+    #         set(cp | cq) == sp | sq
+    #         set(cp & cq) == sp & sq
+
     def __eq__(self, other):
         'True if all counts agree. Missing counts are treated as zero.'
         if not isinstance(other, Counter):
@@ -745,47 +832,6 @@ class Counter(dict):
         if not isinstance(other, Counter):
             return NotImplemented
         return self >= other and self != other
-
-    def __repr__(self):
-        if not self:
-            return f'{self.__class__.__name__}()'
-        try:
-            # dict() preserves the ordering returned by most_common()
-            d = dict(self.most_common())
-        except TypeError:
-            # handle case where values are not orderable
-            d = dict(self)
-        return f'{self.__class__.__name__}({d!r})'
-
-    # Multiset-style mathematical operations discussed in:
-    #       Knuth TAOCP Volume II section 4.6.3 exercise 19
-    #       and at http://en.wikipedia.org/wiki/Multiset
-    #
-    # Outputs guaranteed to only include positive counts.
-    #
-    # To strip negative and zero counts, add-in an empty counter:
-    #       c += Counter()
-    #
-    # When the multiplicities are all zero or one, multiset operations
-    # are guaranteed to be equivalent to the corresponding operations
-    # for regular sets.
-    #     Given counter multisets such as:
-    #         cp = Counter(a=1, b=0, c=1)
-    #         cq = Counter(c=1, d=0, e=1)
-    #     The corresponding regular sets would be:
-    #         sp = {'a', 'c'}
-    #         sq = {'c', 'e'}
-    #     All of the following relations would hold:
-    #         set(cp + cq) == sp | sq
-    #         set(cp - cq) == sp - sq
-    #         set(cp | cq) == sp | sq
-    #         set(cp & cq) == sp & sq
-    #         (cp == cq) == (sp == sq)
-    #         (cp != cq) == (sp != sq)
-    #         (cp <= cq) == (sp <= sq)
-    #         (cp < cq) == (sp < sq)
-    #         (cp >= cq) == (sp >= sq)
-    #         (cp > cq) == (sp > sq)
 
     def __add__(self, other):
         '''Add counts from two counters.
@@ -982,19 +1028,22 @@ class ChainMap(_collections_abc.MutableMapping):
         return self.__missing__(key)            # support subclasses that define __missing__
 
     def get(self, key, default=None):
-        return self[key] if key in self else default
+        return self[key] if key in self else default    # needs to make use of __contains__
 
     def __len__(self):
         return len(set().union(*self.maps))     # reuses stored hash values if possible
 
     def __iter__(self):
         d = {}
-        for mapping in reversed(self.maps):
-            d.update(dict.fromkeys(mapping))    # reuses stored hash values if possible
+        for mapping in map(dict.fromkeys, reversed(self.maps)):
+            d |= mapping                        # reuses stored hash values if possible
         return iter(d)
 
     def __contains__(self, key):
-        return any(key in m for m in self.maps)
+        for mapping in self.maps:
+            if key in mapping:
+                return True
+        return False
 
     def __bool__(self):
         return any(self.maps)
@@ -1004,9 +1053,9 @@ class ChainMap(_collections_abc.MutableMapping):
         return f'{self.__class__.__name__}({", ".join(map(repr, self.maps))})'
 
     @classmethod
-    def fromkeys(cls, iterable, *args):
-        'Create a ChainMap with a single dict created from the iterable.'
-        return cls(dict.fromkeys(iterable, *args))
+    def fromkeys(cls, iterable, value=None, /):
+        'Create a new ChainMap with keys from iterable and values set to value.'
+        return cls(dict.fromkeys(iterable, value))
 
     def copy(self):
         'New ChainMap or subclass with a new copy of maps[0] and refs to maps[1:]'
@@ -1110,9 +1159,16 @@ class UserDict(_collections_abc.MutableMapping):
     def __iter__(self):
         return iter(self.data)
 
-    # Modify __contains__ to work correctly when __missing__ is present
+    # Modify __contains__ and get() to work like dict
+    # does when __missing__ is present.
     def __contains__(self, key):
         return key in self.data
+
+    def get(self, key, default=None):
+        if key in self:
+            return self[key]
+        return default
+
 
     # Now, add the methods in dicts but not in MutableMapping
     def __repr__(self):

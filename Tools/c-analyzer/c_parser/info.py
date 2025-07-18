@@ -1,6 +1,5 @@
 from collections import namedtuple
 import enum
-import os.path
 import re
 
 from c_common import fsutil
@@ -8,7 +7,7 @@ from c_common.clsutil import classonly
 import c_common.misc as _misc
 import c_common.strutil as _strutil
 import c_common.tables as _tables
-from .parser._regexes import SIMPLE_TYPE, _STORAGE
+from .parser._regexes import _STORAGE
 
 
 FIXED_TYPE = _misc.Labeled('FIXED_TYPE')
@@ -207,7 +206,7 @@ class DeclID(namedtuple('DeclID', 'filename funcname name')):
         row = _tables.fix_row(row, **markers)
         return cls(*row)
 
-    # We have to provde _make() becaose we implemented __new__().
+    # We have to provide _make() because we implemented __new__().
 
     @classmethod
     def _make(cls, iterable):
@@ -385,6 +384,9 @@ def get_parsed_vartype(decl):
     elif isinstance(decl, Variable):
         storage = decl.storage
         typequal, typespec, abstract = decl.vartype
+    elif isinstance(decl, Signature):
+        storage = None
+        typequal, typespec, abstract = decl.returntype
     elif isinstance(decl, Function):
         storage = decl.storage
         typequal, typespec, abstract = decl.signature.returntype
@@ -789,6 +791,7 @@ class Declaration(HighlevelParsedItem):
         if kind is not cls.kind:
             raise TypeError(f'expected kind {cls.kind.value!r}, got {row!r}')
         fileinfo = FileInfo.from_raw(filename)
+        extra = None
         if isinstance(data, str):
             data, extra = cls._parse_data(data, fmt='row')
         if extra:
@@ -1012,6 +1015,18 @@ class Signature(namedtuple('Signature', 'params returntype inline isforward')):
     def returns(self):
         return self.returntype
 
+    @property
+    def typequal(self):
+        return self.returntype.typequal
+
+    @property
+    def typespec(self):
+        return self.returntype.typespec
+
+    @property
+    def abstract(self):
+        return self.returntype.abstract
+
 
 class Function(Declaration):
     kind = KIND.FUNCTION
@@ -1029,7 +1044,7 @@ class Function(Declaration):
 
     @classmethod
     def _raw_data(self, data):
-        # XXX finsh!
+        # XXX finish!
         return data
 
     @classmethod
@@ -1106,9 +1121,16 @@ class TypeDef(TypeDeclaration):
     def _resolve_data(cls, data):
         if not data:
             raise NotImplementedError(data)
-        vartype = dict(data)
-        del vartype['storage']
-        return VarType(**vartype), None
+        kwargs = dict(data)
+        del kwargs['storage']
+        if 'returntype' in kwargs:
+            vartype = kwargs['returntype']
+            del vartype['storage']
+            kwargs['returntype'] = VarType(**vartype)
+            datacls = Signature
+        else:
+            datacls = VarType
+        return datacls(**kwargs), None
 
     @classmethod
     def _raw_data(self, data):
@@ -1161,7 +1183,9 @@ class Member(namedtuple('Member', 'name vartype size')):
             vartype = dict(raw.data)
             del vartype['storage']
             if 'size' in vartype:
-                size = int(vartype.pop('size'))
+                size = vartype.pop('size')
+                if isinstance(size, str) and size.isdigit():
+                    size = int(size)
             vartype = VarType(**vartype)
         return cls(name, vartype, size)
 
@@ -1255,7 +1279,7 @@ class Enum(TypeDeclaration):
 
     @classmethod
     def _raw_data(self, data):
-        # XXX finsih!
+        # XXX finish!
         return data
 
     @classmethod
@@ -1296,12 +1320,12 @@ class Statement(HighlevelParsedItem):
 
     @classmethod
     def _resolve_data(cls, data):
-        # XXX finsih!
+        # XXX finish!
         return data, None
 
     @classmethod
     def _raw_data(self, data):
-        # XXX finsih!
+        # XXX finish!
         return data
 
     @classmethod
@@ -1513,7 +1537,7 @@ class Declarations:
 
     def get(self, key, default=None):
         try:
-           return self[key]
+            return self[key]
         except KeyError:
             return default
 
