@@ -1059,6 +1059,57 @@ class TestCopyTree(BaseTest, unittest.TestCase):
         self.assertIn('test.txt', os.listdir(dst_dir))
 
     @os_helper.skip_unless_symlink
+    def test_copytree_dangling_links_to_links(self):
+        src_dir = self.mkdtemp()
+        create_file(os.path.join(src_dir, 'c'), 'abc')
+        os.symlink('IDONTEXIST', os.path.join(src_dir, 'foo'))
+        os.symlink(os.path.join(src_dir, 'foo'), os.path.join(src_dir, 'broken'))
+
+        # A dangling symlink should raise an error.
+        dst_dir = os.path.join(self.mkdtemp(), 'destination')
+        self.assertRaises(Error, shutil.copytree, src_dir, dst_dir)
+        self.assertEqual(['c'], os.listdir(dst_dir))
+
+        # Dangling symlinks should be ignored with the proper flag.
+        dst_dir = os.path.join(self.mkdtemp(), 'destination2')
+        shutil.copytree(src_dir, dst_dir, ignore_dangling_symlinks=True)
+        self.assertEqual(['c'], os.listdir(dst_dir))
+
+        # a dangling symlink is copied if symlinks=True
+        dst_dir = os.path.join(self.mkdtemp(), 'destination3')
+        shutil.copytree(src_dir, dst_dir, symlinks=True)
+        self.assertEqual({'broken', 'c', 'foo'}, set(os.listdir(dst_dir)))
+
+    @os_helper.skip_unless_symlink
+    def test_copytree_circular_symlinks(self):
+        src_dir = self.mkdtemp()
+        os.symlink('a', os.path.join(src_dir, 'b'))
+        os.symlink('b', os.path.join(src_dir, 'a'))
+        create_file(os.path.join(src_dir, 'c'), 'abc')
+
+        # A circular symlink should raise an error if symlinks=False and
+        # ignore_dangling_symlinks=False
+        dst_dir = os.path.join(self.mkdtemp(), 'destination')
+        with self.assertRaises(Error):
+            shutil.copytree(src_dir, dst_dir, symlinks=False,
+                            ignore_dangling_symlinks=False)
+        self.assertEqual(['c'], os.listdir(dst_dir))
+
+        # ...however it should work if ignore_dangling_symlinks=True...
+        dst_dir = os.path.join(self.mkdtemp(), 'destination')
+        shutil.copytree(src_dir, dst_dir, symlinks=False,
+                        ignore_dangling_symlinks=True)
+        self.assertEqual(['c'], os.listdir(dst_dir))
+
+        # ...and of course if symlinks=True
+        for ignore in (True, False):
+            dst_dir = os.path.join(self.mkdtemp(), 'destination')
+            with self.subTest(ignore_dangling_symlinks=ignore):
+                shutil.copytree(src_dir, dst_dir, symlinks=True,
+                                ignore_dangling_symlinks=ignore)
+                self.assertEqual({'a', 'b', 'c'}, set(os.listdir(dst_dir)))
+
+    @os_helper.skip_unless_symlink
     def test_copytree_symlink_dir(self):
         src_dir = self.mkdtemp()
         dst_dir = os.path.join(self.mkdtemp(), 'destination')
@@ -1076,6 +1127,30 @@ class TestCopyTree(BaseTest, unittest.TestCase):
         shutil.copytree(src_dir, dst_dir, symlinks=True)
         self.assertTrue(os.path.islink(os.path.join(dst_dir, 'link_to_dir')))
         self.assertIn('test.txt', os.listdir(os.path.join(dst_dir, 'link_to_dir')))
+
+    @os_helper.skip_unless_symlink
+    def test_copytree_relative_symlink(self):
+        # gh-91205: Ensure valid relative symlinks are copied regardless of the
+        # value of the ``ignore_dangling_symlinks`` flag.
+        src_dir = self.mkdtemp()
+        dir_a = os.path.join(src_dir, 'a')
+        dir_a_dir_b = os.path.join(dir_a, 'b')
+        os.mkdir(dir_a)
+        os.mkdir(dir_a_dir_b)
+        create_file(os.path.join(dir_a, 'a.txt'))
+        # create a symlink from src/a/b/a.txt to ../a.txt
+        os.symlink(os.path.join(os.pardir, 'a.txt'),
+                   os.path.join(dir_a_dir_b, 'a.txt'))
+
+        for ignore_dangling_symlinks in (True, False):
+            with self.subTest(ignore_dangling_symlinks=ignore_dangling_symlinks):
+                dst_dir = os.path.join(self.mkdtemp(), 'x')
+                shutil.copytree(
+                    dir_a_dir_b, dst_dir, symlinks=False,
+                    ignore_dangling_symlinks=ignore_dangling_symlinks)
+                self.assertIn('a.txt', os.listdir(dst_dir))
+                self.assertFalse(
+                    os.path.islink(os.path.join(dst_dir, 'a.txt')))
 
     def test_copytree_return_value(self):
         # copytree returns its destination path.
