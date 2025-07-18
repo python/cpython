@@ -22,14 +22,16 @@ class TestSyslog(unittest.TestCase):
             """
             thread_id = threading.get_ident()
             syslog.openlog(f"thread-id: {thread_id}")
-            for _ in range(5):
-                syslog.syslog("logline")
-                syslog.setlogmask(syslog.LOG_MASK(syslog.LOG_INFO))
-                syslog.syslog(syslog.LOG_INFO, "logline LOG_INFO")
-                syslog.setlogmask(syslog.LOG_MASK(syslog.LOG_ERR))
-                syslog.syslog(syslog.LOG_ERR, "logline LOG_ERR")
-                syslog.setlogmask(syslog.LOG_UPTO(syslog.LOG_DEBUG))
-            syslog.closelog()
+            try:
+                for _ in range(5):
+                    syslog.syslog("logline")
+                    syslog.setlogmask(syslog.LOG_MASK(syslog.LOG_INFO))
+                    syslog.syslog(syslog.LOG_INFO, "logline LOG_INFO")
+                    syslog.setlogmask(syslog.LOG_MASK(syslog.LOG_ERR))
+                    syslog.syslog(syslog.LOG_ERR, "logline LOG_ERR")
+                    syslog.setlogmask(syslog.LOG_UPTO(syslog.LOG_DEBUG))
+            finally:
+                syslog.closelog()
 
         # Run the worker concurrently to exercise all these syslog functions
         run_concurrently(
