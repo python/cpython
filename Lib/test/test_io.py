@@ -808,7 +808,12 @@ class IOTest(unittest.TestCase):
     def test_garbage_collection(self):
         # FileIO objects are collected, and collecting them flushes
         # all data to disk.
-        with warnings_helper.check_warnings(('', ResourceWarning)):
+        #
+        # Note that using warnings_helper.check_warnings() will keep the
+        # file alive due to the `source` argument to warn().  So, use
+        # catch_warnings() instead.
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", ResourceWarning)
             f = self.FileIO(os_helper.TESTFN, "wb")
             f.write(b"abcxxx")
             f.f = f
@@ -1809,7 +1814,11 @@ class CBufferedReaderTest(BufferedReaderTest, SizeofTest):
         # C BufferedReader objects are collected.
         # The Python version has __del__, so it ends into gc.garbage instead
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
-        with warnings_helper.check_warnings(('', ResourceWarning)):
+        # Note that using warnings_helper.check_warnings() will keep the
+        # file alive due to the `source` argument to warn().  So, use
+        # catch_warnings() instead.
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", ResourceWarning)
             rawio = self.FileIO(os_helper.TESTFN, "w+b")
             f = self.tp(rawio)
             f.f = f
@@ -2158,7 +2167,11 @@ class CBufferedWriterTest(BufferedWriterTest, SizeofTest):
         # all data to disk.
         # The Python version has __del__, so it ends into gc.garbage instead
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
-        with warnings_helper.check_warnings(('', ResourceWarning)):
+        # Note that using warnings_helper.check_warnings() will keep the
+        # file alive due to the `source` argument to warn().  So, use
+        # catch_warnings() instead.
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", ResourceWarning)
             rawio = self.FileIO(os_helper.TESTFN, "w+b")
             f = self.tp(rawio)
             f.write(b"123xxx")
@@ -4080,7 +4093,8 @@ class CTextIOWrapperTest(TextIOWrapperTest):
         # C TextIOWrapper objects are collected, and collecting them flushes
         # all data to disk.
         # The Python version has __del__, so it ends in gc.garbage instead.
-        with warnings_helper.check_warnings(('', ResourceWarning)):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", ResourceWarning)
             rawio = self.FileIO(os_helper.TESTFN, "wb")
             b = self.BufferedWriter(rawio)
             t = self.TextIOWrapper(b, encoding="ascii")

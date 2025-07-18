@@ -218,7 +218,7 @@ clear_current_module(PyInterpreterState *interp, PyObject *expected)
         if (PyDict_GetItemRef(dict, INTERP_KEY, &ref) < 0) {
             goto error;
         }
-        if (ref != NULL) {
+        if (ref != NULL && ref != Py_None) {
             PyObject *current = NULL;
             int rc = PyWeakref_GetRef(ref, &current);
             /* We only need "current" for pointer comparison. */
