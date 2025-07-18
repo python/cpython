@@ -186,7 +186,7 @@ The module defines the following items:
       Remove the ``filename`` attribute, use the :attr:`~GzipFile.name`
       attribute instead.
 
-   .. versionchanged:: 3.14
+   .. versionchanged:: next
       The default compression level was reduced to 6 (down from 9).
       It is the default level used by most compression tools and a better
       tradeoff between speed and performance.
