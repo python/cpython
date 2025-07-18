@@ -393,30 +393,30 @@ class _ELF(
         elif section_type in {"SHT_PROGBITS", "SHT_NOBITS"}:
             if "SHF_ALLOC" not in flags:
                 return
+            if "SectionData" in section:
+                section_data_bytes = section["SectionData"]["Bytes"]
+            else:
+                # Zeroed BSS data:
+                section_data_bytes = [0] * section["Size"]
             if "SHF_EXECINSTR" in flags:
                 value = _stencils.HoleValue.CODE
                 stencil = group.code
             else:
                 value = _stencils.HoleValue.DATA
                 stencil = group.data
-            if section_type == "SHT_PROGBITS":
-                assert "SectionData" in section
-                section_data_bytes = section["SectionData"]["Bytes"]
-            else:
-                # Zeroed BSS data:
-                section_data_bytes = [0] * section["Size"]
             if "SHF_WRITE" in flags:
                 assert value is _stencils.HoleValue.DATA
                 value = _stencils.HoleValue.WRITABLE
                 section_data_bytes = []
-            group.symbols[section["Index"]] = value, len(stencil.body)
+            base = len(stencil.body)
+            group.symbols[section["Index"]] = value, base
+            stencil.body.extend(section_data_bytes)
             for wrapped_symbol in section["Symbols"]:
                 symbol = wrapped_symbol["Symbol"]
-                offset = len(stencil.body) + symbol["Value"]
+                offset = base + symbol["Value"]
                 name = symbol["Name"]["Name"]
                 name = name.removeprefix(self.symbol_prefix)
                 group.symbols[name] = value, offset
-            stencil.body.extend(section_data_bytes)
             assert not section["Relocations"]
         else:
             assert section_type in {
@@ -474,15 +474,12 @@ class _MachO(
     def _handle_section(
         self, section: _schema.MachOSection, group: _stencils.StencilGroup
     ) -> None:
-        assert section["Address"] >= len(group.code.body)
         if "SectionData" in section:
             section_data_bytes = section["SectionData"]["Bytes"]
         else:
             # Zeroed BSS data:
             section_data_bytes = [0] * section["Size"]
         flags = {flag["Name"] for flag in section["Attributes"]["Flags"]}
-        name = section["Name"]["Value"]
-        name = name.removeprefix(self.symbol_prefix)
         if "Debug" in flags:
             return
         if "PureInstructions" in flags:
@@ -492,19 +489,20 @@ class _MachO(
             value = _stencils.HoleValue.DATA
             stencil = group.data
         segment = section["Segment"]["Value"]
+        assert segment in {"__DATA", "__TEXT"}, segment
         if segment == "__DATA":
             value = _stencils.HoleValue.WRITABLE
             section_data_bytes = []
-        else:
-            assert segment == "__TEXT", segment
         base = len(stencil.body)
-        group.symbols[name] = value, base
         group.symbols[section["Index"]] = value, base
         stencil.body.extend(section_data_bytes)
+        name = section["Name"]["Value"]
+        name = name.removeprefix(self.symbol_prefix)
+        group.symbols[name] = value, base
         assert "Symbols" in section
         for wrapped_symbol in section["Symbols"]:
             symbol = wrapped_symbol["Symbol"]
-            offset = symbol["Value"] - section["Address"] + base
+            offset = base + symbol["Value"] - section["Address"]
             name = symbol["Name"]["Name"]
             name = name.removeprefix(self.symbol_prefix)
             group.symbols[name] = value, offset
@@ -589,23 +587,23 @@ def get_target(host: str) -> _COFF32 | _COFF64 | _ELF | _MachO:
         target = _MachO(host, condition, optimizer=optimizer)
     elif re.fullmatch(r"aarch64-pc-windows-msvc", host):
         host = "aarch64-pc-windows-msvc"
-        args = ["-fms-runtime-lib=dll", "-fplt"]
         condition = "defined(_M_ARM64)"
+        args = ["-fms-runtime-lib=dll", "-fplt"]
         optimizer = _optimizers.OptimizerAArch64
         target = _COFF64(host, condition, args=args, optimizer=optimizer)
     elif re.fullmatch(r"aarch64-.*-linux-gnu", host):
         host = "aarch64-unknown-linux-gnu"
+        condition = "defined(__aarch64__) && defined(__linux__)"
         # -mno-outline-atomics: Keep intrinsics from being emitted.
         args = ["-fpic", "-mno-outline-atomics"]
-        condition = "defined(__aarch64__) && defined(__linux__)"
         optimizer = _optimizers.OptimizerAArch64
         target = _ELF(host, condition, args=args, optimizer=optimizer)
     elif re.fullmatch(r"i686-pc-windows-msvc", host):
         host = "i686-pc-windows-msvc"
+        condition = "defined(_M_IX86)"
         # -Wno-ignored-attributes: __attribute__((preserve_none)) is not supported here.
         args = ["-DPy_NO_ENABLE_SHARED", "-Wno-ignored-attributes"]
         optimizer = _optimizers.OptimizerX86
-        condition = "defined(_M_IX86)"
         target = _COFF32(host, condition, args=args, optimizer=optimizer)
     elif re.fullmatch(r"x86_64-apple-darwin.*", host):
         host = "x86_64-apple-darwin"
@@ -614,14 +612,14 @@ def get_target(host: str) -> _COFF32 | _COFF64 | _ELF | _MachO:
         target = _MachO(host, condition, optimizer=optimizer)
     elif re.fullmatch(r"x86_64-pc-windows-msvc", host):
         host = "x86_64-pc-windows-msvc"
-        args = ["-fms-runtime-lib=dll"]
         condition = "defined(_M_X64)"
+        args = ["-fms-runtime-lib=dll"]
         optimizer = _optimizers.OptimizerX86
         target = _COFF64(host, condition, args=args, optimizer=optimizer)
     elif re.fullmatch(r"x86_64-.*-linux-gnu", host):
         host = "x86_64-unknown-linux-gnu"
-        args = ["-fno-pic", "-mcmodel=medium", "-mlarge-data-threshold=0"]
         condition = "defined(__x86_64__) && defined(__linux__)"
+        args = ["-fno-pic", "-mcmodel=medium", "-mlarge-data-threshold=0"]
         optimizer = _optimizers.OptimizerX86
         target = _ELF(host, condition, args=args, optimizer=optimizer)
     else:

@@ -71,8 +71,7 @@ class TestJITStencils(unittest.TestCase):
                 actual = self._build_jit_stencils(target)
                 found = True
                 self._check_jit_stencils(expected, actual, test_jit_stencils_h)
-        # This is a local build. If the JIT is available, at least one test should run:
-        assert found, "No JIT stencils built!"
+        self.assertTrue(found, "No JIT stencils built!")
 
 
 if __name__ == "__main__":
