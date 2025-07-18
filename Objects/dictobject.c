@@ -1581,40 +1581,33 @@ read_failed:
     return ix;
 }
 
-static Py_ssize_t
-unicodekeys_lookup_unicode_threadsafe_stackref(PyDictKeysObject* dk, PyObject *key, Py_hash_t hash, _PyStackRef *value_addr)
-{
-    assert(PyUnicode_CheckExact(key));
-    assert(dk->dk_kind == DICT_KEYS_UNICODE);
-    Py_ssize_t ix = unicodekeys_lookup_unicode_threadsafe(dk, key, hash);
-    if (ix == DKIX_EMPTY) {
-        *value_addr = PyStackRef_NULL;
-        return DKIX_EMPTY;
-    } else if (ix >= 0) {
-        PyObject **addr_of_value = &DK_UNICODE_ENTRIES(dk)[ix].me_value;
-        PyObject *value = _Py_atomic_load_ptr(addr_of_value);
-        if (value == NULL) {
-            *value_addr = PyStackRef_NULL;
-            return DKIX_EMPTY;
-        }
-        if (_PyObject_HasDeferredRefcount(value)) {
-            *value_addr = (_PyStackRef){ .bits = (uintptr_t)value | Py_TAG_DEFERRED };
-            return ix;
-        }
-        if (_Py_TryIncrefCompare(addr_of_value, value)) {
-            *value_addr = PyStackRef_FromPyObjectSteal(value);
-            return ix;
-        }
-    }
-}
-
 
 Py_ssize_t
 _Py_dict_lookup_threadsafe_stackref(PyDictObject *mp, PyObject *key, Py_hash_t hash, _PyStackRef *value_addr)
 {
     PyDictKeysObject *dk = _Py_atomic_load_ptr(&mp->ma_keys);
     if (dk->dk_kind == DICT_KEYS_UNICODE && PyUnicode_CheckExact(key)) {
-        return unicodekeys_lookup_unicode_threadsafe_stackref(dk, key, hash, value_addr);
+        Py_ssize_t ix = unicodekeys_lookup_unicode_threadsafe(dk, key, hash);
+        if (ix == DKIX_EMPTY) {
+            *value_addr = PyStackRef_NULL;
+            return ix;
+        }
+        else if (ix >= 0) {
+            PyObject **addr_of_value = &DK_UNICODE_ENTRIES(dk)[ix].me_value;
+            PyObject *value = _Py_atomic_load_ptr(addr_of_value);
+            if (value == NULL) {
+                *value_addr = PyStackRef_NULL;
+                return DKIX_EMPTY;
+            }
+            if (_PyObject_HasDeferredRefcount(value)) {
+                *value_addr =  (_PyStackRef){ .bits = (uintptr_t)value | Py_TAG_DEFERRED };
+                return ix;
+            }
+            if (_Py_TryIncrefCompare(addr_of_value, value)) {
+                *value_addr = PyStackRef_FromPyObjectSteal(value);
+                return ix;
+            }
+        }
     }
 
     PyObject *obj;
@@ -1639,7 +1632,27 @@ _Py_dict_lookup_unicode_threadsafe_stackref(PyDictObject *mp, PyObject *key, Py_
     assert(PyUnicode_CheckExact(key));
     PyDictKeysObject *dk = _Py_atomic_load_ptr(&mp->ma_keys);
     if (dk->dk_kind == DICT_KEYS_UNICODE) {
-        return unicodekeys_lookup_unicode_threadsafe_stackref(dk, key, hash, value_addr);
+        Py_ssize_t ix = unicodekeys_lookup_unicode_threadsafe(dk, key, hash);
+        if (ix == DKIX_EMPTY) {
+            *value_addr = PyStackRef_NULL;
+            return ix;
+        }
+        else if (ix >= 0) {
+            PyObject **addr_of_value = &DK_UNICODE_ENTRIES(dk)[ix].me_value;
+            PyObject *value = _Py_atomic_load_ptr(addr_of_value);
+            if (value == NULL) {
+                *value_addr = PyStackRef_NULL;
+                return DKIX_EMPTY;
+            }
+            if (_PyObject_HasDeferredRefcount(value)) {
+                *value_addr =  (_PyStackRef){ .bits = (uintptr_t)value | Py_TAG_DEFERRED };
+                return ix;
+            }
+            if (_Py_TryIncrefCompare(addr_of_value, value)) {
+                *value_addr = PyStackRef_FromPyObjectSteal(value);
+                return ix;
+            }
+        }
     }
 
     PyObject *obj;
