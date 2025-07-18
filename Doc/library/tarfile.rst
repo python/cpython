@@ -170,7 +170,7 @@ Some facts and figures:
    .. versionchanged:: 3.14
       The *preset* keyword argument also works for streams.
 
-   .. versionchanged:: 3.14
+   .. versionchanged:: next
       The default compression level was reduced to 6 (down from 9).
       It is the default level used by most compression tools and a better
       tradeoff between speed and performance.
