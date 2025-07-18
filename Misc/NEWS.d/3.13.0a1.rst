@@ -6458,8 +6458,8 @@ Victor Stinner.
 .. nonce: GRxZtI
 .. section: C API
 
-Deprecate the :c:func:`PyWeakref_GetObject` and
-:c:func:`PyWeakref_GET_OBJECT` functions: use the new
+Deprecate the :c:func:`!PyWeakref_GetObject` and
+:c:func:`!PyWeakref_GET_OBJECT` functions: use the new
 :c:func:`PyWeakref_GetRef` function instead. Patch by Victor Stinner.
 
 ..
@@ -6470,7 +6470,7 @@ Deprecate the :c:func:`PyWeakref_GetObject` and
 .. section: C API
 
 Add :c:func:`PyWeakref_GetRef` function: similar to
-:c:func:`PyWeakref_GetObject` but returns a :term:`strong reference`, or
+:c:func:`!PyWeakref_GetObject` but returns a :term:`strong reference`, or
 ``NULL`` if the referent is no longer live. Patch by Victor Stinner.
 
 ..
