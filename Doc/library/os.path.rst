@@ -298,9 +298,10 @@ the :mod:`glob` module.)
    device than *path*, or whether :file:`{path}/..` and *path* point to the same
    i-node on the same device --- this should detect mount points for all Unix
    and POSIX variants.  It is not able to reliably detect bind mounts on the
-   same filesystem.  On Windows, a drive letter root and a share UNC are
-   always mount points, and for any other path ``GetVolumePathName`` is called
-   to see if it is different from the input path.
+   same filesystem. On Linux systems, it will always return ``True`` for btrfs
+   subvolumes, even if they aren't mount points. On Windows, a drive letter root
+   and a share UNC are always mount points, and for any other path
+   ``GetVolumePathName`` is called to see if it is different from the input path.
 
    .. versionchanged:: 3.4
       Added support for detecting non-root mount points on Windows.
@@ -506,9 +507,6 @@ the :mod:`glob` module.)
 
    .. versionchanged:: 3.4
       Added Windows support.
-
-   .. versionchanged:: 3.6
-      Accepts a :term:`path-like object`.
 
 
 .. function:: split(path)
