@@ -13,6 +13,12 @@ A :class:`memoryview` object exposes the C level :ref:`buffer interface
 any other object.
 
 
+.. c:var:: PyTypeObject PyMemoryView_Type
+
+   The type of memoryview objects.  Same as :class:`memoryview` in
+   the Python layer.
+
+
 .. c:function:: PyObject *PyMemoryView_FromObject(PyObject *obj)
 
    Create a memoryview object from an object that provides the buffer interface.
