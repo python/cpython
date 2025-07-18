@@ -36,6 +36,41 @@ class TestSet(TestCase):
             for set_repr in set_reprs:
                 self.assertIn(set_repr, ("set()", "{1, 2, 3, 4, 5, 6, 7, 8}"))
 
+    def test_contains_mutate(self):
+        """Test set contains operation combined with mutation."""
+        barrier = Barrier(2)
+        s = set()
+        done = False
+
+        NUM_ITEMS = 2_000
+        NUM_LOOPS = 20
+
+        def read_set():
+            barrier.wait()
+            while not done:
+                for i in range(NUM_ITEMS):
+                    item = i >> 1
+                    result = item in s
+
+        def mutate_set():
+            nonlocal done
+            barrier.wait()
+            for i in range(NUM_LOOPS):
+                s.clear()
+                for j in range(NUM_ITEMS):
+                    s.add(j)
+                for j in range(NUM_ITEMS):
+                    s.discard(j)
+                # executes the set_swap_bodies() function
+                s.__iand__(set(k for k in range(10, 20)))
+            done = True
+
+        threads = [Thread(target=read_set), Thread(target=mutate_set)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
 
 if __name__ == "__main__":
     unittest.main()
