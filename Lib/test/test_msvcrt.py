@@ -137,10 +137,7 @@ class TestOther(unittest.TestCase):
         origin = msvcrt.GetErrorMode()
         def cleanup():
             msvcrt.SetErrorMode(0)
-            for v in (msvcrt.SEM_FAILCRITICALERRORS, msvcrt.SEM_NOGPFAULTERRORBOX,
-                      msvcrt.SEM_NOALIGNMENTFAULTEXCEPT, msvcrt.SEM_NOOPENFILEERRORBOX):
-                if origin & v:
-                    msvcrt.SetErrorMode(v)
+            msvcrt.SetErrorMode(origin)
         self.addCleanup(cleanup)
 
         msvcrt.SetErrorMode(0)
