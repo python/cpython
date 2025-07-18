@@ -541,13 +541,17 @@ class HashLibTestCase(unittest.TestCase):
 
     def check_file_digest(self, name, data, hexdigest):
         hexdigest = hexdigest.lower()
-        try:
-            hashlib.new(name)
-        except ValueError:
-            # skip, algorithm is blocked by security policy.
-            return
-        digests = [name]
-        digests.extend(self.constructors_to_test[name])
+        digests = []
+        for digest in [name, *self.constructors_to_test[name]]:
+            try:
+                if callable(digest):
+                    digest(b"")
+                else:
+                    hashlib.new(digest)
+            except ValueError:
+                # skip, algorithm is blocked by security policy.
+                continue
+            digests.append(digest)
 
         with tempfile.TemporaryFile() as f:
             f.write(data)
