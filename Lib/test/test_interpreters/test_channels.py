@@ -8,8 +8,8 @@ import time
 from test.support import import_helper
 # Raise SkipTest if subinterpreters not supported.
 _channels = import_helper.import_module('_interpchannels')
-from test.support import interpreters
-from test.support.interpreters import channels
+from concurrent import interpreters
+from test.support import channels
 from .utils import _run_output, TestBase
 
 
@@ -121,9 +121,11 @@ class TestRecvChannelAttrs(TestBase):
 
     def test_pickle(self):
         ch, _ = channels.create()
-        data = pickle.dumps(ch)
-        unpickled = pickle.loads(data)
-        self.assertEqual(unpickled, ch)
+        for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(protocol=protocol):
+                data = pickle.dumps(ch, protocol)
+                unpickled = pickle.loads(data)
+                self.assertEqual(unpickled, ch)
 
 
 class TestSendChannelAttrs(TestBase):
@@ -152,9 +154,11 @@ class TestSendChannelAttrs(TestBase):
 
     def test_pickle(self):
         _, ch = channels.create()
-        data = pickle.dumps(ch)
-        unpickled = pickle.loads(data)
-        self.assertEqual(unpickled, ch)
+        for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(protocol=protocol):
+                data = pickle.dumps(ch, protocol)
+                unpickled = pickle.loads(data)
+                self.assertEqual(unpickled, ch)
 
 
 class TestSendRecv(TestBase):
@@ -171,7 +175,7 @@ class TestSendRecv(TestBase):
     def test_send_recv_same_interpreter(self):
         interp = interpreters.create()
         interp.exec(dedent("""
-            from test.support.interpreters import channels
+            from test.support import channels
             r, s = channels.create()
             orig = b'spam'
             s.send_nowait(orig)
@@ -244,7 +248,7 @@ class TestSendRecv(TestBase):
     def test_send_recv_nowait_same_interpreter(self):
         interp = interpreters.create()
         interp.exec(dedent("""
-            from test.support.interpreters import channels
+            from test.support import channels
             r, s = channels.create()
             orig = b'spam'
             s.send_nowait(orig)
@@ -387,7 +391,7 @@ class TestSendRecv(TestBase):
             interp = interpreters.create()
 
             _run_output(interp, dedent(f"""
-                from test.support.interpreters import channels
+                from test.support import channels
                 sch = channels.SendChannel({sch.id})
                 obj1 = b'spam'
                 obj2 = b'eggs'
@@ -482,7 +486,7 @@ class TestSendRecv(TestBase):
         self.assertEqual(_channels.get_count(rch.id), 0)
 
         _run_output(interp, dedent(f"""
-            from test.support.interpreters import channels
+            from test.support import channels
             sch = channels.SendChannel({sch.id})
             sch.send_nowait(1, unbounditems=channels.UNBOUND)
             sch.send_nowait(2, unbounditems=channels.UNBOUND_ERROR)
@@ -518,7 +522,7 @@ class TestSendRecv(TestBase):
 
         sch.send_nowait(1)
         _run_output(interp1, dedent(f"""
-            from test.support.interpreters import channels
+            from test.support import channels
             rch = channels.RecvChannel({rch.id})
             sch = channels.SendChannel({sch.id})
             obj1 = rch.recv()
@@ -526,7 +530,7 @@ class TestSendRecv(TestBase):
             sch.send_nowait(obj1, unbounditems=channels.UNBOUND_REMOVE)
             """))
         _run_output(interp2, dedent(f"""
-            from test.support.interpreters import channels
+            from test.support import channels
             rch = channels.RecvChannel({rch.id})
             sch = channels.SendChannel({sch.id})
             obj2 = rch.recv()
