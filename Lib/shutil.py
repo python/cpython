@@ -1048,14 +1048,19 @@ def _make_tarball(base_name, base_dir, compress="gzip", verbose=0, dry_run=0,
         return tarinfo
 
     if not dry_run:
-        tar = tarfile.open(archive_name, 'w|%s' % tar_compression)
-        arcname = base_dir
-        if root_dir is not None:
-            base_dir = os.path.join(root_dir, base_dir)
-        try:
-            tar.add(base_dir, arcname, filter=_set_uid_gid)
-        finally:
-            tar.close()
+        with tarfile.open(archive_name, 'w|%s' % tar_compression) as tar:
+            if base_dir is not None:
+                arcname = base_dir
+                if root_dir is not None:
+                    base_dir = os.path.join(root_dir, base_dir)
+                tar.add(base_dir, arcname, filter=_set_uid_gid)
+            elif root_dir is not None:
+                for name in os.listdir(root_dir):
+                    path = os.path.join(root_dir, name)
+                    tar.add(path, name, filter=_set_uid_gid)
+            else:
+                for name in os.listdir():
+                    tar.add(name, name, filter=_set_uid_gid)
 
     if root_dir is not None:
         archive_name = os.path.abspath(archive_name)
@@ -1086,11 +1091,13 @@ def _make_zipfile(base_name, base_dir, verbose=0, dry_run=0,
     if not dry_run:
         with zipfile.ZipFile(zip_filename, "w",
                              compression=zipfile.ZIP_DEFLATED) as zf:
-            arcname = os.path.normpath(base_dir)
-            if root_dir is not None:
-                base_dir = os.path.join(root_dir, base_dir)
-            base_dir = os.path.normpath(base_dir)
-            if arcname != os.curdir:
+            if base_dir is None:
+                base_dir = root_dir if root_dir is not None else os.curdir
+            else:
+                arcname = os.path.normpath(base_dir)
+                if root_dir is not None:
+                    base_dir = os.path.join(root_dir, base_dir)
+                base_dir = os.path.normpath(base_dir)
                 zf.write(base_dir, arcname)
                 if logger is not None:
                     logger.info("adding '%s'", base_dir)
@@ -1211,9 +1218,6 @@ def make_archive(base_name, format, root_dir=None, base_dir=None, verbose=0,
     func = format_info[0]
     for arg, val in format_info[1]:
         kwargs[arg] = val
-
-    if base_dir is None:
-        base_dir = os.curdir
 
     supports_root_dir = getattr(func, 'supports_root_dir', False)
     save_cwd = None
