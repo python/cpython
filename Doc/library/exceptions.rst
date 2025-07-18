@@ -897,6 +897,8 @@ The following exceptions are used as warning categories; see the
 
    Base class for warnings about dubious syntax.
 
+   This warning is emitted when compiling Python source code to bytecode.
+
 
 .. exception:: RuntimeWarning
 
