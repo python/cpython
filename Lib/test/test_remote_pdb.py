@@ -11,7 +11,7 @@ import textwrap
 import unittest
 import unittest.mock
 from contextlib import closing, contextmanager, redirect_stdout, redirect_stderr, ExitStack
-from test.support import is_wasi, cpython_only, force_color, requires_subprocess, SHORT_TIMEOUT
+from test.support import is_wasi, cpython_only, force_color, requires_subprocess, SHORT_TIMEOUT, subTests
 from test.support.os_helper import TESTFN, unlink
 from typing import List
 
@@ -279,52 +279,50 @@ class PdbClientTestCase(unittest.TestCase):
             expected_stdout="Some message.\n",
         )
 
-    @unittest.skipIf(sys.flags.optimize >= 2, "Disabled for optimization -OO")
-    def test_handling_help_for_command(self):
-        """Test handling a request to display help for a command."""
-        incoming = [
-            ("server", {"help": "ll"}),
-        ]
-        self.do_test(
-            incoming=incoming,
-            expected_outgoing=[],
-            expected_stdout_substring="Usage: ll | longlist",
-        )
-
-    @unittest.skipIf(sys.flags.optimize >= 2, "Disabled for optimization -OO")
-    def test_handling_help_without_a_specific_topic(self):
-        """Test handling a request to display a help overview."""
-        incoming = [
-            ("server", {"help": ""}),
-        ]
-        self.do_test(
-            incoming=incoming,
-            expected_outgoing=[],
-            expected_stdout_substring="type help <topic>",
-        )
-
     @unittest.skipIf(sys.flags.optimize >= 2, "Help not available for -OO")
-    def test_handling_help_pdb(self):
-        """Test handling a request to display the full PDB manual."""
+    @subTests(
+        "help_request,expected_substring",
+        [
+            # a request to display help for a command
+            ({"help": "ll"}, "Usage: ll | longlist"),
+            # a request to display a help overview
+            ({"help": ""}, "type help <topic>"),
+            # a request to display the full PDB manual
+            ({"help": "pdb"}, ">>> import pdb"),
+        ],
+    )
+    def test_handling_help_when_available(self, help_request, expected_substring):
+        """Test handling help requests when help is available."""
         incoming = [
-            ("server", {"help": "pdb"}),
+            ("server", help_request),
         ]
         self.do_test(
             incoming=incoming,
             expected_outgoing=[],
-            expected_stdout_substring=">>> import pdb",
+            expected_stdout_substring=expected_substring,
         )
 
     @unittest.skipIf(sys.flags.optimize < 2, "Needs -OO")
-    def test_handling_no_help_available(self):
-        """Test handling a request when no help if available."""
+    @subTests(
+        "help_request,expected_substring",
+        [
+            # a request to display help for a command
+            ({"help": "ll"}, "No help for 'll'"),
+            # a request to display a help overview
+            ({"help": ""}, "Undocumented commands"),
+            # a request to display the full PDB manual
+            ({"help": "pdb"}, "No help for 'pdb'"),
+        ],
+    )
+    def test_handling_help_when_not_available(self, help_request, expected_substring):
+        """Test handling help requests when help is not available."""
         incoming = [
-            ("server", {"help": "pdb"}),
+            ("server", help_request),
         ]
         self.do_test(
             incoming=incoming,
             expected_outgoing=[],
-            expected_stdout_substring="No help for 'pdb'",
+            expected_stdout_substring=expected_substring,
         )
 
     def test_handling_pdb_prompts(self):
