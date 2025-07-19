@@ -2336,7 +2336,7 @@ install: @FRAMEWORKINSTALLFIRST@ @INSTALLTARGETS@ @FRAMEWORKINSTALLLAST@
 			install|*) ensurepip="" ;; \
 		esac; \
 		$(RUNSHARED) $(PYTHON_FOR_BUILD) -m ensurepip \
-			$$ensurepip --root=$(DESTDIR)/ ; \
+			$$ensurepip --root=$(DESTDIR)/ --prefix=$(prefix) ; \
 	fi
 
 .PHONY: altinstall
@@ -2347,7 +2347,7 @@ altinstall: commoninstall
 			install|*) ensurepip="--altinstall" ;; \
 		esac; \
 		$(RUNSHARED) $(PYTHON_FOR_BUILD) -m ensurepip \
-			$$ensurepip --root=$(DESTDIR)/ ; \
+			$$ensurepip --root=$(DESTDIR)/ --prefix=$(prefix) ; \
 	fi
 
 .PHONY: commoninstall
