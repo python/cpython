@@ -249,7 +249,7 @@ write code that handles both IP versions correctly.  Address objects are
         ``Reserved-by-Protocol`` column in iana-ipv4-special-registry_.
 
       .. caution:: For IPv6, ``fec0::/10`` a former Site-Local scoped address prefix is
-         currently excluded from that list (see :attr:`~IPv6Address.is_site_local`).
+         currently excluded from that list (see :attr:`~IPv6Address.is_site_local` & :rfc:`3879`).
 
    .. attribute:: is_loopback
 
