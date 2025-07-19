@@ -329,8 +329,8 @@ py_wrapper_ERR_reason_error_string(unsigned long errcode)
 /*
  * Set an exception with additional information.
  *
- * This is only useful in OpenSSL 3 and later as the default reason
- * usually lack information and function locations are no more encoded
+ * This is only useful in OpenSSL 3.0 and later as the default reason
+ * usually lack information and function locations are no longer encoded
  * in the error code.
  */
 static void
@@ -620,10 +620,9 @@ get_hashlib_utf8name_by_evp_md(const EVP_MD *md)
 }
 
 /*
- * Return 1 if the FIPS query property should be disabled.
+ * Return 1 if the property query clause [1] must be "-fips" and 0 otherwise.
  *
- * Note that returning 0 does not necesasrily mean that the
- * fetched algorithm will be available. For instance, a FIPS
+ * [1] https://docs.openssl.org/master/man7/property
  */
 static inline int
 disable_fips_property(Py_hash_type py_ht)
@@ -1798,7 +1797,6 @@ _hashlib_hmac_singleshot_impl(PyObject *module, Py_buffer *key,
         md, &md_len
     );
     Py_END_ALLOW_THREADS
-
     PY_EVP_MD_free(evp);
 
     if (result == NULL) {
