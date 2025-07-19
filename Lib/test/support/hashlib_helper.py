@@ -177,8 +177,8 @@ _EXPLICIT_HMAC_CONSTRUCTORS[HID.shake_128] = None
 _EXPLICIT_HMAC_CONSTRUCTORS[HID.shake_256] = None
 # Strictly speaking, HMAC-BLAKE is meaningless as BLAKE2 is already a
 # keyed hash function. However, as it's exposed by HACL*, we test it.
-_EXPLICIT_HMAC_CONSTRUCTORS[HID.blake2s] = "_hmac.compute_blake2s_32"
-_EXPLICIT_HMAC_CONSTRUCTORS[HID.blake2b] = "_hmac.compute_blake2b_32"
+_EXPLICIT_HMAC_CONSTRUCTORS[HID.blake2s] = '_hmac.compute_blake2s_32'
+_EXPLICIT_HMAC_CONSTRUCTORS[HID.blake2b] = '_hmac.compute_blake2b_32'
 _EXPLICIT_HMAC_CONSTRUCTORS = MappingProxyType(_EXPLICIT_HMAC_CONSTRUCTORS)
 assert _EXPLICIT_HMAC_CONSTRUCTORS.keys() == CANONICAL_DIGEST_NAMES
 
@@ -550,7 +550,6 @@ def find_gil_minsize(modules_names, default=2048):
 def _block_openssl_hash_new(blocked_name):
     """Block OpenSSL implementation of _hashlib.new()."""
     assert isinstance(blocked_name, str), blocked_name
-
     # re-import '_hashlib' in case it was mocked
     if (_hashlib := try_import_module("_hashlib")) is None:
         return contextlib.nullcontext()
@@ -599,8 +598,7 @@ def _block_builtin_hash_new(name):
     assert name.lower() == name, f"invalid name: {name}"
     assert name in HID, f"invalid hash: {name}"
 
-    # Re-import 'hashlib' in case it was mocked, but propagate
-    # exceptions as it should be unconditionally available.
+    # Re-import 'hashlib' in case it was mocked
     hashlib = importlib.import_module('hashlib')
     builtin_constructor_cache = getattr(hashlib, '__builtin_constructor_cache')
     builtin_constructor_cache_mock = builtin_constructor_cache.copy()
