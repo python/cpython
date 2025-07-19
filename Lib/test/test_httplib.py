@@ -425,7 +425,9 @@ class HeaderTests(TestCase):
                 response = conn.getresponse()
 
         with self.subTest(max_headers=None):
-            conn = client.HTTPConnection("example.com", max_headers=max_headers)
+            conn = client.HTTPConnection(
+                "example.com", max_response_headers=max_headers
+            )
             conn.sock = FakeSocket(body)
             conn.request("GET", "/")
             response = conn.getresponse()

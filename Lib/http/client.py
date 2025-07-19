@@ -868,7 +868,7 @@ class HTTPConnection:
         return None
 
     def __init__(self, host, port=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
-                 source_address=None, blocksize=8192, max_headers=None):
+                 source_address=None, blocksize=8192, max_response_headers=None):
         self.timeout = timeout
         self.source_address = source_address
         self.blocksize = blocksize
@@ -881,9 +881,7 @@ class HTTPConnection:
         self._tunnel_port = None
         self._tunnel_headers = {}
         self._raw_proxy_headers = None
-        if max_headers is None:
-            max_headers = _MAXHEADERS
-        self.max_headers = max_headers
+        self.max_response_headers = max_response_headers
 
         (self.host, self.port) = self._get_hostport(host, port)
 
@@ -976,7 +974,7 @@ class HTTPConnection:
         try:
             (version, code, message) = response._read_status()
 
-            self._raw_proxy_headers = _read_headers(response.fp, max_headers=self.max_headers)
+            self._raw_proxy_headers = _read_headers(response.fp, self.max_response_headers)
 
             if self.debuglevel > 0:
                 for header in self._raw_proxy_headers:
@@ -1433,7 +1431,10 @@ class HTTPConnection:
 
         try:
             try:
-                response.begin(_max_headers=self.max_headers)
+                if self.max_response_headers is None:
+                    response.begin()
+                else:
+                    response.begin(self.max_response_headers)
             except ConnectionError:
                 self.close()
                 raise
@@ -1465,11 +1466,11 @@ else:
         def __init__(self, host, port=None,
                      *, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
                      source_address=None, context=None, blocksize=8192,
-                     max_headers=None):
+                     max_response_headers=None):
             super(HTTPSConnection, self).__init__(host, port, timeout,
                                                   source_address,
                                                   blocksize=blocksize,
-                                                  max_headers=max_headers)
+                                                  max_response_headers=max_response_headers)
             if context is None:
                 context = _create_https_context(self._http_vsn)
             self._context = context
