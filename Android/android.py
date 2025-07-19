@@ -118,7 +118,7 @@ def android_env(host):
     env_script = ANDROID_DIR / "android-env.sh"
     env_output = subprocess.run(
         f"set -eu; "
-        f"export HOST={host}; "
+        f"HOST={host}; "
         f"PREFIX={prefix}; "
         f". {env_script}; "
         f"export",
