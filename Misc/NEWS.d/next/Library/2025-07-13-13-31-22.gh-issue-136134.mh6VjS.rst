@@ -1,0 +1,5 @@
+:meth:`!SMTP.auth_cram_md5` now raises an :exc:`~smtplib.SMTPException`
+instead of a :exc:`ValueError` if Python has been built without MD5 support.
+In particular, :class:`~smtplib.SMTP` clients will not attempt to use this
+method even if the remote server is assumed to support it. Patch by Bénédikt
+Tran.
