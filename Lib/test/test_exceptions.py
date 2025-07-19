@@ -2632,7 +2632,7 @@ class PEP626Tests(unittest.TestCase):
 
     def test_ModuleNotFoundError_repr_with_failed_import(self):
         try:
-            import does_not_exist  # type: ignore[import]
+            import does_not_exist  # type: ignore[import] # noqa: F401
         except ModuleNotFoundError as e:
             self.assertEqual(e.name, "does_not_exist")
             self.assertIsNone(e.path)
