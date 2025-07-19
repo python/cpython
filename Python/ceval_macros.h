@@ -41,6 +41,8 @@
  * the CFG.
  */
 
+#include "pycore_frame.h"
+
 #ifdef WITH_DTRACE
 #define OR_DTRACE_LINE | (PyDTrace_LINE_ENABLED() ? 255 : 0)
 #else
@@ -265,6 +267,15 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define LOCALS() frame->f_locals
 #define CONSTS() _PyFrame_GetCode(frame)->co_consts
 #define NAMES() _PyFrame_GetCode(frame)->co_names
+
+static void dtrace_function_entry(_PyInterpreterFrame *);
+static void dtrace_function_return(_PyInterpreterFrame *);
+
+#define DTRACE_FUNCTION_EXIT() \
+    if (PyDTrace_FUNCTION_RETURN_ENABLED()) { \
+        dtrace_function_return(frame); \
+    }
+
 
 #define DTRACE_FUNCTION_ENTRY()  \
     if (PyDTrace_FUNCTION_ENTRY_ENABLED()) { \
