@@ -1106,6 +1106,10 @@ class TracebackException:
             suggestion = _compute_suggestion_error(exc_value, exc_traceback, wrong_name)
             if suggestion:
                 self._str += f". Did you mean: '{suggestion}'?"
+        elif exc_type and issubclass(exc_type, ModuleNotFoundError) and \
+                sys.flags.no_site:
+            self._str += ". Site initialization is disabled, did you forget to add the \
+                site-package directory to sys.path?"
         elif exc_type and issubclass(exc_type, (NameError, AttributeError)) and \
                 getattr(exc_value, "name", None) is not None:
             wrong_name = getattr(exc_value, "name", None)
