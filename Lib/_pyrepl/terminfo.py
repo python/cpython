@@ -102,10 +102,14 @@ def _get_terminfo_dirs() -> list[Path]:
 
     dirs.extend(
         [
-            "/usr/share/terminfo",
-            "/usr/share/misc/terminfo",
-            "/usr/local/share/terminfo",
             "/etc/terminfo",
+            "/lib/terminfo",
+            "/usr/lib/terminfo",
+            "/usr/share/terminfo",
+            "/usr/share/lib/terminfo",
+            "/usr/share/misc/terminfo",
+            "/usr/local/lib/terminfo",
+            "/usr/local/share/terminfo",
         ]
     )
 
