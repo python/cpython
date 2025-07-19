@@ -46,6 +46,9 @@ class MockHandler(WSGIRequestHandler):
     def finish(self):
         pass
 
+class MockExceptionHandler(MockHandler):
+    server_handler = dict
+
 
 def hello_app(environ,start_response):
     start_response("200 OK", [
@@ -80,6 +83,17 @@ def run_amock(app=hello_app, data=b"GET / HTTP/1.0\n\n"):
 
     return out.getvalue(), err.getvalue()
 
+def run_amock_handler_with_incorrect_server_handler(app=hello_app, data=b"GET / HTTP/1.0\n\n"):
+    server = make_server("", 80, app, MockServer, MockExceptionHandler)
+    inp = BufferedReader(BytesIO(data))
+    out = BytesIO()
+    olderr = sys.stderr
+    err = sys.stderr = StringIO()
+
+    try:
+        server.finish_request((inp, out), ("127.0.0.1",8888))
+    finally:
+        sys.stderr = olderr
 
 def compare_generic_iter(make_it, match):
     """Utility to compare a generic iterator with an iterable
@@ -116,6 +130,9 @@ class IntegrationTests(TestCase):
             "\r\n"
             "Hello, world!").encode("iso-8859-1")
         )
+    def test_run_with_incorrect_server_handler(self):
+        with self.assertRaises(ValueError):
+            run_amock_handler_with_incorrect_server_handler()
 
     def test_plain_hello(self):
         out, err = run_amock()
