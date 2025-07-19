@@ -1,0 +1,2 @@
+Added a *color* option to :func:`difflib.unified_diff` that colors output
+similar to :program:`git diff`.
