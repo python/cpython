@@ -240,7 +240,11 @@ write code that handles both IP versions correctly.  Address objects are
 
    .. attribute:: is_reserved
 
-      ``True`` if the address is otherwise IETF reserved.
+      ``True`` if the address is *labelled* as reserved by the IETF:
+
+      * IPv4 address ``240.0.0.0/4`` named ``Reserved``. This attribute is not related to the
+        ``Reserved-by-Protocol`` value in iana-ipv4-special-registry_
+      * IPv6 addresses allocated as ``Reserved by IETF`` for future use (see iana-ipv6-address-space_)
 
    .. attribute:: is_loopback
 
@@ -261,6 +265,7 @@ write code that handles both IP versions correctly.  Address objects are
 
 .. _iana-ipv4-special-registry: https://www.iana.org/assignments/iana-ipv4-special-registry/iana-ipv4-special-registry.xhtml
 .. _iana-ipv6-special-registry: https://www.iana.org/assignments/iana-ipv6-special-registry/iana-ipv6-special-registry.xhtml
+.. _iana-ipv6-address-space: https://www.iana.org/assignments/ipv6-address-space/ipv6-address-space.xhtml
 
 .. method:: IPv4Address.__format__(fmt)
 
