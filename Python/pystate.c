@@ -24,6 +24,8 @@
 #include "pycore_stackref.h"      // Py_STACKREF_DEBUG
 #include "pycore_time.h"          // _PyTime_Init()
 #include "pycore_uniqueid.h"      // _PyObject_FinalizePerThreadRefcounts()
+#include "pycore_stats.h"         // FT_STAT_WORLD_STOP_INC()
+
 
 
 /* --------------------------------------------------------------------------
@@ -1398,6 +1400,9 @@ static void
 free_threadstate(_PyThreadStateImpl *tstate)
 {
     PyInterpreterState *interp = tstate->base.interp;
+#ifdef Py_STATS
+    _PyStats_ThreadFini(tstate);
+#endif
     // The initial thread state of the interpreter is allocated
     // as part of the interpreter state so should not be freed.
     if (tstate == &interp->_initial_thread) {
@@ -1521,6 +1526,13 @@ new_threadstate(PyInterpreterState *interp, int whence)
     }
     int32_t tlbc_idx = _Py_ReserveTLBCIndex(interp);
     if (tlbc_idx < 0) {
+        free_threadstate(tstate);
+        return NULL;
+    }
+#endif
+#ifdef Py_STATS
+    // The PyStats structure is quite large and is allocated separated from tstate.
+    if (!_PyStats_ThreadInit(tstate)) {
         free_threadstate(tstate);
         return NULL;
     }
@@ -1841,6 +1853,9 @@ _PyThreadState_DeleteCurrent(PyThreadState *tstate)
 #ifdef Py_GIL_DISABLED
     _Py_qsbr_detach(((_PyThreadStateImpl *)tstate)->qsbr);
 #endif
+#ifdef Py_STATS
+    _PyStats_Detach((_PyThreadStateImpl *)tstate);
+#endif
     current_fast_clear(tstate->interp->runtime);
     tstate_delete_common(tstate, 1);  // release GIL as part of call
     free_threadstate((_PyThreadStateImpl *)tstate);
@@ -2002,6 +2017,9 @@ tstate_activate(PyThreadState *tstate)
     if (!tstate->_status.bound_gilstate) {
         bind_gilstate_tstate(tstate);
     }
+#ifdef Py_STATS
+    _PyStats_Attach((_PyThreadStateImpl *)tstate);
+#endif
 
     tstate->_status.active = 1;
 }
@@ -2013,6 +2031,10 @@ tstate_deactivate(PyThreadState *tstate)
     // XXX assert(tstate_is_alive(tstate));
     assert(tstate_is_bound(tstate));
     assert(tstate->_status.active);
+
+#if Py_STATS
+    _PyStats_Detach((_PyThreadStateImpl *)tstate);
+#endif
 
     tstate->_status.active = 0;
 
@@ -2264,6 +2286,7 @@ stop_the_world(struct _stoptheworld_state *stw)
     stw->thread_countdown = 0;
     stw->stop_event = (PyEvent){0};  // zero-initialize (unset)
     stw->requester = _PyThreadState_GET();  // may be NULL
+    FT_STAT_WORLD_STOP_INC();
 
     _Py_FOR_EACH_STW_INTERP(stw, i) {
         _Py_FOR_EACH_TSTATE_UNLOCKED(i, t) {

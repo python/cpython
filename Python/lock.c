@@ -6,6 +6,7 @@
 #include "pycore_parking_lot.h"
 #include "pycore_semaphore.h"
 #include "pycore_time.h"          // _PyTime_Add()
+#include "pycore_stats.h"         // FT_STAT_MUTEX_SLEEP_INC()
 
 #ifdef MS_WINDOWS
 #  ifndef WIN32_LEAN_AND_MEAN
@@ -61,6 +62,8 @@ _PyMutex_LockTimed(PyMutex *m, PyTime_t timeout, _PyLockFlags flags)
     if (timeout == 0) {
         return PY_LOCK_FAILURE;
     }
+
+    FT_STAT_MUTEX_SLEEP_INC();
 
     PyTime_t now;
     // silently ignore error: cannot report error to the caller

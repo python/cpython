@@ -4,7 +4,7 @@
 //
 // - _Py_INCREF_STAT_INC() and _Py_DECREF_STAT_INC() used by Py_INCREF()
 //   and Py_DECREF().
-// - _Py_stats variable
+// - _PyStats_GET()
 //
 // Functions of the sys module:
 //
@@ -14,7 +14,7 @@
 // - sys._stats_dump()
 //
 // Python must be built with ./configure --enable-pystats to define the
-// Py_STATS macro.
+// _PyStats_GET() function.
 //
 // Define _PY_INTERPRETER macro to increment interpreter_increfs and
 // interpreter_decrefs. Otherwise, increment increfs and decrefs.
@@ -109,6 +109,15 @@ typedef struct _gc_stats {
     uint64_t objects_not_transitively_reachable;
 } GCStats;
 
+#ifdef Py_GIL_DISABLED
+// stats specific to free-threaded build
+typedef struct _ft_stats {
+    uint64_t mutex_sleeps;
+    uint64_t qsbr_polls;
+    uint64_t world_stops;
+} FTStats;
+#endif
+
 typedef struct _uop_stats {
     uint64_t execution_count;
     uint64_t miss;
@@ -173,22 +182,74 @@ typedef struct _stats {
     CallStats call_stats;
     ObjectStats object_stats;
     OptimizationStats optimization_stats;
+#ifdef Py_GIL_DISABLED
+    FTStats ft_stats;
+#endif
     RareEventStats rare_event_stats;
     GCStats *gc_stats;
 } PyStats;
 
 
+#ifdef Py_GIL_DISABLED
+
+#if defined(HAVE_THREAD_LOCAL) && !defined(Py_BUILD_CORE_MODULE)
+extern _Py_thread_local PyStats *_Py_tss_stats;
+#endif
+
+// Export for most shared extensions, used via _PyStats_GET() static
+// inline function.
+PyAPI_FUNC(PyStats *) _PyStats_GetLocal(void);
+
+#else // !Py_GIL_DISABLED
+
 // Export for shared extensions like 'math'
 PyAPI_DATA(PyStats*) _Py_stats;
 
-#ifdef _PY_INTERPRETER
-#  define _Py_INCREF_STAT_INC() do { if (_Py_stats) _Py_stats->object_stats.interpreter_increfs++; } while (0)
-#  define _Py_DECREF_STAT_INC() do { if (_Py_stats) _Py_stats->object_stats.interpreter_decrefs++; } while (0)
-#  define _Py_INCREF_IMMORTAL_STAT_INC() do { if (_Py_stats) _Py_stats->object_stats.interpreter_immortal_increfs++; } while (0)
-#  define _Py_DECREF_IMMORTAL_STAT_INC() do { if (_Py_stats) _Py_stats->object_stats.interpreter_immortal_decrefs++; } while (0)
+#endif
+
+// Return pointer to the PyStats structure, NULL if recording is off.
+static inline PyStats*
+_PyStats_GET(void)
+{
+#ifdef Py_GIL_DISABLED
+
+#if defined(HAVE_THREAD_LOCAL) && !defined(Py_BUILD_CORE_MODULE)
+    return _Py_tss_stats;
 #else
-#  define _Py_INCREF_STAT_INC() do { if (_Py_stats) _Py_stats->object_stats.increfs++; } while (0)
-#  define _Py_DECREF_STAT_INC() do { if (_Py_stats) _Py_stats->object_stats.decrefs++; } while (0)
-#  define _Py_INCREF_IMMORTAL_STAT_INC() do { if (_Py_stats) _Py_stats->object_stats.immortal_increfs++; } while (0)
-#  define _Py_DECREF_IMMORTAL_STAT_INC() do { if (_Py_stats) _Py_stats->object_stats.immortal_decrefs++; } while (0)
+    return _PyStats_GetLocal();
+#endif
+
+#else // !Py_GIL_DISABLED
+
+    return _Py_stats;
+
+#endif
+}
+
+#define _Py_STATS_EXPR(expr) \
+    do { \
+        PyStats *s = _PyStats_GET(); \
+        if (s != NULL) { \
+            s->expr; \
+        } \
+    } while (0)
+
+#define _Py_STATS_COND_EXPR(cond, expr) \
+    do { \
+        PyStats *s = _PyStats_GET(); \
+        if (s != NULL && cond) { \
+            s->expr; \
+        } \
+    } while (0)
+
+#ifdef _PY_INTERPRETER
+#  define _Py_INCREF_STAT_INC() _Py_STATS_EXPR(object_stats.interpreter_increfs++)
+#  define _Py_DECREF_STAT_INC() _Py_STATS_EXPR(object_stats.interpreter_decrefs++)
+#  define _Py_INCREF_IMMORTAL_STAT_INC() _Py_STATS_EXPR(object_stats.interpreter_immortal_increfs++)
+#  define _Py_DECREF_IMMORTAL_STAT_INC() _Py_STATS_EXPR(object_stats.interpreter_immortal_decrefs++)
+#else
+#  define _Py_INCREF_STAT_INC() _Py_STATS_EXPR(object_stats.increfs++)
+#  define _Py_DECREF_STAT_INC() _Py_STATS_EXPR(object_stats.decrefs++)
+#  define _Py_INCREF_IMMORTAL_STAT_INC() _Py_STATS_EXPR(object_stats.immortal_increfs++)
+#  define _Py_DECREF_IMMORTAL_STAT_INC() _Py_STATS_EXPR(object_stats.immortal_decrefs++)
 #endif

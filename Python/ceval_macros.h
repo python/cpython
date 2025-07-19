@@ -62,8 +62,9 @@
 #ifdef Py_STATS
 #define INSTRUCTION_STATS(op) \
     do { \
+        PyStats *s = _PyStats_GET(); \
         OPCODE_EXE_INC(op); \
-        if (_Py_stats) _Py_stats->opcode_stats[lastopcode].pair_count[op]++; \
+        if (s) s->opcode_stats[lastopcode].pair_count[op]++; \
         lastopcode = op; \
     } while (0)
 #else
