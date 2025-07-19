@@ -82,7 +82,7 @@ running Python processes without requiring code modification or process restart.
 Unlike deterministic profilers (:mod:`cProfile` and :mod:`profile`) that instrument
 every function call, the sampling profiler periodically captures stack traces from
 running processes.  This approach provides virtually zero overhead while achieving
-sampling rates of **up to 200,000 Hz**, making it the fastest sampling profiler
+sampling rates of **up to 1,000,000 Hz**, making it the fastest sampling profiler
 available for Python (at the time of its contribution) and ideal for debugging
 performance issues in production environments.
 
