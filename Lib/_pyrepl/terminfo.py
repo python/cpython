@@ -354,11 +354,14 @@ class TermInfo:
         """
         data = _read_terminfo_file(terminal_name)
         too_short = f"TermInfo file for {terminal_name!r} too short"
-        offset = 0
-        if len(data) < 12:
+        offset = 12
+        if len(data) < offset:
             raise ValueError(too_short)
 
-        magic = struct.unpack("<H", data[offset : offset + 2])[0]
+        magic, name_size, bool_count, num_count, str_count, str_size = (
+            struct.unpack("<Hhhhhh", data[:offset])
+        )
+
         if magic == MAGIC16:
             number_format = "<h"  # 16-bit signed
             number_size = 2
@@ -369,15 +372,6 @@ class TermInfo:
             raise ValueError(
                 f"TermInfo file for {terminal_name!r} uses unknown magic"
             )
-
-        # Parse header
-        name_size = struct.unpack("<h", data[2:4])[0]
-        bool_count = struct.unpack("<h", data[4:6])[0]
-        num_count = struct.unpack("<h", data[6:8])[0]
-        str_count = struct.unpack("<h", data[8:10])[0]
-        str_size = struct.unpack("<h", data[10:12])[0]
-
-        offset = 12
 
         # Read terminal names
         if offset + name_size > len(data):
