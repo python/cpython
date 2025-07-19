@@ -1,0 +1,2 @@
+Add a sort function to respect the longest match rule as per the current internet draft: https://tools.ietf.org/html/draft-koster-rep-00#section-3.2
+The sort function also takes into account equivalent rules such that allow should be used: https://tools.ietf.org/html/draft-koster-rep-00#section-2.2.2
