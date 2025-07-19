@@ -4748,7 +4748,39 @@ class MiscTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             _suggestions._generate_suggestions(MyList(), "")
 
+    @support.requires_subprocess()
+    def test_no_site_package_flavour(self):
+        import subprocess
 
+        cmd = [sys.executable, '-S', '-c', 'import boo']
+        result = subprocess.run(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertTrue(
+            ("Site initialization is disabled, did you forget to "
+                + "add the site-packages directory to sys.path?") in result.stderr
+        )
+
+        cmd = [sys.executable, '-S', '-c',
+            'import sys; sys.builtin_module_names = sys.builtin_module_names + ("boo",); import boo']
+
+        result = subprocess.run(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertTrue(
+            ("Site initialization is disabled, did you forget to "
+                + "add the site-packages directory to sys.path?") not in result.stderr
+        )
 
 
 class TestColorizedTraceback(unittest.TestCase):

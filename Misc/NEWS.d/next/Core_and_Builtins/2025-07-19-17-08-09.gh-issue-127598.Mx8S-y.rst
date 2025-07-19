@@ -1,2 +1,2 @@
-Improve ModuleNotFoundError by adding flavour text to exception when the
-argument '-S' is passed. Contributed by Andrea Mattei
+Improve :exc:`ModuleNotFoundError` by adding flavour text to exception when the
+:option:`-S` option is passed. Patch by Andrea Mattei.
