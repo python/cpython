@@ -279,6 +279,7 @@ class PdbClientTestCase(unittest.TestCase):
             expected_stdout="Some message.\n",
         )
 
+    @unittest.skipIf(sys.flags.optimize >= 2, "Disabled for optimization -OO")
     def test_handling_help_for_command(self):
         """Test handling a request to display help for a command."""
         incoming = [
@@ -290,6 +291,7 @@ class PdbClientTestCase(unittest.TestCase):
             expected_stdout_substring="Usage: ll | longlist",
         )
 
+    @unittest.skipIf(sys.flags.optimize >= 2, "Disabled for optimization -OO")
     def test_handling_help_without_a_specific_topic(self):
         """Test handling a request to display a help overview."""
         incoming = [
@@ -301,6 +303,7 @@ class PdbClientTestCase(unittest.TestCase):
             expected_stdout_substring="type help <topic>",
         )
 
+    @unittest.skipIf(sys.flags.optimize >= 2, "Help not available for -OO")
     def test_handling_help_pdb(self):
         """Test handling a request to display the full PDB manual."""
         incoming = [
@@ -310,6 +313,18 @@ class PdbClientTestCase(unittest.TestCase):
             incoming=incoming,
             expected_outgoing=[],
             expected_stdout_substring=">>> import pdb",
+        )
+
+    @unittest.skipIf(sys.flags.optimize < 2, "Needs -OO")
+    def test_handling_no_help_available(self):
+        """Test handling a request when no help if available."""
+        incoming = [
+            ("server", {"help": "pdb"}),
+        ]
+        self.do_test(
+            incoming=incoming,
+            expected_outgoing=[],
+            expected_stdout_substring="No help for 'pdb'",
         )
 
     def test_handling_pdb_prompts(self):
