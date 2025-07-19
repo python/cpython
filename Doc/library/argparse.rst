@@ -620,7 +620,7 @@ keyword argument::
 color
 ^^^^^
 
-By default, the help message is printed in color. If you want to plain text
+By default, the help message is printed in color. If you want plain text
 help messages, you can disable it by setting ``color`` to ``False``::
 
    >>> parser = argparse.ArgumentParser(description='Process some integers.',
