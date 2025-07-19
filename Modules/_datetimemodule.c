@@ -1763,6 +1763,24 @@ format_utcoffset(char *buf, size_t buflen, const char *sep,
     return 0;
 }
 
+/* Check whether year with century should be normalized for strftime. */
+inline static int
+normalize_century(void)
+{
+    static int cache = -1;
+    if (cache < 0) {
+        char year[5];
+        struct tm date = {
+            .tm_year = -1801,
+            .tm_mon = 0,
+            .tm_mday = 1
+        };
+        cache = (strftime(year, sizeof(year), "%Y", &date) &&
+                 strcmp(year, "0099") != 0);
+    }
+    return cache;
+}
+
 static PyObject *
 make_somezreplacement(PyObject *object, char *sep, PyObject *tzinfoarg)
 {
@@ -1934,10 +1952,9 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             }
             replacement = freplacement;
         }
-#ifdef _Py_NORMALIZE_CENTURY
-        else if (ch == 'Y' || ch == 'G'
-                 || ch == 'F' || ch == 'C'
-        ) {
+        else if (normalize_century()
+                 && (ch == 'Y' || ch == 'G' || ch == 'F' || ch == 'C'))
+        {
             /* 0-pad year with century as necessary */
             PyObject *item = PySequence_GetItem(timetuple, 0);
             if (item == NULL) {
@@ -1988,7 +2005,6 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             }
             continue;
         }
-#endif
         else {
             /* percent followed by something else */
             continue;
