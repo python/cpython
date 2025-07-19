@@ -1868,7 +1868,7 @@ static PyObject *
 ImportError_repr(PyImportErrorObject *self)
 {
     int hasargs = PyTuple_GET_SIZE(((PyBaseExceptionObject *)self)->args) != 0;
-    PyObject *r = BaseException_repr((PyBaseExceptionObject *)self);
+    PyObject *r = BaseException_repr((PyObject *)self);
     if (r && (self->name || self->path)) {
         /* remove ')' */
         Py_SETREF(r, PyUnicode_Substring(r, 0, PyUnicode_GET_LENGTH(r) - 1));
