@@ -1022,6 +1022,58 @@ _codecs_lookup_error_impl(PyObject *module, const char *name)
     return PyCodec_LookupError(name);
 }
 
+extern int _Py_normalize_encoding(const char *, char *, size_t, int);
+
+/*[clinic input]
+_codecs._normalize_encoding
+    encoding: unicode
+
+Normalize an encoding name *encoding*.
+
+Used for encodings.normalize_encoding. Does not convert to lower case.
+[clinic start generated code]*/
+
+static PyObject *
+_codecs__normalize_encoding_impl(PyObject *module, PyObject *encoding)
+/*[clinic end generated code: output=d27465d81e361f8e input=3ff3f4d64995b988]*/
+{
+    Py_ssize_t len;
+    const char *cstr = PyUnicode_AsUTF8AndSize(encoding, &len);
+    if (cstr == NULL) {
+        return NULL;
+    }
+
+    if (len > PY_SSIZE_T_MAX) {
+        PyErr_SetString(PyExc_OverflowError, "encoding is too large");
+        return NULL;
+    }
+
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(len + 1);
+    if (writer == NULL) {
+        return NULL;
+    }
+
+    char *normalized = PyMem_Malloc(len + 1);
+    if (normalized == NULL) {
+        PyUnicodeWriter_Discard(writer);
+        return PyErr_NoMemory();
+    }
+
+    if (!_Py_normalize_encoding(cstr, normalized, len + 1, 0)) {
+        PyMem_Free(normalized);
+        PyUnicodeWriter_Discard(writer);
+        return NULL;
+    }
+
+    if (PyUnicodeWriter_WriteUTF8(writer, normalized, (Py_ssize_t)strlen(normalized)) < 0) {
+        PyUnicodeWriter_Discard(writer);
+        PyMem_Free(normalized);
+        return NULL;
+    }
+    PyMem_Free(normalized);
+    return PyUnicodeWriter_Finish(writer);
+}
+
 /* --- Module API --------------------------------------------------------- */
 
 static PyMethodDef _codecs_functions[] = {
@@ -1071,6 +1123,7 @@ static PyMethodDef _codecs_functions[] = {
     _CODECS_REGISTER_ERROR_METHODDEF
     _CODECS__UNREGISTER_ERROR_METHODDEF
     _CODECS_LOOKUP_ERROR_METHODDEF
+    _CODECS__NORMALIZE_ENCODING_METHODDEF
     {NULL, NULL}                /* sentinel */
 };
 

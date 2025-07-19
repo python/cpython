@@ -180,7 +180,7 @@ _Py_mbrtowc(wchar_t *pwc, const char *str, size_t len, mbstate_t *pmbs)
 
 #define USE_FORCE_ASCII
 
-extern int _Py_normalize_encoding(const char *, char *, size_t);
+extern int _Py_normalize_encoding(const char *, char *, size_t, int);
 
 /* Workaround FreeBSD and OpenIndiana locale encoding issue with the C locale
    and POSIX locale. nl_langinfo(CODESET) announces an alias of the
@@ -231,7 +231,7 @@ check_force_ascii(void)
     }
 
     char encoding[20];   /* longest name: "iso_646.irv_1991\0" */
-    if (!_Py_normalize_encoding(codeset, encoding, sizeof(encoding))) {
+    if (!_Py_normalize_encoding(codeset, encoding, sizeof(encoding), 1)) {
         goto error;
     }
 

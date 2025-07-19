@@ -1,0 +1,4 @@
+:mod:`encodings`: Improve :func:`~encodings.normalize_encoding` performance
+by implementing the function in C using the private
+``_Py_normalize_encoding`` which has been modified to make lowercase
+conversion optional.
