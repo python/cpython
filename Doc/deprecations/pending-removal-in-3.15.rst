@@ -1,57 +1,112 @@
-Pending Removal in Python 3.15
+Pending removal in Python 3.15
 ------------------------------
 
-* :class:`http.server.CGIHTTPRequestHandler` will be removed along with its
-  related ``--cgi`` flag to ``python -m http.server``.  It was obsolete and
-  rarely used.  No direct replacement exists.  *Anything* is better than CGI
-  to interface a web server with a request handler.
+* The import system:
 
-* :class:`locale`: :func:`locale.getdefaultlocale` was deprecated in Python 3.11
-  and originally planned for removal in Python 3.13 (:gh:`90817`),
-  but removal has been postponed to Python 3.15.
-  Use :func:`locale.setlocale()`, :func:`locale.getencoding()` and
-  :func:`locale.getlocale()` instead.
-  (Contributed by Hugo van Kemenade in :gh:`111187`.)
+  * Setting :attr:`~module.__cached__` on a module while
+    failing to set :attr:`__spec__.cached <importlib.machinery.ModuleSpec.cached>`
+    is deprecated. In Python 3.15, :attr:`!__cached__` will cease to be set or
+    take into consideration by the import system or standard library. (:gh:`97879`)
+
+  * Setting :attr:`~module.__package__` on a module while
+    failing to set :attr:`__spec__.parent <importlib.machinery.ModuleSpec.parent>`
+    is deprecated. In Python 3.15, :attr:`!__package__` will cease to be set or
+    take into consideration by the import system or standard library. (:gh:`97879`)
+
+* :mod:`ctypes`:
+
+  * The undocumented :func:`!ctypes.SetPointerType` function
+    has been deprecated since Python 3.13.
+
+* :mod:`http.server`:
+
+  * The obsolete and rarely used :class:`!CGIHTTPRequestHandler`
+    has been deprecated since Python 3.13.
+    No direct replacement exists.
+    *Anything* is better than CGI to interface
+    a web server with a request handler.
+
+  * The :option:`!--cgi` flag to the :program:`python -m http.server`
+    command-line interface has been deprecated since Python 3.13.
+
+* :mod:`importlib`:
+
+  * ``load_module()`` method: use ``exec_module()`` instead.
+
+* :class:`locale`:
+
+  * The :func:`~locale.getdefaultlocale` function
+    has been deprecated since Python 3.11.
+    Its removal was originally planned for Python 3.13 (:gh:`90817`),
+    but has been postponed to Python 3.15.
+    Use :func:`~locale.getlocale`, :func:`~locale.setlocale`,
+    and :func:`~locale.getencoding` instead.
+    (Contributed by Hugo van Kemenade in :gh:`111187`.)
 
 * :mod:`pathlib`:
-  :meth:`pathlib.PurePath.is_reserved` is deprecated and scheduled for
-  removal in Python 3.15. Use :func:`os.path.isreserved` to detect reserved
-  paths on Windows.
+
+  * :meth:`.PurePath.is_reserved`
+    has been deprecated since Python 3.13.
+    Use :func:`os.path.isreserved` to detect reserved paths on Windows.
 
 * :mod:`platform`:
-  :func:`~platform.java_ver` is deprecated and will be removed in 3.15.
-  It was largely untested, had a confusing API,
-  and was only useful for Jython support.
-  (Contributed by Nikita Sobolev in :gh:`116349`.)
+
+  * :func:`!platform.java_ver` has been deprecated since Python 3.13.
+    This function is only useful for Jython support, has a confusing API,
+    and is largely untested.
+
+* :mod:`sysconfig`:
+
+  * The *check_home* argument of :func:`sysconfig.is_python_build` has been
+    deprecated since Python 3.12.
 
 * :mod:`threading`:
-  Passing any arguments to :func:`threading.RLock` is now deprecated.
-  C version allows any numbers of args and kwargs,
-  but they are just ignored. Python version does not allow any arguments.
-  All arguments will be removed from :func:`threading.RLock` in Python 3.15.
-  (Contributed by Nikita Sobolev in :gh:`102029`.)
 
-* :class:`typing.NamedTuple`:
+  * :func:`~threading.RLock` will take no arguments in Python 3.15.
+    Passing any arguments has been deprecated since Python 3.14,
+    as the  Python version does not permit any arguments,
+    but the C version allows any number of positional or keyword arguments,
+    ignoring every argument.
 
-  * The undocumented keyword argument syntax for creating :class:`!NamedTuple` classes
-    (``NT = NamedTuple("NT", x=int)``) is deprecated, and will be disallowed in
-    3.15. Use the class-based syntax or the functional syntax instead.
+* :mod:`types`:
 
-  * When using the functional syntax to create a :class:`!NamedTuple` class, failing to
-    pass a value to the *fields* parameter (``NT = NamedTuple("NT")``) is
-    deprecated. Passing ``None`` to the *fields* parameter
-    (``NT = NamedTuple("NT", None)``) is also deprecated. Both will be
-    disallowed in Python 3.15. To create a :class:`!NamedTuple` class with 0 fields, use
-    ``class NT(NamedTuple): pass`` or ``NT = NamedTuple("NT", [])``.
+  * :class:`types.CodeType`: Accessing :attr:`~codeobject.co_lnotab` was
+    deprecated in :pep:`626`
+    since 3.10 and was planned to be removed in 3.12,
+    but it only got a proper :exc:`DeprecationWarning` in 3.12.
+    May be removed in 3.15.
+    (Contributed by Nikita Sobolev in :gh:`101866`.)
 
-* :class:`typing.TypedDict`: When using the functional syntax to create a
-  :class:`!TypedDict` class, failing to pass a value to the *fields* parameter (``TD =
-  TypedDict("TD")``) is deprecated. Passing ``None`` to the *fields* parameter
-  (``TD = TypedDict("TD", None)``) is also deprecated. Both will be disallowed
-  in Python 3.15. To create a :class:`!TypedDict` class with 0 fields, use ``class
-  TD(TypedDict): pass`` or ``TD = TypedDict("TD", {})``.
+* :mod:`typing`:
 
-* :mod:`wave`: Deprecate the ``getmark()``, ``setmark()`` and ``getmarkers()``
-  methods of the :class:`wave.Wave_read` and :class:`wave.Wave_write` classes.
-  They will be removed in Python 3.15.
-  (Contributed by Victor Stinner in :gh:`105096`.)
+  * The undocumented keyword argument syntax for creating
+    :class:`~typing.NamedTuple` classes
+    (for example, ``Point = NamedTuple("Point", x=int, y=int)``)
+    has been deprecated since Python 3.13.
+    Use the class-based syntax or the functional syntax instead.
+
+  * When using the functional syntax of :class:`~typing.TypedDict`\s, failing
+    to pass a value to the *fields* parameter (``TD = TypedDict("TD")``) or
+    passing ``None`` (``TD = TypedDict("TD", None)``) has been deprecated
+    since Python 3.13.
+    Use ``class TD(TypedDict): pass`` or ``TD = TypedDict("TD", {})``
+    to create a TypedDict with zero field.
+
+  * The :func:`typing.no_type_check_decorator` decorator function
+    has been deprecated since Python 3.13.
+    After eight years in the :mod:`typing` module,
+    it has yet to be supported by any major type checker.
+
+* :mod:`!sre_compile`, :mod:`!sre_constants` and :mod:`!sre_parse` modules.
+
+* :mod:`wave`:
+
+  * The ``getmark()``, ``setmark()`` and ``getmarkers()`` methods of
+    the :class:`~wave.Wave_read` and :class:`~wave.Wave_write` classes
+    have been deprecated since Python 3.13.
+
+* :mod:`zipimport`:
+
+  * :meth:`~zipimport.zipimporter.load_module` has been deprecated since
+    Python 3.10. Use :meth:`~zipimport.zipimporter.exec_module` instead.
+    (Contributed by Jiahao Li in :gh:`125746`.)

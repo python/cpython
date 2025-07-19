@@ -1,0 +1,2 @@
+Fix ``TestPyReplAutoindent.test_auto_indent_default()`` doesn't run
+``input_code``.

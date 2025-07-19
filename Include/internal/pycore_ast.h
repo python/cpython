@@ -361,9 +361,10 @@ enum _expr_kind {BoolOp_kind=1, NamedExpr_kind=2, BinOp_kind=3, UnaryOp_kind=4,
                   ListComp_kind=9, SetComp_kind=10, DictComp_kind=11,
                   GeneratorExp_kind=12, Await_kind=13, Yield_kind=14,
                   YieldFrom_kind=15, Compare_kind=16, Call_kind=17,
-                  FormattedValue_kind=18, JoinedStr_kind=19, Constant_kind=20,
-                  Attribute_kind=21, Subscript_kind=22, Starred_kind=23,
-                  Name_kind=24, List_kind=25, Tuple_kind=26, Slice_kind=27};
+                  FormattedValue_kind=18, Interpolation_kind=19,
+                  JoinedStr_kind=20, TemplateStr_kind=21, Constant_kind=22,
+                  Attribute_kind=23, Subscript_kind=24, Starred_kind=25,
+                  Name_kind=26, List_kind=27, Tuple_kind=28, Slice_kind=29};
 struct _expr {
     enum _expr_kind kind;
     union {
@@ -460,8 +461,19 @@ struct _expr {
         } FormattedValue;
 
         struct {
+            expr_ty value;
+            constant str;
+            int conversion;
+            expr_ty format_spec;
+        } Interpolation;
+
+        struct {
             asdl_expr_seq *values;
         } JoinedStr;
+
+        struct {
+            asdl_expr_seq *values;
+        } TemplateStr;
 
         struct {
             constant value;
@@ -820,8 +832,14 @@ expr_ty _PyAST_Call(expr_ty func, asdl_expr_seq * args, asdl_keyword_seq *
 expr_ty _PyAST_FormattedValue(expr_ty value, int conversion, expr_ty
                               format_spec, int lineno, int col_offset, int
                               end_lineno, int end_col_offset, PyArena *arena);
+expr_ty _PyAST_Interpolation(expr_ty value, constant str, int conversion,
+                             expr_ty format_spec, int lineno, int col_offset,
+                             int end_lineno, int end_col_offset, PyArena
+                             *arena);
 expr_ty _PyAST_JoinedStr(asdl_expr_seq * values, int lineno, int col_offset,
                          int end_lineno, int end_col_offset, PyArena *arena);
+expr_ty _PyAST_TemplateStr(asdl_expr_seq * values, int lineno, int col_offset,
+                           int end_lineno, int end_col_offset, PyArena *arena);
 expr_ty _PyAST_Constant(constant value, string kind, int lineno, int
                         col_offset, int end_lineno, int end_col_offset, PyArena
                         *arena);
@@ -907,6 +925,7 @@ type_param_ty _PyAST_TypeVarTuple(identifier name, expr_ty default_value, int
 
 
 PyObject* PyAST_mod2obj(mod_ty t);
+int PyAst_CheckMode(PyObject *ast, int mode);
 mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode);
 int PyAST_Check(PyObject* obj);
 

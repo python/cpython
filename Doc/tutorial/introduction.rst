@@ -13,10 +13,9 @@ end a multi-line command.
 
 .. only:: html
 
-   You can toggle the display of prompts and output by clicking on ``>>>``
-   in the upper-right corner of an example box.  If you hide the prompts
-   and output for an example, then you can easily copy and paste the input
-   lines into your interpreter.
+   You can use the "Copy" button (it appears in the upper-right corner
+   when hovering over or tapping a code example), which strips prompts
+   and omits output, to copy and paste the input lines into your interpreter.
 
 .. index:: single: # (hash); comment
 
@@ -147,6 +146,8 @@ Python can manipulate text (represented by type :class:`str`, so-called
 "``Yay! :)``". They can be enclosed in single quotes (``'...'``) or double
 quotes (``"..."``) with the same result [#]_.
 
+.. code-block:: pycon
+
    >>> 'spam eggs'  # single quotes
    'spam eggs'
    >>> "Paris rabbit got your back :)! Yay!"  # double quotes
@@ -195,23 +196,21 @@ an odd number of ``\`` characters; see
 and workarounds.
 
 String literals can span multiple lines.  One way is using triple-quotes:
-``"""..."""`` or ``'''...'''``.  End of lines are automatically
+``"""..."""`` or ``'''...'''``.  End-of-line characters are automatically
 included in the string, but it's possible to prevent this by adding a ``\`` at
-the end of the line.  The following example::
+the end of the line.  In the following example, the initial newline is not
+included::
 
-   print("""\
+   >>> print("""\
+   ... Usage: thingy [OPTIONS]
+   ...      -h                        Display this usage message
+   ...      -H hostname               Hostname to connect to
+   ... """)
    Usage: thingy [OPTIONS]
         -h                        Display this usage message
         -H hostname               Hostname to connect to
-   """)
 
-produces the following output (note that the initial newline is not included):
-
-.. code-block:: text
-
-   Usage: thingy [OPTIONS]
-        -h                        Display this usage message
-        -H hostname               Hostname to connect to
+   >>>
 
 Strings can be concatenated (glued together) with the ``+`` operator, and
 repeated with ``*``::
@@ -501,8 +500,8 @@ together.  For instance, we can write an initial sub-sequence of the
 as follows::
 
    >>> # Fibonacci series:
-   ... # the sum of two elements defines the next
-   ... a, b = 0, 1
+   >>> # the sum of two elements defines the next
+   >>> a, b = 0, 1
    >>> while a < 10:
    ...     print(a)
    ...     a, b = b, a+b

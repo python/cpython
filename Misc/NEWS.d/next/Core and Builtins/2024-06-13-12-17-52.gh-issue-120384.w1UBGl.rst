@@ -1,3 +1,0 @@
-Fix an array out of bounds crash in ``list_ass_subscript``, which could be
-invoked via some specifically tailored input: including concurrent modification
-of a list object, where one thread assigns a slice and another clears it.

@@ -64,7 +64,7 @@ class InteractiveInterpreter:
             code = self.compile(source, filename, symbol)
         except (OverflowError, SyntaxError, ValueError):
             # Case 1
-            self.showsyntaxerror(filename)
+            self.showsyntaxerror(filename, source=source)
             return False
 
         if code is None:
@@ -106,32 +106,16 @@ class InteractiveInterpreter:
         The output is written by self.write(), below.
 
         """
-        colorize = kwargs.pop('colorize', False)
-        type, value, tb = sys.exc_info()
-        sys.last_exc = value
-        sys.last_type = type
-        sys.last_value = value
-        sys.last_traceback = tb
-        if filename and type is SyntaxError:
-            # Work hard to stuff the correct filename in the exception
-            try:
-                msg, (dummy_filename, lineno, offset, line) = value.args
-            except ValueError:
-                # Not the format we expect; leave it alone
-                pass
-            else:
-                # Stuff in the right filename
-                value = SyntaxError(msg, (filename, lineno, offset, line))
-                sys.last_exc = sys.last_value = value
-        if sys.excepthook is sys.__excepthook__:
-            lines = traceback.format_exception_only(type, value, colorize=colorize)
-            self.write(''.join(lines))
-        else:
-            # If someone has set sys.excepthook, we let that take precedence
-            # over self.write
-            sys.excepthook(type, value, tb)
+        try:
+            typ, value, tb = sys.exc_info()
+            if filename and issubclass(typ, SyntaxError):
+                value.filename = filename
+            source = kwargs.pop('source', "")
+            self._showtraceback(typ, value, None, source)
+        finally:
+            typ = value = tb = None
 
-    def showtraceback(self, **kwargs):
+    def showtraceback(self):
         """Display the exception that just occurred.
 
         We remove the first stack item because it is our own code.
@@ -139,20 +123,46 @@ class InteractiveInterpreter:
         The output is written by self.write(), below.
 
         """
-        colorize = kwargs.pop('colorize', False)
-        sys.last_type, sys.last_value, last_tb = ei = sys.exc_info()
-        sys.last_traceback = last_tb
-        sys.last_exc = ei[1]
         try:
-            lines = traceback.format_exception(ei[0], ei[1], last_tb.tb_next, colorize=colorize)
-            if sys.excepthook is sys.__excepthook__:
-                self.write(''.join(lines))
-            else:
-                # If someone has set sys.excepthook, we let that take precedence
-                # over self.write
-                sys.excepthook(ei[0], ei[1], last_tb)
+            typ, value, tb = sys.exc_info()
+            self._showtraceback(typ, value, tb.tb_next, "")
         finally:
-            last_tb = ei = None
+            typ = value = tb = None
+
+    def _showtraceback(self, typ, value, tb, source):
+        sys.last_type = typ
+        sys.last_traceback = tb
+        value = value.with_traceback(tb)
+        # Set the line of text that the exception refers to
+        lines = source.splitlines()
+        if (source and typ is SyntaxError
+                and not value.text and value.lineno is not None
+                and len(lines) >= value.lineno):
+            value.text = lines[value.lineno - 1]
+        sys.last_exc = sys.last_value = value
+        if sys.excepthook is sys.__excepthook__:
+            self._excepthook(typ, value, tb)
+        else:
+            # If someone has set sys.excepthook, we let that take precedence
+            # over self.write
+            try:
+                sys.excepthook(typ, value, tb)
+            except SystemExit:
+                raise
+            except BaseException as e:
+                e.__context__ = None
+                e = e.with_traceback(e.__traceback__.tb_next)
+                print('Error in sys.excepthook:', file=sys.stderr)
+                sys.__excepthook__(type(e), e, e.__traceback__)
+                print(file=sys.stderr)
+                print('Original exception was:', file=sys.stderr)
+                sys.__excepthook__(typ, value, tb)
+
+    def _excepthook(self, typ, value, tb):
+        # This method is being overwritten in
+        # _pyrepl.console.InteractiveColoredConsole
+        lines = traceback.format_exception(typ, value, tb)
+        self.write(''.join(lines))
 
     def write(self, data):
         """Write a string.
@@ -209,12 +219,17 @@ class InteractiveConsole(InteractiveInterpreter):
         """
         try:
             sys.ps1
+            delete_ps1_after = False
         except AttributeError:
             sys.ps1 = ">>> "
+            delete_ps1_after = True
         try:
             sys.ps2
+            delete_ps2_after = False
         except AttributeError:
             sys.ps2 = "... "
+            delete_ps2_after = True
+
         cprt = 'Type "help", "copyright", "credits" or "license" for more information.'
         if banner is None:
             self.write("Python %s on %s\n%s\n(%s)\n" %
@@ -276,6 +291,12 @@ class InteractiveConsole(InteractiveInterpreter):
 
             if _quit is not None:
                 builtins.quit = _quit
+
+            if delete_ps1_after:
+                del sys.ps1
+
+            if delete_ps2_after:
+                del sys.ps2
 
             if exitmsg is None:
                 self.write('now exiting %s...\n' % self.__class__.__name__)
@@ -364,7 +385,7 @@ def interact(banner=None, readfunc=None, local=None, exitmsg=None, local_exit=Fa
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(color=True)
     parser.add_argument('-q', action='store_true',
                        help="don't print version and copyright messages")
     args = parser.parse_args()

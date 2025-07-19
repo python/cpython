@@ -122,6 +122,9 @@ typedef int socklen_t;
 #endif
 
 #ifdef HAVE_BLUETOOTH_H
+#ifdef __FreeBSD__
+#define L2CAP_SOCKET_CHECKED
+#endif
 #include <bluetooth.h>
 #endif
 
@@ -170,6 +173,10 @@ typedef int socklen_t;
 # include <linux/vm_sockets.h>
 #else
 # undef AF_VSOCK
+#endif
+
+#ifdef HAVE_LINUX_NETFILTER_IPV4_H
+# include <linux/netfilter_ipv4.h>
 #endif
 
 #ifdef HAVE_SOCKADDR_ALG
@@ -252,7 +259,7 @@ typedef int SOCKET_T;
 #endif
 
 // AF_HYPERV is only supported on Windows
-#if defined(AF_HYPERV) && defined(MS_WINDOWS)
+#if defined(AF_HYPERV) && (defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM))
 #  define HAVE_AF_HYPERV
 #endif
 
@@ -270,18 +277,22 @@ typedef union sock_addr {
     struct sockaddr_in6 in6;
     struct sockaddr_storage storage;
 #endif
-#if defined(HAVE_BLUETOOTH_H) && defined(__FreeBSD__)
-    struct sockaddr_l2cap bt_l2;
-    struct sockaddr_rfcomm bt_rc;
-    struct sockaddr_sco bt_sco;
-    struct sockaddr_hci bt_hci;
-#elif defined(HAVE_BLUETOOTH_BLUETOOTH_H)
+#if defined(MS_WINDOWS)
+    struct SOCKADDR_BTH_REDEF bt_rc;
+#elif defined(HAVE_BLUETOOTH_BLUETOOTH_H) // Linux
     struct sockaddr_l2 bt_l2;
     struct sockaddr_rc bt_rc;
     struct sockaddr_sco bt_sco;
     struct sockaddr_hci bt_hci;
-#elif defined(MS_WINDOWS)
-    struct SOCKADDR_BTH_REDEF bt_rc;
+#elif defined(HAVE_BLUETOOTH_H)
+# if defined(__FreeBSD__)
+    struct sockaddr_l2cap bt_l2;
+    struct sockaddr_rfcomm bt_rc;
+    struct sockaddr_sco bt_sco;
+    struct sockaddr_hci bt_hci;
+# else // NetBSD, DragonFly BSD
+    struct sockaddr_bt bt;
+# endif
 #endif
 #ifdef HAVE_NETPACKET_PACKET_H
     struct sockaddr_ll ll;
@@ -325,6 +336,9 @@ typedef struct {
     PyTime_t sock_timeout;     /* Operation timeout in seconds;
                                         0.0 means non-blocking */
     struct _socket_state *state;
+#ifdef MS_WINDOWS
+    int quickack;
+#endif
 } PySocketSockObject;
 
 /* --- C API ----------------------------------------------------*/

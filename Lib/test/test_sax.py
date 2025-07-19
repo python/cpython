@@ -1,5 +1,4 @@
 # regression test for SAX 2.0
-# $Id$
 
 from xml.sax import make_parser, ContentHandler, \
                     SAXException, SAXReaderNotAvailable, SAXParseException
@@ -832,8 +831,9 @@ class StreamReaderWriterXmlgenTest(XmlgenTest, unittest.TestCase):
     fname = os_helper.TESTFN + '-codecs'
 
     def ioclass(self):
-        writer = codecs.open(self.fname, 'w', encoding='ascii',
-                             errors='xmlcharrefreplace', buffering=0)
+        with self.assertWarns(DeprecationWarning):
+            writer = codecs.open(self.fname, 'w', encoding='ascii',
+                                errors='xmlcharrefreplace', buffering=0)
         def cleanup():
             writer.close()
             os_helper.unlink(self.fname)

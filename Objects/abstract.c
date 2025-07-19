@@ -2,14 +2,17 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
-#include "pycore_pybuffer.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCallTstate()
 #include "pycore_crossinterp.h"   // _Py_CallInInterpreter()
+#include "pycore_genobject.h"     // _PyGen_FetchStopIterationValue()
+#include "pycore_list.h"          // _PyList_AppendTakeRef()
+#include "pycore_long.h"          // _PyLong_IsNegative()
 #include "pycore_object.h"        // _Py_CheckSlotResult()
-#include "pycore_long.h"          // _Py_IsNegative
+#include "pycore_pybuffer.h"      // _PyBuffer_ReleaseInInterpreterAndRawFree()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_tuple.h"         // _PyTuple_FromArraySteal()
 #include "pycore_unionobject.h"   // _PyUnion_Check()
 
 #include <stddef.h>               // offsetof()
@@ -583,7 +586,7 @@ PyBuffer_SizeFromFormat(const char *format)
     PyObject *fmt = NULL;
     Py_ssize_t itemsize = -1;
 
-    calcsize = _PyImport_GetModuleAttrString("struct", "calcsize");
+    calcsize = PyImport_ImportModuleAttrString("struct", "calcsize");
     if (calcsize == NULL) {
         goto done;
     }
@@ -862,7 +865,7 @@ PyObject_Format(PyObject *obj, PyObject *format_spec)
 
     /* If no format_spec is provided, use an empty string */
     if (format_spec == NULL) {
-        empty = PyUnicode_New(0, 0);
+        empty = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
         format_spec = empty;
     }
 
@@ -1000,20 +1003,6 @@ binary_op(PyObject *v, PyObject *w, const int op_slot, const char *op_name)
     PyObject *result = BINARY_OP1(v, w, op_slot, op_name);
     if (result == Py_NotImplemented) {
         Py_DECREF(result);
-
-        if (op_slot == NB_SLOT(nb_rshift) &&
-            PyCFunction_CheckExact(v) &&
-            strcmp(((PyCFunctionObject *)v)->m_ml->ml_name, "print") == 0)
-        {
-            PyErr_Format(PyExc_TypeError,
-                "unsupported operand type(s) for %.100s: "
-                "'%.100s' and '%.100s'. Did you mean \"print(<message>, "
-                "file=<output_stream>)\"?",
-                op_name,
-                Py_TYPE(v)->tp_name,
-                Py_TYPE(w)->tp_name);
-            return NULL;
-        }
         return binop_type_error(v, w, op_name);
     }
     return result;
@@ -2007,9 +1996,6 @@ PyObject *
 PySequence_Tuple(PyObject *v)
 {
     PyObject *it;  /* iter(v) */
-    Py_ssize_t n;             /* guess for result tuple size */
-    PyObject *result = NULL;
-    Py_ssize_t j;
 
     if (v == NULL) {
         return null_error();
@@ -2031,58 +2017,54 @@ PySequence_Tuple(PyObject *v)
     if (it == NULL)
         return NULL;
 
-    /* Guess result size and allocate space. */
-    n = PyObject_LengthHint(v, 10);
-    if (n == -1)
-        goto Fail;
-    result = PyTuple_New(n);
-    if (result == NULL)
-        goto Fail;
-
-    /* Fill the tuple. */
-    for (j = 0; ; ++j) {
+    Py_ssize_t n;
+    PyObject *buffer[8];
+    for (n = 0; n < 8; n++) {
         PyObject *item = PyIter_Next(it);
         if (item == NULL) {
-            if (PyErr_Occurred())
-                goto Fail;
+            if (PyErr_Occurred()) {
+                goto fail;
+            }
+            Py_DECREF(it);
+            return _PyTuple_FromArraySteal(buffer, n);
+        }
+        buffer[n] = item;
+    }
+    PyListObject *list = (PyListObject *)PyList_New(16);
+    if (list == NULL) {
+        goto fail;
+    }
+    assert(n == 8);
+    Py_SET_SIZE(list, n);
+    for (Py_ssize_t j = 0; j < n; j++) {
+        PyList_SET_ITEM(list, j, buffer[j]);
+    }
+    for (;;) {
+        PyObject *item = PyIter_Next(it);
+        if (item == NULL) {
+            if (PyErr_Occurred()) {
+                Py_DECREF(list);
+                Py_DECREF(it);
+                return NULL;
+            }
             break;
         }
-        if (j >= n) {
-            size_t newn = (size_t)n;
-            /* The over-allocation strategy can grow a bit faster
-               than for lists because unlike lists the
-               over-allocation isn't permanent -- we reclaim
-               the excess before the end of this routine.
-               So, grow by ten and then add 25%.
-            */
-            newn += 10u;
-            newn += newn >> 2;
-            if (newn > PY_SSIZE_T_MAX) {
-                /* Check for overflow */
-                PyErr_NoMemory();
-                Py_DECREF(item);
-                goto Fail;
-            }
-            n = (Py_ssize_t)newn;
-            if (_PyTuple_Resize(&result, n) != 0) {
-                Py_DECREF(item);
-                goto Fail;
-            }
+        if (_PyList_AppendTakeRef(list, item) < 0) {
+            Py_DECREF(list);
+            Py_DECREF(it);
+            return NULL;
         }
-        PyTuple_SET_ITEM(result, j, item);
     }
-
-    /* Cut tuple back if guess was too large. */
-    if (j < n &&
-        _PyTuple_Resize(&result, j) != 0)
-        goto Fail;
-
     Py_DECREF(it);
-    return result;
-
-Fail:
-    Py_XDECREF(result);
+    PyObject *res = _PyList_AsTupleAndClear(list);
+    Py_DECREF(list);
+    return res;
+fail:
     Py_DECREF(it);
+    while (n > 0) {
+        n--;
+        Py_DECREF(buffer[n]);
+    }
     return NULL;
 }
 
@@ -2881,7 +2863,50 @@ PyAIter_Check(PyObject *obj)
             tp->tp_as_async->am_anext != &_PyObject_NextNotImplemented);
 }
 
+static int
+iternext(PyObject *iter, PyObject **item)
+{
+    iternextfunc tp_iternext = Py_TYPE(iter)->tp_iternext;
+    if ((*item = tp_iternext(iter))) {
+        return 1;
+    }
+
+    PyThreadState *tstate = _PyThreadState_GET();
+    /* When the iterator is exhausted it must return NULL;
+     * a StopIteration exception may or may not be set. */
+    if (!_PyErr_Occurred(tstate)) {
+        return 0;
+    }
+    if (_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
+        _PyErr_Clear(tstate);
+        return 0;
+    }
+
+    /* Error case: an exception (different than StopIteration) is set. */
+    return -1;
+}
+
+/* Return 1 and set 'item' to the next item of 'iter' on success.
+ * Return 0 and set 'item' to NULL when there are no remaining values.
+ * Return -1, set 'item' to NULL and set an exception on error.
+ */
+int
+PyIter_NextItem(PyObject *iter, PyObject **item)
+{
+    assert(iter != NULL);
+    assert(item != NULL);
+
+    if (Py_TYPE(iter)->tp_iternext == NULL) {
+        *item = NULL;
+        PyErr_Format(PyExc_TypeError, "expected an iterator, got '%T'", iter);
+        return -1;
+    }
+
+    return iternext(iter, item);
+}
+
 /* Return next item.
+ *
  * If an error occurs, return NULL.  PyErr_Occurred() will be true.
  * If the iteration terminates normally, return NULL and clear the
  * PyExc_StopIteration exception (if it was set).  PyErr_Occurred()
@@ -2891,17 +2916,9 @@ PyAIter_Check(PyObject *obj)
 PyObject *
 PyIter_Next(PyObject *iter)
 {
-    PyObject *result;
-    result = (*Py_TYPE(iter)->tp_iternext)(iter);
-    if (result == NULL) {
-        PyThreadState *tstate = _PyThreadState_GET();
-        if (_PyErr_Occurred(tstate)
-            && _PyErr_ExceptionMatches(tstate, PyExc_StopIteration))
-        {
-            _PyErr_Clear(tstate);
-        }
-    }
-    return result;
+    PyObject *item;
+    (void)iternext(iter, &item);
+    return item;
 }
 
 PySendResult

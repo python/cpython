@@ -25,8 +25,8 @@ another rational number, or from a string.
 
    The first version requires that *numerator* and *denominator* are instances
    of :class:`numbers.Rational` and returns a new :class:`Fraction` instance
-   with value ``numerator/denominator``. If *denominator* is ``0``, it
-   raises a :exc:`ZeroDivisionError`.
+   with value equal to ``numerator/denominator`` where the denominator is positive.
+   If *denominator* is ``0``, it raises a :exc:`ZeroDivisionError`.
 
    The second version requires that *number* is an instance of
    :class:`numbers.Rational` or has the :meth:`!as_integer_ratio` method
@@ -141,7 +141,7 @@ another rational number, or from a string.
 
       .. versionadded:: 3.12
 
-   .. classmethod:: from_float(flt)
+   .. classmethod:: from_float(f)
 
       Alternative constructor which only accepts instances of
       :class:`float` or :class:`numbers.Integral`. Beware that
@@ -163,6 +163,16 @@ another rational number, or from a string.
          From Python 3.2 onwards, you can also construct a
          :class:`Fraction` instance directly from a :class:`decimal.Decimal`
          instance.
+
+
+   .. classmethod:: from_number(number)
+
+      Alternative constructor which only accepts instances of
+      :class:`numbers.Integral`, :class:`numbers.Rational`,
+      :class:`float` or :class:`decimal.Decimal`, and objects with
+      the :meth:`!as_integer_ratio` method, but not strings.
+
+      .. versionadded:: 3.14
 
 
    .. method:: limit_denominator(max_denominator=1000000)
