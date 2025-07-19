@@ -242,7 +242,7 @@ write code that handles both IP versions correctly.  Address objects are
 
       ``True`` if the address is *labelled* as reserved by the IETF:
 
-      * IPv4 address ``240.0.0.0/4`` named ``Reserved``. This attribute is not related to the 
+      * IPv4 address ``240.0.0.0/4`` named ``Reserved``. This attribute is not related to the
         ``Reserved-by-Protocol`` value in iana-ipv4-special-registry_
       * IPv6 addresses allocated as ``Reserved by IETF`` for future use (see iana-ipv6-address-space_)
 
