@@ -2306,6 +2306,18 @@ class TestMisc(BaseTest, unittest.TestCase):
         with self.assertRaises(ValueError):
             shutil.chown(filename, dir_fd=dirfd)
 
+    def test_copyfile_same_file(self):
+        # copyfile() should raise SameFileError if the source and destination
+        # are the same.
+        src_dir = self.mkdtemp()
+        src_file = os.path.join(src_dir, 'foo')
+        create_file(src_file, b'foo')
+        self.assertRaises(SameFileError, shutil.copyfile, src_file, src_file)
+        # But Error should work too, to stay backward compatible.
+        self.assertRaises(Error, shutil.copyfile, src_file, src_file)
+        # Make sure file is not corrupted.
+        self.assertEqual(read_file(src_file), 'foo')
+
 
 @support.requires_subprocess()
 class TestWhich(BaseTest, unittest.TestCase):
@@ -2997,7 +3009,7 @@ class TestCopyFile(unittest.TestCase):
             return self._suppress_at_exit
 
     def test_w_source_open_fails(self):
-        def _open(filename, mode='r'):
+        def _open(filename, mode='r', opener=None):
             if filename == 'srcfile':
                 raise OSError('Cannot open "srcfile"')
             assert 0  # shouldn't reach here.
@@ -3010,7 +3022,7 @@ class TestCopyFile(unittest.TestCase):
     def test_w_dest_open_fails(self):
         srcfile = self.Faux()
 
-        def _open(filename, mode='r'):
+        def _open(filename, mode='r', opener=None):
             if filename == 'srcfile':
                 return srcfile
             if filename == 'destfile':
@@ -3029,7 +3041,7 @@ class TestCopyFile(unittest.TestCase):
         srcfile = self.Faux()
         destfile = self.Faux(True)
 
-        def _open(filename, mode='r'):
+        def _open(filename, mode='r', opener=None):
             if filename == 'srcfile':
                 return srcfile
             if filename == 'destfile':
@@ -3051,7 +3063,7 @@ class TestCopyFile(unittest.TestCase):
         srcfile = self.Faux(True)
         destfile = self.Faux()
 
-        def _open(filename, mode='r'):
+        def _open(filename, mode='r', opener=None):
             if filename == 'srcfile':
                 return srcfile
             if filename == 'destfile':
