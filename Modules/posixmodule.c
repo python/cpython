@@ -685,7 +685,8 @@ static void
 reset_remotedebug_data(PyThreadState *tstate)
 {
     tstate->remote_debugger_support.debugger_pending_call = 0;
-    memset(tstate->remote_debugger_support.debugger_script_path, 0, MAX_SCRIPT_PATH_SIZE);
+    memset(tstate->remote_debugger_support.debugger_script_path, 0,
+           Py_MAX_SCRIPT_PATH_SIZE);
 }
 
 
@@ -1782,7 +1783,7 @@ convertenviron(void)
             return NULL;
         }
 #ifdef MS_WINDOWS
-        v = PyUnicode_FromWideChar(p+1, wcslen(p+1));
+        v = PyUnicode_FromWideChar(p+1, -1);
 #else
         v = PyBytes_FromStringAndSize(p+1, strlen(p+1));
 #endif
@@ -3476,12 +3477,12 @@ Change the current working directory to the specified path.
 
 path may always be specified as a string.
 On some platforms, path may also be specified as an open file descriptor.
-  If this functionality is unavailable, using it raises an exception.
+If this functionality is unavailable, using it raises an exception.
 [clinic start generated code]*/
 
 static PyObject *
 os_chdir_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=3be6400eee26eaae input=1a4a15b4d12cb15d]*/
+/*[clinic end generated code: output=3be6400eee26eaae input=a74ceab5d72adf74]*/
 {
     int result;
 
@@ -5052,7 +5053,7 @@ os__getfullpathname_impl(PyObject *module, path_t *path)
         return PyErr_NoMemory();
     }
 
-    PyObject *str = PyUnicode_FromWideChar(abspath, wcslen(abspath));
+    PyObject *str = PyUnicode_FromWideChar(abspath, -1);
     PyMem_RawFree(abspath);
     if (str == NULL) {
         return NULL;
@@ -5168,7 +5169,7 @@ os__findfirstfile_impl(PyObject *module, path_t *path)
     }
 
     wRealFileName = wFileData.cFileName;
-    result = PyUnicode_FromWideChar(wRealFileName, wcslen(wRealFileName));
+    result = PyUnicode_FromWideChar(wRealFileName, -1);
     FindClose(hFindFile);
     return result;
 }
@@ -5212,7 +5213,7 @@ os__getvolumepathname_impl(PyObject *module, path_t *path)
         result = win32_error_object("_getvolumepathname", path->object);
         goto exit;
     }
-    result = PyUnicode_FromWideChar(mountpath, wcslen(mountpath));
+    result = PyUnicode_FromWideChar(mountpath, -1);
     if (PyBytes_Check(path->object))
         Py_SETREF(result, PyUnicode_EncodeFSDefault(result));
 
@@ -5736,6 +5737,9 @@ os_mkdir_impl(PyObject *module, path_t *path, int mode, int dir_fd)
 
 #ifdef MS_WINDOWS
     Py_BEGIN_ALLOW_THREADS
+    // For API sets that don't support these APIs, we have no choice
+    // but to silently create a directory with default ACL.
+#if defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM)
     if (mode == 0700 /* 0o700 */) {
         ULONG sdSize;
         pSecAttr = &secAttr;
@@ -5751,6 +5755,7 @@ os_mkdir_impl(PyObject *module, path_t *path, int mode, int dir_fd)
             error = GetLastError();
         }
     }
+#endif
     if (!error) {
         result = CreateDirectoryW(path->wide, pSecAttr);
         if (secAttr.lpSecurityDescriptor &&
@@ -8816,14 +8821,14 @@ os_ptsname_impl(PyObject *module, int fd)
 #if defined(HAVE_OPENPTY) || defined(HAVE_FORKPTY) || defined(HAVE_LOGIN_TTY) || defined(HAVE_DEV_PTMX)
 #ifdef HAVE_PTY_H
 #include <pty.h>
-#ifdef HAVE_UTMP_H
-#include <utmp.h>
-#endif /* HAVE_UTMP_H */
 #elif defined(HAVE_LIBUTIL_H)
 #include <libutil.h>
 #elif defined(HAVE_UTIL_H)
 #include <util.h>
 #endif /* HAVE_PTY_H */
+#ifdef HAVE_UTMP_H
+#include <utmp.h>
+#endif /* HAVE_UTMP_H */
 #ifdef HAVE_STROPTS_H
 #include <stropts.h>
 #endif
@@ -9558,6 +9563,24 @@ os_getlogin_impl(PyObject *module)
     }
     else
         result = PyErr_SetFromWindowsErr(GetLastError());
+#elif defined (HAVE_GETLOGIN_R)
+# if defined (HAVE_MAXLOGNAME)
+    char name[MAXLOGNAME + 1];
+# elif defined (HAVE_UT_NAMESIZE)
+    char name[UT_NAMESIZE + 1];
+# else
+    char name[256];
+# endif
+    int err = getlogin_r(name, sizeof(name));
+    if (err) {
+        int old_errno = errno;
+        errno = -err;
+        posix_error();
+        errno = old_errno;
+    }
+    else {
+        result = PyUnicode_DecodeFSDefault(name);
+    }
 #else
     char *name;
     int old_errno = errno;

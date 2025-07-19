@@ -1781,9 +1781,12 @@ The following wildcards are supported in patterns for
 ``?``
   Matches one non-separator character.
 ``[seq]``
-  Matches one character in *seq*.
+  Matches one character in *seq*, where *seq* is a sequence of characters.
+  Range expressions are supported; for example, ``[a-z]`` matches any lowercase ASCII letter.
+  Multiple ranges can be combined: ``[a-zA-Z0-9_]`` matches any ASCII letter, digit, or underscore.
+
 ``[!seq]``
-  Matches one character not in *seq*.
+  Matches one character not in *seq*, where *seq* follows the same rules as above.
 
 For a literal match, wrap the meta-characters in brackets.
 For example, ``"[?]"`` matches the character ``"?"``.
@@ -1982,7 +1985,7 @@ The :mod:`pathlib.types` module provides types for static type checking.
 
       If *follow_symlinks* is ``False``, return ``True`` only if the path
       is a file (without following symlinks); return ``False`` if the path
-      is a directory or other other non-file, or if it doesn't exist.
+      is a directory or other non-file, or if it doesn't exist.
 
    .. method:: is_symlink()
 
