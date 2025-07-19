@@ -6838,19 +6838,11 @@ dnl have_panel=[no, yes]
 have_curses=no
 have_panel=no
 
-AC_ARG_ENABLE([test-modules],
-  [AS_HELP_STRING([--disable-test-modules], [don't build nor install test modules])], [
-  AS_VAR_IF([enable_test_modules], [yes], [TEST_MODULES=yes], [TEST_MODULES=no])
-], [TEST_MODULES=yes])
-AC_MSG_RESULT([$TEST_MODULES])
-AC_SUBST([TEST_MODULES])
-
-
-AC_MSG_CHECKING([for --disable-ncurses])
-AC_ARG_ENABLE([ncurses], [AS_HELP_STRING(
-                [--disable-ncurses],
-                [disable linking ncurses (default is no)])], [
-  AS_VAR_IF([enable_ncurses], [yes], [Py_CHECK_NCURSES=yes], [Py_CHECK_NCURSES=no])
+AC_MSG_CHECKING([for --disable-curses])
+AC_ARG_ENABLE([curses], [AS_HELP_STRING(
+                [--disable-curses],
+                [disable building curses module (default is no)])], [
+  AS_VAR_IF([enable_curses], [yes], [Py_CHECK_NCURSES=yes], [Py_CHECK_NCURSES=no])
 ], [Py_CHECK_NCURSES=yes])
 AC_MSG_RESULT([$Py_CHECK_NCURSES])
 
