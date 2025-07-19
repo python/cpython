@@ -434,11 +434,17 @@ arguments they contain.  For example::
    >>> parser.parse_args(['-f', 'foo', '@args.txt'])
    Namespace(f='bar')
 
-Arguments read from a file must by default be one per line (but see also
+Arguments read from a file must be one per line by default (but see also
 :meth:`~ArgumentParser.convert_arg_line_to_args`) and are treated as if they
 were in the same place as the original file referencing argument on the command
 line.  So in the example above, the expression ``['-f', 'foo', '@args.txt']``
 is considered equivalent to the expression ``['-f', 'foo', '-f', 'bar']``.
+
+.. note::
+
+   Empty lines are treated as empty strings (``''``), which are allowed as values but
+   not as arguments. Empty lines that are read as arguments will result in an
+   "unrecognized arguments" error.
 
 :class:`ArgumentParser` uses :term:`filesystem encoding and error handler`
 to read the file containing arguments.
