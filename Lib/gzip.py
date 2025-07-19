@@ -30,7 +30,7 @@ READ_BUFFER_SIZE = 128 * 1024
 _WRITE_BUFFER_SIZE = 4 * io.DEFAULT_BUFFER_SIZE
 
 
-def open(filename, mode="rb", compresslevel=_COMPRESS_LEVEL_BEST,
+def open(filename, mode="rb", compresslevel=_COMPRESS_LEVEL_TRADEOFF,
          encoding=None, errors=None, newline=None):
     """Open a gzip-compressed file in binary or text mode.
 
@@ -158,7 +158,7 @@ class GzipFile(_streams.BaseStream):
     myfileobj = None
 
     def __init__(self, filename=None, mode=None,
-                 compresslevel=_COMPRESS_LEVEL_BEST, fileobj=None, mtime=None):
+                 compresslevel=_COMPRESS_LEVEL_TRADEOFF, fileobj=None, mtime=None):
         """Constructor for the GzipFile class.
 
         At least one of fileobj and filename must be given a
@@ -621,7 +621,7 @@ class _GzipReader(_streams.DecompressReader):
         self._new_member = True
 
 
-def compress(data, compresslevel=_COMPRESS_LEVEL_BEST, *, mtime=0):
+def compress(data, compresslevel=_COMPRESS_LEVEL_TRADEOFF, *, mtime=0):
     """Compress data in one shot and return the compressed string.
 
     compresslevel sets the compression level in range of 0-9.
