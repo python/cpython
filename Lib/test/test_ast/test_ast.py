@@ -3547,7 +3547,7 @@ class CommandLineTests(unittest.TestCase):
         self.check_output(source, expect, '--show-empty')
 
 
-class ASTOptimiziationTests(unittest.TestCase):
+class ASTOptimizationTests(unittest.TestCase):
     def wrap_expr(self, expr):
         return ast.Module(body=[ast.Expr(value=expr)])
 
