@@ -864,19 +864,19 @@ class TestHashlibSupport(unittest.TestCase):
         except TypeError:
             return default
 
-    def fetch_hash_function(self, name, impl):
-        entry = hashlib_helper._EXPLICIT_CONSTRUCTORS[name]
-        match impl:
+    def fetch_hash_function(self, name, implementation):
+        info = hashlib_helper.get_hash_info(name)
+        match implementation:
             case "hashlib":
-                assert entry.hashlib is not None, entry
-                return getattr(self.hashlib, entry.hashlib)
+                assert info.hashlib is not None, info
+                return getattr(self.hashlib, info.hashlib)
             case "openssl":
                 try:
-                    return getattr(self._hashlib, entry.openssl, None)
+                    return getattr(self._hashlib, info.openssl, None)
                 except TypeError:
                     return None
-            case _:
-                return self.try_import_attribute(entry.fullname(impl))
+        fullname = info.fullname(implementation)
+        return self.try_import_attribute(fullname)
 
     def fetch_hmac_function(self, name):
         fullname = hashlib_helper._EXPLICIT_HMAC_CONSTRUCTORS[name]
