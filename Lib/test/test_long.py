@@ -1693,5 +1693,14 @@ class LongTest(unittest.TestCase):
         # GH-117195 -- This shouldn't crash
         object.__sizeof__(1)
 
+    def test_hash(self):
+        # gh-136599
+        self.assertEqual(hash(-1), -2)
+        self.assertEqual(hash(10), 10)
+        self.assertEqual(hash(2**31 - 2), 2**31 - 2)
+        self.assertNotEqual(hash(-2**31), -1)
+        self.assertNotEqual(hash(-2**61), -1)
+
+
 if __name__ == "__main__":
     unittest.main()
