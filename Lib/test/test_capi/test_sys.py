@@ -12,11 +12,6 @@ except ImportError:
 NULL = None
 
 class CAPITest(unittest.TestCase):
-    # TODO: Test the following functions:
-    #
-    #   PySys_Audit()
-    #   PySys_AuditTuple()
-
     maxDiff = None
 
     @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
@@ -210,6 +205,65 @@ class CAPITest(unittest.TestCase):
     def test_sys_writestderr(self):
         # Test PySys_WriteStderr()
         self._test_sys_writestream('PySys_WriteStderr', 'stderr')
+
+    @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
+    def test_sys_audit(self):
+        # Test PySys_Audit()
+        sys_audit = _testlimitedcapi.sys_audit
+
+        result = sys_audit("test.event", "OO", 1, "a")
+        self.assertEqual(result, 0)
+
+        result = sys_audit("test.no_args", "")
+        self.assertEqual(result, 0)
+
+        with self.assertRaises(TypeError):
+            sys_audit(123, "O", 1)
+
+        result = sys_audit("テスト.イベント", "O", 42)
+        self.assertEqual(result, 0)
+
+        result = sys_audit(None, "O", 1)
+        self.assertEqual(result, 0)
+
+        result = sys_audit(b"test.non_utf8\xff", "O", 1)
+        self.assertEqual(result, 0)
+
+        result = sys_audit("test.event", "(")
+        self.assertEqual(result, 0)
+
+        result = sys_audit("test.event", "&")
+        self.assertEqual(result, 0)
+
+        result = sys_audit("test.event", b"\xff")
+        self.assertEqual(result, 0)
+
+        result = sys_audit("test.event", "{OO}", [], [])
+        self.assertEqual(result, 0)
+
+
+    @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
+    def test_sys_audittuple(self):
+        # Test PySys_AuditTuple()
+        sys_audittuple = _testlimitedcapi.sys_audittuple
+
+        result = sys_audittuple("test.event", (1, "a"))
+        self.assertEqual(result, 0)
+
+        result = sys_audittuple("test.null_tuple")
+        self.assertEqual(result, 0)
+
+        with self.assertRaises(TypeError):
+            sys_audittuple("test.bad_tuple", [1, 2])
+
+        result = sys_audittuple("テスト.イベント", (42,))
+        self.assertEqual(result, 0)
+
+        result = sys_audittuple(None, (123,))
+        self.assertEqual(result, 0)
+
+        result = sys_audittuple(b"test.non_utf8\xff", (1,))
+        self.assertEqual(result, 0)
 
 
 if __name__ == "__main__":
