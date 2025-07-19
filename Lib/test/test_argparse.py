@@ -608,6 +608,25 @@ class TestOptionalsNargsDefault(ParserTestCase):
         ('-x a', NS(x='a')),
     ]
 
+class TestNargsDefaultConvert(ParserTestCase):
+    """Tests not specifying the number of args for an Optional"""
+
+    argument_signatures = [Sig('-x', type=int, nargs='+', default=['1', '2'])]
+    failures = []
+    successes = [
+        ('', NS(x=[1, 2])),
+    ]
+
+
+class TestListDefaultConvert(ParserTestCase):
+    """Tests not specifying the number of args for an Optional"""
+
+    argument_signatures = [Sig('-x', type=int, default=['1', '2'])]
+    failures = []
+    successes = [
+        ('', NS(x=['1', '2'])),
+    ]
+
 
 class TestOptionalsNargs1(ParserTestCase):
     """Tests specifying 1 arg for an Optional"""
