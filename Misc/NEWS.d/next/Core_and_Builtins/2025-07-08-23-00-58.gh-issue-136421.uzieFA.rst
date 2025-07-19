@@ -1,0 +1,2 @@
+Fix a crash when :mod:`datetime` is being imported in multiple
+sub-interpreters at the same time.

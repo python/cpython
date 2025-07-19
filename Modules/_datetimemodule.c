@@ -7336,6 +7336,8 @@ init_static_types(PyInterpreterState *interp, int reloading)
         return 0;
     }
 
+    static PyMutex mutex = {0};
+    PyMutex_Lock(&mutex);
     // `&...` is not a constant expression according to a strict reading
     // of C standards. Fill tp_base at run-time rather than statically.
     // See https://bugs.python.org/issue40777
@@ -7346,11 +7348,14 @@ init_static_types(PyInterpreterState *interp, int reloading)
      * so capi_types must have the types in the appropriate order. */
     for (size_t i = 0; i < Py_ARRAY_LENGTH(capi_types); i++) {
         PyTypeObject *type = capi_types[i];
-        if (_PyStaticType_InitForExtension(interp, type) < 0) {
+        int ret = _PyStaticType_InitForExtension(interp, type);
+        if (ret < 0) {
+            PyMutex_Unlock(&mutex);
             return -1;
         }
     }
 
+    PyMutex_Unlock(&mutex);
     return 0;
 }
 
