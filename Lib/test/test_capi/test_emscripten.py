@@ -1,14 +1,15 @@
 import unittest
 from test.support import is_emscripten
 
-unittest.skipUnless(is_emscripten, "only available on Emscripten")
+if not is_emscripten:
+    raise unittest.SkipTest("Emscripten-only test")
 
+from _testinternalcapi import emscripten_set_up_async_input_device
 from pathlib import Path
 
 
 class EmscriptenAsyncInputDeviceTest(unittest.TestCase):
     def test_emscripten_async_input_device(self):
-        from _testinternalcapi import emscripten_set_up_async_input_device
         supported = emscripten_set_up_async_input_device()
         p = Path("/dev/blah")
         self.addCleanup(p.unlink)
