@@ -442,8 +442,8 @@ is considered equivalent to the expression ``['-f', 'foo', '-f', 'bar']``.
 
 .. note::
 
-   Empty lines are treated as empty strings (''), which are allowed as values but not
-   as arguments. Empty lines as arguments will result in an “unrecognized arguments” 
+   Empty lines are treated as empty strings (``''``), which are allowed as values but not
+   as arguments. Empty lines as arguments will result in an “unrecognized arguments”
    error.
 
 :class:`ArgumentParser` uses :term:`filesystem encoding and error handler`
