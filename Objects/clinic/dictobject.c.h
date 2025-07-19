@@ -113,6 +113,46 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(dict_deepget__doc__,
+"deepget($self, keys, default=None, /)\n"
+"--\n"
+"\n"
+"Return the value for the nested keys if the full path exists in the dictionary, else return default.");
+
+#define DICT_DEEPGET_METHODDEF    \
+    {"deepget", _PyCFunction_CAST(dict_deepget), METH_FASTCALL, dict_deepget__doc__},
+
+static PyObject *
+dict_deepget_impl(PyDictObject *self, PyObject * const *keylist, PyObject *default_value);
+
+static PyObject *
+dict_deepget(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *keylist;
+    PyObject *default_value = Py_None;
+
+    if (!_PyArg_CheckPositional("deepget", nargs, 1, 2)) {
+        goto exit;
+    }
+
+    keylist = args[0];
+    if (!PyList_Check(keylist)) {
+        PyErr_SetString(PyExc_TypeError, "keys must be provided as a list");
+        return NULL;
+    }
+
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    default_value = args[1];
+skip_optional:
+    return_value = dict_deepget_impl((PyDictObject *)self, keylist, default_value);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(dict_setdefault__doc__,
 "setdefault($self, key, default=None, /)\n"
 "--\n"

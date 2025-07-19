@@ -4312,6 +4312,40 @@ dict_get_impl(PyDictObject *self, PyObject *key, PyObject *default_value)
     return val;
 }
 
+static PyObject *
+dict_deepget_impl(PyDictObject *self, PyObject * const *keylist, PyObject *default_value)
+{
+    Py_ssize_t n = PyList_GET_SIZE(keylist);
+    if (n == 0) {
+        return default_value;
+    }
+
+    PyObject *val = (PyObject *)self;  // Start with top-level dict
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyObject *key = PyList_GET_ITEM(keylist, i);
+
+        if (!PyDict_Check(val)) {
+            return default_value;
+        }
+
+        Py_hash_t hash = _PyObject_HashFast(key);
+        if (hash == -1) {
+            dict_unhashable_type(key);
+            return default_value;
+        }
+
+        PyObject *next = NULL;
+        Py_ssize_t ix = _Py_dict_lookup_threadsafe((PyDictObject *)val, key, hash, &next);
+        if (ix == DKIX_ERROR || ix == DKIX_EMPTY || next == NULL) {
+            return Py_NewRef(default_value);
+        }
+
+        val = next;
+    }
+
+    return Py_NewRef(val);
+}
+
 static int
 dict_setdefault_ref_lock_held(PyObject *d, PyObject *key, PyObject *default_value,
                     PyObject **result, int incref_result)
@@ -4741,6 +4775,7 @@ static PyMethodDef mapp_methods[] = {
      getitem__doc__},
     DICT___SIZEOF___METHODDEF
     DICT_GET_METHODDEF
+    DICT_DEEPGET_METHODDEF
     DICT_SETDEFAULT_METHODDEF
     DICT_POP_METHODDEF
     DICT_POPITEM_METHODDEF
