@@ -251,16 +251,6 @@ Data Types
         >>> list(reversed(Color))
         [<Color.BLUE: 3>, <Color.GREEN: 2>, <Color.RED: 1>]
 
-   .. method:: EnumType._add_alias_
-
-      Adds a new name as an alias to an existing member.  Raises a
-      :exc:`NameError` if the name is already assigned to a different member.
-
-   .. method:: EnumType._add_value_alias_
-
-      Adds a new value as an alias to an existing member.  Raises a
-      :exc:`ValueError` if the value is already linked with a different member.
-
    .. versionadded:: 3.11
 
       Before 3.11 ``EnumType`` was called ``EnumMeta``, which is still available as an alias.
@@ -469,6 +459,30 @@ Data Types
       starting with ``1``.
 
    .. versionchanged:: 3.12 Added :ref:`enum-dataclass-support`
+
+   .. method:: Enum._add_alias_
+
+      Adds a new name as an alias to an existing member::
+
+         >>> Color._add_alias_(Color.RED, "ERROR")
+         >>> Color.ERROR
+         <Color.RED: 1>
+
+      Raises a :exc:`NameError` if the name is already assigned to a different member.
+
+      .. versionadded:: 3.13
+
+   .. method:: Enum._add_value_alias_
+
+      Adds a new value as an alias to an existing member::
+
+         >>> Color._add_value_alias_(Color.RED, 42)
+         >>> Color(42)
+         <Color.RED: 1>
+
+      Raises a :exc:`ValueError` if the value is already linked with a different member.
+
+      .. versionadded:: 3.13
 
 
 .. class:: IntEnum
@@ -864,9 +878,9 @@ Once all the members are created it is no longer used.
 Supported ``_sunder_`` names
 """"""""""""""""""""""""""""
 
-- :meth:`~EnumType._add_alias_` -- adds a new name as an alias to an existing
+- :meth:`~Enum._add_alias_` -- adds a new name as an alias to an existing
   member.
-- :meth:`~EnumType._add_value_alias_` -- adds a new value as an alias to an
+- :meth:`~Enum._add_value_alias_` -- adds a new value as an alias to an
   existing member.
 - :attr:`~Enum._name_` -- name of the member
 - :attr:`~Enum._value_` -- value of the member; can be set in ``__new__``
