@@ -911,11 +911,17 @@ HTTPRedirectHandler Objects
       do allow automatic redirection of these responses, changing the POST to a
       ``GET``, and the default implementation reproduces this behavior.
 
-
 .. method:: HTTPRedirectHandler.http_error_301(req, fp, code, msg, hdrs)
 
    Redirect to the ``Location:`` or ``URI:`` URL.  This method is called by the
-   parent :class:`OpenerDirector` when getting an HTTP 'moved permanently' response.
+   parent :class:`OpenerDirector` when getting an HTTP 'moved permanently' response. 
+   :class:`OpenerDirector` will call this method with five positional arguments:
+
+* a :class:`Request` object,
+* a file-like object with the HTTP error body,
+* the three-digit code of the error, as a string,
+* the user-visible explanation of the code, as as string, and
+* the headers of the error, as a mapping object.
 
 
 .. method:: HTTPRedirectHandler.http_error_302(req, fp, code, msg, hdrs)
