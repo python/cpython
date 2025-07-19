@@ -1952,6 +1952,10 @@ symtable
 
   (Contributed by Bénédikt Tran in :gh:`120029`.)
 
+typing
+------
+* Add :func:`~typing.copy_func_params` that copies/applies
+  the :class:`~typing.ParamSpec` from one function to another.
 
 sys
 ---
