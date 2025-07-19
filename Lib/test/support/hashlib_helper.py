@@ -73,8 +73,6 @@ class HashInfo:
 
     - *openssl* is the name of the "_hashlib" module method for the explicit
       OpenSSL hash constructor function, e.g., "openssl_md5".
-
-      it must be set to "None", which is the case for BLAKE2b and BLAKE2s.
     - *hashlib* is the name of the "hashlib" module method for the explicit
       hash constructor function, e.g., "md5".
     """
