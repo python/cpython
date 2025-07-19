@@ -77,10 +77,13 @@ the module and a copyright notice if you like).
 All user-visible symbols defined by :file:`Python.h` have a prefix of ``Py`` or
 ``PY``, except those defined in standard header files.
 
-Note that :file:`Python.h` excludes ``<stdio.h>``, ``<string.h>``, ``<errno.h>``, and ``<stdlib.h>`` as they are not used by
-Python anymore. For backward compatibility of existing third party C extensions, they will
-be included if Py_LIMITED_API is not defined and for limited C API version 3.10 and older.
-The ``<ctype.h>`` and ``<unistd.h>`` headers are also not included for limited C API version 3.13 and newer.
+Note that :file:`Python.h` excludes ``<stdio.h>``, ``<string.h>``,
+``<errno.h>``, and ``<stdlib.h>`` as they are not used by Python anymore.
+For backward compatibility of existing third party C extensions, they will be
+included if Py_LIMITED_API is not defined and for limited C API version 3.10
+and older.
+The ``<ctype.h>`` and ``<unistd.h>`` headers are also not included for limited
+C API version 3.13 and newer.
 
 
 The next thing we add to our module file is the C function that will be called
