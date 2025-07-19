@@ -620,8 +620,11 @@ keyword argument::
 color
 ^^^^^
 
-By default, the help message is printed in color. If you want plain text
-help messages, you can disable it by setting ``color`` to ``False``::
+By default, the help message is printed in color using `ANSI escape sequences
+<https://en.wikipedia.org/wiki/ANSI_escape_code>`__.
+If you want plain text help messages, you can disable this :ref:`in your local
+environment <using-on-controlling-color>`, or in the argument parser itself
+by setting ``color`` to ``False``::
 
    >>> parser = argparse.ArgumentParser(description='Process some integers.',
    ...                                  color=False)
@@ -629,9 +632,6 @@ help messages, you can disable it by setting ``color`` to ``False``::
    >>> parser.add_argument('integers', metavar='N', type=int, nargs='+',
    ...                     help='an integer for the accumulator')
    >>> parser.parse_args(['--help'])
-
-Even if a CLI author has not disabled color, it can be
-:ref:`controlled using environment variables <using-on-controlling-color>`.
 
 .. versionadded:: 3.14
 
