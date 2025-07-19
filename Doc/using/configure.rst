@@ -16,20 +16,23 @@ Features and minimum versions required to build CPython:
 
 * On Windows, Microsoft Visual Studio 2017 or later is required.
 
-* Support for `IEEE 754 <https://en.wikipedia.org/wiki/IEEE_754>`_ floating
-  point numbers and `floating point Not-a-Number (NaN)
+* Support for `IEEE 754 <https://en.wikipedia.org/wiki/IEEE_754>`_
+  floating-point numbers and `floating-point Not-a-Number (NaN)
   <https://en.wikipedia.org/wiki/NaN#Floating_point>`_.
 
 * Support for threads.
 
-* OpenSSL 1.1.1 is the minimum version and OpenSSL 3.0.9 is the recommended
+* OpenSSL 1.1.1 is the minimum version and OpenSSL 3.0.16 is the recommended
   minimum version for the :mod:`ssl` and :mod:`hashlib` extension modules.
 
 * SQLite 3.15.2 for the :mod:`sqlite3` extension module.
 
 * Tcl/Tk 8.5.12 for the :mod:`tkinter` module.
 
-* Autoconf 2.71 and aclocal 1.16.4 are required to regenerate the
+* `libmpdec <https://www.bytereef.org/mpdecimal/doc/libmpdec/>`_ 2.5.0
+  for the :mod:`decimal` module.
+
+* Autoconf 2.72 and aclocal 1.16.5 are required to regenerate the
   :file:`configure` script.
 
 .. versionchanged:: 3.1
@@ -56,7 +59,10 @@ Features and minimum versions required to build CPython:
    Tcl/Tk version 8.5.12 is now required for the :mod:`tkinter` module.
 
 .. versionchanged:: 3.13
-   Autoconf 2.71, aclocal 1.16.4 and SQLite 3.15.2 are now required.
+   Autoconf 2.71, aclocal 1.16.5 and SQLite 3.15.2 are now required.
+
+.. versionchanged:: 3.14
+   Autoconf 2.72 is now required.
 
 See also :pep:`7` "Style Guide for C Code" and :pep:`11` "CPython platform
 support".
@@ -183,12 +189,6 @@ General Options
 
    See :envvar:`PYTHONCOERCECLOCALE` and the :pep:`538`.
 
-.. option:: --without-freelists
-
-   Disable all freelists except the empty tuple singleton.
-
-   .. versionadded:: 3.11
-
 .. option:: --with-platlibdir=DIRNAME
 
    Python library directory name (default is ``lib``).
@@ -293,13 +293,37 @@ General Options
 
 .. option:: --disable-gil
 
-   Enables **experimental** support for running Python without the
-   :term:`global interpreter lock` (GIL): free threading build.
+   Enables support for running Python without the :term:`global interpreter
+   lock` (GIL): free threading build.
 
    Defines the ``Py_GIL_DISABLED`` macro and adds ``"t"`` to
    :data:`sys.abiflags`.
 
-   See :ref:`free-threaded-cpython` for more detail.
+   See :ref:`whatsnew313-free-threaded-cpython` for more detail.
+
+   .. versionadded:: 3.13
+
+.. option:: --enable-experimental-jit=[no|yes|yes-off|interpreter]
+
+   Indicate how to integrate the :ref:`experimental just-in-time compiler <whatsnew314-jit-compiler>`.
+
+   * ``no``: Don't build the JIT.
+   * ``yes``: Enable the JIT. To disable it at runtime, set the environment
+     variable :envvar:`PYTHON_JIT=0 <PYTHON_JIT>`.
+   * ``yes-off``: Build the JIT, but disable it by default. To enable it at
+     runtime, set the environment variable :envvar:`PYTHON_JIT=1 <PYTHON_JIT>`.
+   * ``interpreter``: Enable the "JIT interpreter" (only useful for those
+     debugging the JIT itself). To disable it at runtime, set the environment
+     variable :envvar:`PYTHON_JIT=0 <PYTHON_JIT>`.
+
+   ``--enable-experimental-jit=no`` is the default behavior if the option is not
+   provided, and ``--enable-experimental-jit`` is shorthand for
+   ``--enable-experimental-jit=yes``.  See :file:`Tools/jit/README.md` for more
+   information, including how to install the necessary build-time dependencies.
+
+   .. note::
+
+      When building CPython with JIT enabled, ensure that your system has Python 3.11 or later installed.
 
    .. versionadded:: 3.13
 
@@ -424,10 +448,18 @@ Options for third-party dependencies
    C compiler and linker flags for ``libuuid``, used by :mod:`uuid` module,
    overriding ``pkg-config``.
 
+.. option:: LIBZSTD_CFLAGS
+.. option:: LIBZSTD_LIBS
+
+   C compiler and linker flags for ``libzstd``, used by :mod:`compression.zstd` module,
+   overriding ``pkg-config``.
+
+   .. versionadded:: 3.14
+
 .. option:: PANEL_CFLAGS
 .. option:: PANEL_LIBS
 
-   C compiler and Linker flags for PANEL, overriding ``pkg-config``.
+   C compiler and linker flags for PANEL, overriding ``pkg-config``.
 
    C compiler and linker flags for ``libpanel`` or ``libpanelw``, used by
    :mod:`curses.panel` module, overriding ``pkg-config``.
@@ -446,15 +478,6 @@ Options for third-party dependencies
 
 WebAssembly Options
 -------------------
-
-.. option:: --with-emscripten-target=[browser|node]
-
-   Set build flavor for ``wasm32-emscripten``.
-
-   * ``browser`` (default): preload minimal stdlib, default MEMFS.
-   * ``node``: NODERAWFS and pthread support.
-
-   .. versionadded:: 3.11
 
 .. option:: --enable-wasm-dynamic-linking
 
@@ -613,9 +636,19 @@ also be used to improve performance.
    Enable computed gotos in evaluation loop (enabled by default on supported
    compilers).
 
+.. option:: --with-tail-call-interp
+
+   Enable interpreters using tail calls in CPython. If enabled, enabling PGO
+   (:option:`--enable-optimizations`) is highly recommended. This option specifically
+   requires a C compiler with proper tail call support, and the
+   `preserve_none <https://clang.llvm.org/docs/AttributeReference.html#preserve-none>`_
+   calling convention. For example, Clang 19 and newer supports this feature.
+
+   .. versionadded:: 3.14
+
 .. option:: --without-mimalloc
 
-   Disable the fast mimalloc allocator :ref:`mimalloc <mimalloc>`
+   Disable the fast :ref:`mimalloc <mimalloc>` allocator
    (enabled by default).
 
    See also :envvar:`PYTHONMALLOC` environment variable.
@@ -644,6 +677,24 @@ also be used to improve performance.
 
    Add ``-fstrict-overflow`` to the C compiler flags (by default we add
    ``-fno-strict-overflow`` instead).
+
+.. option:: --without-remote-debug
+
+   Deactivate remote debugging support described in :pep:`768` (enabled by default).
+   When this flag is provided the code that allows the interpreter to schedule the
+   execution of a Python file in a separate process as described in :pep:`768` is
+   not compiled. This includes both the functionality to schedule code to be executed
+   and the functionality to receive code to be executed.
+
+   .. c:macro:: Py_REMOTE_DEBUG
+
+      This macro is defined by default, unless Python is configured with
+      :option:`--without-remote-debug`.
+
+      Note that even if the macro is defined, remote debugging may not be
+      available (for example, on an incompatible platform).
+
+   .. versionadded:: 3.14
 
 
 .. _debug-build:
@@ -708,7 +759,7 @@ Debug options
    Effects:
 
    * Define the ``Py_TRACE_REFS`` macro.
-   * Add :func:`!sys.getobjects` function.
+   * Add :func:`sys.getobjects` function.
    * Add :envvar:`PYTHONDUMPREFS` environment variable.
 
    The :envvar:`PYTHONDUMPREFS` environment variable can be used to dump
@@ -907,6 +958,38 @@ Security Options
       The settings ``python`` and *STRING* also set TLS 1.2 as minimum
       protocol version.
 
+.. option:: --disable-safety
+
+   Disable compiler options that are `recommended by OpenSSF`_ for security reasons with no performance overhead.
+   If this option is not enabled, CPython will be built based on safety compiler options with no slow down.
+   When this option is enabled, CPython will not be built with the compiler options listed below.
+
+   The following compiler options are disabled with :option:`!--disable-safety`:
+
+   * `-fstack-protector-strong`_: Enable run-time checks for stack-based buffer overflows.
+   * `-Wtrampolines`_: Enable warnings about trampolines that require executable stacks.
+
+   .. _recommended by OpenSSF: https://github.com/ossf/wg-best-practices-os-developers/blob/main/docs/Compiler-Hardening-Guides/Compiler-Options-Hardening-Guide-for-C-and-C++.md
+   .. _-fstack-protector-strong: https://github.com/ossf/wg-best-practices-os-developers/blob/main/docs/Compiler-Hardening-Guides/Compiler-Options-Hardening-Guide-for-C-and-C++.md#enable-run-time-checks-for-stack-based-buffer-overflows
+   .. _-Wtrampolines: https://github.com/ossf/wg-best-practices-os-developers/blob/main/docs/Compiler-Hardening-Guides/Compiler-Options-Hardening-Guide-for-C-and-C++.md#enable-warning-about-trampolines-that-require-executable-stacks
+
+   .. versionadded:: 3.14
+
+.. option:: --enable-slower-safety
+
+   Enable compiler options that are `recommended by OpenSSF`_ for security reasons which require overhead.
+   If this option is not enabled, CPython will not be built based on safety compiler options which performance impact.
+   When this option is enabled, CPython will be built with the compiler options listed below.
+
+   The following compiler options are enabled with :option:`!--enable-slower-safety`:
+
+   * `-D_FORTIFY_SOURCE=3`_: Fortify sources with compile- and run-time checks for unsafe libc usage and buffer overflows.
+
+   .. _-D_FORTIFY_SOURCE=3: https://github.com/ossf/wg-best-practices-os-developers/blob/main/docs/Compiler-Hardening-Guides/Compiler-Options-Hardening-Guide-for-C-and-C++.md#fortify-sources-for-unsafe-libc-usage-and-buffer-overflows
+
+   .. versionadded:: 3.14
+
+
 macOS Options
 -------------
 
@@ -931,19 +1014,36 @@ See :source:`Mac/README.rst`.
 
    Options:
 
-   * ``universal2``;
-   * ``32-bit``;
-   * ``64-bit``;
-   * ``3-way``;
-   * ``intel``;
-   * ``intel-32``;
-   * ``intel-64``;
-   * ``all``.
+   * ``universal2`` (x86-64 and arm64);
+   * ``32-bit`` (PPC and i386);
+   * ``64-bit``  (PPC64 and x86-64);
+   * ``3-way`` (i386, PPC and x86-64);
+   * ``intel`` (i386 and x86-64);
+   * ``intel-32`` (i386);
+   * ``intel-64`` (x86-64);
+   * ``all``  (PPC, i386, PPC64 and x86-64).
+
+   Note that values for this configuration item are *not* the same as the
+   identifiers used for universal binary wheels on macOS. See the Python
+   Packaging User Guide for details on the `packaging platform compatibility
+   tags used on macOS
+   <https://packaging.python.org/en/latest/specifications/platform-compatibility-tags/#macos>`_
 
 .. option:: --with-framework-name=FRAMEWORK
 
    Specify the name for the python framework on macOS only valid when
    :option:`--enable-framework` is set (default: ``Python``).
+
+.. option:: --with-app-store-compliance
+.. option:: --with-app-store-compliance=PATCH-FILE
+
+   The Python standard library contains strings that are known to trigger
+   automated inspection tool errors when submitted for distribution by
+   the macOS and iOS App Stores. If enabled, this option will apply the list of
+   patches that are known to correct app store compliance. A custom patch
+   file can also be specified. This option is disabled by default.
+
+   .. versionadded:: 3.13
 
 iOS Options
 -----------
@@ -1047,7 +1147,8 @@ CPython project) this is usually the ``all`` target. The
 all`` will build. The three choices are:
 
 * ``profile-opt`` (configured with ``--enable-optimizations``)
-* ``build_wasm`` (configured with ``--with-emscripten-target``)
+* ``build_wasm`` (chosen if the host platform matches ``wasm32-wasi*`` or
+  ``wasm32-emscripten``)
 * ``build_all`` (configured without explicitly using either of the others)
 
 Depending on the most recent source file changes, Make will rebuild
@@ -1090,7 +1191,7 @@ Remove built files.
 make distclean
 ^^^^^^^^^^^^^^
 
-In addition to the the work done by ``make clean``, remove files
+In addition to the work done by ``make clean``, remove files
 created by the configure script.  ``configure`` will have to be run
 before building again. [#]_
 
@@ -1105,11 +1206,19 @@ make test
 ^^^^^^^^^
 
 Build the ``all`` target and run the Python test suite with the
-``--fast-ci`` option. Variables:
+``--fast-ci`` option without GUI tests. Variables:
 
 * ``TESTOPTS``: additional regrtest command-line options.
 * ``TESTPYTHONOPTS``: additional Python command-line options.
 * ``TESTTIMEOUT``: timeout in seconds (default: 10 minutes).
+
+
+make ci
+^^^^^^^
+
+This is similar to ``make test``, but uses the ``-ugui`` to also run GUI tests.
+
+.. versionadded:: 3.14
 
 
 make buildbottest

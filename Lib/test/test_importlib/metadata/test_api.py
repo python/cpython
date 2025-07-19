@@ -29,6 +29,7 @@ class APITests(
     fixtures.EggInfoPkg,
     fixtures.EggInfoPkgPipInstalledNoToplevel,
     fixtures.EggInfoPkgPipInstalledNoModules,
+    fixtures.EggInfoPkgPipInstalledExternalDataFiles,
     fixtures.EggInfoPkgSourcesFallback,
     fixtures.DistInfoPkg,
     fixtures.DistInfoPkgWithDot,

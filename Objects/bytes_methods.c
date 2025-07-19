@@ -432,19 +432,24 @@ parse_args_finds_byte(const char *function_name, PyObject **subobj, char *byte)
 }
 
 /* helper macro to fixup start/end slice values */
-#define ADJUST_INDICES(start, end, len)         \
-    if (end > len)                          \
-        end = len;                          \
-    else if (end < 0) {                     \
-        end += len;                         \
-        if (end < 0)                        \
-        end = 0;                        \
-    }                                       \
-    if (start < 0) {                        \
-        start += len;                       \
-        if (start < 0)                      \
-        start = 0;                      \
-    }
+#define ADJUST_INDICES(start, end, len) \
+    do {                                \
+        if (end > len) {                \
+            end = len;                  \
+        }                               \
+        else if (end < 0) {             \
+            end += len;                 \
+            if (end < 0) {              \
+                end = 0;                \
+            }                           \
+        }                               \
+        if (start < 0) {                \
+            start += len;               \
+            if (start < 0) {            \
+                start = 0;              \
+            }                           \
+        }                               \
+    } while (0)
 
 Py_LOCAL_INLINE(Py_ssize_t)
 find_internal(const char *str, Py_ssize_t len,

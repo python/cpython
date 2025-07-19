@@ -2,8 +2,10 @@ import copy
 import os
 import pickle
 import re
+import textwrap
 import time
 import unittest
+from test.support import script_helper
 
 
 class StructSeqTest(unittest.TestCase):
@@ -40,7 +42,7 @@ class StructSeqTest(unittest.TestCase):
         # os.stat() gives a complicated struct sequence.
         st = os.stat(__file__)
         rep = repr(st)
-        self.assertTrue(rep.startswith("os.stat_result"))
+        self.assertStartsWith(rep, "os.stat_result")
         self.assertIn("st_mode=", rep)
         self.assertIn("st_ino=", rep)
         self.assertIn("st_dev=", rep)
@@ -305,7 +307,7 @@ class StructSeqTest(unittest.TestCase):
         self.assertEqual(t5.tm_mon, 2)
 
         # named invisible fields
-        self.assertTrue(hasattr(t, 'tm_zone'), f"{t} has no attribute 'tm_zone'")
+        self.assertHasAttr(t, 'tm_zone')
         with self.assertRaisesRegex(AttributeError, 'readonly attribute'):
             t.tm_zone = 'some other zone'
         self.assertEqual(t2.tm_zone, t.tm_zone)
@@ -341,6 +343,17 @@ class StructSeqTest(unittest.TestCase):
             copy.replace(r, error=2)
         with self.assertRaisesRegex(TypeError, error_message):
             copy.replace(r, st_mode=1, error=2)
+
+    def test_reference_cycle(self):
+        # gh-122527: Check that a structseq that's part of a reference cycle
+        # with its own type doesn't crash. Previously, if the type's dictionary
+        # was cleared first, the structseq instance would crash in the
+        # destructor.
+        script_helper.assert_python_ok("-c", textwrap.dedent(r"""
+            import time
+            t = time.gmtime()
+            type(t).refcyle = t
+        """))
 
 
 if __name__ == "__main__":

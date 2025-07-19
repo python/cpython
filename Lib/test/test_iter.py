@@ -5,6 +5,7 @@ import unittest
 from test.support import cpython_only
 from test.support.os_helper import TESTFN, unlink
 from test.support import check_free_after_iterating, ALWAYS_EQ, NEVER_EQ
+from test.support import BrokenIter
 import pickle
 import collections.abc
 import functools
@@ -1146,37 +1147,32 @@ class TestCase(unittest.TestCase):
 
     def test_exception_locations(self):
         # The location of an exception raised from __init__ or
-        # __next__ should should be the iterator expression
-
-        class Iter:
-            def __init__(self, init_raises=False, next_raises=False):
-                if init_raises:
-                    1/0
-                self.next_raises = next_raises
-
-            def __next__(self):
-                if self.next_raises:
-                    1/0
-
-            def __iter__(self):
-                return self
+        # __next__ should be the iterator expression
 
         def init_raises():
             try:
-                for x in Iter(init_raises=True):
+                for x in BrokenIter(init_raises=True):
                     pass
             except Exception as e:
                 return e
 
         def next_raises():
             try:
-                for x in Iter(next_raises=True):
+                for x in BrokenIter(next_raises=True):
                     pass
             except Exception as e:
                 return e
 
-        for func, expected in [(init_raises, "Iter(init_raises=True)"),
-                               (next_raises, "Iter(next_raises=True)"),
+        def iter_raises():
+            try:
+                for x in BrokenIter(iter_raises=True):
+                    pass
+            except Exception as e:
+                return e
+
+        for func, expected in [(init_raises, "BrokenIter(init_raises=True)"),
+                               (next_raises, "BrokenIter(next_raises=True)"),
+                               (iter_raises, "BrokenIter(iter_raises=True)"),
                               ]:
             with self.subTest(func):
                 exc = func()

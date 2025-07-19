@@ -539,6 +539,6 @@ class ShareableList:
             if value == entry:
                 return position
         else:
-            raise ValueError(f"{value!r} not in this container")
+            raise ValueError("ShareableList.index(x): x not in list")
 
     __class_getitem__ = classmethod(types.GenericAlias)

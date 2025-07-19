@@ -153,7 +153,7 @@ about a 10% improvement.
 .. section: Core and Builtins
 
 Guard ``assert(tstate->thread_id > 0)`` with ``#ifndef HAVE_PTHREAD_STUBS``.
-This allows for for pydebug builds to work under WASI which (currently)
+This allows for pydebug builds to work under WASI which (currently)
 lacks thread support.
 
 ..
@@ -2294,7 +2294,7 @@ superclass. Patch by James Hilton-Balfe
 .. nonce: VksX1D
 .. section: Library
 
-:class:`http.server.CGIHTTPRequestHandler` has been deprecated for removal
+:class:`!http.server.CGIHTTPRequestHandler` has been deprecated for removal
 in 3.15.  Its design is old and the web world has long since moved beyond
 CGI.
 
@@ -2888,9 +2888,9 @@ documented and were not intended to be used externally.
 .. nonce: vMbmj_
 .. section: Library
 
-:data:`opcode.ENABLE_SPECIALIZATION` (which was added in 3.12 but never
+:data:`!opcode.ENABLE_SPECIALIZATION` (which was added in 3.12 but never
 documented or intended for external usage) is moved to
-:data:`_opcode.ENABLE_SPECIALIZATION` where tests can access it.
+:data:`!_opcode.ENABLE_SPECIALIZATION` where tests can access it.
 
 ..
 
@@ -3053,7 +3053,7 @@ Donghee Na.
 .. nonce: U9nD_B
 .. section: Library
 
-Optimize :meth:`_PollLikeSelector.select` for many iteration case.
+Optimize :meth:`!_PollLikeSelector.select` for many iteration case.
 
 ..
 
@@ -3173,7 +3173,7 @@ Disable tab completion in multiline mode of :mod:`pdb`
 .. nonce: pYSwMj
 .. section: Library
 
-Expose opcode metadata through :mod:`_opcode`.
+Expose opcode metadata through :mod:`!_opcode`.
 
 ..
 
@@ -3735,7 +3735,7 @@ overwritten.
 .. nonce: _sZilh
 .. section: Library
 
-Fix bugs in :mod:`_ctypes` where exceptions could end up being overwritten.
+Fix bugs in :mod:`!_ctypes` where exceptions could end up being overwritten.
 
 ..
 
@@ -5148,7 +5148,7 @@ frame did not save the PC`` is found. Patch by Victor Stinner.
 .. nonce: qxI4OG
 .. section: Tests
 
-libregrtest now calls :func:`random.seed()` before running each test file
+libregrtest now calls :func:`random.seed` before running each test file
 when ``-r/--randomize`` command line option is used. Moreover, it's also
 called in worker processes.  It should help to make tests more
 deterministic. Previously, it was only called once in the main process
@@ -5716,7 +5716,7 @@ Tools/wasm/build_wasi.sh as a reference implementation of the docs.
 .. section: Build
 
 Autoconf 2.71 and aclocal 1.16.4 is now required to regenerate
-:file:`!configure`.
+:file:`configure`.
 
 ..
 
@@ -6538,7 +6538,7 @@ to hide implementation details. Patch by Victor Stinner.
 .. nonce: FQJG5B
 .. section: C API
 
-Deprecate the :c:func:`PyImport_ImportModuleNoBlock` function which is just
+Deprecate the :c:func:`!PyImport_ImportModuleNoBlock` function which is just
 an alias to :c:func:`PyImport_ImportModule` since Python 3.3. Patch by
 Victor Stinner.
 
@@ -6593,12 +6593,12 @@ functions, deprecated in Python 3.9. Patch by Victor Stinner.
 Deprecate old Python initialization functions:
 
 * :c:func:`PySys_ResetWarnOptions`
-* :c:func:`Py_GetExecPrefix`
-* :c:func:`Py_GetPath`
-* :c:func:`Py_GetPrefix`
-* :c:func:`Py_GetProgramFullPath`
-* :c:func:`Py_GetProgramName`
-* :c:func:`Py_GetPythonHome`
+* :c:func:`!Py_GetExecPrefix`
+* :c:func:`!Py_GetPath`
+* :c:func:`!Py_GetPrefix`
+* :c:func:`!Py_GetProgramFullPath`
+* :c:func:`!Py_GetProgramName`
+* :c:func:`!Py_GetPythonHome`
 
 Patch by Victor Stinner.
 

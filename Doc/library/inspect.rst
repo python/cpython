@@ -150,8 +150,27 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 |                 | f_locals          | local namespace seen by   |
 |                 |                   | this frame                |
 +-----------------+-------------------+---------------------------+
+|                 | f_generator       | returns the generator or  |
+|                 |                   | coroutine object that     |
+|                 |                   | owns this frame, or       |
+|                 |                   | ``None`` if the frame is  |
+|                 |                   | of a regular function     |
++-----------------+-------------------+---------------------------+
 |                 | f_trace           | tracing function for this |
 |                 |                   | frame, or ``None``        |
++-----------------+-------------------+---------------------------+
+|                 | f_trace_lines     | indicate whether a        |
+|                 |                   | tracing event is          |
+|                 |                   | triggered for each source |
+|                 |                   | source line               |
++-----------------+-------------------+---------------------------+
+|                 | f_trace_opcodes   | indicate whether          |
+|                 |                   | per-opcode events are     |
+|                 |                   | requested                 |
++-----------------+-------------------+---------------------------+
+|                 | clear()           | used to clear all         |
+|                 |                   | references to local       |
+|                 |                   | variables                 |
 +-----------------+-------------------+---------------------------+
 | code            | co_argcount       | number of arguments (not  |
 |                 |                   | including keyword only    |
@@ -213,6 +232,18 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 |                 | co_varnames       | tuple of names of         |
 |                 |                   | arguments and local       |
 |                 |                   | variables                 |
++-----------------+-------------------+---------------------------+
+|                 | co_lines()        | returns an iterator that  |
+|                 |                   | yields successive         |
+|                 |                   | bytecode ranges           |
++-----------------+-------------------+---------------------------+
+|                 | co_positions()    | returns an iterator of    |
+|                 |                   | source code positions for |
+|                 |                   | each bytecode instruction |
++-----------------+-------------------+---------------------------+
+|                 | replace()         | returns a copy of the     |
+|                 |                   | code object with new      |
+|                 |                   | values                    |
 +-----------------+-------------------+---------------------------+
 | generator       | __name__          | name                      |
 +-----------------+-------------------+---------------------------+
@@ -285,6 +316,10 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 
    Add ``__builtins__`` attribute to functions.
 
+.. versionchanged:: 3.14
+
+   Add ``f_generator`` attribute to frames.
+
 .. function:: getmembers(object[, predicate])
 
    Return all the members of an object in a list of ``(name, value)``
@@ -347,6 +382,13 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 .. function:: ismethod(object)
 
    Return ``True`` if the object is a bound method written in Python.
+
+
+.. function:: ispackage(object)
+
+   Return ``True`` if the object is a :term:`package`.
+
+   .. versionadded:: 3.14
 
 
 .. function:: isfunction(object)
@@ -457,7 +499,7 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 
    .. versionchanged:: 3.8
       Functions wrapped in :func:`functools.partial` now return ``True`` if the
-      wrapped function is a :term:`asynchronous generator` function.
+      wrapped function is an :term:`asynchronous generator` function.
 
    .. versionchanged:: 3.13
       Functions wrapped in :func:`functools.partialmethod` now return ``True``
@@ -520,7 +562,7 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
    has a :meth:`~object.__get__` method, but not a :meth:`~object.__set__`
    method or a :meth:`~object.__delete__` method.  Beyond that, the set of
    attributes varies.  A :attr:`~definition.__name__` attribute is usually
-   sensible, and :attr:`!__doc__` often is.
+   sensible, and :attr:`~definition.__doc__` often is.
 
    Methods implemented via descriptors that also pass one of the other tests
    return ``False`` from the :func:`ismethoddescriptor` test, simply because the
@@ -669,7 +711,7 @@ and its return annotation. To retrieve a :class:`!Signature` object,
 use the :func:`!signature`
 function.
 
-.. function:: signature(callable, *, follow_wrapped=True, globals=None, locals=None, eval_str=False)
+.. function:: signature(callable, *, follow_wrapped=True, globals=None, locals=None, eval_str=False, annotation_format=Format.VALUE)
 
    Return a :class:`Signature` object for the given *callable*:
 
@@ -693,22 +735,27 @@ function.
    Accepts a wide range of Python callables, from plain functions and classes to
    :func:`functools.partial` objects.
 
-   For objects defined in modules using stringized annotations
-   (``from __future__ import annotations``), :func:`signature` will
+   If some of the annotations are strings (e.g., because
+   ``from __future__ import annotations`` was used), :func:`signature` will
    attempt to automatically un-stringize the annotations using
-   :func:`get_annotations`.  The
+   :func:`annotationlib.get_annotations`.  The
    *globals*, *locals*, and *eval_str* parameters are passed
-   into :func:`get_annotations` when resolving the
-   annotations; see the documentation for :func:`get_annotations`
-   for instructions on how to use these parameters.
+   into :func:`!annotationlib.get_annotations` when resolving the
+   annotations; see the documentation for :func:`!annotationlib.get_annotations`
+   for instructions on how to use these parameters. A member of the
+   :class:`annotationlib.Format` enum can be passed to the
+   *annotation_format* parameter to control the format of the returned
+   annotations. For example, use
+   ``annotation_format=annotationlib.Format.STRING`` to return annotations in string
+   format.
 
    Raises :exc:`ValueError` if no signature can be provided, and
    :exc:`TypeError` if that type of object is not supported.  Also,
    if the annotations are stringized, and *eval_str* is not false,
-   the ``eval()`` call(s) to un-stringize the annotations in :func:`get_annotations`
+   the ``eval()`` call(s) to un-stringize the annotations in :func:`annotationlib.get_annotations`
    could potentially raise any kind of exception.
 
-   A slash(/) in the signature of a function denotes that the parameters prior
+   A slash (/) in the signature of a function denotes that the parameters prior
    to it are positional-only. For more info, see
    :ref:`the FAQ entry on positional-only parameters <faq-positional-only-arguments>`.
 
@@ -720,6 +767,9 @@ function.
 
    .. versionchanged:: 3.10
       The *globals*, *locals*, and *eval_str* parameters were added.
+
+   .. versionchanged:: 3.14
+      The *annotation_format* parameter was added.
 
    .. note::
 
@@ -813,7 +863,7 @@ function.
       :class:`Signature` objects are also supported by the generic function
       :func:`copy.replace`.
 
-   .. method:: format(*, max_width=None)
+   .. method:: format(*, max_width=None, quote_annotation_strings=True)
 
       Create a string representation of the :class:`Signature` object.
 
@@ -822,7 +872,16 @@ function.
       If the signature is longer than *max_width*,
       all parameters will be on separate lines.
 
+      If *quote_annotation_strings* is False, :term:`annotations <annotation>`
+      in the signature are displayed without opening and closing quotation
+      marks if they are strings. This is useful if the signature was created with the
+      :attr:`~annotationlib.Format.STRING` format or if
+      ``from __future__ import annotations`` was used.
+
       .. versionadded:: 3.13
+
+      .. versionchanged:: 3.14
+         The *unquote_annotations* parameter was added.
 
    .. classmethod:: Signature.from_callable(obj, *, follow_wrapped=True, globals=None, locals=None, eval_str=False)
 
@@ -938,7 +997,7 @@ function.
 
    .. attribute:: Parameter.kind.description
 
-      Describes a enum value of :attr:`Parameter.kind`.
+      Describes an enum value of :attr:`Parameter.kind`.
 
       .. versionadded:: 3.8
 
@@ -1018,7 +1077,8 @@ function.
    .. attribute:: BoundArguments.kwargs
 
       A dict of keyword arguments values.  Dynamically computed from the
-      :attr:`arguments` attribute.
+      :attr:`arguments` attribute.  Arguments that can be passed positionally
+      are included in :attr:`args` instead.
 
    .. attribute:: BoundArguments.signature
 
@@ -1222,61 +1282,18 @@ Classes and functions
    .. versionadded:: 3.4
 
 
-.. function:: get_annotations(obj, *, globals=None, locals=None, eval_str=False)
+.. function:: get_annotations(obj, *, globals=None, locals=None, eval_str=False, format=annotationlib.Format.VALUE)
 
    Compute the annotations dict for an object.
 
-   ``obj`` may be a callable, class, or module.
-   Passing in an object of any other type raises :exc:`TypeError`.
-
-   Returns a dict.  ``get_annotations()`` returns a new dict every time
-   it's called; calling it twice on the same object will return two
-   different but equivalent dicts.
-
-   This function handles several details for you:
-
-   * If ``eval_str`` is true, values of type ``str`` will
-     be un-stringized using :func:`eval()`.  This is intended
-     for use with stringized annotations
-     (``from __future__ import annotations``).
-   * If ``obj`` doesn't have an annotations dict, returns an
-     empty dict.  (Functions and methods always have an
-     annotations dict; classes, modules, and other types of
-     callables may not.)
-   * Ignores inherited annotations on classes.  If a class
-     doesn't have its own annotations dict, returns an empty dict.
-   * All accesses to object members and dict values are done
-     using ``getattr()`` and ``dict.get()`` for safety.
-   * Always, always, always returns a freshly created dict.
-
-   ``eval_str`` controls whether or not values of type ``str`` are replaced
-   with the result of calling :func:`eval()` on those values:
-
-   * If eval_str is true, :func:`eval()` is called on values of type ``str``.
-     (Note that ``get_annotations`` doesn't catch exceptions; if :func:`eval()`
-     raises an exception, it will unwind the stack past the ``get_annotations``
-     call.)
-   * If eval_str is false (the default), values of type ``str`` are unchanged.
-
-   ``globals`` and ``locals`` are passed in to :func:`eval()`; see the documentation
-   for :func:`eval()` for more information.  If ``globals`` or ``locals``
-   is ``None``, this function may replace that value with a context-specific
-   default, contingent on ``type(obj)``:
-
-   * If ``obj`` is a module, ``globals`` defaults to ``obj.__dict__``.
-   * If ``obj`` is a class, ``globals`` defaults to
-     ``sys.modules[obj.__module__].__dict__`` and ``locals`` defaults
-     to the ``obj`` class namespace.
-   * If ``obj`` is a callable, ``globals`` defaults to
-     :attr:`obj.__globals__ <function.__globals__>`,
-     although if ``obj`` is a wrapped function (using
-     :func:`functools.update_wrapper`) it is first unwrapped.
-
-   Calling ``get_annotations`` is best practice for accessing the
-   annotations dict of any object.  See :ref:`annotations-howto` for
-   more information on annotations best practices.
+   This is an alias for :func:`annotationlib.get_annotations`; see the documentation
+   of that function for more information.
 
    .. versionadded:: 3.10
+
+   .. versionchanged:: 3.14
+      This function is now an alias for :func:`annotationlib.get_annotations`.
+      Calling it as ``inspect.get_annotations`` will continue to work.
 
 
 .. _inspect-stack:
@@ -1692,6 +1709,21 @@ which is a bitmap of the following flags:
    asynchronous generator object.  See :pep:`525` for more details.
 
    .. versionadded:: 3.6
+
+.. data:: CO_HAS_DOCSTRING
+
+   The flag is set when there is a docstring for the code object in
+   the source code. If set, it will be the first item in
+   :attr:`~codeobject.co_consts`.
+
+   .. versionadded:: 3.14
+
+.. data:: CO_METHOD
+
+   The flag is set when the code object is a function defined in class
+   scope.
+
+   .. versionadded:: 3.14
 
 .. note::
    The flags are specific to CPython, and may not be defined in other

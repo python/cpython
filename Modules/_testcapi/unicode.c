@@ -220,369 +220,352 @@ unicode_copycharacters(PyObject *self, PyObject *args)
     return Py_BuildValue("(Nn)", to_copy, copied);
 }
 
-
-static PyObject *
-test_unicodewriter(PyObject *self, PyObject *Py_UNUSED(args))
+static PyObject*
+unicode_GET_CACHED_HASH(PyObject *self, PyObject *arg)
 {
-    PyUnicodeWriter *writer = PyUnicodeWriter_Create(100);
-    if (writer == NULL) {
-        return NULL;
-    }
-
-    // test PyUnicodeWriter_WriteUTF8()
-    if (PyUnicodeWriter_WriteUTF8(writer, "var", -1) < 0) {
-        goto error;
-    }
-
-    // test PyUnicodeWriter_WriteChar()
-    if (PyUnicodeWriter_WriteChar(writer, '=') < 0) {
-        goto error;
-    }
-
-    // test PyUnicodeWriter_WriteSubstring()
-    PyObject *str = PyUnicode_FromString("[long]");
-    if (str == NULL) {
-        goto error;
-    }
-    int ret = PyUnicodeWriter_WriteSubstring(writer, str, 1, 5);
-    Py_CLEAR(str);
-    if (ret < 0) {
-        goto error;
-    }
-
-    // test PyUnicodeWriter_WriteStr()
-    str = PyUnicode_FromString(" value ");
-    if (str == NULL) {
-        goto error;
-    }
-    ret = PyUnicodeWriter_WriteStr(writer, str);
-    Py_CLEAR(str);
-    if (ret < 0) {
-        goto error;
-    }
-
-    // test PyUnicodeWriter_WriteRepr()
-    str = PyUnicode_FromString("repr");
-    if (str == NULL) {
-        goto error;
-    }
-    ret = PyUnicodeWriter_WriteRepr(writer, str);
-    Py_CLEAR(str);
-    if (ret < 0) {
-        goto error;
-    }
-
-    PyObject *result = PyUnicodeWriter_Finish(writer);
-    if (result == NULL) {
-        return NULL;
-    }
-    assert(PyUnicode_EqualToUTF8(result, "var=long value 'repr'"));
-    Py_DECREF(result);
-
-    Py_RETURN_NONE;
-
-error:
-    PyUnicodeWriter_Discard(writer);
-    return NULL;
+    return PyLong_FromSsize_t(PyUnstable_Unicode_GET_CACHED_HASH(arg));
 }
 
 
+// --- PyUnicodeWriter type -------------------------------------------------
+
+typedef struct {
+    PyObject_HEAD
+    PyUnicodeWriter *writer;
+} WriterObject;
+
+
 static PyObject *
-test_unicodewriter_utf8(PyObject *self, PyObject *Py_UNUSED(args))
+writer_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
-    PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
-    if (writer == NULL) {
+    WriterObject *self = (WriterObject *)type->tp_alloc(type, 0);
+    if (!self) {
         return NULL;
     }
-    if (PyUnicodeWriter_WriteUTF8(writer, "ascii", -1) < 0) {
-        goto error;
-    }
-    if (PyUnicodeWriter_WriteChar(writer, '-') < 0) {
-        goto error;
-    }
-    if (PyUnicodeWriter_WriteUTF8(writer, "latin1=\xC3\xA9", -1) < 0) {
-        goto error;
-    }
-    if (PyUnicodeWriter_WriteChar(writer, '-') < 0) {
-        goto error;
-    }
-    if (PyUnicodeWriter_WriteUTF8(writer, "euro=\xE2\x82\xAC", -1) < 0) {
-        goto error;
-    }
-    if (PyUnicodeWriter_WriteChar(writer, '.') < 0) {
-        goto error;
-    }
-
-    PyObject *result = PyUnicodeWriter_Finish(writer);
-    if (result == NULL) {
-        return NULL;
-    }
-    assert(PyUnicode_EqualToUTF8(result,
-                                 "ascii-latin1=\xC3\xA9-euro=\xE2\x82\xAC."));
-    Py_DECREF(result);
-
-    Py_RETURN_NONE;
-
-error:
-    PyUnicodeWriter_Discard(writer);
-    return NULL;
+    self->writer = NULL;
+    return (PyObject*)self;
 }
 
 
-static PyObject *
-test_unicodewriter_invalid_utf8(PyObject *self, PyObject *Py_UNUSED(args))
+static int
+writer_init(PyObject *self_raw, PyObject *args, PyObject *kwargs)
 {
-    PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
-    if (writer == NULL) {
+    WriterObject *self = (WriterObject *)self_raw;
+
+    Py_ssize_t size;
+    if (!PyArg_ParseTuple(args, "n", &size)) {
+        return -1;
+    }
+
+    if (self->writer) {
+        PyUnicodeWriter_Discard(self->writer);
+    }
+
+    self->writer = PyUnicodeWriter_Create(size);
+    if (self->writer == NULL) {
+        return -1;
+    }
+    return 0;
+}
+
+
+static void
+writer_dealloc(PyObject *self_raw)
+{
+    WriterObject *self = (WriterObject *)self_raw;
+    PyTypeObject *tp = Py_TYPE(self);
+    if (self->writer) {
+        PyUnicodeWriter_Discard(self->writer);
+    }
+    tp->tp_free(self);
+    Py_DECREF(tp);
+}
+
+
+static inline int
+writer_check(WriterObject *self)
+{
+    if (self->writer == NULL) {
+        PyErr_SetString(PyExc_ValueError, "operation on finished writer");
+        return -1;
+    }
+    return 0;
+}
+
+
+static PyObject*
+writer_write_char(PyObject *self_raw, PyObject *args)
+{
+    WriterObject *self = (WriterObject *)self_raw;
+    if (writer_check(self) < 0) {
         return NULL;
     }
-    assert(PyUnicodeWriter_WriteUTF8(writer, "invalid=\xFF", -1) < 0);
-    PyUnicodeWriter_Discard(writer);
 
-    assert(PyErr_ExceptionMatches(PyExc_UnicodeDecodeError));
-    PyErr_Clear();
+    PyObject *str;
+    if (!PyArg_ParseTuple(args, "U", &str)) {
+        return NULL;
+    }
+    if (PyUnicode_GET_LENGTH(str) != 1) {
+        PyErr_SetString(PyExc_ValueError, "expect a single character");
+    }
+    Py_UCS4 ch = PyUnicode_READ_CHAR(str, 0);
 
+    if (PyUnicodeWriter_WriteChar(self->writer, ch) < 0) {
+        return NULL;
+    }
     Py_RETURN_NONE;
 }
 
 
-static PyObject *
-test_unicodewriter_recover_error(PyObject *self, PyObject *Py_UNUSED(args))
+static PyObject*
+writer_write_utf8(PyObject *self_raw, PyObject *args)
 {
-    // test recovering from PyUnicodeWriter_WriteUTF8() error
-    PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
-    if (writer == NULL) {
+    WriterObject *self = (WriterObject *)self_raw;
+    if (writer_check(self) < 0) {
         return NULL;
     }
-    assert(PyUnicodeWriter_WriteUTF8(writer, "value=", -1) == 0);
 
-    // write fails with an invalid string
-    assert(PyUnicodeWriter_WriteUTF8(writer, "invalid\xFF", -1) < 0);
-    PyErr_Clear();
-
-    // retry write with a valid string
-    assert(PyUnicodeWriter_WriteUTF8(writer, "valid", -1) == 0);
-
-    PyObject *result = PyUnicodeWriter_Finish(writer);
-    if (result == NULL) {
+    char *str;
+    Py_ssize_t size;
+    if (!PyArg_ParseTuple(args, "yn", &str, &size)) {
         return NULL;
     }
-    assert(PyUnicode_EqualToUTF8(result, "value=valid"));
-    Py_DECREF(result);
 
+    if (PyUnicodeWriter_WriteUTF8(self->writer, str, size) < 0) {
+        return NULL;
+    }
     Py_RETURN_NONE;
 }
 
 
-static PyObject *
-test_unicodewriter_decode_utf8(PyObject *self, PyObject *Py_UNUSED(args))
+static PyObject*
+writer_write_ascii(PyObject *self_raw, PyObject *args)
 {
-    // test PyUnicodeWriter_DecodeUTF8Stateful()
-    PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
-    if (writer == NULL) {
-        return NULL;
-    }
-    if (PyUnicodeWriter_DecodeUTF8Stateful(writer, "ign\xFFore", -1, "ignore", NULL) < 0) {
-        goto error;
-    }
-    if (PyUnicodeWriter_WriteChar(writer, '-') < 0) {
-        goto error;
-    }
-    if (PyUnicodeWriter_DecodeUTF8Stateful(writer, "replace\xFF", -1, "replace", NULL) < 0) {
-        goto error;
-    }
-    if (PyUnicodeWriter_WriteChar(writer, '-') < 0) {
-        goto error;
-    }
-
-    // incomplete trailing UTF-8 sequence
-    if (PyUnicodeWriter_DecodeUTF8Stateful(writer, "incomplete\xC3", -1, "replace", NULL) < 0) {
-        goto error;
-    }
-
-    PyObject *result = PyUnicodeWriter_Finish(writer);
-    if (result == NULL) {
-        return NULL;
-    }
-    assert(PyUnicode_EqualToUTF8(result,
-                                 "ignore-replace\xef\xbf\xbd"
-                                 "-incomplete\xef\xbf\xbd"));
-    Py_DECREF(result);
-
-    Py_RETURN_NONE;
-
-error:
-    PyUnicodeWriter_Discard(writer);
-    return NULL;
-}
-
-
-static PyObject *
-test_unicodewriter_decode_utf8_consumed(PyObject *self, PyObject *Py_UNUSED(args))
-{
-    // test PyUnicodeWriter_DecodeUTF8Stateful()
-    PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
-    if (writer == NULL) {
-        return NULL;
-    }
-    Py_ssize_t consumed;
-
-    // valid string
-    consumed = 12345;
-    if (PyUnicodeWriter_DecodeUTF8Stateful(writer, "text", -1, NULL, &consumed) < 0) {
-        goto error;
-    }
-    assert(consumed == 4);
-    if (PyUnicodeWriter_WriteChar(writer, '-') < 0) {
-        goto error;
-    }
-
-    // non-ASCII
-    consumed = 12345;
-    if (PyUnicodeWriter_DecodeUTF8Stateful(writer, "\xC3\xA9-\xE2\x82\xAC", 6, NULL, &consumed) < 0) {
-        goto error;
-    }
-    assert(consumed == 6);
-    if (PyUnicodeWriter_WriteChar(writer, '-') < 0) {
-        goto error;
-    }
-
-    // consumed is 0 if write fails
-    consumed = 12345;
-    assert(PyUnicodeWriter_DecodeUTF8Stateful(writer, "invalid\xFF", -1, NULL, &consumed) < 0);
-    PyErr_Clear();
-    assert(consumed == 0);
-
-    // ignore error handler
-    consumed = 12345;
-    if (PyUnicodeWriter_DecodeUTF8Stateful(writer, "more\xFF", -1, "ignore", &consumed) < 0) {
-        goto error;
-    }
-    assert(consumed == 5);
-    if (PyUnicodeWriter_WriteChar(writer, '-') < 0) {
-        goto error;
-    }
-
-    // incomplete trailing UTF-8 sequence
-    consumed = 12345;
-    if (PyUnicodeWriter_DecodeUTF8Stateful(writer, "incomplete\xC3", -1, "ignore", &consumed) < 0) {
-        goto error;
-    }
-    assert(consumed == 10);
-
-    PyObject *result = PyUnicodeWriter_Finish(writer);
-    if (result == NULL) {
-        return NULL;
-    }
-    assert(PyUnicode_EqualToUTF8(result,
-                                 "text-\xC3\xA9-\xE2\x82\xAC-"
-                                 "more-incomplete"));
-    Py_DECREF(result);
-
-    Py_RETURN_NONE;
-
-error:
-    PyUnicodeWriter_Discard(writer);
-    return NULL;
-}
-
-
-static PyObject *
-test_unicodewriter_format(PyObject *self, PyObject *Py_UNUSED(args))
-{
-    PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
-    if (writer == NULL) {
+    WriterObject *self = (WriterObject *)self_raw;
+    if (writer_check(self) < 0) {
         return NULL;
     }
 
-    // test PyUnicodeWriter_Format()
-    if (PyUnicodeWriter_Format(writer, "%s %i", "Hello", 123) < 0) {
-        goto error;
-    }
-
-    // test PyUnicodeWriter_WriteChar()
-    if (PyUnicodeWriter_WriteChar(writer, '.') < 0) {
-        goto error;
-    }
-
-    PyObject *result = PyUnicodeWriter_Finish(writer);
-    if (result == NULL) {
-        return NULL;
-    }
-    assert(PyUnicode_EqualToUTF8(result, "Hello 123."));
-    Py_DECREF(result);
-
-    Py_RETURN_NONE;
-
-error:
-    PyUnicodeWriter_Discard(writer);
-    return NULL;
-}
-
-
-static PyObject *
-test_unicodewriter_format_recover_error(PyObject *self, PyObject *Py_UNUSED(args))
-{
-    // test recovering from PyUnicodeWriter_Format() error
-    PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
-    if (writer == NULL) {
+    char *str;
+    Py_ssize_t size;
+    if (!PyArg_ParseTuple(args, "yn", &str, &size)) {
         return NULL;
     }
 
-    assert(PyUnicodeWriter_Format(writer, "%s ", "Hello") == 0);
-
-    // PyUnicodeWriter_Format() fails with an invalid format string
-    assert(PyUnicodeWriter_Format(writer, "%s\xff", "World") < 0);
-    PyErr_Clear();
-
-    // Retry PyUnicodeWriter_Format() with a valid format string
-    assert(PyUnicodeWriter_Format(writer, "%s.", "World") == 0);
-
-    PyObject *result = PyUnicodeWriter_Finish(writer);
-    if (result == NULL) {
+    if (PyUnicodeWriter_WriteASCII(self->writer, str, size) < 0) {
         return NULL;
     }
-    assert(PyUnicode_EqualToUTF8(result, "Hello World."));
-    Py_DECREF(result);
-
     Py_RETURN_NONE;
 }
 
 
-static PyObject *
-test_unicodewriter_widechar(PyObject *self, PyObject *Py_UNUSED(args))
+static PyObject*
+writer_write_widechar(PyObject *self_raw, PyObject *args)
 {
-    PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
-    if (writer == NULL) {
+    WriterObject *self = (WriterObject *)self_raw;
+    if (writer_check(self) < 0) {
         return NULL;
     }
-    if (PyUnicodeWriter_WriteWideChar(writer, L"latin1=\xE9 IGNORED", 8) < 0) {
-        goto error;
-    }
-    if (PyUnicodeWriter_WriteWideChar(writer, L"-", 1) < 0) {
-        goto error;
-    }
-    if (PyUnicodeWriter_WriteWideChar(writer, L"euro=\u20AC", -1) < 0) {
-        goto error;
-    }
-    if (PyUnicodeWriter_WriteChar(writer, '.') < 0) {
-        goto error;
-    }
 
-    PyObject *result = PyUnicodeWriter_Finish(writer);
-    if (result == NULL) {
+    PyObject *str;
+    if (!PyArg_ParseTuple(args, "U", &str)) {
         return NULL;
     }
-    assert(PyUnicode_EqualToUTF8(result,
-                                 "latin1=\xC3\xA9-euro=\xE2\x82\xAC."));
-    Py_DECREF(result);
 
+    Py_ssize_t size;
+    wchar_t *wstr = PyUnicode_AsWideCharString(str, &size);
+    if (wstr == NULL) {
+        return NULL;
+    }
+
+    int res = PyUnicodeWriter_WriteWideChar(self->writer, wstr, size);
+    PyMem_Free(wstr);
+    if (res < 0) {
+        return NULL;
+    }
     Py_RETURN_NONE;
-
-error:
-    PyUnicodeWriter_Discard(writer);
-    return NULL;
 }
+
+
+static PyObject*
+writer_write_ucs4(PyObject *self_raw, PyObject *args)
+{
+    WriterObject *self = (WriterObject *)self_raw;
+    if (writer_check(self) < 0) {
+        return NULL;
+    }
+
+    PyObject *str;
+    Py_ssize_t size;
+    if (!PyArg_ParseTuple(args, "Un", &str, &size)) {
+        return NULL;
+    }
+    Py_ssize_t len = PyUnicode_GET_LENGTH(str);
+    size = Py_MIN(size, len);
+
+    Py_UCS4 *ucs4 = PyUnicode_AsUCS4Copy(str);
+    if (ucs4 == NULL) {
+        return NULL;
+    }
+
+    int res = PyUnicodeWriter_WriteUCS4(self->writer, ucs4, size);
+    PyMem_Free(ucs4);
+    if (res < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
+static PyObject*
+writer_write_str(PyObject *self_raw, PyObject *args)
+{
+    WriterObject *self = (WriterObject *)self_raw;
+    if (writer_check(self) < 0) {
+        return NULL;
+    }
+
+    PyObject *obj;
+    if (!PyArg_ParseTuple(args, "O", &obj)) {
+        return NULL;
+    }
+
+    if (PyUnicodeWriter_WriteStr(self->writer, obj) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
+static PyObject*
+writer_write_repr(PyObject *self_raw, PyObject *args)
+{
+    WriterObject *self = (WriterObject *)self_raw;
+    if (writer_check(self) < 0) {
+        return NULL;
+    }
+
+    PyObject *obj;
+    if (!PyArg_ParseTuple(args, "O", &obj)) {
+        return NULL;
+    }
+
+    if (PyUnicodeWriter_WriteRepr(self->writer, obj) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
+static PyObject*
+writer_write_substring(PyObject *self_raw, PyObject *args)
+{
+    WriterObject *self = (WriterObject *)self_raw;
+    if (writer_check(self) < 0) {
+        return NULL;
+    }
+
+    PyObject *str;
+    Py_ssize_t start, end;
+    if (!PyArg_ParseTuple(args, "Unn", &str, &start, &end)) {
+        return NULL;
+    }
+
+    if (PyUnicodeWriter_WriteSubstring(self->writer, str, start, end) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
+static PyObject*
+writer_decodeutf8stateful(PyObject *self_raw, PyObject *args)
+{
+    WriterObject *self = (WriterObject *)self_raw;
+    if (writer_check(self) < 0) {
+        return NULL;
+    }
+
+    const char *str;
+    Py_ssize_t len;
+    const char *errors;
+    int use_consumed = 0;
+    if (!PyArg_ParseTuple(args, "yny|i", &str, &len, &errors, &use_consumed)) {
+        return NULL;
+    }
+
+    Py_ssize_t consumed = 12345;
+    Py_ssize_t *pconsumed = use_consumed ? &consumed : NULL;
+    if (PyUnicodeWriter_DecodeUTF8Stateful(self->writer, str, len,
+                                           errors, pconsumed) < 0) {
+        if (use_consumed) {
+            assert(consumed == 0);
+        }
+        return NULL;
+    }
+
+    if (use_consumed) {
+        return PyLong_FromSsize_t(consumed);
+    }
+    Py_RETURN_NONE;
+}
+
+
+static PyObject*
+writer_get_pointer(PyObject *self_raw, PyObject *args)
+{
+    WriterObject *self = (WriterObject *)self_raw;
+    if (writer_check(self) < 0) {
+        return NULL;
+    }
+
+    return PyLong_FromVoidPtr(self->writer);
+}
+
+
+static PyObject*
+writer_finish(PyObject *self_raw, PyObject *Py_UNUSED(args))
+{
+    WriterObject *self = (WriterObject *)self_raw;
+    if (writer_check(self) < 0) {
+        return NULL;
+    }
+
+    PyObject *str = PyUnicodeWriter_Finish(self->writer);
+    self->writer = NULL;
+    return str;
+}
+
+
+static PyMethodDef writer_methods[] = {
+    {"write_char", _PyCFunction_CAST(writer_write_char), METH_VARARGS},
+    {"write_utf8", _PyCFunction_CAST(writer_write_utf8), METH_VARARGS},
+    {"write_ascii", _PyCFunction_CAST(writer_write_ascii), METH_VARARGS},
+    {"write_widechar", _PyCFunction_CAST(writer_write_widechar), METH_VARARGS},
+    {"write_ucs4", _PyCFunction_CAST(writer_write_ucs4), METH_VARARGS},
+    {"write_str", _PyCFunction_CAST(writer_write_str), METH_VARARGS},
+    {"write_repr", _PyCFunction_CAST(writer_write_repr), METH_VARARGS},
+    {"write_substring", _PyCFunction_CAST(writer_write_substring), METH_VARARGS},
+    {"decodeutf8stateful", _PyCFunction_CAST(writer_decodeutf8stateful), METH_VARARGS},
+    {"get_pointer", _PyCFunction_CAST(writer_get_pointer), METH_VARARGS},
+    {"finish", _PyCFunction_CAST(writer_finish), METH_NOARGS},
+    {NULL,              NULL}           /* sentinel */
+};
+
+static PyType_Slot Writer_Type_slots[] = {
+    {Py_tp_new, writer_new},
+    {Py_tp_init, writer_init},
+    {Py_tp_dealloc, writer_dealloc},
+    {Py_tp_methods, writer_methods},
+    {0, 0},  /* sentinel */
+};
+
+static PyType_Spec Writer_spec = {
+    .name = "_testcapi.PyUnicodeWriter",
+    .basicsize = sizeof(WriterObject),
+    .flags = Py_TPFLAGS_DEFAULT,
+    .slots = Writer_Type_slots,
+};
 
 
 static PyMethodDef TestMethods[] = {
@@ -593,15 +576,7 @@ static PyMethodDef TestMethods[] = {
     {"unicode_asucs4copy",       unicode_asucs4copy,             METH_VARARGS},
     {"unicode_asutf8",           unicode_asutf8,                 METH_VARARGS},
     {"unicode_copycharacters",   unicode_copycharacters,         METH_VARARGS},
-    {"test_unicodewriter",       test_unicodewriter,             METH_NOARGS},
-    {"test_unicodewriter_utf8",  test_unicodewriter_utf8,        METH_NOARGS},
-    {"test_unicodewriter_invalid_utf8", test_unicodewriter_invalid_utf8, METH_NOARGS},
-    {"test_unicodewriter_recover_error", test_unicodewriter_recover_error, METH_NOARGS},
-    {"test_unicodewriter_decode_utf8", test_unicodewriter_decode_utf8, METH_NOARGS},
-    {"test_unicodewriter_decode_utf8_consumed", test_unicodewriter_decode_utf8_consumed, METH_NOARGS},
-    {"test_unicodewriter_format", test_unicodewriter_format,     METH_NOARGS},
-    {"test_unicodewriter_format_recover_error", test_unicodewriter_format_recover_error, METH_NOARGS},
-    {"test_unicodewriter_widechar", test_unicodewriter_widechar, METH_NOARGS},
+    {"unicode_GET_CACHED_HASH",  unicode_GET_CACHED_HASH,        METH_O},
     {NULL},
 };
 
@@ -610,5 +585,16 @@ _PyTestCapi_Init_Unicode(PyObject *m) {
     if (PyModule_AddFunctions(m, TestMethods) < 0) {
         return -1;
     }
+
+    PyTypeObject *writer_type = (PyTypeObject *)PyType_FromSpec(&Writer_spec);
+    if (writer_type == NULL) {
+        return -1;
+    }
+    if (PyModule_AddType(m, writer_type) < 0) {
+        Py_DECREF(writer_type);
+        return -1;
+    }
+    Py_DECREF(writer_type);
+
     return 0;
 }

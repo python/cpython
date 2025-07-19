@@ -9,6 +9,24 @@
 #endif
 
 
+// Preprocessor check for a builtin preprocessor function. Always return 0
+// if __has_builtin() macro is not defined.
+//
+// __has_builtin() is available on clang and GCC 10.
+#ifdef __has_builtin
+#  define _Py__has_builtin(x) __has_builtin(x)
+#else
+#  define _Py__has_builtin(x) 0
+#endif
+
+// Preprocessor check for a compiler __attribute__. Always return 0
+// if __has_attribute() macro is not defined.
+#ifdef __has_attribute
+#  define _Py__has_attribute(x) __has_attribute(x)
+#else
+#  define _Py__has_attribute(x) 0
+#endif
+
 // Macro to use C++ static_cast<> in the Python C API.
 #ifdef __cplusplus
 #  define _Py_STATIC_CAST(type, expr) static_cast<type>(expr)
@@ -18,11 +36,22 @@
 // Macro to use the more powerful/dangerous C-style cast even in C++.
 #define _Py_CAST(type, expr) ((type)(expr))
 
+// Cast a function to another function type T.
+//
+// The macro first casts the function to the "void func(void)" type
+// to prevent compiler warnings.
+//
+// Note that using this cast only prevents the compiler from emitting
+// warnings, but does not prevent an undefined behavior at runtime if
+// the original function signature is not respected.
+#define _Py_FUNC_CAST(T, func) _Py_CAST(T, _Py_CAST(void(*)(void), (func)))
+
 // Static inline functions should use _Py_NULL rather than using directly NULL
 // to prevent C++ compiler warnings. On C23 and newer and on C++11 and newer,
 // _Py_NULL is defined as nullptr.
-#if (defined (__STDC_VERSION__) && __STDC_VERSION__ > 201710L) \
-        || (defined(__cplusplus) && __cplusplus >= 201103)
+#if !defined(_MSC_VER) && \
+    ((defined (__STDC_VERSION__) && __STDC_VERSION__ > 201710L) \
+        || (defined(__cplusplus) && __cplusplus >= 201103))
 #  define _Py_NULL nullptr
 #else
 #  define _Py_NULL NULL
@@ -532,16 +561,6 @@ extern "C" {
 #endif
 
 
-// Preprocessor check for a builtin preprocessor function. Always return 0
-// if __has_builtin() macro is not defined.
-//
-// __has_builtin() is available on clang and GCC 10.
-#ifdef __has_builtin
-#  define _Py__has_builtin(x) __has_builtin(x)
-#else
-#  define _Py__has_builtin(x) 0
-#endif
-
 // _Py_TYPEOF(expr) gets the type of an expression.
 //
 // Example: _Py_TYPEOF(x) x_copy = (x);
@@ -557,27 +576,45 @@ extern "C" {
 #  if __has_feature(memory_sanitizer)
 #    if !defined(_Py_MEMORY_SANITIZER)
 #      define _Py_MEMORY_SANITIZER
+#      define _Py_NO_SANITIZE_MEMORY __attribute__((no_sanitize_memory))
 #    endif
 #  endif
 #  if __has_feature(address_sanitizer)
 #    if !defined(_Py_ADDRESS_SANITIZER)
 #      define _Py_ADDRESS_SANITIZER
+#      define _Py_NO_SANITIZE_ADDRESS __attribute__((no_sanitize_address))
 #    endif
 #  endif
 #  if __has_feature(thread_sanitizer)
 #    if !defined(_Py_THREAD_SANITIZER)
 #      define _Py_THREAD_SANITIZER
+#      define _Py_NO_SANITIZE_THREAD __attribute__((no_sanitize_thread))
 #    endif
 #  endif
 #elif defined(__GNUC__)
 #  if defined(__SANITIZE_ADDRESS__)
 #    define _Py_ADDRESS_SANITIZER
+#    define _Py_NO_SANITIZE_ADDRESS __attribute__((no_sanitize_address))
 #  endif
 #  if defined(__SANITIZE_THREAD__)
 #    define _Py_THREAD_SANITIZER
+#    define _Py_NO_SANITIZE_THREAD __attribute__((no_sanitize_thread))
+#  elif  __GNUC__ > 5 || (__GNUC__ == 5 && __GNUC_MINOR__ >= 1)
+     // TSAN is supported since GCC 5.1, but __SANITIZE_THREAD__ macro
+     // is provided only since GCC 7.
+#    define _Py_NO_SANITIZE_THREAD __attribute__((no_sanitize_thread))
 #  endif
 #endif
 
+#ifndef _Py_NO_SANITIZE_ADDRESS
+#  define _Py_NO_SANITIZE_ADDRESS
+#endif
+#ifndef _Py_NO_SANITIZE_THREAD
+#  define _Py_NO_SANITIZE_THREAD
+#endif
+#ifndef _Py_NO_SANITIZE_MEMORY
+#  define _Py_NO_SANITIZE_MEMORY
+#endif
 
 /* AIX has __bool__ redefined in it's system header file. */
 #if defined(_AIX) && defined(__bool__)
@@ -606,5 +643,43 @@ extern "C" {
 #if defined(__sgi) && !defined(_SGI_MP_SOURCE)
 #  define _SGI_MP_SOURCE
 #endif
+
+// Explicit fallthrough in switch case to avoid warnings
+// with compiler flag -Wimplicit-fallthrough.
+//
+// Usage example:
+//
+//     switch (value) {
+//     case 1: _Py_FALLTHROUGH;
+//     case 2: code; break;
+//     }
+//
+// __attribute__((fallthrough)) was introduced in GCC 7 and Clang 10 /
+// Apple Clang 12.0. Earlier Clang versions support only the C++11
+// style fallthrough attribute, not the GCC extension syntax used here,
+// and __has_attribute(fallthrough) evaluates to 1.
+#if _Py__has_attribute(fallthrough) && (!defined(__clang__) || \
+    (!defined(__apple_build_version__) && __clang_major__ >= 10) || \
+    (defined(__apple_build_version__) && __clang_major__ >= 12))
+#  define _Py_FALLTHROUGH __attribute__((fallthrough))
+#else
+#  define _Py_FALLTHROUGH do { } while (0)
+#endif
+
+
+// _Py_NONSTRING: The nonstring variable attribute specifies that an object or
+// member declaration with type array of char, signed char, or unsigned char,
+// or pointer to such a type is intended to store character arrays that do not
+// necessarily contain a terminating NUL.
+//
+// Usage:
+//
+//   char name [8] _Py_NONSTRING;
+#if _Py__has_attribute(nonstring)
+#  define _Py_NONSTRING __attribute__((nonstring))
+#else
+#  define _Py_NONSTRING
+#endif
+
 
 #endif /* Py_PYPORT_H */

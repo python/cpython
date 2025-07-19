@@ -34,7 +34,7 @@ clib.setupterm.argtypes = [ctypes.c_char_p, ctypes.c_int, ctypes.POINTER(ctypes.
 clib.setupterm.restype = ctypes.c_int
 
 clib.tigetstr.argtypes = [ctypes.c_char_p]
-clib.tigetstr.restype = ctypes.POINTER(ctypes.c_char)
+clib.tigetstr.restype = ctypes.c_ssize_t
 
 clib.tparm.argtypes = [ctypes.c_char_p] + 9 * [ctypes.c_int]  # type: ignore[operator]
 clib.tparm.restype = ctypes.c_char_p
@@ -56,7 +56,7 @@ def tigetstr(cap):
     if not isinstance(cap, bytes):
         cap = cap.encode("ascii")
     result = clib.tigetstr(cap)
-    if ctypes.cast(result, ctypes.c_void_p).value == ERR:
+    if result == ERR:
         return None
     return ctypes.cast(result, ctypes.c_char_p).value
 
