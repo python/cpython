@@ -1176,7 +1176,7 @@ functions.
    not undo customizations already applied by other code. For example::
 
       class MyLogger(logging.getLoggerClass()):
-          # ... override behaviour here
+          ...  # override behaviour here
 
 
 .. function:: getLogRecordFactory()
