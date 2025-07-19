@@ -1,0 +1,1 @@
+Default to color help in argparse.
