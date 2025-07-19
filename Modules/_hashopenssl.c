@@ -330,7 +330,7 @@ py_wrapper_ERR_reason_error_string(unsigned long errcode)
  * Set an exception with additional information.
  *
  * This is only useful in OpenSSL 3.0 and later as the default reason
- * usually lack information and function locations are no longer encoded
+ * usually lacks information and function locations are no longer encoded
  * in the error code.
  */
 static void
