@@ -9,7 +9,7 @@ import subprocess
 import sys
 import tempfile
 from pkgutil import ModuleInfo
-from unittest import TestCase, skipUnless, skipIf
+from unittest import TestCase, skipUnless, skipIf, SkipTest
 from unittest.mock import patch
 from test.support import force_not_colorized, make_clean_env, Py_DEBUG
 from test.support import has_subprocess_support, SHORT_TIMEOUT, STDLIB_DIR
@@ -40,7 +40,7 @@ except ImportError:
 class ReplTestCase(TestCase):
     def setUp(self):
         if not has_subprocess_support:
-            raise unittest.SkipTest("test module requires subprocess")
+            raise SkipTest("test module requires subprocess")
 
     def run_repl(
         self,
