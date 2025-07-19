@@ -2642,6 +2642,5 @@ class PEP626Tests(unittest.TestCase):
         else:
             self.fail("Expected ModuleNotFoundError was not raised")
 
-
 if __name__ == '__main__':
     unittest.main()
