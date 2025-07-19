@@ -692,10 +692,11 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         '.xz': 'application/x-xz',
     }
 
-    def __init__(self, *args, directory=None, **kwargs):
+    def __init__(self, *args, directory=None, response_headers=None, **kwargs):
         if directory is None:
             directory = os.getcwd()
         self.directory = os.fspath(directory)
+        self.response_headers = response_headers
         super().__init__(*args, **kwargs)
 
     def do_GET(self):
@@ -712,6 +713,13 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         f = self.send_head()
         if f:
             f.close()
+
+    def send_custom_response_headers(self):
+        """Send the headers stored in self.response_headers"""
+        # User specified response_headers
+        if self.response_headers is not None:
+            for header, value in self.response_headers:
+                self.send_header(header, value)
 
     def send_head(self):
         """Common code for GET and HEAD commands.
@@ -795,6 +803,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             self.send_header("Content-Length", str(fs[6]))
             self.send_header("Last-Modified",
                 self.date_time_string(fs.st_mtime))
+            self.send_custom_response_headers()
             self.end_headers()
             return f
         except:
@@ -859,6 +868,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         self.send_response(HTTPStatus.OK)
         self.send_header("Content-type", "text/html; charset=%s" % enc)
         self.send_header("Content-Length", str(len(encoded)))
+        self.send_custom_response_headers()
         self.end_headers()
         return f
 
@@ -998,6 +1008,7 @@ def test(HandlerClass=BaseHTTPRequestHandler,
         except KeyboardInterrupt:
             print("\nKeyboard interrupt received, exiting.")
             sys.exit(0)
+    return server
 
 
 def _main(args=None):
@@ -1024,6 +1035,10 @@ def _main(args=None):
     parser.add_argument('port', default=8000, type=int, nargs='?',
                         help='bind to this port '
                              '(default: %(default)s)')
+    parser.add_argument('-H', '--header', nargs=2, action='append',
+                        metavar=('HEADER', 'VALUE'),
+                        help='Add a custom response header '
+                             '(can be used multiple times)')
     args = parser.parse_args(args)
 
     if not args.tls_cert and args.tls_key:
@@ -1052,7 +1067,8 @@ def _main(args=None):
 
         def finish_request(self, request, client_address):
             self.RequestHandlerClass(request, client_address, self,
-                                     directory=args.directory)
+                                     directory=args.directory,
+                                     response_headers=args.header)
 
     class HTTPDualStackServer(DualStackServerMixin, ThreadingHTTPServer):
         pass
@@ -1061,7 +1077,7 @@ def _main(args=None):
 
     ServerClass = HTTPSDualStackServer if args.tls_cert else HTTPDualStackServer
 
-    test(
+    return test(
         HandlerClass=SimpleHTTPRequestHandler,
         ServerClass=ServerClass,
         port=args.port,
