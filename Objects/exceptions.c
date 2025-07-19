@@ -1874,7 +1874,7 @@ ImportError_repr(PyObject *self)
     if (writer == NULL) goto error;
     if (PyUnicodeWriter_WriteSubstring(writer, r, 0, PyUnicode_GET_LENGTH(r)-1) < 0) goto error;
     if (r && (exc->name || exc->path)) {
-        if (exc->name) { 
+        if (exc->name) {
             if (hasargs) {
                 if (PyUnicodeWriter_WriteASCII(writer, ", ", 2) < 0) goto error;
             }
