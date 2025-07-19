@@ -55,6 +55,10 @@ makebackup = True
 # A specified newline to be used in the output (set by --newline option)
 spec_newline = None
 
+ALLOWLIST_TABS = {
+    "Tools/c-analyzer/cpython/_parser.py",
+}
+
 
 def usage(msg=None):
     if msg is None:
@@ -125,7 +129,7 @@ def check(file):
             return
     try:
         with open(file, encoding=encoding) as f:
-            r = Reindenter(f)
+            r = Reindenter(f, file)
     except IOError as msg:
         errprint("%s: I/O Error: %s" % (file, str(msg)))
         return
@@ -173,7 +177,7 @@ def _rstrip(line, JUNK='\n \t'):
 
 class Reindenter:
 
-    def __init__(self, f):
+    def __init__(self, f, filename=None):
         self.find_stmt = 1  # next token begins a fresh stmt?
         self.level = 0      # current indent level
 
@@ -183,8 +187,16 @@ class Reindenter:
         # File lines, rstripped & tab-expanded.  Dummy at start is so
         # that we can use tokenize's 1-based line numbering easily.
         # Note that a line is all-blank iff it's "\n".
-        self.lines = [_rstrip(line).expandtabs() + "\n"
-                      for line in self.raw]
+        self.lines = [
+            (
+                _rstrip(line)
+                if filename in ALLOWLIST_TABS
+                else _rstrip(line).expandtabs()
+            )
+            + "\n"
+            for line in self.raw
+        ]
+
         self.lines.insert(0, None)
         self.index = 1  # index into self.lines of next line
 
