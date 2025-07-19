@@ -241,15 +241,12 @@ write code that handles both IP versions correctly.  Address objects are
    .. attribute:: is_reserved
 
       ``True`` if the address is noted as reserved by the IETF.
-      For IPv4, this is only ``240.0.0.0/4``, the "Reserved" address block.
+      For IPv4, this is only ``240.0.0.0/4``, the ``Reserved`` address block.
       For IPv6, this is all addresses `allocated <iana-ipv6-address-space_>`__ as
       ``Reserved by IETF`` for future use.
 
-      Note: ``is_reserved`` is not related to the "Reserved-by-Protocol" value.
-
-      .. seealso::
-
-         iana-ipv4-special-registry_
+      Note: ``is_reserved`` is not related to the IPv4 address block value of the
+      ``Reserved-by-Protocol`` column in iana-ipv4-special-registry_.
 
    .. attribute:: is_loopback
 
