@@ -247,7 +247,7 @@ write code that handles both IP versions correctly.  Address objects are
 
       .. note:: For IPv4, ``is_reserved`` is not related to the address block value of the
         ``Reserved-by-Protocol`` column in iana-ipv4-special-registry_.
-      
+
       .. caution:: For IPv6, ``fec0::/10`` a former Site-Local scoped address prefix is
          currently excluded from that list (see :attr:`~IPv6Address.is_site_local`).
 
