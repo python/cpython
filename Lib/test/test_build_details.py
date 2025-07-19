@@ -5,7 +5,7 @@ import sysconfig
 import string
 import unittest
 
-from test.support import is_android, is_apple_mobile, is_wasm
+from test.support import is_android, is_apple_mobile, is_wasm32
 
 
 class FormatTestsBase:
@@ -91,7 +91,7 @@ needs_installed_python = unittest.skipIf(
 
 
 @unittest.skipIf(os.name != 'posix', 'Feature only implemented on POSIX right now')
-@unittest.skipIf(is_wasm, 'Feature not available on WebAssembly builds')
+@unittest.skipIf(is_wasm32, 'Feature not available on WebAssembly builds')
 class CPythonBuildDetailsTests(unittest.TestCase, FormatTestsBase):
     """Test CPython's install details file implementation."""
 
