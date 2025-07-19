@@ -113,9 +113,14 @@ def decode_b(encoded):
         # The non-alphabet characters are ignored as far as padding
         # goes, but we don't know how many there are.  So try without adding
         # padding to see if it works.
+        #
+        # We use urlsafe_b64decode here because some mailers apparently use the
+        # urlsafe b64 alphabet, and urlsafe_b64decode will correctly decode
+        # both the urlsafe and regular alphabets.
+
         try:
             return (
-                base64.b64decode(encoded, validate=False),
+                base64.urlsafe_b64decode(encoded),
                 [errors.InvalidBase64CharactersDefect()],
             )
         except binascii.Error:
@@ -123,7 +128,7 @@ def decode_b(encoded):
             # is ignored).
             try:
                 return (
-                    base64.b64decode(encoded + b'==', validate=False),
+                    base64.urlsafe_b64decode(encoded + b'=='),
                     [errors.InvalidBase64CharactersDefect(),
                      errors.InvalidBase64PaddingDefect()],
                 )

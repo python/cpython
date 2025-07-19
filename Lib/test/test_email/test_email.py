@@ -4663,6 +4663,9 @@ class TestBase64(unittest.TestCase):
         eq = self.assertEqual
         eq(base64mime.decode(''), b'')
         eq(base64mime.decode('aGVsbG8='), b'hello')
+        eq(base64mime.decode(
+           'QW5tZWxkdW5nIE5ldHphbnNjaGx1c3MgU_xkcmluZzNwLmpwZw=='),
+           b'Anmeldung Netzanschluss S\xfcdring3p.jpg')
 
     def test_encode(self):
         eq = self.assertEqual
