@@ -2631,16 +2631,14 @@ class PEP626Tests(unittest.TestCase):
                 "ModuleNotFoundError('test', name='somename', path='somepath')")
 
     def test_ModuleNotFoundError_repr_with_failed_import(self):
-        try:
+        with self.assertRaises(ModuleNotFoundError) as cm:
             import does_not_exist  # type: ignore[import] # noqa: F401
-        except ModuleNotFoundError as e:
-            self.assertEqual(e.name, "does_not_exist")
-            self.assertIsNone(e.path)
 
-            self.assertEqual(repr(e),
-                "ModuleNotFoundError(\"No module named 'does_not_exist'\", name='does_not_exist')")
-        else:
-            self.fail("Expected ModuleNotFoundError was not raised")
+        self.assertEqual(cm.exception.name, "does_not_exist")
+        self.assertIsNone(cm.exception.path)
+
+        self.assertEqual(repr(cm.exception),
+            "ModuleNotFoundError(\"No module named 'does_not_exist'\", name='does_not_exist')")
 
 if __name__ == '__main__':
     unittest.main()

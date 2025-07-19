@@ -1901,10 +1901,10 @@ ImportError_repr(PyObject *self)
     if (PyUnicodeWriter_WriteASCII(writer, ")", 1) < 0) goto error;
     return PyUnicodeWriter_Finish(writer);
 
-    error:
-        Py_XDECREF(r);
-        PyUnicodeWriter_Discard(writer);
-        return NULL;
+error:
+    Py_XDECREF(r);
+    PyUnicodeWriter_Discard(writer);
+    return NULL;
 }
 
 static PyMemberDef ImportError_members[] = {
