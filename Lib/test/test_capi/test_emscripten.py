@@ -10,10 +10,10 @@ from pathlib import Path
 
 class EmscriptenAsyncInputDeviceTest(unittest.TestCase):
     def test_emscripten_async_input_device(self):
-        supported = emscripten_set_up_async_input_device()
+        jspi_supported = emscripten_set_up_async_input_device()
         p = Path("/dev/blah")
         self.addCleanup(p.unlink)
-        if not supported:
+        if not jspi_supported:
             with open(p, "r") as f:
                 self.assertRaises(OSError, f.readline)
             return
