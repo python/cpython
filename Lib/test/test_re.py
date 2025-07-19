@@ -2888,6 +2888,79 @@ class PatternReprTests(unittest.TestCase):
                          "re.ASCII|re.LOCALE|re.UNICODE|re.MULTILINE|re.DEBUG|0xffe01")
 
 
+class TemplateTests(unittest.TestCase):
+    def test_literal(self):
+        p = re.compile(r'\w')
+        t = p.compile_template('a')
+        self.assertIsInstance(t, re.Template)
+        self.assertEqual(re.sub(p, t, 'x-yz'), 'a-aa')
+        self.assertEqual(p.sub(t, 'x-yz'), 'a-aa')
+        self.assertEqual(re.subn(p, t, 'x-yz', count=2), ('a-az', 2))
+        self.assertEqual(p.subn(t, 'x-yz', 2), ('a-az', 2))
+
+        p = re.compile(br'\w')
+        t = p.compile_template(b'a')
+        self.assertIsInstance(t, re.Template)
+        self.assertEqual(re.sub(p, t, b'x-yz'), b'a-aa')
+        self.assertEqual(p.sub(t, b'x-yz'), b'a-aa')
+        self.assertEqual(re.subn(p, t, b'x-yz', count=2), (b'a-az', 2))
+        self.assertEqual(p.subn(t, b'x-yz', 2), (b'a-az', 2))
+
+    def test_group_refs(self):
+        p = re.compile(r'(\w)(\w)')
+        t = p.compile_template(r'[\2-\1]')
+        self.assertIsInstance(t, re.Template)
+        self.assertEqual(re.sub(p, t, 'xyzt'), '[y-x][t-z]')
+        self.assertEqual(p.sub(t, 'xyzt'), '[y-x][t-z]')
+
+        p = re.compile(br'(\w)(\w)')
+        t = p.compile_template(br'[\2-\1]')
+        self.assertIsInstance(t, re.Template)
+        self.assertEqual(re.sub(p, t, b'xyzt'), b'[y-x][t-z]')
+        self.assertEqual(p.sub(t, b'xyzt'), b'[y-x][t-z]')
+
+    def test_group_refs_emplty_literals(self):
+        p = re.compile(r'(\w)(\w)')
+        t = p.compile_template(r'\2\1')
+        self.assertIsInstance(t, re.Template)
+        self.assertEqual(re.sub(p, t, 'xyzt'), 'yxtz')
+        self.assertEqual(p.sub(t, 'xyzt'), 'yxtz')
+
+        p = re.compile(br'(\w)(\w)')
+        t = p.compile_template(br'\2\1')
+        self.assertIsInstance(t, re.Template)
+        self.assertEqual(re.sub(p, t, b'xyzt'), b'yxtz')
+        self.assertEqual(p.sub(t, b'xyzt'), b'yxtz')
+
+    def test_symbolic_group_refs(self):
+        p = re.compile(r'(?P<a>\w)(?P<b>\w)')
+        t = p.compile_template(r'[\g<b>-\g<a>]')
+        self.assertIsInstance(t, re.Template)
+        self.assertEqual(re.sub(p, t, 'xyzt'), '[y-x][t-z]')
+        self.assertEqual(p.sub(t, 'xyzt'), '[y-x][t-z]')
+
+        p = re.compile(br'(?P<a>\w)(?P<b>\w)')
+        t = p.compile_template(br'[\g<b>-\g<a>]')
+        self.assertIsInstance(t, re.Template)
+        self.assertEqual(re.sub(p, t, b'xyzt'), b'[y-x][t-z]')
+        self.assertEqual(p.sub(t, b'xyzt'), b'[y-x][t-z]')
+
+    def test_call(self):
+        p = re.compile(r'(\w)(\w)')
+        t = p.compile_template(r'[\2-\1]')
+        m = p.search(' xy ')
+        self.assertEqual(t(m), '[y-x]')
+        self.assertRaises(TypeError, t, None)
+        self.assertRaises(TypeError, t, {})
+
+        p = re.compile(br'(\w)(\w)')
+        t = p.compile_template(br'[\2-\1]')
+        m = p.search(b' xy ')
+        self.assertEqual(t(m), b'[y-x]')
+        self.assertRaises(TypeError, t, None)
+        self.assertRaises(TypeError, t, {})
+
+
 class ImplementationTest(unittest.TestCase):
     """
     Test implementation details of the re module.
@@ -2900,6 +2973,8 @@ class ImplementationTest(unittest.TestCase):
             re.Match.foo = 1
         with self.assertRaises(TypeError):
             re.Pattern.foo = 1
+        with self.assertRaises(TypeError):
+            re.Template.foo = 1
         with self.assertRaises(TypeError):
             pat = re.compile("")
             tp = type(pat.scanner(""))
@@ -2923,6 +2998,7 @@ class ImplementationTest(unittest.TestCase):
         # Ensure that the type disallows instantiation (bpo-43916)
         check_disallow_instantiation(self, re.Match)
         check_disallow_instantiation(self, re.Pattern)
+        check_disallow_instantiation(self, re.Template)
         pat = re.compile("")
         check_disallow_instantiation(self, type(pat.scanner("")))
 
