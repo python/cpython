@@ -516,6 +516,13 @@ dummy_func(void) {
         value = PyJitRef_Borrow(sym_new_const(ctx, ptr));
     }
 
+    op(_SWAP_CALL_TWO_LOAD_CONST_INLINE_BORROW, (ptr/4, callable, null, instance, cls -- value, c1, i, c2)) {
+        value = PyJitRef_Borrow(sym_new_const(ctx, ptr));
+        c1 = callable;
+        i = instance;
+        c2 = cls;
+    }
+
     op(_POP_TOP, (value -- )) {
         PyTypeObject *typ = sym_get_type(value);
         if (PyJitRef_IsBorrowed(value) ||
@@ -946,7 +953,7 @@ dummy_func(void) {
         }
     }
 
-    op(_CALL_ISINSTANCE, (unused, unused, instance, cls -- res)) {
+    op(_CALL_ISINSTANCE, (unused, unused, instance, cls -- res, unused, unused, unused)) {
         // the result is always a bool, but sometimes we can
         // narrow it down to True or False
         res = sym_new_type(ctx, &PyBool_Type);
@@ -962,7 +969,7 @@ dummy_func(void) {
                 out = Py_True;
             }
             sym_set_const(res, out);
-            REPLACE_OP(this_instr, _POP_CALL_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)out);
+            REPLACE_OP(this_instr, _SWAP_CALL_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)out);
         }
     }
 

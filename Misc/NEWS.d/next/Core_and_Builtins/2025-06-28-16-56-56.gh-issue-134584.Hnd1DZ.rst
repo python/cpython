@@ -1,0 +1,2 @@
+Eliminate redundant refcounting from ``_CALL_ISINSTANCE``. Patch by Noam
+Cohen
