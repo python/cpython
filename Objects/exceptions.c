@@ -1865,21 +1865,23 @@ ImportError_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-ImportError_repr(PyImportErrorObject *self)
+ImportError_repr(PyObject *self)
 {
     int hasargs = PyTuple_GET_SIZE(((PyBaseExceptionObject *)self)->args) != 0;
-    PyObject *r = BaseException_repr((PyObject *)self);
-    if (r && (self->name || self->path)) {
+    PyObject *r = BaseException_repr(self);
+    PyImportErrorObject *exc = PyImportErrorObject_CAST(self);
+
+    if (r && (exc->name || exc->path)) {
         /* remove ')' */
         Py_SETREF(r, PyUnicode_Substring(r, 0, PyUnicode_GET_LENGTH(r) - 1));
-        if (r && self->name) {
+        if (r && exc->name) {
             Py_SETREF(r, PyUnicode_FromFormat("%U%sname=%R",
-                            r, hasargs ? ", " : "", self->name));
+                            r, hasargs ? ", " : "", exc->name));
             hasargs = 1;
         }
-        if (r && self->path) {
+        if (r && exc->path) {
             Py_SETREF(r, PyUnicode_FromFormat("%U%spath=%R",
-                            r, hasargs ? ", " : "", self->path));
+                            r, hasargs ? ", " : "", exc->path));
         }
         if (r) {
             Py_SETREF(r, PyUnicode_FromFormat("%U)", r));
@@ -1905,12 +1907,23 @@ static PyMethodDef ImportError_methods[] = {
     {NULL}
 };
 
-ComplexExtendsException(PyExc_Exception, ImportError,
-                        ImportError, 0 /* new */,
-                        ImportError_methods, ImportError_members,
-                        0 /* getset */, ImportError_str,
-                        "Import can't find module, or can't find name in "
-                        "module.");
+static PyTypeObject _PyExc_ImportError = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "ImportError",
+    sizeof(PyImportErrorObject), 0,
+    (destructor)ImportError_dealloc, 0, 0, 0, 0,
+    ImportError_repr, 0, 0, 0, 0, 0,
+    ImportError_str, 0, 0, 0,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+    PyDoc_STR("Import can't find module, or can't find name in "
+              "module."),
+    (traverseproc)ImportError_traverse,
+    (inquiry)ImportError_clear, 0, 0, 0, 0, ImportError_methods,
+    ImportError_members, 0, &_PyExc_Exception,
+    0, 0, 0, offsetof(PyImportErrorObject, dict),
+    (initproc)ImportError_init,
+};
+PyObject *PyExc_ImportError = (PyObject *)&_PyExc_ImportError;
 
 /*
  *    ModuleNotFoundError extends ImportError
