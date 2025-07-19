@@ -939,8 +939,8 @@ For an example of the usage of queues for interprocess communication see
       Close the queue: release internal resources.
 
       A queue must not be used anymore after it is closed. For example,
-      :meth:`get`, :meth:`put` and :meth:`empty` methods must no longer be
-      called.
+      :meth:`~Queue.get`, :meth:`~Queue.put` and :meth:`~Queue.empty`
+      methods must no longer be called.
 
       The background thread will quit once it has flushed all buffered
       data to the pipe.  This is called automatically when the queue is garbage
