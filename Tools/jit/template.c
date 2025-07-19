@@ -51,7 +51,6 @@
 do {                                                                       \
     OPT_STAT_INC(traces_executed);                                         \
     _PyExecutorObject *_executor = (EXECUTOR);                             \
-    tstate->current_executor = (PyObject *)_executor;                      \
     jit_func_preserve_none jitted = _executor->jit_side_entry;             \
     __attribute__((musttail)) return jitted(frame, stack_pointer, tstate); \
 } while (0)

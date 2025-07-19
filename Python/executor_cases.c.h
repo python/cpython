@@ -7113,9 +7113,8 @@
         case _EXIT_TRACE: {
             PyObject *exit_p = (PyObject *)CURRENT_OPERAND0();
             _PyExitData *exit = (_PyExitData *)exit_p;
-            PyCodeObject *code = _PyFrame_GetCode(frame);
-            _Py_CODEUNIT *target = _PyFrame_GetBytecode(frame) + exit->target;
             #if defined(Py_DEBUG) && !defined(_Py_JIT)
+            _Py_CODEUNIT *target = _PyFrame_GetBytecode(frame) + exit->target;
             OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
             if (frame->lltrace >= 2) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -7128,36 +7127,7 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             #endif
-            if (exit->executor && !exit->executor->vm_data.valid) {
-                exit->temperature = initial_temperature_backoff_counter();
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                Py_CLEAR(exit->executor);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
-            }
-            if (exit->executor == NULL) {
-                _Py_BackoffCounter temperature = exit->temperature;
-                if (!backoff_counter_triggers(temperature)) {
-                    exit->temperature = advance_backoff_counter(temperature);
-                    GOTO_TIER_ONE(target);
-                }
-                _PyExecutorObject *executor;
-                if (target->op.code == ENTER_EXECUTOR) {
-                    executor = code->co_executors->executors[target->op.arg];
-                    Py_INCREF(executor);
-                }
-                else {
-                    int chain_depth = current_executor->vm_data.chain_depth + 1;
-                    _PyFrame_SetStackPointer(frame, stack_pointer);
-                    int optimized = _PyOptimizer_Optimize(frame, target, &executor, chain_depth);
-                    stack_pointer = _PyFrame_GetStackPointer(frame);
-                    if (optimized <= 0) {
-                        exit->temperature = restart_backoff_counter(temperature);
-                        GOTO_TIER_ONE(optimized < 0 ? NULL : target);
-                    }
-                    exit->temperature = initial_temperature_backoff_counter();
-                }
-                exit->executor = executor;
-            }
+            tstate->jit_exit = exit;
             GOTO_TIER_TWO(exit->executor);
             break;
         }
@@ -7438,7 +7408,7 @@
             #ifndef _Py_JIT
             current_executor = (_PyExecutorObject*)executor;
             #endif
-            assert(((_PyExecutorObject *)executor)->vm_data.valid);
+            tstate->current_executor = (PyObject *)executor;
             break;
         }
 
@@ -7484,6 +7454,42 @@
                 JUMP_TO_JUMP_TARGET();
             }
             assert(tstate->tracing || eval_breaker == FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version));
+            break;
+        }
+
+        case _COLD_EXIT: {
+            _PyExitData *exit = tstate->jit_exit;
+            assert(exit != NULL);
+            _Py_CODEUNIT *target = _PyFrame_GetBytecode(frame) + exit->target;
+            _Py_BackoffCounter temperature = exit->temperature;
+            if (!backoff_counter_triggers(temperature)) {
+                exit->temperature = advance_backoff_counter(temperature);
+                GOTO_TIER_ONE(target);
+            }
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            _PyExecutorObject *previous_executor = _PyExecutor_FromExit(exit);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            assert(tstate->current_executor == (PyObject *)previous_executor);
+            _PyExecutorObject *executor;
+            if (target->op.code == ENTER_EXECUTOR) {
+                PyCodeObject *code = _PyFrame_GetCode(frame);
+                executor = code->co_executors->executors[target->op.arg];
+                Py_INCREF(executor);
+            }
+            else {
+                int chain_depth = previous_executor->vm_data.chain_depth + 1;
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                int optimized = _PyOptimizer_Optimize(frame, target, &executor, chain_depth);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                if (optimized <= 0) {
+                    exit->temperature = restart_backoff_counter(temperature);
+                    GOTO_TIER_ONE(optimized < 0 ? NULL : target);
+                }
+                exit->temperature = initial_temperature_backoff_counter();
+            }
+            assert(tstate->jit_exit == exit);
+            exit->executor = executor;
+            GOTO_TIER_TWO(exit->executor);
             break;
         }
 
