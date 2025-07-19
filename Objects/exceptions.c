@@ -1909,19 +1909,20 @@ static PyMethodDef ImportError_methods[] = {
 
 static PyTypeObject _PyExc_ImportError = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "ImportError",
-    sizeof(PyImportErrorObject), 0,
-    (destructor)ImportError_dealloc, 0, 0, 0, 0,
-    ImportError_repr, 0, 0, 0, 0, 0,
-    ImportError_str, 0, 0, 0,
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
-    PyDoc_STR("Import can't find module, or can't find name in "
-              "module."),
-    (traverseproc)ImportError_traverse,
-    (inquiry)ImportError_clear, 0, 0, 0, 0, ImportError_methods,
-    ImportError_members, 0, &_PyExc_Exception,
-    0, 0, 0, offsetof(PyImportErrorObject, dict),
-    (initproc)ImportError_init,
+    .tp_name = "ImportError",
+    .tp_basicsize = sizeof(PyImportErrorObject),
+    .tp_dealloc = (destructor)ImportError_dealloc,
+    .tp_repr = ImportError_repr,
+    .tp_str = (reprfunc)ImportError_str,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+    .tp_doc = PyDoc_STR("Import can't find module, or can't find name in module."),
+    .tp_traverse = (traverseproc)ImportError_traverse,
+    .tp_clear = (inquiry)ImportError_clear,
+    .tp_methods = ImportError_methods,
+    .tp_members = ImportError_members,
+    .tp_base = &_PyExc_Exception,
+    .tp_dictoffset = offsetof(PyImportErrorObject, dict),
+    .tp_init = (initproc)ImportError_init,
 };
 PyObject *PyExc_ImportError = (PyObject *)&_PyExc_ImportError;
 
