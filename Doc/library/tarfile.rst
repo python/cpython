@@ -1416,6 +1416,15 @@ parameter in :meth:`TarFile.add`::
     tar.add("foo", filter=reset)
     tar.close()
 
+How to create and write an archive to stdout using
+:data:`sys.stdout.buffer <sys.stdout>` in the *fileobj* parameter
+in :meth:`TarFile.add`::
+
+    import sys
+    import tarfile
+    with tarfile.open("sample.tar.gz", "w:gz", fileobj=sys.stdout.buffer) as tar:
+        for name in ["foo", "bar", "quux"]:
+            tar.add(name)
 
 .. _tar-formats:
 
