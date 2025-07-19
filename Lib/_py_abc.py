@@ -49,6 +49,7 @@ class ABCMeta(type):
         cls._abc_cache = WeakSet()
         cls._abc_negative_cache = WeakSet()
         cls._abc_negative_cache_version = ABCMeta._abc_invalidation_counter
+        cls._abc_issubclasscheck_recursive = False
         return cls
 
     def register(cls, subclass):
@@ -66,7 +67,7 @@ class ABCMeta(type):
             # This would create a cycle, which is bad for the algorithm below
             raise RuntimeError("Refusing to create an inheritance cycle")
         cls._abc_registry.add(subclass)
-        ABCMeta._abc_invalidation_counter += 1  # Invalidate negative cache
+        ABCMeta._abc_invalidation_counter += 1 # Invalidate negative cache
         return subclass
 
     def _dump_registry(cls, file=None):
@@ -139,9 +140,24 @@ class ABCMeta(type):
                 return True
         # Check if it's a subclass of a subclass (recursive)
         for scls in cls.__subclasses__():
-            if issubclass(subclass, scls):
-                cls._abc_cache.add(subclass)
+            # If inside recursive issubclass check, avoid adding classes
+            # to any cache because this may drastically increase memory usage.
+            # Unfortunately, issubclass/__subclasscheck__ don't accept third
+            # argument with context, so using global context within ABCMeta.
+            # This is done only on first method call, next will use cache.
+            scls_is_abc = hasattr(scls, "_abc_issubclasscheck_recursive")
+            if scls_is_abc:
+                scls._abc_issubclasscheck_recursive = True
+            try:
+                result = issubclass(subclass, scls)
+            finally:
+                if scls_is_abc:
+                    scls._abc_issubclasscheck_recursive = False
+            if result:
+                if not cls._abc_issubclasscheck_recursive:
+                    cls._abc_cache.add(subclass)
                 return True
         # No dice; update negative cache
-        cls._abc_negative_cache.add(subclass)
+        if not cls._abc_issubclasscheck_recursive:
+            cls._abc_negative_cache.add(subclass)
         return False
