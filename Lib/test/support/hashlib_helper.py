@@ -169,10 +169,12 @@ get_hash_info = _EXPLICIT_CONSTRUCTORS.__getitem__
 # There is currently no OpenSSL one-shot named function and there will likely
 # be none in the future.
 _EXPLICIT_HMAC_CONSTRUCTORS = {
-    hid: None if hid.is_xof else f"_hmac.compute_{hid!s}"
-    # names slightly differ for keyed hash functions
-    for hid in HID if not hid.is_keyed
+    HID(name): f"_hmac.compute_{name}"
+    for name in CANONICAL_DIGEST_NAMES
 }
+# Neither HACL* nor OpenSSL supports HMAC over XOFs.
+_EXPLICIT_HMAC_CONSTRUCTORS[HID.shake_128] = None
+_EXPLICIT_HMAC_CONSTRUCTORS[HID.shake_256] = None
 # Strictly speaking, HMAC-BLAKE is meaningless as BLAKE2 is already a
 # keyed hash function. However, as it's exposed by HACL*, we test it.
 _EXPLICIT_HMAC_CONSTRUCTORS[HID.blake2s] = "_hmac.compute_blake2s_32"
