@@ -1,0 +1,2 @@
+Improve ModuleNotFoundError by adding flavour text to exception when the
+argument '-S' is passed. Contributed by Andrea Mattei
