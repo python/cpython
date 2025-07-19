@@ -168,6 +168,7 @@ Python/sysmodule.c	-	_preinit_xoptions	-
 Modules/faulthandler.c	faulthandler_dump_traceback	reentrant	-
 Modules/faulthandler.c	faulthandler_dump_c_stack	reentrant	-
 Modules/grpmodule.c	-	group_db_mutex	-
+Modules/pwdmodule.c	-	pwd_db_mutex	-
 Python/pylifecycle.c	_Py_FatalErrorFormat	reentrant	-
 Python/pylifecycle.c	fatal_error	reentrant	-
 
