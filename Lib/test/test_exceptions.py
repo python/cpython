@@ -2625,7 +2625,7 @@ class PEP626Tests(unittest.TestCase):
         exc = ImportError('test', name='somename', path='somepath')
         self.assertEqual(repr(exc),
                 "ImportError('test', name='somename', path='somepath')")
-        
+
         exc = ModuleNotFoundError('test', name='somename', path='somepath')
         self.assertEqual(repr(exc),
                 "ModuleNotFoundError('test', name='somename', path='somepath')")
