@@ -8086,7 +8086,7 @@ warn_about_fork_with_threads(const char* name)
                 getpid(),
 #endif
                 name);
-        PyErr_Clear();
+        PyErr_WriteUnraisable(NULL);
     }
 }
 #endif  // HAVE_FORK1 || HAVE_FORKPTY || HAVE_FORK

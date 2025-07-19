@@ -39,7 +39,7 @@ from test.support import script_helper
 from test.support import socket_helper
 from test.support import threading_helper
 from test.support import warnings_helper
-
+from test.support.script_helper import run_python_until_end
 
 # Skip tests if _multiprocessing wasn't built.
 _multiprocessing = import_helper.import_module('_multiprocessing')
@@ -7142,3 +7142,67 @@ class SemLockTests(unittest.TestCase):
         name = f'test_semlock_subclass-{os.getpid()}'
         s = SemLock(1, 0, 10, name, False)
         _multiprocessing.sem_unlink(name)
+
+
+@unittest.skipIf(sys.platform != "linux", "Linux only")
+class ForkInThreads(unittest.TestCase):
+
+    def test_fork(self):
+        code = """
+        import os, sys, threading, time
+
+        t = threading.Thread(target=time.sleep, args=(1,), daemon=True)
+        t.start()
+
+        assert threading.active_count() == 2
+
+        pid = os.fork()
+        if pid < 0:
+            print("Fork failed")
+        elif pid == 0:
+            print("In child")
+            sys.exit(0)
+        print("In parent")
+        """
+
+        res, _ = run_python_until_end("-c", code, PYTHONWARNINGS='always')
+        self.assertIn(b'In child', res.out)
+        self.assertIn(b'In parent', res.out)
+        self.assertIn(b'DeprecationWarning', res.err)
+        self.assertIn(b'is multi-threaded, use of fork() may lead to deadlocks in the child', res.err)
+
+        res, _ = run_python_until_end("-c", code, PYTHONWARNINGS='error')
+        self.assertIn(b'In child', res.out)
+        self.assertIn(b'In parent', res.out)
+        self.assertIn(b'DeprecationWarning', res.err)
+        self.assertIn(b'is multi-threaded, use of fork() may lead to deadlocks in the child', res.err)
+
+    def test_forkpty(self):
+        code = """
+        import os, sys, threading, time
+
+        t = threading.Thread(target=time.sleep, args=(1,), daemon=True)
+        t.start()
+
+        assert threading.active_count() == 2
+
+        pid, _ = os.forkpty()
+        if pid < 0:
+            print(f"forkpty failed")
+        elif pid == 0:
+            print(f"In child")
+            sys.exit(0)
+        print(f"In parent")
+        """
+
+        res, _ = run_python_until_end("-c", code, PYTHONWARNINGS='always')
+        print(res)
+        self.assertIn(b'In parent', res.out)
+        self.assertIn(b'DeprecationWarning', res.err)
+        self.assertIn(b'is multi-threaded, use of forkpty() may lead to deadlocks in the child', res.err)
+
+        res, _ = run_python_until_end("-c", code, PYTHONWARNINGS='error')
+        print(res)
+        self.assertIn(b'In parent', res.out)
+        self.assertIn(b'DeprecationWarning', res.err)
+        self.assertIn(b'is multi-threaded, use of forkpty() may lead to deadlocks in the child', res.err)
