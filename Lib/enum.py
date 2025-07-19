@@ -1979,7 +1979,7 @@ class verify:
                         if 2**i not in values:
                             missing.append(2**i)
                 elif enum_type == 'enum':
-                    # check for powers of one
+                    # check for missing consecutive integers
                     for i in range(low+1, high):
                         if i not in values:
                             missing.append(i)
