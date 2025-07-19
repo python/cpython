@@ -1872,7 +1872,7 @@ class AbstractPicklingErrorTests:
                     with self.assertRaises(TypeError) as cm:
                         self.dumps(obj, proto)
                     self.assertEqual(str(cm.exception),
-                        'functools.partial() argument after ** must be a mapping, not list')
+                        'Value after ** must be a mapping, not list')
                     self.assertEqual(cm.exception.__notes__, [
                         'when serializing test.pickletester.REX object'])
         else:
