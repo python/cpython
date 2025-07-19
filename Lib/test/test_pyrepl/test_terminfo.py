@@ -652,3 +652,16 @@ class TestCursesCompatibility(unittest.TestCase):
         self.assertIsNotNone(
             bel, "PyREPL should provide basic capabilities after fallback"
         )
+
+    def test_invalid_terminal_names(self):
+        cases = [
+            (42, TypeError),
+            ("", ValueError),
+            ("w\x00t", ValueError),
+            (f"..{os.sep}name", ValueError),
+        ]
+
+        for term, exc in cases:
+            with self.subTest(term=term):
+                with self.assertRaises(exc):
+                    terminfo._validate_terminal_name_or_raise(term)

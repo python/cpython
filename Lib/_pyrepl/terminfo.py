@@ -112,18 +112,28 @@ def _get_terminfo_dirs() -> list[Path]:
     return [Path(d) for d in dirs if Path(d).is_dir()]
 
 
-def _read_terminfo_file(terminal_name: str) -> bytes:
-    """Find and read terminfo file for given terminal name.
-
-    Terminfo files are stored in directories using the first character
-    of the terminal name as a subdirectory.
-    """
+def _validate_terminal_name_or_raise(terminal_name: str) -> None:
     if not isinstance(terminal_name, str):
         raise TypeError("`terminal_name` must be a string")
 
     if not terminal_name:
         raise ValueError("`terminal_name` cannot be empty")
 
+    if "\x00" in terminal_name:
+        raise ValueError("NUL character found in `terminal_name`")
+
+    t = Path(terminal_name)
+    if len(t.parts) > 1:
+        raise ValueError("`terminal_name` cannot contain path separators")
+
+
+def _read_terminfo_file(terminal_name: str) -> bytes:
+    """Find and read terminfo file for given terminal name.
+
+    Terminfo files are stored in directories using the first character
+    of the terminal name as a subdirectory.
+    """
+    _validate_terminal_name_or_raise(terminal_name)
     first_char = terminal_name[0].lower()
     filename = terminal_name
 
