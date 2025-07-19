@@ -1,1 +1,1 @@
-Default to color help in argparse.
+Enable color help by default in :mod:`argparse`.
