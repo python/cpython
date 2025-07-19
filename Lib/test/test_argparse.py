@@ -6049,6 +6049,7 @@ class TestArgumentError(TestCase):
 
 class TestArgumentTypeError(TestCase):
 
+    @force_not_colorized
     def test_argument_type_error(self):
 
         def spam(string):
@@ -7013,6 +7014,7 @@ class TestExitOnError(TestCase):
                                self.parser.parse_args, ['@no-such-file'])
 
 
+@force_not_colorized_test_class
 class TestProgName(TestCase):
     source = textwrap.dedent('''\
         import argparse
