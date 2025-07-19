@@ -911,6 +911,7 @@ HTTPRedirectHandler Objects
       do allow automatic redirection of these responses, changing the POST to a
       ``GET``, and the default implementation reproduces this behavior.
 
+
 .. method:: HTTPRedirectHandler.http_error_301(req, fp, code, msg, hdrs)
 
    Redirect to the ``Location:`` or ``URI:`` URL.  This method is called by the
