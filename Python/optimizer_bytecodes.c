@@ -975,7 +975,7 @@ dummy_func(void) {
                 // We cannot do anything about tuples with unknown length
                 PyObject *out = Py_False;
                 for (int i = 0; i < length; i++) {
-                    JitOptSymbol *item = sym_tuple_getitem(ctx, cls, i);
+                    JitOptRef item = sym_tuple_getitem(ctx, cls, i);
                     if (!sym_has_type(item)) {
                         // There is an unknown item in the tuple.
                         // It could potentially define its own __instancecheck__

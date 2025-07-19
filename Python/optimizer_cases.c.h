@@ -2519,7 +2519,7 @@
                 if (length != -1) {
                     PyObject *out = Py_False;
                     for (int i = 0; i < length; i++) {
-                        JitOptSymbol *item = sym_tuple_getitem(ctx, cls, i);
+                        JitOptRef item = sym_tuple_getitem(ctx, cls, i);
                         if (!sym_has_type(item)) {
                             out = NULL;
                             break;
