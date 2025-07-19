@@ -1008,7 +1008,7 @@ class CoroutineTest(unittest.TestCase):
             return (await Awaitable())
 
         with self.assertRaisesRegex(
-            TypeError, "__await__.*returned non-iterator of type"):
+            TypeError, "__await__.*must return an iterator, not"):
 
             run_async(foo())
 
@@ -1106,7 +1106,7 @@ class CoroutineTest(unittest.TestCase):
             return await Awaitable()
 
         with self.assertRaisesRegex(
-                TypeError, r"__await__\(\) returned a coroutine"):
+                TypeError, r"__await__\(\) must return an iterator, not coroutine"):
             run_async(foo())
 
         c.close()
@@ -1120,7 +1120,7 @@ class CoroutineTest(unittest.TestCase):
             return await Awaitable()
 
         with self.assertRaisesRegex(
-            TypeError, "__await__.*returned non-iterator of type"):
+            TypeError, "__await__.*must return an iterator, not"):
 
             run_async(foo())
 
@@ -2490,7 +2490,7 @@ class CAPITest(unittest.TestCase):
             return (await future)
 
         with self.assertRaisesRegex(
-                TypeError, "__await__.*returned non-iterator of type 'int'"):
+                TypeError, "__await__.*must return an iterator, not int"):
             self.assertEqual(foo().send(None), 1)
 
 
