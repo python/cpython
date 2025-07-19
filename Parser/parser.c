@@ -22301,6 +22301,7 @@ invalid_dict_comprehension_rule(Parser *p)
 //     | param_no_default* '(' param_no_default+ ','? ')'
 //     | [(slash_no_default | slash_with_default)] param_maybe_default* '*' (',' | param_no_default) param_maybe_default* '/'
 //     | param_maybe_default+ '/' '*'
+//     | NAME NAME
 static void *
 invalid_parameters_rule(Parser *p)
 {
@@ -22510,6 +22511,33 @@ invalid_parameters_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s invalid_parameters[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "param_maybe_default+ '/' '*'"));
+    }
+    { // NAME NAME
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> invalid_parameters[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "NAME NAME"));
+        expr_ty a;
+        expr_ty b;
+        if (
+            (a = _PyPegen_name_token(p))  // NAME
+            &&
+            (b = _PyPegen_name_token(p))  // NAME
+        )
+        {
+            D(fprintf(stderr, "%*c+ invalid_parameters[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "NAME NAME"));
+            _res = RAISE_SYNTAX_ERROR_KNOWN_RANGE ( a , b , "expected comma between parameters" );
+            if (_res == NULL && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                p->level--;
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s invalid_parameters[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "NAME NAME"));
     }
     _res = NULL;
   done:
@@ -22892,6 +22920,7 @@ invalid_parameters_helper_rule(Parser *p)
 //     | lambda_param_no_default* '(' ','.lambda_param+ ','? ')'
 //     | [(lambda_slash_no_default | lambda_slash_with_default)] lambda_param_maybe_default* '*' (',' | lambda_param_no_default) lambda_param_maybe_default* '/'
 //     | lambda_param_maybe_default+ '/' '*'
+//     | NAME NAME
 static void *
 invalid_lambda_parameters_rule(Parser *p)
 {
@@ -23101,6 +23130,33 @@ invalid_lambda_parameters_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s invalid_lambda_parameters[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "lambda_param_maybe_default+ '/' '*'"));
+    }
+    { // NAME NAME
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> invalid_lambda_parameters[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "NAME NAME"));
+        expr_ty a;
+        expr_ty b;
+        if (
+            (a = _PyPegen_name_token(p))  // NAME
+            &&
+            (b = _PyPegen_name_token(p))  // NAME
+        )
+        {
+            D(fprintf(stderr, "%*c+ invalid_lambda_parameters[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "NAME NAME"));
+            _res = RAISE_SYNTAX_ERROR_KNOWN_RANGE ( a , b , "expected comma between parameters" );
+            if (_res == NULL && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                p->level--;
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s invalid_lambda_parameters[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "NAME NAME"));
     }
     _res = NULL;
   done:
