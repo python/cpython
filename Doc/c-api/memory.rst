@@ -673,10 +673,8 @@ This allocator is disabled if Python is configured with the
 the :envvar:`PYTHONMALLOC` environment variable (ex: ``PYTHONMALLOC=malloc``).
 
 Typically, it makes sense to disable the pymalloc allocator when building
-Python with AddressSanitizer (ASan) which helps uncover low level bugs within
-the C code. While pymalloc doesn't break under ASan, the ASan works more
-effectively with the system allocator (ASan does not track
-individual allocations done by pymalloc).
+Python with AddressSanitizer (:option:`--with-address-sanitizer`) which helps
+uncover low level bugs within the C code.
 
 Customize pymalloc Arena Allocator
 ----------------------------------
