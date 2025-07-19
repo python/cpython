@@ -902,7 +902,6 @@ extern "C" {
     INIT_ID(deterministic), \
     INIT_ID(device), \
     INIT_ID(dict), \
-    INIT_ID(dictcomp), \
     INIT_ID(difference_update), \
     INIT_ID(digest), \
     INIT_ID(digest_size), \
@@ -977,7 +976,6 @@ extern "C" {
     INIT_ID(func), \
     INIT_ID(future), \
     INIT_ID(generation), \
-    INIT_ID(genexpr), \
     INIT_ID(get), \
     INIT_ID(get_debug), \
     INIT_ID(get_event_loop), \
@@ -1054,7 +1052,6 @@ extern "C" {
     INIT_ID(kw2), \
     INIT_ID(kwdefaults), \
     INIT_ID(label), \
-    INIT_ID(lambda), \
     INIT_ID(last), \
     INIT_ID(last_exc), \
     INIT_ID(last_node), \
@@ -1070,7 +1067,6 @@ extern "C" {
     INIT_ID(line), \
     INIT_ID(line_buffering), \
     INIT_ID(lineno), \
-    INIT_ID(listcomp), \
     INIT_ID(little), \
     INIT_ID(lo), \
     INIT_ID(locale), \
@@ -1217,7 +1213,6 @@ extern "C" {
     INIT_ID(server_hostname), \
     INIT_ID(server_side), \
     INIT_ID(session), \
-    INIT_ID(setcomp), \
     INIT_ID(setpgroup), \
     INIT_ID(setsid), \
     INIT_ID(setsigdef), \
