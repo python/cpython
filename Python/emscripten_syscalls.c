@@ -148,8 +148,15 @@ EM_JS_MACROS(__externref_t, __maybe_fd_read_async, (
     size_t iovcnt,
     __wasi_size_t *nread
 ), {
-    var stream = SYSCALLS.getStreamFromFD(fd);
     if (!WebAssembly.promising) {
+        return null;
+    }
+    var stream;
+    try {
+        stream = SYSCALLS.getStreamFromFD(fd);
+    } catch (e) {
+        // If the fd was already closed or never existed, getStreamFromFD()
+        // raises. We'll let fd_read_orig() handle setting errno.
         return null;
     }
     if (!stream.stream_ops.readAsync) {
