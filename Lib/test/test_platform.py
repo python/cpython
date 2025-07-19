@@ -15,8 +15,7 @@ from test.support import os_helper
 
 try:
     # Some of the iOS tests need ctypes to operate.
-    # Confirm that the ctypes module is available
-    # is available.
+    # Confirm that the ctypes module is available.
     import _ctypes
 except ImportError:
     _ctypes = None
