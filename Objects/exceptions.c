@@ -1873,24 +1873,22 @@ ImportError_repr(PyObject *self)
     PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
     if (writer == NULL) goto error;
     if (PyUnicodeWriter_WriteSubstring(writer, r, 0, PyUnicode_GET_LENGTH(r)-1) < 0) goto error;
-    if (r && (exc->name || exc->path)) {
-        if (exc->name) {
-            if (hasargs) {
-                if (PyUnicodeWriter_WriteASCII(writer, ", ", 2) < 0) goto error;
-            }
-            if (PyUnicodeWriter_WriteASCII(writer, "name='", 6) < 0) goto error;
-            if (PyUnicodeWriter_WriteSubstring(writer, exc->name, 0, PyUnicode_GET_LENGTH(exc->name)) < 0) goto error;
-            if (PyUnicodeWriter_WriteASCII(writer, "'", 1) < 0) goto error;
-            hasargs = 1;
+    if (exc->name) {
+        if (hasargs) {
+            if (PyUnicodeWriter_WriteASCII(writer, ", ", 2) < 0) goto error;
         }
-        if (exc->path) {
-            if (hasargs) {
-                if (PyUnicodeWriter_WriteASCII(writer, ", ", 2) < 0) goto error;
-            }
-            if (PyUnicodeWriter_WriteASCII(writer, "path='", 6) < 0) goto error;
-            if (PyUnicodeWriter_WriteSubstring(writer, exc->path, 0, PyUnicode_GET_LENGTH(exc->path)) < 0) goto error;
-            if (PyUnicodeWriter_WriteASCII(writer, "'", 1) < 0) goto error;
+        if (PyUnicodeWriter_WriteASCII(writer, "name='", 6) < 0) goto error;
+        if (PyUnicodeWriter_WriteSubstring(writer, exc->name, 0, PyUnicode_GET_LENGTH(exc->name)) < 0) goto error;
+        if (PyUnicodeWriter_WriteASCII(writer, "'", 1) < 0) goto error;
+        hasargs = 1;
+    }
+    if (exc->path) {
+        if (hasargs) {
+            if (PyUnicodeWriter_WriteASCII(writer, ", ", 2) < 0) goto error;
         }
+        if (PyUnicodeWriter_WriteASCII(writer, "path='", 6) < 0) goto error;
+        if (PyUnicodeWriter_WriteSubstring(writer, exc->path, 0, PyUnicode_GET_LENGTH(exc->path)) < 0) goto error;
+        if (PyUnicodeWriter_WriteASCII(writer, "'", 1) < 0) goto error;
     }
     if (PyUnicodeWriter_WriteASCII(writer, ")", 1) < 0) goto error;
     return PyUnicodeWriter_Finish(writer);
