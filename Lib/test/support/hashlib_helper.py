@@ -5,7 +5,6 @@ import importlib
 import inspect
 import unittest
 import unittest.mock
-from collections import namedtuple
 from functools import partial
 from test.support import import_helper
 from types import MappingProxyType
