@@ -564,12 +564,13 @@ class TracebackCases(unittest.TestCase):
         self.assertEqual(
             str(inspect.signature(traceback.print_exception)),
             ('(exc, /, value=<implicit>, tb=<implicit>, '
-             'limit=None, file=None, chain=True, **kwargs)'))
+             'limit=None, file=None, chain=True, *, '
+             'show_lines=True, recent_first=False, **kwargs)'))
 
         self.assertEqual(
             str(inspect.signature(traceback.format_exception)),
             ('(exc, /, value=<implicit>, tb=<implicit>, limit=None, '
-             'chain=True, **kwargs)'))
+             'chain=True, *, show_lines=True, recent_first=False, **kwargs)'))
 
         self.assertEqual(
             str(inspect.signature(traceback.format_exception_only)),
@@ -3340,7 +3341,7 @@ class TestStack(unittest.TestCase):
 
     def test_custom_format_frame(self):
         class CustomStackSummary(traceback.StackSummary):
-            def format_frame_summary(self, frame_summary, colorize=False):
+            def format_frame_summary(self, frame_summary, **kwargs):
                 return f'{frame_summary.filename}:{frame_summary.lineno}'
 
         def some_inner():
@@ -3365,10 +3366,10 @@ class TestStack(unittest.TestCase):
         tb = g()
 
         class Skip_G(traceback.StackSummary):
-            def format_frame_summary(self, frame_summary, colorize=False):
+            def format_frame_summary(self, frame_summary, **kwargs):
                 if frame_summary.name == 'g':
                     return None
-                return super().format_frame_summary(frame_summary)
+                return super().format_frame_summary(frame_summary, **kwargs)
 
         stack = Skip_G.extract(
             traceback.walk_tb(tb)).format()
@@ -4876,6 +4877,246 @@ class TestColorizedTraceback(unittest.TestCase):
                 f'    +------------------------------------',
         ]
         self.assertEqual(actual, expected(**colors))
+
+
+class TestShowLines(unittest.TestCase):
+    """Tests for the show_lines parameter in traceback formatting functions."""
+
+    def setUp(self):
+        # Create a simple exception for testing
+        try:
+            x = 1 / 0
+        except ZeroDivisionError as e:
+            self.exc = e
+
+    def test_print_tb_show_lines_true(self):
+        """Test print_tb with show_lines=True (default)"""
+        output = StringIO()
+        traceback.print_tb(self.exc.__traceback__, file=output, show_lines=True)
+        result = output.getvalue()
+        self.assertIn('x = 1 / 0', result)
+        self.assertIn('File ', result)
+
+    def test_print_tb_show_lines_false(self):
+        """Test print_tb with show_lines=False"""
+        output = StringIO()
+        traceback.print_tb(self.exc.__traceback__, file=output, show_lines=False)
+        result = output.getvalue()
+        self.assertNotIn('x = 1 / 0', result)
+        self.assertIn('File ', result)  # File info should still be present
+
+    def test_format_tb_show_lines_true(self):
+        """Test format_tb with show_lines=True (default)"""
+        result = traceback.format_tb(self.exc.__traceback__, show_lines=True)
+        formatted = ''.join(result)
+        self.assertIn('x = 1 / 0', formatted)
+        self.assertIn('File ', formatted)
+
+    def test_format_tb_show_lines_false(self):
+        """Test format_tb with show_lines=False"""
+        result = traceback.format_tb(self.exc.__traceback__, show_lines=False)
+        formatted = ''.join(result)
+        self.assertNotIn('x = 1 / 0', formatted)
+        self.assertIn('File ', formatted)  # File info should still be present
+
+    def test_print_exception_show_lines_true(self):
+        """Test print_exception with show_lines=True (default)"""
+        output = StringIO()
+        traceback.print_exception(self.exc, file=output, show_lines=True)
+        result = output.getvalue()
+        self.assertIn('x = 1 / 0', result)
+        self.assertIn('ZeroDivisionError', result)
+
+    def test_print_exception_show_lines_false(self):
+        """Test print_exception with show_lines=False"""
+        output = StringIO()
+        traceback.print_exception(self.exc, file=output, show_lines=False)
+        result = output.getvalue()
+        self.assertNotIn('x = 1 / 0', result)
+        self.assertIn('ZeroDivisionError', result)  # Exception type should still be present
+
+    def test_format_exception_show_lines_true(self):
+        """Test format_exception with show_lines=True (default)"""
+        result = traceback.format_exception(self.exc, show_lines=True)
+        formatted = ''.join(result)
+        self.assertIn('x = 1 / 0', formatted)
+        self.assertIn('ZeroDivisionError', formatted)
+
+    def test_format_exception_show_lines_false(self):
+        """Test format_exception with show_lines=False"""
+        result = traceback.format_exception(self.exc, show_lines=False)
+        formatted = ''.join(result)
+        self.assertNotIn('x = 1 / 0', formatted)
+        self.assertIn('ZeroDivisionError', formatted)  # Exception type should still be present
+
+    def test_print_exc_show_lines_false(self):
+        """Test print_exc with show_lines=False"""
+        # Override sys.exception() to return our test exception
+        original_exception = sys.exception
+        sys.exception = lambda: self.exc
+        try:
+            output = StringIO()
+            traceback.print_exc(file=output, show_lines=False)
+            result = output.getvalue()
+            self.assertNotIn('x = 1 / 0', result)
+            self.assertIn('ZeroDivisionError', result)
+        finally:
+            sys.exception = original_exception
+
+    def test_format_exc_show_lines_false(self):
+        """Test format_exc with show_lines=False"""
+        # Override sys.exception() to return our test exception
+        original_exception = sys.exception
+        sys.exception = lambda: self.exc
+        try:
+            result = traceback.format_exc(show_lines=False)
+            self.assertNotIn('x = 1 / 0', result)
+            self.assertIn('ZeroDivisionError', result)
+        finally:
+            sys.exception = original_exception
+
+    def test_print_stack_show_lines_false(self):
+        """Test print_stack with show_lines=False"""
+        output = StringIO()
+        traceback.print_stack(file=output, show_lines=False)
+        result = output.getvalue()
+        # Should not contain source code lines
+        lines = result.split('\n')
+        # Filter out empty lines and check that remaining lines are just file/line info
+        non_empty_lines = [line for line in lines if line.strip()]
+        for line in non_empty_lines:
+            if line.strip():
+                self.assertTrue(line.strip().startswith('File ') or
+                              'in ' in line or
+                              line.strip() == 'traceback.print_stack(file=output, show_lines=False)')
+
+    def test_format_stack_show_lines_false(self):
+        """Test format_stack with show_lines=False"""
+        result = traceback.format_stack(show_lines=False)
+        formatted = ''.join(result)
+        # Should contain file information but not source code
+        self.assertIn('File ', formatted)
+        # Check that the source code of this test is not included
+        self.assertNotIn('traceback.format_stack(show_lines=False)', formatted)
+
+    def test_format_list_show_lines_false(self):
+        """Test format_list with show_lines=False"""
+        tb_list = traceback.extract_tb(self.exc.__traceback__)
+        result = traceback.format_list(tb_list, show_lines=False)
+        formatted = ''.join(result)
+        self.assertNotIn('x = 1 / 0', formatted)
+        self.assertIn('File ', formatted)  # File info should still be present
+
+    def test_print_list_show_lines_false(self):
+        """Test print_list with show_lines=False"""
+        tb_list = traceback.extract_tb(self.exc.__traceback__)
+        output = StringIO()
+        traceback.print_list(tb_list, file=output, show_lines=False)
+        result = output.getvalue()
+        self.assertNotIn('x = 1 / 0', result)
+        self.assertIn('File ', result)  # File info should still be present
+
+    def test_traceback_exception_show_lines_false(self):
+        """Test TracebackException with show_lines=False"""
+        te = traceback.TracebackException.from_exception(self.exc)
+        result = list(te.format(show_lines=False))
+        formatted = ''.join(result)
+        self.assertNotIn('x = 1 / 0', formatted)
+        self.assertIn('ZeroDivisionError', formatted)
+
+    def test_traceback_exception_print_show_lines_false(self):
+        """Test TracebackException.print with show_lines=False"""
+        te = traceback.TracebackException.from_exception(self.exc)
+        output = StringIO()
+        te.print(file=output, show_lines=False)
+        result = output.getvalue()
+        self.assertNotIn('x = 1 / 0', result)
+        self.assertIn('ZeroDivisionError', result)
+
+
+class TestRecentFirst(unittest.TestCase):
+    """Tests for the recent_first parameter in traceback formatting functions."""
+
+    def setUp(self):
+        # Create a simple exception for testing
+        def f1():
+            return 1 / 0
+
+        def f2():
+            return f1()
+
+        try:
+            f2()
+        except ZeroDivisionError as e:
+            self.exc = e
+
+    def test_print_tb_recent_first(self):
+        """Test print_tb with recent_first=True"""
+        output = StringIO()
+        traceback.print_tb(self.exc.__traceback__, file=output, recent_first=True)
+        result = output.getvalue()
+        f1pos = result.index(", in f1")
+        f2pos = result.index(", in f2")
+        self.assertLess(f1pos, f2pos, "f1 should be printed before f2")
+
+    def test_format_tb_recent_first(self):
+        """Test format_tb with recent_first=True"""
+        result = traceback.format_tb(self.exc.__traceback__, recent_first=True)
+        formatted = ''.join(result)
+        f1pos = formatted.index(", in f1")
+        f2pos = formatted.index(", in f2")
+        self.assertLess(f1pos, f2pos, "f1 should be printed before f2")
+
+    def check_recent_first_exception_order(self, result: str):
+        """Helper to check if the recent_first order is correct in the result."""
+        lines = result.splitlines()
+        self.assertEqual(lines[0], "ZeroDivisionError: division by zero")
+        self.assertEqual(lines[1], "Traceback (most recent call first):")
+
+        f1pos = result.index(", in f1")
+        f2pos = result.index(", in f2")
+        self.assertLess(f1pos, f2pos, "f1 should be printed before f2")
+
+    def test_print_exception_recent_first(self):
+        """Test print_exception with recent_first=True"""
+        output = StringIO()
+        traceback.print_exception(self.exc, file=output, recent_first=True)
+        self.check_recent_first_exception_order(output.getvalue())
+
+    def test_format_exception_recent_first(self):
+        """Test format_exception with recent_first=True"""
+        result = traceback.format_exception(self.exc, recent_first=True)
+        self.check_recent_first_exception_order(''.join(result))
+
+    def test_print_stack_recent_first(self):
+        """Test print_stack with recent_first=True"""
+        output = StringIO()
+
+        def f1():
+            traceback.print_stack(file=output, recent_first=True)
+
+        def f2():
+            f1()
+
+        f2()
+        result = output.getvalue()
+        f1pos = result.index(", in f1")
+        f2pos = result.index(", in f2")
+        self.assertLess(f1pos, f2pos, "f1 should be printed before f2")
+
+    def test_format_stack_recent_first(self):
+        """Test format_stack with recent_first=True"""
+        def f1():
+            return traceback.format_stack(recent_first=True)
+
+        def f2():
+            return f1()
+
+        result = ''.join(f2())
+        f1pos = result.index(", in f1")
+        f2pos = result.index(", in f2")
+        self.assertLess(f1pos, f2pos, "f1 should be printed before f2")
+
 
 if __name__ == "__main__":
     unittest.main()
