@@ -40,7 +40,6 @@ printing space-separated values. There are several ways to format output.
   but you'll also need to provide the information to be formatted. In the following code
   block there are two examples of how to format variables:
 
-
   ::
 
      >>> yes_votes = 42_572_654
@@ -95,10 +94,11 @@ Some examples::
    >>> repr((x, y, ('spam', 'eggs')))
    "(32.5, 40000, ('spam', 'eggs'))"
 
-The :mod:`string` module contains a :class:`~string.Template` class that offers
-yet another way to substitute values into strings, using placeholders like
-``$x`` and replacing them with values from a dictionary, but offers much less
-control of the formatting.
+The :mod:`string` module also contains support for so-called
+:ref:`$-strings <template-strings-pep292>` that offer yet another way to
+substitute values into strings, using placeholders like ``$x`` and replacing
+them with values from a dictionary. This syntax is easy to use, although
+it offers much less control of the formatting.
 
 .. index::
    single: formatted string literal
