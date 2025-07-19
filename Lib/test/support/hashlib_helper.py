@@ -59,7 +59,7 @@ class HID(enum.StrEnum):
 
 
 CANONICAL_DIGEST_NAMES = frozenset(map(str, HID.__members__))
-NON_HMAC_DIGEST_NAMES = frozenset((  # fmt: skip
+NON_HMAC_DIGEST_NAMES = frozenset((
     HID.shake_128, HID.shake_256,
     HID.blake2s, HID.blake2b,
 ))
@@ -73,6 +73,7 @@ class HashInfo:
 
     - *openssl* is the name of the "_hashlib" module method for the explicit
       OpenSSL hash constructor function, e.g., "openssl_md5".
+
     - *hashlib* is the name of the "hashlib" module method for the explicit
       hash constructor function, e.g., "md5".
     """
@@ -244,7 +245,7 @@ class SkipNoHash(unittest.SkipTest):
     """A SkipTest exception raised when a hash is not available."""
 
     def __init__(self, digestname, implementation=None, interface=None):
-        parts = ["missing", implementation, f"hash algorithm: {digestname!r}"]
+        parts = ["missing", implementation, f"hash algorithm {digestname!r}"]
         if interface is not None:
             parts.append(f"for {interface}")
         super().__init__(" ".join(filter(None, parts)))
