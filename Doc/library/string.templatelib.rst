@@ -306,8 +306,8 @@ Helper functions
 
    Three conversion flags are currently supported:
 
-   * ``'!s'`` which calls :func:`str` on the value,
-   * ``'!r'`` which calls :func:`repr`, and
-   * ``'!a'`` which calls :func:`ascii`.
+   * ``'s'`` which calls :func:`str` on the value,
+   * ``'r'`` which calls :func:`repr`, and
+   * ``'a'`` which calls :func:`ascii`.
 
    If the conversion flag is ``None``, *obj* is returned unchanged.
