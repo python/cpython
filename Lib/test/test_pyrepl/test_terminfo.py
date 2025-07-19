@@ -5,7 +5,7 @@ import os
 import subprocess
 import sys
 import unittest
-from test.support import requires
+from test.support import requires, has_subprocess_support
 from textwrap import dedent
 
 # Only run these tests if curses is available
@@ -38,6 +38,10 @@ class TestCursesCompatibility(unittest.TestCase):
             raise unittest.SkipTest(
                 "`curses` capability provided to regrtest but `_curses` not importable"
             )
+
+        if not has_subprocess_support:
+            raise unittest.SkipTest("test module requires subprocess")
+
         self.original_term = os.environ.get("TERM", None)
 
     def tearDown(self):
