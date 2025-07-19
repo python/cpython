@@ -167,7 +167,7 @@ class HelpFormatter(object):
         indent_increment=2,
         max_help_position=24,
         width=None,
-        color=False,
+        color=True,
     ):
         # default setting for width
         if width is None:
