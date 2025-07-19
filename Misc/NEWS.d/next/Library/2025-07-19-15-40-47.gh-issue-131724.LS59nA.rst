@@ -1,0 +1,1 @@
+Adds a new max_response_headers parameter to HTTP/HTTPSConnection.
