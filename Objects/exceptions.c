@@ -1870,24 +1870,35 @@ ImportError_repr(PyObject *self)
     int hasargs = PyTuple_GET_SIZE(((PyBaseExceptionObject *)self)->args) != 0;
     PyObject *r = BaseException_repr(self);
     PyImportErrorObject *exc = PyImportErrorObject_CAST(self);
-
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
+    if (writer == NULL) goto error;
+    if (PyUnicodeWriter_WriteSubstring(writer, r, 0, PyUnicode_GET_LENGTH(r)-1) < 0) goto error;
     if (r && (exc->name || exc->path)) {
-        /* remove ')' */
-        Py_SETREF(r, PyUnicode_Substring(r, 0, PyUnicode_GET_LENGTH(r) - 1));
-        if (r && exc->name) {
-            Py_SETREF(r, PyUnicode_FromFormat("%U%sname=%R",
-                            r, hasargs ? ", " : "", exc->name));
+        if (exc->name) { 
+            if (hasargs) {
+                if (PyUnicodeWriter_WriteASCII(writer, ", ", 2) < 0) goto error;
+            }
+            if (PyUnicodeWriter_WriteASCII(writer, "name='", 6) < 0) goto error;
+            if (PyUnicodeWriter_WriteSubstring(writer, exc->name, 0, PyUnicode_GET_LENGTH(exc->name)) < 0) goto error;
+            if (PyUnicodeWriter_WriteASCII(writer, "'", 1) < 0) goto error;
             hasargs = 1;
         }
-        if (r && exc->path) {
-            Py_SETREF(r, PyUnicode_FromFormat("%U%spath=%R",
-                            r, hasargs ? ", " : "", exc->path));
-        }
-        if (r) {
-            Py_SETREF(r, PyUnicode_FromFormat("%U)", r));
+        if (exc->path) {
+            if (hasargs) {
+                if (PyUnicodeWriter_WriteASCII(writer, ", ", 2) < 0) goto error;
+            }
+            if (PyUnicodeWriter_WriteASCII(writer, "path='", 6) < 0) goto error;
+            if (PyUnicodeWriter_WriteSubstring(writer, exc->path, 0, PyUnicode_GET_LENGTH(exc->path)) < 0) goto error;
+            if (PyUnicodeWriter_WriteASCII(writer, "'", 1) < 0) goto error;
         }
     }
-    return r;
+    if (PyUnicodeWriter_WriteASCII(writer, ")", 1) < 0) goto error;
+    return PyUnicodeWriter_Finish(writer);
+
+    error:
+        Py_XDECREF(r);
+        PyUnicodeWriter_Discard(writer);
+        return NULL;
 }
 
 static PyMemberDef ImportError_members[] = {
