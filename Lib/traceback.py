@@ -287,6 +287,12 @@ class FrameSummary:
       of code that was running when the frame was captured.
     - :attr:`locals` Either None if locals were not supplied, or a dict
       mapping the name to the repr() of the variable.
+    - :attr:`end_lineno` The last line number of the source code for this frame.
+      By default, it is set to lineno and indexation starts from 1.
+    - :attr:`colno` The column number of the source code for this frame.
+      By default, it is None and indexation starts from 0.
+    - :attr:`end_colno` The last column number of the source code for this frame.
+      By default, it is None and indexation starts from 0.
     """
 
     __slots__ = ('filename', 'lineno', 'end_lineno', 'colno', 'end_colno',

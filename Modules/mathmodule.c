@@ -1214,6 +1214,40 @@ math_floor(PyObject *module, PyObject *number)
     return PyLong_FromDouble(floor(x));
 }
 
+/*[clinic input]
+math.fmax -> double
+
+    x: double
+    y: double
+    /
+
+Return the larger of two floating-point arguments.
+[clinic start generated code]*/
+
+static double
+math_fmax_impl(PyObject *module, double x, double y)
+/*[clinic end generated code: output=00692358d312fee2 input=021596c027336ffe]*/
+{
+    return fmax(x, y);
+}
+
+/*[clinic input]
+math.fmin -> double
+
+    x: double
+    y: double
+    /
+
+Return the smaller of two floating-point arguments.
+[clinic start generated code]*/
+
+static double
+math_fmin_impl(PyObject *module, double x, double y)
+/*[clinic end generated code: output=3d5b7826bd292dd9 input=d12e64ccc33f878a]*/
+{
+    return fmin(x, y);
+}
+
 FUNC1AD(gamma, m_tgamma,
       "gamma($module, x, /)\n--\n\n"
       "Gamma function at x.",
@@ -1233,6 +1267,23 @@ FUNC2(remainder, m_remainder,
       "Return x - n*y where n*y is the closest integer multiple of y.\n"
       "In the case where x is exactly halfway between two multiples of\n"
       "y, the nearest even value of n is used. The result is always exact.")
+
+/*[clinic input]
+math.signbit
+
+    x: double
+    /
+
+Return True if the sign of x is negative and False otherwise.
+[clinic start generated code]*/
+
+static PyObject *
+math_signbit_impl(PyObject *module, double x)
+/*[clinic end generated code: output=20c5f20156a9b871 input=3d3493fbcb5bdb3e]*/
+{
+    return PyBool_FromLong(signbit(x));
+}
+
 FUNC1D(sin, sin, 0,
       "sin($module, x, /)\n--\n\n"
       "Return the sine of x (measured in radians).",
@@ -4175,7 +4226,9 @@ static PyMethodDef math_methods[] = {
     MATH_FACTORIAL_METHODDEF
     MATH_FLOOR_METHODDEF
     MATH_FMA_METHODDEF
+    MATH_FMAX_METHODDEF
     MATH_FMOD_METHODDEF
+    MATH_FMIN_METHODDEF
     MATH_FREXP_METHODDEF
     MATH_FSUM_METHODDEF
     {"gamma",           math_gamma,     METH_O,         math_gamma_doc},
@@ -4199,6 +4252,7 @@ static PyMethodDef math_methods[] = {
     MATH_POW_METHODDEF
     MATH_RADIANS_METHODDEF
     {"remainder",       _PyCFunction_CAST(math_remainder), METH_FASTCALL,  math_remainder_doc},
+    MATH_SIGNBIT_METHODDEF
     {"sin",             math_sin,       METH_O,         math_sin_doc},
     {"sinh",            math_sinh,      METH_O,         math_sinh_doc},
     {"sqrt",            math_sqrt,      METH_O,         math_sqrt_doc},

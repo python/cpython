@@ -1,0 +1,2 @@
+:mod:`math`: expose C99 :func:`~math.signbit` function to determine whether
+the sign bit of a floating-point value is set. Patch by Bénédikt Tran.

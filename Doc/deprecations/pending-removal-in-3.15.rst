@@ -97,6 +97,8 @@ Pending removal in Python 3.15
     After eight years in the :mod:`typing` module,
     it has yet to be supported by any major type checker.
 
+* :mod:`!sre_compile`, :mod:`!sre_constants` and :mod:`!sre_parse` modules.
+
 * :mod:`wave`:
 
   * The ``getmark()``, ``setmark()`` and ``getmarkers()`` methods of
