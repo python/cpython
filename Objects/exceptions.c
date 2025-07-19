@@ -1868,15 +1868,19 @@ static PyObject *
 ImportError_repr(PyObject *self)
 {
     int hasargs = PyTuple_GET_SIZE(((PyBaseExceptionObject *)self)->args) != 0;
-    PyObject *r = BaseException_repr(self);
     PyImportErrorObject *exc = PyImportErrorObject_CAST(self);
     PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
     if (writer == NULL) {
         goto error;
     }
-    if (PyUnicodeWriter_WriteSubstring(writer, r, 0, PyUnicode_GET_LENGTH(r)-1) < 0) {
+    PyObject *r = BaseException_repr(self);
+    if (PyUnicodeWriter_WriteSubstring(
+        writer, r, 0, PyUnicode_GET_LENGTH(r) - 1) < 0)
+    {
+        Py_XDECREF(r);
         goto error;
     }
+    Py_XDECREF(r);
     if (exc->name) {
         if (hasargs) {
             if (PyUnicodeWriter_WriteASCII(writer, ", ", 2) < 0) {
@@ -1898,11 +1902,14 @@ ImportError_repr(PyObject *self)
             goto error;
         }
     }
-    if (PyUnicodeWriter_WriteASCII(writer, ")", 1) < 0) goto error;
+
+    if (PyUnicodeWriter_WriteASCII(writer, ")", 1) < 0) {
+        goto error;
+    }
+
     return PyUnicodeWriter_Finish(writer);
 
 error:
-    Py_XDECREF(r);
     PyUnicodeWriter_Discard(writer);
     return NULL;
 }
@@ -1932,7 +1939,9 @@ static PyTypeObject _PyExc_ImportError = {
     .tp_repr = ImportError_repr,
     .tp_str = ImportError_str,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
-    .tp_doc = PyDoc_STR("Import can't find module, or can't find name in module."),
+    .tp_doc = PyDoc_STR(
+        "Import can't find module, "
+        "or can't find name in module."),
     .tp_traverse = ImportError_traverse,
     .tp_clear = ImportError_clear,
     .tp_methods = ImportError_methods,
