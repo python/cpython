@@ -101,14 +101,13 @@ import pdb
 import re
 import sys
 import traceback
+import types
 import unittest
 from io import StringIO, IncrementalNewlineDecoder
 from collections import namedtuple
 import _colorize  # Used in doctests
 from _colorize import ANSIColors, can_colorize
 
-
-__unittest = True
 
 class TestResults(namedtuple('TestResults', 'failed attempted')):
     def __new__(cls, failed, attempted, *, skipped=0):
@@ -387,7 +386,7 @@ class _OutputRedirectingPdb(pdb.Pdb):
         self.__out = out
         self.__debugger_used = False
         # do not play signal games in the pdb
-        pdb.Pdb.__init__(self, stdout=out, nosigint=True)
+        super().__init__(stdout=out, nosigint=True)
         # still use input() to get user input
         self.use_rawinput = 1
 
@@ -1280,6 +1279,11 @@ class DocTestRunner:
     # Reporting methods
     #/////////////////////////////////////////////////////////////////
 
+    def report_skip(self, out, test, example):
+        """
+        Report that the given example was skipped.
+        """
+
     def report_start(self, out, test, example):
         """
         Report that the test runner is about to process the given
@@ -1377,6 +1381,8 @@ class DocTestRunner:
 
             # If 'SKIP' is set, then skip this example.
             if self.optionflags & SKIP:
+                if not quiet:
+                    self.report_skip(out, test, example)
                 skips += 1
                 continue
 
@@ -1991,8 +1997,8 @@ def testmod(m=None, name=None, globs=None, verbose=None,
     from module m (or the current module if m is not supplied), starting
     with m.__doc__.
 
-    Also test examples reachable from dict m.__test__ if it exists and is
-    not None.  m.__test__ maps names to functions, classes and strings;
+    Also test examples reachable from dict m.__test__ if it exists.
+    m.__test__ maps names to functions, classes and strings;
     function and class docstrings are tested even if the name is private;
     strings are tested directly, as if they were docstrings.
 
@@ -2274,12 +2280,63 @@ def set_unittest_reportflags(flags):
     return old
 
 
+class _DocTestCaseRunner(DocTestRunner):
+
+    def __init__(self, *args, test_case, test_result, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._test_case = test_case
+        self._test_result = test_result
+        self._examplenum = 0
+
+    def _subTest(self):
+        subtest = unittest.case._SubTest(self._test_case, str(self._examplenum), {})
+        self._examplenum += 1
+        return subtest
+
+    def report_skip(self, out, test, example):
+        unittest.case._addSkip(self._test_result, self._subTest(), '')
+
+    def report_success(self, out, test, example, got):
+        self._test_result.addSubTest(self._test_case, self._subTest(), None)
+
+    def report_unexpected_exception(self, out, test, example, exc_info):
+        tb = self._add_traceback(exc_info[2], test, example)
+        exc_info = (*exc_info[:2], tb)
+        self._test_result.addSubTest(self._test_case, self._subTest(), exc_info)
+
+    def report_failure(self, out, test, example, got):
+        msg = ('Failed example:\n' + _indent(example.source) +
+            self._checker.output_difference(example, got, self.optionflags).rstrip('\n'))
+        exc = self._test_case.failureException(msg)
+        tb = self._add_traceback(None, test, example)
+        exc_info = (type(exc), exc, tb)
+        self._test_result.addSubTest(self._test_case, self._subTest(), exc_info)
+
+    def _add_traceback(self, traceback, test, example):
+        if test.lineno is None or example.lineno is None:
+            lineno = None
+        else:
+            lineno = test.lineno + example.lineno + 1
+        return types.SimpleNamespace(
+            tb_frame = types.SimpleNamespace(
+                f_globals=test.globs,
+                f_code=types.SimpleNamespace(
+                    co_filename=test.filename,
+                    co_name=test.name,
+                ),
+            ),
+            tb_next = traceback,
+            tb_lasti = -1,
+            tb_lineno = lineno,
+        )
+
+
 class DocTestCase(unittest.TestCase):
 
     def __init__(self, test, optionflags=0, setUp=None, tearDown=None,
                  checker=None):
 
-        unittest.TestCase.__init__(self)
+        super().__init__()
         self._dt_optionflags = optionflags
         self._dt_checker = checker
         self._dt_test = test
@@ -2303,30 +2360,28 @@ class DocTestCase(unittest.TestCase):
         test.globs.clear()
         test.globs.update(self._dt_globs)
 
+    def run(self, result=None):
+        self._test_result = result
+        return super().run(result)
+
     def runTest(self):
         test = self._dt_test
-        old = sys.stdout
-        new = StringIO()
         optionflags = self._dt_optionflags
+        result = self._test_result
 
         if not (optionflags & REPORTING_FLAGS):
             # The option flags don't include any reporting flags,
             # so add the default reporting flags
             optionflags |= _unittest_reportflags
+        if getattr(result, 'failfast', False):
+            optionflags |= FAIL_FAST
 
-        runner = DocTestRunner(optionflags=optionflags,
-                               checker=self._dt_checker, verbose=False)
-
-        try:
-            runner.DIVIDER = "-"*70
-            results = runner.run(test, out=new.write, clear_globs=False)
-            if results.skipped == results.attempted:
-                raise unittest.SkipTest("all examples were skipped")
-        finally:
-            sys.stdout = old
-
-        if results.failed:
-            raise self.failureException(self.format_failure(new.getvalue().rstrip('\n')))
+        runner = _DocTestCaseRunner(optionflags=optionflags,
+                               checker=self._dt_checker, verbose=False,
+                               test_case=self, test_result=result)
+        results = runner.run(test, clear_globs=False)
+        if results.skipped == results.attempted:
+            raise unittest.SkipTest("all examples were skipped")
 
     def format_failure(self, err):
         test = self._dt_test
@@ -2441,7 +2496,7 @@ class DocTestCase(unittest.TestCase):
 class SkipDocTestCase(DocTestCase):
     def __init__(self, module):
         self.module = module
-        DocTestCase.__init__(self, None)
+        super().__init__(None)
 
     def setUp(self):
         self.skipTest("DocTestSuite will not work with -O2 and above")

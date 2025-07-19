@@ -953,6 +953,8 @@ always available. Unless explicitly noted otherwise, all variables are read-only
       This function should be used for internal and specialized purposes only.
       It is not guaranteed to exist in all implementations of Python.
 
+   .. versionadded:: 3.12
+
 
 .. function:: getobjects(limit[, type])
 
@@ -1185,6 +1187,15 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    ``cache_tag`` is set to ``None``, it indicates that module caching should
    be disabled.
 
+   *supports_isolated_interpreters* is a boolean value, whether
+   this implementation supports multiple isolated interpreters.
+   It is ``True`` for CPython on most platforms.  Platforms with
+   this support implement the low-level :mod:`!_interpreters` module.
+
+   .. seealso::
+
+      :pep:`684`, :pep:`734`, and :mod:`concurrent.interpreters`.
+
    :data:`sys.implementation` may contain additional attributes specific to
    the Python implementation.  These non-standard attributes must start with
    an underscore, and are not described here.  Regardless of its contents,
@@ -1193,6 +1204,9 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    language versions, however.)  See :pep:`421` for more information.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.14
+      Added ``supports_isolated_interpreters`` field.
 
    .. note::
 
@@ -1932,6 +1946,22 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    and minor version as the local process. If either the local or remote
    interpreter is pre-release (alpha, beta, or release candidate) then the
    local and remote interpreters must be the same exact version.
+
+   .. audit-event:: sys.remote_exec pid script_path
+
+      When the code is executed in the remote process, an
+      :ref:`auditing event <auditing>` ``sys.remote_exec`` is raised with
+      the *pid* and the path to the script file.
+      This event is raised in the process that called :func:`sys.remote_exec`.
+
+   .. audit-event:: cpython.remote_debugger_script script_path
+
+      When the script is executed in the remote process, an
+      :ref:`auditing event <auditing>`
+      ``cpython.remote_debugger_script`` is raised
+      with the path in the remote process.
+      This event is raised in the remote process, not the one
+      that called :func:`sys.remote_exec`.
 
    .. availability:: Unix, Windows.
    .. versionadded:: 3.14
