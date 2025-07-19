@@ -175,6 +175,10 @@ Data Types
    final *enum*, as well as creating the enum members, properly handling
    duplicates, providing iteration over the enum class, etc.
 
+   .. versionadded:: 3.11
+
+      Before 3.11 ``EnumType`` was called ``EnumMeta``, which is still available as an alias.
+
    .. method:: EnumType.__call__(cls, value, names=None, *, module=None, qualname=None, type=None, start=1, boundary=None)
 
       This method is called in two different ways:
@@ -206,7 +210,7 @@ Data Types
         >>> Color.RED.value in Color
         True
 
-   .. versionchanged:: 3.12
+      .. versionchanged:: 3.12
 
          Before Python 3.12, a ``TypeError`` is raised if a
          non-Enum-member is used in a containment check.
@@ -250,10 +254,6 @@ Data Types
 
         >>> list(reversed(Color))
         [<Color.BLUE: 3>, <Color.GREEN: 2>, <Color.RED: 1>]
-
-   .. versionadded:: 3.11
-
-      Before 3.11 ``EnumType`` was called ``EnumMeta``, which is still available as an alias.
 
 
 .. class:: Enum
