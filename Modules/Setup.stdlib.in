@@ -32,7 +32,6 @@
 ############################################################################
 # Modules that should always be present (POSIX and Windows):
 @MODULE_ARRAY_TRUE@array arraymodule.c
-@MODULE__ASYNCIO_TRUE@_asyncio _asynciomodule.c
 @MODULE__BISECT_TRUE@_bisect _bisectmodule.c
 @MODULE__CSV_TRUE@_csv _csv.c
 @MODULE__HEAPQ_TRUE@_heapq _heapqmodule.c
@@ -193,3 +192,9 @@
 # Limited API template modules; must be built as shared modules.
 @MODULE_XXLIMITED_TRUE@xxlimited xxlimited.c
 @MODULE_XXLIMITED_35_TRUE@xxlimited_35 xxlimited_35.c
+
+
+# for performance
+*static*
+
+@MODULE__ASYNCIO_TRUE@_asyncio _asynciomodule.c

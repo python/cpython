@@ -54,7 +54,6 @@ class object "PyObject *" "&PyBaseObject_Type"
         PyUnicode_CheckExact(name) &&                           \
         (PyUnicode_GET_LENGTH(name) <= MCACHE_MAX_ATTR_SIZE)
 
-#define NEXT_GLOBAL_VERSION_TAG _PyRuntime.types.next_version_tag
 #define NEXT_VERSION_TAG(interp) \
     (interp)->types.next_version_tag
 
@@ -226,7 +225,7 @@ type_from_ref(PyObject *ref)
 }
 
 
-/* helpers for for static builtin types */
+/* helpers for static builtin types */
 
 #ifndef NDEBUG
 static inline int
@@ -266,8 +265,8 @@ static_ext_type_lookup(PyInterpreterState *interp, size_t index,
     assert(index < _Py_MAX_MANAGED_STATIC_EXT_TYPES);
 
     size_t full_index = index + _Py_MAX_MANAGED_STATIC_BUILTIN_TYPES;
-    int64_t interp_count =
-            _PyRuntime.types.managed_static.types[full_index].interp_count;
+    int64_t interp_count = _Py_atomic_load_int64(
+            &_PyRuntime.types.managed_static.types[full_index].interp_count);
     assert((interp_count == 0) ==
             (_PyRuntime.types.managed_static.types[full_index].type == NULL));
     *p_interp_count = interp_count;
@@ -344,7 +343,7 @@ managed_static_type_state_init(PyInterpreterState *interp, PyTypeObject *self,
         : index + _Py_MAX_MANAGED_STATIC_BUILTIN_TYPES;
 
     assert((initial == 1) ==
-            (_PyRuntime.types.managed_static.types[full_index].interp_count == 0));
+            (_Py_atomic_load_int64(&_PyRuntime.types.managed_static.types[full_index].interp_count) == 0));
     (void)_Py_atomic_add_int64(
             &_PyRuntime.types.managed_static.types[full_index].interp_count, 1);
 
@@ -393,7 +392,7 @@ managed_static_type_state_clear(PyInterpreterState *interp, PyTypeObject *self,
         : &(interp->types.for_extensions.initialized[index]);
     assert(state != NULL);
 
-    assert(_PyRuntime.types.managed_static.types[full_index].interp_count > 0);
+    assert(_Py_atomic_load_int64(&_PyRuntime.types.managed_static.types[full_index].interp_count) > 0);
     assert(_PyRuntime.types.managed_static.types[full_index].type == state->type);
 
     assert(state->type != NULL);
@@ -403,7 +402,7 @@ managed_static_type_state_clear(PyInterpreterState *interp, PyTypeObject *self,
     (void)_Py_atomic_add_int64(
             &_PyRuntime.types.managed_static.types[full_index].interp_count, -1);
     if (final) {
-        assert(!_PyRuntime.types.managed_static.types[full_index].interp_count);
+        assert(!_Py_atomic_load_int64(&_PyRuntime.types.managed_static.types[full_index].interp_count));
         _PyRuntime.types.managed_static.types[full_index].type = NULL;
 
         managed_static_type_index_clear(self);
@@ -1359,6 +1358,19 @@ _PyType_LookupByVersion(unsigned int version)
 #error "_Py_ATTR_CACHE_UNUSED must be bigger than max"
 #endif
 
+static inline unsigned int
+next_global_version_tag(void)
+{
+    unsigned int old;
+    do {
+        old = _Py_atomic_load_uint_relaxed(&_PyRuntime.types.next_version_tag);
+        if (old >= _Py_MAX_GLOBAL_TYPE_VERSION_TAG) {
+            return 0;
+        }
+    } while (!_Py_atomic_compare_exchange_uint(&_PyRuntime.types.next_version_tag, &old, old + 1));
+    return old + 1;
+}
+
 static int
 assign_version_tag(PyInterpreterState *interp, PyTypeObject *type)
 {
@@ -1389,11 +1401,12 @@ assign_version_tag(PyInterpreterState *interp, PyTypeObject *type)
     }
     if (type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) {
         /* static types */
-        if (NEXT_GLOBAL_VERSION_TAG > _Py_MAX_GLOBAL_TYPE_VERSION_TAG) {
+        unsigned int next_version_tag = next_global_version_tag();
+        if (next_version_tag == 0) {
             /* We have run out of version numbers */
             return 0;
         }
-        set_version_unlocked(type, NEXT_GLOBAL_VERSION_TAG++);
+        set_version_unlocked(type, next_version_tag);
         assert (type->tp_version_tag <= _Py_MAX_GLOBAL_TYPE_VERSION_TAG);
     }
     else {
@@ -9007,7 +9020,11 @@ type_ready_set_new(PyTypeObject *type, int initial)
         && base == &PyBaseObject_Type
         && !(type->tp_flags & Py_TPFLAGS_HEAPTYPE))
     {
-        type_add_flags(type, Py_TPFLAGS_DISALLOW_INSTANTIATION);
+        if (initial) {
+            type_add_flags(type, Py_TPFLAGS_DISALLOW_INSTANTIATION);
+        } else {
+            assert(type->tp_flags & Py_TPFLAGS_DISALLOW_INSTANTIATION);
+        }
     }
 
     if (!(type->tp_flags & Py_TPFLAGS_DISALLOW_INSTANTIATION)) {
@@ -9021,13 +9038,17 @@ type_ready_set_new(PyTypeObject *type, int initial)
             }
         }
         else {
-            // tp_new is NULL: inherit tp_new from base
-            type->tp_new = base->tp_new;
+            if (initial) {
+                // tp_new is NULL: inherit tp_new from base
+                type->tp_new = base->tp_new;
+            }
         }
     }
     else {
         // Py_TPFLAGS_DISALLOW_INSTANTIATION sets tp_new to NULL
-        type->tp_new = NULL;
+        if (initial) {
+            type->tp_new = NULL;
+        }
     }
     return 0;
 }
@@ -9160,7 +9181,12 @@ type_ready(PyTypeObject *type, int initial)
     }
 
     /* All done -- set the ready flag */
-    type_add_flags(type, Py_TPFLAGS_READY);
+    if (initial) {
+        type_add_flags(type, Py_TPFLAGS_READY);
+    } else {
+        assert(type->tp_flags & Py_TPFLAGS_READY);
+    }
+
     stop_readying(type);
 
     assert(_PyType_CheckConsistency(type));
@@ -9209,15 +9235,16 @@ init_static_type(PyInterpreterState *interp, PyTypeObject *self,
     assert(!(self->tp_flags & Py_TPFLAGS_MANAGED_DICT));
     assert(!(self->tp_flags & Py_TPFLAGS_MANAGED_WEAKREF));
 
-    if ((self->tp_flags & Py_TPFLAGS_READY) == 0) {
-        assert(initial);
+    if (initial) {
+        assert((self->tp_flags & Py_TPFLAGS_READY) == 0);
 
         type_add_flags(self, _Py_TPFLAGS_STATIC_BUILTIN);
         type_add_flags(self, Py_TPFLAGS_IMMUTABLETYPE);
 
-        assert(NEXT_GLOBAL_VERSION_TAG <= _Py_MAX_GLOBAL_TYPE_VERSION_TAG);
         if (self->tp_version_tag == 0) {
-            _PyType_SetVersion(self, NEXT_GLOBAL_VERSION_TAG++);
+            unsigned int next_version_tag = next_global_version_tag();
+            assert(next_version_tag != 0);
+            _PyType_SetVersion(self, next_version_tag);
         }
     }
     else {
@@ -10020,6 +10047,11 @@ tp_new_wrapper(PyObject *self, PyObject *args, PyObject *kwds)
     /* If staticbase is NULL now, it is a really weird type.
        In the spirit of backwards compatibility (?), just shut up. */
     if (staticbase && staticbase->tp_new != type->tp_new) {
+        if (staticbase->tp_new == NULL) {
+            PyErr_Format(PyExc_TypeError,
+                         "cannot create '%s' instances", subtype->tp_name);
+            return NULL;
+        }
         PyErr_Format(PyExc_TypeError,
                      "%s.__new__(%s) is not safe, use %s.__new__()",
                      type->tp_name,

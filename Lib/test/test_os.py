@@ -104,7 +104,7 @@ requires_splice_pipe = unittest.skipIf(sys.platform.startswith("aix"),
 
 
 def tearDownModule():
-    asyncio._set_event_loop_policy(None)
+    asyncio.events._set_event_loop_policy(None)
 
 
 class MiscTests(unittest.TestCase):
@@ -1919,6 +1919,8 @@ class MakedirTests(unittest.TestCase):
         "WASI's umask is a stub."
     )
     def test_mode(self):
+        # Note: in some cases, the umask might already be 2 in which case this
+        # will pass even if os.umask is actually broken.
         with os_helper.temp_umask(0o002):
             base = os_helper.TESTFN
             parent = os.path.join(base, 'dir1')

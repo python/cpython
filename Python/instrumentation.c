@@ -1530,7 +1530,7 @@ initialize_lines(PyCodeObject *code, int bytes_per_entry)
                 case END_FOR:
                 case END_SEND:
                 case RESUME:
-            case POP_ITER:
+                case POP_ITER:
                     /* END_FOR cannot start a line, as it is skipped by FOR_ITER
                     * END_SEND cannot start a line, as it is skipped by SEND
                     * RESUME and POP_ITER must not be instrumented with INSTRUMENTED_LINE */

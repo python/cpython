@@ -1233,7 +1233,10 @@ static PyObject *
 mappingproxy_richcompare(PyObject *self, PyObject *w, int op)
 {
     mappingproxyobject *v = (mappingproxyobject *)self;
-    return PyObject_RichCompare(v->mapping, w, op);
+    if (op == Py_EQ || op == Py_NE) {
+        return PyObject_RichCompare(v->mapping, w, op);
+    }
+    Py_RETURN_NOTIMPLEMENTED;
 }
 
 static int
