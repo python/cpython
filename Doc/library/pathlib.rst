@@ -1328,6 +1328,12 @@ Reading directories
    If the path is not a directory or otherwise inaccessible, :exc:`OSError` is
    raised.
 
+   .. warning::
+      Despite its name and being a generator, this function currently
+      does not stream directory entries: It reads all directory
+      entries into memory before yielding the first entry.
+      If you need constant-memory iteration across a large number of
+      directory entries, use :func:`os.scandir` instead.
 
 .. method:: Path.glob(pattern, *, case_sensitive=None, recurse_symlinks=False)
 
