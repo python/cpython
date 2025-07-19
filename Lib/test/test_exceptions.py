@@ -2595,6 +2595,7 @@ class PEP626Tests(unittest.TestCase):
             with ExitFails():
                 1/0
         self.lineno_after_raise(after_with, 1, 1)
+
     def test_repr(self):
         exc = ImportError()
         self.assertEqual(repr(exc), "ImportError()")
@@ -2624,6 +2625,22 @@ class PEP626Tests(unittest.TestCase):
         exc = ImportError('test', name='somename', path='somepath')
         self.assertEqual(repr(exc),
                 "ImportError('test', name='somename', path='somepath')")
+        
+        exc = ModuleNotFoundError('test', name='somename', path='somepath')
+        self.assertEqual(repr(exc),
+                "ModuleNotFoundError('test', name='somename', path='somepath')")
+
+    def test_importerror_name_and_path(self):
+        try:
+            import does_not_exist  # noqa: F401
+        except ModuleNotFoundError as e:
+            self.assertEqual(e.name, "does_not_exist")
+            self.assertIsNone(e.path)
+
+            self.assertEqual(repr(e),
+                "ModuleNotFoundError(\"No module named 'does_not_exist'\", name='does_not_exist')")
+        else:
+            self.fail("Expected ModuleNotFoundError was not raised")
 
 
 if __name__ == '__main__':
