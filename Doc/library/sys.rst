@@ -2131,8 +2131,12 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    When this variable is set to an integer value, it determines the maximum number
    of levels of traceback information printed when an unhandled exception occurs.
    The default is ``1000``.  When set to ``0`` or less, all traceback information
-   is suppressed and only the exception type and value are printed.
+   is suppressed and only the exception type and value are printed.  Setting it
+   to ``None`` resets the limit to the default value.
 
+   .. versionchanged:: 3.6.4
+      Setting to ``0`` or less now suppresses printing tracebacks.
+      Setting to ``None`` now causes using the default limit.
 
 .. function:: unraisablehook(unraisable, /)
 
