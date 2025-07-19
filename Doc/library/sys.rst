@@ -2191,8 +2191,11 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
 .. data:: api_version
 
-   The C API version for this interpreter.  Programmers may find this useful when
-   debugging version conflicts between Python and extension modules.
+   The C API version, equivalent to the C macro :c:macro:`PYTHON_API_VERSION`.
+   Defined for backwards compatibility.
+
+   Currently, this constant is not updated in new Python versions, and is not
+   useful for versioning. This may change in the future.
 
 
 .. data:: version_info
