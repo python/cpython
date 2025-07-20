@@ -471,6 +471,7 @@ class TestBytesGenerator(TestGeneratorBase, TestEmailBase):
         g = BytesGenerator(s, policy=policy.SMTP)
         g.flatten(msg)
         self.assertEqual(s.getvalue(), expected)
+
     def test_utf8_round_trip_preserves_unicode_body(self):
         msg = EmailMessage()
         msg['From'] = "Páolo <főo@bar.com>"
