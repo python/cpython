@@ -3671,7 +3671,7 @@ class TestDateTime(TestDate):
         self.assertEqual(err, b"")
 
         # Now test against concurrent reinitialization
-        script += "\nimport _datetime"
+        script = "import _datetime\n" + script
         rc, out, err = script_helper.assert_python_ok("-c", script)
         self.assertEqual(rc, 0)
         self.assertEqual(out, b"a" * 8)
