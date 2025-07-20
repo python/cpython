@@ -390,21 +390,57 @@ class Pool(object):
             i = -1
             for i, x in enumerate(iterable):
                 yield (result_job, i, func, (x,), {})
+
         except Exception as e:
             yield (result_job, i+1, _helper_reraises_exception, (e,), {})
 
-    def imap(self, func, iterable, chunksize=1):
+    def _guarded_task_generation_lazy(self, result_job, func, iterable,
+                                      lazy_task_gen_helper):
+        '''Provides a generator of tasks for imap and imap_unordered with
+        appropriate handling for iterables which throw exceptions during
+        iteration.'''
+        if not lazy_task_gen_helper.feature_enabled:
+            yield from self._guarded_task_generation(result_job, func, iterable)
+            return
+
+        try:
+            i = -1
+            enumerated_iter = iter(enumerate(iterable))
+            thread = threading.current_thread()
+            max_generated_tasks = self._processes + lazy_task_gen_helper.buffersize
+
+            while thread._state == RUN:
+                with lazy_task_gen_helper.iterator_cond:
+                    if lazy_task_gen_helper.not_finished_tasks >= max_generated_tasks:
+                        continue  # wait for some task to be (picked up and) finished
+
+                try:
+                    i, x = enumerated_iter.__next__()
+                except StopIteration:
+                    break
+
+                yield (result_job, i, func, (x,), {})
+                lazy_task_gen_helper.tasks_generated += 1
+
+        except Exception as e:
+            yield (result_job, i+1, _helper_reraises_exception, (e,), {})
+
+    def imap(self, func, iterable, chunksize=1, buffersize=None):
         '''
         Equivalent of `map()` -- can be MUCH slower than `Pool.map()`.
         '''
         self._check_running()
         if chunksize == 1:
-            result = IMapIterator(self)
+            result = IMapIterator(self, buffersize)
             self._taskqueue.put(
                 (
-                    self._guarded_task_generation(result._job, func, iterable),
-                    result._set_length
-                ))
+                    self._guarded_task_generation_lazy(result._job,
+                                                       func,
+                                                       iterable,
+                                                       result._lazy_task_gen_helper),
+                    result._set_length,
+                )
+            )
             return result
         else:
             if chunksize < 1:
@@ -412,42 +448,50 @@ class Pool(object):
                     "Chunksize must be 1+, not {0:n}".format(
                         chunksize))
             task_batches = Pool._get_tasks(func, iterable, chunksize)
-            result = IMapIterator(self)
+            result = IMapIterator(self, buffersize)
             self._taskqueue.put(
                 (
-                    self._guarded_task_generation(result._job,
-                                                  mapstar,
-                                                  task_batches),
-                    result._set_length
-                ))
+                    self._guarded_task_generation_lazy(result._job,
+                                                       mapstar,
+                                                       task_batches,
+                                                       result._lazy_task_gen_helper),
+                    result._set_length,
+                )
+            )
             return (item for chunk in result for item in chunk)
 
-    def imap_unordered(self, func, iterable, chunksize=1):
+    def imap_unordered(self, func, iterable, chunksize=1, buffersize=None):
         '''
         Like `imap()` method but ordering of results is arbitrary.
         '''
         self._check_running()
         if chunksize == 1:
-            result = IMapUnorderedIterator(self)
+            result = IMapUnorderedIterator(self, buffersize)
             self._taskqueue.put(
                 (
-                    self._guarded_task_generation(result._job, func, iterable),
-                    result._set_length
-                ))
+                    self._guarded_task_generation_lazy(result._job,
+                                                       func,
+                                                       iterable,
+                                                       result._lazy_task_gen_helper),
+                    result._set_length,
+                )
+            )
             return result
         else:
             if chunksize < 1:
                 raise ValueError(
                     "Chunksize must be 1+, not {0!r}".format(chunksize))
             task_batches = Pool._get_tasks(func, iterable, chunksize)
-            result = IMapUnorderedIterator(self)
+            result = IMapUnorderedIterator(self, buffersize)
             self._taskqueue.put(
                 (
-                    self._guarded_task_generation(result._job,
-                                                  mapstar,
-                                                  task_batches),
-                    result._set_length
-                ))
+                    self._guarded_task_generation_lazy(result._job,
+                                                       mapstar,
+                                                       task_batches,
+                                                       result._lazy_task_gen_helper),
+                    result._set_length,
+                )
+            )
             return (item for chunk in result for item in chunk)
 
     def apply_async(self, func, args=(), kwds={}, callback=None,
@@ -835,8 +879,7 @@ class MapResult(ApplyResult):
 #
 
 class IMapIterator(object):
-
-    def __init__(self, pool):
+    def __init__(self, pool, buffersize):
         self._pool = pool
         self._cond = threading.Condition(threading.Lock())
         self._job = next(job_counter)
@@ -846,6 +889,7 @@ class IMapIterator(object):
         self._length = None
         self._unsorted = {}
         self._cache[self._job] = self
+        self._lazy_task_gen_helper = _LazyTaskGenHelper(buffersize, self._cond)
 
     def __iter__(self):
         return self
@@ -866,6 +910,7 @@ class IMapIterator(object):
                         self._pool = None
                         raise StopIteration from None
                     raise TimeoutError from None
+            self._lazy_task_gen_helper.tasks_finished += 1
 
         success, value = item
         if success:
@@ -913,6 +958,22 @@ class IMapUnorderedIterator(IMapIterator):
             if self._index == self._length:
                 del self._cache[self._job]
                 self._pool = None
+
+#
+# Class to store stats for lazy task generation and share them
+# between the main thread and `_guarded_task_generation()` thread.
+#
+class _LazyTaskGenHelper(object):
+    def __init__(self, buffersize, iterator_cond):
+        self.feature_enabled = buffersize is not None
+        self.buffersize = buffersize
+        self.tasks_generated = 0
+        self.tasks_finished = 0
+        self.iterator_cond = iterator_cond
+
+    @property
+    def not_finished_tasks(self):
+        return self.tasks_generated - self.tasks_finished
 
 #
 #
