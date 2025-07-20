@@ -1,2 +1,0 @@
-Fix a bug affecting how multi-line history was being rendered in the new
-REPL after interacting with the new screen cache. Patch by Pablo Galindo

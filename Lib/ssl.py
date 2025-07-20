@@ -116,7 +116,7 @@ except ImportError:
 
 from _ssl import (
     HAS_SNI, HAS_ECDH, HAS_NPN, HAS_ALPN, HAS_SSLv2, HAS_SSLv3, HAS_TLSv1,
-    HAS_TLSv1_1, HAS_TLSv1_2, HAS_TLSv1_3, HAS_PSK
+    HAS_TLSv1_1, HAS_TLSv1_2, HAS_TLSv1_3, HAS_PSK, HAS_PSK_TLS13, HAS_PHA
 )
 from _ssl import _DEFAULT_CIPHERS, _OPENSSL_API_VERSION
 
@@ -513,18 +513,17 @@ class SSLContext(_SSLContext):
         self._set_alpn_protocols(protos)
 
     def _load_windows_store_certs(self, storename, purpose):
-        certs = bytearray()
         try:
             for cert, encoding, trust in enum_certificates(storename):
                 # CA certs are never PKCS#7 encoded
                 if encoding == "x509_asn":
                     if trust is True or purpose.oid in trust:
-                        certs.extend(cert)
+                        try:
+                            self.load_verify_locations(cadata=cert)
+                        except SSLError as exc:
+                            warnings.warn(f"Bad certificate in Windows certificate store: {exc!s}")
         except PermissionError:
             warnings.warn("unable to enumerate Windows certificate store")
-        if certs:
-            self.load_verify_locations(cadata=certs)
-        return certs
 
     def load_default_certs(self, purpose=Purpose.SERVER_AUTH):
         if not isinstance(purpose, _ASN1Object):
@@ -976,6 +975,10 @@ def _sslcopydoc(func):
     return func
 
 
+class _GiveupOnSSLSendfile(Exception):
+    pass
+
+
 class SSLSocket(socket):
     """This class implements a subtype of socket.socket that wraps
     the underlying OS socket in an SSL context when necessary, and
@@ -1165,11 +1168,21 @@ class SSLSocket(socket):
 
     @_sslcopydoc
     def get_verified_chain(self):
-        return self._sslobj.get_verified_chain()
+        chain = self._sslobj.get_verified_chain()
+
+        if chain is None:
+            return []
+
+        return [cert.public_bytes(_ssl.ENCODING_DER) for cert in chain]
 
     @_sslcopydoc
     def get_unverified_chain(self):
-        return self._sslobj.get_unverified_chain()
+        chain = self._sslobj.get_unverified_chain()
+
+        if chain is None:
+            return []
+
+        return [cert.public_bytes(_ssl.ENCODING_DER) for cert in chain]
 
     @_sslcopydoc
     def selected_npn_protocol(self):
@@ -1257,14 +1270,25 @@ class SSLSocket(socket):
             return super().sendall(data, flags)
 
     def sendfile(self, file, offset=0, count=None):
-        """Send a file, possibly by using os.sendfile() if this is a
-        clear-text socket.  Return the total number of bytes sent.
+        """Send a file, possibly by using an efficient sendfile() call if
+        the system supports it.  Return the total number of bytes sent.
         """
-        if self._sslobj is not None:
-            return self._sendfile_use_send(file, offset, count)
-        else:
-            # os.sendfile() works with plain sockets only
+        if self._sslobj is None:
             return super().sendfile(file, offset, count)
+
+        if not self._sslobj.uses_ktls_for_send():
+            return self._sendfile_use_send(file, offset, count)
+
+        sendfile = getattr(self._sslobj, "sendfile", None)
+        if sendfile is None:
+            return self._sendfile_use_send(file, offset, count)
+
+        try:
+            return self._sendfile_zerocopy(
+                sendfile, _GiveupOnSSLSendfile, file, offset, count,
+            )
+        except _GiveupOnSSLSendfile:
+            return self._sendfile_use_send(file, offset, count)
 
     def recv(self, buflen=1024, flags=0):
         self._checkClosed()

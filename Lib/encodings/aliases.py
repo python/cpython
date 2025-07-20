@@ -204,6 +204,11 @@ aliases = {
     'csibm869'           : 'cp869',
     'ibm869'             : 'cp869',
 
+    # cp874 codec
+    '874'                : 'cp874',
+    'ms874'              : 'cp874',
+    'windows_874'        : 'cp874',
+
     # cp932 codec
     '932'                : 'cp932',
     'ms932'              : 'cp932',
@@ -241,6 +246,7 @@ aliases = {
     'ks_c_5601_1987'     : 'euc_kr',
     'ksx1001'            : 'euc_kr',
     'ks_x_1001'          : 'euc_kr',
+    'cseuckr'            : 'euc_kr',
 
     # gb18030 codec
     'gb18030_2000'       : 'gb18030',
@@ -399,6 +405,8 @@ aliases = {
     'iso_8859_8'         : 'iso8859_8',
     'iso_8859_8_1988'    : 'iso8859_8',
     'iso_ir_138'         : 'iso8859_8',
+    'iso_8859_8_i'       : 'iso8859_8',
+    'iso_8859_8_e'       : 'iso8859_8',
 
     # iso8859_9 codec
     'csisolatin5'        : 'iso8859_9',

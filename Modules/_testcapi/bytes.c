@@ -37,8 +37,23 @@ bytes_resize(PyObject *Py_UNUSED(module), PyObject *args)
 }
 
 
+/* Test PyBytes_Join() */
+static PyObject *
+bytes_join(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    PyObject *sep, *iterable;
+    if (!PyArg_ParseTuple(args, "OO", &sep, &iterable)) {
+        return NULL;
+    }
+    NULLABLE(sep);
+    NULLABLE(iterable);
+    return PyBytes_Join(sep, iterable);
+}
+
+
 static PyMethodDef test_methods[] = {
     {"bytes_resize", bytes_resize, METH_VARARGS},
+    {"bytes_join", bytes_join, METH_VARARGS},
     {NULL},
 };
 

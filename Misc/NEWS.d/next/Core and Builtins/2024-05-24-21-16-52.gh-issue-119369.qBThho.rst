@@ -1,2 +1,0 @@
-Fix deadlock during thread deletion in free-threaded build, which could
-occur when the GIL was enabled at runtime.

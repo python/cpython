@@ -3,11 +3,18 @@
 #include "Python.h"
 
 #include "pycore_abstract.h"
+#include "pycore_bitutils.h"
 #include "pycore_call.h"
 #include "pycore_ceval.h"
 #include "pycore_critical_section.h"
 #include "pycore_dict.h"
+#include "pycore_floatobject.h"
+#include "pycore_frame.h"
+#include "pycore_function.h"
+#include "pycore_interpframe.h"
+#include "pycore_interpolation.h"
 #include "pycore_intrinsics.h"
+#include "pycore_list.h"
 #include "pycore_long.h"
 #include "pycore_opcode_metadata.h"
 #include "pycore_opcode_utils.h"
@@ -15,6 +22,10 @@
 #include "pycore_pyerrors.h"
 #include "pycore_setobject.h"
 #include "pycore_sliceobject.h"
+#include "pycore_template.h"
+#include "pycore_tuple.h"
+#include "pycore_unicodeobject.h"
+
 #include "pycore_jit.h"
 
 // Memory management stuff: ////////////////////////////////////////////////////
@@ -57,7 +68,12 @@ jit_alloc(size_t size)
     int failed = memory == NULL;
 #else
     int flags = MAP_ANONYMOUS | MAP_PRIVATE;
-    unsigned char *memory = mmap(NULL, size, PROT_READ | PROT_WRITE, flags, -1, 0);
+    int prot = PROT_READ | PROT_WRITE;
+# ifdef MAP_JIT
+    flags |= MAP_JIT;
+    prot |= PROT_EXEC;
+# endif
+    unsigned char *memory = mmap(NULL, size, prot, flags, -1, 0);
     int failed = memory == MAP_FAILED;
 #endif
     if (failed) {
@@ -81,6 +97,7 @@ jit_free(unsigned char *memory, size_t size)
         jit_error("unable to free memory");
         return -1;
     }
+    OPT_STAT_ADD(jit_freed_memory_size, size);
     return 0;
 }
 
@@ -101,8 +118,11 @@ mark_executable(unsigned char *memory, size_t size)
     int old;
     int failed = !VirtualProtect(memory, size, PAGE_EXECUTE_READ, &old);
 #else
+    int failed = 0;
     __builtin___clear_cache((char *)memory, (char *)memory + size);
-    int failed = mprotect(memory, size, PROT_EXEC | PROT_READ);
+#ifndef MAP_JIT
+    failed = mprotect(memory, size, PROT_EXEC | PROT_READ);
+#endif
 #endif
     if (failed) {
         jit_error("unable to protect executable memory");
@@ -112,6 +132,21 @@ mark_executable(unsigned char *memory, size_t size)
 }
 
 // JIT compiler stuff: /////////////////////////////////////////////////////////
+
+#define SYMBOL_MASK_WORDS 4
+
+typedef uint32_t symbol_mask[SYMBOL_MASK_WORDS];
+
+typedef struct {
+    unsigned char *mem;
+    symbol_mask mask;
+    size_t size;
+} trampoline_state;
+
+typedef struct {
+    trampoline_state trampolines;
+    uintptr_t instruction_starts[UOP_MAX_TRACE_LENGTH];
+} jit_state;
 
 // Warning! AArch64 requires you to get your hands dirty. These are your gloves:
 
@@ -390,7 +425,72 @@ patch_x86_64_32rx(unsigned char *location, uint64_t value)
     patch_32r(location, value);
 }
 
+void patch_aarch64_trampoline(unsigned char *location, int ordinal, jit_state *state);
+
 #include "jit_stencils.h"
+
+#if defined(__aarch64__) || defined(_M_ARM64)
+    #define TRAMPOLINE_SIZE 16
+    #define DATA_ALIGN 8
+#else
+    #define TRAMPOLINE_SIZE 0
+    #define DATA_ALIGN 1
+#endif
+
+// Generate and patch AArch64 trampolines. The symbols to jump to are stored
+// in the jit_stencils.h in the symbols_map.
+void
+patch_aarch64_trampoline(unsigned char *location, int ordinal, jit_state *state)
+{
+
+    uint64_t value = (uintptr_t)symbols_map[ordinal];
+    int64_t range = value - (uintptr_t)location;
+
+    // If we are in range of 28 signed bits, we patch the instruction with
+    // the address of the symbol.
+    if (range >= -(1 << 27) && range < (1 << 27)) {
+        patch_aarch64_26r(location, (uintptr_t)value);
+        return;
+    }
+
+    // Masking is done modulo 32 as the mask is stored as an array of uint32_t
+    const uint32_t symbol_mask = 1 << (ordinal % 32);
+    const uint32_t trampoline_mask = state->trampolines.mask[ordinal / 32];
+    assert(symbol_mask & trampoline_mask);
+
+    // Count the number of set bits in the trampoline mask lower than ordinal,
+    // this gives the index into the array of trampolines.
+    int index = _Py_popcount32(trampoline_mask & (symbol_mask - 1));
+    for (int i = 0; i < ordinal / 32; i++) {
+        index += _Py_popcount32(state->trampolines.mask[i]);
+    }
+
+    uint32_t *p = (uint32_t*)(state->trampolines.mem + index * TRAMPOLINE_SIZE);
+    assert((size_t)(index + 1) * TRAMPOLINE_SIZE <= state->trampolines.size);
+
+
+    /* Generate the trampoline
+       0: 58000048      ldr     x8, 8
+       4: d61f0100      br      x8
+       8: 00000000      // The next two words contain the 64-bit address to jump to.
+       c: 00000000
+    */
+    p[0] = 0x58000048;
+    p[1] = 0xD61F0100;
+    p[2] = value & 0xffffffff;
+    p[3] = value >> 32;
+
+    patch_aarch64_26r(location, (uintptr_t)p);
+}
+
+static void
+combine_symbol_mask(const symbol_mask src, symbol_mask dest)
+{
+    // Calculate the union of the trampolines required by each StencilGroup
+    for (size_t i = 0; i < SYMBOL_MASK_WORDS; i++) {
+        dest[i] |= src[i];
+    }
+}
 
 // Compiles executor in-place. Don't forget to call _PyJIT_Free later!
 int
@@ -398,68 +498,88 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
 {
     const StencilGroup *group;
     // Loop once to find the total compiled size:
-    uintptr_t instruction_starts[UOP_MAX_TRACE_LENGTH];
     size_t code_size = 0;
     size_t data_size = 0;
-    group = &trampoline;
+    jit_state state = {0};
+    group = &shim;
     code_size += group->code_size;
     data_size += group->data_size;
+    combine_symbol_mask(group->trampoline_mask, state.trampolines.mask);
     for (size_t i = 0; i < length; i++) {
         const _PyUOpInstruction *instruction = &trace[i];
         group = &stencil_groups[instruction->opcode];
-        instruction_starts[i] = code_size;
+        state.instruction_starts[i] = code_size;
         code_size += group->code_size;
         data_size += group->data_size;
+        combine_symbol_mask(group->trampoline_mask, state.trampolines.mask);
     }
     group = &stencil_groups[_FATAL_ERROR];
     code_size += group->code_size;
     data_size += group->data_size;
+    combine_symbol_mask(group->trampoline_mask, state.trampolines.mask);
+    // Calculate the size of the trampolines required by the whole trace
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(state.trampolines.mask); i++) {
+        state.trampolines.size += _Py_popcount32(state.trampolines.mask[i]) * TRAMPOLINE_SIZE;
+    }
     // Round up to the nearest page:
     size_t page_size = get_page_size();
     assert((page_size & (page_size - 1)) == 0);
-    size_t padding = page_size - ((code_size + data_size) & (page_size - 1));
-    size_t total_size = code_size + data_size + padding;
+    size_t code_padding = DATA_ALIGN - ((code_size + state.trampolines.size) & (DATA_ALIGN - 1));
+    size_t padding = page_size - ((code_size + state.trampolines.size + code_padding + data_size) & (page_size - 1));
+    size_t total_size = code_size + state.trampolines.size + code_padding + data_size + padding;
     unsigned char *memory = jit_alloc(total_size);
     if (memory == NULL) {
         return -1;
     }
+#ifdef MAP_JIT
+    pthread_jit_write_protect_np(0);
+#endif
+    // Collect memory stats
+    OPT_STAT_ADD(jit_total_memory_size, total_size);
+    OPT_STAT_ADD(jit_code_size, code_size);
+    OPT_STAT_ADD(jit_trampoline_size, state.trampolines.size);
+    OPT_STAT_ADD(jit_data_size, data_size);
+    OPT_STAT_ADD(jit_padding_size, padding);
+    OPT_HIST(total_size, trace_total_memory_hist);
     // Update the offsets of each instruction:
     for (size_t i = 0; i < length; i++) {
-        instruction_starts[i] += (uintptr_t)memory;
+        state.instruction_starts[i] += (uintptr_t)memory;
     }
     // Loop again to emit the code:
     unsigned char *code = memory;
-    unsigned char *data = memory + code_size;
-    // Compile the trampoline, which handles converting between the native
+    state.trampolines.mem = memory + code_size;
+    unsigned char *data = memory + code_size + state.trampolines.size + code_padding;
+    // Compile the shim, which handles converting between the native
     // calling convention and the calling convention used by jitted code
-    // (which may be different for efficiency reasons). On platforms where
-    // we don't change calling conventions, the trampoline is empty and
-    // nothing is emitted here:
-    group = &trampoline;
-    group->emit(code, data, executor, NULL, instruction_starts);
+    // (which may be different for efficiency reasons).
+    group = &shim;
+    group->emit(code, data, executor, NULL, &state);
     code += group->code_size;
     data += group->data_size;
     assert(trace[0].opcode == _START_EXECUTOR);
     for (size_t i = 0; i < length; i++) {
         const _PyUOpInstruction *instruction = &trace[i];
         group = &stencil_groups[instruction->opcode];
-        group->emit(code, data, executor, instruction, instruction_starts);
+        group->emit(code, data, executor, instruction, &state);
         code += group->code_size;
         data += group->data_size;
     }
     // Protect against accidental buffer overrun into data:
     group = &stencil_groups[_FATAL_ERROR];
-    group->emit(code, data, executor, NULL, instruction_starts);
+    group->emit(code, data, executor, NULL, &state);
     code += group->code_size;
     data += group->data_size;
     assert(code == memory + code_size);
-    assert(data == memory + code_size + data_size);
+    assert(data == memory + code_size + state.trampolines.size + code_padding + data_size);
+#ifdef MAP_JIT
+    pthread_jit_write_protect_np(1);
+#endif
     if (mark_executable(memory, total_size)) {
         jit_free(memory, total_size);
         return -1;
     }
     executor->jit_code = memory;
-    executor->jit_side_entry = memory + trampoline.code_size;
+    executor->jit_side_entry = memory + shim.code_size;
     executor->jit_size = total_size;
     return 0;
 }
@@ -474,7 +594,8 @@ _PyJIT_Free(_PyExecutorObject *executor)
         executor->jit_side_entry = NULL;
         executor->jit_size = 0;
         if (jit_free(memory, size)) {
-            PyErr_WriteUnraisable(NULL);
+            PyErr_FormatUnraisable("Exception ignored while "
+                                   "freeing JIT memory");
         }
     }
 }

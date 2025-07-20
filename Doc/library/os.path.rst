@@ -81,7 +81,7 @@ the :mod:`glob` module.)
 
    Return the longest common sub-path of each pathname in the iterable
    *paths*.  Raise :exc:`ValueError` if *paths* contain both absolute
-   and relative pathnames, the *paths* are on the different drives or
+   and relative pathnames, if *paths* are on different drives, or
    if *paths* is empty.  Unlike :func:`commonprefix`, this returns a
    valid path.
 
@@ -201,14 +201,14 @@ the :mod:`glob` module.)
 
 .. function:: getatime(path)
 
-   Return the time of last access of *path*.  The return value is a floating point number giving
+   Return the time of last access of *path*.  The return value is a floating-point number giving
    the number of seconds since the epoch (see the  :mod:`time` module).  Raise
    :exc:`OSError` if the file does not exist or is inaccessible.
 
 
 .. function:: getmtime(path)
 
-   Return the time of last modification of *path*.  The return value is a floating point number
+   Return the time of last modification of *path*.  The return value is a floating-point number
    giving the number of seconds since the epoch (see the  :mod:`time` module).
    Raise :exc:`OSError` if the file does not exist or is inaccessible.
 
@@ -298,9 +298,10 @@ the :mod:`glob` module.)
    device than *path*, or whether :file:`{path}/..` and *path* point to the same
    i-node on the same device --- this should detect mount points for all Unix
    and POSIX variants.  It is not able to reliably detect bind mounts on the
-   same filesystem.  On Windows, a drive letter root and a share UNC are
-   always mount points, and for any other path ``GetVolumePathName`` is called
-   to see if it is different from the input path.
+   same filesystem. On Linux systems, it will always return ``True`` for btrfs
+   subvolumes, even if they aren't mount points. On Windows, a drive letter root
+   and a share UNC are always mount points, and for any other path
+   ``GetVolumePathName`` is called to see if it is different from the input path.
 
    .. versionchanged:: 3.4
       Added support for detecting non-root mount points on Windows.
@@ -408,9 +409,26 @@ the :mod:`glob` module.)
    system). On Windows, this function will also resolve MS-DOS (also called 8.3)
    style names such as ``C:\\PROGRA~1`` to ``C:\\Program Files``.
 
-   If a path doesn't exist or a symlink loop is encountered, and *strict* is
-   ``True``, :exc:`OSError` is raised. If *strict* is ``False`` these errors
-   are ignored, and so the result might be missing or otherwise inaccessible.
+   By default, the path is evaluated up to the first component that does not
+   exist, is a symlink loop, or whose evaluation raises :exc:`OSError`.
+   All such components are appended unchanged to the existing part of the path.
+
+   Some errors that are handled this way include "access denied", "not a
+   directory", or "bad argument to internal function". Thus, the
+   resulting path may be missing or inaccessible, may still contain
+   links or loops, and may traverse non-directories.
+
+   This behavior can be modified by keyword arguments:
+
+   If *strict* is ``True``, the first error encountered when evaluating the path is
+   re-raised.
+   In particular, :exc:`FileNotFoundError` is raised if *path* does not exist,
+   or another :exc:`OSError` if it is otherwise inaccessible.
+
+   If *strict* is :py:data:`os.path.ALLOW_MISSING`, errors other than
+   :exc:`FileNotFoundError` are re-raised (as with ``strict=True``).
+   Thus, the returned path will not contain any symbolic links, but the named
+   file and some of its parent directories may be missing.
 
    .. note::
       This function emulates the operating system's procedure for making a path
@@ -429,6 +447,15 @@ the :mod:`glob` module.)
    .. versionchanged:: 3.10
       The *strict* parameter was added.
 
+   .. versionchanged:: next
+      The :py:data:`~os.path.ALLOW_MISSING` value for the *strict* parameter
+      was added.
+
+.. data:: ALLOW_MISSING
+
+   Special value used for the *strict* argument in :func:`realpath`.
+
+   .. versionadded:: next
 
 .. function:: relpath(path, start=os.curdir)
 
@@ -480,9 +507,6 @@ the :mod:`glob` module.)
 
    .. versionchanged:: 3.4
       Added Windows support.
-
-   .. versionchanged:: 3.6
-      Accepts a :term:`path-like object`.
 
 
 .. function:: split(path)

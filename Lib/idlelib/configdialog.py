@@ -111,7 +111,7 @@ class ConfigDialog(Toplevel):
             load_configs: Load pages except for extensions.
             activate_config_changes: Tell editors to reload.
         """
-        self.frame = frame = Frame(self, padding="5px")
+        self.frame = frame = Frame(self, padding=5)
         self.frame.grid(sticky="nwes")
         self.note = note = Notebook(frame)
         self.extpage = ExtPage(note)
@@ -435,7 +435,7 @@ class FontPage(Frame):
         self.font_name.set(font.lower())
 
     def set_samples(self, event=None):
-        """Update update both screen samples with the font settings.
+        """Update both screen samples with the font settings.
 
         Called on font initialization and change events.
         Accesses font_name, font_size, and font_bold Variables.

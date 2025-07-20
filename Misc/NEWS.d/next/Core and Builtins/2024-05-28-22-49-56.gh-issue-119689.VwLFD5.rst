@@ -1,1 +1,0 @@
-Generate stack effect metadata for pseudo instructions from bytecodes.c.

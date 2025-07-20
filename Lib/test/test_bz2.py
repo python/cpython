@@ -16,7 +16,7 @@ import threading
 from test.support import import_helper
 from test.support import threading_helper
 from test.support.os_helper import unlink, FakePath
-import _compression
+from compression._common import _streams
 import sys
 
 
@@ -126,15 +126,15 @@ class BZ2FileTest(BaseTest):
     def testReadMonkeyMultiStream(self):
         # Test BZ2File.read() on a multi-stream archive where a stream
         # boundary coincides with the end of the raw read buffer.
-        buffer_size = _compression.BUFFER_SIZE
-        _compression.BUFFER_SIZE = len(self.DATA)
+        buffer_size = _streams.BUFFER_SIZE
+        _streams.BUFFER_SIZE = len(self.DATA)
         try:
             self.createTempFile(streams=5)
             with BZ2File(self.filename) as bz2f:
                 self.assertRaises(TypeError, bz2f.read, float())
                 self.assertEqual(bz2f.read(), self.TEXT * 5)
         finally:
-            _compression.BUFFER_SIZE = buffer_size
+            _streams.BUFFER_SIZE = buffer_size
 
     def testReadTrailingJunk(self):
         self.createTempFile(suffix=self.BAD_DATA)
@@ -184,7 +184,7 @@ class BZ2FileTest(BaseTest):
         with BZ2File(self.filename) as bz2f:
             pdata = bz2f.peek()
             self.assertNotEqual(len(pdata), 0)
-            self.assertTrue(self.TEXT.startswith(pdata))
+            self.assertStartsWith(self.TEXT, pdata)
             self.assertEqual(bz2f.read(), self.TEXT)
 
     def testReadInto(self):
@@ -476,7 +476,6 @@ class BZ2FileTest(BaseTest):
         self.assertEqual(xlines, [b'Test'])
 
     def testContextProtocol(self):
-        f = None
         with BZ2File(self.filename, "wb") as f:
             f.write(b"xxx")
         f = BZ2File(self.filename, "rb")
@@ -743,7 +742,7 @@ class BZ2FileTest(BaseTest):
     def testDecompressLimited(self):
         """Decompressed data buffering should be limited"""
         bomb = bz2.compress(b'\0' * int(2e6), compresslevel=9)
-        self.assertLess(len(bomb), _compression.BUFFER_SIZE)
+        self.assertLess(len(bomb), _streams.BUFFER_SIZE)
 
         decomp = BZ2File(BytesIO(bomb))
         self.assertEqual(decomp.read(1), b'\0')
@@ -769,7 +768,7 @@ class BZ2FileTest(BaseTest):
             with BZ2File(bio) as bz2f:
                 pdata = bz2f.peek()
                 self.assertNotEqual(len(pdata), 0)
-                self.assertTrue(self.TEXT.startswith(pdata))
+                self.assertStartsWith(self.TEXT, pdata)
                 self.assertEqual(bz2f.read(), self.TEXT)
 
     def testWriteBytesIO(self):

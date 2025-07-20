@@ -23,6 +23,7 @@ _sre _sre/sre.c
 _sysconfig _sysconfig.c
 _thread _threadmodule.c
 time timemodule.c
+_types _typesmodule.c
 _typing _typingmodule.c
 _weakref _weakref.c
 
