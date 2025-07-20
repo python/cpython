@@ -1051,7 +1051,7 @@ Concurrent safe warnings control
 The :class:`warnings.catch_warnings` context manager will now optionally
 use a context variable for warning filters.  This is enabled by setting
 the :data:`~sys.flags.context_aware_warnings` flag, either with the ``-X``
-command-line option or an environment variable.  This gives predictable
+command-line option or an environment variable.  This gives predicable
 warnings control when using :class:`~warnings.catch_warnings` combined with
 multiple threads or asynchronous tasks. The flag defaults to true for the
 free-threaded build and false for the GIL-enabled build.
