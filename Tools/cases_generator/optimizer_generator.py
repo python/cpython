@@ -399,7 +399,7 @@ def generate_abstract_interpreter(
     base_uop_names = set([uop.name for uop in base.uops.values()])
     for abstract_uop_name in abstract.uops:
         if abstract_uop_name not in base_uop_names:
-            raise AssertionError(f"All abstract uops should override base uops, "
+            raise ValueError(f"All abstract uops should override base uops, "
                                  "but {abstract_uop_name} is not.")
 
     for uop in base.uops.values():
