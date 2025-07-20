@@ -23,7 +23,7 @@ jobs:
     name: >-
       ${{ inputs.sanitizer }}${{
         inputs.free-threading
-        && ' (FT)'
+        && ' (free-threading)'
         || ''
       }}
     runs-on: ubuntu-24.04
