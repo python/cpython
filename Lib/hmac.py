@@ -26,6 +26,16 @@ trans_36 = bytes((x ^ 0x36) for x in range(256))
 digest_size = None
 
 
+def _is_shake_constructor(digest_like):
+    if isinstance(digest_like, str):
+        name = digest_like
+    else:
+        h = digest_like() if callable(digest_like) else digest_like.new()
+        if not isinstance(name := getattr(h, "name", None), str):
+            return False
+    return name.startswith(("shake", "SHAKE"))
+
+
 def _get_digest_constructor(digest_like):
     if callable(digest_like):
         return digest_like
@@ -109,6 +119,8 @@ class HMAC:
         import warnings
 
         digest_cons = _get_digest_constructor(digestmod)
+        if _is_shake_constructor(digest_cons):
+            raise ValueError(f"unsupported hash algorithm {digestmod}")
 
         self._hmac = None
         self._outer = digest_cons()
@@ -243,6 +255,8 @@ def digest(key, msg, digest):
 
 def _compute_digest_fallback(key, msg, digest):
     digest_cons = _get_digest_constructor(digest)
+    if _is_shake_constructor(digest_cons):
+        raise ValueError(f"unsupported hash algorithm {digest}")
     inner = digest_cons()
     outer = digest_cons()
     blocksize = getattr(inner, 'block_size', 64)

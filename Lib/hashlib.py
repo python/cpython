@@ -80,6 +80,11 @@ __block_openssl_constructor = {
 }
 
 def __get_builtin_constructor(name):
+    if not isinstance(name, str):
+        # Since this function is only used by new(), we use the same
+        # exception as _hashlib.new() when 'name' is of incorrect type.
+        err = f"new() argument 'name' must be str, not {type(name).__name__}"
+        raise TypeError(err)
     cache = __builtin_constructor_cache
     constructor = cache.get(name)
     if constructor is not None:
@@ -120,10 +125,13 @@ def __get_builtin_constructor(name):
     if constructor is not None:
         return constructor
 
-    raise ValueError('unsupported hash type ' + name)
+    # Keep the message in sync with hashlib.h::HASHLIB_UNSUPPORTED_ALGORITHM.
+    raise ValueError(f'unsupported hash algorithm {name}')
 
 
 def __get_openssl_constructor(name):
+    # This function is only used until the module has been initialized.
+    assert isinstance(name, str), "invalid call to __get_openssl_constructor()"
     if name in __block_openssl_constructor:
         # Prefer our builtin blake2 implementation.
         return __get_builtin_constructor(name)
@@ -154,6 +162,8 @@ def __hash_new(name, *args, **kwargs):
     optionally initialized with data (which must be a bytes-like object).
     """
     if name in __block_openssl_constructor:
+        # __block_openssl_constructor is expected to contain strings only
+        assert isinstance(name, str), f"unexpected name: {name}"
         # Prefer our builtin blake2 implementation.
         return __get_builtin_constructor(name)(*args, **kwargs)
     try:
