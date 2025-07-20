@@ -226,7 +226,7 @@ def _read_headers(fp, max_headers):
             break
         headers.append(line)
         if len(headers) > max_headers:
-            raise HTTPException("got more than %d headers" % max_headers)
+            raise HTTPException(f"got more than {max_headers} headers")
     return headers
 
 def _parse_header_lines(header_lines, _class=HTTPMessage):
@@ -243,7 +243,7 @@ def _parse_header_lines(header_lines, _class=HTTPMessage):
     hstring = b''.join(header_lines).decode('iso-8859-1')
     return email.parser.Parser(_class=_class).parsestr(hstring)
 
-def parse_headers(fp, _class=HTTPMessage, _max_headers=None):
+def parse_headers(fp, _class=HTTPMessage, *, _max_headers=None):
     """Parses only RFC2822 headers from a file pointer."""
 
     headers = _read_headers(fp, _max_headers)
@@ -322,7 +322,7 @@ class HTTPResponse(io.BufferedIOBase):
             raise BadStatusLine(line)
         return version, status, reason
 
-    def begin(self, _max_headers=None):
+    def begin(self, *, _max_headers=None):
         if self.headers is not None:
             # we've already started reading the response
             return
@@ -868,7 +868,7 @@ class HTTPConnection:
         return None
 
     def __init__(self, host, port=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
-                 source_address=None, blocksize=8192, max_response_headers=None):
+                 source_address=None, blocksize=8192, *, max_response_headers=None):
         self.timeout = timeout
         self.source_address = source_address
         self.blocksize = blocksize
@@ -1434,7 +1434,7 @@ class HTTPConnection:
                 if self.max_response_headers is None:
                     response.begin()
                 else:
-                    response.begin(self.max_response_headers)
+                    response.begin(_max_headers=self.max_response_headers)
             except ConnectionError:
                 self.close()
                 raise

@@ -48,7 +48,7 @@ The module provides the following classes:
    The optional *blocksize* parameter sets the buffer size in bytes for
    sending a file-like message body. The optional *max_response_headers*
    parameter sets the maximum number of allowed response headers to help
-   prevent denial of service attacks, otherwise the default value (100) is used.
+   prevent denial-of-service attacks, otherwise the default value (100) is used.
 
    For example, the following calls all create instances that connect to the server
    at the same host and port::
@@ -68,7 +68,7 @@ The module provides the following classes:
    .. versionchanged:: 3.7
       *blocksize* parameter was added.
 
-   .. versionchanged:: 3.15
+   .. versionchanged:: next
       *max_response_headers* parameter was added.
 
 
@@ -114,7 +114,7 @@ The module provides the following classes:
       The deprecated *key_file*, *cert_file* and *check_hostname* parameters
       have been removed.
 
-   .. versionchanged:: 3.15
+   .. versionchanged:: next
       *max_response_headers* parameter was added.
 
 
@@ -426,10 +426,10 @@ HTTPConnection Objects
 
 .. attribute:: HTTPConnection.max_response_headers
 
-   The maximum number of allowed response headers to help prevent denial of
-   service attacks.
+   The maximum number of allowed response headers to help prevent denial-of-service
+   attacks. By default, the maximum number of allowed headers is set to 100.
 
-   .. versionadded:: 3.15
+   .. versionadded:: next
 
 
 As an alternative to using the :meth:`~HTTPConnection.request` method described above, you can
