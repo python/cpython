@@ -1,2 +1,3 @@
-:meth:`repr` of :class:`ImportError` now contains attributes name and path.
+The :meth:`repr` of :class:`ImportError` and :class:`ModuleNotFoundError` now
+contains attributes name and path.
 Patch by Serhiy Storchaka, Oleg Iarygin, and Yoav Nir

@@ -200,6 +200,10 @@ Other language changes
 * Several error messages incorrectly using the term "argument" have been corrected.
   (Contributed by Stan Ulbrych in :gh:`133382`.)
 
+* The :meth:`repr` of :class:`ImportError` and :class:`ModuleNotFoundError` now
+  contains attributes name and path.
+  (Contributed by Serhiy Storchaka, Oleg Iarygin, and Yoav Nir in :gh:`74185`.)
+
 
 New modules
 ===========

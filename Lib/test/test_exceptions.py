@@ -2640,5 +2640,6 @@ class PEP626Tests(unittest.TestCase):
         self.assertEqual(repr(cm.exception),
             "ModuleNotFoundError(\"No module named 'does_not_exist'\", name='does_not_exist')")
 
+
 if __name__ == '__main__':
     unittest.main()

@@ -1874,6 +1874,9 @@ ImportError_repr(PyObject *self)
         goto error;
     }
     PyObject *r = BaseException_repr(self);
+    if (r == NULL) {
+        goto error;
+    }
     if (PyUnicodeWriter_WriteSubstring(
         writer, r, 0, PyUnicode_GET_LENGTH(r) - 1) < 0)
     {
@@ -1903,7 +1906,7 @@ ImportError_repr(PyObject *self)
         }
     }
 
-    if (PyUnicodeWriter_WriteASCII(writer, ")", 1) < 0) {
+    if (PyUnicodeWriter_WriteChar(writer, ")") < 0) {
         goto error;
     }
 
