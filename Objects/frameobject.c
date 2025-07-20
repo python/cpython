@@ -942,7 +942,7 @@ PyTypeObject PyFrameLocalsProxy_Type = {
     .tp_alloc = PyType_GenericAlloc,
     .tp_new = framelocalsproxy_new,
     .tp_free = PyObject_GC_Del,
-    .tp_doc = framelocalsproxy_doc
+    .tp_doc = framelocalsproxy_doc,
 };
 
 PyObject *
