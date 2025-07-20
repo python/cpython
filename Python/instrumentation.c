@@ -556,7 +556,7 @@ sanity_check_instrumentation(PyCodeObject *code)
         active_monitors));
     int code_len = (int)Py_SIZE(code);
     PyCodeAddressRange range;
-    _PyCode_InitAddressRange(co, &range);
+    _PyCode_InitAddressRange(code, &range);
     for (int i = 0; i < code_len;) {
         _Py_CODEUNIT *instr = &_PyCode_CODE(code)[i];
         int opcode = instr->op.code;
