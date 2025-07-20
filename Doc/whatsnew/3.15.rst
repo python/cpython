@@ -230,6 +230,16 @@ difflib
   (Contributed by Jiahao Li in :gh:`134580`.)
 
 
+http.client
+-----------
+
+* A new *max_response_headers* keyword-only parameter has been added to
+  :class:`~http.client.HTTPConnection` and :class:`~http.client.HTTPSConnection`
+  constructors. This parameter sets the maximum number of allowed response headers,
+  helping to prevent denial-of-service attacks.
+  (Contributed by Alexander Enrique Urieles Nieto in :gh:`136814`.)
+
+
 math
 ----
 
