@@ -52,7 +52,7 @@ The module's API can be divided into two parts:
 Module-Level Functions
 ----------------------
 
-.. function:: print_tb(tb, limit=None, file=None)
+.. function:: print_tb(tb, limit=None, file=None, *, show_lines=True, recent_first=False)
 
    Print up to *limit* stack trace entries from
    :ref:`traceback object <traceback-objects>` *tb* (starting
@@ -62,6 +62,16 @@ Module-Level Functions
    :data:`sys.stderr`; otherwise it should be an open
    :term:`file <file object>` or :term:`file-like object` to
    receive the output.
+
+   If *show_lines* is true (the default), source code lines will be included in the output.
+
+   If *recent_first* is true, the most recent stack trace entries are printed
+   first, otherwise the oldest entries are printed first. The default is false.
+   ``recent_first=True`` is useful for showing stack traces in places where
+   people see the top of the stack trace first, such as in a web browser.
+   ``recent_first=False`` is useful for showing stack traces in places where
+   people see the bottom of the stack trace first, such as a console or log
+   files watched with :command:`tail -f`.
 
    .. note::
 
@@ -74,9 +84,12 @@ Module-Level Functions
    .. versionchanged:: 3.5
        Added negative *limit* support.
 
+   .. versionchanged:: next
+      Added the *show_lines* and *recent_first* parameters.
+
 
 .. function:: print_exception(exc, /[, value, tb], limit=None, \
-                              file=None, chain=True)
+                              file=None, chain=True, *, show_lines=True, recent_first=False)
 
    Print exception information and stack trace entries from
    :ref:`traceback object <traceback-objects>`
@@ -105,6 +118,11 @@ Module-Level Functions
    printed as well, like the interpreter itself does when printing an unhandled
    exception.
 
+   If *show_lines* is true, source code lines are included in the output.
+
+   If *recent_first* is true, the most recent stack trace entries are printed
+   first, otherwise the oldest entries are printed first. The default is false.
+
    .. versionchanged:: 3.5
       The *etype* argument is ignored and inferred from the type of *value*.
 
@@ -112,21 +130,31 @@ Module-Level Functions
       The *etype* parameter has been renamed to *exc* and is now
       positional-only.
 
+   .. versionchanged:: next
+      Added the *show_lines* and *recent_first* parameters.
 
-.. function:: print_exc(limit=None, file=None, chain=True)
+
+.. function:: print_exc(limit=None, file=None, chain=True, *, show_lines=True, recent_first=False)
 
    This is a shorthand for ``print_exception(sys.exception(), limit=limit, file=file,
-   chain=chain)``.
+   chain=chain, show_lines=show_lines, recent_first=recent_first)``.
+
+   .. versionchanged:: next
+      Added the *show_lines* and *recent_first* parameters.
 
 
-.. function:: print_last(limit=None, file=None, chain=True)
+.. function:: print_last(limit=None, file=None, chain=True, *, show_lines=True, recent_first=False)
 
    This is a shorthand for ``print_exception(sys.last_exc, limit=limit, file=file,
-   chain=chain)``.  In general it will work only after an exception has reached
-   an interactive prompt (see :data:`sys.last_exc`).
+   chain=chain, show_lines=show_lines, recent_first=recent_first)``.
+   In general it will work only after an exception has reached an interactive
+   prompt (see :data:`sys.last_exc`).
+
+   .. versionchanged:: next
+      Added the *show_lines* and *recent_first* parameters.
 
 
-.. function:: print_stack(f=None, limit=None, file=None)
+.. function:: print_stack(f=None, limit=None, file=None, *, show_lines=True, recent_first=False)
 
    Print up to *limit* stack trace entries (starting from the invocation
    point) if *limit* is positive.  Otherwise, print the last ``abs(limit)``
@@ -134,10 +162,14 @@ Module-Level Functions
    The optional *f* argument can be used to specify an alternate
    :ref:`stack frame <frame-objects>`
    to start.  The optional *file* argument has the same meaning as for
-   :func:`print_tb`.
+   :func:`print_tb`.  If *show_lines* is true, source code lines are
+   included in the output.
 
    .. versionchanged:: 3.5
-          Added negative *limit* support.
+      Added negative *limit* support.
+
+   .. versionchanged:: next
+      Added the *show_lines* and *recent_first* parameters.
 
 
 .. function:: extract_tb(tb, limit=None)
@@ -161,21 +193,29 @@ Module-Level Functions
    arguments have the same meaning as for :func:`print_stack`.
 
 
-.. function:: print_list(extracted_list, file=None)
+.. function:: print_list(extracted_list, file=None, *, show_lines=True)
 
    Print the list of tuples as returned by :func:`extract_tb` or
    :func:`extract_stack` as a formatted stack trace to the given file.
    If *file* is ``None``, the output is written to :data:`sys.stderr`.
+   If *show_lines* is true, source code lines are included in the output.
+
+   .. versionchanged:: next
+      Added the *show_lines* parameter.
 
 
-.. function:: format_list(extracted_list)
+.. function:: format_list(extracted_list, *, show_lines=True)
 
    Given a list of tuples or :class:`FrameSummary` objects as returned by
    :func:`extract_tb` or :func:`extract_stack`, return a list of strings ready
    for printing.  Each string in the resulting list corresponds to the item with
    the same index in the argument list.  Each string ends in a newline; the
    strings may contain internal newlines as well, for those items whose source
-   text line is not ``None``.
+   text line is not ``None``.  If *show_lines* is ``True``, source code lines
+   are included in the output.
+
+   .. versionchanged:: next
+      Added the *show_lines* parameter.
 
 
 .. function:: format_exception_only(exc, /[, value], *, show_group=False)
@@ -208,13 +248,17 @@ Module-Level Functions
       *show_group* parameter was added.
 
 
-.. function:: format_exception(exc, /[, value, tb], limit=None, chain=True)
+.. function:: format_exception(exc, /[, value, tb], limit=None, chain=True, *, show_lines=True, recent_first=False, show_group=False)
 
    Format a stack trace and the exception information.  The arguments  have the
    same meaning as the corresponding arguments to :func:`print_exception`.  The
    return value is a list of strings, each ending in a newline and some
    containing internal newlines.  When these lines are concatenated and printed,
    exactly the same text is printed as does :func:`print_exception`.
+
+   If *show_lines* is true, source code lines are included in the output.
+   If *recent_first* is true, the most recent stack trace entries are printed
+   first, otherwise the oldest entries are printed first. The default is false.
 
    .. versionchanged:: 3.5
       The *etype* argument is ignored and inferred from the type of *value*.
@@ -223,21 +267,41 @@ Module-Level Functions
       This function's behavior and signature were modified to match
       :func:`print_exception`.
 
+   .. versionchanged:: next
+      Added the *show_lines* and *recent_first* parameters.
 
-.. function:: format_exc(limit=None, chain=True)
+
+.. function:: format_exc(limit=None, chain=True, *, show_lines=True, recent_first=False)
 
    This is like ``print_exc(limit)`` but returns a string instead of printing to
    a file.
 
+   If *show_lines* is true, source code lines are included in the output.
+   If *recent_first* is true, the most recent stack trace entries are printed
+   first, otherwise the oldest entries are printed first. The default is false.
 
-.. function:: format_tb(tb, limit=None)
+   .. versionchanged:: next
+      Added the *show_lines* and *recent_first* parameters.
 
-   A shorthand for ``format_list(extract_tb(tb, limit))``.
+
+.. function:: format_tb(tb, limit=None, *, show_lines=True, recent_first=False)
+
+   A shorthand for ``format_list(extract_tb(tb, limit), show_lines=show_lines)``.
+
+   If *recent_first* is true, ``reversed(extract_tb(tb, limit))`` is used.
+
+   .. versionchanged:: next
+      Added the *show_lines* and *recent_first* parameters.
 
 
-.. function:: format_stack(f=None, limit=None)
+.. function:: format_stack(f=None, limit=None, *, show_lines=True, recent_first=False)
 
-   A shorthand for ``format_list(extract_stack(f, limit))``.
+   A shorthand for ``format_list(extract_stack(f, limit), show_lines=show_lines)``.
+
+   If *recent_first* is true, ``reversed(extract_stack(f, limit))`` is used.
+
+   .. versionchanged:: next
+      Added the *show_lines* and *recent_first* parameters.
 
 .. function:: clear_frames(tb)
 
@@ -283,7 +347,7 @@ storing this information by avoiding holding references to
 In addition, they expose more options to configure the output compared to
 the module-level functions described above.
 
-.. class:: TracebackException(exc_type, exc_value, exc_traceback, *, limit=None, lookup_lines=True, capture_locals=False, compact=False, max_group_width=15, max_group_depth=10)
+.. class:: TracebackException(exc_type, exc_value, exc_traceback, *, limit=None, lookup_lines=False, capture_locals=False, compact=False, max_group_width=15, max_group_depth=10)
 
    Capture an exception for later rendering. The meaning of *limit*,
    *lookup_lines* and *capture_locals* are as for the :class:`StackSummary`
@@ -308,6 +372,10 @@ the module-level functions described above.
 
    .. versionchanged:: 3.11
       Added the *max_group_width* and *max_group_depth* parameters.
+
+   .. versionchanged:: next
+      Changed *lookup_lines* default to ``False`` to avoid overhead when
+      formatting exceptions with ``show_lines=False``.
 
    .. attribute:: __cause__
 
@@ -391,21 +459,35 @@ the module-level functions described above.
 
       For syntax errors - the compiler error message.
 
-   .. classmethod:: from_exception(exc, *, limit=None, lookup_lines=True, capture_locals=False)
+   .. classmethod:: from_exception(exc, *, limit=None, lookup_lines=False, capture_locals=False)
 
       Capture an exception for later rendering. *limit*, *lookup_lines* and
       *capture_locals* are as for the :class:`StackSummary` class.
 
       Note that when locals are captured, they are also shown in the traceback.
 
-   .. method::  print(*, file=None, chain=True)
+      .. versionchanged:: next
+         Changed *lookup_lines* default to ``False`` to avoid overhead when
+         formatting exceptions with ``show_lines=False``.
+
+   .. method::  print(*, file=None, chain=True, show_lines=True, recent_first=False)
 
       Print to *file* (default ``sys.stderr``) the exception information returned by
       :meth:`format`.
 
+      If *show_lines* is true, source code lines are included in the output.
+
+      If *recent_first* is true, the exception is printed first followed by stack
+      trace by "most recent call first" order.
+      Otherwise, the stack trace is printed first by "most recent call last" order
+      followed by the exception.
+
       .. versionadded:: 3.11
 
-   .. method:: format(*, chain=True)
+      .. versionchanged:: next
+         Added the *show_lines* and *recent_first* parameters.
+
+   .. method:: format(*, chain=True, show_lines=True, recent_first=False)
 
       Format the exception.
 
@@ -415,6 +497,16 @@ the module-level functions described above.
       The return value is a generator of strings, each ending in a newline and
       some containing internal newlines. :func:`~traceback.print_exception`
       is a wrapper around this method which just prints the lines to a file.
+
+      If *show_lines* is true, source code lines are included in the output.
+
+      If *recent_first* is true, the exception is printed first followed by stack
+      trace by "most recent call first" order.
+      Otherwise, the stack trace is printed first by "most recent call last" order
+      followed by the exception.
+
+      .. versionchanged:: next
+         Added the *show_lines* and *recent_first* parameters.
 
    .. method::  format_exception_only(*, show_group=False)
 
@@ -449,7 +541,7 @@ the module-level functions described above.
 
 .. class:: StackSummary
 
-   .. classmethod:: extract(frame_gen, *, limit=None, lookup_lines=True, capture_locals=False)
+   .. classmethod:: extract(frame_gen, *, limit=None, lookup_lines=False, capture_locals=False)
 
       Construct a :class:`!StackSummary` object from a frame generator (such as
       is returned by :func:`~traceback.walk_stack` or
@@ -467,6 +559,10 @@ the module-level functions described above.
          Exceptions raised from :func:`repr` on a local variable (when
          *capture_locals* is ``True``) are no longer propagated to the caller.
 
+      .. versionchanged:: next
+         Changed *lookup_lines* default to ``False`` to avoid overhead when
+         formatting traceback with ``show_lines=False``.
+
    .. classmethod:: from_list(a_list)
 
       Construct a :class:`!StackSummary` object from a supplied list of
@@ -474,7 +570,7 @@ the module-level functions described above.
       should be a 4-tuple with *filename*, *lineno*, *name*, *line* as the
       elements.
 
-   .. method:: format()
+   .. method:: format(*, show_lines=True)
 
       Returns a list of strings ready for printing.  Each string in the
       resulting list corresponds to a single :ref:`frame <frame-objects>` from
@@ -486,10 +582,15 @@ the module-level functions described above.
       repetitions are shown, followed by a summary line stating the exact
       number of further repetitions.
 
+      If *show_lines* is true, includes source code lines in the output.
+
       .. versionchanged:: 3.6
          Long sequences of repeated frames are now abbreviated.
 
-   .. method:: format_frame_summary(frame_summary)
+      .. versionchanged:: next
+         Added the *show_lines* parameter.
+
+   .. method:: format_frame_summary(frame_summary, *, show_lines=True, **kwargs)
 
       Returns a string for printing one of the :ref:`frames <frame-objects>`
       involved in the stack.
@@ -497,7 +598,13 @@ the module-level functions described above.
       printed by :meth:`StackSummary.format`. If it returns ``None``, the
       frame is omitted from the output.
 
+      The keyword argument *show_lines*, if ``True``, includes source code
+      lines in the output.
+
       .. versionadded:: 3.11
+
+      .. versionchanged:: next
+         Added the *show_lines* parameter.
 
 
 :class:`!FrameSummary` Objects
