@@ -7327,8 +7327,6 @@ clear_state(datetime_state *st)
 PyStatus
 _PyDateTime_InitTypes(PyInterpreterState *interp)
 {
-    PyDateTime_DateTimeType.tp_base = &PyDateTime_DateType;
-
     /* Bases classes must be initialized before subclasses,
      * so capi_types must have the types in the appropriate order. */
     for (size_t i = 0; i < Py_ARRAY_LENGTH(capi_types); i++) {
