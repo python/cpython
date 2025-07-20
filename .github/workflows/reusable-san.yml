@@ -22,7 +22,9 @@ jobs:
   build-san-reusable:
     name: >-
       ${{ inputs.sanitizer }}${{
-        inputs.free-threading && ' (FT)'
+        inputs.free-threading
+        && ' (FT)'
+        || ''
       }}
     runs-on: ubuntu-24.04
     timeout-minutes: 60

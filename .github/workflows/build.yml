@@ -585,32 +585,30 @@ jobs:
     - name: Tests
       run: xvfb-run make ci
 
-  build-tsan:
-    name: >-
-      Thread sanitizer
-      ${{ fromJSON(matrix.free-threading) && '(free-threading)' || '' }}
+  build-san:
+    name: >-  # ${{ '' } is a hack to nest jobs under the same sidebar category
+      Sanitizers${{ '' }}
     needs: build-context
     if: needs.build-context.outputs.run-tests == 'true'
     strategy:
       fail-fast: false
       matrix:
+        check-name:
+        - Thread
         free-threading:
         - false
         - true
+        sanitizer:
+        - TSan
+        include:
+        - check-name: Undefined behavior
+          sanitizer: UBSan
+          free-threading: false
     uses: ./.github/workflows/reusable-san.yml
     with:
-      sanitizer: TSan
+      sanitizer: ${{ matrix.sanitizer }}
       config_hash: ${{ needs.build-context.outputs.config-hash }}
       free-threading: ${{ matrix.free-threading }}
-
-  build-ubsan:
-    name: Undefined behavior sanitizer
-    needs: build-context
-    if: needs.build-context.outputs.run-tests == 'true'
-    uses: ./.github/workflows/reusable-san.yml
-    with:
-      sanitizer: UBSan
-      config_hash: ${{ needs.build-context.outputs.config-hash }}
 
   cross-build-linux:
     name: Cross build Linux
@@ -710,7 +708,7 @@ jobs:
     - build-wasi
     - test-hypothesis
     - build-asan
-    - build-tsan
+    - build-san
     - cross-build-linux
     - cifuzz
     if: always()
@@ -745,7 +743,7 @@ jobs:
             build-wasi,
             test-hypothesis,
             build-asan,
-            build-tsan,
+            build-san,
             cross-build-linux,
             '
             || ''
