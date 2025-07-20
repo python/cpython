@@ -1331,7 +1331,7 @@ in :meth:`TarFile.add`::
 
     import sys
     import tarfile
-    with tarfile.open("sample.tar.gz", "w:gz", fileobj=sys.stdout.buffer) as tar:
+    with tarfile.open("sample.tar.gz", "w|gz", fileobj=sys.stdout.buffer) as tar:
         for name in ["foo", "bar", "quux"]:
             tar.add(name)
 
