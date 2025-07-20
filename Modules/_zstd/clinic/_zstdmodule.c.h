@@ -289,7 +289,7 @@ PyDoc_STRVAR(_zstd_get_frame_info__doc__,
 "get_frame_info($module, /, frame_buffer)\n"
 "--\n"
 "\n"
-"Get Zstandard frame infomation from a frame header.\n"
+"Get Zstandard frame information from a frame header.\n"
 "\n"
 "  frame_buffer\n"
 "    A bytes-like object, containing the header of a Zstandard frame.");
