@@ -5830,7 +5830,7 @@ os_nice_impl(PyObject *module, int increment)
 
     /* There are two flavours of 'nice': one that returns the new
        priority (as required by almost all standards out there) and the
-       Linux/FreeBSD one, which returns '0' on success and advices
+       Linux/FreeBSD one, which returns '0' on success and advises
        the use of getpriority() to get the new priority.
 
        If we are of the nice family that returns the new priority, we

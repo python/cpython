@@ -543,7 +543,7 @@ init_interpreter(PyInterpreterState *interp,
     interp->threads.preallocated = &interp->_initial_thread;
 
     // We would call _PyObject_InitState() at this point
-    // if interp->feature_flags were alredy set.
+    // if interp->feature_flags were already set.
 
     _PyEval_InitState(interp);
     _PyGC_InitState(&interp->gc);

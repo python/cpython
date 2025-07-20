@@ -137,7 +137,7 @@ set_ftstring_expr(struct tok_state* tok, struct token *token, char c) {
 
         // Handle quotes
         if (ch == '"' || ch == '\'') {
-            // The following if/else block works becase there is an off number
+            // The following if/else block works because there is an off number
             // of quotes in STRING tokens and the lexer only ever reaches this
             // function with valid STRING tokens.
             // For example: """hello"""

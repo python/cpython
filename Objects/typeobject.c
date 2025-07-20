@@ -4880,7 +4880,7 @@ type_new_impl(type_new_ctx *ctx)
 
     assert(_PyType_CheckConsistency(type));
 #if defined(Py_GIL_DISABLED) && defined(Py_DEBUG) && SIZEOF_VOID_P > 4
-    // After this point, other threads can potentally use this type.
+    // After this point, other threads can potentially use this type.
     ((PyObject*)type)->ob_flags |= _Py_TYPE_REVEALED_FLAG;
 #endif
 
@@ -5597,7 +5597,7 @@ PyType_FromMetaclass(
 
     assert(_PyType_CheckConsistency(type));
 #if defined(Py_GIL_DISABLED) && defined(Py_DEBUG) && SIZEOF_VOID_P > 4
-    // After this point, other threads can potentally use this type.
+    // After this point, other threads can potentially use this type.
     ((PyObject*)type)->ob_flags |= _Py_TYPE_REVEALED_FLAG;
 #endif
 

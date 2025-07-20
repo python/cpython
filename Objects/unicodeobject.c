@@ -14289,7 +14289,7 @@ unicode_getnewargs(PyObject *v, PyObject *Py_UNUSED(ignored))
 }
 
 /*
-This function searchs the longest common leading whitespace
+This function searches the longest common leading whitespace
 of all lines in the [src, end).
 It returns the length of the common leading whitespace and sets `output` to
 point to the beginning of the common leading whitespace if length > 0.
