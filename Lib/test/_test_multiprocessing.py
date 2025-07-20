@@ -1765,6 +1765,7 @@ class _TestCondition(BaseTestCase):
         threading_helper.join_thread(t)
         join_process(p)
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
     def test_notify_all(self):
         cond = self.Condition()
         sleeping = self.Semaphore(0)
@@ -1834,6 +1835,7 @@ class _TestCondition(BaseTestCase):
             # NOTE: join_process and join_thread are the same
             threading_helper.join_thread(w)
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
     def test_notify_n(self):
         cond = self.Condition()
         sleeping = self.Semaphore(0)
@@ -1974,6 +1976,7 @@ class _TestCondition(BaseTestCase):
         if pid is not None:
             os.kill(pid, signal.SIGINT)
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
     def test_wait_result(self):
         if isinstance(self, ProcessesMixin) and sys.platform != 'win32':
             pid = os.getpid()
@@ -2801,8 +2804,16 @@ class _TestPool(BaseTestCase):
 
     @classmethod
     def setUpClass(cls):
-        super().setUpClass()
-        cls.pool = cls.Pool(4)
+        # gh-135427
+        # In some of the tests, a forked child forks another child of itself. In that case, using
+        # warnings_helper.ignore_warnings decorator does not actually ignore the warning from that
+        # child of child, and a warnings_helper.ignore_warnings exception is raised.
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore',
+                                    message=".*fork.*may lead to deadlocks in the child.*",
+                                    category=DeprecationWarning)
+            super().setUpClass()
+            cls.pool = cls.Pool(4)
 
     @classmethod
     def tearDownClass(cls):
@@ -6982,8 +6993,16 @@ class ManagerMixin(BaseMixin):
 
     @classmethod
     def setUpClass(cls):
-        super().setUpClass()
-        cls.manager = multiprocessing.Manager()
+        # gh-135427
+        # In some of the tests, a forked child forks another child of itself. In that case, using
+        # warnings_helper.ignore_warnings decorator does not actually ignore the warning from that
+        # child of child, and a warnings_helper.ignore_warnings exception is raised.
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore',
+                                    message=".*fork.*may lead to deadlocks in the child.*",
+                                    category=DeprecationWarning)
+            super().setUpClass()
+            cls.manager = multiprocessing.Manager()
 
     @classmethod
     def tearDownClass(cls):
