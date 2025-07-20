@@ -167,11 +167,12 @@ def make_build_python(context, working_dir):
 @subdir(HOST_BUILD_DIR, clean_ok=True)
 def make_emscripten_libffi(context, working_dir):
     shutil.rmtree(working_dir / "libffi-3.4.6", ignore_errors=True)
-    with tempfile.NamedTemporaryFile(suffix=".tar.gz") as tmp_file:
+    with tempfile.NamedTemporaryFile(suffix=".tar.gz", delete_on_close=False) as tmp_file:
         with urlopen(
             "https://github.com/libffi/libffi/releases/download/v3.4.6/libffi-3.4.6.tar.gz"
         ) as response:
             shutil.copyfileobj(response, tmp_file)
+        tmp_file.close()
         shutil.unpack_archive(tmp_file.name, working_dir)
     call(
         [EMSCRIPTEN_DIR / "make_libffi.sh"],
@@ -262,10 +263,20 @@ def configure_emscripten_python(context, working_dir):
                 REALPATH=abs_path
             fi
 
+            # Before node 24, --experimental-wasm-jspi uses different API,
+            # After node 24 JSPI is on by default.
+            ARGS=$({host_runner} -e "$(cat <<"EOF"
+            const major_version = Number(process.version.split(".")[0].slice(1));
+            if (major_version === 24) {{
+                process.stdout.write("--experimental-wasm-jspi");
+            }}
+            EOF
+            )")
+
             # We compute our own path, not following symlinks and pass it in so that
             # node_entry.mjs can set sys.executable correctly.
             # Intentionally allow word splitting on NODEFLAGS.
-            exec {host_runner} $NODEFLAGS {node_entry} --this-program="$($REALPATH "$0")" "$@"
+            exec {host_runner} $NODEFLAGS $ARGS {node_entry} --this-program="$($REALPATH "$0")" "$@"
             """
         )
     )

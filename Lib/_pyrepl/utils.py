@@ -41,9 +41,15 @@ class Span(NamedTuple):
 
     @classmethod
     def from_token(cls, token: TI, line_len: list[int]) -> Self:
+        end_offset = -1
+        if (token.type in {T.FSTRING_MIDDLE, T.TSTRING_MIDDLE}
+            and token.string.endswith(("{", "}"))):
+            # gh-134158: a visible trailing brace comes from a double brace in input
+            end_offset += 1
+
         return cls(
             line_len[token.start[0] - 1] + token.start[1],
-            line_len[token.end[0] - 1] + token.end[1] - 1,
+            line_len[token.end[0] - 1] + token.end[1] + end_offset,
         )
 
 
@@ -235,14 +241,14 @@ def is_soft_keyword_used(*tokens: TI | None) -> bool:
                 return s in keyword_first_sets_match
             return True
         case (
-            None | TI(T.NEWLINE) | TI(T.INDENT) | TI(string=":"),
+            None | TI(T.NEWLINE) | TI(T.INDENT) | TI(T.DEDENT) | TI(string=":"),
             TI(string="case"),
             TI(T.NUMBER | T.STRING | T.FSTRING_START | T.TSTRING_START)
             | TI(T.OP, string="(" | "*" | "-" | "[" | "{")
         ):
             return True
         case (
-            None | TI(T.NEWLINE) | TI(T.INDENT) | TI(string=":"),
+            None | TI(T.NEWLINE) | TI(T.INDENT) | TI(T.DEDENT) | TI(string=":"),
             TI(string="case"),
             TI(T.NAME, string=s)
         ):

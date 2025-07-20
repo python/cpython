@@ -77,8 +77,8 @@ def needs_symlinks(fn):
 
 class UnsupportedOperationTest(unittest.TestCase):
     def test_is_notimplemented(self):
-        self.assertTrue(issubclass(pathlib.UnsupportedOperation, NotImplementedError))
-        self.assertTrue(isinstance(pathlib.UnsupportedOperation(), NotImplementedError))
+        self.assertIsSubclass(pathlib.UnsupportedOperation, NotImplementedError)
+        self.assertIsInstance(pathlib.UnsupportedOperation(), NotImplementedError)
 
 
 class LazyImportTest(unittest.TestCase):
@@ -300,8 +300,8 @@ class PurePathTest(unittest.TestCase):
                 clsname = p.__class__.__name__
                 r = repr(p)
                 # The repr() is in the form ClassName("forward-slashes path").
-                self.assertTrue(r.startswith(clsname + '('), r)
-                self.assertTrue(r.endswith(')'), r)
+                self.assertStartsWith(r, clsname + '(')
+                self.assertEndsWith(r, ')')
                 inner = r[len(clsname) + 1 : -1]
                 self.assertEqual(eval(inner), p.as_posix())
 
@@ -538,12 +538,6 @@ class PurePathTest(unittest.TestCase):
         self.assertRaises(ValueError, P('/').with_stem, 'd')
         self.assertRaises(ValueError, P('a/b').with_stem, '')
         self.assertRaises(ValueError, P('a/b').with_stem, '.')
-
-    def test_is_reserved_deprecated(self):
-        P = self.cls
-        p = P('a/b')
-        with self.assertWarns(DeprecationWarning):
-            p.is_reserved()
 
     def test_full_match_case_sensitive(self):
         P = self.cls
@@ -2954,7 +2948,13 @@ class PathTest(PurePathTest):
         else:
             # ".." segments are normalized first on Windows, so this path is stat()able.
             self.assertEqual(set(p.glob("xyzzy/..")), { P(self.base, "xyzzy", "..") })
-        self.assertEqual(set(p.glob("/".join([".."] * 50))), { P(self.base, *[".."] * 50)})
+        if sys.platform == "emscripten":
+            # Emscripten will return ELOOP if there are 49 or more ..'s.
+            # Can remove when https://github.com/emscripten-core/emscripten/pull/24591 is merged.
+            NDOTDOTS = 48
+        else:
+            NDOTDOTS = 50
+        self.assertEqual(set(p.glob("/".join([".."] * NDOTDOTS))), { P(self.base, *[".."] * NDOTDOTS)})
 
     def test_glob_inaccessible(self):
         P = self.cls
