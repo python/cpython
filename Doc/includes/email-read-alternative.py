@@ -36,8 +36,8 @@ simplest = msg.get_body(preferencelist=('plain', 'html'))
 print()
 print(''.join(simplest.get_content().splitlines(keepends=True)[:3]))
 
-ans = input("View full message?")
-if ans.lower()[0] == 'n':
+and = input("View full message?")
+if and.lower()[0] == 'n':
     sys.exit()
 
 # We can extract the richest alternative in order to display it:

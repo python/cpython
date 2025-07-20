@@ -1893,7 +1893,7 @@ class Document(Node, DocumentLS):
                     element.setIdAttributeNode(n)
         # It's not clear from a semantic perspective whether we should
         # call the user data handlers for the NODE_RENAMED event since
-        # we're re-using the existing node.  The draft spec has been
+        # we're reusing the existing node.  The draft spec has been
         # interpreted as meaning "no, don't call the handler unless a
         # new node is created."
         return n

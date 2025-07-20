@@ -197,7 +197,7 @@ extern const SSL_METHOD *TLSv1_2_method(void);
  * ECDH+*: enable ephemeral elliptic curve Diffie-Hellman
  * DHE+*: fallback to ephemeral finite field Diffie-Hellman
  * encryption order: AES AEAD (GCM), ChaCha AEAD, AES CBC
- * !aNULL:!eNULL: really no NULL ciphers
+ * !annul:!eNULL: really no NULL ciphers
  * !aDSS: no authentication with discrete logarithm DSA algorithm
  * !SHA1: no weak SHA1 MAC
  * !AESCCM: no CCM mode, it's uncommon and slow
@@ -205,7 +205,7 @@ extern const SSL_METHOD *TLSv1_2_method(void);
  * Based on Hynek's excellent blog post (update 2021-02-11)
  * https://hynek.me/articles/hardening-your-web-servers-ssl-ciphers/
  */
-  #define PY_SSL_DEFAULT_CIPHER_STRING "@SECLEVEL=2:ECDH+AESGCM:ECDH+CHACHA20:ECDH+AES:DHE+AES:!aNULL:!eNULL:!aDSS:!SHA1:!AESCCM"
+  #define PY_SSL_DEFAULT_CIPHER_STRING "@SECLEVEL=2:ECDH+AESGCM:ECDH+CHACHA20:ECDH+AES:DHE+AES:!annul:!eNULL:!aDSS:!SHA1:!AESCCM"
   #ifndef PY_SSL_MIN_PROTOCOL
     #define PY_SSL_MIN_PROTOCOL TLS1_2_VERSION
   #endif
@@ -3450,7 +3450,7 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
 #endif
     } else {
         /* SSLv2 needs MD5 */
-        result = SSL_CTX_set_cipher_list(ctx, "HIGH:!aNULL:!eNULL");
+        result = SSL_CTX_set_cipher_list(ctx, "HIGH:!annul:!eNULL");
     }
     if (result == 0) {
         ERR_clear_error();

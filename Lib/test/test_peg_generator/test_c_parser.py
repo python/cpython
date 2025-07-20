@@ -77,7 +77,7 @@ class TestCParser(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         if cls._has_run:
-            # Since gh-104798 (Use setuptools in peg-generator and reenable
+            # Since gh-104798 (Use setuptools in peg-generator and re-enable
             # tests), this test case has been producing ref leaks. Initial
             # debugging points to bug(s) in setuptools and/or importlib.
             # See gh-105063 for more info.
@@ -92,7 +92,7 @@ class TestCParser(unittest.TestCase):
         cls.tmp_base = os.getcwd()
         if os.path.samefile(cls.tmp_base, os_helper.SAVEDCWD):
             cls.tmp_base = None
-        # Create a directory for the reuseable static library part of
+        # Create a directory for the reusable static library part of
         # the pegen extension build process.  This greatly reduces the
         # runtime overhead of spawning compiler processes.
         cls.library_dir = tempfile.mkdtemp(dir=cls.tmp_base)

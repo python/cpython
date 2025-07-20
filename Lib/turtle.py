@@ -1646,8 +1646,8 @@ class TNavigator(object):
 
     def _go(self, distance):
         """move turtle forward by specified distance"""
-        ende = self._position + self._orient * distance
-        self._goto(ende)
+        end = self._position + self._orient * distance
+        self._goto(end)
 
     def _rotate(self, angle):
         """Turn turtle counterclockwise by specified angle if angle > 0."""

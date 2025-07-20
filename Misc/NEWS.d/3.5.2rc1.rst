@@ -262,7 +262,7 @@ compiler issues.
 .. nonce: j9zand
 .. section: Core and Builtins
 
-Deque.insert() gave odd results for bounded deques that had reached their
+Deque.insert() gave odd results for bounded dequeues that had reached their
 maximum size.  Now an IndexError will be raised when attempting to insert
 into a full deque.
 

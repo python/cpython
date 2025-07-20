@@ -1359,12 +1359,12 @@ Replacing shell pipeline
 
 .. code-block:: bash
 
-   output=$(dmesg | grep hda)
+   output=$(dmesg | grep had)
 
 becomes::
 
    p1 = Popen(["dmesg"], stdout=PIPE)
-   p2 = Popen(["grep", "hda"], stdin=p1.stdout, stdout=PIPE)
+   p2 = Popen(["grep", "had"], stdin=p1.stdout, stdout=PIPE)
    p1.stdout.close()  # Allow p1 to receive a SIGPIPE if p2 exits.
    output = p2.communicate()[0]
 
@@ -1376,11 +1376,11 @@ be used directly:
 
 .. code-block:: bash
 
-   output=$(dmesg | grep hda)
+   output=$(dmesg | grep had)
 
 becomes::
 
-   output = check_output("dmesg | grep hda", shell=True)
+   output = check_output("dmesg | grep had", shell=True)
 
 
 Replacing :func:`os.system`

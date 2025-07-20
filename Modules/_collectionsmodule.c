@@ -117,7 +117,7 @@ class dequeobject_converter(self_converter):
  * d.rightindex become indices into distinct blocks and either may
  * be larger than the other.
  *
- * Empty deques have:
+ * Empty dequeues have:
  *     d.len == 0
  *     d.leftblock == d.rightblock
  *     d.leftindex == CENTER + 1
@@ -139,7 +139,7 @@ struct dequeobject {
     Py_ssize_t leftindex;       /* 0 <= leftindex < BLOCKLEN */
     Py_ssize_t rightindex;      /* 0 <= rightindex < BLOCKLEN */
     size_t state;               /* incremented whenever the indices move */
-    Py_ssize_t maxlen;          /* maxlen is -1 for unbounded deques */
+    Py_ssize_t maxlen;          /* maxlen is -1 for unbounded dequeues */
     Py_ssize_t numfreeblocks;
     block *freeblocks[MAXFREEBLOCKS];
     PyObject *weakreflist;
@@ -2551,7 +2551,7 @@ _collections__count_elements_impl(PyObject *module, PyObject *mapping,
         while (1) {
             /* Fast path advantages:
                    1. Eliminate double hashing
-                      (by re-using the same hash for both the get and set)
+                      (by reusing the same hash for both the get and set)
                    2. Avoid argument overhead of PyObject_CallFunctionObjArgs
                       (argument tuple creation and parsing)
                    3. Avoid indirection through a bound method object

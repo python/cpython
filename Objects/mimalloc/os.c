@@ -476,7 +476,7 @@ bool _mi_os_reset(void* addr, size_t size, mi_stats_t* stats) {
 
 
 // either resets or decommits memory, returns true if the memory needs
-// to be recommitted if it is to be re-used later on.
+// to be recommitted if it is to be reused later on.
 bool _mi_os_purge_ex(void* p, size_t size, bool allow_reset, mi_stats_t* stats)
 {
   if (mi_option_get(mi_option_purge_delay) < 0) return false;  // is purging allowed?
@@ -499,7 +499,7 @@ bool _mi_os_purge_ex(void* p, size_t size, bool allow_reset, mi_stats_t* stats)
 }
 
 // either resets or decommits memory, returns true if the memory needs
-// to be recommitted if it is to be re-used later on.
+// to be recommitted if it is to be reused later on.
 bool _mi_os_purge(void* p, size_t size, mi_stats_t * stats) {
   return _mi_os_purge_ex(p, size, true, stats);
 }

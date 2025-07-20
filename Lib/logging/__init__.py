@@ -886,7 +886,7 @@ def _removeHandlerRef(wr):
     """
     # This function can be called during module teardown, when globals are
     # set to None. It can also be called from another thread. So we need to
-    # pre-emptively grab the necessary globals and check if they're None,
+    # preemptively grab the necessary globals and check if they're None,
     # to prevent race conditions and failures during interpreter shutdown.
     handlers, lock = _handlerList, _lock
     if lock and handlers:

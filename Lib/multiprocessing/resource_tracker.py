@@ -76,7 +76,7 @@ class ResourceTracker(object):
             "Reentrant call into the multiprocessing resource tracker")
 
     def __del__(self):
-        # making sure child processess are cleaned before ResourceTracker
+        # making sure child processes are cleaned before ResourceTracker
         # gets destructed.
         # see https://github.com/python/cpython/issues/88887
         self._stop(use_blocking_lock=False)

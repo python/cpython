@@ -75,14 +75,14 @@ _PyTime_GCD(PyTime_t x, PyTime_t y)
 
 
 int
-_PyTimeFraction_Set(_PyTimeFraction *frac, PyTime_t numer, PyTime_t denom)
+_PyTimeFraction_Set(_PyTimeFraction *frac, PyTime_t number, PyTime_t denom)
 {
-    if (numer < 1 || denom < 1) {
+    if (number < 1 || denom < 1) {
         return -1;
     }
 
-    PyTime_t gcd = _PyTime_GCD(numer, denom);
-    frac->numer = numer / gcd;
+    PyTime_t gcd = _PyTime_GCD(number, denom);
+    frac->number = number / gcd;
     frac->denom = denom / gcd;
     return 0;
 }
@@ -91,7 +91,7 @@ _PyTimeFraction_Set(_PyTimeFraction *frac, PyTime_t numer, PyTime_t denom)
 double
 _PyTimeFraction_Resolution(const _PyTimeFraction *frac)
 {
-    return (double)frac->numer / (double)frac->denom / 1e9;
+    return (double)frac->number / (double)frac->denom / 1e9;
 }
 
 
@@ -179,7 +179,7 @@ _PyTime_Mul(PyTime_t t, PyTime_t k)
 PyTime_t
 _PyTimeFraction_Mul(PyTime_t ticks, const _PyTimeFraction *frac)
 {
-    const PyTime_t mul = frac->numer;
+    const PyTime_t mul = frac->number;
     const PyTime_t div = frac->denom;
 
     if (div == 1) {
@@ -1099,13 +1099,13 @@ py_mach_timebase_info(_PyTimeFraction *base)
     // fail: https://developer.apple.com/library/mac/#qa/qa1398/
     (void)mach_timebase_info(&timebase);
 
-    // Check that timebase.numer and timebase.denom can be casted to
+    // Check that timebase.number and timebase.denom can be casted to
     // PyTime_t. In practice, timebase uses uint32_t, so casting cannot
     // overflow. At the end, only make sure that the type is uint32_t
     // (PyTime_t is 64-bit long).
-    Py_BUILD_ASSERT(sizeof(timebase.numer) <= sizeof(PyTime_t));
+    Py_BUILD_ASSERT(sizeof(timebase.number) <= sizeof(PyTime_t));
     Py_BUILD_ASSERT(sizeof(timebase.denom) <= sizeof(PyTime_t));
-    PyTime_t numer = (PyTime_t)timebase.numer;
+    PyTime_t number = (PyTime_t)timebase.number;
     PyTime_t denom = (PyTime_t)timebase.denom;
 
     // Known time bases:
@@ -1113,7 +1113,7 @@ py_mach_timebase_info(_PyTimeFraction *base)
     // * (1, 1) on Intel: 1 ns
     // * (1000000000, 33333335) on PowerPC: ~30 ns
     // * (1000000000, 25000000) on PowerPC: 40 ns
-    if (_PyTimeFraction_Set(base, numer, denom) < 0) {
+    if (_PyTimeFraction_Set(base, number, denom) < 0) {
         return _PyStatus_ERR("invalid mach_timebase_info");
     }
     return PyStatus_Ok();

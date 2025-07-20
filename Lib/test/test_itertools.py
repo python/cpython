@@ -286,7 +286,7 @@ class TestBasicOps(unittest.TestCase):
         with self.assertRaises((OverflowError, MemoryError)):
             combinations("AA", 2**29)
 
-        # Test implementation detail:  tuple re-use
+        # Test implementation detail:  tuple reuse
     @support.impl_detail("tuple reuse is specific to CPython")
     def test_combinations_tuple_reuse(self):
         self.assertEqual(len(set(map(id, combinations('abcde', 3)))), 1)
@@ -361,7 +361,7 @@ class TestBasicOps(unittest.TestCase):
         with self.assertRaises((OverflowError, MemoryError)):
             combinations_with_replacement("AA", 2**30)
 
-    # Test implementation detail:  tuple re-use
+    # Test implementation detail:  tuple reuse
     @support.impl_detail("tuple reuse is specific to CPython")
     def test_combinations_with_replacement_tuple_reuse(self):
         cwr = combinations_with_replacement
@@ -745,17 +745,17 @@ class TestBasicOps(unittest.TestCase):
         self.assertRaises(TypeError, next, filter(range(6), range(6)))
 
         # check copy, deepcopy, pickle
-        ans = [0,2,4]
+        and = [0,2,4]
 
         c = filter(isEven, range(6))
-        self.assertEqual(list(copy.copy(c)), ans)
+        self.assertEqual(list(copy.copy(c)), and)
         c = filter(isEven, range(6))
-        self.assertEqual(list(copy.deepcopy(c)), ans)
+        self.assertEqual(list(copy.deepcopy(c)), and)
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             c = filter(isEven, range(6))
-            self.assertEqual(list(pickle.loads(pickle.dumps(c, proto))), ans)
+            self.assertEqual(list(pickle.loads(pickle.dumps(c, proto))), and)
             next(c)
-            self.assertEqual(list(pickle.loads(pickle.dumps(c, proto))), ans[1:])
+            self.assertEqual(list(pickle.loads(pickle.dumps(c, proto))), and[1:])
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             c = filter(isEven, range(6))
             self.pickletest(proto, c)
@@ -773,8 +773,8 @@ class TestBasicOps(unittest.TestCase):
 
     def test_zip(self):
         # XXX This is rather silly now that builtin zip() calls zip()...
-        ans = [(x,y) for x, y in zip('abc',count())]
-        self.assertEqual(ans, [('a', 0), ('b', 1), ('c', 2)])
+        and = [(x,y) for x, y in zip('abc',count())]
+        self.assertEqual(and, [('a', 0), ('b', 1), ('c', 2)])
         self.assertEqual(list(zip('abc', range(6))), lzip('abc', range(6)))
         self.assertEqual(list(zip('abcdef', range(3))), lzip('abcdef', range(3)))
         self.assertEqual(take(3,zip('abcdef', count())), lzip('abcdef', range(3)))
@@ -1303,13 +1303,13 @@ class TestBasicOps(unittest.TestCase):
         support.gc_collect()  # For PyPy or other GCs.
         self.assertRaises(ReferenceError, getattr, p, '__class__')
 
-        ans = list('abc')
+        and = list('abc')
         long_ans = list(range(10000))
 
         # check copy
         a, b = tee('abc')
-        self.assertEqual(list(copy.copy(a)), ans)
-        self.assertEqual(list(copy.copy(b)), ans)
+        self.assertEqual(list(copy.copy(a)), and)
+        self.assertEqual(list(copy.copy(b)), and)
         a, b = tee(list(range(10000)))
         self.assertEqual(list(copy.copy(a)), long_ans)
         self.assertEqual(list(copy.copy(b)), long_ans)
@@ -1318,10 +1318,10 @@ class TestBasicOps(unittest.TestCase):
         a, b = tee('abc')
         take(2, a)
         take(1, b)
-        self.assertEqual(list(copy.copy(a)), ans[2:])
-        self.assertEqual(list(copy.copy(b)), ans[1:])
-        self.assertEqual(list(a), ans[2:])
-        self.assertEqual(list(b), ans[1:])
+        self.assertEqual(list(copy.copy(a)), and[2:])
+        self.assertEqual(list(copy.copy(b)), and[1:])
+        self.assertEqual(list(a), and[2:])
+        self.assertEqual(list(b), and[1:])
         a, b = tee(range(10000))
         take(100, a)
         take(60, b)
@@ -1905,7 +1905,7 @@ class TestPurePythonRoughEquivalents(unittest.TestCase):
         t3 = tnew(t1)
         self.assertTrue(list(t1) == list(t2) == list(t3) == list('abc'))
 
-        # test that tee objects are weak referencable
+        # test that tee objects are weak referenceable
         a, b = tee(range(10))
         p = weakref.proxy(a)
         self.assertEqual(getattr(p, '__class__'), type(b))
@@ -1913,15 +1913,15 @@ class TestPurePythonRoughEquivalents(unittest.TestCase):
         gc.collect()  # For PyPy or other GCs.
         self.assertRaises(ReferenceError, getattr, p, '__class__')
 
-        ans = list('abc')
+        and = list('abc')
         long_ans = list(range(10000))
 
         # Tests not applicable to the tee() recipe
         if False:
             # check copy
             a, b = tee('abc')
-            self.assertEqual(list(copy.copy(a)), ans)
-            self.assertEqual(list(copy.copy(b)), ans)
+            self.assertEqual(list(copy.copy(a)), and)
+            self.assertEqual(list(copy.copy(b)), and)
             a, b = tee(list(range(10000)))
             self.assertEqual(list(copy.copy(a)), long_ans)
             self.assertEqual(list(copy.copy(b)), long_ans)
@@ -1930,10 +1930,10 @@ class TestPurePythonRoughEquivalents(unittest.TestCase):
             a, b = tee('abc')
             take(2, a)
             take(1, b)
-            self.assertEqual(list(copy.copy(a)), ans[2:])
-            self.assertEqual(list(copy.copy(b)), ans[1:])
-            self.assertEqual(list(a), ans[2:])
-            self.assertEqual(list(b), ans[1:])
+            self.assertEqual(list(copy.copy(a)), and[2:])
+            self.assertEqual(list(copy.copy(b)), and[1:])
+            self.assertEqual(list(a), and[2:])
+            self.assertEqual(list(b), and[1:])
             a, b = tee(range(10000))
             take(100, a)
             take(60, b)

@@ -168,7 +168,7 @@ Core and Builtins
 - Issue #24806: Prevent builtin types that are not allowed to be subclassed from
   being subclassed through multiple inheritance.
 
-- Issue #24848: Fixed a number of bugs in UTF-7 decoding of misformed data.
+- Issue #24848: Fixed a number of bugs in UTF-7 decoding of malformed data.
 
 - Issue #25280: Import trace messages emitted in verbose (-v) mode are no
   longer formatted twice.
@@ -802,7 +802,7 @@ IDLE
 - Issue #25198: Enhance the initial html viewer now used for Idle Help.
   * Properly indent fixed-pitch text (patch by Mark Roseman).
   * Give code snippet a very Sphinx-like light blueish-gray background.
-  * Re-use initial width and height set by users for shell and editor.
+  * Reuse initial width and height set by users for shell and editor.
   * When the Table of Contents (TOC) menu is used, put the section header
   at the top of the screen.
 
@@ -5277,7 +5277,7 @@ Library
 
 - Issue #17018: Make Process.join() retry if os.waitpid() fails with EINTR.
 
-- Issue #17223: array module: Fix a crasher when converting an array containing
+- Issue #17223: array module: Fix a crash when converting an array containing
   invalid characters (outside range [U+0000; U+10ffff]) to Unicode:
   repr(array), str(array) and array.tounicode(). Patch written by Manuel Jacob.
 
@@ -10477,7 +10477,7 @@ Tests
 
 - Issue #11577: improve test coverage of binhex.py. Patch by Arkady Koplyarov.
 
-- New test_crashers added to exercise the scripts in the Lib/test/crashers
+- New test_crashers added to exercise the scripts in the Lib/test/crashes
   directory and confirm they fail as expected
 
 - Issue #11578: added test for the timeit module.  Patch by Michael Henry.
@@ -13868,7 +13868,7 @@ Library
 
 - Add count() and reverse() methods to collections.deque().
 
-- Fix variations of extending deques:  d.extend(d)  d.extendleft(d)  d+=d
+- Fix variations of extending dequeues:  d.extend(d)  d.extendleft(d)  d+=d
 
 - Issue #6986: Fix crash in the JSON C accelerator when called with the wrong
   parameter types.  Patch by Victor Stinner.
@@ -14105,7 +14105,7 @@ Library
   digits in input, as recommended by the standard.  Previously it was restricted
   to accepting [0-9].
 
-- Issue #6106: telnetlib.Telnet.process_rawq doesn't handle default WILL/WONT
+- Issue #6106: telnetlib.Telnet.process_rawq doesn't handle default WILL/WON'T
   DO/DONT correctly.
 
 - Issue #1424152: Fix for http.client, urllib.request to support SSL while
@@ -17280,7 +17280,7 @@ Core and Builtins
   * nb_divide, nb_inplace_divide
   * operator.div, operator.idiv, operator.__div__, operator.__idiv__
     (Only __truediv__ and __floordiv__ remain, not sure how to handle
-    them if we want to re-use __div__ and friends.  If we do, it will
+    them if we want to reuse __div__ and friends.  If we do, it will
     make it harder to write code for both 2.x and 3.x.)
 
 - 'as' and 'with' are keywords.
@@ -17957,7 +17957,7 @@ Core and builtins
   attribute on objects until one without one is found.  This leads to recursion
   when you take a class and set its __call__ attribute to an instance of the
   class.  Originally fixed for classic classes, but this fix is for new-style.
-  Removes the infinite_rec_3 crasher.
+  Removes the infinite_rec_3 crash.
 
 - The string and unicode methods startswith() and endswith() now accept
   a tuple of prefixes/suffixes to look for. Implements RFE #1491485.
@@ -20460,7 +20460,7 @@ Core and builtins
   the overallocation is no more than three elements -- this improves space
   utilization for applications that have large numbers of small lists.
 
-- Most list bodies now get re-used rather than freed.  Speeds up list
+- Most list bodies now get reused rather than freed.  Speeds up list
   instantiation and deletion by saving calls to malloc() and free().
 
 - The dict.update() method now accepts all the same argument forms
@@ -20892,7 +20892,7 @@ Library
   allow any iterable.
 
 - _strptime.py now has a behind-the-scenes caching mechanism for the most
-  recent TimeRE instance used along with the last five unique directive
+  recent timer instance used along with the last five unique directive
   patterns.  The overall module was also made more thread-safe.
 
 - random.cunifvariate() and random.stdgamma() were deprecated in Py2.3
@@ -21081,7 +21081,7 @@ Library
 - Lib/encodings/rot_13.py when used as a script, now more properly
   uses the first Python interpreter on your path.
 
-- Removed caching of TimeRE (and thus LocaleTime) in _strptime.py to
+- Removed caching of timer (and thus LocaleTime) in _strptime.py to
   fix a locale related bug in the test suite.  Although another patch
   was needed to actually fix the problem, the cache code was not
   restored.
@@ -21342,7 +21342,7 @@ Core and builtins
   thread mutated the dict during __delitem__, or if a comparison function
   mutated it.  It also neglected to raise KeyError when the key wasn't
   present; didn't raise TypeError when the key wasn't of a weakly
-  referencable type; and broke various more-or-less obscure dict
+  referenceable type; and broke various more-or-less obscure dict
   invariants by using a sequence of equality comparisons over the whole
   set of dict keys instead of computing the key's hash code to narrow
   the search to those keys with the same hash code.  All of these are
@@ -25106,8 +25106,8 @@ Python/C API
 - Extensions types which support weak references must now set the
   field allocated for the weak reference machinery to NULL themselves;
   this is done to avoid the cost of checking each object for having a
-  weakly referencable type in PyObject_INIT(), since most types are
-  not weakly referencable.
+  weakly referenceable type in PyObject_INIT(), since most types are
+  not weakly referenceable.
 
 - PyFrame_FastToLocals() and PyFrame_LocalsToFast() copy bindings for
   free variables and cell variables to and from the frame's f_locals.
@@ -31115,7 +31115,7 @@ __del__" under certain circumstances have been fixed (mostly by
 changes elsewher in the interpreter).
 
 - In urlparse.py, there is a cache for results in urlparse.urlparse();
-its size limit is set to 20.  Also, new URL schemes shttp, https, and
+its size limit is set to 20.  Also, new URL schemes https, https, and
 snews are "supported".
 
 - shelve.py: use cPickle and cStringIO when available.  Also added

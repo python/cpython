@@ -604,9 +604,9 @@ PyDoc_STRVAR(unicode_isalnum__doc__,
 "isalnum($self, /)\n"
 "--\n"
 "\n"
-"Return True if the string is an alpha-numeric string, False otherwise.\n"
+"Return True if the string is an alphanumeric string, False otherwise.\n"
 "\n"
-"A string is alpha-numeric if all characters in the string are alpha-numeric and\n"
+"A string is alphanumeric if all characters in the string are alphanumeric and\n"
 "there is at least one character in the string.");
 
 #define UNICODE_ISALNUM_METHODDEF    \

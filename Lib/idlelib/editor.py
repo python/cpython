@@ -607,11 +607,11 @@ class EditorWindow:
 
     def rmenu_check_copy(self):
         try:
-            indx = self.text.index('sel.first')
+            index = self.text.index('sel.first')
         except TclError:
             return 'disabled'
         else:
-            return 'normal' if indx else 'disabled'
+            return 'normal' if index else 'disabled'
 
     def rmenu_check_paste(self):
         try:

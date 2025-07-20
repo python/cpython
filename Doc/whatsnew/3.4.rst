@@ -2414,7 +2414,7 @@ Changes in the Python API
 
 * Because :mod:`unittest.TestSuite` now drops references to tests after they
   are run, test harnesses that reuse a :class:`~unittest.TestSuite` to re-run
-  a set of tests may fail.   Test suites should not be re-used in this fashion
+  a set of tests may fail.   Test suites should not be reused in this fashion
   since it means state is retained between test runs, breaking the test
   isolation that :mod:`unittest` is designed to provide.  However, if the lack
   of isolation is considered acceptable, the old behavior can be restored by

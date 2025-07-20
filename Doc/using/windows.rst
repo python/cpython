@@ -1514,7 +1514,7 @@ free-threaded binaries at this time.
 
 To specify the install option at the command line, use
 ``Include_freethreaded=1``. See :ref:`install-layout-option` for instructions on
-pre-emptively downloading the additional binaries for offline install. The
+preemptively downloading the additional binaries for offline install. The
 options to include debug symbols and binaries also apply to the free-threaded
 builds.
 

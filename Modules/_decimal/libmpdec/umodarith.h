@@ -380,8 +380,8 @@ std_powmod(mpd_uint_t base, mpd_uint_t exp, mpd_uint_t umod)
  *   pinv := (long double)1.0 / p (precalculated)
  *
  *   a) n = a * b              # Calculate exact product.
- *   b) qest = n * pinv        # Calculate estimate for q = n / p.
- *   c) q = (qest+2**63)-2**63 # Truncate qest to the exact quotient.
+ *   b) quest = n * pinv        # Calculate estimate for q = n / p.
+ *   c) q = (quest+2**63)-2**63 # Truncate quest to the exact quotient.
  *   d) r = n - q * p          # Calculate remainder.
  *
  * Remarks:

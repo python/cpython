@@ -1524,7 +1524,7 @@ class Idler:
         # Historical Note:
         # The timeout was originally implemented using select() after
         # checking for the presence of already-buffered data.
-        # That allowed timeouts on pipe connetions like IMAP4_stream.
+        # That allowed timeouts on pipe connections like IMAP4_stream.
         # However, it seemed possible that SSL data arriving without any
         # IMAP data afterward could cause select() to indicate available
         # application data when there was none, leading to a read() call

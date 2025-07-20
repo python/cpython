@@ -274,14 +274,14 @@ class ReferencesTestCase(TestBase):
         proxy = weakref.proxy(o)
         ref2 = weakref.ref(o)
         self.assertIs(ref1, ref2,
-                     "reference object w/out callback should be re-used")
+                     "reference object w/out callback should be reused")
 
         o = C()
         proxy = weakref.proxy(o)
         ref1 = weakref.ref(o)
         ref2 = weakref.ref(o)
         self.assertIs(ref1, ref2,
-                     "reference object w/out callback should be re-used")
+                     "reference object w/out callback should be reused")
         self.assertEqual(weakref.getweakrefcount(o), 2,
                      "wrong weak ref count for object")
         del proxy
@@ -295,7 +295,7 @@ class ReferencesTestCase(TestBase):
         ref = weakref.ref(o)
         proxy2 = weakref.proxy(o)
         self.assertIs(proxy1, proxy2,
-                     "proxy object w/out callback should have been re-used")
+                     "proxy object w/out callback should have been reused")
 
     def test_basic_proxy(self):
         o = C()
@@ -1857,7 +1857,7 @@ class MappingTestCase(TestBase):
         self.assertRaises(KeyError, d.__delitem__, o)
         self.assertRaises(KeyError, d.__getitem__, o)
 
-        # If a key isn't of a weakly referencable type, __getitem__ and
+        # If a key isn't of a weakly referenceable type, __getitem__ and
         # __setitem__ raise TypeError.  __delitem__ should too.
         self.assertRaises(TypeError, d.__delitem__,  13)
         self.assertRaises(TypeError, d.__getitem__,  13)
@@ -2260,7 +2260,7 @@ libreftest = """ Doctest for examples in the library reference: weakref.rst
 >>> class Dict(dict):
 ...     pass
 ...
->>> obj = Dict(red=1, green=2, blue=3)   # this object is weak referencable
+>>> obj = Dict(red=1, green=2, blue=3)   # this object is weak referenceable
 >>> r = weakref.ref(obj)
 >>> print(r() is obj)
 True

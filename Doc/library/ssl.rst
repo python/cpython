@@ -2285,7 +2285,7 @@ something like the following::
   Country Name (2 letter code) [AU]:US
   State or Province Name (full name) [Some-State]:MyState
   Locality Name (eg, city) []:Some City
-  Organization Name (eg, company) [Internet Widgits Pty Ltd]:My Organization, Inc.
+  Organization Name (eg, company) [Internet Widgets Pty Ltd]:My Organization, Inc.
   Organizational Unit Name (eg, section) []:My Group
   Common Name (eg, YOUR name) []:myserver.mygroup.myorganization.com
   Email Address []:ops@myserver.mygroup.myorganization.com

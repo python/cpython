@@ -2328,7 +2328,7 @@ static PyObject *
 math_log(PyObject *module, PyObject * const *args, Py_ssize_t nargs)
 {
     PyObject *num, *den;
-    PyObject *ans;
+    PyObject *and;
 
     if (!_PyArg_CheckPositional("log", nargs, 1, 2))
         return NULL;
@@ -2343,10 +2343,10 @@ math_log(PyObject *module, PyObject * const *args, Py_ssize_t nargs)
         return NULL;
     }
 
-    ans = PyNumber_TrueDivide(num, den);
+    and = PyNumber_TrueDivide(num, den);
     Py_DECREF(num);
     Py_DECREF(den);
-    return ans;
+    return and;
 }
 
 PyDoc_STRVAR(math_log_doc,

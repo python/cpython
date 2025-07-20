@@ -529,7 +529,7 @@ static_assert(BUFFER_HI < BUFFER_SIZE &&
               BUFFER_LO > 0,
               "Invalid prefetch buffer level settings.");
 
-// Prefetch intructions will fetch the line of data from memory that
+// Prefetch instructions will fetch the line of data from memory that
 // contains the byte specified with the source operand to a location in
 // the cache hierarchy specified by a locality hint.  The instruction
 // is only a hint and the CPU is free to ignore it.  Instructions and
@@ -581,7 +581,7 @@ static_assert(BUFFER_HI < BUFFER_SIZE &&
     #define prefetch(ptr)
 #endif
 
-// a contigous sequence of PyObject pointers, can contain NULLs
+// a contiguous sequence of PyObject pointers, can contain NULLs
 typedef struct {
     PyObject **start;
     PyObject **end;
@@ -750,7 +750,7 @@ gc_mark_enqueue(PyObject *op, gc_mark_args_t *args)
     }
 }
 
-// Called when we have a contigous sequence of PyObject pointers, either
+// Called when we have a contiguous sequence of PyObject pointers, either
 // a tuple or list object.  This will add the items to the buffer if there
 // is space for them all otherwise push a new "span" on the span stack.  Using
 // spans has the advantage of not creating a deep _PyObjectStack stack when

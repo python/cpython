@@ -128,7 +128,7 @@ _PyMem_mi_page_is_safe_to_free(mi_page_t *page)
 
 // If we are deferring collection of more than this amount of memory for
 // mimalloc pages, advance the write sequence.  Advancing allows these
-// pages to be re-used in a different thread or for a different size class.
+// pages to be reused in a different thread or for a different size class.
 #define QSBR_PAGE_MEM_LIMIT 4096*20
 
 // Return true if the global write sequence should be advanced for a mimalloc
@@ -1233,7 +1233,7 @@ free_delayed(uintptr_t ptr, size_t size)
 
     struct _mem_work_chunk *buf = NULL;
     if (!llist_empty(head)) {
-        // Try to re-use the last buffer
+        // Try to reuse the last buffer
         buf = llist_data(head->prev, struct _mem_work_chunk, node);
         if (buf->wr_idx == WORK_ITEMS_PER_CHUNK) {
             // already full

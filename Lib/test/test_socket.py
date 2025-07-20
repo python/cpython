@@ -7083,7 +7083,7 @@ class LinuxKernelCryptoAPI(unittest.TestCase):
                 self.assertEqual(expected_ct, res[assoclen:-taglen])
                 self.assertEqual(expected_tag, res[-taglen:])
 
-            # create anc data manually
+            # create and data manually
             pack_uint32 = struct.Struct('I').pack
             op, _ = algo.accept()
             with op:

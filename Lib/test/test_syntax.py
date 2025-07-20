@@ -1844,21 +1844,21 @@ Traceback (most recent call last):
 SyntaxError: invalid syntax. Did you mean 'def'?
 
 >>> def foo():
-...   returm result
+...   return result
 Traceback (most recent call last):
 SyntaxError: invalid syntax. Did you mean 'return'?
 
->>> lamda x: x ** 2
+>>> lambda x: x ** 2
 Traceback (most recent call last):
 SyntaxError: invalid syntax. Did you mean 'lambda'?
 
 >>> def foo():
-...   yeld i
+...   yield i
 Traceback (most recent call last):
 SyntaxError: invalid syntax. Did you mean 'yield'?
 
 >>> def foo():
-...   globel counter
+...   global counter
 Traceback (most recent call last):
 SyntaxError: invalid syntax. Did you mean 'global'?
 

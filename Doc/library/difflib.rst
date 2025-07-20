@@ -246,7 +246,7 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
       >>> print(''.join(diff), end="")
       - one
       ?  ^
-      + ore
+      + or
       ?  ^
       - two
       - three
@@ -273,7 +273,7 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
       two
       three
       >>> print(''.join(restore(diff, 2)), end="")
-      ore
+      or
       tree
       emu
 
@@ -420,12 +420,12 @@ The :class:`SequenceMatcher` class has this constructor:
       is not changed.
 
 
-   .. method:: find_longest_match(alo=0, ahi=None, blo=0, bhi=None)
+   .. method:: find_longest_match(also=0, ahi=None, blo=0, bhi=None)
 
-      Find longest matching block in ``a[alo:ahi]`` and ``b[blo:bhi]``.
+      Find longest matching block in ``a[also:ahi]`` and ``b[blo:bhi]``.
 
       If *isjunk* was omitted or ``None``, :meth:`find_longest_match` returns
-      ``(i, j, k)`` such that ``a[i:i+k]`` is equal to ``b[j:j+k]``, where ``alo
+      ``(i, j, k)`` such that ``a[i:i+k]`` is equal to ``b[j:j+k]``, where ``also
       <= i <= i+k <= ahi`` and ``blo <= j <= j+k <= bhi``. For all ``(i', j',
       k')`` meeting those conditions, the additional conditions ``k >= k'``, ``i
       <= i'``, and if ``i == i'``, ``j <= j'`` are also met. In other words, of
@@ -453,7 +453,7 @@ The :class:`SequenceMatcher` class has this constructor:
          >>> s.find_longest_match(0, 5, 0, 9)
          Match(a=1, b=0, size=4)
 
-      If no blocks match, this returns ``(alo, blo, 0)``.
+      If no blocks match, this returns ``(also, blo, 0)``.
 
       This method returns a :term:`named tuple` ``Match(a, b, size)``.
 

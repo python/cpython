@@ -976,7 +976,7 @@ Fix mimalloc library builds for 32-bit ARM targets.
 .. nonce: 2BgHU5
 .. section: Build
 
-clang-cl on Windows needs option ``/EHa`` to support SEH (structured
+clang-cl on Windows needs option ``/EHa`` to support SHE (structured
 exception handling) correctly. Fix by Chris Eibl.
 
 ..

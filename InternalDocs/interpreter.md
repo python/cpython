@@ -493,7 +493,7 @@ In general, specialized instructions should be implemented in two parts:
   a minimum number of dependent memory accesses.
 
 In practice, the parts may overlap, as data required for guards
-can be re-used in the operation.
+can be reused in the operation.
 
 If there are branches in the operation, then consider further specialization
 to eliminate the branches.

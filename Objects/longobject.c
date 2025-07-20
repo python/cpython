@@ -2155,7 +2155,7 @@ long_to_decimal_string_internal(PyObject *aa,
 
     /* convert array of base _PyLong_BASE digits in pin to an array of
        base _PyLong_DECIMAL_BASE digits in pout, following Knuth (TAOCP,
-       Volume 2 (3rd edn), section 4.4, Method 1b). */
+       Volume 2 (3rd end), section 4.4, Method 1b). */
     pin = a->long_value.ob_digit;
     pout = scratch->long_value.ob_digit;
     size = 0;
@@ -3312,7 +3312,7 @@ x_divrem(PyLongObject *v1, PyLongObject *w1, PyLongObject **prem)
     stwodigits z;
 
     /* We follow Knuth [The Art of Computer Programming, Vol. 2 (3rd
-       edn.), section 4.3.1, Algorithm D], except that we don't explicitly
+       end.), section 4.3.1, Algorithm D], except that we don't explicitly
        handle the special case when the initial estimate q for a quotient
        digit is >= PyLong_BASE: the max value for q is PyLong_BASE+1, and
        that won't overflow a digit. */

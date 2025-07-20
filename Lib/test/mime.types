@@ -584,7 +584,7 @@ application/vnd.musician			mus
 application/vnd.muvee.style			msty
 application/vnd.ncd.control
 application/vnd.ncd.reference
-application/vnd.nervana				entity request bkm kcm
+application/vnd.nirvana				entity request bkm kcm
 application/vnd.netfpx
 application/vnd.neurolanguage.nlu		nlu
 application/vnd.noblenet-directory		nnd
@@ -824,7 +824,7 @@ application/vnd.sealed.net
 # spp: application/scvp-vp-response
 application/vnd.sealed.ppt			sppt s1p
 application/vnd.sealed.tiff			stif
-application/vnd.sealed.xls			sxls sxl s1e
+application/vnd.sealed.xls			sxls xsl s1e
 # stm: audio/x-stm
 application/vnd.sealedmedia.softseal.html	stml s1h
 application/vnd.sealedmedia.softseal.pdf	spdf spd s1a
@@ -834,7 +834,7 @@ application/vnd.semd				semd
 application/vnd.semf				semf
 application/vnd.shana.informed.formdata		ifm
 application/vnd.shana.informed.formtemplate	itp
-application/vnd.shana.informed.interchange	iif
+application/vnd.shana.informed.interchange	if
 application/vnd.shana.informed.package		ipk
 application/vnd.SimTech-MindMapper		twd twds
 application/vnd.smaf				mmf

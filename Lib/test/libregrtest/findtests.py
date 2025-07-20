@@ -65,16 +65,16 @@ def split_test_packages(tests, *, testdir: StrPath | None = None,
                         exclude: Container[str] = (),
                         split_test_dirs=SPLITTESTDIRS) -> list[TestName]:
     testdir = findtestdir(testdir)
-    splitted = []
+    split = []
     for name in tests:
         if name in split_test_dirs:
             subdir = os.path.join(testdir, name)
-            splitted.extend(findtests(testdir=subdir, exclude=exclude,
+            split.extend(findtests(testdir=subdir, exclude=exclude,
                                       split_test_dirs=split_test_dirs,
                                       base_mod=name))
         else:
-            splitted.append(name)
-    return splitted
+            split.append(name)
+    return split
 
 
 def _list_cases(suite: unittest.TestSuite) -> None:

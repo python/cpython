@@ -63,13 +63,13 @@ IID_IStream = create_guid("{0000000C-0000-0000-C000-000000000046}")
 IID_IPersist = create_guid("{0000010C-0000-0000-C000-000000000046}")
 CLSID_ShellLink = create_guid("{00021401-0000-0000-C000-000000000046}")
 
-# https://learn.microsoft.com/en-us/windows/win32/api/unknwn/nf-unknwn-iunknown-queryinterface(refiid_void)
+# https://learn.microsoft.com/en-us/windows/win32/api/unknown/nf-unknown-iunknown-queryinterface(refiid_void)
 proto_query_interface = create_proto_com_method(
     "QueryInterface", 0, HRESULT, POINTER(GUID), POINTER(c_void_p)
 )
-# https://learn.microsoft.com/en-us/windows/win32/api/unknwn/nf-unknwn-iunknown-addref
+# https://learn.microsoft.com/en-us/windows/win32/api/unknown/nf-unknown-iunknown-addref
 proto_add_ref = create_proto_com_method("AddRef", 1, ctypes.c_long)
-# https://learn.microsoft.com/en-us/windows/win32/api/unknwn/nf-unknwn-iunknown-release
+# https://learn.microsoft.com/en-us/windows/win32/api/unknown/nf-unknown-iunknown-release
 proto_release = create_proto_com_method("Release", 2, ctypes.c_long)
 # https://learn.microsoft.com/en-us/windows/win32/api/objidl/nf-objidl-ipersist-getclassid
 proto_get_class_id = create_proto_com_method(

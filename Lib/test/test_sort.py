@@ -154,7 +154,7 @@ class TestBase(unittest.TestCase):
 class TestBugs(unittest.TestCase):
 
     def test_bug453523(self):
-        # bug 453523 -- list.sort() crasher.
+        # bug 453523 -- list.sort() crash.
         # If this fails, the most likely outcome is a core dump.
         # Mutations during a list sort should raise a ValueError.
 

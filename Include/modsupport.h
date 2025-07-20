@@ -33,7 +33,7 @@ PyAPI_FUNC(int) PyModule_Add(PyObject *mod, const char *name, PyObject *value);
 
 // Similar to PyModule_AddObjectRef() and PyModule_Add() but steal
 // a reference to 'value' on success and only on success.
-// Errorprone. Should not be used in new code.
+// Error-prone. Should not be used in new code.
 PyAPI_FUNC(int) PyModule_AddObject(PyObject *mod, const char *, PyObject *value);
 
 PyAPI_FUNC(int) PyModule_AddIntConstant(PyObject *, const char *, long);

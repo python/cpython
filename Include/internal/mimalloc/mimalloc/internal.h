@@ -591,7 +591,7 @@ for the read case we can subtract two entries to discard the `+k1` term,
 but that leads to `((p1^k2)<<<k1) - ((p2^k2)<<<k1)` at best.
 We include the left-rotation since xor and addition are otherwise linear
 in the lowest bit. Finally, both keys are unique per page which reduces
-the re-use of keys by a large factor.
+the reuse of keys by a large factor.
 
 We also pass a separate `null` value to be used as `NULL` or otherwise
 `(k2<<<k1)+k1` would appear (too) often as a sentinel value.

@@ -2515,8 +2515,8 @@ requires, and these work on all platforms with a standard C implementation.
 +-----------+--------------------------------+------------------------+-------+
 | ``%B``    | Month as locale's full name.   || January, February,    | \(1)  |
 |           |                                |  ..., December (en_US);|       |
-|           |                                || Januar, Februar, ..., |       |
-|           |                                |  Dezember (de_DE)      |       |
+|           |                                || January, February, ..., |       |
+|           |                                |  December (de_DE)      |       |
 +-----------+--------------------------------+------------------------+-------+
 | ``%m``    | Month as a zero-padded         | 01, 02, ..., 12        | \(9)  |
 |           | decimal number.                |                        |       |

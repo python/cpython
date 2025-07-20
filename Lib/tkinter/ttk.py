@@ -254,20 +254,20 @@ def _list_from_layouttuple(tk, ltuple):
     ltuple = tk.splitlist(ltuple)
     res = []
 
-    indx = 0
-    while indx < len(ltuple):
-        name = ltuple[indx]
+    index = 0
+    while index < len(ltuple):
+        name = ltuple[index]
         opts = {}
         res.append((name, opts))
-        indx += 1
+        index += 1
 
-        while indx < len(ltuple): # grab name's options
-            opt, val = ltuple[indx:indx + 2]
+        while index < len(ltuple): # grab name's options
+            opt, val = ltuple[index:index + 2]
             if not opt.startswith('-'): # found next name
                 break
 
             opt = opt[1:] # remove the '-' from the option
-            indx += 2
+            index += 2
 
             if opt == 'children':
                 val = _list_from_layouttuple(tk, val)

@@ -85,7 +85,7 @@ for character in (
     '\u05D0',
     # U+060C (Arabic Comma): cp864, cp1006, iso8859_6, mac_arabic
     '\u060C',
-    # U+062A (Arabic Letter Teh): cp720
+    # U+062A (Arabic Letter The): cp720
     '\u062A',
     # U+0E01 (Thai Character Ko Kai): cp874
     '\u0E01',

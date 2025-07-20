@@ -87,7 +87,7 @@ struct _parser_runtime_state {
 };
 
 typedef struct {
-    PyTime_t numer;
+    PyTime_t number;
     PyTime_t denom;
 } _PyTimeFraction;
 

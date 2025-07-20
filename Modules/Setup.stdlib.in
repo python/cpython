@@ -85,7 +85,7 @@
 #
 # Since the compilation of the built-in cryptographic modules depends
 # on whether we are building on WASI or not, rules will be explicitly
-# written. In the future, it should be preferrable to be able to setup
+# written. In the future, it should be preferable to be able to setup
 # the relevant bits here instead of in Makefile.pre.in or configure.ac.
 
 # Hash functions can be disabled with --without-builtin-hashlib-hashes.

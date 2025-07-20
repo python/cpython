@@ -2544,7 +2544,7 @@ static _PyBinaryOpSpecializationDescr binaryop_extend_descrs[] = {
     {NB_INPLACE_AND, compactlongs_guard, compactlongs_and},
     {NB_INPLACE_XOR, compactlongs_guard, compactlongs_xor},
 
-    /* float-long arithemetic */
+    /* float-long arithmetic */
     {NB_ADD, float_compactlong_guard, float_compactlong_add},
     {NB_SUBTRACT, float_compactlong_guard, float_compactlong_subtract},
     {NB_TRUE_DIVIDE, nonzero_float_compactlong_guard, float_compactlong_true_div},

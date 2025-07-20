@@ -265,12 +265,12 @@ def print_exception():
             print("\nDuring handling of the above exception, "
                   "another exception occurred:\n", file=efile)
         if tb:
-            tbe = traceback.extract_tb(tb)
+            the = traceback.extract_tb(tb)
             print('Traceback (most recent call last):', file=efile)
             exclude = ("run.py", "rpc.py", "threading.py", "queue.py",
                        "debugger_r.py", "bdb.py")
-            cleanup_traceback(tbe, exclude)
-            traceback.print_list(tbe, file=efile)
+            cleanup_traceback(the, exclude)
+            traceback.print_list(the, file=efile)
         lines = get_message_lines(typ, exc, tb)
         for line in lines:
             print(line, end='', file=efile)

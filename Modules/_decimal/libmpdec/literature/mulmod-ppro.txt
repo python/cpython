@@ -54,29 +54,29 @@ relative error of 2**(1-F):
 Calculate an estimate for q = floor(n/p). The multiplication has another
 maximum relative error of 2**(1-F):
 
-  (9) qest = n * pinv
+  (9) quest = n * pinv
 
-If we can show that q < qest < q+1, then trunc(qest) = q. It is then
+If we can show that q < quest < q+1, then trunc(quest) = q. It is then
 easy to recover the remainder r. The complete algorithm is:
 
   a) Set the control word to 64-bit precision and truncation mode.
 
   b) n = a * b              # Calculate exact product.
 
-  c) qest = n * pinv        # Calculate estimate for the quotient.
+  c) quest = n * pinv        # Calculate estimate for the quotient.
 
-  d) q = (qest+2**63)-2**63 # Truncate qest to the exact quotient.
+  d) q = (quest+2**63)-2**63 # Truncate quest to the exact quotient.
 
   f) r = n - q * p          # Calculate remainder.
 
 
-Proof for q < qest < q+1:
+Proof for q < quest < q+1:
 -------------------------
 
-Using the cumulative error, the error bounds for qest are:
+Using the cumulative error, the error bounds for quest are:
 
                 n                       n * (1 + 2**(1-F))**2
-  (9) --------------------- <= qest <=  ---------------------
+  (9) --------------------- <= quest <=  ---------------------
       p * (1 + 2**(1-F))**2                       p
 
 

@@ -772,7 +772,7 @@ _PyPickle_GetXIData(PyThreadState *tstate, PyObject *obj, _PyXIData_t *xidata)
         return -1;
     }
 
-    // If we had an "unwrapper" mechnanism, we could call
+    // If we had an "unwrapper" mechanism, we could call
     // _PyObject_GetXIData() on the bytes object directly and add
     // a simple unwrapper to call pickle.loads() on the bytes.
     size_t size = sizeof(struct _shared_pickle_data);
@@ -3176,7 +3176,7 @@ _PyXI_InitTypes(PyInterpreterState *interp)
                 "failed to initialize the cross-interpreter exception types");
     }
     // We would initialize heap types here too but that leads to ref leaks.
-    // Instead, we intialize them in _PyXI_Init().
+    // Instead, we initialize them in _PyXI_Init().
     return _PyStatus_OK();
 }
 

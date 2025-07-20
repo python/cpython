@@ -4100,7 +4100,7 @@ class ThreadedTests(unittest.TestCase):
         client_context, server_context, hostname = testing_context()
 
         server_context.set_ecdh_curve("secp384r1")
-        server_context.set_ciphers("ECDHE:!eNULL:!aNULL")
+        server_context.set_ciphers("ECDHE:!eNULL:!annul")
         server_context.minimum_version = ssl.TLSVersion.TLSv1_2
         stats = server_params_test(client_context, server_context,
                                    chatty=True, connectionchatty=True,
@@ -4109,7 +4109,7 @@ class ThreadedTests(unittest.TestCase):
         # server auto, client secp384r1
         client_context, server_context, hostname = testing_context()
         client_context.set_ecdh_curve("secp384r1")
-        server_context.set_ciphers("ECDHE:!eNULL:!aNULL")
+        server_context.set_ciphers("ECDHE:!eNULL:!annul")
         server_context.minimum_version = ssl.TLSVersion.TLSv1_2
         stats = server_params_test(client_context, server_context,
                                    chatty=True, connectionchatty=True,
@@ -4119,7 +4119,7 @@ class ThreadedTests(unittest.TestCase):
         client_context, server_context, hostname = testing_context()
         client_context.set_ecdh_curve("prime256v1")
         server_context.set_ecdh_curve("secp384r1")
-        server_context.set_ciphers("ECDHE:!eNULL:!aNULL")
+        server_context.set_ciphers("ECDHE:!eNULL:!annul")
         server_context.minimum_version = ssl.TLSVersion.TLSv1_2
         with self.assertRaises(ssl.SSLError):
             server_params_test(client_context, server_context,
@@ -4441,7 +4441,7 @@ class ThreadedTests(unittest.TestCase):
 
             with client_context2.wrap_socket(socket.socket(),
                                              server_hostname=hostname) as s:
-                # cannot re-use session with a different SSLContext
+                # cannot reuse session with a different SSLContext
                 with self.assertRaises(ValueError) as e:
                     s.session = session
                     s.connect((HOST, server.port))

@@ -2377,7 +2377,7 @@ Solution 2
 """
 
 weakref_tests = """\
-Generators are weakly referencable:
+Generators are weakly referenceable:
 
 >>> import weakref
 >>> def gen():
@@ -2388,7 +2388,7 @@ Generators are weakly referencable:
 True
 >>> p = weakref.proxy(gen)
 
-Generator-iterators are weakly referencable as well:
+Generator-iterators are weakly referenceable as well:
 
 >>> gi = gen()
 >>> wr = weakref.ref(gi)

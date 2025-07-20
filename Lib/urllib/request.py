@@ -922,7 +922,7 @@ class AbstractBasicAuthHandler:
                     'realm=(["\']?)([^"\']*)\\2',
                     re.I)
 
-    # XXX could pre-emptively send auth info already accepted (RFC 2617,
+    # XXX could preemptively send auth info already accepted (RFC 2617,
     # end of section 2, and section 1.2 immediately after "credentials"
     # production).
 

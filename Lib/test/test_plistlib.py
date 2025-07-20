@@ -858,7 +858,7 @@ class TestPlistlib(unittest.TestCase):
         self.assertEqual(dt.tzinfo, datetime.UTC)
 
     @unittest.skipUnless("America/Los_Angeles" in zoneinfo.available_timezones(),
-                         "Can't find timezone datebase")
+                         "Can't find timezone database")
     def test_dump_aware_datetime(self):
         dt = datetime.datetime(2345, 6, 7, 8, 9, 10,
                                tzinfo=zoneinfo.ZoneInfo("America/Los_Angeles"))
@@ -877,7 +877,7 @@ class TestPlistlib(unittest.TestCase):
             self.assertEqual(loaded_dt, dt)
 
     @unittest.skipUnless("America/Los_Angeles" in zoneinfo.available_timezones(),
-                         "Can't find timezone datebase")
+                         "Can't find timezone database")
     def test_dump_aware_datetime_without_aware_datetime_option(self):
         dt = datetime.datetime(2345, 6, 7, 8,
                                tzinfo=zoneinfo.ZoneInfo("America/Los_Angeles"))
@@ -1032,7 +1032,7 @@ class TestBinaryPlistlib(unittest.TestCase):
                          datetime.datetime(2345, 6, 7, 8, tzinfo=datetime.UTC))
 
     @unittest.skipUnless("America/Los_Angeles" in zoneinfo.available_timezones(),
-                         "Can't find timezone datebase")
+                         "Can't find timezone database")
     def test_dump_aware_datetime_without_aware_datetime_option(self):
         dt = datetime.datetime(2345, 6, 7, 8,
                                tzinfo=zoneinfo.ZoneInfo("America/Los_Angeles"))

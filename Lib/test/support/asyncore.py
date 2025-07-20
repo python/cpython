@@ -37,7 +37,7 @@ than one thing at a time".  Multi-threaded programming is the simplest and
 most popular way to do it, but there is another very different technique,
 that lets you have nearly all the advantages of multi-threading, without
 actually using multiple threads. it's really only practical if your program
-is largely I/O bound. If your program is CPU bound, then pre-emptive
+is largely I/O bound. If your program is CPU bound, then preemptive
 scheduled threads are probably what you really need. Network servers are
 rarely CPU-bound, however.
 
@@ -295,7 +295,7 @@ class dispatcher:
         self.add_channel(map)
 
     def set_reuse_addr(self):
-        # try to re-use a server port if possible
+        # try to reuse a server port if possible
         try:
             self.socket.setsockopt(
                 socket.SOL_SOCKET, socket.SO_REUSEADDR,

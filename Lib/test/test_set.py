@@ -124,8 +124,8 @@ class TestJointOps:
         def f(s1, s2):
             'Pure python equivalent of isdisjoint()'
             return not set(s1).intersection(s2)
-        for larg in '', 'a', 'ab', 'abc', 'ababac', 'cdc', 'cc', 'efgfe', 'ccb', 'ef':
-            s1 = self.thetype(larg)
+        for large in '', 'a', 'ab', 'abc', 'ababac', 'cdc', 'cc', 'efgfe', 'ccb', 'ef':
+            s1 = self.thetype(large)
             for rarg in '', 'a', 'ab', 'abc', 'ababac', 'cdc', 'cc', 'efgfe', 'ccb', 'ef':
                 for C in set, frozenset, dict.fromkeys, str, list, tuple:
                     s2 = C(rarg)
@@ -661,7 +661,7 @@ class TestSet(TestJointOps, unittest.TestCase):
         with check_unhashable_element():
             myset.discard(elem)
 
-        # Only TypeError exception is overriden,
+        # Only TypeError exception is overridden,
         # other exceptions are left unchanged.
         class HashError:
             def __hash__(self):

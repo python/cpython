@@ -447,12 +447,12 @@ Improved Error Messages
     ...        self.blech = 1
     ...
     ...    def foo(self):
-    ...        somethin = blech
+    ...        something = blech
     ...
     >>> A().foo()
     Traceback (most recent call last):
       File "<stdin>", line 1
-        somethin = blech
+        something = blech
                    ^^^^^
     NameError: name 'blech' is not defined. Did you mean: 'self.blech'?
 

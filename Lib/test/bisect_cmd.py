@@ -13,7 +13,7 @@ Find a reference leak in "test_os", write the list of failing tests into the
 
 Load an existing list of tests from a file using -i option:
 
-    ./python -m test --list-cases -m FileTests test_os > tests
+    ./python -m test --list-cases -m file tests test_os > tests
     ./python -m test.bisect_cmd -i tests test_os
 """
 

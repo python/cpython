@@ -117,15 +117,15 @@ class LocaleTime_Tests(unittest.TestCase):
 
 
 class TimeRETests(unittest.TestCase):
-    """Tests for TimeRE."""
+    """Tests for timer."""
 
     def setUp(self):
-        """Construct generic TimeRE object."""
-        self.time_re = _strptime.TimeRE()
+        """Construct generic timer object."""
+        self.time_re = _strptime.timer()
         self.locale_time = _strptime.LocaleTime()
 
     def test_pattern(self):
-        # Test TimeRE.pattern
+        # Test timer.pattern
         pattern_string = self.time_re.pattern(r"%a %A %d %Y")
         self.assertTrue(pattern_string.find(self.locale_time.a_weekday[2]) != -1,
                         "did not find abbreviated weekday in pattern string '%s'" %
@@ -178,8 +178,8 @@ class TimeRETests(unittest.TestCase):
         # Fixes bug #661354
         test_locale = _strptime.LocaleTime()
         test_locale.timezone = (frozenset(), frozenset())
-        self.assertEqual(_strptime.TimeRE(test_locale).pattern("%Z"), '',
-                         "with timezone == ('',''), TimeRE().pattern('%Z') != ''")
+        self.assertEqual(_strptime.timer(test_locale).pattern("%Z"), '',
+                         "with timezone == ('',''), timer().pattern('%Z') != ''")
 
     def test_matching_with_escapes(self):
         # Make sure a format that requires escaping of characters works
@@ -195,7 +195,7 @@ class TimeRETests(unittest.TestCase):
         locale_time.timezone = (frozenset(("utc", "gmt",
                                             "Tokyo (standard time)")),
                                 frozenset("Tokyo (daylight time)"))
-        time_re = _strptime.TimeRE(locale_time)
+        time_re = _strptime.timer(locale_time)
         self.assertTrue(time_re.compile("%Z").match("Tokyo (standard time)"),
                         "locale data that contains regex metacharacters is not"
                         " properly escaped")
@@ -832,7 +832,7 @@ class CacheTests(unittest.TestCase):
         self.assertEqual(len(_strptime._regex_cache), 1)
 
     def test_new_localetime(self):
-        # A new LocaleTime instance should be created when a new TimeRE object
+        # A new LocaleTime instance should be created when a new timer object
         # is created.
         locale_time_id = _strptime._TimeRE_cache.locale_time
         _strptime._TimeRE_cache.locale_time.lang = "Ni"
@@ -840,7 +840,7 @@ class CacheTests(unittest.TestCase):
         self.assertIsNot(locale_time_id, _strptime._TimeRE_cache.locale_time)
 
     def test_TimeRE_recreation_locale(self):
-        # The TimeRE instance should be recreated upon changing the locale.
+        # The timer instance should be recreated upon changing the locale.
         with support.run_with_locale('LC_TIME', 'en_US.UTF8'):
             _strptime._strptime_time('10 2004', '%d %Y')
             # Get id of current cache object.
@@ -861,7 +861,7 @@ class CacheTests(unittest.TestCase):
 
     @support.run_with_tz('STD-1DST,M4.1.0,M10.1.0')
     def test_TimeRE_recreation_timezone(self):
-        # The TimeRE instance should be recreated upon changing the timezone.
+        # The timer instance should be recreated upon changing the timezone.
         oldtzname = time.tzname
         tm = _strptime._strptime_time(time.tzname[0], '%Z')
         self.assertEqual(tm.tm_isdst, 0)

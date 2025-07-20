@@ -324,31 +324,31 @@ class TestBase_Mapping(unittest.TestCase):
                 if len(csetch) == 1 and 0x80 <= csetch[0]:
                     continue
 
-                unich = unichrs(data[1])
-                if ord(unich) == 0xfffd or unich in urt_wa:
+                unix = unichrs(data[1])
+                if ord(unix) == 0xfffd or unix in urt_wa:
                     continue
-                urt_wa[unich] = csetch
+                urt_wa[unix] = csetch
 
-                self._testpoint(csetch, unich)
+                self._testpoint(csetch, unix)
 
     def _test_mapping_file_ucm(self):
         with self.open_mapping_file() as f:
             ucmdata = f.read()
         uc = re.findall('<a u="([A-F0-9]{4})" b="([0-9A-F ]+)"/>', ucmdata)
         for uni, coded in uc:
-            unich = chr(int(uni, 16))
+            unix = chr(int(uni, 16))
             codech = bytes.fromhex(coded)
-            self._testpoint(codech, unich)
+            self._testpoint(codech, unix)
 
     def test_mapping_supplemental(self):
         for mapping in self.supmaps:
             self._testpoint(*mapping)
 
-    def _testpoint(self, csetch, unich):
-        if (csetch, unich) not in self.pass_enctest:
-            self.assertEqual(unich.encode(self.encoding), csetch)
-        if (csetch, unich) not in self.pass_dectest:
-            self.assertEqual(str(csetch, self.encoding), unich)
+    def _testpoint(self, csetch, unix):
+        if (csetch, unix) not in self.pass_enctest:
+            self.assertEqual(unix.encode(self.encoding), csetch)
+        if (csetch, unix) not in self.pass_dectest:
+            self.assertEqual(str(csetch, self.encoding), unix)
 
     def test_errorhandle(self):
         for source, scheme, expected in self.codectests:

@@ -110,7 +110,7 @@ achieve this we have a assembly template in Objects/asm_trampiline.S that is
 compiled into the Python executable/shared library. This template generates a
 symbol that maps the start of the assembly code and another that marks the end
 of the assembly code for the trampoline.  Then, every time we need a unique
-trampoline for a Python code object, we copy the assembly code into a mmaped
+trampoline for a Python code object, we copy the assembly code into a mapped
 area that has executable permissions and we return the start of that area as
 our trampoline function.
 

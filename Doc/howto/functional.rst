@@ -375,7 +375,7 @@ have the form::
                  if condition3
                  ...
                  for exprN in sequenceN
-                 if conditionN )
+                 if condition )
 
 Again, for a list comprehension only the outside brackets are different (square
 brackets instead of parentheses).
@@ -407,7 +407,7 @@ equivalent to the following Python code::
                 continue   # Skip this element
             ...
             for exprN in sequenceN:
-                if not (conditionN):
+                if not (condition):
                     continue   # Skip this element
 
                 # Output the value of

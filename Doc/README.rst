@@ -59,10 +59,10 @@ Available make targets are:
 
 * "html", which builds standalone HTML files for offline viewing.
 
-* "htmlview", which re-uses the "html" builder, but then opens the main page
+* "htmlview", which reuses the "html" builder, but then opens the main page
   in your default web browser.
 
-* "htmllive", which re-uses the "html" builder, rebuilds the docs,
+* "htmllive", which reuses the "html" builder, rebuilds the docs,
   starts a local server, and automatically reloads the page in your browser
   when you make changes to reST files (Unix only).
 

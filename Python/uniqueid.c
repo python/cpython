@@ -7,7 +7,7 @@
 #include "pycore_uniqueid.h"
 
 // This contains code for allocating unique ids for per-thread reference
-// counting and re-using those ids when an object is deallocated.
+// counting and reusing those ids when an object is deallocated.
 //
 // Currently, per-thread reference counting is only used for heap types.
 //

@@ -1,4 +1,4 @@
-/* Low level interface to the Zstandard algorthm & the zstd library. */
+/* Low level interface to the Zstandard algorithm & the zstd library. */
 
 #ifndef Py_BUILD_CORE_BUILTIN
 #  define Py_BUILD_CORE_MODULE 1
@@ -497,7 +497,7 @@ _zstd.get_frame_info
     frame_buffer: Py_buffer
         A bytes-like object, containing the header of a Zstandard frame.
 
-Get Zstandard frame infomation from a frame header.
+Get Zstandard frame information from a frame header.
 [clinic start generated code]*/
 
 static PyObject *

@@ -143,7 +143,7 @@ PyObject *_PyPegen_get_memo_statistics(void);
 
 int _PyPegen_insert_memo(Parser *p, int mark, int type, void *node);
 int _PyPegen_update_memo(Parser *p, int mark, int type, void *node);
-int _PyPegen_is_memoized(Parser *p, int type, void *pres);
+int _PyPegen_is_memoized(Parser *p, int type, void *press);
 
 int _PyPegen_lookahead(int, void *(func)(Parser *), Parser *);
 int _PyPegen_lookahead_for_expr(int, expr_ty (func)(Parser *), Parser *);

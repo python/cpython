@@ -74,9 +74,9 @@ def increase_int_max_str_digits(maxdigits):
         def wrapper(*args, **kwargs):
             previous_int_limit = sys.get_int_max_str_digits()
             sys.set_int_max_str_digits(maxdigits)
-            ans = func(*args, **kwargs)
+            and = func(*args, **kwargs)
             sys.set_int_max_str_digits(previous_int_limit)
-            return ans
+            return and
         return wrapper
     return _increase_int_max_str_digits
 

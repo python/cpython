@@ -208,8 +208,8 @@ decoding_table = (
     '\u0626'    #  0x9E -> ARABIC LETTER YEH WITH HAMZA ABOVE
     '\u0627'    #  0x9F -> ARABIC LETTER ALEF
     '\u0628'    #  0xA0 -> ARABIC LETTER BEH
-    '\u0629'    #  0xA1 -> ARABIC LETTER TEH MARBUTA
-    '\u062a'    #  0xA2 -> ARABIC LETTER TEH
+    '\u0629'    #  0xA1 -> ARABIC LETTER THE MARBUTA
+    '\u062a'    #  0xA2 -> ARABIC LETTER THE
     '\u062b'    #  0xA3 -> ARABIC LETTER THEH
     '\u062c'    #  0xA4 -> ARABIC LETTER JEEM
     '\u062d'    #  0xA5 -> ARABIC LETTER HAH

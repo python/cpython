@@ -2012,7 +2012,7 @@ _PyCode_CheckNoExternalState(PyCodeObject *co, _PyCode_var_counts_t *counts,
         errmsg = "globals not supported";
     }
     // Otherwise we don't check counts.unbound.globals.numunknown since we can't
-    // distinguish beween globals and builtins here.
+    // distinguish between globals and builtins here.
 
     if (errmsg != NULL) {
         if (p_errmsg != NULL) {
@@ -2123,7 +2123,7 @@ code_returns_only_none(PyCodeObject *co)
         for (int i = 0; i < len; i += _PyInstruction_GetLength(co, i)) {
             _Py_CODEUNIT inst = _Py_GetBaseCodeUnit(co, i);
             if (IS_RETURN_OPCODE(inst.op.code)) {
-                // We alraedy know it isn't returning None.
+                // We already know it isn't returning None.
                 return 0;
             }
         }

@@ -1544,22 +1544,22 @@ class PatchTest(unittest.TestCase):
         original_g = Foo.g
         original_foo = Foo.foo
 
-        def crasher():
+        def crash():
             raise NameError('crasher')
 
         @patch.object(Foo, 'g', 1)
-        @patch.object(Foo, 'foo', new_callable=crasher)
+        @patch.object(Foo, 'foo', new_callable=crash)
         @patch.object(Foo, 'f', 1)
         def thing1(): pass
 
-        @patch.object(Foo, 'foo', new_callable=crasher)
+        @patch.object(Foo, 'foo', new_callable=crash)
         @patch.object(Foo, 'g', 1)
         @patch.object(Foo, 'f', 1)
         def thing2(): pass
 
         @patch.object(Foo, 'g', 1)
         @patch.object(Foo, 'f', 1)
-        @patch.object(Foo, 'foo', new_callable=crasher)
+        @patch.object(Foo, 'foo', new_callable=crash)
         def thing3(): pass
 
         for func in thing1, thing2, thing3:
@@ -1582,8 +1582,8 @@ class PatchTest(unittest.TestCase):
         bad = patch.object(Foo, 'missing', 1)
         bad.attribute_name = 'missing'
 
-        for additionals in [good, bad], [bad, good]:
-            patcher.additional_patchers = additionals
+        for additional in [good, bad], [bad, good]:
+            patcher.additional_patchers = additional
 
             @patcher
             def func(): pass
@@ -1598,7 +1598,7 @@ class PatchTest(unittest.TestCase):
         original_g = Foo.g
         original_foo = Foo.foo
 
-        def crasher():
+        def crash():
             raise NameError('crasher')
 
         patcher = patch.object(Foo, 'f', 1)
@@ -1607,11 +1607,11 @@ class PatchTest(unittest.TestCase):
         good = patch.object(Foo, 'g', 1)
         good.attribute_name = 'g'
 
-        bad = patch.object(Foo, 'foo', new_callable=crasher)
+        bad = patch.object(Foo, 'foo', new_callable=crash)
         bad.attribute_name = 'foo'
 
-        for additionals in [good, bad], [bad, good]:
-            patcher.additional_patchers = additionals
+        for additional in [good, bad], [bad, good]:
+            patcher.additional_patchers = additional
 
             @patcher
             def func(): pass

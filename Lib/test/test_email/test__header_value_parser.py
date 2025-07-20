@@ -2285,11 +2285,11 @@ class TestParser(TestParserMixin, TestEmailBase):
     def test_get_group_mixed_list(self):
         group = self._test_get_x(parser.get_group,
             ('Monty Python: "Fred A. Bear" <dinsdale@example.com>,'
-                '(foo) Roger <ping@exampele.com>, x@test.example.com;'),
+                '(foo) Roger <ping@example.com>, x@test.example.com;'),
             ('Monty Python: "Fred A. Bear" <dinsdale@example.com>,'
-                '(foo) Roger <ping@exampele.com>, x@test.example.com;'),
+                '(foo) Roger <ping@example.com>, x@test.example.com;'),
             ('Monty Python: "Fred A. Bear" <dinsdale@example.com>,'
-                ' Roger <ping@exampele.com>, x@test.example.com;'),
+                ' Roger <ping@example.com>, x@test.example.com;'),
             [],
             '')
         self.assertEqual(group.token_type, 'group')
@@ -2306,11 +2306,11 @@ class TestParser(TestParserMixin, TestEmailBase):
     def test_get_group_one_invalid(self):
         group = self._test_get_x(parser.get_group,
             ('Monty Python: "Fred A. Bear" <dinsdale@example.com>,'
-                '(foo) Roger ping@exampele.com, x@test.example.com;'),
+                '(foo) Roger ping@example.com, x@test.example.com;'),
             ('Monty Python: "Fred A. Bear" <dinsdale@example.com>,'
-                '(foo) Roger ping@exampele.com, x@test.example.com;'),
+                '(foo) Roger ping@example.com, x@test.example.com;'),
             ('Monty Python: "Fred A. Bear" <dinsdale@example.com>,'
-                ' Roger ping@exampele.com, x@test.example.com;'),
+                ' Roger ping@example.com, x@test.example.com;'),
             [errors.InvalidHeaderDefect,   # non-angle addr makes local part invalid
              errors.InvalidHeaderDefect],   # and its not obs-local either: no dots.
             '')
@@ -2718,9 +2718,9 @@ class TestParser(TestParserMixin, TestEmailBase):
     def test_get_msg_id_valid(self):
         msg_id = self._test_get_x(
             parser.get_msg_id,
-            "<simeple.local@example.something.com>",
-            "<simeple.local@example.something.com>",
-            "<simeple.local@example.something.com>",
+            "<simple.local@example.something.com>",
+            "<simple.local@example.something.com>",
+            "<simple.local@example.something.com>",
             [],
             '',
             )
@@ -2729,9 +2729,9 @@ class TestParser(TestParserMixin, TestEmailBase):
     def test_get_msg_id_obsolete_local(self):
         msg_id = self._test_get_x(
             parser.get_msg_id,
-            '<"simeple.local"@example.com>',
-            '<"simeple.local"@example.com>',
-            '<simeple.local@example.com>',
+            '<"simple.local"@example.com>',
+            '<"simple.local"@example.com>',
+            '<simple.local@example.com>',
             [errors.ObsoleteHeaderDefect],
             '',
             )

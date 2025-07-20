@@ -131,10 +131,10 @@ class TestNtpath(NtpathTestCase):
 
     def test_splitdrive_invalid_paths(self):
         splitdrive = ntpath.splitdrive
-        self.assertEqual(splitdrive('\\\\ser\x00ver\\sha\x00re\\di\x00r'),
-                         ('\\\\ser\x00ver\\sha\x00re', '\\di\x00r'))
-        self.assertEqual(splitdrive(b'\\\\ser\x00ver\\sha\x00re\\di\x00r'),
-                         (b'\\\\ser\x00ver\\sha\x00re', b'\\di\x00r'))
+        self.assertEqual(splitdrive('\\\\set\x00ver\\sha\x00re\\di\x00r'),
+                         ('\\\\set\x00ver\\sha\x00re', '\\di\x00r'))
+        self.assertEqual(splitdrive(b'\\\\set\x00ver\\sha\x00re\\di\x00r'),
+                         (b'\\\\set\x00ver\\sha\x00re', b'\\di\x00r'))
         self.assertEqual(splitdrive("\\\\\udfff\\\udffe\\\udffd"),
                          ('\\\\\udfff\\\udffe', '\\\udffd'))
         if sys.platform == 'win32':
@@ -237,10 +237,10 @@ class TestNtpath(NtpathTestCase):
 
     def test_splitroot_invalid_paths(self):
         splitroot = ntpath.splitroot
-        self.assertEqual(splitroot('\\\\ser\x00ver\\sha\x00re\\di\x00r'),
-                         ('\\\\ser\x00ver\\sha\x00re', '\\', 'di\x00r'))
-        self.assertEqual(splitroot(b'\\\\ser\x00ver\\sha\x00re\\di\x00r'),
-                         (b'\\\\ser\x00ver\\sha\x00re', b'\\', b'di\x00r'))
+        self.assertEqual(splitroot('\\\\set\x00ver\\sha\x00re\\di\x00r'),
+                         ('\\\\set\x00ver\\sha\x00re', '\\', 'di\x00r'))
+        self.assertEqual(splitroot(b'\\\\set\x00ver\\sha\x00re\\di\x00r'),
+                         (b'\\\\set\x00ver\\sha\x00re', b'\\', b'di\x00r'))
         self.assertEqual(splitroot("\\\\\udfff\\\udffe\\\udffd"),
                          ('\\\\\udfff\\\udffe', '\\', '\udffd'))
         if sys.platform == 'win32':

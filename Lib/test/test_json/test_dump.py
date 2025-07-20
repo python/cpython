@@ -41,9 +41,9 @@ class TestDump:
     # Issue 16228: Crash on encoding resized list
     def test_encode_mutated(self):
         a = [object()] * 10
-        def crasher(obj):
+        def crash(obj):
             del a[-1]
-        self.assertEqual(self.dumps(a, default=crasher),
+        self.assertEqual(self.dumps(a, default=crash),
                  '[null, null, null, null, null]')
 
     # Issue 24094

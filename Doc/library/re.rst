@@ -1811,7 +1811,7 @@ in each word of a sentence except for the first and last characters::
    >>> re.sub(r"(\w)(\w+)(\w)", repl, text)
    'Poefsrosr Aealmlobdk, pslaee reorpt your abnseces plmrptoy.'
    >>> re.sub(r"(\w)(\w+)(\w)", repl, text)
-   'Pofsroser Aodlambelk, plasee reoprt yuor asnebces potlmrpy.'
+   'Pofsroser Aodlambelk, plasee report your asnebces potlmrpy.'
 
 
 Finding all Adverbs

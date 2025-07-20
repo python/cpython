@@ -485,7 +485,7 @@ advantages to placing the test code in a separate module, such as
 
 .. _legacy-unit-tests:
 
-Re-using old test code
+Reusing old test code
 ----------------------
 
 Some users will find that they have existing test code that they would like to

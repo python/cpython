@@ -338,7 +338,7 @@
 
 [homes]
    comment = Home Directories
-   browseable = no
+   browsable = no
    writable = yes
 
 # You can enable VFS recycle bin on a per share basis:
@@ -369,7 +369,7 @@
 # the default is to use the user's home directory
 ;[Profiles]
 ;    path = /var/lib/samba/profiles
-;    browseable = no
+;    browsable = no
 ;    guest ok = yes
 
 
@@ -384,7 +384,7 @@
 [printers]
    comment = All Printers
    path = /var/spool/samba
-   browseable = no
+   browsable = no
 # to allow user 'guest account' to print.
    guest ok = yes
    writable = no
@@ -414,7 +414,7 @@
 
 [print$]
    path = /var/lib/samba/printers
-   browseable = yes
+   browsable = yes
    read only = yes
    write list = @adm root
 

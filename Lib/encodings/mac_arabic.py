@@ -118,8 +118,8 @@ decoding_map.update({
     0x00c6: 0x0626,     #  ARABIC LETTER YEH WITH HAMZA ABOVE
     0x00c7: 0x0627,     #  ARABIC LETTER ALEF
     0x00c8: 0x0628,     #  ARABIC LETTER BEH
-    0x00c9: 0x0629,     #  ARABIC LETTER TEH MARBUTA
-    0x00ca: 0x062a,     #  ARABIC LETTER TEH
+    0x00c9: 0x0629,     #  ARABIC LETTER THE MARBUTA
+    0x00ca: 0x062a,     #  ARABIC LETTER THE
     0x00cb: 0x062b,     #  ARABIC LETTER THEH
     0x00cc: 0x062c,     #  ARABIC LETTER JEEM
     0x00cd: 0x062d,     #  ARABIC LETTER HAH
@@ -379,8 +379,8 @@ decoding_table = (
     '\u0626'   #  0x00c6 -> ARABIC LETTER YEH WITH HAMZA ABOVE
     '\u0627'   #  0x00c7 -> ARABIC LETTER ALEF
     '\u0628'   #  0x00c8 -> ARABIC LETTER BEH
-    '\u0629'   #  0x00c9 -> ARABIC LETTER TEH MARBUTA
-    '\u062a'   #  0x00ca -> ARABIC LETTER TEH
+    '\u0629'   #  0x00c9 -> ARABIC LETTER THE MARBUTA
+    '\u062a'   #  0x00ca -> ARABIC LETTER THE
     '\u062b'   #  0x00cb -> ARABIC LETTER THEH
     '\u062c'   #  0x00cc -> ARABIC LETTER JEEM
     '\u062d'   #  0x00cd -> ARABIC LETTER HAH
@@ -634,8 +634,8 @@ encoding_map = {
     0x0626: 0x00c6,     #  ARABIC LETTER YEH WITH HAMZA ABOVE
     0x0627: 0x00c7,     #  ARABIC LETTER ALEF
     0x0628: 0x00c8,     #  ARABIC LETTER BEH
-    0x0629: 0x00c9,     #  ARABIC LETTER TEH MARBUTA
-    0x062a: 0x00ca,     #  ARABIC LETTER TEH
+    0x0629: 0x00c9,     #  ARABIC LETTER THE MARBUTA
+    0x062a: 0x00ca,     #  ARABIC LETTER THE
     0x062b: 0x00cb,     #  ARABIC LETTER THEH
     0x062c: 0x00cc,     #  ARABIC LETTER JEEM
     0x062d: 0x00cd,     #  ARABIC LETTER HAH

@@ -54,7 +54,7 @@ the `Python Package Index <https://pypi.org>`_.
    archiving.rst
    fileformats.rst
    crypto.rst
-   allos.rst
+   allows.rst
    cmdlinelibs.rst
    concurrency.rst
    ipc.rst

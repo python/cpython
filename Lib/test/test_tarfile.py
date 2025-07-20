@@ -4112,7 +4112,7 @@ class TestExtractionFilters(unittest.TestCase):
             arc.add("b/")
             # Point "c" to the bottom of the tree in "a"
             arc.add("c", symlink_to=os.path.join("a", "t"))
-            # link to non-existant location under "a"
+            # link to non-existent location under "a"
             arc.add("c/escape", symlink_to=os.path.join("..", "..",
                                                         "link_here"))
             # Move "c" to point to "b" ("c/escape" no longer exists)

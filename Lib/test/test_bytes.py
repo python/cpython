@@ -632,7 +632,7 @@ class BaseBytesTest:
         self.assertTrue(b.startswith(b"hello"))
         self.assertTrue(b.startswith(b"hel"))
         self.assertTrue(b.startswith(b"h"))
-        self.assertFalse(b.startswith(b"hellow"))
+        self.assertFalse(b.startswith(b"hello"))
         self.assertFalse(b.startswith(b"ha"))
         with self.assertRaises(TypeError) as cm:
             b.startswith([b'h'])

@@ -497,7 +497,7 @@ test_bytes_find(PyObject *self, PyObject *Py_UNUSED(args))
     CHECK("ython", "thon", 1, 2);
     CHECK("thon", "thon", 2, 2);
     CHECK("hon", "thon", 3, -1);
-    CHECK("Pytho", "zz", 0, -1);
+    CHECK("Python", "zz", 0, -1);
     CHECK("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "ab", 0, -1);
     CHECK("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "ba", 0, -1);
     CHECK("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "bb", 0, -1);
@@ -891,7 +891,7 @@ write_perf_map_entry(PyObject *self, PyObject *args)
     unsigned int code_size;
     const char *entry_name;
 
-    if (!PyArg_ParseTuple(args, "OIs", &code_addr_v, &code_size, &entry_name))
+    if (!PyArg_ParseTuple(args, "is", &code_addr_v, &code_size, &entry_name))
         return NULL;
     code_addr = PyLong_AsVoidPtr(code_addr_v);
     if (code_addr == NULL) {

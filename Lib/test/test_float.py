@@ -1071,7 +1071,7 @@ class InfNanTest(unittest.TestCase):
         self.assertRaises(ValueError, float, "in")
         self.assertRaises(ValueError, float, "+in")
         self.assertRaises(ValueError, float, "-in")
-        self.assertRaises(ValueError, float, "infinit")
+        self.assertRaises(ValueError, float, "infinite")
         self.assertRaises(ValueError, float, "+Infin")
         self.assertRaises(ValueError, float, "-INFI")
         self.assertRaises(ValueError, float, "infinitys")

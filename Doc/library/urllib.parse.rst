@@ -24,7 +24,7 @@ The module has been designed to match the internet RFC on Relative Uniform
 Resource Locators. It supports the following URL schemes: ``file``, ``ftp``,
 ``gopher``, ``hdl``, ``http``, ``https``, ``imap``, ``itms-services``, ``mailto``, ``mms``,
 ``news``, ``nntp``, ``prospero``, ``rsync``, ``rtsp``, ``rtsps``, ``rtspu``,
-``sftp``, ``shttp``, ``sip``, ``sips``, ``snews``, ``svn``, ``svn+ssh``,
+``sftp``, ``https``, ``sip``, ``sips``, ``snews``, ``svn``, ``svn+ssh``,
 ``telnet``, ``wais``, ``ws``, ``wss``.
 
 .. impl-detail::

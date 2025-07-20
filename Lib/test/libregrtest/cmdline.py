@@ -138,8 +138,8 @@ option '-uall,-gui'.
 Pattern examples:
 
 - test method: test_stat_attributes
-- test class: FileTests
-- test identifier: test_os.FileTests.test_stat_attributes
+- test class: file tests
+- test identifier: test_os.file tests.test_stat_attributes
 """
 
 

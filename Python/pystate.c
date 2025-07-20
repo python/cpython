@@ -309,7 +309,7 @@ holds_gil(PyThreadState *tstate)
 /* Suppress deprecation warning for PyBytesObject.ob_shash */
 _Py_COMP_DIAG_PUSH
 _Py_COMP_DIAG_IGNORE_DEPR_DECLS
-/* We use "initial" if the runtime gets re-used
+/* We use "initial" if the runtime gets reused
    (e.g. Py_Finalize() followed by Py_Initialize().
    Note that we initialize "initial" relative to _PyRuntime,
    to ensure pre-initialized pointers point to the active
@@ -543,7 +543,7 @@ init_interpreter(PyInterpreterState *interp,
     interp->threads.preallocated = &interp->_initial_thread;
 
     // We would call _PyObject_InitState() at this point
-    // if interp->feature_flags were alredy set.
+    // if interp->feature_flags were already set.
 
     _PyEval_InitState(interp);
     _PyGC_InitState(&interp->gc);

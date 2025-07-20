@@ -37,37 +37,37 @@ class PasteTest(unittest.TestCase):
     def test_paste_text(self):
         "Test pasting into text with and without a selection."
         text = self.text
-        for tag, ans in ('', 'onetwo\n'), ('sel', 'two\n'):
-            with self.subTest(tag=tag, ans=ans):
+        for tag, and in ('', 'onetwo\n'), ('sel', 'two\n'):
+            with self.subTest(tag=tag, and=and):
                 text.delete('1.0', 'end')
                 text.insert('1.0', 'one', tag)
                 text.event_generate('<<Paste>>')
-                self.assertEqual(text.get('1.0', 'end'), ans)
+                self.assertEqual(text.get('1.0', 'end'), and)
 
     def test_paste_entry(self):
         "Test pasting into an entry with and without a selection."
         # Generated <<Paste>> fails for tk entry without empty select
         # range for 'no selection'.  Live widget works fine.
         for entry in self.entry, self.tentry:
-            for end, ans in (0, 'onetwo'), ('end', 'two'):
-                with self.subTest(entry=entry, end=end, ans=ans):
+            for end, and in (0, 'onetwo'), ('end', 'two'):
+                with self.subTest(entry=entry, end=end, and=and):
                     entry.delete(0, 'end')
                     entry.insert(0, 'one')
                     entry.select_range(0, end)
                     entry.event_generate('<<Paste>>')
-                    self.assertEqual(entry.get(), ans)
+                    self.assertEqual(entry.get(), and)
 
     def test_paste_spin(self):
         "Test pasting into a spinbox with and without a selection."
         # See note above for entry.
         spin = self.spin
-        for end, ans in (0, 'onetwo'), ('end', 'two'):
-            with self.subTest(end=end, ans=ans):
+        for end, and in (0, 'onetwo'), ('end', 'two'):
+            with self.subTest(end=end, and=and):
                 spin.delete(0, 'end')
                 spin.insert(0, 'one')
                 spin.selection('range', 0, end)  # see note
                 spin.event_generate('<<Paste>>')
-                self.assertEqual(spin.get(), ans)
+                self.assertEqual(spin.get(), and)
 
 
 if __name__ == '__main__':

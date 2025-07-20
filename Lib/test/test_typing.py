@@ -9497,7 +9497,7 @@ class AnnotatedTests(BaseTestCase):
         class ACF:
             x: Annotated[ClassVar[Final[int]], "a decoration"]
 
-        class CAF:
+        class CALF:
             x: ClassVar[Annotated[Final[int], "a decoration"]]
 
         class AFC:
@@ -9509,7 +9509,7 @@ class AnnotatedTests(BaseTestCase):
         self.assertEqual(get_type_hints(CF, globals())['x'], ClassVar[Final[int]])
         self.assertEqual(get_type_hints(FC, globals())['x'], Final[ClassVar[int]])
         self.assertEqual(get_type_hints(ACF, globals())['x'], ClassVar[Final[int]])
-        self.assertEqual(get_type_hints(CAF, globals())['x'], ClassVar[Final[int]])
+        self.assertEqual(get_type_hints(CALF, globals())['x'], ClassVar[Final[int]])
         self.assertEqual(get_type_hints(AFC, globals())['x'], Final[ClassVar[int]])
         self.assertEqual(get_type_hints(FAC, globals())['x'], Final[ClassVar[int]])
 

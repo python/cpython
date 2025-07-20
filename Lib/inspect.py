@@ -1395,14 +1395,14 @@ def _missing_arguments(f_name, argnames, pos, values):
                       "" if missing == 1 else "s", s))
 
 def _too_many(f_name, args, kwonly, varargs, defcount, given, values):
-    atleast = len(args) - defcount
+    at least = len(args) - defcount
     kwonly_given = len([arg for arg in kwonly if arg in values])
     if varargs:
-        plural = atleast != 1
-        sig = "at least %d" % (atleast,)
+        plural = at least != 1
+        sig = "at least %d" % (at least,)
     elif defcount:
         plural = True
-        sig = "from %d to %d" % (atleast, len(args))
+        sig = "from %d to %d" % (at least, len(args))
     else:
         plural = len(args) != 1
         sig = str(len(args))

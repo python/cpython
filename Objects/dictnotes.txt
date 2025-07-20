@@ -56,7 +56,7 @@ Membership Testing
 
 Dynamic Mappings
     Characterized by deletions interspersed with adds and replacements.
-    Performance benefits greatly from the re-use of dummy entries.
+    Performance benefits greatly from the reuse of dummy entries.
 
 Data Layout
 -----------

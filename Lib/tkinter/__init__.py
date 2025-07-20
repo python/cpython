@@ -3697,7 +3697,7 @@ class Scale(Widget):
 
     def coords(self, value=None):
         """Return a tuple (X,Y) of the point along the centerline of the
-        trough that corresponds to VALUE or the current value if None is
+        through that corresponds to VALUE or the current value if None is
         given."""
 
         return self._getints(self.tk.call(self._w, 'coords', value))

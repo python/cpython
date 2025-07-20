@@ -15,7 +15,7 @@
  / This version of mmapmodule.c has been changed significantly
  / from the original mmapfile.c on which it was based.
  / The original version of mmapfile is maintained by Sam at
- / ftp://squirl.nightmare.com/pub/python/python-ext.
+ / ftp://squirrel.nightmare.com/pub/python/python-ext.
 */
 
 #ifndef Py_BUILD_CORE_BUILTIN

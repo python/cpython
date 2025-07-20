@@ -26,7 +26,7 @@ typedef struct {
 
 /* Forward declares */
 
-static BOOL PyHKEY_AsHKEY(winreg_state *st, PyObject *ob, HKEY *pRes, BOOL bNoneOK);
+static BOOL PyHKEY_AsHKEY(winreg_state *st, PyObject *ob, HKEY *press, BOOL bNoneOK);
 static BOOL clinic_HKEY_converter(winreg_state *st, PyObject *ob, void *p);
 static PyObject *PyHKEY_FromHKEY(winreg_state *st, HKEY h);
 static BOOL PyHKEY_Close(winreg_state *st, PyObject *obHandle);

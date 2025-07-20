@@ -109,7 +109,7 @@ class SearchDialogBase:
         label = Label(self.frame, text=label_text)
         label.grid(row=self.row, column=0, sticky="nw")
         entry = Entry(self.frame, textvariable=var, exportselection=0)
-        entry.grid(row=self.row, column=1, sticky="nwe")
+        entry.grid(row=self.row, column=1, sticky="new")
         self.row = self.row + 1
         return entry, label
 
@@ -129,7 +129,7 @@ class SearchDialogBase:
         else:
             label = ''
         frame = Frame(self.frame)
-        frame.grid(row=self.row, column=1, columnspan=1, sticky="nwe")
+        frame.grid(row=self.row, column=1, columnspan=1, sticky="new")
         self.row = self.row + 1
         return frame, label
 
