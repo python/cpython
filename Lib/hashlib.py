@@ -128,12 +128,22 @@ def __get_openssl_constructor(name):
         # Prefer our builtin blake2 implementation.
         return __get_builtin_constructor(name)
     try:
-        # MD5, SHA1, and SHA2 are in all supported OpenSSL versions
-        # SHA3/shake are available in OpenSSL 1.1.1+
+        # Fetch the OpenSSL hash function if it exists,
+        # independently of the context security policy.
         f = getattr(_hashlib, 'openssl_' + name)
-        # Allow the C module to raise ValueError.  The function will be
-        # defined but the hash not actually available.  Don't fall back to
-        # builtin if the current security policy blocks a digest, bpo#40695.
+        # Check if the context security policy blocks the digest or not
+        # by allowing the C module to raise a ValueError. The function
+        # will be defined but the hash will not be available at runtime.
+        #
+        # We use "usedforsecurity=False" to prevent falling back to the
+        # built-in function in case the security policy does not allow it.
+        #
+        # Note that this only affects the explicit named constructors,
+        # and not the algorithms exposed through hashlib.new() which
+        # can still be resolved to a built-in function even if the
+        # current security policy does not allow it.
+        #
+        # See https://github.com/python/cpython/issues/84872.
         f(usedforsecurity=False)
         # Use the C function directly (very fast)
         return f
