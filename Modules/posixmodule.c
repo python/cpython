@@ -7992,7 +7992,7 @@ os_register_at_fork_impl(PyObject *module, PyObject *before,
 //
 // This should only be called from the parent process after
 // PyOS_AfterFork_Parent().
-static void
+static int
 warn_about_fork_with_threads(const char* name)
 {
     // It's not safe to issue the warning while the world is stopped, because
@@ -8043,14 +8043,14 @@ warn_about_fork_with_threads(const char* name)
         PyObject *threading = PyImport_GetModule(&_Py_ID(threading));
         if (!threading) {
             PyErr_Clear();
-            return;
+            return 0;
         }
         PyObject *threading_active =
                 PyObject_GetAttr(threading, &_Py_ID(_active));
         if (!threading_active) {
             PyErr_Clear();
             Py_DECREF(threading);
-            return;
+            return 0;
         }
         PyObject *threading_limbo =
                 PyObject_GetAttr(threading, &_Py_ID(_limbo));
@@ -8058,7 +8058,7 @@ warn_about_fork_with_threads(const char* name)
             PyErr_Clear();
             Py_DECREF(threading);
             Py_DECREF(threading_active);
-            return;
+            return 0;
         }
         Py_DECREF(threading);
         // Duplicating what threading.active_count() does but without holding
@@ -8074,7 +8074,7 @@ warn_about_fork_with_threads(const char* name)
         Py_DECREF(threading_limbo);
     }
     if (num_python_threads > 1) {
-        PyErr_WarnFormat(
+        return PyErr_WarnFormat(
                 PyExc_DeprecationWarning, 1,
 #ifdef HAVE_GETPID
                 "This process (pid=%d) is multi-threaded, "
@@ -8086,11 +8086,8 @@ warn_about_fork_with_threads(const char* name)
                 getpid(),
 #endif
                 name);
-        if (PyErr_Occurred()) {
-            PyErr_WriteUnraisable(NULL);
-            PyErr_Clear();
-        }
     }
+    return 0;
 }
 #endif  // HAVE_FORK1 || HAVE_FORKPTY || HAVE_FORK
 
@@ -8129,7 +8126,8 @@ os_fork1_impl(PyObject *module)
         /* parent: release the import lock. */
         PyOS_AfterFork_Parent();
         // After PyOS_AfterFork_Parent() starts the world to avoid deadlock.
-        warn_about_fork_with_threads("fork1");
+        if (warn_about_fork_with_threads("fork1") < 0)
+            return NULL;
     }
     if (pid == -1) {
         errno = saved_errno;
@@ -8178,7 +8176,8 @@ os_fork_impl(PyObject *module)
         /* parent: release the import lock. */
         PyOS_AfterFork_Parent();
         // After PyOS_AfterFork_Parent() starts the world to avoid deadlock.
-        warn_about_fork_with_threads("fork");
+        if (warn_about_fork_with_threads("fork") < 0)
+            return NULL;
     }
     if (pid == -1) {
         errno = saved_errno;
@@ -9033,7 +9032,8 @@ os_forkpty_impl(PyObject *module)
         /* parent: release the import lock. */
         PyOS_AfterFork_Parent();
         // After PyOS_AfterFork_Parent() starts the world to avoid deadlock.
-        warn_about_fork_with_threads("forkpty");
+        if (warn_about_fork_with_threads("forkpty") < 0)
+            return NULL;
     }
     if (pid == -1) {
         return posix_error();

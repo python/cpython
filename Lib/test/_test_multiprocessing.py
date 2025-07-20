@@ -39,7 +39,7 @@ from test.support import script_helper
 from test.support import socket_helper
 from test.support import threading_helper
 from test.support import warnings_helper
-from test.support.script_helper import run_python_until_end
+from test.support.script_helper import assert_python_failure, assert_python_ok
 
 # Skip tests if _multiprocessing wasn't built.
 _multiprocessing = import_helper.import_module('_multiprocessing')
@@ -6284,7 +6284,15 @@ class TestSyncManagerTypes(unittest.TestCase):
 
     def setUp(self):
         self.manager = self.manager_class()
-        self.manager.start()
+        # gh-135427
+        # In some of the tests, a forked child forks another child of itself. In that case, using
+        # warnings_helper.ignore_warnings decorator does not actually ignore the warning from that
+        # child of child, and a warnings_helper.ignore_warnings exception is raised.
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore',
+                                    message=".*fork.*may lead to deadlocks in the child.*",
+                                    category=DeprecationWarning)
+            self.manager.start()
         self.proc = None
 
     def tearDown(self):
@@ -7165,15 +7173,13 @@ class ForkInThreads(unittest.TestCase):
         print("In parent")
         """
 
-        res, _ = run_python_until_end("-c", code, PYTHONWARNINGS='always')
+        res = assert_python_ok("-c", code, PYTHONWARNINGS='always')
         self.assertIn(b'In child', res.out)
         self.assertIn(b'In parent', res.out)
         self.assertIn(b'DeprecationWarning', res.err)
         self.assertIn(b'is multi-threaded, use of fork() may lead to deadlocks in the child', res.err)
 
-        res, _ = run_python_until_end("-c", code, PYTHONWARNINGS='error')
-        self.assertIn(b'In child', res.out)
-        self.assertIn(b'In parent', res.out)
+        res = assert_python_failure("-c", code, PYTHONWARNINGS='error')
         self.assertIn(b'DeprecationWarning', res.err)
         self.assertIn(b'is multi-threaded, use of fork() may lead to deadlocks in the child', res.err)
 
@@ -7195,14 +7201,11 @@ class ForkInThreads(unittest.TestCase):
         print(f"In parent")
         """
 
-        res, _ = run_python_until_end("-c", code, PYTHONWARNINGS='always')
-        print(res)
+        res = assert_python_ok("-c", code, PYTHONWARNINGS='always')
         self.assertIn(b'In parent', res.out)
         self.assertIn(b'DeprecationWarning', res.err)
         self.assertIn(b'is multi-threaded, use of forkpty() may lead to deadlocks in the child', res.err)
 
-        res, _ = run_python_until_end("-c", code, PYTHONWARNINGS='error')
-        print(res)
-        self.assertIn(b'In parent', res.out)
+        res = assert_python_failure("-c", code, PYTHONWARNINGS='error')
         self.assertIn(b'DeprecationWarning', res.err)
         self.assertIn(b'is multi-threaded, use of forkpty() may lead to deadlocks in the child', res.err)
