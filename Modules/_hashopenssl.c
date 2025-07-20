@@ -74,6 +74,12 @@
 #define PY_EVP_MD_CTX_md(CTX)   EVP_MD_CTX_md(CTX)
 #endif
 
+/*
+ * Return 1 if *md* is an extendable-output Function (XOF) and 0 otherwise.
+ * SHAKE128 and SHAKE256 are XOF functions but not BLAKE2B algorithms.
+ *
+ * This is a backport of the EVP_MD_xof() helper added in OpenSSL 3.4.
+ */
 static inline int
 PY_EVP_MD_xof(PY_EVP_MD *md)
 {
@@ -1768,9 +1774,10 @@ _hashlib_hmac_singleshot_impl(PyObject *module, Py_buffer *key,
 /*[clinic end generated code: output=82f19965d12706ac input=0a0790cc3db45c2e]*/
 {
     unsigned char md[EVP_MAX_MD_SIZE] = {0};
-    unsigned int md_len = 0, is_xof;
+    unsigned int md_len = 0;
     unsigned char *result;
     PY_EVP_MD *evp;
+    int is_xof;
 
     if (key->len > INT_MAX) {
         PyErr_SetString(PyExc_OverflowError,
