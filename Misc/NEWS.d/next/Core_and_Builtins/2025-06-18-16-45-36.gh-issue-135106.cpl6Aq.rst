@@ -1,0 +1,2 @@
+Restrict the trashcan mechanism to GC'ed objects and untrack them while in
+the trashcan to prevent the GC and trashcan mechanisms conflicting.

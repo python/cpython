@@ -1,0 +1,51 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2000-01-01 00:00+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+
+
+#. Special characters that are always escaped in the POT file
+#: escapes.py:5
+msgid ""
+"\"\t\n"
+"\r\\"
+msgstr ""
+
+#. All ascii characters 0-31
+#: escapes.py:8
+msgid ""
+"\000\001\002\003\004\005\006\007\010\t\n"
+"\013\014\r\016\017\020\021\022\023\024\025\026\027\030\031\032\033\034\035\036\037"
+msgstr ""
+
+#. All ascii characters 32-126
+#: escapes.py:13
+msgid " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
+msgstr ""
+
+#. ascii char 127
+#: escapes.py:17
+msgid "\177"
+msgstr ""
+
+#. some characters in the 128-255 range
+#: escapes.py:20
+msgid "\302\200 \302\240 \303\277"
+msgstr ""
+
+#. some characters >= 256 encoded as 2, 3 and 4 bytes, respectively
+#: escapes.py:23
+msgid "\316\261 \343\204\261 \360\223\202\200"
+msgstr ""
+

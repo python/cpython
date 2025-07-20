@@ -25,7 +25,7 @@ PyAPI_DATA(PyTypeObject) PyTupleIter_Type;
 
 #define PyTuple_Check(op) \
                  PyType_FastSubclass(Py_TYPE(op), Py_TPFLAGS_TUPLE_SUBCLASS)
-#define PyTuple_CheckExact(op) Py_IS_TYPE(op, &PyTuple_Type)
+#define PyTuple_CheckExact(op) Py_IS_TYPE((op), &PyTuple_Type)
 
 PyAPI_FUNC(PyObject *) PyTuple_New(Py_ssize_t size);
 PyAPI_FUNC(Py_ssize_t) PyTuple_Size(PyObject *);
@@ -36,7 +36,7 @@ PyAPI_FUNC(PyObject *) PyTuple_Pack(Py_ssize_t, ...);
 
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_TUPLEOBJECT_H
-#  include  "cpython/tupleobject.h"
+#  include "cpython/tupleobject.h"
 #  undef Py_CPYTHON_TUPLEOBJECT_H
 #endif
 

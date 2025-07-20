@@ -1,0 +1,2 @@
+Perform more aggressive control-flow optimizations on the machine code
+templates emitted by the experimental JIT compiler.

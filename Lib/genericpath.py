@@ -7,8 +7,8 @@ import os
 import stat
 
 __all__ = ['commonprefix', 'exists', 'getatime', 'getctime', 'getmtime',
-           'getsize', 'isdir', 'isfile', 'samefile', 'sameopenfile',
-           'samestat']
+           'getsize', 'isdevdrive', 'isdir', 'isfile', 'isjunction', 'islink',
+           'lexists', 'samefile', 'sameopenfile', 'samestat', 'ALLOW_MISSING']
 
 
 # Does a path exist?
@@ -21,6 +21,15 @@ def exists(path):
         return False
     return True
 
+
+# Being true for dangling symbolic links is also useful.
+def lexists(path):
+    """Test whether a path exists.  Returns True for broken symbolic links"""
+    try:
+        os.lstat(path)
+    except (OSError, ValueError):
+        return False
+    return True
 
 # This follows symbolic links, so both islink() and isdir() can be true
 # for the same path on systems that support symlinks
@@ -43,6 +52,33 @@ def isdir(s):
     except (OSError, ValueError):
         return False
     return stat.S_ISDIR(st.st_mode)
+
+
+# Is a path a symbolic link?
+# This will always return false on systems where os.lstat doesn't exist.
+
+def islink(path):
+    """Test whether a path is a symbolic link"""
+    try:
+        st = os.lstat(path)
+    except (OSError, ValueError, AttributeError):
+        return False
+    return stat.S_ISLNK(st.st_mode)
+
+
+# Is a path a junction?
+def isjunction(path):
+    """Test whether a path is a junction
+    Junctions are not supported on the current platform"""
+    os.fspath(path)
+    return False
+
+
+def isdevdrive(path):
+    """Determines whether the specified path is on a Windows Dev Drive.
+    Dev Drives are not supported on the current platform"""
+    os.fspath(path)
+    return False
 
 
 def getsize(filename):
@@ -153,3 +189,12 @@ def _check_arg_types(funcname, *args):
                             f'os.PathLike object, not {s.__class__.__name__!r}') from None
     if hasstr and hasbytes:
         raise TypeError("Can't mix strings and bytes in path components") from None
+
+# A singleton with a true boolean value.
+@object.__new__
+class ALLOW_MISSING:
+    """Special value for use in realpath()."""
+    def __repr__(self):
+        return 'os.path.ALLOW_MISSING'
+    def __reduce__(self):
+        return self.__class__.__name__

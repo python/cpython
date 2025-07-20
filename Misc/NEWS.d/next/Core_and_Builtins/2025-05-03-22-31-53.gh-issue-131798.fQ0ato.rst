@@ -1,0 +1,2 @@
+Allow the JIT to remove int guards after ``_GET_LEN`` by setting the return
+type to int.

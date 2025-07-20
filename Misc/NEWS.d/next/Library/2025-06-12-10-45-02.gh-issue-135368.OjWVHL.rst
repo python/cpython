@@ -1,0 +1,2 @@
+Fix :class:`unittest.mock.Mock` generation on :func:`dataclasses.dataclass`
+objects. Now all special attributes are set as it was before :gh:`124429`.

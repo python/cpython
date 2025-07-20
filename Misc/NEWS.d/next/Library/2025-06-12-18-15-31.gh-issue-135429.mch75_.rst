@@ -1,0 +1,1 @@
+Fix the argument mismatch in ``_lsprof`` for ``PY_THROW`` event.

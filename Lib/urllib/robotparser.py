@@ -11,6 +11,7 @@
 """
 
 import collections
+import urllib.error
 import urllib.parse
 import urllib.request
 
@@ -65,6 +66,7 @@ class RobotFileParser:
                 self.disallow_all = True
             elif err.code >= 400 and err.code < 500:
                 self.allow_all = True
+            err.close()
         else:
             raw = f.read()
             self.parse(raw.decode("utf-8").splitlines())

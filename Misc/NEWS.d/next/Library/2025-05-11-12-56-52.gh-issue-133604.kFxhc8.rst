@@ -1,0 +1,1 @@
+Remove :func:`!platform.java_ver` which was deprecated since Python 3.13.

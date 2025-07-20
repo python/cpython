@@ -11,13 +11,20 @@ from http.client import HTTPException
 import sys
 import unicodedata
 import unittest
-from test.support import open_urlresource, requires_resource, script_helper
+from test.support import (
+    open_urlresource,
+    requires_resource,
+    script_helper,
+    cpython_only,
+    check_disallow_instantiation,
+    force_not_colorized,
+)
 
 
 class UnicodeMethodsTest(unittest.TestCase):
 
     # update this, if the database changes
-    expectedchecksum = 'fbdf8106a3c7c242086b0a9efa03ad4d30d5b85d'
+    expectedchecksum = '9e43ee3929471739680c0e705482b4ae1c4122e4'
 
     @requires_resource('cpu')
     def test_method_checksum(self):
@@ -70,7 +77,7 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
 
     # Update this if the database changes. Make sure to do a full rebuild
     # (e.g. 'make distclean && make') to get the correct checksum.
-    expectedchecksum = 'd1e37a2854df60ac607b47b51189b9bf1b54bfdb'
+    expectedchecksum = '23ab09ed4abdf93db23b97359108ed630dd8311d'
 
     @requires_resource('cpu')
     def test_function_checksum(self):
@@ -89,10 +96,39 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
                 self.db.decomposition(char),
                 str(self.db.mirrored(char)),
                 str(self.db.combining(char)),
+                unicodedata.east_asian_width(char),
+                self.db.name(char, ""),
             ]
             h.update(''.join(data).encode("ascii"))
         result = h.hexdigest()
         self.assertEqual(result, self.expectedchecksum)
+
+    @requires_resource('cpu')
+    def test_name_inverse_lookup(self):
+        for i in range(sys.maxunicode + 1):
+            char = chr(i)
+            if looked_name := self.db.name(char, None):
+                self.assertEqual(self.db.lookup(looked_name), char)
+
+    def test_no_names_in_pua(self):
+        puas = [*range(0xe000, 0xf8ff),
+                *range(0xf0000, 0xfffff),
+                *range(0x100000, 0x10ffff)]
+        for i in puas:
+            char = chr(i)
+            self.assertRaises(ValueError, self.db.name, char)
+
+    def test_lookup_nonexistant(self):
+        # just make sure that lookup can fail
+        for nonexistent in [
+            "LATIN SMLL LETR A",
+            "OPEN HANDS SIGHS",
+            "DREGS",
+            "HANDBUG",
+            "MODIFIER LETTER CYRILLIC SMALL QUESTION MARK",
+            "???",
+        ]:
+            self.assertRaises(KeyError, self.db.lookup, nonexistent)
 
     def test_digit(self):
         self.assertEqual(self.db.digit('A', None), None)
@@ -219,12 +255,35 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         self.assertEqual(eaw('\u2010'), 'A')
         self.assertEqual(eaw('\U00020000'), 'W')
 
+    def test_east_asian_width_unassigned(self):
+        eaw = self.db.east_asian_width
+        # unassigned
+        for char in '\u0530\u0ecf\u10c6\u20fc\uaaca\U000107bd\U000115f2':
+            self.assertEqual(eaw(char), 'N')
+            self.assertIs(self.db.name(char, None), None)
+
+        # unassigned but reserved for CJK
+        for char in '\uFA6E\uFADA\U0002A6E0\U0002FA20\U0003134B\U0003FFFD':
+            self.assertEqual(eaw(char), 'W')
+            self.assertIs(self.db.name(char, None), None)
+
+        # private use areas
+        for char in '\uE000\uF800\U000F0000\U000FFFEE\U00100000\U0010FFF0':
+            self.assertEqual(eaw(char), 'A')
+            self.assertIs(self.db.name(char, None), None)
+
     def test_east_asian_width_9_0_changes(self):
         self.assertEqual(self.db.ucd_3_2_0.east_asian_width('\u231a'), 'N')
         self.assertEqual(self.db.east_asian_width('\u231a'), 'W')
 
 class UnicodeMiscTest(UnicodeDatabaseTest):
 
+    @cpython_only
+    def test_disallow_instantiation(self):
+        # Ensure that the type disallows instantiation (bpo-43916)
+        check_disallow_instantiation(self, unicodedata.UCD)
+
+    @force_not_colorized
     def test_failed_import_during_compiling(self):
         # Issue 4367
         # Decoding \N escapes requires the unicodedata module. If it can't be
@@ -281,6 +340,7 @@ class UnicodeMiscTest(UnicodeDatabaseTest):
         self.assertTrue("\u1d79".upper()=='\ua77d')
         self.assertTrue(".".upper()=='.')
 
+    @requires_resource('cpu')
     def test_bug_5828(self):
         self.assertEqual("\u1d79".lower(), "\u1d79")
         # Only U+0000 should have U+0000 as its upper/lower/titlecase variant
@@ -320,6 +380,8 @@ class NormalizationTest(unittest.TestCase):
         data = [int(x, 16) for x in data.split(" ")]
         return "".join([chr(x) for x in data])
 
+    @requires_resource('network')
+    @requires_resource('cpu')
     def test_normalization(self):
         TESTDATAFILE = "NormalizationTest.txt"
         TESTDATAURL = f"http://www.pythontest.net/unicode/{unicodedata.unidata_version}/{TESTDATAFILE}"
@@ -331,8 +393,8 @@ class NormalizationTest(unittest.TestCase):
         except PermissionError:
             self.skipTest(f"Permission error when downloading {TESTDATAURL} "
                           f"into the test data directory")
-        except (OSError, HTTPException):
-            self.fail(f"Could not retrieve {TESTDATAURL}")
+        except (OSError, HTTPException) as exc:
+            self.skipTest(f"Failed to download {TESTDATAURL}: {exc}")
 
         with testdata:
             self.run_normalization_tests(testdata)
@@ -404,6 +466,29 @@ class NormalizationTest(unittest.TestCase):
     def test_bug_834676(self):
         # Check for bug 834676
         unicodedata.normalize('NFC', '\ud55c\uae00')
+
+    def test_normalize_return_type(self):
+        # gh-129569: normalize() return type must always be str
+        normalize = unicodedata.normalize
+
+        class MyStr(str):
+            pass
+
+        normalization_forms = ("NFC", "NFKC", "NFD", "NFKD")
+        input_strings = (
+            # normalized strings
+            "",
+            "ascii",
+            # unnormalized strings
+            "\u1e0b\u0323",
+            "\u0071\u0307\u0323",
+        )
+
+        for form in normalization_forms:
+            for input_str in input_strings:
+                with self.subTest(form=form, input_str=input_str):
+                    self.assertIs(type(normalize(form, input_str)), str)
+                    self.assertIs(type(normalize(form, MyStr(input_str))), str)
 
 
 if __name__ == "__main__":

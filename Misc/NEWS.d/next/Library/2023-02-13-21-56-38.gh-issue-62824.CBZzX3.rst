@@ -1,0 +1,1 @@
+Fix aliases for ``iso8859_8`` encoding. Patch by Dave Goncalves.

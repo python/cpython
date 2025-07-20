@@ -7,7 +7,11 @@
                                  |_| XML parser
 
    Copyright (c) 1997-2000 Thai Open Source Software Center Ltd
-   Copyright (c) 2000-2017 Expat development team
+   Copyright (c) 2000      Clark Cooper <coopercc@users.sourceforge.net>
+   Copyright (c) 2002      Fred L. Drake, Jr. <fdrake@users.sourceforge.net>
+   Copyright (c) 2002-2005 Karl Waclawek <karl@waclawek.net>
+   Copyright (c) 2016-2024 Sebastian Pipping <sebastian@pipping.org>
+   Copyright (c) 2017      Rhodri James <rhodri@wildebeest.org.uk>
    Licensed under the MIT license:
 
    Permission is  hereby granted,  free of charge,  to any  person obtaining
@@ -285,7 +289,8 @@ int XmlParseXmlDecl(int isGeneralTextEntity, const ENCODING *enc,
                     const char **encodingNamePtr,
                     const ENCODING **namedEncodingPtr, int *standalonePtr);
 
-int XmlInitEncoding(INIT_ENCODING *, const ENCODING **, const char *name);
+int XmlInitEncoding(INIT_ENCODING *p, const ENCODING **encPtr,
+                    const char *name);
 const ENCODING *XmlGetUtf8InternalEncoding(void);
 const ENCODING *XmlGetUtf16InternalEncoding(void);
 int FASTCALL XmlUtf8Encode(int charNumber, char *buf);
@@ -303,7 +308,8 @@ int XmlParseXmlDeclNS(int isGeneralTextEntity, const ENCODING *enc,
                       const char **encodingNamePtr,
                       const ENCODING **namedEncodingPtr, int *standalonePtr);
 
-int XmlInitEncodingNS(INIT_ENCODING *, const ENCODING **, const char *name);
+int XmlInitEncodingNS(INIT_ENCODING *p, const ENCODING **encPtr,
+                      const char *name);
 const ENCODING *XmlGetUtf8InternalEncodingNS(void);
 const ENCODING *XmlGetUtf16InternalEncodingNS(void);
 ENCODING *XmlInitUnknownEncodingNS(void *mem, int *table, CONVERTER convert,

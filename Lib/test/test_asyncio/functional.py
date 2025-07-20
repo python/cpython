@@ -29,10 +29,6 @@ class FunctionalTestCaseMixin:
         self.loop.set_exception_handler(self.loop_exception_handler)
         self.__unhandled_exceptions = []
 
-        # Disable `_get_running_loop`.
-        self._old_get_running_loop = asyncio.events._get_running_loop
-        asyncio.events._get_running_loop = lambda: None
-
     def tearDown(self):
         try:
             self.loop.close()
@@ -43,7 +39,6 @@ class FunctionalTestCaseMixin:
                 self.fail('unexpected calls to loop.call_exception_handler()')
 
         finally:
-            asyncio.events._get_running_loop = self._old_get_running_loop
             asyncio.set_event_loop(None)
             self.loop = None
 
@@ -222,15 +217,14 @@ class TestThreadedServer(SocketThread):
                     pass
         finally:
             super().stop()
-
-    def run(self):
-        try:
-            with self._sock:
-                self._sock.setblocking(False)
-                self._run()
-        finally:
+            self._sock.close()
             self._s1.close()
             self._s2.close()
+
+
+    def run(self):
+        self._sock.setblocking(False)
+        self._run()
 
     def _run(self):
         while self._active:
@@ -248,7 +242,7 @@ class TestThreadedServer(SocketThread):
                     conn, addr = self._sock.accept()
                 except BlockingIOError:
                     continue
-                except socket.timeout:
+                except TimeoutError:
                     if not self._active:
                         return
                     else:

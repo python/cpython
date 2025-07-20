@@ -7,7 +7,23 @@
                                  |_| XML parser
 
    Copyright (c) 1997-2000 Thai Open Source Software Center Ltd
-   Copyright (c) 2000-2017 Expat development team
+   Copyright (c) 2000      Clark Cooper <coopercc@users.sourceforge.net>
+   Copyright (c) 2001-2003 Fred L. Drake, Jr. <fdrake@users.sourceforge.net>
+   Copyright (c) 2002      Greg Stein <gstein@users.sourceforge.net>
+   Copyright (c) 2002-2016 Karl Waclawek <karl@waclawek.net>
+   Copyright (c) 2005-2009 Steven Solie <steven@solie.ca>
+   Copyright (c) 2016-2024 Sebastian Pipping <sebastian@pipping.org>
+   Copyright (c) 2016      Pascal Cuoq <cuoq@trust-in-soft.com>
+   Copyright (c) 2016      Don Lewis <truckman@apache.org>
+   Copyright (c) 2017      Rhodri James <rhodri@wildebeest.org.uk>
+   Copyright (c) 2017      Alexander Bluhm <alexander.bluhm@gmx.net>
+   Copyright (c) 2017      Benbuck Nason <bnason@netflix.com>
+   Copyright (c) 2017      José Gutiérrez de la Concha <jose@zeroc.com>
+   Copyright (c) 2019      David Loffredo <loffredo@steptools.com>
+   Copyright (c) 2021      Donghee Na <donghee.na@python.org>
+   Copyright (c) 2022      Martin Ettl <ettl.martin78@googlemail.com>
+   Copyright (c) 2022      Sean McBride <sean@rogue-research.com>
+   Copyright (c) 2023      Hanno Böck <hanno@gentoo.org>
    Licensed under the MIT license:
 
    Permission is  hereby granted,  free of charge,  to any  person obtaining
@@ -30,24 +46,14 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifdef _WIN32
-#  include "winconfig.h"
-#else
-#  ifdef HAVE_EXPAT_CONFIG_H
-#    include <expat_config.h>
-#  endif
-#endif /* ndef _WIN32 */
+#include "expat_config.h"
 
 #include <stddef.h>
 #include <string.h> /* memcpy */
+#include <stdbool.h>
 
-#if defined(_MSC_VER) && (_MSC_VER <= 1700)
-/* for vs2012/11.0/1700 and earlier Visual Studio compilers */
-#  define bool int
-#  define false 0
-#  define true 1
-#else
-#  include <stdbool.h>
+#ifdef _WIN32
+#  include "winconfig.h"
 #endif
 
 #include "expat_external.h"
@@ -72,7 +78,7 @@
 #define VTABLE VTABLE1, PREFIX(toUtf8), PREFIX(toUtf16)
 
 #define UCS2_GET_NAMING(pages, hi, lo)                                         \
-  (namingBitmap[(pages[hi] << 3) + ((lo) >> 5)] & (1u << ((lo)&0x1F)))
+  (namingBitmap[(pages[hi] << 3) + ((lo) >> 5)] & (1u << ((lo) & 0x1F)))
 
 /* A 2 byte UTF-8 representation splits the characters 11 bits between
    the bottom 5 and 6 bits of the bytes.  We need 8 bits to index into
@@ -95,13 +101,8 @@
         + ((((byte)[1]) & 3) << 1) + ((((byte)[2]) >> 5) & 1)]                 \
    & (1u << (((byte)[2]) & 0x1F)))
 
-#define UTF8_GET_NAMING(pages, p, n)                                           \
-  ((n) == 2                                                                    \
-       ? UTF8_GET_NAMING2(pages, (const unsigned char *)(p))                   \
-       : ((n) == 3 ? UTF8_GET_NAMING3(pages, (const unsigned char *)(p)) : 0))
-
 /* Detection of invalid UTF-8 sequences is based on Table 3.1B
-   of Unicode 3.2: http://www.unicode.org/unicode/reports/tr28/
+   of Unicode 3.2: https://www.unicode.org/unicode/reports/tr28/
    with the additional restriction of not allowing the Unicode
    code points 0xFFFF and 0xFFFE (sequences EF,BF,BF and EF,BF,BE).
    Implementation details:
@@ -226,7 +227,7 @@ struct normal_encoding {
       /* isNmstrt2 */ NULL, /* isNmstrt3 */ NULL, /* isNmstrt4 */ NULL,        \
       /* isInvalid2 */ NULL, /* isInvalid3 */ NULL, /* isInvalid4 */ NULL
 
-static int FASTCALL checkCharRefNumber(int);
+static int FASTCALL checkCharRefNumber(int result);
 
 #include "xmltok_impl.h"
 #include "ascii.h"
@@ -244,7 +245,7 @@ static int FASTCALL checkCharRefNumber(int);
 #endif
 
 #define SB_BYTE_TYPE(enc, p)                                                   \
-  (((struct normal_encoding *)(enc))->type[(unsigned char)*(p)])
+  (((const struct normal_encoding *)(enc))->type[(unsigned char)*(p)])
 
 #ifdef XML_MIN_SIZE
 static int PTRFASTCALL
@@ -269,8 +270,14 @@ sb_byteToAscii(const ENCODING *enc, const char *p) {
 
 #define IS_NAME_CHAR(enc, p, n) (AS_NORMAL_ENCODING(enc)->isName##n(enc, p))
 #define IS_NMSTRT_CHAR(enc, p, n) (AS_NORMAL_ENCODING(enc)->isNmstrt##n(enc, p))
-#define IS_INVALID_CHAR(enc, p, n)                                             \
-  (AS_NORMAL_ENCODING(enc)->isInvalid##n(enc, p))
+#ifdef XML_MIN_SIZE
+#  define IS_INVALID_CHAR(enc, p, n)                                           \
+    (AS_NORMAL_ENCODING(enc)->isInvalid##n                                     \
+     && AS_NORMAL_ENCODING(enc)->isInvalid##n(enc, p))
+#else
+#  define IS_INVALID_CHAR(enc, p, n)                                           \
+    (AS_NORMAL_ENCODING(enc)->isInvalid##n(enc, p))
+#endif
 
 #ifdef XML_MIN_SIZE
 #  define IS_NAME_CHAR_MINBPC(enc, p)                                          \
@@ -292,7 +299,7 @@ sb_charMatches(const ENCODING *enc, const char *p, int c) {
 }
 #else
 /* c is an ASCII character */
-#  define CHAR_MATCHES(enc, p, c) (*(p) == c)
+#  define CHAR_MATCHES(enc, p, c) (*(p) == (c))
 #endif
 
 #define PREFIX(ident) normal_##ident
@@ -402,7 +409,7 @@ utf8_toUtf16(const ENCODING *enc, const char **fromP, const char *fromLim,
   unsigned short *to = *toP;
   const char *from = *fromP;
   while (from < fromLim && to < toLim) {
-    switch (((struct normal_encoding *)enc)->type[(unsigned char)*from]) {
+    switch (SB_BYTE_TYPE(enc, from)) {
     case BT_LEAD2:
       if (fromLim - from < 2) {
         res = XML_CONVERT_INPUT_INCOMPLETE;
@@ -589,13 +596,13 @@ static const struct normal_encoding ascii_encoding
 static int PTRFASTCALL
 unicode_byte_type(char hi, char lo) {
   switch ((unsigned char)hi) {
-  /* 0xD800–0xDBFF first 16-bit code unit or high surrogate (W1) */
+  /* 0xD800-0xDBFF first 16-bit code unit or high surrogate (W1) */
   case 0xD8:
   case 0xD9:
   case 0xDA:
   case 0xDB:
     return BT_LEAD4;
-  /* 0xDC00–0xDFFF second 16-bit code unit or low surrogate (W2) */
+  /* 0xDC00-0xDFFF second 16-bit code unit or low surrogate (W2) */
   case 0xDC:
   case 0xDD:
   case 0xDE:
@@ -710,33 +717,28 @@ unicode_byte_type(char hi, char lo) {
       return res;                                                              \
   }
 
-#define SET2(ptr, ch) (((ptr)[0] = ((ch)&0xff)), ((ptr)[1] = ((ch) >> 8)))
 #define GET_LO(ptr) ((unsigned char)(ptr)[0])
 #define GET_HI(ptr) ((unsigned char)(ptr)[1])
 
 DEFINE_UTF16_TO_UTF8(little2_)
 DEFINE_UTF16_TO_UTF16(little2_)
 
-#undef SET2
 #undef GET_LO
 #undef GET_HI
 
-#define SET2(ptr, ch) (((ptr)[0] = ((ch) >> 8)), ((ptr)[1] = ((ch)&0xFF)))
 #define GET_LO(ptr) ((unsigned char)(ptr)[1])
 #define GET_HI(ptr) ((unsigned char)(ptr)[0])
 
 DEFINE_UTF16_TO_UTF8(big2_)
 DEFINE_UTF16_TO_UTF16(big2_)
 
-#undef SET2
 #undef GET_LO
 #undef GET_HI
 
 #define LITTLE2_BYTE_TYPE(enc, p)                                              \
-  ((p)[1] == 0 ? ((struct normal_encoding *)(enc))->type[(unsigned char)*(p)]  \
-               : unicode_byte_type((p)[1], (p)[0]))
+  ((p)[1] == 0 ? SB_BYTE_TYPE(enc, p) : unicode_byte_type((p)[1], (p)[0]))
 #define LITTLE2_BYTE_TO_ASCII(p) ((p)[1] == 0 ? (p)[0] : -1)
-#define LITTLE2_CHAR_MATCHES(p, c) ((p)[1] == 0 && (p)[0] == c)
+#define LITTLE2_CHAR_MATCHES(p, c) ((p)[1] == 0 && (p)[0] == (c))
 #define LITTLE2_IS_NAME_CHAR_MINBPC(p)                                         \
   UCS2_GET_NAMING(namePages, (unsigned char)p[1], (unsigned char)p[0])
 #define LITTLE2_IS_NMSTRT_CHAR_MINBPC(p)                                       \
@@ -867,11 +869,9 @@ static const struct normal_encoding internal_little2_encoding
 #endif
 
 #define BIG2_BYTE_TYPE(enc, p)                                                 \
-  ((p)[0] == 0                                                                 \
-       ? ((struct normal_encoding *)(enc))->type[(unsigned char)(p)[1]]        \
-       : unicode_byte_type((p)[0], (p)[1]))
+  ((p)[0] == 0 ? SB_BYTE_TYPE(enc, p + 1) : unicode_byte_type((p)[0], (p)[1]))
 #define BIG2_BYTE_TO_ASCII(p) ((p)[0] == 0 ? (p)[1] : -1)
-#define BIG2_CHAR_MATCHES(p, c) ((p)[0] == 0 && (p)[1] == c)
+#define BIG2_CHAR_MATCHES(p, c) ((p)[0] == 0 && (p)[1] == (c))
 #define BIG2_IS_NAME_CHAR_MINBPC(p)                                            \
   UCS2_GET_NAMING(namePages, (unsigned char)p[0], (unsigned char)p[1])
 #define BIG2_IS_NMSTRT_CHAR_MINBPC(p)                                          \

@@ -1,0 +1,2 @@
+Fix a race in internal calls into WMI that can result in an "invalid handle"
+exception under high load. Patch by Chris Eibl.

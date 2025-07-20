@@ -1,0 +1,2 @@
+Fix error message for ``cls.__new__(cls, ...)`` where ``cls`` is not
+instantiable builtin or extension type (with ``tp_new`` set to ``NULL``).

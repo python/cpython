@@ -3,7 +3,9 @@
    Nick Mathewson
 '''
 
+import importlib.machinery
 import sys
+from contextlib import contextmanager
 from textwrap import dedent
 from types import FunctionType, MethodType, BuiltinFunctionType
 import pyclbr
@@ -21,6 +23,29 @@ ClassMethodType = type(classmethod(lambda c: None))
 # is imperfect (as designed), testModule is called with a set of
 # members to ignore.
 
+
+@contextmanager
+def temporary_main_spec():
+    """
+    A context manager that temporarily sets the `__spec__` attribute
+    of the `__main__` module if it's missing.
+    """
+    main_mod = sys.modules.get("__main__")
+    if main_mod is None:
+        yield  # Do nothing if __main__ is not present
+        return
+
+    original_spec = getattr(main_mod, "__spec__", None)
+    if original_spec is None:
+        main_mod.__spec__ = importlib.machinery.ModuleSpec(
+            name="__main__", loader=None, origin="built-in"
+        )
+    try:
+        yield
+    finally:
+        main_mod.__spec__ = original_spec
+
+
 class PyclbrTest(TestCase):
 
     def assertListEq(self, l1, l2, ignore):
@@ -29,14 +54,6 @@ class PyclbrTest(TestCase):
         if missing:
             print("l1=%r\nl2=%r\nignore=%r" % (l1, l2, ignore), file=sys.stderr)
             self.fail("%r missing" % missing.pop())
-
-    def assertHasattr(self, obj, attr, ignore):
-        ''' succeed iff hasattr(obj,attr) or attr in ignore. '''
-        if attr in ignore: return
-        if not hasattr(obj, attr): print("???", attr)
-        self.assertTrue(hasattr(obj, attr),
-                        'expected hasattr(%r, %r)' % (obj, attr))
-
 
     def assertHaskey(self, obj, key, ignore):
         ''' succeed iff key in obj or key in ignore. '''
@@ -77,14 +94,15 @@ class PyclbrTest(TestCase):
 
             objname = obj.__name__
             if objname.startswith("__") and not objname.endswith("__"):
-                objname = "_%s%s" % (oclass.__name__, objname)
+                if stripped_typename := oclass.__name__.lstrip('_'):
+                    objname = f"_{stripped_typename}{objname}"
             return objname == name
 
         # Make sure the toplevel functions and classes are the same.
         for name, value in dict.items():
             if name in ignore:
                 continue
-            self.assertHasattr(module, name, ignore)
+            self.assertHasAttr(module, name)
             py_item = getattr(module, name)
             if isinstance(value, pyclbr.Function):
                 self.assertIsInstance(py_item, (FunctionType, BuiltinFunctionType))
@@ -108,14 +126,20 @@ class PyclbrTest(TestCase):
 
                 actualMethods = []
                 for m in py_item.__dict__.keys():
+                    if m == "__annotate__":
+                        continue
                     if ismethod(py_item, getattr(py_item, m), m):
                         actualMethods.append(m)
-                foundMethods = []
-                for m in value.methods.keys():
-                    if m[:2] == '__' and m[-2:] != '__':
-                        foundMethods.append('_'+name+m)
-                    else:
-                        foundMethods.append(m)
+
+                if stripped_typename := name.lstrip('_'):
+                    foundMethods = []
+                    for m in value.methods.keys():
+                        if m.startswith('__') and not m.endswith('__'):
+                            foundMethods.append(f"_{stripped_typename}{m}")
+                        else:
+                            foundMethods.append(m)
+                else:
+                    foundMethods = list(value.methods.keys())
 
                 try:
                     self.assertListEq(foundMethods, actualMethods, ignore)
@@ -145,25 +169,24 @@ class PyclbrTest(TestCase):
         self.checkModule('pyclbr')
         # XXX: Metaclasses are not supported
         # self.checkModule('ast')
-        self.checkModule('doctest', ignore=("TestResults", "_SpoofOut",
-                                            "DocTestCase", '_DocTestSuite'))
+        with temporary_main_spec():
+            self.checkModule('doctest', ignore=("TestResults", "_SpoofOut",
+                                                "DocTestCase", '_DocTestSuite'))
         self.checkModule('difflib', ignore=("Match",))
 
-    def test_decorators(self):
-        # XXX: See comment in pyclbr_input.py for a test that would fail
-        #      if it were not commented out.
-        #
-        self.checkModule('test.pyclbr_input', ignore=['om'])
+    def test_cases(self):
+        # see test.pyclbr_input for the rationale behind the ignored symbols
+        self.checkModule('test.pyclbr_input', ignore=['om', 'f'])
 
     def test_nested(self):
         mb = pyclbr
         # Set arguments for descriptor creation and _creat_tree call.
         m, p, f, t, i = 'test', '', 'test.py', {}, None
         source = dedent("""\
-        def f0:
+        def f0():
             def f1(a,b,c):
                 def f2(a=1, b=2, c=3): pass
-                    return f1(a,b,d)
+                return f1(a,b,d)
             class c1: pass
         class C0:
             "Test class."
@@ -179,15 +202,15 @@ class PyclbrTest(TestCase):
         actual = mb._create_tree(m, p, f, source, t, i)
 
         # Create descriptors, linked together, and expected dict.
-        f0 = mb.Function(m, 'f0', f, 1)
-        f1 = mb._nest_function(f0, 'f1', 2)
-        f2 = mb._nest_function(f1, 'f2', 3)
-        c1 = mb._nest_class(f0, 'c1', 5)
-        C0 = mb.Class(m, 'C0', None, f, 6)
-        F1 = mb._nest_function(C0, 'F1', 8)
-        C1 = mb._nest_class(C0, 'C1', 11)
-        C2 = mb._nest_class(C1, 'C2', 12)
-        F3 = mb._nest_function(C2, 'F3', 14)
+        f0 = mb.Function(m, 'f0', f, 1, end_lineno=5)
+        f1 = mb._nest_function(f0, 'f1', 2, 4)
+        f2 = mb._nest_function(f1, 'f2', 3, 3)
+        c1 = mb._nest_class(f0, 'c1', 5, 5)
+        C0 = mb.Class(m, 'C0', None, f, 6, end_lineno=14)
+        F1 = mb._nest_function(C0, 'F1', 8, 10)
+        C1 = mb._nest_class(C0, 'C1', 11, 14)
+        C2 = mb._nest_class(C1, 'C2', 12, 14)
+        F3 = mb._nest_function(C2, 'F3', 14, 14)
         expected = {'f0':f0, 'C0':C0}
 
         def compare(parent1, children1, parent2, children2):
@@ -206,8 +229,8 @@ class PyclbrTest(TestCase):
                 self.assertIs(ob.parent, parent2)
             for key in children1.keys():
                 o1, o2 = children1[key], children2[key]
-                t1 = type(o1), o1.name, o1.file, o1.module, o1.lineno
-                t2 = type(o2), o2.name, o2.file, o2.module, o2.lineno
+                t1 = type(o1), o1.name, o1.file, o1.module, o1.lineno, o1.end_lineno
+                t2 = type(o2), o2.name, o2.file, o2.module, o2.lineno, o2.end_lineno
                 self.assertEqual(t1, t2)
                 if type(o1) is mb.Class:
                     self.assertEqual(o1.methods, o2.methods)
@@ -219,14 +242,17 @@ class PyclbrTest(TestCase):
     def test_others(self):
         cm = self.checkModule
 
-        # These were once about the 10 longest modules
+        # These were once some of the longest modules.
         cm('random', ignore=('Random',))  # from _random import Random as CoreGenerator
-        cm('cgi', ignore=('log',))      # set with = in module
         cm('pickle', ignore=('partial', 'PickleBuffer'))
-        cm('aifc', ignore=('_aifc_params',))  # set with = in module
-        cm('sre_parse', ignore=('dump', 'groups', 'pos')) # from sre_constants import *; property
-        cm('pdb')
-        cm('pydoc', ignore=('input', 'output',)) # properties
+        with temporary_main_spec():
+            cm(
+                'pdb',
+                # pyclbr does not handle elegantly `typing` or properties
+                ignore=('Union', '_ModuleTarget', '_ScriptTarget', '_ZipTarget', 'curframe_locals',
+                        '_InteractState'),
+            )
+        cm('pydoc', ignore=('input', 'output',))  # properties
 
         # Tests for modules inside packages
         cm('email.parser')

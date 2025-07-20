@@ -1,0 +1,1 @@
+Fix compilation errors when compiling the internal headers with a C++ compiler.

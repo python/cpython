@@ -13,7 +13,6 @@ also includes default encodings for all supported locale names.
 import sys
 import encodings
 import encodings.aliases
-import re
 import _collections_abc
 from builtins import str as _builtin_str
 import functools
@@ -25,10 +24,10 @@ import functools
 # Yuck:  LC_MESSAGES is non-standard:  can't tell whether it exists before
 # trying the import.  So __all__ is also fiddled at the end of the file.
 __all__ = ["getlocale", "getdefaultlocale", "getpreferredencoding", "Error",
-           "setlocale", "resetlocale", "localeconv", "strcoll", "strxfrm",
-           "str", "atof", "atoi", "format", "format_string", "currency",
+           "setlocale", "localeconv", "strcoll", "strxfrm",
+           "str", "atof", "atoi", "format_string", "currency",
            "normalize", "LC_CTYPE", "LC_COLLATE", "LC_TIME", "LC_MONETARY",
-           "LC_NUMERIC", "LC_ALL", "CHAR_MAX"]
+           "LC_NUMERIC", "LC_ALL", "CHAR_MAX", "getencoding"]
 
 def _strcoll(a,b):
     """ strcoll(string,string) -> int.
@@ -177,16 +176,21 @@ def _strip_padding(s, amount):
         amount -= 1
     return s[lpos:rpos+1]
 
-_percent_re = re.compile(r'%(?:\((?P<key>.*?)\))?'
-                         r'(?P<modifiers>[-#0-9 +*.hlL]*?)[eEfFgGdiouxXcrs%]')
+_percent_re = None
 
 def _format(percent, value, grouping=False, monetary=False, *additional):
     if additional:
         formatted = percent % ((value,) + additional)
     else:
         formatted = percent % value
+    if percent[-1] in 'eEfFgGdiu':
+        formatted = _localize(formatted, grouping, monetary)
+    return formatted
+
+# Transform formatted as locale number according to the locale settings
+def _localize(formatted, grouping=False, monetary=False):
     # floats and decimal ints need special action!
-    if percent[-1] in 'eEfFgG':
+    if '.' in formatted:
         seps = 0
         parts = formatted.split('.')
         if grouping:
@@ -196,7 +200,7 @@ def _format(percent, value, grouping=False, monetary=False, *additional):
         formatted = decimal_point.join(parts)
         if seps:
             formatted = _strip_padding(formatted, seps)
-    elif percent[-1] in 'diu':
+    else:
         seps = 0
         if grouping:
             formatted, seps = _group(formatted, monetary=monetary)
@@ -211,6 +215,13 @@ def format_string(f, val, grouping=False, monetary=False):
     Grouping is applied if the third parameter is true.
     Conversion uses monetary thousands separator and grouping strings if
     forth parameter monetary is true."""
+    global _percent_re
+    if _percent_re is None:
+        import re
+
+        _percent_re = re.compile(r'%(?:\((?P<key>.*?)\))?(?P<modifiers'
+                                 r'>[-#0-9 +*.hlL]*?)[eEfFgGdiouxXcrs%]')
+
     percents = list(_percent_re.finditer(f))
     new_f = _percent_re.sub('%s', f)
 
@@ -241,21 +252,6 @@ def format_string(f, val, grouping=False, monetary=False):
 
     return new_f % val
 
-def format(percent, value, grouping=False, monetary=False, *additional):
-    """Deprecated, use format_string instead."""
-    import warnings
-    warnings.warn(
-        "This method will be removed in a future version of Python. "
-        "Use 'locale.format_string()' instead.",
-        DeprecationWarning, stacklevel=2
-    )
-
-    match = _percent_re.match(percent)
-    if not match or len(match.group())!= len(percent):
-        raise ValueError(("format() must be given exactly one %%char "
-                         "format specifier, %s not valid") % repr(percent))
-    return _format(percent, value, grouping, monetary, *additional)
-
 def currency(val, symbol=True, grouping=False, international=False):
     """Formats val according to the currency settings
     in the current locale."""
@@ -267,7 +263,7 @@ def currency(val, symbol=True, grouping=False, international=False):
         raise ValueError("Currency formatting is not possible using "
                          "the 'C' locale.")
 
-    s = _format('%%.%if' % digits, abs(val), grouping, monetary=True)
+    s = _localize(f'{abs(val):.{digits}f}', grouping, monetary=True)
     # '<' and '>' are markers if the sign must be inserted between symbol and value
     s = '<' + s + '>'
 
@@ -322,6 +318,10 @@ def delocalize(string):
     if dd:
         string = string.replace(dd, '.')
     return string
+
+def localize(string, grouping=False, monetary=False):
+    """Parses a string as locale number according to the locale settings."""
+    return _localize(string, grouping, monetary)
 
 def atof(string, func=float):
     "Parses a string as a float according to the locale settings."
@@ -545,6 +545,16 @@ def getdefaultlocale(envvars=('LC_ALL', 'LC_CTYPE', 'LANG', 'LANGUAGE')):
 
     """
 
+    import warnings
+    warnings._deprecated(
+        "locale.getdefaultlocale",
+        "{name!r} is deprecated and slated for removal in Python {remove}. "
+        "Use setlocale(), getencoding() and getlocale() instead.",
+        remove=(3, 15))
+    return _getdefaultlocale(envvars)
+
+
+def _getdefaultlocale(envvars=('LC_ALL', 'LC_CTYPE', 'LANG', 'LANGUAGE')):
     try:
         # check if it's supported by the _locale module
         import _locale
@@ -609,63 +619,56 @@ def setlocale(category, locale=None):
         locale = normalize(_build_localename(locale))
     return _setlocale(category, locale)
 
-def resetlocale(category=LC_ALL):
 
-    """ Sets the locale for category to the default setting.
+try:
+    from _locale import getencoding
+except ImportError:
+    # When _locale.getencoding() is missing, locale.getencoding() uses the
+    # Python filesystem encoding.
+    def getencoding():
+        return sys.getfilesystemencoding()
 
-        The default setting is determined by calling
-        getdefaultlocale(). category defaults to LC_ALL.
 
-    """
-    _setlocale(category, _build_localename(getdefaultlocale()))
-
-if sys.platform.startswith("win"):
-    # On Win32, this will return the ANSI code page
-    def getpreferredencoding(do_setlocale = True):
+try:
+    CODESET
+except NameError:
+    def getpreferredencoding(do_setlocale=True):
         """Return the charset that the user is likely using."""
+        if sys.flags.warn_default_encoding:
+            import warnings
+            warnings.warn(
+                "UTF-8 Mode affects locale.getpreferredencoding(). Consider locale.getencoding() instead.",
+                EncodingWarning, 2)
         if sys.flags.utf8_mode:
-            return 'UTF-8'
-        import _bootlocale
-        return _bootlocale.getpreferredencoding(False)
+            return 'utf-8'
+        return getencoding()
 else:
     # On Unix, if CODESET is available, use that.
-    try:
-        CODESET
-    except NameError:
-        if hasattr(sys, 'getandroidapilevel'):
-            # On Android langinfo.h and CODESET are missing, and UTF-8 is
-            # always used in mbstowcs() and wcstombs().
-            def getpreferredencoding(do_setlocale = True):
-                return 'UTF-8'
-        else:
-            # Fall back to parsing environment variables :-(
-            def getpreferredencoding(do_setlocale = True):
-                """Return the charset that the user is likely using,
-                by looking at environment variables."""
-                if sys.flags.utf8_mode:
-                    return 'UTF-8'
-                res = getdefaultlocale()[1]
-                if res is None:
-                    # LANG not set, default conservatively to ASCII
-                    res = 'ascii'
-                return res
-    else:
-        def getpreferredencoding(do_setlocale = True):
-            """Return the charset that the user is likely using,
-            according to the system configuration."""
-            if sys.flags.utf8_mode:
-                return 'UTF-8'
-            import _bootlocale
-            if do_setlocale:
-                oldloc = setlocale(LC_CTYPE)
-                try:
-                    setlocale(LC_CTYPE, "")
-                except Error:
-                    pass
-            result = _bootlocale.getpreferredencoding(False)
-            if do_setlocale:
-                setlocale(LC_CTYPE, oldloc)
-            return result
+    def getpreferredencoding(do_setlocale=True):
+        """Return the charset that the user is likely using,
+        according to the system configuration."""
+
+        if sys.flags.warn_default_encoding:
+            import warnings
+            warnings.warn(
+                "UTF-8 Mode affects locale.getpreferredencoding(). "
+                "Consider locale.getencoding() instead.",
+                EncodingWarning, 2)
+        if sys.flags.utf8_mode:
+            return 'utf-8'
+
+        if not do_setlocale:
+            return getencoding()
+
+        old_loc = setlocale(LC_CTYPE)
+        try:
+            try:
+                setlocale(LC_CTYPE, "")
+            except Error:
+                pass
+            return getencoding()
+        finally:
+            setlocale(LC_CTYPE, old_loc)
 
 
 ### Database
@@ -740,6 +743,7 @@ locale_encoding_alias = {
 for k, v in sorted(locale_encoding_alias.items()):
     k = k.replace('_', '')
     locale_encoding_alias.setdefault(k, v)
+del k, v
 
 #
 # The locale_alias table maps lowercase alias names to C locale names
@@ -862,6 +866,28 @@ for k, v in sorted(locale_encoding_alias.items()):
 #    updated 'ca_es@valencia' -> 'ca_ES.ISO8859-15@valencia' to 'ca_ES.UTF-8@valencia'
 #    updated 'kk_kz' -> 'kk_KZ.RK1048' to 'kk_KZ.ptcp154'
 #    updated 'russian' -> 'ru_RU.ISO8859-5' to 'ru_RU.KOI8-R'
+#
+# SS 2025-02-04:
+# Updated alias mapping with glibc 2.41 supported locales and the latest
+# X lib alias mapping.
+#
+# These are the differences compared to the old mapping (Python 3.13.1
+# and older):
+#
+#    updated 'c.utf8' -> 'C.UTF-8' to 'en_US.UTF-8'
+#    updated 'de_it' -> 'de_IT.ISO8859-1' to 'de_IT.UTF-8'
+#    removed 'de_li.utf8'
+#    updated 'en_il' -> 'en_IL.UTF-8' to 'en_IL.ISO8859-1'
+#    removed 'english.iso88591'
+#    updated 'es_cu' -> 'es_CU.UTF-8' to 'es_CU.ISO8859-1'
+#    updated 'russian' -> 'ru_RU.KOI8-R' to 'ru_RU.ISO8859-5'
+#    updated 'sr@latn' -> 'sr_CS.UTF-8@latin' to 'sr_RS.UTF-8@latin'
+#    removed 'univ'
+#    removed 'universal'
+#
+# SS 2025-06-10:
+# Remove 'c.utf8' -> 'en_US.UTF-8' because 'en_US.UTF-8' does not exist
+# on all platforms.
 
 locale_alias = {
     'a3':                                   'az_AZ.KOI8-C',
@@ -941,7 +967,6 @@ locale_alias = {
     'c.ascii':                              'C',
     'c.en':                                 'C',
     'c.iso88591':                           'en_US.ISO8859-1',
-    'c.utf8':                               'en_US.UTF-8',
     'c_c':                                  'C',
     'c_c.c':                                'C',
     'ca':                                   'ca_ES.ISO8859-1',
@@ -958,6 +983,7 @@ locale_alias = {
     'chr_us':                               'chr_US.UTF-8',
     'ckb_iq':                               'ckb_IQ.UTF-8',
     'cmn_tw':                               'cmn_TW.UTF-8',
+    'crh_ru':                               'crh_RU.UTF-8',
     'crh_ua':                               'crh_UA.UTF-8',
     'croatian':                             'hr_HR.ISO8859-2',
     'cs':                                   'cs_CZ.ISO8859-2',
@@ -979,11 +1005,12 @@ locale_alias = {
     'de_be':                                'de_BE.ISO8859-1',
     'de_ch':                                'de_CH.ISO8859-1',
     'de_de':                                'de_DE.ISO8859-1',
-    'de_it':                                'de_IT.ISO8859-1',
-    'de_li.utf8':                           'de_LI.UTF-8',
+    'de_it':                                'de_IT.UTF-8',
+    'de_li':                                'de_LI.ISO8859-1',
     'de_lu':                                'de_LU.ISO8859-1',
     'deutsch':                              'de_DE.ISO8859-1',
     'doi_in':                               'doi_IN.UTF-8',
+    'dsb_de':                               'dsb_DE.UTF-8',
     'dutch':                                'nl_NL.ISO8859-1',
     'dutch.iso88591':                       'nl_BE.ISO8859-1',
     'dv_mv':                                'dv_MV.UTF-8',
@@ -1006,7 +1033,7 @@ locale_alias = {
     'en_gb':                                'en_GB.ISO8859-1',
     'en_hk':                                'en_HK.ISO8859-1',
     'en_ie':                                'en_IE.ISO8859-1',
-    'en_il':                                'en_IL.UTF-8',
+    'en_il':                                'en_IL.ISO8859-1',
     'en_in':                                'en_IN.ISO8859-1',
     'en_ng':                                'en_NG.UTF-8',
     'en_nz':                                'en_NZ.ISO8859-1',
@@ -1022,7 +1049,6 @@ locale_alias = {
     'en_zw.utf8':                           'en_ZS.UTF-8',
     'eng_gb':                               'en_GB.ISO8859-1',
     'english':                              'en_EN.ISO8859-1',
-    'english.iso88591':                     'en_US.ISO8859-1',
     'english_uk':                           'en_GB.ISO8859-1',
     'english_united-states':                'en_US.ISO8859-1',
     'english_united-states.437':            'C',
@@ -1038,7 +1064,7 @@ locale_alias = {
     'es_cl':                                'es_CL.ISO8859-1',
     'es_co':                                'es_CO.ISO8859-1',
     'es_cr':                                'es_CR.ISO8859-1',
-    'es_cu':                                'es_CU.UTF-8',
+    'es_cu':                                'es_CU.ISO8859-1',
     'es_do':                                'es_DO.ISO8859-1',
     'es_ec':                                'es_EC.ISO8859-1',
     'es_es':                                'es_ES.ISO8859-1',
@@ -1088,6 +1114,7 @@ locale_alias = {
     'ga_ie':                                'ga_IE.ISO8859-1',
     'galego':                               'gl_ES.ISO8859-1',
     'galician':                             'gl_ES.ISO8859-1',
+    'gbm_in':                               'gbm_IN.UTF-8',
     'gd':                                   'gd_GB.ISO8859-1',
     'gd_gb':                                'gd_GB.ISO8859-1',
     'ger_de':                               'de_DE.ISO8859-1',
@@ -1128,6 +1155,7 @@ locale_alias = {
     'icelandic':                            'is_IS.ISO8859-1',
     'id':                                   'id_ID.ISO8859-1',
     'id_id':                                'id_ID.ISO8859-1',
+    'ie':                                   'ie.UTF-8',
     'ig_ng':                                'ig_NG.UTF-8',
     'ik_ca':                                'ik_CA.UTF-8',
     'in':                                   'id_ID.ISO8859-1',
@@ -1182,6 +1210,7 @@ locale_alias = {
     'ks_in':                                'ks_IN.UTF-8',
     'ks_in@devanagari.utf8':                'ks_IN.UTF-8@devanagari',
     'ku_tr':                                'ku_TR.ISO8859-9',
+    'kv_ru':                                'kv_RU.UTF-8',
     'kw':                                   'kw_GB.ISO8859-1',
     'kw_gb':                                'kw_GB.ISO8859-1',
     'ky':                                   'ky_KG.UTF-8',
@@ -1200,6 +1229,7 @@ locale_alias = {
     'lo_la.mulelao1':                       'lo_LA.MULELAO-1',
     'lt':                                   'lt_LT.ISO8859-13',
     'lt_lt':                                'lt_LT.ISO8859-13',
+    'ltg_lv.utf8':                          'ltg_LV.UTF-8',
     'lv':                                   'lv_LV.ISO8859-13',
     'lv_lv':                                'lv_LV.ISO8859-13',
     'lzh_tw':                               'lzh_TW.UTF-8',
@@ -1207,6 +1237,7 @@ locale_alias = {
     'mai':                                  'mai_IN.UTF-8',
     'mai_in':                               'mai_IN.UTF-8',
     'mai_np':                               'mai_NP.UTF-8',
+    'mdf_ru':                               'mdf_RU.UTF-8',
     'mfe_mu':                               'mfe_MU.UTF-8',
     'mg_mg':                                'mg_MG.ISO8859-15',
     'mhr_ru':                               'mhr_RU.UTF-8',
@@ -1220,6 +1251,7 @@ locale_alias = {
     'ml_in':                                'ml_IN.UTF-8',
     'mn_mn':                                'mn_MN.UTF-8',
     'mni_in':                               'mni_IN.UTF-8',
+    'mnw_mm':                               'mnw_MM.UTF-8',
     'mr':                                   'mr_IN.UTF-8',
     'mr_in':                                'mr_IN.UTF-8',
     'ms':                                   'ms_MY.ISO8859-1',
@@ -1288,6 +1320,7 @@ locale_alias = {
     'pt_pt':                                'pt_PT.ISO8859-1',
     'quz_pe':                               'quz_PE.UTF-8',
     'raj_in':                               'raj_IN.UTF-8',
+    'rif_ma':                               'rif_MA.UTF-8',
     'ro':                                   'ro_RO.ISO8859-2',
     'ro_ro':                                'ro_RO.ISO8859-2',
     'romanian':                             'ro_RO.ISO8859-2',
@@ -1295,12 +1328,14 @@ locale_alias = {
     'ru_ru':                                'ru_RU.UTF-8',
     'ru_ua':                                'ru_UA.KOI8-U',
     'rumanian':                             'ro_RO.ISO8859-2',
-    'russian':                              'ru_RU.KOI8-R',
+    'russian':                              'ru_RU.ISO8859-5',
     'rw':                                   'rw_RW.ISO8859-1',
     'rw_rw':                                'rw_RW.ISO8859-1',
     'sa_in':                                'sa_IN.UTF-8',
+    'sah_ru':                               'sah_RU.UTF-8',
     'sat_in':                               'sat_IN.UTF-8',
     'sc_it':                                'sc_IT.UTF-8',
+    'scn_it':                               'scn_IT.UTF-8',
     'sd':                                   'sd_IN.UTF-8',
     'sd_in':                                'sd_IN.UTF-8',
     'sd_in@devanagari.utf8':                'sd_IN.UTF-8@devanagari',
@@ -1342,7 +1377,7 @@ locale_alias = {
     'sq_mk':                                'sq_MK.UTF-8',
     'sr':                                   'sr_RS.UTF-8',
     'sr@cyrillic':                          'sr_RS.UTF-8',
-    'sr@latn':                              'sr_CS.UTF-8@latin',
+    'sr@latn':                              'sr_RS.UTF-8@latin',
     'sr_cs':                                'sr_CS.UTF-8',
     'sr_cs.iso88592@latn':                  'sr_CS.ISO8859-2',
     'sr_cs@latn':                           'sr_CS.UTF-8@latin',
@@ -1361,14 +1396,17 @@ locale_alias = {
     'sr_yu@cyrillic':                       'sr_RS.UTF-8',
     'ss':                                   'ss_ZA.ISO8859-1',
     'ss_za':                                'ss_ZA.ISO8859-1',
+    'ssy_er':                               'ssy_ER.UTF-8',
     'st':                                   'st_ZA.ISO8859-1',
     'st_za':                                'st_ZA.ISO8859-1',
+    'su_id':                                'su_ID.UTF-8',
     'sv':                                   'sv_SE.ISO8859-1',
     'sv_fi':                                'sv_FI.ISO8859-1',
     'sv_se':                                'sv_SE.ISO8859-1',
     'sw_ke':                                'sw_KE.UTF-8',
     'sw_tz':                                'sw_TZ.UTF-8',
     'swedish':                              'sv_SE.ISO8859-1',
+    'syr':                                  'syr.UTF-8',
     'szl_pl':                               'szl_PL.UTF-8',
     'ta':                                   'ta_IN.TSCII-0',
     'ta_in':                                'ta_IN.TSCII-0',
@@ -1395,6 +1433,7 @@ locale_alias = {
     'tn':                                   'tn_ZA.ISO8859-15',
     'tn_za':                                'tn_ZA.ISO8859-15',
     'to_to':                                'to_TO.UTF-8',
+    'tok':                                  'tok.UTF-8',
     'tpi_pg':                               'tpi_PG.UTF-8',
     'tr':                                   'tr_TR.ISO8859-9',
     'tr_cy':                                'tr_CY.ISO8859-9',
@@ -1409,8 +1448,7 @@ locale_alias = {
     'ug_cn':                                'ug_CN.UTF-8',
     'uk':                                   'uk_UA.KOI8-U',
     'uk_ua':                                'uk_UA.KOI8-U',
-    'univ':                                 'en_US.utf',
-    'universal':                            'en_US.utf',
+    'univ.utf8':                            'en_US.UTF-8',
     'universal.utf8@ucs4':                  'en_US.UTF-8',
     'unm_us':                               'unm_US.UTF-8',
     'ur':                                   'ur_PK.CP1256',
@@ -1439,6 +1477,7 @@ locale_alias = {
     'yo_ng':                                'yo_NG.UTF-8',
     'yue_hk':                               'yue_HK.UTF-8',
     'yuw_pg':                               'yuw_PG.UTF-8',
+    'zgh_ma':                               'zgh_MA.UTF-8',
     'zh':                                   'zh_CN.eucCN',
     'zh_cn':                                'zh_CN.gb2312',
     'zh_cn.big5':                           'zh_TW.big5',
@@ -1462,7 +1501,8 @@ locale_alias = {
 # to include every locale up to Windows Vista.
 #
 # NOTE: this mapping is incomplete.  If your language is missing, please
-# submit a bug report to the Python bug tracker at http://bugs.python.org/
+# submit a bug report as detailed in the Python devguide at:
+#    https://devguide.python.org/triage/issue-tracker/
 # Make sure you include the missing language identifier and the suggested
 # locale code.
 #
@@ -1701,17 +1741,6 @@ def _print_locale():
 
     print('Locale settings on startup:')
     print('-'*72)
-    for name,category in categories.items():
-        print(name, '...')
-        lang, enc = getlocale(category)
-        print('   Language: ', lang or '(undefined)')
-        print('   Encoding: ', enc or '(undefined)')
-        print()
-
-    print()
-    print('Locale settings after calling resetlocale():')
-    print('-'*72)
-    resetlocale()
     for name,category in categories.items():
         print(name, '...')
         lang, enc = getlocale(category)

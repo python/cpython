@@ -1,0 +1,3 @@
+Fix some issues with the perf trampolines on x86-64 and aarch64.  The
+trampolines were not being generated correctly for some cases, which could
+lead to the perf integration not working correctly. Patch by Pablo Galindo.

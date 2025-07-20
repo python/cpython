@@ -12,7 +12,7 @@ steps:
   displayName: Show layout info (${{ parameters.kind }})
 
 - ${{ if eq(parameters.fulltest, 'true') }}:
-  - script: .\python.exe -m test -q -uall -u-cpu -rwW --slowest --timeout=1200 -j0 --junit-xml="$(Build.BinariesDirectory)\test-results-${{ parameters.kind }}.xml" --tempdir "$(Build.BinariesDirectory)\tmp-${{ parameters.kind }}-$(arch)"
+  - script: .\python.exe -m test -q -uall -u-cpu -rwW --slowest --timeout=1200 -j0 --junit-xml="$(Build.BinariesDirectory)\test-results-${{ parameters.kind }}.xml" --tempdir "$(Build.BinariesDirectory)\tmp-${{ parameters.kind }}-$(arch)" -i test_launcher
     workingDirectory: $(Build.BinariesDirectory)\layout-${{ parameters.kind }}-$(arch)
     displayName: ${{ parameters.kind }} Tests
     env:

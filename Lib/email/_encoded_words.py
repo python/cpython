@@ -179,15 +179,15 @@ def decode(ew):
     # Turn the CTE decoded bytes into unicode.
     try:
         string = bstring.decode(charset)
-    except UnicodeError:
+    except UnicodeDecodeError:
         defects.append(errors.UndecodableBytesDefect("Encoded word "
-            "contains bytes not decodable using {} charset".format(charset)))
+            f"contains bytes not decodable using {charset!r} charset"))
         string = bstring.decode(charset, 'surrogateescape')
-    except LookupError:
+    except (LookupError, UnicodeEncodeError):
         string = bstring.decode('ascii', 'surrogateescape')
         if charset.lower() != 'unknown-8bit':
-            defects.append(errors.CharsetError("Unknown charset {} "
-                "in encoded word; decoded as unknown bytes".format(charset)))
+            defects.append(errors.CharsetError(f"Unknown charset {charset!r} "
+                f"in encoded word; decoded as unknown bytes"))
     return string, charset, lang, defects
 
 

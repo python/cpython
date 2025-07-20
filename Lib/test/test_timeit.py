@@ -77,6 +77,9 @@ class TestTimeit(unittest.TestCase):
         self.assertRaises(SyntaxError, timeit.Timer, stmt='break')
         self.assertRaises(SyntaxError, timeit.Timer, stmt='continue')
         self.assertRaises(SyntaxError, timeit.Timer, stmt='from timeit import *')
+        self.assertRaises(SyntaxError, timeit.Timer, stmt='  pass')
+        self.assertRaises(SyntaxError, timeit.Timer,
+                          setup='while False:\n  pass', stmt='  break')
 
     def test_timer_invalid_setup(self):
         self.assertRaises(ValueError, timeit.Timer, setup=None)
@@ -86,6 +89,12 @@ class TestTimeit(unittest.TestCase):
         self.assertRaises(SyntaxError, timeit.Timer, setup='break')
         self.assertRaises(SyntaxError, timeit.Timer, setup='continue')
         self.assertRaises(SyntaxError, timeit.Timer, setup='from timeit import *')
+        self.assertRaises(SyntaxError, timeit.Timer, setup='  pass')
+
+    def test_timer_empty_stmt(self):
+        timeit.Timer(stmt='')
+        timeit.Timer(stmt=' \n\t\f')
+        timeit.Timer(stmt='# comment')
 
     fake_setup = "import timeit\ntimeit._fake_timer.setup()"
     fake_stmt = "import timeit\ntimeit._fake_timer.inc()"
@@ -213,8 +222,8 @@ class TestTimeit(unittest.TestCase):
     def assert_exc_string(self, exc_string, expected_exc_name):
         exc_lines = exc_string.splitlines()
         self.assertGreater(len(exc_lines), 2)
-        self.assertTrue(exc_lines[0].startswith('Traceback'))
-        self.assertTrue(exc_lines[-1].startswith(expected_exc_name))
+        self.assertStartsWith(exc_lines[0], 'Traceback')
+        self.assertStartsWith(exc_lines[-1], expected_exc_name)
 
     def test_print_exc(self):
         s = io.StringIO()
@@ -288,9 +297,7 @@ class TestTimeit(unittest.TestCase):
     @unittest.skipIf(sys.flags.optimize >= 2, "need __doc__")
     def test_main_help(self):
         s = self.run_main(switches=['-h'])
-        # Note: It's not clear that the trailing space was intended as part of
-        # the help text, but since it's there, check for it.
-        self.assertEqual(s, timeit.__doc__ + ' ')
+        self.assertEqual(s, timeit.__doc__)
 
     def test_main_verbose(self):
         s = self.run_main(switches=['-v'])

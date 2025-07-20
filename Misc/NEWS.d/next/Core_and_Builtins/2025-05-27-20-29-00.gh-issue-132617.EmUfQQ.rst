@@ -1,0 +1,3 @@
+Fix :meth:`dict.update` modification check that could incorrectly raise a
+"dict mutated during update" error when a different dictionary was modified
+that happens to share the same underlying keys object.

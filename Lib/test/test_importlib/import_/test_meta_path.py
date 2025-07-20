@@ -1,4 +1,4 @@
-from .. import util
+from test.test_importlib import util
 import importlib._bootstrap
 import sys
 from types import MethodType
@@ -43,7 +43,7 @@ class CallingOrder:
                 self.assertIsNone(importlib._bootstrap._find_spec('nothing',
                                                                   None))
                 self.assertEqual(len(w), 1)
-                self.assertTrue(issubclass(w[-1].category, ImportWarning))
+                self.assertIsSubclass(w[-1].category, ImportWarning)
 
 
 (Frozen_CallingOrder,
@@ -100,15 +100,17 @@ class CallSignature:
                 self.assertEqual(args[0], mod_name)
                 self.assertIs(args[1], path)
 
+class CallSignoreSuppressImportWarning(CallSignature):
 
-class CallSignaturePEP302(CallSignature):
-    mock_modules = util.mock_modules
-    finder_name = 'find_module'
+    def test_no_path(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", ImportWarning)
+            super().test_no_path()
 
-
-(Frozen_CallSignaturePEP302,
- Source_CallSignaturePEP302
- ) = util.test_both(CallSignaturePEP302, __import__=util.__import__)
+    def test_with_path(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", ImportWarning)
+            super().test_no_path()
 
 
 class CallSignaturePEP451(CallSignature):

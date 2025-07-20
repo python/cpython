@@ -1,0 +1,1 @@
+Add a reference count elimination pass to the JIT compiler. Patch by Ken Jin.

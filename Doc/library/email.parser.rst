@@ -1,5 +1,5 @@
-:mod:`email.parser`: Parsing email messages
--------------------------------------------
+:mod:`!email.parser`: Parsing email messages
+--------------------------------------------
 
 .. module:: email.parser
    :synopsis: Parse flat text email messages to produce a message object structure.
@@ -39,9 +39,9 @@ returns the root object when you close the parser.
 Note that the parser can be extended in limited ways, and of course you can
 implement your own parser completely from scratch.  All of the logic that
 connects the :mod:`email` package's bundled parser and the
-:class:`~email.message.EmailMessage` class is embodied in the :mod:`policy`
+:class:`~email.message.EmailMessage` class is embodied in the :class:`~email.policy.Policy`
 class, so a custom parser can create message object trees any way it finds
-necessary by implementing custom versions of the appropriate :mod:`policy`
+necessary by implementing custom versions of the appropriate :class:`!Policy`
 methods.
 
 
@@ -116,7 +116,7 @@ Here is the API for the :class:`BytesFeedParser`:
    Works like :class:`BytesFeedParser` except that the input to the
    :meth:`~BytesFeedParser.feed` method must be a string.  This is of limited
    utility, since the only way for such a message to be valid is for it to
-   contain only ASCII text or, if :attr:`~email.policy.Policy.utf8` is
+   contain only ASCII text or, if :attr:`~email.policy.EmailPolicy.utf8` is
    ``True``, no binary attachments.
 
    .. versionchanged:: 3.3 Added the *policy* keyword.
@@ -159,7 +159,7 @@ message body, instead setting the payload to the raw body.
       methods.
 
       The bytes contained in *fp* must be formatted as a block of :rfc:`5322`
-      (or, if :attr:`~email.policy.Policy.utf8` is ``True``, :rfc:`6532`)
+      (or, if :attr:`~email.policy.EmailPolicy.utf8` is ``True``, :rfc:`6532`)
       style headers and header continuation lines, optionally preceded by an
       envelope header.  The header block is terminated either by the end of the
       data or by a blank line.  Following the header block is the body of the

@@ -37,11 +37,6 @@ cd Python-3.2
 CC=xlc_r OPT="-O2 -qmaxmem=70000" ./configure --without-computed-gotos --enable-shared
 make
 
-Note:
-On AIX 5.3 and earlier, you will also need to specify the
-"--disable-ipv6" flag to configure. This has been corrected in AIX
-6.1.
-
 
 ======================================================================
 			  Memory Limitations

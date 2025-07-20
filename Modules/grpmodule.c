@@ -1,10 +1,17 @@
-
 /* UNIX group file access module */
+
+// Argument Clinic uses the internal C API
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
 
 #include "Python.h"
 #include "posixmodule.h"
 
-#include <grp.h>
+#include <errno.h>                // ERANGE
+#include <grp.h>                  // getgrgid_r()
+#include <string.h>               // memcpy()
+#include <unistd.h>               // sysconf()
 
 #include "clinic/grpmodule.c.h"
 /*[clinic input]
@@ -46,28 +53,38 @@ get_grp_state(PyObject *module)
     return (grpmodulestate *)state;
 }
 
-#define modulestate_global get_grp_state(PyState_FindModule(&grpmodule))
-
 static struct PyModuleDef grpmodule;
+
+/* Mutex to protect calls to getgrgid(), getgrnam(), and getgrent().
+ * These functions return pointer to static data structure, which
+ * may be overwritten by any subsequent calls. */
+static PyMutex group_db_mutex = {0};
 
 #define DEFAULT_BUFFER_SIZE 1024
 
 static PyObject *
-mkgrent(struct group *p)
+mkgrent(PyObject *module, struct group *p)
 {
     int setIndex = 0;
     PyObject *v, *w;
     char **member;
 
-    if ((v = PyStructSequence_New(modulestate_global->StructGrpType)) == NULL)
+    v = PyStructSequence_New(get_grp_state(module)->StructGrpType);
+    if (v == NULL)
         return NULL;
 
     if ((w = PyList_New(0)) == NULL) {
         Py_DECREF(v);
         return NULL;
     }
-    for (member = p->gr_mem; *member != NULL; member++) {
-        PyObject *x = PyUnicode_DecodeFSDefault(*member);
+    for (member = p->gr_mem; ; member++) {
+        char *group_member;
+        // member can be misaligned
+        memcpy(&group_member, member, sizeof(group_member));
+        if (group_member == NULL) {
+            break;
+        }
+        PyObject *x = PyUnicode_DecodeFSDefault(group_member);
         if (x == NULL || PyList_Append(w, x) != 0) {
             Py_XDECREF(x);
             Py_DECREF(w);
@@ -77,7 +94,7 @@ mkgrent(struct group *p)
         Py_DECREF(x);
     }
 
-#define SET(i,val) PyStructSequence_SET_ITEM(v, i, val)
+#define SET(i,val) PyStructSequence_SetItem(v, i, val)
     SET(setIndex++, PyUnicode_DecodeFSDefault(p->gr_name));
     if (p->gr_passwd)
             SET(setIndex++, PyUnicode_DecodeFSDefault(p->gr_passwd));
@@ -156,9 +173,15 @@ grp_getgrgid_impl(PyObject *module, PyObject *id)
 
     Py_END_ALLOW_THREADS
 #else
+    PyMutex_Lock(&group_db_mutex);
+    // The getgrgid() function need not be thread-safe.
+    // https://pubs.opengroup.org/onlinepubs/9699919799/functions/getgrgid.html
     p = getgrgid(gid);
 #endif
     if (p == NULL) {
+#ifndef HAVE_GETGRGID_R
+        PyMutex_Unlock(&group_db_mutex);
+#endif
         PyMem_RawFree(buf);
         if (nomem == 1) {
             return PyErr_NoMemory();
@@ -170,9 +193,11 @@ grp_getgrgid_impl(PyObject *module, PyObject *id)
         Py_DECREF(gid_obj);
         return NULL;
     }
-    retval = mkgrent(p);
+    retval = mkgrent(module, p);
 #ifdef HAVE_GETGRGID_R
     PyMem_RawFree(buf);
+#else
+    PyMutex_Unlock(&group_db_mutex);
 #endif
     return retval;
 }
@@ -237,9 +262,15 @@ grp_getgrnam_impl(PyObject *module, PyObject *name)
 
     Py_END_ALLOW_THREADS
 #else
+    PyMutex_Lock(&group_db_mutex);
+    // The getgrnam() function need not be thread-safe.
+    // https://pubs.opengroup.org/onlinepubs/9699919799/functions/getgrnam.html
     p = getgrnam(name_chars);
 #endif
     if (p == NULL) {
+#ifndef HAVE_GETGRNAM_R
+        PyMutex_Unlock(&group_db_mutex);
+#endif
         if (nomem == 1) {
             PyErr_NoMemory();
         }
@@ -248,7 +279,10 @@ grp_getgrnam_impl(PyObject *module, PyObject *name)
         }
         goto out;
     }
-    retval = mkgrent(p);
+    retval = mkgrent(module, p);
+#ifndef HAVE_GETGRNAM_R
+    PyMutex_Unlock(&group_db_mutex);
+#endif
 out:
     PyMem_RawFree(buf);
     Py_DECREF(bytes);
@@ -268,23 +302,32 @@ static PyObject *
 grp_getgrall_impl(PyObject *module)
 /*[clinic end generated code: output=585dad35e2e763d7 input=d7df76c825c367df]*/
 {
-    PyObject *d;
-    struct group *p;
-
-    if ((d = PyList_New(0)) == NULL)
+    PyObject *d = PyList_New(0);
+    if (d == NULL) {
         return NULL;
+    }
+
+    PyMutex_Lock(&group_db_mutex);
     setgrent();
+
+    struct group *p;
     while ((p = getgrent()) != NULL) {
-        PyObject *v = mkgrent(p);
+        // gh-126316: Don't release the mutex around mkgrent() since
+        // setgrent()/endgrent() are not reentrant / thread-safe. A deadlock
+        // is unlikely since mkgrent() should not be able to call arbitrary
+        // Python code.
+        PyObject *v = mkgrent(module, p);
         if (v == NULL || PyList_Append(d, v) != 0) {
             Py_XDECREF(v);
-            Py_DECREF(d);
-            endgrent();
-            return NULL;
+            Py_CLEAR(d);
+            goto done;
         }
         Py_DECREF(v);
     }
+
+done:
     endgrent();
+    PyMutex_Unlock(&group_db_mutex);
     return d;
 }
 
@@ -311,6 +354,28 @@ users are not explicitly listed as members of the groups they are in\n\
 according to the password database.  Check both databases to get\n\
 complete membership information.)");
 
+static int
+grpmodule_exec(PyObject *module)
+{
+    grpmodulestate *state = get_grp_state(module);
+
+    state->StructGrpType = PyStructSequence_NewType(&struct_group_type_desc);
+    if (state->StructGrpType == NULL) {
+        return -1;
+    }
+    if (PyModule_AddType(module, state->StructGrpType) < 0) {
+        return -1;
+    }
+    return 0;
+}
+
+static PyModuleDef_Slot grpmodule_slots[] = {
+    {Py_mod_exec, grpmodule_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+    {0, NULL}
+};
+
 static int grpmodule_traverse(PyObject *m, visitproc visit, void *arg) {
     Py_VISIT(get_grp_state(m)->StructGrpType);
     return 0;
@@ -326,37 +391,19 @@ static void grpmodule_free(void *m) {
 }
 
 static struct PyModuleDef grpmodule = {
-        PyModuleDef_HEAD_INIT,
-        "grp",
-        grp__doc__,
-        sizeof(grpmodulestate),
-        grp_methods,
-        NULL,
-        grpmodule_traverse,
-        grpmodule_clear,
-        grpmodule_free,
+    PyModuleDef_HEAD_INIT,
+    .m_name = "grp",
+    .m_doc = grp__doc__,
+    .m_size = sizeof(grpmodulestate),
+    .m_methods = grp_methods,
+    .m_slots = grpmodule_slots,
+    .m_traverse = grpmodule_traverse,
+    .m_clear = grpmodule_clear,
+    .m_free = grpmodule_free,
 };
 
 PyMODINIT_FUNC
 PyInit_grp(void)
 {
-    PyObject *m;
-    if ((m = PyState_FindModule(&grpmodule)) != NULL) {
-        Py_INCREF(m);
-        return m;
-    }
-
-    if ((m = PyModule_Create(&grpmodule)) == NULL) {
-        return NULL;
-    }
-
-    grpmodulestate *state = PyModule_GetState(m);
-    state->StructGrpType = PyStructSequence_NewType(&struct_group_type_desc);
-    if (state->StructGrpType == NULL) {
-        return NULL;
-    }
-
-    Py_INCREF(state->StructGrpType);
-    PyModule_AddObject(m, "struct_group", (PyObject *) state->StructGrpType);
-    return m;
+   return PyModuleDef_Init(&grpmodule);
 }

@@ -1,3 +1,5 @@
+"""Define tree items for debug stackviewer, which is only user.
+"""
 # XXX TO DO:
 # - popup menu
 # - support partial or total redisplay
@@ -17,9 +19,9 @@ myrepr.maxstring = 100
 myrepr.maxother = 100
 
 class ObjectTreeItem(TreeItem):
-    def __init__(self, labeltext, object, setfunction=None):
+    def __init__(self, labeltext, object_, setfunction=None):
         self.labeltext = labeltext
-        self.object = object
+        self.object = object_
         self.setfunction = setfunction
     def GetLabelText(self):
         return self.labeltext
@@ -51,8 +53,8 @@ class ObjectTreeItem(TreeItem):
             item = make_objecttreeitem(
                 str(key) + " =",
                 value,
-                lambda value, key=key, object=self.object:
-                    setattr(object, key, value))
+                lambda value, key=key, object_=self.object:
+                    setattr(object_, key, value))
             sublist.append(item)
         return sublist
 
@@ -85,15 +87,16 @@ class SequenceTreeItem(ObjectTreeItem):
                 value = self.object[key]
             except KeyError:
                 continue
-            def setfunction(value, key=key, object=self.object):
-                object[key] = value
-            item = make_objecttreeitem("%r:" % (key,), value, setfunction)
+            def setfunction(value, key=key, object_=self.object):
+                object_[key] = value
+            item = make_objecttreeitem(f"{key!r}:", value, setfunction)
             sublist.append(item)
         return sublist
 
 class DictTreeItem(SequenceTreeItem):
     def keys(self):
-        keys = list(self.object.keys())
+        # TODO return sorted(self.object)
+        keys = list(self.object)
         try:
             keys.sort()
         except:
@@ -110,16 +113,16 @@ dispatch = {
     type: ClassTreeItem,
 }
 
-def make_objecttreeitem(labeltext, object, setfunction=None):
-    t = type(object)
+def make_objecttreeitem(labeltext, object_, setfunction=None):
+    t = type(object_)
     if t in dispatch:
         c = dispatch[t]
     else:
         c = ObjectTreeItem
-    return c(labeltext, object, setfunction)
+    return c(labeltext, object_, setfunction)
 
 
-def _object_browser(parent):  # htest #
+def _debug_object_browser(parent):  # htest #
     import sys
     from tkinter import Toplevel
     top = Toplevel(parent)
@@ -134,9 +137,10 @@ def _object_browser(parent):  # htest #
     node = TreeNode(sc.canvas, None, item)
     node.update()
 
+
 if __name__ == '__main__':
     from unittest import main
     main('idlelib.idle_test.test_debugobj', verbosity=2, exit=False)
 
     from idlelib.idle_test.htest import run
-    run(_object_browser)
+    run(_debug_object_browser)

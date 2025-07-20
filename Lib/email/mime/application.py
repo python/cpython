@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2006 Python Software Foundation
+# Copyright (C) 2001 Python Software Foundation
 # Author: Keith Dart
 # Contact: email-sig@python.org
 
@@ -17,7 +17,7 @@ class MIMEApplication(MIMENonMultipart):
                  _encoder=encoders.encode_base64, *, policy=None, **_params):
         """Create an application/* type MIME document.
 
-        _data is a string containing the raw application data.
+        _data contains the bytes for the raw application data.
 
         _subtype is the MIME content type subtype, defaulting to
         'octet-stream'.

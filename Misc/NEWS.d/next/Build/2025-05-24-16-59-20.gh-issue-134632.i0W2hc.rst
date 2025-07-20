@@ -1,0 +1,3 @@
+Fixed ``build-details.json`` generation to use ``INCLUDEPY``, in order to
+reference the ``pythonX.Y`` subdirectory of the include directory, as
+required in :pep:`739`, instead of the top-level include directory.

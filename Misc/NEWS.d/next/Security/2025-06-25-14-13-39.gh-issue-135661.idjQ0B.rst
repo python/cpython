@@ -1,0 +1,25 @@
+Fix parsing start and end tags in :class:`html.parser.HTMLParser`
+according to the HTML5 standard.
+
+* Whitespaces no longer accepted between ``</`` and the tag name.
+  E.g. ``</ script>`` does not end the script section.
+
+* Vertical tabulation (``\v``) and non-ASCII whitespaces no longer recognized
+  as whitespaces. The only whitespaces are ``\t\n\r\f`` and space.
+
+* Null character (U+0000) no longer ends the tag name.
+
+* Attributes and slashes after the tag name in end tags are now ignored,
+  instead of terminating after the first ``>`` in quoted attribute value.
+  E.g. ``</script/foo=">"/>``.
+
+* Multiple slashes and whitespaces between the last attribute and closing ``>``
+  are now ignored in both start and end tags. E.g. ``<a foo=bar/ //>``.
+
+* Multiple ``=`` between attribute name and value are no longer collapsed.
+  E.g. ``<a foo==bar>`` produces attribute "foo" with value "=bar".
+
+* Whitespaces between the ``=`` separator and attribute name or value are no
+  longer ignored. E.g. ``<a foo =bar>`` produces two attributes "foo" and
+  "=bar", both with value None; ``<a foo= bar>`` produces two attributes:
+  "foo" with value "" and "bar" with value None.

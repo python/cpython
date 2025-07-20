@@ -1,0 +1,2 @@
+Fix handling paths that end with a percent-encoded slash (``%2f`` or
+``%2F``) in :class:`http.server.SimpleHTTPRequestHandler`.

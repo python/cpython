@@ -1,0 +1,1 @@
+Use the Python-specific :c:macro:`Py_DEBUG` macro rather than :c:macro:`!_DEBUG` in Windows-related C code. Patch by Xuehai Pan.

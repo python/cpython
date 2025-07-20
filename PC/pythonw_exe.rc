@@ -2,9 +2,14 @@
 
 #include "python_ver_rc.h"
 
+#ifndef RT_MANIFEST
+// bpo-45220: Cannot reliably #include RT_MANIFEST from
+// anywhere, so we hardcode it
+#define RT_MANIFEST 24
+#endif
+
 // Include the manifest file that indicates we support all
 // current versions of Windows.
-#include <winuser.h>
 1 RT_MANIFEST "python.manifest"
 
 1 ICON DISCARDABLE "icons\pythonw.ico" 

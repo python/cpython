@@ -1,0 +1,41 @@
+extend = "../.ruff.toml"  # Inherit the project-wide settings
+
+target-version = "py312"  # Align with the version in oldest_supported_sphinx
+extend-exclude = [
+    "includes/*",
+    # Temporary exclusions:
+    "tools/extensions/pyspecific.py",
+]
+
+[lint]
+preview = true
+select = [
+    "C4",    # flake8-comprehensions
+    "B",     # flake8-bugbear
+    "E",     # pycodestyle
+    "F",     # pyflakes
+    "FA",    # flake8-future-annotations
+    "FLY",   # flynt
+    "FURB",  # refurb
+    "G",     # flake8-logging-format
+    "I",     # isort
+    "LOG",   # flake8-logging
+    "N",     # pep8-naming
+    "PERF",  # perflint
+    "PGH",   # pygrep-hooks
+    "PT",    # flake8-pytest-style
+    "TCH",   # flake8-type-checking
+    "UP",    # pyupgrade
+    "W",     # pycodestyle
+]
+ignore = [
+    "E501",  # Ignore line length errors (we use auto-formatting)
+]
+
+[format]
+preview = true
+quote-style = "preserve"
+docstring-code-format = true
+exclude = [
+    "tools/extensions/lexers/*",
+]

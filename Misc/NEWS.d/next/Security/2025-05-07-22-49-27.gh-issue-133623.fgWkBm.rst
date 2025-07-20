@@ -1,0 +1,1 @@
+Indicate through :data:`ssl.HAS_PSK_TLS13` whether the :mod:`ssl` module supports "External PSKs" in TLSv1.3, as described in RFC 9258. Patch by Will Childs-Klein.

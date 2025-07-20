@@ -1,0 +1,2 @@
+:func:`fcntl.fcntl` and :func:`fcntl.ioctl`: Remove the 1024 bytes limit
+on the size of not mutated bytes-like argument.
