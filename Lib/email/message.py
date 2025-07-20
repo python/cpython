@@ -78,10 +78,19 @@ def _parseparam(s):
     while s.find(';', start) == start:
         start += 1
         end = s.find(';', start)
-        while end > 0 and (
-            s.count('"', start, end) - s.count('\\"', start, end)
-        ) % 2:
-            end = s.find(';', end + 1)
+        # The following while block is equivalent to:
+        #
+        #   while end > 0 and (
+        #       s.count('"', start, end) - s.count('\\"', start, end)
+        #   ) % 2:
+        #       end = s.find(';', end + 1)
+        #
+        ind, diff = start, 0
+        while end > 0:
+            diff += s.count('"', ind, end) - s.count('\\"', ind, end)
+            if diff % 2 == 0:
+                break
+            end, ind = ind, s.find(';', end + 1)
         if end < 0:
             end = len(s)
         i = s.find('=', start, end)

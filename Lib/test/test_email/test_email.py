@@ -497,6 +497,11 @@ class TestMessageAPI(TestEmailBase):
                 self.assertEqual(len(set(res)), 1)
                 self.assertEqual(res[0], r)
 
+        # This will be considered as a single parameter.
+        malformed = 's="' + ';' * (N - 1)
+        res = email.message._parseparam(malformed)
+        self.assertEqual(res, [malformed])
+
     def test_field_containment(self):
         msg = email.message_from_string('Header: exists')
         self.assertIn('header', msg)
