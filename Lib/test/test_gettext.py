@@ -981,6 +981,13 @@ class MiscTestCase(unittest.TestCase):
                              not_exported={'c2py', 'ENOENT'})
 
 
+class TranslationFallbackTestCase(unittest.TestCase):
+    def test_translation_fallback(self):
+        with os_helper.temp_cwd() as tempdir:
+            t = gettext.translation('gettext', localedir=tempdir, fallback=True)
+            self.assertIsInstance(t, gettext.NullTranslations)
+
+
 if __name__ == '__main__':
     unittest.main()
 
