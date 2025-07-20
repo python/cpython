@@ -4748,38 +4748,25 @@ class MiscTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             _suggestions._generate_suggestions(MyList(), "")
 
-    @support.requires_subprocess()
     def test_no_site_package_flavour(self):
-        import subprocess
+        code = """import boo"""
+        _, _, stderr = assert_python_failure('-S', '-c', code)
 
-        cmd = [sys.executable, '-S', '-c', 'import boo']
-        result = subprocess.run(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True
+        self.assertIn(
+            (b"Site initialization is disabled, did you forget to "
+                b"add the site-packages directory to sys.path?"), stderr
         )
 
-        self.assertNotEqual(result.returncode, 0)
-        self.assertTrue(
-            ("Site initialization is disabled, did you forget to "
-                + "add the site-packages directory to sys.path?") in result.stderr
-        )
+        code = """
+            import sys
+            sys.builtin_module_names = sys.builtin_module_names + ("boo",)
+            import boo
+        """
+        _, _, stderr = assert_python_failure('-S', '-c', code)
 
-        cmd = [sys.executable, '-S', '-c',
-            'import sys; sys.builtin_module_names = sys.builtin_module_names + ("boo",); import boo']
-
-        result = subprocess.run(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True
-        )
-
-        self.assertNotEqual(result.returncode, 0)
-        self.assertTrue(
-            ("Site initialization is disabled, did you forget to "
-                + "add the site-packages directory to sys.path?") not in result.stderr
+        self.assertNotIn(
+            (b"Site initialization is disabled, did you forget to "
+                b"add the site-packages directory to sys.path?"), stderr
         )
 
 
