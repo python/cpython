@@ -1,12 +1,16 @@
 import unittest
 from test import support
+from test.support import import_helper
 from test.support import socket_helper
+import os
 import smtplib
 import socket
 
-ssl = support.import_module("ssl")
+ssl = import_helper.import_module("ssl")
 
 support.requires("network")
+
+SMTP_TEST_SERVER = os.getenv('CPYTHON_TEST_SMTP_SERVER', 'smtp.gmail.com')
 
 def check_ssl_verifiy(host, port):
     context = ssl.create_default_context()
@@ -21,7 +25,7 @@ def check_ssl_verifiy(host, port):
 
 
 class SmtpTest(unittest.TestCase):
-    testServer = 'smtp.gmail.com'
+    testServer = SMTP_TEST_SERVER
     remotePort = 587
 
     def test_connect_starttls(self):
@@ -43,7 +47,7 @@ class SmtpTest(unittest.TestCase):
 
 
 class SmtpSSLTest(unittest.TestCase):
-    testServer = 'smtp.gmail.com'
+    testServer = SMTP_TEST_SERVER
     remotePort = 465
 
     def test_connect(self):
@@ -60,6 +64,7 @@ class SmtpSSLTest(unittest.TestCase):
             server.ehlo()
             server.quit()
 
+    @support.requires_resource('walltime')
     def test_connect_using_sslcontext(self):
         context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         context.check_hostname = False

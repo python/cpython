@@ -4,7 +4,6 @@ import unittest
 import signal
 import os
 import sys
-from test import support
 from test.support import threading_helper
 import _thread as thread
 import time
@@ -33,35 +32,27 @@ def handle_signals(sig,frame):
 
 # a function that will be spawned as a separate thread.
 def send_signals():
-    os.kill(process_pid, signal.SIGUSR1)
-    os.kill(process_pid, signal.SIGUSR2)
+    # We use `raise_signal` rather than `kill` because:
+    #   * It verifies that a signal delivered to a background thread still has
+    #     its Python-level handler called on the main thread.
+    #   * It ensures the signal is handled before the thread exits.
+    signal.raise_signal(signal.SIGUSR1)
+    signal.raise_signal(signal.SIGUSR2)
     signalled_all.release()
 
+
+@threading_helper.requires_working_threading()
 class ThreadSignals(unittest.TestCase):
 
     def test_signals(self):
         with threading_helper.wait_threads_exit():
             # Test signal handling semantics of threads.
-            # We spawn a thread, have the thread send two signals, and
+            # We spawn a thread, have the thread send itself two signals, and
             # wait for it to finish. Check that we got both signals
             # and that they were run by the main thread.
             signalled_all.acquire()
             self.spawnSignallingThread()
             signalled_all.acquire()
-
-        # the signals that we asked the kernel to send
-        # will come back, but we don't know when.
-        # (it might even be after the thread exits
-        # and might be out of order.)  If we haven't seen
-        # the signals yet, send yet another signal and
-        # wait for it return.
-        if signal_blackboard[signal.SIGUSR1]['tripped'] == 0 \
-           or signal_blackboard[signal.SIGUSR2]['tripped'] == 0:
-            try:
-                signal.alarm(1)
-                signal.pause()
-            finally:
-                signal.alarm(0)
 
         self.assertEqual( signal_blackboard[signal.SIGUSR1]['tripped'], 1)
         self.assertEqual( signal_blackboard[signal.SIGUSR1]['tripped_by'],
@@ -231,7 +222,7 @@ class ThreadSignals(unittest.TestCase):
             signal.signal(signal.SIGUSR1, old_handler)
 
 
-def test_main():
+def setUpModule():
     global signal_blackboard
 
     signal_blackboard = { signal.SIGUSR1 : {'tripped': 0, 'tripped_by': 0 },
@@ -239,10 +230,8 @@ def test_main():
                           signal.SIGALRM : {'tripped': 0, 'tripped_by': 0 } }
 
     oldsigs = registerSignals(handle_signals, handle_signals, handle_signals)
-    try:
-        support.run_unittest(ThreadSignals)
-    finally:
-        registerSignals(*oldsigs)
+    unittest.addModuleCleanup(registerSignals, *oldsigs)
+
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

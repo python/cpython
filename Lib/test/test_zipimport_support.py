@@ -13,6 +13,7 @@ import doctest
 import inspect
 import linecache
 import unittest
+from test.support import os_helper
 from test.support.script_helper import (spawn_python, kill_python, assert_python_ok,
                                         make_script, make_zip_script)
 
@@ -28,8 +29,9 @@ verbose = test.support.verbose
 #  test_cmd_line_script (covers the zipimport support in runpy)
 
 # Retrieve some helpers from other test cases
-from test import (test_doctest, sample_doctest, sample_doctest_no_doctests,
-                  sample_doctest_no_docstrings)
+from test.test_doctest import (test_doctest,
+                               sample_doctest, sample_doctest_no_doctests,
+                               sample_doctest_no_docstrings, sample_doctest_skip)
 
 
 def _run_object_doctest(obj, module):
@@ -77,7 +79,7 @@ class ZipSupportTests(unittest.TestCase):
 
     def test_inspect_getsource_issue4223(self):
         test_src = "def foo(): pass\n"
-        with test.support.temp_dir() as d:
+        with os_helper.temp_dir() as d:
             init_name = make_script(d, '__init__', test_src)
             name_in_zip = os.path.join('zip_pkg',
                                        os.path.basename(init_name))
@@ -99,25 +101,25 @@ class ZipSupportTests(unittest.TestCase):
         # everything still works correctly
         test_src = inspect.getsource(test_doctest)
         test_src = test_src.replace(
-                         "from test import test_doctest",
+                         "from test.test_doctest import test_doctest",
                          "import test_zipped_doctest as test_doctest")
-        test_src = test_src.replace("test.test_doctest",
+        test_src = test_src.replace("test.test_doctest.test_doctest",
                                     "test_zipped_doctest")
-        test_src = test_src.replace("test.sample_doctest",
+        test_src = test_src.replace("test.test_doctest.sample_doctest",
                                     "sample_zipped_doctest")
         # The sample doctest files rewritten to include in the zipped version.
         sample_sources = {}
         for mod in [sample_doctest, sample_doctest_no_doctests,
-                    sample_doctest_no_docstrings]:
+                    sample_doctest_no_docstrings, sample_doctest_skip]:
             src = inspect.getsource(mod)
-            src = src.replace("test.test_doctest", "test_zipped_doctest")
+            src = src.replace("test.test_doctest.test_doctest", "test_zipped_doctest")
             # Rewrite the module name so that, for example,
             # "test.sample_doctest" becomes "sample_zipped_doctest".
             mod_name = mod.__name__.split(".")[-1]
             mod_name = mod_name.replace("sample_", "sample_zipped_")
             sample_sources[mod_name] = src
 
-        with test.support.temp_dir() as d:
+        with os_helper.temp_dir() as d:
             script_name = make_script(d, 'test_zipped_doctest',
                                             test_src)
             zip_name, run_name = make_zip_script(d, 'test_zip',
@@ -192,7 +194,7 @@ class ZipSupportTests(unittest.TestCase):
                     doctest.testmod()
                     """)
         pattern = 'File "%s", line 2, in %s'
-        with test.support.temp_dir() as d:
+        with os_helper.temp_dir() as d:
             script_name = make_script(d, 'script', test_src)
             rc, out, err = assert_python_ok(script_name)
             expected = pattern % (script_name, "__main__.Test")
@@ -219,7 +221,7 @@ class ZipSupportTests(unittest.TestCase):
                     import pdb
                     pdb.Pdb(nosigint=True).runcall(f)
                     """)
-        with test.support.temp_dir() as d:
+        with os_helper.temp_dir() as d:
             script_name = make_script(d, 'script', test_src)
             p = spawn_python(script_name)
             p.stdin.write(b'l\n')

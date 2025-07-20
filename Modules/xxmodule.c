@@ -9,8 +9,7 @@
    You will probably want to delete all references to 'x_attr' and add
    your own types of attributes instead.  Maybe you want to name your
    local variables other than 'self'.  If your object type is needed in
-   other files, you'll have to create a file "foobarobject.h"; see
-   floatobject.h for an example. */
+   other files, you'll have to create a separate header file for it. */
 
 /* Xxo objects */
 
@@ -25,15 +24,16 @@ typedef struct {
 
 static PyTypeObject Xxo_Type;
 
-#define XxoObject_Check(v)      Py_IS_TYPE(v, &Xxo_Type)
+#define XxoObject_CAST(op)  ((XxoObject *)(op))
+#define XxoObject_Check(v)  Py_IS_TYPE(v, &Xxo_Type)
 
 static XxoObject *
 newXxoObject(PyObject *arg)
 {
-    XxoObject *self;
-    self = PyObject_New(XxoObject, &Xxo_Type);
-    if (self == NULL)
+    XxoObject *self = PyObject_New(XxoObject, &Xxo_Type);
+    if (self == NULL) {
         return NULL;
+    }
     self->x_attr = NULL;
     return self;
 }
@@ -41,60 +41,62 @@ newXxoObject(PyObject *arg)
 /* Xxo methods */
 
 static void
-Xxo_dealloc(XxoObject *self)
+Xxo_dealloc(PyObject *op)
 {
+    XxoObject *self = XxoObject_CAST(op);
     Py_XDECREF(self->x_attr);
-    PyObject_Del(self);
+    PyObject_Free(self);
 }
 
 static PyObject *
-Xxo_demo(XxoObject *self, PyObject *args)
+Xxo_demo(PyObject *Py_UNUSED(op), PyObject *args)
 {
-    if (!PyArg_ParseTuple(args, ":demo"))
+    if (!PyArg_ParseTuple(args, ":demo")) {
         return NULL;
-    Py_INCREF(Py_None);
-    return Py_None;
+    }
+    return Py_NewRef(Py_None);
 }
 
 static PyMethodDef Xxo_methods[] = {
-    {"demo",            (PyCFunction)Xxo_demo,  METH_VARARGS,
-        PyDoc_STR("demo() -> None")},
-    {NULL,              NULL}           /* sentinel */
+    {"demo", Xxo_demo,  METH_VARARGS, PyDoc_STR("demo() -> None")},
+    {NULL, NULL}  /* sentinel */
 };
 
 static PyObject *
-Xxo_getattro(XxoObject *self, PyObject *name)
+Xxo_getattro(PyObject *op, PyObject *name)
 {
+    XxoObject *self = XxoObject_CAST(op);
     if (self->x_attr != NULL) {
         PyObject *v = PyDict_GetItemWithError(self->x_attr, name);
         if (v != NULL) {
-            Py_INCREF(v);
-            return v;
+            return Py_NewRef(v);
         }
         else if (PyErr_Occurred()) {
             return NULL;
         }
     }
-    return PyObject_GenericGetAttr((PyObject *)self, name);
+    return PyObject_GenericGetAttr(op, name);
 }
 
 static int
-Xxo_setattr(XxoObject *self, const char *name, PyObject *v)
+Xxo_setattr(PyObject *op, const char *name, PyObject *v)
 {
+    XxoObject *self = XxoObject_CAST(op);
     if (self->x_attr == NULL) {
         self->x_attr = PyDict_New();
-        if (self->x_attr == NULL)
+        if (self->x_attr == NULL) {
             return -1;
+        }
     }
     if (v == NULL) {
         int rv = PyDict_DelItemString(self->x_attr, name);
-        if (rv < 0 && PyErr_ExceptionMatches(PyExc_KeyError))
+        if (rv < 0 && PyErr_ExceptionMatches(PyExc_KeyError)) {
             PyErr_SetString(PyExc_AttributeError,
-                "delete non-existing Xxo attribute");
+                            "delete non-existing Xxo attribute");
+        }
         return rv;
     }
-    else
-        return PyDict_SetItemString(self->x_attr, name, v);
+    return PyDict_SetItemString(self->x_attr, name, v);
 }
 
 static PyTypeObject Xxo_Type = {
@@ -105,10 +107,10 @@ static PyTypeObject Xxo_Type = {
     sizeof(XxoObject),          /*tp_basicsize*/
     0,                          /*tp_itemsize*/
     /* methods */
-    (destructor)Xxo_dealloc,    /*tp_dealloc*/
+    Xxo_dealloc,                /*tp_dealloc*/
     0,                          /*tp_vectorcall_offset*/
-    (getattrfunc)0,             /*tp_getattr*/
-    (setattrfunc)Xxo_setattr,   /*tp_setattr*/
+    0,                          /*tp_getattr*/
+    Xxo_setattr,                /*tp_setattr*/
     0,                          /*tp_as_async*/
     0,                          /*tp_repr*/
     0,                          /*tp_as_number*/
@@ -117,7 +119,7 @@ static PyTypeObject Xxo_Type = {
     0,                          /*tp_hash*/
     0,                          /*tp_call*/
     0,                          /*tp_str*/
-    (getattrofunc)Xxo_getattro, /*tp_getattro*/
+    Xxo_getattro,               /*tp_getattro*/
     0,                          /*tp_setattro*/
     0,                          /*tp_as_buffer*/
     Py_TPFLAGS_DEFAULT,         /*tp_flags*/
@@ -195,8 +197,7 @@ xx_bug(PyObject *self, PyObject *args)
     printf("\n");
     /* Py_DECREF(item); */
 
-    Py_INCREF(Py_None);
-    return Py_None;
+    return Py_NewRef(Py_None);
 }
 
 /* Test bad format character */
@@ -208,8 +209,7 @@ xx_roj(PyObject *self, PyObject *args)
     long b;
     if (!PyArg_ParseTuple(args, "O#:roj", &a, &b))
         return NULL;
-    Py_INCREF(Py_None);
-    return Py_None;
+    return Py_NewRef(Py_None);
 }
 
 
@@ -266,8 +266,7 @@ static PyTypeObject Str_Type = {
 static PyObject *
 null_richcompare(PyObject *self, PyObject *other, int op)
 {
-    Py_INCREF(Py_NotImplemented);
-    return Py_NotImplemented;
+    return Py_NewRef(Py_NotImplemented);
 }
 
 static PyTypeObject Null_Type = {
@@ -358,35 +357,38 @@ xx_exec(PyObject *m)
 
     /* Finalize the type object including setting type of the new type
      * object; doing it here is required for portability, too. */
-    if (PyType_Ready(&Xxo_Type) < 0)
-        goto fail;
+    if (PyType_Ready(&Xxo_Type) < 0) {
+        return -1;
+    }
 
     /* Add some symbolic constants to the module */
     if (ErrorObject == NULL) {
         ErrorObject = PyErr_NewException("xx.error", NULL, NULL);
-        if (ErrorObject == NULL)
-            goto fail;
+        if (ErrorObject == NULL) {
+            return -1;
+        }
     }
-    Py_INCREF(ErrorObject);
-    PyModule_AddObject(m, "error", ErrorObject);
+    int rc = PyModule_AddType(m, (PyTypeObject *)ErrorObject);
+    Py_DECREF(ErrorObject);
+    if (rc < 0) {
+        return -1;
+    }
 
-    /* Add Str */
-    if (PyType_Ready(&Str_Type) < 0)
-        goto fail;
-    PyModule_AddObject(m, "Str", (PyObject *)&Str_Type);
+    /* Add Str and Null types */
+    if (PyModule_AddType(m, &Str_Type) < 0) {
+        return -1;
+    }
+    if (PyModule_AddType(m, &Null_Type) < 0) {
+        return -1;
+    }
 
-    /* Add Null */
-    if (PyType_Ready(&Null_Type) < 0)
-        goto fail;
-    PyModule_AddObject(m, "Null", (PyObject *)&Null_Type);
     return 0;
- fail:
-    Py_XDECREF(m);
-    return -1;
 }
 
 static struct PyModuleDef_Slot xx_slots[] = {
     {Py_mod_exec, xx_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL},
 };
 

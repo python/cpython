@@ -2,6 +2,30 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_runtime.h"     // _Py_SINGLETON()
+#endif
+#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+
+PyDoc_STRVAR(array_array_clear__doc__,
+"clear($self, /)\n"
+"--\n"
+"\n"
+"Remove all items from the array.");
+
+#define ARRAY_ARRAY_CLEAR_METHODDEF    \
+    {"clear", (PyCFunction)array_array_clear, METH_NOARGS, array_array_clear__doc__},
+
+static PyObject *
+array_array_clear_impl(arrayobject *self);
+
+static PyObject *
+array_array_clear(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return array_array_clear_impl((arrayobject *)self);
+}
+
 PyDoc_STRVAR(array_array___copy____doc__,
 "__copy__($self, /)\n"
 "--\n"
@@ -15,9 +39,9 @@ static PyObject *
 array_array___copy___impl(arrayobject *self);
 
 static PyObject *
-array_array___copy__(arrayobject *self, PyObject *Py_UNUSED(ignored))
+array_array___copy__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return array_array___copy___impl(self);
+    return array_array___copy___impl((arrayobject *)self);
 }
 
 PyDoc_STRVAR(array_array___deepcopy____doc__,
@@ -29,6 +53,19 @@ PyDoc_STRVAR(array_array___deepcopy____doc__,
 #define ARRAY_ARRAY___DEEPCOPY___METHODDEF    \
     {"__deepcopy__", (PyCFunction)array_array___deepcopy__, METH_O, array_array___deepcopy____doc__},
 
+static PyObject *
+array_array___deepcopy___impl(arrayobject *self, PyObject *unused);
+
+static PyObject *
+array_array___deepcopy__(PyObject *self, PyObject *unused)
+{
+    PyObject *return_value = NULL;
+
+    return_value = array_array___deepcopy___impl((arrayobject *)self, unused);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(array_array_count__doc__,
 "count($self, v, /)\n"
 "--\n"
@@ -38,14 +75,64 @@ PyDoc_STRVAR(array_array_count__doc__,
 #define ARRAY_ARRAY_COUNT_METHODDEF    \
     {"count", (PyCFunction)array_array_count, METH_O, array_array_count__doc__},
 
+static PyObject *
+array_array_count_impl(arrayobject *self, PyObject *v);
+
+static PyObject *
+array_array_count(PyObject *self, PyObject *v)
+{
+    PyObject *return_value = NULL;
+
+    return_value = array_array_count_impl((arrayobject *)self, v);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(array_array_index__doc__,
-"index($self, v, /)\n"
+"index($self, v, start=0, stop=sys.maxsize, /)\n"
 "--\n"
 "\n"
-"Return index of first occurrence of v in the array.");
+"Return index of first occurrence of v in the array.\n"
+"\n"
+"Raise ValueError if the value is not present.");
 
 #define ARRAY_ARRAY_INDEX_METHODDEF    \
-    {"index", (PyCFunction)array_array_index, METH_O, array_array_index__doc__},
+    {"index", _PyCFunction_CAST(array_array_index), METH_FASTCALL, array_array_index__doc__},
+
+static PyObject *
+array_array_index_impl(arrayobject *self, PyObject *v, Py_ssize_t start,
+                       Py_ssize_t stop);
+
+static PyObject *
+array_array_index(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *v;
+    Py_ssize_t start = 0;
+    Py_ssize_t stop = PY_SSIZE_T_MAX;
+
+    if (!_PyArg_CheckPositional("index", nargs, 1, 3)) {
+        goto exit;
+    }
+    v = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndexNotNone(args[1], &start)) {
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndexNotNone(args[2], &stop)) {
+        goto exit;
+    }
+skip_optional:
+    return_value = array_array_index_impl((arrayobject *)self, v, start, stop);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(array_array_remove__doc__,
 "remove($self, v, /)\n"
@@ -56,6 +143,19 @@ PyDoc_STRVAR(array_array_remove__doc__,
 #define ARRAY_ARRAY_REMOVE_METHODDEF    \
     {"remove", (PyCFunction)array_array_remove, METH_O, array_array_remove__doc__},
 
+static PyObject *
+array_array_remove_impl(arrayobject *self, PyObject *v);
+
+static PyObject *
+array_array_remove(PyObject *self, PyObject *v)
+{
+    PyObject *return_value = NULL;
+
+    return_value = array_array_remove_impl((arrayobject *)self, v);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(array_array_pop__doc__,
 "pop($self, i=-1, /)\n"
 "--\n"
@@ -65,13 +165,13 @@ PyDoc_STRVAR(array_array_pop__doc__,
 "i defaults to -1.");
 
 #define ARRAY_ARRAY_POP_METHODDEF    \
-    {"pop", (PyCFunction)(void(*)(void))array_array_pop, METH_FASTCALL, array_array_pop__doc__},
+    {"pop", _PyCFunction_CAST(array_array_pop), METH_FASTCALL, array_array_pop__doc__},
 
 static PyObject *
 array_array_pop_impl(arrayobject *self, Py_ssize_t i);
 
 static PyObject *
-array_array_pop(arrayobject *self, PyObject *const *args, Py_ssize_t nargs)
+array_array_pop(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t i = -1;
@@ -84,7 +184,7 @@ array_array_pop(arrayobject *self, PyObject *const *args, Py_ssize_t nargs)
     }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(args[0]);
+        PyObject *iobj = _PyNumber_Index(args[0]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -95,7 +195,7 @@ array_array_pop(arrayobject *self, PyObject *const *args, Py_ssize_t nargs)
         i = ival;
     }
 skip_optional:
-    return_value = array_array_pop_impl(self, i);
+    return_value = array_array_pop_impl((arrayobject *)self, i);
 
 exit:
     return return_value;
@@ -108,7 +208,42 @@ PyDoc_STRVAR(array_array_extend__doc__,
 "Append items to the end of the array.");
 
 #define ARRAY_ARRAY_EXTEND_METHODDEF    \
-    {"extend", (PyCFunction)array_array_extend, METH_O, array_array_extend__doc__},
+    {"extend", _PyCFunction_CAST(array_array_extend), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, array_array_extend__doc__},
+
+static PyObject *
+array_array_extend_impl(arrayobject *self, PyTypeObject *cls, PyObject *bb);
+
+static PyObject *
+array_array_extend(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "extend",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *bb;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    bb = args[0];
+    return_value = array_array_extend_impl((arrayobject *)self, cls, bb);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(array_array_insert__doc__,
 "insert($self, i, v, /)\n"
@@ -117,13 +252,13 @@ PyDoc_STRVAR(array_array_insert__doc__,
 "Insert a new item v into the array before position i.");
 
 #define ARRAY_ARRAY_INSERT_METHODDEF    \
-    {"insert", (PyCFunction)(void(*)(void))array_array_insert, METH_FASTCALL, array_array_insert__doc__},
+    {"insert", _PyCFunction_CAST(array_array_insert), METH_FASTCALL, array_array_insert__doc__},
 
 static PyObject *
 array_array_insert_impl(arrayobject *self, Py_ssize_t i, PyObject *v);
 
 static PyObject *
-array_array_insert(arrayobject *self, PyObject *const *args, Py_ssize_t nargs)
+array_array_insert(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t i;
@@ -134,7 +269,7 @@ array_array_insert(arrayobject *self, PyObject *const *args, Py_ssize_t nargs)
     }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(args[0]);
+        PyObject *iobj = _PyNumber_Index(args[0]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -145,7 +280,7 @@ array_array_insert(arrayobject *self, PyObject *const *args, Py_ssize_t nargs)
         i = ival;
     }
     v = args[1];
-    return_value = array_array_insert_impl(self, i, v);
+    return_value = array_array_insert_impl((arrayobject *)self, i, v);
 
 exit:
     return return_value;
@@ -167,9 +302,9 @@ static PyObject *
 array_array_buffer_info_impl(arrayobject *self);
 
 static PyObject *
-array_array_buffer_info(arrayobject *self, PyObject *Py_UNUSED(ignored))
+array_array_buffer_info(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return array_array_buffer_info_impl(self);
+    return array_array_buffer_info_impl((arrayobject *)self);
 }
 
 PyDoc_STRVAR(array_array_append__doc__,
@@ -180,6 +315,19 @@ PyDoc_STRVAR(array_array_append__doc__,
 
 #define ARRAY_ARRAY_APPEND_METHODDEF    \
     {"append", (PyCFunction)array_array_append, METH_O, array_array_append__doc__},
+
+static PyObject *
+array_array_append_impl(arrayobject *self, PyObject *v);
+
+static PyObject *
+array_array_append(PyObject *self, PyObject *v)
+{
+    PyObject *return_value = NULL;
+
+    return_value = array_array_append_impl((arrayobject *)self, v);
+
+    return return_value;
+}
 
 PyDoc_STRVAR(array_array_byteswap__doc__,
 "byteswap($self, /)\n"
@@ -197,9 +345,9 @@ static PyObject *
 array_array_byteswap_impl(arrayobject *self);
 
 static PyObject *
-array_array_byteswap(arrayobject *self, PyObject *Py_UNUSED(ignored))
+array_array_byteswap(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return array_array_byteswap_impl(self);
+    return array_array_byteswap_impl((arrayobject *)self);
 }
 
 PyDoc_STRVAR(array_array_reverse__doc__,
@@ -215,9 +363,9 @@ static PyObject *
 array_array_reverse_impl(arrayobject *self);
 
 static PyObject *
-array_array_reverse(arrayobject *self, PyObject *Py_UNUSED(ignored))
+array_array_reverse(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return array_array_reverse_impl(self);
+    return array_array_reverse_impl((arrayobject *)self);
 }
 
 PyDoc_STRVAR(array_array_fromfile__doc__,
@@ -227,25 +375,42 @@ PyDoc_STRVAR(array_array_fromfile__doc__,
 "Read n objects from the file object f and append them to the end of the array.");
 
 #define ARRAY_ARRAY_FROMFILE_METHODDEF    \
-    {"fromfile", (PyCFunction)(void(*)(void))array_array_fromfile, METH_FASTCALL, array_array_fromfile__doc__},
+    {"fromfile", _PyCFunction_CAST(array_array_fromfile), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, array_array_fromfile__doc__},
 
 static PyObject *
-array_array_fromfile_impl(arrayobject *self, PyObject *f, Py_ssize_t n);
+array_array_fromfile_impl(arrayobject *self, PyTypeObject *cls, PyObject *f,
+                          Py_ssize_t n);
 
 static PyObject *
-array_array_fromfile(arrayobject *self, PyObject *const *args, Py_ssize_t nargs)
+array_array_fromfile(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", "", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "fromfile",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
     PyObject *f;
     Py_ssize_t n;
 
-    if (!_PyArg_CheckPositional("fromfile", nargs, 2, 2)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     f = args[0];
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(args[1]);
+        PyObject *iobj = _PyNumber_Index(args[1]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -255,7 +420,7 @@ array_array_fromfile(arrayobject *self, PyObject *const *args, Py_ssize_t nargs)
         }
         n = ival;
     }
-    return_value = array_array_fromfile_impl(self, f, n);
+    return_value = array_array_fromfile_impl((arrayobject *)self, cls, f, n);
 
 exit:
     return return_value;
@@ -268,7 +433,42 @@ PyDoc_STRVAR(array_array_tofile__doc__,
 "Write all items (as machine values) to the file object f.");
 
 #define ARRAY_ARRAY_TOFILE_METHODDEF    \
-    {"tofile", (PyCFunction)array_array_tofile, METH_O, array_array_tofile__doc__},
+    {"tofile", _PyCFunction_CAST(array_array_tofile), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, array_array_tofile__doc__},
+
+static PyObject *
+array_array_tofile_impl(arrayobject *self, PyTypeObject *cls, PyObject *f);
+
+static PyObject *
+array_array_tofile(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "tofile",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *f;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    f = args[0];
+    return_value = array_array_tofile_impl((arrayobject *)self, cls, f);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(array_array_fromlist__doc__,
 "fromlist($self, list, /)\n"
@@ -278,6 +478,19 @@ PyDoc_STRVAR(array_array_fromlist__doc__,
 
 #define ARRAY_ARRAY_FROMLIST_METHODDEF    \
     {"fromlist", (PyCFunction)array_array_fromlist, METH_O, array_array_fromlist__doc__},
+
+static PyObject *
+array_array_fromlist_impl(arrayobject *self, PyObject *list);
+
+static PyObject *
+array_array_fromlist(PyObject *self, PyObject *list)
+{
+    PyObject *return_value = NULL;
+
+    return_value = array_array_fromlist_impl((arrayobject *)self, list);
+
+    return return_value;
+}
 
 PyDoc_STRVAR(array_array_tolist__doc__,
 "tolist($self, /)\n"
@@ -292,16 +505,16 @@ static PyObject *
 array_array_tolist_impl(arrayobject *self);
 
 static PyObject *
-array_array_tolist(arrayobject *self, PyObject *Py_UNUSED(ignored))
+array_array_tolist(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return array_array_tolist_impl(self);
+    return array_array_tolist_impl((arrayobject *)self);
 }
 
 PyDoc_STRVAR(array_array_frombytes__doc__,
 "frombytes($self, buffer, /)\n"
 "--\n"
 "\n"
-"Appends items from the string, interpreting it as an array of machine values, as if it had been read from a file using the fromfile() method).");
+"Appends items from the string, interpreting it as an array of machine values, as if it had been read from a file using the fromfile() method.");
 
 #define ARRAY_ARRAY_FROMBYTES_METHODDEF    \
     {"frombytes", (PyCFunction)array_array_frombytes, METH_O, array_array_frombytes__doc__},
@@ -310,7 +523,7 @@ static PyObject *
 array_array_frombytes_impl(arrayobject *self, Py_buffer *buffer);
 
 static PyObject *
-array_array_frombytes(arrayobject *self, PyObject *arg)
+array_array_frombytes(PyObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
     Py_buffer buffer = {NULL, NULL};
@@ -318,11 +531,7 @@ array_array_frombytes(arrayobject *self, PyObject *arg)
     if (PyObject_GetBuffer(arg, &buffer, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&buffer, 'C')) {
-        _PyArg_BadArgument("frombytes", "argument", "contiguous buffer", arg);
-        goto exit;
-    }
-    return_value = array_array_frombytes_impl(self, &buffer);
+    return_value = array_array_frombytes_impl((arrayobject *)self, &buffer);
 
 exit:
     /* Cleanup for buffer */
@@ -346,9 +555,9 @@ static PyObject *
 array_array_tobytes_impl(arrayobject *self);
 
 static PyObject *
-array_array_tobytes(arrayobject *self, PyObject *Py_UNUSED(ignored))
+array_array_tobytes(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return array_array_tobytes_impl(self);
+    return array_array_tobytes_impl((arrayobject *)self);
 }
 
 PyDoc_STRVAR(array_array_fromunicode__doc__,
@@ -368,7 +577,7 @@ static PyObject *
 array_array_fromunicode_impl(arrayobject *self, PyObject *ustr);
 
 static PyObject *
-array_array_fromunicode(arrayobject *self, PyObject *arg)
+array_array_fromunicode(PyObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
     PyObject *ustr;
@@ -377,11 +586,8 @@ array_array_fromunicode(arrayobject *self, PyObject *arg)
         _PyArg_BadArgument("fromunicode", "argument", "str", arg);
         goto exit;
     }
-    if (PyUnicode_READY(arg) == -1) {
-        goto exit;
-    }
     ustr = arg;
-    return_value = array_array_fromunicode_impl(self, ustr);
+    return_value = array_array_fromunicode_impl((arrayobject *)self, ustr);
 
 exit:
     return return_value;
@@ -404,9 +610,9 @@ static PyObject *
 array_array_tounicode_impl(arrayobject *self);
 
 static PyObject *
-array_array_tounicode(arrayobject *self, PyObject *Py_UNUSED(ignored))
+array_array_tounicode(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return array_array_tounicode_impl(self);
+    return array_array_tounicode_impl((arrayobject *)self);
 }
 
 PyDoc_STRVAR(array_array___sizeof____doc__,
@@ -422,9 +628,9 @@ static PyObject *
 array_array___sizeof___impl(arrayobject *self);
 
 static PyObject *
-array_array___sizeof__(arrayobject *self, PyObject *Py_UNUSED(ignored))
+array_array___sizeof__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return array_array___sizeof___impl(self);
+    return array_array___sizeof___impl((arrayobject *)self);
 }
 
 PyDoc_STRVAR(array__array_reconstructor__doc__,
@@ -435,7 +641,7 @@ PyDoc_STRVAR(array__array_reconstructor__doc__,
 "Internal. Used for pickling support.");
 
 #define ARRAY__ARRAY_RECONSTRUCTOR_METHODDEF    \
-    {"_array_reconstructor", (PyCFunction)(void(*)(void))array__array_reconstructor, METH_FASTCALL, array__array_reconstructor__doc__},
+    {"_array_reconstructor", _PyCFunction_CAST(array__array_reconstructor), METH_FASTCALL, array__array_reconstructor__doc__},
 
 static PyObject *
 array__array_reconstructor_impl(PyObject *module, PyTypeObject *arraytype,
@@ -460,15 +666,15 @@ array__array_reconstructor(PyObject *module, PyObject *const *args, Py_ssize_t n
         _PyArg_BadArgument("_array_reconstructor", "argument 2", "a unicode character", args[1]);
         goto exit;
     }
-    if (PyUnicode_READY(args[1])) {
-        goto exit;
-    }
     if (PyUnicode_GET_LENGTH(args[1]) != 1) {
-        _PyArg_BadArgument("_array_reconstructor", "argument 2", "a unicode character", args[1]);
+        PyErr_Format(PyExc_TypeError,
+            "_array_reconstructor(): argument 2 must be a unicode character, "
+            "not a string of length %zd",
+            PyUnicode_GET_LENGTH(args[1]));
         goto exit;
     }
     typecode = PyUnicode_READ_CHAR(args[1], 0);
-    mformat_code = _PyLong_AsInt(args[2]);
+    mformat_code = PyLong_AsInt(args[2]);
     if (mformat_code == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -486,7 +692,43 @@ PyDoc_STRVAR(array_array___reduce_ex____doc__,
 "Return state information for pickling.");
 
 #define ARRAY_ARRAY___REDUCE_EX___METHODDEF    \
-    {"__reduce_ex__", (PyCFunction)array_array___reduce_ex__, METH_O, array_array___reduce_ex____doc__},
+    {"__reduce_ex__", _PyCFunction_CAST(array_array___reduce_ex__), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, array_array___reduce_ex____doc__},
+
+static PyObject *
+array_array___reduce_ex___impl(arrayobject *self, PyTypeObject *cls,
+                               PyObject *value);
+
+static PyObject *
+array_array___reduce_ex__(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "__reduce_ex__",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *value;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    value = args[0];
+    return_value = array_array___reduce_ex___impl((arrayobject *)self, cls, value);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(array_arrayiterator___reduce____doc__,
 "__reduce__($self, /)\n"
@@ -495,15 +737,19 @@ PyDoc_STRVAR(array_arrayiterator___reduce____doc__,
 "Return state information for pickling.");
 
 #define ARRAY_ARRAYITERATOR___REDUCE___METHODDEF    \
-    {"__reduce__", (PyCFunction)array_arrayiterator___reduce__, METH_NOARGS, array_arrayiterator___reduce____doc__},
+    {"__reduce__", _PyCFunction_CAST(array_arrayiterator___reduce__), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, array_arrayiterator___reduce____doc__},
 
 static PyObject *
-array_arrayiterator___reduce___impl(arrayiterobject *self);
+array_arrayiterator___reduce___impl(arrayiterobject *self, PyTypeObject *cls);
 
 static PyObject *
-array_arrayiterator___reduce__(arrayiterobject *self, PyObject *Py_UNUSED(ignored))
+array_arrayiterator___reduce__(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return array_arrayiterator___reduce___impl(self);
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
+        PyErr_SetString(PyExc_TypeError, "__reduce__() takes no arguments");
+        return NULL;
+    }
+    return array_arrayiterator___reduce___impl((arrayiterobject *)self, cls);
 }
 
 PyDoc_STRVAR(array_arrayiterator___setstate____doc__,
@@ -514,4 +760,17 @@ PyDoc_STRVAR(array_arrayiterator___setstate____doc__,
 
 #define ARRAY_ARRAYITERATOR___SETSTATE___METHODDEF    \
     {"__setstate__", (PyCFunction)array_arrayiterator___setstate__, METH_O, array_arrayiterator___setstate____doc__},
-/*[clinic end generated code: output=c953eb8486c7c8da input=a9049054013a1b77]*/
+
+static PyObject *
+array_arrayiterator___setstate___impl(arrayiterobject *self, PyObject *state);
+
+static PyObject *
+array_arrayiterator___setstate__(PyObject *self, PyObject *state)
+{
+    PyObject *return_value = NULL;
+
+    return_value = array_arrayiterator___setstate___impl((arrayiterobject *)self, state);
+
+    return return_value;
+}
+/*[clinic end generated code: output=dd49451ac1cc3f39 input=a9049054013a1b77]*/

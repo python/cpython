@@ -1,7 +1,6 @@
 import argparse
 import sys
-
-from typing import Any, Iterator, Callable
+from typing import Any, Callable, Iterator
 
 from pegen.build import build_parser
 from pegen.grammar import Grammar, Rule
@@ -30,7 +29,6 @@ class ASTGrammarPrinter:
             printer(self.print_nodes_recursively(rule))
 
     def print_nodes_recursively(self, node: Rule, prefix: str = "", istail: bool = True) -> str:
-
         children = list(self.children(node))
         value = self.name(node)
 

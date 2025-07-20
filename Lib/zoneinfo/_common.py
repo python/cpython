@@ -2,16 +2,20 @@ import struct
 
 
 def load_tzdata(key):
-    import importlib.resources
+    from importlib import resources
 
     components = key.split("/")
     package_name = ".".join(["tzdata.zoneinfo"] + components[:-1])
     resource_name = components[-1]
 
     try:
-        return importlib.resources.open_binary(package_name, resource_name)
-    except (ImportError, FileNotFoundError, UnicodeEncodeError):
-        # There are three types of exception that can be raised that all amount
+        path = resources.files(package_name).joinpath(resource_name)
+        # gh-85702: Prevent PermissionError on Windows
+        if path.is_dir():
+            raise IsADirectoryError
+        return path.open("rb")
+    except (ImportError, FileNotFoundError, UnicodeEncodeError, IsADirectoryError):
+        # There are four types of exception that can be raised that all amount
         # to "we cannot find this key":
         #
         # ImportError: If package_name doesn't exist (e.g. if tzdata is not
@@ -21,6 +25,7 @@ def load_tzdata(key):
         #   (e.g. Europe/Krasnoy)
         # UnicodeEncodeError: If package_name or resource_name are not UTF-8,
         #   such as keys containing a surrogate character.
+        # IsADirectoryError: If package_name without a resource_name specified.
         raise ZoneInfoNotFoundError(f"No time zone found with key {key}")
 
 
@@ -80,7 +85,6 @@ def load_data(fobj):
     # not by position in the array but by position in the unsplit
     # abbreviation string. I suppose this makes more sense in C, which uses
     # null to terminate the strings, but it's inconvenient here...
-    char_total = 0
     abbr_vals = {}
     abbr_chars = fobj.read(charcnt)
 
@@ -137,8 +141,7 @@ class _TZifHeader:
     ]
 
     def __init__(self, *args):
-        assert len(self.__slots__) == len(args)
-        for attr, val in zip(self.__slots__, args):
+        for attr, val in zip(self.__slots__, args, strict=True):
             setattr(self, attr, val)
 
     @classmethod

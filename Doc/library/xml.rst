@@ -15,12 +15,10 @@ XML Processing Modules
 
 Python's interfaces for processing XML are grouped in the ``xml`` package.
 
-.. warning::
+.. note::
 
-   The XML modules are not secure against erroneous or maliciously
-   constructed data.  If you need to parse untrusted or
-   unauthenticated data see the :ref:`xml-vulnerabilities` and
-   :ref:`defused-packages` sections.
+   If you need to parse untrusted or unauthenticated data, see
+   :ref:`xml-security`.
 
 It is important to note that modules in the :mod:`xml` package require that
 there be at least one SAX-compliant XML parser available. The Expat parser is
@@ -47,36 +45,22 @@ The XML handling submodules are:
 * :mod:`xml.parsers.expat`: the Expat parser binding
 
 
+.. _xml-security:
 .. _xml-vulnerabilities:
 
-XML vulnerabilities
--------------------
+XML security
+------------
 
-The XML processing modules are not secure against maliciously constructed data.
 An attacker can abuse XML features to carry out denial of service attacks,
 access local files, generate network connections to other machines, or
 circumvent firewalls.
 
-The following table gives an overview of the known attacks and whether
-the various modules are vulnerable to them.
+Expat versions lower that 2.6.0 may be vulnerable to "billion laughs",
+"quadratic blowup" and "large tokens". Python may be vulnerable if it uses such
+older versions of Expat as a system-provided library.
+Check :const:`!pyexpat.EXPAT_VERSION`.
 
-=========================  ==============   ===============   ==============   ==============   ==============
-kind                       sax              etree             minidom          pulldom          xmlrpc
-=========================  ==============   ===============   ==============   ==============   ==============
-billion laughs             **Vulnerable**   **Vulnerable**    **Vulnerable**   **Vulnerable**   **Vulnerable**
-quadratic blowup           **Vulnerable**   **Vulnerable**    **Vulnerable**   **Vulnerable**   **Vulnerable**
-external entity expansion  Safe (4)         Safe    (1)       Safe    (2)      Safe (4)         Safe    (3)
-`DTD`_ retrieval           Safe (4)         Safe              Safe             Safe (4)         Safe
-decompression bomb         Safe             Safe              Safe             Safe             **Vulnerable**
-=========================  ==============   ===============   ==============   ==============   ==============
-
-1. :mod:`xml.etree.ElementTree` doesn't expand external entities and raises a
-   :exc:`ParserError` when an entity occurs.
-2. :mod:`xml.dom.minidom` doesn't expand external entities and simply returns
-   the unexpanded entity verbatim.
-3. :mod:`xmlrpclib` doesn't expand external entities and omits them.
-4. Since Python 3.7.1, external general entities are no longer processed by
-   default.
+:mod:`xmlrpc` is **vulnerable** to the "decompression bomb" attack.
 
 
 billion laughs / exponential entity expansion
@@ -91,17 +75,7 @@ quadratic blowup entity expansion
   entity expansion, too. Instead of nested entities it repeats one large entity
   with a couple of thousand chars over and over again. The attack isn't as
   efficient as the exponential case but it avoids triggering parser countermeasures
-  that forbid deeply-nested entities.
-
-external entity expansion
-  Entity declarations can contain more than just text for replacement. They can
-  also point to external resources or local files. The XML
-  parser accesses the resource and embeds the content into the XML document.
-
-`DTD`_ retrieval
-  Some XML libraries like Python's :mod:`xml.dom.pulldom` retrieve document type
-  definitions from remote or local locations. The feature has similar
-  implications as the external entity expansion issue.
+  that forbid deeply nested entities.
 
 decompression bomb
   Decompression bombs (aka `ZIP bomb`_) apply to all XML libraries
@@ -110,30 +84,11 @@ decompression bomb
   files. For an attacker it can reduce the amount of transmitted data by three
   magnitudes or more.
 
-The documentation for `defusedxml`_ on PyPI has further information about
-all known attack vectors with examples and references.
+large tokens
+  Expat needs to re-parse unfinished tokens; without the protection
+  introduced in Expat 2.6.0, this can lead to quadratic runtime that can
+  be used to cause denial of service in the application parsing XML.
+  The issue is known as :cve:`2023-52425`.
 
-.. _defused-packages:
-
-The :mod:`defusedxml` and :mod:`defusedexpat` Packages
-------------------------------------------------------
-
-`defusedxml`_ is a pure Python package with modified subclasses of all stdlib
-XML parsers that prevent any potentially malicious operation. Use of this
-package is recommended for any server code that parses untrusted XML data. The
-package also ships with example exploits and extended documentation on more
-XML exploits such as XPath injection.
-
-`defusedexpat`_ provides a modified libexpat and a patched
-:mod:`pyexpat` module that have countermeasures against entity expansion
-DoS attacks. The :mod:`defusedexpat` module still allows a sane and configurable amount of entity
-expansions. The modifications may be included in some future release of Python,
-but will not be included in any bugfix releases of
-Python because they break backward compatibility.
-
-
-.. _defusedxml: https://pypi.org/project/defusedxml/
-.. _defusedexpat: https://pypi.org/project/defusedexpat/
 .. _Billion Laughs: https://en.wikipedia.org/wiki/Billion_laughs
 .. _ZIP bomb: https://en.wikipedia.org/wiki/Zip_bomb
-.. _DTD: https://en.wikipedia.org/wiki/Document_type_definition

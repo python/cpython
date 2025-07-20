@@ -1,0 +1,2 @@
+This is a partial copy of distutils as it was removed in 0faa0ba240e.
+It only includes the parts needed by the C parser.

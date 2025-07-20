@@ -1,3 +1,0 @@
-:mod:`hashlib` no longer falls back to builtin hash implementations when
-OpenSSL provides a hash digest and the algorithm is blocked by security
-policy.
