@@ -878,10 +878,6 @@ Once all the members are created it is no longer used.
 Supported ``_sunder_`` names
 """"""""""""""""""""""""""""
 
-- :meth:`~Enum._add_alias_` -- adds a new name as an alias to an existing
-  member.
-- :meth:`~Enum._add_value_alias_` -- adds a new value as an alias to an
-  existing member.
 - :attr:`~Enum._name_` -- name of the member
 - :attr:`~Enum._value_` -- value of the member; can be set in ``__new__``
 - :meth:`~Enum._missing_` -- a lookup function used when a value is not found;
@@ -901,6 +897,11 @@ Supported ``_sunder_`` names
 
      For :class:`Flag` classes the next value chosen will be the next highest
      power-of-two.
+
+- :meth:`~Enum._add_alias_` -- adds a new name as an alias to an existing
+  member.
+- :meth:`~Enum._add_value_alias_` -- adds a new value as an alias to an
+  existing member.
 
 - While ``_sunder_`` names are generally reserved for the further development
   of the :class:`Enum` class and can not be used, some are explicitly allowed:
