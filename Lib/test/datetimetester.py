@@ -3653,6 +3653,9 @@ class TestDateTime(TestDate):
 
     @support.cpython_only
     def test_concurrent_initialization_subinterpreter(self):
+        # gh-136421: Concurrent initialization of _datetime across multiple
+        # interpreters wasn't thread-safe due to its static types.
+
         # Run in a subprocess to ensure we get a clean version of _datetime
         script = """if True:
         from concurrent.futures import InterpreterPoolExecutor
