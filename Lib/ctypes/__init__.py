@@ -108,7 +108,6 @@ def CFUNCTYPE(restype, *argtypes, **kw):
     return CFunctionType
 
 if _os.name == "nt":
-    # from _ctypes import LoadLibrary as _dlopen
     from _ctypes import LoadLibrary as _LoadLibrary
     from _ctypes import FUNCFLAG_STDCALL as _FUNCFLAG_STDCALL
 
@@ -138,7 +137,6 @@ if _os.name == "nt":
         WINFUNCTYPE.__doc__ = CFUNCTYPE.__doc__.replace("CFUNCTYPE", "WINFUNCTYPE")
 
 elif _os.name == "posix":
-    # from _ctypes import dlopen as _dlopen
     from _ctypes import dlopen as _dlopen
 
 from _ctypes import sizeof, byref, addressof, alignment, resize
