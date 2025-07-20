@@ -1,0 +1,2 @@
+Do not fail when non-0-9 digit (e.g. super-script digit) is used as section
+number in MIME parameter.
