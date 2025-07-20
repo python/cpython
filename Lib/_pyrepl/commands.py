@@ -428,7 +428,7 @@ class delete(EditCommand):
             r.update_screen()
             r.console.finish()
             raise EOFError
-        elif "\n" in b and self.event[-1] == "\004":
+        elif b and b[-1].endswith('\n') and self.event[-1] == "\004":
             self.finish = True
 
         for i in range(r.get_arg()):
