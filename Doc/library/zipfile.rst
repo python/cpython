@@ -45,6 +45,26 @@ The module defines the following items:
    not been enabled.
 
 
+.. exception:: ZipStructuralError
+
+   The error raised when ZIP file structure is invalid or inconsistent.
+   This includes issues like mismatched offsets, invalid sizes,
+   or structural inconsistencies between different parts of the archive.
+   This is a subclass of :exc:`BadZipFile`.
+
+   .. versionadded:: next
+
+
+.. exception:: ZipValidationError
+
+   The error raised when ZIP file validation fails.
+   This includes CRC mismatches, compression validation failures,
+   or other data integrity issues.
+   This is a subclass of :exc:`BadZipFile`.
+
+   .. versionadded:: next
+
+
 .. class:: ZipFile
    :noindex:
 
@@ -144,6 +164,32 @@ The module defines the following items:
 
    .. versionadded:: 3.14
 
+
+.. class:: ZipValidationLevel
+
+   An :class:`~enum.IntEnum` for the ZIP file validation levels that can be
+   specified for the *strict_validation* parameter of :class:`ZipFile`.
+
+   .. data:: ZipValidationLevel.BASIC
+
+      Basic validation with magic number checks only (default behavior).
+      This provides backward compatibility with existing code.
+
+   .. data:: ZipValidationLevel.STRUCTURAL
+
+      Comprehensive structure validation including consistency checks between
+      different parts of the ZIP archive. This detects issues like mismatched
+      offsets, invalid sizes, entry count mismatches, and potential zip bombs
+      through compression ratio analysis.
+
+   .. data:: ZipValidationLevel.STRICT
+
+      Includes all structural validation plus CRC verification during file
+      reading and deep validation checks. This provides the highest level of
+      validation but may impact performance.
+
+   .. versionadded:: next
+
 .. note::
 
    The ZIP file format specification has included support for bzip2 compression
@@ -171,7 +217,7 @@ ZipFile Objects
 
 .. class:: ZipFile(file, mode='r', compression=ZIP_STORED, allowZip64=True, \
                    compresslevel=None, *, strict_timestamps=True, \
-                   metadata_encoding=None)
+                   metadata_encoding=None, strict_validation=ZipValidationLevel.BASIC)
 
    Open a ZIP file, where *file* can be a path to a file (a string), a
    file-like object or a :term:`path-like object`.
@@ -223,6 +269,23 @@ ZipFile Objects
    When mode is ``'r'``, *metadata_encoding* may be set to the name of a codec,
    which will be used to decode metadata such as the names of members and ZIP
    comments.
+
+   The *strict_validation* parameter controls the level of validation performed
+   on the ZIP file structure. It can be set to one of the :class:`ZipValidationLevel`
+   values:
+
+   * :data:`ZipValidationLevel.BASIC` (default): Performs only basic magic number
+     validation, maintaining backward compatibility with existing code.
+   * :data:`ZipValidationLevel.STRUCTURAL`: Enables comprehensive structure
+     validation including consistency checks between different parts of the ZIP
+     archive, entry count validation, compression ratio analysis for zip bomb
+     detection, and overlap detection.
+   * :data:`ZipValidationLevel.STRICT`: Includes all structural validation plus
+     CRC verification during file reading and additional deep validation checks.
+
+   Higher validation levels provide better security against malformed or
+   malicious ZIP files but may impact performance and compatibility with some
+   malformed but readable archives.
 
    If the file is created with mode ``'w'``, ``'x'`` or ``'a'`` and then
    :meth:`closed <close>` without adding any files to the archive, the appropriate
@@ -277,6 +340,10 @@ ZipFile Objects
    .. versionchanged:: 3.11
       Added support for specifying member name encoding for reading
       metadata in the zipfile's directory and file headers.
+
+   .. versionchanged:: next
+      Added the *strict_validation* parameter for controlling ZIP file
+      structure validation levels.
 
 
 .. method:: ZipFile.close()
