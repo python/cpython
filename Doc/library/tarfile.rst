@@ -1325,6 +1325,21 @@ How to read a gzip compressed tar archive and display some member information::
 Writing examples
 ~~~~~~~~~~~~~~~~
 
+How to create an uncompressed tar archive from a list of filenames::
+
+   import tarfile
+   tar = tarfile.open("sample.tar", "w")
+   for name in ["foo", "bar", "quux"]:
+       tar.add(name)
+   tar.close()
+
+The same example using the :keyword:`with` statement::
+
+    import tarfile
+    with tarfile.open("sample.tar", "w") as tar:
+        for name in ["foo", "bar", "quux"]:
+            tar.add(name)
+
 How to create and write an archive to stdout using
 :data:`sys.stdout.buffer <sys.stdout>` in the *fileobj* parameter
 in :meth:`TarFile.add`::
@@ -1346,21 +1361,6 @@ parameter in :meth:`TarFile.add`::
     tar = tarfile.open("sample.tar.gz", "w:gz")
     tar.add("foo", filter=reset)
     tar.close()
-
-How to create an uncompressed tar archive from a list of filenames::
-
-   import tarfile
-   tar = tarfile.open("sample.tar", "w")
-   for name in ["foo", "bar", "quux"]:
-       tar.add(name)
-   tar.close()
-
-The same example using the :keyword:`with` statement::
-
-    import tarfile
-    with tarfile.open("sample.tar", "w") as tar:
-        for name in ["foo", "bar", "quux"]:
-            tar.add(name)
 
 .. _tar-formats:
 
