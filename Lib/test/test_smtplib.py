@@ -23,7 +23,7 @@ from test.support import socket_helper
 from test.support import threading_helper
 from test.support import asyncore
 from test.support import smtpd
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 
 support.requires_working_socket(module=True)
@@ -1393,6 +1393,11 @@ class SMTPUTF8SimTests(unittest.TestCase):
 
     maxDiff = None
 
+    def _is_local(self, date: str) -> bool:
+        dt = email.utils.parsedate_to_datetime(date)
+        local_offset = dt.now().astimezone().utcoffset()
+        return dt.utcoffset() == local_offset
+
     def setUp(self):
         self.thread_key = threading_helper.threading_setup()
         self.real_getfqdn = socket.getfqdn
@@ -1468,40 +1473,44 @@ class SMTPUTF8SimTests(unittest.TestCase):
         self.assertEqual(self.serv.last_rcpt_options, [])
 
     def test_send_message_uses_smtputf8_if_addrs_non_ascii(self):
-        expected_date = "Thu, 19 Mar 2020 00:59:43 -0000"
-        with patch("email.utils.formatdate") as date_mock:
-            date_mock.return_value = expected_date
-            msg = EmailMessage()
-            msg['From'] = "Páolo <főo@bar.com>"
-            msg['To'] = 'Dinsdale'
-            msg['Subject'] = 'Nudge nudge, wink, wink \u1F609'
-            # XXX I don't know why I need two \n's here, but this is an existing
-            # bug (if it is one) and not a problem with the new functionality.
-            msg.set_content("oh là là, know what I mean, know what I mean?\n\n")
-            # XXX smtpd converts received /r/n to /n, so we can't easily test that
-            # we are successfully sending /r/n :(.
-            expected = textwrap.dedent("""\
-                From: Páolo <főo@bar.com>
-                To: Dinsdale
-                Subject: Nudge nudge, wink, wink \u1F609
-                Content-Type: text/plain; charset="utf-8"
-                Content-Transfer-Encoding: 8bit
-                MIME-Version: 1.0
-                Date: {}
+        msg = EmailMessage()
+        msg['From'] = "Páolo <főo@bar.com>"
+        msg['To'] = 'Dinsdale'
+        msg['Subject'] = 'Nudge nudge, wink, wink \u1F609'
+        # XXX I don't know why I need two \n's here, but this is an existing
+        # bug (if it is one) and not a problem with the new functionality.
+        msg.set_content("oh là là, know what I mean, know what I mean?\n\n")
+        # XXX smtpd converts received /r/n to /n, so we can't easily test that
+        # we are successfully sending /r/n :(.
+        smtp = smtplib.SMTP(
+            HOST, self.port, local_hostname='localhost',
+            timeout=support.LOOPBACK_TIMEOUT)
+        self.addCleanup(smtp.close)
+        self.assertEqual(smtp.send_message(msg), {})
+        self.assertEqual(self.serv.last_mailfrom, 'főo@bar.com')
+        self.assertEqual(self.serv.last_rcpttos, ['Dinsdale'])
 
-                oh là là, know what I mean, know what I mean?
-                """.format(expected_date))
-            smtp = smtplib.SMTP(
-                HOST, self.port, local_hostname='localhost',
-                timeout=support.LOOPBACK_TIMEOUT)
-            self.addCleanup(smtp.close)
-            self.assertEqual(smtp.send_message(msg), {})
-            self.assertEqual(self.serv.last_mailfrom, 'főo@bar.com')
-            self.assertEqual(self.serv.last_rcpttos, ['Dinsdale'])
-            self.assertEqual(self.serv.last_message.decode(), expected)
-            self.assertIn('BODY=8BITMIME', self.serv.last_mail_options)
-            self.assertIn('SMTPUTF8', self.serv.last_mail_options)
-            self.assertEqual(self.serv.last_rcpt_options, [])
+        last_message = self.serv.last_message.decode()
+        date = email.message_from_string(last_message)['Date']
+        # asserts RFC 5322 section 3.3 4th Paragraph
+        self.assertTrue(self._is_local(date))
+
+        expected = textwrap.dedent("""\
+            From: Páolo <főo@bar.com>
+            To: Dinsdale
+            Subject: Nudge nudge, wink, wink \u1F609
+            Content-Type: text/plain; charset="utf-8"
+            Content-Transfer-Encoding: 8bit
+            MIME-Version: 1.0
+            Date: {}
+
+            oh là là, know what I mean, know what I mean?
+            """.format(date))
+
+        self.assertEqual(last_message, expected)
+        self.assertIn('BODY=8BITMIME', self.serv.last_mail_options)
+        self.assertIn('SMTPUTF8', self.serv.last_mail_options)
+        self.assertEqual(self.serv.last_rcpt_options, [])
 
 
 EXPECTED_RESPONSE = encode_base64(b'\0psu\0doesnotexist', eol='')
