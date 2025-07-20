@@ -554,7 +554,7 @@ Internal ABC helper for subclass registration. Should be never used outside abc 
 
 static PyObject *
 _abc__abc_register_impl(PyObject *module, PyObject *self, PyObject *subclass)
-/*[clinic end generated code: output=7851e7668c963524 input=ca589f8c3080e67f]*/
+/*[clinic end generated code: output=7851e7668c963524 input=fdf6a8117da33121]*/
 {
     if (!PyType_Check(subclass)) {
         PyErr_SetString(PyExc_TypeError, "Can only register classes");
