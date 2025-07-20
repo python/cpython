@@ -33,7 +33,7 @@ def _set_module(module):
 # - a class representing the warning category
 # - a compiled regex that must match the module that is being warned
 # - a line number for the line being warning, or 0 to mean any line
-# If either if the compiled regexs are None, match anything.
+# If either of the compiled regexs are None, match anything.
 filters = []
 
 

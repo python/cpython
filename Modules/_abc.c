@@ -549,7 +549,7 @@ _abc._abc_register
     subclass: object
     /
 
-Internal ABC helper for subclasss registration. Should be never used outside abc module.
+Internal ABC helper for subclass registration. Should be never used outside abc module.
 [clinic start generated code]*/
 
 static PyObject *
