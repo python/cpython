@@ -2918,7 +2918,7 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
     {
         char buffer[MAX_INTMAX_CHARS];
 
-        // Fill buffer using sprintf, with one of many possible format
+        // Fill buffer using sprinf, with one of many possible format
         // strings, like "%llX" for `long long` in hexadecimal.
         // The type/size is in `sizemod`; the format is in `*f`.
 
@@ -7771,7 +7771,7 @@ decode_code_page_errors(UINT code_page,
                         const char *in, const int size,
                         const char *errors, int final)
 {
-    const char *starting = in;
+    const char *startin = in;
     const char *endin = in + size;
     DWORD flags = MB_ERR_INVALID_CHARS;
     /* Ideally, we should get reason from FormatMessage. This is the Windows
@@ -7854,13 +7854,13 @@ decode_code_page_errors(UINT code_page,
             if (in + insize >= endin && !final)
                 break;
 
-            startinpos = in - starting;
+            startinpos = in - startin;
             endinpos = startinpos + 1;
             outpos = out - *buf;
             if (unicode_decode_call_errorhandler_wchar(
                     errors, &errorHandler,
                     encoding, reason,
-                    &starting, &endin, &startinpos, &endinpos, &exc, &in,
+                    &startin, &endin, &startinpos, &endinpos, &exc, &in,
                     buf, bufsize, &outpos))
             {
                 goto error;
@@ -7877,8 +7877,8 @@ decode_code_page_errors(UINT code_page,
     /* Shrink the buffer */
     assert(out - *buf <= *bufsize);
     *bufsize = out - *buf;
-    /* (in - starting) <= size and size is an int */
-    ret = Py_SAFE_DOWNCAST(in - starting, Py_ssize_t, int);
+    /* (in - startin) <= size and size is an int */
+    ret = Py_SAFE_DOWNCAST(in - startin, Py_ssize_t, int);
 
 error:
     Py_XDECREF(encoding_obj);
@@ -12252,9 +12252,9 @@ unicode_isalpha_impl(PyObject *self)
 /*[clinic input]
 str.isalnum as unicode_isalnum
 
-Return True if the string is an alphanumeric string, False otherwise.
+Return True if the string is an alpha-numeric string, False otherwise.
 
-A string is alphanumeric if all characters in the string are alphanumeric and
+A string is alpha-numeric if all characters in the string are alpha-numeric and
 there is at least one character in the string.
 [clinic start generated code]*/
 
@@ -14289,7 +14289,7 @@ unicode_getnewargs(PyObject *v, PyObject *Py_UNUSED(ignored))
 }
 
 /*
-This function searches the longest common leading whitespace
+This function searchs the longest common leading whitespace
 of all lines in the [src, end).
 It returns the length of the common leading whitespace and sets `output` to
 point to the beginning of the common leading whitespace if length > 0.

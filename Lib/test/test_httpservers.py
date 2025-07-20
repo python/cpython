@@ -853,17 +853,17 @@ class RejectingSocketlessRequestHandler(SocketlessRequestHandler):
 class AuditableBytesIO:
 
     def __init__(self):
-        self.data = []
+        self.datas = []
 
     def write(self, data):
-        self.data.append(data)
+        self.datas.append(data)
 
     def getData(self):
-        return b''.join(self.data)
+        return b''.join(self.datas)
 
     @property
     def numWrites(self):
-        return len(self.data)
+        return len(self.datas)
 
 
 class BaseHTTPRequestHandlerTestCase(unittest.TestCase):

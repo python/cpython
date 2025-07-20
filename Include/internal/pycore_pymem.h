@@ -94,7 +94,7 @@ extern void _PyMem_FreeDelayed(void *ptr, size_t size);
 extern void _PyMem_ProcessDelayed(PyThreadState *tstate);
 
 // Periodically process delayed free requests when the world is stopped.
-// Notify of any objects which should be freed.
+// Notify of any objects whic should be freeed.
 typedef void (*delayed_dealloc_cb)(PyObject *, void *);
 extern void _PyMem_ProcessDelayedNoDealloc(PyThreadState *tstate,
                                            delayed_dealloc_cb cb, void *state);

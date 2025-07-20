@@ -346,7 +346,7 @@ _PyPegen_get_memo_statistics(void)
 #endif
 
 int  // bool
-_PyPegen_is_memoized(Parser *p, int type, void *press)
+_PyPegen_is_memoized(Parser *p, int type, void *pres)
 {
     if (p->mark == p->fill) {
         if (_PyPegen_fill_token(p) < 0) {
@@ -372,7 +372,7 @@ _PyPegen_is_memoized(Parser *p, int type, void *press)
             }
 #endif
             p->mark = m->mark;
-            *(void **)(press) = m->node;
+            *(void **)(pres) = m->node;
             return 1;
         }
     }

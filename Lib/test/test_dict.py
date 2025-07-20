@@ -1581,7 +1581,7 @@ class DictTest(unittest.TestCase):
         with check_unhashable_key():
             d.get(key)
 
-        # Only TypeError exception is overridden,
+        # Only TypeError exception is overriden,
         # other exceptions are left unchanged.
         class HashError:
             def __hash__(self):

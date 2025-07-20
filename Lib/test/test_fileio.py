@@ -388,7 +388,7 @@ class AutoFileTests:
                 syscalls = strace_helper.filter_memory(syscalls)
 
                 # The first call should be an open that returns a
-                # file descriptor (fd). After that calls may vary. Once the file
+                # file descriptor (fd). Afer that calls may vary. Once the file
                 # is opened, check calls refer to it by fd as the filename
                 # could be removed from the filesystem, renamed, etc. See:
                 # Time-of-check time-of-use (TOCTOU) software bug class.

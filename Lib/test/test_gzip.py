@@ -144,7 +144,7 @@ class TestGzip(BaseTest):
         self.assertEqual(b''.join(blocks), data1 * 50)
 
     def test_readinto(self):
-        # 10MB of incompressible data to ensure multiple reads
+        # 10MB of uncompressible data to ensure multiple reads
         large_data = os.urandom(10 * 2**20)
         with gzip.GzipFile(self.filename, 'wb') as f:
             f.write(large_data)
@@ -156,7 +156,7 @@ class TestGzip(BaseTest):
         self.assertEqual(buf, large_data)
 
     def test_readinto1(self):
-        # 10MB of incompressible data to ensure multiple reads
+        # 10MB of uncompressible data to ensure multiple reads
         large_data = os.urandom(10 * 2**20)
         with gzip.GzipFile(self.filename, 'wb') as f:
             f.write(large_data)

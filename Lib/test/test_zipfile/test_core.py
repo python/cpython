@@ -2378,20 +2378,20 @@ class OtherTests(unittest.TestCase):
     def test_seek_tell(self):
         # Test seek functionality
         txt = b"Where's Bruce?"
-        block = txt.find(b"Bruce")
+        bloc = txt.find(b"Bruce")
         # Check seek on a file
         with zipfile.ZipFile(TESTFN, "w") as zipf:
             zipf.writestr("foo.txt", txt)
         with zipfile.ZipFile(TESTFN, "r") as zipf:
             with zipf.open("foo.txt", "r") as fp:
-                fp.seek(block, os.SEEK_SET)
-                self.assertEqual(fp.tell(), block)
+                fp.seek(bloc, os.SEEK_SET)
+                self.assertEqual(fp.tell(), bloc)
                 fp.seek(-bloc, os.SEEK_CUR)
                 self.assertEqual(fp.tell(), 0)
-                fp.seek(block, os.SEEK_CUR)
-                self.assertEqual(fp.tell(), block)
-                self.assertEqual(fp.read(5), txt[block:block+5])
-                self.assertEqual(fp.tell(), block + 5)
+                fp.seek(bloc, os.SEEK_CUR)
+                self.assertEqual(fp.tell(), bloc)
+                self.assertEqual(fp.read(5), txt[bloc:bloc+5])
+                self.assertEqual(fp.tell(), bloc + 5)
                 fp.seek(0, os.SEEK_END)
                 self.assertEqual(fp.tell(), len(txt))
                 fp.seek(0, os.SEEK_SET)
@@ -2402,14 +2402,14 @@ class OtherTests(unittest.TestCase):
             zipf.writestr("foo.txt", txt)
         with zipfile.ZipFile(data, mode="r") as zipf:
             with zipf.open("foo.txt", "r") as fp:
-                fp.seek(block, os.SEEK_SET)
-                self.assertEqual(fp.tell(), block)
+                fp.seek(bloc, os.SEEK_SET)
+                self.assertEqual(fp.tell(), bloc)
                 fp.seek(-bloc, os.SEEK_CUR)
                 self.assertEqual(fp.tell(), 0)
-                fp.seek(block, os.SEEK_CUR)
-                self.assertEqual(fp.tell(), block)
-                self.assertEqual(fp.read(5), txt[block:block+5])
-                self.assertEqual(fp.tell(), block + 5)
+                fp.seek(bloc, os.SEEK_CUR)
+                self.assertEqual(fp.tell(), bloc)
+                self.assertEqual(fp.read(5), txt[bloc:bloc+5])
+                self.assertEqual(fp.tell(), bloc + 5)
                 fp.seek(0, os.SEEK_END)
                 self.assertEqual(fp.tell(), len(txt))
                 fp.seek(0, os.SEEK_SET)
@@ -2418,12 +2418,12 @@ class OtherTests(unittest.TestCase):
     def test_read_after_seek(self):
         # Issue 102956: Make sure seek(x, os.SEEK_CUR) doesn't break read()
         txt = b"Charge men!"
-        block = txt.find(b"men")
+        bloc = txt.find(b"men")
         with zipfile.ZipFile(TESTFN, "w") as zipf:
             zipf.writestr("foo.txt", txt)
         with zipfile.ZipFile(TESTFN, mode="r") as zipf:
             with zipf.open("foo.txt", "r") as fp:
-                fp.seek(block, os.SEEK_CUR)
+                fp.seek(bloc, os.SEEK_CUR)
                 self.assertEqual(fp.read(-1), b'men!')
         with zipfile.ZipFile(TESTFN, mode="r") as zipf:
             with zipf.open("foo.txt", "r") as fp:
@@ -2802,16 +2802,16 @@ class DecryptionTests(unittest.TestCase):
         self.zip.setpassword(b"python")
         txt = self.plain
         test_word = b'encryption'
-        block = txt.find(test_word)
+        bloc = txt.find(test_word)
         bloc_len = len(test_word)
         with self.zip.open("test.txt", "r") as fp:
-            fp.seek(block, os.SEEK_SET)
-            self.assertEqual(fp.tell(), block)
+            fp.seek(bloc, os.SEEK_SET)
+            self.assertEqual(fp.tell(), bloc)
             fp.seek(-bloc, os.SEEK_CUR)
             self.assertEqual(fp.tell(), 0)
-            fp.seek(block, os.SEEK_CUR)
-            self.assertEqual(fp.tell(), block)
-            self.assertEqual(fp.read(bloc_len), txt[block:block+bloc_len])
+            fp.seek(bloc, os.SEEK_CUR)
+            self.assertEqual(fp.tell(), bloc)
+            self.assertEqual(fp.read(bloc_len), txt[bloc:bloc+bloc_len])
 
             # Make sure that the second read after seeking back beyond
             # _readbuffer returns the same content (ie. rewind to the start of
@@ -2822,8 +2822,8 @@ class DecryptionTests(unittest.TestCase):
             fp._offset = 0
             fp.seek(0, os.SEEK_SET)
             self.assertEqual(fp.tell(), 0)
-            fp.seek(block, os.SEEK_CUR)
-            self.assertEqual(fp.read(bloc_len), txt[block:block+bloc_len])
+            fp.seek(bloc, os.SEEK_CUR)
+            self.assertEqual(fp.read(bloc_len), txt[bloc:bloc+bloc_len])
             fp.MIN_READ_SIZE = old_read_size
 
             fp.seek(0, os.SEEK_END)

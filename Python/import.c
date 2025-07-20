@@ -2636,7 +2636,7 @@ module_dict_for_exec(PyThreadState *tstate, PyObject *name)
     if (m == NULL)
         return NULL;
     /* If the module is being reloaded, we get the old module back
-       and reuse its dict to exec the new code. */
+       and re-use its dict to exec the new code. */
     d = PyModule_GetDict(m);
     int r = PyDict_Contains(d, &_Py_ID(__builtins__));
     if (r == 0) {

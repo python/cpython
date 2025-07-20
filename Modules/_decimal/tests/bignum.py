@@ -27,8 +27,8 @@ def xhash(coeff, exp):
     else:
         exp_hash = pow(_PyHASH_10INV, -exp, _PyHASH_MODULUS)
     hash_ = coeff * exp_hash % _PyHASH_MODULUS
-    and = hash_ if sign == 1 else -hash_
-    return -2 if and == -1 else and
+    ans = hash_ if sign == 1 else -hash_
+    return -2 if ans == -1 else ans
 
 
 x = mpz(10) ** 425000000 - 1

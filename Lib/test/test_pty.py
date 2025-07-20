@@ -53,7 +53,7 @@ def normalize_output(data):
     # etc.)
 
     # This is about the best we can do without getting some feedback
-    # from someone more knowledgeable.
+    # from someone more knowledgable.
 
     # OSF/1 (Tru64) apparently turns \n into \r\r\n.
     if data.endswith(b'\r\r\n'):

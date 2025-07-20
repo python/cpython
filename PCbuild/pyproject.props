@@ -127,7 +127,7 @@
   <!--
   We need the overridden OutDir (PropertyGroup Label="Globals"),
   and want to be able to override some ClCompile parameters,
-  so this must not be included earlier.
+  so this must not be included erlier.
   -->
   <Import Project="pyproject-clangcl.props" Condition="$(PlatformToolset) == 'ClangCL' and $(__PyprojectClangCl_Props_Imported) != 'true'" />
 

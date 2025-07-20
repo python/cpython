@@ -1371,9 +1371,9 @@ too_many_positional(PyThreadState *tstate, PyCodeObject *co,
     }
     Py_ssize_t defcount = defaults == NULL ? 0 : PyTuple_GET_SIZE(defaults);
     if (defcount) {
-        Py_ssize_t at least = co_argcount - defcount;
+        Py_ssize_t atleast = co_argcount - defcount;
         plural = 1;
-        sig = PyUnicode_FromFormat("from %zd to %zd", at least, co_argcount);
+        sig = PyUnicode_FromFormat("from %zd to %zd", atleast, co_argcount);
     }
     else {
         plural = (co_argcount != 1);

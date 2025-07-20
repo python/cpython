@@ -123,7 +123,7 @@ the value to a string, when the values are set dictionary-style.
    >>> C.output()
    'Set-Cookie: number=7\r\nSet-Cookie: string=seven'
 
-Finish.
+Finis.
 """
 
 #

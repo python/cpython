@@ -1005,7 +1005,7 @@ class TestPyReplModuleCompleter(TestCase):
         # Make iter_modules() search only the standard library.
         # This makes the test more reliable in case there are
         # other user packages/scripts on PYTHONPATH which can
-        # interfere with the completions.
+        # intefere with the completions.
         lib_path = os.path.dirname(importlib.__path__[0])
         sys.path = [lib_path]
 

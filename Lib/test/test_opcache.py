@@ -571,7 +571,7 @@ class TestCallCache(TestBase):
 def make_deferred_ref_count_obj():
     """Create an object that uses deferred reference counting.
 
-    Only objects that use deferred reference counting may be stored in inline
+    Only objects that use deferred refence counting may be stored in inline
     caches in free-threaded builds. This constructs a new class named Foo,
     which uses deferred reference counting.
     """

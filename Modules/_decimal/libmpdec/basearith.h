@@ -110,27 +110,27 @@ _mpd_div_words_r(mpd_uint_t *q, mpd_uint_t *r, mpd_uint_t hi, mpd_uint_t lo)
     l = l + n_adj;
     if (l < n_adj) h++;
     t = h + hi;
-    /* At this point t == quest, with q == quest or q == quest+1:
-     *   1) 0 <= 2**64*hi + lo - quest*MPD_RADIX < 2*MPD_RADIX
+    /* At this point t == qest, with q == qest or q == qest+1:
+     *   1) 0 <= 2**64*hi + lo - qest*MPD_RADIX < 2*MPD_RADIX
      */
 
-    /* t = 2**64-1 - quest = 2**64 - (quest+1) */
+    /* t = 2**64-1 - qest = 2**64 - (qest+1) */
     t = MPD_UINT_MAX - t;
 
-    /* (h, l) = 2**64*MPD_RADIX - (quest+1)*MPD_RADIX */
+    /* (h, l) = 2**64*MPD_RADIX - (qest+1)*MPD_RADIX */
     _mpd_mul_words(&h, &l, t, MPD_RADIX);
     l = l + lo;
     if (l < lo) h++;
     h += hi;
     h -= MPD_RADIX;
-    /* (h, l) = 2**64*hi + lo - (quest+1)*MPD_RADIX (mod 2**128)
-     * Case q == quest+1:
+    /* (h, l) = 2**64*hi + lo - (qest+1)*MPD_RADIX (mod 2**128)
+     * Case q == qest+1:
      *     a) h == 0, l == r
-     *     b) q := h - t == quest+1
+     *     b) q := h - t == qest+1
      *     c) r := l
-     * Case q == quest:
+     * Case q == qest:
      *     a) h == MPD_UINT_MAX, l == 2**64-(MPD_RADIX-r)
-     *     b) q := h - t == quest
+     *     b) q := h - t == qest
      *     c) r := l + MPD_RADIX = r
      */
 

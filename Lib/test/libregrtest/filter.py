@@ -20,7 +20,7 @@ def match_test(test):
 def _is_full_match_test(pattern):
     # If a pattern contains at least one dot, it's considered
     # as a full test identifier.
-    # Example: 'test.test_os.file tests.test_access'.
+    # Example: 'test.test_os.FileTests.test_access'.
     #
     # ignore patterns which contain fnmatch patterns: '*', '?', '[...]'
     # or '[!...]'. For example, ignore 'test_access*'.
@@ -66,11 +66,11 @@ def _compile_match_function(patterns):
         def match_test_regex(test_id, regex_match=regex_match):
             if regex_match(test_id):
                 # The regex matches the whole identifier, for example
-                # 'test.test_os.file tests.test_access'.
+                # 'test.test_os.FileTests.test_access'.
                 return True
             else:
                 # Try to match parts of the test identifier.
-                # For example, split 'test.test_os.file tests.test_access'
+                # For example, split 'test.test_os.FileTests.test_access'
                 # into: 'test', 'test_os', 'FileTests' and 'test_access'.
                 return any(map(regex_match, test_id.split(".")))
 

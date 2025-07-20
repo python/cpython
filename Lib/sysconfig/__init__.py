@@ -364,7 +364,7 @@ def _get_sysconfigdata():
 
 
 def _installation_is_relocated():
-    """Is the Python installation running from a different prefix than what was targeted when building?"""
+    """Is the Python installation running from a different prefix than what was targetted when building?"""
     if os.name != 'posix':
         raise NotImplementedError('sysconfig._installation_is_relocated() is currently only supported on POSIX')
 

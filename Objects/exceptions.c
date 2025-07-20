@@ -3698,7 +3698,7 @@ UnicodeDecodeError_init(PyObject *self, PyObject *args, PyObject *kwds)
         if (PyObject_GetBuffer(object, &view, PyBUF_SIMPLE) != 0) {
             return -1;
         }
-        // 'object' is borrowed, so we can reuse the variable
+        // 'object' is borrowed, so we can re-use the variable
         object = PyBytes_FromStringAndSize(view.buf, view.len);
         PyBuffer_Release(&view);
         if (object == NULL) {

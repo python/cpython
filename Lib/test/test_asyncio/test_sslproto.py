@@ -116,7 +116,7 @@ class SslProtoHandshakeTests(test_utils.TestCase):
         sock.fileno = mock.Mock(return_value=12345)
         sock.send = mock.Mock(side_effect=BrokenPipeError)
 
-        # construct StreamWriter chain that contains loop dependent logic this emulates
+        # construct StreamWriter chain that contains loop dependant logic this emulates
         # what _make_ssl_transport() does in BaseSelectorEventLoop
         reader = asyncio.StreamReader(limit=2 ** 16, loop=self.loop)
         protocol = asyncio.StreamReaderProtocol(reader, loop=self.loop)

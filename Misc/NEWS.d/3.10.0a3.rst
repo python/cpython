@@ -636,7 +636,7 @@ find_module(), and load_module().
 .. section: Library
 
 Mock objects which are not unsafe will now raise an AttributeError if an
-attribute with the prefix assert, aseert, or assrt is accessed, in addition
+attribute with the prefix asert, aseert, or assrt is accessed, in addition
 to this already happening for the prefixes assert or assret.
 
 ..

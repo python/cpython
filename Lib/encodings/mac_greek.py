@@ -209,7 +209,7 @@ decoding_table = (
     '\u0393'   #  0xA1 -> GREEK CAPITAL LETTER GAMMA
     '\u0394'   #  0xA2 -> GREEK CAPITAL LETTER DELTA
     '\u0398'   #  0xA3 -> GREEK CAPITAL LETTER THETA
-    '\u039b'   #  0xA4 -> GREEK CAPITAL LETTER LAMBDA
+    '\u039b'   #  0xA4 -> GREEK CAPITAL LETTER LAMDA
     '\u039e'   #  0xA5 -> GREEK CAPITAL LETTER XI
     '\u03a0'   #  0xA6 -> GREEK CAPITAL LETTER PI
     '\xdf'     #  0xA7 -> LATIN SMALL LETTER SHARP S
@@ -281,7 +281,7 @@ decoding_table = (
     '\u03b9'   #  0xE9 -> GREEK SMALL LETTER IOTA
     '\u03be'   #  0xEA -> GREEK SMALL LETTER XI
     '\u03ba'   #  0xEB -> GREEK SMALL LETTER KAPPA
-    '\u03bb'   #  0xEC -> GREEK SMALL LETTER LAMBDA
+    '\u03bb'   #  0xEC -> GREEK SMALL LETTER LAMDA
     '\u03bc'   #  0xED -> GREEK SMALL LETTER MU
     '\u03bd'   #  0xEE -> GREEK SMALL LETTER NU
     '\u03bf'   #  0xEF -> GREEK SMALL LETTER OMICRON

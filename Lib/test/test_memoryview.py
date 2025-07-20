@@ -738,7 +738,7 @@ class OtherTest(unittest.TestCase):
 @support.requires_resource("cpu")
 class RacingTest(unittest.TestCase):
     def test_racing_getbuf_and_releasebuf(self):
-        """Repeatedly access the memoryview for racing."""
+        """Repeatly access the memoryview for racing."""
         try:
             from multiprocessing.managers import SharedMemoryManager
         except ImportError:

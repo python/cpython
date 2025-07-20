@@ -429,7 +429,7 @@ different set of index file names instead of using ``__init__`` parameters.
 when accessing an attribute that matches the name of an assertion but
 without the prefix ``assert_``, e.g. accessing ``called_once`` instead of
 ``assert_called_once``. This is in addition to this already happening for
-accessing attributes with prefixes ``assert``, ``assret``, ``assert``,
+accessing attributes with prefixes ``assert``, ``assret``, ``asert``,
 ``aseert``, and ``assrt``.
 
 ..
@@ -871,7 +871,7 @@ Fix reStructuredText syntax errors in docstrings in the :mod:`enum` module.
 .. nonce: Jd47V6
 .. section: Library
 
-Optimize the :class:`~fractions.Fraction` arithmetic for small components.
+Optimize the :class:`~fractions.Fraction` arithmetics for small components.
 
 ..
 

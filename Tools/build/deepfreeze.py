@@ -118,7 +118,7 @@ class Printer:
         self.file = file
         self.cache: dict[tuple[type, object, str], str] = {}
         self.hits, self.misses = 0, 0
-        self.finish: list[str] = []
+        self.finis: list[str] = []
         self.inits: list[str] = []
         self.identifiers, self.strings = self.get_identifiers_and_strings()
         self.write('#include "Python.h"')
@@ -316,7 +316,7 @@ class Printer:
                 first_traceable += 1
             self.write(f"._co_firsttraceable = {first_traceable},")
         name_as_code = f"(PyCodeObject *)&{name}"
-        self.finish.append(f"_PyStaticCode_Fini({name_as_code});")
+        self.finis.append(f"_PyStaticCode_Fini({name_as_code});")
         self.inits.append(f"_PyStaticCode_Init({name_as_code})")
         return f"& {name}.ob_base.ob_base"
 
@@ -488,7 +488,7 @@ def generate(args: list[str], output: TextIO) -> None:
                 code = compile(fd.read(), f"<frozen {modname}>", "exec")
             printer.generate_file(modname, code)
     with printer.block(f"void\n_Py_Deepfreeze_Fini(void)"):
-        for p in printer.finish:
+        for p in printer.finis:
             printer.write(p)
     with printer.block(f"int\n_Py_Deepfreeze_Init(void)"):
         for p in printer.inits:

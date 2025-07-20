@@ -259,7 +259,7 @@ class TypeTests(unittest.TestCase):
         self.assertEqual(FreezeThis.value, 2)
 
     def test_manual_heap_type(self):
-        # gh-128923: test that a manually allocated and initialized heap type
+        # gh-128923: test that a manually allocated and initailized heap type
         # works correctly
         ManualHeapType = _testcapi.ManualHeapType
         for i in range(100):

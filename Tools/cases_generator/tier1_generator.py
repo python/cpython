@@ -201,7 +201,7 @@ def generate_tier1_labels(
     analysis: Analysis, emitter: Emitter
 ) -> None:
     emitter.emit("\n")
-    # Emit tail-callable labels as function definitions
+    # Emit tail-callable labels as function defintions
     for name, label in analysis.labels.items():
         emitter.emit(f"LABEL({name})\n")
         storage = Storage(Stack(), [], [], 0, False)

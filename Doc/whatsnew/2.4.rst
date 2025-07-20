@@ -1304,7 +1304,7 @@ complete list of changes, or look through the CVS logs for all the details.
   comparable.  (Contributed by Raymond Hettinger.)
 
 * The :mod:`weakref` module now supports a wider variety of objects including
-  Python functions, class instances, sets, frozensets, dequeues, arrays, files,
+  Python functions, class instances, sets, frozensets, deques, arrays, files,
   sockets, and regular expression pattern objects. (Contributed by Raymond
   Hettinger.)
 

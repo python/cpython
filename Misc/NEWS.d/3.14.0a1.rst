@@ -234,7 +234,7 @@ tool
 .. nonce: HW8CIS
 .. section: Tests
 
-Update ``Lib/test/crashes/bogus_code_obj.py`` so that it crashes properly
+Update ``Lib/test/crashers/bogus_code_obj.py`` so that it crashes properly
 again.
 
 ..
@@ -5231,7 +5231,7 @@ both reference ``__class__``.
 .. nonce: D9EE-o
 .. section: Core and Builtins
 
-JIT: Reuse trampolines on AArch64 when creating stencils. Patch by Diego
+JIT: Re-use trampolines on AArch64 when creating stencils. Patch by Diego
 Russo
 
 ..

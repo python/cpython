@@ -604,7 +604,7 @@ class GridTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_grid_configure_sticky(self):
         f = tkinter.Frame(self.root, bg='red')
-        with self.assertRaisesRegex(TclError, 'bad stickiness value "glue"'):
+        with self.assertRaisesRegex(TclError, 'bad stickyness value "glue"'):
             f.grid_configure(sticky='glue')
         f.grid_configure(sticky='ne')
         self.assertEqual(f.grid_info()['sticky'], 'ne')

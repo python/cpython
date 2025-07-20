@@ -39,10 +39,10 @@ output block.
 repr is repr(object), extracted from the first PYTHONDUMPREFS output block.
 CAUTION:  If object is a container type, it may not actually contain all the
 objects shown in the repr:  the repr was captured from the first output block,
-and some of the containers may have been released since then.  For example,
+and some of the containees may have been released since then.  For example,
 it's common for the line showing the dict of interned strings to display
 strings that no longer exist at the end of Py_FinalizeEx; this can be recognized
-(albeit painfully) because such containers don't have a line of their own.
+(albeit painfully) because such containees don't have a line of their own.
 
 The objects are listed in allocation order, with most-recently allocated
 printed first, and the first object allocated printed last.

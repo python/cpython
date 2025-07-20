@@ -3323,7 +3323,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
                 self.assertIs(x.__class__, cls2)
                 x.__class__ = cls
                 self.assertIs(x.__class__, cls)
-        def can't(x, C):
+        def cant(x, C):
             try:
                 x.__class__ = C
             except TypeError:
@@ -3336,18 +3336,18 @@ class ClassPropertiesAndMethods(unittest.TestCase):
                 pass
             else:
                 self.fail("shouldn't allow del %r.__class__" % x)
-        can't(C(), list)
-        can't(list(), C)
-        can't(C(), 1)
-        can't(C(), object)
-        can't(object(), list)
-        can't(list(), object)
+        cant(C(), list)
+        cant(list(), C)
+        cant(C(), 1)
+        cant(C(), object)
+        cant(object(), list)
+        cant(list(), object)
         class Int(int): __slots__ = []
-        can't(True, int)
-        can't(2, bool)
+        cant(True, int)
+        cant(2, bool)
         o = object()
-        can't(o, int)
-        can't(o, type(None))
+        cant(o, int)
+        cant(o, type(None))
         del o
         class G(object):
             __slots__ = ["a", "b"]
@@ -3387,7 +3387,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
             for cls2 in G, J, K, L, M, N, P, R, list, Int:
                 if cls is cls2:
                     continue
-                can't(cls(), cls2)
+                cant(cls(), cls2)
 
         # Issue5283: when __class__ changes in __del__, the wrong
         # type gets DECREF'd.
@@ -3405,16 +3405,16 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         a = C()
         a.__dict__ = {'b': 1}
         self.assertEqual(a.b, 1)
-        def can't(x, dict):
+        def cant(x, dict):
             try:
                 x.__dict__ = dict
             except (AttributeError, TypeError):
                 pass
             else:
                 self.fail("shouldn't allow %r.__dict__ = %r" % (x, dict))
-        can't(a, None)
-        can't(a, [])
-        can't(a, 1)
+        cant(a, None)
+        cant(a, [])
+        cant(a, 1)
         del a.__dict__ # Deleting __dict__ is allowed
 
         class Base(object):
@@ -3423,7 +3423,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
             """
             x has to be an instance of a class inheriting from Base.
             """
-            can't(x, {})
+            cant(x, {})
             try:
                 del x.__dict__
             except (AttributeError, TypeError):
@@ -5282,7 +5282,7 @@ class MiscTests(unittest.TestCase):
         bases_before = ",".join([c.__name__ for c in X.__bases__])
         print(f"before={bases_before}")
 
-        # mykey is initially read from Base, however, the lookup will be performed
+        # mykey is initially read from Base, however, the lookup will be perfomed
         # again if specialization fails. The second lookup will use the new
         # mro set by __eq__.
         print(X.mykey)

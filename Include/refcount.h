@@ -453,7 +453,7 @@ static inline Py_ALWAYS_INLINE void Py_DECREF(PyObject *op)
  * There are cases where it's safe to use the naive code, but they're brittle.
  * For example, if `op` points to a Python integer, you know that destroying
  * one of those can't cause problems -- but in part that relies on that
- * Python integers aren't currently weakly referenceable.  Best practice is
+ * Python integers aren't currently weakly referencable.  Best practice is
  * to use Py_CLEAR() even if you can't think of a reason for why you need to.
  *
  * gh-98724: Use a temporary variable to only evaluate the macro argument once,

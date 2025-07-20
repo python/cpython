@@ -760,7 +760,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_Split(
     Py_ssize_t maxsplit         /* Maxsplit count */
     );
 
-/* Ditto, but split at line breaks.
+/* Dito, but split at line breaks.
 
    CRLF is considered to be one line break. Line breaks are not
    included in the resulting list. */

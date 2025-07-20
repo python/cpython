@@ -1389,7 +1389,7 @@ are created whenever Python calls a Python function.
 The following are new frame optimizations:
 
 - Streamlined the frame creation process.
-- Avoided memory allocation by generously reusing frame space on the C stack.
+- Avoided memory allocation by generously re-using frame space on the C stack.
 - Streamlined the internal frame struct to contain only essential information.
   Frames previously held extra debugging and memory management information.
 

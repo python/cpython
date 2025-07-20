@@ -1295,7 +1295,7 @@ class ExceptionTests(unittest.TestCase):
         self.assertIs(exc.__context__, ve)
 
     def test_unicode_change_attributes(self):
-        # See issue 7309. This was a crash.
+        # See issue 7309. This was a crasher.
 
         u = UnicodeEncodeError('baz', 'xxxxx', 1, 5, 'foo')
         self.assertEqual(str(u), "'baz' codec can't encode characters in position 1-4: foo")

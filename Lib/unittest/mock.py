@@ -1289,7 +1289,7 @@ class Mock(CallableMixin, NonCallableMock):
       `return_value` attribute.
 
     * `unsafe`: By default, accessing any attribute whose name starts with
-      *assert*, *assret*, *assert*, *aseert*, or *assrt* raises an AttributeError.
+      *assert*, *assret*, *asert*, *aseert*, or *assrt* raises an AttributeError.
       Additionally, an AttributeError is raised when accessing
       attributes that match the name of an assertion method without the prefix
       `assert_`, e.g. accessing `called_once` instead of `assert_called_once`.

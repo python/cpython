@@ -93,14 +93,14 @@ class VectorTest(unittest.TestCase):
         for op in opmap[opname]:
             self.assertRaises(error, op, *args)
 
-    def checkequal(self, opname, a, b, express):
+    def checkequal(self, opname, a, b, expres):
         for op in opmap[opname]:
             realres = op(a, b)
-            # can't use assertEqual(realres, express) here
-            self.assertEqual(len(realres), len(express))
+            # can't use assertEqual(realres, expres) here
+            self.assertEqual(len(realres), len(expres))
             for i in range(len(realres)):
                 # results are bool, so we can use "is" here
-                self.assertTrue(realres[i] is express[i])
+                self.assertTrue(realres[i] is expres[i])
 
     def test_mixed(self):
         # check that comparisons involving Vector objects
@@ -149,7 +149,7 @@ class NumberTest(unittest.TestCase):
                                 testoutcome = op(ta, tb)
                                 self.assertEqual(realoutcome, testoutcome)
 
-    def checkvalue(self, opname, a, b, express):
+    def checkvalue(self, opname, a, b, expres):
         for typea in (int, Number):
             for typeb in (int, Number):
                 ta = typea(a)
@@ -157,7 +157,7 @@ class NumberTest(unittest.TestCase):
                 for op in opmap[opname]:
                     realres = op(ta, tb)
                     realres = getattr(realres, "x", realres)
-                    self.assertTrue(realres is express)
+                    self.assertTrue(realres is expres)
 
     def test_values(self):
         # check all operators and all comparison results

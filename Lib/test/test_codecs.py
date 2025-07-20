@@ -3249,7 +3249,7 @@ class ExceptionNotesTest(unittest.TestCase):
 
     def test_unflagged_non_text_codec_handling(self):
         # The stdlib non-text codecs are now marked so they're
-        # preemptively skipped by the text model related methods
+        # pre-emptively skipped by the text model related methods
         # However, third party codecs won't be flagged, so we still make
         # sure the case where an inappropriate output type is produced is
         # handled appropriately

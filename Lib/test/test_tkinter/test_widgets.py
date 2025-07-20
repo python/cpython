@@ -1440,7 +1440,7 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
         p, b, c = self.create2()
         self.check_paneconfigure(p, b, 'sticky', 'nsew', 'nesw')
         self.check_paneconfigure_bad(p, b, 'sticky',
-                                     'bad stickiness value "badValue": must '
+                                     'bad stickyness value "badValue": must '
                                      'be a string containing zero or more of '
                                      'n, e, s, and w')
 

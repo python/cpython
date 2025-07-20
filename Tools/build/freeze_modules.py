@@ -36,7 +36,7 @@ OS_PATH = 'ntpath' if os.name == 'nt' else 'posixpath'
 TESTS_SECTION = 'Test module'
 FROZEN = [
     # See parse_frozen_spec() for the format.
-    # In cases where the frozenid is duplicated, the first one is reused.
+    # In cases where the frozenid is duplicated, the first one is re-used.
     ('import system', [
         # These frozen modules are necessary for bootstrapping
         # the import system.

@@ -207,7 +207,7 @@ class TestFilemode:
             self.assertEqual(modestr[0], 'c')
             self.assertS_IS("CHR", st_mode)
         # Linux block devices, BSD has no block devices anymore
-        for blockdev in ("/dev/sda", "/dev/had"):
+        for blockdev in ("/dev/sda", "/dev/hda"):
             if os.path.exists(blockdev):
                 st_mode, modestr = self.get_mode(blockdev, lstat=False)
                 self.assertEqual(modestr[0], 'b')

@@ -914,7 +914,7 @@ makes it 4 to 100 times faster.  (Contributed by Eric Snow in :issue:`16991`.)
 The :class:`~collections.deque` class now defines
 :meth:`~collections.deque.index`, :meth:`~collections.deque.insert`, and
 :meth:`~collections.deque.copy`, and supports the ``+`` and ``*`` operators.
-This allows dequeues to be recognized as a :class:`~collections.abc.MutableSequence`
+This allows deques to be recognized as a :class:`~collections.abc.MutableSequence`
 and improves their substitutability for lists.
 (Contributed by Raymond Hettinger in :issue:`23704`.)
 

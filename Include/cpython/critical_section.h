@@ -93,7 +93,7 @@ PyCriticalSection2_End(PyCriticalSection2 *c);
     }
 #else /* !Py_GIL_DISABLED */
 
-// NOTE: the contents of this struct are private and may change between
+// NOTE: the contents of this struct are private and may change betweeen
 // Python releases without a deprecation period.
 struct PyCriticalSection {
     // Tagged pointer to an outer active critical section (or 0).
@@ -105,7 +105,7 @@ struct PyCriticalSection {
 
 // A critical section protected by two mutexes. Use
 // Py_BEGIN_CRITICAL_SECTION2 and Py_END_CRITICAL_SECTION2.
-// NOTE: the contents of this struct are private and may change between
+// NOTE: the contents of this struct are private and may change betweeen
 // Python releases without a deprecation period.
 struct PyCriticalSection2 {
     PyCriticalSection _cs_base;

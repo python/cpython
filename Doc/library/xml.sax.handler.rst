@@ -250,7 +250,7 @@ events in the input document:
    string and the *attrs* parameter holds an object of the
    :class:`~xml.sax.xmlreader.Attributes`
    interface (see :ref:`attributes-objects`) containing the attributes of
-   the element.  The object passed as *attrs* may be reused by the parser; holding
+   the element.  The object passed as *attrs* may be re-used by the parser; holding
    on to a reference to it is not a reliable way to keep a copy of the attributes.
    To keep a copy of the attributes, use the :meth:`copy` method of the *attrs*
    object.
@@ -275,7 +275,7 @@ events in the input document:
    :ref:`attributes-ns-objects`)
    containing the attributes of the element.  If no namespace is associated with
    the element, the *uri* component of *name* will be ``None``.  The object passed
-   as *attrs* may be reused by the parser; holding on to a reference to it is not
+   as *attrs* may be re-used by the parser; holding on to a reference to it is not
    a reliable way to keep a copy of the attributes.  To keep a copy of the
    attributes, use the :meth:`copy` method of the *attrs* object.
 

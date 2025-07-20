@@ -2838,7 +2838,7 @@ class AbstractPickleTests:
             self.assert_is_copy(t, t2)
 
     def test_unicode_memoization(self):
-        # Repeated str is reused (even when escapes added).
+        # Repeated str is re-used (even when escapes added).
         for proto in protocols:
             for s in '', 'xyz', 'xyz\n', 'x\\yz', 'x\xa1yz\r':
                 p = self.dumps((s, s), proto)

@@ -3093,7 +3093,7 @@ Changes to Python's build process and to the C API include:
   (Contributed by Collin Winter; :issue:`1530959`.)
 
 * Several basic data types, such as integers and strings, maintain
-  internal free lists of objects that can be reused.  The data
+  internal free lists of objects that can be re-used.  The data
   structures for these free lists now follow a naming convention: the
   variable is always named ``free_list``, the counter is always named
   ``numfree``, and a macro ``Py<typename>_MAXFREELIST`` is

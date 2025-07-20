@@ -270,7 +270,7 @@ until the garbage collector cleans them up.  Patch by Martin Panter.
 .. section: Library
 
 collections.deque() objects now support methods for index(), insert(), and
-copy().  This allows dequeues to be registered as a MutableSequence and it
+copy().  This allows deques to be registered as a MutableSequence and it
 improves their substitutability for lists.
 
 ..

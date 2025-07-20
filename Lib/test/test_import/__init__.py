@@ -2879,7 +2879,7 @@ class SinglephaseInitTests(unittest.TestCase):
         self.assertIs(loaded.snapshot.lookedup, loaded.module)
 
     def check_indirect(self, loaded, orig):
-        # The module reuses another's PyModuleDef, with a different name.
+        # The module re-uses another's PyModuleDef, with a different name.
         assert orig is not loaded.module
         assert orig.__name__ != loaded.name
         self.assertNotEqual(loaded.module.__name__, loaded.name)

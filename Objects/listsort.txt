@@ -721,7 +721,7 @@ wildly unbalanced runs already enjoys excellent performance.
 
 ~sort is a good example of when balanced runs could benefit from a better
 hint value:  to the extent possible, this would like to use a starting
-offset equal to the previous value of account/bcount.  Doing so saves about
+offset equal to the previous value of acount/bcount.  Doing so saves about
 10% of the compares in ~sort.  However, doing so is also a mixed bag,
 hurting other cases.
 

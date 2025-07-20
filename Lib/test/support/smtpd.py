@@ -637,7 +637,7 @@ class SMTPServer(asyncore.dispatcher):
             gai_results = socket.getaddrinfo(*localaddr, family=family,
                                              type=socket.SOCK_STREAM)
             self.create_socket(gai_results[0][0], gai_results[0][1])
-            # try to reuse a server port if possible
+            # try to re-use a server port if possible
             self.set_reuse_addr()
             self.bind(localaddr)
             self.listen(5)

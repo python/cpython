@@ -1719,7 +1719,7 @@ class HandlerTests(unittest.TestCase):
                          realm, http_handler, password_manager,
                          request_url, protected_url):
         import base64
-        user, password = "while", "coyote"
+        user, password = "wile", "coyote"
 
         # .add_password() fed through to password manager
         auth_handler.add_password(realm, request_url, user, password)
@@ -1756,7 +1756,7 @@ class HandlerTests(unittest.TestCase):
         # Assume already authenticated if is_authenticated=True
         # for APIs like Github that don't return 401
 
-        user, password = "while", "coyote"
+        user, password = "wile", "coyote"
         request_url = "http://acme.example.com/protected"
 
         http_handler = MockHTTPHandlerCheckAuth(200)

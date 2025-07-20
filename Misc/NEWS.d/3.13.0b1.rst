@@ -340,7 +340,7 @@ contain lambdas.
 .. nonce: 8LpZ6m
 .. section: Core and Builtins
 
-Prevent ``agen.aclose()`` objects being reused after ``.throw()``.
+Prevent ``agen.aclose()`` objects being re-used after ``.throw()``.
 
 ..
 

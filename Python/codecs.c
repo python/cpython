@@ -926,17 +926,17 @@ PyObject *PyCodec_XMLCharRefReplaceErrors(PyObject *exc)
         slen = Py_MAX(0, end - start);
     }
 
-    Py_ssize_t resize = 0;
+    Py_ssize_t ressize = 0;
     for (Py_ssize_t i = start; i < end; ++i) {
         Py_UCS4 ch = PyUnicode_READ_CHAR(obj, i);
         int k = n_decimal_digits_for_codepoint(ch);
         assert(k != 0);
         assert(k <= 7);
-        resize += 2 + k + 1;
+        ressize += 2 + k + 1;
     }
 
     /* allocate replacement */
-    PyObject *res = PyUnicode_New(resize, 127);
+    PyObject *res = PyUnicode_New(ressize, 127);
     if (res == NULL) {
         Py_DECREF(obj);
         return NULL;
@@ -993,12 +993,12 @@ _PyCodec_BackslashReplaceUnicodeEncodeError(PyObject *exc)
         slen = Py_MAX(0, end - start);
     }
 
-    Py_ssize_t resize = 0;
+    Py_ssize_t ressize = 0;
     for (Py_ssize_t i = start; i < end; ++i) {
         Py_UCS4 c = PyUnicode_READ_CHAR(obj, i);
-        resize += codec_handler_unicode_hex_width(c);
+        ressize += codec_handler_unicode_hex_width(c);
     }
-    PyObject *res = PyUnicode_New(resize, 127);
+    PyObject *res = PyUnicode_New(ressize, 127);
     if (res == NULL) {
         Py_DECREF(obj);
         return NULL;
@@ -1097,7 +1097,7 @@ PyObject *PyCodec_NameReplaceErrors(PyObject *exc)
     }
 
     char buffer[256]; /* NAME_MAXLEN in unicodename_db.h */
-    Py_ssize_t imax = start, resize = 0, replsize;
+    Py_ssize_t imax = start, ressize = 0, replsize;
     for (; imax < end; ++imax) {
         Py_UCS4 c = PyUnicode_READ_CHAR(obj, imax);
         if (ucnhash_capi->getname(c, buffer, sizeof(buffer), 1)) {
@@ -1109,13 +1109,13 @@ PyObject *PyCodec_NameReplaceErrors(PyObject *exc)
         else {
             replsize = codec_handler_unicode_hex_width(c);
         }
-        if (resize > PY_SSIZE_T_MAX - replsize) {
+        if (ressize > PY_SSIZE_T_MAX - replsize) {
             break;
         }
-        resize += replsize;
+        ressize += replsize;
     }
 
-    PyObject *res = PyUnicode_New(resize, 127);
+    PyObject *res = PyUnicode_New(ressize, 127);
     if (res == NULL) {
         Py_DECREF(obj);
         return NULL;
@@ -1137,7 +1137,7 @@ PyObject *PyCodec_NameReplaceErrors(PyObject *exc)
         }
     }
 
-    assert(outp == PyUnicode_1BYTE_DATA(res) + resize);
+    assert(outp == PyUnicode_1BYTE_DATA(res) + ressize);
     assert(_PyUnicode_CheckConsistency(res, 1));
     PyObject *restuple = Py_BuildValue("(Nn)", res, imax);
     Py_DECREF(obj);

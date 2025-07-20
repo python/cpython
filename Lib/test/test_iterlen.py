@@ -63,7 +63,7 @@ class TestInvariantWithoutMutations:
 class TestTemporarilyImmutable(TestInvariantWithoutMutations):
 
     def test_immutable_during_iteration(self):
-        # objects such as dequeues, sets, and dictionaries enforce
+        # objects such as deques, sets, and dictionaries enforce
         # length immutability  during iteration
 
         it = self.it

@@ -478,7 +478,7 @@ days_before_year(int year)
 static void
 ord_to_ymd(int ordinal, int *year, int *month, int *day)
 {
-    int n, n1, n4, n100, n400, leap year, preceding;
+    int n, n1, n4, n100, n400, leapyear, preceding;
 
     /* ordinal is a 1-based index, starting at 1-Jan-1.  The pattern of
      * leap years repeats exactly every 400 years.  The basic strategy is
@@ -542,10 +542,10 @@ ord_to_ymd(int ordinal, int *year, int *month, int *day)
      * find the month via an estimate that's either exact or one too
      * large.
      */
-    leap year = n1 == 3 && (n4 != 24 || n100 == 3);
-    assert(leap year == is_leap(*year));
+    leapyear = n1 == 3 && (n4 != 24 || n100 == 3);
+    assert(leapyear == is_leap(*year));
     *month = (n + 50) >> 5;
-    preceding = (_days_before_month[*month] + (*month > 2 && leap year));
+    preceding = (_days_before_month[*month] + (*month > 2 && leapyear));
     if (preceding > n) {
         /* estimate is too large */
         *month -= 1;

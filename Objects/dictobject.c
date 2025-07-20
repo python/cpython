@@ -81,7 +81,7 @@ DK_ENTRIES(keys)[index] if index >= 0):
    Active upon key insertion.  Dummy slots cannot be made Unused again
    else the probe sequence in case of collision would have no way to know
    they were once active.
-   In free-threaded builds dummy slots are not reused to allow lock-free
+   In free-threaded builds dummy slots are not re-used to allow lock-free
    lookups to proceed safely.
 
 4. Pending. index >= 0, key != NULL, and value == NULL  (split only)
@@ -659,7 +659,7 @@ _PyDict_CheckConsistency(PyObject *op, int check_content)
     PyDictObject *mp = (PyDictObject *)op;
 
     PyDictKeysObject *keys = mp->ma_keys;
-    int split = _PyDict_HasSplitTable(mp);
+    int splitted = _PyDict_HasSplitTable(mp);
     Py_ssize_t usable = USABLE_FRACTION(DK_SIZE(keys));
 
     // In the free-threaded build, shared keys may be concurrently modified,
@@ -672,7 +672,7 @@ _PyDict_CheckConsistency(PyObject *op, int check_content)
     CHECK(0 <= dk_nentries && dk_nentries <= usable);
     CHECK(dk_usable + dk_nentries <= usable);
 
-    if (!split) {
+    if (!splitted) {
         /* combined table */
         CHECK(keys->dk_kind != DICT_KEYS_SPLIT);
         CHECK(keys->dk_refcnt == 1 || keys == Py_EMPTY_KEYS);
@@ -721,20 +721,20 @@ _PyDict_CheckConsistency(PyObject *op, int check_content)
                     CHECK(PyUnicode_CheckExact(key));
                     Py_hash_t hash = unicode_get_hash(key);
                     CHECK(hash != -1);
-                    if (!split) {
+                    if (!splitted) {
                         CHECK(entry->me_value != NULL);
                     }
                 }
 
-                if (split) {
+                if (splitted) {
                     CHECK(entry->me_value == NULL);
                 }
             }
         }
 
-        if (split) {
+        if (splitted) {
             CHECK(mp->ma_used <= SHARED_KEYS_MAX_SIZE);
-            /* split table */
+            /* splitted table */
             int duplicate_check = 0;
             for (Py_ssize_t i=0; i < mp->ma_used; i++) {
                 int index = get_index_from_order(mp, i);
@@ -7218,7 +7218,7 @@ set_dict_inline_values(PyObject *obj, PyDictObject *new_dict)
 
 #ifdef Py_GIL_DISABLED
 
-// Tries and sets the dictionary for an object in the easy case when our current
+// Trys and sets the dictionary for an object in the easy case when our current
 // dictionary is either completely not materialized or is a dictionary which
 // does not point at the inline values.
 static bool

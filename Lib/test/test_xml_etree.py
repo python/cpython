@@ -2736,7 +2736,7 @@ class BadElementTest(ElementTestCase, unittest.TestCase):
 
     def do_test_remove_with_clear(self, *, raises):
 
-        # Until the discrepancy between "del root[:]" and "root.clear()" is
+        # Until the discrepency between "del root[:]" and "root.clear()" is
         # resolved, we need to keep two tests. Previously, using "del root[:]"
         # did not crash with the reproducer of gh-126033 while "root.clear()"
         # did.

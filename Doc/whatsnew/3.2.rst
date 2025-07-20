@@ -167,7 +167,7 @@ each with their own argument patterns and help displays::
 
     $ ./helm.py --help                         # top level help (launch and move)
     $ ./helm.py launch --help                  # help for launch options
-    $ ./helm.py launch --missiles              # set missiles=True and torpedoes=False
+    $ ./helm.py launch --missiles              # set missiles=True and torpedos=False
     $ ./helm.py steer --course 180 --speed 5   # set movement parameters
 
 .. seealso::

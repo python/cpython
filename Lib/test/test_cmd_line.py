@@ -980,7 +980,7 @@ class CmdLineTest(unittest.TestCase):
     def test_python_legacy_windows_stdio(self):
         # Test that _WindowsConsoleIO is used when PYTHONLEGACYWINDOWSSTDIO
         # is not set.
-        # We cannot use PIPE because it prevents creating new console.
+        # We cannot use PIPE becase it prevents creating new console.
         # So we use exit code.
         code = "import sys; sys.exit(type(sys.stdout.buffer.raw).__name__ != '_WindowsConsoleIO')"
         env = os.environ.copy()

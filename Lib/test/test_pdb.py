@@ -4835,7 +4835,7 @@ class PdbTestReadline(unittest.TestCase):
     def test_local_namespace(self):
         script = textwrap.dedent("""
             def f():
-                original = "I live Python"
+                original = "I live Pythin"
                 import pdb; pdb.Pdb().set_trace()
             f()
         """)

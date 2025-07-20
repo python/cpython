@@ -537,7 +537,7 @@ class TestMiscellaneous(unittest.TestCase):
             codecs.lookup(enc)
 
     def test_strcoll_3303(self):
-        # test crash from bug #3303
+        # test crasher from bug #3303
         self.assertRaises(TypeError, locale.strcoll, "a", None)
         self.assertRaises(TypeError, locale.strcoll, b"a", None)
 
@@ -549,7 +549,7 @@ class TestMiscellaneous(unittest.TestCase):
         locale.setlocale(locale.LC_MONETARY)
         locale.setlocale(locale.LC_NUMERIC)
 
-        # crash from bug #7419
+        # crasher from bug #7419
         self.assertRaises(locale.Error, locale.setlocale, 12345)
 
     def test_getsetlocale_issue1813(self):

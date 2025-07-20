@@ -649,7 +649,7 @@ find_hash_info(hmacmodule_state *state, PyObject *hash_info_ref)
 {
     const py_hmac_hinfo *info = NULL;
     int rc = find_hash_info_impl(state, hash_info_ref, &info);
-    // The code below could be simplified with only 'rc == 0' case,
+    // The code below could be simplfied with only 'rc == 0' case,
     // but we are deliberately verbose to ease future improvements.
     if (rc < 0) {
         return NULL;

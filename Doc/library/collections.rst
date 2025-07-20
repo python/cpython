@@ -455,8 +455,8 @@ or subtracting from an empty counter.
     Returns a new deque object initialized left-to-right (using :meth:`append`) with
     data from *iterable*.  If *iterable* is not specified, the new deque is empty.
 
-    Dequeues are a generalization of stacks and queues (the name is pronounced "deck"
-    and is short for "double-ended queue").  Dequeues support thread-safe, memory
+    Deques are a generalization of stacks and queues (the name is pronounced "deck"
+    and is short for "double-ended queue").  Deques support thread-safe, memory
     efficient appends and pops from either side of the deque with approximately the
     same *O*\ (1) performance in either direction.
 
@@ -466,11 +466,11 @@ or subtracting from an empty counter.
     position of the underlying data representation.
 
 
-    If *maxlen* is not specified or is ``None``, dequeues may grow to an
+    If *maxlen* is not specified or is ``None``, deques may grow to an
     arbitrary length.  Otherwise, the deque is bounded to the specified maximum
     length.  Once a bounded length deque is full, when new items are added, a
     corresponding number of items are discarded from the opposite end.  Bounded
-    length dequeues provide functionality similar to the ``tail`` filter in
+    length deques provide functionality similar to the ``tail`` filter in
     Unix. They are also useful for tracking transactions and other pools of data
     where only the most recent activity is of interest.
 
@@ -582,13 +582,13 @@ or subtracting from an empty counter.
         .. versionadded:: 3.1
 
 
-In addition to the above, dequeues support iteration, pickling, ``len(d)``,
+In addition to the above, deques support iteration, pickling, ``len(d)``,
 ``reversed(d)``, ``copy.copy(d)``, ``copy.deepcopy(d)``, membership testing with
 the :keyword:`in` operator, and subscript references such as ``d[0]`` to access
 the first element.  Indexed access is *O*\ (1) at both ends but slows to *O*\ (*n*) in
 the middle.  For fast random access, use lists instead.
 
-Starting in version 3.5, dequeues support ``__add__()``, ``__mul__()``,
+Starting in version 3.5, deques support ``__add__()``, ``__mul__()``,
 and ``__imul__()``.
 
 Example:
@@ -650,9 +650,9 @@ Example:
 :class:`deque` Recipes
 ^^^^^^^^^^^^^^^^^^^^^^
 
-This section shows various approaches to working with dequeues.
+This section shows various approaches to working with deques.
 
-Bounded length dequeues provide functionality similar to the ``tail`` filter
+Bounded length deques provide functionality similar to the ``tail`` filter
 in Unix::
 
     def tail(filename, n=10):
@@ -660,7 +660,7 @@ in Unix::
         with open(filename) as f:
             return deque(f, n)
 
-Another approach to using dequeues is to maintain a sequence of recently
+Another approach to using deques is to maintain a sequence of recently
 added elements by appending to the right and popping to the left::
 
     def moving_average(iterable, n=3):

@@ -155,7 +155,7 @@ def make_paths_relative(data: dict[str, Any], config_path: str | None = None) ->
             continue
         # Get the relative path
         new_path = os.path.relpath(current_path, data['base_prefix'])
-        # Join '.' so that the path is formatted as './path' instead of 'path'
+        # Join '.' so that the path is formated as './path' instead of 'path'
         new_path = os.path.join('.', new_path)
         container[child] = new_path
 

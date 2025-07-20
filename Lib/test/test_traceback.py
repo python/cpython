@@ -4107,7 +4107,7 @@ class SuggestionFormattingTestBase:
 
     def test_getattr_error_bad_suggestions_do_not_trigger_for_small_names(self):
         class MyClass:
-            vvv = mom = w = id = python = None
+            vvv = mom = w = id = pytho = None
 
         for name in ("b", "v", "m", "py"):
             with self.subTest(name=name):
@@ -4324,7 +4324,7 @@ class SuggestionFormattingTestBase:
         self.assertNotIn("blech", actual)
 
     def test_import_from_error_bad_suggestions_do_not_trigger_for_small_names(self):
-        code = "vvv = mom = w = id = python = None"
+        code = "vvv = mom = w = id = pytho = None"
 
         for name in ("b", "v", "m", "py"):
             with self.subTest(name=name):
@@ -4432,19 +4432,19 @@ class SuggestionFormattingTestBase:
     def test_name_error_bad_suggestions_do_not_trigger_for_small_names(self):
 
         def f_b():
-            vvv = mom = w = id = python = None
+            vvv = mom = w = id = pytho = None
             b
 
         def f_v():
-            vvv = mom = w = id = python = None
+            vvv = mom = w = id = pytho = None
             v
 
         def f_m():
-            vvv = mom = w = id = python = None
+            vvv = mom = w = id = pytho = None
             m
 
         def f_py():
-            vvv = mom = w = id = python = None
+            vvv = mom = w = id = pytho = None
             py
 
         for name, func in (("b", f_b), ("v", f_v), ("m", f_m), ("py", f_py)):

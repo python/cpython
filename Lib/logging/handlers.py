@@ -750,7 +750,7 @@ class SysLogHandler(logging.Handler):
     """
     A handler class which sends formatted logging records to a syslog
     server. Based on Sam Rushing's syslog module:
-    http://www.nightmare.com/squirrel/python-ext/misc/syslog.py
+    http://www.nightmare.com/squirl/python-ext/misc/syslog.py
     Contributed by Nicolas Untz (after which minor refactoring changes
     have been made).
     """

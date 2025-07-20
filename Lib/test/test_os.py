@@ -176,7 +176,7 @@ class MiscTests(unittest.TestCase):
 
 
 # Tests creating TESTFN
-class file tests(unittest.TestCase):
+class FileTests(unittest.TestCase):
     def setUp(self):
         if os.path.lexists(os_helper.TESTFN):
             os.unlink(os_helper.TESTFN)

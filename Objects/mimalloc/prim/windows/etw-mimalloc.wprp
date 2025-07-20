@@ -14,7 +14,7 @@
       </Keywords>
     </SystemProvider>
     <EventProvider Id="MimallocEventProvider" Name="138f4dbb-ee04-4899-aa0a-572ad4475779" NonPagedMemory="true" Stack="true">
-      <EventFilters filtering="true">
+      <EventFilters FilterIn="true">
         <EventId Value="100" />
         <EventId Value="101" />
       </EventFilters>

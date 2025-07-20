@@ -782,7 +782,7 @@ Operators And Special Methods
 
 * The function attributes named :attr:`!func_X` have been renamed to
   use the :attr:`!__X__` form, freeing up these names in the function
-  attribute namespace for user-defined attributes.  To with,
+  attribute namespace for user-defined attributes.  To wit,
   :attr:`!func_closure`, :attr:`!func_code`, :attr:`!func_defaults`,
   :attr:`!func_dict`, :attr:`!func_doc`, :attr:`!func_globals`,
   :attr:`!func_name` were renamed to :attr:`~function.__closure__`,

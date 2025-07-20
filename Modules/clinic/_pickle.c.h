@@ -17,7 +17,7 @@ PyDoc_STRVAR(_pickle_Pickler_clear_memo__doc__,
 "The memo is the data structure that remembers which objects the\n"
 "pickler has already seen, so that shared or recursive objects are\n"
 "pickled by reference and not by value.  This method is useful when\n"
-"reusing picklers.");
+"re-using picklers.");
 
 #define _PICKLE_PICKLER_CLEAR_MEMO_METHODDEF    \
     {"clear_memo", (PyCFunction)_pickle_Pickler_clear_memo, METH_NOARGS, _pickle_Pickler_clear_memo__doc__},

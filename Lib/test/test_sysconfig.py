@@ -697,7 +697,7 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
 
         # Keys dependent on uncontrollable external context
         ignore_keys = {'userbase'}
-        # Keys dependent on Python being run outside the build directory
+        # Keys dependent on Python being run outside the build directrory
         if sysconfig.is_python_build():
             ignore_keys |= {'srcdir'}
         # Keys dependent on the executable location
@@ -706,7 +706,7 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
         # Keys dependent on the environment (different inside virtual environments)
         if sys.prefix != sys.base_prefix:
             ignore_keys |= {'prefix', 'exec_prefix', 'base', 'platbase'}
-        # Keys dependent on Python being run from the prefix targeted when building (different on relocatable installs)
+        # Keys dependent on Python being run from the prefix targetted when building (different on relocatable installs)
         if sysconfig._installation_is_relocated():
             ignore_keys |= {'prefix', 'exec_prefix', 'base', 'platbase', 'installed_base', 'installed_platbase'}
 

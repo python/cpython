@@ -265,7 +265,7 @@ the *new_callable* argument to :func:`patch`.
       :attr:`return_value` attribute.
 
     * *unsafe*: By default, accessing any attribute whose name starts with
-      *assert*, *assret*, *assert*, *aseert* or *assrt* will raise an
+      *assert*, *assret*, *asert*, *aseert* or *assrt* will raise an
       :exc:`AttributeError`. Passing ``unsafe=True`` will allow access to
       these attributes.
 

@@ -556,7 +556,7 @@ class TestFindLongest(unittest.TestCase):
                          b[match.b: match.b + match.size])
         self.assertFalse(self.longer_match_exists(a, b, match.size))
 
-        match = sm.find_longest_match(also=2, blo=4)
+        match = sm.find_longest_match(alo=2, blo=4)
         self.assertEqual(match.a, 3)
         self.assertEqual(match.b, 7)
         self.assertEqual(match.size, 4)

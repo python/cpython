@@ -644,11 +644,11 @@ void _mi_arena_free(void* p, size_t size, size_t committed_size, mi_memid_t memi
       mi_assert_internal(arena->blocks_purge != NULL);
 
       if (!all_committed) {
-        // mark the entire range as no longer committed (so we recommit the full range when reusing)
+        // mark the entire range as no longer committed (so we recommit the full range when re-using)
         _mi_bitmap_unclaim_across(arena->blocks_committed, arena->field_count, blocks, bitmap_idx);
         mi_track_mem_noaccess(p,size);
         if (committed_size > 0) {
-          // if partially committed, adjust the committed stats (is it will be recommitted when reusing)
+          // if partially committed, adjust the committed stats (is it will be recommitted when re-using)
           // in the delayed purge, we now need to not count a decommit if the range is not marked as committed.
           _mi_stat_decrease(&stats->committed, committed_size);
         }

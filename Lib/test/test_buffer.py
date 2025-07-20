@@ -4456,7 +4456,7 @@ class TestBufferProtocol(unittest.TestCase):
 
     @support.cpython_only
     def test_flags_overflow(self):
-        # gh-126594: Check for integer overflow on large flags
+        # gh-126594: Check for integer overlow on large flags
         try:
             from _testcapi import INT_MIN, INT_MAX
         except ImportError:

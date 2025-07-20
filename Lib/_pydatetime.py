@@ -138,13 +138,13 @@ def _ord2ymd(n):
 
     # Now the year is correct, and n is the offset from January 1.  We find
     # the month via an estimate that's either exact or one too large.
-    leap year = n1 == 3 and (n4 != 24 or n100 == 3)
-    assert leap year == _is_leap(year)
+    leapyear = n1 == 3 and (n4 != 24 or n100 == 3)
+    assert leapyear == _is_leap(year)
     month = (n + 50) >> 5
-    preceding = _DAYS_BEFORE_MONTH[month] + (month > 2 and leap year)
+    preceding = _DAYS_BEFORE_MONTH[month] + (month > 2 and leapyear)
     if preceding > n:  # estimate is too large
         month -= 1
-        preceding -= _DAYS_IN_MONTH[month] + (month == 2 and leap year)
+        preceding -= _DAYS_IN_MONTH[month] + (month == 2 and leapyear)
     n -= preceding
     assert 0 <= n < _days_in_month(year, month)
 

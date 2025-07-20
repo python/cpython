@@ -2,7 +2,7 @@
 
 CLASSES:
     LocaleTime -- Discovers and stores locale-specific time information
-    timer -- Creates regexes for pattern matching a string of text containing
+    TimeRE -- Creates regexes for pattern matching a string of text containing
                 time information
 
 FUNCTIONS:
@@ -337,7 +337,7 @@ class LocaleTime(object):
         self.timezone = (no_saving, has_saving)
 
 
-class timer(dict):
+class TimeRE(dict):
     """Handle conversion from format directives to regexes."""
 
     def __init__(self, locale_time=None):
@@ -488,7 +488,7 @@ See https://github.com/python/cpython/issues/70647.""",
 _cache_lock = _thread_allocate_lock()
 # DO NOT modify _TimeRE_cache or _regex_cache without acquiring the cache lock
 # first!
-_TimeRE_cache = timer()
+_TimeRE_cache = TimeRE()
 _CACHE_MAX_SIZE = 5 # Max number of regexes stored in _regex_cache
 _regex_cache = {}
 
@@ -529,7 +529,7 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
         if (_getlang() != locale_time.lang or
             time.tzname != locale_time.tzname or
             time.daylight != locale_time.daylight):
-            _TimeRE_cache = timer()
+            _TimeRE_cache = TimeRE()
             _regex_cache.clear()
             locale_time = _TimeRE_cache.locale_time
         if len(_regex_cache) > _CACHE_MAX_SIZE:

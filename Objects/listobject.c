@@ -2304,7 +2304,7 @@ merge_lo(MergeState *ms, sortslice ssa, Py_ssize_t na,
 
     min_gallop = ms->min_gallop;
     for (;;) {
-        Py_ssize_t account = 0;          /* # of times A won in a row */
+        Py_ssize_t acount = 0;          /* # of times A won in a row */
         Py_ssize_t bcount = 0;          /* # of times B won in a row */
 
         /* Do the straightforward thing until (if ever) one run
@@ -2318,7 +2318,7 @@ merge_lo(MergeState *ms, sortslice ssa, Py_ssize_t na,
                     goto Fail;
                 sortslice_copy_incr(&dest, &ssb);
                 ++bcount;
-                account = 0;
+                acount = 0;
                 --nb;
                 if (nb == 0)
                     goto Succeed;
@@ -2327,12 +2327,12 @@ merge_lo(MergeState *ms, sortslice ssa, Py_ssize_t na,
             }
             else {
                 sortslice_copy_incr(&dest, &ssa);
-                ++account;
+                ++acount;
                 bcount = 0;
                 --na;
                 if (na == 1)
                     goto CopyB;
-                if (account >= min_gallop)
+                if (acount >= min_gallop)
                     break;
             }
         }
@@ -2348,7 +2348,7 @@ merge_lo(MergeState *ms, sortslice ssa, Py_ssize_t na,
             min_gallop -= min_gallop > 1;
             ms->min_gallop = min_gallop;
             k = gallop_right(ms, ssb.keys[0], ssa.keys, na, 0);
-            account = k;
+            acount = k;
             if (k) {
                 if (k < 0)
                     goto Fail;
@@ -2386,7 +2386,7 @@ merge_lo(MergeState *ms, sortslice ssa, Py_ssize_t na,
             --na;
             if (na == 1)
                 goto CopyB;
-        } while (account >= MIN_GALLOP || bcount >= MIN_GALLOP);
+        } while (acount >= MIN_GALLOP || bcount >= MIN_GALLOP);
         ++min_gallop;           /* penalize it for leaving galloping mode */
         ms->min_gallop = min_gallop;
     }
@@ -2442,7 +2442,7 @@ merge_hi(MergeState *ms, sortslice ssa, Py_ssize_t na,
 
     min_gallop = ms->min_gallop;
     for (;;) {
-        Py_ssize_t account = 0;          /* # of times A won in a row */
+        Py_ssize_t acount = 0;          /* # of times A won in a row */
         Py_ssize_t bcount = 0;          /* # of times B won in a row */
 
         /* Do the straightforward thing until (if ever) one run
@@ -2455,18 +2455,18 @@ merge_hi(MergeState *ms, sortslice ssa, Py_ssize_t na,
                 if (k < 0)
                     goto Fail;
                 sortslice_copy_decr(&dest, &ssa);
-                ++account;
+                ++acount;
                 bcount = 0;
                 --na;
                 if (na == 0)
                     goto Succeed;
-                if (account >= min_gallop)
+                if (acount >= min_gallop)
                     break;
             }
             else {
                 sortslice_copy_decr(&dest, &ssb);
                 ++bcount;
-                account = 0;
+                acount = 0;
                 --nb;
                 if (nb == 1)
                     goto CopyA;
@@ -2489,7 +2489,7 @@ merge_hi(MergeState *ms, sortslice ssa, Py_ssize_t na,
             if (k < 0)
                 goto Fail;
             k = na - k;
-            account = k;
+            acount = k;
             if (k) {
                 sortslice_advance(&dest, -k);
                 sortslice_advance(&ssa, -k);
@@ -2526,7 +2526,7 @@ merge_hi(MergeState *ms, sortslice ssa, Py_ssize_t na,
             --na;
             if (na == 0)
                 goto Succeed;
-        } while (account >= MIN_GALLOP || bcount >= MIN_GALLOP);
+        } while (acount >= MIN_GALLOP || bcount >= MIN_GALLOP);
         ++min_gallop;           /* penalize it for leaving galloping mode */
         ms->min_gallop = min_gallop;
     }

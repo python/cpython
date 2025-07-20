@@ -124,7 +124,7 @@ def _grouping_intervals(grouping):
         # if grouping is -1, we are done
         if interval == CHAR_MAX:
             return
-        # 0: reuse last group ad infinitum
+        # 0: re-use last group ad infinitum
         if interval == 0:
             if last_interval is None:
                 raise ValueError("invalid grouping")

@@ -414,7 +414,7 @@ The select module is now PEP-384 compliant and no longer has static state
 .. nonce: yZXC3P
 .. section: Core and Builtins
 
-ast module updated to PEP-384 and all statistics removed
+ast module updated to PEP-384 and all statics removed
 
 ..
 

@@ -938,9 +938,9 @@ class LongTest(unittest.TestCase):
             self.check_truediv(n, 2**1076)
 
         # largeish random divisions: a/b where |a| <= |b| <=
-        # 2*|a|; |and| is between 0.5 and 1.0, so error should
+        # 2*|a|; |ans| is between 0.5 and 1.0, so error should
         # always be bounded by 2**-54 with equality possible only
-        # if the least significant bit of q=and*2**53 is zero.
+        # if the least significant bit of q=ans*2**53 is zero.
         for M in [10**10, 10**100, 10**1000]:
             for i in range(1000):
                 a = random.randrange(1, M)

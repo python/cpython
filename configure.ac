@@ -6264,7 +6264,7 @@ if test "$ac_cv_sizeof_wchar_t" -ge 2 \
           -a "$ac_cv_wchar_t_signed" = "no"
 then
   AC_DEFINE([HAVE_USABLE_WCHAR_T], [1],
-  [Define if you have a usable wchar_t type defined in wchar.h; usable
+  [Define if you have a useable wchar_t type defined in wchar.h; useable
    means wchar_t must be an unsigned type with at least 16 bits. (see
    Include/unicodeobject.h).])
   AC_MSG_RESULT([yes])

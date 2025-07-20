@@ -17,7 +17,7 @@ __all__ = (
     'FutureCallGraph',
 )
 
-# Sadly, we can't reuse the traceback module's datastructures as those
+# Sadly, we can't re-use the traceback module's datastructures as those
 # are tailored for error reporting, whereas we need to represent an
 # async call graph.
 #

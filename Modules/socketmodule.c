@@ -6125,7 +6125,7 @@ gethost_common(socket_state *state, struct hostent *h, struct sockaddr *addr,
     name = sock_decode_hostname(h->h_name);
     if (name == NULL)
         goto err;
-    rtn_tuple = Py_BuildValue("NO", name, name_list, addr_list);
+    rtn_tuple = Py_BuildValue("NOO", name, name_list, addr_list);
 
  err:
     Py_XDECREF(name_list);

@@ -1966,7 +1966,7 @@ class ArgsTestCase(BaseTestCase):
             import tempfile
             import unittest
 
-            class file tests(unittest.TestCase):
+            class FileTests(unittest.TestCase):
                 def test_leak_tmp_file(self):
                     filename = os.path.join(tempfile.gettempdir(), 'mytmpfile')
                     with open(filename, "wb") as fp:
@@ -2383,7 +2383,7 @@ class TestUtils(unittest.TestCase):
 
     def test_normalize_test_name(self):
         normalize = normalize_test_name
-        self.assertEqual(normalize('test_access (test.test_os.file tests.test_access)'),
+        self.assertEqual(normalize('test_access (test.test_os.FileTests.test_access)'),
                          'test_access')
         self.assertEqual(normalize('setUpClass (test.test_os.ChownFileTests)', is_error=True),
                          'ChownFileTests')
@@ -2424,7 +2424,7 @@ class TestUtils(unittest.TestCase):
         patterns = get_match_tests()
         self.addCleanup(set_match_tests, patterns)
 
-        test_access = Test('test.test_os.file tests.test_access')
+        test_access = Test('test.test_os.FileTests.test_access')
         test_chdir = Test('test.test_os.Win32ErrorTests.test_chdir')
         test_copy = Test('test.test_shutil.TestCopy.test_copy')
 

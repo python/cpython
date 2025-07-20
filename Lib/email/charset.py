@@ -221,12 +221,12 @@ class Charset:
         # We can try to guess which encoding and conversion to use by the
         # charset_map dictionary.  Try that first, but let the user override
         # it.
-        hence, benc, conv = CHARSETS.get(self.input_charset,
+        henc, benc, conv = CHARSETS.get(self.input_charset,
                                         (SHORTEST, BASE64, None))
         if not conv:
             conv = self.input_charset
         # Set the attributes, allowing the arguments to override the default.
-        self.header_encoding = hence
+        self.header_encoding = henc
         self.body_encoding = benc
         self.output_charset = ALIASES.get(conv, conv)
         # Now set the codecs.  If one isn't defined for input_charset,

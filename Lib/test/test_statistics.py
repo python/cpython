@@ -2998,7 +2998,7 @@ class TestNormalDist:
         X = NormalDist(100, 15)
         cdfs = [X.cdf(x) for x in range(1, 200)]
         self.assertEqual(set(map(type, cdfs)), {float})
-        # Verify monotonic
+        # Verify montonic
         self.assertEqual(cdfs, sorted(cdfs))
         # Verify center (should be exact)
         self.assertEqual(X.cdf(100), 0.50)

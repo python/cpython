@@ -610,7 +610,7 @@ basx563 toSci "NaNs"            -> NaN Conversion_syntax
 basx564 toSci "Infi"            -> NaN Conversion_syntax
 basx565 toSci "Infin"           -> NaN Conversion_syntax
 basx566 toSci "Infini"          -> NaN Conversion_syntax
-basx567 toSci "Infinite"         -> NaN Conversion_syntax
+basx567 toSci "Infinit"         -> NaN Conversion_syntax
 basx568 toSci "-Infinit"        -> NaN Conversion_syntax
 basx569 toSci "0Inf"            -> NaN Conversion_syntax
 basx570 toSci "9Inf"            -> NaN Conversion_syntax

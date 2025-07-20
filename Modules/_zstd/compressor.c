@@ -1,4 +1,4 @@
-/* Low level interface to the Zstandard algorithm & the zstd library. */
+/* Low level interface to the Zstandard algorthm & the zstd library. */
 
 /* ZstdCompressor class definitions */
 
@@ -713,7 +713,7 @@ _zstd_ZstdCompressor_set_pledged_input_size_impl(ZstdCompressor *self,
                                                  unsigned long long size)
 /*[clinic end generated code: output=3a09e55cc0e3b4f9 input=afd8a7d78cff2eb5]*/
 {
-    // Error occurred while converting argument, should be unreachable
+    // Error occured while converting argument, should be unreachable
     assert(size != ZSTD_CONTENTSIZE_ERROR);
 
     /* Thread-safe code */

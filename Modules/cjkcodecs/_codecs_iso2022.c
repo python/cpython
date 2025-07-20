@@ -140,15 +140,15 @@ struct iso2022_designation {
 
 struct iso2022_config {
     int flags;
-    const struct iso2022_designation *designations; /* non-ascii designs */
+    const struct iso2022_designation *designations; /* non-ascii desigs */
 };
 
 /*-*- iso-2022 codec implementation -*-*/
 
 CODEC_INIT(iso2022)
 {
-    const struct iso2022_designation *design;
-    for (design = CONFIG_DESIGNATIONS; design->mark; design++) {
+    const struct iso2022_designation *desig;
+    for (desig = CONFIG_DESIGNATIONS; desig->mark; desig++) {
         if (desig->initializer != NULL && desig->initializer(codec) != 0) {
             return -1;
         }

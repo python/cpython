@@ -1491,7 +1491,7 @@ class BaseTaskTests:
 
         with contextlib.closing(asyncio.new_event_loop()) as loop:
             # Coroutines shouldn't be yielded back as finished coroutines
-            # can't be reused.
+            # can't be re-used.
             awaitables_in = frozenset(
                 (coro(0), coro(1), coro(2), coro(3))
             )
@@ -1922,13 +1922,13 @@ class BaseTaskTests:
 
         base_exc = SystemExit()
 
-        async def notmuch():
+        async def notmutch():
             try:
                 await sleeper()
             except asyncio.CancelledError:
                 raise base_exc
 
-        task = self.new_task(loop, notmuch())
+        task = self.new_task(loop, notmutch())
         test_utils.run_briefly(loop)
 
         task.cancel()

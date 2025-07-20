@@ -1696,7 +1696,7 @@ expected_jumpy_line = 1
 # code_object_inner before rerunning the tests
 
 def _stringify_instruction(instr):
-    # Since positions offsets change a lot for these test cases, ignore them.
+    # Since postions offsets change a lot for these test cases, ignore them.
     base = (
         f"  make_inst(opname={instr.opname!r}, arg={instr.arg!r}, argval={instr.argval!r}, " +
         f"argrepr={instr.argrepr!r}, offset={instr.offset}, start_offset={instr.start_offset}, " +
