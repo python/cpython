@@ -1362,6 +1362,7 @@ parameter in :meth:`TarFile.add`::
     tar.add("foo", filter=reset)
     tar.close()
 
+
 .. _tar-formats:
 
 Supported tar formats
