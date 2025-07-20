@@ -1118,6 +1118,7 @@ class _TestQueue(BaseTestCase):
             queue.get()
         parent_can_continue.set()
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
     def test_put(self):
         MAXSIZE = 6
         queue = self.Queue(maxsize=MAXSIZE)
@@ -1187,6 +1188,7 @@ class _TestQueue(BaseTestCase):
         queue.put(5)
         parent_can_continue.set()
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
     def test_get(self):
         queue = self.Queue()
         child_can_start = self.Event()
@@ -1248,6 +1250,7 @@ class _TestQueue(BaseTestCase):
         # process cannot shutdown until the feeder thread has finished
         # pushing items onto the pipe.
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
     def test_fork(self):
         # Old versions of Queue would fail to create a new feeder
         # thread for a forked process if the original process had its
@@ -1298,6 +1301,7 @@ class _TestQueue(BaseTestCase):
             time.sleep(DELTA)
             q.task_done()
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
     def test_task_done(self):
         queue = self.JoinableQueue()
 
@@ -2912,6 +2916,7 @@ class _TestPool(BaseTestCase):
         self.assertEqual(get(), 49)
         self.assertTimingAlmostEqual(get.elapsed, TIMEOUT1)
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
     def test_async_timeout(self):
         p = self.Pool(3)
         try:
@@ -3009,6 +3014,7 @@ class _TestPool(BaseTestCase):
                 self.assertIn(value, expected_values)
                 expected_values.remove(value)
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
     def test_make_pool(self):
         expected_error = (RemoteError if self.TYPE == 'manager'
                           else ValueError)
@@ -3024,6 +3030,7 @@ class _TestPool(BaseTestCase):
                 p.close()
                 p.join()
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
     def test_terminate(self):
         # Simulate slow tasks which take "forever" to complete
         sleep_time = support.LONG_TIMEOUT
@@ -3041,6 +3048,7 @@ class _TestPool(BaseTestCase):
         p.terminate()
         p.join()
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
     def test_empty_iterable(self):
         # See Issue 12157
         p = self.Pool(1)
@@ -3053,6 +3061,7 @@ class _TestPool(BaseTestCase):
         p.close()
         p.join()
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
     def test_context(self):
         if self.TYPE == 'processes':
             L = list(range(10))
@@ -3067,6 +3076,7 @@ class _TestPool(BaseTestCase):
     def _test_traceback(cls):
         raise RuntimeError(123) # some comment
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
     def test_traceback(self):
         # We want ensure that the traceback from the child process is
         # contained in the traceback raised in the main process.
@@ -3106,9 +3116,11 @@ class _TestPool(BaseTestCase):
             p.join()
 
     @classmethod
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
     def _test_wrapped_exception(cls):
         raise RuntimeError('foo')
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
     def test_wrapped_exception(self):
         # Issue #20980: Should not wrap exception when using thread pool
         with self.Pool(1) as p:
@@ -3116,6 +3128,7 @@ class _TestPool(BaseTestCase):
                 p.apply(self._test_wrapped_exception)
         p.join()
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
     def test_map_no_failfast(self):
         # Issue #23992: the fail-fast behaviour when an exception is raised
         # during map() would make Pool.join() deadlock, because a worker
@@ -3151,6 +3164,7 @@ class _TestPool(BaseTestCase):
         # they were released too.
         self.assertEqual(CountedObject.n_instances, 0)
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
     def test_enter(self):
         if self.TYPE == 'manager':
             self.skipTest("test not applicable to manager")
@@ -3167,6 +3181,7 @@ class _TestPool(BaseTestCase):
                 pass
         pool.join()
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
     def test_resource_warning(self):
         if self.TYPE == 'manager':
             self.skipTest("test not applicable to manager")
@@ -3232,6 +3247,7 @@ class _TestPoolWorkerErrors(BaseTestCase):
 class _TestPoolWorkerLifetime(BaseTestCase):
     ALLOWED_TYPES = ('processes', )
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
     def test_pool_worker_lifetime(self):
         p = multiprocessing.Pool(3, maxtasksperchild=10)
         self.assertEqual(3, len(p._pool))
@@ -3261,6 +3277,7 @@ class _TestPoolWorkerLifetime(BaseTestCase):
         p.close()
         p.join()
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
     def test_pool_worker_lifetime_early_close(self):
         # Issue #10332: closing a pool whose workers have limited lifetimes
         # before all the tasks completed would make join() hang.
@@ -4048,6 +4065,7 @@ class _TestPicklingConnections(BaseTestCase):
 
         conn.close()
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
     def test_pickling(self):
         families = self.connection.families
 
