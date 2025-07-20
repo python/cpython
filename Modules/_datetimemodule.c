@@ -4478,7 +4478,7 @@ static PyTypeObject PyDateTime_TimeZoneType = {
     timezone_methods,                 /* tp_methods */
     0,                                /* tp_members */
     0,                                /* tp_getset */
-    0,                                /* tp_base; filled in PyInit__datetime */
+    &PyDateTime_TZInfoType,           /* tp_base */
     0,                                /* tp_dict */
     0,                                /* tp_descr_get */
     0,                                /* tp_descr_set */
@@ -7143,8 +7143,7 @@ static PyTypeObject PyDateTime_DateTimeType = {
     datetime_methods,                           /* tp_methods */
     0,                                          /* tp_members */
     datetime_getset,                            /* tp_getset */
-    0,                                          /* tp_base; filled in
-                                                   PyInit__datetime */
+    &PyDateTime_DateType,                       /* tp_base */
     0,                                          /* tp_dict */
     0,                                          /* tp_descr_get */
     0,                                          /* tp_descr_set */
@@ -7328,10 +7327,6 @@ clear_state(datetime_state *st)
 PyStatus
 _PyDateTime_InitTypes(PyInterpreterState *interp)
 {
-    // `&...` is not a constant expression according to a strict reading
-    // of C standards. Fill tp_base at run-time rather than statically.
-    // See https://bugs.python.org/issue40777
-    PyDateTime_TimeZoneType.tp_base = &PyDateTime_TZInfoType;
     PyDateTime_DateTimeType.tp_base = &PyDateTime_DateType;
 
     /* Bases classes must be initialized before subclasses,
