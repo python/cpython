@@ -1857,7 +1857,7 @@ class MappingTestCase(TestBase):
         self.assertRaises(KeyError, d.__delitem__, o)
         self.assertRaises(KeyError, d.__getitem__, o)
 
-        # If a key isn't of a weakly referencable type, __getitem__ and
+        # If a key isn't of a weakly referenceable type, __getitem__ and
         # __setitem__ raise TypeError.  __delitem__ should too.
         self.assertRaises(TypeError, d.__delitem__,  13)
         self.assertRaises(TypeError, d.__getitem__,  13)
@@ -2260,7 +2260,7 @@ libreftest = """ Doctest for examples in the library reference: weakref.rst
 >>> class Dict(dict):
 ...     pass
 ...
->>> obj = Dict(red=1, green=2, blue=3)   # this object is weak referencable
+>>> obj = Dict(red=1, green=2, blue=3)   # this object is weak referenceable
 >>> r = weakref.ref(obj)
 >>> print(r() is obj)
 True
