@@ -518,8 +518,8 @@ raise_unsupported_algorithm_impl(PyObject *exc_type,
 {
     // Since OpenSSL 3.0, if the algorithm is not supported or fetching fails,
     // the reason lacks the algorithm name.
-    int errcode = ERR_peek_last_error();
-    switch (ERR_GET_REASON(errcode)) {
+    int errcode = ERR_peek_last_error(), reason_id;
+    switch (reason_id = ERR_GET_REASON(errcode)) {
         case ERR_R_UNSUPPORTED: {
             PyObject *text = PyUnicode_FromFormat(fallback_format, format_arg);
             if (text != NULL) {
@@ -1915,6 +1915,7 @@ _hashlib_hmac_singleshot_impl(PyObject *module, Py_buffer *key,
 
     is_xof = PY_EVP_MD_xof(evp);
     Py_BEGIN_ALLOW_THREADS
+    is_xof = PY_EVP_MD_xof(evp);
     result = HMAC(
         evp,
         (const void *)key->buf, (int)key->len,
