@@ -2404,13 +2404,12 @@ def get_section(value):
                                         value))
     section.append(ValueTerminal('*', 'section-marker'))
     value = value[1:]
-    # We don't use str.isdigit because only 0-9 are accepted, not super-script
-    # and other types of digits.
-    if not value or not '0' <= value[0] <= '9':
+    # We don't use str.isdigit because only ASCII digits are allowed.
+    if not value or not ('0' <= value[0] <= '9'):
         raise errors.HeaderParseError("Expected section number but "
                                       "found {}".format(value))
     digits = ''
-    while value and '0' <= value[0] <= '9':
+    while value and ('0' <= value[0] <= '9'):
         digits += value[0]
         value = value[1:]
     if digits[0] == '0' and digits != '0':

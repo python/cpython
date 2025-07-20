@@ -2983,8 +2983,7 @@ class Test_parse_mime_parameters(TestParserMixin, TestEmailBase):
             [('r', '"')],
             [errors.InvalidHeaderDefect]*2),
 
-        # gh-87112: Unicode super-script digits (and others) are not allowed
-        # as section numbers.
+        # gh-87112: Only ASCII digits can be section numbers.
         'non_allowed_digits': (
             'foo*0=bar; foo*²=baz',
             ' foo="bar"',
