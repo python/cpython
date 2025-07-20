@@ -14,6 +14,7 @@ __all__ = ['Pool', 'ThreadPool']
 #
 
 import collections
+import functools
 import itertools
 import os
 import queue
@@ -395,32 +396,20 @@ class Pool(object):
             yield (result_job, i+1, _helper_reraises_exception, (e,), {})
 
     def _guarded_task_generation_lazy(self, result_job, func, iterable,
-                                      lazy_task_gen_helper):
-        '''Provides a generator of tasks for imap and imap_unordered with
+                                      backpressure_sema):
+        """Provides a generator of tasks for imap and imap_unordered with
         appropriate handling for iterables which throw exceptions during
-        iteration.'''
-        if not lazy_task_gen_helper.feature_enabled:
-            yield from self._guarded_task_generation(result_job, func, iterable)
-            return
-
+        iteration."""
         try:
             i = -1
             enumerated_iter = iter(enumerate(iterable))
-            thread = threading.current_thread()
-            max_generated_tasks = self._processes + lazy_task_gen_helper.buffersize
-
-            while thread._state == RUN:
-                with lazy_task_gen_helper.iterator_cond:
-                    if lazy_task_gen_helper.not_finished_tasks >= max_generated_tasks:
-                        continue  # wait for some task to be (picked up and) finished
-
+            while True:
+                backpressure_sema.acquire()
                 try:
-                    i, x = enumerated_iter.__next__()
+                    i, x = next(enumerated_iter)
                 except StopIteration:
                     break
-
                 yield (result_job, i, func, (x,), {})
-                lazy_task_gen_helper.tasks_generated += 1
 
         except Exception as e:
             yield (result_job, i+1, _helper_reraises_exception, (e,), {})
@@ -430,31 +419,32 @@ class Pool(object):
         Equivalent of `map()` -- can be MUCH slower than `Pool.map()`.
         '''
         self._check_running()
+        if chunksize < 1:
+            raise ValueError("Chunksize must be 1+, not {0:n}".format(chunksize))
+
+        result = IMapIterator(self, buffersize)
+
+        if result._backpressure_sema is None:
+            task_generation = self._guarded_task_generation
+        else:
+            task_generation = functools.partial(
+                self._guarded_task_generation_lazy,
+                backpressure_sema=result._backpressure_sema,
+            )
+
         if chunksize == 1:
-            result = IMapIterator(self, buffersize)
             self._taskqueue.put(
                 (
-                    self._guarded_task_generation_lazy(result._job,
-                                                       func,
-                                                       iterable,
-                                                       result._lazy_task_gen_helper),
+                    task_generation(result._job, func, iterable),
                     result._set_length,
                 )
             )
             return result
         else:
-            if chunksize < 1:
-                raise ValueError(
-                    "Chunksize must be 1+, not {0:n}".format(
-                        chunksize))
             task_batches = Pool._get_tasks(func, iterable, chunksize)
-            result = IMapIterator(self, buffersize)
             self._taskqueue.put(
                 (
-                    self._guarded_task_generation_lazy(result._job,
-                                                       mapstar,
-                                                       task_batches,
-                                                       result._lazy_task_gen_helper),
+                    task_generation(result._job, mapstar, task_batches),
                     result._set_length,
                 )
             )
@@ -465,30 +455,34 @@ class Pool(object):
         Like `imap()` method but ordering of results is arbitrary.
         '''
         self._check_running()
+        if chunksize < 1:
+            raise ValueError(
+                "Chunksize must be 1+, not {0!r}".format(chunksize)
+            )
+
+        result = IMapUnorderedIterator(self, buffersize)
+
+        if result._backpressure_sema is None:
+            task_generation = self._guarded_task_generation
+        else:
+            task_generation = functools.partial(
+                self._guarded_task_generation_lazy,
+                backpressure_sema=result._backpressure_sema,
+            )
+
         if chunksize == 1:
-            result = IMapUnorderedIterator(self, buffersize)
             self._taskqueue.put(
                 (
-                    self._guarded_task_generation_lazy(result._job,
-                                                       func,
-                                                       iterable,
-                                                       result._lazy_task_gen_helper),
+                    task_generation(result._job, func, iterable),
                     result._set_length,
                 )
             )
             return result
         else:
-            if chunksize < 1:
-                raise ValueError(
-                    "Chunksize must be 1+, not {0!r}".format(chunksize))
             task_batches = Pool._get_tasks(func, iterable, chunksize)
-            result = IMapUnorderedIterator(self, buffersize)
             self._taskqueue.put(
                 (
-                    self._guarded_task_generation_lazy(result._job,
-                                                       mapstar,
-                                                       task_batches,
-                                                       result._lazy_task_gen_helper),
+                    task_generation(result._job, mapstar, task_batches),
                     result._set_length,
                 )
             )
@@ -889,7 +883,13 @@ class IMapIterator(object):
         self._length = None
         self._unsorted = {}
         self._cache[self._job] = self
-        self._lazy_task_gen_helper = _LazyTaskGenHelper(buffersize, self._cond)
+
+        if buffersize is None:
+            self._backpressure_sema = None
+        else:
+            self._backpressure_sema = threading.Semaphore(
+                value=self._pool._processes + buffersize
+            )
 
     def __iter__(self):
         return self
@@ -910,7 +910,9 @@ class IMapIterator(object):
                         self._pool = None
                         raise StopIteration from None
                     raise TimeoutError from None
-            self._lazy_task_gen_helper.tasks_finished += 1
+
+        if self._backpressure_sema:
+            self._backpressure_sema.release()
 
         success, value = item
         if success:
@@ -958,22 +960,6 @@ class IMapUnorderedIterator(IMapIterator):
             if self._index == self._length:
                 del self._cache[self._job]
                 self._pool = None
-
-#
-# Class to store stats for lazy task generation and share them
-# between the main thread and `_guarded_task_generation()` thread.
-#
-class _LazyTaskGenHelper(object):
-    def __init__(self, buffersize, iterator_cond):
-        self.feature_enabled = buffersize is not None
-        self.buffersize = buffersize
-        self.tasks_generated = 0
-        self.tasks_finished = 0
-        self.iterator_cond = iterator_cond
-
-    @property
-    def not_finished_tasks(self):
-        return self.tasks_generated - self.tasks_finished
 
 #
 #
