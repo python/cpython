@@ -169,11 +169,11 @@ def copyfileobj(source_f, target_f):
 def _open_reader(obj):
     cls = type(obj)
     try:
-        return cls.__open_reader__(obj)
+        open_reader = cls.__open_reader__
     except AttributeError:
-        if hasattr(cls, '__open_reader__'):
-            raise
-    raise TypeError(f"{cls.__name__} can't be opened for reading")
+        raise TypeError(f"{cls.__name__} can't be opened for reading")
+    else:
+        return open_reader(obj)
 
 
 def _open_writer(obj, mode):
@@ -203,7 +203,7 @@ def vfsopen(obj, mode='r', buffering=-1, encoding=None, errors=None,
     the built-in open() function does.
 
     Unlike the built-in open() function, this function accepts 'openable'
-    objects, which are objects with any of these magic methods:
+    objects, which are objects with any of these special methods:
 
         __open_reader__()
         __open_writer__(mode)
