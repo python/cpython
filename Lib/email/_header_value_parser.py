@@ -2398,22 +2398,19 @@ def get_section(value):
     The caller should already have dealt with leading CFWS.
 
     """
-    def is_allowed_digit(c):
-        # We don't use str.isdigit because only 0-9 are accepted, not
-        # super-script and other types of digits.
-        return c in {'0','1','2','3','4','5','6','7','8','9'}
-
     section = Section()
     if not value or value[0] != '*':
         raise errors.HeaderParseError("Expected section but found {}".format(
                                         value))
     section.append(ValueTerminal('*', 'section-marker'))
     value = value[1:]
-    if not value or not is_allowed_digit(value[0]):
+    # We don't use str.isdigit because only 0-9 are accepted, not super-script
+    # and other types of digits.
+    if not value or not '0' <= value[0] <= '9':
         raise errors.HeaderParseError("Expected section number but "
                                       "found {}".format(value))
     digits = ''
-    while value and is_allowed_digit(value[0]):
+    while value and '0' <= value[0] <= '9':
         digits += value[0]
         value = value[1:]
     if digits[0] == '0' and digits != '0':

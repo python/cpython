@@ -2991,7 +2991,6 @@ class Test_parse_mime_parameters(TestParserMixin, TestEmailBase):
             'foo*0=bar; foo*²=baz',
             [('foo', 'bar')],
             [errors.InvalidHeaderDefect]),
-
     }
 
 @parameterize
