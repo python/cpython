@@ -82,7 +82,7 @@ running Python processes without requiring code modification or process restart.
 Unlike deterministic profilers (:mod:`cProfile` and :mod:`profile`) that instrument
 every function call, the sampling profiler periodically captures stack traces from
 running processes.  This approach provides virtually zero overhead while achieving
-sampling rates of **up to 200,000 Hz**, making it the fastest sampling profiler
+sampling rates of **up to 1,000,000 Hz**, making it the fastest sampling profiler
 available for Python (at the time of its contribution) and ideal for debugging
 performance issues in production environments.
 
@@ -377,6 +377,14 @@ http.server
   (Contributed by Bénédikt Tran in :gh:`133810`.)
 
 
+pathlib
+-------
+
+* Removed deprecated :meth:`!pathlib.PurePath.is_reserved`.
+  Use :func:`os.path.isreserved` to detect reserved paths on Windows.
+  (Contributed by Nikita Sobolev in :gh:`133875`.)
+
+
 platform
 --------
 
@@ -485,6 +493,7 @@ Porting to Python 3.15
 
   The |pythoncapi_compat_project| can be used to get most of these new
   functions on Python 3.14 and older.
+
 
 Deprecated C APIs
 -----------------
