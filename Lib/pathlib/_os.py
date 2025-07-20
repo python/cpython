@@ -171,7 +171,8 @@ def _open_reader(obj):
     try:
         open_reader = cls.__open_reader__
     except AttributeError:
-        raise TypeError(f"{cls.__name__} can't be opened for reading")
+        cls_name = cls.__name__
+        raise TypeError(f"{cls_name} can't be opened for reading") from None
     else:
         return open_reader(obj)
 
@@ -179,21 +180,23 @@ def _open_reader(obj):
 def _open_writer(obj, mode):
     cls = type(obj)
     try:
-        return cls.__open_writer__(obj, mode)
+        open_writer = cls.__open_writer__
     except AttributeError:
-        if hasattr(cls, '__open_writer__'):
-            raise
-    raise TypeError(f"{cls.__name__} can't be opened for writing")
+        cls_name = cls.__name__
+        raise TypeError(f"{cls_name} can't be opened for writing") from None
+    else:
+        return open_writer(obj, mode)
 
 
 def _open_updater(obj, mode):
     cls = type(obj)
     try:
-        return cls.__open_updater__(obj, mode)
+        open_updater = cls.__open_updater__
     except AttributeError:
-        if hasattr(cls, '__open_updater__'):
-            raise
-    raise TypeError(f"{cls.__name__} can't be opened for updating")
+        cls_name = cls.__name__
+        raise TypeError(f"{cls_name} can't be opened for updating") from None
+    else:
+        return open_updater(obj, mode)
 
 
 def vfsopen(obj, mode='r', buffering=-1, encoding=None, errors=None,
