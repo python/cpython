@@ -4758,9 +4758,7 @@ class MiscTest(unittest.TestCase):
         )
 
         code = """
-            import sys
-            sys.builtin_module_names = sys.builtin_module_names + ("boo",)
-            import boo
+            import msvcrt
         """
         _, _, stderr = assert_python_failure('-S', '-c', code)
 
