@@ -1487,8 +1487,6 @@ class SMTPUTF8SimTests(unittest.TestCase):
             timeout=support.LOOPBACK_TIMEOUT)
         self.addCleanup(smtp.close)
         self.assertEqual(smtp.send_message(msg), {})
-        self.assertEqual(self.serv.last_mailfrom, 'főo@bar.com')
-        self.assertEqual(self.serv.last_rcpttos, ['Dinsdale'])
 
         last_message = self.serv.last_message.decode()
         date = email.message_from_string(last_message)['Date']
@@ -1507,6 +1505,8 @@ class SMTPUTF8SimTests(unittest.TestCase):
             oh là là, know what I mean, know what I mean?
             """.format(date))
 
+        self.assertEqual(self.serv.last_mailfrom, 'főo@bar.com')
+        self.assertEqual(self.serv.last_rcpttos, ['Dinsdale'])
         self.assertEqual(last_message, expected)
         self.assertIn('BODY=8BITMIME', self.serv.last_mail_options)
         self.assertIn('SMTPUTF8', self.serv.last_mail_options)
