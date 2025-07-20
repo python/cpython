@@ -95,12 +95,11 @@ class BufferedSubFile(object):
         return line
 
     def _check_eofstack(self, data, start=0, end=sys.maxsize):
-        for ateof in reversed(self._eofstack):
-            if ateof(data, start, end):
-                # We're at the false EOF.
-                return True
-
-        return False
+        # check if we can find a dummy EOF
+        return any(
+            ateof(data, start, end)
+            for ateof in reversed(self._eofstack)
+        )
 
     def unreadline(self, line):
         # Let the consumer push a line back into the buffer.
@@ -112,7 +111,7 @@ class BufferedSubFile(object):
         if not line:
             pass
         elif self._dump_destination is None:
-            # We're not dumping data. Just flush the partial to lines
+            # We're not dumping data. Just flush the partial to lines.
             self._lines.append(line)
         elif self._check_eofstack(line):
             # We were dumping, but we've now reached the end of the dump.
@@ -128,19 +127,17 @@ class BufferedSubFile(object):
     def push(self, data):
         """Push some new data into this object."""
         if not data:
-            return
-
-        if self._can_dump_data(data):
+            pass
+        elif self._can_dump_data(data):
             self._dump_destination.append(data)
-            return
-
-        self._push_data(data)
+        else:
+            self._push_data(data)
 
     def _can_dump_data(self, data):
         if self._dump_destination is None:
             return False
 
-        # We're dumping; check for easy optimizations
+        # We're dumping; check for easy optimizations.
         if not self._eofstack:
             # There's nothing that will ever tell us to stop dumping.
             # This does absolute wonders for large non-multipart emails.
@@ -178,7 +175,6 @@ class BufferedSubFile(object):
             # There's nothing that will ever tell us to stop dumping. Dump away
             return True
 
-        all_boundary_matches = True
         for pred in self._eofstack:
             if not hasattr(pred, 'is_boundary_match'):
                 return False
@@ -190,7 +186,6 @@ class BufferedSubFile(object):
     def _is_dump_midline(self):
         if not self._dump_destination:
             return False
-
         return self._dump_destination[-1][-1] not in ('\n', '\r')
 
     def _push_data(self, data):
@@ -214,8 +209,7 @@ class BufferedSubFile(object):
             return
 
         data_start_index = 0
-
-        # Complete our previous/partial line
+        # Complete our previous/partial line.
         if self._partial:
             if self._dangling_partial:
                 if data[0] != NL:
@@ -227,7 +221,6 @@ class BufferedSubFile(object):
                     self._flush_partial()
                     data_start_index = 1
 
-                    # Find the next newline
                     unl_start_index = BufferedSubFile._find_unl(
                         data, data_start_index)
             else:
@@ -285,7 +278,6 @@ class BufferedSubFile(object):
                     self._partial.append(lines.pop())
                     if data[-1] == '\r':
                         self._dangling_partial = True
-
                 self.pushlines(lines)
         else:
             dump_data_start = None if self._dump_destination is None \
@@ -353,7 +345,7 @@ class BufferedSubFile(object):
             raise StopIteration
         return line
 
-    def _get_dump(self, start_value:str|None = None):
+    def _get_dump(self, start_value=None):
         _dump_destination = deque()
         self._dump_destination = _dump_destination
 
@@ -398,7 +390,6 @@ class BufferedSubFile(object):
         cr_index = data.find('\r', start)
         if cr_index < 0:
             return data.find(NL, start)
-
         nl_index = data.find(NL, start, cr_index)
         return nl_index if nl_index >= 0 else cr_index
 
@@ -410,15 +401,12 @@ class BufferedSubFile(object):
         # \n is always end of line
         if data.startswith(NL, start):
             return start + 1
-
         # \r\n is always end of line
         if data.startswith(NL, start + 1):
             return start + 2
-
         # End of data; we can't know if a \n follows, so no universal line end
         if start + 1 >= len(data):
             return -1
-
         # This is a \r followed by some other non-newline character
         return start + 1
 
