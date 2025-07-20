@@ -167,8 +167,8 @@ _TERMINAL_CAPABILITIES = {
         "cud": b"\x1b[%p1%dB",  # Move cursor down N rows
         "cuf": b"\x1b[%p1%dC",  # Move cursor right N columns
         "cuu": b"\x1b[%p1%dA",  # Move cursor up N rows
-        "cub1": b"\x1b[D",  # Move cursor left 1 column
-        "cud1": b"\x1b[B",  # Move cursor down 1 row
+        "cub1": b"\x08",  # Move cursor left 1 column
+        "cud1": b"\n",  # Move cursor down 1 row
         "cuf1": b"\x1b[C",  # Move cursor right 1 column
         "cuu1": b"\x1b[A",  # Move cursor up 1 row
         "cup": b"\x1b[%i%p1%d;%p2%dH",  # Move cursor to row, column
@@ -180,10 +180,10 @@ _TERMINAL_CAPABILITIES = {
         "dch": b"\x1b[%p1%dP",  # Delete N characters
         "dch1": b"\x1b[P",  # Delete 1 character
         "ich": b"\x1b[%p1%d@",  # Insert N characters
-        "ich1": b"\x1b[@",  # Insert 1 character
+        "ich1": b"",  # Insert 1 character
         # Cursor visibility
         "civis": b"\x1b[?25l",  # Make cursor invisible
-        "cnorm": b"\x1b[?25h",  # Make cursor normal (visible)
+        "cnorm": b"\x1b[?12l\x1b[?25h",  # Make cursor normal (visible)
         # Scrolling
         "ind": b"\n",  # Scroll up one line
         "ri": b"\x1bM",  # Scroll down one line
@@ -194,16 +194,16 @@ _TERMINAL_CAPABILITIES = {
         "pad": b"",
         # Function keys and special keys
         "kdch1": b"\x1b[3~",  # Delete key
-        "kcud1": b"\x1b[B",  # Down arrow
-        "kend": b"\x1b[F",  # End key
+        "kcud1": b"\x1bOB",  # Down arrow
+        "kend": b"\x1bOF",  # End key
         "kent": b"\x1bOM",  # Enter key
-        "khome": b"\x1b[H",  # Home key
+        "khome": b"\x1bOH",  # Home key
         "kich1": b"\x1b[2~",  # Insert key
-        "kcub1": b"\x1b[D",  # Left arrow
+        "kcub1": b"\x1bOD",  # Left arrow
         "knp": b"\x1b[6~",  # Page down
         "kpp": b"\x1b[5~",  # Page up
-        "kcuf1": b"\x1b[C",  # Right arrow
-        "kcuu1": b"\x1b[A",  # Up arrow
+        "kcuf1": b"\x1bOC",  # Right arrow
+        "kcuu1": b"\x1bOA",  # Up arrow
         # Function keys F1-F20
         "kf1": b"\x1bOP",
         "kf2": b"\x1bOQ",
@@ -217,14 +217,14 @@ _TERMINAL_CAPABILITIES = {
         "kf10": b"\x1b[21~",
         "kf11": b"\x1b[23~",
         "kf12": b"\x1b[24~",
-        "kf13": b"\x1b[25~",
-        "kf14": b"\x1b[26~",
-        "kf15": b"\x1b[28~",
-        "kf16": b"\x1b[29~",
-        "kf17": b"\x1b[31~",
-        "kf18": b"\x1b[32~",
-        "kf19": b"\x1b[33~",
-        "kf20": b"\x1b[34~",
+        "kf13": b"\x1b[1;2P",
+        "kf14": b"\x1b[1;2Q",
+        "kf15": b"\x1b[1;2R",
+        "kf16": b"\x1b[1;2S",
+        "kf17": b"\x1b[15;2~",
+        "kf18": b"\x1b[17;2~",
+        "kf19": b"\x1b[18;2~",
+        "kf20": b"\x1b[19;2~",
     },
     # Dumb terminal - minimal capabilities
     "dumb": {

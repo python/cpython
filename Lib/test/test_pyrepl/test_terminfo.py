@@ -33,7 +33,8 @@ class TestCursesCompatibility(unittest.TestCase):
     $TERM in the same process, so we subprocess all `curses` tests to get correctly
     set up terminfo."""
 
-    def setUp(self):
+    @classmethod
+    def setUpClass(cls):
         if _curses is None:
             raise unittest.SkipTest(
                 "`curses` capability provided to regrtest but `_curses` not importable"
@@ -42,6 +43,11 @@ class TestCursesCompatibility(unittest.TestCase):
         if not has_subprocess_support:
             raise unittest.SkipTest("test module requires subprocess")
 
+        # we need to ensure there's a terminfo database on the system and that
+        # `infocmp` works
+        cls.infocmp("dumb")
+
+    def setUp(self):
         self.original_term = os.environ.get("TERM", None)
 
     def tearDown(self):
@@ -49,6 +55,34 @@ class TestCursesCompatibility(unittest.TestCase):
             os.environ["TERM"] = self.original_term
         elif "TERM" in os.environ:
             del os.environ["TERM"]
+
+    @classmethod
+    def infocmp(cls, term) -> list[str]:
+        all_caps = []
+        try:
+            result = subprocess.run(
+                ["infocmp", "-l1", term],
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+        except Exception:
+            raise unittest.SkipTest("calling `infocmp` failed on the system")
+
+        for line in result.stdout.splitlines():
+            line = line.strip()
+            if line.startswith("#"):
+                if "terminfo" not in line and "termcap" in line:
+                    # PyREPL terminfo doesn't parse termcap databases
+                    raise unittest.SkipTest(
+                        "curses using termcap.db: no terminfo database on"
+                        " the system"
+                    )
+            elif "=" in line:
+                cap_name = line.split("=")[0]
+                all_caps.append(cap_name)
+
+        return all_caps
 
     def test_setupterm_basic(self):
         """Test basic setupterm functionality."""
@@ -79,7 +113,7 @@ class TestCursesCompatibility(unittest.TestCase):
 
                 # Set up with PyREPL curses
                 try:
-                    terminfo.TermInfo(term)
+                    terminfo.TermInfo(term, fallback=False)
                     pyrepl_success = True
                 except Exception as e:
                     pyrepl_success = False
@@ -120,7 +154,7 @@ class TestCursesCompatibility(unittest.TestCase):
         std_success = ncurses_data["success"]
 
         try:
-            terminfo.TermInfo(None)
+            terminfo.TermInfo(None, fallback=False)
             pyrepl_success = True
         except Exception:
             pyrepl_success = False
@@ -138,28 +172,7 @@ class TestCursesCompatibility(unittest.TestCase):
         term = "xterm"
 
         # Get ALL capabilities from infocmp
-        all_caps = []
-        try:
-            result = subprocess.run(
-                ["infocmp", "-1", term],
-                capture_output=True,
-                text=True,
-                check=True,
-            )
-            for line in result.stdout.splitlines():
-                line = line.strip()
-                if "=" in line and not line.startswith("#"):
-                    cap_name = line.split("=")[0]
-                    all_caps.append(cap_name)
-        except:
-            # If infocmp fails, at least test the critical ones
-            # fmt: off
-            all_caps = [
-                "cup", "clear", "el", "cub1", "cuf1", "cuu1", "cud1", "bel",
-                "ind", "ri", "civis", "cnorm", "smkx", "rmkx", "cub", "cuf",
-                "cud", "cuu", "home", "hpa", "vpa", "cr", "nel", "ht"
-            ]
-            # fmt: on
+        all_caps = self.infocmp(term)
 
         ncurses_code = dedent(
             f"""
@@ -176,7 +189,7 @@ class TestCursesCompatibility(unittest.TestCase):
                         results[cap] = -1
                     else:
                         results[cap] = list(val)
-                except:
+                except BaseException:
                     results[cap] = "error"
             print(json.dumps(results))
             """
@@ -193,7 +206,7 @@ class TestCursesCompatibility(unittest.TestCase):
 
         ncurses_data = json.loads(result.stdout)
 
-        ti = terminfo.TermInfo(term)
+        ti = terminfo.TermInfo(term, fallback=False)
 
         # Test every single capability
         for cap in all_caps:
@@ -255,7 +268,7 @@ class TestCursesCompatibility(unittest.TestCase):
         ncurses_data = json.loads(result.stdout)
 
         # PyREPL setup
-        ti = terminfo.TermInfo(term)
+        ti = terminfo.TermInfo(term, fallback=False)
 
         # PyREPL behavior with string
         try:
@@ -281,7 +294,7 @@ class TestCursesCompatibility(unittest.TestCase):
     def test_tparm_basic(self):
         """Test basic tparm functionality."""
         term = "xterm"
-        ti = terminfo.TermInfo(term)
+        ti = terminfo.TermInfo(term, fallback=False)
 
         # Test cursor positioning (cup)
         cup = ti.get("cup")
@@ -357,7 +370,7 @@ class TestCursesCompatibility(unittest.TestCase):
     def test_tparm_multiple_params(self):
         """Test tparm with capabilities using multiple parameters."""
         term = "xterm"
-        ti = terminfo.TermInfo(term)
+        ti = terminfo.TermInfo(term, fallback=False)
 
         # Test capabilities that take parameters
         param_caps = {
@@ -472,7 +485,7 @@ class TestCursesCompatibility(unittest.TestCase):
         ncurses_data = json.loads(result.stdout)
 
         # PyREPL setup
-        ti = terminfo.TermInfo(term)
+        ti = terminfo.TermInfo(term, fallback=False)
 
         # Test with None - both should raise TypeError
         if ncurses_data["raises_typeerror"]:
@@ -496,38 +509,9 @@ class TestCursesCompatibility(unittest.TestCase):
         ]
 
         # Get all string capabilities from ncurses
-        all_caps = []
-        try:
-            # Get all capability names from infocmp
-            result = subprocess.run(
-                ["infocmp", "-1", "xterm"],
-                capture_output=True,
-                text=True,
-                check=True,
-            )
-            for line in result.stdout.splitlines():
-                line = line.strip()
-                if "=" in line:
-                    cap_name = line.split("=")[0]
-                    all_caps.append(cap_name)
-        except:
-            # Fall back to a core set if infocmp fails
-            # fmt: off
-            all_caps = [
-                "cup", "clear", "el", "cub", "cuf", "cud", "cuu", "cub1",
-                "cuf1", "cud1", "cuu1", "home", "bel", "ind", "ri", "nel", "cr",
-                "ht", "hpa", "vpa", "dch", "dch1", "dl", "dl1", "ich", "ich1",
-                "il", "il1", "sgr0", "smso", "rmso", "smul", "rmul", "bold",
-                "rev", "blink", "dim", "smacs", "rmacs", "civis", "cnorm", "sc",
-                "rc", "hts", "tbc", "ed", "kbs", "kcud1", "kcub1", "kcuf1",
-                "kcuu1", "kdch1", "khome", "kend", "knp", "kpp", "kich1", "kf1",
-                "kf2", "kf3", "kf4", "kf5", "kf6", "kf7", "kf8", "kf9", "kf10",
-                "rmkx", "smkx"
-            ]
-            # fmt: on
-
         for term in special_terms:
             with self.subTest(term=term):
+                all_caps = self.infocmp(term)
                 ncurses_code = dedent(
                     f"""
                     import _curses
@@ -547,7 +531,7 @@ class TestCursesCompatibility(unittest.TestCase):
                                 else:
                                     # Convert bytes to list of ints for JSON
                                     results[cap] = list(val)
-                            except:
+                            except BaseException:
                                 results[cap] = "error"
                         print(json.dumps(results))
                     except Exception as e:
@@ -576,10 +560,10 @@ class TestCursesCompatibility(unittest.TestCase):
                 if "error" in ncurses_data and len(ncurses_data) == 1:
                     # ncurses failed to setup this terminal
                     # PyREPL should still work with fallback
-                    ti = terminfo.TermInfo(term)
+                    ti = terminfo.TermInfo(term, fallback=True)
                     continue
 
-                ti = terminfo.TermInfo(term)
+                ti = terminfo.TermInfo(term, fallback=False)
 
                 # Compare all capabilities
                 for cap in all_caps:
@@ -638,9 +622,9 @@ class TestCursesCompatibility(unittest.TestCase):
 
         # PyREPL should succeed with fallback
         try:
-            ti = terminfo.TermInfo(fake_term)
+            ti = terminfo.TermInfo(fake_term, fallback=True)
             pyrepl_ok = True
-        except:
+        except Exception:
             pyrepl_ok = False
 
         self.assertTrue(
