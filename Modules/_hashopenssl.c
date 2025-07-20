@@ -1187,8 +1187,8 @@ static PyType_Spec HASHXOFobject_type_spec = {
 #endif
 
 static PyObject *
-_hashlib_HASH(_hashlibstate *state,
-              const char *digestname, PyObject *data_obj, int usedforsecurity)
+_hashlib_HASH(_hashlibstate *state, const char *digestname, PyObject *data_obj,
+              int usedforsecurity)
 {
     Py_buffer view = { 0 };
     PY_EVP_MD *digest = NULL;
@@ -1211,7 +1211,7 @@ _hashlib_HASH(_hashlibstate *state,
         goto exit;
     }
 
-#if !defined(Py_HAS_OPENSSL3_SUPPORT) && defined(EVP_MD_CTX_FLAG_NON_FIPS_ALLOW)
+#if defined(EVP_MD_CTX_FLAG_NON_FIPS_ALLOW) && OPENSSL_VERSION_NUMBER < 0x30000000L
     // In OpenSSL 1.1.1 the non FIPS allowed flag is context specific while
     // in 3.0.0 it is a different EVP_MD provider.
     if (!usedforsecurity) {
