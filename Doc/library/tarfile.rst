@@ -1283,6 +1283,9 @@ Command-line options
 Examples
 --------
 
+Reading examples
+~~~~~~~~~~~~~~~~~~~
+
 How to extract an entire tar archive to the current working directory::
 
    import tarfile
@@ -1305,21 +1308,6 @@ a generator function instead of a list::
    tar.extractall(members=py_files(tar))
    tar.close()
 
-How to create an uncompressed tar archive from a list of filenames::
-
-   import tarfile
-   tar = tarfile.open("sample.tar", "w")
-   for name in ["foo", "bar", "quux"]:
-       tar.add(name)
-   tar.close()
-
-The same example using the :keyword:`with` statement::
-
-    import tarfile
-    with tarfile.open("sample.tar", "w") as tar:
-        for name in ["foo", "bar", "quux"]:
-            tar.add(name)
-
 How to read a gzip compressed tar archive and display some member information::
 
    import tarfile
@@ -1334,6 +1322,19 @@ How to read a gzip compressed tar archive and display some member information::
            print("something else.")
    tar.close()
 
+Writing examples
+~~~~~~~~~~~~~~~~
+
+How to create and write an archive to stdout using
+:data:`sys.stdout.buffer <sys.stdout>` in the *fileobj* parameter
+in :meth:`TarFile.add`::
+
+    import sys
+    import tarfile
+    with tarfile.open("sample.tar.gz", "w:gz", fileobj=sys.stdout.buffer) as tar:
+        for name in ["foo", "bar", "quux"]:
+            tar.add(name)
+
 How to create an archive and reset the user information using the *filter*
 parameter in :meth:`TarFile.add`::
 
@@ -1346,13 +1347,18 @@ parameter in :meth:`TarFile.add`::
     tar.add("foo", filter=reset)
     tar.close()
 
-How to create and write an archive to stdout using
-:data:`sys.stdout.buffer <sys.stdout>` in the *fileobj* parameter
-in :meth:`TarFile.add`::
+How to create an uncompressed tar archive from a list of filenames::
 
-    import sys
+   import tarfile
+   tar = tarfile.open("sample.tar", "w")
+   for name in ["foo", "bar", "quux"]:
+       tar.add(name)
+   tar.close()
+
+The same example using the :keyword:`with` statement::
+
     import tarfile
-    with tarfile.open("sample.tar.gz", "w:gz", fileobj=sys.stdout.buffer) as tar:
+    with tarfile.open("sample.tar", "w") as tar:
         for name in ["foo", "bar", "quux"]:
             tar.add(name)
 
