@@ -519,18 +519,6 @@ class PurePath:
             return False
         return self.parser.isabs(self)
 
-    def is_reserved(self):
-        """Return True if the path contains one of the special names reserved
-        by the system, if any."""
-        import warnings
-        msg = ("pathlib.PurePath.is_reserved() is deprecated and scheduled "
-               "for removal in Python 3.15. Use os.path.isreserved() to "
-               "detect reserved paths on Windows.")
-        warnings._deprecated("pathlib.PurePath.is_reserved", msg, remove=(3, 15))
-        if self.parser is ntpath:
-            return self.parser.isreserved(self)
-        return False
-
     def as_uri(self):
         """Return the path as a URI."""
         import warnings
