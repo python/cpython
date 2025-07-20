@@ -23,7 +23,7 @@ from test.support import socket_helper
 from test.support import threading_helper
 from test.support import asyncore
 from test.support import smtpd
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 
 support.requires_working_socket(module=True)
