@@ -560,7 +560,8 @@ def _block_openssl_hash_new(blocked_name):
     def _hashlib_new(name, data=b'', *, usedforsecurity=True, string=None):
         if name == blocked_name:
             raise _hashlib.UnsupportedDigestmodError(blocked_name)
-        return wrapped(*args, **kwargs)
+        return wrapped(name, data,
+                       usedforsecurity=usedforsecurity, string=string)
 
     _ensure_wrapper_signature(_hashlib_new, wrapped)
     return unittest.mock.patch('_hashlib.new', _hashlib_new)
@@ -596,7 +597,7 @@ def _block_openssl_hmac_digest(blocked_name):
     def _hashlib_hmac_digest(key, msg, digest):
         if digest == blocked_name:
             raise _hashlib.UnsupportedDigestmodError(blocked_name)
-        return wrapped(key, msg, digestmod)
+        return wrapped(key, msg, digest)
 
     _ensure_wrapper_signature(_hashlib_hmac_digest, wrapped)
     return unittest.mock.patch('_hashlib.hmac_digest', _hashlib_hmac_digest)
