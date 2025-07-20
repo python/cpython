@@ -26,7 +26,6 @@ from test.support import smtpd
 from unittest.mock import Mock
 
 
-
 support.requires_working_socket(module=True)
 
 HOST = socket_helper.HOST
