@@ -237,7 +237,7 @@ http.client
   :class:`~http.client.HTTPConnection` and :class:`~http.client.HTTPSConnection`
   constructors. This parameter sets the maximum number of allowed response headers,
   helping to prevent denial-of-service attacks.
-  (Contributed by Alexander Enrique Urieles Nieto in :gh:`136814`.)
+  (Contributed by Alexander Enrique Urieles Nieto in :gh:`131724`.)
 
 
 math
