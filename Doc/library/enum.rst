@@ -509,21 +509,19 @@ Data Types
    of any string operation performed on or with a *StrEnum* member is not part
    of the enumeration.
 
-   >>> from enum import StrEnum
-    >>> class Color(StrEnum):
-    ...     RED = 'r'
-    ...     GREEN = 'g'
-    ...     BLUE = 'b'
-    ...     UNKNOWN = auto()
-    ...     
-    >>> Color.RED
-    <Color.RED: 'r'>
-    >>> str(Color.RED)
-    'r'
-    >>> Color.UNKNOWN
-    <Color.UNKNOWN: 'unknown'>
-    >>> str(Color.UNKNOWN)
-    'unknown'
+   >>> from enum import StrEnum, auto
+   >>> class Color(StrEnum):
+   ...     RED = 'r'
+   ...     GREEN = 'g'
+   ...     BLUE = 'b'
+   ...     UNKNOWN = auto()
+   ...
+   >>> Color.RED
+   <Color.RED: 'r'>
+   >>> Color.UNKNOWN
+   <Color.UNKNOWN: 'unknown'>
+   >>> str(Color.UNKNOWN)
+   'unknown'
 
    .. note::
 
