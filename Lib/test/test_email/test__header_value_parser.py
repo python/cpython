@@ -2982,6 +2982,16 @@ class Test_parse_mime_parameters(TestParserMixin, TestEmailBase):
             'r*=\'a\'"',
             [('r', '"')],
             [errors.InvalidHeaderDefect]*2),
+
+        # bpo-42946: Unicode super-script digits (and others) are not allowed
+        # as section numbers.
+        'non_allowed_digits': (
+            'foo*0=bar; foo*²=baz',
+            ' foo="bar"',
+            'foo*0=bar; foo*²=baz',
+            [('foo', 'bar')],
+            [errors.InvalidHeaderDefect]),
+
     }
 
 @parameterize
