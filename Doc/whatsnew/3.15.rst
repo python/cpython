@@ -230,6 +230,21 @@ difflib
   (Contributed by Jiahao Li in :gh:`134580`.)
 
 
+lzma
+----
+
+* Add :const:`lzma.LZMA_VERSION`, :const:`lzma.LZMA_HEADER_VERSION`, and
+  related constants. They report the version of the underlying ``lzma`` library
+  found at runtime and the header versions used at build time.
+  (Contributed by Chien Wong in :gh:`115988`.)
+
+* Add support of new BCJ filters ARM64 and RISC-V via
+  :const:`!lzma.FILTER_ARM64` and :const:`!lzma.FILTER_RISCV`.  Note that the
+  new filters will work only if runtime library supports them. ARM64 filter
+  requires ``lzma`` 5.4.0 or newer while RISC-V requires 5.6.0 or newer.
+  (Contributed by Chien Wong in :gh:`115988`.)
+
+
 math
 ----
 
