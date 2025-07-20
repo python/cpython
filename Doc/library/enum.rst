@@ -504,16 +504,28 @@ Data Types
 
 .. class:: StrEnum
 
-   ``StrEnum`` is the same as :class:`Enum`, but its members are also strings and can be used
-   in most of the same places that a string can be used.  The result of any string
-   operation performed on or with a *StrEnum* member is not part of the enumeration.
+   *StrEnum* is the same as :class:`Enum`, but its members are also strings and
+   can be used in most of the same places that a string can be used. The result
+   of any string operation performed on or with a *StrEnum* member is not part
+   of the enumeration.
+
+   >>> from enum import StrEnum
+   >>> class Name(StrEnum):
+   ...     IDENTIFIER = 'id'
+   ...     PROPERTY = 'pro'
+   ...     ATTRIBUTE = 'attr'
+   ...
+   >>> Name.IDENTIFIER
+   <Name.IDENTIFIER: 'id'>
+   >>> str(Name.IDENTIFIER)
+   'id'
 
    .. note::
 
       There are places in the stdlib that check for an exact :class:`str`
       instead of a :class:`str` subclass (i.e. ``type(unknown) == str``
       instead of ``isinstance(unknown, str)``), and in those locations you
-      will need to use ``str(StrEnum.member)``.
+      will need to use ``str(MyStrEnum.MY_MEMBER)``.
 
    .. note::
 
