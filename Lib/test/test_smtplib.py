@@ -26,6 +26,7 @@ from test.support import smtpd
 from unittest.mock import Mock
 
 
+
 support.requires_working_socket(module=True)
 
 HOST = socket_helper.HOST
@@ -1393,11 +1394,6 @@ class SMTPUTF8SimTests(unittest.TestCase):
 
     maxDiff = None
 
-    def _is_local(self, date: str) -> bool:
-        dt = email.utils.parsedate_to_datetime(date)
-        local_offset = dt.now().astimezone().utcoffset()
-        return dt.utcoffset() == local_offset
-
     def setUp(self):
         self.thread_key = threading_helper.threading_setup()
         self.real_getfqdn = socket.getfqdn
@@ -1472,6 +1468,7 @@ class SMTPUTF8SimTests(unittest.TestCase):
         self.assertIn('SMTPUTF8', self.serv.last_mail_options)
         self.assertEqual(self.serv.last_rcpt_options, [])
 
+    @support.run_with_tz('UTC-2')
     def test_send_message_uses_smtputf8_if_addrs_non_ascii(self):
         msg = EmailMessage()
         msg['From'] = "Páolo <főo@bar.com>"
@@ -1491,7 +1488,10 @@ class SMTPUTF8SimTests(unittest.TestCase):
         last_message = self.serv.last_message.decode()
         date = email.message_from_string(last_message)['Date']
         # asserts RFC 5322 section 3.3 4th Paragraph
-        self.assertTrue(self._is_local(date))
+        self.assertEqual(
+            email.utils.parsedate_to_datetime(date).tzname(),
+            "UTC+02:00"
+        )
 
         expected = textwrap.dedent("""\
             From: Páolo <főo@bar.com>
