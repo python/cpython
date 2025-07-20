@@ -518,8 +518,8 @@ raise_unsupported_algorithm_impl(PyObject *exc_type,
 {
     // Since OpenSSL 3.0, if the algorithm is not supported or fetching fails,
     // the reason lacks the algorithm name.
-    int errcode = ERR_peek_last_error(), reason_id;
-    switch (reason_id = ERR_GET_REASON(errcode)) {
+    int errcode = ERR_peek_last_error();
+    switch (ERR_GET_REASON(errcode)) {
         case ERR_R_UNSUPPORTED: {
             PyObject *text = PyUnicode_FromFormat(fallback_format, format_arg);
             if (text != NULL) {
@@ -688,13 +688,11 @@ disable_fips_property(Py_hash_type py_ht)
  * If 'name' is an OpenSSL indexed name, the return value is cached.
  */
 static PY_EVP_MD *
-get_openssl_evp_md_by_utf8name(_hashlibstate *state,
-                               const char *name, Py_hash_type py_ht)
+get_openssl_evp_md_by_utf8name(_hashlibstate *state, const char *name,
+                               Py_hash_type py_ht)
 {
     PY_EVP_MD *digest = NULL, *other_digest = NULL;
-    py_hashentry_t *entry = (py_hashentry_t *)_Py_hashtable_get(
-        state->hashtable, (const void*)name
-    );
+    py_hashentry_t *entry = _Py_hashtable_get(state->hashtable, name);
 
     if (entry != NULL) {
         if (!disable_fips_property(py_ht)) {
@@ -1277,19 +1275,13 @@ _hashlib_HASH(_hashlibstate *state, const char *digestname, PyObject *data_obj,
         GET_BUFFER_VIEW_OR_ERROUT(data_obj, &view);
     }
 
-    digest = get_openssl_evp_md_by_utf8name(
-        state, digestname, usedforsecurity ? Py_ht_evp : Py_ht_evp_nosecurity
-    );
+    Py_hash_type purpose = usedforsecurity ? Py_ht_evp : Py_ht_evp_nosecurity;
+    digest = get_openssl_evp_md_by_utf8name(state, digestname, purpose);
     if (digest == NULL) {
         goto exit;
     }
 
-    if ((EVP_MD_flags(digest) & EVP_MD_FLAG_XOF) == EVP_MD_FLAG_XOF) {
-        type = state->HASHXOF_type;
-    } else {
-        type = state->HASH_type;
-    }
-
+    type = PY_EVP_MD_xof(digest) ? state->HASHXOF_type : state->HASH_type;
     self = new_hash_object(type);
     if (self == NULL) {
         goto exit;
@@ -1650,7 +1642,8 @@ pbkdf2_hmac_impl(PyObject *module, const char *hash_name,
     long dklen;
     int retval;
 
-    PY_EVP_MD *digest = get_openssl_evp_md_by_utf8name(state, hash_name, Py_ht_pbkdf2);
+    PY_EVP_MD *digest = get_openssl_evp_md_by_utf8name(state, hash_name,
+                                                       Py_ht_pbkdf2);
     if (digest == NULL) {
         goto end;
     }
