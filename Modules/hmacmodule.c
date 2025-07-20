@@ -656,7 +656,7 @@ find_hash_info(hmacmodule_state *state, PyObject *hash_info_ref)
     }
     if (rc == 0) {
         PyErr_Format(state->unknown_hash_error,
-                     "unsupported hash type: %R", hash_info_ref);
+                     HASHLIB_UNSUPPORTED_ALGORITHM, hash_info_ref);
         return NULL;
     }
     assert(info != NULL);

@@ -240,7 +240,16 @@ write code that handles both IP versions correctly.  Address objects are
 
    .. attribute:: is_reserved
 
-      ``True`` if the address is otherwise IETF reserved.
+      ``True`` if the address is noted as reserved by the IETF.
+      For IPv4, this is only ``240.0.0.0/4``, the ``Reserved`` address block.
+      For IPv6, this is all addresses `allocated <iana-ipv6-address-space_>`__ as
+      ``Reserved by IETF`` for future use.
+
+      .. note:: For IPv4, ``is_reserved`` is not related to the address block value of the
+        ``Reserved-by-Protocol`` column in iana-ipv4-special-registry_.
+
+      .. caution:: For IPv6, ``fec0::/10`` a former Site-Local scoped address prefix is
+         currently excluded from that list (see :attr:`~IPv6Address.is_site_local` & :rfc:`3879`).
 
    .. attribute:: is_loopback
 
@@ -261,6 +270,7 @@ write code that handles both IP versions correctly.  Address objects are
 
 .. _iana-ipv4-special-registry: https://www.iana.org/assignments/iana-ipv4-special-registry/iana-ipv4-special-registry.xhtml
 .. _iana-ipv6-special-registry: https://www.iana.org/assignments/iana-ipv6-special-registry/iana-ipv6-special-registry.xhtml
+.. _iana-ipv6-address-space: https://www.iana.org/assignments/ipv6-address-space/ipv6-address-space.xhtml
 
 .. method:: IPv4Address.__format__(fmt)
 
