@@ -64,7 +64,7 @@ extern "C" {
 
 # define _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op)                           \
     if (Py_REFCNT(op) != 1) {                                                    \
-        _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(&_PyObject_CAST(op)->ob_mutex); \
+        _PyCriticalSection_AssertHeldObj(_PyObject_CAST(op)); \
     }
 
 #else   /* Py_DEBUG */
@@ -239,6 +239,28 @@ _PyCriticalSection_AssertHeld(PyMutex *mutex)
 #endif
 }
 
+static inline void
+_PyCriticalSection_AssertHeldObj(PyObject *op)
+{
+#ifdef Py_DEBUG
+    PyMutex *mutex = &_PyObject_CAST(op)->ob_mutex;
+    PyThreadState *tstate = _PyThreadState_GET();
+    uintptr_t prev = tstate->critical_section;
+    if (prev & _Py_CRITICAL_SECTION_TWO_MUTEXES) {
+        PyCriticalSection2 *cs = (PyCriticalSection2 *)(prev & ~_Py_CRITICAL_SECTION_MASK);
+        _PyObject_ASSERT_WITH_MSG(op,
+            (cs != NULL && (cs->_cs_base._cs_mutex == mutex || cs->_cs_mutex2 == mutex)),
+            "Critical section of object is not held");
+    }
+    else {
+        PyCriticalSection *cs = (PyCriticalSection *)(prev & ~_Py_CRITICAL_SECTION_MASK);
+        _PyObject_ASSERT_WITH_MSG(op,
+            (cs != NULL && cs->_cs_mutex == mutex),
+            "Critical section of object is not held");
+    }
+
+#endif
+}
 #endif /* Py_GIL_DISABLED */
 
 #ifdef __cplusplus

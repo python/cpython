@@ -86,7 +86,7 @@ class TextWrapper:
               -(?: (?<=%(lt)s{2}-) | (?<=%(lt)s-%(lt)s-))
               (?= %(lt)s -? %(lt)s)
             | # end of word
-              (?=%(ws)s|\Z)
+              (?=%(ws)s|\z)
             | # em-dash
               (?<=%(wp)s) (?=-{2,}\w)
             )
@@ -107,7 +107,7 @@ class TextWrapper:
     sentence_end_re = re.compile(r'[a-z]'             # lowercase letter
                                  r'[\.\!\?]'          # sentence-ending punct.
                                  r'[\"\']?'           # optional end-of-quote
-                                 r'\Z')               # end of chunk
+                                 r'\z')               # end of chunk
 
     def __init__(self,
                  width=70,
@@ -426,10 +426,11 @@ def dedent(text):
 
     Entirely blank lines are normalized to a newline character.
     """
-    if not text:
-        return text
-
-    lines = text.split('\n')
+    try:
+        lines = text.split('\n')
+    except (AttributeError, TypeError):
+        msg = f'expected str object, not {type(text).__qualname__!r}'
+        raise TypeError(msg) from None
 
     # Get length of leading whitespace, inspired by ``os.path.commonprefix()``.
     non_blank_lines = [l for l in lines if l and not l.isspace()]

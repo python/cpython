@@ -1,5 +1,17 @@
-#if defined (__SVR4) && defined (__sun)
+/* Get a definition of alloca(). */
+#if (defined (__SVR4) && defined (__sun)) || defined(HAVE_ALLOCA_H)
 #   include <alloca.h>
+#elif defined(MS_WIN32)
+#   include <malloc.h>
+#endif
+
+/* If the system does not define alloca(), we have to hope for a compiler builtin. */
+#ifndef alloca
+#   if defined __GNUC__ || (__clang_major__ >= 4)
+#      define alloca __builtin_alloca
+#   else
+#     error "Could not define alloca() on your platform."
+#   endif
 #endif
 
 #include <stdbool.h>
@@ -11,8 +23,7 @@
 
 // Do we support C99 complex types in ffi?
 // For Apple's libffi, this must be determined at runtime (see gh-128156).
-#if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
-#   include "../_complex.h"       // complex
+#if defined(_Py_FFI_SUPPORT_C_COMPLEX)
 #   if USING_APPLE_OS_LIBFFI && defined(__has_builtin)
 #       if __has_builtin(__builtin_available)
 #           define Py_FFI_COMPLEX_AVAILABLE __builtin_available(macOS 10.15, *)
@@ -83,8 +94,6 @@ typedef struct {
 #ifdef MS_WIN32
     PyTypeObject *PyComError_Type;
 #endif
-    /* This dict maps ctypes types to POINTER types */
-    PyObject *_ctypes_ptrtype_cache;
     /* a callable object used for unpickling:
        strong reference to _ctypes._unpickle() function */
     PyObject *_unpickle;
@@ -390,6 +399,8 @@ typedef struct {
     PyObject *converters;       /* tuple([t.from_param for t in argtypes]) */
     PyObject *restype;          /* CDataObject or NULL */
     PyObject *checker;
+    PyObject *pointer_type;     /* __pointer_type__ attribute;
+                                   arbitrary object or NULL */
     PyObject *module;
     int flags;                  /* calling convention and such */
 #ifdef Py_GIL_DISABLED
@@ -452,6 +463,7 @@ stginfo_set_dict_final(StgInfo *info)
 
 extern int PyCStgInfo_clone(StgInfo *dst_info, StgInfo *src_info);
 extern void ctype_clear_stginfo(StgInfo *info);
+extern void ctype_free_stginfo_members(StgInfo *info);
 
 typedef int(* PPROC)(void);
 
@@ -489,15 +501,13 @@ struct tagPyCArgObject {
         int i;
         long l;
         long long q;
-        long double D;
+        long double g;
         double d;
         float f;
         void *p;
-#if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
-        double complex C;
-        float complex E;
-        long double complex F;
-#endif
+        double D[2];
+        float F[2];
+        long double G[2];
     } value;
     PyObject *obj;
     Py_ssize_t size; /* for the 'V' tag */
@@ -640,6 +650,7 @@ PyStgInfo_Init(ctypes_state *state, PyTypeObject *type)
     if (!module) {
         return NULL;
     }
+    info->pointer_type = NULL;
     info->module = Py_NewRef(module);
 
     info->initialized = 1;

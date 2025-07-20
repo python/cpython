@@ -74,7 +74,7 @@ ArgumentParser objects
                           prefix_chars='-', fromfile_prefix_chars=None, \
                           argument_default=None, conflict_handler='error', \
                           add_help=True, allow_abbrev=True, exit_on_error=True, \
-                          suggest_on_error=False)
+                          *, suggest_on_error=False, color=False)
 
    Create a new :class:`ArgumentParser` object. All parameters should be passed
    as keyword arguments. Each parameter has its own more detailed description
@@ -111,7 +111,7 @@ ArgumentParser objects
    * add_help_ - Add a ``-h/--help`` option to the parser (default: ``True``)
 
    * allow_abbrev_ - Allows long options to be abbreviated if the
-     abbreviation is unambiguous. (default: ``True``)
+     abbreviation is unambiguous (default: ``True``)
 
    * exit_on_error_ - Determines whether or not :class:`!ArgumentParser` exits with
      error info when an error occurs. (default: ``True``)
@@ -119,6 +119,7 @@ ArgumentParser objects
    * suggest_on_error_ - Enables suggestions for mistyped argument choices
      and subparser names (default: ``False``)
 
+   * color_ - Allow color output (default: ``False``)
 
    .. versionchanged:: 3.5
       *allow_abbrev* parameter was added.
@@ -129,6 +130,9 @@ ArgumentParser objects
 
    .. versionchanged:: 3.9
       *exit_on_error* parameter was added.
+
+   .. versionchanged:: 3.14
+      *suggest_on_error* and *color* parameters were added.
 
 The following sections describe how each of these are used.
 
@@ -430,11 +434,17 @@ arguments they contain.  For example::
    >>> parser.parse_args(['-f', 'foo', '@args.txt'])
    Namespace(f='bar')
 
-Arguments read from a file must by default be one per line (but see also
+Arguments read from a file must be one per line by default (but see also
 :meth:`~ArgumentParser.convert_arg_line_to_args`) and are treated as if they
 were in the same place as the original file referencing argument on the command
 line.  So in the example above, the expression ``['-f', 'foo', '@args.txt']``
 is considered equivalent to the expression ``['-f', 'foo', '-f', 'bar']``.
+
+.. note::
+
+   Empty lines are treated as empty strings (``''``), which are allowed as values but
+   not as arguments. Empty lines that are read as arguments will result in an
+   "unrecognized arguments" error.
 
 :class:`ArgumentParser` uses :term:`filesystem encoding and error handler`
 to read the file containing arguments.
@@ -594,7 +604,8 @@ subparser names, the feature can be enabled by setting ``suggest_on_error`` to
 ``True``. Note that this only applies for arguments when the choices specified
 are strings::
 
-   >>> parser = argparse.ArgumentParser(description='Process some integers.', suggest_on_error=True)
+   >>> parser = argparse.ArgumentParser(description='Process some integers.',
+                                        suggest_on_error=True)
    >>> parser.add_argument('--action', choices=['sum', 'max'])
    >>> parser.add_argument('integers', metavar='N', type=int, nargs='+',
    ...                     help='an integer for the accumulator')
@@ -608,6 +619,33 @@ keyword argument::
 
    >>> parser = argparse.ArgumentParser(description='Process some integers.')
    >>> parser.suggest_on_error = True
+
+.. versionadded:: 3.14
+
+
+color
+^^^^^
+
+By default, the help message is printed in plain text. If you want to allow
+color in help messages, you can enable it by setting ``color`` to ``True``::
+
+   >>> parser = argparse.ArgumentParser(description='Process some integers.',
+   ...                                  color=True)
+   >>> parser.add_argument('--action', choices=['sum', 'max'])
+   >>> parser.add_argument('integers', metavar='N', type=int, nargs='+',
+   ...                     help='an integer for the accumulator')
+   >>> parser.parse_args(['--help'])
+
+Even if a CLI author has enabled color, it can be
+:ref:`controlled using environment variables <using-on-controlling-color>`.
+
+If you're writing code that needs to be compatible with older Python versions
+and want to opportunistically use ``color`` when it's available, you
+can set it as an attribute after initializing the parser instead of using the
+keyword argument::
+
+   >>> parser = argparse.ArgumentParser(description='Process some integers.')
+   >>> parser.color = True
 
 .. versionadded:: 3.14
 
@@ -807,23 +845,11 @@ how the command-line arguments should be handled. The supplied actions are:
     >>> parser.parse_args(['--version'])
     PROG 2.0
 
-Only actions that consume command-line arguments (e.g. ``'store'``,
-``'append'`` or ``'extend'``) can be used with positional arguments.
-
-.. class:: BooleanOptionalAction
-
-   You may also specify an arbitrary action by passing an :class:`Action` subclass or
-   other object that implements the same interface. The :class:`!BooleanOptionalAction`
-   is available in :mod:`!argparse` and adds support for boolean actions such as
-   ``--foo`` and ``--no-foo``::
-
-       >>> import argparse
-       >>> parser = argparse.ArgumentParser()
-       >>> parser.add_argument('--foo', action=argparse.BooleanOptionalAction)
-       >>> parser.parse_args(['--no-foo'])
-       Namespace(foo=False)
-
-   .. versionadded:: 3.9
+You may also specify an arbitrary action by passing an :class:`Action` subclass
+(e.g. :class:`BooleanOptionalAction`) or other object that implements the same
+interface. Only actions that consume command-line arguments (e.g. ``'store'``,
+``'append'``, ``'extend'``, or custom actions with non-zero ``nargs``) can be used
+with positional arguments.
 
 The recommended way to create a custom action is to extend :class:`Action`,
 overriding the :meth:`!__call__` method and optionally the :meth:`!__init__` and
@@ -923,7 +949,7 @@ See also :ref:`specifying-ambiguous-arguments`. The supported values are:
 
 .. index:: single: + (plus); in argparse module
 
-* ``'+'``. Just like ``'*'``, all command-line args present are gathered into a
+* ``'+'``. Just like ``'*'``, all command-line arguments present are gathered into a
   list.  Additionally, an error message will be generated if there wasn't at
   least one command-line argument present.  For example::
 
@@ -1396,6 +1422,21 @@ this API may be passed as the ``action`` parameter to
       :class:`!Action` subclasses can define a :meth:`!format_usage` method that takes no argument
       and return a string which will be used when printing the usage of the program.
       If such method is not provided, a sensible default will be used.
+
+.. class:: BooleanOptionalAction
+
+   A subclass of :class:`Action` for handling boolean flags with positive
+   and negative options. Adding a single argument such as ``--foo`` automatically
+   creates both ``--foo`` and ``--no-foo`` options, storing ``True`` and ``False``
+   respectively::
+
+       >>> import argparse
+       >>> parser = argparse.ArgumentParser()
+       >>> parser.add_argument('--foo', action=argparse.BooleanOptionalAction)
+       >>> parser.parse_args(['--no-foo'])
+       Namespace(foo=False)
+
+   .. versionadded:: 3.9
 
 
 The parse_args() method
@@ -2090,12 +2131,15 @@ Partial parsing
 
 .. method:: ArgumentParser.parse_known_args(args=None, namespace=None)
 
-   Sometimes a script may only parse a few of the command-line arguments, passing
-   the remaining arguments on to another script or program. In these cases, the
-   :meth:`~ArgumentParser.parse_known_args` method can be useful.  It works much like
-   :meth:`~ArgumentParser.parse_args` except that it does not produce an error when
-   extra arguments are present.  Instead, it returns a two item tuple containing
-   the populated namespace and the list of remaining argument strings.
+   Sometimes a script only needs to handle a specific set of command-line
+   arguments, leaving any unrecognized arguments for another script or program.
+   In these cases, the :meth:`~ArgumentParser.parse_known_args` method can be
+   useful.
+
+   This method works similarly to :meth:`~ArgumentParser.parse_args`, but it does
+   not raise an error for extra, unrecognized arguments. Instead, it parses the
+   known arguments and returns a two item tuple that contains the populated
+   namespace and the list of any unrecognized arguments.
 
    ::
 

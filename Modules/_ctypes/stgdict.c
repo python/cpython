@@ -25,13 +25,7 @@ PyCStgInfo_clone(StgInfo *dst_info, StgInfo *src_info)
 {
     Py_ssize_t size;
 
-    ctype_clear_stginfo(dst_info);
-    PyMem_Free(dst_info->ffi_type_pointer.elements);
-    PyMem_Free(dst_info->format);
-    dst_info->format = NULL;
-    PyMem_Free(dst_info->shape);
-    dst_info->shape = NULL;
-    dst_info->ffi_type_pointer.elements = NULL;
+    ctype_free_stginfo_members(dst_info);
 
     memcpy(dst_info, src_info, sizeof(StgInfo));
 #ifdef Py_GIL_DISABLED
@@ -45,6 +39,7 @@ PyCStgInfo_clone(StgInfo *dst_info, StgInfo *src_info)
     Py_XINCREF(dst_info->restype);
     Py_XINCREF(dst_info->checker);
     Py_XINCREF(dst_info->module);
+    dst_info->pointer_type = NULL;  // the cache cannot be shared
 
     if (src_info->format) {
         dst_info->format = PyMem_Malloc(strlen(src_info->format) + 1);
@@ -489,7 +484,7 @@ error:;
 
 /*
   Replace array elements at stginfo->ffi_type_pointer.elements.
-  Return -1 if error occured.
+  Return -1 if error occurred.
 */
 int
 _replace_array_elements(ctypes_state *st, PyObject *layout_fields,

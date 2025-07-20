@@ -1777,6 +1777,10 @@ PyErr_CheckSignals(void)
         _Py_RunGC(tstate);
     }
 
+#if defined(Py_REMOTE_DEBUG) && defined(Py_SUPPORTS_REMOTE_DEBUG)
+    _PyRunRemoteDebugger(tstate);
+#endif
+
     if (!_Py_ThreadCanHandleSignals(tstate->interp)) {
         return 0;
     }

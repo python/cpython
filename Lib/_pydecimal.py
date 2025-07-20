@@ -38,10 +38,10 @@ __all__ = [
     'ROUND_FLOOR', 'ROUND_UP', 'ROUND_HALF_DOWN', 'ROUND_05UP',
 
     # Functions for manipulating contexts
-    'setcontext', 'getcontext', 'localcontext',
+    'setcontext', 'getcontext', 'localcontext', 'IEEEContext',
 
     # Limits for the C version for compatibility
-    'MAX_PREC',  'MAX_EMAX', 'MIN_EMIN', 'MIN_ETINY',
+    'MAX_PREC',  'MAX_EMAX', 'MIN_EMIN', 'MIN_ETINY', 'IEEE_CONTEXT_MAX_BITS',
 
     # C version: compile time choice that enables the thread local context (deprecated, now always true)
     'HAVE_THREADS',
@@ -83,10 +83,12 @@ if sys.maxsize == 2**63-1:
     MAX_PREC = 999999999999999999
     MAX_EMAX = 999999999999999999
     MIN_EMIN = -999999999999999999
+    IEEE_CONTEXT_MAX_BITS = 512
 else:
     MAX_PREC = 425000000
     MAX_EMAX = 425000000
     MIN_EMIN = -425000000
+    IEEE_CONTEXT_MAX_BITS = 256
 
 MIN_ETINY = MIN_EMIN - (MAX_PREC-1)
 
@@ -415,6 +417,27 @@ def localcontext(ctx=None, **kwargs):
             raise TypeError(f"'{key}' is an invalid keyword argument for this function")
         setattr(ctx_manager.new_context, key, value)
     return ctx_manager
+
+
+def IEEEContext(bits, /):
+    """
+    Return a context object initialized to the proper values for one of the
+    IEEE interchange formats.  The argument must be a multiple of 32 and less
+    than IEEE_CONTEXT_MAX_BITS.
+    """
+    if bits <= 0 or bits > IEEE_CONTEXT_MAX_BITS or bits % 32:
+        raise ValueError("argument must be a multiple of 32, "
+                         f"with a maximum of {IEEE_CONTEXT_MAX_BITS}")
+
+    ctx = Context()
+    ctx.prec = 9 * (bits//32) - 2
+    ctx.Emax = 3 * (1 << (bits//16 + 3))
+    ctx.Emin = 1 - ctx.Emax
+    ctx.rounding = ROUND_HALF_EVEN
+    ctx.clamp = 1
+    ctx.traps = dict.fromkeys(_signals, False)
+
+    return ctx
 
 
 ##### Decimal class #######################################################
@@ -6073,7 +6096,7 @@ _parser = re.compile(r"""        # A numeric string consists of:
         (?P<diag>\d*)            # with (possibly empty) diagnostic info.
     )
 #    \s*
-    \Z
+    \z
 """, re.VERBOSE | re.IGNORECASE).match
 
 _all_zeros = re.compile('0*$').match
@@ -6097,11 +6120,15 @@ _parse_format_specifier_regex = re.compile(r"""\A
 (?P<no_neg_0>z)?
 (?P<alt>\#)?
 (?P<zeropad>0)?
-(?P<minimumwidth>(?!0)\d+)?
+(?P<minimumwidth>\d+)?
 (?P<thousands_sep>[,_])?
-(?:\.(?P<precision>0|(?!0)\d+))?
+(?:\.
+    (?=[\d,_])  # lookahead for digit or separator
+    (?P<precision>\d+)?
+    (?P<frac_separators>[,_])?
+)?
 (?P<type>[eEfFgGn%])?
-\Z
+\z
 """, re.VERBOSE|re.DOTALL)
 
 del re
@@ -6191,6 +6218,9 @@ def _parse_format_specifier(format_spec, _localeconv=None):
             format_dict['thousands_sep'] = ''
         format_dict['grouping'] = [3, 0]
         format_dict['decimal_point'] = '.'
+
+    if format_dict['frac_separators'] is None:
+        format_dict['frac_separators'] = ''
 
     return format_dict
 
@@ -6310,6 +6340,11 @@ def _format_number(is_negative, intpart, fracpart, exp, spec):
     """
 
     sign = _format_sign(is_negative, spec)
+
+    frac_sep = spec['frac_separators']
+    if fracpart and frac_sep:
+        fracpart = frac_sep.join(fracpart[pos:pos + 3]
+                                 for pos in range(0, len(fracpart), 3))
 
     if fracpart or spec['alt']:
         fracpart = spec['decimal_point'] + fracpart
