@@ -1889,6 +1889,7 @@ _hashlib_hmac_singleshot_impl(PyObject *module, Py_buffer *key,
     }
     assert(evp != NULL);
     is_xof = PY_EVP_MD_xof(evp);
+
     Py_BEGIN_ALLOW_THREADS
     result = EVP_Q_mac(
         NULL, OSSL_MAC_NAME_HMAC, NULL, NULL,
@@ -1905,10 +1906,9 @@ _hashlib_hmac_singleshot_impl(PyObject *module, Py_buffer *key,
     if (evp == NULL) {
         return NULL;
     }
+    is_xof = PY_EVP_MD_xof(evp);
 
-    is_xof = PY_EVP_MD_xof(evp);
     Py_BEGIN_ALLOW_THREADS
-    is_xof = PY_EVP_MD_xof(evp);
     result = HMAC(
         evp,
         (const void *)key->buf, (int)key->len,
@@ -2079,6 +2079,7 @@ hashlib_HMAC_CTX_new_from_digestmod(_hashlibstate *state,
     *nid = EVP_MD_nid(md);
     is_xof = PY_EVP_MD_xof(md);
     PY_EVP_MD_free(md);
+
     /*
      * OpenSSL is responsible for managing the EVP_MAC object's ref. count
      * by calling EVP_MAC_up_ref() and EVP_MAC_free() in EVP_MAC_CTX_new()
@@ -2099,18 +2100,19 @@ hashlib_HMAC_CTX_new_from_digestmod(_hashlibstate *state,
     );
 #else
     assert(nid == NULL);
-    md = get_openssl_evp_md(module, digestmod, Py_ht_mac);
+    md = get_openssl_evp_md(state, digestmod, Py_ht_mac);
     if (md == NULL) {
         return NULL;
     }
+    is_xof = PY_EVP_MD_xof(md);
+
     ctx = py_openssl_wrapper_HMAC_CTX_new();
     if (ctx == NULL) {
         PY_EVP_MD_free(md);
-        goto error;
+        return NULL;
     }
 
     r = HMAC_Init_ex(ctx, key->buf, (int)key->len, md, NULL /* impl */);
-    is_xof = PY_EVP_MD_xof(md);
     PY_EVP_MD_free(md);
 #endif
     if (r == 0) {
