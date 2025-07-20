@@ -312,6 +312,15 @@ tarfile
   and :cve:`2025-4435`.)
 
 
+types
+------
+
+* Expose the write-through :func:`locals` proxy type
+  as :data:`types.FrameLocalsProxyType`.
+  This represents the type of the :attr:`frame.f_locals` attribute,
+  as described in :pep:`667`.
+
+
 unittest
 --------
 
