@@ -3652,7 +3652,7 @@ class TestDateTime(TestDate):
         self.assertEqual(repr(td), "SubclassDatetime(2010, 10, 2, 0, 0, 3)")
 
     @support.cpython_only
-    def test_concurrent_initialization(self):
+    def test_concurrent_initialization_subinterpreter(self):
         # Run in a subprocess to ensure we get a clean version of _datetime
         script = """if True:
         from concurrent.futures import InterpreterPoolExecutor
@@ -3665,6 +3665,13 @@ class TestDateTime(TestDate):
             for _ in range(8):
                 executor.submit(func)
         """
+        rc, out, err = script_helper.assert_python_ok("-c", script)
+        self.assertEqual(rc, 0)
+        self.assertEqual(out, b"a" * 8)
+        self.assertEqual(err, b"")
+
+        # Now test against concurrent reinitialization
+        script += "\nimport _datetime"
         rc, out, err = script_helper.assert_python_ok("-c", script)
         self.assertEqual(rc, 0)
         self.assertEqual(out, b"a" * 8)
