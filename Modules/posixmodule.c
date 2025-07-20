@@ -685,7 +685,8 @@ static void
 reset_remotedebug_data(PyThreadState *tstate)
 {
     tstate->remote_debugger_support.debugger_pending_call = 0;
-    memset(tstate->remote_debugger_support.debugger_script_path, 0, MAX_SCRIPT_PATH_SIZE);
+    memset(tstate->remote_debugger_support.debugger_script_path, 0,
+           Py_MAX_SCRIPT_PATH_SIZE);
 }
 
 
@@ -3476,12 +3477,12 @@ Change the current working directory to the specified path.
 
 path may always be specified as a string.
 On some platforms, path may also be specified as an open file descriptor.
-  If this functionality is unavailable, using it raises an exception.
+If this functionality is unavailable, using it raises an exception.
 [clinic start generated code]*/
 
 static PyObject *
 os_chdir_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=3be6400eee26eaae input=1a4a15b4d12cb15d]*/
+/*[clinic end generated code: output=3be6400eee26eaae input=a74ceab5d72adf74]*/
 {
     int result;
 

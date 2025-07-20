@@ -2530,6 +2530,7 @@ LIBSUBDIRS=	asyncio \
 		logging \
 		multiprocessing multiprocessing/dummy \
 		pathlib \
+		profile \
 		pydoc_data \
 		re \
 		site-packages \
