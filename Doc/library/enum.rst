@@ -510,15 +510,20 @@ Data Types
    of the enumeration.
 
    >>> from enum import StrEnum
-   >>> class Name(StrEnum):
-   ...     IDENTIFIER = 'id'
-   ...     PROPERTY = 'pro'
-   ...     ATTRIBUTE = 'attr'
-   ...
-   >>> Name.IDENTIFIER
-   <Name.IDENTIFIER: 'id'>
-   >>> str(Name.IDENTIFIER)
-   'id'
+    >>> class Color(StrEnum):
+    ...     RED = 'r'
+    ...     GREEN = 'g'
+    ...     BLUE = 'b'
+    ...     UNKNOWN = auto()
+    ...     
+    >>> Color.RED
+    <Color.RED: 'r'>
+    >>> str(Color.RED)
+    'r'
+    >>> Color.UNKNOWN
+    <Color.UNKNOWN: 'unknown'>
+    >>> str(Color.UNKNOWN)
+    'unknown'
 
    .. note::
 
