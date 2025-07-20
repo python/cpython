@@ -938,7 +938,8 @@ class SMTP:
 
         # RFC 5322 section 3.6, 4th Paragraph
         if msg.get('Date', None) is None:
-            msg['Date'] = email.utils.formatdate()
+            # localtime: RFC 5322 section 3.3 4th Paragraph
+            msg['Date'] = email.utils.formatdate(localtime=True)
         if from_addr is None:
             # Prefer the sender field per RFC 2822:3.6.2.
             from_addr = (msg[header_prefix + 'Sender']
