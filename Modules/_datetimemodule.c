@@ -7331,8 +7331,8 @@ _PyDateTime_InitTypes(PyInterpreterState *interp)
     // `&...` is not a constant expression according to a strict reading
     // of C standards. Fill tp_base at run-time rather than statically.
     // See https://bugs.python.org/issue40777
-    _Py_atomic_store_ptr_relaxed(&PyDateTime_TimeZoneType.tp_base, &PyDateTime_TZInfoType);
-    _Py_atomic_store_ptr_relaxed(&PyDateTime_DateTimeType.tp_base , &PyDateTime_DateType);
+    PyDateTime_TimeZoneType.tp_base = &PyDateTime_TZInfoType;
+    PyDateTime_DateTimeType.tp_base = &PyDateTime_DateType;
 
     /* Bases classes must be initialized before subclasses,
      * so capi_types must have the types in the appropriate order. */
