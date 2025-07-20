@@ -287,6 +287,12 @@ class FrameSummary:
       of code that was running when the frame was captured.
     - :attr:`locals` Either None if locals were not supplied, or a dict
       mapping the name to the repr() of the variable.
+    - :attr:`end_lineno` The last line number of the source code for this frame.
+      By default, it is set to lineno and indexation starts from 1.
+    - :attr:`colno` The column number of the source code for this frame.
+      By default, it is None and indexation starts from 0.
+    - :attr:`end_colno` The last column number of the source code for this frame.
+      By default, it is None and indexation starts from 0.
     """
 
     __slots__ = ('filename', 'lineno', 'end_lineno', 'colno', 'end_colno',
@@ -1100,6 +1106,11 @@ class TracebackException:
             suggestion = _compute_suggestion_error(exc_value, exc_traceback, wrong_name)
             if suggestion:
                 self._str += f". Did you mean: '{suggestion}'?"
+        elif exc_type and issubclass(exc_type, ModuleNotFoundError) and \
+                sys.flags.no_site and \
+                getattr(exc_value, "name", None) not in sys.stdlib_module_names:
+            self._str += (". Site initialization is disabled, did you forget to "
+                + "add the site-packages directory to sys.path?")
         elif exc_type and issubclass(exc_type, (NameError, AttributeError)) and \
                 getattr(exc_value, "name", None) is not None:
             wrong_name = getattr(exc_value, "name", None)
@@ -1595,7 +1606,11 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
     if isinstance(exc_value, AttributeError):
         obj = exc_value.obj
         try:
-            d = dir(obj)
+            try:
+                d = dir(obj)
+            except TypeError:  # Attributes are unsortable, e.g. int and str
+                d = list(obj.__class__.__dict__.keys()) + list(obj.__dict__.keys())
+            d = sorted([x for x in d if isinstance(x, str)])
             hide_underscored = (wrong_name[:1] != '_')
             if hide_underscored and tb is not None:
                 while tb.tb_next is not None:
@@ -1610,7 +1625,11 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
     elif isinstance(exc_value, ImportError):
         try:
             mod = __import__(exc_value.name)
-            d = dir(mod)
+            try:
+                d = dir(mod)
+            except TypeError:  # Attributes are unsortable, e.g. int and str
+                d = list(mod.__dict__.keys())
+            d = sorted([x for x in d if isinstance(x, str)])
             if wrong_name[:1] != '_':
                 d = [x for x in d if x[:1] != '_']
         except Exception:
@@ -1628,6 +1647,7 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
             + list(frame.f_globals)
             + list(frame.f_builtins)
         )
+        d = [x for x in d if isinstance(x, str)]
 
         # Check first if we are in a method and the instance
         # has the wrong name as attribute

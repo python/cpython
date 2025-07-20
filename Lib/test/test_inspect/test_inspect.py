@@ -786,12 +786,12 @@ class TestRetrievingSourceCode(GetSourceBase):
     def test_getfile_builtin_module(self):
         with self.assertRaises(TypeError) as e:
             inspect.getfile(sys)
-        self.assertTrue(str(e.exception).startswith('<module'))
+        self.assertStartsWith(str(e.exception), '<module')
 
     def test_getfile_builtin_class(self):
         with self.assertRaises(TypeError) as e:
             inspect.getfile(int)
-        self.assertTrue(str(e.exception).startswith('<class'))
+        self.assertStartsWith(str(e.exception), '<class')
 
     def test_getfile_builtin_function_or_method(self):
         with self.assertRaises(TypeError) as e_abs:
@@ -2820,7 +2820,7 @@ class TestGetAsyncGenState(unittest.IsolatedAsyncioTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        asyncio._set_event_loop_policy(None)
+        asyncio.events._set_event_loop_policy(None)
 
     def _asyncgenstate(self):
         return inspect.getasyncgenstate(self.asyncgen)
@@ -2949,7 +2949,7 @@ class TestSignatureObject(unittest.TestCase):
             pass
 
         sig = inspect.signature(test)
-        self.assertTrue(repr(sig).startswith('<Signature'))
+        self.assertStartsWith(repr(sig), '<Signature')
         self.assertTrue('(po, /, pk' in repr(sig))
 
         # We need two functions, because it is impossible to represent
@@ -2958,7 +2958,7 @@ class TestSignatureObject(unittest.TestCase):
             pass
 
         sig2 = inspect.signature(test2)
-        self.assertTrue(repr(sig2).startswith('<Signature'))
+        self.assertStartsWith(repr(sig2), '<Signature')
         self.assertTrue('(pod=42, /)' in repr(sig2))
 
         po = sig.parameters['po']
@@ -5133,7 +5133,7 @@ class TestParameterObject(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'cannot have default values'):
             p.replace(kind=inspect.Parameter.VAR_POSITIONAL)
 
-        self.assertTrue(repr(p).startswith('<Parameter'))
+        self.assertStartsWith(repr(p), '<Parameter')
         self.assertTrue('"a=42"' in repr(p))
 
     def test_signature_parameter_hashable(self):
@@ -5875,9 +5875,9 @@ class TestSignatureDefinitions(unittest.TestCase):
         self._test_module_has_signatures(operator)
 
     def test_os_module_has_signatures(self):
-        unsupported_signature = {'chmod', 'link', 'utime'}
+        unsupported_signature = {'chmod', 'utime'}
         unsupported_signature |= {name for name in
-            ['get_terminal_size', 'posix_spawn', 'posix_spawnp',
+            ['get_terminal_size', 'link', 'posix_spawn', 'posix_spawnp',
              'register_at_fork', 'startfile']
             if hasattr(os, name)}
         self._test_module_has_signatures(os, unsupported_signature=unsupported_signature)
@@ -5916,6 +5916,7 @@ class TestSignatureDefinitions(unittest.TestCase):
     def test_threading_module_has_signatures(self):
         import threading
         self._test_module_has_signatures(threading)
+        self.assertIsNotNone(inspect.signature(threading.__excepthook__))
 
     def test_thread_module_has_signatures(self):
         import _thread
