@@ -268,7 +268,7 @@ def _hashlib_new(digestname, openssl, /, **kwargs):
     module = _hashlib if openssl and _hashlib is not None else hashlib
     try:
         module.new(digestname, **kwargs)
-    except ValueError:
+    except ValueError as exc:
         interface = f"{module.__name__}.new"
         raise SkipNoHash(digestname, interface=interface) from exc
     return functools.partial(module.new, digestname)
