@@ -5,7 +5,6 @@ import importlib
 import inspect
 import unittest
 import unittest.mock
-from functools import partial
 from test.support import import_helper
 from types import MappingProxyType
 
@@ -207,7 +206,7 @@ def _chain_decorators(decorators):
     """
     def decorator_func(func):
         return functools.reduce(lambda w, deco: deco(w), decorators, func)
-    return partial(_decorate_func_or_class, decorator_func)
+    return functools.partial(_decorate_func_or_class, decorator_func)
 
 
 def _ensure_wrapper_signature(wrapper, wrapped):
@@ -257,7 +256,8 @@ def _hashlib_new(digestname, openssl, /, **kwargs):
     If *openssl* is True, module is "_hashlib" (C extension module),
     otherwise it is "hashlib" (pure Python interface).
 
-    The constructor function is returned, or SkipTest is raised if none exists.
+    The constructor function is returned (without binding **kwargs),
+    or SkipTest is raised if none exists.
     """
     assert isinstance(digestname, str), digestname
     # Re-import 'hashlib' in case it was mocked, but propagate
@@ -265,14 +265,13 @@ def _hashlib_new(digestname, openssl, /, **kwargs):
     hashlib = importlib.import_module("hashlib")
     # re-import '_hashlib' in case it was mocked
     _hashlib = try_import_module("_hashlib")
-    mod = _hashlib if openssl and _hashlib is not None else hashlib
-    constructor = partial(mod.new, digestname, **kwargs)
+    module = _hashlib if openssl and _hashlib is not None else hashlib
     try:
-        constructor()
+        module.new(digestname, **kwargs)
     except ValueError:
-        interface = f"{mod.__name__}.{new.__name__}"
+        interface = f"{module.__name__}.new"
         raise SkipNoHash(digestname, interface=interface) from exc
-    return constructor
+    return functools.partial(module.new, digestname)
 
 
 def _builtin_hash(module_name, digestname, /, **kwargs):
@@ -304,7 +303,8 @@ def _builtin_hash(module_name, digestname, /, **kwargs):
 def _openssl_new(digestname, /, **kwargs):
     """Check availability of _hashlib.new(digestname, **kwargs).
 
-    The constructor function is returned, or SkipTest is raised if none exists.
+    The constructor function is returned (without binding **kwargs),
+    or SkipTest is raised if none exists.
     """
     assert isinstance(digestname, str), digestname
     try:
@@ -312,18 +312,18 @@ def _openssl_new(digestname, /, **kwargs):
         _hashlib = importlib.import_module("_hashlib")
     except ImportError as exc:
         raise SkipNoHash(digestname, "openssl") from exc
-    constructor = partial(_hashlib.new, digestname, **kwargs)
     try:
-        constructor()
+        _hashlib.new(digestname, **kwargs)
     except ValueError as exc:
         raise SkipNoHash(digestname, interface="_hashlib.new") from exc
-    return constructor
+    return functools.partial(_hashlib.new, digestname)
 
 
 def _openssl_hash(digestname, /, **kwargs):
     """Check availability of _hashlib.openssl_<digestname>(**kwargs).
 
-    The constructor function is returned, or SkipTest is raised if none exists.
+    The constructor function is returned (without binding **kwargs),
+    or SkipTest is raised if none exists.
     """
     assert isinstance(digestname, str), digestname
     fullname = f"_hashlib.openssl_{digestname}"
@@ -350,7 +350,7 @@ def _make_requires_hashdigest_decorator(test, /, *test_args, **test_kwargs):
             test(*test_args, **test_kwargs)
             return func(*args, **kwargs)
         return wrapper
-    return partial(_decorate_func_or_class, decorator_func)
+    return functools.partial(_decorate_func_or_class, decorator_func)
 
 
 def requires_hashdigest(digestname, openssl=None, *, usedforsecurity=True):
@@ -430,7 +430,9 @@ class HashFunctionsTrait:
         'sha3_224', 'sha3_256', 'sha3_384', 'sha3_512',
     ]
 
-    # Default 'usedforsecurity' to use when looking up a hash function.
+    # Default 'usedforsecurity' to use when checking a hash function.
+    # When the trait properties are callables (e.g., _md5.md5) and
+    # not strings, they must be called with the same 'usedforsecurity'.
     usedforsecurity = True
 
     @classmethod
@@ -549,29 +551,35 @@ def find_gil_minsize(modules_names, default=2048):
 def _block_openssl_hash_new(blocked_name):
     """Block OpenSSL implementation of _hashlib.new()."""
     assert isinstance(blocked_name, str), blocked_name
+
     # re-import '_hashlib' in case it was mocked
     if (_hashlib := try_import_module("_hashlib")) is None:
         return contextlib.nullcontext()
+
     @functools.wraps(wrapped := _hashlib.new)
-    def wrapper(name, data=b'', *, usedforsecurity=True, string=None):
+    def _hashlib_new(name, data=b'', *, usedforsecurity=True, string=None):
         if name == blocked_name:
             raise _hashlib.UnsupportedDigestmodError(blocked_name)
         return wrapped(*args, **kwargs)
-    _ensure_wrapper_signature(wrapper, wrapped)
-    return unittest.mock.patch('_hashlib.new', wrapper)
+
+    _ensure_wrapper_signature(_hashlib_new, wrapped)
+    return unittest.mock.patch('_hashlib.new', _hashlib_new)
 
 
 def _block_openssl_hmac_new(blocked_name):
     """Block OpenSSL HMAC-HASH implementation."""
     assert isinstance(blocked_name, str), blocked_name
+
     # re-import '_hashlib' in case it was mocked
     if (_hashlib := try_import_module("_hashlib")) is None:
         return contextlib.nullcontext()
+
     @functools.wraps(wrapped := _hashlib.hmac_new)
     def wrapper(key, msg=b'', digestmod=None):
         if digestmod == blocked_name:
             raise _hashlib.UnsupportedDigestmodError(blocked_name)
         return wrapped(key, msg, digestmod)
+
     _ensure_wrapper_signature(wrapper, wrapped)
     return unittest.mock.patch('_hashlib.hmac_new', wrapper)
 
@@ -579,16 +587,19 @@ def _block_openssl_hmac_new(blocked_name):
 def _block_openssl_hmac_digest(blocked_name):
     """Block OpenSSL HMAC-HASH one-shot digest implementation."""
     assert isinstance(blocked_name, str), blocked_name
+
     # re-import '_hashlib' in case it was mocked
     if (_hashlib := try_import_module("_hashlib")) is None:
         return contextlib.nullcontext()
+
     @functools.wraps(wrapped := _hashlib.hmac_digest)
-    def wrapper(key, msg, digest):
+    def _hashlib_hmac_digest(key, msg, digest):
         if digest == blocked_name:
             raise _hashlib.UnsupportedDigestmodError(blocked_name)
         return wrapped(key, msg, digestmod)
-    _ensure_wrapper_signature(wrapper, wrapped)
-    return unittest.mock.patch('_hashlib.hmac_digest', wrapper)
+
+    _ensure_wrapper_signature(_hashlib_hmac_digest, wrapped)
+    return unittest.mock.patch('_hashlib.hmac_digest', _hashlib_hmac_digest)
 
 
 def _block_builtin_hash_new(name):
@@ -610,6 +621,7 @@ def _block_builtin_hash_new(name):
     get_builtin_constructor = getattr(hashlib, '__get_builtin_constructor')
     builtin_module_name = _EXPLICIT_CONSTRUCTORS[name].builtin_module_name
 
+    @functools.wraps(get_builtin_constructor)
     def get_builtin_constructor_mock(name):
         with import_helper.isolated_modules():
             sys = importlib.import_module("sys")
@@ -625,30 +637,36 @@ def _block_builtin_hash_new(name):
 
 def _block_builtin_hmac_new(blocked_name):
     assert isinstance(blocked_name, str), blocked_name
+
     # re-import '_hmac' in case it was mocked
     if (_hmac := try_import_module("_hmac")) is None:
         return contextlib.nullcontext()
+
     @functools.wraps(wrapped := _hmac.new)
-    def wrapper(key, msg=None, digestmod=None):
+    def _hmac_new(key, msg=None, digestmod=None):
         if digestmod == blocked_name:
             raise _hmac.UnknownHashError(blocked_name)
         return wrapped(key, msg, digestmod)
-    _ensure_wrapper_signature(wrapper, wrapped)
-    return unittest.mock.patch('_hmac.new', wrapper)
+
+    _ensure_wrapper_signature(_hmac_new, wrapped)
+    return unittest.mock.patch('_hmac.new', _hmac_new)
 
 
 def _block_builtin_hmac_digest(blocked_name):
     assert isinstance(blocked_name, str), blocked_name
+
     # re-import '_hmac' in case it was mocked
     if (_hmac := try_import_module("_hmac")) is None:
         return contextlib.nullcontext()
+
     @functools.wraps(wrapped := _hmac.compute_digest)
-    def wrapper(key, msg, digest):
+    def _hmac_compute_digest(key, msg, digest):
         if digest == blocked_name:
             raise _hmac.UnknownHashError(blocked_name)
         return wrapped(key, msg, digest)
-    _ensure_wrapper_signature(wrapper, wrapped)
-    return unittest.mock.patch('_hmac.compute_digest', wrapper)
+
+    _ensure_wrapper_signature(_hmac_compute_digest, wrapped)
+    return unittest.mock.patch('_hmac.compute_digest', _hmac_compute_digest)
 
 
 def _make_hash_constructor_blocker(name, dummy, implementation):
