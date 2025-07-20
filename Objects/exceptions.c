@@ -1906,7 +1906,7 @@ ImportError_repr(PyObject *self)
         }
     }
 
-    if (PyUnicodeWriter_WriteChar(writer, ")") < 0) {
+    if (PyUnicodeWriter_WriteChar(writer, ')') < 0) {
         goto error;
     }
 
