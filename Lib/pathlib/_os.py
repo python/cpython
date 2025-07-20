@@ -216,12 +216,12 @@ def vfspath(obj):
     """
     cls = type(obj)
     try:
-        return cls.__vfspath__(obj)
+        vfspath_method = cls.__vfspath__
     except AttributeError:
-        if hasattr(cls, '__vfspath__'):
-            raise
-
-    raise TypeError("expected JoinablePath object, not " + cls.__name__)
+        cls_name = cls.__name__
+        raise TypeError(f"expected JoinablePath object, not {cls_name}") from None
+    else:
+        return vfspath_method(obj)
 
 
 def ensure_distinct_paths(source, target):
