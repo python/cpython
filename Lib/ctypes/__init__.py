@@ -422,13 +422,10 @@ class CDLL(object):
         if name:
             name = _os.fspath(name)
 
-        if handle is None:
-            self._handle = self._load_library(name, mode, winmode)
-        else:
-            self._handle = handle
+        self._handle = self._load_library(name, mode, handle, winmode)
 
     if _os.name == "nt":
-        def _load_library(self, name, mode, winmode):
+        def _load_library(self, name, mode, handle, winmode):
             if winmode is not None:
                 mode = winmode
             else:
@@ -443,10 +440,12 @@ class CDLL(object):
                     name = _nt._getfullpathname(name)
                     mode |= _nt._LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR
             self._name = name
+            if handle is not None:
+                return handle
             return _LoadLibrary(self._name, mode)
 
     else:
-        def _load_library(self, name, mode, winmode):
+        def _load_library(self, name, mode, handle, winmode):
             if _sys.platform.startswith("aix"):
                 """When the name contains ".a(" and ends with ")",
                    e.g., "libFOO.a(libFOO.so)" - this is taken to be an
