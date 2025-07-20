@@ -2779,6 +2779,8 @@ Resolving MRO entries
       Core support for typing module and generic types.
 
 
+.. _metaclass-determination:
+
 Determining the appropriate metaclass
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. index::

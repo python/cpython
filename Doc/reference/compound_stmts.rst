@@ -1421,6 +1421,9 @@ is equivalent to ::
    class Foo(object):
        pass
 
+There may be one or more base classes; see :ref:`multiple-inheritance` below for more
+information.
+
 The class's suite is then executed in a new execution frame (see :ref:`naming`),
 using a newly created local namespace and the original global namespace.
 (Usually, the suite contains mostly function definitions.)  When the class's
@@ -1489,6 +1492,97 @@ can be used to create instance variables with different implementation details.
       The proposal that added class decorators.  Function and method decorators
       were introduced in :pep:`318`.
 
+
+.. _multiple-inheritance:
+
+Multiple inheritance
+--------------------
+
+Python classes may have multiple base classes, a technique known as
+*multiple inheritance*.  The base classes are specified in the class definition
+by listing them in parentheses after the class name, separated by commas.
+For example, the following class definition::
+
+   class C(A, B):
+       pass
+
+defines a class ``C`` that inherits from classes ``A`` and ``B``.
+
+The :term:`method resolution order` (MRO) is the order in which base classes are
+searched when looking up an attribute on a class. See :ref:`python_2.3_mro` for a
+description of how Python determines the MRO for a class.
+
+Multiple inheritance is not always allowed. Attempting to define a class with multiple
+inheritance will raise an error if one of the bases is invalid, if a consistent MRO
+cannot be created, if no valid metaclass can be determined, or if there is an instance
+layout conflict. We'll discuss each of these in turn.
+
+First, all base classes must allow subclassing. While most classes allow subclassing,
+some built-in classes do not, such as :class:`bool`::
+
+   class SubBool(bool):  # TypeError
+       pass
+
+To create a consistent MRO, all bases appear in the order
+they were specified in the base class list and every child class must appear before its
+base classes. Below is an example where this fails::
+
+   class Base: pass
+   class Child(Base): pass
+   class Grandchild(Base, Child): pass  # TypeError
+
+In the MRO of ``Grandchild``, ``Child`` must appear before ``Base`` because it is first
+in the base class list, but it must also appear after ``Base`` because it is a child of
+``Base``. This is a contradiction, so the class cannot be defined.
+
+If some of the bases have a custom :term:`metaclass`, the metaclass of the resulting class
+is chosen among the metaclasses of the bases. It must be a metaclass that is a subclass of
+all other candidate metaclasses. If no such metaclass exists, the class cannot be created,
+as explained in :ref:`metaclass-determination`.
+
+Finally, the memory layouts of the bases must be compatible. This means that it must be
+possible to compute a *solid base* for the class. A class is a solid base if it has a
+nonempty :attr:`~object.__slots__` definition; some other classes may also be solid bases,
+depending on the Python implementation.
+
+.. impl-detail::
+
+   In CPython, many but not all classes defined in C are solid bases, including most
+   builtins but excluding most concrete :class:`Exception` classes. Generally, a C class
+   is a solid base if its underlying struct is different in size from its base class.
+
+Every class has a solid base. :class:`object`, the base class, has itself as its solid base.
+If there is a single base, the child class's solid base is that class if it is a solid baes,
+or else the base class's solid base. If there are multiple bases, we first find the solid base
+for each base class to produce a list of candidate solid bases. If there is a unique solid base
+that is a subclass of all others, then that class is the solid base. Otherwise, class creation
+fails.
+
+Example::
+
+   class Solid1:
+      __slots__ = ("solid1",)
+
+   class Solid2:
+      __slots__ = ("solid2",)
+
+   class SolidChild(Solid1):
+      __slots__ = ("solid_child",)
+
+   class C1:  # solid base is `object`
+      pass
+
+   # OK: solid bases are `Solid1` and `object`, and `Solid1` is a subclass of `object`.
+   class C2(Solid1, C1):  # solid base is `Solid1`
+      pass
+
+   # OK: solid bases are `SolidChild` and `Solid1`, and `SolidChild` is a subclass of `Solid1`.
+   class C3(SolidChild, Solid1):  # solid base is `SolidChild`
+      pass
+
+   # Error: solid bases are `Solid1` and `Solid2`, but they are not subclasses of each other.
+   class C4(Solid1, Solid2):  # error: no single solid base
+      pass
 
 .. _async:
 
