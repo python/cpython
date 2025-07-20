@@ -960,7 +960,7 @@ class PyModuleConstructorTestCase(ThroughModuleAPIMixin, PyConstructorBaseMixin,
         with self.assertRaisesRegex(RuntimeError, "custom exception"):
             func(b'key', b'msg', raiser)
 
-        with self.assertRaisesRegex(ValueError, 'hash type'):
+        with self.assertRaisesRegex(ValueError, 'unsupported hash algorithm'):
             func(b'key', b'msg', 'unknown')
 
         with self.assertRaisesRegex(AttributeError, 'new'):

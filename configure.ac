@@ -2338,6 +2338,8 @@ AS_CASE([$ac_sys_system],
     AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV"])
     AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_FUNCTIONS=_main,_Py_Version,__PyRuntime,__PyEM_EMSCRIPTEN_COUNT_ARGS_OFFSET,_PyGILState_GetThisThreadState,__Py_DumpTraceback"])
     AS_VAR_APPEND([LINKFORSHARED], [" -sSTACK_SIZE=5MB"])
+    dnl Avoid bugs in JS fallback string decoding path
+    AS_VAR_APPEND([LINKFORSHARED], [" -sTEXTDECODER=2"])
 
     AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
       AS_VAR_APPEND([LINKFORSHARED], [" -sMAIN_MODULE"])
@@ -5119,7 +5121,7 @@ PLATFORM_OBJS=
 
 AS_CASE([$ac_sys_system],
   [Emscripten], [
-    AS_VAR_APPEND([PLATFORM_OBJS], [' Python/emscripten_signal.o Python/emscripten_trampoline.o'])
+    AS_VAR_APPEND([PLATFORM_OBJS], [' Python/emscripten_signal.o Python/emscripten_trampoline.o Python/emscripten_syscalls.o'])
     AS_VAR_APPEND([PLATFORM_HEADERS], [' $(srcdir)/Include/internal/pycore_emscripten_signal.h $(srcdir)/Include/internal/pycore_emscripten_trampoline.h'])
   ],
 )
@@ -7529,8 +7531,8 @@ WITH_SAVE_ENV([
     ], [
       OBJ_nid2sn(NID_md5);
       OBJ_nid2sn(NID_sha1);
+      OBJ_nid2sn(NID_sha512);
       OBJ_nid2sn(NID_sha3_512);
-      OBJ_nid2sn(NID_blake2b512);
       EVP_PBE_scrypt(NULL, 0, NULL, 0, 2, 8, 1, 0, NULL, 0);
     ])], [ac_cv_working_openssl_hashlib=yes], [ac_cv_working_openssl_hashlib=no])
   ])
