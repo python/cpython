@@ -108,7 +108,8 @@ def CFUNCTYPE(restype, *argtypes, **kw):
     return CFunctionType
 
 if _os.name == "nt":
-    from _ctypes import LoadLibrary as _dlopen
+    # from _ctypes import LoadLibrary as _dlopen
+    from _ctypes import LoadLibrary as _LoadLibrary
     from _ctypes import FUNCFLAG_STDCALL as _FUNCFLAG_STDCALL
 
     _win_functype_cache = {}
@@ -137,6 +138,7 @@ if _os.name == "nt":
         WINFUNCTYPE.__doc__ = CFUNCTYPE.__doc__.replace("CFUNCTYPE", "WINFUNCTYPE")
 
 elif _os.name == "posix":
+    # from _ctypes import dlopen as _dlopen
     from _ctypes import dlopen as _dlopen
 
 from _ctypes import sizeof, byref, addressof, alignment, resize
@@ -410,52 +412,62 @@ class CDLL(object):
                  use_errno=False,
                  use_last_error=False,
                  winmode=None):
+        class _FuncPtr(_CFuncPtr):
+            _flags_ = self._func_flags_
+            _restype_ = self._func_restype_
+            if use_errno:
+                _flags_ |= _FUNCFLAG_USE_ERRNO
+            if use_last_error:
+                _flags_ |= _FUNCFLAG_USE_LASTERROR
+
+        self._FuncPtr = _FuncPtr
         if name:
             name = _os.fspath(name)
 
+        if handle is None:
+            self._handle = self._load_library(name, mode, winmode)
+        else:
+            self._handle = handle
+
+    if _os.name == "nt":
+        def _load_library(self, name, mode, winmode):
+            if winmode is not None:
+                mode = winmode
+            else:
+                import nt as _nt
+                mode = _nt._LOAD_LIBRARY_SEARCH_DEFAULT_DIRS
+                # WINAPI LoadLibrary searches for a DLL if the given name
+                # is not fully qualified with an explicit drive. For POSIX
+                # compatibility, and because the DLL search path no longer
+                # contains the working directory, begin by fully resolving
+                # any name that contains a path separator.
+                if name is not None and ('/' in name or '\\' in name):
+                    name = _nt._getfullpathname(name)
+                    mode |= _nt._LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR
+            self._name = name
+            return _LoadLibrary(self._name, mode)
+
+    else:
+        def _load_library(self, name, mode, winmode):
+            if _sys.platform.startswith("aix"):
+                """When the name contains ".a(" and ends with ")",
+                   e.g., "libFOO.a(libFOO.so)" - this is taken to be an
+                   archive(member) syntax for dlopen(), and the mode is adjusted.
+                   Otherwise, name is presented to dlopen() as a file argument.
+                """
+                if name and name.endswith(")") and ".a(" in name:
+                    mode |= ( _os.RTLD_MEMBER | _os.RTLD_NOW )
             # If the filename that has been provided is an iOS/tvOS/watchOS
             # .fwork file, dereference the location to the true origin of the
             # binary.
-            if name.endswith(".fwork"):
+            if name and name.endswith(".fwork"):
                 with open(name) as f:
                     name = _os.path.join(
                         _os.path.dirname(_sys.executable),
                         f.read().strip()
                     )
-
-        self._name = name
-        flags = self._func_flags_
-        if use_errno:
-            flags |= _FUNCFLAG_USE_ERRNO
-        if use_last_error:
-            flags |= _FUNCFLAG_USE_LASTERROR
-        if _sys.platform.startswith("aix"):
-            """When the name contains ".a(" and ends with ")",
-               e.g., "libFOO.a(libFOO.so)" - this is taken to be an
-               archive(member) syntax for dlopen(), and the mode is adjusted.
-               Otherwise, name is presented to dlopen() as a file argument.
-            """
-            if name and name.endswith(")") and ".a(" in name:
-                mode |= ( _os.RTLD_MEMBER | _os.RTLD_NOW )
-        if _os.name == "nt":
-            if winmode is not None:
-                mode = winmode
-            else:
-                import nt
-                mode = nt._LOAD_LIBRARY_SEARCH_DEFAULT_DIRS
-                if name is not None and ('/' in name or '\\' in name):
-                    self._name = nt._getfullpathname(self._name)
-                    mode |= nt._LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR
-
-        class _FuncPtr(_CFuncPtr):
-            _flags_ = flags
-            _restype_ = self._func_restype_
-        self._FuncPtr = _FuncPtr
-
-        if handle is None:
-            self._handle = _dlopen(self._name, mode)
-        else:
-            self._handle = handle
+            self._name = name
+            return _dlopen(name, mode)
 
     def __repr__(self):
         return "<%s '%s', handle %x at %#x>" % \
