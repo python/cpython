@@ -256,7 +256,7 @@ Verify that the running flag is set properly
     >>> me.gi_running
     0
 
-Verify that genexps are weakly referencable
+Verify that genexps are weakly referenceable
 
     >>> import weakref
     >>> g = (i*i for i in range(4))

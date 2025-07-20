@@ -259,7 +259,7 @@ class CAPITest(unittest.TestCase):
     def test_bug_59313(self):
         # Before 3.14, the C-API function PySequence_Tuple
         # would create incomplete tuples which were visible to
-        # the cycle GC, and this test would crash the interpeter.
+        # the cycle GC, and this test would crash the interpreter.
         TAG = object()
         tuples = []
 
