@@ -1467,7 +1467,7 @@ class SMTPUTF8SimTests(unittest.TestCase):
         self.assertIn('SMTPUTF8', self.serv.last_mail_options)
         self.assertEqual(self.serv.last_rcpt_options, [])
 
-    @support.run_with_tz('UTC-2')
+    @support.run_with_tz('UTC-02')
     def test_send_message_uses_smtputf8_if_addrs_non_ascii(self):
         msg = EmailMessage()
         msg['From'] = "Páolo <főo@bar.com>"
