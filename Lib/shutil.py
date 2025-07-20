@@ -5,12 +5,15 @@ XXX The functions here don't copy the resource fork or other metadata on Mac.
 """
 
 import os
-import fcntl
 import sys
 import stat
 import fnmatch
 import collections
 import errno
+try:
+    import fcntl
+except ImportError:
+    fcntl = None
 
 try:
     import zlib
@@ -82,6 +85,11 @@ class SameFileError(Error):
 class SpecialFileError(OSError):
     """Raised when trying to do a kind of operation (e.g. copying) which is
     not supported on a special file (e.g. a named pipe)"""
+
+
+class MissingFeatureError(Error):
+    """Raised when a platform does not have all of the features it needs to
+    perform an operation."""
 
 
 class ReadError(OSError):
@@ -299,6 +307,8 @@ def copyfile(src, dst, *, follow_symlinks=True):
         raise SameFileError("{!r} and {!r} are the same file".format(src, dst))
 
     file_size = 0
+
+    ### Move this into the opener?
     for i, fn in enumerate([src, dst]):
         try:
             st = _stat(fn)
@@ -322,6 +332,17 @@ def copyfile(src, dst, *, follow_symlinks=True):
     # In Unix, we must open the files non-blocking initially as opening a
     # FIFO without data present in it will block.
     if os.name == 'posix':
+        # We will need these features in order to set the filehandle back to
+        # blocking mode later.
+        if not fcntl or not hasattr(fcntl, 'F_SETFL') or not hasattr(fcntl, 'F_GETFL'):
+            # Which exception to raise?
+            # The needed module or feature does not exist
+            # We would be unable to set the file to non-blocking later
+            # Cannot reset the file handle to defaults
+            raise MissingFeatureError("Cannot use copyfiles on systems that support"
+                                      " socket files unless `fcntl`, `fcntl.F_SETFL`,"
+                                      " and `fcntl.F_GETFL` are available.")
+
         src_flags = os.O_RDONLY | os.O_NONBLOCK
         ### Do we need os.O_EXCL?
         dst_flags = os.O_CREAT | os.O_WRONLY | os.O_NONBLOCK
@@ -330,7 +351,7 @@ def copyfile(src, dst, *, follow_symlinks=True):
         dst_flags = os.O_WRONLY
 
     def _src_opener(path, flags):
-        return os.open(path, flags)
+        return os.open(path, flags | src_flags)
 
     # dst's opener is more complex.  We need to atomically check and open the
     # destination if it doesn't exist.  If it does exist, we need to detect so
@@ -344,8 +365,10 @@ def copyfile(src, dst, *, follow_symlinks=True):
         except FileExistsError:
             dst_was_created = False
             try:
-                # Open the already existing file in as non-blocking
-                ### We have O_CREATE and O_NONBLOCK in dst_flags.  Is that intended?
+                # Open the already existing file as non-blocking
+                ### We have O_CREAT and O_NONBLOCK in dst_flags.  Even though
+                ### we know that we are not creating the file at this point. Is
+                ### that intended?
                 fd = os.open(path, flags | dst_flags)
             # If the destination is already a FIFO for some reason, we'll get an
             # OSError here as we've opened a FIFO for a non-blocking write with
@@ -379,7 +402,7 @@ def copyfile(src, dst, *, follow_symlinks=True):
                     if dst_was_created:
                         os.unlink(dst)
                     raise SpecialFileError("`%s` is a named pipe" % src)
-                if _WINDOWS and i == 0:
+                if _WINDOWS:
                     file_size = st.st_size
 
                 # In Unix, we must set the file descriptors back to blocking as that's
