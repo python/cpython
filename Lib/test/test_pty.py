@@ -1,6 +1,6 @@
 import unittest
 from test.support import (
-    is_android, is_apple_mobile, is_emscripten, is_wasi, reap_children, verbose
+    is_android, is_apple_mobile, is_emscripten, is_wasi, reap_children, verbose, warnings_helper
 )
 from test.support.import_helper import import_module
 from test.support.os_helper import TESTFN, unlink
@@ -194,6 +194,7 @@ class PtyTest(unittest.TestCase):
         s2 = _readline(master_fd)
         self.assertEqual(b'For my pet fish, Eric.\n', normalize_output(s2))
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
     def test_fork(self):
         debug("calling pty.fork()")
         pid, master_fd = pty.fork()
@@ -295,6 +296,7 @@ class PtyTest(unittest.TestCase):
 
         self.assertEqual(data, b"")
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
     def test_spawn_doesnt_hang(self):
         self.addCleanup(unlink, TESTFN)
         with open(TESTFN, 'wb') as f:

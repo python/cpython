@@ -15,7 +15,7 @@ import unittest
 from unittest import mock
 
 from test import support
-from test.support import os_helper
+from test.support import os_helper, warnings_helper
 from test.support import socket_helper
 from test.support import wait_process
 from test.support import hashlib_helper
@@ -1182,6 +1182,7 @@ class TestFunctional(unittest.TestCase):
 @support.requires_fork()
 class TestFork(unittest.IsolatedAsyncioTestCase):
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
     async def test_fork_not_share_event_loop(self):
         # The forked process should not share the event loop with the parent
         loop = asyncio.get_running_loop()
@@ -1206,6 +1207,7 @@ class TestFork(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(result, b'NO LOOP')
             wait_process(pid, exitcode=0)
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
     @hashlib_helper.requires_hashdigest('md5')
     @support.skip_if_sanitizer("TSAN doesn't support threads after fork", thread=True)
     def test_fork_signal_handling(self):
@@ -1253,6 +1255,7 @@ class TestFork(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(parent_handled.is_set())
         self.assertTrue(child_handled.is_set())
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
     @hashlib_helper.requires_hashdigest('md5')
     @support.skip_if_sanitizer("TSAN doesn't support threads after fork", thread=True)
     def test_fork_asyncio_run(self):
@@ -1273,6 +1276,7 @@ class TestFork(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(result.value, 42)
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
     @hashlib_helper.requires_hashdigest('md5')
     @support.skip_if_sanitizer("TSAN doesn't support threads after fork", thread=True)
     def test_fork_asyncio_subprocess(self):
