@@ -519,7 +519,7 @@ An :class:`SMTP` instance has the following methods:
    is no way to unambiguously detect the most recent set of
    :mailheader:`Resent-` headers.
 
-   .. versionchanged:: 3.2
+   .. versionchanged:: 3.14
       Support to add :mailheader:`Date` header to the message if one does not exist.
 
    ``send_message`` serializes *msg* using
