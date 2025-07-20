@@ -91,10 +91,10 @@ Node classes
                   end_lineno
                   end_col_offset
 
-      Most instances of classes part of this module, e.g. instances of subclasses of
+      Most classes part of the AST module have the :attr:`lineno`, :attr:`col_offset`,
+      :attr:`end_lineno`, and :attr:`end_col_offset` attributes, including subclasses of
       :class:`ast.expr`, :class:`ast.stmt` and others (see
-      `Abstract Grammar <abstract-grammar_>`__), have :attr:`lineno`, :attr:`col_offset`,
-      :attr:`end_lineno`, and :attr:`end_col_offset` attributes.  The :attr:`lineno` and
+      `Abstract Grammar <abstract-grammar_>`__). The :attr:`lineno` and
       :attr:`end_lineno` are the first and last line numbers of source text span (1-indexed
       so the first line is line 1) and the :attr:`col_offset` and :attr:`end_col_offset`
       are the corresponding UTF-8 byte offsets of the first and last tokens that
