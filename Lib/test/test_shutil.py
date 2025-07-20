@@ -3127,8 +3127,13 @@ class TestCopyFileObj(unittest.TestCase):
     def test_win_impl(self):
         # Make sure alternate Windows implementation is called.
         with unittest.mock.patch("shutil._copyfileobj_readinto") as m:
-            shutil.copyfile(TESTFN, TESTFN2)
-        assert m.called
+            with unittest.mock.patch("shutil._fastcopy_fcopyfile") as m1:
+                with unittest.mock.patch("shutil._fastcopy_copy_file_range") as m2:
+                    with unittest.mock.patch("shutil._fastcopy_sendfile") as m3:
+                        with unittest.mock.patch("shutil.copyfileobj") as m4:
+                            shutil.copyfile(TESTFN, TESTFN2)
+
+        assert m.called, f"_copyfileobj_readinto: {m.called}\n_fastcopy_fcopyfile: {m1.called}\n_fastcopy_copy_file_range: {m2.called}\n_fastcopy_sendfile: {m3.called}\ncopyfileobj: {m4.called}\ncalled_with: {m4.call_args}"
 
         # File size is 2 MiB but max buf size should be 1 MiB.
         self.assertEqual(m.call_args[0][2], 1 * 1024 * 1024)
