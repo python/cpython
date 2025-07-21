@@ -179,12 +179,16 @@ def _fix_eols(data):
     return  re.sub(r'(?:\r\n|\n|\r(?!\n))', CRLF, data)
 
 
-# CRAM-MD5 may be supported by the server but not by us
-# if HMAC-MD5 is not supported.
+# Use unbounded LRU cache instead of global variable to ease mocking.
 @functools.cache
 def _have_cram_md5_support():
+    """Check if CRAM-MD5 is supported by the host.
+
+    Note that CRAM-MD5 may be supported by the server
+    but not by the client if HMAC-MD5 is not supported.
+    """
     try:
-        hmac.new(b'', b'', 'md5').hexdigest()
+        hmac.digest(b'', b'', 'md5')
         return True
     except ValueError:
         return False
