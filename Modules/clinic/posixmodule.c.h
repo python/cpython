@@ -2255,58 +2255,25 @@ exit:
 #if defined(MS_WINDOWS)
 
 PyDoc_STRVAR(os__path_isdir__doc__,
-"_path_isdir($module, /, s)\n"
+"_path_isdir($module, s, /)\n"
 "--\n"
 "\n"
 "Return true if the pathname refers to an existing directory.");
 
 #define OS__PATH_ISDIR_METHODDEF    \
-    {"_path_isdir", _PyCFunction_CAST(os__path_isdir), METH_FASTCALL|METH_KEYWORDS, os__path_isdir__doc__},
+    {"_path_isdir", (PyCFunction)os__path_isdir, METH_O, os__path_isdir__doc__},
 
 static int
 os__path_isdir_impl(PyObject *module, path_t *path);
 
 static PyObject *
-os__path_isdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+os__path_isdir(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    #define NUM_KEYWORDS 1
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        Py_hash_t ob_hash;
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_hash = -1,
-        .ob_item = { _Py_LATIN1_CHR('s'), },
-    };
-    #undef NUM_KEYWORDS
-    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #else  // !Py_BUILD_CORE
-    #  define KWTUPLE NULL
-    #endif  // !Py_BUILD_CORE
-
-    static const char * const _keywords[] = {"s", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "_path_isdir",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     path_t path = PATH_T_INITIALIZE_P("_path_isdir", "path", 0, 0, 1, 1);
     int _return_value;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
-        goto exit;
-    }
-    if (!path_converter(args[0], &path)) {
+    if (!path_converter(arg, &path)) {
         goto exit;
     }
     _return_value = os__path_isdir_impl(module, &path);
@@ -2541,7 +2508,7 @@ exit:
 #endif /* defined(MS_WINDOWS) */
 
 PyDoc_STRVAR(os__path_splitroot_ex__doc__,
-"_path_splitroot_ex($module, /, p)\n"
+"_path_splitroot_ex($module, p, /)\n"
 "--\n"
 "\n"
 "Split a pathname into drive, root and tail.\n"
@@ -2549,51 +2516,18 @@ PyDoc_STRVAR(os__path_splitroot_ex__doc__,
 "The tail contains anything after the root.");
 
 #define OS__PATH_SPLITROOT_EX_METHODDEF    \
-    {"_path_splitroot_ex", _PyCFunction_CAST(os__path_splitroot_ex), METH_FASTCALL|METH_KEYWORDS, os__path_splitroot_ex__doc__},
+    {"_path_splitroot_ex", (PyCFunction)os__path_splitroot_ex, METH_O, os__path_splitroot_ex__doc__},
 
 static PyObject *
 os__path_splitroot_ex_impl(PyObject *module, path_t *path);
 
 static PyObject *
-os__path_splitroot_ex(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+os__path_splitroot_ex(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    #define NUM_KEYWORDS 1
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        Py_hash_t ob_hash;
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_hash = -1,
-        .ob_item = { _Py_LATIN1_CHR('p'), },
-    };
-    #undef NUM_KEYWORDS
-    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #else  // !Py_BUILD_CORE
-    #  define KWTUPLE NULL
-    #endif  // !Py_BUILD_CORE
-
-    static const char * const _keywords[] = {"p", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "_path_splitroot_ex",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     path_t path = PATH_T_INITIALIZE("_path_splitroot_ex", "path", 0, 1, 1, 0, 0);
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
-        goto exit;
-    }
-    if (!path_converter(args[0], &path)) {
+    if (!path_converter(arg, &path)) {
         goto exit;
     }
     return_value = os__path_splitroot_ex_impl(module, &path);
@@ -13440,4 +13374,4 @@ os__emscripten_debugger(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__EMSCRIPTEN_DEBUGGER_METHODDEF
     #define OS__EMSCRIPTEN_DEBUGGER_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_DEBUGGER_METHODDEF) */
-/*[clinic end generated code: output=6cfddb3b77dc7a40 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a57128ee5bb77595 input=a9049054013a1b77]*/

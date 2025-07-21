@@ -50,7 +50,7 @@ def _get_sep(path):
 # normalizations (such as optimizing '../' away) are not allowed
 # (another function should be defined to do that).
 
-def normcase(s):
+def normcase(s, /):
     """Normalize case of pathname.  Has no effect under Posix"""
     return os.fspath(s)
 
@@ -58,7 +58,7 @@ def normcase(s):
 # Return whether a path is absolute.
 # Trivial in Posix, harder on the Mac or MS-DOS.
 
-def isabs(s):
+def isabs(s, /):
     """Test whether a path is absolute"""
     s = os.fspath(s)
     sep = _get_sep(s)
@@ -97,7 +97,7 @@ def join(a, *p):
 # '/' in the path, head  will be empty.
 # Trailing '/'es are stripped from head unless it is the root.
 
-def split(p):
+def split(p, /):
     """Split a pathname.  Returns tuple "(head, tail)" where "tail" is
     everything after the final slash.  Either part may be empty."""
     p = os.fspath(p)
@@ -114,7 +114,7 @@ def split(p):
 # pathname component; the root is everything before that.
 # It is always true that root + ext == p.
 
-def splitext(p):
+def splitext(p, /):
     p = os.fspath(p)
     if isinstance(p, bytes):
         sep = b'/'
@@ -128,7 +128,7 @@ splitext.__doc__ = genericpath._splitext.__doc__
 # Split a pathname into a drive specification and the rest of the
 # path.  Useful on DOS/Windows/NT; on Unix, the drive is always empty.
 
-def splitdrive(p):
+def splitdrive(p, /):
     """Split a pathname into drive and path. On Posix, drive is always
     empty."""
     p = os.fspath(p)
@@ -138,7 +138,7 @@ def splitdrive(p):
 try:
     from posix import _path_splitroot_ex as splitroot
 except ImportError:
-    def splitroot(p):
+    def splitroot(p, /):
         """Split a pathname into drive, root and tail.
 
         The tail contains anything after the root."""
@@ -163,7 +163,7 @@ except ImportError:
 
 # Return the tail (basename) part of a path, same as split(path)[1].
 
-def basename(p):
+def basename(p, /):
     """Returns the final component of a pathname"""
     p = os.fspath(p)
     sep = _get_sep(p)
@@ -173,7 +173,7 @@ def basename(p):
 
 # Return the head (dirname) part of a path, same as split(path)[0].
 
-def dirname(p):
+def dirname(p, /):
     """Returns the directory component of a pathname"""
     p = os.fspath(p)
     sep = _get_sep(p)

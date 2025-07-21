@@ -5535,7 +5535,8 @@ os__path_lexists_impl(PyObject *module, path_t *path)
 /*[clinic input]
 os._path_isdir -> bool
 
-    s as path: path_t(allow_fd=True, suppress_value_error=True)
+    s as path: path_t(allow_fd=True, suppress_value_error=True),
+    /
 
 Return true if the pathname refers to an existing directory.
 
@@ -5543,7 +5544,7 @@ Return true if the pathname refers to an existing directory.
 
 static int
 os__path_isdir_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=d5786196f9e2fa7a input=132a3b5301aecf79]*/
+/*[clinic end generated code: output=d5786196f9e2fa7a input=6d3c18234e720b19]*/
 {
     return _testFileType(path, PY_IFDIR);
 }
@@ -5612,7 +5613,8 @@ os__path_isjunction_impl(PyObject *module, path_t *path)
 /*[clinic input]
 os._path_splitroot_ex
 
-    p as path: path_t(make_wide=True, nonstrict=True)
+    p as path: path_t(make_wide=True, nonstrict=True),
+    /
 
 Split a pathname into drive, root and tail.
 
@@ -5621,7 +5623,7 @@ The tail contains anything after the root.
 
 static PyObject *
 os__path_splitroot_ex_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=4b0072b6cdf4b611 input=4556b615c7cc13f2]*/
+/*[clinic end generated code: output=4b0072b6cdf4b611 input=ccd3dfece9b2d79a]*/
 {
     Py_ssize_t drvsize, rootsize;
     PyObject *drv = NULL, *root = NULL, *tail = NULL, *result = NULL;
