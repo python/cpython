@@ -760,6 +760,11 @@ pycore_init_types(PyInterpreterState *interp)
         return status;
     }
 
+    status = _PyDateTime_InitTypes(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
     return _PyStatus_OK();
 }
 
