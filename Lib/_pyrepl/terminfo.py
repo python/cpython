@@ -437,10 +437,8 @@ class TermInfo:
                 strings.append(CANCELLED_STRING)
             elif off < len(string_table):
                 # Find null terminator
-                end = off
-                while end < len(string_table) and string_table[end] != 0:
-                    end += 1
-                if end <= len(string_table):
+                end = string_table.find(0, off)
+                if end >= 0:
                     strings.append(string_table[off:end])
                 else:
                     strings.append(ABSENT_STRING)
