@@ -2929,6 +2929,64 @@ class _TestPool(BaseTestCase):
             self.assertEqual(next(it), i*i)
         self.assertRaises(StopIteration, it.__next__)
 
+    def test_imap_inf_iterable_with_slow_task(self):
+        if self.TYPE in ("processes", "manager"):
+            self.skipTest("test not appropriate for {}".format(self.TYPE))
+
+        processes = 4
+        p = self.Pool(processes)
+
+        tasks_started_later = 2
+        last_produced_task_arg = Value("i")
+
+        def produce_args():
+            for arg in range(1, processes + tasks_started_later + 1):
+                last_produced_task_arg.value = arg
+                yield arg
+
+        it = p.imap(functools.partial(sqr, wait=0.2), produce_args())
+
+        next(it)
+        time.sleep(0.2)
+        # `iterable` should've been advanced only up by `processes` times,
+        # but in fact advances further (by `>=processes+1`).
+        # In this case, it advances to the maximum value.
+        self.assertGreater(last_produced_task_arg.value, processes + 1)
+
+        p.terminate()
+        p.join()
+
+    def test_imap_inf_iterable_with_slow_task_and_buffersize(self):
+        if self.TYPE in ("processes", "manager"):
+            self.skipTest("test not appropriate for {}".format(self.TYPE))
+
+        processes = 4
+        p = self.Pool(processes)
+
+        tasks_started_later = 2
+        last_produced_task_arg = Value("i")
+
+        def produce_args():
+            for arg in range(1, processes + tasks_started_later + 1):
+                last_produced_task_arg.value = arg
+                yield arg
+
+        it = p.imap(
+            functools.partial(sqr, wait=0.2),
+            produce_args(),
+            buffersize=processes,
+        )
+
+        time.sleep(0.2)
+        self.assertEqual(last_produced_task_arg.value, processes)
+
+        next(it)
+        time.sleep(0.2)
+        self.assertEqual(last_produced_task_arg.value, processes + 1)
+
+        p.terminate()
+        p.join()
+
     def test_imap_handle_iterable_exception(self):
         if self.TYPE == 'manager':
             self.skipTest('test not appropriate for {}'.format(self.TYPE))
