@@ -118,7 +118,7 @@ the :mod:`glob` module.)
       Accepts a :term:`path-like object`.
 
 
-.. function:: dirname(path)
+.. function:: dirname(path, /)
 
    Return the directory name of pathname *path*.  This is the first element of
    the pair returned by passing *path* to the function :func:`split`.
