@@ -3449,7 +3449,7 @@ class TestTypeErrors(unittest.TestCase):
     def test_class_or_union_not_specialform(self):
         from typing import Literal
         name = type(Literal).__name__
-        msg = rf"called match pattern must be a class or types.UnionType \(got {name}\)"
+        msg = rf"called match pattern must be a class or typing.Union of classes \(got {name}\)"
         w = None
         with self.assertRaisesRegex(TypeError, msg):
             match 1:
@@ -3461,7 +3461,7 @@ class TestTypeErrors(unittest.TestCase):
         from typing import Union
         IntOrStr = Union[int, str]
         name = type(IntOrStr).__name__
-        msg = rf"called match pattern must be a class or types.UnionType \(got {name}\)"
+        msg = rf"called match pattern must be a class or typing.Union of classes \(got {name}\)"
         w = None
         with self.assertRaisesRegex(TypeError, msg):
             match 1:
