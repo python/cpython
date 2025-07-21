@@ -13,7 +13,7 @@ from itertools import product
 from unittest import mock
 
 from test import support
-from test.support import import_helper
+from test.support import import_helper, warnings_helper
 from test.support.script_helper import assert_python_ok
 
 py_uuid = import_helper.import_fresh_module('uuid', blocked=['_uuid'])
