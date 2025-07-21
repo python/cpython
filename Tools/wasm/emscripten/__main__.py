@@ -206,6 +206,17 @@ def configure_emscripten_python(context, working_dir):
         sysconfig_data += "-pydebug"
 
     host_runner = context.host_runner
+    if node_version := os.environ.get("PYTHON_NODE_VERSION", None):
+        res = subprocess.run(
+            [
+                "bash",
+                "-c",
+                f"source ~/.nvm/nvm.sh && nvm which {node_version}",
+            ],
+            text=True,
+            capture_output=True,
+        )
+        host_runner = res.stdout.strip()
     pkg_config_path_dir = (PREFIX_DIR / "lib/pkgconfig/").resolve()
     env_additions = {
         "CONFIG_SITE": config_site,
@@ -263,10 +274,20 @@ def configure_emscripten_python(context, working_dir):
                 REALPATH=abs_path
             fi
 
+            # Before node 24, --experimental-wasm-jspi uses different API,
+            # After node 24 JSPI is on by default.
+            ARGS=$({host_runner} -e "$(cat <<"EOF"
+            const major_version = Number(process.version.split(".")[0].slice(1));
+            if (major_version === 24) {{
+                process.stdout.write("--experimental-wasm-jspi");
+            }}
+            EOF
+            )")
+
             # We compute our own path, not following symlinks and pass it in so that
             # node_entry.mjs can set sys.executable correctly.
             # Intentionally allow word splitting on NODEFLAGS.
-            exec {host_runner} $NODEFLAGS {node_entry} --this-program="$($REALPATH "$0")" "$@"
+            exec {host_runner} $NODEFLAGS $ARGS {node_entry} --this-program="$($REALPATH "$0")" "$@"
             """
         )
     )
