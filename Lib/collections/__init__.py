@@ -1614,10 +1614,11 @@ class UserString(_collections_abc.Sequence):
 
 import collections.abc
 import heapq
-from typing import Any, Dict, Iterator, List, Optional, Tuple, TypeVar, Union
+import sys
 
-K = TypeVar('K')
-V = TypeVar('V')
+# Use string forward references for type annotations to avoid circular imports
+if sys.version_info >= (3, 7):
+    from __future__ import annotations
 
 class HeapDict(collections.abc.MutableMapping):
     """Dictionary that maintains heap property based on values.
@@ -1625,25 +1626,12 @@ class HeapDict(collections.abc.MutableMapping):
     HeapDict combines the functionality of a dictionary with a heap,
     providing efficient access to key-value pairs while maintaining
     a heap property for priority-based operations.
-    
-    Basic operations:
-    - d[key] = value: Set a key-value pair
-    - value = d[key]: Get value by key
-    - del d[key]: Remove a key-value pair
-    - key in d: Test if key exists
-    - len(d): Get number of items
-    - iter(d): Iterate through keys
-    
-    Heap operations:
-    - d.popmin(): Remove and return the (key, value) pair with minimum value
-    - d.peekmin(): Return the (key, value) pair with minimum value without removing
-    - d.update_priority(key, new_value): Update the value/priority of an existing key
     """
     
     def __init__(self, *args, **kwargs):
         """Initialize a new HeapDict with optional initial values."""
-        self._dict: Dict[K, V] = {}  # Maps keys to values
-        self._heap: List[Tuple[V, K, int]] = []  # List of (value, key, counter)
+        self._dict = {}  # Maps keys to values
+        self._heap = []  # List of (value, key, counter)
         self._counter = 0  # Used to break ties for values that compare equal
         self._removed_keys = set()  # Track removed keys for lazy deletion
         
@@ -1651,7 +1639,7 @@ class HeapDict(collections.abc.MutableMapping):
         if args or kwargs:
             self.update(*args, **kwargs)
     
-    def __setitem__(self, key: K, value: V) -> None:
+    def __setitem__(self, key, value):
         """Set a key-value pair, maintaining heap property."""
         if key in self._dict:
             self.update_priority(key, value)
@@ -1661,37 +1649,32 @@ class HeapDict(collections.abc.MutableMapping):
             self._counter += 1
             heapq.heappush(self._heap, (value, key, count))
     
-    def __getitem__(self, key: K) -> V:
+    def __getitem__(self, key):
         """Get value by key."""
         return self._dict[key]
     
-    def __delitem__(self, key: K) -> None:
+    def __delitem__(self, key):
         """Remove a key-value pair."""
         if key not in self._dict:
             raise KeyError(key)
         
         # Mark the key as removed
         self._removed_keys.add(key)
-        
-        # Remove from dictionary
         del self._dict[key]
-        
-        # Note: We don't remove from the heap here for efficiency.
-        # Instead, we do lazy deletion during heap operations.
     
-    def __iter__(self) -> Iterator[K]:
+    def __iter__(self):
         """Iterate through keys."""
         return iter(self._dict)
     
-    def __len__(self) -> int:
+    def __len__(self):
         """Return the number of items."""
         return len(self._dict)
     
-    def __repr__(self) -> str:
+    def __repr__(self):
         """Return string representation."""
         return f"{self.__class__.__name__}({dict(self.items())})"
     
-    def _clean_heap(self) -> None:
+    def _clean_heap(self):
         """Clean the heap by removing marked items."""
         if len(self._removed_keys) > len(self._heap) // 2:
             # If too many removed items, rebuild the heap
@@ -1700,7 +1683,7 @@ class HeapDict(collections.abc.MutableMapping):
             self._heap = new_heap
             self._removed_keys.clear()
     
-    def popmin(self) -> Tuple[K, V]:
+    def popmin(self):
         """Remove and return the (key, value) pair with minimum value."""
         if not self._dict:
             raise KeyError("popmin from an empty HeapDict")
@@ -1712,10 +1695,9 @@ class HeapDict(collections.abc.MutableMapping):
                 del self._dict[key]
                 return key, value
         
-        # This should never happen if the data structure is consistent
         raise RuntimeError("Heap is inconsistent with dictionary")
     
-    def peekmin(self) -> Tuple[K, V]:
+    def peekmin(self):
         """Return the (key, value) pair with minimum value without removing it."""
         if not self._dict:
             raise KeyError("peekmin from an empty HeapDict")
@@ -1725,29 +1707,38 @@ class HeapDict(collections.abc.MutableMapping):
             value, key, _ = self._heap[0]
             if key not in self._removed_keys and key in self._dict:
                 return key, value
-            
-            # If the top item is removed, pop it and continue
             heapq.heappop(self._heap)
         
-        # This should never happen if the data structure is consistent
         raise RuntimeError("Heap is inconsistent with dictionary")
     
-    def update_priority(self, key: K, new_value: V) -> None:
+    def update_priority(self, key, new_value):
         """Update the value/priority of an existing key."""
         if key not in self._dict:
             raise KeyError(key)
         
         # Update the dictionary
         self._dict[key] = new_value
-        
-        # Mark the old entry as removed
         self._removed_keys.add(key)
-        
-        # Add a new entry to the heap
         count = self._counter
         self._counter += 1
         heapq.heappush(self._heap, (new_value, key, count))
         
-        # Clean the heap if there are too many removed items
         if len(self._removed_keys) > len(self._heap) // 2:
             self._clean_heap()
+
+# Add type hints for older Python versions or static type checkers
+if sys.version_info < (3, 7) or typing.TYPE_CHECKING:
+    from typing import Any, Dict, Iterator, List, Optional, Tuple, TypeVar, Union
+    K = TypeVar('K')
+    V = TypeVar('V')
+    HeapDict.__annotations__ = {
+        '_dict': Dict[K, V],
+        '_heap': List[Tuple[V, K, int]],
+        '__setitem__': None,
+        '__getitem__': None,
+        '__delitem__': None,
+        '__iter__': Iterator[K],
+        'popmin': Tuple[K, V],
+        'peekmin': Tuple[K, V],
+        'update_priority': None
+    }
