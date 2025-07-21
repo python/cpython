@@ -27,7 +27,7 @@ import warnings
 # If threading is available then ThreadPool should be provided.  Therefore
 # we avoid top-level imports which are liable to fail on some systems.
 from . import util
-from . import get_context, TimeoutError
+from . import TimeoutError, get_context
 from .connection import wait
 
 #
@@ -421,6 +421,11 @@ class Pool(object):
         self._check_running()
         if chunksize < 1:
             raise ValueError("Chunksize must be 1+, not {0:n}".format(chunksize))
+        if buffersize is not None:
+            if not isinstance(buffersize, int):
+                raise TypeError("buffersize must be an integer or None")
+            if buffersize < 1:
+                raise ValueError("buffersize must be None or > 0")
 
         result = IMapIterator(self, buffersize)
 
@@ -459,6 +464,11 @@ class Pool(object):
             raise ValueError(
                 "Chunksize must be 1+, not {0!r}".format(chunksize)
             )
+        if buffersize is not None:
+            if not isinstance(buffersize, int):
+                raise TypeError("buffersize must be an integer or None")
+            if buffersize < 1:
+                raise ValueError("buffersize must be None or > 0")
 
         result = IMapUnorderedIterator(self, buffersize)
 
@@ -887,9 +897,7 @@ class IMapIterator(object):
         if buffersize is None:
             self._backpressure_sema = None
         else:
-            self._backpressure_sema = threading.Semaphore(
-                value=self._pool._processes + buffersize
-            )
+            self._backpressure_sema = threading.Semaphore(buffersize)
 
     def __iter__(self):
         return self
@@ -911,7 +919,7 @@ class IMapIterator(object):
                         raise StopIteration from None
                     raise TimeoutError from None
 
-        if self._backpressure_sema:
+        if self._backpressure_sema is not None:
             self._backpressure_sema.release()
 
         success, value = item
