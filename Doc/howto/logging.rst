@@ -303,7 +303,7 @@ favourite beverage and carry on.
 
 If your logging needs are simple, then use the above examples to incorporate
 logging into your own scripts, and if you run into problems or don't understand
-something, please post a question using the "New Topic" button on the `Python
+something, please post a question in the Help category of the `Python
 discussion forum <https://discuss.python.org/c/help/7>`_ and you should receive
 help before too long.
 
