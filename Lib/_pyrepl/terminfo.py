@@ -71,7 +71,6 @@ _STRING_NAMES: tuple[str, ...] = (
     "OTGV", "OTGC","meml", "memu", "box1"
 )
 # fmt: on
-_STRING_CAPABILITY_NAMES = {name: i for i, name in enumerate(_STRING_NAMES)}
 
 
 def _get_terminfo_dirs() -> list[Path]:
@@ -414,7 +413,7 @@ class TermInfo:
 
         # Extract strings from string table
         capabilities = {}
-        for cap, off in zip(_STRING_CAPABILITY_NAMES, string_offsets):
+        for cap, off in zip(_STRING_NAMES, string_offsets):
             if off < 0:
                 # CANCELLED_STRING; we do not store those
                 continue
