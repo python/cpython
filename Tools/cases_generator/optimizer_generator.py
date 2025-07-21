@@ -232,6 +232,20 @@ class OptimizerEmitter(Emitter):
                 emitter.emit(f"{outp.name} = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal({outp.name}_stackref));\n")
             else:
                 emitter.emit(f"{outp.name} = sym_new_const(ctx, PyStackRef_AsPyObjectBorrow({outp.name}_stackref));\n")
+
+        if len(used_stack_inputs) == 2 and len(self.original_uop.stack.outputs) == 1:
+                outp = self.original_uop.stack.outputs[0]
+                if not outp.peek:
+                    emitter.emit(f"""
+                if (sym_is_const(ctx, {outp.name})) {{
+                    PyObject *result = sym_get_const(ctx, {outp.name});
+                    if (_Py_IsImmortal(result)) {{
+                        // Replace with POP_TWO_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
+                        REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+                    }}
+                }}
+                """)
+
         storage.flush(self.out)
         emitter.emit("break;\n")
         emitter.emit("}\n")
