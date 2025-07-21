@@ -290,10 +290,10 @@ Real.register(float)
 
 
 class Rational(Real):
-    """To Real, adds numerator and denominator properties.
+    """To Real, Rational adds numerator and denominator properties.
 
-    The numerator and denominator values should be in lowest terms with
-    denominator positive.
+    The numerator and denominator values should be in lowest terms,
+    with a positive denominator.
     """
 
     __slots__ = ()
@@ -307,7 +307,10 @@ class Rational(Real):
     @property
     @abstractmethod
     def denominator(self):
-        """The positive denominator of a rational number in lowest terms."""
+        """The denominator of a rational number in lowest terms.
+
+        This denominator should be positive.
+        """
         raise NotImplementedError
 
     # Concrete implementation of Real's conversion to float.
