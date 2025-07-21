@@ -71,7 +71,6 @@ _STRING_NAMES: tuple[str, ...] = (
     "OTGV", "OTGC","meml", "memu", "box1"
 )
 # fmt: on
-_STRING_CAPABILITY_NAMES = {name: i for i, name in enumerate(_STRING_NAMES)}
 
 
 def _get_terminfo_dirs() -> list[Path]:
@@ -322,10 +321,6 @@ class TermInfo:
     terminal_name: str | bytes | None
     fallback: bool = True
 
-    _names: list[str] = field(default_factory=list)
-    _booleans: list[int] = field(default_factory=list)
-    _numbers: list[int] = field(default_factory=list)
-    _strings: list[bytes | None] = field(default_factory=list)
     _capabilities: dict[str, bytes] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
@@ -362,9 +357,12 @@ class TermInfo:
     def _parse_terminfo_file(self, terminal_name: str) -> None:
         """Parse a terminfo file.
 
+        Populate the _capabilities dict for easy retrieval
+
         Based on ncurses implementation in:
         - ncurses/tinfo/read_entry.c:_nc_read_termtype()
         - ncurses/tinfo/read_entry.c:_nc_read_file_entry()
+        - ncurses/tinfo/lib_ti.c:tigetstr()
         """
         data = _read_terminfo_file(terminal_name)
         too_short = f"TermInfo file for {terminal_name!r} too short"
@@ -377,53 +375,36 @@ class TermInfo:
         )
 
         if magic == MAGIC16:
-            number_format = "<h"  # 16-bit signed
             number_size = 2
         elif magic == MAGIC32:
-            number_format = "<i"  # 32-bit signed
             number_size = 4
         else:
             raise ValueError(
                 f"TermInfo file for {terminal_name!r} uses unknown magic"
             )
 
-        # Read terminal names
-        if offset + name_size > len(data):
-            raise ValueError(too_short)
-        names = data[offset : offset + name_size - 1].decode(
-            "ascii", errors="ignore"
-        )
+        # Skip data than PyREPL doesn't need:
+        # - names (`|`-separated ASCII strings)
+        # - boolean capabilities (bytes with value 0 or 1)
+        # - numbers (little-endian integers, `number_size` bytes each)
         offset += name_size
-
-        # Read boolean capabilities
-        if offset + bool_count > len(data):
-            raise ValueError(too_short)
-        booleans = list(data[offset : offset + bool_count])
         offset += bool_count
-
-        # Align to even byte boundary for numbers
         if offset % 2:
+            # Align to even byte boundary for numbers
             offset += 1
-
-        # Read numeric capabilities
-        numbers = []
-        for i in range(num_count):
-            if offset + number_size > len(data):
-                raise ValueError(too_short)
-            num = struct.unpack(
-                number_format, data[offset : offset + number_size]
-            )[0]
-            numbers.append(num)
-            offset += number_size
+        offset += num_count * number_size
+        if offset > len(data):
+            raise ValueError(too_short)
 
         # Read string offsets
-        string_offsets = []
-        for i in range(str_count):
-            if offset + 2 > len(data):
-                raise ValueError(too_short)
-            off = struct.unpack("<h", data[offset : offset + 2])[0]
-            string_offsets.append(off)
-            offset += 2
+        end_offset = offset + 2 * str_count
+        if offset > len(data):
+            raise ValueError(too_short)
+        string_offset_data = data[offset:end_offset]
+        string_offsets = [
+            off for [off] in struct.iter_unpack("<h", string_offset_data)
+        ]
+        offset = end_offset
 
         # Read string table
         if offset + str_size > len(data):
@@ -431,53 +412,30 @@ class TermInfo:
         string_table = data[offset : offset + str_size]
 
         # Extract strings from string table
-        strings: list[bytes | None] = []
-        for off in string_offsets:
+        capabilities = {}
+        for cap, off in zip(_STRING_NAMES, string_offsets):
             if off < 0:
-                strings.append(CANCELLED_STRING)
+                # CANCELLED_STRING; we do not store those
+                continue
             elif off < len(string_table):
                 # Find null terminator
-                end = off
-                while end < len(string_table) and string_table[end] != 0:
-                    end += 1
-                if end <= len(string_table):
-                    strings.append(string_table[off:end])
-                else:
-                    strings.append(ABSENT_STRING)
-            else:
-                strings.append(ABSENT_STRING)
+                end = string_table.find(0, off)
+                if end >= 0:
+                    capabilities[cap] = string_table[off:end]
+            # in other cases this is ABSENT_STRING; we don't store those.
 
-        self._names = names.split("|")
-        self._booleans = booleans
-        self._numbers = numbers
-        self._strings = strings
+        # Note: we don't support extended capabilities since PyREPL doesn't
+        # need them.
+
+        self._capabilities = capabilities
 
     def get(self, cap: str) -> bytes | None:
         """Get terminal capability string by name.
-
-        Based on ncurses implementation in:
-        - ncurses/tinfo/lib_ti.c:tigetstr()
-
-        The ncurses version searches through compiled terminfo data structures.
-        This version first checks parsed terminfo data, then falls back to
-        hardcoded capabilities.
         """
         if not isinstance(cap, str):
             raise TypeError(f"`cap` must be a string, not {type(cap)}")
 
-        if self._capabilities:
-            # Fallbacks populated, use them
-            return self._capabilities.get(cap)
-
-        # Look up in standard capabilities first
-        if cap in _STRING_CAPABILITY_NAMES:
-            index = _STRING_CAPABILITY_NAMES[cap]
-            if index < len(self._strings):
-                return self._strings[index]
-
-        # Note: we don't support extended capabilities since PyREPL doesn't
-        # need them.
-        return None
+        return self._capabilities.get(cap)
 
 
 def tparm(cap_bytes: bytes, *params: int) -> bytes:
