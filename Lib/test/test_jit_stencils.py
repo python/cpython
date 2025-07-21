@@ -14,9 +14,14 @@ _TOOLS_JIT_TEST = _TOOLS_JIT / "test"
 _TOOLS_JIT_TEST_TEST_EXECUTOR_CASES_C_H = _TOOLS_JIT_TEST / "test_executor_cases.c.h"
 _TOOLS_JIT_BUILD_PY = _TOOLS_JIT / "build.py"
 
+# Skip this test if either the JIT build scripts or the needed LLVM utilities
+# are missing:
 test.test_tools.skip_if_missing("jit")
 with test.test_tools.imports_under_tool("jit"):
     import _llvm
+for tool in ["clang", "llvm-objdump", "llvm-readobj"]:
+    if not asyncio.run(_llvm._find_tool(tool)):
+        raise unittest.SkipTest(f"{tool} {_llvm._LLVM_VERSION} isn't installed.")
 
 @test.support.cpython_only
 @unittest.skipIf(test.support.Py_DEBUG, "Debug stencils aren't tested.")
@@ -60,8 +65,6 @@ class TestJITStencils(unittest.TestCase):
             raise
 
     def test_jit_stencils(self):
-        if not asyncio.run(_llvm._find_tool("clang")):
-            self.skipTest(f"LLVM {_llvm._LLVM_VERSION} isn't installed.")
         self.maxDiff = None
         found = False
         for test_jit_stencils_h in _TOOLS_JIT_TEST.glob("test_jit_stencils-*.h"):
