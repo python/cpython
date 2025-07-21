@@ -2629,7 +2629,10 @@ differences between platforms in handling of unsupported format specifiers.
    ``%G``, ``%u`` and ``%V`` were added.
 
 .. versionadded:: 3.12
-   ``%:z`` was added.
+   ``%:z`` was added for :meth:`~.datetime.strftime`
+
+.. versionadded:: 3.15
+   ``%:z`` was added for :meth:`~.datetime.strptime`
 
 Technical Detail
 ^^^^^^^^^^^^^^^^
@@ -2724,12 +2727,18 @@ Notes:
       When the ``%z`` directive is provided to the  :meth:`~.datetime.strptime` method,
       the UTC offsets can have a colon as a separator between hours, minutes
       and seconds.
-      For example, ``'+01:00:00'`` will be parsed as an offset of one hour.
-      In addition, providing ``'Z'`` is identical to ``'+00:00'``.
+      For example, both ``'+010000'`` and ``'+01:00:00'`` will be parsed as an offset
+      of one hour. In addition, providing ``'Z'`` is identical to ``'+00:00'``.
 
    ``%:z``
-      Behaves exactly as ``%z``, but has a colon separator added between
-      hours, minutes and seconds.
+      When used with :meth:`~.datetime.strftime`, behaves exactly as ``%z``,
+      except that a colon separator is added between hours, minutes and seconds.
+
+      When used with :meth:`~.datetime.stpftime`, the UTC offset is *required*
+      to have a colon as a separator between hours, minutes and seconds.
+      For example, ``'+01:00:00'`` (but *not* ``'+010000'``) will be parsed as
+      an offset of one hour. In addition, providing ``'Z'`` is identical to
+      ``'+00:00'``.
 
    ``%Z``
       In :meth:`~.datetime.strftime`, ``%Z`` is replaced by an empty string if

@@ -1,0 +1,2 @@
+Support ``%:z`` directive for :meth:`~datetime.datetime.strptime`. Patch by
+Semyon Moroz.
