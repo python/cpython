@@ -1452,7 +1452,6 @@ class ZipFile:
         self._lock = threading.RLock()
         self._seekable = True
         self._writing = False
-        self._data_offset = None
 
         try:
             if mode == 'r':
@@ -1468,6 +1467,7 @@ class ZipFile:
                     self.fp = _Tellable(self.fp)
                     self.start_dir = 0
                     self._seekable = False
+                    self._data_offset = None
                 else:
                     # Some file-like objects can provide tell() but not seek()
                     try:
@@ -1488,7 +1488,6 @@ class ZipFile:
                     # even if no files are added to the archive
                     self._didModify = True
                     self.start_dir = self.fp.tell()
-                    self._data_offset = self.start_dir
             else:
                 raise ValueError("Mode must be 'r', 'w', 'x', or 'a'")
         except:
