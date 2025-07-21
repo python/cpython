@@ -11,6 +11,7 @@ from concurrent.futures.process import _check_system_limits
 
 from test import support
 from test.support import threading_helper
+import warnings
 
 
 def create_future(state=PENDING, exception=None, result=None):
@@ -51,7 +52,15 @@ class ExecutorMixin:
                 max_workers=self.worker_count,
                 mp_context=self.get_context(),
                 **self.executor_kwargs)
-            self.manager = self.get_context().Manager()
+            # gh-135427
+            # In some of the tests, a forked child forks another child of itself. In that case, using
+            # warnings_helper.ignore_warnings decorator does not actually ignore the warning from that
+            # child of child, and a warnings_helper.ignore_warnings exception is raised.
+            with warnings.catch_warnings():
+                warnings.filterwarnings('ignore',
+                                        message=".*fork.*may lead to deadlocks in the child.*",
+                                        category=DeprecationWarning)
+                self.manager = self.get_context().Manager()
         else:
             self.executor = self.executor_type(
                 max_workers=self.worker_count,

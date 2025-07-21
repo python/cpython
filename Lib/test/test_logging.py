@@ -730,6 +730,7 @@ class HandlerTest(BaseTest):
     # based on os.fork existing because that is what users and this test use.
     # This helps ensure that when fork exists (the important concept) that the
     # register_at_fork mechanism is also present and used.
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
     @support.requires_fork()
     @threading_helper.requires_working_threading()
     @skip_if_asan_fork
@@ -4067,6 +4068,7 @@ class ConfigDictTest(BaseTest):
                 with self.assertRaises(ValueError):
                     self._apply_simple_queue_listener_configuration(qspec)
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
     @skip_if_tsan_fork
     @support.requires_subprocess()
     @unittest.skipUnless(support.Py_DEBUG, "requires a debug build for testing"
