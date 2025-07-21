@@ -42,7 +42,6 @@ int __syscall_umask(int mask) {
 #include <wasi/api.h>
 #include <errno.h>
 #include <fcntl.h>
-#undef errno
 
 // Variant of EM_JS that does C preprocessor substitution on the body
 #define EM_JS_MACROS(ret, func_name, args, body...)                            \
@@ -187,7 +186,7 @@ EM_JS_MACROS(__externref_t, __maybe_fd_read_async, (
             if (e.name !== 'ErrnoError') {
                 throw e;
             }
-            return e.errno;
+            return e["errno"];
         }
     })();
 };
@@ -269,7 +268,7 @@ EM_JS_MACROS(__externref_t, __maybe_poll_async, (intptr_t fds, int nfds, int tim
             return nonzero;
         } catch(e) {
             if (e?.name !== "ErrnoError") throw e;
-            return -e.errno;
+            return -e["errno"];
         }
     })();
 });
@@ -296,6 +295,25 @@ int syscall_ioctl_orig(int fd, int request, void* varargs)
 int __syscall_ioctl(int fd, int request, void* varargs) {
     if (request == FIOCLEX || request == FIONCLEX) {
         return 0;
+    }
+    if (request == FIONBIO) {
+        // Implement FIONBIO via fcntl.
+        // TODO: Upstream this.
+        int flags = fcntl(fd, F_GETFL, 0);
+        int nonblock = **((int**)varargs);
+        if (flags < 0) {
+            return errno;
+        }
+        if (nonblock) {
+            flags |= O_NONBLOCK;
+        } else {
+            flags &= (~O_NONBLOCK);
+        }
+        int res = fcntl(fd, F_SETFL, flags);
+        if (res < 0) {
+            return errno;
+        }
+        return res;
     }
     return syscall_ioctl_orig(fd, request, varargs);
 }

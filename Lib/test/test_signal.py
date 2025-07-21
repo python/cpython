@@ -254,7 +254,6 @@ class WakeupFDTests(unittest.TestCase):
                           signal.set_wakeup_fd, fd)
 
     @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
-    @unittest.skipIf(support.is_emscripten, "Doesn't work")
     def test_set_wakeup_fd_result(self):
         r1, w1 = os.pipe()
         self.addCleanup(os.close, r1)
@@ -293,7 +292,6 @@ class WakeupFDTests(unittest.TestCase):
     # function to test if a socket is in non-blocking mode.
     @unittest.skipIf(sys.platform == "win32", "tests specific to POSIX")
     @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
-    @unittest.skipIf(support.is_emscripten, "Doesn't work")
     def test_set_wakeup_fd_blocking(self):
         rfd, wfd = os.pipe()
         self.addCleanup(os.close, rfd)
