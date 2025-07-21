@@ -2563,7 +2563,7 @@ To add cleanup code that must be run even in the case of an exception, use
    .. versionadded:: 3.8
 
 
-.. classmethod:: enterModuleContext(cm)
+.. function:: enterModuleContext(cm)
 
    Enter the supplied :term:`context manager`.  If successful, also
    add its :meth:`~object.__exit__` method as a cleanup function by
