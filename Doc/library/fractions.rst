@@ -25,7 +25,7 @@ another number, or from a string.
 
    The first version requires that *numerator* and *denominator* are instances
    of :class:`numbers.Rational` and returns a new :class:`Fraction` instance
-   with value ``numerator/denominator``. If *denominator* is ``0``, it
+   with value equal to ``numerator/denominator``. If *denominator* is zero, it
    raises a :exc:`ZeroDivisionError`.
 
    The second version requires that *number* is an instance of
