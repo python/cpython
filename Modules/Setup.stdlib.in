@@ -31,7 +31,7 @@
 
 ############################################################################
 # Modules that should always be present (POSIX and Windows):
-@MODULE__ASYNCIO_TRUE@_asyncio _asynciomodule.c
+@MODULE_ARRAY_TRUE@array arraymodule.c
 @MODULE__BISECT_TRUE@_bisect _bisectmodule.c
 @MODULE__CSV_TRUE@_csv _csv.c
 @MODULE__HEAPQ_TRUE@_heapq _heapqmodule.c
