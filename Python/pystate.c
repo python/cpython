@@ -773,6 +773,9 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
             Py_CLEAR(interp->monitoring_callables[t][e]);
         }
     }
+    struct _PyExecutorObject *cold = interp->cold_executor;
+    interp->cold_executor = NULL;
+    _PyExecutor_Free(cold);
     interp->sys_profile_initialized = false;
     interp->sys_trace_initialized = false;
     for (int t = 0; t < PY_MONITORING_TOOL_IDS; t++) {

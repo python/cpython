@@ -205,8 +205,8 @@ static int executor_clear(PyObject *executor);
 static void unlink_executor(_PyExecutorObject *executor);
 
 
-static void
-free_executor(_PyExecutorObject *self)
+void
+_PyExecutor_Free(_PyExecutorObject *self)
 {
 #ifdef _Py_JIT
     _PyJIT_Free(self);
@@ -242,7 +242,7 @@ _Py_ClearExecutorDeletionList(PyInterpreterState *interp)
         }
         else {
             *prev_to_next_ptr = exec->vm_data.links.next;
-            free_executor(exec);
+            _PyExecutor_Free(exec);
         }
         exec = *prev_to_next_ptr;
     }
