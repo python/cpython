@@ -1228,11 +1228,10 @@ argparse
 
   .. _whatsnew314-color-argparse:
 
-* Introduced the optional *color* parameter to
-  :class:`argparse.ArgumentParser`, enabling color for help text.
-  This can be controlled by :ref:`environment variables
-  <using-on-controlling-color>`. Color has also been enabled for help in the
-  :ref:`stdlib CLIs <library-cmdline>` which use :mod:`!argparse`.
+* Enable color for help text, which can be disabled with the optional *color*
+  parameter to :class:`argparse.ArgumentParser`.
+  This can also be controlled by :ref:`environment variables
+  <using-on-controlling-color>`.
   (Contributed by Hugo van Kemenade in :gh:`130645`.)
 
 
@@ -2324,8 +2323,7 @@ uuid
   * :func:`~uuid.uuid3` and :func:`~uuid.uuid5` are both roughly 40% faster
     for 16-byte names and 20% faster for 1024-byte names. Performance for
     longer names remains unchanged.
-  * :func:`~uuid.uuid4` and :func:`~uuid.uuid8` are 30% and 40% faster
-    respectively.
+  * :func:`~uuid.uuid4` is 30% faster.
 
   (Contributed by Bénédikt Tran in :gh:`128150`.)
 
