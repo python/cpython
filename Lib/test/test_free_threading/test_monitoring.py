@@ -62,17 +62,9 @@ class InstrumentationMultiThreadedMixin:
 
         self.after_threads()
 
-        while True:
-            any_alive = False
-            for t in threads:
-                if t.is_alive():
-                    any_alive = True
-                    break
-
-            if not any_alive:
-                break
-
-            self.during_threads()
+        # Fix：use join() instead of  is_alive()
+        for t in threads:
+            t.join()
 
         self.after_test()
 
@@ -130,6 +122,8 @@ class MonitoringMultiThreaded(
         self.called = True
 
     def after_test(self):
+        # 修复：确保测试结束后监控被禁用
+        monitoring.set_events(self.tool_id, 0)
         self.assertTrue(self.called)
 
     def during_threads(self):
