@@ -727,7 +727,7 @@ class Pool(object):
         task_handler._state = TERMINATE
         # Release all semaphores to wake up task_handler to stop.
         for job_id, sema in tuple(taskqueue_buffersize_semaphores.items()):
-            taskqueue_buffersize_semaphores.pop(job_id)
+            taskqueue_buffersize_semaphores.pop(job_id, None)
             sema.release()
 
         util.debug('helping task handler/workers to finish')
@@ -920,8 +920,8 @@ class IMapIterator(object):
 
     def _stop_iterator(self):
         if self._pool is not None:
-            # could be deleted in previous `.next()` calls
-            self._pool._taskqueue_buffersize_semaphores.pop(self._job)
+            # `self._pool` could be set to `None` in previous `.next()` calls
+            self._pool._taskqueue_buffersize_semaphores.pop(self._job, None)
         self._pool = None
         raise StopIteration from None
 
