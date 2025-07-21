@@ -211,6 +211,9 @@ The :mod:`urllib.request` module defines the following functions:
       :exc:`~urllib.error.URLError` is raised.
 
    .. versionchanged:: 3.14
+      The URL query and fragment components are discarded if present.
+
+   .. versionchanged:: 3.14
       The *require_scheme* and *resolve_host* parameters were added.
 
 
