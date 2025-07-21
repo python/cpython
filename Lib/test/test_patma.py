@@ -3457,17 +3457,14 @@ class TestTypeErrors(unittest.TestCase):
                     w = 0
         self.assertIsNone(w)
 
-    def test_legacy_union_type(self):
+    def test_typing_union(self):
         from typing import Union
-        IntOrStr = Union[int, str]
-        name = type(IntOrStr).__name__
-        msg = rf"called match pattern must be a class or typing.Union of classes \(got {name}\)"
-        w = None
-        with self.assertRaisesRegex(TypeError, msg):
-            match 1:
-                case IntOrStr():
-                    w = 0
-        self.assertIsNone(w)
+        IntOrStr = Union[int, str]  # identical to int | str since gh-105499
+        w = False
+        match 1:
+            case IntOrStr():
+                w = True
+        self.assertIs(w, True)
 
     def test_expanded_union_mirrors_isinstance_success(self):
         ListOfInt = list[int]
