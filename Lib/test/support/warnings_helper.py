@@ -5,6 +5,8 @@ import re
 import sys
 import warnings
 
+import inspect
+
 
 def import_deprecated(name):
     """Import *name* while suppressing DeprecationWarning."""
@@ -49,12 +51,20 @@ def ignore_warnings(*, category):
     more noisy and tools like 'git blame' less useful.
     """
     def decorator(test):
-        @functools.wraps(test)
-        def wrapper(self, *args, **kwargs):
-            with warnings.catch_warnings():
-                warnings.simplefilter('ignore', category=category)
-                return test(self, *args, **kwargs)
-        return wrapper
+        if inspect.iscoroutinefunction(test):
+            @functools.wraps(test)
+            async def async_wrapper(self, *args, **kwargs):
+                with warnings.catch_warnings():
+                    warnings.simplefilter('ignore', category=category)
+                    return await test(self, *args, **kwargs)
+            return async_wrapper
+        else:
+            @functools.wraps(test)
+            def wrapper(self, *args, **kwargs):
+                with warnings.catch_warnings():
+                    warnings.simplefilter('ignore', category=category)
+                    return test(self, *args, **kwargs)
+            return wrapper
     return decorator
 
 
