@@ -9,10 +9,10 @@ import subprocess
 import sys
 import tempfile
 from pkgutil import ModuleInfo
-from unittest import TestCase, skipUnless, skipIf
+from unittest import TestCase, skipUnless, skipIf, SkipTest
 from unittest.mock import patch
 from test.support import force_not_colorized, make_clean_env, Py_DEBUG
-from test.support import SHORT_TIMEOUT, STDLIB_DIR
+from test.support import has_subprocess_support, SHORT_TIMEOUT, STDLIB_DIR
 from test.support.import_helper import import_module
 from test.support.os_helper import EnvironmentVarGuard, unlink
 
@@ -38,6 +38,10 @@ except ImportError:
 
 
 class ReplTestCase(TestCase):
+    def setUp(self):
+        if not has_subprocess_support:
+            raise SkipTest("test module requires subprocess")
+
     def run_repl(
         self,
         repl_input: str | list[str],
@@ -1371,6 +1375,7 @@ class TestMain(ReplTestCase):
         # Cleanup from PYTHON* variables to isolate from local
         # user settings, see #121359.  Such variables should be
         # added later in test methods to patched os.environ.
+        super().setUp()
         patcher = patch('os.environ', new=make_clean_env())
         self.addCleanup(patcher.stop)
         patcher.start()
