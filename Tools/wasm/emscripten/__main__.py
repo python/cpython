@@ -216,7 +216,7 @@ def configure_emscripten_python(context, working_dir):
             text=True,
             capture_output=True,
         )
-        host_runner = res.stdout
+        host_runner = res.stdout.strip()
     pkg_config_path_dir = (PREFIX_DIR / "lib/pkgconfig/").resolve()
     env_additions = {
         "CONFIG_SITE": config_site,
