@@ -43,6 +43,7 @@ def receive(sock, n, timeout=test.support.SHORT_TIMEOUT):
         raise RuntimeError("timed out on %r" % (sock,))
 
 
+@warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
 @test.support.requires_fork()
 @contextlib.contextmanager
 def simple_subprocess(testcase):
@@ -173,6 +174,7 @@ class SocketServerTest(unittest.TestCase):
                         socketserver.StreamRequestHandler,
                         self.stream_examine)
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
     @requires_forking
     def test_ForkingTCPServer(self):
         with simple_subprocess(self):
@@ -192,6 +194,7 @@ class SocketServerTest(unittest.TestCase):
                         socketserver.StreamRequestHandler,
                         self.stream_examine)
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
     @requires_unix_sockets
     @requires_forking
     def test_ForkingUnixStreamServer(self):
@@ -210,6 +213,7 @@ class SocketServerTest(unittest.TestCase):
                         socketserver.DatagramRequestHandler,
                         self.dgram_examine)
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
     @requires_forking
     def test_ForkingUDPServer(self):
         with simple_subprocess(self):
@@ -229,6 +233,7 @@ class SocketServerTest(unittest.TestCase):
                         socketserver.DatagramRequestHandler,
                         self.dgram_examine)
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
     @requires_unix_sockets
     @requires_forking
     def test_ForkingUnixDatagramServer(self):
@@ -314,11 +319,13 @@ class ErrorHandlerTest(unittest.TestCase):
 
             self.assertIs(cm.exc_type, SystemExit)
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
     @requires_forking
     def test_forking_handled(self):
         ForkingErrorTestServer(ValueError)
         self.check_result(handled=True)
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
     @requires_forking
     def test_forking_not_handled(self):
         ForkingErrorTestServer(SystemExit)

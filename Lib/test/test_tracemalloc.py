@@ -354,6 +354,7 @@ class TestTracemallocEnabled(unittest.TestCase):
         # everything is fine
         return 0
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
     @support.requires_fork()
     def test_fork(self):
         # check that tracemalloc is still working after fork
