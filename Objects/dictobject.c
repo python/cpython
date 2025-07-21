@@ -1672,7 +1672,7 @@ _PyDict_GetMethodStackRef(PyDictObject *mp, PyObject *key, _PyStackRef *method)
 #ifdef Py_GIL_DISABLED
     PyDictKeysObject *dk = _Py_atomic_load_ptr_acquire(&mp->ma_keys);
     if (dk->dk_kind == DICT_KEYS_UNICODE) {
-        _PyStackRef ref;  //
+        _PyStackRef ref;
         Py_ssize_t ix = lookup_threadsafe_unicode(dk, key, hash, &ref);
         if (ix >= 0) {
             assert(!PyStackRef_IsNull(ref));

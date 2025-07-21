@@ -1754,7 +1754,7 @@ _PyObject_GetMethodStackRef(PyThreadState *ts, PyObject *obj,
     }
     if (dict != NULL) {
         assert(PyUnicode_CheckExact(name));
-        int found = _PyDict_GetMethodStackRef(dict, name, method);
+        int found = _PyDict_GetMethodStackRef((PyDictObject *)dict, name, method);
         if (found < 0) {
             assert(PyStackRef_IsNull(*method));
             return -1;
