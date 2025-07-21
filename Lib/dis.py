@@ -768,15 +768,27 @@ def _get_instructions_bytes(code, linestarts=None, line_offset=0, co_positions=N
     starts_line = False
     local_line_number = None
     line_number = None
+    last_line_number = None
     for offset, start_offset, op, arg in _unpack_opargs(original_code):
         if linestarts is not None:
-            starts_line = offset in linestarts
+            starts_line = False
+            if offset in linestarts:
+                 # if linestarts[offset] is None, we don't start a new line 
+                 # (JUMP_FORWARD, etc.)
+                 # same if last_line_number equals linestarts[offset]
+                if linestarts[offset]:
+                    if last_line_number and linestarts[offset] == last_line_number:
+                        starts_line = False
+                    else:
+                        starts_line = True
             if starts_line:
                 local_line_number = linestarts[offset]
             if local_line_number is not None:
                 line_number = local_line_number + line_offset
             else:
                 line_number = None
+            if line_number is not None:
+                last_line_number = line_number
         positions = Positions(*next(co_positions, ()))
         deop = _deoptop(op)
         op = code[offset]
