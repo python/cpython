@@ -1126,7 +1126,7 @@ web_example/python.mjs web_example/python.wasm: $(BUILDPYTHON)
 	cp python.wasm web_example/python.wasm
 
 .PHONY: web_example
-web_example: web_example/python.mjs web_example/index.html web_example/src.mjs web_example/server.py web_example/$(ZIP_STDLIB)
+web_example: web_example/python.mjs web_example/index.html web_example/server.py web_example/$(ZIP_STDLIB)
 
 WEBEX2=web_example_pyrepl_jspi
 WEBEX2_DIR=$(EMSCRIPTEN_DIR)/$(WEBEX2)/
@@ -1149,10 +1149,6 @@ $(WEBEX2)/src.mjs: $(WEBEX2_DIR)/src.mjs
 	@cp $< $@
 
 $(WEBEX2)/$(ZIP_STDLIB): $(ZIP_STDLIB)
-	@mkdir -p $(WEBEX2)
-	@cp $< $@
-
-$(WEBEX2)/src.mjs: $(WEBEX2_DIR)/src.mjs
 	@mkdir -p $(WEBEX2)
 	@cp $< $@
 
