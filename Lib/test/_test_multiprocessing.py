@@ -2929,7 +2929,7 @@ class _TestPool(BaseTestCase):
             self.assertEqual(next(it), i*i)
         self.assertRaises(StopIteration, it.__next__)
 
-    def test_imap_inf_iterable_with_slow_task(self):
+    def test_imap_fast_iterable_with_slow_task(self):
         if self.TYPE in ("processes", "manager"):
             self.skipTest("test not appropriate for {}".format(self.TYPE))
 
@@ -2956,7 +2956,7 @@ class _TestPool(BaseTestCase):
         p.terminate()
         p.join()
 
-    def test_imap_inf_iterable_with_slow_task_and_buffersize(self):
+    def test_imap_fast_iterable_with_slow_task_and_buffersize(self):
         if self.TYPE in ("processes", "manager"):
             self.skipTest("test not appropriate for {}".format(self.TYPE))
 
