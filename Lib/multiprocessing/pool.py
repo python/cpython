@@ -191,6 +191,11 @@ class Pool(object):
         self._ctx = context or get_context()
         self._setup_queues()
         self._taskqueue = queue.SimpleQueue()
+        # The _taskqueue_buffersize_semaphores exist to allow calling .release()
+        # on every active semaphore when the pool is terminating to let task_handler
+        # wake up to stop. It's a dict so that each iterator object can efficiently
+        # deregister its semaphore when iterator finishes.
+        self._taskqueue_buffersize_semaphores = {}
         # The _change_notifier queue exist to wake up self._handle_workers()
         # when the cache (self._cache) is empty or when there is a change in
         # the _state variable of the thread that runs _handle_workers.
@@ -257,7 +262,8 @@ class Pool(object):
             self, self._terminate_pool,
             args=(self._taskqueue, self._inqueue, self._outqueue, self._pool,
                   self._change_notifier, self._worker_handler, self._task_handler,
-                  self._result_handler, self._cache),
+                  self._result_handler, self._cache,
+                  self._taskqueue_buffersize_semaphores),
             exitpriority=15
             )
         self._state = RUN
@@ -383,33 +389,27 @@ class Pool(object):
         return self._map_async(func, iterable, starmapstar, chunksize,
                                callback, error_callback)
 
-    def _guarded_task_generation(self, result_job, func, iterable):
+    def _guarded_task_generation(self, result_job, func, iterable,
+                                 buffersize_sema=None):
         '''Provides a generator of tasks for imap and imap_unordered with
         appropriate handling for iterables which throw exceptions during
         iteration.'''
         try:
             i = -1
-            for i, x in enumerate(iterable):
-                yield (result_job, i, func, (x,), {})
 
-        except Exception as e:
-            yield (result_job, i+1, _helper_reraises_exception, (e,), {})
+            if buffersize_sema is None:
+                for i, x in enumerate(iterable):
+                    yield (result_job, i, func, (x,), {})
 
-    def _guarded_task_generation_lazy(self, result_job, func, iterable,
-                                      backpressure_sema):
-        """Provides a generator of tasks for imap and imap_unordered with
-        appropriate handling for iterables which throw exceptions during
-        iteration."""
-        try:
-            i = -1
-            enumerated_iter = iter(enumerate(iterable))
-            while True:
-                backpressure_sema.acquire()
-                try:
-                    i, x = next(enumerated_iter)
-                except StopIteration:
-                    break
-                yield (result_job, i, func, (x,), {})
+            else:
+                enumerated_iter = iter(enumerate(iterable))
+                while True:
+                    buffersize_sema.acquire()
+                    try:
+                        i, x = next(enumerated_iter)
+                    except StopIteration:
+                        break
+                    yield (result_job, i, func, (x,), {})
 
         except Exception as e:
             yield (result_job, i+1, _helper_reraises_exception, (e,), {})
@@ -428,19 +428,11 @@ class Pool(object):
                 raise ValueError("buffersize must be None or > 0")
 
         result = IMapIterator(self, buffersize)
-
-        if result._backpressure_sema is None:
-            task_generation = self._guarded_task_generation
-        else:
-            task_generation = functools.partial(
-                self._guarded_task_generation_lazy,
-                backpressure_sema=result._backpressure_sema,
-            )
-
         if chunksize == 1:
             self._taskqueue.put(
                 (
-                    task_generation(result._job, func, iterable),
+                    self._guarded_task_generation(result._job, func, iterable,
+                                                  result._buffersize_sema),
                     result._set_length,
                 )
             )
@@ -449,7 +441,8 @@ class Pool(object):
             task_batches = Pool._get_tasks(func, iterable, chunksize)
             self._taskqueue.put(
                 (
-                    task_generation(result._job, mapstar, task_batches),
+                    self._guarded_task_generation(result._job, mapstar, task_batches,
+                                                  result._buffersize_sema),
                     result._set_length,
                 )
             )
@@ -471,19 +464,11 @@ class Pool(object):
                 raise ValueError("buffersize must be None or > 0")
 
         result = IMapUnorderedIterator(self, buffersize)
-
-        if result._backpressure_sema is None:
-            task_generation = self._guarded_task_generation
-        else:
-            task_generation = functools.partial(
-                self._guarded_task_generation_lazy,
-                backpressure_sema=result._backpressure_sema,
-            )
-
         if chunksize == 1:
             self._taskqueue.put(
                 (
-                    task_generation(result._job, func, iterable),
+                    self._guarded_task_generation(result._job, func, iterable,
+                                                  result._buffersize_sema),
                     result._set_length,
                 )
             )
@@ -492,7 +477,8 @@ class Pool(object):
             task_batches = Pool._get_tasks(func, iterable, chunksize)
             self._taskqueue.put(
                 (
-                    task_generation(result._job, mapstar, task_batches),
+                    self._guarded_task_generation(result._job, mapstar, task_batches,
+                                                  result._buffersize_sema),
                     result._set_length,
                 )
             )
@@ -727,7 +713,8 @@ class Pool(object):
 
     @classmethod
     def _terminate_pool(cls, taskqueue, inqueue, outqueue, pool, change_notifier,
-                        worker_handler, task_handler, result_handler, cache):
+                        worker_handler, task_handler, result_handler, cache,
+                        taskqueue_buffersize_semaphores):
         # this is guaranteed to only be called once
         util.debug('finalizing pool')
 
@@ -738,6 +725,10 @@ class Pool(object):
         change_notifier.put(None)
 
         task_handler._state = TERMINATE
+        # Release all semaphores to wake up task_handler to stop.
+        for job_id, sema in tuple(taskqueue_buffersize_semaphores.items()):
+            taskqueue_buffersize_semaphores.pop(job_id)
+            sema.release()
 
         util.debug('helping task handler/workers to finish')
         cls._help_stuff_finish(inqueue, task_handler, len(pool))
@@ -893,11 +884,13 @@ class IMapIterator(object):
         self._length = None
         self._unsorted = {}
         self._cache[self._job] = self
-
         if buffersize is None:
-            self._backpressure_sema = None
+            self._buffersize_sema = None
         else:
-            self._backpressure_sema = threading.Semaphore(buffersize)
+            self._buffersize_sema = threading.Semaphore(buffersize)
+            self._pool._taskqueue_buffersize_semaphores[self] = (
+                self._buffersize_sema
+            )
 
     def __iter__(self):
         return self
@@ -908,24 +901,29 @@ class IMapIterator(object):
                 item = self._items.popleft()
             except IndexError:
                 if self._index == self._length:
-                    self._pool = None
-                    raise StopIteration from None
+                    self._stop_iterator()
                 self._cond.wait(timeout)
                 try:
                     item = self._items.popleft()
                 except IndexError:
                     if self._index == self._length:
-                        self._pool = None
-                        raise StopIteration from None
+                        self._stop_iterator()
                     raise TimeoutError from None
 
-        if self._backpressure_sema is not None:
-            self._backpressure_sema.release()
+        if self._buffersize_sema is not None:
+            self._buffersize_sema.release()
 
         success, value = item
         if success:
             return value
         raise value
+
+    def _stop_iterator(self):
+        if self._pool is not None:
+            # could be deleted in previous `.next()` calls
+            self._pool._taskqueue_buffersize_semaphores.pop(self._job)
+        self._pool = None
+        raise StopIteration from None
 
     __next__ = next                    # XXX
 
