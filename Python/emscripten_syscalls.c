@@ -100,7 +100,7 @@ EM_JS_MACROS(void, _emscripten_promising_main_js, (void), {
         return;
     }
     const origResolveGlobalSymbol = resolveGlobalSymbol;
-    if (!Module.onExit && process?.exit) {
+    if (!Module.onExit && globalThis?.process?.exit) {
         Module.onExit = (code) => process.exit(code);
     }
     // * wrap the main symbol with WebAssembly.promising,
