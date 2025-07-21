@@ -3151,7 +3151,6 @@ def linked_to_musl():
 
     # emscripten (at least as far as we're concerned) and wasi use musl,
     # but platform doesn't know how to get the version, so set it to zero.
-    # set zero for wasm in general.
     if is_wasm32:
         _linked_to_musl = (0, 0, 0)
         return _linked_to_musl
