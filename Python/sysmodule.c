@@ -3655,7 +3655,7 @@ static PyStructSequence_Desc emscripten_info_desc = {
 };
 
 EM_JS(char *, _Py_emscripten_runtime, (void), {
-    var info;
+    let info;
     if (typeof navigator == 'object') {
         info = navigator.userAgent;
     } else if (typeof process == 'object') {
@@ -3663,8 +3663,8 @@ EM_JS(char *, _Py_emscripten_runtime, (void), {
     } else {
         info = "UNKNOWN";
     }
-    var len = lengthBytesUTF8(info) + 1;
-    var res = _malloc(len);
+    const len = lengthBytesUTF8(info) + 1;
+    const res = _malloc(len);
     if (res) stringToUTF8(info, res, len);
 #if __wasm64__
     return BigInt(res);

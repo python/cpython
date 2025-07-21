@@ -55,12 +55,12 @@ EM_JS_MACROS(void, _emscripten_promising_main_js, (void), {
     // `createAsyncInputDevice` simpler, and everything faster.
     FS.createAsyncInputDevice = function(parent, name, input) {
         parent = typeof parent == 'string' ? parent : FS.getPath(parent);
-        var path = PATH.join2(parent, name);
-        var mode = FS_getMode(true, false);
+        const path = PATH.join2(parent, name);
+        const mode = FS_getMode(true, false);
         FS.createDevice.major ||= 64;
-        var dev = FS.makedev(FS.createDevice.major++, 0);
+        const dev = FS.makedev(FS.createDevice.major++, 0);
         async function getDataBuf() {
-            var buf;
+            let buf;
             try {
                 buf = await input();
             } catch (e) {
@@ -72,7 +72,7 @@ EM_JS_MACROS(void, _emscripten_promising_main_js, (void), {
             ops._dataBuf = buf;
         }
 
-        var ops = {
+        const ops = {
             _dataBuf: new Uint8Array(0),
             open(stream) {
                 stream.seekable = false;
@@ -82,7 +82,7 @@ EM_JS_MACROS(void, _emscripten_promising_main_js, (void), {
                 if (!ops._dataBuf.byteLength) {
                     await getDataBuf();
                 }
-                var toRead = Math.min(ops._dataBuf.byteLength, buffer.byteLength);
+                const toRead = Math.min(ops._dataBuf.byteLength, buffer.byteLength);
                 buffer.subarray(0, toRead).set(ops._dataBuf);
                 buffer = buffer.subarray(toRead);
                 ops._dataBuf = ops._dataBuf.subarray(toRead);
@@ -151,7 +151,7 @@ EM_JS_MACROS(__externref_t, __maybe_fd_read_async, (
     if (!WebAssembly.promising) {
         return null;
     }
-    var stream;
+    let stream;
     try {
         stream = SYSCALLS.getStreamFromFD(fd);
     } catch (e) {
@@ -169,12 +169,12 @@ EM_JS_MACROS(__externref_t, __maybe_fd_read_async, (
         // https://github.com/emscripten-core/emscripten/blob/4.0.11/src/lib/libwasi.js?plain=1#L331
         // https://github.com/emscripten-core/emscripten/blob/4.0.11/src/lib/libwasi.js?plain=1#L197
         try {
-            var ret = 0;
-            for (var i = 0; i < iovcnt; i++) {
-                var ptr = HEAP32[(iovs + IOVEC_T_BUF_OFFSET)/4];
-                var len = HEAP32[(iovs + IOVEC_T_BUF_LEN_OFFSET)/4];
+            let ret = 0;
+            for (let i = 0; i < iovcnt; i++) {
+                const ptr = HEAP32[(iovs + IOVEC_T_BUF_OFFSET)/4];
+                const len = HEAP32[(iovs + IOVEC_T_BUF_LEN_OFFSET)/4];
                 iovs += IOVEC_T_SIZE;
-                var curr = await stream.stream_ops.readAsync(stream, HEAP8, ptr, len);
+                const curr = await stream.stream_ops.readAsync(stream, HEAP8, ptr, len);
                 if (curr < 0) return -1;
                 ret += curr;
                 if (curr < len) break; // nothing more to read
