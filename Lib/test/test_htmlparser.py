@@ -623,7 +623,7 @@ text
 
         html = '<div style="", foo = "bar" ><b>The <a href="some_url">rain</a>'
         expected = [
-            ('starttag', 'div', [('style', ''), (',', None), ('foo', None), ('=', None), ('"bar"', None)]),
+            ('starttag', 'div', [('style', ''), (',', None), ('foo', 'bar')]),
             ('starttag', 'b', []),
             ('data', 'The '),
             ('starttag', 'a', [('href', 'some_url')]),
@@ -813,12 +813,12 @@ class AttributesTestCase(TestCaseBase):
         ]
         self._run_check("""<a b='v' c="v" d=v e>""", output)
         self._run_check("<a foo==bar>", [('starttag', 'a', [('foo', '=bar')])])
-        self._run_check("<a foo =bar>", [('starttag', 'a', [('foo', None), ('=bar', None)])])
-        self._run_check("<a foo\t=bar>", [('starttag', 'a', [('foo', None), ('=bar', None)])])
+        self._run_check("<a foo =bar>", [('starttag', 'a', [('foo', 'bar')])])
+        self._run_check("<a foo\t=bar>", [('starttag', 'a', [('foo', 'bar')])])
         self._run_check("<a foo\v=bar>", [('starttag', 'a', [('foo\v', 'bar')])])
         self._run_check("<a foo\xa0=bar>", [('starttag', 'a', [('foo\xa0', 'bar')])])
-        self._run_check("<a foo= bar>", [('starttag', 'a', [('foo', ''), ('bar', None)])])
-        self._run_check("<a foo=\tbar>", [('starttag', 'a', [('foo', ''), ('bar', None)])])
+        self._run_check("<a foo= bar>", [('starttag', 'a', [('foo', 'bar')])])
+        self._run_check("<a foo=\tbar>", [('starttag', 'a', [('foo', 'bar')])])
         self._run_check("<a foo=\vbar>", [('starttag', 'a', [('foo', '\vbar')])])
         self._run_check("<a foo=\xa0bar>", [('starttag', 'a', [('foo', '\xa0bar')])])
 
@@ -829,8 +829,8 @@ class AttributesTestCase(TestCaseBase):
                                             ("d", "\txyz\n")])])
         self._run_check("""<a b='' c="">""",
                         [("starttag", "a", [("b", ""), ("c", "")])])
-        self._run_check("<a b=\t c=\n>",
-                        [("starttag", "a", [("b", ""), ("c", "")])])
+        self._run_check("<a b=\tx c=\ny>",
+                        [('starttag', 'a', [('b', 'x'), ('c', 'y')])])
         self._run_check("<a b=\v c=\xa0>",
                         [("starttag", "a", [("b", "\v"), ("c", "\xa0")])])
         # Regression test for SF patch #669683.
@@ -899,13 +899,17 @@ class AttributesTestCase(TestCaseBase):
         )
         expected = [
             ('starttag', 'a', [('href', "test'style='color:red;bad1'")]),
-            ('data', 'test - bad1'), ('endtag', 'a'),
+            ('data', 'test - bad1'),
+            ('endtag', 'a'),
             ('starttag', 'a', [('href', "test'+style='color:red;ba2'")]),
-            ('data', 'test - bad2'), ('endtag', 'a'),
+            ('data', 'test - bad2'),
+            ('endtag', 'a'),
             ('starttag', 'a', [('href', "test'\xa0style='color:red;bad3'")]),
-            ('data', 'test - bad3'), ('endtag', 'a'),
-            ('starttag', 'a', [('href', None), ('=', None), ("test'&nbsp;style", 'color:red;bad4')]),
-            ('data', 'test - bad4'), ('endtag', 'a')
+            ('data', 'test - bad3'),
+            ('endtag', 'a'),
+            ('starttag', 'a', [('href', "test'\xa0style='color:red;bad4'")]),
+            ('data', 'test - bad4'),
+            ('endtag', 'a'),
         ]
         self._run_check(html, expected)
 
