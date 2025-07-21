@@ -112,7 +112,8 @@ extern void _PyDictKeys_DecRef(PyDictKeysObject *keys);
 extern Py_ssize_t _Py_dict_lookup(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject **value_addr);
 extern Py_ssize_t _Py_dict_lookup_threadsafe(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject **value_addr);
 extern Py_ssize_t _Py_dict_lookup_threadsafe_stackref(PyDictObject *mp, PyObject *key, Py_hash_t hash, _PyStackRef *value_addr);
-extern Py_ssize_t _Py_dict_lookup_unicode_threadsafe_stackref(PyDictObject *mp, PyObject *key, Py_hash_t hash, _PyStackRef *value_addr);
+
+extern int _PyDict_GetMethodStackRef(PyDictObject *dict, PyObject *name, _PyStackRef *method);
 
 extern Py_ssize_t _PyDict_LookupIndex(PyDictObject *, PyObject *);
 extern Py_ssize_t _PyDictKeys_StringLookup(PyDictKeysObject* dictkeys, PyObject *key);

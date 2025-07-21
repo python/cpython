@@ -1754,24 +1754,12 @@ _PyObject_GetMethodStackRef(PyThreadState *ts, PyObject *obj,
     }
     if (dict != NULL) {
         assert(PyUnicode_CheckExact(name));
-        Py_hash_t hash = _PyObject_HashFast(name);
-        // cannot fail for exact unicode
-        assert(hash != -1);
-        // ref is not visible to gc so there should be
-        // no escaping calls before assigning it to method
-        _PyStackRef ref;
-        Py_ssize_t ix = _Py_dict_lookup_unicode_threadsafe_stackref((PyDictObject *)dict,
-                                                                  name, hash, &ref);
-        if (ix == DKIX_ERROR) {
-            // error
-            PyStackRef_CLEAR(*method);
+        int found = _PyDict_GetMethodStackRef(dict, name, method);
+        if (found < 0) {
+            assert(PyStackRef_IsNull(*method));
             return -1;
         }
-        else if (!PyStackRef_IsNull(ref)) {
-            // found
-            _PyStackRef tmp = *method;
-            *method = ref;
-            PyStackRef_XCLOSE(tmp);
+        else if (found) {
             return 0;
         }
     }
