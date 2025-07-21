@@ -119,6 +119,15 @@ another number, or from a string.
       The :class:`Fraction` constructor now accepts any objects with the
       :meth:`!as_integer_ratio` method.
 
+   .. attribute:: numerator
+
+      Numerator of the Fraction in lowest term.
+
+   .. attribute:: denominator
+
+      Denominator of the Fraction in lowest term.  Should be positive.
+
+
    .. method:: as_integer_ratio()
 
       Return a tuple of two integers, whose ratio is equal
