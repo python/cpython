@@ -437,20 +437,14 @@ class _Sentinel:
         return '<sentinel>'
 
 
-_sentinel = _Sentinel()
-
-
-def _eval_type(t, globalns, localns, type_params=_sentinel, *, recursive_guard=frozenset(),
-               format=None, owner=None):
+def _eval_type(t, globalns, localns, type_params, *, recursive_guard=frozenset(),
+               format=None, owner=None, parent_fwdref=None):
     """Evaluate all forward references in the given type t.
 
     For use of globalns and localns see the docstring for get_type_hints().
     recursive_guard is used to prevent infinite recursion with a recursive
     ForwardRef.
     """
-    if type_params is _sentinel:
-        _deprecation_warning_for_no_type_params_passed("typing._eval_type")
-        type_params = ()
     if isinstance(t, _lazy_annotationlib.ForwardRef):
         # If the forward_ref has __forward_module__ set, evaluate() infers the globals
         # from the module, and it will probably pick better than the globals we have here.
@@ -462,7 +456,7 @@ def _eval_type(t, globalns, localns, type_params=_sentinel, *, recursive_guard=f
     if isinstance(t, (_GenericAlias, GenericAlias, Union)):
         if isinstance(t, GenericAlias):
             args = tuple(
-                _make_forward_ref(arg) if isinstance(arg, str) else arg
+                _make_forward_ref(arg, parent_fwdref=parent_fwdref) if isinstance(arg, str) else arg
                 for arg in t.__args__
             )
         else:
@@ -942,7 +936,12 @@ def TypeIs(self, parameters):
     return _GenericAlias(self, (item,))
 
 
-def _make_forward_ref(code, **kwargs):
+def _make_forward_ref(code, *, parent_fwdref=None, **kwargs):
+    if parent_fwdref is not None:
+        if parent_fwdref.__forward_module__ is not None:
+            kwargs['module'] = parent_fwdref.__forward_module__
+        if parent_fwdref.__owner__ is not None:
+            kwargs['owner'] = parent_fwdref.__owner__
     forward_ref = _lazy_annotationlib.ForwardRef(code, **kwargs)
     # For compatibility, eagerly compile the forwardref's code.
     forward_ref.__forward_code__
@@ -1007,6 +1006,7 @@ def evaluate_forward_ref(
         recursive_guard=_recursive_guard | {forward_ref.__forward_arg__},
         format=format,
         owner=owner,
+        parent_fwdref=forward_ref,
     )
 
 
