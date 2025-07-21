@@ -37,7 +37,7 @@ Template
 
 The :class:`!Template` class describes the contents of a template string.
 
-:class:`!Template` instances are shallow immutable: their attributes cannot be
+:class:`!Template` instances are immutable: their attributes cannot be
 reassigned.
 
 .. class:: Template(*args)
@@ -218,7 +218,7 @@ reassigned.
 
    The :class:`!Interpolation` type represents an expression inside a template string.
 
-   :class:`!Interpolation` instances are shallow immutable: their attributes cannot be
+   :class:`!Interpolation` instances are immutable: their attributes cannot be
    reassigned.
 
    .. attribute:: value
