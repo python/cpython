@@ -351,6 +351,7 @@ expr_ty _PyPegen_collect_call_seqs(Parser *, asdl_expr_seq *, asdl_seq *,
 expr_ty _PyPegen_constant_from_token(Parser* p, Token* tok);
 expr_ty _PyPegen_decoded_constant_from_token(Parser* p, Token* tok);
 expr_ty _PyPegen_constant_from_string(Parser* p, Token* tok);
+expr_ty _PyPegen_concatenate_tstrings(Parser *p, asdl_expr_seq *, int, int, int, int, PyArena *);
 expr_ty _PyPegen_concatenate_strings(Parser *p, asdl_expr_seq *, int, int, int, int, PyArena *);
 expr_ty _PyPegen_FetchRawForm(Parser *p, int, int, int, int);
 expr_ty _PyPegen_ensure_imaginary(Parser *p, expr_ty);
