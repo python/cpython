@@ -3,6 +3,15 @@
 #include "pycore_lock.h"        // PyMutex
 
 /*
+ * Internal error messages used for reporting an unsupported hash algorithm.
+ * The algorithm can be given by its name, a callable or a PEP-247 module.
+ * The same message is raised by Lib/hashlib.py::__get_builtin_constructor()
+ * and _hmacmodule.c::find_hash_info().
+ */
+#define HASHLIB_UNSUPPORTED_ALGORITHM       "unsupported hash algorithm %S"
+#define HASHLIB_UNSUPPORTED_STR_ALGORITHM   "unsupported hash algorithm %s"
+
+/*
  * Given a PyObject* obj, fill in the Py_buffer* viewp with the result
  * of PyObject_GetBuffer.  Sets an exception and issues the erraction
  * on any errors, e.g. 'return NULL' or 'goto error'.
