@@ -224,7 +224,7 @@ reassigned.
    .. attribute:: value
 
        :returns: The evaluated value of the interpolation.
-       :rtype: object
+       :type: object
 
        >>> t"{1 + 2}".interpolations[0].value
        3
@@ -232,7 +232,7 @@ reassigned.
    .. attribute:: expression
 
        :returns: The text of a valid Python expression, or an empty string.
-       :rtype: str
+       :type: str
 
        The :attr:`~Interpolation.expression` is the original text of the
        interpolation's Python expression, if the interpolation was created
@@ -246,7 +246,7 @@ reassigned.
    .. attribute:: conversion
 
        :returns: The conversion to apply to the value, or ``None``.
-       :rtype: ``Literal["a", "r", "s"] | None``
+       :type: ``Literal["a", "r", "s"] | None``
 
        The :attr:`!Interpolation.conversion` is the optional conversion to apply
        to the value:
@@ -264,7 +264,7 @@ reassigned.
    .. attribute:: format_spec
 
        :returns: The format specification to apply to the value.
-       :rtype: str
+       :type: str
 
        The :attr:`!Interpolation.format_spec` is an optional, arbitrary string
        used as the format specification to present the value:
