@@ -230,6 +230,16 @@ difflib
   (Contributed by Jiahao Li in :gh:`134580`.)
 
 
+http.client
+-----------
+
+* A new *max_response_headers* keyword-only parameter has been added to
+  :class:`~http.client.HTTPConnection` and :class:`~http.client.HTTPSConnection`
+  constructors. This parameter overrides the default maximum number of allowed
+  response headers.
+  (Contributed by Alexander Enrique Urieles Nieto in :gh:`131724`.)
+
+
 math
 ----
 
@@ -300,6 +310,15 @@ tarfile
   :func:`~tarfile.TarFile.errorlevel` is zero.
   (Contributed by Matt Prodani and Petr Viktorin in :gh:`112887`
   and :cve:`2025-4435`.)
+
+
+types
+------
+
+* Expose the write-through :func:`locals` proxy type
+  as :data:`types.FrameLocalsProxyType`.
+  This represents the type of the :attr:`frame.f_locals` attribute,
+  as described in :pep:`667`.
 
 
 unittest
