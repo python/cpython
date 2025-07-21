@@ -40,6 +40,7 @@ printing space-separated values. There are several ways to format output.
   but you'll also need to provide the information to be formatted. In the following code
   block there are two examples of how to format variables:
 
+
   ::
 
      >>> yes_votes = 42_572_654
