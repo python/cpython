@@ -27,7 +27,7 @@ import warnings
 # If threading is available then ThreadPool should be provided.  Therefore
 # we avoid top-level imports which are liable to fail on some systems.
 from . import util
-from . import TimeoutError, get_context
+from . import get_context, TimeoutError
 from .connection import wait
 
 #
