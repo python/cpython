@@ -927,7 +927,6 @@ class SimSMTPChannel(smtpd.SMTPChannel):
                 self.push('535 Splitting response {!r} into user and password '
                           'failed: {}'.format(logpass, e))
                 return
-
             pwd = sim_auth[1].encode('ascii')
             msg = self._decode_base64(sim_cram_md5_challenge).encode('ascii')
             try:
