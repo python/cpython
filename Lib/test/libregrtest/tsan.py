@@ -2,7 +2,6 @@
 # chosen because they use threads and run in a reasonable amount of time.
 
 TSAN_TESTS = [
-    'test_array',
     'test_asyncio',
     'test_capi',
     'test_code',
