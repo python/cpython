@@ -31,7 +31,6 @@
 
 ############################################################################
 # Modules that should always be present (POSIX and Windows):
-@MODULE_ARRAY_TRUE@array arraymodule.c
 @MODULE__ASYNCIO_TRUE@_asyncio _asynciomodule.c
 @MODULE__BISECT_TRUE@_bisect _bisectmodule.c
 @MODULE__CSV_TRUE@_csv _csv.c
