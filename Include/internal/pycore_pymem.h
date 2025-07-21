@@ -88,7 +88,7 @@ extern wchar_t *_PyMem_DefaultRawWcsdup(const wchar_t *str);
 extern int _PyMem_DebugEnabled(void);
 
 // Enqueue a pointer to be freed possibly after some delay.
-# Exported for 'array' shared extension.
+// Exported for 'array' shared extension.
 PyAPI_FUNC(void) _PyMem_FreeDelayed(void *ptr, size_t size);
 
 // Periodically process delayed free requests.
