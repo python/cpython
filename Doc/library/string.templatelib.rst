@@ -153,7 +153,7 @@ reassigned.
        >>> t"Hello {name}!".values
        ('World',)
 
-       The ``values`` tuple is always the same length as the
+       The ``values`` tuple always has the same length as the
        ``interpolations`` tuple. It is equivalent to
        ``tuple(i.value for i in template.interpolations)``.
 
