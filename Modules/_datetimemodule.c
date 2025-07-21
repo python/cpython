@@ -14,6 +14,7 @@
 #include "pycore_object.h"        // _PyObject_Init()
 #include "pycore_time.h"          // _PyTime_ObjectToTime_t()
 #include "pycore_unicodeobject.h" // _PyUnicode_Copy()
+#include "pycore_initconfig.h"    // _PyStatus_OK()
 
 #include "datetime.h"
 
@@ -124,10 +125,9 @@ get_module_state(PyObject *module)
 #define INTERP_KEY ((PyObject *)&_Py_ID(cached_datetime_module))
 
 static PyObject *
-get_current_module(PyInterpreterState *interp, int *p_reloading)
+get_current_module(PyInterpreterState *interp)
 {
     PyObject *mod = NULL;
-    int reloading = 0;
 
     PyObject *dict = PyInterpreterState_GetDict(interp);
     if (dict == NULL) {
@@ -138,7 +138,6 @@ get_current_module(PyInterpreterState *interp, int *p_reloading)
         goto error;
     }
     if (ref != NULL) {
-        reloading = 1;
         if (ref != Py_None) {
             (void)PyWeakref_GetRef(ref, &mod);
             if (mod == Py_None) {
@@ -146,9 +145,6 @@ get_current_module(PyInterpreterState *interp, int *p_reloading)
             }
             Py_DECREF(ref);
         }
-    }
-    if (p_reloading != NULL) {
-        *p_reloading = reloading;
     }
     return mod;
 
@@ -163,7 +159,7 @@ static datetime_state *
 _get_current_state(PyObject **p_mod)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
-    PyObject *mod = get_current_module(interp, NULL);
+    PyObject *mod = get_current_module(interp);
     if (mod == NULL) {
         assert(!PyErr_Occurred());
         if (PyErr_Occurred()) {
@@ -4476,7 +4472,7 @@ static PyTypeObject PyDateTime_TimeZoneType = {
     timezone_methods,                 /* tp_methods */
     0,                                /* tp_members */
     0,                                /* tp_getset */
-    0,                                /* tp_base; filled in PyInit__datetime */
+    &PyDateTime_TZInfoType,           /* tp_base */
     0,                                /* tp_dict */
     0,                                /* tp_descr_get */
     0,                                /* tp_descr_set */
@@ -7131,8 +7127,7 @@ static PyTypeObject PyDateTime_DateTimeType = {
     datetime_methods,                           /* tp_methods */
     0,                                          /* tp_members */
     datetime_getset,                            /* tp_getset */
-    0,                                          /* tp_base; filled in
-                                                   PyInit__datetime */
+    &PyDateTime_DateType,                       /* tp_base */
     0,                                          /* tp_dict */
     0,                                          /* tp_descr_get */
     0,                                          /* tp_descr_set */
@@ -7313,29 +7308,82 @@ clear_state(datetime_state *st)
 }
 
 
-static int
-init_static_types(PyInterpreterState *interp, int reloading)
+PyStatus
+_PyDateTime_InitTypes(PyInterpreterState *interp)
 {
-    if (reloading) {
-        return 0;
-    }
-
-    // `&...` is not a constant expression according to a strict reading
-    // of C standards. Fill tp_base at run-time rather than statically.
-    // See https://bugs.python.org/issue40777
-    PyDateTime_TimeZoneType.tp_base = &PyDateTime_TZInfoType;
-    PyDateTime_DateTimeType.tp_base = &PyDateTime_DateType;
-
     /* Bases classes must be initialized before subclasses,
      * so capi_types must have the types in the appropriate order. */
     for (size_t i = 0; i < Py_ARRAY_LENGTH(capi_types); i++) {
         PyTypeObject *type = capi_types[i];
         if (_PyStaticType_InitForExtension(interp, type) < 0) {
-            return -1;
+            return _PyStatus_ERR("could not initialize static types");
         }
     }
 
-    return 0;
+#define DATETIME_ADD_MACRO(dict, c, value_expr)         \
+    do {                                                \
+        assert(!PyErr_Occurred());                      \
+        PyObject *value = (value_expr);                 \
+        if (value == NULL) {                            \
+            goto error;                                 \
+        }                                               \
+        if (PyDict_SetItemString(dict, c, value) < 0) { \
+            Py_DECREF(value);                           \
+            goto error;                                 \
+        }                                               \
+        Py_DECREF(value);                               \
+    } while(0)
+
+    /* timedelta values */
+    PyObject *d = _PyType_GetDict(&PyDateTime_DeltaType);
+    DATETIME_ADD_MACRO(d, "resolution", new_delta(0, 0, 1, 0));
+    DATETIME_ADD_MACRO(d, "min", new_delta(-MAX_DELTA_DAYS, 0, 0, 0));
+    DATETIME_ADD_MACRO(d, "max",
+                        new_delta(MAX_DELTA_DAYS, 24*3600-1, 1000000-1, 0));
+
+    /* date values */
+    d = _PyType_GetDict(&PyDateTime_DateType);
+    DATETIME_ADD_MACRO(d, "min", new_date(1, 1, 1));
+    DATETIME_ADD_MACRO(d, "max", new_date(MAXYEAR, 12, 31));
+    DATETIME_ADD_MACRO(d, "resolution", new_delta(1, 0, 0, 0));
+
+    /* time values */
+    d = _PyType_GetDict(&PyDateTime_TimeType);
+    DATETIME_ADD_MACRO(d, "min", new_time(0, 0, 0, 0, Py_None, 0));
+    DATETIME_ADD_MACRO(d, "max", new_time(23, 59, 59, 999999, Py_None, 0));
+    DATETIME_ADD_MACRO(d, "resolution", new_delta(0, 0, 1, 0));
+
+    /* datetime values */
+    d = _PyType_GetDict(&PyDateTime_DateTimeType);
+    DATETIME_ADD_MACRO(d, "min",
+                        new_datetime(1, 1, 1, 0, 0, 0, 0, Py_None, 0));
+    DATETIME_ADD_MACRO(d, "max", new_datetime(MAXYEAR, 12, 31, 23, 59, 59,
+                                                999999, Py_None, 0));
+    DATETIME_ADD_MACRO(d, "resolution", new_delta(0, 0, 1, 0));
+
+    /* timezone values */
+    d = _PyType_GetDict(&PyDateTime_TimeZoneType);
+    if (PyDict_SetItemString(d, "utc", (PyObject *)&utc_timezone) < 0) {
+        goto error;
+    }
+
+    /* bpo-37642: These attributes are rounded to the nearest minute for backwards
+    * compatibility, even though the constructor will accept a wider range of
+    * values. This may change in the future.*/
+
+    /* -23:59 */
+    DATETIME_ADD_MACRO(d, "min", create_timezone_from_delta(-1, 60, 0, 1));
+
+    /* +23:59 */
+    DATETIME_ADD_MACRO(
+            d, "max", create_timezone_from_delta(0, (23 * 60 + 59) * 60, 0, 0));
+
+#undef DATETIME_ADD_MACRO
+
+    return _PyStatus_OK();
+
+error:
+    return _PyStatus_NO_MEMORY();
 }
 
 
@@ -7353,19 +7401,14 @@ _datetime_exec(PyObject *module)
 {
     int rc = -1;
     datetime_state *st = get_module_state(module);
-    int reloading = 0;
 
     PyInterpreterState *interp = PyInterpreterState_Get();
-    PyObject *old_module = get_current_module(interp, &reloading);
+    PyObject *old_module = get_current_module(interp);
     if (PyErr_Occurred()) {
         assert(old_module == NULL);
         goto error;
     }
     /* We actually set the "current" module right before a successful return. */
-
-    if (init_static_types(interp, reloading) < 0) {
-        goto error;
-    }
 
     for (size_t i = 0; i < Py_ARRAY_LENGTH(capi_types); i++) {
         PyTypeObject *type = capi_types[i];
@@ -7379,68 +7422,6 @@ _datetime_exec(PyObject *module)
     if (init_state(st, module, old_module) < 0) {
         goto error;
     }
-
-#define DATETIME_ADD_MACRO(dict, c, value_expr)         \
-    do {                                                \
-        assert(!PyErr_Occurred());                      \
-        PyObject *value = (value_expr);                 \
-        if (value == NULL) {                            \
-            goto error;                                 \
-        }                                               \
-        if (PyDict_SetItemString(dict, c, value) < 0) { \
-            Py_DECREF(value);                           \
-            goto error;                                 \
-        }                                               \
-        Py_DECREF(value);                               \
-    } while(0)
-
-    if (!reloading) {
-        /* timedelta values */
-        PyObject *d = _PyType_GetDict(&PyDateTime_DeltaType);
-        DATETIME_ADD_MACRO(d, "resolution", new_delta(0, 0, 1, 0));
-        DATETIME_ADD_MACRO(d, "min", new_delta(-MAX_DELTA_DAYS, 0, 0, 0));
-        DATETIME_ADD_MACRO(d, "max",
-                           new_delta(MAX_DELTA_DAYS, 24*3600-1, 1000000-1, 0));
-
-        /* date values */
-        d = _PyType_GetDict(&PyDateTime_DateType);
-        DATETIME_ADD_MACRO(d, "min", new_date(1, 1, 1));
-        DATETIME_ADD_MACRO(d, "max", new_date(MAXYEAR, 12, 31));
-        DATETIME_ADD_MACRO(d, "resolution", new_delta(1, 0, 0, 0));
-
-        /* time values */
-        d = _PyType_GetDict(&PyDateTime_TimeType);
-        DATETIME_ADD_MACRO(d, "min", new_time(0, 0, 0, 0, Py_None, 0));
-        DATETIME_ADD_MACRO(d, "max", new_time(23, 59, 59, 999999, Py_None, 0));
-        DATETIME_ADD_MACRO(d, "resolution", new_delta(0, 0, 1, 0));
-
-        /* datetime values */
-        d = _PyType_GetDict(&PyDateTime_DateTimeType);
-        DATETIME_ADD_MACRO(d, "min",
-                           new_datetime(1, 1, 1, 0, 0, 0, 0, Py_None, 0));
-        DATETIME_ADD_MACRO(d, "max", new_datetime(MAXYEAR, 12, 31, 23, 59, 59,
-                                                  999999, Py_None, 0));
-        DATETIME_ADD_MACRO(d, "resolution", new_delta(0, 0, 1, 0));
-
-        /* timezone values */
-        d = _PyType_GetDict(&PyDateTime_TimeZoneType);
-        if (PyDict_SetItemString(d, "utc", (PyObject *)&utc_timezone) < 0) {
-            goto error;
-        }
-
-        /* bpo-37642: These attributes are rounded to the nearest minute for backwards
-        * compatibility, even though the constructor will accept a wider range of
-        * values. This may change in the future.*/
-
-        /* -23:59 */
-        DATETIME_ADD_MACRO(d, "min", create_timezone_from_delta(-1, 60, 0, 1));
-
-        /* +23:59 */
-        DATETIME_ADD_MACRO(
-                d, "max", create_timezone_from_delta(0, (23 * 60 + 59) * 60, 0, 0));
-    }
-
-#undef DATETIME_ADD_MACRO
 
     /* Add module level attributes */
     if (PyModule_AddIntMacro(module, MINYEAR) < 0) {
