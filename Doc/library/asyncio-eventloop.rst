@@ -614,7 +614,7 @@ Opening network connections
      .. note::
 
         On Windows, when using the proactor event loop with ``local_addr=None``,
-        an :exc:`OSError` with :attr:`errno.WSAEINVAL` will be raised
+        an :exc:`OSError` with :attr:`!errno.WSAEINVAL` will be raised
         when running it.
 
    * *remote_addr*, if given, is a ``(remote_host, remote_port)`` tuple used
