@@ -230,6 +230,17 @@ difflib
   (Contributed by Jiahao Li in :gh:`134580`.)
 
 
+hashlib
+-------
+
+* Ensure that hash functions guaranteed to be always *available* exist as
+  attributes of :mod:`hashlib` even if they will not work at runtime due to
+  missing backend implementations. For instance, ``hashlib.md5`` will no
+  longer raise :exc:`AttributeError` if OpenSSL is not available and Python
+  has been built without MD5 support.
+  (Contributed by Bénédikt Tran in :gh:`136929`.)
+
+
 http.client
 -----------
 
