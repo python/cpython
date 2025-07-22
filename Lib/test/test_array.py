@@ -473,50 +473,54 @@ class BaseTest:
     def test_tofromfile(self):
         a = array.array(self.typecode, 2*self.example)
         self.assertRaises(TypeError, a.tofile)
-        with os_helper.temp_dir() as temp_dir:
-            temp_path = os.path.join(temp_dir, os_helper.TESTFN)
-            try:
-                with open(temp_path, 'wb') as f:
-                    a.tofile(f)
-                b = array.array(self.typecode)
-                with open(temp_path, 'rb') as f:
-                    self.assertRaises(TypeError, b.fromfile)
-                    b.fromfile(f, len(self.example))
-                    self.assertEqual(b, array.array(self.typecode, self.example))
-                    self.assertNotEqual(a, b)
-                    self.assertRaises(EOFError, b.fromfile, f, len(self.example)+1)
-                    self.assertEqual(a, b)
-            finally:
-                os_helper.unlink(temp_path)
+        os_helper.unlink(os_helper.TESTFN)
+        f = open(os_helper.TESTFN, 'wb')
+        try:
+            a.tofile(f)
+            f.close()
+            b = array.array(self.typecode)
+            f = open(os_helper.TESTFN, 'rb')
+            self.assertRaises(TypeError, b.fromfile)
+            b.fromfile(f, len(self.example))
+            self.assertEqual(b, array.array(self.typecode, self.example))
+            self.assertNotEqual(a, b)
+            self.assertRaises(EOFError, b.fromfile, f, len(self.example)+1)
+            self.assertEqual(a, b)
+            f.close()
+        finally:
+            if not f.closed:
+                f.close()
+            os_helper.unlink(os_helper.TESTFN)
 
     def test_fromfile_ioerror(self):
         # Issue #5395: Check if fromfile raises a proper OSError
         # instead of EOFError.
         a = array.array(self.typecode)
-        with os_helper.temp_dir() as temp_dir:
-            temp_path = os.path.join(temp_dir, os_helper.TESTFN)
-            try:
-                with open(temp_path, 'wb') as f:
-                    self.assertRaises(OSError, a.fromfile, f, len(self.example))
-            finally:
-                os_helper.unlink(temp_path)
+        f = open(os_helper.TESTFN, 'wb')
+        try:
+            self.assertRaises(OSError, a.fromfile, f, len(self.example))
+        finally:
+            f.close()
+            os_helper.unlink(os_helper.TESTFN)
 
     def test_filewrite(self):
         a = array.array(self.typecode, 2*self.example)
-        with os_helper.temp_dir() as temp_dir:
-            temp_path = os.path.join(temp_dir, os_helper.TESTFN)
-            try:
-                with open(temp_path, 'wb') as f:
-                    f.write(a)
-                b = array.array(self.typecode)
-                with open(temp_path, 'rb') as f:
-                    b.fromfile(f, len(self.example))
-                    self.assertEqual(b, array.array(self.typecode, self.example))
-                    self.assertNotEqual(a, b)
-                    b.fromfile(f, len(self.example))
-                    self.assertEqual(a, b)
-            finally:
-                os_helper.unlink(temp_path)
+        f = open(os_helper.TESTFN, 'wb')
+        try:
+            f.write(a)
+            f.close()
+            b = array.array(self.typecode)
+            f = open(os_helper.TESTFN, 'rb')
+            b.fromfile(f, len(self.example))
+            self.assertEqual(b, array.array(self.typecode, self.example))
+            self.assertNotEqual(a, b)
+            b.fromfile(f, len(self.example))
+            self.assertEqual(a, b)
+            f.close()
+        finally:
+            if not f.closed:
+                f.close()
+            os_helper.unlink(os_helper.TESTFN)
 
     def test_tofromlist(self):
         a = array.array(self.typecode, 2*self.example)
