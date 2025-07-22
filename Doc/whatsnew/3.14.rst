@@ -1210,7 +1210,7 @@ Deprecated
 .. include:: ../deprecations/pending-removal-in-future.rst
 
 Removed
-========
+=======
 
 argparse
 --------

@@ -36,8 +36,8 @@ Functions
 ---------
 
 .. function:: pp(object, stream=None, indent=1, width=80, depth=None, *, \
-                 compact=False, sort_dicts=False, underscore_numbers=False, \
-                 block_style=False)
+                 block_style=False, compact=False, sort_dicts=False, \
+                 underscore_numbers=False)
 
    Prints the formatted representation of *object*, followed by a newline.
    This function may be used in the interactive interpreter
@@ -107,8 +107,8 @@ Functions
 
 
 .. function:: pprint(object, stream=None, indent=1, width=80, depth=None, *, \
-                     compact=False, sort_dicts=True, \
-                     underscore_numbers=False, block_style=False)
+                     block_style=False, compact=False, sort_dicts=True, \
+                     underscore_numbers=False)
 
    Alias for :func:`~pprint.pp` with *sort_dicts* set to ``True`` by default,
    which would automatically sort the dictionaries' keys,
@@ -116,8 +116,8 @@ Functions
 
 
 .. function:: pformat(object, indent=1, width=80, depth=None, *, \
-                      compact=False, sort_dicts=True, \
-                      underscore_numbers=False, block_style=False)
+                      block_style=False, compact=False, sort_dicts=True, \
+                      underscore_numbers=False)
 
    Return the formatted representation of *object* as a string.  *indent*,
    *width*, *depth*, *compact*, *sort_dicts*, *underscore_numbers* and *block_style* are
@@ -164,8 +164,8 @@ PrettyPrinter Objects
 .. index:: single: ...; placeholder
 
 .. class:: PrettyPrinter(indent=1, width=80, depth=None, stream=None, *, \
-                         compact=False, sort_dicts=True, \
-                         underscore_numbers=False, block_style=False)
+                         block_style=False, compact=False, sort_dicts=True, \
+                         underscore_numbers=False)
 
    Construct a :class:`PrettyPrinter` instance.
 

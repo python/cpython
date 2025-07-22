@@ -1004,6 +1004,12 @@ Counter({'s': 6,
          'e': 4,
          'n': 2,
          'l': 1})""")
+        self.assertEqual(pprint.pformat(d, indent=2, width=1),
+"""\
+Counter({ 's': 6,
+          'e': 4,
+          'n': 2,
+          'l': 1})""")
 
     def test_chainmap(self):
         d = collections.ChainMap()
@@ -1143,7 +1149,8 @@ deque([('brown', 2),
             corge=7,
             garply=(1, 2, 3, 4),
         )
-        self.assertEqual(pprint.pformat(dummy_dataclass, width=40, indent=4, block_style=True),
+        self.assertEqual(pprint.pformat(dummy_dataclass, width=40, indent=4,
+                                        block_style=True),
 """\
 DummyDataclass(
     foo='foo',
@@ -1163,7 +1170,8 @@ DummyDataclass(
             "quux": ["foo", "bar", "baz"],
             "corge": 7,
         }
-        self.assertEqual(pprint.pformat(dummy_dict, width=40, indent=4, block_style=True, sort_dicts=False),
+        self.assertEqual(pprint.pformat(dummy_dict, width=40, indent=4,
+                                        block_style=True, sort_dicts=False),
 """\
 {
     'foo': 'bar',
@@ -1181,7 +1189,8 @@ DummyDataclass(
                 ("baz", 123),
             ]
         )
-        self.assertEqual(pprint.pformat(dummy_ordered_dict, width=20, indent=4, block_style=True),
+        self.assertEqual(pprint.pformat(dummy_ordered_dict, width=20, indent=4,
+                                        block_style=True),
 """\
 OrderedDict([
     ('foo', 1),
@@ -1196,7 +1205,8 @@ OrderedDict([
             "baz",
             "qux",
         ]
-        self.assertEqual(pprint.pformat(dummy_list, width=20, indent=4, block_style=True),
+        self.assertEqual(pprint.pformat(dummy_list, width=20, indent=4,
+                                        block_style=True),
 """\
 [
     'foo',
@@ -1214,7 +1224,8 @@ OrderedDict([
             5,
             6,
         )
-        self.assertEqual(pprint.pformat(dummy_tuple, width=20, indent=4, block_style=True),
+        self.assertEqual(pprint.pformat(dummy_tuple, width=20, indent=4,
+                                        block_style=True),
 """\
 (
     'foo',
@@ -1233,7 +1244,8 @@ OrderedDict([
             "qux",
             (1, 2, 3),
         }
-        self.assertEqual(pprint.pformat(dummy_set, width=20, indent=4, block_style=True),
+        self.assertEqual(pprint.pformat(dummy_set, width=20, indent=4,
+                                        block_style=True),
 """\
 {
     'bar',
@@ -1256,7 +1268,8 @@ OrderedDict([
                 frozenset(dummy_set),
             }
         )
-        self.assertEqual(pprint.pformat(dummy_frozenset, width=40, indent=4, block_style=True),
+        self.assertEqual(pprint.pformat(dummy_frozenset, width=40, indent=4,
+                                        block_style=True),
 """\
 frozenset({
     frozenset({(1, 2, 3)}),
@@ -1268,7 +1281,8 @@ frozenset({
 
     def test_block_style_bytes(self):
         dummy_bytes = b"Hello world! foo bar baz 123 456 789"
-        self.assertEqual(pprint.pformat(dummy_bytes, width=20, indent=4, block_style=True),
+        self.assertEqual(pprint.pformat(dummy_bytes, width=20, indent=4,
+                                        block_style=True),
 """\
 (
     b'Hello world!'
@@ -1279,7 +1293,8 @@ frozenset({
     def test_block_style_bytearray(self):
         dummy_bytes = b"Hello world! foo bar baz 123 456 789"
         dummy_byte_array = bytearray(dummy_bytes)
-        self.assertEqual(pprint.pformat(dummy_byte_array, width=40, indent=4, block_style=True),
+        self.assertEqual(pprint.pformat(dummy_byte_array, width=40, indent=4,
+                                        block_style=True),
 """\
 bytearray(
     b'Hello world! foo bar baz 123 456'
@@ -1295,7 +1310,8 @@ bytearray(
             "corge": 7,
         }
         dummy_mappingproxy = types.MappingProxyType(dummy_dict)
-        self.assertEqual(pprint.pformat(dummy_mappingproxy, width=40, indent=4, block_style=True),
+        self.assertEqual(pprint.pformat(dummy_mappingproxy, width=40, indent=4,
+                                        block_style=True),
 """\
 mappingproxy({
     'baz': 123,
@@ -1316,7 +1332,8 @@ mappingproxy({
             ),
         )
 
-        self.assertEqual(pprint.pformat(dummy_namespace, width=40, indent=4, block_style=True),
+        self.assertEqual(pprint.pformat(dummy_namespace, width=40, indent=4,
+                                        block_style=True),
 """\
 namespace(
     foo='bar',
@@ -1334,7 +1351,8 @@ namespace(
         dummy_defaultdict["foo"].append("baz")
         dummy_defaultdict["foo"].append("qux")
         dummy_defaultdict["bar"] = {"foo": "bar", "baz": None}
-        self.assertEqual(pprint.pformat(dummy_defaultdict, width=40, indent=4, block_style=True),
+        self.assertEqual(pprint.pformat(dummy_defaultdict, width=40, indent=4,
+                                        block_style=True),
 """\
 defaultdict(<class 'list'>, {
     'bar': {'baz': None, 'foo': 'bar'},
@@ -1351,7 +1369,8 @@ Counter({
     'd': 2,
     'e': 1
 })"""
-        self.assertEqual(pprint.pformat(dummy_counter, width=40, indent=4, block_style=True), expected)
+        self.assertEqual(pprint.pformat(dummy_counter, width=40, indent=4,
+                                        block_style=True), expected)
 
         expected2 = """\
 Counter({
@@ -1361,7 +1380,8 @@ Counter({
   'd': 2,
   'e': 1
 })"""
-        self.assertEqual(pprint.pformat(dummy_counter, width=20, indent=2, block_style=True), expected2)
+        self.assertEqual(pprint.pformat(dummy_counter, width=20, indent=2,
+                                        block_style=True), expected2)
 
     def test_block_style_chainmap(self):
         dummy_dict = {
@@ -1377,7 +1397,8 @@ Counter({
             {"corge": dummy_dict},
         )
         dummy_chainmap.maps.append({"garply": "waldo"})
-        self.assertEqual(pprint.pformat(dummy_chainmap, width=40, indent=4, block_style=True),
+        self.assertEqual(pprint.pformat(dummy_chainmap, width=40, indent=4,
+                                        block_style=True),
 """\
 ChainMap(
     {'foo': 'bar'},
@@ -1419,7 +1440,8 @@ ChainMap(
         dummy_deque.append(dummy_dict)
         dummy_deque.extend(dummy_list)
         dummy_deque.appendleft(dummy_set)
-        self.assertEqual(pprint.pformat(dummy_deque, width=40, indent=4, block_style=True),
+        self.assertEqual(pprint.pformat(dummy_deque, width=40, indent=4,
+                                        block_style=True),
 """\
 deque([
     {(1, 2, 3)},
@@ -1450,7 +1472,8 @@ deque([
                                         "corge": 7 })
         dummy_userdict.access_count = 5
 
-        self.assertEqual(pprint.pformat(dummy_userdict, width=40, indent=4, block_style=True),
+        self.assertEqual(pprint.pformat(dummy_userdict, width=40, indent=4,
+                                        block_style=True),
 """\
 {
     'baz': 123,
@@ -1470,7 +1493,8 @@ deque([
         dummy_userlist = DummyUserList(["first", 2, {"key": "value"},
                                        [4, 5, 6]])
 
-        self.assertEqual(pprint.pformat(dummy_userlist, width=40, indent=4, block_style=True),
+        self.assertEqual(pprint.pformat(dummy_userlist, width=40, indent=4,
+                                        block_style=True),
 """\
 [
     'first',
