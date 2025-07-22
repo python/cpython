@@ -1683,11 +1683,6 @@ class FreeThreadingTest(unittest.TestCase):
 
     def setUp(self):
         self.enterContext(warnings.catch_warnings())
-        warnings.filterwarnings(
-            "ignore",
-            message="The 'u' type code is deprecated and "
-                    "will be removed in Python 3.16",
-            category=DeprecationWarning)
 
     def check(self, funcs, a=None, *args):
         if a is None:

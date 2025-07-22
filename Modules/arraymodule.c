@@ -15,7 +15,7 @@
 #include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_pyatomic_ft_wrappers.h"
-#include "pycore_pymem.h"         // _PyMem_FreeDelayed
+#include "pycore_pymem.h"         // _PyMem_FreeDelayed()
 #include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 #include <stddef.h>               // offsetof()
@@ -79,7 +79,7 @@ static Py_ssize_t
 PyArray_GET_SIZE(PyObject *op) {
     arrayobject *ao = (arrayobject *)op;
 #ifdef Py_GIL_DISABLED
-    return _Py_atomic_load_ssize_relaxed(&(_PyVarObject_CAST(ao)->ob_size));
+    return FT_ATOMIC_LOAD_SSIZE_RELAXED(_PyVarObject_CAST(ao)->ob_size);
 #else
     return Py_SIZE(ao);
 #endif
@@ -231,8 +231,7 @@ array_resize(arrayobject *self, Py_ssize_t newsize)
     // Ensure that the array is freed using QSBR if we are not the
     // owning thread.
     if (!_Py_IsOwnedByCurrentThread((PyObject *)self) &&
-        !_PyObject_GC_IS_SHARED(self))
-    {
+        !_PyObject_GC_IS_SHARED(self)) {
         _PyObject_GC_SET_SHARED(self);
     }
 #endif
