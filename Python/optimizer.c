@@ -1778,4 +1778,11 @@ _PyDumpExecutors(FILE *out)
     return -1;
 }
 
+void
+_PyExecutor_Free(struct _PyExecutorObject *self)
+{
+    /* This should never be called */
+    Py_UNREACHABLE();
+}
+
 #endif /* _Py_TIER2 */
