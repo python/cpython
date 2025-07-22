@@ -68,10 +68,20 @@ The full details for each codec can also be looked up directly:
    Looks up the codec info in the Python codec registry and returns a
    :class:`CodecInfo` object as defined below.
 
-   Encodings are first looked up in the registry's cache. If not found, the list of
+   This function first normalizes the *encoding*: all ASCII letters are
+   converted to lower case, spaces are replaced with hyphens.
+   Then encoding is looked up in the registry's cache. If not found, the list of
    registered search functions is scanned. If no :class:`CodecInfo` object is
    found, a :exc:`LookupError` is raised. Otherwise, the :class:`CodecInfo` object
    is stored in the cache and returned to the caller.
+
+   .. versionchanged:: 3.9
+      Any characters except ASCII letters and digits and a dot are converted to underscore.
+
+   .. versionchanged:: next
+      No characters are converted to underscore anymore.
+      Spaces are converted to hyphens.
+
 
 .. class:: CodecInfo(encode, decode, streamreader=None, streamwriter=None, incrementalencoder=None, incrementaldecoder=None, name=None)
 
@@ -167,13 +177,10 @@ function:
 .. function:: register(search_function, /)
 
    Register a codec search function. Search functions are expected to take one
-   argument, being the encoding name in all lower case letters with hyphens
-   and spaces converted to underscores, and return a :class:`CodecInfo` object.
+   argument, being the encoding name in all lower case letters with spaces
+   converted to hyphens, and return a :class:`CodecInfo` object.
    In case a search function cannot find a given encoding, it should return
    ``None``.
-
-   .. versionchanged:: 3.9
-      Hyphens and spaces are converted to underscore.
 
 
 .. function:: unregister(search_function, /)
@@ -1065,7 +1072,7 @@ or with dictionaries as mapping tables. The following table lists the codecs by
 name, together with a few common aliases, and the languages for which the
 encoding is likely used. Neither the list of aliases nor the list of languages
 is meant to be exhaustive. Notice that spelling alternatives that only differ in
-case or use a hyphen instead of an underscore are also valid aliases
+case or use a space or a hyphen instead of an underscore are also valid aliases
 because they are equivalent when normalized by
 :func:`~encodings.normalize_encoding`. For example, ``'utf-8'`` is a valid
 alias for the ``'utf_8'`` codec.

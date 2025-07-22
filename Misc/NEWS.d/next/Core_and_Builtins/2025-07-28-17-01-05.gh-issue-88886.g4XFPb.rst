@@ -1,0 +1,3 @@
+The codecs lookup function now performs only minimal normalization of the
+encoding name before passing it to the search functions: all ASCII letters
+are converted to lower case, spaces are replaced with hyphens.
