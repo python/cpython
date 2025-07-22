@@ -96,7 +96,7 @@ def isabs(s, /):
 
 
 # Join two (or more) paths.
-def join(path, *paths):
+def join(path, /, *paths):
     path = os.fspath(path)
     if isinstance(path, bytes):
         sep = b'\\'
@@ -601,7 +601,7 @@ try:
     from nt import _findfirstfile, _getfinalpathname, readlink as _nt_readlink
 except ImportError:
     # realpath is a no-op on systems without _getfinalpathname support.
-    def realpath(path, *, strict=False):
+    def realpath(path, /, *, strict=False):
         return abspath(path)
 else:
     def _readlink_deep(path, ignored_error=OSError):
@@ -702,7 +702,7 @@ else:
                 tail = join(name, tail) if tail else name
         return tail
 
-    def realpath(path, *, strict=False):
+    def realpath(path, /, *, strict=False):
         path = normpath(path)
         if isinstance(path, bytes):
             prefix = b'\\\\?\\'

@@ -2255,7 +2255,7 @@ exit:
 #if defined(MS_WINDOWS)
 
 PyDoc_STRVAR(os__path_isdir__doc__,
-"_path_isdir($module, s, /)\n"
+"_path_isdir($module, path, /)\n"
 "--\n"
 "\n"
 "Return true if the pathname refers to an existing directory.");
@@ -13452,4 +13452,4 @@ exit:
 #ifndef OS__EMSCRIPTEN_LOG_METHODDEF
     #define OS__EMSCRIPTEN_LOG_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_LOG_METHODDEF) */
-/*[clinic end generated code: output=56ca3c221e3af08d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=af7d1eafb65848b2 input=a9049054013a1b77]*/
