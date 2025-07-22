@@ -1,30 +1,38 @@
 <!doctype html>
 <html lang="en">
     <head>
-        <meta charset="UTF-8" />
-        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <meta name="author" content="Katie Bell" />
-        <meta name="description" content="Simple REPL for Python WASM" />
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="author" content="Katie Bell, Adam Hartz">
+        <meta name="description" content="Simple REPL for Python WASM">
         <title>wasm-python terminal</title>
         <link
             rel="stylesheet"
             href="https://unpkg.com/xterm@4.18.0/css/xterm.css"
             crossorigin
             integrity="sha384-4eEEn/eZgVHkElpKAzzPx/Kow/dTSgFk1BNe+uHdjHa+NkZJDh5Vqkq31+y7Eycd"
-        />
+        >
         <style>
             body {
                 font-family: arial;
                 max-width: 800px;
                 margin: 0 auto;
             }
-            #code {
+            #editor {
+                padding: 5px;
+                border: 1px solid black;
                 width: 100%;
-                height: 180px;
+                height: 300px;
             }
             #info {
                 padding-top: 20px;
+            }
+            .error {
+              border: 1px solid red;
+              background-color: #ffd9d9;
+              padding: 5px;
+              margin-top: 20px;
             }
             .button-container {
                 display: flex;
@@ -41,8 +49,14 @@
             src="https://unpkg.com/xterm@4.18.0/lib/xterm.js"
             crossorigin
             integrity="sha384-yYdNmem1ioP5Onm7RpXutin5A8TimLheLNQ6tnMi01/ZpxXdAwIm2t4fJMx1Djs+"
-        />
+        ></script>
+        <script
+            src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.43.1/ace.js"
+            crossorigin
+            integrity="sha512-kmA5vhcxOkZI0ReiKJMGNb8/KKbgbExIlnt6aXuPtl86AgHBEi6OHHOz2wsTazBDGZKxe7fmiE+pIuZJQks4+A=="
+        ></script>
         <script type="module">
+            const _magic_ctrlc_string = "__WASM_REPL_CTRLC_" + (Date.now()) + "__";
             class WorkerManager {
                 constructor(
                     workerURL,
@@ -132,11 +146,14 @@
 
             class WasmTerminal {
                 constructor() {
-                    this.inputBuffer = new BufferQueue();
-                    this.input = "";
-                    this.resolveInput = null;
-                    this.activeInput = false;
-                    this.inputStartCursor = null;
+                    try {
+                        this.history = JSON.parse(sessionStorage.getItem('__python_wasm_repl.history'));
+                        this.historyBuffer = this.history.slice();
+                    } catch(e) {
+                        this.history = [];
+                        this.historyBuffer = [];
+                    }
+                    this.reset();
 
                     this.xterm = new Terminal({
                         scrollback: 10000,
@@ -153,6 +170,18 @@
                     });
 
                     this.xterm.onData(this.handleTermData);
+                }
+
+                reset() {
+                    this.inputBuffer = new BufferQueue();
+                    this.input = "";
+                    this.resolveInput = null;
+                    this.activeInput = false;
+                    this.inputStartCursor = null;
+
+                    this.cursorPosition = 0;
+                    this.historyIndex = -1;
+                    this.beforeHistoryNav = "";
                 }
 
                 open(container) {
@@ -186,9 +215,34 @@
                         if (!(ord === 0x1b || ord == 0x7f || ord < 32)) {
                             this.inputBuffer.addData(data);
                         }
-                        // TODO: Handle ANSI escape sequences
+                        // TODO: Handle more escape sequences?
                     } else if (ord === 0x1b) {
                         // Handle special characters
+                        switch (data.slice(1)) {
+                            case "[A": // up
+                                this.historyBack();
+                                break;
+                            case "[B": // down
+                                this.historyForward();
+                                break;
+                            case "[C": // right
+                                this.cursorRight();
+                                break;
+                            case "[D": // left
+                                this.cursorLeft();
+                                break;
+                            case "[H": // home key
+                                this.cursorHome(true);
+                                break;
+                            case "[F": // end key
+                                this.cursorEnd(true);
+                                break;
+                            case "[3~": // delete key
+                                this.deleteAtCursor();
+                                break;
+                            default:
+                                break;
+                        }
                     } else if (ord < 32 || ord === 0x7f) {
                         switch (data) {
                             case "\x0c": // CTRL+L
@@ -201,7 +255,17 @@
                                     this.input + this.writeLine("\n"),
                                 );
                                 this.input = "";
+                                this.cursorPosition = 0;
                                 this.activeInput = false;
+                                break;
+                            case "\x03": // CTRL+C
+                                this.input = "";
+                                this.cursorPosition = 0;
+                                this.historyIndex = -1;
+                                this.resolveInput(_magic_ctrlc_string + "\n");
+                                break;
+                            case "\x09": // TAB
+                                this.handleTab();
                                 break;
                             case "\x7F": // BACKSPACE
                             case "\x08": // CTRL+H
@@ -211,13 +275,19 @@
                                 // Send empty input
                                 if (this.input === "") {
                                     this.resolveInput("");
+                                    this.cursorPosition = 0;
                                     this.activeInput = false;
                                 }
                         }
                     } else {
                         this.handleCursorInsert(data);
+                        this.updateHistory();
                     }
                 };
+
+                clearLine() {
+                    this.xterm.write("\x1b[K");
+                }
 
                 writeLine(line) {
                     this.xterm.write(line.slice(0, -1));
@@ -226,8 +296,36 @@
                 }
 
                 handleCursorInsert(data) {
-                    this.input += data;
+                    const trailing = this.input.slice(this.cursorPosition);
+                    this.input =
+                        this.input.slice(0, this.cursorPosition) +
+                        data +
+                        trailing;
+                    this.cursorPosition += data.length;
                     this.xterm.write(data);
+                    if (trailing.length !== 0) {
+                        this.xterm.write(trailing);
+                        this.xterm.write("\x1b[" + trailing.length + "D");
+                    }
+                    this.updateHistory();
+                }
+
+                handleTab() {
+                    // handle tabs: from the current position, add spaces until
+                    // this.cursorPosition is a multiple of 4.
+                    const prefix = this.input.slice(0, this.cursorPosition);
+                    const suffix = this.input.slice(this.cursorPosition);
+                    const count = 4 - (this.cursorPosition % 4);
+                    const toAdd = " ".repeat(count);
+                    this.input = prefix + toAdd + suffix;
+                    this.cursorHome(false);
+                    this.clearLine();
+                    this.xterm.write(this.input);
+                    if (suffix) {
+                        this.xterm.write("\x1b[" + suffix.length + "D");
+                    }
+                    this.cursorPosition += count;
+                    this.updateHistory();
                 }
 
                 handleCursorErase() {
@@ -238,9 +336,113 @@
                     ) {
                         return;
                     }
-                    this.input = this.input.slice(0, -1);
-                    this.xterm.write("\x1B[D");
-                    this.xterm.write("\x1B[P");
+                    const trailing = this.input.slice(this.cursorPosition);
+                    this.input =
+                        this.input.slice(0, this.cursorPosition - 1) + trailing;
+                    this.cursorLeft();
+                    this.clearLine();
+                    if (trailing.length !== 0) {
+                        this.xterm.write(trailing);
+                        this.xterm.write("\x1b[" + trailing.length + "D");
+                    }
+                    this.updateHistory();
+                }
+
+                deleteAtCursor() {
+                    if (this.cursorPosition < this.input.length) {
+                        const trailing = this.input.slice(
+                            this.cursorPosition + 1,
+                        );
+                        this.input =
+                            this.input.slice(0, this.cursorPosition) + trailing;
+                        this.clearLine();
+                        if (trailing.length !== 0) {
+                            this.xterm.write(trailing);
+                            this.xterm.write("\x1b[" + trailing.length + "D");
+                        }
+                        this.updateHistory();
+                    }
+                }
+
+                cursorRight() {
+                    if (this.cursorPosition < this.input.length) {
+                        this.cursorPosition += 1;
+                        this.xterm.write("\x1b[C");
+                    }
+                }
+
+                cursorLeft() {
+                    if (this.cursorPosition > 0) {
+                        this.cursorPosition -= 1;
+                        this.xterm.write("\x1b[D");
+                    }
+                }
+
+                cursorHome(updatePosition) {
+                    if (this.cursorPosition > 0) {
+                        this.xterm.write("\x1b[" + this.cursorPosition + "D");
+                        if (updatePosition) {
+                            this.cursorPosition = 0;
+                        }
+                    }
+                }
+
+                cursorEnd() {
+                    if (this.cursorPosition < this.input.length) {
+                        this.xterm.write(
+                            "\x1b[" +
+                                (this.input.length - this.cursorPosition) +
+                                "C",
+                        );
+                        this.cursorPosition = this.input.length;
+                    }
+                }
+
+                updateHistory() {
+                    if (this.historyIndex !== -1) {
+                        this.historyBuffer[this.historyIndex] = this.input;
+                    } else {
+                        this.beforeHistoryNav = this.input;
+                    }
+                }
+
+                historyBack() {
+                    if (this.history.length === 0) {
+                        return;
+                    } else if (this.historyIndex === -1) {
+                        // we're not currently navigating the history; store
+                        // the current command and then look at the end of our
+                        // history buffer
+                        this.beforeHistoryNav = this.input;
+                        this.historyIndex = this.history.length - 1;
+                    } else if (this.historyIndex > 0) {
+                        this.historyIndex -= 1;
+                    }
+                    this.input = this.historyBuffer[this.historyIndex];
+                    this.cursorHome(false);
+                    this.clearLine();
+                    this.xterm.write(this.input);
+                    this.cursorPosition = this.input.length;
+                }
+
+                historyForward() {
+                    if (this.history.length === 0 || this.historyIndex === -1) {
+                        // we're not currently navigating the history; NOP.
+                        return;
+                    } else if (this.historyIndex < this.history.length - 1) {
+                        this.historyIndex += 1;
+                        this.input = this.historyBuffer[this.historyIndex];
+                    } else if (this.historyIndex == this.history.length - 1) {
+                        // we're coming back from the last history value; reset
+                        // the input to whatever it was when we started going
+                        // through the history
+                        this.input = this.beforeHistoryNav;
+                        this.historyIndex = -1;
+                    }
+                    this.cursorHome(false);
+                    this.clearLine();
+                    this.xterm.write(this.input);
+                    this.cursorPosition = this.input.length;
                 }
 
                 prompt = async () => {
@@ -263,12 +465,29 @@
                         // Hack to ensure cursor input start doesn't end up after user input
                         setTimeout(() => {
                             this.handleCursorInsert(
-                                this.inputBuffer.nextLine(),
+                                this.inputBuffer.nextLine()
                             );
                         }, 1);
                     }
                     return new Promise((resolve, reject) => {
                         this.resolveInput = (value) => {
+                            if (
+                                value.replace(/\s/g, "").length != 0 &&
+                                value != _magic_ctrlc_string + "\n"
+                            ) {
+                                if (this.historyIndex !== -1) {
+                                    this.historyBuffer[this.historyIndex] =
+                                        this.history[this.historyIndex];
+                                }
+                                this.history.push(value.slice(0, -1));
+                                this.historyBuffer.push(value.slice(0, -1));
+                                this.historyIndex = -1;
+                                this.cursorPosition = 0;
+                                try {
+                                    sessionStorage.setItem('__python_wasm_repl.history', JSON.stringify(this.history));
+                                } catch(e) {
+                                }
+                            }
                             resolve(value);
                         };
                     });
@@ -327,8 +546,6 @@
             const stopButton = document.getElementById("stop");
             const clearButton = document.getElementById("clear");
 
-            const codeBox = document.getElementById("codebox");
-
             window.onload = () => {
                 const terminal = new WasmTerminal();
                 terminal.open(document.getElementById("terminal"));
@@ -362,8 +579,9 @@
 
                 runButton.addEventListener("click", (e) => {
                     terminal.clear();
+                    terminal.reset(); // reset the history
                     programRunning(true);
-                    const code = codeBox.value;
+                    const code = editor.getValue();
                     pythonWorkerManager.run({
                         args: ["main.py"],
                         files: { "main.py": code },
@@ -372,10 +590,28 @@
 
                 replButton.addEventListener("click", (e) => {
                     terminal.clear();
+                    terminal.reset(); // reset the history
+                    const REPL = `
+class WASMREPLKeyboardInterrupt(KeyboardInterrupt):
+    pass
+
+import sys
+import code
+import builtins
+
+def _interrupt_aware_input(prompt=''):
+    line = builtins.input(prompt)
+    if line.strip() == "${_magic_ctrlc_string}":
+        raise KeyboardInterrupt()
+    return line
+
+cprt = 'Type "help", "copyright", "credits" or "license" for more information.'
+banner = f'Python {sys.version} on {sys.platform}\\n{cprt}'
+
+code.interact(banner=banner, readfunc=_interrupt_aware_input, exitmsg='')
+`;
                     programRunning(true);
-                    // Need to use "-i -" to force interactive mode.
-                    // Looks like isatty always returns false in emscripten
-                    pythonWorkerManager.run({ args: ["-i", "-"], files: {} });
+                    pythonWorkerManager.run({ args: ["-c", REPL], files: {} });
                 });
 
                 stopButton.addEventListener("click", (e) => {
@@ -395,6 +631,7 @@
 
                 const finishedCallback = () => {
                     programRunning(false);
+                    pythonWorkerManager.reset();
                 };
 
                 const pythonWorkerManager = new WorkerManager(
@@ -404,30 +641,63 @@
                     finishedCallback,
                 );
             };
+            var editor;
+            document.addEventListener("DOMContentLoaded", () => {
+                editor = ace.edit("editor");
+                editor.session.setMode("ace/mode/python");
+            });
         </script>
     </head>
     <body>
-        <h1>Simple REPL for Python WASM</h1>
-        <textarea id="codebox" cols="108" rows="16">
-print('Welcome to WASM!')
-</textarea
-        >
-        <div class="button-container">
-            <button id="run" disabled>Run</button>
-            <button id="repl" disabled>Start REPL</button>
-            <button id="stop" disabled>Stop</button>
-            <button id="clear" disabled>Clear</button>
+        <div id="repldemo">
+            <h1>Simple REPL for Python WASM</h1>
+            <div id="editor">print('Welcome to WASM!')</div>
+            <div class="button-container">
+                <button id="run" disabled>Run code</button>
+                <button id="repl" disabled>Start REPL</button>
+                <button id="stop" disabled>Stop</button>
+                <button id="clear" disabled>Clear</button>
+            </div>
+            <div id="terminal"></div>
+            <div id="info">
+                The simple REPL provides a limited Python experience in the
+                browser.
+                <a
+                    href="https://github.com/python/cpython/blob/main/Tools/wasm/README.md"
+                >
+                    Tools/wasm/README.md
+                </a>
+                contains a list of known limitations and issues. Networking,
+                subprocesses, and threading are not available.
+            </div>
         </div>
-        <div id="terminal"></div>
-        <div id="info">
-            The simple REPL provides a limited Python experience in the browser.
-            <a
-                href="https://github.com/python/cpython/blob/main/Tools/wasm/README.md"
-            >
-                Tools/wasm/README.md
-            </a>
-            contains a list of known limitations and issues. Networking,
-            subprocesses, and threading are not available.
+        <div id="buffererror" class="error" style="display: none">
+            <p>
+                <code>SharedArrayBuffer</code>, which is required for this demo,
+                is not available in your browser environment.  One common cause
+                of this failure is loading <code>index.html</code> directly in
+                your browser instead of using <code>server.py</code> as
+                described in
+                <a
+                    href="https://github.com/python/cpython/blob/main/Tools/wasm/README.md#the-web-example"
+                >
+                    Tools/wasm/README.md
+                </a>.
+            </p>
+            <p>
+                For more details about security requirements for
+                <code>SharedArrayBuffer</code>, see
+                <a
+                    href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/SharedArrayBuffer#security_requirements"
+                  >this MDN page</a
+                >.
+            </p>
+            <script>
+              if (typeof SharedArrayBuffer === 'undefined') {
+                  document.getElementById('repldemo').style.display = 'none';
+                  document.getElementById('buffererror').style.display = 'block';
+              }
+            </script>
         </div>
     </body>
 </html>
