@@ -338,12 +338,12 @@ Literals
             body=TemplateStr(
                 values=[
                     Interpolation(
-                        value=Name(id='name'),
+                        value=Name(id='name', ctx=Load()),
                         str='name',
                         conversion=-1),
                     Constant(value=' finished '),
                     Interpolation(
-                        value=Name(id='place'),
+                        value=Name(id='place', ctx=Load()),
                         str='place',
                         conversion=-1,
                         format_spec=JoinedStr(
