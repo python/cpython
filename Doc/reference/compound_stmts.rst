@@ -852,8 +852,8 @@ A literal pattern corresponds to most
 
 The rule ``strings`` and the token ``NUMBER`` are defined in the
 :doc:`standard Python grammar <./grammar>`.  Triple-quoted strings are
-supported.  Raw strings and byte strings are supported.  :ref:`f-strings` are
-not supported.
+supported.  Raw strings and byte strings are supported.  :ref:`f-strings`
+and :ref:`t-strings` are not supported.
 
 The forms ``signed_number '+' NUMBER`` and ``signed_number '-' NUMBER`` are
 for expressing :ref:`complex numbers <imaginary>`; they require a real number
