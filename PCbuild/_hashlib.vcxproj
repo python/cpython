@@ -101,6 +101,12 @@
     <ClCompile Include="..\Modules\_hashopenssl.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\Modules\_hashlib\hashlib.h" />
+    <ClInclude Include="..\Modules\_hashlib\hashlib_buffer.h" />
+    <ClInclude Include="..\Modules\_hashlib\hashlib_fetch.h" />
+    <ClInclude Include="..\Modules\_hashlib\hashlib_mutex.h" />
+  </ItemGroup>
+  <ItemGroup>
     <ResourceCompile Include="..\PC\python_nt.rc" />
   </ItemGroup>
   <ItemGroup>
