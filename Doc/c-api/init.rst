@@ -2287,7 +2287,7 @@ The C-API provides a basic mutual exclusion lock.
       should not be used to make concurrency control decisions, as the lock
       state may change immediately after the check.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 .. _python-critical-section-api:
 
@@ -2372,7 +2372,7 @@ code triggered by the finalizer blocks and calls :c:func:`PyEval_SaveThread`.
 
    On the default build, this macro expands to ``{``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 .. c:macro:: Py_END_CRITICAL_SECTION()
 
@@ -2418,7 +2418,7 @@ code triggered by the finalizer blocks and calls :c:func:`PyEval_SaveThread`.
 
    On the default build, this macro expands to ``{``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 .. c:macro:: Py_END_CRITICAL_SECTION2()
 
