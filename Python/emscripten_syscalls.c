@@ -1,6 +1,10 @@
 #include "emscripten.h"
 #include "stdio.h"
 
+// All system calls: return nonnegative number on success, return -errno on
+// failure. Negative results get stored back into errno here:
+// https://github.com/emscripten-core/emscripten/blob/main/system/lib/libc/musl/src/internal/syscall_ret.c#L7
+
 // If we're running in node, report the UID of the user in the native system as
 // the UID of the user. Since the nodefs will report the uid correctly, if we
 // don't make getuid report it correctly too we'll see some permission errors.
