@@ -1,0 +1,1 @@
+Fix a bug during JIT compilation failure which caused garbage collection debug assertions to fail.
