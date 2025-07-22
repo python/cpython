@@ -50,56 +50,65 @@
 
 #include "Python.h"
 
-#define Py_HASHLIB_MD_NS(ATTR)          Py_hashlib_message_digest_ ## ATTR
-#define Py_HASHLIB_MD_FAMILY(FAMILY_ID) Py_HASHLIB_MD_NS(family_ ## FAMILY_ID)
-#define Py_HASHLIB_MD_MEMBER(MEMBER_ID) Py_HASHLIB_MD_NS(member_ ## MEMBER_ID)
+/*
+ * Internal error messages used for reporting an unsupported hash algorithm.
+ * The algorithm can be given by its name, a callable or a PEP-247 module.
+ * The same message is raised by Lib/hashlib.py::__get_builtin_constructor()
+ * and _hmacmodule.c::find_hash_info().
+ */
+#define _Py_HASHLIB_UNSUPPORTED_ALGORITHM       "unsupported hash algorithm %S"
+#define _Py_HASHLIB_UNSUPPORTED_STR_ALGORITHM   "unsupported hash algorithm %s"
 
-#define Py_HASHLIB_MD_NAMES             Py_HASHLIB_MD_NS(NAMES)
-#define Py_HASHLIB_MD_COUNT             Py_ARRAY_LENGTH(Py_HASHLIB_MD_NAMES)
-#define Py_HASHLIB_MD_NAME(MEMBER_ID)                                   \
+#define _Py_HASHLIB_MD_NS(ATTR)         _Py_hashlib_message_digest_ ## ATTR
+#define _Py_HASHLIB_MD_FAMILY(FAMILY)   _Py_HASHLIB_MD_NS(family_ ## FAMILY)
+#define _Py_HASHLIB_MD_MEMBER(MEMBER)   _Py_HASHLIB_MD_NS(member_ ## MEMBER)
+
+#define _Py_HASHLIB_MD_NAMES            _Py_HASHLIB_MD_NS(NAMES)
+#define _Py_HASHLIB_MD_COUNT            Py_ARRAY_LENGTH(Py_HASHLIB_MD_NAMES)
+#define _Py_HASHLIB_MD_NAME(MEMBER_ID)                                   \
     (                                                                   \
         assert(Py_HASHLIB_MD_NAME(MEMBER_ID) < Py_HASHLIB_MD_COUNT),    \
         Py_HASHLIB_MD_NAMES[Py_HASHLIB_MD_MEMBER(MEMBER_ID)]            \
     )
 
 typedef enum {
-    Py_HASHLIB_MD_FAMILY(MD) = 0,
-    Py_HASHLIB_MD_FAMILY(SHA1),
-    Py_HASHLIB_MD_FAMILY(SHA2),
-    Py_HASHLIB_MD_FAMILY(SHA2t),
-    Py_HASHLIB_MD_FAMILY(SHA3),
-    Py_HASHLIB_MD_FAMILY(SHA3_XOF),
-    Py_HASHLIB_MD_FAMILY(BLAKE2),
-} Py_HASHLIB_MD_NS(family);
+    _Py_HASHLIB_MD_FAMILY(MD) = 0,
+    _Py_HASHLIB_MD_FAMILY(SHA1),
+    _Py_HASHLIB_MD_FAMILY(SHA2),
+    _Py_HASHLIB_MD_FAMILY(SHA2t),
+    _Py_HASHLIB_MD_FAMILY(SHA3),
+    _Py_HASHLIB_MD_FAMILY(SHA3_XOF),
+    _Py_HASHLIB_MD_FAMILY(BLAKE2),
+} _Py_HASHLIB_MD_NS(family);
 
 typedef enum {
     /* MD-family */
-    Py_HASHLIB_MD_MEMBER(md5) = 0,
+    _Py_HASHLIB_MD_MEMBER(md5) = 0,
     /* SHA-1 family */
-    Py_HASHLIB_MD_MEMBER(sha1),
+    _Py_HASHLIB_MD_MEMBER(sha1),
     /* SHA-2 family */
-    Py_HASHLIB_MD_MEMBER(sha224),
-    Py_HASHLIB_MD_MEMBER(sha256),
-    Py_HASHLIB_MD_MEMBER(sha384),
-    Py_HASHLIB_MD_MEMBER(sha512),
+    _Py_HASHLIB_MD_MEMBER(sha224),
+    _Py_HASHLIB_MD_MEMBER(sha256),
+    _Py_HASHLIB_MD_MEMBER(sha384),
+    _Py_HASHLIB_MD_MEMBER(sha512),
     /* Truncated SHA-2 family */
-    Py_HASHLIB_MD_MEMBER(sha512_224),
-    Py_HASHLIB_MD_MEMBER(sha512_256),
+    _Py_HASHLIB_MD_MEMBER(sha512_224),
+    _Py_HASHLIB_MD_MEMBER(sha512_256),
     /* SHA-3 family */
-    Py_HASHLIB_MD_MEMBER(sha3_224),
-    Py_HASHLIB_MD_MEMBER(sha3_256),
-    Py_HASHLIB_MD_MEMBER(sha3_384),
-    Py_HASHLIB_MD_MEMBER(sha3_512),
+    _Py_HASHLIB_MD_MEMBER(sha3_224),
+    _Py_HASHLIB_MD_MEMBER(sha3_256),
+    _Py_HASHLIB_MD_MEMBER(sha3_384),
+    _Py_HASHLIB_MD_MEMBER(sha3_512),
     /* SHA-3 XOF SHAKE family */
-    Py_HASHLIB_MD_MEMBER(shake_128),
-    Py_HASHLIB_MD_MEMBER(shake_256),
+    _Py_HASHLIB_MD_MEMBER(shake_128),
+    _Py_HASHLIB_MD_MEMBER(shake_256),
     /* BLAKE-2 family */
-    Py_HASHLIB_MD_MEMBER(blake2b),
-    Py_HASHLIB_MD_MEMBER(blake2s),
-} Py_HASHLIB_MD_NS(member);
+    _Py_HASHLIB_MD_MEMBER(blake2b),
+    _Py_HASHLIB_MD_MEMBER(blake2s),
+} _Py_HASHLIB_MD_NS(member);
 
 static const char *Py_HASHLIB_MD_NAMES[] = {
-#define DECL_MESSAGE_DIGEST_NAME(ID)  [Py_HASHLIB_MD_MEMBER(ID)] = #ID
+#define DECL_MESSAGE_DIGEST_NAME(ID)  [_Py_HASHLIB_MD_MEMBER(ID)] = #ID
     /* MD-family */
     DECL_MESSAGE_DIGEST_NAME(md5),
     /* SHA-1 family */
