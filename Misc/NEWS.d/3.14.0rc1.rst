@@ -1,0 +1,316 @@
+.. date: 2025-07-05-15-10-42
+.. gh-issue: 136251
+.. nonce: GRM6o8
+.. release date: 2025-07-22
+.. section: Tools/Demos
+
+Fixes and usability improvements for ``Tools/wasm/emscripten/web_example``
+
+..
+
+.. date: 2025-07-21-14-15-25
+.. gh-issue: 135661
+.. nonce: nAxXw5
+.. section: Security
+
+Fix parsing attributes with whitespaces around the ``=`` separator in
+:class:`html.parser.HTMLParser` according to the HTML5 standard.
+
+..
+
+.. date: 2025-06-09-20-38-25
+.. gh-issue: 118350
+.. nonce: KgWCcP
+.. section: Security
+
+Fix support of escapable raw text mode (elements "textarea" and "title") in
+:class:`html.parser.HTMLParser`.
+
+..
+
+.. date: 2025-07-21-22-35-50
+.. gh-issue: 136170
+.. nonce: QUlc78
+.. section: Library
+
+Removed the unreleased ``zipfile.ZipFile.data_offset`` property added in
+3.14.0a7 as it wasn't fully clear which behavior it should have in some
+situations so the result was not always what a user might expect.
+
+..
+
+.. date: 2025-07-21-16-10-24
+.. gh-issue: 124621
+.. nonce: wyoWc1
+.. section: Library
+
+pyrepl now works in Emscripten.
+
+..
+
+.. date: 2025-07-20-16-02-00
+.. gh-issue: 136874
+.. nonce: cLC3o1
+.. section: Library
+
+Discard URL query and fragment in :func:`urllib.request.url2pathname`.
+
+..
+
+.. date: 2025-07-19-16-20-54
+.. gh-issue: 130645
+.. nonce: O-dYcN
+.. section: Library
+
+Enable color help by default in :mod:`argparse`.
+
+..
+
+.. date: 2025-07-11-23-04-39
+.. gh-issue: 136549
+.. nonce: oAi8u4
+.. section: Library
+
+Fix signature of :func:`threading.excepthook`.
+
+..
+
+.. date: 2025-07-11-03-39-15
+.. gh-issue: 136523
+.. nonce: s7caKL
+.. section: Library
+
+Fix :class:`wave.Wave_write` emitting an unraisable when open raises.
+
+..
+
+.. date: 2025-07-10-10-18-19
+.. gh-issue: 52876
+.. nonce: 9Vjrd8
+.. section: Library
+
+Add missing ``keepends`` (default ``True``) parameter to
+:meth:`!codecs.StreamReaderWriter.readline` and
+:meth:`!codecs.StreamReaderWriter.readlines`.
+
+..
+
+.. date: 2025-07-10-00-47-37
+.. gh-issue: 136470
+.. nonce: KlUEUG
+.. section: Library
+
+Correct :class:`concurrent.futures.InterpreterPoolExecutor`'s default thread
+name.
+
+..
+
+.. date: 2025-07-09-20-29-30
+.. gh-issue: 136476
+.. nonce: HyLLzh
+.. section: Library
+
+Fix a bug that was causing the ``get_async_stack_trace`` function to miss
+some frames in the stack trace.
+
+..
+
+.. date: 2025-07-08-20-58-01
+.. gh-issue: 136434
+.. nonce: uuJsjS
+.. section: Library
+
+Fix docs generation of ``UnboundItem`` in :mod:`concurrent.interpreters`
+when running with :option:`-OO`.
+
+..
+
+.. date: 2025-07-07-22-12-32
+.. gh-issue: 136380
+.. nonce: 1b_nXl
+.. section: Library
+
+Raises :exc:`AttributeError` when accessing
+:class:`concurrent.futures.InterpreterPoolExecutor` and subinterpreters are
+not available.
+
+..
+
+.. date: 2025-06-28-11-32-57
+.. gh-issue: 134759
+.. nonce: AjjKcG
+.. section: Library
+
+Fix :exc:`UnboundLocalError` in :func:`email.message.Message.get_payload`
+when the payload to decode is a :class:`bytes` object. Patch by Kliment
+Lamonov.
+
+..
+
+.. date: 2025-05-25-11-02-05
+.. gh-issue: 134657
+.. nonce: 3YFhR9
+.. section: Library
+
+:mod:`asyncio`: Remove some private names from ``asyncio.__all__``.
+
+..
+
+.. date: 2025-07-19-12-37-05
+.. gh-issue: 136801
+.. nonce: XU_tF2
+.. section: Core and Builtins
+
+Fix PyREPL syntax highlighting on match cases after multi-line case.
+Contributed by Olga Matoula.
+
+..
+
+.. date: 2025-07-12-09-59-14
+.. gh-issue: 136421
+.. nonce: ZD1rNj
+.. section: Core and Builtins
+
+Fix crash when initializing :mod:`datetime` concurrently.
+
+..
+
+.. date: 2025-07-11-13-45-48
+.. gh-issue: 136541
+.. nonce: uZ_-Ju
+.. section: Core and Builtins
+
+Fix some issues with the perf trampolines on x86-64 and aarch64.  The
+trampolines were not being generated correctly for some cases, which could
+lead to the perf integration not working correctly. Patch by Pablo Galindo.
+
+..
+
+.. date: 2025-07-10-23-23-50
+.. gh-issue: 136517
+.. nonce: _NHJyv
+.. section: Core and Builtins
+
+Fixed a typo that prevented printing of uncollectable objects when the
+:const:`gc.DEBUG_UNCOLLECTABLE` mode was set.
+
+..
+
+.. date: 2025-07-10-15-53-16
+.. gh-issue: 136525
+.. nonce: xAko0e
+.. section: Core and Builtins
+
+Fix issue where per-thread bytecode was not instrumented for newly created
+threads.
+
+..
+
+.. date: 2025-07-08-23-53-51
+.. gh-issue: 132661
+.. nonce: B84iYt
+.. section: Core and Builtins
+
+``Interpolation.expression`` now has a default, the empty string.
+
+..
+
+.. date: 2025-07-08-23-22-08
+.. gh-issue: 132661
+.. nonce: 34ftJl
+.. section: Core and Builtins
+
+Reflect recent :pep:`750` change.
+
+Disallow concatenation of ``string.templatelib.Template`` and :class:`str`.
+Also, disallow implicit concatenation of t-string literals with string or
+f-string literals.
+
+..
+
+.. date: 2025-06-12-00-03-34
+.. gh-issue: 116738
+.. nonce: iBBAdo
+.. section: Core and Builtins
+
+Make functions in :mod:`grp` thread-safe on the :term:`free threaded <free
+threading>` build.
+
+..
+
+.. date: 2025-06-06-02-24-42
+.. gh-issue: 135148
+.. nonce: r-t2sC
+.. section: Core and Builtins
+
+Fixed a bug where f-string debug expressions (using =) would incorrectly
+strip out parts of strings containing escaped quotes and # characters. Patch
+by Pablo Galindo.
+
+..
+
+.. date: 2025-06-03-21-06-22
+.. gh-issue: 133136
+.. nonce: Usnvri
+.. section: Core and Builtins
+
+Limit excess memory usage in the :term:`free threading` build when a large
+dictionary or list is resized and accessed by multiple threads.
+
+..
+
+.. date: 2025-05-17-20-56-05
+.. gh-issue: 91153
+.. nonce: afgtG2
+.. section: Core and Builtins
+
+Fix a crash when a :class:`bytearray` is concurrently mutated during item
+assignment.
+
+..
+
+.. date: 2025-04-16-12-01-13
+.. gh-issue: 127971
+.. nonce: pMDOQ0
+.. section: Core and Builtins
+
+Fix off-by-one read beyond the end of a string in string search.
+
+..
+
+.. date: 2025-07-22-15-18-08
+.. gh-issue: 112068
+.. nonce: 4WvT-8
+.. section: C API
+
+Revert support of nullable arguments in :c:func:`PyArg_Parse`.
+
+..
+
+.. date: 2025-06-24-11-10-01
+.. gh-issue: 133296
+.. nonce: lIEuVJ
+.. section: C API
+
+New variants for the critical section API that accept one or two
+:c:type:`PyMutex` pointers rather than :c:type:`PyObject` instances are now
+public in the non-limited C API.
+
+..
+
+.. date: 2025-05-20-17-13-51
+.. gh-issue: 134009
+.. nonce: CpCmry
+.. section: C API
+
+Expose :c:func:`PyMutex_IsLocked` as part of the public C API.
+
+..
+
+.. date: 2025-07-18-17-15-00
+.. gh-issue: 135621
+.. nonce: 9cyCNb
+.. section: Build
+
+PyREPL no longer depends on the :mod:`curses` standard library. Contributed
+by Łukasz Langa.
