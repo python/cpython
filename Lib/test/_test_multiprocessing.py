@@ -342,6 +342,7 @@ class _TestProcess(BaseTestCase):
             p.join()
             self.assertEqual(p.exitcode, 0)
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
     @support.requires_resource('cpu')
     def test_args_argument(self):
         # bpo-45735: Using list or tuple as *args* in constructor could
@@ -531,6 +532,7 @@ class _TestProcess(BaseTestCase):
     def _test_sleep(cls, delay):
         time.sleep(delay)
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
     def _kill_process(self, meth, target=None):
         if self.TYPE == 'threads':
             self.skipTest('test not appropriate for {}'.format(self.TYPE))
@@ -1554,6 +1556,7 @@ class _TestLock(BaseTestCase):
         res.value = lock.locked()
         event.set()
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
     @unittest.skipUnless(HAS_SHAREDCTYPES, 'needs sharedctypes')
     def test_lock_locked_2processes(self):
         if self.TYPE != 'processes':
@@ -1640,6 +1643,7 @@ class _TestLock(BaseTestCase):
         self.assertFalse(lock.locked())
         self.assertRaises((AssertionError, RuntimeError), lock.release)
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
     @unittest.skipUnless(HAS_SHAREDCTYPES, 'needs sharedctypes')
     def test_rlock_locked_2processes(self):
         if self.TYPE != 'processes':
@@ -1938,6 +1942,7 @@ class _TestCondition(BaseTestCase):
             if not result or state.value != 4:
                 sys.exit(1)
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
     @unittest.skipUnless(HAS_SHAREDCTYPES, 'needs sharedctypes')
     def test_waitfor(self):
         # based on test in test/lock_tests.py
@@ -1973,6 +1978,7 @@ class _TestCondition(BaseTestCase):
             if not result and (expected - CLOCK_RES) <= dt:
                 success.value = True
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
     @unittest.skipUnless(HAS_SHAREDCTYPES, 'needs sharedctypes')
     def test_waitfor_timeout(self):
         # based on test in test/lock_tests.py
@@ -2469,7 +2475,7 @@ class _TestValue(BaseTestCase):
         for sv, cv in zip(values, cls.codes_values):
             sv.value = cv[2]
 
-
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
     def test_value(self, raw=False):
         if raw:
             values = [self.RawValue(code, value)
@@ -2533,6 +2539,7 @@ class _TestArray(BaseTestCase):
         for i in range(1, len(seq)):
             seq[i] += seq[i-1]
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
     @unittest.skipIf(c_int is None, "requires _ctypes")
     def test_array(self, raw=False):
         seq = [680, 626, 934, 821, 150, 233, 548, 982, 714, 831]
@@ -4351,6 +4358,7 @@ class _TestSharedCTypes(BaseTestCase):
         for i in range(len(arr)):
             arr[i] *= 2
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
     def test_sharedctypes(self, lock=False):
         x = Value('i', 7, lock=lock)
         y = Value(c_double, 1.0/3.0, lock=lock)
@@ -5584,6 +5592,7 @@ class TestWait(unittest.TestCase):
         sem.release()
         time.sleep(period)
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
     @support.requires_resource('walltime')
     def test_wait_integer(self):
         from multiprocessing.connection import wait
@@ -6010,6 +6019,7 @@ class TestStartMethod(unittest.TestCase):
             print(err)
             self.fail("failed spawning forkserver or grandchild")
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
     @unittest.skipIf(sys.platform == "win32",
                      "Only Spawn on windows so no risk of mixing")
     @only_run_in_spawn_testsuite("avoids redundant testing.")
