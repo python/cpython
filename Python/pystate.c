@@ -773,11 +773,6 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
             Py_CLEAR(interp->monitoring_callables[t][e]);
         }
     }
-    struct _PyExecutorObject *cold = interp->cold_executor;
-    if (cold != NULL) {
-        interp->cold_executor = NULL;
-        _PyExecutor_Free(cold);
-    }
     interp->sys_profile_initialized = false;
     interp->sys_trace_initialized = false;
     for (int t = 0; t < PY_MONITORING_TOOL_IDS; t++) {
@@ -820,7 +815,11 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     /* Last garbage collection on this interpreter */
     _PyGC_CollectNoFail(tstate);
     _PyGC_Fini(interp);
-
+    struct _PyExecutorObject *cold = interp->cold_executor;
+    if (cold != NULL) {
+        interp->cold_executor = NULL;
+        _PyExecutor_Free(cold);
+    }
     /* We don't clear sysdict and builtins until the end of this function.
        Because clearing other attributes can execute arbitrary Python code
        which requires sysdict and builtins. */
