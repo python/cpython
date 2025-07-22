@@ -227,6 +227,7 @@ ENSUREPIP=      @ENSUREPIP@
 # Internal static libraries
 LIBMPDEC_A= Modules/_decimal/libmpdec/libmpdec.a
 LIBEXPAT_A= Modules/expat/libexpat.a
+LIBHASHLIB_INTERNAL_A=Modules/_hashlib/libhashlib.a
 
 # HACL* build configuration
 LIBHACL_CFLAGS=@LIBHACL_CFLAGS@
@@ -760,6 +761,18 @@ LIBHACL_HMAC_HEADERS= \
 		$(LIBHACL_SHA3_HEADERS) \
 		$(LIBHACL_BLAKE2_HEADERS) \
 		$(LIBHACL_HEADERS)
+
+##########################################################################
+# Internal library for cryptographic primitives
+
+LIBHASHLIB_INTERNAL_OBJS= \
+		Modules/_hashlib/hashlib_buffer.o \
+		Modules/_hashlib/hashlib_fetch.o
+
+LIBHASHLIB_INTERNAL_HEADERS= \
+		Modules/_hashlib/hashlib_buffer.h \
+		Modules/_hashlib/hashlib_fetch.h \
+		Modules/_hashlib/hashlib_mutex.h
 
 #########################################################################
 # Rules
@@ -1483,9 +1496,17 @@ $(LIBEXPAT_A): $(LIBEXPAT_OBJS)
 
 ##########################################################################
 # '_hashlib', '_hmac' and HACL*-based modules helpers
+LIBHASHLIB_INTERNAL_CFLAGS=@LIBHASHLIB_INTERNAL_CFLAGS@ $(PY_STDMODULE_CFLAGS) $(CCSHARED)
 
-Modules/_hashlib/hashlib_buffer.o: $(srcdir)/Modules/_hashlib/hashlib_buffer.c $(srcdir)/Modules/_hashlib/hashlib_buffer.h $(PYTHON_HEADERS)
-	$(CC) -I$(srcdir)/Modules/_hashlib -c $(PY_STDMODULE_CFLAGS) $(CCSHARED) -o $@ $(srcdir)/Modules/_hashlib/hashlib_buffer.c
+Modules/_hashlib/hashlib_buffer.o: Modules/_hashlib/hashlib_buffer.c $(LIBHASHLIB_INTERNAL_HEADERS) $(PYTHON_HEADERS)
+	$(CC) -I$(srcdir)/Modules/_hashlib -c $(LIBHASHLIB_INTERNAL_CFLAGS) -o $@ $(srcdir)/Modules/_hashlib/hashlib_buffer.c
+
+Modules/_hashlib/hashlib_fetch.o: Modules/_hashlib/hashlib_fetch.c $(LIBHASHLIB_INTERNAL_HEADERS) $(PYTHON_HEADERS)
+	$(CC) -I$(srcdir)/Modules/_hashlib -c $(LIBHASHLIB_INTERNAL_CFLAGS) -o $@ $(srcdir)/Modules/_hashlib/hashlib_fetch.c
+
+$(LIBHASHLIB_INTERNAL_A): $(LIBHASHLIB_INTERNAL_OBJS)
+	-rm -f $@
+	$(AR) $(ARFLAGS) $@ $(LIBHASHLIB_INTERNAL_OBJS)
 
 ##########################################################################
 # HACL* library build
@@ -3331,14 +3352,8 @@ MODULE__DECIMAL_DEPS=$(srcdir)/Modules/_decimal/docstrings.h @LIBMPDEC_INTERNAL@
 MODULE__ELEMENTTREE_DEPS=$(srcdir)/Modules/pyexpat.c @LIBEXPAT_INTERNAL@
 MODULE__IO_DEPS=$(srcdir)/Modules/_io/_iomodule.h
 
-MODULE__HASHLIB_DEPS=	\
-	$(srcdir)/Modules/_hashlib/hashlib_buffer.h \
-	$(srcdir)/Modules/_hashlib/hashlib_fetch.h \
-	$(srcdir)/Modules/_hashlib/hashlib_mutex.h
-
-MODULE__HASHLIB_LDEPS=	\
-	Modules/_hashlib/hashlib_buffer.o \
-	Modules/_hashlib/hashlib_fetch.o
+MODULE__HASHLIB_DEPS=@LIBHASHLIB_INTERNAL@
+MODULE__HASHLIB_LDEPS=
 
 # HACL*-based cryptographic primitives
 MODULE__MD5_DEPS=$(MODULE__HASHLIB_DEPS) $(LIBHACL_MD5_HEADERS) $(LIBHACL_MD5_LIB_@LIBHACL_LDEPS_LIBTYPE@)

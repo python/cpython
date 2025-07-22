@@ -178,7 +178,7 @@ def find_wasi_sdk():
 
 def wasi_sdk_env(context):
     """Calculate environment variables for building with wasi-sdk."""
-    wasi_sdk_path = context.wasi_sdk_path
+    wasi_sdk_path = context.wasi_sdk_path.absolute()
     sysroot = wasi_sdk_path / "share" / "wasi-sysroot"
     env = {"CC": "clang", "CPP": "clang-cpp", "CXX": "clang++",
            "AR": "llvm-ar", "RANLIB": "ranlib"}

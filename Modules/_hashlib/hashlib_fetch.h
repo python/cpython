@@ -65,10 +65,11 @@
 
 #define _Py_HASHLIB_MD_NAMES            _Py_HASHLIB_MD_NAMESPACE(NAMES)
 #define _Py_HASHLIB_MD_COUNT            Py_ARRAY_LENGTH(_Py_HASHLIB_MD_NAMES)
-#define _Py_HASHLIB_MD_NAME(MEMBER_ID)                                  \
-    (                                                                   \
-        assert(_Py_HASHLIB_MD_NAME(MEMBER_ID) < _Py_HASHLIB_MD_COUNT),  \
-        _Py_HASHLIB_MD_NAMES[_Py_HASHLIB_MD_MEMBER(MEMBER_ID)]          \
+#define _Py_HASHLIB_MD_NAME(MEMBER_ID)                                      \
+    (                                                                       \
+        assert(_Py_HASHLIB_MD_MEMBER(MEMBER_ID) >= 0),                      \
+        assert(_Py_HASHLIB_MD_MEMBER(MEMBER_ID) < _Py_HASHLIB_MD_COUNT),    \
+        _Py_HASHLIB_MD_NAMES[_Py_HASHLIB_MD_MEMBER(MEMBER_ID)]              \
     )
 
 typedef enum {
@@ -107,7 +108,7 @@ typedef enum {
     _Py_HASHLIB_MD_MEMBER(blake2s),
 } _Py_HASHLIB_MD_NAMESPACE(member);
 
-static const char *Py_HASHLIB_MD_NAMES[] = {
+static const char *_Py_HASHLIB_MD_NAMES[] = {
 #define DECL_MESSAGE_DIGEST_NAME(ID)  [_Py_HASHLIB_MD_MEMBER(ID)] = #ID
     /* MD-family */
     DECL_MESSAGE_DIGEST_NAME(md5),
