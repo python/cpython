@@ -70,14 +70,135 @@ Summary --- release highlights
 New features
 ============
 
+.. _whatsnew315-sampling-profiler:
+
+High frequency statistical sampling profiler
+--------------------------------------------
+
+A new statistical sampling profiler has been added to the :mod:`profile` module as
+:mod:`profile.sample`. This profiler enables low-overhead performance analysis of
+running Python processes without requiring code modification or process restart.
+
+Unlike deterministic profilers (:mod:`cProfile` and :mod:`profile`) that instrument
+every function call, the sampling profiler periodically captures stack traces from
+running processes.  This approach provides virtually zero overhead while achieving
+sampling rates of **up to 1,000,000 Hz**, making it the fastest sampling profiler
+available for Python (at the time of its contribution) and ideal for debugging
+performance issues in production environments.
+
+Key features include:
+
+* **Zero-overhead profiling**: Attach to any running Python process without
+  affecting its performance
+* **No code modification required**: Profile existing applications without restart
+* **Real-time statistics**: Monitor sampling quality during data collection
+* **Multiple output formats**: Generate both detailed statistics and flamegraph data
+* **Thread-aware profiling**: Option to profile all threads or just the main thread
+
+Profile process 1234 for 10 seconds with default settings::
+
+  python -m profile.sample 1234
+
+Profile with custom interval and duration, save to file::
+
+  python -m profile.sample -i 50 -d 30 -o profile.stats 1234
+
+Generate collapsed stacks for flamegraph::
+
+  python -m profile.sample --collapsed 1234
+
+Profile all threads and sort by total time::
+
+  python -m profile.sample -a --sort-tottime 1234
+
+The profiler generates statistical estimates of where time is spent::
+
+  Real-time sampling stats: Mean: 100261.5Hz (9.97µs) Min: 86333.4Hz (11.58µs) Max: 118807.2Hz (8.42µs) Samples: 400001
+  Captured 498841 samples in 5.00 seconds
+  Sample rate: 99768.04 samples/sec
+  Error rate: 0.72%
+  Profile Stats:
+        nsamples   sample%   tottime (s)    cumul%   cumtime (s)  filename:lineno(function)
+        43/418858       0.0         0.000      87.9         4.189  case.py:667(TestCase.run)
+      3293/418812       0.7         0.033      87.9         4.188  case.py:613(TestCase._callTestMethod)
+    158562/158562      33.3         1.586      33.3         1.586  test_compile.py:725(TestSpecifics.test_compiler_recursion_limit.<locals>.check_limit)
+    129553/129553      27.2         1.296      27.2         1.296  ast.py:46(parse)
+        0/128129       0.0         0.000      26.9         1.281  test_ast.py:884(AST_Tests.test_ast_recursion_limit.<locals>.check_limit)
+          7/67446       0.0         0.000      14.2         0.674  test_compile.py:729(TestSpecifics.test_compiler_recursion_limit)
+          6/60380       0.0         0.000      12.7         0.604  test_ast.py:888(AST_Tests.test_ast_recursion_limit)
+          3/50020       0.0         0.000      10.5         0.500  test_compile.py:727(TestSpecifics.test_compiler_recursion_limit)
+          1/38011       0.0         0.000       8.0         0.380  test_ast.py:886(AST_Tests.test_ast_recursion_limit)
+          1/25076       0.0         0.000       5.3         0.251  test_compile.py:728(TestSpecifics.test_compiler_recursion_limit)
+      22361/22362       4.7         0.224       4.7         0.224  test_compile.py:1368(TestSpecifics.test_big_dict_literal)
+          4/18008       0.0         0.000       3.8         0.180  test_ast.py:889(AST_Tests.test_ast_recursion_limit)
+        11/17696       0.0         0.000       3.7         0.177  subprocess.py:1038(Popen.__init__)
+      16968/16968       3.6         0.170       3.6         0.170  subprocess.py:1900(Popen._execute_child)
+          2/16941       0.0         0.000       3.6         0.169  test_compile.py:730(TestSpecifics.test_compiler_recursion_limit)
+
+  Legend:
+    nsamples: Direct/Cumulative samples (direct executing / on call stack)
+    sample%: Percentage of total samples this function was directly executing
+    tottime: Estimated total time spent directly in this function
+    cumul%: Percentage of total samples when this function was on the call stack
+    cumtime: Estimated cumulative time (including time in called functions)
+    filename:lineno(function): Function location and name
+
+  Summary of Interesting Functions:
+
+  Functions with Highest Direct/Cumulative Ratio (Hot Spots):
+    1.000 direct/cumulative ratio, 33.3% direct samples: test_compile.py:(TestSpecifics.test_compiler_recursion_limit.<locals>.check_limit)
+    1.000 direct/cumulative ratio, 27.2% direct samples: ast.py:(parse)
+    1.000 direct/cumulative ratio, 3.6% direct samples: subprocess.py:(Popen._execute_child)
+
+  Functions with Highest Call Frequency (Indirect Calls):
+    418815 indirect calls, 87.9% total stack presence: case.py:(TestCase.run)
+    415519 indirect calls, 87.9% total stack presence: case.py:(TestCase._callTestMethod)
+    159470 indirect calls, 33.5% total stack presence: test_compile.py:(TestSpecifics.test_compiler_recursion_limit)
+
+  Functions with Highest Call Magnification (Cumulative/Direct):
+    12267.9x call magnification, 159470 indirect calls from 13 direct: test_compile.py:(TestSpecifics.test_compiler_recursion_limit)
+    10581.7x call magnification, 116388 indirect calls from 11 direct: test_ast.py:(AST_Tests.test_ast_recursion_limit)
+    9740.9x call magnification, 418815 indirect calls from 43 direct: case.py:(TestCase.run)
+
+The profiler automatically identifies performance bottlenecks through statistical
+analysis, highlighting functions with high CPU usage and call frequency patterns.
+
+This capability is particularly valuable for debugging performance issues in
+production systems where traditional profiling approaches would be too intrusive.
+
+(Contributed by Pablo Galindo and László Kiss Kollár in :gh:`135953`.)
 
 
 Other language changes
 ======================
 
+* Python now uses UTF-8_ as the default encoding, independent of the system's
+  environment. This means that I/O operations without an explicit encoding,
+  e.g. ``open('flying-circus.txt')``, will use UTF-8.
+  UTF-8 is a widely-supported Unicode_ character encoding that has become a
+  *de facto* standard for representing text, including nearly every webpage
+  on the internet, many common file formats, programming languages, and more.
+
+  This only applies when no ``encoding`` argument is given. For best
+  compatibility between versions of Python, ensure that an explicit ``encoding``
+  argument is always provided. The :ref:`opt-in encoding warning <io-encoding-warning>`
+  can be used to identify code that may be affected by this change.
+  The special special ``encoding='locale'`` argument uses the current locale
+  encoding, and has been supported since Python 3.10.
+
+  To retain the previous behaviour, Python's UTF-8 mode may be disabled with
+  the :envvar:`PYTHONUTF8=0 <PYTHONUTF8>` environment variable or the
+  :option:`-X utf8=0 <-X>` command line option.
+
+  .. seealso:: :pep:`686` for further details.
+
+  .. _UTF-8: https://en.wikipedia.org/wiki/UTF-8
+  .. _Unicode: https://home.unicode.org/
+
+  (Contributed by Adam Turner in :gh:`133711`; PEP 686 written by Inada Naoki.)
+
 * Several error messages incorrectly using the term "argument" have been corrected.
   (Contributed by Stan Ulbrych in :gh:`133382`.)
-
 
 
 New modules
@@ -109,11 +230,24 @@ difflib
   (Contributed by Jiahao Li in :gh:`134580`.)
 
 
+http.client
+-----------
+
+* A new *max_response_headers* keyword-only parameter has been added to
+  :class:`~http.client.HTTPConnection` and :class:`~http.client.HTTPSConnection`
+  constructors. This parameter overrides the default maximum number of allowed
+  response headers.
+  (Contributed by Alexander Enrique Urieles Nieto in :gh:`131724`.)
+
+
 math
 ----
 
 * Add :func:`math.isnormal` and :func:`math.issubnormal` functions.
   (Contributed by Sergey B Kirpichev in :gh:`132908`.)
+
+* Add :func:`math.fmax`, :func:`math.fmin` and :func:`math.signbit` functions.
+  (Contributed by Bénédikt Tran in :gh:`135853`.)
 
 
 os.path
@@ -137,8 +271,15 @@ shelve
 sqlite3
 -------
 
-* Support SQL keyword completion in the :mod:`sqlite3` command-line interface.
-  (Contributed by Long Tan in :gh:`133393`.)
+* The :ref:`command-line interface <sqlite3-cli>` has several new features:
+
+   * SQL keyword completion on <tab>.
+     (Contributed by Long Tan in :gh:`133393`.)
+
+   * Prompts, error messages, and help text are now colored.
+     This is enabled by default, see :ref:`using-on-controlling-color` for
+     details.
+     (Contributed by Stan Ulbrych and Łukasz Langa in :gh:`133461`)
 
 
 ssl
@@ -169,6 +310,23 @@ tarfile
   :func:`~tarfile.TarFile.errorlevel` is zero.
   (Contributed by Matt Prodani and Petr Viktorin in :gh:`112887`
   and :cve:`2025-4435`.)
+
+
+types
+------
+
+* Expose the write-through :func:`locals` proxy type
+  as :data:`types.FrameLocalsProxyType`.
+  This represents the type of the :attr:`frame.f_locals` attribute,
+  as described in :pep:`667`.
+
+
+unittest
+--------
+
+* :func:`unittest.TestCase.assertLogs` will now accept a formatter
+  to control how messages are formatted.
+  (Contributed by Garry Cairns in :gh:`134567`.)
 
 
 zlib
@@ -234,12 +392,27 @@ http.server
   (Contributed by Bénédikt Tran in :gh:`133810`.)
 
 
+pathlib
+-------
+
+* Removed deprecated :meth:`!pathlib.PurePath.is_reserved`.
+  Use :func:`os.path.isreserved` to detect reserved paths on Windows.
+  (Contributed by Nikita Sobolev in :gh:`133875`.)
+
+
 platform
 --------
 
 * Removed the :func:`!platform.java_ver` function,
   which was deprecated since Python 3.13.
   (Contributed by Alexey Makridenko in :gh:`133604`.)
+
+
+sre_*
+-----
+
+* Removed :mod:`!sre_compile`, :mod:`!sre_constants` and :mod:`!sre_parse` modules.
+  (Contributed by Stan Ulbrych in :gh:`135994`.)
 
 
 sysconfig
@@ -293,6 +466,11 @@ that may require changes to your code.
 Build changes
 =============
 
+* Removed implicit fallback to the bundled copy of the ``libmpdec`` library.
+  Now this should be explicitly enabled with :option:`--with-system-libmpdec`
+  set to ``no`` or with :option:`!--without-system-libmpdec`.
+  (Contributed by Sergey B Kirpichev in :gh:`115119`.)
+
 
 C API changes
 =============
@@ -324,10 +502,22 @@ Porting to Python 3.15
 
   (Contributed by Serhiy Storchaka in :gh:`133595`.)
 
+* Private functions promoted to public C APIs:
+
+  * ``PyMutex_IsLocked()`` : :c:func:`PyMutex_IsLocked`
+
+  The |pythoncapi_compat_project| can be used to get most of these new
+  functions on Python 3.14 and older.
+
+
 Deprecated C APIs
 -----------------
 
-* TODO
+* For unsigned integer formats in :c:func:`PyArg_ParseTuple`,
+  accepting Python integers with value that is larger than the maximal value
+  for the C type or less than the minimal value for the corresponding
+  signed integer type of the same size is now deprecated.
+  (Contributed by Serhiy Storchaka in :gh:`132629`.)
 
 .. Add C API deprecations above alphabetically, not here at the end.
 

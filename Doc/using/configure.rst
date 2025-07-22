@@ -29,6 +29,9 @@ Features and minimum versions required to build CPython:
 
 * Tcl/Tk 8.5.12 for the :mod:`tkinter` module.
 
+* `libmpdec <https://www.bytereef.org/mpdecimal/doc/libmpdec/>`_ 2.5.0
+  for the :mod:`decimal` module.
+
 * Autoconf 2.72 and aclocal 1.16.5 are required to regenerate the
   :file:`configure` script.
 
@@ -290,8 +293,8 @@ General Options
 
 .. option:: --disable-gil
 
-   Enables **experimental** support for running Python without the
-   :term:`global interpreter lock` (GIL): free threading build.
+   Enables support for running Python without the :term:`global interpreter
+   lock` (GIL): free threading build.
 
    Defines the ``Py_GIL_DISABLED`` macro and adds ``"t"`` to
    :data:`sys.abiflags`.
@@ -444,6 +447,14 @@ Options for third-party dependencies
 
    C compiler and linker flags for ``libuuid``, used by :mod:`uuid` module,
    overriding ``pkg-config``.
+
+.. option:: LIBZSTD_CFLAGS
+.. option:: LIBZSTD_LIBS
+
+   C compiler and linker flags for ``libzstd``, used by :mod:`compression.zstd` module,
+   overriding ``pkg-config``.
+
+   .. versionadded:: 3.14
 
 .. option:: PANEL_CFLAGS
 .. option:: PANEL_LIBS
@@ -675,6 +686,13 @@ also be used to improve performance.
    not compiled. This includes both the functionality to schedule code to be executed
    and the functionality to receive code to be executed.
 
+   .. c:macro:: Py_REMOTE_DEBUG
+
+      This macro is defined by default, unless Python is configured with
+      :option:`--without-remote-debug`.
+
+      Note that even if the macro is defined, remote debugging may not be
+      available (for example, on an incompatible platform).
 
    .. versionadded:: 3.14
 
@@ -784,6 +802,9 @@ Debug options
 .. option:: --with-address-sanitizer
 
    Enable AddressSanitizer memory error detector, ``asan`` (default is no).
+   To improve ASan detection capabilities you may also want to combine this
+   with :option:`--without-pymalloc` to disable the specialized small-object
+   allocator whose allocations are not tracked by ASan.
 
    .. versionadded:: 3.6
 

@@ -7,13 +7,6 @@ _ensure_current_cause(PyThreadState *tstate, PyObject *cause)
     }
     PyObject *exc = _PyErr_GetRaisedException(tstate);
     assert(exc != NULL);
-    PyObject *ctx = PyException_GetContext(exc);
-    if (ctx == NULL) {
-        PyException_SetContext(exc, Py_NewRef(cause));
-    }
-    else {
-        Py_DECREF(ctx);
-    }
     assert(PyException_GetCause(exc) == NULL);
     PyException_SetCause(exc, Py_NewRef(cause));
     _PyErr_SetRaisedException(tstate, exc);

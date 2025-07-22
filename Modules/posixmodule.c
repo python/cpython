@@ -685,7 +685,8 @@ static void
 reset_remotedebug_data(PyThreadState *tstate)
 {
     tstate->remote_debugger_support.debugger_pending_call = 0;
-    memset(tstate->remote_debugger_support.debugger_script_path, 0, MAX_SCRIPT_PATH_SIZE);
+    memset(tstate->remote_debugger_support.debugger_script_path, 0,
+           Py_MAX_SCRIPT_PATH_SIZE);
 }
 
 
@@ -3476,12 +3477,12 @@ Change the current working directory to the specified path.
 
 path may always be specified as a string.
 On some platforms, path may also be specified as an open file descriptor.
-  If this functionality is unavailable, using it raises an exception.
+If this functionality is unavailable, using it raises an exception.
 [clinic start generated code]*/
 
 static PyObject *
 os_chdir_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=3be6400eee26eaae input=1a4a15b4d12cb15d]*/
+/*[clinic end generated code: output=3be6400eee26eaae input=a74ceab5d72adf74]*/
 {
     int result;
 
@@ -16970,6 +16971,25 @@ os__emscripten_debugger_impl(PyObject *module)
     emscripten_debugger();
     Py_RETURN_NONE;
 }
+
+EM_JS(void, emscripten_log_impl_js, (const char* arg), {
+    console.warn(UTF8ToString(arg));
+});
+
+/*[clinic input]
+os._emscripten_log
+   arg: str
+
+Log something to the JS console. Emscripten only.
+[clinic start generated code]*/
+
+static PyObject *
+os__emscripten_log_impl(PyObject *module, const char *arg)
+/*[clinic end generated code: output=9749e5e293c42784 input=350aa1f70bc1e905]*/
+{
+    emscripten_log_impl_js(arg);
+    Py_RETURN_NONE;
+}
 #endif /* __EMSCRIPTEN__ */
 
 
@@ -17189,6 +17209,7 @@ static PyMethodDef posix_methods[] = {
     OS__IS_INPUTHOOK_INSTALLED_METHODDEF
     OS__CREATE_ENVIRON_METHODDEF
     OS__EMSCRIPTEN_DEBUGGER_METHODDEF
+    OS__EMSCRIPTEN_LOG_METHODDEF
     {NULL,              NULL}            /* Sentinel */
 };
 

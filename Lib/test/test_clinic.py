@@ -1277,12 +1277,8 @@ class ClinicParserTest(TestCase):
             os.stat
                 invalid syntax: int = 42
         """
-        err = dedent(r"""
-            Function 'stat' has an invalid parameter declaration:
-            \s+'invalid syntax: int = 42'
-        """).strip()
-        with self.assertRaisesRegex(ClinicError, err):
-            self.parse_function(block)
+        err = "Function 'stat' has an invalid parameter declaration: 'invalid syntax: int = 42'"
+        self.expect_failure(block, err, lineno=2)
 
     def test_param_default_invalid_syntax(self):
         block = """
@@ -1290,7 +1286,7 @@ class ClinicParserTest(TestCase):
             os.stat
                 x: int = invalid syntax
         """
-        err = r"Syntax error: 'x = invalid syntax\n'"
+        err = "Function 'stat' has an invalid parameter declaration:"
         self.expect_failure(block, err, lineno=2)
 
     def test_cloning_nonexistent_function_correctly_fails(self):
@@ -2510,7 +2506,7 @@ class ClinicParserTest(TestCase):
         self.expect_failure(block, err, lineno=1)
 
     def test_vararg_cannot_take_default_value(self):
-        err = "Vararg can't take a default value!"
+        err = "Function 'fn' has an invalid parameter declaration:"
         block = """
             fn
                 *args: tuple = None
@@ -2796,6 +2792,7 @@ class ClinicExternalTest(TestCase):
             out = self.expect_success("-v", fn)
             self.assertEqual(out.strip(), fn)
 
+    @support.force_not_colorized
     def test_cli_help(self):
         out = self.expect_success("-h")
         self.assertIn("usage: clinic.py", out)
@@ -3048,6 +3045,8 @@ class ClinicFunctionalTest(unittest.TestCase):
 
     def test_unsigned_char_converter(self):
         from _testcapi import UCHAR_MAX
+        SCHAR_MAX = UCHAR_MAX // 2
+        SCHAR_MIN = SCHAR_MAX - UCHAR_MAX
         with self.assertRaises(OverflowError):
             ac_tester.unsigned_char_converter(-1)
         with self.assertRaises(OverflowError):
@@ -3057,8 +3056,13 @@ class ClinicFunctionalTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             ac_tester.unsigned_char_converter([])
         self.assertEqual(ac_tester.unsigned_char_converter(), (12, 34, 56))
-        self.assertEqual(ac_tester.unsigned_char_converter(0, 0, UCHAR_MAX + 1), (0, 0, 0))
-        self.assertEqual(ac_tester.unsigned_char_converter(0, 0, (UCHAR_MAX + 1) * 3 + 123), (0, 0, 123))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(ac_tester.unsigned_char_converter(0, 0, UCHAR_MAX + 1), (0, 0, 0))
+        self.assertEqual(ac_tester.unsigned_char_converter(0, 0, SCHAR_MIN), (0, 0, SCHAR_MAX + 1))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(ac_tester.unsigned_char_converter(0, 0, SCHAR_MIN - 1), (0, 0, SCHAR_MAX))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(ac_tester.unsigned_char_converter(0, 0, (UCHAR_MAX + 1) * 3 + 123), (0, 0, 123))
 
     def test_short_converter(self):
         from _testcapi import SHRT_MIN, SHRT_MAX
@@ -3072,7 +3076,7 @@ class ClinicFunctionalTest(unittest.TestCase):
         self.assertEqual(ac_tester.short_converter(4321), (4321,))
 
     def test_unsigned_short_converter(self):
-        from _testcapi import USHRT_MAX
+        from _testcapi import SHRT_MIN, SHRT_MAX, USHRT_MAX
         with self.assertRaises(ValueError):
             ac_tester.unsigned_short_converter(-1)
         with self.assertRaises(OverflowError):
@@ -3082,8 +3086,13 @@ class ClinicFunctionalTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             ac_tester.unsigned_short_converter([])
         self.assertEqual(ac_tester.unsigned_short_converter(), (12, 34, 56))
-        self.assertEqual(ac_tester.unsigned_short_converter(0, 0, USHRT_MAX + 1), (0, 0, 0))
-        self.assertEqual(ac_tester.unsigned_short_converter(0, 0, (USHRT_MAX + 1) * 3 + 123), (0, 0, 123))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(ac_tester.unsigned_short_converter(0, 0, USHRT_MAX + 1), (0, 0, 0))
+        self.assertEqual(ac_tester.unsigned_short_converter(0, 0, SHRT_MIN), (0, 0, SHRT_MAX + 1))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(ac_tester.unsigned_short_converter(0, 0, SHRT_MIN - 1), (0, 0, SHRT_MAX))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(ac_tester.unsigned_short_converter(0, 0, (USHRT_MAX + 1) * 3 + 123), (0, 0, 123))
 
     def test_int_converter(self):
         from _testcapi import INT_MIN, INT_MAX
@@ -3099,7 +3108,7 @@ class ClinicFunctionalTest(unittest.TestCase):
         self.assertEqual(ac_tester.int_converter(1, 2, '3'), (1, 2, ord('3')))
 
     def test_unsigned_int_converter(self):
-        from _testcapi import UINT_MAX
+        from _testcapi import INT_MIN, INT_MAX, UINT_MAX
         with self.assertRaises(ValueError):
             ac_tester.unsigned_int_converter(-1)
         with self.assertRaises(OverflowError):
@@ -3109,8 +3118,13 @@ class ClinicFunctionalTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             ac_tester.unsigned_int_converter([])
         self.assertEqual(ac_tester.unsigned_int_converter(), (12, 34, 56))
-        self.assertEqual(ac_tester.unsigned_int_converter(0, 0, UINT_MAX + 1), (0, 0, 0))
-        self.assertEqual(ac_tester.unsigned_int_converter(0, 0, (UINT_MAX + 1) * 3 + 123), (0, 0, 123))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(ac_tester.unsigned_int_converter(0, 0, UINT_MAX + 1), (0, 0, 0))
+        self.assertEqual(ac_tester.unsigned_int_converter(0, 0, INT_MIN), (0, 0, INT_MAX + 1))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(ac_tester.unsigned_int_converter(0, 0, INT_MIN - 1), (0, 0, INT_MAX))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(ac_tester.unsigned_int_converter(0, 0, (UINT_MAX + 1) * 3 + 123), (0, 0, 123))
 
     def test_long_converter(self):
         from _testcapi import LONG_MIN, LONG_MAX
@@ -3124,7 +3138,7 @@ class ClinicFunctionalTest(unittest.TestCase):
         self.assertEqual(ac_tester.long_converter(-1234), (-1234,))
 
     def test_unsigned_long_converter(self):
-        from _testcapi import ULONG_MAX
+        from _testcapi import LONG_MIN, LONG_MAX, ULONG_MAX
         with self.assertRaises(ValueError):
             ac_tester.unsigned_long_converter(-1)
         with self.assertRaises(OverflowError):
@@ -3134,8 +3148,13 @@ class ClinicFunctionalTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             ac_tester.unsigned_long_converter([])
         self.assertEqual(ac_tester.unsigned_long_converter(), (12, 34, 56))
-        self.assertEqual(ac_tester.unsigned_long_converter(0, 0, ULONG_MAX + 1), (0, 0, 0))
-        self.assertEqual(ac_tester.unsigned_long_converter(0, 0, (ULONG_MAX + 1) * 3 + 123), (0, 0, 123))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(ac_tester.unsigned_long_converter(0, 0, ULONG_MAX + 1), (0, 0, 0))
+        self.assertEqual(ac_tester.unsigned_long_converter(0, 0, LONG_MIN), (0, 0, LONG_MAX + 1))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(ac_tester.unsigned_long_converter(0, 0, LONG_MIN - 1), (0, 0, LONG_MAX))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(ac_tester.unsigned_long_converter(0, 0, (ULONG_MAX + 1) * 3 + 123), (0, 0, 123))
 
     def test_long_long_converter(self):
         from _testcapi import LLONG_MIN, LLONG_MAX
@@ -3149,7 +3168,7 @@ class ClinicFunctionalTest(unittest.TestCase):
         self.assertEqual(ac_tester.long_long_converter(-1234), (-1234,))
 
     def test_unsigned_long_long_converter(self):
-        from _testcapi import ULLONG_MAX
+        from _testcapi import LLONG_MIN, LLONG_MAX, ULLONG_MAX
         with self.assertRaises(ValueError):
             ac_tester.unsigned_long_long_converter(-1)
         with self.assertRaises(OverflowError):
@@ -3159,8 +3178,13 @@ class ClinicFunctionalTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             ac_tester.unsigned_long_long_converter([])
         self.assertEqual(ac_tester.unsigned_long_long_converter(), (12, 34, 56))
-        self.assertEqual(ac_tester.unsigned_long_long_converter(0, 0, ULLONG_MAX + 1), (0, 0, 0))
-        self.assertEqual(ac_tester.unsigned_long_long_converter(0, 0, (ULLONG_MAX + 1) * 3 + 123), (0, 0, 123))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(ac_tester.unsigned_long_long_converter(0, 0, ULLONG_MAX + 1), (0, 0, 0))
+        self.assertEqual(ac_tester.unsigned_long_long_converter(0, 0, LLONG_MIN), (0, 0, LLONG_MAX + 1))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(ac_tester.unsigned_long_long_converter(0, 0, LLONG_MIN - 1), (0, 0, LLONG_MAX))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(ac_tester.unsigned_long_long_converter(0, 0, (ULLONG_MAX + 1) * 3 + 123), (0, 0, 123))
 
     def test_py_ssize_t_converter(self):
         from _testcapi import PY_SSIZE_T_MIN, PY_SSIZE_T_MAX

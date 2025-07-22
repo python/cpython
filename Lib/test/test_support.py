@@ -1,6 +1,8 @@
 import contextlib
 import errno
 import importlib
+import itertools
+import inspect
 import io
 import logging
 import os
@@ -17,6 +19,7 @@ import unittest
 import warnings
 
 from test import support
+from test.support import hashlib_helper
 from test.support import import_helper
 from test.support import os_helper
 from test.support import script_helper
@@ -816,6 +819,239 @@ class TestSupport(unittest.TestCase):
     # can_symlink
     # skip_unless_symlink
     # SuppressCrashReport
+
+
+@hashlib_helper.requires_builtin_hashes()
+class TestHashlibSupport(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.hashlib = import_helper.import_module("hashlib")
+        cls.hmac = import_helper.import_module("hmac")
+
+        # All C extension modules must be present since blocking
+        # the built-in implementation while allowing OpenSSL or vice-versa
+        # may result in failures depending on the exposed built-in hashes.
+        cls._hashlib = import_helper.import_module("_hashlib")
+        cls._hmac = import_helper.import_module("_hmac")
+        cls._md5 = import_helper.import_module("_md5")
+
+    def skip_if_fips_mode(self):
+        if self._hashlib.get_fips_mode():
+            self.skipTest("disabled in FIPS mode")
+
+    def skip_if_not_fips_mode(self):
+        if not self._hashlib.get_fips_mode():
+            self.skipTest("requires FIPS mode")
+
+    def check_context(self, disabled=True):
+        if disabled:
+            return self.assertRaises(ValueError)
+        return contextlib.nullcontext()
+
+    def try_import_attribute(self, fullname, default=None):
+        if fullname is None:
+            return default
+        assert fullname.count('.') == 1, fullname
+        module_name, attribute = fullname.split('.', maxsplit=1)
+        try:
+            module = importlib.import_module(module_name)
+        except ImportError:
+            return default
+        try:
+            return getattr(module, attribute, default)
+        except TypeError:
+            return default
+
+    def fetch_hash_function(self, name, implementation):
+        info = hashlib_helper.get_hash_info(name)
+        match implementation:
+            case "hashlib":
+                assert info.hashlib is not None, info
+                return getattr(self.hashlib, info.hashlib)
+            case "openssl":
+                try:
+                    return getattr(self._hashlib, info.openssl, None)
+                except TypeError:
+                    return None
+        fullname = info.fullname(implementation)
+        return self.try_import_attribute(fullname)
+
+    def fetch_hmac_function(self, name):
+        fullname = hashlib_helper._EXPLICIT_HMAC_CONSTRUCTORS[name]
+        return self.try_import_attribute(fullname)
+
+    def check_openssl_hash(self, name, *, disabled=True):
+        """Check that OpenSSL HASH interface is enabled/disabled."""
+        with self.check_context(disabled):
+            _ = self._hashlib.new(name)
+        if do_hash := self.fetch_hash_function(name, "openssl"):
+            self.assertStartsWith(do_hash.__name__, 'openssl_')
+            with self.check_context(disabled):
+                _ = do_hash(b"")
+
+    def check_openssl_hmac(self, name, *, disabled=True):
+        """Check that OpenSSL HMAC interface is enabled/disabled."""
+        if name in hashlib_helper.NON_HMAC_DIGEST_NAMES:
+            # HMAC-BLAKE and HMAC-SHAKE raise a ValueError as they are not
+            # supported at all (they do not make any sense in practice).
+            with self.assertRaises(ValueError):
+                self._hashlib.hmac_digest(b"", b"", name)
+        else:
+            with self.check_context(disabled):
+                _ = self._hashlib.hmac_digest(b"", b"", name)
+        # OpenSSL does not provide one-shot explicit HMAC functions
+
+    def check_builtin_hash(self, name, *, disabled=True):
+        """Check that HACL* HASH interface is enabled/disabled."""
+        if do_hash := self.fetch_hash_function(name, "builtin"):
+            self.assertEqual(do_hash.__name__, name)
+            with self.check_context(disabled):
+                _ = do_hash(b"")
+
+    def check_builtin_hmac(self, name, *, disabled=True):
+        """Check that HACL* HMAC interface is enabled/disabled."""
+        if name in hashlib_helper.NON_HMAC_DIGEST_NAMES:
+            # HMAC-BLAKE and HMAC-SHAKE raise a ValueError as they are not
+            # supported at all (they do not make any sense in practice).
+            with self.assertRaises(ValueError):
+                self._hmac.compute_digest(b"", b"", name)
+        else:
+            with self.check_context(disabled):
+                _ = self._hmac.compute_digest(b"", b"", name)
+
+        with self.check_context(disabled):
+            _ = self._hmac.new(b"", b"", name)
+
+        if do_hmac := self.fetch_hmac_function(name):
+            self.assertStartsWith(do_hmac.__name__, 'compute_')
+            with self.check_context(disabled):
+                _ = do_hmac(b"", b"")
+        else:
+            self.assertIn(name, hashlib_helper.NON_HMAC_DIGEST_NAMES)
+
+    @support.subTests(
+        ('name', 'allow_openssl', 'allow_builtin'),
+        itertools.product(
+            hashlib_helper.CANONICAL_DIGEST_NAMES,
+            [True, False],
+            [True, False],
+        )
+    )
+    def test_disable_hash(self, name, allow_openssl, allow_builtin):
+        # In FIPS mode, the function may be available but would still need
+        # to raise a ValueError, so we will test the helper separately.
+        self.skip_if_fips_mode()
+        flags = dict(allow_openssl=allow_openssl, allow_builtin=allow_builtin)
+        is_fully_disabled = not allow_builtin and not allow_openssl
+
+        with hashlib_helper.block_algorithm(name, **flags):
+            # OpenSSL's blake2s and blake2b are unknown names
+            # when only the OpenSSL interface is available.
+            if allow_openssl and not allow_builtin:
+                aliases = {'blake2s': 'blake2s256', 'blake2b': 'blake2b512'}
+                name_for_hashlib_new = aliases.get(name, name)
+            else:
+                name_for_hashlib_new = name
+
+            with self.check_context(is_fully_disabled):
+                _ = self.hashlib.new(name_for_hashlib_new)
+
+            # Since _hashlib is present, explicit blake2b/blake2s constructors
+            # use the built-in implementation, while others (since we are not
+            # in FIPS mode and since _hashlib exists) use the OpenSSL function.
+            with self.check_context(is_fully_disabled):
+                _ = getattr(self.hashlib, name)()
+
+            self.check_openssl_hash(name, disabled=not allow_openssl)
+            self.check_builtin_hash(name, disabled=not allow_builtin)
+
+            if name not in hashlib_helper.NON_HMAC_DIGEST_NAMES:
+                with self.check_context(is_fully_disabled):
+                    _ = self.hmac.new(b"", b"", name)
+                with self.check_context(is_fully_disabled):
+                    _ = self.hmac.HMAC(b"", b"", name)
+                with self.check_context(is_fully_disabled):
+                    _ = self.hmac.digest(b"", b"", name)
+
+                self.check_openssl_hmac(name, disabled=not allow_openssl)
+                self.check_builtin_hmac(name, disabled=not allow_builtin)
+
+    @hashlib_helper.block_algorithm("md5")
+    def test_disable_hash_md5_in_fips_mode(self):
+        self.skip_if_not_fips_mode()
+
+        self.assertRaises(ValueError, self.hashlib.new, "md5")
+        self.assertRaises(ValueError, self._hashlib.new, "md5")
+        self.assertRaises(ValueError, self.hashlib.md5)
+        self.assertRaises(ValueError, self._hashlib.openssl_md5)
+
+        kwargs = dict(usedforsecurity=True)
+        self.assertRaises(ValueError, self.hashlib.new, "md5", **kwargs)
+        self.assertRaises(ValueError, self._hashlib.new, "md5", **kwargs)
+        self.assertRaises(ValueError, self.hashlib.md5, **kwargs)
+        self.assertRaises(ValueError, self._hashlib.openssl_md5, **kwargs)
+
+    @hashlib_helper.block_algorithm("md5", allow_openssl=True)
+    def test_disable_hash_md5_in_fips_mode_allow_openssl(self):
+        self.skip_if_not_fips_mode()
+        # Allow the OpenSSL interface to be used but not the HACL* one.
+        # hashlib.new("md5") is dispatched to hashlib.openssl_md5()
+        self.assertRaises(ValueError, self.hashlib.new, "md5")
+        # dispatched to hashlib.openssl_md5() in FIPS mode
+        h2 = self.hashlib.new("md5", usedforsecurity=False)
+        self.assertIsInstance(h2, self._hashlib.HASH)
+
+        # block_algorithm() does not mock hashlib.md5 and _hashlib.openssl_md5
+        self.assertNotHasAttr(self.hashlib.md5, "__wrapped__")
+        self.assertNotHasAttr(self._hashlib.openssl_md5, "__wrapped__")
+
+        hashlib_md5 = inspect.unwrap(self.hashlib.md5)
+        self.assertIs(hashlib_md5, self._hashlib.openssl_md5)
+        self.assertRaises(ValueError, self.hashlib.md5)
+        # allow MD5 to be used in FIPS mode if usedforsecurity=False
+        h3 = self.hashlib.md5(usedforsecurity=False)
+        self.assertIsInstance(h3, self._hashlib.HASH)
+
+    @hashlib_helper.block_algorithm("md5", allow_builtin=True)
+    def test_disable_hash_md5_in_fips_mode_allow_builtin(self):
+        self.skip_if_not_fips_mode()
+        # Allow the HACL* interface to be used but not the OpenSSL one.
+        h1 = self.hashlib.new("md5")  # dispatched to _md5.md5()
+        self.assertNotIsInstance(h1, self._hashlib.HASH)
+        h2 = self.hashlib.new("md5", usedforsecurity=False)
+        self.assertIsInstance(h2, type(h1))
+
+        # block_algorithm() mocks hashlib.md5 and _hashlib.openssl_md5
+        self.assertHasAttr(self.hashlib.md5, "__wrapped__")
+        self.assertHasAttr(self._hashlib.openssl_md5, "__wrapped__")
+
+        hashlib_md5 = inspect.unwrap(self.hashlib.md5)
+        openssl_md5 = inspect.unwrap(self._hashlib.openssl_md5)
+        self.assertIs(hashlib_md5, openssl_md5)
+        self.assertRaises(ValueError, self.hashlib.md5)
+        self.assertRaises(ValueError, self.hashlib.md5,
+                          usedforsecurity=False)
+
+    @hashlib_helper.block_algorithm("md5",
+                                    allow_openssl=True,
+                                    allow_builtin=True)
+    def test_disable_hash_md5_in_fips_mode_allow_all(self):
+        self.skip_if_not_fips_mode()
+        # hashlib.new() isn't blocked as it falls back to _md5.md5
+        self.assertIsInstance(self.hashlib.new("md5"), self._md5.MD5Type)
+        self.assertRaises(ValueError, self._hashlib.new, "md5")
+        h = self._hashlib.new("md5", usedforsecurity=False)
+        self.assertIsInstance(h, self._hashlib.HASH)
+
+        self.assertNotHasAttr(self.hashlib.md5, "__wrapped__")
+        self.assertNotHasAttr(self._hashlib.openssl_md5, "__wrapped__")
+
+        self.assertIs(self.hashlib.md5, self._hashlib.openssl_md5)
+        self.assertRaises(ValueError, self.hashlib.md5)
+        h = self.hashlib.md5(usedforsecurity=False)
+        self.assertIsInstance(h, self._hashlib.HASH)
 
 
 if __name__ == '__main__':

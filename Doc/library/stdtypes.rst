@@ -1223,7 +1223,9 @@ accepts integers that meet the value restriction ``0 <= x <= 255``).
 |                              | is replaced by the contents of |                     |
 |                              | the iterable *t*               |                     |
 +------------------------------+--------------------------------+---------------------+
-| ``del s[i:j]``               | same as ``s[i:j] = []``        |                     |
+| ``del s[i:j]``               | removes the elements of        |                     |
+|                              | ``s[i:j]`` from the list       |                     |
+|                              | (same as ``s[i:j] = []``)      |                     |
 +------------------------------+--------------------------------+---------------------+
 | ``s[i:j:k] = t``             | the elements of ``s[i:j:k]``   | \(1)                |
 |                              | are replaced by those of *t*   |                     |
@@ -1891,12 +1893,15 @@ expression support in the :mod:`re` module).
    (``\n``) or return (``\r``), it is copied and the current column is reset to
    zero.  Any other character is copied unchanged and the current column is
    incremented by one regardless of how the character is represented when
-   printed.
+   printed. For example::
 
       >>> '01\t012\t0123\t01234'.expandtabs()
       '01      012     0123    01234'
       >>> '01\t012\t0123\t01234'.expandtabs(4)
       '01  012 0123    01234'
+      >>> print('01\t012\n0123\t01234'.expandtabs(4))
+      01  012
+      0123    01234
 
 
 .. method:: str.find(sub[, start[, end]])
@@ -2670,9 +2675,9 @@ For example:
    lead to a number of common errors (such as failing to display tuples and
    dictionaries correctly).  Using the newer :ref:`formatted string literals
    <f-strings>`, the :meth:`str.format` interface, or :ref:`template strings
-   <template-strings>` may help avoid these errors.  Each of these
-   alternatives provides their own trade-offs and benefits of simplicity,
-   flexibility, and/or extensibility.
+   ($-strings) <template-strings-pep292>` may help avoid these errors.
+   Each of these alternatives provides their own trade-offs and benefits of
+   simplicity, flexibility, and/or extensibility.
 
 String objects have one unique built-in operation: the ``%`` operator (modulo).
 This is also known as the string *formatting* or *interpolation* operator.

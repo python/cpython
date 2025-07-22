@@ -45,7 +45,7 @@ Pending removal in Python 3.15
 
 * :mod:`pathlib`:
 
-  * :meth:`.PurePath.is_reserved`
+  * :meth:`!.PurePath.is_reserved`
     has been deprecated since Python 3.13.
     Use :func:`os.path.isreserved` to detect reserved paths on Windows.
 
@@ -96,6 +96,8 @@ Pending removal in Python 3.15
     has been deprecated since Python 3.13.
     After eight years in the :mod:`typing` module,
     it has yet to be supported by any major type checker.
+
+* :mod:`!sre_compile`, :mod:`!sre_constants` and :mod:`!sre_parse` modules.
 
 * :mod:`wave`:
 
