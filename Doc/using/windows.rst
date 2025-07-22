@@ -385,10 +385,10 @@ The following settings are those that are considered likely to be modified in
 normal use. Later sections list those that are intended for administrative
 customization.
 
-.. rubric:: Standard configuration options
-
 .. Sphinx bug with text writer; remove widths & caption temporarily
 .. :widths: 2, 2, 4
+
+.. rubric:: Standard configuration options
 
 .. list-table::
 
@@ -749,10 +749,10 @@ issue at `our bug tracker <https://github.com/python/cpython/issues>`_,
 including any relevant log files (written to your :file:`%TEMP%` directory by
 default).
 
-.. rubric:: Troubleshooting
-
 .. Sphinx bug with text writer; remove widths & caption temporarily
 .. :widths: 1, 1
+
+.. rubric:: Troubleshooting
 
 .. list-table::
 
