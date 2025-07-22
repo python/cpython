@@ -4,7 +4,6 @@
 
 import collections.abc
 import io
-import os
 import unittest
 from test import support
 from test.support import import_helper
