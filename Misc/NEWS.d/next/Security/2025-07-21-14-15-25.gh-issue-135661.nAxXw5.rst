@@ -1,2 +1,0 @@
-Fix parsing attributes with whitespaces around the ``=`` separator in
-:class:`html.parser.HTMLParser` according to the HTML5 standard.
