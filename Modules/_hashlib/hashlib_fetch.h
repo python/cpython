@@ -59,16 +59,16 @@
 #define _Py_HASHLIB_UNSUPPORTED_ALGORITHM       "unsupported hash algorithm %S"
 #define _Py_HASHLIB_UNSUPPORTED_STR_ALGORITHM   "unsupported hash algorithm %s"
 
-#define _Py_HASHLIB_MD_NS(ATTR)         _Py_hashlib_message_digest_ ## ATTR
-#define _Py_HASHLIB_MD_FAMILY(FAMILY)   _Py_HASHLIB_MD_NS(family_ ## FAMILY)
-#define _Py_HASHLIB_MD_MEMBER(MEMBER)   _Py_HASHLIB_MD_NS(member_ ## MEMBER)
+#define _Py_HASHLIB_MD_NAMESPACE(NAME)  _Py_hashlib_message_digest_ ## NAME
+#define _Py_HASHLIB_MD_FAMILY(ID)       _Py_HASHLIB_MD_NAMESPACE(family_ ## ID)
+#define _Py_HASHLIB_MD_MEMBER(ID)       _Py_HASHLIB_MD_NAMESPACE(member_ ## ID)
 
-#define _Py_HASHLIB_MD_NAMES            _Py_HASHLIB_MD_NS(NAMES)
-#define _Py_HASHLIB_MD_COUNT            Py_ARRAY_LENGTH(Py_HASHLIB_MD_NAMES)
-#define _Py_HASHLIB_MD_NAME(MEMBER_ID)                                   \
+#define _Py_HASHLIB_MD_NAMES            _Py_HASHLIB_MD_NAMESPACE(NAMES)
+#define _Py_HASHLIB_MD_COUNT            Py_ARRAY_LENGTH(_Py_HASHLIB_MD_NAMES)
+#define _Py_HASHLIB_MD_NAME(MEMBER_ID)                                  \
     (                                                                   \
-        assert(Py_HASHLIB_MD_NAME(MEMBER_ID) < Py_HASHLIB_MD_COUNT),    \
-        Py_HASHLIB_MD_NAMES[Py_HASHLIB_MD_MEMBER(MEMBER_ID)]            \
+        assert(_Py_HASHLIB_MD_NAME(MEMBER_ID) < _Py_HASHLIB_MD_COUNT),  \
+        _Py_HASHLIB_MD_NAMES[_Py_HASHLIB_MD_MEMBER(MEMBER_ID)]          \
     )
 
 typedef enum {
@@ -79,7 +79,7 @@ typedef enum {
     _Py_HASHLIB_MD_FAMILY(SHA3),
     _Py_HASHLIB_MD_FAMILY(SHA3_XOF),
     _Py_HASHLIB_MD_FAMILY(BLAKE2),
-} _Py_HASHLIB_MD_NS(family);
+} _Py_HASHLIB_MD_NAMESPACE(family);
 
 typedef enum {
     /* MD-family */
@@ -105,7 +105,7 @@ typedef enum {
     /* BLAKE-2 family */
     _Py_HASHLIB_MD_MEMBER(blake2b),
     _Py_HASHLIB_MD_MEMBER(blake2s),
-} _Py_HASHLIB_MD_NS(member);
+} _Py_HASHLIB_MD_NAMESPACE(member);
 
 static const char *Py_HASHLIB_MD_NAMES[] = {
 #define DECL_MESSAGE_DIGEST_NAME(ID)  [_Py_HASHLIB_MD_MEMBER(ID)] = #ID
