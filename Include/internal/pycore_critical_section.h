@@ -21,16 +21,6 @@ extern "C" {
 #define _Py_CRITICAL_SECTION_MASK           0x3
 
 #ifdef Py_GIL_DISABLED
-# define Py_BEGIN_CRITICAL_SECTION_MUT(mutex)                           \
-    {                                                                   \
-        PyCriticalSection _py_cs;                                       \
-        _PyCriticalSection_BeginMutex(&_py_cs, mutex)
-
-# define Py_BEGIN_CRITICAL_SECTION2_MUT(m1, m2)                         \
-    {                                                                   \
-        PyCriticalSection2 _py_cs2;                                     \
-        _PyCriticalSection2_BeginMutex(&_py_cs2, m1, m2)
-
 // Specialized version of critical section locking to safely use
 // PySequence_Fast APIs without the GIL. For performance, the argument *to*
 // PySequence_Fast() is provided to the macro, not the *result* of
@@ -75,8 +65,6 @@ extern "C" {
 
 #else  /* !Py_GIL_DISABLED */
 // The critical section APIs are no-ops with the GIL.
-# define Py_BEGIN_CRITICAL_SECTION_MUT(mut) {
-# define Py_BEGIN_CRITICAL_SECTION2_MUT(m1, m2) {
 # define Py_BEGIN_CRITICAL_SECTION_SEQUENCE_FAST(original) {
 # define Py_END_CRITICAL_SECTION_SEQUENCE_FAST() }
 # define _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(mutex)
@@ -119,6 +107,7 @@ _PyCriticalSection_BeginMutex(PyCriticalSection *c, PyMutex *m)
         _PyCriticalSection_BeginSlow(c, m);
     }
 }
+#define PyCriticalSection_BeginMutex _PyCriticalSection_BeginMutex
 
 static inline void
 _PyCriticalSection_Begin(PyCriticalSection *c, PyObject *op)
@@ -194,6 +183,7 @@ _PyCriticalSection2_BeginMutex(PyCriticalSection2 *c, PyMutex *m1, PyMutex *m2)
         _PyCriticalSection2_BeginSlow(c, m1, m2, 0);
     }
 }
+#define PyCriticalSection2_BeginMutex _PyCriticalSection2_BeginMutex
 
 static inline void
 _PyCriticalSection2_Begin(PyCriticalSection2 *c, PyObject *a, PyObject *b)
