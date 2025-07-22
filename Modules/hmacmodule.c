@@ -1099,42 +1099,60 @@ _hmac_compute_digest_impl(PyObject *module, PyObject *key, PyObject *msg,
 }
 
 /*
+ * Obtain a view from 'key' and 'msg', storing it in 'keyview' and 'msgview'.
+ *
+ * Return 0 on success; otherwise set an exception and return -1.
+ */
+static int
+hmac_get_buffer_views(PyObject *key, Py_buffer *keyview,
+                      PyObject *msg, Py_buffer *msgview)
+{
+    if (_Py_hashlib_get_buffer_view(key, keyview) < 0) {
+        return -1;
+    }
+    if (!has_uint32_t_buffer_length(keyview)) {
+        PyBuffer_Release(keyview);
+        set_invalid_key_length_error();
+        return -1;
+    }
+    if (_Py_hashlib_get_buffer_view(msg, msgview) < 0) {
+        PyBuffer_Release(keyview);
+        return -1;
+    }
+    if (!has_uint32_t_buffer_length(msgview)) {
+        PyBuffer_Release(msgview);
+        PyBuffer_Release(keyview);
+        set_invalid_msg_length_error();
+        return -1;
+    }
+    return 0;
+}
+
+/*
  * One-shot HMAC-HASH using the given HACL_HID.
  *
  * The length of the key and message buffers must not exceed UINT32_MAX,
  * lest an OverflowError is raised. The Python implementation takes care
  * of dispatching to the OpenSSL implementation in this case.
  */
-#define Py_HMAC_HACL_ONESHOT(HACL_HID, KEY, MSG)                \
-    do {                                                        \
-        Py_buffer keyview, msgview;                             \
-        GET_BUFFER_VIEW_OR_ERROUT((KEY), &keyview);             \
-        if (!has_uint32_t_buffer_length(&keyview)) {            \
-            PyBuffer_Release(&keyview);                         \
-            set_invalid_key_length_error();                     \
-            return NULL;                                        \
-        }                                                       \
-        GET_BUFFER_VIEW_OR_ERROR((MSG), &msgview,               \
-                                 PyBuffer_Release(&keyview);    \
-                                 return NULL);                  \
-        if (!has_uint32_t_buffer_length(&msgview)) {            \
-            PyBuffer_Release(&msgview);                         \
-            PyBuffer_Release(&keyview);                         \
-            set_invalid_msg_length_error();                     \
-            return NULL;                                        \
-        }                                                       \
-        uint8_t out[Py_hmac_## HACL_HID ##_digest_size];        \
-        Py_hmac_## HACL_HID ##_compute_func(                    \
-            out,                                                \
-            (uint8_t *)keyview.buf, (uint32_t)keyview.len,      \
-            (uint8_t *)msgview.buf, (uint32_t)msgview.len       \
-        );                                                      \
-        PyBuffer_Release(&msgview);                             \
-        PyBuffer_Release(&keyview);                             \
-        return PyBytes_FromStringAndSize(                       \
-            (const char *)out,                                  \
-            Py_hmac_## HACL_HID ##_digest_size                  \
-        );                                                      \
+#define Py_HMAC_HACL_ONESHOT(HACL_HID, KEY, MSG)                        \
+    do {                                                                \
+        Py_buffer keyview, msgview;                                     \
+        if (hmac_get_buffer_views(key, &keyview, msg, &msgview) < 0) {  \
+            return NULL;                                                \
+        }                                                               \
+        uint8_t out[Py_hmac_## HACL_HID ##_digest_size];                \
+        Py_hmac_## HACL_HID ##_compute_func(                            \
+            out,                                                        \
+            (uint8_t *)keyview.buf, (uint32_t)keyview.len,              \
+            (uint8_t *)msgview.buf, (uint32_t)msgview.len               \
+        );                                                              \
+        PyBuffer_Release(&msgview);                                     \
+        PyBuffer_Release(&keyview);                                     \
+        return PyBytes_FromStringAndSize(                               \
+            (const char *)out,                                          \
+            Py_hmac_## HACL_HID ##_digest_size                          \
+        );                                                              \
     } while (0)
 
 /*[clinic input]
@@ -1328,6 +1346,8 @@ _hmac_compute_blake2b_32_impl(PyObject *module, PyObject *key, PyObject *msg)
 {
     Py_HMAC_HACL_ONESHOT(blake2b_32, key, msg);
 }
+
+#undef Py_HMAC_HACL_ONESHOT
 
 // --- HMAC module methods ----------------------------------------------------
 
