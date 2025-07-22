@@ -1565,7 +1565,7 @@ depending on the Python implementation.
    is a solid base if its underlying struct is different in size from its base class.
 
 Every class has a solid base. :class:`object`, the base class, has itself as its solid base.
-If there is a single base, the child class's solid base is that class if it is a solid baes,
+If there is a single base, the child class's solid base is that class if it is a solid base,
 or else the base class's solid base. If there are multiple bases, we first find the solid base
 for each base class to produce a list of candidate solid bases. If there is a unique solid base
 that is a subclass of all others, then that class is the solid base. Otherwise, class creation
