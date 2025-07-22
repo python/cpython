@@ -196,9 +196,9 @@ Data Types
          :start: The first integer value for the Enum (used by :class:`auto`).
          :boundary:  How to handle out-of-range values from bit operations (:class:`Flag` only).
 
-   .. method:: EnumType.__contains__(cls, member)
+   .. method:: EnumType.__contains__(cls, value)
 
-      Returns ``True`` if member belongs to the ``cls``::
+      Returns ``True`` if value belongs to the ``cls``::
 
         >>> some_var = Color.RED
         >>> some_var in Color
