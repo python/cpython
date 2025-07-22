@@ -2940,11 +2940,6 @@ New features
   file.
   (Contributed by Victor Stinner in :gh:`127350`.)
 
-* Add support of nullable arguments in :c:func:`PyArg_ParseTuple` and
-  similar functions.
-  Adding ``?`` after any format unit makes ``None`` be accepted as a value.
-  (Contributed by Serhiy Storchaka in :gh:`112068`.)
-
 * The ``k`` and ``K`` formats in :c:func:`PyArg_ParseTuple` and
   similar functions now use :meth:`~object.__index__` if available,
   like all other integer formats.

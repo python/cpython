@@ -1228,15 +1228,22 @@ encoder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     static char *kwlist[] = {"markers", "default", "encoder", "indent", "key_separator", "item_separator", "sort_keys", "skipkeys", "allow_nan", NULL};
 
     PyEncoderObject *s;
-    PyObject *markers = Py_None, *defaultfn, *encoder, *indent, *key_separator;
+    PyObject *markers, *defaultfn, *encoder, *indent, *key_separator;
     PyObject *item_separator;
     int sort_keys, skipkeys, allow_nan;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O!?OOOUUppp:make_encoder", kwlist,
-        &PyDict_Type, &markers, &defaultfn, &encoder, &indent,
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "OOOOUUppp:make_encoder", kwlist,
+        &markers, &defaultfn, &encoder, &indent,
         &key_separator, &item_separator,
         &sort_keys, &skipkeys, &allow_nan))
         return NULL;
+
+    if (markers != Py_None && !PyDict_Check(markers)) {
+        PyErr_Format(PyExc_TypeError,
+                     "make_encoder() argument 1 must be dict or None, "
+                     "not %.200s", Py_TYPE(markers)->tp_name);
+        return NULL;
+    }
 
     s = (PyEncoderObject *)type->tp_alloc(type, 0);
     if (s == NULL)

@@ -2012,7 +2012,7 @@ interpreter.
 .. nonce: ofI5Fl
 .. section: C API
 
-Add support of nullable arguments in :c:func:`PyArg_Parse` and similar
+[Reverted in :gh:`136991`] Add support of nullable arguments in :c:func:`PyArg_Parse` and similar
 functions. Adding ``?`` after any format unit makes ``None`` be accepted as
 a value.
 
