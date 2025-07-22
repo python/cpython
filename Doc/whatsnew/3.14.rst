@@ -2192,6 +2192,7 @@ urllib
   - Discard URL authority if it matches the local hostname.
   - Discard URL authority if it resolves to a local IP address when the new
     *resolve_host* argument is set to true.
+  - Discard URL query and fragment components.
   - Raise :exc:`~urllib.error.URLError` if a URL authority isn't local,
     except on Windows where we return a UNC path as before.
 
@@ -2323,8 +2324,7 @@ uuid
   * :func:`~uuid.uuid3` and :func:`~uuid.uuid5` are both roughly 40% faster
     for 16-byte names and 20% faster for 1024-byte names. Performance for
     longer names remains unchanged.
-  * :func:`~uuid.uuid4` and :func:`~uuid.uuid8` are 30% and 40% faster
-    respectively.
+  * :func:`~uuid.uuid4` is 30% faster.
 
   (Contributed by Bénédikt Tran in :gh:`128150`.)
 
