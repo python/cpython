@@ -310,6 +310,8 @@ tarfile
   :func:`~tarfile.TarFile.errorlevel` is zero.
   (Contributed by Matt Prodani and Petr Viktorin in :gh:`112887`
   and :cve:`2025-4435`.)
+* :mod:`tarfile` now validates archives to ensure member offsets are non-negative.
+  (Contributed by Alexander Enrique Urieles Nieto in :gh:`130577`.)
 
 
 types

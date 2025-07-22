@@ -1,0 +1,2 @@
+:mod:`tarfile` now validates archives to ensure member offsets are
+non-negative.
