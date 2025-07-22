@@ -6,7 +6,11 @@
             href="https://unpkg.com/xterm@4.18.0/css/xterm.css"
         />
         <style>
-            .xterm-dom-renderer-owner-1 .xterm-fg-3 {
+             body {
+                 background-color: #300a24;
+             }
+
+             .xterm-dom-renderer-owner-1 .xterm-fg-3 {
                 color: #c4a000 !important;
             }
 
@@ -23,7 +27,7 @@
             }
         </style>
     </head>
-    <body style="background-color: #300a24" ;>
+    <body>
         <div id="terminal"></div>
         <script type="module" src="src.mjs"></script>
     </body>
