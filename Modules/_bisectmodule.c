@@ -179,6 +179,7 @@ _bisect_bisect_right_impl(PyObject *module, PyObject *a, PyObject *x,
 }
 
 /*[clinic input]
+@critical_section a
 _bisect.insort_right
 
     a: object
@@ -201,7 +202,7 @@ A custom key function can be supplied to customize the sort order.
 static PyObject *
 _bisect_insort_right_impl(PyObject *module, PyObject *a, PyObject *x,
                           Py_ssize_t lo, Py_ssize_t hi, PyObject *key)
-/*[clinic end generated code: output=ac3bf26d07aedda2 input=f60777d2b6ddb239]*/
+/*[clinic end generated code: output=ac3bf26d07aedda2 input=93bd855be0c1add7]*/
 {
     PyObject *result, *key_x;
     Py_ssize_t index;
@@ -365,6 +366,7 @@ _bisect_bisect_left_impl(PyObject *module, PyObject *a, PyObject *x,
 
 
 /*[clinic input]
+@critical_section a
 _bisect.insort_left
 
     a: object
@@ -387,7 +389,7 @@ A custom key function can be supplied to customize the sort order.
 static PyObject *
 _bisect_insort_left_impl(PyObject *module, PyObject *a, PyObject *x,
                          Py_ssize_t lo, Py_ssize_t hi, PyObject *key)
-/*[clinic end generated code: output=b1d33e5e7ffff11e input=0a700a82edbd472c]*/
+/*[clinic end generated code: output=b1d33e5e7ffff11e input=93e06f5a323e09ef]*/
 {
     PyObject *result, *key_x;
     Py_ssize_t index;

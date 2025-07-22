@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(_bisect_bisect_right__doc__,
@@ -222,7 +223,9 @@ skip_optional_pos:
     }
     key = args[4];
 skip_optional_kwonly:
+    Py_BEGIN_CRITICAL_SECTION(a);
     return_value = _bisect_insort_right_impl(module, a, x, lo, hi, key);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -441,9 +444,11 @@ skip_optional_pos:
     }
     key = args[4];
 skip_optional_kwonly:
+    Py_BEGIN_CRITICAL_SECTION(a);
     return_value = _bisect_insort_left_impl(module, a, x, lo, hi, key);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=729385c6a23828ab input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6111121f07c8300b input=a9049054013a1b77]*/
