@@ -5614,7 +5614,7 @@ os__path_isjunction_impl(PyObject *module, path_t *path)
 /*[clinic input]
 os._path_splitroot_ex
 
-    p as path: path_t(make_wide=True, nonstrict=True),
+    path: path_t(make_wide=True, nonstrict=True),
     /
 
 Split a pathname into drive, root and tail.
@@ -5624,7 +5624,7 @@ The tail contains anything after the root.
 
 static PyObject *
 os__path_splitroot_ex_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=4b0072b6cdf4b611 input=ccd3dfece9b2d79a]*/
+/*[clinic end generated code: output=4b0072b6cdf4b611 input=4ac47b394d68bd21]*/
 {
     Py_ssize_t drvsize, rootsize;
     PyObject *drv = NULL, *root = NULL, *tail = NULL, *result = NULL;

@@ -2475,7 +2475,7 @@ exit:
 #endif /* defined(MS_WINDOWS) */
 
 PyDoc_STRVAR(os__path_splitroot_ex__doc__,
-"_path_splitroot_ex($module, p, /)\n"
+"_path_splitroot_ex($module, path, /)\n"
 "--\n"
 "\n"
 "Split a pathname into drive, root and tail.\n"
@@ -13419,4 +13419,4 @@ exit:
 #ifndef OS__EMSCRIPTEN_LOG_METHODDEF
     #define OS__EMSCRIPTEN_LOG_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_LOG_METHODDEF) */
-/*[clinic end generated code: output=09592255619ed47b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b1e2615384347102 input=a9049054013a1b77]*/
