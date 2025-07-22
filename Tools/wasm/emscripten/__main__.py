@@ -186,7 +186,7 @@ def make_emscripten_libffi(context, working_dir):
 def configure_emscripten_python(context, working_dir):
     """Configure the emscripten/host build."""
     config_site = os.fsdecode(
-        CHECKOUT / "Tools" / "wasm" / "config.site-wasm32-emscripten"
+        EMSCRIPTEN_DIR / "config.site-wasm32-emscripten"
     )
 
     emscripten_build_dir = working_dir.relative_to(CHECKOUT)
