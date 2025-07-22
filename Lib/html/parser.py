@@ -126,6 +126,7 @@ class HTMLParser(_markupbase.ParserBase):
     containing respectively the named or numeric reference as the
     argument.
     """
+
     CDATA_CONTENT_ELEMENTS = ("script", "style")
     RCDATA_CONTENT_ELEMENTS = ("textarea", "title")
 
@@ -167,7 +168,7 @@ class HTMLParser(_markupbase.ParserBase):
         """Return full source of start tag: '<...>'."""
         return self.__starttag_text
 
-    def set_cdata_mode(self, elem, escapable=False):
+    def set_cdata_mode(self, elem, *, escapable=False):
         self.cdata_elem = elem.lower()
         self._escapable = escapable
         if escapable and not self.convert_charrefs:
@@ -428,7 +429,7 @@ class HTMLParser(_markupbase.ParserBase):
             if tag in self.CDATA_CONTENT_ELEMENTS:
                 self.set_cdata_mode(tag)
             elif tag in self.RCDATA_CONTENT_ELEMENTS:
-                self.set_cdata_mode(tag, True)
+                self.set_cdata_mode(tag, escapable=True)
         return endpos
 
     # Internal -- check to see if we have a complete starttag; return end
