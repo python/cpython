@@ -22,10 +22,11 @@
 
 #include "Python.h"
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
-#include "pycore_typeobject.h"    // _PyType_GetModuleState()
 #include "pycore_strhex.h"        // _Py_strhex()
+#include "pycore_typeobject.h"    // _PyType_GetModuleState()
 
-#include "hashlib.h"
+#include "_hashlib/hashlib_buffer.h"
+#include "_hashlib/hashlib_mutex.h"
 
 #include "_hacl/Hacl_Hash_SHA2.h"
 

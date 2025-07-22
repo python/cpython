@@ -15,10 +15,12 @@
 #endif
 
 #include "Python.h"
-#include "hashlib.h"
+#include "pycore_moduleobject.h"
 #include "pycore_strhex.h"       // _Py_strhex()
 #include "pycore_typeobject.h"
-#include "pycore_moduleobject.h"
+
+#include "_hashlib/hashlib_buffer.h"
+#include "_hashlib/hashlib_mutex.h"
 
 // QUICK CPU AUTODETECTION
 //
