@@ -302,7 +302,7 @@ int __syscall_ioctl(int fd, int request, void* varargs) {
         int flags = fcntl(fd, F_GETFL, 0);
         int nonblock = **((int**)varargs);
         if (flags < 0) {
-            return errno;
+            return -errno;
         }
         if (nonblock) {
             flags |= O_NONBLOCK;
@@ -311,7 +311,7 @@ int __syscall_ioctl(int fd, int request, void* varargs) {
         }
         int res = fcntl(fd, F_SETFL, flags);
         if (res < 0) {
-            return errno;
+            return -errno;
         }
         return res;
     }
