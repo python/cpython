@@ -148,9 +148,12 @@ Morsel Objects
    in HTTP requests, and is not accessible through JavaScript. This is intended
    to mitigate some forms of cross-site scripting.
 
-   The attribute :attr:`samesite` specifies that the browser is not allowed to
-   send the cookie along with cross-site requests. This helps to mitigate CSRF
-   attacks. Valid values for this attribute are "Strict" and "Lax".
+   The attribute :attr:`samesite` controls when the browser sends the cookie with
+   cross-site requests. This helps to mitigate CSRF attacks. Valid values are
+   "Strict" (never sent with cross-site requests), "Lax" (sent with top-level
+   navigation), and "None" (always sent). When using "None", the "secure"
+   attribute must also be set, as required by modern browsers per
+   `RFC6265bis <https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis>`_.
 
    The attribute :attr:`partitioned` indicates to user agents that these
    cross-site cookies *should* only be available in the same top-level context
