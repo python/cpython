@@ -1222,6 +1222,10 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
     }
     sanity_check(executor);
 #endif
+    // Note: this MUST be here before any Py_DECREF(executor).
+    // Otherwise, the GC tries to untrack a still untracked object
+    // during dealloc.
+    _PyObject_GC_TRACK(executor);
 #ifdef _Py_JIT
     executor->jit_code = NULL;
     executor->jit_side_entry = NULL;
@@ -1234,7 +1238,6 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
         return NULL;
     }
 #endif
-    _PyObject_GC_TRACK(executor);
     return executor;
 }
 
