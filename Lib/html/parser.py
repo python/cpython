@@ -43,7 +43,7 @@ attrfind_tolerant = re.compile(r"""
   (
     (?<=['"\t\n\r\f /])[^\t\n\r\f />][^\t\n\r\f /=>]*  # attribute name
    )
-  (=                                # value indicator
+  ([\t\n\r\f ]*=[\t\n\r\f ]*        # value indicator
     ('[^']*'                        # LITA-enclosed value
     |"[^"]*"                        # LIT-enclosed value
     |(?!['"])[^>\t\n\r\f ]*         # bare value
@@ -55,7 +55,7 @@ locatetagend = re.compile(r"""
   [a-zA-Z][^\t\n\r\f />]*           # tag name
   [\t\n\r\f /]*                     # optional whitespace before attribute name
   (?:(?<=['"\t\n\r\f /])[^\t\n\r\f />][^\t\n\r\f /=>]*  # attribute name
-    (?:=                            # value indicator
+    (?:[\t\n\r\f ]*=[\t\n\r\f ]*    # value indicator
       (?:'[^']*'                    # LITA-enclosed value
         |"[^"]*"                    # LIT-enclosed value
         |(?!['"])[^>\t\n\r\f ]*     # bare value
