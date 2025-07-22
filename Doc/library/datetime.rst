@@ -2734,7 +2734,7 @@ Notes:
       When used with :meth:`~.datetime.strftime`, behaves exactly as ``%z``,
       except that a colon separator is added between hours, minutes and seconds.
 
-      When used with :meth:`~.datetime.stpftime`, the UTC offset is *required*
+      When used with :meth:`~.datetime.strptime`, the UTC offset is *required*
       to have a colon as a separator between hours, minutes and seconds.
       For example, ``'+01:00:00'`` (but *not* ``'+010000'``) will be parsed as
       an offset of one hour. In addition, providing ``'Z'`` is identical to
