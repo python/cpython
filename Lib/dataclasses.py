@@ -1342,7 +1342,8 @@ def _add_slots(cls, is_frozen, weakref_slot, defined_fields):
     # Bypass mapping proxy to allow __dict__ to be removed
     old_cls_dict = cls.__dict__ | _deproxier
     old_cls_dict.pop('__dict__', None)
-    del cls.__weakref__
+    if "__weakref__" in cls.__dict__:
+        del cls.__weakref__
 
     return newcls
 
