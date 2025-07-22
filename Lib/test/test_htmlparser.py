@@ -10,10 +10,13 @@ from test import support
 
 class EventCollector(html.parser.HTMLParser):
 
-    def __init__(self, *args, **kw):
+    def __init__(self, *args, autocdata=False, **kw):
+        self.autocdata = autocdata
         self.events = []
         self.append = self.events.append
         html.parser.HTMLParser.__init__(self, *args, **kw)
+        if autocdata:
+            self.support_cdata(False)
 
     def get_events(self):
         # Normalize the list of events so that buffer artefacts don't
@@ -34,7 +37,7 @@ class EventCollector(html.parser.HTMLParser):
 
     def handle_starttag(self, tag, attrs):
         self.append(("starttag", tag, attrs))
-        if tag == 'svg':
+        if self.autocdata and tag == 'svg':
             self.support_cdata(True)
 
     def handle_startendtag(self, tag, attrs):
@@ -42,7 +45,7 @@ class EventCollector(html.parser.HTMLParser):
 
     def handle_endtag(self, tag):
         self.append(("endtag", tag))
-        if tag == 'svg':
+        if self.autocdata and tag == 'svg':
             self.support_cdata(False)
 
     # all other markup
@@ -771,22 +774,6 @@ text
             ('<!', [('comment', '')]),
             ('<!-', [('comment', '-')]),
             ('<![', [('comment', '[')]),
-            ('<![CDATA[', [('comment', '![CDATA[')]),
-            ('<![CDATA[x', [('comment', '![CDATA[x')]),
-            ('<![CDATA[x]', [('comment', '![CDATA[x]')]),
-            ('<![CDATA[x]]', [('comment', '![CDATA[x]]')]),
-            ('<svg><text y="100"><![CDATA[',
-             [('starttag', 'svg', []), ('starttag', 'text', [('y', '100')]),
-              ('unknown decl', 'CDATA[')]),
-            ('<svg><text y="100"><![CDATA[x',
-             [('starttag', 'svg', []), ('starttag', 'text', [('y', '100')]),
-              ('unknown decl', 'CDATA[x')]),
-            ('<svg><text y="100"><![CDATA[x]',
-             [('starttag', 'svg', []), ('starttag', 'text', [('y', '100')]),
-              ('unknown decl', 'CDATA[x]')]),
-            ('<svg><text y="100"><![CDATA[x]]',
-             [('starttag', 'svg', []), ('starttag', 'text', [('y', '100')]),
-              ('unknown decl', 'CDATA[x]]')]),
             ('<!DOCTYPE', [('decl', 'DOCTYPE')]),
             ('<!DOCTYPE ', [('decl', 'DOCTYPE ')]),
             ('<!DOCTYPE html', [('decl', 'DOCTYPE html')]),
@@ -798,6 +785,18 @@ text
         ]
         for html, expected in data:
             self._run_check(html, expected)
+
+    @support.subTests('content', ['', 'x', 'x]', 'x]]'])
+    def test_eof_in_cdata(self, content):
+        self._run_check('<![CDATA[' + content,
+                        [('unknown decl', 'CDATA[' + content)])
+        self._run_check('<![CDATA[' + content,
+                        [('comment', '![CDATA[' + content)],
+                        collector=EventCollector(autocdata=True))
+        self._run_check('<svg><text y="100"><![CDATA[' + content,
+                        [('starttag', 'svg', []),
+                         ('starttag', 'text', [('y', '100')]),
+                         ('unknown decl', 'CDATA[' + content)])
 
     def test_bogus_comments(self):
         html = ('<!ELEMENT br EMPTY>'
@@ -889,6 +888,7 @@ text
             ('endtag', 'svg'),
         ]
         self._run_check(html, expected)
+        self._run_check(html, expected, collector=EventCollector(autocdata=True))
 
     def test_cdata_section(self):
         # See "13.2.5.42 Markup declaration open state".
@@ -906,7 +906,7 @@ text
             ('comment', '[CDATA[foo<br'),
             ('data', 'bar]]>'),
         ]
-        self._run_check(html, expected)
+        self._run_check(html, expected, collector=EventCollector(autocdata=True))
 
     def test_convert_charrefs_dropped_text(self):
         # #23144: make sure that all the events are triggered when

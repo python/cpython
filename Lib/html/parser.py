@@ -146,7 +146,7 @@ class HTMLParser(_markupbase.ParserBase):
         self.lasttag = '???'
         self.interesting = interesting_normal
         self.cdata_elem = None
-        self._support_cdata = False
+        self._support_cdata = True
         self._escapable = True
         super().reset()
 
