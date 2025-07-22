@@ -77,6 +77,7 @@ class ExecutorTest:
         with self.assertRaises(ZeroDivisionError):
             i.__next__()
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
     @support.requires_resource('walltime')
     def test_map_timeout(self):
         results = []
@@ -135,6 +136,7 @@ class ExecutorTest:
         self.assertEqual(next(res, None), "1")
         self.assertEqual(next(res, None), "2")
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
     def test_map_buffersize_on_multiple_infinite_iterables(self):
         res = self.executor.map(
             add,

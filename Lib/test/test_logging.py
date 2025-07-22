@@ -4046,6 +4046,7 @@ class ConfigDictTest(BaseTest):
                 self._apply_simple_queue_listener_configuration(qspec)
                 manager.assert_not_called()
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
     @skip_if_tsan_fork
     @support.requires_subprocess()
     @unittest.skipUnless(support.Py_DEBUG, "requires a debug build for testing"
@@ -4109,6 +4110,7 @@ class ConfigDictTest(BaseTest):
         # log a message (this creates a record put in the queue)
         logging.getLogger().info(message_to_log)
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
     @skip_if_tsan_fork
     @support.requires_subprocess()
     def test_multiprocessing_queues(self):
@@ -5339,6 +5341,7 @@ class LogRecordTest(BaseTest):
         else:
             return results
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
     @skip_if_tsan_fork
     def test_multiprocessing(self):
         support.skip_if_broken_multiprocessing_synchronize()
