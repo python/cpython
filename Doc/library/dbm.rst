@@ -254,9 +254,6 @@ functionality like crash tolerance.
       * ``'s'``: Synchronized mode.
         Changes to the database will be written immediately to the file.
       * ``'u'``: Do not lock database.
-      * ``'m'``: Do not use :manpage:`mmap(2)`.
-        This may harm performance, but improve crash tolerance.
-        .. versionadded:: next
 
       Not all flags are valid for all versions of GDBM.
       See the :data:`open_flags` member for a list of supported flag characters.
