@@ -1531,9 +1531,10 @@ some built-in classes do not, such as :class:`bool`:
       ...
    TypeError: type 'bool' is not an acceptable base type
 
-To create a consistent MRO, all bases appear in the order
-they were specified in the base class list and every child class must appear before its
-base classes. Below is an example where this fails:
+In the resolved MRO of a class, the class's bases appear in the order they were
+specified in the class's bases list. Additionally, the MRO always lists a child
+class before any of its bases. A class definition will fail if it is impossible to
+resolve a consistent MRO that satisfies these rules from the list of bases provided:
 
 .. doctest::
 
@@ -1549,9 +1550,10 @@ in the base class list, but it must also appear after ``Base`` because it is a c
 ``Base``. This is a contradiction, so the class cannot be defined.
 
 If some of the bases have a custom :term:`metaclass`, the metaclass of the resulting class
-is chosen among the metaclasses of the bases. It must be a metaclass that is a subclass of
-all other candidate metaclasses. If no such metaclass exists, the class cannot be created,
-as explained in :ref:`metaclass-determination`.
+is chosen among the metaclasses of the bases and the explicitly specified metaclass of the
+child class. It must be a metaclass that is a subclass of
+all other candidate metaclasses. If no such metaclass exists among the candidates,
+the class cannot be created, as explained in :ref:`metaclass-determination`.
 
 Finally, the memory layouts of the bases must be compatible. This means that it must be
 possible to compute a *solid base* for the class. A class is a solid base if it has a
@@ -1561,7 +1563,8 @@ depending on the Python implementation.
 .. impl-detail::
 
    In CPython, many but not all classes defined in C are solid bases, including most
-   builtins but excluding most concrete :class:`Exception` classes. Generally, a C class
+   builtins (such as :class:`int` or :class:`BaseException`)
+   but excluding most concrete :class:`Exception` classes. Generally, a C class
    is a solid base if its underlying struct is different in size from its base class.
 
 Every class has a solid base. :class:`object`, the base class, has itself as its solid base.
@@ -1595,7 +1598,7 @@ Example:
    >>> class C3(SolidChild, Solid1):  # solid base is `SolidChild`
    ...    pass
    >>>
-   >>> # Error: solid bases are `Solid1` and `Solid2`, but they are not subclasses of each other.
+   >>> # Error: solid bases are `Solid1` and `Solid2`, but neither is a subclass of the other.
    >>> class C4(Solid1, Solid2):  # error: no single solid base
    ...    pass
    Traceback (most recent call last):
