@@ -1,2 +1,2 @@
-One-shot :func:`hmac.digest` now properly handles large keys and messages
-by delegating to :func:`hmac.new` when possible. Patch by Bénédikt Tran.
+One-shot :func:`hmac.digest` now properly handles large keys and messages.
+Patch by Bénédikt Tran.

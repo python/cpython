@@ -1504,42 +1504,33 @@ class PyMiscellaneousTests(unittest.TestCase):
             cache.pop('foo')
 
     @hashlib_helper.requires_openssl_hashdigest("md5")
-    @bigmemtest(size=_4G, memuse=2, dry_run=False)
+    @bigmemtest(size=_4G + 5, memuse=2, dry_run=False)
     def test_hmac_digest_overflow_error_openssl_only(self, size):
-        self.do_test_hmac_digest_overflow_error_fast(size, openssl=True)
+        hmac = import_fresh_module("hmac", blocked=["_hmac"])
+        self.do_test_hmac_digest_overflow_error_switch_to_slow(hmac, size)
 
     @hashlib_helper.requires_builtin_hashdigest("_md5", "md5")
-    @bigmemtest(size=_4G , memuse=2, dry_run=False)
+    @bigmemtest(size=_4G + 5, memuse=2, dry_run=False)
     def test_hmac_digest_overflow_error_builtin_only(self, size):
-        self.do_test_hmac_digest_overflow_error_fast(size, openssl=False)
+        hmac = import_fresh_module("hmac", blocked=["_hashlib"])
+        self.do_test_hmac_digest_overflow_error_switch_to_slow(hmac, size)
 
-    def do_test_hmac_digest_overflow_error_fast(self, size, *, openssl):
-        """Check that C hmac.digest() works for large inputs."""
-
-        if openssl:
-            hmac = import_fresh_module("hmac", blocked=["_hashlib"])
-            c_module_name, c_method_name = "_hmac", "new"
-        else:
-            hmac = import_fresh_module("hmac", blocked=["_hmac"])
-            c_module_name, c_method_name = "_hashlib", "hmac_new"
-
-        cext = import_helper.import_module(c_module_name)
-        cnew = getattr(cext, c_method_name)
+    def do_test_hmac_digest_overflow_error_switch_to_slow(self, hmac, size):
+        """Check that hmac.digest() falls back to pure Python."""
 
         bigkey = b'K' * size
         bigmsg = b'M' * size
 
         with patch.object(hmac, "_compute_digest_fallback") as slow:
-            with patch.object(cext, c_method_name, wraps=cnew) as new:
-                self.assertIsInstance(hmac.digest(bigkey, b'm', "md5"), bytes)
-            new.assert_called_once()
-            with patch.object(cext, c_method_name, wraps=cnew) as new:
-                self.assertIsInstance(hmac.digest(b'k', bigmsg, "md5"), bytes)
-            new.assert_called_once()
-        slow.assert_not_called()
+            self.assertIsInstance(hmac.digest(bigkey, b'm', "md5"), bytes)
+        slow.assert_called_once()
+
+        with patch.object(hmac, "_compute_digest_fallback") as slow:
+            self.assertIsInstance(hmac.digest(b'k', bigmsg, "md5"), bytes)
+        slow.assert_called_once()
 
     @hashlib_helper.requires_hashdigest("md5", openssl=True)
-    @bigmemtest(size=_4G, memuse=2, dry_run=False)
+    @bigmemtest(size=_4G + 5, memuse=2, dry_run=False)
     def test_hmac_digest_no_overflow_error_in_fallback(self, size):
         hmac = import_fresh_module("hmac", blocked=["_hashlib", "_hmac"])
 
