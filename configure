@@ -7254,6 +7254,8 @@ case $host/$ac_cv_cc_name in #(
     PY_SUPPORT_TIER=3 ;; #(
     x86_64-*-linux-android/clang) :
     PY_SUPPORT_TIER=3 ;; #(
+    wasm32-*-emscripten/emcc) :
+    PY_SUPPORT_TIER=3 ;; #(
   *) :
 
   PY_SUPPORT_TIER=0
@@ -9601,9 +9603,10 @@ fi
         as_fn_append LDFLAGS_NODIST " -sWASM_BIGINT"
 
         as_fn_append LINKFORSHARED " -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"
-    as_fn_append LINKFORSHARED " -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV"
+    as_fn_append LINKFORSHARED " -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV,HEAPU32,TTY"
     as_fn_append LINKFORSHARED " -sEXPORTED_FUNCTIONS=_main,_Py_Version,__PyRuntime,__PyEM_EMSCRIPTEN_COUNT_ARGS_OFFSET,_PyGILState_GetThisThreadState,__Py_DumpTraceback"
     as_fn_append LINKFORSHARED " -sSTACK_SIZE=5MB"
+        as_fn_append LINKFORSHARED " -sTEXTDECODER=2"
 
     if test "x$enable_wasm_dynamic_linking" = xyes
 then :
@@ -19058,7 +19061,7 @@ PLATFORM_OBJS=
 case $ac_sys_system in #(
   Emscripten) :
 
-    as_fn_append PLATFORM_OBJS ' Python/emscripten_signal.o Python/emscripten_trampoline.o'
+    as_fn_append PLATFORM_OBJS ' Python/emscripten_signal.o Python/emscripten_trampoline.o Python/emscripten_syscalls.o'
     as_fn_append PLATFORM_HEADERS ' $(srcdir)/Include/internal/pycore_emscripten_signal.h $(srcdir)/Include/internal/pycore_emscripten_trampoline.h'
    ;; #(
   *) :
@@ -28218,7 +28221,7 @@ printf "%s\n" "$ac_cv_normalize_century" >&6; }
 if test "$ac_cv_normalize_century" = yes
 then
 
-printf "%s\n" "#define Py_NORMALIZE_CENTURY 1" >>confdefs.h
+printf "%s\n" "#define _Py_NORMALIZE_CENTURY 1" >>confdefs.h
 
 fi
 
@@ -30846,8 +30849,8 @@ main (void)
 
       OBJ_nid2sn(NID_md5);
       OBJ_nid2sn(NID_sha1);
+      OBJ_nid2sn(NID_sha512);
       OBJ_nid2sn(NID_sha3_512);
-      OBJ_nid2sn(NID_blake2b512);
       EVP_PBE_scrypt(NULL, 0, NULL, 0, 2, 8, 1, 0, NULL, 0);
 
   ;
@@ -31177,9 +31180,7 @@ case $ac_sys_system in #(
 
 
 
-    py_cv_module_fcntl=n/a
     py_cv_module_readline=n/a
-    py_cv_module_termios=n/a
     py_cv_module_=n/a
 
    ;; #(

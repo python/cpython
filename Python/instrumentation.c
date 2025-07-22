@@ -1530,7 +1530,7 @@ initialize_lines(PyCodeObject *code, int bytes_per_entry)
                 case END_FOR:
                 case END_SEND:
                 case RESUME:
-            case POP_ITER:
+                case POP_ITER:
                     /* END_FOR cannot start a line, as it is skipped by FOR_ITER
                     * END_SEND cannot start a line, as it is skipped by SEND
                     * RESUME and POP_ITER must not be instrumented with INSTRUMENTED_LINE */
@@ -2558,18 +2558,22 @@ PyObject *_Py_CreateMonitoringObject(void)
     err = PyObject_SetAttrString(events, "NO_EVENTS", _PyLong_GetZero());
     if (err) goto error;
     PyObject *val = PyLong_FromLong(PY_MONITORING_DEBUGGER_ID);
+    assert(val != NULL); /* Can't return NULL because the int is small. */
     err = PyObject_SetAttrString(mod, "DEBUGGER_ID", val);
     Py_DECREF(val);
     if (err) goto error;
     val = PyLong_FromLong(PY_MONITORING_COVERAGE_ID);
+    assert(val != NULL);
     err = PyObject_SetAttrString(mod, "COVERAGE_ID", val);
     Py_DECREF(val);
     if (err) goto error;
     val = PyLong_FromLong(PY_MONITORING_PROFILER_ID);
+    assert(val != NULL);
     err = PyObject_SetAttrString(mod, "PROFILER_ID", val);
     Py_DECREF(val);
     if (err) goto error;
     val = PyLong_FromLong(PY_MONITORING_OPTIMIZER_ID);
+    assert(val != NULL);
     err = PyObject_SetAttrString(mod, "OPTIMIZER_ID", val);
     Py_DECREF(val);
     if (err) goto error;

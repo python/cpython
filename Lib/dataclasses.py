@@ -1265,7 +1265,7 @@ def _create_slots(defined_fields, inherited_slots, field_names, weakref_slot):
         doc = getattr(defined_fields.get(slot), 'doc', None)
         if doc is not None:
             seen_docs = True
-        slots.update({slot: doc})
+        slots[slot] = doc
 
     # We only return dict if there's at least one doc member,
     # otherwise we return tuple, which is the old default format.
@@ -1337,6 +1337,13 @@ def _add_slots(cls, is_frozen, weakref_slot, defined_fields):
                 or _update_func_cell_for__class__(member.fset, cls, newcls)
                 or _update_func_cell_for__class__(member.fdel, cls, newcls)):
                 break
+
+    # gh-135228: Make sure the original class can be garbage collected.
+    # Bypass mapping proxy to allow __dict__ to be removed
+    old_cls_dict = cls.__dict__ | _deproxier
+    old_cls_dict.pop('__dict__', None)
+    if "__weakref__" in cls.__dict__:
+        del cls.__weakref__
 
     return newcls
 
@@ -1732,3 +1739,11 @@ def _replace(self, /, **changes):
     # changes that aren't fields, this will correctly raise a
     # TypeError.
     return self.__class__(**changes)
+
+
+# Hack to the get the underlying dict out of a mappingproxy
+# Use it with: cls.__dict__ | _deproxier
+class _Deproxier:
+    def __ror__(self, other):
+        return other
+_deproxier = _Deproxier()

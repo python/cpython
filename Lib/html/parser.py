@@ -29,7 +29,8 @@ attr_charref = re.compile(r'&(#[0-9]+|#[xX][0-9a-fA-F]+|[a-zA-Z][a-zA-Z0-9]*)[;=
 starttagopen = re.compile('<[a-zA-Z]')
 endtagopen = re.compile('</[a-zA-Z]')
 piclose = re.compile('>')
-commentclose = re.compile(r'--\s*>')
+commentclose = re.compile(r'--!?>')
+commentabruptclose = re.compile(r'-?>')
 # Note:
 #  1) if you change tagfind/attrfind remember to update locatetagend too;
 #  2) if you change tagfind/attrfind and/or locatetagend the parser will
@@ -44,7 +45,7 @@ attrfind_tolerant = re.compile(r"""
   (
     (?<=['"\t\n\r\f /])[^\t\n\r\f />][^\t\n\r\f /=>]*  # attribute name
    )
-  (=                                # value indicator
+  ([\t\n\r\f ]*=[\t\n\r\f ]*        # value indicator
     ('[^']*'                        # LITA-enclosed value
     |"[^"]*"                        # LIT-enclosed value
     |(?!['"])[^>\t\n\r\f ]*         # bare value
@@ -56,7 +57,7 @@ locatetagend = re.compile(r"""
   [a-zA-Z][^\t\n\r\f />]*           # tag name
   [\t\n\r\f /]*                     # optional whitespace before attribute name
   (?:(?<=['"\t\n\r\f /])[^\t\n\r\f />][^\t\n\r\f /=>]*  # attribute name
-    (?:=                            # value indicator
+    (?:[\t\n\r\f ]*=[\t\n\r\f ]*    # value indicator
       (?:'[^']*'                    # LITA-enclosed value
         |"[^"]*"                    # LIT-enclosed value
         |(?!['"])[^>\t\n\r\f ]*     # bare value
@@ -127,6 +128,7 @@ class HTMLParser(_markupbase.ParserBase):
     """
 
     CDATA_CONTENT_ELEMENTS = ("script", "style")
+    RCDATA_CONTENT_ELEMENTS = ("textarea", "title")
 
     def __init__(self, *, convert_charrefs=True):
         """Initialize and reset this instance.
@@ -145,6 +147,7 @@ class HTMLParser(_markupbase.ParserBase):
         self.interesting = interesting_normal
         self.cdata_elem = None
         self._support_cdata = False
+        self._escapable = True
         super().reset()
 
     def feed(self, data):
@@ -166,14 +169,20 @@ class HTMLParser(_markupbase.ParserBase):
         """Return full source of start tag: '<...>'."""
         return self.__starttag_text
 
-    def set_cdata_mode(self, elem):
+    def set_cdata_mode(self, elem, *, escapable=False):
         self.cdata_elem = elem.lower()
-        self.interesting = re.compile(r'</%s(?=[\t\n\r\f />])' % self.cdata_elem,
-                                      re.IGNORECASE|re.ASCII)
+        self._escapable = escapable
+        if escapable and not self.convert_charrefs:
+            self.interesting = re.compile(r'&|</%s(?=[\t\n\r\f />])' % self.cdata_elem,
+                                          re.IGNORECASE|re.ASCII)
+        else:
+            self.interesting = re.compile(r'</%s(?=[\t\n\r\f />])' % self.cdata_elem,
+                                          re.IGNORECASE|re.ASCII)
 
     def clear_cdata_mode(self):
         self.interesting = interesting_normal
         self.cdata_elem = None
+        self._escapable = True
 
     def support_cdata(self, flag=True):
         self._support_cdata = flag
@@ -209,7 +218,7 @@ class HTMLParser(_markupbase.ParserBase):
                         break
                     j = n
             if i < j:
-                if self.convert_charrefs and not self.cdata_elem:
+                if self.convert_charrefs and self._escapable:
                     self.handle_data(unescape(rawdata[i:j]))
                 else:
                     self.handle_data(rawdata[i:j])
@@ -314,7 +323,7 @@ class HTMLParser(_markupbase.ParserBase):
                 assert 0, "interesting.search() lied"
         # end while
         if end and i < n:
-            if self.convert_charrefs and not self.cdata_elem:
+            if self.convert_charrefs and self._escapable:
                 self.handle_data(unescape(rawdata[i:n]))
             else:
                 self.handle_data(rawdata[i:n])
@@ -349,6 +358,21 @@ class HTMLParser(_markupbase.ParserBase):
             return gtpos+1
         else:
             return self.parse_bogus_comment(i)
+
+    # Internal -- parse comment, return length or -1 if not terminated
+    # see https://html.spec.whatwg.org/multipage/parsing.html#comment-start-state
+    def parse_comment(self, i, report=True):
+        rawdata = self.rawdata
+        assert rawdata.startswith('<!--', i), 'unexpected call to parse_comment()'
+        match = commentclose.search(rawdata, i+4)
+        if not match:
+            match = commentabruptclose.match(rawdata, i+4)
+            if not match:
+                return -1
+        if report:
+            j = match.start()
+            self.handle_comment(rawdata[i+4: j])
+        return match.end()
 
     # Internal -- parse bogus comment, return length or -1 if not terminated
     # see https://html.spec.whatwg.org/multipage/parsing.html#bogus-comment-state
@@ -418,6 +442,8 @@ class HTMLParser(_markupbase.ParserBase):
             self.handle_starttag(tag, attrs)
             if tag in self.CDATA_CONTENT_ELEMENTS:
                 self.set_cdata_mode(tag)
+            elif tag in self.RCDATA_CONTENT_ELEMENTS:
+                self.set_cdata_mode(tag, escapable=True)
         return endpos
 
     # Internal -- check to see if we have a complete starttag; return end

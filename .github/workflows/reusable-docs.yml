@@ -66,7 +66,7 @@ jobs:
       run: |
         set -Eeuo pipefail
         # Build docs with the nit-picky option; write warnings to file
-        make -C Doc/ PYTHON=../python SPHINXOPTS="--quiet --nitpicky --fail-on-warning --warning-file sphinx-warnings.txt" html
+        make -C Doc/ PYTHON=../python SPHINXOPTS="--quiet --nitpicky --warning-file sphinx-warnings.txt" html
     - name: 'Check warnings'
       if: github.event_name == 'pull_request'
       run: |
@@ -75,6 +75,18 @@ jobs:
           --fail-if-regression \
           --fail-if-improved \
           --fail-if-new-news-nit
+    - name: 'Build EPUB documentation'
+      continue-on-error: true
+      run: |
+        set -Eeuo pipefail
+        make -C Doc/ PYTHON=../python SPHINXOPTS="--quiet" epub
+        pip install epubcheck
+        epubcheck Doc/build/epub/Python.epub &> Doc/epubcheck.txt
+    - name: 'Check for fatal errors in EPUB'
+      if: github.event_name == 'pull_request'
+      continue-on-error: true  # until gh-136155 is fixed
+      run: |
+        python Doc/tools/check-epub.py
 
   # Run "doctest" on HEAD as new syntax doesn't exist in the latest stable release
   doctest:

@@ -18,8 +18,3 @@ according to the HTML5 standard.
 
 * Multiple ``=`` between attribute name and value are no longer collapsed.
   E.g. ``<a foo==bar>`` produces attribute "foo" with value "=bar".
-
-* Whitespaces between the ``=`` separator and attribute name or value are no
-  longer ignored. E.g. ``<a foo =bar>`` produces two attributes "foo" and
-  "=bar", both with value None; ``<a foo= bar>`` produces two attributes:
-  "foo" with value "" and "bar" with value None.
