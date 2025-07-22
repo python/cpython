@@ -241,13 +241,23 @@ def digest(key, msg, digest):
     if _hashopenssl and isinstance(digest, (str, _functype)):
         try:
             return _hashopenssl.hmac_digest(key, msg, digest)
+        except OverflowError:
+            try:
+                return _hashopenssl.hmac_new(key, msg, digest).digest()
+            except _hashopenssl.UnsupportedDigestmodError:
+                pass
         except _hashopenssl.UnsupportedDigestmodError:
             pass
 
     if _hmac and isinstance(digest, str):
         try:
             return _hmac.compute_digest(key, msg, digest)
-        except (OverflowError, _hmac.UnknownHashError):
+        except OverflowError:
+            try:
+                return _hmac.new(key, msg, digest).digest()
+            except _hmac.UnknownHashError:
+                pass
+        except _hmac.UnknownHashError:
             pass
 
     return _compute_digest_fallback(key, msg, digest)
