@@ -112,8 +112,8 @@ an unknown set of names into the interpreter, possibly hiding some things
 you have already defined.
 
 Note that in general the practice of importing ``*`` from a module or package is
-frowned upon, since it often causes poorly readable code. However, it is okay to
-use it to save typing in interactive sessions.
+frowned upon, since it often causes poorly readable code. However, it's acceptable
+only in interactive sessions for exploration; avoid in production code.
 
 If the module name is followed by :keyword:`!as`, then the name
 following :keyword:`!as` is bound directly to the imported module.
