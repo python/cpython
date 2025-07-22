@@ -8,7 +8,7 @@ import struct
 import sys
 import unittest
 from test.support import (
-    cpython_only, get_pagesize, is_apple, requires_subprocess, verbose
+    cpython_only, get_pagesize, is_apple, requires_subprocess, verbose, is_emscripten
 )
 from test.support.import_helper import import_module
 from test.support.os_helper import TESTFN, unlink, make_bad_fd
@@ -211,6 +211,7 @@ class TestFcntl(unittest.TestCase):
     @unittest.skipUnless(
         hasattr(fcntl, "F_SETPIPE_SZ") and hasattr(fcntl, "F_GETPIPE_SZ"),
         "F_SETPIPE_SZ and F_GETPIPE_SZ are not available on all platforms.")
+    @unittest.skipIf(is_emscripten, "Emscripten pipefs doesn't support these")
     def test_fcntl_f_pipesize(self):
         test_pipe_r, test_pipe_w = os.pipe()
         try:
