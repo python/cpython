@@ -129,14 +129,28 @@ The module defines the following items:
 
    .. versionadded:: 3.3
 
+.. data:: ZIP_ZSTANDARD
+
+   The numeric constant for Zstandard compression. This requires the
+   :mod:`compression.zstd` module.
+
    .. note::
 
-      The ZIP file format specification has included support for bzip2 compression
-      since 2001, and for LZMA compression since 2006. However, some tools
-      (including older Python releases) do not support these compression
-      methods, and may either refuse to process the ZIP file altogether,
-      or fail to extract individual files.
+      In APPNOTE 6.3.7, the method ID ``20`` was assigned to Zstandard
+      compression. This was changed in APPNOTE 6.3.8 to method ID ``93`` to
+      avoid conflicts, with method ID ``20`` being deprecated. For
+      compatibility, the :mod:`!zipfile` module reads both method IDs but will
+      only write data with method ID ``93``.
 
+   .. versionadded:: 3.14
+
+.. note::
+
+   The ZIP file format specification has included support for bzip2 compression
+   since 2001, for LZMA compression since 2006, and Zstandard compression since
+   2020. However, some tools (including older Python releases) do not support
+   these compression methods, and may either refuse to process the ZIP file
+   altogether, or fail to extract individual files.
 
 .. seealso::
 
@@ -176,10 +190,11 @@ ZipFile Objects
 
    *compression* is the ZIP compression method to use when writing the archive,
    and should be :const:`ZIP_STORED`, :const:`ZIP_DEFLATED`,
-   :const:`ZIP_BZIP2` or :const:`ZIP_LZMA`; unrecognized
-   values will cause :exc:`NotImplementedError` to be raised.  If
-   :const:`ZIP_DEFLATED`, :const:`ZIP_BZIP2` or :const:`ZIP_LZMA` is specified
-   but the corresponding module (:mod:`zlib`, :mod:`bz2` or :mod:`lzma`) is not
+   :const:`ZIP_BZIP2`, :const:`ZIP_LZMA`, or :const:`ZIP_ZSTANDARD`;
+   unrecognized values will cause :exc:`NotImplementedError` to be raised.  If
+   :const:`ZIP_DEFLATED`, :const:`ZIP_BZIP2`, :const:`ZIP_LZMA`, or
+   :const:`ZIP_ZSTANDARD` is specified but the corresponding module
+   (:mod:`zlib`, :mod:`bz2`, :mod:`lzma`, or :mod:`compression.zstd`) is not
    available, :exc:`RuntimeError` is raised. The default is :const:`ZIP_STORED`.
 
    If *allowZip64* is ``True`` (the default) zipfile will create ZIP files that
@@ -194,6 +209,10 @@ ZipFile Objects
    (see :class:`zlib <zlib.compressobj>` for more information).
    When using :const:`ZIP_BZIP2` integers ``1`` through ``9`` are accepted
    (see :class:`bz2 <bz2.BZ2File>` for more information).
+   When using :const:`ZIP_ZSTANDARD` integers ``-131072`` through ``22`` are
+   commonly accepted (see
+   :attr:`CompressionParameter.compression_level <compression.zstd.CompressionParameter.compression_level>`
+   for more on retrieving valid values and their meaning).
 
    The *strict_timestamps* argument, when set to ``False``, allows to
    zip files older than 1980-01-01 at the cost of setting the
@@ -415,9 +434,10 @@ ZipFile Objects
    read or append. *pwd* is the password used for encrypted files as a :class:`bytes`
    object and, if specified, overrides the default password set with :meth:`setpassword`.
    Calling :meth:`read` on a ZipFile that uses a compression method other than
-   :const:`ZIP_STORED`, :const:`ZIP_DEFLATED`, :const:`ZIP_BZIP2` or
-   :const:`ZIP_LZMA` will raise a :exc:`NotImplementedError`. An error will also
-   be raised if the corresponding compression module is not available.
+   :const:`ZIP_STORED`, :const:`ZIP_DEFLATED`, :const:`ZIP_BZIP2`,
+   :const:`ZIP_LZMA`, or :const:`ZIP_ZSTANDARD` will raise a
+   :exc:`NotImplementedError`. An error will also be raised if the
+   corresponding compression module is not available.
 
    .. versionchanged:: 3.6
       Calling :meth:`read` on a closed ZipFile will raise a :exc:`ValueError`.

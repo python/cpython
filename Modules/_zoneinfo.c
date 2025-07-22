@@ -7,6 +7,7 @@
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_typeobject.h"    // _PyType_GetModuleState()
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 #include "datetime.h"             // PyDateTime_TZInfo
 
@@ -375,9 +376,7 @@ zoneinfo_dealloc(PyObject *obj_self)
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
 
-    if (self->weakreflist != NULL) {
-        PyObject_ClearWeakRefs(obj_self);
-    }
+    FT_CLEAR_WEAKREFS(obj_self, self->weakreflist);
 
     if (self->trans_list_utc != NULL) {
         PyMem_Free(self->trans_list_utc);
@@ -2605,10 +2604,10 @@ static PyMethodDef zoneinfo_methods[] = {
     ZONEINFO_ZONEINFO_UTCOFFSET_METHODDEF
     ZONEINFO_ZONEINFO_DST_METHODDEF
     ZONEINFO_ZONEINFO_TZNAME_METHODDEF
-    {"fromutc", (PyCFunction)zoneinfo_fromutc, METH_O,
+    {"fromutc", zoneinfo_fromutc, METH_O,
      PyDoc_STR("Given a datetime with local time in UTC, retrieve an adjusted "
                "datetime in local time.")},
-    {"__reduce__", (PyCFunction)zoneinfo_reduce, METH_NOARGS,
+    {"__reduce__", zoneinfo_reduce, METH_NOARGS,
      PyDoc_STR("Function for serialization with the pickle protocol.")},
     ZONEINFO_ZONEINFO__UNPICKLE_METHODDEF
     {"__init_subclass__", _PyCFunction_CAST(zoneinfo_init_subclass),

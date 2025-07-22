@@ -83,7 +83,7 @@ class FinalizationTest(unittest.TestCase):
         g = gen()
         next(g)
         g.send(g)
-        self.assertGreater(sys.getrefcount(g), 2)
+        self.assertGreaterEqual(sys.getrefcount(g), 2)
         self.assertFalse(finalized)
         del g
         support.gc_collect()
@@ -267,6 +267,28 @@ class GeneratorTest(unittest.TestCase):
 
         #This should not raise
         loop()
+
+    def test_genexpr_only_calls_dunder_iter_once(self):
+
+        class Iterator:
+
+            def __init__(self):
+                self.val = 0
+
+            def __next__(self):
+                if self.val == 2:
+                    raise StopIteration
+                self.val += 1
+                return self.val
+
+            # No __iter__ method
+
+        class C:
+
+            def __iter__(self):
+                return Iterator()
+
+        self.assertEqual([1,2], list(i for i in C()))
 
 
 class ModifyUnderlyingIterableTest(unittest.TestCase):

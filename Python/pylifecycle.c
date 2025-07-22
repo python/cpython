@@ -13,6 +13,7 @@
 #include "pycore_freelist.h"      // _PyObject_ClearFreeLists()
 #include "pycore_global_objects_fini_generated.h"  // _PyStaticObjects_CheckRefcnt()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
+#include "pycore_interpolation.h" // _PyInterpolation_InitTypes()
 #include "pycore_long.h"          // _PyLong_InitTypes()
 #include "pycore_object.h"        // _PyDebug_PrintTotalRefs()
 #include "pycore_obmalloc.h"      // _PyMem_init_obmalloc()
@@ -754,6 +755,16 @@ pycore_init_types(PyInterpreterState *interp)
         return status;
     }
 
+    status = _PyInterpolation_InitTypes(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    status = _PyDateTime_InitTypes(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
     return _PyStatus_OK();
 }
 
@@ -789,6 +800,26 @@ pycore_init_builtins(PyThreadState *tstate)
         goto error;
     }
     interp->callable_cache.len = len;
+
+    PyObject *all = PyDict_GetItemWithError(builtins_dict, &_Py_ID(all));
+    if (!all) {
+        goto error;
+    }
+
+    PyObject *any = PyDict_GetItemWithError(builtins_dict, &_Py_ID(any));
+    if (!any) {
+        goto error;
+    }
+
+    interp->common_consts[CONSTANT_ASSERTIONERROR] = PyExc_AssertionError;
+    interp->common_consts[CONSTANT_NOTIMPLEMENTEDERROR] = PyExc_NotImplementedError;
+    interp->common_consts[CONSTANT_BUILTIN_TUPLE] = (PyObject*)&PyTuple_Type;
+    interp->common_consts[CONSTANT_BUILTIN_ALL] = all;
+    interp->common_consts[CONSTANT_BUILTIN_ANY] = any;
+
+    for (int i=0; i < NUM_COMMON_CONSTANTS; i++) {
+        assert(interp->common_consts[i] != NULL);
+    }
 
     PyObject *list_append = _PyType_Lookup(&PyList_Type, &_Py_ID(append));
     if (list_append == NULL) {
@@ -828,6 +859,10 @@ error:
 static PyStatus
 pycore_interp_init(PyThreadState *tstate)
 {
+    _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
+    if (_tstate->c_stack_hard_limit == 0) {
+        _Py_InitializeRecursionLimits(tstate);
+    }
     PyInterpreterState *interp = tstate->interp;
     PyStatus status;
     PyObject *sysmod = NULL;
@@ -947,7 +982,7 @@ _Py_PreInitializeFromPyArgv(const PyPreConfig *src_config, const _PyArgv *args)
         return _PyStatus_OK();
     }
 
-    /* Note: preinitialized remains 1 on error, it is only set to 0
+    /* Note: preinitializing remains 1 on error, it is only set to 0
        at exit on success. */
     runtime->preinitializing = 1;
 
@@ -1253,7 +1288,7 @@ init_interp_main(PyThreadState *tstate)
     if (is_main_interp) {
         /* Initialize warnings. */
         PyObject *warnoptions;
-        if (_PySys_GetOptionalAttrString("warnoptions", &warnoptions) < 0) {
+        if (PySys_GetOptionalAttrString("warnoptions", &warnoptions) < 0) {
             return _PyStatus_ERR("can't initialize warnings");
         }
         if (warnoptions != NULL && PyList_Check(warnoptions) &&
@@ -1672,8 +1707,10 @@ finalize_modules(PyThreadState *tstate)
 #endif
 
     // Stop watching __builtin__ modifications
-    PyDict_Unwatch(0, interp->builtins);
-
+    if (PyDict_Unwatch(0, interp->builtins) < 0) {
+        // might happen if interp is cleared before watching the __builtin__
+        PyErr_Clear();
+    }
     PyObject *modules = _PyImport_GetModules(interp);
     if (modules == NULL) {
         // Already done
@@ -1776,7 +1813,7 @@ flush_std_files(void)
     PyObject *file;
     int status = 0;
 
-    if (_PySys_GetOptionalAttr(&_Py_ID(stdout), &file) < 0) {
+    if (PySys_GetOptionalAttr(&_Py_ID(stdout), &file) < 0) {
         status = -1;
     }
     else if (file != NULL && file != Py_None && !file_is_closed(file)) {
@@ -1789,7 +1826,7 @@ flush_std_files(void)
     }
     Py_XDECREF(file);
 
-    if (_PySys_GetOptionalAttr(&_Py_ID(stderr), &file) < 0) {
+    if (PySys_GetOptionalAttr(&_Py_ID(stderr), &file) < 0) {
         PyErr_Clear();
         status = -1;
     }
@@ -2347,15 +2384,13 @@ new_interpreter(PyThreadState **tstate_p,
 error:
     *tstate_p = NULL;
     if (tstate != NULL) {
-        PyThreadState_Clear(tstate);
-        _PyThreadState_Detach(tstate);
-        PyThreadState_Delete(tstate);
+        Py_EndInterpreter(tstate);
+    } else {
+        PyInterpreterState_Delete(interp);
     }
     if (save_tstate != NULL) {
         _PyThreadState_Attach(save_tstate);
     }
-    PyInterpreterState_Delete(interp);
-
     return status;
 }
 
@@ -2735,7 +2770,7 @@ init_set_builtins_open(void)
         goto error;
     }
 
-    if (!(wrapper = PyImport_ImportModuleAttrString("io", "open"))) {
+    if (!(wrapper = PyImport_ImportModuleAttrString("_io", "open"))) {
         goto error;
     }
 
@@ -2780,7 +2815,7 @@ init_sys_streams(PyThreadState *tstate)
     }
 #endif
 
-    if (!(iomod = PyImport_ImportModule("io"))) {
+    if (!(iomod = PyImport_ImportModule("_io"))) {
         goto error;
     }
 
@@ -3016,7 +3051,7 @@ _Py_FatalError_PrintExc(PyThreadState *tstate)
     }
 
     PyObject *ferr;
-    if (_PySys_GetOptionalAttr(&_Py_ID(stderr), &ferr) < 0) {
+    if (PySys_GetOptionalAttr(&_Py_ID(stderr), &ferr) < 0) {
         _PyErr_Clear(tstate);
     }
     if (ferr == NULL || ferr == Py_None) {
@@ -3114,7 +3149,7 @@ static inline void _Py_NO_RETURN
 fatal_error_exit(int status)
 {
     if (status < 0) {
-#if defined(MS_WINDOWS) && defined(_DEBUG)
+#if defined(MS_WINDOWS) && defined(Py_DEBUG)
         DebugBreak();
 #endif
         abort();

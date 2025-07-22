@@ -8,12 +8,13 @@ import select
 import subprocess
 import sys
 import tempfile
-from unittest import TestCase, skipUnless, skipIf
+from pkgutil import ModuleInfo
+from unittest import TestCase, skipUnless, skipIf, SkipTest
 from unittest.mock import patch
-from test.support import force_not_colorized, make_clean_env
-from test.support import SHORT_TIMEOUT
+from test.support import force_not_colorized, make_clean_env, Py_DEBUG
+from test.support import has_subprocess_support, SHORT_TIMEOUT, STDLIB_DIR
 from test.support.import_helper import import_module
-from test.support.os_helper import unlink
+from test.support.os_helper import EnvironmentVarGuard, unlink
 
 from .support import (
     FakeConsole,
@@ -25,6 +26,7 @@ from .support import (
     code_to_events,
 )
 from _pyrepl.console import Event
+from _pyrepl._module_completer import ImportParser, ModuleCompleter
 from _pyrepl.readline import (ReadlineAlikeReader, ReadlineConfig,
                               _ReadlineWrapper)
 from _pyrepl.readline import multiline_input as readline_multiline_input
@@ -36,6 +38,10 @@ except ImportError:
 
 
 class ReplTestCase(TestCase):
+    def setUp(self):
+        if not has_subprocess_support:
+            raise SkipTest("test module requires subprocess")
+
     def run_repl(
         self,
         repl_input: str | list[str],
@@ -43,6 +49,8 @@ class ReplTestCase(TestCase):
         *,
         cmdline_args: list[str] | None = None,
         cwd: str | None = None,
+        skip: bool = False,
+        timeout: float = SHORT_TIMEOUT,
     ) -> tuple[str, int]:
         temp_dir = None
         if cwd is None:
@@ -50,7 +58,12 @@ class ReplTestCase(TestCase):
             cwd = temp_dir.name
         try:
             return self._run_repl(
-                repl_input, env=env, cmdline_args=cmdline_args, cwd=cwd
+                repl_input,
+                env=env,
+                cmdline_args=cmdline_args,
+                cwd=cwd,
+                skip=skip,
+                timeout=timeout,
             )
         finally:
             if temp_dir is not None:
@@ -63,6 +76,8 @@ class ReplTestCase(TestCase):
         env: dict | None,
         cmdline_args: list[str] | None,
         cwd: str,
+        skip: bool,
+        timeout: float,
     ) -> tuple[str, int]:
         assert pty
         master_fd, slave_fd = pty.openpty()
@@ -100,7 +115,7 @@ class ReplTestCase(TestCase):
         os.write(master_fd, repl_input.encode("utf-8"))
 
         output = []
-        while select.select([master_fd], [], [], SHORT_TIMEOUT)[0]:
+        while select.select([master_fd], [], [], timeout)[0]:
             try:
                 data = os.read(master_fd, 1024).decode("utf-8")
                 if not data:
@@ -111,15 +126,19 @@ class ReplTestCase(TestCase):
         else:
             os.close(master_fd)
             process.kill()
+            process.wait(timeout=timeout)
             self.fail(f"Timeout while waiting for output, got: {''.join(output)}")
 
         os.close(master_fd)
         try:
-            exit_code = process.wait(timeout=SHORT_TIMEOUT)
+            exit_code = process.wait(timeout=timeout)
         except subprocess.TimeoutExpired:
             process.kill()
             exit_code = process.wait()
-        return "".join(output), exit_code
+        output = "".join(output)
+        if skip and "can't use pyrepl" in output:
+            self.skipTest("pyrepl not available")
+        return output, exit_code
 
 
 class TestCursorPosition(TestCase):
@@ -437,6 +456,11 @@ class TestPyReplAutoindent(TestCase):
             "    "
         )
         # fmt: on
+
+        events = code_to_events(input_code)
+        reader = self.prepare_reader(events)
+        output = multiline_input(reader)
+        self.assertEqual(output, output_code)
 
     def test_auto_indent_continuation(self):
         # auto indenting according to previous user indentation
@@ -896,6 +920,282 @@ class TestPyReplCompleter(TestCase):
         self.assertEqual(mock_stderr.getvalue(), "")
 
 
+class TestPyReplModuleCompleter(TestCase):
+    def setUp(self):
+        import importlib
+        # Make iter_modules() search only the standard library.
+        # This makes the test more reliable in case there are
+        # other user packages/scripts on PYTHONPATH which can
+        # interfere with the completions.
+        lib_path = os.path.dirname(importlib.__path__[0])
+        self._saved_sys_path = sys.path
+        sys.path = [lib_path]
+
+    def tearDown(self):
+        sys.path = self._saved_sys_path
+
+    def prepare_reader(self, events, namespace):
+        console = FakeConsole(events)
+        config = ReadlineConfig()
+        config.module_completer = ModuleCompleter(namespace)
+        config.readline_completer = rlcompleter.Completer(namespace).complete
+        reader = ReadlineAlikeReader(console=console, config=config)
+        return reader
+
+    def test_import_completions(self):
+        cases = (
+            ("import path\t\n", "import pathlib"),
+            ("import importlib.\t\tres\t\n", "import importlib.resources"),
+            ("import importlib.resources.\t\ta\t\n", "import importlib.resources.abc"),
+            ("import foo, impo\t\n", "import foo, importlib"),
+            ("import foo as bar, impo\t\n", "import foo as bar, importlib"),
+            ("from impo\t\n", "from importlib"),
+            ("from importlib.res\t\n", "from importlib.resources"),
+            ("from importlib.\t\tres\t\n", "from importlib.resources"),
+            ("from importlib.resources.ab\t\n", "from importlib.resources.abc"),
+            ("from importlib import mac\t\n", "from importlib import machinery"),
+            ("from importlib import res\t\n", "from importlib import resources"),
+            ("from importlib.res\t import a\t\n", "from importlib.resources import abc"),
+        )
+        for code, expected in cases:
+            with self.subTest(code=code):
+                events = code_to_events(code)
+                reader = self.prepare_reader(events, namespace={})
+                output = reader.readline()
+                self.assertEqual(output, expected)
+
+    @patch("pkgutil.iter_modules", lambda: [ModuleInfo(None, "public", True),
+                                            ModuleInfo(None, "_private", True)])
+    @patch("sys.builtin_module_names", ())
+    def test_private_completions(self):
+        cases = (
+            # Return public methods by default
+            ("import \t\n", "import public"),
+            ("from \t\n", "from public"),
+            # Return private methods if explicitly specified
+            ("import _\t\n", "import _private"),
+            ("from _\t\n", "from _private"),
+        )
+        for code, expected in cases:
+            with self.subTest(code=code):
+                events = code_to_events(code)
+                reader = self.prepare_reader(events, namespace={})
+                output = reader.readline()
+                self.assertEqual(output, expected)
+
+    @patch(
+        "_pyrepl._module_completer.ModuleCompleter.iter_submodules",
+        lambda *_: [
+            ModuleInfo(None, "public", True),
+            ModuleInfo(None, "_private", True),
+        ],
+    )
+    def test_sub_module_private_completions(self):
+        cases = (
+            # Return public methods by default
+            ("from foo import \t\n", "from foo import public"),
+            # Return private methods if explicitly specified
+            ("from foo import _\t\n", "from foo import _private"),
+        )
+        for code, expected in cases:
+            with self.subTest(code=code):
+                events = code_to_events(code)
+                reader = self.prepare_reader(events, namespace={})
+                output = reader.readline()
+                self.assertEqual(output, expected)
+
+    def test_builtin_completion_top_level(self):
+        import importlib
+        # Make iter_modules() search only the standard library.
+        # This makes the test more reliable in case there are
+        # other user packages/scripts on PYTHONPATH which can
+        # intefere with the completions.
+        lib_path = os.path.dirname(importlib.__path__[0])
+        sys.path = [lib_path]
+
+        cases = (
+            ("import bui\t\n", "import builtins"),
+            ("from bui\t\n", "from builtins"),
+        )
+        for code, expected in cases:
+            with self.subTest(code=code):
+                events = code_to_events(code)
+                reader = self.prepare_reader(events, namespace={})
+                output = reader.readline()
+                self.assertEqual(output, expected)
+
+    def test_relative_import_completions(self):
+        cases = (
+            (None, "from .readl\t\n", "from .readl"),
+            (None, "from . import readl\t\n", "from . import readl"),
+            ("_pyrepl", "from .readl\t\n", "from .readline"),
+            ("_pyrepl", "from . import readl\t\n", "from . import readline"),
+        )
+        for package, code, expected in cases:
+            with self.subTest(code=code):
+                events = code_to_events(code)
+                reader = self.prepare_reader(events, namespace={"__package__": package})
+                output = reader.readline()
+                self.assertEqual(output, expected)
+
+    @patch("pkgutil.iter_modules", lambda: [ModuleInfo(None, "valid_name", True),
+                                            ModuleInfo(None, "invalid-name", True)])
+    def test_invalid_identifiers(self):
+        # Make sure modules which are not valid identifiers
+        # are not suggested as those cannot be imported via 'import'.
+        cases = (
+            ("import valid\t\n", "import valid_name"),
+            # 'invalid-name' contains a dash and should not be completed
+            ("import invalid\t\n", "import invalid"),
+        )
+        for code, expected in cases:
+            with self.subTest(code=code):
+                events = code_to_events(code)
+                reader = self.prepare_reader(events, namespace={})
+                output = reader.readline()
+                self.assertEqual(output, expected)
+
+    def test_no_fallback_on_regular_completion(self):
+        cases = (
+            ("import pri\t\n", "import pri"),
+            ("from pri\t\n", "from pri"),
+            ("from typing import Na\t\n", "from typing import Na"),
+        )
+        for code, expected in cases:
+            with self.subTest(code=code):
+                events = code_to_events(code)
+                reader = self.prepare_reader(events, namespace={})
+                output = reader.readline()
+                self.assertEqual(output, expected)
+
+    def test_get_path_and_prefix(self):
+        cases = (
+            ('', ('', '')),
+            ('.', ('.', '')),
+            ('..', ('..', '')),
+            ('.foo', ('.', 'foo')),
+            ('..foo', ('..', 'foo')),
+            ('..foo.', ('..foo', '')),
+            ('..foo.bar', ('..foo', 'bar')),
+            ('.foo.bar.', ('.foo.bar', '')),
+            ('..foo.bar.', ('..foo.bar', '')),
+            ('foo', ('', 'foo')),
+            ('foo.', ('foo', '')),
+            ('foo.bar', ('foo', 'bar')),
+            ('foo.bar.', ('foo.bar', '')),
+            ('foo.bar.baz', ('foo.bar', 'baz')),
+        )
+        completer = ModuleCompleter()
+        for name, expected in cases:
+            with self.subTest(name=name):
+                self.assertEqual(completer.get_path_and_prefix(name), expected)
+
+    def test_parse(self):
+        cases = (
+            ('import ', (None, '')),
+            ('import foo', (None, 'foo')),
+            ('import foo,', (None, '')),
+            ('import foo, ', (None, '')),
+            ('import foo, bar', (None, 'bar')),
+            ('import foo, bar, baz', (None, 'baz')),
+            ('import foo as bar,', (None, '')),
+            ('import foo as bar, ', (None, '')),
+            ('import foo as bar, baz', (None, 'baz')),
+            ('import a.', (None, 'a.')),
+            ('import a.b', (None, 'a.b')),
+            ('import a.b.', (None, 'a.b.')),
+            ('import a.b.c', (None, 'a.b.c')),
+            ('import a.b.c, foo', (None, 'foo')),
+            ('import a.b.c, foo.bar', (None, 'foo.bar')),
+            ('import a.b.c, foo.bar,', (None, '')),
+            ('import a.b.c, foo.bar, ', (None, '')),
+            ('from foo', ('foo', None)),
+            ('from a.', ('a.', None)),
+            ('from a.b', ('a.b', None)),
+            ('from a.b.', ('a.b.', None)),
+            ('from a.b.c', ('a.b.c', None)),
+            ('from foo import ', ('foo', '')),
+            ('from foo import a', ('foo', 'a')),
+            ('from ', ('', None)),
+            ('from . import a', ('.', 'a')),
+            ('from .foo import a', ('.foo', 'a')),
+            ('from ..foo import a', ('..foo', 'a')),
+            ('from foo import (', ('foo', '')),
+            ('from foo import ( ', ('foo', '')),
+            ('from foo import (a', ('foo', 'a')),
+            ('from foo import (a,', ('foo', '')),
+            ('from foo import (a, ', ('foo', '')),
+            ('from foo import (a, c', ('foo', 'c')),
+            ('from foo import (a as b, c', ('foo', 'c')),
+        )
+        for code, parsed in cases:
+            parser = ImportParser(code)
+            actual = parser.parse()
+            with self.subTest(code=code):
+                self.assertEqual(actual, parsed)
+            # The parser should not get tripped up by any
+            # other preceding statements
+            _code = f'import xyz\n{code}'
+            parser = ImportParser(_code)
+            actual = parser.parse()
+            with self.subTest(code=_code):
+                self.assertEqual(actual, parsed)
+            _code = f'import xyz;{code}'
+            parser = ImportParser(_code)
+            actual = parser.parse()
+            with self.subTest(code=_code):
+                self.assertEqual(actual, parsed)
+
+    def test_parse_error(self):
+        cases = (
+            '',
+            'import foo ',
+            'from foo ',
+            'import foo. ',
+            'import foo.bar ',
+            'from foo ',
+            'from foo. ',
+            'from foo.bar ',
+            'from foo import bar ',
+            'from foo import (bar ',
+            'from foo import bar, baz ',
+            'import foo as',
+            'import a. as',
+            'import a.b as',
+            'import a.b. as',
+            'import a.b.c as',
+            'import (foo',
+            'import (',
+            'import .foo',
+            'import ..foo',
+            'import .foo.bar',
+            'import foo; x = 1',
+            'import a.; x = 1',
+            'import a.b; x = 1',
+            'import a.b.; x = 1',
+            'import a.b.c; x = 1',
+            'from foo import a as',
+            'from foo import a. as',
+            'from foo import a.b as',
+            'from foo import a.b. as',
+            'from foo import a.b.c as',
+            'from foo impo',
+            'import import',
+            'import from',
+            'import as',
+            'from import',
+            'from from',
+            'from as',
+            'from foo import import',
+            'from foo import from',
+            'from foo import as',
+        )
+        for code in cases:
+            parser = ImportParser(code)
+            actual = parser.parse()
+            with self.subTest(code=code):
+                self.assertEqual(actual, None)
+
 class TestPasteEvent(TestCase):
     def prepare_reader(self, events):
         console = FakeConsole(events)
@@ -1075,6 +1375,7 @@ class TestMain(ReplTestCase):
         # Cleanup from PYTHON* variables to isolate from local
         # user settings, see #121359.  Such variables should be
         # added later in test methods to patched os.environ.
+        super().setUp()
         patcher = patch('os.environ', new=make_clean_env())
         self.addCleanup(patcher.stop)
         patcher.start()
@@ -1083,9 +1384,7 @@ class TestMain(ReplTestCase):
     def test_exposed_globals_in_repl(self):
         pre = "['__builtins__'"
         post = "'__loader__', '__name__', '__package__', '__spec__']"
-        output, exit_code = self.run_repl(["sorted(dir())", "exit()"])
-        if "can't use pyrepl" in output:
-            self.skipTest("pyrepl not available")
+        output, exit_code = self.run_repl(["sorted(dir())", "exit()"], skip=True)
         self.assertEqual(exit_code, 0)
 
         # if `__main__` is not a file (impossible with pyrepl)
@@ -1118,7 +1417,7 @@ class TestMain(ReplTestCase):
             )
 
     @force_not_colorized
-    def _run_repl_globals_test(self, expectations, *, as_file=False, as_module=False):
+    def _run_repl_globals_test(self, expectations, *, as_file=False, as_module=False, pythonstartup=False):
         clean_env = make_clean_env()
         clean_env["NO_COLOR"] = "1"  # force_not_colorized doesn't touch subprocesses
 
@@ -1127,9 +1426,13 @@ class TestMain(ReplTestCase):
             blue.mkdir()
             mod = blue / "calx.py"
             mod.write_text("FOO = 42", encoding="utf-8")
+            startup = blue / "startup.py"
+            startup.write_text("BAR = 64", encoding="utf-8")
             commands = [
                 "print(f'^{" + var + "=}')" for var in expectations
             ] + ["exit()"]
+            if pythonstartup:
+                clean_env["PYTHONSTARTUP"] = str(startup)
             if as_file and as_module:
                 self.fail("as_file and as_module are mutually exclusive")
             elif as_file:
@@ -1137,6 +1440,7 @@ class TestMain(ReplTestCase):
                     commands,
                     cmdline_args=[str(mod)],
                     env=clean_env,
+                    skip=True,
                 )
             elif as_module:
                 output, exit_code = self.run_repl(
@@ -1144,12 +1448,16 @@ class TestMain(ReplTestCase):
                     cmdline_args=["-m", "blue.calx"],
                     env=clean_env,
                     cwd=td,
+                    skip=True,
                 )
             else:
-                self.fail("Choose one of as_file or as_module")
-
-        if "can't use pyrepl" in output:
-            self.skipTest("pyrepl not available")
+                output, exit_code = self.run_repl(
+                    commands,
+                    cmdline_args=[],
+                    env=clean_env,
+                    cwd=td,
+                    skip=True,
+                )
 
         self.assertEqual(exit_code, 0)
         for var, expected in expectations.items():
@@ -1162,6 +1470,23 @@ class TestMain(ReplTestCase):
         self.assertNotIn("Exception", output)
         self.assertNotIn("Traceback", output)
 
+    def test_globals_initialized_as_default(self):
+        expectations = {
+            "__name__": "'__main__'",
+            "__package__": "None",
+            # "__file__" is missing in -i, like in the basic REPL
+        }
+        self._run_repl_globals_test(expectations)
+
+    def test_globals_initialized_from_pythonstartup(self):
+        expectations = {
+            "BAR": "64",
+            "__name__": "'__main__'",
+            "__package__": "None",
+            # "__file__" is missing in -i, like in the basic REPL
+        }
+        self._run_repl_globals_test(expectations, pythonstartup=True)
+
     def test_inspect_keeps_globals_from_inspected_file(self):
         expectations = {
             "FOO": "42",
@@ -1170,6 +1495,16 @@ class TestMain(ReplTestCase):
             # "__file__" is missing in -i, like in the basic REPL
         }
         self._run_repl_globals_test(expectations, as_file=True)
+
+    def test_inspect_keeps_globals_from_inspected_file_with_pythonstartup(self):
+        expectations = {
+            "FOO": "42",
+            "BAR": "64",
+            "__name__": "'__main__'",
+            "__package__": "None",
+            # "__file__" is missing in -i, like in the basic REPL
+        }
+        self._run_repl_globals_test(expectations, as_file=True, pythonstartup=True)
 
     def test_inspect_keeps_globals_from_inspected_module(self):
         expectations = {
@@ -1180,28 +1515,32 @@ class TestMain(ReplTestCase):
         }
         self._run_repl_globals_test(expectations, as_module=True)
 
+    def test_inspect_keeps_globals_from_inspected_module_with_pythonstartup(self):
+        expectations = {
+            "FOO": "42",
+            "BAR": "64",
+            "__name__": "'__main__'",
+            "__package__": "'blue'",
+            "__file__": re.compile(r"^'.*calx.py'$"),
+        }
+        self._run_repl_globals_test(expectations, as_module=True, pythonstartup=True)
+
     @force_not_colorized
     def test_python_basic_repl(self):
         env = os.environ.copy()
-        commands = ("from test.support import initialized_with_pyrepl\n"
-                    "initialized_with_pyrepl()\n"
-                    "exit()\n")
-
+        pyrepl_commands = "clear\nexit()\n"
         env.pop("PYTHON_BASIC_REPL", None)
-        output, exit_code = self.run_repl(commands, env=env)
-        if "can\'t use pyrepl" in output:
-            self.skipTest("pyrepl not available")
+        output, exit_code = self.run_repl(pyrepl_commands, env=env, skip=True)
         self.assertEqual(exit_code, 0)
-        self.assertIn("True", output)
-        self.assertNotIn("False", output)
         self.assertNotIn("Exception", output)
+        self.assertNotIn("NameError", output)
         self.assertNotIn("Traceback", output)
 
+        basic_commands = "help\nexit()\n"
         env["PYTHON_BASIC_REPL"] = "1"
-        output, exit_code = self.run_repl(commands, env=env)
+        output, exit_code = self.run_repl(basic_commands, env=env)
         self.assertEqual(exit_code, 0)
-        self.assertIn("False", output)
-        self.assertNotIn("True", output)
+        self.assertIn("Type help() for interactive help", output)
         self.assertNotIn("Exception", output)
         self.assertNotIn("Traceback", output)
 
@@ -1218,6 +1557,31 @@ class TestMain(ReplTestCase):
         self.assertNotIn("Traceback", output)
 
     @force_not_colorized
+    def test_no_pyrepl_source_in_exc(self):
+        # Avoid using _pyrepl/__main__.py in traceback reports
+        # See https://github.com/python/cpython/issues/129098.
+        pyrepl_main_file = os.path.join(STDLIB_DIR, "_pyrepl", "__main__.py")
+        self.assertTrue(os.path.exists(pyrepl_main_file), pyrepl_main_file)
+        with open(pyrepl_main_file) as fp:
+            excluded_lines = fp.readlines()
+        excluded_lines = list(filter(None, map(str.strip, excluded_lines)))
+
+        for filename in ['?', 'unknown-filename', '<foo>', '<...>']:
+            self._test_no_pyrepl_source_in_exc(filename, excluded_lines)
+
+    def _test_no_pyrepl_source_in_exc(self, filename, excluded_lines):
+        with EnvironmentVarGuard() as env, self.subTest(filename=filename):
+            env.unset("PYTHON_BASIC_REPL")
+            commands = (f"eval(compile('spam', {filename!r}, 'eval'))\n"
+                        f"exit()\n")
+            output, _ = self.run_repl(commands, env=env)
+            self.assertIn("Traceback (most recent call last)", output)
+            self.assertIn("NameError: name 'spam' is not defined", output)
+            for line in excluded_lines:
+                with self.subTest(line=line):
+                    self.assertNotIn(line, output)
+
+    @force_not_colorized
     def test_bad_sys_excepthook_doesnt_crash_pyrepl(self):
         env = os.environ.copy()
         commands = ("import sys\n"
@@ -1232,9 +1596,7 @@ class TestMain(ReplTestCase):
             self.assertIn("division by zero", output)
             self.assertEqual(exitcode, 0)
         env.pop("PYTHON_BASIC_REPL", None)
-        output, exit_code = self.run_repl(commands, env=env)
-        if "can\'t use pyrepl" in output:
-            self.skipTest("pyrepl not available")
+        output, exit_code = self.run_repl(commands, env=env, skip=True)
         check(output, exit_code)
 
         env["PYTHON_BASIC_REPL"] = "1"
@@ -1272,9 +1634,7 @@ class TestMain(ReplTestCase):
     def test_correct_filename_in_syntaxerrors(self):
         env = os.environ.copy()
         commands = "a b c\nexit()\n"
-        output, exit_code = self.run_repl(commands, env=env)
-        if "can't use pyrepl" in output:
-            self.skipTest("pyrepl not available")
+        output, exit_code = self.run_repl(commands, env=env, skip=True)
         self.assertIn("SyntaxError: invalid syntax", output)
         self.assertIn("<python-input-0>", output)
         commands = " b\nexit()\n"
@@ -1301,9 +1661,7 @@ class TestMain(ReplTestCase):
                     env.pop("PYTHON_BASIC_REPL", None)
                 with self.subTest(set_tracebacklimit=set_tracebacklimit,
                                   basic_repl=basic_repl):
-                    output, exit_code = self.run_repl(commands, env=env)
-                    if "can't use pyrepl" in output:
-                        self.skipTest("pyrepl not available")
+                    output, exit_code = self.run_repl(commands, env=env, skip=True)
                     self.assertIn("in x1", output)
                     if set_tracebacklimit:
                         self.assertNotIn("in x2", output)
@@ -1318,6 +1676,17 @@ class TestMain(ReplTestCase):
         output, exit_code = self.run_repl("\x00\nexit()\n")
         self.assertEqual(exit_code, 0)
         self.assertNotIn("TypeError", output)
+
+    @force_not_colorized
+    def test_non_string_suggestion_candidates(self):
+        commands = ("import runpy\n"
+                    "runpy._run_module_code('blech', {0: '', 'bluch': ''}, '')\n"
+                    "exit()\n")
+
+        output, exit_code = self.run_repl(commands)
+        self.assertEqual(exit_code, 0)
+        self.assertNotIn("all elements in 'candidates' must be strings", output)
+        self.assertIn("bluch", output)
 
     def test_readline_history_file(self):
         # skip, if readline module is not available
@@ -1341,8 +1710,31 @@ class TestMain(ReplTestCase):
             self.assertEqual(exit_code, 0)
             self.assertNotIn("\\040", pathlib.Path(hfile.name).read_text())
 
+    def test_history_survive_crash(self):
+        env = os.environ.copy()
+
+        with tempfile.NamedTemporaryFile() as hfile:
+            env["PYTHON_HISTORY"] = hfile.name
+
+            commands = "1\n2\n3\nexit()\n"
+            output, exit_code = self.run_repl(commands, env=env, skip=True)
+
+            commands = "spam\nimport time\ntime.sleep(1000)\nquit\n"
+            try:
+                self.run_repl(commands, env=env, timeout=3)
+            except AssertionError:
+                pass
+
+            history = pathlib.Path(hfile.name).read_text()
+            self.assertIn("2", history)
+            self.assertIn("exit()", history)
+            self.assertIn("spam", history)
+            self.assertIn("import time", history)
+            self.assertNotIn("sleep", history)
+            self.assertNotIn("quit", history)
+
     def test_keyboard_interrupt_after_isearch(self):
-        output, exit_code = self.run_repl(["\x12", "\x03", "exit"])
+        output, exit_code = self.run_repl("\x12\x03exit\n")
         self.assertEqual(exit_code, 0)
 
     def test_prompt_after_help(self):
@@ -1357,3 +1749,27 @@ class TestMain(ReplTestCase):
         # Extra stuff (newline and `exit` rewrites) are necessary
         # because of how run_repl works.
         self.assertNotIn(">>> \n>>> >>>", cleaned_output)
+
+    @skipUnless(Py_DEBUG, '-X showrefcount requires a Python debug build')
+    def test_showrefcount(self):
+        env = os.environ.copy()
+        env.pop("PYTHON_BASIC_REPL", "")
+        output, _ = self.run_repl("1\n1+2\nexit()\n", cmdline_args=['-Xshowrefcount'], env=env)
+        matches = re.findall(r'\[-?\d+ refs, \d+ blocks\]', output)
+        self.assertEqual(len(matches), 3)
+
+        env["PYTHON_BASIC_REPL"] = "1"
+        output, _ = self.run_repl("1\n1+2\nexit()\n", cmdline_args=['-Xshowrefcount'], env=env)
+        matches = re.findall(r'\[-?\d+ refs, \d+ blocks\]', output)
+        self.assertEqual(len(matches), 3)
+
+    def test_detect_pip_usage_in_repl(self):
+        for pip_cmd in ("pip", "pip3", "python -m pip", "python3 -m pip"):
+            with self.subTest(pip_cmd=pip_cmd):
+                output, exit_code = self.run_repl([f"{pip_cmd} install sampleproject", "exit"])
+                self.assertIn("SyntaxError", output)
+                hint = (
+                    "The Python package manager (pip) can only be used"
+                    " outside of the Python REPL"
+                )
+                self.assertIn(hint, output)

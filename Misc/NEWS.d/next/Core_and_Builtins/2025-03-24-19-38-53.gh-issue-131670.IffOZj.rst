@@ -1,1 +1,0 @@
-Fix :func:`anext` failing on sync :meth:`~object.__anext__` raising an exception.

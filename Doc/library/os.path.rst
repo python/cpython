@@ -64,7 +64,7 @@ the :mod:`glob` module.)
       Accepts a :term:`path-like object`.
 
 
-.. function:: basename(path)
+.. function:: basename(path, /)
 
    Return the base name of pathname *path*.  This is the second element of the
    pair returned by passing *path* to the function :func:`split`.  Note that
@@ -118,7 +118,7 @@ the :mod:`glob` module.)
       Accepts a :term:`path-like object`.
 
 
-.. function:: dirname(path)
+.. function:: dirname(path, /)
 
    Return the directory name of pathname *path*.  This is the first element of
    the pair returned by passing *path* to the function :func:`split`.
@@ -237,7 +237,7 @@ the :mod:`glob` module.)
       Accepts a :term:`path-like object`.
 
 
-.. function:: isabs(path)
+.. function:: isabs(path, /)
 
    Return ``True`` if *path* is an absolute pathname.  On Unix, that means it
    begins with a slash, on Windows that it begins with two (back)slashes, or a
@@ -261,7 +261,7 @@ the :mod:`glob` module.)
       Accepts a :term:`path-like object`.
 
 
-.. function:: isdir(path)
+.. function:: isdir(path, /)
 
    Return ``True`` if *path* is an :func:`existing <exists>` directory.  This
    follows symbolic links, so both :func:`islink` and :func:`isdir` can be true
@@ -298,9 +298,10 @@ the :mod:`glob` module.)
    device than *path*, or whether :file:`{path}/..` and *path* point to the same
    i-node on the same device --- this should detect mount points for all Unix
    and POSIX variants.  It is not able to reliably detect bind mounts on the
-   same filesystem.  On Windows, a drive letter root and a share UNC are
-   always mount points, and for any other path ``GetVolumePathName`` is called
-   to see if it is different from the input path.
+   same filesystem. On Linux systems, it will always return ``True`` for btrfs
+   subvolumes, even if they aren't mount points. On Windows, a drive letter root
+   and a share UNC are always mount points, and for any other path
+   ``GetVolumePathName`` is called to see if it is different from the input path.
 
    .. versionchanged:: 3.4
       Added support for detecting non-root mount points on Windows.
@@ -371,7 +372,7 @@ the :mod:`glob` module.)
       Accepts a :term:`path-like object` for *path* and *paths*.
 
 
-.. function:: normcase(path)
+.. function:: normcase(path, /)
 
    Normalize the case of a pathname.  On Windows, convert all characters in the
    pathname to lowercase, and also convert forward slashes to backward slashes.
@@ -408,9 +409,26 @@ the :mod:`glob` module.)
    system). On Windows, this function will also resolve MS-DOS (also called 8.3)
    style names such as ``C:\\PROGRA~1`` to ``C:\\Program Files``.
 
-   If a path doesn't exist or a symlink loop is encountered, and *strict* is
-   ``True``, :exc:`OSError` is raised. If *strict* is ``False`` these errors
-   are ignored, and so the result might be missing or otherwise inaccessible.
+   By default, the path is evaluated up to the first component that does not
+   exist, is a symlink loop, or whose evaluation raises :exc:`OSError`.
+   All such components are appended unchanged to the existing part of the path.
+
+   Some errors that are handled this way include "access denied", "not a
+   directory", or "bad argument to internal function". Thus, the
+   resulting path may be missing or inaccessible, may still contain
+   links or loops, and may traverse non-directories.
+
+   This behavior can be modified by keyword arguments:
+
+   If *strict* is ``True``, the first error encountered when evaluating the path is
+   re-raised.
+   In particular, :exc:`FileNotFoundError` is raised if *path* does not exist,
+   or another :exc:`OSError` if it is otherwise inaccessible.
+
+   If *strict* is :py:data:`os.path.ALLOW_MISSING`, errors other than
+   :exc:`FileNotFoundError` are re-raised (as with ``strict=True``).
+   Thus, the returned path will not contain any symbolic links, but the named
+   file and some of its parent directories may be missing.
 
    .. note::
       This function emulates the operating system's procedure for making a path
@@ -429,6 +447,15 @@ the :mod:`glob` module.)
    .. versionchanged:: 3.10
       The *strict* parameter was added.
 
+   .. versionchanged:: next
+      The :py:data:`~os.path.ALLOW_MISSING` value for the *strict* parameter
+      was added.
+
+.. data:: ALLOW_MISSING
+
+   Special value used for the *strict* argument in :func:`realpath`.
+
+   .. versionadded:: next
 
 .. function:: relpath(path, start=os.curdir)
 
@@ -481,11 +508,8 @@ the :mod:`glob` module.)
    .. versionchanged:: 3.4
       Added Windows support.
 
-   .. versionchanged:: 3.6
-      Accepts a :term:`path-like object`.
 
-
-.. function:: split(path)
+.. function:: split(path, /)
 
    Split the pathname *path* into a pair, ``(head, tail)`` where *tail* is the
    last pathname component and *head* is everything leading up to that.  The
@@ -501,7 +525,7 @@ the :mod:`glob` module.)
       Accepts a :term:`path-like object`.
 
 
-.. function:: splitdrive(path)
+.. function:: splitdrive(path, /)
 
    Split the pathname *path* into a pair ``(drive, tail)`` where *drive* is either
    a mount point or the empty string.  On systems which do not use drive
@@ -526,7 +550,7 @@ the :mod:`glob` module.)
       Accepts a :term:`path-like object`.
 
 
-.. function:: splitroot(path)
+.. function:: splitroot(path, /)
 
    Split the pathname *path* into a 3-item tuple ``(drive, root, tail)`` where
    *drive* is a device name or mount point, *root* is a string of separators
@@ -559,7 +583,7 @@ the :mod:`glob` module.)
    .. versionadded:: 3.12
 
 
-.. function:: splitext(path)
+.. function:: splitext(path, /)
 
    Split the pathname *path* into a pair ``(root, ext)``  such that ``root + ext ==
    path``, and the extension, *ext*, is empty or begins with a period and contains at

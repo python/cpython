@@ -167,11 +167,12 @@ def make_build_python(context, working_dir):
 @subdir(HOST_BUILD_DIR, clean_ok=True)
 def make_emscripten_libffi(context, working_dir):
     shutil.rmtree(working_dir / "libffi-3.4.6", ignore_errors=True)
-    with tempfile.NamedTemporaryFile(suffix=".tar.gz") as tmp_file:
+    with tempfile.NamedTemporaryFile(suffix=".tar.gz", delete_on_close=False) as tmp_file:
         with urlopen(
             "https://github.com/libffi/libffi/releases/download/v3.4.6/libffi-3.4.6.tar.gz"
         ) as response:
             shutil.copyfileobj(response, tmp_file)
+        tmp_file.close()
         shutil.unpack_archive(tmp_file.name, working_dir)
     call(
         [EMSCRIPTEN_DIR / "make_libffi.sh"],
@@ -185,7 +186,7 @@ def make_emscripten_libffi(context, working_dir):
 def configure_emscripten_python(context, working_dir):
     """Configure the emscripten/host build."""
     config_site = os.fsdecode(
-        CHECKOUT / "Tools" / "wasm" / "config.site-wasm32-emscripten"
+        EMSCRIPTEN_DIR / "config.site-wasm32-emscripten"
     )
 
     emscripten_build_dir = working_dir.relative_to(CHECKOUT)
@@ -205,6 +206,17 @@ def configure_emscripten_python(context, working_dir):
         sysconfig_data += "-pydebug"
 
     host_runner = context.host_runner
+    if node_version := os.environ.get("PYTHON_NODE_VERSION", None):
+        res = subprocess.run(
+            [
+                "bash",
+                "-c",
+                f"source ~/.nvm/nvm.sh && nvm which {node_version}",
+            ],
+            text=True,
+            capture_output=True,
+        )
+        host_runner = res.stdout.strip()
     pkg_config_path_dir = (PREFIX_DIR / "lib/pkgconfig/").resolve()
     env_additions = {
         "CONFIG_SITE": config_site,
@@ -248,10 +260,10 @@ def configure_emscripten_python(context, working_dir):
 
             # Macs come with FreeBSD coreutils which doesn't have the -s option
             # so feature detect and work around it.
-            if which grealpath > /dev/null; then
+            if which grealpath > /dev/null 2>&1; then
                 # It has brew installed gnu core utils, use that
                 REALPATH="grealpath -s"
-            elif which realpath > /dev/null && realpath --version > /dev/null 2> /dev/null && realpath --version | grep GNU > /dev/null; then
+            elif which realpath > /dev/null 2>&1 && realpath --version > /dev/null 2>&1 && realpath --version | grep GNU > /dev/null 2>&1; then
                 # realpath points to GNU realpath so use it.
                 REALPATH="realpath -s"
             else
@@ -262,10 +274,20 @@ def configure_emscripten_python(context, working_dir):
                 REALPATH=abs_path
             fi
 
+            # Before node 24, --experimental-wasm-jspi uses different API,
+            # After node 24 JSPI is on by default.
+            ARGS=$({host_runner} -e "$(cat <<"EOF"
+            const major_version = Number(process.version.split(".")[0].slice(1));
+            if (major_version === 24) {{
+                process.stdout.write("--experimental-wasm-jspi");
+            }}
+            EOF
+            )")
+
             # We compute our own path, not following symlinks and pass it in so that
             # node_entry.mjs can set sys.executable correctly.
             # Intentionally allow word splitting on NODEFLAGS.
-            exec {host_runner} $NODEFLAGS {node_entry} --this-program="$($REALPATH "$0")" "$@"
+            exec {host_runner} $NODEFLAGS $ARGS {node_entry} --this-program="$($REALPATH "$0")" "$@"
             """
         )
     )
