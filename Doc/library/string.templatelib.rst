@@ -188,13 +188,11 @@ Types
          Empty strings are **not** included in the iteration:
 
          >>> name = 'World'
-         >>> list(t'Hello, {name}{name}!')
-         [
-             'Hello, ',
-             Interpolation('World', 'name', None, ''),
-             Interpolation('World', 'name', None, ''),
-             '!',
-         ]
+         >>> list(t'Hello, {name}{name}!')  # doctest: +NORMALIZE_WHITESPACE
+         ['Hello, ',
+          Interpolation('World', 'name', None, ''),
+          Interpolation('World', 'name', None, ''),
+          '!']
 
    .. describe:: template + other
                  template += other
