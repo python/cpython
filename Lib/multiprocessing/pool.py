@@ -889,7 +889,7 @@ class IMapIterator(object):
             self._buffersize_sema = None
         else:
             self._buffersize_sema = threading.Semaphore(buffersize)
-            self._pool._taskqueue_buffersize_semaphores[self] = (
+            self._pool._taskqueue_buffersize_semaphores[self._job] = (
                 self._buffersize_sema
             )
 
