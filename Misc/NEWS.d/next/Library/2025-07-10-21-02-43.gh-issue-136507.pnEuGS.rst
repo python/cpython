@@ -1,1 +1,1 @@
-Fix mimetypes CLI cannot handle multiple file parameters
+Fix mimetypes CLI to handle multiple file parameters.
