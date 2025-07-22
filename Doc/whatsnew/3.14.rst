@@ -3027,6 +3027,7 @@ Porting to Python 3.14
   * ``_PyLong_IsPositive()``: :c:func:`PyLong_IsPositive`
   * ``_PyLong_IsZero()``: :c:func:`PyLong_IsZero`
   * ``_PyLong_Sign()``: :c:func:`PyLong_GetSign`
+  * ``_PyMutex_IsLocked()`` : :c:func:`PyMutex_IsLocked`
   * ``_PyUnicodeWriter_Dealloc()``: :c:func:`PyUnicodeWriter_Discard`
   * ``_PyUnicodeWriter_Finish()``: :c:func:`PyUnicodeWriter_Finish`
   * ``_PyUnicodeWriter_Init()``: use :c:func:`PyUnicodeWriter_Create`

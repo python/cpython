@@ -2441,6 +2441,18 @@ The C-API provides a basic mutual exclusion lock.
 
    .. versionadded:: 3.13
 
+.. c:function:: int PyMutex_IsLocked(PyMutex *m)
+
+   Returns non-zero if the mutex *m* is currently locked, zero otherwise.
+
+   .. note::
+
+      This function is intended for use in assertions and debugging only and
+      should not be used to make concurrency control decisions, as the lock
+      state may change immediately after the check.
+
+   .. versionadded:: 3.14
+
 .. _python-critical-section-api:
 
 Python Critical Section API
