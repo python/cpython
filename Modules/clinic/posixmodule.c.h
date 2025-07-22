@@ -2044,57 +2044,24 @@ exit:
 #if defined(MS_WINDOWS)
 
 PyDoc_STRVAR(os__path_splitroot__doc__,
-"_path_splitroot($module, /, path)\n"
+"_path_splitroot($module, path, /)\n"
 "--\n"
 "\n"
 "Removes everything after the root on Win32.");
 
 #define OS__PATH_SPLITROOT_METHODDEF    \
-    {"_path_splitroot", _PyCFunction_CAST(os__path_splitroot), METH_FASTCALL|METH_KEYWORDS, os__path_splitroot__doc__},
+    {"_path_splitroot", (PyCFunction)os__path_splitroot, METH_O, os__path_splitroot__doc__},
 
 static PyObject *
 os__path_splitroot_impl(PyObject *module, path_t *path);
 
 static PyObject *
-os__path_splitroot(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+os__path_splitroot(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    #define NUM_KEYWORDS 1
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        Py_hash_t ob_hash;
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_hash = -1,
-        .ob_item = { &_Py_ID(path), },
-    };
-    #undef NUM_KEYWORDS
-    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #else  // !Py_BUILD_CORE
-    #  define KWTUPLE NULL
-    #endif  // !Py_BUILD_CORE
-
-    static const char * const _keywords[] = {"path", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "_path_splitroot",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     path_t path = PATH_T_INITIALIZE_P("_path_splitroot", "path", 0, 0, 0, 0);
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
-        goto exit;
-    }
-    if (!path_converter(args[0], &path)) {
+    if (!path_converter(arg, &path)) {
         goto exit;
     }
     return_value = os__path_splitroot_impl(module, &path);
@@ -13452,4 +13419,4 @@ exit:
 #ifndef OS__EMSCRIPTEN_LOG_METHODDEF
     #define OS__EMSCRIPTEN_LOG_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_LOG_METHODDEF) */
-/*[clinic end generated code: output=af7d1eafb65848b2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=09592255619ed47b input=a9049054013a1b77]*/

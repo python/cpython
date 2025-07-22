@@ -5226,14 +5226,15 @@ exit:
 /*[clinic input]
 os._path_splitroot
 
-    path: path_t
+    path: path_t,
+    /
 
 Removes everything after the root on Win32.
 [clinic start generated code]*/
 
 static PyObject *
 os__path_splitroot_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=ab7f1a88b654581c input=dc93b1d3984cffb6]*/
+/*[clinic end generated code: output=ab7f1a88b654581c input=42831e41f8458f6d]*/
 {
     wchar_t *buffer;
     wchar_t *end;
