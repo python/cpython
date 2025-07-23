@@ -504,8 +504,6 @@ Porting to Python 3.15
 
 * Private functions promoted to public C APIs:
 
-  * ``PyMutex_IsLocked()`` : :c:func:`PyMutex_IsLocked`
-
   The |pythoncapi_compat_project| can be used to get most of these new
   functions on Python 3.14 and older.
 
