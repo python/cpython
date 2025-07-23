@@ -1079,19 +1079,6 @@ include expressions.
 See also :pep:`498` for the proposal that added formatted string literals,
 and :meth:`str.format`, which uses a related format string mechanism.
 
-.. _t-strings:
-.. _template-string-literals:
-
-t-strings
----------
-
-A :dfn:`template string literal` or :dfn:`t-string` is a string literal that
-is prefixed with ``'t'`` or ``'T'``.
-These strings have internal structure similar to :ref:`f-strings`,
-but are evaluated as Template objects instead of strings.
-
-.. versionadded:: 3.14
-
 
 .. _t-strings:
 .. _template-string-literals:
