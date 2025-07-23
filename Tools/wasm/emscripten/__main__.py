@@ -186,7 +186,7 @@ def make_emscripten_libffi(context, working_dir):
 def configure_emscripten_python(context, working_dir):
     """Configure the emscripten/host build."""
     config_site = os.fsdecode(
-        CHECKOUT / "Tools" / "wasm" / "config.site-wasm32-emscripten"
+        EMSCRIPTEN_DIR / "config.site-wasm32-emscripten"
     )
 
     emscripten_build_dir = working_dir.relative_to(CHECKOUT)
@@ -206,6 +206,17 @@ def configure_emscripten_python(context, working_dir):
         sysconfig_data += "-pydebug"
 
     host_runner = context.host_runner
+    if node_version := os.environ.get("PYTHON_NODE_VERSION", None):
+        res = subprocess.run(
+            [
+                "bash",
+                "-c",
+                f"source ~/.nvm/nvm.sh && nvm which {node_version}",
+            ],
+            text=True,
+            capture_output=True,
+        )
+        host_runner = res.stdout.strip()
     pkg_config_path_dir = (PREFIX_DIR / "lib/pkgconfig/").resolve()
     env_additions = {
         "CONFIG_SITE": config_site,
