@@ -739,7 +739,6 @@ def _main(args=None):
             else:
                 sys.exit(f"error: media type unknown for {gtype}")
         return '\n'.join(results)
-    return help_text
 
 
 if __name__ == '__main__':

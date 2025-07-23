@@ -478,6 +478,14 @@ class CommandLineTest(unittest.TestCase):
             "type: image/png encoding: None"
         )
 
+    def test_multiple_inputs_error(self):
+        with self.assertRaises(SystemExit) as err:
+            mimetypes._main(shlex.split("foo.pdf foo.bar_ext"))
+
+        self.assertNotEqual(err.exception.code, 0)
+        self.assertIn("error: media type unknown for foo.bar_ext", str(err.exception))
+
+
     def test_invocation(self):
         for command, expected in [
             ("-l -e image/jpg", ".jpg"),
