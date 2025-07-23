@@ -269,8 +269,6 @@ array_resize(arrayobject *self, Py_ssize_t newsize)
     size_t _new_size = (newsize >> 4) + (Py_SIZE(self) < 8 ? 3 : 7) + newsize;
     int itemsize = self->ob_descr->itemsize;
 
-    /* XXX The following multiplication and division does not optimize away
-       like it does for lists since the size is not known at compile time */
     if (!arraydata_size_valid(_new_size, itemsize)) {
         PyErr_NoMemory();
         return -1;
