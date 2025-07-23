@@ -1,0 +1,16 @@
+# Python 3.12 is required for 'type' statements
+target-version = "py312"
+line-length = 79
+
+[format]
+skip-magic-trailing-comma = false
+
+[lint]
+select = [
+    "I", # isort
+    "F841", # unused variable
+    "RUF100", # Ban unused `# noqa` comments
+    "PGH004", # Ban blanket `# noqa` comments (only ignore specific error codes)
+]
+
+
