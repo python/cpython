@@ -56,7 +56,7 @@ reassigned.
    >>> type(template)
    <class 'string.templatelib.Template'>
 
-   Templates ars stored as sequences of literal :attr:`~Template.strings`
+   Templates are stored as sequences of literal :attr:`~Template.strings`
    and dynamic :attr:`~Template.interpolations`.
    A :attr:`~Template.values` attribute holds the interpolation values:
 
