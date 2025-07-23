@@ -700,14 +700,10 @@ compiler does it.  It is possible to override this behavior entirely by specifyi
 :attr:`~Structure._layout_` class attribute in the subclass definition; see
 the attribute documentation for details.
 
-It is possible to specify the maximum alignment for the fields by setting
-the :attr:`~Structure._pack_` class attribute to a positive integer.
-This matches what ``#pragma pack(n)`` does in MSVC.
-
-It is also possible to set a minimum alignment for how the subclass itself is packed in the
-same way ``#pragma align(n)`` works in MSVC.
-This can be achieved by specifying a :attr:`~Structure._align_` class attribute
-in the subclass definition.
+It is possible to specify the maximum alignment for the fields and/or for the
+structure itself by setting the class attributes :attr:`~Structure._pack_`
+and/or :attr:`~Structure._align_`, respectively.
+See the attribute documentation for details.
 
 :mod:`ctypes` uses the native byte order for Structures and Unions.  To build
 structures with non-native byte order, you can use one of the
@@ -2792,11 +2788,18 @@ fields, or any other data types containing pointer type fields.
    .. attribute:: _pack_
 
       An optional small integer that allows overriding the alignment of
-      structure fields in the instance.  :attr:`_pack_` must already be defined
-      when :attr:`_fields_` is assigned, otherwise it will have no effect.
-      Setting this attribute to 0 is the same as not setting it at all.
+      structure fields in the instance.
 
-      This is only implemented for the MSVC-compatible memory layout.
+      This is only implemented for the MSVC-compatible memory layout
+      (see :attr:`_layout_`).
+
+      Setting :attr:`!_pack_` to 0 is the same as not setting it at all.
+      Otherwise, the value must be a positive power of two.
+      The effect is equivalent to ``#pragma pack(N)`` in C, except
+      :mod:`ctypes` may allow larger *n* than what the compiler accepts.
+
+      :attr:`!_pack_` must already be defined
+      when :attr:`_fields_` is assigned, otherwise it will have no effect.
 
       .. deprecated-removed:: 3.14 3.19
 
@@ -2809,9 +2812,22 @@ fields, or any other data types containing pointer type fields.
 
    .. attribute:: _align_
 
-      An optional small integer that allows overriding the alignment of
+      An optional small integer that allows increasing the alignment of
       the structure when being packed or unpacked to/from memory.
-      Setting this attribute to 0 is the same as not setting it at all.
+
+      The value must not be negative.
+      The effect is equivalent to ``__attribute__((aligned(N)))`` on GCC
+      or ``#pragma align(N)`` on MSVC, except :mod:`ctypes` may allow
+      values that the compiler would reject.
+
+      :attr:`!_align_` can only *increase* a structure's alignment
+      requirements. Setting it to 0 or 1 has no effect.
+
+      Using values that are not powers of two is discouraged and may lead to
+      surprising behavior.
+
+      :attr:`!_align_` must already be defined
+      when :attr:`_fields_` is assigned, otherwise it will have no effect.
 
       .. versionadded:: 3.13
 
