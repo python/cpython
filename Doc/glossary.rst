@@ -462,7 +462,7 @@ Glossary
       core and with user code.
 
    f-string
-      String literals prefixed with ``'f'`` or ``'F'`` are commonly called
+      String literals prefixed with ``f`` or ``F`` are commonly called
       "f-strings" which is short for
       :ref:`formatted string literals <f-strings>`.  See also :pep:`498`.
 
@@ -1208,6 +1208,11 @@ Glossary
       :func:`sys.getrefcount` function to return the
       reference count for a particular object.
 
+      In :term:`CPython`, reference counts are not considered to be stable
+      or well-defined values; the number of references to an object, and how
+      that number is affected by Python code, may be different between
+      versions.
+
    regular package
       A traditional :term:`package`, such as a directory containing an
       ``__init__.py`` file.
@@ -1316,6 +1321,11 @@ Glossary
       avoid leaking one reference.
 
       See also :term:`borrowed reference`.
+
+   t-string
+      String literals prefixed with ``t`` or ``T`` are commonly called
+      "t-strings" which is short for
+      :ref:`template string literals <t-strings>`.
 
    text encoding
       A string in Python is a sequence of Unicode code points (in range

@@ -1997,8 +1997,8 @@ def testmod(m=None, name=None, globs=None, verbose=None,
     from module m (or the current module if m is not supplied), starting
     with m.__doc__.
 
-    Also test examples reachable from dict m.__test__ if it exists and is
-    not None.  m.__test__ maps names to functions, classes and strings;
+    Also test examples reachable from dict m.__test__ if it exists.
+    m.__test__ maps names to functions, classes and strings;
     function and class docstrings are tested even if the name is private;
     strings are tested directly, as if they were docstrings.
 
