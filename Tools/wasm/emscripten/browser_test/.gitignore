@@ -1,4 +1,4 @@
 node_modules
 test-results
 playwright-report
-
+test_log.txt
