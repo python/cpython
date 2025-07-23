@@ -192,14 +192,6 @@ For example::
    >>> "Hello" r', ' f"{name}!"
    "Hello, Blaise!"
 
-However, bytes literals may only be combined with other byte literals;
-not with string literals of any kind.
-Also, template string literals may only be combined with other template
-string literals::
-
-   >>> t"Hello" t"{name}!"
-   Template(strings=('Hello', '!'), interpolations=(...))
-
 This feature can be used to reduce the number of backslashes
 needed, to split long strings conveniently across long lines, or even to add
 comments to parts of strings. For example::
@@ -207,6 +199,14 @@ comments to parts of strings. For example::
    re.compile("[A-Za-z_]"       # letter or underscore
               "[A-Za-z0-9_]*"   # letter, digit or underscore
              )
+
+However, bytes literals may only be combined with other byte literals;
+not with string literals of any kind.
+Also, template string literals may only be combined with other template
+string literals::
+
+   >>> t"Hello" t"{name}!"
+   Template(strings=('Hello', '!'), interpolations=(...))
 
 
 .. _parenthesized:

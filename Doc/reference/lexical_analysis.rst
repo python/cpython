@@ -709,92 +709,92 @@ Standard C.  The recognized escape sequences are:
 Ignored end of line
 ^^^^^^^^^^^^^^^^^^^
 
-   A backslash can be added at the end of a line to ignore the newline::
+A backslash can be added at the end of a line to ignore the newline::
 
-      >>> 'This string will not include \
-      ... backslashes or newline characters.'
-      'This string will not include backslashes or newline characters.'
+   >>> 'This string will not include \
+   ... backslashes or newline characters.'
+   'This string will not include backslashes or newline characters.'
 
-   The same result can be achieved using :ref:`triple-quoted strings <strings>`,
-   or parentheses and :ref:`string literal concatenation <string-concatenation>`.
+The same result can be achieved using :ref:`triple-quoted strings <strings>`,
+or parentheses and :ref:`string literal concatenation <string-concatenation>`.
 
 .. _string-escape-escaped-char:
 
 Escaped characters
 ^^^^^^^^^^^^^^^^^^
 
-  To include a backslash in a non-:ref:`raw <raw-strings>` Python string
-  literal, it must be doubled. The ``\\`` escape sequence denotes a single
-  backslash character::
+To include a backslash in a non-:ref:`raw <raw-strings>` Python string
+literal, it must be doubled. The ``\\`` escape sequence denotes a single
+backslash character::
 
-      >>> print('C:\\Program Files')
-      C:\Program Files
+   >>> print('C:\\Program Files')
+   C:\Program Files
 
-  Similarly, the ``\'`` and ``\"`` sequences denote the single and double
-  quote character, respectively::
+Similarly, the ``\'`` and ``\"`` sequences denote the single and double
+quote character, respectively::
 
-      >>> print('\' and \"')
-      ' and "
+   >>> print('\' and \"')
+   ' and "
 
 .. _string-escape-oct:
 
 Octal character
 ^^^^^^^^^^^^^^^
 
-  The sequence :samp:`\\\\{ooo}` denotes a *character* with the octal (base 8)
-  value *ooo*::
+The sequence :samp:`\\\\{ooo}` denotes a *character* with the octal (base 8)
+value *ooo*::
 
-     >>> '\120'
-     'P'
+   >>> '\120'
+   'P'
 
-  Up to three octal digits (0 through 7) are accepted.
+Up to three octal digits (0 through 7) are accepted.
 
-  In a bytes literal, *character* means a *byte* with the given value.
-  In a string literal, it means a Unicode character with the given value.
+In a bytes literal, *character* means a *byte* with the given value.
+In a string literal, it means a Unicode character with the given value.
 
-   .. versionchanged:: 3.11
-      Octal escapes with value larger than ``0o377`` (255) produce a
-      :exc:`DeprecationWarning`.
+.. versionchanged:: 3.11
+   Octal escapes with value larger than ``0o377`` (255) produce a
+   :exc:`DeprecationWarning`.
 
-   .. versionchanged:: 3.12
-      Octal escapes with value larger than ``0o377`` (255) produce a
-      :exc:`SyntaxWarning`.
-      In a future Python version they will raise a :exc:`SyntaxError`.
+.. versionchanged:: 3.12
+   Octal escapes with value larger than ``0o377`` (255) produce a
+   :exc:`SyntaxWarning`.
+   In a future Python version they will raise a :exc:`SyntaxError`.
 
 .. _string-escape-hex:
 
 Hexadecimal character
 ^^^^^^^^^^^^^^^^^^^^^
 
-  The sequence :samp:`\\x{hh}` denotes a *character* with the hex (base 16)
-  value *hh*::
+The sequence :samp:`\\x{hh}` denotes a *character* with the hex (base 16)
+value *hh*::
 
-     >>> '\x50'
-     'P'
+   >>> '\x50'
+   'P'
 
-  Unlike in Standard C, exactly two hex digits are required.
+Unlike in Standard C, exactly two hex digits are required.
 
-  In a bytes literal, *character* means a *byte* with the given value.
-  In a string literal, it means a Unicode character with the given value.
+In a bytes literal, *character* means a *byte* with the given value.
+In a string literal, it means a Unicode character with the given value.
 
 .. _string-escape-named:
 
 Named Unicode character
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-  The sequence :samp:`\\N\\{{name}\\}` denotes a Unicode character
-  with the given *name*::
+The sequence :samp:`\\N\\{{name}\\}` denotes a Unicode character
+with the given *name*::
 
-     >>> '\N{LATIN CAPITAL LETTER P}'
-     'P'
-     >>> '\N{SNAKE}'
-     '🐍'
+   >>> '\N{LATIN CAPITAL LETTER P}'
+   'P'
+   >>> '\N{SNAKE}'
+   '🐍'
 
-  This sequence cannot appear in :ref:`bytes literals <bytes-literal>`.
+This sequence cannot appear in :ref:`bytes literals <bytes-literal>`.
 
-  .. versionchanged:: 3.3
-     Support for `name aliases <https://www.unicode.org/Public/16.0.0/ucd/NameAliases.txt>`__
-     has been added.
+.. versionchanged:: 3.3
+   Support for `name aliases <https://www.unicode.org/Public/16.0.0/ucd/NameAliases.txt>`__
+   has been added.
 
 .. _string-escape-long-hex:
 
@@ -807,14 +807,14 @@ Exactly four digits are required for ``\u``; exactly eight digits are
 required for ``\U``.
 The latter can encode any Unicode character.
 
-  .. code-block:: pycon
+.. code-block:: pycon
 
-      >>> '\u1234'
-      'ሴ'
-      >>> '\U0001f40d'
-      '🐍'
+   >>> '\u1234'
+   'ሴ'
+   >>> '\U0001f40d'
+   '🐍'
 
-  These sequences cannot appear in :ref:`bytes literals <bytes-literal>`.
+These sequences cannot appear in :ref:`bytes literals <bytes-literal>`.
 
 
 .. index:: unrecognized escape sequence
