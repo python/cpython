@@ -544,6 +544,21 @@ The :mod:`multiprocessing` package mostly replicates the API of the
    .. versionchanged:: 3.3
       Added the *daemon* parameter.
 
+   .. note::
+
+      Starting with Python 3.14, ``'fork'`` is no longer the default start
+      method on any operating system. When creating a new ``Process`` object
+      in a REPL session, with a start method such as ``'spawn'`` or ``'forkserver'``
+      (other than ``'fork'``), the *target* argument must be
+      a callable object **mandatorily** defined in a module.
+
+      Using a callable object defined in the current REPL session raises
+      an :exc:`AttributeError` exception when starting the process,
+      although this is still possible when the start method is ``'fork'``.
+
+      This also applies to the use of the
+      :class:`concurrent.futures.ProcessPoolExecutor` class.
+
    .. method:: run()
 
       Method representing the process's activity.
