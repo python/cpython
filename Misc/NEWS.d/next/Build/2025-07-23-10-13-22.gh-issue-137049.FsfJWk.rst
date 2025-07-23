@@ -1,0 +1,2 @@
+Stop creating an empty Modules/Setup.local when doing WASI builds as it's
+unnecessary.
