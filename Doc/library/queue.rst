@@ -258,7 +258,7 @@ or terminated immediately.
 
    If *immediate* is true, the queue is terminated immediately.
    The queue is drained to be completely empty.  The count of
-   unfinished tasks is reduced to zero but without calling
+   unfinished tasks is reduced by number drained but without calling
    :meth:`~Queue.task_done`.  That then unblocks all callers of
    :meth:`~Queue.join`.  In addition, blocked callers of
    :meth:`~Queue.get` are unblocked and will raise :exc:`ShutDown`.
