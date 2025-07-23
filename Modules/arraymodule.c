@@ -154,7 +154,7 @@ enum machine_format_code {
 static inline bool
 arraydata_size_valid(Py_ssize_t size, int itemsize)
 {
-    return size <= (PY_SSIZE_T_MAX - sizeof(arraydata)) / itemsize;
+    return size <= (PY_SSIZE_T_MAX - (Py_ssize_t)sizeof(arraydata)) / itemsize;
 }
 
 static arraydata *
