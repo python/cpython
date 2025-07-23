@@ -1,6 +1,7 @@
 /* Math module -- standard C math library functions, pi and e */
 
-/* Here are some comments from Tim Peters, extracted from the
+/* 
+   Here are some comments from Tim Peters, extracted from the
    discussion attached to http://bugs.python.org/issue1640.  They
    describe the general aims of the math module with respect to
    special values, IEEE-754 floating-point exceptions, and Python
@@ -39,7 +40,6 @@ accident ;-)).
 For #3 and #4, raise ValueError.  It may have made sense to raise
 Python's ZeroDivisionError in #3, but historically that's only been
 raised for division by zero and mod by zero.
-
 */
 
 /*
@@ -50,7 +50,7 @@ raised for division by zero and mod by zero.
    the standard recommends raising 'overflow', Python should raise an
    OverflowError.  In all other circumstances a value should be
    returned.
- */
+*/
 
 #ifndef Py_BUILD_CORE_BUILTIN
 #  define Py_BUILD_CORE_MODULE 1
@@ -77,8 +77,6 @@ module math
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=76bc7002685dd942]*/
 
-
-
 /*
 Double and triple length extended precision algorithms from:
 
@@ -86,7 +84,6 @@ Double and triple length extended precision algorithms from:
   by Takeshi Ogita, Siegfried M. Rump, and Shin’Ichi Oishi
   https://doi.org/10.1137/030601818
   https://www.tuhh.de/ti3/paper/rump/OgRuOi05.pdf
-
 */
 
 typedef struct{ double hi; double lo; } DoubleLength;
@@ -185,7 +182,6 @@ tl_to_d(TripleLength total)
     return total.tiny + last.lo + last.hi;
 }
 
-
 /*
    sin(pi*x), giving accurate results for all finite x (especially x
    integral or close to an integer).  This is here for use in the
@@ -196,7 +192,8 @@ tl_to_d(TripleLength total)
 static const double pi = 3.141592653589793238462643383279502884197;
 static const double logpi = 1.144729885849400174143427351353058711647;
 
-/* Version of PyFloat_AsDouble() with in-line fast paths
+/* 
+   Version of PyFloat_AsDouble() with in-line fast paths
    for exact floats and integers.  Gives a substantial
    speed improvement for extracting float arguments.
 */
@@ -252,7 +249,8 @@ m_sinpi(double x)
     return copysign(1.0, x)*r;
 }
 
-/* Implementation of the real gamma function.  Kept here to work around
+/* 
+   Implementation of the real gamma function.  Kept here to work around
    issues (see e.g. gh-70309) with quality of libm's tgamma/lgamma implementations
    on various platforms (Windows, MacOS).  In extensive but non-exhaustive
    random tests, this function proved accurate to within <= 10 ulps across the
@@ -375,7 +373,6 @@ lanczos_sum(double x)
     }
     return num/den;
 }
-
 
 static double
 m_tgamma(double x)
@@ -522,9 +519,11 @@ m_lgamma(double x)
     return r;
 }
 
-/* IEEE 754-style remainder operation: x - n*y where n*y is the nearest
+/*
+   IEEE 754-style remainder operation: x - n*y where n*y is the nearest
    multiple of y to x, taking n even in the case of a tie. Assuming an IEEE 754
-   binary floating-point format, the result is always exact. */
+   binary floating-point format, the result is always exact.
+*/
 
 static double
 m_remainder(double x, double y)
@@ -616,13 +615,12 @@ m_remainder(double x, double y)
     return x;
 }
 
-
 /*
-    Various platforms (Solaris, OpenBSD) do nonstandard things for log(0),
-    log(-ve), log(NaN).  Here are wrappers for log and log10 that deal with
-    special values directly, passing positive non-special values through to
-    the system log/log10.
- */
+   Various platforms (Solaris, OpenBSD) do nonstandard things for log(0),
+   log(-ve), log(NaN).  Here are wrappers for log and log10 that deal with
+   special values directly, passing positive non-special values through to
+   the system log/log10.
+*/
 
 static double
 m_log(double x)
@@ -705,7 +703,6 @@ m_log10(double x)
     }
 }
 
-
 /*[clinic input]
 math.gcd
 
@@ -760,7 +757,6 @@ math_gcd_impl(PyObject *module, PyObject * const *args,
     return res;
 }
 
-
 static PyObject *
 long_lcm(PyObject *a, PyObject *b)
 {
@@ -787,7 +783,6 @@ long_lcm(PyObject *a, PyObject *b)
     Py_DECREF(m);
     return ab;
 }
-
 
 /*[clinic input]
 math.lcm
@@ -839,11 +834,12 @@ math_lcm_impl(PyObject *module, PyObject * const *args,
     return res;
 }
 
+/* 
+   Call is_error when errno != 0, and where x is the result libm
+   returned.  is_error will usually set up an exception and return
+   true (1), but may return false (0) without setting up an exception.
+*/
 
-/* Call is_error when errno != 0, and where x is the result libm
- * returned.  is_error will usually set up an exception and return
- * true (1), but may return false (0) without setting up an exception.
- */
 static int
 is_error(double x, int raise_edom)
 {
@@ -857,24 +853,23 @@ is_error(double x, int raise_edom)
 
     else if (errno == ERANGE) {
         /* ANSI C generally requires libm functions to set ERANGE
-         * on overflow, but also generally *allows* them to set
-         * ERANGE on underflow too.  There's no consistency about
-         * the latter across platforms.
-         * Alas, C99 never requires that errno be set.
-         * Here we suppress the underflow errors (libm functions
-         * should return a zero on underflow, and +- HUGE_VAL on
-         * overflow, so testing the result for zero suffices to
-         * distinguish the cases).
-         *
-         * On some platforms (Ubuntu/ia64) it seems that errno can be
-         * set to ERANGE for subnormal results that do *not* underflow
-         * to zero.  So to be safe, we'll ignore ERANGE whenever the
-         * function result is less than 1.5 in absolute value.
-         *
-         * bpo-46018: Changed to 1.5 to ensure underflows in expm1()
-         * are correctly detected, since the function may underflow
-         * toward -1.0 rather than 0.0.
-         */
+           on overflow, but also generally *allows* them to set
+           ERANGE on underflow too.  There's no consistency about
+           the latter across platforms.
+           Alas, C99 never requires that errno be set.
+           Here we suppress the underflow errors (libm functions
+           should return a zero on underflow, and +- HUGE_VAL on
+           overflow, so testing the result for zero suffices to
+           distinguish the cases).
+          
+           On some platforms (Ubuntu/ia64) it seems that errno can be
+           set to ERANGE for subnormal results that do *not* underflow
+           to zero.  So to be safe, we'll ignore ERANGE whenever the
+           function result is less than 1.5 in absolute value.
+          
+           bpo-46018: Changed to 1.5 to ensure underflows in expm1()
+           are correctly detected, since the function may underflow
+           toward -1.0 rather than 0.0. */
         if (fabs(x) < 1.5)
             result = 0;
         else
@@ -957,9 +952,11 @@ domain_err:
     return NULL;
 }
 
-/* variant of math_1, to be used when the function being wrapped is known to
+/* 
+   Variant of math_1, to be used when the function being wrapped is known to
    set errno properly (that is, errno = EDOM for invalid or divide-by-zero,
-   errno = ERANGE for overflow). */
+   errno = ERANGE for overflow).
+*/
 
 static PyObject *
 math_1a(PyObject *arg, double (*func) (double), const char *err_msg)
@@ -1303,7 +1300,8 @@ FUNC1(tanh, tanh, 0,
       "tanh($module, x, /)\n--\n\n"
       "Return the hyperbolic tangent of x.")
 
-/* Precision summation function as msum() by Raymond Hettinger in
+/* 
+   Precision summation function as msum() by Raymond Hettinger in
    <https://code.activestate.com/recipes/393090-binary-floating-point-summation-accurate-to-full-p/>,
    enhanced with the exact partials sum and roundoff from Mark
    Dickinson's post at <http://bugs.python.org/file10357/msum4.py>.
@@ -1369,7 +1367,8 @@ _fsum_realloc(double **p_ptr, Py_ssize_t  n,
     return 0;
 }
 
-/* Full precision summation of a sequence of floats.
+/*
+   Full precision summation of a sequence of floats.
 
    def msum(iterable):
        partials = []  # sorted, non-overlapping partial sums
@@ -1530,7 +1529,6 @@ math_fsum(PyObject *module, PyObject *seq)
 
 #undef NUM_PARTIALS
 
-
 static unsigned long
 count_set_bits(unsigned long n)
 {
@@ -1542,7 +1540,8 @@ count_set_bits(unsigned long n)
     return count;
 }
 
-/* Integer square root
+/*
+Integer square root
 
 Given a nonnegative integer `n`, we want to compute the largest integer
 `a` for which `a * a <= n`, or equivalently the integer part of the exact
@@ -1683,20 +1682,19 @@ But we know from (4) that `m / 4^(d-e) < (a + 1)^2`, hence
 Now taking square roots of both sides and observing that both `2^(d-e-1)` and
 `a` are integers gives `2^(d - e - 1) <= a`, which is what we needed. This
 completes the proof sketch.
-
 */
 
 /*
-    The _approximate_isqrt_tab table provides approximate square roots for
-    16-bit integers. For any n in the range 2**14 <= n < 2**16, the value
+   The _approximate_isqrt_tab table provides approximate square roots for
+   16-bit integers. For any n in the range 2**14 <= n < 2**16, the value
 
-        a = _approximate_isqrt_tab[(n >> 8) - 64]
+     a = _approximate_isqrt_tab[(n >> 8) - 64]
 
-    is an approximate square root of n, satisfying (a - 1)**2 < n < (a + 1)**2.
+   is an approximate square root of n, satisfying (a - 1)**2 < n < (a + 1)**2.
 
-    The table was computed in Python using the expression:
+   The table was computed in Python using the expression:
 
-        [min(round(sqrt(256*n + 128)), 255) for n in range(64, 256)]
+     [min(round(sqrt(256*n + 128)), 255) for n in range(64, 256)]
 */
 
 static const uint8_t _approximate_isqrt_tab[192] = {
@@ -1718,10 +1716,12 @@ static const uint8_t _approximate_isqrt_tab[192] = {
     250, 251, 251, 252, 252, 253, 253, 254, 254, 255, 255, 255,
 };
 
-/* Approximate square root of a large 64-bit integer.
+/* 
+   Approximate square root of a large 64-bit integer.
 
    Given `n` satisfying `2**62 <= n < 2**64`, return `a`
-   satisfying `(a - 1)**2 < n < (a + 1)**2`. */
+   satisfying `(a - 1)**2 < n < (a + 1)**2`.
+*/
 
 static inline uint32_t
 _approximate_isqrt(uint64_t n)
@@ -1867,74 +1867,77 @@ math_isqrt(PyObject *module, PyObject *n)
     return NULL;
 }
 
-/* Divide-and-conquer factorial algorithm
- *
- * Based on the formula and pseudo-code provided at:
- * http://www.luschny.de/math/factorial/binarysplitfact.html
- *
- * Faster algorithms exist, but they're more complicated and depend on
- * a fast prime factorization algorithm.
- *
- * Notes on the algorithm
- * ----------------------
- *
- * factorial(n) is written in the form 2**k * m, with m odd.  k and m are
- * computed separately, and then combined using a left shift.
- *
- * The function factorial_odd_part computes the odd part m (i.e., the greatest
- * odd divisor) of factorial(n), using the formula:
- *
- *   factorial_odd_part(n) =
- *
- *        product_{i >= 0} product_{0 < j <= n / 2**i, j odd} j
- *
- * Example: factorial_odd_part(20) =
- *
- *        (1) *
- *        (1) *
- *        (1 * 3 * 5) *
- *        (1 * 3 * 5 * 7 * 9) *
- *        (1 * 3 * 5 * 7 * 9 * 11 * 13 * 15 * 17 * 19)
- *
- * Here i goes from large to small: the first term corresponds to i=4 (any
- * larger i gives an empty product), and the last term corresponds to i=0.
- * Each term can be computed from the last by multiplying by the extra odd
- * numbers required: e.g., to get from the penultimate term to the last one,
- * we multiply by (11 * 13 * 15 * 17 * 19).
- *
- * To see a hint of why this formula works, here are the same numbers as above
- * but with the even parts (i.e., the appropriate powers of 2) included.  For
- * each subterm in the product for i, we multiply that subterm by 2**i:
- *
- *   factorial(20) =
- *
- *        (16) *
- *        (8) *
- *        (4 * 12 * 20) *
- *        (2 * 6 * 10 * 14 * 18) *
- *        (1 * 3 * 5 * 7 * 9 * 11 * 13 * 15 * 17 * 19)
- *
- * The factorial_partial_product function computes the product of all odd j in
- * range(start, stop) for given start and stop.  It's used to compute the
- * partial products like (11 * 13 * 15 * 17 * 19) in the example above.  It
- * operates recursively, repeatedly splitting the range into two roughly equal
- * pieces until the subranges are small enough to be computed using only C
- * integer arithmetic.
- *
- * The two-valuation k (i.e., the exponent of the largest power of 2 dividing
- * the factorial) is computed independently in the main math_factorial
- * function.  By standard results, its value is:
- *
- *    two_valuation = n//2 + n//4 + n//8 + ....
- *
- * It can be shown (e.g., by complete induction on n) that two_valuation is
- * equal to n - count_set_bits(n), where count_set_bits(n) gives the number of
- * '1'-bits in the binary expansion of n.
- */
+/* 
+   Divide-and-conquer factorial algorithm
 
-/* factorial_partial_product: Compute product(range(start, stop, 2)) using
- * divide and conquer.  Assumes start and stop are odd and stop > start.
- * max_bits must be >= bit_length(stop - 2). */
+   Based on the formula and pseudo-code provided at:
+   http://www.luschny.de/math/factorial/binarysplitfact.html
+
+   Faster algorithms exist, but they're more complicated and depend on
+   a fast prime factorization algorithm.
+
+   Notes on the algorithm
+   ----------------------
+
+   factorial(n) is written in the form 2**k * m, with m odd.  k and m are
+   computed separately, and then combined using a left shift.
+
+   The function factorial_odd_part computes the odd part m (i.e., the greatest
+   odd divisor) of factorial(n), using the formula:
+
+     factorial_odd_part(n) =
+
+         product_{i >= 0} product_{0 < j <= n / 2**i, j odd} j
+
+   Example: factorial_odd_part(20) =
+
+          (1) *
+          (1) *
+          (1 * 3 * 5) *
+          (1 * 3 * 5 * 7 * 9) *
+          (1 * 3 * 5 * 7 * 9 * 11 * 13 * 15 * 17 * 19)
+
+   Here i goes from large to small: the first term corresponds to i=4 (any
+   larger i gives an empty product), and the last term corresponds to i=0.
+   Each term can be computed from the last by multiplying by the extra odd
+   numbers required: e.g., to get from the penultimate term to the last one,
+   we multiply by (11 * 13 * 15 * 17 * 19).
+
+   To see a hint of why this formula works, here are the same numbers as above
+   but with the even parts (i.e., the appropriate powers of 2) included.  For
+   each subterm in the product for i, we multiply that subterm by 2**i:
+
+     factorial(20) =
+
+          (16) *
+          (8) *
+          (4 * 12 * 20) *
+          (2 * 6 * 10 * 14 * 18) *
+          (1 * 3 * 5 * 7 * 9 * 11 * 13 * 15 * 17 * 19)
+
+   The factorial_partial_product function computes the product of all odd j in
+   range(start, stop) for given start and stop.  It's used to compute the
+   partial products like (11 * 13 * 15 * 17 * 19) in the example above.  It
+   operates recursively, repeatedly splitting the range into two roughly equal
+   pieces until the subranges are small enough to be computed using only C
+   integer arithmetic.
+
+   The two-valuation k (i.e., the exponent of the largest power of 2 dividing
+   the factorial) is computed independently in the main math_factorial
+   function.  By standard results, its value is:
+
+      two_valuation = n//2 + n//4 + n//8 + ....
+
+   It can be shown (e.g., by complete induction on n) that two_valuation is
+   equal to n - count_set_bits(n), where count_set_bits(n) gives the number of
+   '1'-bits in the binary expansion of n.
+*/
+
+/* 
+   factorial_partial_product: Compute product(range(start, stop, 2)) using
+   divide and conquer.  Assumes start and stop are odd and stop > start.
+   max_bits must be >= bit_length(stop - 2).
+*/
 
 static PyObject *
 factorial_partial_product(unsigned long start, unsigned long stop,
@@ -1944,24 +1947,23 @@ factorial_partial_product(unsigned long start, unsigned long stop,
     PyObject *left = NULL, *right = NULL, *result = NULL;
 
     /* If the return value will fit an unsigned long, then we can
-     * multiply in a tight, fast loop where each multiply is O(1).
-     * Compute an upper bound on the number of bits required to store
-     * the answer.
-     *
-     * Storing some integer z requires floor(lg(z))+1 bits, which is
-     * conveniently the value returned by bit_length(z).  The
-     * product x*y will require at most
-     * bit_length(x) + bit_length(y) bits to store, based
-     * on the idea that lg product = lg x + lg y.
-     *
-     * We know that stop - 2 is the largest number to be multiplied.  From
-     * there, we have: bit_length(answer) <= num_operands *
-     * bit_length(stop - 2)
-     */
+       multiply in a tight, fast loop where each multiply is O(1).
+       Compute an upper bound on the number of bits required to store
+       the answer.
+
+       Storing some integer z requires floor(lg(z))+1 bits, which is
+       conveniently the value returned by bit_length(z).  The
+       product x*y will require at most
+       bit_length(x) + bit_length(y) bits to store, based
+       on the idea that lg product = lg x + lg y.
+
+       We know that stop - 2 is the largest number to be multiplied.  From
+       there, we have: bit_length(answer) <= num_operands *
+       bit_length(stop - 2) */
 
     num_operands = (stop - start) / 2;
     /* The "num_operands <= 8 * SIZEOF_LONG" check guards against the
-     * unlikely case of an overflow in num_operands * max_bits. */
+       unlikely case of an overflow in num_operands * max_bits. */
     if (num_operands <= 8 * SIZEOF_LONG &&
         num_operands * max_bits <= 8 * SIZEOF_LONG) {
         unsigned long j, total;
@@ -2039,7 +2041,6 @@ factorial_odd_part(unsigned long n)
     return NULL;
 }
 
-
 /* Lookup table for small factorial values */
 
 static const unsigned long SmallFactorials[] = {
@@ -2100,7 +2101,6 @@ math_factorial(PyObject *module, PyObject *arg)
     return result;
 }
 
-
 /*[clinic input]
 math.trunc
 
@@ -2132,7 +2132,6 @@ math_trunc(PyObject *module, PyObject *x)
     return NULL;
 }
 
-
 /*[clinic input]
 math.frexp
 
@@ -2160,7 +2159,6 @@ math_frexp_impl(PyObject *module, double x)
     }
     return Py_BuildValue("(di)", x, i);
 }
-
 
 /*[clinic input]
 math.ldexp
@@ -2242,7 +2240,6 @@ math_ldexp_impl(PyObject *module, double x, PyObject *i)
     return PyFloat_FromDouble(r);
 }
 
-
 /*[clinic input]
 math.modf
 
@@ -2271,15 +2268,16 @@ math_modf_impl(PyObject *module, double x)
     return Py_BuildValue("(dd)", x, y);
 }
 
-
-/* A decent logarithm is easy to compute even for huge ints, but libm can't
+/*
+   A decent logarithm is easy to compute even for huge ints, but libm can't
    do that by itself -- loghelper can.  func is log or log10, and name is
    "log" or "log10".  Note that overflow of the result isn't possible: an int
    can contain no more than INT_MAX * SHIFT bits, so has value certainly less
    than 2**(2**64 * 2**16) == 2**2**80, and log2 of that is 2**80, which is
    small enough to fit in an IEEE single.  log and log10 are even smaller.
    However, intermediate overflow is possible for an int if the number of bits
-   in that int is larger than PY_SSIZE_T_MAX. */
+   in that int is larger than PY_SSIZE_T_MAX.
+*/
 
 static PyObject*
 loghelper(PyObject* arg, double (*func)(double))
@@ -2321,9 +2319,11 @@ loghelper(PyObject* arg, double (*func)(double))
     return math_1(arg, func, 0, "expected a positive input, got %s");
 }
 
+/*
+   AC: cannot convert yet, see gh-102839 and gh-89381, waiting
+   for support of multiple signatures
+*/
 
-/* AC: cannot convert yet, see gh-102839 and gh-89381, waiting
-   for support of multiple signatures */
 static PyObject *
 math_log(PyObject *module, PyObject * const *args, Py_ssize_t nargs)
 {
@@ -2370,7 +2370,6 @@ math_log2(PyObject *module, PyObject *x)
     return loghelper(x, m_log2);
 }
 
-
 /*[clinic input]
 math.log10
 
@@ -2386,7 +2385,6 @@ math_log10(PyObject *module, PyObject *x)
 {
     return loghelper(x, m_log10);
 }
-
 
 /*[clinic input]
 math.fma
@@ -2428,7 +2426,6 @@ math_fma_impl(PyObject *module, double x, double y, double z)
 
     return PyFloat_FromDouble(r);
 }
-
 
 /*[clinic input]
 math.fmod
@@ -2573,7 +2570,6 @@ References:
 5. https://www.wolframalpha.com/input/?i=Maclaurin+series+sqrt%28h**2+%2B+x%29+at+x%3D0
 6. Analysis of internal accuracy:  https://bugs.python.org/file49484/best_frac.py
 7. Commutativity test:  https://bugs.python.org/file49448/test_hypot_commutativity.py
-
 */
 
 static inline double
@@ -3029,8 +3025,8 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
     return NULL;
 }
 
-
-/* pow can't use math_2, but needs its own wrapper: the problem is
+/*
+   pow can't use math_2, but needs its own wrapper: the problem is
    that an infinite result can arise either as a result of overflow
    (in which case OverflowError should be raised) or as a result of
    e.g. 0.**-5. (for which ValueError needs to be raised.)
@@ -3114,7 +3110,6 @@ math_pow_impl(PyObject *module, double x, double y)
         return PyFloat_FromDouble(r);
 }
 
-
 static const double degToRad = Py_MATH_PI / 180.0;
 static const double radToDeg = 180.0 / Py_MATH_PI;
 
@@ -3134,7 +3129,6 @@ math_degrees_impl(PyObject *module, double x)
     return PyFloat_FromDouble(x * radToDeg);
 }
 
-
 /*[clinic input]
 math.radians
 
@@ -3150,7 +3144,6 @@ math_radians_impl(PyObject *module, double x)
 {
     return PyFloat_FromDouble(x * degToRad);
 }
-
 
 /*[clinic input]
 math.isfinite
@@ -3168,7 +3161,6 @@ math_isfinite_impl(PyObject *module, double x)
     return PyBool_FromLong((long)isfinite(x));
 }
 
-
 /*[clinic input]
 math.isnormal
 
@@ -3184,7 +3176,6 @@ math_isnormal_impl(PyObject *module, double x)
 {
     return PyBool_FromLong(isnormal(x));
 }
-
 
 /*[clinic input]
 math.issubnormal
@@ -3205,7 +3196,6 @@ math_issubnormal_impl(PyObject *module, double x)
     return PyBool_FromLong(isfinite(x) && x && !isnormal(x));
 #endif
 }
-
 
 /*[clinic input]
 math.isnan
@@ -3336,9 +3326,7 @@ _check_long_mult_overflow(long a, long b) {
     We check these two ways against each other, and declare victory if they're
     approximately the same.  Else, because the native long product is the only
     one that can lose catastrophic amounts of information, it's the native long
-    product that must have overflowed.
-
-    */
+    product that must have overflowed. */
 
     long longprod = (long)((unsigned long)a * b);
     double doubleprod = (double)a * (double)b;
@@ -3444,9 +3432,8 @@ math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start)
     }
 
     /* Fast paths for floats keeping temporary products in C.
-     * Assumes all inputs are the same type.
-     * If the assumption fails, default to use PyObjects instead.
-    */
+       Assumes all inputs are the same type.
+       If the assumption fails, default to use PyObjects instead. */
     if (PyFloat_CheckExact(result)) {
         double f_result = PyFloat_AS_DOUBLE(result);
         Py_SETREF(result, NULL);
@@ -3492,7 +3479,7 @@ math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start)
     }
 #endif
     /* Consume rest of the iterable (if any) that could not be handled
-     * by specialized functions above.*/
+       by specialized functions above.*/
     for(;;) {
         item = PyIter_Next(iter);
         if (item == NULL) {
@@ -3513,18 +3500,19 @@ math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start)
     return result;
 }
 
+/*
+   Least significant 64 bits of the odd part of factorial(n),
+   for n in range(128).
 
-/* least significant 64 bits of the odd part of factorial(n), for n in range(128).
+   Python code to generate the values:
 
-Python code to generate the values:
+     import math
 
-    import math
-
-    for n in range(128):
-        fac = math.factorial(n)
-        fac_odd_part = fac // (fac & -fac)
-        reduced_fac_odd_part = fac_odd_part % (2**64)
-        print(f"{reduced_fac_odd_part:#018x}u")
+     for n in range(128):
+         fac = math.factorial(n)
+         fac_odd_part = fac // (fac & -fac)
+         reduced_fac_odd_part = fac_odd_part % (2**64)
+         print(f"{reduced_fac_odd_part:#018x}u")
 */
 static const uint64_t reduced_factorial_odd_part[] = {
     0x0000000000000001u, 0x0000000000000001u, 0x0000000000000001u, 0x0000000000000003u,
@@ -3561,18 +3549,20 @@ static const uint64_t reduced_factorial_odd_part[] = {
     0xcdcf31bf8604c5e7u, 0x7e2b4a847054a1cbu, 0x0ca75697a4d3d0f5u, 0x4703f53ac514a98bu,
 };
 
-/* inverses of reduced_factorial_odd_part values modulo 2**64.
+/*
+   Inverses of reduced_factorial_odd_part values modulo 2**64.
 
-Python code to generate the values:
+   Python code to generate the values:
 
-    import math
+     import math
 
-    for n in range(128):
-        fac = math.factorial(n)
-        fac_odd_part = fac // (fac & -fac)
-        inverted_fac_odd_part = pow(fac_odd_part, -1, 2**64)
-        print(f"{inverted_fac_odd_part:#018x}u")
+     for n in range(128):
+         fac = math.factorial(n)
+         fac_odd_part = fac // (fac & -fac)
+         inverted_fac_odd_part = pow(fac_odd_part, -1, 2**64)
+         print(f"{inverted_fac_odd_part:#018x}u")
 */
+
 static const uint64_t inverted_factorial_odd_part[] = {
     0x0000000000000001u, 0x0000000000000001u, 0x0000000000000001u, 0xaaaaaaaaaaaaaaabu,
     0xaaaaaaaaaaaaaaabu, 0xeeeeeeeeeeeeeeefu, 0x4fa4fa4fa4fa4fa5u, 0x2ff2ff2ff2ff2ff3u,
@@ -3608,16 +3598,17 @@ static const uint64_t inverted_factorial_odd_part[] = {
     0xac4dd6b894447dd7u, 0x42ea183eeaa87be3u, 0x15612d1550ee5b5du, 0x226fa19d656cb623u,
 };
 
-/* exponent of the largest power of 2 dividing factorial(n), for n in range(68)
+/*
+   Exponent of the largest power of 2 dividing factorial(n), for n in range(68)
 
-Python code to generate the values:
+   Python code to generate the values:
 
-import math
+     import math
 
-for n in range(128):
-    fac = math.factorial(n)
-    fac_trailing_zeros = (fac & -fac).bit_length() - 1
-    print(fac_trailing_zeros)
+     for n in range(128):
+         fac = math.factorial(n)
+         fac_trailing_zeros = (fac & -fac).bit_length() - 1
+         print(fac_trailing_zeros)
 */
 
 static const uint8_t factorial_trailing_zeros[] = {
@@ -3631,10 +3622,12 @@ static const uint8_t factorial_trailing_zeros[] = {
     109, 109, 110, 110, 112, 112, 113, 113, 116, 116, 117, 117, 119, 119, 120, 120,  // 112-127
 };
 
-/* Number of permutations and combinations.
- * P(n, k) = n! / (n-k)!
- * C(n, k) = P(n, k) / k!
- */
+/*
+   Number of permutations and combinations:
+
+     P(n, k) = n! / (n-k)!
+     C(n, k) = P(n, k) / k!
+*/
 
 /* Calculate C(n, k) for n in the 63-bit range. */
 static PyObject *
@@ -3643,11 +3636,11 @@ perm_comb_small(unsigned long long n, unsigned long long k, int iscomb)
     assert(k != 0);
 
     /* For small enough n and k the result fits in the 64-bit range and can
-     * be calculated without allocating intermediate PyLong objects. */
+       be calculated without allocating intermediate PyLong objects. */
     if (iscomb) {
         /* Maps k to the maximal n so that 2*k-1 <= n <= 127 and C(n, k)
-         * fits into a uint64_t.  Exclude k = 1, because the second fast
-         * path is faster for this case.*/
+           fits into a uint64_t.  Exclude k = 1, because the second fast
+           path is faster for this case. */
         static const unsigned char fast_comb_limits1[] = {
             0, 0, 127, 127, 127, 127, 127, 127,  // 0-7
             127, 127, 127, 127, 127, 127, 127, 127,  // 8-15
@@ -3656,16 +3649,14 @@ perm_comb_small(unsigned long long n, unsigned long long k, int iscomb)
             67, 67, 67,  // 32-34
         };
         if (k < Py_ARRAY_LENGTH(fast_comb_limits1) && n <= fast_comb_limits1[k]) {
-            /*
-                comb(n, k) fits into a uint64_t. We compute it as
+            /* comb(n, k) fits into a uint64_t. We compute it as
 
-                    comb_odd_part << shift
+                 comb_odd_part << shift
 
-                where 2**shift is the largest power of two dividing comb(n, k)
-                and comb_odd_part is comb(n, k) >> shift. comb_odd_part can be
-                calculated efficiently via arithmetic modulo 2**64, using three
-                lookups and two uint64_t multiplications.
-            */
+               where 2**shift is the largest power of two dividing comb(n, k)
+               and comb_odd_part is comb(n, k) >> shift. comb_odd_part can be
+               calculated efficiently via arithmetic modulo 2**64, using three
+               lookups and two uint64_t multiplications. */
             uint64_t comb_odd_part = reduced_factorial_odd_part[n]
                                    * inverted_factorial_odd_part[k]
                                    * inverted_factorial_odd_part[n - k];
@@ -3676,8 +3667,8 @@ perm_comb_small(unsigned long long n, unsigned long long k, int iscomb)
         }
 
         /* Maps k to the maximal n so that 2*k-1 <= n <= 127 and C(n, k)*k
-         * fits into a long long (which is at least 64 bit).  Only contains
-         * items larger than in fast_comb_limits1. */
+           fits into a long long (which is at least 64 bit).  Only contains
+           items larger than in fast_comb_limits1. */
         static const unsigned long long fast_comb_limits2[] = {
             0, ULLONG_MAX, 4294967296ULL, 3329022, 102570, 13467, 3612, 1449,  // 0-7
             746, 453, 308, 227, 178, 147,  // 8-13
@@ -3694,7 +3685,7 @@ perm_comb_small(unsigned long long n, unsigned long long k, int iscomb)
     }
     else {
         /* Maps k to the maximal n so that k <= n and P(n, k)
-         * fits into a long long (which is at least 64 bit). */
+           fits into a long long (which is at least 64 bit). */
         static const unsigned long long fast_perm_limits[] = {
             0, ULLONG_MAX, 4294967296ULL, 2642246, 65537, 7133, 1627, 568,  // 0-7
             259, 142, 88, 61, 45, 36, 30, 26,  // 8-15
@@ -3721,10 +3712,9 @@ perm_comb_small(unsigned long long n, unsigned long long k, int iscomb)
     }
 
     /* For larger n use recursive formulas:
-     *
-     *   P(n, k) = P(n, j) * P(n-j, k-j)
-     *   C(n, k) = C(n, j) * C(n-j, k-j) // C(k, j)
-     */
+      
+         P(n, k) = P(n, j) * P(n-j, k-j)
+         C(n, k) = C(n, j) * C(n-j, k-j) // C(k, j) */
     unsigned long long j = k / 2;
     PyObject *a, *b;
     a = perm_comb_small(n, j, iscomb);
@@ -3752,10 +3742,12 @@ error:
     return NULL;
 }
 
-/* Calculate P(n, k) or C(n, k) using recursive formulas.
- * It is more efficient than sequential multiplication thanks to
- * Karatsuba multiplication.
- */
+/*
+   Calculate P(n, k) or C(n, k) using recursive formulas.
+   It is more efficient than sequential multiplication thanks to
+   Karatsuba multiplication.
+*/
+
 static PyObject *
 perm_comb(PyObject *n, unsigned long long k, int iscomb)
 {
@@ -4016,7 +4008,6 @@ error:
     return NULL;
 }
 
-
 /*[clinic input]
 math.nextafter
 
@@ -4147,7 +4138,6 @@ math_nextafter_impl(PyObject *module, double x, double y, PyObject *steps)
         }
     }
 }
-
 
 /*[clinic input]
 math.ulp -> double
