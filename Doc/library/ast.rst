@@ -289,9 +289,9 @@ Literals
    * ``conversion`` is an integer:
 
      * -1: no formatting
-     * 97: ``!a`` :func:`ASCII <ascii>` formatting (``ord('a')``)
-     * 114: ``!r`` :func:`repr` formatting (``ord('r')``)
-     * 115: ``!s`` :func:`string <str>` formatting (``ord('s')``)
+     * 97 (``ord('a')``): ``!a`` :func:`ASCII <ascii>` formatting
+     * 114 (``ord('r')``): ``!r`` :func:`repr` formatting
+     * 115 (``ord('s')``): ``!s`` :func:`string <str>` formatting
 
    * ``format_spec`` is a :class:`JoinedStr` node representing the formatting
      of the value, or ``None`` if no format was specified. Both
