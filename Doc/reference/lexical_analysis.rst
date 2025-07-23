@@ -981,6 +981,35 @@ assignment expressions ``:=`` must be surrounded by explicit parentheses::
    >>> f'{(half := 1/2)}, {half * 42}'
    '0.5, 21.0'
 
+Reusing the outer f-string quoting type inside a replacement field is
+permitted::
+
+   >>> a = dict(x=2)
+   >>> f"abc {a["x"]} def"
+   'abc 2 def'
+
+Backslashes are also allowed in replacement fields and are evaluated the same
+way as in any other context::
+
+   >>> a = ["a", "b", "c"]
+   >>> print(f"List a contains:\n{"\n".join(a)}")
+   List a contains:
+   a
+   b
+   c
+
+It is possible to nest f-strings::
+
+   >>> name = 'world'
+   >>> f'Repeated:{f' hello {name}' * 3}'
+   'Repeated: hello world hello world hello world'
+
+Portable Python programs should not use more than 5 levels of nesting.
+
+.. impl-detail::
+
+   CPython does not limit nesting of f-strings.
+
 Replacement expressions can contain newlines in both single-quoted and
 triple-quoted f-strings and they can contain comments.
 Everything that comes after a ``#`` inside a replacement field
@@ -1010,15 +1039,16 @@ to the :func:`format` function to format a replacement field value.
 For example, they can be used to specify a field width and padding characters
 using the :ref:`Format Specification Mini-Language <formatspec>`::
 
-   >>> color = 'blue'
-   >>> f'{color:-^20s}'
-   '--------blue--------'
+   >>> number = 14.3
+   >>> f'{number:20.7f}'
+   '          14.3000000'
 
 Top-level format specifiers may include nested replacement fields::
 
    >>> field_size = 20
-   >>> f'{color:-^{field_size}s}'
-   '--------blue--------'
+   >>> precision = 7
+   >>> f'{number:{field_size}.{precision}f}'
+   '          14.3000000'
 
 These nested fields may include their own conversion fields and
 :ref:`format specifiers <formatspec>`::
@@ -1032,40 +1062,65 @@ These nested fields may include their own conversion fields and
 However, these nested fields may not include more deeply nested replacement
 fields.
 
-Formatted string literals may be concatenated, but replacement fields
-cannot be split across literals.
-For example, the following is a single f-string::
+Formatted string literals cannot be used as :term:`docstrings <docstring>`,
+even if they do not include expressions::
 
-   >>> f'{' '}'
-   ' '
+   >>> def foo():
+   ...     f"Not a docstring"
+   ...
+   >>> print(foo.__doc__)
+   None
 
-It is equivalent to ``f'{" "}'``, rather than ``f'{' "}"``.
+.. seealso::
+
+   * :pep:`498` -- Literal String Interpolation
+   * :pep:`701` -- Syntactic formalization of f-strings
+   * :meth:`str.format`, which uses a related format string mechanism.
 
 
-Formal grammar
-^^^^^^^^^^^^^^
+Formal grammar for f-strings
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. grammar-snippet:: python-grammar
-   :group: python-grammar
+F-strings are handled partly by the :term:`lexical analyzer`, which produces the
+tokens :py:data:`~token.FSTRING_START`, :py:data:`~token.FSTRING_MIDDLE`
+and :py:data:`~token.FSTRING_END`, and the parser, which handles expressions
+in the replacement field.
+The exact way the work is split is a CPython implementation detail.
 
-   FSTRING_START:      `fstringprefix` ("'" | '"' | "'''" | '"""')
-   FSTRING_MIDDLE:
-      | <any `source_character`, except backslash, newline, '{' and '}'>
-      | `stringescapeseq`
-      | "{{"
-      | "}}"
-      | <newline, in triple-quoted f-strings only>
-   FSTRING_END:        ("'" | '"' | "'''" | '"""')
-   fstringprefix:      <("f" | "fr" | "rf"), case-insensitive>
-   f_debug_specifier:  whitespace* '=' whitespace*
+Correspondingly, the f-string grammar is a mix of
+:ref:`lexical and syntactic definitions <notation-lexical-vs-syntactic>`.
+
+Whitespace is significant in these situations:
+
+* There may be no whitespace in :py:data:`~token.FSTRING_START` (between
+  the prefix and quote).
+* Whitespace in :py:data:`~token.FSTRING_MIDDLE` is part of the literal
+  string contents.
+* In ``fstring_replacement_field``, if ``f_debug_specifier`` is present,
+  all whitespace after the opening brace up to the ``!`` of
+  ``fstring_conversion``, ``:`` of ``fstring_full_format_spec``,
+  or the closing brace, is retained as part of the expression.
 
 .. grammar-snippet:: python-grammar
    :group: python-grammar
 
    fstring:    `FSTRING_START` `fstring_middle`* `FSTRING_END`
+
+   FSTRING_START:      `fstringprefix` ("'" | '"' | "'''" | '"""')
+   FSTRING_END:        `f_quote`
+   fstringprefix:      <("f" | "fr" | "rf"), case-insensitive>
+   f_debug_specifier:  '='
+   f_quote:            <the quote character(s) used in FSTRING_START>
+
    fstring_middle:
       | `fstring_replacement_field`
       | `FSTRING_MIDDLE`
+   FSTRING_MIDDLE:
+      | (!"\" !`newline` !'{' !'}' !`f_quote`) `source_character`
+      | `stringescapeseq`
+      | "{{"
+      | "}}"
+      | <newline, in triple-quoted f-strings only>
    fstring_replacement_field:
       | '{' `f_expression` [`f_debug_specifier`] [`fstring_conversion`]
             [`fstring_full_format_spec`] '}'
@@ -1079,90 +1134,6 @@ Formal grammar
    f_expression:
       | ','.(`conditional_expression` | "*" `or_expr`)+ [","]
       | `yield_expression`
-
-
-.. versionchanged:: 3.7
-   Prior to Python 3.7, an :keyword:`await` expression and comprehensions
-   containing an :keyword:`async for` clause were illegal in the expressions
-   in formatted string literals due to a problem with the implementation.
-
-.. versionchanged:: 3.12
-   Prior to Python 3.12, comments were not allowed inside f-string replacement
-   fields.
-
----------------
-
-
-Some examples of formatted string literals::
-
-   >>> name = "Fred"
-   >>> f"He said his name is {name!r}."
-   "He said his name is 'Fred'."
-   >>> f"He said his name is {repr(name)}."  # repr() is equivalent to !r
-   "He said his name is 'Fred'."
-   >>> width = 10
-   >>> precision = 4
-   >>> value = decimal.Decimal("12.34567")
-   >>> f"result: {value:{width}.{precision}}"  # nested fields
-   'result:      12.35'
-   >>> today = datetime(year=2017, month=1, day=27)
-   >>> f"{today:%B %d, %Y}"  # using date format specifier
-   'January 27, 2017'
-   >>> f"{today=:%B %d, %Y}" # using date format specifier and debugging
-   'today=January 27, 2017'
-   >>> number = 1024
-   >>> f"{number:#0x}"  # using integer format specifier
-   '0x400'
-   >>> foo = "bar"
-   >>> f"{ foo = }" # preserves whitespace
-   " foo = 'bar'"
-   >>> line = "The mill's closed"
-   >>> f"{line = }"
-   'line = "The mill\'s closed"'
-   >>> f"{line = :20}"
-   "line = The mill's closed   "
-   >>> f"{line = !r:20}"
-   'line = "The mill\'s closed" '
-
-
-Reusing the outer f-string quoting type inside a replacement field is
-permitted::
-
-   >>> a = dict(x=2)
-   >>> f"abc {a["x"]} def"
-   'abc 2 def'
-
-.. versionchanged:: 3.12
-   Prior to Python 3.12, reuse of the same quoting type of the outer f-string
-   inside a replacement field was not possible.
-
-Backslashes are also allowed in replacement fields and are evaluated the same
-way as in any other context::
-
-   >>> a = ["a", "b", "c"]
-   >>> print(f"List a contains:\n{"\n".join(a)}")
-   List a contains:
-   a
-   b
-   c
-
-.. versionchanged:: 3.12
-   Prior to Python 3.12, backslashes were not permitted inside an f-string
-   replacement field.
-
-Formatted string literals cannot be used as docstrings, even if they do not
-include expressions.
-
-::
-
-   >>> def foo():
-   ...     f"Not a docstring"
-   ...
-   >>> foo.__doc__ is None
-   True
-
-See also :pep:`498` for the proposal that added formatted string literals,
-and :meth:`str.format`, which uses a related format string mechanism.
 
 
 .. _t-strings:

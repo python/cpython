@@ -2567,14 +2567,15 @@ field expression, the resulting f-string will contain the expression's source,
 the equal sign, and the value of the expression.
 This is often useful for debugging::
 
-   >>> print(f'{name=}')
-   name='Galahad'
+   >>> number = 14.3
+   >>> 'number=14.3'
+   number=14.3
 
-Whitespace on both sides of the equal sign is significant --- it is retained
-in the result::
+Whitespace before, inside and after the expression, as well as whitespace
+after the equal sign, is significant --- it is retained in the result::
 
-   >>> print(f'{name = }')
-   name = 'Galahad'
+   >>> f'{ number  -  4  = }'
+   ' number  -  4  = 10.3'
 
 
 Conversion specifier
@@ -2602,10 +2603,18 @@ The conversion can be specified explicitly using one of these specifiers:
 
 For example::
 
-   >>> f'{one_third!r} is {one_third!s}'
-   'Fraction(1, 3) is 1/3'
+   >>> str(one_third)
+   '1/3'
+   >>> repr(one_third)
+   'Fraction(1, 3)'
+
+   >>> f'{one_third!s} is {one_third!r}'
+   '1/3 is Fraction(1, 3)'
 
    >>> string = "¡kočka 😸!"
+   >>> ascii(string)
+   "'\\xa1ko\\u010dka \\U0001f638!'"
+
    >>> f'{string = !a}'
    "string = '\\xa1ko\\u010dka \\U0001f638!'"
 
