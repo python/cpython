@@ -174,7 +174,7 @@ class SimpleFinalizationTest(TestBase, unittest.TestCase):
             gc.collect()
             self.assert_del_calls(ids)
             self.assert_survivors([])
-            self.assertIs(wr(), None)
+            self.assertIsNone(wr())
             gc.collect()
             self.assert_del_calls(ids)
             self.assert_survivors([])
@@ -188,12 +188,12 @@ class SimpleFinalizationTest(TestBase, unittest.TestCase):
             gc.collect()
             self.assert_del_calls(ids)
             self.assert_survivors(ids)
-            self.assertIsNot(wr(), None)
+            self.assertIsNotNone(wr())
             self.clear_survivors()
             gc.collect()
             self.assert_del_calls(ids)
             self.assert_survivors([])
-        self.assertIs(wr(), None)
+        self.assertIsNone(wr())
 
     @support.cpython_only
     def test_non_gc(self):
@@ -265,7 +265,7 @@ class SelfCycleFinalizationTest(TestBase, unittest.TestCase):
             gc.collect()
             self.assert_del_calls(ids)
             self.assert_survivors([])
-            self.assertIs(wr(), None)
+            self.assertIsNone(wr())
             gc.collect()
             self.assert_del_calls(ids)
             self.assert_survivors([])
@@ -283,7 +283,7 @@ class SelfCycleFinalizationTest(TestBase, unittest.TestCase):
             self.assert_survivors(ids)
             # This used to be None because weakrefs were cleared before
             # calling finalizers.  Now they are cleared after.
-            self.assertIsNot(wr(), None)
+            self.assertIsNotNone(wr())
             # A weakref with a callback is still cleared before calling
             # finalizers.
             self.assertIsNone(wrc())
@@ -293,7 +293,7 @@ class SelfCycleFinalizationTest(TestBase, unittest.TestCase):
             gc.collect()
             self.assert_del_calls(ids)
             self.assert_survivors([])
-            self.assertIs(wr(), None)
+            self.assertIsNone(wr())
 
     def test_simple_suicide(self):
         # Test the GC is able to deal with an object that kills its last
@@ -306,11 +306,11 @@ class SelfCycleFinalizationTest(TestBase, unittest.TestCase):
             gc.collect()
             self.assert_del_calls(ids)
             self.assert_survivors([])
-            self.assertIs(wr(), None)
+            self.assertIsNone(wr())
             gc.collect()
             self.assert_del_calls(ids)
             self.assert_survivors([])
-            self.assertIs(wr(), None)
+            self.assertIsNone(wr())
 
 
 class ChainedBase:
@@ -505,7 +505,7 @@ class LegacyFinalizationTest(TestBase, unittest.TestCase):
             self.assert_del_calls(ids)
             self.assert_tp_del_calls(ids)
             self.assert_survivors([])
-            self.assertIs(wr(), None)
+            self.assertIsNone(wr())
             gc.collect()
             self.assert_del_calls(ids)
             self.assert_tp_del_calls(ids)
@@ -521,13 +521,13 @@ class LegacyFinalizationTest(TestBase, unittest.TestCase):
             self.assert_tp_del_calls(ids)
             self.assert_survivors(ids)
             # weakrefs are cleared before tp_del is called.
-            self.assertIs(wr(), None)
+            self.assertIsNone(wr())
             self.clear_survivors()
             gc.collect()
             self.assert_del_calls(ids)
             self.assert_tp_del_calls(ids * 2)
             self.assert_survivors(ids)
-        self.assertIs(wr(), None)
+        self.assertIsNone(wr())
 
     def test_legacy_self_cycle(self):
         # Self-cycles with legacy finalizers end up in gc.garbage.
@@ -541,11 +541,11 @@ class LegacyFinalizationTest(TestBase, unittest.TestCase):
             self.assert_tp_del_calls([])
             self.assert_survivors([])
             self.assert_garbage(ids)
-            self.assertIsNot(wr(), None)
+            self.assertIsNotNone(wr())
             # Break the cycle to allow collection
             gc.garbage[0].ref = None
         self.assert_garbage([])
-        self.assertIs(wr(), None)
+        self.assertIsNone(wr())
 
 
 if __name__ == "__main__":
