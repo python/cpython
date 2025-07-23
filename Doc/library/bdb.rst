@@ -193,7 +193,7 @@ The :mod:`bdb` module also defines two classes:
       * ``"return"``: A function or other code block is about to return.
       * ``"exception"``: An exception has occurred.
 
-      For the Python events, specialized functions (see below) are called.
+      For all the events, specialized functions (see below) are called.
 
       The *arg* parameter depends on the previous event.
 
