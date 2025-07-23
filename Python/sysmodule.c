@@ -2661,6 +2661,10 @@ sys__clear_type_descriptors(PyObject *module, PyObject *type)
         return NULL;
     }
     PyTypeObject *typeobj = (PyTypeObject *)(type);
+    if (!_PyType_HasFeature(typeobj, Py_TPFLAGS_HEAPTYPE)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a heap type");
+        return NULL;
+    }
     PyObject *dict = _PyType_GetDict(typeobj);
     if (PyDict_PopString(dict, "__dict__", NULL) < 0) {
         return NULL;
