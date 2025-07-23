@@ -205,6 +205,7 @@ def make_mpdec(context, working_dir):
         [
             "emconfigure",
             mpdec_dir / "configure",
+            "CFLAGS=-fPIC",
             "--prefix",
             PREFIX_DIR,
             "--disable-shared",
