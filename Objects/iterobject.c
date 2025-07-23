@@ -539,3 +539,228 @@ PyAnextAwaitable_New(PyObject *awaitable, PyObject *default_value)
     _PyObject_GC_TRACK(anext);
     return (PyObject *)anext;
 }
+
+/* ------------------------------- */
+
+typedef struct {
+    PyObject_HEAD
+    PyObject *wrapped;
+    PyObject *exc;
+} anextfutureobject;
+
+static void
+anextfuture_dealloc(anextfutureobject *obj)
+{
+    _PyObject_GC_UNTRACK(obj);
+    Py_XDECREF(obj->wrapped);
+    Py_XDECREF(obj->exc);
+    PyObject_GC_Del(obj);
+}
+
+static int
+anextfuture_traverse(anextfutureobject *obj, visitproc visit, void *arg)
+{
+    Py_VISIT(obj->wrapped);
+    return 0;
+}
+
+static PySendResult
+anextfuture_am_send(anextfutureobject *it,
+                   PyObject *Py_UNUSED(arg),
+                   PyObject **result)
+{
+    PyObject *res;
+    *result = it->wrapped;
+    return PYGEN_RETURN;
+}
+
+static PyObject *
+anextfuture_iternext(anextfutureobject *it)
+{
+    PyObject *result;
+    switch (anextfuture_am_send(it, Py_None, &result)) {
+        case PYGEN_RETURN:
+            if (it->exc == Py_None) {
+                (void)_PyGen_SetStopIterationValue(result);
+            } else {
+                PyErr_SetObject(it->exc, result);
+            };
+            Py_DECREF(result);
+            return NULL;
+        case PYGEN_NEXT:
+            return result;
+        case PYGEN_ERROR:
+            return NULL;
+        default:
+            Py_UNREACHABLE();
+    }
+}
+
+static PyAsyncMethods anextfuture_as_async = {
+    PyObject_SelfIter,                          /* am_await */
+    0,                                          /* am_aiter */
+    0,                                          /* am_anext */
+    anextfuture_am_send,                        /* am_send  */
+};
+
+PyTypeObject _PyAnextFuture_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "anext_future",                             /* tp_name */
+    sizeof(anextfutureobject),                  /* tp_basicsize */
+    0,                                          /* tp_itemsize */
+    /* methods */
+    (destructor)anextfuture_dealloc,            /* tp_dealloc */
+    0,                                          /* tp_vectorcall_offset */
+    0,                                          /* tp_getattr */
+    0,                                          /* tp_setattr */
+    &anextfuture_as_async,                      /* tp_as_async */
+    0,                                          /* tp_repr */
+    0,                                          /* tp_as_number */
+    0,                                          /* tp_as_sequence */
+    0,                                          /* tp_as_mapping */
+    0,                                          /* tp_hash */
+    0,                                          /* tp_call */
+    0,                                          /* tp_str */
+    PyObject_GenericGetAttr,                    /* tp_getattro */
+    0,                                          /* tp_setattro */
+    0,                                          /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
+    0,                                          /* tp_doc */
+    (traverseproc)anextfuture_traverse,         /* tp_traverse */
+    0,                                          /* tp_clear */
+    0,                                          /* tp_richcompare */
+    0,                                          /* tp_weaklistoffset */
+    0,                                          /* tp_iter */
+    (unaryfunc)anextfuture_iternext,            /* tp_iternext */
+    0,                                          /* tp_methods */
+    0,                                          /* tp_members */
+};
+
+PyObject *
+PyAnextFuture_New(PyObject *wrapped, PyObject *exc)
+{
+    anextfutureobject *anextfuture = PyObject_GC_New(
+            anextfutureobject, &_PyAnextFuture_Type);
+    if (anextfuture == NULL) {
+        return NULL;
+    }
+    anextfuture->wrapped = Py_NewRef(wrapped);
+    anextfuture->exc = Py_NewRef(exc);
+    _PyObject_GC_TRACK(anextfuture);
+    return (PyObject *)anextfuture;
+}
+/* -------------------------------------------- */
+
+typedef struct {
+    PyObject_HEAD
+    PyObject *it_iter; /* Set to NULL when iterator is exhausted */
+} aiterobject;
+
+static void
+aiter_dealloc(aiterobject *it)
+{
+    _PyObject_GC_UNTRACK(it);
+    Py_XDECREF(it->it_iter);
+    PyObject_GC_Del(it);
+}
+
+PyObject *
+PySeqAIter_New(PyObject *iter)
+{
+    aiterobject *ai;
+
+    if (!PyIter_Check(iter)) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+    ai = PyObject_GC_New(aiterobject, &PySeqAIter_Type);
+    if (ai == NULL)
+        return NULL;
+
+    //
+    // _PyCoro_GetAwaitableIter
+
+    // it->tp_as_async->am_aiter = ??;
+    ai->it_iter = Py_NewRef(iter);
+    _PyObject_GC_TRACK(ai);
+    return (PyObject *)ai;
+}
+
+static int
+aiter_traverse(aiterobject *ai, visitproc visit, void *arg)
+{
+    Py_VISIT(ai->it_iter);
+    return 0;
+}
+
+static PyObject *
+aiter_iternext(PyObject *aiterator)
+{
+    aiterobject *ai;
+    PyObject *iter, *value, *result = NULL;
+
+    assert(PySeqAIter_Check(aiterator));
+    ai = (aiterobject *)aiterator;
+
+    iter = ai->it_iter;
+
+    value = PyIter_Next(iter);
+    if (value != NULL) {
+        // XXX: I would love to wrap this in an _asyncio.Future since that's
+        // exactly the use case for this, but I can't figure out how to import
+        // from modules and I'm not sure that's the way to go about this.
+        // result = PyType_FromSpec(Future_spec);
+        // this is a very poor man's future lmao
+        result = PyAnextFuture_New(value, Py_None);
+        return result;
+    }
+
+    if (!PyErr_Occurred()) {
+        result = PyAnextFuture_New(Py_None, PyExc_StopAsyncIteration);
+    };
+
+    ai->it_iter = NULL;
+    Py_DECREF(iter);
+
+    return result;
+}
+
+static PyAsyncMethods aiter_as_async = {
+    0,                                         /* am_await */
+    PyObject_SelfIter,                          /* am_aiter */
+    aiter_iternext,                             /* am_anext */
+    0,                                          /* am_send  */
+};
+
+PyTypeObject PySeqAIter_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "async_iterator",                           /* tp_name */
+    sizeof(aiterobject),                        /* tp_basicsize */
+    0,                                          /* tp_itemsize */
+    /* methods */
+    (destructor)aiter_dealloc,                   /* tp_dealloc */
+    0,                                          /* tp_vectorcall_offset */
+    0,                                          /* tp_getattr */
+    0,                                          /* tp_setattr */
+    &aiter_as_async,                            /* tp_as_async */
+    0,                                          /* tp_repr */
+    0,                                          /* tp_as_number */
+    0,                                          /* tp_as_sequence */
+    0,                                          /* tp_as_mapping */
+    0,                                          /* tp_hash */
+    0,                                          /* tp_call */
+    0,                                          /* tp_str */
+    PyObject_GenericGetAttr,                    /* tp_getattro */
+    0,                                          /* tp_setattro */
+    0,                                          /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
+    0,                                          /* tp_doc */
+    (traverseproc)aiter_traverse,               /* tp_traverse */
+    0,                                          /* tp_clear */
+    0,                                          /* tp_richcompare */
+    0,                                          /* tp_weaklistoffset */
+    0,                                          /* tp_iter */
+    0,                                          /* tp_iternext */
+    0,                                          /* tp_methods */
+    0,                                          /* tp_members */
+};
