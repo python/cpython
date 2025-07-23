@@ -154,7 +154,7 @@ enum machine_format_code {
 static arraydata *
 arraydata_alloc(Py_ssize_t size, int itemsize)
 {
-    assert (size <= PY_SSIZE_T_MAX / itemsize);
+    assert(size <= PY_SSIZE_T_MAX / itemsize);
     Py_ssize_t bufsize = sizeof(arraydata) + size * itemsize;
     arraydata *data = (arraydata *)PyMem_Malloc(bufsize);
     if (data == NULL) {
