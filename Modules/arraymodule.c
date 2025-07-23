@@ -151,10 +151,16 @@ enum machine_format_code {
 
 #define array_Check(op, state) PyObject_TypeCheck(op, state->ArrayType)
 
+static inline bool
+arraydata_size_valid(Py_ssize_t size, int itemsize)
+{
+    return size <= (PY_SSIZE_T_MAX - sizeof(arraydata)) / itemsize;
+}
+
 static arraydata *
 arraydata_alloc(Py_ssize_t size, int itemsize)
 {
-    assert(size <= PY_SSIZE_T_MAX / itemsize);
+    assert(arraydata_size_valid(size, itemsize));
     Py_ssize_t bufsize = sizeof(arraydata) + size * itemsize;
     arraydata *data = (arraydata *)PyMem_Malloc(bufsize);
     if (data == NULL) {
@@ -265,7 +271,7 @@ array_resize(arrayobject *self, Py_ssize_t newsize)
 
     /* XXX The following multiplication and division does not optimize away
        like it does for lists since the size is not known at compile time */
-    if (_new_size > ((~(size_t)0) / itemsize)) {
+    if (!arraydata_size_valid(_new_size, itemsize)) {
         PyErr_NoMemory();
         return -1;
     }
@@ -745,7 +751,7 @@ newarrayobject(PyTypeObject *type, Py_ssize_t size, const struct arraydescr *des
     }
 
     /* Check for overflow */
-    if (size > PY_SSIZE_T_MAX / descr->itemsize) {
+    if (!arraydata_size_valid(size, descr->itemsize)) {
         return PyErr_NoMemory();
     }
     op = (arrayobject *) type->tp_alloc(type, 0);
@@ -1368,7 +1374,7 @@ array_do_extend_lock_held(array_state *state, arrayobject *self, PyObject *bb)
         return -1;
     }
     if ((Py_SIZE(self) > PY_SSIZE_T_MAX - Py_SIZE(b)) ||
-        ((Py_SIZE(self) + Py_SIZE(b)) > PY_SSIZE_T_MAX / self->ob_descr->itemsize)) {
+        !arraydata_size_valid(Py_SIZE(self) + Py_SIZE(b), self->ob_descr->itemsize)) {
         PyErr_NoMemory();
         return -1;
     }
@@ -1424,6 +1430,7 @@ array_inplace_repeat_lock_held(PyObject *op, Py_ssize_t n)
     if (array_size > 0 && n != 1 ) {
         if (n < 0)
             n = 0;
+        // XXX This check below does nothing useful???
         if ((self->ob_descr->itemsize != 0) &&
             (array_size > PY_SSIZE_T_MAX / self->ob_descr->itemsize)) {
             return PyErr_NoMemory();
@@ -1848,7 +1855,7 @@ array_array_fromfile_impl(arrayobject *self, PyTypeObject *cls, PyObject *f,
 /*[clinic end generated code: output=83a667080b345ebc input=3822e907c1c11f1a]*/
 {
     PyObject *b, *res;
-    Py_ssize_t itemsize = self->ob_descr->itemsize;
+    int itemsize = self->ob_descr->itemsize;
     Py_ssize_t nbytes;
     int not_enough_bytes;
 
@@ -1856,7 +1863,7 @@ array_array_fromfile_impl(arrayobject *self, PyTypeObject *cls, PyObject *f,
         PyErr_SetString(PyExc_ValueError, "negative count");
         return NULL;
     }
-    if (n > PY_SSIZE_T_MAX / itemsize) {
+    if (!arraydata_size_valid(n, itemsize)) {
         PyErr_NoMemory();
         return NULL;
     }
@@ -2048,7 +2055,7 @@ array_array_frombytes_impl(arrayobject *self, Py_buffer *buffer)
     if (n > 0) {
         Py_ssize_t old_size = Py_SIZE(self);
         if ((n > PY_SSIZE_T_MAX - old_size) ||
-            ((old_size + n) > PY_SSIZE_T_MAX / itemsize)) {
+            !arraydata_size_valid(old_size + n, itemsize)) {
                 return PyErr_NoMemory();
         }
         if (array_resize(self, old_size + n) == -1) {
@@ -2071,7 +2078,7 @@ static PyObject *
 array_array_tobytes_impl(arrayobject *self)
 /*[clinic end generated code: output=87318e4edcdc2bb6 input=c4d44d5499d2320f]*/
 {
-    if (Py_SIZE(self) <= PY_SSIZE_T_MAX / self->ob_descr->itemsize) {
+    if (arraydata_size_valid(Py_SIZE(self), self->ob_descr->itemsize)) {
         return PyBytes_FromStringAndSize(array_items_ptr(self),
                             Py_SIZE(self) * self->ob_descr->itemsize);
     } else {
@@ -2125,7 +2132,7 @@ array_array_fromunicode_impl(arrayobject *self, PyObject *ustr)
         Py_ssize_t old_size = Py_SIZE(self);
         Py_ssize_t new_size = old_size + ustr_length;
 
-        if (new_size < 0 || (size_t)new_size > PY_SSIZE_T_MAX / sizeof(Py_UCS4)) {
+        if (new_size < 0 || !arraydata_size_valid(new_size, sizeof(Py_UCS4))) {
             return PyErr_NoMemory();
         }
         if (array_resize(self, new_size) == -1) {
