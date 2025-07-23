@@ -1286,31 +1286,34 @@ class _BaseGenericAlias(_Final, _root=True):
 
 
 class _GenericAlias(_BaseGenericAlias, _root=True):
-    # The type of parameterized generics.
-    #
-    # That is, for example, `type(List[int])` is `_GenericAlias`.
-    #
-    # Objects which are instances of this class include:
-    # * Parameterized container types, e.g. `Tuple[int]`, `List[int]`.
-    #  * Note that native container types, e.g. `tuple`, `list`, use
-    #    `types.GenericAlias` instead.
-    # * Parameterized classes:
-    #     class C[T]: pass
-    #     # C[int] is a _GenericAlias
-    # * `Callable` aliases, generic `Callable` aliases, and
-    #   parameterized `Callable` aliases:
-    #     T = TypeVar('T')
-    #     # _CallableGenericAlias inherits from _GenericAlias.
-    #     A = Callable[[], None]  # _CallableGenericAlias
-    #     B = Callable[[T], None]  # _CallableGenericAlias
-    #     C = B[int]  # _CallableGenericAlias
-    # * Parameterized `Final`, `ClassVar`, `TypeGuard`, and `TypeIs`:
-    #     # All _GenericAlias
-    #     Final[int]
-    #     ClassVar[float]
-    #     TypeGuard[bool]
-    #     TypeIs[range]
+    """The type of parameterized generics.
 
+    That is, for example, `type(List[int])` is `_GenericAlias`.
+
+    Objects which are instances of this class include:
+    * Parameterized container types, e.g. `Tuple[int]`, `List[int]`.
+     * Note that native container types, e.g. `tuple`, `list`, use
+       `types.GenericAlias` instead.
+    * Parameterized classes:
+        class C[T]: pass
+        # C[int] is a _GenericAlias
+    * `Callable` aliases, generic `Callable` aliases, and
+      parameterized `Callable` aliases:
+        T = TypeVar('T')
+        # _CallableGenericAlias inherits from _GenericAlias.
+        A = Callable[[], None]  # _CallableGenericAlias
+        B = Callable[[T], None]  # _CallableGenericAlias
+        C = B[int]  # _CallableGenericAlias
+    * Parameterized `Final`, `ClassVar`, `TypeGuard`, and `TypeIs`:
+        # All _GenericAlias
+        Final[int]
+        ClassVar[float]
+        TypeGuard[bool]
+        TypeIs[range]
+
+    Note that objects of this class is not considered to be a class (e.g by `inspect.isclass`),
+    even though they behave like them.
+    """
     def __init__(self, origin, args, *, inst=True, name=None):
         super().__init__(origin, inst=inst, name=name)
         if not isinstance(args, tuple):
@@ -1342,20 +1345,21 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
 
     @_tp_cache
     def __getitem__(self, args):
-        # Parameterizes an already-parameterized object.
-        #
-        # For example, we arrive here doing something like:
-        #   T1 = TypeVar('T1')
-        #   T2 = TypeVar('T2')
-        #   T3 = TypeVar('T3')
-        #   class A(Generic[T1]): pass
-        #   B = A[T2]  # B is a _GenericAlias
-        #   C = B[T3]  # Invokes _GenericAlias.__getitem__
-        #
-        # We also arrive here when parameterizing a generic `Callable` alias:
-        #   T = TypeVar('T')
-        #   C = Callable[[T], None]
-        #   C[int]  # Invokes _GenericAlias.__getitem__
+        """Parameterizes an already-parameterized object.
+
+        For example, we arrive here doing something like:
+          T1 = TypeVar('T1')
+          T2 = TypeVar('T2')
+          T3 = TypeVar('T3')
+          class A(Generic[T1]): pass
+          B = A[T2]  # B is a _GenericAlias
+          C = B[T3]  # Invokes _GenericAlias.__getitem__
+
+        We also arrive here when parameterizing a generic `Callable` alias:
+          T = TypeVar('T')
+          C = Callable[[T], None]
+          C[int]  # Invokes _GenericAlias.__getitem__
+        """
 
         if self.__origin__ in (Generic, Protocol):
             # Can't subscript Generic[...] or Protocol[...].
@@ -1372,20 +1376,20 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
         return r
 
     def _determine_new_args(self, args):
-        # Determines new __args__ for __getitem__.
-        #
-        # For example, suppose we had:
-        #   T1 = TypeVar('T1')
-        #   T2 = TypeVar('T2')
-        #   class A(Generic[T1, T2]): pass
-        #   T3 = TypeVar('T3')
-        #   B = A[int, T3]
-        #   C = B[str]
-        # `B.__args__` is `(int, T3)`, so `C.__args__` should be `(int, str)`.
-        # Unfortunately, this is harder than it looks, because if `T3` is
-        # anything more exotic than a plain `TypeVar`, we need to consider
-        # edge cases.
+        """Determines new __args__ for __getitem__.
 
+        For example, suppose we had:
+          T1 = TypeVar('T1')
+          T2 = TypeVar('T2')
+          class A(Generic[T1, T2]): pass
+          T3 = TypeVar('T3')
+          B = A[int, T3]
+          C = B[str]
+        `B.__args__` is `(int, T3)`, so `C.__args__` should be `(int, str)`.
+        Unfortunately, this is harder than it looks, because if `T3` is
+        anything more exotic than a plain `TypeVar`, we need to consider
+        edge cases.
+        """
         params = self.__parameters__
         # In the example above, this would be {T3: str}
         for param in params:
