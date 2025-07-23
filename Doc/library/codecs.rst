@@ -1251,11 +1251,7 @@ particular, the following variants typically exist:
 +-----------------+--------------------------------+--------------------------------+
 | iso8859_3       | iso-8859-3, latin3, L3         | Esperanto, Maltese             |
 +-----------------+--------------------------------+--------------------------------+
-| iso8859_4       | iso-8859-4, latin4, L4         | Danish, English, Estonian,     |
-|                 |                                | Finnish, German, Greenlandic,  |
-|                 |                                | Latin, Latvian, Lithuanian,    |
-|                 |                                | Norwegian, Sámi, Slovene,      |
-|                 |                                | Swedish                        |
+| iso8859_4       | iso-8859-4, latin4, L4         | Northern Europe                |
 +-----------------+--------------------------------+--------------------------------+
 | iso8859_5       | iso-8859-5, cyrillic           | Belarusian, Bulgarian,         |
 |                 |                                | Macedonian, Russian, Serbian   |
