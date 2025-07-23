@@ -1516,7 +1516,7 @@ searched when looking up an attribute on a class. See :ref:`python_2.3_mro` for 
 description of how Python determines the MRO for a class.
 
 Multiple inheritance is not always allowed. Attempting to define a class with multiple
-inheritance will raise an error if one of the bases is invalid, if a consistent MRO
+inheritance will raise an error if one of the bases does not allow subclassing, if a consistent MRO
 cannot be created, if no valid metaclass can be determined, or if there is an instance
 layout conflict. We'll discuss each of these in turn.
 
@@ -1555,7 +1555,7 @@ child class. It must be a metaclass that is a subclass of
 all other candidate metaclasses. If no such metaclass exists among the candidates,
 the class cannot be created, as explained in :ref:`metaclass-determination`.
 
-Finally, the memory layouts of the bases must be compatible. This means that it must be
+Finally, the instance layouts of the bases must be compatible. This means that it must be
 possible to compute a *solid base* for the class. Exactly which classes are solid bases
 depends on the Python implementation.
 
