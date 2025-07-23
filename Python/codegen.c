@@ -4081,16 +4081,6 @@ codegen_template_str(compiler *c, expr_ty e)
         }
         else {
             VISIT(c, expr, value);
-            Py_ssize_t j;
-            for (j = i + 1; j < value_count; j++) {
-                value = asdl_seq_GET(e->v.TemplateStr.values, j);
-                if (value->kind == Interpolation_kind) {
-                    break;
-                }
-                VISIT(c, expr, value);
-                ADDOP_INPLACE(c, loc, Add);
-            }
-            i = j - 1;
             stringslen++;
             last_was_interpolation = 0;
         }

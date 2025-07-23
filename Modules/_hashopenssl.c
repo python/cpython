@@ -495,8 +495,8 @@ raise_unsupported_algorithm_impl(PyObject *exc_type,
 {
     // Since OpenSSL 3.0, if the algorithm is not supported or fetching fails,
     // the reason lacks the algorithm name.
-    int errcode = ERR_peek_last_error(), reason_id;
-    switch (reason_id = ERR_GET_REASON(errcode)) {
+    int errcode = ERR_peek_last_error();
+    switch (ERR_GET_REASON(errcode)) {
         case ERR_R_UNSUPPORTED: {
             PyObject *text = PyUnicode_FromFormat(fallback_format, format_arg);
             if (text != NULL) {
@@ -651,14 +651,11 @@ disable_fips_property(Py_hash_type py_ht)
  * If 'name' is an OpenSSL indexed name, the return value is cached.
  */
 static PY_EVP_MD *
-get_openssl_evp_md_by_utf8name(PyObject *module, const char *name,
+get_openssl_evp_md_by_utf8name(_hashlibstate *state, const char *name,
                                Py_hash_type py_ht)
 {
     PY_EVP_MD *digest = NULL, *other_digest = NULL;
-    _hashlibstate *state = get_hashlib_state(module);
-    py_hashentry_t *entry = (py_hashentry_t *)_Py_hashtable_get(
-        state->hashtable, (const void*)name
-    );
+    py_hashentry_t *entry = _Py_hashtable_get(state->hashtable, name);
 
     if (entry != NULL) {
         if (!disable_fips_property(py_ht)) {
@@ -715,26 +712,25 @@ get_openssl_evp_md_by_utf8name(PyObject *module, const char *name,
  *      py_ht       The message digest purpose.
  */
 static PY_EVP_MD *
-get_openssl_evp_md(PyObject *module, PyObject *digestmod, Py_hash_type py_ht)
+get_openssl_evp_md(_hashlibstate *state, PyObject *digestmod, Py_hash_type py_ht)
 {
     const char *name;
     if (PyUnicode_Check(digestmod)) {
         name = PyUnicode_AsUTF8(digestmod);
     }
     else {
-        PyObject *dict = get_hashlib_state(module)->constructs;
+        PyObject *dict = state->constructs;
         assert(dict != NULL);
         PyObject *borrowed_ref = PyDict_GetItemWithError(dict, digestmod);
         name = borrowed_ref == NULL ? NULL : PyUnicode_AsUTF8(borrowed_ref);
     }
     if (name == NULL) {
         if (!PyErr_Occurred()) {
-            _hashlibstate *state = get_hashlib_state(module);
             raise_unsupported_algorithm_error(state, digestmod);
         }
         return NULL;
     }
-    return get_openssl_evp_md_by_utf8name(module, name, py_ht);
+    return get_openssl_evp_md_by_utf8name(state, name, py_ht);
 }
 
 // --- OpenSSL HASH wrappers --------------------------------------------------
@@ -1191,7 +1187,7 @@ static PyType_Spec HASHXOFobject_type_spec = {
 #endif
 
 static PyObject *
-_hashlib_HASH(PyObject *module, const char *digestname, PyObject *data_obj,
+_hashlib_HASH(_hashlibstate *state, const char *digestname, PyObject *data_obj,
               int usedforsecurity)
 {
     Py_buffer view = { 0 };
@@ -1203,19 +1199,13 @@ _hashlib_HASH(PyObject *module, const char *digestname, PyObject *data_obj,
         GET_BUFFER_VIEW_OR_ERROUT(data_obj, &view);
     }
 
-    digest = get_openssl_evp_md_by_utf8name(
-        module, digestname, usedforsecurity ? Py_ht_evp : Py_ht_evp_nosecurity
-    );
+    Py_hash_type purpose = usedforsecurity ? Py_ht_evp : Py_ht_evp_nosecurity;
+    digest = get_openssl_evp_md_by_utf8name(state, digestname, purpose);
     if (digest == NULL) {
         goto exit;
     }
 
-    if ((EVP_MD_flags(digest) & EVP_MD_FLAG_XOF) == EVP_MD_FLAG_XOF) {
-        type = get_hashlib_state(module)->HASHXOF_type;
-    } else {
-        type = get_hashlib_state(module)->HASH_type;
-    }
-
+    type = PY_EVP_MD_xof(digest) ? state->HASHXOF_type : state->HASH_type;
     self = new_hash_object(type);
     if (self == NULL) {
         goto exit;
@@ -1267,7 +1257,8 @@ exit:
         if (_Py_hashlib_data_argument(&data_obj, DATA, STRING) < 0) {   \
             return NULL;                                                \
         }                                                               \
-        return _hashlib_HASH(MODULE, NAME, data_obj, USEDFORSECURITY);  \
+        _hashlibstate *state = get_hashlib_state(MODULE);               \
+        return _hashlib_HASH(state, NAME, data_obj, USEDFORSECURITY);   \
     } while (0)
 
 /* The module-level function: new() */
@@ -1569,12 +1560,14 @@ pbkdf2_hmac_impl(PyObject *module, const char *hash_name,
                  PyObject *dklen_obj)
 /*[clinic end generated code: output=144b76005416599b input=ed3ab0d2d28b5d5c]*/
 {
+    _hashlibstate *state = get_hashlib_state(module);
     PyObject *key_obj = NULL;
     char *key;
     long dklen;
     int retval;
 
-    PY_EVP_MD *digest = get_openssl_evp_md_by_utf8name(module, hash_name, Py_ht_pbkdf2);
+    PY_EVP_MD *digest = get_openssl_evp_md_by_utf8name(state, hash_name,
+                                                       Py_ht_pbkdf2);
     if (digest == NULL) {
         goto end;
     }
@@ -1773,6 +1766,7 @@ _hashlib_hmac_singleshot_impl(PyObject *module, Py_buffer *key,
                               Py_buffer *msg, PyObject *digest)
 /*[clinic end generated code: output=82f19965d12706ac input=0a0790cc3db45c2e]*/
 {
+    _hashlibstate *state = get_hashlib_state(module);
     unsigned char md[EVP_MAX_MD_SIZE] = {0};
     unsigned int md_len = 0;
     unsigned char *result;
@@ -1790,7 +1784,7 @@ _hashlib_hmac_singleshot_impl(PyObject *module, Py_buffer *key,
         return NULL;
     }
 
-    evp = get_openssl_evp_md(module, digest, Py_ht_mac);
+    evp = get_openssl_evp_md(state, digest, Py_ht_mac);
     if (evp == NULL) {
         return NULL;
     }
@@ -1808,7 +1802,6 @@ _hashlib_hmac_singleshot_impl(PyObject *module, Py_buffer *key,
 
     if (result == NULL) {
         if (is_xof) {
-            _hashlibstate *state = get_hashlib_state(module);
             /* use a better default error message if an XOF is used */
             raise_unsupported_algorithm_error(state, digest);
         }
@@ -1862,6 +1855,7 @@ _hashlib_hmac_new_impl(PyObject *module, Py_buffer *key, PyObject *msg_obj,
                        PyObject *digestmod)
 /*[clinic end generated code: output=c20d9e4d9ed6d219 input=5f4071dcc7f34362]*/
 {
+    _hashlibstate *state = get_hashlib_state(module);
     PY_EVP_MD *digest;
     HMAC_CTX *ctx = NULL;
     HMACobject *self = NULL;
@@ -1879,7 +1873,7 @@ _hashlib_hmac_new_impl(PyObject *module, Py_buffer *key, PyObject *msg_obj,
         return NULL;
     }
 
-    digest = get_openssl_evp_md(module, digestmod, Py_ht_mac);
+    digest = get_openssl_evp_md(state, digestmod, Py_ht_mac);
     if (digest == NULL) {
         return NULL;
     }
@@ -1895,7 +1889,6 @@ _hashlib_hmac_new_impl(PyObject *module, Py_buffer *key, PyObject *msg_obj,
     PY_EVP_MD_free(digest);
     if (r == 0) {
         if (is_xof) {
-            _hashlibstate *state = get_hashlib_state(module);
             /* use a better default error message if an XOF is used */
             raise_unsupported_algorithm_error(state, digestmod);
         }
@@ -1905,7 +1898,6 @@ _hashlib_hmac_new_impl(PyObject *module, Py_buffer *key, PyObject *msg_obj,
         goto error;
     }
 
-    _hashlibstate *state = get_hashlib_state(module);
     self = PyObject_New(HMACobject, state->HMAC_type);
     if (self == NULL) {
         goto error;

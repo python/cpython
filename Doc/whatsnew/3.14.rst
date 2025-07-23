@@ -1228,11 +1228,10 @@ argparse
 
   .. _whatsnew314-color-argparse:
 
-* Introduced the optional *color* parameter to
-  :class:`argparse.ArgumentParser`, enabling color for help text.
-  This can be controlled by :ref:`environment variables
-  <using-on-controlling-color>`. Color has also been enabled for help in the
-  :ref:`stdlib CLIs <library-cmdline>` which use :mod:`!argparse`.
+* Enable color for help text, which can be disabled with the optional *color*
+  parameter to :class:`argparse.ArgumentParser`.
+  This can also be controlled by :ref:`environment variables
+  <using-on-controlling-color>`.
   (Contributed by Hugo van Kemenade in :gh:`130645`.)
 
 
@@ -2193,6 +2192,7 @@ urllib
   - Discard URL authority if it matches the local hostname.
   - Discard URL authority if it resolves to a local IP address when the new
     *resolve_host* argument is set to true.
+  - Discard URL query and fragment components.
   - Raise :exc:`~urllib.error.URLError` if a URL authority isn't local,
     except on Windows where we return a UNC path as before.
 
@@ -2324,8 +2324,7 @@ uuid
   * :func:`~uuid.uuid3` and :func:`~uuid.uuid5` are both roughly 40% faster
     for 16-byte names and 20% faster for 1024-byte names. Performance for
     longer names remains unchanged.
-  * :func:`~uuid.uuid4` and :func:`~uuid.uuid8` are 30% and 40% faster
-    respectively.
+  * :func:`~uuid.uuid4` is 30% faster.
 
   (Contributed by Bénédikt Tran in :gh:`128150`.)
 
@@ -2941,11 +2940,6 @@ New features
   file.
   (Contributed by Victor Stinner in :gh:`127350`.)
 
-* Add support of nullable arguments in :c:func:`PyArg_ParseTuple` and
-  similar functions.
-  Adding ``?`` after any format unit makes ``None`` be accepted as a value.
-  (Contributed by Serhiy Storchaka in :gh:`112068`.)
-
 * The ``k`` and ``K`` formats in :c:func:`PyArg_ParseTuple` and
   similar functions now use :meth:`~object.__index__` if available,
   like all other integer formats.
@@ -3041,6 +3035,7 @@ Porting to Python 3.14
   * ``_Py_GetConfig()``: :c:func:`PyConfig_Get` and :c:func:`PyConfig_GetInt`
   * ``_Py_HashBytes()``: :c:func:`Py_HashBuffer`
   * ``_Py_fopen_obj()``: :c:func:`Py_fopen`
+  * ``PyMutex_IsLocked()`` : :c:func:`PyMutex_IsLocked`
 
   The `pythoncapi-compat project`_ can be used to get most of these new
   functions on Python 3.13 and older.

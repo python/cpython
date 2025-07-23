@@ -30,7 +30,8 @@ templateiter_next(PyObject *op)
             Py_SETREF(item, PyIter_Next(self->interpolationsiter));
             self->from_strings = 1;
         }
-    } else {
+    }
+    else {
         item = PyIter_Next(self->interpolationsiter);
         self->from_strings = 1;
     }
@@ -246,54 +247,6 @@ template_iter(PyObject *op)
 }
 
 static PyObject *
-template_strings_append_str(PyObject *strings, PyObject *str)
-{
-    Py_ssize_t stringslen = PyTuple_GET_SIZE(strings);
-    PyObject *string = PyTuple_GET_ITEM(strings, stringslen - 1);
-    PyObject *concat = PyUnicode_Concat(string, str);
-    if (concat == NULL) {
-        return NULL;
-    }
-
-    PyObject *newstrings = PyTuple_New(stringslen);
-    if (newstrings == NULL) {
-        Py_DECREF(concat);
-        return NULL;
-    }
-
-    for (Py_ssize_t i = 0; i < stringslen - 1; i++) {
-        PyTuple_SET_ITEM(newstrings, i, Py_NewRef(PyTuple_GET_ITEM(strings, i)));
-    }
-    PyTuple_SET_ITEM(newstrings, stringslen - 1, concat);
-
-    return newstrings;
-}
-
-static PyObject *
-template_strings_prepend_str(PyObject *strings, PyObject *str)
-{
-    Py_ssize_t stringslen = PyTuple_GET_SIZE(strings);
-    PyObject *string = PyTuple_GET_ITEM(strings, 0);
-    PyObject *concat = PyUnicode_Concat(str, string);
-    if (concat == NULL) {
-        return NULL;
-    }
-
-    PyObject *newstrings = PyTuple_New(stringslen);
-    if (newstrings == NULL) {
-        Py_DECREF(concat);
-        return NULL;
-    }
-
-    PyTuple_SET_ITEM(newstrings, 0, concat);
-    for (Py_ssize_t i = 1; i < stringslen; i++) {
-        PyTuple_SET_ITEM(newstrings, i, Py_NewRef(PyTuple_GET_ITEM(strings, i)));
-    }
-
-    return newstrings;
-}
-
-static PyObject *
 template_strings_concat(PyObject *left, PyObject *right)
 {
     Py_ssize_t left_stringslen = PyTuple_GET_SIZE(left);
@@ -344,47 +297,17 @@ template_concat_templates(templateobject *self, templateobject *other)
     return newtemplate;
 }
 
-static PyObject *
-template_concat_template_str(templateobject *self, PyObject *other)
-{
-    PyObject *newstrings = template_strings_append_str(self->strings, other);
-    if (newstrings == NULL) {
-        return NULL;
-    }
-
-    PyObject *newtemplate = _PyTemplate_Build(newstrings, self->interpolations);
-    Py_DECREF(newstrings);
-    return newtemplate;
-}
-
-static PyObject *
-template_concat_str_template(templateobject *self, PyObject *other)
-{
-    PyObject *newstrings = template_strings_prepend_str(self->strings, other);
-    if (newstrings == NULL) {
-        return NULL;
-    }
-
-    PyObject *newtemplate = _PyTemplate_Build(newstrings, self->interpolations);
-    Py_DECREF(newstrings);
-    return newtemplate;
-}
-
 PyObject *
 _PyTemplate_Concat(PyObject *self, PyObject *other)
 {
     if (_PyTemplate_CheckExact(self) && _PyTemplate_CheckExact(other)) {
         return template_concat_templates((templateobject *) self, (templateobject *) other);
     }
-    else if ((_PyTemplate_CheckExact(self)) && PyUnicode_Check(other)) {
-        return template_concat_template_str((templateobject *) self, other);
-    }
-    else if (PyUnicode_Check(self) && (_PyTemplate_CheckExact(other))) {
-        return template_concat_str_template((templateobject *) other, self);
-    }
-    else {
-        Py_RETURN_NOTIMPLEMENTED;
-    }
+
+    PyErr_Format(PyExc_TypeError,
+        "can only concatenate string.templatelib.Template (not \"%T\") to string.templatelib.Template",
+        other);
+    return NULL;
 }
 
 static PyObject *

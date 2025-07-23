@@ -58,7 +58,10 @@ except ImportError:
         raise TypeError
     except TypeError as exc:
         TracebackType = type(exc.__traceback__)
-        FrameType = type(exc.__traceback__.tb_frame)
+
+    _f = (lambda: sys._getframe())()
+    FrameType = type(_f)
+    FrameLocalsProxyType = type(_f.f_locals)
 
     GetSetDescriptorType = type(FunctionType.__code__)
     MemberDescriptorType = type(FunctionType.__globals__)

@@ -1,0 +1,124 @@
+name: Reusable Sanitizer
+
+on:
+  workflow_call:
+    inputs:
+      sanitizer:
+        required: true
+        type: string
+      config_hash:
+        required: true
+        type: string
+      free-threading:
+        description: Whether to use free-threaded mode
+        required: false
+        type: boolean
+        default: false
+
+env:
+  FORCE_COLOR: 1
+
+jobs:
+  build-san-reusable:
+    name: >-
+      ${{ inputs.sanitizer }}${{
+        inputs.free-threading
+        && ' (free-threading)'
+        || ''
+      }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
+    - name: Runner image version
+      run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
+    - name: Restore config.cache
+      uses: actions/cache@v4
+      with:
+        path: config.cache
+        key: ${{ github.job }}-${{ env.IMAGE_OS_VERSION }}-${{ inputs.sanitizer }}-${{ inputs.config_hash }}
+    - name: Install dependencies
+      run: |
+        sudo ./.github/workflows/posix-deps-apt.sh
+        # Install clang
+        wget https://apt.llvm.org/llvm.sh
+        chmod +x llvm.sh
+
+        if [ "${SANITIZER}" = "TSan" ]; then
+          sudo ./llvm.sh 17  # gh-121946: llvm-18 package is temporarily broken
+          sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-17 100
+          sudo update-alternatives --set clang /usr/bin/clang-17
+          sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-17 100
+          sudo update-alternatives --set clang++ /usr/bin/clang++-17
+          # Reduce ASLR to avoid TSan crashing
+          sudo sysctl -w vm.mmap_rnd_bits=28
+        else
+          sudo ./llvm.sh 20
+        fi
+
+    - name: Sanitizer option setup
+      run: |
+        if [ "${SANITIZER}" = "TSan" ]; then
+          echo "TSAN_OPTIONS=${SAN_LOG_OPTION} suppressions=${GITHUB_WORKSPACE}/Tools/tsan/suppressions${{
+              fromJSON(inputs.free-threading)
+              && '_free_threading'
+              || ''
+            }}.txt handle_segv=0" >> "$GITHUB_ENV"
+        else
+          echo "UBSAN_OPTIONS=${SAN_LOG_OPTION}" >> "$GITHUB_ENV"
+        fi
+        echo "CC=clang" >> "$GITHUB_ENV"
+        echo "CXX=clang++" >> "$GITHUB_ENV"
+      env:
+        SANITIZER: ${{ inputs.sanitizer }}
+        SAN_LOG_OPTION: log_path=${{ github.workspace }}/san_log
+    - name: Add ccache to PATH
+      run: |
+        echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
+    - name: Configure ccache action
+      uses: hendrikmuhs/ccache-action@v1.2
+      with:
+        save: ${{ github.event_name == 'push' }}
+        max-size: "200M"
+    - name: Configure CPython
+      run: >-
+        ./configure
+        --config-cache
+        ${{
+          inputs.sanitizer == 'TSan'
+          && '--with-thread-sanitizer'
+          || '--with-undefined-behavior-sanitizer'
+        }}
+        --with-pydebug
+        ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
+    - name: Build CPython
+      run: make -j4
+    - name: Display build info
+      run: make pythoninfo
+    - name: Tests
+      run: >-
+        ./python -m test
+        ${{ inputs.sanitizer == 'TSan' && '--tsan' || '' }}
+        -j4
+    - name: Parallel tests
+      if: >-
+        inputs.sanitizer == 'TSan'
+        && fromJSON(inputs.free-threading)
+      run: ./python -m test --tsan-parallel --parallel-threads=4 -j4
+    - name: Display logs
+      if: always()
+      run: find "${GITHUB_WORKSPACE}" -name 'san_log.*' | xargs head -n 1000
+    - name: Archive logs
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: >-
+          ${{ inputs.sanitizer }}-logs-${{
+            fromJSON(inputs.free-threading)
+            && 'free-threading'
+            || 'default'
+          }}
+        path: san_log.*
+        if-no-files-found: ignore

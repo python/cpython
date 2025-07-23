@@ -206,10 +206,6 @@ class UnparseTestCase(ASTTestCase):
         self.check_ast_roundtrip("t'foo'")
         self.check_ast_roundtrip("t'foo {bar}'")
         self.check_ast_roundtrip("t'foo {bar!s:.2f}'")
-        self.check_ast_roundtrip("t'foo {bar}' f'{bar}'")
-        self.check_ast_roundtrip("f'{bar}' t'foo {bar}'")
-        self.check_ast_roundtrip("t'foo {bar}' fr'\\hello {bar}'")
-        self.check_ast_roundtrip("t'foo {bar}' u'bar'")
 
     def test_strings(self):
         self.check_ast_roundtrip("u'foo'")

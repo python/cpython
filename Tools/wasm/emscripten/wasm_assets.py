@@ -18,7 +18,7 @@ import zipfile
 from typing import Dict
 
 # source directory
-SRCDIR = pathlib.Path(__file__).parents[4].absolute()
+SRCDIR = pathlib.Path(__file__).parents[3].absolute()
 SRCDIR_LIB = SRCDIR / "Lib"
 
 
@@ -84,7 +84,6 @@ OMIT_MODULE_FILES = {
     "_json": ["json/"],
     "_multiprocessing": ["concurrent/futures/process.py", "multiprocessing/"],
     "pyexpat": ["xml/", "xmlrpc/"],
-    "readline": ["rlcompleter.py"],
     "_sqlite3": ["sqlite3/"],
     "_ssl": ["ssl.py"],
     "_tkinter": ["idlelib/", "tkinter/", "turtle.py", "turtledemo/"],

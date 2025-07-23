@@ -1,0 +1,3 @@
+Add support for perf trampoline on macOS, to allow profilers wit JIT map
+support to read Python calls. While profiling, ``PYTHONPERFSUPPORT=1`` can
+be appended to enable the trampoline.

@@ -123,7 +123,7 @@ Some facts and figures:
 
    For modes ``'w:gz'``, ``'x:gz'``, ``'w|gz'``, ``'w:bz2'``, ``'x:bz2'``,
    ``'w|bz2'``, :func:`tarfile.open` accepts the keyword argument
-   *compresslevel* (default ``9``) to specify the compression level of the file.
+   *compresslevel* (default ``6``) to specify the compression level of the file.
 
    For modes ``'w:xz'``, ``'x:xz'`` and ``'w|xz'``, :func:`tarfile.open` accepts the
    keyword argument *preset* to specify the compression level of the file.
@@ -198,6 +198,10 @@ Some facts and figures:
    .. versionchanged:: 3.14
       The *preset* keyword argument also works for streams.
 
+   .. versionchanged:: next
+      The default compression level was reduced to 6 (down from 9).
+      It is the default level used by most compression tools and a better
+      tradeoff between speed and performance.
 
 .. class:: TarFile
    :noindex:
@@ -1353,6 +1357,9 @@ Command-line options
 Examples
 --------
 
+Reading examples
+~~~~~~~~~~~~~~~~~~~
+
 How to extract an entire tar archive to the current working directory::
 
    import tarfile
@@ -1375,6 +1382,23 @@ a generator function instead of a list::
    tar.extractall(members=py_files(tar))
    tar.close()
 
+How to read a gzip compressed tar archive and display some member information::
+
+   import tarfile
+   tar = tarfile.open("sample.tar.gz", "r:gz")
+   for tarinfo in tar:
+       print(tarinfo.name, "is", tarinfo.size, "bytes in size and is ", end="")
+       if tarinfo.isreg():
+           print("a regular file.")
+       elif tarinfo.isdir():
+           print("a directory.")
+       else:
+           print("something else.")
+   tar.close()
+
+Writing examples
+~~~~~~~~~~~~~~~~
+
 How to create an uncompressed tar archive from a list of filenames::
 
    import tarfile
@@ -1390,19 +1414,15 @@ The same example using the :keyword:`with` statement::
         for name in ["foo", "bar", "quux"]:
             tar.add(name)
 
-How to read a gzip compressed tar archive and display some member information::
+How to create and write an archive to stdout using
+:data:`sys.stdout.buffer <sys.stdout>` in the *fileobj* parameter
+in :meth:`TarFile.add`::
 
-   import tarfile
-   tar = tarfile.open("sample.tar.gz", "r:gz")
-   for tarinfo in tar:
-       print(tarinfo.name, "is", tarinfo.size, "bytes in size and is ", end="")
-       if tarinfo.isreg():
-           print("a regular file.")
-       elif tarinfo.isdir():
-           print("a directory.")
-       else:
-           print("something else.")
-   tar.close()
+    import sys
+    import tarfile
+    with tarfile.open("sample.tar.gz", "w|gz", fileobj=sys.stdout.buffer) as tar:
+        for name in ["foo", "bar", "quux"]:
+            tar.add(name)
 
 How to create an archive and reset the user information using the *filter*
 parameter in :meth:`TarFile.add`::

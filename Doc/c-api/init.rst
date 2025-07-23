@@ -2287,7 +2287,7 @@ The C-API provides a basic mutual exclusion lock.
       should not be used to make concurrency control decisions, as the lock
       state may change immediately after the check.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 .. _python-critical-section-api:
 
@@ -2305,6 +2305,12 @@ When :c:func:`PyEval_RestoreThread` is called, the most recent critical section
 is resumed, and its locks reacquired.  This means the critical section API
 provides weaker guarantees than traditional locks -- they are useful because
 their behavior is similar to the :term:`GIL`.
+
+Variants that accept :c:type:`PyMutex` pointers rather than Python objects are also
+available. Use these variants to start a critical section in a situation where
+there is no :c:type:`PyObject` -- for example, when working with a C type that
+does not extend or wrap :c:type:`PyObject` but still needs to call into the C
+API in a manner that might lead to deadlocks.
 
 The functions and structs used by the macros are exposed for cases
 where C macros are not available. They should only be used as in the
@@ -2351,6 +2357,23 @@ code triggered by the finalizer blocks and calls :c:func:`PyEval_SaveThread`.
 
    .. versionadded:: 3.13
 
+.. c:macro:: Py_BEGIN_CRITICAL_SECTION_MUTEX(m)
+
+   Locks the mutex *m* and begins a critical section.
+
+   In the free-threaded build, this macro expands to::
+
+     {
+          PyCriticalSection _py_cs;
+          PyCriticalSection_BeginMutex(&_py_cs, m)
+
+   Note that unlike :c:macro:`Py_BEGIN_CRITICAL_SECTION`, there is no cast for
+   the argument of the macro - it must be a :c:type:`PyMutex` pointer.
+
+   On the default build, this macro expands to ``{``.
+
+   .. versionadded:: 3.14
+
 .. c:macro:: Py_END_CRITICAL_SECTION()
 
    Ends the critical section and releases the per-object lock.
@@ -2379,6 +2402,23 @@ code triggered by the finalizer blocks and calls :c:func:`PyEval_SaveThread`.
    In the default build, this macro expands to ``{``.
 
    .. versionadded:: 3.13
+
+.. c:macro:: Py_BEGIN_CRITICAL_SECTION2_MUTEX(m1, m2)
+
+   Locks the mutexes *m1* and *m2* and begins a critical section.
+
+   In the free-threaded build, this macro expands to::
+
+     {
+          PyCriticalSection2 _py_cs2;
+          PyCriticalSection2_BeginMutex(&_py_cs2, m1, m2)
+
+   Note that unlike :c:macro:`Py_BEGIN_CRITICAL_SECTION2`, there is no cast for
+   the arguments of the macro - they must be :c:type:`PyMutex` pointers.
+
+   On the default build, this macro expands to ``{``.
+
+   .. versionadded:: 3.14
 
 .. c:macro:: Py_END_CRITICAL_SECTION2()
 

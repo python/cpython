@@ -317,6 +317,49 @@ text
                             ("data", content),
                             ("endtag", "style")])
 
+    @support.subTests('content', [
+            '<!-- not a comment -->',
+            "<not a='start tag'>",
+            '<![CDATA[not a cdata]]>',
+            '<!not a bogus comment>',
+            '</not a bogus comment>',
+            '\u2603',
+            '< /title>',
+            '</ title>',
+            '</titled>',
+            '</title\v>',
+            '</title\xa0>',
+            '</tıtle>',
+        ])
+    def test_title_content(self, content):
+        source = f"<title>{content}</title>"
+        self._run_check(source, [
+            ("starttag", "title", []),
+            ("data", content),
+            ("endtag", "title"),
+        ])
+
+    @support.subTests('content', [
+            '<!-- not a comment -->',
+            "<not a='start tag'>",
+            '<![CDATA[not a cdata]]>',
+            '<!not a bogus comment>',
+            '</not a bogus comment>',
+            '\u2603',
+            '< /textarea>',
+            '</ textarea>',
+            '</textareable>',
+            '</textarea\v>',
+            '</textarea\xa0>',
+        ])
+    def test_textarea_content(self, content):
+        source = f"<textarea>{content}</textarea>"
+        self._run_check(source, [
+            ("starttag", "textarea", []),
+            ("data", content),
+            ("endtag", "textarea"),
+        ])
+
     @support.subTests('endtag', ['script', 'SCRIPT', 'script ', 'script\n',
                                  'script/', 'script foo=bar', 'script foo=">"'])
     def test_script_closing_tag(self, endtag):
@@ -346,6 +389,38 @@ text
                             ("endtag", "style")],
                         collector=EventCollectorNoNormalize(convert_charrefs=False))
 
+    @support.subTests('endtag', ['title', 'TITLE', 'title ', 'title\n',
+                                 'title/', 'title foo=bar', 'title foo=">"'])
+    def test_title_closing_tag(self, endtag):
+        content = "<!-- not a comment --><i>Egg &amp; Spam</i>"
+        s = f'<TitLe>{content}</{endtag}>'
+        self._run_check(s, [("starttag", "title", []),
+                            ('data', '<!-- not a comment --><i>Egg & Spam</i>'),
+                            ("endtag", "title")],
+                        collector=EventCollectorNoNormalize(convert_charrefs=True))
+        self._run_check(s, [("starttag", "title", []),
+                            ('data', '<!-- not a comment --><i>Egg '),
+                            ('entityref', 'amp'),
+                            ('data', ' Spam</i>'),
+                            ("endtag", "title")],
+                        collector=EventCollectorNoNormalize(convert_charrefs=False))
+
+    @support.subTests('endtag', ['textarea', 'TEXTAREA', 'textarea ', 'textarea\n',
+                                 'textarea/', 'textarea foo=bar', 'textarea foo=">"'])
+    def test_textarea_closing_tag(self, endtag):
+        content = "<!-- not a comment --><i>Egg &amp; Spam</i>"
+        s = f'<TexTarEa>{content}</{endtag}>'
+        self._run_check(s, [("starttag", "textarea", []),
+                            ('data', '<!-- not a comment --><i>Egg & Spam</i>'),
+                            ("endtag", "textarea")],
+                        collector=EventCollectorNoNormalize(convert_charrefs=True))
+        self._run_check(s, [("starttag", "textarea", []),
+                            ('data', '<!-- not a comment --><i>Egg '),
+                            ('entityref', 'amp'),
+                            ('data', ' Spam</i>'),
+                            ("endtag", "textarea")],
+                        collector=EventCollectorNoNormalize(convert_charrefs=False))
+
     @support.subTests('tail,end', [
         ('', False),
         ('<', False),
@@ -361,6 +436,27 @@ text
         s = f'<ScrIPt>{content}{tail}'
         self._run_check(s, [("starttag", "script", []),
                             ("data", content if end else content + tail)],
+                        collector=EventCollectorNoNormalize(convert_charrefs=False))
+
+    @support.subTests('tail,end', [
+        ('', False),
+        ('<', False),
+        ('</', False),
+        ('</t', False),
+        ('</title', False),
+        ('</title ', True),
+        ('</title foo=bar', True),
+        ('</title foo=">', True),
+    ])
+    def test_eof_in_title(self, tail, end):
+        s = f'<TitLe>Egg &amp; Spam{tail}'
+        self._run_check(s, [("starttag", "title", []),
+                            ("data", "Egg & Spam" + ('' if end else tail))],
+                        collector=EventCollectorNoNormalize(convert_charrefs=True))
+        self._run_check(s, [("starttag", "title", []),
+                            ('data', 'Egg '),
+                            ('entityref', 'amp'),
+                            ('data', ' Spam' + ('' if end else tail))],
                         collector=EventCollectorNoNormalize(convert_charrefs=False))
 
     def test_comments(self):
@@ -623,7 +719,7 @@ text
 
         html = '<div style="", foo = "bar" ><b>The <a href="some_url">rain</a>'
         expected = [
-            ('starttag', 'div', [('style', ''), (',', None), ('foo', None), ('=', None), ('"bar"', None)]),
+            ('starttag', 'div', [('style', ''), (',', None), ('foo', 'bar')]),
             ('starttag', 'b', []),
             ('data', 'The '),
             ('starttag', 'a', [('href', 'some_url')]),
@@ -813,12 +909,12 @@ class AttributesTestCase(TestCaseBase):
         ]
         self._run_check("""<a b='v' c="v" d=v e>""", output)
         self._run_check("<a foo==bar>", [('starttag', 'a', [('foo', '=bar')])])
-        self._run_check("<a foo =bar>", [('starttag', 'a', [('foo', None), ('=bar', None)])])
-        self._run_check("<a foo\t=bar>", [('starttag', 'a', [('foo', None), ('=bar', None)])])
+        self._run_check("<a foo =bar>", [('starttag', 'a', [('foo', 'bar')])])
+        self._run_check("<a foo\t=bar>", [('starttag', 'a', [('foo', 'bar')])])
         self._run_check("<a foo\v=bar>", [('starttag', 'a', [('foo\v', 'bar')])])
         self._run_check("<a foo\xa0=bar>", [('starttag', 'a', [('foo\xa0', 'bar')])])
-        self._run_check("<a foo= bar>", [('starttag', 'a', [('foo', ''), ('bar', None)])])
-        self._run_check("<a foo=\tbar>", [('starttag', 'a', [('foo', ''), ('bar', None)])])
+        self._run_check("<a foo= bar>", [('starttag', 'a', [('foo', 'bar')])])
+        self._run_check("<a foo=\tbar>", [('starttag', 'a', [('foo', 'bar')])])
         self._run_check("<a foo=\vbar>", [('starttag', 'a', [('foo', '\vbar')])])
         self._run_check("<a foo=\xa0bar>", [('starttag', 'a', [('foo', '\xa0bar')])])
 
@@ -829,8 +925,8 @@ class AttributesTestCase(TestCaseBase):
                                             ("d", "\txyz\n")])])
         self._run_check("""<a b='' c="">""",
                         [("starttag", "a", [("b", ""), ("c", "")])])
-        self._run_check("<a b=\t c=\n>",
-                        [("starttag", "a", [("b", ""), ("c", "")])])
+        self._run_check("<a b=\tx c=\ny>",
+                        [('starttag', 'a', [('b', 'x'), ('c', 'y')])])
         self._run_check("<a b=\v c=\xa0>",
                         [("starttag", "a", [("b", "\v"), ("c", "\xa0")])])
         # Regression test for SF patch #669683.
@@ -899,13 +995,17 @@ class AttributesTestCase(TestCaseBase):
         )
         expected = [
             ('starttag', 'a', [('href', "test'style='color:red;bad1'")]),
-            ('data', 'test - bad1'), ('endtag', 'a'),
+            ('data', 'test - bad1'),
+            ('endtag', 'a'),
             ('starttag', 'a', [('href', "test'+style='color:red;ba2'")]),
-            ('data', 'test - bad2'), ('endtag', 'a'),
+            ('data', 'test - bad2'),
+            ('endtag', 'a'),
             ('starttag', 'a', [('href', "test'\xa0style='color:red;bad3'")]),
-            ('data', 'test - bad3'), ('endtag', 'a'),
-            ('starttag', 'a', [('href', None), ('=', None), ("test'&nbsp;style", 'color:red;bad4')]),
-            ('data', 'test - bad4'), ('endtag', 'a')
+            ('data', 'test - bad3'),
+            ('endtag', 'a'),
+            ('starttag', 'a', [('href', "test'\xa0style='color:red;bad4'")]),
+            ('data', 'test - bad4'),
+            ('endtag', 'a'),
         ]
         self._run_check(html, expected)
 
