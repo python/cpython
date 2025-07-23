@@ -187,9 +187,6 @@ fully processed by daemon consumer threads.
    processed (meaning that a :meth:`task_done` call was received for every item
    that had been :meth:`put` into the queue).
 
-   ``shutdown(immediate=True)`` calls :meth:`task_done` for each remaining item
-   in the queue.
-
    Raises a :exc:`ValueError` if called more times than there were items placed in
    the queue.
 
@@ -233,22 +230,42 @@ Example of how to wait for enqueued tasks to be completed::
 Terminating queues
 ^^^^^^^^^^^^^^^^^^
 
-:class:`Queue` objects can be made to prevent further interaction by shutting
-them down.
+When no longer needed, :class:`Queue` objects can be wound down
+or terminated immediately.
 
 .. method:: Queue.shutdown(immediate=False)
 
-   Shut down the queue, making :meth:`~Queue.get` and :meth:`~Queue.put` raise
-   :exc:`ShutDown`.
+   Put a :class:`Queue` instance into a shutdown mode.
 
-   By default, :meth:`~Queue.get` on a shut down queue will only raise once the
-   queue is empty. Set *immediate* to true to make :meth:`~Queue.get` raise
-   immediately instead.
+   The queue can no longer grow.
+   Future calls to :meth:`~Queue.put` raise :exc:`ShutDown`.
+   Currently blocked callers of :meth:`~Queue.put` will be unblocked
+   and will raise :exc:`ShutDown` in the formerly blocked thread.
 
-   All blocked callers of :meth:`~Queue.put` and :meth:`~Queue.get` will be
-   unblocked. If *immediate* is true, a task will be marked as done for each
-   remaining item in the queue, which may unblock callers of
-   :meth:`~Queue.join`.
+   If *immediate* is false (the default), the queue can be wound
+   down normally with calls :meth:`~Queue.get` to extract tasks
+   that have already been loaded.
+
+   If the shutdown occurs during the brief window where the queue still
+   has data and callers to :meth:`~Queue.get` are blocked, those callers
+   will be unblocked.
+
+   And if :meth:`~Queue.task_done` is called for each remaining task, a
+   pending :meth:`~Queue.join` will be unblocked normally.
+
+   Once the queue is empty, future calls to :meth:`~Queue.get` will
+   raise :exc:`ShutDown`.
+
+   If *immediate* is true, the queue is terminated immediately.
+   The queue is drained to be completely empty.  The count of
+   unfinished tasks is reduced to zero but without calling
+   :meth:`~Queue.task_done`.  That then unblocks all callers of
+   :meth:`~Queue.join`.  In addition, blocked callers of
+   :meth:`~Queue.get` are unblocked and will raise :exc:`ShutDown`.
+
+   Use caution when using :meth:`~Queue.join` with *immediate* set
+   to true. This unblocks the join even when no work has been done
+   on the tasks, violating the usual invariant for joining a queue.
 
    .. versionadded:: 3.13
 
