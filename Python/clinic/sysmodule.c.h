@@ -1793,6 +1793,17 @@ sys__baserepl(PyObject *module, PyObject *Py_UNUSED(ignored))
     return sys__baserepl_impl(module);
 }
 
+PyDoc_STRVAR(sys__clear_type_descriptors__doc__,
+"_clear_type_descriptors($module, type, /)\n"
+"--\n"
+"\n"
+"Private function for clearing certain descriptors from a type\'s dictionary.\n"
+"\n"
+"See gh-135228 for context.");
+
+#define SYS__CLEAR_TYPE_DESCRIPTORS_METHODDEF    \
+    {"_clear_type_descriptors", (PyCFunction)sys__clear_type_descriptors, METH_O, sys__clear_type_descriptors__doc__},
+
 PyDoc_STRVAR(sys__is_gil_enabled__doc__,
 "_is_gil_enabled($module, /)\n"
 "--\n"
@@ -1948,4 +1959,4 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=449d16326e69dcf6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f75cd2babc1841db input=a9049054013a1b77]*/

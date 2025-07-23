@@ -2642,6 +2642,38 @@ sys__baserepl_impl(PyObject *module)
 }
 
 /*[clinic input]
+sys._clear_type_descriptors
+
+    type: object
+    /
+
+Private function for clearing certain descriptors from a type's dictionary.
+
+See gh-135228 for context.
+[clinic start generated code]*/
+
+static PyObject *
+sys__clear_type_descriptors(PyObject *module, PyObject *type)
+/*[clinic end generated code: output=7d5cefcf861909e0 input=5fdc23500d477de6]*/
+{
+    if (!PyType_Check(type)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a type");
+        return NULL;
+    }
+    PyTypeObject *typeobj = (PyTypeObject *)(type);
+    PyObject *dict = _PyType_GetDict(typeobj);
+    if (PyDict_PopString(dict, "__dict__", NULL) < 0) {
+        return NULL;
+    }
+    if (PyDict_PopString(dict, "__weakref__", NULL) < 0) {
+        return NULL;
+    }
+    PyType_Modified(typeobj);
+    Py_RETURN_NONE;
+}
+
+
+/*[clinic input]
 sys._is_gil_enabled -> bool
 
 Return True if the GIL is currently enabled and False otherwise.
@@ -2837,6 +2869,7 @@ static PyMethodDef sys_methods[] = {
     SYS__STATS_DUMP_METHODDEF
 #endif
     SYS__GET_CPU_COUNT_CONFIG_METHODDEF
+    SYS__CLEAR_TYPE_DESCRIPTORS_METHODDEF
     SYS__IS_GIL_ENABLED_METHODDEF
     SYS__DUMP_TRACELETS_METHODDEF
     {NULL, NULL}  // sentinel

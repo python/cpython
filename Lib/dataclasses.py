@@ -1340,10 +1340,7 @@ def _add_slots(cls, is_frozen, weakref_slot, defined_fields):
 
     # gh-135228: Make sure the original class can be garbage collected.
     # Bypass mapping proxy to allow __dict__ to be removed
-    old_cls_dict = cls.__dict__ | _deproxier
-    old_cls_dict.pop('__dict__', None)
-    if "__weakref__" in cls.__dict__:
-        del cls.__weakref__
+    sys._clear_type_descriptors(cls)
 
     return newcls
 
@@ -1739,11 +1736,3 @@ def _replace(self, /, **changes):
     # changes that aren't fields, this will correctly raise a
     # TypeError.
     return self.__class__(**changes)
-
-
-# Hack to the get the underlying dict out of a mappingproxy
-# Use it with: cls.__dict__ | _deproxier
-class _Deproxier:
-    def __ror__(self, other):
-        return other
-_deproxier = _Deproxier()
