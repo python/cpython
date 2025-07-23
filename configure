@@ -19037,15 +19037,27 @@ printf "%s\n" "#define WITH_DTRACE 1" >>confdefs.h
     # linked into the binary. Correspondingly, dtrace(1) is missing the ELF
     # generation flag '-G'. We check for presence of this flag, rather than
     # hardcoding support by OS, in the interest of robustness.
+    #
+    # NetBSD DTrace requires the -x nolibs flag to avoid system library conflicts
+    # and uses header generation for testing instead of object generation.
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether DTrace probes require linking" >&5
 printf %s "checking whether DTrace probes require linking... " >&6; }
 if test ${ac_cv_dtrace_link+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
-  e)             ac_cv_dtrace_link=no
+  e)
+            ac_cv_dtrace_link=no
             echo 'BEGIN{}' > conftest.d
-            "$DTRACE" $DFLAGS -G -s conftest.d -o conftest.o > /dev/null 2>&1 && \
+            case $host in
+                *netbsd*)
+                    DTRACE_TEST_FLAGS="-x nolibs -h"
+                    ;;
+                *)
+                    DTRACE_TEST_FLAGS="-G"
+                    ;;
+            esac
+            "$DTRACE" $DFLAGS $DTRACE_TEST_FLAGS -s conftest.d -o conftest.o > /dev/null 2>&1 && \
                 ac_cv_dtrace_link=yes
        ;;
 esac
@@ -19055,6 +19067,12 @@ printf "%s\n" "$ac_cv_dtrace_link" >&6; }
     if test "$ac_cv_dtrace_link" = "yes"; then
         DTRACE_OBJS="Python/pydtrace.o"
     fi
+    # Set NetBSD-specific DTrace flags in DFLAGS
+    case $host in
+        *netbsd*)
+            DFLAGS="$DFLAGS -x nolibs"
+            ;;
+    esac
 fi
 
 PLATFORM_HEADERS=
