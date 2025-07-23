@@ -1556,13 +1556,14 @@ all other candidate metaclasses. If no such metaclass exists among the candidate
 the class cannot be created, as explained in :ref:`metaclass-determination`.
 
 Finally, the memory layouts of the bases must be compatible. This means that it must be
-possible to compute a *solid base* for the class. A class is a solid base if it has a
-nonempty :attr:`~object.__slots__` definition; some other classes may also be solid bases,
-depending on the Python implementation.
+possible to compute a *solid base* for the class. Exactly which classes are solid bases
+depends on the Python implementation.
 
 .. impl-detail::
 
-   In CPython, many but not all classes defined in C are solid bases, including most
+   In CPython, a class is a solid base if it has a
+   nonempty :attr:`~object.__slots__` definition.
+   Many but not all classes defined in C are also solid bases, including most
    builtins (such as :class:`int` or :class:`BaseException`)
    but excluding most concrete :class:`Exception` classes. Generally, a C class
    is a solid base if its underlying struct is different in size from its base class.
