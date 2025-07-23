@@ -1086,7 +1086,7 @@ Platform Support
 
 * :pep:`776`: Emscripten is now an officially supported platform at
   :pep:`tier 3 <11#tier-3>`. As a part of this effort, more than 25 bugs in
-  Emscripten libc were fixed :issue:`127146`. Emscripten now includes support
+  Emscripten libc were fixed :gh:`127146`. Emscripten now includes support
   for ``ctypes`` (:gh:`127683`), ``termios``, and ``fcntl``, as well as
   experimental support for PyREPL (:gh:`136931`).
 
