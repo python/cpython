@@ -1339,7 +1339,6 @@ def _add_slots(cls, is_frozen, weakref_slot, defined_fields):
                 break
 
     # gh-135228: Make sure the original class can be garbage collected.
-    # Bypass mapping proxy to allow __dict__ to be removed
     sys._clear_type_descriptors(cls)
 
     return newcls
