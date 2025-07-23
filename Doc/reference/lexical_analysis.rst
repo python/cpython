@@ -1097,9 +1097,15 @@ Whitespace is significant in these situations:
 * Whitespace in :py:data:`~token.FSTRING_MIDDLE` is part of the literal
   string contents.
 * In ``fstring_replacement_field``, if ``f_debug_specifier`` is present,
-  all whitespace after the opening brace up to the ``!`` of
-  ``fstring_conversion``, ``:`` of ``fstring_full_format_spec``,
-  or the closing brace, is retained as part of the expression.
+  all whitespace after the opening brace until the ``f_debug_specifier``,
+  as well as whitespace immediatelly following ``f_debug_specifier``,
+  is retained as part of the expression.
+
+  .. impl-detail::
+
+     The expression is not handled in the tokenization phase; it is
+     retrieved from the source code using locations of the ``{`` token
+     and the token after ``=``.
 
 .. grammar-snippet:: python-grammar
    :group: python-grammar
