@@ -53,7 +53,9 @@ end-of-line sequences:
 
 * the Unix form using ASCII LF (linefeed),
 * the Windows form using the ASCII sequence CR LF (return followed by linefeed),
-* the old Macintosh form using the ASCII CR (return) character.
+* the '`Classic Mac OS`__' form using the ASCII CR (return) character.
+
+  __ https://en.wikipedia.org/wiki/Classic_Mac_OS
 
 Regardless of platform, each of these sequences is replaced by a single
 ASCII LF (linefeed) character.
@@ -499,7 +501,7 @@ Literals are notations for constant values of some built-in types.
 In terms of lexical analysis, Python has :ref:`string, bytes <strings>`
 and :ref:`numeric <numbers>` literals.
 
-Other “literals” are lexically denoted using :ref:`keywords <keywords>`
+Other "literals" are lexically denoted using :ref:`keywords <keywords>`
 (``None``, ``True``, ``False``) and the special
 :ref:`ellipsis token <lexical-ellipsis>` (``...``).
 
@@ -538,7 +540,7 @@ after the backslash.
 For example, ``\"`` denotes the double quote character, and does *not* end
 the string:
 
-.. code-block:: python
+.. code-block:: pycon
 
    >>> print("Say \"Hello\" to everyone!")
    Say "Hello" to everyone!
@@ -613,8 +615,8 @@ The ``r`` prefix can be combined with ``f``, ``t`` or ``b``, so ``fr``,
 Formal grammar
 --------------
 
-String literals, except :ref:`"F-strings" <f-strings>` and
-:ref:`"T-strings" <t-strings>`, are described by the
+String literals, except :ref:`"f-strings" <f-strings>` and
+:ref:`"t-strings" <t-strings>`, are described by the
 following lexical definitions.
 
 These definitions use :ref:`negative lookaheads <lexical-lookaheads>` (``!``)
@@ -791,21 +793,21 @@ Named Unicode character
   This sequence cannot appear in :ref:`bytes literals <bytes-literal>`.
 
   .. versionchanged:: 3.3
-      Support for `name aliases <https://www.unicode.org/Public/16.0.0/ucd/NameAliases.txt>`__
-      has been added.
+     Support for `name aliases <https://www.unicode.org/Public/16.0.0/ucd/NameAliases.txt>`__
+     has been added.
 
 .. _string-escape-long-hex:
 
 Hexadecimal Unicode characters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-  These sequences :samp:`\\u{xxxx}` and :samp:`\\U{xxxxxxxx}` denote the
-  Unicode character with the given hex (base 16) value.
-  Exactly four digits are required for ``\u``; exactly eight digits are
-  required for ``\U``.
-  The latter can encode any Unicode character.
+These sequences :samp:`\\u{xxxx}` and :samp:`\\U{xxxxxxxx}` denote the
+Unicode character with the given hex (base 16) value.
+Exactly four digits are required for ``\u``; exactly eight digits are
+required for ``\U``.
+The latter can encode any Unicode character.
 
-  .. code-block:: python
+  .. code-block:: pycon
 
       >>> '\u1234'
       'ሴ'
@@ -856,7 +858,7 @@ They may only contain ASCII characters; bytes with a numeric value of 128
 or greater must be expressed with escape sequences (typically
 :ref:`string-escape-hex` or :ref:`string-escape-oct`):
 
-.. code-block:: python
+.. code-block:: pycon
 
    >>> b'\x89PNG\r\n\x1a\n'
    b'\x89PNG\r\n\x1a\n'
@@ -883,7 +885,7 @@ literal characters.
 As a result, in raw string literals, :ref:`escape sequences <escape-sequences>`
 are not treated specially:
 
-.. code-block:: python
+.. code-block:: pycon
 
    >>> r'\d{4}-\d{2}-\d{2}'
    '\\d{4}-\\d{2}-\\d{2}'

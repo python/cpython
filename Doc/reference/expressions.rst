@@ -176,8 +176,7 @@ Formally:
 
    strings: ( `STRING` | fstring)+ | tstring+
 
-Note that this feature is defined at the syntactical level, so it only works
-with literals.
+This feature is defined at the syntactical level, so it only works with literals.
 To concatenate string expressions at run time, the '+' operator may be used::
 
    >>> greeting = "Hello"
@@ -186,8 +185,9 @@ To concatenate string expressions at run time, the '+' operator may be used::
    >>> print(greeting + space + name)   # not: print(greeting space name)
    Hello Blaise
 
-Also note that literal concatenation can freely mix raw strings,
-triple-quoted strings, and formatted string literals. For example::
+Literal concatenation can freely mix raw strings, triple-quoted strings,
+and formatted string literals.
+For example::
 
    >>> "Hello" r', ' f"{name}!"
    "Hello, Blaise!"
