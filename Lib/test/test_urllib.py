@@ -1526,6 +1526,14 @@ class Pathname_Tests(unittest.TestCase):
         self.assertEqual(fn('////foo/bar'), f'{sep}{sep}foo{sep}bar')
         self.assertEqual(fn('data:blah'), 'data:blah')
         self.assertEqual(fn('data://blah'), f'data:{sep}{sep}blah')
+        self.assertEqual(fn('foo?bar'), 'foo')
+        self.assertEqual(fn('foo#bar'), 'foo')
+        self.assertEqual(fn('foo?bar=baz'), 'foo')
+        self.assertEqual(fn('foo?bar#baz'), 'foo')
+        self.assertEqual(fn('foo%3Fbar'), 'foo?bar')
+        self.assertEqual(fn('foo%23bar'), 'foo#bar')
+        self.assertEqual(fn('foo%3Fbar%3Dbaz'), 'foo?bar=baz')
+        self.assertEqual(fn('foo%3Fbar%23baz'), 'foo?bar#baz')
 
     def test_url2pathname_require_scheme(self):
         sep = os.path.sep
