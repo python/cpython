@@ -17,6 +17,7 @@
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "pycore_unicodeobject.h" // _PyUnicode_InternImmortal()
 #include "pycore_uniqueid.h"      // _PyObject_AssignUniqueId()
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 #include "clinic/codeobject.c.h"
 #include <stdbool.h>
@@ -1999,7 +2000,6 @@ _PyCode_CheckNoExternalState(PyCodeObject *co, _PyCode_var_counts_t *counts,
                              const char **p_errmsg)
 {
     const char *errmsg = NULL;
-    assert(counts->locals.hidden.total == 0);
     if (counts->numfree > 0) {  // It's a closure.
         errmsg = "closures not supported";
     }
@@ -2437,9 +2437,7 @@ code_dealloc(PyObject *self)
         Py_XDECREF(co->_co_cached->_co_varnames);
         PyMem_Free(co->_co_cached);
     }
-    if (co->co_weakreflist != NULL) {
-        PyObject_ClearWeakRefs(self);
-    }
+    FT_CLEAR_WEAKREFS(self, co->co_weakreflist);
     free_monitoring_data(co->_co_monitoring);
 #ifdef Py_GIL_DISABLED
     // The first element always points to the mutable bytecode at the end of
@@ -3332,12 +3330,29 @@ _PyCodeArray_New(Py_ssize_t size)
     return arr;
 }
 
+// Get the underlying code unit, leaving instrumentation
+static _Py_CODEUNIT
+deopt_code_unit(PyCodeObject *code, int i)
+{
+    _Py_CODEUNIT *src_instr = _PyCode_CODE(code) + i;
+    _Py_CODEUNIT inst = {
+        .cache = FT_ATOMIC_LOAD_UINT16_RELAXED(*(uint16_t *)src_instr)};
+    int opcode = inst.op.code;
+    if (opcode < MIN_INSTRUMENTED_OPCODE) {
+        inst.op.code = _PyOpcode_Deopt[opcode];
+        assert(inst.op.code < MIN_SPECIALIZED_OPCODE);
+    }
+    // JIT should not be enabled with free-threading
+    assert(inst.op.code != ENTER_EXECUTOR);
+    return inst;
+}
+
 static void
 copy_code(_Py_CODEUNIT *dst, PyCodeObject *co)
 {
     int code_len = (int) Py_SIZE(co);
     for (int i = 0; i < code_len; i += _PyInstruction_GetLength(co, i)) {
-        dst[i] = _Py_GetBaseCodeUnit(co, i);
+        dst[i] = deopt_code_unit(co, i);
     }
     _PyCode_Quicken(dst, code_len, 1);
 }
@@ -3370,7 +3385,7 @@ create_tlbc_lock_held(PyCodeObject *co, Py_ssize_t idx)
         }
         memcpy(new_tlbc->entries, tlbc->entries, tlbc->size * sizeof(void *));
         _Py_atomic_store_ptr_release(&co->co_tlbc, new_tlbc);
-        _PyMem_FreeDelayed(tlbc);
+        _PyMem_FreeDelayed(tlbc, tlbc->size * sizeof(void *));
         tlbc = new_tlbc;
     }
     char *bc = PyMem_Calloc(1, _PyCode_NBYTES(co));

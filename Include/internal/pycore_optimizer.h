@@ -10,7 +10,7 @@ extern "C" {
 
 #include "pycore_typedefs.h"      // _PyInterpreterFrame
 #include "pycore_uop_ids.h"
-#include "pycore_stackref.h"
+#include "pycore_stackref.h"      // _PyStackRef
 #include <stdbool.h>
 
 
@@ -179,6 +179,7 @@ typedef enum _JitSymType {
     JIT_SYM_KNOWN_VALUE_TAG = 7,
     JIT_SYM_TUPLE_TAG = 8,
     JIT_SYM_TRUTHINESS_TAG = 9,
+    JIT_SYM_COMPACT_INT = 10,
 } JitSymType;
 
 typedef struct _jit_opt_known_class {
@@ -211,6 +212,10 @@ typedef struct {
     uint16_t value;
 } JitOptTruthiness;
 
+typedef struct {
+    uint8_t tag;
+} JitOptCompactInt;
+
 typedef union _jit_opt_symbol {
     uint8_t tag;
     JitOptKnownClass cls;
@@ -218,6 +223,7 @@ typedef union _jit_opt_symbol {
     JitOptKnownVersion version;
     JitOptTuple tuple;
     JitOptTruthiness truthiness;
+    JitOptCompactInt compact;
 } JitOptSymbol;
 
 
@@ -308,7 +314,11 @@ extern JitOptRef _Py_uop_sym_new_unknown(JitOptContext *ctx);
 extern JitOptRef _Py_uop_sym_new_not_null(JitOptContext *ctx);
 extern JitOptRef _Py_uop_sym_new_type(
     JitOptContext *ctx, PyTypeObject *typ);
+
 extern JitOptRef _Py_uop_sym_new_const(JitOptContext *ctx, PyObject *const_val);
+extern JitOptRef _Py_uop_sym_new_const_steal(JitOptContext *ctx, PyObject *const_val);
+bool _Py_uop_sym_is_safe_const(JitOptContext *ctx, JitOptRef sym);
+_PyStackRef _Py_uop_sym_get_const_as_stackref(JitOptContext *ctx, JitOptRef sym);
 extern JitOptRef _Py_uop_sym_new_null(JitOptContext *ctx);
 extern bool _Py_uop_sym_has_type(JitOptRef sym);
 extern bool _Py_uop_sym_matches_type(JitOptRef sym, PyTypeObject *typ);
@@ -325,6 +335,9 @@ extern JitOptRef _Py_uop_sym_new_tuple(JitOptContext *ctx, int size, JitOptRef *
 extern JitOptRef _Py_uop_sym_tuple_getitem(JitOptContext *ctx, JitOptRef sym, int item);
 extern int _Py_uop_sym_tuple_length(JitOptRef sym);
 extern JitOptRef _Py_uop_sym_new_truthiness(JitOptContext *ctx, JitOptRef value, bool truthy);
+extern bool _Py_uop_sym_is_compact_int(JitOptRef sym);
+extern JitOptRef _Py_uop_sym_new_compact_int(JitOptContext *ctx);
+extern void _Py_uop_sym_set_compact_int(JitOptContext *ctx,  JitOptRef sym);
 
 extern void _Py_uop_abstractcontext_init(JitOptContext *ctx);
 extern void _Py_uop_abstractcontext_fini(JitOptContext *ctx);

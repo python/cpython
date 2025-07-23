@@ -542,20 +542,6 @@ Pure paths provide the following methods and properties:
       Passing additional arguments is deprecated; if supplied, they are joined
       with *other*.
 
-.. method:: PurePath.is_reserved()
-
-   With :class:`PureWindowsPath`, return ``True`` if the path is considered
-   reserved under Windows, ``False`` otherwise.  With :class:`PurePosixPath`,
-   ``False`` is always returned.
-
-   .. versionchanged:: 3.13
-      Windows path names that contain a colon, or end with a dot or a space,
-      are considered reserved. UNC paths may be reserved.
-
-   .. deprecated-removed:: 3.13 3.15
-      This method is deprecated; use :func:`os.path.isreserved` to detect
-      reserved paths on Windows.
-
 .. method:: PurePath.joinpath(*pathsegments)
 
    Calling this method is equivalent to combining the path with each of
@@ -1985,7 +1971,7 @@ The :mod:`pathlib.types` module provides types for static type checking.
 
       If *follow_symlinks* is ``False``, return ``True`` only if the path
       is a file (without following symlinks); return ``False`` if the path
-      is a directory or other other non-file, or if it doesn't exist.
+      is a directory or other non-file, or if it doesn't exist.
 
    .. method:: is_symlink()
 

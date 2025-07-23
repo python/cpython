@@ -412,9 +412,11 @@ class InterpreterObjectTests(TestBase):
 
     def test_pickle(self):
         interp = interpreters.create()
-        data = pickle.dumps(interp)
-        unpickled = pickle.loads(data)
-        self.assertEqual(unpickled, interp)
+        for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(protocol=protocol):
+                data = pickle.dumps(interp, protocol)
+                unpickled = pickle.loads(data)
+                self.assertEqual(unpickled, interp)
 
 
 class TestInterpreterIsRunning(TestBase):
@@ -943,6 +945,22 @@ class TestInterpreterExec(TestBase):
         with self.interpreter_obj_from_capi() as (interp, _):
             with self.assertRaisesRegex(InterpreterError, 'unrecognized'):
                 interp.exec('raise Exception("it worked!")')
+
+    def test_list_comprehension(self):
+        # gh-135450: List comprehensions caused an assertion failure
+        # in _PyCode_CheckNoExternalState()
+        import string
+        r_interp, w_interp = self.pipe()
+
+        interp = interpreters.create()
+        interp.exec(f"""if True:
+            import os
+            comp = [str(i) for i in range(10)]
+            os.write({w_interp}, ''.join(comp).encode())
+        """)
+        self.assertEqual(os.read(r_interp, 10).decode(), string.digits)
+        interp.close()
+
 
     # test__interpreters covers the remaining
     # Interpreter.exec() behavior.

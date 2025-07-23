@@ -278,7 +278,7 @@ As another example, generating HTML attributes from data:
 
    attributes = {"src": "shrubbery.jpg", "alt": "looks nice"}
    template = t"<img {attributes}>"
-   assert html(template) == '<img src="shrubbery.jpg" alt="looks nice" class="looks-nice">'
+   assert html(template) == '<img src="shrubbery.jpg" alt="looks nice" />'
 
 Compared to using an f-string, the ``html`` function has access to template attributes
 containing the original information: static strings, interpolations, and values
@@ -978,6 +978,23 @@ be specified by the build backend, as it will no longer be determined
 automatically by the C compiler. For a running interpreter, the setting that
 was used at compile time can be found using :func:`sysconfig.get_config_var`.
 
+A new flag has been added, :data:`~sys.flags.context_aware_warnings`.  This
+flag defaults to true for the free-threaded build and false for the GIL-enabled
+build. If the flag is true then the :class:`warnings.catch_warnings` context
+manager uses a context variable for warning filters.  This makes the context
+manager behave predicably when used with multiple threads or asynchronous
+tasks.
+
+A new flag has been added, :data:`~sys.flags.thread_inherit_context`. This flag
+defaults to true for the free-threaded build and false for the GIL-enabled
+build. If the flag is true then threads created with :class:`threading.Thread`
+start with a copy of the :class:`~contextvars.Context()` of the caller of
+:meth:`~threading.Thread.start`.  Most significantly, this makes the warning
+filtering context established by :class:`~warnings.catch_warnings` be
+"inherited" by threads (or asyncio tasks) started within that context.  It also
+affects other modules that use context variables, such as the :mod:`decimal`
+context manager.
+
 
 .. _whatsnew314-pyrepl-highlighting:
 
@@ -1027,6 +1044,42 @@ work without modification). Free-threaded builds do not support JIT compilation.
 Please report any bugs or major performance regressions that you encounter!
 
 .. seealso:: :pep:`744`
+
+Concurrent safe warnings control
+--------------------------------
+
+The :class:`warnings.catch_warnings` context manager will now optionally
+use a context variable for warning filters.  This is enabled by setting
+the :data:`~sys.flags.context_aware_warnings` flag, either with the ``-X``
+command-line option or an environment variable.  This gives predicable
+warnings control when using :class:`~warnings.catch_warnings` combined with
+multiple threads or asynchronous tasks. The flag defaults to true for the
+free-threaded build and false for the GIL-enabled build.
+
+(Contributed by Neil Schemenauer and Kumar Aditya in :gh:`130010`.)
+
+.. _whatsnew314-incremental-gc:
+
+Incremental garbage collection
+------------------------------
+
+The cycle garbage collector is now incremental.
+This means that maximum pause times are reduced
+by an order of magnitude or more for larger heaps.
+
+There are now only two generations: young and old.
+When :func:`gc.collect` is not called directly, the
+GC is invoked a little less frequently. When invoked, it
+collects the young generation and an increment of the
+old generation, instead of collecting one or more generations.
+
+The behavior of :func:`!gc.collect` changes slightly:
+
+* ``gc.collect(1)``: Performs an increment of garbage collection,
+  rather than collecting generation 1.
+* Other calls to :func:`!gc.collect` are unchanged.
+
+(Contributed by Mark Shannon in :gh:`108362`.)
 
 
 Other language changes
@@ -1175,11 +1228,10 @@ argparse
 
   .. _whatsnew314-color-argparse:
 
-* Introduced the optional *color* parameter to
-  :class:`argparse.ArgumentParser`, enabling color for help text.
-  This can be controlled by :ref:`environment variables
-  <using-on-controlling-color>`. Color has also been enabled for help in the
-  :ref:`stdlib CLIs <library-cmdline>` which use :mod:`!argparse`.
+* Enable color for help text, which can be disabled with the optional *color*
+  parameter to :class:`argparse.ArgumentParser`.
+  This can also be controlled by :ref:`environment variables
+  <using-on-controlling-color>`.
   (Contributed by Hugo van Kemenade in :gh:`130645`.)
 
 
@@ -1455,6 +1507,36 @@ functools
 * Allow the *initial* parameter of :func:`functools.reduce` to be passed
   as a keyword argument.
   (Contributed by Sayandip Dutta in :gh:`125916`.)
+
+
+gc
+--
+
+The cyclic garbage collector is now incremental,
+which changes the meaning of the results of
+:meth:`~gc.get_threshold` and :meth:`~gc.set_threshold`
+as well as :meth:`~gc.get_count` and :meth:`~gc.get_stats`.
+
+* For backwards compatibility, :meth:`~gc.get_threshold` continues to return
+  a three-item tuple.
+  The first value is the threshold for young collections, as before;
+  the second value determines the rate at which the old collection is scanned
+  (the default is 10, and higher values mean that the old collection
+  is scanned more slowly).
+  The third value is meaningless and is always zero.
+
+* :meth:`~gc.set_threshold` ignores any items after the second.
+
+* :meth:`~gc.get_count` and :meth:`~gc.get_stats` continue to return
+  the same format of results.
+  The only difference is that instead of the results referring to
+  the young, aging and old generations,
+  the results refer to the young generation
+  and the aging and collecting spaces of the old generation.
+
+In summary, code that attempted to manipulate the behavior of the cycle GC
+may not work exactly as intended, but it is very unlikely to be harmful.
+All other code will work just fine.
 
 
 getopt
@@ -1757,6 +1839,16 @@ os
   (Contributed by Cody Maloney in :gh:`129205`.)
 
 
+os.path
+-------
+
+* The *strict* parameter to :func:`os.path.realpath` accepts a new value,
+  :data:`os.path.ALLOW_MISSING`.
+  If used, errors other than :exc:`FileNotFoundError` will be re-raised;
+  the resulting path can be missing but it will be free of symlinks.
+  (Contributed by Petr Viktorin for :cve:`2025-4517`.)
+
+
 pathlib
 -------
 
@@ -1945,6 +2037,28 @@ sysconfig
   (Contributed by Xuehai Pan in :gh:`131799`.)
 
 
+tarfile
+-------
+
+* :func:`~tarfile.data_filter` now normalizes symbolic link targets in order to
+  avoid path traversal attacks.
+  (Contributed by Petr Viktorin in :gh:`127987` and :cve:`2025-4138`.)
+* :func:`~tarfile.TarFile.extractall` now skips fixing up directory attributes
+  when a directory was removed or replaced by another kind of file.
+  (Contributed by Petr Viktorin in :gh:`127987` and :cve:`2024-12718`.)
+* :func:`~tarfile.TarFile.extract` and :func:`~tarfile.TarFile.extractall`
+  now (re-)apply the extraction filter when substituting a link (hard or
+  symbolic) with a copy of another archive member, and when fixing up
+  directory attributes.
+  The former raises a new exception, :exc:`~tarfile.LinkFallbackError`.
+  (Contributed by Petr Viktorin for :cve:`2025-4330` and :cve:`2024-12718`.)
+* :func:`~tarfile.TarFile.extract` and :func:`~tarfile.TarFile.extractall`
+  no longer extract rejected members when
+  :func:`~tarfile.TarFile.errorlevel` is zero.
+  (Contributed by Matt Prodani and Petr Viktorin in :gh:`112887`
+  and :cve:`2025-4435`.)
+
+
 threading
 ---------
 
@@ -2078,6 +2192,7 @@ urllib
   - Discard URL authority if it matches the local hostname.
   - Discard URL authority if it resolves to a local IP address when the new
     *resolve_host* argument is set to true.
+  - Discard URL query and fragment components.
   - Raise :exc:`~urllib.error.URLError` if a URL authority isn't local,
     except on Windows where we return a UNC path as before.
 
@@ -2172,12 +2287,22 @@ asyncio
   (Contributed by Yury Selivanov, Pablo Galindo Salgado, and Łukasz Langa
   in :gh:`91048`.)
 
+
 base64
 ------
 
 * Improve the performance of :func:`base64.b16decode` by up to ten times,
   and reduce the import time of :mod:`base64` by up to six times.
   (Contributed by Bénédikt Tran, Chris Markiewicz, and Adam Turner in :gh:`118761`.)
+
+
+gc
+--
+
+* The new :ref:`incremental garbage collector <whatsnew314-incremental-gc>`
+  means that maximum pause times are reduced
+  by an order of magnitude or more for larger heaps.
+  (Contributed by Mark Shannon in :gh:`108362`.)
 
 
 io
@@ -2199,8 +2324,7 @@ uuid
   * :func:`~uuid.uuid3` and :func:`~uuid.uuid5` are both roughly 40% faster
     for 16-byte names and 20% faster for 1024-byte names. Performance for
     longer names remains unchanged.
-  * :func:`~uuid.uuid4` and :func:`~uuid.uuid8` are 30% and 40% faster
-    respectively.
+  * :func:`~uuid.uuid4` is 30% faster.
 
   (Contributed by Bénédikt Tran in :gh:`128150`.)
 
@@ -2579,7 +2703,9 @@ pty
 sqlite3
 -------
 
-* Remove :data:`!version` and :data:`!version_info` from :mod:`sqlite3`.
+* Remove :data:`!version` and :data:`!version_info` from :mod:`sqlite3`;
+  use :data:`~sqlite3.sqlite_version` and :data:`~sqlite3.sqlite_version_info`
+  for the actual version number of the runtime SQLite library.
   (Contributed by Hugo van Kemenade in :gh:`118924`.)
 
 * Disallow using a sequence of parameters with named placeholders.
@@ -2644,6 +2770,13 @@ Changes in the Python API
   Wrap it in :func:`staticmethod` if you want to preserve the old behavior.
   (Contributed by Serhiy Storchaka and Dominykas Grigonis in :gh:`121027`.)
 
+* The :ref:`garbage collector is now incremental <whatsnew314-incremental-gc>`,
+  which means that the behavior of :func:`gc.collect` changes slightly:
+
+  * ``gc.collect(1)``: Performs an increment of garbage collection,
+    rather than collecting generation 1.
+  * Other calls to :func:`!gc.collect` are unchanged.
+
 * The :func:`locale.nl_langinfo` function now sets temporarily the ``LC_CTYPE``
   locale in some cases.
   This temporary change affects other threads.
@@ -2700,6 +2833,7 @@ New features
   * :c:func:`PyUnicodeWriter_Discard`
   * :c:func:`PyUnicodeWriter_Finish`
   * :c:func:`PyUnicodeWriter_Format`
+  * :c:func:`PyUnicodeWriter_WriteASCII`
   * :c:func:`PyUnicodeWriter_WriteChar`
   * :c:func:`PyUnicodeWriter_WriteRepr`
   * :c:func:`PyUnicodeWriter_WriteStr`
@@ -2806,11 +2940,6 @@ New features
   file.
   (Contributed by Victor Stinner in :gh:`127350`.)
 
-* Add support of nullable arguments in :c:func:`PyArg_ParseTuple` and
-  similar functions.
-  Adding ``?`` after any format unit makes ``None`` be accepted as a value.
-  (Contributed by Serhiy Storchaka in :gh:`112068`.)
-
 * The ``k`` and ``K`` formats in :c:func:`PyArg_ParseTuple` and
   similar functions now use :meth:`~object.__index__` if available,
   like all other integer formats.
@@ -2906,6 +3035,7 @@ Porting to Python 3.14
   * ``_Py_GetConfig()``: :c:func:`PyConfig_Get` and :c:func:`PyConfig_GetInt`
   * ``_Py_HashBytes()``: :c:func:`Py_HashBuffer`
   * ``_Py_fopen_obj()``: :c:func:`Py_fopen`
+  * ``PyMutex_IsLocked()`` : :c:func:`PyMutex_IsLocked`
 
   The `pythoncapi-compat project`_ can be used to get most of these new
   functions on Python 3.13 and older.
@@ -2976,7 +3106,7 @@ Deprecated
     :c:func:`PyUnicodeWriter_WriteSubstring(writer, str, start, end) <PyUnicodeWriter_WriteSubstring>`.
   * :c:func:`!_PyUnicodeWriter_WriteASCIIString`:
     replace ``_PyUnicodeWriter_WriteASCIIString(&writer, str)`` with
-    :c:func:`PyUnicodeWriter_WriteUTF8(writer, str) <PyUnicodeWriter_WriteUTF8>`.
+    :c:func:`PyUnicodeWriter_WriteASCII(writer, str) <PyUnicodeWriter_WriteASCII>`.
   * :c:func:`!_PyUnicodeWriter_WriteLatin1String`:
     replace ``_PyUnicodeWriter_WriteLatin1String(&writer, str)`` with
     :c:func:`PyUnicodeWriter_WriteUTF8(writer, str) <PyUnicodeWriter_WriteUTF8>`.
@@ -2988,6 +3118,8 @@ Deprecated
   (Contributed by Victor Stinner in :gh:`128863`.)
 
 .. include:: ../deprecations/c-api-pending-removal-in-3.15.rst
+
+.. include:: ../deprecations/c-api-pending-removal-in-3.16.rst
 
 .. include:: ../deprecations/c-api-pending-removal-in-3.18.rst
 
