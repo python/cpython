@@ -19,7 +19,7 @@ class TestBase:
                 insert_method(data, x)
 
         data = list(range(OBJECT_COUNT))
-        self.run_concurrently(
+        threading_helper.run_concurrently(
             worker_func=insert, args=(data,), nthreads=NTHREADS
         )
         if False:
@@ -41,28 +41,6 @@ class TestBase:
         Check if the list is sorted in ascending order (non-decreasing).
         """
         return all(lst[i - 1] <= lst[i] for i in range(1, len(lst)))
-
-    def run_concurrently(self, worker_func, args, nthreads):
-        """
-        Run the worker function concurrently in multiple threads.
-        """
-        barrier = Barrier(nthreads)
-
-        def wrapper_func(*args):
-            # Wait for all threads to reach this point before proceeding.
-            barrier.wait()
-            worker_func(*args)
-
-        with threading_helper.catch_threading_exception() as cm:
-            workers = (
-                Thread(target=wrapper_func, args=args)
-                for _ in range(nthreads)
-            )
-            with threading_helper.start_threads(workers):
-                pass
-
-            # Worker threads should not raise any exceptions
-            self.assertIsNone(cm.exc_value)
 
 
 @threading_helper.requires_working_threading()
