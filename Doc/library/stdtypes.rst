@@ -2673,9 +2673,10 @@ For example:
 
    The formatting operations described here exhibit a variety of quirks that
    lead to a number of common errors (such as failing to display tuples and
-   dictionaries correctly).  Using the newer :ref:`formatted string literals
-   <f-strings>`, the :meth:`str.format` interface, or :ref:`template strings
-   ($-strings) <template-strings-pep292>` may help avoid these errors.
+   dictionaries correctly).
+
+   Using :ref:`formatted string literals <f-strings>`, the :meth:`str.format`
+   interface, or :class:`string.Template` may help avoid these errors.
    Each of these alternatives provides their own trade-offs and benefits of
    simplicity, flexibility, and/or extensibility.
 
