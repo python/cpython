@@ -2477,6 +2477,7 @@ class AtexitTests(unittest.TestCase):
 
         self.assertFalse(err)
 
+    @force_not_colorized
     def test_atexit_after_shutdown(self):
         # The only way to do this is by registering an atexit within
         # an atexit, which is intended to raise an exception.
