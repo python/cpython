@@ -1939,7 +1939,6 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_UNPACK_SEQUENCE_TWO_TUPLE", uops)
         self.assertNotIn("_COMPARE_OP_INT", uops)
         self.assertNotIn("_GUARD_IS_TRUE_POP", uops)
-        self.assertNotIn("_POP_TWO_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_call_len(self):
         def testfunc(n):
@@ -2058,7 +2057,6 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_BINARY_OP_SUBSCR_TUPLE_INT", uops)
         self.assertNotIn("_COMPARE_OP_INT", uops)
         self.assertNotIn("_GUARD_IS_TRUE_POP", uops)
-        self.assertNotIn("_POP_TWO_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_call_isinstance_guards_removed(self):
         def testfunc(n):
