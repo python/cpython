@@ -154,7 +154,8 @@ enum machine_format_code {
 static inline bool
 arraydata_size_valid(Py_ssize_t size, int itemsize)
 {
-    return size <= (PY_SSIZE_T_MAX - (Py_ssize_t)sizeof(arraydata)) / itemsize;
+    return size >= 0 &&
+        size <= (PY_SSIZE_T_MAX - (Py_ssize_t)sizeof(arraydata)) / itemsize;
 }
 
 static arraydata *
@@ -213,6 +214,7 @@ static int
 array_resize(arrayobject *self, Py_ssize_t newsize)
 {
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
+    assert(newsize >= 0);
 
     if (self->ob_exports > 0 && newsize != Py_SIZE(self)) {
         PyErr_SetString(PyExc_BufferError,
@@ -267,6 +269,11 @@ array_resize(arrayobject *self, Py_ssize_t newsize)
      */
 
     size_t _new_size = (newsize >> 4) + (Py_SIZE(self) < 8 ? 3 : 7) + newsize;
+    // Limit over-allocation to not overflow Py_ssize_t, newsize can't ever be
+    // larger than this anyway.
+    if (_new_size > PY_SSIZE_T_MAX) {
+        _new_size = PY_SSIZE_T_MAX;
+    }
     int itemsize = self->ob_descr->itemsize;
 
     if (!arraydata_size_valid(_new_size, itemsize)) {
@@ -2116,7 +2123,13 @@ array_array_fromunicode_impl(arrayobject *self, PyObject *ustr)
         if (ustr_length > 1) {
             ustr_length--; /* trim trailing NUL character */
             Py_ssize_t old_size = Py_SIZE(self);
-            if (array_resize(self, old_size + ustr_length) == -1) {
+            // if overflows PY_SSIZE_T_MAX arraydata_size_valid() will catch it
+            Py_ssize_t new_size = old_size + ustr_length;
+
+            if (!arraydata_size_valid(new_size, sizeof(wchar_t))) {
+                return PyErr_NoMemory();
+            }
+            if (array_resize(self, new_size) == -1) {
                 return NULL;
             }
 
@@ -2128,9 +2141,10 @@ array_array_fromunicode_impl(arrayobject *self, PyObject *ustr)
     else { // typecode == 'w'
         Py_ssize_t ustr_length = PyUnicode_GetLength(ustr);
         Py_ssize_t old_size = Py_SIZE(self);
+        // if overflows PY_SSIZE_T_MAX arraydata_size_valid() will catch it
         Py_ssize_t new_size = old_size + ustr_length;
 
-        if (new_size < 0 || !arraydata_size_valid(new_size, sizeof(Py_UCS4))) {
+        if (!arraydata_size_valid(new_size, sizeof(Py_UCS4))) {
             return PyErr_NoMemory();
         }
         if (array_resize(self, new_size) == -1) {
