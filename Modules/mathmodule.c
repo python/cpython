@@ -1,6 +1,6 @@
 /* Math module -- standard C math library functions, pi and e */
 
-/* 
+/*
    Here are some comments from Tim Peters, extracted from the
    discussion attached to http://bugs.python.org/issue1640.  They
    describe the general aims of the math module with respect to
@@ -192,7 +192,7 @@ tl_to_d(TripleLength total)
 static const double pi = 3.141592653589793238462643383279502884197;
 static const double logpi = 1.144729885849400174143427351353058711647;
 
-/* 
+/*
    Version of PyFloat_AsDouble() with in-line fast paths
    for exact floats and integers.  Gives a substantial
    speed improvement for extracting float arguments.
@@ -249,7 +249,7 @@ m_sinpi(double x)
     return copysign(1.0, x)*r;
 }
 
-/* 
+/*
    Implementation of the real gamma function.  Kept here to work around
    issues (see e.g. gh-70309) with quality of libm's tgamma/lgamma implementations
    on various platforms (Windows, MacOS).  In extensive but non-exhaustive
@@ -834,7 +834,7 @@ math_lcm_impl(PyObject *module, PyObject * const *args,
     return res;
 }
 
-/* 
+/*
    Call is_error when errno != 0, and where x is the result libm
    returned.  is_error will usually set up an exception and return
    true (1), but may return false (0) without setting up an exception.
@@ -945,14 +945,14 @@ domain_err:
             PyErr_Format(PyExc_ValueError, err_msg, buf);
             PyMem_Free(buf);
         }
-	}
-	else {
-		PyErr_SetString(PyExc_ValueError, "math domain error");
-	}
+    }
+    else {
+        PyErr_SetString(PyExc_ValueError, "math domain error");
+    }
     return NULL;
 }
 
-/* 
+/*
    Variant of math_1, to be used when the function being wrapped is known to
    set errno properly (that is, errno = EDOM for invalid or divide-by-zero,
    errno = ERANGE for overflow).
@@ -1300,7 +1300,7 @@ FUNC1(tanh, tanh, 0,
       "tanh($module, x, /)\n--\n\n"
       "Return the hyperbolic tangent of x.")
 
-/* 
+/*
    Precision summation function as msum() by Raymond Hettinger in
    <https://code.activestate.com/recipes/393090-binary-floating-point-summation-accurate-to-full-p/>,
    enhanced with the exact partials sum and roundoff from Mark
@@ -1714,7 +1714,7 @@ static const uint8_t _approximate_isqrt_tab[192] = {
     250, 251, 251, 252, 252, 253, 253, 254, 254, 255, 255, 255,
 };
 
-/* 
+/*
    Approximate square root of a large 64-bit integer.
 
    Given `n` satisfying `2**62 <= n < 2**64`, return `a`
@@ -1865,7 +1865,7 @@ math_isqrt(PyObject *module, PyObject *n)
     return NULL;
 }
 
-/* 
+/*
    Divide-and-conquer factorial algorithm
 
    Based on the formula and pseudo-code provided at:
@@ -1931,7 +1931,7 @@ math_isqrt(PyObject *module, PyObject *n)
    '1'-bits in the binary expansion of n.
 */
 
-/* 
+/*
    factorial_partial_product: Compute product(range(start, stop, 2)) using
    divide and conquer.  Assumes start and stop are odd and stop > start.
    max_bits must be >= bit_length(stop - 2).
@@ -3290,9 +3290,9 @@ math_isclose_impl(PyObject *module, double a, double b, double rel_tol,
 
     diff = fabs(b - a);
 
-    return (((diff <= fabs(rel_tol * b)) ||
-             (diff <= fabs(rel_tol * a))) ||
-            (diff <= abs_tol));
+    return (diff <= fabs(rel_tol * b)) ||
+           (diff <= fabs(rel_tol * a)) ||
+           (diff <= abs_tol);
 }
 
 static inline int
