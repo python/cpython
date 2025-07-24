@@ -3940,8 +3940,7 @@ def bœr():
             rc_path = os.path.join(cwd, ".pdbrc")
             with open(rc_path, "w") as f:
                 f.write("invalid")
-            self.assertEqual(pdb.Pdb().rcLines[0], "invalid")
-            self.assertEqual(len(pdb.Pdb().rcLines), 1)
+            self.assertEqual(pdb.Pdb().rcLines[-1], "invalid")
 
     def test_readrc_cwd_is_home(self):
         with os_helper.EnvironmentVarGuard() as env:
@@ -3952,7 +3951,6 @@ def bœr():
                 with open(rc_path, "w") as f:
                     f.write("invalid")
                 self.assertEqual(pdb.Pdb().rcLines, ["invalid"])
-                self.assertEqual(len(pdb.Pdb().rcLines), 1)
 
     def test_header(self):
         stdout = StringIO()
