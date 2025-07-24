@@ -231,7 +231,7 @@ Terminating queues
 ^^^^^^^^^^^^^^^^^^
 
 When no longer needed, :class:`Queue` objects can be wound down
-or terminated immediately.
+until empty or terminated immediately (a hard shutdown).
 
 .. method:: Queue.shutdown(immediate=False)
 
@@ -258,7 +258,7 @@ or terminated immediately.
 
    If *immediate* is true, the queue is terminated immediately.
    The queue is drained to be completely empty.  The count of
-   unfinished tasks is reduced by number drained but without calling
+   unfinished tasks is reduced by the number drained but without calling
    :meth:`~Queue.task_done`.  All callers of :meth:`~Queue.join`
    are unblocked even if the unfinished tasks is more than zero.
    In addition, blocked callers of
