@@ -268,12 +268,6 @@ array_resize(arrayobject *self, Py_ssize_t newsize)
      */
 
     size_t _new_size = (size_t)(newsize >> 4) + (Py_SIZE(self) < 8 ? 3 : 7) + newsize;
-    // Limit over-allocation to not overflow Py_ssize_t, newsize can't ever be
-    // larger than this anyway. Otherwise a valid resize request might be
-    // rejected due to overallocation falling outside usable range.
-    if (_new_size > PY_SSIZE_T_MAX) {
-        _new_size = PY_SSIZE_T_MAX;
-    }
     int itemsize = self->ob_descr->itemsize;
 
     if (!arraydata_size_valid(_new_size, itemsize)) {
