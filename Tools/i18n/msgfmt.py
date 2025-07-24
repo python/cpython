@@ -23,6 +23,9 @@ Options:
     -V
     --version
         Display version information and exit.
+
+    --statistics
+        Print statistics about translations.
 """
 
 import os
@@ -38,6 +41,7 @@ __version__ = "1.2"
 
 
 MESSAGES = {}
+empty_translations = 0  # Counter for empty translations for --statistics
 
 
 def usage(code, msg=''):
@@ -49,12 +53,14 @@ def usage(code, msg=''):
 
 def add(ctxt, id, str, fuzzy):
     "Add a non-fuzzy translation to the dictionary."
-    global MESSAGES
+    global MESSAGES, empty_translations
     if not fuzzy and str:
         if ctxt is None:
             MESSAGES[id] = str
         else:
             MESSAGES[b"%b\x04%b" % (ctxt, id)] = str
+    elif not fuzzy and not str:
+        empty_translations += 1
 
 
 def generate():
@@ -99,6 +105,11 @@ def generate():
 
 
 def make(filename, outfile):
+    # see gh-issue: 53950
+    global MESSAGES, empty_translations
+    MESSAGES.clear()
+    empty_translations = 0
+
     ID = 1
     STR = 2
     CTXT = 3
@@ -234,11 +245,12 @@ def make(filename, outfile):
 def main():
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'hVo:',
-                                   ['help', 'version', 'output-file='])
+                                   ['help', 'version', 'output-file=', 'statistics'])
     except getopt.error as msg:
         usage(1, msg)
 
     outfile = None
+    print_statistics = False
     # parse options
     for opt, arg in opts:
         if opt in ('-h', '--help'):
@@ -248,6 +260,8 @@ def main():
             sys.exit(0)
         elif opt in ('-o', '--output-file'):
             outfile = arg
+        elif opt in ('--statistics',):
+            print_statistics = True
     # do it
     if not args:
         print('No input file given', file=sys.stderr)
@@ -256,6 +270,25 @@ def main():
 
     for filename in args:
         make(filename, outfile)
+
+        if print_statistics:
+            _print_statistics(filename, args)
+
+# Utility to print --statistics
+def _print_statistics(filename, args):
+    translated = 0
+    for msgid, msgstr in MESSAGES.items():
+        if not msgid:
+            continue
+        if msgstr:
+            translated += 1
+
+    message = (f"{os.path.basename(filename) + ': ' if len(args) > 1 else ''}"
+               f"{translated} translated message{'s' if translated != 1 else ''}")
+    if empty_translations > 0:
+        message += f", {empty_translations} untranslated message{'s' if empty_translations != 1 else ''}"
+    message += "."
+    print(message)
 
 
 if __name__ == '__main__':
