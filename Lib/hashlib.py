@@ -2,7 +2,7 @@
 #  Licensed to PSF under a Contributor Agreement.
 #
 
-__doc__ = """hashlib module - A common interface to many hash functions.
+__doc__ = r"""hashlib module - A common interface to many hash functions.
 
 new(name, data=b'', **kwargs) - returns a new hash object implementing the
                                 given hash function; initializing the hash
@@ -12,7 +12,7 @@ Named constructor functions are also available, these are faster
 than using new(name):
 
 md5(), sha1(), sha224(), sha256(), sha384(), sha512(), blake2b(), blake2s(),
-sha3_224, sha3_256, sha3_384, sha3_512, shake_128, and shake_256.
+sha3_224(), sha3_256(), sha3_384(), sha3_512(), shake_128(), and shake_256().
 
 More algorithms may be available on your platform but the above are guaranteed
 to exist.  See the algorithms_guaranteed and algorithms_available attributes
@@ -21,8 +21,8 @@ to find out what algorithm names can be passed to new().
 NOTE: If you want the adler32 or crc32 hash functions they are available in
 the zlib module.
 
-Choose your hash function wisely.  Some have known collision weaknesses.
-sha384 and sha512 will be slow on 32 bit platforms.
+Choose your hash function wisely.  Some have known collision weaknesses,
+while others may be slower depending on the CPU architecture.
 
 Hash objects have these methods:
  - update(data): Update the hash object with the bytes in data. Repeated calls
@@ -36,20 +36,20 @@ Hash objects have these methods:
                  efficiently compute the digests of data that share a common
                  initial substring.
 
-For example, to obtain the digest of the byte string 'Nobody inspects the
-spammish repetition':
+Assuming that Python has been built with MD5 support, the following computes
+the MD5 digest of the byte string b'Nobody inspects the spammish repetition':
 
     >>> import hashlib
     >>> m = hashlib.md5()
     >>> m.update(b"Nobody inspects")
     >>> m.update(b" the spammish repetition")
     >>> m.digest()
-    b'\\xbbd\\x9c\\x83\\xdd\\x1e\\xa5\\xc9\\xd9\\xde\\xc9\\xa1\\x8d\\xf0\\xff\\xe9'
+    b'\xbbd\x9c\x83\xdd\x1e\xa5\xc9\xd9\xde\xc9\xa1\x8d\xf0\xff\xe9'
 
 More condensed:
 
-    >>> hashlib.sha224(b"Nobody inspects the spammish repetition").hexdigest()
-    'a4337bc45a8fc544c03f52dc550cd6e1e87021bc896588bd79e901e2'
+    >>> hashlib.md5(b"Nobody inspects the spammish repetition").hexdigest()
+    'bb649c83dd1ea5c9d9dec9a18df0ffe9'
 
 """
 
@@ -80,6 +80,11 @@ __block_openssl_constructor = {
 }
 
 def __get_builtin_constructor(name):
+    if not isinstance(name, str):
+        # Since this function is only used by new(), we use the same
+        # exception as _hashlib.new() when 'name' is of incorrect type.
+        err = f"new() argument 'name' must be str, not {type(name).__name__}"
+        raise TypeError(err)
     cache = __builtin_constructor_cache
     constructor = cache.get(name)
     if constructor is not None:
@@ -120,20 +125,33 @@ def __get_builtin_constructor(name):
     if constructor is not None:
         return constructor
 
-    raise ValueError('unsupported hash type ' + name)
+    # Keep the message in sync with hashlib.h::HASHLIB_UNSUPPORTED_ALGORITHM.
+    raise ValueError(f'unsupported hash algorithm {name}')
 
 
 def __get_openssl_constructor(name):
+    # This function is only used until the module has been initialized.
+    assert isinstance(name, str), "invalid call to __get_openssl_constructor()"
     if name in __block_openssl_constructor:
         # Prefer our builtin blake2 implementation.
         return __get_builtin_constructor(name)
     try:
-        # MD5, SHA1, and SHA2 are in all supported OpenSSL versions
-        # SHA3/shake are available in OpenSSL 1.1.1+
+        # Fetch the OpenSSL hash function if it exists,
+        # independently of the context security policy.
         f = getattr(_hashlib, 'openssl_' + name)
-        # Allow the C module to raise ValueError.  The function will be
-        # defined but the hash not actually available.  Don't fall back to
-        # builtin if the current security policy blocks a digest, bpo#40695.
+        # Check if the context security policy blocks the digest or not
+        # by allowing the C module to raise a ValueError. The function
+        # will be defined but the hash will not be available at runtime.
+        #
+        # We use "usedforsecurity=False" to prevent falling back to the
+        # built-in function in case the security policy does not allow it.
+        #
+        # Note that this only affects the explicit named constructors,
+        # and not the algorithms exposed through hashlib.new() which
+        # can still be resolved to a built-in function even if the
+        # current security policy does not allow it.
+        #
+        # See https://github.com/python/cpython/issues/84872.
         f(usedforsecurity=False)
         # Use the C function directly (very fast)
         return f
@@ -154,6 +172,8 @@ def __hash_new(name, *args, **kwargs):
     optionally initialized with data (which must be a bytes-like object).
     """
     if name in __block_openssl_constructor:
+        # __block_openssl_constructor is expected to contain strings only
+        assert isinstance(name, str), f"unexpected name: {name}"
         # Prefer our builtin blake2 implementation.
         return __get_builtin_constructor(name)(*args, **kwargs)
     try:
@@ -187,7 +207,8 @@ except ImportError:
 
 try:
     # OpenSSL's scrypt requires OpenSSL 1.1+
-    from _hashlib import scrypt  # noqa: F401
+    from _hashlib import scrypt
+    __all__ += ('scrypt',)
 except ImportError:
     pass
 
@@ -203,7 +224,7 @@ def file_digest(fileobj, digest, /, *, _bufsize=2**18):
     *digest* must either be a hash algorithm name as a *str*, a hash
     constructor, or a callable that returns a hash object.
     """
-    # On Linux we could use AF_ALG sockets and sendfile() to archive zero-copy
+    # On Linux we could use AF_ALG sockets and sendfile() to achieve zero-copy
     # hashing with hardware acceleration.
     if isinstance(digest, str):
         digestobj = new(digest)

@@ -243,8 +243,8 @@ wider range of codecs when working with binary files:
 .. function:: iterencode(iterator, encoding, errors='strict', **kwargs)
 
    Uses an incremental encoder to iteratively encode the input provided by
-   *iterator*. This function is a :term:`generator`.
-   The *errors* argument (as well as any
+   *iterator*. *iterator* must yield :class:`str` objects.
+   This function is a :term:`generator`. The *errors* argument (as well as any
    other keyword argument) is passed through to the incremental encoder.
 
    This function requires that the codec accept text :class:`str` objects
@@ -255,8 +255,8 @@ wider range of codecs when working with binary files:
 .. function:: iterdecode(iterator, encoding, errors='strict', **kwargs)
 
    Uses an incremental decoder to iteratively decode the input provided by
-   *iterator*. This function is a :term:`generator`.
-   The *errors* argument (as well as any
+   *iterator*. *iterator* must yield :class:`bytes` objects.
+   This function is a :term:`generator`. The *errors* argument (as well as any
    other keyword argument) is passed through to the incremental decoder.
 
    This function requires that the codec accept :class:`bytes` objects
@@ -1065,8 +1065,15 @@ or with dictionaries as mapping tables. The following table lists the codecs by
 name, together with a few common aliases, and the languages for which the
 encoding is likely used. Neither the list of aliases nor the list of languages
 is meant to be exhaustive. Notice that spelling alternatives that only differ in
-case or use a hyphen instead of an underscore are also valid aliases; therefore,
-e.g. ``'utf-8'`` is a valid alias for the ``'utf_8'`` codec.
+case or use a hyphen instead of an underscore are also valid aliases
+because they are equivalent when normalized by
+:func:`~encodings.normalize_encoding`. For example, ``'utf-8'`` is a valid
+alias for the ``'utf_8'`` codec.
+
+.. note::
+
+   The below table lists the most common aliases, for a complete list
+   refer to the source :source:`aliases.py <Lib/encodings/aliases.py>` file.
 
 On Windows, ``cpXXX`` codecs are available for all code pages.
 But only codecs listed in the following table are guarantead to exist on
@@ -1395,7 +1402,11 @@ encodings.
 |                    |         | It is used in the Python  |
 |                    |         | pickle protocol.          |
 +--------------------+---------+---------------------------+
-| undefined          |         | Raise an exception for    |
+| undefined          |         | This Codec should only    |
+|                    |         | be used for testing       |
+|                    |         | purposes.                 |
+|                    |         |                           |
+|                    |         | Raise an exception for    |
 |                    |         | all conversions, even     |
 |                    |         | empty strings. The error  |
 |                    |         | handler is ignored.       |
