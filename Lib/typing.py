@@ -787,18 +787,9 @@ def Union(self, parameters):
 def _union_from_types(left, right):
     """Helper function to create union types avoiding recursion."""
     try:
-        if hasattr(left, '__or__') and not isinstance(left, _GenericAlias):
-            return left | right
-        elif hasattr(right, '__ror__') and not isinstance(right, _GenericAlias):
-            return right.__ror__(left)
-        else:
-            if hasattr(left, '__origin__'):
-                left = left.__origin__
-            if hasattr(right, '__origin__'):
-                right = right.__origin__
-            return left | right
+        return left | right
     except (TypeError, AttributeError):
-        return f"Union[{left}, {right}]"
+        return Union[left, right]
 
 
 @_SpecialForm
