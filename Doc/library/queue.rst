@@ -201,6 +201,9 @@ fully processed by daemon consumer threads.
    count of unfinished tasks drops to zero, :meth:`join` unblocks.
 
 
+Waiting for task completion
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 Example of how to wait for enqueued tasks to be completed::
 
     import threading
