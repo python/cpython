@@ -188,8 +188,11 @@ class GzipFile(_streams.BaseStream):
 
         The optional mtime argument is the timestamp requested by gzip. The time
         is in Unix format, i.e., seconds since 00:00:00 UTC, January 1, 1970.
-        If mtime is omitted or None, the current time is used. Use mtime = 0
-        to generate a compressed stream that does not depend on creation time.
+        Set mtime to 0 to generate a compressed stream that does not depend on
+        creation time. If mtime is omitted or None, the current time is used;
+        however, if the current time is outside the range 00:00:00 UTC, January
+        1, 1970 through 06:28:15 UTC, February 7, 2106, then the value 0 is used
+        instead.
 
         """
 
@@ -202,6 +205,9 @@ class GzipFile(_streams.BaseStream):
             raise ValueError("Invalid mode: {!r}".format(mode))
         if mode and 'b' not in mode:
             mode += 'b'
+
+        if mtime is not None and (mtime < 0 or mtime >= 2**32):
+            raise ValueError(f'mtime must be in the range 0 through {2**32-1}')
 
         try:
             if fileobj is None:
@@ -297,6 +303,8 @@ class GzipFile(_streams.BaseStream):
         mtime = self._write_mtime
         if mtime is None:
             mtime = time.time()
+            if mtime < 0 or mtime >= 2**32:
+                mtime = 0
         write32u(self.fileobj, int(mtime))
         if compresslevel == _COMPRESS_LEVEL_BEST:
             xfl = b'\002'
