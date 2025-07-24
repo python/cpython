@@ -2124,7 +2124,7 @@ array_array_fromunicode_impl(arrayobject *self, PyObject *ustr)
         if (ustr_length > 1) {
             ustr_length--; /* trim trailing NUL character */
             Py_ssize_t old_size = Py_SIZE(self);
-            ssize_t new_size = (size_t)old_size + ustr_length;
+            size_t new_size = (size_t)old_size + ustr_length;
 
             if (!arraydata_size_valid(new_size, sizeof(wchar_t))) {
                 return PyErr_NoMemory();
@@ -2141,7 +2141,7 @@ array_array_fromunicode_impl(arrayobject *self, PyObject *ustr)
     else { // typecode == 'w'
         Py_ssize_t ustr_length = PyUnicode_GetLength(ustr);
         Py_ssize_t old_size = Py_SIZE(self);
-        ssize_t new_size = (size_t)old_size + ustr_length;
+        size_t new_size = (size_t)old_size + ustr_length;
 
         if (!arraydata_size_valid(new_size, sizeof(Py_UCS4))) {
             return PyErr_NoMemory();
