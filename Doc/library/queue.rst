@@ -246,10 +246,6 @@ until empty or terminated immediately (a hard shutdown).
    down normally with calls :meth:`~Queue.get` to extract tasks
    that have already been loaded.
 
-   If the shutdown occurs during the brief window where the queue still
-   has data and callers to :meth:`~Queue.get` are blocked, those callers
-   will be unblocked.
-
    And if :meth:`~Queue.task_done` is called for each remaining task, a
    pending :meth:`~Queue.join` will be unblocked normally.
 
