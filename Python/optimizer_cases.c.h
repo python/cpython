@@ -1661,7 +1661,46 @@
         }
 
         case _COMPARE_OP_FLOAT: {
+            JitOptRef right;
+            JitOptRef left;
             JitOptRef res;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            if (
+                sym_is_safe_const(ctx, left) &&
+                sym_is_safe_const(ctx, right)
+            ) {
+                JitOptRef left_sym = left;
+                JitOptRef right_sym = right;
+                _PyStackRef left = sym_get_const_as_stackref(ctx, left_sym);
+                _PyStackRef right = sym_get_const_as_stackref(ctx, right_sym);
+                _PyStackRef res_stackref;
+                /* Start of uop copied from bytecodes for constant evaluation */
+                PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+                PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+                STAT_INC(COMPARE_OP, hit);
+                double dleft = PyFloat_AS_DOUBLE(left_o);
+                double dright = PyFloat_AS_DOUBLE(right_o);
+                int sign_ish = COMPARISON_BIT(dleft, dright);
+                PyStackRef_CLOSE_SPECIALIZED(left, _PyFloat_ExactDealloc);
+                PyStackRef_CLOSE_SPECIALIZED(right, _PyFloat_ExactDealloc);
+                res_stackref = (sign_ish & oparg) ? PyStackRef_True : PyStackRef_False;
+                /* End of uop copied from bytecodes for constant evaluation */
+                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
+
+                if (sym_is_const(ctx, res)) {
+                    PyObject *result = sym_get_const(ctx, res);
+                    if (_Py_IsImmortal(result)) {
+                        // Replace with POP_TWO_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
+                        REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+                    }
+                }
+
+                stack_pointer[-2] = res;
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
+                break;
+            }
             res = sym_new_type(ctx, &PyBool_Type);
             stack_pointer[-2] = res;
             stack_pointer += -1;
