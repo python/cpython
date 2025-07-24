@@ -126,8 +126,8 @@
        forward slashes (``/``, ``posixpath.sep`` ).
        For example, the following are equivalent::
 
-           files.joinpath('subdir', 'subsuddir', 'file.txt')
-           files.joinpath('subdir/subsuddir/file.txt')
+           files.joinpath('subdir', 'subsubdir', 'file.txt')
+           files.joinpath('subdir/subsubdir/file.txt')
 
        Note that some :class:`!Traversable` implementations
        might not be updated to the latest version of the protocol.
