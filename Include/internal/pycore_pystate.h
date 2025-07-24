@@ -11,7 +11,7 @@ extern "C" {
 #include "pycore_pythonrun.h"     // _PyOS_STACK_MARGIN_SHIFT
 #include "pycore_typedefs.h"      // _PyRuntimeState
 #include "pycore_tstate.h"
-
+#include "pycore_interp.h"        // _PyInterpreterState_HasFeature
 
 // Values for PyThreadState.state. A thread must be in the "attached" state
 // before calling most Python APIs. If the GIL is enabled, then "attached"
@@ -78,11 +78,12 @@ extern void _PyInterpreterState_ReinitRunningMain(PyThreadState *);
 extern const PyConfig* _Py_GetMainConfig(void);
 
 
-/* Only handle signals on the main thread of the main interpreter. */
+/* Only handle signals on the main thread of an interpreter that supports it. */
 static inline int
 _Py_ThreadCanHandleSignals(PyInterpreterState *interp)
 {
-    return (_Py_IsMainThread() && _Py_IsMainInterpreter(interp));
+    return (_Py_IsMainThread()
+            && _PyInterpreterState_HasFeature(interp, Py_RTFLAGS_CAN_HANDLE_SIGNALS));
 }
 
 

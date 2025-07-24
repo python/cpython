@@ -87,6 +87,7 @@ _PyInterpreterConfig_AsDict(PyInterpreterConfig *config)
     ADD_BOOL(allow_threads);
     ADD_BOOL(allow_daemon_threads);
     ADD_BOOL(check_multi_interp_extensions);
+    ADD_BOOL(can_handle_signals);
 
     ADD_STR(gil, gil_flag_to_str(config->gil));
 
@@ -182,6 +183,7 @@ interp_config_from_dict(PyObject *origdict, PyInterpreterConfig *config,
     COPY_BOOL(allow_threads);
     COPY_BOOL(allow_daemon_threads);
     COPY_BOOL(check_multi_interp_extensions);
+    COPY_BOOL(can_handle_signals);
 
     // PyInterpreterConfig.gil
     char buf[20];

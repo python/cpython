@@ -566,6 +566,10 @@ init_interp_settings(PyInterpreterState *interp,
         interp->feature_flags |= Py_RTFLAGS_MULTI_INTERP_EXTENSIONS;
     }
 
+    if (config->can_handle_signals) {
+        interp->feature_flags |= Py_RTFLAGS_CAN_HANDLE_SIGNALS;
+    }
+
     switch (config->gil) {
     case PyInterpreterConfig_DEFAULT_GIL: break;
     case PyInterpreterConfig_SHARED_GIL: break;
@@ -636,10 +640,11 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
     }
 
     PyInterpreterConfig config = _PyInterpreterConfig_LEGACY_INIT;
-    // The main interpreter always has its own GIL and supports single-phase
-    // init extensions.
+    // The main interpreter always has its own GIL, supports single-phase
+    // init extensions, and can handle signals.
     config.gil = PyInterpreterConfig_OWN_GIL;
     config.check_multi_interp_extensions = 0;
+    config.can_handle_signals = 1;
     status = init_interp_settings(interp, &config);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
