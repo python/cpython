@@ -214,8 +214,9 @@ class CookieTests(unittest.TestCase):
             'Set-Cookie: Customer="WILE_E_COYOTE"; HttpOnly; Partitioned; Secure')
 
     def test_samesite_attrs(self):
-        samesite_values = ['Strict', 'Lax', 'strict', 'lax']
+        samesite_values = ['Strict', 'Lax', 'strict', 'lax', 'None', 'none', 'asdasd']
         for val in samesite_values:
+            print(val)
             with self.subTest(val=val):
                 C = cookies.SimpleCookie('Customer="WILE_E_COYOTE"')
                 C['Customer']['samesite'] = val
