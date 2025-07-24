@@ -3129,9 +3129,8 @@ class TransformCodecTest(unittest.TestCase):
         self.assertRaises(ValueError, codecs.decode, b"", "uu-codec")
 
     def test_invalid_error_input(self):
-        # decoders/encoders require errors == 'strict'
         for encoding in bytes_transform_encodings:
-            with (self.subTest(encoding=encoding)):
+            with self.subTest(encoding=encoding):
                 encoder = codecs.getencoder(encoding)
                 decoder = codecs.getdecoder(encoding)
 
