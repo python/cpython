@@ -186,7 +186,8 @@ _PyObject_CallNoArgs(PyObject *func) {
 }
 
 
-extern PyObject *const *
+// these are exported only for other re-generated interpreters to call
+PyAPI_FUNC(PyObject *const *)
 _PyStack_UnpackDict(PyThreadState *tstate,
     PyObject *const *args, Py_ssize_t nargs,
     PyObject *kwargs, PyObject **p_kwnames);
@@ -196,7 +197,7 @@ extern void _PyStack_UnpackDict_Free(
     Py_ssize_t nargs,
     PyObject *kwnames);
 
-extern void _PyStack_UnpackDict_FreeNoDecRef(
+PyAPI_FUNC(void) _PyStack_UnpackDict_FreeNoDecRef(
     PyObject *const *stack,
     PyObject *kwnames);
 
