@@ -3943,7 +3943,7 @@ def bœr():
             self.assertEqual(pdb.Pdb().rcLines[0], "invalid")
             self.assertEqual(len(pdb.Pdb().rcLines), 1)
 
-    def test_readrc_home_twice(self):
+    def test_readrc_cwd_is_home(self):
         with os_helper.EnvironmentVarGuard() as env:
             env.unset("HOME")
             with os_helper.temp_cwd() as cwd, patch("os.path.expanduser"):
