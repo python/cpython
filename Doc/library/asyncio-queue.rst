@@ -105,9 +105,9 @@ Queue
       Put a :class:`Queue` instance into a shutdown mode.
 
       The queue can no longer grow.
-      Future calls to :meth:`~Queue.put` raise :exc:`ShutDown`.
+      Future calls to :meth:`~Queue.put` raise :exc:`QueueShutDown`.
       Currently blocked callers of :meth:`~Queue.put` will be unblocked
-      and will raise :exc:`ShutDown` in the formerly blocked thread.
+      and will raise :exc:`QueueShutDown` in the formerly blocked thread.
 
       If *immediate* is false (the default), the queue can be wound
       down normally with calls :meth:`~Queue.get` to extract tasks
@@ -117,13 +117,13 @@ Queue
       pending :meth:`~Queue.join` will be unblocked normally.
 
       Once the queue is empty, future calls to :meth:`~Queue.get` will
-      raise :exc:`ShutDown`.
+      raise :exc:`QueueShutDown`.
 
       If *immediate* is true, the queue is terminated immediately.
       The queue is drained to be completely empty.  All callers of
       :meth:`~Queue.join` are unblocked regardless of the number
       of unfinished tasks.  Blocked callers of :meth:`~Queue.get`
-      are unblocked and will raise :exc:`ShutDown` because the
+      are unblocked and will raise :exc:`QueueShutDown` because the
       queue is empty.
 
       Use caution when using :meth:`~Queue.join` with *immediate* set
