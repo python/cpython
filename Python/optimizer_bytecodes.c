@@ -440,7 +440,7 @@ dummy_func(void) {
     }
 
     op(_COMPARE_OP_STR, (left, right -- res)) {
-        // REPLACE_OPCODE_IF_EVALUATES_PURE(left, right);
+        REPLACE_OPCODE_IF_EVALUATES_PURE(left, right);
         res = sym_new_type(ctx, &PyBool_Type);
     }
 
