@@ -257,12 +257,11 @@ until empty or terminated immediately (a hard shutdown).
    raise :exc:`ShutDown`.
 
    If *immediate* is true, the queue is terminated immediately.
-   The queue is drained to be completely empty.  The count of
-   unfinished tasks is reduced by the number drained but without calling
-   :meth:`~Queue.task_done`.  All callers of :meth:`~Queue.join`
-   are unblocked even if the unfinished tasks is more than zero.
-   In addition, blocked callers of
-   :meth:`~Queue.get` are unblocked and will raise :exc:`ShutDown`.
+   The queue is drained to be completely empty.  All callers of
+   :meth:`~Queue.join` are unblocked regardless of the number
+   of unfinished tasks.  Blocked callers of :meth:`~Queue.get`
+   are unblocked and will raise :exc:`ShutDown` because the
+   queue is empty.
 
    Use caution when using :meth:`~Queue.join` with *immediate* set
    to true. This unblocks the join even when no work has been done
