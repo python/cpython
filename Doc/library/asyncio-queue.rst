@@ -110,7 +110,7 @@ Queue
       and will raise :exc:`QueueShutDown` in the formerly blocked thread.
 
       If *immediate* is false (the default), the queue can be wound
-      down normally with calls :meth:`~Queue.get` to extract tasks
+      down normally with :meth:`~Queue.get` calls to extract tasks
       that have already been loaded.
 
       And if :meth:`~Queue.task_done` is called for each remaining task, a
