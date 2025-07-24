@@ -3238,6 +3238,47 @@ class ElementFindTest(unittest.TestCase):
         self.assertRaisesRegex(SyntaxError, 'XPath', e.find, './tag[last()-0]')
         self.assertRaisesRegex(SyntaxError, 'XPath', e.find, './tag[last()+1]')
 
+    def test_find_xpath_namespaces(self):
+        LINEAR_XML = '''
+        <body xmlns="X">
+            <tag class='a'/>
+            <tag class='b'/>
+            <tag class='c'/>
+            <tag class='d'/>
+        </body>'''
+        e = ET.XML(LINEAR_XML)
+        nsmap = {"": "X"}
+
+        # Test for numeric indexing and last()
+        self.assertEqual(
+            e.find('./tag[1]', namespaces=nsmap).attrib['class'], 'a',
+        )
+        self.assertEqual(
+            e.find('./tag[2]', namespaces=nsmap).attrib['class'], 'b',
+        )
+        self.assertEqual(
+            e.find('./tag[last()]', namespaces=nsmap).attrib['class'], 'd',
+        )
+        self.assertEqual(
+            e.find('./tag[last()-1]', namespaces=nsmap).attrib['class'], 'c',
+        )
+        self.assertEqual(
+            e.find('./tag[last()-2]', namespaces=nsmap).attrib['class'], 'b',
+        )
+
+        self.assertRaisesRegex(
+            SyntaxError, 'XPath', e.find, './tag[0]', namespaces=nsmap,
+        )
+        self.assertRaisesRegex(
+            SyntaxError, 'XPath', e.find, './tag[-1]', namespaces=nsmap,
+        )
+        self.assertRaisesRegex(
+            SyntaxError, 'XPath', e.find, './tag[last()-0]', namespaces=nsmap,
+        )
+        self.assertRaisesRegex(
+            SyntaxError, 'XPath', e.find, './tag[last()+1]', namespaces=nsmap,
+        )
+
     def test_findall(self):
         e = ET.XML(SAMPLE_XML)
         e[2] = ET.XML(SAMPLE_SECTION)
@@ -3376,6 +3417,21 @@ class ElementFindTest(unittest.TestCase):
         nsmap = {'xx': 'X', '': 'Y'}
         self.assertEqual(len(root.findall(".//xx:b", namespaces=nsmap)), 2)
         self.assertEqual(len(root.findall(".//b", namespaces=nsmap)), 1)
+
+    def test_findall_default_nsmap_position_predicate(self):
+        root = ET.XML('''
+            <a xmlns="default" xmlns:x="X" xmlns:y="Y">
+                <x:b><c/></x:b>
+                <b/>
+                <b/>
+                <c><x:b/><b/></c><y:b/>
+            </a>''')
+        nsmap = {'': 'default'}
+        first_b = root[1]
+        last_b = root[2]
+        self.assertEqual(len(root.findall(".//b[1]", namespaces=nsmap)), 2)
+        self.assertEqual(root.findall(".//b[1]", namespaces=nsmap)[0], first_b)
+        self.assertEqual(root.findall(".//b[last()]", namespaces=nsmap)[0], last_b)
 
     def test_findall_wildcard(self):
         root = ET.XML('''
