@@ -67,7 +67,7 @@ def ignore_warnings(*, category):
             return wrapper
     return decorator
 
-    
+
 def ignore_fork_in_thread_deprecation_warnings(test):
     """Decorator to suppress the deprecation warnings related to running a fork within a thread.
     """
