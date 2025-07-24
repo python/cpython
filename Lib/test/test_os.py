@@ -3518,7 +3518,7 @@ class PidTests(unittest.TestCase):
         self.assertEqual(error, b'')
         self.assertEqual(int(stdout), os.getpid())
 
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings  # gh-135427
     def check_waitpid(self, code, exitcode, callback=None):
         if sys.platform == 'win32':
             # On Windows, os.spawnv() simply joins arguments with spaces:
@@ -3621,35 +3621,35 @@ class SpawnTests(unittest.TestCase):
 
         return program, args
 
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings  # gh-135427
     @requires_os_func('spawnl')
     def test_spawnl(self):
         program, args = self.create_args()
         exitcode = os.spawnl(os.P_WAIT, program, *args)
         self.assertEqual(exitcode, self.exitcode)
 
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings  # gh-135427
     @requires_os_func('spawnle')
     def test_spawnle(self):
         program, args = self.create_args(with_env=True)
         exitcode = os.spawnle(os.P_WAIT, program, *args, self.env)
         self.assertEqual(exitcode, self.exitcode)
 
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings  # gh-135427
     @requires_os_func('spawnlp')
     def test_spawnlp(self):
         program, args = self.create_args()
         exitcode = os.spawnlp(os.P_WAIT, program, *args)
         self.assertEqual(exitcode, self.exitcode)
 
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings  # gh-135427
     @requires_os_func('spawnlpe')
     def test_spawnlpe(self):
         program, args = self.create_args(with_env=True)
         exitcode = os.spawnlpe(os.P_WAIT, program, *args, self.env)
         self.assertEqual(exitcode, self.exitcode)
 
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings  # gh-135427
     @requires_os_func('spawnv')
     def test_spawnv(self):
         program, args = self.create_args()
@@ -3660,35 +3660,35 @@ class SpawnTests(unittest.TestCase):
         exitcode = os.spawnv(os.P_WAIT, FakePath(program), args)
         self.assertEqual(exitcode, self.exitcode)
 
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings  # gh-135427
     @requires_os_func('spawnve')
     def test_spawnve(self):
         program, args = self.create_args(with_env=True)
         exitcode = os.spawnve(os.P_WAIT, program, args, self.env)
         self.assertEqual(exitcode, self.exitcode)
 
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings  # gh-135427
     @requires_os_func('spawnvp')
     def test_spawnvp(self):
         program, args = self.create_args()
         exitcode = os.spawnvp(os.P_WAIT, program, args)
         self.assertEqual(exitcode, self.exitcode)
 
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings  # gh-135427
     @requires_os_func('spawnvpe')
     def test_spawnvpe(self):
         program, args = self.create_args(with_env=True)
         exitcode = os.spawnvpe(os.P_WAIT, program, args, self.env)
         self.assertEqual(exitcode, self.exitcode)
 
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings  # gh-135427
     @requires_os_func('spawnv')
     def test_nowait(self):
         program, args = self.create_args()
         pid = os.spawnv(os.P_NOWAIT, program, args)
         support.wait_process(pid, exitcode=self.exitcode)
 
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings  # gh-135427
     @requires_os_func('spawnve')
     def test_spawnve_bytes(self):
         # Test bytes handling in parse_arglist and parse_envlist (#28114)
@@ -3696,21 +3696,21 @@ class SpawnTests(unittest.TestCase):
         exitcode = os.spawnve(os.P_WAIT, program, args, self.env)
         self.assertEqual(exitcode, self.exitcode)
 
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings  # gh-135427
     @requires_os_func('spawnl')
     def test_spawnl_noargs(self):
         program, __ = self.create_args()
         self.assertRaises(ValueError, os.spawnl, os.P_NOWAIT, program)
         self.assertRaises(ValueError, os.spawnl, os.P_NOWAIT, program, '')
 
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings  # gh-135427
     @requires_os_func('spawnle')
     def test_spawnle_noargs(self):
         program, __ = self.create_args()
         self.assertRaises(ValueError, os.spawnle, os.P_NOWAIT, program, {})
         self.assertRaises(ValueError, os.spawnle, os.P_NOWAIT, program, '', {})
 
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings  # gh-135427
     @requires_os_func('spawnv')
     def test_spawnv_noargs(self):
         program, __ = self.create_args()
@@ -3719,7 +3719,7 @@ class SpawnTests(unittest.TestCase):
         self.assertRaises(ValueError, os.spawnv, os.P_NOWAIT, program, ('',))
         self.assertRaises(ValueError, os.spawnv, os.P_NOWAIT, program, [''])
 
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings  # gh-135427
     @requires_os_func('spawnve')
     def test_spawnve_noargs(self):
         program, __ = self.create_args()
@@ -3776,12 +3776,12 @@ class SpawnTests(unittest.TestCase):
         exitcode = spawn(os.P_WAIT, program, args, newenv)
         self.assertEqual(exitcode, 0)
 
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings  # gh-135427
     @requires_os_func('spawnve')
     def test_spawnve_invalid_env(self):
         self._test_invalid_env(os.spawnve)
 
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings  # gh-135427
     @requires_os_func('spawnvpe')
     def test_spawnvpe_invalid_env(self):
         self._test_invalid_env(os.spawnvpe)
@@ -4898,7 +4898,7 @@ class PseudoterminalTests(unittest.TestCase):
         self.addCleanup(os.close, son_fd)
         self.assertEqual(os.ptsname(mother_fd), os.ttyname(son_fd))
 
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings  # gh-135427
     @unittest.skipUnless(hasattr(os, 'spawnl'), "need os.spawnl()")
     @support.requires_subprocess()
     def test_pipe_spawnl(self):

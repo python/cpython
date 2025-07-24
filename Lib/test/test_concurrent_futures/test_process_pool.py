@@ -49,7 +49,7 @@ class ProcessPoolExecutorTest(ExecutorTest):
                                     "max_workers must be <= 61"):
             futures.ProcessPoolExecutor(max_workers=62)
 
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings  # gh-135427
     def test_killed_child(self):
         # When a child process is abruptly terminated, the whole pool gets
         # "broken".
@@ -62,7 +62,7 @@ class ProcessPoolExecutorTest(ExecutorTest):
         # Submitting other jobs fails as well.
         self.assertRaises(BrokenProcessPool, self.executor.submit, pow, 2, 8)
 
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings  # gh-135427
     def test_map_chunksize(self):
         def bad_map():
             list(self.executor.map(pow, range(40), range(40), chunksize=-1))
@@ -83,7 +83,7 @@ class ProcessPoolExecutorTest(ExecutorTest):
     def _test_traceback(cls):
         raise RuntimeError(123) # some comment
 
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings  # gh-135427
     def test_traceback(self):
         # We want ensure that the traceback from the child process is
         # contained in the traceback raised in the main process.
@@ -106,7 +106,7 @@ class ProcessPoolExecutorTest(ExecutorTest):
         self.assertIn('raise RuntimeError(123) # some comment',
                       f1.getvalue())
 
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings  # gh-135427
     @hashlib_helper.requires_hashdigest('md5')
     def test_ressources_gced_in_workers(self):
         # Ensure that argument for a job are correctly gc-ed after the job
@@ -127,7 +127,7 @@ class ProcessPoolExecutorTest(ExecutorTest):
         mgr.shutdown()
         mgr.join()
 
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings  # gh-135427
     def test_saturation(self):
         executor = self.executor
         mp_context = self.get_context()
@@ -213,7 +213,7 @@ class ProcessPoolExecutorTest(ExecutorTest):
         for i, future in enumerate(futures):
             self.assertEqual(future.result(), mul(i, i))
 
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings  # gh-135427
     def test_python_finalization_error(self):
         # gh-109047: Catch RuntimeError on thread creation
         # during Python finalization.
@@ -264,7 +264,7 @@ class ProcessPoolExecutorTest(ExecutorTest):
                               executor._force_shutdown,
                               operation='invalid operation'),
 
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings  # gh-135427
     @parameterize(*FORCE_SHUTDOWN_PARAMS)
     def test_force_shutdown_workers(self, function_name):
         manager = self.get_context().Manager()

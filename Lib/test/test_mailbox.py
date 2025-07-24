@@ -1212,7 +1212,7 @@ class _TestMboxMMDF(_TestSingleFile):
             self.assertEqual(contents, f.read())
         self._box = self._factory(self._path)
 
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings  # gh-135427
     @support.requires_fork()
     @unittest.skipUnless(hasattr(socket, 'socketpair'), "Test needs socketpair().")
     def test_lock_conflict(self):

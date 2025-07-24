@@ -485,7 +485,7 @@ class TestSupport(unittest.TestCase):
 
         self.assertRaises(AssertionError, support.check__all__, self, unittest)
 
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-135427
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings  # gh-135427
     @unittest.skipUnless(hasattr(os, 'waitpid') and hasattr(os, 'WNOHANG'),
                          'need os.waitpid() and os.WNOHANG')
     @support.requires_fork()
