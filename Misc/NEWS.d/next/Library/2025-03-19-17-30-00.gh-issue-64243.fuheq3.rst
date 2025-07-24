@@ -1,0 +1,2 @@
+Implement a fall back to :func:`locale.getlocale` in :func:`gettext.find` if
+*languages* is not provided and :envvar:`LANGUAGE` is not set.
