@@ -3130,14 +3130,17 @@ class TransformCodecTest(unittest.TestCase):
 
     def test_invalid_error_input(self):
         # decoders/encoders require errors == 'strict'
-
         for encoding in bytes_transform_encodings:
-            with self.subTest(encoding=encoding):
+            with (self.subTest(encoding=encoding)):
                 encoder = codecs.getencoder(encoding)
                 decoder = codecs.getdecoder(encoding)
 
                 self.assertRaises(ValueError, encoder, 'in', errors='notstrict')
                 self.assertRaises(ValueError, decoder, 'in', errors='notstrict')
+
+                incdev = codecs.getincrementaldecoder(encoding)
+                if encoding not in ('base64_codec', 'uu_codec', 'quopri_codec', 'hex_codec'):
+                    self.assertRaises(ValueError, incdev, errors='notstrict')
 
 
 
