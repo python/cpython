@@ -5226,14 +5226,15 @@ exit:
 /*[clinic input]
 os._path_splitroot
 
-    path: path_t
+    path: path_t,
+    /
 
 Removes everything after the root on Win32.
 [clinic start generated code]*/
 
 static PyObject *
 os__path_splitroot_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=ab7f1a88b654581c input=dc93b1d3984cffb6]*/
+/*[clinic end generated code: output=ab7f1a88b654581c input=42831e41f8458f6d]*/
 {
     wchar_t *buffer;
     wchar_t *end;
@@ -5535,7 +5536,8 @@ os__path_lexists_impl(PyObject *module, path_t *path)
 /*[clinic input]
 os._path_isdir -> bool
 
-    s as path: path_t(allow_fd=True, suppress_value_error=True)
+    path: path_t(allow_fd=True, suppress_value_error=True),
+    /
 
 Return true if the pathname refers to an existing directory.
 
@@ -5543,7 +5545,7 @@ Return true if the pathname refers to an existing directory.
 
 static int
 os__path_isdir_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=d5786196f9e2fa7a input=132a3b5301aecf79]*/
+/*[clinic end generated code: output=d5786196f9e2fa7a input=0d3fd790564d244b]*/
 {
     return _testFileType(path, PY_IFDIR);
 }
@@ -5612,7 +5614,8 @@ os__path_isjunction_impl(PyObject *module, path_t *path)
 /*[clinic input]
 os._path_splitroot_ex
 
-    p as path: path_t(make_wide=True, nonstrict=True)
+    path: path_t(make_wide=True, nonstrict=True),
+    /
 
 Split a pathname into drive, root and tail.
 
@@ -5621,7 +5624,7 @@ The tail contains anything after the root.
 
 static PyObject *
 os__path_splitroot_ex_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=4b0072b6cdf4b611 input=4556b615c7cc13f2]*/
+/*[clinic end generated code: output=4b0072b6cdf4b611 input=4ac47b394d68bd21]*/
 {
     Py_ssize_t drvsize, rootsize;
     PyObject *drv = NULL, *root = NULL, *tail = NULL, *result = NULL;
@@ -16971,6 +16974,25 @@ os__emscripten_debugger_impl(PyObject *module)
     emscripten_debugger();
     Py_RETURN_NONE;
 }
+
+EM_JS(void, emscripten_log_impl_js, (const char* arg), {
+    console.warn(UTF8ToString(arg));
+});
+
+/*[clinic input]
+os._emscripten_log
+   arg: str
+
+Log something to the JS console. Emscripten only.
+[clinic start generated code]*/
+
+static PyObject *
+os__emscripten_log_impl(PyObject *module, const char *arg)
+/*[clinic end generated code: output=9749e5e293c42784 input=350aa1f70bc1e905]*/
+{
+    emscripten_log_impl_js(arg);
+    Py_RETURN_NONE;
+}
 #endif /* __EMSCRIPTEN__ */
 
 
@@ -17190,6 +17212,7 @@ static PyMethodDef posix_methods[] = {
     OS__IS_INPUTHOOK_INSTALLED_METHODDEF
     OS__CREATE_ENVIRON_METHODDEF
     OS__EMSCRIPTEN_DEBUGGER_METHODDEF
+    OS__EMSCRIPTEN_LOG_METHODDEF
     {NULL,              NULL}            /* Sentinel */
 };
 

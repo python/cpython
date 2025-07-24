@@ -333,6 +333,16 @@ Standard names are defined for the following types:
    :attr:`tb.tb_frame <traceback.tb_frame>` if ``tb`` is a traceback object.
 
 
+.. data:: FrameLocalsProxyType
+
+   The type of frame locals proxy objects, as found on the
+   :attr:`frame.f_locals` attribute.
+
+   .. versionadded:: next
+
+   .. seealso:: :pep:`667`
+
+
 .. data:: GetSetDescriptorType
 
    The type of objects defined in extension modules with ``PyGetSetDef``, such
