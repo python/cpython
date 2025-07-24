@@ -67,6 +67,29 @@ def ignore_warnings(*, category):
             return wrapper
     return decorator
 
+    
+def ignore_fork_in_thread_deprecation_warnings(test):
+    """Decorator to suppress the deprecation warnings related to running a fork within a thread.
+    """
+    if inspect.iscoroutinefunction(test):
+        @functools.wraps(test)
+        async def async_wrapper(self, *args, **kwargs):
+            with warnings.catch_warnings():
+                warnings.filterwarnings('ignore',
+                                        message=".*fork.*may lead to deadlocks in the child.*",
+                                        category=DeprecationWarning)
+                return await test(self, *args, **kwargs)
+        return async_wrapper
+    else:
+        @functools.wraps(test)
+        def wrapper(self, *args, **kwargs):
+            with warnings.catch_warnings():
+                warnings.filterwarnings('ignore',
+                                        message=".*fork.*may lead to deadlocks in the child.*",
+                                        category=DeprecationWarning)
+                return test(self, *args, **kwargs)
+        return wrapper
+
 
 class WarningsRecorder(object):
     """Convenience wrapper for the warnings list returned on
