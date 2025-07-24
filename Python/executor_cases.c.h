@@ -26,6 +26,8 @@
             break;
         }
 
+        /* _CHECK_PERIODIC_AT_END is not a viable micro-op for tier 2 because it is replaced */
+
         case _CHECK_PERIODIC_IF_NOT_YIELD_FROM: {
             oparg = CURRENT_OPARG();
             if ((oparg & RESUME_OPARG_LOCATION_MASK) < RESUME_AFTER_YIELD_FROM) {
@@ -7458,6 +7460,14 @@
 
         case _DEOPT: {
             GOTO_TIER_ONE(_PyFrame_GetBytecode(frame) + CURRENT_TARGET());
+            break;
+        }
+
+        case _PERIODIC: {
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            int err = _Py_HandlePending(tstate);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            GOTO_TIER_ONE(err ? NULL : _PyFrame_GetBytecode(frame) + CURRENT_TARGET());
             break;
         }
 

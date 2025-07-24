@@ -132,7 +132,7 @@ def uses_this(inst: Instruction) -> bool:
             continue
         for tkn in uop.body.tokens():
             if (tkn.kind == "IDENTIFIER"
-                    and (tkn.text in {"DEOPT_IF", "EXIT_IF"})):
+                    and (tkn.text in {"DEOPT_IF", "EXIT_IF", "EXIT_IF_AFTER"})):
                 return True
     return False
 

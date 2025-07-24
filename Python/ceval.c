@@ -1207,6 +1207,7 @@ jump_to_error_target:
         printf(" @ %d -> %s]\n",
                (int)(next_uop - current_executor->trace - 1),
                _PyOpcode_OpName[frame->instr_ptr->op.code]);
+        fflush(stdout);
     }
 #endif
     assert(next_uop[-1].format == UOP_FORMAT_JUMP);

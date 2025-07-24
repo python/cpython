@@ -11,6 +11,8 @@
             break;
         }
 
+        /* _CHECK_PERIODIC_AT_END is not a viable micro-op for tier 2 */
+
         case _CHECK_PERIODIC_IF_NOT_YIELD_FROM: {
             break;
         }
@@ -3034,6 +3036,10 @@
         }
 
         case _DEOPT: {
+            break;
+        }
+
+        case _PERIODIC: {
             break;
         }
 

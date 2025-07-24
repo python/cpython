@@ -432,6 +432,7 @@ _PyUOp_Replacements[MAX_UOP_ID + 1] = {
     [_ITER_JUMP_TUPLE] = _GUARD_NOT_EXHAUSTED_TUPLE,
     [_FOR_ITER] = _FOR_ITER_TIER_TWO,
     [_ITER_NEXT_LIST] = _ITER_NEXT_LIST_TIER_TWO,
+    [_CHECK_PERIODIC_AT_END] = _TIER2_RESUME_CHECK,
 };
 
 static const uint8_t
@@ -776,9 +777,12 @@ translate_bytecode_to_trace(
                             case OPARG_REPLACED:
                                 uop = _PyUOp_Replacements[uop];
                                 assert(uop != 0);
+                                uint32_t next_inst = target + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]] + (oparg > 255);
+                                if (uop == _TIER2_RESUME_CHECK) {
+                                    target = next_inst;
+                                }
 #ifdef Py_DEBUG
-                                {
-                                    uint32_t next_inst = target + 1 + INLINE_CACHE_ENTRIES_FOR_ITER + (oparg > 255);
+                                else {
                                     uint32_t jump_target = next_inst + oparg;
                                     assert(_Py_GetBaseCodeUnit(code, jump_target).op.code == END_FOR);
                                     assert(_Py_GetBaseCodeUnit(code, jump_target+1).op.code == POP_ITER);
@@ -1043,9 +1047,15 @@ prepare_for_execution(_PyUOpInstruction *buffer, int length)
         _PyUOpInstruction *inst = &buffer[i];
         int opcode = inst->opcode;
         int32_t target = (int32_t)uop_get_target(inst);
-        if (_PyUop_Flags[opcode] & (HAS_EXIT_FLAG | HAS_DEOPT_FLAG)) {
-            uint16_t exit_op = (_PyUop_Flags[opcode] & HAS_EXIT_FLAG) ?
-                _EXIT_TRACE : _DEOPT;
+        uint16_t exit_flags = _PyUop_Flags[opcode] & (HAS_EXIT_FLAG | HAS_DEOPT_FLAG | HAS_PERIODIC_FLAG);
+        if (exit_flags) {
+            uint16_t exit_op = _EXIT_TRACE;
+            if (exit_flags & HAS_DEOPT_FLAG) {
+                exit_op = _DEOPT;
+            }
+            else if (exit_flags & HAS_PERIODIC_FLAG) {
+                exit_op = _PERIODIC;
+            }
             int32_t jump_target = target;
             if (is_for_iter_test[opcode]) {
                 /* Target the POP_TOP immediately after the END_FOR,
@@ -1159,6 +1169,7 @@ sanity_check(_PyExecutorObject *executor)
         uint16_t opcode = inst->opcode;
         CHECK(
             opcode == _DEOPT ||
+            opcode == _PERIODIC ||
             opcode == _EXIT_TRACE ||
             opcode == _ERROR_POP_N);
     }
