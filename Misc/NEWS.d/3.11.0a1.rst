@@ -2741,7 +2741,7 @@ Fix deprecation of :data:`ssl.OP_NO_TLSv1_3`
 .. nonce: TMWh1i
 .. section: Library
 
-:meth:`pathlib.PureWindowsPath.is_reserved` now identifies a greater range
+:meth:`!pathlib.PureWindowsPath.is_reserved` now identifies a greater range
 of reserved filenames, including those with trailing spaces or colons.
 
 ..
