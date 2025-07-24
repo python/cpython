@@ -1,0 +1,3 @@
+Fix :class:`calendar.TextCalendar` and :class:`calendar.HTMLCalendar` and
+:mod:`calendar` CLI to display month names in the nominative case if
+provided by the locale.
