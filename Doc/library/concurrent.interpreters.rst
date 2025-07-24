@@ -134,10 +134,9 @@ makes them similar to processes, but they still enjoy in-process
 efficiency, like threads.
 
 All that said, interpreters do naturally support certain flavors of
-concurrency, as a powerful side effect of that isolation.
-There's a powerful side effect of that isolation.  It enables a
-different approach to concurrency than you can take with async or
-threads.  It's a similar concurrency model to CSP or the actor model,
+concurrency, as a powerful side effect of that isolation. It enables
+a different approach to concurrency than you can take with async or
+threads. It's a similar concurrency model to CSP or the actor model,
 a model which is relatively easy to reason about.
 
 You can take advantage of that concurrency model in a single thread,
