@@ -2979,7 +2979,7 @@ class ClinicFunctionalTest(unittest.TestCase):
         regex = (
             fr"Passing( more than)?( [0-9]+)? positional argument(s)? to "
             fr"{re.escape(name)}\(\) is deprecated. Parameters? {pnames} will "
-            fr"become( a)? keyword-only parameters? in Python 3\.37"
+            fr"become( a)? keyword-only parameters? in Python 3\.14"
         )
         self.check_depr(regex, fn, *args, **kwds)
 
@@ -2992,7 +2992,7 @@ class ClinicFunctionalTest(unittest.TestCase):
         regex = (
             fr"Passing keyword argument{pl} {pnames} to "
             fr"{re.escape(name)}\(\) is deprecated. Parameter{pl} {pnames} "
-            fr"will become positional-only in Python 3\.37."
+            fr"will become positional-only in Python 3\.14."
         )
         self.check_depr(regex, fn, *args, **kwds)
 
