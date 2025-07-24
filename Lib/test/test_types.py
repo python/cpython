@@ -1161,9 +1161,9 @@ class UnionTests(unittest.TestCase):
 
     def test_instantiation(self):
         check_disallow_instantiation(self, types.UnionType)
-        self.assertIs(int, types.UnionType[int])
-        self.assertIs(int, types.UnionType[int, int])
-        self.assertEqual(int | str, types.UnionType[int, str])
+        self.assertIs(int, typing.Union[int])
+        self.assertIs(int, typing.Union[int, int])
+        self.assertEqual(int | str, typing.Union[int, str])
 
         for obj in (
             int | typing.ForwardRef("str"),

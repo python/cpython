@@ -7,7 +7,7 @@
 #include "Python.h"
 #include "internal/pycore_interp.h"
 #include "internal/pycore_typevarobject.h"
-#include "internal/pycore_unionobject.h"  // _PyUnion_Type
+#include "internal/pycore_unionobject.h"  // _Py_union_from_tuple
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "clinic/_typingmodule.c.h"
 
@@ -35,8 +35,24 @@ _typing__idfunc(PyObject *module, PyObject *x)
 }
 
 
+/*[clinic input]
+_typing._make_union
+
+    *args: tuple
+
+[clinic start generated code]*/
+
+static PyObject *
+_typing__make_union_impl(PyObject *module, PyObject *args)
+/*[clinic end generated code: output=73350430c47d5681 input=5a47e504a2b21ad4]*/
+{
+    return _Py_union_from_tuple(args);
+}
+
+
 static PyMethodDef typing_methods[] = {
     _TYPING__IDFUNC_METHODDEF
+    _TYPING__MAKE_UNION_METHODDEF
     {NULL, NULL, 0, NULL}
 };
 
@@ -62,9 +78,6 @@ _typing_exec(PyObject *m)
     EXPORT_TYPE("Generic", generic_type);
 #undef EXPORT_TYPE
     if (PyModule_AddObjectRef(m, "TypeAliasType", (PyObject *)&_PyTypeAlias_Type) < 0) {
-        return -1;
-    }
-    if (PyModule_AddObjectRef(m, "Union", (PyObject *)&_PyUnion_Type) < 0) {
         return -1;
     }
     if (PyModule_AddObjectRef(m, "NoDefault", (PyObject *)&_Py_NoDefaultStruct) < 0) {

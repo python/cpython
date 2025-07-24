@@ -27,10 +27,11 @@ import functools
 import operator
 import sys
 import types
-from types import GenericAlias
+from types import GenericAlias, UnionType
 
 from _typing import (
     _idfunc,
+    _make_union,
     TypeVar,
     ParamSpec,
     TypeVarTuple,
@@ -38,7 +39,6 @@ from _typing import (
     ParamSpecKwargs,
     TypeAliasType,
     Generic,
-    Union,
     NoDefault,
 )
 
@@ -453,7 +453,7 @@ def _eval_type(t, globalns, localns, type_params, *, recursive_guard=frozenset()
         return evaluate_forward_ref(t, globals=globalns, locals=localns,
                                     type_params=type_params, owner=owner,
                                     _recursive_guard=recursive_guard, format=format)
-    if isinstance(t, (_GenericAlias, GenericAlias, Union)):
+    if isinstance(t, (_GenericAlias, GenericAlias, UnionType)):
         if isinstance(t, GenericAlias):
             args = tuple(
                 _make_forward_ref(arg, parent_fwdref=parent_fwdref) if isinstance(arg, str) else arg
@@ -473,7 +473,7 @@ def _eval_type(t, globalns, localns, type_params, *, recursive_guard=frozenset()
             return t
         if isinstance(t, GenericAlias):
             return _rebuild_generic_alias(t, ev_args)
-        if isinstance(t, Union):
+        if isinstance(t, UnionType):
             return functools.reduce(operator.or_, ev_args)
         else:
             return t.copy_with(ev_args)
@@ -726,6 +726,33 @@ def Final(self, parameters):
     """
     item = _type_check(parameters, f'{self} accepts only single type.', allow_special_forms=True)
     return _GenericAlias(self, (item,))
+
+@_SpecialForm
+def Union(self, parameters):
+    """Union type; Union[X, Y] means either X or Y.
+    On Python 3.10 and higher, the | operator
+    can also be used to denote unions;
+    X | Y means the same thing to the type checker as Union[X, Y].
+    To define a union, use e.g. Union[int, str]. Details:
+    - The arguments must be types and there must be at least one.
+    - None as an argument is a special case and is replaced by
+      type(None).
+    - Unions of unions are flattened, e.g.::
+        assert Union[Union[int, str], float] == Union[int, str, float]
+    - Unions of a single argument vanish, e.g.::
+        assert Union[int] == int  # The constructor actually returns int
+    - Redundant arguments are skipped, e.g.::
+        assert Union[int, str, int] == Union[int, str]
+    - When comparing unions, the argument order is ignored, e.g.::
+        assert Union[int, str] == Union[str, int]
+    - You cannot subclass or instantiate a union.
+    - You can use Optional[X] as a shorthand for Union[X, None].
+    """
+    if parameters == ():
+        raise TypeError("Cannot take a Union of no types.")
+    if not isinstance(parameters, tuple):
+        parameters = (parameters,)
+    return _make_union(*parameters)
 
 @_SpecialForm
 def Optional(self, parameters):
@@ -1638,12 +1665,12 @@ class _UnionGenericAliasMeta(type):
     def __instancecheck__(self, inst: object) -> bool:
         import warnings
         warnings._deprecated("_UnionGenericAlias", remove=(3, 17))
-        return isinstance(inst, Union)
+        return isinstance(inst, UnionType)
 
     def __subclasscheck__(self, inst: type) -> bool:
         import warnings
         warnings._deprecated("_UnionGenericAlias", remove=(3, 17))
-        return issubclass(inst, Union)
+        return issubclass(inst, UnionType)
 
     def __eq__(self, other):
         import warnings
@@ -2413,7 +2440,7 @@ def _strip_annotations(t):
         if stripped_args == t.__args__:
             return t
         return _rebuild_generic_alias(t, stripped_args)
-    if isinstance(t, Union):
+    if isinstance(t, UnionType):
         stripped_args = tuple(_strip_annotations(a) for a in t.__args__)
         if stripped_args == t.__args__:
             return t
@@ -2442,13 +2469,11 @@ def get_origin(tp):
     """
     if isinstance(tp, _AnnotatedAlias):
         return Annotated
-    if isinstance(tp, (_BaseGenericAlias, GenericAlias,
+    if isinstance(tp, (_BaseGenericAlias, GenericAlias, UnionType,
                        ParamSpecArgs, ParamSpecKwargs)):
         return tp.__origin__
     if tp is Generic:
         return Generic
-    if isinstance(tp, Union):
-        return Union
     return None
 
 
@@ -2473,7 +2498,7 @@ def get_args(tp):
         if _should_unflatten_callable_args(tp, res):
             res = (list(res[:-1]), res[-1])
         return res
-    if isinstance(tp, Union):
+    if isinstance(tp, UnionType):
         return tp.__args__
     return ()
 

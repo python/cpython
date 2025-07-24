@@ -1,0 +1,4 @@
+Partially revert :gh:`105499`. :class:`types.UnionType` no longer an alias
+of :data:`typing.Union` and no longer subscriptable, but subscribing
+:data:`!typing.Union` returns an instance of :class:`!types.UnionType`.
+:data:`!typing.Union` can no longer be used in the ``isinstance()`` checks.

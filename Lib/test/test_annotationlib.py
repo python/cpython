@@ -8,6 +8,7 @@ import functools
 import itertools
 import pickle
 from string.templatelib import Template
+import types
 import typing
 import unittest
 from annotationlib import (
@@ -137,7 +138,7 @@ class TestForwardRefFormat(unittest.TestCase):
             str | int,
         )
         union = annos["union"]
-        self.assertIsInstance(union, Union)
+        self.assertIsInstance(union, types.UnionType)
         arg1, arg2 = typing.get_args(union)
         self.assertIs(arg1, str)
         self.assertEqual(

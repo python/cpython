@@ -5573,7 +5573,7 @@ Union Type
 A union object holds the value of the ``|`` (bitwise or) operation on
 multiple :ref:`type objects <bltin-type-objects>`.  These types are intended
 primarily for :term:`type annotations <annotation>`. The union type expression
-enables cleaner type hinting syntax compared to subscripting :class:`typing.Union`.
+enables cleaner type hinting syntax compared to subscripting :data:`typing.Union`.
 
 .. describe:: X | Y | ...
 
@@ -5609,7 +5609,7 @@ enables cleaner type hinting syntax compared to subscripting :class:`typing.Unio
 
       int | str == str | int
 
-   * It creates instances of :class:`typing.Union`::
+   * It creates instances of :class:`types.UnionType`::
 
       int | str == typing.Union[int, str]
       type(int | str) is typing.Union
@@ -5638,15 +5638,15 @@ enables cleaner type hinting syntax compared to subscripting :class:`typing.Unio
       TypeError: isinstance() argument 2 cannot be a parameterized generic
 
 The user-exposed type for the union object can be accessed from
-:class:`typing.Union` and used for :func:`isinstance` checks::
+:class:`types.UnionType` and used for :func:`isinstance` checks::
 
-   >>> import typing
-   >>> isinstance(int | str, typing.Union)
+   >>> import types
+   >>> isinstance(int | str, types.UnionType)
    True
-   >>> typing.Union()
+   >>> types.UnionType()
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   TypeError: cannot create 'typing.Union' instances
+   TypeError: cannot create 'types.UnionType' instances
 
 .. note::
    The :meth:`!__or__` method for type objects was added to support the syntax
@@ -5672,11 +5672,6 @@ The user-exposed type for the union object can be accessed from
    :pep:`604` -- PEP proposing the ``X | Y`` syntax and the Union type.
 
 .. versionadded:: 3.10
-
-.. versionchanged:: 3.14
-
-   Union objects are now instances of :class:`typing.Union`. Previously, they were instances
-   of :class:`types.UnionType`, which remains an alias for :class:`typing.Union`.
 
 
 .. _typesother:
