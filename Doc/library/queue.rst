@@ -234,7 +234,7 @@ Terminating queues
 ^^^^^^^^^^^^^^^^^^
 
 When no longer needed, :class:`Queue` objects can be wound down
-until empty or terminated immediately (a hard shutdown).
+until empty or terminated immediately with a hard shutdown.
 
 .. method:: Queue.shutdown(immediate=False)
 
