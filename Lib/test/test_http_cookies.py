@@ -216,7 +216,6 @@ class CookieTests(unittest.TestCase):
     def test_samesite_attrs(self):
         samesite_values = ['Strict', 'Lax', 'strict', 'lax']
         for val in samesite_values:
-            print(val)
             with self.subTest(val=val):
                 C = cookies.SimpleCookie('Customer="WILE_E_COYOTE"')
                 C['Customer']['samesite'] = val
