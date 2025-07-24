@@ -38,7 +38,6 @@ from _typing import (
     ParamSpecKwargs,
     TypeAliasType,
     Generic,
-    Union,
     NoDefault,
 )
 
@@ -728,6 +727,81 @@ def Final(self, parameters):
     return _GenericAlias(self, (item,))
 
 @_SpecialForm
+def Union(self, parameters):
+    """Union type; Union[X, Y] is equivalent to X | Y and means either X or Y.
+
+    To define a union, use e.g. Union[int, str] or the shorthand int | str.
+    Using that shorthand is recommended. Details:
+
+    * The arguments must be types and there must be at least one.
+
+    * Unions of unions are flattened, e.g.::
+
+        Union[Union[int, str], float] == Union[int, str, float]
+
+    * Unions of a single argument vanish, e.g.::
+
+        Union[int] == int  # The constructor actually returns int
+
+    * Redundant arguments are skipped, e.g.::
+
+        Union[int, str, int] == Union[int, str] == int | str
+
+    * When comparing unions, the argument order is ignored, e.g.::
+
+        Union[int, str] == Union[str, int]
+
+    * You cannot subclass or instantiate a ``Union``.
+
+    * You cannot write ``Union[X][Y]``.
+    """
+    if not parameters:
+        raise TypeError("Cannot take a Union of no types.")
+    if not isinstance(parameters, tuple):
+        parameters = (parameters,)
+    
+    flattened = []
+    for p in parameters:
+        if isinstance(p, types.UnionType):
+            flattened.extend(p.__args__)
+        elif hasattr(p, '__origin__') and p.__origin__ is Union:
+            flattened.extend(p.__args__)
+        else:
+            flattened.append(p)
+    
+    unique_args = []
+    seen = set()
+    for arg in flattened:
+        if arg not in seen:
+            unique_args.append(arg)
+            seen.add(arg)
+    
+    if len(unique_args) == 0:
+        raise TypeError("Cannot take a Union of no types.")
+    if len(unique_args) == 1:
+        return unique_args[0]
+    
+    return _UnionGenericAlias(tuple(unique_args))
+
+
+def _union_from_types(left, right):
+    """Helper function to create union types avoiding recursion."""
+    try:
+        if hasattr(left, '__or__') and not isinstance(left, _GenericAlias):
+            return left | right
+        elif hasattr(right, '__ror__') and not isinstance(right, _GenericAlias):
+            return right.__ror__(left)
+        else:
+            if hasattr(left, '__origin__'):
+                left = left.__origin__
+            if hasattr(right, '__origin__'):
+                right = right.__origin__
+            return left | right
+    except (TypeError, AttributeError):
+        return f"Union[{left}, {right}]"
+
+
+@_SpecialForm
 def Optional(self, parameters):
     """Optional[X] is equivalent to Union[X, None]."""
     arg = _type_check(parameters, f"{self} requires a single type.")
@@ -1334,12 +1408,6 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
     def __hash__(self):
         return hash((self.__origin__, self.__args__))
 
-    def __or__(self, right):
-        return Union[self, right]
-
-    def __ror__(self, left):
-        return Union[left, self]
-
     @_tp_cache
     def __getitem__(self, args):
         # Parameterizes an already-parameterized object.
@@ -1563,12 +1631,6 @@ class _SpecialGenericAlias(_NotIterable, _BaseGenericAlias, _root=True):
     def __reduce__(self):
         return self._name
 
-    def __or__(self, right):
-        return Union[self, right]
-
-    def __ror__(self, left):
-        return Union[left, self]
-
 
 class _CallableGenericAlias(_NotIterable, _GenericAlias, _root=True):
     def __repr__(self):
@@ -1634,41 +1696,42 @@ class _TupleType(_SpecialGenericAlias, _root=True):
         return self.copy_with(params)
 
 
-class _UnionGenericAliasMeta(type):
-    def __instancecheck__(self, inst: object) -> bool:
-        import warnings
-        warnings._deprecated("_UnionGenericAlias", remove=(3, 17))
-        return isinstance(inst, Union)
-
-    def __subclasscheck__(self, inst: type) -> bool:
-        import warnings
-        warnings._deprecated("_UnionGenericAlias", remove=(3, 17))
-        return issubclass(inst, Union)
-
-    def __eq__(self, other):
-        import warnings
-        warnings._deprecated("_UnionGenericAlias", remove=(3, 17))
-        if other is _UnionGenericAlias or other is Union:
-            return True
-        return NotImplemented
-
-    def __hash__(self):
-        return hash(Union)
+class _SimpleUnion:
+    """Fallback union representation when types.UnionType creation fails."""
+    def __init__(self, args):
+        self.__args__ = args
+        self.__origin__ = Union
+    
+    def __repr__(self):
+        return f"Union{self.__args__}"
 
 
-class _UnionGenericAlias(metaclass=_UnionGenericAliasMeta):
-    """Compatibility hack.
-
-    A class named _UnionGenericAlias used to be used to implement
-    typing.Union. This class exists to serve as a shim to preserve
-    the meaning of some code that used to use _UnionGenericAlias
-    directly.
-
-    """
-    def __new__(cls, self_cls, parameters, /, *, name=None):
-        import warnings
-        warnings._deprecated("_UnionGenericAlias", remove=(3, 17))
-        return Union[parameters]
+class _UnionGenericAlias:
+    """A placeholder class for union types that wraps types.UnionType functionality."""
+    
+    def __new__(cls, args):
+        if len(args) == 1:
+            return args[0]
+        elif len(args) == 2:
+            try:
+                result = args[0] | args[1]
+                if hasattr(result, '__class__') and result.__class__.__name__ == 'UnionType':
+                    return result
+                else:
+                    return _SimpleUnion(args)
+            except (TypeError, AttributeError):
+                return _SimpleUnion(args)
+        else:
+            try:
+                result = args[0]
+                for arg in args[1:]:
+                    result = result | arg
+                if hasattr(result, '__class__') and result.__class__.__name__ == 'UnionType':
+                    return result
+                else:
+                    return _SimpleUnion(args)
+            except (TypeError, AttributeError):
+                return _SimpleUnion(args)
 
 
 def _value_and_type_iter(parameters):
@@ -3463,7 +3526,7 @@ class IO(Generic[AnyStr]):
         pass
 
     @abstractmethod
-    def __enter__(self) -> IO[AnyStr]:
+    def __enter__(self) -> 'IO[AnyStr]':
         pass
 
     @abstractmethod
@@ -3481,7 +3544,7 @@ class BinaryIO(IO[bytes]):
         pass
 
     @abstractmethod
-    def __enter__(self) -> BinaryIO:
+    def __enter__(self) -> 'BinaryIO':
         pass
 
 
@@ -3516,7 +3579,7 @@ class TextIO(IO[str]):
         pass
 
     @abstractmethod
-    def __enter__(self) -> TextIO:
+    def __enter__(self) -> 'TextIO':
         pass
 
 
@@ -3550,7 +3613,7 @@ def dataclass_transform(
     order_default: bool = False,
     kw_only_default: bool = False,
     frozen_default: bool = False,
-    field_specifiers: tuple[type[Any] | Callable[..., Any], ...] = (),
+    field_specifiers: tuple[Union[type[Any], Callable[..., Any]], ...] = (),
     **kwargs: Any,
 ) -> _IdentityCallable:
     """Decorator to mark an object as providing dataclass-like behaviour.
