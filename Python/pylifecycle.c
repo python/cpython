@@ -2003,13 +2003,19 @@ resolve_final_tstate(_PyRuntimeState *runtime)
     return main_tstate;
 }
 
+#ifdef Py_GIL_DISABLED
+#define ASSERT_WORLD_STOPPED(interp) assert(interp->runtime->stoptheworld.world_stopped)
+#else
+#define ASSERT_WORLD_STOPPED(interp)
+#endif
+
 static int
 interp_has_threads(PyInterpreterState *interp)
 {
     /* This needs to check for non-daemon threads only, otherwise we get stuck
      * in an infinite loop. */
     assert(interp != NULL);
-    assert(interp->runtime->stoptheworld.world_stopped);
+    ASSERT_WORLD_STOPPED(interp);
     assert(interp->threads.head != NULL);
     if (interp->threads.head->next == NULL) {
         // No other threads active, easy way out.
@@ -2031,7 +2037,7 @@ static int
 interp_has_pending_calls(PyInterpreterState *interp)
 {
     assert(interp != NULL);
-    assert(interp->runtime->stoptheworld.world_stopped);
+    ASSERT_WORLD_STOPPED(interp);
     return interp->ceval.pending.npending != 0;
 }
 
@@ -2040,7 +2046,7 @@ interp_has_atexit_callbacks(PyInterpreterState *interp)
 {
     assert(interp != NULL);
     assert(interp->atexit.callbacks != NULL);
-    assert(interp->runtime->stoptheworld.world_stopped);
+    ASSERT_WORLD_STOPPED(interp);
     assert(PyList_CheckExact(interp->atexit.callbacks));
     return PyList_GET_SIZE(interp->atexit.callbacks) != 0;
 }
@@ -2093,7 +2099,7 @@ make_pre_finalization_calls(PyThreadState *tstate)
         _PyEval_StartTheWorldAll(interp->runtime);
         PyMutex_Unlock(&interp->ceval.pending.mutex);
     }
-    assert(interp->runtime->stoptheworld.world_stopped);
+    ASSERT_WORLD_STOPPED(interp);
 }
 
 static int
@@ -2130,7 +2136,7 @@ _Py_Finalize(_PyRuntimeState *runtime)
 #endif
 
     /* Ensure that remaining threads are detached */
-    assert(tstate->interp->runtime->stoptheworld.world_stopped);
+    ASSERT_WORLD_STOPPED(tstate->interp);
 
     /* Remaining daemon threads will be trapped in PyThread_hang_thread
        when they attempt to take the GIL (ex: PyEval_RestoreThread()). */
