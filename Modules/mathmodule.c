@@ -540,8 +540,7 @@ m_remainder(double x, double y)
         absy = fabs(y);
         m = fmod(absx, absy);
 
-        /*
-           Warning: some subtlety here. What we *want* to know at this point is
+        /* Warning: some subtlety here. What we *want* to know at this point is
            whether the remainder m is less than, equal to, or greater than half
            of absy. However, we can't do that comparison directly because we
            can't be sure that 0.5*absy is representable (the multiplication
@@ -557,8 +556,7 @@ m_remainder(double x, double y)
            - if m < 0.5*absy then either (i) 0.5*absy is exactly representable,
              in which case 0.5*absy < absy - m, so 0.5*absy <= c and hence m <
              c, or (ii) absy is tiny, either subnormal or in the lowest normal
-             binade. Then absy - m is exactly representable and again m < c.
-        */
+             binade. Then absy - m is exactly representable and again m < c. */
 
         c = absy - m;
         if (m < c) {
@@ -568,8 +566,7 @@ m_remainder(double x, double y)
             r = -c;
         }
         else {
-            /*
-               Here absx is exactly halfway between two multiples of absy,
+            /* Here absx is exactly halfway between two multiples of absy,
                and we need to choose the even multiple. x now has the form
 
                    absx = n * absy + m
@@ -593,8 +590,7 @@ m_remainder(double x, double y)
 
                Note that all steps in fmod(0.5 * (absx - m), absy)
                will be computed exactly, with no rounding error
-               introduced.
-            */
+               introduced. */
             assert(m == c);
             r = m - 2.0 * fmod(0.5 * (absx - m), absy);
         }
@@ -1423,7 +1419,7 @@ math_fsum(PyObject *module, PyObject *seq)
     if (iter == NULL)
         return NULL;
 
-    for(;;) {           /* for x in iterable */
+    for (;;) {           /* for x in iterable */
         assert(0 <= n && n <= m);
         assert((m == NUM_PARTIALS && p == ps) ||
                (m >  NUM_PARTIALS && p != NULL));
@@ -2450,8 +2446,7 @@ math_fmod_impl(PyObject *module, double x, double y)
 #ifdef _MSC_VER
     /* Windows (e.g. Windows 10 with MSC v.1916) loose sign
        for zero result.  But C99+ says: "if y is nonzero, the result
-       has the same sign as x".
-     */
+       has the same sign as x". */
     if (r == 0.0 && y != 0.0) {
         r = copysign(r, x);
     }
@@ -3088,11 +3083,9 @@ math_pow_impl(PyObject *module, double x, double y)
             if (isnan(r)) {
                 errno = EDOM;
             }
-            /*
-               an infinite result here arises either from:
+            /* an infinite result here arises either from:
                (A) (+/-0.)**negative (-> divide-by-zero)
-               (B) overflow of x**y with x and y finite
-            */
+               (B) overflow of x**y with x and y finite */
             else if (isinf(r)) {
                 if (x == 0.)
                     errno = EDOM;
@@ -3266,10 +3259,9 @@ math_isclose_impl(PyObject *module, double a, double b, double rel_tol,
         return -1;
     }
 
-    if ( a == b ) {
-        /* short circuit exact equality -- needed to catch two infinities of
-           the same sign. And perhaps speeds things up a bit sometimes.
-        */
+    if (a == b) {
+        /* Short circuit exact equality -- needed to catch two infinities of
+           the same sign. And perhaps speeds things up a bit sometimes. */
         return 1;
     }
 
@@ -3277,16 +3269,14 @@ math_isclose_impl(PyObject *module, double a, double b, double rel_tol,
        one infinity and one finite number. Two infinities of opposite
        sign would otherwise have an infinite relative tolerance.
        Two infinities of the same sign are caught by the equality check
-       above.
-    */
+       above. */
 
     if (isinf(a) || isinf(b)) {
         return 0;
     }
 
-    /* now do the regular computation
-       this is essentially the "weak" test from the Boost library
-    */
+    /* Now do the regular computation. This is essentially the "weak" test
+       from the Boost library. */
 
     diff = fabs(b - a);
 
@@ -3378,9 +3368,8 @@ math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start)
     Py_INCREF(result);
 #ifndef SLOW_PROD
     /* Fast paths for integers keeping temporary products in C.
-     * Assumes all inputs are the same type.
-     * If the assumption fails, default to use PyObjects instead.
-    */
+       Assumes all inputs are the same type.
+       If the assumption fails, default to use PyObjects instead. */
     if (PyLong_CheckExact(result)) {
         int overflow;
         long i_result = PyLong_AsLongAndOverflow(result, &overflow);
@@ -3389,7 +3378,7 @@ math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start)
             Py_SETREF(result, NULL);
         }
         /* Loop over all the items in the iterable until we finish, we overflow
-         * or we found a non integer element */
+           or we found a non integer element */
         while (result == NULL) {
             item = PyIter_Next(iter);
             if (item == NULL) {
@@ -3409,7 +3398,7 @@ math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 }
             }
             /* Either overflowed or is not an int.
-             * Restore real objects and process normally */
+               Restore real objects and process normally */
             result = PyLong_FromLong(i_result);
             if (result == NULL) {
                 Py_DECREF(item);
@@ -3433,7 +3422,7 @@ math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start)
     if (PyFloat_CheckExact(result)) {
         double f_result = PyFloat_AS_DOUBLE(result);
         Py_SETREF(result, NULL);
-        while(result == NULL) {
+        while (result == NULL) {
             item = PyIter_Next(iter);
             if (item == NULL) {
                 Py_DECREF(iter);
@@ -3476,7 +3465,7 @@ math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start)
 #endif
     /* Consume rest of the iterable (if any) that could not be handled
        by specialized functions above.*/
-    for(;;) {
+    for (;;) {
         item = PyIter_Next(iter);
         if (item == NULL) {
             /* error, or end-of-sequence */
