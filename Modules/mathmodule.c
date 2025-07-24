@@ -861,12 +861,12 @@ is_error(double x, int raise_edom)
            should return a zero on underflow, and +- HUGE_VAL on
            overflow, so testing the result for zero suffices to
            distinguish the cases).
-          
+
            On some platforms (Ubuntu/ia64) it seems that errno can be
            set to ERANGE for subnormal results that do *not* underflow
            to zero.  So to be safe, we'll ignore ERANGE whenever the
            function result is less than 1.5 in absolute value.
-          
+
            bpo-46018: Changed to 1.5 to ensure underflows in expm1()
            are correctly detected, since the function may underflow
            toward -1.0 rather than 0.0. */
@@ -1574,7 +1574,6 @@ here:
 
     https://github.com/mdickinson/snippets/blob/master/proofs/isqrt/src/isqrt.lean
 
-
 Here's Python code equivalent to the C implementation below:
 
     def isqrt(n):
@@ -1598,7 +1597,6 @@ Here's Python code equivalent to the C implementation below:
             a = (a << d - e - 1) + (n >> 2*c - e - d + 1) // a
 
         return a - (a*a > n)
-
 
 Sketch of proof of correctness
 ------------------------------
@@ -3213,7 +3211,6 @@ math_isnan_impl(PyObject *module, double x)
     return PyBool_FromLong((long)isnan(x));
 }
 
-
 /*[clinic input]
 math.isinf
 
@@ -3229,7 +3226,6 @@ math_isinf_impl(PyObject *module, double x)
 {
     return PyBool_FromLong((long)isinf(x));
 }
-
 
 /*[clinic input]
 math.isclose -> bool
@@ -3712,7 +3708,7 @@ perm_comb_small(unsigned long long n, unsigned long long k, int iscomb)
     }
 
     /* For larger n use recursive formulas:
-      
+
          P(n, k) = P(n, j) * P(n-j, k-j)
          C(n, k) = C(n, j) * C(n-j, k-j) // C(k, j) */
     unsigned long long j = k / 2;
