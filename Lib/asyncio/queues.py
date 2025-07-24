@@ -257,8 +257,8 @@ class Queue(mixins._LoopBoundMixin):
         'immediate' to True to make gets raise immediately instead.
 
         All blocked callers of put() and get() will be unblocked. If
-        'immediate', a task is marked as done for each item remaining in
-        the queue, which may unblock callers of join().
+        'immediate', unblock callers of join() regardless of the
+        number of unfinished tasks.
         """
         self._is_shutdown = True
         if immediate:
