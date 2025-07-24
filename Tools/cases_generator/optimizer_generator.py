@@ -243,8 +243,7 @@ class OptimizerEmitter(Emitter):
                         // Replace with POP_TWO_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
                         REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
                     }}
-                }}
-                """)
+                }}""")
 
         storage.flush(self.out)
         emitter.emit("break;\n")
