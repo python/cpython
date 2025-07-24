@@ -267,7 +267,13 @@ array_resize(arrayobject *self, Py_ssize_t newsize)
      * memory critical.
      */
 
-    size_t _new_size = (newsize >> 4) + (Py_SIZE(self) < 8 ? 3 : 7) + newsize;
+    size_t _new_size = (size_t)(newsize >> 4) + (Py_SIZE(self) < 8 ? 3 : 7) + newsize;
+    // Limit over-allocation to not overflow Py_ssize_t, newsize can't ever be
+    // larger than this anyway. Otherwise a valid resize request might be
+    // rejected due to overallocation falling outside usable range.
+    if (_new_size > PY_SSIZE_T_MAX) {
+        _new_size = PY_SSIZE_T_MAX;
+    }
     int itemsize = self->ob_descr->itemsize;
 
     if (!arraydata_size_valid(_new_size, itemsize)) {
@@ -2077,6 +2083,7 @@ static PyObject *
 array_array_tobytes_impl(arrayobject *self)
 /*[clinic end generated code: output=87318e4edcdc2bb6 input=c4d44d5499d2320f]*/
 {
+    // XXX This check below does nothing useful???
     if (arraydata_size_valid(Py_SIZE(self), self->ob_descr->itemsize)) {
         return PyBytes_FromStringAndSize(array_items_ptr(self),
                             Py_SIZE(self) * self->ob_descr->itemsize);
@@ -2117,7 +2124,7 @@ array_array_fromunicode_impl(arrayobject *self, PyObject *ustr)
         if (ustr_length > 1) {
             ustr_length--; /* trim trailing NUL character */
             Py_ssize_t old_size = Py_SIZE(self);
-            Py_ssize_t new_size = old_size + ustr_length;
+            ssize_t new_size = (size_t)old_size + ustr_length;
 
             if (!arraydata_size_valid(new_size, sizeof(wchar_t))) {
                 return PyErr_NoMemory();
@@ -2134,7 +2141,7 @@ array_array_fromunicode_impl(arrayobject *self, PyObject *ustr)
     else { // typecode == 'w'
         Py_ssize_t ustr_length = PyUnicode_GetLength(ustr);
         Py_ssize_t old_size = Py_SIZE(self);
-        Py_ssize_t new_size = old_size + ustr_length;
+        ssize_t new_size = (size_t)old_size + ustr_length;
 
         if (!arraydata_size_valid(new_size, sizeof(Py_UCS4))) {
             return PyErr_NoMemory();

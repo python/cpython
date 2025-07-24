@@ -1684,9 +1684,6 @@ class FreeThreadingTest(unittest.TestCase):
     # Non-deterministic, but at least one of these things will fail if
     # array module is not free-thread safe.
 
-    def setUp(self):
-        self.enterContext(warnings.catch_warnings())
-
     def check(self, funcs, a=None, *args):
         if a is None:
             a = array.array('i', [1])
