@@ -68,7 +68,7 @@
 #include "pybuffer.h"
 #include "pystats.h"
 #include "pyatomic.h"
-#include "lock.h"
+#include "pylock.h"
 #include "critical_section.h"
 #include "object.h"
 #include "refcount.h"
