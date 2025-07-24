@@ -1545,9 +1545,9 @@ resolve a consistent MRO that satisfies these rules from the list of bases provi
       ...
    TypeError: Cannot create a consistent method resolution order (MRO) for bases Base, Child
 
-In the MRO of ``Grandchild``, ``Child`` must appear before ``Base`` because it is first
-in the base class list, but it must also appear after ``Base`` because it is a child of
-``Base``. This is a contradiction, so the class cannot be defined.
+In the MRO of ``Grandchild``, ``Base`` must appear before ``Child`` because it is first
+in the base class list, but it must also appear after ``Child`` because it is a parent of
+``Child``. This is a contradiction, so the class cannot be defined.
 
 If some of the bases have a custom :term:`metaclass`, the metaclass of the resulting class
 is chosen among the metaclasses of the bases and the explicitly specified metaclass of the
