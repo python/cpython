@@ -1580,6 +1580,15 @@ function. You can create and destroy them using the following functions:
       If this is :c:macro:`PyInterpreterConfig_OWN_GIL` then
       :c:member:`PyInterpreterConfig.use_main_obmalloc` must be ``0``.
 
+   .. c:member:: int can_handle_signals
+
+      If this is ``0``, then the interpreter will ignore incoming signals when
+      it is running on the main thread. These signals will instead be handled
+      by the next interpreter in the main thread that is capable of handling
+      signals.
+
+      .. versionadded:: next
+
 
 .. c:function:: PyStatus Py_NewInterpreterFromConfig(PyThreadState **tstate_p, const PyInterpreterConfig *config)
 
