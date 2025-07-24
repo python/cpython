@@ -386,7 +386,7 @@ def main():
         "configure-build-python", help="Run `configure` for the " "build Python"
     )
     make_mpdec_cmd = subcommands.add_parser(
-        "make-mpdec", help="Clone libffi repo, configure and build it for emscripten"
+        "make-mpdec", help="Clone mpdec repo, configure and build it for emscripten"
     )
     make_libffi_cmd = subcommands.add_parser(
         "make-libffi", help="Clone libffi repo, configure and build it for emscripten"
