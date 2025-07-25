@@ -398,7 +398,7 @@ class Condition:
             result = predicate()
         return result
 
-    def notify(self, n=1):
+    def notify(self, n=1, timeout=None):
         """Wake up one or more threads waiting on this condition, if any.
 
         If the calling thread has not acquired the lock when this method is
@@ -428,14 +428,14 @@ class Condition:
             except ValueError:
                 pass
 
-    def notify_all(self):
+    def notify_all(self, timeout=None):
         """Wake up all threads waiting on this condition.
 
         If the calling thread has not acquired the lock when this method
         is called, a RuntimeError is raised.
 
         """
-        self.notify(len(self._waiters))
+        self.notify(len(self._waiters), timeout=timeout)
 
     def notifyAll(self):
         """Wake up all threads waiting on this condition.
@@ -726,7 +726,7 @@ class Barrier:
             try:
                 if index + 1 == self._parties:
                     # We release the barrier
-                    self._release()
+                    self._release(timeout=timeout)
                 else:
                     # We wait until someone releases us
                     self._wait(timeout)
@@ -749,13 +749,13 @@ class Barrier:
 
     # Optionally run the 'action' and release the threads waiting
     # in the barrier.
-    def _release(self):
+    def _release(self, timeout=None):
         try:
             if self._action:
                 self._action()
             # enter draining state
             self._state = 1
-            self._cond.notify_all()
+            self._cond.notify_all(timeout=timeout)
         except:
             #an exception during the _action handler.  Break and reraise
             self._break()
