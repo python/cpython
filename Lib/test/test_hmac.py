@@ -1522,11 +1522,11 @@ class PyMiscellaneousTests(unittest.TestCase):
         bigmsg = b'M' * size
 
         with patch.object(hmac, "_compute_digest_fallback") as slow:
-            self.assertIsInstance(hmac.digest(bigkey, b'm', "md5"), bytes)
+            hmac.digest(bigkey, b'm', "md5")
         slow.assert_called_once()
 
         with patch.object(hmac, "_compute_digest_fallback") as slow:
-            self.assertIsInstance(hmac.digest(b'k', bigmsg, "md5"), bytes)
+            hmac.digest(b'k', bigmsg, "md5")
         slow.assert_called_once()
 
     @hashlib_helper.requires_hashdigest("md5", openssl=True)
@@ -1537,7 +1537,7 @@ class PyMiscellaneousTests(unittest.TestCase):
         for key, msg in [(b'K' * size, b'm'), (b'k', b'M' * size)]:
             with self.subTest(keysize=len(key), msgsize=len(msg)):
                 with patch.object(hmac, "_compute_digest_fallback") as slow:
-                    self.assertIsInstance(hmac.digest(key, msg, "md5"), bytes)
+                    hmac.digest(key, msg, "md5")
                     slow.assert_called_once()
 
 
