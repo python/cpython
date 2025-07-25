@@ -94,3 +94,14 @@ def cached_func_with_doctest(value):
 @functools.cache
 def cached_func_without_docstring(value):
     return value + 1
+
+
+class ClassWithACachedProperty:
+
+    @functools.cached_property
+    def cached(self):
+        """
+        >>> X().cached
+        -1
+        """
+        return 0
