@@ -2820,7 +2820,7 @@ class TestGetAsyncGenState(unittest.IsolatedAsyncioTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        asyncio._set_event_loop_policy(None)
+        asyncio.events._set_event_loop_policy(None)
 
     def _asyncgenstate(self):
         return inspect.getasyncgenstate(self.asyncgen)
@@ -5786,6 +5786,7 @@ class TestSignatureDefinitions(unittest.TestCase):
             'AsyncGeneratorType': {'athrow'},
             'CoroutineType': {'throw'},
             'GeneratorType': {'throw'},
+            'FrameLocalsProxyType': {'setdefault', 'pop', 'get'},
         }
         self._test_module_has_signatures(types,
                 unsupported_signature=unsupported_signature,
@@ -5875,9 +5876,9 @@ class TestSignatureDefinitions(unittest.TestCase):
         self._test_module_has_signatures(operator)
 
     def test_os_module_has_signatures(self):
-        unsupported_signature = {'chmod', 'link', 'utime'}
+        unsupported_signature = {'chmod', 'utime'}
         unsupported_signature |= {name for name in
-            ['get_terminal_size', 'posix_spawn', 'posix_spawnp',
+            ['get_terminal_size', 'link', 'posix_spawn', 'posix_spawnp',
              'register_at_fork', 'startfile']
             if hasattr(os, name)}
         self._test_module_has_signatures(os, unsupported_signature=unsupported_signature)
@@ -5916,6 +5917,7 @@ class TestSignatureDefinitions(unittest.TestCase):
     def test_threading_module_has_signatures(self):
         import threading
         self._test_module_has_signatures(threading)
+        self.assertIsNotNone(inspect.signature(threading.__excepthook__))
 
     def test_thread_module_has_signatures(self):
         import _thread

@@ -233,7 +233,7 @@ exit:
 #endif /* defined(PY_OPENSSL_HAS_SHAKE) */
 
 PyDoc_STRVAR(_hashlib_HASH_new__doc__,
-"new($module, /, name, string=b\'\', *, usedforsecurity=True)\n"
+"new($module, /, name, data=b\'\', *, usedforsecurity=True, string=None)\n"
 "--\n"
 "\n"
 "Return a new hash object using the named algorithm.\n"
@@ -247,8 +247,8 @@ PyDoc_STRVAR(_hashlib_HASH_new__doc__,
     {"new", _PyCFunction_CAST(_hashlib_HASH_new), METH_FASTCALL|METH_KEYWORDS, _hashlib_HASH_new__doc__},
 
 static PyObject *
-_hashlib_HASH_new_impl(PyObject *module, const char *name,
-                       PyObject *data_obj, int usedforsecurity);
+_hashlib_HASH_new_impl(PyObject *module, const char *name, PyObject *data,
+                       int usedforsecurity, PyObject *string);
 
 static PyObject *
 _hashlib_HASH_new(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -256,7 +256,7 @@ _hashlib_HASH_new(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 3
+    #define NUM_KEYWORDS 4
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -265,7 +265,7 @@ _hashlib_HASH_new(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(name), &_Py_ID(string), &_Py_ID(usedforsecurity), },
+        .ob_item = { &_Py_ID(name), &_Py_ID(data), &_Py_ID(usedforsecurity), &_Py_ID(string), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -274,18 +274,19 @@ _hashlib_HASH_new(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"name", "string", "usedforsecurity", NULL};
+    static const char * const _keywords[] = {"name", "data", "usedforsecurity", "string", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "new",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[3];
+    PyObject *argsbuf[4];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     const char *name;
-    PyObject *data_obj = NULL;
+    PyObject *data = NULL;
     int usedforsecurity = 1;
+    PyObject *string = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -309,7 +310,7 @@ _hashlib_HASH_new(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
         goto skip_optional_pos;
     }
     if (args[1]) {
-        data_obj = args[1];
+        data = args[1];
         if (!--noptargs) {
             goto skip_optional_pos;
         }
@@ -318,19 +319,25 @@ skip_optional_pos:
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    usedforsecurity = PyObject_IsTrue(args[2]);
-    if (usedforsecurity < 0) {
-        goto exit;
+    if (args[2]) {
+        usedforsecurity = PyObject_IsTrue(args[2]);
+        if (usedforsecurity < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
     }
+    string = args[3];
 skip_optional_kwonly:
-    return_value = _hashlib_HASH_new_impl(module, name, data_obj, usedforsecurity);
+    return_value = _hashlib_HASH_new_impl(module, name, data, usedforsecurity, string);
 
 exit:
     return return_value;
 }
 
 PyDoc_STRVAR(_hashlib_openssl_md5__doc__,
-"openssl_md5($module, /, string=b\'\', *, usedforsecurity=True)\n"
+"openssl_md5($module, /, data=b\'\', *, usedforsecurity=True, string=None)\n"
 "--\n"
 "\n"
 "Returns a md5 hash object; optionally initialized with a string");
@@ -339,8 +346,8 @@ PyDoc_STRVAR(_hashlib_openssl_md5__doc__,
     {"openssl_md5", _PyCFunction_CAST(_hashlib_openssl_md5), METH_FASTCALL|METH_KEYWORDS, _hashlib_openssl_md5__doc__},
 
 static PyObject *
-_hashlib_openssl_md5_impl(PyObject *module, PyObject *data_obj,
-                          int usedforsecurity);
+_hashlib_openssl_md5_impl(PyObject *module, PyObject *data,
+                          int usedforsecurity, PyObject *string);
 
 static PyObject *
 _hashlib_openssl_md5(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -348,7 +355,7 @@ _hashlib_openssl_md5(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 2
+    #define NUM_KEYWORDS 3
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -357,7 +364,7 @@ _hashlib_openssl_md5(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(string), &_Py_ID(usedforsecurity), },
+        .ob_item = { &_Py_ID(data), &_Py_ID(usedforsecurity), &_Py_ID(string), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -366,17 +373,18 @@ _hashlib_openssl_md5(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"string", "usedforsecurity", NULL};
+    static const char * const _keywords[] = {"data", "usedforsecurity", "string", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "openssl_md5",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
-    PyObject *data_obj = NULL;
+    PyObject *data = NULL;
     int usedforsecurity = 1;
+    PyObject *string = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -387,7 +395,7 @@ _hashlib_openssl_md5(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
         goto skip_optional_pos;
     }
     if (args[0]) {
-        data_obj = args[0];
+        data = args[0];
         if (!--noptargs) {
             goto skip_optional_pos;
         }
@@ -396,19 +404,25 @@ skip_optional_pos:
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    usedforsecurity = PyObject_IsTrue(args[1]);
-    if (usedforsecurity < 0) {
-        goto exit;
+    if (args[1]) {
+        usedforsecurity = PyObject_IsTrue(args[1]);
+        if (usedforsecurity < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
     }
+    string = args[2];
 skip_optional_kwonly:
-    return_value = _hashlib_openssl_md5_impl(module, data_obj, usedforsecurity);
+    return_value = _hashlib_openssl_md5_impl(module, data, usedforsecurity, string);
 
 exit:
     return return_value;
 }
 
 PyDoc_STRVAR(_hashlib_openssl_sha1__doc__,
-"openssl_sha1($module, /, string=b\'\', *, usedforsecurity=True)\n"
+"openssl_sha1($module, /, data=b\'\', *, usedforsecurity=True, string=None)\n"
 "--\n"
 "\n"
 "Returns a sha1 hash object; optionally initialized with a string");
@@ -417,8 +431,8 @@ PyDoc_STRVAR(_hashlib_openssl_sha1__doc__,
     {"openssl_sha1", _PyCFunction_CAST(_hashlib_openssl_sha1), METH_FASTCALL|METH_KEYWORDS, _hashlib_openssl_sha1__doc__},
 
 static PyObject *
-_hashlib_openssl_sha1_impl(PyObject *module, PyObject *data_obj,
-                           int usedforsecurity);
+_hashlib_openssl_sha1_impl(PyObject *module, PyObject *data,
+                           int usedforsecurity, PyObject *string);
 
 static PyObject *
 _hashlib_openssl_sha1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -426,7 +440,7 @@ _hashlib_openssl_sha1(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 2
+    #define NUM_KEYWORDS 3
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -435,7 +449,7 @@ _hashlib_openssl_sha1(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(string), &_Py_ID(usedforsecurity), },
+        .ob_item = { &_Py_ID(data), &_Py_ID(usedforsecurity), &_Py_ID(string), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -444,17 +458,18 @@ _hashlib_openssl_sha1(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"string", "usedforsecurity", NULL};
+    static const char * const _keywords[] = {"data", "usedforsecurity", "string", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "openssl_sha1",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
-    PyObject *data_obj = NULL;
+    PyObject *data = NULL;
     int usedforsecurity = 1;
+    PyObject *string = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -465,7 +480,7 @@ _hashlib_openssl_sha1(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
         goto skip_optional_pos;
     }
     if (args[0]) {
-        data_obj = args[0];
+        data = args[0];
         if (!--noptargs) {
             goto skip_optional_pos;
         }
@@ -474,19 +489,26 @@ skip_optional_pos:
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    usedforsecurity = PyObject_IsTrue(args[1]);
-    if (usedforsecurity < 0) {
-        goto exit;
+    if (args[1]) {
+        usedforsecurity = PyObject_IsTrue(args[1]);
+        if (usedforsecurity < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
     }
+    string = args[2];
 skip_optional_kwonly:
-    return_value = _hashlib_openssl_sha1_impl(module, data_obj, usedforsecurity);
+    return_value = _hashlib_openssl_sha1_impl(module, data, usedforsecurity, string);
 
 exit:
     return return_value;
 }
 
 PyDoc_STRVAR(_hashlib_openssl_sha224__doc__,
-"openssl_sha224($module, /, string=b\'\', *, usedforsecurity=True)\n"
+"openssl_sha224($module, /, data=b\'\', *, usedforsecurity=True,\n"
+"               string=None)\n"
 "--\n"
 "\n"
 "Returns a sha224 hash object; optionally initialized with a string");
@@ -495,8 +517,8 @@ PyDoc_STRVAR(_hashlib_openssl_sha224__doc__,
     {"openssl_sha224", _PyCFunction_CAST(_hashlib_openssl_sha224), METH_FASTCALL|METH_KEYWORDS, _hashlib_openssl_sha224__doc__},
 
 static PyObject *
-_hashlib_openssl_sha224_impl(PyObject *module, PyObject *data_obj,
-                             int usedforsecurity);
+_hashlib_openssl_sha224_impl(PyObject *module, PyObject *data,
+                             int usedforsecurity, PyObject *string);
 
 static PyObject *
 _hashlib_openssl_sha224(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -504,7 +526,7 @@ _hashlib_openssl_sha224(PyObject *module, PyObject *const *args, Py_ssize_t narg
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 2
+    #define NUM_KEYWORDS 3
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -513,7 +535,7 @@ _hashlib_openssl_sha224(PyObject *module, PyObject *const *args, Py_ssize_t narg
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(string), &_Py_ID(usedforsecurity), },
+        .ob_item = { &_Py_ID(data), &_Py_ID(usedforsecurity), &_Py_ID(string), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -522,17 +544,18 @@ _hashlib_openssl_sha224(PyObject *module, PyObject *const *args, Py_ssize_t narg
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"string", "usedforsecurity", NULL};
+    static const char * const _keywords[] = {"data", "usedforsecurity", "string", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "openssl_sha224",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
-    PyObject *data_obj = NULL;
+    PyObject *data = NULL;
     int usedforsecurity = 1;
+    PyObject *string = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -543,7 +566,7 @@ _hashlib_openssl_sha224(PyObject *module, PyObject *const *args, Py_ssize_t narg
         goto skip_optional_pos;
     }
     if (args[0]) {
-        data_obj = args[0];
+        data = args[0];
         if (!--noptargs) {
             goto skip_optional_pos;
         }
@@ -552,19 +575,26 @@ skip_optional_pos:
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    usedforsecurity = PyObject_IsTrue(args[1]);
-    if (usedforsecurity < 0) {
-        goto exit;
+    if (args[1]) {
+        usedforsecurity = PyObject_IsTrue(args[1]);
+        if (usedforsecurity < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
     }
+    string = args[2];
 skip_optional_kwonly:
-    return_value = _hashlib_openssl_sha224_impl(module, data_obj, usedforsecurity);
+    return_value = _hashlib_openssl_sha224_impl(module, data, usedforsecurity, string);
 
 exit:
     return return_value;
 }
 
 PyDoc_STRVAR(_hashlib_openssl_sha256__doc__,
-"openssl_sha256($module, /, string=b\'\', *, usedforsecurity=True)\n"
+"openssl_sha256($module, /, data=b\'\', *, usedforsecurity=True,\n"
+"               string=None)\n"
 "--\n"
 "\n"
 "Returns a sha256 hash object; optionally initialized with a string");
@@ -573,8 +603,8 @@ PyDoc_STRVAR(_hashlib_openssl_sha256__doc__,
     {"openssl_sha256", _PyCFunction_CAST(_hashlib_openssl_sha256), METH_FASTCALL|METH_KEYWORDS, _hashlib_openssl_sha256__doc__},
 
 static PyObject *
-_hashlib_openssl_sha256_impl(PyObject *module, PyObject *data_obj,
-                             int usedforsecurity);
+_hashlib_openssl_sha256_impl(PyObject *module, PyObject *data,
+                             int usedforsecurity, PyObject *string);
 
 static PyObject *
 _hashlib_openssl_sha256(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -582,7 +612,7 @@ _hashlib_openssl_sha256(PyObject *module, PyObject *const *args, Py_ssize_t narg
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 2
+    #define NUM_KEYWORDS 3
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -591,7 +621,7 @@ _hashlib_openssl_sha256(PyObject *module, PyObject *const *args, Py_ssize_t narg
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(string), &_Py_ID(usedforsecurity), },
+        .ob_item = { &_Py_ID(data), &_Py_ID(usedforsecurity), &_Py_ID(string), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -600,17 +630,18 @@ _hashlib_openssl_sha256(PyObject *module, PyObject *const *args, Py_ssize_t narg
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"string", "usedforsecurity", NULL};
+    static const char * const _keywords[] = {"data", "usedforsecurity", "string", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "openssl_sha256",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
-    PyObject *data_obj = NULL;
+    PyObject *data = NULL;
     int usedforsecurity = 1;
+    PyObject *string = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -621,7 +652,7 @@ _hashlib_openssl_sha256(PyObject *module, PyObject *const *args, Py_ssize_t narg
         goto skip_optional_pos;
     }
     if (args[0]) {
-        data_obj = args[0];
+        data = args[0];
         if (!--noptargs) {
             goto skip_optional_pos;
         }
@@ -630,19 +661,26 @@ skip_optional_pos:
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    usedforsecurity = PyObject_IsTrue(args[1]);
-    if (usedforsecurity < 0) {
-        goto exit;
+    if (args[1]) {
+        usedforsecurity = PyObject_IsTrue(args[1]);
+        if (usedforsecurity < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
     }
+    string = args[2];
 skip_optional_kwonly:
-    return_value = _hashlib_openssl_sha256_impl(module, data_obj, usedforsecurity);
+    return_value = _hashlib_openssl_sha256_impl(module, data, usedforsecurity, string);
 
 exit:
     return return_value;
 }
 
 PyDoc_STRVAR(_hashlib_openssl_sha384__doc__,
-"openssl_sha384($module, /, string=b\'\', *, usedforsecurity=True)\n"
+"openssl_sha384($module, /, data=b\'\', *, usedforsecurity=True,\n"
+"               string=None)\n"
 "--\n"
 "\n"
 "Returns a sha384 hash object; optionally initialized with a string");
@@ -651,8 +689,8 @@ PyDoc_STRVAR(_hashlib_openssl_sha384__doc__,
     {"openssl_sha384", _PyCFunction_CAST(_hashlib_openssl_sha384), METH_FASTCALL|METH_KEYWORDS, _hashlib_openssl_sha384__doc__},
 
 static PyObject *
-_hashlib_openssl_sha384_impl(PyObject *module, PyObject *data_obj,
-                             int usedforsecurity);
+_hashlib_openssl_sha384_impl(PyObject *module, PyObject *data,
+                             int usedforsecurity, PyObject *string);
 
 static PyObject *
 _hashlib_openssl_sha384(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -660,7 +698,7 @@ _hashlib_openssl_sha384(PyObject *module, PyObject *const *args, Py_ssize_t narg
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 2
+    #define NUM_KEYWORDS 3
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -669,7 +707,7 @@ _hashlib_openssl_sha384(PyObject *module, PyObject *const *args, Py_ssize_t narg
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(string), &_Py_ID(usedforsecurity), },
+        .ob_item = { &_Py_ID(data), &_Py_ID(usedforsecurity), &_Py_ID(string), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -678,17 +716,18 @@ _hashlib_openssl_sha384(PyObject *module, PyObject *const *args, Py_ssize_t narg
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"string", "usedforsecurity", NULL};
+    static const char * const _keywords[] = {"data", "usedforsecurity", "string", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "openssl_sha384",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
-    PyObject *data_obj = NULL;
+    PyObject *data = NULL;
     int usedforsecurity = 1;
+    PyObject *string = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -699,7 +738,7 @@ _hashlib_openssl_sha384(PyObject *module, PyObject *const *args, Py_ssize_t narg
         goto skip_optional_pos;
     }
     if (args[0]) {
-        data_obj = args[0];
+        data = args[0];
         if (!--noptargs) {
             goto skip_optional_pos;
         }
@@ -708,19 +747,26 @@ skip_optional_pos:
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    usedforsecurity = PyObject_IsTrue(args[1]);
-    if (usedforsecurity < 0) {
-        goto exit;
+    if (args[1]) {
+        usedforsecurity = PyObject_IsTrue(args[1]);
+        if (usedforsecurity < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
     }
+    string = args[2];
 skip_optional_kwonly:
-    return_value = _hashlib_openssl_sha384_impl(module, data_obj, usedforsecurity);
+    return_value = _hashlib_openssl_sha384_impl(module, data, usedforsecurity, string);
 
 exit:
     return return_value;
 }
 
 PyDoc_STRVAR(_hashlib_openssl_sha512__doc__,
-"openssl_sha512($module, /, string=b\'\', *, usedforsecurity=True)\n"
+"openssl_sha512($module, /, data=b\'\', *, usedforsecurity=True,\n"
+"               string=None)\n"
 "--\n"
 "\n"
 "Returns a sha512 hash object; optionally initialized with a string");
@@ -729,8 +775,8 @@ PyDoc_STRVAR(_hashlib_openssl_sha512__doc__,
     {"openssl_sha512", _PyCFunction_CAST(_hashlib_openssl_sha512), METH_FASTCALL|METH_KEYWORDS, _hashlib_openssl_sha512__doc__},
 
 static PyObject *
-_hashlib_openssl_sha512_impl(PyObject *module, PyObject *data_obj,
-                             int usedforsecurity);
+_hashlib_openssl_sha512_impl(PyObject *module, PyObject *data,
+                             int usedforsecurity, PyObject *string);
 
 static PyObject *
 _hashlib_openssl_sha512(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -738,7 +784,7 @@ _hashlib_openssl_sha512(PyObject *module, PyObject *const *args, Py_ssize_t narg
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 2
+    #define NUM_KEYWORDS 3
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -747,7 +793,7 @@ _hashlib_openssl_sha512(PyObject *module, PyObject *const *args, Py_ssize_t narg
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(string), &_Py_ID(usedforsecurity), },
+        .ob_item = { &_Py_ID(data), &_Py_ID(usedforsecurity), &_Py_ID(string), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -756,17 +802,18 @@ _hashlib_openssl_sha512(PyObject *module, PyObject *const *args, Py_ssize_t narg
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"string", "usedforsecurity", NULL};
+    static const char * const _keywords[] = {"data", "usedforsecurity", "string", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "openssl_sha512",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
-    PyObject *data_obj = NULL;
+    PyObject *data = NULL;
     int usedforsecurity = 1;
+    PyObject *string = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -777,7 +824,7 @@ _hashlib_openssl_sha512(PyObject *module, PyObject *const *args, Py_ssize_t narg
         goto skip_optional_pos;
     }
     if (args[0]) {
-        data_obj = args[0];
+        data = args[0];
         if (!--noptargs) {
             goto skip_optional_pos;
         }
@@ -786,12 +833,18 @@ skip_optional_pos:
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    usedforsecurity = PyObject_IsTrue(args[1]);
-    if (usedforsecurity < 0) {
-        goto exit;
+    if (args[1]) {
+        usedforsecurity = PyObject_IsTrue(args[1]);
+        if (usedforsecurity < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
     }
+    string = args[2];
 skip_optional_kwonly:
-    return_value = _hashlib_openssl_sha512_impl(module, data_obj, usedforsecurity);
+    return_value = _hashlib_openssl_sha512_impl(module, data, usedforsecurity, string);
 
 exit:
     return return_value;
@@ -800,7 +853,8 @@ exit:
 #if defined(PY_OPENSSL_HAS_SHA3)
 
 PyDoc_STRVAR(_hashlib_openssl_sha3_224__doc__,
-"openssl_sha3_224($module, /, string=b\'\', *, usedforsecurity=True)\n"
+"openssl_sha3_224($module, /, data=b\'\', *, usedforsecurity=True,\n"
+"                 string=None)\n"
 "--\n"
 "\n"
 "Returns a sha3-224 hash object; optionally initialized with a string");
@@ -809,8 +863,8 @@ PyDoc_STRVAR(_hashlib_openssl_sha3_224__doc__,
     {"openssl_sha3_224", _PyCFunction_CAST(_hashlib_openssl_sha3_224), METH_FASTCALL|METH_KEYWORDS, _hashlib_openssl_sha3_224__doc__},
 
 static PyObject *
-_hashlib_openssl_sha3_224_impl(PyObject *module, PyObject *data_obj,
-                               int usedforsecurity);
+_hashlib_openssl_sha3_224_impl(PyObject *module, PyObject *data,
+                               int usedforsecurity, PyObject *string);
 
 static PyObject *
 _hashlib_openssl_sha3_224(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -818,7 +872,7 @@ _hashlib_openssl_sha3_224(PyObject *module, PyObject *const *args, Py_ssize_t na
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 2
+    #define NUM_KEYWORDS 3
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -827,7 +881,7 @@ _hashlib_openssl_sha3_224(PyObject *module, PyObject *const *args, Py_ssize_t na
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(string), &_Py_ID(usedforsecurity), },
+        .ob_item = { &_Py_ID(data), &_Py_ID(usedforsecurity), &_Py_ID(string), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -836,17 +890,18 @@ _hashlib_openssl_sha3_224(PyObject *module, PyObject *const *args, Py_ssize_t na
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"string", "usedforsecurity", NULL};
+    static const char * const _keywords[] = {"data", "usedforsecurity", "string", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "openssl_sha3_224",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
-    PyObject *data_obj = NULL;
+    PyObject *data = NULL;
     int usedforsecurity = 1;
+    PyObject *string = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -857,7 +912,7 @@ _hashlib_openssl_sha3_224(PyObject *module, PyObject *const *args, Py_ssize_t na
         goto skip_optional_pos;
     }
     if (args[0]) {
-        data_obj = args[0];
+        data = args[0];
         if (!--noptargs) {
             goto skip_optional_pos;
         }
@@ -866,12 +921,18 @@ skip_optional_pos:
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    usedforsecurity = PyObject_IsTrue(args[1]);
-    if (usedforsecurity < 0) {
-        goto exit;
+    if (args[1]) {
+        usedforsecurity = PyObject_IsTrue(args[1]);
+        if (usedforsecurity < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
     }
+    string = args[2];
 skip_optional_kwonly:
-    return_value = _hashlib_openssl_sha3_224_impl(module, data_obj, usedforsecurity);
+    return_value = _hashlib_openssl_sha3_224_impl(module, data, usedforsecurity, string);
 
 exit:
     return return_value;
@@ -882,7 +943,8 @@ exit:
 #if defined(PY_OPENSSL_HAS_SHA3)
 
 PyDoc_STRVAR(_hashlib_openssl_sha3_256__doc__,
-"openssl_sha3_256($module, /, string=b\'\', *, usedforsecurity=True)\n"
+"openssl_sha3_256($module, /, data=b\'\', *, usedforsecurity=True,\n"
+"                 string=None)\n"
 "--\n"
 "\n"
 "Returns a sha3-256 hash object; optionally initialized with a string");
@@ -891,8 +953,8 @@ PyDoc_STRVAR(_hashlib_openssl_sha3_256__doc__,
     {"openssl_sha3_256", _PyCFunction_CAST(_hashlib_openssl_sha3_256), METH_FASTCALL|METH_KEYWORDS, _hashlib_openssl_sha3_256__doc__},
 
 static PyObject *
-_hashlib_openssl_sha3_256_impl(PyObject *module, PyObject *data_obj,
-                               int usedforsecurity);
+_hashlib_openssl_sha3_256_impl(PyObject *module, PyObject *data,
+                               int usedforsecurity, PyObject *string);
 
 static PyObject *
 _hashlib_openssl_sha3_256(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -900,7 +962,7 @@ _hashlib_openssl_sha3_256(PyObject *module, PyObject *const *args, Py_ssize_t na
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 2
+    #define NUM_KEYWORDS 3
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -909,7 +971,7 @@ _hashlib_openssl_sha3_256(PyObject *module, PyObject *const *args, Py_ssize_t na
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(string), &_Py_ID(usedforsecurity), },
+        .ob_item = { &_Py_ID(data), &_Py_ID(usedforsecurity), &_Py_ID(string), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -918,17 +980,18 @@ _hashlib_openssl_sha3_256(PyObject *module, PyObject *const *args, Py_ssize_t na
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"string", "usedforsecurity", NULL};
+    static const char * const _keywords[] = {"data", "usedforsecurity", "string", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "openssl_sha3_256",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
-    PyObject *data_obj = NULL;
+    PyObject *data = NULL;
     int usedforsecurity = 1;
+    PyObject *string = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -939,7 +1002,7 @@ _hashlib_openssl_sha3_256(PyObject *module, PyObject *const *args, Py_ssize_t na
         goto skip_optional_pos;
     }
     if (args[0]) {
-        data_obj = args[0];
+        data = args[0];
         if (!--noptargs) {
             goto skip_optional_pos;
         }
@@ -948,12 +1011,18 @@ skip_optional_pos:
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    usedforsecurity = PyObject_IsTrue(args[1]);
-    if (usedforsecurity < 0) {
-        goto exit;
+    if (args[1]) {
+        usedforsecurity = PyObject_IsTrue(args[1]);
+        if (usedforsecurity < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
     }
+    string = args[2];
 skip_optional_kwonly:
-    return_value = _hashlib_openssl_sha3_256_impl(module, data_obj, usedforsecurity);
+    return_value = _hashlib_openssl_sha3_256_impl(module, data, usedforsecurity, string);
 
 exit:
     return return_value;
@@ -964,7 +1033,8 @@ exit:
 #if defined(PY_OPENSSL_HAS_SHA3)
 
 PyDoc_STRVAR(_hashlib_openssl_sha3_384__doc__,
-"openssl_sha3_384($module, /, string=b\'\', *, usedforsecurity=True)\n"
+"openssl_sha3_384($module, /, data=b\'\', *, usedforsecurity=True,\n"
+"                 string=None)\n"
 "--\n"
 "\n"
 "Returns a sha3-384 hash object; optionally initialized with a string");
@@ -973,8 +1043,8 @@ PyDoc_STRVAR(_hashlib_openssl_sha3_384__doc__,
     {"openssl_sha3_384", _PyCFunction_CAST(_hashlib_openssl_sha3_384), METH_FASTCALL|METH_KEYWORDS, _hashlib_openssl_sha3_384__doc__},
 
 static PyObject *
-_hashlib_openssl_sha3_384_impl(PyObject *module, PyObject *data_obj,
-                               int usedforsecurity);
+_hashlib_openssl_sha3_384_impl(PyObject *module, PyObject *data,
+                               int usedforsecurity, PyObject *string);
 
 static PyObject *
 _hashlib_openssl_sha3_384(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -982,7 +1052,7 @@ _hashlib_openssl_sha3_384(PyObject *module, PyObject *const *args, Py_ssize_t na
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 2
+    #define NUM_KEYWORDS 3
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -991,7 +1061,7 @@ _hashlib_openssl_sha3_384(PyObject *module, PyObject *const *args, Py_ssize_t na
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(string), &_Py_ID(usedforsecurity), },
+        .ob_item = { &_Py_ID(data), &_Py_ID(usedforsecurity), &_Py_ID(string), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -1000,17 +1070,18 @@ _hashlib_openssl_sha3_384(PyObject *module, PyObject *const *args, Py_ssize_t na
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"string", "usedforsecurity", NULL};
+    static const char * const _keywords[] = {"data", "usedforsecurity", "string", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "openssl_sha3_384",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
-    PyObject *data_obj = NULL;
+    PyObject *data = NULL;
     int usedforsecurity = 1;
+    PyObject *string = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -1021,7 +1092,7 @@ _hashlib_openssl_sha3_384(PyObject *module, PyObject *const *args, Py_ssize_t na
         goto skip_optional_pos;
     }
     if (args[0]) {
-        data_obj = args[0];
+        data = args[0];
         if (!--noptargs) {
             goto skip_optional_pos;
         }
@@ -1030,12 +1101,18 @@ skip_optional_pos:
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    usedforsecurity = PyObject_IsTrue(args[1]);
-    if (usedforsecurity < 0) {
-        goto exit;
+    if (args[1]) {
+        usedforsecurity = PyObject_IsTrue(args[1]);
+        if (usedforsecurity < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
     }
+    string = args[2];
 skip_optional_kwonly:
-    return_value = _hashlib_openssl_sha3_384_impl(module, data_obj, usedforsecurity);
+    return_value = _hashlib_openssl_sha3_384_impl(module, data, usedforsecurity, string);
 
 exit:
     return return_value;
@@ -1046,7 +1123,8 @@ exit:
 #if defined(PY_OPENSSL_HAS_SHA3)
 
 PyDoc_STRVAR(_hashlib_openssl_sha3_512__doc__,
-"openssl_sha3_512($module, /, string=b\'\', *, usedforsecurity=True)\n"
+"openssl_sha3_512($module, /, data=b\'\', *, usedforsecurity=True,\n"
+"                 string=None)\n"
 "--\n"
 "\n"
 "Returns a sha3-512 hash object; optionally initialized with a string");
@@ -1055,8 +1133,8 @@ PyDoc_STRVAR(_hashlib_openssl_sha3_512__doc__,
     {"openssl_sha3_512", _PyCFunction_CAST(_hashlib_openssl_sha3_512), METH_FASTCALL|METH_KEYWORDS, _hashlib_openssl_sha3_512__doc__},
 
 static PyObject *
-_hashlib_openssl_sha3_512_impl(PyObject *module, PyObject *data_obj,
-                               int usedforsecurity);
+_hashlib_openssl_sha3_512_impl(PyObject *module, PyObject *data,
+                               int usedforsecurity, PyObject *string);
 
 static PyObject *
 _hashlib_openssl_sha3_512(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -1064,7 +1142,7 @@ _hashlib_openssl_sha3_512(PyObject *module, PyObject *const *args, Py_ssize_t na
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 2
+    #define NUM_KEYWORDS 3
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -1073,7 +1151,7 @@ _hashlib_openssl_sha3_512(PyObject *module, PyObject *const *args, Py_ssize_t na
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(string), &_Py_ID(usedforsecurity), },
+        .ob_item = { &_Py_ID(data), &_Py_ID(usedforsecurity), &_Py_ID(string), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -1082,17 +1160,18 @@ _hashlib_openssl_sha3_512(PyObject *module, PyObject *const *args, Py_ssize_t na
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"string", "usedforsecurity", NULL};
+    static const char * const _keywords[] = {"data", "usedforsecurity", "string", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "openssl_sha3_512",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
-    PyObject *data_obj = NULL;
+    PyObject *data = NULL;
     int usedforsecurity = 1;
+    PyObject *string = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -1103,7 +1182,7 @@ _hashlib_openssl_sha3_512(PyObject *module, PyObject *const *args, Py_ssize_t na
         goto skip_optional_pos;
     }
     if (args[0]) {
-        data_obj = args[0];
+        data = args[0];
         if (!--noptargs) {
             goto skip_optional_pos;
         }
@@ -1112,12 +1191,18 @@ skip_optional_pos:
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    usedforsecurity = PyObject_IsTrue(args[1]);
-    if (usedforsecurity < 0) {
-        goto exit;
+    if (args[1]) {
+        usedforsecurity = PyObject_IsTrue(args[1]);
+        if (usedforsecurity < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
     }
+    string = args[2];
 skip_optional_kwonly:
-    return_value = _hashlib_openssl_sha3_512_impl(module, data_obj, usedforsecurity);
+    return_value = _hashlib_openssl_sha3_512_impl(module, data, usedforsecurity, string);
 
 exit:
     return return_value;
@@ -1128,7 +1213,8 @@ exit:
 #if defined(PY_OPENSSL_HAS_SHAKE)
 
 PyDoc_STRVAR(_hashlib_openssl_shake_128__doc__,
-"openssl_shake_128($module, /, string=b\'\', *, usedforsecurity=True)\n"
+"openssl_shake_128($module, /, data=b\'\', *, usedforsecurity=True,\n"
+"                  string=None)\n"
 "--\n"
 "\n"
 "Returns a shake-128 variable hash object; optionally initialized with a string");
@@ -1137,8 +1223,8 @@ PyDoc_STRVAR(_hashlib_openssl_shake_128__doc__,
     {"openssl_shake_128", _PyCFunction_CAST(_hashlib_openssl_shake_128), METH_FASTCALL|METH_KEYWORDS, _hashlib_openssl_shake_128__doc__},
 
 static PyObject *
-_hashlib_openssl_shake_128_impl(PyObject *module, PyObject *data_obj,
-                                int usedforsecurity);
+_hashlib_openssl_shake_128_impl(PyObject *module, PyObject *data,
+                                int usedforsecurity, PyObject *string);
 
 static PyObject *
 _hashlib_openssl_shake_128(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -1146,7 +1232,7 @@ _hashlib_openssl_shake_128(PyObject *module, PyObject *const *args, Py_ssize_t n
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 2
+    #define NUM_KEYWORDS 3
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -1155,7 +1241,7 @@ _hashlib_openssl_shake_128(PyObject *module, PyObject *const *args, Py_ssize_t n
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(string), &_Py_ID(usedforsecurity), },
+        .ob_item = { &_Py_ID(data), &_Py_ID(usedforsecurity), &_Py_ID(string), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -1164,17 +1250,18 @@ _hashlib_openssl_shake_128(PyObject *module, PyObject *const *args, Py_ssize_t n
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"string", "usedforsecurity", NULL};
+    static const char * const _keywords[] = {"data", "usedforsecurity", "string", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "openssl_shake_128",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
-    PyObject *data_obj = NULL;
+    PyObject *data = NULL;
     int usedforsecurity = 1;
+    PyObject *string = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -1185,7 +1272,7 @@ _hashlib_openssl_shake_128(PyObject *module, PyObject *const *args, Py_ssize_t n
         goto skip_optional_pos;
     }
     if (args[0]) {
-        data_obj = args[0];
+        data = args[0];
         if (!--noptargs) {
             goto skip_optional_pos;
         }
@@ -1194,12 +1281,18 @@ skip_optional_pos:
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    usedforsecurity = PyObject_IsTrue(args[1]);
-    if (usedforsecurity < 0) {
-        goto exit;
+    if (args[1]) {
+        usedforsecurity = PyObject_IsTrue(args[1]);
+        if (usedforsecurity < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
     }
+    string = args[2];
 skip_optional_kwonly:
-    return_value = _hashlib_openssl_shake_128_impl(module, data_obj, usedforsecurity);
+    return_value = _hashlib_openssl_shake_128_impl(module, data, usedforsecurity, string);
 
 exit:
     return return_value;
@@ -1210,7 +1303,8 @@ exit:
 #if defined(PY_OPENSSL_HAS_SHAKE)
 
 PyDoc_STRVAR(_hashlib_openssl_shake_256__doc__,
-"openssl_shake_256($module, /, string=b\'\', *, usedforsecurity=True)\n"
+"openssl_shake_256($module, /, data=b\'\', *, usedforsecurity=True,\n"
+"                  string=None)\n"
 "--\n"
 "\n"
 "Returns a shake-256 variable hash object; optionally initialized with a string");
@@ -1219,8 +1313,8 @@ PyDoc_STRVAR(_hashlib_openssl_shake_256__doc__,
     {"openssl_shake_256", _PyCFunction_CAST(_hashlib_openssl_shake_256), METH_FASTCALL|METH_KEYWORDS, _hashlib_openssl_shake_256__doc__},
 
 static PyObject *
-_hashlib_openssl_shake_256_impl(PyObject *module, PyObject *data_obj,
-                                int usedforsecurity);
+_hashlib_openssl_shake_256_impl(PyObject *module, PyObject *data,
+                                int usedforsecurity, PyObject *string);
 
 static PyObject *
 _hashlib_openssl_shake_256(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -1228,7 +1322,7 @@ _hashlib_openssl_shake_256(PyObject *module, PyObject *const *args, Py_ssize_t n
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 2
+    #define NUM_KEYWORDS 3
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -1237,7 +1331,7 @@ _hashlib_openssl_shake_256(PyObject *module, PyObject *const *args, Py_ssize_t n
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(string), &_Py_ID(usedforsecurity), },
+        .ob_item = { &_Py_ID(data), &_Py_ID(usedforsecurity), &_Py_ID(string), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -1246,17 +1340,18 @@ _hashlib_openssl_shake_256(PyObject *module, PyObject *const *args, Py_ssize_t n
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"string", "usedforsecurity", NULL};
+    static const char * const _keywords[] = {"data", "usedforsecurity", "string", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "openssl_shake_256",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
-    PyObject *data_obj = NULL;
+    PyObject *data = NULL;
     int usedforsecurity = 1;
+    PyObject *string = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -1267,7 +1362,7 @@ _hashlib_openssl_shake_256(PyObject *module, PyObject *const *args, Py_ssize_t n
         goto skip_optional_pos;
     }
     if (args[0]) {
-        data_obj = args[0];
+        data = args[0];
         if (!--noptargs) {
             goto skip_optional_pos;
         }
@@ -1276,12 +1371,18 @@ skip_optional_pos:
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    usedforsecurity = PyObject_IsTrue(args[1]);
-    if (usedforsecurity < 0) {
-        goto exit;
+    if (args[1]) {
+        usedforsecurity = PyObject_IsTrue(args[1]);
+        if (usedforsecurity < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
     }
+    string = args[2];
 skip_optional_kwonly:
-    return_value = _hashlib_openssl_shake_256_impl(module, data_obj, usedforsecurity);
+    return_value = _hashlib_openssl_shake_256_impl(module, data, usedforsecurity, string);
 
 exit:
     return return_value;
@@ -1391,8 +1492,6 @@ exit:
     return return_value;
 }
 
-#if defined(PY_OPENSSL_HAS_SCRYPT)
-
 PyDoc_STRVAR(_hashlib_scrypt__doc__,
 "scrypt($module, /, password, *, salt, n, r, p, maxmem=0, dklen=64)\n"
 "--\n"
@@ -1499,8 +1598,6 @@ exit:
 
     return return_value;
 }
-
-#endif /* defined(PY_OPENSSL_HAS_SCRYPT) */
 
 PyDoc_STRVAR(_hashlib_hmac_singleshot__doc__,
 "hmac_digest($module, /, key, msg, digest)\n"
@@ -1879,8 +1976,4 @@ exit:
 #ifndef _HASHLIB_OPENSSL_SHAKE_256_METHODDEF
     #define _HASHLIB_OPENSSL_SHAKE_256_METHODDEF
 #endif /* !defined(_HASHLIB_OPENSSL_SHAKE_256_METHODDEF) */
-
-#ifndef _HASHLIB_SCRYPT_METHODDEF
-    #define _HASHLIB_SCRYPT_METHODDEF
-#endif /* !defined(_HASHLIB_SCRYPT_METHODDEF) */
-/*[clinic end generated code: output=dc03b64435166a64 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=cd5ff436f6dc2938 input=a9049054013a1b77]*/

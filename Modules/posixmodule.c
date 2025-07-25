@@ -685,7 +685,8 @@ static void
 reset_remotedebug_data(PyThreadState *tstate)
 {
     tstate->remote_debugger_support.debugger_pending_call = 0;
-    memset(tstate->remote_debugger_support.debugger_script_path, 0, MAX_SCRIPT_PATH_SIZE);
+    memset(tstate->remote_debugger_support.debugger_script_path, 0,
+           Py_MAX_SCRIPT_PATH_SIZE);
 }
 
 
@@ -3476,12 +3477,12 @@ Change the current working directory to the specified path.
 
 path may always be specified as a string.
 On some platforms, path may also be specified as an open file descriptor.
-  If this functionality is unavailable, using it raises an exception.
+If this functionality is unavailable, using it raises an exception.
 [clinic start generated code]*/
 
 static PyObject *
 os_chdir_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=3be6400eee26eaae input=1a4a15b4d12cb15d]*/
+/*[clinic end generated code: output=3be6400eee26eaae input=a74ceab5d72adf74]*/
 {
     int result;
 
@@ -5225,14 +5226,15 @@ exit:
 /*[clinic input]
 os._path_splitroot
 
-    path: path_t
+    path: path_t,
+    /
 
 Removes everything after the root on Win32.
 [clinic start generated code]*/
 
 static PyObject *
 os__path_splitroot_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=ab7f1a88b654581c input=dc93b1d3984cffb6]*/
+/*[clinic end generated code: output=ab7f1a88b654581c input=42831e41f8458f6d]*/
 {
     wchar_t *buffer;
     wchar_t *end;
@@ -5534,7 +5536,8 @@ os__path_lexists_impl(PyObject *module, path_t *path)
 /*[clinic input]
 os._path_isdir -> bool
 
-    s as path: path_t(allow_fd=True, suppress_value_error=True)
+    path: path_t(allow_fd=True, suppress_value_error=True),
+    /
 
 Return true if the pathname refers to an existing directory.
 
@@ -5542,7 +5545,7 @@ Return true if the pathname refers to an existing directory.
 
 static int
 os__path_isdir_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=d5786196f9e2fa7a input=132a3b5301aecf79]*/
+/*[clinic end generated code: output=d5786196f9e2fa7a input=0d3fd790564d244b]*/
 {
     return _testFileType(path, PY_IFDIR);
 }
@@ -5611,7 +5614,8 @@ os__path_isjunction_impl(PyObject *module, path_t *path)
 /*[clinic input]
 os._path_splitroot_ex
 
-    p as path: path_t(make_wide=True, nonstrict=True)
+    path: path_t(make_wide=True, nonstrict=True),
+    /
 
 Split a pathname into drive, root and tail.
 
@@ -5620,7 +5624,7 @@ The tail contains anything after the root.
 
 static PyObject *
 os__path_splitroot_ex_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=4b0072b6cdf4b611 input=4556b615c7cc13f2]*/
+/*[clinic end generated code: output=4b0072b6cdf4b611 input=4ac47b394d68bd21]*/
 {
     Py_ssize_t drvsize, rootsize;
     PyObject *drv = NULL, *root = NULL, *tail = NULL, *result = NULL;
@@ -8820,14 +8824,14 @@ os_ptsname_impl(PyObject *module, int fd)
 #if defined(HAVE_OPENPTY) || defined(HAVE_FORKPTY) || defined(HAVE_LOGIN_TTY) || defined(HAVE_DEV_PTMX)
 #ifdef HAVE_PTY_H
 #include <pty.h>
-#ifdef HAVE_UTMP_H
-#include <utmp.h>
-#endif /* HAVE_UTMP_H */
 #elif defined(HAVE_LIBUTIL_H)
 #include <libutil.h>
 #elif defined(HAVE_UTIL_H)
 #include <util.h>
 #endif /* HAVE_PTY_H */
+#ifdef HAVE_UTMP_H
+#include <utmp.h>
+#endif /* HAVE_UTMP_H */
 #ifdef HAVE_STROPTS_H
 #include <stropts.h>
 #endif
@@ -9562,6 +9566,24 @@ os_getlogin_impl(PyObject *module)
     }
     else
         result = PyErr_SetFromWindowsErr(GetLastError());
+#elif defined (HAVE_GETLOGIN_R)
+# if defined (HAVE_MAXLOGNAME)
+    char name[MAXLOGNAME + 1];
+# elif defined (HAVE_UT_NAMESIZE)
+    char name[UT_NAMESIZE + 1];
+# else
+    char name[256];
+# endif
+    int err = getlogin_r(name, sizeof(name));
+    if (err) {
+        int old_errno = errno;
+        errno = -err;
+        posix_error();
+        errno = old_errno;
+    }
+    else {
+        result = PyUnicode_DecodeFSDefault(name);
+    }
 #else
     char *name;
     int old_errno = errno;
@@ -16952,6 +16974,25 @@ os__emscripten_debugger_impl(PyObject *module)
     emscripten_debugger();
     Py_RETURN_NONE;
 }
+
+EM_JS(void, emscripten_log_impl_js, (const char* arg), {
+    console.warn(UTF8ToString(arg));
+});
+
+/*[clinic input]
+os._emscripten_log
+   arg: str
+
+Log something to the JS console. Emscripten only.
+[clinic start generated code]*/
+
+static PyObject *
+os__emscripten_log_impl(PyObject *module, const char *arg)
+/*[clinic end generated code: output=9749e5e293c42784 input=350aa1f70bc1e905]*/
+{
+    emscripten_log_impl_js(arg);
+    Py_RETURN_NONE;
+}
 #endif /* __EMSCRIPTEN__ */
 
 
@@ -17171,6 +17212,7 @@ static PyMethodDef posix_methods[] = {
     OS__IS_INPUTHOOK_INSTALLED_METHODDEF
     OS__CREATE_ENVIRON_METHODDEF
     OS__EMSCRIPTEN_DEBUGGER_METHODDEF
+    OS__EMSCRIPTEN_LOG_METHODDEF
     {NULL,              NULL}            /* Sentinel */
 };
 
