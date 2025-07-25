@@ -762,6 +762,7 @@ def collect_support(info_add):
         'is_emscripten',
         'is_jython',
         'is_wasi',
+        'is_wasm32',
     )
     copy_attributes(info_add, support, 'support.%s', attributes)
 
