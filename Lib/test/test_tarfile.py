@@ -49,6 +49,7 @@ def sha256sum(data):
 TEMPDIR = os.path.abspath(os_helper.TESTFN) + "-tardir"
 tarextdir = TEMPDIR + '-extract-test'
 tarname = support.findfile("testtar.tar", subdir="archivetestdata")
+tgzname_with_comment_extra_data_in_header = support.findfile("tgz_with_comment_extra_data_in_header.tgz", subdir="archivetestdata")
 gzipname = os.path.join(TEMPDIR, "testtar.tar.gz")
 bz2name = os.path.join(TEMPDIR, "testtar.tar.bz2")
 xzname = os.path.join(TEMPDIR, "testtar.tar.xz")
@@ -876,6 +877,11 @@ class StreamReadTest(CommonReadTest, unittest.TestCase):
                     if not buf:
                         break
 
+    @unittest.skipIf(zlib is None, "requires zlib")
+    def test_read_with_extra_header(self):
+        with tarfile.open(tgzname_with_comment_extra_data_in_header,
+                          mode="r|*") as _:
+            pass
     def test_fileobj_regular_file(self):
         tarinfo = self.tar.next() # get "regtype" (can't use getmember)
         with self.tar.extractfile(tarinfo) as fobj:
