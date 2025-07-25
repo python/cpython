@@ -2588,10 +2588,10 @@ _ssl__SSLSocket_sendfile_impl(PySSLSocket *self, int fd, Py_off_t offset,
     }
 
     do {
-        PySSL_BEGIN_ALLOW_THREADS
+        PySSL_BEGIN_ALLOW_THREADS(self)
         retval = SSL_sendfile(self->ssl, fd, (off_t)offset, size, flags);
         err = _PySSL_errno(retval < 0, self->ssl, (int)retval);
-        PySSL_END_ALLOW_THREADS
+        PySSL_END_ALLOW_THREADS(self)
         self->err = err;
 
         if (PyErr_CheckSignals()) {
