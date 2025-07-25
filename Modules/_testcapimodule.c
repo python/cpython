@@ -52,6 +52,12 @@ get_testerror(PyObject *self) {
     return state->error;
 }
 
+static void
+simple_object_dealloc(PyObject *self)
+{
+    PyObject_Free(self);
+}
+
 /* Raise _testcapi.error with test_name + ": " + msg, and return NULL. */
 
 static PyObject *
@@ -171,7 +177,7 @@ static PyTypeObject _HashInheritanceTester_Type = {
     "hashinheritancetester",            /* Name of this type */
     sizeof(PyObject),           /* Basic object size */
     0,                          /* Item size for varobject */
-    (destructor)PyObject_Free,  /* tp_dealloc */
+    simple_object_dealloc,      /* tp_dealloc */
     0,                          /* tp_vectorcall_offset */
     0,                          /* tp_getattr */
     0,                          /* tp_setattr */
@@ -509,8 +515,7 @@ test_thread_state(PyObject *self, PyObject *args)
         return NULL;
 
     if (!PyCallable_Check(fn)) {
-        PyErr_Format(PyExc_TypeError, "'%s' object is not callable",
-            Py_TYPE(fn)->tp_name);
+        PyErr_Format(PyExc_TypeError, "'%T' object is not callable", fn);
         return NULL;
     }
 
@@ -1737,7 +1742,7 @@ meth_o(PyObject* self, PyObject* obj)
 }
 
 static PyObject*
-meth_noargs(PyObject* self, PyObject* ignored)
+meth_noargs(PyObject* self, PyObject *Py_UNUSED(dummy))
 {
     return _null_to_none(self);
 }
@@ -2413,12 +2418,22 @@ test_critical_sections(PyObject *module, PyObject *Py_UNUSED(args))
     Py_BEGIN_CRITICAL_SECTION2(module, module);
     Py_END_CRITICAL_SECTION2();
 
+#ifdef Py_GIL_DISABLED
+    // avoid unused variable compiler warning on GIL-enabled build
+    PyMutex mut = {0};
+    Py_BEGIN_CRITICAL_SECTION_MUTEX(&mut);
+    Py_END_CRITICAL_SECTION();
+
+    Py_BEGIN_CRITICAL_SECTION2_MUTEX(&mut, &mut);
+    Py_END_CRITICAL_SECTION2();
+#endif
+
     Py_RETURN_NONE;
 }
 
 
 // Used by `finalize_thread_hang`.
-#ifdef _POSIX_THREADS
+#if defined(_POSIX_THREADS) && !defined(__wasi__)
 static void finalize_thread_hang_cleanup_callback(void *Py_UNUSED(arg)) {
     // Should not reach here.
     Py_FatalError("pthread thread termination was triggered unexpectedly");
@@ -2552,10 +2567,10 @@ static PyMethodDef TestMethods[] = {
     {"pyobject_repr_from_null", pyobject_repr_from_null, METH_NOARGS},
     {"pyobject_str_from_null",  pyobject_str_from_null, METH_NOARGS},
     {"pyobject_bytes_from_null", pyobject_bytes_from_null, METH_NOARGS},
-    {"test_capsule", (PyCFunction)test_capsule, METH_NOARGS},
-    {"test_from_contiguous", (PyCFunction)test_from_contiguous, METH_NOARGS},
+    {"test_capsule", test_capsule, METH_NOARGS},
+    {"test_from_contiguous", test_from_contiguous, METH_NOARGS},
 #if (defined(__linux__) || defined(__FreeBSD__)) && defined(__GNUC__)
-    {"test_pep3118_obsolete_write_locks", (PyCFunction)test_pep3118_obsolete_write_locks, METH_NOARGS},
+    {"test_pep3118_obsolete_write_locks", test_pep3118_obsolete_write_locks, METH_NOARGS},
 #endif
     {"getbuffer_with_null_view", getbuffer_with_null_view,       METH_O},
     {"PyBuffer_SizeFromFormat",  test_PyBuffer_SizeFromFormat,   METH_VARARGS},
@@ -2768,6 +2783,7 @@ typedef struct {
     PyObject *ao_iterator;
 } awaitObject;
 
+#define awaitObject_CAST(op)    ((awaitObject *)(op))
 
 static PyObject *
 awaitObject_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
@@ -2790,21 +2806,23 @@ awaitObject_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
 
 static void
-awaitObject_dealloc(awaitObject *ao)
+awaitObject_dealloc(PyObject *op)
 {
+    awaitObject *ao = awaitObject_CAST(op);
     Py_CLEAR(ao->ao_iterator);
     Py_TYPE(ao)->tp_free(ao);
 }
 
 
 static PyObject *
-awaitObject_await(awaitObject *ao)
+awaitObject_await(PyObject *op)
 {
+    awaitObject *ao = awaitObject_CAST(op);
     return Py_NewRef(ao->ao_iterator);
 }
 
 static PyAsyncMethods awaitType_as_async = {
-    (unaryfunc)awaitObject_await,           /* am_await */
+    awaitObject_await,                      /* am_await */
     0,                                      /* am_aiter */
     0,                                      /* am_anext */
     0,                                      /* am_send  */
@@ -2816,7 +2834,7 @@ static PyTypeObject awaitType = {
     "awaitType",
     sizeof(awaitObject),                /* tp_basicsize */
     0,                                  /* tp_itemsize */
-    (destructor)awaitObject_dealloc,    /* destructor tp_dealloc */
+    awaitObject_dealloc,                /* tp_dealloc */
     0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
@@ -2871,8 +2889,9 @@ MyList_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 void
-MyList_dealloc(MyListObject* op)
+MyList_dealloc(PyObject *self)
 {
+    MyListObject *op = (MyListObject *)self;
     if (op->deallocated) {
         /* We cannot raise exceptions here but we still want the testsuite
          * to fail when we hit this */
@@ -2887,7 +2906,7 @@ static PyTypeObject MyList_Type = {
     "MyList",
     sizeof(MyListObject),
     0,
-    (destructor)MyList_dealloc,                 /* tp_dealloc */
+    MyList_dealloc,                             /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
@@ -2935,11 +2954,11 @@ generic_alias_dealloc(PyObject *op)
 {
     PyGenericAliasObject *self = (PyGenericAliasObject*)op;
     Py_CLEAR(self->item);
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    Py_TYPE(self)->tp_free(self);
 }
 
 static PyObject *
-generic_alias_mro_entries(PyObject *op, PyObject *bases)
+generic_alias_mro_entries(PyObject *op, PyObject *Py_UNUSED(bases))
 {
     PyGenericAliasObject *self = (PyGenericAliasObject*)op;
     return PyTuple_Pack(1, self->item);
@@ -3090,7 +3109,7 @@ ContainerNoGC_dealloc(PyObject *op)
 {
     ContainerNoGCobject *self = (ContainerNoGCobject*)op;
     Py_DECREF(self->value);
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    Py_TYPE(self)->tp_free(self);
 }
 
 static PyMemberDef ContainerNoGC_members[] = {
@@ -3163,6 +3182,48 @@ create_manual_heap_type(void)
         return NULL;
     }
     return (PyObject *)type;
+}
+
+typedef struct {
+    PyObject_VAR_HEAD
+} ManagedDictObject;
+
+int ManagedDict_traverse(PyObject *self, visitproc visit, void *arg) {
+    PyObject_VisitManagedDict(self, visit, arg);
+    Py_VISIT(Py_TYPE(self));
+    return 0;
+}
+
+int ManagedDict_clear(PyObject *self) {
+    PyObject_ClearManagedDict(self);
+    return 0;
+}
+
+static PyGetSetDef ManagedDict_getset[] = {
+    {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict, NULL, NULL},
+    {NULL, NULL, NULL, NULL, NULL},
+};
+
+static PyType_Slot ManagedDict_slots[] = {
+    {Py_tp_new, (void *)PyType_GenericNew},
+    {Py_tp_getset, (void *)ManagedDict_getset},
+    {Py_tp_traverse, (void *)ManagedDict_traverse},
+    {Py_tp_clear, (void *)ManagedDict_clear},
+    {0}
+};
+
+static PyType_Spec ManagedDict_spec = {
+    "_testcapi.ManagedDictType",
+    sizeof(ManagedDictObject),
+    0, // itemsize
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_MANAGED_DICT | Py_TPFLAGS_HEAPTYPE | Py_TPFLAGS_HAVE_GC,
+    ManagedDict_slots
+};
+
+static PyObject *
+create_managed_dict_type(void)
+{
+   return PyType_FromSpec(&ManagedDict_spec);
 }
 
 static struct PyModuleDef _testcapimodule = {
@@ -3305,6 +3366,13 @@ PyInit__testcapi(void)
         return NULL;
     }
 
+    PyObject *managed_dict_type = create_managed_dict_type();
+    if (managed_dict_type == NULL) {
+        return NULL;
+    }
+    if (PyModule_Add(m, "ManagedDictType", managed_dict_type) < 0) {
+        return NULL;
+    }
 
     /* Include tests from the _testcapi/ directory */
     if (_PyTestCapi_Init_Vectorcall(m) < 0) {

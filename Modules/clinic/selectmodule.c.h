@@ -570,9 +570,11 @@ select_epoll(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(sizehint), &_Py_ID(flags), },
     };
     #undef NUM_KEYWORDS
@@ -743,9 +745,11 @@ select_epoll_register(PyObject *self, PyObject *const *args, Py_ssize_t nargs, P
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(fd), &_Py_ID(eventmask), },
     };
     #undef NUM_KEYWORDS
@@ -779,9 +783,21 @@ select_epoll_register(PyObject *self, PyObject *const *args, Py_ssize_t nargs, P
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    eventmask = (unsigned int)PyLong_AsUnsignedLongMask(args[1]);
-    if (eventmask == (unsigned int)-1 && PyErr_Occurred()) {
-        goto exit;
+    {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(args[1], &eventmask, sizeof(unsigned int),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
+            goto exit;
+        }
+        if ((size_t)_bytes > sizeof(unsigned int)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
+        }
     }
 skip_optional_pos:
     return_value = select_epoll_register_impl((pyEpoll_Object *)self, fd, eventmask);
@@ -822,9 +838,11 @@ select_epoll_modify(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyO
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(fd), &_Py_ID(eventmask), },
     };
     #undef NUM_KEYWORDS
@@ -854,9 +872,21 @@ select_epoll_modify(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyO
     if (fd < 0) {
         goto exit;
     }
-    eventmask = (unsigned int)PyLong_AsUnsignedLongMask(args[1]);
-    if (eventmask == (unsigned int)-1 && PyErr_Occurred()) {
-        goto exit;
+    {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(args[1], &eventmask, sizeof(unsigned int),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
+            goto exit;
+        }
+        if ((size_t)_bytes > sizeof(unsigned int)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
+        }
     }
     return_value = select_epoll_modify_impl((pyEpoll_Object *)self, fd, eventmask);
 
@@ -893,9 +923,11 @@ select_epoll_unregister(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(fd), },
     };
     #undef NUM_KEYWORDS
@@ -966,9 +998,11 @@ select_epoll_poll(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObj
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(timeout), &_Py_ID(maxevents), },
     };
     #undef NUM_KEYWORDS
@@ -1365,4 +1399,4 @@ exit:
 #ifndef SELECT_KQUEUE_CONTROL_METHODDEF
     #define SELECT_KQUEUE_CONTROL_METHODDEF
 #endif /* !defined(SELECT_KQUEUE_CONTROL_METHODDEF) */
-/*[clinic end generated code: output=60c3edb2745c9f33 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2a66dd831f22c696 input=a9049054013a1b77]*/

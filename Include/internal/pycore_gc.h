@@ -352,16 +352,6 @@ union _PyStackRef;
 extern int _PyGC_VisitFrameStack(_PyInterpreterFrame *frame, visitproc visit, void *arg);
 extern int _PyGC_VisitStackRef(union _PyStackRef *ref, visitproc visit, void *arg);
 
-// Like Py_VISIT but for _PyStackRef fields
-#define _Py_VISIT_STACKREF(ref)                                         \
-    do {                                                                \
-        if (!PyStackRef_IsNull(ref)) {                                  \
-            int vret = _PyGC_VisitStackRef(&(ref), visit, arg);         \
-            if (vret)                                                   \
-                return vret;                                            \
-        }                                                               \
-    } while (0)
-
 #ifdef Py_GIL_DISABLED
 extern void _PyGC_VisitObjectsWorldStopped(PyInterpreterState *interp,
                                            gcvisitobjects_t callback, void *arg);

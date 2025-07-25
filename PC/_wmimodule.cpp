@@ -57,11 +57,11 @@ _query_thread(LPVOID param)
     IEnumWbemClassObject* enumerator = NULL;
     HRESULT hr = S_OK;
     BSTR bstrQuery = NULL;
-    struct _query_data *data = (struct _query_data*)param;
+    _query_data data = *(struct _query_data*)param;
 
     // gh-125315: Copy the query string first, so that if the main thread gives
     // up on waiting we aren't left with a dangling pointer (and a likely crash)
-    bstrQuery = SysAllocString(data->query);
+    bstrQuery = SysAllocString(data.query);
     if (!bstrQuery) {
         hr = HRESULT_FROM_WIN32(ERROR_NOT_ENOUGH_MEMORY);
     }
@@ -71,7 +71,7 @@ _query_thread(LPVOID param)
     }
 
     if (FAILED(hr)) {
-        CloseHandle(data->writePipe);
+        CloseHandle(data.writePipe);
         if (bstrQuery) {
             SysFreeString(bstrQuery);
         }
@@ -96,7 +96,7 @@ _query_thread(LPVOID param)
             IID_IWbemLocator, (LPVOID *)&locator
         );
     }
-    if (SUCCEEDED(hr) && !SetEvent(data->initEvent)) {
+    if (SUCCEEDED(hr) && !SetEvent(data.initEvent)) {
         hr = HRESULT_FROM_WIN32(GetLastError());
     }
     if (SUCCEEDED(hr)) {
@@ -105,7 +105,7 @@ _query_thread(LPVOID param)
             NULL, NULL, 0, NULL, 0, 0, &services
         );
     }
-    if (SUCCEEDED(hr) && !SetEvent(data->connectEvent)) {
+    if (SUCCEEDED(hr) && !SetEvent(data.connectEvent)) {
         hr = HRESULT_FROM_WIN32(GetLastError());
     }
     if (SUCCEEDED(hr)) {
@@ -143,7 +143,7 @@ _query_thread(LPVOID param)
         if (FAILED(hr) || got != 1 || !value) {
             continue;
         }
-        if (!startOfEnum && !WriteFile(data->writePipe, (LPVOID)L"\0", 2, &written, NULL)) {
+        if (!startOfEnum && !WriteFile(data.writePipe, (LPVOID)L"\0", 2, &written, NULL)) {
             hr = HRESULT_FROM_WIN32(GetLastError());
             break;
         }
@@ -171,10 +171,10 @@ _query_thread(LPVOID param)
                     DWORD cbStr1, cbStr2;
                     cbStr1 = (DWORD)(wcslen(propName) * sizeof(propName[0]));
                     cbStr2 = (DWORD)(wcslen(propStr) * sizeof(propStr[0]));
-                    if (!WriteFile(data->writePipe, propName, cbStr1, &written, NULL) ||
-                        !WriteFile(data->writePipe, (LPVOID)L"=", 2, &written, NULL) ||
-                        !WriteFile(data->writePipe, propStr, cbStr2, &written, NULL) ||
-                        !WriteFile(data->writePipe, (LPVOID)L"\0", 2, &written, NULL)
+                    if (!WriteFile(data.writePipe, propName, cbStr1, &written, NULL) ||
+                        !WriteFile(data.writePipe, (LPVOID)L"=", 2, &written, NULL) ||
+                        !WriteFile(data.writePipe, propStr, cbStr2, &written, NULL) ||
+                        !WriteFile(data.writePipe, (LPVOID)L"\0", 2, &written, NULL)
                     ) {
                         hr = HRESULT_FROM_WIN32(GetLastError());
                     }
@@ -200,7 +200,7 @@ _query_thread(LPVOID param)
         locator->Release();
     }
     CoUninitialize();
-    CloseHandle(data->writePipe);
+    CloseHandle(data.writePipe);
     return (DWORD)hr;
 }
 
@@ -240,7 +240,6 @@ _wmi_exec_query_impl(PyObject *module, PyObject *query)
 
 /*[clinic end generated code]*/
 {
-    PyObject *result = NULL;
     HANDLE hThread = NULL;
     int err = 0;
     WCHAR buffer[8192];

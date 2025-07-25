@@ -73,6 +73,7 @@ PyStructSequence_New(PyTypeObject *type)
     obj = PyObject_GC_NewVar(PyStructSequence, type, size);
     if (obj == NULL)
         return NULL;
+    _PyTuple_RESET_HASH_CACHE(obj);
     /* Hack the size of the variable object, so invisible fields don't appear
      to Python code. */
     Py_SET_SIZE(obj, vsize);

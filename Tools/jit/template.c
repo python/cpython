@@ -2,15 +2,18 @@
 
 #include "pycore_backoff.h"
 #include "pycore_call.h"
-#include "pycore_ceval.h"
 #include "pycore_cell.h"
+#include "pycore_ceval.h"
 #include "pycore_code.h"
+#include "pycore_descrobject.h"
 #include "pycore_dict.h"
-#include "pycore_floatobject.h"
 #include "pycore_emscripten_signal.h"
+#include "pycore_floatobject.h"
 #include "pycore_frame.h"
+#include "pycore_function.h"
 #include "pycore_genobject.h"
 #include "pycore_interpframe.h"
+#include "pycore_interpolation.h"
 #include "pycore_intrinsics.h"
 #include "pycore_jit.h"
 #include "pycore_list.h"
@@ -22,8 +25,8 @@
 #include "pycore_range.h"
 #include "pycore_setobject.h"
 #include "pycore_sliceobject.h"
-#include "pycore_descrobject.h"
 #include "pycore_stackref.h"
+#include "pycore_template.h"
 #include "pycore_tuple.h"
 #include "pycore_unicodeobject.h"
 
@@ -47,13 +50,16 @@
 #define GOTO_TIER_TWO(EXECUTOR)                                            \
 do {                                                                       \
     OPT_STAT_INC(traces_executed);                                         \
-    jit_func_preserve_none jitted = (EXECUTOR)->jit_side_entry;            \
+    _PyExecutorObject *_executor = (EXECUTOR);                             \
+    tstate->current_executor = (PyObject *)_executor;                      \
+    jit_func_preserve_none jitted = _executor->jit_side_entry;             \
     __attribute__((musttail)) return jitted(frame, stack_pointer, tstate); \
 } while (0)
 
 #undef GOTO_TIER_ONE
 #define GOTO_TIER_ONE(TARGET)                       \
 do {                                                \
+    tstate->current_executor = NULL;                \
     _PyFrame_SetStackPointer(frame, stack_pointer); \
     return TARGET;                                  \
 } while (0)
@@ -68,10 +74,10 @@ do {                                                \
     do {                       \
     } while (0)
 
-#define PATCH_JUMP(ALIAS)                                                \
-do {                                                                     \
-    PATCH_VALUE(jit_func_preserve_none, jump, ALIAS);                    \
-    __attribute__((musttail)) return jump(frame, stack_pointer, tstate); \
+#define PATCH_JUMP(ALIAS)                                                 \
+do {                                                                      \
+    DECLARE_TARGET(ALIAS);                                                \
+    __attribute__((musttail)) return ALIAS(frame, stack_pointer, tstate); \
 } while (0)
 
 #undef JUMP_TO_JUMP_TARGET

@@ -7,25 +7,36 @@ about local paths in tests.
 """
 
 import os
-import pathlib.types
 
-from test.support import os_helper
-from test.test_pathlib.support.lexical_path import LexicalPath
+from . import is_pypi
+from .lexical_path import LexicalPath
+
+if is_pypi:
+    from shutil import rmtree
+    from pathlib_abc import PathInfo, _ReadablePath, _WritablePath
+    can_symlink = True
+    testfn = "TESTFN"
+else:
+    from pathlib.types import PathInfo, _ReadablePath, _WritablePath
+    from test.support import os_helper
+    can_symlink = os_helper.can_symlink()
+    testfn = os_helper.TESTFN
+    rmtree = os_helper.rmtree
 
 
 class LocalPathGround:
-    can_symlink = os_helper.can_symlink()
+    can_symlink = can_symlink
 
     def __init__(self, path_cls):
         self.path_cls = path_cls
 
     def setup(self, local_suffix=""):
-        root = self.path_cls(os_helper.TESTFN + local_suffix)
+        root = self.path_cls(testfn + local_suffix)
         os.mkdir(root)
         return root
 
     def teardown(self, root):
-        os_helper.rmtree(root)
+        rmtree(root)
 
     def create_file(self, p, data=b''):
         with open(p, 'wb') as f:
@@ -71,7 +82,7 @@ class LocalPathGround:
     readlink = staticmethod(os.readlink)
 
     def readtext(self, p):
-        with open(p, 'r') as f:
+        with open(p, 'r', encoding='utf-8') as f:
             return f.read()
 
     def readbytes(self, p):
@@ -79,14 +90,14 @@ class LocalPathGround:
             return f.read()
 
 
-class LocalPathInfo(pathlib.types.PathInfo):
+class LocalPathInfo(PathInfo):
     """
     Simple implementation of PathInfo for a local path
     """
     __slots__ = ('_path', '_exists', '_is_dir', '_is_file', '_is_symlink')
 
     def __init__(self, path):
-        self._path = str(path)
+        self._path = os.fspath(path)
         self._exists = None
         self._is_dir = None
         self._is_file = None
@@ -123,18 +134,16 @@ class LocalPathInfo(pathlib.types.PathInfo):
         return self._is_symlink
 
 
-class ReadableLocalPath(pathlib.types._ReadablePath, LexicalPath):
+class ReadableLocalPath(_ReadablePath, LexicalPath):
     """
     Simple implementation of a ReadablePath class for local filesystem paths.
     """
     __slots__ = ('info',)
+    __fspath__ = LexicalPath.__vfspath__
 
     def __init__(self, *pathsegments):
         super().__init__(*pathsegments)
         self.info = LocalPathInfo(self)
-
-    def __fspath__(self):
-        return str(self)
 
     def __open_rb__(self, buffering=-1):
         return open(self, 'rb')
@@ -146,15 +155,13 @@ class ReadableLocalPath(pathlib.types._ReadablePath, LexicalPath):
         return self.with_segments(os.readlink(self))
 
 
-class WritableLocalPath(pathlib.types._WritablePath, LexicalPath):
+class WritableLocalPath(_WritablePath, LexicalPath):
     """
     Simple implementation of a WritablePath class for local filesystem paths.
     """
 
     __slots__ = ()
-
-    def __fspath__(self):
-        return str(self)
+    __fspath__ = LexicalPath.__vfspath__
 
     def __open_wb__(self, buffering=-1):
         return open(self, 'wb')

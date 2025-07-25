@@ -404,27 +404,27 @@ static PyMethodDef stdprinter_methods[] = {
 };
 
 static PyObject *
-get_closed(PyStdPrinter_Object *self, void *closure)
+get_closed(PyObject *self, void *Py_UNUSED(closure))
 {
     Py_RETURN_FALSE;
 }
 
 static PyObject *
-get_mode(PyStdPrinter_Object *self, void *closure)
+get_mode(PyObject *self, void *Py_UNUSED(closure))
 {
     return PyUnicode_FromString("w");
 }
 
 static PyObject *
-get_encoding(PyStdPrinter_Object *self, void *closure)
+get_encoding(PyObject *self, void *Py_UNUSED(closure))
 {
     Py_RETURN_NONE;
 }
 
 static PyGetSetDef stdprinter_getsetlist[] = {
-    {"closed", (getter)get_closed, NULL, "True if the file is closed"},
-    {"encoding", (getter)get_encoding, NULL, "Encoding of the file"},
-    {"mode", (getter)get_mode, NULL, "String giving the file mode"},
+    {"closed", get_closed, NULL, "True if the file is closed"},
+    {"encoding", get_encoding, NULL, "Encoding of the file"},
+    {"mode", get_mode, NULL, "String giving the file mode"},
     {0},
 };
 

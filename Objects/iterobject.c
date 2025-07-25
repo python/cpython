@@ -315,9 +315,12 @@ typedef struct {
     PyObject *default_value;
 } anextawaitableobject;
 
+#define anextawaitableobject_CAST(op)   ((anextawaitableobject *)(op))
+
 static void
-anextawaitable_dealloc(anextawaitableobject *obj)
+anextawaitable_dealloc(PyObject *op)
 {
+    anextawaitableobject *obj = anextawaitableobject_CAST(op);
     _PyObject_GC_UNTRACK(obj);
     Py_XDECREF(obj->wrapped);
     Py_XDECREF(obj->default_value);
@@ -325,8 +328,9 @@ anextawaitable_dealloc(anextawaitableobject *obj)
 }
 
 static int
-anextawaitable_traverse(anextawaitableobject *obj, visitproc visit, void *arg)
+anextawaitable_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    anextawaitableobject *obj = anextawaitableobject_CAST(op);
     Py_VISIT(obj->wrapped);
     Py_VISIT(obj->default_value);
     return 0;
@@ -363,7 +367,7 @@ anextawaitable_getiter(anextawaitableobject *obj)
 }
 
 static PyObject *
-anextawaitable_iternext(anextawaitableobject *obj)
+anextawaitable_iternext(PyObject *op)
 {
     /* Consider the following class:
      *
@@ -385,6 +389,7 @@ anextawaitable_iternext(anextawaitableobject *obj)
      * Then `await anext(gen)` can just call
      * gen.__anext__().__next__()
      */
+    anextawaitableobject *obj = anextawaitableobject_CAST(op);
     PyObject *awaitable = anextawaitable_getiter(obj);
     if (awaitable == NULL) {
         return NULL;
@@ -403,12 +408,17 @@ anextawaitable_iternext(anextawaitableobject *obj)
 
 
 static PyObject *
-anextawaitable_proxy(anextawaitableobject *obj, char *meth, PyObject *arg) {
+anextawaitable_proxy(anextawaitableobject *obj, char *meth, PyObject *arg)
+{
     PyObject *awaitable = anextawaitable_getiter(obj);
     if (awaitable == NULL) {
         return NULL;
     }
-    PyObject *ret = PyObject_CallMethod(awaitable, meth, "O", arg);
+    // When specified, 'arg' may be a tuple (if coming from a METH_VARARGS
+    // method) or a single object (if coming from a METH_O method).
+    PyObject *ret = arg == NULL
+        ? PyObject_CallMethod(awaitable, meth, NULL)
+        : PyObject_CallMethod(awaitable, meth, "O", arg);
     Py_DECREF(awaitable);
     if (ret != NULL) {
         return ret;
@@ -427,20 +437,26 @@ anextawaitable_proxy(anextawaitableobject *obj, char *meth, PyObject *arg) {
 
 
 static PyObject *
-anextawaitable_send(anextawaitableobject *obj, PyObject *arg) {
+anextawaitable_send(PyObject *op, PyObject *arg)
+{
+    anextawaitableobject *obj = anextawaitableobject_CAST(op);
     return anextawaitable_proxy(obj, "send", arg);
 }
 
 
 static PyObject *
-anextawaitable_throw(anextawaitableobject *obj, PyObject *arg) {
-    return anextawaitable_proxy(obj, "throw", arg);
+anextawaitable_throw(PyObject *op, PyObject *args)
+{
+    anextawaitableobject *obj = anextawaitableobject_CAST(op);
+    return anextawaitable_proxy(obj, "throw", args);
 }
 
 
 static PyObject *
-anextawaitable_close(anextawaitableobject *obj, PyObject *arg) {
-    return anextawaitable_proxy(obj, "close", arg);
+anextawaitable_close(PyObject *op, PyObject *Py_UNUSED(dummy))
+{
+    anextawaitableobject *obj = anextawaitableobject_CAST(op);
+    return anextawaitable_proxy(obj, "close", NULL);
 }
 
 
@@ -464,9 +480,9 @@ PyDoc_STRVAR(close_doc,
 
 
 static PyMethodDef anextawaitable_methods[] = {
-    {"send",(PyCFunction)anextawaitable_send, METH_O, send_doc},
-    {"throw",(PyCFunction)anextawaitable_throw, METH_VARARGS, throw_doc},
-    {"close",(PyCFunction)anextawaitable_close, METH_VARARGS, close_doc},
+    {"send", anextawaitable_send, METH_O, send_doc},
+    {"throw", anextawaitable_throw, METH_VARARGS, throw_doc},
+    {"close", anextawaitable_close, METH_NOARGS, close_doc},
     {NULL, NULL}        /* Sentinel */
 };
 
@@ -484,7 +500,7 @@ PyTypeObject _PyAnextAwaitable_Type = {
     sizeof(anextawaitableobject),               /* tp_basicsize */
     0,                                          /* tp_itemsize */
     /* methods */
-    (destructor)anextawaitable_dealloc,         /* tp_dealloc */
+    anextawaitable_dealloc,                     /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
@@ -501,12 +517,12 @@ PyTypeObject _PyAnextAwaitable_Type = {
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
     0,                                          /* tp_doc */
-    (traverseproc)anextawaitable_traverse,      /* tp_traverse */
+    anextawaitable_traverse,                    /* tp_traverse */
     0,                                          /* tp_clear */
     0,                                          /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
     PyObject_SelfIter,                          /* tp_iter */
-    (unaryfunc)anextawaitable_iternext,         /* tp_iternext */
+    anextawaitable_iternext,                    /* tp_iternext */
     anextawaitable_methods,                     /* tp_methods */
 };
 

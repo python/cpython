@@ -30,9 +30,11 @@ OrderedDict_fromkeys(PyObject *type, PyObject *const *args, Py_ssize_t nargs, Py
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(iterable), &_Py_ID(value), },
     };
     #undef NUM_KEYWORDS
@@ -96,9 +98,11 @@ OrderedDict_setdefault(PyObject *self, PyObject *const *args, Py_ssize_t nargs, 
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(key), &_Py_ID(default), },
     };
     #undef NUM_KEYWORDS
@@ -163,9 +167,11 @@ OrderedDict_pop(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObjec
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(key), &_Py_ID(default), },
     };
     #undef NUM_KEYWORDS
@@ -228,9 +234,11 @@ OrderedDict_popitem(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyO
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(last), },
     };
     #undef NUM_KEYWORDS
@@ -294,9 +302,11 @@ OrderedDict_move_to_end(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(key), &_Py_ID(last), },
     };
     #undef NUM_KEYWORDS
@@ -337,4 +347,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=6f84d0649fcd0c1f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7d8206823bb1f419 input=a9049054013a1b77]*/

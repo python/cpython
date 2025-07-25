@@ -3,8 +3,8 @@ Low-level OS functionality wrappers used by pathlib.
 """
 
 from errno import *
+from io import TextIOWrapper, text_encoding
 from stat import S_ISDIR, S_ISREG, S_ISLNK, S_IMODE
-import io
 import os
 import sys
 try:
@@ -172,12 +172,16 @@ def magic_open(path, mode='r', buffering=-1, encoding=None, errors=None,
     Open the file pointed to by this path and return a file object, as
     the built-in open() function does.
     """
+    text = 'b' not in mode
+    if text:
+        # Call io.text_encoding() here to ensure any warning is raised at an
+        # appropriate stack level.
+        encoding = text_encoding(encoding)
     try:
-        return io.open(path, mode, buffering, encoding, errors, newline)
+        return open(path, mode, buffering, encoding, errors, newline)
     except TypeError:
         pass
     cls = type(path)
-    text = 'b' not in mode
     mode = ''.join(sorted(c for c in mode if c not in 'bt'))
     if text:
         try:
@@ -186,6 +190,12 @@ def magic_open(path, mode='r', buffering=-1, encoding=None, errors=None,
             pass
         else:
             return attr(path, buffering, encoding, errors, newline)
+    elif encoding is not None:
+        raise ValueError("binary mode doesn't take an encoding argument")
+    elif errors is not None:
+        raise ValueError("binary mode doesn't take an errors argument")
+    elif newline is not None:
+        raise ValueError("binary mode doesn't take a newline argument")
 
     try:
         attr = getattr(cls, f'__open_{mode}b__')
@@ -194,10 +204,30 @@ def magic_open(path, mode='r', buffering=-1, encoding=None, errors=None,
     else:
         stream = attr(path, buffering)
         if text:
-            stream = io.TextIOWrapper(stream, encoding, errors, newline)
+            stream = TextIOWrapper(stream, encoding, errors, newline)
         return stream
 
     raise TypeError(f"{cls.__name__} can't be opened with mode {mode!r}")
+
+
+def vfspath(path):
+    """
+    Return the string representation of a virtual path object.
+    """
+    try:
+        return os.fsdecode(path)
+    except TypeError:
+        pass
+
+    path_type = type(path)
+    try:
+        return path_type.__vfspath__(path)
+    except AttributeError:
+        if hasattr(path_type, '__vfspath__'):
+            raise
+
+    raise TypeError("expected str, bytes, os.PathLike or JoinablePath "
+                    "object, not " + path_type.__name__)
 
 
 def ensure_distinct_paths(source, target):
@@ -215,8 +245,8 @@ def ensure_distinct_paths(source, target):
         err = OSError(EINVAL, "Source path is a parent of target path")
     else:
         return
-    err.filename = str(source)
-    err.filename2 = str(target)
+    err.filename = vfspath(source)
+    err.filename2 = vfspath(target)
     raise err
 
 
@@ -237,8 +267,8 @@ def ensure_different_files(source, target):
         except (OSError, ValueError):
             return
     err = OSError(EINVAL, "Source and target are the same file")
-    err.filename = str(source)
-    err.filename2 = str(target)
+    err.filename = vfspath(source)
+    err.filename2 = vfspath(target)
     raise err
 
 

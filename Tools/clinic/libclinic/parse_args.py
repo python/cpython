@@ -65,9 +65,11 @@ def declare_parser(
             static struct {{
                 PyGC_Head _this_is_not_used;
                 PyObject_VAR_HEAD
+                Py_hash_t ob_hash;
                 PyObject *ob_item[NUM_KEYWORDS];
             }} _kwtuple = {{
                 .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+                .ob_hash = -1,
                 .ob_item = {{ {keywords_py} }},
             }};
             #undef NUM_KEYWORDS
@@ -258,7 +260,10 @@ class ParseArgsCodeGen:
         if self.func.critical_section:
             self.codegen.add_include('pycore_critical_section.h',
                                      'Py_BEGIN_CRITICAL_SECTION()')
-        self.fastcall = not self.is_new_or_init()
+        if self.func.disable_fastcall:
+            self.fastcall = False
+        else:
+            self.fastcall = not self.is_new_or_init()
 
         self.pos_only = 0
         self.min_pos = 0

@@ -130,7 +130,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
 .. data:: base_exec_prefix
 
-   Equivalent to :data:`exec_prefix`, but refering to the base Python installation.
+   Equivalent to :data:`exec_prefix`, but referring to the base Python installation.
 
    When running under :ref:`sys-path-init-virtual-environments`,
    :data:`exec_prefix` gets overwritten to the virtual environment prefix.
@@ -143,7 +143,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
 .. data:: base_prefix
 
-   Equivalent to :data:`prefix`, but refering to the base Python installation.
+   Equivalent to :data:`prefix`, but referring to the base Python installation.
 
    When running under :ref:`virtual environment <venv-def>`,
    :data:`prefix` gets overwritten to the virtual environment prefix.
@@ -535,7 +535,8 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 .. data:: flags
 
    The :term:`named tuple` *flags* exposes the status of command line
-   flags. The attributes are read only.
+   flags.  Flags should only be accessed only by name and not by index.  The
+   attributes are read only.
 
    .. list-table::
 
@@ -594,6 +595,18 @@ always available. Unless explicitly noted otherwise, all variables are read-only
       * - .. attribute:: flags.warn_default_encoding
         - :option:`-X warn_default_encoding <-X>`
 
+      * - .. attribute:: flags.gil
+        - :option:`-X gil <-X>` and :envvar:`PYTHON_GIL`
+
+      * - .. attribute:: flags.thread_inherit_context
+        - :option:`-X thread_inherit_context <-X>` and
+          :envvar:`PYTHON_THREAD_INHERIT_CONTEXT`
+
+      * - .. attribute:: flags.context_aware_warnings
+        - :option:`-X context_aware_warnings <-X>` and
+          :envvar:`PYTHON_CONTEXT_AWARE_WARNINGS`
+
+
    .. versionchanged:: 3.2
       Added ``quiet`` attribute for the new :option:`-q` flag.
 
@@ -619,6 +632,15 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    .. versionchanged:: 3.11
       Added the ``int_max_str_digits`` attribute.
+
+   .. versionchanged:: 3.13
+      Added the ``gil`` attribute.
+
+   .. versionchanged:: 3.14
+      Added the ``thread_inherit_context`` attribute.
+
+   .. versionchanged:: 3.14
+      Added the ``context_aware_warnings`` attribute.
 
 
 .. data:: float_info
@@ -931,6 +953,8 @@ always available. Unless explicitly noted otherwise, all variables are read-only
       This function should be used for internal and specialized purposes only.
       It is not guaranteed to exist in all implementations of Python.
 
+   .. versionadded:: 3.12
+
 
 .. function:: getobjects(limit[, type])
 
@@ -1163,6 +1187,15 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    ``cache_tag`` is set to ``None``, it indicates that module caching should
    be disabled.
 
+   *supports_isolated_interpreters* is a boolean value, whether
+   this implementation supports multiple isolated interpreters.
+   It is ``True`` for CPython on most platforms.  Platforms with
+   this support implement the low-level :mod:`!_interpreters` module.
+
+   .. seealso::
+
+      :pep:`684`, :pep:`734`, and :mod:`concurrent.interpreters`.
+
    :data:`sys.implementation` may contain additional attributes specific to
    the Python implementation.  These non-standard attributes must start with
    an underscore, and are not described here.  Regardless of its contents,
@@ -1171,6 +1204,9 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    language versions, however.)  See :pep:`421` for more information.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.14
+      Added ``supports_isolated_interpreters`` field.
 
    .. note::
 
@@ -1247,6 +1283,9 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    .. versionadded:: 3.13
 
+   .. impl-detail::
+
+      It is not guaranteed to exist in all implementations of Python.
 
 .. function:: is_finalizing()
 
@@ -1256,6 +1295,64 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    See also the :exc:`PythonFinalizationError` exception.
 
    .. versionadded:: 3.5
+
+.. data:: _jit
+
+   Utilities for observing just-in-time compilation.
+
+   .. impl-detail::
+
+      JIT compilation is an *experimental implementation detail* of CPython.
+      ``sys._jit`` is not guaranteed to exist or behave the same way in all
+      Python implementations, versions, or build configurations.
+
+   .. versionadded:: 3.14
+
+   .. function:: _jit.is_available()
+
+      Return ``True`` if the current Python executable supports JIT compilation,
+      and ``False`` otherwise.  This can be controlled by building CPython with
+      the ``--experimental-jit`` option on Windows, and the
+      :option:`--enable-experimental-jit` option on all other platforms.
+
+   .. function:: _jit.is_enabled()
+
+      Return ``True`` if JIT compilation is enabled for the current Python
+      process (implies :func:`sys._jit.is_available`), and ``False`` otherwise.
+      If JIT compilation is available, this can be controlled by setting the
+      :envvar:`PYTHON_JIT` environment variable to ``0`` (disabled) or ``1``
+      (enabled) at interpreter startup.
+
+   .. function:: _jit.is_active()
+
+      Return ``True`` if the topmost Python frame is currently executing JIT
+      code (implies :func:`sys._jit.is_enabled`), and ``False`` otherwise.
+
+      .. note::
+
+         This function is intended for testing and debugging the JIT itself.
+         It should be avoided for any other purpose.
+
+      .. note::
+
+         Due to the nature of tracing JIT compilers, repeated calls to this
+         function may give surprising results. For example, branching on its
+         return value will likely lead to unexpected behavior (if doing so
+         causes JIT code to be entered or exited):
+
+         .. code-block:: pycon
+
+            >>> for warmup in range(BIG_NUMBER):
+            ...     # This line is "hot", and is eventually JIT-compiled:
+            ...     if sys._jit.is_active():
+            ...         # This line is "cold", and is run in the interpreter:
+            ...         assert sys._jit.is_active()
+            ...
+            Traceback (most recent call last):
+              File "<stdin>", line 5, in <module>
+                assert sys._jit.is_active()
+                       ~~~~~~~~~~~~~~~~~~^^
+            AssertionError
 
 .. data:: last_exc
 
@@ -1832,6 +1929,44 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    .. versionadded:: 3.12
 
+
+.. function:: remote_exec(pid, script)
+
+   Executes *script*, a file containing Python code in the remote
+   process with the given *pid*.
+
+   This function returns immediately, and the code will be executed by the
+   target process's main thread at the next available opportunity, similarly
+   to how signals are handled. There is no interface to determine when the
+   code has been executed. The caller is responsible for making sure that
+   the file still exists whenever the remote process tries to read it and that
+   it hasn't been overwritten.
+
+   The remote process must be running a CPython interpreter of the same major
+   and minor version as the local process. If either the local or remote
+   interpreter is pre-release (alpha, beta, or release candidate) then the
+   local and remote interpreters must be the same exact version.
+
+   .. audit-event:: sys.remote_exec pid script_path
+
+      When the code is executed in the remote process, an
+      :ref:`auditing event <auditing>` ``sys.remote_exec`` is raised with
+      the *pid* and the path to the script file.
+      This event is raised in the process that called :func:`sys.remote_exec`.
+
+   .. audit-event:: cpython.remote_debugger_script script_path
+
+      When the script is executed in the remote process, an
+      :ref:`auditing event <auditing>`
+      ``cpython.remote_debugger_script`` is raised
+      with the path in the remote process.
+      This event is raised in the remote process, not the one
+      that called :func:`sys.remote_exec`.
+
+   .. availability:: Unix, Windows.
+   .. versionadded:: 3.14
+
+
 .. function:: _enablelegacywindowsfsencoding()
 
    Changes the :term:`filesystem encoding and error handler` to 'mbcs' and
@@ -2056,8 +2191,11 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
 .. data:: api_version
 
-   The C API version for this interpreter.  Programmers may find this useful when
-   debugging version conflicts between Python and extension modules.
+   The C API version, equivalent to the C macro :c:macro:`PYTHON_API_VERSION`.
+   Defined for backwards compatibility.
+
+   Currently, this constant is not updated in new Python versions, and is not
+   useful for versioning. This may change in the future.
 
 
 .. data:: version_info

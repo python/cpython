@@ -1,11 +1,9 @@
 import contextlib
 import os
-import re
 import sys
 import tempfile
 import unittest
 
-from io import StringIO
 from test import support
 from test import test_tools
 
@@ -31,12 +29,11 @@ skip_if_different_mount_drives()
 
 test_tools.skip_if_missing("cases_generator")
 with test_tools.imports_under_tool("cases_generator"):
-    from analyzer import analyze_forest, StackItem
+    from analyzer import StackItem
     from cwriter import CWriter
     import parser
     from stack import Local, Stack
     import tier1_generator
-    import opcode_metadata_generator
     import optimizer_generator
 
 
@@ -59,22 +56,24 @@ class TestEffects(unittest.TestCase):
     def test_effect_sizes(self):
         stack = Stack()
         inputs = [
-            x := StackItem("x", None, "1"),
-            y := StackItem("y", None, "oparg"),
-            z := StackItem("z", None, "oparg*2"),
+            x := StackItem("x", "1"),
+            y := StackItem("y", "oparg"),
+            z := StackItem("z", "oparg*2"),
         ]
         outputs = [
-            StackItem("x", None, "1"),
-            StackItem("b", None, "oparg*4"),
-            StackItem("c", None, "1"),
+            StackItem("x", "1"),
+            StackItem("b", "oparg*4"),
+            StackItem("c", "1"),
         ]
-        stack.pop(z)
-        stack.pop(y)
-        stack.pop(x)
+        null = CWriter.null()
+        stack.pop(z, null)
+        stack.pop(y, null)
+        stack.pop(x, null)
         for out in outputs:
             stack.push(Local.undefined(out))
         self.assertEqual(stack.base_offset.to_c(), "-1 - oparg - oparg*2")
-        self.assertEqual(stack.top_offset.to_c(), "1 - oparg - oparg*2 + oparg*4")
+        self.assertEqual(stack.physical_sp.to_c(), "0")
+        self.assertEqual(stack.logical_sp.to_c(), "1 - oparg - oparg*2 + oparg*4")
 
 
 class TestGeneratedCases(unittest.TestCase):
@@ -285,9 +284,11 @@ class TestGeneratedCases(unittest.TestCase):
     def test_predictions(self):
         input = """
         inst(OP1, (arg -- res)) {
+            DEAD(arg);
             res = Py_None;
         }
         inst(OP3, (arg -- res)) {
+            DEAD(arg);
             DEOPT_IF(xxx);
             res = Py_None;
         }
@@ -303,7 +304,9 @@ class TestGeneratedCases(unittest.TestCase):
             next_instr += 1;
             INSTRUCTION_STATS(OP1);
             PREDICTED_OP1:;
+            _PyStackRef arg;
             _PyStackRef res;
+            arg = stack_pointer[-1];
             res = Py_None;
             stack_pointer[-1] = res;
             DISPATCH();
@@ -320,7 +323,9 @@ class TestGeneratedCases(unittest.TestCase):
             next_instr += 1;
             INSTRUCTION_STATS(OP3);
             static_assert(INLINE_CACHE_ENTRIES_OP1 == 0, "incorrect cache size");
+            _PyStackRef arg;
             _PyStackRef res;
+            arg = stack_pointer[-1];
             if (xxx) {
                 UPDATE_MISS_STATS(OP1);
                 assert(_PyOpcode_Deopt[opcode] == (OP1));
@@ -336,11 +341,13 @@ class TestGeneratedCases(unittest.TestCase):
     def test_sync_sp(self):
         input = """
         inst(A, (arg -- res)) {
+            DEAD(arg);
             SYNC_SP();
             escaping_call();
             res = Py_None;
         }
         inst(B, (arg -- res)) {
+            DEAD(arg);
             res = Py_None;
             SYNC_SP();
             escaping_call();
@@ -355,7 +362,9 @@ class TestGeneratedCases(unittest.TestCase):
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(A);
+            _PyStackRef arg;
             _PyStackRef res;
+            arg = stack_pointer[-1];
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -376,7 +385,9 @@ class TestGeneratedCases(unittest.TestCase):
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(B);
+            _PyStackRef arg;
             _PyStackRef res;
+            arg = stack_pointer[-1];
             res = Py_None;
             stack_pointer[-1] = res;
             _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -405,7 +416,7 @@ class TestGeneratedCases(unittest.TestCase):
     def test_error_if_plain(self):
         input = """
         inst(OP, (--)) {
-            ERROR_IF(cond, label);
+            ERROR_IF(cond);
         }
     """
         output = """
@@ -418,7 +429,7 @@ class TestGeneratedCases(unittest.TestCase):
             next_instr += 1;
             INSTRUCTION_STATS(OP);
             if (cond) {
-                JUMP_TO_LABEL(label);
+                JUMP_TO_LABEL(error);
             }
             DISPATCH();
         }
@@ -428,7 +439,7 @@ class TestGeneratedCases(unittest.TestCase):
     def test_error_if_plain_with_comment(self):
         input = """
         inst(OP, (--)) {
-            ERROR_IF(cond, label);  // Comment is ok
+            ERROR_IF(cond);  // Comment is ok
         }
     """
         output = """
@@ -441,9 +452,8 @@ class TestGeneratedCases(unittest.TestCase):
             next_instr += 1;
             INSTRUCTION_STATS(OP);
             if (cond) {
-                JUMP_TO_LABEL(label);
+                JUMP_TO_LABEL(error);
             }
-            // Comment is ok
             DISPATCH();
         }
     """
@@ -454,7 +464,7 @@ class TestGeneratedCases(unittest.TestCase):
         inst(OP, (left, right -- res)) {
             SPAM(left, right);
             INPUTS_DEAD();
-            ERROR_IF(cond, label);
+            ERROR_IF(cond);
             res = 0;
         }
     """
@@ -474,7 +484,7 @@ class TestGeneratedCases(unittest.TestCase):
             left = stack_pointer[-2];
             SPAM(left, right);
             if (cond) {
-                JUMP_TO_LABEL(pop_2_label);
+                JUMP_TO_LABEL(pop_2_error);
             }
             res = 0;
             stack_pointer[-2] = res;
@@ -490,7 +500,7 @@ class TestGeneratedCases(unittest.TestCase):
         inst(OP, (left, right -- res)) {
             res = SPAM(left, right);
             INPUTS_DEAD();
-            ERROR_IF(cond, label);
+            ERROR_IF(cond);
         }
     """
         output = """
@@ -509,7 +519,7 @@ class TestGeneratedCases(unittest.TestCase):
             left = stack_pointer[-2];
             res = SPAM(left, right);
             if (cond) {
-                JUMP_TO_LABEL(pop_2_label);
+                JUMP_TO_LABEL(pop_2_error);
             }
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -522,6 +532,7 @@ class TestGeneratedCases(unittest.TestCase):
     def test_cache_effect(self):
         input = """
         inst(OP, (counter/1, extra/2, value --)) {
+            DEAD(value);
         }
     """
         output = """
@@ -535,6 +546,8 @@ class TestGeneratedCases(unittest.TestCase):
             frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(OP);
+            _PyStackRef value;
+            value = stack_pointer[-1];
             uint16_t counter = read_u16(&this_instr[1].cache);
             (void)counter;
             uint32_t extra = read_u32(&this_instr[2].cache);
@@ -569,7 +582,6 @@ class TestGeneratedCases(unittest.TestCase):
 
         LABEL(somewhere)
         {
-
         }
     """
         self.run_cases_test(input, output)
@@ -793,6 +805,9 @@ class TestGeneratedCases(unittest.TestCase):
         input = """
         inst(OP, (below, values[oparg*2], above --)) {
             SPAM(values, oparg);
+            DEAD(below);
+            DEAD(values);
+            DEAD(above);
         }
     """
         output = """
@@ -804,8 +819,12 @@ class TestGeneratedCases(unittest.TestCase):
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
+            _PyStackRef below;
             _PyStackRef *values;
+            _PyStackRef above;
+            above = stack_pointer[-1];
             values = &stack_pointer[-1 - oparg*2];
+            below = stack_pointer[-2 - oparg*2];
             SPAM(values, oparg);
             stack_pointer += -2 - oparg*2;
             assert(WITHIN_STACK_BOUNDS());
@@ -879,7 +898,9 @@ class TestGeneratedCases(unittest.TestCase):
     def test_array_error_if(self):
         input = """
         inst(OP, (extra, values[oparg] --)) {
-            ERROR_IF(oparg == 0, somewhere);
+            DEAD(extra);
+            DEAD(values);
+            ERROR_IF(oparg == 0);
         }
     """
         output = """
@@ -891,10 +912,14 @@ class TestGeneratedCases(unittest.TestCase):
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
+            _PyStackRef extra;
+            _PyStackRef *values;
+            values = &stack_pointer[-oparg];
+            extra = stack_pointer[-1 - oparg];
             if (oparg == 0) {
                 stack_pointer += -1 - oparg;
                 assert(WITHIN_STACK_BOUNDS());
-                JUMP_TO_LABEL(somewhere);
+                JUMP_TO_LABEL(error);
             }
             stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
@@ -1056,6 +1081,7 @@ class TestGeneratedCases(unittest.TestCase):
         input = """
         inst(OP, (arg[1] -- out[1])) {
             out[0] = arg[0];
+            DEAD(arg);
         }
         """
         output = """
@@ -1072,32 +1098,6 @@ class TestGeneratedCases(unittest.TestCase):
             arg = &stack_pointer[-1];
             out = &stack_pointer[-1];
             out[0] = arg[0];
-            DISPATCH();
-        }
-        """
-        self.run_cases_test(input, output)
-
-    def test_pointer_to_stackref(self):
-        input = """
-        inst(OP, (arg: _PyStackRef * -- out)) {
-            out = *arg;
-            DEAD(arg);
-        }
-        """
-        output = """
-        TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
-            int opcode = OP;
-            (void)(opcode);
-            #endif
-            frame->instr_ptr = next_instr;
-            next_instr += 1;
-            INSTRUCTION_STATS(OP);
-            _PyStackRef *arg;
-            _PyStackRef out;
-            arg = (_PyStackRef *)stack_pointer[-1].bits;
-            out = *arg;
-            stack_pointer[-1] = out;
             DISPATCH();
         }
         """
@@ -1290,7 +1290,7 @@ class TestGeneratedCases(unittest.TestCase):
 
         op(THIRD, (j, k --)) {
             INPUTS_DEAD(); // Mark j and k as used
-            ERROR_IF(cond, error);
+            ERROR_IF(cond);
         }
 
         macro(TEST) = FIRST + SECOND + THIRD;
@@ -1320,7 +1320,6 @@ class TestGeneratedCases(unittest.TestCase):
             }
             // THIRD
             {
-                // Mark j and k as used
                 if (cond) {
                     JUMP_TO_LABEL(pop_2_error);
                 }
@@ -1341,7 +1340,7 @@ class TestGeneratedCases(unittest.TestCase):
 
         op(SECOND, (a -- a, b)) {
             b = 1;
-            ERROR_IF(cond, error);
+            ERROR_IF(cond);
         }
 
         macro(TEST) = FIRST + SECOND;
@@ -1386,10 +1385,10 @@ class TestGeneratedCases(unittest.TestCase):
 
         input = """
         inst(OP1, ( --)) {
-            ERROR_IF(true, here);
+            ERROR_IF(true);
         }
         inst(OP2, ( --)) {
-            ERROR_IF(1, there);
+            ERROR_IF(1);
         }
         """
         output = """
@@ -1401,7 +1400,7 @@ class TestGeneratedCases(unittest.TestCase):
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP1);
-            JUMP_TO_LABEL(here);
+            JUMP_TO_LABEL(error);
         }
 
         TARGET(OP2) {
@@ -1412,7 +1411,7 @@ class TestGeneratedCases(unittest.TestCase):
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP2);
-            JUMP_TO_LABEL(there);
+            JUMP_TO_LABEL(error);
         }
         """
         self.run_cases_test(input, output)
@@ -1688,7 +1687,7 @@ class TestGeneratedCases(unittest.TestCase):
 
         input = """
         inst(OP, ( -- )) {
-            ERROR_IF(escaping_call(), error);
+            ERROR_IF(escaping_call());
         }
         """
         with self.assertRaises(SyntaxError):
@@ -1726,17 +1725,14 @@ class TestGeneratedCases(unittest.TestCase):
         output = """
         LABEL(other_label)
         {
-
         }
 
         LABEL(other_label2)
         {
-
         }
 
         LABEL(my_label)
         {
-            // Comment
             _PyFrame_SetStackPointer(frame, stack_pointer);
             do_thing();
             stack_pointer = _PyFrame_GetStackPointer(frame);
@@ -1764,7 +1760,6 @@ class TestGeneratedCases(unittest.TestCase):
         output = """
         LABEL(one)
         {
-            /* STACK SPILLED */
             stack_pointer = _PyFrame_GetStackPointer(frame);
             JUMP_TO_LABEL(two);
         }
@@ -1820,7 +1815,6 @@ class TestGeneratedCases(unittest.TestCase):
         output = """
         LABEL(my_label_1)
         {
-            // Comment
             _PyFrame_SetStackPointer(frame, stack_pointer);
             do_thing1();
             stack_pointer = _PyFrame_GetStackPointer(frame);
@@ -1829,11 +1823,69 @@ class TestGeneratedCases(unittest.TestCase):
 
         LABEL(my_label_2)
         {
-            // Comment
             _PyFrame_SetStackPointer(frame, stack_pointer);
             do_thing2();
             stack_pointer = _PyFrame_GetStackPointer(frame);
             JUMP_TO_LABEL(my_label_1);
+        }
+        """
+        self.run_cases_test(input, output)
+
+    def test_reassigning_live_inputs(self):
+        input = """
+        inst(OP, (in -- in)) {
+            in = 0;
+        }
+        """
+
+        output = """
+        TARGET(OP) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = OP;
+            (void)(opcode);
+            #endif
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
+            _PyStackRef in;
+            in = stack_pointer[-1];
+            in = 0;
+            stack_pointer[-1] = in;
+            DISPATCH();
+        }
+        """
+        self.run_cases_test(input, output)
+
+    def test_reassigning_dead_inputs(self):
+        input = """
+        inst(OP, (in -- )) {
+            temp = use(in);
+            DEAD(in);
+            in = temp;
+            PyStackRef_CLOSE(in);
+        }
+        """
+        output = """
+        TARGET(OP) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = OP;
+            (void)(opcode);
+            #endif
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
+            _PyStackRef in;
+            in = stack_pointer[-1];
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            temp = use(in);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            in = temp;
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyStackRef_CLOSE(in);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            DISPATCH();
         }
         """
         self.run_cases_test(input, output)
@@ -1924,8 +1976,8 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         output = """
         case OP: {
-            JitOptSymbol *arg1;
-            JitOptSymbol *out;
+            JitOptRef arg1;
+            JitOptRef out;
             arg1 = stack_pointer[-1];
             out = EGGS(arg1);
             stack_pointer[-1] = out;
@@ -1933,7 +1985,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         }
 
         case OP2: {
-            JitOptSymbol *out;
+            JitOptRef out;
             out = sym_new_not_null(ctx);
             stack_pointer[-1] = out;
             break;
@@ -1958,14 +2010,14 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         output = """
         case OP: {
-            JitOptSymbol *out;
+            JitOptRef out;
             out = sym_new_not_null(ctx);
             stack_pointer[-1] = out;
             break;
         }
 
         case OP2: {
-            JitOptSymbol *out;
+            JitOptRef out;
             out = NULL;
             stack_pointer[-1] = out;
             break;
@@ -1985,9 +2037,436 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         output = """
         """
-        with self.assertRaisesRegex(AssertionError, "All abstract uops"):
+        with self.assertRaisesRegex(ValueError, "All abstract uops"):
             self.run_cases_test(input, input2, output)
 
+    def test_validate_uop_input_length_mismatch(self):
+        input = """
+        op(OP, (arg1 -- out)) {
+            SPAM();
+        }
+        """
+        input2 = """
+        op(OP, (arg1, arg2 -- out)) {
+        }
+        """
+        output = """
+        """
+        with self.assertRaisesRegex(SyntaxError,
+                                    "Must have the same number of inputs"):
+            self.run_cases_test(input, input2, output)
+
+    def test_validate_uop_output_length_mismatch(self):
+        input = """
+        op(OP, (arg1 -- out)) {
+            SPAM();
+        }
+        """
+        input2 = """
+        op(OP, (arg1 -- out1, out2)) {
+        }
+        """
+        output = """
+        """
+        with self.assertRaisesRegex(SyntaxError,
+                                    "Must have the same number of outputs"):
+            self.run_cases_test(input, input2, output)
+
+    def test_validate_uop_input_name_mismatch(self):
+        input = """
+        op(OP, (foo -- out)) {
+            SPAM();
+        }
+        """
+        input2 = """
+        op(OP, (bar -- out)) {
+        }
+        """
+        output = """
+        """
+        with self.assertRaisesRegex(SyntaxError,
+                                    "Inputs must have equal names"):
+            self.run_cases_test(input, input2, output)
+
+    def test_validate_uop_output_name_mismatch(self):
+        input = """
+        op(OP, (arg1 -- foo)) {
+            SPAM();
+        }
+        """
+        input2 = """
+        op(OP, (arg1 -- bar)) {
+        }
+        """
+        output = """
+        """
+        with self.assertRaisesRegex(SyntaxError,
+                                    "Outputs must have equal names"):
+            self.run_cases_test(input, input2, output)
+
+    def test_validate_uop_unused_input(self):
+        input = """
+        op(OP, (unused -- )) {
+        }
+        """
+        input2 = """
+        op(OP, (foo -- )) {
+        }
+        """
+        output = """
+        case OP: {
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+        """
+        self.run_cases_test(input, input2, output)
+
+        input = """
+        op(OP, (foo -- )) {
+        }
+        """
+        input2 = """
+        op(OP, (unused -- )) {
+        }
+        """
+        output = """
+        case OP: {
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+        """
+        self.run_cases_test(input, input2, output)
+
+    def test_validate_uop_unused_output(self):
+        input = """
+        op(OP, ( -- unused)) {
+        }
+        """
+        input2 = """
+        op(OP, ( -- foo)) {
+            foo = NULL;
+        }
+        """
+        output = """
+        case OP: {
+            JitOptRef foo;
+            foo = NULL;
+            stack_pointer[0] = foo;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+        """
+        self.run_cases_test(input, input2, output)
+
+        input = """
+        op(OP, ( -- foo)) {
+            foo = NULL;
+        }
+        """
+        input2 = """
+        op(OP, ( -- unused)) {
+        }
+        """
+        output = """
+        case OP: {
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+        """
+        self.run_cases_test(input, input2, output)
+
+    def test_validate_uop_input_size_mismatch(self):
+        input = """
+        op(OP, (arg1[2] -- )) {
+        }
+        """
+        input2 = """
+        op(OP, (arg1[4] -- )) {
+        }
+        """
+        output = """
+        """
+        with self.assertRaisesRegex(SyntaxError,
+                                    "Inputs must have equal sizes"):
+            self.run_cases_test(input, input2, output)
+
+    def test_validate_uop_output_size_mismatch(self):
+        input = """
+        op(OP, ( -- out[2])) {
+        }
+        """
+        input2 = """
+        op(OP, ( -- out[4])) {
+        }
+        """
+        output = """
+        """
+        with self.assertRaisesRegex(SyntaxError,
+                                    "Outputs must have equal sizes"):
+            self.run_cases_test(input, input2, output)
+
+    def test_validate_uop_unused_size_mismatch(self):
+        input = """
+        op(OP, (foo[2] -- )) {
+        }
+        """
+        input2 = """
+        op(OP, (unused[4] -- )) {
+        }
+        """
+        output = """
+        """
+        with self.assertRaisesRegex(SyntaxError,
+                                    "Inputs must have equal sizes"):
+            self.run_cases_test(input, input2, output)
+
+    def test_pure_uop_body_copied_in(self):
+        # Note: any non-escaping call works.
+        # In this case, we use PyStackRef_IsNone.
+        input = """
+        pure op(OP, (foo -- res)) {
+            res = PyStackRef_IsNone(foo);
+        }
+        """
+        input2 = """
+        op(OP, (foo -- res)) {
+            REPLACE_OPCODE_IF_EVALUATES_PURE(foo);
+            res = sym_new_known(ctx, foo);
+        }
+        """
+        output = """
+        case OP: {
+            JitOptRef foo;
+            JitOptRef res;
+            foo = stack_pointer[-1];
+            if (
+                sym_is_safe_const(ctx, foo)
+            ) {
+                JitOptRef foo_sym = foo;
+                _PyStackRef foo = sym_get_const_as_stackref(ctx, foo_sym);
+                _PyStackRef res_stackref;
+                /* Start of uop copied from bytecodes for constant evaluation */
+                res_stackref = PyStackRef_IsNone(foo);
+                /* End of uop copied from bytecodes for constant evaluation */
+                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
+                stack_pointer[-1] = res;
+                break;
+            }
+            res = sym_new_known(ctx, foo);
+            stack_pointer[-1] = res;
+            break;
+        }
+        """
+        self.run_cases_test(input, input2, output)
+
+    def test_pure_uop_body_copied_in_deopt(self):
+        # Note: any non-escaping call works.
+        # In this case, we use PyStackRef_IsNone.
+        input = """
+        pure op(OP, (foo -- res)) {
+            DEOPT_IF(PyStackRef_IsNull(foo));
+            res = foo;
+        }
+        """
+        input2 = """
+        op(OP, (foo -- res)) {
+            REPLACE_OPCODE_IF_EVALUATES_PURE(foo);
+            res = foo;
+        }
+        """
+        output = """
+        case OP: {
+            JitOptRef foo;
+            JitOptRef res;
+            foo = stack_pointer[-1];
+            if (
+                sym_is_safe_const(ctx, foo)
+            ) {
+                JitOptRef foo_sym = foo;
+                _PyStackRef foo = sym_get_const_as_stackref(ctx, foo_sym);
+                _PyStackRef res_stackref;
+                /* Start of uop copied from bytecodes for constant evaluation */
+                if (PyStackRef_IsNull(foo)) {
+                    ctx->done = true;
+                    break;
+                }
+                res_stackref = foo;
+                /* End of uop copied from bytecodes for constant evaluation */
+                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
+                stack_pointer[-1] = res;
+                break;
+            }
+            res = foo;
+            stack_pointer[-1] = res;
+            break;
+        }
+        """
+        self.run_cases_test(input, input2, output)
+
+    def test_pure_uop_body_copied_in_error_if(self):
+        # Note: any non-escaping call works.
+        # In this case, we use PyStackRef_IsNone.
+        input = """
+        pure op(OP, (foo -- res)) {
+            ERROR_IF(PyStackRef_IsNull(foo));
+            res = foo;
+        }
+        """
+        input2 = """
+        op(OP, (foo -- res)) {
+            REPLACE_OPCODE_IF_EVALUATES_PURE(foo);
+            res = foo;
+        }
+        """
+        output = """
+        case OP: {
+            JitOptRef foo;
+            JitOptRef res;
+            foo = stack_pointer[-1];
+            if (
+                sym_is_safe_const(ctx, foo)
+            ) {
+                JitOptRef foo_sym = foo;
+                _PyStackRef foo = sym_get_const_as_stackref(ctx, foo_sym);
+                _PyStackRef res_stackref;
+                /* Start of uop copied from bytecodes for constant evaluation */
+                if (PyStackRef_IsNull(foo)) {
+                    goto error;
+                }
+                res_stackref = foo;
+                /* End of uop copied from bytecodes for constant evaluation */
+                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
+                stack_pointer[-1] = res;
+                break;
+            }
+            res = foo;
+            stack_pointer[-1] = res;
+            break;
+        }
+        """
+        self.run_cases_test(input, input2, output)
+
+
+    def test_replace_opcode_uop_body_copied_in_complex(self):
+        input = """
+        pure op(OP, (foo -- res)) {
+            if (foo) {
+                res = PyStackRef_IsNone(foo);
+            }
+            else {
+                res = 1;
+            }
+        }
+        """
+        input2 = """
+        op(OP, (foo -- res)) {
+            REPLACE_OPCODE_IF_EVALUATES_PURE(foo);
+            res = sym_new_known(ctx, foo);
+        }
+        """
+        output = """
+        case OP: {
+            JitOptRef foo;
+            JitOptRef res;
+            foo = stack_pointer[-1];
+            if (
+                sym_is_safe_const(ctx, foo)
+            ) {
+                JitOptRef foo_sym = foo;
+                _PyStackRef foo = sym_get_const_as_stackref(ctx, foo_sym);
+                _PyStackRef res_stackref;
+                /* Start of uop copied from bytecodes for constant evaluation */
+                if (foo) {
+                    res_stackref = PyStackRef_IsNone(foo);
+                }
+                else {
+                    res_stackref = 1;
+                }
+                /* End of uop copied from bytecodes for constant evaluation */
+                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
+                stack_pointer[-1] = res;
+                break;
+            }
+            res = sym_new_known(ctx, foo);
+            stack_pointer[-1] = res;
+            break;
+        }
+        """
+        self.run_cases_test(input, input2, output)
+
+    def test_replace_opcode_escaping_uop_body_copied_in_complex(self):
+        input = """
+        pure op(OP, (foo -- res)) {
+            if (foo) {
+                res = ESCAPING_CODE(foo);
+            }
+            else {
+                res = 1;
+            }
+        }
+        """
+        input2 = """
+        op(OP, (foo -- res)) {
+            REPLACE_OPCODE_IF_EVALUATES_PURE(foo);
+            res = sym_new_known(ctx, foo);
+        }
+        """
+        output = """
+        case OP: {
+            JitOptRef foo;
+            JitOptRef res;
+            foo = stack_pointer[-1];
+            if (
+                sym_is_safe_const(ctx, foo)
+            ) {
+                JitOptRef foo_sym = foo;
+                _PyStackRef foo = sym_get_const_as_stackref(ctx, foo_sym);
+                _PyStackRef res_stackref;
+                /* Start of uop copied from bytecodes for constant evaluation */
+                if (foo) {
+                    res_stackref = ESCAPING_CODE(foo);
+                }
+                else {
+                    res_stackref = 1;
+                }
+                /* End of uop copied from bytecodes for constant evaluation */
+                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
+                stack_pointer[-1] = res;
+                break;
+            }
+            res = sym_new_known(ctx, foo);
+            stack_pointer[-1] = res;
+            break;
+        }
+        """
+        self.run_cases_test(input, input2, output)
+
+    def test_replace_opocode_uop_reject_array_effects(self):
+        input = """
+        pure op(OP, (foo[2] -- res)) {
+            if (foo) {
+                res = PyStackRef_IsNone(foo);
+            }
+            else {
+                res = 1;
+            }
+        }
+        """
+        input2 = """
+        op(OP, (foo[2] -- res)) {
+            REPLACE_OPCODE_IF_EVALUATES_PURE(foo);
+            res = sym_new_unknown(ctx);
+        }
+        """
+        output = """
+        """
+        with self.assertRaisesRegex(SyntaxError,
+                                    "Pure evaluation cannot take array-like inputs"):
+            self.run_cases_test(input, input2, output)
 
 if __name__ == "__main__":
     unittest.main()

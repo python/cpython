@@ -297,7 +297,7 @@ Distribution files
    package is not installed in the current Python environment.
 
    Returns :const:`None` if the distribution is found but the installation
-   database records reporting the files associated with the distribuion package
+   database records reporting the files associated with the distribution package
    are missing.
 
 .. class:: PackagePath
@@ -422,7 +422,7 @@ While the module level API described above is the most common and convenient usa
 you can get all of that information from the :class:`!Distribution` class.
 :class:`!Distribution` is an abstract object that represents the metadata for
 a Python `Distribution Package <https://packaging.python.org/en/latest/glossary/#term-Distribution-Package>`_.
-You can get the concreate :class:`!Distribution` subclass instance for an installed
+You can get the concrete :class:`!Distribution` subclass instance for an installed
 distribution package by calling the :func:`distribution` function::
 
     >>> from importlib.metadata import distribution  # doctest: +SKIP

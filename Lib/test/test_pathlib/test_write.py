@@ -4,14 +4,19 @@ Tests for pathlib.types._WritablePath
 
 import io
 import os
+import sys
 import unittest
 
-from pathlib import Path
-from pathlib.types import _WritablePath
-from pathlib._os import magic_open
+from .support import is_pypi
+from .support.local_path import WritableLocalPath, LocalPathGround
+from .support.zip_path import WritableZipPath, ZipPathGround
 
-from test.test_pathlib.support.local_path import WritableLocalPath, LocalPathGround
-from test.test_pathlib.support.zip_path import WritableZipPath, ZipPathGround
+if is_pypi:
+    from pathlib_abc import _WritablePath
+    from pathlib_abc._os import magic_open
+else:
+    from pathlib.types import _WritablePath
+    from pathlib._os import magic_open
 
 
 class WriteTestBase:
@@ -26,10 +31,21 @@ class WriteTestBase:
 
     def test_open_w(self):
         p = self.root / 'fileA'
-        with magic_open(p, 'w') as f:
+        with magic_open(p, 'w', encoding='utf-8') as f:
             self.assertIsInstance(f, io.TextIOBase)
             f.write('this is file A\n')
         self.assertEqual(self.ground.readtext(p), 'this is file A\n')
+
+    @unittest.skipIf(
+        not getattr(sys.flags, 'warn_default_encoding', 0),
+        "Requires warn_default_encoding",
+    )
+    def test_open_w_encoding_warning(self):
+        p = self.root / 'fileA'
+        with self.assertWarns(EncodingWarning) as wc:
+            with magic_open(p, 'w'):
+                pass
+        self.assertEqual(wc.filename, __file__)
 
     def test_open_wb(self):
         p = self.root / 'fileA'
@@ -37,6 +53,9 @@ class WriteTestBase:
             #self.assertIsInstance(f, io.BufferedWriter)
             f.write(b'this is file A\n')
         self.assertEqual(self.ground.readbytes(p), b'this is file A\n')
+        self.assertRaises(ValueError, magic_open, p, 'wb', encoding='utf8')
+        self.assertRaises(ValueError, magic_open, p, 'wb', errors='strict')
+        self.assertRaises(ValueError, magic_open, p, 'wb', newline='')
 
     def test_write_bytes(self):
         p = self.root / 'fileA'
@@ -51,29 +70,39 @@ class WriteTestBase:
         p.write_text('äbcdefg', encoding='latin-1')
         self.assertEqual(self.ground.readbytes(p), b'\xe4bcdefg')
         # Check that trying to write bytes does not truncate the file.
-        self.assertRaises(TypeError, p.write_text, b'somebytes')
+        self.assertRaises(TypeError, p.write_text, b'somebytes', encoding='utf-8')
         self.assertEqual(self.ground.readbytes(p), b'\xe4bcdefg')
+
+    @unittest.skipIf(
+        not getattr(sys.flags, 'warn_default_encoding', 0),
+        "Requires warn_default_encoding",
+    )
+    def test_write_text_encoding_warning(self):
+        p = self.root / 'fileA'
+        with self.assertWarns(EncodingWarning) as wc:
+            p.write_text('abcdefg')
+        self.assertEqual(wc.filename, __file__)
 
     def test_write_text_with_newlines(self):
         # Check that `\n` character change nothing
         p = self.root / 'fileA'
-        p.write_text('abcde\r\nfghlk\n\rmnopq', newline='\n')
+        p.write_text('abcde\r\nfghlk\n\rmnopq', encoding='utf-8', newline='\n')
         self.assertEqual(self.ground.readbytes(p), b'abcde\r\nfghlk\n\rmnopq')
 
         # Check that `\r` character replaces `\n`
         p = self.root / 'fileB'
-        p.write_text('abcde\r\nfghlk\n\rmnopq', newline='\r')
+        p.write_text('abcde\r\nfghlk\n\rmnopq', encoding='utf-8', newline='\r')
         self.assertEqual(self.ground.readbytes(p), b'abcde\r\rfghlk\r\rmnopq')
 
         # Check that `\r\n` character replaces `\n`
         p = self.root / 'fileC'
-        p.write_text('abcde\r\nfghlk\n\rmnopq', newline='\r\n')
+        p.write_text('abcde\r\nfghlk\n\rmnopq', encoding='utf-8', newline='\r\n')
         self.assertEqual(self.ground.readbytes(p), b'abcde\r\r\nfghlk\r\n\rmnopq')
 
         # Check that no argument passed will change `\n` to `os.linesep`
         os_linesep_byte = bytes(os.linesep, encoding='ascii')
         p = self.root / 'fileD'
-        p.write_text('abcde\nfghlk\n\rmnopq')
+        p.write_text('abcde\nfghlk\n\rmnopq', encoding='utf-8')
         self.assertEqual(self.ground.readbytes(p),
                          b'abcde' + os_linesep_byte +
                          b'fghlk' + os_linesep_byte + b'\rmnopq')
@@ -101,8 +130,11 @@ class LocalPathWriteTest(WriteTestBase, unittest.TestCase):
     ground = LocalPathGround(WritableLocalPath)
 
 
-class PathWriteTest(WriteTestBase, unittest.TestCase):
-    ground = LocalPathGround(Path)
+if not is_pypi:
+    from pathlib import Path
+
+    class PathWriteTest(WriteTestBase, unittest.TestCase):
+        ground = LocalPathGround(Path)
 
 
 if __name__ == "__main__":

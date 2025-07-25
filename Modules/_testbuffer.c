@@ -1586,8 +1586,9 @@ ptr_from_index(Py_buffer *base, Py_ssize_t index)
 }
 
 static PyObject *
-ndarray_item(NDArrayObject *self, Py_ssize_t index)
+ndarray_item(PyObject *op, Py_ssize_t index)
 {
+    NDArrayObject *self = (NDArrayObject *)op;
     ndbuf_t *ndbuf = self->head;
     Py_buffer *base = &ndbuf->base;
     char *ptr;
@@ -1801,7 +1802,7 @@ ndarray_subscript(PyObject *op, PyObject *key)
         Py_ssize_t index = PyLong_AsSsize_t(key);
         if (index == -1 && PyErr_Occurred())
             return NULL;
-        return ndarray_item(self, index);
+        return ndarray_item(op, index);
     }
 
     nd = (NDArrayObject *)ndarray_new(&NDArray_Type, NULL, NULL);
@@ -1854,8 +1855,7 @@ ndarray_subscript(PyObject *op, PyObject *key)
 
 type_error:
     PyErr_Format(PyExc_TypeError,
-        "cannot index memory using \"%.200s\"",
-        Py_TYPE(key)->tp_name);
+        "cannot index memory using \"%T\"", key);
 err_occurred:
     Py_DECREF(nd);
     return NULL;
@@ -1966,10 +1966,10 @@ static PyMappingMethods ndarray_as_mapping = {
 };
 
 static PySequenceMethods ndarray_as_sequence = {
-        0,                                /* sq_length */
-        0,                                /* sq_concat */
-        0,                                /* sq_repeat */
-        (ssizeargfunc)ndarray_item,       /* sq_item */
+    0,              /* sq_length */
+    0,              /* sq_concat */
+    0,              /* sq_repeat */
+    ndarray_item,   /* sq_item */
 };
 
 
@@ -2742,7 +2742,7 @@ staticarray_init(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 static void
-staticarray_dealloc(StaticArrayObject *self)
+staticarray_dealloc(PyObject *self)
 {
     PyObject_Free(self);
 }
@@ -2750,8 +2750,9 @@ staticarray_dealloc(StaticArrayObject *self)
 /* Return a buffer for a PyBUF_FULL_RO request. Flags are not checked,
    which makes this object a non-compliant exporter! */
 static int
-staticarray_getbuf(StaticArrayObject *self, Py_buffer *view, int flags)
+staticarray_getbuf(PyObject *op, Py_buffer *view, int flags)
 {
+    StaticArrayObject *self = (StaticArrayObject *)op;
     *view = static_buffer;
 
     if (self->legacy_mode) {
@@ -2765,7 +2766,7 @@ staticarray_getbuf(StaticArrayObject *self, Py_buffer *view, int flags)
 }
 
 static PyBufferProcs staticarray_as_buffer = {
-    (getbufferproc)staticarray_getbuf, /* bf_getbuffer */
+    staticarray_getbuf,                /* bf_getbuffer */
     NULL,                              /* bf_releasebuffer */
 };
 
@@ -2774,7 +2775,7 @@ static PyTypeObject StaticArray_Type = {
     "staticarray",                   /* Name of this type */
     sizeof(StaticArrayObject),       /* Basic object size */
     0,                               /* Item size for varobject */
-    (destructor)staticarray_dealloc, /* tp_dealloc */
+    staticarray_dealloc,             /* tp_dealloc */
     0,                               /* tp_vectorcall_offset */
     0,                               /* tp_getattr */
     0,                               /* tp_setattr */

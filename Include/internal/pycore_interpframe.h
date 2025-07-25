@@ -1,7 +1,3 @@
-/* See InternalDocs/frames.md for an explanation of the frame stack
- * including explanation of the PyFrameObject and _PyInterpreterFrame
- * structs. */
-
 #ifndef Py_INTERNAL_INTERP_FRAME_H
 #define Py_INTERNAL_INTERP_FRAME_H
 
@@ -10,53 +6,19 @@
 #endif
 
 #include "pycore_code.h"          // _PyCode_CODE()
-#include "pycore_structs.h"       // _PyStackRef
+#include "pycore_interpframe_structs.h" // _PyInterpreterFrame
 #include "pycore_stackref.h"      // PyStackRef_AsPyObjectBorrow()
-#include "pycore_typedefs.h"      // _PyInterpreterFrame
-
+#include "pycore_stats.h"         // CALL_STAT_INC()
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-enum _frameowner {
-    FRAME_OWNED_BY_THREAD = 0,
-    FRAME_OWNED_BY_GENERATOR = 1,
-    FRAME_OWNED_BY_FRAME_OBJECT = 2,
-    FRAME_OWNED_BY_INTERPRETER = 3,
-    FRAME_OWNED_BY_CSTACK = 4,
-};
-
-struct _PyInterpreterFrame {
-    _PyStackRef f_executable; /* Deferred or strong reference (code object or None) */
-    struct _PyInterpreterFrame *previous;
-    _PyStackRef f_funcobj; /* Deferred or strong reference. Only valid if not on C stack */
-    PyObject *f_globals; /* Borrowed reference. Only valid if not on C stack */
-    PyObject *f_builtins; /* Borrowed reference. Only valid if not on C stack */
-    PyObject *f_locals; /* Strong reference, may be NULL. Only valid if not on C stack */
-    PyFrameObject *frame_obj; /* Strong reference, may be NULL. Only valid if not on C stack */
-    _Py_CODEUNIT *instr_ptr; /* Instruction currently executing (or about to begin) */
-    _PyStackRef *stackpointer;
-#ifdef Py_GIL_DISABLED
-    /* Index of thread-local bytecode containing instr_ptr. */
-    int32_t tlbc_index;
-#endif
-    uint16_t return_offset;  /* Only relevant during a function call */
-    char owner;
-#ifdef Py_DEBUG
-    uint8_t visited:1;
-    uint8_t lltrace:7;
-#else
-    uint8_t visited;
-#endif
-    /* Locals and stack */
-    _PyStackRef localsplus[1];
-};
-
 #define _PyInterpreterFrame_LASTI(IF) \
     ((int)((IF)->instr_ptr - _PyFrame_GetBytecode((IF))))
 
 static inline PyCodeObject *_PyFrame_GetCode(_PyInterpreterFrame *f) {
+    assert(!PyStackRef_IsNull(f->f_executable));
     PyObject *executable = PyStackRef_AsPyObjectBorrow(f->f_executable);
     assert(PyCode_Check(executable));
     return (PyCodeObject *)executable;
@@ -86,13 +48,13 @@ static inline _PyStackRef *_PyFrame_Stackbase(_PyInterpreterFrame *f) {
 }
 
 static inline _PyStackRef _PyFrame_StackPeek(_PyInterpreterFrame *f) {
-    assert(f->stackpointer >  f->localsplus + _PyFrame_GetCode(f)->co_nlocalsplus);
+    assert(f->stackpointer > _PyFrame_Stackbase(f));
     assert(!PyStackRef_IsNull(f->stackpointer[-1]));
     return f->stackpointer[-1];
 }
 
 static inline _PyStackRef _PyFrame_StackPop(_PyInterpreterFrame *f) {
-    assert(f->stackpointer >  f->localsplus + _PyFrame_GetCode(f)->co_nlocalsplus);
+    assert(f->stackpointer > _PyFrame_Stackbase(f));
     f->stackpointer--;
     return *f->stackpointer;
 }
@@ -202,15 +164,17 @@ _PyFrame_GetLocalsArray(_PyInterpreterFrame *frame)
     return frame->localsplus;
 }
 
-/* Fetches the stack pointer, and sets stackpointer to NULL.
-   Having stackpointer == NULL ensures that invalid
-   values are not visible to the cycle GC. */
+// Fetches the stack pointer, and (on debug builds) sets stackpointer to NULL.
+// Having stackpointer == NULL makes it easier to catch missing stack pointer
+// spills/restores (which could expose invalid values to the GC) using asserts.
 static inline _PyStackRef*
 _PyFrame_GetStackPointer(_PyInterpreterFrame *frame)
 {
     assert(frame->stackpointer != NULL);
     _PyStackRef *sp = frame->stackpointer;
+#ifndef NDEBUG
     frame->stackpointer = NULL;
+#endif
     return sp;
 }
 
@@ -228,8 +192,11 @@ _PyFrame_SetStackPointer(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer)
  * Frames on the frame stack are incomplete until the
  * first RESUME instruction.
  * Frames owned by a generator are always complete.
+ *
+ * NOTE: We allow racy accesses to the instruction pointer
+ * from other threads for sys._current_frames() and similar APIs.
  */
-static inline bool
+static inline bool _Py_NO_SANITIZE_THREAD
 _PyFrame_IsIncomplete(_PyInterpreterFrame *frame)
 {
     if (frame->owner >= FRAME_OWNED_BY_INTERPRETER) {

@@ -306,7 +306,7 @@ class CAPITest(unittest.TestCase):
                     CURRENT_THREAD_REGEX +
                     r'  File .*, line 6 in <module>\n'
                     r'\n'
-                    r'Extension modules: _testcapi, _testinternalcapi \(total: 2\)\n')
+                    r'Extension modules: _testcapi \(total: 1\)\n')
         else:
             # Python built with NDEBUG macro defined:
             # test _Py_CheckFunctionResult() instead.
@@ -412,10 +412,14 @@ class CAPITest(unittest.TestCase):
             L = MyList((L,))
 
     @support.requires_resource('cpu')
+    @support.skip_emscripten_stack_overflow()
+    @support.skip_wasi_stack_overflow()
     def test_trashcan_python_class1(self):
         self.do_test_trashcan_python_class(list)
 
     @support.requires_resource('cpu')
+    @support.skip_emscripten_stack_overflow()
+    @support.skip_wasi_stack_overflow()
     def test_trashcan_python_class2(self):
         from _testcapi import MyList
         self.do_test_trashcan_python_class(MyList)
@@ -1411,6 +1415,7 @@ class TestPendingCalls(unittest.TestCase):
                 self.assertNotIn(task.requester_tid, runner_tids)
 
     @requires_subinterpreters
+    @support.skip_if_sanitizer("gh-129824: race on assign_version_tag", thread=True)
     def test_isolated_subinterpreter(self):
         # We exercise the most important permutations.
 
