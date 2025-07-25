@@ -60,7 +60,7 @@ but some operations may not account for daylight saving time transitions as expe
     performed in local (naive) time.
 
     To perform arithmetic that accounts for time zone transitions,
-    convert the datetime object to UTC with :meth:`datetime.astimezone`,
+    convert the datetime object to UTC with :meth:`~datetime.datetime.astimezone`,
     perform the arithmetic, and convert the result back to the local time zone.
 
 .. code-block:: pycon
