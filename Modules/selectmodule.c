@@ -1133,7 +1133,7 @@ newDevPollObject(PyObject *module)
     struct rlimit limit;
 
     /*
-    ** If we try to process more that getrlimit()
+    ** If we try to process more than getrlimit()
     ** fds, the kernel will give an error, so
     ** we set the limit here. It is a dynamic
     ** value, because we can change rlimit() anytime.
@@ -1142,6 +1142,15 @@ newDevPollObject(PyObject *module)
     if (limit_result == -1) {
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
+    }
+
+    /*
+    ** If the limit is too high (or RLIM_INFINITY), we might allocate huge
+    ** amounts of memory (or even fail to allocate). Because of that, we limit
+    ** the number of allocated structs to 2^18 (which is ~4MB of memory).
+    */
+    if (limit.rlim_cur > (rlim_t)262144) {
+        limit.rlim_cur = (rlim_t)262144;
     }
 
     fd_devpoll = _Py_open("/dev/poll", O_RDWR);
