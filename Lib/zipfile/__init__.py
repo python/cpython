@@ -1372,7 +1372,7 @@ class ZipFile:
     """ Class with methods to open, read, write, close, list zip files.
 
     z = ZipFile(file, mode="r", compression=ZIP_STORED, allowZip64=True,
-                compresslevel=None, _ZipInfo=ZipInfo, _ZipExtFile=ZipExtFile)
+                compresslevel=None, zipinfo_class=ZipInfo, zipextfile_class=ZipExtFile)
 
     file: Either the path to the file, or a file-like object.
           If it is a path, the file will be opened and closed by ZipFile.
@@ -1392,7 +1392,14 @@ class ZipFile:
                    When using ZIP_ZSTANDARD integers -7 though 22 are common,
                    see the CompressionParameter enum in compression.zstd for
                    details.
-    _ZipInfo: A class that can replace ZipInfo. This is designed to help extend
+    zipinfo_class: A class that can replace ZipInfo. This is designed to help
+                   extend ZipFile.
+                   For example, to implement other encryption or compression
+                   methods.
+    zipextfile_class: A class that can replace ZipExtFile. This is designed to
+                      help extend ZipFile.
+                      For example to implement other encryption or compression
+                      methods.
               ZipFile, for example to implement other encryption or compression
               methods.
               This is private as there is no commitemnt to maintain backward
@@ -1409,15 +1416,15 @@ class ZipFile:
 
     def __init__(self, file, mode="r", compression=ZIP_STORED, allowZip64=True,
                  compresslevel=None, *, strict_timestamps=True, metadata_encoding=None,
-                 _ZipInfo=ZipInfo, _ZipExtFile=ZipExtFile):
+                 zipinfo_class=ZipInfo, zipextfile_class=ZipExtFile):
         """Open the ZIP file with mode read 'r', write 'w', exclusive create 'x',
         or append 'a'."""
         if mode not in ('r', 'w', 'x', 'a'):
             raise ValueError("ZipFile requires mode 'r', 'w', 'x', or 'a'")
 
         _check_compression(compression)
-        self._ZipInfo = _ZipInfo
-        self._ZipExtFile = _ZipExtFile
+        self._ZipInfo = zipinfo_class
+        self._ZipExtFile = zipextfile_class
         self._allowZip64 = allowZip64
         self._didModify = False
         self.debug = 0  # Level of printing: 0 through 3
