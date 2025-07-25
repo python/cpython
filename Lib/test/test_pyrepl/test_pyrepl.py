@@ -8,10 +8,11 @@ import select
 import subprocess
 import sys
 import tempfile
-from unittest import TestCase, skipUnless, skipIf
+from pkgutil import ModuleInfo
+from unittest import TestCase, skipUnless, skipIf, SkipTest
 from unittest.mock import patch
 from test.support import force_not_colorized, make_clean_env, Py_DEBUG
-from test.support import SHORT_TIMEOUT, STDLIB_DIR
+from test.support import has_subprocess_support, SHORT_TIMEOUT, STDLIB_DIR
 from test.support.import_helper import import_module
 from test.support.os_helper import EnvironmentVarGuard, unlink
 
@@ -37,6 +38,10 @@ except ImportError:
 
 
 class ReplTestCase(TestCase):
+    def setUp(self):
+        if not has_subprocess_support:
+            raise SkipTest("test module requires subprocess")
+
     def run_repl(
         self,
         repl_input: str | list[str],
@@ -917,7 +922,14 @@ class TestPyReplCompleter(TestCase):
 
 class TestPyReplModuleCompleter(TestCase):
     def setUp(self):
+        import importlib
+        # Make iter_modules() search only the standard library.
+        # This makes the test more reliable in case there are
+        # other user packages/scripts on PYTHONPATH which can
+        # interfere with the completions.
+        lib_path = os.path.dirname(importlib.__path__[0])
         self._saved_sys_path = sys.path
+        sys.path = [lib_path]
 
     def tearDown(self):
         sys.path = self._saved_sys_path
@@ -925,19 +937,12 @@ class TestPyReplModuleCompleter(TestCase):
     def prepare_reader(self, events, namespace):
         console = FakeConsole(events)
         config = ReadlineConfig()
+        config.module_completer = ModuleCompleter(namespace)
         config.readline_completer = rlcompleter.Completer(namespace).complete
         reader = ReadlineAlikeReader(console=console, config=config)
         return reader
 
     def test_import_completions(self):
-        import importlib
-        # Make iter_modules() search only the standard library.
-        # This makes the test more reliable in case there are
-        # other user packages/scripts on PYTHONPATH which can
-        # intefere with the completions.
-        lib_path = os.path.dirname(importlib.__path__[0])
-        sys.path = [lib_path]
-
         cases = (
             ("import path\t\n", "import pathlib"),
             ("import importlib.\t\tres\t\n", "import importlib.resources"),
@@ -959,10 +964,17 @@ class TestPyReplModuleCompleter(TestCase):
                 output = reader.readline()
                 self.assertEqual(output, expected)
 
-    def test_relative_import_completions(self):
+    @patch("pkgutil.iter_modules", lambda: [ModuleInfo(None, "public", True),
+                                            ModuleInfo(None, "_private", True)])
+    @patch("sys.builtin_module_names", ())
+    def test_private_completions(self):
         cases = (
-            ("from .readl\t\n", "from .readline"),
-            ("from . import readl\t\n", "from . import readline"),
+            # Return public methods by default
+            ("import \t\n", "import public"),
+            ("from \t\n", "from public"),
+            # Return private methods if explicitly specified
+            ("import _\t\n", "import _private"),
+            ("from _\t\n", "from _private"),
         )
         for code, expected in cases:
             with self.subTest(code=code):
@@ -971,8 +983,63 @@ class TestPyReplModuleCompleter(TestCase):
                 output = reader.readline()
                 self.assertEqual(output, expected)
 
-    @patch("pkgutil.iter_modules", lambda: [(None, 'valid_name', None),
-                                            (None, 'invalid-name', None)])
+    @patch(
+        "_pyrepl._module_completer.ModuleCompleter.iter_submodules",
+        lambda *_: [
+            ModuleInfo(None, "public", True),
+            ModuleInfo(None, "_private", True),
+        ],
+    )
+    def test_sub_module_private_completions(self):
+        cases = (
+            # Return public methods by default
+            ("from foo import \t\n", "from foo import public"),
+            # Return private methods if explicitly specified
+            ("from foo import _\t\n", "from foo import _private"),
+        )
+        for code, expected in cases:
+            with self.subTest(code=code):
+                events = code_to_events(code)
+                reader = self.prepare_reader(events, namespace={})
+                output = reader.readline()
+                self.assertEqual(output, expected)
+
+    def test_builtin_completion_top_level(self):
+        import importlib
+        # Make iter_modules() search only the standard library.
+        # This makes the test more reliable in case there are
+        # other user packages/scripts on PYTHONPATH which can
+        # intefere with the completions.
+        lib_path = os.path.dirname(importlib.__path__[0])
+        sys.path = [lib_path]
+
+        cases = (
+            ("import bui\t\n", "import builtins"),
+            ("from bui\t\n", "from builtins"),
+        )
+        for code, expected in cases:
+            with self.subTest(code=code):
+                events = code_to_events(code)
+                reader = self.prepare_reader(events, namespace={})
+                output = reader.readline()
+                self.assertEqual(output, expected)
+
+    def test_relative_import_completions(self):
+        cases = (
+            (None, "from .readl\t\n", "from .readl"),
+            (None, "from . import readl\t\n", "from . import readl"),
+            ("_pyrepl", "from .readl\t\n", "from .readline"),
+            ("_pyrepl", "from . import readl\t\n", "from . import readline"),
+        )
+        for package, code, expected in cases:
+            with self.subTest(code=code):
+                events = code_to_events(code)
+                reader = self.prepare_reader(events, namespace={"__package__": package})
+                output = reader.readline()
+                self.assertEqual(output, expected)
+
+    @patch("pkgutil.iter_modules", lambda: [ModuleInfo(None, "valid_name", True),
+                                            ModuleInfo(None, "invalid-name", True)])
     def test_invalid_identifiers(self):
         # Make sure modules which are not valid identifiers
         # are not suggested as those cannot be imported via 'import'.
@@ -980,6 +1047,19 @@ class TestPyReplModuleCompleter(TestCase):
             ("import valid\t\n", "import valid_name"),
             # 'invalid-name' contains a dash and should not be completed
             ("import invalid\t\n", "import invalid"),
+        )
+        for code, expected in cases:
+            with self.subTest(code=code):
+                events = code_to_events(code)
+                reader = self.prepare_reader(events, namespace={})
+                output = reader.readline()
+                self.assertEqual(output, expected)
+
+    def test_no_fallback_on_regular_completion(self):
+        cases = (
+            ("import pri\t\n", "import pri"),
+            ("from pri\t\n", "from pri"),
+            ("from typing import Na\t\n", "from typing import Na"),
         )
         for code, expected in cases:
             with self.subTest(code=code):
@@ -1295,6 +1375,7 @@ class TestMain(ReplTestCase):
         # Cleanup from PYTHON* variables to isolate from local
         # user settings, see #121359.  Such variables should be
         # added later in test methods to patched os.environ.
+        super().setUp()
         patcher = patch('os.environ', new=make_clean_env())
         self.addCleanup(patcher.stop)
         patcher.start()
@@ -1336,7 +1417,7 @@ class TestMain(ReplTestCase):
             )
 
     @force_not_colorized
-    def _run_repl_globals_test(self, expectations, *, as_file=False, as_module=False):
+    def _run_repl_globals_test(self, expectations, *, as_file=False, as_module=False, pythonstartup=False):
         clean_env = make_clean_env()
         clean_env["NO_COLOR"] = "1"  # force_not_colorized doesn't touch subprocesses
 
@@ -1345,9 +1426,13 @@ class TestMain(ReplTestCase):
             blue.mkdir()
             mod = blue / "calx.py"
             mod.write_text("FOO = 42", encoding="utf-8")
+            startup = blue / "startup.py"
+            startup.write_text("BAR = 64", encoding="utf-8")
             commands = [
                 "print(f'^{" + var + "=}')" for var in expectations
             ] + ["exit()"]
+            if pythonstartup:
+                clean_env["PYTHONSTARTUP"] = str(startup)
             if as_file and as_module:
                 self.fail("as_file and as_module are mutually exclusive")
             elif as_file:
@@ -1366,7 +1451,13 @@ class TestMain(ReplTestCase):
                     skip=True,
                 )
             else:
-                self.fail("Choose one of as_file or as_module")
+                output, exit_code = self.run_repl(
+                    commands,
+                    cmdline_args=[],
+                    env=clean_env,
+                    cwd=td,
+                    skip=True,
+                )
 
         self.assertEqual(exit_code, 0)
         for var, expected in expectations.items():
@@ -1379,6 +1470,23 @@ class TestMain(ReplTestCase):
         self.assertNotIn("Exception", output)
         self.assertNotIn("Traceback", output)
 
+    def test_globals_initialized_as_default(self):
+        expectations = {
+            "__name__": "'__main__'",
+            "__package__": "None",
+            # "__file__" is missing in -i, like in the basic REPL
+        }
+        self._run_repl_globals_test(expectations)
+
+    def test_globals_initialized_from_pythonstartup(self):
+        expectations = {
+            "BAR": "64",
+            "__name__": "'__main__'",
+            "__package__": "None",
+            # "__file__" is missing in -i, like in the basic REPL
+        }
+        self._run_repl_globals_test(expectations, pythonstartup=True)
+
     def test_inspect_keeps_globals_from_inspected_file(self):
         expectations = {
             "FOO": "42",
@@ -1387,6 +1495,16 @@ class TestMain(ReplTestCase):
             # "__file__" is missing in -i, like in the basic REPL
         }
         self._run_repl_globals_test(expectations, as_file=True)
+
+    def test_inspect_keeps_globals_from_inspected_file_with_pythonstartup(self):
+        expectations = {
+            "FOO": "42",
+            "BAR": "64",
+            "__name__": "'__main__'",
+            "__package__": "None",
+            # "__file__" is missing in -i, like in the basic REPL
+        }
+        self._run_repl_globals_test(expectations, as_file=True, pythonstartup=True)
 
     def test_inspect_keeps_globals_from_inspected_module(self):
         expectations = {
@@ -1397,26 +1515,32 @@ class TestMain(ReplTestCase):
         }
         self._run_repl_globals_test(expectations, as_module=True)
 
+    def test_inspect_keeps_globals_from_inspected_module_with_pythonstartup(self):
+        expectations = {
+            "FOO": "42",
+            "BAR": "64",
+            "__name__": "'__main__'",
+            "__package__": "'blue'",
+            "__file__": re.compile(r"^'.*calx.py'$"),
+        }
+        self._run_repl_globals_test(expectations, as_module=True, pythonstartup=True)
+
     @force_not_colorized
     def test_python_basic_repl(self):
         env = os.environ.copy()
-        commands = ("from test.support import initialized_with_pyrepl\n"
-                    "initialized_with_pyrepl()\n"
-                    "exit()\n")
-
+        pyrepl_commands = "clear\nexit()\n"
         env.pop("PYTHON_BASIC_REPL", None)
-        output, exit_code = self.run_repl(commands, env=env, skip=True)
+        output, exit_code = self.run_repl(pyrepl_commands, env=env, skip=True)
         self.assertEqual(exit_code, 0)
-        self.assertIn("True", output)
-        self.assertNotIn("False", output)
         self.assertNotIn("Exception", output)
+        self.assertNotIn("NameError", output)
         self.assertNotIn("Traceback", output)
 
+        basic_commands = "help\nexit()\n"
         env["PYTHON_BASIC_REPL"] = "1"
-        output, exit_code = self.run_repl(commands, env=env)
+        output, exit_code = self.run_repl(basic_commands, env=env)
         self.assertEqual(exit_code, 0)
-        self.assertIn("False", output)
-        self.assertNotIn("True", output)
+        self.assertIn("Type help() for interactive help", output)
         self.assertNotIn("Exception", output)
         self.assertNotIn("Traceback", output)
 
@@ -1553,6 +1677,17 @@ class TestMain(ReplTestCase):
         self.assertEqual(exit_code, 0)
         self.assertNotIn("TypeError", output)
 
+    @force_not_colorized
+    def test_non_string_suggestion_candidates(self):
+        commands = ("import runpy\n"
+                    "runpy._run_module_code('blech', {0: '', 'bluch': ''}, '')\n"
+                    "exit()\n")
+
+        output, exit_code = self.run_repl(commands)
+        self.assertEqual(exit_code, 0)
+        self.assertNotIn("all elements in 'candidates' must be strings", output)
+        self.assertIn("bluch", output)
+
     def test_readline_history_file(self):
         # skip, if readline module is not available
         readline = import_module('readline')
@@ -1627,3 +1762,14 @@ class TestMain(ReplTestCase):
         output, _ = self.run_repl("1\n1+2\nexit()\n", cmdline_args=['-Xshowrefcount'], env=env)
         matches = re.findall(r'\[-?\d+ refs, \d+ blocks\]', output)
         self.assertEqual(len(matches), 3)
+
+    def test_detect_pip_usage_in_repl(self):
+        for pip_cmd in ("pip", "pip3", "python -m pip", "python3 -m pip"):
+            with self.subTest(pip_cmd=pip_cmd):
+                output, exit_code = self.run_repl([f"{pip_cmd} install sampleproject", "exit"])
+                self.assertIn("SyntaxError", output)
+                hint = (
+                    "The Python package manager (pip) can only be used"
+                    " outside of the Python REPL"
+                )
+                self.assertIn(hint, output)

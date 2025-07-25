@@ -1991,6 +1991,25 @@ class OtherTests(unittest.TestCase):
         self.assertFalse(zipfile.is_zipfile(fp))
         fp.seek(0, 0)
         self.assertFalse(zipfile.is_zipfile(fp))
+        # - passing non-zipfile with ZIP header elements
+        # data created using pyPNG like so:
+        #  d = [(ord('P'), ord('K'), 5, 6), (ord('P'), ord('K'), 6, 6)]
+        #  w = png.Writer(1,2,alpha=True,compression=0)
+        #  f = open('onepix.png', 'wb')
+        #  w.write(f, d)
+        #  w.close()
+        data = (b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00"
+                b"\x00\x02\x08\x06\x00\x00\x00\x99\x81\xb6'\x00\x00\x00\x15I"
+                b"DATx\x01\x01\n\x00\xf5\xff\x00PK\x05\x06\x00PK\x06\x06\x07"
+                b"\xac\x01N\xc6|a\r\x00\x00\x00\x00IEND\xaeB`\x82")
+        # - passing a filename
+        with open(TESTFN, "wb") as fp:
+            fp.write(data)
+        self.assertFalse(zipfile.is_zipfile(TESTFN))
+        # - passing a file-like object
+        fp = io.BytesIO()
+        fp.write(data)
+        self.assertFalse(zipfile.is_zipfile(fp))
 
     def test_damaged_zipfile(self):
         """Check that zipfiles with missing bytes at the end raise BadZipFile."""
@@ -3179,7 +3198,7 @@ class TestWithDirectory(unittest.TestCase):
         with zipfile.ZipFile(TESTFN, "w") as zipf:
             zipf.write(dirpath)
             zinfo = zipf.filelist[0]
-            self.assertTrue(zinfo.filename.endswith("/x/"))
+            self.assertEndsWith(zinfo.filename, "/x/")
             self.assertEqual(zinfo.external_attr, (mode << 16) | 0x10)
             zipf.write(dirpath, "y")
             zinfo = zipf.filelist[1]
@@ -3187,7 +3206,7 @@ class TestWithDirectory(unittest.TestCase):
             self.assertEqual(zinfo.external_attr, (mode << 16) | 0x10)
         with zipfile.ZipFile(TESTFN, "r") as zipf:
             zinfo = zipf.filelist[0]
-            self.assertTrue(zinfo.filename.endswith("/x/"))
+            self.assertEndsWith(zinfo.filename, "/x/")
             self.assertEqual(zinfo.external_attr, (mode << 16) | 0x10)
             zinfo = zipf.filelist[1]
             self.assertTrue(zinfo.filename, "y/")
@@ -3207,7 +3226,7 @@ class TestWithDirectory(unittest.TestCase):
             self.assertEqual(zinfo.external_attr, (0o40775 << 16) | 0x10)
         with zipfile.ZipFile(TESTFN, "r") as zipf:
             zinfo = zipf.filelist[0]
-            self.assertTrue(zinfo.filename.endswith("x/"))
+            self.assertEndsWith(zinfo.filename, "x/")
             self.assertEqual(zinfo.external_attr, (0o40775 << 16) | 0x10)
             target = os.path.join(TESTFN2, "target")
             os.mkdir(target)
@@ -3449,60 +3468,6 @@ class TestExecutablePrependedZip(unittest.TestCase):
     def test_execute_zip64(self):
         output = subprocess.check_output([self.exe_zip64, sys.executable])
         self.assertIn(b'number in executable: 5', output)
-
-
-class TestDataOffsetPrependedZip(unittest.TestCase):
-    """Test .data_offset on reading zip files with an executable prepended."""
-
-    def setUp(self):
-        self.exe_zip = findfile('exe_with_zip', subdir='archivetestdata')
-        self.exe_zip64 = findfile('exe_with_z64', subdir='archivetestdata')
-
-    def _test_data_offset(self, name):
-        with zipfile.ZipFile(name) as zipfp:
-            self.assertEqual(zipfp.data_offset, 713)
-
-    def test_data_offset_with_exe_prepended(self):
-        self._test_data_offset(self.exe_zip)
-
-    def test_data_offset_with_exe_prepended_zip64(self):
-        self._test_data_offset(self.exe_zip64)
-
-class TestDataOffsetZipWrite(unittest.TestCase):
-    """Test .data_offset for ZipFile opened in write mode."""
-
-    def setUp(self):
-        os.mkdir(TESTFNDIR)
-        self.addCleanup(rmtree, TESTFNDIR)
-        self.test_path = os.path.join(TESTFNDIR, 'testoffset.zip')
-
-    def test_data_offset_write_no_prefix(self):
-        with io.BytesIO() as fp:
-            with zipfile.ZipFile(fp, "w") as zipfp:
-                self.assertEqual(zipfp.data_offset, 0)
-
-    def test_data_offset_write_with_prefix(self):
-        with io.BytesIO() as fp:
-            fp.write(b"this is a prefix")
-            with zipfile.ZipFile(fp, "w") as zipfp:
-                self.assertEqual(zipfp.data_offset, 16)
-
-    def test_data_offset_append_with_bad_zip(self):
-        with io.BytesIO() as fp:
-            fp.write(b"this is a prefix")
-            with zipfile.ZipFile(fp, "a") as zipfp:
-                self.assertEqual(zipfp.data_offset, 16)
-
-    def test_data_offset_write_no_tell(self):
-        # The initializer in ZipFile checks if tell raises AttributeError or
-        # OSError when creating a file in write mode when deducing the offset
-        # of the beginning of zip data
-        class NoTellBytesIO(io.BytesIO):
-            def tell(self):
-                raise OSError("Unimplemented!")
-        with NoTellBytesIO() as fp:
-            with zipfile.ZipFile(fp, "w") as zipfp:
-                self.assertIsNone(zipfp.data_offset)
 
 
 class EncodedMetadataTests(unittest.TestCase):

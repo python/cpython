@@ -1018,7 +1018,7 @@ operations have the same priority as the corresponding numeric operations. [3]_
 | ``s * n`` or             | equivalent to adding *s* to    | (2)(7)   |
 | ``n * s``                | itself *n* times               |          |
 +--------------------------+--------------------------------+----------+
-| ``s[i]``                 | *i*\ th item of *s*, origin 0  | \(3)     |
+| ``s[i]``                 | *i*\ th item of *s*, origin 0  | (3)(9)   |
 +--------------------------+--------------------------------+----------+
 | ``s[i:j]``               | slice of *s* from *i* to *j*   | (3)(4)   |
 +--------------------------+--------------------------------+----------+
@@ -1150,6 +1150,9 @@ Notes:
    without copying any data and with the returned index being relative to
    the start of the sequence rather than the start of the slice.
 
+(9)
+   An :exc:`IndexError` is raised if *i* is outside the sequence range.
+
 
 .. _typesseq-immutable:
 
@@ -1214,11 +1217,15 @@ accepts integers that meet the value restriction ``0 <= x <= 255``).
 | ``s[i] = x``                 | item *i* of *s* is replaced by |                     |
 |                              | *x*                            |                     |
 +------------------------------+--------------------------------+---------------------+
+| ``del s[i]``                 | removes item *i* of *s*        |                     |
++------------------------------+--------------------------------+---------------------+
 | ``s[i:j] = t``               | slice of *s* from *i* to *j*   |                     |
 |                              | is replaced by the contents of |                     |
 |                              | the iterable *t*               |                     |
 +------------------------------+--------------------------------+---------------------+
-| ``del s[i:j]``               | same as ``s[i:j] = []``        |                     |
+| ``del s[i:j]``               | removes the elements of        |                     |
+|                              | ``s[i:j]`` from the list       |                     |
+|                              | (same as ``s[i:j] = []``)      |                     |
 +------------------------------+--------------------------------+---------------------+
 | ``s[i:j:k] = t``             | the elements of ``s[i:j:k]``   | \(1)                |
 |                              | are replaced by those of *t*   |                     |
@@ -1788,8 +1795,14 @@ expression support in the :mod:`re` module).
 
    Return centered in a string of length *width*. Padding is done using the
    specified *fillchar* (default is an ASCII space). The original string is
-   returned if *width* is less than or equal to ``len(s)``.
+   returned if *width* is less than or equal to ``len(s)``.  For example::
 
+      >>> 'Python'.center(10)
+      '  Python  '
+      >>> 'Python'.center(10, '-')
+      '--Python--'
+      >>> 'Python'.center(4)
+      'Python'
 
 
 .. method:: str.count(sub[, start[, end]])
@@ -1799,8 +1812,18 @@ expression support in the :mod:`re` module).
    interpreted as in slice notation.
 
    If *sub* is empty, returns the number of empty strings between characters
-   which is the length of the string plus one.
+   which is the length of the string plus one. For example::
 
+      >>> 'spam, spam, spam'.count('spam')
+      3
+      >>> 'spam, spam, spam'.count('spam', 5)
+      2
+      >>> 'spam, spam, spam'.count('spam', 5, 10)
+      1
+      >>> 'spam, spam, spam'.count('eggs')
+      0
+      >>> 'spam, spam, spam'.count('')
+      17
 
 .. method:: str.encode(encoding="utf-8", errors="strict")
 
@@ -1820,6 +1843,14 @@ expression support in the :mod:`re` module).
    unless an encoding error actually occurs,
    :ref:`devmode` is enabled
    or a :ref:`debug build <debug-build>` is used.
+   For example::
+
+      >>> encoded_str_to_bytes = 'Python'.encode()
+      >>> type(encoded_str_to_bytes)
+      <class 'bytes'>
+      >>> encoded_str_to_bytes
+      b'Python'
+
 
    .. versionchanged:: 3.1
       Added support for keyword arguments.
@@ -1834,7 +1865,19 @@ expression support in the :mod:`re` module).
    Return ``True`` if the string ends with the specified *suffix*, otherwise return
    ``False``.  *suffix* can also be a tuple of suffixes to look for.  With optional
    *start*, test beginning at that position.  With optional *end*, stop comparing
-   at that position.
+   at that position. Using *start* and *end* is equivalent to
+   ``str[start:end].endswith(suffix)``. For example::
+
+      >>> 'Python'.endswith('on')
+      True
+      >>> 'a tuple of suffixes'.endswith(('at', 'in'))
+      False
+      >>> 'a tuple of suffixes'.endswith(('at', 'es'))
+      True
+      >>> 'Python is amazing'.endswith('is', 0, 9)
+      True
+
+   See also :meth:`startswith` and :meth:`removesuffix`.
 
 
 .. method:: str.expandtabs(tabsize=8)
@@ -1850,12 +1893,15 @@ expression support in the :mod:`re` module).
    (``\n``) or return (``\r``), it is copied and the current column is reset to
    zero.  Any other character is copied unchanged and the current column is
    incremented by one regardless of how the character is represented when
-   printed.
+   printed. For example::
 
       >>> '01\t012\t0123\t01234'.expandtabs()
       '01      012     0123    01234'
       >>> '01\t012\t0123\t01234'.expandtabs(4)
       '01  012 0123    01234'
+      >>> print('01\t012\n0123\t01234'.expandtabs(4))
+      01  012
+      0123    01234
 
 
 .. method:: str.find(sub[, start[, end]])
@@ -2629,9 +2675,9 @@ For example:
    lead to a number of common errors (such as failing to display tuples and
    dictionaries correctly).  Using the newer :ref:`formatted string literals
    <f-strings>`, the :meth:`str.format` interface, or :ref:`template strings
-   <template-strings>` may help avoid these errors.  Each of these
-   alternatives provides their own trade-offs and benefits of simplicity,
-   flexibility, and/or extensibility.
+   ($-strings) <template-strings-pep292>` may help avoid these errors.
+   Each of these alternatives provides their own trade-offs and benefits of
+   simplicity, flexibility, and/or extensibility.
 
 String objects have one unique built-in operation: the ``%`` operator (modulo).
 This is also known as the string *formatting* or *interpolation* operator.

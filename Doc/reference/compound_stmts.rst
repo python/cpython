@@ -154,15 +154,15 @@ The :keyword:`for` statement is used to iterate over the elements of a sequence
 (such as a string, tuple or list) or other iterable object:
 
 .. productionlist:: python-grammar
-   for_stmt: "for" `target_list` "in" `starred_list` ":" `suite`
+   for_stmt: "for" `target_list` "in" `starred_expression_list` ":" `suite`
            : ["else" ":" `suite`]
 
-The ``starred_list`` expression is evaluated once; it should yield an
-:term:`iterable` object.  An :term:`iterator` is created for that iterable.
-The first item provided
-by the iterator is then assigned to the target list using the standard
-rules for assignments (see :ref:`assignment`), and the suite is executed.  This
-repeats for each item provided by the iterator.  When the iterator is exhausted,
+The :token:`~python-grammar:starred_expression_list` expression is evaluated
+once; it should yield an :term:`iterable` object. An :term:`iterator` is
+created for that iterable. The first item provided by the iterator is then
+assigned to the target list using the standard rules for assignments
+(see :ref:`assignment`), and the suite is executed. This repeats for each
+item provided by the iterator. When the iterator is exhausted,
 the suite in the :keyword:`!else` clause,
 if present, is executed, and the loop terminates.
 
@@ -852,8 +852,8 @@ A literal pattern corresponds to most
 
 The rule ``strings`` and the token ``NUMBER`` are defined in the
 :doc:`standard Python grammar <./grammar>`.  Triple-quoted strings are
-supported.  Raw strings and byte strings are supported.  :ref:`f-strings` are
-not supported.
+supported.  Raw strings and byte strings are supported.  :ref:`f-strings`
+and :ref:`t-strings` are not supported.
 
 The forms ``signed_number '+' NUMBER`` and ``signed_number '-' NUMBER`` are
 for expressing :ref:`complex numbers <imaginary>`; they require a real number

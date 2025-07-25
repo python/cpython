@@ -913,6 +913,15 @@ static PyMethodDef framelocalsproxy_methods[] = {
     {NULL, NULL}   /* sentinel */
 };
 
+PyDoc_STRVAR(framelocalsproxy_doc,
+"FrameLocalsProxy($frame)\n"
+"--\n"
+"\n"
+"Create a write-through view of the locals dictionary for a frame.\n"
+"\n"
+"  frame\n"
+"    the frame object to wrap.");
+
 PyTypeObject PyFrameLocalsProxy_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "FrameLocalsProxy",
@@ -933,6 +942,7 @@ PyTypeObject PyFrameLocalsProxy_Type = {
     .tp_alloc = PyType_GenericAlloc,
     .tp_new = framelocalsproxy_new,
     .tp_free = PyObject_GC_Del,
+    .tp_doc = framelocalsproxy_doc,
 };
 
 PyObject *
@@ -1386,6 +1396,10 @@ mark_stacks(PyCodeObject *code_obj, int len)
                     stacks[j] = next_stack;
                     break;
                 case GET_ITER:
+                    next_stack = push_value(pop_value(next_stack), Iterator);
+                    next_stack = push_value(next_stack, Iterator);
+                    stacks[next_i] = next_stack;
+                    break;
                 case GET_AITER:
                     next_stack = push_value(pop_value(next_stack), Iterator);
                     stacks[next_i] = next_stack;
