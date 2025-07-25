@@ -1372,7 +1372,7 @@ class ZipFile:
     """ Class with methods to open, read, write, close, list zip files.
 
     z = ZipFile(file, mode="r", compression=ZIP_STORED, allowZip64=True,
-                compresslevel=None)
+                compresslevel=None, _ZipInfo=ZipInfo, _ZipExtFile=ZipExtFile)
 
     file: Either the path to the file, or a file-like object.
           If it is a path, the file will be opened and closed by ZipFile.
@@ -1392,21 +1392,32 @@ class ZipFile:
                    When using ZIP_ZSTANDARD integers -7 though 22 are common,
                    see the CompressionParameter enum in compression.zstd for
                    details.
-
+    _ZipInfo: A class that can replace ZipInfo. This is designed to help extend
+              ZipFile, for example to implement other encryption or compression
+              methods.
+              This is private as there is no commitemnt to maintain backward
+              compatibitly.
+    _ZipExtFile: A class that can replace ZipExtFile. This is designed to help
+              extend ZipFile, for example to implement other encryption
+              or compression methods.
+              This is private as there is no commitemnt to maintain backward
+              compatibitly.
     """
 
     fp = None                   # Set here since __del__ checks it
     _windows_illegal_name_trans_table = None
 
     def __init__(self, file, mode="r", compression=ZIP_STORED, allowZip64=True,
-                 compresslevel=None, *, strict_timestamps=True, metadata_encoding=None):
+                 compresslevel=None, *, strict_timestamps=True, metadata_encoding=None,
+                 _ZipInfo=ZipInfo, _ZipExtFile=ZipExtFile):
         """Open the ZIP file with mode read 'r', write 'w', exclusive create 'x',
         or append 'a'."""
         if mode not in ('r', 'w', 'x', 'a'):
             raise ValueError("ZipFile requires mode 'r', 'w', 'x', or 'a'")
 
         _check_compression(compression)
-
+        self._ZipInfo = _ZipInfo
+        self._ZipExtFile = _ZipExtFile
         self._allowZip64 = allowZip64
         self._didModify = False
         self.debug = 0  # Level of printing: 0 through 3
@@ -1558,7 +1569,7 @@ class ZipFile:
                 # Historical ZIP filename encoding
                 filename = filename.decode(self.metadata_encoding or 'cp437')
             # Create ZipInfo instance to store file information
-            x = ZipInfo(filename)
+            x = self._ZipInfo(filename)
             x.extra = fp.read(centdir[_CD_EXTRA_FIELD_LENGTH])
             x.comment = fp.read(centdir[_CD_COMMENT_LENGTH])
             x.header_offset = centdir[_CD_LOCAL_HEADER_OFFSET]
@@ -1693,11 +1704,11 @@ class ZipFile:
                 "Attempt to use ZIP archive that was already closed")
 
         # Make sure we have an info object
-        if isinstance(name, ZipInfo):
+        if isinstance(name, self._ZipInfo):
             # 'name' is already an info object
             zinfo = name
         elif mode == 'w':
-            zinfo = ZipInfo(name)
+            zinfo = self._ZipInfo(name)
             zinfo.compress_type = self.compression
             zinfo.compress_level = self.compresslevel
         else:
@@ -1774,7 +1785,7 @@ class ZipFile:
             else:
                 pwd = None
 
-            return ZipExtFile(zef_file, mode + 'b', zinfo, pwd, True)
+            return self._ZipExtFile(zef_file, mode + 'b', zinfo, pwd, True)
         except:
             zef_file.close()
             raise
@@ -1872,7 +1883,7 @@ class ZipFile:
         """Extract the ZipInfo object 'member' to a physical
            file on the path targetpath.
         """
-        if not isinstance(member, ZipInfo):
+        if not isinstance(member, self._ZipInfo):
             member = self.getinfo(member)
 
         # build the destination pathname, replacing
@@ -1952,7 +1963,7 @@ class ZipFile:
                 "Can't write to ZIP archive while an open writing handle exists"
             )
 
-        zinfo = ZipInfo.from_file(filename, arcname,
+        zinfo = self._ZipInfo.from_file(filename, arcname,
                                   strict_timestamps=self._strict_timestamps)
 
         if zinfo.is_dir():
@@ -1982,10 +1993,10 @@ class ZipFile:
         the name of the file in the archive."""
         if isinstance(data, str):
             data = data.encode("utf-8")
-        if isinstance(zinfo_or_arcname, ZipInfo):
+        if isinstance(zinfo_or_arcname, self._ZipInfo):
             zinfo = zinfo_or_arcname
         else:
-            zinfo = ZipInfo(zinfo_or_arcname)._for_archive(self)
+            zinfo = self._ZipInfo(zinfo_or_arcname)._for_archive(self)
 
         if not self.fp:
             raise ValueError(
@@ -2008,7 +2019,7 @@ class ZipFile:
 
     def mkdir(self, zinfo_or_directory_name, mode=511):
         """Creates a directory inside the zip archive."""
-        if isinstance(zinfo_or_directory_name, ZipInfo):
+        if isinstance(zinfo_or_directory_name, self._ZipInfo):
             zinfo = zinfo_or_directory_name
             if not zinfo.is_dir():
                 raise ValueError("The given ZipInfo does not describe a directory")
@@ -2016,7 +2027,7 @@ class ZipFile:
             directory_name = zinfo_or_directory_name
             if not directory_name.endswith("/"):
                 directory_name += "/"
-            zinfo = ZipInfo(directory_name)
+            zinfo = self._ZipInfo(directory_name)
             zinfo.compress_size = 0
             zinfo.CRC = 0
             zinfo.external_attr = ((0o40000 | mode) & 0xFFFF) << 16

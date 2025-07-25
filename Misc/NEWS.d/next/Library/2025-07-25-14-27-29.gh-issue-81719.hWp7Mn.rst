@@ -1,0 +1,2 @@
+zipfile.ZipFile.__init__ was updated to make it easier to subclass and
+extend it to support new encryption methods.
