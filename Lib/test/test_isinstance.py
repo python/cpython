@@ -353,6 +353,28 @@ class TestIsInstanceIsSubclass(unittest.TestCase):
         with support.infinite_recursion(25):
             self.assertRaises(RecursionError, issubclass, X(), int)
 
+    def test_custom_subclasses_are_ignored(self):
+        class A: pass
+        class B: pass
+
+        class Parent1:
+            @classmethod
+            def __subclasses__(cls):
+                return [A, B]
+
+        class Parent2:
+            __subclasses__ = lambda: [A, B]
+
+        self.assertNotIsInstance(A(), Parent1)
+        self.assertNotIsInstance(B(), Parent1)
+        self.assertNotIsSubclass(A, Parent1)
+        self.assertNotIsSubclass(B, Parent1)
+
+        self.assertNotIsInstance(A(), Parent2)
+        self.assertNotIsInstance(B(), Parent2)
+        self.assertNotIsSubclass(A, Parent2)
+        self.assertNotIsSubclass(B, Parent2)
+
 
 def blowstack(fxn, arg, compare_to):
     # Make sure that calling isinstance with a deeply nested tuple for its
