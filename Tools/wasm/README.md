@@ -84,6 +84,17 @@ make a node application that "embeds" the interpreter instead of acting like the
 CLI you will need to write your own alternative to `node_entry.mjs`.
 
 
+### Running tests
+
+After building, you can run the full test suite with:
+```shell
+./cross-build/wasm32-emscripten/build/python/python.sh -m test -uall
+```
+You can run the browser smoke test with:
+```shell
+./Tools/wasm/emscripten/browser_test/run_test.sh
+```
+
 ### The Web Example
 
 When building for Emscripten, the web example will be built automatically. It
