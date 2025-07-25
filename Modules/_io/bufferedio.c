@@ -737,6 +737,8 @@ static PyObject *
 _bufferedreader_read_generic(buffered *self, Py_ssize_t);
 static Py_ssize_t
 _bufferedreader_raw_read(buffered *self, char *start, Py_ssize_t len);
+static int
+_buffered_init(buffered *self);
 
 /*
  * Helpers
@@ -825,6 +827,60 @@ _buffered_raw_seek(buffered *self, Py_off_t target, int whence)
     return n;
 }
 
+#ifdef HAVE_FORK
+
+static PyObject*
+buffered_after_fork_child_impl(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    buffered *buf = (buffered *)self;
+    if (_buffered_init(buf) < 0) {
+        PyErr_SetString(PyExc_RuntimeError, "Failed to initialize buffer after fork");
+        return NULL;
+    }
+    _bufferedreader_reset_buf(buf);
+    Py_RETURN_NONE;
+}
+
+static PyMethodDef buffered_fork_methods[] = {
+    {"_after_fork_child", buffered_after_fork_child_impl, METH_NOARGS, NULL},
+    {NULL, NULL}
+};
+
+static int
+buffered_register_at_fork(buffered *self)
+{
+    PyInterpreterState *interp = PyThreadState_Get()->interp;
+    if (!interp) {
+        PyErr_SetString(PyExc_RuntimeError, "Failed to get interpreter state");
+        return -1;
+    }
+
+    // Only register the fork handlers once
+    if (!interp->after_forkers_child) {
+        interp->after_forkers_child = PyList_New(0);
+        if (!interp->after_forkers_child) {
+            return -1;
+        }
+    }
+
+    /* Create method objects */
+    PyObject *after_child = PyCFunction_New(&buffered_fork_methods[0], (PyObject *)self);
+    if (!after_child) {
+        return -1;
+    }
+
+    /* Append callbacks to the lists */
+    int status = 0;
+    if (PyList_Append(interp->after_forkers_child, after_child) < 0) {
+        status = -1;
+    }
+
+    Py_DECREF(after_child);
+    return status;
+}
+
+#endif  /* HAVE_FORK */
+
 static int
 _buffered_init(buffered *self)
 {
@@ -859,6 +915,16 @@ _buffered_init(buffered *self)
         self->buffer_mask = 0;
     if (_buffered_raw_tell(self) == -1)
         PyErr_Clear();
+
+    #ifdef HAVE_FORK
+    /* Register fork handlers */
+    if (buffered_register_at_fork(self) < 0) {
+        PyThread_free_lock(self->lock);
+        self->lock = NULL;
+        return -1;
+    }
+    #endif /* HAVE_FORK */
+
     return 0;
 }
 
