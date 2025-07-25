@@ -139,6 +139,13 @@ Node classes
     The :meth:`~object.__repr__` output of :class:`~ast.AST` nodes includes
     the values of the node fields.
 
+.. deprecated-removed:: 3.8 3.14
+
+   Previous versions of Python provided the AST classes :class:`!ast.Num`,
+   :class:`!ast.Str`, :class:`!ast.Bytes`, :class:`!ast.NameConstant` and
+   :class:`!ast.Ellipsis`, which were deprecated in Python 3.8 and removed in
+   Python 3.14, and which have been replaced with :class:`ast.Constant`.
+
 .. deprecated:: 3.9
 
    Old classes :class:`!ast.Index` and :class:`!ast.ExtSlice` are still
