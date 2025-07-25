@@ -4618,7 +4618,7 @@ class OffsetValidationTests(unittest.TestCase):
         + b"\xff" * 11 + SPACE
         # mtime, space: 12 bytes
         + tarfile.NUL * 11 + SPACE
-        # chksum: 8 spaces
+        # chksum: 8 bytes
         + b"0011407" + tarfile.NUL
         # type: 1 byte
         + tarfile.REGTYPE
@@ -4652,7 +4652,7 @@ class OffsetValidationTests(unittest.TestCase):
         + b"\xff" * 11 + SPACE
         # mtime, space: 12 bytes
         + tarfile.NUL * 11 + SPACE
-        # chksum: 8 spaces
+        # chksum: 8 bytes
         + b"0011327" + tarfile.NUL
         # type: 1 byte
         + tarfile.REGTYPE
@@ -4684,7 +4684,7 @@ class OffsetValidationTests(unittest.TestCase):
         + b"\xff" * 11 + SPACE
         # mtime, space: 12 bytes
         + tarfile.NUL * 11 + SPACE
-        # chksum: 8 spaces
+        # chksum: 8 bytes
         + b"0010070" + tarfile.NUL
         # type: 1 byte
         + tarfile.REGTYPE
