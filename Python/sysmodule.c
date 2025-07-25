@@ -2666,13 +2666,22 @@ sys__clear_type_descriptors(PyObject *module, PyObject *type)
         return NULL;
     }
     PyObject *dict = _PyType_GetDict(typeobj);
-    if (PyDict_PopString(dict, "__dict__", NULL) < 0) {
+    PyObject *dunder_dict = NULL;
+    if (PyDict_PopString(dict, "__dict__", &dunder_dict) < 0) {
         return NULL;
     }
-    if (PyDict_PopString(dict, "__weakref__", NULL) < 0) {
+    PyObject *dunder_weakref = NULL;
+    if (PyDict_PopString(dict, "__weakref__", &dunder_weakref) < 0) {
+        PyType_Modified(typeobj);
+        Py_XDECREF(dunder_dict);
         return NULL;
     }
     PyType_Modified(typeobj);
+    // We try to hold onto a reference to these until after we call
+    // PyType_Modified(), in case their deallocation triggers somer user code
+    // that tries to do something to the type.
+    Py_XDECREF(dunder_dict);
+    Py_XDECREF(dunder_weakref);
     Py_RETURN_NONE;
 }
 
