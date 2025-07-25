@@ -261,18 +261,16 @@ def file_digest(fileobj, digest, /, *, _bufsize=2**18):
     return digestobj
 
 
-__logger = __logging = None
+__logging = None
 for __func_name in __always_supported:
     # try them all, some may not work due to the OpenSSL
     # version not supporting that algorithm.
     try:
         globals()[__func_name] = __get_hash(__func_name)
-    except ValueError:
+    except ValueError as __exc:
         import logging as __logging
-        if __logger is None:
-            __logger = __logging.getLogger(__name__)
-        __logger.warning('hash algorithm %s will not be supported at runtime',
-                         __func_name)
+        __logging.error('hash algorithm %s will not be supported at runtime '
+                        '[reason: %s]', __func_name, __exc)
         # The following code can be simplified in Python 3.19
         # once "string" is removed from the signature.
         __code = f'''\
@@ -293,9 +291,9 @@ def {__func_name}(data=__UNSET, *, usedforsecurity=True, string=__UNSET):
 '''
         exec(__code, {"__UNSET": object()}, __locals := {})
         globals()[__func_name] = __locals[__func_name]
-        del __code, __locals
+        del __exc, __code, __locals
 
 # Cleanup locals()
 del __always_supported, __func_name, __get_hash
 del __py_new, __hash_new, __get_openssl_constructor
-del __logger, __logging
+del __logging
