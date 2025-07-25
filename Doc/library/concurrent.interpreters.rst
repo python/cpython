@@ -135,7 +135,7 @@ efficiency, like threads.
 
 All that said, interpreters do naturally support certain flavors of
 concurrency.
-There's a powerful side effect of that isolation. It enables a
+There's a powerful side effect of that isolation.  It enables a
 different approach to concurrency than you can take with async or
 threads.  It's a similar concurrency model to CSP or the actor model,
 a model which is relatively easy to reason about.
