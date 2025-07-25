@@ -143,8 +143,9 @@ Node classes
 
    Previous versions of Python provided the AST classes :class:`!ast.Num`,
    :class:`!ast.Str`, :class:`!ast.Bytes`, :class:`!ast.NameConstant` and
-   :class:`!ast.Ellipsis`, which were deprecated in Python 3.8 and removed in
-   Python 3.14, and which have been replaced with :class:`ast.Constant`.
+   :class:`!ast.Ellipsis`, which were deprecated in Python 3.8. These classes
+   were removed in Python 3.14, and their functionality has been replaced with
+   :class:`ast.Constant`.
 
 .. deprecated:: 3.9
 
