@@ -3678,11 +3678,13 @@ long_hash(PyObject *obj)
     sign = _PyLong_NonCompactSign(v);
 
     // unroll first two digits
+#if ( PyHASH_BITS > PyLong_SHIFT )
     assert(i>=2);
     --i;
     x = v->long_value.ob_digit[i];
     assert(x < _PyHASH_MODULUS);
-#if ( PyHASH_BITS > (2*PyLong_SHIFT))
+#endif
+#if ( PyHASH_BITS > (2 * PyLong_SHIFT) )
     --i;
     x = ((x << PyLong_SHIFT));
     x += v->long_value.ob_digit[i];
