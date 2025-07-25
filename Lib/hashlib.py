@@ -261,8 +261,7 @@ def file_digest(fileobj, digest, /, *, _bufsize=2**18):
     return digestobj
 
 
-__logging = None
-__logger = None
+__logger = __logging = None
 for __func_name in __always_supported:
     # try them all, some may not work due to the OpenSSL
     # version not supporting that algorithm.
