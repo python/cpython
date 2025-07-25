@@ -791,6 +791,7 @@ if pth:
     config['use_environment'] = 0
     config['site_import'] = 0
     config['safe_path'] = 1
+    config['user_site_directory'] = 0
     pythonpath = []
     for line in pth:
         line = line.partition('#')[0].strip()
