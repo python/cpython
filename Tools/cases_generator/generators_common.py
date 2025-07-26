@@ -111,7 +111,9 @@ class Emitter:
     def __init__(self, out: CWriter, labels: dict[str, Label], cannot_escape: bool = False):
         self._replacers = {
             "EXIT_IF": self.exit_if,
+            "EXIT_IF_AFTER": self.exit_if_after,
             "DEOPT_IF": self.deopt_if,
+            "PERIODIC_IF": self.periodic_if,
             "ERROR_IF": self.error_if,
             "ERROR_NO_POP": self.error_no_pop,
             "DECREF_INPUTS": self.decref_inputs,
@@ -170,6 +172,29 @@ class Emitter:
         return not always_true(first_tkn)
 
     exit_if = deopt_if
+
+    def periodic_if(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        raise NotImplementedError("PERIODIC_IF not support in tier 1")
+
+    def exit_if_after(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        storage.clear_inputs("in EXIT_IF_AFTER")
+        storage.flush(self.out)
+        storage.stack.clear(self.out)
+        return self.exit_if(tkn, tkn_iter, uop, storage, inst)
 
     def goto_error(self, offset: int, storage: Storage) -> str:
         if offset > 0:
@@ -692,6 +717,8 @@ def cflags(p: Properties) -> str:
         flags.append("HAS_EVAL_BREAK_FLAG")
     if p.deopts:
         flags.append("HAS_DEOPT_FLAG")
+    if p.deopts_periodic:
+        flags.append("HAS_PERIODIC_FLAG")
     if p.side_exit:
         flags.append("HAS_EXIT_FLAG")
     if not p.infallible:
