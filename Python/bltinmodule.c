@@ -2477,7 +2477,8 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
         }
         s = PyOS_Readline(stdin, stdout, promptstr);
         if (s == NULL) {
-            PyErr_CheckSignals();
+            if (!PyErr_Occurred())
+                PyErr_CheckSignals();
             if (!PyErr_Occurred())
                 PyErr_SetNone(PyExc_KeyboardInterrupt);
             goto _readline_errors;
