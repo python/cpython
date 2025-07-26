@@ -1784,6 +1784,7 @@ encoder_listencode_list(PyEncoderObject *s, PyUnicodeWriter *writer,
     if (s->markers != Py_None) {
         Py_ReprLeave(seq);
     }
+
     if (s->indent != Py_None) {
         indent_level--;
         if (write_newline_indent(writer, indent_level, indent_cache) < 0) {
