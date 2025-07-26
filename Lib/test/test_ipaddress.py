@@ -122,6 +122,10 @@ class CommonTestMixin_v4(CommonTestMixin):
         self.assertInstancesEqual(bytes.fromhex("00000000"), "0.0.0.0")
         self.assertInstancesEqual(bytes.fromhex("c0a80001"), "192.168.0.1")
 
+    def test_packed_bytearray(self):
+        self.assertInstancesEqual(bytearray.fromhex("00000000"), "0.0.0.0")
+        self.assertInstancesEqual(bytearray.fromhex("c0a80001"), "192.168.0.1")
+
     def test_negative_ints_rejected(self):
         msg = "-1 (< 0) is not permitted as an IPv4 address"
         with self.assertAddressError(re.escape(msg)):
@@ -159,6 +163,14 @@ class CommonTestMixin_v6(CommonTestMixin):
         addr = b'\0'*12 + bytes.fromhex("c0a80001")
         self.assertInstancesEqual(addr, "::c0a8:1")
         addr = bytes.fromhex("c0a80001") + b'\0'*12
+        self.assertInstancesEqual(addr, "c0a8:1::")
+
+    def test_packed_bytearray(self):
+        addr = bytearray(b'\0'*12) + bytearray.fromhex("00000000")
+        self.assertInstancesEqual(addr, "::")
+        addr = bytearray(b'\0'*12) + bytearray.fromhex("c0a80001")
+        self.assertInstancesEqual(addr, "::c0a8:1")
+        addr = bytearray.fromhex("c0a80001") + bytearray(b'\0'*12)
         self.assertInstancesEqual(addr, "c0a8:1::")
 
     def test_negative_ints_rejected(self):

@@ -536,7 +536,7 @@ class _IPAddressBase:
             (addr, prefix) tuple.
         """
         # a packed address or integer
-        if isinstance(address, (bytes, int)):
+        if isinstance(address, (bytes, bytearray, int)):
             return address, cls.max_prefixlen
 
         if not isinstance(address, tuple):
@@ -1292,7 +1292,7 @@ class IPv4Address(_BaseV4, _BaseAddress):
             return
 
         # Constructing from a packed address
-        if isinstance(address, bytes):
+        if isinstance(address, bytes) or isinstance(address, bytearray):
             self._check_packed_address(address, 4)
             self._ip = int.from_bytes(address)  # big endian
             return
@@ -1938,7 +1938,7 @@ class IPv6Address(_BaseV6, _BaseAddress):
             return
 
         # Constructing from a packed address
-        if isinstance(address, bytes):
+        if isinstance(address, bytes) or isinstance(address, bytearray):
             self._check_packed_address(address, 16)
             self._ip = int.from_bytes(address, 'big')
             self._scope_id = None
