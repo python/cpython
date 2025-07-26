@@ -1190,9 +1190,10 @@ call_instrumentation_vector(
                 break;
             }
             else {
-                LOCK_CODE(code);
+                PyInterpreterState *interp = tstate->interp;
+                _PyEval_StopTheWorld(interp);
                 remove_tools(code, offset, event, 1 << tool);
-                UNLOCK_CODE();
+                _PyEval_StartTheWorld(interp);
             }
         }
     }
@@ -1381,9 +1382,10 @@ _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame,
         }
         else {
             /* DISABLE  */
-            LOCK_CODE(code);
+            PyInterpreterState *interp = tstate->interp;
+            _PyEval_StopTheWorld(interp);
             remove_line_tools(code, i, 1 << tool);
-            UNLOCK_CODE();
+            _PyEval_StartTheWorld(interp);
         }
     } while (tools);
     Py_DECREF(line_obj);
@@ -1438,9 +1440,10 @@ _Py_call_instrumentation_instruction(PyThreadState *tstate, _PyInterpreterFrame*
         }
         else {
             /* DISABLE  */
-            LOCK_CODE(code);
+            PyInterpreterState *interp = tstate->interp;
+            _PyEval_StopTheWorld(interp);
             remove_per_instruction_tools(code, offset, 1 << tool);
-            UNLOCK_CODE();
+            _PyEval_StartTheWorld(interp);
         }
     }
     Py_DECREF(offset_obj);
@@ -2558,18 +2561,22 @@ PyObject *_Py_CreateMonitoringObject(void)
     err = PyObject_SetAttrString(events, "NO_EVENTS", _PyLong_GetZero());
     if (err) goto error;
     PyObject *val = PyLong_FromLong(PY_MONITORING_DEBUGGER_ID);
+    assert(val != NULL); /* Can't return NULL because the int is small. */
     err = PyObject_SetAttrString(mod, "DEBUGGER_ID", val);
     Py_DECREF(val);
     if (err) goto error;
     val = PyLong_FromLong(PY_MONITORING_COVERAGE_ID);
+    assert(val != NULL);
     err = PyObject_SetAttrString(mod, "COVERAGE_ID", val);
     Py_DECREF(val);
     if (err) goto error;
     val = PyLong_FromLong(PY_MONITORING_PROFILER_ID);
+    assert(val != NULL);
     err = PyObject_SetAttrString(mod, "PROFILER_ID", val);
     Py_DECREF(val);
     if (err) goto error;
     val = PyLong_FromLong(PY_MONITORING_OPTIMIZER_ID);
+    assert(val != NULL);
     err = PyObject_SetAttrString(mod, "OPTIMIZER_ID", val);
     Py_DECREF(val);
     if (err) goto error;
@@ -2991,9 +2998,10 @@ branch_handler_vectorcall(
             // Orphaned NOT_TAKEN -- Jump removed by the compiler
             return res;
         }
-        LOCK_CODE(code);
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        _PyEval_StopTheWorld(interp);
         remove_tools(code, offset, other_event, 1 << self->tool_id);
-        UNLOCK_CODE();
+        _PyEval_StartTheWorld(interp);
     }
     return res;
 }
