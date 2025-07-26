@@ -862,17 +862,26 @@ class StrTest(string_tests.StringLikeTest,
                              category[0] not in ('C', 'Z')
                              or char == ' ')
 
+    def test_contains_surrogates(self):
+        self.assertFalse("hello".contains_surrogate())
+        self.assertFalse("".contains_surrogate())
+        self.assertTrue("\udc80".contains_surrogate())
+        self.assertTrue("\ud800\udfff".contains_surrogate())
+        self.assertTrue("\ud83d\udc0d".contains_surrogate())
+
     def test_surrogates(self):
         for s in ('a\uD800b\uDFFF', 'a\uDFFFb\uD800',
                   'a\uD800b\uDFFFa', 'a\uDFFFb\uD800a'):
             self.assertTrue(s.islower())
             self.assertFalse(s.isupper())
             self.assertFalse(s.istitle())
+            self.assertTrue(s.contains_surrogate())
         for s in ('A\uD800B\uDFFF', 'A\uDFFFB\uD800',
                   'A\uD800B\uDFFFA', 'A\uDFFFB\uD800A'):
             self.assertFalse(s.islower())
             self.assertTrue(s.isupper())
             self.assertTrue(s.istitle())
+            self.assertTrue(s.contains_surrogate())
 
         for meth_name in ('islower', 'isupper', 'istitle'):
             meth = getattr(str, meth_name)
