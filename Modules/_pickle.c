@@ -5445,25 +5445,18 @@ load_counted_long(PickleState *st, UnpicklerObject *self, int size)
 static int
 load_float(PickleState *state, UnpicklerObject *self)
 {
-    PyObject *value;
-    char *endptr, *s;
+    PyObject *value, *s_obj;
+    char *s;
     Py_ssize_t len;
-    double d;
 
     if ((len = _Unpickler_Readline(state, self, &s)) < 0)
         return -1;
     if (len < 2)
         return bad_readline(state);
 
-    errno = 0;
-    d = PyOS_string_to_double(s, &endptr, PyExc_OverflowError);
-    if (d == -1.0 && PyErr_Occurred())
-        return -1;
-    if ((endptr[0] != '\n') && (endptr[0] != '\0')) {
-        PyErr_SetString(PyExc_ValueError, "could not convert string to float");
-        return -1;
-    }
-    value = PyFloat_FromDouble(d);
+    s_obj = PyUnicode_FromString(s);
+    value = PyFloat_FromString(s_obj);
+
     if (value == NULL)
         return -1;
 
