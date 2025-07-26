@@ -1,0 +1,1 @@
+Fix instructions positions in :attr:`~object.__annotate__`.
