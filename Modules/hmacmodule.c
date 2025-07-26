@@ -1102,6 +1102,10 @@ _hmac_compute_digest_impl(PyObject *module, PyObject *key, PyObject *msg,
  * Obtain a view from 'key' and 'msg', storing it in 'keyview' and 'msgview'.
  *
  * Return 0 on success; otherwise set an exception and return -1.
+ *
+ * The length of the key and message buffers must not exceed UINT32_MAX,
+ * lest an OverflowError is raised. The Python implementation takes care
+ * of dispatching to the OpenSSL implementation in this case.
  */
 static int
 hmac_get_buffer_views(PyObject *key, Py_buffer *keyview,
@@ -1130,10 +1134,6 @@ hmac_get_buffer_views(PyObject *key, Py_buffer *keyview,
 
 /*
  * One-shot HMAC-HASH using the given HACL_HID.
- *
- * The length of the key and message buffers must not exceed UINT32_MAX,
- * lest an OverflowError is raised. The Python implementation takes care
- * of dispatching to the OpenSSL implementation in this case.
  */
 #define Py_HMAC_HACL_ONESHOT(HACL_HID, KEY, MSG)                        \
     do {                                                                \
