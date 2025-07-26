@@ -1546,6 +1546,7 @@ encoder_listencode_obj(PyEncoderObject *s, PyUnicodeWriter *writer,
         rv = encoder_listencode_obj(s, writer, newobj, indent_level, indent_cache);
         _Py_LeaveRecursiveCall();
 
+        Py_DECREF(newobj);
         if (rv) {
             _PyErr_FormatNote("when serializing %T object", obj);
             Py_DECREF(newobj);
@@ -1555,7 +1556,6 @@ encoder_listencode_obj(PyEncoderObject *s, PyUnicodeWriter *writer,
         if (s->markers != Py_None) {
             Py_ReprLeave(obj);
         }
-        Py_DECREF(newobj);
         return rv;
 bail:
         if (s->markers != Py_None) {
@@ -1707,6 +1707,9 @@ encoder_listencode_dict(PyEncoderObject *s, PyUnicodeWriter *writer,
         }
     }
 
+    if (s->markers != Py_None) {
+        Py_ReprLeave(dct);
+    }
     if (s->indent != Py_None && !first) {
         indent_level--;
         if (write_newline_indent(writer, indent_level, indent_cache) < 0) {
@@ -1717,16 +1720,13 @@ encoder_listencode_dict(PyEncoderObject *s, PyUnicodeWriter *writer,
     if (PyUnicodeWriter_WriteChar(writer, '}')) {
         goto bail;
     }
-    if (s->markers != Py_None) {
-        Py_ReprLeave(dct);
-    }
     return 0;
 
 bail:
+    Py_XDECREF(items);
     if (s->markers != Py_None) {
         Py_ReprLeave(dct);
     }
-    Py_XDECREF(items);
     return -1;
 }
 
@@ -1783,6 +1783,9 @@ encoder_listencode_list(PyEncoderObject *s, PyUnicodeWriter *writer,
         }
     }
 
+    if (s->markers != Py_None) {
+        Py_ReprLeave(seq);
+    }
     if (s->indent != Py_None) {
         indent_level--;
         if (write_newline_indent(writer, indent_level, indent_cache) < 0) {
@@ -1792,9 +1795,6 @@ encoder_listencode_list(PyEncoderObject *s, PyUnicodeWriter *writer,
 
     if (PyUnicodeWriter_WriteChar(writer, ']')) {
         goto bail;
-    }
-    if (s->markers != Py_None) {
-        Py_ReprLeave(seq);
     }
     Py_DECREF(s_fast);
     return 0;
