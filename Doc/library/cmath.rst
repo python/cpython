@@ -38,6 +38,14 @@ the function is then applied to the result of the conversion.
       1.4142135623730951j
 
 
+Most functions compute and return the C99 Annex G recommended result.
+If the standard recommends raising ``FE_DIVBYZERO`` or ``FE_INVALID``
+floating-point exceptions, a :exc:`ValueError` is raised and the recommended
+result is available as the ``value`` attribute of the exception object.
+If a range error occurs due to an overflow in any component of the result,
+an :exc:`OverflowError` is raised.
+
+
 ====================================================  ============================================
 **Conversions to and from polar coordinates**
 --------------------------------------------------------------------------------------------------
