@@ -538,6 +538,69 @@ ZipFile Objects
    .. versionadded:: 3.11
 
 
+.. method:: ZipFile.remove(zinfo_or_arcname)
+
+   Removes a member entry from the archive's central directory.
+   *zinfo_or_arcname* may be the full path of the member or a :class:`ZipInfo`
+   instance.  If multiple members share the same full path and the path is
+   provided, only one of them is removed.
+
+   The archive must be opened with mode ``'w'``, ``'x'`` or ``'a'``.
+
+   Returns the removed :class:`ZipInfo` instance.
+
+   Calling :meth:`remove` on a closed ZipFile will raise a :exc:`ValueError`.
+
+   .. note::
+      This method only removes the member's entry from the central directory,
+      making it inaccessible to most tools.  The member's local file entry,
+      including content and metadata, remains in the archive and is still
+      recoverable using forensic tools.  Call :meth:`repack` afterwards to
+      completely remove the member and reclaim space.
+
+   .. versionadded:: next
+
+
+.. method:: ZipFile.repack(removed=None, *, \
+                           strict_descriptor=False[, chunk_size])
+
+   Rewrites the archive to remove unreferenced local file entries, shrinking
+   its file size.  The archive must be opened with mode ``'a'``.
+
+   If *removed* is provided, it must be a sequence of :class:`ZipInfo` objects
+   representing the recently removed members, and only their corresponding
+   local file entries will be removed.  Otherwise, the archive is scanned to
+   locate and remove local file entries that are no longer referenced in the
+   central directory.
+
+   When scanning, setting ``strict_descriptor=True`` disables detection of any
+   entry using an unsigned data descriptor (a format deprecated by the ZIP
+   specification since version 6.3.0, released on 2006-09-29, and used only by
+   some legacy tools), which is significantly slower to scan—around 100 to
+   1000 times in the worst case. This does not affect performance on entries
+   without such feature.
+
+   *chunk_size* may be specified to control the buffer size when moving
+   entry data (default is 1 MiB).
+
+   Calling :meth:`repack` on a closed ZipFile will raise a :exc:`ValueError`.
+
+   .. note::
+      The scanning algorithm is heuristic-based and assumes that the ZIP file
+      is normally structured—for example, with local file entries stored
+      consecutively, without overlap or interleaved binary data.  Prepended
+      binary data, such as a self-extractor stub, is recognized and preserved
+      unless it happens to contain bytes that coincidentally resemble a valid
+      local file entry in multiple respects—an extremely rare case. Embedded
+      ZIP payloads are also handled correctly, as long as they follow normal
+      structure.  However, the algorithm does not guarantee correctness or
+      safety on untrusted or intentionally crafted input.  It is generally
+      recommended to provide the *removed* argument for better reliability and
+      performance.
+
+   .. versionadded:: next
+
+
 The following data attributes are also available:
 
 .. attribute:: ZipFile.filename
