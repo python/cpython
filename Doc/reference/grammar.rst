@@ -15,5 +15,7 @@ except for an extra complication:
 * ``~`` ("cut"): commit to the current alternative and fail the rule
   even if this fails to parse
 
-.. literalinclude:: ../../Grammar/python.gram
-  :language: peg
+.. only:: html or latex or epub or text or texinfo
+
+   .. literalinclude:: ../../Grammar/python.gram
+     :language: peg
