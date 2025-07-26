@@ -307,8 +307,7 @@ class HelperFunctionsTests(unittest.TestCase):
 
         with EnvironmentVarGuard() as environ:
             environ['PYTHONUSERBASE'] = 'xoxo'
-            self.assertTrue(site.getuserbase().startswith('xoxo'),
-                            site.getuserbase())
+            self.assertStartsWith(site.getuserbase(), 'xoxo')
 
     @unittest.skipUnless(HAS_USER_SITE, 'need user site')
     def test_getusersitepackages(self):
@@ -318,7 +317,7 @@ class HelperFunctionsTests(unittest.TestCase):
 
         # the call sets USER_BASE *and* USER_SITE
         self.assertEqual(site.USER_SITE, user_site)
-        self.assertTrue(user_site.startswith(site.USER_BASE), user_site)
+        self.assertStartsWith(user_site, site.USER_BASE)
         self.assertEqual(site.USER_BASE, site.getuserbase())
 
     def test_getsitepackages(self):
@@ -359,11 +358,10 @@ class HelperFunctionsTests(unittest.TestCase):
             environ.unset('PYTHONUSERBASE', 'APPDATA')
 
             user_base = site.getuserbase()
-            self.assertTrue(user_base.startswith('~' + os.sep),
-                            user_base)
+            self.assertStartsWith(user_base, '~' + os.sep)
 
             user_site = site.getusersitepackages()
-            self.assertTrue(user_site.startswith(user_base), user_site)
+            self.assertStartsWith(user_site, user_base)
 
         with mock.patch('os.path.isdir', return_value=False) as mock_isdir, \
              mock.patch.object(site, 'addsitedir') as mock_addsitedir, \
@@ -495,18 +493,18 @@ class ImportSideEffectTests(unittest.TestCase):
 
     def test_setting_quit(self):
         # 'quit' and 'exit' should be injected into builtins
-        self.assertTrue(hasattr(builtins, "quit"))
-        self.assertTrue(hasattr(builtins, "exit"))
+        self.assertHasAttr(builtins, "quit")
+        self.assertHasAttr(builtins, "exit")
 
     def test_setting_copyright(self):
         # 'copyright', 'credits', and 'license' should be in builtins
-        self.assertTrue(hasattr(builtins, "copyright"))
-        self.assertTrue(hasattr(builtins, "credits"))
-        self.assertTrue(hasattr(builtins, "license"))
+        self.assertHasAttr(builtins, "copyright")
+        self.assertHasAttr(builtins, "credits")
+        self.assertHasAttr(builtins, "license")
 
     def test_setting_help(self):
         # 'help' should be set in builtins
-        self.assertTrue(hasattr(builtins, "help"))
+        self.assertHasAttr(builtins, "help")
 
     def test_sitecustomize_executed(self):
         # If sitecustomize is available, it should have been imported.

@@ -102,7 +102,7 @@ class PublicAPITests(BaseTest):
     """
 
     def test_module_all_attribute(self):
-        self.assertTrue(hasattr(self.module, '__all__'))
+        self.assertHasAttr(self.module, '__all__')
         target_api = ["warn", "warn_explicit", "showwarning",
                       "formatwarning", "filterwarnings", "simplefilter",
                       "resetwarnings", "catch_warnings", "deprecated"]
@@ -555,13 +555,7 @@ class WarnTests(BaseTest):
         with self.module.catch_warnings(record=True) as w:
             self.module.resetwarnings()
             self.module.filterwarnings("always", category=UserWarning)
-            filenames = ["nonascii\xe9\u20ac"]
-            if not support.is_emscripten:
-                # JavaScript does not like surrogates.
-                # Invalid UTF-8 leading byte 0x80 encountered when
-                # deserializing a UTF-8 string in wasm memory to a JS
-                # string!
-                filenames.append("surrogate\udc80")
+            filenames = ["nonascii\xe9\u20ac", "surrogate\udc80"]
             for filename in filenames:
                 try:
                     os.fsencode(filename)
@@ -735,7 +729,7 @@ class CWarnTests(WarnTests, unittest.TestCase):
     # test.import_helper.import_fresh_module utility function
     def test_accelerated(self):
         self.assertIsNot(original_warnings, self.module)
-        self.assertFalse(hasattr(self.module.warn, '__code__'))
+        self.assertNotHasAttr(self.module.warn, '__code__')
 
 class PyWarnTests(WarnTests, unittest.TestCase):
     module = py_warnings
@@ -744,7 +738,7 @@ class PyWarnTests(WarnTests, unittest.TestCase):
     # test.import_helper.import_fresh_module utility function
     def test_pure_python(self):
         self.assertIsNot(original_warnings, self.module)
-        self.assertTrue(hasattr(self.module.warn, '__code__'))
+        self.assertHasAttr(self.module.warn, '__code__')
 
 
 class WCmdLineTests(BaseTest):
@@ -1528,12 +1522,12 @@ a=A()
         # (_warnings will try to import it)
         code = "f = open(%a)" % __file__
         rc, out, err = assert_python_ok("-Wd", "-c", code)
-        self.assertTrue(err.startswith(expected), ascii(err))
+        self.assertStartsWith(err, expected)
 
         # import the warnings module
         code = "import warnings; f = open(%a)" % __file__
         rc, out, err = assert_python_ok("-Wd", "-c", code)
-        self.assertTrue(err.startswith(expected), ascii(err))
+        self.assertStartsWith(err, expected)
 
 
 class AsyncTests(BaseTest):

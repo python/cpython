@@ -133,6 +133,22 @@ class PlatformTest(unittest.TestCase):
             for terse in (False, True):
                 res = platform.platform(aliased, terse)
 
+    def test__platform(self):
+        for src, res in [
+            ('foo bar', 'foo_bar'),
+            (
+                '1/2\\3:4;5"6(7)8(7)6"5;4:3\\2/1',
+                '1-2-3-4-5-6-7-8-7-6-5-4-3-2-1'
+            ),
+            ('--', ''),
+            ('-f', '-f'),
+            ('-foo----', '-foo'),
+            ('--foo---', '-foo'),
+            ('---foo--', '-foo'),
+        ]:
+            with self.subTest(src=src):
+                self.assertEqual(platform._platform(src), res)
+
     def test_system(self):
         res = platform.system()
 
@@ -383,15 +399,6 @@ class PlatformTest(unittest.TestCase):
                 finally:
                     platform._uname_cache = None
 
-    def test_java_ver(self):
-        import re
-        msg = re.escape(
-            "'java_ver' is deprecated and slated for removal in Python 3.15"
-        )
-        with self.assertWarnsRegex(DeprecationWarning, msg):
-            res = platform.java_ver()
-        self.assertEqual(len(res), 4)
-
     @unittest.skipUnless(support.MS_WINDOWS, 'This test only makes sense on Windows')
     def test_win32_ver(self):
         release1, version1, csd1, ptype1 = 'a', 'b', 'c', 'd'
@@ -410,7 +417,7 @@ class PlatformTest(unittest.TestCase):
             for v in version.split('.'):
                 int(v)  # should not fail
         if csd:
-            self.assertTrue(csd.startswith('SP'), msg=csd)
+            self.assertStartsWith(csd, 'SP')
         if ptype:
             if os.cpu_count() > 1:
                 self.assertIn('Multiprocessor', ptype)

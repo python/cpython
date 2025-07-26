@@ -77,21 +77,16 @@ To install the file downloaded from python.org, either double-click and select
 "Install", or run ``Add-AppxPackage <path to MSIX>`` in Windows Powershell.
 
 After installation, the ``python``, ``py``, and ``pymanager`` commands should be
-available. If they are not, click Start and search for "Manage app execution
-aliases". This settings page will let you enable the relevant commands. They
-will be labelled "Python (default)", "Python (default windowed)", and "Python
-install manager".
-
-If you have existing installations of Python, or you have modified your
-:envvar:`PATH` variable, you may need to remove them or undo the modifications
-in order for the commands to work. Old versions of Python can be reinstalled
-using the Python install manager.
+available. If you have existing installations of Python, or you have modified
+your :envvar:`PATH` variable, you may need to remove them or undo the
+modifications. See :ref:`pymanager-troubleshoot` for more help with fixing
+non-working commands.
 
 When you first install a runtime, you will likely be prompted to add a directory
 to your :envvar:`PATH`. This is optional, if you prefer to use the ``py``
 command, but is offered for those who prefer the full range of aliases (such
 as ``python3.14.exe``) to be available. The directory will be
-:file:`%LocalAppData%\Python\bin` by default, but may be customized by an
+:file:`%LocalAppData%\\Python\\bin` by default, but may be customized by an
 administrator. Click Start and search for "Edit environment variables for your
 account" for the system settings page to add the path.
 
@@ -103,8 +98,9 @@ does not affect any installs of Python runtimes. Uninstalling the Python install
 manager does not uninstall any Python runtimes.
 
 If you are not able to install an MSIX in your context, for example, you are
-using automated deployment software that does not support it, please see
-:ref:`pymanager-advancedinstall` below for more information.
+using automated deployment software that does not support it, or are targeting
+Windows Server 2019, please see :ref:`pymanager-advancedinstall` below for more
+information.
 
 
 Basic Use
@@ -149,6 +145,10 @@ want to be passed to the runtime (such as script files or the module to launch):
    ...
    $> py -m this
    ...
+
+The default runtime can be overridden with the :envvar:`PYTHON_MANAGER_DEFAULT`
+environment variable, or a configuration file. See :ref:`pymanager-config` for
+information about configuration settings.
 
 To launch a specific runtime, the ``py`` command accepts a ``-V:<TAG>`` option.
 This option must be specified before any others. The tag is part or all of the
@@ -385,50 +385,77 @@ The following settings are those that are considered likely to be modified in
 normal use. Later sections list those that are intended for administrative
 customization.
 
-.. csv-table:: Standard configuration options
-   :header: "Config Key", "Environment Variable", "Description"
-   :widths: 2, 2, 4
+.. Sphinx bug with text writer; remove widths & caption temporarily
+.. :widths: 2, 2, 4
 
-   ``default_tag``,``PYTHON_MANAGER_DEFAULT``,"The preferred default
-   version to launch or install. By default, this is interpreted as the most
-   recent non-prerelease version from the CPython team.
-   "
-   ``default_platform``,``PYTHON_MANAGER_DEFAULT_PLATFORM``,"The preferred
-   default platform to launch or install. This is treated as a suffix to the
-   specified tag, such that ``py -V:3.14`` would prefer an install for
-   ``3.14-64`` if it exists (and ``default_platform`` is ``-64``), but will use
-   ``3.14`` if no tagged install exists.
-   "
-   ``logs_dir``,``PYTHON_MANAGER_LOGS``,"The location where log files are
-   written. By default, :file:`%TEMP%`.
-   "
-   ``automatic_install``,``PYTHON_MANAGER_AUTOMATIC_INSTALL``,"True to
-   allow automatic installs when specifying a particular runtime to launch.
-   By default, true.
-   "
-   ``include_unmanaged``,``PYTHON_MANAGER_INCLUDE_UNMANAGED``,"True to
-   allow listing and launching runtimes that were not installed by the Python
-   install manager, or false to exclude them. By default, true.
-   "
-   ``shebang_can_run_anything``,"``PYTHON_MANAGER_SHEBANG_CAN_RUN_ANYTHING``
-   ","True to allow shebangs in ``.py`` files to launch applications other than
-   Python runtimes, or false to prevent it. By default, true.
-   "
-   ``log_level``,"``PYMANAGER_VERBOSE``, ``PYMANAGER_DEBUG``","Set
-   the default level of output (0-50) By default, 20. Lower values produce more
-   output. The environment variables are boolean, and may produce additional
-   output during startup that is later suppressed by other configuration.
-   "
-   ``confirm``,``PYTHON_MANAGER_CONFIRM``,"True to confirm certain actions
-   before taking them (such as uninstall), or false to skip the confirmation. By
-   default, true.
-   "
-   ``install.source``,``PYTHON_MANAGER_SOURCE_URL``,"Override the index
-   feed to obtain new installs from.
-   "
-   ``list.format``,``PYTHON_MANAGER_LIST_FORMAT``,"Specify the default
-   format used by the ``py list`` command. By default, ``table``.
-   "
+.. rubric:: Standard configuration options
+
+.. list-table::
+   :header-rows: 1
+
+   * - Config Key
+     - Environment Variable
+     - Description
+
+   * - ``default_tag``
+     - ``PYTHON_MANAGER_DEFAULT``
+     - The preferred default version to launch or install.
+       By default, this is interpreted as the most recent non-prerelease version
+       from the CPython team.
+
+   * - ``default_platform``
+     - ``PYTHON_MANAGER_DEFAULT_PLATFORM``
+     - The preferred default platform to launch or install.
+       This is treated as a suffix to the specified tag, such that ``py -V:3.14``
+       would prefer an install for ``3.14-64`` if it exists
+       (and ``default_platform`` is ``-64``),
+       but will use ``3.14`` if no tagged install exists.
+
+   * - ``logs_dir``
+     - ``PYTHON_MANAGER_LOGS``
+     - The location where log files are written.
+       By default, :file:`%TEMP%`.
+
+   * - ``automatic_install``
+     - ``PYTHON_MANAGER_AUTOMATIC_INSTALL``
+     - True to allow automatic installs when specifying a particular runtime
+       to launch.
+       By default, true.
+
+   * - ``include_unmanaged``
+     - ``PYTHON_MANAGER_INCLUDE_UNMANAGED``
+     - True to allow listing and launching runtimes that were not installed
+       by the Python install manager, or false to exclude them.
+       By default, true.
+
+   * - ``shebang_can_run_anything``
+     - ``PYTHON_MANAGER_SHEBANG_CAN_RUN_ANYTHING``
+     - True to allow shebangs in ``.py`` files to launch applications other than
+       Python runtimes, or false to prevent it.
+       By default, true.
+
+   * - ``log_level``
+     - ``PYMANAGER_VERBOSE``, ``PYMANAGER_DEBUG``
+     - Set the default level of output (0-50).
+       By default, 20.
+       Lower values produce more output.
+       The environment variables are boolean, and may produce additional
+       output during startup that is later suppressed by other configuration.
+
+   * - ``confirm``
+     - ``PYTHON_MANAGER_CONFIRM``
+     - True to confirm certain actions before taking them (such as uninstall),
+       or false to skip the confirmation.
+       By default, true.
+
+   * - ``install.source``
+     - ``PYTHON_MANAGER_SOURCE_URL``
+     - Override the index feed to obtain new installs from.
+
+   * - ``list.format``
+     - ``PYTHON_MANAGER_LIST_FORMAT``
+     - Specify the default format used by the ``py list`` command.
+       By default, ``table``.
 
 Dotted names should be nested inside JSON objects, for example, ``list.format``
 would be specified as ``{"list": {"format": "table"}}``.
@@ -472,6 +499,10 @@ directory (which you may have added to your :envvar:`PATH` environment variable)
 can be used in a shebang, even if it is not on your :envvar:`PATH`. This allows
 the use of shebangs like ``/usr/bin/python3.12`` to select a particular runtime.
 
+If no runtimes are installed, or if automatic installation is enabled, the
+requested runtime will be installed if necessary. See :ref:`pymanager-config`
+for information about configuration settings.
+
 The ``/usr/bin/env`` form of shebang line will also search the :envvar:`PATH`
 environment variable for unrecognized commands. This corresponds to the
 behaviour of the Unix ``env`` program, which performs the same search, but
@@ -488,7 +519,7 @@ which the path to the script and any additional arguments will be appended.
 This functionality may be disabled by the ``shebang_can_run_anything``
 configuration option.
 
-.. note:
+.. note::
 
    The behaviour of shebangs in the Python install manager is subtly different
    from the previous ``py.exe`` launcher, and the old configuration options no
@@ -499,6 +530,14 @@ configuration option.
    PyManager's one, and you will need to use ``pymanager`` commands for
    installing and uninstalling.
 
+
+.. _Add-AppxPackage: https://learn.microsoft.com/powershell/module/appx/add-appxpackage
+
+.. _Remove-AppxPackage: https://learn.microsoft.com/powershell/module/appx/remove-appxpackage
+
+.. _Add-AppxProvisionedPackage: https://learn.microsoft.com/powershell/module/dism/add-appxprovisionedpackage
+
+.. _PackageManager: https://learn.microsoft.com/uwp/api/windows.management.deployment.packagemanager
 
 .. _pymanager-advancedinstall:
 
@@ -511,6 +550,11 @@ python.org downloads page. This MSI has no user interface, and can only perform
 per-machine installs to its default location in Program Files. It will attempt
 to modify the system :envvar:`PATH` environment variable to include this install
 location, but be sure to validate this on your configuration.
+
+.. note::
+
+   Windows Server 2019 is the only version of Windows that CPython supports that
+   does not support MSIX. For Windows Server 2019, you should use the MSI.
 
 Be aware that the MSI package does not bundle any runtimes, and so is not
 suitable for installs into offline environments without also creating an offline
@@ -532,25 +576,62 @@ depending on whether it was installed from python.org or through the Windows
 Store. Attempting to run the executable directly from Program Files is not
 recommended.
 
-To programmatically install or uninstall the MSIX without using your
-distribution platform's native support, the `Add-AppxPackage
-<https://learn.microsoft.com/powershell/module/appx/add-appxpackage>`_ and
-`Remove-AppxPackage <https://learn.microsoft.com/powershell/module/appx/remove-appxpackage>`_
-PowerShell cmdlets are simplest to use:
+To programmatically install the Python install manager, it is easiest to use
+WinGet, which is included with all supported versions of Windows:
 
-.. code::
+.. code-block:: powershell
+
+   $> winget install 9NQ7512CXL7T -e --accept-package-agreements --disable-interactivity
+
+   # Optionally run the configuration checker and accept all changes
+   $> py install --configure -y
+
+To download the Python install manager and install on another machine, the
+following WinGet command will download the required files from the Store to your
+Downloads directory (add ``-d <location>`` to customize the output location).
+This also generates a YAML file that appears to be unnecessary, as the
+downloaded MSIX can be installed by launching or using the commands below.
+
+.. code-block:: powershell
+
+   $> winget download 9NQ7512CXL7T -e --skip-license --accept-package-agreements --accept-source-agreements
+
+To programmatically install or uninstall an MSIX using only PowerShell, the
+`Add-AppxPackage`_ and `Remove-AppxPackage`_ PowerShell cmdlets are recommended:
+
+.. code-block:: powershell
 
    $> Add-AppxPackage C:\Downloads\python-manager-25.0.msix
    ...
    $> Get-AppxPackage PythonSoftwareFoundation.PythonManager | Remove-AppxPackage
 
-The native APIs for package management may be found on the Windows
-`PackageManager <https://learn.microsoft.com/uwp/api/windows.management.deployment.packagemanager>`_
-class. The :func:`!AddPackageAsync` method installs for the current user, or use
-:func:`!StagePackageAsync` followed by :func:`!ProvisionPackageForAllUsersAsync`
-to install the Python install manager for all users from the MSIX package. Users
-will still need to install their own copies of Python itself, as there is no way
-to trigger those installs without being a logged in user.
+The latest release can be downloaded and installed by Windows by passing the
+AppInstaller file to the Add-AppxPackage command. This installs using the MSIX
+on python.org, and is only recommended for cases where installing via the Store
+(interactively or using WinGet) is not possible.
+
+.. code-block:: powershell
+
+   $> Add-AppxPackage -AppInstallerFile https://www.python.org/ftp/python/pymanager/pymanager.appinstaller
+
+Other tools and APIs may also be used to provision an MSIX package for all users
+on a machine, but Python does not consider this a supported scenario. We suggest
+looking into the PowerShell `Add-AppxProvisionedPackage`_ cmdlet, the native
+Windows `PackageManager`_ class, or the documentation and support for your
+deployment tool.
+
+Regardless of the install method, users will still need to install their own
+copies of Python itself, as there is no way to trigger those installs without
+being a logged in user. When using the MSIX, the latest version of Python will
+be available for all users to install without network access.
+
+Note that the MSIX downloadable from the Store and from the Python website are
+subtly different and cannot be installed at the same time. Wherever possible,
+we suggest using the above WinGet commands to download the package from the
+Store to reduce the risk of setting up conflicting installs. There are no
+licensing restrictions on the Python install manager that would prevent using
+the Store package in this way.
+
 
 .. _pymanager-admin-config:
 
@@ -584,46 +665,64 @@ variable will be used instead.
 Configuration settings that are paths are interpreted as relative to the
 directory containing the configuration file that specified them.
 
-.. csv-table:: Administrative configuration options
-   :header: "Config Key", "Description"
-   :widths: 1, 4
+.. Sphinx bug with text writer; remove widths & caption temporarily
+.. :widths: 1, 4
 
-   ``base_config``,"The highest priority configuration file to read. Note that
-   only the built-in configuration file and the registry can modify this
-   setting.
-   "
-   ``user_config``,"The second configuration file to read.
-   "
-   ``additional_config``,"The third configuration file to read.
-   "
-   ``registry_override_key``,"Registry location to check for overrides. Note
-   that only the built-in configuration file can modify this setting.
-   "
-   ``bundled_dir``,"Read-only directory containing locally cached files.
-   "
-   ``install.fallback_source``,"Path or URL to an index to consult when the
-   main index cannot be accessed.
-   "
-   ``install.enable_shortcut_kinds``,"Comma-separated list of shortcut kinds
-   to allow (e.g. ``""pep514,start""``). Enabled shortcuts may still be disabled
-   by ``disable_shortcut_kinds``.
-   "
-   ``install.disable_shortcut_kinds``,"Comma-separated list of shortcut kinds
-   to exclude (e.g. ``""pep514,start""``). Disabled shortcuts are not
-   reactivated by ``enable_shortcut_kinds``.
-   "
-   ``pep514_root``,"Registry location to read and write PEP 514 entries into.
-   By default, :file:`HKEY_CURRENT_USER\\Software\\Python`.
-   "
-   ``start_folder``,"Start menu folder to write shortcuts into. By default,
-   ``Python``. This path is relative to the user's Programs folder.
-   "
-   ``virtual_env``,"Path to the active virtual environment. By default, this
-   is ``%VIRTUAL_ENV%``, but may be set empty to disable venv detection.
-   "
-   ``shebang_can_run_anything_silently``,"True to suppress visible warnings
-   when a shebang launches an application other than a Python runtime.
-   "
+.. rubric:: Administrative configuration options
+
+.. list-table::
+   :header-rows: 1
+
+   * - Config Key
+     - Description
+
+   * - ``base_config``
+     - The highest priority configuration file to read.
+       Note that only the built-in configuration file and the registry can
+       modify this setting.
+
+   * - ``user_config``
+     - The second configuration file to read.
+
+   * - ``additional_config``
+     - The third configuration file to read.
+
+   * - ``registry_override_key``
+     - Registry location to check for overrides.
+       Note that only the built-in configuration file can modify this setting.
+
+   * - ``bundled_dir``
+     - Read-only directory containing locally cached files.
+
+   * - ``install.fallback_source``
+     - Path or URL to an index to consult when the main index cannot be accessed.
+
+   * - ``install.enable_shortcut_kinds``
+     - Comma-separated list of shortcut kinds to allow (e.g. ``"pep514,start"``).
+       Enabled shortcuts may still be disabled by ``disable_shortcut_kinds``.
+
+   * - ``install.disable_shortcut_kinds``
+     - Comma-separated list of shortcut kinds to exclude
+       (e.g. ``"pep514,start"``).
+       Disabled shortcuts are not reactivated by ``enable_shortcut_kinds``.
+
+   * - ``pep514_root``
+     - Registry location to read and write PEP 514 entries into.
+       By default, :file:`HKEY_CURRENT_USER\\Software\\Python`.
+
+   * - ``start_folder``
+     - Start menu folder to write shortcuts into.
+       By default, ``Python``.
+       This path is relative to the user's Programs folder.
+
+   * - ``virtual_env``
+     - Path to the active virtual environment.
+       By default, this is ``%VIRTUAL_ENV%``, but may be set empty
+       to disable venv detection.
+
+   * - ``shebang_can_run_anything_silently``
+     - True to suppress visible warnings when a shebang launches an application
+       other than a Python runtime.
 
 .. _install-freethreaded-windows:
 
@@ -662,70 +761,89 @@ issue at `our bug tracker <https://github.com/python/cpython/issues>`_,
 including any relevant log files (written to your :file:`%TEMP%` directory by
 default).
 
-.. csv-table:: Troubleshooting
-   :header: "Symptom", "Things to try"
-   :widths: 1, 1
+.. Sphinx bug with text writer; remove widths & caption temporarily
+.. :widths: 1, 1
 
-   "``python`` gives me a ""command not found"" error or opens the Store app
-   when I type it in my terminal.", "Did you :ref:`install the Python install
-   manager <pymanager>`?
-   "
-   "", "Click Start, open ""Manage app execution aliases"", and check that the
-   aliases for ""Python (default)"" are enabled. If they already are, try
-   disabling and re-enabling to refresh the command. The ""Python (default
-   windowed)"" and ""Python install manager"" commands may also need refreshing.
-   "
-   "", "Check that the ``py`` and ``pymanager`` commands work.
-   "
-   "``py`` gives me a ""command not found"" error when I type it in my
-   terminal.","Did you :ref:`install the Python install manager <pymanager>`?
-   "
-   "", "Click Start, open ""Manage app execution aliases"", and check that the
-   aliases for ""Python install manager"" are enabled. If they already are, try
-   disabling and re-enabling to refresh the command. The ""Python (default
-   windowed)"" and ""Python install manager"" commands may also need refreshing.
-   "
-   "``py`` gives me a ""can't open file"" error when I type commands in my
-   terminal.", "This usually means you have the legacy launcher installed and it
-   has priority over the Python install manager. To remove, click Start, open
-   ""Installed apps"", search for ""Python launcher"" and uninstall it.
-   "
-   "``python`` doesn't launch the same runtime as ``py``", "Click Start, open
-   ""Installed apps"", look for any existing Python runtimes, and either remove
-   them or Modify and disable the :envvar:`PATH` options.
-   "
-   "", "Click Start, open ""Manage app execution aliases"", and check that your
-   ``python.exe`` alias is set to ""Python (default)""
-   "
-   "``python`` and ``py`` don't launch the runtime I expect", "Check your
-   ``PYTHON_MANAGER_DEFAULT`` environment variable or ``default_tag``
-   configuration. The ``py list`` command will show your default based on these
-   settings.
-   "
-   "", "Installs that are managed by the Python install manager will be chosen
-   ahead of unmanaged installs. Use ``py install`` to install the runtime you
-   expect, or configure your default tag.
-   "
-   "", "Prerelease and experimental installs that are not managed by the Python
-   install manager may be chosen ahead of stable releases. Configure your
-   default tag or uninstall the prerelease runtime and reinstall using ``py
-   install``.
-   "
-   "``pythonw`` or ``pyw`` don't launch the same runtime as ``python`` or
-   ``py``","Click Start, open ""Manage app execution aliases"", and check that
-   your ``pythonw.exe`` and ``pyw.exe`` aliases are consistent with your
-   others.
-   "
-   "``pip`` gives me a ""command not found"" error when I type it in my
-   terminal.","Have you activated a virtual environment? Run the
-   ``.venv\Scripts\activate`` script in your terminal to activate.
-   "
-   "","The package may be available but missing the generated executable.
-   We recommend using the ``python -m pip`` command instead, or alternatively
-   the ``python -m pip install --force pip`` command will recreate the
-   executables and show you the path to add to :envvar:`PATH`. These scripts are
-   separated for each runtime, and so you may need to add multiple paths.
-   "
+.. rubric:: Troubleshooting
+
+.. list-table::
+   :header-rows: 1
+
+   * - Symptom
+     - Things to try
+
+   * - ``python`` gives me a "command not found" error or opens the Store app
+       when I type it in my terminal.
+     - Did you :ref:`install the Python install manager <pymanager>`?
+
+   * -
+     - Click Start, open "Manage app execution aliases", and check that the
+       aliases for "Python (default)" are enabled.
+       If they already are, try disabling and re-enabling to refresh the command.
+       The "Python (default windowed)" and "Python install manager" commands
+       may also need refreshing.
+
+   * -
+     - Check that the ``py`` and ``pymanager`` commands work.
+
+   * - ``py`` gives me a "command not found" error when I type it in my terminal.
+     - Did you :ref:`install the Python install manager <pymanager>`?
+
+   * -
+     - Click Start, open "Manage app execution aliases", and check that the
+       aliases for "Python (default)" are enabled.
+       If they already are, try disabling and re-enabling to refresh the command.
+       The "Python (default windowed)" and "Python install manager" commands
+       may also need refreshing.
+
+   * - ``py`` gives me a "can't open file" error when I type commands in my
+       terminal.
+     - This usually means you have the legacy launcher installed and
+       it has priority over the Python install manager.
+       To remove, click Start, open "Installed apps",
+       search for "Python launcher" and uninstall it.
+
+   * - ``python`` doesn't launch the same runtime as ``py``
+     - Click Start, open "Installed apps", look for any existing Python runtimes,
+       and either remove them or Modify and disable the :envvar:`PATH` options.
+
+   * -
+     - Click Start, open "Manage app execution aliases", and check that your
+       ``python.exe`` alias is set to "Python (default)"
+
+   * - ``python`` and ``py`` don't launch the runtime I expect
+     - Check your ``PYTHON_MANAGER_DEFAULT`` environment variable
+       or ``default_tag`` configuration.
+       The ``py list`` command will show your default based on these settings.
+
+   * -
+     - Installs that are managed by the Python install manager will be chosen
+       ahead of unmanaged installs.
+       Use ``py install`` to install the runtime you expect,
+       or configure your default tag.
+
+   * -
+     - Prerelease and experimental installs that are not managed by the Python
+       install manager may be chosen ahead of stable releases.
+       Configure your default tag or uninstall the prerelease runtime
+       and reinstall using ``py install``.
+
+   * - ``pythonw`` or ``pyw`` don't launch the same runtime as ``python`` or ``py``
+     - Click Start, open "Manage app execution aliases", and check that your
+       ``pythonw.exe`` and ``pyw.exe`` aliases are consistent with your others.
+
+   * - ``pip`` gives me a "command not found" error when I type it in my terminal.
+     - Have you activated a virtual environment?
+       Run the ``.venv\Scripts\activate`` script in your terminal to activate.
+
+   * -
+     - The package may be available but missing the generated executable.
+       We recommend using the ``python -m pip`` command instead,
+       or alternatively the ``python -m pip install --force pip`` command
+       will recreate the executables and show you the path to
+       add to :envvar:`PATH`.
+       These scripts are separated for each runtime, and so you may need to
+       add multiple paths.
 
 
 .. _windows-embeddable:
@@ -952,6 +1070,9 @@ UTF-8 mode
 ==========
 
 .. versionadded:: 3.7
+.. versionchanged:: next
+
+   Python UTF-8 mode is now enabled by default (:pep:`686`).
 
 Windows still uses legacy encodings for the system encoding (the ANSI Code
 Page).  Python uses it for the default encoding of text files (e.g.
@@ -960,20 +1081,22 @@ Page).  Python uses it for the default encoding of text files (e.g.
 This may cause issues because UTF-8 is widely used on the internet
 and most Unix systems, including WSL (Windows Subsystem for Linux).
 
-You can use the :ref:`Python UTF-8 Mode <utf8-mode>` to change the default text
-encoding to UTF-8. You can enable the :ref:`Python UTF-8 Mode <utf8-mode>` via
-the ``-X utf8`` command line option, or the ``PYTHONUTF8=1`` environment
-variable.  See :envvar:`PYTHONUTF8` for enabling UTF-8 mode, and
-:ref:`setting-envvars` for how to modify environment variables.
-
-When the :ref:`Python UTF-8 Mode <utf8-mode>` is enabled, you can still use the
+The :ref:`Python UTF-8 Mode <utf8-mode>`, enabled by default, can help by
+changing the default text encoding to UTF-8.
+When the :ref:`UTF-8 mode <utf8-mode>` is enabled, you can still use the
 system encoding (the ANSI Code Page) via the "mbcs" codec.
 
-Note that adding ``PYTHONUTF8=1`` to the default environment variables
-will affect all Python 3.7+ applications on your system.
-If you have any Python 3.7+ applications which rely on the legacy
-system encoding, it is recommended to set the environment variable
-temporarily or use the ``-X utf8`` command line option.
+You can disable the :ref:`Python UTF-8 Mode <utf8-mode>` via
+the ``-X utf8=0`` command line option, or the ``PYTHONUTF8=0`` environment
+variable.  See :envvar:`PYTHONUTF8` for disabling UTF-8 mode, and
+:ref:`setting-envvars` for how to modify environment variables.
+
+.. hint::
+   Adding ``PYTHONUTF8={0,1}`` to the default environment variables
+   will affect all Python 3.7+ applications on your system.
+   If you have any Python 3.7+ applications which rely on the legacy
+   system encoding, it is recommended to set the environment variable
+   temporarily or use the ``-X utf8`` command line option.
 
 .. note::
    Even when UTF-8 mode is disabled, Python uses UTF-8 by default

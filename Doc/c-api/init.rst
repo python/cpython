@@ -492,17 +492,8 @@ Initializing and finalizing the interpreter
    strings other than those passed in (however, the contents of the strings
    pointed to by the argument list are not modified).
 
-   The return value will be ``0`` if the interpreter exits normally (i.e.,
-   without an exception), ``1`` if the interpreter exits due to an exception,
-   or ``2`` if the argument list does not represent a valid Python command
-   line.
-
-   Note that if an otherwise unhandled :exc:`SystemExit` is raised, this
-   function will not return ``1``, but exit the process, as long as
-   ``Py_InspectFlag`` is not set. If ``Py_InspectFlag`` is set, execution will
-   drop into the interactive Python prompt, at which point a second otherwise
-   unhandled :exc:`SystemExit` will still exit the process, while any other
-   means of exiting will set the return value as described above.
+   The return value is ``2`` if the argument list does not represent a valid
+   Python command line, and otherwise the same as :c:func:`Py_RunMain`.
 
    In terms of the CPython runtime configuration APIs documented in the
    :ref:`runtime configuration <init-config>` section (and without accounting
@@ -539,23 +530,18 @@ Initializing and finalizing the interpreter
 
    If :c:member:`PyConfig.inspect` is not set (the default), the return value
    will be ``0`` if the interpreter exits normally (that is, without raising
-   an exception), or ``1`` if the interpreter exits due to an exception. If an
-   otherwise unhandled :exc:`SystemExit` is raised, the function will immediately
-   exit the process instead of returning ``1``.
+   an exception), the exit status of an unhandled :exc:`SystemExit`, or ``1``
+   for any other unhandled exception.
 
    If :c:member:`PyConfig.inspect` is set (such as when the :option:`-i` option
    is used), rather than returning when the interpreter exits, execution will
    instead resume in an interactive Python prompt (REPL) using the ``__main__``
    module's global namespace. If the interpreter exited with an exception, it
    is immediately raised in the REPL session. The function return value is
-   then determined by the way the *REPL session* terminates: returning ``0``
-   if the session terminates without raising an unhandled exception, exiting
-   immediately for an unhandled :exc:`SystemExit`, and returning ``1`` for
-   any other unhandled exception.
+   then determined by the way the *REPL session* terminates: ``0``, ``1``, or
+   the status of a :exc:`SystemExit`, as specified above.
 
-   This function always finalizes the Python interpreter regardless of whether
-   it returns a value or immediately exits the process due to an unhandled
-   :exc:`SystemExit` exception.
+   This function always finalizes the Python interpreter before it returns.
 
    See :ref:`Python Configuration <init-python-config>` for an example of a
    customized Python that always runs in isolated mode using
@@ -919,8 +905,36 @@ Note that the ``PyGILState_*`` functions assume there is only one global
 interpreter (created automatically by :c:func:`Py_Initialize`).  Python
 supports the creation of additional interpreters (using
 :c:func:`Py_NewInterpreter`), but mixing multiple interpreters and the
-``PyGILState_*`` API is unsupported.
+``PyGILState_*`` API is unsupported. This is because :c:func:`PyGILState_Ensure`
+and similar functions default to :term:`attaching <attached thread state>` a
+:term:`thread state` for the main interpreter, meaning that the thread can't safely
+interact with the calling subinterpreter.
 
+Supporting subinterpreters in non-Python threads
+------------------------------------------------
+
+If you would like to support subinterpreters with non-Python created threads, you
+must use the ``PyThreadState_*`` API instead of the traditional ``PyGILState_*``
+API.
+
+In particular, you must store the interpreter state from the calling
+function and pass it to :c:func:`PyThreadState_New`, which will ensure that
+the :term:`thread state` is targeting the correct interpreter::
+
+   /* The return value of PyInterpreterState_Get() from the
+      function that created this thread. */
+   PyInterpreterState *interp = ThreadData->interp;
+   PyThreadState *tstate = PyThreadState_New(interp);
+   PyThreadState_Swap(tstate);
+
+   /* GIL of the subinterpreter is now held.
+      Perform Python actions here. */
+   result = CallSomeFunction();
+   /* evaluate result or handle exception */
+
+   /* Destroy the thread state. No Python API allowed beyond this point. */
+   PyThreadState_Clear(tstate);
+   PyThreadState_DeleteCurrent();
 
 .. _fork-and-threads:
 
@@ -1097,6 +1111,10 @@ code, or when embedding the Python interpreter:
    .. seealso:
       :c:func:`PyEval_ReleaseThread`
 
+   .. note::
+      Similar to :c:func:`PyGILState_Ensure`, this function will hang the
+      thread if the runtime is finalizing.
+
 
 The following functions use thread-local storage, and are not compatible
 with sub-interpreters:
@@ -1123,10 +1141,10 @@ with sub-interpreters:
    When the function returns, there will be an :term:`attached thread state`
    and the thread will be able to call arbitrary Python code.  Failure is a fatal error.
 
-   .. note::
-      Calling this function from a thread when the runtime is finalizing will
-      hang the thread until the program exits, even if the thread was not
-      created by Python.  Refer to
+   .. warning::
+      Calling this function when the runtime is finalizing is unsafe. Doing
+      so will either hang the thread until the program ends, or fully crash
+      the interpreter in rare cases. Refer to
       :ref:`cautions-regarding-runtime-finalization` for more details.
 
    .. versionchanged:: 3.14
@@ -1143,7 +1161,6 @@ with sub-interpreters:
    Every call to :c:func:`PyGILState_Ensure` must be matched by a call to
    :c:func:`PyGILState_Release` on the same thread.
 
-
 .. c:function:: PyThreadState* PyGILState_GetThisThreadState()
 
    Get the :term:`attached thread state` for this thread.  May return ``NULL`` if no
@@ -1151,19 +1168,29 @@ with sub-interpreters:
    always has such a thread-state, even if no auto-thread-state call has been
    made on the main thread.  This is mainly a helper/diagnostic function.
 
-   .. seealso: :c:func:`PyThreadState_Get``
+   .. note::
+      This function does not account for :term:`thread states <thread state>` created
+      by something other than :c:func:`PyGILState_Ensure` (such as :c:func:`PyThreadState_New`).
+      Prefer :c:func:`PyThreadState_Get` or :c:func:`PyThreadState_GetUnchecked`
+      for most cases.
 
+   .. seealso: :c:func:`PyThreadState_Get``
 
 .. c:function:: int PyGILState_Check()
 
    Return ``1`` if the current thread is holding the :term:`GIL` and ``0`` otherwise.
    This function can be called from any thread at any time.
-   Only if it has had its Python thread state initialized and currently is
-   holding the :term:`GIL` will it return ``1``.
+   Only if it has had its :term:`thread state <attached thread state>` initialized
+   via :c:func:`PyGILState_Ensure` will it return ``1``.
    This is mainly a helper/diagnostic function.  It can be useful
    for example in callback contexts or memory allocation functions when
    knowing that the :term:`GIL` is locked can allow the caller to perform sensitive
    actions or otherwise behave differently.
+
+   .. note::
+      If the current Python process has ever created a subinterpreter, this
+      function will *always* return ``1``. Prefer :c:func:`PyThreadState_GetUnchecked`
+      for most cases.
 
    .. versionadded:: 3.4
 
@@ -1223,7 +1250,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 .. c:function:: void PyInterpreterState_Clear(PyInterpreterState *interp)
 
    Reset all information in an interpreter state object.  There must be
-   an :term:`attached thread state` for the the interpreter.
+   an :term:`attached thread state` for the interpreter.
 
    .. audit-event:: cpython.PyInterpreterState_Clear "" c.PyInterpreterState_Clear
 
@@ -2250,6 +2277,18 @@ The C-API provides a basic mutual exclusion lock.
 
    .. versionadded:: 3.13
 
+.. c:function:: int PyMutex_IsLocked(PyMutex *m)
+
+   Returns non-zero if the mutex *m* is currently locked, zero otherwise.
+
+   .. note::
+
+      This function is intended for use in assertions and debugging only and
+      should not be used to make concurrency control decisions, as the lock
+      state may change immediately after the check.
+
+   .. versionadded:: 3.14
+
 .. _python-critical-section-api:
 
 Python Critical Section API
@@ -2266,6 +2305,12 @@ When :c:func:`PyEval_RestoreThread` is called, the most recent critical section
 is resumed, and its locks reacquired.  This means the critical section API
 provides weaker guarantees than traditional locks -- they are useful because
 their behavior is similar to the :term:`GIL`.
+
+Variants that accept :c:type:`PyMutex` pointers rather than Python objects are also
+available. Use these variants to start a critical section in a situation where
+there is no :c:type:`PyObject` -- for example, when working with a C type that
+does not extend or wrap :c:type:`PyObject` but still needs to call into the C
+API in a manner that might lead to deadlocks.
 
 The functions and structs used by the macros are exposed for cases
 where C macros are not available. They should only be used as in the
@@ -2312,6 +2357,23 @@ code triggered by the finalizer blocks and calls :c:func:`PyEval_SaveThread`.
 
    .. versionadded:: 3.13
 
+.. c:macro:: Py_BEGIN_CRITICAL_SECTION_MUTEX(m)
+
+   Locks the mutex *m* and begins a critical section.
+
+   In the free-threaded build, this macro expands to::
+
+     {
+          PyCriticalSection _py_cs;
+          PyCriticalSection_BeginMutex(&_py_cs, m)
+
+   Note that unlike :c:macro:`Py_BEGIN_CRITICAL_SECTION`, there is no cast for
+   the argument of the macro - it must be a :c:type:`PyMutex` pointer.
+
+   On the default build, this macro expands to ``{``.
+
+   .. versionadded:: 3.14
+
 .. c:macro:: Py_END_CRITICAL_SECTION()
 
    Ends the critical section and releases the per-object lock.
@@ -2340,6 +2402,23 @@ code triggered by the finalizer blocks and calls :c:func:`PyEval_SaveThread`.
    In the default build, this macro expands to ``{``.
 
    .. versionadded:: 3.13
+
+.. c:macro:: Py_BEGIN_CRITICAL_SECTION2_MUTEX(m1, m2)
+
+   Locks the mutexes *m1* and *m2* and begins a critical section.
+
+   In the free-threaded build, this macro expands to::
+
+     {
+          PyCriticalSection2 _py_cs2;
+          PyCriticalSection2_BeginMutex(&_py_cs2, m1, m2)
+
+   Note that unlike :c:macro:`Py_BEGIN_CRITICAL_SECTION2`, there is no cast for
+   the arguments of the macro - they must be :c:type:`PyMutex` pointers.
+
+   On the default build, this macro expands to ``{``.
+
+   .. versionadded:: 3.14
 
 .. c:macro:: Py_END_CRITICAL_SECTION2()
 

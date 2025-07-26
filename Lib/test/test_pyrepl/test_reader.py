@@ -375,7 +375,8 @@ class TestReaderInColor(ScreenEqualMixin, TestCase):
                 )
                 match case:
                     case "emscripten": print("on the web")
-                    case "ios" | "android": print("on the phone")
+                    case "ios" | "android":
+                        print("on the phone")
                     case _: print('arms around', match.group(1))
             """
         )
@@ -393,7 +394,8 @@ class TestReaderInColor(ScreenEqualMixin, TestCase):
                 {o}){z}
                 {K}match{z} case{o}:{z}
                     {K}case{z} {s}"emscripten"{z}{o}:{z} {b}print{z}{o}({z}{s}"on the web"{z}{o}){z}
-                    {K}case{z} {s}"ios"{z} {o}|{z} {s}"android"{z}{o}:{z} {b}print{z}{o}({z}{s}"on the phone"{z}{o}){z}
+                    {K}case{z} {s}"ios"{z} {o}|{z} {s}"android"{z}{o}:{z}
+                        {b}print{z}{o}({z}{s}"on the phone"{z}{o}){z}
                     {K}case{z} {K}_{z}{o}:{z} {b}print{z}{o}({z}{s}'arms around'{z}{o},{z} match{o}.{z}group{o}({z}{n}1{z}{o}){z}{o}){z}
             """
         )
@@ -402,14 +404,14 @@ class TestReaderInColor(ScreenEqualMixin, TestCase):
         reader, _ = handle_all_events(events)
         self.assert_screen_equal(reader, code, clean=True)
         self.assert_screen_equal(reader, expected_sync)
-        self.assertEqual(reader.pos, 2**7 + 2**8)
-        self.assertEqual(reader.cxy, (0, 14))
+        self.assertEqual(reader.pos, 396)
+        self.assertEqual(reader.cxy, (0, 15))
 
         async_msg = "{k}async{z} ".format(**colors)
         expected_async = expected.format(a=async_msg, **colors)
         more_events = itertools.chain(
             code_to_events(code),
-            [Event(evt="key", data="up", raw=bytearray(b"\x1bOA"))] * 13,
+            [Event(evt="key", data="up", raw=bytearray(b"\x1bOA"))] * 14,
             code_to_events("async "),
         )
         reader, _ = handle_all_events(more_events)
@@ -515,6 +517,37 @@ class TestReaderInColor(ScreenEqualMixin, TestCase):
         events = code_to_events(code)
         reader, _ = handle_all_events(events)
         self.assert_screen_equal(reader, code, clean=True)
+        self.assert_screen_equal(reader, expected)
+
+    def test_syntax_highlighting_literal_brace_in_fstring_or_tstring(self):
+        code = dedent(
+            """\
+            f"{{"
+            f"}}"
+            f"a{{b"
+            f"a}}b"
+            f"a{{b}}c"
+            t"a{{b}}c"
+            f"{{{0}}}"
+            f"{ {0} }"
+            """
+        )
+        expected = dedent(
+            """\
+            {s}f"{z}{s}<<{z}{s}"{z}
+            {s}f"{z}{s}>>{z}{s}"{z}
+            {s}f"{z}{s}a<<{z}{s}b{z}{s}"{z}
+            {s}f"{z}{s}a>>{z}{s}b{z}{s}"{z}
+            {s}f"{z}{s}a<<{z}{s}b>>{z}{s}c{z}{s}"{z}
+            {s}t"{z}{s}a<<{z}{s}b>>{z}{s}c{z}{s}"{z}
+            {s}f"{z}{s}<<{z}{o}<{z}{n}0{z}{o}>{z}{s}>>{z}{s}"{z}
+            {s}f"{z}{o}<{z} {o}<{z}{n}0{z}{o}>{z} {o}>{z}{s}"{z}
+            """
+        ).format(**colors).replace("<", "{").replace(">", "}")
+        events = code_to_events(code)
+        reader, _ = handle_all_events(events)
+        self.assert_screen_equal(reader, code, clean=True)
+        self.maxDiff=None
         self.assert_screen_equal(reader, expected)
 
     def test_control_characters(self):

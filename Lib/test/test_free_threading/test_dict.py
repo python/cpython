@@ -228,6 +228,22 @@ class TestDict(TestCase):
 
             self.assertEqual(count, 0)
 
+    def test_racing_object_get_set_dict(self):
+        e = Exception()
+
+        def writer():
+            for i in range(10000):
+                e.__dict__ = {1:2}
+
+        def reader():
+            for i in range(10000):
+                e.__dict__
+
+        t1 = Thread(target=writer)
+        t2 = Thread(target=reader)
+
+        with threading_helper.start_threads([t1, t2]):
+            pass
 
 if __name__ == "__main__":
     unittest.main()
