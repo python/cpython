@@ -230,6 +230,17 @@ difflib
   (Contributed by Jiahao Li in :gh:`134580`.)
 
 
+hashlib
+-------
+
+* Ensure that hash functions guaranteed to be always *available* exist as
+  attributes of :mod:`hashlib` even if they will not work at runtime due to
+  missing backend implementations. For instance, ``hashlib.md5`` will no
+  longer raise :exc:`AttributeError` if OpenSSL is not available and Python
+  has been built without MD5 support.
+  (Contributed by Bénédikt Tran in :gh:`136929`.)
+
+
 http.client
 -----------
 
@@ -503,8 +514,6 @@ Porting to Python 3.15
   (Contributed by Serhiy Storchaka in :gh:`133595`.)
 
 * Private functions promoted to public C APIs:
-
-  * ``PyMutex_IsLocked()`` : :c:func:`PyMutex_IsLocked`
 
   The |pythoncapi_compat_project| can be used to get most of these new
   functions on Python 3.14 and older.
