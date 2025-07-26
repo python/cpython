@@ -1864,7 +1864,7 @@ _hashlib_hmac_singleshot_impl(PyObject *module, Py_buffer *key,
     unsigned int md_len = 0;
 #endif
     const void *result;
-    PY_EVP_MD *evp = NULL;
+    PY_EVP_MD *evp;
     int is_xof;
 
     if (key->len > INT_MAX) {
