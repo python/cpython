@@ -4040,21 +4040,21 @@ subtype_getweakref(PyObject *obj, void *context)
 
 static PyGetSetDef subtype_getsets_full[] = {
     {"__dict__", subtype_dict, subtype_setdict,
-     PyDoc_STR("dictionary for instance variables")},
+     PyDoc_STR("dictionary for instance variables"), (void *)1},
     {"__weakref__", subtype_getweakref, NULL,
-     PyDoc_STR("list of weak references to the object")},
+     PyDoc_STR("list of weak references to the object"), (void *)1},
     {0}
 };
 
 static PyGetSetDef subtype_getsets_dict_only[] = {
     {"__dict__", subtype_dict, subtype_setdict,
-     PyDoc_STR("dictionary for instance variables")},
+     PyDoc_STR("dictionary for instance variables"), (void *)1},
     {0}
 };
 
 static PyGetSetDef subtype_getsets_weakref_only[] = {
     {"__weakref__", subtype_getweakref, NULL,
-     PyDoc_STR("list of weak references to the object")},
+     PyDoc_STR("list of weak references to the object"), (void *)1},
     {0}
 };
 
