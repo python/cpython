@@ -1522,34 +1522,26 @@ encoder_listencode_obj(PyEncoderObject *s, PyUnicodeWriter *writer,
         return rv;
     }
     else {
-        PyObject *ident = NULL;
+        int rc;
+
         if (s->markers != Py_None) {
-            int has_key;
-            ident = PyLong_FromVoidPtr(obj);
-            if (ident == NULL)
-                return -1;
-            has_key = PyDict_Contains(s->markers, ident);
-            if (has_key) {
-                if (has_key != -1)
+            rc = Py_ReprEnter(obj);
+            if (rc != 0) {
+                if (rc > 0) {
                     PyErr_SetString(PyExc_ValueError, "Circular reference detected");
-                Py_DECREF(ident);
-                return -1;
-            }
-            if (PyDict_SetItem(s->markers, ident, obj)) {
-                Py_DECREF(ident);
-                return -1;
+                }
+                goto bail;
             }
         }
+
         newobj = PyObject_CallOneArg(s->defaultfn, obj);
         if (newobj == NULL) {
-            Py_XDECREF(ident);
-            return -1;
+            goto bail;
         }
 
         if (_Py_EnterRecursiveCall(" while encoding a JSON object")) {
             Py_DECREF(newobj);
-            Py_XDECREF(ident);
-            return -1;
+            goto bail;
         }
         rv = encoder_listencode_obj(s, writer, newobj, indent_level, indent_cache);
         _Py_LeaveRecursiveCall();
@@ -1557,17 +1549,18 @@ encoder_listencode_obj(PyEncoderObject *s, PyUnicodeWriter *writer,
         Py_DECREF(newobj);
         if (rv) {
             _PyErr_FormatNote("when serializing %T object", obj);
-            Py_XDECREF(ident);
-            return -1;
+            goto bail;
         }
-        if (ident != NULL) {
-            if (PyDict_DelItem(s->markers, ident)) {
-                Py_XDECREF(ident);
-                return -1;
-            }
-            Py_XDECREF(ident);
+
+        if (s->markers != Py_None) {
+            Py_ReprLeave(obj);
         }
         return rv;
+bail:
+        if (s->markers != Py_None) {
+            Py_ReprLeave(obj);
+        }
+        return -1;
     }
 }
 
@@ -1649,10 +1642,10 @@ encoder_listencode_dict(PyEncoderObject *s, PyUnicodeWriter *writer,
                        Py_ssize_t indent_level, PyObject *indent_cache)
 {
     /* Encode Python dict dct a JSON term */
-    PyObject *ident = NULL;
     PyObject *items = NULL;
     PyObject *key, *value;
     bool first = true;
+    int rc;
 
     if (PyDict_GET_SIZE(dct) == 0) {
         /* Fast path */
@@ -1660,17 +1653,11 @@ encoder_listencode_dict(PyEncoderObject *s, PyUnicodeWriter *writer,
     }
 
     if (s->markers != Py_None) {
-        int has_key;
-        ident = PyLong_FromVoidPtr(dct);
-        if (ident == NULL)
-            goto bail;
-        has_key = PyDict_Contains(s->markers, ident);
-        if (has_key) {
-            if (has_key != -1)
+        rc = Py_ReprEnter(dct);
+        if (rc != 0) {
+            if (rc > 0) {
                 PyErr_SetString(PyExc_ValueError, "Circular reference detected");
-            goto bail;
-        }
-        if (PyDict_SetItem(s->markers, ident, dct)) {
+            }
             goto bail;
         }
     }
@@ -1719,10 +1706,8 @@ encoder_listencode_dict(PyEncoderObject *s, PyUnicodeWriter *writer,
         }
     }
 
-    if (ident != NULL) {
-        if (PyDict_DelItem(s->markers, ident))
-            goto bail;
-        Py_CLEAR(ident);
+    if (s->markers != Py_None) {
+        Py_ReprLeave(dct);
     }
     if (s->indent != Py_None && !first) {
         indent_level--;
@@ -1738,7 +1723,9 @@ encoder_listencode_dict(PyEncoderObject *s, PyUnicodeWriter *writer,
 
 bail:
     Py_XDECREF(items);
-    Py_XDECREF(ident);
+    if (s->markers != Py_None) {
+        Py_ReprLeave(dct);
+    }
     return -1;
 }
 
@@ -1747,11 +1734,10 @@ encoder_listencode_list(PyEncoderObject *s, PyUnicodeWriter *writer,
                         PyObject *seq,
                         Py_ssize_t indent_level, PyObject *indent_cache)
 {
-    PyObject *ident = NULL;
     PyObject *s_fast = NULL;
     Py_ssize_t i;
+    int rc;
 
-    ident = NULL;
     s_fast = PySequence_Fast(seq, "_iterencode_list needs a sequence");
     if (s_fast == NULL)
         return -1;
@@ -1761,17 +1747,11 @@ encoder_listencode_list(PyEncoderObject *s, PyUnicodeWriter *writer,
     }
 
     if (s->markers != Py_None) {
-        int has_key;
-        ident = PyLong_FromVoidPtr(seq);
-        if (ident == NULL)
-            goto bail;
-        has_key = PyDict_Contains(s->markers, ident);
-        if (has_key) {
-            if (has_key != -1)
+        rc = Py_ReprEnter(seq);
+        if (rc != 0) {
+            if (rc > 0) {
                 PyErr_SetString(PyExc_ValueError, "Circular reference detected");
-            goto bail;
-        }
-        if (PyDict_SetItem(s->markers, ident, seq)) {
+            }
             goto bail;
         }
     }
@@ -1801,10 +1781,8 @@ encoder_listencode_list(PyEncoderObject *s, PyUnicodeWriter *writer,
             goto bail;
         }
     }
-    if (ident != NULL) {
-        if (PyDict_DelItem(s->markers, ident))
-            goto bail;
-        Py_CLEAR(ident);
+    if (s->markers != Py_None) {
+        Py_ReprLeave(seq);
     }
 
     if (s->indent != Py_None) {
@@ -1821,7 +1799,9 @@ encoder_listencode_list(PyEncoderObject *s, PyUnicodeWriter *writer,
     return 0;
 
 bail:
-    Py_XDECREF(ident);
+    if (s->markers != Py_None) {
+        Py_ReprLeave(seq);
+    }
     Py_DECREF(s_fast);
     return -1;
 }
