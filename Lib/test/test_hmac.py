@@ -1516,18 +1516,23 @@ class PyMiscellaneousTests(unittest.TestCase):
         self.do_test_hmac_digest_overflow_error_switch_to_slow(hmac, size)
 
     def do_test_hmac_digest_overflow_error_switch_to_slow(self, hmac, size):
-        """Check that hmac.digest() falls back to pure Python."""
+        """Check that hmac.digest() falls back to pure Python.
+
+        The *hmac* argument implements the HMAC module interface.
+        The *size* argument is a large key size or message size that would
+        trigger an OverflowError in the C implementation(s) of hmac.digest().
+        """
 
         bigkey = b'K' * size
         bigmsg = b'M' * size
 
         with patch.object(hmac, "_compute_digest_fallback") as slow:
             hmac.digest(bigkey, b'm', "md5")
-        slow.assert_called_once()
+            slow.assert_called_once()
 
         with patch.object(hmac, "_compute_digest_fallback") as slow:
             hmac.digest(b'k', bigmsg, "md5")
-        slow.assert_called_once()
+            slow.assert_called_once()
 
     @hashlib_helper.requires_hashdigest("md5", openssl=True)
     @bigmemtest(size=_4G + 5, memuse=2, dry_run=False)
