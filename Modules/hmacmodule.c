@@ -1099,7 +1099,7 @@ _hmac_compute_digest_impl(PyObject *module, PyObject *key, PyObject *msg,
 }
 
 /*
- * Obtain a view from 'key' and 'msg', storing it in 'keyview' and 'msgview'.
+ * Obtain a view for 'key' and 'msg', storing it in 'keyview' and 'msgview'.
  *
  * Return 0 on success; otherwise set an exception and return -1.
  *
