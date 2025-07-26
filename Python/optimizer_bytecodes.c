@@ -422,6 +422,7 @@ dummy_func(void) {
 
     op(_COMPARE_OP, (left, right -- res)) {
         if (oparg & 16) {
+            REPLACE_OPCODE_IF_EVALUATES_PURE(left, right);
             res = sym_new_type(ctx, &PyBool_Type);
         }
         else {
@@ -449,6 +450,7 @@ dummy_func(void) {
     }
 
     op(_CONTAINS_OP, (left, right -- b)) {
+        REPLACE_OPCODE_IF_EVALUATES_PURE(left, right);
         b = sym_new_type(ctx, &PyBool_Type);
     }
 
