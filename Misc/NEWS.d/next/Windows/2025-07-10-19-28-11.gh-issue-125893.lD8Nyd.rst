@@ -1,0 +1,2 @@
+Added validation for the ``category`` argument in
+``warnings.filterwarnings()`` and ``warnings.simplefilter()``
