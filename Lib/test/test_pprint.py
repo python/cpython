@@ -1472,6 +1472,38 @@ ValuesView({'a': 6,
     'jumped over a '
     'lazy dog'}""")
 
+    def test_template(self):
+        d = t""
+        self.assertEqual(pprint.pformat(d),
+                         "Template(strings=('',), interpolations=())")
+        self.assertEqual(pprint.pformat(d), repr(d))
+        self.assertEqual(pprint.pformat(d, width=1),
+"""\
+Template(strings=('',),
+         interpolations=())""")
+        name = "World"
+        d = t"Hello {name}"
+        self.assertEqual(pprint.pformat(d),
+"""\
+Template(strings=('Hello ', ''),
+         interpolations=(Interpolation('World', 'name', None, ''),))""")
+        ver = {3.13: False, 3.14: True}
+        d = t"Hello { {"name": "Python", "version": ver}!s:z}!"
+        self.assertEqual(pprint.pformat(d, width=1),
+"""\
+Template(strings=('Hello ',
+                  '!'),
+         interpolations=(Interpolation({'name': 'Python',
+                                        'version': {3.13: False,
+                                                    3.14: True}},
+                                       ' '
+                                       '{"name": '
+                                       '"Python", '
+                                       '"version": '
+                                       'ver}',
+                                       's',
+                                       'z'),))""")
+
 
 class DottedPrettyPrinter(pprint.PrettyPrinter):
 
