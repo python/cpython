@@ -1549,7 +1549,6 @@ encoder_listencode_obj(PyEncoderObject *s, PyUnicodeWriter *writer,
         Py_DECREF(newobj);
         if (rv) {
             _PyErr_FormatNote("when serializing %T object", obj);
-            Py_DECREF(newobj);
             goto bail;
         }
 
