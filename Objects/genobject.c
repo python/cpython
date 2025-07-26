@@ -188,6 +188,70 @@ gen_dealloc(PyObject *self)
     PyObject_GC_Del(gen);
 }
 
+
+/*
+ * Set StopAsyncIteration with specified value.  Value can be arbitrary object
+ * or NULL.
+ *
+ * Returns 0 if StopAsyncIteration is set and -1 if any other exception is set.
+ */
+int
+_PyGen_SetStopAsyncIterationValue(PyObject *value)
+{
+    PyObject *e;
+
+    if (value == NULL ||
+        (!PyTuple_Check(value) && !PyExceptionInstance_Check(value)))
+    {
+        /* Delay exception instantiation if we can */
+        PyErr_SetObject(PyExc_StopAsyncIteration, value);
+        return 0;
+    }
+    /* Construct an exception instance manually with
+     * PyObject_CallOneArg and pass it to PyErr_SetObject.
+     *
+     * We do this to handle a situation when "value" is a tuple, in which
+     * case PyErr_SetObject would set the value of StopIteration to
+     * the first element of the tuple.
+     *
+     * (See PyErr_SetObject/_PyErr_CreateException code for details.)
+     */
+    e = PyObject_CallOneArg(PyExc_StopAsyncIteration, value);
+    if (e == NULL) {
+        return -1;
+    }
+    PyErr_SetObject(PyExc_StopAsyncIteration, e);
+    Py_DECREF(e);
+    return 0;
+}
+
+/*
+ *   If StopAsyncIteration exception is set, fetches its 'value'
+ *   attribute if any, otherwise sets pvalue to None.
+ *
+ *   Returns 0 if no exception or StopAsyncIteration is set.
+ *   If any other exception is set, returns -1 and leaves
+ *   pvalue unchanged.
+ */
+
+int
+_PyGen_FetchStopAsyncIterationValue(PyObject **pvalue)
+{
+    PyObject *value = NULL;
+    if (PyErr_ExceptionMatches(PyExc_StopAsyncIteration)) {
+        PyObject *exc = PyErr_GetRaisedException();
+        value = Py_NewRef(((PyStopAsyncIterationObject *)exc)->value);
+        Py_DECREF(exc);
+    } else if (PyErr_Occurred()) {
+        return -1;
+    }
+    if (value == NULL) {
+        value = Py_NewRef(Py_None);
+    }
+    *pvalue = value;
+    return 0;
+}
+
 static PySendResult
 gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
              int exc, int closing)
@@ -269,8 +333,7 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
             *presult = result;
             return PYGEN_NEXT;
         }
-        assert(result == Py_None || !PyAsyncGen_CheckExact(gen));
-        if (result == Py_None && !PyAsyncGen_CheckExact(gen) && !arg) {
+        if (result == Py_None && !arg) {
             /* Return NULL if called by gen_iternext() */
             Py_CLEAR(result);
         }
@@ -300,8 +363,12 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc, int closing)
     PyObject *result;
     if (gen_send_ex2(gen, arg, &result, exc, closing) == PYGEN_RETURN) {
         if (PyAsyncGen_CheckExact(gen)) {
-            assert(result == Py_None);
-            PyErr_SetNone(PyExc_StopAsyncIteration);
+            if (result == Py_None) {
+                PyErr_SetNone(PyExc_StopAsyncIteration);
+            }
+            else {
+                _PyGen_SetStopAsyncIterationValue(result);
+            }
         }
         else if (result == Py_None) {
             PyErr_SetNone(PyExc_StopIteration);
