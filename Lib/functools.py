@@ -241,8 +241,9 @@ def reduce(function, sequence, initial=_initial_missing):
     Apply a function of two arguments cumulatively to the items of an iterable, from left to right.
 
     This effectively reduces the iterable to a single value.  If initial is present,
-    it is placed before the items of the iterable in the calculation, and serves as
-    a default when the iterable is empty.
+    it is placed before the items of the iterable in the calculation. If the iterable is empty and
+    initial is given, initial will be returned. If initial is not given and iterable contains only
+    one item, the first item is returned.
 
     For example, reduce(lambda x, y: x+y, [1, 2, 3, 4, 5])
     calculates ((((1 + 2) + 3) + 4) + 5).
