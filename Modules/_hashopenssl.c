@@ -24,30 +24,26 @@
 
 #include "Python.h"
 #include "pycore_hashtable.h"
-#include "pycore_strhex.h"                  // _Py_strhex()
-#include "pycore_pyatomic_ft_wrappers.h"    // FT_ATOMIC_LOAD_PTR_RELAXED
+#include "pycore_strhex.h"               // _Py_strhex()
+#include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_LOAD_PTR_RELAXED
 #include "hashlib.h"
 
-#include <openssl/opensslv.h>
-#if OPENSSL_VERSION_NUMBER >= 0x30000000L
-#  define Py_HAS_OPENSSL3_SUPPORT
-#endif
-
-#include <openssl/err.h>
 /* EVP is the preferred interface to hashing in OpenSSL */
 #include <openssl/evp.h>
-#include <openssl/crypto.h>                 // FIPS_mode()
+#include <openssl/crypto.h>              // FIPS_mode()
 /* We use the object interface to discover what hashes OpenSSL supports. */
 #include <openssl/objects.h>
+#include <openssl/err.h>
 
-#ifdef Py_HAS_OPENSSL3_SUPPORT
+#include <stdbool.h>
+
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+#  define Py_HAS_OPENSSL3_SUPPORT
 #  include <openssl/core_names.h>           // OSSL_MAC_PARAM_DIGEST
 #  include <openssl/params.h>               // OSSL_PARAM_*()
 #else
 #  include <openssl/hmac.h>                 // HMAC()
 #endif
-
-#include <stdbool.h>
 
 #ifndef OPENSSL_THREADS
 #  error "OPENSSL_THREADS is not defined, Python requires thread-safe OpenSSL"
@@ -73,7 +69,7 @@
 
 #define PY_EVP_MD_CTX_md(CTX)   EVP_MD_CTX_get0_md(CTX)
 
-#define Py_HMAC_CTX_TYPE    EVP_MAC_CTX
+#define PY_HMAC_CTX_TYPE    EVP_MAC_CTX
 #define PY_HMAC_CTX_free    EVP_MAC_CTX_free
 #define PY_HMAC_update      EVP_MAC_update
 #else
@@ -84,7 +80,7 @@
 
 #define PY_EVP_MD_CTX_md(CTX)   EVP_MD_CTX_md(CTX)
 
-#define Py_HMAC_CTX_TYPE    HMAC_CTX
+#define PY_HMAC_CTX_TYPE    HMAC_CTX
 #define PY_HMAC_CTX_free    HMAC_CTX_free
 #define PY_HMAC_update      HMAC_Update
 #endif
@@ -749,8 +745,7 @@ get_openssl_evp_md_by_utf8name(_hashlibstate *state, const char *name,
  *      py_ht       The message digest purpose.
  */
 static PY_EVP_MD *
-get_openssl_evp_md(_hashlibstate *state,
-                   PyObject *digestmod, Py_hash_type py_ht)
+get_openssl_evp_md(_hashlibstate *state, PyObject *digestmod, Py_hash_type py_ht)
 {
     const char *name;
     if (PyUnicode_Check(digestmod)) {
@@ -1861,7 +1856,6 @@ _hashlib_hmac_singleshot_impl(PyObject *module, Py_buffer *key,
 /*[clinic end generated code: output=82f19965d12706ac input=0a0790cc3db45c2e]*/
 {
     _hashlibstate *state = get_hashlib_state(module);
-    const void *result;
     unsigned char md[EVP_MAX_MD_SIZE] = {0};
 #ifdef Py_HAS_OPENSSL3_SUPPORT
     size_t md_len = 0;
@@ -1869,15 +1863,18 @@ _hashlib_hmac_singleshot_impl(PyObject *module, Py_buffer *key,
 #else
     unsigned int md_len = 0;
 #endif
-    int is_xof;
+    const void *result;
     PY_EVP_MD *evp = NULL;
+    int is_xof;
 
     if (key->len > INT_MAX) {
-        PyErr_SetString(PyExc_OverflowError, "key is too long.");
+        PyErr_SetString(PyExc_OverflowError,
+                        "key is too long.");
         return NULL;
     }
     if (msg->len > INT_MAX) {
-        PyErr_SetString(PyExc_OverflowError, "msg is too long.");
+        PyErr_SetString(PyExc_OverflowError,
+                        "msg is too long.");
         return NULL;
     }
 
@@ -1951,7 +1948,7 @@ py_openssl_wrapper_HMAC_CTX_new(void)
 }
 
 static const EVP_MD *
-hashlib_openssl_HMAC_evp_md_borrowed(HMACobject *self)
+_hashlib_hmac_get_md(HMACobject *self)
 {
     assert(self->ctx != NULL);
     const EVP_MD *md = HMAC_CTX_get_md(self->ctx);
@@ -1968,13 +1965,13 @@ hashlib_HMAC_get_hashlib_digest_name(HMACobject *self)
 #ifdef Py_HAS_OPENSSL3_SUPPORT
     return get_hashlib_utf8name_by_nid(self->evp_md_nid);
 #else
-    const EVP_MD *md = hashlib_openssl_HMAC_evp_md_borrowed(self);
+    const EVP_MD *md = _hashlib_hmac_get_md(self);
     return md == NULL ? NULL : get_hashlib_utf8name_by_evp_md(md);
 #endif
 }
 
 static int
-hashlib_openssl_HMAC_update_once(Py_HMAC_CTX_TYPE *ctx, const Py_buffer *v)
+hashlib_openssl_HMAC_update_once(PY_HMAC_CTX_TYPE *ctx, const Py_buffer *v)
 {
     if (!PY_HMAC_update(ctx, (const unsigned char *)v->buf, (size_t)v->len)) {
         notify_smart_ssl_error_occurred_in(Py_STRINGIFY(PY_HMAC_update));
@@ -1985,7 +1982,7 @@ hashlib_openssl_HMAC_update_once(Py_HMAC_CTX_TYPE *ctx, const Py_buffer *v)
 
 /* Thin wrapper around PY_HMAC_CTX_free that allows to pass a NULL 'ctx'. */
 static inline void
-hashlib_openssl_HMAC_CTX_free(Py_HMAC_CTX_TYPE *ctx)
+hashlib_openssl_HMAC_CTX_free(PY_HMAC_CTX_TYPE *ctx)
 {
     /* The NULL check was not present in every OpenSSL versions. */
     if (ctx) {
@@ -2007,10 +2004,10 @@ hashlib_openssl_HMAC_update_with_lock(HMACobject *self, PyObject *data)
     return r;
 }
 
-static Py_HMAC_CTX_TYPE *
+static PY_HMAC_CTX_TYPE *
 hashlib_openssl_HMAC_ctx_copy_with_lock(HMACobject *self)
 {
-    Py_HMAC_CTX_TYPE *ctx = NULL;
+    PY_HMAC_CTX_TYPE *ctx = NULL;
 #ifdef Py_HAS_OPENSSL3_SUPPORT
     HASHLIB_ACQUIRE_LOCK(self);
     ctx = EVP_MAC_CTX_dup(self->ctx);
@@ -2040,12 +2037,12 @@ error:
     return NULL;
 }
 
-static Py_HMAC_CTX_TYPE *
+static PY_HMAC_CTX_TYPE *
 hashlib_HMAC_CTX_new_from_digestmod(_hashlibstate *state,
                                     Py_buffer *key, PyObject *digestmod,
                                     int *nid)
 {
-    Py_HMAC_CTX_TYPE *ctx = NULL;
+    PY_HMAC_CTX_TYPE *ctx = NULL;
     PY_EVP_MD *md = NULL;
     int is_xof, r;
 #ifdef Py_HAS_OPENSSL3_SUPPORT
@@ -2148,8 +2145,8 @@ _hashlib_hmac_new_impl(PyObject *module, Py_buffer *key, PyObject *msg_obj,
 /*[clinic end generated code: output=c20d9e4d9ed6d219 input=5f4071dcc7f34362]*/
 {
     _hashlibstate *state = get_hashlib_state(module);
+    PY_HMAC_CTX_TYPE *ctx = NULL;
     HMACobject *self = NULL;
-    Py_HMAC_CTX_TYPE *ctx = NULL;
 #ifdef Py_HAS_OPENSSL3_SUPPORT
     int nid;
 #endif
@@ -2215,7 +2212,7 @@ _hashlib_HMAC_copy_impl(HMACobject *self)
 /*[clinic end generated code: output=29aa28b452833127 input=e2fa6a05db61a4d6]*/
 {
     HMACobject *retval;
-    Py_HMAC_CTX_TYPE *ctx = hashlib_openssl_HMAC_ctx_copy_with_lock(self);
+    PY_HMAC_CTX_TYPE *ctx = hashlib_openssl_HMAC_ctx_copy_with_lock(self);
     if (ctx == NULL) {
         return NULL;
     }
@@ -2230,7 +2227,7 @@ _hashlib_HMAC_copy_impl(HMACobject *self)
 }
 
 static void
-_hashlib_HMAC_dealloc(PyObject *op)
+_hmac_dealloc(PyObject *op)
 {
     HMACobject *self = HMACobject_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
@@ -2243,7 +2240,7 @@ _hashlib_HMAC_dealloc(PyObject *op)
 }
 
 static PyObject *
-_hashlib_HMAC_repr(PyObject *op)
+_hmac_repr(PyObject *op)
 {
     HMACobject *self = HMACobject_CAST(op);
     const char *digest_name = hashlib_HMAC_get_hashlib_digest_name(self);
@@ -2287,7 +2284,7 @@ hashlib_openssl_HMAC_digest_size(HMACobject *self)
     size_t digest_size = EVP_MAC_CTX_get_mac_size(self->ctx);
     assert(digest_size <= (size_t)EVP_MAX_MD_SIZE);
 #else
-    const EVP_MD *md = hashlib_openssl_HMAC_evp_md_borrowed(self);
+    const EVP_MD *md = _hashlib_hmac_get_md(self);
     if (md == NULL) {
         return BAD_DIGEST_SIZE;
     }
@@ -2321,7 +2318,7 @@ hashlib_openssl_HMAC_digest_compute(HMACobject *self, unsigned char *buf)
         assert(PyErr_Occurred());
         return -1;
     }
-    Py_HMAC_CTX_TYPE *ctx = hashlib_openssl_HMAC_ctx_copy_with_lock(self);
+    PY_HMAC_CTX_TYPE *ctx = hashlib_openssl_HMAC_ctx_copy_with_lock(self);
     if (ctx == NULL) {
         return -1;
     }
@@ -2375,7 +2372,7 @@ _hashlib_HMAC_hexdigest_impl(HMACobject *self)
 }
 
 static PyObject *
-_hashlib_HMAC_digest_size_getter(PyObject *op, void *Py_UNUSED(closure))
+_hashlib_hmac_get_digest_size(PyObject *op, void *Py_UNUSED(closure))
 {
     HMACobject *self = HMACobject_CAST(op);
     unsigned int size = hashlib_openssl_HMAC_digest_size(self);
@@ -2383,20 +2380,20 @@ _hashlib_HMAC_digest_size_getter(PyObject *op, void *Py_UNUSED(closure))
 }
 
 static PyObject *
-_hashlib_HMAC_block_size_getter(PyObject *op, void *Py_UNUSED(closure))
+_hashlib_hmac_get_block_size(PyObject *op, void *Py_UNUSED(closure))
 {
     HMACobject *self = HMACobject_CAST(op);
 #ifdef Py_HAS_OPENSSL3_SUPPORT
     assert(self->ctx != NULL);
     return PyLong_FromSize_t(EVP_MAC_CTX_get_block_size(self->ctx));
 #else
-    const EVP_MD *md = hashlib_openssl_HMAC_evp_md_borrowed(self);
+    const EVP_MD *md = _hashlib_hmac_get_md(self);
     return md == NULL ? NULL : PyLong_FromLong(EVP_MD_block_size(md));
 #endif
 }
 
 static PyObject *
-_hashlib_HMAC_name_getter(PyObject *op, void *Py_UNUSED(closure))
+_hashlib_hmac_get_name(PyObject *op, void *Py_UNUSED(closure))
 {
     HMACobject *self = HMACobject_CAST(op);
     const char *digest_name = hashlib_HMAC_get_hashlib_digest_name(self);
@@ -2415,15 +2412,15 @@ static PyMethodDef HMAC_methods[] = {
     {NULL, NULL}  /* sentinel */
 };
 
-static PyGetSetDef HMAC_getsets[] = {
-    {"digest_size", _hashlib_HMAC_digest_size_getter, NULL, NULL, NULL},
-    {"block_size", _hashlib_HMAC_block_size_getter, NULL, NULL, NULL},
-    {"name", _hashlib_HMAC_name_getter, NULL, NULL, NULL},
+static PyGetSetDef HMAC_getset[] = {
+    {"digest_size", _hashlib_hmac_get_digest_size, NULL, NULL, NULL},
+    {"block_size", _hashlib_hmac_get_block_size, NULL, NULL, NULL},
+    {"name", _hashlib_hmac_get_name, NULL, NULL, NULL},
     {NULL}  /* Sentinel */
 };
 
 
-PyDoc_STRVAR(HMACobject_type_doc,
+PyDoc_STRVAR(hmactype_doc,
 "The object used to calculate HMAC of a message.\n\
 \n\
 Methods:\n\
@@ -2438,24 +2435,20 @@ Attributes:\n\
 name -- the name, including the hash algorithm used by this object\n\
 digest_size -- number of bytes in digest() output\n");
 
-static PyType_Slot HMACobject_type_slots[] = {
-    {Py_tp_doc, (char *)HMACobject_type_doc},
-    {Py_tp_repr, _hashlib_HMAC_repr},
-    {Py_tp_dealloc, _hashlib_HMAC_dealloc},
+static PyType_Slot HMACtype_slots[] = {
+    {Py_tp_doc, (char *)hmactype_doc},
+    {Py_tp_repr, _hmac_repr},
+    {Py_tp_dealloc, _hmac_dealloc},
     {Py_tp_methods, HMAC_methods},
-    {Py_tp_getset, HMAC_getsets},
+    {Py_tp_getset, HMAC_getset},
     {0, NULL}
 };
 
-PyType_Spec HMACobject_type_spec = {
-    .name = "_hashlib.HMAC",
-    .basicsize = sizeof(HMACobject),
-    .flags = (
-        Py_TPFLAGS_DEFAULT
-        | Py_TPFLAGS_DISALLOW_INSTANTIATION
-        | Py_TPFLAGS_IMMUTABLETYPE
-    ),
-    .slots = HMACobject_type_slots
+PyType_Spec HMACtype_spec = {
+    "_hashlib.HMAC",    /* name */
+    sizeof(HMACobject),     /* basicsize */
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_IMMUTABLETYPE,
+    .slots = HMACtype_slots,
 };
 
 
@@ -2803,7 +2796,7 @@ hashlib_init_hmactype(PyObject *module)
 {
     _hashlibstate *state = get_hashlib_state(module);
 
-    state->HMAC_type = (PyTypeObject *)PyType_FromSpec(&HMACobject_type_spec);
+    state->HMAC_type = (PyTypeObject *)PyType_FromSpec(&HMACtype_spec);
     if (state->HMAC_type == NULL) {
         return -1;
     }
