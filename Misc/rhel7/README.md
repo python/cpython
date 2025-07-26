@@ -12,7 +12,7 @@ command.
 sudo yum install pkgconfig 'tcl-devel >= 8.5.12' 'tk-devel >= 8.5.12' openssl11-devel
 ```
 
-The run `configure` with `PKG_CONFIG_PATH` environment variable.
+Then run `configure` with `PKG_CONFIG_PATH` environment variable.
 
 ```shell
 PKG_CONFIG_PATH=Misc/rhel7 ./configure -C
