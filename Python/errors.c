@@ -1,4 +1,3 @@
-
 /* Error handling */
 
 #include "Python.h"
@@ -1937,8 +1936,32 @@ int
 _PyErr_EmitSyntaxWarning(PyObject *msg, PyObject *filename, int lineno, int col_offset,
                          int end_lineno, int end_col_offset)
 {
-    if (_PyErr_WarnExplicitObjectWithContext(PyExc_SyntaxWarning, msg,
-                                             filename, lineno) < 0)
+    /* For pseudo-filenames (e.g., <string>, <stdin>), use the original approach
+       to maintain compatibility with existing behavior */
+    Py_ssize_t len = PyUnicode_GET_LENGTH(filename);
+    if (len > 1 &&
+        PyUnicode_READ_CHAR(filename, 0) == '<' &&
+        PyUnicode_READ_CHAR(filename, len - 1) == '>')
+    {
+        if (_PyErr_WarnExplicitObjectWithContext(PyExc_SyntaxWarning, msg,
+                                                 filename, lineno) < 0)
+        {
+            if (PyErr_ExceptionMatches(PyExc_SyntaxWarning)) {
+                /* Replace the SyntaxWarning exception with a SyntaxError
+                   to get a more accurate error report */
+                PyErr_Clear();
+                _PyErr_RaiseSyntaxError(msg, filename, lineno, col_offset,
+                                        end_lineno, end_col_offset);
+            }
+            return -1;
+        }
+        return 0;
+    }
+
+    /* For regular files, derive the module from the filename by passing NULL
+       as the module argument to PyErr_WarnExplicitObject */
+    if (PyErr_WarnExplicitObject(PyExc_SyntaxWarning, msg,
+                                 filename, lineno, NULL, NULL) < 0)
     {
         if (PyErr_ExceptionMatches(PyExc_SyntaxWarning)) {
             /* Replace the SyntaxWarning exception with a SyntaxError
