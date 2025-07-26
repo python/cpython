@@ -1,0 +1,2 @@
+:mod:`datetime`: Mark arguments as "positional only" (:pep:`570`) for
+several functions in ``_pydatetime`` to match C implementation.
