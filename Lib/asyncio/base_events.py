@@ -1136,6 +1136,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                 infos = _interleave_addrinfos(infos, interleave)
 
             exceptions = []
+            staggered_exceptions = []
             if happy_eyeballs_delay is None:
                 # not using happy eyeballs
                 for addrinfo in infos:
@@ -1146,7 +1147,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                     except OSError:
                         continue
             else:  # using happy eyeballs
-                sock = (await staggered.staggered_race(
+                sock, _, staggered_exceptions = (await staggered.staggered_race(
                     (
                         # can't use functools.partial as it keeps a reference
                         # to exceptions
@@ -1157,10 +1158,15 @@ class BaseEventLoop(events.AbstractEventLoop):
                     ),
                     happy_eyeballs_delay,
                     loop=self,
-                ))[0]  # can't use sock, _, _ as it keeks a reference to exceptions
+                ))
 
             if sock is None:
                 exceptions = [exc for sub in exceptions for exc in sub]
+                for exc in staggered_exceptions:
+                    if not (isinstance(exc, CancelledError) or exc in exceptions):
+                        exceptions.append(exc)
+                        del exc
+
                 try:
                     if all_errors:
                         raise ExceptionGroup("create_connection failed", exceptions)
@@ -1180,6 +1186,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                         raise TimeoutError('create_connection failed')
                 finally:
                     exceptions = None
+                    staggered_exceptions = None
 
         else:
             if sock is None:
