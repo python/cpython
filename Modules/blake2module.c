@@ -16,7 +16,7 @@
 
 #include "Python.h"
 #include "pycore_moduleobject.h"
-#include "pycore_strhex.h"       // _Py_strhex()
+#include "pycore_strhex.h"              // _Py_strhex()
 #include "pycore_typeobject.h"
 
 #include "_hashlib/hashlib_buffer.h"

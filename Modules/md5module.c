@@ -22,7 +22,7 @@
 #endif
 
 #include "Python.h"
-#include "pycore_strhex.h" // _Py_strhex()
+#include "pycore_strhex.h"              // _Py_strhex()
 
 #include "_hashlib/hashlib_buffer.h"
 #include "_hashlib/hashlib_mutex.h"
