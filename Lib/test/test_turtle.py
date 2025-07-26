@@ -480,6 +480,25 @@ class TestTPen(unittest.TestCase):
             tpen.teleport(-100, -100, fill_gap=fill_gap_value)
             self.assertTrue(tpen.isdown())
 
+    def test_pensize_with_positive_numbers(self):
+        tpen = turtle.TPen()
+
+        tpen.pensize(42)
+        self.assertEqual(42, tpen.pensize())
+
+    def test_pensize_with_nonpositive_numbers(self):
+        tpen = turtle.TPen()
+
+        tpen.pensize(0)
+        self.assertEqual(0, tpen.pensize())
+
+        width = -1
+        msg = f"width argument must be a positive number, but got {width}."
+        with self.assertRaisesRegex(turtle.TurtleGraphicsError, re.escape(msg)):
+            tpen.pensize(width)
+
+        self.assertEqual(0, tpen.pensize())
+
 
 class TestTurtleScreen(unittest.TestCase):
     def test_save_raises_if_wrong_extension(self) -> None:
