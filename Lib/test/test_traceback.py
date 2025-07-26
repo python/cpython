@@ -4021,7 +4021,7 @@ class TestTracebackException_ExceptionGroups(unittest.TestCase):
 global_for_suggestions = None
 
 
-class SuggestionFormattingTestBase:
+class SuggestionFormattingTestMixin:
     def get_suggestion(self, obj, attr_name=None):
         if attr_name is not None:
             def callable():
@@ -4034,7 +4034,13 @@ class SuggestionFormattingTestBase:
         )
         return result_lines[0]
 
-    def test_getattr_suggestions(self):
+
+class BaseSuggestionTests(SuggestionFormattingTestMixin):
+    """
+    Subclasses need to implement the get_suggestion method.
+    """
+
+    def test_suggestions(self):
         class Substitution:
             noise = more_noise = a = bc = None
             blech = None
@@ -4077,7 +4083,7 @@ class SuggestionFormattingTestBase:
             actual = self.get_suggestion(cls(), 'bluch')
             self.assertIn(suggestion, actual)
 
-    def test_getattr_suggestions_underscored(self):
+    def test_suggestions_underscored(self):
         class A:
             bluch = None
 
@@ -4094,24 +4100,20 @@ class SuggestionFormattingTestBase:
         self.assertIn("'_bluch'", self.get_suggestion(B(), '_luch'))
         self.assertNotIn("'_bluch'", self.get_suggestion(B(), 'bluch'))
 
-        self.assertIn("'_bluch'", self.get_suggestion(partial(B().method, '_blach')))
-        self.assertIn("'_bluch'", self.get_suggestion(partial(B().method, '_luch')))
-        self.assertIn("'_bluch'", self.get_suggestion(partial(B().method, 'bluch')))
-
-    def test_getattr_suggestions_do_not_trigger_for_long_attributes(self):
+    def test_do_not_trigger_for_long_attributes(self):
         class A:
             blech = None
 
         actual = self.get_suggestion(A(), 'somethingverywrong')
         self.assertNotIn("blech", actual)
 
-    def test_getattr_error_bad_suggestions_do_not_trigger_for_small_names(self):
+    def test_do_not_trigger_for_small_names(self):
         class MyClass:
             vvv = mom = w = id = pytho = None
 
         for name in ("b", "v", "m", "py"):
             with self.subTest(name=name):
-                actual = self.get_suggestion(MyClass, name)
+                actual = self.get_suggestion(MyClass(), name)
                 self.assertNotIn("Did you mean", actual)
                 self.assertNotIn("'vvv", actual)
                 self.assertNotIn("'mom'", actual)
@@ -4119,7 +4121,7 @@ class SuggestionFormattingTestBase:
                 self.assertNotIn("'w'", actual)
                 self.assertNotIn("'pytho'", actual)
 
-    def test_getattr_suggestions_do_not_trigger_for_big_dicts(self):
+    def test_do_not_trigger_for_big_dicts(self):
         class A:
             blech = None
         # A class with a very big __dict__ will not be considered
@@ -4130,7 +4132,21 @@ class SuggestionFormattingTestBase:
         actual = self.get_suggestion(A(), 'bluch')
         self.assertNotIn("blech", actual)
 
-    def test_getattr_suggestions_no_args(self):
+
+class GetattrSuggestionTests(BaseSuggestionTests):
+    def get_suggestion(self, obj, attr_name=None):
+        if attr_name is not None:
+            def callable():
+                getattr(obj, attr_name)
+        else:
+            callable = obj
+
+        result_lines = self.get_exception(
+            callable, slice_start=-1, slice_end=None
+        )
+        return result_lines[0]
+
+    def test_suggestions_no_args(self):
         class A:
             blech = None
             def __getattr__(self, attr):
@@ -4147,7 +4163,7 @@ class SuggestionFormattingTestBase:
         actual = self.get_suggestion(A(), 'bluch')
         self.assertIn("blech", actual)
 
-    def test_getattr_suggestions_invalid_args(self):
+    def test_suggestions_invalid_args(self):
         class NonStringifyClass:
             __str__ = None
             __repr__ = None
@@ -4171,13 +4187,37 @@ class SuggestionFormattingTestBase:
             actual = self.get_suggestion(cls(), 'bluch')
             self.assertIn("blech", actual)
 
-    def test_getattr_suggestions_for_same_name(self):
+    def test_suggestions_for_same_name(self):
         class A:
             def __dir__(self):
                 return ['blech']
         actual = self.get_suggestion(A(), 'blech')
         self.assertNotIn("Did you mean", actual)
 
+    def test_suggestions_with_method_call(self):
+        class B:
+            _bluch = None
+            def method(self, name):
+                getattr(self, name)
+
+        obj = B()
+        self.assertIn("'_bluch'", self.get_suggestion(partial(obj.method, '_blach')))
+        self.assertIn("'_bluch'", self.get_suggestion(partial(obj.method, '_luch')))
+        self.assertIn("'_bluch'", self.get_suggestion(partial(obj.method, 'bluch')))
+
+
+class DelattrSuggestionTests(BaseSuggestionTests):
+    def get_suggestion(self, obj, attr_name):
+        def callable():
+            delattr(obj, attr_name)
+
+        result_lines = self.get_exception(
+            callable, slice_start=-1, slice_end=None
+        )
+        return result_lines[0]
+
+
+class SuggestionFormattingTestBase(SuggestionFormattingTestMixin):
     def test_attribute_error_with_failing_dict(self):
         class T:
             bluch = 1
@@ -4654,6 +4694,51 @@ class CPythonSuggestionFormattingTests(
     Same set of tests as above but with Python's internal traceback printing.
     """
 
+
+class PurePythonGetattrSuggestionFormattingTests(
+    PurePythonExceptionFormattingMixin,
+    GetattrSuggestionTests,
+    unittest.TestCase,
+):
+    """
+    Same set of tests (for attribute access) as above using the pure Python
+    implementation of traceback printing in traceback.py.
+    """
+
+
+class PurePythonDelattrSuggestionFormattingTests(
+    PurePythonExceptionFormattingMixin,
+    DelattrSuggestionTests,
+    unittest.TestCase,
+):
+    """
+    Same set of tests (for attribute deletion) as above using the pure Python
+    implementation of traceback printing in traceback.py.
+    """
+
+
+@cpython_only
+class CPythonGetattrSuggestionFormattingTests(
+    CAPIExceptionFormattingMixin,
+    GetattrSuggestionTests,
+    unittest.TestCase,
+):
+    """
+    Same set of tests (for attribute access) as above but with Python's
+    internal traceback printing.
+    """
+
+
+@cpython_only
+class CPythonDelattrSuggestionFormattingTests(
+    CAPIExceptionFormattingMixin,
+    DelattrSuggestionTests,
+    unittest.TestCase,
+):
+    """
+    Same set of tests (for attribute deletion) as above but with Python's
+    internal traceback printing.
+    """
 
 class MiscTest(unittest.TestCase):
 
