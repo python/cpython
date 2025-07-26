@@ -1,45 +1,14 @@
-/* Common code for use by all hashlib related modules. */
+#ifndef _HASHLIB_HASHLIB_MUTEX_H
+#define _HASHLIB_HASHLIB_MUTEX_H
 
-#include "pycore_lock.h"        // PyMutex
-
-/*
- * Internal error messages used for reporting an unsupported hash algorithm.
- * The algorithm can be given by its name, a callable or a PEP-247 module.
- * The same message is raised by Lib/hashlib.py::__get_builtin_constructor()
- * and _hmacmodule.c::find_hash_info().
- */
-#define HASHLIB_UNSUPPORTED_ALGORITHM       "unsupported hash algorithm %S"
-#define HASHLIB_UNSUPPORTED_STR_ALGORITHM   "unsupported hash algorithm %s"
+#include "Python.h"
+#include "pycore_lock.h"    // PyMutex
 
 /*
- * Given a PyObject* obj, fill in the Py_buffer* viewp with the result
- * of PyObject_GetBuffer.  Sets an exception and issues the erraction
- * on any errors, e.g. 'return NULL' or 'goto error'.
+ * Message length above which the GIL is to be released
+ * when performing hashing operations.
  */
-#define GET_BUFFER_VIEW_OR_ERROR(obj, viewp, erraction) do { \
-        if (PyUnicode_Check((obj))) { \
-            PyErr_SetString(PyExc_TypeError, \
-                            "Strings must be encoded before hashing");\
-            erraction; \
-        } \
-        if (!PyObject_CheckBuffer((obj))) { \
-            PyErr_SetString(PyExc_TypeError, \
-                            "object supporting the buffer API required"); \
-            erraction; \
-        } \
-        if (PyObject_GetBuffer((obj), (viewp), PyBUF_SIMPLE) == -1) { \
-            erraction; \
-        } \
-        if ((viewp)->ndim > 1) { \
-            PyErr_SetString(PyExc_BufferError, \
-                            "Buffer must be single dimension"); \
-            PyBuffer_Release((viewp)); \
-            erraction; \
-        } \
-    } while(0)
-
-#define GET_BUFFER_VIEW_OR_ERROUT(obj, viewp) \
-    GET_BUFFER_VIEW_OR_ERROR(obj, viewp, return NULL)
+#define HASHLIB_GIL_MINSIZE 2048
 
 /*
  * Helper code to synchronize access to the hash object when the GIL is
@@ -63,12 +32,6 @@
 
 #define HASHLIB_ACQUIRE_LOCK(OBJ)   PyMutex_Lock(&(OBJ)->mutex)
 #define HASHLIB_RELEASE_LOCK(OBJ)   PyMutex_Unlock(&(OBJ)->mutex)
-
-/*
- * Message length above which the GIL is to be released
- * when performing hashing operations.
- */
-#define HASHLIB_GIL_MINSIZE         2048
 
 // Macros for executing code while conditionally holding the GIL.
 //
@@ -116,41 +79,4 @@
         }                                                           \
     } while (0)
 
-static inline int
-_Py_hashlib_data_argument(PyObject **res, PyObject *data, PyObject *string)
-{
-    if (data != NULL && string == NULL) {
-        // called as H(data) or H(data=...)
-        *res = data;
-        return 1;
-    }
-    else if (data == NULL && string != NULL) {
-        // called as H(string=...)
-        if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                         "the 'string' keyword parameter is deprecated since "
-                         "Python 3.15 and slated for removal in Python 3.19; "
-                         "use the 'data' keyword parameter or pass the data "
-                         "to hash as a positional argument instead", 1) < 0)
-        {
-            *res = NULL;
-            return -1;
-        }
-        *res = string;
-        return 1;
-    }
-    else if (data == NULL && string == NULL) {
-        // fast path when no data is given
-        assert(!PyErr_Occurred());
-        *res = NULL;
-        return 0;
-    }
-    else {
-        // called as H(data=..., string)
-        *res = NULL;
-        PyErr_SetString(PyExc_TypeError,
-                        "'data' and 'string' are mutually exclusive "
-                        "and support for 'string' keyword parameter "
-                        "is slated for removal in a future version.");
-        return -1;
-    }
-}
+#endif // !_HASHLIB_HASHLIB_MUTEX_H
