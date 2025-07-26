@@ -2667,6 +2667,31 @@
                 sym_set_const(res, out);
                 REPLACE_OP(this_instr, _POP_CALL_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)out);
             }
+            else if (inst_type && sym_matches_type(cls, &PyTuple_Type)) {
+                int length = sym_tuple_length(cls);
+                if (length != -1) {
+                    PyObject *out = Py_False;
+                    for (int i = 0; i < length; i++) {
+                        JitOptRef item = sym_tuple_getitem(ctx, cls, i);
+                        if (!sym_has_type(item)) {
+                            out = NULL;
+                            break;
+                        }
+                        PyTypeObject *cls_o = (PyTypeObject *)sym_get_const(ctx, item);
+                        if (cls_o &&
+                            sym_matches_type(item, &PyType_Type) &&
+                            (inst_type == cls_o || PyType_IsSubtype(inst_type, cls_o)))
+                        {
+                            out = Py_True;
+                            break;
+                        }
+                    }
+                    if (out) {
+                        sym_set_const(res, out);
+                        REPLACE_OP(this_instr, _POP_CALL_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)out);
+                    }
+                }
+            }
             stack_pointer[-4] = res;
             stack_pointer += -3;
             assert(WITHIN_STACK_BOUNDS());
