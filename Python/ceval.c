@@ -437,6 +437,10 @@ int pthread_attr_destroy(pthread_attr_t *a)
 
 #endif
 
+#if defined(__wasi__) & _Py__has_attribute(weak)
+extern __attribute__((weak)) unsigned char __stack_high;
+extern __attribute__((weak)) unsigned char __stack_low;
+#endif
 
 void
 _Py_InitializeRecursionLimits(PyThreadState *tstate)
@@ -477,6 +481,14 @@ _Py_InitializeRecursionLimits(PyThreadState *tstate)
         return;
     }
 #  endif
+#if defined(__wasi__) & _Py__has_attribute(weak)
+    if (__stack_high) {
+        _tstate->c_stack_top = &__stack_high;
+        _tstate->c_stack_soft_limit = &__stack_low + PYOS_STACK_MARGIN_BYTES * 2;
+        _tstate->c_stack_hard_limit = &__stack_low + PYOS_STACK_MARGIN_BYTES;
+        return;
+    }
+#endif
     _tstate->c_stack_top = _Py_SIZE_ROUND_UP(here_addr, 4096);
     _tstate->c_stack_soft_limit = _tstate->c_stack_top - Py_C_STACK_SIZE;
     _tstate->c_stack_hard_limit = _tstate->c_stack_top - (Py_C_STACK_SIZE + _PyOS_STACK_MARGIN_BYTES);
