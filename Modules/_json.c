@@ -1781,7 +1781,6 @@ encoder_listencode_list(PyEncoderObject *s, PyUnicodeWriter *writer,
             goto bail;
         }
     }
-
     if (s->markers != Py_None) {
         Py_ReprLeave(seq);
     }
