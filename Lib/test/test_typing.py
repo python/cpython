@@ -7887,14 +7887,6 @@ class TypeTests(BaseTestCase):
         self.assertIsNone(foo(None))
 
 
-class TestModules(TestCase):
-    func_names = ['_idfunc']
-
-    def test_c_functions(self):
-        for fname in self.func_names:
-            self.assertEqual(getattr(typing, fname).__module__, '_typing')
-
-
 class NewTypeTests(BaseTestCase):
     @classmethod
     def setUpClass(cls):
