@@ -4038,22 +4038,25 @@ subtype_getweakref(PyObject *obj, void *context)
 
 /* Three variants on the subtype_getsets list. */
 
+static char subtype_getset_dict_name[] = "__dict__";
+static char subtype_getset_weakref_name[] = "__weakref__";
+
 static PyGetSetDef subtype_getsets_full[] = {
-    {"__dict__", subtype_dict, subtype_setdict,
+    {subtype_getset_dict_name, subtype_dict, subtype_setdict,
      PyDoc_STR("dictionary for instance variables")},
-    {"__weakref__", subtype_getweakref, NULL,
+    {subtype_getset_weakref_name, subtype_getweakref, NULL,
      PyDoc_STR("list of weak references to the object")},
     {0}
 };
 
 static PyGetSetDef subtype_getsets_dict_only[] = {
-    {"__dict__", subtype_dict, subtype_setdict,
+    {subtype_getset_dict_name, subtype_dict, subtype_setdict,
      PyDoc_STR("dictionary for instance variables")},
     {0}
 };
 
 static PyGetSetDef subtype_getsets_weakref_only[] = {
-    {"__weakref__", subtype_getweakref, NULL,
+    {subtype_getset_weakref_name, subtype_getweakref, NULL,
      PyDoc_STR("list of weak references to the object")},
     {0}
 };
@@ -8329,7 +8332,16 @@ type_add_getset(PyTypeObject *type)
 
     PyObject *dict = lookup_tp_dict(type);
     for (; gsp->name != NULL; gsp++) {
-        PyObject *descr = PyDescr_NewGetSet(type, gsp);
+        PyTypeObject *descr_type = type;
+        // Hack: dict and weakref descriptors are created for `object`,
+        // rather than this specific type.
+        // We identify their PyGetSetDef by pointer equality on name.
+        if (gsp->name == subtype_getset_dict_name
+            || gsp->name == subtype_getset_weakref_name)
+        {
+            descr_type = &PyBaseObject_Type;
+        }
+        PyObject *descr = PyDescr_NewGetSet(descr_type, gsp);
         if (descr == NULL) {
             return -1;
         }
