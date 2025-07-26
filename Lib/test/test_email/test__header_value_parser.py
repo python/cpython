@@ -2982,6 +2982,14 @@ class Test_parse_mime_parameters(TestParserMixin, TestEmailBase):
             'r*=\'a\'"',
             [('r', '"')],
             [errors.InvalidHeaderDefect]*2),
+
+        # gh-87112: Only ASCII digits can be section numbers.
+        'non_allowed_digits': (
+            'foo*0=bar; foo*²=baz',
+            ' foo="bar"',
+            'foo*0=bar; foo*²=baz',
+            [('foo', 'bar')],
+            [errors.InvalidHeaderDefect]),
     }
 
 @parameterize

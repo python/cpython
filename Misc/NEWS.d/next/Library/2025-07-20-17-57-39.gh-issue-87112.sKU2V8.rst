@@ -1,0 +1,2 @@
+Ensure that only ASCII digits are accepted as section number in MIME header
+parameter.

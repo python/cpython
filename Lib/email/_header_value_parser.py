@@ -2398,17 +2398,21 @@ def get_section(value):
     The caller should already have dealt with leading CFWS.
 
     """
+    def is_ascii_digit(d):
+        # We don't use str.isdigit because only ASCII digits are allowed.
+        return '0' <= d <= '9'
+
     section = Section()
     if not value or value[0] != '*':
         raise errors.HeaderParseError("Expected section but found {}".format(
                                         value))
     section.append(ValueTerminal('*', 'section-marker'))
     value = value[1:]
-    if not value or not value[0].isdigit():
+    if not value or not is_ascii_digit(value[0]):
         raise errors.HeaderParseError("Expected section number but "
                                       "found {}".format(value))
     digits = ''
-    while value and value[0].isdigit():
+    while value and is_ascii_digit(value[0]):
         digits += value[0]
         value = value[1:]
     if digits[0] == '0' and digits != '0':
