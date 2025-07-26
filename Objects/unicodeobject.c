@@ -13477,20 +13477,21 @@ unicode_maketrans_impl(PyObject *x, PyObject *y, PyObject *z)
 str.translate as unicode_translate
 
     table: object
-        Translation table, which must be a mapping of Unicode ordinals to
-        Unicode ordinals, strings, or None.
+        Translation table, which must be an object that implements indexing via __getitem__(),
+        typically a mapping or sequence.
     /
 
 Replace each character in the string using the given translation table.
 
 The table must implement lookup/indexing via __getitem__, for instance a
-dictionary or list.  If this operation raises LookupError, the character is
-left untouched.  Characters mapped to None are deleted.
+dictionary or list. When indexed by a Unicode ordinal, it may return another
+Unicode ordinal or a string to replace the character, return None to delete
+it, or raise LookupError to leave it unchanged.
 [clinic start generated code]*/
 
 static PyObject *
 unicode_translate(PyObject *self, PyObject *table)
-/*[clinic end generated code: output=3cb448ff2fd96bf3 input=6d38343db63d8eb0]*/
+/*[clinic end generated code: output=3cb448ff2fd96bf3 input=6bb9205d97271b8b]*/
 {
     return _PyUnicode_TranslateCharmap(self, table, "ignore");
 }
