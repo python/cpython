@@ -18,6 +18,7 @@ Data members:
 #include "pycore_audit.h"         // _Py_AuditHookEntry
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_SetAsyncGenFinalizer()
+#include "pycore_object_deferred.h" // _PyObject_HasDeferredRefcount
 #include "pycore_frame.h"         // _PyInterpreterFrame
 #include "pycore_import.h"        // _PyImport_SetDLOpenFlags()
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
@@ -1050,6 +1051,70 @@ sys__is_immortal_impl(PyObject *module, PyObject *op)
 /*[clinic end generated code: output=c2f5d6a80efb8d1a input=4609c9bf5481db76]*/
 {
     return PyUnstable_IsImmortal(op);
+}
+
+
+/*[clinic input]
+sys.get_object_tags -> object
+
+  op: object
+  /
+Return the tags of the given object.
+[clinic start generated code]*/
+
+static PyObject *
+sys_get_object_tags(PyObject *module, PyObject *op)
+/*[clinic end generated code: output=a68da7f1805c9216 input=75993fb67096e2ff]*/
+{
+    assert(op != NULL);
+    PyObject *dict = PyDict_New();
+    if (dict == NULL) {
+        return NULL;
+    }
+
+    if (PyDict_SetItemString(dict, "immortal", PyBool_FromLong(PyUnstable_IsImmortal(op))) < 0) {
+        Py_DECREF(dict);
+        return NULL;
+    }
+
+    if (PyDict_SetItemString(dict, "interned", PyBool_FromLong((PyUnicode_Check(op) && PyUnicode_CHECK_INTERNED(op)))) < 0) {
+        Py_DECREF(dict);
+        return NULL;
+    }
+
+    if (PyDict_SetItemString(dict, "deferred_refcount", PyBool_FromLong(_PyObject_HasDeferredRefcount(op))) < 0) {
+        Py_DECREF(dict);
+        return NULL;
+    }
+
+    return dict;
+}
+
+/*[clinic input]
+sys.set_object_tag -> object
+
+  object: object
+  tag: str
+  *
+  options: object = None
+
+Set the tags of the given object.
+[clinic start generated code]*/
+
+static PyObject *
+sys_set_object_tag_impl(PyObject *module, PyObject *object, const char *tag,
+                        PyObject *options)
+/*[clinic end generated code: output=b0fb5e9931feb4aa input=b64c9bd958c75f11]*/
+{
+    assert(object != NULL);
+    if (strcmp(tag, "interned") == 0) {
+        Py_INCREF(object);
+        _PyUnicode_InternMortal(_PyInterpreterState_GET(), &object);
+    }
+    else if(strcmp(tag, "deferred_refcount") == 0) {
+        PyUnstable_Object_EnableDeferredRefcount(object);
+    }
+    Py_RETURN_NONE;
 }
 
 /*
@@ -2801,6 +2866,8 @@ static PyMethodDef sys_methods[] = {
     SYS__IS_IMMORTAL_METHODDEF
     SYS_INTERN_METHODDEF
     SYS__IS_INTERNED_METHODDEF
+    SYS_GET_OBJECT_TAGS_METHODDEF
+    SYS_SET_OBJECT_TAG_METHODDEF
     SYS_IS_FINALIZING_METHODDEF
     SYS_MDEBUG_METHODDEF
     SYS_SETSWITCHINTERVAL_METHODDEF
