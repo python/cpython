@@ -5889,6 +5889,26 @@ PyObject_GetItemData(PyObject *obj)
     return (char *)obj + Py_TYPE(obj)->tp_basicsize;
 }
 
+// Try to assign a new type version tag, return it if successful.  Return 0
+// if no version was assigned.
+static unsigned int
+type_assign_version(PyTypeObject *type)
+{
+    unsigned int version = FT_ATOMIC_LOAD_UINT32_RELAXED((type)->tp_version_tag);
+    if (version == 0) {
+        BEGIN_TYPE_LOCK();
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        if (assign_version_tag(interp, type)) {
+            version = type->tp_version_tag;
+        }
+        else {
+            version = 0;
+        }
+        END_TYPE_LOCK();
+    }
+    return version;
+}
+
 /* Internal API to look for a name through the MRO, bypassing the method cache.
    This returns a borrowed reference, and might set an exception.
    'error' is set to: -1: error with exception; 1: error without exception; 0: ok */
@@ -5901,15 +5921,17 @@ find_name_in_mro(PyTypeObject *type, PyObject *name, int *error)
         return NULL;
     }
 
-    /* Look in tp_dict of types in MRO */
-    PyObject *mro = lookup_tp_mro(type);
+    /* Look in tp_dict of types in MRO.  Keep a strong reference to mro
+       because type->tp_mro can be replaced during dict lookup, e.g. when
+       comparing to non-string keys. */
+    PyObject *mro = _PyType_GetMRO(type);
     if (mro == NULL) {
         if (!is_readying(type)) {
             if (PyType_Ready(type) < 0) {
                 *error = -1;
                 return NULL;
             }
-            mro = lookup_tp_mro(type);
+            mro = _PyType_GetMRO(type);
         }
         if (mro == NULL) {
             *error = 1;
@@ -5917,10 +5939,13 @@ find_name_in_mro(PyTypeObject *type, PyObject *name, int *error)
         }
     }
 
+#ifdef Py_GIL_DISABLED
+    if (!_Py_IsOwnedByCurrentThread(mro)) {
+        PyUnstable_Object_EnableDeferredRefcount(mro);
+    }
+#endif
+
     PyObject *res = NULL;
-    /* Keep a strong reference to mro because type->tp_mro can be replaced
-       during dict lookup, e.g. when comparing to non-string keys. */
-    Py_INCREF(mro);
     Py_ssize_t n = PyTuple_GET_SIZE(mro);
     for (Py_ssize_t i = 0; i < n; i++) {
         PyObject *base = PyTuple_GET_ITEM(mro, i);
@@ -6093,19 +6118,19 @@ _PyType_LookupStackRefAndVersion(PyTypeObject *type, PyObject *name, _PyStackRef
 
     PyObject *res;
     int error;
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    int has_version = 0;
     unsigned int assigned_version = 0;
-    BEGIN_TYPE_LOCK();
     // We must assign the version before doing the lookup.  If
     // find_name_in_mro() blocks and releases the critical section
     // then the type version can change.
     if (MCACHE_CACHEABLE_NAME(name)) {
-        has_version = assign_version_tag(interp, type);
-        assigned_version = type->tp_version_tag;
+        assigned_version = type_assign_version(type);
     }
+    // Note that calling find_name_in_mro() might cause the type version to
+    // change.  For example, if a __hash__ or __eq__ method mutates the types.
+    // In that case, 'assigned_version' will be stale after this call.  Since
+    // that's expected to be rare and does not cause a correctness issue, we
+    // don't check for this case.
     res = find_name_in_mro(type, name, &error);
-    END_TYPE_LOCK();
 
     /* Only put NULL results into cache if there was no error. */
     if (error) {
@@ -6124,7 +6149,7 @@ _PyType_LookupStackRefAndVersion(PyTypeObject *type, PyObject *name, _PyStackRef
         return 0;
     }
 
-    if (has_version) {
+    if (assigned_version != 0) {
 #if Py_GIL_DISABLED
         update_cache_gil_disabled(entry, name, assigned_version, res);
 #else
@@ -6133,7 +6158,7 @@ _PyType_LookupStackRefAndVersion(PyTypeObject *type, PyObject *name, _PyStackRef
 #endif
     }
     *out = res ? PyStackRef_FromPyObjectSteal(res) : PyStackRef_NULL;
-    return has_version ? assigned_version : 0;
+    return assigned_version;
 }
 
 /* Internal API to look for a name through the MRO.
