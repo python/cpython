@@ -1,0 +1,1 @@
+A DeprecationWarning is now provided for os.fork and os.forkpty when run within a thread with -Werror.
