@@ -1333,7 +1333,8 @@ def getargvalues(frame):
 def formatannotation(annotation, base_module=None, *, quote_annotation_strings=True):
     if not quote_annotation_strings and isinstance(annotation, str):
         return annotation
-    if getattr(annotation, '__module__', None) == 'typing':
+    if (isinstance(annotation, types.UnionType)
+        or getattr(annotation, '__module__', None) == 'typing'):
         def repl(match):
             text = match.group()
             return text.removeprefix('typing.')

@@ -372,13 +372,13 @@ union_parameters(PyObject *self, void *Py_UNUSED(unused))
 static PyObject *
 union_name(PyObject *Py_UNUSED(self), void *Py_UNUSED(ignored))
 {
-    return PyUnicode_FromString("Union");
+    return PyUnicode_FromString("UnionType");
 }
 
 static PyObject *
 union_origin(PyObject *Py_UNUSED(self), void *Py_UNUSED(ignored))
 {
-    return Py_NewRef(&_PyUnion_Type);
+    return PyImport_ImportModuleAttrString("typing", "Union");
 }
 
 static PyGetSetDef union_properties[] = {
@@ -486,12 +486,6 @@ _Py_union_from_tuple(PyObject *args)
 }
 
 static PyObject *
-union_class_getitem(PyObject *cls, PyObject *args)
-{
-    return _Py_union_from_tuple(args);
-}
-
-static PyObject *
 union_mro_entries(PyObject *self, PyObject *args)
 {
     return PyErr_Format(PyExc_TypeError,
@@ -500,13 +494,12 @@ union_mro_entries(PyObject *self, PyObject *args)
 
 static PyMethodDef union_methods[] = {
     {"__mro_entries__", union_mro_entries, METH_O},
-    {"__class_getitem__", union_class_getitem, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {0}
 };
 
 PyTypeObject _PyUnion_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    .tp_name = "typing.Union",
+    .tp_name = "types.UnionType",
     .tp_doc = PyDoc_STR("Represent a union type\n"
               "\n"
               "E.g. for int | str"),

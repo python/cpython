@@ -509,6 +509,8 @@ class TypeVarTests(BaseTestCase):
 
     def test_bound_errors(self):
         with self.assertRaises(TypeError):
+            TypeVar('X', bound=Union)
+        with self.assertRaises(TypeError):
             TypeVar('X', bound=Optional)
         with self.assertRaises(TypeError):
             TypeVar('X', str, float, bound=Employee)
@@ -549,7 +551,7 @@ class TypeVarTests(BaseTestCase):
     def test_bad_var_substitution(self):
         T = TypeVar('T')
         bad_args = (
-            (), (int, str), Optional,
+            (), (int, str), Union, Optional,
             Generic, Generic[T], Protocol, Protocol[T],
             Final, Final[int], ClassVar, ClassVar[int],
         )
@@ -2056,6 +2058,10 @@ class UnionTests(BaseTestCase):
 
     def test_union_issubclass_type_error(self):
         with self.assertRaises(TypeError):
+            issubclass(int, Union)
+        with self.assertRaises(TypeError):
+            issubclass(Union, int)
+        with self.assertRaises(TypeError):
             issubclass(Union[int, str], int)
         with self.assertRaises(TypeError):
             issubclass(int, Union[str, list[int]])
@@ -2174,8 +2180,11 @@ class UnionTests(BaseTestCase):
 
     def test_cannot_subclass(self):
         with self.assertRaisesRegex(TypeError,
-                r"type 'typing\.Union' is not an acceptable base type"):
+                r"Cannot subclass typing\.Union"):
             class C(Union):
+                pass
+        with self.assertRaisesRegex(TypeError, CANNOT_SUBCLASS_TYPE):
+            class D(type(Union)):
                 pass
         with self.assertRaisesRegex(TypeError,
                 r'Cannot subclass int \| str'):
@@ -5192,6 +5201,8 @@ class GenericTests(BaseTestCase):
         with self.assertRaises(TypeError):
             List[Final]
         with self.assertRaises(TypeError):
+            Tuple[Union]
+        with self.assertRaises(TypeError):
             Tuple[Optional]
         with self.assertRaises(TypeError):
             List[ClassVar[int]]
@@ -5734,6 +5745,8 @@ class GenericTests(BaseTestCase):
         for obj in (
             ClassVar[int],
             Final[int],
+            Union[int, float],
+            Optional[int],
             Literal[1, 2],
             Concatenate[int, ParamSpec("P")],
             TypeGuard[int],
@@ -5765,7 +5778,7 @@ class GenericTests(BaseTestCase):
             __parameters__ = (T,)
         # Bare classes should be skipped
         for a in (List, list):
-            for b in (A, int, TypeVar, TypeVarTuple, ParamSpec, types.GenericAlias, Union):
+            for b in (A, int, TypeVar, TypeVarTuple, ParamSpec, types.GenericAlias, types.UnionType):
                 with self.subTest(generic=a, sub=b):
                     with self.assertRaisesRegex(TypeError, '.* is not a generic class'):
                         a[b][str]
@@ -5784,7 +5797,7 @@ class GenericTests(BaseTestCase):
 
         for s in (int, G, A, List, list,
                   TypeVar, TypeVarTuple, ParamSpec,
-                  types.GenericAlias, Union):
+                  types.GenericAlias, types.UnionType):
 
             for t in Tuple, tuple:
                 with self.subTest(tuple=t, sub=s):
@@ -10452,6 +10465,7 @@ class SpecialAttrsTests(BaseTestCase):
             typing.TypeGuard: 'TypeGuard',
             typing.TypeIs: 'TypeIs',
             typing.TypeVar: 'TypeVar',
+            typing.Union: 'Union',
             typing.Self: 'Self',
             # Subscripted special forms
             typing.Annotated[Any, "Annotation"]: 'Annotated',
@@ -10462,11 +10476,11 @@ class SpecialAttrsTests(BaseTestCase):
             typing.Literal[Any]: 'Literal',
             typing.Literal[1, 2]: 'Literal',
             typing.Literal[True, 2]: 'Literal',
-            typing.Optional[Any]: 'Union',
+            typing.Optional[Any]: 'UnionType',
             typing.TypeGuard[Any]: 'TypeGuard',
             typing.TypeIs[Any]: 'TypeIs',
             typing.Union[Any]: 'Any',
-            typing.Union[int, float]: 'Union',
+            typing.Union[int, float]: 'UnionType',
             # Incompatible special forms (tested in test_special_attrs2)
             # - typing.NewType('TypeName', Any)
             # - typing.ParamSpec('SpecialAttrsP')
@@ -10477,14 +10491,12 @@ class SpecialAttrsTests(BaseTestCase):
             with self.subTest(cls=cls):
                 self.assertEqual(cls.__name__, name, str(cls))
                 self.assertEqual(cls.__qualname__, name, str(cls))
-                self.assertEqual(cls.__module__, 'typing', str(cls))
+                if not isinstance(cls, types.UnionType):
+                    self.assertEqual(cls.__module__, 'typing', str(cls))
                 for proto in range(pickle.HIGHEST_PROTOCOL + 1):
                     s = pickle.dumps(cls, proto)
                     loaded = pickle.loads(s)
-                    if isinstance(cls, Union):
-                        self.assertEqual(cls, loaded)
-                    else:
-                        self.assertIs(cls, loaded)
+                    self.assertIs(cls, loaded)
 
     TypeName = typing.NewType('SpecialAttrsTests.TypeName', Any)
 
