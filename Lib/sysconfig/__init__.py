@@ -314,6 +314,7 @@ def get_default_scheme():
 
 def get_makefile_filename():
     """Return the path of the Makefile."""
+    import warnings
 
     # GH-127429: When cross-compiling, use the Makefile from the target, instead of the host Python.
     if cross_base := os.environ.get('_PYTHON_PROJECT_BASE'):
@@ -322,7 +323,14 @@ def get_makefile_filename():
     if _PYTHON_BUILD:
         return os.path.join(_PROJECT_BASE, "Makefile")
 
-    if hasattr(sys, 'abiflags'):
+    # TODO: Remove this in Python 3.16.
+    # This flag will always be True since Python 3.16.
+    with warnings.catch_warnings():
+        # ignore DeprecationWarning on sys.abiflags change on Windows
+        warnings.filterwarnings('ignore', r'sys\.abiflags', category=DeprecationWarning)
+        has_abiflags = hasattr(sys, 'abiflags')
+
+    if has_abiflags:
         config_dir_name = f'config-{_PY_VERSION_SHORT}{sys.abiflags}'
     else:
         config_dir_name = 'config'
@@ -496,6 +504,8 @@ def get_path(name, scheme=get_default_scheme(), vars=None, expand=True):
 
 
 def _init_config_vars():
+    import warnings
+
     global _CONFIG_VARS
     _CONFIG_VARS = {}
 
@@ -504,10 +514,12 @@ def _init_config_vars():
     base_prefix = _BASE_PREFIX
     base_exec_prefix = _BASE_EXEC_PREFIX
 
-    try:
-        abiflags = sys.abiflags
-    except AttributeError:
-        abiflags = ''
+    # XXX: Remove this context manager in Python 3.16
+    # sys.abiflags will always be available on all platforms since Python 3.16
+    with warnings.catch_warnings():
+        # ignore DeprecationWarning on sys.abiflags change on Windows
+        warnings.simplefilter('ignore', DeprecationWarning)
+        abiflags = getattr(sys, 'abiflags', '')
 
     if os.name == 'posix':
         _init_posix(_CONFIG_VARS)
