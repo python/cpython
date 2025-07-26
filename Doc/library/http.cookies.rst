@@ -150,9 +150,10 @@ Morsel Objects
 
    The attribute :attr:`samesite` controls when the browser sends the cookie with
    cross-site requests. This helps to mitigate CSRF attacks. Valid values are
-   "Strict" (never sent with cross-site requests), "Lax" (sent with top-level
-   navigation), and "None" (always sent). When using "None", the "secure"
-   attribute must also be set, as required by modern browsers.
+   "Strict" (only sent with same-site requests), "Lax" (sent with same-site
+   requests and top-level navigations), and "None" (sent with same-site and
+   cross-site requests). When using "None", the "secure" attribute must also
+   be set, as required by modern browsers.
 
 
    The attribute :attr:`partitioned` indicates to user agents that these
