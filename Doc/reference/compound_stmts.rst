@@ -335,16 +335,31 @@ stored in the :mod:`sys` module is reset to its previous value::
 :keyword:`!except*` clause
 --------------------------
 
-The :keyword:`!except*` clause(s) are used for handling
-:exc:`ExceptionGroup`\s. The exception type for matching is interpreted as in
-the case of :keyword:`except`, but in the case of exception groups we can have
-partial matches when the type matches some of the exceptions in the group.
-This means that multiple :keyword:`!except*` clauses can execute,
-each handling part of the exception group.
-Each clause executes at most once and handles an exception group
-of all matching exceptions.  Each exception in the group is handled by at most
-one :keyword:`!except*` clause, the first that matches it. ::
+The :keyword:`!except*` clause(s) specify one or more handlers for groups of
+exceptions (:exc:`BaseExceptionGroup` instances). A :keyword:`try` statement
+can have either :keyword:`except` or :keyword:`!except*` clauses, but not both.
+The exception type for matching is mandatory in the case of :keyword:`!except*`,
+so ``except*:`` is a syntax error. The type is interpreted as in the case of
+:keyword:`except`, but matching is performed on the exceptions contained in the
+group that is being handled. An :exc:`TypeError` is raised if a matching
+type is a subclass of :exc:`BaseExceptionGroup`, because that would have
+ambiguous semantics.
 
+When an exception group is raised in the try block, each :keyword:`!except*`
+clause splits (see :meth:`~BaseExceptionGroup.split`) it into the subgroups
+of matching and non-matching exceptions. If the matching subgroup is not empty,
+it becomes the handled exception (the value returned from ``sys.exception()``)
+and assigned to the target of the :keyword:`!except*` clause (if there is one).
+Then, the body of the :keyword:`!except*` clause executes. If the non-matching
+subgroup is not empty, it is processed by the next :keyword:`!except*` in the
+same manner. This continues until all exceptions in the group have been matched,
+or the last :keyword:`!except*` clause has run.
+
+After all :keyword:`!except*` clauses execute, the group of unhandled exceptions
+is merged with any exceptions that were raised or re-raised from within
+:keyword:`!except*` clauses. This merged exception group propagates on.
+
+ and before the :keyword:`!finally`
    >>> try:
    ...     raise ExceptionGroup("eg",
    ...         [ValueError(1), TypeError(2), OSError(3), OSError(4)])
@@ -356,22 +371,18 @@ one :keyword:`!except*` clause, the first that matches it. ::
    caught <class 'ExceptionGroup'> with nested (TypeError(2),)
    caught <class 'ExceptionGroup'> with nested (OSError(3), OSError(4))
      + Exception Group Traceback (most recent call last):
-     |   File "<stdin>", line 2, in <module>
-     | ExceptionGroup: eg
+     |   File "<doctest default[0]>", line 2, in <module>
+     |     raise ExceptionGroup("eg",
+     |         [ValueError(1), TypeError(2), OSError(3), OSError(4)])
+     | ExceptionGroup: eg (1 sub-exception)
      +-+---------------- 1 ----------------
        | ValueError: 1
        +------------------------------------
 
-
-Any remaining exceptions that were not handled by any :keyword:`!except*`
-clause are re-raised at the end, along with all exceptions that were
-raised from within the :keyword:`!except*` clauses. If this list contains
-more than one exception to reraise, they are combined into an exception
-group.
-
-If the raised exception is not an exception group and its type matches
-one of the :keyword:`!except*` clauses, it is caught and wrapped by an
-exception group with an empty message string. ::
+If the exception raised from the :keyword:`try` block is not an exception group
+and its type matches one of the :keyword:`!except*` clauses, it is caught and
+wrapped by an exception group with an empty message string. This ensures that the
+type of the target ``e`` is consistently :exc:`BaseExceptionGroup`::
 
    >>> try:
    ...     raise BlockingIOError
@@ -380,12 +391,6 @@ exception group with an empty message string. ::
    ...
    ExceptionGroup('', (BlockingIOError()))
 
-An :keyword:`!except*` clause must have a matching expression; it cannot be ``except*:``.
-Furthermore, this expression cannot contain exception group types, because that would
-have ambiguous semantics.
-
-It is not possible to mix :keyword:`except` and :keyword:`!except*`
-in the same :keyword:`try`.
 :keyword:`break`, :keyword:`continue` and :keyword:`return`
 cannot appear in an :keyword:`!except*` clause.
 
