@@ -23,6 +23,12 @@ by the abstract :class:`Executor` class.
 
 .. include:: ../includes/wasm-notavail.rst
 
+.. seealso::
+
+   The :ref:`concurrency-howto` offers explanations about concurrency
+   and different concurrency models, along with examples for each
+   of those models.
+
 Executor Objects
 ----------------
 
