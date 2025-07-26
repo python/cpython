@@ -4,6 +4,7 @@ import contextlib
 import io
 import marshal
 import os
+import shutil
 import socket
 import subprocess
 import sys
@@ -1588,6 +1589,68 @@ if __name__ == "__main__":
         # Just verify that sampling completed without error
         # We're not testing output format here
 
+    def test_sample_target_script(self):
+        script_file = tempfile.NamedTemporaryFile(delete=False)
+        script_file.write(self.test_script.encode("utf-8"))
+        script_file.flush()
+        self.addCleanup(close_and_unlink, script_file)
+
+        test_args = ["profile.sample", "-d", "1", script_file.name]
+
+        with (
+            mock.patch("sys.argv", test_args),
+            io.StringIO() as captured_output,
+            mock.patch("sys.stdout", captured_output),
+        ):
+            try:
+                profile.sample.main()
+            except PermissionError:
+                self.skipTest("Insufficient permissions for remote profiling")
+
+            output = captured_output.getvalue()
+
+        # Basic checks on output
+        self.assertIn("Captured", output)
+        self.assertIn("samples", output)
+        self.assertIn("Profile Stats", output)
+
+        # Should see some of our test functions
+        self.assertIn("slow_fibonacci", output)
+
+
+    def test_sample_target_module(self):
+        tempdir = tempfile.TemporaryDirectory(delete=False)
+        self.addCleanup(lambda x: shutil.rmtree(x), tempdir.name)
+
+        module_path = os.path.join(tempdir.name, "test_module.py")
+
+        with open(module_path, "w") as f:
+            f.write(self.test_script)
+
+        test_args = ["profile.sample", "-d", "1", "-m", "test_module"]
+
+        with (
+            mock.patch("sys.argv", test_args),
+            io.StringIO() as captured_output,
+            mock.patch("sys.stdout", captured_output),
+            # Change to temp directory so subprocess can find the module
+            contextlib.chdir(tempdir.name),
+        ):
+            try:
+                profile.sample.main()
+            except PermissionError:
+                self.skipTest("Insufficient permissions for remote profiling")
+
+            output = captured_output.getvalue()
+
+        # Basic checks on output
+        self.assertIn("Captured", output)
+        self.assertIn("samples", output)
+        self.assertIn("Profile Stats", output)
+
+        # Should see some of our test functions
+        self.assertIn("slow_fibonacci", output)
+
 
 @skip_if_not_supported
 @unittest.skipIf(
@@ -1690,16 +1753,298 @@ class TestSampleProfilerErrorHandling(unittest.TestCase):
 
 
 class TestSampleProfilerCLI(unittest.TestCase):
+    def test_cli_module_argument_parsing(self):
+        test_args = ["profile.sample", "-m", "mymodule"]
+
+        with (
+            mock.patch("sys.argv", test_args),
+            mock.patch("profile.sample.sample") as mock_sample,
+            mock.patch("subprocess.Popen") as mock_popen,
+        ):
+            mock_process = mock.MagicMock()
+            mock_process.pid = 12345
+            mock_process.wait.side_effect = [subprocess.TimeoutExpired(test_args, 0.1), None]
+            mock_process.poll.return_value = None
+            mock_popen.return_value = mock_process
+
+            profile.sample.main()
+
+            mock_popen.assert_called_once_with([sys.executable, "-m", "mymodule"])
+            mock_sample.assert_called_once_with(
+                12345,
+                sort=2,  # default sort (sort_value from args.sort)
+                sample_interval_usec=100,
+                duration_sec=10,
+                filename=None,
+                all_threads=False,
+                limit=15,
+                show_summary=True,
+                output_format="pstats",
+                realtime_stats=False,
+            )
+
+    def test_cli_module_with_arguments(self):
+        test_args = ["profile.sample", "-m", "mymodule", "arg1", "arg2", "--flag"]
+
+        with (
+            mock.patch("sys.argv", test_args),
+            mock.patch("profile.sample.sample") as mock_sample,
+            mock.patch("subprocess.Popen") as mock_popen,
+        ):
+            mock_process = mock.MagicMock()
+            mock_process.pid = 12345
+            mock_process.wait.side_effect = [subprocess.TimeoutExpired(test_args, 0.1), None]
+            mock_process.poll.return_value = None
+            mock_popen.return_value = mock_process
+
+            profile.sample.main()
+
+            mock_popen.assert_called_once_with([
+                sys.executable, "-m", "mymodule", "arg1", "arg2", "--flag"
+            ])
+            mock_sample.assert_called_once_with(
+                12345,
+                sort=2,
+                sample_interval_usec=100,
+                duration_sec=10,
+                filename=None,
+                all_threads=False,
+                limit=15,
+                show_summary=True,
+                output_format="pstats",
+                realtime_stats=False,
+            )
+
+    def test_cli_script_argument_parsing(self):
+        test_args = ["profile.sample", "myscript.py"]
+
+        with (
+            mock.patch("sys.argv", test_args),
+            mock.patch("profile.sample.sample") as mock_sample,
+            mock.patch("subprocess.Popen") as mock_popen,
+        ):
+            mock_process = mock.MagicMock()
+            mock_process.pid = 12345
+            mock_process.wait.side_effect = [subprocess.TimeoutExpired(test_args, 0.1), None]
+            mock_process.poll.return_value = None
+            mock_popen.return_value = mock_process
+
+            profile.sample.main()
+
+            mock_popen.assert_called_once_with([sys.executable, "myscript.py"])
+            mock_sample.assert_called_once_with(
+                12345,
+                sort=2,
+                sample_interval_usec=100,
+                duration_sec=10,
+                filename=None,
+                all_threads=False,
+                limit=15,
+                show_summary=True,
+                output_format="pstats",
+                realtime_stats=False,
+            )
+
+    def test_cli_script_with_arguments(self):
+        test_args = ["profile.sample", "myscript.py", "arg1", "arg2", "--flag"]
+
+        with (
+            mock.patch("sys.argv", test_args),
+            mock.patch("profile.sample.sample") as mock_sample,
+            mock.patch("subprocess.Popen") as mock_popen,
+        ):
+            mock_process = mock.MagicMock()
+            mock_process.pid = 12345
+            mock_process.wait.side_effect = [subprocess.TimeoutExpired(test_args, 0.1), None]
+            mock_process.poll.return_value = None
+            mock_popen.return_value = mock_process
+
+            profile.sample.main()
+
+            mock_popen.assert_called_once_with([
+                sys.executable, "myscript.py", "arg1", "arg2", "--flag"
+            ])
+
+    def test_cli_mutually_exclusive_pid_module(self):
+        test_args = ["profile.sample", "-p", "12345", "-m", "mymodule"]
+
+        with (
+            mock.patch("sys.argv", test_args),
+            mock.patch("sys.stderr", io.StringIO()) as mock_stderr,
+            self.assertRaises(SystemExit) as cm,
+        ):
+            profile.sample.main()
+
+        self.assertEqual(cm.exception.code, 2)  # argparse error
+        error_msg = mock_stderr.getvalue()
+        self.assertIn("not allowed with argument", error_msg)
+
+    def test_cli_mutually_exclusive_pid_script(self):
+        test_args = ["profile.sample", "-p", "12345", "myscript.py"]
+
+        with (
+            mock.patch("sys.argv", test_args),
+            mock.patch("sys.stderr", io.StringIO()) as mock_stderr,
+            self.assertRaises(SystemExit) as cm,
+        ):
+            profile.sample.main()
+
+        self.assertEqual(cm.exception.code, 2)  # argparse error
+        error_msg = mock_stderr.getvalue()
+        self.assertIn("not allowed with argument", error_msg)
+
+    def test_cli_no_target_specified(self):
+        test_args = ["profile.sample", "-d", "5"]
+
+        with (
+            mock.patch("sys.argv", test_args),
+            mock.patch("sys.stderr", io.StringIO()) as mock_stderr,
+            self.assertRaises(SystemExit) as cm,
+        ):
+            profile.sample.main()
+
+        self.assertEqual(cm.exception.code, 2)  # argparse error
+        error_msg = mock_stderr.getvalue()
+        self.assertIn("one of the arguments", error_msg)
+
+    def test_cli_module_with_profiler_options(self):
+        test_args = [
+            "profile.sample", "-i", "1000", "-d", "30", "-a",
+            "--sort-tottime", "-l", "20", "-m", "mymodule",
+        ]
+
+        with (
+            mock.patch("sys.argv", test_args),
+            mock.patch("profile.sample.sample") as mock_sample,
+            mock.patch("subprocess.Popen") as mock_popen,
+        ):
+            mock_process = mock.MagicMock()
+            mock_process.pid = 12345
+            mock_process.wait.side_effect = [subprocess.TimeoutExpired(test_args, 0.1), None]
+            mock_process.poll.return_value = None
+            mock_popen.return_value = mock_process
+
+            profile.sample.main()
+
+            mock_sample.assert_called_once_with(
+                12345,
+                sort=1,  # sort-tottime
+                sample_interval_usec=1000,
+                duration_sec=30,
+                filename=None,
+                all_threads=True,
+                limit=20,
+                show_summary=True,
+                output_format="pstats",
+                realtime_stats=False,
+            )
+
+    def test_cli_script_with_profiler_options(self):
+        """Test script with various profiler options."""
+        test_args = [
+            "profile.sample", "-i", "2000", "-d", "60",
+            "--collapsed", "-o", "output.txt",
+            "myscript.py", "scriptarg",
+        ]
+
+        with (
+            mock.patch("sys.argv", test_args),
+            mock.patch("profile.sample.sample") as mock_sample,
+            mock.patch("subprocess.Popen") as mock_popen,
+        ):
+            mock_process = mock.MagicMock()
+            mock_process.pid = 12345
+            mock_process.wait.side_effect = [subprocess.TimeoutExpired(test_args, 0.1), None]
+            mock_process.poll.return_value = None
+            mock_popen.return_value = mock_process
+
+            profile.sample.main()
+
+            mock_popen.assert_called_once_with([
+                sys.executable, "myscript.py", "scriptarg"
+            ])
+            # Verify profiler options were passed correctly
+            mock_sample.assert_called_once_with(
+                12345,
+                sort=2,  # default sort
+                sample_interval_usec=2000,
+                duration_sec=60,
+                filename="output.txt",
+                all_threads=False,
+                limit=15,
+                show_summary=True,
+                output_format="collapsed",
+                realtime_stats=False,
+            )
+
+    def test_cli_empty_module_name(self):
+        test_args = ["profile.sample", "-m"]
+
+        with (
+            mock.patch("sys.argv", test_args),
+            mock.patch("sys.stderr", io.StringIO()) as mock_stderr,
+            self.assertRaises(SystemExit) as cm,
+        ):
+            profile.sample.main()
+
+        self.assertEqual(cm.exception.code, 2)  # argparse error
+        error_msg = mock_stderr.getvalue()
+        self.assertIn("must specify", error_msg)
+
+    def test_cli_long_module_option(self):
+        test_args = ["profile.sample", "--module", "mymodule", "arg1"]
+
+        with (
+            mock.patch("sys.argv", test_args),
+            mock.patch("profile.sample.sample") as mock_sample,
+            mock.patch("subprocess.Popen") as mock_popen,
+        ):
+            mock_process = mock.MagicMock()
+            mock_process.pid = 12345
+            mock_process.wait.side_effect = [subprocess.TimeoutExpired(test_args, 0.1), None]
+            mock_process.poll.return_value = None
+            mock_popen.return_value = mock_process
+
+            profile.sample.main()
+
+            mock_popen.assert_called_once_with([
+                sys.executable, "-m", "mymodule", "arg1",
+            ])
+
+    def test_cli_complex_script_arguments(self):
+        test_args = [
+            "profile.sample", "script.py",
+            "--input", "file.txt", "-v", "--output=/tmp/out", "positional"
+        ]
+
+        with (
+            mock.patch("sys.argv", test_args),
+            mock.patch("profile.sample.sample") as mock_sample,
+            mock.patch("subprocess.Popen") as mock_popen,
+        ):
+            mock_process = mock.MagicMock()
+            mock_process.pid = 12345
+            mock_process.wait.side_effect = [subprocess.TimeoutExpired(test_args, 0.1), None]
+            mock_process.poll.return_value = None
+            mock_popen.return_value = mock_process
+
+            profile.sample.main()
+
+            mock_popen.assert_called_once_with([
+                sys.executable, "script.py",
+                "--input", "file.txt", "-v", "--output=/tmp/out", "positional",
+            ])
+
     def test_cli_collapsed_format_validation(self):
         """Test that CLI properly validates incompatible options with collapsed format."""
         test_cases = [
             # Test sort options are invalid with collapsed
             (
-                ["profile.sample", "--collapsed", "--sort-nsamples", "12345"],
+                ["profile.sample", "--collapsed", "--sort-nsamples", "-p", "12345"],
                 "sort",
             ),
             (
-                ["profile.sample", "--collapsed", "--sort-tottime", "12345"],
+                ["profile.sample", "--collapsed", "--sort-tottime", "-p", "12345"],
                 "sort",
             ),
             (
@@ -1707,6 +2052,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
                     "profile.sample",
                     "--collapsed",
                     "--sort-cumtime",
+                    "-p",
                     "12345",
                 ],
                 "sort",
@@ -1716,6 +2062,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
                     "profile.sample",
                     "--collapsed",
                     "--sort-sample-pct",
+                    "-p",
                     "12345",
                 ],
                 "sort",
@@ -1725,23 +2072,24 @@ class TestSampleProfilerCLI(unittest.TestCase):
                     "profile.sample",
                     "--collapsed",
                     "--sort-cumul-pct",
+                    "-p",
                     "12345",
                 ],
                 "sort",
             ),
             (
-                ["profile.sample", "--collapsed", "--sort-name", "12345"],
+                ["profile.sample", "--collapsed", "--sort-name", "-p", "12345"],
                 "sort",
             ),
             # Test limit option is invalid with collapsed
-            (["profile.sample", "--collapsed", "-l", "20", "12345"], "limit"),
+            (["profile.sample", "--collapsed", "-l", "20", "-p", "12345"], "limit"),
             (
-                ["profile.sample", "--collapsed", "--limit", "20", "12345"],
+                ["profile.sample", "--collapsed", "--limit", "20", "-p", "12345"],
                 "limit",
             ),
             # Test no-summary option is invalid with collapsed
             (
-                ["profile.sample", "--collapsed", "--no-summary", "12345"],
+                ["profile.sample", "--collapsed", "--no-summary", "-p", "12345"],
                 "summary",
             ),
         ]
@@ -1761,7 +2109,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
 
     def test_cli_default_collapsed_filename(self):
         """Test that collapsed format gets a default filename when not specified."""
-        test_args = ["profile.sample", "--collapsed", "12345"]
+        test_args = ["profile.sample", "--collapsed", "-p", "12345"]
 
         with (
             mock.patch("sys.argv", test_args),
@@ -1779,12 +2127,12 @@ class TestSampleProfilerCLI(unittest.TestCase):
         """Test custom output filenames for both formats."""
         test_cases = [
             (
-                ["profile.sample", "--pstats", "-o", "custom.pstats", "12345"],
+                ["profile.sample", "--pstats", "-o", "custom.pstats", "-p", "12345"],
                 "custom.pstats",
                 "pstats",
             ),
             (
-                ["profile.sample", "--collapsed", "-o", "custom.txt", "12345"],
+                ["profile.sample", "--collapsed", "-o", "custom.txt", "-p", "12345"],
                 "custom.txt",
                 "collapsed",
             ),
@@ -1816,7 +2164,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
         with (
             mock.patch(
                 "sys.argv",
-                ["profile.sample", "--pstats", "--collapsed", "12345"],
+                ["profile.sample", "--pstats", "--collapsed", "-p", "12345"],
             ),
             mock.patch("sys.stderr", io.StringIO()),
         ):
@@ -1824,7 +2172,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 profile.sample.main()
 
     def test_argument_parsing_basic(self):
-        test_args = ["profile.sample", "12345"]
+        test_args = ["profile.sample", "-p", "12345"]
 
         with (
             mock.patch("sys.argv", test_args),
@@ -1856,7 +2204,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
         ]
 
         for option, expected_sort_value in sort_options:
-            test_args = ["profile.sample", option, "12345"]
+            test_args = ["profile.sample", option, "-p", "12345"]
 
             with (
                 mock.patch("sys.argv", test_args),
