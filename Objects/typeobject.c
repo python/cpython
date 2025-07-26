@@ -8817,6 +8817,13 @@ type_ready_preheader(PyTypeObject *type)
                         type->tp_name);
             return -1;
         }
+        if (!(type->tp_flags & Py_TPFLAGS_HAVE_GC)) {
+            PyErr_Format(PyExc_SystemError,
+                        "type %s has the Py_TPFLAGS_MANAGED_DICT flag "
+                        "but not Py_TPFLAGS_HAVE_GC flag",
+                        type->tp_name);
+            return -1;
+        }
         type->tp_dictoffset = -1;
     }
     if (type->tp_flags & Py_TPFLAGS_MANAGED_WEAKREF) {
@@ -8826,6 +8833,13 @@ type_ready_preheader(PyTypeObject *type)
             PyErr_Format(PyExc_TypeError,
                         "type %s has the Py_TPFLAGS_MANAGED_WEAKREF flag "
                         "but tp_weaklistoffset is set",
+                        type->tp_name);
+            return -1;
+        }
+        if (!(type->tp_flags & Py_TPFLAGS_HAVE_GC)) {
+            PyErr_Format(PyExc_SystemError,
+                        "type %s has the Py_TPFLAGS_MANAGED_WEAKREF flag "
+                        "but not Py_TPFLAGS_HAVE_GC flag",
                         type->tp_name);
             return -1;
         }
