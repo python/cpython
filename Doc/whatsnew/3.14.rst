@@ -1058,6 +1058,30 @@ free-threaded build and false for the GIL-enabled build.
 
 (Contributed by Neil Schemenauer and Kumar Aditya in :gh:`130010`.)
 
+.. _whatsnew314-incremental-gc:
+
+Incremental garbage collection
+------------------------------
+
+The cycle garbage collector is now incremental.
+This means that maximum pause times are reduced
+by an order of magnitude or more for larger heaps.
+
+There are now only two generations: young and old.
+When :func:`gc.collect` is not called directly, the
+GC is invoked a little less frequently. When invoked, it
+collects the young generation and an increment of the
+old generation, instead of collecting one or more generations.
+
+The behavior of :func:`!gc.collect` changes slightly:
+
+* ``gc.collect(1)``: Performs an increment of garbage collection,
+  rather than collecting generation 1.
+* Other calls to :func:`!gc.collect` are unchanged.
+
+(Contributed by Mark Shannon in :gh:`108362`.)
+
+
 Other language changes
 ======================
 
@@ -1204,11 +1228,10 @@ argparse
 
   .. _whatsnew314-color-argparse:
 
-* Introduced the optional *color* parameter to
-  :class:`argparse.ArgumentParser`, enabling color for help text.
-  This can be controlled by :ref:`environment variables
-  <using-on-controlling-color>`. Color has also been enabled for help in the
-  :ref:`stdlib CLIs <library-cmdline>` which use :mod:`!argparse`.
+* Enable color for help text, which can be disabled with the optional *color*
+  parameter to :class:`argparse.ArgumentParser`.
+  This can also be controlled by :ref:`environment variables
+  <using-on-controlling-color>`.
   (Contributed by Hugo van Kemenade in :gh:`130645`.)
 
 
@@ -1484,6 +1507,36 @@ functools
 * Allow the *initial* parameter of :func:`functools.reduce` to be passed
   as a keyword argument.
   (Contributed by Sayandip Dutta in :gh:`125916`.)
+
+
+gc
+--
+
+The cyclic garbage collector is now incremental,
+which changes the meaning of the results of
+:meth:`~gc.get_threshold` and :meth:`~gc.set_threshold`
+as well as :meth:`~gc.get_count` and :meth:`~gc.get_stats`.
+
+* For backwards compatibility, :meth:`~gc.get_threshold` continues to return
+  a three-item tuple.
+  The first value is the threshold for young collections, as before;
+  the second value determines the rate at which the old collection is scanned
+  (the default is 10, and higher values mean that the old collection
+  is scanned more slowly).
+  The third value is meaningless and is always zero.
+
+* :meth:`~gc.set_threshold` ignores any items after the second.
+
+* :meth:`~gc.get_count` and :meth:`~gc.get_stats` continue to return
+  the same format of results.
+  The only difference is that instead of the results referring to
+  the young, aging and old generations,
+  the results refer to the young generation
+  and the aging and collecting spaces of the old generation.
+
+In summary, code that attempted to manipulate the behavior of the cycle GC
+may not work exactly as intended, but it is very unlikely to be harmful.
+All other code will work just fine.
 
 
 getopt
@@ -2139,6 +2192,7 @@ urllib
   - Discard URL authority if it matches the local hostname.
   - Discard URL authority if it resolves to a local IP address when the new
     *resolve_host* argument is set to true.
+  - Discard URL query and fragment components.
   - Raise :exc:`~urllib.error.URLError` if a URL authority isn't local,
     except on Windows where we return a UNC path as before.
 
@@ -2233,12 +2287,22 @@ asyncio
   (Contributed by Yury Selivanov, Pablo Galindo Salgado, and Łukasz Langa
   in :gh:`91048`.)
 
+
 base64
 ------
 
 * Improve the performance of :func:`base64.b16decode` by up to ten times,
   and reduce the import time of :mod:`base64` by up to six times.
   (Contributed by Bénédikt Tran, Chris Markiewicz, and Adam Turner in :gh:`118761`.)
+
+
+gc
+--
+
+* The new :ref:`incremental garbage collector <whatsnew314-incremental-gc>`
+  means that maximum pause times are reduced
+  by an order of magnitude or more for larger heaps.
+  (Contributed by Mark Shannon in :gh:`108362`.)
 
 
 io
@@ -2260,8 +2324,7 @@ uuid
   * :func:`~uuid.uuid3` and :func:`~uuid.uuid5` are both roughly 40% faster
     for 16-byte names and 20% faster for 1024-byte names. Performance for
     longer names remains unchanged.
-  * :func:`~uuid.uuid4` and :func:`~uuid.uuid8` are 30% and 40% faster
-    respectively.
+  * :func:`~uuid.uuid4` is 30% faster.
 
   (Contributed by Bénédikt Tran in :gh:`128150`.)
 
@@ -2707,6 +2770,13 @@ Changes in the Python API
   Wrap it in :func:`staticmethod` if you want to preserve the old behavior.
   (Contributed by Serhiy Storchaka and Dominykas Grigonis in :gh:`121027`.)
 
+* The :ref:`garbage collector is now incremental <whatsnew314-incremental-gc>`,
+  which means that the behavior of :func:`gc.collect` changes slightly:
+
+  * ``gc.collect(1)``: Performs an increment of garbage collection,
+    rather than collecting generation 1.
+  * Other calls to :func:`!gc.collect` are unchanged.
+
 * The :func:`locale.nl_langinfo` function now sets temporarily the ``LC_CTYPE``
   locale in some cases.
   This temporary change affects other threads.
@@ -2870,11 +2940,6 @@ New features
   file.
   (Contributed by Victor Stinner in :gh:`127350`.)
 
-* Add support of nullable arguments in :c:func:`PyArg_ParseTuple` and
-  similar functions.
-  Adding ``?`` after any format unit makes ``None`` be accepted as a value.
-  (Contributed by Serhiy Storchaka in :gh:`112068`.)
-
 * The ``k`` and ``K`` formats in :c:func:`PyArg_ParseTuple` and
   similar functions now use :meth:`~object.__index__` if available,
   like all other integer formats.
@@ -2970,6 +3035,7 @@ Porting to Python 3.14
   * ``_Py_GetConfig()``: :c:func:`PyConfig_Get` and :c:func:`PyConfig_GetInt`
   * ``_Py_HashBytes()``: :c:func:`Py_HashBuffer`
   * ``_Py_fopen_obj()``: :c:func:`Py_fopen`
+  * ``PyMutex_IsLocked()`` : :c:func:`PyMutex_IsLocked`
 
   The `pythoncapi-compat project`_ can be used to get most of these new
   functions on Python 3.13 and older.
@@ -3052,6 +3118,8 @@ Deprecated
   (Contributed by Victor Stinner in :gh:`128863`.)
 
 .. include:: ../deprecations/c-api-pending-removal-in-3.15.rst
+
+.. include:: ../deprecations/c-api-pending-removal-in-3.16.rst
 
 .. include:: ../deprecations/c-api-pending-removal-in-3.18.rst
 

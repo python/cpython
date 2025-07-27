@@ -436,7 +436,7 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             # test both direct compilation and compilation via AST
                 codeobjs = []
                 codeobjs.append(compile(codestr, "<test>", "exec", optimize=optval))
-                tree = ast.parse(codestr)
+                tree = ast.parse(codestr, optimize=optval)
                 codeobjs.append(compile(tree, "<test>", "exec", optimize=optval))
                 for code in codeobjs:
                     ns = {}
@@ -624,7 +624,7 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         for opt in [opt1, opt2]:
             opt_right = opt.value.right
             self.assertIsInstance(opt_right, ast.Constant)
-            self.assertEqual(opt_right.value, True)
+            self.assertEqual(opt_right.value, __debug__)
 
     def test_delattr(self):
         sys.spam = 1

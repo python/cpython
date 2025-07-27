@@ -5,7 +5,7 @@ import sysconfig
 import string
 import unittest
 
-from test.support import is_android, is_apple_mobile, is_emscripten, is_wasi
+from test.support import is_android, is_apple_mobile, is_wasm32
 
 
 class FormatTestsBase:
@@ -91,7 +91,7 @@ needs_installed_python = unittest.skipIf(
 
 
 @unittest.skipIf(os.name != 'posix', 'Feature only implemented on POSIX right now')
-@unittest.skipIf(is_wasi or is_emscripten, 'Feature not available on WebAssembly builds')
+@unittest.skipIf(is_wasm32, 'Feature not available on WebAssembly builds')
 class CPythonBuildDetailsTests(unittest.TestCase, FormatTestsBase):
     """Test CPython's install details file implementation."""
 
@@ -124,6 +124,10 @@ class CPythonBuildDetailsTests(unittest.TestCase, FormatTestsBase):
     def test_base_interpreter(self):
         value = self.key('base_interpreter')
 
+        # Skip check if installation is relocated
+        if sysconfig._installation_is_relocated():
+            self.skipTest("Installation is relocated")
+
         self.assertEqual(os.path.realpath(value), os.path.realpath(sys.executable))
 
     @needs_installed_python
@@ -133,6 +137,11 @@ class CPythonBuildDetailsTests(unittest.TestCase, FormatTestsBase):
     )
     def test_c_api(self):
         value = self.key('c_api')
+
+        # Skip check if installation is relocated
+        if sysconfig._installation_is_relocated():
+            self.skipTest("Installation is relocated")
+
         self.assertTrue(os.path.exists(os.path.join(value['headers'], 'Python.h')))
         version = sysconfig.get_config_var('VERSION')
         self.assertTrue(os.path.exists(os.path.join(value['pkgconfig_path'], f'python-{version}.pc')))

@@ -13,7 +13,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-//_Py_UNLOCKED is defined as 0 and _Py_LOCKED as 1 in Include/cpython/lock.h
+//_Py_UNLOCKED is defined as 0 and _Py_LOCKED as 1 in Include/cpython/pylock.h
 #define _Py_HAS_PARKED  2
 #define _Py_ONCE_INITIALIZED 4
 
@@ -23,13 +23,6 @@ PyMutex_LockFast(PyMutex *m)
     uint8_t expected = _Py_UNLOCKED;
     uint8_t *lock_bits = &m->_bits;
     return _Py_atomic_compare_exchange_uint8(lock_bits, &expected, _Py_LOCKED);
-}
-
-// Checks if the mutex is currently locked.
-static inline int
-PyMutex_IsLocked(PyMutex *m)
-{
-    return (_Py_atomic_load_uint8(&m->_bits) & _Py_LOCKED) != 0;
 }
 
 // Re-initializes the mutex after a fork to the unlocked state.
