@@ -161,6 +161,8 @@ that return :term:`strong references <strong reference>`.
 +===================================+===================================+
 | :c:func:`PyList_GetItem`          | :c:func:`PyList_GetItemRef`       |
 +-----------------------------------+-----------------------------------+
+| :c:func:`PyList_GET_ITEM`         | :c:func:`PyList_GetItemRef`       |
++-----------------------------------+-----------------------------------+
 | :c:func:`PyDict_GetItem`          | :c:func:`PyDict_GetItemRef`       |
 +-----------------------------------+-----------------------------------+
 | :c:func:`PyDict_GetItemWithError` | :c:func:`PyDict_GetItemRef`       |
