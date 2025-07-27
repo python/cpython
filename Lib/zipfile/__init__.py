@@ -1404,9 +1404,6 @@ class ZipFile:
                       help extend ZipFile.
                       For example to implement other encryption or compression
                       methods.
-                      ZipFile, for example to implement other encryption or compression
-                      methods.
-
     """
 
     fp = None                   # Set here since __del__ checks it
