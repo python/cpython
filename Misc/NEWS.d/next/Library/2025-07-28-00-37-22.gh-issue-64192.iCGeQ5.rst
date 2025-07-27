@@ -1,0 +1,8 @@
+Add the optional ``buffersize`` parameter to
+:meth:`multiprocessing.pool.Pool.imap` and
+:meth:`multiprocessing.pool.Pool.imap_unordered` to limit the number of
+submitted tasks whose results have not yet been yielded. If the buffer is
+full, iteration over the *iterables* pauses until a result is yielded from
+the buffer. To fully utilize pool's capacity, set *buffersize* to the number
+of processes in pool (to consume *iterable* as you go) or even higher (to
+prefetch *buffersize - processes* arguments).
