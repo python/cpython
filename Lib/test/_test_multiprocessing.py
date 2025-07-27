@@ -2953,64 +2953,6 @@ class _TestPool(BaseTestCase):
                     self.assertEqual(next(it), i * i)
                 self.assertRaises(StopIteration, it.__next__)
 
-    def test_imap_fast_iterable_with_slow_task(self):
-        if self.TYPE != "threads":
-            self.skipTest("test not appropriate for {}".format(self.TYPE))
-
-        processes = 4
-        p = self.Pool(processes)
-
-        tasks_started_later = 2
-        last_produced_task_arg = Value("i")
-
-        def produce_args():
-            for arg in range(1, processes + tasks_started_later + 1):
-                last_produced_task_arg.value = arg
-                yield arg
-
-        it = p.imap(functools.partial(sqr, wait=0.2), produce_args())
-
-        next(it)
-        time.sleep(0.2)
-        # `iterable` should've been advanced only up by `processes` times,
-        # but in fact advances further (by `>=processes+1`).
-        # In this case, it advances to the maximum value.
-        self.assertGreater(last_produced_task_arg.value, processes + 1)
-
-        p.terminate()
-        p.join()
-
-    def test_imap_fast_iterable_with_slow_task_and_buffersize(self):
-        if self.TYPE != "threads":
-            self.skipTest("test not appropriate for {}".format(self.TYPE))
-
-        processes = 4
-        p = self.Pool(processes)
-
-        tasks_started_later = 2
-        last_produced_task_arg = Value("i")
-
-        def produce_args():
-            for arg in range(1, processes + tasks_started_later + 1):
-                last_produced_task_arg.value = arg
-                yield arg
-
-        it = p.imap(
-            functools.partial(sqr, wait=0.2),
-            produce_args(),
-            buffersize=processes,
-        )
-
-        time.sleep(0.2)
-        self.assertEqual(last_produced_task_arg.value, processes)
-
-        next(it)
-        time.sleep(0.2)
-        self.assertEqual(last_produced_task_arg.value, processes + 1)
-
-        p.terminate()
-        p.join()
-
     def test_imap_handle_iterable_exception(self):
         if self.TYPE == 'manager':
             self.skipTest('test not appropriate for {}'.format(self.TYPE))
@@ -3100,6 +3042,128 @@ class _TestPool(BaseTestCase):
                 value = next(it)
                 self.assertIn(value, expected_values)
                 expected_values.remove(value)
+
+    def test_imap_and_imap_unordered_buffersize_type_validation(self):
+        for method_name in ("imap", "imap_unordered"):
+            for buffersize in ("foo", 2.0):
+                with (
+                    self.subTest(method=method_name, buffersize=buffersize),
+                    self.assertRaisesRegex(
+                        TypeError, "buffersize must be an integer or None"
+                    ),
+                ):
+                    method = getattr(self.pool, method_name)
+                    method(str, range(4), buffersize=buffersize)
+
+    def test_imap_and_imap_unordered_buffersize_value_validation(self):
+        for method_name in ("imap", "imap_unordered"):
+            for buffersize in (0, -1):
+                with (
+                    self.subTest(method=method_name, buffersize=buffersize),
+                    self.assertRaisesRegex(
+                        ValueError, "buffersize must be None or > 0"
+                    ),
+                ):
+                    method = getattr(self.pool, method_name)
+                    method(str, range(4), buffersize=buffersize)
+
+    def test_imap_and_imap_unordered_when_buffer_is_full(self):
+        if self.TYPE != "threads":
+            self.skipTest("test not appropriate for {}".format(self.TYPE))
+
+        for method_name in ("imap", "imap_unordered"):
+            with self.subTest(method=method_name):
+                processes = 4
+                p = self.Pool(processes)
+                last_produced_task_arg = Value("i")
+
+                def produce_args():
+                    for arg in itertools.count(1):
+                        last_produced_task_arg.value = arg
+                        yield arg
+
+                method = getattr(p, method_name)
+                it = method(functools.partial(sqr, wait=0.2), produce_args())
+
+                time.sleep(0.2)
+                # `iterable` could've been advanced only `processes` times,
+                # but in fact it advances further (`> processes`) because of
+                # not waiting for workers or user code to catch up.
+                self.assertGreater(last_produced_task_arg.value, processes)
+
+                next(it)
+                time.sleep(0.2)
+                self.assertGreater(last_produced_task_arg.value, processes + 1)
+
+                next(it)
+                time.sleep(0.2)
+                self.assertGreater(last_produced_task_arg.value, processes + 2)
+
+                p.terminate()
+                p.join()
+
+    def test_imap_and_imap_unordered_buffersize_when_buffer_is_full(self):
+        if self.TYPE != "threads":
+            self.skipTest("test not appropriate for {}".format(self.TYPE))
+
+        for method_name in ("imap", "imap_unordered"):
+            with self.subTest(method=method_name):
+                processes = 4
+                p = self.Pool(processes)
+                last_produced_task_arg = Value("i")
+
+                def produce_args():
+                    for arg in itertools.count(1):
+                        last_produced_task_arg.value = arg
+                        yield arg
+
+                method = getattr(p, method_name)
+                it = method(
+                    functools.partial(sqr, wait=0.2),
+                    produce_args(),
+                    buffersize=processes,
+                )
+
+                time.sleep(0.2)
+                self.assertEqual(last_produced_task_arg.value, processes)
+
+                next(it)
+                time.sleep(0.2)
+                self.assertEqual(last_produced_task_arg.value, processes + 1)
+
+                next(it)
+                time.sleep(0.2)
+                self.assertEqual(last_produced_task_arg.value, processes + 2)
+
+                p.terminate()
+                p.join()
+
+    def test_imap_and_imap_unordered_buffersize_on_infinite_iterable(self):
+        if self.TYPE != "threads":
+            self.skipTest("test not appropriate for {}".format(self.TYPE))
+
+        for method_name in ("imap", "imap_unordered"):
+            with self.subTest(method=method_name):
+                p = self.Pool(4)
+                method = getattr(p, method_name)
+
+                res = method(str, itertools.count(), buffersize=2)
+
+                self.assertEqual(next(res, None), "0")
+                self.assertEqual(next(res, None), "1")
+                self.assertEqual(next(res, None), "2")
+
+                p.terminate()
+                p.join()
+
+    def test_imap_and_imap_unordered_buffersize_on_empty_iterable(self):
+        for method_name in ("imap", "imap_unordered"):
+            with self.subTest(method=method_name):
+                method = getattr(self.pool, method_name)
+
+                res = method(str, [], buffersize=2)
+
+                self.assertIsNone(next(res, None))
 
     def test_make_pool(self):
         expected_error = (RemoteError if self.TYPE == 'manager'
