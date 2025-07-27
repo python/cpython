@@ -409,32 +409,22 @@ _locale_strxfrm_impl(PyObject *module, PyObject *str)
     }
 
     /* assume no change in size, first */
-    n1 = n1 + 1;
-    buf = PyMem_New(wchar_t, n1);
+    errno = 0;
+    n2 = wcsxfrm(NULL, s, 0);
+    if (errno && errno != ERANGE) {
+        PyErr_SetFromErrno(PyExc_OSError);
+        goto exit;
+    }
+    buf = PyMem_New(wchar_t, n2+1);
     if (!buf) {
         PyErr_NoMemory();
         goto exit;
     }
     errno = 0;
-    n2 = wcsxfrm(buf, s, n1);
-    if (errno && errno != ERANGE) {
+    n2 = wcsxfrm(buf, s, n2+1);
+    if (errno) {
         PyErr_SetFromErrno(PyExc_OSError);
         goto exit;
-    }
-    if (n2 >= (size_t)n1) {
-        /* more space needed */
-        wchar_t * new_buf = PyMem_Realloc(buf, (n2+1)*sizeof(wchar_t));
-        if (!new_buf) {
-            PyErr_NoMemory();
-            goto exit;
-        }
-        buf = new_buf;
-        errno = 0;
-        n2 = wcsxfrm(buf, s, n2+1);
-        if (errno) {
-            PyErr_SetFromErrno(PyExc_OSError);
-            goto exit;
-        }
     }
     result = PyUnicode_FromWideChar(buf, n2);
 exit:
