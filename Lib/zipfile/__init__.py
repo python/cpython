@@ -869,6 +869,10 @@ def _get_decompressor(compress_type):
 
 
 class _SharedFile:
+    """
+    Protect an already opened member of the archive from being read or written
+    at the same time.
+    """
     def __init__(self, file, pos, close, lock, writing):
         self._file = file
         self._pos = pos
@@ -1400,15 +1404,9 @@ class ZipFile:
                       help extend ZipFile.
                       For example to implement other encryption or compression
                       methods.
-              ZipFile, for example to implement other encryption or compression
-              methods.
-              This is private as there is no commitemnt to maintain backward
-              compatibitly.
-    _ZipExtFile: A class that can replace ZipExtFile. This is designed to help
-              extend ZipFile, for example to implement other encryption
-              or compression methods.
-              This is private as there is no commitemnt to maintain backward
-              compatibitly.
+                      ZipFile, for example to implement other encryption or compression
+                      methods.
+
     """
 
     fp = None                   # Set here since __del__ checks it

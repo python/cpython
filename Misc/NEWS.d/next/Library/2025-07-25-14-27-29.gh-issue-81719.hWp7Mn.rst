@@ -1,2 +1,2 @@
-zipfile.ZipFile.__init__ was updated to make it easier to subclass and
-extend it to support new encryption methods.
+:class:`zipfile.ZipFile` was given the `zipinfo_class` and `zipextfile_class` to make it easier to subclass and
+extend it.
