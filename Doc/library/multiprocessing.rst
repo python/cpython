@@ -545,37 +545,39 @@ The :mod:`multiprocessing` package mostly replicates the API of the
    to pass to *target*.
 
    If a subclass overrides the constructor, it must make sure it invokes the
-   base class constructor (:meth:`Process.__init__`) before doing anything else
+   base class constructor (``super().__init__()``) before doing anything else
    to the process.
 
    .. note::
 
-      In general, all arguments to :meth:`Process.__init__` must be picklable.
-      This is particularly notable when trying to create a :class:`Process` or use
-      a :class:`concurrent.futures.ProcessPoolExecutor` from a REPL with a locally
-      defined *target* function.
+      In general, all arguments to :class:`Process` must be picklable.  This is
+      frequently observed when trying to create a :class:`Process` or use a
+      :class:`concurrent.futures.ProcessPoolExecutor` from a REPL with a
+      locally defined *target* function.
 
-      Passing a callable object defined in the current REPL session raises an
-      :exc:`AttributeError` exception when starting the process as such as
-      *target* must have been defined within an importable module to under to be
-      unpickled.
+      Passing a callable object defined in the current REPL session causes the
+      child process to die via an uncaught :exc:`AttributeError` exception when
+      starting as *target* must have been defined within an importable module
+      in order to be loaded during unpickling.
 
-      Example::
+      Example of this uncatchable error from the child::
 
          >>> import multiprocessing as mp
          >>> def knigit():
-         ...     print("knee!")
+         ...     print("Ni!")
          ...
-         >>> mp.Process(target=knigit).start()
+         >>> process = mp.Process(target=knigit)
+         >>> process.start()
          >>> Traceback (most recent call last):
            File ".../multiprocessing/spawn.py", line ..., in spawn_main
            File ".../multiprocessing/spawn.py", line ..., in _main
          AttributeError: module '__main__' has no attribute 'knigit'
+         >>> process
+         <SpawnProcess name='SpawnProcess-1' pid=379473 parent=378707 stopped exitcode=1>
 
-      See :ref:`multiprocessing-programming-spawn`.
-
-      While this restriction is not true if using the ``"fork"`` start method,
-      as of Python ``3.14`` that is no longer the default on any platform.  See
+      See :ref:`multiprocessing-programming-spawn`.  While this restriction is
+      not true if using the ``"fork"`` start method, as of Python ``3.14`` that
+      is no longer the default on any platform.  See
       :ref:`multiprocessing-start-methods`.
 
    .. versionchanged:: 3.3
@@ -3107,7 +3109,7 @@ start method.
 
 More picklability
 
-    Ensure that all arguments to :meth:`Process.__init__` are picklable.
+    Ensure that all arguments to :class:`Process` are picklable.
     Also, if you subclass :class:`~multiprocessing.Process` then make sure that
     instances will be picklable when the :meth:`Process.start
     <multiprocessing.Process.start>` method is called.
