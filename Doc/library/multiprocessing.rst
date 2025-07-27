@@ -3109,10 +3109,10 @@ start method.
 
 More picklability
 
-    Ensure that all arguments to :class:`Process` are picklable.
-    Also, if you subclass :class:`~multiprocessing.Process` then make sure that
-    instances will be picklable when the :meth:`Process.start
-    <multiprocessing.Process.start>` method is called.
+    Ensure that all arguments to :class:`~multiprocessing.Process` are
+    picklable.  Also, if you subclass ``Process.__init__``, you must make sure
+    that instances will be picklable when the
+    :meth:`Process.start <multiprocessing.Process.start>` method is called.
 
 Global variables
 
