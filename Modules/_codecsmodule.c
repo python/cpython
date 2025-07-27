@@ -1048,30 +1048,19 @@ _codecs__normalize_encoding_impl(PyObject *module, PyObject *encoding)
         return NULL;
     }
 
-    PyUnicodeWriter *writer = PyUnicodeWriter_Create(len + 1);
-    if (writer == NULL) {
-        return NULL;
-    }
-
     char *normalized = PyMem_Malloc(len + 1);
     if (normalized == NULL) {
-        PyUnicodeWriter_Discard(writer);
         return PyErr_NoMemory();
     }
 
     if (!_Py_normalize_encoding(cstr, normalized, len + 1, 0)) {
         PyMem_Free(normalized);
-        PyUnicodeWriter_Discard(writer);
         return NULL;
     }
 
-    if (PyUnicodeWriter_WriteUTF8(writer, normalized, (Py_ssize_t)strlen(normalized)) < 0) {
-        PyUnicodeWriter_Discard(writer);
-        PyMem_Free(normalized);
-        return NULL;
-    }
+    PyObject *result = PyUnicode_FromString(normalized);
     PyMem_Free(normalized);
-    return PyUnicodeWriter_Finish(writer);
+    return result;
 }
 
 /* --- Module API --------------------------------------------------------- */
