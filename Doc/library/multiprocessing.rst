@@ -233,9 +233,12 @@ processes for a different context.  In particular, locks created using
 the *fork* context cannot be passed to processes started using the
 *spawn* or *forkserver* start methods.
 
-A library which wants to use a particular start method should probably
-use :func:`get_context` to avoid interfering with the choice of the
-library user.
+Libraries using :mod:`multiprocessing` or
+:class:`~concurrent.futures.ProcessPoolExecutor` should be designed to allow
+their users to provide their own multiprocessing context.  Using a specific
+context of your own within a library can lead to incompatibilities with the
+rest of the library user's application.  Always document if your library
+requires a specific start method.
 
 .. warning::
 
@@ -546,18 +549,33 @@ The :mod:`multiprocessing` package mostly replicates the API of the
 
    .. note::
 
-      Starting with Python 3.14, ``'fork'`` is no longer the default start
-      method on any operating system. When creating a new ``Process`` object
-      in a REPL session, with a start method such as ``'spawn'`` or ``'forkserver'``
-      (other than ``'fork'``), the *target* argument must be
-      a callable object **mandatorily** defined in a module.
+      In general, all arguments to :meth:`Process.__init__` must be picklable.
+      This is particularly notable when trying to create a :class:`Process` or
+      use a :class:`~concurrent.futures.ProcessPoolExecutor` from a REPL with a
+      locally defined *target* function.
 
-      Using a callable object defined in the current REPL session raises
-      an :exc:`AttributeError` exception when starting the process,
-      although this is still possible when the start method is ``'fork'``.
+      Passing a callable object defined in the current REPL session raises an
+      :exc:`AttributeError` exception when starting the process as such as
+      *target* must have been defined within an importable module to under to be
+      unpickled.
 
-      This also applies to the use of the
-      :class:`concurrent.futures.ProcessPoolExecutor` class.
+      Example::
+
+         >>> import multiprocessing as mp
+         >>> def knigit():
+         ...     print("knee!")
+         ...
+         >>> mp.Process(target=knigit).start()
+         >>> Traceback (most recent call last):
+           File ".../multiprocessing/spawn.py", line ..., in spawn_main
+           File ".../multiprocessing/spawn.py", line ..., in _main
+         AttributeError: module '__main__' has no attribute 'knigit'
+
+      See :ref:`multiprocessing-programming-spawn`.
+
+      While this restriction is not true if using the ``"fork"`` start method,
+      as of Python ``3.14`` that is no longer the default on any platform.  See
+      :ref:`multiprocessing-start-methods`.
 
    .. method:: run()
 
