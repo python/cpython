@@ -1,2 +1,1 @@
-:mod:`email`: Use :mod:`!encodings.aliases` for alias lookup
-:mod:`!encodings.aliases`: Add ``latin_*`` aliases.
+:mod:`!encodings.aliases`: Add ``latin_N`` aliases

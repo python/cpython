@@ -16,7 +16,6 @@ import email.quoprimime
 
 from email import errors
 from email.encoders import encode_7or8bit
-from encodings.aliases import aliases as ALIASES
 
 
 # Flags for types of header encodings
@@ -62,11 +61,35 @@ CHARSETS = {
     'utf-8':       (SHORTEST,  BASE64, 'utf-8'),
     }
 
-# The email module uses the slower latin-1 encoding
-ALIASES.update({
-    'latin-1': 'iso-8859-1',
+# Aliases for other commonly-used names for character sets.  Map
+# them to the real ones used in email.
+ALIASES = {
     'latin_1': 'iso-8859-1',
-})
+    'latin-1': 'iso-8859-1',
+    'latin_2': 'iso-8859-2',
+    'latin-2': 'iso-8859-2',
+    'latin_3': 'iso-8859-3',
+    'latin-3': 'iso-8859-3',
+    'latin_4': 'iso-8859-4',
+    'latin-4': 'iso-8859-4',
+    'latin_5': 'iso-8859-9',
+    'latin-5': 'iso-8859-9',
+    'latin_6': 'iso-8859-10',
+    'latin-6': 'iso-8859-10',
+    'latin_7': 'iso-8859-13',
+    'latin-7': 'iso-8859-13',
+    'latin_8': 'iso-8859-14',
+    'latin-8': 'iso-8859-14',
+    'latin_9': 'iso-8859-15',
+    'latin-9': 'iso-8859-15',
+    'latin_10':'iso-8859-16',
+    'latin-10':'iso-8859-16',
+    'cp949':   'ks_c_5601-1987',
+    'euc_jp':  'euc-jp',
+    'euc_kr':  'euc-kr',
+    'ascii':   'us-ascii',
+    }
+
 
 # Map charsets to their Unicode codec strings.
 CODEC_MAP = {
