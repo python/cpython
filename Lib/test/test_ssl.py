@@ -1239,6 +1239,25 @@ class ContextTests(unittest.TestCase):
         # Make sure the password function isn't called if it isn't needed
         ctx.load_cert_chain(CERTFILE, password=getpass_exception)
 
+    @threading_helper.requires_working_threading()
+    def test_load_cert_chain_thread_safety(self):
+        # gh-134698: _ssl detaches the thread state (and as such,
+        # releases the GIL and critical sections) around expensive
+        # OpenSSL calls. Unfortunately, OpenSSL structures aren't
+        # thread-safe, so executing these calls concurrently led
+        # to crashes.
+        ctx = ssl.create_default_context()
+
+        def race():
+            ctx.load_cert_chain(CERTFILE)
+
+        threads = [threading.Thread(target=race) for _ in range(8)]
+        with threading_helper.catch_threading_exception() as cm:
+            with threading_helper.start_threads(threads):
+                pass
+
+            self.assertIsNone(cm.exc_value)
+
     def test_load_verify_locations(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         ctx.load_verify_locations(CERTFILE)
@@ -4316,19 +4335,30 @@ class ThreadedTests(unittest.TestCase):
             self.assertRaises(ValueError, s.write, b'hello')
 
     def test_sendfile(self):
+        """Try to send a file using kTLS if possible."""
         TEST_DATA = b"x" * 512
         with open(os_helper.TESTFN, 'wb') as f:
             f.write(TEST_DATA)
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
         client_context, server_context, hostname = testing_context()
+        client_context.options |= getattr(ssl, 'OP_ENABLE_KTLS', 0)
         server = ThreadedEchoServer(context=server_context, chatty=False)
-        with server:
-            with client_context.wrap_socket(socket.socket(),
-                                            server_hostname=hostname) as s:
-                s.connect((HOST, server.port))
+        # kTLS seems to work only with a connection created before
+        # wrapping `sock` by the SSL context in contrast to calling
+        # `sock.connect()` after the wrapping.
+        with server, socket.create_connection((HOST, server.port)) as sock:
+            with client_context.wrap_socket(
+                sock, server_hostname=hostname
+            ) as ssock:
+                if support.verbose:
+                    ktls_used = ssock._sslobj.uses_ktls_for_send()
+                    print(
+                        'kTLS is',
+                        'available' if ktls_used else 'unavailable',
+                    )
                 with open(os_helper.TESTFN, 'rb') as file:
-                    s.sendfile(file)
-                    self.assertEqual(s.recv(1024), TEST_DATA)
+                    ssock.sendfile(file)
+                self.assertEqual(ssock.recv(1024), TEST_DATA)
 
     def test_session(self):
         client_context, server_context, hostname = testing_context()

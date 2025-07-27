@@ -9,10 +9,10 @@ import subprocess
 import sys
 import tempfile
 from pkgutil import ModuleInfo
-from unittest import TestCase, skipUnless, skipIf
+from unittest import TestCase, skipUnless, skipIf, SkipTest
 from unittest.mock import patch
 from test.support import force_not_colorized, make_clean_env, Py_DEBUG
-from test.support import SHORT_TIMEOUT, STDLIB_DIR
+from test.support import has_subprocess_support, SHORT_TIMEOUT, STDLIB_DIR
 from test.support.import_helper import import_module
 from test.support.os_helper import EnvironmentVarGuard, unlink
 
@@ -38,6 +38,10 @@ except ImportError:
 
 
 class ReplTestCase(TestCase):
+    def setUp(self):
+        if not has_subprocess_support:
+            raise SkipTest("test module requires subprocess")
+
     def run_repl(
         self,
         repl_input: str | list[str],
@@ -1371,6 +1375,7 @@ class TestMain(ReplTestCase):
         # Cleanup from PYTHON* variables to isolate from local
         # user settings, see #121359.  Such variables should be
         # added later in test methods to patched os.environ.
+        super().setUp()
         patcher = patch('os.environ', new=make_clean_env())
         self.addCleanup(patcher.stop)
         patcher.start()
@@ -1757,3 +1762,14 @@ class TestMain(ReplTestCase):
         output, _ = self.run_repl("1\n1+2\nexit()\n", cmdline_args=['-Xshowrefcount'], env=env)
         matches = re.findall(r'\[-?\d+ refs, \d+ blocks\]', output)
         self.assertEqual(len(matches), 3)
+
+    def test_detect_pip_usage_in_repl(self):
+        for pip_cmd in ("pip", "pip3", "python -m pip", "python3 -m pip"):
+            with self.subTest(pip_cmd=pip_cmd):
+                output, exit_code = self.run_repl([f"{pip_cmd} install sampleproject", "exit"])
+                self.assertIn("SyntaxError", output)
+                hint = (
+                    "The Python package manager (pip) can only be used"
+                    " outside of the Python REPL"
+                )
+                self.assertIn(hint, output)
