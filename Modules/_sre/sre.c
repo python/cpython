@@ -43,6 +43,7 @@ static const char copyright[] =
 #include "pycore_dict.h"             // _PyDict_Next()
 #include "pycore_long.h"             // _PyLong_GetZero()
 #include "pycore_moduleobject.h"     // _PyModule_GetState()
+#include "pycore_modsupport.h"       // _PyArg_NoKeywords()
 #include "pycore_unicodeobject.h"    // _PyUnicode_Copy
 #include "pycore_weakref.h"          // FT_CLEAR_WEAKREFS()
 
@@ -1245,7 +1246,9 @@ pattern_subx(_sremodulestate* module_state,
     if (PyCallable_Check(ptemplate)) {
         /* sub/subn takes either a function or a template */
         filter = Py_NewRef(ptemplate);
-        filter_type = CALLABLE;
+        filter_type = (Py_TYPE(filter) == module_state->Template_Type)
+            ? TEMPLATE
+            : CALLABLE;
     } else {
         /* if not callable, check if it's a literal string */
         int literal;
@@ -1271,15 +1274,15 @@ pattern_subx(_sremodulestate* module_state,
             if (!filter)
                 return NULL;
 
-            assert(Py_TYPE(filter) == module_state->Template_Type);
-            if (Py_SIZE(filter) == 0) {
-                Py_SETREF(filter,
-                          Py_NewRef(((TemplateObject *)filter)->literal));
-                filter_type = LITERAL;
-            }
-            else {
-                filter_type = TEMPLATE;
-            }
+            filter_type = TEMPLATE;
+        }
+    }
+    if (filter_type == TEMPLATE) {
+        assert(Py_TYPE(filter) == module_state->Template_Type);
+        if (Py_SIZE(filter) == 0) {
+            Py_SETREF(filter,
+                        Py_NewRef(((TemplateObject *)filter)->literal));
+            filter_type = LITERAL;
         }
     }
 
@@ -1458,6 +1461,25 @@ _sre_SRE_Pattern_subn_impl(PatternObject *self, PyTypeObject *cls,
     _sremodulestate *module_state = get_sre_module_state_by_class(cls);
 
     return pattern_subx(module_state, self, repl, string, count, 1);
+}
+
+/*[clinic input]
+_sre.SRE_Pattern.compile_template
+
+    cls: defining_class
+    repl: object
+    /
+
+Compile a replacement string into a template object.
+[clinic start generated code]*/
+
+static PyObject *
+_sre_SRE_Pattern_compile_template_impl(PatternObject *self,
+                                       PyTypeObject *cls, PyObject *repl)
+/*[clinic end generated code: output=1844907c9fead66a input=1dc068ecb1a70712]*/
+{
+    _sremodulestate *module_state = get_sre_module_state_by_class(cls);
+    return compile_template(module_state, self, repl);
 }
 
 /*[clinic input]
@@ -2982,6 +3004,8 @@ pattern_scanner(_sremodulestate *module_state,
 /* -------------------------------------------------------------------- */
 /* template methods */
 
+PyDoc_STRVAR(template_doc, "Compiled replacement string.");
+
 static int
 template_traverse(PyObject *op, visitproc visit, void *arg)
 {
@@ -3081,6 +3105,23 @@ cleanup:
     return result;
 }
 
+static PyObject *
+template_call(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    MatchObject *match;
+    if (!_PyArg_NoKeywords("template", kwargs))
+        return NULL;
+
+    _sremodulestate *state = PyType_GetModuleState(Py_TYPE(self));
+    if (state == NULL) {
+        return NULL;
+    }
+    if (!PyArg_ParseTuple(args, "O!", state->Match_Type, &match))
+        return NULL;
+
+    return expand_template((TemplateObject *)self, match);
+}
+
 
 static Py_hash_t
 pattern_hash(PyObject *op)
@@ -3168,6 +3209,7 @@ static PyMethodDef pattern_methods[] = {
     _SRE_SRE_PATTERN_SPLIT_METHODDEF
     _SRE_SRE_PATTERN_FINDITER_METHODDEF
     _SRE_SRE_PATTERN_SCANNER_METHODDEF
+    _SRE_SRE_PATTERN_COMPILE_TEMPLATE_METHODDEF
     _SRE_SRE_PATTERN___COPY___METHODDEF
     _SRE_SRE_PATTERN___DEEPCOPY___METHODDEF
     _SRE_SRE_PATTERN__FAIL_AFTER_METHODDEF
@@ -3314,15 +3356,24 @@ static PyType_Spec scanner_spec = {
     .slots = scanner_slots,
 };
 
+static PyMethodDef template_methods[] = {
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS,
+     PyDoc_STR("See PEP 585")},
+    {NULL, NULL}
+};
+
 static PyType_Slot template_slots[] = {
     {Py_tp_dealloc, template_dealloc},
+    {Py_tp_doc, (void *)template_doc},
+    {Py_tp_methods, template_methods},
     {Py_tp_traverse, template_traverse},
     {Py_tp_clear, template_clear},
+    {Py_tp_call, template_call},
     {0, NULL},
 };
 
 static PyType_Spec template_spec = {
-    .name = "_sre.SRE_Template",
+    .name = "re.Template",
     .basicsize = sizeof(TemplateObject),
     .itemsize = sizeof(((TemplateObject *)0)->items[0]),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE |
