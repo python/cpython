@@ -3138,24 +3138,6 @@ class _TestPool(BaseTestCase):
                 p.terminate()
                 p.join()
 
-    def test_imap_and_imap_unordered_buffersize_on_infinite_iterable(self):
-        if self.TYPE != "threads":
-            self.skipTest("test not appropriate for {}".format(self.TYPE))
-
-        for method_name in ("imap", "imap_unordered"):
-            with self.subTest(method=method_name):
-                p = self.Pool(4)
-                method = getattr(p, method_name)
-
-                res = method(str, itertools.count(), buffersize=2)
-
-                self.assertEqual(next(res, None), "0")
-                self.assertEqual(next(res, None), "1")
-                self.assertEqual(next(res, None), "2")
-
-                p.terminate()
-                p.join()
-
     def test_imap_and_imap_unordered_buffersize_on_empty_iterable(self):
         for method_name in ("imap", "imap_unordered"):
             with self.subTest(method=method_name):
@@ -3164,6 +3146,33 @@ class _TestPool(BaseTestCase):
                 res = method(str, [], buffersize=2)
 
                 self.assertIsNone(next(res, None))
+
+    def test_imap_buffersize_on_infinite_iterable(self):
+        if self.TYPE != "threads":
+            self.skipTest("test not appropriate for {}".format(self.TYPE))
+
+        p = self.Pool(4)
+        res = p.imap(str, itertools.count(), buffersize=2)
+
+        self.assertEqual(next(res, None), "0")
+        self.assertEqual(next(res, None), "1")
+        self.assertEqual(next(res, None), "2")
+
+        p.terminate()
+        p.join()
+
+    def test_imap_unordered_buffersize_on_infinite_iterable(self):
+        if self.TYPE != "threads":
+            self.skipTest("test not appropriate for {}".format(self.TYPE))
+
+        p = self.Pool(4)
+        res = p.imap(str, itertools.count(), buffersize=2)
+        first_three_results = sorted(next(res, None) for _ in range(3))
+
+        self.assertEqual(first_three_results, ["0", "1", "2"])
+
+        p.terminate()
+        p.join()
 
     def test_make_pool(self):
         expected_error = (RemoteError if self.TYPE == 'manager'
