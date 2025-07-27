@@ -329,6 +329,15 @@ unittest
   (Contributed by Garry Cairns in :gh:`134567`.)
 
 
+zipfile
+-------
+
+* :class:`zipfile.ZipFile` now has the ``zipinfo_class``
+  and ``zipextfile_class`` init arguments make it easier to subclass and
+  extend it.
+  (Contributed by Adi Roiban in :gh:`81719`.)
+
+
 zlib
 ----
 
