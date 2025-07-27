@@ -548,33 +548,35 @@ The :mod:`multiprocessing` package mostly replicates the API of the
    base class constructor (:meth:`Process.__init__`) before doing anything else
    to the process.
 
-   In general, all arguments to :meth:`Process.__init__` must be picklable.
-   This is particularly notable when trying to create a :class:`Process` or
-   use a :class:`~concurrent.futures.ProcessPoolExecutor` from a REPL with a
-   locally defined *target* function.
+   .. note::
 
-   Passing a callable object defined in the current REPL session raises an
-   :exc:`AttributeError` exception when starting the process as such as
-   *target* must have been defined within an importable module to under to be
-   unpickled.
+      In general, all arguments to :meth:`Process.__init__` must be picklable.
+      This is particularly notable when trying to create a :class:`Process` or use
+      a :class:`concurrent.futures.ProcessPoolExecutor` from a REPL with a locally
+      defined *target* function.
 
-   Example::
+      Passing a callable object defined in the current REPL session raises an
+      :exc:`AttributeError` exception when starting the process as such as
+      *target* must have been defined within an importable module to under to be
+      unpickled.
 
-      >>> import multiprocessing as mp
-      >>> def knigit():
-      ...     print("knee!")
-      ...
-      >>> mp.Process(target=knigit).start()
-      >>> Traceback (most recent call last):
-        File ".../multiprocessing/spawn.py", line ..., in spawn_main
-        File ".../multiprocessing/spawn.py", line ..., in _main
-      AttributeError: module '__main__' has no attribute 'knigit'
+      Example::
 
-   See :ref:`multiprocessing-programming-spawn`.
+         >>> import multiprocessing as mp
+         >>> def knigit():
+         ...     print("knee!")
+         ...
+         >>> mp.Process(target=knigit).start()
+         >>> Traceback (most recent call last):
+           File ".../multiprocessing/spawn.py", line ..., in spawn_main
+           File ".../multiprocessing/spawn.py", line ..., in _main
+         AttributeError: module '__main__' has no attribute 'knigit'
 
-   While this restriction is not true if using the ``"fork"`` start method,
-   as of Python ``3.14`` that is no longer the default on any platform.  See
-   :ref:`multiprocessing-start-methods`.
+      See :ref:`multiprocessing-programming-spawn`.
+
+      While this restriction is not true if using the ``"fork"`` start method,
+      as of Python ``3.14`` that is no longer the default on any platform.  See
+      :ref:`multiprocessing-start-methods`.
 
    .. versionchanged:: 3.3
       Added the *daemon* parameter.
