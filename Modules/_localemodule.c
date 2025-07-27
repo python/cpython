@@ -408,7 +408,6 @@ _locale_strxfrm_impl(PyObject *module, PyObject *str)
         goto exit;
     }
 
-    /* assume no change in size, first */
     errno = 0;
     n2 = wcsxfrm(NULL, s, 0);
     if (errno && errno != ERANGE) {
@@ -420,6 +419,7 @@ _locale_strxfrm_impl(PyObject *module, PyObject *str)
         PyErr_NoMemory();
         goto exit;
     }
+
     errno = 0;
     n2 = wcsxfrm(buf, s, n2+1);
     if (errno) {
