@@ -4039,10 +4039,10 @@ class Text(Widget, XView, YView):
         self.tk.call(self._w, 'scan', 'dragto', x, y)
 
     def search(self, pattern, index, stopindex=None,
-               forwards=None, backwards=None, exact=None,
-               regexp=None, nocase=None, count=None,
-               elide=None, nolinestop=None, all=None,
-               overlap=None, strictlimits=None):
+           forwards=None, backwards=None, exact=None,
+           regexp=None, nocase=None, count=None,
+           elide=None, nolinestop=None, all=None,
+           overlap=None, strictlimits=None):
         """Search PATTERN beginning from INDEX until STOPINDEX.
         Return the index of the first character of a match or an
         empty string."""
