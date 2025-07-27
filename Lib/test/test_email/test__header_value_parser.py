@@ -2983,12 +2983,19 @@ class Test_parse_mime_parameters(TestParserMixin, TestEmailBase):
             [('r', '"')],
             [errors.InvalidHeaderDefect]*2),
 
-        # gh-87112: Only ASCII digits can be section numbers.
-        'non_allowed_digits': (
+        # gh-87112: Only digits convertible to integers can be section numbers.
+        'non_accepted_digit': (
             'foo*0=bar; foo*²=baz',
             ' foo="bar"',
             'foo*0=bar; foo*²=baz',
             [('foo', 'bar')],
+            [errors.InvalidHeaderDefect]),
+
+        'non_ascii_digit_backwards_compatibility': (
+            'foo*0=bar; foo*߁=baz',  # NKO digit '1'
+            ' foo="barbaz"',
+            'foo*0=bar; foo*߁=baz',
+            [('foo', 'barbaz')],
             [errors.InvalidHeaderDefect]),
     }
 
