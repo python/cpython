@@ -37,6 +37,7 @@ TODO:
 Usage: see USAGE variable in the script.
 """
 import platform, os, sys, getopt, textwrap, shutil, stat, time, pwd, grp
+import hashlib
 try:
     import urllib2 as urllib_request
 except ImportError:
@@ -359,9 +360,9 @@ def library_recipes():
                   ),
           ),
           dict(
-              name="SQLite 3.49.1",
-              url="https://sqlite.org/2025/sqlite-autoconf-3490100.tar.gz",
-              checksum="106642d8ccb36c5f7323b64e4152e9b719f7c0215acf5bfeac3d5e7f97b59254",
+              name="SQLite 3.50.3",
+              url="https://www.sqlite.org/2025/sqlite-autoconf-3500300.tar.gz",
+              checksum="sha3-256:c3df1542703a666d3f41bb623e9bed7d6e1dc81c57f0c45e3122403f862c520d",
               extra_cflags=('-Os '
                             '-DSQLITE_ENABLE_FTS5 '
                             '-DSQLITE_ENABLE_FTS4 '
@@ -795,7 +796,7 @@ def downloadURL(url, fname):
 def verifyThirdPartyFile(url, checksum, fname):
     """
     Download file from url to filename fname if it does not already exist.
-    Abort if file contents does not match supplied md5 checksum.
+    Abort if file contents does not match supplied hashlib checksum.
     """
     name = os.path.basename(fname)
     if os.path.exists(fname):
@@ -805,16 +806,30 @@ def verifyThirdPartyFile(url, checksum, fname):
         print("Downloading %s"%(name,))
         downloadURL(url, fname)
         print("Archive for %s stored as %s"%(name, fname))
-    if len(checksum) == 32:
+    if ':' in checksum:
+        algo, _, checksum = checksum.partition(':')
+        assert algo in hashlib.algorithms_guaranteed, f"Unsupported {algo}, try sha3-256 or sha256 instead."
+        if algo in ("md5", "sha1"):
+            raise ValueError(f"Known insecure checksum algorithm {algo} for {fname}.")
+        if algo.startswith(("shake", "blake")):
+            raise ValueError(f"Please stick to sha2 or sha3 standard checksum algorithms, not {algo}")
+    # TODO remove length based logic AND legacy md5s after updating the ones we already list.
+    elif len(checksum) == 32:
         algo = 'md5'
+        print("WARNING: insecure md5 used for {fname}", file=sys.stderr)
     elif len(checksum) == 64:
         algo = 'sha256'
     else:
         raise ValueError(checksum)
-    if os.system(
-            'CHECKSUM=$(openssl %s %s) ; test "${CHECKSUM##*= }" = "%s"'
-                % (algo, shellQuote(fname), checksum) ):
-        fatal('%s checksum mismatch for file %s' % (algo, fname))
+    with open(fname, 'rb') as downloaded_file:
+        if hasattr(hashlib, 'file_digest'):
+            hasher = hashlib.file_digest(downloaded_file, algo)  # 3.11+
+        else:
+            hasher = hashlib.new(algo, downloaded_file.read())
+        computed_checksum = hasher.hexdigest()
+        if computed_checksum != checksum:
+            fatal(f"{algo} hashlib checksum mismatch for file {fname}")
+
 
 def build_universal_openssl(basedir, archList):
     """
