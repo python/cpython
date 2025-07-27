@@ -726,10 +726,11 @@ class Pool(object):
 
         task_handler._state = TERMINATE
         # Release all semaphores to wake up task_handler to stop.
-        for job_id in tuple(taskqueue_buffersize_semaphores.keys()):
-            sema = taskqueue_buffersize_semaphores.pop(job_id, None)
-            if sema is not None:
-                sema.release()
+        for job_id, buffersize_sema in tuple(
+            taskqueue_buffersize_semaphores.items()
+        ):
+            buffersize_sema.release()
+            taskqueue_buffersize_semaphores.pop(job_id, None)
 
         util.debug('helping task handler/workers to finish')
         cls._help_stuff_finish(inqueue, task_handler, len(pool))
