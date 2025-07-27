@@ -1771,7 +1771,7 @@ class CAPITest(unittest.TestCase):
     @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_toupper(self):
         import string
-        from _testcapi import unicode_toupper
+        from _testcapi import unicode_toupper, unicode_toupper_buffer_too_small
 
         for i, c in enumerate(string.ascii_lowercase):
             with self.subTest(c):
@@ -1781,6 +1781,10 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(unicode_toupper("č"), "Č")
         self.assertEqual(unicode_toupper("ß"), "SS")
         self.assertEqual(unicode_toupper("ΐ"), "Ϊ́")
+
+        # Test unicode character with smaller buffer
+        with self.assertRaisesRegex(ValueError, "output buffer is too small"):
+            unicode_toupper_buffer_too_small("ß")
 
     @support.cpython_only
     @unittest.skipIf(_testcapi is None, 'need _testcapi module')

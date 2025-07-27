@@ -307,7 +307,7 @@ These APIs can be used for fast direct character conversions:
    possible.  This function does not raise exceptions.
 
 
-.. c:function:: Py_ssize_t PyUnicode_ToLower(Py_UCS4 ch, Py_UCS4 *buffer, Py_ssize_t size)
+.. c:function:: Py_ssize_t PyUCS4_ToLower(Py_UCS4 ch, Py_UCS4 *buffer, Py_ssize_t size)
 
    Convert *ch* to lower case, store result in *buffer*, which should be
    able to hold as many characters needed for *ch* to be lower cased
@@ -318,7 +318,7 @@ These APIs can be used for fast direct character conversions:
    .. versionadded:: next
 
 
-.. c:function:: Py_ssize_t PyUnicode_ToUpper(Py_UCS4 ch, Py_UCS4 *buffer, Py_ssize_t size)
+.. c:function:: Py_ssize_t PyUCS4_ToUpper(Py_UCS4 ch, Py_UCS4 *buffer, Py_ssize_t size)
 
    Convert *ch* to upper case, store result in *buffer*, which should be
    able to hold as many characters needed for *ch* to be upper cased
@@ -329,7 +329,7 @@ These APIs can be used for fast direct character conversions:
    .. versionadded:: next
 
 
-.. c:function:: Py_ssize_t PyUnicode_ToTitle(Py_UCS4 ch, Py_UCS4 *buffer, Py_ssize_t size)
+.. c:function:: Py_ssize_t PyUCS4_ToTitle(Py_UCS4 ch, Py_UCS4 *buffer, Py_ssize_t size)
 
    Convert *ch* to title case, store result in *buffer*, which should be
    able to hold as many characters needed for *ch* to be title cased
@@ -340,7 +340,7 @@ These APIs can be used for fast direct character conversions:
    .. versionadded:: next
 
 
-.. c:function:: Py_ssize_t PyUnicode_ToFolded(Py_UCS4 ch, Py_UCS4 *buffer, Py_ssize_t size)
+.. c:function:: Py_ssize_t PyUCS4_ToFolded(Py_UCS4 ch, Py_UCS4 *buffer, Py_ssize_t size)
 
    Foldcase *ch*, store result in *buffer*, which should be
    able to hold as many characters needed for *ch* to be foldcased

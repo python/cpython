@@ -198,7 +198,7 @@ Py_UCS4 _PyUnicode_ToLowercase(Py_UCS4 ch)
     return ch + ctype->lower;
 }
 
-Py_ssize_t PyUnicode_ToLower(Py_UCS4 ch, Py_UCS4 *res, Py_ssize_t size)
+Py_ssize_t PyUCS4_ToLower(Py_UCS4 ch, Py_UCS4 *res, Py_ssize_t size)
 {
     const _PyUnicode_TypeRecord *ctype = gettyperecord(ch);
 
@@ -224,7 +224,7 @@ Py_ssize_t PyUnicode_ToLower(Py_UCS4 ch, Py_UCS4 *res, Py_ssize_t size)
     return 1;
 }
 
-Py_ssize_t PyUnicode_ToTitle(Py_UCS4 ch, Py_UCS4 *res, Py_ssize_t size)
+Py_ssize_t PyUCS4_ToTitle(Py_UCS4 ch, Py_UCS4 *res, Py_ssize_t size)
 {
     const _PyUnicode_TypeRecord *ctype = gettyperecord(ch);
 
@@ -250,7 +250,7 @@ Py_ssize_t PyUnicode_ToTitle(Py_UCS4 ch, Py_UCS4 *res, Py_ssize_t size)
     return 1;
 }
 
-Py_ssize_t PyUnicode_ToUpper(Py_UCS4 ch, Py_UCS4 *res, Py_ssize_t size)
+Py_ssize_t PyUCS4_ToUpper(Py_UCS4 ch, Py_UCS4 *res, Py_ssize_t size)
 {
     const _PyUnicode_TypeRecord *ctype = gettyperecord(ch);
 
@@ -276,7 +276,7 @@ Py_ssize_t PyUnicode_ToUpper(Py_UCS4 ch, Py_UCS4 *res, Py_ssize_t size)
     return 1;
 }
 
-Py_ssize_t PyUnicode_ToFolded(Py_UCS4 ch, Py_UCS4 *res, Py_ssize_t size)
+Py_ssize_t PyUCS4_ToFolded(Py_UCS4 ch, Py_UCS4 *res, Py_ssize_t size)
 {
     const _PyUnicode_TypeRecord *ctype = gettyperecord(ch);
 
@@ -294,7 +294,7 @@ Py_ssize_t PyUnicode_ToFolded(Py_UCS4 ch, Py_UCS4 *res, Py_ssize_t size)
         return n;
     }
 
-    return PyUnicode_ToLower(ch, res, size);
+    return PyUCS4_ToLower(ch, res, size);
 }
 
 int _PyUnicode_IsCased(Py_UCS4 ch)

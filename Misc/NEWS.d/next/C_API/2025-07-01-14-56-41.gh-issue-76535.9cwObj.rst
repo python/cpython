@@ -1,1 +1,1 @@
-Make :c:func:`PyUnicode_ToLower`, :c:func:`PyUnicode_ToUpper`, :c:func:`PyUnicode_ToTitle` and :c:func:`PyUnicode_ToFolded` public.
+Make :c:func:`PyUCS4_ToLower`, :c:func:`PyUCS4_ToUpper`, :c:func:`PyUCS4_ToTitle` and :c:func:`PyUCS4_ToFolded` public.
