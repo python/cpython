@@ -579,6 +579,7 @@ The :mod:`multiprocessing` package mostly replicates the API of the
       not true if using the ``"fork"`` start method, as of Python ``3.14`` that
       is no longer the default on any platform.  See
       :ref:`multiprocessing-start-methods`.
+      See also :gh:`132898`.
 
    .. versionchanged:: 3.3
       Added the *daemon* parameter.
