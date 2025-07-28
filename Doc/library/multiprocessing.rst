@@ -2471,7 +2471,7 @@ with the :class:`Pool` class.
       (to consume *iterable* as you go), or even higher
       (to prefetch the next ``N=buffersize-processes`` arguments).
 
-      .. versionadded:: 3.15
+      .. versionadded:: next
          Added the *buffersize* parameter.
 
    .. method:: imap_unordered(func, iterable[, chunksize[, buffersize]])
@@ -2480,7 +2480,7 @@ with the :class:`Pool` class.
       returned iterator should be considered arbitrary.  (Only when there is
       only one worker process is the order guaranteed to be "correct".)
 
-      .. versionadded:: 3.15
+      .. versionadded:: next
          Added the *buffersize* parameter.
 
    .. method:: starmap(func, iterable[, chunksize])
