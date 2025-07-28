@@ -4,7 +4,7 @@
 # but actions can be run dynamically from the runner's filesystem.
 
 name: Build and test (Android)
-description: Build and test (Android)
+description:
 
 inputs:
   triplet:
@@ -22,7 +22,7 @@ runs:
       run: ./Android/android.py package ${{ inputs.triplet }}
     - uses: actions/upload-artifact@v4
       with:
-        name: android
+        name: ${{ inputs.triplet }}
         path: cross-build/${{ inputs.triplet }}/dist/*
         if-no-files-found: error
 
