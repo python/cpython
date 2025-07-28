@@ -666,7 +666,7 @@ _run_in_interpreter(PyThreadState *tstate, PyInterpreterState *interp,
 
     // Prep and switch interpreters.
     if (_PyXI_Enter(session, interp, shareables, &result) < 0) {
-        // If an error occured at this step, it means that interp
+        // If an error occurred at this step, it means that interp
         // was not prepared and switched.
         _PyXI_FreeSession(session);
         _PyXI_FreeFailure(failure);
@@ -1415,10 +1415,13 @@ interp_get_config(PyObject *self, PyObject *args, PyObject *kwds)
     PyObject *idobj = NULL;
     int restricted = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "O?|$p:get_config", kwlist,
+                                     "O|$p:get_config", kwlist,
                                      &idobj, &restricted))
     {
         return NULL;
+    }
+    if (idobj == Py_None) {
+        idobj = NULL;
     }
 
     int reqready = 0;
@@ -1536,14 +1539,14 @@ capture_exception(PyObject *self, PyObject *args, PyObject *kwds)
     static char *kwlist[] = {"exc", NULL};
     PyObject *exc_arg = NULL;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "|O?:capture_exception", kwlist,
+                                     "|O:capture_exception", kwlist,
                                      &exc_arg))
     {
         return NULL;
     }
 
     PyObject *exc = exc_arg;
-    if (exc == NULL) {
+    if (exc == NULL || exc == Py_None) {
         exc = PyErr_GetRaisedException();
         if (exc == NULL) {
             Py_RETURN_NONE;
@@ -1706,8 +1709,7 @@ module_traverse(PyObject *mod, visitproc visit, void *arg)
 {
     module_state *state = get_module_state(mod);
     assert(state != NULL);
-    (void)traverse_module_state(state, visit, arg);
-    return 0;
+    return traverse_module_state(state, visit, arg);
 }
 
 static int
@@ -1715,8 +1717,7 @@ module_clear(PyObject *mod)
 {
     module_state *state = get_module_state(mod);
     assert(state != NULL);
-    (void)clear_module_state(state);
-    return 0;
+    return clear_module_state(state);
 }
 
 static void

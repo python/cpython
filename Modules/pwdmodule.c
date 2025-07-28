@@ -1,12 +1,6 @@
 
 /* UNIX password file access module */
 
-// Need limited C API version 3.13 for PyMem_RawRealloc()
-#include "pyconfig.h"   // Py_GIL_DISABLED
-#ifndef Py_GIL_DISABLED
-#  define Py_LIMITED_API 0x030d0000
-#endif
-
 #include "Python.h"
 #include "posixmodule.h"
 
@@ -68,6 +62,11 @@ get_pwd_state(PyObject *module)
 }
 
 static struct PyModuleDef pwdmodule;
+
+/* Mutex to protect calls to getpwuid(), getpwnam(), and getpwent().
+ * These functions return pointer to static data structure, which
+ * may be overwritten by any subsequent calls. */
+static PyMutex pwd_db_mutex = {0};
 
 #define DEFAULT_BUFFER_SIZE 1024
 
@@ -182,9 +181,15 @@ pwd_getpwuid(PyObject *module, PyObject *uidobj)
 
     Py_END_ALLOW_THREADS
 #else
+    PyMutex_Lock(&pwd_db_mutex);
+    // The getpwuid() function is not required to be thread-safe.
+    // https://pubs.opengroup.org/onlinepubs/009604499/functions/getpwuid.html
     p = getpwuid(uid);
 #endif
     if (p == NULL) {
+#ifndef HAVE_GETPWUID_R
+        PyMutex_Unlock(&pwd_db_mutex);
+#endif
         PyMem_RawFree(buf);
         if (nomem == 1) {
             return PyErr_NoMemory();
@@ -200,6 +205,8 @@ pwd_getpwuid(PyObject *module, PyObject *uidobj)
     retval = mkpwent(module, p);
 #ifdef HAVE_GETPWUID_R
     PyMem_RawFree(buf);
+#else
+    PyMutex_Unlock(&pwd_db_mutex);
 #endif
     return retval;
 }
@@ -265,9 +272,15 @@ pwd_getpwnam_impl(PyObject *module, PyObject *name)
 
     Py_END_ALLOW_THREADS
 #else
+    PyMutex_Lock(&pwd_db_mutex);
+    // The getpwnam() function is not required to be thread-safe.
+    // https://pubs.opengroup.org/onlinepubs/009604599/functions/getpwnam.html
     p = getpwnam(name_chars);
 #endif
     if (p == NULL) {
+#ifndef HAVE_GETPWNAM_R
+        PyMutex_Unlock(&pwd_db_mutex);
+#endif
         if (nomem == 1) {
             PyErr_NoMemory();
         }
@@ -278,6 +291,9 @@ pwd_getpwnam_impl(PyObject *module, PyObject *name)
         goto out;
     }
     retval = mkpwent(module, p);
+#ifndef HAVE_GETPWNAM_R
+    PyMutex_Unlock(&pwd_db_mutex);
+#endif
 out:
     PyMem_RawFree(buf);
     Py_DECREF(bytes);
@@ -302,12 +318,12 @@ pwd_getpwall_impl(PyObject *module)
     if ((d = PyList_New(0)) == NULL)
         return NULL;
 
-#ifdef Py_GIL_DISABLED
-    static PyMutex getpwall_mutex = {0};
-    PyMutex_Lock(&getpwall_mutex);
-#endif
+    PyMutex_Lock(&pwd_db_mutex);
     int failure = 0;
     PyObject *v = NULL;
+    // The setpwent(), getpwent() and endpwent() functions are not required to
+    // be thread-safe.
+    // https://pubs.opengroup.org/onlinepubs/009696799/functions/setpwent.html
     setpwent();
     while ((p = getpwent()) != NULL) {
         v = mkpwent(module, p);
@@ -321,9 +337,7 @@ pwd_getpwall_impl(PyObject *module)
 
 done:
     endpwent();
-#ifdef Py_GIL_DISABLED
-    PyMutex_Unlock(&getpwall_mutex);
-#endif
+    PyMutex_Unlock(&pwd_db_mutex);
     if (failure) {
         Py_XDECREF(v);
         Py_CLEAR(d);

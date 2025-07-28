@@ -232,7 +232,23 @@ Fundamental data types
 +----------------------+------------------------------------------+----------------------------+
 | :class:`c_int`       | :c:expr:`int`                            | int                        |
 +----------------------+------------------------------------------+----------------------------+
+| :class:`c_int8`      | :c:type:`int8_t`                         | int                        |
++----------------------+------------------------------------------+----------------------------+
+| :class:`c_int16`     | :c:type:`int16_t`                        | int                        |
++----------------------+------------------------------------------+----------------------------+
+| :class:`c_int32`     | :c:type:`int32_t`                        | int                        |
++----------------------+------------------------------------------+----------------------------+
+| :class:`c_int64`     | :c:type:`int64_t`                        | int                        |
++----------------------+------------------------------------------+----------------------------+
 | :class:`c_uint`      | :c:expr:`unsigned int`                   | int                        |
++----------------------+------------------------------------------+----------------------------+
+| :class:`c_uint8`     | :c:type:`uint8_t`                        | int                        |
++----------------------+------------------------------------------+----------------------------+
+| :class:`c_uint16`    | :c:type:`uint16_t`                       | int                        |
++----------------------+------------------------------------------+----------------------------+
+| :class:`c_uint32`    | :c:type:`uint32_t`                       | int                        |
++----------------------+------------------------------------------+----------------------------+
+| :class:`c_uint64`    | :c:type:`uint64_t`                       | int                        |
 +----------------------+------------------------------------------+----------------------------+
 | :class:`c_long`      | :c:expr:`long`                           | int                        |
 +----------------------+------------------------------------------+----------------------------+
@@ -2524,7 +2540,7 @@ These are the fundamental ctypes data types:
 
 .. class:: c_int8
 
-   Represents the C 8-bit :c:expr:`signed int` datatype.  Usually an alias for
+   Represents the C 8-bit :c:expr:`signed int` datatype.  It is an alias for
    :class:`c_byte`.
 
 
@@ -2599,7 +2615,7 @@ These are the fundamental ctypes data types:
 
 .. class:: c_uint8
 
-   Represents the C 8-bit :c:expr:`unsigned int` datatype.  Usually an alias for
+   Represents the C 8-bit :c:expr:`unsigned int` datatype.  It is an alias for
    :class:`c_ubyte`.
 
 
@@ -2965,7 +2981,7 @@ fields, or any other data types containing pointer type fields.
    .. attribute:: is_anonymous
 
       True if this field is anonymous, that is, it contains nested sub-fields
-      that should be be merged into a containing structure or union.
+      that should be merged into a containing structure or union.
 
 
 .. _ctypes-arrays-pointers:

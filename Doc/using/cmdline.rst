@@ -653,7 +653,7 @@ Miscellaneous options
      .. versionadded:: 3.13
 
    * :samp:`-X thread_inherit_context={0,1}` causes :class:`~threading.Thread`
-     to, by default, use a copy of context of of the caller of
+     to, by default, use a copy of context of the caller of
      ``Thread.start()`` when starting.  Otherwise, threads will start
      with an empty context.  If unset, the value of this option defaults
      to ``1`` on free-threaded builds and to ``0`` otherwise.  See also
@@ -1284,7 +1284,7 @@ conflict.
 .. envvar:: PYTHON_THREAD_INHERIT_CONTEXT
 
    If this variable is set to ``1`` then :class:`~threading.Thread` will,
-   by default, use a copy of context of of the caller of ``Thread.start()``
+   by default, use a copy of context of the caller of ``Thread.start()``
    when starting.  Otherwise, new threads will start with an empty context.
    If unset, this variable defaults to ``1`` on free-threaded builds and to
    ``0`` otherwise.  See also :option:`-X thread_inherit_context<-X>`.

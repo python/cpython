@@ -206,6 +206,21 @@
             JitOptRef value;
             JitOptRef res;
             value = stack_pointer[-1];
+            if (
+                sym_is_safe_const(ctx, value)
+            ) {
+                JitOptRef value_sym = value;
+                _PyStackRef value = sym_get_const_as_stackref(ctx, value_sym);
+                _PyStackRef res_stackref;
+                /* Start of uop copied from bytecodes for constant evaluation */
+                assert(PyStackRef_BoolCheck(value));
+                res_stackref = PyStackRef_IsFalse(value)
+                ? PyStackRef_True : PyStackRef_False;
+                /* End of uop copied from bytecodes for constant evaluation */
+                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
+                stack_pointer[-1] = res;
+                break;
+            }
             sym_set_type(value, &PyBool_Type);
             res = sym_new_truthiness(ctx, value, false);
             stack_pointer[-1] = res;
@@ -391,7 +406,49 @@
         }
 
         case _BINARY_OP_MULTIPLY_INT: {
+            JitOptRef right;
+            JitOptRef left;
             JitOptRef res;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            if (
+                sym_is_safe_const(ctx, left) &&
+                sym_is_safe_const(ctx, right)
+            ) {
+                JitOptRef left_sym = left;
+                JitOptRef right_sym = right;
+                _PyStackRef left = sym_get_const_as_stackref(ctx, left_sym);
+                _PyStackRef right = sym_get_const_as_stackref(ctx, right_sym);
+                _PyStackRef res_stackref;
+                /* Start of uop copied from bytecodes for constant evaluation */
+                PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+                PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+                assert(PyLong_CheckExact(left_o));
+                assert(PyLong_CheckExact(right_o));
+                assert(_PyLong_BothAreCompact((PyLongObject *)left_o, (PyLongObject *)right_o));
+                STAT_INC(BINARY_OP, hit);
+                res_stackref = _PyCompactLong_Multiply((PyLongObject *)left_o, (PyLongObject *)right_o);
+                if (PyStackRef_IsNull(res_stackref )) {
+                    ctx->done = true;
+                    break;
+                }
+                PyStackRef_CLOSE_SPECIALIZED(right, _PyLong_ExactDealloc);
+                PyStackRef_CLOSE_SPECIALIZED(left, _PyLong_ExactDealloc);
+                /* End of uop copied from bytecodes for constant evaluation */
+                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
+
+                if (sym_is_const(ctx, res)) {
+                    PyObject *result = sym_get_const(ctx, res);
+                    if (_Py_IsImmortal(result)) {
+                        // Replace with _POP_TWO_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
+                        REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+                    }
+                }
+                stack_pointer[-2] = res;
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
+                break;
+            }
             res = sym_new_compact_int(ctx);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -400,7 +457,49 @@
         }
 
         case _BINARY_OP_ADD_INT: {
+            JitOptRef right;
+            JitOptRef left;
             JitOptRef res;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            if (
+                sym_is_safe_const(ctx, left) &&
+                sym_is_safe_const(ctx, right)
+            ) {
+                JitOptRef left_sym = left;
+                JitOptRef right_sym = right;
+                _PyStackRef left = sym_get_const_as_stackref(ctx, left_sym);
+                _PyStackRef right = sym_get_const_as_stackref(ctx, right_sym);
+                _PyStackRef res_stackref;
+                /* Start of uop copied from bytecodes for constant evaluation */
+                PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+                PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+                assert(PyLong_CheckExact(left_o));
+                assert(PyLong_CheckExact(right_o));
+                assert(_PyLong_BothAreCompact((PyLongObject *)left_o, (PyLongObject *)right_o));
+                STAT_INC(BINARY_OP, hit);
+                res_stackref = _PyCompactLong_Add((PyLongObject *)left_o, (PyLongObject *)right_o);
+                if (PyStackRef_IsNull(res_stackref )) {
+                    ctx->done = true;
+                    break;
+                }
+                PyStackRef_CLOSE_SPECIALIZED(right, _PyLong_ExactDealloc);
+                PyStackRef_CLOSE_SPECIALIZED(left, _PyLong_ExactDealloc);
+                /* End of uop copied from bytecodes for constant evaluation */
+                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
+
+                if (sym_is_const(ctx, res)) {
+                    PyObject *result = sym_get_const(ctx, res);
+                    if (_Py_IsImmortal(result)) {
+                        // Replace with _POP_TWO_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
+                        REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+                    }
+                }
+                stack_pointer[-2] = res;
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
+                break;
+            }
             res = sym_new_compact_int(ctx);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -409,7 +508,49 @@
         }
 
         case _BINARY_OP_SUBTRACT_INT: {
+            JitOptRef right;
+            JitOptRef left;
             JitOptRef res;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            if (
+                sym_is_safe_const(ctx, left) &&
+                sym_is_safe_const(ctx, right)
+            ) {
+                JitOptRef left_sym = left;
+                JitOptRef right_sym = right;
+                _PyStackRef left = sym_get_const_as_stackref(ctx, left_sym);
+                _PyStackRef right = sym_get_const_as_stackref(ctx, right_sym);
+                _PyStackRef res_stackref;
+                /* Start of uop copied from bytecodes for constant evaluation */
+                PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+                PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+                assert(PyLong_CheckExact(left_o));
+                assert(PyLong_CheckExact(right_o));
+                assert(_PyLong_BothAreCompact((PyLongObject *)left_o, (PyLongObject *)right_o));
+                STAT_INC(BINARY_OP, hit);
+                res_stackref = _PyCompactLong_Subtract((PyLongObject *)left_o, (PyLongObject *)right_o);
+                if (PyStackRef_IsNull(res_stackref )) {
+                    ctx->done = true;
+                    break;
+                }
+                PyStackRef_CLOSE_SPECIALIZED(right, _PyLong_ExactDealloc);
+                PyStackRef_CLOSE_SPECIALIZED(left, _PyLong_ExactDealloc);
+                /* End of uop copied from bytecodes for constant evaluation */
+                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
+
+                if (sym_is_const(ctx, res)) {
+                    PyObject *result = sym_get_const(ctx, res);
+                    if (_Py_IsImmortal(result)) {
+                        // Replace with _POP_TWO_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
+                        REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+                    }
+                }
+                stack_pointer[-2] = res;
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
+                break;
+            }
             res = sym_new_compact_int(ctx);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -443,29 +584,50 @@
             JitOptRef res;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
-                assert(PyFloat_CheckExact(sym_get_const(ctx, left)));
-                assert(PyFloat_CheckExact(sym_get_const(ctx, right)));
-                PyObject *temp = PyFloat_FromDouble(
-                    PyFloat_AS_DOUBLE(sym_get_const(ctx, left)) *
-                    PyFloat_AS_DOUBLE(sym_get_const(ctx, right)));
-                if (temp == NULL) {
+            if (
+                sym_is_safe_const(ctx, left) &&
+                sym_is_safe_const(ctx, right)
+            ) {
+                JitOptRef left_sym = left;
+                JitOptRef right_sym = right;
+                _PyStackRef left = sym_get_const_as_stackref(ctx, left_sym);
+                _PyStackRef right = sym_get_const_as_stackref(ctx, right_sym);
+                _PyStackRef res_stackref;
+                /* Start of uop copied from bytecodes for constant evaluation */
+                PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+                PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+                assert(PyFloat_CheckExact(left_o));
+                assert(PyFloat_CheckExact(right_o));
+                STAT_INC(BINARY_OP, hit);
+                double dres =
+                ((PyFloatObject *)left_o)->ob_fval *
+                ((PyFloatObject *)right_o)->ob_fval;
+                res_stackref = _PyFloat_FromDouble_ConsumeInputs(left, right, dres);
+                if (PyStackRef_IsNull(res_stackref )) {
                     goto error;
                 }
-                res = sym_new_const(ctx, temp);
+                /* End of uop copied from bytecodes for constant evaluation */
+                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
+
+                if (sym_is_const(ctx, res)) {
+                    PyObject *result = sym_get_const(ctx, res);
+                    if (_Py_IsImmortal(result)) {
+                        // Replace with _POP_TWO_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
+                        REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+                    }
+                }
                 stack_pointer[-2] = res;
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
-                Py_DECREF(temp);
+                break;
             }
-            else {
-                res = sym_new_type(ctx, &PyFloat_Type);
-                stack_pointer += -1;
-            }
+            res = sym_new_type(ctx, &PyFloat_Type);
             if (PyJitRef_IsBorrowed(left) && PyJitRef_IsBorrowed(right)) {
                 REPLACE_OP(this_instr, op_without_decref_inputs[opcode], oparg, 0);
             }
-            stack_pointer[-1] = res;
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
@@ -475,29 +637,50 @@
             JitOptRef res;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
-                assert(PyFloat_CheckExact(sym_get_const(ctx, left)));
-                assert(PyFloat_CheckExact(sym_get_const(ctx, right)));
-                PyObject *temp = PyFloat_FromDouble(
-                    PyFloat_AS_DOUBLE(sym_get_const(ctx, left)) +
-                    PyFloat_AS_DOUBLE(sym_get_const(ctx, right)));
-                if (temp == NULL) {
+            if (
+                sym_is_safe_const(ctx, left) &&
+                sym_is_safe_const(ctx, right)
+            ) {
+                JitOptRef left_sym = left;
+                JitOptRef right_sym = right;
+                _PyStackRef left = sym_get_const_as_stackref(ctx, left_sym);
+                _PyStackRef right = sym_get_const_as_stackref(ctx, right_sym);
+                _PyStackRef res_stackref;
+                /* Start of uop copied from bytecodes for constant evaluation */
+                PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+                PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+                assert(PyFloat_CheckExact(left_o));
+                assert(PyFloat_CheckExact(right_o));
+                STAT_INC(BINARY_OP, hit);
+                double dres =
+                ((PyFloatObject *)left_o)->ob_fval +
+                ((PyFloatObject *)right_o)->ob_fval;
+                res_stackref = _PyFloat_FromDouble_ConsumeInputs(left, right, dres);
+                if (PyStackRef_IsNull(res_stackref )) {
                     goto error;
                 }
-                res = sym_new_const(ctx, temp);
+                /* End of uop copied from bytecodes for constant evaluation */
+                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
+
+                if (sym_is_const(ctx, res)) {
+                    PyObject *result = sym_get_const(ctx, res);
+                    if (_Py_IsImmortal(result)) {
+                        // Replace with _POP_TWO_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
+                        REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+                    }
+                }
                 stack_pointer[-2] = res;
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
-                Py_DECREF(temp);
+                break;
             }
-            else {
-                res = sym_new_type(ctx, &PyFloat_Type);
-                stack_pointer += -1;
-            }
+            res = sym_new_type(ctx, &PyFloat_Type);
             if (PyJitRef_IsBorrowed(left) && PyJitRef_IsBorrowed(right)) {
                 REPLACE_OP(this_instr, op_without_decref_inputs[opcode], oparg, 0);
             }
-            stack_pointer[-1] = res;
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
@@ -507,29 +690,50 @@
             JitOptRef res;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
-                assert(PyFloat_CheckExact(sym_get_const(ctx, left)));
-                assert(PyFloat_CheckExact(sym_get_const(ctx, right)));
-                PyObject *temp = PyFloat_FromDouble(
-                    PyFloat_AS_DOUBLE(sym_get_const(ctx, left)) -
-                    PyFloat_AS_DOUBLE(sym_get_const(ctx, right)));
-                if (temp == NULL) {
+            if (
+                sym_is_safe_const(ctx, left) &&
+                sym_is_safe_const(ctx, right)
+            ) {
+                JitOptRef left_sym = left;
+                JitOptRef right_sym = right;
+                _PyStackRef left = sym_get_const_as_stackref(ctx, left_sym);
+                _PyStackRef right = sym_get_const_as_stackref(ctx, right_sym);
+                _PyStackRef res_stackref;
+                /* Start of uop copied from bytecodes for constant evaluation */
+                PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+                PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+                assert(PyFloat_CheckExact(left_o));
+                assert(PyFloat_CheckExact(right_o));
+                STAT_INC(BINARY_OP, hit);
+                double dres =
+                ((PyFloatObject *)left_o)->ob_fval -
+                ((PyFloatObject *)right_o)->ob_fval;
+                res_stackref = _PyFloat_FromDouble_ConsumeInputs(left, right, dres);
+                if (PyStackRef_IsNull(res_stackref )) {
                     goto error;
                 }
-                res = sym_new_const(ctx, temp);
+                /* End of uop copied from bytecodes for constant evaluation */
+                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
+
+                if (sym_is_const(ctx, res)) {
+                    PyObject *result = sym_get_const(ctx, res);
+                    if (_Py_IsImmortal(result)) {
+                        // Replace with _POP_TWO_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
+                        REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+                    }
+                }
                 stack_pointer[-2] = res;
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
-                Py_DECREF(temp);
+                break;
             }
-            else {
-                res = sym_new_type(ctx, &PyFloat_Type);
-                stack_pointer += -1;
-            }
+            res = sym_new_type(ctx, &PyFloat_Type);
             if (PyJitRef_IsBorrowed(left) && PyJitRef_IsBorrowed(right)) {
                 REPLACE_OP(this_instr, op_without_decref_inputs[opcode], oparg, 0);
             }
-            stack_pointer[-1] = res;
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
@@ -566,24 +770,47 @@
             JitOptRef res;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
-                assert(PyUnicode_CheckExact(sym_get_const(ctx, left)));
-                assert(PyUnicode_CheckExact(sym_get_const(ctx, right)));
-                PyObject *temp = PyUnicode_Concat(sym_get_const(ctx, left), sym_get_const(ctx, right));
-                if (temp == NULL) {
+            if (
+                sym_is_safe_const(ctx, left) &&
+                sym_is_safe_const(ctx, right)
+            ) {
+                JitOptRef left_sym = left;
+                JitOptRef right_sym = right;
+                _PyStackRef left = sym_get_const_as_stackref(ctx, left_sym);
+                _PyStackRef right = sym_get_const_as_stackref(ctx, right_sym);
+                _PyStackRef res_stackref;
+                /* Start of uop copied from bytecodes for constant evaluation */
+                PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+                PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+                assert(PyUnicode_CheckExact(left_o));
+                assert(PyUnicode_CheckExact(right_o));
+                STAT_INC(BINARY_OP, hit);
+                PyObject *res_o = PyUnicode_Concat(left_o, right_o);
+                PyStackRef_CLOSE_SPECIALIZED(right, _PyUnicode_ExactDealloc);
+                PyStackRef_CLOSE_SPECIALIZED(left, _PyUnicode_ExactDealloc);
+                if (res_o == NULL) {
                     goto error;
                 }
-                res = sym_new_const(ctx, temp);
+                res_stackref = PyStackRef_FromPyObjectSteal(res_o);
+                /* End of uop copied from bytecodes for constant evaluation */
+                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
+
+                if (sym_is_const(ctx, res)) {
+                    PyObject *result = sym_get_const(ctx, res);
+                    if (_Py_IsImmortal(result)) {
+                        // Replace with _POP_TWO_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
+                        REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+                    }
+                }
                 stack_pointer[-2] = res;
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
-                Py_DECREF(temp);
+                break;
             }
-            else {
-                res = sym_new_type(ctx, &PyUnicode_Type);
-                stack_pointer += -1;
-            }
-            stack_pointer[-1] = res;
+            res = sym_new_type(ctx, &PyUnicode_Type);
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
@@ -1243,16 +1470,16 @@
 
         case _LOAD_ATTR: {
             JitOptRef owner;
-            JitOptRef attr;
+            JitOptRef *attr;
             JitOptRef *self_or_null;
             owner = stack_pointer[-1];
+            attr = &stack_pointer[-1];
             self_or_null = &stack_pointer[0];
             (void)owner;
-            attr = sym_new_not_null(ctx);
+            *attr = sym_new_not_null(ctx);
             if (oparg & 1) {
                 self_or_null[0] = sym_new_unknown(ctx);
             }
-            stack_pointer[-1] = attr;
             stack_pointer += (oparg&1);
             assert(WITHIN_STACK_BOUNDS());
             break;
@@ -1427,7 +1654,45 @@
         }
 
         case _COMPARE_OP_FLOAT: {
+            JitOptRef right;
+            JitOptRef left;
             JitOptRef res;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            if (
+                sym_is_safe_const(ctx, left) &&
+                sym_is_safe_const(ctx, right)
+            ) {
+                JitOptRef left_sym = left;
+                JitOptRef right_sym = right;
+                _PyStackRef left = sym_get_const_as_stackref(ctx, left_sym);
+                _PyStackRef right = sym_get_const_as_stackref(ctx, right_sym);
+                _PyStackRef res_stackref;
+                /* Start of uop copied from bytecodes for constant evaluation */
+                PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+                PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+                STAT_INC(COMPARE_OP, hit);
+                double dleft = PyFloat_AS_DOUBLE(left_o);
+                double dright = PyFloat_AS_DOUBLE(right_o);
+                int sign_ish = COMPARISON_BIT(dleft, dright);
+                PyStackRef_CLOSE_SPECIALIZED(left, _PyFloat_ExactDealloc);
+                PyStackRef_CLOSE_SPECIALIZED(right, _PyFloat_ExactDealloc);
+                res_stackref = (sign_ish & oparg) ? PyStackRef_True : PyStackRef_False;
+                /* End of uop copied from bytecodes for constant evaluation */
+                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
+
+                if (sym_is_const(ctx, res)) {
+                    PyObject *result = sym_get_const(ctx, res);
+                    if (_Py_IsImmortal(result)) {
+                        // Replace with _POP_TWO_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
+                        REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+                    }
+                }
+                stack_pointer[-2] = res;
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
+                break;
+            }
             res = sym_new_type(ctx, &PyBool_Type);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -1441,34 +1706,93 @@
             JitOptRef res;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
-                assert(PyLong_CheckExact(sym_get_const(ctx, left)));
-                assert(PyLong_CheckExact(sym_get_const(ctx, right)));
-                PyObject *tmp = PyObject_RichCompare(sym_get_const(ctx, left),
-                    sym_get_const(ctx, right),
-                    oparg >> 5);
-                if (tmp == NULL) {
-                    goto error;
+            if (
+                sym_is_safe_const(ctx, left) &&
+                sym_is_safe_const(ctx, right)
+            ) {
+                JitOptRef left_sym = left;
+                JitOptRef right_sym = right;
+                _PyStackRef left = sym_get_const_as_stackref(ctx, left_sym);
+                _PyStackRef right = sym_get_const_as_stackref(ctx, right_sym);
+                _PyStackRef res_stackref;
+                /* Start of uop copied from bytecodes for constant evaluation */
+                PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+                PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+                assert(_PyLong_IsCompact((PyLongObject *)left_o));
+                assert(_PyLong_IsCompact((PyLongObject *)right_o));
+                STAT_INC(COMPARE_OP, hit);
+                assert(_PyLong_DigitCount((PyLongObject *)left_o) <= 1 &&
+                   _PyLong_DigitCount((PyLongObject *)right_o) <= 1);
+                Py_ssize_t ileft = _PyLong_CompactValue((PyLongObject *)left_o);
+                Py_ssize_t iright = _PyLong_CompactValue((PyLongObject *)right_o);
+                int sign_ish = COMPARISON_BIT(ileft, iright);
+                PyStackRef_CLOSE_SPECIALIZED(left, _PyLong_ExactDealloc);
+                PyStackRef_CLOSE_SPECIALIZED(right, _PyLong_ExactDealloc);
+                res_stackref =  (sign_ish & oparg) ? PyStackRef_True : PyStackRef_False;
+                /* End of uop copied from bytecodes for constant evaluation */
+                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
+
+                if (sym_is_const(ctx, res)) {
+                    PyObject *result = sym_get_const(ctx, res);
+                    if (_Py_IsImmortal(result)) {
+                        // Replace with _POP_TWO_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
+                        REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+                    }
                 }
-                assert(PyBool_Check(tmp));
-                assert(_Py_IsImmortal(tmp));
-                REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)tmp);
-                res = sym_new_const(ctx, tmp);
                 stack_pointer[-2] = res;
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
-                Py_DECREF(tmp);
+                break;
             }
-            else {
-                res = sym_new_type(ctx, &PyBool_Type);
-                stack_pointer += -1;
-            }
-            stack_pointer[-1] = res;
+            res = sym_new_type(ctx, &PyBool_Type);
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _COMPARE_OP_STR: {
+            JitOptRef right;
+            JitOptRef left;
             JitOptRef res;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            if (
+                sym_is_safe_const(ctx, left) &&
+                sym_is_safe_const(ctx, right)
+            ) {
+                JitOptRef left_sym = left;
+                JitOptRef right_sym = right;
+                _PyStackRef left = sym_get_const_as_stackref(ctx, left_sym);
+                _PyStackRef right = sym_get_const_as_stackref(ctx, right_sym);
+                _PyStackRef res_stackref;
+                /* Start of uop copied from bytecodes for constant evaluation */
+                PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+                PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+                STAT_INC(COMPARE_OP, hit);
+                int eq = _PyUnicode_Equal(left_o, right_o);
+                assert((oparg >> 5) == Py_EQ || (oparg >> 5) == Py_NE);
+                PyStackRef_CLOSE_SPECIALIZED(left, _PyUnicode_ExactDealloc);
+                PyStackRef_CLOSE_SPECIALIZED(right, _PyUnicode_ExactDealloc);
+                assert(eq == 0 || eq == 1);
+                assert((oparg & 0xf) == COMPARISON_NOT_EQUALS || (oparg & 0xf) == COMPARISON_EQUALS);
+                assert(COMPARISON_NOT_EQUALS + 1 == COMPARISON_EQUALS);
+                res_stackref = ((COMPARISON_NOT_EQUALS + eq) & oparg) ? PyStackRef_True : PyStackRef_False;
+                /* End of uop copied from bytecodes for constant evaluation */
+                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
+
+                if (sym_is_const(ctx, res)) {
+                    PyObject *result = sym_get_const(ctx, res);
+                    if (_Py_IsImmortal(result)) {
+                        // Replace with _POP_TWO_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
+                        REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+                    }
+                }
+                stack_pointer[-2] = res;
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
+                break;
+            }
             res = sym_new_type(ctx, &PyBool_Type);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -2539,6 +2863,39 @@
             JitOptRef res;
             rhs = stack_pointer[-1];
             lhs = stack_pointer[-2];
+            if (
+                sym_is_safe_const(ctx, lhs) &&
+                sym_is_safe_const(ctx, rhs)
+            ) {
+                JitOptRef lhs_sym = lhs;
+                JitOptRef rhs_sym = rhs;
+                _PyStackRef lhs = sym_get_const_as_stackref(ctx, lhs_sym);
+                _PyStackRef rhs = sym_get_const_as_stackref(ctx, rhs_sym);
+                _PyStackRef res_stackref;
+                /* Start of uop copied from bytecodes for constant evaluation */
+                PyObject *lhs_o = PyStackRef_AsPyObjectBorrow(lhs);
+                PyObject *rhs_o = PyStackRef_AsPyObjectBorrow(rhs);
+                assert(_PyEval_BinaryOps[oparg]);
+                PyObject *res_o = _PyEval_BinaryOps[oparg](lhs_o, rhs_o);
+                if (res_o == NULL) {
+                    JUMP_TO_LABEL(error);
+                }
+                res_stackref = PyStackRef_FromPyObjectSteal(res_o);
+                /* End of uop copied from bytecodes for constant evaluation */
+                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
+
+                if (sym_is_const(ctx, res)) {
+                    PyObject *result = sym_get_const(ctx, res);
+                    if (_Py_IsImmortal(result)) {
+                        // Replace with _POP_TWO_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
+                        REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+                    }
+                }
+                stack_pointer[-2] = res;
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
+                break;
+            }
             bool lhs_int = sym_matches_type(lhs, &PyLong_Type);
             bool rhs_int = sym_matches_type(rhs, &PyLong_Type);
             bool lhs_float = sym_matches_type(lhs, &PyFloat_Type);

@@ -279,7 +279,10 @@ class HashLibTestCase(unittest.TestCase):
                 with self.assertWarnsRegex(DeprecationWarning,
                                            DEPRECATED_STRING_PARAMETER):
                     hashlib.new(digest_name, string=b'')
-                if self._hashlib:
+                # Make sure that _hashlib contains the constructor
+                # to test when using a combination of libcrypto and
+                # interned hash implementations.
+                if self._hashlib and digest_name in self._hashlib._constructors:
                     self._hashlib.new(digest_name, b'')
                     self._hashlib.new(digest_name, data=b'')
                     with self.assertWarnsRegex(DeprecationWarning,
@@ -333,13 +336,16 @@ class HashLibTestCase(unittest.TestCase):
                 with self.subTest(digest_name, args=args, kwds=kwds):
                     with self.assertRaisesRegex(TypeError, errmsg):
                         hashlib.new(digest_name, *args, **kwds)
-                    if self._hashlib:
+                    if (self._hashlib and
+                            digest_name in self._hashlib._constructors):
                         with self.assertRaisesRegex(TypeError, errmsg):
                             self._hashlib.new(digest_name, *args, **kwds)
 
     def test_unknown_hash(self):
         self.assertRaises(ValueError, hashlib.new, 'spam spam spam spam spam')
-        self.assertRaises(TypeError, hashlib.new, 1)
+        # ensure that the exception message remains consistent
+        err = re.escape("new() argument 'name' must be str, not int")
+        self.assertRaisesRegex(TypeError, err, hashlib.new, 1)
 
     def test_new_upper_to_lower(self):
         self.assertEqual(hashlib.new("SHA256").name, "sha256")
@@ -366,7 +372,9 @@ class HashLibTestCase(unittest.TestCase):
                 sys.modules['_md5'] = _md5
             else:
                 del sys.modules['_md5']
-        self.assertRaises(TypeError, get_builtin_constructor, 3)
+        # ensure that the exception message remains consistent
+        err = re.escape("new() argument 'name' must be str, not int")
+        self.assertRaises(TypeError, err, get_builtin_constructor, 3)
         constructor = get_builtin_constructor('md5')
         self.assertIs(constructor, _md5.md5)
         self.assertEqual(sorted(builtin_constructor_cache), ['MD5', 'md5'])
@@ -537,13 +545,17 @@ class HashLibTestCase(unittest.TestCase):
 
     def check_file_digest(self, name, data, hexdigest):
         hexdigest = hexdigest.lower()
-        try:
-            hashlib.new(name)
-        except ValueError:
-            # skip, algorithm is blocked by security policy.
-            return
-        digests = [name]
-        digests.extend(self.constructors_to_test[name])
+        digests = []
+        for digest in [name, *self.constructors_to_test[name]]:
+            try:
+                if callable(digest):
+                    digest(b"")
+                else:
+                    hashlib.new(digest)
+            except ValueError:
+                # skip, algorithm is blocked by security policy.
+                continue
+            digests.append(digest)
 
         with tempfile.TemporaryFile() as f:
             f.write(data)
@@ -1180,12 +1192,6 @@ class KDFTests(unittest.TestCase):
         (b'pass\0word', b'sa\0lt', 4096, 16),
     ]
 
-    scrypt_test_vectors = [
-        (b'', b'', 16, 1, 1, unhexlify('77d6576238657b203b19ca42c18a0497f16b4844e3074ae8dfdffa3fede21442fcd0069ded0948f8326a753a0fc81f17e8d3e0fb2e0d3628cf35e20c38d18906')),
-        (b'password', b'NaCl', 1024, 8, 16, unhexlify('fdbabe1c9d3472007856e7190d01e9fe7c6ad7cbc8237830e77376634b3731622eaf30d92e22a3886ff109279d9830dac727afb94a83ee6d8360cbdfa2cc0640')),
-        (b'pleaseletmein', b'SodiumChloride', 16384, 8, 1, unhexlify('7023bdcb3afd7348461c06cd81fd38ebfda8fbba904f8e3ea9b543f6545da1f2d5432955613f0fcf62d49705242a9af9e61e85dc0d651e40dfcf017b45575887')),
-   ]
-
     pbkdf2_results = {
         "sha1": [
             # official test vectors from RFC 6070
@@ -1277,46 +1283,6 @@ class KDFTests(unittest.TestCase):
     def test_pbkdf2_hmac_c(self):
         self._test_pbkdf2_hmac(openssl_hashlib.pbkdf2_hmac, openssl_md_meth_names)
 
-    @unittest.skipUnless(hasattr(hashlib, 'scrypt'),
-                     '   test requires OpenSSL > 1.1')
-    @unittest.skipIf(get_fips_mode(), reason="scrypt is blocked in FIPS mode")
-    def test_scrypt(self):
-        for password, salt, n, r, p, expected in self.scrypt_test_vectors:
-            result = hashlib.scrypt(password, salt=salt, n=n, r=r, p=p)
-            self.assertEqual(result, expected)
-
-        # this values should work
-        hashlib.scrypt(b'password', salt=b'salt', n=2, r=8, p=1)
-        # password and salt must be bytes-like
-        with self.assertRaises(TypeError):
-            hashlib.scrypt('password', salt=b'salt', n=2, r=8, p=1)
-        with self.assertRaises(TypeError):
-            hashlib.scrypt(b'password', salt='salt', n=2, r=8, p=1)
-        # require keyword args
-        with self.assertRaises(TypeError):
-            hashlib.scrypt(b'password')
-        with self.assertRaises(TypeError):
-            hashlib.scrypt(b'password', b'salt')
-        with self.assertRaises(TypeError):
-            hashlib.scrypt(b'password', 2, 8, 1, salt=b'salt')
-        for n in [-1, 0, 1, None]:
-            with self.assertRaises((ValueError, OverflowError, TypeError)):
-                hashlib.scrypt(b'password', salt=b'salt', n=n, r=8, p=1)
-        for r in [-1, 0, None]:
-            with self.assertRaises((ValueError, OverflowError, TypeError)):
-                hashlib.scrypt(b'password', salt=b'salt', n=2, r=r, p=1)
-        for p in [-1, 0, None]:
-            with self.assertRaises((ValueError, OverflowError, TypeError)):
-                hashlib.scrypt(b'password', salt=b'salt', n=2, r=8, p=p)
-        for maxmem in [-1, None]:
-            with self.assertRaises((ValueError, OverflowError, TypeError)):
-                hashlib.scrypt(b'password', salt=b'salt', n=2, r=8, p=1,
-                               maxmem=maxmem)
-        for dklen in [-1, None]:
-            with self.assertRaises((ValueError, OverflowError, TypeError)):
-                hashlib.scrypt(b'password', salt=b'salt', n=2, r=8, p=1,
-                               dklen=dklen)
-
     def test_normalized_name(self):
         self.assertNotIn("blake2b512", hashlib.algorithms_available)
         self.assertNotIn("sha3-512", hashlib.algorithms_available)
@@ -1356,6 +1322,77 @@ class KDFTests(unittest.TestCase):
 
         with self.assertRaises(BlockingIOError):
             hashlib.file_digest(NonBlocking(), hashlib.sha256)
+
+
+@unittest.skipUnless(hasattr(hashlib, 'scrypt'), 'requires OpenSSL 1.1+')
+@unittest.skipIf(get_fips_mode(), reason="scrypt is blocked in FIPS mode")
+class TestScrypt(unittest.TestCase):
+
+    scrypt_test_vectors = [
+        (b'', b'', 16, 1, 1, unhexlify('77d6576238657b203b19ca42c18a0497f16b4844e3074ae8dfdffa3fede21442fcd0069ded0948f8326a753a0fc81f17e8d3e0fb2e0d3628cf35e20c38d18906')),
+        (b'password', b'NaCl', 1024, 8, 16, unhexlify('fdbabe1c9d3472007856e7190d01e9fe7c6ad7cbc8237830e77376634b3731622eaf30d92e22a3886ff109279d9830dac727afb94a83ee6d8360cbdfa2cc0640')),
+        (b'pleaseletmein', b'SodiumChloride', 16384, 8, 1, unhexlify('7023bdcb3afd7348461c06cd81fd38ebfda8fbba904f8e3ea9b543f6545da1f2d5432955613f0fcf62d49705242a9af9e61e85dc0d651e40dfcf017b45575887')),
+   ]
+
+    def test_scrypt(self):
+        for password, salt, n, r, p, expected in self.scrypt_test_vectors:
+            result = hashlib.scrypt(password, salt=salt, n=n, r=r, p=p)
+            self.assertEqual(result, expected)
+
+        # these parameters must be valid
+        hashlib.scrypt(b'password', salt=b'salt', n=2, r=8, p=1)
+        hashlib.scrypt(b'password', salt=b'salt', n=2, r=8, p=1, maxmem=0)
+        hashlib.scrypt(b'password', salt=b'salt', n=2, r=8, p=1, dklen=1)
+
+    def test_scrypt_types(self):
+        # password and salt must be bytes-like
+        with self.assertRaises(TypeError):
+            hashlib.scrypt('password', salt=b'salt', n=2, r=8, p=1)
+        with self.assertRaises(TypeError):
+            hashlib.scrypt(b'password', salt='salt', n=2, r=8, p=1)
+        # require keyword args
+        with self.assertRaises(TypeError):
+            hashlib.scrypt(b'password')
+        with self.assertRaises(TypeError):
+            hashlib.scrypt(b'password', b'salt')
+        with self.assertRaises(TypeError):
+            hashlib.scrypt(b'password', 2, 8, 1, salt=b'salt')
+
+    def test_scrypt_validate(self):
+        def scrypt(password=b"password", /, **kwargs):
+            # overwrite well-defined parameters with bad ones
+            kwargs = dict(salt=b'salt', n=2, r=8, p=1) | kwargs
+            return hashlib.scrypt(password, **kwargs)
+
+        for param_name in ('n', 'r', 'p', 'maxmem', 'dklen'):
+            param = {param_name: None}
+            with self.subTest(**param):
+                self.assertRaises(TypeError, scrypt, **param)
+
+        self.assertRaises(ValueError, scrypt, n=0)
+        self.assertRaises(ValueError, scrypt, n=-1)
+        self.assertRaises(ValueError, scrypt, n=1)
+
+        self.assertRaises(ValueError, scrypt, r=0)
+        self.assertRaises(ValueError, scrypt, r=-1)
+
+        self.assertRaises(ValueError, scrypt, p=-1)
+        self.assertRaises(ValueError, scrypt, p=0)
+
+        self.assertRaises(ValueError, scrypt, maxmem=-1)
+        # OpenSSL hard limit for 'maxmem' is an 'uint64_t' but for now,
+        # we do not use the 'uint64' Clinic converter but the 'long' one.
+        self.assertRaises(OverflowError, scrypt, maxmem=(1 << 64))
+        # Historically, Python allowed 'maxmem' to be at most INT_MAX,
+        # which is at most 2**32-1 (on Windows, sizeof(long) == 4, so
+        # an OverflowError will be raised instead of a ValueError).
+        numeric_exc_types = (OverflowError, ValueError)
+        self.assertRaises(numeric_exc_types, scrypt, maxmem=(1 << 32))
+
+        self.assertRaises(ValueError, scrypt, dklen=-1)
+        self.assertRaises(ValueError, scrypt, dklen=0)
+        MAX_DKLEN = ((1 << 32) - 1) * 32  # see RFC 7914
+        self.assertRaises(numeric_exc_types, scrypt, dklen=MAX_DKLEN + 1)
 
 
 if __name__ == "__main__":

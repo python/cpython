@@ -569,8 +569,11 @@ else:
 is_emscripten = sys.platform == "emscripten"
 is_wasi = sys.platform == "wasi"
 
+# Use is_wasm32 as a generic check for WebAssembly platforms.
+is_wasm32 = is_emscripten or is_wasi
+
 def skip_emscripten_stack_overflow():
-    return unittest.skipIf(is_emscripten, "Exhausts limited stack on Emscripten")
+    return unittest.skipIf(is_emscripten, "Exhausts stack on Emscripten")
 
 def skip_wasi_stack_overflow():
     return unittest.skipIf(is_wasi, "Exhausts stack on WASI")
@@ -2333,6 +2336,7 @@ def check_disallow_instantiation(testcase, tp, *args, **kwds):
         qualname = f"{name}"
     msg = f"cannot create '{re.escape(qualname)}' instances"
     testcase.assertRaisesRegex(TypeError, msg, tp, *args, **kwds)
+    testcase.assertRaisesRegex(TypeError, msg, tp.__new__, tp, *args, **kwds)
 
 def get_recursion_depth():
     """Get the recursion depth of the caller function.
@@ -3147,7 +3151,7 @@ def linked_to_musl():
 
     # emscripten (at least as far as we're concerned) and wasi use musl,
     # but platform doesn't know how to get the version, so set it to zero.
-    if is_emscripten or is_wasi:
+    if is_wasm32:
         _linked_to_musl = (0, 0, 0)
         return _linked_to_musl
 

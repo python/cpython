@@ -725,6 +725,8 @@ LIBHACL_BLAKE2_SIMD128_OBJS
 LIBHACL_SIMD128_FLAGS
 LIBHACL_LDFLAGS
 LIBHACL_CFLAGS
+LIBHASHLIB_INTERNAL
+LIBHASHLIB_INTERNAL_CFLAGS
 MODULE_UNICODEDATA_FALSE
 MODULE_UNICODEDATA_TRUE
 MODULE__MULTIBYTECODEC_FALSE
@@ -7254,6 +7256,8 @@ case $host/$ac_cv_cc_name in #(
     PY_SUPPORT_TIER=3 ;; #(
     x86_64-*-linux-android/clang) :
     PY_SUPPORT_TIER=3 ;; #(
+    wasm32-*-emscripten/emcc) :
+    PY_SUPPORT_TIER=3 ;; #(
   *) :
 
   PY_SUPPORT_TIER=0
@@ -9601,9 +9605,10 @@ fi
         as_fn_append LDFLAGS_NODIST " -sWASM_BIGINT"
 
         as_fn_append LINKFORSHARED " -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"
-    as_fn_append LINKFORSHARED " -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV"
+    as_fn_append LINKFORSHARED " -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV,HEAPU32,TTY"
     as_fn_append LINKFORSHARED " -sEXPORTED_FUNCTIONS=_main,_Py_Version,__PyRuntime,__PyEM_EMSCRIPTEN_COUNT_ARGS_OFFSET,_PyGILState_GetThisThreadState,__Py_DumpTraceback"
     as_fn_append LINKFORSHARED " -sSTACK_SIZE=5MB"
+        as_fn_append LINKFORSHARED " -sTEXTDECODER=2"
 
     if test "x$enable_wasm_dynamic_linking" = xyes
 then :
@@ -13813,6 +13818,8 @@ case $PLATFORM_TRIPLET in #(
     perf_trampoline=yes ;; #(
   aarch64-linux-gnu) :
     perf_trampoline=yes ;; #(
+  darwin) :
+    perf_trampoline=yes ;; #(
   *) :
     perf_trampoline=no
  ;;
@@ -15742,7 +15749,7 @@ fi
 printf "%s\n" "$ac_cv_ffi_complex_double_supported" >&6; }
 if test "$ac_cv_ffi_complex_double_supported" = "yes"; then
 
-printf "%s\n" "#define Py_FFI_SUPPORT_C_COMPLEX 1" >>confdefs.h
+printf "%s\n" "#define _Py_FFI_SUPPORT_C_COMPLEX 1" >>confdefs.h
 
 fi
 
@@ -15750,10 +15757,18 @@ fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-system-libmpdec" >&5
 printf %s "checking for --with-system-libmpdec... " >&6; }
 
+
 # Check whether --with-system_libmpdec was given.
 if test ${with_system_libmpdec+y}
 then :
-  withval=$with_system_libmpdec;
+  withval=$with_system_libmpdec; if test "x$with_system_libmpdec" = xno
+then :
+  LIBMPDEC_CFLAGS="-I\$(srcdir)/Modules/_decimal/libmpdec"
+          LIBMPDEC_LIBS="-lm \$(LIBMPDEC_A)"
+          LIBMPDEC_INTERNAL="\$(LIBMPDEC_HEADERS) \$(LIBMPDEC_A)"
+          have_mpdec=yes
+          with_system_libmpdec=no
+fi
 else case e in #(
   e) with_system_libmpdec="yes" ;;
 esac
@@ -15761,8 +15776,6 @@ fi
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_system_libmpdec" >&5
 printf "%s\n" "$with_system_libmpdec" >&6; }
-
-
 
 if test "x$with_system_libmpdec" = xyes
 then :
@@ -15841,13 +15854,6 @@ else
 printf "%s\n" "yes" >&6; }
 
 fi
-else case e in #(
-  e) LIBMPDEC_CFLAGS="-I\$(srcdir)/Modules/_decimal/libmpdec"
-          LIBMPDEC_LIBS="-lm \$(LIBMPDEC_A)"
-          LIBMPDEC_INTERNAL="\$(LIBMPDEC_HEADERS) \$(LIBMPDEC_A)"
-          have_mpdec=yes
-          with_system_libmpdec=no ;;
-esac
 fi
 
 if test "x$with_system_libmpdec" = xyes
@@ -15894,21 +15900,6 @@ LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
 
 
-else case e in #(
-  e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: the bundled copy of libmpdecimal is scheduled for removal in Python 3.15; consider using a system installed mpdecimal library." >&5
-printf "%s\n" "$as_me: WARNING: the bundled copy of libmpdecimal is scheduled for removal in Python 3.15; consider using a system installed mpdecimal library." >&2;} ;;
-esac
-fi
-
-if test "$with_system_libmpdec" = "yes" && test "$have_mpdec" = "no"
-then :
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: no system libmpdecimal found; falling back to bundled libmpdecimal (deprecated and scheduled for removal in Python 3.15)" >&5
-printf "%s\n" "$as_me: WARNING: no system libmpdecimal found; falling back to bundled libmpdecimal (deprecated and scheduled for removal in Python 3.15)" >&2;}
-       LIBMPDEC_CFLAGS="-I\$(srcdir)/Modules/_decimal/libmpdec"
-          LIBMPDEC_LIBS="-lm \$(LIBMPDEC_A)"
-          LIBMPDEC_INTERNAL="\$(LIBMPDEC_HEADERS) \$(LIBMPDEC_A)"
-          have_mpdec=yes
-          with_system_libmpdec=no
 fi
 
 # Disable forced inlining in debug builds, see GH-94847
@@ -19074,7 +19065,7 @@ PLATFORM_OBJS=
 case $ac_sys_system in #(
   Emscripten) :
 
-    as_fn_append PLATFORM_OBJS ' Python/emscripten_signal.o Python/emscripten_trampoline.o'
+    as_fn_append PLATFORM_OBJS ' Python/emscripten_signal.o Python/emscripten_trampoline.o Python/emscripten_syscalls.o'
     as_fn_append PLATFORM_HEADERS ' $(srcdir)/Include/internal/pycore_emscripten_signal.h $(srcdir)/Include/internal/pycore_emscripten_trampoline.h'
    ;; #(
   *) :
@@ -28234,7 +28225,7 @@ printf "%s\n" "$ac_cv_normalize_century" >&6; }
 if test "$ac_cv_normalize_century" = yes
 then
 
-printf "%s\n" "#define Py_NORMALIZE_CENTURY 1" >>confdefs.h
+printf "%s\n" "#define _Py_NORMALIZE_CENTURY 1" >>confdefs.h
 
 fi
 
@@ -29933,9 +29924,6 @@ printf "%s\n" "#define Py_REMOTE_DEBUG 1" >>confdefs.h
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
 else
-
-printf "%s\n" "#define Py_REMOTE_DEBUG 0" >>confdefs.h
-
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
 fi
@@ -29963,6 +29951,7 @@ SRCDIRS="\
   Modules/_decimal \
   Modules/_decimal/libmpdec \
   Modules/_hacl \
+  Modules/_hashlib \
   Modules/_io \
   Modules/_multiprocessing \
   Modules/_sqlite \
@@ -30865,8 +30854,8 @@ main (void)
 
       OBJ_nid2sn(NID_md5);
       OBJ_nid2sn(NID_sha1);
+      OBJ_nid2sn(NID_sha512);
       OBJ_nid2sn(NID_sha3_512);
-      OBJ_nid2sn(NID_blake2b512);
       EVP_PBE_scrypt(NULL, 0, NULL, 0, 2, 8, 1, 0, NULL, 0);
 
   ;
@@ -31196,9 +31185,7 @@ case $ac_sys_system in #(
 
 
 
-    py_cv_module_fcntl=n/a
     py_cv_module_readline=n/a
-    py_cv_module_termios=n/a
     py_cv_module_=n/a
 
    ;; #(
@@ -32542,6 +32529,15 @@ fi
 
 
 ###############################################################################
+# Cryptographic primitives
+LIBHASHLIB_INTERNAL_CFLAGS="-I\$(srcdir)/Modules/_hashlib"
+LIBHASHLIB_INTERNAL_LDFLAGS="-lm \$(LIBHASHLIB_INTERNAL_A)"
+LIBHASHLIB_INTERNAL="\$(LIBHASHLIB_INTERNAL_HEADERS) \$(LIBHASHLIB_INTERNAL_A)"
+
+
+
+
+###############################################################################
 # HACL* compilation and linking configuration (contact: @picnixz)
 #
 # Used by the HACL*-based implementations of cryptographic primitives.
@@ -32636,7 +32632,7 @@ then :
     LIBHACL_SIMD128_FLAGS="-msse -msse2 -msse3 -msse4.1 -msse4.2"
 
 
-printf "%s\n" "#define HACL_CAN_COMPILE_SIMD128 1" >>confdefs.h
+printf "%s\n" "#define _Py_HACL_CAN_COMPILE_VEC128 1" >>confdefs.h
 
 
     # macOS universal2 builds *support* the -msse etc flags because they're
@@ -32712,7 +32708,7 @@ then :
 
     LIBHACL_SIMD256_FLAGS="-mavx2"
 
-printf "%s\n" "#define HACL_CAN_COMPILE_SIMD256 1" >>confdefs.h
+printf "%s\n" "#define _Py_HACL_CAN_COMPILE_VEC256 1" >>confdefs.h
 
 
     # macOS universal2 builds *support* the -mavx2 compiler flag because it's
@@ -32789,8 +32785,8 @@ fi
   if test "x$py_cv_module__md5" = xyes
 then :
 
-    as_fn_append MODULE_BLOCK "MODULE__MD5_CFLAGS=$LIBHACL_CFLAGS$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__MD5_LDFLAGS=\$($LIBHACL_MD5_LDFLAGS)$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__MD5_CFLAGS=$LIBHACL_CFLAGS $LIBHASHLIB_INTERNAL_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__MD5_LDFLAGS=\$($LIBHACL_MD5_LDFLAGS) $LIBHASHLIB_INTERNAL_LDFLAGS$as_nl"
 
 fi
    if test "$py_cv_module__md5" = yes; then
@@ -32834,8 +32830,8 @@ fi
   if test "x$py_cv_module__sha1" = xyes
 then :
 
-    as_fn_append MODULE_BLOCK "MODULE__SHA1_CFLAGS=$LIBHACL_CFLAGS$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__SHA1_LDFLAGS=\$($LIBHACL_SHA1_LDFLAGS)$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__SHA1_CFLAGS=$LIBHACL_CFLAGS $LIBHASHLIB_INTERNAL_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__SHA1_LDFLAGS=\$($LIBHACL_SHA1_LDFLAGS) $LIBHASHLIB_INTERNAL_LDFLAGS$as_nl"
 
 fi
    if test "$py_cv_module__sha1" = yes; then
@@ -32879,8 +32875,8 @@ fi
   if test "x$py_cv_module__sha2" = xyes
 then :
 
-    as_fn_append MODULE_BLOCK "MODULE__SHA2_CFLAGS=$LIBHACL_CFLAGS$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__SHA2_LDFLAGS=\$($LIBHACL_SHA2_LDFLAGS)$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__SHA2_CFLAGS=$LIBHACL_CFLAGS $LIBHASHLIB_INTERNAL_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__SHA2_LDFLAGS=\$($LIBHACL_SHA2_LDFLAGS) $LIBHASHLIB_INTERNAL_LDFLAGS$as_nl"
 
 fi
    if test "$py_cv_module__sha2" = yes; then
@@ -32924,8 +32920,8 @@ fi
   if test "x$py_cv_module__sha3" = xyes
 then :
 
-    as_fn_append MODULE_BLOCK "MODULE__SHA3_CFLAGS=$LIBHACL_CFLAGS$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__SHA3_LDFLAGS=\$($LIBHACL_SHA3_LDFLAGS)$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__SHA3_CFLAGS=$LIBHACL_CFLAGS $LIBHASHLIB_INTERNAL_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__SHA3_LDFLAGS=\$($LIBHACL_SHA3_LDFLAGS) $LIBHASHLIB_INTERNAL_LDFLAGS$as_nl"
 
 fi
    if test "$py_cv_module__sha3" = yes; then
@@ -32969,8 +32965,8 @@ fi
   if test "x$py_cv_module__blake2" = xyes
 then :
 
-    as_fn_append MODULE_BLOCK "MODULE__BLAKE2_CFLAGS=$LIBHACL_CFLAGS$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__BLAKE2_LDFLAGS=\$($LIBHACL_BLAKE2_LDFLAGS)$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__BLAKE2_CFLAGS=$LIBHACL_CFLAGS $LIBHASHLIB_INTERNAL_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__BLAKE2_LDFLAGS=\$($LIBHACL_BLAKE2_LDFLAGS) $LIBHASHLIB_INTERNAL_LDFLAGS$as_nl"
 
 fi
    if test "$py_cv_module__blake2" = yes; then
@@ -33015,8 +33011,8 @@ fi
   if test "x$py_cv_module__hmac" = xyes
 then :
 
-    as_fn_append MODULE_BLOCK "MODULE__HMAC_CFLAGS=$LIBHACL_CFLAGS$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__HMAC_LDFLAGS=\$($LIBHACL_HMAC_LDFLAGS)$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__HMAC_CFLAGS=$LIBHACL_CFLAGS $LIBHASHLIB_INTERNAL_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__HMAC_LDFLAGS=\$($LIBHACL_HMAC_LDFLAGS) $LIBHASHLIB_INTERNAL_LDFLAGS$as_nl"
 
 fi
    if test "$py_cv_module__hmac" = yes; then
@@ -33195,6 +33191,18 @@ fi
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__decimal" >&5
 printf "%s\n" "$py_cv_module__decimal" >&6; }
+
+
+if test "x$with_system_libmpdec" = xno
+then :
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: the bundled copy of libmpdec is scheduled for removal in Python 3.16; consider using a system installed mpdecimal library." >&5
+printf "%s\n" "$as_me: WARNING: the bundled copy of libmpdec is scheduled for removal in Python 3.16; consider using a system installed mpdecimal library." >&2;}
+fi
+if test "$with_system_libmpdec" = "yes" && test "$have_mpdec" = "no"
+then :
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: no system libmpdec found; falling back to pure-Python version for the decimal module" >&5
+printf "%s\n" "$as_me: WARNING: no system libmpdec found; falling back to pure-Python version for the decimal module" >&2;}
+fi
 
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _dbm" >&5
@@ -33685,8 +33693,8 @@ fi
   if test "x$py_cv_module__hashlib" = xyes
 then :
 
-    as_fn_append MODULE_BLOCK "MODULE__HASHLIB_CFLAGS=$OPENSSL_INCLUDES$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__HASHLIB_LDFLAGS=$OPENSSL_LDFLAGS $OPENSSL_LDFLAGS_RPATH $LIBCRYPTO_LIBS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__HASHLIB_CFLAGS=$OPENSSL_INCLUDES $LIBHASHLIB_INTERNAL_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__HASHLIB_LDFLAGS=$OPENSSL_LDFLAGS $OPENSSL_LDFLAGS_RPATH $LIBCRYPTO_LIBS $LIBHASHLIB_INTERNAL_LDFLAGS$as_nl"
 
 fi
    if test "$py_cv_module__hashlib" = yes; then
