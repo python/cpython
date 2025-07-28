@@ -469,7 +469,7 @@ class Listener(object):
     This is a wrapper for a bound socket which is 'listening' for
     connections, or for a Windows named pipe.
     '''
-    def __init__(self, address=None, family=None, backlog=1, authkey=None):
+    def __init__(self, address=None, family=None, backlog=None, authkey=None):
         family = family or (address and address_type(address)) \
                  or default_family
         address = address or arbitrary_address(family)
@@ -614,7 +614,7 @@ class SocketListener(object):
     '''
     Representation of a socket which is bound to an address and listening
     '''
-    def __init__(self, address, family, backlog=1):
+    def __init__(self, address, family, backlog=None):
         self._socket = socket.socket(getattr(socket, family))
         try:
             # SO_REUSEADDR has different semantics on Windows (issue #2550).
@@ -623,7 +623,10 @@ class SocketListener(object):
                                         socket.SO_REUSEADDR, 1)
             self._socket.setblocking(True)
             self._socket.bind(address)
-            self._socket.listen(backlog)
+            if backlog is None:
+                self._socket.listen()
+            else:
+                self._socket.listen(backlog)
             self._address = self._socket.getsockname()
         except OSError:
             self._socket.close()
