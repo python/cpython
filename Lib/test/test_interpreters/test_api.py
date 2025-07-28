@@ -1855,6 +1855,7 @@ class LowLevelTests(TestBase):
                 allow_threads=True,
                 allow_daemon_threads=False,
                 check_multi_interp_extensions=True,
+                can_handle_signals=True,
                 gil='own',
             ),
             'legacy': types.SimpleNamespace(
@@ -1864,6 +1865,7 @@ class LowLevelTests(TestBase):
                 allow_threads=True,
                 allow_daemon_threads=True,
                 check_multi_interp_extensions=bool(Py_GIL_DISABLED),
+                can_handle_signals=False,
                 gil='shared',
             ),
             'empty': types.SimpleNamespace(
@@ -1873,6 +1875,7 @@ class LowLevelTests(TestBase):
                 allow_threads=False,
                 allow_daemon_threads=False,
                 check_multi_interp_extensions=False,
+                can_handle_signals=False,
                 gil='default',
             ),
         }
@@ -2134,6 +2137,7 @@ class LowLevelTests(TestBase):
         with self.subTest('main'):
             expected = _interpreters.new_config('legacy')
             expected.gil = 'own'
+            expected.can_handle_signals = True
             if Py_GIL_DISABLED:
                 expected.check_multi_interp_extensions = False
             interpid, *_ = _interpreters.get_main()
@@ -2359,6 +2363,37 @@ class LowLevelTests(TestBase):
                     'assert spam is True',
                 )
             self.assertEqual(rc, 0)
+
+    def test_interpreter_handles_signals(self):
+        import subprocess
+        import sys
+        import signal
+
+        interp_source = """if True:
+        import sys
+        import time
+
+        sys.stdout.write('x')
+        sys.stdout.flush()
+        time.sleep(10)
+        print("should never happen", flush=True)
+        """
+
+        source = f"""if True:
+        from concurrent import interpreters
+
+        interp = interpreters.create()
+        interp.exec('''{interp_source}''')
+        """
+
+        proc = subprocess.Popen([sys.executable, '-c', source],
+                                stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE, close_fds=True)
+        self.assertEqual(proc.stdout.read(1), b'x')
+        proc.send_signal(signal.SIGINT)
+        stdout, stderr = proc.communicate()
+        self.assertEqual(stdout, b"")
+        self.assertIn(b"KeyboardInterrupt", stderr)
 
 
 if __name__ == '__main__':

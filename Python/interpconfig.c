@@ -262,6 +262,7 @@ _PyInterpreterConfig_InitFromState(PyInterpreterConfig *config,
         .allow_threads = FLAG(THREADS),
         .allow_daemon_threads = FLAG(DAEMON_THREADS),
         .check_multi_interp_extensions = FLAG(MULTI_INTERP_EXTENSIONS),
+        .can_handle_signals = FLAG(CAN_HANDLE_SIGNALS),
 #undef FLAG
         .gil = interp->ceval.own_gil
             ? PyInterpreterConfig_OWN_GIL
