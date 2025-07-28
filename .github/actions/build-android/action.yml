@@ -4,7 +4,7 @@
 # but actions can be run dynamically from the runner's filesystem.
 
 name: Build and test (Android)
-description:
+description: Build and test (Android)
 
 inputs:
   triplet:
@@ -49,6 +49,8 @@ runs:
     - name: Tests
       if: runner.os == 'Linux'
       shell: bash
+      # Arguments are similar to --fast-ci, but in single-process mode.
       run: |
         $RUNNER_TEMP/android/android.py test --managed maxVersion -v -- \
-          -uall --single-process --rerun -W
+          --single-process --fail-env-changed --rerun --slowest --verbose3 \
+          -u "all,-cpu" --timeout=600
