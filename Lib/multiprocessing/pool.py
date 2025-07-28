@@ -417,67 +417,14 @@ class Pool(object):
         '''
         Equivalent of `map()` -- can be MUCH slower than `Pool.map()`.
         '''
-        self._check_running()
-        self._check_chunksize(chunksize)
-        self._check_buffersize(buffersize)
-
-        result = IMapIterator(self, buffersize)
-        if chunksize == 1:
-            self._taskqueue.put(
-                (
-                    self._guarded_task_generation(result._job, func, iterable,
-                                                  result._buffersize_sema),
-                    result._set_length,
-                )
-            )
-            return result
-        else:
-            task_batches = Pool._get_tasks(func, iterable, chunksize)
-            self._taskqueue.put(
-                (
-                    self._guarded_task_generation(
-                        result._job,
-                        mapstar,
-                        task_batches,
-                        result._buffersize_sema,
-                    ),
-                    result._set_length,
-                )
-            )
-            return (item for chunk in result for item in chunk)
+        return self._imap(IMapIterator, func, iterable, chunksize, buffersize)
 
     def imap_unordered(self, func, iterable, chunksize=1, buffersize=None):
         '''
         Like `imap()` method but ordering of results is arbitrary.
         '''
-        self._check_running()
-        self._check_chunksize(chunksize)
-        self._check_buffersize(buffersize)
-
-        result = IMapUnorderedIterator(self, buffersize)
-        if chunksize == 1:
-            self._taskqueue.put(
-                (
-                    self._guarded_task_generation(result._job, func, iterable,
-                                                  result._buffersize_sema),
-                    result._set_length,
-                )
-            )
-            return result
-        else:
-            task_batches = Pool._get_tasks(func, iterable, chunksize)
-            self._taskqueue.put(
-                (
-                    self._guarded_task_generation(
-                        result._job,
-                        mapstar,
-                        task_batches,
-                        result._buffersize_sema,
-                    ),
-                    result._set_length,
-                )
-            )
-            return (item for chunk in result for item in chunk)
+        return self._imap(IMapUnorderedIterator, func, iterable, chunksize,
+                          buffersize)
 
     def apply_async(self, func, args=(), kwds={}, callback=None,
             error_callback=None):
@@ -525,6 +472,34 @@ class Pool(object):
             )
         )
         return result
+
+    def _imap(self, iterator_cls, func, iterable, chunksize=1,
+              buffersize=None):
+        self._check_running()
+        self._check_chunksize(chunksize)
+        self._check_buffersize(buffersize)
+
+        result = iterator_cls(self, buffersize)
+        if chunksize == 1:
+            self._taskqueue.put(
+                (
+                    self._guarded_task_generation(result._job, func, iterable,
+                                                  result._buffersize_sema),
+                    result._set_length,
+                )
+            )
+            return result
+        else:
+            task_batches = Pool._get_tasks(func, iterable, chunksize)
+            self._taskqueue.put(
+                (
+                    self._guarded_task_generation(result._job, mapstar,
+                                                  task_batches,
+                                                  result._buffersize_sema),
+                    result._set_length,
+                )
+            )
+            return (item for chunk in result for item in chunk)
 
     @staticmethod
     def _check_chunksize(chunksize):
