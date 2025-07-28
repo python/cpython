@@ -487,6 +487,11 @@ New features
   a string. See the documentation for caveats.
   (Contributed by Petr Viktorin in :gh:`131510`)
 
+* Subinterpreters now have the option to handle signals through the
+  :c:member:`PyInterpreterConfig.can_handle_signals` setting. Only
+  subinterpreters running in the main thread will be able to handle
+  signals.
+
 
 Porting to Python 3.15
 ----------------------
