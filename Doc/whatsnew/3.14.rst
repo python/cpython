@@ -1088,7 +1088,7 @@ Platform support
   :pep:`tier 3 <11#tier-3>`. As a part of this effort, more than 25 bugs in
   `Emscripten libc`__ were fixed. Emscripten now includes support
   for :mod:`ctypes`, :mod:`termios`, and :mod:`fcntl`, as well as
-  experimental support for PyREPL.
+  experimental support for :ref:`PyREPL <tut-interactive>`.
 
   (Contributed by R. Hood Chatham in :gh:`127146`, :gh:`127683`, and :gh:`136931`.)
 
