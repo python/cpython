@@ -7,22 +7,22 @@ For actions that take a FILENAME, the filename can be left out to use a default
 (relative to the manifest file, as they appear in the CPython codebase).
 """
 
-from functools import partial
-from pathlib import Path
-import dataclasses
-import subprocess
-import sysconfig
 import argparse
-import textwrap
-import tomllib
+import csv
+import dataclasses
 import difflib
-import pprint
-import sys
+import io
 import os
 import os.path
-import io
+import pprint
 import re
-import csv
+import subprocess
+import sys
+import sysconfig
+import textwrap
+import tomllib
+from functools import partial
+from pathlib import Path
 
 SCRIPT_NAME = 'Tools/build/stable_abi.py'
 DEFAULT_MANIFEST_PATH = (
@@ -57,7 +57,7 @@ UNIXY = MACOS or (sys.platform == "linux")  # XXX should this be "not Windows"?
 class Manifest:
     """Collection of `ABIItem`s forming the stable ABI/limited API."""
     def __init__(self):
-        self.contents = dict()
+        self.contents = {}
 
     def add(self, item):
         if item.name in self.contents:
@@ -404,22 +404,20 @@ def do_unixy_check(manifest, args):
     # Get all macros first: we'll need feature macros like HAVE_FORK and
     # MS_WINDOWS for everything else
     present_macros = gcc_get_limited_api_macros(['Include/Python.h'])
-    feature_macros = set(m.name for m in manifest.select({'feature_macro'}))
+    feature_macros = {m.name for m in manifest.select({'feature_macro'})}
     feature_macros &= present_macros
 
     # Check that we have all needed macros
-    expected_macros = set(
-        item.name for item in manifest.select({'macro'})
-    )
+    expected_macros = {item.name for item in manifest.select({'macro'})}
     missing_macros = expected_macros - present_macros
     okay &= _report_unexpected_items(
         missing_macros,
-        'Some macros from are not defined from "Include/Python.h"'
-        + 'with Py_LIMITED_API:')
+        'Some macros from are not defined from "Include/Python.h" '
+        'with Py_LIMITED_API:')
 
-    expected_symbols = set(item.name for item in manifest.select(
+    expected_symbols = {item.name for item in manifest.select(
         {'function', 'data'}, include_abi_only=True, ifdef=feature_macros,
-    ))
+    )}
 
     # Check the static library (*.a)
     LIBRARY = sysconfig.get_config_var("LIBRARY")
@@ -437,15 +435,15 @@ def do_unixy_check(manifest, args):
             manifest, LDLIBRARY, expected_symbols, dynamic=False)
 
     # Check definitions in the header files
-    expected_defs = set(item.name for item in manifest.select(
+    expected_defs = {item.name for item in manifest.select(
         {'function', 'data'}, include_abi_only=False, ifdef=feature_macros,
-    ))
+    )}
     found_defs = gcc_get_limited_api_definitions(['Include/Python.h'])
     missing_defs = expected_defs - found_defs
     okay &= _report_unexpected_items(
         missing_defs,
         'Some expected declarations were not declared in '
-        + '"Include/Python.h" with Py_LIMITED_API:')
+        '"Include/Python.h" with Py_LIMITED_API:')
 
     # Some Limited API macros are defined in terms of private symbols.
     # These are not part of Limited API (even though they're defined with
@@ -455,7 +453,7 @@ def do_unixy_check(manifest, args):
     okay &= _report_unexpected_items(
         extra_defs,
         'Some extra declarations were found in "Include/Python.h" '
-        + 'with Py_LIMITED_API:')
+        'with Py_LIMITED_API:')
 
     return okay
 
@@ -477,7 +475,7 @@ def binutils_get_exported_symbols(library, dynamic=False):
     if dynamic:
         args.append("--dynamic")
     args.append(library)
-    proc = subprocess.run(args, stdout=subprocess.PIPE, universal_newlines=True)
+    proc = subprocess.run(args, stdout=subprocess.PIPE, encoding='utf-8')
     if proc.returncode:
         sys.stdout.write(proc.stdout)
         sys.exit(proc.returncode)
@@ -547,15 +545,10 @@ def gcc_get_limited_api_macros(headers):
             "-E",
         ]
         + [str(file) for file in headers],
-        text=True,
+        encoding='utf-8',
     )
 
-    return {
-        target
-        for target in re.findall(
-            r"#define (\w+)", preprocessor_output_with_macros
-        )
-    }
+    return set(re.findall(r"#define (\w+)", preprocessor_output_with_macros))
 
 
 def gcc_get_limited_api_definitions(headers):
@@ -590,7 +583,7 @@ def gcc_get_limited_api_definitions(headers):
             "-E",
         ]
         + [str(file) for file in headers],
-        text=True,
+        encoding='utf-8',
         stderr=subprocess.DEVNULL,
     )
     stable_functions = set(
@@ -613,7 +606,7 @@ def check_private_names(manifest):
         if name.startswith('_') and not item.abi_only:
             raise ValueError(
                 f'`{name}` is private (underscore-prefixed) and should be '
-                + 'removed from the stable ABI list or marked `abi_only`')
+                'removed from the stable ABI list or marked `abi_only`')
 
 def check_dump(manifest, filename):
     """Check that manifest.dump() corresponds to the data.
@@ -624,7 +617,7 @@ def check_dump(manifest, filename):
     with filename.open('rb') as file:
         from_file = tomllib.load(file)
     if dumped != from_file:
-        print(f'Dump differs from loaded data!', file=sys.stderr)
+        print('Dump differs from loaded data!', file=sys.stderr)
         diff = difflib.unified_diff(
             pprint.pformat(dumped).splitlines(),
             pprint.pformat(from_file).splitlines(),
@@ -654,7 +647,7 @@ def main():
     parser.add_argument(
         "--generate-all", action='store_true',
         help="as --generate, but generate all file(s) using default filenames."
-            + " (unlike --all, does not run any extra checks)",
+             " (unlike --all, does not run any extra checks)",
     )
     parser.add_argument(
         "-a", "--all", action='store_true',
@@ -739,9 +732,9 @@ def main():
     if not results:
         if args.generate:
             parser.error('No file specified. Use --generate-all to regenerate '
-                         + 'all files, or --help for usage.')
+                         'all files, or --help for usage.')
         parser.error('No check specified. Use --all to check all files, '
-                     + 'or --help for usage.')
+                     'or --help for usage.')
 
     failed_results = [name for name, result in results.items() if not result]
 

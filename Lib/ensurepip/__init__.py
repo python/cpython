@@ -10,7 +10,7 @@ from shutil import copy2
 
 
 __all__ = ["version", "bootstrap"]
-_PIP_VERSION = "24.2"
+_PIP_VERSION = "25.1.1"
 
 # Directory of system wheel packages. Some Linux distribution packaging
 # policies recommend against bundling dependencies. For example, Fedora
@@ -205,7 +205,7 @@ def _uninstall_helper(*, verbosity=0):
 
 def _main(argv=None):
     import argparse
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(color=True)
     parser.add_argument(
         "--version",
         action="version",

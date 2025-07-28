@@ -253,9 +253,6 @@ class WakeupFDTests(unittest.TestCase):
         self.assertRaises((ValueError, OSError),
                           signal.set_wakeup_fd, fd)
 
-    # Emscripten does not support fstat on pipes yet.
-    # https://github.com/emscripten-core/emscripten/issues/16414
-    @unittest.skipIf(support.is_emscripten, "Emscripten cannot fstat pipes.")
     @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     def test_set_wakeup_fd_result(self):
         r1, w1 = os.pipe()
@@ -274,7 +271,6 @@ class WakeupFDTests(unittest.TestCase):
         self.assertEqual(signal.set_wakeup_fd(-1), w2)
         self.assertEqual(signal.set_wakeup_fd(-1), -1)
 
-    @unittest.skipIf(support.is_emscripten, "Emscripten cannot fstat pipes.")
     @unittest.skipUnless(support.has_socket_support, "needs working sockets.")
     def test_set_wakeup_fd_socket_result(self):
         sock1 = socket.socket()
@@ -295,7 +291,6 @@ class WakeupFDTests(unittest.TestCase):
     # On Windows, files are always blocking and Windows does not provide a
     # function to test if a socket is in non-blocking mode.
     @unittest.skipIf(sys.platform == "win32", "tests specific to POSIX")
-    @unittest.skipIf(support.is_emscripten, "Emscripten cannot fstat pipes.")
     @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     def test_set_wakeup_fd_blocking(self):
         rfd, wfd = os.pipe()
@@ -385,7 +380,7 @@ class WakeupSignalTests(unittest.TestCase):
         except ZeroDivisionError:
             # An ignored exception should have been printed out on stderr
             err = err.getvalue()
-            if ('Exception ignored when trying to write to the signal wakeup fd'
+            if ('Exception ignored while trying to write to the signal wakeup fd'
                 not in err):
                 raise AssertionError(err)
             if ('OSError: [Errno %d]' % errno.EBADF) not in err:
@@ -574,7 +569,7 @@ class WakeupSocketSignalTests(unittest.TestCase):
             signal.raise_signal(signum)
 
         err = err.getvalue()
-        if ('Exception ignored when trying to {action} to the signal wakeup fd'
+        if ('Exception ignored while trying to {action} to the signal wakeup fd'
             not in err):
             raise AssertionError(err)
         """.format(action=action)
@@ -644,7 +639,7 @@ class WakeupSocketSignalTests(unittest.TestCase):
                                  "buffer" % written)
 
         # By default, we get a warning when a signal arrives
-        msg = ('Exception ignored when trying to {action} '
+        msg = ('Exception ignored while trying to {action} '
                'to the signal wakeup fd')
         signal.set_wakeup_fd(write.fileno())
 
@@ -840,11 +835,11 @@ class ItimerTest(unittest.TestCase):
     def test_itimer_virtual(self):
         self.itimer = signal.ITIMER_VIRTUAL
         signal.signal(signal.SIGVTALRM, self.sig_vtalrm)
-        signal.setitimer(self.itimer, 0.3, 0.2)
+        signal.setitimer(self.itimer, 0.001, 0.001)
 
         for _ in support.busy_retry(support.LONG_TIMEOUT):
             # use up some virtual time by doing real work
-            _ = pow(12345, 67890, 10000019)
+            _ = sum(i * i for i in range(10**5))
             if signal.getitimer(self.itimer) == (0.0, 0.0):
                 # sig_vtalrm handler stopped this itimer
                 break
@@ -861,7 +856,7 @@ class ItimerTest(unittest.TestCase):
 
         for _ in support.busy_retry(support.LONG_TIMEOUT):
             # do some work
-            _ = pow(12345, 67890, 10000019)
+            _ = sum(i * i for i in range(10**5))
             if signal.getitimer(self.itimer) == (0.0, 0.0):
                 # sig_prof handler stopped this itimer
                 break

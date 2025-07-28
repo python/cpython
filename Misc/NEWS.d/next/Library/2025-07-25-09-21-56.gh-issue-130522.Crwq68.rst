@@ -1,0 +1,2 @@
+Fix unraisable :exc:`TypeError` raised during :term:`interpreter shutdown`
+in the :mod:`threading` module.

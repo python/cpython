@@ -7,7 +7,7 @@
  document.addEventListener("readthedocs-addons-data-ready", function(event) {
    const config = event.detail.data()
    const versionSelect = `
-   <select id="version_select">
+   <select id="version_select" aria-label="Python version">
    ${ config.versions.active.map(
        (version) => `
        <option
@@ -25,7 +25,7 @@
    languages = languages.sort((a, b) => a.language.name.localeCompare(b.language.name));
 
    const languageSelect = `
-   <select id="language_select">
+   <select id="language_select" aria-label="Language">
    ${ languages.map(
        (translation) => `
        <option
