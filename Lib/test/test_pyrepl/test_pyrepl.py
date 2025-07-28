@@ -51,6 +51,7 @@ class ReplTestCase(TestCase):
         cwd: str | None = None,
         skip: bool = False,
         timeout: float = SHORT_TIMEOUT,
+        exit_on_output: str | None = None,
     ) -> tuple[str, int]:
         temp_dir = None
         if cwd is None:
@@ -64,6 +65,7 @@ class ReplTestCase(TestCase):
                 cwd=cwd,
                 skip=skip,
                 timeout=timeout,
+                exit_on_output=exit_on_output,
             )
         finally:
             if temp_dir is not None:
@@ -78,6 +80,7 @@ class ReplTestCase(TestCase):
         cwd: str,
         skip: bool,
         timeout: float,
+        exit_on_output: str | None,
     ) -> tuple[str, int]:
         assert pty
         master_fd, slave_fd = pty.openpty()
@@ -123,6 +126,11 @@ class ReplTestCase(TestCase):
             except OSError:
                 break
             output.append(data)
+            if exit_on_output is not None:
+                output = ["".join(output)]
+                if exit_on_output in output[0]:
+                    process.kill()
+                    break
         else:
             os.close(master_fd)
             process.kill()
@@ -1718,12 +1726,15 @@ class TestMain(ReplTestCase):
 
             commands = "1\n2\n3\nexit()\n"
             output, exit_code = self.run_repl(commands, env=env, skip=True)
+            self.assertEqual(exit_code, 0)
 
-            commands = "spam\nimport time\ntime.sleep(1000)\nquit\n"
-            try:
-                self.run_repl(commands, env=env, timeout=3)
-            except AssertionError:
-                pass
+            # Run until "0xcafe" is printed (as "51966") and then kill the
+            # process to simulate a crash. Note that the output also includes
+            # the echoed input commands.
+            commands = "spam\nimport time\n0xcafe\ntime.sleep(1000)\nquit\n"
+            output, exit_code = self.run_repl(commands, env=env, timeout=3,
+                                              exit_on_output="51966")
+            self.assertNotEqual(exit_code, 0)
 
             history = pathlib.Path(hfile.name).read_text()
             self.assertIn("2", history)
