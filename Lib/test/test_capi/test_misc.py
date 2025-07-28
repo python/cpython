@@ -1730,8 +1730,9 @@ class SubinterpreterTest(unittest.TestCase):
         DAEMON_THREADS = 1<<11
         FORK = 1<<15
         EXEC = 1<<16
+        SIGNALS = 1<<17
         ALL_FLAGS = (OBMALLOC | FORK | EXEC | THREADS | DAEMON_THREADS
-                     | EXTENSIONS);
+                     | EXTENSIONS | SIGNALS);
 
         features = [
             'obmalloc',
@@ -1741,23 +1742,25 @@ class SubinterpreterTest(unittest.TestCase):
             'daemon_threads',
             'extensions',
             'own_gil',
+            'signals',
         ]
         kwlist = [f'allow_{n}' for n in features]
         kwlist[0] = 'use_main_obmalloc'
-        kwlist[-2] = 'check_multi_interp_extensions'
-        kwlist[-1] = 'own_gil'
+        kwlist[-3] = 'check_multi_interp_extensions'
+        kwlist[-2] = 'own_gil'
+        kwlist[-1] = 'can_handle_signals'
 
         expected_to_work = {
-            (True, True, True, True, True, True, True):
+            (True, True, True, True, True, True, True, True):
                 (ALL_FLAGS, True),
-            (True, False, False, False, False, False, False):
+            (True, False, False, False, False, False, False, False):
                 (OBMALLOC, False),
-            (False, False, False, True, False, True, False):
+            (False, False, False, True, False, True, False, False):
                 (THREADS | EXTENSIONS, False),
         }
 
         expected_to_fail = {
-            (False, False, False, False, False, False, False),
+            (False, False, False, False, False, False, False, False),
         }
 
         # gh-117649: The free-threaded build does not currently allow
@@ -1824,7 +1827,8 @@ class SubinterpreterTest(unittest.TestCase):
         DAEMON_THREADS = 1<<11
         FORK = 1<<15
         EXEC = 1<<16
-        BASE_FLAGS = OBMALLOC | FORK | EXEC | THREADS | DAEMON_THREADS
+        SIGNALS = 1<<17
+        BASE_FLAGS = OBMALLOC | FORK | EXEC | THREADS | DAEMON_THREADS | SIGNALS
         base_kwargs = {
             'use_main_obmalloc': True,
             'allow_fork': True,
@@ -1832,6 +1836,7 @@ class SubinterpreterTest(unittest.TestCase):
             'allow_threads': True,
             'allow_daemon_threads': True,
             'own_gil': False,
+            'can_handle_signals': True
         }
 
         def check(enabled, override):
@@ -1961,6 +1966,7 @@ class InterpreterConfigTests(unittest.TestCase):
             allow_threads=True,
             allow_daemon_threads=False,
             check_multi_interp_extensions=True,
+            can_handle_signals=True,
             gil='own',
         ),
         'legacy': types.SimpleNamespace(
@@ -1970,6 +1976,7 @@ class InterpreterConfigTests(unittest.TestCase):
             allow_threads=True,
             allow_daemon_threads=True,
             check_multi_interp_extensions=bool(Py_GIL_DISABLED),
+            can_handle_signals=False,
             gil='shared',
         ),
         'empty': types.SimpleNamespace(
@@ -1979,6 +1986,7 @@ class InterpreterConfigTests(unittest.TestCase):
             allow_threads=False,
             allow_daemon_threads=False,
             check_multi_interp_extensions=False,
+            can_handle_signals=False,
             gil='default',
         ),
     }
@@ -1991,16 +1999,18 @@ class InterpreterConfigTests(unittest.TestCase):
                     for allow_threads in (True, False):
                         for allow_daemon in (True, False):
                             for checkext in (True, False):
-                                for gil in ('shared', 'own', 'default'):
-                                    yield types.SimpleNamespace(
-                                        use_main_obmalloc=use_main_obmalloc,
-                                        allow_fork=allow_fork,
-                                        allow_exec=allow_exec,
-                                        allow_threads=allow_threads,
-                                        allow_daemon_threads=allow_daemon,
-                                        check_multi_interp_extensions=checkext,
-                                        gil=gil,
-                                    )
+                                for handle_signals in (True, False):
+                                    for gil in ('shared', 'own', 'default'):
+                                        yield types.SimpleNamespace(
+                                            use_main_obmalloc=use_main_obmalloc,
+                                            allow_fork=allow_fork,
+                                            allow_exec=allow_exec,
+                                            allow_threads=allow_threads,
+                                            allow_daemon_threads=allow_daemon,
+                                            check_multi_interp_extensions=checkext,
+                                            can_handle_signals=handle_signals,
+                                            gil=gil,
+                                        )
 
     def assert_ns_equal(self, ns1, ns2, msg=None):
         # This is mostly copied from TestCase.assertDictEqual.
@@ -2175,6 +2185,7 @@ class InterpreterConfigTests(unittest.TestCase):
         with self.subTest('main'):
             expected = _interpreters.new_config('legacy')
             expected.gil = 'own'
+            expected.can_handle_signals = True
             if Py_GIL_DISABLED:
                 expected.check_multi_interp_extensions = False
             interpid, *_ = _interpreters.get_main()
