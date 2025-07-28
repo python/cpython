@@ -2,7 +2,6 @@
 # license: PSFL.
 
 import weakref
-import sys
 import gc
 import asyncio
 import contextvars
