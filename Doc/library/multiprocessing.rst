@@ -111,6 +111,8 @@ Contexts and start methods
 Depending on the platform, :mod:`multiprocessing` supports three ways
 to start a process.  These *start methods* are
 
+  .. _multiprocessing-start-method-spawn:
+
   *spawn*
     The parent process starts a fresh Python interpreter process.  The
     child process will only inherit those resources necessary to run
@@ -120,6 +122,8 @@ to start a process.  These *start methods* are
     rather slow compared to using *fork* or *forkserver*.
 
     Available on POSIX and Windows platforms.  The default on Windows and macOS.
+
+  .. _multiprocessing-start-method-fork:
 
   *fork*
     The parent process uses :func:`os.fork` to fork the Python
@@ -140,6 +144,8 @@ to start a process.  These *start methods* are
        :func:`os.fork` function that this start method calls internally will
        raise a :exc:`DeprecationWarning`. Use a different start method.
        See the :func:`os.fork` documentation for further explanation.
+
+  .. _multiprocessing-start-method-forkserver:
 
   *forkserver*
     When the program starts and selects the *forkserver* start method,
@@ -3024,6 +3030,9 @@ Beware of replacing :data:`sys.stdin` with a "file like object"
            return self._cache
 
     For more information, see :issue:`5155`, :issue:`5313` and :issue:`5331`
+
+.. _multiprocessing-programming-spawn:
+.. _multiprocessing-programming-forkserver:
 
 The *spawn* and *forkserver* start methods
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
