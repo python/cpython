@@ -1745,7 +1745,7 @@ class StreamWriteTest(WriteTestBase, unittest.TestCase):
             with self.subTest():
                 with func(tarpath, self.mode) as tar:
                     self.assertEqual(tar.name, expected_name)
-                    os_helper.unlink(tmpname)
+                os_helper.unlink(tmpname)
 
 
 class GzipStreamWriteTest(GzipTest, StreamWriteTest):
