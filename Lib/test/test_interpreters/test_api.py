@@ -2364,6 +2364,7 @@ class LowLevelTests(TestBase):
                 )
             self.assertEqual(rc, 0)
 
+    @support.requires_subprocess()
     def test_interpreter_handles_signals(self):
         import subprocess
         import sys
@@ -2389,9 +2390,44 @@ class LowLevelTests(TestBase):
                                 stderr=subprocess.PIPE, close_fds=True)
         self.assertEqual(proc.stdout.read(1), b'x')
         proc.send_signal(signal.SIGINT)
-        stdout, stderr = proc.communicate()
+        stdout, stderr = proc.communicate(timeout=5)
         self.assertEqual(stdout, b"")
         self.assertIn(b"KeyboardInterrupt", stderr)
+
+    @support.requires_subprocess()
+    def test_legacy_interpreter_does_not_handle_signals(self):
+        import subprocess
+        import sys
+        import signal
+
+        interp_source = """if True:
+        import time
+
+        print('x', end='', flush=True)
+        time.sleep(1)
+        print('inquisition', end='', flush=True)
+        """
+
+        source = f"""if True:
+        import _interpreters
+
+        config = _interpreters.new_config("legacy")
+        interp = _interpreters.create(config)
+        res = _interpreters.run_string(interp, '''{interp_source}''')
+        assert res is None
+        """
+
+        proc = subprocess.Popen([sys.executable, '-c', source],
+                                stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE, close_fds=True)
+        self.assertEqual(proc.stdout.read(1), b'x')
+        proc.send_signal(signal.SIGINT)
+        with self.assertRaises(subprocess.TimeoutExpired):
+            stdout, stderr = proc.communicate(timeout=0.5)
+        stdout, stderr = proc.communicate()
+        self.assertEqual(stdout, b"inquisition")
+        self.assertIn(b"KeyboardInterrupt", stderr)
+        self.assertNotIn(b"AssertionError", stderr)
 
 
 if __name__ == '__main__':
