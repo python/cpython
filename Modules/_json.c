@@ -1524,18 +1524,21 @@ encoder_listencode_obj(PyEncoderObject *s, PyUnicodeWriter *writer,
     else {
         PyObject *ident = NULL;
         if (s->markers != Py_None) {
-            int has_key;
+            Py_ssize_t len;
+
             ident = PyLong_FromVoidPtr(obj);
             if (ident == NULL)
                 return -1;
-            has_key = PyDict_Contains(s->markers, ident);
-            if (has_key) {
-                if (has_key != -1)
-                    PyErr_SetString(PyExc_ValueError, "Circular reference detected");
+
+            len = PyDict_GET_SIZE(s->markers);
+
+            if (PyDict_SetItem(s->markers, ident, obj)) {
                 Py_DECREF(ident);
                 return -1;
             }
-            if (PyDict_SetItem(s->markers, ident, obj)) {
+
+            if (PyDict_GET_SIZE(s->markers) == len) {
+                PyErr_SetString(PyExc_ValueError, "Circular reference detected");
                 Py_DECREF(ident);
                 return -1;
             }
@@ -1660,17 +1663,20 @@ encoder_listencode_dict(PyEncoderObject *s, PyUnicodeWriter *writer,
     }
 
     if (s->markers != Py_None) {
-        int has_key;
+        Py_ssize_t len;
+
         ident = PyLong_FromVoidPtr(dct);
         if (ident == NULL)
-            goto bail;
-        has_key = PyDict_Contains(s->markers, ident);
-        if (has_key) {
-            if (has_key != -1)
-                PyErr_SetString(PyExc_ValueError, "Circular reference detected");
+            return -1;
+
+        len = PyDict_GET_SIZE(s->markers);
+
+        if (PyDict_SetItem(s->markers, ident, dct)) {
             goto bail;
         }
-        if (PyDict_SetItem(s->markers, ident, dct)) {
+
+        if (PyDict_GET_SIZE(s->markers) == len) {
+            PyErr_SetString(PyExc_ValueError, "Circular reference detected");
             goto bail;
         }
     }
@@ -1761,17 +1767,20 @@ encoder_listencode_list(PyEncoderObject *s, PyUnicodeWriter *writer,
     }
 
     if (s->markers != Py_None) {
-        int has_key;
+        Py_ssize_t len;
+
         ident = PyLong_FromVoidPtr(seq);
         if (ident == NULL)
-            goto bail;
-        has_key = PyDict_Contains(s->markers, ident);
-        if (has_key) {
-            if (has_key != -1)
-                PyErr_SetString(PyExc_ValueError, "Circular reference detected");
+            return -1;
+
+        len = PyDict_GET_SIZE(s->markers);
+
+        if (PyDict_SetItem(s->markers, ident, seq)) {
             goto bail;
         }
-        if (PyDict_SetItem(s->markers, ident, seq)) {
+
+        if (PyDict_GET_SIZE(s->markers) == len) {
+            PyErr_SetString(PyExc_ValueError, "Circular reference detected");
             goto bail;
         }
     }
