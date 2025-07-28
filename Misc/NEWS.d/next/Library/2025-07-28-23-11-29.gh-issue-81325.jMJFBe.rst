@@ -1,2 +1,2 @@
-:mod:`tarfile` now accepts a path-like object when writing a compressed gzip. 
+:mod:`tarfile` now accepts a path-like object when writing a compressed gzip.
 (Contributed by Alexander Enrique Urieles Nieto in :gh:`81325`.)
