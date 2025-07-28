@@ -38,3 +38,28 @@ _Py_hashlib_data_argument(PyObject **res, PyObject *data, PyObject *string)
         return -1;
     }
 }
+
+int
+_Py_hashlib_get_buffer_view(PyObject *obj, Py_buffer *view)
+{
+    if (PyUnicode_Check(obj)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "Strings must be encoded before hashing");
+        return -1;
+    }
+    if (!PyObject_CheckBuffer(obj)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "object supporting the buffer API required");
+        return -1;
+    }
+    if (PyObject_GetBuffer(obj, view, PyBUF_SIMPLE) == -1) {
+        return -1;
+    }
+    if (view->ndim > 1) {
+        PyErr_SetString(PyExc_BufferError,
+                        "Buffer must be single dimension");
+        PyBuffer_Release(view);
+        return -1;
+    }
+    return 0;
+}
