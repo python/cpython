@@ -3,7 +3,7 @@ import unicodedata
 import unittest
 import urllib.parse
 from test import support
-from strings import ascii_letters, digits
+from string import ascii_letters, digits
 
 RFC1808_BASE = "http://a/b/c/d;p?q#f"
 RFC2396_BASE = "http://a/b/c/d;p?q"
