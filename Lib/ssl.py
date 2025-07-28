@@ -520,6 +520,8 @@ class SSLContext(_SSLContext):
 
     def set_npn_protocols(self, npn_protocols):
         protos = bytearray()
+        if not npn_protocols:
+            raise SSLError('NPN protocols must not be empty')
         for protocol in npn_protocols:
             b = bytes(protocol, 'ascii')
             if len(b) == 0 or len(b) > 255:

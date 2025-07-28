@@ -1,0 +1,2 @@
+Raise an :exc:`SSL.SSLError` if an empty *protocols* argument is passed to
+:meth:`ssl.SSLContext.set_npn_protocols` to fix :cve:`CVE-2024-5642`.

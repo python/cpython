@@ -4219,6 +4219,12 @@ class ThreadedTests(unittest.TestCase):
                 if len(stats['server_npn_protocols']) else 'nothing'
             self.assertEqual(server_result, expected, msg % (server_result, "server"))
 
+    def test_empty_npn_protocols(self):
+        """npn_protocols cannot be empty, see CVE-2024-5642 & gh-121227"""
+        client_context, server_context, hostname = testing_context()
+        with self.assertRaises(ssl.SSLError):
+            server_context.set_npn_protocols([])
+
     def sni_contexts(self):
         server_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         server_context.load_cert_chain(SIGNED_CERTFILE)
