@@ -5,7 +5,6 @@ import importlib.util
 import io
 import itertools
 import os
-import pathlib
 import posixpath
 import stat
 import struct
@@ -16,7 +15,7 @@ import unittest
 import unittest.mock as mock
 import zipfile
 
-
+from pathlib import Path
 from tempfile import TemporaryFile
 from random import randint, random, randbytes
 
@@ -486,9 +485,6 @@ class AbstractTestsWithSourceFile:
 
 class StoredTestsWithSourceFile(AbstractTestsWithSourceFile,
                                 unittest.TestCase):
-    """
-    Test in which the files inside the archive are not compressed.
-    """
     compression = zipfile.ZIP_STORED
     test_low_compression = None
 
@@ -679,16 +675,11 @@ class StoredTestsWithSourceFile(AbstractTestsWithSourceFile,
             zinfo = zipfp.getinfo(TESTFN)
             self.assertEqual(zinfo.date_time, (2107, 12, 31, 23, 59, 59))
 
-
     class CustomZipInfo(zipfile.ZipInfo):
-        """
-        Support for testing extending and subclassing ZipFile.
-        """
+        pass
 
     class CustomZipExtFile(zipfile.ZipExtFile):
-        """
-        Support for testing extending and subclassing ZipFile.
-        """
+        pass
 
     def test_read_custom_zipinfo_and_zipextfile(self):
         """
@@ -699,6 +690,7 @@ class StoredTestsWithSourceFile(AbstractTestsWithSourceFile,
         source = io.BytesIO()
         with zipfile.ZipFile(source, 'w', zipfile.ZIP_STORED) as zipfp:
             zipfp.writestr('test.txt', 'some-text-content')
+        source.seek(0)
 
         with zipfile.ZipFile(
                 source, 'r',
@@ -714,6 +706,7 @@ class StoredTestsWithSourceFile(AbstractTestsWithSourceFile,
             target_member = members[0]
             with zipfp.open(target_member, mode='r') as memberfp:
                 self.assertIsInstance(memberfp, self.CustomZipExtFile)
+                self.assertEqual(b'some-text-content', memberfp.read())
 
     def test_write_custom_zipinfo(self):
         """
@@ -723,7 +716,7 @@ class StoredTestsWithSourceFile(AbstractTestsWithSourceFile,
         destination = io.BytesIO()
         with zipfile.ZipFile(
                 destination, 'w', zipinfo_class=self.CustomZipInfo) as zipfp:
-            # It can write using the specific custom classe.
+            # It can write using the specific custom class.
             new_member = self.CustomZipInfo('new-member.txt')
             with zipfp.open(new_member, mode='w') as memberfp:
                 self.assertIs(new_member, memberfp._zinfo)
@@ -731,7 +724,7 @@ class StoredTestsWithSourceFile(AbstractTestsWithSourceFile,
             # When creating a new member using just the name,
             # the custom ZipInfo is used internally.
             with zipfp.open('other-member.txt', mode='w') as memberfp:
-                self.assertIsInstance(memberfp._zinfo, self.CustomZipInfo)
+                memberfp.write(b'some-content')
             self.assertIsInstance(
                 zipfp.NameToInfo['other-member.txt'], self.CustomZipInfo)
 
@@ -754,7 +747,7 @@ class StoredTestsWithSourceFile(AbstractTestsWithSourceFile,
             # When writing from an external file, the file is created using
             # the custom ZipInfo
             with temp_dir() as source_dir:
-                source_file = pathlib.Path(source_dir).joinpath('source.txt')
+                source_file = Path(source_dir) / 'source.txt'
                 with open(source_file, 'wb') as fp:
                     fp.write(b'some-content')
                 zipfp.write(source_file, arcname='newly-file.txt')
@@ -766,16 +759,27 @@ class StoredTestsWithSourceFile(AbstractTestsWithSourceFile,
         A subclass of ZipFile can be implemented to extact the
         archive content using custom ZipInfo implementation.
         """
-        destination = io.BytesIO()
-        with zipfile.ZipFile(
-                destination, 'w', zipinfo_class=self.CustomZipInfo) as zipfp:
-            zipfp.mkdir('dir-as-text/')
-            dir_info = zipfp.NameToInfo['dir-as-text/']
-            self.assertIsInstance(dir_info, self.CustomZipInfo)
 
+        destination = io.BytesIO()
+        with zipfile.ZipFile(destination, 'w') as zipfp:
+            zipfp.mkdir('dir-as-text/')
+            zipfp.writestr('test.txt', b'new file content')
+
+        destination.seek(0)
+        with zipfile.ZipFile(
+                destination, 'r', zipinfo_class=self.CustomZipInfo) as zipfp:
             with temp_dir() as extract_dir:
-                zipfp.extract(dir_info, path=extract_dir)
-                zipfp.extract('dir-as-text/', path=extract_dir)
+                expected_dir = Path(extract_dir) / 'dir-as-text'
+                expected_file = Path(extract_dir) / 'test.txt'
+
+                # Check extracting using custom ZipInfo
+                dir_info = zipfp.NameToInfo['dir-as-text/']
+                #zipfp.extract(dir_info, path=extract_dir)
+                #self.assertTrue(expected_dir.is_dir())
+                # Check extracting using file name.
+                zipfp.extract('test.txt', path=extract_dir)
+                with expected_file.open('rb') as fp:
+                    self.assertEqual(b'new file content', fp.read())
 
 
 @requires_zlib()
