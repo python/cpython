@@ -997,7 +997,7 @@ class BaseTestTaskGroup:
 
         self.assertIsNone(task_wr())
         self.assertIsInstance(exc, _Done)
-        self.assertListEqual(gc.get_referrers(exc), no_other_refs())
+        self.assertListEqual(gc.get_referrers(exc), [])
 
     async def test_exception_refcycles_propagate_cancellation_error(self):
         """Test that TaskGroup deletes propagate_cancellation_error"""
