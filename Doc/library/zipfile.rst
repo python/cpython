@@ -229,18 +229,15 @@ ZipFile Objects
    :meth:`closed <close>` without adding any files to the archive, the appropriate
    ZIP structures for an empty archive will be written to the file.
 
+   The *zipinfo_class* and *zipextfile_class* arguments can be used to replace
+   the default :class:`ZipInfo` and :class:`!ZipExtFile` classes with different ones.
+
    ZipFile is also a context manager and therefore supports the
    :keyword:`with` statement.  In the example, *myzip* is closed after the
    :keyword:`!with` statement's suite is finished---even if an exception occurs::
 
       with ZipFile('spam.zip', 'w') as myzip:
           myzip.write('eggs.txt')
-
-   The *zipinfo_class* and *zipextfile_class* are designed to help extend the
-   functionalities.
-   For now, there is no stable public protocol or interface for these classes.
-   When implementing custom classes you will need to follow the public and
-   private API from :class:`ZipInfo` and ``ZipExtFile``.
 
    .. note::
 
@@ -285,8 +282,8 @@ ZipFile Objects
       Added support for specifying member name encoding for reading
       metadata in the zipfile's directory and file headers.
 
-   .. versionchanged:: 3.15
-      Add the *zipinfo_class* and *zipextfile_class* parameters.
+   .. versionchanged:: next
+      Added the *zipinfo_class* and *zipextfile_class* parameters.
 
 
 .. method:: ZipFile.close()
