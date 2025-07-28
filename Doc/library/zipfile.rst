@@ -818,16 +818,14 @@ Instances have the following methods and attributes:
 .. attribute:: ZipInfo.date_time
 
    The time and date of the last modification to the archive member.  This is a
-   tuple of six values representing the "last mod file time" and "last mod file date"
+   tuple of six values representing the "last [modified] file time" and "last [modified] file date"
    fields from the ZIP file's central directory.
 
    .. note::
 
       The ZIP format supports multiple timestamp fields in different locations
       (central directory, extra fields for NTFS/UNIX systems, etc.). This attribute
-      specifically returns the timestamp from the central directory. Future Python
-      versions may use alternative timestamp sources if they provide better accuracy
-      or precision.
+      specifically returns the timestamp from the central directory.
 
    The tuple contains:
 
