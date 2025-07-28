@@ -1,0 +1,4 @@
+Add :c:member:`PyInterpreterConfig.can_handle_signals` to allow
+subinterpreters to handle signals when they are running the main thread.
+This also allows interpreters created by :mod:`concurrent.interpreters` to
+handle signals.
