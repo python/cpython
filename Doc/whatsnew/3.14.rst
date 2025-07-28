@@ -1081,7 +1081,7 @@ The behavior of :func:`!gc.collect` changes slightly:
 
 (Contributed by Mark Shannon in :gh:`108362`.)
 
-Platform Support
+Platform support
 ================
 
 * :pep:`776`: Emscripten is now an officially supported platform at
