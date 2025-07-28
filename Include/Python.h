@@ -68,7 +68,7 @@
 #include "pybuffer.h"
 #include "pystats.h"
 #include "pyatomic.h"
-#include "pylock.h"
+#include "lock.h"
 #include "object.h"
 #include "objimpl.h"
 #include "typeslots.h"
