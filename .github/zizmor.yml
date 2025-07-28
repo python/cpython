@@ -8,3 +8,6 @@ rules:
     config:
       policies:
         "*": ref-pin
+  obfuscation:
+    ignore:
+      - build.yml
