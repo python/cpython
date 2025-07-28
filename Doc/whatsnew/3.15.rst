@@ -332,9 +332,8 @@ unittest
 zipfile
 -------
 
-* :class:`zipfile.ZipFile` now has the ``zipinfo_class``
-  and ``zipextfile_class`` init arguments make it easier to subclass and
-  extend it.
+* :class:`zipfile.ZipFile` now accepts the keyword-only arguments *zipinfo_class*
+  and *zipextfile_class* to make it easier to subclass and extend.
   (Contributed by Adi Roiban in :gh:`81719`.)
 
 
