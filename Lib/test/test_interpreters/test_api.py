@@ -2365,6 +2365,7 @@ class LowLevelTests(TestBase):
             self.assertEqual(rc, 0)
 
     @support.requires_subprocess()
+    @unittest.skipIf(os.name == 'nt', 'SIGINT not supported on windows')
     def test_interpreter_handles_signals(self):
         import subprocess
         import sys
@@ -2395,6 +2396,7 @@ class LowLevelTests(TestBase):
         self.assertIn(b"KeyboardInterrupt", stderr)
 
     @support.requires_subprocess()
+    @unittest.skipIf(os.name == 'nt', 'SIGINT not supported on windows')
     def test_legacy_interpreter_does_not_handle_signals(self):
         import subprocess
         import sys
