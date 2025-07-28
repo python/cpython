@@ -2479,6 +2479,9 @@ with the :class:`Pool` class.
       returned iterator should be considered arbitrary.  (Only when there is
       only one worker process is the order guaranteed to be "correct".)
 
+      .. versionadded:: 3.15
+         Added the *buffersize* parameter.
+
    .. method:: starmap(func, iterable[, chunksize])
 
       Like :meth:`~multiprocessing.pool.Pool.map` except that the
