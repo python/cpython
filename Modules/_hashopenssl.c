@@ -24,14 +24,17 @@
 
 #include "Python.h"
 #include "pycore_hashtable.h"
-#include "pycore_strhex.h"               // _Py_strhex()
-#include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_LOAD_PTR_RELAXED
-#include "hashlib.h"
+#include "pycore_strhex.h"                  // _Py_strhex()
+#include "pycore_pyatomic_ft_wrappers.h"    // FT_ATOMIC_LOAD_PTR_RELAXED
+
+#include "_hashlib/hashlib_buffer.h"
+#include "_hashlib/hashlib_fetch.h"
+#include "_hashlib/hashlib_mutex.h"
 
 /* EVP is the preferred interface to hashing in OpenSSL */
 #include <openssl/evp.h>
 #include <openssl/hmac.h>
-#include <openssl/crypto.h>              // FIPS_mode()
+#include <openssl/crypto.h>                 // FIPS_mode()
 /* We use the object interface to discover what hashes OpenSSL supports. */
 #include <openssl/objects.h>
 #include <openssl/err.h>
@@ -532,7 +535,7 @@ raise_unsupported_algorithm_error(_hashlibstate *state, PyObject *digestmod)
 {
     raise_unsupported_algorithm_impl(
         state->unsupported_digestmod_error,
-        HASHLIB_UNSUPPORTED_ALGORITHM,
+        _Py_HASHLIB_UNSUPPORTED_ALGORITHM,
         digestmod
     );
 }
@@ -542,7 +545,7 @@ raise_unsupported_str_algorithm_error(_hashlibstate *state, const char *name)
 {
     raise_unsupported_algorithm_impl(
         state->unsupported_digestmod_error,
-        HASHLIB_UNSUPPORTED_STR_ALGORITHM,
+        _Py_HASHLIB_UNSUPPORTED_STR_ALGORITHM,
         name
     );
 }
@@ -1251,15 +1254,11 @@ exit:
     return (PyObject *)self;
 }
 
+// In Python 3.19, we can remove the "STRING" argument and would also be able
+// to remove the macro (or keep it as an alias for better naming) since calls
+// to _hashlib_HASH_new_impl() would fit on 80 characters.
 #define CALL_HASHLIB_NEW(MODULE, NAME, DATA, STRING, USEDFORSECURITY)   \
-    do {                                                                \
-        PyObject *data_obj;                                             \
-        if (_Py_hashlib_data_argument(&data_obj, DATA, STRING) < 0) {   \
-            return NULL;                                                \
-        }                                                               \
-        _hashlibstate *state = get_hashlib_state(MODULE);               \
-        return _hashlib_HASH(state, NAME, data_obj, USEDFORSECURITY);   \
-    } while (0)
+    return _hashlib_HASH_new_impl(MODULE, NAME, DATA, USEDFORSECURITY, STRING)
 
 /* The module-level function: new() */
 
@@ -1285,7 +1284,12 @@ _hashlib_HASH_new_impl(PyObject *module, const char *name, PyObject *data,
                        int usedforsecurity, PyObject *string)
 /*[clinic end generated code: output=b905aaf9840c1bbd input=c34af6c6e696d44e]*/
 {
-    CALL_HASHLIB_NEW(module, name, data, string, usedforsecurity);
+    PyObject *data_obj;
+    if (_Py_hashlib_data_argument(&data_obj, data, string) < 0) {
+        return NULL;
+    }
+    _hashlibstate *state = get_hashlib_state(module);
+    return _hashlib_HASH(state, name, data_obj, usedforsecurity);
 }
 
 
