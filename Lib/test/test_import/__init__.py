@@ -2194,9 +2194,11 @@ class SubinterpImportTests(unittest.TestCase):
     ISOLATED = dict(
         use_main_obmalloc=False,
         gil=2,
+        can_handle_signals=True,
     )
     NOT_ISOLATED = {k: not v for k, v in ISOLATED.items()}
     NOT_ISOLATED['gil'] = 1
+    NOT_ISOLATED['can_handle_signals'] = False
 
     @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     def pipe(self):
