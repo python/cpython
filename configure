@@ -29949,6 +29949,7 @@ SRCDIRS="\
   Modules/_decimal \
   Modules/_decimal/libmpdec \
   Modules/_hacl \
+  Modules/_hashlib \
   Modules/_io \
   Modules/_multiprocessing \
   Modules/_sqlite \

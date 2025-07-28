@@ -255,6 +255,15 @@
     <ClInclude Include="..\Include\weakrefobject.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Modules\_hashlib\hashlib_buffer.h">
+      <Filter>Modules\_hashlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Modules\_hashlib\hashlib_fetch.h">
+      <Filter>Modules\_hashlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Modules\_hashlib\hashlib_mutex.h">
+      <Filter>Modules\_hashlib</Filter>
+    </ClInclude>
     <ClInclude Include="..\Modules\_math.h">
       <Filter>Modules</Filter>
     </ClInclude>
