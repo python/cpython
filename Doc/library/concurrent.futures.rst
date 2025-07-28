@@ -342,6 +342,11 @@ that :class:`ProcessPoolExecutor` will not work in the interactive interpreter.
 Calling :class:`Executor` or :class:`Future` methods from a callable submitted
 to a :class:`ProcessPoolExecutor` will result in deadlock.
 
+Note that the restrictions on functions and arguments needing to picklable as
+per :class:`multiprocessing.Process` apply when using :meth:`~Executor.submit`
+and :meth:`~Executor.map` on a :class:`ProcessPoolExecutor`. A function defined
+in a REPL or a lambda should not be expected to work.
+
 .. class:: ProcessPoolExecutor(max_workers=None, mp_context=None, initializer=None, initargs=(), max_tasks_per_child=None)
 
    An :class:`Executor` subclass that executes calls asynchronously using a pool
