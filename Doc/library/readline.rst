@@ -8,8 +8,8 @@
 .. sectionauthor:: Skip Montanaro <skip.montanaro@gmail.com>
 
 .. note::
-   The Python REPL after version 3.13 no longer supports readline as per :gh:`118840`.
-   However, readline can still be used if the :envvar:`PYTHON_BASIC_REPL` environment variable is set.
+   The new REPL introduced in version 3.13 no longer supports readline.
+   However, readline can still be used by setting the :envvar:`PYTHON_BASIC_REPL` environment variable.
 
 --------------
 
