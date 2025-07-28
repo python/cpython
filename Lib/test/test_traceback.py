@@ -4741,6 +4741,13 @@ class MiscTest(unittest.TestCase):
             None
         )
 
+        self.assertRaises(
+            TypeError,
+            _suggestions._generate_suggestions,
+                ["hello", "world", 0, 1.1],
+                "hell",
+        )
+
         # gh-131936: _generate_suggestions() doesn't accept list subclasses
         class MyList(list):
             pass
