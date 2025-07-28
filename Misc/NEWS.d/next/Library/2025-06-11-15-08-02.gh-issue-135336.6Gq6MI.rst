@@ -1,1 +1,1 @@
-:mod:`json` now encodes strings up to 2.2x faster if they consist solely of ASCII characters that don’t require escaping.
+:mod:`json` now encodes strings up to 2.2x faster if they consist solely of characters that don’t require escaping.
