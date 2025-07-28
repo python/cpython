@@ -2370,11 +2370,9 @@ class LowLevelTests(TestBase):
         import signal
 
         interp_source = """if True:
-        import sys
         import time
 
-        sys.stdout.write('x')
-        sys.stdout.flush()
+        print('x', end='', flush=True)
         time.sleep(10)
         print("should never happen", flush=True)
         """
