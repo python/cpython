@@ -171,7 +171,8 @@ ZipFile Objects
 
 .. class:: ZipFile(file, mode='r', compression=ZIP_STORED, allowZip64=True, \
                    compresslevel=None, *, strict_timestamps=True, \
-                   metadata_encoding=None)
+                   metadata_encoding=None, \
+                   zipinfo_class=ZipInfo, zipextfile_class=ZipExtFile)
 
    Open a ZIP file, where *file* can be a path to a file (a string), a
    file-like object or a :term:`path-like object`.
@@ -235,6 +236,12 @@ ZipFile Objects
       with ZipFile('spam.zip', 'w') as myzip:
           myzip.write('eggs.txt')
 
+   The *zipinfo_class* and *zipextfile_class* are designed to help extend the
+   functionalities.
+   For now, there is no stable public protocol or interface for these classes.
+   When implementing custom classes you will need to follow the public and
+   private API from :class:`ZipInfo` and ``ZipExtFile``.
+
    .. note::
 
       *metadata_encoding* is an instance-wide setting for the ZipFile.
@@ -277,6 +284,9 @@ ZipFile Objects
    .. versionchanged:: 3.11
       Added support for specifying member name encoding for reading
       metadata in the zipfile's directory and file headers.
+
+   .. versionchanged:: 3.15
+      Add the *zipinfo_class* and *zipextfile_class* parameters.
 
 
 .. method:: ZipFile.close()
