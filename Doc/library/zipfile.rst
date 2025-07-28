@@ -821,12 +821,6 @@ Instances have the following methods and attributes:
    tuple of six values representing the "last [modified] file time" and "last [modified] file date"
    fields from the ZIP file's central directory.
 
-   .. note::
-
-      The ZIP format supports multiple timestamp fields in different locations
-      (central directory, extra fields for NTFS/UNIX systems, etc.). This attribute
-      specifically returns the timestamp from the central directory.
-
    The tuple contains:
 
    +-------+--------------------------+
@@ -847,10 +841,14 @@ Instances have the following methods and attributes:
 
    .. note::
 
-      The central directory timestamp format in ZIP files does not support
-      timestamps before 1980. While some extra field formats (such as UNIX
-      timestamps) can represent earlier dates, this attribute only returns
-      the central directory timestamp.
+      The ZIP format supports multiple timestamp fields in different locations
+      (central directory, extra fields for NTFS/UNIX systems, etc.). This attribute
+      specifically returns the timestamp from the central directory. The central
+      directory timestamp format in ZIP files does not support timestamps before
+      1980. While some extra field formats (such as UNIX timestamps) can represent
+      earlier dates, this attribute only returns the central directory timestamp.
+
+      CPython interprets this timestamp as representing local time, not UTC.
 
 
 .. attribute:: ZipInfo.compress_type
