@@ -1,0 +1,72 @@
+.. date: 2025-06-02-11-32-23
+.. gh-issue: 135034
+.. nonce: RLGjbp
+.. release date: 2025-06-03
+.. section: Security
+
+Fixes multiple issues that allowed ``tarfile`` extraction filters
+(``filter="data"`` and ``filter="tar"``) to be bypassed using crafted
+symlinks and hard links.
+
+Addresses CVE 2024-12718, CVE 2025-4138, CVE 2025-4330, and CVE 2025-4517.
+
+..
+
+.. date: 2025-05-09-20-22-54
+.. gh-issue: 133767
+.. nonce: kN2i3Q
+.. section: Security
+
+Fix use-after-free in the "unicode-escape" decoder with a non-"strict" error
+handler.
+
+..
+
+.. date: 2025-01-14-11-19-07
+.. gh-issue: 128840
+.. nonce: M1doZW
+.. section: Security
+
+Short-circuit the processing of long IPv6 addresses early in
+:mod:`ipaddress` to prevent excessive memory consumption and a minor
+denial-of-service.
+
+..
+
+.. date: 2025-05-28-15-53-27
+.. gh-issue: 128840
+.. nonce: Nur2pB
+.. section: Library
+
+Fix parsing long IPv6 addresses with embedded IPv4 address.
+
+..
+
+.. date: 2025-05-15-14-27-01
+.. gh-issue: 134062
+.. nonce: fRbJet
+.. section: Library
+
+:mod:`ipaddress`: fix collisions in :meth:`~object.__hash__` for
+:class:`~ipaddress.IPv4Network` and :class:`~ipaddress.IPv6Network` objects.
+
+..
+
+.. date: 2024-08-28-13-03-36
+.. gh-issue: 123409
+.. nonce: lW0YF-
+.. section: Library
+
+Fix :attr:`ipaddress.IPv6Address.reverse_pointer` output according to
+:rfc:`RFC 3596, §2.5 <3596#section-2.5>`.  Patch by Bénédikt Tran.
+
+..
+
+.. bpo: 43633
+.. date: 2021-10-31-16-06-28
+.. nonce: vflwXv
+.. section: Library
+
+Improve the textual representation of IPv4-mapped IPv6 addresses
+(:rfc:`4291` Sections 2.2, 2.5.5.2) in :mod:`ipaddress`. Patch by Oleksandr
+Pavliuk.

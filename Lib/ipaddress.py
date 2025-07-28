@@ -734,7 +734,7 @@ class _BaseNetwork(_IPAddressBase):
             return NotImplemented
 
     def __hash__(self):
-        return hash(int(self.network_address) ^ int(self.netmask))
+        return hash((int(self.network_address), int(self.netmask)))
 
     def __contains__(self, other):
         # always false if one is v4 and the other is v6.
@@ -1649,8 +1649,18 @@ class _BaseV6:
         """
         if not ip_str:
             raise AddressValueError('Address cannot be empty')
+        if len(ip_str) > 45:
+            shorten = ip_str
+            if len(shorten) > 100:
+                shorten = f'{ip_str[:45]}({len(ip_str)-90} chars elided){ip_str[-45:]}'
+            raise AddressValueError(f"At most 45 characters expected in "
+                                    f"{shorten!r}")
 
-        parts = ip_str.split(':')
+        # We want to allow more parts than the max to be 'split'
+        # to preserve the correct error message when there are
+        # too many parts combined with '::'
+        _max_parts = cls._HEXTET_COUNT + 1
+        parts = ip_str.split(':', maxsplit=_max_parts)
 
         # An IPv6 address needs at least 2 colons (3 parts).
         _min_parts = 3
@@ -1670,7 +1680,6 @@ class _BaseV6:
         # An IPv6 address can't have more than 8 colons (9 parts).
         # The extra colon comes from using the "::" notation for a single
         # leading or trailing zero part.
-        _max_parts = cls._HEXTET_COUNT + 1
         if len(parts) > _max_parts:
             msg = "At most %d colons permitted in %r" % (_max_parts-1, ip_str)
             raise AddressValueError(msg)
@@ -1942,8 +1951,49 @@ class IPv6Address(_BaseV6, _BaseAddress):
 
         self._ip = self._ip_int_from_string(addr_str)
 
+    def _explode_shorthand_ip_string(self):
+        ipv4_mapped = self.ipv4_mapped
+        if ipv4_mapped is None:
+            return super()._explode_shorthand_ip_string()
+        prefix_len = 30
+        raw_exploded_str = super()._explode_shorthand_ip_string()
+        return f"{raw_exploded_str[:prefix_len]}{ipv4_mapped!s}"
+
+    def _reverse_pointer(self):
+        ipv4_mapped = self.ipv4_mapped
+        if ipv4_mapped is None:
+            return super()._reverse_pointer()
+        prefix_len = 30
+        raw_exploded_str = super()._explode_shorthand_ip_string()[:prefix_len]
+        # ipv4 encoded using hexadecimal nibbles instead of decimals
+        ipv4_int = ipv4_mapped._ip
+        reverse_chars = f"{raw_exploded_str}{ipv4_int:008x}"[::-1].replace(':', '')
+        return '.'.join(reverse_chars) + '.ip6.arpa'
+
+    def _ipv4_mapped_ipv6_to_str(self):
+        """Return convenient text representation of IPv4-mapped IPv6 address
+
+        See RFC 4291 2.5.5.2, 2.2 p.3 for details.
+
+        Returns:
+            A string, 'x:x:x:x:x:x:d.d.d.d', where the 'x's are the hexadecimal values of
+            the six high-order 16-bit pieces of the address, and the 'd's are
+            the decimal values of the four low-order 8-bit pieces of the
+            address (standard IPv4 representation) as defined in RFC 4291 2.2 p.3.
+
+        """
+        ipv4_mapped = self.ipv4_mapped
+        if ipv4_mapped is None:
+            raise AddressValueError("Can not apply to non-IPv4-mapped IPv6 address %s" % str(self))
+        high_order_bits = self._ip >> 32
+        return "%s:%s" % (self._string_from_ip_int(high_order_bits), str(ipv4_mapped))
+
     def __str__(self):
-        ip_str = super().__str__()
+        ipv4_mapped = self.ipv4_mapped
+        if ipv4_mapped is None:
+            ip_str = super().__str__()
+        else:
+            ip_str = self._ipv4_mapped_ipv6_to_str()
         return ip_str + '%' + self._scope_id if self._scope_id else ip_str
 
     def __hash__(self):

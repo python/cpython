@@ -1,0 +1,1 @@
+Update the bundled copy of setuptools to 79.0.1.

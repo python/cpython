@@ -389,6 +389,19 @@ class AddressTestCase_v6(BaseTestCase, CommonTestMixin_v6):
         # A trailing IPv4 address is two parts
         assertBadSplit("10:9:8:7:6:5:4:3:42.42.42.42%scope")
 
+    def test_bad_address_split_v6_too_long(self):
+        def assertBadSplit(addr):
+            msg = r"At most 45 characters expected in '%s"
+            with self.assertAddressError(msg, re.escape(addr[:45])):
+                ipaddress.IPv6Address(addr)
+
+        # Long IPv6 address
+        long_addr = ("0:" * 10000) + "0"
+        assertBadSplit(long_addr)
+        assertBadSplit(long_addr + "%zoneid")
+        assertBadSplit(long_addr + ":255.255.255.255")
+        assertBadSplit(long_addr + ":ffff:255.255.255.255")
+
     def test_bad_address_split_v6_too_many_parts(self):
         def assertBadSplit(addr):
             msg = "Exactly 8 parts expected without '::' in %r"
@@ -1322,6 +1335,17 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(str(self.ipv6_scoped_interface.ip),
                          '2001:658:22a:cafe:200::1')
 
+    def testIPv6IPv4MappedStringRepresentation(self):
+        long_prefix = '0000:0000:0000:0000:0000:ffff:'
+        short_prefix = '::ffff:'
+        ipv4 = '1.2.3.4'
+        ipv6_ipv4_str = short_prefix + ipv4
+        ipv6_ipv4_addr = ipaddress.IPv6Address(ipv6_ipv4_str)
+        ipv6_ipv4_iface = ipaddress.IPv6Interface(ipv6_ipv4_str)
+        self.assertEqual(str(ipv6_ipv4_addr), ipv6_ipv4_str)
+        self.assertEqual(ipv6_ipv4_addr.exploded, long_prefix + ipv4)
+        self.assertEqual(str(ipv6_ipv4_iface.ip), ipv6_ipv4_str)
+
     def testGetScopeId(self):
         self.assertEqual(self.ipv6_address.scope_id,
                          None)
@@ -2150,6 +2174,11 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(ipaddress.ip_address('FFFF::192.0.2.1'),
                           ipaddress.ip_address('FFFF::c000:201'))
 
+        self.assertEqual(ipaddress.ip_address('0000:0000:0000:0000:0000:FFFF:192.168.255.255'),
+                          ipaddress.ip_address('::ffff:c0a8:ffff'))
+        self.assertEqual(ipaddress.ip_address('FFFF:0000:0000:0000:0000:0000:192.168.255.255'),
+                          ipaddress.ip_address('ffff::c0a8:ffff'))
+
         self.assertEqual(ipaddress.ip_address('::FFFF:192.0.2.1%scope'),
                           ipaddress.ip_address('::FFFF:c000:201%scope'))
         self.assertEqual(ipaddress.ip_address('FFFF::192.0.2.1%scope'),
@@ -2162,6 +2191,10 @@ class IpaddrUnitTest(unittest.TestCase):
                           ipaddress.ip_address('::FFFF:c000:201%scope'))
         self.assertNotEqual(ipaddress.ip_address('FFFF::192.0.2.1'),
                           ipaddress.ip_address('FFFF::c000:201%scope'))
+        self.assertEqual(ipaddress.ip_address('0000:0000:0000:0000:0000:FFFF:192.168.255.255%scope'),
+                          ipaddress.ip_address('::ffff:c0a8:ffff%scope'))
+        self.assertEqual(ipaddress.ip_address('FFFF:0000:0000:0000:0000:0000:192.168.255.255%scope'),
+                          ipaddress.ip_address('ffff::c0a8:ffff%scope'))
 
     def testIPVersion(self):
         self.assertEqual(self.ipv4_address.version, 4)
@@ -2546,6 +2579,10 @@ class IpaddrUnitTest(unittest.TestCase):
             '::7:6:5:4:3:2:0': '0:7:6:5:4:3:2:0/128',
             '7:6:5:4:3:2:1::': '7:6:5:4:3:2:1:0/128',
             '0:6:5:4:3:2:1::': '0:6:5:4:3:2:1:0/128',
+            '0000:0000:0000:0000:0000:0000:255.255.255.255': '::ffff:ffff/128',
+            '0000:0000:0000:0000:0000:ffff:255.255.255.255': '::ffff:255.255.255.255/128',
+            'ffff:ffff:ffff:ffff:ffff:ffff:255.255.255.255':
+                'ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff/128',
             }
         for uncompressed, compressed in list(test_addresses.items()):
             self.assertEqual(compressed, str(ipaddress.IPv6Interface(
@@ -2568,12 +2605,42 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual('192.168.178.1', addr4.exploded)
 
     def testReversePointer(self):
-        addr1 = ipaddress.IPv4Address('127.0.0.1')
-        addr2 = ipaddress.IPv6Address('2001:db8::1')
-        self.assertEqual('1.0.0.127.in-addr.arpa', addr1.reverse_pointer)
-        self.assertEqual('1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.8.' +
-                         'b.d.0.1.0.0.2.ip6.arpa',
-                         addr2.reverse_pointer)
+        for addr_v4, expected in [
+            ('127.0.0.1', '1.0.0.127.in-addr.arpa'),
+            # test vector: https://www.rfc-editor.org/rfc/rfc1035, §3.5
+            ('10.2.0.52', '52.0.2.10.in-addr.arpa'),
+        ]:
+            with self.subTest('ipv4_reverse_pointer', addr=addr_v4):
+                addr = ipaddress.IPv4Address(addr_v4)
+                self.assertEqual(addr.reverse_pointer, expected)
+
+        for addr_v6, expected in [
+            (
+                '2001:db8::1', (
+                    '1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.'
+                    '0.0.0.0.0.0.0.0.8.b.d.0.1.0.0.2.'
+                    'ip6.arpa'
+                )
+            ),
+            (
+                '::FFFF:192.168.1.35', (
+                    '3.2.1.0.8.a.0.c.f.f.f.f.0.0.0.0.'
+                    '0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.'
+                    'ip6.arpa'
+                )
+            ),
+            # test vector: https://www.rfc-editor.org/rfc/rfc3596, §2.5
+            (
+                '4321:0:1:2:3:4:567:89ab', (
+                    'b.a.9.8.7.6.5.0.4.0.0.0.3.0.0.0.'
+                    '2.0.0.0.1.0.0.0.0.0.0.0.1.2.3.4.'
+                    'ip6.arpa'
+                )
+             )
+        ]:
+            with self.subTest('ipv6_reverse_pointer', addr=addr_v6):
+                addr = ipaddress.IPv6Address(addr_v6)
+                self.assertEqual(addr.reverse_pointer, expected)
 
     def testIntRepresentation(self):
         self.assertEqual(16909060, int(self.ipv4_address))
@@ -2678,6 +2745,34 @@ class IpaddrUnitTest(unittest.TestCase):
         ipv6_address1 = ipaddress.IPv6Interface("2001:658:22a:cafe:200:0:0:1")
         ipv6_address2 = ipaddress.IPv6Interface("2001:658:22a:cafe:200:0:0:2")
         self.assertNotEqual(ipv6_address1.__hash__(), ipv6_address2.__hash__())
+
+    # issue 134062 Hash collisions in IPv4Network and IPv6Network
+    def testNetworkV4HashCollisions(self):
+        self.assertNotEqual(
+            ipaddress.IPv4Network("192.168.1.255/32").__hash__(),
+            ipaddress.IPv4Network("192.168.1.0/24").__hash__()
+        )
+        self.assertNotEqual(
+            ipaddress.IPv4Network("172.24.255.0/24").__hash__(),
+            ipaddress.IPv4Network("172.24.0.0/16").__hash__()
+        )
+        self.assertNotEqual(
+            ipaddress.IPv4Network("192.168.1.87/32").__hash__(),
+            ipaddress.IPv4Network("192.168.1.86/31").__hash__()
+        )
+
+    # issue 134062 Hash collisions in IPv4Network and IPv6Network
+    def testNetworkV6HashCollisions(self):
+        self.assertNotEqual(
+            ipaddress.IPv6Network("fe80::/64").__hash__(),
+            ipaddress.IPv6Network("fe80::ffff:ffff:ffff:0/112").__hash__()
+        )
+        self.assertNotEqual(
+            ipaddress.IPv4Network("10.0.0.0/8").__hash__(),
+            ipaddress.IPv6Network(
+                "ffff:ffff:ffff:ffff:ffff:ffff:aff:0/112"
+            ).__hash__()
+        )
 
 
 if __name__ == '__main__':
