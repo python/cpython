@@ -11,8 +11,10 @@
  * - If 'data' and 'string' are both NULL, set '*res' to NULL and return 0.
  * - Otherwise, set '*res' to 'data' or 'string' and return 1. A deprecation
  *   warning is set when 'string' is specified.
+ *
+ * The symbol is exported for '_hashlib' and HACL*-based extension modules.
  */
-extern int
+PyAPI_FUNC(int)
 _Py_hashlib_data_argument(PyObject **res, PyObject *data, PyObject *string);
 
 /*
@@ -20,8 +22,10 @@ _Py_hashlib_data_argument(PyObject **res, PyObject *data, PyObject *string);
  *
  * On success, store the result in 'view' and return 0.
  * On error, set an exception and return -1.
+ *
+ * The symbol is exported for '_hashlib' and HACL*-based extension modules.
  */
-extern int
+PyAPI_FUNC(int)
 _Py_hashlib_get_buffer_view(PyObject *obj, Py_buffer *view);
 
 /*
