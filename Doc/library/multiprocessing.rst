@@ -2466,9 +2466,10 @@ with the :class:`Pool` class.
       *buffersize* is specified to limit the number of submitted tasks whose
       results have not yet been yielded. If the buffer is full, iteration over
       the *iterables* pauses until a result is yielded from the buffer.
-      To fully utilize pool's capacity, set *buffersize* to the number of
-      processes in pool (to consume *iterable* as you go) or even higher
-      (to prefetch *buffersize - processes* arguments).
+      To fully utilize pool's capacity when using this feature,
+      set *buffersize* at least to the number of processes in pool
+      (to consume *iterable* as you go), or even higher
+      (to prefetch the next ``N=buffersize-processes`` arguments).
 
       .. versionadded:: 3.15
          Added the *buffersize* parameter.
