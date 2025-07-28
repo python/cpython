@@ -4,43 +4,51 @@
 #include "Python.h"
 
 /*
- * Given an buffer-like OBJ, fill in the buffer VIEW with the result
- * of PyObject_GetBuffer.
+ * Obtain a buffer view from a buffer-like object 'obj'.
  *
- * On error, set an exception and execute the ERRACTION statements,
- * e.g. 'return NULL' or 'goto error'.
- *
- * Parameters
- *
- *      OBJ         An object supporting the buffer API.
- *      VIEW        A Py_buffer pointer to fill.
- *      ERRACTION   The statements to execute on error.
+ * On success, store the result in 'view' and return 0.
+ * On error, set an exception and return -1.
  */
-#define GET_BUFFER_VIEW_OR_ERROR(OBJ, VIEW, ERRACTION)                      \
-    do {                                                                    \
-        if (PyUnicode_Check((OBJ))) {                                       \
-            PyErr_SetString(PyExc_TypeError,                                \
-                            "strings must be encoded before hashing");      \
-            ERRACTION;                                                      \
-        }                                                                   \
-        if (!PyObject_CheckBuffer((OBJ))) {                                 \
-            PyErr_SetString(PyExc_TypeError,                                \
-                            "object supporting the buffer API required");   \
-            ERRACTION;                                                      \
-        }                                                                   \
-        if (PyObject_GetBuffer((OBJ), (VIEW), PyBUF_SIMPLE) == -1) {        \
-            ERRACTION;                                                      \
-        }                                                                   \
-        if ((VIEW)->ndim > 1) {                                             \
-            PyErr_SetString(PyExc_BufferError,                              \
-                            "buffer must be one-dimensional");              \
-            PyBuffer_Release((VIEW));                                       \
-            ERRACTION;                                                      \
-        }                                                                   \
-    } while(0)
+static inline int
+_Py_hashlib_get_buffer_view(PyObject *obj, Py_buffer *view)
+{
+    if (PyUnicode_Check(obj)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "Strings must be encoded before hashing");
+        return -1;
+    }
+    if (!PyObject_CheckBuffer(obj)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "object supporting the buffer API required");
+        return -1;
+    }
+    if (PyObject_GetBuffer(obj, view, PyBUF_SIMPLE) == -1) {
+        return -1;
+    }
+    if (view->ndim > 1) {
+        PyErr_SetString(PyExc_BufferError,
+                        "Buffer must be single dimension");
+        PyBuffer_Release(view);
+        return -1;
+    }
+    return 0;
+}
+
+/*
+ * Call _Py_hashlib_get_buffer_view() and check if it succeeded.
+ *
+ * On error, set an exception and execute the ERRACTION statements.
+ */
+#define GET_BUFFER_VIEW_OR_ERROR(OBJ, VIEW, ERRACTION)      \
+    do {                                                    \
+        if (_Py_hashlib_get_buffer_view(OBJ, VIEW) < 0) {   \
+            assert(PyErr_Occurred());                       \
+            ERRACTION;                                      \
+        }                                                   \
+    } while (0)
 
 /* Specialization of GET_BUFFER_VIEW_OR_ERROR() returning NULL on error. */
-#define GET_BUFFER_VIEW_OR_ERROUT(OBJ, VIEW) \
+#define GET_BUFFER_VIEW_OR_ERROUT(OBJ, VIEW)                \
     GET_BUFFER_VIEW_OR_ERROR(OBJ, VIEW, return NULL)
 
 /*

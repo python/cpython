@@ -13818,6 +13818,8 @@ case $PLATFORM_TRIPLET in #(
     perf_trampoline=yes ;; #(
   aarch64-linux-gnu) :
     perf_trampoline=yes ;; #(
+  darwin) :
+    perf_trampoline=yes ;; #(
   *) :
     perf_trampoline=no
  ;;
