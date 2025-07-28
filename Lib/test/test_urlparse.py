@@ -1428,7 +1428,7 @@ class UrlParseTestCase(unittest.TestCase):
             character = chr(character)
             if character in zoneid_authorized_characters or character in removed_characters:
                 continue
-            self.assertRaises(ValueError, parse.urlsplit, f'scheme://[::1%invalid{character}invalid]/')
+            self.assertRaises(ValueError, urllib.parse.urlsplit, f'scheme://[::1%invalid{character}invalid]/')
 
     def test_splitting_bracketed_hosts(self):
         p1 = urllib.parse.urlsplit('scheme://user@[v6a.ip]:1234/path?query')
