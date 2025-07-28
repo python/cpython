@@ -1251,15 +1251,11 @@ exit:
     return (PyObject *)self;
 }
 
+// In Python 3.19, we can remove the "STRING" argument and would also be able
+// to remove the macro (or keep it as an alias for better naming) since calls
+// to _hashlib_HASH_new_impl() would fit on 80 characters.
 #define CALL_HASHLIB_NEW(MODULE, NAME, DATA, STRING, USEDFORSECURITY)   \
-    do {                                                                \
-        PyObject *data_obj;                                             \
-        if (_Py_hashlib_data_argument(&data_obj, DATA, STRING) < 0) {   \
-            return NULL;                                                \
-        }                                                               \
-        _hashlibstate *state = get_hashlib_state(MODULE);               \
-        return _hashlib_HASH(state, NAME, data_obj, USEDFORSECURITY);   \
-    } while (0)
+    return _hashlib_HASH_new_impl(MODULE, NAME, DATA, USEDFORSECURITY, STRING)
 
 /* The module-level function: new() */
 
@@ -1285,7 +1281,12 @@ _hashlib_HASH_new_impl(PyObject *module, const char *name, PyObject *data,
                        int usedforsecurity, PyObject *string)
 /*[clinic end generated code: output=b905aaf9840c1bbd input=c34af6c6e696d44e]*/
 {
-    CALL_HASHLIB_NEW(module, name, data, string, usedforsecurity);
+    PyObject *data_obj;
+    if (_Py_hashlib_data_argument(&data_obj, data, string) < 0) {
+        return NULL;
+    }
+    _hashlibstate *state = get_hashlib_state(module);
+    return _hashlib_HASH(state, name, data_obj, usedforsecurity);
 }
 
 
