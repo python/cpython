@@ -273,6 +273,22 @@ math
   (Contributed by Bénédikt Tran in :gh:`135853`.)
 
 
+multiprocessing
+---------------
+
+* Add the optional ``buffersize`` parameter to
+  :meth:`multiprocessing.pool.Pool.imap` and
+  :meth:`multiprocessing.pool.Pool.imap_unordered` to limit the number of
+  submitted tasks whose results have not yet been yielded. If the buffer is
+  full, iteration over the *iterables* pauses until a result is yielded from
+  the buffer. To fully utilize pool's capacity when using this feature, set
+  *buffersize* at least to the number of processes in pool (to consume
+  *iterable* as you go), or even higher (to prefetch the next
+  ``N=buffersize-processes`` arguments).
+
+  (Contributed by Oleksandr Baltian in :gh:`136871`.)
+
+
 os.path
 -------
 
