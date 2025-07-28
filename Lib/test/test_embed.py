@@ -1827,10 +1827,11 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         DAEMON_THREADS = 1<<11
         FORK = 1<<15
         EXEC = 1<<16
+        SIGNALS = 1<<17
         expected = {
             # All optional features should be enabled.
             'feature_flags':
-                OBMALLOC | FORK | EXEC | THREADS | DAEMON_THREADS,
+                OBMALLOC | FORK | EXEC | THREADS | DAEMON_THREADS | SIGNALS,
             'own_gil': True,
         }
         out, err = self.run_embedded_interpreter(
