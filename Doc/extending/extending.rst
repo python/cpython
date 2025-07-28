@@ -214,7 +214,7 @@ and initialize it by calling :c:func:`PyErr_NewException` in the module's
 
    SpamError = PyErr_NewException("spam.error", NULL, NULL);
 
-Since :c:data:`!SpamError` is a global variable, it will be overwitten every time
+Since :c:data:`!SpamError` is a global variable, it will be overwritten every time
 the module is reinitialized, when the :c:data:`Py_mod_exec` function is called.
 
 For now, let's avoid the issue: we will block repeated initialization by raising an

@@ -1,0 +1,2 @@
+Fix races on :mod:`heapq` updates and :class:`list` reads on the :term:`free threaded <free threading>`
+build.

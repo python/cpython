@@ -515,8 +515,7 @@ test_thread_state(PyObject *self, PyObject *args)
         return NULL;
 
     if (!PyCallable_Check(fn)) {
-        PyErr_Format(PyExc_TypeError, "'%s' object is not callable",
-            Py_TYPE(fn)->tp_name);
+        PyErr_Format(PyExc_TypeError, "'%T' object is not callable", fn);
         return NULL;
     }
 
@@ -2419,12 +2418,22 @@ test_critical_sections(PyObject *module, PyObject *Py_UNUSED(args))
     Py_BEGIN_CRITICAL_SECTION2(module, module);
     Py_END_CRITICAL_SECTION2();
 
+#ifdef Py_GIL_DISABLED
+    // avoid unused variable compiler warning on GIL-enabled build
+    PyMutex mut = {0};
+    Py_BEGIN_CRITICAL_SECTION_MUTEX(&mut);
+    Py_END_CRITICAL_SECTION();
+
+    Py_BEGIN_CRITICAL_SECTION2_MUTEX(&mut, &mut);
+    Py_END_CRITICAL_SECTION2();
+#endif
+
     Py_RETURN_NONE;
 }
 
 
 // Used by `finalize_thread_hang`.
-#ifdef _POSIX_THREADS
+#if defined(_POSIX_THREADS) && !defined(__wasi__)
 static void finalize_thread_hang_cleanup_callback(void *Py_UNUSED(arg)) {
     // Should not reach here.
     Py_FatalError("pthread thread termination was triggered unexpectedly");

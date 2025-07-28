@@ -474,13 +474,6 @@ _build_rval_index_tuple(PyObject *rval, Py_ssize_t idx) {
     return tpl;
 }
 
-static inline int
-_PyUnicodeWriter_IsEmpty(PyUnicodeWriter *writer_pub)
-{
-    _PyUnicodeWriter *writer = (_PyUnicodeWriter*)writer_pub;
-    return (writer->pos == 0);
-}
-
 static PyObject *
 scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict, Py_ssize_t *next_end_ptr)
 {
@@ -499,10 +492,7 @@ scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict, Py_ssize_t *next
     const void *buf;
     int kind;
 
-    PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
-    if (writer == NULL) {
-        goto bail;
-    }
+    PyUnicodeWriter *writer = NULL;
 
     len = PyUnicode_GET_LENGTH(pystr);
     buf = PyUnicode_DATA(pystr);
@@ -533,12 +523,11 @@ scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict, Py_ssize_t *next
 
         if (c == '"') {
             // Fast path for simple case.
-            if (_PyUnicodeWriter_IsEmpty(writer)) {
+            if (writer == NULL) {
                 PyObject *ret = PyUnicode_Substring(pystr, end, next);
                 if (ret == NULL) {
                     goto bail;
                 }
-                PyUnicodeWriter_Discard(writer);
                 *next_end_ptr = next + 1;;
                 return ret;
             }
@@ -546,6 +535,11 @@ scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict, Py_ssize_t *next
         else if (c != '\\') {
             raise_errmsg("Unterminated string starting at", pystr, begin);
             goto bail;
+        } else if (writer == NULL) {
+            writer = PyUnicodeWriter_Create(0);
+            if (writer == NULL) {
+                goto bail;
+            }
         }
 
         /* Pick up this chunk if it's not zero length */
@@ -1342,15 +1336,22 @@ encoder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     static char *kwlist[] = {"markers", "default", "encoder", "indent", "key_separator", "item_separator", "sort_keys", "skipkeys", "allow_nan", NULL};
 
     PyEncoderObject *s;
-    PyObject *markers = Py_None, *defaultfn, *encoder, *indent, *key_separator;
+    PyObject *markers, *defaultfn, *encoder, *indent, *key_separator;
     PyObject *item_separator;
     int sort_keys, skipkeys, allow_nan;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O!?OOOUUppp:make_encoder", kwlist,
-        &PyDict_Type, &markers, &defaultfn, &encoder, &indent,
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "OOOOUUppp:make_encoder", kwlist,
+        &markers, &defaultfn, &encoder, &indent,
         &key_separator, &item_separator,
         &sort_keys, &skipkeys, &allow_nan))
         return NULL;
+
+    if (markers != Py_None && !PyDict_Check(markers)) {
+        PyErr_Format(PyExc_TypeError,
+                     "make_encoder() argument 1 must be dict or None, "
+                     "not %.200s", Py_TYPE(markers)->tp_name);
+        return NULL;
+    }
 
     s = (PyEncoderObject *)type->tp_alloc(type, 0);
     if (s == NULL)
@@ -1726,6 +1727,12 @@ encoder_encode_key_value(PyEncoderObject *s, PyUnicodeWriter *writer, bool *firs
 
     if (*first) {
         *first = false;
+        if (s->indent != Py_None) {
+            if (write_newline_indent(writer, indent_level, indent_cache) < 0) {
+                Py_DECREF(keystr);
+                return -1;
+            }
+        }
     }
     else {
         if (PyUnicodeWriter_WriteStr(writer, item_separator) < 0) {
@@ -1790,11 +1797,8 @@ encoder_listencode_dict(PyEncoderObject *s, PyUnicodeWriter *writer,
     if (s->indent != Py_None) {
         indent_level++;
         separator = get_item_separator(s, indent_level, indent_cache);
-        if (separator == NULL ||
-            write_newline_indent(writer, indent_level, indent_cache) < 0)
-        {
+        if (separator == NULL)
             goto bail;
-        }
     }
 
     if (s->sort_keys || !PyDict_CheckExact(dct)) {
@@ -1834,7 +1838,7 @@ encoder_listencode_dict(PyEncoderObject *s, PyUnicodeWriter *writer,
             goto bail;
         Py_CLEAR(ident);
     }
-    if (s->indent != Py_None) {
+    if (s->indent != Py_None && !first) {
         indent_level--;
         if (write_newline_indent(writer, indent_level, indent_cache) < 0) {
             goto bail;

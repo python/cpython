@@ -10,7 +10,8 @@ preserve
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(_remote_debugging_RemoteUnwinder___init____doc__,
-"RemoteUnwinder(pid, *, all_threads=False, debug=False)\n"
+"RemoteUnwinder(pid, *, all_threads=False, only_active_thread=False,\n"
+"               debug=False)\n"
 "--\n"
 "\n"
 "Initialize a new RemoteUnwinder object for debugging a remote Python process.\n"
@@ -19,6 +20,8 @@ PyDoc_STRVAR(_remote_debugging_RemoteUnwinder___init____doc__,
 "    pid: Process ID of the target Python process to debug\n"
 "    all_threads: If True, initialize state for all threads in the process.\n"
 "                If False, only initialize for the main thread.\n"
+"    only_active_thread: If True, only sample the thread holding the GIL.\n"
+"                       Cannot be used together with all_threads=True.\n"
 "    debug: If True, chain exceptions to explain the sequence of events that\n"
 "           lead to the exception.\n"
 "\n"
@@ -28,11 +31,13 @@ PyDoc_STRVAR(_remote_debugging_RemoteUnwinder___init____doc__,
 "Raises:\n"
 "    PermissionError: If access to the target process is denied\n"
 "    OSError: If unable to attach to the target process or access its memory\n"
-"    RuntimeError: If unable to read debug information from the target process");
+"    RuntimeError: If unable to read debug information from the target process\n"
+"    ValueError: If both all_threads and only_active_thread are True");
 
 static int
 _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
                                                int pid, int all_threads,
+                                               int only_active_thread,
                                                int debug);
 
 static int
@@ -41,7 +46,7 @@ _remote_debugging_RemoteUnwinder___init__(PyObject *self, PyObject *args, PyObje
     int return_value = -1;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 3
+    #define NUM_KEYWORDS 4
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -50,7 +55,7 @@ _remote_debugging_RemoteUnwinder___init__(PyObject *self, PyObject *args, PyObje
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(pid), &_Py_ID(all_threads), &_Py_ID(debug), },
+        .ob_item = { &_Py_ID(pid), &_Py_ID(all_threads), &_Py_ID(only_active_thread), &_Py_ID(debug), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -59,19 +64,20 @@ _remote_debugging_RemoteUnwinder___init__(PyObject *self, PyObject *args, PyObje
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"pid", "all_threads", "debug", NULL};
+    static const char * const _keywords[] = {"pid", "all_threads", "only_active_thread", "debug", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "RemoteUnwinder",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[3];
+    PyObject *argsbuf[4];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
     int pid;
     int all_threads = 0;
+    int only_active_thread = 0;
     int debug = 0;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
@@ -95,12 +101,21 @@ _remote_debugging_RemoteUnwinder___init__(PyObject *self, PyObject *args, PyObje
             goto skip_optional_kwonly;
         }
     }
-    debug = PyObject_IsTrue(fastargs[2]);
+    if (fastargs[2]) {
+        only_active_thread = PyObject_IsTrue(fastargs[2]);
+        if (only_active_thread < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    debug = PyObject_IsTrue(fastargs[3]);
     if (debug < 0) {
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = _remote_debugging_RemoteUnwinder___init___impl((RemoteUnwinderObject *)self, pid, all_threads, debug);
+    return_value = _remote_debugging_RemoteUnwinder___init___impl((RemoteUnwinderObject *)self, pid, all_threads, only_active_thread, debug);
 
 exit:
     return return_value;
@@ -110,12 +125,17 @@ PyDoc_STRVAR(_remote_debugging_RemoteUnwinder_get_stack_trace__doc__,
 "get_stack_trace($self, /)\n"
 "--\n"
 "\n"
-"Returns a list of stack traces for all threads in the target process.\n"
+"Returns a list of stack traces for threads in the target process.\n"
 "\n"
 "Each element in the returned list is a tuple of (thread_id, frame_list), where:\n"
 "- thread_id is the OS thread identifier\n"
 "- frame_list is a list of tuples (function_name, filename, line_number) representing\n"
 "  the Python stack frames for that thread, ordered from most recent to oldest\n"
+"\n"
+"The threads returned depend on the initialization parameters:\n"
+"- If only_active_thread was True: returns only the thread holding the GIL\n"
+"- If all_threads was True: returns all threads\n"
+"- Otherwise: returns only the main thread\n"
 "\n"
 "Example:\n"
 "    [\n"
@@ -215,26 +235,41 @@ PyDoc_STRVAR(_remote_debugging_RemoteUnwinder_get_async_stack_trace__doc__,
 "get_async_stack_trace($self, /)\n"
 "--\n"
 "\n"
-"Returns information about the currently running async task and its stack trace.\n"
+"Get the currently running async tasks and their dependency graphs from the remote process.\n"
 "\n"
-"Returns a tuple of (task_info, stack_frames) where:\n"
-"- task_info is a tuple of (task_id, task_name) identifying the task\n"
-"- stack_frames is a list of tuples (function_name, filename, line_number) representing\n"
-"  the Python stack frames for the task, ordered from most recent to oldest\n"
+"This returns information about running tasks and all tasks that are waiting for them,\n"
+"forming a complete dependency graph for each thread\'s active task.\n"
 "\n"
-"Example:\n"
-"    ((4345585712, \'Task-1\'), [\n"
-"        (\'run_echo_server\', \'server.py\', 127),\n"
-"        (\'serve_forever\', \'server.py\', 45),\n"
-"        (\'main\', \'app.py\', 23)\n"
-"    ])\n"
+"For each thread with a running task, returns the running task plus all tasks that\n"
+"transitively depend on it (tasks waiting for the running task, tasks waiting for\n"
+"those tasks, etc.).\n"
+"\n"
+"Returns a list of per-thread results, where each thread result contains:\n"
+"- Thread ID\n"
+"- List of task information for the running task and all its waiters\n"
+"\n"
+"Each task info contains:\n"
+"- Task ID (memory address)\n"
+"- Task name\n"
+"- Call stack frames: List of (func_name, filename, lineno)\n"
+"- List of tasks waiting for this task (recursive structure)\n"
 "\n"
 "Raises:\n"
 "    RuntimeError: If AsyncioDebug section is not available in the target process\n"
-"    RuntimeError: If there is an error copying memory from the target process\n"
-"    OSError: If there is an error accessing the target process\n"
-"    PermissionError: If access to the target process is denied\n"
-"    UnicodeDecodeError: If there is an error decoding strings from the target process");
+"    MemoryError: If memory allocation fails\n"
+"    OSError: If reading from the remote process fails\n"
+"\n"
+"Example output (similar structure to get_all_awaited_by but only for running tasks):\n"
+"[\n"
+"    (140234, [\n"
+"        (4345585712, \'main_task\',\n"
+"         [(\"run_server\", \"server.py\", 127), (\"main\", \"app.py\", 23)],\n"
+"         [\n"
+"             (4345585800, \'worker_1\', [...], [...]),\n"
+"             (4345585900, \'worker_2\', [...], [...])\n"
+"         ])\n"
+"    ])\n"
+"]");
 
 #define _REMOTE_DEBUGGING_REMOTEUNWINDER_GET_ASYNC_STACK_TRACE_METHODDEF    \
     {"get_async_stack_trace", (PyCFunction)_remote_debugging_RemoteUnwinder_get_async_stack_trace, METH_NOARGS, _remote_debugging_RemoteUnwinder_get_async_stack_trace__doc__},
@@ -253,4 +288,4 @@ _remote_debugging_RemoteUnwinder_get_async_stack_trace(PyObject *self, PyObject 
 
     return return_value;
 }
-/*[clinic end generated code: output=774ec34aa653402d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0dd1e6e8bab2a8b1 input=a9049054013a1b77]*/

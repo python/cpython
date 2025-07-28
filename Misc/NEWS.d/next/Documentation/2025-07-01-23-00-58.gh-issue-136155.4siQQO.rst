@@ -1,0 +1,1 @@
+We are now checking for fatal errors in EPUB builds in CI.

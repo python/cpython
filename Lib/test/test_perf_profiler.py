@@ -318,6 +318,7 @@ def run_perf(cwd, *args, use_jit=False, **env_vars):
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         env=env,
+        text=True,
     )
     if proc.returncode:
         print(proc.stderr, file=sys.stderr)
@@ -327,10 +328,10 @@ def run_perf(cwd, *args, use_jit=False, **env_vars):
         jit_output_file = cwd + "/jit_output.dump"
         command = ("perf", "inject", "-j", "-i", output_file, "-o", jit_output_file)
         proc = subprocess.run(
-            command, stderr=subprocess.PIPE, stdout=subprocess.PIPE, env=env
+            command, stderr=subprocess.PIPE, stdout=subprocess.PIPE, env=env, text=True
         )
         if proc.returncode:
-            print(proc.stderr)
+            print(proc.stderr, file=sys.stderr)
             raise ValueError(f"Perf failed with return code {proc.returncode}")
         # Copy the jit_output_file to the output_file
         os.rename(jit_output_file, output_file)
@@ -342,10 +343,9 @@ def run_perf(cwd, *args, use_jit=False, **env_vars):
         stderr=subprocess.PIPE,
         env=env,
         check=True,
+        text=True,
     )
-    return proc.stdout.decode("utf-8", "replace"), proc.stderr.decode(
-        "utf-8", "replace"
-    )
+    return proc.stdout, proc.stderr
 
 
 class TestPerfProfilerMixin:
@@ -506,9 +506,12 @@ def _is_perf_version_at_least(major, minor):
     # The output of perf --version looks like "perf version 6.7-3" but
     # it can also be perf version "perf version 5.15.143", or even include
     # a commit hash in the version string, like "6.12.9.g242e6068fd5c"
+    #
+    # PermissionError is raised if perf does not exist on the Windows Subsystem
+    # for Linux, see #134987
     try:
         output = subprocess.check_output(["perf", "--version"], text=True)
-    except (subprocess.CalledProcessError, FileNotFoundError):
+    except (subprocess.CalledProcessError, FileNotFoundError, PermissionError):
         return False
     version = output.split()[2]
     version = version.split("-")[0]

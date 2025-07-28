@@ -1,4 +1,4 @@
-/* Low level interface to the Zstandard algorthm & the zstd library. */
+/* Low level interface to the Zstandard algorithm & the zstd library. */
 
 /* ZstdDict class definitions */
 
@@ -15,7 +15,6 @@ class _zstd.ZstdDict "ZstdDict *" "&zstd_dict_type_spec"
 #include "Python.h"
 
 #include "_zstdmodule.h"
-#include "zstddict.h"
 #include "clinic/zstddict.c.h"
 #include "internal/pycore_lock.h" // PyMutex_IsLocked
 

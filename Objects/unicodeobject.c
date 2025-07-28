@@ -56,7 +56,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "pycore_pyhash.h"        // _Py_HashSecret_t
 #include "pycore_pylifecycle.h"   // _Py_SetFileSystemEncoding()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
-#include "pycore_template.h"      // _PyTemplate_Concat()
 #include "pycore_tuple.h"         // _PyTuple_FromArray()
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
 #include "pycore_unicodeobject.h" // struct _Py_unicode_state
@@ -167,11 +166,7 @@ static inline void PyUnicode_SET_UTF8_LENGTH(PyObject *op, Py_ssize_t length)
 #define _PyUnicode_HASH(op)                             \
     (_PyASCIIObject_CAST(op)->hash)
 
-static inline Py_hash_t PyUnicode_HASH(PyObject *op)
-{
-    assert(_PyUnicode_CHECK(op));
-    return FT_ATOMIC_LOAD_SSIZE_RELAXED(_PyASCIIObject_CAST(op)->hash);
-}
+#define PyUnicode_HASH PyUnstable_Unicode_GET_CACHED_HASH
 
 static inline void PyUnicode_SET_HASH(PyObject *op, Py_hash_t hash)
 {
@@ -11614,16 +11609,10 @@ PyUnicode_Concat(PyObject *left, PyObject *right)
         return NULL;
 
     if (!PyUnicode_Check(right)) {
-        if (_PyTemplate_CheckExact(right)) {
-            // str + tstring is implemented in the tstring type
-            return _PyTemplate_Concat(left, right);
-        }
-        else {
-            PyErr_Format(PyExc_TypeError,
-                "can only concatenate str (not \"%.200s\") to str",
-                Py_TYPE(right)->tp_name);
-            return NULL;
-        }
+        PyErr_Format(PyExc_TypeError,
+            "can only concatenate str (not \"%.200s\") to str",
+            Py_TYPE(right)->tp_name);
+        return NULL;
     }
 
     /* Shortcuts */
