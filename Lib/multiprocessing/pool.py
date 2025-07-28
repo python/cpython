@@ -389,22 +389,21 @@ class Pool(object):
         return self._map_async(func, iterable, starmapstar, chunksize,
                                callback, error_callback)
 
-    def _guarded_task_generation(self, result_job, func, iterable,
-                                 buffersize_sema=None):
+    def _guarded_task_generation(self, result_job, func, iterable, sema=None):
         '''Provides a generator of tasks for imap and imap_unordered with
         appropriate handling for iterables which throw exceptions during
         iteration.'''
         try:
             i = -1
 
-            if buffersize_sema is None:
+            if sema is None:
                 for i, x in enumerate(iterable):
                     yield (result_job, i, func, (x,), {})
 
             else:
                 enumerated_iter = iter(enumerate(iterable))
                 while True:
-                    buffersize_sema.acquire()
+                    sema.acquire()
                     try:
                         i, x = next(enumerated_iter)
                     except StopIteration:
@@ -419,13 +418,8 @@ class Pool(object):
         Equivalent of `map()` -- can be MUCH slower than `Pool.map()`.
         '''
         self._check_running()
-        if chunksize < 1:
-            raise ValueError("Chunksize must be 1+, not {0:n}".format(chunksize))
-        if buffersize is not None:
-            if not isinstance(buffersize, int):
-                raise TypeError("buffersize must be an integer or None")
-            if buffersize < 1:
-                raise ValueError("buffersize must be None or > 0")
+        self._check_chunksize(chunksize)
+        self._check_buffersize(buffersize)
 
         result = IMapIterator(self, buffersize)
         if chunksize == 1:
@@ -441,8 +435,12 @@ class Pool(object):
             task_batches = Pool._get_tasks(func, iterable, chunksize)
             self._taskqueue.put(
                 (
-                    self._guarded_task_generation(result._job, mapstar, task_batches,
-                                                  result._buffersize_sema),
+                    self._guarded_task_generation(
+                        result._job,
+                        mapstar,
+                        task_batches,
+                        result._buffersize_sema,
+                    ),
                     result._set_length,
                 )
             )
@@ -453,15 +451,8 @@ class Pool(object):
         Like `imap()` method but ordering of results is arbitrary.
         '''
         self._check_running()
-        if chunksize < 1:
-            raise ValueError(
-                "Chunksize must be 1+, not {0!r}".format(chunksize)
-            )
-        if buffersize is not None:
-            if not isinstance(buffersize, int):
-                raise TypeError("buffersize must be an integer or None")
-            if buffersize < 1:
-                raise ValueError("buffersize must be None or > 0")
+        self._check_chunksize(chunksize)
+        self._check_buffersize(buffersize)
 
         result = IMapUnorderedIterator(self, buffersize)
         if chunksize == 1:
@@ -477,8 +468,12 @@ class Pool(object):
             task_batches = Pool._get_tasks(func, iterable, chunksize)
             self._taskqueue.put(
                 (
-                    self._guarded_task_generation(result._job, mapstar, task_batches,
-                                                  result._buffersize_sema),
+                    self._guarded_task_generation(
+                        result._job,
+                        mapstar,
+                        task_batches,
+                        result._buffersize_sema,
+                    ),
                     result._set_length,
                 )
             )
@@ -530,6 +525,22 @@ class Pool(object):
             )
         )
         return result
+
+    @staticmethod
+    def _check_chunksize(chunksize):
+        if chunksize < 1:
+            raise ValueError(
+                "Chunksize must be 1+, not {0:n}".format(chunksize)
+            )
+
+    @staticmethod
+    def _check_buffersize(buffersize):
+        if buffersize is None:
+            return
+        if not isinstance(buffersize, int):
+            raise TypeError("buffersize must be an integer or None")
+        if buffersize < 1:
+            raise ValueError("buffersize must be None or > 0")
 
     @staticmethod
     def _wait_for_updates(sentinels, change_notifier, timeout=None):
@@ -876,7 +887,8 @@ class MapResult(ApplyResult):
 #
 
 class IMapIterator(object):
-    def __init__(self, pool, buffersize):
+
+    def __init__(self, pool, buffersize=None):
         self._pool = pool
         self._cond = threading.Condition(threading.Lock())
         self._job = next(job_counter)
