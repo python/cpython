@@ -2335,7 +2335,7 @@ AS_CASE([$ac_sys_system],
 
     dnl Include file system support
     AS_VAR_APPEND([LINKFORSHARED], [" -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"])
-    AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV"])
+    AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV,HEAPU32,TTY"])
     AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_FUNCTIONS=_main,_Py_Version,__PyRuntime,__PyEM_EMSCRIPTEN_COUNT_ARGS_OFFSET,_PyGILState_GetThisThreadState,__Py_DumpTraceback"])
     AS_VAR_APPEND([LINKFORSHARED], [" -sSTACK_SIZE=5MB"])
     dnl Avoid bugs in JS fallback string decoding path
@@ -3692,12 +3692,13 @@ case "$ac_sys_system" in
 esac
 AC_MSG_RESULT([$SHLIBS])
 
-dnl perf trampoline is Linux specific and requires an arch-specific
+dnl perf trampoline is Linux and macOS specific and requires an arch-specific
 dnl trampoline in assembly.
 AC_MSG_CHECKING([perf trampoline])
 AS_CASE([$PLATFORM_TRIPLET],
   [x86_64-linux-gnu], [perf_trampoline=yes],
   [aarch64-linux-gnu], [perf_trampoline=yes],
+  [darwin], [perf_trampoline=yes],
   [perf_trampoline=no]
 )
 AC_MSG_RESULT([$perf_trampoline])
@@ -7186,6 +7187,7 @@ SRCDIRS="\
   Modules/_decimal \
   Modules/_decimal/libmpdec \
   Modules/_hacl \
+  Modules/_hashlib \
   Modules/_io \
   Modules/_multiprocessing \
   Modules/_sqlite \
@@ -7768,9 +7770,7 @@ AS_CASE([$ac_sys_system],
     )
     dnl fcntl, readline, and termios are not particularly useful in browsers.
     PY_STDLIB_MOD_SET_NA(
-      [fcntl],
       [readline],
-      [termios],
     )
   ],
   [WASI], [
@@ -7959,6 +7959,15 @@ PY_STDLIB_MOD_SIMPLE([_multibytecodec])
 PY_STDLIB_MOD_SIMPLE([unicodedata])
 
 ###############################################################################
+# Cryptographic primitives
+LIBHASHLIB_INTERNAL_CFLAGS="-I\$(srcdir)/Modules/_hashlib"
+LIBHASHLIB_INTERNAL_LDFLAGS="-lm \$(LIBHASHLIB_INTERNAL_A)"
+LIBHASHLIB_INTERNAL="\$(LIBHASHLIB_INTERNAL_HEADERS) \$(LIBHASHLIB_INTERNAL_A)"
+
+AC_SUBST([LIBHASHLIB_INTERNAL_CFLAGS])
+AC_SUBST([LIBHASHLIB_INTERNAL])
+
+###############################################################################
 # HACL* compilation and linking configuration (contact: @picnixz)
 #
 # Used by the HACL*-based implementations of cryptographic primitives.
@@ -8094,7 +8103,9 @@ dnl The EXTNAME is the name of the extension module being built.
 AC_DEFUN([PY_HACL_CREATE_MODULE], [
   AS_VAR_PUSHDEF([v], [[LIBHACL_][$1][_LDFLAGS]])
   AS_VAR_SET([v], [[LIBHACL_][$1][_LIB_${LIBHACL_LDEPS_LIBTYPE}]])
-  PY_STDLIB_MOD([$2], [$3], [], [$LIBHACL_CFLAGS], [\$($v)])
+  PY_STDLIB_MOD([$2], [$3], [],
+    [$LIBHACL_CFLAGS $LIBHASHLIB_INTERNAL_CFLAGS],
+    [\$($v) $LIBHASHLIB_INTERNAL_LDFLAGS])
   AS_VAR_POPDEF([v])
 ])
 
@@ -8175,7 +8186,8 @@ dnl OpenSSL bindings
 PY_STDLIB_MOD([_ssl], [], [test "$ac_cv_working_openssl_ssl" = yes],
   [$OPENSSL_INCLUDES], [$OPENSSL_LDFLAGS $OPENSSL_LDFLAGS_RPATH $OPENSSL_LIBS])
 PY_STDLIB_MOD([_hashlib], [], [test "$ac_cv_working_openssl_hashlib" = yes],
-  [$OPENSSL_INCLUDES], [$OPENSSL_LDFLAGS $OPENSSL_LDFLAGS_RPATH $LIBCRYPTO_LIBS])
+  [$OPENSSL_INCLUDES $LIBHASHLIB_INTERNAL_CFLAGS],
+  [$OPENSSL_LDFLAGS $OPENSSL_LDFLAGS_RPATH $LIBCRYPTO_LIBS $LIBHASHLIB_INTERNAL_LDFLAGS])
 
 dnl test modules
 PY_STDLIB_MOD([_testcapi],

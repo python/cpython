@@ -131,7 +131,7 @@ class AST_Tests(unittest.TestCase):
                                     (eval_tests, eval_results, "eval")):
             for i, o in zip(input, output):
                 with self.subTest(action="parsing", input=i):
-                    ast_tree = compile(i, "?", kind, ast.PyCF_ONLY_AST)
+                    ast_tree = compile(i, "?", kind, ast.PyCF_ONLY_AST, optimize=False)
                     self.assertEqual(to_tuple(ast_tree), o)
                     self._assertTrueorder(ast_tree, (0, 0))
                 with self.subTest(action="compiling", input=i, kind=kind):
@@ -141,7 +141,7 @@ class AST_Tests(unittest.TestCase):
         # compile() is the only function that calls PyAST_Validate
         snippets_to_validate = exec_tests + single_tests + eval_tests
         for snippet in snippets_to_validate:
-            tree = ast.parse(snippet)
+            tree = ast.parse(snippet, optimize=False)
             compile(tree, '<string>', 'exec')
 
     def test_parse_invalid_ast(self):
@@ -923,7 +923,7 @@ class AST_Tests(unittest.TestCase):
         snapshots = AST_REPR_DATA_FILE.read_text().split("\n")
         for test, snapshot in zip(ast_repr_get_test_cases(), snapshots, strict=True):
             with self.subTest(test_input=test):
-                self.assertEqual(repr(ast.parse(test)), snapshot)
+                self.assertEqual(repr(ast.parse(test, optimize=False)), snapshot)
 
     def test_repr_large_input_crash(self):
         # gh-125010: Fix use-after-free in ast repr()
@@ -998,13 +998,6 @@ class AST_Tests(unittest.TestCase):
         self.assertIsInstance(tree.body[0].value, ast.TemplateStr)
         self.assertIsInstance(tree.body[0].value.values[0], ast.Constant)
         self.assertIsInstance(tree.body[0].value.values[1], ast.Interpolation)
-
-        # Test AST for implicit concat of t-string with f-string
-        tree = ast.parse('t"Hello {name}" f"{name}"')
-        self.assertIsInstance(tree.body[0].value, ast.TemplateStr)
-        self.assertIsInstance(tree.body[0].value.values[0], ast.Constant)
-        self.assertIsInstance(tree.body[0].value.values[1], ast.Interpolation)
-        self.assertIsInstance(tree.body[0].value.values[2], ast.FormattedValue)
 
 
 class CopyTests(unittest.TestCase):
@@ -1698,22 +1691,22 @@ Module(
         )
 
     def test_get_docstring(self):
-        node = ast.parse('"""line one\n  line two"""')
+        node = ast.parse('"""line one\n  line two"""', optimize=False)
         self.assertEqual(ast.get_docstring(node),
                          'line one\nline two')
 
-        node = ast.parse('class foo:\n  """line one\n  line two"""')
+        node = ast.parse('class foo:\n  """line one\n  line two"""', optimize=False)
         self.assertEqual(ast.get_docstring(node.body[0]),
                          'line one\nline two')
 
-        node = ast.parse('def foo():\n  """line one\n  line two"""')
+        node = ast.parse('def foo():\n  """line one\n  line two"""', optimize=False)
         self.assertEqual(ast.get_docstring(node.body[0]),
                          'line one\nline two')
 
-        node = ast.parse('async def foo():\n  """spam\n  ham"""')
+        node = ast.parse('async def foo():\n  """spam\n  ham"""', optimize=False)
         self.assertEqual(ast.get_docstring(node.body[0]), 'spam\nham')
 
-        node = ast.parse('async def foo():\n  """spam\n  ham"""')
+        node = ast.parse('async def foo():\n  """spam\n  ham"""', optimize=False)
         self.assertEqual(ast.get_docstring(node.body[0], clean=False), 'spam\n  ham')
 
         node = ast.parse('x')
@@ -1752,7 +1745,8 @@ Module(
             'def foo():\n  """line one\n  line two"""\n\n'
             '  def bar():\n    """line one\n    line two"""\n'
             '  """line one\n  line two"""\n'
-            '"""line one\nline two"""\n\n'
+            '"""line one\nline two"""\n\n',
+            optimize=False
         )
         self.assertEqual(node.body[0].col_offset, 0)
         self.assertEqual(node.body[0].lineno, 1)
@@ -2321,9 +2315,9 @@ class ASTValidatorTests(unittest.TestCase):
                 fn = os.path.join(STDLIB, module)
                 with open(fn, "r", encoding="utf-8") as fp:
                     source = fp.read()
-                mod = ast.parse(source, fn)
+                mod = ast.parse(source, fn, optimize=False)
                 compile(mod, fn, "exec")
-                mod2 = ast.parse(source, fn)
+                mod2 = ast.parse(source, fn, optimize=False)
                 self.assertTrue(ast.compare(mod, mod2))
 
     constant_1 = ast.Constant(1)
@@ -2537,7 +2531,7 @@ class ConstantTests(unittest.TestCase):
                          "to in Store context")
 
     def test_get_docstring(self):
-        tree = ast.parse("'docstring'\nx = 1")
+        tree = ast.parse("'docstring'\nx = 1", optimize=False)
         self.assertEqual(ast.get_docstring(tree), 'docstring')
 
     def get_load_const(self, tree):
@@ -3544,7 +3538,7 @@ class CommandLineTests(unittest.TestCase):
         self.check_output(source, expect, '--show-empty')
 
 
-class ASTOptimiziationTests(unittest.TestCase):
+class ASTOptimizationTests(unittest.TestCase):
     def wrap_expr(self, expr):
         return ast.Module(body=[ast.Expr(value=expr)])
 
