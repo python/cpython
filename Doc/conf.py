@@ -233,75 +233,6 @@ nitpick_ignore = [
 # Temporary undocumented names.
 # In future this list must be empty.
 nitpick_ignore += [
-    # C API: Standard Python exception classes
-    ('c:data', 'PyExc_ArithmeticError'),
-    ('c:data', 'PyExc_AssertionError'),
-    ('c:data', 'PyExc_AttributeError'),
-    ('c:data', 'PyExc_BaseException'),
-    ('c:data', 'PyExc_BaseExceptionGroup'),
-    ('c:data', 'PyExc_BlockingIOError'),
-    ('c:data', 'PyExc_BrokenPipeError'),
-    ('c:data', 'PyExc_BufferError'),
-    ('c:data', 'PyExc_ChildProcessError'),
-    ('c:data', 'PyExc_ConnectionAbortedError'),
-    ('c:data', 'PyExc_ConnectionError'),
-    ('c:data', 'PyExc_ConnectionRefusedError'),
-    ('c:data', 'PyExc_ConnectionResetError'),
-    ('c:data', 'PyExc_EOFError'),
-    ('c:data', 'PyExc_Exception'),
-    ('c:data', 'PyExc_FileExistsError'),
-    ('c:data', 'PyExc_FileNotFoundError'),
-    ('c:data', 'PyExc_FloatingPointError'),
-    ('c:data', 'PyExc_GeneratorExit'),
-    ('c:data', 'PyExc_ImportError'),
-    ('c:data', 'PyExc_IndentationError'),
-    ('c:data', 'PyExc_IndexError'),
-    ('c:data', 'PyExc_InterruptedError'),
-    ('c:data', 'PyExc_IsADirectoryError'),
-    ('c:data', 'PyExc_KeyboardInterrupt'),
-    ('c:data', 'PyExc_KeyError'),
-    ('c:data', 'PyExc_LookupError'),
-    ('c:data', 'PyExc_MemoryError'),
-    ('c:data', 'PyExc_ModuleNotFoundError'),
-    ('c:data', 'PyExc_NameError'),
-    ('c:data', 'PyExc_NotADirectoryError'),
-    ('c:data', 'PyExc_NotImplementedError'),
-    ('c:data', 'PyExc_OSError'),
-    ('c:data', 'PyExc_OverflowError'),
-    ('c:data', 'PyExc_PermissionError'),
-    ('c:data', 'PyExc_ProcessLookupError'),
-    ('c:data', 'PyExc_PythonFinalizationError'),
-    ('c:data', 'PyExc_RecursionError'),
-    ('c:data', 'PyExc_ReferenceError'),
-    ('c:data', 'PyExc_RuntimeError'),
-    ('c:data', 'PyExc_StopAsyncIteration'),
-    ('c:data', 'PyExc_StopIteration'),
-    ('c:data', 'PyExc_SyntaxError'),
-    ('c:data', 'PyExc_SystemError'),
-    ('c:data', 'PyExc_SystemExit'),
-    ('c:data', 'PyExc_TabError'),
-    ('c:data', 'PyExc_TimeoutError'),
-    ('c:data', 'PyExc_TypeError'),
-    ('c:data', 'PyExc_UnboundLocalError'),
-    ('c:data', 'PyExc_UnicodeDecodeError'),
-    ('c:data', 'PyExc_UnicodeEncodeError'),
-    ('c:data', 'PyExc_UnicodeError'),
-    ('c:data', 'PyExc_UnicodeTranslateError'),
-    ('c:data', 'PyExc_ValueError'),
-    ('c:data', 'PyExc_ZeroDivisionError'),
-    # C API: Standard Python warning classes
-    ('c:data', 'PyExc_BytesWarning'),
-    ('c:data', 'PyExc_DeprecationWarning'),
-    ('c:data', 'PyExc_EncodingWarning'),
-    ('c:data', 'PyExc_FutureWarning'),
-    ('c:data', 'PyExc_ImportWarning'),
-    ('c:data', 'PyExc_PendingDeprecationWarning'),
-    ('c:data', 'PyExc_ResourceWarning'),
-    ('c:data', 'PyExc_RuntimeWarning'),
-    ('c:data', 'PyExc_SyntaxWarning'),
-    ('c:data', 'PyExc_UnicodeWarning'),
-    ('c:data', 'PyExc_UserWarning'),
-    ('c:data', 'PyExc_Warning'),
     # Undocumented public C macros
     ('c:macro', 'Py_BUILD_ASSERT'),
     ('c:macro', 'Py_BUILD_ASSERT_EXPR'),
@@ -517,6 +448,7 @@ latex_appendices = ['glossary', 'about', 'license', 'copyright']
 
 epub_author = 'Python Documentation Authors'
 epub_publisher = 'Python Software Foundation'
+epub_exclude_files = ('index.xhtml', 'download.xhtml')
 
 # index pages are not valid xhtml
 # https://github.com/sphinx-doc/sphinx/issues/12359
@@ -635,13 +567,14 @@ ogp_social_cards = {  # Used when matplotlib is installed
     'image': '_static/og-image.png',
     'line_color': '#3776ab',
 }
-ogp_custom_meta_tags = [
-    '<meta name="theme-color" content="#3776ab">',
-]
-if 'create-social-cards' not in tags:  # noqa: F821
-    # Define a static preview image when not creating social cards
-    ogp_image = '_static/og-image.png'
-    ogp_custom_meta_tags += [
-        '<meta property="og:image:width" content="200">',
-        '<meta property="og:image:height" content="200">',
+if 'builder_html' in tags:  # noqa: F821
+    ogp_custom_meta_tags = [
+        '<meta name="theme-color" content="#3776ab">',
     ]
+    if 'create-social-cards' not in tags:  # noqa: F821
+        # Define a static preview image when not creating social cards
+        ogp_image = '_static/og-image.png'
+        ogp_custom_meta_tags += [
+            '<meta property="og:image:width" content="200">',
+            '<meta property="og:image:height" content="200">',
+        ]

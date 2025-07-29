@@ -211,6 +211,71 @@ bound into a function.
    .. versionadded:: 3.12
 
 
+.. _c_codeobject_flags:
+
+Code Object Flags
+-----------------
+
+Code objects contain a bit-field of flags, which can be retrieved as the
+:attr:`~codeobject.co_flags` Python attribute (for example using
+:c:func:`PyObject_GetAttrString`), and set using a *flags* argument to
+:c:func:`PyUnstable_Code_New` and similar functions.
+
+Flags whose names start with ``CO_FUTURE_`` correspond to features normally
+selectable by :ref:`future statements <future>`. These flags can be used in
+:c:member:`PyCompilerFlags.cf_flags`.
+Note that many ``CO_FUTURE_`` flags are mandatory in current versions of
+Python, and setting them has no effect.
+
+The following flags are available.
+For their meaning, see the linked documentation of their Python equivalents.
+
+
+.. list-table::
+   :widths: auto
+   :header-rows: 1
+
+   * * Flag
+     * Meaning
+   * * .. c:macro:: CO_OPTIMIZED
+     * :py:data:`inspect.CO_OPTIMIZED`
+   * * .. c:macro:: CO_NEWLOCALS
+     * :py:data:`inspect.CO_NEWLOCALS`
+   * * .. c:macro:: CO_VARARGS
+     * :py:data:`inspect.CO_VARARGS`
+   * * .. c:macro:: CO_VARKEYWORDS
+     * :py:data:`inspect.CO_VARKEYWORDS`
+   * * .. c:macro:: CO_NESTED
+     * :py:data:`inspect.CO_NESTED`
+   * * .. c:macro:: CO_GENERATOR
+     * :py:data:`inspect.CO_GENERATOR`
+   * * .. c:macro:: CO_COROUTINE
+     * :py:data:`inspect.CO_COROUTINE`
+   * * .. c:macro:: CO_ITERABLE_COROUTINE
+     * :py:data:`inspect.CO_ITERABLE_COROUTINE`
+   * * .. c:macro:: CO_ASYNC_GENERATOR
+     * :py:data:`inspect.CO_ASYNC_GENERATOR`
+   * * .. c:macro:: CO_HAS_DOCSTRING
+     * :py:data:`inspect.CO_HAS_DOCSTRING`
+   * * .. c:macro:: CO_METHOD
+     * :py:data:`inspect.CO_METHOD`
+
+   * * .. c:macro:: CO_FUTURE_DIVISION
+     * no effect (:py:data:`__future__.division`)
+   * * .. c:macro:: CO_FUTURE_ABSOLUTE_IMPORT
+     * no effect (:py:data:`__future__.absolute_import`)
+   * * .. c:macro:: CO_FUTURE_WITH_STATEMENT
+     * no effect (:py:data:`__future__.with_statement`)
+   * * .. c:macro:: CO_FUTURE_PRINT_FUNCTION
+     * no effect (:py:data:`__future__.print_function`)
+   * * .. c:macro:: CO_FUTURE_UNICODE_LITERALS
+     * no effect (:py:data:`__future__.unicode_literals`)
+   * * .. c:macro:: CO_FUTURE_GENERATOR_STOP
+     * no effect (:py:data:`__future__.generator_stop`)
+   * * .. c:macro:: CO_FUTURE_ANNOTATIONS
+     * :py:data:`__future__.annotations`
+
+
 Extra information
 -----------------
 

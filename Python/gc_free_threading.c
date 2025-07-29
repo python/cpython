@@ -1073,6 +1073,14 @@ validate_refcounts(const mi_heap_t *heap, const mi_heap_area_t *area,
         return true;
     }
 
+    // This assert mirrors the one in Python/gc.c:update_refs(). There must be
+    // no tracked objects with a reference count of 0 when the cyclic
+    // collector starts. If there is, then the collector will double dealloc
+    // the object. The likely cause for hitting this is a faulty .tp_dealloc.
+    // Also see the comment in `update_refs()`.
+    _PyObject_ASSERT_WITH_MSG(op, Py_REFCNT(op) > 0,
+                              "tracked objects must have a reference count > 0");
+
     _PyObject_ASSERT_WITH_MSG(op, !gc_is_unreachable(op),
                               "object should not be marked as unreachable yet");
 
@@ -1422,13 +1430,6 @@ static int
 deduce_unreachable_heap(PyInterpreterState *interp,
                         struct collection_state *state)
 {
-
-#ifdef GC_DEBUG
-    // Check that all objects are marked as unreachable and that the computed
-    // reference count difference (stored in `ob_tid`) is non-negative.
-    gc_visit_heaps(interp, &validate_refcounts, &state->base);
-#endif
-
     // Identify objects that are directly reachable from outside the GC heap
     // by computing the difference between the refcount and the number of
     // incoming references.
@@ -1492,9 +1493,9 @@ move_legacy_finalizer_reachable(struct collection_state *state)
 }
 
 // Clear all weakrefs to unreachable objects. Weakrefs with callbacks are
-// enqueued in `wrcb_to_call`, but not invoked yet.
+// optionally enqueued in `wrcb_to_call`, but not invoked yet.
 static void
-clear_weakrefs(struct collection_state *state)
+clear_weakrefs(struct collection_state *state, bool enqueue_callbacks)
 {
     PyObject *op;
     WORKSTACK_FOR_EACH(&state->unreachable, op) {
@@ -1525,6 +1526,10 @@ clear_weakrefs(struct collection_state *state)
             _PyObject_ASSERT((PyObject *)wr, wr->wr_object == op);
             _PyWeakref_ClearRef(wr);
             _PyObject_ASSERT((PyObject *)wr, wr->wr_object == Py_None);
+
+            if (!enqueue_callbacks) {
+                continue;
+            }
 
             // We do not invoke callbacks for weakrefs that are themselves
             // unreachable. This is partly for historical reasons: weakrefs
@@ -2154,6 +2159,13 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
         state->gcstate->old[i-1].count = 0;
     }
 
+#ifdef GC_DEBUG
+    // Before we start, check that the heap is in a good condition. There must
+    // be no objects with a zero reference count. And `ob_tid` must only have a
+    // thread if the refcount is unmerged.
+    gc_visit_heaps(interp, &validate_refcounts, &state->base);
+#endif
+
     _Py_FOR_EACH_TSTATE_BEGIN(interp, p) {
         _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)p;
 
@@ -2211,7 +2223,7 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
     interp->gc.long_lived_total = state->long_lived_total;
 
     // Clear weakrefs and enqueue callbacks (but do not call them).
-    clear_weakrefs(state);
+    clear_weakrefs(state, true);
     _PyEval_StartTheWorld(interp);
 
     // Deallocate any object from the refcount merge step
@@ -2222,11 +2234,19 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
     call_weakref_callbacks(state);
     finalize_garbage(state);
 
-    // Handle any objects that may have resurrected after the finalization.
     _PyEval_StopTheWorld(interp);
+    // Handle any objects that may have resurrected after the finalization.
     err = handle_resurrected_objects(state);
     // Clear free lists in all threads
     _PyGC_ClearAllFreeLists(interp);
+    if (err == 0) {
+        // Clear weakrefs to objects in the unreachable set.  No Python-level
+        // code must be allowed to access those unreachable objects.  During
+        // delete_garbage(), finalizers outside the unreachable set might
+        // run and create new weakrefs.  If those weakrefs were not cleared,
+        // they could reveal unreachable objects.
+        clear_weakrefs(state, false);
+    }
     _PyEval_StartTheWorld(interp);
 
     if (err < 0) {
