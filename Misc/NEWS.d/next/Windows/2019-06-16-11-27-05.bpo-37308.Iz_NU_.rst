@@ -1,2 +1,0 @@
-Fix mojibake in :class:`mmap.mmap` when using a non-ASCII *tagname* argument
-on Windows.

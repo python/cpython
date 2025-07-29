@@ -17,10 +17,10 @@ passing other environment variables and command arguments.
 .. section: Security
 
 Upgrade expat copy from 2.2.0 to 2.2.1 to get fixes of multiple security
-vulnerabilities including: CVE-2017-9233 (External entity infinite loop
-DoS), CVE-2016-9063 (Integer overflow, re-fix), CVE-2016-0718 (Fix
-regression bugs from 2.2.0's fix to CVE-2016-0718) and CVE-2012-0876
-(Counter hash flooding with SipHash). Note: the CVE-2016-5300 (Use
+vulnerabilities including: :cve:`2017-9233` (External entity infinite loop
+DoS), :cve:`2016-9063` (Integer overflow, re-fix), :cve:`2016-0718` (Fix
+regression bugs from 2.2.0's fix to :cve:`2016-0718`) and :cve:`2012-0876`
+(Counter hash flooding with SipHash). Note: the :cve:`2016-5300` (Use
 os-specific entropy sources like getrandom) doesn't impact Python, since Python
 already gets entropy from the OS to set the expat secret using
 ``XML_SetHashSalt()``.
@@ -46,8 +46,8 @@ authentication (``login@host``).
 .. original section: Library
 .. section: Security
 
-Update expat copy from 2.1.1 to 2.2.0 to get fixes of CVE-2016-0718 and
-CVE-2016-4472. See https://sourceforge.net/p/expat/bugs/537/ for more
+Update expat copy from 2.1.1 to 2.2.0 to get fixes of :cve:`2016-0718` and
+:cve:`2016-4472`. See https://sourceforge.net/p/expat/bugs/537/ for more
 information.
 
 ..

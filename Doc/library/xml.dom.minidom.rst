@@ -1,5 +1,5 @@
-:mod:`xml.dom.minidom` --- Minimal DOM implementation
-=====================================================
+:mod:`!xml.dom.minidom` --- Minimal DOM implementation
+======================================================
 
 .. module:: xml.dom.minidom
    :synopsis: Minimal Document Object Model (DOM) implementation.
@@ -19,11 +19,10 @@ not already proficient with the DOM should consider using the
 :mod:`xml.etree.ElementTree` module for their XML processing instead.
 
 
-.. warning::
+.. note::
 
-   The :mod:`xml.dom.minidom` module is not secure against
-   maliciously constructed data.  If you need to parse untrusted or
-   unauthenticated data see :ref:`xml-vulnerabilities`.
+   If you need to parse untrusted or unauthenticated data, see
+   :ref:`xml-security`.
 
 
 DOM applications typically start by parsing some XML into a DOM.  With

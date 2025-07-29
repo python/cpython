@@ -79,7 +79,7 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <PropertyGroup>
-    <TargetExt>.pyd</TargetExt>
+    <TargetExt>$(PyStdlibPydExt)</TargetExt>
   </PropertyGroup>
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
@@ -99,6 +99,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\Modules\_hashopenssl.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\Modules\_hashlib\hashlib_buffer.h" />
+    <ClInclude Include="..\Modules\_hashlib\hashlib_fetch.h" />
+    <ClInclude Include="..\Modules\_hashlib\hashlib_mutex.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\python_nt.rc" />

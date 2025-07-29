@@ -6,7 +6,7 @@ The CPython interpreter is defined in C, meaning that the semantics of the
 bytecode instructions, the dispatching mechanism, error handling, and
 tracing and instrumentation are all intermixed.
 
-This document proposes defining a custom C-like DSL for defining the 
+This document proposes defining a custom C-like DSL for defining the
 instruction semantics and tools for generating the code deriving from
 the instruction definitions.
 
@@ -46,7 +46,7 @@ passes from the semantic definition, reducing errors.
 
 As we improve the performance of CPython, we need to optimize larger regions
 of code, use more complex optimizations and, ultimately, translate to machine
-code. 
+code.
 
 All of these steps introduce the possibility of more bugs, and require more code
 to be written. One way to mitigate this is through the use of code generators.
@@ -62,7 +62,7 @@ blocks as the instructions for the tier 1 (PEP 659) interpreter.
 Rewriting all the instructions is tedious and error-prone, and changing the
 instructions is a maintenance headache as both versions need to be kept in sync.
 
-By using a code generator and using a common source for the instructions, or 
+By using a code generator and using a common source for the instructions, or
 parts of instructions, we can reduce the potential for errors considerably.
 
 
@@ -74,19 +74,19 @@ We update it as the need arises.
 ### Syntax
 
 Each op definition has a kind, a name, a stack and instruction stream effect,
-and a piece of C code describing its semantics::
- 
+and a piece of C code describing its semantics:
+
 ```
   file:
     (definition | family | pseudo)+
 
   definition:
-    "inst" "(" NAME ["," stack_effect] ")" "{" C-code "}"
+    "inst" "(" NAME "," stack_effect ")" "{" C-code "}"
     |
     "op" "(" NAME "," stack_effect ")" "{" C-code "}"
     |
     "macro" "(" NAME ")" "=" uop ("+" uop)* ";"
- 
+
   stack_effect:
     "(" [inputs] "--" [outputs] ")"
 
@@ -109,10 +109,7 @@ and a piece of C code describing its semantics::
     NAME [":" type] [ "if" "(" C-expression ")" ]
 
   type:
-    NAME ["*"] | type_prop
-
-  type_prop:
-    "&" "(" NAME ["+" NAME] ")"
+    NAME ["*"]
 
   stream:
     NAME "/" size
@@ -127,7 +124,13 @@ and a piece of C code describing its semantics::
     "family" "(" NAME ")" = "{" NAME ("," NAME)+ [","] "}" ";"
 
   pseudo:
-    "pseudo" "(" NAME ")" = "{" NAME ("," NAME)+ [","] "}" ";"
+    "pseudo" "(" NAME "," stack_effect ["," "(" flags ")"]")" = "{" NAME ("," NAME)+ [","] "}" ";"
+
+  flags:
+    flag ("|" flag)*
+
+  flag:
+    HAS_ARG | HAS_DEOPT | etc..
 ```
 
 The following definitions may occur:
@@ -142,26 +145,7 @@ The following definitions may occur:
 The optional `type` in an `object` is the C type. It defaults to `PyObject *`.
 The objects before the "--" are the objects on top of the stack at the start of
 the instruction. Those after the "--" are the objects on top of the stack at the
-end of the instruction. When prefixed by a `&`, the `type` production rule follows the
-`type_prop` production rule. This indicates the type of the value is of that specific type
-after the operation. In this case, the type may also contain 64-bit refinement information
-that is fetched from a previously defined operand in the instruction header, such as
-a type version tag. This follows the format `type + refinement`. The list of possible types
-and their refinements are below. They obey the following predicates:
-
-
-* `PYLONG_TYPE`: `Py_TYPE(val) == &PyLong_Type`
-* `PYFLOAT_TYPE`: `Py_TYPE(val) == &PyFloat_Type`
-* `PYUNICODE_TYPE`: `Py_TYPE(val) == &PYUNICODE_TYPE`
-* `NULL_TYPE`: `val == NULL`
-* `GUARD_TYPE_VERSION_TYPE`: `type->tp_version_tag == auxillary`
-* `GUARD_DORV_VALUES_TYPE`: `_PyDictOrValues_IsValues(obj)`
-* `GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_TYPE`:
-  `_PyDictOrValues_IsValues(obj) || _PyObject_MakeInstanceAttributesFromDict(obj, dorv)`
-* `GUARD_KEYS_VERSION_TYPE`: `owner_heap_type->ht_cached_keys->dk_version == auxillary`
-* `PYMETHOD_TYPE`: `Py_TYPE(val) == &PyMethod_Type`
-* `PYFUNCTION_TYPE_VERSION_TYPE`:
-  `PyFunction_Check(callable) && func->func_version == auxillary && code->co_argcount == oparg + (self_or_null != NULL)`
+end of the instruction.
 
 
 An `inst` without `stack_effect` is a transitional form to allow the original C code
@@ -190,17 +174,21 @@ list of annotations and their meanings are as follows:
 * `override`. For external use by other interpreter definitions to override the current
    instruction definition.
 * `pure`. This instruction has no side effects.
+* 'tierN'. This instruction is only used by the tier N interpreter.
 
 ### Special functions/macros
 
-The C code may include special functions that are understood by the tools as
+The C code may include special functions and macros that are understood by the tools as
 part of the DSL.
 
-Those functions include:
+Those include:
 
 * `DEOPT_IF(cond, instruction)`. Deoptimize if `cond` is met.
-* `ERROR_IF(cond, label)`. Jump to error handler at `label` if `cond` is true.
+* `ERROR_IF(cond)`. Jump to error handler if `cond` is true.
 * `DECREF_INPUTS()`. Generate `Py_DECREF()` calls for the input stack effects.
+* `SYNC_SP()`. Synchronizes the physical stack pointer with the stack effects.
+* `INSTRUCTION_SIZE`. Replaced with the size of the instruction which is equal
+to `1 + INLINE_CACHE_ENTRIES`.
 
 Note that the use of `DECREF_INPUTS()` is optional -- manual calls
 to `Py_DECREF()` or other approaches are also acceptable
@@ -221,7 +209,7 @@ These requirements result in the following constraints on the use of
 2. Before the first `ERROR_IF`, all input values must be `DECREF`ed,
    and no objects may be allocated or `INCREF`ed, with the exception
    of attempting to create an object and checking for success using
-   `ERROR_IF(result == NULL, label)`. (TODO: Unclear what to do with
+   `ERROR_IF(result == NULL)`. (TODO: Unclear what to do with
    intermediate results.)
 3. No `DEOPT_IF` may follow an `ERROR_IF` in the same block.
 
@@ -233,14 +221,14 @@ two idioms are valid:
 
 - Use `goto error`.
 - Use a block containing the appropriate `DECREF` calls ending in
-  `ERROR_IF(true, error)`.
+  `ERROR_IF(true)`.
 
 An example of the latter would be:
 ```cc
     res = PyObject_Add(left, right);
     if (res == NULL) {
         DECREF_INPUTS();
-        ERROR_IF(true, error);
+        ERROR_IF(true);
     }
 ```
 
@@ -259,7 +247,8 @@ The same is true for all members of a pseudo instruction
 
 ## Examples
 
-(Another source of examples can be found in the [tests](test_generator.py).)
+(Another source of examples can be found in the
+[tests](https://github.com/python/cpython/blob/main/Lib/test/test_generated_cases.py).)
 
 Some examples:
 
@@ -320,7 +309,7 @@ This might become (if it was an instruction):
 
 ### More examples
 
-For explanations see "Generating the interpreter" below.)
+For explanations see "Generating the interpreter" below.
 ```C
     op ( CHECK_HAS_INSTANCE_VALUES, (owner -- owner) ) {
         PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
@@ -357,7 +346,7 @@ For explanations see "Generating the interpreter" below.)
 ```C
     inst ( BUILD_TUPLE, (items[oparg] -- tuple) ) {
         tuple = _PyTuple_FromArraySteal(items, oparg);
-        ERROR_IF(tuple == NULL, error);
+        ERROR_IF(tuple == NULL);
     }
 ```
 ```C
@@ -382,7 +371,7 @@ For explanations see "Generating the interpreter" below.)
 
 A _family_ maps a specializable instruction to its specializations.
 
-Example: These opcodes all share the same instruction format):
+Example: These opcodes all share the same instruction format:
 ```C
     family(load_attr) = { LOAD_ATTR, LOAD_ATTR_INSTANCE_VALUE, LOAD_SLOT };
 ```
@@ -404,7 +393,7 @@ which can be easily inserted. What is more complex is ensuring the correct stack
 and not generating excess pops and pushes.
 
 For example, in `CHECK_HAS_INSTANCE_VALUES`, `owner` occurs in the input, so it cannot be
-redefined. Thus it doesn't need to written and can be read without adjusting the stack pointer.
+redefined. Thus, it doesn't need to be written and can be read without adjusting the stack pointer.
 The C code generated for `CHECK_HAS_INSTANCE_VALUES` would look something like:
 
 ```C
@@ -415,7 +404,7 @@ The C code generated for `CHECK_HAS_INSTANCE_VALUES` would look something like:
     }
 ```
 
-When combining ops together to form instructions, temporary values should be used,
+When combining ops to form instructions, temporary values should be used,
 rather than popping and pushing, such that `LOAD_ATTR_SLOT` would look something like:
 
 ```C
@@ -445,7 +434,7 @@ rather than popping and pushing, such that `LOAD_ATTR_SLOT` would look something
                 stack_pointer += 1;
             }
             s1 = res;
-        }   
+        }
         next_instr += (1 + 1 + 2 + 1 + 4);
         stack_pointer[-1] = s1;
         DISPATCH();

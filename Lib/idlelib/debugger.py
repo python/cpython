@@ -1,6 +1,6 @@
 """Debug user code with a GUI interface to a subclass of bdb.Bdb.
 
-The Idb idb and Debugger gui instances each need a reference to each
+The Idb instance 'idb' and Debugger instance 'gui' need references to each
 other or to an rpc proxy for each other.
 
 If IDLE is started with '-n', so that user code and idb both run in the
@@ -508,11 +508,11 @@ class StackViewer(ScrolledList):
 class NamespaceViewer:
     "Global/local namespace viewer for debugger GUI."
 
-    def __init__(self, master, title, dict=None):
+    def __init__(self, master, title, odict=None):  # XXX odict never passed.
         width = 0
         height = 40
-        if dict:
-            height = 20*len(dict) # XXX 20 == observed height of Entry widget
+        if odict:
+            height = 20*len(odict) # XXX 20 == observed height of Entry widget
         self.master = master
         self.title = title
         import reprlib
@@ -533,24 +533,24 @@ class NamespaceViewer:
         canvas["yscrollcommand"] = vbar.set
         self.subframe = subframe = Frame(canvas)
         self.sfid = canvas.create_window(0, 0, window=subframe, anchor="nw")
-        self.load_dict(dict)
+        self.load_dict(odict)
 
-    dict = -1
+    prev_odict = -1  # Needed for initial comparison below.
 
-    def load_dict(self, dict, force=0, rpc_client=None):
-        if dict is self.dict and not force:
+    def load_dict(self, odict, force=0, rpc_client=None):
+        if odict is self.prev_odict and not force:
             return
         subframe = self.subframe
         frame = self.frame
         for c in list(subframe.children.values()):
             c.destroy()
-        self.dict = None
-        if not dict:
+        self.prev_odict = None
+        if not odict:
             l = Label(subframe, text="None")
             l.grid(row=0, column=0)
         else:
             #names = sorted(dict)
-            ###
+            #
             # Because of (temporary) limitations on the dict_keys type (not yet
             # public or pickleable), have the subprocess to send a list of
             # keys, not a dict_keys object.  sorted() will take a dict_keys
@@ -560,12 +560,12 @@ class NamespaceViewer:
             # interpreter gets into a loop requesting non-existing dict[0],
             # dict[1], dict[2], etc from the debugger_r.DictProxy.
             # TODO recheck above; see debugger_r 159ff, debugobj 60.
-            keys_list = dict.keys()
+            keys_list = odict.keys()
             names = sorted(keys_list)
-            ###
+
             row = 0
             for name in names:
-                value = dict[name]
+                value = odict[name]
                 svalue = self.repr.repr(value) # repr(value)
                 # Strip extra quotes caused by calling repr on the (already)
                 # repr'd value sent across the RPC interface:
@@ -577,7 +577,7 @@ class NamespaceViewer:
                 l.insert(0, svalue)
                 l.grid(row=row, column=1, sticky="nw")
                 row = row+1
-        self.dict = dict
+        self.prev_odict = odict
         # XXX Could we use a <Configure> callback for the following?
         subframe.update_idletasks() # Alas!
         width = subframe.winfo_reqwidth()

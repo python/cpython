@@ -1,5 +1,5 @@
-:mod:`zipfile` --- Work with ZIP archives
-=========================================
+:mod:`!zipfile` --- Work with ZIP archives
+==========================================
 
 .. module:: zipfile
    :synopsis: Read and write ZIP-format archive files.
@@ -79,10 +79,21 @@ The module defines the following items:
    of the last modification to the file; the fields are described in section
    :ref:`zipinfo-objects`.
 
-   .. versionadded:: 3.13
-      A public ``.compress_level`` attribute has been added to expose the
-      formerly protected ``._compresslevel``.  The older protected name
+   .. versionchanged:: 3.13
+      A public :attr:`!compress_level` attribute has been added to expose the
+      formerly protected :attr:`!_compresslevel`.  The older protected name
       continues to work as a property for backwards compatibility.
+
+
+   .. method:: _for_archive(archive)
+
+      Resolve the date_time, compression attributes, and external attributes
+      to suitable defaults as used by :meth:`ZipFile.writestr`.
+
+      Returns self for chaining.
+
+      .. versionadded:: 3.14
+
 
 .. function:: is_zipfile(filename)
 
@@ -118,14 +129,28 @@ The module defines the following items:
 
    .. versionadded:: 3.3
 
+.. data:: ZIP_ZSTANDARD
+
+   The numeric constant for Zstandard compression. This requires the
+   :mod:`compression.zstd` module.
+
    .. note::
 
-      The ZIP file format specification has included support for bzip2 compression
-      since 2001, and for LZMA compression since 2006. However, some tools
-      (including older Python releases) do not support these compression
-      methods, and may either refuse to process the ZIP file altogether,
-      or fail to extract individual files.
+      In APPNOTE 6.3.7, the method ID ``20`` was assigned to Zstandard
+      compression. This was changed in APPNOTE 6.3.8 to method ID ``93`` to
+      avoid conflicts, with method ID ``20`` being deprecated. For
+      compatibility, the :mod:`!zipfile` module reads both method IDs but will
+      only write data with method ID ``93``.
 
+   .. versionadded:: 3.14
+
+.. note::
+
+   The ZIP file format specification has included support for bzip2 compression
+   since 2001, for LZMA compression since 2006, and Zstandard compression since
+   2020. However, some tools (including older Python releases) do not support
+   these compression methods, and may either refuse to process the ZIP file
+   altogether, or fail to extract individual files.
 
 .. seealso::
 
@@ -165,10 +190,11 @@ ZipFile Objects
 
    *compression* is the ZIP compression method to use when writing the archive,
    and should be :const:`ZIP_STORED`, :const:`ZIP_DEFLATED`,
-   :const:`ZIP_BZIP2` or :const:`ZIP_LZMA`; unrecognized
-   values will cause :exc:`NotImplementedError` to be raised.  If
-   :const:`ZIP_DEFLATED`, :const:`ZIP_BZIP2` or :const:`ZIP_LZMA` is specified
-   but the corresponding module (:mod:`zlib`, :mod:`bz2` or :mod:`lzma`) is not
+   :const:`ZIP_BZIP2`, :const:`ZIP_LZMA`, or :const:`ZIP_ZSTANDARD`;
+   unrecognized values will cause :exc:`NotImplementedError` to be raised.  If
+   :const:`ZIP_DEFLATED`, :const:`ZIP_BZIP2`, :const:`ZIP_LZMA`, or
+   :const:`ZIP_ZSTANDARD` is specified but the corresponding module
+   (:mod:`zlib`, :mod:`bz2`, :mod:`lzma`, or :mod:`compression.zstd`) is not
    available, :exc:`RuntimeError` is raised. The default is :const:`ZIP_STORED`.
 
    If *allowZip64* is ``True`` (the default) zipfile will create ZIP files that
@@ -183,6 +209,10 @@ ZipFile Objects
    (see :class:`zlib <zlib.compressobj>` for more information).
    When using :const:`ZIP_BZIP2` integers ``1`` through ``9`` are accepted
    (see :class:`bz2 <bz2.BZ2File>` for more information).
+   When using :const:`ZIP_ZSTANDARD` integers ``-131072`` through ``22`` are
+   commonly accepted (see
+   :attr:`CompressionParameter.compression_level <compression.zstd.CompressionParameter.compression_level>`
+   for more on retrieving valid values and their meaning).
 
    The *strict_timestamps* argument, when set to ``False``, allows to
    zip files older than 1980-01-01 at the cost of setting the
@@ -218,7 +248,7 @@ ZipFile Objects
       That flag takes precedence over *metadata_encoding*, which is
       a Python-specific extension.
 
-   .. versionadded:: 3.2
+   .. versionchanged:: 3.2
       Added the ability to use :class:`ZipFile` as a context manager.
 
    .. versionchanged:: 3.3
@@ -241,8 +271,8 @@ ZipFile Objects
    .. versionchanged:: 3.7
       Add the *compresslevel* parameter.
 
-   .. versionadded:: 3.8
-      The *strict_timestamps* keyword-only argument
+   .. versionchanged:: 3.8
+      The *strict_timestamps* keyword-only parameter.
 
    .. versionchanged:: 3.11
       Added support for specifying member name encoding for reading
@@ -301,6 +331,10 @@ ZipFile Objects
    attempting to read or write other files in the ZIP file will raise a
    :exc:`ValueError`.
 
+   In both cases the file-like object has also attributes :attr:`!name`,
+   which is equivalent to the name of a file within the archive, and
+   :attr:`!mode`, which is ``'rb'`` or ``'wb'`` depending on the input mode.
+
    When writing a file, if the file size is not known in advance but may exceed
    2 GiB, pass ``force_zip64=True`` to ensure that the header format is
    capable of supporting large files.  If the file size is known in advance,
@@ -324,6 +358,12 @@ ZipFile Objects
    .. versionchanged:: 3.6
       Calling :meth:`.open` on a closed ZipFile will raise a :exc:`ValueError`.
       Previously, a :exc:`RuntimeError` was raised.
+
+   .. versionchanged:: 3.13
+      Added attributes :attr:`!name` and :attr:`!mode` for the writeable
+      file-like object.
+      The value of the :attr:`!mode` attribute for the readable file-like
+      object was changed from ``'r'`` to ``'rb'``.
 
 
 .. method:: ZipFile.extract(member, path=None, pwd=None)
@@ -394,9 +434,10 @@ ZipFile Objects
    read or append. *pwd* is the password used for encrypted files as a :class:`bytes`
    object and, if specified, overrides the default password set with :meth:`setpassword`.
    Calling :meth:`read` on a ZipFile that uses a compression method other than
-   :const:`ZIP_STORED`, :const:`ZIP_DEFLATED`, :const:`ZIP_BZIP2` or
-   :const:`ZIP_LZMA` will raise a :exc:`NotImplementedError`. An error will also
-   be raised if the corresponding compression module is not available.
+   :const:`ZIP_STORED`, :const:`ZIP_DEFLATED`, :const:`ZIP_BZIP2`,
+   :const:`ZIP_LZMA`, or :const:`ZIP_ZSTANDARD` will raise a
+   :exc:`NotImplementedError`. An error will also be raised if the
+   corresponding compression module is not available.
 
    .. versionchanged:: 3.6
       Calling :meth:`read` on a closed ZipFile will raise a :exc:`ValueError`.
@@ -533,6 +574,14 @@ Path Objects
    e.g. 'dir/file.txt', 'dir/', or ''. Defaults to the empty string,
    indicating the root.
 
+   .. note::
+      The :class:`Path` class does not sanitize filenames within the ZIP archive. Unlike
+      the :meth:`ZipFile.extract` and :meth:`ZipFile.extractall` methods, it is the
+      caller's responsibility to validate or sanitize filenames to prevent path traversal
+      vulnerabilities (e.g., filenames containing ".." or absolute paths). When handling
+      untrusted archives, consider resolving filenames using :func:`os.path.abspath`
+      and checking against the target directory with :func:`os.path.commonpath`.
+
 Path objects expose the following features of :mod:`pathlib.Path`
 objects:
 
@@ -574,6 +623,15 @@ Path objects are traversable using the ``/`` operator or ``joinpath``.
 .. method:: Path.is_file()
 
    Return ``True`` if the current context references a file.
+
+.. method:: Path.is_symlink()
+
+   Return ``True`` if the current context references a symbolic link.
+
+   .. versionadded:: 3.12
+
+   .. versionchanged:: 3.13
+      Previously, ``is_symlink`` would unconditionally return ``False``.
 
 .. method:: Path.exists()
 
@@ -632,7 +690,7 @@ Path objects are traversable using the ``/`` operator or ``joinpath``.
       Prior to 3.10, ``joinpath`` was undocumented and accepted
       exactly one parameter.
 
-The `zipp <https://pypi.org/project/zipp>`_ project provides backports
+The :pypi:`zipp` project provides backports
 of the latest path object functionality to older Pythons. Use
 ``zipp.Path`` in place of ``zipfile.Path`` for early access to
 changes.
@@ -648,8 +706,8 @@ The :class:`PyZipFile` constructor takes the same parameters as the
 .. class:: PyZipFile(file, mode='r', compression=ZIP_STORED, allowZip64=True, \
                      optimize=-1)
 
-   .. versionadded:: 3.2
-      The *optimize* parameter.
+   .. versionchanged:: 3.2
+      Added the *optimize* parameter.
 
    .. versionchanged:: 3.4
       ZIP64 extensions are enabled by default.
@@ -704,8 +762,8 @@ The :class:`PyZipFile` constructor takes the same parameters as the
          test/bogus/__init__.pyc      # Subpackage directory
          test/bogus/myfile.pyc        # Submodule test.bogus.myfile
 
-      .. versionadded:: 3.4
-         The *filterfunc* parameter.
+      .. versionchanged:: 3.4
+         Added the *filterfunc* parameter.
 
       .. versionchanged:: 3.6.2
          The *pathname* parameter accepts a :term:`path-like object`.
@@ -749,8 +807,8 @@ file:
    .. versionchanged:: 3.6.2
       The *filename* parameter accepts a :term:`path-like object`.
 
-   .. versionadded:: 3.8
-      The *strict_timestamps* keyword-only argument
+   .. versionchanged:: 3.8
+      Added the *strict_timestamps* keyword-only parameter.
 
 
 Instances have the following methods and attributes:

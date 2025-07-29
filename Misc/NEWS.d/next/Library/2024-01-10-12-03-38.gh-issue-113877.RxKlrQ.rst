@@ -1,1 +1,0 @@
-Fix :mod:`tkinter` method ``winfo_pathname()`` on 64-bit Windows.
