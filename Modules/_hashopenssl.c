@@ -2488,13 +2488,7 @@ hashlib_make_type(PyTypeObject **out,
 {
     assert(out != NULL);
     *out = (PyTypeObject *)PyType_FromModuleAndSpec(module, specs, bases);
-    if (*out == NULL) {
-        return -1;
-    }
-    if (PyModule_AddType(module, *out) < 0) {
-        return -1;
-    }
-    return 0;
+    return *out == NULL ? -1 : PyModule_AddType(module, *out);
 }
 
 // --- Py_mod_exec functions --------------------------------------------------
