@@ -220,7 +220,7 @@ _imp_find_frozen(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    static _Thread_local PyObject *argsbuf[2];
+    static _Py_thread_local PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *name;
     int withdata = 0;
@@ -595,7 +595,7 @@ _imp_source_hash(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    static _Thread_local PyObject *argsbuf[2];
+    static _Py_thread_local PyObject *argsbuf[2];
     long key;
     Py_buffer source = {NULL, NULL};
 
@@ -629,4 +629,4 @@ exit:
 #ifndef _IMP_EXEC_DYNAMIC_METHODDEF
     #define _IMP_EXEC_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_EXEC_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=89798355c6481d1f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1cf0cb2b6beee406 input=a9049054013a1b77]*/

@@ -46,7 +46,7 @@ PyCField_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    static _Thread_local PyObject *argsbuf[8];
+    static _Py_thread_local PyObject *argsbuf[8];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 6;
@@ -126,4 +126,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=996bd48168b18b72 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=105242d71e2ed436 input=a9049054013a1b77]*/

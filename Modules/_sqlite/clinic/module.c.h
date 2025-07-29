@@ -51,7 +51,7 @@ pysqlite_complete_statement(PyObject *module, PyObject *const *args, Py_ssize_t 
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    static _Thread_local PyObject *argsbuf[1];
+    static _Py_thread_local PyObject *argsbuf[1];
     const char *statement;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -211,4 +211,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=6195e71b5c32f483 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e4343860250462ae input=a9049054013a1b77]*/

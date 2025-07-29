@@ -50,7 +50,7 @@ tb_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    static _Thread_local PyObject *argsbuf[4];
+    static _Py_thread_local PyObject *argsbuf[4];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     PyObject *tb_next;
@@ -132,4 +132,4 @@ traceback_tb_next_set(PyObject *self, PyObject *value, void *Py_UNUSED(context))
 
     return return_value;
 }
-/*[clinic end generated code: output=3df417ce1927da18 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fd25b24dcac3fb1a input=a9049054013a1b77]*/

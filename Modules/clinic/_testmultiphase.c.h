@@ -106,7 +106,7 @@ _testmultiphase_StateAccessType_increment_count_clinic(PyObject *self, PyTypeObj
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    static _Thread_local PyObject *argsbuf[2];
+    static _Py_thread_local PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int n = 1;
     int twice = 0;
@@ -165,4 +165,4 @@ _testmultiphase_StateAccessType_get_count(PyObject *self, PyTypeObject *cls, PyO
     }
     return _testmultiphase_StateAccessType_get_count_impl((StateAccessTypeObject *)self, cls);
 }
-/*[clinic end generated code: output=017e3b7af3fc8090 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a1fa210c6442c428 input=a9049054013a1b77]*/

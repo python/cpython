@@ -480,7 +480,7 @@ _overlapped_Overlapped(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    static _Thread_local PyObject *argsbuf[1];
+    static _Py_thread_local PyObject *argsbuf[1];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
@@ -1242,4 +1242,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=d971b06a1cb4b375 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=71a98fc6f5ec1c7f input=a9049054013a1b77]*/

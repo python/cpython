@@ -214,7 +214,7 @@ pysqlite_cursor_fetchmany(PyObject *self, PyObject *const *args, Py_ssize_t narg
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    static _Thread_local PyObject *argsbuf[1];
+    static _Py_thread_local PyObject *argsbuf[1];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int maxrows = ((pysqlite_Cursor *)self)->arraysize;
 
@@ -329,4 +329,4 @@ pysqlite_cursor_close(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return pysqlite_cursor_close_impl((pysqlite_Cursor *)self);
 }
-/*[clinic end generated code: output=747207d6f35e7fb0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=547e802c2fe9cad3 input=a9049054013a1b77]*/
