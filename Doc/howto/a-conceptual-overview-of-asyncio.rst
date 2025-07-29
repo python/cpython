@@ -32,9 +32,9 @@ In part 1, we'll cover the main, high-level building blocks of asyncio: the
 event-loop, coroutine functions, coroutine objects, tasks & ``await``.
 
 
-==========================
+==========
 Event Loop
-==========================
+==========
 
 Everything in asyncio happens relative to the event-loop.
 It's the star of the show and there's only one.
@@ -66,9 +66,9 @@ the overall event-loop approach rather useless.
     event_loop = asyncio.new_event_loop()
     event_loop.run_forever()
 
-====================================
+===================================
 Asynchronous Functions & Coroutines
-====================================
+===================================
 
 This is a regular 'ol Python function::
 
@@ -113,9 +113,9 @@ Notably, the coroutine can be paused & resumed at various points within the
 function's body.
 That pausing & resuming ability is what allows for asynchronous behavior!
 
-===========
+=====
 Tasks
-===========
+=====
 
 Roughly speaking, tasks are coroutines (not coroutine functions) tied to an
 event-loop.
@@ -137,9 +137,9 @@ argument optional and will add it for you if it's left unspecified::
     # loop argument was left unspecified.
     another_special_task = asyncio.Task(coro=special_fella(magic_number=12))
 
-===========
+=====
 await
-===========
+=====
 
 ``await`` is a Python keyword that's commonly used in one of two different ways::
 
@@ -220,9 +220,9 @@ This is where the magic happens.
 You'll come away from this section knowing what await does behind the scenes
 and how to make your own asynchronous operators.
 
-===============================================
+==============================================
 coroutine.send(), await, yield & StopIteration
-===============================================
+==============================================
 
 asyncio leverages those 4 components to pass around control.
 
@@ -302,9 +302,9 @@ That might sound odd to you. Frankly, it was to me too. You might be thinking:
     coroutines for the sake of simplicity.
     Ideologically, ``yield from`` and ``await`` are quite similar.
 
-===========
+=======
 Futures
-===========
+=======
 
 A future is an object meant to represent a computation or process's status and
 result.
@@ -329,9 +329,9 @@ Futures are much more versatile and will be marked as done when you say so.
 In this way, they're the flexible interface for you to make your own conditions
 for waiting and resuming.
 
-==========================
+=========================
 await-ing Tasks & futures
-==========================
+=========================
 
 ``Future`` defines an important method: ``__await__``. Below is the actual
 implementation (well, one line was removed for simplicity's sake) found
