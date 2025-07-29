@@ -1740,8 +1740,10 @@ class TestMain(ReplTestCase):
             self.assertIn("2", history)
             self.assertIn("exit()", history)
             self.assertIn("spam", history)
-            self.assertIn("0xcafe", history)
             self.assertIn("import time", history)
+            # History is written after each command's output is printed to the
+            # console, so depending on how quickly the process is killed,
+            # the last command may or may not be written to the history file.
             self.assertNotIn("sleep", history)
             self.assertNotIn("quit", history)
 
