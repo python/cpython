@@ -8,6 +8,7 @@ import datetime
 import io
 import locale
 import os
+import platform
 import sys
 import time
 
@@ -557,7 +558,29 @@ class CalendarTestCase(unittest.TestCase):
             # verify it "acts like a sequence" in two forms of iteration
             self.assertEqual(value[::-1], list(reversed(value)))
 
-    def test_standalone_month_name_and_abbr(self):
+    @support.run_with_locale('LC_ALL', 'pl_PL')
+    @unittest.skipUnless(sys.platform == 'darwin' or platform.libc_ver()[0] == 'glibc',
+                         "Guaranteed to work with glibc and macOS")
+    def test_standalone_month_name_and_abbr_pl_locale(self):
+        expected_standalone_month_names = [
+            "", "styczeń", "luty", "marzec", "kwiecień", "maj", "czerwiec",
+            "lipiec", "sierpień", "wrzesień", "październik", "listopad",
+            "grudzień"
+        ]
+        expected_standalone_month_abbr = [
+            "", "sty", "lut", "mar", "kwi", "maj", "cze",
+            "lip", "sie", "wrz", "paź", "lis", "gru"
+        ]
+        self.assertEqual(
+            list(calendar.standalone_month_name),
+            expected_standalone_month_names
+        )
+        self.assertEqual(
+            list(calendar.standalone_month_abbr),
+            expected_standalone_month_abbr
+        )
+
+    def test_standalone_month_name_and_abbr_C_locale(self):
         # Ensure that the standalone month names and abbreviations are
         # equal to the regular month names and abbreviations for
         # the "C" locale.
