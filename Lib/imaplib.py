@@ -21,7 +21,7 @@ Public functions:       Internaldate2tuple
 # GET/SETANNOTATION contributed by Tomas Lindroos <skitta@abo.fi> June 2005.
 # IDLE contributed by Forest <forestix@nom.one> August 2024.
 
-__version__ = "2.59"
+__version__ = "2.60"
 
 import binascii, errno, random, re, socket, subprocess, sys, time, calendar
 from datetime import datetime, timezone, timedelta
