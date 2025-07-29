@@ -530,9 +530,8 @@ The :mod:`calendar` module exports the following data attributes:
 .. data:: standalone_month_name
 
    A sequence that represents the months of the year in the current locale
-   in the grammatical form used when a month name stands by itself if
-   the locale provides one. If the locale does not supply a standalone form,
-   it is equal to :data:`month_name`.
+   in the standalone form if the locale provides one. Else it is equivalent
+   to :data:`month_name`.
 
    .. versionadded:: next
 
@@ -540,9 +539,8 @@ The :mod:`calendar` module exports the following data attributes:
 .. data:: standalone_month_abbr
 
    A sequence that represents the abbreviated months of the year in the current
-   locale in the grammatical form used when a month name stands by itself if
-   the locale provides one. If the locale does not supply a standalone form
-   it is equal to :data:`month_abbr`.
+   locale in the standalone form if the locale provides one. Else it is
+   equivalent to :data:`month_abbr`.
 
    .. versionadded:: next
 
