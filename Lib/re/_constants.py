@@ -15,7 +15,7 @@
 
 MAGIC = 20230612
 
-from _sre import MAXREPEAT, MAXGROUPS
+from _sre import MAXREPEAT, MAXGROUPS  # noqa: F401
 
 # SRE standard exception (access as sre.error)
 # should this really be here?
@@ -205,6 +205,8 @@ CH_UNICODE = {
     CATEGORY_LINEBREAK: CATEGORY_UNI_LINEBREAK,
     CATEGORY_NOT_LINEBREAK: CATEGORY_UNI_NOT_LINEBREAK
 }
+
+CH_NEGATE = dict(zip(CHCODES[::2] + CHCODES[1::2], CHCODES[1::2] + CHCODES[::2]))
 
 # flags
 SRE_FLAG_IGNORECASE = 2 # case insensitive

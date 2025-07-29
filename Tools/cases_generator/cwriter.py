@@ -1,6 +1,7 @@
+import contextlib
 from lexer import Token
-from typing import TextIO
-
+from typing import TextIO, Iterator
+from io import StringIO
 
 class CWriter:
     "A writer that understands tokens and how to format C code"
@@ -14,11 +15,18 @@ class CWriter:
         self.line_directives = line_directives
         self.last_token = None
         self.newline = True
+        self.pending_spill = False
+        self.pending_reload = False
+
+    @staticmethod
+    def null() -> "CWriter":
+        return CWriter(StringIO(), 0, False)
 
     def set_position(self, tkn: Token) -> None:
         if self.last_token is not None:
-            if self.last_token.line < tkn.line:
+            if self.last_token.end_line < tkn.line:
                 self.out.write("\n")
+            if self.last_token.line < tkn.line:
                 if self.line_directives:
                     self.out.write(f'#line {tkn.line} "{tkn.filename}"\n')
                 self.out.write(" " * self.indents[-1])
@@ -31,6 +39,7 @@ class CWriter:
         self.newline = False
 
     def emit_at(self, txt: str, where: Token) -> None:
+        self.maybe_write_spill()
         self.set_position(where)
         self.out.write(txt)
 
@@ -38,23 +47,30 @@ class CWriter:
         parens = txt.count("(") - txt.count(")")
         if parens < 0:
             self.indents.pop()
-        elif "}" in txt or is_label(txt):
+        braces = txt.count("{") - txt.count("}")
+        if braces < 0 or is_label(txt):
             self.indents.pop()
 
     def maybe_indent(self, txt: str) -> None:
         parens = txt.count("(") - txt.count(")")
-        if parens > 0 and self.last_token:
-            offset = self.last_token.end_column - 1
-            if offset <= self.indents[-1] or offset > 40:
+        if parens > 0:
+            if self.last_token:
+                offset = self.last_token.end_column - 1
+                if offset <= self.indents[-1] or offset > 40:
+                    offset = self.indents[-1] + 4
+            else:
                 offset = self.indents[-1] + 4
             self.indents.append(offset)
         if is_label(txt):
             self.indents.append(self.indents[-1] + 4)
-        elif "{" in txt:
-            if 'extern "C"' in txt:
-                self.indents.append(self.indents[-1])
-            else:
-                self.indents.append(self.indents[-1] + 4)
+        else:
+            braces = txt.count("{") - txt.count("}")
+            if braces > 0:
+                assert braces == 1
+                if 'extern "C"' in txt:
+                    self.indents.append(self.indents[-1])
+                else:
+                    self.indents.append(self.indents[-1] + 4)
 
     def emit_text(self, txt: str) -> None:
         self.out.write(txt)
@@ -83,6 +99,8 @@ class CWriter:
         self.maybe_dedent(tkn.text)
         self.set_position(tkn)
         self.emit_text(tkn.text)
+        if tkn.kind.startswith("CMACRO"):
+            self.newline = True
         self.maybe_indent(tkn.text)
 
     def emit_str(self, txt: str) -> None:
@@ -98,6 +116,7 @@ class CWriter:
         self.last_token = None
 
     def emit(self, txt: str | Token) -> None:
+        self.maybe_write_spill()
         if isinstance(txt, Token):
             self.emit_token(txt)
         elif isinstance(txt, str):
@@ -110,6 +129,50 @@ class CWriter:
             self.out.write("\n")
         self.newline = True
         self.last_token = None
+
+    def emit_spill(self) -> None:
+        if self.pending_reload:
+            self.pending_reload = False
+            return
+        assert not self.pending_spill
+        self.pending_spill = True
+
+    def maybe_write_spill(self) -> None:
+        if self.pending_spill:
+            self.pending_spill = False
+            self.emit_str("_PyFrame_SetStackPointer(frame, stack_pointer);\n")
+        elif self.pending_reload:
+            self.pending_reload = False
+            self.emit_str("stack_pointer = _PyFrame_GetStackPointer(frame);\n")
+
+    def emit_reload(self) -> None:
+        if self.pending_spill:
+            self.pending_spill = False
+            return
+        assert not self.pending_reload
+        self.pending_reload = True
+
+    @contextlib.contextmanager
+    def header_guard(self, name: str) -> Iterator[None]:
+        self.out.write(
+            f"""
+#ifndef {name}
+#define {name}
+#ifdef __cplusplus
+extern "C" {{
+#endif
+
+"""
+        )
+        yield
+        self.out.write(
+            f"""
+#ifdef __cplusplus
+}}
+#endif
+#endif /* !{name} */
+"""
+        )
 
 
 def is_label(txt: str) -> bool:

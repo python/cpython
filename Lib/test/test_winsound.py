@@ -1,12 +1,13 @@
 # Ridiculously simple test of the winsound module for Windows.
 
 import functools
-import pathlib
+import os
 import time
 import unittest
 
 from test import support
 from test.support import import_helper
+from test.support import os_helper
 
 
 support.requires('audio')
@@ -81,15 +82,20 @@ class MessageBeepTest(unittest.TestCase):
     def test_question(self):
         safe_MessageBeep(winsound.MB_ICONQUESTION)
 
+    def test_error(self):
+        safe_MessageBeep(winsound.MB_ICONERROR)
+
+    def test_information(self):
+        safe_MessageBeep(winsound.MB_ICONINFORMATION)
+
+    def test_stop(self):
+        safe_MessageBeep(winsound.MB_ICONSTOP)
+
+    def test_warning(self):
+        safe_MessageBeep(winsound.MB_ICONWARNING)
+
     def test_keyword_args(self):
         safe_MessageBeep(type=winsound.MB_OK)
-
-
-# A class for testing winsound when the given path resolves
-# to bytes rather than str.
-class BytesPath(pathlib.WindowsPath):
-    def __fspath__(self):
-        return bytes(super().__fspath__(), 'UTF-8')
 
 
 class PlaySoundTest(unittest.TestCase):
@@ -126,7 +132,7 @@ class PlaySoundTest(unittest.TestCase):
 
     def test_snd_filepath(self):
         fn = support.findfile('pluck-pcm8.wav', subdir='audiodata')
-        path = pathlib.Path(fn)
+        path = os_helper.FakePath(fn)
         safe_PlaySound(path, winsound.SND_FILENAME | winsound.SND_NODEFAULT)
 
     def test_snd_filepath_as_bytes(self):
@@ -134,7 +140,7 @@ class PlaySoundTest(unittest.TestCase):
         self.assertRaises(
             TypeError,
             winsound.PlaySound,
-            BytesPath(fn),
+            os_helper.FakePath(os.fsencode(fn)),
             winsound.SND_FILENAME | winsound.SND_NODEFAULT
         )
 
@@ -166,6 +172,15 @@ class PlaySoundTest(unittest.TestCase):
         # Issue 8367: PlaySound(None, winsound.SND_PURGE)
         # does not raise on systems without a sound card.
         winsound.PlaySound(None, winsound.SND_PURGE)
+
+    def test_sound_sentry(self):
+        safe_PlaySound("SystemExit", winsound.SND_ALIAS | winsound.SND_SENTRY)
+
+    def test_sound_sync(self):
+        safe_PlaySound("SystemExit", winsound.SND_ALIAS | winsound.SND_SYNC)
+
+    def test_sound_system(self):
+        safe_PlaySound("SystemExit", winsound.SND_ALIAS | winsound.SND_SYSTEM)
 
 
 if __name__ == "__main__":

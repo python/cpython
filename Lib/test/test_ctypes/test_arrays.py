@@ -1,12 +1,13 @@
 import ctypes
 import sys
 import unittest
-import warnings
-from ctypes import (Structure, Array, sizeof, addressof,
+from ctypes import (Structure, Array, ARRAY, sizeof, addressof,
                     create_string_buffer, create_unicode_buffer,
                     c_char, c_wchar, c_byte, c_ubyte, c_short, c_ushort, c_int, c_uint,
                     c_long, c_ulonglong, c_float, c_double, c_longdouble)
-from test.support import bigmemtest, _2G
+from test.support import bigmemtest, _2G, threading_helper, Py_GIL_DISABLED
+from ._support import (_CData, PyCArrayType, Py_TPFLAGS_DISALLOW_INSTANTIATION,
+                       Py_TPFLAGS_IMMUTABLETYPE)
 
 
 formats = "bBhHiIlLqQfd"
@@ -15,14 +16,35 @@ formats = c_byte, c_ubyte, c_short, c_ushort, c_int, c_uint, \
           c_long, c_ulonglong, c_float, c_double, c_longdouble
 
 
-def ARRAY(*args):
-    # ignore DeprecationWarning in tests
-    with warnings.catch_warnings():
-        warnings.simplefilter('ignore', DeprecationWarning)
-        return ctypes.ARRAY(*args)
-
-
 class ArrayTestCase(unittest.TestCase):
+    def test_inheritance_hierarchy(self):
+        self.assertEqual(Array.mro(), [Array, _CData, object])
+
+        self.assertEqual(PyCArrayType.__name__, "PyCArrayType")
+        self.assertEqual(type(PyCArrayType), type)
+
+    def test_type_flags(self):
+        for cls in Array, PyCArrayType:
+            with self.subTest(cls=cls):
+                self.assertTrue(cls.__flags__ & Py_TPFLAGS_IMMUTABLETYPE)
+                self.assertFalse(cls.__flags__ & Py_TPFLAGS_DISALLOW_INSTANTIATION)
+
+    def test_metaclass_details(self):
+        # Abstract classes (whose metaclass __init__ was not called) can't be
+        # instantiated directly
+        NewArray = PyCArrayType.__new__(PyCArrayType, 'NewArray', (Array,), {})
+        for cls in Array, NewArray:
+            with self.subTest(cls=cls):
+                with self.assertRaisesRegex(TypeError, "abstract class"):
+                    obj = cls()
+
+        # Cannot call the metaclass __init__ more than once
+        class T(Array):
+            _type_ = c_int
+            _length_ = 13
+        with self.assertRaisesRegex(SystemError, "already initialized"):
+            PyCArrayType.__init__(T, 'ptr', (), {})
+
     def test_simple(self):
         # create classes holding simple numeric types, and check
         # various properties.
@@ -223,7 +245,7 @@ class ArrayTestCase(unittest.TestCase):
         class EmptyStruct(Structure):
             _fields_ = []
 
-        obj = (EmptyStruct * 2)()  # bpo37188: Floating point exception
+        obj = (EmptyStruct * 2)()  # bpo37188: Floating-point exception
         self.assertEqual(sizeof(obj), 0)
 
     def test_empty_element_array(self):
@@ -231,7 +253,7 @@ class ArrayTestCase(unittest.TestCase):
             _type_ = c_int
             _length_ = 0
 
-        obj = (EmptyArray * 2)()  # bpo37188: Floating point exception
+        obj = (EmptyArray * 2)()  # bpo37188: Floating-point exception
         self.assertEqual(sizeof(obj), 0)
 
     def test_bpo36504_signed_int_overflow(self):
@@ -245,9 +267,25 @@ class ArrayTestCase(unittest.TestCase):
     def test_large_array(self, size):
         c_char * size
 
-    def test_deprecation(self):
-        with self.assertWarns(DeprecationWarning):
-            CharArray = ctypes.ARRAY(c_char, 3)
+    @threading_helper.requires_working_threading()
+    @unittest.skipUnless(Py_GIL_DISABLED, "only meaningful if the GIL is disabled")
+    def test_thread_safety(self):
+        from threading import Thread
+
+        buffer = (ctypes.c_char_p * 10)()
+
+        def run():
+            for i in range(100):
+                buffer.value = b"hello"
+                buffer[0] = b"j"
+
+        with threading_helper.catch_threading_exception() as cm:
+            threads = (Thread(target=run) for _ in range(25))
+            with threading_helper.start_threads(threads):
+                pass
+
+            if cm.exc_value:
+                raise cm.exc_value
 
 
 if __name__ == '__main__':

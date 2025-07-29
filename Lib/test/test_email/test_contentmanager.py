@@ -288,7 +288,7 @@ class TestRawDataManager(TestEmailBase):
 
             The real body is in another message.
             """))
-        self.assertEqual(raw_data_manager.get_content(m)[:10], b'To: foo@ex')
+        self.assertStartsWith(raw_data_manager.get_content(m), b'To: foo@ex')
 
     def test_set_text_plain(self):
         m = self._make_message()

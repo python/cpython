@@ -1,0 +1,1 @@
+Remove unused C tracing code in bdb for event type ``c_call``, ``c_return`` and ``c_exception``

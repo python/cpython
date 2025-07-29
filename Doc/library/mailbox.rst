@@ -1,5 +1,5 @@
-:mod:`mailbox` --- Manipulate mailboxes in various formats
-==========================================================
+:mod:`!mailbox` --- Manipulate mailboxes in various formats
+===========================================================
 
 .. module:: mailbox
    :synopsis: Manipulate mailboxes in various formats
@@ -364,6 +364,9 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
 
       The :attr:`!colon` attribute may also be set on a per-instance basis.
 
+   .. versionchanged:: 3.13
+      :class:`Maildir` now ignores files with a leading dot.
+
    :class:`!Maildir` instances have all of the methods of :class:`Mailbox` in
    addition to the following:
 
@@ -584,12 +587,27 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
    remarks:
 
 
-   .. method:: get_file(key)
+   .. method:: get_bytes(key, from_=False)
+
+      Note: This method has an extra parameter (*from_*) compared with other classes.
+      The first line of an mbox file entry is the Unix "From " line.
+      If *from_* is False, the first line of the file is dropped.
+
+   .. method:: get_file(key, from_=False)
 
       Using the file after calling :meth:`~Mailbox.flush` or
       :meth:`~Mailbox.close` on the :class:`!mbox` instance may yield
       unpredictable results or raise an exception.
 
+      Note: This method has an extra parameter (*from_*) compared with other classes.
+      The first line of an mbox file entry is the Unix "From " line.
+      If *from_* is False, the first line of the file is dropped.
+
+   .. method:: get_string(key, from_=False)
+
+      Note: This method has an extra parameter (*from_*) compared with other classes.
+      The first line of an mbox file entry is the Unix "From " line.
+      If *from_* is False, the first line of the file is dropped.
 
    .. method:: lock()
                unlock()
@@ -640,6 +658,10 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
 
    :class:`!MH` instances have all of the methods of :class:`Mailbox` in addition
    to the following:
+
+   .. versionchanged:: 3.13
+
+      Supported folders that don't contain a :file:`.mh_sequences` file.
 
 
    .. method:: list_folders()
@@ -844,11 +866,21 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
    remarks:
 
 
-   .. method:: get_file(key)
+   .. method:: get_bytes(key, from_=False)
+
+      Note: This method has an extra parameter (*from_*) compared with other classes.
+      The first line of an mbox file entry is the Unix "From " line.
+      If *from_* is False, the first line of the file is dropped.
+
+   .. method:: get_file(key, from_=False)
 
       Using the file after calling :meth:`~Mailbox.flush` or
       :meth:`~Mailbox.close` on the :class:`!MMDF` instance may yield
       unpredictable results or raise an exception.
+
+      Note: This method has an extra parameter (*from_*) compared with other classes.
+      The first line of an mbox file entry is the Unix "From " line.
+      If *from_* is False, the first line of the file is dropped.
 
 
    .. method:: lock()
@@ -1129,8 +1161,8 @@ When a :class:`!MaildirMessage` instance is created based upon a
       leading "From " or trailing newline. For convenience, *time_* may be
       specified and will be formatted appropriately and appended to *from_*. If
       *time_* is specified, it should be a :class:`time.struct_time` instance, a
-      tuple suitable for passing to :meth:`time.strftime`, or ``True`` (to use
-      :meth:`time.gmtime`).
+      tuple suitable for passing to :func:`time.strftime`, or ``True`` (to use
+      :func:`time.gmtime`).
 
 
    .. method:: get_flags()
@@ -1380,7 +1412,7 @@ When an :class:`!MHMessage` instance is created based upon a
 
    .. method:: get_visible()
 
-      Return an :class:`Message` instance whose headers are the message's
+      Return a :class:`Message` instance whose headers are the message's
       visible headers and whose body is empty.
 
 
@@ -1501,8 +1533,8 @@ When a :class:`!BabylMessage` instance is created based upon an
       leading "From " or trailing newline. For convenience, *time_* may be
       specified and will be formatted appropriately and appended to *from_*. If
       *time_* is specified, it should be a :class:`time.struct_time` instance, a
-      tuple suitable for passing to :meth:`time.strftime`, or ``True`` (to use
-      :meth:`time.gmtime`).
+      tuple suitable for passing to :func:`time.strftime`, or ``True`` (to use
+      :func:`time.gmtime`).
 
 
    .. method:: get_flags()

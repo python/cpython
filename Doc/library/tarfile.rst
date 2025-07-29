@@ -1,5 +1,5 @@
-:mod:`tarfile` --- Read and write tar archive files
-===================================================
+:mod:`!tarfile` --- Read and write tar archive files
+====================================================
 
 .. module:: tarfile
    :synopsis: Read and write tar-format archive files.
@@ -18,8 +18,8 @@ higher-level functions in :ref:`shutil <archiving-operations>`.
 
 Some facts and figures:
 
-* reads and writes :mod:`gzip`, :mod:`bz2` and :mod:`lzma` compressed archives
-  if the respective modules are available.
+* reads and writes :mod:`gzip`, :mod:`bz2`, :mod:`compression.zstd`, and
+  :mod:`lzma` compressed archives if the respective modules are available.
 
 * read/write support for the POSIX.1-1988 (ustar) format.
 
@@ -40,9 +40,16 @@ Some facts and figures:
    Archives are extracted using a :ref:`filter <tarfile-extraction-filter>`,
    which makes it possible to either limit surprising/dangerous features,
    or to acknowledge that they are expected and the archive is fully trusted.
-   By default, archives are fully trusted, but this default is deprecated
-   and slated to change in Python 3.14.
 
+.. versionchanged:: 3.14
+   Set the default extraction filter to :func:`data <data_filter>`,
+   which disallows some dangerous features such as links to absolute paths
+   or paths outside of the destination. Previously, the filter strategy
+   was equivalent to :func:`fully_trusted <fully_trusted_filter>`.
+
+.. versionchanged:: 3.14
+
+   Added support for Zstandard compression using :mod:`compression.zstd`.
 
 .. function:: open(name=None, mode='r', fileobj=None, bufsize=10240, **kwargs)
 
@@ -56,8 +63,8 @@ Some facts and figures:
    +------------------+---------------------------------------------+
    | mode             | action                                      |
    +==================+=============================================+
-   | ``'r' or 'r:*'`` | Open for reading with transparent           |
-   |                  | compression (recommended).                  |
+   | ``'r'`` or       | Open for reading with transparent           |
+   | ``'r:*'``        | compression (recommended).                  |
    +------------------+---------------------------------------------+
    | ``'r:'``         | Open for reading exclusively without        |
    |                  | compression.                                |
@@ -67,6 +74,8 @@ Some facts and figures:
    | ``'r:bz2'``      | Open for reading with bzip2 compression.    |
    +------------------+---------------------------------------------+
    | ``'r:xz'``       | Open for reading with lzma compression.     |
+   +------------------+---------------------------------------------+
+   | ``'r:zst'``      | Open for reading with Zstandard compression.|
    +------------------+---------------------------------------------+
    | ``'x'`` or       | Create a tarfile exclusively without        |
    | ``'x:'``         | compression.                                |
@@ -85,16 +94,23 @@ Some facts and figures:
    |                  | Raise a :exc:`FileExistsError` exception    |
    |                  | if it already exists.                       |
    +------------------+---------------------------------------------+
-   | ``'a' or 'a:'``  | Open for appending with no compression. The |
-   |                  | file is created if it does not exist.       |
+   | ``'x:zst'``      | Create a tarfile with Zstandard compression.|
+   |                  | Raise a :exc:`FileExistsError` exception    |
+   |                  | if it already exists.                       |
    +------------------+---------------------------------------------+
-   | ``'w' or 'w:'``  | Open for uncompressed writing.              |
+   | ``'a'`` or       | Open for appending with no compression. The |
+   | ``'a:'``         | file is created if it does not exist.       |
+   +------------------+---------------------------------------------+
+   | ``'w'`` or       | Open for uncompressed writing.              |
+   | ``'w:'``         |                                             |
    +------------------+---------------------------------------------+
    | ``'w:gz'``       | Open for gzip compressed writing.           |
    +------------------+---------------------------------------------+
    | ``'w:bz2'``      | Open for bzip2 compressed writing.          |
    +------------------+---------------------------------------------+
    | ``'w:xz'``       | Open for lzma compressed writing.           |
+   +------------------+---------------------------------------------+
+   | ``'w:zst'``      | Open for Zstandard compressed writing.      |
    +------------------+---------------------------------------------+
 
    Note that ``'a:gz'``, ``'a:bz2'`` or ``'a:xz'`` is not possible. If *mode*
@@ -107,19 +123,30 @@ Some facts and figures:
 
    For modes ``'w:gz'``, ``'x:gz'``, ``'w|gz'``, ``'w:bz2'``, ``'x:bz2'``,
    ``'w|bz2'``, :func:`tarfile.open` accepts the keyword argument
-   *compresslevel* (default ``9``) to specify the compression level of the file.
+   *compresslevel* (default ``6``) to specify the compression level of the file.
 
-   For modes ``'w:xz'`` and ``'x:xz'``, :func:`tarfile.open` accepts the
+   For modes ``'w:xz'``, ``'x:xz'`` and ``'w|xz'``, :func:`tarfile.open` accepts the
    keyword argument *preset* to specify the compression level of the file.
+
+   For modes ``'w:zst'``, ``'x:zst'`` and ``'w|zst'``, :func:`tarfile.open`
+   accepts the keyword argument *level* to specify the compression level of
+   the file. The keyword argument *options* may also be passed, providing
+   advanced Zstandard compression parameters described by
+   :class:`~compression.zstd.CompressionParameter`. The keyword argument
+   *zstd_dict* can be passed to provide a :class:`~compression.zstd.ZstdDict`,
+   a Zstandard dictionary used to improve compression of smaller amounts of
+   data.
 
    For special purposes, there is a second format for *mode*:
    ``'filemode|[compression]'``.  :func:`tarfile.open` will return a :class:`TarFile`
    object that processes its data as a stream of blocks.  No random seeking will
    be done on the file. If given, *fileobj* may be any object that has a
-   :meth:`read` or :meth:`write` method (depending on the *mode*). *bufsize*
-   specifies the blocksize and defaults to ``20 * 512`` bytes. Use this variant
-   in combination with e.g. ``sys.stdin``, a socket :term:`file object` or a tape
-   device. However, such a :class:`TarFile` object is limited in that it does
+   :meth:`~io.RawIOBase.read` or :meth:`~io.RawIOBase.write` method
+   (depending on the *mode*) that works with bytes.
+   *bufsize* specifies the blocksize and defaults to ``20 * 512`` bytes.
+   Use this variant in combination with e.g. ``sys.stdin.buffer``, a socket
+   :term:`file object` or a tape device.
+   However, such a :class:`TarFile` object is limited in that it does
    not allow random access, see :ref:`tar-examples`.  The currently
    possible modes:
 
@@ -141,6 +168,9 @@ Some facts and figures:
    | ``'r|xz'``  | Open an lzma compressed *stream* for       |
    |             | reading.                                   |
    +-------------+--------------------------------------------+
+   | ``'r|zst'`` | Open a Zstandard compressed *stream* for   |
+   |             | reading.                                   |
+   +-------------+--------------------------------------------+
    | ``'w|'``    | Open an uncompressed *stream* for writing. |
    +-------------+--------------------------------------------+
    | ``'w|gz'``  | Open a gzip compressed *stream* for        |
@@ -150,6 +180,9 @@ Some facts and figures:
    |             | writing.                                   |
    +-------------+--------------------------------------------+
    | ``'w|xz'``  | Open an lzma compressed *stream* for       |
+   |             | writing.                                   |
+   +-------------+--------------------------------------------+
+   | ``'w|zst'`` | Open a Zstandard compressed *stream* for   |
    |             | writing.                                   |
    +-------------+--------------------------------------------+
 
@@ -162,6 +195,13 @@ Some facts and figures:
    .. versionchanged:: 3.12
       The *compresslevel* keyword argument also works for streams.
 
+   .. versionchanged:: 3.14
+      The *preset* keyword argument also works for streams.
+
+   .. versionchanged:: next
+      The default compression level was reduced to 6 (down from 9).
+      It is the default level used by most compression tools and a better
+      tradeoff between speed and performance.
 
 .. class:: TarFile
    :noindex:
@@ -247,6 +287,15 @@ The :mod:`tarfile` module defines the following exceptions:
    Raised to refuse extracting a symbolic link pointing outside the destination
    directory.
 
+.. exception:: LinkFallbackError
+
+   Raised to refuse emulating a link (hard or symbolic) by extracting another
+   archive member, when that member would be rejected by the filter location.
+   The exception that was raised to reject the replacement member is available
+   as :attr:`!BaseException.__context__`.
+
+   .. versionadded:: next
+
 
 The following constants are available at the module level:
 
@@ -254,6 +303,51 @@ The following constants are available at the module level:
 
    The default character encoding: ``'utf-8'`` on Windows, the value returned by
    :func:`sys.getfilesystemencoding` otherwise.
+
+.. data:: REGTYPE
+          AREGTYPE
+
+   A regular file :attr:`~TarInfo.type`.
+
+.. data:: LNKTYPE
+
+   A link (inside tarfile) :attr:`~TarInfo.type`.
+
+.. data:: SYMTYPE
+
+   A symbolic link :attr:`~TarInfo.type`.
+
+.. data:: CHRTYPE
+
+   A character special device :attr:`~TarInfo.type`.
+
+.. data:: BLKTYPE
+
+   A block special device :attr:`~TarInfo.type`.
+
+.. data:: DIRTYPE
+
+   A directory :attr:`~TarInfo.type`.
+
+.. data:: FIFOTYPE
+
+   A FIFO special device :attr:`~TarInfo.type`.
+
+.. data:: CONTTYPE
+
+   A contiguous file :attr:`~TarInfo.type`.
+
+.. data:: GNUTYPE_LONGNAME
+
+   A GNU tar longname :attr:`~TarInfo.type`.
+
+.. data:: GNUTYPE_LONGLINK
+
+   A GNU tar longlink :attr:`~TarInfo.type`.
+
+.. data:: GNUTYPE_SPARSE
+
+   A GNU tar sparse file :attr:`~TarInfo.type`.
 
 
 Each of the following constants defines a tar archive format that the
@@ -325,7 +419,7 @@ be finalized; only the internally used file object will be closed. See the
 
    *name* is the pathname of the archive. *name* may be a :term:`path-like object`.
    It can be omitted if *fileobj* is given.
-   In this case, the file object's :attr:`name` attribute is used if it exists.
+   In this case, the file object's :attr:`!name` attribute is used if it exists.
 
    *mode* is either ``'r'`` to read from an existing archive, ``'a'`` to append
    data to an existing file, ``'w'`` to create a new file overwriting an existing
@@ -359,7 +453,7 @@ be finalized; only the internally used file object will be closed. See the
    messages). The messages are written to ``sys.stderr``.
 
    *errorlevel* controls how extraction errors are handled,
-   see :attr:`the corresponding attribute <~TarFile.errorlevel>`.
+   see :attr:`the corresponding attribute <TarFile.errorlevel>`.
 
    The *encoding* and *errors* arguments define the character encoding to be
    used for reading or writing the archive and how conversion errors are going
@@ -448,18 +542,18 @@ be finalized; only the internally used file object will be closed. See the
    The *filter* argument specifies how ``members`` are modified or rejected
    before extraction.
    See :ref:`tarfile-extraction-filter` for details.
-   It is recommended to set this explicitly depending on which *tar* features
-   you need to support.
+   It is recommended to set this explicitly only if specific *tar* features
+   are required, or as ``filter='data'`` to support Python versions with a less
+   secure default (3.13 and lower).
 
    .. warning::
 
       Never extract archives from untrusted sources without prior inspection.
-      It is possible that files are created outside of *path*, e.g. members
-      that have absolute filenames starting with ``"/"`` or filenames with two
-      dots ``".."``.
 
-      Set ``filter='data'`` to prevent the most dangerous security issues,
-      and read the :ref:`tarfile-extraction-filter` section for details.
+      Since Python 3.14, the default (:func:`data <data_filter>`) will prevent
+      the most dangerous security issues.
+      However, it will not prevent *all* unintended or insecure behavior.
+      Read the :ref:`tarfile-extraction-filter` section for details.
 
    .. versionchanged:: 3.5
       Added the *numeric_owner* parameter.
@@ -469,6 +563,9 @@ be finalized; only the internally used file object will be closed. See the
 
    .. versionchanged:: 3.12
       Added the *filter* parameter.
+
+   .. versionchanged:: 3.14
+      The *filter* parameter now defaults to ``'data'``.
 
 
 .. method:: TarFile.extract(member, path="", set_attrs=True, *, numeric_owner=False, filter=None)
@@ -489,10 +586,8 @@ be finalized; only the internally used file object will be closed. See the
 
    .. warning::
 
-      See the warning for :meth:`extractall`.
-
-      Set ``filter='data'`` to prevent the most dangerous security issues,
-      and read the :ref:`tarfile-extraction-filter` section for details.
+      Never extract archives from untrusted sources without prior inspection.
+      See the warning for :meth:`extractall` for details.
 
    .. versionchanged:: 3.2
       Added the *set_attrs* parameter.
@@ -517,6 +612,10 @@ be finalized; only the internally used file object will be closed. See the
 
    .. versionchanged:: 3.3
       Return an :class:`io.BufferedReader` object.
+
+   .. versionchanged:: 3.13
+      The returned :class:`io.BufferedReader` object has the :attr:`!mode`
+      attribute which is always equal to ``'rb'``.
 
 .. attribute:: TarFile.errorlevel
    :type: int
@@ -551,14 +650,8 @@ be finalized; only the internally used file object will be closed. See the
    String names are not allowed for this attribute, unlike the *filter*
    argument to :meth:`~TarFile.extract`.
 
-   If ``extraction_filter`` is ``None`` (the default),
-   calling an extraction method without a *filter* argument will raise a
-   ``DeprecationWarning``,
-   and fall back to the :func:`fully_trusted <fully_trusted_filter>` filter,
-   whose dangerous behavior matches previous versions of Python.
-
-   In Python 3.14+, leaving ``extraction_filter=None`` will cause
-   extraction methods to use the :func:`data <data_filter>` filter by default.
+   If ``extraction_filter`` is ``None`` (the default), extraction methods
+   will use the :func:`data <data_filter>` filter by default.
 
    The attribute may be set on instances or overridden in subclasses.
    It also is possible to set it on the ``TarFile`` class itself to set a
@@ -566,7 +659,15 @@ be finalized; only the internally used file object will be closed. See the
    it is best practice to only do so in top-level applications or
    :mod:`site configuration <site>`.
    To set a global default this way, a filter function needs to be wrapped in
-   :func:`staticmethod()` to prevent injection of a ``self`` argument.
+   :func:`staticmethod` to prevent injection of a ``self`` argument.
+
+   .. versionchanged:: 3.14
+
+      The default filter is set to :func:`data <data_filter>`,
+      which disallows some dangerous features such as links to absolute paths
+      or paths outside of the destination.
+      Previously, the default was equivalent to
+      :func:`fully_trusted <fully_trusted_filter>`.
 
 .. method:: TarFile.add(name, arcname=None, recursive=True, *, filter=None)
 
@@ -590,10 +691,14 @@ be finalized; only the internally used file object will be closed. See the
 
 .. method:: TarFile.addfile(tarinfo, fileobj=None)
 
-   Add the :class:`TarInfo` object *tarinfo* to the archive. If *fileobj* is given,
-   it should be a :term:`binary file`, and
-   ``tarinfo.size`` bytes are read from it and added to the archive.  You can
+   Add the :class:`TarInfo` object *tarinfo* to the archive. If *tarinfo* represents
+   a non zero-size regular file, the *fileobj* argument should be a :term:`binary file`,
+   and ``tarinfo.size`` bytes are read from it and added to the archive.  You can
    create :class:`TarInfo` objects directly, or by using :meth:`gettarinfo`.
+
+   .. versionchanged:: 3.13
+
+      *fileobj* must be given for non-zero-sized regular files.
 
 
 .. method:: TarFile.gettarinfo(name=None, arcname=None, fileobj=None)
@@ -626,6 +731,7 @@ be finalized; only the internally used file object will be closed. See the
 
 
 .. attribute:: TarFile.pax_headers
+   :type: dict
 
    A dictionary containing key-value pairs of pax global headers.
 
@@ -645,8 +751,8 @@ It does *not* contain the file's data itself.
 :meth:`~TarFile.getmember`, :meth:`~TarFile.getmembers` and
 :meth:`~TarFile.gettarinfo`.
 
-Modifying the objects returned by :meth:`~!TarFile.getmember` or
-:meth:`~!TarFile.getmembers` will affect all subsequent
+Modifying the objects returned by :meth:`~TarFile.getmember` or
+:meth:`~TarFile.getmembers` will affect all subsequent
 operations on the archive.
 For cases where this is unwanted, you can use :mod:`copy.copy() <copy>` or
 call the :meth:`~TarInfo.replace` method to create a modified copy in one step.
@@ -790,13 +896,48 @@ A ``TarInfo`` object has the following public data attributes:
       :meth:`~TarFile.extractall`, causing extraction to skip applying this
       attribute.
 
+.. attribute:: TarInfo.chksum
+   :type: int
+
+   Header checksum.
+
+
+.. attribute:: TarInfo.devmajor
+   :type: int
+
+   Device major number.
+
+
+.. attribute:: TarInfo.devminor
+   :type: int
+
+   Device minor number.
+
+
+.. attribute:: TarInfo.offset
+   :type: int
+
+   The tar header starts here.
+
+
+.. attribute:: TarInfo.offset_data
+   :type: int
+
+   The file's data starts here.
+
+
+.. attribute:: TarInfo.sparse
+
+   Sparse member information.
+
+
 .. attribute:: TarInfo.pax_headers
    :type: dict
 
    A dictionary containing key-value pairs of an associated pax extended header.
 
-.. method:: TarInfo.replace(name=..., mtime=..., mode=..., linkname=...,
-                            uid=..., gid=..., uname=..., gname=...,
+.. method:: TarInfo.replace(name=..., mtime=..., mode=..., linkname=..., \
+                            uid=..., gid=..., uname=..., gname=..., \
                             deep=True)
 
    .. versionadded:: 3.12
@@ -816,7 +957,7 @@ A :class:`TarInfo` object also provides some convenient query methods:
 
 .. method:: TarInfo.isfile()
 
-   Return :const:`True` if the :class:`Tarinfo` object is a regular file.
+   Return :const:`True` if the :class:`TarInfo` object is a regular file.
 
 
 .. method:: TarInfo.isreg()
@@ -878,6 +1019,12 @@ In most cases, the full functionality is not needed.
 Therefore, *tarfile* supports extraction filters: a mechanism to limit
 functionality, and thus mitigate some of the security issues.
 
+.. warning::
+
+   None of the available filters blocks *all* dangerous archive features.
+   Never extract archives from untrusted sources without prior inspection.
+   See also :ref:`tarfile-further-verification`.
+
 .. seealso::
 
    :pep:`706`
@@ -901,12 +1048,13 @@ can be:
 
 * ``None`` (default): Use :attr:`TarFile.extraction_filter`.
 
-  If that is also ``None`` (the default), raise a ``DeprecationWarning``,
-  and fall back to the ``'fully_trusted'`` filter, whose dangerous behavior
-  matches previous versions of Python.
+  If that is also ``None`` (the default), the ``'data'`` filter will be used.
 
-  In Python 3.14, the ``'data'`` filter will become the default instead.
-  It's possible to switch earlier; see :attr:`TarFile.extraction_filter`.
+   .. versionchanged:: 3.14
+
+      The default filter is set to :func:`data <data_filter>`.
+      Previously, the default was equivalent to
+      :func:`fully_trusted <fully_trusted_filter>`.
 
 * A callable which will be called for each extracted member with a
   :ref:`TarInfo <tarinfo-objects>` describing the member and the destination
@@ -952,7 +1100,7 @@ reused in custom filters:
     path (after following symlinks) would end up outside the destination.
     This raises :class:`~tarfile.OutsideDestinationError`.
   - Clear high mode bits (setuid, setgid, sticky) and group/other write bits
-    (:const:`~stat.S_IWGRP`|:const:`~stat.S_IWOTH`).
+    (:const:`~stat.S_IWGRP` | :const:`~stat.S_IWOTH`).
 
   Return the modified ``TarInfo`` member.
 
@@ -960,6 +1108,12 @@ reused in custom filters:
 
   Implements the ``'data'`` filter.
   In addition to what ``tar_filter`` does:
+
+  - Normalize link targets (:attr:`TarInfo.linkname`) using
+    :func:`os.path.normpath`.
+    Note that this removes internal ``..`` components, which may change the
+    meaning of the link if the path in :attr:`!TarInfo.linkname` traverses
+    symbolic links.
 
   - :ref:`Refuse <tarfile-extraction-refuse>` to extract links (hard or soft)
     that link to absolute paths, or ones that link outside the destination.
@@ -977,9 +1131,9 @@ reused in custom filters:
   - For regular files, including hard links:
 
     - Set the owner read and write permissions
-      (:const:`~stat.S_IRUSR`|:const:`~stat.S_IWUSR`).
+      (:const:`~stat.S_IRUSR` | :const:`~stat.S_IWUSR`).
     - Remove the group & other executable permission
-      (:const:`~stat.S_IXGRP`|:const:`~stat.S_IXOTH`)
+      (:const:`~stat.S_IXGRP` | :const:`~stat.S_IXOTH`)
       if the owner doesn’t have it (:const:`~stat.S_IXUSR`).
 
   - For other files (directories), set ``mode`` to ``None``, so
@@ -988,6 +1142,13 @@ reused in custom filters:
     to ``None``, so that extraction methods skip setting it.
 
   Return the modified ``TarInfo`` member.
+
+  Note that this filter does not block *all* dangerous archive features.
+  See :ref:`tarfile-further-verification`  for details.
+
+  .. versionchanged:: next
+
+     Link targets are now normalized.
 
 
 .. _tarfile-extraction-refuse:
@@ -1002,6 +1163,8 @@ With ``errorlevel=0`` the error will be logged and the member will be skipped,
 but extraction will continue.
 
 
+.. _tarfile-further-verification:
+
 Hints for further verification
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -1015,13 +1178,15 @@ Here is an incomplete list of things to consider:
 * Extract to a :func:`new temporary directory <tempfile.mkdtemp>`
   to prevent e.g. exploiting pre-existing links, and to make it easier to
   clean up after a failed extraction.
+* Disallow symbolic links if you do not need the functionality.
 * When working with untrusted data, use external (e.g. OS-level) limits on
   disk, memory and CPU usage.
 * Check filenames against an allow-list of characters
   (to filter out control characters, confusables, foreign path separators,
-  etc.).
+  and so on).
 * Check that filenames have expected extensions (discouraging files that
-  execute when you “click on them”, or extension-less files like Windows special device names).
+  execute when you “click on them”, or extension-less files like Windows
+  special device names).
 * Limit the number of extracted files, total size of extracted data,
   filename length (including symlink length), and size of individual files.
 * Check for files that would be shadowed on case-insensitive filesystems.
@@ -1192,6 +1357,9 @@ Command-line options
 Examples
 --------
 
+Reading examples
+~~~~~~~~~~~~~~~~~~~
+
 How to extract an entire tar archive to the current working directory::
 
    import tarfile
@@ -1214,6 +1382,23 @@ a generator function instead of a list::
    tar.extractall(members=py_files(tar))
    tar.close()
 
+How to read a gzip compressed tar archive and display some member information::
+
+   import tarfile
+   tar = tarfile.open("sample.tar.gz", "r:gz")
+   for tarinfo in tar:
+       print(tarinfo.name, "is", tarinfo.size, "bytes in size and is ", end="")
+       if tarinfo.isreg():
+           print("a regular file.")
+       elif tarinfo.isdir():
+           print("a directory.")
+       else:
+           print("something else.")
+   tar.close()
+
+Writing examples
+~~~~~~~~~~~~~~~~
+
 How to create an uncompressed tar archive from a list of filenames::
 
    import tarfile
@@ -1229,19 +1414,15 @@ The same example using the :keyword:`with` statement::
         for name in ["foo", "bar", "quux"]:
             tar.add(name)
 
-How to read a gzip compressed tar archive and display some member information::
+How to create and write an archive to stdout using
+:data:`sys.stdout.buffer <sys.stdout>` in the *fileobj* parameter
+in :meth:`TarFile.add`::
 
-   import tarfile
-   tar = tarfile.open("sample.tar.gz", "r:gz")
-   for tarinfo in tar:
-       print(tarinfo.name, "is", tarinfo.size, "bytes in size and is ", end="")
-       if tarinfo.isreg():
-           print("a regular file.")
-       elif tarinfo.isdir():
-           print("a directory.")
-       else:
-           print("something else.")
-   tar.close()
+    import sys
+    import tarfile
+    with tarfile.open("sample.tar.gz", "w|gz", fileobj=sys.stdout.buffer) as tar:
+        for name in ["foo", "bar", "quux"]:
+            tar.add(name)
 
 How to create an archive and reset the user information using the *filter*
 parameter in :meth:`TarFile.add`::
