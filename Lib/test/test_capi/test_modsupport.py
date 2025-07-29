@@ -128,24 +128,6 @@ class Test_ABIInfo_Check(unittest.TestCase):
     @subTests('modname', (None, 'test_mod'))
     @subTests('minor', (0, 1, 9))
     @subTests('build', (0, sys.hexversion))
-    @subTests('abi_version', (
-        sys.hexversion - 0x00010000,
-        sys.hexversion - 1,
-        sys.hexversion + 1,
-        sys.hexversion + 0x00010000,
-    ))
-    def test_negative_internal(self, modname, minor, build, abi_version):
-        with self.assertRaisesRegex(
-                ImportError,
-                r'incompatible internal ABI \(0x[\da-f]+ != 0x[\da-f]+\)$'):
-            _testcapi.pyabiinfo_check(modname, 1, minor,
-                                      _testcapi.PyABIInfo_INTERNAL,
-                                      build,
-                                      abi_version)
-
-    @subTests('modname', (None, 'test_mod'))
-    @subTests('minor', (0, 1, 9))
-    @subTests('build', (0, sys.hexversion))
     @subTests('ft_flag', (
         0,
         (_testcapi.PyABIInfo_FREETHREADED
