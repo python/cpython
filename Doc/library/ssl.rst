@@ -1687,7 +1687,7 @@ to speed up repeated connections from the same clients.
    Set the allowed ciphers for sockets created with this context when
    connecting using TLS 1.2 and earlier.  It should be a string in the `OpenSSL
    cipher list format <https://docs.openssl.org/master/man1/ciphers/>`_.
-   To set allowed TLS 1.3 ciphers, use :meth:`SSHContext.set_ciphersuites`.
+   To set allowed TLS 1.3 ciphers, use :meth:`SSLContext.set_ciphersuites`.
    below.  If no cipher can be selected (because compile-time options or other
    configuration forbids use of all the specified ciphers), an
    :class:`SSLError` will be raised.
