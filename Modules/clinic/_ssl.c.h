@@ -969,6 +969,45 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_ssl__SSLContext_set_ciphersuites__doc__,
+"set_ciphersuites($self, ciphersuites, /)\n"
+"--\n"
+"\n");
+
+#define _SSL__SSLCONTEXT_SET_CIPHERSUITES_METHODDEF    \
+    {"set_ciphersuites", (PyCFunction)_ssl__SSLContext_set_ciphersuites, METH_O, _ssl__SSLContext_set_ciphersuites__doc__},
+
+static PyObject *
+_ssl__SSLContext_set_ciphersuites_impl(PySSLContext *self,
+                                       const char *ciphersuites);
+
+static PyObject *
+_ssl__SSLContext_set_ciphersuites(PyObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    const char *ciphersuites;
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("set_ciphersuites", "argument", "str", arg);
+        goto exit;
+    }
+    Py_ssize_t ciphersuites_length;
+    ciphersuites = PyUnicode_AsUTF8AndSize(arg, &ciphersuites_length);
+    if (ciphersuites == NULL) {
+        goto exit;
+    }
+    if (strlen(ciphersuites) != (size_t)ciphersuites_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLContext_set_ciphersuites_impl((PySSLContext *)self, ciphersuites);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_ssl__SSLContext_get_ciphers__doc__,
 "get_ciphers($self, /)\n"
 "--\n"
@@ -3142,4 +3181,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=c409bdf3c123b28b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4e35d2ea2fc46023 input=a9049054013a1b77]*/
