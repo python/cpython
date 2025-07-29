@@ -2480,7 +2480,25 @@ hashlib_free(void *m)
     (void)hashlib_clear((PyObject *)m);
 }
 
-/* Py_mod_exec functions */
+// --- Py_mod_exec helpers ----------------------------------------------------
+
+static int
+hashlib_make_type(PyTypeObject **out,
+                  PyObject *module, PyType_Spec *specs, PyObject *bases)
+{
+    assert(out != NULL);
+    *out = (PyTypeObject *)PyType_FromModuleAndSpec(module, specs, bases);
+    if (*out == NULL) {
+        return -1;
+    }
+    if (PyModule_AddType(module, *out) < 0) {
+        return -1;
+    }
+    return 0;
+}
+
+// --- Py_mod_exec functions --------------------------------------------------
+
 static int
 hashlib_init_hashtable(PyObject *module)
 {
@@ -2498,15 +2516,10 @@ static int
 hashlib_init_HASH_type(PyObject *module)
 {
     _hashlibstate *state = get_hashlib_state(module);
-
-    state->HASH_type = (PyTypeObject *)PyType_FromSpec(&HASHobject_type_spec);
-    if (state->HASH_type == NULL) {
-        return -1;
-    }
-    if (PyModule_AddType(module, state->HASH_type) < 0) {
-        return -1;
-    }
-    return 0;
+    return hashlib_make_type(
+        &state->HASH_type,
+        module, &HASHobject_type_spec, NULL
+    );
 }
 
 static int
@@ -2514,37 +2527,24 @@ hashlib_init_HASHXOF_type(PyObject *module)
 {
 #ifdef PY_OPENSSL_HAS_SHAKE
     _hashlibstate *state = get_hashlib_state(module);
-
-    if (state->HASH_type == NULL) {
-        return -1;
-    }
-
-    state->HASHXOF_type = (PyTypeObject *)PyType_FromSpecWithBases(
-        &HASHXOFobject_type_spec, (PyObject *)state->HASH_type
+    assert(state->HASH_type != NULL);
+    return hashlib_make_type(
+        &state->HASHXOF_type,
+        module, &HASHXOFobject_type_spec, (PyObject *)state->HASH_type
     );
-    if (state->HASHXOF_type == NULL) {
-        return -1;
-    }
-    if (PyModule_AddType(module, state->HASHXOF_type) < 0) {
-        return -1;
-    }
-#endif
+#else
     return 0;
+#endif
 }
 
 static int
 hashlib_init_hmactype(PyObject *module)
 {
     _hashlibstate *state = get_hashlib_state(module);
-
-    state->HMAC_type = (PyTypeObject *)PyType_FromSpec(&HMACtype_spec);
-    if (state->HMAC_type == NULL) {
-        return -1;
-    }
-    if (PyModule_AddType(module, state->HMAC_type) < 0) {
-        return -1;
-    }
-    return 0;
+    return hashlib_make_type(
+        &state->HMAC_type,
+        module, &HMACtype_spec, NULL
+    );
 }
 
 static int

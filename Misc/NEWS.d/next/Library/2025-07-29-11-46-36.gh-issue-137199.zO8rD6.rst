@@ -1,0 +1,3 @@
+Associate the :mod:`!_hashlib` module to the C heap types
+:class:`!_hashlib.HASH`, :class:`!_hashlib.HASHXOF`, and
+:class:`!_hashlib.HMAC`. Patch by Bénédikt Tran.
