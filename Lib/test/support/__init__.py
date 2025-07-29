@@ -546,8 +546,9 @@ def has_no_debug_ranges():
 def requires_debug_ranges(reason='requires co_positions / debug_ranges'):
     try:
         skip = has_no_debug_ranges()
-    except unittest.SkipTest:
+    except unittest.SkipTest as e:
         skip = True
+        reason = e.args[0] if e.args else reason
     return unittest.skipIf(skip, reason)
 
 
