@@ -1732,7 +1732,7 @@ class TestMain(ReplTestCase):
             # process to simulate a crash. Note that the output also includes
             # the echoed input commands.
             commands = "spam\nimport time\n0xcafe\ntime.sleep(1000)\nquit\n"
-            output, exit_code = self.run_repl(commands, env=env, timeout=3,
+            output, exit_code = self.run_repl(commands, env=env,
                                               exit_on_output="51966")
             self.assertNotEqual(exit_code, 0)
 
@@ -1740,6 +1740,7 @@ class TestMain(ReplTestCase):
             self.assertIn("2", history)
             self.assertIn("exit()", history)
             self.assertIn("spam", history)
+            self.assertIn("0xcafe", history)
             self.assertIn("import time", history)
             self.assertNotIn("sleep", history)
             self.assertNotIn("quit", history)
