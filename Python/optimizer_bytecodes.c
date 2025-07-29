@@ -973,15 +973,17 @@ dummy_func(void) {
             int length = sym_tuple_length(cls);
             if (length != -1) {
                 // We cannot do anything about tuples with unknown length
+                bool can_replace_op = true;
                 PyObject *out = Py_False;
                 for (int i = 0; i < length; i++) {
                     JitOptRef item = sym_tuple_getitem(ctx, cls, i);
                     if (!sym_has_type(item)) {
                         // There is an unknown item in the tuple.
                         // It could potentially define its own __instancecheck__
-                        // method so we can only deduce bool.
+                        // so it is no longer possible to replace the op with a const load.
                         out = NULL;
-                        break;
+                        can_replace_op = false;
+                        continue;
                     }
                     PyTypeObject *cls_o = (PyTypeObject *)sym_get_const(ctx, item);
                     if (cls_o &&
@@ -994,7 +996,9 @@ dummy_func(void) {
                 }
                 if (out) {
                     sym_set_const(res, out);
-                    REPLACE_OP(this_instr, _POP_CALL_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)out);
+                    if (can_replace_op) {
+                        REPLACE_OP(this_instr, _POP_CALL_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)out);
+                    }
                 }
             }
         }

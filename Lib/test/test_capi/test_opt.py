@@ -2234,7 +2234,8 @@ class TestUopsOptimization(unittest.TestCase):
             x = 0
             for _ in range(n):
                 # One of the classes is unknown, but it comes
-                # after a known class, so we can narrow to True
+                # after a known class, so we can narrow to True and
+                # remove the isinstance call.
                 y = isinstance(42, (int, eval('str')))
                 if y:
                     x += 1
@@ -2246,7 +2247,7 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertNotIn("_CALL_ISINSTANCE", uops)
         self.assertNotIn("_TO_BOOL_BOOL", uops)
-        self.assertNotIn("_GUARD_IS_FALSE_POP", uops)
+        self.assertNotIn("_GUARD_IS_TRUE_POP", uops)
         self.assertIn("_BUILD_TUPLE", uops)
         self.assertIn("_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW", uops)
 
@@ -2254,8 +2255,9 @@ class TestUopsOptimization(unittest.TestCase):
         def testfunc(n):
             x = 0
             for _ in range(n):
-                # One of the classes is unknown, so we can't narrow
-                # to True or False, only bool
+                # We can narrow to True, but since the unknown class comes
+                # first and could potentially trigger an __instancecheck__,
+                # we can't remove the isinstance call.
                 y = isinstance(42, (eval('str'), int))
                 if y:
                     x += 1
@@ -2267,14 +2269,13 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertIn("_CALL_ISINSTANCE", uops)
         self.assertNotIn("_TO_BOOL_BOOL", uops)
-        self.assertIn("_GUARD_IS_TRUE_POP", uops)
+        self.assertNotIn("_GUARD_IS_TRUE_POP", uops)
 
     def test_call_isinstance_tuple_of_classes_true_unknown_3(self):
         def testfunc(n):
             x = 0
             for _ in range(n):
-                # One of the classes is unknown, so we can't narrow
-                # to True or False, only bool
+                # We can only narrow to bool here
                 y = isinstance(42, (str, eval('int')))
                 if y:
                     x += 1
@@ -2292,8 +2293,7 @@ class TestUopsOptimization(unittest.TestCase):
         def testfunc(n):
             x = 0
             for _ in range(n):
-                # One of the classes is unknown, so we can't narrow
-                # to True or False, only bool
+                # We can only narrow to bool here
                 y = isinstance(42, (eval('int'), str))
                 if y:
                     x += 1
