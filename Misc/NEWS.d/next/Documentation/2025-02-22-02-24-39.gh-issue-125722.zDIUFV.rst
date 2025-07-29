@@ -1,2 +1,0 @@
-Require Sphinx 8.2.0 or later to build the Python documentation. Patch by
-Adam Turner.

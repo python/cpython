@@ -1,4 +1,0 @@
-Add :meth:`concurrent.futures.ProcessPoolExecutor.terminate_workers` and
-:meth:`concurrent.futures.ProcessPoolExecutor.kill_workers` as
-ways to terminate or kill all living worker processes in the given pool.
-(Contributed by Charles Machalow in :gh:`130849`.)

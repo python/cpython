@@ -20,11 +20,14 @@ class TestList(TestCase):
     def test_racing_iter_append(self):
         l = []
 
-        def writer_func():
+        barrier = Barrier(NTHREAD + 1)
+        def writer_func(l):
+            barrier.wait()
             for i in range(OBJECT_COUNT):
                 l.append(C(i + OBJECT_COUNT))
 
-        def reader_func():
+        def reader_func(l):
+            barrier.wait()
             while True:
                 count = len(l)
                 for i, x in enumerate(l):
@@ -32,10 +35,10 @@ class TestList(TestCase):
                 if count == OBJECT_COUNT:
                     break
 
-        writer = Thread(target=writer_func)
+        writer = Thread(target=writer_func, args=(l,))
         readers = []
         for x in range(NTHREAD):
-            reader = Thread(target=reader_func)
+            reader = Thread(target=reader_func, args=(l,))
             readers.append(reader)
             reader.start()
 
@@ -47,11 +50,14 @@ class TestList(TestCase):
     def test_racing_iter_extend(self):
         l = []
 
+        barrier = Barrier(NTHREAD + 1)
         def writer_func():
+            barrier.wait()
             for i in range(OBJECT_COUNT):
                 l.extend([C(i + OBJECT_COUNT)])
 
         def reader_func():
+            barrier.wait()
             while True:
                 count = len(l)
                 for i, x in enumerate(l):

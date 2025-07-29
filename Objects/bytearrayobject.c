@@ -709,7 +709,9 @@ bytearray_ass_subscript_lock_held(PyObject *op, PyObject *index, PyObject *value
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
     PyByteArrayObject *self = _PyByteArray_CAST(op);
     Py_ssize_t start, stop, step, slicelen;
-    char *buf = PyByteArray_AS_STRING(self);
+    // Do not store a reference to the internal buffer since
+    // index.__index__() or _getbytevalue() may alter 'self'.
+    // See https://github.com/python/cpython/issues/91153.
 
     if (_PyIndex_Check(index)) {
         Py_ssize_t i = PyNumber_AsSsize_t(index, PyExc_IndexError);
@@ -744,7 +746,7 @@ bytearray_ass_subscript_lock_held(PyObject *op, PyObject *index, PyObject *value
         }
         else {
             assert(0 <= ival && ival < 256);
-            buf[i] = (char)ival;
+            PyByteArray_AS_STRING(self)[i] = (char)ival;
             return 0;
         }
     }
@@ -805,6 +807,7 @@ bytearray_ass_subscript_lock_held(PyObject *op, PyObject *index, PyObject *value
             /* Delete slice */
             size_t cur;
             Py_ssize_t i;
+            char *buf = PyByteArray_AS_STRING(self);
 
             if (!_canresize(self))
                 return -1;
@@ -845,6 +848,7 @@ bytearray_ass_subscript_lock_held(PyObject *op, PyObject *index, PyObject *value
             /* Assign slice */
             Py_ssize_t i;
             size_t cur;
+            char *buf = PyByteArray_AS_STRING(self);
 
             if (needed != slicelen) {
                 PyErr_Format(PyExc_ValueError,
@@ -2543,8 +2547,8 @@ Example: bytearray.fromhex('B9 01EF') -> bytearray(b'\\xb9\\x01\\xef')
 [clinic start generated code]*/
 
 static PyObject *
-bytearray_fromhex(PyTypeObject *type, PyObject *string)
-/*[clinic end generated code: output=da84dc708e9c4b36 input=7e314e5b2d7ab484]*/
+bytearray_fromhex_impl(PyTypeObject *type, PyObject *string)
+/*[clinic end generated code: output=8f0f0b6d30fb3ba0 input=7e314e5b2d7ab484]*/
 {
     PyObject *result = _PyBytes_FromHex(string, type == &PyByteArray_Type);
     if (type != &PyByteArray_Type && result != NULL) {
@@ -2832,7 +2836,7 @@ PyTypeObject PyByteArray_Type = {
     0,                                  /* tp_descr_get */
     0,                                  /* tp_descr_set */
     0,                                  /* tp_dictoffset */
-    (initproc)bytearray___init__,       /* tp_init */
+    bytearray___init__,                 /* tp_init */
     PyType_GenericAlloc,                /* tp_alloc */
     PyType_GenericNew,                  /* tp_new */
     PyObject_Free,                      /* tp_free */

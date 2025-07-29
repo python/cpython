@@ -330,13 +330,13 @@ class TestGzip(BaseTest):
     def test_1647484(self):
         for mode in ('wb', 'rb'):
             with gzip.GzipFile(self.filename, mode) as f:
-                self.assertTrue(hasattr(f, "name"))
+                self.assertHasAttr(f, "name")
                 self.assertEqual(f.name, self.filename)
 
     def test_paddedfile_getattr(self):
         self.test_write()
         with gzip.GzipFile(self.filename, 'rb') as f:
-            self.assertTrue(hasattr(f.fileobj, "name"))
+            self.assertHasAttr(f.fileobj, "name")
             self.assertEqual(f.fileobj.name, self.filename)
 
     def test_mtime(self):
@@ -344,7 +344,7 @@ class TestGzip(BaseTest):
         with gzip.GzipFile(self.filename, 'w', mtime = mtime) as fWrite:
             fWrite.write(data1)
         with gzip.GzipFile(self.filename) as fRead:
-            self.assertTrue(hasattr(fRead, 'mtime'))
+            self.assertHasAttr(fRead, 'mtime')
             self.assertIsNone(fRead.mtime)
             dataRead = fRead.read()
             self.assertEqual(dataRead, data1)
@@ -353,7 +353,7 @@ class TestGzip(BaseTest):
     def test_metadata(self):
         mtime = 123456789
 
-        with gzip.GzipFile(self.filename, 'w', mtime = mtime) as fWrite:
+        with gzip.GzipFile(self.filename, 'w', mtime = mtime, compresslevel = 9) as fWrite:
             fWrite.write(data1)
 
         with open(self.filename, 'rb') as fRead:
@@ -459,7 +459,7 @@ class TestGzip(BaseTest):
             self.assertEqual(d, data1 * 50, "Incorrect data in file")
 
     def test_gzip_BadGzipFile_exception(self):
-        self.assertTrue(issubclass(gzip.BadGzipFile, OSError))
+        self.assertIsSubclass(gzip.BadGzipFile, OSError)
 
     def test_bad_gzip_file(self):
         with open(self.filename, 'wb') as file:
@@ -899,9 +899,10 @@ class TestGzip(BaseTest):
         # fileobj would be closed before the GzipFile as the result of a
         # reference loop. See issue gh-129726
         with catch_unraisable_exception() as cm:
-            gzip.GzipFile(fileobj=io.BytesIO(), mode="w")
-            gc.collect()
-            self.assertIsNone(cm.unraisable)
+            with self.assertWarns(ResourceWarning):
+                gzip.GzipFile(fileobj=io.BytesIO(), mode="w")
+                gc.collect()
+                self.assertIsNone(cm.unraisable)
 
 
 class TestOpen(BaseTest):

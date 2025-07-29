@@ -1,2 +1,0 @@
-``#pragma``-based linking with ``python3*.lib`` can now be switched off with
-:c:expr:`Py_NO_LINK_LIB`. Patch by Jean-Christophe Fillion-Robin.

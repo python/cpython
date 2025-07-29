@@ -8,7 +8,13 @@
 #include "pycore_ceval.h"
 #include "pycore_critical_section.h"
 #include "pycore_dict.h"
+#include "pycore_floatobject.h"
+#include "pycore_frame.h"
+#include "pycore_function.h"
+#include "pycore_interpframe.h"
+#include "pycore_interpolation.h"
 #include "pycore_intrinsics.h"
+#include "pycore_list.h"
 #include "pycore_long.h"
 #include "pycore_opcode_metadata.h"
 #include "pycore_opcode_utils.h"
@@ -16,6 +22,10 @@
 #include "pycore_pyerrors.h"
 #include "pycore_setobject.h"
 #include "pycore_sliceobject.h"
+#include "pycore_template.h"
+#include "pycore_tuple.h"
+#include "pycore_unicodeobject.h"
+
 #include "pycore_jit.h"
 
 // Memory management stuff: ////////////////////////////////////////////////////
@@ -421,8 +431,10 @@ void patch_aarch64_trampoline(unsigned char *location, int ordinal, jit_state *s
 
 #if defined(__aarch64__) || defined(_M_ARM64)
     #define TRAMPOLINE_SIZE 16
+    #define DATA_ALIGN 8
 #else
     #define TRAMPOLINE_SIZE 0
+    #define DATA_ALIGN 1
 #endif
 
 // Generate and patch AArch64 trampolines. The symbols to jump to are stored
@@ -430,6 +442,17 @@ void patch_aarch64_trampoline(unsigned char *location, int ordinal, jit_state *s
 void
 patch_aarch64_trampoline(unsigned char *location, int ordinal, jit_state *state)
 {
+
+    uint64_t value = (uintptr_t)symbols_map[ordinal];
+    int64_t range = value - (uintptr_t)location;
+
+    // If we are in range of 28 signed bits, we patch the instruction with
+    // the address of the symbol.
+    if (range >= -(1 << 27) && range < (1 << 27)) {
+        patch_aarch64_26r(location, (uintptr_t)value);
+        return;
+    }
+
     // Masking is done modulo 32 as the mask is stored as an array of uint32_t
     const uint32_t symbol_mask = 1 << (ordinal % 32);
     const uint32_t trampoline_mask = state->trampolines.mask[ordinal / 32];
@@ -445,7 +468,6 @@ patch_aarch64_trampoline(unsigned char *location, int ordinal, jit_state *state)
     uint32_t *p = (uint32_t*)(state->trampolines.mem + index * TRAMPOLINE_SIZE);
     assert((size_t)(index + 1) * TRAMPOLINE_SIZE <= state->trampolines.size);
 
-    uint64_t value = (uintptr_t)symbols_map[ordinal];
 
     /* Generate the trampoline
        0: 58000048      ldr     x8, 8
@@ -502,8 +524,9 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     // Round up to the nearest page:
     size_t page_size = get_page_size();
     assert((page_size & (page_size - 1)) == 0);
-    size_t padding = page_size - ((code_size + state.trampolines.size + data_size) & (page_size - 1));
-    size_t total_size = code_size + state.trampolines.size + data_size  + padding;
+    size_t code_padding = DATA_ALIGN - ((code_size + state.trampolines.size) & (DATA_ALIGN - 1));
+    size_t padding = page_size - ((code_size + state.trampolines.size + code_padding + data_size) & (page_size - 1));
+    size_t total_size = code_size + state.trampolines.size + code_padding + data_size + padding;
     unsigned char *memory = jit_alloc(total_size);
     if (memory == NULL) {
         return -1;
@@ -525,7 +548,7 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     // Loop again to emit the code:
     unsigned char *code = memory;
     state.trampolines.mem = memory + code_size;
-    unsigned char *data = memory + code_size + state.trampolines.size;
+    unsigned char *data = memory + code_size + state.trampolines.size + code_padding;
     // Compile the shim, which handles converting between the native
     // calling convention and the calling convention used by jitted code
     // (which may be different for efficiency reasons).
@@ -547,7 +570,7 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     code += group->code_size;
     data += group->data_size;
     assert(code == memory + code_size);
-    assert(data == memory + code_size + state.trampolines.size + data_size);
+    assert(data == memory + code_size + state.trampolines.size + code_padding + data_size);
 #ifdef MAP_JIT
     pthread_jit_write_protect_np(1);
 #endif

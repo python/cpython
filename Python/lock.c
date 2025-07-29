@@ -58,7 +58,7 @@ _PyMutex_LockTimed(PyMutex *m, PyTime_t timeout, _PyLockFlags flags)
             return PY_LOCK_ACQUIRED;
         }
     }
-    else if (timeout == 0) {
+    if (timeout == 0) {
         return PY_LOCK_FAILURE;
     }
 
@@ -95,6 +95,18 @@ _PyMutex_LockTimed(PyMutex *m, PyTime_t timeout, _PyLockFlags flags)
         if (timeout == 0) {
             return PY_LOCK_FAILURE;
         }
+        if ((flags & _PY_LOCK_PYTHONLOCK) && Py_IsFinalizing()) {
+            // At this phase of runtime shutdown, only the finalization thread
+            // can have attached thread state; others hang if they try
+            // attaching. And since operations on this lock requires attached
+            // thread state (_PY_LOCK_PYTHONLOCK), the finalization thread is
+            // running this code, and no other thread can unlock.
+            // Raise rather than hang. (_PY_LOCK_PYTHONLOCK allows raising
+            // exceptons.)
+            PyErr_SetString(PyExc_PythonFinalizationError,
+                            "cannot acquire lock at interpreter finalization");
+            return PY_LOCK_FAILURE;
+        }
 
         uint8_t newv = v;
         if (!(v & _Py_HAS_PARKED)) {
@@ -119,6 +131,9 @@ _PyMutex_LockTimed(PyMutex *m, PyTime_t timeout, _PyLockFlags flags)
                 return PY_LOCK_INTR;
             }
         }
+        else if (ret == Py_PARK_INTR && (flags & _PY_FAIL_IF_INTERRUPTED)) {
+            return PY_LOCK_INTR;
+        }
         else if (ret == Py_PARK_TIMEOUT) {
             assert(timeout >= 0);
             return PY_LOCK_FAILURE;
@@ -137,8 +152,10 @@ _PyMutex_LockTimed(PyMutex *m, PyTime_t timeout, _PyLockFlags flags)
 }
 
 static void
-mutex_unpark(PyMutex *m, struct mutex_entry *entry, int has_more_waiters)
+mutex_unpark(void *arg, void *park_arg, int has_more_waiters)
 {
+    PyMutex *m = (PyMutex*)arg;
+    struct mutex_entry *entry = (struct mutex_entry*)park_arg;
     uint8_t v = 0;
     if (entry) {
         PyTime_t now;
@@ -168,7 +185,7 @@ _PyMutex_TryUnlock(PyMutex *m)
         }
         else if ((v & _Py_HAS_PARKED)) {
             // wake up a single thread
-            _PyParkingLot_Unpark(&m->_bits, (_Py_unpark_fn_t *)mutex_unpark, m);
+            _PyParkingLot_Unpark(&m->_bits, mutex_unpark, m);
             return 0;
         }
         else if (_Py_atomic_compare_exchange_uint8(&m->_bits, &v, _Py_UNLOCKED)) {
@@ -616,4 +633,12 @@ PyMutex_Unlock(PyMutex *m)
     if (_PyMutex_TryUnlock(m) < 0) {
         Py_FatalError("unlocking mutex that is not locked");
     }
+}
+
+
+#undef PyMutex_IsLocked
+int
+PyMutex_IsLocked(PyMutex *m)
+{
+    return _PyMutex_IsLocked(m);
 }

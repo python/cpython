@@ -1,1 +1,0 @@
-``sys.ps1`` and ``sys.ps2`` are now restored after :func:`code.interact` call.

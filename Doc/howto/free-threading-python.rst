@@ -1,18 +1,21 @@
 .. _freethreading-python-howto:
 
-**********************************************
-Python experimental support for free threading
-**********************************************
+*********************************
+Python support for free threading
+*********************************
 
-Starting with the 3.13 release, CPython has experimental support for a build of
+Starting with the 3.13 release, CPython has support for a build of
 Python called :term:`free threading` where the :term:`global interpreter lock`
 (GIL) is disabled.  Free-threaded execution allows for full utilization of the
 available processing power by running threads in parallel on available CPU cores.
 While not all software will benefit from this automatically, programs
 designed with threading in mind will run faster on multi-core hardware.
 
-**The free-threaded mode is experimental** and work is ongoing to improve it:
-expect some bugs and a substantial single-threaded performance hit.
+The free-threaded mode is working and continues to be improved, but
+there is some additional overhead in single-threaded workloads compared
+to the regular build. Additionally, third-party packages, in particular ones
+with an :term:`extension module`, may not be ready for use in a
+free-threaded build, and will re-enable the :term:`GIL`.
 
 This document describes the implications of free threading
 for Python code.  See :ref:`freethreading-extensions-howto` for information on
@@ -32,7 +35,7 @@ optionally support installing free-threaded Python binaries.  The installers
 are available at https://www.python.org/downloads/.
 
 For information on other platforms, see the `Installing a Free-Threaded Python
-<https://py-free-threading.github.io/installing_cpython/>`_, a
+<https://py-free-threading.github.io/installing-cpython/>`_, a
 community-maintained installation guide for installing free-threaded Python.
 
 When building CPython from source, the :option:`--disable-gil` configure option
@@ -43,7 +46,7 @@ Identifying free-threaded Python
 ================================
 
 To check if the current interpreter supports free-threading, :option:`python -VV <-V>`
-and :data:`sys.version` contain "experimental free-threading build".
+and :data:`sys.version` contain "free-threading build".
 The new :func:`sys._is_gil_enabled` function can be used to check whether
 the GIL is actually disabled in the running process.
 
@@ -152,3 +155,33 @@ to re-enable it in a thread-safe way in the 3.14 release.  This overhead is
 expected to be reduced in upcoming Python release.   We are aiming for an
 overhead of 10% or less on the pyperformance suite compared to the default
 GIL-enabled build.
+
+
+Behavioral changes
+==================
+
+This section describes CPython behavioural changes with the free-threaded
+build.
+
+
+Context variables
+-----------------
+
+In the free-threaded build, the flag :data:`~sys.flags.thread_inherit_context`
+is set to true by default which causes threads created with
+:class:`threading.Thread` to start with a copy of the
+:class:`~contextvars.Context()` of the caller of
+:meth:`~threading.Thread.start`.  In the default GIL-enabled build, the flag
+defaults to false so threads start with an
+empty :class:`~contextvars.Context()`.
+
+
+Warning filters
+---------------
+
+In the free-threaded build, the flag :data:`~sys.flags.context_aware_warnings`
+is set to true by default.  In the default GIL-enabled build, the flag defaults
+to false.  If the flag is true then the :class:`warnings.catch_warnings`
+context manager uses a context variable for warning filters.  If the flag is
+false then :class:`~warnings.catch_warnings` modifies the global filters list,
+which is not thread-safe.  See the :mod:`warnings` module for more details.

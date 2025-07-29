@@ -1,5 +1,0 @@
-Use tagged references (``_PyStackRef``) for the default build as well as for
-the free-threading build. This has a small negative performance impact
-short-term but will enable larger speedups in the future and signficantly
-reduce maintenance costs by allowing a single implementation of tagged
-references in the future.

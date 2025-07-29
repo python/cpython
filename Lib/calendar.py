@@ -576,7 +576,7 @@ class HTMLCalendar(Calendar):
         Return a formatted year as a complete HTML page.
         """
         if encoding is None:
-            encoding = sys.getdefaultencoding()
+            encoding = 'utf-8'
         v = []
         a = v.append
         a('<?xml version="1.0" encoding="%s"?>\n' % encoding)
@@ -821,7 +821,7 @@ def timegm(tuple):
 
 def main(args=None):
     import argparse
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(color=True)
     textgroup = parser.add_argument_group('text only arguments')
     htmlgroup = parser.add_argument_group('html only arguments')
     textgroup.add_argument(
@@ -857,7 +857,7 @@ def main(args=None):
     parser.add_argument(
         "-e", "--encoding",
         default=None,
-        help="encoding to use for output"
+        help="encoding to use for output (default utf-8)"
     )
     parser.add_argument(
         "-t", "--type",
@@ -901,7 +901,7 @@ def main(args=None):
         cal.setfirstweekday(options.first_weekday)
         encoding = options.encoding
         if encoding is None:
-            encoding = sys.getdefaultencoding()
+            encoding = 'utf-8'
         optdict = dict(encoding=encoding, css=options.css)
         write = sys.stdout.buffer.write
         if options.year is None:

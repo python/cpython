@@ -14,6 +14,8 @@
 #include "pycore_audit.h"         // _PySys_Audit()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "pycore_compile.h"       // _PyAST_Compile()
+#include "pycore_fileutils.h"     // _PyFile_Flush
+#include "pycore_import.h"        // _PyImport_GetImportlibExternalLoader()
 #include "pycore_interp.h"        // PyInterpreterState.importlib
 #include "pycore_object.h"        // _PyDebug_PrintTotalRefs()
 #include "pycore_parser.h"        // _PyParser_ASTFromString()
@@ -23,6 +25,7 @@
 #include "pycore_pythonrun.h"     // export _PyRun_InteractiveLoopObject()
 #include "pycore_sysmodule.h"     // _PySys_SetAttr()
 #include "pycore_traceback.h"     // _PyTraceBack_Print()
+#include "pycore_unicodeobject.h" // _PyUnicode_Equal()
 
 #include "errcode.h"              // E_EOF
 #include "marshal.h"              // PyMarshal_ReadLongFromFile()
@@ -111,7 +114,7 @@ _PyRun_InteractiveLoopObject(FILE *fp, PyObject *filename, PyCompilerFlags *flag
     }
 
     PyObject *v;
-    if (_PySys_GetOptionalAttr(&_Py_ID(ps1), &v) < 0) {
+    if (PySys_GetOptionalAttr(&_Py_ID(ps1), &v) < 0) {
         PyErr_Print();
         return -1;
     }
@@ -125,7 +128,7 @@ _PyRun_InteractiveLoopObject(FILE *fp, PyObject *filename, PyCompilerFlags *flag
         }
     }
     Py_XDECREF(v);
-    if (_PySys_GetOptionalAttr(&_Py_ID(ps2), &v) < 0) {
+    if (PySys_GetOptionalAttr(&_Py_ID(ps2), &v) < 0) {
         PyErr_Print();
         return -1;
     }
@@ -203,7 +206,7 @@ pyrun_one_parse_ast(FILE *fp, PyObject *filename,
     PyObject *encoding_obj = NULL;
     const char *encoding = NULL;
     if (fp == stdin) {
-        if (_PySys_GetOptionalAttr(&_Py_ID(stdin), &attr) < 0) {
+        if (PySys_GetOptionalAttr(&_Py_ID(stdin), &attr) < 0) {
             PyErr_Clear();
         }
         else if (attr != NULL && attr != Py_None) {
@@ -223,7 +226,7 @@ pyrun_one_parse_ast(FILE *fp, PyObject *filename,
     // Get sys.ps1 (as UTF-8)
     PyObject *ps1_obj = NULL;
     const char *ps1 = "";
-    if (_PySys_GetOptionalAttr(&_Py_ID(ps1), &attr) < 0) {
+    if (PySys_GetOptionalAttr(&_Py_ID(ps1), &attr) < 0) {
         PyErr_Clear();
     }
     else if (attr != NULL) {
@@ -244,7 +247,7 @@ pyrun_one_parse_ast(FILE *fp, PyObject *filename,
     // Get sys.ps2 (as UTF-8)
     PyObject *ps2_obj = NULL;
     const char *ps2 = "";
-    if (_PySys_GetOptionalAttr(&_Py_ID(ps2), &attr) < 0) {
+    if (PySys_GetOptionalAttr(&_Py_ID(ps2), &attr) < 0) {
         PyErr_Clear();
     }
     else if (attr != NULL) {
@@ -655,7 +658,7 @@ _Py_HandleSystemExitAndKeyboardInterrupt(int *exitcode_p)
     }
 
     PyObject *sys_stderr;
-    if (_PySys_GetOptionalAttr(&_Py_ID(stderr), &sys_stderr) < 0) {
+    if (PySys_GetOptionalAttr(&_Py_ID(stderr), &sys_stderr) < 0) {
         PyErr_Clear();
     }
     else if (sys_stderr != NULL && sys_stderr != Py_None) {
@@ -719,7 +722,7 @@ _PyErr_PrintEx(PyThreadState *tstate, int set_sys_last_vars)
             _PyErr_Clear(tstate);
         }
     }
-    if (_PySys_GetOptionalAttr(&_Py_ID(excepthook), &hook) < 0) {
+    if (PySys_GetOptionalAttr(&_Py_ID(excepthook), &hook) < 0) {
         PyErr_Clear();
     }
     if (_PySys_Audit(tstate, "sys.excepthook", "OOOO", hook ? hook : Py_None,
@@ -1194,7 +1197,7 @@ void
 PyErr_Display(PyObject *unused, PyObject *value, PyObject *tb)
 {
     PyObject *file;
-    if (_PySys_GetOptionalAttr(&_Py_ID(stderr), &file) < 0) {
+    if (PySys_GetOptionalAttr(&_Py_ID(stderr), &file) < 0) {
         PyObject *exc = PyErr_GetRaisedException();
         _PyObject_Dump(value);
         fprintf(stderr, "lost sys.stderr\n");
@@ -1318,7 +1321,7 @@ static void
 flush_io_stream(PyThreadState *tstate, PyObject *name)
 {
     PyObject *f;
-    if (_PySys_GetOptionalAttr(name, &f) < 0) {
+    if (PySys_GetOptionalAttr(name, &f) < 0) {
         PyErr_Clear();
     }
     if (f != NULL) {
@@ -1494,11 +1497,10 @@ Py_CompileStringObject(const char *str, PyObject *filename, int start,
         return NULL;
     }
     if (flags && (flags->cf_flags & PyCF_ONLY_AST)) {
-        if ((flags->cf_flags & PyCF_OPTIMIZED_AST) == PyCF_OPTIMIZED_AST) {
-            if (_PyCompile_AstOptimize(mod, filename, flags, optimize, arena) < 0) {
-                _PyArena_Free(arena);
-                return NULL;
-            }
+        int syntax_check_only = ((flags->cf_flags & PyCF_OPTIMIZED_AST) == PyCF_ONLY_AST); /* unoptiomized AST */
+        if (_PyCompile_AstPreprocess(mod, filename, flags, optimize, arena, syntax_check_only) < 0) {
+            _PyArena_Free(arena);
+            return NULL;
         }
         PyObject *result = PyAST_mod2obj(mod);
         _PyArena_Free(arena);
@@ -1520,6 +1522,26 @@ Py_CompileStringExFlags(const char *str, const char *filename_str, int start,
     co = Py_CompileStringObject(str, filename, start, flags, optimize);
     Py_DECREF(filename);
     return co;
+}
+
+int
+_PyObject_SupportedAsScript(PyObject *cmd)
+{
+    if (PyUnicode_Check(cmd)) {
+        return 1;
+    }
+    else if (PyBytes_Check(cmd)) {
+        return 1;
+    }
+    else if (PyByteArray_Check(cmd)) {
+        return 1;
+    }
+    else if (PyObject_CheckBuffer(cmd)) {
+        return 1;
+    }
+    else {
+        return 0;
+    }
 }
 
 const char *
