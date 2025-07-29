@@ -1,5 +1,8 @@
 role,name,added,ifdef_note,struct_abi_kind
 macro,PY_VECTORCALL_ARGUMENTS_OFFSET,3.12,,
+type,PyABIInfo,3.15,,full-abi
+func,PyABIInfo_Check,3.15,,
+macro,PyABIInfo_VAR,3.15,,
 func,PyAIter_Check,3.10,,
 func,PyArg_Parse,3.2,,
 func,PyArg_ParseTuple,3.2,,
