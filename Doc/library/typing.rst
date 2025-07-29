@@ -64,7 +64,7 @@ Specification for the Python Type System
 ========================================
 
 The canonical, up-to-date specification of the Python type system can be
-found at `"Specification for the Python type system" <https://typing.python.org/en/latest/spec/index.html>`_.
+found at `Specification for the Python type system <https://typing.python.org/en/latest/spec/index.html>`_.
 
 .. _type-aliases:
 
@@ -2573,7 +2573,7 @@ types.
       at runtime as soon as the class has been created. Monkey-patching
       attributes onto a runtime-checkable protocol will still work, but will
       have no impact on :func:`isinstance` checks comparing objects to the
-      protocol. See :ref:`"What's new in Python 3.12" <whatsnew-typing-py312>`
+      protocol. See :ref:`What's new in Python 3.12 <whatsnew-typing-py312>`
       for more details.
 
 
