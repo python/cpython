@@ -36,8 +36,8 @@ __all__ = ["normcase","isabs","join","splitdrive","splitroot","split","splitext"
            "samefile","sameopenfile","samestat",
            "curdir","pardir","sep","pathsep","defpath","altsep","extsep",
            "devnull","realpath","supports_unicode_filenames","relpath",
-           "commonpath", "isjunction","isdevdrive",
-           "ALL_BUT_LAST", "ALLOW_MISSING"]
+           "commonpath","isjunction","isdevdrive",
+           "ALL_BUT_LAST","ALLOW_MISSING"]
 
 
 def _get_sep(path):

@@ -424,7 +424,7 @@ the :mod:`glob` module.)
    In particular, :exc:`FileNotFoundError` is raised if *path* does not exist,
    or another :exc:`OSError` if it is otherwise inaccessible.
    If *strict* is :data:`ALL_BUT_LAST`, the last component of the path
-   might be missing, but other errors are not ignored.
+   is allowed to be missing, but all other errors are raised.
 
    If *strict* is :py:data:`os.path.ALLOW_MISSING`, errors other than
    :exc:`FileNotFoundError` are re-raised (as with ``strict=True``).
