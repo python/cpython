@@ -534,10 +534,6 @@ The :mod:`calendar` module exports the following data attributes:
    the locale provides one. If the locale does not supply a standalone form,
    it is equal to :data:`month_name`.
 
-       >>> import calendar
-       >>> list(calendar.standalone_month_name)
-       ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-
    .. versionadded:: next
 
 
@@ -547,10 +543,6 @@ The :mod:`calendar` module exports the following data attributes:
    locale in the grammatical form used when a month name stands by itself if
    the locale provides one. If the locale does not supply a standalone form
    it is equal to :data:`month_abbr`.
-
-       >>> import calendar
-       >>> list(calendar.standalone_month_abbr)
-       ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
    .. versionadded:: next
 
