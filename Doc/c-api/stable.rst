@@ -259,20 +259,20 @@ The full API is described below for advanced use cases.
 
 .. c:type:: PyABIInfo
 
-   .. c:member:: uint8_t PyABIInfo.abiinfo_major_version
+   .. c:member:: uint8_t abiinfo_major_version
 
       The major version of :c:struct:`PyABIInfo`. Can be set to:
 
       * ``0`` to skip all checking, or
       * ``1`` to specify this version of :c:struct:`!PyABIInfo`.
 
-   .. c:member:: uint8_t PyABIInfo.abiinfo_minor_version
+   .. c:member:: uint8_t abiinfo_minor_version
 
       The major version of :c:struct:`PyABIInfo`.
       Must be set to ``0``; larger values are reserved for backwards-compatible
       future versions of :c:struct:`!PyABIInfo`.
 
-   .. c:member:: uint16_t PyABIInfo.flags
+   .. c:member:: uint16_t flags
 
       .. c:namespace:: NULL
 
@@ -311,7 +311,7 @@ The full API is described below for advanced use cases.
             Specifies ABI compatible with non-free-threading builds of CPython
             (ones compiled *without* :option:`--disable-gil`).
 
-   .. c:member:: uint32_t PyABIInfo.build_version
+   .. c:member:: uint32_t build_version
 
       The version of the Python headers used to build the code, in the format
       used by :c:macro:`PY_VERSION_HEX`.
@@ -320,7 +320,7 @@ The full API is described below for advanced use cases.
       This option is meant mainly for projects that do not use the CPython
       headers directly, and do not emulate a specific version of them.
 
-   .. c:member:: uint32_t PyABIInfo.abi_version
+   .. c:member:: uint32_t abi_version
 
       The ABI version.
 
