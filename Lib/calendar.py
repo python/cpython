@@ -147,7 +147,6 @@ try:
     standalone_month_name = _localized_month('%OB')
     standalone_month_abbr = _localized_month('%Ob')
 except ValueError:
-    # The platform does not support the %OB and %Ob specifiers.
     standalone_month_name = month_name
     standalone_month_abbr = month_abbr
 
