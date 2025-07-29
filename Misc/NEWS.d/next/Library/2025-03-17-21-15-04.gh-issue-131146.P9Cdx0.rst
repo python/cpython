@@ -1,3 +1,0 @@
-Add :data:`calendar.standalone_month_name` and :data:`calendar.standalone_month_abbr` to
-provide month names and abbreviations in a grammatical form used when a month name stands
-by itself if the locale provides one.
