@@ -158,8 +158,6 @@ back to the event-loops queue.
 
 In practice, it's slightly more convoluted, but not by much.
 In part 2, we'll walk through the details that make this possible.
-And in the control flow analysis example we'll walk through, in precise detail,
-the various control handoffs in an example async program.
 
 **Unlike tasks, await-ing a coroutine does not cede control!**
 Wrapping a coroutine in a task first, then ``await``-ing that would cede control.
