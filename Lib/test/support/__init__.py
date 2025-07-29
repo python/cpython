@@ -544,7 +544,11 @@ def has_no_debug_ranges():
     return not bool(config['code_debug_ranges'])
 
 def requires_debug_ranges(reason='requires co_positions / debug_ranges'):
-    return unittest.skipIf(has_no_debug_ranges(), reason)
+    try:
+        skip = has_no_debug_ranges()
+    except unittest.SkipTest:
+        skip = True
+    return unittest.skipIf(skip, reason)
 
 
 MS_WINDOWS = (sys.platform == 'win32')
