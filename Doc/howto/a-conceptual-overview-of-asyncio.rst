@@ -822,7 +822,7 @@ instruction is executed at a time.
 Of course, since processes are generally entirely independent from one another,
 the GIL in one process won't be impeded by the GIL in another process.
 Granted, I believe there are ways to also get around the GIL in a single process
-by leveraging C extensions.
+by leveraging C extensions or via subinterpreters.
 
 ===========================
 multithreading & asyncio
