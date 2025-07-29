@@ -2661,17 +2661,17 @@ sys__clear_type_descriptors(PyObject *module, PyObject *type)
         return NULL;
     }
     PyTypeObject *typeobj = (PyTypeObject *)(type);
-    if (!_PyType_HasFeature(typeobj, Py_TPFLAGS_HEAPTYPE)) {
-        PyErr_SetString(PyExc_TypeError, "argument must be a heap type");
+    if (!_PyType_HasFeature(typeobj, Py_TPFLAGS_IMMUTABLETYPE)) {
+        PyErr_SetString(PyExc_TypeError, "argument is immutable");
         return NULL;
     }
     PyObject *dict = _PyType_GetDict(typeobj);
     PyObject *dunder_dict = NULL;
-    if (PyDict_PopString(dict, "__dict__", &dunder_dict) < 0) {
+    if (PyDict_Pop(dict, &_Py_ID(__dict__), &dunder_dict) < 0) {
         return NULL;
     }
     PyObject *dunder_weakref = NULL;
-    if (PyDict_PopString(dict, "__weakref__", &dunder_weakref) < 0) {
+    if (PyDict_Pop(dict, &_Py_ID(__weakref__), &dunder_weakref) < 0) {
         PyType_Modified(typeobj);
         Py_XDECREF(dunder_dict);
         return NULL;
