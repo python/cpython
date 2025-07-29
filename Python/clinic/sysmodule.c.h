@@ -52,7 +52,7 @@ sys_addaudithook(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    static PyObject *argsbuf[1];
+    static _Thread_local PyObject *argsbuf[1];
     PyObject *hook;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -642,7 +642,7 @@ sys_set_coroutine_origin_tracking_depth(PyObject *module, PyObject *const *args,
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    static PyObject *argsbuf[1];
+    static _Thread_local PyObject *argsbuf[1];
     int depth;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -946,7 +946,7 @@ sys_set_int_max_str_digits(PyObject *module, PyObject *const *args, Py_ssize_t n
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    static PyObject *argsbuf[1];
+    static _Thread_local PyObject *argsbuf[1];
     int maxdigits;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -1098,7 +1098,7 @@ sys_getunicodeinternedsize(PyObject *module, PyObject *const *args, Py_ssize_t n
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    static PyObject *argsbuf[1];
+    static _Thread_local PyObject *argsbuf[1];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int _only_immortal = 0;
     Py_ssize_t _return_value;
@@ -1597,7 +1597,7 @@ sys_remote_exec(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    static PyObject *argsbuf[2];
+    static _Thread_local PyObject *argsbuf[2];
     int pid;
     PyObject *script;
 
@@ -1660,7 +1660,7 @@ sys__dump_tracelets(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    static PyObject *argsbuf[1];
+    static _Thread_local PyObject *argsbuf[1];
     PyObject *outpath;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -1724,7 +1724,7 @@ sys__getframemodulename(PyObject *module, PyObject *const *args, Py_ssize_t narg
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    static PyObject *argsbuf[1];
+    static _Thread_local PyObject *argsbuf[1];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int depth = 0;
 
@@ -1948,4 +1948,4 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=38f2deb1c43ff974 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=eb56f6c2f5cf2ced input=a9049054013a1b77]*/

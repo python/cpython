@@ -329,7 +329,7 @@ signal_set_wakeup_fd(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    static PyObject *argsbuf[2];
+    static _Thread_local PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *fdobj;
     int warn_on_full_buffer = 1;
@@ -794,4 +794,4 @@ exit:
 #ifndef SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF
     #define SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF
 #endif /* !defined(SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF) */
-/*[clinic end generated code: output=680e3aa6df3d2a81 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4c7d61c04e66ee11 input=a9049054013a1b77]*/

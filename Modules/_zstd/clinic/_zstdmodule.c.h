@@ -193,7 +193,7 @@ _zstd_get_param_bounds(PyObject *module, PyObject *const *args, Py_ssize_t nargs
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    static PyObject *argsbuf[2];
+    static _Thread_local PyObject *argsbuf[2];
     int parameter;
     int is_compress;
 
@@ -263,7 +263,7 @@ _zstd_get_frame_size(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    static PyObject *argsbuf[1];
+    static _Thread_local PyObject *argsbuf[1];
     Py_buffer frame_buffer = {NULL, NULL};
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -331,7 +331,7 @@ _zstd_get_frame_info(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    static PyObject *argsbuf[1];
+    static _Thread_local PyObject *argsbuf[1];
     Py_buffer frame_buffer = {NULL, NULL};
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -402,7 +402,7 @@ _zstd_set_parameter_types(PyObject *module, PyObject *const *args, Py_ssize_t na
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    static PyObject *argsbuf[2];
+    static _Thread_local PyObject *argsbuf[2];
     PyObject *c_parameter_type;
     PyObject *d_parameter_type;
 
@@ -426,4 +426,4 @@ _zstd_set_parameter_types(PyObject *module, PyObject *const *args, Py_ssize_t na
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=4c43e0a400805589 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8fe583ce7cb6acbe input=a9049054013a1b77]*/

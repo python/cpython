@@ -54,7 +54,7 @@ syslog_openlog(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    static PyObject *argsbuf[3];
+    static _Thread_local PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *ident = NULL;
     long logopt = 0;
@@ -265,4 +265,4 @@ syslog_LOG_UPTO(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=28517b612a9e3f32 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6f6344e6e75255aa input=a9049054013a1b77]*/

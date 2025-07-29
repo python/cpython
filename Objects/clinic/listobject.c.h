@@ -245,7 +245,7 @@ list_sort(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwn
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    static PyObject *argsbuf[2];
+    static _Thread_local PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *keyfunc = Py_None;
     int reverse = 0;
@@ -468,4 +468,4 @@ list___reversed__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return list___reversed___impl((PyListObject *)self);
 }
-/*[clinic end generated code: output=ab2325cff74b7e1e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=843b4f5d481d4ff8 input=a9049054013a1b77]*/

@@ -204,7 +204,7 @@ code_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    static PyObject *argsbuf[18];
+    static _Thread_local PyObject *argsbuf[18];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int co_argcount = ((PyCodeObject *)self)->co_argcount;
     int co_posonlyargcount = ((PyCodeObject *)self)->co_posonlyargcount;
@@ -453,7 +453,7 @@ code__varname_from_oparg(PyObject *self, PyObject *const *args, Py_ssize_t nargs
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    static PyObject *argsbuf[1];
+    static _Thread_local PyObject *argsbuf[1];
     int oparg;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -470,4 +470,4 @@ code__varname_from_oparg(PyObject *self, PyObject *const *args, Py_ssize_t nargs
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a2838d6ad221b6c9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fb495ab7749c39a6 input=a9049054013a1b77]*/

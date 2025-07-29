@@ -68,7 +68,7 @@ iso_calendar_date_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    static PyObject *argsbuf[3];
+    static _Thread_local PyObject *argsbuf[3];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     int year;
@@ -142,7 +142,7 @@ datetime_date_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs, P
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    static PyObject *argsbuf[3];
+    static _Thread_local PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int year = GET_YEAR(self);
     int month = GET_MONTH(self);
@@ -231,7 +231,7 @@ datetime_time_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs, P
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    static PyObject *argsbuf[6];
+    static _Thread_local PyObject *argsbuf[6];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int hour = TIME_GET_HOUR(self);
     int minute = TIME_GET_MINUTE(self);
@@ -353,7 +353,7 @@ datetime_datetime_now(PyObject *type, PyObject *const *args, Py_ssize_t nargs, P
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    static PyObject *argsbuf[1];
+    static _Thread_local PyObject *argsbuf[1];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *tz = Py_None;
 
@@ -421,7 +421,7 @@ datetime_datetime_replace(PyObject *self, PyObject *const *args, Py_ssize_t narg
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    static PyObject *argsbuf[9];
+    static _Thread_local PyObject *argsbuf[9];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int year = GET_YEAR(self);
     int month = GET_MONTH(self);
@@ -524,4 +524,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e2948ea777fdcb50 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2c7dd28cb6a1adce input=a9049054013a1b77]*/
