@@ -311,11 +311,6 @@ The full API is described below for advanced use cases.
             Specifies ABI compatible with non-free-threading builds of CPython
             (ones compiled *without* :option:`--disable-gil`).
 
-         .. c:macro:: PyABIInfo_FREETHREADING_AGNOSTIC
-
-            Specifies ABI compatible with both free-threading and non-free-threading
-            builds.
-
    .. c:member:: uint32_t PyABIInfo.build_version
 
       The version of the Python headers used to build the code, in the format
