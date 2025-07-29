@@ -1,3 +1,0 @@
-On POSIX systems, excluding macOS framework installs, the lib directory
-for the free-threaded build now includes a "t" suffix to avoid conflicts
-with a co-located default build installation.

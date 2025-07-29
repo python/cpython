@@ -25,7 +25,7 @@ modules and functions can be found in the following sections.
 
    :pep:`324` -- PEP proposing the subprocess module
 
-.. include:: ../includes/wasm-ios-notavail.rst
+.. include:: ../includes/wasm-mobile-notavail.rst
 
 Using the :mod:`subprocess` Module
 ----------------------------------
@@ -1524,6 +1524,24 @@ handling consistency are valid for these functions.
 
 Notes
 -----
+
+.. _subprocess-timeout-behavior:
+
+Timeout Behavior
+^^^^^^^^^^^^^^^^
+
+When using the ``timeout`` parameter in functions like :func:`run`,
+:meth:`Popen.wait`, or :meth:`Popen.communicate`,
+users should be aware of the following behaviors:
+
+1. **Process Creation Delay**: The initial process creation itself cannot be interrupted
+   on many platform APIs. This means that even when specifying a timeout, you are not
+   guaranteed to see a timeout exception until at least after however long process
+   creation takes.
+
+2. **Extremely Small Timeout Values**: Setting very small timeout values (such as a few
+   milliseconds) may result in almost immediate :exc:`TimeoutExpired` exceptions because
+   process creation and system scheduling inherently require time.
 
 .. _converting-argument-sequence:
 

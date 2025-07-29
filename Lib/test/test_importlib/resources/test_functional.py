@@ -1,9 +1,12 @@
 import unittest
 import os
+import importlib
 
 from test.support import warnings_helper
 
 from importlib import resources
+
+from . import util
 
 # Since the functional API forwards to Traversable, we only test
 # filesystem resources here -- not zip files, namespace packages etc.
@@ -11,16 +14,25 @@ from importlib import resources
 
 
 class StringAnchorMixin:
-    anchor01 = 'test.test_importlib.resources.data01'
-    anchor02 = 'test.test_importlib.resources.data02'
+    anchor01 = 'data01'
+    anchor02 = 'data02'
 
 
 class ModuleAnchorMixin:
-    from . import data01 as anchor01
-    from . import data02 as anchor02
+    @property
+    def anchor01(self):
+        return importlib.import_module('data01')
+
+    @property
+    def anchor02(self):
+        return importlib.import_module('data02')
 
 
-class FunctionalAPIBase:
+class FunctionalAPIBase(util.DiskSetup):
+    def setUp(self):
+        super().setUp()
+        self.load_fixture('data02')
+
     def _gen_resourcetxt_path_parts(self):
         """Yield various names of a text file in anchor02, each in a subTest"""
         for path_parts in (
@@ -30,12 +42,6 @@ class FunctionalAPIBase:
         ):
             with self.subTest(path_parts=path_parts):
                 yield path_parts
-
-    def assertEndsWith(self, string, suffix):
-        """Assert that `string` ends with `suffix`.
-
-        Used to ignore an architecture-specific UTF-16 byte-order mark."""
-        self.assertEqual(string[-len(suffix) :], suffix)
 
     def test_read_text(self):
         self.assertEqual(
@@ -228,16 +234,16 @@ class FunctionalAPIBase:
 
 
 class FunctionalAPITest_StringAnchor(
-    unittest.TestCase,
-    FunctionalAPIBase,
     StringAnchorMixin,
+    FunctionalAPIBase,
+    unittest.TestCase,
 ):
     pass
 
 
 class FunctionalAPITest_ModuleAnchor(
-    unittest.TestCase,
-    FunctionalAPIBase,
     ModuleAnchorMixin,
+    FunctionalAPIBase,
+    unittest.TestCase,
 ):
     pass

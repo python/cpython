@@ -26,7 +26,7 @@ except ImportError:
 from test import support
 from test.support import os_helper
 from test.support import (
-    TestFailed, run_with_locale, no_tracing,
+    TestFailed, run_with_locales, no_tracing,
     _2G, _4G, bigmemtest
     )
 from test.support.import_helper import forget
@@ -1012,6 +1012,26 @@ class AbstractUnpickleTests:
         self.assertIs(self.loads(b'I01\n.'), True)
         self.assertIs(self.loads(b'I00\n.'), False)
 
+    def test_zero_padded_integers(self):
+        self.assertEqual(self.loads(b'I010\n.'), 10)
+        self.assertEqual(self.loads(b'I-010\n.'), -10)
+        self.assertEqual(self.loads(b'I0010\n.'), 10)
+        self.assertEqual(self.loads(b'I-0010\n.'), -10)
+        self.assertEqual(self.loads(b'L010\n.'), 10)
+        self.assertEqual(self.loads(b'L-010\n.'), -10)
+        self.assertEqual(self.loads(b'L0010\n.'), 10)
+        self.assertEqual(self.loads(b'L-0010\n.'), -10)
+        self.assertEqual(self.loads(b'L010L\n.'), 10)
+        self.assertEqual(self.loads(b'L-010L\n.'), -10)
+
+    def test_nondecimal_integers(self):
+        self.assertRaises(ValueError, self.loads, b'I0b10\n.')
+        self.assertRaises(ValueError, self.loads, b'I0o10\n.')
+        self.assertRaises(ValueError, self.loads, b'I0x10\n.')
+        self.assertRaises(ValueError, self.loads, b'L0b10L\n.')
+        self.assertRaises(ValueError, self.loads, b'L0o10L\n.')
+        self.assertRaises(ValueError, self.loads, b'L0x10L\n.')
+
     def test_empty_bytestring(self):
         # issue 11286
         empty = self.loads(b'\x80\x03U\x00q\x00.', encoding='koi8-r')
@@ -1079,6 +1099,11 @@ class AbstractUnpickleTests:
         dumped = b'\x80\x04\x8d\4\0\0\0\1\0\0\0\xe2\x82\xac\x00.'
         self.check_unpickling_error((pickle.UnpicklingError, OverflowError),
                                     dumped)
+
+    def test_large_binstring(self):
+        errmsg = 'BINSTRING pickle has negative byte count'
+        with self.assertRaisesRegex(pickle.UnpicklingError, errmsg):
+            self.loads(b'T\0\0\0\x80')
 
     def test_get(self):
         pickled = b'((lp100000\ng100000\nt.'
@@ -1230,37 +1255,36 @@ class AbstractUnpickleTests:
 
         self.assertIs(unpickler4.find_class('builtins', 'str.upper'), str.upper)
         with self.assertRaisesRegex(AttributeError,
-                r"module 'builtins' has no attribute 'str\.upper'|"
-                r"Can't get attribute 'str\.upper' on <module 'builtins'"):
+                r"module 'builtins' has no attribute 'str\.upper'"):
             unpickler.find_class('builtins', 'str.upper')
 
         with self.assertRaisesRegex(AttributeError,
-                "module 'math' has no attribute 'spam'|"
-                "Can't get attribute 'spam' on <module 'math'"):
+                "module 'math' has no attribute 'spam'"):
             unpickler.find_class('math', 'spam')
         with self.assertRaisesRegex(AttributeError,
-                "Can't get attribute 'spam' on <module 'math'"):
+                "module 'math' has no attribute 'spam'"):
             unpickler4.find_class('math', 'spam')
         with self.assertRaisesRegex(AttributeError,
-                r"module 'math' has no attribute 'log\.spam'|"
-                r"Can't get attribute 'log\.spam' on <module 'math'"):
+                r"module 'math' has no attribute 'log\.spam'"):
             unpickler.find_class('math', 'log.spam')
         with self.assertRaisesRegex(AttributeError,
-                r"Can't get attribute 'log\.spam' on <module 'math'"):
+                r"Can't resolve path 'log\.spam' on module 'math'") as cm:
             unpickler4.find_class('math', 'log.spam')
+        self.assertEqual(str(cm.exception.__context__),
+            "'builtin_function_or_method' object has no attribute 'spam'")
         with self.assertRaisesRegex(AttributeError,
-                r"module 'math' has no attribute 'log\.<locals>\.spam'|"
-                r"Can't get attribute 'log\.<locals>\.spam' on <module 'math'"):
+                r"module 'math' has no attribute 'log\.<locals>\.spam'"):
             unpickler.find_class('math', 'log.<locals>.spam')
         with self.assertRaisesRegex(AttributeError,
-                r"Can't get local attribute 'log\.<locals>\.spam' on <module 'math'"):
+                r"Can't resolve path 'log\.<locals>\.spam' on module 'math'") as cm:
             unpickler4.find_class('math', 'log.<locals>.spam')
+        self.assertEqual(str(cm.exception.__context__),
+            "'builtin_function_or_method' object has no attribute '<locals>'")
         with self.assertRaisesRegex(AttributeError,
-                "module 'math' has no attribute ''|"
-                "Can't get attribute '' on <module 'math'"):
+                "module 'math' has no attribute ''"):
             unpickler.find_class('math', '')
         with self.assertRaisesRegex(AttributeError,
-                "Can't get attribute '' on <module 'math'"):
+                "module 'math' has no attribute ''"):
             unpickler4.find_class('math', '')
         self.assertRaises(ModuleNotFoundError, unpickler.find_class, 'spam', 'log')
         self.assertRaises(ValueError, unpickler.find_class, '', 'log')
@@ -1357,6 +1381,41 @@ class AbstractUnpickleTests:
         self.check_unpickling_error(error, b'cbuiltins\nlen\n)}\x92.')
         self.check_unpickling_error(error, b'cbuiltins\nint\nN}\x92.')
         self.check_unpickling_error(error, b'cbuiltins\nint\n)N\x92.')
+
+    def test_bad_state(self):
+        c = C()
+        c.x = None
+        base = b'c__main__\nC\n)\x81'
+        self.assertEqual(self.loads(base + b'}X\x01\x00\x00\x00xNsb.'), c)
+        self.assertEqual(self.loads(base + b'N}X\x01\x00\x00\x00xNs\x86b.'), c)
+        # non-hashable dict key
+        self.check_unpickling_error(TypeError, base + b'}]Nsb.')
+        # state = list
+        error = (pickle.UnpicklingError, AttributeError)
+        self.check_unpickling_error(error, base + b'](}}eb.')
+        # state = 1-tuple
+        self.check_unpickling_error(error, base + b'}\x85b.')
+        # state = 3-tuple
+        self.check_unpickling_error(error, base + b'}}}\x87b.')
+        # non-hashable slot name
+        self.check_unpickling_error(TypeError, base + b'}}]Ns\x86b.')
+        # non-string slot name
+        self.check_unpickling_error(TypeError, base + b'}}NNs\x86b.')
+        # dict = True
+        self.check_unpickling_error(error, base + b'\x88}\x86b.')
+        # slots dict = True
+        self.check_unpickling_error(error, base + b'}\x88\x86b.')
+
+        class BadKey1:
+            count = 1
+            def __hash__(self):
+                if not self.count:
+                    raise CustomError
+                self.count -= 1
+                return 42
+        __main__.BadKey1 = BadKey1
+        # bad hashable dict key
+        self.check_unpickling_error(CustomError, base + b'}c__main__\nBadKey1\n)\x81Nsb.')
 
     def test_bad_stack(self):
         badpickles = [
@@ -1613,27 +1672,30 @@ class AbstractPicklingErrorTests:
             with self.subTest(proto=proto):
                 with self.assertRaises(pickle.PicklingError) as cm:
                     self.dumps(obj, proto)
-                self.assertIn(str(cm.exception), {
-                    f'{obj.__reduce_ex__!r} must return string or tuple',
-                    '__reduce__ must return a string or tuple'})
+                self.assertEqual(str(cm.exception),
+                    '__reduce__ must return a string or tuple, not list')
+                self.assertEqual(cm.exception.__notes__, [
+                    'when serializing test.pickletester.REX object'])
 
         obj = REX((print,))
         for proto in protocols:
             with self.subTest(proto=proto):
                 with self.assertRaises(pickle.PicklingError) as cm:
                     self.dumps(obj, proto)
-                self.assertIn(str(cm.exception), {
-                    f'Tuple returned by {obj.__reduce_ex__!r} must have two to six elements',
-                    'tuple returned by __reduce__ must contain 2 through 6 elements'})
+                self.assertEqual(str(cm.exception),
+                    'tuple returned by __reduce__ must contain 2 through 6 elements')
+                self.assertEqual(cm.exception.__notes__, [
+                    'when serializing test.pickletester.REX object'])
 
         obj = REX((print, (), None, None, None, None, None))
         for proto in protocols:
             with self.subTest(proto=proto):
                 with self.assertRaises(pickle.PicklingError) as cm:
                     self.dumps(obj, proto)
-                self.assertIn(str(cm.exception), {
-                    f'Tuple returned by {obj.__reduce_ex__!r} must have two to six elements',
-                    'tuple returned by __reduce__ must contain 2 through 6 elements'})
+                self.assertEqual(str(cm.exception),
+                    'tuple returned by __reduce__ must contain 2 through 6 elements')
+                self.assertEqual(cm.exception.__notes__, [
+                    'when serializing test.pickletester.REX object'])
 
     def test_bad_reconstructor(self):
         obj = REX((42, ()))
@@ -1641,16 +1703,21 @@ class AbstractPicklingErrorTests:
             with self.subTest(proto=proto):
                 with self.assertRaises(pickle.PicklingError) as cm:
                     self.dumps(obj, proto)
-                self.assertIn(str(cm.exception), {
-                    'func from save_reduce() must be callable',
-                    'first item of the tuple returned by __reduce__ must be callable'})
+                self.assertEqual(str(cm.exception),
+                    'first item of the tuple returned by __reduce__ '
+                    'must be callable, not int')
+                self.assertEqual(cm.exception.__notes__, [
+                    'when serializing test.pickletester.REX object'])
 
     def test_unpickleable_reconstructor(self):
         obj = REX((UnpickleableCallable(), ()))
         for proto in protocols:
             with self.subTest(proto=proto):
-                with self.assertRaises(CustomError):
+                with self.assertRaises(CustomError) as cm:
                     self.dumps(obj, proto)
+                self.assertEqual(cm.exception.__notes__, [
+                    'when serializing test.pickletester.REX reconstructor',
+                    'when serializing test.pickletester.REX object'])
 
     def test_bad_reconstructor_args(self):
         obj = REX((print, []))
@@ -1658,16 +1725,22 @@ class AbstractPicklingErrorTests:
             with self.subTest(proto=proto):
                 with self.assertRaises(pickle.PicklingError) as cm:
                     self.dumps(obj, proto)
-                self.assertIn(str(cm.exception), {
-                    'args from save_reduce() must be a tuple',
-                    'second item of the tuple returned by __reduce__ must be a tuple'})
+                self.assertEqual(str(cm.exception),
+                    'second item of the tuple returned by __reduce__ '
+                    'must be a tuple, not list')
+                self.assertEqual(cm.exception.__notes__, [
+                    'when serializing test.pickletester.REX object'])
 
     def test_unpickleable_reconstructor_args(self):
         obj = REX((print, (1, 2, UNPICKLEABLE)))
         for proto in protocols:
             with self.subTest(proto=proto):
-                with self.assertRaises(CustomError):
+                with self.assertRaises(CustomError) as cm:
                     self.dumps(obj, proto)
+                self.assertEqual(cm.exception.__notes__, [
+                    'when serializing tuple item 2',
+                    'when serializing test.pickletester.REX reconstructor arguments',
+                    'when serializing test.pickletester.REX object'])
 
     def test_bad_newobj_args(self):
         obj = REX((copyreg.__newobj__, ()))
@@ -1677,16 +1750,20 @@ class AbstractPicklingErrorTests:
                     self.dumps(obj, proto)
                 self.assertIn(str(cm.exception), {
                     'tuple index out of range',
-                    '__newobj__ arglist is empty'})
+                    '__newobj__ expected at least 1 argument, got 0'})
+                self.assertEqual(cm.exception.__notes__, [
+                    'when serializing test.pickletester.REX object'])
 
         obj = REX((copyreg.__newobj__, [REX]))
         for proto in protocols[2:]:
             with self.subTest(proto=proto):
-                with self.assertRaises((IndexError, pickle.PicklingError)) as cm:
+                with self.assertRaises(pickle.PicklingError) as cm:
                     self.dumps(obj, proto)
-                self.assertIn(str(cm.exception), {
-                    'args from save_reduce() must be a tuple',
-                    'second item of the tuple returned by __reduce__ must be a tuple'})
+                self.assertEqual(str(cm.exception),
+                    'second item of the tuple returned by __reduce__ '
+                    'must be a tuple, not list')
+                self.assertEqual(cm.exception.__notes__, [
+                    'when serializing test.pickletester.REX object'])
 
     def test_bad_newobj_class(self):
         obj = REX((copyreg.__newobj__, (NoNew(),)))
@@ -1695,8 +1772,10 @@ class AbstractPicklingErrorTests:
                 with self.assertRaises(pickle.PicklingError) as cm:
                     self.dumps(obj, proto)
                 self.assertIn(str(cm.exception), {
-                    'args[0] from __newobj__ args has no __new__',
-                    'args[0] from __newobj__ args is not a type'})
+                    'first argument to __newobj__() has no __new__',
+                    f'first argument to __newobj__() must be a class, not {__name__}.NoNew'})
+                self.assertEqual(cm.exception.__notes__, [
+                    'when serializing test.pickletester.REX object'])
 
     def test_wrong_newobj_class(self):
         obj = REX((copyreg.__newobj__, (str,)))
@@ -1705,22 +1784,43 @@ class AbstractPicklingErrorTests:
                 with self.assertRaises(pickle.PicklingError) as cm:
                     self.dumps(obj, proto)
                 self.assertEqual(str(cm.exception),
-                    'args[0] from __newobj__ args has the wrong class')
+                    f'first argument to __newobj__() must be {REX!r}, not {str!r}')
+                self.assertEqual(cm.exception.__notes__, [
+                    'when serializing test.pickletester.REX object'])
 
     def test_unpickleable_newobj_class(self):
         class LocalREX(REX): pass
         obj = LocalREX((copyreg.__newobj__, (LocalREX,)))
         for proto in protocols:
             with self.subTest(proto=proto):
-                with self.assertRaises((pickle.PicklingError, AttributeError)):
+                with self.assertRaises(pickle.PicklingError) as cm:
                     self.dumps(obj, proto)
+            if proto >= 2:
+                self.assertEqual(cm.exception.__notes__, [
+                    f'when serializing {LocalREX.__module__}.{LocalREX.__qualname__} class',
+                    f'when serializing {LocalREX.__module__}.{LocalREX.__qualname__} object'])
+            else:
+                self.assertEqual(cm.exception.__notes__, [
+                    'when serializing tuple item 0',
+                    f'when serializing {LocalREX.__module__}.{LocalREX.__qualname__} reconstructor arguments',
+                    f'when serializing {LocalREX.__module__}.{LocalREX.__qualname__} object'])
 
     def test_unpickleable_newobj_args(self):
         obj = REX((copyreg.__newobj__, (REX, 1, 2, UNPICKLEABLE)))
         for proto in protocols:
             with self.subTest(proto=proto):
-                with self.assertRaises(CustomError):
+                with self.assertRaises(CustomError) as cm:
                     self.dumps(obj, proto)
+                if proto >= 2:
+                    self.assertEqual(cm.exception.__notes__, [
+                        'when serializing tuple item 2',
+                        'when serializing test.pickletester.REX __new__ arguments',
+                        'when serializing test.pickletester.REX object'])
+                else:
+                    self.assertEqual(cm.exception.__notes__, [
+                        'when serializing tuple item 3',
+                        'when serializing test.pickletester.REX reconstructor arguments',
+                        'when serializing test.pickletester.REX object'])
 
     def test_bad_newobj_ex_args(self):
         obj = REX((copyreg.__newobj_ex__, ()))
@@ -1730,16 +1830,20 @@ class AbstractPicklingErrorTests:
                     self.dumps(obj, proto)
                 self.assertIn(str(cm.exception), {
                     'not enough values to unpack (expected 3, got 0)',
-                    'length of the NEWOBJ_EX argument tuple must be exactly 3, not 0'})
+                    '__newobj_ex__ expected 3 arguments, got 0'})
+                self.assertEqual(cm.exception.__notes__, [
+                    'when serializing test.pickletester.REX object'])
 
         obj = REX((copyreg.__newobj_ex__, 42))
         for proto in protocols[2:]:
             with self.subTest(proto=proto):
                 with self.assertRaises(pickle.PicklingError) as cm:
                     self.dumps(obj, proto)
-                self.assertIn(str(cm.exception), {
-                    'args from save_reduce() must be a tuple',
-                    'second item of the tuple returned by __reduce__ must be a tuple'})
+                self.assertEqual(str(cm.exception),
+                    'second item of the tuple returned by __reduce__ '
+                    'must be a tuple, not int')
+                self.assertEqual(cm.exception.__notes__, [
+                    'when serializing test.pickletester.REX object'])
 
         obj = REX((copyreg.__newobj_ex__, (REX, 42, {})))
         if self.pickler is pickle._Pickler:
@@ -1749,13 +1853,17 @@ class AbstractPicklingErrorTests:
                         self.dumps(obj, proto)
                     self.assertEqual(str(cm.exception),
                         'Value after * must be an iterable, not int')
+                    self.assertEqual(cm.exception.__notes__, [
+                        'when serializing test.pickletester.REX object'])
         else:
             for proto in protocols[2:]:
                 with self.subTest(proto=proto):
                     with self.assertRaises(pickle.PicklingError) as cm:
                         self.dumps(obj, proto)
                     self.assertEqual(str(cm.exception),
-                        'second item from NEWOBJ_EX argument tuple must be a tuple, not int')
+                        'second argument to __newobj_ex__() must be a tuple, not int')
+                    self.assertEqual(cm.exception.__notes__, [
+                        'when serializing test.pickletester.REX object'])
 
         obj = REX((copyreg.__newobj_ex__, (REX, (), [])))
         if self.pickler is pickle._Pickler:
@@ -1765,13 +1873,17 @@ class AbstractPicklingErrorTests:
                         self.dumps(obj, proto)
                     self.assertEqual(str(cm.exception),
                         'functools.partial() argument after ** must be a mapping, not list')
+                    self.assertEqual(cm.exception.__notes__, [
+                        'when serializing test.pickletester.REX object'])
         else:
             for proto in protocols[2:]:
                 with self.subTest(proto=proto):
                     with self.assertRaises(pickle.PicklingError) as cm:
                         self.dumps(obj, proto)
                     self.assertEqual(str(cm.exception),
-                        'third item from NEWOBJ_EX argument tuple must be a dict, not list')
+                        'third argument to __newobj_ex__() must be a dict, not list')
+                    self.assertEqual(cm.exception.__notes__, [
+                        'when serializing test.pickletester.REX object'])
 
     def test_bad_newobj_ex__class(self):
         obj = REX((copyreg.__newobj_ex__, (NoNew(), (), {})))
@@ -1780,8 +1892,10 @@ class AbstractPicklingErrorTests:
                 with self.assertRaises(pickle.PicklingError) as cm:
                     self.dumps(obj, proto)
                 self.assertIn(str(cm.exception), {
-                    'args[0] from __newobj_ex__ args has no __new__',
-                    'first item from NEWOBJ_EX argument tuple must be a class, not NoNew'})
+                    'first argument to __newobj_ex__() has no __new__',
+                    f'first argument to __newobj_ex__() must be a class, not {__name__}.NoNew'})
+                self.assertEqual(cm.exception.__notes__, [
+                    'when serializing test.pickletester.REX object'])
 
     def test_wrong_newobj_ex_class(self):
         if self.pickler is not pickle._Pickler:
@@ -1792,36 +1906,96 @@ class AbstractPicklingErrorTests:
                 with self.assertRaises(pickle.PicklingError) as cm:
                     self.dumps(obj, proto)
                 self.assertEqual(str(cm.exception),
-                    'args[0] from __newobj_ex__ args has the wrong class')
+                    f'first argument to __newobj_ex__() must be {REX}, not {str}')
+                self.assertEqual(cm.exception.__notes__, [
+                    'when serializing test.pickletester.REX object'])
 
     def test_unpickleable_newobj_ex_class(self):
         class LocalREX(REX): pass
         obj = LocalREX((copyreg.__newobj_ex__, (LocalREX, (), {})))
         for proto in protocols:
             with self.subTest(proto=proto):
-                with self.assertRaises((pickle.PicklingError, AttributeError)):
+                with self.assertRaises(pickle.PicklingError) as cm:
                     self.dumps(obj, proto)
+                if proto >= 4:
+                    self.assertEqual(cm.exception.__notes__, [
+                        f'when serializing {LocalREX.__module__}.{LocalREX.__qualname__} class',
+                        f'when serializing {LocalREX.__module__}.{LocalREX.__qualname__} object'])
+                elif proto >= 2:
+                    self.assertEqual(cm.exception.__notes__, [
+                        'when serializing tuple item 0',
+                        'when serializing tuple item 1',
+                        'when serializing functools.partial state',
+                        'when serializing functools.partial object',
+                        f'when serializing {LocalREX.__module__}.{LocalREX.__qualname__} reconstructor',
+                        f'when serializing {LocalREX.__module__}.{LocalREX.__qualname__} object'])
+                else:
+                    self.assertEqual(cm.exception.__notes__, [
+                        'when serializing tuple item 0',
+                        f'when serializing {LocalREX.__module__}.{LocalREX.__qualname__} reconstructor arguments',
+                        f'when serializing {LocalREX.__module__}.{LocalREX.__qualname__} object'])
 
     def test_unpickleable_newobj_ex_args(self):
         obj = REX((copyreg.__newobj_ex__, (REX, (1, 2, UNPICKLEABLE), {})))
         for proto in protocols:
             with self.subTest(proto=proto):
-                with self.assertRaises(CustomError):
+                with self.assertRaises(CustomError) as cm:
                     self.dumps(obj, proto)
+                if proto >= 4:
+                    self.assertEqual(cm.exception.__notes__, [
+                        'when serializing tuple item 2',
+                        'when serializing test.pickletester.REX __new__ arguments',
+                        'when serializing test.pickletester.REX object'])
+                elif proto >= 2:
+                    self.assertEqual(cm.exception.__notes__, [
+                        'when serializing tuple item 3',
+                        'when serializing tuple item 1',
+                        'when serializing functools.partial state',
+                        'when serializing functools.partial object',
+                        'when serializing test.pickletester.REX reconstructor',
+                        'when serializing test.pickletester.REX object'])
+                else:
+                    self.assertEqual(cm.exception.__notes__, [
+                        'when serializing tuple item 2',
+                        'when serializing tuple item 1',
+                        'when serializing test.pickletester.REX reconstructor arguments',
+                        'when serializing test.pickletester.REX object'])
 
     def test_unpickleable_newobj_ex_kwargs(self):
         obj = REX((copyreg.__newobj_ex__, (REX, (), {'a': UNPICKLEABLE})))
         for proto in protocols:
             with self.subTest(proto=proto):
-                with self.assertRaises(CustomError):
+                with self.assertRaises(CustomError) as cm:
                     self.dumps(obj, proto)
+                if proto >= 4:
+                    self.assertEqual(cm.exception.__notes__, [
+                        "when serializing dict item 'a'",
+                        'when serializing test.pickletester.REX __new__ arguments',
+                        'when serializing test.pickletester.REX object'])
+                elif proto >= 2:
+                    self.assertEqual(cm.exception.__notes__, [
+                        "when serializing dict item 'a'",
+                        'when serializing tuple item 2',
+                        'when serializing functools.partial state',
+                        'when serializing functools.partial object',
+                        'when serializing test.pickletester.REX reconstructor',
+                        'when serializing test.pickletester.REX object'])
+                else:
+                    self.assertEqual(cm.exception.__notes__, [
+                        "when serializing dict item 'a'",
+                        'when serializing tuple item 2',
+                        'when serializing test.pickletester.REX reconstructor arguments',
+                        'when serializing test.pickletester.REX object'])
 
     def test_unpickleable_state(self):
         obj = REX_state(UNPICKLEABLE)
         for proto in protocols:
             with self.subTest(proto=proto):
-                with self.assertRaises(CustomError):
+                with self.assertRaises(CustomError) as cm:
                     self.dumps(obj, proto)
+                self.assertEqual(cm.exception.__notes__, [
+                    'when serializing test.pickletester.REX_state state',
+                    'when serializing test.pickletester.REX_state object'])
 
     def test_bad_state_setter(self):
         if self.pickler is pickle._Pickler:
@@ -1832,21 +2006,30 @@ class AbstractPicklingErrorTests:
                 with self.assertRaises(pickle.PicklingError) as cm:
                     self.dumps(obj, proto)
                 self.assertEqual(str(cm.exception),
-                    'sixth element of the tuple returned by __reduce__ must be a function, not int')
+                    'sixth item of the tuple returned by __reduce__ '
+                    'must be callable, not int')
+                self.assertEqual(cm.exception.__notes__, [
+                    'when serializing test.pickletester.REX object'])
 
     def test_unpickleable_state_setter(self):
         obj = REX((print, (), 'state', None, None, UnpickleableCallable()))
         for proto in protocols:
             with self.subTest(proto=proto):
-                with self.assertRaises(CustomError):
+                with self.assertRaises(CustomError) as cm:
                     self.dumps(obj, proto)
+                self.assertEqual(cm.exception.__notes__, [
+                    'when serializing test.pickletester.REX state setter',
+                    'when serializing test.pickletester.REX object'])
 
     def test_unpickleable_state_with_state_setter(self):
         obj = REX((print, (), UNPICKLEABLE, None, None, print))
         for proto in protocols:
             with self.subTest(proto=proto):
-                with self.assertRaises(CustomError):
+                with self.assertRaises(CustomError) as cm:
                     self.dumps(obj, proto)
+                self.assertEqual(cm.exception.__notes__, [
+                    'when serializing test.pickletester.REX state',
+                    'when serializing test.pickletester.REX object'])
 
     def test_bad_object_list_items(self):
         # Issue4176: crash when 4th and 5th items of __reduce__()
@@ -1858,25 +2041,33 @@ class AbstractPicklingErrorTests:
                     self.dumps(obj, proto)
                 self.assertIn(str(cm.exception), {
                     "'int' object is not iterable",
-                    'fourth element of the tuple returned by __reduce__ must be an iterator, not int'})
+                    'fourth item of the tuple returned by __reduce__ '
+                    'must be an iterator, not int'})
+                self.assertEqual(cm.exception.__notes__, [
+                    'when serializing test.pickletester.REX object'])
 
         if self.pickler is not pickle._Pickler:
             # Python implementation is less strict and also accepts iterables.
             obj = REX((list, (), None, []))
             for proto in protocols:
                 with self.subTest(proto=proto):
-                    with self.assertRaises((TypeError, pickle.PicklingError)):
+                    with self.assertRaises(pickle.PicklingError):
                         self.dumps(obj, proto)
-                    self.assertIn(str(cm.exception), {
-                        "'int' object is not iterable",
-                        'fourth element of the tuple returned by __reduce__ must be an iterator, not int'})
+                    self.assertEqual(str(cm.exception),
+                        'fourth item of the tuple returned by __reduce__ '
+                        'must be an iterator, not int')
+                    self.assertEqual(cm.exception.__notes__, [
+                        'when serializing test.pickletester.REX object'])
 
     def test_unpickleable_object_list_items(self):
         obj = REX_six([1, 2, UNPICKLEABLE])
         for proto in protocols:
             with self.subTest(proto=proto):
-                with self.assertRaises(CustomError):
+                with self.assertRaises(CustomError) as cm:
                     self.dumps(obj, proto)
+                self.assertEqual(cm.exception.__notes__, [
+                    'when serializing test.pickletester.REX_six item 2',
+                    'when serializing test.pickletester.REX_six object'])
 
     def test_bad_object_dict_items(self):
         # Issue4176: crash when 4th and 5th items of __reduce__()
@@ -1888,7 +2079,10 @@ class AbstractPicklingErrorTests:
                     self.dumps(obj, proto)
                 self.assertIn(str(cm.exception), {
                     "'int' object is not iterable",
-                    'fifth element of the tuple returned by __reduce__ must be an iterator, not int'})
+                    'fifth item of the tuple returned by __reduce__ '
+                    'must be an iterator, not int'})
+                self.assertEqual(cm.exception.__notes__, [
+                    'when serializing test.pickletester.REX object'])
 
         for proto in protocols:
             obj = REX((dict, (), None, None, iter([('a',)])))
@@ -1898,76 +2092,118 @@ class AbstractPicklingErrorTests:
                 self.assertIn(str(cm.exception), {
                     'not enough values to unpack (expected 2, got 1)',
                     'dict items iterator must return 2-tuples'})
+                self.assertEqual(cm.exception.__notes__, [
+                    'when serializing test.pickletester.REX object'])
 
         if self.pickler is not pickle._Pickler:
             # Python implementation is less strict and also accepts iterables.
             obj = REX((dict, (), None, None, []))
             for proto in protocols:
                 with self.subTest(proto=proto):
-                    with self.assertRaises((TypeError, pickle.PicklingError)):
+                    with self.assertRaises(pickle.PicklingError):
                         self.dumps(obj, proto)
                     self.assertEqual(str(cm.exception),
                         'dict items iterator must return 2-tuples')
+                    self.assertEqual(cm.exception.__notes__, [
+                        'when serializing test.pickletester.REX object'])
 
     def test_unpickleable_object_dict_items(self):
         obj = REX_seven({'a': UNPICKLEABLE})
         for proto in protocols:
             with self.subTest(proto=proto):
-                with self.assertRaises(CustomError):
+                with self.assertRaises(CustomError) as cm:
                     self.dumps(obj, proto)
+                self.assertEqual(cm.exception.__notes__, [
+                    "when serializing test.pickletester.REX_seven item 'a'",
+                    'when serializing test.pickletester.REX_seven object'])
 
     def test_unpickleable_list_items(self):
         obj = [1, [2, 3, UNPICKLEABLE]]
         for proto in protocols:
             with self.subTest(proto=proto):
-                with self.assertRaises(CustomError):
+                with self.assertRaises(CustomError) as cm:
                     self.dumps(obj, proto)
+                self.assertEqual(cm.exception.__notes__, [
+                    'when serializing list item 2',
+                    'when serializing list item 1'])
         for n in [0, 1, 1000, 1005]:
             obj = [*range(n), UNPICKLEABLE]
             for proto in protocols:
                 with self.subTest(proto=proto):
-                    with self.assertRaises(CustomError):
+                    with self.assertRaises(CustomError) as cm:
                         self.dumps(obj, proto)
+                    self.assertEqual(cm.exception.__notes__, [
+                        f'when serializing list item {n}'])
 
     def test_unpickleable_tuple_items(self):
         obj = (1, (2, 3, UNPICKLEABLE))
         for proto in protocols:
             with self.subTest(proto=proto):
-                with self.assertRaises(CustomError):
+                with self.assertRaises(CustomError) as cm:
                     self.dumps(obj, proto)
+                self.assertEqual(cm.exception.__notes__, [
+                    'when serializing tuple item 2',
+                    'when serializing tuple item 1'])
         obj = (*range(10), UNPICKLEABLE)
         for proto in protocols:
             with self.subTest(proto=proto):
-                with self.assertRaises(CustomError):
+                with self.assertRaises(CustomError) as cm:
                     self.dumps(obj, proto)
+                self.assertEqual(cm.exception.__notes__, [
+                    'when serializing tuple item 10'])
 
     def test_unpickleable_dict_items(self):
         obj = {'a': {'b': UNPICKLEABLE}}
         for proto in protocols:
             with self.subTest(proto=proto):
-                with self.assertRaises(CustomError):
+                with self.assertRaises(CustomError) as cm:
                     self.dumps(obj, proto)
+                self.assertEqual(cm.exception.__notes__, [
+                    "when serializing dict item 'b'",
+                    "when serializing dict item 'a'"])
         for n in [0, 1, 1000, 1005]:
             obj = dict.fromkeys(range(n))
             obj['a'] = UNPICKLEABLE
             for proto in protocols:
                 with self.subTest(proto=proto, n=n):
-                    with self.assertRaises(CustomError):
+                    with self.assertRaises(CustomError) as cm:
                         self.dumps(obj, proto)
+                    self.assertEqual(cm.exception.__notes__, [
+                        "when serializing dict item 'a'"])
 
     def test_unpickleable_set_items(self):
         obj = {UNPICKLEABLE}
         for proto in protocols:
             with self.subTest(proto=proto):
-                with self.assertRaises(CustomError):
+                with self.assertRaises(CustomError) as cm:
                     self.dumps(obj, proto)
+                if proto >= 4:
+                    self.assertEqual(cm.exception.__notes__, [
+                        'when serializing set element'])
+                else:
+                    self.assertEqual(cm.exception.__notes__, [
+                        'when serializing list item 0',
+                        'when serializing tuple item 0',
+                        'when serializing set reconstructor arguments'])
 
     def test_unpickleable_frozenset_items(self):
         obj = frozenset({frozenset({UNPICKLEABLE})})
         for proto in protocols:
             with self.subTest(proto=proto):
-                with self.assertRaises(CustomError):
+                with self.assertRaises(CustomError) as cm:
                     self.dumps(obj, proto)
+                if proto >= 4:
+                    self.assertEqual(cm.exception.__notes__, [
+                        'when serializing frozenset element',
+                        'when serializing frozenset element'])
+                else:
+                    self.assertEqual(cm.exception.__notes__, [
+                        'when serializing list item 0',
+                        'when serializing tuple item 0',
+                        'when serializing frozenset reconstructor arguments',
+                        'when serializing list item 0',
+                        'when serializing tuple item 0',
+                        'when serializing frozenset reconstructor arguments'])
 
     def test_global_lookup_error(self):
         # Global name does not exist
@@ -1977,36 +2213,40 @@ class AbstractPicklingErrorTests:
             with self.subTest(proto=proto):
                 with self.assertRaises(pickle.PicklingError) as cm:
                     self.dumps(obj, proto)
-                self.assertIn(str(cm.exception), {
-                    f"Can't pickle {obj!r}: it's not found as {__name__}.spam",
-                    f"Can't pickle {obj!r}: attribute lookup spam on {__name__} failed"})
+                self.assertEqual(str(cm.exception),
+                    f"Can't pickle {obj!r}: it's not found as {__name__}.spam")
+                self.assertEqual(str(cm.exception.__context__),
+                    f"module '{__name__}' has no attribute 'spam'")
 
         obj.__module__ = 'nonexisting'
         for proto in protocols:
             with self.subTest(proto=proto):
                 with self.assertRaises(pickle.PicklingError) as cm:
                     self.dumps(obj, proto)
-                self.assertIn(str(cm.exception), {
-                    f"Can't pickle {obj!r}: it's not found as nonexisting.spam",
-                    f"Can't pickle {obj!r}: import of module 'nonexisting' failed"})
+                self.assertEqual(str(cm.exception),
+                    f"Can't pickle {obj!r}: No module named 'nonexisting'")
+                self.assertEqual(str(cm.exception.__context__),
+                    "No module named 'nonexisting'")
 
         obj.__module__ = ''
         for proto in protocols:
             with self.subTest(proto=proto):
-                with self.assertRaises((ValueError, pickle.PicklingError)) as cm:
+                with self.assertRaises(pickle.PicklingError) as cm:
                     self.dumps(obj, proto)
-                self.assertIn(str(cm.exception), {
-                    'Empty module name',
-                    f"Can't pickle {obj!r}: import of module '' failed"})
+                self.assertEqual(str(cm.exception),
+                    f"Can't pickle {obj!r}: Empty module name")
+                self.assertEqual(str(cm.exception.__context__),
+                    "Empty module name")
 
         obj.__module__ = None
         for proto in protocols:
             with self.subTest(proto=proto):
                 with self.assertRaises(pickle.PicklingError) as cm:
                     self.dumps(obj, proto)
-                self.assertIn(str(cm.exception), {
-                    f"Can't pickle {obj!r}: it's not found as __main__.spam",
-                    f"Can't pickle {obj!r}: attribute lookup spam on __main__ failed"})
+                self.assertEqual(str(cm.exception),
+                    f"Can't pickle {obj!r}: it's not found as __main__.spam")
+                self.assertEqual(str(cm.exception.__context__),
+                    "module '__main__' has no attribute 'spam'")
 
     def test_nonencodable_global_name_error(self):
         for proto in protocols[:4]:
@@ -2015,15 +2255,11 @@ class AbstractPicklingErrorTests:
                 obj = REX(name)
                 obj.__module__ = __name__
                 with support.swap_item(globals(), name, obj):
-                    if proto == 3 and self.pickler is pickle._Pickler:
-                        with self.assertRaises(UnicodeEncodeError):
-                            self.dumps(obj, proto)
-                    else:
-                        with self.assertRaises(pickle.PicklingError) as cm:
-                            self.dumps(obj, proto)
-                        self.assertIn(str(cm.exception), {
-                            f"can't pickle global identifier '{__name__}.{name}' using pickle protocol {proto}",
-                            f"can't pickle global identifier '{name}' using pickle protocol {proto}"})
+                    with self.assertRaises(pickle.PicklingError) as cm:
+                        self.dumps(obj, proto)
+                    self.assertEqual(str(cm.exception),
+                        f"can't pickle global identifier {name!r} using pickle protocol {proto}")
+                    self.assertIsInstance(cm.exception.__context__, UnicodeEncodeError)
 
     def test_nonencodable_module_name_error(self):
         for proto in protocols[:4]:
@@ -2033,57 +2269,67 @@ class AbstractPicklingErrorTests:
                 obj.__module__ = name
                 mod = types.SimpleNamespace(test=obj)
                 with support.swap_item(sys.modules, name, mod):
-                    if proto == 3 and self.pickler is pickle._Pickler:
-                        with self.assertRaises(UnicodeEncodeError):
-                            self.dumps(obj, proto)
-                    else:
-                        with self.assertRaises(pickle.PicklingError) as cm:
-                            self.dumps(obj, proto)
-                        self.assertIn(str(cm.exception), {
-                            f"can't pickle global identifier '{name}.test' using pickle protocol {proto}",
-                            f"can't pickle module identifier '{name}' using pickle protocol {proto}"})
+                    with self.assertRaises(pickle.PicklingError) as cm:
+                        self.dumps(obj, proto)
+                    self.assertEqual(str(cm.exception),
+                        f"can't pickle module identifier {name!r} using pickle protocol {proto}")
+                    self.assertIsInstance(cm.exception.__context__, UnicodeEncodeError)
 
     def test_nested_lookup_error(self):
         # Nested name does not exist
-        obj = REX('AbstractPickleTests.spam')
+        global TestGlobal
+        class TestGlobal:
+            class A:
+                pass
+        obj = REX('TestGlobal.A.B.C')
         obj.__module__ = __name__
-        for proto in protocols:
-            with self.subTest(proto=proto):
-                with self.assertRaises(pickle.PicklingError) as cm:
-                    self.dumps(obj, proto)
-                self.assertIn(str(cm.exception), {
-                    f"Can't pickle {obj!r}: it's not found as {__name__}.AbstractPickleTests.spam",
-                    f"Can't pickle {obj!r}: attribute lookup AbstractPickleTests.spam on {__name__} failed"})
-
-        obj.__module__ = None
-        for proto in protocols:
-            with self.subTest(proto=proto):
-                with self.assertRaises(pickle.PicklingError) as cm:
-                    self.dumps(obj, proto)
-                self.assertIn(str(cm.exception), {
-                    f"Can't pickle {obj!r}: it's not found as __main__.AbstractPickleTests.spam",
-                    f"Can't pickle {obj!r}: attribute lookup AbstractPickleTests.spam on __main__ failed"})
-
-    def test_wrong_object_lookup_error(self):
-        # Name is bound to different object
-        obj = REX('AbstractPickleTests')
-        obj.__module__ = __name__
-        AbstractPickleTests.ham = []
         for proto in protocols:
             with self.subTest(proto=proto):
                 with self.assertRaises(pickle.PicklingError) as cm:
                     self.dumps(obj, proto)
                 self.assertEqual(str(cm.exception),
-                    f"Can't pickle {obj!r}: it's not the same object as {__name__}.AbstractPickleTests")
+                    f"Can't pickle {obj!r}: "
+                    f"it's not found as {__name__}.TestGlobal.A.B.C")
+                self.assertEqual(str(cm.exception.__context__),
+                    "type object 'A' has no attribute 'B'")
 
         obj.__module__ = None
         for proto in protocols:
             with self.subTest(proto=proto):
                 with self.assertRaises(pickle.PicklingError) as cm:
                     self.dumps(obj, proto)
-                self.assertIn(str(cm.exception), {
-                    f"Can't pickle {obj!r}: it's not found as __main__.AbstractPickleTests",
-                    f"Can't pickle {obj!r}: attribute lookup AbstractPickleTests on __main__ failed"})
+                self.assertEqual(str(cm.exception),
+                    f"Can't pickle {obj!r}: "
+                    f"it's not found as __main__.TestGlobal.A.B.C")
+                self.assertEqual(str(cm.exception.__context__),
+                    "module '__main__' has no attribute 'TestGlobal'")
+
+    def test_wrong_object_lookup_error(self):
+        # Name is bound to different object
+        global TestGlobal
+        class TestGlobal:
+            pass
+        obj = REX('TestGlobal')
+        obj.__module__ = __name__
+        for proto in protocols:
+            with self.subTest(proto=proto):
+                with self.assertRaises(pickle.PicklingError) as cm:
+                    self.dumps(obj, proto)
+                self.assertEqual(str(cm.exception),
+                    f"Can't pickle {obj!r}: "
+                    f"it's not the same object as {__name__}.TestGlobal")
+                self.assertIsNone(cm.exception.__context__)
+
+        obj.__module__ = None
+        for proto in protocols:
+            with self.subTest(proto=proto):
+                with self.assertRaises(pickle.PicklingError) as cm:
+                    self.dumps(obj, proto)
+                self.assertEqual(str(cm.exception),
+                    f"Can't pickle {obj!r}: "
+                    f"it's not found as __main__.TestGlobal")
+                self.assertEqual(str(cm.exception.__context__),
+                    "module '__main__' has no attribute 'TestGlobal'")
 
     def test_local_lookup_error(self):
         # Test that whichmodule() errors out cleanly when looking up
@@ -2093,30 +2339,27 @@ class AbstractPicklingErrorTests:
         # Since the function is local, lookup will fail
         for proto in protocols:
             with self.subTest(proto=proto):
-                with self.assertRaises((AttributeError, pickle.PicklingError)) as cm:
+                with self.assertRaises(pickle.PicklingError) as cm:
                     self.dumps(f, proto)
-                self.assertIn(str(cm.exception), {
-                    f"Can't pickle {f!r}: it's not found as {__name__}.{f.__qualname__}",
-                    f"Can't get local attribute {f.__qualname__!r} on {sys.modules[__name__]}"})
+                self.assertEqual(str(cm.exception),
+                    f"Can't pickle local object {f!r}")
         # Same without a __module__ attribute (exercises a different path
         # in _pickle.c).
         del f.__module__
         for proto in protocols:
             with self.subTest(proto=proto):
-                with self.assertRaises((AttributeError, pickle.PicklingError)) as cm:
+                with self.assertRaises(pickle.PicklingError) as cm:
                     self.dumps(f, proto)
-                self.assertIn(str(cm.exception), {
-                    f"Can't pickle {f!r}: it's not found as __main__.{f.__qualname__}",
-                    f"Can't get local object {f.__qualname__!r}"})
+                self.assertEqual(str(cm.exception),
+                    f"Can't pickle local object {f!r}")
         # Yet a different path.
         f.__name__ = f.__qualname__
         for proto in protocols:
             with self.subTest(proto=proto):
-                with self.assertRaises((AttributeError, pickle.PicklingError)) as cm:
+                with self.assertRaises(pickle.PicklingError) as cm:
                     self.dumps(f, proto)
-                self.assertIn(str(cm.exception), {
-                    f"Can't pickle {f!r}: it's not found as __main__.{f.__qualname__}",
-                    f"Can't get local object {f.__qualname__!r}"})
+                self.assertEqual(str(cm.exception),
+                    f"Can't pickle local object {f!r}")
 
     def test_reduce_ex_None(self):
         c = REX_None()
@@ -2149,12 +2392,10 @@ class AbstractPicklingErrorTests:
                     'PickleBuffer can only be pickled with protocol >= 5')
 
     def test_non_continuous_buffer(self):
-        if self.pickler is pickle._Pickler:
-            self.skipTest('CRASHES (see gh-122306)')
         for proto in protocols[5:]:
             with self.subTest(proto=proto):
                 pb = pickle.PickleBuffer(memoryview(b"foobar")[::2])
-                with self.assertRaises(pickle.PicklingError):
+                with self.assertRaises((pickle.PicklingError, BufferError)):
                     self.dumps(pb, proto)
 
     def test_buffer_callback_error(self):
@@ -2195,7 +2436,7 @@ class AbstractPicklingErrorTests:
     @support.cpython_only
     def test_bad_ext_code(self):
         # This should never happen in normal circumstances, because the type
-        # and the value of the extesion code is checked in copyreg.add_extension().
+        # and the value of the extension code is checked in copyreg.add_extension().
         key = (__name__, 'MyList')
         def check(code, exc):
             assert key not in copyreg._extension_registry
@@ -2723,7 +2964,7 @@ class AbstractPickleTests:
                 got = self.loads(pickle)
                 self.assert_is_copy(value, got)
 
-    @run_with_locale('LC_ALL', 'de_DE', 'fr_FR')
+    @run_with_locales('LC_ALL', 'de_DE', 'fr_FR', '')
     def test_float_format(self):
         # make sure that floats are formatted locale independent with proto 0
         self.assertEqual(self.dumps(1.2, 0)[0:3], b'F1.')
@@ -2832,7 +3073,7 @@ class AbstractPickleTests:
             pickled = self.dumps(None, proto)
             if proto >= 2:
                 proto_header = pickle.PROTO + bytes([proto])
-                self.assertTrue(pickled.startswith(proto_header))
+                self.assertStartsWith(pickled, proto_header)
             else:
                 self.assertEqual(count_opcode(pickle.PROTO, pickled), 0)
 
@@ -4173,7 +4414,9 @@ class MyIntWithNew2(MyIntWithNew):
 class SlotList(MyList):
     __slots__ = ["foo"]
 
-class SimpleNewObj(int):
+# Ruff "redefined while unused" false positive here due to `global` variables
+# being assigned (and then restored) from within test methods earlier in the file
+class SimpleNewObj(int):  # noqa: F811
     def __init__(self, *args, **kwargs):
         # raise an error, to make sure this isn't called
         raise TypeError("SimpleNewObj.__init__() didn't expect to get called")
@@ -4769,7 +5012,7 @@ class AbstractDispatchTableTests:
         p = self.pickler_class(f, 0)
         with self.assertRaises(AttributeError):
             p.dispatch_table
-        self.assertFalse(hasattr(p, 'dispatch_table'))
+        self.assertNotHasAttr(p, 'dispatch_table')
 
     def test_class_dispatch_table(self):
         # A dispatch_table attribute can be specified class-wide

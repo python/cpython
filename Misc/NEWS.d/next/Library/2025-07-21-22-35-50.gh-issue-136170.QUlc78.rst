@@ -1,0 +1,3 @@
+Removed the unreleased ``zipfile.ZipFile.data_offset`` property added in 3.14.0a7
+as it wasn't fully clear which behavior it should have in some situations so
+the result was not always what a user might expect.

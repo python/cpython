@@ -283,9 +283,11 @@ are always available.  They are listed here in alphabetical order.
       :func:`property`.
 
    .. versionchanged:: 3.10
-      Class methods now inherit the method attributes (``__module__``,
-      ``__name__``, ``__qualname__``, ``__doc__`` and ``__annotations__``) and
-      have a new ``__wrapped__`` attribute.
+      Class methods now inherit the method attributes
+      (:attr:`~function.__module__`, :attr:`~function.__name__`,
+      :attr:`~function.__qualname__`, :attr:`~function.__doc__` and
+      :attr:`~function.__annotations__`) and have a new ``__wrapped__``
+      attribute.
 
    .. deprecated-removed:: 3.11 3.13
       Class methods can no longer wrap other :term:`descriptors <descriptor>` such as
@@ -592,6 +594,11 @@ are always available.  They are listed here in alphabetical order.
    :returns: The result of the evaluated expression.
    :raises: Syntax errors are reported as exceptions.
 
+   .. warning::
+
+      This function executes arbitrary code. Calling it with
+      user-supplied input may lead to security vulnerabilities.
+
    The *expression* argument is parsed and evaluated as a Python expression
    (technically speaking, a condition list) using the *globals* and *locals*
    mappings as global and local namespace.  If the *globals* dictionary is
@@ -648,6 +655,11 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: exec(source, /, globals=None, locals=None, *, closure=None)
 
+   .. warning::
+
+      This function executes arbitrary code. Calling it with
+      user-supplied input may lead to security vulnerabilities.
+
    This function supports dynamic execution of Python code. *source* must be
    either a string or a code object.  If it is a string, the string is parsed as
    a suite of Python statements which is then executed (unless a syntax error
@@ -682,9 +694,10 @@ are always available.  They are listed here in alphabetical order.
    ``__builtins__`` dictionary into *globals* before passing it to :func:`exec`.
 
    The *closure* argument specifies a closure--a tuple of cellvars.
-   It's only valid when the *object* is a code object containing free variables.
-   The length of the tuple must exactly match the number of free variables
-   referenced by the code object.
+   It's only valid when the *object* is a code object containing
+   :term:`free (closure) variables <closure variable>`.
+   The length of the tuple must exactly match the length of the code object's
+   :attr:`~codeobject.co_freevars` attribute.
 
    .. audit-event:: exec code_object exec
 
@@ -1141,44 +1154,44 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: locals()
 
-    Return a mapping object representing the current local symbol table, with
-    variable names as the keys, and their currently bound references as the
-    values.
+   Return a mapping object representing the current local symbol table, with
+   variable names as the keys, and their currently bound references as the
+   values.
 
-    At module scope, as well as when using :func:`exec` or :func:`eval` with
-    a single namespace, this function returns the same namespace as
-    :func:`globals`.
+   At module scope, as well as when using :func:`exec` or :func:`eval` with
+   a single namespace, this function returns the same namespace as
+   :func:`globals`.
 
-    At class scope, it returns the namespace that will be passed to the
-    metaclass constructor.
+   At class scope, it returns the namespace that will be passed to the
+   metaclass constructor.
 
-    When using ``exec()`` or ``eval()`` with separate local and global
-    arguments, it returns the local namespace passed in to the function call.
+   When using ``exec()`` or ``eval()`` with separate local and global
+   arguments, it returns the local namespace passed in to the function call.
 
-    In all of the above cases, each call to ``locals()`` in a given frame of
-    execution will return the *same* mapping object. Changes made through
-    the mapping object returned from ``locals()`` will be visible as assigned,
-    reassigned, or deleted local variables, and assigning, reassigning, or
-    deleting local variables will immediately affect the contents of the
-    returned mapping object.
+   In all of the above cases, each call to ``locals()`` in a given frame of
+   execution will return the *same* mapping object. Changes made through
+   the mapping object returned from ``locals()`` will be visible as assigned,
+   reassigned, or deleted local variables, and assigning, reassigning, or
+   deleting local variables will immediately affect the contents of the
+   returned mapping object.
 
-    In an :term:`optimized scope` (including functions, generators, and
-    coroutines), each call to ``locals()`` instead returns a fresh dictionary
-    containing the current bindings of the function's local variables and any
-    nonlocal cell references. In this case, name binding changes made via the
-    returned dict are *not* written back to the corresponding local variables
-    or nonlocal cell references, and assigning, reassigning, or deleting local
-    variables and nonlocal cell references does *not* affect the contents
-    of previously returned dictionaries.
+   In an :term:`optimized scope` (including functions, generators, and
+   coroutines), each call to ``locals()`` instead returns a fresh dictionary
+   containing the current bindings of the function's local variables and any
+   nonlocal cell references. In this case, name binding changes made via the
+   returned dict are *not* written back to the corresponding local variables
+   or nonlocal cell references, and assigning, reassigning, or deleting local
+   variables and nonlocal cell references does *not* affect the contents
+   of previously returned dictionaries.
 
-    Calling ``locals()`` as part of a comprehension in a function, generator, or
-    coroutine is equivalent to calling it in the containing scope, except that
-    the comprehension's initialised iteration variables will be included. In
-    other scopes, it behaves as if the comprehension were running as a nested
-    function.
+   Calling ``locals()`` as part of a comprehension in a function, generator, or
+   coroutine is equivalent to calling it in the containing scope, except that
+   the comprehension's initialised iteration variables will be included. In
+   other scopes, it behaves as if the comprehension were running as a nested
+   function.
 
-    Calling ``locals()`` as part of a generator expression is equivalent to
-    calling it in a nested generator function.
+   Calling ``locals()`` as part of a generator expression is equivalent to
+   calling it in a nested generator function.
 
    .. versionchanged:: 3.12
       The behaviour of ``locals()`` in a comprehension has been updated as
@@ -1192,14 +1205,19 @@ are always available.  They are listed here in alphabetical order.
       unchanged from previous versions.
 
 
-.. function:: map(function, iterable, *iterables)
+.. function:: map(function, iterable, /, *iterables, strict=False)
 
    Return an iterator that applies *function* to every item of *iterable*,
    yielding the results.  If additional *iterables* arguments are passed,
    *function* must take that many arguments and is applied to the items from all
    iterables in parallel.  With multiple iterables, the iterator stops when the
-   shortest iterable is exhausted.  For cases where the function inputs are
-   already arranged into argument tuples, see :func:`itertools.starmap`\.
+   shortest iterable is exhausted.  If *strict* is ``True`` and one of the
+   iterables is exhausted before the others, a :exc:`ValueError` is raised. For
+   cases where the function inputs are already arranged into argument tuples,
+   see :func:`itertools.starmap`.
+
+   .. versionchanged:: 3.14
+      Added the *strict* parameter.
 
 
 .. function:: max(iterable, *, key=None)
@@ -1280,14 +1298,16 @@ are always available.  They are listed here in alphabetical order.
 
 .. class:: object()
 
-   Return a new featureless object.  :class:`object` is a base for all classes.
-   It has methods that are common to all instances of Python classes.  This
-   function does not accept any arguments.
+   This is the ultimate base class of all other classes. It has methods
+   that are common to all instances of Python classes. When the constructor
+   is called, it returns a new featureless object. The constructor does not
+   accept any arguments.
 
    .. note::
 
-      :class:`object` does *not* have a :attr:`~object.__dict__`, so you can't
-      assign arbitrary attributes to an instance of the :class:`object` class.
+      :class:`object` instances do *not* have :attr:`~object.__dict__`
+      attributes, so you can't assign arbitrary attributes to an instance of
+      :class:`object`.
 
 
 .. function:: oct(x)
@@ -1385,10 +1405,10 @@ are always available.  They are listed here in alphabetical order.
    :func:`io.TextIOWrapper.reconfigure`. When no *buffering* argument is
    given, the default buffering policy works as follows:
 
-   * Binary files are buffered in fixed-size chunks; the size of the buffer is
-     chosen using a heuristic trying to determine the underlying device's "block
-     size" and falling back on :const:`io.DEFAULT_BUFFER_SIZE`.  On many systems,
-     the buffer will typically be 4096 or 8192 bytes long.
+   * Binary files are buffered in fixed-size chunks; the size of the buffer
+     is ``max(min(blocksize, 8 MiB), DEFAULT_BUFFER_SIZE)``
+     when the device block size is available.
+     On most systems, the buffer will typically be 128 kilobytes long.
 
    * "Interactive" text files (files for which :meth:`~io.IOBase.isatty`
      returns ``True``) use line buffering.  Other text files use the policy
@@ -1819,14 +1839,14 @@ are always available.  They are listed here in alphabetical order.
    ``range(start, stop, step)``.  The *start* and *step* arguments default to
    ``None``.
 
+   Slice objects have read-only data attributes :attr:`!start`,
+   :attr:`!stop`, and :attr:`!step` which merely return the argument
+   values (or their default).  They have no other explicit functionality;
+   however, they are used by NumPy and other third-party packages.
+
    .. attribute:: slice.start
    .. attribute:: slice.stop
    .. attribute:: slice.step
-
-      Slice objects have read-only data attributes :attr:`!start`,
-      :attr:`!stop`, and :attr:`!step` which merely return the argument
-      values (or their default).  They have no other explicit functionality;
-      however, they are used by NumPy and other third-party packages.
 
    Slice objects are also generated when extended indexing syntax is used.  For
    example: ``a[start:stop:step]`` or ``a[start:stop, i]``.  See
@@ -1907,10 +1927,11 @@ are always available.  They are listed here in alphabetical order.
    For more information on static methods, see :ref:`types`.
 
    .. versionchanged:: 3.10
-      Static methods now inherit the method attributes (``__module__``,
-      ``__name__``, ``__qualname__``, ``__doc__`` and ``__annotations__``),
-      have a new ``__wrapped__`` attribute, and are now callable as regular
-      functions.
+      Static methods now inherit the method attributes
+      (:attr:`~function.__module__`, :attr:`~function.__name__`,
+      :attr:`~function.__qualname__`, :attr:`~function.__doc__` and
+      :attr:`~function.__annotations__`), have a new ``__wrapped__`` attribute,
+      and are now callable as regular functions.
 
 
 .. index::
@@ -1961,11 +1982,11 @@ are always available.  They are listed here in alphabetical order.
    to be searched.  The search starts from the class right after the
    *type*.
 
-   For example, if :attr:`~class.__mro__` of *object_or_type* is
+   For example, if :attr:`~type.__mro__` of *object_or_type* is
    ``D -> B -> C -> A -> object`` and the value of *type* is ``B``,
    then :func:`super` searches ``C -> A -> object``.
 
-   The :attr:`~class.__mro__` attribute of the class corresponding to
+   The :attr:`~type.__mro__` attribute of the class corresponding to
    *object_or_type* lists the method resolution search order used by both
    :func:`getattr` and :func:`super`.  The attribute is dynamic and can change
    whenever the inheritance hierarchy is updated.
@@ -2027,6 +2048,10 @@ are always available.  They are listed here in alphabetical order.
    :func:`super`, see `guide to using super()
    <https://rhettinger.wordpress.com/2011/05/26/super-considered-super/>`_.
 
+   .. versionchanged:: 3.14
+     :class:`super` objects are now :mod:`pickleable <pickle>` and
+      :mod:`copyable <copy>`.
+
 
 .. _func-tuple:
 .. class:: tuple()
@@ -2044,28 +2069,30 @@ are always available.  They are listed here in alphabetical order.
 
    With one argument, return the type of an *object*.  The return value is a
    type object and generally the same object as returned by
-   :attr:`object.__class__ <instance.__class__>`.
+   :attr:`object.__class__`.
 
    The :func:`isinstance` built-in function is recommended for testing the type
    of an object, because it takes subclasses into account.
 
-
    With three arguments, return a new type object.  This is essentially a
    dynamic form of the :keyword:`class` statement. The *name* string is
-   the class name and becomes the :attr:`~definition.__name__` attribute.
+   the class name and becomes the :attr:`~type.__name__` attribute.
    The *bases* tuple contains the base classes and becomes the
-   :attr:`~class.__bases__` attribute; if empty, :class:`object`, the
+   :attr:`~type.__bases__` attribute; if empty, :class:`object`, the
    ultimate base of all classes, is added.  The *dict* dictionary contains
    attribute and method definitions for the class body; it may be copied
-   or wrapped before becoming the :attr:`~object.__dict__` attribute.
-   The following two statements create identical :class:`type` objects:
+   or wrapped before becoming the :attr:`~type.__dict__` attribute.
+   The following two statements create identical :class:`!type` objects:
 
       >>> class X:
       ...     a = 1
       ...
       >>> X = type('X', (), dict(a=1))
 
-   See also :ref:`bltin-type-objects`.
+   See also:
+
+   * :ref:`Documentation on attributes and methods on classes <class-attrs-and-methods>`.
+   * :ref:`bltin-type-objects`
 
    Keyword arguments provided to the three argument form are passed to the
    appropriate metaclass machinery (usually :meth:`~object.__init_subclass__`)
@@ -2075,18 +2102,18 @@ are always available.  They are listed here in alphabetical order.
    See also :ref:`class-customization`.
 
    .. versionchanged:: 3.6
-      Subclasses of :class:`type` which don't override ``type.__new__`` may no
+      Subclasses of :class:`!type` which don't override ``type.__new__`` may no
       longer use the one-argument form to get the type of an object.
 
 .. function:: vars()
               vars(object)
 
    Return the :attr:`~object.__dict__` attribute for a module, class, instance,
-   or any other object with a :attr:`~object.__dict__` attribute.
+   or any other object with a :attr:`!__dict__` attribute.
 
    Objects such as modules and instances have an updateable :attr:`~object.__dict__`
    attribute; however, other objects may have write restrictions on their
-   :attr:`~object.__dict__` attributes (for example, classes use a
+   :attr:`!__dict__` attributes (for example, classes use a
    :class:`types.MappingProxyType` to prevent direct dictionary updates).
 
    Without an argument, :func:`vars` acts like :func:`locals`.

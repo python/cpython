@@ -934,6 +934,19 @@ Constants
 
    .. versionadded:: 3.13
 
+.. data:: HAS_PSK_TLS13
+
+   Whether the OpenSSL library has built-in support for External PSKs in TLS
+   1.3 as described in :rfc:`9258`.
+
+   .. versionadded:: next
+
+.. data:: HAS_PHA
+
+   Whether the OpenSSL library has built-in support for TLS-PHA.
+
+   .. versionadded:: 3.14
+
 .. data:: CHANNEL_BINDING_TYPES
 
    List of supported TLS channel binding types.  Strings in this list
@@ -1065,8 +1078,9 @@ SSL Sockets
      (but passing a non-zero ``flags`` argument is not allowed)
    - :meth:`~socket.socket.send`, :meth:`~socket.socket.sendall` (with
      the same limitation)
-   - :meth:`~socket.socket.sendfile` (but :mod:`os.sendfile` will be used
-     for plain-text sockets only, else :meth:`~socket.socket.send` will be used)
+   - :meth:`~socket.socket.sendfile` (it may be high-performant only when
+     the kernel TLS is enabled by setting :data:`~ssl.OP_ENABLE_KTLS` or when a
+     socket is plain-text, else :meth:`~socket.socket.send` will be used)
    - :meth:`~socket.socket.shutdown`
 
    However, since the SSL (and TLS) protocol has its own framing atop
@@ -1099,6 +1113,11 @@ SSL Sockets
       Python now uses ``SSL_read_ex`` and ``SSL_write_ex`` internally. The
       functions support reading and writing of data larger than 2 GB. Writing
       zero-length data no longer fails with a protocol violation error.
+
+   .. versionchanged:: next
+      Python now uses ``SSL_sendfile`` internally when possible. The
+      function sends a file more efficiently because it performs TLS encryption
+      in the kernel to avoid additional context switches.
 
 SSL sockets also have the following additional methods and attributes:
 
@@ -1270,6 +1289,13 @@ SSL sockets also have the following additional methods and attributes:
    socket.
 
    .. versionadded:: 3.5
+
+.. method:: SSLSocket.group()
+
+   Return the group used for doing key agreement on this connection. If no
+   connection has been established, returns ``None``.
+
+   .. versionadded:: next
 
 .. method:: SSLSocket.compression()
 
@@ -1566,7 +1592,7 @@ to speed up repeated connections from the same clients.
    The *capath* string, if present, is
    the path to a directory containing several CA certificates in PEM format,
    following an `OpenSSL specific layout
-   <https://www.openssl.org/docs/manmaster/man3/SSL_CTX_load_verify_locations.html>`_.
+   <https://docs.openssl.org/master/man3/SSL_CTX_load_verify_locations/>`_.
 
    The *cadata* object, if present, is either an ASCII string of one or more
    PEM-encoded certificates or a :term:`bytes-like object` of DER-encoded
@@ -1628,6 +1654,25 @@ to speed up repeated connections from the same clients.
 
    .. versionadded:: 3.6
 
+.. method:: SSLContext.get_groups(*, include_aliases=False)
+
+   Get a list of groups implemented for key agreement, taking into
+   account the current TLS :attr:`~SSLContext.minimum_version` and
+   :attr:`~SSLContext.maximum_version` values.  For example::
+
+       >>> ctx = ssl.create_default_context()
+       >>> ctx.minimum_version = ssl.TLSVersion.TLSv1_3
+       >>> ctx.maximum_version = ssl.TLSVersion.TLSv1_3
+       >>> ctx.get_groups()  # doctest: +SKIP
+       ['secp256r1', 'secp384r1', 'secp521r1', 'x25519', 'x448', ...]
+
+   By default, this method returns only the preferred IANA names for the
+   available groups. However, if the ``include_aliases`` parameter is set to
+   :const:`True` this method will also return any associated aliases such as
+   the ECDH curve names supported in older versions of OpenSSL.
+
+   .. versionadded:: next
+
 .. method:: SSLContext.set_default_verify_paths()
 
    Load a set of default "certification authority" (CA) certificates from
@@ -1641,7 +1686,7 @@ to speed up repeated connections from the same clients.
 
    Set the available ciphers for sockets created with this context.
    It should be a string in the `OpenSSL cipher list format
-   <https://www.openssl.org/docs/manmaster/man1/ciphers.html>`_.
+   <https://docs.openssl.org/master/man1/ciphers/>`_.
    If no cipher can be selected (because compile-time options or other
    configuration forbids use of all the specified ciphers), an
    :class:`SSLError` will be raised.
@@ -1652,6 +1697,19 @@ to speed up repeated connections from the same clients.
 
       TLS 1.3 cipher suites cannot be disabled with
       :meth:`~SSLContext.set_ciphers`.
+
+.. method:: SSLContext.set_groups(groups)
+
+   Set the groups allowed for key agreement for sockets created with this
+   context.  It should be a string in the `OpenSSL group list format
+   <https://docs.openssl.org/master/man3/SSL_CTX_set1_groups_list/>`_.
+
+   .. note::
+
+      When connected, the :meth:`SSLSocket.group` method of SSL sockets will
+      return the group used for key agreement on that connection.
+
+   .. versionadded:: next
 
 .. method:: SSLContext.set_alpn_protocols(protocols)
 
@@ -1874,7 +1932,7 @@ to speed up repeated connections from the same clients.
 .. method:: SSLContext.session_stats()
 
    Get statistics about the SSL sessions created or managed by this context.
-   A dictionary is returned which maps the names of each `piece of information <https://www.openssl.org/docs/man1.1.1/man3/SSL_CTX_sess_number.html>`_ to their
+   A dictionary is returned which maps the names of each `piece of information <https://docs.openssl.org/1.1.1/man3/SSL_CTX_sess_number/>`_ to their
    numeric values.  For example, here is the total number of hits and misses
    in the session cache since the context was created::
 
@@ -1931,8 +1989,8 @@ to speed up repeated connections from the same clients.
 
    A :class:`TLSVersion` enum member representing the highest supported
    TLS version. The value defaults to :attr:`TLSVersion.MAXIMUM_SUPPORTED`.
-   The attribute is read-only for protocols other than :attr:`PROTOCOL_TLS`,
-   :attr:`PROTOCOL_TLS_CLIENT`, and :attr:`PROTOCOL_TLS_SERVER`.
+   The attribute is read-only for protocols other than :const:`PROTOCOL_TLS`,
+   :const:`PROTOCOL_TLS_CLIENT`, and :const:`PROTOCOL_TLS_SERVER`.
 
    The attributes :attr:`~SSLContext.maximum_version`,
    :attr:`~SSLContext.minimum_version` and
@@ -1955,7 +2013,7 @@ to speed up repeated connections from the same clients.
 .. attribute:: SSLContext.num_tickets
 
    Control the number of TLS 1.3 session tickets of a
-   :attr:`PROTOCOL_TLS_SERVER` context. The setting has no impact on TLS
+   :const:`PROTOCOL_TLS_SERVER` context. The setting has no impact on TLS
    1.0 to 1.2 connections.
 
    .. versionadded:: 3.8
@@ -2017,7 +2075,7 @@ to speed up repeated connections from the same clients.
 .. attribute:: SSLContext.security_level
 
    An integer representing the `security level
-   <https://www.openssl.org/docs/manmaster/man3/SSL_CTX_get_security_level.html>`_
+   <https://docs.openssl.org/master/man3/SSL_CTX_get_security_level/>`_
    for the context. This attribute is read-only.
 
    .. versionadded:: 3.10
@@ -2508,8 +2566,8 @@ thus several things you need to be aware of:
 .. seealso::
 
    The :mod:`asyncio` module supports :ref:`non-blocking SSL sockets
-   <ssl-nonblocking>` and provides a
-   higher level API. It polls for events using the :mod:`selectors` module and
+   <ssl-nonblocking>` and provides a higher level :ref:`Streams API <asyncio-streams>`.
+   It polls for events using the :mod:`selectors` module and
    handles :exc:`SSLWantWriteError`, :exc:`SSLWantReadError` and
    :exc:`BlockingIOError` exceptions. It runs the SSL handshake asynchronously
    as well.
@@ -2759,7 +2817,7 @@ enabled when negotiating a SSL session is possible through the
 :meth:`SSLContext.set_ciphers` method.  Starting from Python 3.2.3, the
 ssl module disables certain weak ciphers by default, but you may want
 to further restrict the cipher choice. Be sure to read OpenSSL's documentation
-about the `cipher list format <https://www.openssl.org/docs/man1.1.1/man1/ciphers.html#CIPHER-LIST-FORMAT>`_.
+about the `cipher list format <https://docs.openssl.org/1.1.1/man1/ciphers/#cipher-list-format>`_.
 If you want to check which ciphers are enabled by a given cipher list, use
 :meth:`SSLContext.get_ciphers` or the ``openssl ciphers`` command on your
 system.

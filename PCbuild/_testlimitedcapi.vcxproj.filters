@@ -12,11 +12,13 @@
     <ClCompile Include="..\Modules\_testlimitedcapi\abstract.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\bytearray.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\bytes.c" />
+    <ClCompile Include="..\Modules\_testlimitedcapi\codec.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\complex.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\dict.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\eval.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\float.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\heaptype_relative.c" />
+    <ClCompile Include="..\Modules\_testlimitedcapi\import.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\list.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\long.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\object.c" />
@@ -27,6 +29,8 @@
     <ClCompile Include="..\Modules\_testlimitedcapi\tuple.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\unicode.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\vectorcall_limited.c" />
+    <ClCompile Include="..\Modules\_testlimitedcapi\version.c" />
+    <ClCompile Include="..\Modules\_testlimitedcapi\file.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi.c" />
   </ItemGroup>
   <ItemGroup>

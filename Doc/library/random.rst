@@ -447,6 +447,11 @@ Alternative Generator
       Override this method in subclasses to customise the
       :meth:`~random.getrandbits` behaviour of :class:`!Random` instances.
 
+   .. method:: Random.randbytes(n)
+
+      Override this method in subclasses to customise the
+      :meth:`~random.randbytes` behaviour of :class:`!Random` instances.
+
 
 .. class:: SystemRandom([seed])
 
@@ -741,7 +746,7 @@ The following options are accepted:
 .. option:: -f <N>
             --float <N>
 
-   Print a random floating-point number between 1 and N inclusive,
+   Print a random floating-point number between 0 and N inclusive,
    using :meth:`uniform`.
 
 If no options are given, the output depends on the input:

@@ -1,1 +1,0 @@
-Show string value of LOAD_SPECIAL oparg in :mod:`dis` output.

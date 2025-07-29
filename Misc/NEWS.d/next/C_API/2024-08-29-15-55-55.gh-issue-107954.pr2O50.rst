@@ -1,8 +1,0 @@
-Add functions to get and set the current runtime Python configuration:
-
-* :c:func:`PyConfig_Get`
-* :c:func:`PyConfig_GetInt`
-* :c:func:`PyConfig_Set`
-* :c:func:`PyConfig_Names`
-
-Patch by Victor Stinner.

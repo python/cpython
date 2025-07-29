@@ -5,7 +5,7 @@ from ctypes import (Structure, Array, ARRAY, sizeof, addressof,
                     create_string_buffer, create_unicode_buffer,
                     c_char, c_wchar, c_byte, c_ubyte, c_short, c_ushort, c_int, c_uint,
                     c_long, c_ulonglong, c_float, c_double, c_longdouble)
-from test.support import bigmemtest, _2G
+from test.support import bigmemtest, _2G, threading_helper, Py_GIL_DISABLED
 from ._support import (_CData, PyCArrayType, Py_TPFLAGS_DISALLOW_INSTANTIATION,
                        Py_TPFLAGS_IMMUTABLETYPE)
 
@@ -266,6 +266,26 @@ class ArrayTestCase(unittest.TestCase):
     @bigmemtest(size=_2G, memuse=1, dry_run=False)
     def test_large_array(self, size):
         c_char * size
+
+    @threading_helper.requires_working_threading()
+    @unittest.skipUnless(Py_GIL_DISABLED, "only meaningful if the GIL is disabled")
+    def test_thread_safety(self):
+        from threading import Thread
+
+        buffer = (ctypes.c_char_p * 10)()
+
+        def run():
+            for i in range(100):
+                buffer.value = b"hello"
+                buffer[0] = b"j"
+
+        with threading_helper.catch_threading_exception() as cm:
+            threads = (Thread(target=run) for _ in range(25))
+            with threading_helper.start_threads(threads):
+                pass
+
+            if cm.exc_value:
+                raise cm.exc_value
 
 
 if __name__ == '__main__':

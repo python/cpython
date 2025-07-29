@@ -8,7 +8,7 @@
 
 --------------
 
-.. include:: ../includes/wasm-ios-notavail.rst
+.. include:: ../includes/wasm-mobile-notavail.rst
 
 Introduction
 ------------
@@ -97,6 +97,10 @@ To show the individual process IDs involved, here is an expanded example::
 For an explanation of why the ``if __name__ == '__main__'`` part is
 necessary, see :ref:`multiprocessing-programming`.
 
+The arguments to :class:`Process` usually need to be unpickleable from within
+the child process. If you tried typing the above example directly into a REPL it
+could lead to an :exc:`AttributeError` in the child process trying to locate the
+*f* function in the ``__main__`` module.
 
 
 .. _multiprocessing-start-methods:
@@ -106,6 +110,8 @@ Contexts and start methods
 
 Depending on the platform, :mod:`multiprocessing` supports three ways
 to start a process.  These *start methods* are
+
+  .. _multiprocessing-start-method-spawn:
 
   *spawn*
     The parent process starts a fresh Python interpreter process.  The
@@ -117,6 +123,8 @@ to start a process.  These *start methods* are
 
     Available on POSIX and Windows platforms.  The default on Windows and macOS.
 
+  .. _multiprocessing-start-method-fork:
+
   *fork*
     The parent process uses :func:`os.fork` to fork the Python
     interpreter.  The child process, when it begins, is effectively
@@ -124,11 +132,11 @@ to start a process.  These *start methods* are
     inherited by the child process.  Note that safely forking a
     multithreaded process is problematic.
 
-    Available on POSIX systems.  Currently the default on POSIX except macOS.
+    Available on POSIX systems.
 
-    .. note::
-       The default start method will change away from *fork* in Python 3.14.
-       Code that requires *fork* should explicitly specify that via
+    .. versionchanged:: 3.14
+       This is no longer the default start method on any platform.
+       Code that requires *fork* must explicitly specify that via
        :func:`get_context` or :func:`set_start_method`.
 
     .. versionchanged:: 3.12
@@ -136,6 +144,8 @@ to start a process.  These *start methods* are
        :func:`os.fork` function that this start method calls internally will
        raise a :exc:`DeprecationWarning`. Use a different start method.
        See the :func:`os.fork` documentation for further explanation.
+
+  .. _multiprocessing-start-method-forkserver:
 
   *forkserver*
     When the program starts and selects the *forkserver* start method,
@@ -146,9 +156,11 @@ to start a process.  These *start methods* are
     side-effect so it is generally safe for it to use :func:`os.fork`.
     No unnecessary resources are inherited.
 
-    Available on POSIX platforms which support passing file descriptors
-    over Unix pipes such as Linux.
+    Available on POSIX platforms which support passing file descriptors over
+    Unix pipes such as Linux.  The default on those.
 
+    .. versionchanged:: 3.14
+       This became the default start method on POSIX platforms.
 
 .. versionchanged:: 3.4
    *spawn* added on all POSIX platforms, and *forkserver* added for
@@ -161,6 +173,13 @@ to start a process.  These *start methods* are
    On macOS, the *spawn* start method is now the default.  The *fork* start
    method should be considered unsafe as it can lead to crashes of the
    subprocess as macOS system libraries may start threads. See :issue:`33725`.
+
+.. versionchanged:: 3.14
+
+   On POSIX platforms the default start method was changed from *fork* to
+   *forkserver* to retain the performance but avoid common multithreaded
+   process incompatibilities. See :gh:`84559`.
+
 
 On POSIX using the *spawn* or *forkserver* start methods will also
 start a *resource tracker* process which tracks the unlinked named
@@ -218,9 +237,12 @@ processes for a different context.  In particular, locks created using
 the *fork* context cannot be passed to processes started using the
 *spawn* or *forkserver* start methods.
 
-A library which wants to use a particular start method should probably
-use :func:`get_context` to avoid interfering with the choice of the
-library user.
+Libraries using :mod:`multiprocessing` or
+:class:`~concurrent.futures.ProcessPoolExecutor` should be designed to allow
+their users to provide their own multiprocessing context.  Using a specific
+context of your own within a library can lead to incompatibilities with the
+rest of the library user's application.  Always document if your library
+requires a specific start method.
 
 .. warning::
 
@@ -282,7 +304,7 @@ processes:
    of corruption from processes using different ends of the pipe at the same
    time.
 
-   The :meth:`~Connection.send` method serializes the the object and
+   The :meth:`~Connection.send` method serializes the object and
    :meth:`~Connection.recv` re-creates the object.
 
 Synchronization between processes
@@ -365,35 +387,40 @@ However, if you really do need to use some shared data then
    proxies.
 
    A manager returned by :func:`Manager` will support types
-   :class:`list`, :class:`dict`, :class:`~managers.Namespace`, :class:`Lock`,
+   :class:`list`, :class:`dict`, :class:`set`, :class:`~managers.Namespace`, :class:`Lock`,
    :class:`RLock`, :class:`Semaphore`, :class:`BoundedSemaphore`,
    :class:`Condition`, :class:`Event`, :class:`Barrier`,
    :class:`Queue`, :class:`Value` and :class:`Array`.  For example, ::
 
       from multiprocessing import Process, Manager
 
-      def f(d, l):
+      def f(d, l, s):
           d[1] = '1'
           d['2'] = 2
           d[0.25] = None
           l.reverse()
+          s.add('a')
+          s.add('b')
 
       if __name__ == '__main__':
           with Manager() as manager:
               d = manager.dict()
               l = manager.list(range(10))
+              s = manager.set()
 
-              p = Process(target=f, args=(d, l))
+              p = Process(target=f, args=(d, l, s))
               p.start()
               p.join()
 
               print(d)
               print(l)
+              print(s)
 
    will print ::
 
        {0.25: None, 1: '1', '2': 2}
        [9, 8, 7, 6, 5, 4, 3, 2, 1, 0]
+       {'a', 'b'}
 
    Server process managers are more flexible than using shared memory objects
    because they can be made to support arbitrary object types.  Also, a single
@@ -518,8 +545,41 @@ The :mod:`multiprocessing` package mostly replicates the API of the
    to pass to *target*.
 
    If a subclass overrides the constructor, it must make sure it invokes the
-   base class constructor (:meth:`Process.__init__`) before doing anything else
+   base class constructor (``super().__init__()``) before doing anything else
    to the process.
+
+   .. note::
+
+      In general, all arguments to :class:`Process` must be picklable.  This is
+      frequently observed when trying to create a :class:`Process` or use a
+      :class:`concurrent.futures.ProcessPoolExecutor` from a REPL with a
+      locally defined *target* function.
+
+      Passing a callable object defined in the current REPL session causes the
+      child process to die via an uncaught :exc:`AttributeError` exception when
+      starting as *target* must have been defined within an importable module
+      in order to be loaded during unpickling.
+
+      Example of this uncatchable error from the child::
+
+         >>> import multiprocessing as mp
+         >>> def knigit():
+         ...     print("Ni!")
+         ...
+         >>> process = mp.Process(target=knigit)
+         >>> process.start()
+         >>> Traceback (most recent call last):
+           File ".../multiprocessing/spawn.py", line ..., in spawn_main
+           File ".../multiprocessing/spawn.py", line ..., in _main
+         AttributeError: module '__main__' has no attribute 'knigit'
+         >>> process
+         <SpawnProcess name='SpawnProcess-1' pid=379473 parent=378707 stopped exitcode=1>
+
+      See :ref:`multiprocessing-programming-spawn`.  While this restriction is
+      not true if using the ``"fork"`` start method, as of Python ``3.14`` that
+      is no longer the default on any platform.  See
+      :ref:`multiprocessing-start-methods`.
+      See also :gh:`132898`.
 
    .. versionchanged:: 3.3
       Added the *daemon* parameter.
@@ -649,6 +709,25 @@ The :mod:`multiprocessing` package mostly replicates the API of the
       a file descriptor usable with primitives from the :mod:`select` module.
 
       .. versionadded:: 3.3
+
+   .. method:: interrupt()
+
+      Terminate the process. Works on POSIX using the :py:const:`~signal.SIGINT` signal.
+      Behavior on Windows is undefined.
+
+      By default, this terminates the child process by raising :exc:`KeyboardInterrupt`.
+      This behavior can be altered by setting the respective signal handler in the child
+      process :func:`signal.signal` for :py:const:`~signal.SIGINT`.
+
+      Note: if the child process catches and discards :exc:`KeyboardInterrupt`, the
+      process will not be terminated.
+
+      Note: the default behavior will also set :attr:`exitcode` to ``1`` as if an
+      uncaught exception was raised in the child process. To have a different
+      :attr:`exitcode` you may simply catch :exc:`KeyboardInterrupt` and call
+      ``exit(your_code)``.
+
+      .. versionadded:: 3.14
 
    .. method:: terminate()
 
@@ -819,7 +898,7 @@ For an example of the usage of queues for interprocess communication see
    used for receiving messages and ``conn2`` can only be used for sending
    messages.
 
-   The :meth:`~multiprocessing.Connection.send` method serializes the the object using
+   The :meth:`~multiprocessing.Connection.send` method serializes the object using
    :mod:`pickle` and the :meth:`~multiprocessing.Connection.recv` re-creates the object.
 
 .. class:: Queue([maxsize])
@@ -897,8 +976,13 @@ For an example of the usage of queues for interprocess communication see
 
    .. method:: close()
 
-      Indicate that no more data will be put on this queue by the current
-      process.  The background thread will quit once it has flushed all buffered
+      Close the queue: release internal resources.
+
+      A queue must not be used anymore after it is closed. For example,
+      :meth:`~Queue.get`, :meth:`~Queue.put` and :meth:`~Queue.empty`
+      methods must no longer be called.
+
+      The background thread will quit once it has flushed all buffered
       data to the pipe.  This is called automatically when the queue is garbage
       collected.
 
@@ -1042,7 +1126,7 @@ Miscellaneous
 .. function:: freeze_support()
 
    Add support for when a program which uses :mod:`multiprocessing` has been
-   frozen to produce a Windows executable.  (Has been tested with **py2exe**,
+   frozen to produce an executable.  (Has been tested with **py2exe**,
    **PyInstaller** and **cx_Freeze**.)
 
    One needs to call this function straight after the ``if __name__ ==
@@ -1060,10 +1144,10 @@ Miscellaneous
    If the ``freeze_support()`` line is omitted then trying to run the frozen
    executable will raise :exc:`RuntimeError`.
 
-   Calling ``freeze_support()`` has no effect when invoked on any operating
-   system other than Windows.  In addition, if the module is being run
-   normally by the Python interpreter on Windows (the program has not been
-   frozen), then ``freeze_support()`` has no effect.
+   Calling ``freeze_support()`` has no effect when the start method is not
+   *spawn*. In addition, if the module is being run normally by the Python
+   interpreter (the program has not been frozen), then ``freeze_support()``
+   has no effect.
 
 .. function:: get_all_start_methods()
 
@@ -1079,7 +1163,9 @@ Miscellaneous
    Return a context object which has the same attributes as the
    :mod:`multiprocessing` module.
 
-   If *method* is ``None`` then the default context is returned.
+   If *method* is ``None`` then the default context is returned. Note that if
+   the global start method has not been set, this will set it to the
+   default method.
    Otherwise *method* should be ``'fork'``, ``'spawn'``,
    ``'forkserver'``.  :exc:`ValueError` is raised if the specified
    start method is not available.  See :ref:`multiprocessing-start-methods`.
@@ -1090,10 +1176,10 @@ Miscellaneous
 
    Return the name of start method used for starting processes.
 
-   If the start method has not been fixed and *allow_none* is false,
-   then the start method is fixed to the default and the name is
-   returned.  If the start method has not been fixed and *allow_none*
-   is true then ``None`` is returned.
+   If the global start method has not been set and *allow_none* is
+   ``False``, then the start method is set to the default and the name
+   is returned. If the start method has not been set and *allow_none* is
+   ``True`` then ``None`` is returned.
 
    The return value can be ``'fork'``, ``'spawn'``, ``'forkserver'``
    or ``None``.  See :ref:`multiprocessing-start-methods`.
@@ -1330,6 +1416,12 @@ object -- see :ref:`multiprocessing-managers`.
    A solitary difference from its close analog exists: its ``acquire`` method's
    first argument is named *block*, as is consistent with :meth:`Lock.acquire`.
 
+   .. method:: locked()
+
+      Return a boolean indicating whether this object is locked right now.
+
+      .. versionadded:: 3.14
+
    .. note::
       On macOS, this is indistinguishable from :class:`Semaphore` because
       ``sem_getvalue()`` is not implemented on that platform.
@@ -1401,6 +1493,13 @@ object -- see :ref:`multiprocessing-managers`.
       when invoked on an unlocked lock, a :exc:`ValueError` is raised.
 
 
+   .. method:: locked()
+
+      Return a boolean indicating whether this object is locked right now.
+
+      .. versionadded:: 3.14
+
+
 .. class:: RLock()
 
    A recursive lock object: a close analog of :class:`threading.RLock`.  A
@@ -1461,12 +1560,25 @@ object -- see :ref:`multiprocessing-managers`.
       differs from the implemented behavior in :meth:`threading.RLock.release`.
 
 
+   .. method:: locked()
+
+      Return a boolean indicating whether this object is locked right now.
+
+      .. versionadded:: 3.14
+
+
 .. class:: Semaphore([value])
 
    A semaphore object: a close analog of :class:`threading.Semaphore`.
 
    A solitary difference from its close analog exists: its ``acquire`` method's
    first argument is named *block*, as is consistent with :meth:`Lock.acquire`.
+
+   .. method:: locked()
+
+      Return a boolean indicating whether this object is locked right now.
+
+      .. versionadded:: 3.14
 
 .. note::
 
@@ -1926,6 +2038,15 @@ their parent process exits.  The manager classes are defined in the
                list(sequence)
 
       Create a shared :class:`list` object and return a proxy for it.
+
+   .. method:: set()
+               set(sequence)
+               set(mapping)
+
+      Create a shared :class:`set` object and return a proxy for it.
+
+      .. versionadded:: 3.14
+         :class:`set` support was added.
 
    .. versionchanged:: 3.6
       Shared objects are capable of being nested.  For example, a shared
@@ -2978,6 +3099,9 @@ Beware of replacing :data:`sys.stdin` with a "file like object"
 
     For more information, see :issue:`5155`, :issue:`5313` and :issue:`5331`
 
+.. _multiprocessing-programming-spawn:
+.. _multiprocessing-programming-forkserver:
+
 The *spawn* and *forkserver* start methods
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -2986,10 +3110,10 @@ start method.
 
 More picklability
 
-    Ensure that all arguments to :meth:`Process.__init__` are picklable.
-    Also, if you subclass :class:`~multiprocessing.Process` then make sure that
-    instances will be picklable when the :meth:`Process.start
-    <multiprocessing.Process.start>` method is called.
+    Ensure that all arguments to :class:`~multiprocessing.Process` are
+    picklable.  Also, if you subclass ``Process.__init__``, you must make sure
+    that instances will be picklable when the
+    :meth:`Process.start <multiprocessing.Process.start>` method is called.
 
 Global variables
 

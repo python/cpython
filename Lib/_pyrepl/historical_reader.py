@@ -266,7 +266,9 @@ class HistoricalReader(Reader):
             (r"\M-r", "restore-history"),
             (r"\M-.", "yank-arg"),
             (r"\<page down>", "history-search-forward"),
+            (r"\x1b[6~", "history-search-forward"),
             (r"\<page up>", "history-search-backward"),
+            (r"\x1b[5~", "history-search-backward"),
         )
 
     def select_item(self, i: int) -> None:
@@ -288,13 +290,17 @@ class HistoricalReader(Reader):
 
     @contextmanager
     def suspend(self) -> SimpleContextManager:
-        with super().suspend():
-            try:
-                old_history = self.history[:]
-                del self.history[:]
-                yield
-            finally:
-                self.history[:] = old_history
+        with super().suspend(), self.suspend_history():
+            yield
+
+    @contextmanager
+    def suspend_history(self) -> SimpleContextManager:
+        try:
+            old_history = self.history[:]
+            del self.history[:]
+            yield
+        finally:
+            self.history[:] = old_history
 
     def prepare(self) -> None:
         super().prepare()
