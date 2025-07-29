@@ -1333,6 +1333,6 @@ _Py_InitDumpStack(void)
 #ifdef CAN_C_BACKTRACE
     // gh-137185: Call backtrace() once to force libgcc to be loaded early.
     void *callstack[1];
-    backtrace(callstack, 1);
+    (void)backtrace(callstack, 1);
 #endif
 }
