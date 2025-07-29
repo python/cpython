@@ -516,6 +516,11 @@ New features
   a string. See the documentation for caveats.
   (Contributed by Petr Viktorin in :gh:`131510`)
 
+* Add API for checking an extension module's ABI compatibility:
+  :c:data:`Py_mod_abi`, :c:func:`PyABIInfo_Check`, :c:macro:`PyABIInfo_VAR`
+  and :c:data:`Py_mod_abi`.
+  (Contributed by Petr Viktorin in :gh:`137210`)
+
 
 Porting to Python 3.15
 ----------------------
