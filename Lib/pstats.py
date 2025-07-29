@@ -139,7 +139,11 @@ class Stats:
             return
         elif isinstance(arg, str):
             with open(arg, 'rb') as f:
-                self.stats = marshal.load(f)
+                stats = marshal.load(f)
+            if (('__sampled__',)) in stats:
+                stats.pop((('__sampled__',)))
+                self.__class__ = SampledStats
+            self.stats = stats
             try:
                 file_stats = os.stat(arg)
                 arg = time.ctime(file_stats.st_mtime) + "    " + arg
@@ -467,7 +471,10 @@ class Stats:
                 subheader = isinstance(value, tuple)
                 break
         if subheader:
-            print(" "*name_size + "    ncalls  tottime  cumtime", file=self.stream)
+            self.print_call_subheading(name_size)
+
+    def print_call_subheading(self, name_size):
+        print(" "*name_size + "    ncalls  tottime  cumtime", file=self.stream)
 
     def print_call_line(self, name_size, source, call_dict, arrow="->"):
         print(func_std_string(source).ljust(name_size) + arrow, end=' ', file=self.stream)
@@ -515,6 +522,35 @@ class Stats:
         else:
             print(f8(ct/cc), end=' ', file=self.stream)
         print(func_std_string(func), file=self.stream)
+
+
+class SampledStats(Stats):
+    def __init__(self, *args, stream=None):
+        super().__init__(*args, stream=stream)
+
+        self.sort_arg_dict = {
+              "samples"   : (((1,-1),              ), "sample count"),
+              "nsamples"  : (((1,-1),              ), "sample count"),
+              "cumtime"   : (((3,-1),              ), "cumulative time"),
+              "cumulative": (((3,-1),              ), "cumulative time"),
+              "filename"  : (((4, 1),              ), "file name"),
+              "line"      : (((5, 1),              ), "line number"),
+              "module"    : (((4, 1),              ), "file name"),
+              "name"      : (((6, 1),              ), "function name"),
+              "nfl"       : (((6, 1),(4, 1),(5, 1),), "name/file/line"),
+              "psamples"  : (((0,-1),              ), "primitive call count"),
+              "stdname"   : (((7, 1),              ), "standard name"),
+              "time"      : (((2,-1),              ), "internal time"),
+              "tottime"   : (((2,-1),              ), "internal time"),
+              }
+
+    def print_call_subheading(self, name_size):
+        print(" "*name_size + "    nsamples  tottime  cumtime", file=self.stream)
+
+    def print_title(self):
+        print(' nsamples  tottime persample cumtime persample', end=' ', file=self.stream)
+        print('filename:lineno(function)', file=self.stream)
+
 
 class TupleComp:
     """This class provides a generic function for comparing any two tuples.
@@ -607,6 +643,24 @@ def f8(x):
 # Statistics browser added by ESR, April 2001
 #**************************************************************************
 
+class StatsLoaderShim:
+    """Compatibility shim implementing 'create_stats' needed by Stats classes
+    to handle already unmarshalled data."""
+    def __init__(self, raw_stats):
+        self.stats = raw_stats
+
+    def create_stats(self):
+        pass
+
+def stats_factory(raw_stats):
+    """Return a Stats or SampledStats instance based on the marker in raw_stats."""
+    if (('__sampled__',)) in raw_stats:
+        raw_stats = dict(raw_stats)  # avoid mutating caller's dict
+        raw_stats.pop((('__sampled__',)))
+        return SampledStats(StatsLoaderShim(raw_stats))
+    else:
+        return Stats(StatsLoaderShim(raw_stats))
+
 if __name__ == '__main__':
     import cmd
     try:
@@ -693,7 +747,15 @@ if __name__ == '__main__':
         def do_read(self, line):
             if line:
                 try:
-                    self.stats = Stats(line)
+                    with open(line, 'rb') as f:
+                        raw_stats = marshal.load(f)
+                    self.stats = stats_factory(raw_stats)
+                    try:
+                        file_stats = os.stat(line)
+                        arg = time.ctime(file_stats.st_mtime) + "    " + line
+                    except Exception:
+                        arg = line
+                    self.stats.files = [arg]
                 except OSError as err:
                     print(err.args[1], file=self.stream)
                     return

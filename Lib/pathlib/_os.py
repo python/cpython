@@ -210,24 +210,18 @@ def magic_open(path, mode='r', buffering=-1, encoding=None, errors=None,
     raise TypeError(f"{cls.__name__} can't be opened with mode {mode!r}")
 
 
-def vfspath(path):
+def vfspath(obj):
     """
     Return the string representation of a virtual path object.
     """
+    cls = type(obj)
     try:
-        return os.fsdecode(path)
-    except TypeError:
-        pass
-
-    path_type = type(path)
-    try:
-        return path_type.__vfspath__(path)
+        vfspath_method = cls.__vfspath__
     except AttributeError:
-        if hasattr(path_type, '__vfspath__'):
-            raise
-
-    raise TypeError("expected str, bytes, os.PathLike or JoinablePath "
-                    "object, not " + path_type.__name__)
+        cls_name = cls.__name__
+        raise TypeError(f"expected JoinablePath object, not {cls_name}") from None
+    else:
+        return vfspath_method(obj)
 
 
 def ensure_distinct_paths(source, target):

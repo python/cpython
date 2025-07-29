@@ -227,6 +227,7 @@ ENSUREPIP=      @ENSUREPIP@
 # Internal static libraries
 LIBMPDEC_A= Modules/_decimal/libmpdec/libmpdec.a
 LIBEXPAT_A= Modules/expat/libexpat.a
+LIBHASHLIB_INTERNAL_A=Modules/_hashlib/libhashlib.a
 
 # HACL* build configuration
 LIBHACL_CFLAGS=@LIBHACL_CFLAGS@
@@ -762,6 +763,17 @@ LIBHACL_HMAC_HEADERS= \
 		$(LIBHACL_BLAKE2_HEADERS) \
 		$(LIBHACL_HEADERS)
 
+##########################################################################
+# Internal library for cryptographic primitives
+
+LIBHASHLIB_INTERNAL_OBJS= \
+		Modules/_hashlib/hashlib_buffer.o
+
+LIBHASHLIB_INTERNAL_HEADERS= \
+		Modules/_hashlib/hashlib_buffer.h \
+		Modules/_hashlib/hashlib_fetch.h \
+		Modules/_hashlib/hashlib_mutex.h
+
 #########################################################################
 # Rules
 
@@ -805,7 +817,7 @@ build_wasm: check-clean-src $(BUILDPYTHON) platform sharedmods \
 		python-config checksharedmods
 
 .PHONY: build_emscripten
-build_emscripten: build_wasm web_example
+build_emscripten: build_wasm web_example web_example_pyrepl_jspi
 
 # Check that the source is clean when building out of source.
 .PHONY: check-clean-src
@@ -1096,12 +1108,17 @@ $(DLLLIBRARY) libpython$(LDVERSION).dll.a: $(LIBRARY_OBJS)
 
 # wasm32-emscripten browser web example
 
-WEBEX_DIR=$(srcdir)/Tools/wasm/emscripten/web_example/
-web_example/python.html: $(WEBEX_DIR)/python.html
-	@mkdir -p web_example
-	@cp $< $@
+EMSCRIPTEN_DIR=$(srcdir)/Tools/wasm/emscripten
+WEBEX_DIR=$(EMSCRIPTEN_DIR)/web_example/
 
-web_example/python.worker.mjs: $(WEBEX_DIR)/python.worker.mjs
+ZIP_STDLIB=python$(VERSION)$(ABI_THREAD).zip
+$(ZIP_STDLIB): $(srcdir)/Lib/*.py $(srcdir)/Lib/*/*.py \
+	    $(EMSCRIPTEN_DIR)/wasm_assets.py \
+	    Makefile pybuilddir.txt Modules/Setup.local
+	$(PYTHON_FOR_BUILD) $(EMSCRIPTEN_DIR)/wasm_assets.py \
+	    --buildroot . --prefix $(prefix) -o $@
+
+web_example/index.html: $(WEBEX_DIR)/index.html
 	@mkdir -p web_example
 	@cp $< $@
 
@@ -1109,12 +1126,9 @@ web_example/server.py: $(WEBEX_DIR)/server.py
 	@mkdir -p web_example
 	@cp $< $@
 
-WEB_STDLIB=web_example/python$(VERSION)$(ABI_THREAD).zip
-$(WEB_STDLIB): $(srcdir)/Lib/*.py $(srcdir)/Lib/*/*.py \
-	    $(WEBEX_DIR)/wasm_assets.py \
-	    Makefile pybuilddir.txt Modules/Setup.local
-	$(PYTHON_FOR_BUILD) $(WEBEX_DIR)/wasm_assets.py \
-	    --buildroot . --prefix $(prefix) -o $@
+web_example/$(ZIP_STDLIB): $(ZIP_STDLIB)
+	@mkdir -p web_example
+	@cp $< $@
 
 web_example/python.mjs web_example/python.wasm: $(BUILDPYTHON)
 	@if test $(HOST_GNU_TYPE) != 'wasm32-unknown-emscripten' ; then \
@@ -1125,7 +1139,35 @@ web_example/python.mjs web_example/python.wasm: $(BUILDPYTHON)
 	cp python.wasm web_example/python.wasm
 
 .PHONY: web_example
-web_example: web_example/python.mjs web_example/python.worker.mjs web_example/python.html web_example/server.py $(WEB_STDLIB)
+web_example: web_example/python.mjs web_example/index.html web_example/server.py web_example/$(ZIP_STDLIB)
+
+WEBEX2=web_example_pyrepl_jspi
+WEBEX2_DIR=$(EMSCRIPTEN_DIR)/$(WEBEX2)/
+
+$(WEBEX2)/python.mjs $(WEBEX2)/python.wasm: $(BUILDPYTHON)
+	@if test $(HOST_GNU_TYPE) != 'wasm32-unknown-emscripten' ; then \
+		echo "Can only build web_example when target is Emscripten" ;\
+		exit 1 ;\
+	fi
+	@mkdir -p $(WEBEX2)
+	@cp python.mjs $(WEBEX2)/python.mjs
+	@cp python.wasm $(WEBEX2)/python.wasm
+
+$(WEBEX2)/index.html: $(WEBEX2_DIR)/index.html
+	@mkdir -p $(WEBEX2)
+	@cp $< $@
+
+$(WEBEX2)/src.mjs: $(WEBEX2_DIR)/src.mjs
+	@mkdir -p $(WEBEX2)
+	@cp $< $@
+
+$(WEBEX2)/$(ZIP_STDLIB): $(ZIP_STDLIB)
+	@mkdir -p $(WEBEX2)
+	@cp $< $@
+
+.PHONY: web_example_pyrepl_jspi
+web_example_pyrepl_jspi: $(WEBEX2)/python.mjs $(WEBEX2)/index.html $(WEBEX2)/src.mjs $(WEBEX2)/$(ZIP_STDLIB)
+
 
 ############################################################################
 # Header files
@@ -1158,7 +1200,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/intrcheck.h \
 		$(srcdir)/Include/iterobject.h \
 		$(srcdir)/Include/listobject.h \
-		$(srcdir)/Include/lock.h \
+		$(srcdir)/Include/pylock.h \
 		$(srcdir)/Include/longobject.h \
 		$(srcdir)/Include/marshal.h \
 		$(srcdir)/Include/memoryobject.h \
@@ -1235,7 +1277,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/import.h \
 		$(srcdir)/Include/cpython/initconfig.h \
 		$(srcdir)/Include/cpython/listobject.h \
-		$(srcdir)/Include/cpython/lock.h \
+		$(srcdir)/Include/cpython/pylock.h \
 		$(srcdir)/Include/cpython/longintrepr.h \
 		$(srcdir)/Include/cpython/longobject.h \
 		$(srcdir)/Include/cpython/memoryobject.h \
@@ -1483,6 +1525,17 @@ Modules/expat/xmltok.o: $(srcdir)/Modules/expat/xmltok.c $(LIBEXPAT_HEADERS) $(P
 $(LIBEXPAT_A): $(LIBEXPAT_OBJS)
 	-rm -f $@
 	$(AR) $(ARFLAGS) $@ $(LIBEXPAT_OBJS)
+
+##########################################################################
+# '_hashlib', '_hmac' and HACL*-based modules helpers
+LIBHASHLIB_INTERNAL_CFLAGS=@LIBHASHLIB_INTERNAL_CFLAGS@ $(PY_STDMODULE_CFLAGS) $(CCSHARED)
+
+Modules/_hashlib/hashlib_buffer.o: Modules/_hashlib/hashlib_buffer.c $(LIBHASHLIB_INTERNAL_HEADERS) $(PYTHON_HEADERS)
+	$(CC) -I$(srcdir)/Modules/_hashlib -c $(LIBHASHLIB_INTERNAL_CFLAGS) -o $@ $(srcdir)/Modules/_hashlib/hashlib_buffer.c
+
+$(LIBHASHLIB_INTERNAL_A): $(LIBHASHLIB_INTERNAL_OBJS)
+	-rm -f $@
+	$(AR) $(ARFLAGS) $@ $(LIBHASHLIB_INTERNAL_OBJS)
 
 ##########################################################################
 # HACL* library build
@@ -2533,6 +2586,7 @@ LIBSUBDIRS=	asyncio \
 		logging \
 		multiprocessing multiprocessing/dummy \
 		pathlib \
+		profile \
 		pydoc_data \
 		re \
 		site-packages \
@@ -3325,21 +3379,21 @@ MODULE__CTYPES_TEST_DEPS=$(srcdir)/Modules/_ctypes/_ctypes_test_generated.c.h
 MODULE__CTYPES_MALLOC_CLOSURE=@MODULE__CTYPES_MALLOC_CLOSURE@
 MODULE__DECIMAL_DEPS=$(srcdir)/Modules/_decimal/docstrings.h @LIBMPDEC_INTERNAL@
 MODULE__ELEMENTTREE_DEPS=$(srcdir)/Modules/pyexpat.c @LIBEXPAT_INTERNAL@
-MODULE__HASHLIB_DEPS=$(srcdir)/Modules/hashlib.h
+MODULE__HASHLIB_DEPS=@LIBHASHLIB_INTERNAL@
 MODULE__IO_DEPS=$(srcdir)/Modules/_io/_iomodule.h
 
 # HACL*-based cryptographic primitives
-MODULE__MD5_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_MD5_HEADERS) $(LIBHACL_MD5_LIB_@LIBHACL_LDEPS_LIBTYPE@)
+MODULE__MD5_DEPS=$(MODULE__HASHLIB_DEPS) $(LIBHACL_MD5_HEADERS) $(LIBHACL_MD5_LIB_@LIBHACL_LDEPS_LIBTYPE@)
 MODULE__MD5_LDEPS=$(LIBHACL_MD5_LIB_@LIBHACL_LDEPS_LIBTYPE@)
-MODULE__SHA1_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_SHA1_HEADERS) $(LIBHACL_SHA1_LIB_@LIBHACL_LDEPS_LIBTYPE@)
+MODULE__SHA1_DEPS=$(MODULE__HASHLIB_DEPS) $(LIBHACL_SHA1_HEADERS) $(LIBHACL_SHA1_LIB_@LIBHACL_LDEPS_LIBTYPE@)
 MODULE__SHA1_LDEPS=$(LIBHACL_SHA1_LIB_@LIBHACL_LDEPS_LIBTYPE@)
-MODULE__SHA2_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_SHA2_HEADERS) $(LIBHACL_SHA2_LIB_@LIBHACL_LDEPS_LIBTYPE@)
+MODULE__SHA2_DEPS=$(MODULE__HASHLIB_DEPS) $(LIBHACL_SHA2_HEADERS) $(LIBHACL_SHA2_LIB_@LIBHACL_LDEPS_LIBTYPE@)
 MODULE__SHA2_LDEPS=$(LIBHACL_SHA2_LIB_@LIBHACL_LDEPS_LIBTYPE@)
-MODULE__SHA3_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_SHA3_HEADERS) $(LIBHACL_SHA3_LIB_@LIBHACL_LDEPS_LIBTYPE@)
+MODULE__SHA3_DEPS=$(MODULE__HASHLIB_DEPS) $(LIBHACL_SHA3_HEADERS) $(LIBHACL_SHA3_LIB_@LIBHACL_LDEPS_LIBTYPE@)
 MODULE__SHA3_LDEPS=$(LIBHACL_SHA3_LIB_@LIBHACL_LDEPS_LIBTYPE@)
-MODULE__BLAKE2_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_BLAKE2_HEADERS) $(LIBHACL_BLAKE2_LIB_@LIBHACL_LDEPS_LIBTYPE@)
+MODULE__BLAKE2_DEPS=$(MODULE__HASHLIB_DEPS) $(LIBHACL_BLAKE2_HEADERS) $(LIBHACL_BLAKE2_LIB_@LIBHACL_LDEPS_LIBTYPE@)
 MODULE__BLAKE2_LDEPS=$(LIBHACL_BLAKE2_LIB_@LIBHACL_LDEPS_LIBTYPE@)
-MODULE__HMAC_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_HMAC_HEADERS) $(LIBHACL_HMAC_LIB_@LIBHACL_LDEPS_LIBTYPE@)
+MODULE__HMAC_DEPS=$(MODULE__HASHLIB_DEPS) $(LIBHACL_HMAC_HEADERS) $(LIBHACL_HMAC_LIB_@LIBHACL_LDEPS_LIBTYPE@)
 MODULE__HMAC_LDEPS=$(LIBHACL_HMAC_LIB_@LIBHACL_LDEPS_LIBTYPE@)
 
 MODULE__SOCKET_DEPS=$(srcdir)/Modules/socketmodule.h $(srcdir)/Modules/addrinfo.h $(srcdir)/Modules/getaddrinfo.c $(srcdir)/Modules/getnameinfo.c

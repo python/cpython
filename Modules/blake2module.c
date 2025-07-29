@@ -15,11 +15,13 @@
 #endif
 
 #include "Python.h"
-#include "hashlib.h"
-#include "pycore_cpuinfo.h"         // _Py_cpuid_features
-#include "pycore_strhex.h"          // _Py_strhex()
-#include "pycore_typeobject.h"
+#include "pycore_cpuinfo.h"             // _Py_cpuid_features
 #include "pycore_moduleobject.h"
+#include "pycore_strhex.h"              // _Py_strhex()
+#include "pycore_typeobject.h"
+
+#include "_hashlib/hashlib_buffer.h"
+#include "_hashlib/hashlib_mutex.h"
 
 #include <stdbool.h>
 

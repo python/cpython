@@ -1834,8 +1834,8 @@ _build_concatenated_joined_str(Parser *p, asdl_expr_seq *strings,
     return _PyAST_JoinedStr(values, lineno, col_offset, end_lineno, end_col_offset, p->arena);
 }
 
-static expr_ty
-_build_concatenated_template_str(Parser *p, asdl_expr_seq *strings,
+expr_ty
+_PyPegen_concatenate_tstrings(Parser *p, asdl_expr_seq *strings,
                                int lineno, int col_offset, int end_lineno,
                                int end_col_offset, PyArena *arena)
 {
@@ -1853,7 +1853,6 @@ _PyPegen_concatenate_strings(Parser *p, asdl_expr_seq *strings,
     Py_ssize_t len = asdl_seq_LEN(strings);
     assert(len > 0);
 
-    int t_string_found = 0;
     int f_string_found = 0;
     int unicode_string_found = 0;
     int bytes_found = 0;
@@ -1873,7 +1872,8 @@ _PyPegen_concatenate_strings(Parser *p, asdl_expr_seq *strings,
                 f_string_found = 1;
                 break;
             case TemplateStr_kind:
-                t_string_found = 1;
+                // python.gram handles this; we should never get here
+                assert(0);
                 break;
             default:
                 f_string_found = 1;
@@ -1882,13 +1882,13 @@ _PyPegen_concatenate_strings(Parser *p, asdl_expr_seq *strings,
     }
 
     // Cannot mix unicode and bytes
-    if ((unicode_string_found || f_string_found || t_string_found) && bytes_found) {
+    if ((unicode_string_found || f_string_found) && bytes_found) {
         RAISE_SYNTAX_ERROR("cannot mix bytes and nonbytes literals");
         return NULL;
     }
 
     // If it's only bytes or only unicode string, do a simple concat
-    if (!f_string_found && !t_string_found) {
+    if (!f_string_found) {
         if (len == 1) {
             return asdl_seq_GET(strings, 0);
         }
@@ -1900,11 +1900,6 @@ _PyPegen_concatenate_strings(Parser *p, asdl_expr_seq *strings,
             return _build_concatenated_unicode(p, strings, lineno, col_offset,
                 end_lineno, end_col_offset, arena);
         }
-    }
-
-    if (t_string_found) {
-        return _build_concatenated_template_str(p, strings, lineno,
-            col_offset, end_lineno, end_col_offset, arena);
     }
 
     return _build_concatenated_joined_str(p, strings, lineno,

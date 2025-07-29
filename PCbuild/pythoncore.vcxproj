@@ -165,7 +165,7 @@
     <ClInclude Include="..\Include\cpython\import.h" />
     <ClInclude Include="..\Include\cpython\initconfig.h" />
     <ClInclude Include="..\Include\cpython\listobject.h" />
-    <ClInclude Include="..\Include\cpython\lock.h" />
+    <ClInclude Include="..\Include\cpython\pylock.h" />
     <ClInclude Include="..\Include\cpython\longintrepr.h" />
     <ClInclude Include="..\Include\cpython\longobject.h" />
     <ClInclude Include="..\Include\cpython\memoryobject.h" />
@@ -334,7 +334,7 @@
     <ClInclude Include="..\Include\intrcheck.h" />
     <ClInclude Include="..\Include\iterobject.h" />
     <ClInclude Include="..\Include\listobject.h" />
-    <ClInclude Include="..\Include\lock.h" />
+    <ClInclude Include="..\Include\pylock.h" />
     <ClInclude Include="..\Include\longobject.h" />
     <ClInclude Include="..\Include\marshal.h" />
     <ClInclude Include="..\Include\memoryobject.h" />
@@ -449,6 +449,10 @@
       <PreprocessorDefinitions>HACL_CAN_COMPILE_VEC128;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/arch:AVX %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
+    <ClCompile Include="..\Modules\_hashlib\hashlib_buffer.c" />
+    <ClInclude Include="..\Modules\_hashlib\hashlib_buffer.h" />
+    <ClInclude Include="..\Modules\_hashlib\hashlib_fetch.h" />
+    <ClInclude Include="..\Modules\_hashlib\hashlib_mutex.h" />
     <ClCompile Include="..\Modules\_heapqmodule.c" />
     <ClCompile Include="..\Modules\_json.c" />
     <ClCompile Include="..\Modules\_localemodule.c" />

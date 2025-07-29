@@ -1,0 +1,3 @@
+:func:`hmac.digest` now properly handles large keys and messages
+by falling back to the pure Python implementation when necessary.
+Patch by Bénédikt Tran.

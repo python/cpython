@@ -121,7 +121,7 @@ get_c_recursion_remaining(PyObject *self, PyObject *Py_UNUSED(args))
     PyThreadState *tstate = _PyThreadState_GET();
     uintptr_t here_addr = _Py_get_machine_stack_pointer();
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
-    int remaining = (int)((here_addr - _tstate->c_stack_soft_limit)/PYOS_STACK_MARGIN_BYTES * 50);
+    int remaining = (int)((here_addr - _tstate->c_stack_soft_limit) / _PyOS_STACK_MARGIN_BYTES * 50);
     return PyLong_FromLong(remaining);
 }
 
@@ -2207,8 +2207,7 @@ get_code(PyObject *obj)
         return (PyCodeObject *)PyFunction_GetCode(obj);
     }
     return (PyCodeObject *)PyErr_Format(
-        PyExc_TypeError, "expected function or code object, got %s",
-        Py_TYPE(obj)->tp_name);
+        PyExc_TypeError, "expected function or code object, got %T", obj);
 }
 
 static PyObject *
@@ -2346,6 +2345,37 @@ incref_decref_delayed(PyObject *self, PyObject *op)
     Py_RETURN_NONE;
 }
 
+#ifdef __EMSCRIPTEN__
+#include "emscripten.h"
+
+EM_JS(int, emscripten_set_up_async_input_device_js, (void), {
+    let idx = 0;
+    const encoder = new TextEncoder();
+    const bufs = [
+        encoder.encode("ab\n"),
+        encoder.encode("fi\n"),
+        encoder.encode("xy\n"),
+    ];
+    function sleep(t) {
+        return new Promise(res => setTimeout(res, t));
+    }
+    FS.createAsyncInputDevice("/dev", "blah", async () => {
+        await sleep(5);
+        return bufs[(idx ++) % 3];
+    });
+    return !!WebAssembly.promising;
+});
+
+static PyObject *
+emscripten_set_up_async_input_device(PyObject *self, PyObject *Py_UNUSED(ignored)) {
+    if (emscripten_set_up_async_input_device_js()) {
+        Py_RETURN_TRUE;
+    } else {
+        Py_RETURN_FALSE;
+    }
+}
+#endif
+
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
@@ -2448,6 +2478,9 @@ static PyMethodDef module_functions[] = {
     {"is_static_immortal", is_static_immortal, METH_O},
     {"incref_decref_delayed", incref_decref_delayed, METH_O},
     GET_NEXT_DICT_KEYS_VERSION_METHODDEF
+#ifdef __EMSCRIPTEN__
+    {"emscripten_set_up_async_input_device", emscripten_set_up_async_input_device, METH_NOARGS},
+#endif
     {NULL, NULL} /* sentinel */
 };
 

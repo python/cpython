@@ -31,8 +31,7 @@ import urllib.parse
 import warnings
 
 from test.support import (
-    SHORT_TIMEOUT, check_disallow_instantiation, requires_subprocess,
-    is_apple, is_emscripten, is_wasi
+    SHORT_TIMEOUT, check_disallow_instantiation, requires_subprocess
 )
 from test.support import gc_collect
 from test.support import threading_helper, import_helper
@@ -641,14 +640,21 @@ class OpenTests(unittest.TestCase):
             self.assertTrue(os.path.exists(path))
             cx.execute(self._sql)
 
-    @unittest.skipIf(sys.platform == "win32", "skipped on Windows")
-    @unittest.skipIf(is_apple, "skipped on Apple platforms")
-    @unittest.skipIf(is_emscripten or is_wasi, "not supported on Emscripten/WASI")
-    @unittest.skipUnless(TESTFN_UNDECODABLE, "only works if there are undecodable paths")
-    def test_open_with_undecodable_path(self):
+    def get_undecodable_path(self):
         path = TESTFN_UNDECODABLE
+        if not path:
+            self.skipTest("only works if there are undecodable paths")
+        try:
+            open(path, 'wb').close()
+        except OSError:
+            self.skipTest(f"can't create file with undecodable path {path!r}")
+        unlink(path)
+        return path
+
+    @unittest.skipIf(sys.platform == "win32", "skipped on Windows")
+    def test_open_with_undecodable_path(self):
+        path = self.get_undecodable_path()
         self.addCleanup(unlink, path)
-        self.assertFalse(os.path.exists(path))
         with contextlib.closing(sqlite.connect(path)) as cx:
             self.assertTrue(os.path.exists(path))
             cx.execute(self._sql)
@@ -688,14 +694,10 @@ class OpenTests(unittest.TestCase):
                 cx.execute(self._sql)
 
     @unittest.skipIf(sys.platform == "win32", "skipped on Windows")
-    @unittest.skipIf(is_apple, "skipped on Apple platforms")
-    @unittest.skipIf(is_emscripten or is_wasi, "not supported on Emscripten/WASI")
-    @unittest.skipUnless(TESTFN_UNDECODABLE, "only works if there are undecodable paths")
     def test_open_undecodable_uri(self):
-        path = TESTFN_UNDECODABLE
+        path = self.get_undecodable_path()
         self.addCleanup(unlink, path)
         uri = "file:" + urllib.parse.quote(path)
-        self.assertFalse(os.path.exists(path))
         with contextlib.closing(sqlite.connect(uri, uri=True)) as cx:
             self.assertTrue(os.path.exists(path))
             cx.execute(self._sql)
