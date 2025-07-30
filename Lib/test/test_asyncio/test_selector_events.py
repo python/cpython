@@ -1500,7 +1500,7 @@ class SelectorDatagramTransportTests(test_utils.TestCase):
     def test_sendto_sendto_ready(self):
         data = b'data'
 
-        # First queue up a buffer by having the socket block
+        # First queue up the buffer by having the socket blocked
         self.sock.sendto.side_effect = BlockingIOError
         transport = self.datagram_transport()
         transport.sendto(data, ('0.0.0.0', 12345))
