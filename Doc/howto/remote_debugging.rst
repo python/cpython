@@ -374,7 +374,7 @@ To locate a thread:
    reliable thread to target.
 
 3. Optionally, use the offset ``interpreter_state.threads_head`` to iterate
-   through the linked list of all thread states. Each ``PyThreadState`` 
+   through the linked list of all thread states. Each ``PyThreadState``
    structure contains a ``native_thread_id`` field, which may be compared to
    a target thread ID to find a specific thread.
 
