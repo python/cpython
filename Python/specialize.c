@@ -935,8 +935,7 @@ analyze_descriptor_load(PyTypeObject *type, PyObject *name, PyObject **descr, un
         PyObject *getattr = _PyType_Lookup(type, &_Py_ID(__getattr__));
         has_getattr = getattr != NULL;
         if (has_custom_getattribute) {
-            if (getattro_slot == _Py_slot_tp_getattro &&
-                !has_getattr &&
+            if (!has_getattr &&
                 Py_IS_TYPE(getattribute, &PyFunction_Type)) {
                 *descr = getattribute;
                 *tp_version = ga_version;

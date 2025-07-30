@@ -10581,7 +10581,10 @@ _Py_slot_tp_getattr_hook(PyObject *self, PyObject *name)
     getattr = _PyType_LookupRef(tp, &_Py_ID(__getattr__));
     if (getattr == NULL) {
         /* No __getattr__ hook: use a simpler dispatcher */
+#ifndef Py_GIL_DISABLED
+        // Replacing the slot is only thread-safe if there is a GIL.
         tp->tp_getattro = _Py_slot_tp_getattro;
+#endif
         return _Py_slot_tp_getattro(self, name);
     }
     /* speed hack: we could use lookup_maybe, but that would resolve the
