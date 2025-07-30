@@ -75,6 +75,7 @@ repos:
     rev: v1.6.0
     hooks:
       - id: zizmor
+        # Action files are misidentified as workflows.
         exclude: ^.github/actions/
 
   - repo: https://github.com/sphinx-contrib/sphinx-lint
