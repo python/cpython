@@ -186,11 +186,9 @@ typedef struct _stats {
     FTStats ft_stats;
 #endif
     RareEventStats rare_event_stats;
-    GCStats *gc_stats;
+    GCStats gc_stats[3]; // must match NUM_GENERATIONS
 } PyStats;
 
-
-#ifdef Py_GIL_DISABLED
 
 #if defined(HAVE_THREAD_LOCAL) && !defined(Py_BUILD_CORE_MODULE)
 extern _Py_thread_local PyStats *_Py_tss_stats;
@@ -200,29 +198,14 @@ extern _Py_thread_local PyStats *_Py_tss_stats;
 // inline function.
 PyAPI_FUNC(PyStats *) _PyStats_GetLocal(void);
 
-#else // !Py_GIL_DISABLED
-
-// Export for shared extensions like 'math'
-PyAPI_DATA(PyStats*) _Py_stats;
-
-#endif
-
 // Return pointer to the PyStats structure, NULL if recording is off.
 static inline PyStats*
 _PyStats_GET(void)
 {
-#ifdef Py_GIL_DISABLED
-
 #if defined(HAVE_THREAD_LOCAL) && !defined(Py_BUILD_CORE_MODULE)
     return _Py_tss_stats;
 #else
     return _PyStats_GetLocal();
-#endif
-
-#else // !Py_GIL_DISABLED
-
-    return _Py_stats;
-
 #endif
 }
 

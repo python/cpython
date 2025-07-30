@@ -22,10 +22,9 @@
 #include "pycore_runtime.h"       // _PyRuntime
 #include "pycore_runtime_init.h"  // _PyRuntimeState_INIT
 #include "pycore_stackref.h"      // Py_STACKREF_DEBUG
+#include "pycore_stats.h"         // FT_STAT_WORLD_STOP_INC()
 #include "pycore_time.h"          // _PyTime_Init()
 #include "pycore_uniqueid.h"      // _PyObject_FinalizePerThreadRefcounts()
-#include "pycore_stats.h"         // FT_STAT_WORLD_STOP_INC()
-
 
 
 /* --------------------------------------------------------------------------
@@ -480,6 +479,12 @@ alloc_interpreter(void)
 static void
 free_interpreter(PyInterpreterState *interp)
 {
+#ifdef Py_STATS
+    if (interp->pystats_struct) {
+        PyMem_RawFree(interp->pystats_struct);
+        interp->pystats_struct = NULL;
+    }
+#endif
     // The main interpreter is statically allocated so
     // should not be freed.
     if (interp != &_PyRuntime._main_interpreter) {
@@ -1532,7 +1537,7 @@ new_threadstate(PyInterpreterState *interp, int whence)
 #endif
 #ifdef Py_STATS
     // The PyStats structure is quite large and is allocated separated from tstate.
-    if (!_PyStats_ThreadInit(tstate)) {
+    if (!_PyStats_ThreadInit(interp, tstate)) {
         free_threadstate(tstate);
         return NULL;
     }
@@ -2017,9 +2022,6 @@ tstate_activate(PyThreadState *tstate)
     if (!tstate->_status.bound_gilstate) {
         bind_gilstate_tstate(tstate);
     }
-#ifdef Py_STATS
-    _PyStats_Attach((_PyThreadStateImpl *)tstate);
-#endif
 
     tstate->_status.active = 1;
 }
@@ -2138,6 +2140,10 @@ _PyThreadState_Attach(PyThreadState *tstate)
     if (tstate->critical_section != 0) {
         _PyCriticalSection_Resume(tstate);
     }
+
+#ifdef Py_STATS
+    _PyStats_Attach((_PyThreadStateImpl *)tstate);
+#endif
 
 #if defined(Py_DEBUG)
     errno = err;

@@ -9,25 +9,7 @@
 
 #include <stdlib.h> // rand()
 
-extern const char *_PyUOpName(int index);
-
 #ifdef Py_STATS
-
-static bool pystats_was_enabled;
-
-static GCStats pystats_gc[NUM_GENERATIONS] = { 0 };
-
-static PyStats pystats_struct = { .gc_stats = pystats_gc };
-
-
-#ifdef Py_GIL_DISABLED
-
-// true if recording of pystats is on, this is used when new threads
-// are created to decide if recording should be on for them
-static bool pystats_enabled;
-
-// held when global pystats structure is being updated
-static PyMutex pystats_mutex;
 
 // Pointer to Thread-local stats structure, null if recording is off.
 _Py_thread_local PyStats *_Py_tss_stats;
@@ -38,11 +20,13 @@ _PyStats_GetLocal(void)
     return _Py_tss_stats;
 }
 
-#else // !Py_GIL_DISABLED
-
-PyStats *_Py_stats;
-
-#endif // Py_GIL_DISABLED
+#ifdef Py_GIL_DISABLED
+#define STATS_LOCK(interp) PyMutex_Lock(&interp->pystats_mutex)
+#define STATS_UNLOCK(interp) PyMutex_Unlock(&interp->pystats_mutex)
+#else
+#define STATS_LOCK(interp)
+#define STATS_UNLOCK(interp)
+#endif
 
 
 #if PYSTATS_MAX_UOP_ID < MAX_UOP_ID
@@ -103,11 +87,12 @@ stats_to_dict(SpecializationStats *stats)
 
 static int
 add_stat_dict(
+    PyStats *src,
     PyObject *res,
     int opcode,
     const char *name) {
 
-    SpecializationStats *stats = &pystats_struct.opcode_stats[opcode].specialization;
+    SpecializationStats *stats = &src->opcode_stats[opcode].specialization;
     PyObject *d = stats_to_dict(stats);
     if (d == NULL) {
         return -1;
@@ -119,26 +104,31 @@ add_stat_dict(
 
 PyObject*
 _Py_GetSpecializationStats(void) {
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyStats *src = tstate->interp->pystats_struct;
+    if (src == NULL) {
+        Py_RETURN_NONE;
+    }
     PyObject *stats = PyDict_New();
     if (stats == NULL) {
         return NULL;
     }
     int err = 0;
-    err += add_stat_dict(stats, CONTAINS_OP, "contains_op");
-    err += add_stat_dict(stats, LOAD_SUPER_ATTR, "load_super_attr");
-    err += add_stat_dict(stats, LOAD_ATTR, "load_attr");
-    err += add_stat_dict(stats, LOAD_GLOBAL, "load_global");
-    err += add_stat_dict(stats, STORE_SUBSCR, "store_subscr");
-    err += add_stat_dict(stats, STORE_ATTR, "store_attr");
-    err += add_stat_dict(stats, JUMP_BACKWARD, "jump_backward");
-    err += add_stat_dict(stats, CALL, "call");
-    err += add_stat_dict(stats, CALL_KW, "call_kw");
-    err += add_stat_dict(stats, BINARY_OP, "binary_op");
-    err += add_stat_dict(stats, COMPARE_OP, "compare_op");
-    err += add_stat_dict(stats, UNPACK_SEQUENCE, "unpack_sequence");
-    err += add_stat_dict(stats, FOR_ITER, "for_iter");
-    err += add_stat_dict(stats, TO_BOOL, "to_bool");
-    err += add_stat_dict(stats, SEND, "send");
+    err += add_stat_dict(src, stats, CONTAINS_OP, "contains_op");
+    err += add_stat_dict(src, stats, LOAD_SUPER_ATTR, "load_super_attr");
+    err += add_stat_dict(src, stats, LOAD_ATTR, "load_attr");
+    err += add_stat_dict(src, stats, LOAD_GLOBAL, "load_global");
+    err += add_stat_dict(src, stats, STORE_SUBSCR, "store_subscr");
+    err += add_stat_dict(src, stats, STORE_ATTR, "store_attr");
+    err += add_stat_dict(src, stats, JUMP_BACKWARD, "jump_backward");
+    err += add_stat_dict(src, stats, CALL, "call");
+    err += add_stat_dict(src, stats, CALL_KW, "call_kw");
+    err += add_stat_dict(src, stats, BINARY_OP, "binary_op");
+    err += add_stat_dict(src, stats, COMPARE_OP, "compare_op");
+    err += add_stat_dict(src, stats, UNPACK_SEQUENCE, "unpack_sequence");
+    err += add_stat_dict(src, stats, FOR_ITER, "for_iter");
+    err += add_stat_dict(src, stats, TO_BOOL, "to_bool");
+    err += add_stat_dict(src, stats, SEND, "send");
     if (err < 0) {
         Py_DECREF(stats);
         return NULL;
@@ -262,6 +252,8 @@ print_histogram(FILE *out, const char *name, uint64_t hist[_Py_UOP_HIST_SIZE])
     }
 }
 
+extern const char *_PyUOpName(int index);
+
 static void
 print_optimization_stats(FILE *out, OptimizationStats *stats)
 {
@@ -376,6 +368,7 @@ print_stats(FILE *out, PyStats *stats)
 }
 
 #ifdef Py_GIL_DISABLED
+
 static void
 merge_specialization_stats(SpecializationStats *dest, const SpecializationStats *src)
 {
@@ -521,7 +514,6 @@ merge_rare_event_stats(RareEventStats *dest, const RareEventStats *src)
     dest->watched_globals_modification += src->watched_globals_modification;
 }
 
-#if 0
 static void
 merge_gc_stats_array(GCStats *dest, const GCStats *src)
 {
@@ -533,16 +525,15 @@ merge_gc_stats_array(GCStats *dest, const GCStats *src)
         dest[i].objects_not_transitively_reachable += src[i].objects_not_transitively_reachable;
     }
 }
-#endif
 
 // merge stats for a single thread into the global structure
 void
 stats_merge_thread(_PyThreadStateImpl *tstate, bool zero)
 {
     PyStats *src = tstate->pystats_struct;
-    PyStats *dest = &pystats_struct;
+    PyStats *dest = ((PyThreadState *)tstate)->interp->pystats_struct;
 
-    if (src == NULL) {
+    if (src == NULL || dest == NULL) {
         return;
     }
 
@@ -551,28 +542,21 @@ stats_merge_thread(_PyThreadStateImpl *tstate, bool zero)
     merge_call_stats(&dest->call_stats, &src->call_stats);
     merge_object_stats(&dest->object_stats, &src->object_stats);
     merge_optimization_stats(&dest->optimization_stats, &src->optimization_stats);
-#ifdef Py_GIL_DISABLED
     merge_ft_stats(&dest->ft_stats, &src->ft_stats);
-#endif
     merge_rare_event_stats(&dest->rare_event_stats, &src->rare_event_stats);
-    //merge_gc_stats_array(dest->gc_stats, src->gc_stats);
+    merge_gc_stats_array(dest->gc_stats, src->gc_stats);
 
     if (zero) {
         // Zero the source stat counters
-        memset(src, 0, sizeof(pystats_struct));
-        src->gc_stats = pystats_gc;
+        memset(src, 0, sizeof(PyStats));
     }
 }
+#endif // Py_GIL_DISABLED
 
 // toggle stats collection on or off for all threads
 static void
-stats_toggle_on_off(void)
+stats_toggle_on_off(PyThreadState *tstate)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    if (tstate == NULL) {
-        return;
-    }
-    PyMutex_Lock(&pystats_mutex);
     PyInterpreterState *interp = tstate->interp;
     _Py_FOR_EACH_TSTATE_BEGIN(interp, ts) {
         if (!ts->_status.active) {
@@ -580,8 +564,12 @@ stats_toggle_on_off(void)
         }
         _PyThreadStateImpl *ts_impl = (_PyThreadStateImpl *)ts;
         PyStats *s;
-        if (pystats_enabled) {
+        if (interp->pystats_enabled) {
+#ifdef Py_GIL_DISABLED
             s = ts_impl->pystats_struct;
+#else
+            s = ((PyThreadState *)tstate)->interp->pystats_struct;
+#endif
         }
         else {
             s = NULL;
@@ -590,62 +578,64 @@ stats_toggle_on_off(void)
         *ts_impl->pystats_tss = s;
     }
     _Py_FOR_EACH_TSTATE_END(interp);
-    PyMutex_Unlock(&pystats_mutex);
 }
-#endif // Py_GIL_DISABLED
 
 // merge stats for all threads into the global structure
 static void
 stats_merge_all(void)
 {
 #ifdef Py_GIL_DISABLED
-    if (!pystats_was_enabled) {
-        return;
-    }
     PyThreadState *tstate = _PyThreadState_GET();
     if (tstate == NULL) {
         return;
     }
-    PyMutex_Lock(&pystats_mutex);
     PyInterpreterState *interp = tstate->interp;
     _Py_FOR_EACH_TSTATE_BEGIN(interp, ts) {
         stats_merge_thread((_PyThreadStateImpl*)ts, true);
     }
     _Py_FOR_EACH_TSTATE_END(interp);
-    PyMutex_Unlock(&pystats_mutex);
 #endif
 }
 
-void
+int
 _Py_StatsOn(void)
 {
-    pystats_was_enabled = true;
-#ifdef Py_GIL_DISABLED
-    pystats_enabled = true;
-    stats_toggle_on_off();
-#else
-    _Py_stats = &pystats_struct;
-#endif
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyInterpreterState *interp = tstate->interp;
+    STATS_LOCK(interp);
+    tstate->interp->pystats_enabled = true;
+    if (interp->pystats_struct == NULL) {
+        interp->pystats_struct = PyMem_RawCalloc(1, sizeof(PyStats));
+        if (interp->pystats_struct == NULL) {
+            STATS_UNLOCK(interp);
+            return -1;
+        }
+    }
+    stats_toggle_on_off(tstate);
+    STATS_UNLOCK(interp);
+    return 0;
 }
 
 void
 _Py_StatsOff(void)
 {
-#ifdef Py_GIL_DISABLED
-    pystats_enabled = false;
-    stats_toggle_on_off();
-#else
-    _Py_stats = NULL;
-#endif
+    PyThreadState *tstate = _PyThreadState_GET();
+    STATS_LOCK(tstate->interp);
+    tstate->interp->pystats_enabled = false;
+    stats_toggle_on_off(tstate);
+    STATS_UNLOCK(tstate->interp);
 }
 
 void
 _Py_StatsClear(void)
 {
-    stats_merge_all();
-    memset(&pystats_gc, 0, sizeof(pystats_gc));
-    memset(&pystats_struct, 0, sizeof(pystats_struct));
-    pystats_struct.gc_stats = pystats_gc;
+    PyThreadState *tstate = _PyThreadState_GET();
+    STATS_LOCK(tstate->interp);
+    if (tstate->interp->pystats_struct != NULL) {
+        stats_merge_all();
+        memset(tstate->interp->pystats_struct, 0, sizeof(PyStats));
+    }
+    STATS_UNLOCK(tstate->interp);
 }
 
 static int
@@ -664,8 +654,13 @@ int
 _Py_PrintSpecializationStats(int to_file)
 {
     assert(to_file);
-    stats_merge_all();
-    PyStats *stats = &pystats_struct;
+    PyThreadState *tstate = _PyThreadState_GET();
+    STATS_LOCK(tstate->interp);
+    PyStats *stats = tstate->interp->pystats_struct;
+    if (stats == NULL) {
+        STATS_UNLOCK(tstate->interp);
+        return 0;
+    }
 #define MEM_IS_ZERO(DATA) mem_is_zero((unsigned char*)DATA, sizeof(*(DATA)))
     int is_zero = (
         MEM_IS_ZERO(stats->gc_stats)  // is a pointer
@@ -674,6 +669,7 @@ _Py_PrintSpecializationStats(int to_file)
         && MEM_IS_ZERO(&stats->object_stats)
     );
 #undef MEM_IS_ZERO
+    STATS_UNLOCK(tstate->interp);
     if (is_zero) {
         // gh-108753: -X pystats command line was used, but then _stats_off()
         // and _stats_clear() have been called: in this case, avoid printing
@@ -711,7 +707,9 @@ _Py_PrintSpecializationStats(int to_file)
     else {
         fprintf(out, "Specialization stats:\n");
     }
+    STATS_LOCK(tstate->interp);
     print_stats(out, stats);
+    STATS_UNLOCK(tstate->interp);
     if (out != stderr) {
         fclose(out);
     }
@@ -719,14 +717,22 @@ _Py_PrintSpecializationStats(int to_file)
 }
 
 bool
-_PyStats_ThreadInit(_PyThreadStateImpl *tstate)
+_PyStats_ThreadInit(PyInterpreterState *interp, _PyThreadStateImpl *tstate)
 {
+    STATS_LOCK(interp);
+    if (interp->pystats_enabled) {
+        interp->pystats_struct = PyMem_RawCalloc(1, sizeof(PyStats));
+        if (interp->pystats_struct == NULL) {
+            STATS_UNLOCK(interp);
+            return false;
+        }
+    }
+    STATS_UNLOCK(interp);
 #ifdef Py_GIL_DISABLED
-    tstate->pystats_struct = PyMem_RawCalloc(1, sizeof(pystats_struct));
+    tstate->pystats_struct = PyMem_RawCalloc(1, sizeof(PyStats));
     if (tstate->pystats_struct == NULL) {
         return false;
     }
-    tstate->pystats_struct->gc_stats = pystats_gc;
 #endif
     return true;
 }
@@ -735,9 +741,7 @@ void
 _PyStats_ThreadFini(_PyThreadStateImpl *tstate)
 {
 #ifdef Py_GIL_DISABLED
-    if (pystats_was_enabled) {
-        stats_merge_thread(tstate, false);
-    }
+    stats_merge_thread(tstate, false);
     PyMem_RawFree(tstate->pystats_struct);
 #endif
 }
@@ -745,28 +749,31 @@ _PyStats_ThreadFini(_PyThreadStateImpl *tstate)
 void
 _PyStats_Attach(_PyThreadStateImpl *tstate)
 {
+    PyStats *s;
+    PyInterpreterState *interp = ((PyThreadState *)tstate)->interp;
+    STATS_LOCK(interp);
+    if (interp->pystats_enabled) {
 #ifdef Py_GIL_DISABLED
-        PyStats *s;
-        if (pystats_enabled) {
-            s = tstate->pystats_struct;
-        }
-        else {
-            s = NULL;
-        }
-        // use correct TSS variable for thread
-        tstate->pystats_tss = &_Py_tss_stats;
-        // write to the tss variable for the 'ts' thread
-        _Py_tss_stats = s;
+        s = tstate->pystats_struct;
+#else
+        s = ((PyThreadState *)tstate)->interp->pystats_struct;
 #endif
+    }
+    else {
+        s = NULL;
+    }
+    STATS_UNLOCK(interp);
+    // use correct TSS variable for thread
+    tstate->pystats_tss = &_Py_tss_stats;
+    // write to the tss variable for the 'ts' thread
+    _Py_tss_stats = s;
 }
 
 void
 _PyStats_Detach(_PyThreadStateImpl *tstate)
 {
-#ifdef Py_GIL_DISABLED
     tstate->pystats_tss = NULL;
     _Py_tss_stats = NULL;
-#endif
 }
 
 #endif // Py_STATS

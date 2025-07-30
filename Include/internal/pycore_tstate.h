@@ -71,13 +71,15 @@ typedef struct _PyThreadStateImpl {
     // When >1, code objects do not immortalize their non-string constants.
     int suppress_co_const_immortalization;
 
+#endif // Py_GIL_DISABLED
+
 #ifdef Py_STATS
-    // per-thread stats, will be merged into the _Py_stats_struct global
+#ifdef Py_GIL_DISABLED
+    // per-thread stats, will be merged into interp->pystats_struct
     PyStats *pystats_struct; // allocated by _PyStats_ThreadInit()
+#endif
     PyStats **pystats_tss;  // pointer to tss variable
 #endif
-
-#endif // Py_GIL_DISABLED
 
 #if defined(Py_REF_DEBUG) && defined(Py_GIL_DISABLED)
     Py_ssize_t reftotal;  // this thread's total refcount operations

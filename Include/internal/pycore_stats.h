@@ -110,7 +110,7 @@ PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
         RARE_EVENT_INTERP_INC(interp, name); \
     } while (0); \
 
-bool _PyStats_ThreadInit(_PyThreadStateImpl *);
+bool _PyStats_ThreadInit(PyInterpreterState *, _PyThreadStateImpl *);
 void _PyStats_ThreadFini(_PyThreadStateImpl *);
 void _PyStats_Attach(_PyThreadStateImpl *);
 void _PyStats_Detach(_PyThreadStateImpl *);
