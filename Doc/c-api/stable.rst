@@ -233,7 +233,7 @@ The full API is described below for advanced use cases.
    The *module_name* argument can be ``NULL``, or point to a NUL-terminated
    UTF-8-encoded string used for error messages.
 
-   Note that if *info* describes the ABI taht the current code uses (as defined
+   Note that if *info* describes the ABI that the current code uses (as defined
    by :c:macro:`PyABIInfo_VAR`, for example), using any other Python C API
    may lead to crashes.
    In particular, it is not safe to examine the raised exception.
