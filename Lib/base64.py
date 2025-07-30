@@ -25,6 +25,7 @@ __all__ = [
     'urlsafe_b64encode', 'urlsafe_b64decode',
     ]
 
+_ALLOWED_BASE16_CHARS = frozenset(b'0123456789ABCDEF')
 
 bytes_types = (bytes, bytearray)  # Types acceptable as binary data
 
@@ -283,8 +284,7 @@ def b16decode(s, casefold=False):
     s = _bytes_from_decode_data(s)
     if casefold:
         s = s.upper()
-        delete= b'0123456789abcdef'
-    if any(c not in delete for c in s):
+    if any(c not in _ALLOWED_BASE16_CHARS for c in s):
         raise binascii.Error('Non-base16 digit found')
     return binascii.unhexlify(s)
 
