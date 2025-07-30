@@ -91,11 +91,17 @@ def subdir(working_dir, *, clean_ok=False):
     return decorator
 
 
-def call(command, *, quiet, **kwargs):
+def call(command, *, context=None, quiet=False, logdir=None, **kwargs):
     """Execute a command.
 
     If 'quiet' is true, then redirect stdout and stderr to a temporary file.
     """
+    if context is not None:
+        quiet = context.quiet
+        logdir = context.logdir
+    elif quiet and logdir is None:
+        raise ValueError("When quiet is True, logdir must be specified")
+
     print("❯", " ".join(map(str, command)))
     if not quiet:
         stdout = None
@@ -103,6 +109,7 @@ def call(command, *, quiet, **kwargs):
     else:
         stdout = tempfile.NamedTemporaryFile("w", encoding="utf-8",
                                              delete=False,
+                                             dir=logdir,
                                              prefix="cpython-wasi-",
                                              suffix=".log")
         stderr = subprocess.STDOUT
@@ -154,14 +161,14 @@ def configure_build_python(context, working_dir):
     if context.args:
         configure.extend(context.args)
 
-    call(configure, quiet=context.quiet)
+    call(configure, context=context)
 
 
 @subdir(BUILD_DIR)
 def make_build_python(context, working_dir):
     """Make/build the build Python."""
     call(["make", "--jobs", str(cpu_count()), "all"],
-            quiet=context.quiet)
+            context=context)
 
     binary = build_python_path()
     cmd = [binary, "-c",
@@ -261,7 +268,7 @@ def configure_wasi_python(context, working_dir):
         configure.extend(context.args)
     call(configure,
          env=updated_env(env_additions | wasi_sdk_env(context)),
-         quiet=context.quiet)
+         context=context)
 
     python_wasm = working_dir / "python.wasm"
     exec_script = working_dir / "python.sh"
@@ -277,7 +284,7 @@ def make_wasi_python(context, working_dir):
     """Run `make` for the WASI/host build."""
     call(["make", "--jobs", str(cpu_count()), "all"],
              env=updated_env(),
-             quiet=context.quiet)
+             context=context)
 
     exec_script = working_dir / "python.sh"
     call([exec_script, "--version"], quiet=False)
@@ -317,6 +324,7 @@ def main():
                         "--dir {HOST_DIR}::{GUEST_DIR} "
                         # Set PYTHONPATH to the sysconfig data.
                         "--env {ENV_VAR_NAME}={ENV_VAR_VALUE}")
+    default_logdir = pathlib.Path(tempfile.gettempdir())
 
     parser = argparse.ArgumentParser()
     subcommands = parser.add_subparsers(dest="subcommand")
@@ -339,6 +347,9 @@ def main():
         subcommand.add_argument("--quiet", action="store_true", default=False,
                         dest="quiet",
                         help="Redirect output from subprocesses to a log file")
+        subcommand.add_argument("--logdir", type=pathlib.Path, default=default_logdir,
+                                help="Directory to store log files; "
+                                     f"defaults to {default_logdir}")
     for subcommand in configure_build, configure_host:
         subcommand.add_argument("--clean", action="store_true", default=False,
                         dest="clean",
