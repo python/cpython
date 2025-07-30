@@ -2965,6 +2965,7 @@ dummy_func(
                     this_instr[1].counter = initial_jump_backoff_counter();
                     assert(tstate->current_executor == NULL);
                     assert(executor != tstate->interp->cold_executor);
+                    tstate->jit_exit = NULL;
                     GOTO_TIER_TWO(executor);
                 }
             }
@@ -3030,6 +3031,7 @@ dummy_func(
                 DISPATCH_GOTO();
             }
             assert(executor != tstate->interp->cold_executor);
+            tstate->jit_exit = NULL;
             GOTO_TIER_TWO(executor);
             #else
             Py_FatalError("ENTER_EXECUTOR is not supported in this build");
@@ -5352,6 +5354,12 @@ dummy_func(
             current_executor = (_PyExecutorObject*)executor;
 #endif
             tstate->current_executor = (PyObject *)executor;
+            if (!current_executor->vm_data.valid) {
+                assert(tstate->jit_exit->executor == current_executor);
+                assert(tstate->current_executor == current_executor);
+                _PyExecutor_ClearExit(tstate->jit_exit);
+                DEOPT_IF(true);
+            }
         }
 
         tier2 op(_MAKE_WARM, (--)) {

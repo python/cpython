@@ -7409,6 +7409,17 @@
             current_executor = (_PyExecutorObject*)executor;
             #endif
             tstate->current_executor = (PyObject *)executor;
+            if (!current_executor->vm_data.valid) {
+                assert(tstate->jit_exit->executor == current_executor);
+                assert(tstate->current_executor == current_executor);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                _PyExecutor_ClearExit(tstate->jit_exit);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                if (true) {
+                    UOP_STAT_INC(uopcode, miss);
+                    JUMP_TO_JUMP_TARGET();
+                }
+            }
             break;
         }
 

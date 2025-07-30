@@ -584,7 +584,6 @@ translate_bytecode_to_trace(
             code->co_firstlineno,
             2 * INSTR_IP(initial_instr, code));
     ADD_TO_TRACE(_START_EXECUTOR, 0, (uintptr_t)instr, INSTR_IP(instr, code));
-    ADD_TO_TRACE(_CHECK_VALIDITY, 0, 0, 0);
     ADD_TO_TRACE(_MAKE_WARM, 0, 0, 0);
     uint32_t target = 0;
 
@@ -1494,6 +1493,16 @@ _PyExecutor_GetColdExecutor(void)
     return cold;
 }
 
+void
+_PyExecutor_ClearExit(_PyExitData *exit)
+{
+    if (exit == NULL) {
+        return;
+    }
+    _PyExecutorObject *old = exit->executor;
+    exit->executor = _PyExecutor_GetColdExecutor();
+    Py_DECREF(old);
+}
 
 /* Detaches the executor from the code object (if any) that
  * holds a reference to it */

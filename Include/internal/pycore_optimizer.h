@@ -363,6 +363,8 @@ static inline _PyExecutorObject *_PyExecutor_FromExit(_PyExitData *exit)
 
 extern _PyExecutorObject *_PyExecutor_GetColdExecutor(void);
 
+PyAPI_FUNC(void) _PyExecutor_ClearExit(_PyExitData *exit);
+
 static inline int is_terminator(const _PyUOpInstruction *uop)
 {
     int opcode = uop->opcode;
