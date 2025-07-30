@@ -1190,9 +1190,10 @@ call_instrumentation_vector(
                 break;
             }
             else {
-                LOCK_CODE(code);
+                PyInterpreterState *interp = tstate->interp;
+                _PyEval_StopTheWorld(interp);
                 remove_tools(code, offset, event, 1 << tool);
-                UNLOCK_CODE();
+                _PyEval_StartTheWorld(interp);
             }
         }
     }
@@ -1381,9 +1382,10 @@ _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame,
         }
         else {
             /* DISABLE  */
-            LOCK_CODE(code);
+            PyInterpreterState *interp = tstate->interp;
+            _PyEval_StopTheWorld(interp);
             remove_line_tools(code, i, 1 << tool);
-            UNLOCK_CODE();
+            _PyEval_StartTheWorld(interp);
         }
     } while (tools);
     Py_DECREF(line_obj);
@@ -1438,9 +1440,10 @@ _Py_call_instrumentation_instruction(PyThreadState *tstate, _PyInterpreterFrame*
         }
         else {
             /* DISABLE  */
-            LOCK_CODE(code);
+            PyInterpreterState *interp = tstate->interp;
+            _PyEval_StopTheWorld(interp);
             remove_per_instruction_tools(code, offset, 1 << tool);
-            UNLOCK_CODE();
+            _PyEval_StartTheWorld(interp);
         }
     }
     Py_DECREF(offset_obj);
@@ -2995,9 +2998,10 @@ branch_handler_vectorcall(
             // Orphaned NOT_TAKEN -- Jump removed by the compiler
             return res;
         }
-        LOCK_CODE(code);
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        _PyEval_StopTheWorld(interp);
         remove_tools(code, offset, other_event, 1 << self->tool_id);
-        UNLOCK_CODE();
+        _PyEval_StartTheWorld(interp);
     }
     return res;
 }

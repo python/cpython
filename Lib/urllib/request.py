@@ -1660,7 +1660,10 @@ def url2pathname(url, *, require_scheme=False, resolve_host=False):
     if scheme != 'file':
         raise URLError("URL is missing a 'file:' scheme")
     if os.name == 'nt':
-        if not _is_local_authority(authority, resolve_host):
+        if authority[1:2] == ':':
+            # e.g. file://c:/file.txt
+            url = authority + url
+        elif not _is_local_authority(authority, resolve_host):
             # e.g. file://server/share/file.txt
             url = '//' + authority + url
         elif url[:3] == '///':

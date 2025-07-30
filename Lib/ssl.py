@@ -931,6 +931,10 @@ class SSLObject:
         ssl_version, secret_bits)``."""
         return self._sslobj.cipher()
 
+    def group(self):
+        """Return the currently selected key agreement group name."""
+        return self._sslobj.group()
+
     def shared_ciphers(self):
         """Return a list of ciphers shared by the client during the handshake or
         None if this is not a valid server connection.
@@ -1209,6 +1213,14 @@ class SSLSocket(socket):
             return None
         else:
             return self._sslobj.cipher()
+
+    @_sslcopydoc
+    def group(self):
+        self._checkClosed()
+        if self._sslobj is None:
+            return None
+        else:
+            return self._sslobj.group()
 
     @_sslcopydoc
     def shared_ciphers(self):
