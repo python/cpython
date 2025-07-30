@@ -566,6 +566,8 @@ class ProactorDatagramTransportTests(test_utils.TestCase):
         self.assertTrue(self.proactor.sendto.called)
         self.proactor.sendto.assert_called_with(
             self.sock, data, addr=('0.0.0.0', 1234))
+        self.assertFalse(transport._buffer)
+        self.assertEqual(0, transport._buffer_size)
 
     def test_sendto_bytearray(self):
         data = bytearray(b'data')
