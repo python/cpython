@@ -677,6 +677,14 @@ def package(context):
                     else:
                         shutil.copy2(src, dst, follow_symlinks=False)
 
+        # Strip debug information.
+        if not context.debug:
+            run(
+                [android_env(context.host)["STRIP"]]
+                + glob(f"{temp_dir}/**/*.so", recursive=True),
+                log=False,
+            )
+
         dist_dir = subdir(context.host, "dist", create=True)
         package_path = shutil.make_archive(
             f"{dist_dir}/python-{version}-{context.host}", "gztar", temp_dir
@@ -772,6 +780,11 @@ def parse_args():
     test.add_argument(
         "args", nargs="*", help=f"Arguments to add to sys.argv. "
         f"Separate them from {SCRIPT_NAME}'s own arguments with `--`.")
+
+    # Package arguments.
+    package.add_argument(
+        "-g", action="store_true", default=False, dest="debug",
+        help="Include debug information")
 
     return parser.parse_args()
 
