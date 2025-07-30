@@ -374,13 +374,13 @@ To locate a thread:
    reliable thread to target.
 
 3. Optionally, use the offset ``interpreter_state.threads_head`` to iterate
-through the linked list of all thread states. Each ``PyThreadState`` structure
-contains a ``native_thread_id`` field, which may be compared to a target thread
-ID to find a specific thread.
+   through the linked list of all thread states. Each ``PyThreadState`` 
+   structure contains a ``native_thread_id`` field, which may be compared to
+   a target thread ID to find a specific thread.
 
-1. Once a valid ``PyThreadState`` has been found, its address can be used in
-later steps of the protocol, such as writing debugger control fields and
-scheduling execution.
+4. Once a valid ``PyThreadState`` has been found, its address can be used in
+   later steps of the protocol, such as writing debugger control fields and
+   scheduling execution.
 
 The following is an example implementation that locates the main thread state::
 
