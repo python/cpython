@@ -13,7 +13,12 @@ pyabiinfo_check(PyObject *Py_UNUSED(module), PyObject *args)
     {
         return NULL;
     }
-    PyABIInfo info = {maj, min, flags, buildver, abiver};
+    PyABIInfo info = {
+        .abiinfo_major_version = (uint8_t)maj,
+        .abiinfo_minor_version = (uint8_t)min,
+        .flags = (uint16_t)flags,
+        .build_version = (uint32_t)buildver,
+        .abi_version = (uint32_t)abiver};
     if (PyABIInfo_Check(&info, modname) < 0) {
         return NULL;
     }
