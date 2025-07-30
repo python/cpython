@@ -283,7 +283,8 @@ def b16decode(s, casefold=False):
     s = _bytes_from_decode_data(s)
     if casefold:
         s = s.upper()
-    if s.translate(None, delete=b'0123456789ABCDEF'):
+        delete= b'0123456789abcdef'
+    if any(c not in delete for c in s):
         raise binascii.Error('Non-base16 digit found')
     return binascii.unhexlify(s)
 
@@ -462,7 +463,7 @@ def b85decode(b):
     # Delay the initialization of tables to not waste memory
     # if the function is never called
     if _b85dec is None:
-        _b85dec = [None] * 256
+        _b85dec = bytearray(256)
         for i, c in enumerate(_b85alphabet):
             _b85dec[c] = i
 
@@ -579,7 +580,8 @@ def decodebytes(s):
 # Usable as a script...
 def main():
     """Small main program"""
-    import sys, getopt
+    import sys
+    import getopt
     usage = f"""usage: {sys.argv[0]} [-h|-d|-e|-u] [file|-]
         -h: print this help message and exit
         -d, -u: decode
