@@ -1,0 +1,1 @@
+Support the ``--enable-pystats`` build option for the free-threaded build.
