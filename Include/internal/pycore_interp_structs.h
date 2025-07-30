@@ -691,6 +691,13 @@ struct _Py_interp_cached_objects {
     PyTypeObject *paramspecargs_type;
     PyTypeObject *paramspeckwargs_type;
     PyTypeObject *constevaluator_type;
+
+    /* Descriptors for __dict__ and __weakref__ */
+#ifdef Py_GIL_DISABLED
+    PyMutex descriptor_mutex;
+#endif
+    PyObject *dict_descriptor;
+    PyObject *weakref_descriptor;
 };
 
 struct _Py_interp_static_objects {
