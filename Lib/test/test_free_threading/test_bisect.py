@@ -1,6 +1,5 @@
 import unittest
 from test.support import import_helper, threading_helper
-from threading import Thread, Barrier
 import random
 
 py_bisect = import_helper.import_fresh_module('bisect', blocked=['_bisect'])
