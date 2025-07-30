@@ -2329,27 +2329,12 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False,
             if format == Format.STRING:
                 hints.update(ann)
                 continue
-            if globalns is None:
-                base_globals = getattr(sys.modules.get(base.__module__, None), '__dict__', {})
-            else:
-                base_globals = globalns
-            base_locals = dict(vars(base)) if localns is None else localns
-            if localns is None and globalns is None:
-                # This is surprising, but required.  Before Python 3.10,
-                # get_type_hints only evaluated the globalns of
-                # a class.  To maintain backwards compatibility, we reverse
-                # the globalns and localns order so that eval() looks into
-                # *base_globals* first rather than *base_locals*.
-                # This only affects ForwardRefs.
-                base_globals, base_locals = base_locals, base_globals
-            type_params = base.__type_params__
-            base_globals, base_locals = _add_type_params_to_scope(
-                type_params, base_globals, base_locals, True)
             for name, value in ann.items():
                 if isinstance(value, str):
-                    value = _make_forward_ref(value, is_argument=False, is_class=True)
-                value = _eval_type(value, base_globals, base_locals, (),
-                                   format=format, owner=obj)
+                    value = _make_forward_ref(value, is_argument=False, is_class=True,
+                                              owner=base)
+                value = _eval_type(value, globalns, localns, base.__type_params__,
+                                   format=format, owner=base)
                 if value is None:
                     value = type(None)
                 hints[name] = value
@@ -2370,21 +2355,14 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False,
     if format == Format.STRING:
         return hints
 
-    if globalns is None:
-        if isinstance(obj, types.ModuleType):
-            globalns = obj.__dict__
-        else:
-            nsobj = obj
-            # Find globalns for the unwrapped object.
-            while hasattr(nsobj, '__wrapped__'):
-                nsobj = nsobj.__wrapped__
-            globalns = getattr(nsobj, '__globals__', {})
-        if localns is None:
-            localns = globalns
-    elif localns is None:
-        localns = globalns
-    type_params = getattr(obj, "__type_params__", ())
-    globalns, localns = _add_type_params_to_scope(type_params, globalns, localns, False)
+    if isinstance(obj, types.ModuleType):
+        nsobj = obj
+    else:
+        nsobj = obj
+        # Find globalns for the unwrapped object.
+        while hasattr(nsobj, '__wrapped__'):
+            nsobj = nsobj.__wrapped__
+    type_params = getattr(nsobj, "__type_params__", ())
     for name, value in hints.items():
         if isinstance(value, str):
             # class-level forward refs were handled above, this must be either
@@ -2393,26 +2371,13 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False,
                 value,
                 is_argument=not isinstance(obj, types.ModuleType),
                 is_class=False,
+                owner=nsobj,
             )
-        value = _eval_type(value, globalns, localns, (), format=format, owner=obj)
+        value = _eval_type(value, globalns, localns, type_params, format=format, owner=nsobj)
         if value is None:
             value = type(None)
         hints[name] = value
     return hints if include_extras else {k: _strip_annotations(t) for k, t in hints.items()}
-
-
-# Add type parameters to the globals and locals scope. This is needed for
-# compatibility.
-def _add_type_params_to_scope(type_params, globalns, localns, is_class):
-    if not type_params:
-        return globalns, localns
-    globalns = dict(globalns)
-    localns = dict(localns)
-    for param in type_params:
-        if not is_class or param.__name__ not in globalns:
-            globalns[param.__name__] = param
-            localns.pop(param.__name__, None)
-    return globalns, localns
 
 
 def _strip_annotations(t):
