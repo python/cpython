@@ -2661,7 +2661,7 @@ sys__clear_type_descriptors(PyObject *module, PyObject *type)
         return NULL;
     }
     PyTypeObject *typeobj = (PyTypeObject *)(type);
-    if (!_PyType_HasFeature(typeobj, Py_TPFLAGS_IMMUTABLETYPE)) {
+    if (_PyType_HasFeature(typeobj, Py_TPFLAGS_IMMUTABLETYPE)) {
         PyErr_SetString(PyExc_TypeError, "argument is immutable");
         return NULL;
     }
