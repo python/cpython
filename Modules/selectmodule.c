@@ -1184,9 +1184,9 @@ newDevPollObject(PyObject *module)
         return NULL;
     }
     self->fd_devpoll = fd_devpoll;
-    self->max_n_fds = out_size;
     self->n_fds = 0;
     self->fds = fds;
+    self->out_size = out_size;
     self->out_fds = out_fds;
 
     return self;
