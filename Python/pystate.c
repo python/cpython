@@ -818,6 +818,8 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     struct _PyExecutorObject *cold = interp->cold_executor;
     if (cold != NULL) {
         interp->cold_executor = NULL;
+        assert(cold->vm_data.valid);
+        assert(cold->vm_data.warm);
         _PyExecutor_Free(cold);
     }
     /* We don't clear sysdict and builtins until the end of this function.

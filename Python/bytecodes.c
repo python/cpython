@@ -5353,10 +5353,11 @@ dummy_func(
 #ifndef _Py_JIT
             current_executor = (_PyExecutorObject*)executor;
 #endif
+            assert(tstate->jit_exit == NULL || tstate->jit_exit->executor == current_executor);
             tstate->current_executor = (PyObject *)executor;
             if (!current_executor->vm_data.valid) {
                 assert(tstate->jit_exit->executor == current_executor);
-                assert(tstate->current_executor == current_executor);
+                assert(tstate->current_executor == executor);
                 _PyExecutor_ClearExit(tstate->jit_exit);
                 DEOPT_IF(true);
             }
@@ -5407,8 +5408,6 @@ dummy_func(
                 exit->temperature = advance_backoff_counter(temperature);
                 GOTO_TIER_ONE(target);
             }
-            _PyExecutorObject *previous_executor = _PyExecutor_FromExit(exit);
-            assert(tstate->current_executor == (PyObject *)previous_executor);
             _PyExecutorObject *executor;
             if (target->op.code == ENTER_EXECUTOR) {
                 PyCodeObject *code = _PyFrame_GetCode(frame);
@@ -5416,6 +5415,8 @@ dummy_func(
                 Py_INCREF(executor);
             }
             else {
+                _PyExecutorObject *previous_executor = _PyExecutor_FromExit(exit);
+                assert(tstate->current_executor == (PyObject *)previous_executor);
                 int chain_depth = previous_executor->vm_data.chain_depth + 1;
                 int optimized = _PyOptimizer_Optimize(frame, target, &executor, chain_depth);
                 if (optimized <= 0) {
