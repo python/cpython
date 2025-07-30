@@ -16,6 +16,7 @@ to modify the meaning of the API call itself.
 import collections
 import collections.abc
 import concurrent.futures
+import enum
 import errno
 import heapq
 import itertools
@@ -272,6 +273,23 @@ class _SendfileFallbackProtocol(protocols.Protocol):
             self._proto.resume_writing()
 
 
+class _ServerState(enum.Enum):
+    """This tracks the state of Server.
+
+    -[in]->NOT_STARTED -[ss]-> SERVING -[cl]-> CLOSED -[wk]*-> SHUTDOWN
+
+    - in: Server.__init__()
+    - ss: Server._start_serving()
+    - cl: Server.close()
+    - wk: Server._wakeup()  *only called if number of clients == 0
+    """
+
+    NOT_STARTED = "not_started"
+    SERVING = "serving"
+    CLOSED = "closed"
+    SHUTDOWN = "shutdown"
+
+
 class Server(events.AbstractServer):
 
     def __init__(self, loop, sockets, protocol_factory, ssl_context, backlog,
@@ -287,22 +305,33 @@ class Server(events.AbstractServer):
         self._ssl_context = ssl_context
         self._ssl_handshake_timeout = ssl_handshake_timeout
         self._ssl_shutdown_timeout = ssl_shutdown_timeout
-        self._serving = False
+        self._state = _ServerState.NOT_STARTED
         self._serving_forever_fut = None
 
     def __repr__(self):
         return f'<{self.__class__.__name__} sockets={self.sockets!r}>'
 
     def _attach(self, transport):
-        assert self._sockets is not None
+        if self._state != _ServerState.SERVING:
+            raise RuntimeError("server is not serving, cannot attach transport")
         self._clients.add(transport)
 
     def _detach(self, transport):
         self._clients.discard(transport)
-        if len(self._clients) == 0 and self._sockets is None:
-            self._wakeup()
+        if self._state == _ServerState.CLOSED and len(self._clients) == 0:
+            self._shutdown()
 
-    def _wakeup(self):
+    def _shutdown(self):
+        if self._state == _ServerState.CLOSED:
+            self._state = _ServerState.SHUTDOWN
+        elif self._state == _ServerState.SHUTDOWN:
+            # gh109564: the wakeup method has two possible call-sites,
+            # through an explicit call Server.close(), or indirectly through
+            # Server._detach() by the last connected client.
+            return
+        else:
+            raise RuntimeError(f"server {self!r} must be closed before shutdown")
+
         waiters = self._waiters
         self._waiters = None
         for waiter in waiters:
@@ -310,9 +339,13 @@ class Server(events.AbstractServer):
                 waiter.set_result(None)
 
     def _start_serving(self):
-        if self._serving:
+        if self._state == _ServerState.NOT_STARTED:
+            self._state = _ServerState.SERVING
+        elif self._state == _ServerState.SERVING:
             return
-        self._serving = True
+        else:
+            raise RuntimeError(f'server {self!r} was already started and then closed')
+
         for sock in self._sockets:
             sock.listen(self._backlog)
             self._loop._start_serving(
@@ -324,7 +357,7 @@ class Server(events.AbstractServer):
         return self._loop
 
     def is_serving(self):
-        return self._serving
+        return self._state == _ServerState.SERVING
 
     @property
     def sockets(self):
@@ -333,23 +366,30 @@ class Server(events.AbstractServer):
         return tuple(trsock.TransportSocket(s) for s in self._sockets)
 
     def close(self):
-        sockets = self._sockets
-        if sockets is None:
+        if self._state in {_ServerState.CLOSED, _ServerState.SHUTDOWN}:
             return
-        self._sockets = None
 
-        for sock in sockets:
-            self._loop._stop_serving(sock)
+        prev_state = self._state
+        try:
+            self._state = _ServerState.CLOSED
 
-        self._serving = False
+            sockets = self._sockets
+            if sockets is None:
+                return
+            self._sockets = None
 
-        if (self._serving_forever_fut is not None and
-                not self._serving_forever_fut.done()):
-            self._serving_forever_fut.cancel()
-            self._serving_forever_fut = None
+            for sock in sockets:
+                self._loop._stop_serving(sock)
 
-        if len(self._clients) == 0:
-            self._wakeup()
+            if (self._serving_forever_fut is not None and
+                    not self._serving_forever_fut.done()):
+                self._serving_forever_fut.cancel()
+                self._serving_forever_fut = None
+
+            if len(self._clients) == 0:
+                self._shutdown()
+        except:
+            self._state = prev_state
 
     def close_clients(self):
         for transport in self._clients.copy():
@@ -369,8 +409,6 @@ class Server(events.AbstractServer):
         if self._serving_forever_fut is not None:
             raise RuntimeError(
                 f'server {self!r} is already being awaited on serve_forever()')
-        if self._sockets is None:
-            raise RuntimeError(f'server {self!r} is closed')
 
         self._start_serving()
         self._serving_forever_fut = self._loop.create_future()
@@ -407,7 +445,7 @@ class Server(events.AbstractServer):
         # from two places: self.close() and self._detach(), but only
         # when both conditions have become true. To signal that this
         # has happened, self._wakeup() sets self._waiters to None.
-        if self._waiters is None:
+        if self._state == _ServerState.SHUTDOWN:
             return
         waiter = self._loop.create_future()
         self._waiters.append(waiter)
