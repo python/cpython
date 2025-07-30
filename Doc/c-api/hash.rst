@@ -83,7 +83,7 @@ See also the :c:member:`PyTypeObject.tp_hash` member and :ref:`numeric-hash`.
 .. c:function:: Py_hash_t Py_HashPointer(const void *ptr)
 
    Hash a pointer value: process the pointer value as an integer (cast it to
-   ``uintptr_t`` internally). The pointer is not dereferenced.
+   :c:expr:`uintptr_t` internally). The pointer is not dereferenced.
 
    The function cannot fail: it cannot return ``-1``.
 
