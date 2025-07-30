@@ -158,21 +158,13 @@ class ForwardRef:
             # as a way of emulating annotation scopes when calling `eval()`
             type_params = getattr(owner, "__type_params__", None)
 
-        # type parameters require some special handling,
-        # as they exist in their own scope
-        # but `eval()` does not have a dedicated parameter for that scope.
-        # For classes, names in type parameter scopes should override
-        # names in the global scope (which here are called `localns`!),
-        # but should in turn be overridden by names in the class scope
-        # (which here are called `globalns`!)
+        # Type parameters exist in their own scope, which is logically
+        # between the locals and the globals. We simulate this by adding
+        # them to the globals.
         if type_params is not None:
             globals = dict(globals)
-            locals = dict(locals)
             for param in type_params:
-                param_name = param.__name__
-                if not self.__forward_is_class__ or param_name not in globals:
-                    globals[param_name] = param
-                    locals.pop(param_name, None)
+                globals[param.__name__] = param
         if self.__extra_names__:
             locals = {**locals, **self.__extra_names__}
 
