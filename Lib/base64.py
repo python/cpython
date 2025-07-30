@@ -569,7 +569,7 @@ def b85decode(b):
     if padding:
         # If padding was added, remove the corresponding bytes from the end of the result
         result = result[:-padding]
-        return result
+    return result
 
 
 _z85alphabet = (
