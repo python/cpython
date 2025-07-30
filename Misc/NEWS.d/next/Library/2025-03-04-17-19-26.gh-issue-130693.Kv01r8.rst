@@ -1,0 +1,1 @@
+Add support for ``-nolinestop``, ``-all``, ``-overlap``, and ``-strictlimits`` options to ``!tkinter.Text.search``
