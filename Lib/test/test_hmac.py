@@ -21,20 +21,21 @@ import functools
 import hmac
 import hashlib
 import random
-import test.support.hashlib_helper as hashlib_helper
 import types
 import unittest
-import unittest.mock as mock
 import warnings
 from _operator import _compare_digest as operator_compare_digest
+from test.support import _4G, bigmemtest
 from test.support import check_disallow_instantiation
+from test.support import hashlib_helper, import_helper
 from test.support.hashlib_helper import (
     BuiltinHashFunctionsTrait,
     HashFunctionsTrait,
     NamedHashFunctionsTrait,
     OpenSSLHashFunctionsTrait,
 )
-from test.support.import_helper import import_fresh_module, import_module
+from test.support.import_helper import import_fresh_module
+from unittest.mock import patch
 
 try:
     import _hashlib
@@ -727,7 +728,7 @@ class PurePythonInitHMAC(PyModuleMixin, HashFunctionsTrait):
         super().setUpClass()
         for meth in ['_init_openssl_hmac', '_init_builtin_hmac']:
             fn = getattr(cls.hmac.HMAC, meth)
-            cm = mock.patch.object(cls.hmac.HMAC, meth, autospec=True, wraps=fn)
+            cm = patch.object(cls.hmac.HMAC, meth, autospec=True, wraps=fn)
             cls.enterClassContext(cm)
 
     @classmethod
@@ -949,7 +950,11 @@ class PyConstructorTestCase(ThroughObjectMixin, PyConstructorBaseMixin,
 
 class PyModuleConstructorTestCase(ThroughModuleAPIMixin, PyConstructorBaseMixin,
                                   unittest.TestCase):
-    """Test the hmac.new() and hmac.digest() functions."""
+    """Test the hmac.new() and hmac.digest() functions.
+
+    Note that "self.hmac" is imported by blocking "_hashlib" and "_hmac".
+    For testing functions in "hmac", extend PyMiscellaneousTests instead.
+    """
 
     def test_hmac_digest_digestmod_parameter(self):
         func = self.hmac_digest
@@ -1445,9 +1450,8 @@ class PyMiscellaneousTests(unittest.TestCase):
         hmac = import_fresh_module("hmac", blocked=["_hashlib"])
 
         def watch_method(cls, name):
-            return mock.patch.object(
-                cls, name, autospec=True, wraps=getattr(cls, name)
-            )
+            wraps = getattr(cls, name)
+            return patch.object(cls, name, autospec=True, wraps=wraps)
 
         with (
             watch_method(hmac.HMAC, '_init_openssl_hmac') as f,
@@ -1499,6 +1503,48 @@ class PyMiscellaneousTests(unittest.TestCase):
         finally:
             cache.pop('foo')
 
+    @hashlib_helper.requires_openssl_hashdigest("md5")
+    @bigmemtest(size=_4G + 5, memuse=2, dry_run=False)
+    def test_hmac_digest_overflow_error_openssl_only(self, size):
+        hmac = import_fresh_module("hmac", blocked=["_hmac"])
+        self.do_test_hmac_digest_overflow_error_switch_to_slow(hmac, size)
+
+    @hashlib_helper.requires_builtin_hashdigest("_md5", "md5")
+    @bigmemtest(size=_4G + 5, memuse=2, dry_run=False)
+    def test_hmac_digest_overflow_error_builtin_only(self, size):
+        hmac = import_fresh_module("hmac", blocked=["_hashlib"])
+        self.do_test_hmac_digest_overflow_error_switch_to_slow(hmac, size)
+
+    def do_test_hmac_digest_overflow_error_switch_to_slow(self, hmac, size):
+        """Check that hmac.digest() falls back to pure Python.
+
+        The *hmac* argument implements the HMAC module interface.
+        The *size* argument is a large key size or message size that would
+        trigger an OverflowError in the C implementation(s) of hmac.digest().
+        """
+
+        bigkey = b'K' * size
+        bigmsg = b'M' * size
+
+        with patch.object(hmac, "_compute_digest_fallback") as slow:
+            hmac.digest(bigkey, b'm', "md5")
+            slow.assert_called_once()
+
+        with patch.object(hmac, "_compute_digest_fallback") as slow:
+            hmac.digest(b'k', bigmsg, "md5")
+            slow.assert_called_once()
+
+    @hashlib_helper.requires_hashdigest("md5", openssl=True)
+    @bigmemtest(size=_4G + 5, memuse=2, dry_run=False)
+    def test_hmac_digest_no_overflow_error_in_fallback(self, size):
+        hmac = import_fresh_module("hmac", blocked=["_hashlib", "_hmac"])
+
+        for key, msg in [(b'K' * size, b'm'), (b'k', b'M' * size)]:
+            with self.subTest(keysize=len(key), msgsize=len(msg)):
+                with patch.object(hmac, "_compute_digest_fallback") as slow:
+                    hmac.digest(key, msg, "md5")
+                    slow.assert_called_once()
+
 
 class BuiltinMiscellaneousTests(BuiltinModuleMixin, unittest.TestCase):
     """HMAC-BLAKE2 is not standardized as BLAKE2 is a keyed hash function.
@@ -1511,7 +1557,7 @@ class BuiltinMiscellaneousTests(BuiltinModuleMixin, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.blake2 = import_module("_blake2")
+        cls.blake2 = import_helper.import_module("_blake2")
         cls.blake2b = cls.blake2.blake2b
         cls.blake2s = cls.blake2.blake2s
 
