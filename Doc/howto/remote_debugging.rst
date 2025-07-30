@@ -454,15 +454,15 @@ its fields are defined by the ``_Py_DebugOffsets`` structure and include the
 following:
 
 - ``debugger_script_path``: A fixed-size buffer that holds the full path to a
-   Python source file (``.py``).  This file must be accessible and readable by
-   the target process when execution is triggered.
+  Python source file (``.py``).  This file must be accessible and readable by
+  the target process when execution is triggered.
 
 - ``debugger_pending_call``: An integer flag. Setting this to ``1`` tells the
-   interpreter that a script is ready to be executed.
+  interpreter that a script is ready to be executed.
 
 - ``eval_breaker``: A field checked by the interpreter during execution.
-   Setting bit 5 (``_PY_EVAL_PLEASE_STOP_BIT``, value ``1U << 5``) in this
-   field causes the interpreter to pause and check for debugger activity.
+  Setting bit 5 (``_PY_EVAL_PLEASE_STOP_BIT``, value ``1U << 5``) in this
+  field causes the interpreter to pause and check for debugger activity.
 
 To complete the injection, the debugger must perform the following steps:
 
