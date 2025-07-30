@@ -1,0 +1,1 @@
+Instead, it now utilizes a frozenset named _ALLOWED_BASE16_CHARS for efficient character validation.
