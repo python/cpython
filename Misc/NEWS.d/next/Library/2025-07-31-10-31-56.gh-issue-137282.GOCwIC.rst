@@ -1,1 +1,1 @@
-Fixed tab completion / ``dir()`` on ``concurrent.futures``.
+Fix tab completion and :func:`dir` on :mod:`concurrent.futures`.

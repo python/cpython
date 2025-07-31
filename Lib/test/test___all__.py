@@ -48,7 +48,6 @@ class AllTest(unittest.TestCase):
                 raise FailedImport(modname)
         if not hasattr(sys.modules[modname], "__all__"):
             raise NoAll(modname)
-
         names = {}
         with self.subTest(module=modname):
             with warnings_helper.check_warnings(
@@ -75,7 +74,6 @@ class AllTest(unittest.TestCase):
                 self.assertEqual(keys, all_set, "in module {}".format(modname))
                 # Verify __dir__ is non-empty and doesn't produce an error
                 self.assertTrue(dir(sys.modules[modname]))
-
 
     def walk_modules(self, basedir, modpath):
         for fn in sorted(os.listdir(basedir)):
