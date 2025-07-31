@@ -1,0 +1,2 @@
+Add support for :const:`~configparser.UNNAMED_SECTION` when creating a
+section via the mapping protocol access
