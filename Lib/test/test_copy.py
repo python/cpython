@@ -767,6 +767,18 @@ class TestCopy(unittest.TestCase):
         self.assertIsNot(x[0], y[0])
         self.assertIsNot(x.foo, y.foo)
 
+        class L(list):
+            def __getstate__(self):
+                return list(self)
+
+            def __setstate__(self, state):
+                self[:] = state
+
+        l1 = L([1, 2])
+        l2 = copy.deepcopy(l1)
+        self.assertEqual(l1, l2)
+        self.assertEqual(len(l1), len(l2))
+
     def test_copy_tuple_subclass(self):
         class C(tuple):
             pass
