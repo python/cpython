@@ -264,7 +264,7 @@ To write a t-string, use a ``'t'`` prefix instead of an ``'f'``:
    >>> variety = "Stilton"
    >>> template = t"Try some {variety} cheese!"
    >>> type(template)
-    <class 'string.templatelib.Template'>
+   <class 'string.templatelib.Template'>
 
 Iterate over :class:`!Template` instances to access their parts in order:
 
