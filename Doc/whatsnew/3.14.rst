@@ -337,8 +337,8 @@ template:
    assert rendered == '<img src="limburger.jpg" alt="a cheese" />'
 
 Of course, template processing code does not need to return a ``str`` or
-string-like result. For example, an even *more* advanced ``html()`` could
-return a custom ``Element`` type representing a DOM-like structure.
+string-like result. An even *more* advanced ``html()`` could return a custom ``Element``
+type representing a DOM-like structure.
 
 With t-strings in place, developers can write systems that sanitize SQL,
 make safe shell operations, improve logging, tackle modern ideas in web
