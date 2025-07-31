@@ -3084,6 +3084,14 @@ class TestFolding(TestEmailBase):
                         "mich.  And that's\n"
                    " all I'm sayin.\n")
 
+    def test_unicode_near_end_of_line(self):
+        self._test(parser.get_unstructured("Mein Kaktus ist sehr attraktiv. Er "
+                                           "hat viele Stacheln und liebt "
+                                           "übriggebliebenes Eigelb."),
+                   "Mein Kaktus ist sehr attraktiv. Er hat viele "
+                       "Stacheln und liebt \n"
+                   " =?utf-8?q?=C3=BCbriggebliebenes?= Eigelb.\n")
+
     def test_unicode_after_unknown_not_combined(self):
         self._test(parser.get_unstructured("=?unknown-8bit?q?=A4?=\xa4"),
                    "=?unknown-8bit?q?=A4?==?utf-8?q?=C2=A4?=\n")
