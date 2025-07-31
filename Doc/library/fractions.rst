@@ -25,8 +25,10 @@ another number, or from a string.
 
    The first version requires that *numerator* and *denominator* are instances
    of :class:`numbers.Rational` and returns a new :class:`Fraction` instance
-   with value equal to ``numerator/denominator``. If *denominator* is zero, it
-   raises a :exc:`ZeroDivisionError`.
+   with a value equal to ``numerator/denominator``.
+   The numerator and denominator of this new instance are converted to be in
+   simplest integral terms, always with a positive denominator.
+   If *denominator* is zero, it raises a :exc:`ZeroDivisionError`.
 
    The second version requires that *number* is an instance of
    :class:`numbers.Rational` or has the :meth:`!as_integer_ratio` method
