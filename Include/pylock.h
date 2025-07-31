@@ -6,7 +6,7 @@ extern "C" {
 
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_LOCK_H
-#  include "cpython/lock.h"
+#  include "cpython/pylock.h"
 #  undef Py_CPYTHON_LOCK_H
 #endif
 
