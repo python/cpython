@@ -24,9 +24,9 @@ of this article.
 - How would I go about writing my own asynchronous variant of some operation?
   Something like an async sleep, database request, etc.
 
----------------------------------------------
+--------------------------------------------
 A conceptual overview part 1: the high-level
----------------------------------------------
+--------------------------------------------
 
 In part 1, we'll cover the main, high-level building blocks of asyncio: the
 event loop, coroutine functions, coroutine objects, tasks and ``await``.
