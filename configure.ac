@@ -7958,6 +7958,99 @@ PY_STDLIB_MOD_SIMPLE([_codecs_tw])
 PY_STDLIB_MOD_SIMPLE([_multibytecodec])
 PY_STDLIB_MOD_SIMPLE([unicodedata])
 
+dnl PY_SIMD_DETECT(INSTRUCTION-SET-NAME, COMPILER-FLAG, [NORMALIZED-NAME])
+dnl ----------------------------------------------------------------------
+dnl
+dnl Check if the compiler supports a given COMPILER-FLAG and define:
+dnl
+dnl     ac_cv_can_compile_simd_<name> = yes
+dnl     #define _Py_CAN_COMPILE_SIMD_<NAME>_INSTRUCTIONS 1
+dnl
+dnl or
+dnl
+dnl     ac_cv_can_compile_simd_<name> = no
+dnl     #undef _Py_CAN_COMPILE_SIMD_<NAME>_INSTRUCTIONS
+dnl
+dnl where <name> and <NAME> are the lowercased and uppercased versions
+dnl of NORMALIZED-NAME; by default, the latter is INSTRUCTION-SET-NAME.
+dnl
+AC_DEFUN([PY_SIMD_DETECT], [
+  AS_VAR_PUSHDEF([py_var], [m4_ifblank([$3],
+    [[ac_cv_can_compile_simd_]m4_tolower([$1])],
+    [[ac_cv_can_compile_simd_]m4_tolower([$3])])])
+  AS_VAR_PUSHDEF([py_define], [m4_ifblank([$3],
+    [[_Py_CAN_COMPILE_SIMD_]m4_toupper([$1])[_INSTRUCTIONS]],
+    [[_Py_CAN_COMPILE_SIMD_]m4_toupper([$3])[_INSTRUCTIONS]])])
+  AX_CHECK_COMPILE_FLAG([$2],
+    [AS_VAR_SET([py_var], [yes])],
+    [AS_VAR_SET([py_var], [no])],
+    [-Werror])
+  AS_VAR_IF([py_var], [yes], [
+    AC_DEFINE([py_define], [1], [Define if '$2' is a valid compiler flag.])
+  ])
+  AS_VAR_POPDEF([py_var])
+  AS_VAR_POPDEF([py_define])
+])
+
+# Detection of supported SIMD instruction sets for CPython. Since
+# we do not necessarily know which instruction sets will be used,
+# we disable SIMD support on some older Android platforms.
+#
+# See _Py_cpuid_features in pycore_cpuinfo.h for how to order fields
+# and where to put blank lines to separate processor generations for
+# AVX-512 instructions.
+#
+# Although AVX support is not guaranteed on Android [1], this is safe
+# because we do a runtime CPUID check.
+#
+# [1]: https://developer.android.com/ndk/guides/abis#86-64
+if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "WASI" || \
+   { test -n "$ANDROID_API_LEVEL" && test "$ANDROID_API_LEVEL" -ge 28; }
+then
+  # SSE
+  PY_SIMD_DETECT([SSE], [-msse])
+  PY_SIMD_DETECT([SSE2], [-msse2])
+  PY_SIMD_DETECT([SSE3], [-msse3])
+  PY_SIMD_DETECT([SSSE3], [-mssse3])
+  PY_SIMD_DETECT([SSE4.1], [-msse4.1], [SSE4_1])
+  PY_SIMD_DETECT([SSE4.2], [-msse4.2], [SSE4_2])
+  # AVX
+  PY_SIMD_DETECT([AVX], [-mavx])
+  PY_SIMD_DETECT([AVX_IFMA], [-mavxifma])
+  PY_SIMD_DETECT([AVX_NE_CONVERT], [-mavxneconvert])
+  #
+  PY_SIMD_DETECT([AVX_VNNI], [-mavxvnni])
+  PY_SIMD_DETECT([AVX_VNNI_INT8], [-mavxvnniint8])
+  PY_SIMD_DETECT([AVX_VNNI_INT16], [-mavxvnniint16])
+  # AVX-2
+  PY_SIMD_DETECT([AVX2], [-mavx2])
+  # AVX-512
+  PY_SIMD_DETECT([AVX512_F], [-mavx512f])
+  PY_SIMD_DETECT([AVX512_CD], [-mavx512cd])
+  #
+  PY_SIMD_DETECT([AVX512_ER], [-mavx512er])
+  PY_SIMD_DETECT([AVX512_PF], [-mavx512pf])
+  #
+  PY_SIMD_DETECT([AVX512_4FMAPS], [-mavx5124fmaps])
+  PY_SIMD_DETECT([AVX512_4VNNIW], [-mavx5124vnniw])
+  #
+  PY_SIMD_DETECT([AVX512_VPOPCNTDQ], [-mavx512vpopcntdq])
+  #
+  PY_SIMD_DETECT([AVX512_VL], [-mavx512vl])
+  PY_SIMD_DETECT([AVX512_DQ], [-mavx512dq])
+  PY_SIMD_DETECT([AVX512_BW], [-mavx512bw])
+  #
+  PY_SIMD_DETECT([AVX512_IFMA], [-mavx512ifma])
+  PY_SIMD_DETECT([AVX512_VBMI], [-mavx512vbmi])
+  #
+  PY_SIMD_DETECT([AVX512_VNNI], [-mavx512vnni])
+  #
+  PY_SIMD_DETECT([AVX512_VBMI2], [-mavx512vbmi2])
+  PY_SIMD_DETECT([AVX512_BITALG], [-mavx512bitalg])
+  #
+  PY_SIMD_DETECT([AVX512_VP2INTERSECT], [-mavx512vp2intersect])
+fi
+
 ###############################################################################
 # Cryptographic primitives
 LIBHASHLIB_INTERNAL_CFLAGS="-I\$(srcdir)/Modules/_hashlib"
@@ -8018,14 +8111,19 @@ else
   use_hacl_universal2_impl=no
 fi
 
-# The SIMD files use aligned_alloc, which is not available on older versions of
-# Android.
-# The *mmintrin.h headers are x86-family-specific, so can't be used on WASI.
+# The HACL* SIMD-128 files use aligned_alloc, which is not available
+# on older versions of Android. In addition, since the *mmintrin.h
+# headers are x86-family-specific, they cannot be used on WASI.
 if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "WASI" || \
    { test -n "$ANDROID_API_LEVEL" && test "$ANDROID_API_LEVEL" -ge 28; }
 then
-  dnl This can be extended here to detect e.g. Power8, which HACL* should also support.
-  AX_CHECK_COMPILE_FLAG([-msse -msse2 -msse3 -msse4.1 -msse4.2],[
+  # SIMD-128
+  if test "$ac_cv_can_compile_simd_sse" = "yes" \
+    -a "$ac_cv_can_compile_simd_sse2" = "yes"   \
+    -a "$ac_cv_can_compile_simd_sse3" = "yes"   \
+    -a "$ac_cv_can_compile_simd_sse4_1" = "yes"  \
+    -a "$ac_cv_can_compile_simd_sse4_2" = "yes"
+  then
     [LIBHACL_SIMD128_FLAGS="-msse -msse2 -msse3 -msse4.1 -msse4.2"]
 
     AC_DEFINE([_Py_HACL_CAN_COMPILE_VEC128], [1], [
@@ -8042,24 +8140,21 @@ then
       [LIBHACL_BLAKE2_SIMD128_OBJS="Modules/_hacl/Hacl_Hash_Blake2s_Simd128.o"]
       AC_MSG_RESULT([standard])
     fi
-
-  ], [], [-Werror])
+  fi
 fi
 AC_SUBST([LIBHACL_SIMD128_FLAGS])
 AC_SUBST([LIBHACL_BLAKE2_SIMD128_OBJS])
 
-# The SIMD files use aligned_alloc, which is not available on older versions of
-# Android.
-# The *mmintrin.h headers are x86-family-specific, so can't be used on WASI.
-#
-# Although AVX support is not guaranteed on Android
-# (https://developer.android.com/ndk/guides/abis#86-64), this is safe because we do a
-# runtime CPUID check.
+# The HACL* SIMD-256 files use aligned_alloc, which is not available
+# on older versions of Android. In addition, since the *mmintrin.h
+# headers are x86-family-specific, they cannot be used on WASI.
 if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "WASI" || \
    { test -n "$ANDROID_API_LEVEL" && test "$ANDROID_API_LEVEL" -ge 28; }
 then
-  AX_CHECK_COMPILE_FLAG([-mavx2],[
+  if test "$ac_cv_can_compile_simd_avx2" = "yes"
+  then
     [LIBHACL_SIMD256_FLAGS="-mavx2"]
+
     AC_DEFINE([_Py_HACL_CAN_COMPILE_VEC256], [1], [
       HACL* library can compile SIMD256 implementations])
 
@@ -8075,7 +8170,7 @@ then
       [LIBHACL_BLAKE2_SIMD256_OBJS="Modules/_hacl/Hacl_Hash_Blake2b_Simd256.o"]
       AC_MSG_RESULT([standard])
     fi
-  ], [], [-Werror])
+  fi
 fi
 AC_SUBST([LIBHACL_SIMD256_FLAGS])
 AC_SUBST([LIBHACL_BLAKE2_SIMD256_OBJS])

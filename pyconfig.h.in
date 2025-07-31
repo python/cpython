@@ -2014,6 +2014,93 @@
 /* Maximum length in bytes of a thread name */
 #undef _PYTHREAD_NAME_MAXLEN
 
+/* Define if '-mavx2' is a valid compiler flag. */
+#undef _Py_CAN_COMPILE_SIMD_AVX2_INSTRUCTIONS
+
+/* Define if '-mavx5124fmaps' is a valid compiler flag. */
+#undef _Py_CAN_COMPILE_SIMD_AVX512_4FMAPS_INSTRUCTIONS
+
+/* Define if '-mavx5124vnniw' is a valid compiler flag. */
+#undef _Py_CAN_COMPILE_SIMD_AVX512_4VNNIW_INSTRUCTIONS
+
+/* Define if '-mavx512bitalg' is a valid compiler flag. */
+#undef _Py_CAN_COMPILE_SIMD_AVX512_BITALG_INSTRUCTIONS
+
+/* Define if '-mavx512bw' is a valid compiler flag. */
+#undef _Py_CAN_COMPILE_SIMD_AVX512_BW_INSTRUCTIONS
+
+/* Define if '-mavx512cd' is a valid compiler flag. */
+#undef _Py_CAN_COMPILE_SIMD_AVX512_CD_INSTRUCTIONS
+
+/* Define if '-mavx512dq' is a valid compiler flag. */
+#undef _Py_CAN_COMPILE_SIMD_AVX512_DQ_INSTRUCTIONS
+
+/* Define if '-mavx512er' is a valid compiler flag. */
+#undef _Py_CAN_COMPILE_SIMD_AVX512_ER_INSTRUCTIONS
+
+/* Define if '-mavx512f' is a valid compiler flag. */
+#undef _Py_CAN_COMPILE_SIMD_AVX512_F_INSTRUCTIONS
+
+/* Define if '-mavx512ifma' is a valid compiler flag. */
+#undef _Py_CAN_COMPILE_SIMD_AVX512_IFMA_INSTRUCTIONS
+
+/* Define if '-mavx512pf' is a valid compiler flag. */
+#undef _Py_CAN_COMPILE_SIMD_AVX512_PF_INSTRUCTIONS
+
+/* Define if '-mavx512vbmi2' is a valid compiler flag. */
+#undef _Py_CAN_COMPILE_SIMD_AVX512_VBMI2_INSTRUCTIONS
+
+/* Define if '-mavx512vbmi' is a valid compiler flag. */
+#undef _Py_CAN_COMPILE_SIMD_AVX512_VBMI_INSTRUCTIONS
+
+/* Define if '-mavx512vl' is a valid compiler flag. */
+#undef _Py_CAN_COMPILE_SIMD_AVX512_VL_INSTRUCTIONS
+
+/* Define if '-mavx512vnni' is a valid compiler flag. */
+#undef _Py_CAN_COMPILE_SIMD_AVX512_VNNI_INSTRUCTIONS
+
+/* Define if '-mavx512vp2intersect' is a valid compiler flag. */
+#undef _Py_CAN_COMPILE_SIMD_AVX512_VP2INTERSECT_INSTRUCTIONS
+
+/* Define if '-mavx512vpopcntdq' is a valid compiler flag. */
+#undef _Py_CAN_COMPILE_SIMD_AVX512_VPOPCNTDQ_INSTRUCTIONS
+
+/* Define if '-mavxifma' is a valid compiler flag. */
+#undef _Py_CAN_COMPILE_SIMD_AVX_IFMA_INSTRUCTIONS
+
+/* Define if '-mavx' is a valid compiler flag. */
+#undef _Py_CAN_COMPILE_SIMD_AVX_INSTRUCTIONS
+
+/* Define if '-mavxneconvert' is a valid compiler flag. */
+#undef _Py_CAN_COMPILE_SIMD_AVX_NE_CONVERT_INSTRUCTIONS
+
+/* Define if '-mavxvnni' is a valid compiler flag. */
+#undef _Py_CAN_COMPILE_SIMD_AVX_VNNI_INSTRUCTIONS
+
+/* Define if '-mavxvnniint16' is a valid compiler flag. */
+#undef _Py_CAN_COMPILE_SIMD_AVX_VNNI_INT16_INSTRUCTIONS
+
+/* Define if '-mavxvnniint8' is a valid compiler flag. */
+#undef _Py_CAN_COMPILE_SIMD_AVX_VNNI_INT8_INSTRUCTIONS
+
+/* Define if '-msse2' is a valid compiler flag. */
+#undef _Py_CAN_COMPILE_SIMD_SSE2_INSTRUCTIONS
+
+/* Define if '-msse3' is a valid compiler flag. */
+#undef _Py_CAN_COMPILE_SIMD_SSE3_INSTRUCTIONS
+
+/* Define if '-msse4.1' is a valid compiler flag. */
+#undef _Py_CAN_COMPILE_SIMD_SSE4_1_INSTRUCTIONS
+
+/* Define if '-msse4.2' is a valid compiler flag. */
+#undef _Py_CAN_COMPILE_SIMD_SSE4_2_INSTRUCTIONS
+
+/* Define if '-msse' is a valid compiler flag. */
+#undef _Py_CAN_COMPILE_SIMD_SSE_INSTRUCTIONS
+
+/* Define if '-mssse3' is a valid compiler flag. */
+#undef _Py_CAN_COMPILE_SIMD_SSSE3_INSTRUCTIONS
+
 /* Defined if _Complex C type can be used with libffi. */
 #undef _Py_FFI_SUPPORT_C_COMPLEX
 

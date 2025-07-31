@@ -15,31 +15,13 @@
 #endif
 
 #include "Python.h"
+#include "pycore_cpuinfo.h"             // _Py_cpuid_features
 #include "pycore_moduleobject.h"
 #include "pycore_strhex.h"              // _Py_strhex()
 #include "pycore_typeobject.h"
 
 #include "_hashlib/hashlib_buffer.h"
 #include "_hashlib/hashlib_mutex.h"
-
-// QUICK CPU AUTODETECTION
-//
-// See https://github.com/python/cpython/pull/119316 -- we only enable
-// vectorized versions for Intel CPUs, even though HACL*'s "vec128" modules also
-// run on ARM NEON. (We could enable them on POWER -- but I don't have access to
-// a test machine to see if that speeds anything up.)
-//
-// Note that configure.ac and the rest of the build are written in such a way
-// that if the configure script finds suitable flags to compile HACL's SIMD128
-// (resp. SIMD256) files, then Hacl_Hash_Blake2b_Simd128.c (resp. ...) will be
-// pulled into the build automatically, and then only the CPU autodetection will
-// need to be updated here.
-
-#if defined(__x86_64__) && defined(__GNUC__)
-#include <cpuid.h>
-#elif defined(_M_X64)
-#include <intrin.h>
-#endif
 
 #include <stdbool.h>
 
@@ -131,75 +113,20 @@ _blake2_free(void *module)
 static void
 blake2module_init_cpu_features(Blake2State *state)
 {
-    /* This must be kept in sync with hmacmodule_init_cpu_features()
-     * in hmacmodule.c */
-    int eax1 = 0, ebx1 = 0, ecx1 = 0, edx1 = 0;
-    int eax7 = 0, ebx7 = 0, ecx7 = 0, edx7 = 0;
-#if defined(__x86_64__) && defined(__GNUC__)
-    __cpuid_count(1, 0, eax1, ebx1, ecx1, edx1);
-    __cpuid_count(7, 0, eax7, ebx7, ecx7, edx7);
-#elif defined(_M_X64)
-    int info1[4] = {0};
-    __cpuidex(info1, 1, 0);
-    eax1 = info1[0], ebx1 = info1[1], ecx1 = info1[2], edx1 = info1[3];
-
-    int info7[4] = {0};
-    __cpuidex(info7, 7, 0);
-    eax7 = info7[0], ebx7 = info7[1], ecx7 = info7[2], edx7 = info7[3];
-#endif
-    // fmt: off
-    (void)eax1; (void)ebx1; (void)ecx1; (void)edx1;
-    (void)eax7; (void)ebx7; (void)ecx7; (void)edx7;
-    // fmt: on
-
-#define EBX_AVX2 (1 << 5)
-#define ECX_SSE3 (1 << 0)
-#define ECX_SSSE3 (1 << 9)
-#define ECX_SSE4_1 (1 << 19)
-#define ECX_SSE4_2 (1 << 20)
-#define ECX_AVX (1 << 28)
-#define EDX_SSE (1 << 25)
-#define EDX_SSE2 (1 << 26)
-#define EDX_CMOV (1 << 15)
-
-    bool avx = (ecx1 & ECX_AVX) != 0;
-    bool avx2 = (ebx7 & EBX_AVX2) != 0;
-
-    bool sse = (edx1 & EDX_SSE) != 0;
-    bool sse2 = (edx1 & EDX_SSE2) != 0;
-    bool cmov = (edx1 & EDX_CMOV) != 0;
-
-    bool sse3 = (ecx1 & ECX_SSE3) != 0;
-    bool sse41 = (ecx1 & ECX_SSE4_1) != 0;
-    bool sse42 = (ecx1 & ECX_SSE4_2) != 0;
-
-#undef EDX_CMOV
-#undef EDX_SSE2
-#undef EDX_SSE
-#undef ECX_AVX
-#undef ECX_SSE4_2
-#undef ECX_SSE4_1
-#undef ECX_SSSE3
-#undef ECX_SSE3
-#undef EBX_AVX2
-
+    _Py_cpuid_features flags;
+    _Py_cpuid_detect_features(&flags);
 #if _Py_HACL_CAN_COMPILE_VEC128
-    // TODO(picnixz): use py_cpuid_features (gh-125022) to improve detection
-    state->can_run_simd128 = sse && sse2 && sse3 && sse41 && sse42 && cmov;
+    state->can_run_simd128 = flags.sse && flags.sse2 && flags.sse3
+                             && flags.sse41 && flags.sse42
+                             && flags.cmov;
 #else
-    // fmt: off
-    (void)sse; (void)sse2; (void)sse3; (void)sse41; (void)sse42; (void)cmov;
-    // fmt: on
     state->can_run_simd128 = false;
 #endif
 
 #if _Py_HACL_CAN_COMPILE_VEC256
-    // TODO(picnixz): use py_cpuid_features (gh-125022) to improve detection
-    state->can_run_simd256 = state->can_run_simd128 && avx && avx2;
+    state->can_run_simd256 = state->can_run_simd128
+                             && flags.avx && flags.avx2;
 #else
-    // fmt: off
-    (void)avx; (void)avx2;
-    // fmt: on
     state->can_run_simd256 = false;
 #endif
 }
