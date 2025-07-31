@@ -468,7 +468,7 @@ Here is the full program's output:
 You might feel this implementation of asynchronous sleep was unnecessarily
 convoluted.
 And, well, it was.
-The example was meant to showcase the versatility of futures with a simple 
+The example was meant to showcase the versatility of futures with a simple
 example that could be mimicked for more complex needs.
 For reference, you could implement it without futures, like so::
 
