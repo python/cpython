@@ -8126,8 +8126,9 @@ os_fork1_impl(PyObject *module)
         /* parent: release the import lock. */
         PyOS_AfterFork_Parent();
         // After PyOS_AfterFork_Parent() starts the world to avoid deadlock.
-        if (warn_about_fork_with_threads("fork1") < 0)
+        if (warn_about_fork_with_threads("fork1") < 0) {
             return NULL;
+        }
     }
     if (pid == -1) {
         errno = saved_errno;
