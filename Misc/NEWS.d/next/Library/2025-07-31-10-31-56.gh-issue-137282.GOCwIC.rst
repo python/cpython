@@ -1,0 +1,1 @@
+Fixed tab completion / ``dir()`` on ``concurrent.futures``.
