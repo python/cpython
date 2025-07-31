@@ -1120,6 +1120,8 @@ class date:
         Format using strftime().
 
         Example: "%d/%m/%Y, %H:%M:%S"
+
+        `A list of supported format codes can be viewed here. <https://docs.python.org/3/library/datetime.html#format-codes>`_
         """
         return _wrap_strftime(self, format, self.timetuple())
 
@@ -1661,6 +1663,8 @@ class time:
     def strftime(self, format):
         """Format using strftime().  The date part of the timestamp passed
         to underlying strftime should not be used.
+
+        `A list of supported format codes can be viewed here. <https://docs.python.org/3/library/datetime.html#format-codes>`_
         """
         # The year must be >= 1000 else Python's strftime implementation
         # can raise a bogus exception.
@@ -2209,7 +2213,9 @@ class datetime(date):
 
     @classmethod
     def strptime(cls, date_string, format):
-        'string, format -> new datetime parsed from a string (like time.strptime()).'
+        """string, format -> new datetime parsed from a string (like time.strptime()).
+        
+        `A list of supported format codes can be viewed here. <https://docs.python.org/3/library/datetime.html#format-codes>`_"""
         import _strptime
         return _strptime._strptime_datetime_datetime(cls, date_string, format)
 
