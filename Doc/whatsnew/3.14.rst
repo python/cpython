@@ -254,8 +254,6 @@ PEP 750: Template strings
 Template strings are a new mechanism for custom string processing. They share
 the familiar syntax of f-strings but, unlike f-strings, return a
 :class:`~string.templatelib.Template` instance instead of a simple ``str``.
-Templates provide access to the static and interpolated (in curly braces) parts
-of a string *before* they are combined.
 
 To write a t-string, use a ``'t'`` prefix instead of an ``'f'``:
 
@@ -266,7 +264,9 @@ To write a t-string, use a ``'t'`` prefix instead of an ``'f'``:
    >>> type(template)
    <class 'string.templatelib.Template'>
 
-Iterate over :class:`!Template` instances to access their parts in order:
+Templates provide access to the static and interpolated (in curly braces) parts
+of a string *before* they are combined. Iterate over :class:`!Template`
+instances to access their parts in order:
 
 .. testsetup::
 
