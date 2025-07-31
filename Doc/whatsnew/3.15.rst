@@ -548,6 +548,11 @@ Deprecated C APIs
   signed integer type of the same size is now deprecated.
   (Contributed by Serhiy Storchaka in :gh:`132629`.)
 
+* Functions :c:func:`_Py_c_sum`, :c:func:`_Py_c_diff`, :c:func:`_Py_c_neg`,
+  :c:func:`_Py_c_prod`, :c:func:`_Py_c_quot`, :c:func:`_Py_c_pow` and
+  :c:func:`_Py_c_abs` are :term:`soft deprecated`.
+  (Contributed by Sergey B Kirpichev in :gh:`128813`.)
+
 .. Add C API deprecations above alphabetically, not here at the end.
 
 Removed C APIs
