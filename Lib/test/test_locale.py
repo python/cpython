@@ -6,6 +6,7 @@ from test.support.import_helper import ensure_lazy_imports, import_fresh_module
 from unittest import mock
 import unittest
 import locale
+import os
 import sys
 import codecs
 
@@ -555,6 +556,9 @@ class TestRealLocales(unittest.TestCase):
         ('uz_UZ.UTF-8@cyrillic', ('uz_UZ@cyrillic', None)),
     ])
     def test_setlocale_with_modifier(self, localename, localetuple):
+        if os.name == 'nt' and localename in ('ks_IN.UTF-8@devanagari',
+                                              'sd_IN.UTF-8@devanagari'):
+            self.skipTest('gh-137273: crashes on Windows')
         try:
             locale.setlocale(locale.LC_CTYPE, localename)
         except locale.Error as exc:
@@ -602,6 +606,9 @@ class TestRealLocales(unittest.TestCase):
         ('uz_UZ@cyrillic', ('uz_UZ@cyrillic', 'UTF-8')),
     ])
     def test_getlocale_with_modifier(self, localename, localetuple):
+        if os.name == 'nt' and localename in ('ks_IN.UTF-8@devanagari',
+                                              'sd_IN.UTF-8@devanagari'):
+            self.skipTest('gh-137273: crashes on Windows')
         try:
             locale.setlocale(locale.LC_CTYPE, localename)
         except locale.Error as exc:
