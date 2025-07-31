@@ -723,7 +723,7 @@ def check_escaping_calls(instr: parser.CodeDef, escapes: dict[SimpleStmt, Escapi
     if error is not None:
         raise analysis_error(f"Escaping call '{error.text} in condition", error)
 
-def escaping_call_in_simple_stmt(stmt: SimpleStmt, result: dict[Stmt, EscapingCall]):
+def escaping_call_in_simple_stmt(stmt: SimpleStmt, result: dict[SimpleStmt, EscapingCall]) -> None:
     tokens = stmt.contents
     for idx, tkn in enumerate(tokens):
         try:
@@ -826,9 +826,9 @@ def stack_effect_only_peeks(instr: parser.InstDef) -> bool:
     )
 
 
-def op_escapes(op: parser.CodeDef):
+def op_escapes(op: parser.CodeDef) -> bool:
 
-    def is_simple_exit(stmt: Stmt):
+    def is_simple_exit(stmt: Stmt) -> bool:
         if not isinstance(stmt, SimpleStmt):
             return False
         tokens = stmt.contents
@@ -844,7 +844,7 @@ def op_escapes(op: parser.CodeDef):
             tokens[3].text == ")"
         )
 
-    def escapes_list(stmts: list[Stmt]):
+    def escapes_list(stmts: list[Stmt]) -> bool:
         if not stmts:
             return False
         if is_simple_exit(stmts[-1]):
@@ -854,14 +854,14 @@ def op_escapes(op: parser.CodeDef):
                 return True
         return False
 
-    def escapes(stmt: Stmt) -> None:
+    def escapes(stmt: Stmt) -> bool:
         if isinstance(stmt, BlockStmt):
             return escapes_list(stmt.body)
         elif isinstance(stmt, SimpleStmt):
             for tkn in stmt.contents:
                 if tkn.text == "DECREF_INPUTS":
                     return True
-            d: dict[Stmt, EscapingCall] = {}
+            d: dict[SimpleStmt, EscapingCall] = {}
             escaping_call_in_simple_stmt(stmt, d)
             return bool(d)
         elif isinstance(stmt, IfStmt):
@@ -876,6 +876,8 @@ def op_escapes(op: parser.CodeDef):
             return escapes(stmt.body)
         elif isinstance(stmt, WhileStmt):
             return escapes(stmt.body)
+        else:
+            assert False, "Unexpected statement type"
 
     return escapes(op.block)
 
