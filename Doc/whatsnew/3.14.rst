@@ -300,7 +300,7 @@ For example, here's a function that renders static parts lowercase and
    template = t"Mister {name}"
    assert lower_upper(template) == "mister WENSLYDALE"
 
-Because :class:`Template` instances distinguish between static strings and
+Because :class:`!Template` instances distinguish between static strings and
 interpolations at runtime, they are useful for sanitizing user input. Here's
 a simple example that escapes user input in HTML:
 
