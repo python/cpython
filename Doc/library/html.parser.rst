@@ -121,6 +121,17 @@ The output will then be:
    attributes can be preserved, etc.).
 
 
+.. method:: HTMLParser.support_cdata(flag)
+
+   Sets how the parser will parse CDATA declarations.
+   If *flag* is true, then the :meth:`unknown_decl` method will be called
+   for the CDATA section ``<![CDATA[...]]>``.
+   If *flag* is false, then the :meth:`handle_comment` method will be called
+   for ``<![CDATA[...>``.
+
+   .. versionadded:: 3.13.6
+
+
 The following methods are called when data or markup elements are encountered
 and they are meant to be overridden in a subclass.  The base class
 implementations do nothing (except for :meth:`~HTMLParser.handle_startendtag`):
