@@ -383,7 +383,6 @@ have ambiguous semantics.
 
 It is not possible to mix :keyword:`except` and :keyword:`!except*`
 in the same :keyword:`try`.
-The statements
 The :keyword:`break`, :keyword:`continue`, and :keyword:`return` statements
 cannot appear in an :keyword:`!except*` clause.
 
