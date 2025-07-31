@@ -162,48 +162,55 @@ class TestPerfTrampoline(unittest.TestCase):
 
     @unittest.skipIf(support.check_bolt_optimized(), "fails on BOLT instrumented binaries")
     def test_sys_api(self):
-        code = """if 1:
-                import sys
-                def foo():
-                    pass
+        for define_eval_hook in (False, True):
+            code = """if 1:
+                    import sys
+                    def foo():
+                        pass
 
-                def spam():
-                    pass
+                    def spam():
+                        pass
 
-                def bar():
-                    sys.deactivate_stack_trampoline()
-                    foo()
+                    def bar():
+                        sys.deactivate_stack_trampoline()
+                        foo()
+                        sys.activate_stack_trampoline("perf")
+                        spam()
+
+                    def baz():
+                        bar()
+
                     sys.activate_stack_trampoline("perf")
-                    spam()
+                    baz()
+                    """
+            if define_eval_hook:
+                set_eval_hook = """if 1:
+                                import _testinternalcapi
+                                _testinternalcapi.set_eval_frame_record([])
+"""
+                code = set_eval_hook + code
+            with temp_dir() as script_dir:
+                script = make_script(script_dir, "perftest", code)
+                env = {**os.environ, "PYTHON_JIT": "0"}
+                with subprocess.Popen(
+                    [sys.executable, script],
+                    text=True,
+                    stderr=subprocess.PIPE,
+                    stdout=subprocess.PIPE,
+                    env=env,
+                ) as process:
+                    stdout, stderr = process.communicate()
 
-                def baz():
-                    bar()
+            self.assertEqual(stderr, "")
+            self.assertEqual(stdout, "")
 
-                sys.activate_stack_trampoline("perf")
-                baz()
-                """
-        with temp_dir() as script_dir:
-            script = make_script(script_dir, "perftest", code)
-            env = {**os.environ, "PYTHON_JIT": "0"}
-            with subprocess.Popen(
-                [sys.executable, script],
-                text=True,
-                stderr=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-                env=env,
-            ) as process:
-                stdout, stderr = process.communicate()
-
-        self.assertEqual(stderr, "")
-        self.assertEqual(stdout, "")
-
-        perf_file = pathlib.Path(f"/tmp/perf-{process.pid}.map")
-        self.assertTrue(perf_file.exists())
-        perf_file_contents = perf_file.read_text()
-        self.assertNotIn(f"py::foo:{script}", perf_file_contents)
-        self.assertIn(f"py::spam:{script}", perf_file_contents)
-        self.assertIn(f"py::bar:{script}", perf_file_contents)
-        self.assertIn(f"py::baz:{script}", perf_file_contents)
+            perf_file = pathlib.Path(f"/tmp/perf-{process.pid}.map")
+            self.assertTrue(perf_file.exists())
+            perf_file_contents = perf_file.read_text()
+            self.assertNotIn(f"py::foo:{script}", perf_file_contents)
+            self.assertIn(f"py::spam:{script}", perf_file_contents)
+            self.assertIn(f"py::bar:{script}", perf_file_contents)
+            self.assertIn(f"py::baz:{script}", perf_file_contents)
 
     def test_sys_api_with_existing_trampoline(self):
         code = """if 1:
