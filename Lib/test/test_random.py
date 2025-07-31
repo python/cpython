@@ -1401,7 +1401,7 @@ class TestModule(unittest.TestCase):
         # tests validity but not completeness of the __all__ list
         self.assertTrue(set(random.__all__) <= set(dir(random)))
 
-    @warnings_helper.ignore_fork_in_thread_deprecation_warnings  # gh-135427
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @test.support.requires_fork()
     def test_after_fork(self):
         # Test the global Random instance gets reseeded in child

@@ -44,51 +44,32 @@ def check_syntax_warning(testcase, statement, errtext='',
     testcase.assertEqual(warns, [])
 
 
-def ignore_warnings(*, category):
+@contextlib.contextmanager
+def ignore_warnings(*, category, message=''):
     """Decorator to suppress warnings.
 
-    Use of context managers to hide warnings make diffs
-    more noisy and tools like 'git blame' less useful.
+    Can also be used as a context manager. This is not preferred,
+    because it makes diffs more noisy and tools like 'git blame' less useful.
+    But, it's useful for async functions.
     """
-    def decorator(test):
-        if inspect.iscoroutinefunction(test):
-            @functools.wraps(test)
-            async def async_wrapper(self, *args, **kwargs):
-                with warnings.catch_warnings():
-                    warnings.simplefilter('ignore', category=category)
-                    return await test(self, *args, **kwargs)
-            return async_wrapper
-        else:
-            @functools.wraps(test)
-            def wrapper(self, *args, **kwargs):
-                with warnings.catch_warnings():
-                    warnings.simplefilter('ignore', category=category)
-                    return test(self, *args, **kwargs)
-            return wrapper
-    return decorator
+    with warnings.catch_warnings():
+        warnings.filterwarnings('ignore', category=category, message=message)
+        yield
 
 
-def ignore_fork_in_thread_deprecation_warnings(test):
-    """Decorator to suppress the deprecation warnings related to running a fork within a thread.
+@contextlib.contextmanager
+def ignore_fork_in_thread_deprecation_warnings():
+    """Suppress deprecation warnings related to forking in multi-threaded code.
+
+    See gh-135427
+
+    Can be used as decorator (preferred) or context manager.
     """
-    if inspect.iscoroutinefunction(test):
-        @functools.wraps(test)
-        async def async_wrapper(self, *args, **kwargs):
-            with warnings.catch_warnings():
-                warnings.filterwarnings('ignore',
-                                        message=".*fork.*may lead to deadlocks in the child.*",
-                                        category=DeprecationWarning)
-                return await test(self, *args, **kwargs)
-        return async_wrapper
-    else:
-        @functools.wraps(test)
-        def wrapper(self, *args, **kwargs):
-            with warnings.catch_warnings():
-                warnings.filterwarnings('ignore',
-                                        message=".*fork.*may lead to deadlocks in the child.*",
-                                        category=DeprecationWarning)
-                return test(self, *args, **kwargs)
-        return wrapper
+    with ignore_warnings(
+        message=".*fork.*may lead to deadlocks in the child.*",
+        category=DeprecationWarning,
+    ):
+        yield
 
 
 class WarningsRecorder(object):

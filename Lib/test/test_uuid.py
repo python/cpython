@@ -1112,7 +1112,7 @@ class BaseTestUUID:
         versions = {u.version for u in uuids}
         self.assertSetEqual(versions, {8})
 
-    @warnings_helper.ignore_fork_in_thread_deprecation_warnings  # gh-135427
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @support.requires_fork()
     def testIssue8621(self):
         # On at least some versions of OSX self.uuid.uuid4 generates
