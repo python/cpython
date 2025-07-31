@@ -322,7 +322,7 @@ a coroutine does, instead it represents the status and result of that computatio
 kind of like a status-light (red, yellow or green) or indicator.
 
 ``Task`` subclasses ``Future`` in order to gain these various capabilities.
-I said in the prior section tasks store a list of callbacks and I lied a bit.
+The prior section said tasks store a list of callbacks and it lied to you a bit.
 It's actually the ``Future`` class that implements this logic which ``Task``
 inherits.
 
@@ -420,8 +420,8 @@ will monitor how much time has elapsed and accordingly call
 
 We'll use a rather bare object ``YieldToEventLoop()`` to ``yield`` from its
 ``__await__`` in order to cede control to the event loop.
-This is effectively the same as calling ``asyncio.sleep(0)``, but I prefer the
-clarity this approach offers, not to mention it's somewhat cheating to use
+This is effectively the same as calling ``asyncio.sleep(0)``, but this approach
+offers more clarity , not to mention it's somewhat cheating to use
 ``asyncio.sleep`` when showcasing how to implement it!
 
 The event loop, as usual, cycles through its queue of tasks, giving them control,
@@ -468,8 +468,8 @@ Here is the full program's output:
 You might feel this implementation of asynchronous sleep was unnecessarily
 convoluted.
 And, well, it was.
-I wanted to showcase the versatility of futures with a simple example that
-could be mimicked for more complex needs.
+The example was meant to showcase the versatility of futures with a simple 
+example that could be mimicked for more complex needs.
 For reference, you could implement it without futures, like so::
 
     async def simpler_async_sleep(seconds):
