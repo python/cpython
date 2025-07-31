@@ -1,11 +1,9 @@
 import contextlib
-import functools
 import importlib
 import re
 import sys
 import warnings
 
-import inspect
 
 
 def import_deprecated(name):
