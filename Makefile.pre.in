@@ -3135,7 +3135,7 @@ JIT_DEPS = \
 jit_stencils.h: $(JIT_DEPS)
 	@REGEN_JIT_COMMAND@
 
-Python/jit.o: $(srcdir)/Python/jit.c @JIT_STENCILS_H@
+Python/jit.o: $(srcdir)/Python/jit.c jit_stencils.h $(wildcard jit_stencils-*.h)
 	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
 
 .PHONY: regen-jit
@@ -3233,7 +3233,7 @@ clean-retain-profile: pycremoval
 	-rm -rf Python/deepfreeze
 	-rm -f Python/frozen_modules/*.h
 	-rm -f Python/frozen_modules/MANIFEST
-	-rm -f jit_stencils.h
+	-rm -f jit_stencils.h jit_stencils-*.h
 	-find build -type f -a ! -name '*.gc??' -exec rm -f {} ';'
 	-rm -f Include/pydtrace_probes.h
 	-rm -f profile-gen-stamp

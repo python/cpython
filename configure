@@ -906,7 +906,6 @@ LDSHARED
 SHLIB_SUFFIX
 DSYMUTIL_PATH
 DSYMUTIL
-JIT_STENCILS_H
 REGEN_JIT_COMMAND
 UNIVERSAL_ARCH_FLAGS
 WASM_STDLIB
@@ -10869,14 +10868,12 @@ then :
 else case e in #(
   e) as_fn_append CFLAGS_NODIST " $jit_flags"
            REGEN_JIT_COMMAND="\$(PYTHON_FOR_REGEN) \$(srcdir)/Tools/jit/build.py ${ARCH_TRIPLES:-$host} --output-dir . --pyconfig-dir . --cflags=\"$CFLAGS_JIT\""
-           JIT_STENCILS_H="jit_stencils.h"
            if test "x$Py_DEBUG" = xtrue
 then :
   as_fn_append REGEN_JIT_COMMAND " --debug"
 fi ;;
 esac
 fi
-
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $tier2_flags $jit_flags" >&5
 printf "%s\n" "$tier2_flags $jit_flags" >&6; }
