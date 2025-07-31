@@ -22,6 +22,7 @@ import operator
 from test import support
 from test.support import MISSING_C_DOCSTRINGS
 from test.support import import_helper
+from test.support import script_helper
 from test.support import threading_helper
 from test.support import warnings_helper
 from test.support import requires_limited_api
@@ -1640,6 +1641,36 @@ class TestPendingCalls(unittest.TestCase):
             actual = int.from_bytes(text, 'little')
 
             self.assertEqual(actual, int(interpid))
+
+    @threading_helper.requires_working_threading()
+    def test_pending_call_creates_thread(self):
+        source = """
+        import _testcapi
+        import threading
+        import time
+
+
+        def output():
+            print(24)
+            time.sleep(1)
+            print(42)
+
+
+        def callback():
+            threading.Thread(target=output).start()
+
+
+        def create_pending_call():
+            time.sleep(1)
+            _testcapi.simple_pending_call(callback)
+
+
+        threading.Thread(target=create_pending_call).start()
+        """
+        return_code, stdout, stderr = script_helper.assert_python_ok('-c', textwrap.dedent(source))
+        self.assertEqual(return_code, 0)
+        self.assertEqual(stdout, f"24{os.linesep}42{os.linesep}".encode("utf-8"))
+        self.assertEqual(stderr, b"")
 
 
 class SubinterpreterTest(unittest.TestCase):
