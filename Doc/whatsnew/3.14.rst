@@ -251,64 +251,98 @@ Also added in 3.14: :ref:`concurrent.futures.InterpreterPoolExecutor
 PEP 750: Template strings
 -------------------------
 
-Template string literals (t-strings) are a generalization of f-strings,
-using a ``t`` in place of the ``f`` prefix. Instead of evaluating
-to :class:`str`, t-strings evaluate to a new :class:`!string.templatelib.Template` type:
+Template strings are a new mechanism for custom string processing. They share
+the familiar syntax of f-strings but, unlike f-strings, return a
+:class:`~string.templatelib.Template` instance instead of a simple ``str``.
+Templates provide access to the static and interpolated (in curly braces) parts
+of a string *before* they are combined.
 
-.. code-block:: python
+To write a t-string, use a ``'t'`` prefix instead of an ``'f'``:
 
-   from string.templatelib import Template
+.. doctest::
 
-   name = "World"
-   template: Template = t"Hello {name}"
+   >>> variety = "Stilton"
+   >>> template = t"Try some {variety} cheese!"
+   >>> type(template)
+    <class 'string.templatelib.Template'>
 
-The template can then be combined with functions that operate on the template's
-structure to produce a :class:`str` or a string-like result.
-For example, sanitizing input:
+Iterate over :class:`!Template` instances to access their parts in order:
 
-.. code-block:: python
+.. testsetup::
 
-   evil = "<script>alert('evil')</script>"
-   template = t"<p>{evil}</p>"
-   assert html(template) == "<p>&lt;script&gt;alert('evil')&lt;/script&gt;</p>"
+   variety = "Stilton"
+   template = t"Try some {variety} cheese!"
 
-As another example, generating HTML attributes from data:
+.. doctest::
 
-.. code-block:: python
+   >>> list(template)
+   ['Try some ', Interpolation('Stilton', 'variety', None, ''), ' cheese!']
 
-   attributes = {"src": "shrubbery.jpg", "alt": "looks nice"}
-   template = t"<img {attributes}>"
-   assert html(template) == '<img src="shrubbery.jpg" alt="looks nice" />'
-
-Compared to using an f-string, the ``html`` function has access to template attributes
-containing the original information: static strings, interpolations, and values
-from the original scope. Unlike existing templating approaches, t-strings build
-from the well-known f-string syntax and rules. Template systems thus benefit
-from Python tooling as they are much closer to the Python language, syntax,
-scoping, and more.
-
-Writing template handlers is straightforward:
+It's easy to write (or call) code to process :class:`!Template` instances.
+For example, here's a function that renders static parts lowercase and
+:class:`~string.templatelib.Interpolation` instances uppercase:
 
 .. code-block:: python
 
    from string.templatelib import Template, Interpolation
 
    def lower_upper(template: Template) -> str:
-       """Render static parts lowercased and interpolations uppercased."""
+       """Render static parts lowercase and interpolations uppercase."""
        parts: list[str] = []
-       for item in template:
-           if isinstance(item, Interpolation):
-               parts.append(str(item.value).upper())
+       for part in template:
+           if isinstance(part, Interpolation):
+               parts.append(str(part.value).upper())
            else:
-               parts.append(item.lower())
+               parts.append(part.lower())
        return "".join(parts)
 
-   name = "world"
-   assert lower_upper(t"HELLO {name}") == "hello WORLD"
+   name = "Wenslydale"
+   template = t"Mister {name}"
+   assert lower_upper(template) == "mister WENSLYDALE"
 
-With this in place, developers can write template systems to sanitize SQL, make
-safe shell operations, improve logging, tackle modern ideas in web development
-(HTML, CSS, and so on), and implement lightweight, custom business DSLs.
+Because :class:`Template` instances distinguish between static strings and
+interpolations at runtime, they are useful for sanitizing user input. Here's
+a simple example that escapes user input in HTML:
+
+.. code-block:: python
+
+   from string.templatelib import Template, Interpolation
+   from html import escape
+
+   def html(template: Template) -> str:
+       """Escape HTML in interpolations."""
+       parts: list[str] = []
+       for part in template:
+           if isinstance(part, Interpolation):
+               parts.append(escape(str(part.value)))
+           else:
+               parts.append(part)
+       return "".join(parts)
+
+   user_supplied = "<script>alert('cheese')</script>"
+   template = t"<p>{user_supplied}</p>"
+   rendered = html(template)
+   assert rendered == "<p>&lt;script&gt;alert(&#x27;cheese&#x27;)&lt;/script&gt;</p>"
+
+Beyond simply sanitizing input, template processing code can provide flexibility
+and better developer experience. For instance, a more advanced ``html()``
+implementation could accept a ``dict`` of HTML attributes directly in the
+template:
+
+.. code-block:: python
+
+   attributes = {"src": "limburger.jpg", "alt": "a cheese"}
+   template = t"<img {attributes}>"
+   rendered = html(template)
+   assert rendered == '<img src="limburger.jpg" alt="a cheese" />'
+
+Of course, template processing code does not need to return a ``str`` or
+string-like result. For example, an even *more* advanced ``html()`` could
+return a custom ``Element`` type representing a DOM-like structure.
+
+With t-strings in place, developers can write systems that sanitize SQL,
+make safe shell operations, improve logging, tackle modern ideas in web
+development (HTML, CSS, and so on), and implement lightweight custom business DSLs.
 
 (Contributed by Jim Baker, Guido van Rossum, Paul Everitt, Koudai Aono,
 Lysandros Nikolaou, Dave Peck, Adam Turner, Jelle Zijlstra, Bénédikt Tran,
