@@ -1,0 +1,2 @@
+Python Debugger now supports additional location
+``$XDG_CONFIG_HOME/pdb/.pdbrc`` for :file:`.pdbrc` file.
