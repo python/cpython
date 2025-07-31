@@ -22,7 +22,7 @@ of this article.
   read as opposed to a task that does need cpu-time to make progress, like
   computing n-factorial?
 - How would I go about writing my own asynchronous variant of some operation?
-  Something like an async sleep, database request, etc.
+  Something like an async sleep, database request, and so on.
 
 --------------------------------------------
 A conceptual overview part 1: the high-level
