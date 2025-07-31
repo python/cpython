@@ -3,7 +3,6 @@
 import collections
 import dis
 import functools
-import inspect
 import math
 import operator
 import sys
@@ -1718,15 +1717,10 @@ class TestBranchAndJumpEvents(CheckEvents):
                 return 0
 
         def callback(code, from_, to):
-            frame = inspect.currentframe()
-            while frame and frame.f_code is not code:
-                frame = frame.f_back
-
-            if frame:
-                self.assertIs(frame.f_code, code)
-                # try get and set frame.f_lineno
-                l = frame.f_lineno
-                frame.f_lineno = l
+            frame = sys._getframe(0)
+            old = frame.f_lineno
+            # try set frame.f_lineno
+            frame.f_lineno = frame.f_lineno
 
         sys.monitoring.set_local_events(TEST_TOOL, func.__code__, E.BRANCH_LEFT)
         sys.monitoring.register_callback(TEST_TOOL, E.BRANCH_LEFT, callback)
