@@ -1753,20 +1753,15 @@ _PyObject_GetMethodStackRef(PyThreadState *ts, PyObject *obj,
         }
     }
     if (dict != NULL) {
-        // TODO: use _Py_dict_lookup_threadsafe_stackref
-        Py_INCREF(dict);
-        PyObject *value;
-        if (PyDict_GetItemRef(dict, name, &value) != 0) {
-            // found or error
-            Py_DECREF(dict);
-            PyStackRef_CLEAR(*method);
-            if (value != NULL) {
-                *method = PyStackRef_FromPyObjectSteal(value);
-            }
+        assert(PyUnicode_CheckExact(name));
+        int found = _PyDict_GetMethodStackRef((PyDictObject *)dict, name, method);
+        if (found < 0) {
+            assert(PyStackRef_IsNull(*method));
+            return -1;
+        }
+        else if (found) {
             return 0;
         }
-        // not found
-        Py_DECREF(dict);
     }
 
     if (meth_found) {
