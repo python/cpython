@@ -1182,30 +1182,30 @@ class TestFunctional(unittest.TestCase):
 @support.requires_fork()
 class TestFork(unittest.IsolatedAsyncioTestCase):
 
-    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     async def test_fork_not_share_event_loop(self):
-        # The forked process should not share the event loop with the parent
-        loop = asyncio.get_running_loop()
-        r, w = os.pipe()
-        self.addCleanup(os.close, r)
-        self.addCleanup(os.close, w)
-        pid = os.fork()
-        if pid == 0:
-            # child
-            try:
-                loop = asyncio.get_event_loop()
-                os.write(w, b'LOOP:' + str(id(loop)).encode())
-            except RuntimeError:
-                os.write(w, b'NO LOOP')
-            except BaseException as e:
-                os.write(w, b'ERROR:' + ascii(e).encode())
-            finally:
-                os._exit(0)
-        else:
-            # parent
-            result = os.read(r, 100)
-            self.assertEqual(result, b'NO LOOP')
-            wait_process(pid, exitcode=0)
+        with warnings_helper.ignore_fork_in_thread_deprecation_warnings():
+            # The forked process should not share the event loop with the parent
+            loop = asyncio.get_running_loop()
+            r, w = os.pipe()
+            self.addCleanup(os.close, r)
+            self.addCleanup(os.close, w)
+            pid = os.fork()
+            if pid == 0:
+                # child
+                try:
+                    loop = asyncio.get_event_loop()
+                    os.write(w, b'LOOP:' + str(id(loop)).encode())
+                except RuntimeError:
+                    os.write(w, b'NO LOOP')
+                except BaseException as e:
+                    os.write(w, b'ERROR:' + ascii(e).encode())
+                finally:
+                    os._exit(0)
+            else:
+                # parent
+                result = os.read(r, 100)
+                self.assertEqual(result, b'NO LOOP')
+                wait_process(pid, exitcode=0)
 
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @hashlib_helper.requires_hashdigest('md5')
