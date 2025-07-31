@@ -265,7 +265,7 @@ def _collect_type_parameters(
     """Collect all type parameters in args
     in order of first appearance (lexicographic order).
 
-    Having an explicit `Generic` or `Protocol` base class determins
+    Having an explicit `Generic` or `Protocol` base class determines
     the exact parameter order.
 
     For example::
