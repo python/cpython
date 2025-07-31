@@ -973,7 +973,7 @@ struct _is {
 #ifdef Py_STATS
     // true if recording of pystats is on, this is used when new threads
     // are created to decide if recording should be on for them
-    bool pystats_enabled;
+    int pystats_enabled;
     // allocated when (and if) stats are first enabled
     PyStats *pystats_struct;
 #ifdef Py_GIL_DISABLED
