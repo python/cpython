@@ -150,18 +150,6 @@ def bin(num, max_bits=None):
             digits = (sign[-1] * max_bits + digits)[-max_bits:]
     return "%s %s" % (sign, digits)
 
-def _dedent(text):
-    """
-    Like textwrap.dedent.  Rewritten because we cannot import textwrap.
-    """
-    lines = text.split('\n')
-    for i, ch in enumerate(lines[0]):
-        if ch != ' ':
-            break
-    for j, l in enumerate(lines):
-        lines[j] = l[i:]
-    return '\n'.join(lines)
-
 class _not_given:
     def __repr__(self):
         return('<not given>')
@@ -547,7 +535,7 @@ class EnumType(type):
         # now set the __repr__ for the value
         classdict['_value_repr_'] = metacls._find_data_repr_(cls, bases)
         #
-        # Flag structures (will be removed if final class is not a Flag
+        # Flag structures (will be removed if final class is not a Flag)
         classdict['_boundary_'] = (
                 boundary
                 or getattr(first_enum, '_boundary_', None)
@@ -556,6 +544,29 @@ class EnumType(type):
         classdict['_singles_mask_'] = 0
         classdict['_all_bits_'] = 0
         classdict['_inverted_'] = None
+        # check for negative flag values and invert if found (using _proto_members)
+        if Flag is not None and bases and issubclass(bases[-1], Flag):
+            bits = 0
+            inverted = []
+            for n in member_names:
+                p = classdict[n]
+                if isinstance(p.value, int):
+                    if p.value < 0:
+                        inverted.append(p)
+                    else:
+                        bits |= p.value
+                elif p.value is None:
+                    pass
+                elif isinstance(p.value, tuple) and p.value and isinstance(p.value[0], int):
+                    if p.value[0] < 0:
+                        inverted.append(p)
+                    else:
+                        bits |= p.value[0]
+            for p in inverted:
+                if isinstance(p.value, int):
+                    p.value = bits & p.value
+                else:
+                    p.value = (bits & p.value[0], ) + p.value[1:]
         try:
             classdict['_%s__in_progress' % cls] = True
             enum_class = super().__new__(metacls, cls, bases, classdict, **kwds)
@@ -743,14 +754,16 @@ class EnumType(type):
         """
         if isinstance(value, cls):
             return True
-        try:
-            cls(value)
-            return True
-        except ValueError:
-            return (
-                    value in cls._unhashable_values_    # both structures are lists
-                    or value in cls._hashable_values_
-                    )
+        if issubclass(cls, Flag):
+            try:
+                result = cls._missing_(value)
+                return isinstance(result, cls)
+            except ValueError:
+                pass
+        return (
+                value in cls._unhashable_values_    # both structures are lists
+                or value in cls._hashable_values_
+                )
 
     def __delattr__(cls, attr):
         # nicer error message when someone tries to delete an attribute
@@ -1497,7 +1510,10 @@ class Flag(Enum, boundary=STRICT):
                         )
         if value < 0:
             neg_value = value
-            value = all_bits + 1 + value
+            if cls._boundary_ in (EJECT, KEEP):
+                value = all_bits + 1 + value
+            else:
+                value = singles_mask & value
         # get members and unknown
         unknown = value & ~flag_mask
         aliases = value & ~singles_mask
@@ -1975,7 +1991,7 @@ class verify:
                         if 2**i not in values:
                             missing.append(2**i)
                 elif enum_type == 'enum':
-                    # check for powers of one
+                    # check for missing consecutive integers
                     for i in range(low+1, high):
                         if i not in values:
                             missing.append(i)

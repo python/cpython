@@ -170,6 +170,7 @@ venv:
 		echo "venv already exists."; \
 		echo "To recreate it, remove it first with \`make clean-venv'."; \
 	else \
+		set -e; \
 		echo "Creating venv in $(VENVDIR)"; \
 		if $(UV) --version >/dev/null 2>&1; then \
 			$(UV) venv --python=$(PYTHON) $(VENVDIR); \
@@ -204,6 +205,7 @@ dist-html:
 	find dist -name 'python-$(DISTVERSION)-docs-html*' -exec rm -rf {} \;
 	$(MAKE) html
 	cp -pPR build/html dist/python-$(DISTVERSION)-docs-html
+	rm -rf dist/python-$(DISTVERSION)-docs-html/_images/social_previews/
 	tar -C dist -cf dist/python-$(DISTVERSION)-docs-html.tar python-$(DISTVERSION)-docs-html
 	bzip2 -9 -k dist/python-$(DISTVERSION)-docs-html.tar
 	(cd dist; zip -q -r -9 python-$(DISTVERSION)-docs-html.zip python-$(DISTVERSION)-docs-html)

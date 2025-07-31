@@ -1,0 +1,2 @@
+Have Tools/wasm/wasi detect a WASI SDK install in /opt when it was directly
+extracted from a release tarball.
