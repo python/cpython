@@ -75,12 +75,14 @@ the module and a copyright notice if you like).
    See :ref:`arg-parsing-string-and-buffers` for a description of this macro.
 
 All user-visible symbols defined by :file:`Python.h` have a prefix of ``Py`` or
-``PY``, except those defined in standard header files. For convenience, and
-since they are used extensively by the Python interpreter, ``"Python.h"``
-includes a few standard header files: ``<stdio.h>``, ``<string.h>``,
-``<errno.h>``, and ``<stdlib.h>``.  If the latter header file does not exist on
-your system, it declares the functions :c:func:`malloc`, :c:func:`free` and
-:c:func:`realloc` directly.
+``PY``, except those defined in standard header files.
+
+For backward compatibility of existing third party C extensions, :file:`Python.h`
+includes ``<stdio.h>``, ``<string.h>``, ``<errno.h>``, and ``<stdlib.h>`` if
+:c:macro:`Py_LIMITED_API` is not defined or for limited C API version 3.10 and older.
+The ``<ctype.h>`` and ``<unistd.h>`` headers are also not included for limited
+C API version 3.13 and newer.
+
 
 The next thing we add to our module file is the C function that will be called
 when the Python expression ``spam.system(string)`` is evaluated (we'll see
