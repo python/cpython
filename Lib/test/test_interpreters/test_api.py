@@ -2364,6 +2364,8 @@ class LowLevelTests(TestBase):
                 )
             self.assertEqual(rc, 0)
 
+
+class SignalTests(TestBase):
     @support.requires_subprocess()
     @unittest.skipIf(os.name == 'nt', 'SIGINT not supported on windows')
     def test_interpreter_handles_signals(self):
@@ -2430,6 +2432,25 @@ class LowLevelTests(TestBase):
         self.assertEqual(stdout, b"inquisition")
         self.assertIn(b"KeyboardInterrupt", stderr)
         self.assertNotIn(b"AssertionError", stderr)
+
+    @unittest.skipIf(os.name == 'nt', 'SIGUSR1 not supported')
+    def test_signal_module_in_subinterpreters(self):
+        read, write = self.pipe()
+        interp = interpreters.create()
+        interp.exec(f"""if True:
+        import signal
+        import os
+
+        def sig(signum, stack):
+            signame = signal.Signals(signum).name
+            assert signame == "SIGUSR1"
+            os.write({write}, b'x')
+
+        signal.signal(signal.SIGUSR1, sig)
+        signal.raise_signal(signal.SIGUSR1)
+        """)
+        self.assertEqual(os.read(read, 1), b'x')
+
 
 
 if __name__ == '__main__':
