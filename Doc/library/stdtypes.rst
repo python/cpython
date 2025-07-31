@@ -3641,8 +3641,8 @@ place, and instead produce new objects.
 .. method:: bytes.isalnum()
             bytearray.isalnum()
 
-   Return ``True`` if all bytes in the sequence are alphabetical ASCII characters
-   or ASCII decimal digits and the sequence is not empty, ``False`` otherwise.
+   Return ``True`` if all bytes in the sequence are alphabetic ASCII characters
+   and/or ASCII decimal digits and the sequence is not empty, ``False`` otherwise.
    Alphabetic ASCII characters are those byte values in the sequence
    ``b'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'``. ASCII decimal
    digits are those byte values in the sequence ``b'0123456789'``.
