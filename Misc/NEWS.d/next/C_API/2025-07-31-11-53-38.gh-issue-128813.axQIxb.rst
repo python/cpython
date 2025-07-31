@@ -1,0 +1,2 @@
+Document and deprecate :c:member:`~PyComplexObject.cval` field of
+the :c:type:`PyComplexObject` type.  Patch by Sergey B Kirpichev.

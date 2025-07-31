@@ -118,6 +118,12 @@ Complex Numbers as Python Objects
 
    This subtype of :c:type:`PyObject` represents a Python complex number object.
 
+   .. c:member:: Py_complex cval
+
+      The complex number value, using the C :c:type:`Py_complex` representation.
+
+      .. deprecated:: 3.15
+
 
 .. c:var:: PyTypeObject PyComplex_Type
 
