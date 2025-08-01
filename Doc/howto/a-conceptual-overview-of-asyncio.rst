@@ -353,7 +353,7 @@ done; instead it represents the status and result of that computation, kind of
 like a status light (red, yellow or green) or indicator.
 
 :class:`asyncio.Task` subclasses :class:`asyncio.Future` in order to gain these various capabilities.
-The prior section said tasks store a list of callbacks and it lied to you a bit.
+The prior section said tasks store a list of callbacks, which wasn't entirely true.
 It's actually the ``Future`` class that implements this logic which ``Task``
 inherits.
 
