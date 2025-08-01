@@ -725,6 +725,8 @@ LIBHACL_BLAKE2_SIMD128_OBJS
 LIBHACL_SIMD128_FLAGS
 LIBHACL_LDFLAGS
 LIBHACL_CFLAGS
+LIBHASHLIB_INTERNAL
+LIBHASHLIB_INTERNAL_CFLAGS
 MODULE_UNICODEDATA_FALSE
 MODULE_UNICODEDATA_TRUE
 MODULE__MULTIBYTECODEC_FALSE
@@ -9604,7 +9606,7 @@ fi
         as_fn_append LDFLAGS_NODIST " -sWASM_BIGINT"
 
         as_fn_append LINKFORSHARED " -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"
-    as_fn_append LINKFORSHARED " -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV"
+    as_fn_append LINKFORSHARED " -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV,HEAPU32,TTY"
     as_fn_append LINKFORSHARED " -sEXPORTED_FUNCTIONS=_main,_Py_Version,__PyRuntime,__PyEM_EMSCRIPTEN_COUNT_ARGS_OFFSET,_PyGILState_GetThisThreadState,__Py_DumpTraceback"
     as_fn_append LINKFORSHARED " -sSTACK_SIZE=5MB"
         as_fn_append LINKFORSHARED " -sTEXTDECODER=2"
@@ -13817,6 +13819,8 @@ case $PLATFORM_TRIPLET in #(
   x86_64-linux-gnu) :
     perf_trampoline=yes ;; #(
   aarch64-linux-gnu) :
+    perf_trampoline=yes ;; #(
+  darwin) :
     perf_trampoline=yes ;; #(
   *) :
     perf_trampoline=no
@@ -29949,6 +29953,7 @@ SRCDIRS="\
   Modules/_decimal \
   Modules/_decimal/libmpdec \
   Modules/_hacl \
+  Modules/_hashlib \
   Modules/_io \
   Modules/_multiprocessing \
   Modules/_sqlite \
@@ -31182,9 +31187,7 @@ case $ac_sys_system in #(
 
 
 
-    py_cv_module_fcntl=n/a
     py_cv_module_readline=n/a
-    py_cv_module_termios=n/a
     py_cv_module_=n/a
 
    ;; #(
@@ -32528,6 +32531,15 @@ fi
 
 
 ###############################################################################
+# Cryptographic primitives
+LIBHASHLIB_INTERNAL_CFLAGS="-I\$(srcdir)/Modules/_hashlib"
+LIBHASHLIB_INTERNAL_LDFLAGS="-lm \$(LIBHASHLIB_INTERNAL_A)"
+LIBHASHLIB_INTERNAL="\$(LIBHASHLIB_INTERNAL_HEADERS) \$(LIBHASHLIB_INTERNAL_A)"
+
+
+
+
+###############################################################################
 # HACL* compilation and linking configuration (contact: @picnixz)
 #
 # Used by the HACL*-based implementations of cryptographic primitives.
@@ -32775,8 +32787,8 @@ fi
   if test "x$py_cv_module__md5" = xyes
 then :
 
-    as_fn_append MODULE_BLOCK "MODULE__MD5_CFLAGS=$LIBHACL_CFLAGS$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__MD5_LDFLAGS=\$($LIBHACL_MD5_LDFLAGS)$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__MD5_CFLAGS=$LIBHACL_CFLAGS $LIBHASHLIB_INTERNAL_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__MD5_LDFLAGS=\$($LIBHACL_MD5_LDFLAGS) $LIBHASHLIB_INTERNAL_LDFLAGS$as_nl"
 
 fi
    if test "$py_cv_module__md5" = yes; then
@@ -32820,8 +32832,8 @@ fi
   if test "x$py_cv_module__sha1" = xyes
 then :
 
-    as_fn_append MODULE_BLOCK "MODULE__SHA1_CFLAGS=$LIBHACL_CFLAGS$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__SHA1_LDFLAGS=\$($LIBHACL_SHA1_LDFLAGS)$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__SHA1_CFLAGS=$LIBHACL_CFLAGS $LIBHASHLIB_INTERNAL_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__SHA1_LDFLAGS=\$($LIBHACL_SHA1_LDFLAGS) $LIBHASHLIB_INTERNAL_LDFLAGS$as_nl"
 
 fi
    if test "$py_cv_module__sha1" = yes; then
@@ -32865,8 +32877,8 @@ fi
   if test "x$py_cv_module__sha2" = xyes
 then :
 
-    as_fn_append MODULE_BLOCK "MODULE__SHA2_CFLAGS=$LIBHACL_CFLAGS$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__SHA2_LDFLAGS=\$($LIBHACL_SHA2_LDFLAGS)$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__SHA2_CFLAGS=$LIBHACL_CFLAGS $LIBHASHLIB_INTERNAL_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__SHA2_LDFLAGS=\$($LIBHACL_SHA2_LDFLAGS) $LIBHASHLIB_INTERNAL_LDFLAGS$as_nl"
 
 fi
    if test "$py_cv_module__sha2" = yes; then
@@ -32910,8 +32922,8 @@ fi
   if test "x$py_cv_module__sha3" = xyes
 then :
 
-    as_fn_append MODULE_BLOCK "MODULE__SHA3_CFLAGS=$LIBHACL_CFLAGS$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__SHA3_LDFLAGS=\$($LIBHACL_SHA3_LDFLAGS)$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__SHA3_CFLAGS=$LIBHACL_CFLAGS $LIBHASHLIB_INTERNAL_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__SHA3_LDFLAGS=\$($LIBHACL_SHA3_LDFLAGS) $LIBHASHLIB_INTERNAL_LDFLAGS$as_nl"
 
 fi
    if test "$py_cv_module__sha3" = yes; then
@@ -32955,8 +32967,8 @@ fi
   if test "x$py_cv_module__blake2" = xyes
 then :
 
-    as_fn_append MODULE_BLOCK "MODULE__BLAKE2_CFLAGS=$LIBHACL_CFLAGS$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__BLAKE2_LDFLAGS=\$($LIBHACL_BLAKE2_LDFLAGS)$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__BLAKE2_CFLAGS=$LIBHACL_CFLAGS $LIBHASHLIB_INTERNAL_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__BLAKE2_LDFLAGS=\$($LIBHACL_BLAKE2_LDFLAGS) $LIBHASHLIB_INTERNAL_LDFLAGS$as_nl"
 
 fi
    if test "$py_cv_module__blake2" = yes; then
@@ -33001,8 +33013,8 @@ fi
   if test "x$py_cv_module__hmac" = xyes
 then :
 
-    as_fn_append MODULE_BLOCK "MODULE__HMAC_CFLAGS=$LIBHACL_CFLAGS$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__HMAC_LDFLAGS=\$($LIBHACL_HMAC_LDFLAGS)$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__HMAC_CFLAGS=$LIBHACL_CFLAGS $LIBHASHLIB_INTERNAL_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__HMAC_LDFLAGS=\$($LIBHACL_HMAC_LDFLAGS) $LIBHASHLIB_INTERNAL_LDFLAGS$as_nl"
 
 fi
    if test "$py_cv_module__hmac" = yes; then
@@ -33683,8 +33695,8 @@ fi
   if test "x$py_cv_module__hashlib" = xyes
 then :
 
-    as_fn_append MODULE_BLOCK "MODULE__HASHLIB_CFLAGS=$OPENSSL_INCLUDES$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__HASHLIB_LDFLAGS=$OPENSSL_LDFLAGS $OPENSSL_LDFLAGS_RPATH $LIBCRYPTO_LIBS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__HASHLIB_CFLAGS=$OPENSSL_INCLUDES $LIBHASHLIB_INTERNAL_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__HASHLIB_LDFLAGS=$OPENSSL_LDFLAGS $OPENSSL_LDFLAGS_RPATH $LIBCRYPTO_LIBS $LIBHASHLIB_INTERNAL_LDFLAGS$as_nl"
 
 fi
    if test "$py_cv_module__hashlib" = yes; then
