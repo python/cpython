@@ -438,7 +438,7 @@ On each resumption, it'll check the time and if not enough has elapsed, it'll
 pause once again and return control to the event loop.
 Eventually, enough time will have elapsed, and ``_sleep_watcher(...)`` will
 mark the future as done, and then itself finish too by breaking out of the
-infinite while loop.
+infinite ``while`` loop.
 Given this helper task is only invoked once per cycle of the event loop's queue,
 you'd be correct to note that this asynchronous sleep will sleep **at least**
 three seconds, rather than exactly three seconds.
