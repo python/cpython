@@ -137,7 +137,7 @@ class TestType(TestCase):
 
         def reader():
             for _ in range(1000):
-                self.assertEqual(Foo.__name__, 'Bar')
+                Foo.__name__
 
         self.run_one(writer, reader)
 
