@@ -219,7 +219,7 @@ Consider this program::
     asyncio.run(main())
 
 The first statement in the coroutine ``main()`` creates ``task_b`` and places
-it on the event loops queue.
+it on the event loop's queue.
 Then, ``coro_a()`` is repeatedly ``await``\ ed. Control never cedes to the
 event loop which is why we see the output of all three ``coro_a()``
 invocations before ``coro_b()``'s output:
