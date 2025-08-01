@@ -14,7 +14,7 @@
  *
  * The symbol is exported for '_hashlib' and HACL*-based extension modules.
  */
-PyAPI_FUNC(int)
+extern int
 _Py_hashlib_data_argument(PyObject **res, PyObject *data, PyObject *string);
 
 /*
@@ -25,7 +25,7 @@ _Py_hashlib_data_argument(PyObject **res, PyObject *data, PyObject *string);
  *
  * The symbol is exported for '_hashlib' and HACL*-based extension modules.
  */
-PyAPI_FUNC(int)
+extern int
 _Py_hashlib_get_buffer_view(PyObject *obj, Py_buffer *view);
 
 /*

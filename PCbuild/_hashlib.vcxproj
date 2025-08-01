@@ -99,6 +99,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\Modules\_hashopenssl.c" />
+    <ClCompile Include="..\Modules\_hashlib\hashlib_fetch.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Modules\_hashlib\hashlib_buffer.h" />
