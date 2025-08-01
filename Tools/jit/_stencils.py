@@ -19,12 +19,16 @@ class HoleValue(enum.Enum):
     CODE = enum.auto()
     # The base address of the read-only data for this uop:
     DATA = enum.auto()
+    # The base address of the machine code for the error jump target (exposed as _JIT_ERROR_TARGET):
+    ERROR_TARGET = enum.auto()
     # The address of the current executor (exposed as _JIT_EXECUTOR):
     EXECUTOR = enum.auto()
     # The base address of the "global" offset table located in the read-only data.
     # Shouldn't be present in the final stencils, since these are all replaced with
     # equivalent DATA values:
     GOT = enum.auto()
+    # The base address of the machine code for the jump target (exposed as _JIT_JUMP_TARGET):
+    JUMP_TARGET = enum.auto()
     # The current uop's oparg (exposed as _JIT_OPARG):
     OPARG = enum.auto()
     # The current uop's operand0 on 64-bit platforms (exposed as _JIT_OPERAND0):
@@ -39,10 +43,9 @@ class HoleValue(enum.Enum):
     OPERAND1_LO = enum.auto()
     # The current uop's target (exposed as _JIT_TARGET):
     TARGET = enum.auto()
-    # The base address of the machine code for the jump target (exposed as _JIT_JUMP_TARGET):
-    JUMP_TARGET = enum.auto()
-    # The base address of the machine code for the error jump target (exposed as _JIT_ERROR_TARGET):
-    ERROR_TARGET = enum.auto()
+    # Writable data, which we don't support! Optimistically remove their data
+    # from the stencil, and raise later if they're actually used:
+    WRITABLE = enum.auto()
     # A hardcoded value of zero (used for symbol lookups):
     ZERO = enum.auto()
 
@@ -96,9 +99,11 @@ _PATCH_FUNCS = {
 _HOLE_EXPRS = {
     HoleValue.CODE: "(uintptr_t)code",
     HoleValue.DATA: "(uintptr_t)data",
+    HoleValue.ERROR_TARGET: "state->instruction_starts[instruction->error_target]",
     HoleValue.EXECUTOR: "(uintptr_t)executor",
     # These should all have been turned into DATA values by process_relocations:
     # HoleValue.GOT: "",
+    HoleValue.JUMP_TARGET: "state->instruction_starts[instruction->jump_target]",
     HoleValue.OPARG: "instruction->oparg",
     HoleValue.OPERAND0: "instruction->operand0",
     HoleValue.OPERAND0_HI: "(instruction->operand0 >> 32)",
@@ -107,8 +112,8 @@ _HOLE_EXPRS = {
     HoleValue.OPERAND1_HI: "(instruction->operand1 >> 32)",
     HoleValue.OPERAND1_LO: "(instruction->operand1 & UINT32_MAX)",
     HoleValue.TARGET: "instruction->target",
-    HoleValue.JUMP_TARGET: "state->instruction_starts[instruction->jump_target]",
-    HoleValue.ERROR_TARGET: "state->instruction_starts[instruction->error_target]",
+    # These should all have raised an error if they were actually used:
+    # HoleValue.WRITABLE: "",
     HoleValue.ZERO: "",
 }
 
@@ -246,6 +251,12 @@ class StencilGroup:
         self.data.pad(8)
         for stencil in [self.code, self.data]:
             for hole in stencil.holes:
+                if hole.symbol in self.symbols:
+                    value, _ = self.symbols[hole.symbol]
+                    if value is HoleValue.WRITABLE:
+                        raise ValueError(
+                            f"Writable data ({hole.symbol}) is not supported!"
+                        )
                 if hole.value is HoleValue.GOT:
                     assert hole.symbol is not None
                     hole.value = HoleValue.DATA
