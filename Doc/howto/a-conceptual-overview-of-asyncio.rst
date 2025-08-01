@@ -54,7 +54,7 @@ This process repeats indefinitely.
 Even if the queue is empty, the event loop continues to cycle (somewhat aimlessly).
 
 Effective overall execution relies on tasks sharing well.
-A greedy task could hog control and leave the other tasks to starve rendering
+A greedy task could hog control and leave the other tasks to starve, rendering
 the overall event loop approach rather useless.
 
 ::
