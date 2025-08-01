@@ -360,9 +360,9 @@ def library_recipes():
                   ),
           ),
           dict(
-              name="SQLite 3.50.3",
-              url="https://www.sqlite.org/2025/sqlite-autoconf-3500300.tar.gz",
-              checksum="sha3-256:c3df1542703a666d3f41bb623e9bed7d6e1dc81c57f0c45e3122403f862c520d",
+              name="SQLite 3.50.4",
+              url="https://www.sqlite.org/2025/sqlite-autoconf-3500400.tar.gz",
+              checksum="sha3-256:330bb88febc08814d49406391891eddac59e5f812e87b83c27ab172687554375",
               extra_cflags=('-Os '
                             '-DSQLITE_ENABLE_FTS5 '
                             '-DSQLITE_ENABLE_FTS4 '
