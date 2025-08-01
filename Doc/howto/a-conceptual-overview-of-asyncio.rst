@@ -258,9 +258,7 @@ and how to make your own asynchronous operators.
 coroutine.send(), await, yield and StopIteration
 ================================================
 
-asyncio leverages those 4 components to pass around control.
-
-
+asyncio leverages 4 components to pass around control.
 
 :meth:`coroutine.send(arg) <generator.send>` is the method used to start or resume a coroutine.
 If the coroutine was paused and is now being resumed, the argument ``arg``
