@@ -358,7 +358,7 @@ It's actually the ``Future`` class that implements this logic which ``Task``
 inherits.
 
 Futures may be also used directly that is, not via tasks.
-Tasks mark themselves as done when their coroutine's complete.
+Tasks mark themselves as done when their coroutine is complete.
 Futures are much more versatile and will be marked as done when you say so.
 In this way, they're the flexible interface for you to make your own conditions
 for waiting and resuming.
