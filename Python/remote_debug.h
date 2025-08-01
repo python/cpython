@@ -732,6 +732,9 @@ search_linux_map_for_section(proc_handle_t *handle, const char* secname, const c
             if (retval) {
                 break;
             }
+            if (PyErr_Occured()){
+                PyErr_Clear();
+            }
         }
     }
 
