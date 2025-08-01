@@ -223,7 +223,7 @@ def _iter_source(lines, *, maxtext=11_000, maxlines=200, showtext=False):
         '''
         raise RuntimeError(textwrap.dedent(msg))
 
-    if srcinfo.too_much_lines(maxlines):
+    if srcinfo.too_many_lines(maxlines):
         import textwrap
         msg = f'''
             too much lines, try to increase MAX_SIZES[MAXLINES] in cpython/_parser.py

@@ -126,13 +126,13 @@ class SourceInfo:
     def too_much_text(self, maxtext):
         return maxtext and len(self.text) > maxtext
 
-    def too_much_lines(self, maxlines):
+    def too_many_lines(self, maxlines):
         return maxlines and self.end - self.start > maxlines
 
     def too_much(self, maxtext, maxlines):
         if self.too_much_text(maxtext):
             pass
-        elif self.too_much_lines(maxlines):
+        elif self.too_many_lines(maxlines):
             pass
         else:
             return False
