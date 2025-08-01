@@ -304,7 +304,7 @@ That might sound odd to you. Frankly, it was to me too. You might be thinking:
     This was intentionally designed for the sake of simplicity -- mandating only
     one way of using coroutines. Originally ``yield`` was actually barred as well,
     but was re-accepted to allow for async generators.
-    Ideologically, ``yield from`` and ``await`` are very similar.
+    Despite that, ``yield from`` and ``await`` effectively do the same thing.
 
 =======
 Futures
