@@ -330,12 +330,13 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_LOAD_CONST_UNDER_INLINE] = 0,
     [_LOAD_CONST_UNDER_INLINE_BORROW] = 0,
     [_CHECK_FUNCTION] = HAS_DEOPT_FLAG,
-    [_START_EXECUTOR] = 0,
+    [_START_EXECUTOR] = HAS_DEOPT_FLAG,
     [_MAKE_WARM] = 0,
     [_FATAL_ERROR] = 0,
     [_DEOPT] = 0,
     [_ERROR_POP_N] = HAS_ARG_FLAG,
     [_TIER2_RESUME_CHECK] = HAS_DEOPT_FLAG,
+    [_COLD_EXIT] = HAS_ESCAPES_FLAG,
 };
 
 const ReplicationRange _PyUop_Replication[MAX_UOP_ID+1] = {
@@ -419,6 +420,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_CHECK_STACK_SPACE] = "_CHECK_STACK_SPACE",
     [_CHECK_STACK_SPACE_OPERAND] = "_CHECK_STACK_SPACE_OPERAND",
     [_CHECK_VALIDITY] = "_CHECK_VALIDITY",
+    [_COLD_EXIT] = "_COLD_EXIT",
     [_COMPARE_OP] = "_COMPARE_OP",
     [_COMPARE_OP_FLOAT] = "_COMPARE_OP_FLOAT",
     [_COMPARE_OP_INT] = "_COMPARE_OP_INT",
@@ -1300,6 +1302,8 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _ERROR_POP_N:
             return 0;
         case _TIER2_RESUME_CHECK:
+            return 0;
+        case _COLD_EXIT:
             return 0;
         default:
             return -1;
