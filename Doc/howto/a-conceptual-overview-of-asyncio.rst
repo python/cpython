@@ -131,7 +131,7 @@ of tasks::
 
 It's common to see a task instantiated without explicitly specifying the event loop
 it belongs to.
-Since there's only one event loop, asyncio made the loop argument optional and
+Since there's only one event loop (in each thread), asyncio made the loop argument optional and
 will add it for you if it's left unspecified::
 
     # This creates another Task object and puts it on the event loop's queue.
