@@ -9,10 +9,10 @@ compilation of CPython to WebAssembly (WASM). Python supports Emscripten
 run in modern browsers and JavaScript runtimes like *Node.js*. WASI builds
 use WASM runtimes such as *wasmtime*.
 
-Users and developers are encouraged to use the `Tools/wasm/emscripten` and
-`Tools/wasm/wasi` for building CPython for WebAssembly. These tools automate
-the build process and provide assistance with installation of SDKs, running
-tests, etc.
+Users and developers are encouraged to use `Tools/wasm/emscripten` and
+`Tools/wasm/wasi` for building CPython for WebAssembly, as described below.
+These tools automate the build process and provide assistance with installation
+of SDKs, running tests, etc.
 
 **NOTE**: If you are looking for general information about WebAssembly that is
 not directly related to CPython, please see https://github.com/psf/webassembly.
@@ -48,8 +48,8 @@ You can run the browser smoke test with:
 
 ### The Web Example
 
-When building for Emscripten, the web example will be built automatically. It
-is in the ``web_example`` directory. To run the web example, ``cd`` into the
+When building for Emscripten, a small web example will be built automatically
+in the ``web_example`` directory. To run the web example, ``cd`` into the
 ``web_example`` directory, then run ``python server.py``. This will start a web
 server; you can then visit ``http://localhost:8000/`` in a browser to see a
 simple REPL example.
