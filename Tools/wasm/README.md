@@ -9,68 +9,19 @@ compilation of CPython to WebAssembly (WASM). Python supports Emscripten
 run in modern browsers and JavaScript runtimes like *Node.js*. WASI builds
 use WASM runtimes such as *wasmtime*.
 
-Users and developers are encouraged to use the script
-`Tools/wasm/wasm_build.py`. The tool automates the build process and provides
-assistance with installation of SDKs, running tests, etc.
+Users and developers are encouraged to use the `Tools/wasm/emscripten` and
+`Tools/wasm/wasi` for building CPython for WebAssembly. These tools automate
+the build process and provide assistance with installation of SDKs, running
+tests, etc.
 
-**NOTE**: If you are looking for information that is not directly related to
-building CPython for WebAssembly (or the resulting build), please see
-https://github.com/psf/webassembly for more information.
+**NOTE**: If you are looking for general information about WebAssembly that is
+not directly related to CPython, please see https://github.com/psf/webassembly.
 
-## wasm32-emscripten
+## Emscripten (wasm32-emscripten)
 
 ### Build
 
-To cross compile to the ``wasm32-emscripten`` platform you need
-[the Emscripten compiler toolchain](https://emscripten.org/),
-a Python interpreter, and an installation of Node version 18 or newer.
-Emscripten version 4.0.2 is recommended; newer versions may also work, but all
-official testing is performed with that version. All commands below are relative
-to a checkout of the Python repository.
-
-#### Install [the Emscripten compiler toolchain](https://emscripten.org/docs/getting_started/downloads.html)
-
-You can install the Emscripten toolchain as follows:
-```shell
-git clone https://github.com/emscripten-core/emsdk.git --depth 1
-./emsdk/emsdk install latest
-./emsdk/emsdk activate latest
-```
-To add the Emscripten compiler to your path:
-```shell
-source ./emsdk/emsdk_env.sh
-```
-This adds `emcc` and `emconfigure` to your path.
-
-##### Optionally: enable ccache for EMSDK
-
-The ``EM_COMPILER_WRAPPER`` must be set after the EMSDK environment is
-sourced. Otherwise the source script removes the environment variable.
-
-```shell
-export EM_COMPILER_WRAPPER=ccache
-```
-
-#### Compile and build Python interpreter
-
-You can use `python Tools/wasm/emscripten` to compile and build targeting
-Emscripten. You can do everything at once with:
-```shell
-python Tools/wasm/emscripten build
-```
-or you can break it out into four separate steps:
-```shell
-python Tools/wasm/emscripten configure-build-python
-python Tools/wasm/emscripten make-build-python
-python Tools/wasm/emscripten make-libffi
-python Tools/wasm/emscripten configure-host
-python Tools/wasm/emscripten make-host
-```
-Extra arguments to the configure steps are passed along to configure. For
-instance, to do a debug build, you can use:
-```shell
-python Tools/wasm/emscripten build --with-py-debug
-```
+See [the devguide instructions for building for Emscripten](https://devguide.python.org/getting-started/setup-building/#emscripten).
 
 ### Running from node
 
