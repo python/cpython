@@ -115,6 +115,42 @@ Notably, the coroutine can be paused and resumed at various points within the
 function's body.
 That pausing and resuming ability is what allows for asynchronous behavior!
 
+Coroutines and coroutine functions are built on top of generators and
+generator functions.
+Recall, a generator function is a function that ``yield``\s, like this one::
+
+    def get_random_number():
+        # This would be a bad random number generator!
+        print("Hi")
+        yield 1
+        print("Hello")
+        yield 7
+        print("Howdy")
+        yield 4
+        ...
+
+Like, a coroutine function, invoking a generator function does not run it.
+Instead, it provides a generator object::
+
+    >>> get_random_number()
+    <generator object get_random_number at 0x1048671c0>
+    >>>
+
+You can "invoke" or proceed to the next ``yield`` of a generator by using the
+built-in function :func:`next`.
+In other words, the generator runs, then pauses.
+For example::
+
+    >>> generator = get_random_number()
+    >>> next(generator)
+    Hi
+    1
+    >>> next(generator)
+    Hello
+    7
+
+
+
 =====
 Tasks
 =====
