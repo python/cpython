@@ -294,7 +294,7 @@ def _is_local_static_mutex(decl):
 def _has_other_supported_type(decl):
     if hasattr(decl, 'file') and decl.file.filename.endswith('.c.h'):
         assert 'clinic' in decl.file.filename, (decl,)
-        if decl.name == '_kwtuple':
+        if decl.name == '_kwtuple' or decl.name == 'argsbuf':
             return True
     if _is_local_static_mutex(decl):
         # GH-127081: Local static mutexes are used to
