@@ -1423,37 +1423,59 @@ are always available.  They are listed here in alphabetical order.
    *errors* is an optional string that specifies how encoding and decoding
    errors are to be handled—this cannot be used in binary mode.
    A variety of standard error handlers are available
-   (listed under :ref:`error-handlers`), though any
-   error handling name that has been registered with
+   (listed under :ref:`error-handlers`, and reproduced below for convenience),
+   though any error handling name that has been registered with
    :func:`codecs.register_error` is also valid.  The standard names
    include:
 
-   * ``'strict'`` to raise a :exc:`ValueError` exception if there is
-     an encoding error.  The default value of ``None`` has the same
-     effect.
+   .. list-table::
+      :header-rows: 1
 
-   * ``'ignore'`` ignores errors.  Note that ignoring encoding errors
-     can lead to data loss.
+      * - Error handler
+        - Description
+      * - ``'strict'``
+        - Raise a :exc:`UnicodeError` (or a subclass) exception if there is
+          an error.  The default value of ``None`` has the same effect.
+      * - ``'ignore'``
+        - Ignore the malformed data and continue without further notice.
+          Note that ignoring encoding errors can lead to data loss.
+      * - ``'replace'``
+        - Replace malformed data with a replacement marker.
+          On encoding, use ``?`` (ASCII character).
+          On decoding, use ``�`` (U+FFFD, the official REPLACEMENT CHARACTER)
+      * - ``'backslashreplace'``
+        - Replace malformed data with backslashed escape sequences.
+          On encoding, use hexadecimal form of Unicode code point with formats
+          :samp:`\\x{hh}` :samp:`\\u{xxxx}` :samp:`\\U{xxxxxxxx}`.
+          On decoding, use hexadecimal form of byte value with format :samp:`\\x{hh}`.
+      * - ``'surrogateescape'``
+        - Will represent any incorrect bytes as low
+          surrogate code units ranging from ``U+DC80`` to ``U+DCFF``.
+          These surrogate code units will then be turned back into
+          the same bytes when the ``'surrogateescape'`` error handler is used
+          when writing data.  This is useful for processing files in an
+          unknown encoding.
+      * - ``'surrogatepass'``
+        - Only available for Unicode codecs.
+          Allow encoding and decoding surrogate code point
+          (``U+D800`` - ``U+DFFF``) as normal code point.  Otherwise these codecs
+          treat the presence of surrogate code point in :class:`str` as an error.
 
-   * ``'replace'`` causes a replacement marker (such as ``'?'``) to be inserted
-     where there is malformed data.
+   The following error handlers are only applicable to encoding (within
+   :term:`text encodings <text encoding>`):
 
-   * ``'surrogateescape'`` will represent any incorrect bytes as low
-     surrogate code units ranging from U+DC80 to U+DCFF.
-     These surrogate code units will then be turned back into
-     the same bytes when the ``surrogateescape`` error handler is used
-     when writing data.  This is useful for processing files in an
-     unknown encoding.
+   .. list-table::
+      :header-rows: 1
 
-   * ``'xmlcharrefreplace'`` is only supported when writing to a file.
-     Characters not supported by the encoding are replaced with the
-     appropriate XML character reference :samp:`&#{nnn};`.
-
-   * ``'backslashreplace'`` replaces malformed data by Python's backslashed
-     escape sequences.
-
-   * ``'namereplace'`` (also only supported when writing)
-     replaces unsupported characters with ``\N{...}`` escape sequences.
+      * - Error handler
+        - Description
+      * - ``'xmlcharrefreplace'``
+        - Only supported when writing to a file.
+          Characters not supported by the encoding are replaced with the
+          appropriate XML character reference :samp:`&#{nnn};`.
+      * - ``'namereplace'``
+        - Only supported when writing.  Replaces unsupported characters with
+          ``\N{...}`` escape sequences.
 
    .. index::
       single: universal newlines; open() built-in function

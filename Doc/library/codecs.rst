@@ -350,6 +350,8 @@ error handling schemes by accepting the *errors* string argument:
 The following error handlers can be used with all Python
 :ref:`standard-encodings` codecs:
 
+.. The following tables are reproduced on the library/functions page under open.
+
 .. tabularcolumns:: |l|L|
 
 +-------------------------+-----------------------------------------------+
