@@ -175,7 +175,6 @@ to specify the event loop.
 await
 =====
 
-
 :keyword:`await` is a Python keyword that's commonly used in one of two
 different ways::
 
@@ -275,7 +274,7 @@ any yields it receives up the call-chain.
 In this case, that's back to ``... = coroutine.send(None)`` on line 16.
 
 The coroutine is resumed via the ``coroutine.send(42)`` call on line 21.
-The coroutine picks back up from where it ``yield``\ ed (that is, paused) on line 3
+The coroutine picks back up from where it ``yield``\ ed (or paused) on line 3
 and executes the remaining statements in its body.
 When a coroutine finishes it raises a :exc:`StopIteration` exception with the
 return value attached to the exception.
