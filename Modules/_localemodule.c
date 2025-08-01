@@ -88,12 +88,17 @@ copy_grouping(const char* s)
 }
 
 #if defined(MS_WINDOWS)
+
+// The number of elements in the szCodePage field
+// of the __crt_locale_strings structure.
+#define MAX_ENCODING_SIZE 16
+
 static int
 check_locale_name(const char *locale, const char *end)
 {
     size_t len = end ? (size_t)(end - locale) : strlen(locale);
     const char *dot = memchr(locale, '.', len);
-    if (dot && locale + len - dot > 16) {
+    if (dot && locale + len - dot > MAX_ENCODING_SIZE) {
         return -1;
     }
     return 0;

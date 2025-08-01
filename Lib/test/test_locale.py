@@ -5,6 +5,7 @@ from test.support.import_helper import ensure_lazy_imports, import_fresh_module
 from unittest import mock
 import unittest
 import locale
+import os
 import sys
 import codecs
 
@@ -510,16 +511,26 @@ class TestRealLocales(unittest.TestCase):
             self.skipTest(f"setlocale(LC_CTYPE, {loc!r}) failed: {exc!r}")
         self.assertEqual(loc, locale.getlocale(locale.LC_CTYPE))
 
+    @unittest.skipUnless(os.name == 'nt', 'requires Windows')
     def test_setlocale_long_encoding(self):
+        with self.assertRaises(locale.Error):
+            locale.setlocale(locale.LC_CTYPE, 'English.%016d' % 1252)
+        locale.setlocale(locale.LC_CTYPE, 'English.%015d' % 1252)
+        loc = locale.setlocale(locale.LC_ALL)
+        self.assertIn('.1252', loc)
+        loc2 = loc.replace('.1252', '.%016d' % 1252, 1)
+        with self.assertRaises(locale.Error):
+            locale.setlocale(locale.LC_ALL, loc2)
+        loc2 = loc.replace('.1252', '.%015d' % 1252, 1)
+        locale.setlocale(locale.LC_ALL, loc2)
+
         # gh-137273: Debug assertion failure on Windows for long encoding.
-        oldlocale = locale.setlocale(locale.LC_ALL)
-        self.addCleanup(locale.setlocale, locale.LC_ALL, oldlocale)
         with self.assertRaises(locale.Error):
             locale.setlocale(locale.LC_CTYPE, 'en_US.' + 'x'*16)
         locale.setlocale(locale.LC_CTYPE, 'en_US.UTF-8')
         loc = locale.setlocale(locale.LC_ALL)
         self.assertIn('.UTF-8', loc)
-        loc2 = loc.replace('UTF-8', 'x'*16, 1)
+        loc2 = loc.replace('.UTF-8', '.' + 'x'*16, 1)
         with self.assertRaises(locale.Error):
             locale.setlocale(locale.LC_ALL, loc2)
 
