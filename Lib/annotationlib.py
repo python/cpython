@@ -6,6 +6,7 @@ import enum
 import keyword
 import sys
 import types
+from _typing import _make_union
 
 __all__ = [
     "Format",
@@ -292,10 +293,10 @@ class ForwardRef:
         ))
 
     def __or__(self, other):
-        return types.UnionType[self, other]
+        return _make_union(self, other)
 
     def __ror__(self, other):
-        return types.UnionType[other, self]
+        return _make_union(other, self)
 
     def __repr__(self):
         extra = []
