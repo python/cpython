@@ -34,11 +34,17 @@ The :mod:`locale` module defines the following exception and functions:
 
    If *locale* is given and not ``None``, :func:`setlocale` modifies the locale
    setting for the *category*. The available categories are listed in the data
-   description below. *locale* may be a string, or an iterable of two strings
-   (language code and encoding). If it's an iterable, it's converted to a locale
+   description below. *locale* may be a string, or a pair,
+   language code and encoding. If it is a pair, it is converted to a locale
    name using the locale aliasing engine. An empty string specifies the user's
    default settings. If the modification of the locale fails, the exception
    :exc:`Error` is raised. If successful, the new locale setting is returned.
+
+   The format of the *locale* and the language code strings is platform
+   depended, but the forms ``language[_territory][.encoding][@modifier]``
+   and ``language[_territory]`` respectively are typically accepted on all
+   platforms.
+   The language code and encoding can be ``None``.
 
    If *locale* is omitted or ``None``, the current setting for *category* is
    returned.
@@ -345,22 +351,26 @@ The :mod:`locale` module defines the following exception and functions:
    ``'LANG'``.  The GNU gettext search path contains ``'LC_ALL'``,
    ``'LC_CTYPE'``, ``'LANG'`` and ``'LANGUAGE'``, in that order.
 
-   Except for the code ``'C'``, the language code corresponds to :rfc:`1766`.
-   *language code* and *encoding* may be ``None`` if their values cannot be
+   The format of the language code is platform depended, but on Posix
+   platforms it usually looks like ``language[_territory]``.
+   The language code and encoding may be ``None`` if their values cannot be
    determined.
+   The "C" locale is represented as ``(None, None)``.
 
    .. deprecated-removed:: 3.11 3.15
 
 
 .. function:: getlocale(category=LC_CTYPE)
 
-   Returns the current setting for the given locale category as sequence containing
-   *language code*, *encoding*. *category* may be one of the :const:`!LC_\*` values
+   Returns the current setting for the given locale category as a tuple containing
+   language code and encoding. *category* may be one of the :const:`!LC_\*` values
    except :const:`LC_ALL`.  It defaults to :const:`LC_CTYPE`.
 
-   Except for the code ``'C'``, the language code corresponds to :rfc:`1766`.
-   *language code* and *encoding* may be ``None`` if their values cannot be
+   The format of the language code is platform depended, but on Posix
+   platforms it usually looks like ``language[_territory]``.
+   The language code and encoding may be ``None`` if their values cannot be
    determined.
+   The "C" locale is represented as ``(None, None)``.
 
 
 .. function:: getpreferredencoding(do_setlocale=True)
