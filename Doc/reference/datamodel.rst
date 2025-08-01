@@ -3709,6 +3709,8 @@ object itself in order to be consistently invoked by the interpreter).
 .. index::
    single: coroutine
 
+.. _coroutine-protocol:
+
 Coroutines
 ==========
 
