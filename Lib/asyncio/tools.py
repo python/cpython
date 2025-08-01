@@ -1,11 +1,11 @@
 """Tools to analyze tasks running in asyncio programs."""
 
 from collections import defaultdict, namedtuple
+import csv
 from itertools import count
 from enum import Enum
 import sys
 from _remote_debugging import RemoteUnwinder, FrameInfo
-import csv
 
 
 class NodeType(Enum):
@@ -248,37 +248,37 @@ _header = ('tid', 'task id', 'task name', 'coroutine stack', 'awaiter chain', 'a
 
 def display_awaited_by_tasks_table(
         pid: int,
-        format_: TaskTableOutputFormat | str = TaskTableOutputFormat.table
+        format: TaskTableOutputFormat | str = TaskTableOutputFormat.table
     ) -> None:
     """Build and print a table of all pending tasks under `pid`."""
 
     tasks = _get_awaited_by_tasks(pid)
     table = build_task_table(tasks)
-    format_ = TaskTableOutputFormat(format_)
-    if format_ == TaskTableOutputFormat.table:
+    format = TaskTableOutputFormat(format)
+    if format == TaskTableOutputFormat.table:
         _display_awaited_by_tasks_table(table)
     else:
-        _display_awaited_by_tasks_csv(table, format_)
+        _display_awaited_by_tasks_csv(table, format)
 
 
 def _display_awaited_by_tasks_table(table) -> None:
     # Print the table in a simple tabular format
     print(
-        f"{_header[0]:<10} {_header[1]:<20} {_header[2]:<20} {_header[3]:<50} {_header[4]:<50} {_header[5]:<15} {_header[6]:<15}"
+        f"{'tid':<10} {'task id':<20} {'task name':<20} {'coroutine stack':<50} {'awaiter chain':<50} {'awaiter name':<15} {'awaiter id':<15}"
     )
     print("-" * 180)
     for row in table:
         print(f"{row[0]:<10} {row[1]:<20} {row[2]:<20} {row[3]:<50} {row[4]:<50} {row[5]:<15} {row[6]:<15}")
 
 
-def _display_awaited_by_tasks_csv(table, format_: TaskTableOutputFormat) -> None:
-    match format_:
+def _display_awaited_by_tasks_csv(table, format: TaskTableOutputFormat) -> None:
+    match format:
         case TaskTableOutputFormat.csv:
             delimiter = ','
         case TaskTableOutputFormat.bsv:
             delimiter = '\N{BANANA}'
         case _:
-            raise ValueError(f"Unknown output format: {format_}")
+            raise ValueError(f"Unknown output format: {format}")
     csv_writer = csv.writer(sys.stdout, delimiter=delimiter)
     csv_writer.writerow(_header)
     csv_writer.writerows(table)
