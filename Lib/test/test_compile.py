@@ -1636,6 +1636,54 @@ class TestSpecifics(unittest.TestCase):
                     pass
             [[]]
 
+    def test_globals_dict_subclass(self):
+        # gh-132386
+        class WeirdDict(dict):
+            pass
+
+        ns = {}
+        exec('def foo(): return a', WeirdDict(), ns)
+
+        self.assertRaises(NameError, ns['foo'])
+
+    def test_compile_warnings(self):
+        # See gh-131927
+        # Compile warnings originating from the same file and
+        # line are now only emitted once.
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("default")
+            compile('1 is 1', '<stdin>', 'eval')
+            compile('1 is 1', '<stdin>', 'eval')
+
+        self.assertEqual(len(caught), 1)
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            compile('1 is 1', '<stdin>', 'eval')
+            compile('1 is 1', '<stdin>', 'eval')
+
+        self.assertEqual(len(caught), 2)
+
+    def test_compile_warning_in_finally(self):
+        # Ensure that warnings inside finally blocks are
+        # only emitted once despite the block being
+        # compiled twice (for normal execution and for
+        # exception handling).
+        source = textwrap.dedent("""
+            try:
+                pass
+            finally:
+                1 is 1
+        """)
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("default")
+            compile(source, '<stdin>', 'exec')
+
+        self.assertEqual(len(caught), 1)
+        self.assertEqual(caught[0].category, SyntaxWarning)
+        self.assertIn("\"is\" with 'int' literal", str(caught[0].message))
+
 class TestBooleanExpression(unittest.TestCase):
     class Value:
         def __init__(self):

@@ -146,6 +146,8 @@ def collect_sys(info_add):
         text = 'No (sys.getobjects() missing)'
     info_add('build.Py_TRACE_REFS', text)
 
+    info_add('sys.is_remote_debug_enabled', sys.is_remote_debug_enabled())
+
 
 def collect_platform(info_add):
     import platform
@@ -528,6 +530,7 @@ def collect_sysconfig(info_add):
         'Py_DEBUG',
         'Py_ENABLE_SHARED',
         'Py_GIL_DISABLED',
+        'Py_REMOTE_DEBUG',
         'SHELL',
         'SOABI',
         'TEST_MODULES',
@@ -655,6 +658,16 @@ def collect_zlib(info_add):
     copy_attributes(info_add, zlib, 'zlib.%s', attributes)
 
 
+def collect_zstd(info_add):
+    try:
+        import _zstd
+    except ImportError:
+        return
+
+    attributes = ('zstd_version',)
+    copy_attributes(info_add, _zstd, 'zstd.%s', attributes)
+
+
 def collect_expat(info_add):
     try:
         from xml.parsers import expat
@@ -749,6 +762,7 @@ def collect_support(info_add):
         'is_emscripten',
         'is_jython',
         'is_wasi',
+        'is_wasm32',
     )
     copy_attributes(info_add, support, 'support.%s', attributes)
 
@@ -907,10 +921,17 @@ def collect_windows(info_add):
 
     try:
         import _winapi
-        dll_path = _winapi.GetModuleFileName(sys.dllhandle)
-        info_add('windows.dll_path', dll_path)
-    except (ImportError, AttributeError):
+    except ImportError:
         pass
+    else:
+        try:
+            dll_path = _winapi.GetModuleFileName(sys.dllhandle)
+            info_add('windows.dll_path', dll_path)
+        except AttributeError:
+            pass
+
+        call_func(info_add, 'windows.ansi_code_page', _winapi, 'GetACP')
+        call_func(info_add, 'windows.oem_code_page', _winapi, 'GetOEMCP')
 
     # windows.version_caption: "wmic os get Caption,Version /value" command
     import subprocess
@@ -1048,6 +1069,7 @@ def collect_info(info):
         collect_tkinter,
         collect_windows,
         collect_zlib,
+        collect_zstd,
         collect_libregrtest_utils,
 
         # Collecting from tests should be last as they have side effects.

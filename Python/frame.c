@@ -69,6 +69,7 @@ take_ownership(PyFrameObject *f, _PyInterpreterFrame *frame)
     _PyInterpreterFrame *prev = _PyFrame_GetFirstComplete(frame->previous);
     if (prev) {
         assert(prev->owner < FRAME_OWNED_BY_INTERPRETER);
+        PyObject *exc = PyErr_GetRaisedException();
         /* Link PyFrameObjects.f_back and remove link through _PyInterpreterFrame.previous */
         PyFrameObject *back = _PyFrame_GetFrameObject(prev);
         if (back == NULL) {
@@ -80,6 +81,7 @@ take_ownership(PyFrameObject *f, _PyInterpreterFrame *frame)
         else {
             f->f_back = (PyFrameObject *)Py_NewRef(back);
         }
+        PyErr_SetRaisedException(exc);
     }
     if (!_PyObject_GC_IS_TRACKED((PyObject *)f)) {
         _PyObject_GC_TRACK((PyObject *)f);

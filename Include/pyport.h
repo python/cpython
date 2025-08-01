@@ -36,11 +36,22 @@
 // Macro to use the more powerful/dangerous C-style cast even in C++.
 #define _Py_CAST(type, expr) ((type)(expr))
 
+// Cast a function to another function type T.
+//
+// The macro first casts the function to the "void func(void)" type
+// to prevent compiler warnings.
+//
+// Note that using this cast only prevents the compiler from emitting
+// warnings, but does not prevent an undefined behavior at runtime if
+// the original function signature is not respected.
+#define _Py_FUNC_CAST(T, func) _Py_CAST(T, _Py_CAST(void(*)(void), (func)))
+
 // Static inline functions should use _Py_NULL rather than using directly NULL
 // to prevent C++ compiler warnings. On C23 and newer and on C++11 and newer,
 // _Py_NULL is defined as nullptr.
-#if (defined (__STDC_VERSION__) && __STDC_VERSION__ > 201710L) \
-        || (defined(__cplusplus) && __cplusplus >= 201103)
+#if !defined(_MSC_VER) && \
+    ((defined (__STDC_VERSION__) && __STDC_VERSION__ >= 202311L) \
+        || (defined(__cplusplus) && __cplusplus >= 201103))
 #  define _Py_NULL nullptr
 #else
 #  define _Py_NULL NULL
@@ -656,22 +667,18 @@ extern "C" {
 #endif
 
 
-// _Py_NO_SANITIZE_UNDEFINED(): Disable Undefined Behavior sanitizer (UBsan)
-// on a function.
+// _Py_NONSTRING: The nonstring variable attribute specifies that an object or
+// member declaration with type array of char, signed char, or unsigned char,
+// or pointer to such a type is intended to store character arrays that do not
+// necessarily contain a terminating NUL.
 //
-// Clang and GCC 9.0+ use __attribute__((no_sanitize("undefined"))).
-// GCC 4.9+ uses __attribute__((no_sanitize_undefined)).
-#if defined(__has_feature)
-#  if __has_feature(undefined_behavior_sanitizer)
-#    define _Py_NO_SANITIZE_UNDEFINED __attribute__((no_sanitize("undefined")))
-#  endif
-#endif
-#if !defined(_Py_NO_SANITIZE_UNDEFINED) && defined(__GNUC__) \
-    && ((__GNUC__ >= 5) || (__GNUC__ == 4) && (__GNUC_MINOR__ >= 9))
-#  define _Py_NO_SANITIZE_UNDEFINED __attribute__((no_sanitize_undefined))
-#endif
-#ifndef _Py_NO_SANITIZE_UNDEFINED
-#  define _Py_NO_SANITIZE_UNDEFINED
+// Usage:
+//
+//   char name [8] _Py_NONSTRING;
+#if _Py__has_attribute(nonstring)
+#  define _Py_NONSTRING __attribute__((nonstring))
+#else
+#  define _Py_NONSTRING
 #endif
 
 

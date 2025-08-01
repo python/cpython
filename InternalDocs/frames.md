@@ -11,7 +11,7 @@ of three conceptual sections:
   previous frame, etc.
 
 The definition of the `_PyInterpreterFrame` struct is in
-[Include/internal/pycore_frame.h](../Include/internal/pycore_frame.h).
+[Include/internal/pycore_interpframe_structs.h](../Include/internal/pycore_interpframe_structs.h).
 
 # Allocation
 
@@ -21,8 +21,8 @@ of reference, most frames are allocated contiguously in a per-thread stack
 (see `_PyThreadState_PushFrame` in [Python/pystate.c](../Python/pystate.c)).
 
 Frames of generators and coroutines are embedded in the generator and coroutine
-objects, so are not allocated in the per-thread stack. See `PyGenObject` in
-[Include/internal/pycore_genobject.h](../Include/internal/pycore_genobject.h).
+objects, so are not allocated in the per-thread stack. See `_PyGenObject` in
+[Include/internal/pycore_interpframe_structs.h](../Include/internal/pycore_interpframe_structs.h).
 
 ## Layout
 
