@@ -1599,12 +1599,13 @@ PyDoc_STRVAR(unicode_translate__doc__,
 "Replace each character in the string using the given translation table.\n"
 "\n"
 "  table\n"
-"    Translation table, which must be a mapping of Unicode ordinals to\n"
-"    Unicode ordinals, strings, or None.\n"
+"    Translation table, which must be an object that implements indexing via __getitem__(),\n"
+"    typically a mapping or sequence.\n"
 "\n"
 "The table must implement lookup/indexing via __getitem__, for instance a\n"
-"dictionary or list.  If this operation raises LookupError, the character is\n"
-"left untouched.  Characters mapped to None are deleted.");
+"dictionary or list. When indexed by a Unicode ordinal, it may return another\n"
+"Unicode ordinal or a string to replace the character, return None to delete\n"
+"it, or raise LookupError to leave it unchanged.");
 
 #define UNICODE_TRANSLATE_METHODDEF    \
     {"translate", (PyCFunction)unicode_translate, METH_O, unicode_translate__doc__},
@@ -1908,4 +1909,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=238917fe66120bde input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a3a619e3f415afb8 input=a9049054013a1b77]*/
