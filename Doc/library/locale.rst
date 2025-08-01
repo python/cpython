@@ -41,7 +41,7 @@ The :mod:`locale` module defines the following exception and functions:
    :exc:`Error` is raised. If successful, the new locale setting is returned.
 
    The format of the *locale* and the language code strings is platform
-   depended, but the forms ``language[_territory][.encoding][@modifier]``
+   dependent, but the forms ``language[_territory][.encoding][@modifier]``
    and ``language[_territory]`` respectively are typically accepted on all
    platforms.
    The language code and encoding can be ``None``.
@@ -363,10 +363,10 @@ The :mod:`locale` module defines the following exception and functions:
 .. function:: getlocale(category=LC_CTYPE)
 
    Returns the current setting for the given locale category as a tuple containing
-   language code and encoding. *category* may be one of the :const:`!LC_\*` values
-   except :const:`LC_ALL`.  It defaults to :const:`LC_CTYPE`.
+   the language code and encoding. *category* may be one of the :const:`!LC_\*`
+   values except :const:`LC_ALL`.  It defaults to :const:`LC_CTYPE`.
 
-   The format of the language code is platform depended, but on Posix
+   The format of the language code is platform dependent, but on Posix
    platforms it usually looks like ``language[_territory]``.
    The language code and encoding may be ``None`` if their values cannot be
    determined.
