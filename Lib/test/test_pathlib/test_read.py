@@ -4,6 +4,7 @@ Tests for pathlib.types._ReadablePath
 
 import collections.abc
 import io
+import sys
 import unittest
 
 from .support import is_pypi
@@ -31,9 +32,20 @@ class ReadTestBase:
 
     def test_open_r(self):
         p = self.root / 'fileA'
-        with magic_open(p, 'r') as f:
+        with magic_open(p, 'r', encoding='utf-8') as f:
             self.assertIsInstance(f, io.TextIOBase)
             self.assertEqual(f.read(), 'this is file A\n')
+
+    @unittest.skipIf(
+        not getattr(sys.flags, 'warn_default_encoding', 0),
+        "Requires warn_default_encoding",
+    )
+    def test_open_r_encoding_warning(self):
+        p = self.root / 'fileA'
+        with self.assertWarns(EncodingWarning) as wc:
+            with magic_open(p, 'r'):
+                pass
+        self.assertEqual(wc.filename, __file__)
 
     def test_open_rb(self):
         p = self.root / 'fileA'
@@ -49,21 +61,31 @@ class ReadTestBase:
 
     def test_read_text(self):
         p = self.root / 'fileA'
-        self.assertEqual(p.read_text(), 'this is file A\n')
+        self.assertEqual(p.read_text(encoding='utf-8'), 'this is file A\n')
         q = self.root / 'abc'
         self.ground.create_file(q, b'\xe4bcdefg')
         self.assertEqual(q.read_text(encoding='latin-1'), 'äbcdefg')
         self.assertEqual(q.read_text(encoding='utf-8', errors='ignore'), 'bcdefg')
 
+    @unittest.skipIf(
+        not getattr(sys.flags, 'warn_default_encoding', 0),
+        "Requires warn_default_encoding",
+    )
+    def test_read_text_encoding_warning(self):
+        p = self.root / 'fileA'
+        with self.assertWarns(EncodingWarning) as wc:
+            p.read_text()
+        self.assertEqual(wc.filename, __file__)
+
     def test_read_text_with_newlines(self):
         p = self.root / 'abc'
         self.ground.create_file(p, b'abcde\r\nfghlk\n\rmnopq')
         # Check that `\n` character change nothing
-        self.assertEqual(p.read_text(newline='\n'), 'abcde\r\nfghlk\n\rmnopq')
+        self.assertEqual(p.read_text(encoding='utf-8', newline='\n'), 'abcde\r\nfghlk\n\rmnopq')
         # Check that `\r` character replaces `\n`
-        self.assertEqual(p.read_text(newline='\r'), 'abcde\r\nfghlk\n\rmnopq')
+        self.assertEqual(p.read_text(encoding='utf-8', newline='\r'), 'abcde\r\nfghlk\n\rmnopq')
         # Check that `\r\n` character replaces `\n`
-        self.assertEqual(p.read_text(newline='\r\n'), 'abcde\r\nfghlk\n\rmnopq')
+        self.assertEqual(p.read_text(encoding='utf-8', newline='\r\n'), 'abcde\r\nfghlk\n\rmnopq')
 
     def test_iterdir(self):
         expected = ['dirA', 'dirB', 'dirC', 'fileA']

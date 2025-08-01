@@ -6,7 +6,8 @@ import unittest.mock
 from functools import partial
 
 from test import support
-from test.support import os_helper
+from test.support import cpython_only, os_helper
+from test.support.import_helper import ensure_lazy_imports
 
 
 # TODO:
@@ -115,6 +116,23 @@ GNU_MO_DATA_CORRUPT = base64.b64encode(bytes([
     0x62, 0x61, 0x72, 0x00,  # Message data
 ]))
 
+
+GNU_MO_DATA_BIG_ENDIAN = base64.b64encode(bytes([
+    0x95, 0x04, 0x12, 0xDE,  # Magic
+    0x00, 0x00, 0x00, 0x00,  # Version
+    0x00, 0x00, 0x00, 0x01,  # Message count
+    0x00, 0x00, 0x00, 0x1C,  # Message offset
+    0x00, 0x00, 0x00, 0x24,  # Translation offset
+    0x00, 0x00, 0x00, 0x00,  # Hash table size
+    0x00, 0x00, 0x00, 0x2C,  # Hash table offset
+    0x00, 0x00, 0x00, 0x03,  # 1st message length
+    0x00, 0x00, 0x00, 0x2C,  # 1st message offset
+    0x00, 0x00, 0x00, 0x03,  # 1st trans length
+    0x00, 0x00, 0x00, 0x30,  # 1st trans offset
+    0x66, 0x6F, 0x6F, 0x00,  # Message data
+    0x62, 0x61, 0x72, 0x00,  # Message data
+]))
+
 UMO_DATA = b'''\
 3hIElQAAAAADAAAAHAAAADQAAAAAAAAAAAAAAAAAAABMAAAABAAAAE0AAAAQAAAAUgAAAA8BAABj
 AAAABAAAAHMBAAAWAAAAeAEAAABhYsOeAG15Y29udGV4dMOeBGFiw54AUHJvamVjdC1JZC1WZXJz
@@ -142,6 +160,7 @@ MOFILE_BAD_MAGIC_NUMBER = os.path.join(LOCALEDIR, 'gettext_bad_magic_number.mo')
 MOFILE_BAD_MAJOR_VERSION = os.path.join(LOCALEDIR, 'gettext_bad_major_version.mo')
 MOFILE_BAD_MINOR_VERSION = os.path.join(LOCALEDIR, 'gettext_bad_minor_version.mo')
 MOFILE_CORRUPT = os.path.join(LOCALEDIR, 'gettext_corrupt.mo')
+MOFILE_BIG_ENDIAN = os.path.join(LOCALEDIR, 'gettext_big_endian.mo')
 UMOFILE = os.path.join(LOCALEDIR, 'ugettext.mo')
 MMOFILE = os.path.join(LOCALEDIR, 'metadata.mo')
 
@@ -168,6 +187,8 @@ class GettextBaseTest(unittest.TestCase):
             fp.write(base64.decodebytes(GNU_MO_DATA_BAD_MINOR_VERSION))
         with open(MOFILE_CORRUPT, 'wb') as fp:
             fp.write(base64.decodebytes(GNU_MO_DATA_CORRUPT))
+        with open(MOFILE_BIG_ENDIAN, 'wb') as fp:
+            fp.write(base64.decodebytes(GNU_MO_DATA_BIG_ENDIAN))
         with open(UMOFILE, 'wb') as fp:
             fp.write(base64.decodebytes(UMO_DATA))
         with open(MMOFILE, 'wb') as fp:
@@ -292,6 +313,12 @@ class GettextTestCase2(GettextBaseTest):
             self.assertEqual(exception.errno, 0)
             self.assertEqual(exception.strerror, "File is corrupt")
             self.assertEqual(exception.filename, MOFILE_CORRUPT)
+
+    def test_big_endian_file(self):
+        with open(MOFILE_BIG_ENDIAN, 'rb') as fp:
+            t = gettext.GNUTranslations(fp)
+
+        self.assertEqual(t.gettext('foo'), 'bar')
 
     def test_some_translations(self):
         eq = self.assertEqual
@@ -904,6 +931,17 @@ class MiscTestCase(unittest.TestCase):
     def test__all__(self):
         support.check__all__(self, gettext,
                              not_exported={'c2py', 'ENOENT'})
+
+    @cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("gettext", {"re", "warnings", "locale"})
+
+
+class TranslationFallbackTestCase(unittest.TestCase):
+    def test_translation_fallback(self):
+        with os_helper.temp_cwd() as tempdir:
+            t = gettext.translation('gettext', localedir=tempdir, fallback=True)
+            self.assertIsInstance(t, gettext.NullTranslations)
 
 
 if __name__ == '__main__':

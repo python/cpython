@@ -73,6 +73,7 @@ struct trampoline_api_st {
     int (*free_state)(void* state);
     void *state;
     Py_ssize_t code_padding;
+    Py_ssize_t code_alignment;
 };
 #endif
 
@@ -129,8 +130,6 @@ struct _atexit_runtime_state {
 //###################
 // interpreter atexit
 
-typedef void (*atexit_datacallbackfunc)(void *);
-
 typedef struct atexit_callback {
     atexit_datacallbackfunc func;
     void *data;
@@ -159,10 +158,11 @@ struct atexit_state {
 typedef struct {
     // Tagged pointer to next object in the list.
     // 0 means the object is not tracked
-    uintptr_t _gc_next;
+    _Py_ALIGNED_DEF(_PyObject_MIN_ALIGNMENT, uintptr_t) _gc_next;
 
     // Tagged pointer to previous object in the list.
     // Lowest two bits are used for flags documented later.
+    // Those bits are made available by the struct's minimum alignment.
     uintptr_t _gc_prev;
 } PyGC_Head;
 
@@ -245,6 +245,16 @@ struct _gc_runtime_state {
 
     /* True if gc.freeze() has been used. */
     int freeze_active;
+
+    /* Memory usage of the process (RSS + swap) after last GC. */
+    Py_ssize_t last_mem;
+
+    /* This accumulates the new object count whenever collection is deferred
+       due to the RSS increase condition not being meet.  Reset on collection. */
+    Py_ssize_t deferred_count;
+
+    /* Mutex held for gc_should_collect_mem_usage(). */
+    PyMutex mutex;
 #endif
 };
 
@@ -667,8 +677,11 @@ struct _Py_interp_cached_objects {
 
     /* object.__reduce__ */
     PyObject *objreduce;
+#ifndef Py_GIL_DISABLED
+    /* resolve_slotdups() */
     PyObject *type_slots_pname;
     pytype_slotdef *type_slots_ptrs[MAX_EQUIV];
+#endif
 
     /* TypeVar and related types */
     PyTypeObject *generic_type;
@@ -716,6 +729,10 @@ typedef struct _PyIndexPool {
 
     // Next index to allocate if no free indices are available
     int32_t next_index;
+
+    // Generation counter incremented on thread creation/destruction
+    // Used for TLBC cache invalidation in remote debugging
+    uint32_t tlbc_generation;
 } _PyIndexPool;
 
 typedef union _Py_unique_id_entry {
@@ -753,6 +770,12 @@ struct _is {
      * which is by far the hottest field in this struct
      * and should be placed at the beginning. */
     struct _ceval_state ceval;
+
+    /* This structure is carefully allocated so that it's correctly aligned
+     * to avoid undefined behaviors during LOAD and STORE. The '_malloced'
+     * field stores the allocated pointer address that will later be freed.
+     */
+    void *_malloced;
 
     PyInterpreterState *next;
 
@@ -826,6 +849,8 @@ struct _is {
 
     /* The per-interpreter GIL, which might not be used. */
     struct _gil_runtime_state _gil;
+
+    uint64_t _code_object_generation;
 
      /* ---------- IMPORTANT ---------------------------
      The fields above this line are declared as early as
@@ -917,6 +942,9 @@ struct _is {
     PyObject *common_consts[NUM_COMMON_CONSTANTS];
     bool jit;
     struct _PyExecutorObject *executor_list_head;
+    struct _PyExecutorObject *executor_deletion_list_head;
+    struct _PyExecutorObject *cold_executor;
+    int executor_deletion_list_remaining_capacity;
     size_t trace_run_counter;
     _rare_events rare_events;
     PyDict_WatchCallback builtins_dict_watcher;
@@ -935,11 +963,6 @@ struct _is {
 
     Py_ssize_t _interactive_src_count;
 
-    /* the initial PyInterpreterState.threads.head */
-    _PyThreadStateImpl _initial_thread;
-    // _initial_thread should be the last field of PyInterpreterState.
-    // See https://github.com/python/cpython/issues/127117.
-
 #if !defined(Py_GIL_DISABLED) && defined(Py_STACKREF_DEBUG)
     uint64_t next_stackref;
     _Py_hashtable_t *open_stackrefs_table;
@@ -947,6 +970,11 @@ struct _is {
     _Py_hashtable_t *closed_stackrefs_table;
 #  endif
 #endif
+
+    /* the initial PyInterpreterState.threads.head */
+    _PyThreadStateImpl _initial_thread;
+    // _initial_thread should be the last field of PyInterpreterState.
+    // See https://github.com/python/cpython/issues/127117.
 };
 
 

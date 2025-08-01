@@ -2,8 +2,9 @@ import unittest
 from unittest import mock
 from test import support
 from test.support import (
-    is_apple, os_helper, refleak_helper, socket_helper, threading_helper
+    cpython_only, is_apple, os_helper, refleak_helper, socket_helper, threading_helper
 )
+from test.support.import_helper import ensure_lazy_imports
 import _thread as thread
 import array
 import contextlib
@@ -256,6 +257,12 @@ HAVE_SOCKET_HYPERV = _have_socket_hyperv()
 
 # Size in bytes of the int type
 SIZEOF_INT = array.array("i").itemsize
+
+class TestLazyImport(unittest.TestCase):
+    @cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("socket", {"array", "selectors"})
+
 
 class SocketTCPTest(unittest.TestCase):
 
@@ -1078,9 +1085,7 @@ class GeneralModuleTests(unittest.TestCase):
             'IPV6_USE_MIN_MTU',
         }
         for opt in opts:
-            self.assertTrue(
-                hasattr(socket, opt), f"Missing RFC3542 socket option '{opt}'"
-            )
+            self.assertHasAttr(socket, opt)
 
     def testHostnameRes(self):
         # Testing hostname resolution mechanisms
@@ -1169,7 +1174,7 @@ class GeneralModuleTests(unittest.TestCase):
     @support.skip_android_selinux('if_indextoname')
     def testInvalidInterfaceIndexToName(self):
         self.assertRaises(OSError, socket.if_indextoname, 0)
-        self.assertRaises(OverflowError, socket.if_indextoname, -1)
+        self.assertRaises(ValueError, socket.if_indextoname, -1)
         self.assertRaises(OverflowError, socket.if_indextoname, 2**1000)
         self.assertRaises(TypeError, socket.if_indextoname, '_DEADBEEF')
         if hasattr(socket, 'if_nameindex'):
@@ -1225,24 +1230,23 @@ class GeneralModuleTests(unittest.TestCase):
             self.assertEqual(swapped & mask, mask)
             self.assertRaises(OverflowError, func, 1<<34)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, "requires _testcapi")
     def testNtoHErrors(self):
-        import _testcapi
         s_good_values = [0, 1, 2, 0xffff]
         l_good_values = s_good_values + [0xffffffff]
-        l_bad_values = [-1, -2, 1<<32, 1<<1000]
-        s_bad_values = (
-            l_bad_values +
-            [_testcapi.INT_MIN-1, _testcapi.INT_MAX+1] +
-            [1 << 16, _testcapi.INT_MAX]
-        )
+        neg_values = [-1, -2, -(1<<15)-1, -(1<<31)-1, -(1<<63)-1, -1<<1000]
+        l_bad_values = [1<<32, 1<<1000]
+        s_bad_values = l_bad_values + [1 << 16, (1<<31)-1, 1<<31]
         for k in s_good_values:
             socket.ntohs(k)
             socket.htons(k)
         for k in l_good_values:
             socket.ntohl(k)
             socket.htonl(k)
+        for k in neg_values:
+            self.assertRaises(ValueError, socket.ntohs, k)
+            self.assertRaises(ValueError, socket.htons, k)
+            self.assertRaises(ValueError, socket.ntohl, k)
+            self.assertRaises(ValueError, socket.htonl, k)
         for k in s_bad_values:
             self.assertRaises(OverflowError, socket.ntohs, k)
             self.assertRaises(OverflowError, socket.htons, k)
@@ -1587,11 +1591,11 @@ class GeneralModuleTests(unittest.TestCase):
 
     @unittest.skipUnless(os.name == "nt", "Windows specific")
     def test_sock_ioctl(self):
-        self.assertTrue(hasattr(socket.socket, 'ioctl'))
-        self.assertTrue(hasattr(socket, 'SIO_RCVALL'))
-        self.assertTrue(hasattr(socket, 'RCVALL_ON'))
-        self.assertTrue(hasattr(socket, 'RCVALL_OFF'))
-        self.assertTrue(hasattr(socket, 'SIO_KEEPALIVE_VALS'))
+        self.assertHasAttr(socket.socket, 'ioctl')
+        self.assertHasAttr(socket, 'SIO_RCVALL')
+        self.assertHasAttr(socket, 'RCVALL_ON')
+        self.assertHasAttr(socket, 'RCVALL_OFF')
+        self.assertHasAttr(socket, 'SIO_KEEPALIVE_VALS')
         s = socket.socket()
         self.addCleanup(s.close)
         self.assertRaises(ValueError, s.ioctl, -1, None)
@@ -2606,7 +2610,7 @@ class BasicVSOCKTest(unittest.TestCase):
                              socket.SO_VM_SOCKETS_BUFFER_MIN_SIZE))
 
 
-@unittest.skipUnless(HAVE_SOCKET_BLUETOOTH,
+@unittest.skipUnless(hasattr(socket, 'AF_BLUETOOTH'),
                      'Bluetooth sockets required for this test.')
 class BasicBluetoothTest(unittest.TestCase):
 
@@ -2615,19 +2619,78 @@ class BasicBluetoothTest(unittest.TestCase):
         socket.BDADDR_LOCAL
         socket.AF_BLUETOOTH
         socket.BTPROTO_RFCOMM
+        socket.SOL_RFCOMM
+
+        if sys.platform == "win32":
+            socket.SO_BTH_ENCRYPT
+            socket.SO_BTH_MTU
+            socket.SO_BTH_MTU_MAX
+            socket.SO_BTH_MTU_MIN
 
         if sys.platform != "win32":
             socket.BTPROTO_HCI
             socket.SOL_HCI
             socket.BTPROTO_L2CAP
+            socket.SOL_L2CAP
             socket.BTPROTO_SCO
+            socket.SOL_SCO
+            socket.HCI_DATA_DIR
 
         if sys.platform == "linux":
+            socket.SOL_BLUETOOTH
+            socket.HCI_DEV_NONE
             socket.HCI_CHANNEL_RAW
             socket.HCI_CHANNEL_USER
             socket.HCI_CHANNEL_MONITOR
             socket.HCI_CHANNEL_CONTROL
             socket.HCI_CHANNEL_LOGGING
+            socket.HCI_TIME_STAMP
+            socket.BT_SECURITY
+            socket.BT_SECURITY_SDP
+            socket.BT_FLUSHABLE
+            socket.BT_POWER
+            socket.BT_CHANNEL_POLICY
+            socket.BT_CHANNEL_POLICY_BREDR_ONLY
+            if hasattr(socket, 'BT_PHY'):
+                socket.BT_PHY_BR_1M_1SLOT
+            if hasattr(socket, 'BT_MODE'):
+                socket.BT_MODE_BASIC
+            if hasattr(socket, 'BT_VOICE'):
+                socket.BT_VOICE_TRANSPARENT
+                socket.BT_VOICE_CVSD_16BIT
+            socket.L2CAP_LM
+            socket.L2CAP_LM_MASTER
+            socket.L2CAP_LM_AUTH
+
+        if sys.platform in ("linux", "freebsd"):
+            socket.BDADDR_BREDR
+            socket.BDADDR_LE_PUBLIC
+            socket.BDADDR_LE_RANDOM
+            socket.HCI_FILTER
+
+        if sys.platform.startswith(("freebsd", "netbsd", "dragonfly")):
+            socket.SO_L2CAP_IMTU
+            socket.SO_L2CAP_FLUSH
+            socket.SO_RFCOMM_MTU
+            socket.SO_RFCOMM_FC_INFO
+            socket.SO_SCO_MTU
+
+        if sys.platform == "freebsd":
+            socket.SO_SCO_CONNINFO
+
+        if sys.platform.startswith(("netbsd", "dragonfly")):
+            socket.SO_HCI_EVT_FILTER
+            socket.SO_HCI_PKT_FILTER
+            socket.SO_L2CAP_IQOS
+            socket.SO_L2CAP_LM
+            socket.L2CAP_LM_AUTH
+            socket.SO_RFCOMM_LM
+            socket.RFCOMM_LM_AUTH
+            socket.SO_SCO_HANDLE
+
+@unittest.skipUnless(HAVE_SOCKET_BLUETOOTH,
+                     'Bluetooth sockets required for this test.')
+class BluetoothTest(unittest.TestCase):
 
     def testCreateRfcommSocket(self):
         with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM) as s:
@@ -6017,10 +6080,10 @@ class UDPLITETimeoutTest(SocketUDPLITETest):
 class TestExceptions(unittest.TestCase):
 
     def testExceptionTree(self):
-        self.assertTrue(issubclass(OSError, Exception))
-        self.assertTrue(issubclass(socket.herror, OSError))
-        self.assertTrue(issubclass(socket.gaierror, OSError))
-        self.assertTrue(issubclass(socket.timeout, OSError))
+        self.assertIsSubclass(OSError, Exception)
+        self.assertIsSubclass(socket.herror, OSError)
+        self.assertIsSubclass(socket.gaierror, OSError)
+        self.assertIsSubclass(socket.timeout, OSError)
         self.assertIs(socket.error, OSError)
         self.assertIs(socket.timeout, TimeoutError)
 

@@ -28,7 +28,6 @@ except ImportError:  # pragma: no cover
 from asyncio import base_events
 from asyncio import events
 from asyncio import format_helpers
-from asyncio import futures
 from asyncio import tasks
 from asyncio.log import logger
 from test import support
@@ -104,7 +103,7 @@ def run_until(loop, pred, timeout=support.SHORT_TIMEOUT):
         loop.run_until_complete(tasks.sleep(delay))
         delay = max(delay * 2, 1.0)
     else:
-        raise futures.TimeoutError()
+        raise TimeoutError()
 
 
 def run_once(loop):
@@ -602,3 +601,9 @@ async def await_without_task(coro):
     await asyncio.sleep(0)
     if exc is not None:
         raise exc
+
+
+if sys.platform == 'win32':
+    DefaultEventLoopPolicy = asyncio.windows_events._DefaultEventLoopPolicy
+else:
+    DefaultEventLoopPolicy = asyncio.unix_events._DefaultEventLoopPolicy

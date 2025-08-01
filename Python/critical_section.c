@@ -130,6 +130,15 @@ PyCriticalSection_Begin(PyCriticalSection *c, PyObject *op)
 #endif
 }
 
+#undef PyCriticalSection_BeginMutex
+void
+PyCriticalSection_BeginMutex(PyCriticalSection *c, PyMutex *m)
+{
+#ifdef Py_GIL_DISABLED
+    _PyCriticalSection_BeginMutex(c, m);
+#endif
+}
+
 #undef PyCriticalSection_End
 void
 PyCriticalSection_End(PyCriticalSection *c)
@@ -145,6 +154,15 @@ PyCriticalSection2_Begin(PyCriticalSection2 *c, PyObject *a, PyObject *b)
 {
 #ifdef Py_GIL_DISABLED
     _PyCriticalSection2_Begin(c, a, b);
+#endif
+}
+
+#undef PyCriticalSection2_BeginMutex
+void
+PyCriticalSection2_BeginMutex(PyCriticalSection2 *c, PyMutex *m1, PyMutex *m2)
+{
+#ifdef Py_GIL_DISABLED
+    _PyCriticalSection2_BeginMutex(c, m1, m2);
 #endif
 }
 
