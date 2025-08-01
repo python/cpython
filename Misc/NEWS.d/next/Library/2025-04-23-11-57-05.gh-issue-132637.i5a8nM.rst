@@ -1,0 +1,3 @@
+Fix ``xml.etree.ElementPath.xpath_tokenizer`` to correctly handle
+positional predicates when a default namespace is provided in the
+``namespaces`` argument.
