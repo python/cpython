@@ -147,6 +147,7 @@ __pragma(warning(disable: 4201))
 #include "fileutils.h"
 #include "cpython/pyfpe.h"
 #include "cpython/tracemalloc.h"
+#include "pyabiinfo.h"
 
 #ifdef _MSC_VER
 __pragma(warning(pop))  // warning(disable: 4201)

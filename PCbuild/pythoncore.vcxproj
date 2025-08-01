@@ -582,6 +582,7 @@
     <ClCompile Include="..\Python\pyhash.c" />
     <ClCompile Include="..\Python\_contextvars.c" />
     <ClCompile Include="..\Python\_warnings.c" />
+    <ClCompile Include="..\Python\abiinfo.c" />
     <ClCompile Include="..\Python\asdl.c" />
     <ClCompile Include="..\Python\assemble.c" />
     <ClCompile Include="..\Python\ast.c" />

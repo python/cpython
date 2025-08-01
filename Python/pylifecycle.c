@@ -1,6 +1,7 @@
 /* Python interpreter top-level routines, including init/exit */
 
 #include "Python.h"
+#include "pycore_abiinfo.h"       // _PyAbiInfo_InitTypes()
 #include "pycore_audit.h"         // _PySys_ClearAuditHooks()
 #include "pycore_call.h"          // _PyObject_CallMethod()
 #include "pycore_ceval.h"         // _PyEval_FiniGIL()
@@ -707,6 +708,11 @@ pycore_init_types(PyInterpreterState *interp)
     PyStatus status;
 
     status = _PyTypes_InitTypes(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    status = _PyAbiInfo_InitTypes(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -1860,6 +1866,7 @@ static void
 finalize_interp_types(PyInterpreterState *interp)
 {
     _PyTypes_FiniExtTypes(interp);
+    _PyAbiInfo_FiniTypes(interp);
     _PyUnicode_FiniTypes(interp);
     _PySys_FiniTypes(interp);
     _PyXI_FiniTypes(interp);

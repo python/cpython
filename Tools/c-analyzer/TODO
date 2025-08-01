@@ -841,6 +841,7 @@ Objects/unicodeobject.c:PyUnicode_Type                           PyTypeObject Py
 Objects/weakrefobject.c:_PyWeakref_CallableProxyType             PyTypeObject _PyWeakref_CallableProxyType
 Objects/weakrefobject.c:_PyWeakref_ProxyType                     PyTypeObject _PyWeakref_ProxyType
 Objects/weakrefobject.c:_PyWeakref_RefType                       PyTypeObject _PyWeakref_RefType
+Python/abiinfo.c:AbiInfoType                                     static PyTypeObject AbiInfoType
 Python/bltinmodule.c:PyFilter_Type                               PyTypeObject PyFilter_Type
 Python/bltinmodule.c:PyMap_Type                                  PyTypeObject PyMap_Type
 Python/bltinmodule.c:PyZip_Type                                  PyTypeObject PyZip_Type

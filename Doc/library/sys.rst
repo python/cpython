@@ -11,6 +11,31 @@ interpreter and to functions that interact strongly with the interpreter. It is
 always available. Unless explicitly noted otherwise, all variables are read-only.
 
 
+.. data:: abi_info
+
+   A :term:`named tuple` holding information about the ABI of the interpreter.
+
+   .. attribute:: abi_info.pointer_bits
+
+      The width of pointers in bits, as an integer.
+
+      * ``32``: 32-bit build
+      * ``64``: 64-bit build
+      * ``None`` if this information is unknown or neither 32 nore 64 bits.
+
+   .. attribute:: abi_info.Py_GIL_DISABLED
+
+      A boolean indicating whether the interpreter was built in with the GIL
+      disabled, i.e. with the :option:`--disable-gil` option, aka free-threading.
+
+   .. attribute:: abi_info.Py_DEBUG
+
+      A boolean indicating whether the interpreter was built in debug mode,
+      i.e. with the :option:`--with-pydebug` option.
+
+   .. versionadded:: next
+
+
 .. data:: abiflags
 
    On POSIX systems where Python was built with the standard ``configure``

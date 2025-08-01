@@ -423,6 +423,7 @@ PYTHON_OBJS=	\
 		Python/_warnings.o \
 		Python/Python-ast.o \
 		Python/Python-tokenize.o \
+		Python/abiinfo.o \
 		Python/asdl.o \
 		Python/assemble.o \
 		Python/ast.o \

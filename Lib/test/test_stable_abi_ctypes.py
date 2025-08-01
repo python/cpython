@@ -46,6 +46,7 @@ class TestStableABIAvailability(unittest.TestCase):
 SYMBOL_NAMES = (
 
     "PyAIter_Check",
+    "PyAbiInfo_GetInfo",
     "PyArg_Parse",
     "PyArg_ParseTuple",
     "PyArg_ParseTupleAndKeywords",

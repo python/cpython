@@ -25,6 +25,7 @@ class TestStructSeq(unittest.TestCase):
 
     def test_sys_attrs(self):
         for attr_name in (
+            'abi_info',       # AbiInfoType
             'flags',          # FlagsType
             'float_info',     # FloatInfoType
             'hash_info',      # Hash_InfoType

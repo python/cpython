@@ -3268,6 +3268,7 @@ PyDoc_STR(
 "\n\
 Static objects:\n\
 \n\
+abi_info -- a named tuple with information about the ABI.\n\
 builtin_module_names -- tuple of module names built into this interpreter\n\
 copyright -- copyright notice pertaining to this interpreter\n\
 exec_prefix -- prefix used to find the machine-specific Python library\n\
@@ -3862,6 +3863,8 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
 #endif
 
     SET_SYS("thread_info", PyThread_GetInfo());
+
+    SET_SYS("abi_info", PyAbiInfo_GetInfo());
 
     /* initialize asyncgen_hooks */
     if (_PyStructSequence_InitBuiltin(interp, &AsyncGenHooksType,
