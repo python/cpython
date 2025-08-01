@@ -6633,7 +6633,7 @@ class GetTypeHintsTests(BaseTestCase):
         self.assertEqual(gth(mod_generics_cache.B),
                          {'my_inner_a1': mod_generics_cache.B.A,
                           'my_inner_a2': mod_generics_cache.B.A,
-                          'my_outer_a': mod_generics_cache.A})
+                          'my_outer_a': mod_generics_cache.B.A})
 
     def test_get_type_hints_classes_no_implicit_optional(self):
         class WithNoneDefault:
@@ -8762,7 +8762,7 @@ class TypedDictTests(BaseTestCase):
     def test_get_type_hints_generic(self):
         self.assertEqual(
             get_type_hints(BarGeneric),
-            {'a': typing.Optional[T], 'b': int}
+            {'a': typing.Optional[_typed_dict_helper.T], 'b': int}
         )
 
         class FooBarGeneric(BarGeneric[int]):
@@ -8770,7 +8770,7 @@ class TypedDictTests(BaseTestCase):
 
         self.assertEqual(
             get_type_hints(FooBarGeneric),
-            {'a': typing.Optional[T], 'b': int, 'c': str}
+            {'a': typing.Optional[_typed_dict_helper.T], 'b': int, 'c': str}
         )
 
     def test_pep695_generic_typeddict(self):
