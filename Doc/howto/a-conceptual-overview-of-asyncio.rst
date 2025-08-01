@@ -296,14 +296,15 @@ The only way to yield (or effectively cede control) from a coroutine is to
 That might sound odd to you. Frankly, it was to me too. You might be thinking:
 
     1. What about a ``yield`` directly within the coroutine? The coroutine becomes
-    a generator-coroutine, a different beast entirely.
+    a generator-coroutine (or async generator), a different beast entirely.
 
     2. What about a ``yield from`` within the coroutine to a function that yields
     (that is, plain generator)?
     ``SyntaxError: yield from not allowed in a coroutine.``
-    I imagine Python made this a ``SyntaxError`` to mandate only one way of using
-    coroutines for the sake of simplicity.
-    Ideologically, ``yield from`` and ``await`` are quite similar.
+    This was intentionally designed for the sake of simplicity -- mandating only
+    one way of using coroutines. Originally ``yield`` was actually barred as well,
+    but was re-accepted to allow for async generators.
+    Ideologically, ``yield from`` and ``await`` are very similar.
 
 =======
 Futures
