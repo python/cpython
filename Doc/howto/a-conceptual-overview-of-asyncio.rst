@@ -333,34 +333,6 @@ Futures are much more versatile and will be marked as done when you say so.
 In this way, they're the flexible interface for you to make your own conditions
 for waiting and resuming.
 
-===========================
-await-ing Tasks and futures
-===========================
-
-``Future`` defines an important method: ``__await__``. Below is the actual
-implementation (well, one line was removed for simplicity's sake) found
-in ``asyncio.futures.Future``.
-It's okay if it doesn't make complete sense now, we'll go through it in detail
-in the control-flow example.
-
-::
-
-    1  class Future:
-    2      ...
-    3      def __await__(self):
-    4
-    5          if not self.done():
-    6              yield self
-    7
-    8          if not self.done():
-    9              raise RuntimeError("await wasn't used with future")
-    10
-    11         return self.result()
-
-The ``Task`` class does not override ``Future``'s ``__await__`` implementation.
-``await``\ ing a task or future invokes that above ``__await__`` method and
-percolates the ``yield`` on line 6 to relinquish control to its caller, which
-is generally the event loop.
 
 ========================
 A homemade asyncio.sleep
