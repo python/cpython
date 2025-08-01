@@ -990,9 +990,9 @@ Supported ``_sunder_`` names
   from the final class
 - :meth:`~Enum._generate_next_value_` -- used to get an appropriate value for
   an enum member; may be overridden
-- :meth:`~EnumType._add_alias_` -- adds a new name as an alias to an existing
+- :meth:`~Enum._add_alias_` -- adds a new name as an alias to an existing
   member.
-- :meth:`~EnumType._add_value_alias_` -- adds a new value as an alias to an
+- :meth:`~Enum._add_value_alias_` -- adds a new value as an alias to an
   existing member.  See `MultiValueEnum`_ for an example.
 
   .. note::
