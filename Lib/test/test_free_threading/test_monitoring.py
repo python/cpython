@@ -2,10 +2,12 @@
 environment to verify things are thread-safe in a free-threaded build"""
 
 import sys
+import threading
 import time
 import unittest
 import weakref
 
+from contextlib import contextmanager
 from sys import monitoring
 from test.support import threading_helper
 from threading import Thread, _PyRLock, Barrier
@@ -192,6 +194,16 @@ class SetProfileMultiThreaded(InstrumentationMultiThreadedMixin, TestCase):
         self.set = not self.set
 
 
+class TraceBuf:
+    def __init__(self):
+        self.traces = []
+        self.traces_lock = threading.Lock()
+
+    def append(self, trace):
+        with self.traces_lock:
+            self.traces.append(trace)
+
+
 @threading_helper.requires_working_threading()
 class MonitoringMisc(MonitoringTestMixin, TestCase):
     def register_callback(self, barrier):
@@ -245,6 +257,135 @@ class MonitoringMisc(MonitoringTestMixin, TestCase):
             t.join()
         finally:
             sys.settrace(None)
+
+    def test_toggle_setprofile_no_new_events(self):
+        # gh-136396: Make sure that profile functions are called for newly
+        # created threads when profiling is toggled but the set of monitoring
+        # events doesn't change
+        traces = []
+
+        def profiler(frame, event, arg):
+            traces.append((frame.f_code.co_name, event, arg))
+
+        def a(x, y):
+            return b(x, y)
+
+        def b(x, y):
+            return max(x, y)
+
+        sys.setprofile(profiler)
+        try:
+            a(1, 2)
+        finally:
+            sys.setprofile(None)
+        traces.clear()
+
+        def thread_main(x, y):
+            sys.setprofile(profiler)
+            try:
+                a(x, y)
+            finally:
+                sys.setprofile(None)
+        t = Thread(target=thread_main, args=(100, 200))
+        t.start()
+        t.join()
+
+        expected = [
+            ("a", "call", None),
+            ("b", "call", None),
+            ("b", "c_call", max),
+            ("b", "c_return", max),
+            ("b", "return", 200),
+            ("a", "return", 200),
+            ("thread_main", "c_call", sys.setprofile),
+        ]
+        self.assertEqual(traces, expected)
+
+    def observe_threads(self, observer, buf):
+        def in_child(ident):
+            return ident
+
+        def child(ident):
+            with observer():
+                in_child(ident)
+
+        def in_parent(ident):
+            return ident
+
+        def parent(barrier, ident):
+            barrier.wait()
+            with observer():
+                t = Thread(target=child, args=(ident,))
+                t.start()
+                t.join()
+                in_parent(ident)
+
+        num_threads = 5
+        barrier = Barrier(num_threads)
+        threads = []
+        for i in range(num_threads):
+            t = Thread(target=parent, args=(barrier, i))
+            t.start()
+            threads.append(t)
+        for t in threads:
+            t.join()
+
+        for i in range(num_threads):
+            self.assertIn(("in_parent", "return", i), buf.traces)
+            self.assertIn(("in_child", "return", i), buf.traces)
+
+    def test_profile_threads(self):
+        buf = TraceBuf()
+
+        def profiler(frame, event, arg):
+            buf.append((frame.f_code.co_name, event, arg))
+
+        @contextmanager
+        def profile():
+            sys.setprofile(profiler)
+            try:
+                yield
+            finally:
+                sys.setprofile(None)
+
+        self.observe_threads(profile, buf)
+
+    def test_trace_threads(self):
+        buf = TraceBuf()
+
+        def tracer(frame, event, arg):
+            buf.append((frame.f_code.co_name, event, arg))
+            return tracer
+
+        @contextmanager
+        def trace():
+            sys.settrace(tracer)
+            try:
+                yield
+            finally:
+                sys.settrace(None)
+
+        self.observe_threads(trace, buf)
+
+    def test_monitor_threads(self):
+        buf = TraceBuf()
+
+        def monitor_py_return(code, off, retval):
+            buf.append((code.co_name, "return", retval))
+
+        monitoring.register_callback(
+            self.tool_id, monitoring.events.PY_RETURN, monitor_py_return
+        )
+
+        monitoring.set_events(
+            self.tool_id, monitoring.events.PY_RETURN
+        )
+
+        @contextmanager
+        def noop():
+            yield
+
+        self.observe_threads(noop, buf)
 
 
 if __name__ == "__main__":

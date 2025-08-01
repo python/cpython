@@ -120,7 +120,7 @@
     <ClInclude Include="..\Include\listobject.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\lock.h">
+    <ClInclude Include="..\Include\pylock.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\longobject.h">
@@ -254,6 +254,15 @@
     </ClInclude>
     <ClInclude Include="..\Include\weakrefobject.h">
       <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Modules\_hashlib\hashlib_buffer.h">
+      <Filter>Modules\_hashlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Modules\_hashlib\hashlib_fetch.h">
+      <Filter>Modules\_hashlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Modules\_hashlib\hashlib_mutex.h">
+      <Filter>Modules\_hashlib</Filter>
     </ClInclude>
     <ClInclude Include="..\Modules\_math.h">
       <Filter>Modules</Filter>
@@ -414,7 +423,7 @@
     <ClInclude Include="..\Include\cpython\listobject.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\cpython\lock.h">
+    <ClInclude Include="..\Include\cpython\pylock.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\cpython\longintrepr.h">
@@ -970,6 +979,9 @@
     </ClCompile>
     <ClCompile Include="..\Modules\_hacl\Hacl_Streaming_HMAC.c">
       <Filter>Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_hashlib\hashlib_buffer.c">
+      <Filter>Modules\_hashlib</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\_heapqmodule.c">
       <Filter>Modules</Filter>

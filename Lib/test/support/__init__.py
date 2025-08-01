@@ -46,6 +46,7 @@ __all__ = [
     # sys
     "MS_WINDOWS", "is_jython", "is_android", "is_emscripten", "is_wasi",
     "is_apple_mobile", "check_impl_detail", "unix_shell", "setswitchinterval",
+    "support_remote_exec_only",
     # os
     "get_pagesize",
     # network
@@ -543,7 +544,12 @@ def has_no_debug_ranges():
     return not bool(config['code_debug_ranges'])
 
 def requires_debug_ranges(reason='requires co_positions / debug_ranges'):
-    return unittest.skipIf(has_no_debug_ranges(), reason)
+    try:
+        skip = has_no_debug_ranges()
+    except unittest.SkipTest as e:
+        skip = True
+        reason = e.args[0] if e.args else reason
+    return unittest.skipIf(skip, reason)
 
 
 MS_WINDOWS = (sys.platform == 'win32')
@@ -568,8 +574,11 @@ else:
 is_emscripten = sys.platform == "emscripten"
 is_wasi = sys.platform == "wasi"
 
+# Use is_wasm32 as a generic check for WebAssembly platforms.
+is_wasm32 = is_emscripten or is_wasi
+
 def skip_emscripten_stack_overflow():
-    return unittest.skipIf(is_emscripten, "Exhausts limited stack on Emscripten")
+    return unittest.skipIf(is_emscripten, "Exhausts stack on Emscripten")
 
 def skip_wasi_stack_overflow():
     return unittest.skipIf(is_wasi, "Exhausts stack on WASI")
@@ -2332,6 +2341,7 @@ def check_disallow_instantiation(testcase, tp, *args, **kwds):
         qualname = f"{name}"
     msg = f"cannot create '{re.escape(qualname)}' instances"
     testcase.assertRaisesRegex(TypeError, msg, tp, *args, **kwds)
+    testcase.assertRaisesRegex(TypeError, msg, tp.__new__, tp, *args, **kwds)
 
 def get_recursion_depth():
     """Get the recursion depth of the caller function.
@@ -3069,6 +3079,27 @@ def is_libssl_fips_mode():
         return False  # more of a maybe, unless we add this to the _ssl module.
     return get_fips_mode() != 0
 
+def _supports_remote_attaching():
+    PROCESS_VM_READV_SUPPORTED = False
+
+    try:
+        from _remote_debugging import PROCESS_VM_READV_SUPPORTED
+    except ImportError:
+        pass
+
+    return PROCESS_VM_READV_SUPPORTED
+
+def _support_remote_exec_only_impl():
+    if not sys.is_remote_debug_enabled():
+        return unittest.skip("Remote debugging is not enabled")
+    if sys.platform not in ("darwin", "linux", "win32"):
+        return unittest.skip("Test only runs on Linux, Windows and macOS")
+    if sys.platform == "linux" and not _supports_remote_attaching():
+        return unittest.skip("Test only runs on Linux with process_vm_readv support")
+    return _id
+
+def support_remote_exec_only(test):
+    return _support_remote_exec_only_impl()(test)
 
 class EqualToForwardRef:
     """Helper to ease use of annotationlib.ForwardRef in tests.
@@ -3125,7 +3156,7 @@ def linked_to_musl():
 
     # emscripten (at least as far as we're concerned) and wasi use musl,
     # but platform doesn't know how to get the version, so set it to zero.
-    if is_emscripten or is_wasi:
+    if is_wasm32:
         _linked_to_musl = (0, 0, 0)
         return _linked_to_musl
 

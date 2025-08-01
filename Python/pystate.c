@@ -1142,6 +1142,7 @@ _Py_CheckMainModule(PyObject *module)
         PyObject *msg = PyUnicode_FromString("invalid __main__ module");
         if (msg != NULL) {
             (void)PyErr_SetImportError(msg, &_Py_ID(__main__), NULL);
+            Py_DECREF(msg);
         }
         return -1;
     }
@@ -1681,6 +1682,10 @@ PyThreadState_Clear(PyThreadState *tstate)
           "PyThreadState_Clear: warning: thread still has a generator\n");
     }
 
+#ifdef Py_GIL_DISABLED
+    PyMutex_Lock(&_PyRuntime.ceval.sys_trace_profile_mutex);
+#endif
+
     if (tstate->c_profilefunc != NULL) {
         tstate->interp->sys_profiling_threads--;
         tstate->c_profilefunc = NULL;
@@ -1689,6 +1694,11 @@ PyThreadState_Clear(PyThreadState *tstate)
         tstate->interp->sys_tracing_threads--;
         tstate->c_tracefunc = NULL;
     }
+
+#ifdef Py_GIL_DISABLED
+    PyMutex_Unlock(&_PyRuntime.ceval.sys_trace_profile_mutex);
+#endif
+
     Py_CLEAR(tstate->c_profileobj);
     Py_CLEAR(tstate->c_traceobj);
 

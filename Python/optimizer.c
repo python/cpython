@@ -1292,8 +1292,8 @@ uop_optimize(
     for (int pc = 0; pc < length; pc++) {
         int opcode = buffer[pc].opcode;
         int oparg = buffer[pc].oparg;
-        if (oparg < _PyUop_Replication[opcode]) {
-            buffer[pc].opcode = opcode + oparg + 1;
+        if (oparg < _PyUop_Replication[opcode].stop && oparg >= _PyUop_Replication[opcode].start) {
+            buffer[pc].opcode = opcode + oparg + 1 - _PyUop_Replication[opcode].start;
             assert(strncmp(_PyOpcode_uop_name[buffer[pc].opcode], _PyOpcode_uop_name[opcode], strlen(_PyOpcode_uop_name[opcode])) == 0);
         }
         else if (is_terminator(&buffer[pc])) {
