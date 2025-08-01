@@ -31,7 +31,6 @@ A conceptual overview part 1: the high-level
 In part 1, we'll cover the main, high-level building blocks of asyncio: the
 event loop, coroutine functions, coroutine objects, tasks and ``await``.
 
-
 ==========
 Event Loop
 ==========
@@ -149,8 +148,6 @@ For example::
     Hello
     7
 
-
-
 =====
 Tasks
 =====
@@ -242,7 +239,6 @@ The event loop then works through its queue, calling ``coro_b()`` and then
     I am coro_a(). Hi!
     I am coro_a(). Hi!
     I am coro_a(). Hi!
-
 
 ------------------------------------------------
 A conceptual overview part 2: the nuts and bolts
@@ -363,7 +359,6 @@ Futures are much more versatile and will be marked as done when you say so.
 In this way, they're the flexible interface for you to make your own conditions
 for waiting and resuming.
 
-
 ========================
 A homemade asyncio.sleep
 ========================
@@ -419,7 +414,6 @@ will monitor how much time has elapsed and accordingly call
         watcher_task = asyncio.create_task(_sleep_watcher(future, time_to_wake))
         # Block until the future is marked as done.
         await future
-
 
 We'll use a rather bare object ``YieldToEventLoop()`` to ``yield`` from its
 ``__await__`` in order to cede control to the event loop.
