@@ -3,7 +3,7 @@
 from collections import defaultdict, namedtuple
 import csv
 from itertools import count
-from enum import Enum
+from enum import Enum, StrEnum, auto
 import sys
 from _remote_debugging import RemoteUnwinder, FrameInfo
 
@@ -234,16 +234,13 @@ def _get_awaited_by_tasks(pid: int) -> list:
         sys.exit(1)
 
 
-class TaskTableOutputFormat(Enum):
-    table = "table"
-    csv = "csv"
-    bsv = "bsv"
+class TaskTableOutputFormat(StrEnum):
+    table = auto()
+    csv = auto()
+    bsv = auto()
     # As per the words of the asyncio 🍌SV spec lead:
     # > 🍌SV is not just a format. It’s a lifestyle. A philosophy.
     # https://www.youtube.com/watch?v=RrsVi1P6n0w
-
-
-_header = ('tid', 'task id', 'task name', 'coroutine stack', 'awaiter chain', 'awaiter name', 'awaiter id')
 
 
 def display_awaited_by_tasks_table(
@@ -272,6 +269,7 @@ def _display_awaited_by_tasks_table(table) -> None:
 
 
 def _display_awaited_by_tasks_csv(table, format: TaskTableOutputFormat) -> None:
+    _header = ('tid', 'task id', 'task name', 'coroutine stack', 'awaiter chain', 'awaiter name', 'awaiter id')
     match format:
         case TaskTableOutputFormat.csv:
             delimiter = ','
