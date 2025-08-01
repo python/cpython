@@ -733,7 +733,7 @@ search_linux_map_for_section(proc_handle_t *handle, const char* secname, const c
                 break;
             }
             if (PyErr_Occurred()){
-                PyErr_Print();
+                PyErr_Clear();
             }
         }
     }
