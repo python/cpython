@@ -189,7 +189,7 @@ the event loop.
 And while doing so, add a callback to the awaited task's list of callbacks
 indicating it should resume the current task/coroutine when it (the
 ``await``\ ed one) finishes.
-Said another way, when that awaited task finishes, it adds the original task
+In other words, when that awaited task finishes, it adds the original task
 back to the event loops queue.
 
 In practice, it's slightly more convoluted, but not by much.
