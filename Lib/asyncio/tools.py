@@ -271,13 +271,12 @@ def _display_awaited_by_tasks_table(table) -> None:
 def _display_awaited_by_tasks_csv(table, format: TaskTableOutputFormat) -> None:
     csv_header = ('tid', 'task id', 'task name', 'coroutine stack',
                   'awaiter chain', 'awaiter name', 'awaiter id')
-    match format:
-        case TaskTableOutputFormat.csv:
-            delimiter = ','
-        case TaskTableOutputFormat.bsv:
-            delimiter = '\N{BANANA}'
-        case _:
-            raise ValueError(f"Unknown output format: {format}")
+    if format == TaskTableOutputFormat.csv:
+        delimiter = ','
+    elif format == TaskTableOutputFormat.bsv:
+        delimiter = '\N{BANANA}'
+    else:
+        raise ValueError(f"Unknown output format: {format}")
     csv_writer = csv.writer(sys.stdout, delimiter=delimiter)
     csv_writer.writerow(csv_header)
     csv_writer.writerows(table)
