@@ -277,7 +277,7 @@ The coroutine is resumed via the ``coroutine.send(42)`` call on line 21.
 The coroutine picks back up from where it ``yield``\ ed (or paused) on line 3
 and executes the remaining statements in its body.
 When a coroutine finishes, it raises a :exc:`StopIteration` exception with the
-return value attached to the exception.
+return value attached as an attribute.
 
 ::
 
