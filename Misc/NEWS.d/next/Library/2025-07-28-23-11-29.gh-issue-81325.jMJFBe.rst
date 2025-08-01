@@ -1,2 +1,2 @@
-:mod:`tarfile` now accepts a path-like object when writing a compressed gzip.
+:class:`tarfile.Tarfile` now accepts a :term:`path-like <path-like object>` when working on a tar archive.
 (Contributed by Alexander Enrique Urieles Nieto in :gh:`81325`.)
