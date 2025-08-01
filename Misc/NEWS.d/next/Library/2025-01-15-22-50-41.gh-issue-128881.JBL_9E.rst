@@ -1,0 +1,2 @@
+Fix ``flags`` and ``address`` parameters which were ignored in
+:func:`socket.send_fds` and :func:`socket.recv_fds`.
