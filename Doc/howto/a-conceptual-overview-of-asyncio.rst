@@ -326,10 +326,10 @@ The only way to yield (or effectively cede control) from a coroutine is to
 That might sound odd to you. Frankly, it was to me too. You might be thinking:
 
     1. What about a ``yield`` directly within the coroutine? The coroutine becomes
-    a generator-coroutine (or async generator), a different beast entirely.
+    an async generator, a different beast entirely.
 
     2. What about a ``yield from`` within the coroutine to a function that yields
-    (that is, plain generator)?
+    (that is, a plain generator)?
     ``SyntaxError: yield from not allowed in a coroutine.``
     This was intentionally designed for the sake of simplicity -- mandating only
     one way of using coroutines. Originally ``yield`` was actually barred as well,
