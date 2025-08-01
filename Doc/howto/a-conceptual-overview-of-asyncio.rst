@@ -162,7 +162,7 @@ clear in a moment when we discuss ``await``.
 The recommended way to create tasks is via :func:`asyncio.create_task`.
 Creating a task automatically adds it to the event loop's queue of tasks.
 
-Since there's only one event loop (in each thread), ``asyncio`` takes care of 
+Since there's only one event loop (in each thread), ``asyncio`` takes care of
 associating the task with the event loop for you. That is, there's no need
 to specify the event loop.
 
@@ -341,18 +341,18 @@ Futures
 =======
 
 A :ref:`future <asyncio-future-obj>` is an object meant to represent a
-computation or process's status and result.
+computation's status and result.
 The term is a nod to the idea of something still to come or not yet happened,
 and the object is a way to keep an eye on that something.
 
 A future has a few important attributes. One is its state which can be either
-pending, cancelled or done.
+"pending", "cancelled" or "done".
 Another is its result which is set when the state transitions to done.
-To be clear, a future does not represent the actual computation to be done, like
-a coroutine does, instead it represents the status and result of that computation,
-kind of like a status-light (red, yellow or green) or indicator.
+Unlike a coroutine, a future does not represent the actual computation to be
+done; instead it represents the status and result of that computation, kind of
+like a status light (red, yellow or green) or indicator.
 
-``Task`` subclasses ``Future`` in order to gain these various capabilities.
+:class:`asyncio.Task` subclasses :class:`asyncio.Future` in order to gain these various capabilities.
 The prior section said tasks store a list of callbacks and it lied to you a bit.
 It's actually the ``Future`` class that implements this logic which ``Task``
 inherits.
