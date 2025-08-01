@@ -37,25 +37,24 @@ Event Loop
 ==========
 
 Everything in asyncio happens relative to the event loop.
-It's the star of the show and there's only one.
+It's the star of the show.
 It's kind of like an orchestra conductor or military general.
-She's behind the scenes managing resources.
-Some power is explicitly granted to her, but a lot of her ability to get things
-done comes from the respect and cooperation of her subordinates.
+It's behind the scenes managing resources.
+Some power is explicitly granted to it, but a lot of its ability to get things
+done comes from the respect and cooperation of its subordinates.
 
 In more technical terms, the event loop contains a queue of tasks to be run.
 Some tasks are added directly by you, and some indirectly by asyncio.
 The event loop pops a task from the queue and invokes it (or gives it control),
-similar to calling a function.
-That task then runs.
+similar to calling a function, then that task runs.
 Once it pauses or completes, it returns control to the event loop.
 The event loop will then move on to the next task in its queue and invoke it.
 This process repeats indefinitely.
 Even if the queue is empty, the event loop continues to cycle (somewhat aimlessly).
 
-Effective overall execution relies on tasks sharing well.
-A greedy task could hog control and leave the other tasks to starve, rendering
-the overall event loop approach rather useless.
+Effective execution relies on tasks sharing well: a greedy task could hog
+control and leave the other tasks to starve, rendering the overall event loop
+approach rather useless.
 
 ::
 
@@ -85,7 +84,11 @@ Calling a regular function invokes its logic or body::
     fresh paper and a loving octopus-wife.
     >>>
 
-This is an asynchronous-function or coroutine-function::
+The :ref:`async def <async def>`, as opposed to just a plain ``def``, makes
+this an asynchronous function (or coroutine function).
+Calling it creates and returns a :ref:`coroutine <coroutine>` object.
+
+::
 
     async def special_fella(magic_number: int):
         print(
@@ -93,9 +96,7 @@ This is an asynchronous-function or coroutine-function::
             f"By the way, my lucky number is: {magic_number}."
         )
 
-Calling an asynchronous function creates and returns a
-:ref:`coroutine <coroutine>` object.
-It does not execute the function::
+Note that calling it does not execute the function::
 
     >>> special_fella(magic_number=3)
     <coroutine object special_fella at 0x104ed2740>
