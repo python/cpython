@@ -371,7 +371,10 @@ class TimeRE(dict):
             # W is set below by using 'U'
             'y': r"(?P<y>\d\d)",
             'Y': r"(?P<Y>\d\d\d\d)",
+            # See gh-121237: "z" might not support colons, if designed from scratch.
+            # However, for backwards compatibility, we must keep them.
             'z': r"(?P<z>([+-]\d\d:?[0-5]\d(:?[0-5]\d(\.\d{1,6})?)?)|(?-i:Z))?",
+            ':z': r"(?P<colon_z>([+-]\d\d:[0-5]\d(:[0-5]\d(\.\d{1,6})?)?)|(?-i:Z))?",
             'A': self.__seqToRE(self.locale_time.f_weekday, 'A'),
             'a': self.__seqToRE(self.locale_time.a_weekday, 'a'),
             'B': self.__seqToRE(_fixmonths(self.locale_time.f_month[1:]), 'B'),
@@ -459,16 +462,16 @@ class TimeRE(dict):
         year_in_format = False
         day_of_month_in_format = False
         def repl(m):
-            format_char = m[1]
-            match format_char:
+            directive = m.group()[1:] # exclude `%` symbol
+            match directive:
                 case 'Y' | 'y' | 'G':
                     nonlocal year_in_format
                     year_in_format = True
                 case 'd':
                     nonlocal day_of_month_in_format
                     day_of_month_in_format = True
-            return self[format_char]
-        format = re_sub(r'%[-_0^#]*[0-9]*([OE]?\\?.?)', repl, format)
+            return self[directive]
+        format = re_sub(r'%[-_0^#]*[0-9]*([OE]?[:\\]?.?)', repl, format)
         if day_of_month_in_format and not year_in_format:
             import warnings
             warnings.warn("""\
@@ -662,8 +665,8 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
                 week_of_year_start = 0
         elif group_key == 'V':
             iso_week = int(found_dict['V'])
-        elif group_key == 'z':
-            z = found_dict['z']
+        elif group_key in ('z', 'colon_z'):
+            z = found_dict[group_key]
             if z:
                 if z == 'Z':
                     gmtoff = 0
@@ -672,7 +675,7 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
                         z = z[:3] + z[4:]
                         if len(z) > 5:
                             if z[5] != ':':
-                                msg = f"Inconsistent use of : in {found_dict['z']}"
+                                msg = f"Inconsistent use of : in {found_dict[group_key]}"
                                 raise ValueError(msg)
                             z = z[:5] + z[6:]
                     hours = int(z[1:3])
