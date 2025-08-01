@@ -551,8 +551,8 @@ static inline void *
 _Py_atomic_memcpy_ptr_store_relaxed(void *dest, void *src, Py_ssize_t n)
 {
     size_t size = (size_t)n;
-    assert(((uintptr_t)dest & (sizeof (void *) - 1)) == 0);
-    assert(((uintptr_t)src & (sizeof (void *) - 1)) == 0);
+    assert(_Py_IS_ALIGNED(dest, sizeof(void *)));
+    assert(_Py_IS_ALIGNED(src, sizeof(void *)));
     assert(size % sizeof(void *) == 0);
 
     if (dest != src) {
@@ -572,8 +572,8 @@ static inline void *
 _Py_atomic_memmove_ptr_store_relaxed(void *dest, void *src, Py_ssize_t n)
 {
     size_t size = (size_t)n;
-    assert(((uintptr_t)dest & (sizeof (void *) - 1)) == 0);
-    assert(((uintptr_t)src & (sizeof (void *) - 1)) == 0);
+    assert(_Py_IS_ALIGNED(dest, sizeof(void *)));
+    assert(_Py_IS_ALIGNED(src, sizeof(void *)));
     assert(size % sizeof(void *) == 0);
 
     if (dest < src || dest >= (void *)((char *)src + size)) {
