@@ -1,0 +1,28 @@
+import chess
+import chess.svg
+
+def print_board(board):
+    print(board)
+
+def main():
+    board = chess.Board()
+    print("Welcome to Chess!")
+    print_board(board)
+    
+    while not board.is_game_over():
+        move = input(f"\n{'White' if board.turn else 'Black'} to move (e.g., e2e4): ")
+        try:
+            chess_move = chess.Move.from_uci(move)
+            if chess_move in board.legal_moves:
+                board.push(chess_move)
+                print_board(board)
+            else:
+                print("Illegal move. Try again.")
+        except Exception as e:
+            print(f"Invalid input: {e}")
+    
+    print("Game Over!")
+    print(f"Result: {board.result()}")
+
+if __name__ == '__main__':
+    main()
