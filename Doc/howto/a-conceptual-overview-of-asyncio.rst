@@ -19,7 +19,7 @@ of this article.
 - What's roughly happening behind the scenes when an object is ``await``\ ed?
 - How does asyncio differentiate between a task which doesn't need CPU-time
   to make progress towards completion, for example, a network request or file
-  read as opposed to a task that does need cpu-time to make progress, like
+  read as opposed to a task that does need CPU-time to make progress, like
   computing n-factorial?
 - How would I go about writing my own asynchronous variant of some operation?
   Something like an async sleep, database request, and so on.
