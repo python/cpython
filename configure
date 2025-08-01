@@ -726,6 +726,7 @@ LIBHACL_SIMD128_FLAGS
 LIBHACL_LDFLAGS
 LIBHACL_CFLAGS
 LIBHASHLIB_INTERNAL
+LIBHASHLIB_INTERNAL_RULE_LDFLAGS
 LIBHASHLIB_INTERNAL_CFLAGS
 MODULE_UNICODEDATA_FALSE
 MODULE_UNICODEDATA_TRUE
@@ -1038,6 +1039,7 @@ GITBRANCH
 GITTAG
 GITVERSION
 BASECPPFLAGS
+UNIQMODLIBS
 target_alias
 host_alias
 build_alias
@@ -3559,6 +3561,9 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
+
+
+UNIQMODLIBS=""
 
 
 
@@ -14153,6 +14158,7 @@ fi
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
+save_UNIQMODLIBS=$UNIQMODLIBS
 
 
         CPPFLAGS="$CPPFLAGS $LIBUUID_CFLAGS"
@@ -14285,6 +14291,7 @@ CFLAGS=$save_CFLAGS
 CPPFLAGS=$save_CPPFLAGS
 LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
+UNIQMODLIBS=$save_UNIQMODLIBS
 
 
 
@@ -14297,6 +14304,7 @@ printf "%s\n" "no" >&6; }
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
+save_UNIQMODLIBS=$UNIQMODLIBS
 
 
         CPPFLAGS="$CPPFLAGS $LIBUUID_CFLAGS"
@@ -14429,6 +14437,7 @@ CFLAGS=$save_CFLAGS
 CPPFLAGS=$save_CPPFLAGS
 LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
+UNIQMODLIBS=$save_UNIQMODLIBS
 
 
 
@@ -14531,6 +14540,7 @@ printf %s "checking if uuid_generate_time_safe() node value is stable... " >&6; 
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
+save_UNIQMODLIBS=$UNIQMODLIBS
 
 
   # Be sure to add the extra include path if we used pkg-config
@@ -14591,12 +14601,14 @@ CFLAGS=$save_CFLAGS
 CPPFLAGS=$save_CPPFLAGS
 LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
+UNIQMODLIBS=$save_UNIQMODLIBS
 
 
   save_CFLAGS=$CFLAGS
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
+save_UNIQMODLIBS=$UNIQMODLIBS
 
 
   # Be sure to add the extra include path if we used pkg-config
@@ -14657,6 +14669,7 @@ CFLAGS=$save_CFLAGS
 CPPFLAGS=$save_CPPFLAGS
 LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
+UNIQMODLIBS=$save_UNIQMODLIBS
 
 
   if test -n "$py_cv_uuid_node1" -a "$py_cv_uuid_node1" = "$py_cv_uuid_node2"
@@ -15195,6 +15208,7 @@ then :
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
+save_UNIQMODLIBS=$UNIQMODLIBS
 
 
     CFLAGS="-I${SDKROOT}/usr/include/ffi $CFLAGS"
@@ -15262,6 +15276,7 @@ CFLAGS=$save_CFLAGS
 CPPFLAGS=$save_CPPFLAGS
 LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
+UNIQMODLIBS=$save_UNIQMODLIBS
 
 
 
@@ -15333,6 +15348,7 @@ fi
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
+save_UNIQMODLIBS=$UNIQMODLIBS
 
 
       CPPFLAGS="$CPPFLAGS $LIBFFI_CFLAGS"
@@ -15404,6 +15420,7 @@ CFLAGS=$save_CFLAGS
 CPPFLAGS=$save_CPPFLAGS
 LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
+UNIQMODLIBS=$save_UNIQMODLIBS
 
 
 
@@ -15415,6 +15432,7 @@ printf "%s\n" "no" >&6; }
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
+save_UNIQMODLIBS=$UNIQMODLIBS
 
 
       CPPFLAGS="$CPPFLAGS $LIBFFI_CFLAGS"
@@ -15486,6 +15504,7 @@ CFLAGS=$save_CFLAGS
 CPPFLAGS=$save_CPPFLAGS
 LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
+UNIQMODLIBS=$save_UNIQMODLIBS
 
 
 
@@ -15536,6 +15555,7 @@ fi
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
+save_UNIQMODLIBS=$UNIQMODLIBS
 
 
     CFLAGS="$CFLAGS $LIBFFI_CFLAGS"
@@ -15669,6 +15689,7 @@ CFLAGS=$save_CFLAGS
 CPPFLAGS=$save_CPPFLAGS
 LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
+UNIQMODLIBS=$save_UNIQMODLIBS
 
 
 
@@ -15689,6 +15710,7 @@ else case e in #(
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
+save_UNIQMODLIBS=$UNIQMODLIBS
 
 
  CPPFLAGS="$CPPFLAGS $LIBFFI_CFLAGS"
@@ -15741,6 +15763,7 @@ CFLAGS=$save_CFLAGS
 CPPFLAGS=$save_CPPFLAGS
 LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
+UNIQMODLIBS=$save_UNIQMODLIBS
 
  ;;
 esac
@@ -15862,6 +15885,7 @@ then :
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
+save_UNIQMODLIBS=$UNIQMODLIBS
 
 
     CPPFLAGS="$CPPFLAGS $LIBMPDEC_CFLAGS"
@@ -15898,6 +15922,7 @@ CFLAGS=$save_CFLAGS
 CPPFLAGS=$save_CPPFLAGS
 LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
+UNIQMODLIBS=$save_UNIQMODLIBS
 
 
 fi
@@ -16117,6 +16142,7 @@ save_CFLAGS=$CFLAGS
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
+save_UNIQMODLIBS=$UNIQMODLIBS
 
 
   CPPFLAGS="$CPPFLAGS $LIBSQLITE3_CFLAGS"
@@ -16851,6 +16877,7 @@ CFLAGS=$save_CFLAGS
 CPPFLAGS=$save_CPPFLAGS
 LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
+UNIQMODLIBS=$save_UNIQMODLIBS
 
 
 
@@ -17107,6 +17134,7 @@ save_CFLAGS=$CFLAGS
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
+save_UNIQMODLIBS=$UNIQMODLIBS
 
 
   CPPFLAGS="$CPPFLAGS $TCLTK_CFLAGS"
@@ -17165,6 +17193,7 @@ CFLAGS=$save_CFLAGS
 CPPFLAGS=$save_CPPFLAGS
 LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
+UNIQMODLIBS=$save_UNIQMODLIBS
 
 
 
@@ -17174,6 +17203,7 @@ save_CFLAGS=$CFLAGS
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
+save_UNIQMODLIBS=$UNIQMODLIBS
 
 
   CPPFLAGS="$CPPFLAGS $GDBM_CFLAGS"
@@ -17251,6 +17281,7 @@ CFLAGS=$save_CFLAGS
 CPPFLAGS=$save_CPPFLAGS
 LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
+UNIQMODLIBS=$save_UNIQMODLIBS
 
 
 
@@ -17265,6 +17296,7 @@ then :
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
+save_UNIQMODLIBS=$UNIQMODLIBS
 
 
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for library containing dbm_open" >&5
@@ -17339,6 +17371,7 @@ CFLAGS=$save_CFLAGS
 CPPFLAGS=$save_CPPFLAGS
 LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
+UNIQMODLIBS=$save_UNIQMODLIBS
 
 
 
@@ -17436,6 +17469,7 @@ if test "$ac_cv_header_gdbm_slash_ndbm_h" = yes -o "$ac_cv_header_gdbm_dash_ndbm
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
+save_UNIQMODLIBS=$UNIQMODLIBS
 
 
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for library containing dbm_open" >&5
@@ -17513,6 +17547,7 @@ CFLAGS=$save_CFLAGS
 CPPFLAGS=$save_CPPFLAGS
 LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
+UNIQMODLIBS=$save_UNIQMODLIBS
 
 
 fi
@@ -17537,6 +17572,7 @@ else case e in #(
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
+save_UNIQMODLIBS=$UNIQMODLIBS
 
 
       LIBS="$LIBS -ldb"
@@ -17572,6 +17608,7 @@ CFLAGS=$save_CFLAGS
 CPPFLAGS=$save_CPPFLAGS
 LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
+UNIQMODLIBS=$save_UNIQMODLIBS
 
 
    ;;
@@ -21757,6 +21794,7 @@ fi
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
+save_UNIQMODLIBS=$UNIQMODLIBS
 
 
     CPPFLAGS="$CPPFLAGS $ZLIB_CFLAGS"
@@ -21893,6 +21931,7 @@ CFLAGS=$save_CFLAGS
 CPPFLAGS=$save_CPPFLAGS
 LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
+UNIQMODLIBS=$save_UNIQMODLIBS
 
 
 
@@ -21904,6 +21943,7 @@ printf "%s\n" "no" >&6; }
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
+save_UNIQMODLIBS=$UNIQMODLIBS
 
 
     CPPFLAGS="$CPPFLAGS $ZLIB_CFLAGS"
@@ -22040,6 +22080,7 @@ CFLAGS=$save_CFLAGS
 CPPFLAGS=$save_CPPFLAGS
 LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
+UNIQMODLIBS=$save_UNIQMODLIBS
 
 
 
@@ -22141,6 +22182,7 @@ fi
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
+save_UNIQMODLIBS=$UNIQMODLIBS
 
 
     CPPFLAGS="$CPPFLAGS $BZIP2_CFLAGS"
@@ -22222,6 +22264,7 @@ CFLAGS=$save_CFLAGS
 CPPFLAGS=$save_CPPFLAGS
 LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
+UNIQMODLIBS=$save_UNIQMODLIBS
 
 
 
@@ -22233,6 +22276,7 @@ printf "%s\n" "no" >&6; }
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
+save_UNIQMODLIBS=$UNIQMODLIBS
 
 
     CPPFLAGS="$CPPFLAGS $BZIP2_CFLAGS"
@@ -22314,6 +22358,7 @@ CFLAGS=$save_CFLAGS
 CPPFLAGS=$save_CPPFLAGS
 LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
+UNIQMODLIBS=$save_UNIQMODLIBS
 
 
 
@@ -22389,6 +22434,7 @@ fi
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
+save_UNIQMODLIBS=$UNIQMODLIBS
 
 
     CPPFLAGS="$CPPFLAGS $LIBLZMA_CFLAGS"
@@ -22470,6 +22516,7 @@ CFLAGS=$save_CFLAGS
 CPPFLAGS=$save_CPPFLAGS
 LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
+UNIQMODLIBS=$save_UNIQMODLIBS
 
 
 
@@ -22481,6 +22528,7 @@ printf "%s\n" "no" >&6; }
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
+save_UNIQMODLIBS=$UNIQMODLIBS
 
 
     CPPFLAGS="$CPPFLAGS $LIBLZMA_CFLAGS"
@@ -22562,6 +22610,7 @@ CFLAGS=$save_CFLAGS
 CPPFLAGS=$save_CPPFLAGS
 LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
+UNIQMODLIBS=$save_UNIQMODLIBS
 
 
 
@@ -22637,6 +22686,7 @@ fi
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
+save_UNIQMODLIBS=$UNIQMODLIBS
 
 
     CPPFLAGS="$CPPFLAGS $LIBZSTD_CFLAGS"
@@ -22775,6 +22825,7 @@ CFLAGS=$save_CFLAGS
 CPPFLAGS=$save_CPPFLAGS
 LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
+UNIQMODLIBS=$save_UNIQMODLIBS
 
 
 
@@ -22786,6 +22837,7 @@ printf "%s\n" "no" >&6; }
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
+save_UNIQMODLIBS=$UNIQMODLIBS
 
 
     CPPFLAGS="$CPPFLAGS $LIBZSTD_CFLAGS"
@@ -22924,6 +22976,7 @@ CFLAGS=$save_CFLAGS
 CPPFLAGS=$save_CPPFLAGS
 LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
+UNIQMODLIBS=$save_UNIQMODLIBS
 
 
 
@@ -27024,6 +27077,7 @@ fi
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
+save_UNIQMODLIBS=$UNIQMODLIBS
 
 
       CPPFLAGS="$CPPFLAGS $LIBREADLINE_CFLAGS"
@@ -27102,6 +27156,7 @@ CFLAGS=$save_CFLAGS
 CPPFLAGS=$save_CPPFLAGS
 LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
+UNIQMODLIBS=$save_UNIQMODLIBS
 
 
 
@@ -27113,6 +27168,7 @@ printf "%s\n" "no" >&6; }
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
+save_UNIQMODLIBS=$UNIQMODLIBS
 
 
       CPPFLAGS="$CPPFLAGS $LIBREADLINE_CFLAGS"
@@ -27191,6 +27247,7 @@ CFLAGS=$save_CFLAGS
 CPPFLAGS=$save_CPPFLAGS
 LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
+UNIQMODLIBS=$save_UNIQMODLIBS
 
 
 
@@ -27275,6 +27332,7 @@ fi
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
+save_UNIQMODLIBS=$UNIQMODLIBS
 
 
       CPPFLAGS="$CPPFLAGS $LIBEDIT_CFLAGS"
@@ -27355,6 +27413,7 @@ CFLAGS=$save_CFLAGS
 CPPFLAGS=$save_CPPFLAGS
 LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
+UNIQMODLIBS=$save_UNIQMODLIBS
 
 
 
@@ -27366,6 +27425,7 @@ printf "%s\n" "no" >&6; }
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
+save_UNIQMODLIBS=$UNIQMODLIBS
 
 
       CPPFLAGS="$CPPFLAGS $LIBEDIT_CFLAGS"
@@ -27446,6 +27506,7 @@ CFLAGS=$save_CFLAGS
 CPPFLAGS=$save_CPPFLAGS
 LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
+UNIQMODLIBS=$save_UNIQMODLIBS
 
 
 
@@ -27484,6 +27545,7 @@ printf "%s\n" "$with_readline (CFLAGS: $READLINE_CFLAGS, LIBS: $READLINE_LIBS)" 
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
+save_UNIQMODLIBS=$UNIQMODLIBS
 
 
     CPPFLAGS="$CPPFLAGS $READLINE_CFLAGS"
@@ -27883,6 +27945,7 @@ CFLAGS=$save_CFLAGS
 CPPFLAGS=$save_CPPFLAGS
 LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
+UNIQMODLIBS=$save_UNIQMODLIBS
 
  ;;
 esac
@@ -28596,6 +28659,7 @@ save_CFLAGS=$CFLAGS
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
+save_UNIQMODLIBS=$UNIQMODLIBS
 
 
   # Make sure we've got the header defines.
@@ -29631,6 +29695,7 @@ CFLAGS=$save_CFLAGS
 CPPFLAGS=$save_CPPFLAGS
 LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
+UNIQMODLIBS=$save_UNIQMODLIBS
 
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for device files" >&5
@@ -30323,6 +30388,7 @@ save_CFLAGS=$CFLAGS
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
+save_UNIQMODLIBS=$UNIQMODLIBS
 
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for library containing shm_open" >&5
@@ -30429,6 +30495,7 @@ CFLAGS=$save_CFLAGS
 CPPFLAGS=$save_CPPFLAGS
 LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
+UNIQMODLIBS=$save_UNIQMODLIBS
 
 
 
@@ -30761,6 +30828,7 @@ save_CFLAGS=$CFLAGS
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
+save_UNIQMODLIBS=$UNIQMODLIBS
 
 
   LIBS="$LIBS $OPENSSL_LIBS"
@@ -30819,6 +30887,7 @@ CFLAGS=$save_CFLAGS
 CPPFLAGS=$save_CPPFLAGS
 LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
+UNIQMODLIBS=$save_UNIQMODLIBS
 
 
 
@@ -30826,6 +30895,7 @@ save_CFLAGS=$CFLAGS
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
+save_UNIQMODLIBS=$UNIQMODLIBS
 
 
   LIBS="$LIBS $LIBCRYPTO_LIBS"
@@ -30881,6 +30951,7 @@ CFLAGS=$save_CFLAGS
 CPPFLAGS=$save_CPPFLAGS
 LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
+UNIQMODLIBS=$save_UNIQMODLIBS
 
 
 
@@ -32531,8 +32602,10 @@ fi
 ###############################################################################
 # Cryptographic primitives
 LIBHASHLIB_INTERNAL_CFLAGS="-I\$(srcdir)/Modules/_hashlib"
-LIBHASHLIB_INTERNAL_LDFLAGS="-lm \$(LIBHASHLIB_INTERNAL_A)"
+LIBHASHLIB_INTERNAL_RULE_LDFLAGS="-lm \$(LIBHASHLIB_INTERNAL_A)"
 LIBHASHLIB_INTERNAL="\$(LIBHASHLIB_INTERNAL_HEADERS) \$(LIBHASHLIB_INTERNAL_A)"
+UNIQMODLIBS="$UNIQMODLIBS \$(LIBHASHLIB_INTERNAL_A)"
+
 
 
 
@@ -32760,6 +32833,9 @@ fi
 
 
   LIBHACL_MD5_LDFLAGS=LIBHACL_MD5_LIB_${LIBHACL_LDEPS_LIBTYPE}
+  # LDFLAGS will not contain the internal library helper as it could
+  # be duplicated. Instead, it will be linked added only for the rule
+  # and will be otherwise added to the interpreter directly.
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _md5" >&5
 printf %s "checking for stdlib extension module _md5... " >&6; }
@@ -32786,7 +32862,7 @@ fi
 then :
 
     as_fn_append MODULE_BLOCK "MODULE__MD5_CFLAGS=$LIBHACL_CFLAGS $LIBHASHLIB_INTERNAL_CFLAGS$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__MD5_LDFLAGS=\$($LIBHACL_MD5_LDFLAGS) $LIBHASHLIB_INTERNAL_LDFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__MD5_LDFLAGS=\$($LIBHACL_MD5_LDFLAGS)$as_nl"
 
 fi
    if test "$py_cv_module__md5" = yes; then
@@ -32805,6 +32881,9 @@ printf "%s\n" "$py_cv_module__md5" >&6; }
 
 
   LIBHACL_SHA1_LDFLAGS=LIBHACL_SHA1_LIB_${LIBHACL_LDEPS_LIBTYPE}
+  # LDFLAGS will not contain the internal library helper as it could
+  # be duplicated. Instead, it will be linked added only for the rule
+  # and will be otherwise added to the interpreter directly.
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _sha1" >&5
 printf %s "checking for stdlib extension module _sha1... " >&6; }
@@ -32831,7 +32910,7 @@ fi
 then :
 
     as_fn_append MODULE_BLOCK "MODULE__SHA1_CFLAGS=$LIBHACL_CFLAGS $LIBHASHLIB_INTERNAL_CFLAGS$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__SHA1_LDFLAGS=\$($LIBHACL_SHA1_LDFLAGS) $LIBHASHLIB_INTERNAL_LDFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__SHA1_LDFLAGS=\$($LIBHACL_SHA1_LDFLAGS)$as_nl"
 
 fi
    if test "$py_cv_module__sha1" = yes; then
@@ -32850,6 +32929,9 @@ printf "%s\n" "$py_cv_module__sha1" >&6; }
 
 
   LIBHACL_SHA2_LDFLAGS=LIBHACL_SHA2_LIB_${LIBHACL_LDEPS_LIBTYPE}
+  # LDFLAGS will not contain the internal library helper as it could
+  # be duplicated. Instead, it will be linked added only for the rule
+  # and will be otherwise added to the interpreter directly.
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _sha2" >&5
 printf %s "checking for stdlib extension module _sha2... " >&6; }
@@ -32876,7 +32958,7 @@ fi
 then :
 
     as_fn_append MODULE_BLOCK "MODULE__SHA2_CFLAGS=$LIBHACL_CFLAGS $LIBHASHLIB_INTERNAL_CFLAGS$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__SHA2_LDFLAGS=\$($LIBHACL_SHA2_LDFLAGS) $LIBHASHLIB_INTERNAL_LDFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__SHA2_LDFLAGS=\$($LIBHACL_SHA2_LDFLAGS)$as_nl"
 
 fi
    if test "$py_cv_module__sha2" = yes; then
@@ -32895,6 +32977,9 @@ printf "%s\n" "$py_cv_module__sha2" >&6; }
 
 
   LIBHACL_SHA3_LDFLAGS=LIBHACL_SHA3_LIB_${LIBHACL_LDEPS_LIBTYPE}
+  # LDFLAGS will not contain the internal library helper as it could
+  # be duplicated. Instead, it will be linked added only for the rule
+  # and will be otherwise added to the interpreter directly.
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _sha3" >&5
 printf %s "checking for stdlib extension module _sha3... " >&6; }
@@ -32921,7 +33006,7 @@ fi
 then :
 
     as_fn_append MODULE_BLOCK "MODULE__SHA3_CFLAGS=$LIBHACL_CFLAGS $LIBHASHLIB_INTERNAL_CFLAGS$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__SHA3_LDFLAGS=\$($LIBHACL_SHA3_LDFLAGS) $LIBHASHLIB_INTERNAL_LDFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__SHA3_LDFLAGS=\$($LIBHACL_SHA3_LDFLAGS)$as_nl"
 
 fi
    if test "$py_cv_module__sha3" = yes; then
@@ -32940,6 +33025,9 @@ printf "%s\n" "$py_cv_module__sha3" >&6; }
 
 
   LIBHACL_BLAKE2_LDFLAGS=LIBHACL_BLAKE2_LIB_${LIBHACL_LDEPS_LIBTYPE}
+  # LDFLAGS will not contain the internal library helper as it could
+  # be duplicated. Instead, it will be linked added only for the rule
+  # and will be otherwise added to the interpreter directly.
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _blake2" >&5
 printf %s "checking for stdlib extension module _blake2... " >&6; }
@@ -32966,7 +33054,7 @@ fi
 then :
 
     as_fn_append MODULE_BLOCK "MODULE__BLAKE2_CFLAGS=$LIBHACL_CFLAGS $LIBHASHLIB_INTERNAL_CFLAGS$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__BLAKE2_LDFLAGS=\$($LIBHACL_BLAKE2_LDFLAGS) $LIBHASHLIB_INTERNAL_LDFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__BLAKE2_LDFLAGS=\$($LIBHACL_BLAKE2_LDFLAGS)$as_nl"
 
 fi
    if test "$py_cv_module__blake2" = yes; then
@@ -32986,6 +33074,9 @@ printf "%s\n" "$py_cv_module__blake2" >&6; }
 
 
   LIBHACL_HMAC_LDFLAGS=LIBHACL_HMAC_LIB_${LIBHACL_LDEPS_LIBTYPE}
+  # LDFLAGS will not contain the internal library helper as it could
+  # be duplicated. Instead, it will be linked added only for the rule
+  # and will be otherwise added to the interpreter directly.
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _hmac" >&5
 printf %s "checking for stdlib extension module _hmac... " >&6; }
@@ -33012,7 +33103,7 @@ fi
 then :
 
     as_fn_append MODULE_BLOCK "MODULE__HMAC_CFLAGS=$LIBHACL_CFLAGS $LIBHASHLIB_INTERNAL_CFLAGS$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__HMAC_LDFLAGS=\$($LIBHACL_HMAC_LDFLAGS) $LIBHASHLIB_INTERNAL_LDFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__HMAC_LDFLAGS=\$($LIBHACL_HMAC_LDFLAGS)$as_nl"
 
 fi
    if test "$py_cv_module__hmac" = yes; then
@@ -33694,7 +33785,7 @@ fi
 then :
 
     as_fn_append MODULE_BLOCK "MODULE__HASHLIB_CFLAGS=$OPENSSL_INCLUDES $LIBHASHLIB_INTERNAL_CFLAGS$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__HASHLIB_LDFLAGS=$OPENSSL_LDFLAGS $OPENSSL_LDFLAGS_RPATH $LIBCRYPTO_LIBS $LIBHASHLIB_INTERNAL_LDFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__HASHLIB_LDFLAGS=$OPENSSL_LDFLAGS $OPENSSL_LDFLAGS_RPATH $LIBCRYPTO_LIBS$as_nl"
 
 fi
    if test "$py_cv_module__hashlib" = yes; then

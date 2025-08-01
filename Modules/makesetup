@@ -111,6 +111,7 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 	SHAREDMODS=
 	OBJS=
 	LIBS=
+	UNIQMODLIBS=
 	LOCALLIBS=
 	BASELIBS=
 	while read line
@@ -276,7 +277,7 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 				;;
 			esac
 			rule="$file: $objs \$(MODULE_${mods_upper}_LDEPS)"
-			rule="$rule; \$(BLDSHARED) $objs $libs \$(LIBPYTHON) -o $file"
+			rule="$rule; \$(BLDSHARED) $objs $libs \$(MODULE_${mods_upper}_RULE_LDFLAGS) \$(LIBPYTHON) -o $file"
 			echo "$rule" >>$rulesf
 		done
 	done
@@ -290,7 +291,7 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 	yes)	BASELIBS=$LIBS;;
 	*)	LOCALLIBS=$LIBS;;
 	esac
-	LIBS='$(LOCALMODLIBS) $(BASEMODLIBS)'
+	LIBS='$(LOCALMODLIBS) $(BASEMODLIBS) $(UNIQMODLIBS)'
 	DEFS="BASEMODLIBS=$BASELIBS$NL$DEFS"
 	DEFS="LOCALMODLIBS=$LOCALLIBS$NL$DEFS"
 
@@ -332,6 +333,7 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 		echo "s%_MODDISABLED_NAMES_%$DISABLED%" >>$sedf
 		echo "s%_MODOBJS_%$OBJS%" >>$sedf
 		echo "s%_MODLIBS_%$LIBS%" >>$sedf
+		echo "s%_UNIQMODLIBS_%$UNIQMODLIBS%" >>$sedf
 		echo "/Definitions added by makesetup/r $sedr" >>$sedf
 		sed -f $sedf $makepre >Makefile
 		cat $rulesf >>Makefile

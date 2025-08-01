@@ -40,18 +40,23 @@ AC_DEFUN([SAVE_ENV],
 [_SAVE_VAR([CPPFLAGS])]
 [_SAVE_VAR([LDFLAGS])]
 [_SAVE_VAR([LIBS])]
+[_SAVE_VAR([UNIQMODLIBS])]
 )dnl
 AC_DEFUN([RESTORE_ENV],
 [_RESTORE_VAR([CFLAGS])]
 [_RESTORE_VAR([CPPFLAGS])]
 [_RESTORE_VAR([LDFLAGS])]
 [_RESTORE_VAR([LIBS])]
+[_RESTORE_VAR([UNIQMODLIBS])]
 )dnl
 AC_DEFUN([WITH_SAVE_ENV],
 [SAVE_ENV]
 [$1]
 [RESTORE_ENV]
 )dnl
+
+UNIQMODLIBS=""
+AC_SUBST([UNIQMODLIBS])
 
 dnl PY_CHECK_FUNC(FUNCTION, [INCLUDES], [AC_DEFINE-VAR])
 AC_DEFUN([PY_CHECK_FUNC],
@@ -7961,10 +7966,12 @@ PY_STDLIB_MOD_SIMPLE([unicodedata])
 ###############################################################################
 # Cryptographic primitives
 LIBHASHLIB_INTERNAL_CFLAGS="-I\$(srcdir)/Modules/_hashlib"
-LIBHASHLIB_INTERNAL_LDFLAGS="-lm \$(LIBHASHLIB_INTERNAL_A)"
+LIBHASHLIB_INTERNAL_RULE_LDFLAGS="-lm \$(LIBHASHLIB_INTERNAL_A)"
 LIBHASHLIB_INTERNAL="\$(LIBHASHLIB_INTERNAL_HEADERS) \$(LIBHASHLIB_INTERNAL_A)"
+UNIQMODLIBS="$UNIQMODLIBS \$(LIBHASHLIB_INTERNAL_A)"
 
 AC_SUBST([LIBHASHLIB_INTERNAL_CFLAGS])
+AC_SUBST([LIBHASHLIB_INTERNAL_RULE_LDFLAGS])
 AC_SUBST([LIBHASHLIB_INTERNAL])
 
 ###############################################################################
@@ -8103,9 +8110,12 @@ dnl The EXTNAME is the name of the extension module being built.
 AC_DEFUN([PY_HACL_CREATE_MODULE], [
   AS_VAR_PUSHDEF([v], [[LIBHACL_][$1][_LDFLAGS]])
   AS_VAR_SET([v], [[LIBHACL_][$1][_LIB_${LIBHACL_LDEPS_LIBTYPE}]])
+  # LDFLAGS will not contain the internal library helper as it could
+  # be duplicated. Instead, it will be linked added only for the rule
+  # and will be otherwise added to the interpreter directly.
   PY_STDLIB_MOD([$2], [$3], [],
     [$LIBHACL_CFLAGS $LIBHASHLIB_INTERNAL_CFLAGS],
-    [\$($v) $LIBHASHLIB_INTERNAL_LDFLAGS])
+    [\$($v)])
   AS_VAR_POPDEF([v])
 ])
 
@@ -8187,7 +8197,7 @@ PY_STDLIB_MOD([_ssl], [], [test "$ac_cv_working_openssl_ssl" = yes],
   [$OPENSSL_INCLUDES], [$OPENSSL_LDFLAGS $OPENSSL_LDFLAGS_RPATH $OPENSSL_LIBS])
 PY_STDLIB_MOD([_hashlib], [], [test "$ac_cv_working_openssl_hashlib" = yes],
   [$OPENSSL_INCLUDES $LIBHASHLIB_INTERNAL_CFLAGS],
-  [$OPENSSL_LDFLAGS $OPENSSL_LDFLAGS_RPATH $LIBCRYPTO_LIBS $LIBHASHLIB_INTERNAL_LDFLAGS])
+  [$OPENSSL_LDFLAGS $OPENSSL_LDFLAGS_RPATH $LIBCRYPTO_LIBS])
 
 dnl test modules
 PY_STDLIB_MOD([_testcapi],
