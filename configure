@@ -32531,8 +32531,18 @@ fi
 ###############################################################################
 # Cryptographic primitives
 LIBHASHLIB_INTERNAL_CFLAGS="-I\$(srcdir)/Modules/_hashlib"
-LIBHASHLIB_INTERNAL_LDFLAGS="-lm \$(LIBHASHLIB_INTERNAL_A)"
-LIBHASHLIB_INTERNAL="\$(LIBHASHLIB_INTERNAL_HEADERS) \$(LIBHASHLIB_INTERNAL_A)"
+if test "$ac_sys_system" = "Emscripten"; then
+  LIBHASHLIB_INTERNAL_LDFLAGS="-lm"
+  LIBHASHLIB_INTERNAL="\$(LIBHASHLIB_INTERNAL_HEADERS)"
+  # Directly link the library to the interpreter instead to prevent duplicated
+  # symbols. This is a temporary fix until we manage to find a way to elegantly
+  # configure the various cryptographic modules.
+  LDFLAGS="$LDFLAGS \$(LIBHASHLIB_INTERNAL_A)"
+  LIBS="$LIBS \$(LIBHASHLIB_INTERNAL_A)"
+else
+  LIBHASHLIB_INTERNAL_LDFLAGS="-lm \$(LIBHASHLIB_INTERNAL_A)"
+  LIBHASHLIB_INTERNAL="\$(LIBHASHLIB_INTERNAL_HEADERS) \$(LIBHASHLIB_INTERNAL_A)"
+fi
 
 
 
