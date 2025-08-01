@@ -572,25 +572,16 @@ search_elf_file_for_section(
 
     int fd = open(elf_file, O_RDONLY);
     if (fd < 0) {
-        PyErr_Format(PyExc_OSError,
-            "Cannot open ELF file '%s' for section '%s' search: %s",
-            elf_file, secname, strerror(errno));
         goto exit;
     }
 
     struct stat file_stats;
     if (fstat(fd, &file_stats) != 0) {
-        PyErr_Format(PyExc_OSError,
-            "Cannot get file size for ELF file '%s' during section '%s' search: %s",
-            elf_file, secname, strerror(errno));
         goto exit;
     }
 
     file_memory = mmap(NULL, file_stats.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
     if (file_memory == MAP_FAILED) {
-        PyErr_Format(PyExc_OSError,
-            "Cannot memory map ELF file '%s' (size: %lld bytes) for section '%s' search: %s",
-            elf_file, (long long)file_stats.st_size, secname, strerror(errno));
         goto exit;
     }
 
@@ -598,9 +589,6 @@ search_elf_file_for_section(
 
     // Validate ELF header
     if (elf_header->e_shstrndx >= elf_header->e_shnum) {
-        PyErr_Format(PyExc_RuntimeError,
-            "Invalid ELF file '%s': string table index %u >= section count %u",
-            elf_file, elf_header->e_shstrndx, elf_header->e_shnum);
         goto exit;
     }
 
@@ -635,9 +623,6 @@ search_elf_file_for_section(
     }
 
     if (first_load_segment == NULL) {
-        PyErr_Format(PyExc_RuntimeError,
-            "No PT_LOAD segment found in ELF file '%s' (%u program headers examined)",
-            elf_file, elf_header->e_phnum);
         goto exit;
     }
 
@@ -650,9 +635,6 @@ exit:
         munmap(file_memory, file_stats.st_size);
     }
     if (fd >= 0 && close(fd) != 0) {
-        PyErr_Format(PyExc_OSError,
-            "Failed to close ELF file '%s': %s",
-            elf_file, strerror(errno));
         result = 0;
     }
     return result;
@@ -731,9 +713,6 @@ search_linux_map_for_section(proc_handle_t *handle, const char* secname, const c
             retval = search_elf_file_for_section(handle, secname, start, path);
             if (retval) {
                 break;
-            }
-            if (PyErr_Occurred()){
-                PyErr_Clear();
             }
         }
     }
