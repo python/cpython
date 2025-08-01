@@ -73,6 +73,11 @@ except ImportError:
 _profile_hook = None
 _trace_hook = None
 
+def _defer_refcount(op):
+    """Improve multithreaded scaling on the free-threade build."""
+    if hasattr(_sys, "_defer_refcount"):
+        _sys._defer_refcount(op)
+
 def setprofile(func):
     """Set a profile function for all threads started from the threading module.
 
@@ -298,6 +303,7 @@ class Condition:
         if hasattr(lock, '_is_owned'):
             self._is_owned = lock._is_owned
         self._waiters = _deque()
+        _defer_refcount(self)
 
     def _at_fork_reinit(self):
         self._lock._at_fork_reinit()
@@ -466,6 +472,7 @@ class Semaphore:
             raise ValueError("semaphore initial value must be >= 0")
         self._cond = Condition(Lock())
         self._value = value
+        _defer_refcount(self)
 
     def __repr__(self):
         cls = self.__class__
@@ -595,6 +602,7 @@ class Event:
     def __init__(self):
         self._cond = Condition(Lock())
         self._flag = False
+        _defer_refcount(self)
 
     def __repr__(self):
         cls = self.__class__
@@ -700,6 +708,7 @@ class Barrier:
         self._parties = parties
         self._state = 0  # 0 filling, 1 draining, -1 resetting, -2 broken
         self._count = 0
+        _defer_refcount(self)
 
     def __repr__(self):
         cls = self.__class__
