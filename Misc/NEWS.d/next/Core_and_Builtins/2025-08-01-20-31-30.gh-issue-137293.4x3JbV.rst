@@ -1,0 +1,1 @@
+Ignore Exceptions when searching ELF Files in remote debug since the file containing PyRuntime is the only one that matters.
