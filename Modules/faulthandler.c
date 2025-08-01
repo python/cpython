@@ -6,7 +6,6 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_signal.h"        // Py_NSIG
-#include "pycore_sysmodule.h"     // _PySys_GetRequiredAttr()
 #include "pycore_time.h"          // _PyTime_FromSecondsObject()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads
 #ifdef HAVE_UNISTD_H
@@ -98,7 +97,7 @@ faulthandler_get_fileno(PyObject **file_ptr)
     PyObject *file = *file_ptr;
 
     if (file == NULL || file == Py_None) {
-        file = _PySys_GetRequiredAttr(&_Py_ID(stderr));
+        file = PySys_GetAttr(&_Py_ID(stderr));
         if (file == NULL) {
             return -1;
         }
@@ -524,6 +523,11 @@ faulthandler_enable(void)
         return -1;
     }
 #endif
+
+    // gh-137185: Initialize C stack trace dumping outside of the signal
+    // handler. Specifically, we call backtrace() to ensure that libgcc is
+    // dynamically loaded outside of the signal handler.
+    _Py_InitDumpStack();
 
     for (size_t i=0; i < faulthandler_nsignals; i++) {
         fault_handler_t *handler;

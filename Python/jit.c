@@ -69,10 +69,6 @@ jit_alloc(size_t size)
 #else
     int flags = MAP_ANONYMOUS | MAP_PRIVATE;
     int prot = PROT_READ | PROT_WRITE;
-# ifdef MAP_JIT
-    flags |= MAP_JIT;
-    prot |= PROT_EXEC;
-# endif
     unsigned char *memory = mmap(NULL, size, prot, flags, -1, 0);
     int failed = memory == MAP_FAILED;
 #endif
@@ -118,11 +114,8 @@ mark_executable(unsigned char *memory, size_t size)
     int old;
     int failed = !VirtualProtect(memory, size, PAGE_EXECUTE_READ, &old);
 #else
-    int failed = 0;
     __builtin___clear_cache((char *)memory, (char *)memory + size);
-#ifndef MAP_JIT
-    failed = mprotect(memory, size, PROT_EXEC | PROT_READ);
-#endif
+    int failed = mprotect(memory, size, PROT_EXEC | PROT_READ);
 #endif
     if (failed) {
         jit_error("unable to protect executable memory");
@@ -431,8 +424,10 @@ void patch_aarch64_trampoline(unsigned char *location, int ordinal, jit_state *s
 
 #if defined(__aarch64__) || defined(_M_ARM64)
     #define TRAMPOLINE_SIZE 16
+    #define DATA_ALIGN 8
 #else
     #define TRAMPOLINE_SIZE 0
+    #define DATA_ALIGN 1
 #endif
 
 // Generate and patch AArch64 trampolines. The symbols to jump to are stored
@@ -522,15 +517,13 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     // Round up to the nearest page:
     size_t page_size = get_page_size();
     assert((page_size & (page_size - 1)) == 0);
-    size_t padding = page_size - ((code_size + state.trampolines.size + data_size) & (page_size - 1));
-    size_t total_size = code_size + state.trampolines.size + data_size  + padding;
+    size_t code_padding = DATA_ALIGN - ((code_size + state.trampolines.size) & (DATA_ALIGN - 1));
+    size_t padding = page_size - ((code_size + state.trampolines.size + code_padding + data_size) & (page_size - 1));
+    size_t total_size = code_size + state.trampolines.size + code_padding + data_size + padding;
     unsigned char *memory = jit_alloc(total_size);
     if (memory == NULL) {
         return -1;
     }
-#ifdef MAP_JIT
-    pthread_jit_write_protect_np(0);
-#endif
     // Collect memory stats
     OPT_STAT_ADD(jit_total_memory_size, total_size);
     OPT_STAT_ADD(jit_code_size, code_size);
@@ -545,7 +538,7 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     // Loop again to emit the code:
     unsigned char *code = memory;
     state.trampolines.mem = memory + code_size;
-    unsigned char *data = memory + code_size + state.trampolines.size;
+    unsigned char *data = memory + code_size + state.trampolines.size + code_padding;
     // Compile the shim, which handles converting between the native
     // calling convention and the calling convention used by jitted code
     // (which may be different for efficiency reasons).
@@ -567,10 +560,7 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     code += group->code_size;
     data += group->data_size;
     assert(code == memory + code_size);
-    assert(data == memory + code_size + state.trampolines.size + data_size);
-#ifdef MAP_JIT
-    pthread_jit_write_protect_np(1);
-#endif
+    assert(data == memory + code_size + state.trampolines.size + code_padding + data_size);
     if (mark_executable(memory, total_size)) {
         jit_free(memory, total_size);
         return -1;

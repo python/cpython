@@ -192,12 +192,8 @@ The :mod:`bdb` module also defines two classes:
         entered.
       * ``"return"``: A function or other code block is about to return.
       * ``"exception"``: An exception has occurred.
-      * ``"c_call"``: A C function is about to be called.
-      * ``"c_return"``: A C function has returned.
-      * ``"c_exception"``: A C function has raised an exception.
 
-      For the Python events, specialized functions (see below) are called.  For
-      the C events, no action is taken.
+      For all the events, specialized functions (see below) are called.
 
       The *arg* parameter depends on the previous event.
 

@@ -1056,7 +1056,7 @@ Here is an example of a multi-line docstring::
    >>> print(my_function.__doc__)
    Do nothing, but document it.
 
-       No, really, it doesn't do anything.
+   No, really, it doesn't do anything.
 
 
 .. _tut-annotations:
