@@ -195,7 +195,7 @@ back to the event loops queue.
 In practice, it's slightly more convoluted, but not by much.
 In part 2, we'll walk through the details that make this possible.
 
-**Unlike tasks, await-ing a coroutine does not cede control!**
+**Unlike tasks, awaiting a coroutine does not cede control!**
 Wrapping a coroutine in a task first, then ``await``\ ing that would cede control.
 The behavior of ``await coroutine`` is effectively the same as invoking a regular,
 synchronous Python function.
