@@ -1538,8 +1538,10 @@ type_set_name(PyObject *tp, PyObject *value, void *Py_UNUSED(closure))
     PyInterpreterState *interp = _PyInterpreterState_GET();
     _PyEval_StopTheWorld(interp);
     type->tp_name = tp_name;
-    Py_SETREF(((PyHeapTypeObject*)type)->ht_name, Py_NewRef(value));
+    PyObject *old_name = ((PyHeapTypeObject*)type)->ht_name;
+    ((PyHeapTypeObject*)type)->ht_name = Py_NewRef(value);
     _PyEval_StartTheWorld(interp);
+    Py_DECREF(old_name);
     return 0;
 }
 
