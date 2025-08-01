@@ -10,6 +10,7 @@
 
 .. seealso::
 
+   * :ref:`T-strings tutorial <tut-t-strings>`
    * :ref:`Format strings <f-strings>`
    * :ref:`T-string literal syntax <t-strings>`
 
