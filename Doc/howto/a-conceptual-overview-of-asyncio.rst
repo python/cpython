@@ -115,8 +115,8 @@ Notably, the coroutine can be paused and resumed at various points within the
 function's body.
 That pausing and resuming ability is what allows for asynchronous behavior!
 
-Coroutines and coroutine functions are built on top of generators and
-generator functions.
+Coroutines and coroutine functions were built by leveraging the functionality
+of generators and generator functions.
 Recall, a generator function is a function that ``yield``\s, like this one::
 
     def get_random_number():
