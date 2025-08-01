@@ -159,21 +159,17 @@ Roughly speaking, :ref:`tasks <asyncio-task-obj>` are coroutines (not coroutine
 functions) tied to an event loop.
 A task also maintains a list of callback functions whose importance will become
 clear in a moment when we discuss ``await``.
-When tasks are created they are automatically added to the event loop's queue
-of tasks::
+The recommended way to create tasks is via :func:`asyncio.create_task`.
+Creating a task automatically adds it to the event loop's queue of tasks.
+
+Since there's only one event loop (in each thread), ``asyncio`` takes care of 
+associating the task with the event loop for you. That is, there's no need
+to specify the event loop.
+
+::
 
     # This creates a Task object and puts it on the event loop's queue.
-    special_task = asyncio.Task(coro=special_fella(magic_number=5), loop=event_loop)
-
-It's common to see a task instantiated without explicitly specifying the event loop
-it belongs to.
-Since there's only one event loop (in each thread), asyncio made the loop argument optional and
-will add it for you if it's left unspecified::
-
-    # This creates another Task object and puts it on the event loop's queue.
-    # The task is implicitly tied to the event loop by asyncio since the
-    # loop argument was left unspecified.
-    another_special_task = asyncio.Task(coro=special_fella(magic_number=12))
+    special_task = asyncio.create_task(coro=special_fella(magic_number=5))
 
 =====
 await
@@ -214,7 +210,7 @@ Consider this program::
         print("I am coro_b(). I sure hope no one hogs the event loop...")
 
     async def main():
-        task_b = asyncio.Task(coro_b())
+        task_b = asyncio.create_task(coro_b())
         num_repeats = 3
         for _ in range(num_repeats):
             await coro_a()
@@ -235,7 +231,7 @@ invocations before ``coro_b()``'s output:
     I am coro_a(). Hi!
     I am coro_b(). I sure hope no one hogs the event loop...
 
-If we change ``await coro_a()`` to ``await asyncio.Task(coro_a())``, the
+If we change ``await coro_a()`` to ``await asyncio.create_task(coro_a())``, the
 behavior changes.
 The coroutine ``main()`` cedes control to the event loop with that statement.
 The event loop then works through its queue, calling ``coro_b()`` and then
@@ -392,15 +388,15 @@ hogging control while waiting.
         # Add a few other tasks to the event loop, so there's something
         # to do while asynchronously sleeping.
         work_tasks = [
-            asyncio.Task(other_work()),
-            asyncio.Task(other_work()),
-            asyncio.Task(other_work())
+            asyncio.create_task(other_work()),
+            asyncio.create_task(other_work()),
+            asyncio.create_task(other_work())
         ]
         print(
             "Beginning asynchronous sleep at time: "
             f"{datetime.datetime.now().strftime("%H:%M:%S")}."
         )
-        await asyncio.Task(async_sleep(3))
+        await asyncio.create_task(async_sleep(3))
         print(
             "Done asynchronous sleep at time: "
             f"{datetime.datetime.now().strftime("%H:%M:%S")}."
@@ -423,7 +419,7 @@ will monitor how much time has elapsed and accordingly call
         future = asyncio.Future()
         time_to_wake = time.time() + seconds
         # Add the watcher-task to the event loop.
-        watcher_task = asyncio.Task(_sleep_watcher(future, time_to_wake))
+        watcher_task = asyncio.create_task(_sleep_watcher(future, time_to_wake))
         # Block until the future is marked as done.
         await future
 
