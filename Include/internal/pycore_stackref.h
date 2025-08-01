@@ -70,6 +70,9 @@ static const _PyStackRef PyStackRef_ERROR = { .index = 2 };
 #define PyStackRef_False ((_PyStackRef){ .index = 6 })
 #define PyStackRef_True ((_PyStackRef){ .index = 8 })
 
+#define PyStackRef_ZERO_BITS PyStackRef_NULL
+
+
 #define INITIAL_STACKREF_INDEX 10
 
 static inline int
@@ -263,6 +266,10 @@ PyStackRef_IsNullOrInt(_PyStackRef ref);
 #define Py_TAG_BITS 3
 
 static const _PyStackRef PyStackRef_ERROR = { .bits = Py_TAG_INVALID };
+
+/* For use in the JIT to clear an unused value.
+ * PyStackRef_ZERO_BITS has no meaning and should not be used other than by the JIT. */
+static const _PyStackRef PyStackRef_ZERO_BITS = { .bits = 0 };
 
 /* Wrap a pointer in a stack ref.
  * The resulting stack reference is not safe and should only be used

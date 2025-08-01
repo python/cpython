@@ -54,7 +54,7 @@ FLAGS = [
     "EXIT",
     "PURE",
     "PASSTHROUGH",
-    "OPARG_AND_1",
+    "SYNC_SP",
     "ERROR_NO_POP",
     "NO_SAVE_IP",
 ]
