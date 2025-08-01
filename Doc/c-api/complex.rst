@@ -122,7 +122,7 @@ Complex Numbers as Python Objects
 
       The complex number value, using the C :c:type:`Py_complex` representation.
 
-      .. deprecated:: 3.15
+      .. deprecated-removed:: next 3.17
 
 
 .. c:var:: PyTypeObject PyComplex_Type
