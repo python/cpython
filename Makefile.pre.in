@@ -3136,10 +3136,29 @@ JIT_DEPS = \
 		$(srcdir)/Python/executor_cases.c.h \
 		pyconfig.h
 
-jit_stencils.h: $(JIT_DEPS)
+jit_stencils.h $(JIT_STENCIL_HEADER): $(JIT_DEPS)
 	@REGEN_JIT_COMMAND@
 
-Python/jit.o: $(srcdir)/Python/jit.c jit_stencils.h $(wildcard jit_stencils-*.h)
+# Match Darwin hosts with version suffixes
+ifneq ($(filter aarch64-apple-darwin%,$(HOST_GNU_TYPE)),)
+JIT_STENCIL_HEADER = jit_stencils-aarch64-apple-darwin.h
+else ifneq ($(filter x86_64-apple-darwin%,$(HOST_GNU_TYPE)),)
+JIT_STENCIL_HEADER = jit_stencils-x86_64-apple-darwin.h
+else ifeq ($(HOST_GNU_TYPE), aarch64-pc-windows-msvc)
+JIT_STENCIL_HEADER = jit_stencils-aarch64-pc-windows-msvc.h
+else ifneq ($(filter aarch64-unknown-linux-gnu,$(HOST_GNU_TYPE)),)
+JIT_STENCIL_HEADER = jit_stencils-aarch64-unknown-linux-gnu.h
+else ifeq ($(HOST_GNU_TYPE), i686-pc-windows-msvc)
+JIT_STENCIL_HEADER = jit_stencils-i686-pc-windows-msvc.h
+else ifeq ($(HOST_GNU_TYPE), x86_64-pc-windows-msvc)
+JIT_STENCIL_HEADER = jit_stencils-x86_64-pc-windows-msvc.h
+else ifneq ($(filter x86_64-unknown-linux-gnu,$(HOST_GNU_TYPE)),)
+JIT_STENCIL_HEADER = jit_stencils-x86_64-unknown-linux-gnu.h
+else
+$(error "Unsupported host triple: $(HOST_GNU_TYPE). Please update the Makefile to support this host triple.")
+endif
+
+Python/jit.o: $(srcdir)/Python/jit.c jit_stencils.h $(JIT_STENCIL_HEADER)
 	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
 
 .PHONY: regen-jit
