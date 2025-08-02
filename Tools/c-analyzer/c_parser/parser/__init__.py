@@ -116,6 +116,8 @@ TODO:
 * alt impl using a state machine (& tokenizer or split on delimiters)
 """
 
+import textwrap
+
 from ..info import ParsedItem
 from ._info import SourceInfo
 
@@ -214,7 +216,6 @@ def _iter_source(lines, *, maxtext=11_000, maxlines=200, showtext=False):
         text = text[:500] + '...'
 
     if srcinfo.too_much_text(maxtext):
-        import textwrap
         msg = f'''
             too much text, try to increase MAX_SIZES[MAXTEXT] in cpython/_parser.py
             {filename} starting at line {lno_from} to {lno_to}
@@ -224,7 +225,6 @@ def _iter_source(lines, *, maxtext=11_000, maxlines=200, showtext=False):
         raise RuntimeError(textwrap.dedent(msg))
 
     if srcinfo.too_many_lines(maxlines):
-        import textwrap
         msg = f'''
             too many lines, try to increase MAX_SIZES[MAXLINES] in cpython/_parser.py
             {filename} starting at line {lno_from} to {lno_to}
