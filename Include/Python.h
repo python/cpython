@@ -59,6 +59,15 @@
 #  endif
 #endif // Py_GIL_DISABLED
 
+#ifdef _MSC_VER
+// Ignore MSC warning C4201: "nonstandard extension used: nameless
+// struct/union".  (Only generated for C standard versions less than C11, which
+// we don't *officially* support.)
+__pragma(warning(push))
+__pragma(warning(disable: 4201))
+#endif
+
+
 // Include Python header files
 #include "pyport.h"
 #include "pymacro.h"
@@ -137,5 +146,9 @@
 #include "fileutils.h"
 #include "cpython/pyfpe.h"
 #include "cpython/tracemalloc.h"
+
+#ifdef _MSC_VER
+__pragma(warning(pop))  // warning(disable: 4201)
+#endif
 
 #endif /* !Py_PYTHON_H */
