@@ -3152,8 +3152,8 @@ else ifeq ($(HOST_GNU_TYPE), i686-pc-windows-msvc)
 JIT_STENCIL_HEADER = jit_stencils-i686-pc-windows-msvc.h
 else ifeq ($(HOST_GNU_TYPE), x86_64-pc-windows-msvc)
 JIT_STENCIL_HEADER = jit_stencils-x86_64-pc-windows-msvc.h
-else ifeq ($(HOST_GNU_TYPE), x86_64-unknown-linux-gnu)
-JIT_STENCIL_HEADER = jit_stencils-x86_64-unknown-linux-gnu.h
+else ifeq ($(HOST_GNU_TYPE), x86_64-pc-linux-gnu)
+JIT_STENCIL_HEADER = jit_stencils-x86_64-pc-linux-gnu.h
 else
 $(error "Unsupported host triple: $(HOST_GNU_TYPE).")
 endif
