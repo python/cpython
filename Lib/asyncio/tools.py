@@ -1,10 +1,12 @@
 """Tools to analyze tasks running in asyncio programs."""
 
 from collections import defaultdict, namedtuple
+import csv
 from itertools import count
-from enum import Enum
+from enum import Enum, StrEnum, auto
 import sys
 from _remote_debugging import RemoteUnwinder, FrameInfo
+
 
 class NodeType(Enum):
     COROUTINE = 1
@@ -232,11 +234,31 @@ def _get_awaited_by_tasks(pid: int) -> list:
         sys.exit(1)
 
 
-def display_awaited_by_tasks_table(pid: int) -> None:
+class TaskTableOutputFormat(StrEnum):
+    table = auto()
+    csv = auto()
+    bsv = auto()
+    # As per the words of the asyncio 🍌SV spec lead:
+    # > 🍌SV is not just a format. It’s a lifestyle. A philosophy.
+    # https://www.youtube.com/watch?v=RrsVi1P6n0w
+
+
+def display_awaited_by_tasks_table(
+        pid: int,
+        format: TaskTableOutputFormat | str = TaskTableOutputFormat.table
+    ) -> None:
     """Build and print a table of all pending tasks under `pid`."""
 
     tasks = _get_awaited_by_tasks(pid)
     table = build_task_table(tasks)
+    format = TaskTableOutputFormat(format)
+    if format == TaskTableOutputFormat.table:
+        _display_awaited_by_tasks_table(table)
+    else:
+        _display_awaited_by_tasks_csv(table, format)
+
+
+def _display_awaited_by_tasks_table(table) -> None:
     # Print the table in a simple tabular format
     print(
         f"{'tid':<10} {'task id':<20} {'task name':<20} {'coroutine stack':<50} {'awaiter chain':<50} {'awaiter name':<15} {'awaiter id':<15}"
@@ -244,6 +266,20 @@ def display_awaited_by_tasks_table(pid: int) -> None:
     print("-" * 180)
     for row in table:
         print(f"{row[0]:<10} {row[1]:<20} {row[2]:<20} {row[3]:<50} {row[4]:<50} {row[5]:<15} {row[6]:<15}")
+
+
+def _display_awaited_by_tasks_csv(table, format: TaskTableOutputFormat) -> None:
+    csv_header = ('tid', 'task id', 'task name', 'coroutine stack',
+                  'awaiter chain', 'awaiter name', 'awaiter id')
+    if format == TaskTableOutputFormat.csv:
+        delimiter = ','
+    elif format == TaskTableOutputFormat.bsv:
+        delimiter = '\N{BANANA}'
+    else:
+        raise ValueError(f"Unknown output format: {format}")
+    csv_writer = csv.writer(sys.stdout, delimiter=delimiter)
+    csv_writer.writerow(csv_header)
+    csv_writer.writerows(table)
 
 
 def display_awaited_by_tasks_tree(pid: int) -> None:
