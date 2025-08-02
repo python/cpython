@@ -826,60 +826,59 @@ def stack_effect_only_peeks(instr: parser.InstDef) -> bool:
     )
 
 
-def op_escapes(op: parser.CodeDef) -> bool:
-
-    def is_simple_exit(stmt: Stmt) -> bool:
-        if not isinstance(stmt, SimpleStmt):
-            return False
-        tokens = stmt.contents
-        if len(tokens) < 4:
-            return False
-        return (
-            tokens[0].text in ("ERROR_IF", "DEOPT_IF", "EXIT_IF")
-            and
-            tokens[1].text == "("
-            and
-            tokens[2].text in ("true", "1")
-            and
-            tokens[3].text == ")"
-        )
-
-    def escapes_list(stmts: list[Stmt]) -> bool:
-        if not stmts:
-            return False
-        if is_simple_exit(stmts[-1]):
-            return False
-        for stmt in stmts:
-            if escapes(stmt):
-                return True
+def stmt_is_simple_exit(stmt: Stmt) -> bool:
+    if not isinstance(stmt, SimpleStmt):
         return False
+    tokens = stmt.contents
+    if len(tokens) < 4:
+        return False
+    return (
+        tokens[0].text in ("ERROR_IF", "DEOPT_IF", "EXIT_IF")
+        and
+        tokens[1].text == "("
+        and
+        tokens[2].text in ("true", "1")
+        and
+        tokens[3].text == ")"
+    )
 
-    def escapes(stmt: Stmt) -> bool:
-        if isinstance(stmt, BlockStmt):
-            return escapes_list(stmt.body)
-        elif isinstance(stmt, SimpleStmt):
-            for tkn in stmt.contents:
-                if tkn.text == "DECREF_INPUTS":
-                    return True
-            d: dict[SimpleStmt, EscapingCall] = {}
-            escaping_call_in_simple_stmt(stmt, d)
-            return bool(d)
-        elif isinstance(stmt, IfStmt):
-            if stmt.else_body and escapes(stmt.else_body):
-                return True
-            return escapes(stmt.body)
-        elif isinstance(stmt, MacroIfStmt):
-            if stmt.else_body and escapes_list(stmt.else_body):
-                return True
-            return escapes_list(stmt.body)
-        elif isinstance(stmt, ForStmt):
-            return escapes(stmt.body)
-        elif isinstance(stmt, WhileStmt):
-            return escapes(stmt.body)
-        else:
-            assert False, "Unexpected statement type"
 
-    return escapes(op.block)
+def stmt_list_escapes(stmts: list[Stmt]) -> bool:
+    if not stmts:
+        return False
+    if stmt_is_simple_exit(stmts[-1]):
+        return False
+    for stmt in stmts:
+        if stmt_escapes(stmt):
+            return True
+    return False
+
+
+def stmt_escapes(stmt: Stmt) -> bool:
+    if isinstance(stmt, BlockStmt):
+        return stmt_list_escapes(stmt.body)
+    elif isinstance(stmt, SimpleStmt):
+        for tkn in stmt.contents:
+            if tkn.text == "DECREF_INPUTS":
+                return True
+        d: dict[SimpleStmt, EscapingCall] = {}
+        escaping_call_in_simple_stmt(stmt, d)
+        return bool(d)
+    elif isinstance(stmt, IfStmt):
+        if stmt.else_body and stmt_escapes(stmt.else_body):
+            return True
+        return stmt_escapes(stmt.body)
+    elif isinstance(stmt, MacroIfStmt):
+        if stmt.else_body and stmt_list_escapes(stmt.else_body):
+            return True
+        return stmt_list_escapes(stmt.body)
+    elif isinstance(stmt, ForStmt):
+        return stmt_escapes(stmt.body)
+    elif isinstance(stmt, WhileStmt):
+        return stmt_escapes(stmt.body)
+    else:
+        assert False, "Unexpected statement type"
+
 
 def compute_properties(op: parser.CodeDef) -> Properties:
     escaping_calls = find_escaping_api_calls(op)
@@ -902,7 +901,7 @@ def compute_properties(op: parser.CodeDef) -> Properties:
         )
     error_with_pop = has_error_with_pop(op)
     error_without_pop = has_error_without_pop(op)
-    escapes = op_escapes(op)
+    escapes = stmt_escapes(op.block)
     pure = False if isinstance(op, parser.LabelDef) else "pure" in op.annotations
     no_save_ip = False if isinstance(op, parser.LabelDef) else "no_save_ip" in op.annotations
     return Properties(
