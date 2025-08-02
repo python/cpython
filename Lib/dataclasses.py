@@ -1338,6 +1338,9 @@ def _add_slots(cls, is_frozen, weakref_slot, defined_fields):
                 or _update_func_cell_for__class__(member.fdel, cls, newcls)):
                 break
 
+    # gh-135228: Make sure the original class can be garbage collected.
+    sys._clear_type_descriptors(cls)
+
     return newcls
 
 
