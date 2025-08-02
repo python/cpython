@@ -47,6 +47,9 @@ import ast
 import operator
 import os
 import sys
+from functools import cache
+from string.templatelib import Interpolation, Template, convert
+from typing import Any
 
 
 __all__ = ['NullTranslations', 'GNUTranslations', 'Catalog',
@@ -291,11 +294,23 @@ class NullTranslations:
     def gettext(self, message):
         if self._fallback:
             return self._fallback.gettext(message)
+        if isinstance(message, Template):
+            message, values = _template_to_format(message)
+            return message.format(**values)
         return message
 
     def ngettext(self, msgid1, msgid2, n):
         if self._fallback:
             return self._fallback.ngettext(msgid1, msgid2, n)
+        msgid1_is_template = isinstance(msgid1, Template)
+        msgid2_is_template = isinstance(msgid2, Template)
+        if msgid1_is_template and msgid2_is_template:
+            message, values = _template_to_format(
+                msgid1 if n == 1 else msgid2
+            )
+            return message.format(**values)
+        elif msgid1_is_template or msgid2_is_template:
+            raise TypeError('msgids cannot mix strings and t-strings')
         n = _as_int2(n)
         if n == 1:
             return msgid1
@@ -305,11 +320,23 @@ class NullTranslations:
     def pgettext(self, context, message):
         if self._fallback:
             return self._fallback.pgettext(context, message)
+        if isinstance(message, Template):
+            message, values = _template_to_format(message)
+            return message.format(**values)
         return message
 
     def npgettext(self, context, msgid1, msgid2, n):
         if self._fallback:
             return self._fallback.npgettext(context, msgid1, msgid2, n)
+        msgid1_is_template = isinstance(msgid1, Template)
+        msgid2_is_template = isinstance(msgid2, Template)
+        if msgid1_is_template and msgid2_is_template:
+            message, values = _template_to_format(
+                msgid1 if n == 1 else msgid2
+            )
+            return message.format(**values)
+        elif msgid1_is_template or msgid2_is_template:
+            raise TypeError('msgids cannot mix strings and t-strings')
         n = _as_int2(n)
         if n == 1:
             return msgid1
@@ -438,50 +465,104 @@ class GNUTranslations(NullTranslations):
 
     def gettext(self, message):
         missing = object()
+        orig_message = message
+        t_values = None
+        if isinstance(message, Template):
+            message, t_values = _template_to_format(message)
         tmsg = self._catalog.get(message, missing)
         if tmsg is missing:
             tmsg = self._catalog.get((message, self.plural(1)), missing)
         if tmsg is not missing:
+            if t_values is not None:
+                return tmsg.format(**t_values)
             return tmsg
         if self._fallback:
-            return self._fallback.gettext(message)
+            return self._fallback.gettext(orig_message)
+        if t_values is not None:
+            return message.format(**t_values)
         return message
 
     def ngettext(self, msgid1, msgid2, n):
+        orig_msgid1 = msgid1
+        orig_msgid2 = msgid2
+        msgid1_is_template = isinstance(msgid1, Template)
+        msgid2_is_template = isinstance(msgid2, Template)
+        t_values1 = t_values2 = None
+        if msgid1_is_template and msgid2_is_template:
+            msgid1, t_values1 = _template_to_format(msgid1)
+            msgid2, t_values2 = _template_to_format(msgid2)
+        elif msgid1_is_template or msgid2_is_template:
+            raise TypeError('msgids cannot mix strings and t-strings')
+        plural = self.plural(n)
+        t_values = t_values2 if plural else t_values1
         try:
-            tmsg = self._catalog[(msgid1, self.plural(n))]
+            tmsg = self._catalog[(msgid1, plural)]
         except KeyError:
             if self._fallback:
-                return self._fallback.ngettext(msgid1, msgid2, n)
+                return self._fallback.ngettext(orig_msgid1, orig_msgid2, n)
             if n == 1:
-                tmsg = msgid1
+                if t_values1 is not None:
+                    return msgid1.format(**t_values1)
+                return msgid1
             else:
-                tmsg = msgid2
+                if t_values2 is not None:
+                    return msgid2.format(**t_values2)
+                return msgid2
+        if t_values is not None:
+            return tmsg.format(**t_values)
         return tmsg
 
     def pgettext(self, context, message):
+        orig_message = message
+        t_values = None
+        if isinstance(message, Template):
+            message, t_values = _template_to_format(message)
         ctxt_msg_id = self.CONTEXT % (context, message)
         missing = object()
         tmsg = self._catalog.get(ctxt_msg_id, missing)
         if tmsg is missing:
             tmsg = self._catalog.get((ctxt_msg_id, self.plural(1)), missing)
         if tmsg is not missing:
+            if t_values is not None:
+                return tmsg.format(**t_values)
             return tmsg
         if self._fallback:
-            return self._fallback.pgettext(context, message)
+            return self._fallback.pgettext(context, orig_message)
+        if t_values is not None:
+            return message.format(**t_values)
         return message
 
     def npgettext(self, context, msgid1, msgid2, n):
+        orig_msgid1 = msgid1
+        orig_msgid2 = msgid2
+        msgid1_is_template = isinstance(msgid1, Template)
+        msgid2_is_template = isinstance(msgid2, Template)
+        t_values1 = t_values2 = None
+        if msgid1_is_template and msgid2_is_template:
+            msgid1, t_values1 = _template_to_format(msgid1)
+            msgid2, t_values2 = _template_to_format(msgid2)
+        elif msgid1_is_template or msgid2_is_template:
+            raise TypeError('msgids cannot mix strings and t-strings')
+        plural = self.plural(n)
+        t_values = t_values2 if plural else t_values1
         ctxt_msg_id = self.CONTEXT % (context, msgid1)
         try:
-            tmsg = self._catalog[ctxt_msg_id, self.plural(n)]
+            tmsg = self._catalog[ctxt_msg_id, plural]
         except KeyError:
             if self._fallback:
-                return self._fallback.npgettext(context, msgid1, msgid2, n)
+                return self._fallback.npgettext(
+                    context, orig_msgid1, orig_msgid2, n
+                )
             if n == 1:
-                tmsg = msgid1
+                if t_values1 is not None:
+                    return msgid1.format(**t_values1)
+                return msgid1
             else:
-                tmsg = msgid2
+                if t_values2 is not None:
+                    return msgid2.format(**t_values2)
+                return msgid2
+        if t_values is not None:
+            return tmsg.format(**t_values)
         return tmsg
 
 
@@ -749,3 +830,51 @@ def _template_node_to_format(node: ast.TemplateStr) -> str:
                 interpolation_format_names[name] = expr
                 parts.append(f'{{{name}}}')
     return ''.join(parts)
+
+
+def _template_to_format(template: Template) -> tuple[str, dict[str, Any]]:
+    """Convert a template to a format string and its value dict.
+
+    This takes a :class:`~string.templatelib.Template`, and converts all the
+    interpolations with format string placeholders derived from the original
+    expression.
+
+    This fails with a `_NameTooComplexError` in case the expression is not
+    suitable for conversion.
+    """
+    parts = []
+    interpolation_format_names = {}
+    values = {}
+    for item in template:
+        match item:
+            case str() as s:
+                parts.append(s.replace('{', '{{').replace('}', '}}'))
+            case Interpolation(value, expr, conversion, format_spec):
+                value = convert(value, conversion)
+                value = format(value, format_spec)
+                name = _expr_to_format_field_name(expr)
+                if (
+                    existing_expr := interpolation_format_names.get(name)
+                ) and existing_expr != expr:
+                    raise _NameTooComplexError(
+                        f'Interpolations of {existing_expr} and {expr} cannot '
+                        'be mixed in the same gettext call; assign one of '
+                        'them to a variable and use that instead'
+                    )
+                interpolation_format_names[name] = expr
+                values[name] = value
+                parts.append(f'{{{name}}}')
+    return ''.join(parts), values
+
+
+@cache
+def _expr_to_format_field_name(expr: str) -> str:
+    # handle simple cases w/o the overhead of dealing with an ast
+    if expr.isidentifier():
+        return expr
+    if all(x.isidentifier() for x in expr.split('.')):
+        return '__'.join(expr.split('.'))
+    expr_node = ast.parse(expr, mode='eval').body
+    visitor = _ExtractNamesVisitor()
+    visitor.visit(expr_node)
+    return visitor.name
