@@ -1,1 +1,0 @@
-10-20% performance improvement of :func:`random.randint`.

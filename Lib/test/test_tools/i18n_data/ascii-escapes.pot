@@ -41,7 +41,7 @@ msgstr ""
 
 #. some characters in the 128-255 range
 #: escapes.py:20
-msgid "   ÿ"
+msgid "\302\200 \302\240 ÿ"
 msgstr ""
 
 #. some characters >= 256 encoded as 2, 3 and 4 bytes, respectively

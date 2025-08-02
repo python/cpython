@@ -40,6 +40,7 @@
 #include "pycore_pyatomic_ft_wrappers.h"  // FT_ATOMIC_LOAD_SSIZE_RELAXED()
 #include "pycore_pyerrors.h"            // _PyErr_SetKeyError()
 #include "pycore_setobject.h"           // _PySet_NextEntry() definition
+#include "pycore_weakref.h"             // FT_CLEAR_WEAKREFS()
 
 #include "stringlib/eq.h"               // unicode_eq()
 #include <stddef.h>                     // offsetof()
@@ -211,11 +212,28 @@ set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
     return set_add_entry_takeref(so, Py_NewRef(key), hash);
 }
 
+static void
+set_unhashable_type(PyObject *key)
+{
+    PyObject *exc = PyErr_GetRaisedException();
+    assert(exc != NULL);
+    if (!Py_IS_TYPE(exc, (PyTypeObject*)PyExc_TypeError)) {
+        PyErr_SetRaisedException(exc);
+        return;
+    }
+
+    PyErr_Format(PyExc_TypeError,
+                 "cannot use '%T' as a set element (%S)",
+                 key, exc);
+    Py_DECREF(exc);
+}
+
 int
 _PySet_AddTakeRef(PySetObject *so, PyObject *key)
 {
     Py_hash_t hash = _PyObject_HashFast(key);
     if (hash == -1) {
+        set_unhashable_type(key);
         Py_DECREF(key);
         return -1;
     }
@@ -384,6 +402,7 @@ set_add_key(PySetObject *so, PyObject *key)
 {
     Py_hash_t hash = _PyObject_HashFast(key);
     if (hash == -1) {
+        set_unhashable_type(key);
         return -1;
     }
     return set_add_entry(so, key, hash);
@@ -394,6 +413,7 @@ set_contains_key(PySetObject *so, PyObject *key)
 {
     Py_hash_t hash = _PyObject_HashFast(key);
     if (hash == -1) {
+        set_unhashable_type(key);
         return -1;
     }
     return set_contains_entry(so, key, hash);
@@ -404,6 +424,7 @@ set_discard_key(PySetObject *so, PyObject *key)
 {
     Py_hash_t hash = _PyObject_HashFast(key);
     if (hash == -1) {
+        set_unhashable_type(key);
         return -1;
     }
     return set_discard_entry(so, key, hash);
@@ -417,7 +438,7 @@ set_empty_to_minsize(PySetObject *so)
     FT_ATOMIC_STORE_SSIZE_RELAXED(so->used, 0);
     so->mask = PySet_MINSIZE - 1;
     so->table = so->smalltable;
-    so->hash = -1;
+    FT_ATOMIC_STORE_SSIZE_RELAXED(so->hash, -1);
 }
 
 static int
@@ -516,9 +537,7 @@ set_dealloc(PyObject *self)
 
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(so);
-    Py_TRASHCAN_BEGIN(so, set_dealloc)
-    if (so->weakreflist != NULL)
-        PyObject_ClearWeakRefs((PyObject *) so);
+    FT_CLEAR_WEAKREFS(self, so->weakreflist);
 
     for (entry = so->table; used > 0; entry++) {
         if (entry->key && entry->key != dummy) {
@@ -529,7 +548,6 @@ set_dealloc(PyObject *self)
     if (so->table != so->smalltable)
         PyMem_Free(so->table);
     Py_TYPE(so)->tp_free(so);
-    Py_TRASHCAN_END
 }
 
 static PyObject *
@@ -1243,10 +1261,12 @@ set_swap_bodies(PySetObject *a, PySetObject *b)
 
     if (PyType_IsSubtype(Py_TYPE(a), &PyFrozenSet_Type)  &&
         PyType_IsSubtype(Py_TYPE(b), &PyFrozenSet_Type)) {
-        h = a->hash;     a->hash = b->hash;  b->hash = h;
+        h = FT_ATOMIC_LOAD_SSIZE_RELAXED(a->hash);
+        FT_ATOMIC_STORE_SSIZE_RELAXED(a->hash, FT_ATOMIC_LOAD_SSIZE_RELAXED(b->hash));
+        FT_ATOMIC_STORE_SSIZE_RELAXED(b->hash, h);
     } else {
-        a->hash = -1;
-        b->hash = -1;
+        FT_ATOMIC_STORE_SSIZE_RELAXED(a->hash, -1);
+        FT_ATOMIC_STORE_SSIZE_RELAXED(b->hash, -1);
     }
 }
 
@@ -2141,9 +2161,9 @@ set_richcompare(PyObject *self, PyObject *w, int op)
     case Py_EQ:
         if (PySet_GET_SIZE(v) != PySet_GET_SIZE(w))
             Py_RETURN_FALSE;
-        if (v->hash != -1  &&
-            ((PySetObject *)w)->hash != -1 &&
-            v->hash != ((PySetObject *)w)->hash)
+        Py_hash_t v_hash = FT_ATOMIC_LOAD_SSIZE_RELAXED(v->hash);
+        Py_hash_t w_hash = FT_ATOMIC_LOAD_SSIZE_RELAXED(((PySetObject *)w)->hash);
+        if (v_hash != -1 && w_hash != -1 && v_hash != w_hash)
             Py_RETURN_FALSE;
         return set_issubset((PyObject*)v, w);
     case Py_NE:
@@ -2242,6 +2262,28 @@ x.__contains__(y) <==> y in x.
 static PyObject *
 set___contains___impl(PySetObject *so, PyObject *key)
 /*[clinic end generated code: output=b44863d034b3c70e input=4a7d568459617f24]*/
+{
+    long result;
+
+    result = set_contains_lock_held(so, key);
+    if (result < 0)
+        return NULL;
+    return PyBool_FromLong(result);
+}
+
+/*[clinic input]
+@coexist
+frozenset.__contains__
+    so: setobject
+    object as key: object
+    /
+
+x.__contains__(y) <==> y in x.
+[clinic start generated code]*/
+
+static PyObject *
+frozenset___contains___impl(PySetObject *so, PyObject *key)
+/*[clinic end generated code: output=2301ed91bc3a6dd5 input=2f04922a98d8bab7]*/
 {
     long result;
 
@@ -2553,7 +2595,7 @@ PyTypeObject PySet_Type = {
 
 
 static PyMethodDef frozenset_methods[] = {
-    SET___CONTAINS___METHODDEF
+    FROZENSET___CONTAINS___METHODDEF
     FROZENSET_COPY_METHODDEF
     SET_DIFFERENCE_MULTI_METHODDEF
     SET_INTERSECTION_MULTI_METHODDEF

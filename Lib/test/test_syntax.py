@@ -382,6 +382,13 @@ SyntaxError: invalid syntax
 Traceback (most recent call last):
 SyntaxError: invalid syntax
 
+# But prefixes of soft keywords should
+# still raise specialized errors
+
+>>> (mat x)
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Perhaps you forgot a comma?
+
 From compiler_complex_args():
 
 >>> def f(None=1):
@@ -419,7 +426,7 @@ SyntaxError: invalid syntax
 >>> def foo(/,a,b=,c):
 ...    pass
 Traceback (most recent call last):
-SyntaxError: at least one argument must precede /
+SyntaxError: at least one parameter must precede /
 
 >>> def foo(a,/,/,b,c):
 ...    pass
@@ -454,67 +461,67 @@ SyntaxError: / must be ahead of *
 >>> def foo(a,*b=3,c):
 ...    pass
 Traceback (most recent call last):
-SyntaxError: var-positional argument cannot have default value
+SyntaxError: var-positional parameter cannot have default value
 
 >>> def foo(a,*b: int=,c):
 ...    pass
 Traceback (most recent call last):
-SyntaxError: var-positional argument cannot have default value
+SyntaxError: var-positional parameter cannot have default value
 
 >>> def foo(a,**b=3):
 ...    pass
 Traceback (most recent call last):
-SyntaxError: var-keyword argument cannot have default value
+SyntaxError: var-keyword parameter cannot have default value
 
 >>> def foo(a,**b: int=3):
 ...    pass
 Traceback (most recent call last):
-SyntaxError: var-keyword argument cannot have default value
+SyntaxError: var-keyword parameter cannot have default value
 
 >>> def foo(a,*a, b, **c, d):
 ...    pass
 Traceback (most recent call last):
-SyntaxError: arguments cannot follow var-keyword argument
+SyntaxError: parameters cannot follow var-keyword parameter
 
 >>> def foo(a,*a, b, **c, d=4):
 ...    pass
 Traceback (most recent call last):
-SyntaxError: arguments cannot follow var-keyword argument
+SyntaxError: parameters cannot follow var-keyword parameter
 
 >>> def foo(a,*a, b, **c, *d):
 ...    pass
 Traceback (most recent call last):
-SyntaxError: arguments cannot follow var-keyword argument
+SyntaxError: parameters cannot follow var-keyword parameter
 
 >>> def foo(a,*a, b, **c, **d):
 ...    pass
 Traceback (most recent call last):
-SyntaxError: arguments cannot follow var-keyword argument
+SyntaxError: parameters cannot follow var-keyword parameter
 
 >>> def foo(a=1,/,**b,/,c):
 ...    pass
 Traceback (most recent call last):
-SyntaxError: arguments cannot follow var-keyword argument
+SyntaxError: parameters cannot follow var-keyword parameter
 
 >>> def foo(*b,*d):
 ...    pass
 Traceback (most recent call last):
-SyntaxError: * argument may appear only once
+SyntaxError: * may appear only once
 
 >>> def foo(a,*b,c,*d,*e,c):
 ...    pass
 Traceback (most recent call last):
-SyntaxError: * argument may appear only once
+SyntaxError: * may appear only once
 
 >>> def foo(a,b,/,c,*b,c,*d,*e,c):
 ...    pass
 Traceback (most recent call last):
-SyntaxError: * argument may appear only once
+SyntaxError: * may appear only once
 
 >>> def foo(a,b,/,c,*b,c,*d,**e):
 ...    pass
 Traceback (most recent call last):
-SyntaxError: * argument may appear only once
+SyntaxError: * may appear only once
 
 >>> def foo(a=1,/*,b,c):
 ...    pass
@@ -538,7 +545,7 @@ SyntaxError: expected default value expression
 
 >>> lambda /,a,b,c: None
 Traceback (most recent call last):
-SyntaxError: at least one argument must precede /
+SyntaxError: at least one parameter must precede /
 
 >>> lambda a,/,/,b,c: None
 Traceback (most recent call last):
@@ -570,47 +577,47 @@ SyntaxError: expected comma between / and *
 
 >>> lambda a,*b=3,c: None
 Traceback (most recent call last):
-SyntaxError: var-positional argument cannot have default value
+SyntaxError: var-positional parameter cannot have default value
 
 >>> lambda a,**b=3: None
 Traceback (most recent call last):
-SyntaxError: var-keyword argument cannot have default value
+SyntaxError: var-keyword parameter cannot have default value
 
 >>> lambda a, *a, b, **c, d: None
 Traceback (most recent call last):
-SyntaxError: arguments cannot follow var-keyword argument
+SyntaxError: parameters cannot follow var-keyword parameter
 
 >>> lambda a,*a, b, **c, d=4: None
 Traceback (most recent call last):
-SyntaxError: arguments cannot follow var-keyword argument
+SyntaxError: parameters cannot follow var-keyword parameter
 
 >>> lambda a,*a, b, **c, *d: None
 Traceback (most recent call last):
-SyntaxError: arguments cannot follow var-keyword argument
+SyntaxError: parameters cannot follow var-keyword parameter
 
 >>> lambda a,*a, b, **c, **d: None
 Traceback (most recent call last):
-SyntaxError: arguments cannot follow var-keyword argument
+SyntaxError: parameters cannot follow var-keyword parameter
 
 >>> lambda a=1,/,**b,/,c: None
 Traceback (most recent call last):
-SyntaxError: arguments cannot follow var-keyword argument
+SyntaxError: parameters cannot follow var-keyword parameter
 
 >>> lambda *b,*d: None
 Traceback (most recent call last):
-SyntaxError: * argument may appear only once
+SyntaxError: * may appear only once
 
 >>> lambda a,*b,c,*d,*e,c: None
 Traceback (most recent call last):
-SyntaxError: * argument may appear only once
+SyntaxError: * may appear only once
 
 >>> lambda a,b,/,c,*b,c,*d,*e,c: None
 Traceback (most recent call last):
-SyntaxError: * argument may appear only once
+SyntaxError: * may appear only once
 
 >>> lambda a,b,/,c,*b,c,*d,**e: None
 Traceback (most recent call last):
-SyntaxError: * argument may appear only once
+SyntaxError: * may appear only once
 
 >>> lambda a=1,d=,c: None
 Traceback (most recent call last):
@@ -948,6 +955,18 @@ isn't, there should be a syntax error.
      ...
    SyntaxError: 'break' outside loop
 
+elif can't come after an else.
+
+    >>> if a % 2 == 0:
+    ...     pass
+    ... else:
+    ...     pass
+    ... elif a % 2 == 1:
+    ...     pass
+    Traceback (most recent call last):
+      ...
+    SyntaxError: 'elif' block follows an 'else' block
+
 Misuse of the nonlocal and global statement can lead to a few unique syntax errors.
 
    >>> def f():
@@ -1189,7 +1208,7 @@ Missing ':' before suites:
    >>> with block ad something:
    ...   pass
    Traceback (most recent call last):
-   SyntaxError: invalid syntax
+   SyntaxError: invalid syntax. Did you mean 'and'?
 
    >>> try
    ...   pass
@@ -1292,7 +1311,7 @@ Missing parens after function definition
    Traceback (most recent call last):
    SyntaxError: expected '('
 
-Parenthesized arguments in function definitions
+Parenthesized parameters in function definitions
 
    >>> def f(x, (y, z), w):
    ...    pass
@@ -1418,6 +1437,23 @@ Better error message for using `except as` with not a name:
    ...    pass
    Traceback (most recent call last):
    SyntaxError: cannot use except* statement with literal
+
+Regression tests for gh-133999:
+
+   >>> try: pass
+   ... except TypeError as name: raise from None
+   Traceback (most recent call last):
+   SyntaxError: did you forget an expression between 'raise' and 'from'?
+
+   >>> try: pass
+   ... except* TypeError as name: raise from None
+   Traceback (most recent call last):
+   SyntaxError: did you forget an expression between 'raise' and 'from'?
+
+   >>> match 1:
+   ...     case 1 | 2 as abc: raise from None
+   Traceback (most recent call last):
+   SyntaxError: did you forget an expression between 'raise' and 'from'?
 
 Ensure that early = are not matched by the parser as invalid comparisons
    >>> f(2, 4, x=34); 1 $ 2
@@ -1666,6 +1702,28 @@ Make sure that the old "raise X, Y[, Z]" form is gone:
      ...
    SyntaxError: invalid syntax
 
+Better errors for `raise` statement:
+
+    >>> raise ValueError from
+    Traceback (most recent call last):
+    SyntaxError: did you forget an expression after 'from'?
+
+    >>> raise mod.ValueError() from
+    Traceback (most recent call last):
+    SyntaxError: did you forget an expression after 'from'?
+
+    >>> raise from exc
+    Traceback (most recent call last):
+    SyntaxError: did you forget an expression between 'raise' and 'from'?
+
+    >>> raise from None
+    Traceback (most recent call last):
+    SyntaxError: did you forget an expression between 'raise' and 'from'?
+
+    >>> raise from
+    Traceback (most recent call last):
+    SyntaxError: did you forget an expression between 'raise' and 'from'?
+
 Check that an multiple exception types with missing parentheses
 raise a custom exception only when using 'as'
 
@@ -1713,6 +1771,136 @@ Custom exception for 'except*' without an exception type
    Traceback (most recent call last):
    SyntaxError: expected one or more exception types
 
+Check custom exceptions for keywords with typos
+
+>>> fur a in b:
+...   pass
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Did you mean 'for'?
+
+>>> for a in b:
+...   pass
+... elso:
+...   pass
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Did you mean 'else'?
+
+>>> whille True:
+...   pass
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Did you mean 'while'?
+
+>>> while True:
+...   pass
+... elso:
+...   pass
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Did you mean 'else'?
+
+>>> iff x > 5:
+...   pass
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Did you mean 'if'?
+
+>>> if x:
+...   pass
+... elseif y:
+...   pass
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Did you mean 'elif'?
+
+>>> if x:
+...   pass
+... elif y:
+...   pass
+... elso:
+...   pass
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Did you mean 'else'?
+
+>>> tyo:
+...   pass
+... except y:
+...   pass
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Did you mean 'try'?
+
+>>> classe MyClass:
+...   pass
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Did you mean 'class'?
+
+>>> impor math
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Did you mean 'import'?
+
+>>> form x import y
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Did you mean 'from'?
+
+>>> defn calculate_sum(a, b):
+...   return a + b
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Did you mean 'def'?
+
+>>> def foo():
+...   returm result
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Did you mean 'return'?
+
+>>> lamda x: x ** 2
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Did you mean 'lambda'?
+
+>>> def foo():
+...   yeld i
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Did you mean 'yield'?
+
+>>> def foo():
+...   globel counter
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Did you mean 'global'?
+
+>>> frum math import sqrt
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Did you mean 'from'?
+
+>>> asynch def fetch_data():
+...   pass
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Did you mean 'async'?
+
+>>> async def foo():
+...   awaid fetch_data()
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Did you mean 'await'?
+
+>>> raisee ValueError("Error")
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Did you mean 'raise'?
+
+>>> [
+... x for x
+... in range(3)
+... of x
+... ]
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Did you mean 'if'?
+
+>>> [
+... 123 fur x
+... in range(3)
+... if x
+... ]
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Did you mean 'for'?
+
+
+>>> for x im n:
+...     pass
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Did you mean 'in'?
 
 >>> f(a=23, a=234)
 Traceback (most recent call last):
@@ -1734,6 +1922,86 @@ SyntaxError: cannot assign to f-string expression here. Maybe you meant '==' ins
 >>> f'{x}-{y}' = 42
 Traceback (most recent call last):
 SyntaxError: cannot assign to f-string expression here. Maybe you meant '==' instead of '='?
+
+>>> ub''
+Traceback (most recent call last):
+SyntaxError: 'u' and 'b' prefixes are incompatible
+
+>>> bu"привет"
+Traceback (most recent call last):
+SyntaxError: 'u' and 'b' prefixes are incompatible
+
+>>> ur''
+Traceback (most recent call last):
+SyntaxError: 'u' and 'r' prefixes are incompatible
+
+>>> ru"\t"
+Traceback (most recent call last):
+SyntaxError: 'u' and 'r' prefixes are incompatible
+
+>>> uf'{1 + 1}'
+Traceback (most recent call last):
+SyntaxError: 'u' and 'f' prefixes are incompatible
+
+>>> fu""
+Traceback (most recent call last):
+SyntaxError: 'u' and 'f' prefixes are incompatible
+
+>>> ut'{1}'
+Traceback (most recent call last):
+SyntaxError: 'u' and 't' prefixes are incompatible
+
+>>> tu"234"
+Traceback (most recent call last):
+SyntaxError: 'u' and 't' prefixes are incompatible
+
+>>> bf'{x!r}'
+Traceback (most recent call last):
+SyntaxError: 'b' and 'f' prefixes are incompatible
+
+>>> fb"text"
+Traceback (most recent call last):
+SyntaxError: 'b' and 'f' prefixes are incompatible
+
+>>> bt"text"
+Traceback (most recent call last):
+SyntaxError: 'b' and 't' prefixes are incompatible
+
+>>> tb''
+Traceback (most recent call last):
+SyntaxError: 'b' and 't' prefixes are incompatible
+
+>>> tf"{0.3:.02f}"
+Traceback (most recent call last):
+SyntaxError: 'f' and 't' prefixes are incompatible
+
+>>> ft'{x=}'
+Traceback (most recent call last):
+SyntaxError: 'f' and 't' prefixes are incompatible
+
+>>> tfu"{x=}"
+Traceback (most recent call last):
+SyntaxError: 'u' and 'f' prefixes are incompatible
+
+>>> turf"{x=}"
+Traceback (most recent call last):
+SyntaxError: 'u' and 'r' prefixes are incompatible
+
+>>> burft"{x=}"
+Traceback (most recent call last):
+SyntaxError: 'u' and 'b' prefixes are incompatible
+
+>>> brft"{x=}"
+Traceback (most recent call last):
+SyntaxError: 'b' and 'f' prefixes are incompatible
+
+>>> t'{x}' = 42
+Traceback (most recent call last):
+SyntaxError: cannot assign to t-string expression here. Maybe you meant '==' instead of '='?
+
+>>> t'{x}-{y}' = 42
+Traceback (most recent call last):
+SyntaxError: cannot assign to t-string expression here. Maybe you meant '==' instead of '='?
 
 >>> (x, y, z=3, d, e)
 Traceback (most recent call last):
@@ -1814,6 +2082,56 @@ SyntaxError: cannot assign to __debug__
 >>> from a import b as __debug__
 Traceback (most recent call last):
 SyntaxError: cannot assign to __debug__
+
+>>> import a as b.c
+Traceback (most recent call last):
+SyntaxError: cannot use attribute as import target
+
+>>> import a.b as (a, b)
+Traceback (most recent call last):
+SyntaxError: cannot use tuple as import target
+
+>>> import a, a.b as 1
+Traceback (most recent call last):
+SyntaxError: cannot use literal as import target
+
+>>> import a.b as 'a', a
+Traceback (most recent call last):
+SyntaxError: cannot use literal as import target
+
+>>> from a import (b as c.d)
+Traceback (most recent call last):
+SyntaxError: cannot use attribute as import target
+
+>>> from a import b as 1
+Traceback (most recent call last):
+SyntaxError: cannot use literal as import target
+
+>>> from a import (
+...   b as f())
+Traceback (most recent call last):
+SyntaxError: cannot use function call as import target
+
+>>> from a import (
+...   b as [],
+... )
+Traceback (most recent call last):
+SyntaxError: cannot use list as import target
+
+>>> from a import (
+...   b,
+...   c as ()
+... )
+Traceback (most recent call last):
+SyntaxError: cannot use tuple as import target
+
+>>> from a import b, с as d[e]
+Traceback (most recent call last):
+SyntaxError: cannot use subscript as import target
+
+>>> from a import с as d[e], b
+Traceback (most recent call last):
+SyntaxError: cannot use subscript as import target
 
 # Check that we dont raise the "trailing comma" error if there is more
 # input to the left of the valid part that we parsed.
@@ -1906,7 +2224,7 @@ Corner-cases that used to fail to raise the correct error:
 
     >>> with (lambda *:0): pass
     Traceback (most recent call last):
-    SyntaxError: named arguments must follow bare *
+    SyntaxError: named parameters must follow bare *
 
 Corner-cases that used to crash:
 
@@ -2553,6 +2871,13 @@ class SyntaxErrorTestCase(unittest.TestCase):
                 global b  # SyntaxError
             """
         self._check_error(source, "parameter and nonlocal", lineno=3)
+
+    def test_raise_from_error_message(self):
+        source = """if 1:
+        raise AssertionError() from None
+        print(1,,2)
+        """
+        self._check_error(source, "invalid syntax", lineno=3)
 
     def test_yield_outside_function(self):
         self._check_error("if 0: yield",                "outside function")

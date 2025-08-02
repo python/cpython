@@ -13,6 +13,7 @@
 #include "pycore_object.h"              // _PyObject_GC_UNTRACK()
 #include "pycore_pyerrors.h"            // _Py_FatalErrorFormat()
 #include "pycore_pylifecycle.h"         // _Py_IsInterpreterFinalizing()
+#include "pycore_weakref.h"             // FT_CLEAR_WEAKREFS()
 
 #include "_iomodule.h"
 
@@ -421,8 +422,7 @@ buffered_dealloc(PyObject *op)
         return;
     _PyObject_GC_UNTRACK(self);
     self->ok = 0;
-    if (self->weakreflist != NULL)
-        PyObject_ClearWeakRefs(op);
+    FT_CLEAR_WEAKREFS(op, self->weakreflist);
     if (self->buffer) {
         PyMem_Free(self->buffer);
         self->buffer = NULL;
@@ -2312,8 +2312,7 @@ bufferedrwpair_dealloc(PyObject *op)
     rwpair *self = rwpair_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
     _PyObject_GC_UNTRACK(self);
-    if (self->weakreflist != NULL)
-        PyObject_ClearWeakRefs(op);
+    FT_CLEAR_WEAKREFS(op, self->weakreflist);
     (void)bufferedrwpair_clear(op);
     tp->tp_free(self);
     Py_DECREF(tp);
@@ -2555,8 +2554,7 @@ static PyMethodDef bufferedreader_methods[] = {
     _IO__BUFFERED_TRUNCATE_METHODDEF
     _IO__BUFFERED___SIZEOF___METHODDEF
 
-    {"__reduce__", _PyIOBase_cannot_pickle, METH_NOARGS},
-    {"__reduce_ex__", _PyIOBase_cannot_pickle, METH_O},
+    {"__getstate__", _PyIOBase_cannot_pickle, METH_NOARGS},
     {NULL, NULL}
 };
 
@@ -2615,8 +2613,7 @@ static PyMethodDef bufferedwriter_methods[] = {
     _IO__BUFFERED_TELL_METHODDEF
     _IO__BUFFERED___SIZEOF___METHODDEF
 
-    {"__reduce__", _PyIOBase_cannot_pickle, METH_NOARGS},
-    {"__reduce_ex__", _PyIOBase_cannot_pickle, METH_O},
+    {"__getstate__", _PyIOBase_cannot_pickle, METH_NOARGS},
     {NULL, NULL}
 };
 
@@ -2733,8 +2730,7 @@ static PyMethodDef bufferedrandom_methods[] = {
     _IO_BUFFEREDWRITER_WRITE_METHODDEF
     _IO__BUFFERED___SIZEOF___METHODDEF
 
-    {"__reduce__", _PyIOBase_cannot_pickle, METH_NOARGS},
-    {"__reduce_ex__", _PyIOBase_cannot_pickle, METH_O},
+    {"__getstate__", _PyIOBase_cannot_pickle, METH_NOARGS},
     {NULL, NULL}
 };
 

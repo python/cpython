@@ -1623,7 +1623,7 @@ signal_module_exec(PyObject *m)
     modstate->ignore_handler = state->ignore_handler;  // borrowed ref
 
 #ifdef PYHAVE_ITIMER_ERROR
-    modstate->itimer_error = PyErr_NewException("signal.itimer_error",
+    modstate->itimer_error = PyErr_NewException("signal.ItimerError",
                                                 PyExc_OSError, NULL);
     if (modstate->itimer_error == NULL) {
         return -1;
@@ -1776,6 +1776,10 @@ PyErr_CheckSignals(void)
         _Py_unset_eval_breaker_bit(tstate, _PY_GC_SCHEDULED_BIT);
         _Py_RunGC(tstate);
     }
+
+#if defined(Py_REMOTE_DEBUG) && defined(Py_SUPPORTS_REMOTE_DEBUG)
+    _PyRunRemoteDebugger(tstate);
+#endif
 
     if (!_Py_ThreadCanHandleSignals(tstate->interp)) {
         return 0;
