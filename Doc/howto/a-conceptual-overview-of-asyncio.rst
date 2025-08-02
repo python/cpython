@@ -399,8 +399,8 @@ preventing other tasks from running.
 
 Below, we use a future to enable custom control over when that task will be marked
 as done.
-If ``future.set_result()``, the method responsible for marking that future as
-done, is never called, this task will never finish.
+If ``future.set_result()`` (the method responsible for marking that future as
+done) is never called, then this task will never finish.
 We've also enlisted the help of another task, which we'll see in a moment, that
 will monitor how much time has elapsed and accordingly call
 ``future.set_result()``.
