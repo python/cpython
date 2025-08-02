@@ -1,0 +1,1 @@
+Emit a :exc:`DeprecationWarning` about a future change of :data:`sys.abiflags` availability on Windows. Patch by Xuehai Pan.

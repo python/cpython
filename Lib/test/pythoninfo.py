@@ -47,7 +47,14 @@ class PythonInfo:
 
 def copy_attributes(info_add, obj, name_fmt, attributes, *, formatter=None):
     for attr in attributes:
-        value = getattr(obj, attr, None)
+        if attr == 'abiflags':
+            # TODO: Remove this special case handling in Python 3.16
+            with warnings.catch_warnings():
+                # ignore DeprecationWarning on sys.abiflags change on Windows
+                warnings.filterwarnings('ignore', r'sys\.abiflags', category=DeprecationWarning)
+                value = getattr(obj, attr, None)
+        else:
+            value = getattr(obj, attr, None)
         if value is None:
             continue
         name = name_fmt % attr
