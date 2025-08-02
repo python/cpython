@@ -1,1 +1,1 @@
-Fix :meth:`ipaddress.IPv4Interface.is_unspecified`.
+Fix :attr:`ipaddress.IPv4Interface.is_unspecified`.
