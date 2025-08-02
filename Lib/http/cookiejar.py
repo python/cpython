@@ -532,15 +532,41 @@ def parse_ns_headers(ns_headers):
     return result
 
 
+# only kept for backwards compatibilty.
 IPV4_RE = re.compile(r"\.\d+$", re.ASCII)
+
+def _is_ipv4_hostname(text):
+    from ipaddress import IPv4Address
+    try:
+        IPv4Address(text)
+    except ValueError:
+        return False
+    return True
+
+def _is_ipv6_hostname(text):
+    if text.startswith('[') and text.endswith(']'):
+        from ipaddress import IPv6Address
+        try:
+            IPv6Address(text[1:-1])
+        except ValueError:
+            return False
+        return True
+    return False
+
+def is_ip_like_hostname(text):
+    """Check if *text* is a valid IP-like hostname.
+
+    A valid IP-like hostname is either an IPv4 address or
+    an IPv6 enclosed in brackets (for instance, "[::1]").
+    """
+    return _is_ipv4_hostname(text) or _is_ipv6_hostname(text)
+
 def is_HDN(text):
     """Return True if text is a host domain name."""
     # XXX
     # This may well be wrong.  Which RFC is HDN defined in, if any (for
     #  the purposes of RFC 2965)?
-    # For the current implementation, what about IPv6?  Remember to look
-    #  at other uses of IPV4_RE also, if change this.
-    if IPV4_RE.search(text):
+    if is_ip_like_hostname(text):
         return False
     if text == "":
         return False
@@ -593,9 +619,7 @@ def liberal_is_HDN(text):
     For accepting/blocking domains.
 
     """
-    if IPV4_RE.search(text):
-        return False
-    return True
+    return not is_ip_like_hostname(text)
 
 def user_domain_match(A, B):
     """For blocking/accepting domains.
@@ -641,7 +665,10 @@ def eff_request_host(request):
 
     """
     erhn = req_host = request_host(request)
-    if "." not in req_host:
+    if "." not in req_host and not _is_ipv6_hostname(req_host):
+        # Avoid adding .local at the end of an IPv6 address.
+        # See RFC 2965 [1] for the rationale of ".local".
+        # [1]: https://www.rfc-editor.org/rfc/rfc2965
         erhn = req_host + ".local"
     return req_host, erhn
 
