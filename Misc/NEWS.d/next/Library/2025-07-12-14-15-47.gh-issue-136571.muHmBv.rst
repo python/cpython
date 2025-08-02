@@ -1,0 +1,2 @@
+:meth:`datetime.date.fromisocalendar` can now raise OverflowError for out of
+range arguments.
