@@ -157,10 +157,7 @@ _zstd_load_impl(ZstdDecompressor *self, ZstdDict *zd,
                                        zd->dict_len);
     }
     else {
-        /* Impossible code path */
-        PyErr_SetString(PyExc_SystemError,
-                        "load_d_dict() impossible code path");
-        return -1;
+        Py_UNREACHABLE();
     }
 
     /* Check error */
