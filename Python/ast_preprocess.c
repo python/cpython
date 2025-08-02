@@ -438,6 +438,7 @@ stmt_seq_remove_item(asdl_stmt_seq *stmts, Py_ssize_t idx)
 static int
 remove_docstring(asdl_stmt_seq *stmts, Py_ssize_t idx, PyArena *ctx_)
 {
+    assert(_PyAST_GetDocString(stmts) != NULL);
     // In case there's just the docstring in the body, replace it with `pass`
     // keyword, so body won't be empty.
     if (asdl_seq_LEN(stmts) == 1) {
