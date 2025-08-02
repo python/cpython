@@ -368,7 +368,7 @@ own variant of asynchronous sleep -- :func:`asyncio.sleep`.
 
 This snippet puts a few tasks on the event loop's queue and then ``await``\ s a
 coroutine wrapped in a task: ``async_sleep(3)``.
-We want that task to finish only after 3 seconds have elapsed, but without
+We want that task to finish only after three seconds have elapsed, but without
 preventing other tasks from running.
 
 ::
@@ -431,10 +431,9 @@ Eventually, enough time will have elapsed, and ``_sleep_watcher(...)`` will
 mark the future as done, and then itself finish too by breaking out of the
 infinite ``while`` loop.
 Given this helper task is only invoked once per cycle of the event loop's queue,
-you'd be correct to note that this asynchronous sleep will sleep **at least**
+you'd be correct to note that this asynchronous sleep will sleep *at least*
 three seconds, rather than exactly three seconds.
-Note, this is also of true of the library-provided asynchronous function:
-``asyncio.sleep``.
+Note, this is also of true of: ``asyncio.sleep``.
 
 ::
 
@@ -477,3 +476,5 @@ For reference, you could implement it without futures, like so::
             else:
                 await YieldToEventLoop()
 
+That's all for now. Hopefully you're ready to more confidently dive into some
+async programming or check out advanced topics in the :mod:`docs <asyncio>`.
