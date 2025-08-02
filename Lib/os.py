@@ -490,8 +490,8 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
 
     def _fwalk(stack, isbytes, topdown, onerror, follow_symlinks):
         # Note: This uses O(depth of the directory tree) file descriptors: if
-        # necessary, it can be adapted to only require O(1) FDs, see issue
-        # https://github.com/python/cpython/issues/57943
+        # necessary, it can be adapted to only require O(1) FDs.
+        # See https://github.com/python/cpython/issues/57943
 
         action, value = stack.pop()
         if action == _fwalk_close:
