@@ -848,7 +848,8 @@ Instances have the following methods and attributes:
       1980. While some extra field formats (such as UNIX timestamps) can represent
       earlier dates, this attribute only returns the central directory timestamp.
 
-      CPython interprets this timestamp as representing local time, not UTC.
+      The central directory timestamp is interpreted as representing local
+      time, rather than UTC time, to match the behavior of other zip tools.
 
 
 .. attribute:: ZipInfo.compress_type
