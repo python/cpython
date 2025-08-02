@@ -2528,6 +2528,8 @@
                         }
                         PyTypeObject *cls_o = (PyTypeObject *)sym_get_const(ctx, item);
                         if (cls_o &&
+                            // Ensure that item is an exact instance of `type` ensuring that
+                            // there is no __instancecheck__ defined.
                             sym_matches_type(item, &PyType_Type) &&
                             (inst_type == cls_o || PyType_IsSubtype(inst_type, cls_o)))
                         {
