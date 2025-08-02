@@ -3,9 +3,11 @@
     document.addEventListener('DOMContentLoaded', () => {
         const title = document.querySelector('meta[property="og:title"]').content;
         const elements = document.querySelectorAll('.improvepage');
+        const pageurl = window.location.href.split('?')[0];
         elements.forEach(element => {
             const url = new URL(element.href);
             url.searchParams.set('pagetitle', title);
+            url.searchParams.set('pageurl', pageurl);
             element.href = url.toString();
         });
     });
@@ -14,7 +16,7 @@
     <h3>{{ _('This page') }}</h3>
     <ul class="this-page-menu">
       <li><a href="{{ pathto('bugs') }}">{% trans %}Report a bug{% endtrans %}</a></li>
-      <li><a class="improvepage" href="{{ pathto('improvepage') }}?pageurl=https://docs.python.org/3/{{ pagename }}.html&pagesource={{ sourcename|replace('.rst.txt', '.rst') }}">{% trans %}Improve this page{% endtrans %}</a></li>
+      <li><a class="improvepage" href="{{ pathto('improve-page') }}?pagesource={{ pagename }}.rst">{% trans %}Improve this page{% endtrans %}</a></li>
       <li>
         <a href="https://github.com/python/cpython/blob/main/Doc/{{ pagename }}.rst?plain=1"
             rel="nofollow">{{ _('Show source') }}
