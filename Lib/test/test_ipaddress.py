@@ -2269,6 +2269,10 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(False, ipaddress.ip_network('240.0.0.0').is_multicast)
         self.assertEqual(True, ipaddress.ip_network('240.0.0.0').is_reserved)
 
+        self.assertTrue(ipaddress.ip_interface('0.0.0.0/32').is_unspecified)
+        self.assertFalse(ipaddress.ip_interface('0.0.0.0/31').is_unspecified)
+        self.assertFalse(ipaddress.ip_interface('1.2.3.4/32').is_unspecified)
+
         self.assertEqual(True, ipaddress.ip_interface(
                 '192.168.1.1/17').is_private)
         self.assertEqual(False, ipaddress.ip_network('192.169.0.0').is_private)
