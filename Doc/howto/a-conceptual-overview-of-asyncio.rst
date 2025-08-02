@@ -57,12 +57,12 @@ approach rather useless.
 
 ::
 
-    import asyncio
-
-    # This creates an event loop and indefinitely cycles through
-    # its queue of tasks.
-    event_loop = asyncio.new_event_loop()
-    event_loop.run_forever()
+   import asyncio
+   
+   # This creates an event loop and indefinitely cycles through
+   # its queue of tasks.
+   event_loop = asyncio.new_event_loop()
+   event_loop.run_forever()
 
 =====================================
 Asynchronous Functions and Coroutines
@@ -70,18 +70,17 @@ Asynchronous Functions and Coroutines
 
 This is a regular 'ol Python function::
 
-    def hello_printer():
-        print(
-            "Hi, I am a lowly, simple printer, though I have all I "
-            "need in life -- \nfresh paper and a loving octopus-wife."
-        )
+   def hello_printer():
+       print(
+           "Hi, I am a lowly, simple printer, though I have all I "
+           "need in life -- \nfresh paper and a loving octopus-wife."
+       )
 
 Calling a regular function invokes its logic or body::
 
-    >>> hello_printer()
-    Hi, I am a lowly, simple printer, though I have all I need in life --
-    fresh paper and a loving octopus-wife.
-    >>>
+   >>> hello_printer()
+   Hi, I am a lowly, simple printer, though I have all I need in life --
+   fresh paper and a loving octopus-wife.
 
 The :ref:`async def <async def>`, as opposed to just a plain ``def``, makes
 this an asynchronous function (or "coroutine function").
@@ -89,17 +88,16 @@ Calling it creates and returns a :ref:`coroutine <coroutine>` object.
 
 ::
 
-    async def special_fella(magic_number: int):
-        print(
-            "I am a super special function. Far cooler than that printer. "
-            f"By the way, my lucky number is: {magic_number}."
-        )
+   async def special_fella(magic_number: int):
+       print(
+        "I am a super special function. Far cooler than that printer. "
+        f"By the way, my lucky number is: {magic_number}."
+       )
 
 Note that calling it does not execute the function::
 
-    >>> special_fella(magic_number=3)
-    <coroutine object special_fella at 0x104ed2740>
-    >>>
+   >>> special_fella(magic_number=3)
+   <coroutine object special_fella at 0x104ed2740>
 
 The terms "asynchronous function" and "coroutine object" are often conflated
 as coroutine.
@@ -121,35 +119,34 @@ of :term:`generators <generator iterator>` and
 :term:`generator functions <generator>`.
 Recall, a generator function is a function that :keyword:`yield`\s, like this one::
 
-    def get_random_number():
-        # This would be a bad random number generator!
-        print("Hi")
-        yield 1
-        print("Hello")
-        yield 7
-        print("Howdy")
-        yield 4
-        ...
+   def get_random_number():
+       # This would be a bad random number generator!
+       print("Hi")
+       yield 1
+       print("Hello")
+       yield 7
+       print("Howdy")
+       yield 4
+       ...
 
 Similar to a coroutine function, calling a generator function does not run it.
 Instead, it provides a generator object::
 
-    >>> get_random_number()
-    <generator object get_random_number at 0x1048671c0>
-    >>>
+   >>> get_random_number()
+   <generator object get_random_number at 0x1048671c0>
 
 You can "invoke" or proceed to the next ``yield`` of a generator by using the
 built-in function :func:`next`.
 In other words, the generator runs, then pauses.
 For example::
 
-    >>> generator = get_random_number()
-    >>> next(generator)
-    Hi
-    1
-    >>> next(generator)
-    Hello
-    7
+   >>> generator = get_random_number()
+   >>> next(generator)
+   Hi
+   1
+   >>> next(generator)
+   Hello
+   7
 
 =====
 Tasks
@@ -168,8 +165,8 @@ to specify the event loop.
 
 ::
 
-    # This creates a Task object and puts it on the event loop's queue.
-    special_task = asyncio.create_task(coro=special_fella(magic_number=5))
+   # This creates a Task object and puts it on the event loop's queue.
+   special_task = asyncio.create_task(coro=special_fella(magic_number=5))
 
 =====
 await
@@ -178,8 +175,8 @@ await
 :keyword:`await` is a Python keyword that's commonly used in one of two
 different ways::
 
-    await task
-    await coroutine
+   await task
+   await coroutine
 
 Unfortunately, it actually does matter which type of object await is applied to.
 
@@ -200,22 +197,22 @@ The behavior of ``await coroutine`` is effectively the same as invoking a regula
 synchronous Python function.
 Consider this program::
 
-    import asyncio
+   import asyncio
 
-    async def coro_a():
-        print("I am coro_a(). Hi!")
+   async def coro_a():
+      print("I am coro_a(). Hi!")
 
-    async def coro_b():
-        print("I am coro_b(). I sure hope no one hogs the event loop...")
+   async def coro_b():
+      print("I am coro_b(). I sure hope no one hogs the event loop...")
 
-    async def main():
-        task_b = asyncio.create_task(coro_b())
-        num_repeats = 3
-        for _ in range(num_repeats):
-            await coro_a()
-        await task_b
+   async def main():
+      task_b = asyncio.create_task(coro_b())
+      num_repeats = 3
+      for _ in range(num_repeats):
+         await coro_a()
+      await task_b
 
-    asyncio.run(main())
+   asyncio.run(main())
 
 The first statement in the coroutine ``main()`` creates ``task_b`` and places
 it on the event loop's queue.
@@ -225,10 +222,10 @@ invocations before ``coro_b()``'s output:
 
 .. code-block:: none
 
-    I am coro_a(). Hi!
-    I am coro_a(). Hi!
-    I am coro_a(). Hi!
-    I am coro_b(). I sure hope no one hogs the event loop...
+   I am coro_a(). Hi!
+   I am coro_a(). Hi!
+   I am coro_a(). Hi!
+   I am coro_b(). I sure hope no one hogs the event loop...
 
 If we change ``await coro_a()`` to ``await asyncio.create_task(coro_a())``, the
 behavior changes.
@@ -238,10 +235,10 @@ The event loop then works through its queue, calling ``coro_b()`` and then
 
 .. code-block:: none
 
-    I am coro_b(). I sure hope no one hogs the event loop...
-    I am coro_a(). Hi!
-    I am coro_a(). Hi!
-    I am coro_a(). Hi!
+   I am coro_b(). I sure hope no one hogs the event loop...
+   I am coro_a(). Hi!
+   I am coro_a(). Hi!
+   I am coro_a(). Hi!
 
 ------------------------------------------------
 A conceptual overview part 2: the nuts and bolts
@@ -282,42 +279,42 @@ return value attached in the :attr:`~StopIteration.value` attribute.
 
 ::
 
-    1   class Rock:
-    2       def __await__(self):
-    3           value_sent_in = yield 7
-    4           print(f"Rock.__await__ resuming with value: {value_sent_in}.")
-    5           return value_sent_in
-    6
-    7   async def main():
-    8       print("Beginning coroutine main().")
-    9       rock = Rock()
-    10      print("Awaiting rock...")
-    11      value_from_rock = await rock
-    12      print(f"Coroutine received value: {value_from_rock} from rock.")
-    13      return 23
-    14
-    15  coroutine = main()
-    16  intermediate_result = coroutine.send(None)
-    17  print(f"Coroutine paused and returned intermediate value: {intermediate_result}.")
-    18
-    19  print(f"Resuming coroutine and sending in value: 42.")
-    20  try:
-    21      coroutine.send(42)
-    22  except StopIteration as e:
-    23      returned_value = e.value
-    24  print(f"Coroutine main() finished and provided value: {returned_value}.")
+   1   class Rock:
+   2       def __await__(self):
+   3           value_sent_in = yield 7
+   4           print(f"Rock.__await__ resuming with value: {value_sent_in}.")
+   5           return value_sent_in
+   6
+   7   async def main():
+   8       print("Beginning coroutine main().")
+   9       rock = Rock()
+   10      print("Awaiting rock...")
+   11      value_from_rock = await rock
+   12      print(f"Coroutine received value: {value_from_rock} from rock.")
+   13      return 23
+   14
+   15  coroutine = main()
+   16  intermediate_result = coroutine.send(None)
+   17  print(f"Coroutine paused and returned intermediate value: {intermediate_result}.")
+   18
+   19  print(f"Resuming coroutine and sending in value: 42.")
+   20  try:
+   21      coroutine.send(42)
+   22  except StopIteration as e:
+   23      returned_value = e.value
+   24  print(f"Coroutine main() finished and provided value: {returned_value}.")
 
 That snippet produces this output:
 
 .. code-block:: none
 
-    Beginning coroutine main().
-    Awaiting rock...
-    Coroutine paused and returned intermediate value: 7.
-    Resuming coroutine and sending in value: 42.
-    Rock.__await__ resuming with value: 42.
-    Coroutine received value: 42 from rock.
-    Coroutine main() finished and provided value: 23.
+   Beginning coroutine main().
+   Awaiting rock...
+   Coroutine paused and returned intermediate value: 7.
+   Resuming coroutine and sending in value: 42.
+   Rock.__await__ resuming with value: 42.
+   Coroutine received value: 42 from rock.
+   Coroutine main() finished and provided value: 23.
 
 It's worth pausing for a moment here and making sure you followed the various
 ways that control flow and values were passed.
@@ -326,16 +323,16 @@ The only way to yield (or effectively cede control) from a coroutine is to
 ``await`` an object that ``yield``\ s in its ``__await__`` method.
 That might sound odd to you. Frankly, it was to me too. You might be thinking:
 
-    1. What about a ``yield`` directly within the coroutine? The coroutine becomes
-    an async generator, a different beast entirely.
+   1. What about a ``yield`` directly within the coroutine? The coroutine becomes
+   an async generator, a different beast entirely.
 
-    2. What about a ``yield from`` within the coroutine to a function that yields
-    (that is, a plain generator)?
-    ``SyntaxError: yield from not allowed in a coroutine.``
-    This was intentionally designed for the sake of simplicity -- mandating only
-    one way of using coroutines. Originally ``yield`` was actually barred as well,
-    but was re-accepted to allow for async generators.
-    Despite that, ``yield from`` and ``await`` effectively do the same thing.
+   2. What about a ``yield from`` within the coroutine to a function that yields
+   (that is, a plain generator)?
+   ``SyntaxError: yield from not allowed in a coroutine.``
+   This was intentionally designed for the sake of simplicity -- mandating only
+   one way of using coroutines. Originally ``yield`` was actually barred as well,
+   but was re-accepted to allow for async generators.
+   Despite that, ``yield from`` and ``await`` effectively do the same thing.
 
 =======
 Futures
@@ -380,28 +377,28 @@ preventing other tasks from running.
 
 ::
 
-    async def other_work():
-        print(f"I am worker. Work work.")
-
-    async def main():
-        # Add a few other tasks to the event loop, so there's something
-        # to do while asynchronously sleeping.
-        work_tasks = [
-            asyncio.create_task(other_work()),
-            asyncio.create_task(other_work()),
-            asyncio.create_task(other_work())
-        ]
-        print(
-            "Beginning asynchronous sleep at time: "
-            f"{datetime.datetime.now().strftime("%H:%M:%S")}."
-        )
-        await asyncio.create_task(async_sleep(3))
-        print(
-            "Done asynchronous sleep at time: "
-            f"{datetime.datetime.now().strftime("%H:%M:%S")}."
-        )
-        # asyncio.gather effectively awaits each task in the collection.
-        await asyncio.gather(*work_tasks)
+   async def other_work():
+       print(f"I am worker. Work work.")
+ 
+   async def main():
+       # Add a few other tasks to the event loop, so there's something
+       # to do while asynchronously sleeping.
+       work_tasks = [
+           asyncio.create_task(other_work()),
+           asyncio.create_task(other_work()),
+           asyncio.create_task(other_work())
+       ]
+       print(
+           "Beginning asynchronous sleep at time: "
+           f"{datetime.datetime.now().strftime("%H:%M:%S")}."
+       )
+       await asyncio.create_task(async_sleep(3))
+       print(
+           "Done asynchronous sleep at time: "
+           f"{datetime.datetime.now().strftime("%H:%M:%S")}."
+       )
+       # asyncio.gather effectively awaits each task in the collection.
+       await asyncio.gather(*work_tasks)
 
 
 Below, we use a future to enable custom control over when that task will be marked
@@ -414,13 +411,13 @@ will monitor how much time has elapsed and accordingly call
 
 ::
 
-    async def async_sleep(seconds: float):
-        future = asyncio.Future()
-        time_to_wake = time.time() + seconds
-        # Add the watcher-task to the event loop.
-        watcher_task = asyncio.create_task(_sleep_watcher(future, time_to_wake))
-        # Block until the future is marked as done.
-        await future
+   async def async_sleep(seconds: float):
+       future = asyncio.Future()
+       time_to_wake = time.time() + seconds
+       # Add the watcher-task to the event loop.
+       watcher_task = asyncio.create_task(_sleep_watcher(future, time_to_wake))
+       # Block until the future is marked as done.
+       await future
 
 We'll use a rather bare object, ``YieldToEventLoop()``, to ``yield`` from
 ``__await__`` in order to cede control to the event loop.
@@ -444,29 +441,29 @@ Note this is also of true of ``asyncio.sleep``.
 
 ::
 
-    class YieldToEventLoop:
-        def __await__(self):
-            yield
-
-    async def _sleep_watcher(future: asyncio.Future, time_to_wake: float):
-        while True:
-            if time.time() >= time_to_wake:
-                # This marks the future as done.
-                future.set_result(None)
-                break
-            else:
-                await YieldToEventLoop()
+   class YieldToEventLoop:
+       def __await__(self):
+           yield
+     
+   async def _sleep_watcher(future: asyncio.Future, time_to_wake: float):
+       while True:
+           if time.time() >= time_to_wake:
+           # This marks the future as done.
+           future.set_result(None)
+           break
+           else:
+           await YieldToEventLoop()
 
 Here is the full program's output:
 
 .. code-block:: none
 
-    $ python custom-async-sleep.py
-    Beginning asynchronous sleep at time: 14:52:22.
-    I am worker. Work work.
-    I am worker. Work work.
-    I am worker. Work work.
-    Done asynchronous sleep at time: 14:52:25.
+   $ python custom-async-sleep.py
+   Beginning asynchronous sleep at time: 14:52:22.
+   I am worker. Work work.
+   I am worker. Work work.
+   I am worker. Work work.
+   Done asynchronous sleep at time: 14:52:25.
 
 You might feel this implementation of asynchronous sleep was unnecessarily
 convoluted.
@@ -475,13 +472,13 @@ The example was meant to showcase the versatility of futures with a simple
 example that could be mimicked for more complex needs.
 For reference, you could implement it without futures, like so::
 
-    async def simpler_async_sleep(seconds):
-        time_to_wake = time.time() + seconds
-        while True:
-            if time.time() >= time_to_wake:
-                return
-            else:
-                await YieldToEventLoop()
+   async def simpler_async_sleep(seconds):
+       time_to_wake = time.time() + seconds
+       while True:
+           if time.time() >= time_to_wake:
+               return
+           else:
+               await YieldToEventLoop()
 
 But, that's all for now. Hopefully you're ready to more confidently dive into
 some async programming or check out advanced topics in the
