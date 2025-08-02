@@ -256,9 +256,17 @@ def _type_repr(obj):
     return _lazy_annotationlib.type_repr(obj)
 
 
-def _collect_type_parameters(args, *, enforce_default_ordering: bool = True):
+def _collect_type_parameters(
+    args,
+    *,
+    enforce_default_ordering: bool = True,
+    validate_all: bool = False,
+):
     """Collect all type parameters in args
     in order of first appearance (lexicographic order).
+
+    Having an explicit `Generic` or `Protocol` base class determines
+    the exact parameter order.
 
     For example::
 
@@ -266,6 +274,9 @@ def _collect_type_parameters(args, *, enforce_default_ordering: bool = True):
         >>> T = TypeVar('T')
         >>> _collect_type_parameters((T, Callable[P, T]))
         (~T, ~P)
+        >>> _collect_type_parameters((list[T], Generic[P, T]))
+        (~P, ~T)
+
     """
     # required type parameter cannot appear after parameter with default
     default_encountered = False
@@ -297,6 +308,17 @@ def _collect_type_parameters(args, *, enforce_default_ordering: bool = True):
                                         ' follows type parameter with a default')
 
                 parameters.append(t)
+        elif (
+            not validate_all
+            and isinstance(t, _GenericAlias)
+            and t.__origin__ in (Generic, Protocol)
+        ):
+            # If we see explicit `Generic[...]` or `Protocol[...]` base classes,
+            # we need to just copy them as-is.
+            # Unless `validate_all` is passed, in this case it means that
+            # we are doing a validation of `Generic` subclasses,
+            # then we collect all unique parameters to be able to inspect them.
+            parameters = t.__parameters__
         else:
             if _is_unpacked_typevartuple(t):
                 type_var_tuple_encountered = True
@@ -1156,20 +1178,22 @@ def _generic_init_subclass(cls, *args, **kwargs):
     if error:
         raise TypeError("Cannot inherit from plain Generic")
     if '__orig_bases__' in cls.__dict__:
-        tvars = _collect_type_parameters(cls.__orig_bases__)
+        tvars = _collect_type_parameters(cls.__orig_bases__, validate_all=True)
         # Look for Generic[T1, ..., Tn].
         # If found, tvars must be a subset of it.
         # If not found, tvars is it.
         # Also check for and reject plain Generic,
         # and reject multiple Generic[...].
         gvars = None
+        basename = None
         for base in cls.__orig_bases__:
             if (isinstance(base, _GenericAlias) and
-                    base.__origin__ is Generic):
+                    base.__origin__ in (Generic, Protocol)):
                 if gvars is not None:
                     raise TypeError(
                         "Cannot inherit from Generic[...] multiple times.")
                 gvars = base.__parameters__
+                basename = base.__origin__.__name__
         if gvars is not None:
             tvarset = set(tvars)
             gvarset = set(gvars)
@@ -1177,7 +1201,7 @@ def _generic_init_subclass(cls, *args, **kwargs):
                 s_vars = ', '.join(str(t) for t in tvars if t not in gvarset)
                 s_args = ', '.join(str(g) for g in gvars)
                 raise TypeError(f"Some type variables ({s_vars}) are"
-                                f" not listed in Generic[{s_args}]")
+                                f" not listed in {basename}[{s_args}]")
             tvars = gvars
     cls.__parameters__ = tuple(tvars)
 
