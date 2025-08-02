@@ -188,9 +188,6 @@ class PurePath:
     def __repr__(self):
         return "{}({!r})".format(self.__class__.__name__, self.as_posix())
 
-    def __fspath__(self):
-        return str(self)
-
     def __bytes__(self):
         """Return the bytes representation of the path.  This is only
         recommended to use under Unix."""
@@ -258,6 +255,9 @@ class PurePath:
             self._str = self._format_parsed_parts(self.drive, self.root,
                                                   self._tail) or '.'
             return self._str
+
+    __fspath__ = __str__
+    __vfspath__ = __str__
 
     @classmethod
     def _format_parsed_parts(cls, drv, root, tail):
@@ -518,18 +518,6 @@ class PurePath:
                     return True
             return False
         return self.parser.isabs(self)
-
-    def is_reserved(self):
-        """Return True if the path contains one of the special names reserved
-        by the system, if any."""
-        import warnings
-        msg = ("pathlib.PurePath.is_reserved() is deprecated and scheduled "
-               "for removal in Python 3.15. Use os.path.isreserved() to "
-               "detect reserved paths on Windows.")
-        warnings._deprecated("pathlib.PurePath.is_reserved", msg, remove=(3, 15))
-        if self.parser is ntpath:
-            return self.parser.isreserved(self)
-        return False
 
     def as_uri(self):
         """Return the path as a URI."""
