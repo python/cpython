@@ -264,8 +264,6 @@ contained :class:`Cookie` objects.
    it *could* only be useful when customizing a :class:`CookiePolicy`
    with an expiring logic.
 
-   Note that the :meth:`save` method won't save expired cookies anyway (unless you
-   ask otherwise by passing a true *ignore_expires* argument).
 
 :class:`FileCookieJar` implements the following additional methods:
 
