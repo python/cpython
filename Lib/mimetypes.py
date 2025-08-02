@@ -722,19 +722,23 @@ def _main(args=None):
 
     args, help_text = _parse_args(args)
 
+    results = []
     if args.extension:
         for gtype in args.type:
             guess = guess_extension(gtype, not args.lenient)
             if guess:
-                return str(guess)
-            sys.exit(f"error: unknown type {gtype}")
+                results.append(str(guess))
+            else:
+                sys.exit(f"error: unknown type {gtype}")
+        return '\n'.join(results)
     else:
         for gtype in args.type:
             guess, encoding = guess_type(gtype, not args.lenient)
             if guess:
-                return f"type: {guess} encoding: {encoding}"
-            sys.exit(f"error: media type unknown for {gtype}")
-    return help_text
+                results.append(f"type: {guess} encoding: {encoding}")
+            else:
+                sys.exit(f"error: media type unknown for {gtype}")
+        return '\n'.join(results)
 
 
 if __name__ == '__main__':
