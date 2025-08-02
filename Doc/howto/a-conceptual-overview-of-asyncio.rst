@@ -104,8 +104,10 @@ Note that calling it does not execute the function::
 The terms "asynchronous function" (or "coroutine function") and "coroutine object"
 are often conflated as coroutine.
 That can be confusing!
-In this article, coroutine will exclusively mean "coroutine object" -- the
-thing produced by executing a coroutine function.
+In this article, coroutine specifically refers to a coroutine object, or more
+precisely, an instance of :data:`types.CoroutineType` (native coroutine).
+Note that coroutines can also exist as instances of :class:`collections.abc.Coroutine`
+-- a distinction that matters for type checking.
 
 That coroutine represents the function's body or logic.
 A coroutine has to be explicitly started; again, merely creating the coroutine
@@ -426,7 +428,7 @@ and receiving control back when they pause or finish.
 The ``watcher_task``, which runs the coroutine: ``_sleep_watcher(...)`` will be
 invoked once per full cycle of the event loop's queue.
 On each resumption, it'll check the time and if not enough has elapsed, then it'll
-pause once again and return control to the event loop.
+pause once again and hand control back to the event loop.
 Eventually, enough time will have elapsed, and ``_sleep_watcher(...)`` will
 mark the future as done, and then itself finish too by breaking out of the
 infinite ``while`` loop.
