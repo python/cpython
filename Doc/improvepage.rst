@@ -36,4 +36,4 @@ You have a few options for asking questions or suggesting changes:
   `Docs: problem with "PAGETITLE" <https://github.com/python/cpython/issues/new?title=Docs%3A+problem+with+%22PAGETITLE%22&labels=docs&body=The+page+at+PAGEURL+has+a+problem%3A>`_.
 
 - You can `edit the page on GitHub <https://github.com/python/cpython/blob/main/Doc/PAGESOURCE?plain=1>`_
-  and open a pull request, though you will need to have signed a contributor agreement before it can be merged.
+  to open a pull request and begin the contribution process.
