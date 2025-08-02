@@ -57,6 +57,9 @@ class IntLike(WithDunder):
 class FloatLike(WithDunder):
     methname = '__float__'
 
+class ComplexLike(WithDunder):
+    methname = '__complex__'
+
 
 def subclassof(base):
     return type(base.__name__ + 'Subclass', (base,), {})
@@ -80,6 +83,7 @@ class CAPITest(unittest.TestCase):
         self.assertTrue(check(0.5))
         self.assertTrue(check(FloatLike.with_val(4.25)))
         self.assertTrue(check(1+2j))
+        self.assertTrue(check(ComplexLike.with_val(1+2j)))
 
         self.assertFalse(check([]))
         self.assertFalse(check("abc"))
@@ -300,6 +304,47 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, float_, 1j)
         self.assertRaises(TypeError, float_, object())
         self.assertRaises(SystemError, float_, NULL)
+
+    def test_complex(self):
+        # Test PyNumber_Complex()
+        complex_ = _testcapi.number_complex
+
+        self.assertEqual(complex_(1.25), 1.25+0j)
+        self.assertEqual(complex_(123), 123+0j)
+        self.assertEqual(complex_("1.25"), 1.25+0j)
+        self.assertEqual(complex_(1+2j), 1+2j)
+        self.assertEqual(complex_("1+2j"), 1+2j)
+
+        self.assertEqual(complex_(FloatLike.with_val(4.25)), 4.25 + 0j)
+        self.assertEqual(complex_(IndexLike.with_val(99)), 99.0 + 0j)
+        self.assertEqual(complex_(IndexLike.with_val(-1)), -1.0 + 0j)
+        self.assertEqual(complex_(ComplexLike.with_val(1+2j)), 1+2j)
+
+        self.assertRaises(TypeError, complex_, FloatLike.with_val(687))
+        x = FloatLike.with_val(subclassof(float)(4.25))
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", DeprecationWarning)
+            self.assertRaises(DeprecationWarning, complex_, x)
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(complex_(x), 4.25+0j)
+        self.assertRaises(RuntimeError, complex_,
+                          FloatLike.with_exc(RuntimeError))
+
+        self.assertRaises(TypeError, complex_, ComplexLike.with_val(687))
+        x = ComplexLike.with_val(subclassof(complex)(1+2j))
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", DeprecationWarning)
+            self.assertRaises(DeprecationWarning, complex_, x)
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(complex_(x), 1+2j)
+        self.assertRaises(RuntimeError, complex_,
+                          ComplexLike.with_exc(RuntimeError))
+
+        self.assertRaises(TypeError, complex_, IndexLike.with_val(1.25))
+        self.assertRaises(OverflowError, complex_, IndexLike.with_val(2**2000))
+
+        self.assertRaises(TypeError, complex_, object())
+        self.assertRaises(SystemError, complex_, NULL)
 
     def test_index(self):
         # Test PyNumber_Index()
