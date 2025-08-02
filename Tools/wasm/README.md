@@ -9,11 +9,6 @@ compilation of CPython to WebAssembly (WASM). Python supports Emscripten
 run in modern browsers and JavaScript runtimes like *Node.js*. WASI builds
 use WASM runtimes such as *wasmtime*.
 
-Users and developers are encouraged to use `Tools/wasm/emscripten` and
-`Tools/wasm/wasi` for building CPython for WebAssembly, as described below.
-These tools automate the build process and provide assistance with installation
-of SDKs, running tests, etc.
-
 **NOTE**: If you are looking for general information about WebAssembly that is
 not directly related to CPython, please see https://github.com/psf/webassembly.
 
