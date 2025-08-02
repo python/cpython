@@ -4036,10 +4036,6 @@ class SuggestionFormattingTestMixin:
 
 
 class BaseSuggestionTests(SuggestionFormattingTestMixin):
-    """
-    Subclasses need to implement the get_suggestion method.
-    """
-
     def test_suggestions(self):
         class Substitution:
             noise = more_noise = a = bc = None
