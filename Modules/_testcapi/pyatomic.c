@@ -5,6 +5,7 @@
  */
 
 #include "parts.h"
+#include "pyconfig.h"  // SIZEOF_VOID_P
 
 // We define atomic bitwise operations on these types
 #define FOR_BITWISE_TYPES(V)    \
@@ -156,6 +157,78 @@ test_atomic_load_store_int_release_acquire(PyObject *self, PyObject *obj) { \
     Py_RETURN_NONE;
 }
 
+static PyObject *
+test_atomic_memcpy_ptr_store_relaxed(PyObject *self, PyObject *obj) {
+#if SIZEOF_VOID_P == 8
+#define p0 (void *)0x5555555555555555
+#define p1 (void *)0xaaaaaaaaaaaaaaaa
+#define p2 (void *)0xfedcba9876543210
+#define p3 (void *)0x0123456789abcdef
+#else
+#if SIZEOF_VOID_P == 4
+#define p0 (void *)0x55555555
+#define p1 (void *)0xaaaaaaaa
+#define p2 (void *)0x76543210
+#define p3 (void *)0x01234567
+#else
+#error "unexpected sizeof(void *), expecting 8 or 4"
+#endif
+#endif
+    void *src[4] = { (void *)0, p2, p3, (void *)0 };
+    void *dst[4] = { p0, (void *)0, (void *)0, p1 };
+    assert(_Py_atomic_memcpy_ptr_store_relaxed(&dst[1], &src[1], SIZEOF_VOID_P * 2) == &dst[1]);
+    assert(dst[0] == p0);
+    assert(dst[1] == p2);
+    assert(dst[2] == p3);
+    assert(dst[3] == p1);
+    Py_RETURN_NONE;
+#undef p3
+#undef p2
+#undef p1
+#undef p0
+}
+
+static PyObject *
+test_atomic_memmove_ptr_store_relaxed(PyObject *self, PyObject *obj) {
+#if SIZEOF_VOID_P == 8
+#define p0 (void *)0x5555555555555555
+#define p1 (void *)0xaaaaaaaaaaaaaaaa
+#define p2 (void *)0xfedcba9876543210
+#define p3 (void *)0x0123456789abcdef
+#define p4 (void *)0x0f2d4b6987a5c3e1
+#else
+#if SIZEOF_VOID_P == 4
+#define p0 (void *)0x55555555
+#define p1 (void *)0xaaaaaaaa
+#define p2 (void *)0x76543210
+#define p3 (void *)0x01234567
+#define p4 (void *)0x07254361
+#else
+#error "unexpected sizeof(void *), expecting 8 or 4"
+#endif
+#endif
+    void *back[5] = { p0, p2, p3, p4, p1 };
+    assert(_Py_atomic_memmove_ptr_store_relaxed(&back[1], &back[2], SIZEOF_VOID_P * 2) == &back[1]);
+    assert(back[0] == p0);
+    assert(back[1] == p3);
+    assert(back[2] == p4);
+    assert(back[3] == p4);
+    assert(back[4] == p1);
+    void *fwd[5] = { p0, p2, p3, p4, p1 };
+    assert(_Py_atomic_memmove_ptr_store_relaxed(&fwd[2], &fwd[1], SIZEOF_VOID_P * 2) == &fwd[2]);
+    assert(fwd[0] == p0);
+    assert(fwd[1] == p2);
+    assert(fwd[2] == p2);
+    assert(fwd[3] == p3);
+    assert(fwd[4] == p1);
+    Py_RETURN_NONE;
+#undef p4
+#undef p3
+#undef p2
+#undef p1
+#undef p0
+}
+
 // NOTE: all tests should start with "test_atomic_" to be included
 // in test_pyatomic.py
 
@@ -179,6 +252,8 @@ static PyMethodDef test_methods[] = {
     {"test_atomic_fences", test_atomic_fences, METH_NOARGS},
     {"test_atomic_release_acquire", test_atomic_release_acquire, METH_NOARGS},
     {"test_atomic_load_store_int_release_acquire", test_atomic_load_store_int_release_acquire, METH_NOARGS},
+    {"test_atomic_memcpy_ptr_store_relaxed", test_atomic_memcpy_ptr_store_relaxed, METH_NOARGS},
+    {"test_atomic_memmove_ptr_store_relaxed", test_atomic_memmove_ptr_store_relaxed, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
