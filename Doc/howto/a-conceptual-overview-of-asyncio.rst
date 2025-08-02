@@ -58,7 +58,7 @@ approach rather useless.
 ::
 
    import asyncio
-   
+
    # This creates an event loop and indefinitely cycles through
    # its queue of tasks.
    event_loop = asyncio.new_event_loop()
@@ -277,32 +277,33 @@ and executes the remaining statements in its body.
 When a coroutine finishes, it raises a :exc:`StopIteration` exception with the
 return value attached in the :attr:`~StopIteration.value` attribute.
 
-::
+.. code-block::
+   :linenos:
 
-   1   class Rock:
-   2       def __await__(self):
-   3           value_sent_in = yield 7
-   4           print(f"Rock.__await__ resuming with value: {value_sent_in}.")
-   5           return value_sent_in
-   6
-   7   async def main():
-   8       print("Beginning coroutine main().")
-   9       rock = Rock()
-   10      print("Awaiting rock...")
-   11      value_from_rock = await rock
-   12      print(f"Coroutine received value: {value_from_rock} from rock.")
-   13      return 23
-   14
-   15  coroutine = main()
-   16  intermediate_result = coroutine.send(None)
-   17  print(f"Coroutine paused and returned intermediate value: {intermediate_result}.")
-   18
-   19  print(f"Resuming coroutine and sending in value: 42.")
-   20  try:
-   21      coroutine.send(42)
-   22  except StopIteration as e:
-   23      returned_value = e.value
-   24  print(f"Coroutine main() finished and provided value: {returned_value}.")
+   class Rock:
+       def __await__(self):
+           value_sent_in = yield 7
+           print(f"Rock.__await__ resuming with value: {value_sent_in}.")
+           return value_sent_in
+
+   async def main():
+       print("Beginning coroutine main().")
+       rock = Rock()
+       print("Awaiting rock...")
+       value_from_rock = await rock
+       print(f"Coroutine received value: {value_from_rock} from rock.")
+       return 23
+
+   coroutine = main()
+   intermediate_result = coroutine.send(None)
+   print(f"Coroutine paused and returned intermediate value: {intermediate_result}.")
+
+   print(f"Resuming coroutine and sending in value: 42.")
+   try:
+       coroutine.send(42)
+   except StopIteration as e:
+       returned_value = e.value
+   print(f"Coroutine main() finished and provided value: {returned_value}.")
 
 That snippet produces this output:
 
@@ -378,8 +379,8 @@ preventing other tasks from running.
 ::
 
    async def other_work():
-       print(f"I am worker. Work work.")
- 
+       print("I am worker. Work work.")
+
    async def main():
        # Add a few other tasks to the event loop, so there's something
        # to do while asynchronously sleeping.
@@ -444,7 +445,7 @@ Note this is also of true of ``asyncio.sleep``.
    class YieldToEventLoop:
        def __await__(self):
            yield
-     
+
    async def _sleep_watcher(future: asyncio.Future, time_to_wake: float):
        while True:
            if time.time() >= time_to_wake:
