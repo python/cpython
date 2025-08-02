@@ -548,17 +548,16 @@ _Py_atomic_load_ssize_acquire(const Py_ssize_t *obj);
 // --- _Py_atomic_memcpy / _Py_atomic_memmove ------------
 
 static inline void *
-_Py_atomic_memcpy_ptr_store_relaxed(void *dest, void *src, Py_ssize_t n)
+_Py_atomic_memcpy_ptr_store_relaxed(void *dest, void *src, size_t n)
 {
-    size_t size = (size_t)n;
     assert(_Py_IS_ALIGNED(dest, sizeof(void *)));
     assert(_Py_IS_ALIGNED(src, sizeof(void *)));
-    assert(size % sizeof(void *) == 0);
+    assert(n % sizeof(void *) == 0);
 
     if (dest != src) {
         void **dest_ = (void **)dest;
         void **src_ = (void **)src;
-        void **end = dest_ + size / sizeof(void *);
+        void **end = dest_ + n / sizeof(void *);
 
         for (; dest_ != end; dest_++, src_++) {
             _Py_atomic_store_ptr_relaxed(dest_, *src_);
@@ -569,26 +568,25 @@ _Py_atomic_memcpy_ptr_store_relaxed(void *dest, void *src, Py_ssize_t n)
 }
 
 static inline void *
-_Py_atomic_memmove_ptr_store_relaxed(void *dest, void *src, Py_ssize_t n)
+_Py_atomic_memmove_ptr_store_relaxed(void *dest, void *src, size_t n)
 {
-    size_t size = (size_t)n;
     assert(_Py_IS_ALIGNED(dest, sizeof(void *)));
     assert(_Py_IS_ALIGNED(src, sizeof(void *)));
-    assert(size % sizeof(void *) == 0);
+    assert(n % sizeof(void *) == 0);
 
-    if (dest < src || dest >= (void *)((char *)src + size)) {
+    if (dest < src || dest >= (void *)((char *)src + n)) {
         void **dest_ = (void **)dest;
         void **src_ = (void **)src;
-        void **end = dest_ + size / sizeof(void *);
+        void **end = dest_ + n / sizeof(void *);
 
         for (; dest_ != end; dest_++, src_++) {
             _Py_atomic_store_ptr_relaxed(dest_, *src_);
         }
     }
     else if (dest > src) {
-        size = size / sizeof(void *) - 1;
-        void **dest_ = (void **)dest + size;
-        void **src_ = (void **)src + size;
+        n = n / sizeof(void *) - 1;
+        void **dest_ = (void **)dest + n;
+        void **src_ = (void **)src + n;
         void **end = (void **)dest - 1;
 
         for (; dest_ != end; dest_--, src_--) {
