@@ -1,0 +1,2 @@
+Fix potential :mod:`weakref` races in an object's destructor on the :term:`free threaded <free
+threading>` build.

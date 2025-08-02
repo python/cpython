@@ -1,3 +1,4 @@
+import sys
 import ast
 import contextlib
 import re
@@ -55,7 +56,7 @@ class RuleCollectorVisitor(GrammarVisitor):
 
 
 class KeywordCollectorVisitor(GrammarVisitor):
-    """Visitor that collects all the keywods and soft keywords in the Grammar"""
+    """Visitor that collects all the keywords and soft keywords in the Grammar"""
 
     def __init__(self, gen: "ParserGenerator", keywords: Dict[str, int], soft_keywords: Set[str]):
         self.generator = gen
@@ -75,6 +76,16 @@ class RuleCheckingVisitor(GrammarVisitor):
     def __init__(self, rules: Dict[str, Rule], tokens: Set[str]):
         self.rules = rules
         self.tokens = tokens
+        # If python < 3.12 add the virtual fstring tokens
+        if sys.version_info < (3, 12):
+            self.tokens.add("FSTRING_START")
+            self.tokens.add("FSTRING_END")
+            self.tokens.add("FSTRING_MIDDLE")
+        # If python < 3.14 add the virtual tstring tokens
+        if sys.version_info < (3, 14, 0, 'beta', 1):
+            self.tokens.add("TSTRING_START")
+            self.tokens.add("TSTRING_END")
+            self.tokens.add("TSTRING_MIDDLE")
 
     def visit_NameLeaf(self, node: NameLeaf) -> None:
         if node.value not in self.rules and node.value not in self.tokens:

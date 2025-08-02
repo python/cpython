@@ -45,19 +45,19 @@
 #  endif
 #endif
 
-// gh-111506: The free-threaded build is not compatible with the limited API
-// or the stable ABI.
-#if defined(Py_LIMITED_API) && defined(Py_GIL_DISABLED)
-#  error "The limited API is not currently supported in the free-threaded build"
-#endif
+#if defined(Py_GIL_DISABLED)
+#  if defined(Py_LIMITED_API) && !defined(_Py_OPAQUE_PYOBJECT)
+#    error "Py_LIMITED_API is not currently supported in the free-threaded build"
+#  endif
 
-#if defined(Py_GIL_DISABLED) && defined(_MSC_VER)
-#  include <intrin.h>             // __readgsqword()
-#endif
+#  if defined(_MSC_VER)
+#    include <intrin.h>             // __readgsqword()
+#  endif
 
-#if defined(Py_GIL_DISABLED) && defined(__MINGW32__)
-#  include <intrin.h>             // __readgsqword()
-#endif
+#  if defined(__MINGW32__)
+#    include <intrin.h>             // __readgsqword()
+#  endif
+#endif // Py_GIL_DISABLED
 
 // Include Python header files
 #include "pyport.h"
@@ -68,7 +68,8 @@
 #include "pybuffer.h"
 #include "pystats.h"
 #include "pyatomic.h"
-#include "lock.h"
+#include "pylock.h"
+#include "critical_section.h"
 #include "object.h"
 #include "refcount.h"
 #include "objimpl.h"
@@ -130,7 +131,6 @@
 #include "import.h"
 #include "abstract.h"
 #include "bltinmodule.h"
-#include "critical_section.h"
 #include "cpython/pyctype.h"
 #include "pystrtod.h"
 #include "pystrcmp.h"

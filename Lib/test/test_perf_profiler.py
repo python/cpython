@@ -17,7 +17,7 @@ from test.support.os_helper import temp_dir
 if not support.has_subprocess_support:
     raise unittest.SkipTest("test module requires subprocess")
 
-if support.check_sanitizer(address=True, memory=True, ub=True):
+if support.check_sanitizer(address=True, memory=True, ub=True, function=True):
     # gh-109580: Skip the test because it does crash randomly if Python is
     # built with ASAN.
     raise unittest.SkipTest("test crash randomly on ASAN/MSAN/UBSAN build")
@@ -47,6 +47,7 @@ class TestPerfTrampoline(unittest.TestCase):
         for file in files_to_delete:
             file.unlink()
 
+    @unittest.skipIf(support.check_bolt_optimized(), "fails on BOLT instrumented binaries")
     def test_trampoline_works(self):
         code = """if 1:
                 def foo():
@@ -92,14 +93,13 @@ class TestPerfTrampoline(unittest.TestCase):
                 perf_line, f"Could not find {expected_symbol} in perf file"
             )
             perf_addr = perf_line.split(" ")[0]
-            self.assertFalse(
-                perf_addr.startswith("0x"), "Address should not be prefixed with 0x"
-            )
+            self.assertNotStartsWith(perf_addr, "0x")
             self.assertTrue(
                 set(perf_addr).issubset(string.hexdigits),
                 "Address should contain only hex characters",
             )
 
+    @unittest.skipIf(support.check_bolt_optimized(), "fails on BOLT instrumented binaries")
     def test_trampoline_works_with_forks(self):
         code = """if 1:
                 import os, sys
@@ -160,6 +160,7 @@ class TestPerfTrampoline(unittest.TestCase):
         self.assertIn(f"py::bar_fork:{script}", child_perf_file_contents)
         self.assertIn(f"py::baz_fork:{script}", child_perf_file_contents)
 
+    @unittest.skipIf(support.check_bolt_optimized(), "fails on BOLT instrumented binaries")
     def test_sys_api(self):
         code = """if 1:
                 import sys
@@ -210,14 +211,14 @@ class TestPerfTrampoline(unittest.TestCase):
                 sys.activate_stack_trampoline("perf")
                 sys.activate_stack_trampoline("perf")
                 """
-        assert_python_ok("-c", code)
+        assert_python_ok("-c", code, PYTHON_JIT="0")
 
     def test_sys_api_with_invalid_trampoline(self):
         code = """if 1:
                 import sys
                 sys.activate_stack_trampoline("invalid")
                 """
-        rc, out, err = assert_python_failure("-c", code)
+        rc, out, err = assert_python_failure("-c", code, PYTHON_JIT="0")
         self.assertIn("invalid backend: invalid", err.decode())
 
     def test_sys_api_get_status(self):
@@ -228,7 +229,7 @@ class TestPerfTrampoline(unittest.TestCase):
                 sys.deactivate_stack_trampoline()
                 assert sys.is_stack_trampoline_active() is False
                 """
-        assert_python_ok("-c", code)
+        assert_python_ok("-c", code, PYTHON_JIT="0")
 
 
 def is_unwinding_reliable_with_frame_pointers():
@@ -257,6 +258,8 @@ def perf_command_works():
             cmd = (
                 "perf",
                 "record",
+                "--no-buildid",
+                "--no-buildid-cache",
                 "-g",
                 "--call-graph=fp",
                 "-o",
@@ -286,11 +289,22 @@ def run_perf(cwd, *args, use_jit=False, **env_vars):
     env["PYTHON_JIT"] = "0"
     output_file = cwd + "/perf_output.perf"
     if not use_jit:
-        base_cmd = ("perf", "record", "-g", "--call-graph=fp", "-o", output_file, "--")
+        base_cmd = (
+            "perf",
+            "record",
+            "--no-buildid",
+            "--no-buildid-cache",
+            "-g",
+            "--call-graph=fp",
+            "-o", output_file,
+            "--"
+        )
     else:
         base_cmd = (
             "perf",
             "record",
+            "--no-buildid",
+            "--no-buildid-cache",
             "-g",
             "--call-graph=dwarf,65528",
             "-F99",
@@ -304,6 +318,7 @@ def run_perf(cwd, *args, use_jit=False, **env_vars):
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         env=env,
+        text=True,
     )
     if proc.returncode:
         print(proc.stderr, file=sys.stderr)
@@ -313,10 +328,10 @@ def run_perf(cwd, *args, use_jit=False, **env_vars):
         jit_output_file = cwd + "/jit_output.dump"
         command = ("perf", "inject", "-j", "-i", output_file, "-o", jit_output_file)
         proc = subprocess.run(
-            command, stderr=subprocess.PIPE, stdout=subprocess.PIPE, env=env
+            command, stderr=subprocess.PIPE, stdout=subprocess.PIPE, env=env, text=True
         )
         if proc.returncode:
-            print(proc.stderr)
+            print(proc.stderr, file=sys.stderr)
             raise ValueError(f"Perf failed with return code {proc.returncode}")
         # Copy the jit_output_file to the output_file
         os.rename(jit_output_file, output_file)
@@ -328,10 +343,9 @@ def run_perf(cwd, *args, use_jit=False, **env_vars):
         stderr=subprocess.PIPE,
         env=env,
         check=True,
+        text=True,
     )
-    return proc.stdout.decode("utf-8", "replace"), proc.stderr.decode(
-        "utf-8", "replace"
-    )
+    return proc.stdout, proc.stderr
 
 
 class TestPerfProfilerMixin:
@@ -490,15 +504,19 @@ class TestPerfProfiler(unittest.TestCase, TestPerfProfilerMixin):
 
 def _is_perf_version_at_least(major, minor):
     # The output of perf --version looks like "perf version 6.7-3" but
-    # it can also be perf version "perf version 5.15.143"
+    # it can also be perf version "perf version 5.15.143", or even include
+    # a commit hash in the version string, like "6.12.9.g242e6068fd5c"
+    #
+    # PermissionError is raised if perf does not exist on the Windows Subsystem
+    # for Linux, see #134987
     try:
         output = subprocess.check_output(["perf", "--version"], text=True)
-    except (subprocess.CalledProcessError, FileNotFoundError):
+    except (subprocess.CalledProcessError, FileNotFoundError, PermissionError):
         return False
     version = output.split()[2]
     version = version.split("-")[0]
     version = version.split(".")
-    version = tuple(map(int, version))
+    version = tuple(map(int, version[:2]))
     return version >= (major, minor)
 
 

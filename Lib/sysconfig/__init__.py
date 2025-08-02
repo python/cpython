@@ -116,8 +116,10 @@ def _getuserbase():
     if env_base:
         return env_base
 
-    # Emscripten, iOS, tvOS, VxWorks, WASI, and watchOS have no home directories
-    if sys.platform in {"emscripten", "ios", "tvos", "vxworks", "wasi", "watchos"}:
+    # Emscripten, iOS, tvOS, VxWorks, WASI, and watchOS have no home directories.
+    # Use _PYTHON_HOST_PLATFORM to get the correct platform when cross-compiling.
+    system_name = os.environ.get('_PYTHON_HOST_PLATFORM', sys.platform).split('-')[0]
+    if system_name in {"emscripten", "ios", "tvos", "vxworks", "wasi", "watchos"}:
         return None
 
     def joinuser(*args):
@@ -173,9 +175,7 @@ _SCHEME_KEYS = ('stdlib', 'platstdlib', 'purelib', 'platlib', 'include',
 _PY_VERSION = sys.version.split()[0]
 _PY_VERSION_SHORT = f'{sys.version_info[0]}.{sys.version_info[1]}'
 _PY_VERSION_SHORT_NO_DOT = f'{sys.version_info[0]}{sys.version_info[1]}'
-_PREFIX = os.path.normpath(sys.prefix)
 _BASE_PREFIX = os.path.normpath(sys.base_prefix)
-_EXEC_PREFIX = os.path.normpath(sys.exec_prefix)
 _BASE_EXEC_PREFIX = os.path.normpath(sys.base_exec_prefix)
 # Mutex guarding initialization of _CONFIG_VARS.
 _CONFIG_VARS_LOCK = threading.RLock()
@@ -219,11 +219,7 @@ if os.name == 'nt':
 if "_PYTHON_PROJECT_BASE" in os.environ:
     _PROJECT_BASE = _safe_realpath(os.environ["_PYTHON_PROJECT_BASE"])
 
-def is_python_build(check_home=None):
-    if check_home is not None:
-        import warnings
-        warnings.warn("check_home argument is deprecated and ignored.",
-                      DeprecationWarning, stacklevel=2)
+def is_python_build():
     for fn in ("Setup", "Setup.local"):
         if os.path.isfile(os.path.join(_PROJECT_BASE, "Modules", fn)):
             return True
@@ -318,15 +314,35 @@ def get_default_scheme():
 
 def get_makefile_filename():
     """Return the path of the Makefile."""
+
+    # GH-127429: When cross-compiling, use the Makefile from the target, instead of the host Python.
+    if cross_base := os.environ.get('_PYTHON_PROJECT_BASE'):
+        return os.path.join(cross_base, 'Makefile')
+
     if _PYTHON_BUILD:
         return os.path.join(_PROJECT_BASE, "Makefile")
+
     if hasattr(sys, 'abiflags'):
         config_dir_name = f'config-{_PY_VERSION_SHORT}{sys.abiflags}'
     else:
         config_dir_name = 'config'
+
     if hasattr(sys.implementation, '_multiarch'):
         config_dir_name += f'-{sys.implementation._multiarch}'
+
     return os.path.join(get_path('stdlib'), config_dir_name, 'Makefile')
+
+
+def _import_from_directory(path, name):
+    if name not in sys.modules:
+        import importlib.machinery
+        import importlib.util
+
+        spec = importlib.machinery.PathFinder.find_spec(name, [path])
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        sys.modules[name] = module
+    return sys.modules[name]
 
 
 def _get_sysconfigdata_name():
@@ -336,26 +352,34 @@ def _get_sysconfigdata_name():
         f'_sysconfigdata_{sys.abiflags}_{sys.platform}_{multiarch}',
     )
 
+
+def _get_sysconfigdata():
+    import importlib
+
+    name = _get_sysconfigdata_name()
+    path = os.environ.get('_PYTHON_SYSCONFIGDATA_PATH')
+    module = _import_from_directory(path, name) if path else importlib.import_module(name)
+
+    return module.build_time_vars
+
+
+def _installation_is_relocated():
+    """Is the Python installation running from a different prefix than what was targetted when building?"""
+    if os.name != 'posix':
+        raise NotImplementedError('sysconfig._installation_is_relocated() is currently only supported on POSIX')
+
+    data = _get_sysconfigdata()
+    return (
+        data['prefix'] != getattr(sys, 'base_prefix', '')
+        or data['exec_prefix'] != getattr(sys, 'base_exec_prefix', '')
+    )
+
+
 def _init_posix(vars):
     """Initialize the module as appropriate for POSIX systems."""
-    # _sysconfigdata is generated at build time, see _generate_posix_vars()
-    name = _get_sysconfigdata_name()
+    # GH-126920: Make sure we don't overwrite any of the keys already set
+    vars.update(_get_sysconfigdata() | vars)
 
-    # For cross builds, the path to the target's sysconfigdata must be specified
-    # so it can be imported. It cannot be in PYTHONPATH, as foreign modules in
-    # sys.path can cause crashes when loaded by the host interpreter.
-    # Rely on truthiness as a valueless env variable is still an empty string.
-    # See OS X note in _generate_posix_vars re _sysconfigdata.
-    if (path := os.environ.get('_PYTHON_SYSCONFIGDATA_PATH')):
-        from importlib.machinery import FileFinder, SourceFileLoader, SOURCE_SUFFIXES
-        from importlib.util import module_from_spec
-        spec = FileFinder(path, (SourceFileLoader, SOURCE_SUFFIXES)).find_spec(name)
-        _temp = module_from_spec(spec)
-        spec.loader.exec_module(_temp)
-    else:
-        _temp = __import__(name, globals(), locals(), ['build_time_vars'], 0)
-    build_time_vars = _temp.build_time_vars
-    vars.update(build_time_vars)
 
 def _init_non_posix(vars):
     """Initialize the module as appropriate for NT"""
@@ -366,8 +390,19 @@ def _init_non_posix(vars):
     vars['BINLIBDEST'] = get_path('platstdlib')
     vars['INCLUDEPY'] = get_path('include')
 
-    # Add EXT_SUFFIX, SOABI, and Py_GIL_DISABLED
+    # Add EXT_SUFFIX, SOABI, Py_DEBUG, and Py_GIL_DISABLED
     vars.update(_sysconfig.config_vars())
+
+    # NOTE: ABIFLAGS is only an emulated value. It is not present during build
+    #       on Windows. sys.abiflags is absent on Windows and vars['abiflags']
+    #       is already widely used to calculate paths, so it should remain an
+    #       empty string.
+    vars['ABIFLAGS'] = ''.join(
+        (
+            't' if vars['Py_GIL_DISABLED'] else '',
+            '_d' if vars['Py_DEBUG'] else '',
+        ),
+    )
 
     vars['LIBDIR'] = _safe_realpath(os.path.join(get_config_var('installed_base'), 'libs'))
     if hasattr(sys, 'dllhandle'):
@@ -422,7 +457,7 @@ def get_config_h_filename():
     """Return the path of pyconfig.h."""
     if _PYTHON_BUILD:
         if os.name == "nt":
-            inc_dir = os.path.dirname(sys._base_executable)
+            inc_dir = os.path.join(_PROJECT_BASE, 'PC')
         else:
             inc_dir = _PROJECT_BASE
     else:
@@ -463,27 +498,44 @@ def get_path(name, scheme=get_default_scheme(), vars=None, expand=True):
 def _init_config_vars():
     global _CONFIG_VARS
     _CONFIG_VARS = {}
+
+    prefix = os.path.normpath(sys.prefix)
+    exec_prefix = os.path.normpath(sys.exec_prefix)
+    base_prefix = _BASE_PREFIX
+    base_exec_prefix = _BASE_EXEC_PREFIX
+
+    try:
+        abiflags = sys.abiflags
+    except AttributeError:
+        abiflags = ''
+
+    if os.name == 'posix':
+        _init_posix(_CONFIG_VARS)
+        # If we are cross-compiling, load the prefixes from the Makefile instead.
+        if '_PYTHON_PROJECT_BASE' in os.environ:
+            prefix = _CONFIG_VARS['host_prefix']
+            exec_prefix = _CONFIG_VARS['host_exec_prefix']
+            base_prefix = _CONFIG_VARS['host_prefix']
+            base_exec_prefix = _CONFIG_VARS['host_exec_prefix']
+            abiflags = _CONFIG_VARS['ABIFLAGS']
+
     # Normalized versions of prefix and exec_prefix are handy to have;
     # in fact, these are the standard versions used most places in the
     # Distutils.
-    _CONFIG_VARS['prefix'] = _PREFIX
-    _CONFIG_VARS['exec_prefix'] = _EXEC_PREFIX
+    _CONFIG_VARS['prefix'] = prefix
+    _CONFIG_VARS['exec_prefix'] = exec_prefix
     _CONFIG_VARS['py_version'] = _PY_VERSION
     _CONFIG_VARS['py_version_short'] = _PY_VERSION_SHORT
     _CONFIG_VARS['py_version_nodot'] = _PY_VERSION_SHORT_NO_DOT
-    _CONFIG_VARS['installed_base'] = _BASE_PREFIX
-    _CONFIG_VARS['base'] = _PREFIX
-    _CONFIG_VARS['installed_platbase'] = _BASE_EXEC_PREFIX
-    _CONFIG_VARS['platbase'] = _EXEC_PREFIX
+    _CONFIG_VARS['installed_base'] = base_prefix
+    _CONFIG_VARS['base'] = prefix
+    _CONFIG_VARS['installed_platbase'] = base_exec_prefix
+    _CONFIG_VARS['platbase'] = exec_prefix
     _CONFIG_VARS['projectbase'] = _PROJECT_BASE
     _CONFIG_VARS['platlibdir'] = sys.platlibdir
     _CONFIG_VARS['implementation'] = _get_implementation()
     _CONFIG_VARS['implementation_lower'] = _get_implementation().lower()
-    try:
-        _CONFIG_VARS['abiflags'] = sys.abiflags
-    except AttributeError:
-        # sys.abiflags may not be defined on all platforms.
-        _CONFIG_VARS['abiflags'] = ''
+    _CONFIG_VARS['abiflags'] = abiflags
     try:
         _CONFIG_VARS['py_version_nodot_plat'] = sys.winver.replace('.', '')
     except AttributeError:
@@ -492,8 +544,6 @@ def _init_config_vars():
     if os.name == 'nt':
         _init_non_posix(_CONFIG_VARS)
         _CONFIG_VARS['VPATH'] = sys._vpath
-    if os.name == 'posix':
-        _init_posix(_CONFIG_VARS)
     if _HAS_USER_BASE:
         # Setting 'userbase' is done below the call to the
         # init function to enable using 'get_config_var' in
@@ -540,9 +590,19 @@ def get_config_vars(*args):
     With arguments, return a list of values that result from looking up
     each argument in the configuration variable dictionary.
     """
+    global _CONFIG_VARS_INITIALIZED
 
     # Avoid claiming the lock once initialization is complete.
-    if not _CONFIG_VARS_INITIALIZED:
+    if _CONFIG_VARS_INITIALIZED:
+        # GH-126789: If sys.prefix or sys.exec_prefix were updated, invalidate the cache.
+        prefix = os.path.normpath(sys.prefix)
+        exec_prefix = os.path.normpath(sys.exec_prefix)
+        if _CONFIG_VARS['prefix'] != prefix or _CONFIG_VARS['exec_prefix'] != exec_prefix:
+            with _CONFIG_VARS_LOCK:
+                _CONFIG_VARS_INITIALIZED = False
+                _init_config_vars()
+    else:
+        # Initialize the config_vars cache.
         with _CONFIG_VARS_LOCK:
             # Test again with the lock held to avoid races. Note that
             # we test _CONFIG_VARS here, not _CONFIG_VARS_INITIALIZED,
@@ -584,7 +644,8 @@ def get_platform():
        solaris-2.6-sun4u
 
     Windows will return one of:
-       win-amd64 (64bit Windows on AMD64 (aka x86_64, Intel64, EM64T, etc)
+       win-amd64 (64-bit Windows on AMD64 (aka x86_64, Intel64, EM64T, etc)
+       win-arm64 (64-bit Windows on ARM64 (aka AArch64)
        win32 (all others - specifically, sys.platform is returned)
 
     For other non-POSIX platforms, currently just returns 'sys.platform'.
@@ -605,34 +666,34 @@ def get_platform():
 
     # Set for cross builds explicitly
     if "_PYTHON_HOST_PLATFORM" in os.environ:
-        return os.environ["_PYTHON_HOST_PLATFORM"]
+        osname, _, machine = os.environ["_PYTHON_HOST_PLATFORM"].partition('-')
+        release = None
+    else:
+        # Try to distinguish various flavours of Unix
+        osname, host, release, version, machine = os.uname()
 
-    # Try to distinguish various flavours of Unix
-    osname, host, release, version, machine = os.uname()
+        # Convert the OS name to lowercase, remove '/' characters, and translate
+        # spaces (for "Power Macintosh")
+        osname = osname.lower().replace('/', '')
+        machine = machine.replace(' ', '_')
+        machine = machine.replace('/', '-')
 
-    # Convert the OS name to lowercase, remove '/' characters, and translate
-    # spaces (for "Power Macintosh")
-    osname = osname.lower().replace('/', '')
-    machine = machine.replace(' ', '_')
-    machine = machine.replace('/', '-')
+    if osname == "android" or sys.platform == "android":
+        osname = "android"
+        release = get_config_var("ANDROID_API_LEVEL")
 
-    if osname[:5] == "linux":
-        if sys.platform == "android":
-            osname = "android"
-            release = get_config_var("ANDROID_API_LEVEL")
-
-            # Wheel tags use the ABI names from Android's own tools.
-            machine = {
-                "x86_64": "x86_64",
-                "i686": "x86",
-                "aarch64": "arm64_v8a",
-                "armv7l": "armeabi_v7a",
-            }[machine]
-        else:
-            # At least on Linux/Intel, 'machine' is the processor --
-            # i386, etc.
-            # XXX what about Alpha, SPARC, etc?
-            return  f"{osname}-{machine}"
+        # Wheel tags use the ABI names from Android's own tools.
+        machine = {
+            "x86_64": "x86_64",
+            "i686": "x86",
+            "aarch64": "arm64_v8a",
+            "armv7l": "armeabi_v7a",
+        }[machine]
+    elif osname == "linux":
+        # At least on Linux/Intel, 'machine' is the processor --
+        # i386, etc.
+        # XXX what about Alpha, SPARC, etc?
+        return  f"{osname}-{machine}"
     elif osname[:5] == "sunos":
         if release[0] >= "5":           # SunOS 5 == Solaris 2
             osname = "solaris"
@@ -664,7 +725,7 @@ def get_platform():
                                                 get_config_vars(),
                                                 osname, release, machine)
 
-    return f"{osname}-{release}-{machine}"
+    return '-'.join(map(str, filter(None, (osname, release, machine))))
 
 
 def get_python_version():
@@ -683,7 +744,19 @@ def expand_makefile_vars(s, vars):
     variable expansions; if 'vars' is the output of 'parse_makefile()',
     you're fine.  Returns a variable-expanded version of 's'.
     """
+
+    import warnings
+    warnings.warn(
+        'sysconfig.expand_makefile_vars is deprecated and will be removed in '
+        'Python 3.16. Use sysconfig.get_paths(vars=...) instead.',
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
     import re
+
+    _findvar1_rx = r"\$\(([A-Za-z][A-Za-z0-9_]*)\)"
+    _findvar2_rx = r"\${([A-Za-z][A-Za-z0-9_]*)}"
 
     # This algorithm does multiple expansion, so if vars['foo'] contains
     # "${bar}", it will expand ${foo} to ${bar}, and then expand

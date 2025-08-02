@@ -1012,6 +1012,26 @@ class AbstractUnpickleTests:
         self.assertIs(self.loads(b'I01\n.'), True)
         self.assertIs(self.loads(b'I00\n.'), False)
 
+    def test_zero_padded_integers(self):
+        self.assertEqual(self.loads(b'I010\n.'), 10)
+        self.assertEqual(self.loads(b'I-010\n.'), -10)
+        self.assertEqual(self.loads(b'I0010\n.'), 10)
+        self.assertEqual(self.loads(b'I-0010\n.'), -10)
+        self.assertEqual(self.loads(b'L010\n.'), 10)
+        self.assertEqual(self.loads(b'L-010\n.'), -10)
+        self.assertEqual(self.loads(b'L0010\n.'), 10)
+        self.assertEqual(self.loads(b'L-0010\n.'), -10)
+        self.assertEqual(self.loads(b'L010L\n.'), 10)
+        self.assertEqual(self.loads(b'L-010L\n.'), -10)
+
+    def test_nondecimal_integers(self):
+        self.assertRaises(ValueError, self.loads, b'I0b10\n.')
+        self.assertRaises(ValueError, self.loads, b'I0o10\n.')
+        self.assertRaises(ValueError, self.loads, b'I0x10\n.')
+        self.assertRaises(ValueError, self.loads, b'L0b10L\n.')
+        self.assertRaises(ValueError, self.loads, b'L0o10L\n.')
+        self.assertRaises(ValueError, self.loads, b'L0x10L\n.')
+
     def test_empty_bytestring(self):
         # issue 11286
         empty = self.loads(b'\x80\x03U\x00q\x00.', encoding='koi8-r')
@@ -1079,6 +1099,11 @@ class AbstractUnpickleTests:
         dumped = b'\x80\x04\x8d\4\0\0\0\1\0\0\0\xe2\x82\xac\x00.'
         self.check_unpickling_error((pickle.UnpicklingError, OverflowError),
                                     dumped)
+
+    def test_large_binstring(self):
+        errmsg = 'BINSTRING pickle has negative byte count'
+        with self.assertRaisesRegex(pickle.UnpicklingError, errmsg):
+            self.loads(b'T\0\0\0\x80')
 
     def test_get(self):
         pickled = b'((lp100000\ng100000\nt.'
@@ -1356,6 +1381,41 @@ class AbstractUnpickleTests:
         self.check_unpickling_error(error, b'cbuiltins\nlen\n)}\x92.')
         self.check_unpickling_error(error, b'cbuiltins\nint\nN}\x92.')
         self.check_unpickling_error(error, b'cbuiltins\nint\n)N\x92.')
+
+    def test_bad_state(self):
+        c = C()
+        c.x = None
+        base = b'c__main__\nC\n)\x81'
+        self.assertEqual(self.loads(base + b'}X\x01\x00\x00\x00xNsb.'), c)
+        self.assertEqual(self.loads(base + b'N}X\x01\x00\x00\x00xNs\x86b.'), c)
+        # non-hashable dict key
+        self.check_unpickling_error(TypeError, base + b'}]Nsb.')
+        # state = list
+        error = (pickle.UnpicklingError, AttributeError)
+        self.check_unpickling_error(error, base + b'](}}eb.')
+        # state = 1-tuple
+        self.check_unpickling_error(error, base + b'}\x85b.')
+        # state = 3-tuple
+        self.check_unpickling_error(error, base + b'}}}\x87b.')
+        # non-hashable slot name
+        self.check_unpickling_error(TypeError, base + b'}}]Ns\x86b.')
+        # non-string slot name
+        self.check_unpickling_error(TypeError, base + b'}}NNs\x86b.')
+        # dict = True
+        self.check_unpickling_error(error, base + b'\x88}\x86b.')
+        # slots dict = True
+        self.check_unpickling_error(error, base + b'}\x88\x86b.')
+
+        class BadKey1:
+            count = 1
+            def __hash__(self):
+                if not self.count:
+                    raise CustomError
+                self.count -= 1
+                return 42
+        __main__.BadKey1 = BadKey1
+        # bad hashable dict key
+        self.check_unpickling_error(CustomError, base + b'}c__main__\nBadKey1\n)\x81Nsb.')
 
     def test_bad_stack(self):
         badpickles = [
@@ -2217,7 +2277,11 @@ class AbstractPicklingErrorTests:
 
     def test_nested_lookup_error(self):
         # Nested name does not exist
-        obj = REX('AbstractPickleTests.spam')
+        global TestGlobal
+        class TestGlobal:
+            class A:
+                pass
+        obj = REX('TestGlobal.A.B.C')
         obj.__module__ = __name__
         for proto in protocols:
             with self.subTest(proto=proto):
@@ -2225,9 +2289,9 @@ class AbstractPicklingErrorTests:
                     self.dumps(obj, proto)
                 self.assertEqual(str(cm.exception),
                     f"Can't pickle {obj!r}: "
-                    f"it's not found as {__name__}.AbstractPickleTests.spam")
+                    f"it's not found as {__name__}.TestGlobal.A.B.C")
                 self.assertEqual(str(cm.exception.__context__),
-                    "type object 'AbstractPickleTests' has no attribute 'spam'")
+                    "type object 'A' has no attribute 'B'")
 
         obj.__module__ = None
         for proto in protocols:
@@ -2235,21 +2299,25 @@ class AbstractPicklingErrorTests:
                 with self.assertRaises(pickle.PicklingError) as cm:
                     self.dumps(obj, proto)
                 self.assertEqual(str(cm.exception),
-                    f"Can't pickle {obj!r}: it's not found as __main__.AbstractPickleTests.spam")
+                    f"Can't pickle {obj!r}: "
+                    f"it's not found as __main__.TestGlobal.A.B.C")
                 self.assertEqual(str(cm.exception.__context__),
-                    "module '__main__' has no attribute 'AbstractPickleTests'")
+                    "module '__main__' has no attribute 'TestGlobal'")
 
     def test_wrong_object_lookup_error(self):
         # Name is bound to different object
-        obj = REX('AbstractPickleTests')
+        global TestGlobal
+        class TestGlobal:
+            pass
+        obj = REX('TestGlobal')
         obj.__module__ = __name__
-        AbstractPickleTests.ham = []
         for proto in protocols:
             with self.subTest(proto=proto):
                 with self.assertRaises(pickle.PicklingError) as cm:
                     self.dumps(obj, proto)
                 self.assertEqual(str(cm.exception),
-                    f"Can't pickle {obj!r}: it's not the same object as {__name__}.AbstractPickleTests")
+                    f"Can't pickle {obj!r}: "
+                    f"it's not the same object as {__name__}.TestGlobal")
                 self.assertIsNone(cm.exception.__context__)
 
         obj.__module__ = None
@@ -2258,9 +2326,10 @@ class AbstractPicklingErrorTests:
                 with self.assertRaises(pickle.PicklingError) as cm:
                     self.dumps(obj, proto)
                 self.assertEqual(str(cm.exception),
-                    f"Can't pickle {obj!r}: it's not found as __main__.AbstractPickleTests")
+                    f"Can't pickle {obj!r}: "
+                    f"it's not found as __main__.TestGlobal")
                 self.assertEqual(str(cm.exception.__context__),
-                    "module '__main__' has no attribute 'AbstractPickleTests'")
+                    "module '__main__' has no attribute 'TestGlobal'")
 
     def test_local_lookup_error(self):
         # Test that whichmodule() errors out cleanly when looking up
@@ -3004,7 +3073,7 @@ class AbstractPickleTests:
             pickled = self.dumps(None, proto)
             if proto >= 2:
                 proto_header = pickle.PROTO + bytes([proto])
-                self.assertTrue(pickled.startswith(proto_header))
+                self.assertStartsWith(pickled, proto_header)
             else:
                 self.assertEqual(count_opcode(pickle.PROTO, pickled), 0)
 
@@ -4943,7 +5012,7 @@ class AbstractDispatchTableTests:
         p = self.pickler_class(f, 0)
         with self.assertRaises(AttributeError):
             p.dispatch_table
-        self.assertFalse(hasattr(p, 'dispatch_table'))
+        self.assertNotHasAttr(p, 'dispatch_table')
 
     def test_class_dispatch_table(self):
         # A dispatch_table attribute can be specified class-wide

@@ -1,7 +1,7 @@
 """Manage HTTP Response Headers
 
 Much of this module is red-handedly pilfered from email.message in the stdlib,
-so portions are Copyright (C) 2001,2002 Python Software Foundation, and were
+so portions are Copyright (C) 2001 Python Software Foundation, and were
 written by Barry Warsaw.
 """
 
