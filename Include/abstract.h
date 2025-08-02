@@ -138,7 +138,12 @@ extern "C" {
    Delete attribute named attr_name, for object o. Returns
    -1 on failure.
 
-   This is the equivalent of the Python statement: del o.attr_name. */
+   This is the equivalent of the Python statement: del o.attr_name.
+
+   Implemented as a macro in the limited C API 3.12 and older. */
+#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 < 0x030d0000
+#  define PyObject_DelAttrString(O, A) PyObject_SetAttrString((O), (A), NULL)
+#endif
 
 
 /* Implemented elsewhere:
@@ -147,7 +152,12 @@ extern "C" {
 
    Delete attribute named attr_name, for object o. Returns -1
    on failure.  This is the equivalent of the Python
-   statement: del o.attr_name. */
+   statement: del o.attr_name.
+
+   Implemented as a macro in the limited C API 3.12 and older. */
+#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 < 0x030d0000
+#  define PyObject_DelAttr(O, A) PyObject_SetAttr((O), (A), NULL)
+#endif
 
 
 /* Implemented elsewhere:
@@ -397,13 +407,23 @@ PyAPI_FUNC(int) PyIter_Check(PyObject *);
    This function always succeeds. */
 PyAPI_FUNC(int) PyAIter_Check(PyObject *);
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030e0000
+/* Return 1 and set 'item' to the next item of 'iter' on success.
+ * Return 0 and set 'item' to NULL when there are no remaining values.
+ * Return -1, set 'item' to NULL and set an exception on error.
+ */
+PyAPI_FUNC(int) PyIter_NextItem(PyObject *iter, PyObject **item);
+#endif
+
 /* Takes an iterator object and calls its tp_iternext slot,
    returning the next value.
 
    If the iterator is exhausted, this returns NULL without setting an
    exception.
 
-   NULL with an exception means an error occurred. */
+   NULL with an exception means an error occurred.
+
+   Prefer PyIter_NextItem() instead. */
 PyAPI_FUNC(PyObject *) PyIter_Next(PyObject *);
 
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030A0000
@@ -725,22 +745,6 @@ PyAPI_FUNC(PyObject *) PySequence_List(PyObject *o);
    TypeError exception with 'm' as the message text. */
 PyAPI_FUNC(PyObject *) PySequence_Fast(PyObject *o, const char* m);
 
-/* Return the size of the sequence 'o', assuming that 'o' was returned by
-   PySequence_Fast and is not NULL. */
-#define PySequence_Fast_GET_SIZE(o) \
-    (PyList_Check(o) ? PyList_GET_SIZE(o) : PyTuple_GET_SIZE(o))
-
-/* Return the 'i'-th element of the sequence 'o', assuming that o was returned
-   by PySequence_Fast, and that i is within bounds. */
-#define PySequence_Fast_GET_ITEM(o, i)\
-     (PyList_Check(o) ? PyList_GET_ITEM((o), (i)) : PyTuple_GET_ITEM((o), (i)))
-
-/* Return a pointer to the underlying item array for
-   an object returned by PySequence_Fast */
-#define PySequence_Fast_ITEMS(sf) \
-    (PyList_Check(sf) ? ((PyListObject *)(sf))->ob_item \
-                      : ((PyTupleObject *)(sf))->ob_item)
-
 /* Return the number of occurrences on value on 'o', that is, return
    the number of keys for which o[key] == value.
 
@@ -852,15 +856,15 @@ PyAPI_FUNC(int) PyMapping_HasKeyWithError(PyObject *o, PyObject *key);
 
 PyAPI_FUNC(int) PyMapping_HasKeyStringWithError(PyObject *o, const char *key);
 
-/* On success, return a list or tuple of the keys in mapping object 'o'.
+/* On success, return a list of the keys in mapping object 'o'.
    On failure, return NULL. */
 PyAPI_FUNC(PyObject *) PyMapping_Keys(PyObject *o);
 
-/* On success, return a list or tuple of the values in mapping object 'o'.
+/* On success, return a list of the values in mapping object 'o'.
    On failure, return NULL. */
 PyAPI_FUNC(PyObject *) PyMapping_Values(PyObject *o);
 
-/* On success, return a list or tuple of the items in mapping object 'o',
+/* On success, return a list of the items in mapping object 'o',
    where each item is a tuple containing a key-value pair. On failure, return
    NULL. */
 PyAPI_FUNC(PyObject *) PyMapping_Items(PyObject *o);

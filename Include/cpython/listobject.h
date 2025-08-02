@@ -29,7 +29,11 @@ typedef struct {
 
 static inline Py_ssize_t PyList_GET_SIZE(PyObject *op) {
     PyListObject *list = _PyList_CAST(op);
+#ifdef Py_GIL_DISABLED
+    return _Py_atomic_load_ssize_relaxed(&(_PyVarObject_CAST(list)->ob_size));
+#else
     return Py_SIZE(list);
+#endif
 }
 #define PyList_GET_SIZE(op) PyList_GET_SIZE(_PyObject_CAST(op))
 

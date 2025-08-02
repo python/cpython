@@ -4,6 +4,7 @@ from test import support
 from test.support import import_helper
 
 _testcapi = import_helper.import_module('_testcapi')
+_testlimitedcapi = import_helper.import_module('_testlimitedcapi')
 from _testcapi import PY_SSIZE_T_MIN, PY_SSIZE_T_MAX
 
 NULL = None
@@ -74,7 +75,7 @@ class CAPITest(unittest.TestCase):
 
     def test_object_str(self):
         # Test PyObject_Str()
-        object_str = _testcapi.object_str
+        object_str = _testlimitedcapi.object_str
         self.assertTypedEqual(object_str(''), '')
         self.assertTypedEqual(object_str('abc'), 'abc')
         self.assertTypedEqual(object_str('\U0001f40d'), '\U0001f40d')
@@ -87,7 +88,7 @@ class CAPITest(unittest.TestCase):
 
     def test_object_repr(self):
         # Test PyObject_Repr()
-        object_repr = _testcapi.object_repr
+        object_repr = _testlimitedcapi.object_repr
         self.assertTypedEqual(object_repr(''), "''")
         self.assertTypedEqual(object_repr('abc'), "'abc'")
         self.assertTypedEqual(object_repr('\U0001f40d'), "'\U0001f40d'")
@@ -100,7 +101,7 @@ class CAPITest(unittest.TestCase):
 
     def test_object_ascii(self):
         # Test PyObject_ASCII()
-        object_ascii = _testcapi.object_ascii
+        object_ascii = _testlimitedcapi.object_ascii
         self.assertTypedEqual(object_ascii(''), "''")
         self.assertTypedEqual(object_ascii('abc'), "'abc'")
         self.assertTypedEqual(object_ascii('\U0001f40d'), r"'\U0001f40d'")
@@ -113,7 +114,7 @@ class CAPITest(unittest.TestCase):
 
     def test_object_bytes(self):
         # Test PyObject_Bytes()
-        object_bytes = _testcapi.object_bytes
+        object_bytes = _testlimitedcapi.object_bytes
         self.assertTypedEqual(object_bytes(b''), b'')
         self.assertTypedEqual(object_bytes(b'abc'), b'abc')
         self.assertTypedEqual(object_bytes(BytesSubclass(b'abc')), b'abc')
@@ -132,7 +133,7 @@ class CAPITest(unittest.TestCase):
         self.assertTypedEqual(object_bytes(NULL), b'<NULL>')
 
     def test_object_getattr(self):
-        xgetattr = _testcapi.object_getattr
+        xgetattr = _testlimitedcapi.object_getattr
         obj = TestObject()
         obj.a = 11
         setattr(obj, '\U0001f40d', 22)
@@ -146,7 +147,7 @@ class CAPITest(unittest.TestCase):
         # CRASHES xgetattr(NULL, 'a')
 
     def test_object_getattrstring(self):
-        getattrstring = _testcapi.object_getattrstring
+        getattrstring = _testlimitedcapi.object_getattrstring
         obj = TestObject()
         obj.a = 11
         setattr(obj, '\U0001f40d', 22)
@@ -188,7 +189,7 @@ class CAPITest(unittest.TestCase):
         # CRASHES getoptionalattrstring(NULL, b'a')
 
     def test_object_hasattr(self):
-        xhasattr = _testcapi.object_hasattr
+        xhasattr = _testlimitedcapi.object_hasattr
         obj = TestObject()
         obj.a = 1
         setattr(obj, '\U0001f40d', 2)
@@ -212,7 +213,7 @@ class CAPITest(unittest.TestCase):
         # CRASHES xhasattr(NULL, 'a')
 
     def test_object_hasattrstring(self):
-        hasattrstring = _testcapi.object_hasattrstring
+        hasattrstring = _testlimitedcapi.object_hasattrstring
         obj = TestObject()
         obj.a = 1
         setattr(obj, '\U0001f40d', 2)
@@ -264,7 +265,7 @@ class CAPITest(unittest.TestCase):
         # CRASHES hasattrstring(NULL, b'a')
 
     def test_object_setattr(self):
-        xsetattr = _testcapi.object_setattr
+        xsetattr = _testlimitedcapi.object_setattr
         obj = TestObject()
         xsetattr(obj, 'a', 5)
         self.assertEqual(obj.a, 5)
@@ -273,7 +274,7 @@ class CAPITest(unittest.TestCase):
 
         # PyObject_SetAttr(obj, attr_name, NULL) removes the attribute
         xsetattr(obj, 'a', NULL)
-        self.assertFalse(hasattr(obj, 'a'))
+        self.assertNotHasAttr(obj, 'a')
         self.assertRaises(AttributeError, xsetattr, obj, 'b', NULL)
         self.assertRaises(RuntimeError, xsetattr, obj, 'evil', NULL)
 
@@ -284,7 +285,7 @@ class CAPITest(unittest.TestCase):
         # CRASHES xsetattr(NULL, 'a', 5)
 
     def test_object_setattrstring(self):
-        setattrstring = _testcapi.object_setattrstring
+        setattrstring = _testlimitedcapi.object_setattrstring
         obj = TestObject()
         setattrstring(obj, b'a', 5)
         self.assertEqual(obj.a, 5)
@@ -293,7 +294,7 @@ class CAPITest(unittest.TestCase):
 
         # PyObject_SetAttrString(obj, attr_name, NULL) removes the attribute
         setattrstring(obj, b'a', NULL)
-        self.assertFalse(hasattr(obj, 'a'))
+        self.assertNotHasAttr(obj, 'a')
         self.assertRaises(AttributeError, setattrstring, obj, b'b', NULL)
         self.assertRaises(RuntimeError, setattrstring, obj, b'evil', NULL)
 
@@ -305,15 +306,15 @@ class CAPITest(unittest.TestCase):
         # CRASHES setattrstring(NULL, b'a', 5)
 
     def test_object_delattr(self):
-        xdelattr = _testcapi.object_delattr
+        xdelattr = _testlimitedcapi.object_delattr
         obj = TestObject()
         obj.a = 1
         setattr(obj, '\U0001f40d', 2)
         xdelattr(obj, 'a')
-        self.assertFalse(hasattr(obj, 'a'))
+        self.assertNotHasAttr(obj, 'a')
         self.assertRaises(AttributeError, xdelattr, obj, 'b')
         xdelattr(obj, '\U0001f40d')
-        self.assertFalse(hasattr(obj, '\U0001f40d'))
+        self.assertNotHasAttr(obj, '\U0001f40d')
 
         self.assertRaises(AttributeError, xdelattr, 42, 'numerator')
         self.assertRaises(RuntimeError, xdelattr, obj, 'evil')
@@ -322,15 +323,15 @@ class CAPITest(unittest.TestCase):
         # CRASHES xdelattr(NULL, 'a')
 
     def test_object_delattrstring(self):
-        delattrstring = _testcapi.object_delattrstring
+        delattrstring = _testlimitedcapi.object_delattrstring
         obj = TestObject()
         obj.a = 1
         setattr(obj, '\U0001f40d', 2)
         delattrstring(obj, b'a')
-        self.assertFalse(hasattr(obj, 'a'))
+        self.assertNotHasAttr(obj, 'a')
         self.assertRaises(AttributeError, delattrstring, obj, b'b')
         delattrstring(obj, '\U0001f40d'.encode())
-        self.assertFalse(hasattr(obj, '\U0001f40d'))
+        self.assertNotHasAttr(obj, '\U0001f40d')
 
         self.assertRaises(AttributeError, delattrstring, 42, b'numerator')
         self.assertRaises(RuntimeError, delattrstring, obj, b'evil')
@@ -340,7 +341,7 @@ class CAPITest(unittest.TestCase):
 
 
     def test_mapping_check(self):
-        check = _testcapi.mapping_check
+        check = _testlimitedcapi.mapping_check
         self.assertTrue(check({1: 2}))
         self.assertTrue(check([1, 2]))
         self.assertTrue(check((1, 2)))
@@ -351,7 +352,7 @@ class CAPITest(unittest.TestCase):
         self.assertFalse(check(NULL))
 
     def test_mapping_size(self):
-        for size in _testcapi.mapping_size, _testcapi.mapping_length:
+        for size in _testlimitedcapi.mapping_size, _testlimitedcapi.mapping_length:
             self.assertEqual(size({1: 2}), 1)
             self.assertEqual(size([1, 2]), 2)
             self.assertEqual(size((1, 2)), 2)
@@ -363,7 +364,7 @@ class CAPITest(unittest.TestCase):
             self.assertRaises(SystemError, size, NULL)
 
     def test_object_getitem(self):
-        getitem = _testcapi.object_getitem
+        getitem = _testlimitedcapi.object_getitem
         dct = {'a': 1, '\U0001f40d': 2}
         self.assertEqual(getitem(dct, 'a'), 1)
         self.assertRaises(KeyError, getitem, dct, 'b')
@@ -383,7 +384,7 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(SystemError, getitem, NULL, 'a')
 
     def test_mapping_getitemstring(self):
-        getitemstring = _testcapi.mapping_getitemstring
+        getitemstring = _testlimitedcapi.mapping_getitemstring
         dct = {'a': 1, '\U0001f40d': 2}
         self.assertEqual(getitemstring(dct, b'a'), 1)
         self.assertRaises(KeyError, getitemstring, dct, b'b')
@@ -437,7 +438,7 @@ class CAPITest(unittest.TestCase):
         # CRASHES getitemstring(NULL, b'a')
 
     def test_mapping_haskey(self):
-        haskey = _testcapi.mapping_haskey
+        haskey = _testlimitedcapi.mapping_haskey
         dct = {'a': 1, '\U0001f40d': 2}
         self.assertTrue(haskey(dct, 'a'))
         self.assertFalse(haskey(dct, 'b'))
@@ -459,7 +460,8 @@ class CAPITest(unittest.TestCase):
             self.assertFalse(haskey({}, []))
             self.assertEqual(cm.unraisable.exc_type, TypeError)
             self.assertEqual(str(cm.unraisable.exc_value),
-                             "unhashable type: 'list'")
+                             "cannot use 'list' as a dict key "
+                             "(unhashable type: 'list')")
 
         with support.catch_unraisable_exception() as cm:
             self.assertFalse(haskey([], 1))
@@ -486,7 +488,7 @@ class CAPITest(unittest.TestCase):
                              'null argument to internal routine')
 
     def test_mapping_haskeystring(self):
-        haskeystring = _testcapi.mapping_haskeystring
+        haskeystring = _testlimitedcapi.mapping_haskeystring
         dct = {'a': 1, '\U0001f40d': 2}
         self.assertTrue(haskeystring(dct, b'a'))
         self.assertFalse(haskeystring(dct, b'b'))
@@ -527,7 +529,7 @@ class CAPITest(unittest.TestCase):
                              "null argument to internal routine")
 
     def test_mapping_haskeywitherror(self):
-        haskey = _testcapi.mapping_haskeywitherror
+        haskey = _testlimitedcapi.mapping_haskeywitherror
         dct = {'a': 1, '\U0001f40d': 2}
         self.assertTrue(haskey(dct, 'a'))
         self.assertFalse(haskey(dct, 'b'))
@@ -548,7 +550,7 @@ class CAPITest(unittest.TestCase):
         # CRASHES haskey(NULL, 'a'))
 
     def test_mapping_haskeystringwitherror(self):
-        haskeystring = _testcapi.mapping_haskeystringwitherror
+        haskeystring = _testlimitedcapi.mapping_haskeystringwitherror
         dct = {'a': 1, '\U0001f40d': 2}
         self.assertTrue(haskeystring(dct, b'a'))
         self.assertFalse(haskeystring(dct, b'b'))
@@ -565,7 +567,7 @@ class CAPITest(unittest.TestCase):
         # CRASHES haskeystring(NULL, b'a')
 
     def test_object_setitem(self):
-        setitem = _testcapi.object_setitem
+        setitem = _testlimitedcapi.object_setitem
         dct = {}
         setitem(dct, 'a', 5)
         self.assertEqual(dct, {'a': 5})
@@ -591,7 +593,7 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(SystemError, setitem, NULL, 'a', 5)
 
     def test_mapping_setitemstring(self):
-        setitemstring = _testcapi.mapping_setitemstring
+        setitemstring = _testlimitedcapi.mapping_setitemstring
         dct = {}
         setitemstring(dct, b'a', 5)
         self.assertEqual(dct, {'a': 5})
@@ -611,7 +613,7 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(SystemError, setitemstring, NULL, b'a', 5)
 
     def test_object_delitem(self):
-        for delitem in _testcapi.object_delitem, _testcapi.mapping_delitem:
+        for delitem in _testlimitedcapi.object_delitem, _testlimitedcapi.mapping_delitem:
             dct = {'a': 1, 'c': 2, '\U0001f40d': 3}
             delitem(dct, 'a')
             self.assertEqual(dct, {'c': 2, '\U0001f40d': 3})
@@ -637,7 +639,7 @@ class CAPITest(unittest.TestCase):
             self.assertRaises(SystemError, delitem, NULL, 'a')
 
     def test_mapping_delitemstring(self):
-        delitemstring = _testcapi.mapping_delitemstring
+        delitemstring = _testlimitedcapi.mapping_delitemstring
         dct = {'a': 1, 'c': 2, '\U0001f40d': 3}
         delitemstring(dct, b'a')
         self.assertEqual(dct, {'c': 2, '\U0001f40d': 3})
@@ -677,23 +679,23 @@ class CAPITest(unittest.TestCase):
         for mapping in [{}, OrderedDict(), Mapping1(), Mapping2(),
                         dict_obj, OrderedDict(dict_obj),
                         Mapping1(dict_obj), Mapping2(dict_obj)]:
-            self.assertListEqual(_testcapi.mapping_keys(mapping),
+            self.assertListEqual(_testlimitedcapi.mapping_keys(mapping),
                                  list(mapping.keys()))
-            self.assertListEqual(_testcapi.mapping_values(mapping),
+            self.assertListEqual(_testlimitedcapi.mapping_values(mapping),
                                  list(mapping.values()))
-            self.assertListEqual(_testcapi.mapping_items(mapping),
+            self.assertListEqual(_testlimitedcapi.mapping_items(mapping),
                                  list(mapping.items()))
 
     def test_mapping_keys_valuesitems_bad_arg(self):
-        self.assertRaises(AttributeError, _testcapi.mapping_keys, object())
-        self.assertRaises(AttributeError, _testcapi.mapping_values, object())
-        self.assertRaises(AttributeError, _testcapi.mapping_items, object())
-        self.assertRaises(AttributeError, _testcapi.mapping_keys, [])
-        self.assertRaises(AttributeError, _testcapi.mapping_values, [])
-        self.assertRaises(AttributeError, _testcapi.mapping_items, [])
-        self.assertRaises(SystemError, _testcapi.mapping_keys, NULL)
-        self.assertRaises(SystemError, _testcapi.mapping_values, NULL)
-        self.assertRaises(SystemError, _testcapi.mapping_items, NULL)
+        self.assertRaises(AttributeError, _testlimitedcapi.mapping_keys, object())
+        self.assertRaises(AttributeError, _testlimitedcapi.mapping_values, object())
+        self.assertRaises(AttributeError, _testlimitedcapi.mapping_items, object())
+        self.assertRaises(AttributeError, _testlimitedcapi.mapping_keys, [])
+        self.assertRaises(AttributeError, _testlimitedcapi.mapping_values, [])
+        self.assertRaises(AttributeError, _testlimitedcapi.mapping_items, [])
+        self.assertRaises(SystemError, _testlimitedcapi.mapping_keys, NULL)
+        self.assertRaises(SystemError, _testlimitedcapi.mapping_values, NULL)
+        self.assertRaises(SystemError, _testlimitedcapi.mapping_items, NULL)
 
         class BadMapping:
             def keys(self):
@@ -703,12 +705,12 @@ class CAPITest(unittest.TestCase):
             def items(self):
                 return None
         bad_mapping = BadMapping()
-        self.assertRaises(TypeError, _testcapi.mapping_keys, bad_mapping)
-        self.assertRaises(TypeError, _testcapi.mapping_values, bad_mapping)
-        self.assertRaises(TypeError, _testcapi.mapping_items, bad_mapping)
+        self.assertRaises(TypeError, _testlimitedcapi.mapping_keys, bad_mapping)
+        self.assertRaises(TypeError, _testlimitedcapi.mapping_values, bad_mapping)
+        self.assertRaises(TypeError, _testlimitedcapi.mapping_items, bad_mapping)
 
     def test_sequence_check(self):
-        check = _testcapi.sequence_check
+        check = _testlimitedcapi.sequence_check
         self.assertFalse(check({1: 2}))
         self.assertTrue(check([1, 2]))
         self.assertTrue(check((1, 2)))
@@ -719,7 +721,7 @@ class CAPITest(unittest.TestCase):
         # CRASHES check(NULL)
 
     def test_sequence_size(self):
-        for size in _testcapi.sequence_size, _testcapi.sequence_length:
+        for size in _testlimitedcapi.sequence_size, _testlimitedcapi.sequence_length:
             self.assertEqual(size([1, 2]), 2)
             self.assertEqual(size((1, 2)), 2)
             self.assertEqual(size('abc'), 3)
@@ -731,7 +733,7 @@ class CAPITest(unittest.TestCase):
             self.assertRaises(SystemError, size, NULL)
 
     def test_sequence_getitem(self):
-        getitem = _testcapi.sequence_getitem
+        getitem = _testlimitedcapi.sequence_getitem
         lst = ['a', 'b', 'c']
         self.assertEqual(getitem(lst, 1), 'b')
         self.assertEqual(getitem(lst, -1), 'c')
@@ -744,7 +746,7 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(SystemError, getitem, NULL, 1)
 
     def test_sequence_concat(self):
-        concat = _testcapi.sequence_concat
+        concat = _testlimitedcapi.sequence_concat
         self.assertEqual(concat(['a', 'b'], [1, 2]), ['a', 'b', 1, 2])
         self.assertEqual(concat(('a', 'b'), (1, 2)), ('a', 'b', 1, 2))
 
@@ -757,7 +759,7 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(SystemError, concat, NULL, [])
 
     def test_sequence_repeat(self):
-        repeat = _testcapi.sequence_repeat
+        repeat = _testlimitedcapi.sequence_repeat
         self.assertEqual(repeat(['a', 'b'], 2), ['a', 'b', 'a', 'b'])
         self.assertEqual(repeat(('a', 'b'), 2), ('a', 'b', 'a', 'b'))
         self.assertEqual(repeat(['a', 'b'], 0), [])
@@ -771,7 +773,7 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(SystemError, repeat, NULL, 2)
 
     def test_sequence_inplaceconcat(self):
-        inplaceconcat = _testcapi.sequence_inplaceconcat
+        inplaceconcat = _testlimitedcapi.sequence_inplaceconcat
         lst = ['a', 'b']
         res = inplaceconcat(lst, [1, 2])
         self.assertEqual(res, ['a', 'b', 1, 2])
@@ -790,7 +792,7 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(SystemError, inplaceconcat, NULL, [])
 
     def test_sequence_inplacerepeat(self):
-        inplacerepeat = _testcapi.sequence_inplacerepeat
+        inplacerepeat = _testlimitedcapi.sequence_inplacerepeat
         lst = ['a', 'b']
         res = inplacerepeat(lst, 2)
         self.assertEqual(res, ['a', 'b', 'a', 'b'])
@@ -807,7 +809,7 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(SystemError, inplacerepeat, NULL, 2)
 
     def test_sequence_setitem(self):
-        setitem = _testcapi.sequence_setitem
+        setitem = _testlimitedcapi.sequence_setitem
         lst = ['a', 'b', 'c']
         setitem(lst, 1, 'x')
         self.assertEqual(lst, ['a', 'x', 'c'])
@@ -825,7 +827,7 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(SystemError, setitem, NULL, 1, 'x')
 
     def test_sequence_delitem(self):
-        delitem = _testcapi.sequence_delitem
+        delitem = _testlimitedcapi.sequence_delitem
         lst = ['a', 'b', 'c']
         delitem(lst, 1)
         self.assertEqual(lst, ['a', 'c'])
@@ -840,7 +842,7 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(SystemError, delitem, NULL, 1)
 
     def test_sequence_setslice(self):
-        setslice = _testcapi.sequence_setslice
+        setslice = _testlimitedcapi.sequence_setslice
 
         # Correct case:
         for start in [*range(-6, 7), PY_SSIZE_T_MIN, PY_SSIZE_T_MAX]:
@@ -882,7 +884,7 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(SystemError, setslice, NULL, 1, 3, 'xy')
 
     def test_sequence_delslice(self):
-        delslice = _testcapi.sequence_delslice
+        delslice = _testlimitedcapi.sequence_delslice
 
         # Correct case:
         for start in [*range(-6, 7), PY_SSIZE_T_MIN, PY_SSIZE_T_MAX]:
@@ -920,7 +922,7 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(mapping, {1: 'a', 2: 'b', 3: 'c'})
 
     def test_sequence_count(self):
-        count = _testcapi.sequence_count
+        count = _testlimitedcapi.sequence_count
 
         lst = ['a', 'b', 'a']
         self.assertEqual(count(lst, 'a'), 2)
@@ -935,7 +937,7 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(SystemError, count, NULL, 'a')
 
     def test_sequence_contains(self):
-        contains = _testcapi.sequence_contains
+        contains = _testlimitedcapi.sequence_contains
 
         lst = ['a', 'b', 'a']
         self.assertEqual(contains(lst, 'a'), 1)
@@ -954,7 +956,7 @@ class CAPITest(unittest.TestCase):
         # CRASHES contains(NULL, 'a')
 
     def test_sequence_index(self):
-        index = _testcapi.sequence_index
+        index = _testlimitedcapi.sequence_index
 
         lst = ['a', 'b', 'a']
         self.assertEqual(index(lst, 'a'), 0)
@@ -974,7 +976,7 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(SystemError, index, NULL, 'a')
 
     def test_sequence_list(self):
-        xlist = _testcapi.sequence_list
+        xlist = _testlimitedcapi.sequence_list
         self.assertEqual(xlist(['a', 'b', 'c']), ['a', 'b', 'c'])
         self.assertEqual(xlist(('a', 'b', 'c')), ['a', 'b', 'c'])
         self.assertEqual(xlist(iter(['a', 'b', 'c'])), ['a', 'b', 'c'])
@@ -984,7 +986,7 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(SystemError, xlist, NULL)
 
     def test_sequence_tuple(self):
-        xtuple = _testcapi.sequence_tuple
+        xtuple = _testlimitedcapi.sequence_tuple
         self.assertEqual(xtuple(['a', 'b', 'c']), ('a', 'b', 'c'))
         self.assertEqual(xtuple(('a', 'b', 'c')), ('a', 'b', 'c'))
         self.assertEqual(xtuple(iter(['a', 'b', 'c'])), ('a', 'b', 'c'))
@@ -993,12 +995,112 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, xtuple, 42)
         self.assertRaises(SystemError, xtuple, NULL)
 
-    def test_number_check(self):
-        number_check = _testcapi.number_check
-        self.assertTrue(number_check(1 + 1j))
-        self.assertTrue(number_check(1))
-        self.assertTrue(number_check(0.5))
-        self.assertFalse(number_check("1 + 1j"))
+    def test_sequence_fast(self):
+        # Test PySequence_Fast()
+        sequence_fast = _testlimitedcapi.sequence_fast
+        sequence_fast_get_size = _testcapi.sequence_fast_get_size
+        sequence_fast_get_item = _testcapi.sequence_fast_get_item
+
+        tpl = ('a', 'b', 'c')
+        fast = sequence_fast(tpl, "err_msg")
+        self.assertIs(fast, tpl)
+        self.assertEqual(sequence_fast_get_size(fast), 3)
+        self.assertEqual(sequence_fast_get_item(fast, 2), 'c')
+
+        lst = ['a', 'b', 'c']
+        fast = sequence_fast(lst, "err_msg")
+        self.assertIs(fast, lst)
+        self.assertEqual(sequence_fast_get_size(fast), 3)
+        self.assertEqual(sequence_fast_get_item(fast, 2), 'c')
+
+        it = iter(['A', 'B'])
+        fast = sequence_fast(it, "err_msg")
+        self.assertEqual(fast, ['A', 'B'])
+        self.assertEqual(sequence_fast_get_size(fast), 2)
+        self.assertEqual(sequence_fast_get_item(fast, 1), 'B')
+
+        text = 'fast'
+        fast = sequence_fast(text, "err_msg")
+        self.assertEqual(fast, ['f', 'a', 's', 't'])
+        self.assertEqual(sequence_fast_get_size(fast), 4)
+        self.assertEqual(sequence_fast_get_item(fast, 0), 'f')
+
+        self.assertRaises(TypeError, sequence_fast, 42, "err_msg")
+        self.assertRaises(SystemError, sequence_fast, NULL, "err_msg")
+
+        # CRASHES sequence_fast_get_size(NULL)
+        # CRASHES sequence_fast_get_item(NULL, 0)
+
+    def test_object_generichash(self):
+        # Test PyObject_GenericHash()
+        generichash = _testcapi.object_generichash
+        for obj in object(), 1, 'string', []:
+            self.assertEqual(generichash(obj), object.__hash__(obj))
+
+    def run_iter_api_test(self, next_func):
+        for data in (), [], (1, 2, 3), [1 , 2, 3], "123":
+            with self.subTest(data=data):
+                items = []
+                it = iter(data)
+                while (item := next_func(it)) is not None:
+                    items.append(item)
+                self.assertEqual(items, list(data))
+
+        class Broken:
+            def __init__(self):
+                self.count = 0
+
+            def __next__(self):
+                if self.count < 3:
+                    self.count += 1
+                    return self.count
+                else:
+                    raise TypeError('bad type')
+
+        it = Broken()
+        self.assertEqual(next_func(it), 1)
+        self.assertEqual(next_func(it), 2)
+        self.assertEqual(next_func(it), 3)
+        with self.assertRaisesRegex(TypeError, 'bad type'):
+            next_func(it)
+
+    def test_iter_next(self):
+        from _testcapi import PyIter_Next
+        self.run_iter_api_test(PyIter_Next)
+        # CRASHES PyIter_Next(10)
+
+    def test_iter_nextitem(self):
+        from _testcapi import PyIter_NextItem
+        self.run_iter_api_test(PyIter_NextItem)
+
+        regex = "expected.*iterator.*got.*'int'"
+        with self.assertRaisesRegex(TypeError, regex):
+            PyIter_NextItem(10)
+
+    def test_object_setattr_null_exc(self):
+        class Obj:
+            pass
+        obj = Obj()
+        obj.attr = 123
+
+        exc = ValueError("error")
+        with self.assertRaises(SystemError) as cm:
+            _testcapi.object_setattr_null_exc(obj, 'attr', exc)
+        self.assertIs(cm.exception.__context__, exc)
+        self.assertIsNone(cm.exception.__cause__)
+        self.assertHasAttr(obj, 'attr')
+
+        with self.assertRaises(SystemError) as cm:
+            _testcapi.object_setattrstring_null_exc(obj, 'attr', exc)
+        self.assertIs(cm.exception.__context__, exc)
+        self.assertIsNone(cm.exception.__cause__)
+        self.assertHasAttr(obj, 'attr')
+
+        with self.assertRaises(SystemError) as cm:
+            # undecodable name
+            _testcapi.object_setattrstring_null_exc(obj, b'\xff', exc)
+        self.assertIs(cm.exception.__context__, exc)
+        self.assertIsNone(cm.exception.__cause__)
 
 
 if __name__ == "__main__":

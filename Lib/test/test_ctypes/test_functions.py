@@ -1,12 +1,13 @@
-import _ctypes_test
 import ctypes
 import sys
 import unittest
 from ctypes import (CDLL, Structure, Array, CFUNCTYPE,
-                    byref, POINTER, pointer, ArgumentError,
+                    byref, POINTER, pointer, ArgumentError, sizeof,
                     c_char, c_wchar, c_byte, c_char_p, c_wchar_p,
                     c_short, c_int, c_long, c_longlong, c_void_p,
                     c_float, c_double, c_longdouble)
+from test.support import import_helper
+_ctypes_test = import_helper.import_module("_ctypes_test")
 from _ctypes import _Pointer,  _SimpleCData
 
 
@@ -71,7 +72,8 @@ class FunctionTestCase(unittest.TestCase):
 
         self.assertEqual(str(cm.exception),
                          "argument 1: TypeError: one character bytes, "
-                         "bytearray or integer expected")
+                         "bytearray, or an integer in range(256) expected, "
+                         "not bytes of length 3")
 
     def test_wchar_parm(self):
         f = dll._testfunc_i_bhilfd
@@ -83,14 +85,27 @@ class FunctionTestCase(unittest.TestCase):
         with self.assertRaises(ArgumentError) as cm:
             f(1, 2, 3, 4, 5.0, 6.0)
         self.assertEqual(str(cm.exception),
-                         "argument 2: TypeError: unicode string expected "
-                         "instead of int instance")
+                         "argument 2: TypeError: a unicode character expected, "
+                         "not instance of int")
 
         with self.assertRaises(ArgumentError) as cm:
             f(1, "abc", 3, 4, 5.0, 6.0)
         self.assertEqual(str(cm.exception),
-                         "argument 2: TypeError: one character unicode string "
-                         "expected")
+                         "argument 2: TypeError: a unicode character expected, "
+                         "not a string of length 3")
+
+        with self.assertRaises(ArgumentError) as cm:
+            f(1, "", 3, 4, 5.0, 6.0)
+        self.assertEqual(str(cm.exception),
+                         "argument 2: TypeError: a unicode character expected, "
+                         "not a string of length 0")
+
+        if sizeof(c_wchar) < 4:
+            with self.assertRaises(ArgumentError) as cm:
+                f(1, "\U0001f40d", 3, 4, 5.0, 6.0)
+            self.assertEqual(str(cm.exception),
+                             "argument 2: TypeError: the string '\\U0001f40d' "
+                             "cannot be converted to a single wchar_t character")
 
     def test_c_char_p_parm(self):
         """Test the error message when converting an incompatible type to c_char_p."""

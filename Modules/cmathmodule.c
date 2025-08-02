@@ -117,7 +117,7 @@ enum special_types {
 static enum special_types
 special_type(double d)
 {
-    if (Py_IS_FINITE(d)) {
+    if (isfinite(d)) {
         if (d != 0) {
             if (copysign(1., d) == 1.)
                 return ST_POS;
@@ -131,7 +131,7 @@ special_type(double d)
                 return ST_NZERO;
         }
     }
-    if (Py_IS_NAN(d))
+    if (isnan(d))
         return ST_NAN;
     if (copysign(1., d) == 1.)
         return ST_PINF;
@@ -139,18 +139,18 @@ special_type(double d)
         return ST_NINF;
 }
 
-#define SPECIAL_VALUE(z, table)                                         \
-    if (!Py_IS_FINITE((z).real) || !Py_IS_FINITE((z).imag)) {           \
-        errno = 0;                                              \
-        return table[special_type((z).real)]                            \
-                    [special_type((z).imag)];                           \
+#define SPECIAL_VALUE(z, table)                       \
+    if (!isfinite((z).real) || !isfinite((z).imag)) { \
+        errno = 0;                                    \
+        return table[special_type((z).real)]          \
+                    [special_type((z).imag)];         \
     }
 
 #define P Py_MATH_PI
 #define P14 0.25*Py_MATH_PI
 #define P12 0.5*Py_MATH_PI
 #define P34 0.75*Py_MATH_PI
-#define INF Py_HUGE_VAL
+#define INF Py_INFINITY
 #define N Py_NAN
 #define U -9.5426319407711027e33 /* unlikely value, used as placeholder */
 
@@ -185,15 +185,8 @@ cmath_acos_impl(PyObject *module, Py_complex z)
     if (fabs(z.real) > CM_LARGE_DOUBLE || fabs(z.imag) > CM_LARGE_DOUBLE) {
         /* avoid unnecessary overflow for large arguments */
         r.real = atan2(fabs(z.imag), z.real);
-        /* split into cases to make sure that the branch cut has the
-           correct continuity on systems with unsigned zeros */
-        if (z.real < 0.) {
-            r.imag = -copysign(log(hypot(z.real/2., z.imag/2.)) +
-                               M_LN2*2., z.imag);
-        } else {
-            r.imag = copysign(log(hypot(z.real/2., z.imag/2.)) +
-                              M_LN2*2., -z.imag);
-        }
+        r.imag = -copysign(log(hypot(z.real/2., z.imag/2.)) +
+                           M_LN2*2., z.imag);
     } else {
         s1.real = 1.-z.real;
         s1.imag = -z.imag;
@@ -324,36 +317,6 @@ cmath_atan_impl(PyObject *module, Py_complex z)
     return r;
 }
 
-/* Windows screws up atan2 for inf and nan, and alpha Tru64 5.1 doesn't follow
-   C99 for atan2(0., 0.). */
-static double
-c_atan2(Py_complex z)
-{
-    if (Py_IS_NAN(z.real) || Py_IS_NAN(z.imag))
-        return Py_NAN;
-    if (Py_IS_INFINITY(z.imag)) {
-        if (Py_IS_INFINITY(z.real)) {
-            if (copysign(1., z.real) == 1.)
-                /* atan2(+-inf, +inf) == +-pi/4 */
-                return copysign(0.25*Py_MATH_PI, z.imag);
-            else
-                /* atan2(+-inf, -inf) == +-pi*3/4 */
-                return copysign(0.75*Py_MATH_PI, z.imag);
-        }
-        /* atan2(+-inf, x) == +-pi/2 for finite x */
-        return copysign(0.5*Py_MATH_PI, z.imag);
-    }
-    if (Py_IS_INFINITY(z.real) || z.imag == 0.) {
-        if (copysign(1., z.real) == 1.)
-            /* atan2(+-y, +inf) = atan2(+-0, +x) = +-0. */
-            return copysign(0., z.imag);
-        else
-            /* atan2(+-y, -inf) = atan2(+-0., -x) = +-pi. */
-            return copysign(Py_MATH_PI, z.imag);
-    }
-    return atan2(z.imag, z.real);
-}
-
 
 static Py_complex atanh_special_values[7][7];
 
@@ -386,11 +349,7 @@ cmath_atanh_impl(PyObject *module, Py_complex z)
         */
         h = hypot(z.real/2., z.imag/2.);  /* safe from overflow */
         r.real = z.real/4./h/h;
-        /* the two negations in the next line cancel each other out
-           except when working with unsigned zeros: they're there to
-           ensure that the branch cut has the correct continuity on
-           systems that don't support signed zeros */
-        r.imag = -copysign(Py_MATH_PI/2., -z.imag);
+        r.imag = copysign(Py_MATH_PI/2., z.imag);
         errno = 0;
     } else if (z.real == 1. && ay < CM_SQRT_DBL_MIN) {
         /* C99 standard says:  atanh(1+/-0.) should be inf +/- 0i */
@@ -448,8 +407,8 @@ cmath_cosh_impl(PyObject *module, Py_complex z)
     double x_minus_one;
 
     /* special treatment for cosh(+/-inf + iy) if y is not a NaN */
-    if (!Py_IS_FINITE(z.real) || !Py_IS_FINITE(z.imag)) {
-        if (Py_IS_INFINITY(z.real) && Py_IS_FINITE(z.imag) &&
+    if (!isfinite(z.real) || !isfinite(z.imag)) {
+        if (isinf(z.real) && isfinite(z.imag) &&
             (z.imag != 0.)) {
             if (z.real > 0) {
                 r.real = copysign(INF, cos(z.imag));
@@ -466,7 +425,7 @@ cmath_cosh_impl(PyObject *module, Py_complex z)
         }
         /* need to set errno = EDOM if y is +/- infinity and x is not
            a NaN */
-        if (Py_IS_INFINITY(z.imag) && !Py_IS_NAN(z.real))
+        if (isinf(z.imag) && !isnan(z.real))
             errno = EDOM;
         else
             errno = 0;
@@ -484,7 +443,7 @@ cmath_cosh_impl(PyObject *module, Py_complex z)
         r.imag = sin(z.imag) * sinh(z.real);
     }
     /* detect overflow, and set errno accordingly */
-    if (Py_IS_INFINITY(r.real) || Py_IS_INFINITY(r.imag))
+    if (isinf(r.real) || isinf(r.imag))
         errno = ERANGE;
     else
         errno = 0;
@@ -509,8 +468,8 @@ cmath_exp_impl(PyObject *module, Py_complex z)
     Py_complex r;
     double l;
 
-    if (!Py_IS_FINITE(z.real) || !Py_IS_FINITE(z.imag)) {
-        if (Py_IS_INFINITY(z.real) && Py_IS_FINITE(z.imag)
+    if (!isfinite(z.real) || !isfinite(z.imag)) {
+        if (isinf(z.real) && isfinite(z.imag)
             && (z.imag != 0.)) {
             if (z.real > 0) {
                 r.real = copysign(INF, cos(z.imag));
@@ -527,9 +486,9 @@ cmath_exp_impl(PyObject *module, Py_complex z)
         }
         /* need to set errno = EDOM if y is +/- infinity and x is not
            a NaN and not -infinity */
-        if (Py_IS_INFINITY(z.imag) &&
-            (Py_IS_FINITE(z.real) ||
-             (Py_IS_INFINITY(z.real) && z.real > 0)))
+        if (isinf(z.imag) &&
+            (isfinite(z.real) ||
+             (isinf(z.real) && z.real > 0)))
             errno = EDOM;
         else
             errno = 0;
@@ -546,7 +505,7 @@ cmath_exp_impl(PyObject *module, Py_complex z)
         r.imag = l*sin(z.imag);
     }
     /* detect overflow, and set errno accordingly */
-    if (Py_IS_INFINITY(r.real) || Py_IS_INFINITY(r.imag))
+    if (isinf(r.real) || isinf(r.imag))
         errno = ERANGE;
     else
         errno = 0;
@@ -686,8 +645,8 @@ cmath_sinh_impl(PyObject *module, Py_complex z)
 
     /* special treatment for sinh(+/-inf + iy) if y is finite and
        nonzero */
-    if (!Py_IS_FINITE(z.real) || !Py_IS_FINITE(z.imag)) {
-        if (Py_IS_INFINITY(z.real) && Py_IS_FINITE(z.imag)
+    if (!isfinite(z.real) || !isfinite(z.imag)) {
+        if (isinf(z.real) && isfinite(z.imag)
             && (z.imag != 0.)) {
             if (z.real > 0) {
                 r.real = copysign(INF, cos(z.imag));
@@ -704,7 +663,7 @@ cmath_sinh_impl(PyObject *module, Py_complex z)
         }
         /* need to set errno = EDOM if y is +/- infinity and x is not
            a NaN */
-        if (Py_IS_INFINITY(z.imag) && !Py_IS_NAN(z.real))
+        if (isinf(z.imag) && !isnan(z.real))
             errno = EDOM;
         else
             errno = 0;
@@ -720,7 +679,7 @@ cmath_sinh_impl(PyObject *module, Py_complex z)
         r.imag = sin(z.imag) * cosh(z.real);
     }
     /* detect overflow, and set errno accordingly */
-    if (Py_IS_INFINITY(r.real) || Py_IS_INFINITY(r.imag))
+    if (isinf(r.real) || isinf(r.imag))
         errno = ERANGE;
     else
         errno = 0;
@@ -856,8 +815,8 @@ cmath_tanh_impl(PyObject *module, Py_complex z)
 
     /* special treatment for tanh(+/-inf + iy) if y is finite and
        nonzero */
-    if (!Py_IS_FINITE(z.real) || !Py_IS_FINITE(z.imag)) {
-        if (Py_IS_INFINITY(z.real) && Py_IS_FINITE(z.imag)
+    if (!isfinite(z.real) || !isfinite(z.imag)) {
+        if (isinf(z.real) && isfinite(z.imag)
             && (z.imag != 0.)) {
             if (z.real > 0) {
                 r.real = 1.0;
@@ -876,7 +835,7 @@ cmath_tanh_impl(PyObject *module, Py_complex z)
         }
         /* need to set errno = EDOM if z.imag is +/-infinity and
            z.real is finite */
-        if (Py_IS_INFINITY(z.imag) && Py_IS_FINITE(z.real))
+        if (isinf(z.imag) && isfinite(z.real))
             errno = EDOM;
         else
             errno = 0;
@@ -966,7 +925,7 @@ cmath_phase_impl(PyObject *module, Py_complex z)
     double phi;
 
     errno = 0;
-    phi = c_atan2(z); /* should not cause any exception */
+    phi = atan2(z.imag, z.real); /* should not cause any exception */
     if (errno != 0)
         return math_error();
     else
@@ -991,7 +950,7 @@ cmath_polar_impl(PyObject *module, Py_complex z)
     double r, phi;
 
     errno = 0;
-    phi = c_atan2(z); /* should not cause any exception */
+    phi = atan2(z.imag, z.real); /* should not cause any exception */
     r = _Py_c_abs(z); /* sets errno to ERANGE on overflow */
     if (errno != 0)
         return math_error();
@@ -1030,11 +989,11 @@ cmath_rect_impl(PyObject *module, double r, double phi)
     errno = 0;
 
     /* deal with special values */
-    if (!Py_IS_FINITE(r) || !Py_IS_FINITE(phi)) {
+    if (!isfinite(r) || !isfinite(phi)) {
         /* if r is +/-infinity and phi is finite but nonzero then
            result is (+-INF +-INF i), but we need to compute cos(phi)
            and sin(phi) to figure out the signs. */
-        if (Py_IS_INFINITY(r) && (Py_IS_FINITE(phi)
+        if (isinf(r) && (isfinite(phi)
                                   && (phi != 0.))) {
             if (r > 0) {
                 z.real = copysign(INF, cos(phi));
@@ -1051,7 +1010,7 @@ cmath_rect_impl(PyObject *module, double r, double phi)
         }
         /* need to set errno = EDOM if r is a nonzero number and phi
            is infinite */
-        if (r != 0. && !Py_IS_NAN(r) && Py_IS_INFINITY(phi))
+        if (r != 0. && !isnan(r) && isinf(phi))
             errno = EDOM;
         else
             errno = 0;
@@ -1085,7 +1044,7 @@ static PyObject *
 cmath_isfinite_impl(PyObject *module, Py_complex z)
 /*[clinic end generated code: output=ac76611e2c774a36 input=848e7ee701895815]*/
 {
-    return PyBool_FromLong(Py_IS_FINITE(z.real) && Py_IS_FINITE(z.imag));
+    return PyBool_FromLong(isfinite(z.real) && isfinite(z.imag));
 }
 
 /*[clinic input]
@@ -1098,7 +1057,7 @@ static PyObject *
 cmath_isnan_impl(PyObject *module, Py_complex z)
 /*[clinic end generated code: output=e7abf6e0b28beab7 input=71799f5d284c9baf]*/
 {
-    return PyBool_FromLong(Py_IS_NAN(z.real) || Py_IS_NAN(z.imag));
+    return PyBool_FromLong(isnan(z.real) || isnan(z.imag));
 }
 
 /*[clinic input]
@@ -1111,8 +1070,7 @@ static PyObject *
 cmath_isinf_impl(PyObject *module, Py_complex z)
 /*[clinic end generated code: output=502a75a79c773469 input=363df155c7181329]*/
 {
-    return PyBool_FromLong(Py_IS_INFINITY(z.real) ||
-                           Py_IS_INFINITY(z.imag));
+    return PyBool_FromLong(isinf(z.real) || isinf(z.imag));
 }
 
 /*[clinic input]
@@ -1167,8 +1125,7 @@ cmath_isclose_impl(PyObject *module, Py_complex a, Py_complex b,
        above.
     */
 
-    if (Py_IS_INFINITY(a.real) || Py_IS_INFINITY(a.imag) ||
-        Py_IS_INFINITY(b.real) || Py_IS_INFINITY(b.imag)) {
+    if (isinf(a.real) || isinf(a.imag) || isinf(b.real) || isinf(b.imag)) {
         return 0;
     }
 
@@ -1261,8 +1218,8 @@ cmath_exec(PyObject *mod)
     INIT_SPECIAL_VALUES(acosh_special_values, {
       C(INF,-P34) C(INF,-P)  C(INF,-P)  C(INF,P)  C(INF,P)  C(INF,P34) C(INF,N)
       C(INF,-P12) C(U,U)     C(U,U)     C(U,U)    C(U,U)    C(INF,P12) C(N,N)
-      C(INF,-P12) C(U,U)     C(0.,-P12) C(0.,P12) C(U,U)    C(INF,P12) C(N,N)
-      C(INF,-P12) C(U,U)     C(0.,-P12) C(0.,P12) C(U,U)    C(INF,P12) C(N,N)
+      C(INF,-P12) C(U,U)     C(0.,-P12) C(0.,P12) C(U,U)    C(INF,P12) C(N,P12)
+      C(INF,-P12) C(U,U)     C(0.,-P12) C(0.,P12) C(U,U)    C(INF,P12) C(N,P12)
       C(INF,-P12) C(U,U)     C(U,U)     C(U,U)    C(U,U)    C(INF,P12) C(N,N)
       C(INF,-P14) C(INF,-0.) C(INF,-0.) C(INF,0.) C(INF,0.) C(INF,P14) C(INF,N)
       C(INF,N)    C(N,N)     C(N,N)     C(N,N)    C(N,N)    C(INF,N)   C(N,N)
@@ -1341,8 +1298,8 @@ cmath_exec(PyObject *mod)
     INIT_SPECIAL_VALUES(tanh_special_values, {
       C(-1.,0.) C(U,U) C(-1.,-0.) C(-1.,0.) C(U,U) C(-1.,0.) C(-1.,0.)
       C(N,N)    C(U,U) C(U,U)     C(U,U)    C(U,U) C(N,N)    C(N,N)
-      C(N,N)    C(U,U) C(-0.,-0.) C(-0.,0.) C(U,U) C(N,N)    C(N,N)
-      C(N,N)    C(U,U) C(0.,-0.)  C(0.,0.)  C(U,U) C(N,N)    C(N,N)
+      C(-0.0,N)    C(U,U) C(-0.,-0.) C(-0.,0.) C(U,U) C(-0.0,N)    C(-0.,N)
+      C(0.0,N)    C(U,U) C(0.,-0.)  C(0.,0.)  C(U,U) C(0.0,N)    C(0.,N)
       C(N,N)    C(U,U) C(U,U)     C(U,U)    C(U,U) C(N,N)    C(N,N)
       C(1.,0.)  C(U,U) C(1.,-0.)  C(1.,0.)  C(U,U) C(1.,0.)  C(1.,0.)
       C(N,N)    C(N,N) C(N,-0.)   C(N,0.)   C(N,N) C(N,N)    C(N,N)
@@ -1363,6 +1320,7 @@ cmath_exec(PyObject *mod)
 static PyModuleDef_Slot cmath_slots[] = {
     {Py_mod_exec, cmath_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

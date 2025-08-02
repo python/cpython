@@ -7,17 +7,10 @@ set here=%~dp0
 set rt_opts=-q -d
 set regrtest_args=
 set arm32_ssh=
+set cmdline_args=%*
+set cmdline_args=%cmdline_args:,=#COMMA#%
 
-:CheckOpts
-if "%1"=="-x64" (set rt_opts=%rt_opts% %1) & shift & goto CheckOpts
-if "%1"=="-arm64" (set rt_opts=%rt_opts% %1) & shift & goto CheckOpts
-if "%1"=="-arm32" (set rt_opts=%rt_opts% %1) & (set arm32_ssh=true) & shift & goto CheckOpts
-if "%1"=="-d" (set rt_opts=%rt_opts% %1) & shift & goto CheckOpts
-if "%1"=="-O" (set rt_opts=%rt_opts% %1) & shift & goto CheckOpts
-if "%1"=="-q" (set rt_opts=%rt_opts% %1) & shift & goto CheckOpts
-if "%1"=="+d" (set rt_opts=%rt_opts:-d=%) & shift & goto CheckOpts
-if "%1"=="+q" (set rt_opts=%rt_opts:-q=%) & shift & goto CheckOpts
-if NOT "%1"=="" (set regrtest_args=%regrtest_args% %1) & shift & goto CheckOpts
+call:CheckOpts %cmdline_args%
 
 if "%PROCESSOR_ARCHITECTURE%"=="ARM" if "%arm32_ssh%"=="true" goto NativeExecution
 if "%arm32_ssh%"=="true" goto :Arm32Ssh
@@ -49,3 +42,16 @@ echo The test worker should have the SSH agent running.
 echo Also a key must be created with ssh-keygen and added to both the buildbot worker machine
 echo and the ARM32 worker device: see https://docs.microsoft.com/en-us/windows/iot-core/connect-your-device/ssh
 exit /b 127
+
+:CheckOpts
+set arg="%~1"
+if %arg%=="-x64" (set rt_opts=%rt_opts% %1) & shift & goto CheckOpts
+if %arg%=="-arm64" (set rt_opts=%rt_opts% %1) & shift & goto CheckOpts
+if %arg%=="-arm32" (set rt_opts=%rt_opts% %1) & (set arm32_ssh=true) & shift & goto CheckOpts
+if %arg%=="-d" (set rt_opts=%rt_opts% %1) & shift & goto CheckOpts
+if %arg%=="-O" (set rt_opts=%rt_opts% %1) & shift & goto CheckOpts
+if %arg%=="-q" (set rt_opts=%rt_opts% %1) & shift & goto CheckOpts
+if %arg%=="+d" (set rt_opts=%rt_opts:-d=%) & shift & goto CheckOpts
+if %arg%=="+q" (set rt_opts=%rt_opts:-q=%) & shift & goto CheckOpts
+if NOT %arg%=="" (set regrtest_args=%regrtest_args% %arg:#COMMA#=,%) & shift & goto CheckOpts
+goto:eof

@@ -7,7 +7,7 @@ import tokenize
 
 from tkinter import filedialog
 from tkinter import messagebox
-from tkinter.simpledialog import askstring
+from tkinter.simpledialog import askstring  # loadfile encoding.
 
 from idlelib.config import idleConf
 from idlelib.util import py_extensions
@@ -180,24 +180,25 @@ class IOBinding:
         return True
 
     def maybesave(self):
+        """Return 'yes', 'no', 'cancel' as appropriate.
+
+        Tkinter messagebox.askyesnocancel converts these tk responses
+        to True, False, None.  Convert back, as now expected elsewhere.
+        """
         if self.get_saved():
             return "yes"
-        message = "Do you want to save %s before closing?" % (
-            self.filename or "this untitled document")
+        message = ("Do you want to save "
+                   f"{self.filename or 'this untitled document'}"
+                   " before closing?")
         confirm = messagebox.askyesnocancel(
                   title="Save On Close",
                   message=message,
                   default=messagebox.YES,
                   parent=self.text)
         if confirm:
-            reply = "yes"
             self.save(None)
-            if not self.get_saved():
-                reply = "cancel"
-        elif confirm is None:
-            reply = "cancel"
-        else:
-            reply = "no"
+            reply = "yes" if self.get_saved() else "cancel"
+        else:  reply = "cancel" if confirm is None else "no"
         self.text.focus_set()
         return reply
 
