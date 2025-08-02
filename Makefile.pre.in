@@ -3153,7 +3153,7 @@ JIT_STENCIL_HEADER = jit_stencils-x86_64-pc-windows-msvc.h
 else ifneq ($(filter aarch64-%-linux-gnu,$(HOST_GNU_TYPE)),)
 JIT_STENCIL_HEADER = jit_stencils-aarch64-unknown-linux-gnu.h
 else ifneq ($(filter x86_64-%-linux-gnu,$(HOST_GNU_TYPE)),)
-JIT_STENCIL_HEADER = jit_stencils-x86_64-pc-linux-gnu.h
+JIT_STENCIL_HEADER = jit_stencils-x86_64-unknown-linux-gnu.h
 else
 $(error "Unsupported host triple: $(HOST_GNU_TYPE). Please update the Makefile to support this host triple.")
 endif
