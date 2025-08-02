@@ -6,21 +6,19 @@ A Conceptual Overview of asyncio
 
 :Author: Alexander Nordin
 
-This article seeks to help you build a sturdy mental model of how asyncio
-fundamentally works.
-Something that will help you understand the how and why behind the recommended
-patterns.
+This article seeks to help you build a sturdy mental model of how ``asyncio``
+fundamentally works, helping you understand the how and why behind the
+recommended patterns.
 
-During my own asyncio learning process, a few aspects particually drove my
+During my own ``asyncio`` learning process, a few aspects particually drove my
 curiosity (read: drove me nuts).
 You should be able to comfortably answer all these questions by the end
 of this article.
 
-- What's roughly happening behind the scenes when an object is ``await``\ ed?
-- How does asyncio differentiate between a task which doesn't need CPU-time
-  to make progress towards completion, for example, a network request or file
-  read as opposed to a task that does need CPU-time to make progress, like
-  computing n-factorial?
+- What's happening behind the scenes when an object is ``await``\ ed?
+- How does ``asyncio`` differentiate between a task which doesn't need CPU-time
+  (such as a network request or file read) as opposed to a task that does
+  (such as computing n-factorial)?
 - How would I go about writing my own asynchronous variant of some operation?
   Something like an async sleep, database request, and so on.
 
@@ -28,28 +26,30 @@ of this article.
 A conceptual overview part 1: the high-level
 --------------------------------------------
 
-In part 1, we'll cover the main, high-level building blocks of asyncio: the
-event loop, coroutine functions, coroutine objects, tasks and ``await``.
+In part 1, we'll cover the main, high-level building blocks of ``asyncio``:
+the event loop, coroutine functions, coroutine objects, tasks and ``await``.
 
 ==========
 Event Loop
 ==========
 
-Everything in asyncio happens relative to the event loop.
+Everything in ``asyncio`` happens relative to the event loop.
 It's the star of the show.
 It's kind of like an orchestra conductor or military general.
 It's behind the scenes managing resources.
 Some power is explicitly granted to it, but a lot of its ability to get things
 done comes from the respect and cooperation of its subordinates.
 
-In more technical terms, the event loop contains a queue of tasks to be run.
-Some tasks are added directly by you, and some indirectly by asyncio.
-The event loop pops a task from the queue and invokes it (or gives it control),
+In more technical terms, the event loop contains a queue of tasks (or "chunks
+of work") to be run.
+Some tasks are added directly by you, and some indirectly by ``asyncio``.
+The event loop pops a task from the queue and invokes it (or "gives it control"),
 similar to calling a function, then that task runs.
 Once it pauses or completes, it returns control to the event loop.
 The event loop will then move on to the next task in its queue and invoke it.
 This process repeats indefinitely.
-Even if the queue is empty, the event loop continues to cycle (somewhat aimlessly).
+Even if the queue is empty, the event loop continues to cycle (somewhat
+aimlessly).
 
 Effective execution relies on tasks sharing well: a greedy task could hog
 control and leave the other tasks to starve, rendering the overall event loop
@@ -84,7 +84,7 @@ Calling a regular function invokes its logic or body::
     >>>
 
 The :ref:`async def <async def>`, as opposed to just a plain ``def``, makes
-this an asynchronous function (or coroutine function).
+this an asynchronous function (or "coroutine function").
 Calling it creates and returns a :ref:`coroutine <coroutine>` object.
 
 ::
@@ -101,15 +101,15 @@ Note that calling it does not execute the function::
     <coroutine object special_fella at 0x104ed2740>
     >>>
 
-The terms "asynchronous function" (or "coroutine function") and "coroutine object"
-are often conflated as coroutine.
+The terms "asynchronous function" and "coroutine object" are often conflated
+as coroutine.
 That can be confusing!
 In this article, coroutine specifically refers to a coroutine object, or more
 precisely, an instance of :data:`types.CoroutineType` (native coroutine).
 Note that coroutines can also exist as instances of :class:`collections.abc.Coroutine`
 -- a distinction that matters for type checking.
 
-That coroutine represents the function's body or logic.
+A coroutine represents the function's body or logic.
 A coroutine has to be explicitly started; again, merely creating the coroutine
 does not start it.
 Notably, the coroutine can be paused and resumed at various points within the
@@ -117,8 +117,9 @@ function's body.
 That pausing and resuming ability is what allows for asynchronous behavior!
 
 Coroutines and coroutine functions were built by leveraging the functionality
-of generators and generator functions.
-Recall, a generator function is a function that ``yield``\s, like this one::
+of :term:`generators <generator iterator>` and
+:term:`generator functions <generator>`.
+Recall, a generator function is a function that :keyword:`yield`\s, like this one::
 
     def get_random_number():
         # This would be a bad random number generator!
@@ -130,7 +131,7 @@ Recall, a generator function is a function that ``yield``\s, like this one::
         yield 4
         ...
 
-Like, a coroutine function, invoking a generator function does not run it.
+Similar to a coroutine function, calling a generator function does not run it.
 Instead, it provides a generator object::
 
     >>> get_random_number()
@@ -162,7 +163,7 @@ The recommended way to create tasks is via :func:`asyncio.create_task`.
 Creating a task automatically adds it to the event loop's queue of tasks.
 
 Since there's only one event loop (in each thread), ``asyncio`` takes care of
-associating the task with the event loop for you. That is, there's no need
+associating the task with the event loop for you. As such, there's no need
 to specify the event loop.
 
 ::
@@ -184,7 +185,7 @@ Unfortunately, it actually does matter which type of object await is applied to.
 
 ``await``\ ing a task will cede control from the current task or coroutine to
 the event loop.
-And while doing so, add a callback to the awaited task's list of callbacks
+And while doing so, adds a callback to the awaited task's list of callbacks
 indicating it should resume the current task/coroutine when it (the
 ``await``\ ed one) finishes.
 In other words, when that awaited task finishes, it adds the original task
@@ -246,7 +247,7 @@ The event loop then works through its queue, calling ``coro_b()`` and then
 A conceptual overview part 2: the nuts and bolts
 ------------------------------------------------
 
-Part 2 goes into detail on the mechanisms asyncio uses to manage control flow.
+Part 2 goes into detail on the mechanisms ``asyncio`` uses to manage control flow.
 This is where the magic happens.
 You'll come away from this section knowing what await does behind the scenes
 and how to make your own asynchronous operators.
@@ -255,27 +256,29 @@ and how to make your own asynchronous operators.
 coroutine.send(), await, yield and StopIteration
 ================================================
 
-asyncio leverages 4 components to pass around control.
+``asyncio`` leverages 4 components to pass around control.
 
 :meth:`coroutine.send(arg) <generator.send>` is the method used to start or resume a coroutine.
 If the coroutine was paused and is now being resumed, the argument ``arg``
 will be sent in as the return value of the ``yield`` statement which originally
 paused it.
-If the coroutine is being started, as opposed to resumed, ``arg`` must be None.
+If the coroutine is being started, as opposed to resumed, ``arg`` must be
+``None``.
 
 :ref:`yield <yieldexpr>`, like usual, pauses execution and returns control to the caller.
-In the example below, the ``yield`` is on line 3 and the caller is
+In the example below, the ``yield``, on line 3, is called by
 ``... = await rock`` on line 11.
-Generally, ``await`` calls the ``__await__`` method of the given object.
-``await`` also does one more very special thing: it propagates (or passes along)
-any yields it receives up the call-chain.
+Generally, ``await`` calls the :meth:`~object.__await__` method of the given
+object.
+``await`` also does one more very special thing: it propagates (or "passes
+along") any ``yield``\ s it receives up the call-chain.
 In this case, that's back to ``... = coroutine.send(None)`` on line 16.
 
 The coroutine is resumed via the ``coroutine.send(42)`` call on line 21.
 The coroutine picks back up from where it ``yield``\ ed (or paused) on line 3
 and executes the remaining statements in its body.
 When a coroutine finishes, it raises a :exc:`StopIteration` exception with the
-return value attached as an attribute.
+return value attached in the :attr:`~StopIteration.value` attribute.
 
 ::
 
@@ -317,7 +320,7 @@ That snippet produces this output:
     Coroutine main() finished and provided value: 23.
 
 It's worth pausing for a moment here and making sure you followed the various
-ways control flow and values were passed.
+ways that control flow and values were passed.
 
 The only way to yield (or effectively cede control) from a coroutine is to
 ``await`` an object that ``yield``\ s in its ``__await__`` method.
@@ -347,15 +350,17 @@ A future has a few important attributes. One is its state which can be either
 "pending", "cancelled" or "done".
 Another is its result which is set when the state transitions to done.
 Unlike a coroutine, a future does not represent the actual computation to be
-done; instead it represents the status and result of that computation, kind of
+done; instead, it represents the status and result of that computation, kind of
 like a status light (red, yellow or green) or indicator.
 
-:class:`asyncio.Task` subclasses :class:`asyncio.Future` in order to gain these various capabilities.
-The prior section said tasks store a list of callbacks, which wasn't entirely true.
+:class:`asyncio.Task` subclasses :class:`asyncio.Future` in order to gain
+these various capabilities.
+The prior section said tasks store a list of callbacks, which wasn't entirely
+true.
 It's actually the ``Future`` class that implements this logic which ``Task``
 inherits.
 
-Futures may be also used directly that is, not via tasks.
+Futures may also be used directly (not via tasks).
 Tasks mark themselves as done when their coroutine is complete.
 Futures are much more versatile and will be marked as done when you say so.
 In this way, they're the flexible interface for you to make your own conditions
@@ -401,7 +406,7 @@ preventing other tasks from running.
 
 Below, we use a future to enable custom control over when that task will be marked
 as done.
-If ``future.set_result()`` (the method responsible for marking that future as
+If :meth:`future.set_result() <asyncio.Future.set_result>` (the method responsible for marking that future as
 done) is never called, then this task will never finish.
 We've also enlisted the help of another task, which we'll see in a moment, that
 will monitor how much time has elapsed and accordingly call
@@ -417,7 +422,7 @@ will monitor how much time has elapsed and accordingly call
         # Block until the future is marked as done.
         await future
 
-We'll use a rather bare object ``YieldToEventLoop()`` to ``yield`` from its
+We'll use a rather bare object, ``YieldToEventLoop()``, to ``yield`` from
 ``__await__`` in order to cede control to the event loop.
 This is effectively the same as calling ``asyncio.sleep(0)``, but this approach
 offers more clarity, not to mention it's somewhat cheating to use
@@ -425,8 +430,8 @@ offers more clarity, not to mention it's somewhat cheating to use
 
 As usual, the event loop cycles through its queue of tasks, giving them control
 and receiving control back when they pause or finish.
-The ``watcher_task``, which runs the coroutine: ``_sleep_watcher(...)`` will be
-invoked once per full cycle of the event loop's queue.
+The ``watcher_task``, which runs the coroutine ``_sleep_watcher(...)``, will
+be invoked once per full cycle of the event loop's queue.
 On each resumption, it'll check the time and if not enough has elapsed, then it'll
 pause once again and hand control back to the event loop.
 Eventually, enough time will have elapsed, and ``_sleep_watcher(...)`` will
@@ -435,7 +440,7 @@ infinite ``while`` loop.
 Given this helper task is only invoked once per cycle of the event loop's queue,
 you'd be correct to note that this asynchronous sleep will sleep *at least*
 three seconds, rather than exactly three seconds.
-Note, this is also of true of: ``asyncio.sleep``.
+Note this is also of true of ``asyncio.sleep``.
 
 ::
 
@@ -478,5 +483,6 @@ For reference, you could implement it without futures, like so::
             else:
                 await YieldToEventLoop()
 
-That's all for now. Hopefully you're ready to more confidently dive into some
-async programming or check out advanced topics in the :mod:`docs <asyncio>`.
+But, that's all for now. Hopefully you're ready to more confidently dive into
+some async programming or check out advanced topics in the
+:mod:`docs <asyncio>`.
