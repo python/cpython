@@ -814,7 +814,7 @@ class timedelta:
         """microseconds"""
         return self._microseconds
 
-    def __add__(self, other):
+    def __add__(self, other, /):
         if isinstance(other, timedelta):
             # for CPython compatibility, we cannot use
             # our __class__ here, but need a real timedelta
@@ -825,7 +825,7 @@ class timedelta:
 
     __radd__ = __add__
 
-    def __sub__(self, other):
+    def __sub__(self, other, /):
         if isinstance(other, timedelta):
             # for CPython compatibility, we cannot use
             # our __class__ here, but need a real timedelta
@@ -834,7 +834,7 @@ class timedelta:
                              self._microseconds - other._microseconds)
         return NotImplemented
 
-    def __rsub__(self, other):
+    def __rsub__(self, other, /):
         if isinstance(other, timedelta):
             return -self + other
         return NotImplemented
@@ -855,7 +855,7 @@ class timedelta:
         else:
             return self
 
-    def __mul__(self, other):
+    def __mul__(self, other, /):
         if isinstance(other, int):
             # for CPython compatibility, we cannot use
             # our __class__ here, but need a real timedelta
@@ -874,7 +874,7 @@ class timedelta:
         return ((self._days * (24*3600) + self._seconds) * 1000000 +
                 self._microseconds)
 
-    def __floordiv__(self, other):
+    def __floordiv__(self, other, /):
         if not isinstance(other, (int, timedelta)):
             return NotImplemented
         usec = self._to_microseconds()
@@ -883,7 +883,7 @@ class timedelta:
         if isinstance(other, int):
             return timedelta(0, 0, usec // other)
 
-    def __truediv__(self, other):
+    def __truediv__(self, other, /):
         if not isinstance(other, (int, float, timedelta)):
             return NotImplemented
         usec = self._to_microseconds()
@@ -895,13 +895,13 @@ class timedelta:
             a, b = other.as_integer_ratio()
             return timedelta(0, 0, _divide_and_round(b * usec, a))
 
-    def __mod__(self, other):
+    def __mod__(self, other, /):
         if isinstance(other, timedelta):
             r = self._to_microseconds() % other._to_microseconds()
             return timedelta(0, 0, r)
         return NotImplemented
 
-    def __divmod__(self, other):
+    def __divmod__(self, other, /):
         if isinstance(other, timedelta):
             q, r = divmod(self._to_microseconds(),
                           other._to_microseconds())
@@ -916,25 +916,25 @@ class timedelta:
         else:
             return NotImplemented
 
-    def __le__(self, other):
+    def __le__(self, other, /):
         if isinstance(other, timedelta):
             return self._cmp(other) <= 0
         else:
             return NotImplemented
 
-    def __lt__(self, other):
+    def __lt__(self, other, /):
         if isinstance(other, timedelta):
             return self._cmp(other) < 0
         else:
             return NotImplemented
 
-    def __ge__(self, other):
+    def __ge__(self, other, /):
         if isinstance(other, timedelta):
             return self._cmp(other) >= 0
         else:
             return NotImplemented
 
-    def __gt__(self, other):
+    def __gt__(self, other, /):
         if isinstance(other, timedelta):
             return self._cmp(other) > 0
         else:
@@ -1047,7 +1047,7 @@ class date:
         return cls.fromtimestamp(t)
 
     @classmethod
-    def fromordinal(cls, n):
+    def fromordinal(cls, n, /):
         """Construct a date from a proleptic Gregorian ordinal.
 
         January 1 of year 1 is day 1.  Only the year, month and day are
@@ -1057,7 +1057,7 @@ class date:
         return cls(y, m, d)
 
     @classmethod
-    def fromisoformat(cls, date_string):
+    def fromisoformat(cls, date_string, /):
         """Construct a date from a string in ISO 8601 format."""
 
         if not isinstance(date_string, str):
@@ -1123,7 +1123,7 @@ class date:
         """
         return _wrap_strftime(self, format, self.timetuple())
 
-    def __format__(self, fmt):
+    def __format__(self, fmt, /):
         if not isinstance(fmt, str):
             raise TypeError("must be str, not %s" % type(fmt).__name__)
         if len(fmt) != 0:
@@ -1194,22 +1194,22 @@ class date:
             return self._cmp(other) == 0
         return NotImplemented
 
-    def __le__(self, other):
+    def __le__(self, other, /):
         if isinstance(other, date) and not isinstance(other, datetime):
             return self._cmp(other) <= 0
         return NotImplemented
 
-    def __lt__(self, other):
+    def __lt__(self, other, /):
         if isinstance(other, date) and not isinstance(other, datetime):
             return self._cmp(other) < 0
         return NotImplemented
 
-    def __ge__(self, other):
+    def __ge__(self, other, /):
         if isinstance(other, date) and not isinstance(other, datetime):
             return self._cmp(other) >= 0
         return NotImplemented
 
-    def __gt__(self, other):
+    def __gt__(self, other, /):
         if isinstance(other, date) and not isinstance(other, datetime):
             return self._cmp(other) > 0
         return NotImplemented
@@ -1229,7 +1229,7 @@ class date:
 
     # Computations
 
-    def __add__(self, other):
+    def __add__(self, other, /):
         "Add a date to a timedelta."
         if isinstance(other, timedelta):
             o = self.toordinal() + other.days
@@ -1240,7 +1240,7 @@ class date:
 
     __radd__ = __add__
 
-    def __sub__(self, other):
+    def __sub__(self, other, /):
         """Subtract two dates, or a date and a timedelta."""
         if isinstance(other, timedelta):
             return self + timedelta(-other.days)
@@ -1316,15 +1316,15 @@ class tzinfo:
     """
     __slots__ = ()
 
-    def tzname(self, dt):
+    def tzname(self, dt, /):
         "datetime -> string name of time zone."
         raise NotImplementedError("tzinfo subclass must override tzname()")
 
-    def utcoffset(self, dt):
+    def utcoffset(self, dt, /):
         "datetime -> timedelta, positive for east of UTC, negative for west of UTC"
         raise NotImplementedError("tzinfo subclass must override utcoffset()")
 
-    def dst(self, dt):
+    def dst(self, dt, /):
         """datetime -> DST offset as timedelta, positive for east of UTC.
 
         Return 0 if DST not in effect.  utcoffset() must include the DST
@@ -1332,7 +1332,7 @@ class tzinfo:
         """
         raise NotImplementedError("tzinfo subclass must override dst()")
 
-    def fromutc(self, dt):
+    def fromutc(self, dt, /):
         "datetime in UTC -> datetime in local time."
 
         if not isinstance(dt, datetime):
@@ -1512,25 +1512,25 @@ class time:
         else:
             return NotImplemented
 
-    def __le__(self, other):
+    def __le__(self, other, /):
         if isinstance(other, time):
             return self._cmp(other) <= 0
         else:
             return NotImplemented
 
-    def __lt__(self, other):
+    def __lt__(self, other, /):
         if isinstance(other, time):
             return self._cmp(other) < 0
         else:
             return NotImplemented
 
-    def __ge__(self, other):
+    def __ge__(self, other, /):
         if isinstance(other, time):
             return self._cmp(other) >= 0
         else:
             return NotImplemented
 
-    def __gt__(self, other):
+    def __gt__(self, other, /):
         if isinstance(other, time):
             return self._cmp(other) > 0
         else:
@@ -1631,7 +1631,7 @@ class time:
     __str__ = isoformat
 
     @classmethod
-    def fromisoformat(cls, time_string):
+    def fromisoformat(cls, time_string, /):
         """Construct a time from a string in one of the ISO 8601 formats."""
         if not isinstance(time_string, str):
             raise TypeError('fromisoformat: argument must be str')
@@ -1669,7 +1669,7 @@ class time:
                      0, 1, -1)
         return _wrap_strftime(self, format, timetuple)
 
-    def __format__(self, fmt):
+    def __format__(self, fmt, /):
         if not isinstance(fmt, str):
             raise TypeError("must be str, not %s" % type(fmt).__name__)
         if len(fmt) != 0:
@@ -1903,7 +1903,7 @@ class datetime(date):
         return cls._fromtimestamp(timestamp, tz is not None, tz)
 
     @classmethod
-    def utcfromtimestamp(cls, t):
+    def utcfromtimestamp(cls, t, /):
         """Construct a naive UTC datetime from a POSIX timestamp."""
         import warnings
         warnings.warn("datetime.datetime.utcfromtimestamp() is deprecated and scheduled "
@@ -1947,7 +1947,7 @@ class datetime(date):
                    tzinfo, fold=time.fold)
 
     @classmethod
-    def fromisoformat(cls, date_string):
+    def fromisoformat(cls, date_string, /):
         """Construct a datetime from a string in one of the ISO 8601 formats."""
         if not isinstance(date_string, str):
             raise TypeError('fromisoformat: argument must be str')
@@ -2208,7 +2208,7 @@ class datetime(date):
         return self.isoformat(sep=' ')
 
     @classmethod
-    def strptime(cls, date_string, format):
+    def strptime(cls, date_string, format, /):
         'string, format -> new datetime parsed from a string (like time.strptime()).'
         import _strptime
         return _strptime._strptime_datetime_datetime(cls, date_string, format)
@@ -2258,25 +2258,25 @@ class datetime(date):
         else:
             return NotImplemented
 
-    def __le__(self, other):
+    def __le__(self, other, /):
         if isinstance(other, datetime):
             return self._cmp(other) <= 0
         else:
             return NotImplemented
 
-    def __lt__(self, other):
+    def __lt__(self, other, /):
         if isinstance(other, datetime):
             return self._cmp(other) < 0
         else:
             return NotImplemented
 
-    def __ge__(self, other):
+    def __ge__(self, other, /):
         if isinstance(other, datetime):
             return self._cmp(other) >= 0
         else:
             return NotImplemented
 
-    def __gt__(self, other):
+    def __gt__(self, other, /):
         if isinstance(other, datetime):
             return self._cmp(other) > 0
         else:
