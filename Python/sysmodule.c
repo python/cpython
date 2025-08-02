@@ -916,7 +916,16 @@ sys_exit_impl(PyObject *module, PyObject *status)
 /*[clinic end generated code: output=13870986c1ab2ec0 input=b86ca9497baa94f2]*/
 {
     /* Raise SystemExit so callers may catch it or clean up. */
-    PyErr_SetObject(PyExc_SystemExit, status);
+    if (PyTuple_Check(status)) {
+        /* Make sure that tuples are not flattened during normalization
+         * due to the fast path for tuples in _PyErr_CreateException(). */
+        PyObject *exc = PyObject_CallOneArg(PyExc_SystemExit, status);
+        PyErr_SetObject(PyExc_SystemExit, exc);
+        Py_DECREF(exc);
+    }
+    else {
+        PyErr_SetObject(PyExc_SystemExit, status);
+    }
     return NULL;
 }
 
