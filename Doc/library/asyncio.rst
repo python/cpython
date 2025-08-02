@@ -30,7 +30,7 @@ asyncio is often a perfect fit for IO-bound and high-level
 **structured** network code.
 
 If you're new to asyncio or confused by it and would like to better understand
-the fundmentals of how it works check out: :ref:`a-conceputal-overview-of-asyncio`.
+the fundmentals of how it works check out: :ref:`a-conceptual-overview-of-asyncio`.
 
 asyncio provides a set of **high-level** APIs to:
 
