@@ -1,7 +1,6 @@
-import sys
 import unittest
 from test.support import (
-    is_apple_mobile, is_emscripten, is_wasi, reap_children, verbose
+    is_android, is_apple_mobile, is_wasm32, reap_children, verbose
 )
 from test.support.import_helper import import_module
 from test.support.os_helper import TESTFN, unlink
@@ -9,9 +8,8 @@ from test.support.os_helper import TESTFN, unlink
 # Skip these tests if termios is not available
 import_module('termios')
 
-# Skip tests on WASM platforms, plus iOS/tvOS/watchOS
-if is_apple_mobile or is_emscripten or is_wasi:
-    raise unittest.SkipTest(f"pty tests not required on {sys.platform}")
+if is_android or is_apple_mobile or is_wasm32:
+    raise unittest.SkipTest("pty is not available on this platform")
 
 import errno
 import os
@@ -22,7 +20,6 @@ import select
 import signal
 import socket
 import io # readline
-import warnings
 
 TEST_STRING_1 = b"I wish to buy a fish license.\n"
 TEST_STRING_2 = b"For my pet fish, Eric.\n"
@@ -137,8 +134,10 @@ class PtyTest(unittest.TestCase):
                 new_dim = tty.tcgetwinsize(pty.STDIN_FILENO)
                 self.assertEqual(new_dim, target_dim,
                                  "pty.STDIN_FILENO window size unchanged")
-            except OSError:
-                warnings.warn("Failed to set pty.STDIN_FILENO window size.")
+            except OSError as e:
+                logging.getLogger(__name__).warning(
+                    "Failed to set pty.STDIN_FILENO window size.", exc_info=e,
+                )
                 pass
 
         try:

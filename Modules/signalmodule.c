@@ -8,7 +8,7 @@
 #include "pycore_ceval.h"         // _PyEval_SignalReceived()
 #include "pycore_emscripten_signal.h"  // _Py_CHECK_EMSCRIPTEN_SIGNALS
 #include "pycore_fileutils.h"     // _Py_BEGIN_SUPPRESS_IPH
-#include "pycore_frame.h"         // _PyInterpreterFrame
+#include "pycore_interpframe.h"   // _PyThreadState_GetFrame()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_pyerrors.h"      // _PyErr_SetString()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
@@ -245,7 +245,8 @@ report_wakeup_write_error(void *data)
     errno = (int) (intptr_t) data;
     PyObject *exc = PyErr_GetRaisedException();
     PyErr_SetFromErrno(PyExc_OSError);
-    PyErr_FormatUnraisable("Exception ignored when trying to write to the signal wakeup fd");
+    PyErr_FormatUnraisable("Exception ignored while "
+                           "trying to write to the signal wakeup fd");
     PyErr_SetRaisedException(exc);
     errno = save_errno;
     return 0;
@@ -262,7 +263,8 @@ report_wakeup_send_error(void* data)
        recognizes the error codes used by both GetLastError() and
        WSAGetLastError */
     PyErr_SetExcFromWindowsErr(PyExc_OSError, send_errno);
-    PyErr_FormatUnraisable("Exception ignored when trying to send to the signal wakeup fd");
+    PyErr_FormatUnraisable("Exception ignored while "
+                           "trying to send to the signal wakeup fd");
     PyErr_SetRaisedException(exc);
     return 0;
 }
@@ -638,7 +640,7 @@ signal_strsignal_impl(PyObject *module, int signalnum)
             res = "Aborted";
             break;
         case SIGFPE:
-            res = "Floating point exception";
+            res = "Floating-point exception";
             break;
         case SIGSEGV:
             res = "Segmentation fault";
@@ -706,35 +708,43 @@ signal_siginterrupt_impl(PyObject *module, int signalnum, int flag)
 #endif
 
 
-static PyObject*
-signal_set_wakeup_fd(PyObject *self, PyObject *args, PyObject *kwds)
+/*[clinic input]
+signal.set_wakeup_fd
+
+    fd as fdobj: object
+    /
+    *
+    warn_on_full_buffer: bool = True
+
+Sets the fd to be written to (with the signal number) when a signal comes in.
+
+A library can use this to wakeup select or poll.
+The previous fd or -1 is returned.
+
+The fd must be non-blocking.
+[clinic start generated code]*/
+
+static PyObject *
+signal_set_wakeup_fd_impl(PyObject *module, PyObject *fdobj,
+                          int warn_on_full_buffer)
+/*[clinic end generated code: output=2280d72dd2a54c4f input=5b545946a28b8339]*/
 {
     struct _Py_stat_struct status;
-    static char *kwlist[] = {
-        "", "warn_on_full_buffer", NULL,
-    };
-    int warn_on_full_buffer = 1;
 #ifdef MS_WINDOWS
-    PyObject *fdobj;
     SOCKET_T sockfd, old_sockfd;
     int res;
     int res_size = sizeof res;
     PyObject *mod;
     int is_socket;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|$p:set_wakeup_fd", kwlist,
-                                     &fdobj, &warn_on_full_buffer))
-        return NULL;
-
     sockfd = PyLong_AsSocket_t(fdobj);
     if (sockfd == (SOCKET_T)(-1) && PyErr_Occurred())
         return NULL;
 #else
-    int fd;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "i|$p:set_wakeup_fd", kwlist,
-                                     &fd, &warn_on_full_buffer))
+    int fd = PyLong_AsInt(fdobj);
+    if (fd == -1 && PyErr_Occurred()) {
         return NULL;
+    }
 #endif
 
     PyThreadState *tstate = _PyThreadState_GET();
@@ -819,15 +829,6 @@ signal_set_wakeup_fd(PyObject *self, PyObject *args, PyObject *kwds)
     return PyLong_FromLong(old_fd);
 #endif
 }
-
-PyDoc_STRVAR(set_wakeup_fd_doc,
-"set_wakeup_fd(fd, *, warn_on_full_buffer=True) -> fd\n\
-\n\
-Sets the fd to be written to (with the signal number) when a signal\n\
-comes in.  A library can use this to wakeup select or poll.\n\
-The previous fd or -1 is returned.\n\
-\n\
-The fd must be non-blocking.");
 
 /* C API for the same, without all the error checking */
 int
@@ -1200,13 +1201,13 @@ signal.sigtimedwait
 
 Like sigwaitinfo(), but with a timeout.
 
-The timeout is specified in seconds, with floating point numbers allowed.
+The timeout is specified in seconds, with floating-point numbers allowed.
 [clinic start generated code]*/
 
 static PyObject *
 signal_sigtimedwait_impl(PyObject *module, sigset_t sigset,
                          PyObject *timeout_obj)
-/*[clinic end generated code: output=59c8971e8ae18a64 input=87fd39237cf0b7ba]*/
+/*[clinic end generated code: output=59c8971e8ae18a64 input=955773219c1596cd]*/
 {
     PyTime_t timeout;
     if (_PyTime_FromSecondsObject(&timeout,
@@ -1300,7 +1301,9 @@ signal_pthread_kill_impl(PyObject *module, unsigned long thread_id,
 #endif   /* #if defined(HAVE_PTHREAD_KILL) */
 
 
-#if defined(__linux__) && defined(__NR_pidfd_send_signal)
+// This system call always crashes on older Android versions.
+#if defined(__linux__) && defined(__NR_pidfd_send_signal) && \
+    !(defined(__ANDROID__) && __ANDROID_API__ < 31)
 /*[clinic input]
 signal.pidfd_send_signal
 
@@ -1344,7 +1347,7 @@ static PyMethodDef signal_methods[] = {
     SIGNAL_RAISE_SIGNAL_METHODDEF
     SIGNAL_STRSIGNAL_METHODDEF
     SIGNAL_GETSIGNAL_METHODDEF
-    {"set_wakeup_fd", _PyCFunction_CAST(signal_set_wakeup_fd), METH_VARARGS | METH_KEYWORDS, set_wakeup_fd_doc},
+    SIGNAL_SET_WAKEUP_FD_METHODDEF
     SIGNAL_SIGINTERRUPT_METHODDEF
     SIGNAL_PAUSE_METHODDEF
     SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF
@@ -1620,7 +1623,7 @@ signal_module_exec(PyObject *m)
     modstate->ignore_handler = state->ignore_handler;  // borrowed ref
 
 #ifdef PYHAVE_ITIMER_ERROR
-    modstate->itimer_error = PyErr_NewException("signal.itimer_error",
+    modstate->itimer_error = PyErr_NewException("signal.ItimerError",
                                                 PyExc_OSError, NULL);
     if (modstate->itimer_error == NULL) {
         return -1;
@@ -1699,6 +1702,7 @@ _signal_module_free(void *module)
 static PyModuleDef_Slot signal_slots[] = {
     {Py_mod_exec, signal_module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 
@@ -1773,6 +1777,10 @@ PyErr_CheckSignals(void)
         _Py_RunGC(tstate);
     }
 
+#if defined(Py_REMOTE_DEBUG) && defined(Py_SUPPORTS_REMOTE_DEBUG)
+    _PyRunRemoteDebugger(tstate);
+#endif
+
     if (!_Py_ThreadCanHandleSignals(tstate->interp)) {
         return 0;
     }
@@ -1835,7 +1843,8 @@ _PyErr_CheckSignalsTstate(PyThreadState *tstate)
             PyErr_Format(PyExc_OSError,
                          "Signal %i ignored due to race condition",
                          i);
-            PyErr_WriteUnraisable(Py_None);
+            PyErr_FormatUnraisable("Exception ignored while "
+                                   "calling signal handler");
             continue;
         }
         PyObject *arglist = NULL;

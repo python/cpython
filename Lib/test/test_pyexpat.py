@@ -9,11 +9,10 @@ import traceback
 from io import BytesIO
 from test import support
 from test.support import os_helper
-
+from test.support import sortdict
+from unittest import mock
 from xml.parsers import expat
 from xml.parsers.expat import errors
-
-from test.support import sortdict
 
 
 class SetAttributeTest(unittest.TestCase):
@@ -436,6 +435,19 @@ class BufferTextTest(unittest.TestCase):
                           "<!--abc-->", "4", "<!--def-->", "5", "</a>"],
                          "buffered text not properly split")
 
+    def test_change_character_data_handler_in_callback(self):
+        # Test that xmlparse_handler_setter() properly handles
+        # the special case "parser.CharacterDataHandler = None".
+        def handler(*args):
+            parser.CharacterDataHandler = None
+
+        handler_wrapper = mock.Mock(wraps=handler)
+        parser = expat.ParserCreate()
+        parser.CharacterDataHandler = handler_wrapper
+        parser.Parse(b"<a>1<b/>2<c></c>3<!--abc-->4<!--def-->5</a> ", True)
+        handler_wrapper.assert_called_once()
+        self.assertIsNone(parser.CharacterDataHandler)
+
 
 # Test handling of exception from callback:
 class HandlerExceptionTest(unittest.TestCase):
@@ -595,7 +607,7 @@ class ChardataBufferTest(unittest.TestCase):
     def test_disabling_buffer(self):
         xml1 = b"<?xml version='1.0' encoding='iso8859'?><a>" + b'a' * 512
         xml2 = b'b' * 1024
-        xml3 = b'c' * 1024 + b'</a>';
+        xml3 = b'c' * 1024 + b'</a>'
         parser = expat.ParserCreate()
         parser.CharacterDataHandler = self.counting_handler
         parser.buffer_text = 1
@@ -753,6 +765,60 @@ class ForeignDTDTests(unittest.TestCase):
         parser.Parse(
             b"<?xml version='1.0'?><!DOCTYPE foo PUBLIC 'bar' 'baz'><element/>")
         self.assertEqual(handler_call_args, [("bar", "baz")])
+
+
+class ReparseDeferralTest(unittest.TestCase):
+    def test_getter_setter_round_trip(self):
+        parser = expat.ParserCreate()
+        enabled = (expat.version_info >= (2, 6, 0))
+
+        self.assertIs(parser.GetReparseDeferralEnabled(), enabled)
+        parser.SetReparseDeferralEnabled(False)
+        self.assertIs(parser.GetReparseDeferralEnabled(), False)
+        parser.SetReparseDeferralEnabled(True)
+        self.assertIs(parser.GetReparseDeferralEnabled(), enabled)
+
+    def test_reparse_deferral_enabled(self):
+        if expat.version_info < (2, 6, 0):
+            self.skipTest(f'Expat {expat.version_info} does not '
+                          'support reparse deferral')
+
+        started = []
+
+        def start_element(name, _):
+            started.append(name)
+
+        parser = expat.ParserCreate()
+        parser.StartElementHandler = start_element
+        self.assertTrue(parser.GetReparseDeferralEnabled())
+
+        for chunk in (b'<doc', b'/>'):
+            parser.Parse(chunk, False)
+
+        # The key test: Have handlers already fired?  Expecting: no.
+        self.assertEqual(started, [])
+
+        parser.Parse(b'', True)
+
+        self.assertEqual(started, ['doc'])
+
+    def test_reparse_deferral_disabled(self):
+        started = []
+
+        def start_element(name, _):
+            started.append(name)
+
+        parser = expat.ParserCreate()
+        parser.StartElementHandler = start_element
+        if expat.version_info >= (2, 6, 0):
+            parser.SetReparseDeferralEnabled(False)
+        self.assertFalse(parser.GetReparseDeferralEnabled())
+
+        for chunk in (b'<doc', b'/>'):
+            parser.Parse(chunk, False)
+
+        # The key test: Have handlers already fired?  Expecting: yes.
+        self.assertEqual(started, ['doc'])
 
 
 if __name__ == "__main__":

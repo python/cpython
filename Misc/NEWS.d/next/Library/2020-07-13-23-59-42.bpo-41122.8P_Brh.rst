@@ -1,3 +1,0 @@
-Failing to pass arguments properly to :func:`functools.singledispatchmethod`
-now throws a TypeError instead of hitting an index out of bounds
-internally.

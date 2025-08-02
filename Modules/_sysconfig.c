@@ -67,6 +67,16 @@ _sysconfig_config_vars_impl(PyObject *module)
         return NULL;
     }
 
+#ifdef Py_DEBUG
+    PyObject *py_debug = _PyLong_GetOne();
+#else
+    PyObject *py_debug = _PyLong_GetZero();
+#endif
+    if (PyDict_SetItemString(config, "Py_DEBUG", py_debug) < 0) {
+        Py_DECREF(config);
+        return NULL;
+    }
+
     return config;
 }
 
@@ -80,6 +90,7 @@ static struct PyMethodDef sysconfig_methods[] = {
 
 static PyModuleDef_Slot sysconfig_slots[] = {
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

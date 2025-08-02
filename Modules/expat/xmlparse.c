@@ -1,4 +1,4 @@
-/* 628e24d4966bedbd4800f6ed128d06d29703765b4bce12d3b7f099f90f842fc9 (2.6.0+)
+/* d19ae032c224863c1527ba44d228cc34b99192c3a4c5a27af1f4e054d45ee031 (2.7.1+)
                             __  __            _
                          ___\ \/ /_ __   __ _| |_
                         / _ \\  /| '_ \ / _` | __|
@@ -13,7 +13,7 @@
    Copyright (c) 2002-2016 Karl Waclawek <karl@waclawek.net>
    Copyright (c) 2005-2009 Steven Solie <steven@solie.ca>
    Copyright (c) 2016      Eric Rahm <erahm@mozilla.com>
-   Copyright (c) 2016-2024 Sebastian Pipping <sebastian@pipping.org>
+   Copyright (c) 2016-2025 Sebastian Pipping <sebastian@pipping.org>
    Copyright (c) 2016      Gaurav <g.gupta@samsung.com>
    Copyright (c) 2016      Thomas Beutlich <tc@tbeu.de>
    Copyright (c) 2016      Gustavo Grieco <gustavo.grieco@imag.fr>
@@ -38,7 +38,9 @@
    Copyright (c) 2022      Jann Horn <jannh@google.com>
    Copyright (c) 2022      Sean McBride <sean@rogue-research.com>
    Copyright (c) 2023      Owain Davies <owaind@bath.edu>
-   Copyright (c) 2023      Sony Corporation / Snild Dolkow <snild@sony.com>
+   Copyright (c) 2023-2024 Sony Corporation / Snild Dolkow <snild@sony.com>
+   Copyright (c) 2024-2025 Berkay Eren Ürün <berkay.ueruen@siemens.com>
+   Copyright (c) 2024      Hanno Böck <hanno@gentoo.org>
    Licensed under the MIT license:
 
    Permission is  hereby granted,  free of charge,  to any  person obtaining
@@ -210,7 +212,7 @@ typedef char ICHAR;
 #endif
 
 /* Round up n to be a multiple of sz, where sz is a power of 2. */
-#define ROUND_UP(n, sz) (((n) + ((sz)-1)) & ~((sz)-1))
+#define ROUND_UP(n, sz) (((n) + ((sz) - 1)) & ~((sz) - 1))
 
 /* Do safe (NULL-aware) pointer arithmetic */
 #define EXPAT_SAFE_PTR_DIFF(p, q) (((p) && (q)) ? ((p) - (q)) : 0)
@@ -248,7 +250,7 @@ static void copy_salt_to_sipkey(XML_Parser parser, struct sipkey *key);
    it odd, since odd numbers are always relative prime to a power of 2.
 */
 #define SECOND_HASH(hash, mask, power)                                         \
-  ((((hash) & ~(mask)) >> ((power)-1)) & ((mask) >> 2))
+  ((((hash) & ~(mask)) >> ((power) - 1)) & ((mask) >> 2))
 #define PROBE_STEP(hash, mask, power)                                          \
   ((unsigned char)((SECOND_HASH(hash, mask, power)) | 1))
 
@@ -294,7 +296,7 @@ typedef struct {
    The name of the element is stored in both the document and API
    encodings.  The memory buffer 'buf' is a separately-allocated
    memory area which stores the name.  During the XML_Parse()/
-   XMLParseBuffer() when the element is open, the memory for the 'raw'
+   XML_ParseBuffer() when the element is open, the memory for the 'raw'
    version of the name (in the document encoding) is shared with the
    document buffer.  If the element is open across calls to
    XML_Parse()/XML_ParseBuffer(), the buffer is re-allocated to
@@ -323,6 +325,10 @@ typedef struct {
   const XML_Char *publicId;
   const XML_Char *notation;
   XML_Bool open;
+  XML_Bool hasMore; /* true if entity has not been completely processed */
+  /* An entity can be open while being already completely processed (hasMore ==
+    XML_FALSE). The reason is the delayed closing of entities until their inner
+    entities are processed and closed */
   XML_Bool is_param;
   XML_Bool is_internal; /* true if declared in internal subset outside PE */
 } ENTITY;
@@ -413,6 +419,12 @@ typedef struct {
   int *scaffIndex;
 } DTD;
 
+enum EntityType {
+  ENTITY_INTERNAL,
+  ENTITY_ATTRIBUTE,
+  ENTITY_VALUE,
+};
+
 typedef struct open_internal_entity {
   const char *internalEventPtr;
   const char *internalEventEndPtr;
@@ -420,6 +432,7 @@ typedef struct open_internal_entity {
   ENTITY *entity;
   int startTagLevel;
   XML_Bool betweenDecl; /* WFC: PE Between Declarations */
+  enum EntityType type;
 } OPEN_INTERNAL_ENTITY;
 
 enum XML_Account {
@@ -479,8 +492,8 @@ static enum XML_Error doProlog(XML_Parser parser, const ENCODING *enc,
                                const char *next, const char **nextPtr,
                                XML_Bool haveMore, XML_Bool allowClosingDoctype,
                                enum XML_Account account);
-static enum XML_Error processInternalEntity(XML_Parser parser, ENTITY *entity,
-                                            XML_Bool betweenDecl);
+static enum XML_Error processEntity(XML_Parser parser, ENTITY *entity,
+                                    XML_Bool betweenDecl, enum EntityType type);
 static enum XML_Error doContent(XML_Parser parser, int startTagLevel,
                                 const ENCODING *enc, const char *start,
                                 const char *end, const char **endPtr,
@@ -511,18 +524,22 @@ static enum XML_Error storeAttributeValue(XML_Parser parser,
                                           const char *ptr, const char *end,
                                           STRING_POOL *pool,
                                           enum XML_Account account);
-static enum XML_Error appendAttributeValue(XML_Parser parser,
-                                           const ENCODING *enc,
-                                           XML_Bool isCdata, const char *ptr,
-                                           const char *end, STRING_POOL *pool,
-                                           enum XML_Account account);
+static enum XML_Error
+appendAttributeValue(XML_Parser parser, const ENCODING *enc, XML_Bool isCdata,
+                     const char *ptr, const char *end, STRING_POOL *pool,
+                     enum XML_Account account, const char **nextPtr);
 static ATTRIBUTE_ID *getAttributeId(XML_Parser parser, const ENCODING *enc,
                                     const char *start, const char *end);
 static int setElementTypePrefix(XML_Parser parser, ELEMENT_TYPE *elementType);
 #if XML_GE == 1
 static enum XML_Error storeEntityValue(XML_Parser parser, const ENCODING *enc,
                                        const char *start, const char *end,
-                                       enum XML_Account account);
+                                       enum XML_Account account,
+                                       const char **nextPtr);
+static enum XML_Error callStoreEntityValue(XML_Parser parser,
+                                           const ENCODING *enc,
+                                           const char *start, const char *end,
+                                           enum XML_Account account);
 #else
 static enum XML_Error storeSelfEntityValue(XML_Parser parser, ENTITY *entity);
 #endif
@@ -629,8 +646,14 @@ static unsigned long getDebugLevel(const char *variableName,
        ? 0                                                                     \
        : ((*((pool)->ptr)++ = c), 1))
 
-XML_Bool g_reparseDeferralEnabledDefault = XML_TRUE; // write ONLY in runtests.c
-unsigned int g_parseAttempts = 0;                    // used for testing only
+#if ! defined(XML_TESTING)
+const
+#endif
+    XML_Bool g_reparseDeferralEnabledDefault
+    = XML_TRUE; // write ONLY in runtests.c
+#if defined(XML_TESTING)
+unsigned int g_bytesScanned = 0; // used for testing only
+#endif
 
 struct XML_ParserStruct {
   /* The first member must be m_userData so that the XML_GetUserData
@@ -701,6 +724,10 @@ struct XML_ParserStruct {
   const char *m_positionPtr;
   OPEN_INTERNAL_ENTITY *m_openInternalEntities;
   OPEN_INTERNAL_ENTITY *m_freeInternalEntities;
+  OPEN_INTERNAL_ENTITY *m_openAttributeEntities;
+  OPEN_INTERNAL_ENTITY *m_freeAttributeEntities;
+  OPEN_INTERNAL_ENTITY *m_openValueEntities;
+  OPEN_INTERNAL_ENTITY *m_freeValueEntities;
   XML_Bool m_defaultExpandInternalEntities;
   int m_tagLevel;
   ENTITY *m_declEntity;
@@ -748,6 +775,7 @@ struct XML_ParserStruct {
   ACCOUNTING m_accounting;
   ENTITY_STATS m_entity_stats;
 #endif
+  XML_Bool m_reenter;
 };
 
 #define MALLOC(parser, s) (parser->m_mem.malloc_fcn((s)))
@@ -1017,8 +1045,32 @@ callProcessor(XML_Parser parser, const char *start, const char *end,
       return XML_ERROR_NONE;
     }
   }
-  g_parseAttempts += 1;
-  const enum XML_Error ret = parser->m_processor(parser, start, end, endPtr);
+#if defined(XML_TESTING)
+  g_bytesScanned += (unsigned)have_now;
+#endif
+  // Run in a loop to eliminate dangerous recursion depths
+  enum XML_Error ret;
+  *endPtr = start;
+  while (1) {
+    // Use endPtr as the new start in each iteration, since it will
+    // be set to the next start point by m_processor.
+    ret = parser->m_processor(parser, *endPtr, end, endPtr);
+
+    // Make parsing status (and in particular XML_SUSPENDED) take
+    // precedence over re-enter flag when they disagree
+    if (parser->m_parsingStatus.parsing != XML_PARSING) {
+      parser->m_reenter = XML_FALSE;
+    }
+
+    if (! parser->m_reenter) {
+      break;
+    }
+
+    parser->m_reenter = XML_FALSE;
+    if (ret != XML_ERROR_NONE)
+      return ret;
+  }
+
   if (ret == XML_ERROR_NONE) {
     // if we consumed nothing, remember what we had on this parse attempt.
     if (*endPtr == start) {
@@ -1129,6 +1181,8 @@ parserCreate(const XML_Char *encodingName,
   parser->m_freeBindingList = NULL;
   parser->m_freeTagList = NULL;
   parser->m_freeInternalEntities = NULL;
+  parser->m_freeAttributeEntities = NULL;
+  parser->m_freeValueEntities = NULL;
 
   parser->m_groupSize = 0;
   parser->m_groupConnector = NULL;
@@ -1231,6 +1285,8 @@ parserInit(XML_Parser parser, const XML_Char *encodingName) {
   parser->m_eventEndPtr = NULL;
   parser->m_positionPtr = NULL;
   parser->m_openInternalEntities = NULL;
+  parser->m_openAttributeEntities = NULL;
+  parser->m_openValueEntities = NULL;
   parser->m_defaultExpandInternalEntities = XML_TRUE;
   parser->m_tagLevel = 0;
   parser->m_tagStack = NULL;
@@ -1241,6 +1297,8 @@ parserInit(XML_Parser parser, const XML_Char *encodingName) {
   parser->m_unknownEncodingData = NULL;
   parser->m_parentParser = NULL;
   parser->m_parsingStatus.parsing = XML_INITIALIZED;
+  // Reentry can only be triggered inside m_processor calls
+  parser->m_reenter = XML_FALSE;
 #ifdef XML_DTD
   parser->m_isParamEntity = XML_FALSE;
   parser->m_useForeignDTD = XML_FALSE;
@@ -1300,6 +1358,24 @@ XML_ParserReset(XML_Parser parser, const XML_Char *encodingName) {
     openEntity->next = parser->m_freeInternalEntities;
     parser->m_freeInternalEntities = openEntity;
   }
+  /* move m_openAttributeEntities to m_freeAttributeEntities (i.e. same task but
+   * for attributes) */
+  openEntityList = parser->m_openAttributeEntities;
+  while (openEntityList) {
+    OPEN_INTERNAL_ENTITY *openEntity = openEntityList;
+    openEntityList = openEntity->next;
+    openEntity->next = parser->m_freeAttributeEntities;
+    parser->m_freeAttributeEntities = openEntity;
+  }
+  /* move m_openValueEntities to m_freeValueEntities (i.e. same task but
+   * for value entities) */
+  openEntityList = parser->m_openValueEntities;
+  while (openEntityList) {
+    OPEN_INTERNAL_ENTITY *openEntity = openEntityList;
+    openEntityList = openEntity->next;
+    openEntity->next = parser->m_freeValueEntities;
+    parser->m_freeValueEntities = openEntity;
+  }
   moveToFreeBindingList(parser, parser->m_inheritedBindings);
   FREE(parser, parser->m_unknownEncodingMem);
   if (parser->m_unknownEncodingRelease)
@@ -1313,6 +1389,19 @@ XML_ParserReset(XML_Parser parser, const XML_Char *encodingName) {
   return XML_TRUE;
 }
 
+static XML_Bool
+parserBusy(XML_Parser parser) {
+  switch (parser->m_parsingStatus.parsing) {
+  case XML_PARSING:
+  case XML_SUSPENDED:
+    return XML_TRUE;
+  case XML_INITIALIZED:
+  case XML_FINISHED:
+  default:
+    return XML_FALSE;
+  }
+}
+
 enum XML_Status XMLCALL
 XML_SetEncoding(XML_Parser parser, const XML_Char *encodingName) {
   if (parser == NULL)
@@ -1321,8 +1410,7 @@ XML_SetEncoding(XML_Parser parser, const XML_Char *encodingName) {
      XXX There's no way for the caller to determine which of the
      XXX possible error cases caused the XML_STATUS_ERROR return.
   */
-  if (parser->m_parsingStatus.parsing == XML_PARSING
-      || parser->m_parsingStatus.parsing == XML_SUSPENDED)
+  if (parserBusy(parser))
     return XML_STATUS_ERROR;
 
   /* Get rid of any previous encoding name */
@@ -1559,7 +1647,34 @@ XML_ParserFree(XML_Parser parser) {
     entityList = entityList->next;
     FREE(parser, openEntity);
   }
-
+  /* free m_openAttributeEntities and m_freeAttributeEntities */
+  entityList = parser->m_openAttributeEntities;
+  for (;;) {
+    OPEN_INTERNAL_ENTITY *openEntity;
+    if (entityList == NULL) {
+      if (parser->m_freeAttributeEntities == NULL)
+        break;
+      entityList = parser->m_freeAttributeEntities;
+      parser->m_freeAttributeEntities = NULL;
+    }
+    openEntity = entityList;
+    entityList = entityList->next;
+    FREE(parser, openEntity);
+  }
+  /* free m_openValueEntities and m_freeValueEntities */
+  entityList = parser->m_openValueEntities;
+  for (;;) {
+    OPEN_INTERNAL_ENTITY *openEntity;
+    if (entityList == NULL) {
+      if (parser->m_freeValueEntities == NULL)
+        break;
+      entityList = parser->m_freeValueEntities;
+      parser->m_freeValueEntities = NULL;
+    }
+    openEntity = entityList;
+    entityList = entityList->next;
+    FREE(parser, openEntity);
+  }
   destroyBindings(parser->m_freeBindingList, parser);
   destroyBindings(parser->m_inheritedBindings, parser);
   poolDestroy(&parser->m_tempPool);
@@ -1601,8 +1716,7 @@ XML_UseForeignDTD(XML_Parser parser, XML_Bool useDTD) {
     return XML_ERROR_INVALID_ARGUMENT;
 #ifdef XML_DTD
   /* block after XML_Parse()/XML_ParseBuffer() has been called */
-  if (parser->m_parsingStatus.parsing == XML_PARSING
-      || parser->m_parsingStatus.parsing == XML_SUSPENDED)
+  if (parserBusy(parser))
     return XML_ERROR_CANT_CHANGE_FEATURE_ONCE_PARSING;
   parser->m_useForeignDTD = useDTD;
   return XML_ERROR_NONE;
@@ -1617,8 +1731,7 @@ XML_SetReturnNSTriplet(XML_Parser parser, int do_nst) {
   if (parser == NULL)
     return;
   /* block after XML_Parse()/XML_ParseBuffer() has been called */
-  if (parser->m_parsingStatus.parsing == XML_PARSING
-      || parser->m_parsingStatus.parsing == XML_SUSPENDED)
+  if (parserBusy(parser))
     return;
   parser->m_ns_triplets = do_nst ? XML_TRUE : XML_FALSE;
 }
@@ -1887,8 +2000,7 @@ XML_SetParamEntityParsing(XML_Parser parser,
   if (parser == NULL)
     return 0;
   /* block after XML_Parse()/XML_ParseBuffer() has been called */
-  if (parser->m_parsingStatus.parsing == XML_PARSING
-      || parser->m_parsingStatus.parsing == XML_SUSPENDED)
+  if (parserBusy(parser))
     return 0;
 #ifdef XML_DTD
   parser->m_paramEntityParsing = peParsing;
@@ -1905,8 +2017,7 @@ XML_SetHashSalt(XML_Parser parser, unsigned long hash_salt) {
   if (parser->m_parentParser)
     return XML_SetHashSalt(parser->m_parentParser, hash_salt);
   /* block after XML_Parse()/XML_ParseBuffer() has been called */
-  if (parser->m_parsingStatus.parsing == XML_PARSING
-      || parser->m_parsingStatus.parsing == XML_SUSPENDED)
+  if (parserBusy(parser))
     return 0;
   parser->m_hash_secret_salt = hash_salt;
   return 1;
@@ -2030,6 +2141,12 @@ XML_ParseBuffer(XML_Parser parser, int len, int isFinal) {
 
   if (parser == NULL)
     return XML_STATUS_ERROR;
+
+  if (len < 0) {
+    parser->m_errorCode = XML_ERROR_INVALID_ARGUMENT;
+    return XML_STATUS_ERROR;
+  }
+
   switch (parser->m_parsingStatus.parsing) {
   case XML_SUSPENDED:
     parser->m_errorCode = XML_ERROR_SUSPENDED;
@@ -2214,11 +2331,19 @@ XML_GetBuffer(XML_Parser parser, int len) {
   return parser->m_bufferEnd;
 }
 
+static void
+triggerReenter(XML_Parser parser) {
+  parser->m_reenter = XML_TRUE;
+}
+
 enum XML_Status XMLCALL
 XML_StopParser(XML_Parser parser, XML_Bool resumable) {
   if (parser == NULL)
     return XML_STATUS_ERROR;
   switch (parser->m_parsingStatus.parsing) {
+  case XML_INITIALIZED:
+    parser->m_errorCode = XML_ERROR_NOT_STARTED;
+    return XML_STATUS_ERROR;
   case XML_SUSPENDED:
     if (resumable) {
       parser->m_errorCode = XML_ERROR_SUSPENDED;
@@ -2229,7 +2354,7 @@ XML_StopParser(XML_Parser parser, XML_Bool resumable) {
   case XML_FINISHED:
     parser->m_errorCode = XML_ERROR_FINISHED;
     return XML_STATUS_ERROR;
-  default:
+  case XML_PARSING:
     if (resumable) {
 #ifdef XML_DTD
       if (parser->m_isParamEntity) {
@@ -2240,6 +2365,9 @@ XML_StopParser(XML_Parser parser, XML_Bool resumable) {
       parser->m_parsingStatus.parsing = XML_SUSPENDED;
     } else
       parser->m_parsingStatus.parsing = XML_FINISHED;
+    break;
+  default:
+    assert(0);
   }
   return XML_STATUS_OK;
 }
@@ -2504,6 +2632,9 @@ XML_ErrorString(enum XML_Error code) {
   case XML_ERROR_AMPLIFICATION_LIMIT_BREACH:
     return XML_L(
         "limit on input amplification factor (from DTD and entities) breached");
+  /* Added in 2.6.4. */
+  case XML_ERROR_NOT_STARTED:
+    return XML_L("parser not started");
   }
   return NULL;
 }
@@ -2679,8 +2810,9 @@ static enum XML_Error PTRCALL
 contentProcessor(XML_Parser parser, const char *start, const char *end,
                  const char **endPtr) {
   enum XML_Error result = doContent(
-      parser, 0, parser->m_encoding, start, end, endPtr,
-      (XML_Bool)! parser->m_parsingStatus.finalBuffer, XML_ACCOUNT_DIRECT);
+      parser, parser->m_parentParser ? 1 : 0, parser->m_encoding, start, end,
+      endPtr, (XML_Bool)! parser->m_parsingStatus.finalBuffer,
+      XML_ACCOUNT_DIRECT);
   if (result == XML_ERROR_NONE) {
     if (! storeRawNames(parser))
       return XML_ERROR_NO_MEMORY;
@@ -2768,6 +2900,11 @@ externalEntityInitProcessor3(XML_Parser parser, const char *start,
       return XML_ERROR_NONE;
     case XML_FINISHED:
       return XML_ERROR_ABORTED;
+    case XML_PARSING:
+      if (parser->m_reenter) {
+        return XML_ERROR_UNEXPECTED_STATE; // LCOV_EXCL_LINE
+      }
+      /* Fall through */
     default:
       start = next;
     }
@@ -2941,7 +3078,7 @@ doContent(XML_Parser parser, int startTagLevel, const ENCODING *enc,
             reportDefault(parser, enc, s, next);
           break;
         }
-        result = processInternalEntity(parser, entity, XML_FALSE);
+        result = processEntity(parser, entity, XML_FALSE, ENTITY_INTERNAL);
         if (result != XML_ERROR_NONE)
           return result;
       } else if (parser->m_externalEntityRefHandler) {
@@ -3067,7 +3204,9 @@ doContent(XML_Parser parser, int startTagLevel, const ENCODING *enc,
     }
       if ((parser->m_tagLevel == 0)
           && (parser->m_parsingStatus.parsing != XML_FINISHED)) {
-        if (parser->m_parsingStatus.parsing == XML_SUSPENDED)
+        if (parser->m_parsingStatus.parsing == XML_SUSPENDED
+            || (parser->m_parsingStatus.parsing == XML_PARSING
+                && parser->m_reenter))
           parser->m_processor = epilogProcessor;
         else
           return epilogProcessor(parser, next, end, nextPtr);
@@ -3128,7 +3267,9 @@ doContent(XML_Parser parser, int startTagLevel, const ENCODING *enc,
         }
         if ((parser->m_tagLevel == 0)
             && (parser->m_parsingStatus.parsing != XML_FINISHED)) {
-          if (parser->m_parsingStatus.parsing == XML_SUSPENDED)
+          if (parser->m_parsingStatus.parsing == XML_SUSPENDED
+              || (parser->m_parsingStatus.parsing == XML_PARSING
+                  && parser->m_reenter))
             parser->m_processor = epilogProcessor;
           else
             return epilogProcessor(parser, next, end, nextPtr);
@@ -3261,14 +3402,22 @@ doContent(XML_Parser parser, int startTagLevel, const ENCODING *enc,
       break;
       /* LCOV_EXCL_STOP */
     }
-    *eventPP = s = next;
     switch (parser->m_parsingStatus.parsing) {
     case XML_SUSPENDED:
+      *eventPP = next;
       *nextPtr = next;
       return XML_ERROR_NONE;
     case XML_FINISHED:
+      *eventPP = next;
       return XML_ERROR_ABORTED;
+    case XML_PARSING:
+      if (parser->m_reenter) {
+        *nextPtr = next;
+        return XML_ERROR_NONE;
+      }
+      /* Fall through */
     default:;
+      *eventPP = s = next;
     }
   }
   /* not reached */
@@ -4185,14 +4334,21 @@ doCdataSection(XML_Parser parser, const ENCODING *enc, const char **startPtr,
       /* LCOV_EXCL_STOP */
     }
 
-    *eventPP = s = next;
     switch (parser->m_parsingStatus.parsing) {
     case XML_SUSPENDED:
+      *eventPP = next;
       *nextPtr = next;
       return XML_ERROR_NONE;
     case XML_FINISHED:
+      *eventPP = next;
       return XML_ERROR_ABORTED;
+    case XML_PARSING:
+      if (parser->m_reenter) {
+        return XML_ERROR_UNEXPECTED_STATE; // LCOV_EXCL_LINE
+      }
+      /* Fall through */
     default:;
+      *eventPP = s = next;
     }
   }
   /* not reached */
@@ -4524,7 +4680,7 @@ entityValueInitProcessor(XML_Parser parser, const char *s, const char *end,
       }
       /* found end of entity value - can store it now */
       return storeEntityValue(parser, parser->m_encoding, s, end,
-                              XML_ACCOUNT_DIRECT);
+                              XML_ACCOUNT_DIRECT, NULL);
     } else if (tok == XML_TOK_XML_DECL) {
       enum XML_Error result;
       result = processXmlDecl(parser, 0, start, next);
@@ -4651,7 +4807,7 @@ entityValueProcessor(XML_Parser parser, const char *s, const char *end,
         break;
       }
       /* found end of entity value - can store it now */
-      return storeEntityValue(parser, enc, s, end, XML_ACCOUNT_DIRECT);
+      return storeEntityValue(parser, enc, s, end, XML_ACCOUNT_DIRECT, NULL);
     }
     start = next;
   }
@@ -5094,9 +5250,9 @@ doProlog(XML_Parser parser, const ENCODING *enc, const char *s, const char *end,
 #if XML_GE == 1
         // This will store the given replacement text in
         // parser->m_declEntity->textPtr.
-        enum XML_Error result
-            = storeEntityValue(parser, enc, s + enc->minBytesPerChar,
-                               next - enc->minBytesPerChar, XML_ACCOUNT_NONE);
+        enum XML_Error result = callStoreEntityValue(
+            parser, enc, s + enc->minBytesPerChar, next - enc->minBytesPerChar,
+            XML_ACCOUNT_NONE);
         if (parser->m_declEntity) {
           parser->m_declEntity->textPtr = poolStart(&dtd->entityValuePool);
           parser->m_declEntity->textLen
@@ -5521,7 +5677,7 @@ doProlog(XML_Parser parser, const ENCODING *enc, const char *s, const char *end,
           enum XML_Error result;
           XML_Bool betweenDecl
               = (role == XML_ROLE_PARAM_ENTITY_REF ? XML_TRUE : XML_FALSE);
-          result = processInternalEntity(parser, entity, betweenDecl);
+          result = processEntity(parser, entity, betweenDecl, ENTITY_INTERNAL);
           if (result != XML_ERROR_NONE)
             return result;
           handleDefault = XML_FALSE;
@@ -5726,6 +5882,12 @@ doProlog(XML_Parser parser, const ENCODING *enc, const char *s, const char *end,
       return XML_ERROR_NONE;
     case XML_FINISHED:
       return XML_ERROR_ABORTED;
+    case XML_PARSING:
+      if (parser->m_reenter) {
+        *nextPtr = next;
+        return XML_ERROR_NONE;
+      }
+    /* Fall through */
     default:
       s = next;
       tok = XmlPrologTok(enc, s, end, &next);
@@ -5793,28 +5955,58 @@ epilogProcessor(XML_Parser parser, const char *s, const char *end,
     default:
       return XML_ERROR_JUNK_AFTER_DOC_ELEMENT;
     }
-    parser->m_eventPtr = s = next;
     switch (parser->m_parsingStatus.parsing) {
     case XML_SUSPENDED:
+      parser->m_eventPtr = next;
       *nextPtr = next;
       return XML_ERROR_NONE;
     case XML_FINISHED:
+      parser->m_eventPtr = next;
       return XML_ERROR_ABORTED;
+    case XML_PARSING:
+      if (parser->m_reenter) {
+        return XML_ERROR_UNEXPECTED_STATE; // LCOV_EXCL_LINE
+      }
+    /* Fall through */
     default:;
+      parser->m_eventPtr = s = next;
     }
   }
 }
 
 static enum XML_Error
-processInternalEntity(XML_Parser parser, ENTITY *entity, XML_Bool betweenDecl) {
-  const char *textStart, *textEnd;
-  const char *next;
-  enum XML_Error result;
-  OPEN_INTERNAL_ENTITY *openEntity;
+processEntity(XML_Parser parser, ENTITY *entity, XML_Bool betweenDecl,
+              enum EntityType type) {
+  OPEN_INTERNAL_ENTITY *openEntity, **openEntityList, **freeEntityList;
+  switch (type) {
+  case ENTITY_INTERNAL:
+    parser->m_processor = internalEntityProcessor;
+    openEntityList = &parser->m_openInternalEntities;
+    freeEntityList = &parser->m_freeInternalEntities;
+    break;
+  case ENTITY_ATTRIBUTE:
+    openEntityList = &parser->m_openAttributeEntities;
+    freeEntityList = &parser->m_freeAttributeEntities;
+    break;
+  case ENTITY_VALUE:
+    openEntityList = &parser->m_openValueEntities;
+    freeEntityList = &parser->m_freeValueEntities;
+    break;
+    /* default case serves merely as a safety net in case of a
+     * wrong entityType. Therefore we exclude the following lines
+     * from the test coverage.
+     *
+     * LCOV_EXCL_START
+     */
+  default:
+    // Should not reach here
+    assert(0);
+    /* LCOV_EXCL_STOP */
+  }
 
-  if (parser->m_freeInternalEntities) {
-    openEntity = parser->m_freeInternalEntities;
-    parser->m_freeInternalEntities = openEntity->next;
+  if (*freeEntityList) {
+    openEntity = *freeEntityList;
+    *freeEntityList = openEntity->next;
   } else {
     openEntity
         = (OPEN_INTERNAL_ENTITY *)MALLOC(parser, sizeof(OPEN_INTERNAL_ENTITY));
@@ -5822,56 +6014,34 @@ processInternalEntity(XML_Parser parser, ENTITY *entity, XML_Bool betweenDecl) {
       return XML_ERROR_NO_MEMORY;
   }
   entity->open = XML_TRUE;
+  entity->hasMore = XML_TRUE;
 #if XML_GE == 1
   entityTrackingOnOpen(parser, entity, __LINE__);
 #endif
   entity->processed = 0;
-  openEntity->next = parser->m_openInternalEntities;
-  parser->m_openInternalEntities = openEntity;
+  openEntity->next = *openEntityList;
+  *openEntityList = openEntity;
   openEntity->entity = entity;
+  openEntity->type = type;
   openEntity->startTagLevel = parser->m_tagLevel;
   openEntity->betweenDecl = betweenDecl;
   openEntity->internalEventPtr = NULL;
   openEntity->internalEventEndPtr = NULL;
-  textStart = (const char *)entity->textPtr;
-  textEnd = (const char *)(entity->textPtr + entity->textLen);
-  /* Set a safe default value in case 'next' does not get set */
-  next = textStart;
 
-#ifdef XML_DTD
-  if (entity->is_param) {
-    int tok
-        = XmlPrologTok(parser->m_internalEncoding, textStart, textEnd, &next);
-    result = doProlog(parser, parser->m_internalEncoding, textStart, textEnd,
-                      tok, next, &next, XML_FALSE, XML_FALSE,
-                      XML_ACCOUNT_ENTITY_EXPANSION);
-  } else
-#endif /* XML_DTD */
-    result = doContent(parser, parser->m_tagLevel, parser->m_internalEncoding,
-                       textStart, textEnd, &next, XML_FALSE,
-                       XML_ACCOUNT_ENTITY_EXPANSION);
-
-  if (result == XML_ERROR_NONE) {
-    if (textEnd != next && parser->m_parsingStatus.parsing == XML_SUSPENDED) {
-      entity->processed = (int)(next - textStart);
-      parser->m_processor = internalEntityProcessor;
-    } else if (parser->m_openInternalEntities->entity == entity) {
-#if XML_GE == 1
-      entityTrackingOnClose(parser, entity, __LINE__);
-#endif /* XML_GE == 1 */
-      entity->open = XML_FALSE;
-      parser->m_openInternalEntities = openEntity->next;
-      /* put openEntity back in list of free instances */
-      openEntity->next = parser->m_freeInternalEntities;
-      parser->m_freeInternalEntities = openEntity;
-    }
+  // Only internal entities make use of the reenter flag
+  // therefore no need to set it for other entity types
+  if (type == ENTITY_INTERNAL) {
+    triggerReenter(parser);
   }
-  return result;
+  return XML_ERROR_NONE;
 }
 
 static enum XML_Error PTRCALL
 internalEntityProcessor(XML_Parser parser, const char *s, const char *end,
                         const char **nextPtr) {
+  UNUSED_P(s);
+  UNUSED_P(end);
+  UNUSED_P(nextPtr);
   ENTITY *entity;
   const char *textStart, *textEnd;
   const char *next;
@@ -5881,72 +6051,67 @@ internalEntityProcessor(XML_Parser parser, const char *s, const char *end,
     return XML_ERROR_UNEXPECTED_STATE;
 
   entity = openEntity->entity;
-  textStart = ((const char *)entity->textPtr) + entity->processed;
-  textEnd = (const char *)(entity->textPtr + entity->textLen);
-  /* Set a safe default value in case 'next' does not get set */
-  next = textStart;
 
-#ifdef XML_DTD
-  if (entity->is_param) {
-    int tok
-        = XmlPrologTok(parser->m_internalEncoding, textStart, textEnd, &next);
-    result = doProlog(parser, parser->m_internalEncoding, textStart, textEnd,
-                      tok, next, &next, XML_FALSE, XML_TRUE,
-                      XML_ACCOUNT_ENTITY_EXPANSION);
-  } else
-#endif /* XML_DTD */
-    result = doContent(parser, openEntity->startTagLevel,
-                       parser->m_internalEncoding, textStart, textEnd, &next,
-                       XML_FALSE, XML_ACCOUNT_ENTITY_EXPANSION);
+  // This will return early
+  if (entity->hasMore) {
+    textStart = ((const char *)entity->textPtr) + entity->processed;
+    textEnd = (const char *)(entity->textPtr + entity->textLen);
+    /* Set a safe default value in case 'next' does not get set */
+    next = textStart;
 
-  if (result != XML_ERROR_NONE)
+    if (entity->is_param) {
+      int tok
+          = XmlPrologTok(parser->m_internalEncoding, textStart, textEnd, &next);
+      result = doProlog(parser, parser->m_internalEncoding, textStart, textEnd,
+                        tok, next, &next, XML_FALSE, XML_FALSE,
+                        XML_ACCOUNT_ENTITY_EXPANSION);
+    } else {
+      result = doContent(parser, openEntity->startTagLevel,
+                         parser->m_internalEncoding, textStart, textEnd, &next,
+                         XML_FALSE, XML_ACCOUNT_ENTITY_EXPANSION);
+    }
+
+    if (result != XML_ERROR_NONE)
+      return result;
+    // Check if entity is complete, if not, mark down how much of it is
+    // processed
+    if (textEnd != next
+        && (parser->m_parsingStatus.parsing == XML_SUSPENDED
+            || (parser->m_parsingStatus.parsing == XML_PARSING
+                && parser->m_reenter))) {
+      entity->processed = (int)(next - (const char *)entity->textPtr);
+      return result;
+    }
+
+    // Entity is complete. We cannot close it here since we need to first
+    // process its possible inner entities (which are added to the
+    // m_openInternalEntities during doProlog or doContent calls above)
+    entity->hasMore = XML_FALSE;
+    triggerReenter(parser);
     return result;
+  } // End of entity processing, "if" block will return here
 
-  if (textEnd != next && parser->m_parsingStatus.parsing == XML_SUSPENDED) {
-    entity->processed = (int)(next - (const char *)entity->textPtr);
-    return result;
-  }
-
+  // Remove fully processed openEntity from open entity list.
 #if XML_GE == 1
   entityTrackingOnClose(parser, entity, __LINE__);
 #endif
+  // openEntity is m_openInternalEntities' head, as we set it at the start of
+  // this function and we skipped doProlog and doContent calls with hasMore set
+  // to false. This means we can directly remove the head of
+  // m_openInternalEntities
+  assert(parser->m_openInternalEntities == openEntity);
   entity->open = XML_FALSE;
-  parser->m_openInternalEntities = openEntity->next;
+  parser->m_openInternalEntities = parser->m_openInternalEntities->next;
+
   /* put openEntity back in list of free instances */
   openEntity->next = parser->m_freeInternalEntities;
   parser->m_freeInternalEntities = openEntity;
 
-  // If there are more open entities we want to stop right here and have the
-  // upcoming call to XML_ResumeParser continue with entity content, or it would
-  // be ignored altogether.
-  if (parser->m_openInternalEntities != NULL
-      && parser->m_parsingStatus.parsing == XML_SUSPENDED) {
-    return XML_ERROR_NONE;
+  if (parser->m_openInternalEntities == NULL) {
+    parser->m_processor = entity->is_param ? prologProcessor : contentProcessor;
   }
-
-#ifdef XML_DTD
-  if (entity->is_param) {
-    int tok;
-    parser->m_processor = prologProcessor;
-    tok = XmlPrologTok(parser->m_encoding, s, end, &next);
-    return doProlog(parser, parser->m_encoding, s, end, tok, next, nextPtr,
-                    (XML_Bool)! parser->m_parsingStatus.finalBuffer, XML_TRUE,
-                    XML_ACCOUNT_DIRECT);
-  } else
-#endif /* XML_DTD */
-  {
-    parser->m_processor = contentProcessor;
-    /* see externalEntityContentProcessor vs contentProcessor */
-    result = doContent(parser, parser->m_parentParser ? 1 : 0,
-                       parser->m_encoding, s, end, nextPtr,
-                       (XML_Bool)! parser->m_parsingStatus.finalBuffer,
-                       XML_ACCOUNT_DIRECT);
-    if (result == XML_ERROR_NONE) {
-      if (! storeRawNames(parser))
-        return XML_ERROR_NO_MEMORY;
-    }
-    return result;
-  }
+  triggerReenter(parser);
+  return XML_ERROR_NONE;
 }
 
 static enum XML_Error PTRCALL
@@ -5962,8 +6127,70 @@ static enum XML_Error
 storeAttributeValue(XML_Parser parser, const ENCODING *enc, XML_Bool isCdata,
                     const char *ptr, const char *end, STRING_POOL *pool,
                     enum XML_Account account) {
-  enum XML_Error result
-      = appendAttributeValue(parser, enc, isCdata, ptr, end, pool, account);
+  const char *next = ptr;
+  enum XML_Error result = XML_ERROR_NONE;
+
+  while (1) {
+    if (! parser->m_openAttributeEntities) {
+      result = appendAttributeValue(parser, enc, isCdata, next, end, pool,
+                                    account, &next);
+    } else {
+      OPEN_INTERNAL_ENTITY *const openEntity = parser->m_openAttributeEntities;
+      if (! openEntity)
+        return XML_ERROR_UNEXPECTED_STATE;
+
+      ENTITY *const entity = openEntity->entity;
+      const char *const textStart
+          = ((const char *)entity->textPtr) + entity->processed;
+      const char *const textEnd
+          = (const char *)(entity->textPtr + entity->textLen);
+      /* Set a safe default value in case 'next' does not get set */
+      const char *nextInEntity = textStart;
+      if (entity->hasMore) {
+        result = appendAttributeValue(
+            parser, parser->m_internalEncoding, isCdata, textStart, textEnd,
+            pool, XML_ACCOUNT_ENTITY_EXPANSION, &nextInEntity);
+        if (result != XML_ERROR_NONE)
+          break;
+        // Check if entity is complete, if not, mark down how much of it is
+        // processed. A XML_SUSPENDED check here is not required as
+        // appendAttributeValue will never suspend the parser.
+        if (textEnd != nextInEntity) {
+          entity->processed
+              = (int)(nextInEntity - (const char *)entity->textPtr);
+          continue;
+        }
+
+        // Entity is complete. We cannot close it here since we need to first
+        // process its possible inner entities (which are added to the
+        // m_openAttributeEntities during appendAttributeValue)
+        entity->hasMore = XML_FALSE;
+        continue;
+      } // End of entity processing, "if" block skips the rest
+
+      // Remove fully processed openEntity from open entity list.
+#if XML_GE == 1
+      entityTrackingOnClose(parser, entity, __LINE__);
+#endif
+      // openEntity is m_openAttributeEntities' head, since we set it at the
+      // start of this function and because we skipped appendAttributeValue call
+      // with hasMore set to false. This means we can directly remove the head
+      // of m_openAttributeEntities
+      assert(parser->m_openAttributeEntities == openEntity);
+      entity->open = XML_FALSE;
+      parser->m_openAttributeEntities = parser->m_openAttributeEntities->next;
+
+      /* put openEntity back in list of free instances */
+      openEntity->next = parser->m_freeAttributeEntities;
+      parser->m_freeAttributeEntities = openEntity;
+    }
+
+    // Break if an error occurred or there is nothing left to process
+    if (result || (parser->m_openAttributeEntities == NULL && end == next)) {
+      break;
+    }
+  }
+
   if (result)
     return result;
   if (! isCdata && poolLength(pool) && poolLastChar(pool) == 0x20)
@@ -5976,7 +6203,7 @@ storeAttributeValue(XML_Parser parser, const ENCODING *enc, XML_Bool isCdata,
 static enum XML_Error
 appendAttributeValue(XML_Parser parser, const ENCODING *enc, XML_Bool isCdata,
                      const char *ptr, const char *end, STRING_POOL *pool,
-                     enum XML_Account account) {
+                     enum XML_Account account, const char **nextPtr) {
   DTD *const dtd = parser->m_dtd; /* save one level of indirection */
 #ifndef XML_DTD
   UNUSED_P(account);
@@ -5994,6 +6221,9 @@ appendAttributeValue(XML_Parser parser, const ENCODING *enc, XML_Bool isCdata,
 #endif
     switch (tok) {
     case XML_TOK_NONE:
+      if (nextPtr) {
+        *nextPtr = next;
+      }
       return XML_ERROR_NONE;
     case XML_TOK_INVALID:
       if (enc == parser->m_encoding)
@@ -6134,21 +6364,11 @@ appendAttributeValue(XML_Parser parser, const ENCODING *enc, XML_Bool isCdata,
         return XML_ERROR_ATTRIBUTE_EXTERNAL_ENTITY_REF;
       } else {
         enum XML_Error result;
-        const XML_Char *textEnd = entity->textPtr + entity->textLen;
-        entity->open = XML_TRUE;
-#if XML_GE == 1
-        entityTrackingOnOpen(parser, entity, __LINE__);
-#endif
-        result = appendAttributeValue(parser, parser->m_internalEncoding,
-                                      isCdata, (const char *)entity->textPtr,
-                                      (const char *)textEnd, pool,
-                                      XML_ACCOUNT_ENTITY_EXPANSION);
-#if XML_GE == 1
-        entityTrackingOnClose(parser, entity, __LINE__);
-#endif
-        entity->open = XML_FALSE;
-        if (result)
-          return result;
+        result = processEntity(parser, entity, XML_FALSE, ENTITY_ATTRIBUTE);
+        if ((result == XML_ERROR_NONE) && (nextPtr != NULL)) {
+          *nextPtr = next;
+        }
+        return result;
       }
     } break;
     default:
@@ -6177,7 +6397,7 @@ appendAttributeValue(XML_Parser parser, const ENCODING *enc, XML_Bool isCdata,
 static enum XML_Error
 storeEntityValue(XML_Parser parser, const ENCODING *enc,
                  const char *entityTextPtr, const char *entityTextEnd,
-                 enum XML_Account account) {
+                 enum XML_Account account, const char **nextPtr) {
   DTD *const dtd = parser->m_dtd; /* save one level of indirection */
   STRING_POOL *pool = &(dtd->entityValuePool);
   enum XML_Error result = XML_ERROR_NONE;
@@ -6195,8 +6415,9 @@ storeEntityValue(XML_Parser parser, const ENCODING *enc,
       return XML_ERROR_NO_MEMORY;
   }
 
+  const char *next;
   for (;;) {
-    const char *next
+    next
         = entityTextPtr; /* XmlEntityValueTok doesn't always set the last arg */
     int tok = XmlEntityValueTok(enc, entityTextPtr, entityTextEnd, &next);
 
@@ -6232,7 +6453,7 @@ storeEntityValue(XML_Parser parser, const ENCODING *enc,
           dtd->keepProcessing = dtd->standalone;
           goto endEntityValue;
         }
-        if (entity->open) {
+        if (entity->open || (entity == parser->m_declEntity)) {
           if (enc == parser->m_encoding)
             parser->m_eventPtr = entityTextPtr;
           result = XML_ERROR_RECURSIVE_ENTITY_REF;
@@ -6258,16 +6479,8 @@ storeEntityValue(XML_Parser parser, const ENCODING *enc,
           } else
             dtd->keepProcessing = dtd->standalone;
         } else {
-          entity->open = XML_TRUE;
-          entityTrackingOnOpen(parser, entity, __LINE__);
-          result = storeEntityValue(
-              parser, parser->m_internalEncoding, (const char *)entity->textPtr,
-              (const char *)(entity->textPtr + entity->textLen),
-              XML_ACCOUNT_ENTITY_EXPANSION);
-          entityTrackingOnClose(parser, entity, __LINE__);
-          entity->open = XML_FALSE;
-          if (result)
-            goto endEntityValue;
+          result = processEntity(parser, entity, XML_FALSE, ENTITY_VALUE);
+          goto endEntityValue;
         }
         break;
       }
@@ -6355,6 +6568,81 @@ endEntityValue:
 #  ifdef XML_DTD
   parser->m_prologState.inEntityValue = oldInEntityValue;
 #  endif /* XML_DTD */
+  // If 'nextPtr' is given, it should be updated during the processing
+  if (nextPtr != NULL) {
+    *nextPtr = next;
+  }
+  return result;
+}
+
+static enum XML_Error
+callStoreEntityValue(XML_Parser parser, const ENCODING *enc,
+                     const char *entityTextPtr, const char *entityTextEnd,
+                     enum XML_Account account) {
+  const char *next = entityTextPtr;
+  enum XML_Error result = XML_ERROR_NONE;
+  while (1) {
+    if (! parser->m_openValueEntities) {
+      result
+          = storeEntityValue(parser, enc, next, entityTextEnd, account, &next);
+    } else {
+      OPEN_INTERNAL_ENTITY *const openEntity = parser->m_openValueEntities;
+      if (! openEntity)
+        return XML_ERROR_UNEXPECTED_STATE;
+
+      ENTITY *const entity = openEntity->entity;
+      const char *const textStart
+          = ((const char *)entity->textPtr) + entity->processed;
+      const char *const textEnd
+          = (const char *)(entity->textPtr + entity->textLen);
+      /* Set a safe default value in case 'next' does not get set */
+      const char *nextInEntity = textStart;
+      if (entity->hasMore) {
+        result = storeEntityValue(parser, parser->m_internalEncoding, textStart,
+                                  textEnd, XML_ACCOUNT_ENTITY_EXPANSION,
+                                  &nextInEntity);
+        if (result != XML_ERROR_NONE)
+          break;
+        // Check if entity is complete, if not, mark down how much of it is
+        // processed. A XML_SUSPENDED check here is not required as
+        // appendAttributeValue will never suspend the parser.
+        if (textEnd != nextInEntity) {
+          entity->processed
+              = (int)(nextInEntity - (const char *)entity->textPtr);
+          continue;
+        }
+
+        // Entity is complete. We cannot close it here since we need to first
+        // process its possible inner entities (which are added to the
+        // m_openValueEntities during storeEntityValue)
+        entity->hasMore = XML_FALSE;
+        continue;
+      } // End of entity processing, "if" block skips the rest
+
+      // Remove fully processed openEntity from open entity list.
+#  if XML_GE == 1
+      entityTrackingOnClose(parser, entity, __LINE__);
+#  endif
+      // openEntity is m_openValueEntities' head, since we set it at the
+      // start of this function and because we skipped storeEntityValue call
+      // with hasMore set to false. This means we can directly remove the head
+      // of m_openValueEntities
+      assert(parser->m_openValueEntities == openEntity);
+      entity->open = XML_FALSE;
+      parser->m_openValueEntities = parser->m_openValueEntities->next;
+
+      /* put openEntity back in list of free instances */
+      openEntity->next = parser->m_freeValueEntities;
+      parser->m_freeValueEntities = openEntity;
+    }
+
+    // Break if an error occurred or there is nothing left to process
+    if (result
+        || (parser->m_openValueEntities == NULL && entityTextEnd == next)) {
+      break;
+    }
+  }
+
   return result;
 }
 
@@ -7008,6 +7296,16 @@ dtdCopy(XML_Parser oldParser, DTD *newDtd, const DTD *oldDtd,
     if (! newE)
       return 0;
     if (oldE->nDefaultAtts) {
+      /* Detect and prevent integer overflow.
+       * The preprocessor guard addresses the "always false" warning
+       * from -Wtype-limits on platforms where
+       * sizeof(int) < sizeof(size_t), e.g. on x86_64. */
+#if UINT_MAX >= SIZE_MAX
+      if ((size_t)oldE->nDefaultAtts
+          > ((size_t)(-1) / sizeof(DEFAULT_ATTRIBUTE))) {
+        return 0;
+      }
+#endif
       newE->defaultAtts
           = ms->malloc_fcn(oldE->nDefaultAtts * sizeof(DEFAULT_ATTRIBUTE));
       if (! newE->defaultAtts) {
@@ -7550,6 +7848,15 @@ nextScaffoldPart(XML_Parser parser) {
   int next;
 
   if (! dtd->scaffIndex) {
+    /* Detect and prevent integer overflow.
+     * The preprocessor guard addresses the "always false" warning
+     * from -Wtype-limits on platforms where
+     * sizeof(unsigned int) < sizeof(size_t), e.g. on x86_64. */
+#if UINT_MAX >= SIZE_MAX
+    if (parser->m_groupSize > ((size_t)(-1) / sizeof(int))) {
+      return -1;
+    }
+#endif
     dtd->scaffIndex = (int *)MALLOC(parser, parser->m_groupSize * sizeof(int));
     if (! dtd->scaffIndex)
       return -1;
@@ -7779,6 +8086,8 @@ copyString(const XML_Char *s, const XML_Memory_Handling_Suite *memsuite) {
 
 static float
 accountingGetCurrentAmplification(XML_Parser rootParser) {
+  //                                          1.........1.........12 => 22
+  const size_t lenOfShortestInclude = sizeof("<!ENTITY a SYSTEM 'b'>") - 1;
   const XmlBigCount countBytesOutput
       = rootParser->m_accounting.countBytesDirect
         + rootParser->m_accounting.countBytesIndirect;
@@ -7786,7 +8095,9 @@ accountingGetCurrentAmplification(XML_Parser rootParser) {
       = rootParser->m_accounting.countBytesDirect
             ? (countBytesOutput
                / (float)(rootParser->m_accounting.countBytesDirect))
-            : 1.0f;
+            : ((lenOfShortestInclude
+                + rootParser->m_accounting.countBytesIndirect)
+               / (float)lenOfShortestInclude);
   assert(! rootParser->m_parentParser);
   return amplificationFactor;
 }
@@ -7823,7 +8134,7 @@ accountingReportDiff(XML_Parser rootParser,
   assert(! rootParser->m_parentParser);
 
   fprintf(stderr,
-          " (+" EXPAT_FMT_PTRDIFF_T("6") " bytes %s|%d, xmlparse.c:%d) %*s\"",
+          " (+" EXPAT_FMT_PTRDIFF_T("6") " bytes %s|%u, xmlparse.c:%d) %*s\"",
           bytesMore, (account == XML_ACCOUNT_DIRECT) ? "DIR" : "EXP",
           levelsAwayFromRootParser, source_line, 10, "");
 
@@ -7936,11 +8247,11 @@ entityTrackingReportStats(XML_Parser rootParser, ENTITY *entity,
 
   fprintf(
       stderr,
-      "expat: Entities(%p): Count %9d, depth %2d/%2d %*s%s%s; %s length %d (xmlparse.c:%d)\n",
+      "expat: Entities(%p): Count %9u, depth %2u/%2u %*s%s%s; %s length %d (xmlparse.c:%d)\n",
       (void *)rootParser, rootParser->m_entity_stats.countEverOpened,
       rootParser->m_entity_stats.currentDepth,
       rootParser->m_entity_stats.maximumDepthSeen,
-      (rootParser->m_entity_stats.currentDepth - 1) * 2, "",
+      ((int)rootParser->m_entity_stats.currentDepth - 1) * 2, "",
       entity->is_param ? "%" : "&", entityName, action, entity->textLen,
       sourceLine);
 }
@@ -8499,11 +8810,13 @@ unsignedCharToPrintable(unsigned char c) {
     return "\\xFE";
   case 255:
     return "\\xFF";
+  // LCOV_EXCL_START
   default:
     assert(0); /* never gets here */
     return "dead code";
   }
   assert(0); /* never gets here */
+  // LCOV_EXCL_STOP
 }
 
 #endif /* XML_GE == 1 */

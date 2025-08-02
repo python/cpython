@@ -1,28 +1,20 @@
-
 #define _PY_INTERPRETER
 
 #include "Python.h"
-#include "frameobject.h"
-#include "pycore_code.h"          // stats
-#include "pycore_frame.h"
-#include "pycore_object.h"        // _PyObject_GC_UNTRACK()
-#include "opcode.h"
+#include "pycore_frame.h"         // _PyFrame_New_NoTrack()
+#include "pycore_interpframe.h"   // _PyFrame_GetCode()
+#include "pycore_genobject.h"     // _PyGen_GetGeneratorFromFrame()
+#include "pycore_stackref.h"      // _Py_VISIT_STACKREF()
+
 
 int
 _PyFrame_Traverse(_PyInterpreterFrame *frame, visitproc visit, void *arg)
 {
     Py_VISIT(frame->frame_obj);
     Py_VISIT(frame->f_locals);
-    Py_VISIT(frame->f_funcobj);
-    Py_VISIT(_PyFrame_GetCode(frame));
-   /* locals */
-    PyObject **locals = _PyFrame_GetLocalsArray(frame);
-    int i = 0;
-    /* locals and stack */
-    for (; i <frame->stacktop; i++) {
-        Py_VISIT(locals[i]);
-    }
-    return 0;
+    _Py_VISIT_STACKREF(frame->f_funcobj);
+    _Py_VISIT_STACKREF(frame->f_executable);
+    return _PyGC_VisitFrameStack(frame, visit, arg);
 }
 
 PyFrameObject *
@@ -37,67 +29,47 @@ _PyFrame_MakeAndSetFrameObject(_PyInterpreterFrame *frame)
         return NULL;
     }
     PyErr_SetRaisedException(exc);
-    if (frame->frame_obj) {
-        // GH-97002: How did we get into this horrible situation? Most likely,
-        // allocating f triggered a GC collection, which ran some code that
-        // *also* created the same frame... while we were in the middle of
-        // creating it! See test_sneaky_frame_object in test_frame.py for a
-        // concrete example.
-        //
-        // Regardless, just throw f away and use that frame instead, since it's
-        // already been exposed to user code. It's actually a bit tricky to do
-        // this, since we aren't backed by a real _PyInterpreterFrame anymore.
-        // Just pretend that we have an owned, cleared frame so frame_dealloc
-        // doesn't make the situation worse:
-        f->f_frame = (_PyInterpreterFrame *)f->_f_frame_data;
-        f->f_frame->owner = FRAME_CLEARED;
-        f->f_frame->frame_obj = f;
-        Py_DECREF(f);
-        return frame->frame_obj;
-    }
+
+    // GH-97002: There was a time when a frame object could be created when we
+    // are allocating the new frame object f above, so frame->frame_obj would
+    // be assigned already. That path does not exist anymore. We won't call any
+    // Python code in this function and garbage collection will not run.
+    // Notice that _PyFrame_New_NoTrack() can potentially raise a MemoryError,
+    // but it won't allocate a traceback until the frame unwinds, so we are safe
+    // here.
+    assert(frame->frame_obj == NULL);
     assert(frame->owner != FRAME_OWNED_BY_FRAME_OBJECT);
-    assert(frame->owner != FRAME_CLEARED);
     f->f_frame = frame;
     frame->frame_obj = f;
     return f;
 }
 
-void
-_PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *dest)
-{
-    assert(src->stacktop >= _PyFrame_GetCode(src)->co_nlocalsplus);
-    Py_ssize_t size = ((char*)&src->localsplus[src->stacktop]) - (char *)src;
-    memcpy(dest, src, size);
-    // Don't leave a dangling pointer to the old frame when creating generators
-    // and coroutines:
-    dest->previous = NULL;
-}
-
-
 static void
 take_ownership(PyFrameObject *f, _PyInterpreterFrame *frame)
 {
-    assert(frame->owner != FRAME_OWNED_BY_CSTACK);
+    Py_BEGIN_CRITICAL_SECTION(f);
+    assert(frame->owner < FRAME_OWNED_BY_INTERPRETER);
     assert(frame->owner != FRAME_OWNED_BY_FRAME_OBJECT);
-    assert(frame->owner != FRAME_CLEARED);
-    Py_ssize_t size = ((char*)&frame->localsplus[frame->stacktop]) - (char *)frame;
-    Py_INCREF(_PyFrame_GetCode(frame));
-    memcpy((_PyInterpreterFrame *)f->_f_frame_data, frame, size);
-    frame = (_PyInterpreterFrame *)f->_f_frame_data;
-    f->f_frame = frame;
-    frame->owner = FRAME_OWNED_BY_FRAME_OBJECT;
-    if (_PyFrame_IsIncomplete(frame)) {
+    _PyInterpreterFrame *new_frame = (_PyInterpreterFrame *)f->_f_frame_data;
+    _PyFrame_Copy(frame, new_frame);
+    // _PyFrame_Copy takes the reference to the executable,
+    // so we need to restore it.
+    frame->f_executable = PyStackRef_DUP(new_frame->f_executable);
+    f->f_frame = new_frame;
+    new_frame->owner = FRAME_OWNED_BY_FRAME_OBJECT;
+    if (_PyFrame_IsIncomplete(new_frame)) {
         // This may be a newly-created generator or coroutine frame. Since it's
         // dead anyways, just pretend that the first RESUME ran:
-        PyCodeObject *code = _PyFrame_GetCode(frame);
-        frame->instr_ptr = _PyCode_CODE(code) + code->_co_firsttraceable + 1;
+        PyCodeObject *code = _PyFrame_GetCode(new_frame);
+        new_frame->instr_ptr =
+            _PyFrame_GetBytecode(new_frame) + code->_co_firsttraceable + 1;
     }
-    assert(!_PyFrame_IsIncomplete(frame));
+    assert(!_PyFrame_IsIncomplete(new_frame));
     assert(f->f_back == NULL);
     _PyInterpreterFrame *prev = _PyFrame_GetFirstComplete(frame->previous);
-    frame->previous = NULL;
     if (prev) {
-        assert(prev->owner != FRAME_OWNED_BY_CSTACK);
+        assert(prev->owner < FRAME_OWNED_BY_INTERPRETER);
+        PyObject *exc = PyErr_GetRaisedException();
         /* Link PyFrameObjects.f_back and remove link through _PyInterpreterFrame.previous */
         PyFrameObject *back = _PyFrame_GetFrameObject(prev);
         if (back == NULL) {
@@ -109,10 +81,26 @@ take_ownership(PyFrameObject *f, _PyInterpreterFrame *frame)
         else {
             f->f_back = (PyFrameObject *)Py_NewRef(back);
         }
+        PyErr_SetRaisedException(exc);
     }
     if (!_PyObject_GC_IS_TRACKED((PyObject *)f)) {
         _PyObject_GC_TRACK((PyObject *)f);
     }
+    Py_END_CRITICAL_SECTION();
+}
+
+void
+_PyFrame_ClearLocals(_PyInterpreterFrame *frame)
+{
+    assert(frame->stackpointer != NULL);
+    _PyStackRef *sp = frame->stackpointer;
+    _PyStackRef *locals = frame->localsplus;
+    frame->stackpointer = locals;
+    while (sp > locals) {
+        sp--;
+        PyStackRef_XCLOSE(*sp);
+    }
+    Py_CLEAR(frame->f_locals);
 }
 
 void
@@ -121,26 +109,22 @@ _PyFrame_ClearExceptCode(_PyInterpreterFrame *frame)
     /* It is the responsibility of the owning generator/coroutine
      * to have cleared the enclosing generator, if any. */
     assert(frame->owner != FRAME_OWNED_BY_GENERATOR ||
-        _PyFrame_GetGenerator(frame)->gi_frame_state == FRAME_CLEARED);
+        _PyGen_GetGeneratorFromFrame(frame)->gi_frame_state == FRAME_CLEARED);
     // GH-99729: Clearing this frame can expose the stack (via finalizers). It's
     // crucial that this frame has been unlinked, and is no longer visible:
     assert(_PyThreadState_GET()->current_frame != frame);
     if (frame->frame_obj) {
         PyFrameObject *f = frame->frame_obj;
         frame->frame_obj = NULL;
-        if (Py_REFCNT(f) > 1) {
+        if (!_PyObject_IsUniquelyReferenced((PyObject *)f)) {
             take_ownership(f, frame);
             Py_DECREF(f);
             return;
         }
         Py_DECREF(f);
     }
-    assert(frame->stacktop >= 0);
-    for (int i = 0; i < frame->stacktop; i++) {
-        Py_XDECREF(frame->localsplus[i]);
-    }
-    Py_XDECREF(frame->f_locals);
-    Py_DECREF(frame->f_funcobj);
+    _PyFrame_ClearLocals(frame);
+    PyStackRef_CLEAR(frame->f_funcobj);
 }
 
 /* Unstable API functions */
@@ -148,9 +132,7 @@ _PyFrame_ClearExceptCode(_PyInterpreterFrame *frame)
 PyObject *
 PyUnstable_InterpreterFrame_GetCode(struct _PyInterpreterFrame *frame)
 {
-    PyObject *code = frame->f_executable;
-    Py_INCREF(code);
-    return code;
+    return PyStackRef_AsPyObjectNew(frame->f_executable);
 }
 
 int
@@ -159,7 +141,9 @@ PyUnstable_InterpreterFrame_GetLasti(struct _PyInterpreterFrame *frame)
     return _PyInterpreterFrame_LASTI(frame) * sizeof(_Py_CODEUNIT);
 }
 
-int
+// NOTE: We allow racy accesses to the instruction pointer from other threads
+// for sys._current_frames() and similar APIs.
+int _Py_NO_SANITIZE_THREAD
 PyUnstable_InterpreterFrame_GetLine(_PyInterpreterFrame *frame)
 {
     int addr = _PyInterpreterFrame_LASTI(frame) * sizeof(_Py_CODEUNIT);

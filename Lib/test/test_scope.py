@@ -778,7 +778,7 @@ class ScopeTests(unittest.TestCase):
         class X:
             locals()["x"] = 43
             del x
-        self.assertFalse(hasattr(X, "x"))
+        self.assertNotHasAttr(X, "x")
         self.assertEqual(x, 42)
 
     @cpython_only
@@ -810,6 +810,30 @@ class ScopeTests(unittest.TestCase):
         gc_collect()  # For PyPy or other GCs.
         self.assertIsNone(ref())
 
+    def test_multiple_nesting(self):
+        # Regression test for https://github.com/python/cpython/issues/121863
+        class MultiplyNested:
+            def f1(self):
+                __arg = 1
+                class D:
+                    def g(self, __arg):
+                        return __arg
+                return D().g(_MultiplyNested__arg=2)
+
+            def f2(self):
+                __arg = 1
+                class D:
+                    def g(self, __arg):
+                        return __arg
+                return D().g
+
+        inst = MultiplyNested()
+        with self.assertRaises(TypeError):
+            inst.f1()
+
+        closure = inst.f2()
+        with self.assertRaises(TypeError):
+            closure(_MultiplyNested__arg=2)
 
 if __name__ == '__main__':
     unittest.main()

@@ -142,6 +142,122 @@ getargs_w_star(PyObject *self, PyObject *args)
 }
 
 static PyObject *
+getargs_w_star_opt(PyObject *self, PyObject *args)
+{
+    Py_buffer buffer;
+    Py_buffer buf2;
+    int number = 1;
+
+    if (!PyArg_ParseTuple(args, "w*|w*i:getargs_w_star",
+                          &buffer, &buf2, &number)) {
+        return NULL;
+    }
+
+    if (2 <= buffer.len) {
+        char *str = buffer.buf;
+        str[0] = '[';
+        str[buffer.len-1] = ']';
+    }
+
+    PyObject *result = PyBytes_FromStringAndSize(buffer.buf, buffer.len);
+    PyBuffer_Release(&buffer);
+    return result;
+}
+
+/* Test the old w and w# codes that no longer work */
+static PyObject *
+test_w_code_invalid(PyObject *self, PyObject *arg)
+{
+    static const char * const keywords[] = {"a", "b", "c", "d", NULL};
+    char *formats_3[] = {"O|w#$O",
+                         "O|w$O",
+                         "O|w#O",
+                         "O|wO",
+                         NULL};
+    char *formats_4[] = {"O|w#O$O",
+                         "O|wO$O",
+                         "O|Ow#O",
+                         "O|OwO",
+                         "O|Ow#$O",
+                         "O|Ow$O",
+                         NULL};
+    size_t n;
+    PyObject *args;
+    PyObject *kwargs;
+    PyObject *tmp;
+
+    if (!(args = PyTuple_Pack(1, Py_None))) {
+        return NULL;
+    }
+
+    kwargs = PyDict_New();
+    if (!kwargs) {
+        Py_DECREF(args);
+        return NULL;
+    }
+
+    if (PyDict_SetItemString(kwargs, "c", Py_None)) {
+        Py_DECREF(args);
+        Py_XDECREF(kwargs);
+        return NULL;
+    }
+
+    for (n = 0; formats_3[n]; ++n) {
+        if (PyArg_ParseTupleAndKeywords(args, kwargs, formats_3[n],
+                                        (char**) keywords,
+                                        &tmp, &tmp, &tmp)) {
+            Py_DECREF(args);
+            Py_DECREF(kwargs);
+            PyErr_Format(PyExc_AssertionError,
+                         "test_w_code_invalid_suffix: %s",
+                         formats_3[n]);
+            return NULL;
+        }
+        else {
+            if (!PyErr_ExceptionMatches(PyExc_SystemError)) {
+                Py_DECREF(args);
+                Py_DECREF(kwargs);
+                return NULL;
+            }
+            PyErr_Clear();
+        }
+    }
+
+    if (PyDict_DelItemString(kwargs, "c") ||
+        PyDict_SetItemString(kwargs, "d", Py_None)) {
+
+        Py_DECREF(kwargs);
+        Py_DECREF(args);
+        return NULL;
+    }
+
+    for (n = 0; formats_4[n]; ++n) {
+        if (PyArg_ParseTupleAndKeywords(args, kwargs, formats_4[n],
+                                        (char**) keywords,
+                                        &tmp, &tmp, &tmp, &tmp)) {
+            Py_DECREF(args);
+            Py_DECREF(kwargs);
+            PyErr_Format(PyExc_AssertionError,
+                         "test_w_code_invalid_suffix: %s",
+                         formats_4[n]);
+            return NULL;
+        }
+        else {
+            if (!PyErr_ExceptionMatches(PyExc_SystemError)) {
+                Py_DECREF(args);
+                Py_DECREF(kwargs);
+                return NULL;
+            }
+            PyErr_Clear();
+        }
+    }
+
+    Py_DECREF(args);
+    Py_DECREF(kwargs);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
 getargs_empty(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     /* Test that formats can begin with '|'. See issue #4720. */
@@ -684,6 +800,7 @@ static PyMethodDef test_methods[] = {
     {"getargs_s_star",          getargs_s_star,                  METH_VARARGS},
     {"getargs_tuple",           getargs_tuple,                   METH_VARARGS},
     {"getargs_w_star",          getargs_w_star,                  METH_VARARGS},
+    {"getargs_w_star_opt",      getargs_w_star_opt,              METH_VARARGS},
     {"getargs_empty",           _PyCFunction_CAST(getargs_empty), METH_VARARGS|METH_KEYWORDS},
     {"getargs_y",               getargs_y,                       METH_VARARGS},
     {"getargs_y_hash",          getargs_y_hash,                  METH_VARARGS},
@@ -693,6 +810,7 @@ static PyMethodDef test_methods[] = {
     {"getargs_z_star",          getargs_z_star,                  METH_VARARGS},
     {"parse_tuple_and_keywords", parse_tuple_and_keywords,       METH_VARARGS},
     {"gh_99240_clear_args",     gh_99240_clear_args,             METH_VARARGS},
+    {"test_w_code_invalid",     test_w_code_invalid,             METH_NOARGS},
     {NULL},
 };
 

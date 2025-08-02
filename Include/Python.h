@@ -45,6 +45,19 @@
 #  endif
 #endif
 
+#if defined(Py_GIL_DISABLED)
+#  if defined(Py_LIMITED_API) && !defined(_Py_OPAQUE_PYOBJECT)
+#    error "Py_LIMITED_API is not currently supported in the free-threaded build"
+#  endif
+
+#  if defined(_MSC_VER)
+#    include <intrin.h>             // __readgsqword()
+#  endif
+
+#  if defined(__MINGW32__)
+#    include <intrin.h>             // __readgsqword()
+#  endif
+#endif // Py_GIL_DISABLED
 
 // Include Python header files
 #include "pyport.h"
@@ -55,7 +68,10 @@
 #include "pybuffer.h"
 #include "pystats.h"
 #include "pyatomic.h"
+#include "pylock.h"
+#include "critical_section.h"
 #include "object.h"
+#include "refcount.h"
 #include "objimpl.h"
 #include "typeslots.h"
 #include "pyhash.h"
@@ -63,6 +79,7 @@
 #include "bytearrayobject.h"
 #include "bytesobject.h"
 #include "unicodeobject.h"
+#include "pyerrors.h"
 #include "longobject.h"
 #include "cpython/longintrepr.h"
 #include "boolobject.h"
@@ -78,6 +95,7 @@
 #include "setobject.h"
 #include "methodobject.h"
 #include "moduleobject.h"
+#include "monitoring.h"
 #include "cpython/funcobject.h"
 #include "cpython/classobject.h"
 #include "fileobject.h"
@@ -99,7 +117,6 @@
 #include "cpython/picklebufobject.h"
 #include "cpython/pytime.h"
 #include "codecs.h"
-#include "pyerrors.h"
 #include "pythread.h"
 #include "cpython/context.h"
 #include "modsupport.h"
@@ -108,6 +125,7 @@
 #include "pylifecycle.h"
 #include "ceval.h"
 #include "sysmodule.h"
+#include "audit.h"
 #include "osmodule.h"
 #include "intrcheck.h"
 #include "import.h"
@@ -119,6 +137,5 @@
 #include "fileutils.h"
 #include "cpython/pyfpe.h"
 #include "cpython/tracemalloc.h"
-#include "cpython/optimizer.h"
 
 #endif /* !Py_PYTHON_H */

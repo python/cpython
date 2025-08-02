@@ -84,7 +84,7 @@ static mi_segment_t* _mi_segment_of(const void* p) {
   // TODO: maintain max/min allocated range for efficiency for more efficient rejection of invalid pointers?
 
   // search downwards for the first segment in case it is an interior pointer
-  // could be slow but searches in MI_INTPTR_SIZE * MI_SEGMENT_SIZE (512MiB) steps trough
+  // could be slow but searches in MI_INTPTR_SIZE * MI_SEGMENT_SIZE (512MiB) steps through
   // valid huge objects
   // note: we could maintain a lowest index to speed up the path for invalid pointers?
   size_t lobitidx;

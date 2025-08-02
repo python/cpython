@@ -1,2 +1,0 @@
-The install name for libPython is now correctly set for non-framework macOS
-builds.

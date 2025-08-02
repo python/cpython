@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Generate Python documentation in HTML or text for interactive use.
 
 At the Python interactive prompt, calling help(thing) on a Python object
@@ -54,6 +53,7 @@ Richard Chamberlain, for the first implementation of textdoc.
 #     the current directory is changed with os.chdir(), an incorrect
 #     path will be displayed.
 
+import ast
 import __future__
 import builtins
 import importlib._bootstrap
@@ -68,13 +68,30 @@ import platform
 import re
 import sys
 import sysconfig
+import textwrap
 import time
 import tokenize
 import urllib.parse
 import warnings
+from annotationlib import Format
 from collections import deque
 from reprlib import Repr
 from traceback import format_exception_only
+
+from _pyrepl.pager import (get_pager, pipe_pager,
+                           plain_pager, tempfile_pager, tty_pager)
+
+# Expose plain() as pydoc.plain()
+from _pyrepl.pager import plain  # noqa: F401
+
+
+# --------------------------------------------------------- old names
+
+getpager = get_pager
+pipepager = pipe_pager
+plainpager = plain_pager
+tempfilepager = tempfile_pager
+ttypager = tty_pager
 
 
 # --------------------------------------------------------- common routines
@@ -198,12 +215,12 @@ def splitdoc(doc):
 
 def _getargspec(object):
     try:
-        signature = inspect.signature(object)
+        signature = inspect.signature(object, annotation_format=Format.STRING)
         if signature:
             name = getattr(object, '__name__', '')
             # <lambda> function are always single-line and should not be formatted
             max_width = (80 - len(name)) if name != '<lambda>' else None
-            return signature.format(max_width=max_width)
+            return signature.format(max_width=max_width, quote_annotation_strings=False)
     except (ValueError, TypeError):
         argspec = getattr(object, '__text_signature__', None)
         if argspec:
@@ -229,7 +246,7 @@ def parentname(object, modname):
     if necessary) or module."""
     if '.' in object.__qualname__:
         name = object.__qualname__.rpartition('.')[0]
-        if object.__module__ != modname:
+        if object.__module__ != modname and object.__module__ is not None:
             return object.__module__ + '.' + name
         else:
             return name
@@ -313,7 +330,9 @@ def visiblename(name, all=None, obj=None):
     if name in {'__author__', '__builtins__', '__cached__', '__credits__',
                 '__date__', '__doc__', '__file__', '__spec__',
                 '__loader__', '__module__', '__name__', '__package__',
-                '__path__', '__qualname__', '__slots__', '__version__'}:
+                '__path__', '__qualname__', '__slots__', '__version__',
+                '__static_attributes__', '__firstlineno__',
+                '__annotate_func__', '__annotations_cache__'}:
         return 0
     # Private names are hidden, but special names are displayed.
     if name.startswith('__') and name.endswith('__'): return 1
@@ -368,21 +387,29 @@ def ispackage(path):
     return False
 
 def source_synopsis(file):
-    line = file.readline()
-    while line[:1] == '#' or not line.strip():
-        line = file.readline()
-        if not line: break
-    line = line.strip()
-    if line[:4] == 'r"""': line = line[1:]
-    if line[:3] == '"""':
-        line = line[3:]
-        if line[-1:] == '\\': line = line[:-1]
-        while not line.strip():
-            line = file.readline()
-            if not line: break
-        result = line.split('"""')[0].strip()
-    else: result = None
-    return result
+    """Return the one-line summary of a file object, if present"""
+
+    string = ''
+    try:
+        tokens = tokenize.generate_tokens(file.readline)
+        for tok_type, tok_string, _, _, _ in tokens:
+            if tok_type == tokenize.STRING:
+                string += tok_string
+            elif tok_type == tokenize.NEWLINE:
+                with warnings.catch_warnings():
+                    # Ignore the "invalid escape sequence" warning.
+                    warnings.simplefilter("ignore", SyntaxWarning)
+                    docstring = ast.literal_eval(string)
+                if not isinstance(docstring, str):
+                    return None
+                return docstring.strip().split('\n')[0].strip()
+            elif tok_type == tokenize.OP and tok_string in ('(', ')'):
+                string += tok_string
+            elif tok_type not in (tokenize.COMMENT, tokenize.NL, tokenize.ENCODING):
+                return None
+    except (tokenize.TokenError, UnicodeDecodeError, SyntaxError):
+        return None
+    return None
 
 def synopsis(filename, cache={}):
     """Get the one-line summary out of a module file."""
@@ -855,9 +882,9 @@ class HTMLDoc(Doc):
                             cdict[key] = cdict[base] = modname + '.html#' + key
         funcs, fdict = [], {}
         for key, value in inspect.getmembers(object, inspect.isroutine):
-            # if __all__ exists, believe it.  Otherwise use old heuristic.
-            if (all is not None or
-                inspect.isbuiltin(value) or inspect.getmodule(value) is object):
+            # if __all__ exists, believe it.  Otherwise use a heuristic.
+            if (all is not None
+                or (inspect.getmodule(value) or object) is object):
                 if visiblename(key, all, object):
                     funcs.append((key, value))
                     fdict[key] = '#-' + key
@@ -1299,9 +1326,9 @@ location listed above.
                     classes.append((key, value))
         funcs = []
         for key, value in inspect.getmembers(object, inspect.isroutine):
-            # if __all__ exists, believe it.  Otherwise use old heuristic.
-            if (all is not None or
-                inspect.isbuiltin(value) or inspect.getmodule(value) is object):
+            # if __all__ exists, believe it.  Otherwise use a heuristic.
+            if (all is not None
+                or (inspect.getmodule(value) or object) is object):
                 if visiblename(key, all, object):
                     funcs.append((key, value))
         data = []
@@ -1410,7 +1437,8 @@ location listed above.
         # List the built-in subclasses, if any:
         subclasses = sorted(
             (str(cls.__name__) for cls in type.__subclasses__(object)
-             if not cls.__name__.startswith("_") and cls.__module__ == "builtins"),
+             if (not cls.__name__.startswith("_") and
+                 getattr(cls, '__module__', '') == "builtins")),
             key=str.lower
         )
         no_of_subclasses = len(subclasses)
@@ -1636,140 +1664,11 @@ class _PlainTextDoc(TextDoc):
 
 # --------------------------------------------------------- user interfaces
 
-def pager(text):
+def pager(text, title=''):
     """The first time this is called, determine what kind of pager to use."""
     global pager
-    pager = getpager()
-    pager(text)
-
-def getpager():
-    """Decide what method to use for paging through text."""
-    if not hasattr(sys.stdin, "isatty"):
-        return plainpager
-    if not hasattr(sys.stdout, "isatty"):
-        return plainpager
-    if not sys.stdin.isatty() or not sys.stdout.isatty():
-        return plainpager
-    if sys.platform == "emscripten":
-        return plainpager
-    use_pager = os.environ.get('MANPAGER') or os.environ.get('PAGER')
-    if use_pager:
-        if sys.platform == 'win32': # pipes completely broken in Windows
-            return lambda text: tempfilepager(plain(text), use_pager)
-        elif os.environ.get('TERM') in ('dumb', 'emacs'):
-            return lambda text: pipepager(plain(text), use_pager)
-        else:
-            return lambda text: pipepager(text, use_pager)
-    if os.environ.get('TERM') in ('dumb', 'emacs'):
-        return plainpager
-    if sys.platform == 'win32':
-        return lambda text: tempfilepager(plain(text), 'more <')
-    if hasattr(os, 'system') and os.system('(less) 2>/dev/null') == 0:
-        return lambda text: pipepager(text, 'less')
-
-    import tempfile
-    (fd, filename) = tempfile.mkstemp()
-    os.close(fd)
-    try:
-        if hasattr(os, 'system') and os.system('more "%s"' % filename) == 0:
-            return lambda text: pipepager(text, 'more')
-        else:
-            return ttypager
-    finally:
-        os.unlink(filename)
-
-def plain(text):
-    """Remove boldface formatting from text."""
-    return re.sub('.\b', '', text)
-
-def pipepager(text, cmd):
-    """Page through text by feeding it to another program."""
-    import subprocess
-    proc = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE,
-                            errors='backslashreplace')
-    try:
-        with proc.stdin as pipe:
-            try:
-                pipe.write(text)
-            except KeyboardInterrupt:
-                # We've hereby abandoned whatever text hasn't been written,
-                # but the pager is still in control of the terminal.
-                pass
-    except OSError:
-        pass # Ignore broken pipes caused by quitting the pager program.
-    while True:
-        try:
-            proc.wait()
-            break
-        except KeyboardInterrupt:
-            # Ignore ctl-c like the pager itself does.  Otherwise the pager is
-            # left running and the terminal is in raw mode and unusable.
-            pass
-
-def tempfilepager(text, cmd):
-    """Page through text by invoking a program on a temporary file."""
-    import tempfile
-    with tempfile.TemporaryDirectory() as tempdir:
-        filename = os.path.join(tempdir, 'pydoc.out')
-        with open(filename, 'w', errors='backslashreplace',
-                  encoding=os.device_encoding(0) if
-                  sys.platform == 'win32' else None
-                  ) as file:
-            file.write(text)
-        os.system(cmd + ' "' + filename + '"')
-
-def _escape_stdout(text):
-    # Escape non-encodable characters to avoid encoding errors later
-    encoding = getattr(sys.stdout, 'encoding', None) or 'utf-8'
-    return text.encode(encoding, 'backslashreplace').decode(encoding)
-
-def ttypager(text):
-    """Page through text on a text terminal."""
-    lines = plain(_escape_stdout(text)).split('\n')
-    try:
-        import tty
-        fd = sys.stdin.fileno()
-        old = tty.tcgetattr(fd)
-        tty.setcbreak(fd)
-        getchar = lambda: sys.stdin.read(1)
-    except (ImportError, AttributeError, io.UnsupportedOperation):
-        tty = None
-        getchar = lambda: sys.stdin.readline()[:-1][:1]
-
-    try:
-        try:
-            h = int(os.environ.get('LINES', 0))
-        except ValueError:
-            h = 0
-        if h <= 1:
-            h = 25
-        r = inc = h - 1
-        sys.stdout.write('\n'.join(lines[:inc]) + '\n')
-        while lines[r:]:
-            sys.stdout.write('-- more --')
-            sys.stdout.flush()
-            c = getchar()
-
-            if c in ('q', 'Q'):
-                sys.stdout.write('\r          \r')
-                break
-            elif c in ('\r', '\n'):
-                sys.stdout.write('\r          \r' + lines[r] + '\n')
-                r = r + 1
-                continue
-            if c in ('b', 'B', '\x1b'):
-                r = r - inc - inc
-                if r < 0: r = 0
-            sys.stdout.write('\n' + '\n'.join(lines[r:r+inc]) + '\n')
-            r = r + inc
-
-    finally:
-        if tty:
-            tty.tcsetattr(fd, tty.TCSAFLUSH, old)
-
-def plainpager(text):
-    """Simply print unformatted text.  This is the ultimate fallback."""
-    sys.stdout.write(plain(_escape_stdout(text)))
+    pager = get_pager()
+    pager(text, title)
 
 def describe(thing):
     """Produce a short description of the given thing."""
@@ -1796,6 +1695,13 @@ def describe(thing):
         return 'function ' + thing.__name__
     if inspect.ismethod(thing):
         return 'method ' + thing.__name__
+    if inspect.ismethodwrapper(thing):
+        return 'method wrapper ' + thing.__name__
+    if inspect.ismethoddescriptor(thing):
+        try:
+            return 'method descriptor ' + thing.__name__
+        except AttributeError:
+            pass
     return type(thing).__name__
 
 def locate(path, forceload=0):
@@ -1869,7 +1775,15 @@ def doc(thing, title='Python Library Documentation: %s', forceload=0,
     """Display text documentation, given an object or a path to an object."""
     if output is None:
         try:
-            pager(render_doc(thing, title, forceload))
+            if isinstance(thing, str):
+                what = thing
+            else:
+                what = getattr(thing, '__qualname__', None)
+                if not isinstance(what, str):
+                    what = getattr(thing, '__name__', None)
+                    if not isinstance(what, str):
+                        what = type(thing).__name__ + ' object'
+            pager(render_doc(thing, title, forceload), f'Help on {what!s}')
         except ImportError as exc:
             if is_cli:
                 raise
@@ -1895,6 +1809,36 @@ def writedocs(dir, pkgpath='', done=None):
     for importer, modname, ispkg in pkgutil.walk_packages([dir], pkgpath):
         writedoc(modname)
     return
+
+
+def _introdoc():
+    ver = '%d.%d' % sys.version_info[:2]
+    if os.environ.get('PYTHON_BASIC_REPL'):
+        pyrepl_keys = ''
+    else:
+        # Additional help for keyboard shortcuts if enhanced REPL is used.
+        pyrepl_keys = '''
+        You can use the following keyboard shortcuts at the main interpreter prompt.
+        F1: enter interactive help, F2: enter history browsing mode, F3: enter paste
+        mode (press again to exit).
+        '''
+    return textwrap.dedent(f'''\
+        Welcome to Python {ver}'s help utility! If this is your first time using
+        Python, you should definitely check out the tutorial at
+        https://docs.python.org/{ver}/tutorial/.
+
+        Enter the name of any module, keyword, or topic to get help on writing
+        Python programs and using Python modules.  To get a list of available
+        modules, keywords, symbols, or topics, enter "modules", "keywords",
+        "symbols", or "topics".
+        {pyrepl_keys}
+        Each module also comes with a one-line summary of what it does; to list
+        the modules whose name or summary contain a given string such as "spam",
+        enter "modules spam".
+
+        To quit this help utility and return to the interpreter,
+        enter "q", "quit" or "exit".
+    ''')
 
 class Helper:
 
@@ -1969,6 +1913,7 @@ class Helper:
         ':': 'SLICINGS DICTIONARYLITERALS',
         '@': 'def class',
         '\\': 'STRINGS',
+        ':=': 'ASSIGNMENTEXPRESSIONS',
         '_': 'PRIVATENAMES',
         '__': 'PRIVATENAMES SPECIALMETHODS',
         '`': 'BACKQUOTES',
@@ -2062,6 +2007,7 @@ class Helper:
         'ASSERTION': 'assert',
         'ASSIGNMENT': ('assignment', 'AUGMENTEDASSIGNMENT'),
         'AUGMENTEDASSIGNMENT': ('augassign', 'NUMBERMETHODS'),
+        'ASSIGNMENTEXPRESSIONS': ('assignment-expressions', ''),
         'DELETION': 'del',
         'RETURNING': 'return',
         'IMPORTING': 'import',
@@ -2123,7 +2069,7 @@ has the same effect as typing a particular string at the help> prompt.
             if (len(request) > 2 and request[0] == request[-1] in ("'", '"')
                     and request[0] not in request[1:-1]):
                 request = request[1:-1]
-            if request.lower() in ('q', 'quit'): break
+            if request.lower() in ('q', 'quit', 'exit'): break
             if request == 'help':
                 self.intro()
             else:
@@ -2150,7 +2096,7 @@ has the same effect as typing a particular string at the help> prompt.
             elif request in self.symbols: self.showsymbol(request)
             elif request in ['True', 'False', 'None']:
                 # special case these keywords since they are objects too
-                doc(eval(request), 'Help on %s:', is_cli=is_cli)
+                doc(eval(request), 'Help on %s:', output=self._output, is_cli=is_cli)
             elif request in self.keywords: self.showtopic(request)
             elif request in self.topics: self.showtopic(request)
             elif request: doc(request, 'Help on %s:', output=self._output, is_cli=is_cli)
@@ -2160,26 +2106,10 @@ has the same effect as typing a particular string at the help> prompt.
         self.output.write('\n')
 
     def intro(self):
-        self.output.write('''\
-Welcome to Python {0}'s help utility! If this is your first time using
-Python, you should definitely check out the tutorial at
-https://docs.python.org/{0}/tutorial/.
-
-Enter the name of any module, keyword, or topic to get help on writing
-Python programs and using Python modules.  To get a list of available
-modules, keywords, symbols, or topics, enter "modules", "keywords",
-"symbols", or "topics".
-
-Each module also comes with a one-line summary of what it does; to list
-the modules whose name or summary contain a given string such as "spam",
-enter "modules spam".
-
-To quit this help utility and return to the interpreter,
-enter "q" or "quit".
-'''.format('%d.%d' % sys.version_info[:2]))
+        self.output.write(_introdoc())
 
     def list(self, items, columns=4, width=80):
-        items = list(sorted(items))
+        items = sorted(items)
         colw = width // columns
         rows = (len(items) + columns - 1) // columns
         for row in range(rows):
@@ -2211,7 +2141,7 @@ to. Enter any symbol to get more help.
 Here is a list of available topics.  Enter any topic name to get more help.
 
 ''')
-        self.list(self.topics.keys())
+        self.list(self.topics.keys(), columns=3)
 
     def showtopic(self, topic, more_xrefs=''):
         try:
@@ -2239,11 +2169,14 @@ module "pydoc_data.topics" could not be found.
         if more_xrefs:
             xrefs = (xrefs or '') + ' ' + more_xrefs
         if xrefs:
-            import textwrap
             text = 'Related help topics: ' + ', '.join(xrefs.split()) + '\n'
             wrapped_text = textwrap.wrap(text, 72)
             doc += '\n%s\n' % '\n'.join(wrapped_text)
-        pager(doc)
+
+        if self._output is None:
+            pager(doc, f'Help on {topic!s}')
+        else:
+            self.output.write(doc)
 
     def _gettopic(self, topic, more_xrefs=''):
         """Return unbuffered tuple of (topic, xrefs).
@@ -2495,6 +2428,7 @@ def _start_server(urlhandler, hostname, port):
             threading.Thread.__init__(self)
             self.serving = False
             self.error = None
+            self.docserver = None
 
         def run(self):
             """Start the server."""
@@ -2527,9 +2461,9 @@ def _start_server(urlhandler, hostname, port):
 
     thread = ServerThread(urlhandler, hostname, port)
     thread.start()
-    # Wait until thread.serving is True to make sure we are
-    # really up before returning.
-    while not thread.error and not thread.serving:
+    # Wait until thread.serving is True and thread.docserver is set
+    # to make sure we are really up before returning.
+    while not thread.error and not (thread.serving and thread.docserver):
         time.sleep(.01)
     return thread
 

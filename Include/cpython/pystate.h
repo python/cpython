@@ -8,8 +8,6 @@
 PyAPI_FUNC(int) _PyInterpreterState_RequiresIDRef(PyInterpreterState *);
 PyAPI_FUNC(void) _PyInterpreterState_RequireIDRef(PyInterpreterState *, int);
 
-PyAPI_FUNC(PyObject *) PyUnstable_InterpreterState_GetMainModule(PyInterpreterState *);
-
 /* State unique per thread */
 
 /* Py_tracefunc return -1 when raising an exception, or 0 for success. */
@@ -28,6 +26,13 @@ typedef int (*Py_tracefunc)(PyObject *, PyFrameObject *, int, PyObject *);
 #define PyTrace_C_EXCEPTION 5
 #define PyTrace_C_RETURN 6
 #define PyTrace_OPCODE 7
+
+/* Remote debugger support */
+#define Py_MAX_SCRIPT_PATH_SIZE 512
+typedef struct {
+    int32_t debugger_pending_call;
+    char debugger_script_path[Py_MAX_SCRIPT_PATH_SIZE];
+} _PyRemoteDebuggerSupport;
 
 typedef struct _err_stackitem {
     /* This struct represents a single execution context where we might
@@ -56,11 +61,8 @@ typedef struct _stack_chunk {
     PyObject * data[1]; /* Variable sized */
 } _PyStackChunk;
 
-struct _py_trashcan {
-    int delete_nesting;
-    PyObject *delete_later;
-};
-
+/* Minimum size of data stack chunk */
+#define _PY_DATA_STACK_CHUNK_SIZE (16*1024)
 struct _ts {
     /* See Python/ceval.c for comments explaining most fields */
 
@@ -100,11 +102,16 @@ struct _ts {
 #ifdef Py_BUILD_CORE
 #  define _PyThreadState_WHENCE_NOTSET -1
 #  define _PyThreadState_WHENCE_UNKNOWN 0
-#  define _PyThreadState_WHENCE_INTERP 1
-#  define _PyThreadState_WHENCE_THREADING 2
-#  define _PyThreadState_WHENCE_GILSTATE 3
-#  define _PyThreadState_WHENCE_EXEC 4
+#  define _PyThreadState_WHENCE_INIT 1
+#  define _PyThreadState_WHENCE_FINI 2
+#  define _PyThreadState_WHENCE_THREADING 3
+#  define _PyThreadState_WHENCE_GILSTATE 4
+#  define _PyThreadState_WHENCE_EXEC 5
 #endif
+
+    /* Currently holds the GIL. Must be its own field to avoid data races */
+    int holds_gil;
+
     int _whence;
 
     /* Thread state (_Py_THREAD_ATTACHED, _Py_THREAD_DETACHED, _Py_THREAD_SUSPENDED).
@@ -113,8 +120,6 @@ struct _ts {
 
     int py_recursion_remaining;
     int py_recursion_limit;
-
-    int c_recursion_remaining;
     int recursion_headroom; /* Allow 50 more calls to handle any errors. */
 
     /* 'tracing' keeps track of the execution depth when tracing/profiling.
@@ -152,7 +157,7 @@ struct _ts {
      */
     unsigned long native_thread_id;
 
-    struct _py_trashcan trash;
+    PyObject *delete_later;
 
     /* Tagged pointer to top-most critical section, or zero if there is no
      * active critical section. Critical sections are only used in
@@ -160,32 +165,6 @@ struct _ts {
      * default build, this field is always zero.
      */
     uintptr_t critical_section;
-
-    /* Called when a thread state is deleted normally, but not when it
-     * is destroyed after fork().
-     * Pain:  to prevent rare but fatal shutdown errors (issue 18808),
-     * Thread.join() must wait for the join'ed thread's tstate to be unlinked
-     * from the tstate chain.  That happens at the end of a thread's life,
-     * in pystate.c.
-     * The obvious way doesn't quite work:  create a lock which the tstate
-     * unlinking code releases, and have Thread.join() wait to acquire that
-     * lock.  The problem is that we _are_ at the end of the thread's life:
-     * if the thread holds the last reference to the lock, decref'ing the
-     * lock will delete the lock, and that may trigger arbitrary Python code
-     * if there's a weakref, with a callback, to the lock.  But by this time
-     * _PyRuntime.gilstate.tstate_current is already NULL, so only the simplest
-     * of C code can be allowed to run (in particular it must not be possible to
-     * release the GIL).
-     * So instead of holding the lock directly, the tstate holds a weakref to
-     * the lock:  that's the value of on_delete_data below.  Decref'ing a
-     * weakref is harmless.
-     * on_delete points to _threadmodule.c's static release_sentinel() function.
-     * After the tstate is unlinked, release_sentinel is called with the
-     * weakref-to-lock (on_delete_data) argument, and release_sentinel releases
-     * the indirectly held lock.
-     */
-    void (*on_delete)(void *);
-    void *on_delete_data;
 
     int coroutine_origin_tracking_depth;
 
@@ -217,33 +196,22 @@ struct _ts {
     /* The thread's exception stack entry.  (Always the last entry.) */
     _PyErr_StackItem exc_state;
 
-    PyObject *previous_executor;
+    PyObject *current_executor;
 
+    /* Internal to the JIT */
+    struct _PyExitData *jit_exit;
+
+    uint64_t dict_global_version;
+
+    /* Used to store/retrieve `threading.local` keys/values for this thread */
+    PyObject *threading_local_key;
+
+    /* Used by `threading.local`s to be remove keys/values for dying threads.
+       The PyThreadObject must hold the only reference to this value.
+    */
+    PyObject *threading_local_sentinel;
+    _PyRemoteDebuggerSupport remote_debugger_support;
 };
-
-#ifdef Py_DEBUG
-   // A debug build is likely built with low optimization level which implies
-   // higher stack memory usage than a release build: use a lower limit.
-#  if defined(__wasi__)
-     // Based on wasmtime 16.
-#    define Py_C_RECURSION_LIMIT 150
-#  else
-#    define Py_C_RECURSION_LIMIT 500
-#  endif
-#elif defined(__wasi__)
-   // Based on wasmtime 16.
-#  define Py_C_RECURSION_LIMIT 500
-#elif defined(__s390x__)
-#  define Py_C_RECURSION_LIMIT 800
-#elif defined(_WIN32)
-#  define Py_C_RECURSION_LIMIT 3000
-#elif defined(_Py_ADDRESS_SANITIZER)
-#  define Py_C_RECURSION_LIMIT 4000
-#else
-   // This value is duplicated in Lib/test/support/__init__.py
-#  define Py_C_RECURSION_LIMIT 10000
-#endif
-
 
 /* other API */
 
@@ -251,9 +219,12 @@ struct _ts {
  * if it is NULL. */
 PyAPI_FUNC(PyThreadState *) PyThreadState_GetUnchecked(void);
 
-// Alias kept for backward compatibility
-#define _PyThreadState_UncheckedGet PyThreadState_GetUnchecked
-
+// Deprecated alias kept for backward compatibility
+Py_DEPRECATED(3.14) static inline PyThreadState*
+_PyThreadState_UncheckedGet(void)
+{
+    return PyThreadState_GetUnchecked();
+}
 
 // Disable tracing and profiling.
 PyAPI_FUNC(void) PyThreadState_EnterTracing(PyThreadState *tstate);

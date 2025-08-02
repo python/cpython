@@ -79,10 +79,11 @@ _can_fork_exec = sys.platform not in {"emscripten", "wasi", "ios", "tvos", "watc
 
 if _mswindows:
     import _winapi
-    from _winapi import (CREATE_NEW_CONSOLE, CREATE_NEW_PROCESS_GROUP,
+    from _winapi import (CREATE_NEW_CONSOLE, CREATE_NEW_PROCESS_GROUP,  # noqa: F401
                          STD_INPUT_HANDLE, STD_OUTPUT_HANDLE,
                          STD_ERROR_HANDLE, SW_HIDE,
                          STARTF_USESTDHANDLES, STARTF_USESHOWWINDOW,
+                         STARTF_FORCEONFEEDBACK, STARTF_FORCEOFFFEEDBACK,
                          ABOVE_NORMAL_PRIORITY_CLASS, BELOW_NORMAL_PRIORITY_CLASS,
                          HIGH_PRIORITY_CLASS, IDLE_PRIORITY_CLASS,
                          NORMAL_PRIORITY_CLASS, REALTIME_PRIORITY_CLASS,
@@ -93,6 +94,7 @@ if _mswindows:
                     "STD_INPUT_HANDLE", "STD_OUTPUT_HANDLE",
                     "STD_ERROR_HANDLE", "SW_HIDE",
                     "STARTF_USESTDHANDLES", "STARTF_USESHOWWINDOW",
+                    "STARTF_FORCEONFEEDBACK", "STARTF_FORCEOFFFEEDBACK",
                     "STARTUPINFO",
                     "ABOVE_NORMAL_PRIORITY_CLASS", "BELOW_NORMAL_PRIORITY_CLASS",
                     "HIGH_PRIORITY_CLASS", "IDLE_PRIORITY_CLASS",
@@ -350,7 +352,7 @@ def _args_from_interpreter_flags():
     if dev_mode:
         args.extend(('-X', 'dev'))
     for opt in ('faulthandler', 'tracemalloc', 'importtime',
-                'frozen_modules', 'showrefcount', 'utf8'):
+                'frozen_modules', 'showrefcount', 'utf8', 'gil'):
         if opt in xoptions:
             value = xoptions[opt]
             if value is True:
@@ -378,13 +380,12 @@ def _text_encoding():
 
     if sys.flags.utf8_mode:
         return "utf-8"
-    else:
-        return locale.getencoding()
+    return locale.getencoding()
 
 
 def call(*popenargs, timeout=None, **kwargs):
     """Run command with arguments.  Wait for command to complete or
-    timeout, then return the returncode attribute.
+    for timeout seconds, then return the returncode attribute.
 
     The arguments are the same as for the Popen constructor.  Example:
 
@@ -521,8 +522,8 @@ def run(*popenargs,
     in the returncode attribute, and output & stderr attributes if those streams
     were captured.
 
-    If timeout is given, and the process takes too long, a TimeoutExpired
-    exception will be raised.
+    If timeout (seconds) is given and the process takes too long,
+     a TimeoutExpired exception will be raised.
 
     There is an optional argument "input", allowing you to
     pass bytes or a string to the subprocess's stdin.  If you use this argument
@@ -713,6 +714,9 @@ def _use_posix_spawn():
         # os.posix_spawn() is not available
         return False
 
+    if ((_env := os.environ.get('_PYTHON_SUBPROCESS_USE_POSIX_SPAWN')) in ('0', '1')):
+        return bool(int(_env))
+
     if sys.platform in ('darwin', 'sunos5'):
         # posix_spawn() is a syscall on both macOS and Solaris,
         # and properly reports errors
@@ -747,7 +751,6 @@ def _use_posix_spawn():
 # These are primarily fail-safe knobs for negatives. A True value does not
 # guarantee the given libc/syscall API will be used.
 _USE_POSIX_SPAWN = _use_posix_spawn()
-_USE_VFORK = True
 _HAVE_POSIX_SPAWN_CLOSEFROM = hasattr(os, 'POSIX_SPAWN_CLOSEFROM')
 
 
@@ -838,6 +841,9 @@ class Popen:
             bufsize = -1  # Restore default
         if not isinstance(bufsize, int):
             raise TypeError("bufsize must be an integer")
+
+        if stdout is STDOUT:
+            raise ValueError("STDOUT can only be used for stderr")
 
         if pipesize is None:
             pipesize = -1  # Restore default
@@ -1117,10 +1123,9 @@ class Popen:
                     except TimeoutExpired:
                         pass
                 self._sigint_wait_secs = 0  # Note that this has been done.
-                return  # resume the KeyboardInterrupt
-
-            # Wait for the process to terminate, to avoid zombies.
-            self.wait()
+            else:
+                # Wait for the process to terminate, to avoid zombies.
+                self.wait()
 
     def __del__(self, _maxsize=sys.maxsize, _warn=warnings.warn):
         if not self._child_created:
@@ -1229,8 +1234,11 @@ class Popen:
 
             finally:
                 self._communication_started = True
-
-            sts = self.wait(timeout=self._remaining_time(endtime))
+            try:
+                sts = self.wait(timeout=self._remaining_time(endtime))
+            except TimeoutExpired as exc:
+                exc.timeout = timeout
+                raise
 
         return (stdout, stderr)
 
@@ -1586,6 +1594,8 @@ class Popen:
             """Internal implementation of wait() on Windows."""
             if timeout is None:
                 timeout_millis = _winapi.INFINITE
+            elif timeout <= 0:
+                timeout_millis = 0
             else:
                 timeout_millis = int(timeout * 1000)
             if self.returncode is None:
@@ -1895,7 +1905,7 @@ class Popen:
                             errpipe_read, errpipe_write,
                             restore_signals, start_new_session,
                             process_group, gid, gids, uid, umask,
-                            preexec_fn, _USE_VFORK)
+                            preexec_fn)
                     self._child_created = True
                 finally:
                     # be sure the FD is closed no matter what
@@ -2137,8 +2147,11 @@ class Popen:
                                 selector.unregister(key.fileobj)
                                 key.fileobj.close()
                             self._fileobj2output[key.fileobj].append(data)
-
-            self.wait(timeout=self._remaining_time(endtime))
+            try:
+                self.wait(timeout=self._remaining_time(endtime))
+            except TimeoutExpired as exc:
+                exc.timeout = orig_timeout
+                raise
 
             # All data exchanged.  Translate lists into strings.
             if stdout is not None:

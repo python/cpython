@@ -1,1 +1,0 @@
-Document CVE-2023-52425 of Expat <2.6.0 under "XML vulnerabilities".

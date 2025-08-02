@@ -206,6 +206,36 @@ class Parser:
         return None
 
     @memoize
+    def fstring_start(self) -> Optional[tokenize.TokenInfo]:
+        FSTRING_START = getattr(token, "FSTRING_START", None)
+        if not FSTRING_START:
+            return None
+        tok = self._tokenizer.peek()
+        if tok.type == FSTRING_START:
+            return self._tokenizer.getnext()
+        return None
+
+    @memoize
+    def fstring_middle(self) -> Optional[tokenize.TokenInfo]:
+        FSTRING_MIDDLE = getattr(token, "FSTRING_MIDDLE", None)
+        if not FSTRING_MIDDLE:
+            return None
+        tok = self._tokenizer.peek()
+        if tok.type == FSTRING_MIDDLE:
+            return self._tokenizer.getnext()
+        return None
+
+    @memoize
+    def fstring_end(self) -> Optional[tokenize.TokenInfo]:
+        FSTRING_END = getattr(token, "FSTRING_END", None)
+        if not FSTRING_END:
+            return None
+        tok = self._tokenizer.peek()
+        if tok.type == FSTRING_END:
+            return self._tokenizer.getnext()
+        return None
+
+    @memoize
     def op(self) -> Optional[tokenize.TokenInfo]:
         tok = self._tokenizer.peek()
         if tok.type == token.OP:

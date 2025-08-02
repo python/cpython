@@ -1,5 +1,5 @@
-:mod:`bisect` --- Array bisection algorithm
-===========================================
+:mod:`!bisect` --- Array bisection algorithm
+============================================
 
 .. module:: bisect
    :synopsis: Array bisection algorithms for binary searching.
@@ -23,6 +23,16 @@ insertion point. Accordingly, the functions never call an :meth:`~object.__eq__`
 method to determine whether a value has been found.  Instead, the
 functions only call the :meth:`~object.__lt__` method and will return an insertion
 point between values in an array.
+
+.. note::
+
+   The functions in this module are not thread-safe. If multiple threads
+   concurrently use :mod:`bisect` functions on the same sequence, this
+   may result in undefined behaviour. Likewise, if the provided sequence
+   is mutated by a different thread while a :mod:`bisect` function
+   is operating on it, the result is undefined. For example, using
+   :py:func:`~bisect.insort_left` on the same list from multiple threads
+   may result in the list becoming unsorted.
 
 .. _bisect functions:
 

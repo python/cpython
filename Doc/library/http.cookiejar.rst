@@ -1,5 +1,5 @@
-:mod:`http.cookiejar` --- Cookie handling for HTTP clients
-==========================================================
+:mod:`!http.cookiejar` --- Cookie handling for HTTP clients
+===========================================================
 
 .. module:: http.cookiejar
    :synopsis: Classes for automatic handling of HTTP cookies.
@@ -137,7 +137,7 @@ The following classes are provided:
       The Netscape protocol with the bugs fixed.  Uses :mailheader:`Set-Cookie2` in
       place of :mailheader:`Set-Cookie`.  Not widely used.
 
-   http://kristol.org/cookie/errata.html
+   https://kristol.org/cookie/errata.html
       Unfinished errata to :rfc:`2965`.
 
    :rfc:`2964` - Use of HTTP State Management
@@ -570,7 +570,7 @@ Netscape protocol strictness switches:
 
    Don't allow setting cookies whose path doesn't path-match request URI.
 
-:attr:`strict_ns_domain` is a collection of flags.  Its value is constructed by
+:attr:`~DefaultCookiePolicy.strict_ns_domain` is a collection of flags.  Its value is constructed by
 or-ing together (for example, ``DomainStrictNoDots|DomainStrictNonDomain`` means
 both flags are set).
 
