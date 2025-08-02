@@ -247,7 +247,13 @@ def make_host_python(context):
     # flags to be duplicated. So we don't use the `host` argument here.
     os.chdir(host_dir)
     run(["make", "-j", str(os.cpu_count())])
-    run(["make", "install", f"prefix={prefix_dir}"])
+
+    # The `make install` output is very verbose and rarely useful, so
+    # suppress it by default.
+    run(
+        ["make", "install", f"prefix={prefix_dir}"],
+        capture_output=not context.verbose,
+    )
 
 
 def build_all(context):
@@ -671,6 +677,14 @@ def package(context):
                     else:
                         shutil.copy2(src, dst, follow_symlinks=False)
 
+        # Strip debug information.
+        if not context.debug:
+            run(
+                [android_env(context.host)["STRIP"]]
+                + glob(f"{temp_dir}/**/*.so", recursive=True),
+                log=False,
+            )
+
         dist_dir = subdir(context.host, "dist", create=True)
         package_path = shutil.make_archive(
             f"{dist_dir}/python-{version}-{context.host}", "gztar", temp_dir
@@ -695,24 +709,31 @@ def parse_args():
     parser = argparse.ArgumentParser()
     subcommands = parser.add_subparsers(dest="subcommand", required=True)
 
+    def add_parser(*args, **kwargs):
+        parser = subcommands.add_parser(*args, **kwargs)
+        parser.add_argument(
+            "-v", "--verbose", action="count", default=0,
+            help="Show verbose output. Use twice to be even more verbose.")
+        return parser
+
     # Subcommands
-    build = subcommands.add_parser(
+    build = add_parser(
         "build", help="Run configure-build, make-build, configure-host and "
         "make-host")
-    configure_build = subcommands.add_parser(
+    configure_build = add_parser(
         "configure-build", help="Run `configure` for the build Python")
-    subcommands.add_parser(
+    add_parser(
         "make-build", help="Run `make` for the build Python")
-    configure_host = subcommands.add_parser(
+    configure_host = add_parser(
         "configure-host", help="Run `configure` for Android")
-    make_host = subcommands.add_parser(
+    make_host = add_parser(
         "make-host", help="Run `make` for Android")
 
-    subcommands.add_parser("clean", help="Delete all build directories")
-    subcommands.add_parser("build-testbed", help="Build the testbed app")
-    test = subcommands.add_parser("test", help="Run the testbed app")
-    package = subcommands.add_parser("package", help="Make a release package")
-    env = subcommands.add_parser("env", help="Print environment variables")
+    add_parser("clean", help="Delete all build directories")
+    add_parser("build-testbed", help="Build the testbed app")
+    test = add_parser("test", help="Run the testbed app")
+    package = add_parser("package", help="Make a release package")
+    env = add_parser("env", help="Print environment variables")
 
     # Common arguments
     for subcommand in build, configure_build, configure_host:
@@ -733,11 +754,6 @@ def parse_args():
                                 help="Extra arguments to pass to `configure`")
 
     # Test arguments
-    test.add_argument(
-        "-v", "--verbose", action="count", default=0,
-        help="Show Gradle output, and non-Python logcat messages. "
-        "Use twice to include high-volume messages which are rarely useful.")
-
     device_group = test.add_mutually_exclusive_group(required=True)
     device_group.add_argument(
         "--connected", metavar="SERIAL", help="Run on a connected device. "
@@ -764,6 +780,11 @@ def parse_args():
     test.add_argument(
         "args", nargs="*", help=f"Arguments to add to sys.argv. "
         f"Separate them from {SCRIPT_NAME}'s own arguments with `--`.")
+
+    # Package arguments.
+    package.add_argument(
+        "-g", action="store_true", default=False, dest="debug",
+        help="Include debug information")
 
     return parser.parse_args()
 
@@ -803,6 +824,8 @@ def main():
 def print_called_process_error(e):
     for stream_name in ["stdout", "stderr"]:
         content = getattr(e, stream_name)
+        if isinstance(content, bytes):
+            content = content.decode(*DECODE_ARGS)
         stream = getattr(sys, stream_name)
         if content:
             stream.write(content)
