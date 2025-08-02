@@ -16,7 +16,16 @@ from . import get_context
 from .context import reduction, assert_spawning
 _ForkingPickler = reduction.ForkingPickler
 
-__all__ = ['RawValue', 'RawArray', 'Value', 'Array', 'copy', 'synchronized']
+__all__ = [
+    # Methods for getting ctypes in shared memory
+    'RawValue', 'RawArray',
+    # Methods for getting synchronization wrappers
+    'Value', 'Array',
+    # The synchronization types
+    'Synchronized', 'SynchronizedArray', 'SynchronizedString',
+    # Misc functions
+    'copy', 'synchronized'
+    ]
 
 #
 #
