@@ -1,4 +1,3 @@
-import contextlib
 import io
 import itertools
 import pickle
@@ -533,11 +532,9 @@ class CommandLineTest(unittest.TestCase):
             pickle.dump(data, f)
 
     def invoke_pickletools(self, *flags):
-        stderr = io.StringIO()
-        stdout = io.StringIO()
         with (
-            contextlib.redirect_stdout(stdout),
-            contextlib.redirect_stderr(stderr),
+            support.captured_stdout() as stdout,
+            support.captured_stderr() as stderr,
         ):
             pickletools._main(args=[*flags, self.filename])
         self.assertEqual(stderr.getvalue(), '')
@@ -573,23 +570,22 @@ class CommandLineTest(unittest.TestCase):
 
     def test_unknown_flag(self):
         with self.assertRaises(SystemExit):
-            output = io.StringIO()
-            with contextlib.redirect_stderr(output):
+            with support.captured_stderr() as stderr:
                 pickletools._main(args=['--unknown'])
-            self.assertStartsWith(output.getvalue(), 'usage: ')
+            self.assertStartsWith(stderr.getvalue(), 'usage: ')
 
     def test_output_flag(self):
         # test 'python -m pickletools -o/--output'
         output_file = tempfile.mktemp()
         self.addCleanup(os_helper.unlink, output_file)
         data = ('fake_data',)
-        expect = '''
-            0: \\x80 PROTO      5
-            2: \\x95 FRAME      15
-           11: \\x8c SHORT_BINUNICODE 'fake_data'
-           22: \\x94 MEMOIZE    (as 0)
-           23: \\x85 TUPLE1
-           24: \\x94 MEMOIZE    (as 1)
+        expect = r'''
+            0: \x80 PROTO      5
+            2: \x95 FRAME      15
+           11: \x8c SHORT_BINUNICODE 'fake_data'
+           22: \x94 MEMOIZE    (as 0)
+           23: \x85 TUPLE1
+           24: \x94 MEMOIZE    (as 1)
            25: .    STOP
         highest protocol among opcodes = 4
         '''
@@ -608,13 +604,13 @@ class CommandLineTest(unittest.TestCase):
     def test_memo_flag(self):
         # test 'python -m pickletools -m/--memo'
         data = ('fake_data',)
-        expect = '''
-            0: \\x80 PROTO      5
-            2: \\x95 FRAME      15
-           11: \\x8c SHORT_BINUNICODE 'fake_data'
-           22: \\x94 MEMOIZE    (as 0)
-           23: \\x85 TUPLE1
-           24: \\x94 MEMOIZE    (as 1)
+        expect = r'''
+            0: \x80 PROTO      5
+            2: \x95 FRAME      15
+           11: \x8c SHORT_BINUNICODE 'fake_data'
+           22: \x94 MEMOIZE    (as 0)
+           23: \x85 TUPLE1
+           24: \x94 MEMOIZE    (as 1)
            25: .    STOP
         highest protocol among opcodes = 4
         '''
@@ -624,13 +620,13 @@ class CommandLineTest(unittest.TestCase):
     def test_indentlevel_flag(self):
         # test 'python -m pickletools -l/--indentlevel'
         data = ('fake_data',)
-        expect = '''
-            0: \\x80 PROTO      5
-            2: \\x95 FRAME      15
-           11: \\x8c SHORT_BINUNICODE 'fake_data'
-           22: \\x94 MEMOIZE    (as 0)
-           23: \\x85 TUPLE1
-           24: \\x94 MEMOIZE    (as 1)
+        expect = r'''
+            0: \x80 PROTO      5
+            2: \x95 FRAME      15
+           11: \x8c SHORT_BINUNICODE 'fake_data'
+           22: \x94 MEMOIZE    (as 0)
+           23: \x85 TUPLE1
+           24: \x94 MEMOIZE    (as 1)
            25: .    STOP
         highest protocol among opcodes = 4
         '''
@@ -640,13 +636,13 @@ class CommandLineTest(unittest.TestCase):
     def test_annotate_flag(self):
         # test 'python -m pickletools -a/--annotate'
         data = ('fake_data',)
-        expect = '''
-            0: \\x80 PROTO      5              Protocol version indicator.
-            2: \\x95 FRAME      15             Indicate the beginning of a new frame.
-           11: \\x8c SHORT_BINUNICODE 'fake_data' Push a Python Unicode string object.
-           22: \\x94 MEMOIZE    (as 0)            Store the stack top into the memo.  The stack is not popped.
-           23: \\x85 TUPLE1                       Build a one-tuple out of the topmost item on the stack.
-           24: \\x94 MEMOIZE    (as 1)            Store the stack top into the memo.  The stack is not popped.
+        expect = r'''
+            0: \x80 PROTO      5              Protocol version indicator.
+            2: \x95 FRAME      15             Indicate the beginning of a new frame.
+           11: \x8c SHORT_BINUNICODE 'fake_data' Push a Python Unicode string object.
+           22: \x94 MEMOIZE    (as 0)            Store the stack top into the memo.  The stack is not popped.
+           23: \x85 TUPLE1                       Build a one-tuple out of the topmost item on the stack.
+           24: \x94 MEMOIZE    (as 1)            Store the stack top into the memo.  The stack is not popped.
            25: .    STOP                         Stop the unpickling machine.
         highest protocol among opcodes = 4
         '''
@@ -656,33 +652,32 @@ class CommandLineTest(unittest.TestCase):
     def test_preamble_flag(self):
         # test 'python -m pickletools -p/--preamble'
         data = ('fake_data',)
-        expect = '''
+        expect = r'''
         Another:
-            0: \\x80 PROTO      5
-            2: \\x95 FRAME      15
-           11: \\x8c SHORT_BINUNICODE 'fake_data'
-           22: \\x94 MEMOIZE    (as 0)
-           23: \\x85 TUPLE1
-           24: \\x94 MEMOIZE    (as 1)
+            0: \x80 PROTO      5
+            2: \x95 FRAME      15
+           11: \x8c SHORT_BINUNICODE 'fake_data'
+           22: \x94 MEMOIZE    (as 0)
+           23: \x85 TUPLE1
+           24: \x94 MEMOIZE    (as 1)
            25: .    STOP
         highest protocol among opcodes = 4
         Another:
-            0: \\x80 PROTO      5
-            2: \\x95 FRAME      15
-           11: \\x8c SHORT_BINUNICODE 'fake_data'
-           22: \\x94 MEMOIZE    (as 0)
-           23: \\x85 TUPLE1
-           24: \\x94 MEMOIZE    (as 1)
+            0: \x80 PROTO      5
+            2: \x95 FRAME      15
+           11: \x8c SHORT_BINUNICODE 'fake_data'
+           22: \x94 MEMOIZE    (as 0)
+           23: \x85 TUPLE1
+           24: \x94 MEMOIZE    (as 1)
            25: .    STOP
         highest protocol among opcodes = 4
         '''
         for flag in ['-p=Another:', '--preamble=Another:']:
             with self.subTest(data=data, flags=flag):
                 self.set_pickle_data(data)
-                output = io.StringIO()
-                with contextlib.redirect_stdout(output):
+                with support.captured_stdout() as stdout:
                     pickletools._main(args=[flag, self.filename, self.filename])
-                res = self.text_normalize(output.getvalue())
+                res = self.text_normalize(stdout.getvalue())
                 expect = self.text_normalize(expect)
                 self.assertListEqual(res.splitlines(), expect.splitlines())
 
