@@ -11,6 +11,7 @@ __all__ = (
     'get_frame_info',
     'Strategy',
     'train_dict',
+    'zstd_version_info',
 
     # compression.zstd._zstdfile
     'open',
@@ -19,7 +20,6 @@ __all__ = (
     # _zstd
     'get_frame_size',
     'zstd_version',
-    'zstd_version_info',
     'ZstdCompressor',
     'ZstdDecompressor',
     'ZstdDict',

@@ -120,9 +120,9 @@ ZstdDict_dealloc(PyObject *ob)
 
 PyDoc_STRVAR(ZstdDict_dictid_doc,
 "the Zstandard dictionary, an int between 0 and 2**32.\n\n"
-"A non-zero value represents an ordinary Zstandard dictionary, "
+"A non-zero value represents an ordinary Zstandard dictionary,\n"
 "conforming to the standardised format.\n\n"
-"The special value '0' means a 'raw content' dictionary,"
+"The special value '0' means a 'raw content' dictionary,\n"
 "without any restrictions on format or content.");
 
 static PyObject *
