@@ -421,8 +421,8 @@ This is effectively the same as calling ``asyncio.sleep(0)``, but this approach
 offers more clarity, not to mention it's somewhat cheating to use
 ``asyncio.sleep`` when showcasing how to implement it!
 
-The event loop, as usual, cycles through its queue of tasks, giving them control,
-and receiving control back when each task pauses or finishes.
+As usual, the event loop cycles through its queue of tasks, giving them control
+and receiving control back when they pause or finish.
 The ``watcher_task``, which runs the coroutine: ``_sleep_watcher(...)`` will be
 invoked once per full cycle of the event loop's queue.
 On each resumption, it'll check the time and if not enough has elapsed, it'll
