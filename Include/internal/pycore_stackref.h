@@ -829,7 +829,7 @@ _Py_TryIncrefCompareStackRef(PyObject **src, PyObject *op, _PyStackRef *out)
 static inline int
 _Py_TryXGetStackRef(PyObject **src, _PyStackRef *out)
 {
-    PyObject *op = _Py_atomic_load_ptr_relaxed(src);
+    PyObject *op = _PyObject_CAST(_Py_atomic_load_ptr_relaxed(src));
     if (op == NULL) {
         *out = PyStackRef_NULL;
         return 1;
@@ -838,6 +838,13 @@ _Py_TryXGetStackRef(PyObject **src, _PyStackRef *out)
 }
 
 #endif
+
+#define PyStackRef_XSETREF(dst, src) \
+    do { \
+        _PyStackRef _tmp_dst_ref = (dst); \
+        (dst) = (src); \
+        PyStackRef_XCLOSE(_tmp_dst_ref); \
+    } while(0)
 
 // Like Py_VISIT but for _PyStackRef fields
 #define _Py_VISIT_STACKREF(ref)                                         \
