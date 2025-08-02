@@ -483,6 +483,7 @@ PYTHON_OBJS=	\
 		Python/pylifecycle.o \
 		Python/pymath.o \
 		Python/pystate.o \
+		Python/pystats.o \
 		Python/pythonrun.o \
 		Python/pytime.o \
 		Python/qsbr.o \
