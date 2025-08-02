@@ -255,11 +255,14 @@ contained :class:`Cookie` objects.
    Discards all contained cookies that have a true :attr:`expires` attribute
    (usually because their expiration time have passed)
 
-   This is a low-level function which probably don't need to be called because
-   expired cookies are never sent back to the server (provided using
-   :class:`DefaultCookiePolicy`). This method is called by :class:`CookieJar`
-   itself every so often. It *could* only be useful when customizing a
-   :class:`CookiePolicy` with an expiring logic.
+   This is a low-level function which usually does not need to be called
+   since expired cookies are never sent back to the server when using
+   :class:`DefaultCookiePolicy` nor are they saved by :meth:`save` unless
+   the latter is called with a truthy *ignore_expires*.
+
+   Since :class:`CookieJar` also calls this method every so often,
+   it *could* only be useful when customizing a :class:`CookiePolicy`
+   with an expiring logic.
 
    Note that the :meth:`save` method won't save expired cookies anyway (unless you
    ask otherwise by passing a true *ignore_expires* argument).
