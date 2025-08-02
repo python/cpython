@@ -1109,6 +1109,10 @@ web_example/index.html: $(WEBEX_DIR)/index.html
 	@mkdir -p web_example
 	@cp $< $@
 
+web_example/python.worker.mjs: $(WEBEX_DIR)/python.worker.mjs
+	@mkdir -p web_example
+	@cp $< $@
+
 web_example/server.py: $(WEBEX_DIR)/server.py
 	@mkdir -p web_example
 	@cp $< $@
@@ -1126,7 +1130,7 @@ web_example/python.mjs web_example/python.wasm: $(BUILDPYTHON)
 	cp python.wasm web_example/python.wasm
 
 .PHONY: web_example
-web_example: web_example/python.mjs web_example/index.html web_example/server.py web_example/$(ZIP_STDLIB)
+web_example: web_example/python.mjs web_example/python.worker.mjs web_example/index.html web_example/server.py web_example/$(ZIP_STDLIB)
 
 WEBEX2=web_example_pyrepl_jspi
 WEBEX2_DIR=$(EMSCRIPTEN_DIR)/$(WEBEX2)/
@@ -1187,7 +1191,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/intrcheck.h \
 		$(srcdir)/Include/iterobject.h \
 		$(srcdir)/Include/listobject.h \
-		$(srcdir)/Include/lock.h \
+		$(srcdir)/Include/pylock.h \
 		$(srcdir)/Include/longobject.h \
 		$(srcdir)/Include/marshal.h \
 		$(srcdir)/Include/memoryobject.h \
@@ -1264,7 +1268,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/import.h \
 		$(srcdir)/Include/cpython/initconfig.h \
 		$(srcdir)/Include/cpython/listobject.h \
-		$(srcdir)/Include/cpython/lock.h \
+		$(srcdir)/Include/cpython/pylock.h \
 		$(srcdir)/Include/cpython/longintrepr.h \
 		$(srcdir)/Include/cpython/longobject.h \
 		$(srcdir)/Include/cpython/memoryobject.h \

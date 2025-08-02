@@ -379,9 +379,9 @@ static int test_pre_initialization_sys_options(void)
 
 
 /* bpo-20891: Avoid race condition when initialising the GIL */
-static void bpo20891_thread(void *lockp)
+static void bpo20891_thread(void *eventp)
 {
-    PyThread_type_lock lock = *((PyThread_type_lock*)lockp);
+    PyEvent *event = (PyEvent *)eventp;
 
     PyGILState_STATE state = PyGILState_Ensure();
     if (!PyGILState_Check()) {
@@ -390,8 +390,7 @@ static void bpo20891_thread(void *lockp)
     }
 
     PyGILState_Release(state);
-
-    PyThread_release_lock(lock);
+    _PyEvent_Notify(event);
 }
 
 static int test_bpo20891(void)
@@ -401,27 +400,16 @@ static int test_bpo20891(void)
 
     /* bpo-20891: Calling PyGILState_Ensure in a non-Python thread must not
        crash. */
-    PyThread_type_lock lock = PyThread_allocate_lock();
-    if (!lock) {
-        error("PyThread_allocate_lock failed!");
-        return 1;
-    }
-
+    PyEvent event = {0};
     _testembed_initialize();
 
-    unsigned long thrd = PyThread_start_new_thread(bpo20891_thread, &lock);
+    unsigned long thrd = PyThread_start_new_thread(bpo20891_thread, &event);
     if (thrd == PYTHREAD_INVALID_THREAD_ID) {
         error("PyThread_start_new_thread failed!");
         return 1;
     }
-    PyThread_acquire_lock(lock, WAIT_LOCK);
 
-    Py_BEGIN_ALLOW_THREADS
-    /* wait until the thread exit */
-    PyThread_acquire_lock(lock, WAIT_LOCK);
-    Py_END_ALLOW_THREADS
-
-    PyThread_free_lock(lock);
+    PyEvent_Wait(&event);
 
     Py_Finalize();
 

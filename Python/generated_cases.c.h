@@ -5595,6 +5595,8 @@
                 }
                 DISPATCH_GOTO();
             }
+            assert(executor != tstate->interp->cold_executor);
+            tstate->jit_exit = NULL;
             GOTO_TIER_TWO(executor);
             #else
             Py_FatalError("ENTER_EXECUTOR is not supported in this build");
@@ -7793,6 +7795,8 @@
                         this_instr[1].counter = initial_jump_backoff_counter();
                         stack_pointer = _PyFrame_GetStackPointer(frame);
                         assert(tstate->current_executor == NULL);
+                        assert(executor != tstate->interp->cold_executor);
+                        tstate->jit_exit = NULL;
                         GOTO_TIER_TWO(executor);
                     }
                 }
