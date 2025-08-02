@@ -117,3 +117,42 @@ dnpgettext(*args, 'context', 'foo', 'foos')
 # f-strings
 f"Hello, {_('world')}!"
 f"Hello, {ngettext('world', 'worlds', 3)}!"
+
+# t-strings
+_(t'Hello World')
+_(t'Hello' t' World')
+_(t'Hello {name}')
+_(t'Hello {name.title()}')
+_(t'Hello {user.name}')
+_(t'Hello {user['name']}')
+_(t'Hello {user["name"]}')
+_(t'Hello {numbers[69]}')
+
+# t-strings - escaped braces
+_(t'Hello {{escaped braces}}')
+_(t'Hello {{{interpolated_braces}}} inside esacped braces')
+_(t'}}Even{{ more {{braces}}')
+_(t'}}Even{{ more {{{interpolated_braces}}}')
+
+# t-strings - slightly weird cases but simple enough to convert in a
+# straightforward manner
+_(t'Weird {meow[False]}')
+_(t'Weird {meow[True]}')
+_(t'Weird {meow[69j]}')
+_(t'Weird {meow[...]}')
+_(t'Weird {meow[None]}')
+
+# t-strings - invalid cases
+_(t'Invalid {t"nesting"}')  # nested tstrings are not allowed
+_(t'Invalid {meow[meow()]}')  # non-const subscript
+_(t'Invalid {meow[kitty]}')  # non-const subscript
+_(t'Invalid {meow[()]}')  # non-primitive subscript
+_(t'Invalid {meow(42)}')  # call with argument
+_(t'Invalid {meow["foo:r"]}')  # subscript that cannot be formatstringified
+_(t'Invalid {meow[3.14]}')  # subscript that cannot be formatstringified
+_(t'Invalid {meow[...]} {meow.Ellipsis}')  # same name for different expressions
+_(t'Invalid {meow.loudly} {meow["loudly"]}')  # same name for different expressions
+_(t'Invalid {meow.loudly} {meow.loudly()}')  # same name for different expressions
+_(t'Invalid {3.14}')  # format string is not a valid identifier
+_(t'Invalid {42}')  # format string is not a valid identifier
+_(t'Invalid {69j}')  # format string is not a valid identifier

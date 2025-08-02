@@ -43,6 +43,7 @@ internationalized, to the local language and cultural habits.
 #   you'll need to study the GNU gettext code to do this.
 
 
+import ast
 import operator
 import os
 import sys
@@ -655,3 +656,96 @@ def npgettext(context, msgid1, msgid2, n):
 # gettext.
 
 Catalog = translation
+
+
+# utils for t-string handling in gettext translation + pygettext extraction
+# TBD where they should go, and whether this should be a public API or internal,
+# especially the part about generating names from interpolations which is IMHO
+# beneficial to have in stdlib so any implementation can re-use it without
+# risking diverging behavior for the same expression between implementations
+
+class _NameTooComplexError(ValueError):
+    """
+    Raised when an expression is too complex to derive a format string name
+    from it, or the resulting name would not be valid in a format string.
+    """
+
+
+class _ExtractNamesVisitor(ast.NodeVisitor):
+    def __init__(self):
+        self._name_parts = []
+
+    @property
+    def name(self) -> str:
+        name = '__'.join(self._name_parts)
+        if not name.isidentifier():
+            raise _NameTooComplexError(
+                'Only expressions which can be converted to a format string '
+                'placeholder may be used in a gettext call; assign the '
+                'expression to a variable and use that instead'
+            )
+        return name
+
+    def generic_visit(self, node):
+        name = node.__class__.__name__
+        raise _NameTooComplexError(
+            f'Only simple expressions are supported, {name} is not allowed; '
+            'assign the expression to a variable and use that instead'
+        )
+
+    def visit_Attribute(self, node):
+        self.visit(node.value)
+        self._name_parts.append(node.attr)
+
+    def visit_Name(self, node):
+        self._name_parts.append(node.id)
+
+    def visit_Subscript(self, node):
+        self.visit(node.value)
+        if not isinstance(node.slice, ast.Constant):
+            raise _NameTooComplexError(
+                'Only constant value dict keys may be used in a gettext call; '
+                'assign the expression to a variable and use that instead'
+            )
+        self.visit(node.slice)
+
+    def visit_Constant(self, node):
+        self._name_parts.append(str(node.value))
+
+    def visit_Call(self, node):
+        self.visit(node.func)
+        if node.args:
+            raise _NameTooComplexError(
+                'Function calls with arguments are not supported in gettext '
+                'calls; assign the result to a variable and use that instead'
+            )
+
+
+def _template_node_to_format(node: ast.TemplateStr) -> str:
+    """Generate a format string from a template string AST node.
+
+    This fails with a `_NameTooComplexError` in case the expression is not
+    suitable for conversion.
+    """
+    parts = []
+    interpolation_format_names = {}
+    for child in node.values:
+        match child:
+            case ast.Constant(value):
+                parts.append(value.replace('{', '{{').replace('}', '}}'))
+            case ast.Interpolation(value):
+                visitor = _ExtractNamesVisitor()
+                visitor.visit(value)
+                name = visitor.name
+                expr = ast.unparse(value)
+                if (
+                    existing_expr := interpolation_format_names.get(name)
+                ) and existing_expr != expr:
+                    raise _NameTooComplexError(
+                        f'Interpolations of {existing_expr} and {expr} cannot '
+                        'be mixed in the same gettext call; assign one of '
+                        'them to a variable and use that instead'
+                    )
+                interpolation_format_names[name] = expr
+                parts.append(f'{{{name}}}')
+    return ''.join(parts)

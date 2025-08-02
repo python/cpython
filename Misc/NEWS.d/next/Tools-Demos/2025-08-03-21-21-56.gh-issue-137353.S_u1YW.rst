@@ -1,0 +1,1 @@
+Support extracting t-strings in :program:`pygettext`.
