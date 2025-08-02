@@ -38,7 +38,7 @@ async def staggered_race(coro_fns, delay, *, loop=None):
     Args:
         coro_fns: an iterable of coroutine functions, i.e. callables that
             return a coroutine object when called. Use ``functools.partial`` or
-            lambdas to pass arguments.
+            lambdas to pass arguments. Can also be an async iterable.
 
         delay: amount of time, in seconds, between starting coroutines. If
             ``None``, the coroutines will run sequentially.
@@ -62,10 +62,19 @@ async def staggered_race(coro_fns, delay, *, loop=None):
           coroutine's entry is ``None``.
 
     """
-    # TODO: when we have aiter() and anext(), allow async iterables in coro_fns.
+    # Support for async iterables in coro_fns
+    try:
+        # Try to get an async iterator
+        aiter_coro_fns = aiter(coro_fns)
+        is_async_iterable = True
+        enum_coro_fns = None
+    except TypeError:
+        # Not an async iterable, use regular iteration
+        enum_coro_fns = enumerate(coro_fns)
+        is_async_iterable = False
+        aiter_coro_fns = None
     loop = loop or events.get_running_loop()
     parent_task = tasks.current_task(loop)
-    enum_coro_fns = enumerate(coro_fns)
     winner_result = None
     winner_index = None
     unhandled_exceptions = []
@@ -106,8 +115,12 @@ async def staggered_race(coro_fns, delay, *, loop=None):
                 await tasks.wait_for(previous_failed.wait(), delay)
         # Get the next coroutine to run
         try:
-            this_index, coro_fn = next(enum_coro_fns)
-        except StopIteration:
+            if is_async_iterable:
+                coro_fn = await anext(aiter_coro_fns)
+                this_index = len(exceptions)  # Track index manually for async iterables
+            else:
+                this_index, coro_fn = next(enum_coro_fns)
+        except (StopIteration, StopAsyncIteration):
             return
         # Start task that will run the next coroutine
         this_failed = locks.Event()
