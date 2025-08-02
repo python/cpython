@@ -1832,11 +1832,10 @@ print(f'''{{
             compile(case, "<string>", "exec")
 
     def test_raw_fstring_format_spec(self):
-        """Test raw f-string format spec behavior (Issue #137314).
-
-        Raw f-strings should preserve literal backslashes in format specifications,
-        not interpret them as escape sequences.
-        """
+        # Test raw f-string format spec behavior (Issue #137314).
+        #
+        # Raw f-strings should preserve literal backslashes in format specifications,
+        # not interpret them as escape sequences.
         class UnchangedFormat:
             """Test helper that returns the format spec unchanged."""
             def __format__(self, format):
