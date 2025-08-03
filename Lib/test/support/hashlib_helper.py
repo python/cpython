@@ -198,6 +198,61 @@ class _HashInfoBase:
         return AssertionError(msg)
 
 
+class _HashTypeInfo(_HashInfoBase):
+    """Dataclass containing information for hash functions types.
+
+    - *builtin* is the fully-qualified name for the builtin HACL* type,
+      e.g., "_md5.MD5Type".
+
+    - *openssl* is the fully-qualified name for the OpenSSL wrapper type,
+      e.g., "_hashlib.HASH".
+    """
+
+    def __init__(self, canonical_name, builtin, openssl):
+        super().__init__(canonical_name)
+        self.builtin = _HashInfoItem(builtin, strict=True)
+        self.openssl = _HashInfoItem(openssl, strict=True)
+
+    def fullname(self, implementation):
+        """Get the fully qualified name of a given implementation.
+
+        This returns a string of the form "MODULE_NAME.OBJECT_NAME" or None
+        if the hash function does not have a corresponding implementation.
+
+        *implementation* must be "builtin" or "openssl".
+        """
+        return self[implementation].fullname
+
+    def module_name(self, implementation):
+        """Get the name of the module containing the hash object type."""
+        return self[implementation].module_name
+
+    def object_type_name(self, implementation):
+        """Get the name of the hash object class name."""
+        return self[implementation].member_name
+
+    def import_module(self, implementation, *, allow_skip=False):
+        """Import the module containing the hash object type.
+
+        On error, return None if *allow_skip* is false, or raise SkipNoHash.
+        """
+        module = self[implementation].import_module()
+        if allow_skip and module is None:
+            raise SkipNoHash(self.canonical_name, implementation)
+        return module
+
+    def import_object_type(self, implementation, *, allow_skip=False):
+        """Get the runtime hash object type.
+
+        On error, return None if *allow_skip* is false, or raise SkipNoHash.
+        """
+        member = self[implementation].import_member()
+        if allow_skip and member is None:
+            raise SkipNoHash(self.name, implementation, interface="class")
+        assert isinstance(member, type | None), member
+        return member
+
+
 class _HashFuncInfo(_HashInfoBase):
     """Dataclass containing information for hash functions constructors.
 
@@ -247,6 +302,12 @@ class _HashFuncInfo(_HashInfoBase):
 class _HashInfo:
     """Dataclass containing information for supported hash functions.
 
+    - *builtin_object_type_fullname* is the fully-qualified name
+      for the builtin HACL* type, e.g., "_md5.MD5Type".
+
+    - *openssl_object_type_fullname* is the fully-qualified name
+      for the OpenSSL wrapper type, i.e. "_hashlib.HASH" or "_hashlib.HASHXOF".
+
     - *builtin_method_fullname* is the fully-qualified name
       of the HACL* hash constructor function, e.g., "_md5.md5".
 
@@ -262,11 +323,19 @@ class _HashInfo:
     def __init__(
         self,
         name,
+        builtin_object_type_fullname,
+        openssl_object_type_fullname,
         builtin_method_fullname,
         openssl_method_fullname=None,
         hashlib_method_fullname=None,
     ):
         self.name = name
+
+        self.type = _HashTypeInfo(
+            name,
+            builtin_object_type_fullname,
+            openssl_object_type_fullname,
+        )
         self.func = _HashFuncInfo(
             name,
             builtin_method_fullname,
@@ -278,36 +347,48 @@ class _HashInfo:
 _HASHINFO_DATABASE = MappingProxyType({
     HashId.md5: _HashInfo(
         HashId.md5,
+        "_md5.MD5Type",
+        "_hashlib.HASH",
         "_md5.md5",
         "_hashlib.openssl_md5",
         "hashlib.md5",
     ),
     HashId.sha1: _HashInfo(
         HashId.sha1,
+        "_sha1.SHA1Type",
+        "_hashlib.HASH",
         "_sha1.sha1",
         "_hashlib.openssl_sha1",
         "hashlib.sha1",
     ),
     HashId.sha224: _HashInfo(
         HashId.sha224,
+        "_sha2.SHA224Type",
+        "_hashlib.HASH",
         "_sha2.sha224",
         "_hashlib.openssl_sha224",
         "hashlib.sha224",
     ),
     HashId.sha256: _HashInfo(
         HashId.sha256,
+        "_sha2.SHA256Type",
+        "_hashlib.HASH",
         "_sha2.sha256",
         "_hashlib.openssl_sha256",
         "hashlib.sha256",
     ),
     HashId.sha384: _HashInfo(
         HashId.sha384,
+        "_sha2.SHA384Type",
+        "_hashlib.HASH",
         "_sha2.sha384",
         "_hashlib.openssl_sha384",
         "hashlib.sha384",
     ),
     HashId.sha512: _HashInfo(
         HashId.sha512,
+        "_sha2.SHA512Type",
+        "_hashlib.HASH",
         "_sha2.sha512",
         "_hashlib.openssl_sha512",
         "hashlib.sha512",
@@ -315,11 +396,15 @@ _HASHINFO_DATABASE = MappingProxyType({
     HashId.sha3_224: _HashInfo(
         HashId.sha3_224,
         "_sha3.sha3_224",
+        "_hashlib.HASH",
+        "_sha3.sha3_224",
         "_hashlib.openssl_sha3_224",
         "hashlib.sha3_224",
     ),
     HashId.sha3_256: _HashInfo(
         HashId.sha3_256,
+        "_sha3.sha3_256",
+        "_hashlib.HASH",
         "_sha3.sha3_256",
         "_hashlib.openssl_sha3_256",
         "hashlib.sha3_256",
@@ -327,11 +412,15 @@ _HASHINFO_DATABASE = MappingProxyType({
     HashId.sha3_384: _HashInfo(
         HashId.sha3_384,
         "_sha3.sha3_384",
+        "_hashlib.HASH",
+        "_sha3.sha3_384",
         "_hashlib.openssl_sha3_384",
         "hashlib.sha3_384",
     ),
     HashId.sha3_512: _HashInfo(
         HashId.sha3_512,
+        "_sha3.sha3_512",
+        "_hashlib.HASH",
         "_sha3.sha3_512",
         "_hashlib.openssl_sha3_512",
         "hashlib.sha3_512",
@@ -339,11 +428,15 @@ _HASHINFO_DATABASE = MappingProxyType({
     HashId.shake_128: _HashInfo(
         HashId.shake_128,
         "_sha3.shake_128",
+        "_hashlib.HASHXOF",
+        "_sha3.shake_128",
         "_hashlib.openssl_shake_128",
         "hashlib.shake_128",
     ),
     HashId.shake_256: _HashInfo(
         HashId.shake_256,
+        "_sha3.shake_256",
+        "_hashlib.HASHXOF",
         "_sha3.shake_256",
         "_hashlib.openssl_shake_256",
         "hashlib.shake_256",
@@ -351,17 +444,27 @@ _HASHINFO_DATABASE = MappingProxyType({
     HashId.blake2s: _HashInfo(
         HashId.blake2s,
         "_blake2.blake2s",
+        "_hashlib.HASH",
+        "_blake2.blake2s",
         None,
         "hashlib.blake2s",
     ),
     HashId.blake2b: _HashInfo(
         HashId.blake2b,
         "_blake2.blake2b",
+        "_hashlib.HASH",
+        "_blake2.blake2b",
         None,
         "hashlib.blake2b",
     ),
 })
 assert _HASHINFO_DATABASE.keys() == CANONICAL_DIGEST_NAMES
+
+
+def get_hash_type_info(name):
+    info = _HASHINFO_DATABASE[name]
+    assert isinstance(info, _HashInfo), info
+    return info.type
 
 
 def get_hash_func_info(name):
