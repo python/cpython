@@ -252,8 +252,7 @@ contained :class:`Cookie` objects.
 
    Discard all expired cookies.
 
-   Discards all contained cookies that have a true :attr:`expires` attribute
-   (usually because their expiration time have passed)
+   Discards all contained cookies that have a true :attr:`expires` attribute.
 
    This is a low-level function which usually does not need to be called
    since expired cookies are never sent back to the server when using
