@@ -1065,23 +1065,16 @@ def _block_builtin_hash_constructor(name):
 
 def _block_builtin_hmac_constructor(name):
     """Block explicit HACL* HMAC constructors."""
-    fullname = _EXPLICIT_HMAC_CONSTRUCTORS[name]
-    if fullname is None:
+    info = _HashInfoItem(_EXPLICIT_HMAC_CONSTRUCTORS[name])
+    assert info.module_name is None or info.module_name == "_hmac", info
+    if (wrapped := info.import_member()) is None:
         # function shouldn't exist for this implementation
         return contextlib.nullcontext()
-    assert fullname.count('.') == 1, fullname
-    module_name, method = fullname.split('.', maxsplit=1)
-    assert module_name == '_hmac', module_name
-    try:
-        module = importlib.import_module(module_name)
-    except ImportError:
-        # module is already disabled
-        return contextlib.nullcontext()
-    @functools.wraps(wrapped := getattr(module, method))
+    @functools.wraps(wrapped)
     def wrapper(key, obj):
         raise ValueError(f"blocked hash name: {name}")
     _ensure_wrapper_signature(wrapper, wrapped)
-    return unittest.mock.patch(fullname, wrapper)
+    return unittest.mock.patch(info.fullname, wrapper)
 
 
 @contextlib.contextmanager
