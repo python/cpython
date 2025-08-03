@@ -1,0 +1,1 @@
+Make idlelib.config.idleConf's functions GetExtensionKeys, __GetRawExtensionKeys, and GetKeyBinding look at user config files, allowing custom extensions to have key-binds defined in ~/.idlerc instead of in the default key-binds file.
