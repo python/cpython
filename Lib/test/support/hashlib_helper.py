@@ -65,6 +65,17 @@ class Implementation(enum.StrEnum):
     hashlib = enum.auto()
 
 
+class HashFamily(enum.StrEnum):
+    """Enumerationg containing the algorithmic families known hashes."""
+
+    md5 = enum.auto()
+    sha1 = enum.auto()
+    sha2 = enum.auto()
+    sha3 = enum.auto()
+    shake = enum.auto()
+    blake2 = enum.auto()
+
+
 class HashId(enum.StrEnum):
     """Enumeration containing the canonical digest names.
 
@@ -72,37 +83,71 @@ class HashId(enum.StrEnum):
     Their support by _hashlib.new() is not necessarily guaranteed.
     """
 
-    md5 = enum.auto()
-    sha1 = enum.auto()
+    # MD5 family
+    md5 = (enum.auto(), HashFamily.md5)
 
-    sha224 = enum.auto()
-    sha256 = enum.auto()
-    sha384 = enum.auto()
-    sha512 = enum.auto()
+    # SHA-1 family
+    sha1 = (enum.auto(), HashFamily.sha1)
 
-    sha3_224 = enum.auto()
-    sha3_256 = enum.auto()
-    sha3_384 = enum.auto()
-    sha3_512 = enum.auto()
+    # SHA-2 family
+    sha224 = (enum.auto(), HashFamily.sha2)
+    sha256 = (enum.auto(), HashFamily.sha2)
+    sha384 = (enum.auto(), HashFamily.sha2)
+    sha512 = (enum.auto(), HashFamily.sha2)
 
-    shake_128 = enum.auto()
-    shake_256 = enum.auto()
+    # SHA-3 family
+    sha3_224 = (enum.auto(), HashFamily.sha3)
+    sha3_256 = (enum.auto(), HashFamily.sha3)
+    sha3_384 = (enum.auto(), HashFamily.sha3)
+    sha3_512 = (enum.auto(), HashFamily.sha3)
 
-    blake2s = enum.auto()
-    blake2b = enum.auto()
+    # SHA-3-XOF family
+    shake_128 = (enum.auto(), HashFamily.shake)
+    shake_256 = (enum.auto(), HashFamily.shake)
+
+    # BLAKE-2 family
+    blake2s = (enum.auto(), HashFamily.blake2)
+    blake2b = (enum.auto(), HashFamily.blake2)
+
+    def __new__(cls, *args):
+        if len(args) == 1:
+            try:
+                return getattr(cls, args[0])
+            except AttributeError as exc:
+                raise ValueError(f"unknown hash algorithm: {args[0]}") from exc
+        elif len(args) != 2:
+            raise TypeError(f"HashId expects 1 to 2 arguments,"
+                            f" got {len(args)}")
+        value, family = args
+        assert isinstance(family, HashFamily), family
+        self = str.__new__(cls, value)
+        self._value_ = value
+        self._family = family
+        return self
 
     def __repr__(self):
         return str(self)
 
+    @classmethod
+    def from_name(cls, canonical_name):
+        if isinstance(canonical_name, cls):
+            return canonical_name
+        return getattr(cls, canonical_name)
+
+    @property
+    def family(self):
+        """Get the hash function family."""
+        return self._family
+
     @property
     def is_xof(self):
         """Indicate whether the hash is an extendable-output hash function."""
-        return self.startswith("shake_")
+        return self.family is HashFamily.shake
 
     @property
     def is_keyed(self):
         """Indicate whether the hash is a keyed hash function."""
-        return self.startswith("blake2")
+        return self.family is HashFamily.blake2
 
 
 CANONICAL_DIGEST_NAMES = frozenset(map(str, HashId.__members__))
