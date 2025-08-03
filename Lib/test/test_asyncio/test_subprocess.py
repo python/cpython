@@ -25,12 +25,26 @@ else:
 if support.check_sanitizer(address=True):
     raise unittest.SkipTest("Exposes ASAN flakiness in GitHub CI")
 
+
+def get_quoted_sys_executable():
+    if hasattr(get_quoted_sys_executable, '_cached_get_quoted_sys_executable'):
+        return get_quoted_sys_executable._cached_get_quoted_sys_executable
+
+    sysExecutable = sys.executable
+    if not ((sysExecutable.startswith('"') and sysExecutable.endswith('"')) or 
+        (sysExecutable.startswith("'") and sysExecutable.endswith("'"))):
+        if ' ' in (sysExecutable if sys.platform == 'win32' else sysExecutable.replace('\\ ', '')):
+            sysExecutable = f'"{sysExecutable}"'
+
+    get_quoted_sys_executable._cached_get_quoted_sys_executable = sysExecutable
+    return sysExecutable
+    
 # Program blocking
-PROGRAM_BLOCKED = [sys.executable, '-c', 'import time; time.sleep(3600)']
+PROGRAM_BLOCKED = [get_quoted_sys_executable(), '-c', 'import time; time.sleep(3600)']
 
 # Program copying input to output
 PROGRAM_CAT = [
-    sys.executable, '-c',
+    get_quoted_sys_executable(), '-c',
     ';'.join(('import sys',
               'data = sys.stdin.buffer.read()',
               'sys.stdout.buffer.write(data)'))]
@@ -209,7 +223,7 @@ class SubprocessMixin:
 
     def test_kill_issue43884(self):
         if sys.platform == 'win32':
-            blocking_shell_command = f'"{sys.executable}" -c "import time; time.sleep(2)"'
+            blocking_shell_command = f'"{get_quoted_sys_executable()}" -c "import time; time.sleep(2)"'
         else:
             blocking_shell_command = 'sleep 1; sleep 1'
         creationflags = 0
@@ -255,7 +269,7 @@ class SubprocessMixin:
         old_handler = signal.signal(signal.SIGHUP, signal.SIG_DFL)
         try:
             code = 'import time; print("sleeping", flush=True); time.sleep(3600)'
-            args = [sys.executable, '-c', code]
+            args = [get_quoted_sys_executable(), '-c', code]
             proc = self.loop.run_until_complete(
                 asyncio.create_subprocess_exec(
                     *args,
@@ -304,7 +318,7 @@ class SubprocessMixin:
         # the program ends before the stdin can be fed
         proc = self.loop.run_until_complete(
             asyncio.create_subprocess_exec(
-                sys.executable, '-c', code,
+                get_quoted_sys_executable(), '-c', code,
                 stdin=subprocess.PIPE,
                 **kwargs
             )
@@ -330,7 +344,7 @@ class SubprocessMixin:
         # the program ends before the stdin can be fed
         proc = self.loop.run_until_complete(
             asyncio.create_subprocess_exec(
-                sys.executable, '-c', 'pass',
+                get_quoted_sys_executable(), '-c', 'pass',
                 stdin=subprocess.PIPE,
             )
         )
@@ -362,7 +376,7 @@ class SubprocessMixin:
             self.loop.connect_read_pipe = connect_read_pipe_mock
 
             proc = await asyncio.create_subprocess_exec(
-                sys.executable, '-c', code,
+                get_quoted_sys_executable(), '-c', code,
                 stdin=asyncio.subprocess.PIPE,
                 stdout=asyncio.subprocess.PIPE,
                 limit=limit,
@@ -390,7 +404,7 @@ class SubprocessMixin:
         async def len_message(message):
             code = 'import sys; data = sys.stdin.read(); print(len(data))'
             proc = await asyncio.create_subprocess_exec(
-                sys.executable, '-c', code,
+                get_quoted_sys_executable(), '-c', code,
                 stdin=asyncio.subprocess.PIPE,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
@@ -409,7 +423,7 @@ class SubprocessMixin:
         async def empty_input():
             code = 'import sys; data = sys.stdin.read(); print(len(data))'
             proc = await asyncio.create_subprocess_exec(
-                sys.executable, '-c', code,
+                get_quoted_sys_executable(), '-c', code,
                 stdin=asyncio.subprocess.PIPE,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
@@ -428,7 +442,7 @@ class SubprocessMixin:
         async def empty_input():
             code = 'import sys; data = sys.stdin.read(); print(len(data))'
             proc = await asyncio.create_subprocess_exec(
-                sys.executable, '-c', code,
+                get_quoted_sys_executable(), '-c', code,
                 stdin=asyncio.subprocess.DEVNULL,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
@@ -447,7 +461,7 @@ class SubprocessMixin:
         async def empty_output():
             code = 'import sys; data = sys.stdin.read(); print(len(data))'
             proc = await asyncio.create_subprocess_exec(
-                sys.executable, '-c', code,
+                get_quoted_sys_executable(), '-c', code,
                 stdin=asyncio.subprocess.PIPE,
                 stdout=asyncio.subprocess.DEVNULL,
                 stderr=asyncio.subprocess.PIPE,
@@ -466,7 +480,7 @@ class SubprocessMixin:
         async def empty_error():
             code = 'import sys; data = sys.stdin.read(); print(len(data))'
             proc = await asyncio.create_subprocess_exec(
-                sys.executable, '-c', code,
+                get_quoted_sys_executable(), '-c', code,
                 stdin=asyncio.subprocess.PIPE,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.DEVNULL,
@@ -487,7 +501,7 @@ class SubprocessMixin:
         async def devstdin_input(message):
             code = 'file = open("/dev/stdin"); data = file.read(); print(len(data))'
             proc = await asyncio.create_subprocess_exec(
-                sys.executable, '-c', code,
+                get_quoted_sys_executable(), '-c', code,
                 stdin=asyncio.subprocess.PIPE,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
@@ -643,7 +657,7 @@ class SubprocessMixin:
             with warnings.catch_warnings(record=True) as warns:
                 with self.assertRaises(exc):
                     await asyncio.create_subprocess_exec(
-                        sys.executable,
+                        get_quoted_sys_executable(),
                         '-c',
                         'pass',
                         stdin=stdin
@@ -671,7 +685,7 @@ class SubprocessMixin:
                               'sys.exit(1)'])
 
             process = await asyncio.create_subprocess_exec(
-                sys.executable, '-c', code,
+                get_quoted_sys_executable(), '-c', code,
                 stdout=asyncio.subprocess.PIPE,
             )
 
@@ -687,15 +701,15 @@ class SubprocessMixin:
     def test_create_subprocess_exec_text_mode_fails(self):
         async def execute():
             with self.assertRaises(ValueError):
-                await subprocess.create_subprocess_exec(sys.executable,
+                await subprocess.create_subprocess_exec(get_quoted_sys_executable(),
                                                         text=True)
 
             with self.assertRaises(ValueError):
-                await subprocess.create_subprocess_exec(sys.executable,
+                await subprocess.create_subprocess_exec(get_quoted_sys_executable(),
                                                         encoding="utf-8")
 
             with self.assertRaises(ValueError):
-                await subprocess.create_subprocess_exec(sys.executable,
+                await subprocess.create_subprocess_exec(get_quoted_sys_executable(),
                                                         errors="strict")
 
         self.loop.run_until_complete(execute())
@@ -704,15 +718,15 @@ class SubprocessMixin:
 
         async def execute():
             with self.assertRaises(ValueError):
-                await subprocess.create_subprocess_shell(sys.executable,
+                await subprocess.create_subprocess_shell(get_quoted_sys_executable(),
                                                          text=True)
 
             with self.assertRaises(ValueError):
-                await subprocess.create_subprocess_shell(sys.executable,
+                await subprocess.create_subprocess_shell(get_quoted_sys_executable(),
                                                          encoding="utf-8")
 
             with self.assertRaises(ValueError):
-                await subprocess.create_subprocess_shell(sys.executable,
+                await subprocess.create_subprocess_shell(get_quoted_sys_executable(),
                                                          errors="strict")
 
         self.loop.run_until_complete(execute())
@@ -720,10 +734,10 @@ class SubprocessMixin:
     def test_create_subprocess_exec_with_path(self):
         async def execute():
             p = await subprocess.create_subprocess_exec(
-                os_helper.FakePath(sys.executable), '-c', 'pass')
+                os_helper.FakePath(get_quoted_sys_executable()), '-c', 'pass')
             await p.wait()
             p = await subprocess.create_subprocess_exec(
-                sys.executable, '-c', 'pass', os_helper.FakePath('.'))
+                get_quoted_sys_executable(), '-c', 'pass', os_helper.FakePath('.'))
             await p.wait()
 
         self.assertIsNone(self.loop.run_until_complete(execute()))
@@ -739,7 +753,7 @@ class SubprocessMixin:
 
     def test_create_subprocess_env_shell(self) -> None:
         async def main() -> None:
-            executable = sys.executable
+            executable = get_quoted_sys_executable()
             if sys.platform == "win32":
                 executable = f'"{executable}"'
             cmd = f'''{executable} -c "import os, sys; sys.stdout.write(os.getenv('FOO'))"'''
@@ -754,7 +768,7 @@ class SubprocessMixin:
 
     def test_create_subprocess_env_exec(self) -> None:
         async def main() -> None:
-            cmd = [sys.executable, "-c",
+            cmd = [get_quoted_sys_executable(), "-c",
                    "import os, sys; sys.stdout.write(os.getenv('FOO'))"]
             env = os.environ.copy()
             env["FOO"] = "baz"
@@ -825,7 +839,7 @@ class SubprocessMixin:
             exit_future = asyncio.Future()
             code = 'import sys; sys.stdout.write("stdout"); sys.stderr.write("stderr")'
             transport, _ = await loop.subprocess_exec(lambda: MyProtocol(exit_future),
-                                                      sys.executable, '-c', code, stdin=None)
+                                                      get_quoted_sys_executable(), '-c', code, stdin=None)
             await exit_future
             transport.close()
 
@@ -858,7 +872,7 @@ class SubprocessMixin:
 
         async def main():
             outputs = [f'foo{i}' for i in range(10)]
-            res = await asyncio.gather(*[get_command_stdout(sys.executable, '-c',
+            res = await asyncio.gather(*[get_command_stdout(get_quoted_sys_executable(), '-c',
                                         f'print({out!r})') for out in outputs])
             self.assertEqual(res, outputs)
 
