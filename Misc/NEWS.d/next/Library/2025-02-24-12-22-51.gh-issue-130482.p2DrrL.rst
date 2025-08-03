@@ -1,2 +1,0 @@
-Add ability to specify name for :class:`!tkinter.OptionMenu` and
-:class:`!tkinter.ttk.OptionMenu`.

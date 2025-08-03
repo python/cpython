@@ -50,13 +50,15 @@
 #define GOTO_TIER_TWO(EXECUTOR)                                            \
 do {                                                                       \
     OPT_STAT_INC(traces_executed);                                         \
-    jit_func_preserve_none jitted = (EXECUTOR)->jit_side_entry;            \
+    _PyExecutorObject *_executor = (EXECUTOR);                             \
+    jit_func_preserve_none jitted = _executor->jit_side_entry;             \
     __attribute__((musttail)) return jitted(frame, stack_pointer, tstate); \
 } while (0)
 
 #undef GOTO_TIER_ONE
 #define GOTO_TIER_ONE(TARGET)                       \
 do {                                                \
+    tstate->current_executor = NULL;                \
     _PyFrame_SetStackPointer(frame, stack_pointer); \
     return TARGET;                                  \
 } while (0)
@@ -71,10 +73,10 @@ do {                                                \
     do {                       \
     } while (0)
 
-#define PATCH_JUMP(ALIAS)                                                \
-do {                                                                     \
-    PATCH_VALUE(jit_func_preserve_none, jump, ALIAS);                    \
-    __attribute__((musttail)) return jump(frame, stack_pointer, tstate); \
+#define PATCH_JUMP(ALIAS)                                                 \
+do {                                                                      \
+    DECLARE_TARGET(ALIAS);                                                \
+    __attribute__((musttail)) return ALIAS(frame, stack_pointer, tstate); \
 } while (0)
 
 #undef JUMP_TO_JUMP_TARGET

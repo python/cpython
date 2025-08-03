@@ -663,6 +663,9 @@ Taken together, these properties make it possible to design reliable and
 extensible classes with multiple inheritance.  For more detail, see
 :ref:`python_2.3_mro`.
 
+In some cases multiple inheritance is not allowed; see :ref:`multiple-inheritance`
+for details.
+
 
 .. _tut-private:
 

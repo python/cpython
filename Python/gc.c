@@ -1,6 +1,6 @@
 //  This implements the reference cycle garbage collector.
 //  The Python module interface to the collector is in gcmodule.c.
-//  See https://devguide.python.org/internals/garbage-collector/
+//  See InternalDocs/garbage_collector.md for more infromation.
 
 #include "Python.h"
 #include "pycore_ceval.h"         // _Py_set_eval_breaker_bit()
@@ -493,6 +493,7 @@ update_refs(PyGC_Head *containers)
         next = GC_NEXT(gc);
         PyObject *op = FROM_GC(gc);
         if (_Py_IsImmortal(op)) {
+            assert(!_Py_IsStaticImmortal(op));
             _PyObject_GC_UNTRACK(op);
            gc = next;
            continue;
@@ -869,7 +870,7 @@ move_legacy_finalizer_reachable(PyGC_Head *finalizers)
  * no object in `unreachable` is weakly referenced anymore.
  */
 static int
-handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
+handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old, bool allow_callbacks)
 {
     PyGC_Head *gc;
     PyObject *op;               /* generally FROM_GC(gc) */
@@ -878,7 +879,9 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
     PyGC_Head *next;
     int num_freed = 0;
 
-    gc_list_init(&wrcb_to_call);
+    if (allow_callbacks) {
+        gc_list_init(&wrcb_to_call);
+    }
 
     /* Clear all weakrefs to the objects in unreachable.  If such a weakref
      * also has a callback, move it into `wrcb_to_call` if the callback
@@ -934,6 +937,11 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
             _PyObject_ASSERT((PyObject *)wr, wr->wr_object == op);
             _PyWeakref_ClearRef(wr);
             _PyObject_ASSERT((PyObject *)wr, wr->wr_object == Py_None);
+
+            if (!allow_callbacks) {
+                continue;
+            }
+
             if (wr->wr_callback == NULL) {
                 /* no callback */
                 continue;
@@ -984,6 +992,10 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
             _PyObject_ASSERT((PyObject *)wr, wrasgc != next);
             gc_list_move(wrasgc, &wrcb_to_call);
         }
+    }
+
+    if (!allow_callbacks) {
+        return 0;
     }
 
     /* Invoke the callbacks we decided to honor.  It's safe to invoke them
@@ -1319,15 +1331,6 @@ gc_collect_young(PyThreadState *tstate,
     PyGC_Head *visited = &gcstate->old[gcstate->visited_space].head;
     untrack_tuples(young);
     GC_STAT_ADD(0, collections, 1);
-#ifdef Py_STATS
-    {
-        Py_ssize_t count = 0;
-        PyGC_Head *gc;
-        for (gc = GC_NEXT(young); gc != young; gc = GC_NEXT(gc)) {
-            count++;
-        }
-    }
-#endif
 
     PyGC_Head survivors;
     gc_list_init(&survivors);
@@ -1393,7 +1396,7 @@ expand_region_transitively_reachable(PyGC_Head *container, PyGC_Head *gc, GCStat
         assert(_PyObject_GC_IS_TRACKED(op));
         if (_Py_IsImmortal(op)) {
             PyGC_Head *next = GC_NEXT(gc);
-            gc_list_move(gc, &get_gc_state()->permanent_generation.head);
+            gc_list_move(gc, &gcstate->permanent_generation.head);
             gc = next;
             continue;
         }
@@ -1736,7 +1739,7 @@ gc_collect_region(PyThreadState *tstate,
     }
 
     /* Clear weakrefs and invoke callbacks as necessary. */
-    stats->collected += handle_weakrefs(&unreachable, to);
+    stats->collected += handle_weakrefs(&unreachable, to, true);
     gc_list_validate_space(to, gcstate->visited_space);
     validate_list(to, collecting_clear_unreachable_clear);
     validate_list(&unreachable, collecting_set_unreachable_clear);
@@ -1750,6 +1753,14 @@ gc_collect_region(PyThreadState *tstate,
     gc_list_init(&final_unreachable);
     handle_resurrected_objects(&unreachable, &final_unreachable, to);
 
+    /* Clear weakrefs to objects in the unreachable set.  No Python-level
+     * code must be allowed to access those unreachable objects.  During
+     * delete_garbage(), finalizers outside the unreachable set might run
+     * and create new weakrefs.  If those weakrefs were not cleared, they
+     * could reveal unreachable objects.  Callbacks are not executed.
+     */
+    handle_weakrefs(&final_unreachable, NULL, false);
+
     /* Call tp_clear on objects in the final_unreachable set.  This will cause
     * the reference cycles to be broken.  It may also cause some objects
     * in finalizers to be freed.
@@ -1762,7 +1773,7 @@ gc_collect_region(PyThreadState *tstate,
     Py_ssize_t n = 0;
     for (gc = GC_NEXT(&finalizers); gc != &finalizers; gc = GC_NEXT(gc)) {
         n++;
-        if (gcstate->debug & _PyGC_DEBUG_COLLECTABLE)
+        if (gcstate->debug & _PyGC_DEBUG_UNCOLLECTABLE)
             debug_cycle("uncollectable", FROM_GC(gc));
     }
     stats->uncollectable = n;

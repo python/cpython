@@ -663,91 +663,21 @@ build_ftstring_body(asdl_expr_seq *values, bool is_format_spec)
 }
 
 static int
-_write_values_subarray(PyUnicodeWriter *writer, asdl_expr_seq *values, Py_ssize_t first_idx,
-                       Py_ssize_t last_idx, char prefix, PyArena *arena)
+append_templatestr(PyUnicodeWriter *writer, expr_ty e)
 {
     int result = -1;
-
-    asdl_expr_seq *new_values = _Py_asdl_expr_seq_new(last_idx - first_idx + 1, arena);
-    if (!new_values) {
-        return result;
-    }
-
-    Py_ssize_t j = 0;
-    for (Py_ssize_t i = first_idx; i <= last_idx; ++i) {
-        asdl_seq_SET(new_values, j++, asdl_seq_GET(values, i));
-    }
-
-    PyObject *body = build_ftstring_body(new_values, false);
+    PyObject *body = build_ftstring_body(e->v.TemplateStr.values, false);
     if (!body) {
-        return result;
+        return -1;
     }
 
-    if (-1 != append_char(writer, prefix) &&
+    if (-1 != append_charp(writer, "t") &&
         -1 != append_repr(writer, body))
     {
         result = 0;
     }
     Py_DECREF(body);
     return result;
-}
-
-static int
-append_templatestr(PyUnicodeWriter *writer, expr_ty e)
-{
-    PyArena *arena = _PyArena_New();
-    if (!arena) {
-        return -1;
-    }
-
-    Py_ssize_t last_idx = 0;
-    Py_ssize_t len = asdl_seq_LEN(e->v.TemplateStr.values);
-    for (Py_ssize_t i = 0; i < len; i++) {
-        expr_ty value = asdl_seq_GET(e->v.TemplateStr.values, i);
-
-        // Handle implicit concat of t-strings with f-strings
-        if (value->kind == FormattedValue_kind) {
-            if (i > last_idx) {
-                // Create a new TemplateStr with the values between last_idx and i
-                // and append it to the writer.
-                if (_write_values_subarray(writer, e->v.TemplateStr.values,
-                        last_idx, i - 1, 't', arena) == -1) {
-                    goto error;
-                }
-
-                if (append_charp(writer, " ") == -1) {
-                    goto error;
-                }
-            }
-
-            // Append the FormattedValue to the writer.
-            if (_write_values_subarray(writer, e->v.TemplateStr.values,
-                    i, i, 'f', arena) == -1) {
-                goto error;
-            }
-
-            if (i + 1 < len) {
-                if (append_charp(writer, " ") == -1) {
-                    goto error;
-                }
-            }
-
-            last_idx = i + 1;
-        }
-    }
-
-    if (last_idx < len) {
-        if (_write_values_subarray(writer, e->v.TemplateStr.values,
-                last_idx, len - 1, 't', arena) == -1) {
-            goto error;
-        }
-    }
-
-    return 0;
-
-error:
-    _PyArena_Free(arena);
-    return -1;
 }
 
 static int
@@ -774,30 +704,35 @@ append_joinedstr(PyUnicodeWriter *writer, expr_ty e, bool is_format_spec)
 }
 
 static int
-append_interpolation_value(PyUnicodeWriter *writer, expr_ty e)
+append_interpolation_str(PyUnicodeWriter *writer, PyObject *str)
 {
     const char *outer_brace = "{";
+    if (PyUnicode_Find(str, _Py_LATIN1_CHR('{'), 0, 1, 1) == 0) {
+        /* Expression starts with a brace, split it with a space from the outer
+           one. */
+        outer_brace = "{ ";
+    }
+    if (-1 == append_charp(writer, outer_brace)) {
+        return -1;
+    }
+    if (-1 == PyUnicodeWriter_WriteStr(writer, str)) {
+        return -1;
+    }
+    return 0;
+}
+
+static int
+append_interpolation_value(PyUnicodeWriter *writer, expr_ty e)
+{
     /* Grammar allows PR_TUPLE, but use >PR_TEST for adding parenthesis
        around a lambda with ':' */
     PyObject *temp_fv_str = expr_as_unicode(e, PR_TEST + 1);
     if (!temp_fv_str) {
         return -1;
     }
-    if (PyUnicode_Find(temp_fv_str, _Py_LATIN1_CHR('{'), 0, 1, 1) == 0) {
-        /* Expression starts with a brace, split it with a space from the outer
-           one. */
-        outer_brace = "{ ";
-    }
-    if (-1 == append_charp(writer, outer_brace)) {
-        Py_DECREF(temp_fv_str);
-        return -1;
-    }
-    if (-1 == PyUnicodeWriter_WriteStr(writer, temp_fv_str)) {
-        Py_DECREF(temp_fv_str);
-        return -1;
-    }
+    int result = append_interpolation_str(writer, temp_fv_str);
     Py_DECREF(temp_fv_str);
-    return 0;
+    return result;
 }
 
 static int
@@ -843,7 +778,7 @@ append_interpolation_format_spec(PyUnicodeWriter *writer, expr_ty e)
 static int
 append_interpolation(PyUnicodeWriter *writer, expr_ty e)
 {
-    if (-1 == append_interpolation_value(writer, e->v.Interpolation.value)) {
+    if (-1 == append_interpolation_str(writer, e->v.Interpolation.str)) {
         return -1;
     }
 

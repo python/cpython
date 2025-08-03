@@ -28,10 +28,10 @@ typedef int (*Py_tracefunc)(PyObject *, PyFrameObject *, int, PyObject *);
 #define PyTrace_OPCODE 7
 
 /* Remote debugger support */
-#define MAX_SCRIPT_PATH_SIZE 512
-typedef struct _remote_debugger_support {
+#define Py_MAX_SCRIPT_PATH_SIZE 512
+typedef struct {
     int32_t debugger_pending_call;
-    char debugger_script_path[MAX_SCRIPT_PATH_SIZE];
+    char debugger_script_path[Py_MAX_SCRIPT_PATH_SIZE];
 } _PyRemoteDebuggerSupport;
 
 typedef struct _err_stackitem {
@@ -61,6 +61,8 @@ typedef struct _stack_chunk {
     PyObject * data[1]; /* Variable sized */
 } _PyStackChunk;
 
+/* Minimum size of data stack chunk */
+#define _PY_DATA_STACK_CHUNK_SIZE (16*1024)
 struct _ts {
     /* See Python/ceval.c for comments explaining most fields */
 
@@ -194,7 +196,10 @@ struct _ts {
     /* The thread's exception stack entry.  (Always the last entry.) */
     _PyErr_StackItem exc_state;
 
-    PyObject *previous_executor;
+    PyObject *current_executor;
+
+    /* Internal to the JIT */
+    struct _PyExitData *jit_exit;
 
     uint64_t dict_global_version;
 

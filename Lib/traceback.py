@@ -10,9 +10,9 @@ import codeop
 import keyword
 import tokenize
 import io
-from contextlib import suppress
 import _colorize
-from _colorize import ANSIColors
+
+from contextlib import suppress
 
 __all__ = ['extract_stack', 'extract_tb', 'format_exception',
            'format_exception_only', 'format_list', 'format_stack',
@@ -187,15 +187,13 @@ def _format_final_exc_line(etype, value, *, insert_final_newline=True, colorize=
     valuestr = _safe_string(value, 'exception')
     end_char = "\n" if insert_final_newline else ""
     if colorize:
-        if value is None or not valuestr:
-            line = f"{ANSIColors.BOLD_MAGENTA}{etype}{ANSIColors.RESET}{end_char}"
-        else:
-            line = f"{ANSIColors.BOLD_MAGENTA}{etype}{ANSIColors.RESET}: {ANSIColors.MAGENTA}{valuestr}{ANSIColors.RESET}{end_char}"
+        theme = _colorize.get_theme(force_color=True).traceback
     else:
-        if value is None or not valuestr:
-            line = f"{etype}{end_char}"
-        else:
-            line = f"{etype}: {valuestr}{end_char}"
+        theme = _colorize.get_theme(force_no_color=True).traceback
+    if value is None or not valuestr:
+        line = f"{theme.type}{etype}{theme.reset}{end_char}"
+    else:
+        line = f"{theme.type}{etype}{theme.reset}: {theme.message}{valuestr}{theme.reset}{end_char}"
     return line
 
 
@@ -289,6 +287,12 @@ class FrameSummary:
       of code that was running when the frame was captured.
     - :attr:`locals` Either None if locals were not supplied, or a dict
       mapping the name to the repr() of the variable.
+    - :attr:`end_lineno` The last line number of the source code for this frame.
+      By default, it is set to lineno and indexation starts from 1.
+    - :attr:`colno` The column number of the source code for this frame.
+      By default, it is None and indexation starts from 0.
+    - :attr:`end_colno` The last column number of the source code for this frame.
+      By default, it is None and indexation starts from 0.
     """
 
     __slots__ = ('filename', 'lineno', 'end_lineno', 'colno', 'end_colno',
@@ -539,21 +543,22 @@ class StackSummary(list):
         if frame_summary.filename.startswith("<stdin>-"):
             filename = "<stdin>"
         if colorize:
-            row.append('  File {}"{}"{}, line {}{}{}, in {}{}{}\n'.format(
-                    ANSIColors.MAGENTA,
-                    filename,
-                    ANSIColors.RESET,
-                    ANSIColors.MAGENTA,
-                    frame_summary.lineno,
-                    ANSIColors.RESET,
-                    ANSIColors.MAGENTA,
-                    frame_summary.name,
-                    ANSIColors.RESET,
-                    )
-            )
+            theme = _colorize.get_theme(force_color=True).traceback
         else:
-            row.append('  File "{}", line {}, in {}\n'.format(
-                filename, frame_summary.lineno, frame_summary.name))
+            theme = _colorize.get_theme(force_no_color=True).traceback
+        row.append(
+            '  File {}"{}"{}, line {}{}{}, in {}{}{}\n'.format(
+                theme.filename,
+                filename,
+                theme.reset,
+                theme.line_no,
+                frame_summary.lineno,
+                theme.reset,
+                theme.frame,
+                frame_summary.name,
+                theme.reset,
+            )
+        )
         if frame_summary._dedented_lines and frame_summary._dedented_lines.strip():
             if (
                 frame_summary.colno is None or
@@ -672,11 +677,11 @@ class StackSummary(list):
                         for color, group in itertools.groupby(itertools.zip_longest(line, carets, fillvalue=""), key=lambda x: x[1]):
                             caret_group = list(group)
                             if color == "^":
-                                colorized_line_parts.append(ANSIColors.BOLD_RED + "".join(char for char, _ in caret_group) + ANSIColors.RESET)
-                                colorized_carets_parts.append(ANSIColors.BOLD_RED + "".join(caret for _, caret in caret_group) + ANSIColors.RESET)
+                                colorized_line_parts.append(theme.error_highlight + "".join(char for char, _ in caret_group) + theme.reset)
+                                colorized_carets_parts.append(theme.error_highlight + "".join(caret for _, caret in caret_group) + theme.reset)
                             elif color == "~":
-                                colorized_line_parts.append(ANSIColors.RED + "".join(char for char, _ in caret_group) + ANSIColors.RESET)
-                                colorized_carets_parts.append(ANSIColors.RED + "".join(caret for _, caret in caret_group) + ANSIColors.RESET)
+                                colorized_line_parts.append(theme.error_range + "".join(char for char, _ in caret_group) + theme.reset)
+                                colorized_carets_parts.append(theme.error_range + "".join(caret for _, caret in caret_group) + theme.reset)
                             else:
                                 colorized_line_parts.append("".join(char for char, _ in caret_group))
                                 colorized_carets_parts.append("".join(caret for _, caret in caret_group))
@@ -1101,6 +1106,11 @@ class TracebackException:
             suggestion = _compute_suggestion_error(exc_value, exc_traceback, wrong_name)
             if suggestion:
                 self._str += f". Did you mean: '{suggestion}'?"
+        elif exc_type and issubclass(exc_type, ModuleNotFoundError) and \
+                sys.flags.no_site and \
+                getattr(exc_value, "name", None) not in sys.stdlib_module_names:
+            self._str += (". Site initialization is disabled, did you forget to "
+                + "add the site-packages directory to sys.path?")
         elif exc_type and issubclass(exc_type, (NameError, AttributeError)) and \
                 getattr(exc_value, "name", None) is not None:
             wrong_name = getattr(exc_value, "name", None)
@@ -1378,20 +1388,20 @@ class TracebackException:
         """Format SyntaxError exceptions (internal helper)."""
         # Show exactly where the problem was found.
         colorize = kwargs.get("colorize", False)
+        if colorize:
+            theme = _colorize.get_theme(force_color=True).traceback
+        else:
+            theme = _colorize.get_theme(force_no_color=True).traceback
         filename_suffix = ''
         if self.lineno is not None:
-            if colorize:
-                yield '  File {}"{}"{}, line {}{}{}\n'.format(
-                    ANSIColors.MAGENTA,
-                    self.filename or "<string>",
-                    ANSIColors.RESET,
-                    ANSIColors.MAGENTA,
-                    self.lineno,
-                    ANSIColors.RESET,
-                    )
-            else:
-                yield '  File "{}", line {}\n'.format(
-                    self.filename or "<string>", self.lineno)
+            yield '  File {}"{}"{}, line {}{}{}\n'.format(
+                theme.filename,
+                self.filename or "<string>",
+                theme.reset,
+                theme.line_no,
+                self.lineno,
+                theme.reset,
+                )
         elif self.filename is not None:
             filename_suffix = ' ({})'.format(self.filename)
 
@@ -1441,11 +1451,11 @@ class TracebackException:
                         # colorize from colno to end_colno
                         ltext = (
                             ltext[:colno] +
-                            ANSIColors.BOLD_RED + ltext[colno:end_colno] + ANSIColors.RESET +
+                            theme.error_highlight + ltext[colno:end_colno] + theme.reset +
                             ltext[end_colno:]
                         )
-                        start_color = ANSIColors.BOLD_RED
-                        end_color = ANSIColors.RESET
+                        start_color = theme.error_highlight
+                        end_color = theme.reset
                     yield '    {}\n'.format(ltext)
                     yield '    {}{}{}{}\n'.format(
                         "".join(caretspace),
@@ -1456,17 +1466,15 @@ class TracebackException:
                 else:
                     yield '    {}\n'.format(ltext)
         msg = self.msg or "<no detail available>"
-        if colorize:
-            yield "{}{}{}: {}{}{}{}\n".format(
-                ANSIColors.BOLD_MAGENTA,
-                stype,
-                ANSIColors.RESET,
-                ANSIColors.MAGENTA,
-                msg,
-                ANSIColors.RESET,
-                filename_suffix)
-        else:
-            yield "{}: {}{}\n".format(stype, msg, filename_suffix)
+        yield "{}{}{}: {}{}{}{}\n".format(
+            theme.type,
+            stype,
+            theme.reset,
+            theme.message,
+            msg,
+            theme.reset,
+            filename_suffix,
+        )
 
     def format(self, *, chain=True, _ctx=None, **kwargs):
         """Format the exception.
@@ -1598,7 +1606,11 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
     if isinstance(exc_value, AttributeError):
         obj = exc_value.obj
         try:
-            d = dir(obj)
+            try:
+                d = dir(obj)
+            except TypeError:  # Attributes are unsortable, e.g. int and str
+                d = list(obj.__class__.__dict__.keys()) + list(obj.__dict__.keys())
+            d = sorted([x for x in d if isinstance(x, str)])
             hide_underscored = (wrong_name[:1] != '_')
             if hide_underscored and tb is not None:
                 while tb.tb_next is not None:
@@ -1613,7 +1625,11 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
     elif isinstance(exc_value, ImportError):
         try:
             mod = __import__(exc_value.name)
-            d = dir(mod)
+            try:
+                d = dir(mod)
+            except TypeError:  # Attributes are unsortable, e.g. int and str
+                d = list(mod.__dict__.keys())
+            d = sorted([x for x in d if isinstance(x, str)])
             if wrong_name[:1] != '_':
                 d = [x for x in d if x[:1] != '_']
         except Exception:
@@ -1631,6 +1647,7 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
             + list(frame.f_globals)
             + list(frame.f_builtins)
         )
+        d = [x for x in d if isinstance(x, str)]
 
         # Check first if we are in a method and the instance
         # has the wrong name as attribute

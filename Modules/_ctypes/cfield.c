@@ -14,10 +14,6 @@
 #include <ffi.h>
 #include "ctypes.h"
 
-#if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
-#  include "../_complex.h"        // complex
-#endif
-
 #define CTYPES_CFIELD_CAPSULE_NAME_PYMEM "_ctypes/cfield.c pymem"
 
 /*[clinic input]
@@ -763,18 +759,25 @@ d_get(void *ptr, Py_ssize_t size)
     return PyFloat_FromDouble(val);
 }
 
-#if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
+#if defined(_Py_FFI_SUPPORT_C_COMPLEX)
+
+/* We don't use _Complex types here, using arrays instead, as the C11+
+   standard says: "Each complex type has the same representation and alignment
+   requirements as an array type containing exactly two elements of the
+   corresponding real type; the first element is equal to the real part, and
+   the second element to the imaginary part, of the complex number." */
+
 /* D: double complex */
 static PyObject *
 D_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
-    assert(NUM_BITS(size) || (size == sizeof(double complex)));
+    assert(NUM_BITS(size) || (size == 2*sizeof(double)));
     Py_complex c = PyComplex_AsCComplex(value);
 
     if (c.real == -1 && PyErr_Occurred()) {
         return NULL;
     }
-    double complex x = CMPLX(c.real, c.imag);
+    double x[2] = {c.real, c.imag};
     memcpy(ptr, &x, sizeof(x));
     _RET(value);
 }
@@ -782,24 +785,24 @@ D_set(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 D_get(void *ptr, Py_ssize_t size)
 {
-    assert(NUM_BITS(size) || (size == sizeof(double complex)));
-    double complex x;
+    assert(NUM_BITS(size) || (size == 2*sizeof(double)));
+    double x[2];
 
     memcpy(&x, ptr, sizeof(x));
-    return PyComplex_FromDoubles(creal(x), cimag(x));
+    return PyComplex_FromDoubles(x[0], x[1]);
 }
 
 /* F: float complex */
 static PyObject *
 F_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
-    assert(NUM_BITS(size) || (size == sizeof(float complex)));
+    assert(NUM_BITS(size) || (size == 2*sizeof(float)));
     Py_complex c = PyComplex_AsCComplex(value);
 
     if (c.real == -1 && PyErr_Occurred()) {
         return NULL;
     }
-    float complex x = CMPLXF((float)c.real, (float)c.imag);
+    float x[2] = {(float)c.real, (float)c.imag};
     memcpy(ptr, &x, sizeof(x));
     _RET(value);
 }
@@ -807,24 +810,24 @@ F_set(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 F_get(void *ptr, Py_ssize_t size)
 {
-    assert(NUM_BITS(size) || (size == sizeof(float complex)));
-    float complex x;
+    assert(NUM_BITS(size) || (size == 2*sizeof(float)));
+    float x[2];
 
     memcpy(&x, ptr, sizeof(x));
-    return PyComplex_FromDoubles(crealf(x), cimagf(x));
+    return PyComplex_FromDoubles(x[0], x[1]);
 }
 
 /* G: long double complex */
 static PyObject *
 G_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
-    assert(NUM_BITS(size) || (size == sizeof(long double complex)));
+    assert(NUM_BITS(size) || (size == 2*sizeof(long double)));
     Py_complex c = PyComplex_AsCComplex(value);
 
     if (c.real == -1 && PyErr_Occurred()) {
         return NULL;
     }
-    long double complex x = CMPLXL(c.real, c.imag);
+    long double x[2] = {c.real, c.imag};
     memcpy(ptr, &x, sizeof(x));
     _RET(value);
 }
@@ -832,11 +835,11 @@ G_set(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 G_get(void *ptr, Py_ssize_t size)
 {
-    assert(NUM_BITS(size) || (size == sizeof(long double complex)));
-    long double complex x;
+    assert(NUM_BITS(size) || (size == 2*sizeof(long double)));
+    long double x[2];
 
     memcpy(&x, ptr, sizeof(x));
-    return PyComplex_FromDoubles((double)creall(x), (double)cimagl(x));
+    return PyComplex_FromDoubles((double)x[0], (double)x[1]);
 }
 #endif
 
@@ -1250,7 +1253,7 @@ Z_get(void *ptr, Py_ssize_t size)
     wchar_t *p;
     p = *(wchar_t **)ptr;
     if (p) {
-        return PyUnicode_FromWideChar(p, wcslen(p));
+        return PyUnicode_FromWideChar(p, -1);
     } else {
         Py_RETURN_NONE;
     }
@@ -1596,7 +1599,7 @@ for base_code, base_c_type in [
     ///////////////////////////////////////////////////////////////////////////
 
     TABLE_ENTRY_SW(d, &ffi_type_double);
-#if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
+#if defined(_Py_FFI_SUPPORT_C_COMPLEX)
     if (Py_FFI_COMPLEX_AVAILABLE) {
         TABLE_ENTRY(D, &ffi_type_complex_double);
         TABLE_ENTRY(F, &ffi_type_complex_float);

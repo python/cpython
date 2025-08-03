@@ -43,10 +43,11 @@ from ._module_completer import ModuleCompleter, make_default_module_completer
 
 Console: type[ConsoleType]
 _error: tuple[type[Exception], ...] | type[Exception]
-try:
-    from .unix_console import UnixConsole as Console, _error
-except ImportError:
+
+if os.name == "nt":
     from .windows_console import WindowsConsole as Console, _error
+else:
+    from .unix_console import UnixConsole as Console, _error
 
 ENCODING = sys.getdefaultencoding() or "latin1"
 
@@ -134,7 +135,8 @@ class ReadlineAlikeReader(historical_reader.HistoricalReader, CompletingReader):
         return "".join(b[p + 1 : self.pos])
 
     def get_completions(self, stem: str) -> list[str]:
-        if module_completions := self.get_module_completions():
+        module_completions = self.get_module_completions()
+        if module_completions is not None:
             return module_completions
         if len(stem) == 0 and self.more_lines is not None:
             b = self.buffer
@@ -165,7 +167,7 @@ class ReadlineAlikeReader(historical_reader.HistoricalReader, CompletingReader):
             result.sort()
         return result
 
-    def get_module_completions(self) -> list[str]:
+    def get_module_completions(self) -> list[str] | None:
         line = self.get_line()
         return self.config.module_completer.get_completions(line)
 
@@ -275,10 +277,6 @@ class maybe_accept(commands.Command):
         r: ReadlineAlikeReader
         r = self.reader  # type: ignore[assignment]
         r.dirty = True  # this is needed to hide the completion menu, if visible
-
-        if self.reader.in_bracketed_paste:
-            r.insert("\n")
-            return
 
         # if there are already several lines and the cursor
         # is not on the last one, always insert a new \n.
@@ -610,6 +608,7 @@ def _setup(namespace: Mapping[str, Any]) -> None:
     # set up namespace in rlcompleter, which requires it to be a bona fide dict
     if not isinstance(namespace, dict):
         namespace = dict(namespace)
+    _wrapper.config.module_completer = ModuleCompleter(namespace)
     _wrapper.config.readline_completer = RLCompleter(namespace).complete
 
     # this is not really what readline.c does.  Better than nothing I guess

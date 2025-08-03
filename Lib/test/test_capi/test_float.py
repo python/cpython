@@ -199,13 +199,13 @@ class CAPIFloatTest(unittest.TestCase):
                     signaling = 0
                 quiet = int(not signaling)
                 if size == 8:
-                    payload = random.randint(signaling, 1 << 50)
+                    payload = random.randint(signaling, 0x7ffffffffffff)
                     i = (sign << 63) + (0x7ff << 52) + (quiet << 51) + payload
                 elif size == 4:
-                    payload = random.randint(signaling, 1 << 21)
+                    payload = random.randint(signaling, 0x3fffff)
                     i = (sign << 31) + (0xff << 23) + (quiet << 22) + payload
                 elif size == 2:
-                    payload = random.randint(signaling, 1 << 8)
+                    payload = random.randint(signaling, 0x1ff)
                     i = (sign << 15) + (0x1f << 10) + (quiet << 9) + payload
                 data = bytes.fromhex(f'{i:x}')
                 for endian in (BIG_ENDIAN, LITTLE_ENDIAN):

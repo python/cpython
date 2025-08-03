@@ -760,6 +760,11 @@ pycore_init_types(PyInterpreterState *interp)
         return status;
     }
 
+    status = _PyDateTime_InitTypes(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
     return _PyStatus_OK();
 }
 
@@ -1283,7 +1288,7 @@ init_interp_main(PyThreadState *tstate)
     if (is_main_interp) {
         /* Initialize warnings. */
         PyObject *warnoptions;
-        if (_PySys_GetOptionalAttrString("warnoptions", &warnoptions) < 0) {
+        if (PySys_GetOptionalAttrString("warnoptions", &warnoptions) < 0) {
             return _PyStatus_ERR("can't initialize warnings");
         }
         if (warnoptions != NULL && PyList_Check(warnoptions) &&
@@ -1702,8 +1707,10 @@ finalize_modules(PyThreadState *tstate)
 #endif
 
     // Stop watching __builtin__ modifications
-    PyDict_Unwatch(0, interp->builtins);
-
+    if (PyDict_Unwatch(0, interp->builtins) < 0) {
+        // might happen if interp is cleared before watching the __builtin__
+        PyErr_Clear();
+    }
     PyObject *modules = _PyImport_GetModules(interp);
     if (modules == NULL) {
         // Already done
@@ -1806,7 +1813,7 @@ flush_std_files(void)
     PyObject *file;
     int status = 0;
 
-    if (_PySys_GetOptionalAttr(&_Py_ID(stdout), &file) < 0) {
+    if (PySys_GetOptionalAttr(&_Py_ID(stdout), &file) < 0) {
         status = -1;
     }
     else if (file != NULL && file != Py_None && !file_is_closed(file)) {
@@ -1819,7 +1826,7 @@ flush_std_files(void)
     }
     Py_XDECREF(file);
 
-    if (_PySys_GetOptionalAttr(&_Py_ID(stderr), &file) < 0) {
+    if (PySys_GetOptionalAttr(&_Py_ID(stderr), &file) < 0) {
         PyErr_Clear();
         status = -1;
     }
@@ -2377,15 +2384,13 @@ new_interpreter(PyThreadState **tstate_p,
 error:
     *tstate_p = NULL;
     if (tstate != NULL) {
-        PyThreadState_Clear(tstate);
-        _PyThreadState_Detach(tstate);
-        PyThreadState_Delete(tstate);
+        Py_EndInterpreter(tstate);
+    } else {
+        PyInterpreterState_Delete(interp);
     }
     if (save_tstate != NULL) {
         _PyThreadState_Attach(save_tstate);
     }
-    PyInterpreterState_Delete(interp);
-
     return status;
 }
 
@@ -3046,7 +3051,7 @@ _Py_FatalError_PrintExc(PyThreadState *tstate)
     }
 
     PyObject *ferr;
-    if (_PySys_GetOptionalAttr(&_Py_ID(stderr), &ferr) < 0) {
+    if (PySys_GetOptionalAttr(&_Py_ID(stderr), &ferr) < 0) {
         _PyErr_Clear(tstate);
     }
     if (ferr == NULL || ferr == Py_None) {
@@ -3144,7 +3149,7 @@ static inline void _Py_NO_RETURN
 fatal_error_exit(int status)
 {
     if (status < 0) {
-#if defined(MS_WINDOWS) && defined(_DEBUG)
+#if defined(MS_WINDOWS) && defined(Py_DEBUG)
         DebugBreak();
 #endif
         abort();

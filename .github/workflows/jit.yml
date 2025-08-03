@@ -5,6 +5,8 @@ on:
       - '**jit**'
       - 'Python/bytecodes.c'
       - 'Python/optimizer*.c'
+      - 'Python/executor_cases.c.h'
+      - 'Python/optimizer_cases.c.h'
       - '!Python/perf_jit_trampoline.c'
       - '!**/*.md'
       - '!**/*.ini'
@@ -13,6 +15,8 @@ on:
       - '**jit**'
       - 'Python/bytecodes.c'
       - 'Python/optimizer*.c'
+      - 'Python/executor_cases.c.h'
+      - 'Python/optimizer_cases.c.h'
       - '!Python/perf_jit_trampoline.c'
       - '!**/*.md'
       - '!**/*.ini'
@@ -95,10 +99,10 @@ jobs:
         with:
           python-version: '3.11'
 
+      # PCbuild downloads LLVM automatically:
       - name: Windows
         if: runner.os == 'Windows'
         run: |
-          choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}.1.0
           ./PCbuild/build.bat --experimental-jit ${{ matrix.debug && '-d' || '' }} -p ${{ matrix.architecture }}
           ./PCbuild/rt.bat ${{ matrix.debug && '-d' || '' }} -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
@@ -113,6 +117,10 @@ jobs:
           find /usr/local/bin -lname '*/Library/Frameworks/Python.framework/*' -delete
           brew install llvm@${{ matrix.llvm }}
           export SDKROOT="$(xcrun --show-sdk-path)"
+          # Set MACOSX_DEPLOYMENT_TARGET and -Werror=unguarded-availability to
+          # make sure we don't break downstream distributors (like uv):
+          export CFLAGS_JIT='-Werror=unguarded-availability'
+          export MACOSX_DEPLOYMENT_TARGET=10.15
           ./configure --enable-experimental-jit --enable-universalsdk --with-universal-archs=universal2 ${{ matrix.debug && '--with-pydebug' || '' }}
           make all --jobs 4
           ./python.exe -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
@@ -126,29 +134,30 @@ jobs:
           make all --jobs 4
           ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
-  jit-with-disabled-gil:
-    name: Free-Threaded (Debug)
-    needs: interpreter
-    runs-on: ubuntu-24.04
-    timeout-minutes: 90
-    strategy:
-      fail-fast: false
-      matrix:
-        llvm:
-          - 19
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - name: Build with JIT enabled and GIL disabled
-        run: |
-          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
-          export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
-          ./configure --enable-experimental-jit --with-pydebug --disable-gil
-          make all --jobs 4
-      - name: Run tests
-        run: |
-          ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
+  # XXX: GH-133171
+  # jit-with-disabled-gil:
+  #   name: Free-Threaded (Debug)
+  #   needs: interpreter
+  #   runs-on: ubuntu-24.04
+  #   timeout-minutes: 90
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       llvm:
+  #         - 19
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #       with:
+  #         persist-credentials: false
+  #     - uses: actions/setup-python@v5
+  #       with:
+  #         python-version: '3.11'
+  #     - name: Build with JIT enabled and GIL disabled
+  #       run: |
+  #         sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
+  #         export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
+  #         ./configure --enable-experimental-jit --with-pydebug --disable-gil
+  #         make all --jobs 4
+  #     - name: Run tests
+  #       run: |
+  #         ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
