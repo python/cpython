@@ -1493,9 +1493,10 @@ write_unraisable_exc_file(PyThreadState *tstate, PyObject *exc_type,
     if (print_exception_fn != NULL && PyCallable_Check(print_exception_fn)) {
         PyObject *args[2] = {exc_value, file};
         PyObject *result = PyObject_Vectorcall(print_exception_fn, args, 2, NULL);
+        int ok = result != NULL;
         Py_DECREF(print_exception_fn);
         Py_XDECREF(result);
-        if (result != NULL) {
+        if (ok) {
             // Nothing else to do
             return 0;
         }
