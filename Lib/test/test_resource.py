@@ -127,10 +127,15 @@ class ResourceTest(unittest.TestCase):
             self.assertEqual(resource.getrlimit(resource.RLIMIT_FSIZE), (2**32, max))
             resource.setrlimit(resource.RLIMIT_FSIZE, (2**63-1, max))
             self.assertEqual(resource.getrlimit(resource.RLIMIT_FSIZE), (2**63-1, max))
-            resource.setrlimit(resource.RLIMIT_FSIZE, (2**63, max))
-            self.assertEqual(resource.getrlimit(resource.RLIMIT_FSIZE), (2**63, max))
-            resource.setrlimit(resource.RLIMIT_FSIZE, (2**64-2, max))
-            self.assertEqual(resource.getrlimit(resource.RLIMIT_FSIZE), (2**64-2, max))
+            try:
+                resource.setrlimit(resource.RLIMIT_FSIZE, (2**63, max))
+            except ValueError:
+                # There is a hard limit on macOS.
+                pass
+            else:
+                self.assertEqual(resource.getrlimit(resource.RLIMIT_FSIZE), (2**63, max))
+                resource.setrlimit(resource.RLIMIT_FSIZE, (2**64-2, max))
+                self.assertEqual(resource.getrlimit(resource.RLIMIT_FSIZE), (2**64-2, max))
 
     @unittest.skipIf(sys.platform == "vxworks",
                      "setting RLIMIT_FSIZE is not supported on VxWorks")
