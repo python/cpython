@@ -680,8 +680,10 @@ def package(context):
         # Strip debug information.
         if not context.debug:
             run(
-                [android_env(context.host)["STRIP"]]
-                + glob(f"{temp_dir}/**/*.so", recursive=True),
+                [
+                    android_env(context.host)["STRIP"],
+                    *glob(f"{temp_dir}/**/*.so", recursive=True),
+                ],
                 log=False,
             )
 
