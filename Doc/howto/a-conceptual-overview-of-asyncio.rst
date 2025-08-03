@@ -10,10 +10,9 @@ This article seeks to help you build a sturdy mental model of how ``asyncio``
 fundamentally works, helping you understand the how and why behind the
 recommended patterns.
 
-During my own ``asyncio`` learning process, a few aspects particually drove my
-curiosity (read: drove me nuts).
-You should be able to comfortably answer all these questions by the end
-of this article.
+You might be curious about some key ``asyncio`` concepts.
+You'll be comfortably able to answer these questions by the end of this 
+article.
 
 - What's happening behind the scenes when an object is ``await``\ ed?
 - How does ``asyncio`` differentiate between a task which doesn't need CPU-time
