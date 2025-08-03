@@ -183,7 +183,7 @@ Other language changes
   compatibility between versions of Python, ensure that an explicit ``encoding``
   argument is always provided. The :ref:`opt-in encoding warning <io-encoding-warning>`
   can be used to identify code that may be affected by this change.
-  The special special ``encoding='locale'`` argument uses the current locale
+  The special ``encoding='locale'`` argument uses the current locale
   encoding, and has been supported since Python 3.10.
 
   To retain the previous behaviour, Python's UTF-8 mode may be disabled with
