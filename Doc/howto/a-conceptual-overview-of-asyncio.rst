@@ -1,8 +1,8 @@
 .. _a-conceptual-overview-of-asyncio:
 
-********************************
-A Conceptual Overview of asyncio
-********************************
+***************************************
+A Conceptual Overview of :mod:`asyncio`
+***************************************
 
 :Author: Alexander Nordin
 
@@ -35,7 +35,7 @@ Event Loop
 
 Everything in ``asyncio`` happens relative to the event loop.
 It's the star of the show.
-It's kind of like an orchestra conductor or military general.
+It's like an orchestra conductor.
 It's behind the scenes managing resources.
 Some power is explicitly granted to it, but a lot of its ability to get things
 done comes from the respect and cooperation of its subordinates.
@@ -135,7 +135,7 @@ Instead, it provides a generator object::
    >>> get_random_number()
    <generator object get_random_number at 0x1048671c0>
 
-You can "invoke" or proceed to the next ``yield`` of a generator by using the
+You can proceed to the next ``yield`` of a generator by using the
 built-in function :func:`next`.
 In other words, the generator runs, then pauses.
 For example::
@@ -178,14 +178,14 @@ different ways::
    await task
    await coroutine
 
-Unfortunately, it actually does matter which type of object await is applied to.
+Unfortunately, it does matter which type of object is awaited.
 
 ``await``\ ing a task will cede control from the current task or coroutine to
 the event loop.
 And while doing so, adds a callback to the awaited task's list of callbacks
 indicating it should resume the current task/coroutine when it (the
 ``await``\ ed one) finishes.
-In other words, when that awaited task finishes, it adds the original task
+In other words, when that awaited task finishes, the original task is added
 back to the event loops queue.
 
 In practice, it's slightly more convoluted, but not by much.
@@ -322,7 +322,7 @@ ways that control flow and values were passed.
 
 The only way to yield (or effectively cede control) from a coroutine is to
 ``await`` an object that ``yield``\ s in its ``__await__`` method.
-That might sound odd to you. Frankly, it was to me too. You might be thinking:
+That might sound odd to you. You might be thinking:
 
    1. What about a ``yield`` directly within the coroutine? The coroutine becomes
    an async generator, a different beast entirely.
