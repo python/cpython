@@ -1509,7 +1509,7 @@ class PyMiscellaneousTests(unittest.TestCase):
         hmac = import_fresh_module("hmac", blocked=["_hmac"])
         self.do_test_hmac_digest_overflow_error_switch_to_slow(hmac, size)
 
-    @hashlib_helper.requires_builtin_hashdigest("_md5", "md5")
+    @hashlib_helper.requires_builtin_hashdigest("md5")
     @bigmemtest(size=_4G + 5, memuse=2, dry_run=False)
     def test_hmac_digest_overflow_error_builtin_only(self, size):
         hmac = import_fresh_module("hmac", blocked=["_hashlib"])

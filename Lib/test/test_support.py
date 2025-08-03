@@ -865,17 +865,17 @@ class TestHashlibSupport(unittest.TestCase):
             return default
 
     def fetch_hash_function(self, name, implementation):
-        info = hashlib_helper.get_hash_info(name)
-        match implementation:
-            case "hashlib":
-                assert info.hashlib is not None, info
-                return getattr(self.hashlib, info.hashlib)
-            case "openssl":
-                try:
-                    return getattr(self._hashlib, info.openssl, None)
-                except TypeError:
-                    return None
-        fullname = info.fullname(implementation)
+        info = hashlib_helper.get_hash_func_info(name)
+        match hashlib_helper.Implementation(implementation):
+            case hashlib_helper.Implementation.hashlib:
+                method_name = info.hashlib.member_name
+                assert isinstance(method_name, str), method_name
+                return getattr(self.hashlib, method_name)
+            case hashlib_helper.Implementation.openssl:
+                method_name = info.openssl.member_name
+                assert isinstance(method_name, str | None), method_name
+                return getattr(self._hashlib, method_name or "", None)
+        fullname = info[implementation].fullname
         return self.try_import_attribute(fullname)
 
     def fetch_hmac_function(self, name):

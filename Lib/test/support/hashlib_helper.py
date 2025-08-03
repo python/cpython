@@ -9,14 +9,6 @@ from test.support import import_helper
 from types import MappingProxyType
 
 
-def try_import_module(module_name):
-    """Try to import a module and return None on failure."""
-    try:
-        return importlib.import_module(module_name)
-    except ImportError:
-        return None
-
-
 def _parse_fullname(fullname, *, strict=False):
     """Parse a fully-qualified name <module_name>.<member_name>.
 
@@ -252,71 +244,6 @@ class _HashFuncInfo(_HashInfoBase):
         return self[implementation].member_name
 
 
-class HashInfo:
-    """Dataclass storing explicit hash constructor names.
-
-    - *builtin* is the fully-qualified name for the explicit HACL*
-      hash constructor function, e.g., "_md5.md5".
-
-    - *openssl* is the name of the "_hashlib" module method for the explicit
-      OpenSSL hash constructor function, e.g., "openssl_md5".
-
-    - *hashlib* is the name of the "hashlib" module method for the explicit
-      hash constructor function, e.g., "md5".
-    """
-
-    def __init__(self, builtin, openssl=None, hashlib=None):
-        assert isinstance(builtin, str), builtin
-        assert len(builtin.split(".")) == 2, builtin
-
-        self.builtin = builtin
-        self.builtin_module_name, self.builtin_method_name = (
-            self.builtin.split(".", maxsplit=1)
-        )
-
-        assert openssl is None or openssl.startswith("openssl_")
-        self.openssl = self.openssl_method_name = openssl
-        self.openssl_module_name = "_hashlib" if openssl else None
-
-        assert hashlib is None or isinstance(hashlib, str)
-        self.hashlib = self.hashlib_method_name = hashlib
-        self.hashlib_module_name = "hashlib" if hashlib else None
-
-    def module_name(self, implementation):
-        match implementation:
-            case "builtin":
-                return self.builtin_module_name
-            case "openssl":
-                return self.openssl_module_name
-            case "hashlib":
-                return self.hashlib_module_name
-        raise AssertionError(f"invalid implementation {implementation}")
-
-    def method_name(self, implementation):
-        match implementation:
-            case "builtin":
-                return self.builtin_method_name
-            case "openssl":
-                return self.openssl_method_name
-            case "hashlib":
-                return self.hashlib_method_name
-        raise AssertionError(f"invalid implementation {implementation}")
-
-    def fullname(self, implementation):
-        """Get the fully qualified name of a given implementation.
-
-        This returns a string of the form "MODULE_NAME.METHOD_NAME" or None
-        if the hash function does not have a corresponding implementation.
-
-        *implementation* must be "builtin", "openssl" or "hashlib".
-        """
-        module_name = self.module_name(implementation)
-        method_name = self.method_name(implementation)
-        if module_name is None or method_name is None:
-            return None
-        return f"{module_name}.{method_name}"
-
-
 class _HashInfo:
     """Dataclass containing information for supported hash functions.
 
@@ -443,6 +370,12 @@ def get_hash_func_info(name):
     return info.func
 
 
+def _iter_hash_func_info(excluded):
+    for name, info in _HASHINFO_DATABASE.items():
+        if name not in excluded:
+            yield info.func
+
+
 # Mapping from canonical hash names to their explicit HACL* HMAC constructor.
 # There is currently no OpenSSL one-shot named function and there will likely
 # be none in the future.
@@ -511,12 +444,12 @@ def _ensure_wrapper_signature(wrapper, wrapped):
 
 
 def requires_openssl_hashlib():
-    _hashlib = try_import_module("_hashlib")
+    _hashlib = _import_module("_hashlib")
     return unittest.skipIf(_hashlib is None, "requires _hashlib")
 
 
 def requires_builtin_hmac():
-    _hmac = try_import_module("_hmac")
+    _hmac = _import_module("_hmac")
     return unittest.skipIf(_hmac is None, "requires _hmac")
 
 
@@ -544,7 +477,7 @@ def _hashlib_new(digestname, openssl, /, **kwargs):
     # exceptions as it should be unconditionally available.
     hashlib = importlib.import_module("hashlib")
     # re-import '_hashlib' in case it was mocked
-    _hashlib = try_import_module("_hashlib")
+    _hashlib = _import_module("_hashlib")
     module = _hashlib if openssl and _hashlib is not None else hashlib
     try:
         module.new(digestname, **kwargs)
@@ -665,29 +598,30 @@ def requires_openssl_hashdigest(digestname, *, usedforsecurity=True):
     )
 
 
-def requires_builtin_hashdigest(
-    module_name, digestname, *, usedforsecurity=True
-):
-    """Decorator raising SkipTest if a HACL* hashing algorithm is missing.
-
-    - The *module_name* is the C extension module name based on HACL*.
-    - The *digestname* is one of its member, e.g., 'md5'.
-    """
+def _make_requires_builtin_hashdigest_decorator(item, *, usedforsecurity=True):
+    assert isinstance(item, _HashInfoItem), item
     return _make_requires_hashdigest_decorator(
-        _builtin_hash, module_name, digestname, usedforsecurity=usedforsecurity
+        _builtin_hash,
+        item.module_name,
+        item.member_name,
+        usedforsecurity=usedforsecurity,
+    )
+
+
+def requires_builtin_hashdigest(canonical_name, *, usedforsecurity=True):
+    """Decorator raising SkipTest if a HACL* hashing algorithm is missing."""
+    info = get_hash_func_info(canonical_name)
+    return _make_requires_builtin_hashdigest_decorator(
+        info.builtin, usedforsecurity=usedforsecurity
     )
 
 
 def requires_builtin_hashes(*ignored, usedforsecurity=True):
     """Decorator raising SkipTest if one HACL* hashing algorithm is missing."""
     return _chain_decorators((
-        requires_builtin_hashdigest(
-            api.builtin_module_name,
-            api.builtin_method_name,
-            usedforsecurity=usedforsecurity,
-        )
-        for name, api in _EXPLICIT_CONSTRUCTORS.items()
-        if name not in ignored
+        _make_requires_builtin_hashdigest_decorator(
+            info.builtin, usedforsecurity=usedforsecurity
+        ) for info in _iter_hash_func_info(ignored)
     ))
 
 
@@ -803,10 +737,10 @@ class BuiltinHashFunctionsTrait(HashFunctionsTrait):
 
     def _find_constructor(self, digestname):
         self.is_valid_digest_name(digestname)
-        info = _EXPLICIT_CONSTRUCTORS[digestname]
+        info = get_hash_func_info(digestname)
         return _builtin_hash(
-            info.builtin_module_name,
-            info.builtin_method_name,
+            info.builtin.module_name,
+            info.builtin.member_name,
             usedforsecurity=self.usedforsecurity,
         )
 
@@ -822,7 +756,7 @@ def find_gil_minsize(modules_names, default=2048):
     """
     sizes = []
     for module_name in modules_names:
-        module = try_import_module(module_name)
+        module = _import_module(module_name)
         if module is not None:
             sizes.append(getattr(module, '_GIL_MINSIZE', default))
     return max(sizes, default=default)
@@ -833,7 +767,7 @@ def _block_openssl_hash_new(blocked_name):
     assert isinstance(blocked_name, str), blocked_name
 
     # re-import '_hashlib' in case it was mocked
-    if (_hashlib := try_import_module("_hashlib")) is None:
+    if (_hashlib := _import_module("_hashlib")) is None:
         return contextlib.nullcontext()
 
     @functools.wraps(wrapped := _hashlib.new)
@@ -852,7 +786,7 @@ def _block_openssl_hmac_new(blocked_name):
     assert isinstance(blocked_name, str), blocked_name
 
     # re-import '_hashlib' in case it was mocked
-    if (_hashlib := try_import_module("_hashlib")) is None:
+    if (_hashlib := _import_module("_hashlib")) is None:
         return contextlib.nullcontext()
 
     @functools.wraps(wrapped := _hashlib.hmac_new)
@@ -870,7 +804,7 @@ def _block_openssl_hmac_digest(blocked_name):
     assert isinstance(blocked_name, str), blocked_name
 
     # re-import '_hashlib' in case it was mocked
-    if (_hashlib := try_import_module("_hashlib")) is None:
+    if (_hashlib := _import_module("_hashlib")) is None:
         return contextlib.nullcontext()
 
     @functools.wraps(wrapped := _hashlib.hmac_digest)
@@ -900,7 +834,7 @@ def _block_builtin_hash_new(name):
     # so we need to block the possibility of importing it, but only
     # during the call to __get_builtin_constructor().
     get_builtin_constructor = getattr(hashlib, '__get_builtin_constructor')
-    builtin_module_name = _EXPLICIT_CONSTRUCTORS[name].builtin_module_name
+    builtin_module_name = get_hash_func_info(name).builtin.module_name
 
     @functools.wraps(get_builtin_constructor)
     def get_builtin_constructor_mock(name):
@@ -920,7 +854,7 @@ def _block_builtin_hmac_new(blocked_name):
     assert isinstance(blocked_name, str), blocked_name
 
     # re-import '_hmac' in case it was mocked
-    if (_hmac := try_import_module("_hmac")) is None:
+    if (_hmac := _import_module("_hmac")) is None:
         return contextlib.nullcontext()
 
     @functools.wraps(wrapped := _hmac.new)
@@ -937,7 +871,7 @@ def _block_builtin_hmac_digest(blocked_name):
     assert isinstance(blocked_name, str), blocked_name
 
     # re-import '_hmac' in case it was mocked
-    if (_hmac := try_import_module("_hmac")) is None:
+    if (_hmac := _import_module("_hmac")) is None:
         return contextlib.nullcontext()
 
     @functools.wraps(wrapped := _hmac.compute_digest)
@@ -951,30 +885,19 @@ def _block_builtin_hmac_digest(blocked_name):
 
 
 def _make_hash_constructor_blocker(name, dummy, implementation):
-    info = _EXPLICIT_CONSTRUCTORS[name]
-    module_name = info.module_name(implementation)
-    method_name = info.method_name(implementation)
-    if module_name is None or method_name is None:
+    info = get_hash_func_info(name)[implementation]
+    if (wrapped := info.import_member()) is None:
         # function shouldn't exist for this implementation
         return contextlib.nullcontext()
-
-    try:
-        module = importlib.import_module(module_name)
-    except ImportError:
-        # module is already disabled
-        return contextlib.nullcontext()
-
-    wrapped = getattr(module, method_name)
     wrapper = functools.wraps(wrapped)(dummy)
     _ensure_wrapper_signature(wrapper, wrapped)
-    return unittest.mock.patch(info.fullname(implementation), wrapper)
+    return unittest.mock.patch(info.fullname, wrapper)
 
 
 def _block_hashlib_hash_constructor(name):
     """Block explicit public constructors."""
     def dummy(data=b'', *, usedforsecurity=True, string=None):
         raise ValueError(f"blocked explicit public hash name: {name}")
-
     return _make_hash_constructor_blocker(name, dummy, 'hashlib')
 
 
@@ -1040,14 +963,14 @@ def block_algorithm(name, *, allow_openssl=False, allow_builtin=False):
             # the OpenSSL implementation, except with usedforsecurity=False.
             # However, blocking such functions also means blocking them
             # so we again need to block them if we want to.
-            (_hashlib := try_import_module("_hashlib"))
+            (_hashlib := _import_module("_hashlib"))
             and _hashlib.get_fips_mode()
             and not allow_openssl
         ) or (
             # Without OpenSSL, hashlib.<name>() functions are aliases
             # to built-in functions, so both of them must be blocked
             # as the module may have been imported before the HACL ones.
-            not (_hashlib := try_import_module("_hashlib"))
+            not (_hashlib := _import_module("_hashlib"))
             and not allow_builtin
         ):
             stack.enter_context(_block_hashlib_hash_constructor(name))
