@@ -73,6 +73,7 @@ struct trampoline_api_st {
     int (*free_state)(void* state);
     void *state;
     Py_ssize_t code_padding;
+    Py_ssize_t code_alignment;
 };
 #endif
 
@@ -129,8 +130,6 @@ struct _atexit_runtime_state {
 //###################
 // interpreter atexit
 
-typedef void (*atexit_datacallbackfunc)(void *);
-
 typedef struct atexit_callback {
     atexit_datacallbackfunc func;
     void *data;
@@ -159,10 +158,11 @@ struct atexit_state {
 typedef struct {
     // Tagged pointer to next object in the list.
     // 0 means the object is not tracked
-    uintptr_t _gc_next;
+    _Py_ALIGNED_DEF(_PyObject_MIN_ALIGNMENT, uintptr_t) _gc_next;
 
     // Tagged pointer to previous object in the list.
     // Lowest two bits are used for flags documented later.
+    // Those bits are made available by the struct's minimum alignment.
     uintptr_t _gc_prev;
 } PyGC_Head;
 
@@ -677,8 +677,11 @@ struct _Py_interp_cached_objects {
 
     /* object.__reduce__ */
     PyObject *objreduce;
+#ifndef Py_GIL_DISABLED
+    /* resolve_slotdups() */
     PyObject *type_slots_pname;
     pytype_slotdef *type_slots_ptrs[MAX_EQUIV];
+#endif
 
     /* TypeVar and related types */
     PyTypeObject *generic_type;
@@ -726,6 +729,10 @@ typedef struct _PyIndexPool {
 
     // Next index to allocate if no free indices are available
     int32_t next_index;
+
+    // Generation counter incremented on thread creation/destruction
+    // Used for TLBC cache invalidation in remote debugging
+    uint32_t tlbc_generation;
 } _PyIndexPool;
 
 typedef union _Py_unique_id_entry {
@@ -843,6 +850,8 @@ struct _is {
     /* The per-interpreter GIL, which might not be used. */
     struct _gil_runtime_state _gil;
 
+    uint64_t _code_object_generation;
+
      /* ---------- IMPORTANT ---------------------------
      The fields above this line are declared as early as
      possible to facilitate out-of-process observability
@@ -934,6 +943,7 @@ struct _is {
     bool jit;
     struct _PyExecutorObject *executor_list_head;
     struct _PyExecutorObject *executor_deletion_list_head;
+    struct _PyExecutorObject *cold_executor;
     int executor_deletion_list_remaining_capacity;
     size_t trace_run_counter;
     _rare_events rare_events;

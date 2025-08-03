@@ -1,5 +1,17 @@
-#if defined (__SVR4) && defined (__sun)
+/* Get a definition of alloca(). */
+#if (defined (__SVR4) && defined (__sun)) || defined(HAVE_ALLOCA_H)
 #   include <alloca.h>
+#elif defined(MS_WIN32)
+#   include <malloc.h>
+#endif
+
+/* If the system does not define alloca(), we have to hope for a compiler builtin. */
+#ifndef alloca
+#   if defined __GNUC__ || (__clang_major__ >= 4)
+#      define alloca __builtin_alloca
+#   else
+#     error "Could not define alloca() on your platform."
+#   endif
 #endif
 
 #include <stdbool.h>
@@ -11,7 +23,7 @@
 
 // Do we support C99 complex types in ffi?
 // For Apple's libffi, this must be determined at runtime (see gh-128156).
-#if defined(Py_FFI_SUPPORT_C_COMPLEX)
+#if defined(_Py_FFI_SUPPORT_C_COMPLEX)
 #   if USING_APPLE_OS_LIBFFI && defined(__has_builtin)
 #       if __has_builtin(__builtin_available)
 #           define Py_FFI_COMPLEX_AVAILABLE __builtin_available(macOS 10.15, *)
@@ -419,7 +431,7 @@ typedef struct {
     visible to other threads before the `dict_final` bit is set.
 */
 
-#define STGINFO_LOCK(stginfo)   Py_BEGIN_CRITICAL_SECTION_MUT(&(stginfo)->mutex)
+#define STGINFO_LOCK(stginfo)   Py_BEGIN_CRITICAL_SECTION_MUTEX(&(stginfo)->mutex)
 #define STGINFO_UNLOCK()        Py_END_CRITICAL_SECTION()
 
 static inline uint8_t

@@ -8,6 +8,7 @@ import datetime
 import io
 import locale
 import os
+import platform
 import sys
 import time
 
@@ -417,7 +418,7 @@ class OutputTestCase(unittest.TestCase):
         self.check_htmlcalendar_encoding('utf-8', 'utf-8')
 
     def test_output_htmlcalendar_encoding_default(self):
-        self.check_htmlcalendar_encoding(None, sys.getdefaultencoding())
+        self.check_htmlcalendar_encoding(None, 'utf-8')
 
     def test_yeardatescalendar(self):
         def shrink(cal):
@@ -546,7 +547,8 @@ class CalendarTestCase(unittest.TestCase):
             self.assertEqual(value[::-1], list(reversed(value)))
 
     def test_months(self):
-        for attr in "month_name", "month_abbr":
+        for attr in ("month_name", "month_abbr", "standalone_month_name",
+                     "standalone_month_abbr"):
             value = getattr(calendar, attr)
             self.assertEqual(len(value), 13)
             self.assertEqual(len(value[:]), 13)
@@ -555,6 +557,38 @@ class CalendarTestCase(unittest.TestCase):
             self.assertEqual(len(set(value)), 13)
             # verify it "acts like a sequence" in two forms of iteration
             self.assertEqual(value[::-1], list(reversed(value)))
+
+    @support.run_with_locale('LC_ALL', 'pl_PL')
+    @unittest.skipUnless(sys.platform == 'darwin' or platform.libc_ver()[0] == 'glibc',
+                         "Guaranteed to work with glibc and macOS")
+    def test_standalone_month_name_and_abbr_pl_locale(self):
+        expected_standalone_month_names = [
+            "", "styczeń", "luty", "marzec", "kwiecień", "maj", "czerwiec",
+            "lipiec", "sierpień", "wrzesień", "październik", "listopad",
+            "grudzień"
+        ]
+        expected_standalone_month_abbr = [
+            "", "sty", "lut", "mar", "kwi", "maj", "cze",
+            "lip", "sie", "wrz", "paź", "lis", "gru"
+        ]
+        self.assertEqual(
+            list(calendar.standalone_month_name),
+            expected_standalone_month_names
+        )
+        self.assertEqual(
+            list(calendar.standalone_month_abbr),
+            expected_standalone_month_abbr
+        )
+
+    def test_standalone_month_name_and_abbr_C_locale(self):
+        # Ensure that the standalone month names and abbreviations are
+        # equal to the regular month names and abbreviations for
+        # the "C" locale.
+        with calendar.different_locale("C"):
+            self.assertListEqual(list(calendar.month_name),
+                                 list(calendar.standalone_month_name))
+            self.assertListEqual(list(calendar.month_abbr),
+                                 list(calendar.standalone_month_abbr))
 
     def test_locale_text_calendar(self):
         try:
@@ -1098,7 +1132,7 @@ class CommandLineTestCase(unittest.TestCase):
             output = run('--type', 'text', '2004')
             self.assertEqual(output, conv(result_2004_text))
             output = run('--type', 'html', '2004')
-            self.assertEqual(output[:6], b'<?xml ')
+            self.assertStartsWith(output, b'<?xml ')
             self.assertIn(b'<title>Calendar for 2004</title>', output)
 
     def test_html_output_current_year(self):
