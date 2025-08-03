@@ -17,6 +17,15 @@ def try_import_module(module_name):
         return None
 
 
+class Implementation(enum.StrEnum):
+    # Indicate that the hash function is implemented by a built-in module.
+    builtin = enum.auto()
+    # Indicate that the hash function is implemented by OpenSSL.
+    openssl = enum.auto()
+    # Indicate that the hash function is provided through the public API.
+    hashlib = enum.auto()
+
+
 class HID(enum.StrEnum):
     """Enumeration containing the canonical digest names.
 
