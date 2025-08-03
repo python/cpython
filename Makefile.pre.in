@@ -3129,6 +3129,12 @@ config.status:	$(srcdir)/configure
 Python/asm_trampoline.o: $(srcdir)/Python/asm_trampoline.S
 	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
 
+JIT_DEPS = \
+		$(srcdir)/Tools/jit/*.c \
+		$(srcdir)/Tools/jit/*.py \
+		$(srcdir)/Python/executor_cases.c.h \
+		pyconfig.h
+		
 # Determine correct JIT stencil header based on host triple
 ifeq (,$(JIT_STENCIL_HEADER))
   ifneq ($(filter aarch64-apple-darwin%,$(HOST_GNU_TYPE)),)
