@@ -120,6 +120,92 @@ NON_HMAC_DIGEST_NAMES = frozenset((
 ))
 
 
+class _HashInfoItem:
+    """Interface for interacting with a named object.
+
+    The object is entirely described by its fully-qualified *fullname*.
+
+    *fullname* must be None or a string "<module_name>.<member_name>".
+    If *strict* is true, *fullname* cannot be None.
+    """
+
+    def __init__(self, fullname=None, *, strict=False):
+        module_name, member_name = _parse_fullname(fullname, strict=strict)
+        self._fullname = fullname
+        self._module_name = module_name
+        self._member_name = member_name
+
+    @property
+    def fullname(self):
+        return self._fullname
+
+    @property
+    def module_name(self):
+        return self._module_name
+
+    @property
+    def member_name(self):
+        return self._member_name
+
+    def import_module(self, *, strict=False):
+        """Import the described module.
+
+        If *strict* is true, an ImportError may be raised if importing fails,
+        otherwise, None is returned on error.
+        """
+        return _import_module(self.module_name, strict=strict)
+
+    def import_member(self, *, strict=False):
+        """Import the described member.
+
+        If *strict* is true, an AttributeError or an ImportError may be
+        raised if importing fails; otherwise, None is returned on error.
+        """
+        return _import_member(
+            self.module_name, self.member_name, strict=strict
+        )
+
+
+class _HashInfoBase:
+    """Base dataclass containing "backend" information.
+
+    Subclasses may define an attribute named after one of the known
+    implementations ("builtin", "openssl" or "hashlib") which stores
+    an _HashInfoItem object.
+
+    Those attributes can be retrieved through __getitem__(), e.g.,
+    ``info["builtin"]`` returns the _HashInfoItem corresponding to
+    the builtin implementation.
+    """
+
+    def __init__(self, canonical_name):
+        self._canonical_name = canonical_name
+
+    @property
+    def canonical_name(self):
+        """The canonical hash name."""
+        return self._canonical_name
+
+    def __getitem__(self, implementation):
+        try:
+            attrname = Implementation(implementation)
+        except ValueError:
+            raise self.invalid_implementation_error(implementation) from None
+
+        try:
+            provider = getattr(self, attrname)
+        except AttributeError:
+            raise self.invalid_implementation_error(implementation) from None
+
+        if not isinstance(provider, _HashInfoItem):
+            raise KeyError(implementation)
+        return provider
+
+    def invalid_implementation_error(self, implementation):
+        msg = f"no implementation {implementation} for {self.canonical_name}"
+        return AssertionError(msg)
+
+
 class HashInfo:
     """Dataclass storing explicit hash constructor names.
 
