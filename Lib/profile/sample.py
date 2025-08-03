@@ -760,10 +760,8 @@ def main():
 
     sort_value = args.sort if args.sort is not None else 2
 
-    if not(args.pid or args.module or args.script):
-        parser.error(
-            "You must specify either a process ID (-p), a module (-m), or a script to run."
-        )
+    if args.module is not None and not args.module:
+        parser.error("the following arguments are required: module name")
 
     if args.pid:
         sample(
