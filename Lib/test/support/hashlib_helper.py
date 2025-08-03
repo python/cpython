@@ -73,7 +73,7 @@ class Implementation(enum.StrEnum):
     hashlib = enum.auto()
 
 
-class HID(enum.StrEnum):
+class HashId(enum.StrEnum):
     """Enumeration containing the canonical digest names.
 
     Those names should only be used by hashlib.new() or hmac.new().
@@ -113,10 +113,10 @@ class HID(enum.StrEnum):
         return self.startswith("blake2")
 
 
-CANONICAL_DIGEST_NAMES = frozenset(map(str, HID.__members__))
+CANONICAL_DIGEST_NAMES = frozenset(map(str, HashId.__members__))
 NON_HMAC_DIGEST_NAMES = frozenset((
-    HID.shake_128, HID.shake_256,
-    HID.blake2s, HID.blake2b,
+    HashId.shake_128, HashId.shake_256,
+    HashId.blake2s, HashId.blake2b,
 ))
 
 
@@ -189,32 +189,32 @@ class HashInfo:
 # constructors. If the constructor name is None, then this means that the
 # algorithm can only be used by the "agile" new() interfaces.
 _EXPLICIT_CONSTRUCTORS = MappingProxyType({  # fmt: skip
-    HID.md5: HashInfo("_md5.md5", "openssl_md5", "md5"),
-    HID.sha1: HashInfo("_sha1.sha1", "openssl_sha1", "sha1"),
-    HID.sha224: HashInfo("_sha2.sha224", "openssl_sha224", "sha224"),
-    HID.sha256: HashInfo("_sha2.sha256", "openssl_sha256", "sha256"),
-    HID.sha384: HashInfo("_sha2.sha384", "openssl_sha384", "sha384"),
-    HID.sha512: HashInfo("_sha2.sha512", "openssl_sha512", "sha512"),
-    HID.sha3_224: HashInfo(
+    HashId.md5: HashInfo("_md5.md5", "openssl_md5", "md5"),
+    HashId.sha1: HashInfo("_sha1.sha1", "openssl_sha1", "sha1"),
+    HashId.sha224: HashInfo("_sha2.sha224", "openssl_sha224", "sha224"),
+    HashId.sha256: HashInfo("_sha2.sha256", "openssl_sha256", "sha256"),
+    HashId.sha384: HashInfo("_sha2.sha384", "openssl_sha384", "sha384"),
+    HashId.sha512: HashInfo("_sha2.sha512", "openssl_sha512", "sha512"),
+    HashId.sha3_224: HashInfo(
         "_sha3.sha3_224", "openssl_sha3_224", "sha3_224"
     ),
-    HID.sha3_256: HashInfo(
+    HashId.sha3_256: HashInfo(
         "_sha3.sha3_256", "openssl_sha3_256", "sha3_256"
     ),
-    HID.sha3_384: HashInfo(
+    HashId.sha3_384: HashInfo(
         "_sha3.sha3_384", "openssl_sha3_384", "sha3_384"
     ),
-    HID.sha3_512: HashInfo(
+    HashId.sha3_512: HashInfo(
         "_sha3.sha3_512", "openssl_sha3_512", "sha3_512"
     ),
-    HID.shake_128: HashInfo(
+    HashId.shake_128: HashInfo(
         "_sha3.shake_128", "openssl_shake_128", "shake_128"
     ),
-    HID.shake_256: HashInfo(
+    HashId.shake_256: HashInfo(
         "_sha3.shake_256", "openssl_shake_256", "shake_256"
     ),
-    HID.blake2s: HashInfo("_blake2.blake2s", None, "blake2s"),
-    HID.blake2b: HashInfo("_blake2.blake2b", None, "blake2b"),
+    HashId.blake2s: HashInfo("_blake2.blake2s", None, "blake2s"),
+    HashId.blake2b: HashInfo("_blake2.blake2b", None, "blake2b"),
 })
 assert _EXPLICIT_CONSTRUCTORS.keys() == CANONICAL_DIGEST_NAMES
 get_hash_info = _EXPLICIT_CONSTRUCTORS.__getitem__
@@ -223,16 +223,16 @@ get_hash_info = _EXPLICIT_CONSTRUCTORS.__getitem__
 # There is currently no OpenSSL one-shot named function and there will likely
 # be none in the future.
 _EXPLICIT_HMAC_CONSTRUCTORS = {
-    HID(name): f"_hmac.compute_{name}"
+    HashId(name): f"_hmac.compute_{name}"
     for name in CANONICAL_DIGEST_NAMES
 }
 # Neither HACL* nor OpenSSL supports HMAC over XOFs.
-_EXPLICIT_HMAC_CONSTRUCTORS[HID.shake_128] = None
-_EXPLICIT_HMAC_CONSTRUCTORS[HID.shake_256] = None
+_EXPLICIT_HMAC_CONSTRUCTORS[HashId.shake_128] = None
+_EXPLICIT_HMAC_CONSTRUCTORS[HashId.shake_256] = None
 # Strictly speaking, HMAC-BLAKE is meaningless as BLAKE2 is already a
 # keyed hash function. However, as it's exposed by HACL*, we test it.
-_EXPLICIT_HMAC_CONSTRUCTORS[HID.blake2s] = '_hmac.compute_blake2s_32'
-_EXPLICIT_HMAC_CONSTRUCTORS[HID.blake2b] = '_hmac.compute_blake2b_32'
+_EXPLICIT_HMAC_CONSTRUCTORS[HashId.blake2s] = '_hmac.compute_blake2s_32'
+_EXPLICIT_HMAC_CONSTRUCTORS[HashId.blake2b] = '_hmac.compute_blake2b_32'
 _EXPLICIT_HMAC_CONSTRUCTORS = MappingProxyType(_EXPLICIT_HMAC_CONSTRUCTORS)
 assert _EXPLICIT_HMAC_CONSTRUCTORS.keys() == CANONICAL_DIGEST_NAMES
 
@@ -663,7 +663,7 @@ def _block_builtin_hash_new(name):
     """Block a buitin-in hash name from the hashlib.new() interface."""
     assert isinstance(name, str), name
     assert name.lower() == name, f"invalid name: {name}"
-    assert name in HID, f"invalid hash: {name}"
+    assert name in HashId, f"invalid hash: {name}"
 
     # Re-import 'hashlib' in case it was mocked
     hashlib = importlib.import_module('hashlib')
