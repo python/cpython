@@ -1444,14 +1444,15 @@ make_unraisable_hook_args(PyThreadState *tstate, PyObject *exc_type,
 
    It can be called to log the exception of a custom sys.unraisablehook.
 
-   This assumes file is non-NULL.
+   This assumes 'file' neither NULL nor None.
  */
 static int
 write_unraisable_exc_file(PyThreadState *tstate, PyObject *exc_type,
                           PyObject *exc_value, PyObject *exc_tb,
                           PyObject *err_msg, PyObject *obj, PyObject *file)
 {
-    assert(file != NULL && !Py_IsNone(file));
+    assert(file != NULL);
+    assert(!Py_IsNone(file));
     if (obj != NULL && obj != Py_None) {
         if (err_msg != NULL && err_msg != Py_None) {
             if (PyFile_WriteObject(err_msg, file, Py_PRINT_RAW) < 0) {
