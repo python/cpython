@@ -1,2 +1,1 @@
-Add colorization to unraisable exceptions by default
-(:func:`sys.unraisablehook`).
+Add colorization to :func:`sys.unraisablehook` by default.
