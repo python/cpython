@@ -126,5 +126,4 @@ jobs:
     - name: 'Run epubcheck'
       run: epubcheck Doc/build/epub/Python.epub &> Doc/epubcheck.txt
     - name: 'Check for fatal errors in EPUB'
-      if: github.event_name == 'pull_request'
       run: python Doc/tools/check-epub.py
