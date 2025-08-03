@@ -450,14 +450,14 @@ Note this is also of true of ``asyncio.sleep``.
        def __await__(self):
            yield
 
-   async def _sleep_watcher(future: asyncio.Future, time_to_wake: float):
+   async def _sleep_watcher(future, time_to_wake):
        while True:
            if time.time() >= time_to_wake:
-           # This marks the future as done.
-           future.set_result(None)
-           break
+               # This marks the future as done.
+               future.set_result(None)
+               break
            else:
-           await YieldToEventLoop()
+               await YieldToEventLoop()
 
 Here is the full program's output:
 
