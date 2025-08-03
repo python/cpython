@@ -206,6 +206,52 @@ class _HashInfoBase:
         return AssertionError(msg)
 
 
+class _HashFuncInfo(_HashInfoBase):
+    """Dataclass containing information for hash functions constructors.
+
+    - *builtin* is the fully-qualified name of the HACL*
+      hash constructor function, e.g., "_md5.md5".
+
+    - *openssl* is the fully-qualified name of the "_hashlib" method
+      for the OpenSSL named constructor, e.g., "_hashlib.openssl_md5".
+
+    - *hashlib* is the fully-qualified name of the "hashlib" method
+      for the explicit named hash constructor, e.g., "hashlib.md5".
+    """
+
+    def __init__(self, canonical_name, builtin, openssl=None, hashlib=None):
+        super().__init__(canonical_name)
+        self.builtin = _HashInfoItem(builtin, strict=True)
+        self.openssl = _HashInfoItem(openssl, strict=False)
+        self.hashlib = _HashInfoItem(hashlib, strict=False)
+
+    def fullname(self, implementation):
+        """Get the fully qualified name of a given implementation.
+
+        This returns a string of the form "MODULE_NAME.METHOD_NAME" or None
+        if the hash function does not have a corresponding implementation.
+
+        *implementation* must be "builtin", "openssl" or "hashlib".
+        """
+        return self[implementation].fullname
+
+    def module_name(self, implementation):
+        """Get the name of the constructor function module.
+
+        The *implementation* must be "builtin", "openssl" or "hashlib".
+        """
+        return self[implementation].module_name
+
+    def method_name(self, implementation):
+        """Get the name of the constructor function module method.
+
+        Use fullname() to get the constructor function fully-qualified name.
+
+        The *implementation* must be "builtin", "openssl" or "hashlib".
+        """
+        return self[implementation].member_name
+
+
 class HashInfo:
     """Dataclass storing explicit hash constructor names.
 
