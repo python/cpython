@@ -1,0 +1,2 @@
+Remove some newer macOS API usage from the JIT compiler in order to restore
+compatibility with older OSX 10.15 deployment targets.
