@@ -19,7 +19,7 @@ runs:
     # UI, so use a single step with ::group:: markers instead.
     - shell: bash
       env:
-        - triplet: ${{ inputs.triplet }}
+        triplet: ${{ inputs.triplet }}
       run: |
         echo "::group::Configure build Python"
         ./Android/android.py configure-build
