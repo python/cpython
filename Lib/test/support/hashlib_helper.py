@@ -17,6 +17,53 @@ def try_import_module(module_name):
         return None
 
 
+def _parse_fullname(fullname, *, strict=False):
+    """Parse a fully-qualified name <module_name>.<member_name>.
+
+    The ``module_name`` component contains one or more dots.
+    The ``member_name`` component does not contain any dot.
+    """
+    if fullname is None:
+        assert not strict
+        return None, None
+    assert isinstance(fullname, str), fullname
+    assert fullname.count(".") >= 1, fullname
+    return fullname.rsplit(".", maxsplit=1)
+
+
+def _import_module(module_name, *, strict=False):
+    """Import a module from its fully-qualified name.
+
+    If *strict* is false, import failures are suppressed and None is returned.
+    """
+    if module_name is None:
+        # To prevent a TypeError in importlib.import_module
+        if strict:
+            raise ImportError("no module to import")
+        return None
+    try:
+        return importlib.import_module(module_name)
+    except ImportError as exc:
+        if strict:
+            raise exc
+        return None
+
+
+def _import_member(module_name, member_name, *, strict=False):
+    """Import a member from a module.
+
+    If *strict* is false, import failures are suppressed and None is returned.
+    """
+    if member_name is None:
+        if strict:
+            raise ImportError(f"no member to import from {module_name}")
+        return None
+    module = _import_module(module_name, strict=strict)
+    if strict:
+        return getattr(module, member_name)
+    return getattr(module, member_name, None)
+
+
 class Implementation(enum.StrEnum):
     # Indicate that the hash function is implemented by a built-in module.
     builtin = enum.auto()
