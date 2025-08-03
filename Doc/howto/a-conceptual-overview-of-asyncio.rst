@@ -11,7 +11,7 @@ fundamentally works, helping you understand the how and why behind the
 recommended patterns.
 
 You might be curious about some key ``asyncio`` concepts.
-You'll be comfortably able to answer these questions by the end of this 
+You'll be comfortably able to answer these questions by the end of this
 article.
 
 - What's happening behind the scenes when an object is ``await``\ ed?
