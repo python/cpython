@@ -161,7 +161,7 @@ class ThroughModuleAPIMixin(ModuleMixin, CreatorMixin, DigestMixin):
         return _call_digest_func(self.hmac.digest, key, msg, digestmod)
 
 
-@hashlib_helper.requires_hashlib()
+@hashlib_helper.requires_openssl_hashlib()
 class ThroughOpenSSLAPIMixin(CreatorMixin, DigestMixin):
     """Mixin delegating to _hashlib.hmac_new() and _hashlib.hmac_digest()."""
 
@@ -1431,7 +1431,7 @@ class HMACCompareDigestTestCase(CompareDigestMixin, unittest.TestCase):
             self.assertIs(self.compare_digest, operator_compare_digest)
 
 
-@hashlib_helper.requires_hashlib()
+@hashlib_helper.requires_openssl_hashlib()
 class OpenSSLCompareDigestTestCase(CompareDigestMixin, unittest.TestCase):
     compare_digest = openssl_compare_digest
 

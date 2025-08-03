@@ -230,7 +230,7 @@ def _ensure_wrapper_signature(wrapper, wrapped):
         )
 
 
-def requires_hashlib():
+def requires_openssl_hashlib():
     _hashlib = try_import_module("_hashlib")
     return unittest.skipIf(_hashlib is None, "requires _hashlib")
 
