@@ -24,12 +24,10 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
 .. class:: SMTP(host='', port=0, local_hostname=None[, timeout], source_address=None)
 
    An :class:`SMTP` instance encapsulates an SMTP connection.  It has methods
-   that support a full repertoire of SMTP and ESMTP operations. If the optional
-   *host* and *port* parameters are given, the SMTP :meth:`connect` method is
-   called with those parameters during initialization.If *host* is omitted or
-   an empty string, no connection is made during initialization; you must
+   that support a full repertoire of SMTP and ESMTP operations.
+   If *host* is omitted or set to an empty string, no connection is made during initialization; you must
    call :meth:`connect` manually before using the instance.
-   If *port* is zero, the default SMTP port (25) is used.  If specified,
+   If *port* is zero,the value of the :attr:`default_port` attribute is used. If specified,
    *local_hostname* is used as the FQDN of the local host in the HELO/EHLO
    command.  Otherwise, the local hostname is found using
    :func:`socket.getfqdn`.  If the :meth:`connect` call returns anything other
