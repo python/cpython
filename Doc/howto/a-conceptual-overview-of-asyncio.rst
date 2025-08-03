@@ -72,14 +72,15 @@ This is a regular 'ol Python function::
    def hello_printer():
        print(
            "Hi, I am a lowly, simple printer, though I have all I "
-           "need in life -- \nfresh paper and a loving octopus-wife."
+           "need in life -- \nfresh paper and my dearly beloved octopus "
+           "partner in crime."
        )
 
 Calling a regular function invokes its logic or body::
 
    >>> hello_printer()
    Hi, I am a lowly, simple printer, though I have all I need in life --
-   fresh paper and a loving octopus-wife.
+   fresh paper and my dearly beloved octopus partner in crime.
 
 The :ref:`async def <async def>`, as opposed to just a plain ``def``, makes
 this an asynchronous function (or "coroutine function").
