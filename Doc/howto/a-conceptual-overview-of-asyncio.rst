@@ -88,16 +88,16 @@ Calling it creates and returns a :ref:`coroutine <coroutine>` object.
 
 ::
 
-   async def special_fella(magic_number: int):
+   async def loudmouth_penguin(magic_number: int):
        print(
-        "I am a super special function. Far cooler than that printer. "
+        "I am a super special talking penguin. Far cooler than that printer. "
         f"By the way, my lucky number is: {magic_number}."
        )
 
 Note that calling it does not execute the function::
 
-   >>> special_fella(magic_number=3)
-   <coroutine object special_fella at 0x104ed2740>
+   >>> loudmouth_penguin(magic_number=3)
+   <coroutine object loudmouth_penguin at 0x104ed2740>
 
 The terms "asynchronous function" and "coroutine object" are often conflated
 as coroutine.
@@ -166,7 +166,7 @@ to specify the event loop.
 ::
 
    # This creates a Task object and puts it on the event loop's queue.
-   special_task = asyncio.create_task(coro=special_fella(magic_number=5))
+   task = asyncio.create_task(coro=loudmouth_penguin(magic_number=5))
 
 =====
 await
