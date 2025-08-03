@@ -4,8 +4,6 @@
 A Conceptual Overview of :mod:`asyncio`
 ***************************************
 
-:Author: Alexander Nordin
-
 This article seeks to help you build a sturdy mental model of how ``asyncio``
 fundamentally works, helping you understand the how and why behind the
 recommended patterns.
@@ -20,6 +18,11 @@ article.
   (such as computing n-factorial)?
 - How would I go about writing my own asynchronous variant of some operation?
   Something like an async sleep, database request, and so on.
+
+.. seealso::
+
+   The `guide <https://github.com/anordin95/a-conceptual-overview-of-asyncio/
+   tree/main>`_ which inspired this HOWTO article.
 
 --------------------------------------------
 A conceptual overview part 1: the high-level
