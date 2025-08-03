@@ -32,8 +32,8 @@ _mmap_counter = itertools.count()
 
 def pipe(*, duplex=False, overlapped=(True, True), bufsize=BUFSIZE):
     """Like os.pipe() but with overlapped support and using handles not fds."""
-    address = tempfile.mkstemp(r'\\.\pipe\python-pipe-{:d}-{:s}'.format(os.getpid(),
-                                                       str(uuid.uuid4())))
+    pipename = f'python-pipe-{os.getpid()}-{uuid.uuid4()}'
+    address = fr'\\.\pipe\{pipename}'
 
     if duplex:
         openmode = _winapi.PIPE_ACCESS_DUPLEX
