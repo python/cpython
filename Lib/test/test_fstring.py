@@ -1841,30 +1841,23 @@ print(f'''{{
             def __format__(self, format):
                 return format
 
-        # Test basic Unicode escape
-        non_raw = f"{UnchangedFormat():\xFF}"
-        self.assertEqual(non_raw, 'ÿ')
-
-        raw = rf"{UnchangedFormat():\xFF}"
-        self.assertEqual(raw, '\\xFF')
-
-        # Test newline escape
-        non_raw = f"{UnchangedFormat():\n}"
-        self.assertEqual(non_raw, '\n')
-
-        raw = rf"{UnchangedFormat():\n}"
-        self.assertEqual(raw, '\\n')
-
-        # Test tab escape
-        non_raw = f"{UnchangedFormat():\t}"
-        self.assertEqual(non_raw, '\t')
-
-        raw = rf"{UnchangedFormat():\t}"
-        self.assertEqual(raw, '\\t')
-
+        # Test basic escape sequences
+        self.assertEqual(f"{UnchangedFormat():\xFF}", 'ÿ')
+        self.assertEqual(rf"{UnchangedFormat():\xFF}", '\\xFF')
+        
+        # Test nested expressions with raw/non-raw combinations
+        self.assertEqual(rf"{UnchangedFormat():{'\xFF'}}", 'ÿ')
+        self.assertEqual(f"{UnchangedFormat():{r'\xFF'}}", '\\xFF')
+        self.assertEqual(rf"{UnchangedFormat():{r'\xFF'}}", '\\xFF')
+        
+        # Test continuation character in format specs
+        self.assertEqual(f"""{UnchangedFormat():{'a'\
+                        'b'}}""", 'ab')
+        self.assertEqual(rf"""{UnchangedFormat():{'a'\
+                         'b'}}""", 'ab')
+        
         # Test multiple format specs in same raw f-string
-        result = rf"{UnchangedFormat():\xFF} {UnchangedFormat():\n}"
-        self.assertEqual(result, '\\xFF \\n')
+        self.assertEqual(rf"{UnchangedFormat():\xFF} {UnchangedFormat():\n}", '\\xFF \\n')
 
 
 if __name__ == '__main__':
