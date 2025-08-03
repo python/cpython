@@ -220,6 +220,131 @@ class AST_Tests(unittest.TestCase):
                 # This also must not crash:
                 ast.parse(tree, optimize=2)
 
+    def test_docstring_optimization_single_node(self):
+        # https://github.com/python/cpython/issues/137308
+        class_example1 = textwrap.dedent('''
+            class A:
+                """Docstring"""
+        ''')
+        class_example2 = textwrap.dedent('''
+            class A:
+                """
+                Docstring"""
+        ''')
+        def_example1 = textwrap.dedent('''
+            def some():
+                """Docstring"""
+        ''')
+        def_example2 = textwrap.dedent('''
+            def some():
+                """Docstring
+                                       """
+        ''')
+        async_def_example1 = textwrap.dedent('''
+            async def some():
+                """Docstring"""
+        ''')
+        async_def_example2 = textwrap.dedent('''
+            async def some():
+                """
+                Docstring
+            """
+        ''')
+        for code in [
+            class_example1,
+            class_example2,
+            def_example1,
+            def_example2,
+            async_def_example1,
+            async_def_example2,
+        ]:
+            for opt_level in [0, 1, 2]:
+                with self.subTest(code=code, opt_level=opt_level):
+                    mod = ast.parse(code, optimize=opt_level)
+                    self.assertEqual(len(mod.body[0].body), 1)
+                    if opt_level == 2:
+                        pass_stmt = mod.body[0].body[0]
+                        self.assertIsInstance(pass_stmt, ast.Pass)
+                        self.assertEqual(
+                            vars(pass_stmt),
+                            {
+                                'lineno': 3,
+                                'col_offset': 4,
+                                'end_lineno': 3,
+                                'end_col_offset': 8,
+                            },
+                        )
+                    else:
+                        self.assertIsInstance(mod.body[0].body[0], ast.Expr)
+                        self.assertIsInstance(
+                            mod.body[0].body[0].value,
+                            ast.Constant,
+                        )
+
+                    compile(code, "a", "exec")
+                    compile(code, "a", "exec", optimize=opt_level)
+                    compile(mod, "a", "exec")
+                    compile(mod, "a", "exec", optimize=opt_level)
+
+    def test_docstring_optimization_multiple_nodes(self):
+        # https://github.com/python/cpython/issues/137308
+        class_example = textwrap.dedent(
+            """
+            class A:
+                '''
+                Docstring
+                '''
+                x = 1
+            """
+        )
+
+        def_example = textwrap.dedent(
+            """
+            def some():
+                '''
+                Docstring
+
+            '''
+                x = 1
+            """
+        )
+
+        async_def_example = textwrap.dedent(
+            """
+            async def some():
+
+                '''Docstring
+
+            '''
+                x = 1
+            """
+        )
+
+        for code in [
+            class_example,
+            def_example,
+            async_def_example,
+        ]:
+            for opt_level in [0, 1, 2]:
+                with self.subTest(code=code, opt_level=opt_level):
+                    mod = ast.parse(code, optimize=opt_level)
+                    if opt_level == 2:
+                        self.assertNotIsInstance(
+                            mod.body[0].body[0],
+                            (ast.Pass, ast.Expr),
+                        )
+                    else:
+                        self.assertIsInstance(mod.body[0].body[0], ast.Expr)
+                        self.assertIsInstance(
+                            mod.body[0].body[0].value,
+                            ast.Constant,
+                        )
+
+                    compile(code, "a", "exec")
+                    compile(code, "a", "exec", optimize=opt_level)
+                    compile(mod, "a", "exec")
+                    compile(mod, "a", "exec", optimize=opt_level)
+
     def test_slice(self):
         slc = ast.parse("x[::]").body[0].value.slice
         self.assertIsNone(slc.upper)
