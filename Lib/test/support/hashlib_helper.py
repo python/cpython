@@ -794,3 +794,21 @@ def block_algorithm(name, *, allow_openssl=False, allow_builtin=False):
             # _hmac.compute_digest(..., name)
             stack.enter_context(_block_builtin_hmac_digest(name))
         yield
+
+
+@contextlib.contextmanager
+def block_openssl_algorithms(*ignored):
+    """Block OpenSSL implementations, except those given in *ignored*."""
+    with contextlib.ExitStack() as stack:
+        for name in CANONICAL_DIGEST_NAMES.difference(ignored):
+            stack.enter_context(block_algorithm(name, allow_builtin=True))
+        yield
+
+
+@contextlib.contextmanager
+def block_builtin_algorithms(*ignored):
+    """Block HACL* implementations, except those given in *ignored*."""
+    with contextlib.ExitStack() as stack:
+        for name in CANONICAL_DIGEST_NAMES.difference(ignored):
+            stack.enter_context(block_algorithm(name, allow_openssl=True))
+        yield
