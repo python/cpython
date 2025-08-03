@@ -1844,18 +1844,18 @@ print(f'''{{
         # Test basic escape sequences
         self.assertEqual(f"{UnchangedFormat():\xFF}", 'ÿ')
         self.assertEqual(rf"{UnchangedFormat():\xFF}", '\\xFF')
-        
+
         # Test nested expressions with raw/non-raw combinations
         self.assertEqual(rf"{UnchangedFormat():{'\xFF'}}", 'ÿ')
         self.assertEqual(f"{UnchangedFormat():{r'\xFF'}}", '\\xFF')
         self.assertEqual(rf"{UnchangedFormat():{r'\xFF'}}", '\\xFF')
-        
+
         # Test continuation character in format specs
         self.assertEqual(f"""{UnchangedFormat():{'a'\
                         'b'}}""", 'ab')
         self.assertEqual(rf"""{UnchangedFormat():{'a'\
                          'b'}}""", 'ab')
-        
+
         # Test multiple format specs in same raw f-string
         self.assertEqual(rf"{UnchangedFormat():\xFF} {UnchangedFormat():\n}", '\\xFF \\n')
 
