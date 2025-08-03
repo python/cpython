@@ -39,18 +39,18 @@ It's behind the scenes managing resources.
 Some power is explicitly granted to it, but a lot of its ability to get things
 done comes from the respect and cooperation of its teammates.
 
-In more technical terms, the event loop contains a queue of tasks (or "chunks
+In more technical terms, the event loop contains a queue of jobs (or "chunks
 of work") to be run.
-Some tasks are added directly by you, and some indirectly by ``asyncio``.
-The event loop pops a task from the queue and invokes it (or "gives it control"),
-similar to calling a function, then that task runs.
+Some jobs are added directly by you, and some indirectly by ``asyncio``.
+The event loop pops a job from the queue and invokes it (or "gives it control"),
+similar to calling a function, then that job runs.
 Once it pauses or completes, it returns control to the event loop.
-The event loop will then move on to the next task in its queue and invoke it.
+The event loop will then move on to the next job in its queue and invoke it.
 This process repeats indefinitely.
 Even if the queue is empty, the event loop continues to cycle (somewhat
 aimlessly).
 
-Effective execution relies on tasks sharing well: a greedy task could hog
+Effective execution relies on tasks sharing well: a greedy job could hog
 control and leave the other tasks to starve, rendering the overall event loop
 approach rather useless.
 
