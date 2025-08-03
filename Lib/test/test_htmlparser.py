@@ -16,7 +16,7 @@ class EventCollector(html.parser.HTMLParser):
         self.append = self.events.append
         html.parser.HTMLParser.__init__(self, *args, **kw)
         if autocdata:
-            self.support_cdata(False)
+            self._set_support_cdata(False)
 
     def get_events(self):
         # Normalize the list of events so that buffer artefacts don't
@@ -38,7 +38,7 @@ class EventCollector(html.parser.HTMLParser):
     def handle_starttag(self, tag, attrs):
         self.append(("starttag", tag, attrs))
         if self.autocdata and tag == 'svg':
-            self.support_cdata(True)
+            self._set_support_cdata(True)
 
     def handle_startendtag(self, tag, attrs):
         self.append(("startendtag", tag, attrs))
@@ -46,7 +46,7 @@ class EventCollector(html.parser.HTMLParser):
     def handle_endtag(self, tag):
         self.append(("endtag", tag))
         if self.autocdata and tag == 'svg':
-            self.support_cdata(False)
+            self._set_support_cdata(False)
 
     # all other markup
 

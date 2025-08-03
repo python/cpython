@@ -184,7 +184,17 @@ class HTMLParser(_markupbase.ParserBase):
         self.cdata_elem = None
         self._escapable = True
 
-    def support_cdata(self, flag=True):
+    def _set_support_cdata(self, flag=True):
+        """Enable or disable support of the CDATA sections.
+        If enabled, "<[CDATA[" starts a CDATA section which ends with "]]>".
+        If disabled, "<[CDATA[" starts a bogus comments which ends with ">".
+
+        This method is not called by default. Its purpose is to be called
+        in custom handle_starttag() and handle_endtag() methods, with
+        value that depends on the adjusted current node.
+        See https://html.spec.whatwg.org/multipage/parsing.html#markup-declaration-open-state
+        for details.
+        """
         self._support_cdata = flag
 
     # Internal -- handle data as far as reasonable.  May leave state
