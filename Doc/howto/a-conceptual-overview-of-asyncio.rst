@@ -191,7 +191,8 @@ indicating it should resume the current task/coroutine when it (the
 In other words, when that awaited task finishes, the original task is added
 back to the event loops queue.
 
-In practice, it's slightly more convoluted, but not by much.
+This is a basic, yet reliable mental model.
+In practice, it's slightly more complex, but not by much.
 In part 2, we'll walk through the details that make this possible.
 
 **Unlike tasks, awaiting a coroutine does not cede control!**
