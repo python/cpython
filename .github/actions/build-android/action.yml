@@ -18,6 +18,8 @@ runs:
     # The steps of a composite action are not clearly divided in the GitHub
     # UI, so use a single step with ::group:: markers instead.
     - shell: bash
+      env:
+        - triplet: ${{ inputs.triplet }}
       run: |
         echo "::group::Configure build Python"
         ./Android/android.py configure-build
@@ -28,18 +30,18 @@ runs:
         echo "::endgroup::"
 
         echo "::group::Configure host Python"
-        ./Android/android.py configure-host ${{ inputs.triplet }}
+        ./Android/android.py configure-host $triplet
         echo "::endgroup::"
 
         echo "::group::Compile host Python"
-        ./Android/android.py make-host ${{ inputs.triplet }}
+        ./Android/android.py make-host $triplet
         echo "::endgroup::"
 
         echo "::group::Make release package"
-        ./Android/android.py package ${{ inputs.triplet }}
+        ./Android/android.py package $triplet
         echo "::endgroup::"
 
-        if [ "$RUNNER_OS" = "Linux" ] && [ "$RUNNER_ARCH" = "X64"]; then
+        if [ "$RUNNER_OS" = "Linux" ] && [ "$RUNNER_ARCH" = "X64" ]; then
             # https://github.blog/changelog/2024-04-02-github-actions-hardware-accelerated-android-virtualization-now-available/
             echo "::group::Enable KVM for Android emulator"
             echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
@@ -50,7 +52,7 @@ runs:
 
             echo "::group::Unpack release artifact"
             mkdir $RUNNER_TEMP/android
-            tar -C $RUNNER_TEMP/android -xf cross-build/${{ inputs.triplet }}/dist/*
+            tar -C $RUNNER_TEMP/android -xf cross-build/$triplet/dist/*
             echo "::endgroup::"
 
             echo "::group::Tests"

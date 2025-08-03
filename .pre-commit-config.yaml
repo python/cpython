@@ -72,11 +72,9 @@ repos:
       - id: actionlint
 
   - repo: https://github.com/woodruffw/zizmor-pre-commit
-    rev: v1.6.0
+    rev: v1.11.0
     hooks:
       - id: zizmor
-        # Action files are misidentified as workflows.
-        exclude: ^.github/actions/
 
   - repo: https://github.com/sphinx-contrib/sphinx-lint
     rev: v1.0.0
