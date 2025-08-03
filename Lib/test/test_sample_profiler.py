@@ -1989,7 +1989,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
 
         self.assertEqual(cm.exception.code, 2)  # argparse error
         error_msg = mock_stderr.getvalue()
-        self.assertIn("must specify", error_msg)
+        self.assertIn("arguments are required: module name", error_msg)
 
     def test_cli_long_module_option(self):
         test_args = ["profile.sample", "--module", "mymodule", "arg1"]

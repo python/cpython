@@ -14,6 +14,9 @@ from .pstats_collector import PstatsCollector
 from .stack_collector import CollapsedStackCollector
 
 FREE_THREADED_BUILD = sysconfig.get_config_var("Py_GIL_DISABLED") is not None
+MAX_STARTUP_ATTEMPTS = 5
+STARTUP_RETRY_DELAY_SECONDS = 0.1
+
 
 class SampleProfiler:
     def __init__(self, pid, sample_interval_usec, all_threads):
@@ -538,6 +541,30 @@ def _validate_collapsed_format_args(args, parser):
         args.outfile = f"collapsed.{args.pid}.txt"
 
 
+def wait_for_process_and_sample(process_pid, sort_value, args):
+    for attempt in range(MAX_STARTUP_ATTEMPTS):
+        try:
+            sample(
+                process_pid,
+                sort=sort_value,
+                sample_interval_usec=args.interval,
+                duration_sec=args.duration,
+                filename=args.outfile,
+                all_threads=args.all_threads,
+                limit=args.limit,
+                show_summary=not args.no_summary,
+                output_format=args.format,
+                realtime_stats=args.realtime_stats,
+            )
+            break
+        except RuntimeError:
+            if attempt < MAX_STARTUP_ATTEMPTS - 1:
+                print("Waiting for process to start...")
+                time.sleep(STARTUP_RETRY_DELAY_SECONDS)
+            else:
+                raise RuntimeError("Process failed to start after maximum retries")
+
+
 def main():
     # Create the main parser
     parser = argparse.ArgumentParser(
@@ -760,24 +787,7 @@ def main():
         process = subprocess.Popen(cmd)
 
         try:
-            exit_code = process.wait(timeout=0.1)
-            sys.exit(exit_code)
-        except subprocess.TimeoutExpired:
-            pass
-
-        try:
-            sample(
-                process.pid,
-                sort=sort_value,
-                sample_interval_usec=args.interval,
-                duration_sec=args.duration,
-                filename=args.outfile,
-                all_threads=args.all_threads,
-                limit=args.limit,
-                show_summary=not args.no_summary,
-                output_format=args.format,
-                realtime_stats=args.realtime_stats,
-            )
+            wait_for_process_and_sample(process.pid, sort_value, args)
         finally:
             if process.poll() is None:
                 process.terminate()
