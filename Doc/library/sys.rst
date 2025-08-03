@@ -2160,7 +2160,6 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    exceptions are handled.
 
    .. versionchanged:: next
-
       Exceptions are now printed with colorful text.
 
    .. seealso::
