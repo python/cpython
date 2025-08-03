@@ -1,6 +1,7 @@
 #include <Python.h>
 
 #include "pegen.h"
+#include "lexer/state.h"
 #include "string_parser.h"
 #include "pycore_runtime.h"         // _PyRuntime
 #include "pycore_pystate.h"         // _PyInterpreterState_GET()
@@ -1374,7 +1375,7 @@ expr_ty _PyPegen_decoded_constant_from_token(Parser* p, Token* tok) {
     int is_raw = 0;
     if (INSIDE_FSTRING(p->tok)) {
         tokenizer_mode *mode = TOK_GET_MODE(p->tok);
-        is_raw = mode->raw;
+        is_raw = mode->f_string_raw;
     }
 
     PyObject* str = _PyPegen_decode_string(p, is_raw, bstr, bsize, tok);

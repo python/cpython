@@ -1,6 +1,7 @@
 #ifndef _PY_LEXER_H_
 #define _PY_LEXER_H_
 
+#include "Python.h"
 #include "object.h"
 
 #define MAXINDENT 100       /* Max indentation level */
@@ -138,5 +139,20 @@ void _PyTokenizer_Free(struct tok_state *);
 void _PyToken_Free(struct token *);
 void _PyToken_Init(struct token *);
 
+#ifdef Py_DEBUG
+static inline tokenizer_mode* TOK_GET_MODE(struct tok_state* tok) {
+    assert(tok->tok_mode_stack_index >= 0);
+    assert(tok->tok_mode_stack_index < MAXFSTRINGLEVEL);
+    return &(tok->tok_mode_stack[tok->tok_mode_stack_index]);
+}
+static inline tokenizer_mode* TOK_NEXT_MODE(struct tok_state* tok) {
+    assert(tok->tok_mode_stack_index >= 0);
+    assert(tok->tok_mode_stack_index + 1 < MAXFSTRINGLEVEL);
+    return &(tok->tok_mode_stack[++tok->tok_mode_stack_index]);
+}
+#else
+#define TOK_GET_MODE(tok) (&(tok->tok_mode_stack[tok->tok_mode_stack_index]))
+#define TOK_NEXT_MODE(tok) (&(tok->tok_mode_stack[++tok->tok_mode_stack_index]))
+#endif
 
 #endif

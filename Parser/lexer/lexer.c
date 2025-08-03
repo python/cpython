@@ -22,22 +22,6 @@
                || c == '_'\
                || (c >= 128))
 
-#ifdef Py_DEBUG
-static inline tokenizer_mode* TOK_GET_MODE(struct tok_state* tok) {
-    assert(tok->tok_mode_stack_index >= 0);
-    assert(tok->tok_mode_stack_index < MAXFSTRINGLEVEL);
-    return &(tok->tok_mode_stack[tok->tok_mode_stack_index]);
-}
-static inline tokenizer_mode* TOK_NEXT_MODE(struct tok_state* tok) {
-    assert(tok->tok_mode_stack_index >= 0);
-    assert(tok->tok_mode_stack_index + 1 < MAXFSTRINGLEVEL);
-    return &(tok->tok_mode_stack[++tok->tok_mode_stack_index]);
-}
-#else
-#define TOK_GET_MODE(tok) (&(tok->tok_mode_stack[tok->tok_mode_stack_index]))
-#define TOK_NEXT_MODE(tok) (&(tok->tok_mode_stack[++tok->tok_mode_stack_index]))
-#endif
-
 #define MAKE_TOKEN(token_type) _PyLexer_token_setup(tok, token, token_type, p_start, p_end)
 #define MAKE_TYPE_COMMENT_TOKEN(token_type, col_offset, end_col_offset) (\
                 _PyLexer_type_comment_token_setup(tok, token, token_type, col_offset, end_col_offset, p_start, p_end))
