@@ -29,8 +29,10 @@ database connection libraries, distributed task queues, etc.
 asyncio is often a perfect fit for IO-bound and high-level
 **structured** network code.
 
-If you're new to asyncio or confused by it and would like to better understand
-the fundmentals of how it works check out: :ref:`a-conceptual-overview-of-asyncio`.
+.. seealso::
+
+   :ref:`a-conceptual-overview-of-asyncio`
+      Explanation of the fundamentals of asyncio.
 
 asyncio provides a set of **high-level** APIs to:
 
