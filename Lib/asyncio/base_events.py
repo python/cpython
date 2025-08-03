@@ -636,7 +636,7 @@ class BaseEventLoop(events.AbstractEventLoop):
     def _run_forever_setup(self):
         """Prepare the run loop to process events.
 
-        This method exists so that custom custom event loop subclasses (e.g., event loops
+        This method exists so that custom event loop subclasses (e.g., event loops
         that integrate a GUI event loop with Python's event loop) have access to all the
         loop setup logic.
         """
@@ -656,7 +656,7 @@ class BaseEventLoop(events.AbstractEventLoop):
     def _run_forever_cleanup(self):
         """Clean up after an event loop finishes the looping over events.
 
-        This method exists so that custom custom event loop subclasses (e.g., event loops
+        This method exists so that custom event loop subclasses (e.g., event loops
         that integrate a GUI event loop with Python's event loop) have access to all the
         loop cleanup logic.
         """
