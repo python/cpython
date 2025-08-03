@@ -215,7 +215,7 @@ class ResourceTest(unittest.TestCase):
                 return 2
             def __getitem__(self, key):
                 lim = limits[key]
-                return lim - 1 if lim > 0 else lim + 0xFFFF_FFFF  # new reference
+                return lim - 1 if lim > 0 else lim + sys.maxsize*2  # new reference
 
         limits = resource.getrlimit(resource.RLIMIT_AS)
         self.assertEqual(resource.prlimit(0, resource.RLIMIT_AS, BadSeq()),
