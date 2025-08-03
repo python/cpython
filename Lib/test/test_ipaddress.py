@@ -4,14 +4,15 @@
 """Unittest for ipaddress module."""
 
 
-import copy
-import unittest
-import re
 import contextlib
+import copy
+import ipaddress
 import operator
 import pickle
-import ipaddress
+import re
+import unittest
 import weakref
+
 from test.support import LARGEST, SMALLEST
 
 

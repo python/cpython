@@ -6,9 +6,8 @@ defined elsewhere, we don't need to test them exhaustively.
 
 
 import secrets
-import unittest
 import string
-
+import unittest
 
 # === Unit tests ===
 

@@ -2,7 +2,13 @@ import collections.abc
 import copy
 import pickle
 import unittest
-from test.support import skip_emscripten_stack_overflow, skip_wasi_stack_overflow, exceeds_recursion_limit
+
+from test.support import (
+    exceeds_recursion_limit,
+    skip_emscripten_stack_overflow,
+    skip_wasi_stack_overflow,
+)
+
 
 class DictSetTest(unittest.TestCase):
 

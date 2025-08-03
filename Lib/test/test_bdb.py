@@ -49,17 +49,16 @@
 """
 
 import bdb as _bdb
-import sys
-import os
-import unittest
-import textwrap
 import importlib
 import linecache
+import os
+import sys
+import textwrap
+import unittest
 from contextlib import contextmanager
 from itertools import islice, repeat
-from test.support import import_helper
-from test.support import os_helper
-from test.support import patch_list
+
+from test.support import import_helper, os_helper, patch_list
 
 
 class BdbException(Exception): pass

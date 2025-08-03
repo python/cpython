@@ -2,11 +2,13 @@
 Test suite for OS X interpreter environment variables.
 """
 
-from test.support.os_helper import EnvironmentVarGuard
 import subprocess
 import sys
 import sysconfig
 import unittest
+
+from test.support.os_helper import EnvironmentVarGuard
+
 
 @unittest.skipUnless(sys.platform == 'darwin' and
                      sysconfig.get_config_var('WITH_NEXT_FRAMEWORK'),

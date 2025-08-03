@@ -4,11 +4,13 @@ import os
 import shutil
 import subprocess
 import sys
-import test.support
 import unittest
-from ctypes import CDLL, cdll, addressof, c_void_p, c_char_p
+from ctypes import CDLL, addressof, c_char_p, c_void_p, cdll
 from ctypes.util import find_library
+
+import test.support
 from test.support import import_helper, os_helper
+
 _ctypes_test = import_helper.import_module("_ctypes_test")
 
 

@@ -6,18 +6,18 @@
 # randrange, and then Python hangs.
 
 import _imp as imp
-import os
 import importlib
-import sys
-import time
+import os
 import shutil
+import sys
 import threading
+import time
 import unittest
+
 from test import support
-from test.support import verbose
+from test.support import script_helper, threading_helper, verbose
 from test.support.import_helper import forget, mock_register_at_fork
-from test.support.os_helper import (TESTFN, unlink, rmtree)
-from test.support import script_helper, threading_helper
+from test.support.os_helper import TESTFN, rmtree, unlink
 
 threading_helper.requires_working_threading(module=True)
 
@@ -29,8 +29,8 @@ def task(N, done, done_tasks, errors):
             import modulefinder
             import random
         else:
-            import random
             import modulefinder
+            import random
         # This will fail if random is not completely initialized
         x = random.randrange(1, 3)
     except Exception as e:

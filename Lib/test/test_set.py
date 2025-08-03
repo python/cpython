@@ -9,6 +9,7 @@ import unittest
 import warnings
 import weakref
 from random import randrange, shuffle
+
 from test import support
 from test.support import warnings_helper
 
@@ -1763,6 +1764,8 @@ class S:
         raise StopIteration
 
 from itertools import chain
+
+
 def L(seqn):
     'Test multiple tiers of iterators'
     return chain(map(lambda x:x, R(Ig(G(seqn)))))

@@ -2,7 +2,6 @@ import gc
 import time
 import unittest
 import weakref
-
 from ast import Or
 from functools import partial
 from threading import Barrier, Thread

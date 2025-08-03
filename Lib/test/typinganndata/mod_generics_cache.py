@@ -1,6 +1,6 @@
 """Module for testing the behavior of generics across different modules."""
 
-from typing import TypeVar, Generic, Optional, TypeAliasType
+from typing import Generic, Optional, TypeAliasType, TypeVar
 
 default_a: Optional['A'] = None
 default_b: Optional['B'] = None

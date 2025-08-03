@@ -47,10 +47,10 @@ naming style.
 __author__ = "Michael Felt <aixtools@felt.demon.nl>"
 
 import re
-from os import environ, path
-from sys import executable
 from ctypes import c_void_p, sizeof
-from subprocess import Popen, PIPE, DEVNULL
+from os import environ, path
+from subprocess import DEVNULL, PIPE, Popen
+from sys import executable
 
 # Executable bit size - 32 or 64
 # Used to filter the search in an archive by size, e.g., -X64
@@ -58,6 +58,8 @@ AIX_ABI = sizeof(c_void_p) * 8
 
 
 from sys import maxsize
+
+
 def _last_version(libnames, sep):
     def _num_version(libname):
         # "libxyz.so.MAJOR.MINOR" => [MAJOR, MINOR]

@@ -4,15 +4,15 @@
 import os
 import sys
 import sysconfig
-import unittest
 import traceback
+import unittest
 from io import BytesIO
-from test import support
-from test.support import os_helper
-from test.support import sortdict
 from unittest import mock
 from xml.parsers import expat
 from xml.parsers.expat import errors
+
+from test import support
+from test.support import os_helper, sortdict
 
 
 class SetAttributeTest(unittest.TestCase):

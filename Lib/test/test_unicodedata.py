@@ -7,17 +7,18 @@
 """
 
 import hashlib
-from http.client import HTTPException
 import sys
 import unicodedata
 import unittest
+from http.client import HTTPException
+
 from test.support import (
+    check_disallow_instantiation,
+    cpython_only,
+    force_not_colorized,
     open_urlresource,
     requires_resource,
     script_helper,
-    cpython_only,
-    check_disallow_instantiation,
-    force_not_colorized,
 )
 
 

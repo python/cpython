@@ -1,5 +1,6 @@
 """Tests for tasks.py."""
 
+import asyncio
 import collections
 import contextlib
 import contextvars
@@ -11,16 +12,14 @@ import sys
 import traceback
 import types
 import unittest
-from unittest import mock
+from asyncio import futures, tasks
 from types import GenericAlias
+from unittest import mock
 
-import asyncio
-from asyncio import futures
-from asyncio import tasks
-from test.test_asyncio import utils as test_utils
 from test import support
 from test.support.script_helper import assert_python_ok
 from test.support.warnings_helper import ignore_warnings
+from test.test_asyncio import utils as test_utils
 
 
 def tearDownModule():
@@ -3254,8 +3253,8 @@ class GenericTaskTests(test_utils.TestCase):
         # (hence the test for _functools etc), but _asyncio somehow didn't.
         try:
             import _functools  # noqa: F401
-            import _json       # noqa: F401
-            import _pickle     # noqa: F401
+            import _json  # noqa: F401
+            import _pickle  # noqa: F401
         except ImportError:
             self.skipTest('C modules are not available')
         else:

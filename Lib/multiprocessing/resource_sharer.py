@@ -14,9 +14,8 @@ import socket
 import sys
 import threading
 
-from . import process
+from . import process, util
 from .context import reduction
-from . import util
 
 __all__ = ['stop']
 

@@ -3,8 +3,9 @@
 __all__ = ["Repr", "repr", "recursive_repr"]
 
 import builtins
-from itertools import islice
 from _thread import get_ident
+from itertools import islice
+
 
 def recursive_repr(fillvalue='...'):
     'Decorator to make a repr function return fillvalue for a recursive call'
@@ -187,7 +188,8 @@ class Repr:
             assert 'sys.set_int_max_str_digits()' in str(exc)
             # Those imports must be deferred due to Python's build system
             # where the reprlib module is imported before the math module.
-            import math, sys
+            import math
+            import sys
             # Integers with more than sys.get_int_max_str_digits() digits
             # are rendered differently as their repr() raises a ValueError.
             # See https://github.com/python/cpython/issues/135487.

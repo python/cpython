@@ -1,9 +1,10 @@
-from test.support import verbose, TestFailed
 import locale
-import sys
 import re
-import test.support as support
+import sys
 import unittest
+
+import test.support as support
+from test.support import TestFailed, verbose
 from test.support.import_helper import import_module
 
 maxsize = support.MAX_Py_ssize_t

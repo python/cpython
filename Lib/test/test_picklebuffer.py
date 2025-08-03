@@ -4,9 +4,9 @@ Pickling tests themselves are in pickletester.py.
 """
 
 import gc
-from pickle import PickleBuffer
-import weakref
 import unittest
+import weakref
+from pickle import PickleBuffer
 
 from test.support import import_helper
 

@@ -21,8 +21,7 @@ import sys
 import threading
 import warnings
 
-from . import spawn
-from . import util
+from . import spawn, util
 
 __all__ = ['ensure_running', 'register', 'unregister']
 

@@ -1,19 +1,23 @@
-import unittest
-import tkinter
-from tkinter import TclError
 import os
+import tkinter
+import unittest
+from tkinter import TclError
+
 from test.support import requires
-
-from test.test_tkinter.support import (requires_tk, tk_version,
-                                  get_tk_patchlevel, widget_eq,
-                                  AbstractDefaultRootTest)
-
+from test.test_tkinter.support import (
+    AbstractDefaultRootTest,
+    get_tk_patchlevel,
+    requires_tk,
+    tk_version,
+    widget_eq,
+)
 from test.test_tkinter.widget_tests import (
-    add_configure_tests,
     AbstractWidgetTest,
-    StandardOptionsTests,
     IntegerSizeTests,
-    PixelSizeTests)
+    PixelSizeTests,
+    StandardOptionsTests,
+    add_configure_tests,
+)
 
 requires('gui')
 

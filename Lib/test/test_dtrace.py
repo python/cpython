@@ -10,7 +10,6 @@ import unittest
 from test import support
 from test.support import findfile
 
-
 if not support.has_subprocess_support:
     raise unittest.SkipTest("test module requires subprocess")
 

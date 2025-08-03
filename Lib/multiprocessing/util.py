@@ -7,13 +7,14 @@
 # Licensed to PSF under a Contributor Agreement.
 #
 
-import os
-import itertools
-import sys
-import weakref
 import atexit
-import threading        # we want threading to install it's
-                        # cleanup function before multiprocessing does
+import itertools
+import os
+import sys
+import threading  # we want threading to install it's
+import weakref
+
+# cleanup function before multiprocessing does
 from subprocess import _args_from_interpreter_flags  # noqa: F401
 
 from . import process
@@ -208,7 +209,8 @@ def get_temp_dir():
     # get name of a temp directory which will be automatically cleaned up
     tempdir = process.current_process()._config.get('tempdir')
     if tempdir is None:
-        import shutil, tempfile
+        import shutil
+        import tempfile
         base_tempdir = _get_base_temp_dir(tempfile)
         tempdir = tempfile.mkdtemp(prefix='pymp-', dir=base_tempdir)
         info('created temp directory %s', tempdir)

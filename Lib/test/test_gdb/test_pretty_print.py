@@ -1,10 +1,15 @@
 import re
 import sys
+
 from test import support
 
 from .util import (
-    BREAKPOINT_FN, GDB_VERSION,
-    run_gdb, setup_module, DebuggerTests)
+    BREAKPOINT_FN,
+    GDB_VERSION,
+    DebuggerTests,
+    run_gdb,
+    setup_module,
+)
 
 
 def setUpModule():

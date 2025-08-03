@@ -1,5 +1,6 @@
 import ast
 
+
 class ASTTestMixin:
     """Test mixing to have basic assertions for AST nodes."""
 

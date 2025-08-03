@@ -1,4 +1,3 @@
-import _ast_unparse
 import ast
 import builtins
 import contextlib
@@ -17,21 +16,31 @@ import weakref
 from io import StringIO
 from pathlib import Path
 from textwrap import dedent
+
+import _ast_unparse
+
 try:
     import _testinternalcapi
 except ImportError:
     _testinternalcapi = None
 
 from test import support
-from test.support import os_helper
-from test.support import skip_emscripten_stack_overflow, skip_wasi_stack_overflow
+from test.support import (
+    os_helper,
+    skip_emscripten_stack_overflow,
+    skip_wasi_stack_overflow,
+)
 from test.support.ast_helper import ASTTestMixin
 from test.support.import_helper import ensure_lazy_imports
-from test.test_ast.utils import to_tuple
 from test.test_ast.snippets import (
-    eval_tests, eval_results, exec_tests, exec_results, single_tests, single_results
+    eval_results,
+    eval_tests,
+    exec_results,
+    exec_tests,
+    single_results,
+    single_tests,
 )
-
+from test.test_ast.utils import to_tuple
 
 STDLIB = os.path.dirname(ast.__file__)
 STDLIB_FILES = [fn for fn in os.listdir(STDLIB) if fn.endswith(".py")]

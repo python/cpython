@@ -15,7 +15,6 @@ from __future__ import annotations
 
 from typing import Annotated, Generic, Optional, Required, TypedDict, TypeVar
 
-
 OptionalIntType = Optional[int]
 
 class Foo(TypedDict):

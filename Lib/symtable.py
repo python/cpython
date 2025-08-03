@@ -1,18 +1,28 @@
 """Interface to the compiler's internal symbol tables"""
 
 import _symtable
-from _symtable import (
-    USE,
-    DEF_GLOBAL,  # noqa: F401
-    DEF_NONLOCAL, DEF_LOCAL,
-    DEF_PARAM, DEF_TYPE_PARAM, DEF_FREE_CLASS,
-    DEF_IMPORT, DEF_BOUND, DEF_ANNOT,
-    DEF_COMP_ITER, DEF_COMP_CELL,
-    SCOPE_OFF, SCOPE_MASK,
-    FREE, LOCAL, GLOBAL_IMPLICIT, GLOBAL_EXPLICIT, CELL
-)
-
 import weakref
+from _symtable import (
+    CELL,
+    DEF_ANNOT,
+    DEF_BOUND,
+    DEF_COMP_CELL,
+    DEF_COMP_ITER,
+    DEF_FREE_CLASS,
+    DEF_GLOBAL,  # noqa: F401
+    DEF_IMPORT,
+    DEF_LOCAL,
+    DEF_NONLOCAL,
+    DEF_PARAM,
+    DEF_TYPE_PARAM,
+    FREE,
+    GLOBAL_EXPLICIT,
+    GLOBAL_IMPLICIT,
+    LOCAL,
+    SCOPE_MASK,
+    SCOPE_OFF,
+    USE,
+)
 from enum import StrEnum
 
 __all__ = ["symtable", "SymbolTableType", "SymbolTable", "Class", "Function", "Symbol"]

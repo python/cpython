@@ -7,8 +7,9 @@ importlib = util.import_importlib('importlib')
 machinery = util.import_importlib('importlib.machinery')
 
 import os
-from test.support import os_helper
 import unittest
+
+from test.support import os_helper
 
 
 @util.case_insensitive_tests

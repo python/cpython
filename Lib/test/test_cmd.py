@@ -5,14 +5,16 @@ Original by Michael Schneider
 
 
 import cmd
-import sys
 import doctest
-import unittest
 import io
+import sys
 import textwrap
+import unittest
+
 from test import support
 from test.support.import_helper import ensure_lazy_imports, import_module
 from test.support.pty_helper import run_pty
+
 
 class LazyImportTest(unittest.TestCase):
     @support.cpython_only

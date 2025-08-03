@@ -385,6 +385,7 @@ def _init_non_posix(vars):
     """Initialize the module as appropriate for NT"""
     # set basic install directories
     import _winapi
+
     import _sysconfig
     vars['LIBDEST'] = get_path('stdlib')
     vars['BINLIBDEST'] = get_path('platstdlib')

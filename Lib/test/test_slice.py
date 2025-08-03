@@ -1,13 +1,13 @@
 # tests for slice objects; in particular the indices method.
 
+import copy
 import itertools
 import operator
 import sys
 import unittest
 import weakref
-import copy
+from pickle import dumps, loads
 
-from pickle import loads, dumps
 from test import support
 
 

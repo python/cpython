@@ -1,40 +1,39 @@
 import array
 import gc
 import io
+import os
 import pathlib
 import random
 import re
-import os
-import unittest
 import tempfile
 import threading
+import unittest
 
+from test.support import _1M, threading_helper
 from test.support.import_helper import import_module
-from test.support import threading_helper
-from test.support import _1M
 
 _zstd = import_module("_zstd")
 zstd = import_module("compression.zstd")
 
 from compression.zstd import (
-    open,
-    compress,
-    decompress,
+    COMPRESSION_LEVEL_DEFAULT,
+    CompressionParameter,
+    DecompressionParameter,
+    Strategy,
     ZstdCompressor,
     ZstdDecompressor,
     ZstdDict,
     ZstdError,
-    zstd_version,
-    zstd_version_info,
-    COMPRESSION_LEVEL_DEFAULT,
+    ZstdFile,
+    compress,
+    decompress,
+    finalize_dict,
     get_frame_info,
     get_frame_size,
-    finalize_dict,
+    open,
     train_dict,
-    CompressionParameter,
-    DecompressionParameter,
-    Strategy,
-    ZstdFile,
+    zstd_version,
+    zstd_version_info,
 )
 
 _1K = 1024

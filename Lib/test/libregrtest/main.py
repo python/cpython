@@ -6,28 +6,43 @@ import sys
 import sysconfig
 import time
 import trace
-from _colorize import get_colors  # type: ignore[import-not-found]
 from typing import NoReturn
 
-from test.support import os_helper, MS_WINDOWS, flush_std_streams
+from _colorize import get_colors  # type: ignore[import-not-found]
 
-from .cmdline import _parse_args, Namespace
-from .findtests import findtests, split_test_packages, list_cases
+from test.support import MS_WINDOWS, flush_std_streams, os_helper
+
+from .cmdline import Namespace, _parse_args
+from .findtests import findtests, list_cases, split_test_packages
 from .logger import Logger
 from .pgo import setup_pgo_tests
 from .result import TestResult
-from .results import TestResults, EXITCODE_INTERRUPTED
-from .runtests import RunTests, HuntRefleak
+from .results import EXITCODE_INTERRUPTED, TestResults
+from .runtests import HuntRefleak, RunTests
 from .setup import setup_process, setup_test_dir
-from .single import run_single_test, PROGRESS_MIN_TIME
-from .tsan import setup_tsan_tests, setup_tsan_parallel_tests
+from .single import PROGRESS_MIN_TIME, run_single_test
+from .tsan import setup_tsan_parallel_tests, setup_tsan_tests
 from .utils import (
-    StrPath, StrJSON, TestName, TestList, TestTuple, TestFilter,
-    strip_py_suffix, count, format_duration,
-    printlist, get_temp_dir, get_work_dir, exit_timeout,
-    display_header, cleanup_temp_dir, print_warning,
-    is_cross_compiled, get_host_runner,
-    EXIT_TIMEOUT)
+    EXIT_TIMEOUT,
+    StrJSON,
+    StrPath,
+    TestFilter,
+    TestList,
+    TestName,
+    TestTuple,
+    cleanup_temp_dir,
+    count,
+    display_header,
+    exit_timeout,
+    format_duration,
+    get_host_runner,
+    get_temp_dir,
+    get_work_dir,
+    is_cross_compiled,
+    print_warning,
+    printlist,
+    strip_py_suffix,
+)
 
 
 class Regrtest:

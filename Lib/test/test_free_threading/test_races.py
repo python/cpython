@@ -1,10 +1,10 @@
 # It's most useful to run these tests with ThreadSanitizer enabled.
-import sys
+import _testinternalcapi
 import functools
+import sys
 import threading
 import time
 import unittest
-import _testinternalcapi
 import warnings
 
 from test.support import threading_helper

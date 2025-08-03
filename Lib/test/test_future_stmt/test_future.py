@@ -1,14 +1,16 @@
 # Test various flavors of legal and illegal future statements
 
 import __future__
+
 import ast
-import unittest
-from test.support import import_helper
-from test.support.script_helper import spawn_python, kill_python
-from textwrap import dedent
 import os
 import re
 import sys
+import unittest
+from textwrap import dedent
+
+from test.support import import_helper
+from test.support.script_helper import kill_python, spawn_python
 
 TOP_LEVEL_MSG = 'from __future__ imports must occur at the beginning of the file'
 
@@ -67,19 +69,25 @@ class FutureTest(unittest.TestCase):
         with import_helper.CleanImport(
             'test.test_future_stmt.test_future_single_import',
         ):
-            from test.test_future_stmt import test_future_single_import  # noqa: F401
+            from test.test_future_stmt import (
+                test_future_single_import,  # noqa: F401
+            )
 
     def test_future_multiple_imports(self):
         with import_helper.CleanImport(
             'test.test_future_stmt.test_future_multiple_imports',
         ):
-            from test.test_future_stmt import test_future_multiple_imports  # noqa: F401
+            from test.test_future_stmt import (
+                test_future_multiple_imports,  # noqa: F401
+            )
 
     def test_future_multiple_features(self):
         with import_helper.CleanImport(
             "test.test_future_stmt.test_future_multiple_features",
         ):
-            from test.test_future_stmt import test_future_multiple_features  # noqa: F401
+            from test.test_future_stmt import (
+                test_future_multiple_features,  # noqa: F401
+            )
 
     def test_unknown_future_flag(self):
         code = """

@@ -1,7 +1,7 @@
-import unittest
 import types
-from test.support import import_helper
+import unittest
 
+from test.support import import_helper
 
 _testinternalcapi = import_helper.import_module("_testinternalcapi")
 

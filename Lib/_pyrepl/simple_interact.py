@@ -26,15 +26,13 @@ allowing multiline input and multiline history entries.
 from __future__ import annotations
 
 import _sitebuiltins
+import code
 import functools
 import os
 import sys
-import code
 import warnings
-import errno
 
-from .readline import _get_reader, multiline_input, append_history_file
-
+from .readline import _get_reader, append_history_file, multiline_input
 
 _error: tuple[type[Exception], ...] | type[Exception]
 try:

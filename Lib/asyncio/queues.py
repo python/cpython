@@ -11,8 +11,7 @@ import collections
 import heapq
 from types import GenericAlias
 
-from . import locks
-from . import mixins
+from . import locks, mixins
 
 
 class QueueEmpty(Exception):

@@ -10,12 +10,17 @@ import unittest
 from io import BytesIO, StringIO
 from textwrap import dedent
 from unittest import TestCase, mock
+
 from test import support
 from test.support import os_helper
-from test.support.script_helper import run_test_script, make_script, run_python_until_end
 from test.support.numbers import (
-    VALID_UNDERSCORE_LITERALS,
     INVALID_UNDERSCORE_LITERALS,
+    VALID_UNDERSCORE_LITERALS,
+)
+from test.support.script_helper import (
+    make_script,
+    run_python_until_end,
+    run_test_script,
 )
 
 
@@ -2012,7 +2017,8 @@ if 1:
         # Test roundtrip on random python modules.
         # pass the '-ucpu' option to process the full directory.
 
-        import glob, random
+        import glob
+        import random
         tempdir = os.path.dirname(__file__) or os.curdir
         testfiles = glob.glob(os.path.join(glob.escape(tempdir), "test*.py"))
 

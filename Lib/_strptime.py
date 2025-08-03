@@ -10,19 +10,19 @@ FUNCTIONS:
     strptime -- Calculates the time struct represented by the passed-in string
 
 """
-import os
-import time
-import locale
 import calendar
+import locale
+import os
 import re
-from re import compile as re_compile
-from re import sub as re_sub
-from re import IGNORECASE
-from re import escape as re_escape
-from datetime import (date as datetime_date,
-                      timedelta as datetime_timedelta,
-                      timezone as datetime_timezone)
+import time
 from _thread import allocate_lock as _thread_allocate_lock
+from datetime import date as datetime_date
+from datetime import timedelta as datetime_timedelta
+from datetime import timezone as datetime_timezone
+from re import IGNORECASE
+from re import compile as re_compile
+from re import escape as re_escape
+from re import sub as re_sub
 
 __all__ = []
 

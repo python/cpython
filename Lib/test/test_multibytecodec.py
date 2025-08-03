@@ -9,10 +9,11 @@ import io
 import sys
 import textwrap
 import unittest
+
 from test import support
 from test.support import os_helper
-from test.support.os_helper import TESTFN
 from test.support.import_helper import import_module
+from test.support.os_helper import TESTFN
 
 ALL_CJKENCODINGS = [
 # _codecs_cn

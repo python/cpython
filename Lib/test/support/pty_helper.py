@@ -10,6 +10,7 @@ from errno import EIO
 
 from test.support.import_helper import import_module
 
+
 def run_pty(script, input=b"dummy input\r", env=None):
     pty = import_module('pty')
     output = bytearray()

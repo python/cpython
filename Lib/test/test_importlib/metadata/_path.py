@@ -2,8 +2,7 @@
 
 import functools
 import pathlib
-from typing import Dict, Protocol, Union
-from typing import runtime_checkable
+from typing import Dict, Protocol, Union, runtime_checkable
 
 
 class Symlink(str):

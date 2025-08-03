@@ -1,10 +1,12 @@
+import doctest
 import io
 import pickle
 import pickletools
+import unittest
+
 from test import support
 from test.pickletester import AbstractPickleTests
-import doctest
-import unittest
+
 
 class OptimizedPickleTests(AbstractPickleTests, unittest.TestCase):
 

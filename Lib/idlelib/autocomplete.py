@@ -3,11 +3,12 @@
 Either on demand or after a user-selected delay after a key character,
 pop up a list of candidates.
 """
-import __main__
 import keyword
 import os
 import string
 import sys
+
+import __main__
 
 # Modified keyword list is used in fetch_completions.
 completion_kwds = [s for s in keyword.kwlist

@@ -1,18 +1,22 @@
 """Utility code for constructing importers, etc."""
-from ._abc import Loader
-from ._bootstrap import module_from_spec
-from ._bootstrap import _resolve_name
-from ._bootstrap import spec_from_loader
-from ._bootstrap import _find_spec
-from ._bootstrap_external import MAGIC_NUMBER
-from ._bootstrap_external import cache_from_source
-from ._bootstrap_external import decode_source
-from ._bootstrap_external import source_from_cache
-from ._bootstrap_external import spec_from_file_location
-
 import _imp
 import sys
 import types
+
+from ._abc import Loader
+from ._bootstrap import (
+    _find_spec,
+    _resolve_name,
+    module_from_spec,
+    spec_from_loader,
+)
+from ._bootstrap_external import (
+    MAGIC_NUMBER,
+    cache_from_source,
+    decode_source,
+    source_from_cache,
+    spec_from_file_location,
+)
 
 
 def source_hash(source_bytes):

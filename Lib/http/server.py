@@ -84,9 +84,7 @@ import socketserver
 import sys
 import time
 import urllib.parse
-
 from http import HTTPStatus
-
 
 # Default error message template
 DEFAULT_ERROR_MESSAGE = """\

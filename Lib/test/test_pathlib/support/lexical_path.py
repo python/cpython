@@ -9,10 +9,10 @@ import posixpath
 from . import is_pypi
 
 if is_pypi:
-    from pathlib_abc import vfspath, _JoinablePath
+    from pathlib_abc import _JoinablePath, vfspath
 else:
-    from pathlib.types import _JoinablePath
     from pathlib._os import vfspath
+    from pathlib.types import _JoinablePath
 
 
 class LexicalPath(_JoinablePath):

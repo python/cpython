@@ -1,7 +1,13 @@
 import string
 import unittest
 
-from _pyrepl.keymap import _keynames, _escapes, parse_keys, compile_keymap, KeySpecError
+from _pyrepl.keymap import (
+    KeySpecError,
+    _escapes,
+    _keynames,
+    compile_keymap,
+    parse_keys,
+)
 
 
 class TestParseKeys(unittest.TestCase):

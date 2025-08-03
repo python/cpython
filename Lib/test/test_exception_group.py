@@ -1,7 +1,13 @@
 import collections.abc
 import types
 import unittest
-from test.support import skip_emscripten_stack_overflow, skip_wasi_stack_overflow, exceeds_recursion_limit
+
+from test.support import (
+    exceeds_recursion_limit,
+    skip_emscripten_stack_overflow,
+    skip_wasi_stack_overflow,
+)
+
 
 class TestExceptionGroupTypeHierarchy(unittest.TestCase):
     def test_exception_group_types(self):

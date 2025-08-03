@@ -13,11 +13,17 @@ import tempfile
 import textwrap
 import types
 import unittest
-from test.support import (captured_stdout, requires_debug_ranges,
-                          requires_specialization, cpython_only,
-                          os_helper, import_helper, reset_code)
-from test.support.bytecode_helper import BytecodeTestCase
 
+from test.support import (
+    captured_stdout,
+    cpython_only,
+    import_helper,
+    os_helper,
+    requires_debug_ranges,
+    requires_specialization,
+    reset_code,
+)
+from test.support.bytecode_helper import BytecodeTestCase
 
 CACHE = dis.opmap["CACHE"]
 

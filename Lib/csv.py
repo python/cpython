@@ -64,13 +64,23 @@ SETTINGS:
 """
 
 import types
-from _csv import Error, writer, reader, register_dialect, \
-                 unregister_dialect, get_dialect, list_dialects, \
-                 field_size_limit, \
-                 QUOTE_MINIMAL, QUOTE_ALL, QUOTE_NONNUMERIC, QUOTE_NONE, \
-                 QUOTE_STRINGS, QUOTE_NOTNULL
+from _csv import (
+    QUOTE_ALL,
+    QUOTE_MINIMAL,
+    QUOTE_NONE,
+    QUOTE_NONNUMERIC,
+    QUOTE_NOTNULL,
+    QUOTE_STRINGS,
+    Error,
+    field_size_limit,
+    get_dialect,
+    list_dialects,
+    reader,
+    register_dialect,
+    unregister_dialect,
+    writer,
+)
 from _csv import Dialect as _Dialect
-
 from io import StringIO
 
 __all__ = ["QUOTE_MINIMAL", "QUOTE_ALL", "QUOTE_NONNUMERIC", "QUOTE_NONE",

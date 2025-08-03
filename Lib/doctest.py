@@ -93,6 +93,7 @@ __all__ = [
 ]
 
 import __future__
+
 import difflib
 import functools
 import inspect
@@ -104,8 +105,9 @@ import sys
 import traceback
 import types
 import unittest
-from io import StringIO, IncrementalNewlineDecoder
 from collections import namedtuple
+from io import IncrementalNewlineDecoder, StringIO
+
 import _colorize  # Used in doctests
 from _colorize import ANSIColors, can_colorize
 

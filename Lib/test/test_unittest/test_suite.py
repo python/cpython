@@ -1,10 +1,9 @@
-import unittest
-
 import gc
 import sys
+import unittest
 import weakref
-from test.test_unittest.support import LoggingResult, TestEquality
 
+from test.test_unittest.support import LoggingResult, TestEquality
 
 ### Support code for Test_TestSuite
 ################################################################

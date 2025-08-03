@@ -9,6 +9,7 @@ import sysconfig
 import tempfile
 import unittest
 from pathlib import Path
+
 from test import support
 
 if sys.platform != "win32":
@@ -16,7 +17,6 @@ if sys.platform != "win32":
 
 # Get winreg after the platform check
 import winreg
-
 
 PY_EXE = "py.exe"
 DEBUG_BUILD = False

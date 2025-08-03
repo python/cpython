@@ -2,24 +2,17 @@
 # Contact: email-sig@python.org
 # email package unit tests
 
-import re
-import time
 import base64
-import unittest
-import textwrap
-
-from io import StringIO, BytesIO
-from itertools import chain
-from random import choice
-from threading import Thread
-from unittest.mock import patch
-
 import email
 import email.policy
 import email.utils
-
+import re
+import textwrap
+import time
+import unittest
+from email import base64mime, encoders, errors, iterators, quoprimime, utils
 from email.charset import Charset
-from email.generator import Generator, DecodedGenerator, BytesGenerator
+from email.generator import BytesGenerator, DecodedGenerator, Generator
 from email.header import Header, decode_header, make_header
 from email.headerregistry import HeaderRegistry
 from email.message import Message
@@ -31,22 +24,20 @@ from email.mime.message import MIMEMessage
 from email.mime.multipart import MIMEMultipart
 from email.mime.nonmultipart import MIMENonMultipart
 from email.mime.text import MIMEText
-from email.parser import Parser, HeaderParser
-from email import base64mime
-from email import encoders
-from email import errors
-from email import iterators
-from email import quoprimime
-from email import utils
+
+# These imports are documented to work, but we are testing them using a
+# different path, so we import them here just to make sure they are importable.
+from email.parser import FeedParser, HeaderParser, Parser
+from io import BytesIO, StringIO
+from itertools import chain
+from random import choice
+from threading import Thread
+from unittest.mock import patch
 
 from test import support
 from test.support import threading_helper
 from test.support.os_helper import unlink
-from test.test_email import openfile, TestEmailBase
-
-# These imports are documented to work, but we are testing them using a
-# different path, so we import them here just to make sure they are importable.
-from email.parser import FeedParser
+from test.test_email import TestEmailBase, openfile
 
 NL = '\n'
 EMPTYSTRING = ''

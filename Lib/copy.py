@@ -53,6 +53,7 @@ import types
 import weakref
 from copyreg import dispatch_table
 
+
 class Error(Exception):
     pass
 error = Error   # backward compatibility

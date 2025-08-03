@@ -2,6 +2,7 @@ import textwrap
 import unittest
 from email import message_from_bytes, message_from_string, policy
 from email.message import EmailMessage, MIMEPart
+
 from test.test_email import TestEmailBase, parameterize
 
 

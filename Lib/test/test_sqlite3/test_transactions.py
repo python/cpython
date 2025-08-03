@@ -20,15 +20,14 @@
 #    misrepresented as being the original software.
 # 3. This notice may not be removed or altered from any source distribution.
 
-import unittest
 import sqlite3 as sqlite
+import unittest
 from contextlib import contextmanager
 
 from test.support.os_helper import TESTFN, unlink
 from test.support.script_helper import assert_python_ok
 
-from .util import memory_database
-from .util import MemoryDatabaseMixin
+from .util import MemoryDatabaseMixin, memory_database
 
 
 class TransactionTests(unittest.TestCase):

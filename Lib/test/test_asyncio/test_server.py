@@ -1,13 +1,13 @@
 import asyncio
 import os
 import socket
-import time
 import threading
+import time
 import unittest
 
 from test.support import socket_helper
-from test.test_asyncio import utils as test_utils
 from test.test_asyncio import functional as func_tests
+from test.test_asyncio import utils as test_utils
 
 
 def tearDownModule():

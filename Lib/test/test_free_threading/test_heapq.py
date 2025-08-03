@@ -1,15 +1,12 @@
-import unittest
-
 import heapq
-
+import unittest
 from enum import Enum
+from random import randint, shuffle
 from threading import Barrier, Lock
-from random import shuffle, randint
 
+from test import test_heapq
 from test.support import threading_helper
 from test.support.threading_helper import run_concurrently
-from test import test_heapq
-
 
 NTHREADS = 10
 OBJECT_COUNT = 5_000

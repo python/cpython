@@ -18,10 +18,10 @@ from datetime import date, datetime, time, timedelta, timezone
 from functools import cached_property
 
 from test.support import MISSING_C_DOCSTRINGS
+from test.support.import_helper import CleanImport, import_module
 from test.support.os_helper import EnvironmentVarGuard
 from test.test_zoneinfo import _support as test_support
 from test.test_zoneinfo._support import TZPATH_TEST_LOCK, ZoneInfoTestBase
-from test.support.import_helper import import_module, CleanImport
 
 lzma = import_module('lzma')
 py_zoneinfo, c_zoneinfo = test_support.get_modules()

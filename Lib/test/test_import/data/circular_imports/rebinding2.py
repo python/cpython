@@ -1,3 +1,4 @@
-from .subpkg import util
 from . import rebinding
+from .subpkg import util
+
 util = util.util

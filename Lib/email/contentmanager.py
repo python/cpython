@@ -1,8 +1,9 @@
 import binascii
 import email.charset
-import email.message
 import email.errors
+import email.message
 from email import quoprimime
+
 
 class ContentManager:
 

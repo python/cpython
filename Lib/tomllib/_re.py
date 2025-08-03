@@ -4,9 +4,9 @@
 
 from __future__ import annotations
 
+import re
 from datetime import date, datetime, time, timedelta, timezone, tzinfo
 from functools import lru_cache
-import re
 
 TYPE_CHECKING = False
 if TYPE_CHECKING:

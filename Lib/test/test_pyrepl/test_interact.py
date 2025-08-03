@@ -2,13 +2,14 @@ import contextlib
 import io
 import unittest
 import warnings
-from unittest.mock import patch
 from textwrap import dedent
-
-from test.support import force_not_colorized
+from unittest.mock import patch
 
 from _pyrepl.console import InteractiveColoredConsole
 from _pyrepl.simple_interact import _more_lines
+
+from test.support import force_not_colorized
+
 
 class TestSimpleInteract(unittest.TestCase):
     def test_multiple_statements(self):

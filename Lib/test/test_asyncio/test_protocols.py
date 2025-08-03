@@ -1,7 +1,6 @@
+import asyncio
 import unittest
 from unittest import mock
-
-import asyncio
 
 
 def tearDownModule():

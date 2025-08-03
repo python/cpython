@@ -1,7 +1,8 @@
-import unittest
 import string
-from string import Template
 import types
+import unittest
+from string import Template
+
 from test.support import cpython_only
 from test.support.import_helper import ensure_lazy_imports
 

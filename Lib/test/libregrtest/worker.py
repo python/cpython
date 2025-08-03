@@ -1,17 +1,21 @@
+import os
 import subprocess
 import sys
-import os
 from typing import Any, NoReturn
 
-from test.support import os_helper, Py_DEBUG
+from test.support import Py_DEBUG, os_helper
 
+from .runtests import JsonFile, JsonFileType, WorkerRunTests
 from .setup import setup_process, setup_test_dir
-from .runtests import WorkerRunTests, JsonFile, JsonFileType
 from .single import run_single_test
 from .utils import (
-    StrPath, StrJSON, TestFilter,
-    get_temp_dir, get_work_dir, exit_timeout)
-
+    StrJSON,
+    StrPath,
+    TestFilter,
+    exit_timeout,
+    get_temp_dir,
+    get_work_dir,
+)
 
 USE_PROCESS_GROUP = (hasattr(os, "setsid") and hasattr(os, "killpg"))
 NEED_TTY = {

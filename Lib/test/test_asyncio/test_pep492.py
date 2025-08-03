@@ -1,12 +1,11 @@
 """Tests support for new syntax introduced by PEP 492."""
 
+import asyncio
 import sys
 import types
 import unittest
-
 from unittest import mock
 
-import asyncio
 from test.test_asyncio import utils as test_utils
 
 

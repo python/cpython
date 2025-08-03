@@ -1,8 +1,13 @@
-import unittest
 import tkinter
+import unittest
+
 from test import support
 from test.support import os_helper
-from test.test_tkinter.support import AbstractTkTest, AbstractDefaultRootTest, requires_tk
+from test.test_tkinter.support import (
+    AbstractDefaultRootTest,
+    AbstractTkTest,
+    requires_tk,
+)
 
 support.requires('gui')
 

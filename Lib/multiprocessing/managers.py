@@ -14,25 +14,21 @@ __all__ = [ 'BaseManager', 'SyncManager', 'BaseProxy', 'Token' ]
 # Imports
 #
 
-import sys
-import threading
-import signal
 import array
 import collections.abc
+import os
 import queue
+import signal
+import sys
+import threading
 import time
 import types
-import os
 from os import getpid
-
 from traceback import format_exc
 
-from . import connection
-from .context import reduction, get_spawning_popen, ProcessError
-from . import pool
-from . import process
-from . import util
-from . import get_context
+from . import connection, get_context, pool, process, util
+from .context import ProcessError, get_spawning_popen, reduction
+
 try:
     from . import shared_memory
 except ImportError:

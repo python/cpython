@@ -1,8 +1,8 @@
 """Implementation of JSONDecoder
 """
 import re
-
 from json import scanner
+
 try:
     from _json import scanstring as c_scanstring
 except ImportError:

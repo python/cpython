@@ -1,7 +1,5 @@
 import unittest
-
 from asyncio import tools
-
 from collections import namedtuple
 
 FrameInfo = namedtuple('FrameInfo', ['funcname', 'filename', 'lineno'])

@@ -1,8 +1,8 @@
 import os.path
 import unittest
+
 from test import support
 from test.support import import_helper
-
 
 if support.check_sanitizer(address=True, memory=True):
     raise unittest.SkipTest("Tests involving libX11 can SEGFAULT on ASAN/MSAN builds")

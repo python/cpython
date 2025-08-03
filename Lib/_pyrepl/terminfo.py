@@ -1,12 +1,11 @@
 """Pure Python curses-like terminal capability queries."""
 
-from dataclasses import dataclass, field
 import errno
 import os
-from pathlib import Path
 import re
 import struct
-
+from dataclasses import dataclass, field
+from pathlib import Path
 
 # Terminfo constants
 MAGIC16 = 0o432  # Magic number for 16-bit terminfo format

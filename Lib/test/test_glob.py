@@ -6,9 +6,14 @@ import sys
 import unittest
 import warnings
 
-from test.support import is_wasi, Py_DEBUG
-from test.support.os_helper import (TESTFN, skip_unless_symlink,
-                                    can_symlink, create_empty_file, change_cwd)
+from test.support import Py_DEBUG, is_wasi
+from test.support.os_helper import (
+    TESTFN,
+    can_symlink,
+    change_cwd,
+    create_empty_file,
+    skip_unless_symlink,
+)
 
 
 class GlobTests(unittest.TestCase):

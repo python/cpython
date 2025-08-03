@@ -1,12 +1,22 @@
 """Simple text browser for IDLE
 
 """
-from tkinter import Toplevel, Text, TclError,\
-    HORIZONTAL, VERTICAL, NS, EW, NSEW, NONE, WORD, SUNKEN
-from tkinter.ttk import Frame, Scrollbar, Button
-from tkinter.messagebox import showerror
-
 from idlelib.colorizer import color_config
+from tkinter import (
+    EW,
+    HORIZONTAL,
+    NONE,
+    NS,
+    NSEW,
+    SUNKEN,
+    VERTICAL,
+    WORD,
+    TclError,
+    Text,
+    Toplevel,
+)
+from tkinter.messagebox import showerror
+from tkinter.ttk import Button, Frame, Scrollbar
 
 
 class AutoHideScrollbar(Scrollbar):

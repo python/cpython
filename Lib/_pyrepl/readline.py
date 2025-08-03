@@ -28,26 +28,27 @@ extensions for multiline input.
 
 from __future__ import annotations
 
+import os
+import sys
 import warnings
 from dataclasses import dataclass, field
-
-import os
-from site import gethistoryfile
-import sys
 from rlcompleter import Completer as RLCompleter
+from site import gethistoryfile
 
 from . import commands, historical_reader
+from ._module_completer import ModuleCompleter, make_default_module_completer
 from .completing_reader import CompletingReader
 from .console import Console as ConsoleType
-from ._module_completer import ModuleCompleter, make_default_module_completer
 
 Console: type[ConsoleType]
 _error: tuple[type[Exception], ...] | type[Exception]
 
 if os.name == "nt":
-    from .windows_console import WindowsConsole as Console, _error
+    from .windows_console import WindowsConsole as Console
+    from .windows_console import _error
 else:
-    from .unix_console import UnixConsole as Console, _error
+    from .unix_console import UnixConsole as Console
+    from .unix_console import _error
 
 ENCODING = sys.getdefaultencoding() or "latin1"
 
@@ -55,7 +56,8 @@ ENCODING = sys.getdefaultencoding() or "latin1"
 # types
 Command = commands.Command
 from collections.abc import Callable, Collection
-from .types import Callback, Completer, KeySpec, CommandName
+
+from .types import Callback, CommandName, Completer, KeySpec
 
 TYPE_CHECKING = False
 

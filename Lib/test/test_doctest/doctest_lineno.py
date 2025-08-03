@@ -72,6 +72,7 @@ str_wrapper = object().__str__
 # https://github.com/python/cpython/issues/115392
 from test.test_doctest.decorator_mod import decorator
 
+
 @decorator
 @decorator
 def func_with_docstring_wrapped():

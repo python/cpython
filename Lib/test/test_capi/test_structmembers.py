@@ -1,17 +1,30 @@
 import unittest
+
 from test.support import import_helper
 
 # Skip this test if the _testcapi module isn't available.
 import_helper.import_module('_testcapi')
-from _testcapi import (_test_structmembersType_OldAPI,
+from _testcapi import (
+    CHAR_MAX,
+    CHAR_MIN,
+    INT_MAX,
+    INT_MIN,
+    LLONG_MAX,
+    LLONG_MIN,
+    LONG_MAX,
+    LONG_MIN,
+    PY_SSIZE_T_MAX,
+    PY_SSIZE_T_MIN,
+    SHRT_MAX,
+    SHRT_MIN,
+    UCHAR_MAX,
+    UINT_MAX,
+    ULLONG_MAX,
+    ULONG_MAX,
+    USHRT_MAX,
     _test_structmembersType_NewAPI,
-    CHAR_MAX, CHAR_MIN, UCHAR_MAX,
-    SHRT_MAX, SHRT_MIN, USHRT_MAX,
-    INT_MAX, INT_MIN, UINT_MAX,
-    LONG_MAX, LONG_MIN, ULONG_MAX,
-    LLONG_MAX, LLONG_MIN, ULLONG_MAX,
-    PY_SSIZE_T_MAX, PY_SSIZE_T_MIN,
-    )
+    _test_structmembersType_OldAPI,
+)
 
 
 class Index:

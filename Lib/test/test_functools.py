@@ -1,33 +1,35 @@
 import abc
-from annotationlib import Format, get_annotations
 import builtins
 import collections
 import collections.abc
+import contextlib
 import copy
-from itertools import permutations
+import functools
+import gc
 import pickle
-from random import choice
 import re
 import sys
-from test import support
 import threading
 import time
 import typing
 import unittest
 import unittest.mock
 import weakref
-import gc
-from weakref import proxy
-import contextlib
 from inspect import Signature
+from itertools import permutations
+from random import choice
+from weakref import proxy
 
-from test.support import ALWAYS_EQ
-from test.support import import_helper
-from test.support import threading_helper
-from test.support import cpython_only
-from test.support import EqualToForwardRef
+from annotationlib import Format, get_annotations
 
-import functools
+from test import support
+from test.support import (
+    ALWAYS_EQ,
+    EqualToForwardRef,
+    cpython_only,
+    import_helper,
+    threading_helper,
+)
 
 py_functools = import_helper.import_fresh_module('functools',
                                                  blocked=['_functools'])
@@ -2588,8 +2590,8 @@ class TestSingleDispatch(unittest.TestCase):
                                               # Sized in the MRO
 
     def test_cache_invalidation(self):
-        from collections import UserDict
         import weakref
+        from collections import UserDict
 
         class TracingDict(UserDict):
             def __init__(self, *args, **kwargs):

@@ -1,11 +1,11 @@
-import unittest
 import os
 import socket
 import sys
+import unittest
+
 from test.support import is_apple, os_helper, socket_helper
 from test.support.import_helper import import_fresh_module
 from test.support.os_helper import TESTFN
-
 
 c_stat = import_fresh_module('stat', fresh=['_stat'])
 py_stat = import_fresh_module('stat', blocked=['_stat'])

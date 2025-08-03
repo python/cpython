@@ -1,13 +1,26 @@
 import sys
 import unittest
+from ctypes import (
+    POINTER,
+    addressof,
+    byref,
+    c_byte,
+    c_char_p,
+    c_ubyte,
+    c_void_p,
+    c_wchar,
+    cast,
+    create_string_buffer,
+    create_unicode_buffer,
+    memmove,
+    memoryview_at,
+    memset,
+    sizeof,
+    string_at,
+    wstring_at,
+)
+
 from test import support
-from ctypes import (POINTER, sizeof, cast,
-                    create_string_buffer, string_at,
-                    create_unicode_buffer, wstring_at,
-                    memmove, memset,
-                    memoryview_at, c_void_p,
-                    c_char_p, c_byte, c_ubyte, c_wchar,
-                    addressof, byref)
 
 
 class MemFunctionsTest(unittest.TestCase):

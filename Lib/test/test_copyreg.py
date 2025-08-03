@@ -3,6 +3,7 @@ import unittest
 
 from test.pickletester import ExtensionSaver
 
+
 class C:
     pass
 

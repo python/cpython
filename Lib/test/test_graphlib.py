@@ -4,6 +4,7 @@ import unittest
 
 from test.support.script_helper import assert_python_ok
 
+
 class TestTopologicalSort(unittest.TestCase):
     def _test_graph(self, graph, expected):
         def static_order_with_groups(ts):

@@ -4,12 +4,25 @@
 import os
 import sys
 import webbrowser
-from platform import python_version, architecture
-
-from tkinter import Toplevel, Frame, Label, Button, PhotoImage
-from tkinter import SUNKEN, TOP, BOTTOM, LEFT, X, BOTH, W, EW, NSEW, E
-
 from idlelib import textview
+from platform import architecture, python_version
+from tkinter import (
+    BOTH,
+    BOTTOM,
+    EW,
+    LEFT,
+    NSEW,
+    SUNKEN,
+    TOP,
+    Button,
+    E,
+    Frame,
+    Label,
+    PhotoImage,
+    Toplevel,
+    W,
+    X,
+)
 
 pyver = python_version()
 

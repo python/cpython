@@ -1,6 +1,7 @@
 import textwrap
 from io import StringIO
-from test.test_json import PyTest, CTest
+
+from test.test_json import CTest, PyTest
 
 
 class TestIndent:

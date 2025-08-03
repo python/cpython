@@ -6,22 +6,24 @@ proactor is only implemented on Windows with IOCP.
 
 __all__ = 'BaseProactorEventLoop',
 
+import collections
 import io
 import os
-import socket
-import warnings
 import signal
+import socket
 import threading
-import collections
+import warnings
 
-from . import base_events
-from . import constants
-from . import futures
-from . import exceptions
-from . import protocols
-from . import sslproto
-from . import transports
-from . import trsock
+from . import (
+    base_events,
+    constants,
+    exceptions,
+    futures,
+    protocols,
+    sslproto,
+    transports,
+    trsock,
+)
 from .log import logger
 
 

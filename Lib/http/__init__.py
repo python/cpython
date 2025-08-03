@@ -1,4 +1,4 @@
-from enum import StrEnum, IntEnum, _simple_enum
+from enum import IntEnum, StrEnum, _simple_enum
 
 __all__ = ['HTTPStatus', 'HTTPMethod']
 

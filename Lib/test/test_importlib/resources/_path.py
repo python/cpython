@@ -1,10 +1,6 @@
-import pathlib
 import functools
-
-from typing import Dict, Union
-from typing import runtime_checkable
-from typing import Protocol
-
+import pathlib
+from typing import Dict, Protocol, Union, runtime_checkable
 
 ####
 # from jaraco.path 3.7.1

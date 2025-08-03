@@ -1,9 +1,10 @@
 # Tests for rich comparisons
 
+import operator
 import unittest
+
 from test import support
 
-import operator
 
 class Number:
 

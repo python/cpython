@@ -2,8 +2,14 @@
 import dis
 import unittest
 import warnings
+
 from test import support
-from test.support import import_helper, requires_specialization, requires_specialization_ft
+from test.support import (
+    import_helper,
+    requires_specialization,
+    requires_specialization_ft,
+)
+
 try:
     from sys import _clear_type_cache
 except ImportError:

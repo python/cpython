@@ -4,8 +4,7 @@ import sys
 import tempfile
 import unittest
 
-from test import support
-from test import test_tools
+from test import support, test_tools
 
 
 def skip_if_different_mount_drives():
@@ -29,12 +28,12 @@ skip_if_different_mount_drives()
 
 test_tools.skip_if_missing("cases_generator")
 with test_tools.imports_under_tool("cases_generator"):
+    import optimizer_generator
+    import parser
+    import tier1_generator
     from analyzer import StackItem
     from cwriter import CWriter
-    import parser
     from stack import Local, Stack
-    import tier1_generator
-    import optimizer_generator
 
 
 def handle_stderr():

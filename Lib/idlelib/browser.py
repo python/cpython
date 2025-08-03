@@ -11,13 +11,11 @@ XXX TO DO:
 import os
 import pyclbr
 import sys
-
-from idlelib.config import idleConf
 from idlelib import pyshell
-from idlelib.tree import TreeNode, TreeItem, ScrolledCanvas
+from idlelib.config import idleConf
+from idlelib.tree import ScrolledCanvas, TreeItem, TreeNode
 from idlelib.util import py_extensions
 from idlelib.window import ListedToplevel
-
 
 file_open = None  # Method...Item and Class...Item use this.
 # Normally pyshell.flist.open, but there is no pyshell.flist for htest.

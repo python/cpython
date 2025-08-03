@@ -1,34 +1,39 @@
-from _compat_pickle import (IMPORT_MAPPING, REVERSE_IMPORT_MAPPING,
-                            NAME_MAPPING, REVERSE_NAME_MAPPING)
 import builtins
 import collections
 import contextlib
+import doctest
 import io
 import pickle
 import struct
 import sys
 import tempfile
+import unittest
 import warnings
 import weakref
+from _compat_pickle import (
+    IMPORT_MAPPING,
+    NAME_MAPPING,
+    REVERSE_IMPORT_MAPPING,
+    REVERSE_NAME_MAPPING,
+)
 from textwrap import dedent
 
-import doctest
-import unittest
 from test import support
+from test.pickletester import (
+    AbstractCustomPicklerClass,
+    AbstractDispatchTableTests,
+    AbstractHookTests,
+    AbstractIdentityPersistentPicklerTests,
+    AbstractPersistentPicklerTests,
+    AbstractPickleModuleTests,
+    AbstractPicklerUnpicklerObjectTests,
+    AbstractPickleTests,
+    AbstractPicklingErrorTests,
+    AbstractUnpickleTests,
+    BigmemPickleTests,
+)
 from test.support import cpython_only, import_helper, os_helper
 from test.support.import_helper import ensure_lazy_imports
-
-from test.pickletester import AbstractHookTests
-from test.pickletester import AbstractUnpickleTests
-from test.pickletester import AbstractPicklingErrorTests
-from test.pickletester import AbstractPickleTests
-from test.pickletester import AbstractPickleModuleTests
-from test.pickletester import AbstractPersistentPicklerTests
-from test.pickletester import AbstractIdentityPersistentPicklerTests
-from test.pickletester import AbstractPicklerUnpicklerObjectTests
-from test.pickletester import AbstractDispatchTableTests
-from test.pickletester import AbstractCustomPicklerClass
-from test.pickletester import BigmemPickleTests
 
 try:
     import _pickle
@@ -369,7 +374,7 @@ class PyPicklerHookTests(AbstractHookTests, unittest.TestCase):
 
 if has_c_implementation:
     class CPickleTests(AbstractPickleModuleTests, unittest.TestCase):
-        from _pickle import dump, dumps, load, loads, Pickler, Unpickler
+        from _pickle import Pickler, Unpickler, dump, dumps, load, loads
 
     class CUnpicklerTests(PyUnpicklerTests):
         unpickler = _pickle.Unpickler

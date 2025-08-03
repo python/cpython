@@ -8,12 +8,12 @@ Modified for Python 2.0 by Fredrik Lundh (fredrik@pythonware.com)
 """#"
 
 import ast
-import unittest
 import unicodedata
+import unittest
 import urllib.error
+from http.client import HTTPException
 
 from test import support
-from http.client import HTTPException
 
 try:
     from _testcapi import INT_MAX, PY_SSIZE_T_MAX, UINT_MAX

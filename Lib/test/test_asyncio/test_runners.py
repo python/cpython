@@ -6,9 +6,10 @@ import signal
 import sys
 import threading
 import unittest
-from test.test_asyncio import utils as test_utils
 from unittest import mock
 from unittest.mock import patch
+
+from test.test_asyncio import utils as test_utils
 
 
 def tearDownModule():

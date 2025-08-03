@@ -1,15 +1,15 @@
 """Test suite for the cProfile module."""
 
-import sys
-import unittest
-
 # rip off all interesting stuff from test_profile
 import cProfile
+import sys
 import tempfile
 import textwrap
-from test.test_profile import ProfileTest, regenerate_expected_output
-from test.support.script_helper import assert_python_failure, assert_python_ok
+import unittest
+
 from test import support
+from test.support.script_helper import assert_python_failure, assert_python_ok
+from test.test_profile import ProfileTest, regenerate_expected_output
 
 
 class CProfileTest(ProfileTest):

@@ -1,11 +1,12 @@
-import unittest
-from weakref import WeakSet
-import copy
-import string
-from collections import UserString as ustr
-from collections.abc import Set, MutableSet
-import gc
 import contextlib
+import copy
+import gc
+import string
+import unittest
+from collections import UserString as ustr
+from collections.abc import MutableSet, Set
+from weakref import WeakSet
+
 from test import support
 
 

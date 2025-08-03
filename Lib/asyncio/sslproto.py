@@ -5,15 +5,13 @@
 import collections
 import enum
 import warnings
+
 try:
     import ssl
 except ImportError:  # pragma: no cover
     ssl = None
 
-from . import constants
-from . import exceptions
-from . import protocols
-from . import transports
+from . import constants, exceptions, protocols, transports
 from .log import logger
 
 if ssl is not None:

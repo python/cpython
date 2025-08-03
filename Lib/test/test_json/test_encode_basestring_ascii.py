@@ -1,7 +1,7 @@
 from collections import OrderedDict
-from test.test_json import PyTest, CTest
-from test.support import bigaddrspacetest
 
+from test.support import bigaddrspacetest
+from test.test_json import CTest, PyTest
 
 CASES = [
     ('/\\"\ucafe\ubabe\uab98\ufcde\ubcda\uef4a\x08\x0c\n\r\t`1~!@#$%^&*()_+-=[]{}|;:\',./<>?', '"/\\\\\\"\\ucafe\\ubabe\\uab98\\ufcde\\ubcda\\uef4a\\b\\f\\n\\r\\t`1~!@#$%^&*()_+-=[]{}|;:\',./<>?"'),

@@ -4,10 +4,9 @@ import re
 import tempfile
 import unittest
 import unittest.mock
-from test import support
-from test.support import import_helper
-from test.support import os_helper
 
+from test import support
+from test.support import import_helper, os_helper
 
 turtle = import_helper.import_module('turtle')
 Vec2D = turtle.Vec2D

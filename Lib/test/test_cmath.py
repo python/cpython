@@ -1,13 +1,14 @@
-from test.support import requires_IEEE_754, cpython_only, import_helper
-from test.support.testcase import ComplexesAreIdenticalMixin
-from test.test_math import parse_testfile, test_file
-import test.test_math as test_math
-import unittest
-import cmath, math
-from cmath import phase, polar, rect, pi
+import cmath
+import math
 import platform
 import sys
+import unittest
+from cmath import phase, pi, polar, rect
 
+import test.test_math as test_math
+from test.support import cpython_only, import_helper, requires_IEEE_754
+from test.support.testcase import ComplexesAreIdenticalMixin
+from test.test_math import parse_testfile, test_file
 
 INF = float('inf')
 NAN = float('nan')

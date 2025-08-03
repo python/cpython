@@ -1,5 +1,4 @@
 import argparse
-import _remote_debugging
 import os
 import pstats
 import statistics
@@ -7,6 +6,8 @@ import sys
 import sysconfig
 import time
 from collections import deque
+
+import _remote_debugging
 from _colorize import ANSIColors
 
 from .pstats_collector import PstatsCollector

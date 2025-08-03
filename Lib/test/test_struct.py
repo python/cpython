@@ -1,13 +1,13 @@
-from collections import abc
-from itertools import combinations
 import array
 import gc
 import math
 import operator
-import unittest
 import struct
 import sys
+import unittest
 import weakref
+from collections import abc
+from itertools import combinations
 
 from test import support
 from test.support import import_helper

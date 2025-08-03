@@ -4,7 +4,7 @@ import sys
 from _ast import *
 from ast import NodeVisitor
 from contextlib import contextmanager, nullcontext
-from enum import IntEnum, auto, _simple_enum
+from enum import IntEnum, _simple_enum, auto
 
 # Large float and imaginary literals get turned into infinities in the AST.
 # We unparse those infinities to INFSTR.

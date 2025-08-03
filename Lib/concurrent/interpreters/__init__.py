@@ -2,18 +2,25 @@
 
 import threading
 import weakref
+
 import _interpreters
 
 # aliases:
 from _interpreters import (
-    InterpreterError, InterpreterNotFoundError, NotShareableError,
+    InterpreterError,
+    InterpreterNotFoundError,
+    NotShareableError,
     is_shareable,
+)
+
+from ._queues import (
+    Queue,
+    QueueEmpty,
+    QueueFull,
 )
 from ._queues import (
     create as create_queue,
-    Queue, QueueEmpty, QueueFull,
 )
-
 
 __all__ = [
     'get_current', 'get_main', 'create', 'list_all', 'is_shareable',

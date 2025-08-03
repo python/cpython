@@ -1,6 +1,7 @@
 import os.path
 import sys
 import unittest
+
 from test import support
 
 if support.PGO:

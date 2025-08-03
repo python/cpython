@@ -1,9 +1,4 @@
 # Run the tests in Programs/_testembed.c (tests for the CPython embedding APIs)
-from test import support
-from test.support import import_helper, os_helper, threading_helper, MS_WINDOWS
-import unittest
-
-from collections import namedtuple
 import contextlib
 import json
 import os
@@ -15,6 +10,11 @@ import sys
 import sysconfig
 import tempfile
 import textwrap
+import unittest
+from collections import namedtuple
+
+from test import support
+from test.support import MS_WINDOWS, import_helper, os_helper, threading_helper
 
 if not support.has_subprocess_support:
     raise unittest.SkipTest("test module requires subprocess")

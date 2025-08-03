@@ -1,27 +1,35 @@
-import unittest
-import unittest.mock
-from test import support
-from test.support import (verbose, refcount_test,
-                          cpython_only, requires_subprocess,
-                          requires_gil_enabled,
-                          Py_GIL_DISABLED)
-from test.support.import_helper import import_module
-from test.support.os_helper import temp_dir, TESTFN, unlink
-from test.support.script_helper import assert_python_ok, make_script, run_test_script
-from test.support import threading_helper, gc_threshold
-
 import gc
 import sys
 import sysconfig
 import textwrap
 import threading
 import time
+import unittest
+import unittest.mock
 import weakref
+
+from test import support
+from test.support import (
+    Py_GIL_DISABLED,
+    cpython_only,
+    gc_threshold,
+    refcount_test,
+    requires_gil_enabled,
+    requires_subprocess,
+    threading_helper,
+    verbose,
+)
+from test.support.import_helper import import_module
+from test.support.os_helper import TESTFN, temp_dir, unlink
+from test.support.script_helper import (
+    assert_python_ok,
+    make_script,
+    run_test_script,
+)
 
 try:
     import _testcapi
-    from _testcapi import with_tp_del
-    from _testcapi import ContainerNoGC
+    from _testcapi import ContainerNoGC, with_tp_del
 except ImportError:
     _testcapi = None
     def with_tp_del(cls):

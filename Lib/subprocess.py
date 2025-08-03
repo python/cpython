@@ -41,18 +41,18 @@ getstatusoutput(...): Runs a command in the shell, waits for it to complete,
 """
 
 import builtins
+import contextlib
 import errno
 import io
 import locale
 import os
-import time
 import signal
 import sys
 import threading
-import warnings
-import contextlib
-from time import monotonic as _time
+import time
 import types
+import warnings
+from time import monotonic as _time
 
 try:
     import fcntl
@@ -79,16 +79,28 @@ _can_fork_exec = sys.platform not in {"emscripten", "wasi", "ios", "tvos", "watc
 
 if _mswindows:
     import _winapi
-    from _winapi import (CREATE_NEW_CONSOLE, CREATE_NEW_PROCESS_GROUP,  # noqa: F401
-                         STD_INPUT_HANDLE, STD_OUTPUT_HANDLE,
-                         STD_ERROR_HANDLE, SW_HIDE,
-                         STARTF_USESTDHANDLES, STARTF_USESHOWWINDOW,
-                         STARTF_FORCEONFEEDBACK, STARTF_FORCEOFFFEEDBACK,
-                         ABOVE_NORMAL_PRIORITY_CLASS, BELOW_NORMAL_PRIORITY_CLASS,
-                         HIGH_PRIORITY_CLASS, IDLE_PRIORITY_CLASS,
-                         NORMAL_PRIORITY_CLASS, REALTIME_PRIORITY_CLASS,
-                         CREATE_NO_WINDOW, DETACHED_PROCESS,
-                         CREATE_DEFAULT_ERROR_MODE, CREATE_BREAKAWAY_FROM_JOB)
+    from _winapi import (  # noqa: F401
+        ABOVE_NORMAL_PRIORITY_CLASS,
+        BELOW_NORMAL_PRIORITY_CLASS,
+        CREATE_BREAKAWAY_FROM_JOB,
+        CREATE_DEFAULT_ERROR_MODE,
+        CREATE_NEW_CONSOLE,
+        CREATE_NEW_PROCESS_GROUP,
+        CREATE_NO_WINDOW,
+        DETACHED_PROCESS,
+        HIGH_PRIORITY_CLASS,
+        IDLE_PRIORITY_CLASS,
+        NORMAL_PRIORITY_CLASS,
+        REALTIME_PRIORITY_CLASS,
+        STARTF_FORCEOFFFEEDBACK,
+        STARTF_FORCEONFEEDBACK,
+        STARTF_USESHOWWINDOW,
+        STARTF_USESTDHANDLES,
+        STD_ERROR_HANDLE,
+        STD_INPUT_HANDLE,
+        STD_OUTPUT_HANDLE,
+        SW_HIDE,
+    )
 
     __all__.extend(["CREATE_NEW_CONSOLE", "CREATE_NEW_PROCESS_GROUP",
                     "STD_INPUT_HANDLE", "STD_OUTPUT_HANDLE",

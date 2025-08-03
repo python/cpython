@@ -10,11 +10,16 @@ import struct
 import sys
 import unittest
 from subprocess import PIPE, Popen
-from test.support import catch_unraisable_exception
-from test.support import import_helper
-from test.support import os_helper
-from test.support import _4G, bigmemtest, requires_subprocess
-from test.support.script_helper import assert_python_ok, assert_python_failure
+
+from test.support import (
+    _4G,
+    bigmemtest,
+    catch_unraisable_exception,
+    import_helper,
+    os_helper,
+    requires_subprocess,
+)
+from test.support.script_helper import assert_python_failure, assert_python_ok
 
 gzip = import_helper.import_module('gzip')
 zlib = import_helper.import_module('zlib')

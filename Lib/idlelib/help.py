@@ -25,15 +25,13 @@ copy_strip - Copy the text part of idle.html to help.html while rstripping each 
 show_idlehelp - Create HelpWindow.  Called in EditorWindow.help_dialog.
 """
 from html.parser import HTMLParser
+from idlelib.colorizer import color_config
+from idlelib.config import idleConf
 from os.path import abspath, dirname, isfile, join
 from platform import python_version
-
-from tkinter import Toplevel, Text, Menu
-from tkinter.ttk import Frame, Menubutton, Scrollbar, Style
+from tkinter import Menu, Text, Toplevel
 from tkinter import font as tkfont
-
-from idlelib.config import idleConf
-from idlelib.colorizer import color_config
+from tkinter.ttk import Frame, Menubutton, Scrollbar, Style
 
 ## About IDLE ##
 

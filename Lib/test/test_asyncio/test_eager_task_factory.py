@@ -3,11 +3,11 @@
 import asyncio
 import contextvars
 import unittest
-
-from unittest import mock
 from asyncio import tasks
-from test.test_asyncio import utils as test_utils
+from unittest import mock
+
 from test.support.script_helper import assert_python_ok
+from test.test_asyncio import utils as test_utils
 
 MOCK_ANY = mock.ANY
 

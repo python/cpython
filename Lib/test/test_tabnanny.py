@@ -3,17 +3,21 @@
 Glossary:
     * errored    : Whitespace related problems present in file.
 """
-from unittest import TestCase, mock
 import errno
 import os
 import tabnanny
-import tokenize
 import tempfile
 import textwrap
-from test.support import (captured_stderr, captured_stdout, script_helper,
-                          findfile)
-from test.support.os_helper import unlink
+import tokenize
+from unittest import TestCase, mock
 
+from test.support import (
+    captured_stderr,
+    captured_stdout,
+    findfile,
+    script_helper,
+)
+from test.support.os_helper import unlink
 
 SOURCE_CODES = {
     "incomplete_expression": (

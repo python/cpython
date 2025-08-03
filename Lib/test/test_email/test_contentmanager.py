@@ -1,9 +1,10 @@
-import unittest
-from test.test_email import TestEmailBase, parameterize
 import textwrap
+import unittest
 from email import policy
-from email.message import EmailMessage
 from email.contentmanager import ContentManager, raw_data_manager
+from email.message import EmailMessage
+
+from test.test_email import TestEmailBase, parameterize
 
 
 @parameterize

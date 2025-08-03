@@ -19,34 +19,41 @@
 
 from __future__ import annotations
 
+import ctypes
 import io
 import os
 import sys
-
-import ctypes
 import types
+from ctypes import POINTER, Structure, Union
 from ctypes.wintypes import (
     _COORD,
-    WORD,
-    SMALL_RECT,
     BOOL,
-    HANDLE,
     CHAR,
     DWORD,
-    WCHAR,
+    HANDLE,
     SHORT,
+    SMALL_RECT,
+    WCHAR,
+    WORD,
 )
-from ctypes import Structure, POINTER, Union
-from .console import Event, Console
+
+from .console import Console, Event
 from .trace import trace
 from .utils import wlen
 from .windows_eventqueue import EventQueue
 
 try:
-    from ctypes import get_last_error, GetLastError, WinDLL, windll, WinError  # type: ignore[attr-defined]
+    from ctypes import (  # type: ignore[attr-defined]
+        GetLastError,
+        WinDLL,
+        WinError,
+        get_last_error,
+        windll,
+    )
 except:
     # Keep MyPy happy off Windows
-    from ctypes import CDLL as WinDLL, cdll as windll
+    from ctypes import CDLL as WinDLL
+    from ctypes import cdll as windll
 
     def GetLastError() -> int:
         return 42

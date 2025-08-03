@@ -5,13 +5,12 @@ This module allows high-level and efficient I/O multiplexing, built upon the
 """
 
 
-from abc import ABCMeta, abstractmethod
-from collections import namedtuple
-from collections.abc import Mapping
 import math
 import select
 import sys
-
+from abc import ABCMeta, abstractmethod
+from collections import namedtuple
+from collections.abc import Mapping
 
 # generic events, that must be mapped to implementation-specific ones
 EVENT_READ = (1 << 0)

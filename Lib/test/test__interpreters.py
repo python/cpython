@@ -1,19 +1,15 @@
 import contextlib
 import os
 import pickle
-from textwrap import dedent
 import threading
 import unittest
+from textwrap import dedent
 
 from test import support
-from test.support import import_helper
-from test.support import os_helper
-from test.support import script_helper
-
+from test.support import import_helper, os_helper, script_helper
 
 _interpreters = import_helper.import_module('_interpreters')
 from _interpreters import InterpreterNotFoundError
-
 
 ##################################
 # helpers

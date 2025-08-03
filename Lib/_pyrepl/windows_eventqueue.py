@@ -4,7 +4,6 @@ Windows event and VT sequence scanner
 
 from .base_eventqueue import BaseEventQueue
 
-
 # Reference: https://learn.microsoft.com/en-us/windows/console/console-virtual-terminal-sequences#input-sequences
 VT_MAP: dict[bytes, str] = {
     b'\x1b[A': 'up',

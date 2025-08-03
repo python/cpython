@@ -1,7 +1,7 @@
 "Test debugobj_r, coverage 56%."
 
-from idlelib import debugobj_r
 import unittest
+from idlelib import debugobj_r
 
 
 class WrappedObjectTreeItemTest(unittest.TestCase):

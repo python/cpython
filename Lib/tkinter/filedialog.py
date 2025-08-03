@@ -19,13 +19,26 @@ __all__ = ["FileDialog", "LoadFileDialog", "SaveFileDialog",
 import fnmatch
 import os
 from tkinter import (
-    Frame, LEFT, YES, BOTTOM, Entry, TOP, Button, Tk, X,
-    Toplevel, RIGHT, Y, END, Listbox, BOTH, Scrollbar,
+    BOTH,
+    BOTTOM,
+    END,
+    LEFT,
+    RIGHT,
+    TOP,
+    YES,
+    Button,
+    Entry,
+    Frame,
+    Listbox,
+    Scrollbar,
+    Tk,
+    Toplevel,
+    X,
+    Y,
+    commondialog,
 )
 from tkinter.dialog import Dialog
-from tkinter import commondialog
 from tkinter.simpledialog import _setup_dialog
-
 
 dialogstates = {}
 

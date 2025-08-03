@@ -31,7 +31,8 @@ def pickle_complex(c):
 pickle(complex, pickle_complex, complex)
 
 def pickle_union(obj):
-    import typing, operator
+    import operator
+    import typing
     return operator.getitem, (typing.Union, obj.__args__)
 
 pickle(type(int | str), pickle_union)

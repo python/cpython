@@ -11,7 +11,6 @@ from collections import namedtuple
 from test import support
 from test.support.script_helper import run_python_until_end
 
-
 # Set the list of ways we expect to be able to ask for the "C" locale
 EXPECTED_C_LOCALE_EQUIVALENTS = ["C", "invalid.ascii"]
 

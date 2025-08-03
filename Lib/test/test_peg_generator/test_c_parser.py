@@ -1,16 +1,15 @@
 import contextlib
-import subprocess
-import sysconfig
-import textwrap
-import unittest
 import os
 import shutil
+import subprocess
+import sysconfig
 import tempfile
+import textwrap
+import unittest
 from pathlib import Path
 
-from test import test_tools
-from test import support
-from test.support import os_helper, import_helper
+from test import support, test_tools
+from test.support import import_helper, os_helper
 from test.support.script_helper import assert_python_ok
 
 if support.check_cflags_pgo():
@@ -20,9 +19,9 @@ test_tools.skip_if_missing("peg_generator")
 with test_tools.imports_under_tool("peg_generator"):
     from pegen.grammar_parser import GeneratedParser as GrammarParser
     from pegen.testutil import (
-        parse_string,
-        generate_parser_c_extension,
         generate_c_parser_source,
+        generate_parser_c_extension,
+        parse_string,
     )
 
 

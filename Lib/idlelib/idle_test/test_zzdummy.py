@@ -1,14 +1,11 @@
 "Test zzdummy, coverage 100%."
 
-from idlelib import zzdummy
 import unittest
-from test.support import requires
-from tkinter import Tk, Text
+from idlelib import config, editor, format, zzdummy
+from tkinter import Text, Tk
 from unittest import mock
-from idlelib import config
-from idlelib import editor
-from idlelib import format
 
+from test.support import requires
 
 usercfg = zzdummy.idleConf.userCfg
 testcfg = {

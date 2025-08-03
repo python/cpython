@@ -1,19 +1,20 @@
 """Tests for proactor_events.py"""
 
+import asyncio
 import io
 import socket
-import unittest
 import sys
+import unittest
+from asyncio.proactor_events import (
+    BaseProactorEventLoop,
+    _ProactorDatagramTransport,
+    _ProactorDuplexPipeTransport,
+    _ProactorSocketTransport,
+    _ProactorWritePipeTransport,
+)
 from unittest import mock
 
-import asyncio
-from asyncio.proactor_events import BaseProactorEventLoop
-from asyncio.proactor_events import _ProactorSocketTransport
-from asyncio.proactor_events import _ProactorWritePipeTransport
-from asyncio.proactor_events import _ProactorDuplexPipeTransport
-from asyncio.proactor_events import _ProactorDatagramTransport
-from test.support import os_helper
-from test.support import socket_helper
+from test.support import os_helper, socket_helper
 from test.test_asyncio import utils as test_utils
 
 

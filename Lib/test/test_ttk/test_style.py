@@ -1,8 +1,8 @@
-import unittest
 import sys
 import tkinter
-from tkinter import ttk
-from tkinter import TclError
+import unittest
+from tkinter import TclError, ttk
+
 from test import support
 from test.support import requires
 from test.test_tkinter.support import AbstractTkTest, get_tk_patchlevel

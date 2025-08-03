@@ -25,10 +25,9 @@ _bootstrap = None
 # Import builtin modules
 import _imp
 import _io
-import sys
 import _warnings
 import marshal
-
+import sys
 
 _MS_WINDOWS = (sys.platform == 'win32')
 if _MS_WINDOWS:

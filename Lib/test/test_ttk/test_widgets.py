@@ -1,15 +1,25 @@
-import unittest
-import tkinter
-from tkinter import ttk, TclError
-from test.support import requires, gc_collect
 import sys
+import tkinter
+import unittest
+from tkinter import TclError, ttk
 
-from test.test_ttk_textonly import MockTclObj
+from test.support import gc_collect, requires
 from test.test_tkinter.support import (
-    AbstractTkTest, requires_tk, tk_version, get_tk_patchlevel,
-    simulate_mouse_click, AbstractDefaultRootTest)
-from test.test_tkinter.widget_tests import (add_configure_tests,
-    AbstractWidgetTest, StandardOptionsTests, IntegerSizeTests, PixelSizeTests)
+    AbstractDefaultRootTest,
+    AbstractTkTest,
+    get_tk_patchlevel,
+    requires_tk,
+    simulate_mouse_click,
+    tk_version,
+)
+from test.test_tkinter.widget_tests import (
+    AbstractWidgetTest,
+    IntegerSizeTests,
+    PixelSizeTests,
+    StandardOptionsTests,
+    add_configure_tests,
+)
+from test.test_ttk_textonly import MockTclObj
 
 requires('gui')
 

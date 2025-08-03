@@ -20,9 +20,9 @@ is read when the database is opened, and some updates rewrite the whole index)
 """
 
 import ast as _ast
+import collections.abc
 import io as _io
 import os as _os
-import collections.abc
 
 __all__ = ["error", "open"]
 

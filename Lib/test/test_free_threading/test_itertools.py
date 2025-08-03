@@ -1,8 +1,8 @@
 import unittest
-from threading import Thread, Barrier
 from itertools import batched, chain, cycle
-from test.support import threading_helper
+from threading import Barrier, Thread
 
+from test.support import threading_helper
 
 threading_helper.requires_working_threading(module=True)
 

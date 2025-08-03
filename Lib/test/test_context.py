@@ -1,13 +1,14 @@
-import sys
 import collections.abc
 import concurrent.futures
 import contextvars
 import functools
 import gc
 import random
+import sys
 import time
 import unittest
 import weakref
+
 from test import support
 from test.support import threading_helper
 

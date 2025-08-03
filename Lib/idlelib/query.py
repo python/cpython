@@ -19,16 +19,16 @@ Subclass HelpSource gets menu item and path for additions to Help menu.
 # HelpSource was extracted from configHelpSourceEdit.py (temporarily
 # config_help.py), with darwin code moved from ok to path_ok.
 
-import importlib.util, importlib.abc
+import importlib.abc
+import importlib.util
 import os
 import shlex
 from sys import executable, platform  # Platform is set for one test.
-
-from tkinter import Toplevel, StringVar, BooleanVar, W, E, S
-from tkinter.ttk import Frame, Button, Entry, Label, Checkbutton
-from tkinter import filedialog
+from tkinter import BooleanVar, E, S, StringVar, Toplevel, W, filedialog
 from tkinter.font import Font
 from tkinter.simpledialog import _setup_dialog
+from tkinter.ttk import Button, Checkbutton, Entry, Frame, Label
+
 
 class Query(Toplevel):
     """Base class for getting verified answer from a user.

@@ -3,7 +3,11 @@ import textwrap
 import unittest
 
 from test import support
-from test.support import cpython_only, import_helper, requires_specialization_ft
+from test.support import (
+    cpython_only,
+    import_helper,
+    requires_specialization_ft,
+)
 from test.support.script_helper import assert_python_ok
 from test.support.threading_helper import requires_working_threading
 

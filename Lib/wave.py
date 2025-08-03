@@ -67,11 +67,10 @@ The close() method is called automatically when the class instance
 is destroyed.
 """
 
-from collections import namedtuple
 import builtins
 import struct
 import sys
-
+from collections import namedtuple
 
 __all__ = ["open", "Error", "Wave_read", "Wave_write"]
 

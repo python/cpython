@@ -19,23 +19,21 @@
 
 from __future__ import annotations
 
-import _colorize
-
-from abc import ABC, abstractmethod
 import ast
 import code
 import linecache
-from dataclasses import dataclass, field
 import os.path
 import re
 import sys
+from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
 
+import _colorize
 
 TYPE_CHECKING = False
 
 if TYPE_CHECKING:
-    from typing import IO
-    from typing import Callable
+    from typing import IO, Callable
 
 
 @dataclass

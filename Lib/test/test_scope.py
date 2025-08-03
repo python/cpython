@@ -1,8 +1,7 @@
 import unittest
 import weakref
 
-from test.support import check_syntax_error, cpython_only
-from test.support import gc_collect
+from test.support import check_syntax_error, cpython_only, gc_collect
 
 
 class ScopeTests(unittest.TestCase):

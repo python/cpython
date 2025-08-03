@@ -5,7 +5,6 @@ import math
 import struct
 import winreg
 
-
 # Seconds per measurement
 SAMPLING_INTERVAL = 1
 # Exponential damping factor to compute exponentially weighted moving average

@@ -1,33 +1,47 @@
 # regression test for SAX 2.0
 
-from xml.sax import make_parser, ContentHandler, \
-                    SAXException, SAXReaderNotAvailable, SAXParseException
 import unittest
 from unittest import mock
+from xml.sax import (
+    ContentHandler,
+    SAXException,
+    SAXParseException,
+    SAXReaderNotAvailable,
+    make_parser,
+)
+
 try:
     make_parser()
 except SAXReaderNotAvailable:
     # don't try to test this module if we cannot create a parser
     raise unittest.SkipTest("no XML parsers available")
-from xml.sax.saxutils import XMLGenerator, escape, unescape, quoteattr, \
-                             XMLFilterBase, prepare_input_source
-from xml.sax.expatreader import create_parser
-from xml.sax.handler import (feature_namespaces, feature_external_ges,
-                             LexicalHandler)
-from xml.sax.xmlreader import InputSource, AttributesImpl, AttributesNSImpl
-from xml import sax
-from io import BytesIO, StringIO
 import codecs
 import os.path
 import pyexpat
 import shutil
 import sys
-from urllib.error import URLError
 import urllib.request
-from test.support import os_helper
-from test.support import findfile, check__all__
-from test.support.os_helper import FakePath, TESTFN
+from io import BytesIO, StringIO
+from urllib.error import URLError
+from xml import sax
+from xml.sax.expatreader import create_parser
+from xml.sax.handler import (
+    LexicalHandler,
+    feature_external_ges,
+    feature_namespaces,
+)
+from xml.sax.saxutils import (
+    XMLFilterBase,
+    XMLGenerator,
+    escape,
+    prepare_input_source,
+    quoteattr,
+    unescape,
+)
+from xml.sax.xmlreader import AttributesImpl, AttributesNSImpl, InputSource
 
+from test.support import check__all__, findfile, os_helper
+from test.support.os_helper import TESTFN, FakePath
 
 TEST_XMLFILE = findfile("test.xml", subdir="xmltestdata")
 TEST_XMLFILE_OUT = findfile("test.xml.out", subdir="xmltestdata")

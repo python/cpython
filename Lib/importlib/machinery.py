@@ -1,21 +1,25 @@
 """The machinery of importlib: finders, loaders, hooks, etc."""
 
-from ._bootstrap import ModuleSpec
-from ._bootstrap import BuiltinImporter
-from ._bootstrap import FrozenImporter
+from ._bootstrap import BuiltinImporter, FrozenImporter, ModuleSpec
 from ._bootstrap_external import (
-    SOURCE_SUFFIXES, BYTECODE_SUFFIXES, EXTENSION_SUFFIXES,
-    DEBUG_BYTECODE_SUFFIXES as _DEBUG_BYTECODE_SUFFIXES,
-    OPTIMIZED_BYTECODE_SUFFIXES as _OPTIMIZED_BYTECODE_SUFFIXES
+    BYTECODE_SUFFIXES,
+    EXTENSION_SUFFIXES,
+    SOURCE_SUFFIXES,
+    AppleFrameworkLoader,
+    ExtensionFileLoader,
+    FileFinder,
+    NamespaceLoader,
+    PathFinder,
+    SourceFileLoader,
+    SourcelessFileLoader,
+    WindowsRegistryFinder,
 )
-from ._bootstrap_external import WindowsRegistryFinder
-from ._bootstrap_external import PathFinder
-from ._bootstrap_external import FileFinder
-from ._bootstrap_external import SourceFileLoader
-from ._bootstrap_external import SourcelessFileLoader
-from ._bootstrap_external import ExtensionFileLoader
-from ._bootstrap_external import AppleFrameworkLoader
-from ._bootstrap_external import NamespaceLoader
+from ._bootstrap_external import (
+    DEBUG_BYTECODE_SUFFIXES as _DEBUG_BYTECODE_SUFFIXES,
+)
+from ._bootstrap_external import (
+    OPTIMIZED_BYTECODE_SUFFIXES as _OPTIMIZED_BYTECODE_SUFFIXES,
+)
 
 
 def all_suffixes():

@@ -129,15 +129,16 @@ Exported functions:
 """
 
 import base64
+import errno
+import http.client
 import sys
 import time
+import urllib.parse
 from datetime import datetime
 from decimal import Decimal
-import http.client
-import urllib.parse
-from xml.parsers import expat
-import errno
 from io import BytesIO
+from xml.parsers import expat
+
 try:
     import gzip
 except ImportError:

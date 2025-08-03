@@ -1,17 +1,16 @@
+import asyncio
 import os
 import signal
 import sys
 import textwrap
 import unittest
 import warnings
+from asyncio import base_subprocess, subprocess
 from unittest import mock
 
-import asyncio
-from asyncio import base_subprocess
-from asyncio import subprocess
-from test.test_asyncio import utils as test_utils
 from test import support
 from test.support import os_helper
+from test.test_asyncio import utils as test_utils
 
 if not support.has_subprocess_support:
     raise unittest.SkipTest("test module requires subprocess")

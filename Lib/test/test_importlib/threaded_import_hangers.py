@@ -7,10 +7,9 @@
 
 TIMEOUT = 10
 
-import threading
-
-import tempfile
 import os.path
+import tempfile
+import threading
 
 errors = []
 

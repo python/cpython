@@ -3,9 +3,9 @@
 import io
 import sys
 import traceback
+from functools import wraps
 
 from . import util
-from functools import wraps
 
 __unittest = True
 

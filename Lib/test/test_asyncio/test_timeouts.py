@@ -1,9 +1,8 @@
 """Tests for asyncio/timeouts.py"""
 
-import unittest
-import time
-
 import asyncio
+import time
+import unittest
 
 from test.test_asyncio.utils import await_without_task
 

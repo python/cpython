@@ -20,9 +20,12 @@
 # test both implementations. This file has lots of examples.
 ################################################################################
 
+import _pyio as pyio  # Python implementation of io
 import abc
 import array
+import codecs
 import errno
+import io  # C implementation of io
 import locale
 import os
 import pickle
@@ -35,19 +38,23 @@ import time
 import unittest
 import warnings
 import weakref
-from collections import deque, UserList
-from itertools import cycle, count
+from collections import UserList, deque
+from itertools import count, cycle
+
 from test import support
-from test.support.script_helper import (
-    assert_python_ok, assert_python_failure, run_python_until_end)
 from test.support import (
-    import_helper, is_apple, os_helper, threading_helper, warnings_helper,
+    import_helper,
+    is_apple,
+    os_helper,
+    threading_helper,
+    warnings_helper,
 )
 from test.support.os_helper import FakePath
-
-import codecs
-import io  # C implementation of io
-import _pyio as pyio # Python implementation of io
+from test.support.script_helper import (
+    assert_python_failure,
+    assert_python_ok,
+    run_python_until_end,
+)
 
 try:
     import ctypes

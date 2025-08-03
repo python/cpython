@@ -3,8 +3,9 @@ import functools
 import io
 import re
 import sqlite3
-import test.support
 import unittest
+
+import test.support
 
 
 # Helper for temporary memory databases

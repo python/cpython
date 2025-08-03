@@ -1,8 +1,4 @@
 import calendar
-import unittest
-
-from test import support
-from test.support.script_helper import assert_python_ok, assert_python_failure
 import contextlib
 import datetime
 import io
@@ -11,6 +7,10 @@ import os
 import platform
 import sys
 import time
+import unittest
+
+from test import support
+from test.support.script_helper import assert_python_failure, assert_python_ok
 
 # From https://en.wikipedia.org/wiki/Leap_year_starting_on_Saturday
 result_0_02_text = """\

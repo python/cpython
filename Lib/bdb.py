@@ -1,12 +1,12 @@
 """Debugger basics"""
 
 import fnmatch
+import os
 import sys
 import threading
-import os
 import weakref
 from contextlib import contextmanager
-from inspect import CO_GENERATOR, CO_COROUTINE, CO_ASYNC_GENERATOR
+from inspect import CO_ASYNC_GENERATOR, CO_COROUTINE, CO_GENERATOR
 
 __all__ = ["BdbQuit", "Bdb", "Breakpoint"]
 
@@ -653,7 +653,7 @@ class Bdb:
         The filename should be in canonical form.
         """
         filename = self.canonic(filename)
-        import linecache # Import as late as possible
+        import linecache  # Import as late as possible
         line = linecache.getline(filename, lineno)
         if not line:
             return 'Line %s:%d does not exist' % (filename, lineno)
@@ -837,7 +837,8 @@ class Bdb:
         line of code (if it exists).
 
         """
-        import linecache, reprlib
+        import linecache
+        import reprlib
         frame, lineno = frame_lineno
         filename = self.canonic(frame.f_code.co_filename)
         s = '%s(%r)' % (filename, lineno)

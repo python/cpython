@@ -26,8 +26,12 @@ import unittest
 
 from test.support.os_helper import TESTFN, unlink
 
-from .util import memory_database, cx_limit, with_tracebacks
-from .util import MemoryDatabaseMixin
+from .util import (
+    MemoryDatabaseMixin,
+    cx_limit,
+    memory_database,
+    with_tracebacks,
+)
 
 
 class CollationTests(MemoryDatabaseMixin, unittest.TestCase):

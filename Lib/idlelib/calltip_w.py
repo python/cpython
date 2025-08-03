@@ -3,9 +3,8 @@
 After tooltip.py, which uses ideas gleaned from PySol.
 Used by calltip.py.
 """
-from tkinter import Label, LEFT, SOLID, TclError
-
 from idlelib.tooltip import TooltipBase
+from tkinter import LEFT, SOLID, Label, TclError
 
 HIDE_EVENT = "<<calltipwindow-hide>>"
 HIDE_SEQUENCES = ("<Key-Escape>", "<FocusOut>")
@@ -170,7 +169,7 @@ class CalltipWindow(TooltipBase):
 
 
 def _calltip_window(parent):  # htest #
-    from tkinter import Toplevel, Text, LEFT, BOTH
+    from tkinter import BOTH, LEFT, Text, Toplevel
 
     top = Toplevel(parent)
     top.title("Test call-tips")

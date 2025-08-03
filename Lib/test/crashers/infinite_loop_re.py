@@ -5,6 +5,7 @@
 # 100% of CPU while running this and should be fixed.
 
 import re
+
 starttag = re.compile(r'<[a-zA-Z][-_.:a-zA-Z0-9]*\s*('
         r'\s*([a-zA-Z_][-:.a-zA-Z_0-9]*)(\s*=\s*'
         r'(\'[^\']*\'|"[^"]*"|[-a-zA-Z0-9./,:;+*%?!&$\(\)_#=~@]'

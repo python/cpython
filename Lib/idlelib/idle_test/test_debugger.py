@@ -3,15 +3,15 @@
 Try to make tests pass with draft bdbx, which may replace bdb in 3.13+.
 """
 
-from idlelib import debugger
+import unittest
 from collections import namedtuple
+from idlelib import debugger
 from textwrap import dedent
 from tkinter import Tk
-
-from test.support import requires
-import unittest
 from unittest import mock
 from unittest.mock import Mock, patch
+
+from test.support import requires
 
 """A test python script for the debug tests."""
 TEST_CODE = dedent("""

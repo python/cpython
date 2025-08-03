@@ -1,27 +1,48 @@
+import builtins as bltns
 import copy
-import enum
 import doctest
+import enum
 import inspect
 import os
 import pydoc
 import sys
-import unittest
 import threading
 import typing
-import builtins as bltns
+import unittest
 from collections import OrderedDict
-from datetime import date
-from enum import Enum, EnumMeta, IntEnum, StrEnum, EnumType, Flag, IntFlag, unique, auto
-from enum import STRICT, CONFORM, EJECT, KEEP, _simple_enum, _test_simple_enum
-from enum import verify, UNIQUE, CONTINUOUS, NAMED_FLAGS, ReprEnum
-from enum import member, nonmember, _iter_bits_lsb, EnumDict
+from datetime import date, timedelta
+from enum import (
+    CONFORM,
+    CONTINUOUS,
+    EJECT,
+    KEEP,
+    NAMED_FLAGS,
+    STRICT,
+    UNIQUE,
+    Enum,
+    EnumDict,
+    EnumMeta,
+    EnumType,
+    Flag,
+    IntEnum,
+    IntFlag,
+    ReprEnum,
+    StrEnum,
+    _iter_bits_lsb,
+    _simple_enum,
+    _test_simple_enum,
+    auto,
+    member,
+    nonmember,
+    unique,
+    verify,
+)
 from io import StringIO
-from pickle import dumps, loads, PicklingError, HIGHEST_PROTOCOL
+from pickle import HIGHEST_PROTOCOL, PicklingError, dumps, loads
+
 from test import support
-from test.support import ALWAYS_EQ, REPO_ROOT
-from test.support import threading_helper, cpython_only
+from test.support import ALWAYS_EQ, REPO_ROOT, cpython_only, threading_helper
 from test.support.import_helper import ensure_lazy_imports
-from datetime import timedelta
 
 python_version = sys.version_info[:2]
 
@@ -5187,7 +5208,7 @@ class TestStdLib(unittest.TestCase):
             self.fail("result does not equal expected, see print above")
 
     def test_inspect_signatures(self):
-        from inspect import signature, Signature, Parameter
+        from inspect import Parameter, Signature, signature
         self.assertEqual(
                 signature(Enum),
                 Signature([

@@ -5,28 +5,30 @@ the latter should be modernized).
 """
 
 import array
-import operator
-import os
-import re
-import sys
 import copy
 import functools
+import operator
+import os
 import pickle
+import re
+import sys
 import tempfile
 import textwrap
 import threading
 import unittest
 
+import test.list_tests
+import test.string_tests
 import test.support
 from test import support
-from test.support import import_helper
-from test.support import threading_helper
-from test.support import warnings_helper
-import test.string_tests
-import test.list_tests
-from test.support import bigaddrspacetest, MAX_Py_ssize_t
+from test.support import (
+    MAX_Py_ssize_t,
+    bigaddrspacetest,
+    import_helper,
+    threading_helper,
+    warnings_helper,
+)
 from test.support.script_helper import assert_python_failure
-
 
 if sys.flags.bytes_warning:
     def check_bytes_warnings(func):
@@ -1154,12 +1156,17 @@ class BytesTest(BaseBytesTest, unittest.TestCase):
     def test_from_format(self):
         ctypes = import_helper.import_module('ctypes')
         _testcapi = import_helper.import_module('_testcapi')
-        from ctypes import pythonapi, py_object
         from ctypes import (
-            c_int, c_uint,
-            c_long, c_ulong,
-            c_size_t, c_ssize_t,
-            c_char_p)
+            c_char_p,
+            c_int,
+            c_long,
+            c_size_t,
+            c_ssize_t,
+            c_uint,
+            c_ulong,
+            py_object,
+            pythonapi,
+        )
 
         PyBytes_FromFormat = pythonapi.PyBytes_FromFormat
         PyBytes_FromFormat.argtypes = (c_char_p,)

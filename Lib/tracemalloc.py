@@ -1,5 +1,3 @@
-from collections.abc import Sequence, Iterable
-from functools import total_ordering
 import fnmatch
 import linecache
 import os.path
@@ -8,6 +6,8 @@ import pickle
 # Import types and functions implemented in C
 from _tracemalloc import *
 from _tracemalloc import _get_object_traceback, _get_traces
+from collections.abc import Iterable, Sequence
+from functools import total_ordering
 
 
 def _format_size(size, sign):

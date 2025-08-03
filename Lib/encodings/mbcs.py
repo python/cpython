@@ -9,9 +9,9 @@ which was written by Marc-Andre Lemburg (mal@lemburg.com).
 """
 # Import them explicitly to cause an ImportError
 # on non-Windows systems
-from codecs import mbcs_encode, mbcs_decode
 # for IncrementalDecoder, IncrementalEncoder, ...
 import codecs
+from codecs import mbcs_decode, mbcs_encode
 
 ### Codec APIs
 

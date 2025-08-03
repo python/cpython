@@ -1,8 +1,8 @@
 """Unittest main program"""
 
-import sys
 import argparse
 import os
+import sys
 
 from . import loader, runner
 from .signals import installHandler

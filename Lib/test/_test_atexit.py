@@ -4,6 +4,7 @@ Tests run by test_atexit in a subprocess since it clears atexit callbacks.
 import atexit
 import sys
 import unittest
+
 from test import support
 
 

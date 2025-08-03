@@ -2,32 +2,44 @@
 # is tested, so they all must be present.  This is a way to catch
 # missing ones.
 
-from dataclasses import *
-
 import abc
-import annotationlib
+import builtins
+import dataclasses  # Needed for the string "dataclasses.InitVar[int]" to work as an annotation.
+import inspect
 import io
 import pickle
-import inspect
-import builtins
-import types
-import weakref
-import traceback
 import sys
 import textwrap
+import traceback
+import types
+import typing  # Needed for the string "typing.ClassVar[int]" to work as an annotation.
 import unittest
-from unittest.mock import Mock
-from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Optional, Protocol, DefaultDict
-from typing import get_type_hints
-from collections import deque, OrderedDict, namedtuple, defaultdict
+import weakref
+from collections import OrderedDict, defaultdict, deque, namedtuple
 from copy import deepcopy
+from dataclasses import *
 from functools import total_ordering, wraps
+from typing import (
+    Any,
+    ClassVar,
+    DefaultDict,
+    Dict,
+    Generic,
+    List,
+    Optional,
+    Protocol,
+    Tuple,
+    TypeVar,
+    Union,
+    get_type_hints,
+)
+from unittest.mock import Mock
 
-import typing       # Needed for the string "typing.ClassVar[int]" to work as an annotation.
-import dataclasses  # Needed for the string "dataclasses.InitVar[int]" to work as an annotation.
+import annotationlib
 
 from test import support
 from test.support import import_helper
+
 
 # Just any custom exception we can catch.
 class CustomError(Exception): pass
@@ -4089,10 +4101,12 @@ class TestStringAnnotations(unittest.TestCase):
                 self.assertEqual(C(10).x, 10)
 
     def test_classvar_module_level_import(self):
-        from test.test_dataclasses import dataclass_module_1
-        from test.test_dataclasses import dataclass_module_1_str
-        from test.test_dataclasses import dataclass_module_2
-        from test.test_dataclasses import dataclass_module_2_str
+        from test.test_dataclasses import (
+            dataclass_module_1,
+            dataclass_module_1_str,
+            dataclass_module_2,
+            dataclass_module_2_str,
+        )
 
         for m in (dataclass_module_1, dataclass_module_1_str,
                   dataclass_module_2, dataclass_module_2_str,

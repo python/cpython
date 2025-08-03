@@ -1,6 +1,6 @@
 # Author: Steven J. Bethard <steven.bethard@gmail.com>.
 
-import _colorize
+import argparse
 import contextlib
 import functools
 import inspect
@@ -11,24 +11,27 @@ import py_compile
 import shutil
 import stat
 import sys
-import textwrap
 import tempfile
+import textwrap
 import unittest
-import argparse
 import warnings
-
 from enum import StrEnum
+from unittest import mock
+
+import _colorize
+
 from test.support import (
     captured_stderr,
     force_not_colorized,
     force_not_colorized_test_class,
+    import_helper,
+    os_helper,
+    script_helper,
 )
-from test.support import import_helper
-from test.support import os_helper
-from test.support import script_helper
-from test.support.i18n_helper import TestTranslationsBase, update_translation_snapshots
-from unittest import mock
-
+from test.support.i18n_helper import (
+    TestTranslationsBase,
+    update_translation_snapshots,
+)
 
 py = os.path.basename(sys.executable)
 

@@ -1,14 +1,12 @@
 import datetime
 import textwrap
 import unittest
-from email import errors
-from email import policy
-from email.message import Message
-from test.test_email import TestEmailBase, parameterize
-from email import headerregistry
+from email import errors, headerregistry, policy
 from email.headerregistry import Address, Group
-from test.support import ALWAYS_EQ
+from email.message import Message
 
+from test.support import ALWAYS_EQ
+from test.test_email import TestEmailBase, parameterize
 
 DITTO = object()
 

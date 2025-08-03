@@ -5,8 +5,8 @@ This codec de/encodes from bytes to bytes.
 Written by Marc-Andre Lemburg (mal@lemburg.com).
 """
 
-import codecs
 import base64
+import codecs
 
 ### Codec APIs
 

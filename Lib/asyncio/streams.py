@@ -11,14 +11,9 @@ import weakref
 if hasattr(socket, 'AF_UNIX'):
     __all__ += ('open_unix_connection', 'start_unix_server')
 
-from . import coroutines
-from . import events
-from . import exceptions
-from . import format_helpers
-from . import protocols
+from . import coroutines, events, exceptions, format_helpers, protocols
 from .log import logger
 from .tasks import sleep
-
 
 _DEFAULT_LIMIT = 2 ** 16  # 64 KiB
 

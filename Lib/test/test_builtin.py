@@ -25,21 +25,28 @@ from contextlib import ExitStack
 from functools import partial
 from inspect import CO_COROUTINE
 from itertools import product
-from textwrap import dedent
-from types import AsyncGeneratorType, FunctionType, CellType
 from operator import neg
+from textwrap import dedent
+from types import AsyncGeneratorType, CellType, FunctionType
+from unittest.mock import MagicMock, patch
+
 from test import support
-from test.support import cpython_only, swap_attr
-from test.support import async_yield, run_yielding_async_fn
+from test.support import (
+    async_yield,
+    cpython_only,
+    requires_IEEE_754,
+    run_yielding_async_fn,
+    swap_attr,
+)
 from test.support.import_helper import import_module
-from test.support.os_helper import (EnvironmentVarGuard, TESTFN, unlink)
+from test.support.os_helper import TESTFN, EnvironmentVarGuard, unlink
 from test.support.script_helper import assert_python_ok
 from test.support.testcase import ComplexesAreIdenticalMixin
 from test.support.warnings_helper import check_warnings
-from test.support import requires_IEEE_754
-from unittest.mock import MagicMock, patch
+
 try:
-    import pty, signal
+    import pty
+    import signal
 except ImportError:
     pty = signal = None
 

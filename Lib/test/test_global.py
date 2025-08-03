@@ -11,11 +11,12 @@ variable scoping and usage in different contexts.
 """
 
 import contextlib
-from test.support import check_syntax_error
-from test.support.warnings_helper import check_warnings
-from types import SimpleNamespace
 import unittest
 import warnings
+from types import SimpleNamespace
+
+from test.support import check_syntax_error
+from test.support.warnings_helper import check_warnings
 
 
 class GlobalTests(unittest.TestCase):

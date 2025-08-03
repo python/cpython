@@ -855,8 +855,12 @@ try:
     # get_event_loop() is one of the most frequently called
     # functions in asyncio.  Pure Python implementation is
     # about 4 times slower than C-accelerated.
-    from _asyncio import (_get_running_loop, _set_running_loop,
-                          get_running_loop, get_event_loop)
+    from _asyncio import (
+        _get_running_loop,
+        _set_running_loop,
+        get_event_loop,
+        get_running_loop,
+    )
 except ImportError:
     pass
 else:

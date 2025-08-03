@@ -2,6 +2,7 @@
 import bisect
 import contextlib
 import copy
+import datetime as datetime_module
 import decimal
 import io
 import itertools
@@ -12,26 +13,33 @@ import re
 import struct
 import sys
 import textwrap
+import time as _time
 import unittest
 import warnings
-
 from array import array
-
-from operator import lt, le, gt, ge, eq, ne, truediv, floordiv, mod
+from datetime import (
+    MAXYEAR,
+    MINYEAR,
+    UTC,
+    date,
+    datetime,
+    time,
+    timedelta,
+    timezone,
+    tzinfo,
+)
+from operator import eq, floordiv, ge, gt, le, lt, mod, ne, truediv
 
 from test import support
-from test.support import is_resource_enabled, ALWAYS_EQ, LARGEST, SMALLEST
-from test.support import os_helper, script_helper, warnings_helper
-
-import datetime as datetime_module
-from datetime import MINYEAR, MAXYEAR
-from datetime import timedelta
-from datetime import tzinfo
-from datetime import time
-from datetime import timezone
-from datetime import UTC
-from datetime import date, datetime
-import time as _time
+from test.support import (
+    ALWAYS_EQ,
+    LARGEST,
+    SMALLEST,
+    is_resource_enabled,
+    os_helper,
+    script_helper,
+    warnings_helper,
+)
 
 try:
     import _testcapi
@@ -44,6 +52,7 @@ except ModuleNotFoundError:
 
 # Needed by test_datetime
 import _strptime
+
 try:
     import _pydatetime
 except ImportError:

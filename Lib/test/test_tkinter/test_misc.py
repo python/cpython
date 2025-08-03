@@ -1,11 +1,16 @@
-import functools
-import unittest
-import tkinter
-from tkinter import TclError
 import enum
+import functools
+import tkinter
+import unittest
+from tkinter import TclError
+
 from test import support
-from test.test_tkinter.support import (AbstractTkTest, AbstractDefaultRootTest,
-                                       requires_tk, get_tk_patchlevel)
+from test.test_tkinter.support import (
+    AbstractDefaultRootTest,
+    AbstractTkTest,
+    get_tk_patchlevel,
+    requires_tk,
+)
 
 support.requires('gui')
 

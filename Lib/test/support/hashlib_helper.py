@@ -5,8 +5,9 @@ import importlib
 import inspect
 import unittest
 import unittest.mock
-from test.support import import_helper
 from types import MappingProxyType
+
+from test.support import import_helper
 
 
 def try_import_module(module_name):

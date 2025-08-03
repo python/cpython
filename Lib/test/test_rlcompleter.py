@@ -1,8 +1,10 @@
-import unittest
-from unittest.mock import patch
 import builtins
 import rlcompleter
+import unittest
+from unittest.mock import patch
+
 from test.support import MISSING_C_DOCSTRINGS
+
 
 class CompleteMe:
     """ Trivial class used in testing rlcompleter.Completer. """

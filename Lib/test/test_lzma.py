@@ -1,18 +1,17 @@
 import array
-from io import BytesIO, UnsupportedOperation, DEFAULT_BUFFER_SIZE
 import os
 import pickle
 import random
 import sys
-from test import support
 import unittest
+from io import DEFAULT_BUFFER_SIZE, BytesIO, UnsupportedOperation
+
 from compression._common import _streams
 
+from test import support
 from test.support import _4G, bigmemtest
 from test.support.import_helper import import_module
-from test.support.os_helper import (
-    TESTFN, unlink, FakePath
-)
+from test.support.os_helper import TESTFN, FakePath, unlink
 
 lzma = import_module("lzma")
 from lzma import LZMACompressor, LZMADecompressor, LZMAError, LZMAFile

@@ -2688,12 +2688,13 @@ Invalid expressions in type scopes:
     SyntaxError: Invalid star expression
 """
 
-import re
 import doctest
+import re
 import textwrap
 import unittest
 
 from test import support
+
 
 class SyntaxWarningTest(unittest.TestCase):
     def check_warning(self, code, errtext, filename="<testcase>", mode="exec"):

@@ -1,9 +1,10 @@
-from xmlrpc.server import DocXMLRPCServer
 import http.client
 import re
 import sys
 import threading
 import unittest
+from xmlrpc.server import DocXMLRPCServer
+
 from test import support
 
 support.requires_working_socket(module=True)

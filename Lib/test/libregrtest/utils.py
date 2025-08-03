@@ -15,9 +15,7 @@ import textwrap
 from collections.abc import Callable, Iterable
 
 from test import support
-from test.support import os_helper
-from test.support import threading_helper
-
+from test.support import os_helper, threading_helper
 
 # All temporary files and temporary directories created by libregrtest should
 # use TMP_PREFIX so cleanup_temp_dir() can remove them all.

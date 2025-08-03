@@ -2,7 +2,6 @@ import unittest
 
 from test.support import warnings_helper
 
-
 nturl2path = warnings_helper.import_deprecated("nturl2path")
 
 

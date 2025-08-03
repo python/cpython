@@ -1,13 +1,21 @@
-from decimal import Decimal
-from test.support import cpython_only, verbose, is_android, linked_to_musl, os_helper
-from test.support.warnings_helper import check_warnings
-from test.support.import_helper import ensure_lazy_imports, import_fresh_module
-from unittest import mock
-import unittest
+import codecs
 import locale
 import os
 import sys
-import codecs
+import unittest
+from decimal import Decimal
+from unittest import mock
+
+from test.support import (
+    cpython_only,
+    is_android,
+    linked_to_musl,
+    os_helper,
+    verbose,
+)
+from test.support.import_helper import ensure_lazy_imports, import_fresh_module
+from test.support.warnings_helper import check_warnings
+
 
 class LazyImportTest(unittest.TestCase):
     @cpython_only

@@ -1,11 +1,10 @@
-import unittest
 import base64
 import binascii
 import os
+import unittest
 from array import array
-from test.support import cpython_only
-from test.support import os_helper
-from test.support import script_helper
+
+from test.support import cpython_only, os_helper, script_helper
 from test.support.import_helper import ensure_lazy_imports
 
 

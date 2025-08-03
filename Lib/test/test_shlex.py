@@ -3,9 +3,8 @@ import itertools
 import shlex
 import string
 import unittest
-from test.support import cpython_only
-from test.support import import_helper
 
+from test.support import cpython_only, import_helper
 
 # The original test data set was from shellwords, by Hartmut Goebel.
 

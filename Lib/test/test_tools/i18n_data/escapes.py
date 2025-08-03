@@ -1,6 +1,5 @@
 import gettext as _
 
-
 # Special characters that are always escaped in the POT file
 _('"\t\n\r\\')
 

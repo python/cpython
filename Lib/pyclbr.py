@@ -42,8 +42,8 @@ shouldn't happen often.
 """
 
 import ast
-import sys
 import importlib.util
+import sys
 
 __all__ = ["readmodule", "readmodule_ex", "Class", "Function"]
 

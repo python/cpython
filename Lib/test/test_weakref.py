@@ -1,23 +1,27 @@
-import gc
-import sys
-import doctest
-import unittest
 import collections
-import weakref
-import operator
 import contextlib
 import copy
+import doctest
+import gc
+import operator
+import random
+import sys
+import textwrap
 import threading
 import time
-import random
-import textwrap
+import unittest
+import weakref
 
 from test import support
-from test.support import script_helper, ALWAYS_EQ
-from test.support import gc_collect
-from test.support import import_helper
-from test.support import threading_helper
-from test.support import is_wasi, Py_DEBUG
+from test.support import (
+    ALWAYS_EQ,
+    Py_DEBUG,
+    gc_collect,
+    import_helper,
+    is_wasi,
+    script_helper,
+    threading_helper,
+)
 
 # Used in ReferencesTestCase.test_ref_created_during_del() .
 ref_from_del = None
@@ -2063,6 +2067,7 @@ class MappingTestCase(TestBase):
 
 
 from test import mapping_tests
+
 
 class WeakValueDictionaryTestCase(mapping_tests.BasicTestMappingProtocol):
     """Check that WeakValueDictionary conforms to the mapping protocol"""

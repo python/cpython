@@ -73,8 +73,10 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
-import sys, os
-from gettext import gettext as _, ngettext
+import os
+import sys
+from gettext import gettext as _
+from gettext import ngettext
 
 
 def _repr(self):

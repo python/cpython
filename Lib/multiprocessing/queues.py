@@ -9,22 +9,21 @@
 
 __all__ = ['Queue', 'SimpleQueue', 'JoinableQueue']
 
-import sys
-import os
-import threading
 import collections
+import errno
+import os
+import sys
+import threading
 import time
 import types
 import weakref
-import errno
-
 from queue import Empty, Full
 
-from . import connection
-from . import context
+from . import connection, context
+
 _ForkingPickler = context.reduction.ForkingPickler
 
-from .util import debug, info, Finalize, register_after_fork, is_exiting
+from .util import Finalize, debug, info, is_exiting, register_after_fork
 
 #
 # Queue type using a pipe, buffer and thread

@@ -1,10 +1,10 @@
 import random
 import unittest
-
 from functools import lru_cache
 from threading import Barrier, Thread
 
 from test.support import threading_helper
+
 
 @threading_helper.requires_working_threading()
 class TestLRUCache(unittest.TestCase):

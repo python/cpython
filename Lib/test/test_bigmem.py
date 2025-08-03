@@ -9,12 +9,13 @@ high memory limit to regrtest, with the -M option.
 """
 
 from test import support
-from test.support import bigmemtest, _1G, _2G, _4G, import_helper
+from test.support import _1G, _2G, _4G, bigmemtest, import_helper
+
 _testcapi = import_helper.import_module('_testcapi')
 
-import unittest
 import operator
 import sys
+import unittest
 
 # These tests all use one of the bigmemtest decorators to indicate how much
 # memory they use and how much memory they need to be even meaningful.  The

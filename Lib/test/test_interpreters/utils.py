@@ -1,17 +1,18 @@
-from collections import namedtuple
 import contextlib
 import json
 import logging
 import os
 import os.path
+
 #import select
 import subprocess
 import sys
 import tempfile
-from textwrap import dedent
 import threading
 import types
 import unittest
+from collections import namedtuple
+from textwrap import dedent
 
 from test import support
 
@@ -23,10 +24,9 @@ except ImportError as exc:
     raise unittest.SkipTest(str(exc))
 from concurrent import interpreters
 
-
 try:
-    import _testinternalcapi
     import _testcapi
+    import _testinternalcapi
 except ImportError:
     _testinternalcapi = None
     _testcapi = None

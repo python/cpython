@@ -62,13 +62,12 @@ import binascii
 import codecs
 import datetime
 import enum
-from io import BytesIO
 import itertools
 import os
 import re
 import struct
+from io import BytesIO
 from xml.parsers.expat import ParserCreate
-
 
 PlistFormat = enum.Enum('PlistFormat', 'FMT_XML FMT_BINARY', module=__name__)
 globals().update(PlistFormat.__members__)

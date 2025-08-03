@@ -1,11 +1,10 @@
+import io
+import sys
 import timeit
 import unittest
-import sys
-import io
 from textwrap import dedent
 
-from test.support import captured_stdout
-from test.support import captured_stderr
+from test.support import captured_stderr, captured_stdout
 
 # timeit's default number of iterations.
 DEFAULT_NUMBER = 1000000

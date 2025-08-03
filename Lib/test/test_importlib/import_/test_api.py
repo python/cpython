@@ -1,10 +1,10 @@
-from test.test_importlib import util
-
-from importlib import machinery
 import sys
 import types
 import unittest
 import warnings
+from importlib import machinery
+
+from test.test_importlib import util
 
 PKG_NAME = 'fine'
 SUBMOD_NAME = 'fine.bogus'

@@ -1,4 +1,4 @@
-from tkinter.ttk import Label, Frame
+from tkinter.ttk import Frame, Label
 
 
 class MultiStatusBar(Frame):
@@ -20,8 +20,8 @@ class MultiStatusBar(Frame):
 
 
 def _multistatus_bar(parent):  # htest #
-    from tkinter import Toplevel, Text
-    from tkinter.ttk import Frame, Button
+    from tkinter import Text, Toplevel
+    from tkinter.ttk import Button, Frame
     top = Toplevel(parent)
     x, y = map(int, parent.geometry().split('+')[1:])
     top.geometry("+%d+%d" %(x, y + 175))

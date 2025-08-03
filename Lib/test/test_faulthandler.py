@@ -1,4 +1,3 @@
-from contextlib import contextmanager
 import datetime
 import faulthandler
 import os
@@ -6,11 +5,19 @@ import re
 import signal
 import subprocess
 import sys
-from test import support
-from test.support import os_helper, script_helper, is_android, MS_WINDOWS, threading_helper
 import tempfile
 import unittest
+from contextlib import contextmanager
 from textwrap import dedent
+
+from test import support
+from test.support import (
+    MS_WINDOWS,
+    is_android,
+    os_helper,
+    script_helper,
+    threading_helper,
+)
 
 try:
     import _testcapi

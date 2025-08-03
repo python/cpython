@@ -1,12 +1,14 @@
+import pickle
 import signal
 import sys
 import textwrap
+import unittest
+
 from test import list_tests, support
 from test.support import cpython_only
 from test.support.import_helper import import_module
 from test.support.script_helper import assert_python_failure, assert_python_ok
-import pickle
-import unittest
+
 
 class ListTest(list_tests.CommonTest):
     type2test = list

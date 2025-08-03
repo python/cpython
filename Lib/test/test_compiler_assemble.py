@@ -5,7 +5,6 @@ import types
 
 from test.support.bytecode_helper import AssemblerTestCase
 
-
 # Tests for the code-object creation stage of the compiler.
 
 class IsolatedAssembleTests(AssemblerTestCase):

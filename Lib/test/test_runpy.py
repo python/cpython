@@ -1,10 +1,12 @@
 # Test the runpy module
 import contextlib
-import importlib.machinery, importlib.util
+import importlib.machinery
+import importlib.util
 import os.path
 import pathlib
 import py_compile
 import re
+import runpy
 import signal
 import subprocess
 import sys
@@ -12,6 +14,8 @@ import tempfile
 import textwrap
 import unittest
 import warnings
+from runpy import _run_code, _run_module_code, run_module, run_path
+
 from test.support import (
     force_not_colorized_test_class,
     infinite_recursion,
@@ -21,12 +25,9 @@ from test.support import (
     verbose,
 )
 from test.support.import_helper import forget, make_legacy_pyc, unload
-from test.support.os_helper import create_empty_file, temp_dir, FakePath
+from test.support.os_helper import FakePath, create_empty_file, temp_dir
 from test.support.script_helper import make_script, make_zip_script
 
-
-import runpy
-from runpy import _run_code, _run_module_code, run_module, run_path
 # Note: This module can't safely test _run_module_as_main as it
 # runs its tests in the current process, which would mess with the
 # real __main__ module (usually test.regrtest)

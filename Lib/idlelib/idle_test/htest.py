@@ -63,11 +63,11 @@ TODO test these modules and classes:
   pyshell.PyShellEditorWindow
 """
 
-import idlelib.pyshell  # Set Windows DPI awareness before Tk().
-from importlib import import_module
 import textwrap
 import tkinter as tk
+from importlib import import_module
 from tkinter.ttk import Scrollbar
+
 tk.NoDefaultRoot()
 
 AboutDialog_spec = {

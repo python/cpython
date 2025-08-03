@@ -1,25 +1,30 @@
 # Python test set -- part 5, built-in exceptions
 
 import copy
+import errno
 import os
+import pickle
 import sys
 import unittest
-import pickle
 import weakref
-import errno
 from codecs import BOM_UTF8
 from itertools import product
 from textwrap import dedent
 
-from test.support import (captured_stderr, check_impl_detail,
-                          cpython_only, gc_collect,
-                          no_tracing, script_helper,
-                          SuppressCrashReport,
-                          force_not_colorized)
+from test import support
+from test.support import (
+    SuppressCrashReport,
+    captured_stderr,
+    check_impl_detail,
+    cpython_only,
+    force_not_colorized,
+    gc_collect,
+    no_tracing,
+    script_helper,
+)
 from test.support.import_helper import import_module
 from test.support.os_helper import TESTFN, unlink
 from test.support.warnings_helper import check_warnings
-from test import support
 
 try:
     import _testcapi

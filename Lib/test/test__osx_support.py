@@ -2,6 +2,7 @@
 Test suite for _osx_support: shared OS X support functions.
 """
 
+import _osx_support
 import os
 import platform
 import stat
@@ -10,7 +11,6 @@ import unittest
 
 from test.support import os_helper
 
-import _osx_support
 
 @unittest.skipUnless(sys.platform.startswith("darwin"), "requires OS X")
 class Test_OSXSupport(unittest.TestCase):

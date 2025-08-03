@@ -6,25 +6,37 @@
 # $Id$
 #
 
-import sys
+import copy
+import optparse
 import os
 import re
-import copy
+import sys
 import unittest
-
 from io import StringIO
+from optparse import (
+    SUPPRESS_USAGE,
+    BadOptionError,
+    Option,
+    OptionConflictError,
+    OptionError,
+    OptionGroup,
+    OptionParser,
+    OptionValueError,
+    TitledHelpFormatter,
+    Values,
+    _match_abbrev,
+    _parse_num,
+    make_option,
+)
+
 from test import support
 from test.support import cpython_only, os_helper
-from test.support.i18n_helper import TestTranslationsBase, update_translation_snapshots
+from test.support.i18n_helper import (
+    TestTranslationsBase,
+    update_translation_snapshots,
+)
 from test.support.import_helper import ensure_lazy_imports
 
-import optparse
-from optparse import make_option, Option, \
-     TitledHelpFormatter, OptionParser, OptionGroup, \
-     SUPPRESS_USAGE, OptionError, OptionConflictError, \
-     BadOptionError, OptionValueError, Values
-from optparse import _match_abbrev
-from optparse import _parse_num
 
 class InterceptedError(Exception):
     def __init__(self,

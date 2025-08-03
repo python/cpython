@@ -4,8 +4,9 @@
 # Written by Hye-Shik Chang <perky@FreeBSD.org>
 #
 
-import _codecs_tw, codecs
+import _codecs_tw
 import _multibytecodec as mbc
+import codecs
 
 codec = _codecs_tw.getcodec('big5')
 

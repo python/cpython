@@ -1,7 +1,19 @@
 import unittest
-from ctypes import (CDLL, POINTER, sizeof,
-                    c_byte, c_short, c_int, c_long, c_char, c_wchar, c_char_p)
+from ctypes import (
+    CDLL,
+    POINTER,
+    c_byte,
+    c_char,
+    c_char_p,
+    c_int,
+    c_long,
+    c_short,
+    c_wchar,
+    sizeof,
+)
+
 from test.support import import_helper
+
 _ctypes_test = import_helper.import_module("_ctypes_test")
 
 

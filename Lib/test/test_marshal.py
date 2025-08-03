@@ -1,14 +1,20 @@
-from test import support
-from test.support import is_apple_mobile, os_helper, requires_debug_ranges, is_emscripten
-from test.support.script_helper import assert_python_ok
 import array
 import io
 import marshal
-import sys
-import unittest
 import os
-import types
+import sys
 import textwrap
+import types
+import unittest
+
+from test import support
+from test.support import (
+    is_apple_mobile,
+    is_emscripten,
+    os_helper,
+    requires_debug_ranges,
+)
+from test.support.script_helper import assert_python_ok
 
 try:
     import _testcapi

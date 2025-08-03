@@ -5,14 +5,16 @@ The module for testing variable annotations.
 Empty lines above are for good reason (testing for correct line numbers)
 """
 
-from typing import Optional
 from functools import wraps
+from typing import Optional
+
 
 class C:
 
     x = 5; y: Optional['C'] = None
 
 from typing import Tuple
+
 x: int = 5; y: str = x; f: Tuple[int, int]
 
 class M(type):
@@ -24,6 +26,7 @@ class D(C):
     j: str = 'hi'; k: str= 'bye'
 
 from types import new_class
+
 h_class = new_class('H', (C,))
 j_class = new_class('J')
 

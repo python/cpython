@@ -1,26 +1,25 @@
 """Regression tests for what was in Python 2's "urllib" module"""
 
-import urllib.parse
-import urllib.request
-import urllib.error
-import http.client
 import email.message
+import http.client
 import io
-import unittest
-from test import support
-from test.support import os_helper
-from test.support import socket_helper
 import os
 import socket
+import unittest
+import urllib.error
+import urllib.parse
+import urllib.request
+
+from test import support
+from test.support import os_helper, socket_helper
+
 try:
     import ssl
 except ImportError:
     ssl = None
+import collections
 import sys
 import tempfile
-
-import collections
-
 
 if not socket_helper.has_gethostname:
     raise unittest.SkipTest("test requires gethostname()")

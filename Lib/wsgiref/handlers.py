@@ -1,9 +1,11 @@
 """Base classes for server/gateway implementations"""
 
-from .util import FileWrapper, guess_scheme, is_hop_by_hop
-from .headers import Headers
+import os
+import sys
+import time
 
-import sys, os, time
+from .headers import Headers
+from .util import FileWrapper, guess_scheme, is_hop_by_hop
 
 __all__ = [
     'BaseHandler', 'SimpleHandler', 'BaseCGIHandler', 'CGIHandler',

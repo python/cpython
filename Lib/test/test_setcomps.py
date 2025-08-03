@@ -4,7 +4,6 @@ import unittest
 
 from test.support import BrokenIter
 
-
 doctests = """
 ########### Tests mostly copied from test_listcomps.py ############
 

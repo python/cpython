@@ -6,8 +6,8 @@ import subprocess
 import sys
 import sysconfig
 import unittest
-from test import support
 
+from test import support
 
 GDB_PROGRAM = shutil.which('gdb') or 'gdb'
 

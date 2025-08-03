@@ -17,9 +17,10 @@ import unittest
 import warnings
 
 from test.support.import_helper import make_legacy_pyc, unload
-
-from test.test_py_compile import without_source_date_epoch
-from test.test_py_compile import SourceDateEpochTestMeta
+from test.test_py_compile import (
+    SourceDateEpochTestMeta,
+    without_source_date_epoch,
+)
 
 
 class SimpleTest(abc.LoaderTests):

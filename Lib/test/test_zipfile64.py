@@ -11,14 +11,13 @@ support.requires(
         'test requires loads of disk-space bytes and a long time to run'
     )
 
-import zipfile, unittest
-import time
 import sys
-
+import time
+import unittest
+import zipfile
 from tempfile import TemporaryFile
 
-from test.support import os_helper
-from test.support import requires_zlib
+from test.support import os_helper, requires_zlib
 
 TESTFN = os_helper.TESTFN
 TESTFN2 = TESTFN + "2"

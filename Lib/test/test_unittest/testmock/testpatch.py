@@ -4,21 +4,27 @@
 
 import os
 import sys
-from collections import OrderedDict
-
 import unittest
-import test
-from test.test_unittest.testmock import support
-from test.test_unittest.testmock.support import SomeClass, is_instance
-
-from test.support.import_helper import DirsOnSysPath
-from test.test_importlib.util import uncache
+from collections import OrderedDict
 from unittest.mock import (
-    NonCallableMock, CallableMixin, sentinel,
-    MagicMock, Mock, NonCallableMagicMock, patch, _patch,
-    DEFAULT, call, _get_target
+    DEFAULT,
+    CallableMixin,
+    MagicMock,
+    Mock,
+    NonCallableMagicMock,
+    NonCallableMock,
+    _get_target,
+    _patch,
+    call,
+    patch,
+    sentinel,
 )
 
+import test
+from test.support.import_helper import DirsOnSysPath
+from test.test_importlib.util import uncache
+from test.test_unittest.testmock import support
+from test.test_unittest.testmock.support import SomeClass, is_instance
 
 builtin_string = 'builtins'
 

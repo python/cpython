@@ -1,7 +1,8 @@
 """Test relative imports (PEP 328)."""
-from test.test_importlib import util
 import unittest
 import warnings
+
+from test.test_importlib import util
 
 
 class RelativeImports:

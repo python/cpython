@@ -1,5 +1,6 @@
 import unittest
 
+
 class PEP3120Test(unittest.TestCase):
 
     def test_pep3120(self):

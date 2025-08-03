@@ -1,4 +1,5 @@
 import unittest
+
 from test.support import import_helper
 
 # Skip this test if the _testcapi module isn't available.

@@ -1,10 +1,10 @@
 import contextlib
 import sys
-import unittest
-from test import support
-from test.support import import_helper
-from test.support import os_helper
 import time
+import unittest
+
+from test import support
+from test.support import import_helper, os_helper
 
 resource = import_helper.import_module('resource')
 

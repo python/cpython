@@ -17,9 +17,9 @@ altsep = '/'
 defpath = '.;C:\\bin'
 devnull = 'nul'
 
+import genericpath
 import os
 import sys
-import genericpath
 from genericpath import *
 
 __all__ = ["normcase","isabs","join","splitdrive","splitroot","split","splitext",
@@ -42,10 +42,9 @@ def _get_bothseps(path):
 # (this is done by normpath).
 
 try:
-    from _winapi import (
-        LCMapStringEx as _LCMapStringEx,
-        LOCALE_NAME_INVARIANT as _LOCALE_NAME_INVARIANT,
-        LCMAP_LOWERCASE as _LCMAP_LOWERCASE)
+    from _winapi import LCMAP_LOWERCASE as _LCMAP_LOWERCASE
+    from _winapi import LOCALE_NAME_INVARIANT as _LOCALE_NAME_INVARIANT
+    from _winapi import LCMapStringEx as _LCMapStringEx
 
     def normcase(s, /):
         """Normalize case of pathname.
@@ -598,7 +597,8 @@ else:  # use native Windows method on Windows
         return normpath(path)
 
 try:
-    from nt import _findfirstfile, _getfinalpathname, readlink as _nt_readlink
+    from nt import _findfirstfile, _getfinalpathname
+    from nt import readlink as _nt_readlink
 except ImportError:
     # realpath is a no-op on systems without _getfinalpathname support.
     def realpath(path, /, *, strict=False):
@@ -897,11 +897,11 @@ try:
     # The isdir(), isfile(), islink(), exists() and lexists() implementations
     # in genericpath use os.stat(). This is overkill on Windows. Use simpler
     # builtin functions if they are available.
+    from nt import _path_exists as exists
     from nt import _path_isdir as isdir
     from nt import _path_isfile as isfile
-    from nt import _path_islink as islink
     from nt import _path_isjunction as isjunction
-    from nt import _path_exists as exists
+    from nt import _path_islink as islink
     from nt import _path_lexists as lexists
 except ImportError:
     # Use genericpath.* as imported above

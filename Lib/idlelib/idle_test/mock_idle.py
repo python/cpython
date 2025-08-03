@@ -5,6 +5,7 @@ Attributes and methods will be added as needed for tests.
 
 from idlelib.idle_test.mock_tk import Text
 
+
 class Func:
     '''Record call, capture args, return/raise result set by test.
 

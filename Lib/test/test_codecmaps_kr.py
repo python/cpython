@@ -3,8 +3,10 @@
 #   Codec mapping tests for ROK encodings
 #
 
-from test import multibytecodec_support
 import unittest
+
+from test import multibytecodec_support
+
 
 class TestCP949Map(multibytecodec_support.TestBase_Mapping,
                    unittest.TestCase):

@@ -1,6 +1,6 @@
 import unittest
-from threading import Thread
 from operator import methodcaller
+from threading import Thread
 
 
 class TestMethodcaller(unittest.TestCase):

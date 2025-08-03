@@ -3,29 +3,32 @@
 # Modified by Giampaolo Rodola' to test FTP class, IPv6 and TLS
 # environment
 
-import ftplib
-import socket
-import io
 import errno
+import ftplib
+import io
 import os
+import socket
 import threading
 import time
 import unittest
+
 try:
     import ssl
 except ImportError:
     ssl = None
 
 from unittest import TestCase, skipUnless
-from test import support
-from test.support import requires_subprocess
-from test.support import threading_helper
-from test.support import socket_helper
-from test.support import warnings_helper
-from test.support import asynchat
-from test.support import asyncore
-from test.support.socket_helper import HOST, HOSTv6
 
+from test import support
+from test.support import (
+    asynchat,
+    asyncore,
+    requires_subprocess,
+    socket_helper,
+    threading_helper,
+    warnings_helper,
+)
+from test.support.socket_helper import HOST, HOSTv6
 
 support.requires_working_socket(module=True)
 

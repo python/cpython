@@ -1,9 +1,10 @@
-from test.test_importlib import util
 import importlib._bootstrap
 import sys
-from types import MethodType
 import unittest
 import warnings
+from types import MethodType
+
+from test.test_importlib import util
 
 
 class CallingOrder:

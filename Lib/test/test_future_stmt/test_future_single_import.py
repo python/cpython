@@ -1,5 +1,4 @@
-from __future__ import nested_scopes
-from __future__ import division
+from __future__ import division, nested_scopes
 
 import unittest
 

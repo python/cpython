@@ -8,18 +8,18 @@ import sys
 import textwrap
 import time
 import unittest
-from concurrent.futures.interpreter import BrokenInterpreterPool
 from concurrent import interpreters
+from concurrent.futures.interpreter import BrokenInterpreterPool
 from concurrent.interpreters import _queues as queues
+
 import _interpreters
-from test import support
-from test.support import os_helper
-from test.support import script_helper
+
 import test.test_asyncio.utils as testasyncio_utils
+from test import support
+from test.support import os_helper, script_helper
 
 from .executor import ExecutorTest, mul
 from .util import BaseTestCase, InterpreterPoolMixin, setup_module
-
 
 WINDOWS = sys.platform.startswith('win')
 

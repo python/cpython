@@ -1,11 +1,11 @@
-import unittest
-from test import audiotests
-from test import support
 import io
 import os
 import struct
 import sys
+import unittest
 import wave
+
+from test import audiotests, support
 
 
 class WaveTest(audiotests.AudioWriteTests,

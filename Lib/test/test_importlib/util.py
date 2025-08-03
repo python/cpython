@@ -2,18 +2,17 @@ import builtins
 import contextlib
 import errno
 import functools
-from importlib import machinery, util, invalidate_caches
 import marshal
 import os
 import os.path
-from test import support
-from test.support import import_helper
-from test.support import is_apple_mobile
-from test.support import os_helper
-import unittest
 import sys
 import tempfile
 import types
+import unittest
+from importlib import invalidate_caches, machinery, util
+
+from test import support
+from test.support import import_helper, is_apple_mobile, os_helper
 
 _testsinglephase = import_helper.import_module("_testsinglephase")
 

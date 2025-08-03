@@ -6,12 +6,12 @@ import codecs
 import importlib.util
 import re
 import types
+
 # Because sys.path gets essentially blanked, need to have unicodedata already
 # imported for the parser to use.
 import unicodedata
 import unittest
 import warnings
-
 
 CODING_RE = re.compile(r'^[ \t\f]*#.*?coding[:=][ \t]*([-\w.]+)', re.ASCII)
 

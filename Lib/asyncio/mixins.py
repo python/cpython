@@ -1,6 +1,7 @@
 """Event loop mixins."""
 
 import threading
+
 from . import events
 
 _global_lock = threading.Lock()

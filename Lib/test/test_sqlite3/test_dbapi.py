@@ -29,17 +29,25 @@ import threading
 import unittest
 import urllib.parse
 import warnings
+from os import SEEK_CUR, SEEK_END, SEEK_SET
 
 from test.support import (
-    SHORT_TIMEOUT, check_disallow_instantiation, requires_subprocess
+    SHORT_TIMEOUT,
+    check_disallow_instantiation,
+    gc_collect,
+    import_helper,
+    requires_subprocess,
+    threading_helper,
 )
-from test.support import gc_collect
-from test.support import threading_helper, import_helper
-from os import SEEK_SET, SEEK_CUR, SEEK_END
-from test.support.os_helper import TESTFN, TESTFN_UNDECODABLE, unlink, temp_dir, FakePath
+from test.support.os_helper import (
+    TESTFN,
+    TESTFN_UNDECODABLE,
+    FakePath,
+    temp_dir,
+    unlink,
+)
 
-from .util import memory_database, cx_limit
-from .util import MemoryDatabaseMixin
+from .util import MemoryDatabaseMixin, cx_limit, memory_database
 
 
 class ModuleTests(unittest.TestCase):

@@ -3,11 +3,10 @@
 This module provides an implementation of the HeaderRegistry API.
 The implementation is designed to flexibly follow RFC5322 rules.
 """
+from email import _header_value_parser as parser
+from email import errors, utils
 from types import MappingProxyType
 
-from email import utils
-from email import errors
-from email import _header_value_parser as parser
 
 class Address:
 

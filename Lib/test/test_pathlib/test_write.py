@@ -8,15 +8,15 @@ import sys
 import unittest
 
 from .support import is_pypi
-from .support.local_path import WritableLocalPath, LocalPathGround
+from .support.local_path import LocalPathGround, WritableLocalPath
 from .support.zip_path import WritableZipPath, ZipPathGround
 
 if is_pypi:
     from pathlib_abc import _WritablePath
     from pathlib_abc._os import magic_open
 else:
-    from pathlib.types import _WritablePath
     from pathlib._os import magic_open
+    from pathlib.types import _WritablePath
 
 
 class WriteTestBase:

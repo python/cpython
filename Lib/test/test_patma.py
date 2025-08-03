@@ -6,6 +6,7 @@ import enum
 import inspect
 import sys
 import unittest
+
 from test import support
 
 
@@ -2801,7 +2802,7 @@ class TestPatma(unittest.TestCase):
 
     def test_patma_generic_protocol(self):
         # Runtime-checkable generic protocol
-        from typing import Generic, TypeVar, Protocol, runtime_checkable
+        from typing import Generic, Protocol, TypeVar, runtime_checkable
 
         T = TypeVar('T')  # not using PEP695 to be able to backport changes
 

@@ -7,25 +7,26 @@ if sys.platform != "win32":
 
 import itertools
 from functools import partial
-from test.support import force_not_colorized_test_class
 from typing import Iterable
 from unittest import TestCase
 from unittest.mock import MagicMock, call
 
-from .support import handle_all_events, code_to_events
+from test.support import force_not_colorized_test_class
+
+from .support import code_to_events, handle_all_events
 from .support import prepare_reader as default_prepare_reader
 
 try:
-    from _pyrepl.console import Event, Console
+    import _pyrepl.windows_console as wc
+    from _pyrepl.console import Console, Event
     from _pyrepl.windows_console import (
-        WindowsConsole,
+        ERASE_IN_LINE,
+        MOVE_DOWN,
         MOVE_LEFT,
         MOVE_RIGHT,
         MOVE_UP,
-        MOVE_DOWN,
-        ERASE_IN_LINE,
+        WindowsConsole,
     )
-    import _pyrepl.windows_console as wc
 except ImportError:
     pass
 

@@ -1,5 +1,5 @@
 import unittest
-from ctypes import (Structure, POINTER, pointer, c_char_p, c_int)
+from ctypes import POINTER, Structure, c_char_p, c_int, pointer
 
 
 class SimpleTestCase(unittest.TestCase):

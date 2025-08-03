@@ -1,16 +1,15 @@
+# Modules under test
+import _thread
+import _threading_local
 import sys
+import threading
 import unittest
+import weakref
 from doctest import DocTestSuite
+
 from test import support
 from test.support import threading_helper
 from test.support.import_helper import import_module
-import weakref
-
-# Modules under test
-import _thread
-import threading
-import _threading_local
-
 
 threading_helper.requires_working_threading(module=True)
 

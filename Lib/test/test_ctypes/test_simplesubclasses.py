@@ -1,7 +1,12 @@
 import unittest
-from ctypes import Structure, CFUNCTYPE, c_int, _SimpleCData
-from ._support import (_CData, PyCSimpleType, Py_TPFLAGS_DISALLOW_INSTANTIATION,
-                       Py_TPFLAGS_IMMUTABLETYPE)
+from ctypes import CFUNCTYPE, Structure, _SimpleCData, c_int
+
+from ._support import (
+    Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    Py_TPFLAGS_IMMUTABLETYPE,
+    PyCSimpleType,
+    _CData,
+)
 
 
 class MyInt(c_int):

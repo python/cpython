@@ -1,28 +1,26 @@
-import sys
-import os
-import marshal
+import doctest
 import glob
 import importlib
 import importlib.util
+import inspect
+import io
+import linecache
+import marshal
+import os
 import re
 import struct
+import sys
 import time
 import unittest
 import unittest.mock
 import warnings
+import zipimport
+from traceback import extract_stack, extract_tb, print_tb
+from zipfile import ZIP_DEFLATED, ZIP_STORED, ZipFile, ZipInfo
 
 from test import support
-from test.support import import_helper
-from test.support import os_helper
+from test.support import import_helper, os_helper
 
-from zipfile import ZipFile, ZipInfo, ZIP_STORED, ZIP_DEFLATED
-
-import zipimport
-import linecache
-import doctest
-import inspect
-import io
-from traceback import extract_tb, extract_stack, print_tb
 try:
     import zlib
 except ImportError:

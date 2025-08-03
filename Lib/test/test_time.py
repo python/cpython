@@ -1,14 +1,16 @@
-from test import support
-from test.support import warnings_helper
 import decimal
 import enum
 import math
 import platform
 import sys
 import sysconfig
-import time
 import threading
+import time
 import unittest
+
+from test import support
+from test.support import warnings_helper
+
 try:
     import _testcapi
 except ImportError:
@@ -18,7 +20,7 @@ try:
 except ImportError:
     _testinternalcapi = None
 
-from test.support import skip_if_buggy_ucrt_strfptime, SuppressCrashReport
+from test.support import SuppressCrashReport, skip_if_buggy_ucrt_strfptime
 
 # Max year is only limited by the size of C int.
 SIZEOF_INT = sysconfig.get_config_var('SIZEOF_INT') or 4
@@ -1010,7 +1012,7 @@ class TestCPyTime(CPyTimeTestCase, unittest.TestCase):
             return divmod(us, SEC_TO_US)
 
         if sys.platform == 'win32':
-            from _testcapi import LONG_MIN, LONG_MAX
+            from _testcapi import LONG_MAX, LONG_MIN
 
             # On Windows, timeval.tv_sec type is a C long
             def seconds_filter(secs):
@@ -1042,7 +1044,7 @@ class TestCPyTime(CPyTimeTestCase, unittest.TestCase):
         from _testinternalcapi import _PyTime_AsTimeval_clamp
 
         if sys.platform == 'win32':
-            from _testcapi import LONG_MIN, LONG_MAX
+            from _testcapi import LONG_MAX, LONG_MIN
             tv_sec_max = LONG_MAX
             tv_sec_min = LONG_MIN
         else:
@@ -1168,8 +1170,8 @@ class TestTimeWeaklinking(unittest.TestCase):
     #
     # See the section on Weak Linking in Mac/README.txt for more information.
     def test_clock_functions(self):
-        import sysconfig
         import platform
+        import sysconfig
 
         config_vars = sysconfig.get_config_vars()
         var_name = "HAVE_CLOCK_GETTIME"

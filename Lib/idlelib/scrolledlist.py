@@ -1,7 +1,6 @@
+from idlelib import macosx
 from tkinter import *
 from tkinter.ttk import Frame, Scrollbar
-
-from idlelib import macosx
 
 
 class ScrolledList:

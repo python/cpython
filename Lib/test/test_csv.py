@@ -2,19 +2,24 @@
 # csv package unit tests
 
 import copy
-import sys
-import unittest
-from io import StringIO
-from tempfile import TemporaryFile
 import csv
 import gc
 import pickle
-from test import support
-from test.support import cpython_only, import_helper, check_disallow_instantiation
-from test.support.import_helper import ensure_lazy_imports
-from itertools import permutations
-from textwrap import dedent
+import sys
+import unittest
 from collections import OrderedDict
+from io import StringIO
+from itertools import permutations
+from tempfile import TemporaryFile
+from textwrap import dedent
+
+from test import support
+from test.support import (
+    check_disallow_instantiation,
+    cpython_only,
+    import_helper,
+)
+from test.support.import_helper import ensure_lazy_imports
 
 
 class BadIterable:
@@ -1079,7 +1084,8 @@ class TestArrayWrites(unittest.TestCase):
             self.assertEqual(fileobj.read(), expected)
 
     def test_char_write(self):
-        import array, string
+        import array
+        import string
         a = array.array('w', string.ascii_letters)
 
         with TemporaryFile("w+", encoding="utf-8", newline='') as fileobj:

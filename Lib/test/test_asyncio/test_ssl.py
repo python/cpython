@@ -12,9 +12,9 @@ import sys
 import tempfile
 import threading
 import time
+import unittest
 import unittest.mock
 import weakref
-import unittest
 
 try:
     import ssl
@@ -23,7 +23,6 @@ except ImportError:
 
 from test import support
 from test.test_asyncio import utils as test_utils
-
 
 MACOS = (sys.platform == 'darwin')
 BUF_MULTIPLIER = 1024 if not MACOS else 64

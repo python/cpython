@@ -2,9 +2,15 @@
 
 import re
 import tkinter
-from test.test_tkinter.support import (AbstractTkTest, requires_tk, tk_version,
-                                  pixels_conv, tcl_obj_eq)
+
 import test.support
+from test.test_tkinter.support import (
+    AbstractTkTest,
+    pixels_conv,
+    requires_tk,
+    tcl_obj_eq,
+    tk_version,
+)
 
 _sentinel = object()
 

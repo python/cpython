@@ -65,44 +65,44 @@ Debugger commands
 # NOTE: the actual command documentation is collected from docstrings of the
 # commands and is appended to __doc__ after the class has been defined.
 
-import os
-import io
-import re
-import sys
-import cmd
-import bdb
-import dis
-import code
-import glob
-import json
-import stat
-import token
-import types
+import asyncio
 import atexit
+import bdb
+import builtins
+import cmd
+import code
 import codeop
+import dis
+import glob
+import inspect
+import io
+import itertools
+import json
+import linecache
+import os
 import pprint
+import re
+import selectors
 import signal
 import socket
-import typing
-import asyncio
-import inspect
-import weakref
-import builtins
+import stat
+import sys
 import tempfile
 import textwrap
-import tokenize
-import itertools
-import traceback
-import linecache
-import selectors
 import threading
-import _colorize
-import _pyrepl.utils
-
+import token
+import tokenize
+import traceback
+import types
+import typing
+import weakref
 from contextlib import ExitStack, closing, contextmanager
 from rlcompleter import Completer
 from types import CodeType
 from warnings import deprecated
+
+import _colorize
+import _pyrepl.utils
 
 
 class Restart(Exception):

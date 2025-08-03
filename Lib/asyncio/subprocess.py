@@ -2,12 +2,8 @@ __all__ = 'create_subprocess_exec', 'create_subprocess_shell'
 
 import subprocess
 
-from . import events
-from . import protocols
-from . import streams
-from . import tasks
+from . import events, protocols, streams, tasks
 from .log import logger
-
 
 PIPE = subprocess.PIPE
 STDOUT = subprocess.STDOUT

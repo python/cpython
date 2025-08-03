@@ -1,11 +1,10 @@
 """Test script for the dbm.open function based on testdumbdbm.py"""
 
-import unittest
 import dbm
 import os
-from test.support import import_helper
-from test.support import os_helper
+import unittest
 
+from test.support import import_helper, os_helper
 
 try:
     from dbm import sqlite3 as dbm_sqlite3

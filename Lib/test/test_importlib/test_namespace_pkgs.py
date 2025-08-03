@@ -173,8 +173,8 @@ class SeparatedOverlappingNamespacePackages(NamespacePackageTest):
         self.assertEqual(foo.two.attr, 'both_portions foo two')
 
     def test_first_path_wins_importing_second_first(self):
-        import foo.two
         import foo.one
+        import foo.two
         self.assertEqual(foo.one.attr, 'portion1 foo one')
         self.assertEqual(foo.two.attr, 'both_portions foo two')
 

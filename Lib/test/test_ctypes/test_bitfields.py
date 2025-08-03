@@ -1,16 +1,41 @@
 import os
 import sys
 import unittest
-from ctypes import (CDLL, Structure, sizeof, POINTER, byref, alignment,
-                    LittleEndianStructure, BigEndianStructure,
-                    c_byte, c_ubyte, c_char, c_char_p, c_void_p, c_wchar,
-                    c_uint8, c_uint16, c_uint32, c_uint64,
-                    c_short, c_ushort, c_int, c_uint, c_long, c_ulong,
-                    c_longlong, c_ulonglong,
-                    Union)
+from ctypes import (
+    CDLL,
+    POINTER,
+    BigEndianStructure,
+    LittleEndianStructure,
+    Structure,
+    Union,
+    alignment,
+    byref,
+    c_byte,
+    c_char,
+    c_char_p,
+    c_int,
+    c_long,
+    c_longlong,
+    c_short,
+    c_ubyte,
+    c_uint,
+    c_uint8,
+    c_uint16,
+    c_uint32,
+    c_uint64,
+    c_ulong,
+    c_ulonglong,
+    c_ushort,
+    c_void_p,
+    c_wchar,
+    sizeof,
+)
+
 from test import support
 from test.support import import_helper
+
 from ._support import StructCheckMixin
+
 _ctypes_test = import_helper.import_module("_ctypes_test")
 
 

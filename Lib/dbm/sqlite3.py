@@ -1,8 +1,8 @@
 import os
 import sqlite3
-from pathlib import Path
-from contextlib import suppress, closing
 from collections.abc import MutableMapping
+from contextlib import closing, suppress
+from pathlib import Path
 
 BUILD_TABLE = """
   CREATE TABLE IF NOT EXISTS Dict (

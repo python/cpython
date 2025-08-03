@@ -13,18 +13,21 @@
 # Written and designed by Stefan Krah for Python 3.3.
 #
 
+import array
 import contextlib
-import unittest
-from test import support
-from test.support import os_helper
 import inspect
-from itertools import permutations, product
-from random import randrange, sample, choice
+import io
+import os
+import sys
+import unittest
 import warnings
-import sys, array, io, os
 from decimal import Decimal
 from fractions import Fraction
-from test.support import warnings_helper
+from itertools import permutations, product
+from random import choice, randrange, sample
+
+from test import support
+from test.support import os_helper, warnings_helper
 
 try:
     from _testbuffer import *
@@ -4458,7 +4461,7 @@ class TestBufferProtocol(unittest.TestCase):
     def test_flags_overflow(self):
         # gh-126594: Check for integer overlow on large flags
         try:
-            from _testcapi import INT_MIN, INT_MAX
+            from _testcapi import INT_MAX, INT_MIN
         except ImportError:
             INT_MIN = -(2 ** 31)
             INT_MAX = 2 ** 31 - 1

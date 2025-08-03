@@ -30,7 +30,6 @@ Each function will be called at most once for each event.
 """
 import re
 import sys
-
 import tkinter
 
 # the event type constants, which define the meaning of mc_type

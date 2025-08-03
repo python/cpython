@@ -7,8 +7,8 @@ and print it out, until terminated."""
 
 import sys
 import time
-from test.support import get_pagesize
 
+from test.support import get_pagesize
 
 while True:
     page_size = get_pagesize()

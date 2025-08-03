@@ -5,10 +5,10 @@ import platform
 import shlex
 import sys
 import sysconfig
+
+from setuptools import Extension, setup
+
 from test import support
-
-from setuptools import setup, Extension
-
 
 SOURCE = 'extension.cpp'
 

@@ -3,8 +3,8 @@
 import html.parser
 import pprint
 import unittest
-
 from unittest.mock import patch
+
 from test import support
 
 

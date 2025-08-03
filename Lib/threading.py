@@ -1,13 +1,13 @@
 """Thread module emulating a subset of Java's threading model."""
 
+import _contextvars
+import _thread
 import os as _os
 import sys as _sys
-import _thread
-import _contextvars
-
-from time import monotonic as _time
 from _weakrefset import WeakSet
 from itertools import count as _count
+from time import monotonic as _time
+
 try:
     from _collections import deque as _deque
 except ImportError:
@@ -1248,12 +1248,12 @@ class Thread:
 
 
 try:
-    from _thread import (_excepthook as excepthook,
-                         _ExceptHookArgs as ExceptHookArgs)
+    from _thread import _excepthook as excepthook
+    from _thread import _ExceptHookArgs as ExceptHookArgs
 except ImportError:
     # Simple Python implementation if _thread._excepthook() is not available
-    from traceback import print_exception as _print_exception
     from collections import namedtuple
+    from traceback import print_exception as _print_exception
 
     _ExceptHookArgs = namedtuple(
         'ExceptHookArgs',

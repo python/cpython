@@ -1,9 +1,10 @@
 import textwrap
 import unittest
+
 from test import support
 from test.support import python_is_optimized
 
-from .util import setup_module, DebuggerTests, CET_PROTECTION, SAMPLE_SCRIPT
+from .util import CET_PROTECTION, SAMPLE_SCRIPT, DebuggerTests, setup_module
 
 
 def setUpModule():

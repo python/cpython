@@ -1,16 +1,16 @@
 """Test suite for the profile module."""
 
-import sys
-import pstats
-import unittest
 import os
+import profile
+import pstats
+import sys
+import unittest
+from contextlib import contextmanager, redirect_stdout
 from difflib import unified_diff
 from io import StringIO
-from test.support.os_helper import TESTFN, unlink, temp_dir, change_cwd
-from contextlib import contextmanager, redirect_stdout
 
-import profile
 from test.profilee import testfunc, timer
+from test.support.os_helper import TESTFN, change_cwd, temp_dir, unlink
 from test.support.script_helper import assert_python_failure, assert_python_ok
 
 

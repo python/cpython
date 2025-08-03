@@ -1,10 +1,11 @@
-import unittest
-import operator
-import sys
-import pickle
 import gc
+import operator
+import pickle
+import sys
+import unittest
 
 from test import support
+
 
 class G:
     'Sequence using __getitem__'

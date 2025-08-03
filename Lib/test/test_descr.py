@@ -12,9 +12,9 @@ import types
 import unittest
 import warnings
 import weakref
-
-from copy import deepcopy
 from contextlib import redirect_stdout
+from copy import deepcopy
+
 from test import support
 from test.support.script_helper import assert_python_ok
 
@@ -309,7 +309,8 @@ class OperatorsTest(unittest.TestCase):
     @unittest.skipIf(xxsubtype is None, "requires xxsubtype module")
     def test_spam_lists(self):
         # Testing spamlist operations...
-        import copy, xxsubtype as spam
+        import copy
+        import xxsubtype as spam
 
         def spamlist(l, memo=None):
             import xxsubtype as spam
@@ -354,7 +355,8 @@ class OperatorsTest(unittest.TestCase):
     @unittest.skipIf(xxsubtype is None, "requires xxsubtype module")
     def test_spam_dicts(self):
         # Testing spamdict operations...
-        import copy, xxsubtype as spam
+        import copy
+        import xxsubtype as spam
         def spamdict(d, memo=None):
             import xxsubtype as spam
             sd = spam.spamdict()

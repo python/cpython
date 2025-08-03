@@ -1,17 +1,22 @@
 # Test iterators.
 
-import sys
-import unittest
-from test.support import cpython_only
-from test.support.os_helper import TESTFN, unlink
-from test.support import check_free_after_iterating, ALWAYS_EQ, NEVER_EQ
-from test.support import BrokenIter
-import pickle
-import collections.abc
-import functools
-import contextlib
 import builtins
+import collections.abc
+import contextlib
+import functools
+import pickle
+import sys
 import traceback
+import unittest
+
+from test.support import (
+    ALWAYS_EQ,
+    NEVER_EQ,
+    BrokenIter,
+    check_free_after_iterating,
+    cpython_only,
+)
+from test.support.os_helper import TESTFN, unlink
 
 # Test result of triple loop (too big to inline)
 TRIPLETS = [(0, 0, 0), (0, 0, 1), (0, 0, 2),

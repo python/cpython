@@ -1,9 +1,9 @@
-import unittest
 import re
 import tkinter
+import unittest
 from tkinter import TclError
-from test.support import requires
 
+from test.support import requires
 from test.test_tkinter.support import pixels_conv
 from test.test_tkinter.widget_tests import AbstractWidgetTest
 

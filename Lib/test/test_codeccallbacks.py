@@ -1,10 +1,10 @@
-from _codecs import _unregister_error as _codecs_unregister_error
 import codecs
 import html.entities
 import itertools
 import sys
 import unicodedata
 import unittest
+from _codecs import _unregister_error as _codecs_unregister_error
 
 
 class PosReturn:

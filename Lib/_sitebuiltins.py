@@ -10,6 +10,7 @@ The objects used by the site module to add custom builtins.
 
 import sys
 
+
 class Quitter(object):
     def __init__(self, name, eof):
         self.name = name

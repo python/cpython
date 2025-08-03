@@ -3,15 +3,19 @@
 import queue
 import time
 import weakref
+
 import _interpqueues as _queues
-from . import _crossinterp
 
 # aliases:
 from _interpqueues import (
-    QueueError, QueueNotFoundError,
+    QueueError,
+    QueueNotFoundError,
 )
+
+from . import _crossinterp
 from ._crossinterp import (
-    UNBOUND_ERROR, UNBOUND_REMOVE,
+    UNBOUND_ERROR,
+    UNBOUND_REMOVE,
 )
 
 __all__ = [

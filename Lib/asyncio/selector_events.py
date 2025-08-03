@@ -15,19 +15,22 @@ import selectors
 import socket
 import warnings
 import weakref
+
 try:
     import ssl
 except ImportError:  # pragma: no cover
     ssl = None
 
-from . import base_events
-from . import constants
-from . import events
-from . import futures
-from . import protocols
-from . import sslproto
-from . import transports
-from . import trsock
+from . import (
+    base_events,
+    constants,
+    events,
+    futures,
+    protocols,
+    sslproto,
+    transports,
+    trsock,
+)
 from .log import logger
 
 _HAS_SENDMSG = hasattr(socket.socket, 'sendmsg')

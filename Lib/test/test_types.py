@@ -1,27 +1,31 @@
 # Python test set -- part 6, built-in types
 
-from test.support import (
-    run_with_locale, cpython_only, no_rerun,
-    MISSING_C_DOCSTRINGS, EqualToForwardRef, check_disallow_instantiation,
-)
-from test.support.script_helper import assert_python_ok
-from test.support.import_helper import import_fresh_module
-
-import collections.abc
-from collections import namedtuple, UserDict
-import copy
 import _datetime
+import collections.abc
+import copy
 import gc
 import inspect
-import pickle
 import locale
+import pickle
+import re
 import sys
 import textwrap
 import types
+import typing
 import unittest.mock
 import weakref
-import typing
-import re
+from collections import UserDict, namedtuple
+
+from test.support import (
+    MISSING_C_DOCSTRINGS,
+    EqualToForwardRef,
+    check_disallow_instantiation,
+    cpython_only,
+    no_rerun,
+    run_with_locale,
+)
+from test.support.import_helper import import_fresh_module
+from test.support.script_helper import assert_python_ok
 
 c_types = import_fresh_module('types', fresh=['_types'])
 py_types = import_fresh_module('types', blocked=['_types'])
@@ -659,8 +663,8 @@ class TypesTests(unittest.TestCase):
         # gh-132747: The default __get__() implementation in C was unable
         # to handle a second argument of None when called from Python
         import _io
-        import io
         import _queue
+        import io
 
         to_check = [
             # (method, instance)

@@ -1,38 +1,55 @@
+import _imp
+import _osx_support
+import json
+import os
 import platform
 import re
-import unittest
-import sys
-import os
-import subprocess
 import shutil
-import json
+import subprocess
+import sys
+import sysconfig
 import textwrap
+import unittest
 from copy import copy
+from sysconfig import (
+    _INSTALL_SCHEMES,
+    _PROJECT_BASE,
+    _expand_vars,
+    _get_preferred_schemes,
+    get_config_var,
+    get_config_vars,
+    get_default_scheme,
+    get_path,
+    get_path_names,
+    get_paths,
+    get_platform,
+    get_scheme_names,
+    is_python_build,
+)
+from sysconfig.__main__ import (
+    _get_json_data_name,
+    _get_pybuilddir,
+    _main,
+    _parse_makefile,
+)
 
 from test import support
 from test.support import (
+    PythonSymlink,
     captured_stdout,
     is_android,
     is_apple_mobile,
     is_wasi,
-    PythonSymlink,
     requires_subprocess,
 )
 from test.support.import_helper import import_module
-from test.support.os_helper import (TESTFN, unlink, skip_unless_symlink,
-                                    change_cwd)
+from test.support.os_helper import (
+    TESTFN,
+    change_cwd,
+    skip_unless_symlink,
+    unlink,
+)
 from test.support.venv import VirtualEnvironmentMixin
-
-import sysconfig
-from sysconfig import (get_paths, get_platform, get_config_vars,
-                       get_path, get_path_names, _INSTALL_SCHEMES,
-                       get_default_scheme, get_scheme_names, get_config_var,
-                       _expand_vars, _get_preferred_schemes,
-                       is_python_build, _PROJECT_BASE)
-from sysconfig.__main__ import _main, _parse_makefile, _get_pybuilddir, _get_json_data_name
-import _imp
-import _osx_support
-
 
 HAS_USER_BASE = sysconfig._HAS_USER_BASE
 

@@ -1,8 +1,9 @@
-import io
 import email
+import io
 import unittest
-from email.message import Message, EmailMessage
+from email.message import EmailMessage, Message
 from email.policy import default
+
 from test.test_email import TestEmailBase
 
 

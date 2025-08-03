@@ -143,27 +143,31 @@ __all__ = [
 
 
 import abc
-from annotationlib import Format, ForwardRef
-from annotationlib import get_annotations  # re-exported
 import ast
-import dis
+import builtins
 import collections.abc
+import dis
 import enum
+import functools
 import importlib.machinery
 import itertools
 import linecache
 import os
 import re
 import sys
-import tokenize
 import token
+import tokenize
 import types
-import functools
-import builtins
+from collections import OrderedDict, namedtuple
 from keyword import iskeyword
 from operator import attrgetter
-from collections import namedtuple, OrderedDict
 from weakref import ref as make_weakref
+
+from annotationlib import (
+    Format,
+    ForwardRef,
+    get_annotations,  # re-exported
+)
 
 # Create constants for the compiler flags in Include/code.h
 # We try to get them from dis to avoid duplication

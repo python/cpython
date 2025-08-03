@@ -9,28 +9,32 @@ import shutil
 import struct
 import sys
 import tempfile
-import test.test_importlib.util
 import time
 import unittest
-
 from unittest import mock, skipUnless
+
+import test.test_importlib.util
+
 try:
     # compileall relies on ProcessPoolExecutor if ProcessPoolExecutor exists
     # and it can function.
-    from multiprocessing.util import _cleanup_tests as multiprocessing_cleanup_tests
     from concurrent.futures import ProcessPoolExecutor  # noqa: F401
     from concurrent.futures.process import _check_system_limits
+    from multiprocessing.util import (
+        _cleanup_tests as multiprocessing_cleanup_tests,
+    )
     _check_system_limits()
     _have_multiprocessing = True
 except (NotImplementedError, ModuleNotFoundError):
     _have_multiprocessing = False
 
 from test import support
-from test.support import os_helper
-from test.support import script_helper
-from test.test_py_compile import without_source_date_epoch
-from test.test_py_compile import SourceDateEpochTestMeta
+from test.support import os_helper, script_helper
 from test.support.os_helper import FakePath
+from test.test_py_compile import (
+    SourceDateEpochTestMeta,
+    without_source_date_epoch,
+)
 
 
 def get_pyc(script, opt):

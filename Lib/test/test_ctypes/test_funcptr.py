@@ -1,12 +1,29 @@
 import ctypes
 import unittest
-from ctypes import (CDLL, Structure, CFUNCTYPE, sizeof, _CFuncPtr,
-                    c_void_p, c_char_p, c_char, c_int, c_uint, c_long)
-from test.support import import_helper
-_ctypes_test = import_helper.import_module("_ctypes_test")
-from ._support import (_CData, PyCFuncPtrType, Py_TPFLAGS_DISALLOW_INSTANTIATION,
-                       Py_TPFLAGS_IMMUTABLETYPE, StructCheckMixin)
+from ctypes import (
+    CDLL,
+    CFUNCTYPE,
+    Structure,
+    _CFuncPtr,
+    c_char,
+    c_char_p,
+    c_int,
+    c_long,
+    c_uint,
+    c_void_p,
+    sizeof,
+)
 
+from test.support import import_helper
+
+_ctypes_test = import_helper.import_module("_ctypes_test")
+from ._support import (
+    Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    Py_TPFLAGS_IMMUTABLETYPE,
+    PyCFuncPtrType,
+    StructCheckMixin,
+    _CData,
+)
 
 try:
     WINFUNCTYPE = ctypes.WINFUNCTYPE

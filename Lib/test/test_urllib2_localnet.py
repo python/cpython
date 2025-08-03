@@ -1,16 +1,15 @@
 import base64
-import os
 import email
-import urllib.parse
-import urllib.request
+import hashlib
 import http.server
+import os
 import threading
 import unittest
-import hashlib
+import urllib.parse
+import urllib.request
 
 from test import support
-from test.support import hashlib_helper
-from test.support import threading_helper
+from test.support import hashlib_helper, threading_helper
 
 try:
     import ssl

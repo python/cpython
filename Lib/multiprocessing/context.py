@@ -2,8 +2,7 @@ import os
 import sys
 import threading
 
-from . import process
-from . import reduction
+from . import process, reduction
 
 __all__ = ()
 

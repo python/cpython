@@ -22,10 +22,9 @@ object's .defects attribute.
 __all__ = ['FeedParser', 'BytesFeedParser']
 
 import re
-
+from collections import deque
 from email import errors
 from email._policybase import compat32
-from collections import deque
 from io import StringIO
 
 NLCRE = re.compile(r'\r\n|\r|\n')

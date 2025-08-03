@@ -6,8 +6,8 @@
 import os
 import sysconfig
 import unittest
-from test import support
 
+from test import support
 
 if support.MS_WINDOWS:
     # On Windows, Python is usually built by MSVC. Passing /p:DebugSymbols=true

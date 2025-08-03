@@ -1,5 +1,6 @@
 import gc
 
+
 class old_style_class():
     pass
 class new_style_class(object):

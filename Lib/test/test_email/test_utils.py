@@ -1,9 +1,9 @@
 import datetime
-from email import utils
-import test.support
 import time
 import unittest
+from email import utils
 
+import test.support
 from test.support import cpython_only
 from test.support.import_helper import ensure_lazy_imports
 

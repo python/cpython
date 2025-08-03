@@ -2,11 +2,10 @@
 
 import linecache
 import os
-
 import tkinter as tk
-
 from idlelib.debugobj import ObjectTreeItem, make_objecttreeitem
-from idlelib.tree import TreeNode, TreeItem, ScrolledCanvas
+from idlelib.tree import ScrolledCanvas, TreeItem, TreeNode
+
 
 def StackBrowser(root, exc, flist=None, top=None):
     global sc, item, node  # For testing.

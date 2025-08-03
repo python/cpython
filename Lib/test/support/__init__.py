@@ -3,12 +3,11 @@
 if __name__ != 'test.support':
     raise ImportError('support must be imported from the test package')
 
-import annotationlib
+import _opcode
 import contextlib
 import functools
 import inspect
 import logging
-import _opcode
 import os
 import re
 import stat
@@ -20,6 +19,7 @@ import types
 import unittest
 import warnings
 
+import annotationlib
 
 __all__ = [
     # globals
@@ -727,7 +727,9 @@ def check_syntax_error(testcase, statement, errtext='', *, lineno=None, offset=N
 
 
 def open_urlresource(url, *args, **kw):
-    import urllib.request, urllib.parse
+    import urllib.parse
+    import urllib.request
+
     from .os_helper import unlink
     try:
         import gzip
@@ -1335,6 +1337,7 @@ def refcount_test(test):
 def requires_limited_api(test):
     try:
         import _testcapi  # noqa: F401
+
         import _testlimitedcapi  # noqa: F401
     except ImportError:
         return unittest.skip('needs _testcapi and _testlimitedcapi modules')(test)
@@ -1589,8 +1592,8 @@ class PythonSymlink:
 
     if sys.platform == "win32":
         def _platform_specific(self):
-            import glob
             import _winapi
+            import glob
 
             if os.path.lexists(self.real) and not os.path.exists(self.real):
                 # App symlink appears to not exist, but we want the
@@ -1982,9 +1985,10 @@ def missing_compiler_executable(cmd_names=[]):
     missing.
 
     """
-    from setuptools._distutils import ccompiler, sysconfig
-    from setuptools import errors
     import shutil
+
+    from setuptools import errors
+    from setuptools._distutils import ccompiler, sysconfig
 
     compiler = ccompiler.new_compiler()
     sysconfig.customize_compiler(compiler)
@@ -2474,6 +2478,7 @@ def _findwheel(pkgname):
 @contextlib.contextmanager
 def setup_venv_with_pip_setuptools(venv_dir):
     import subprocess
+
     from .os_helper import temp_cwd
 
     def run_command(cmd):
@@ -2896,6 +2901,7 @@ def iter_slot_wrappers(cls):
 @contextlib.contextmanager
 def force_color(color: bool):
     import _colorize
+
     from .os_helper import EnvironmentVarGuard
 
     with (

@@ -23,12 +23,18 @@ Copyright (C) 2001-2022 Vinay Sajip. All Rights Reserved.
 To use, simply 'import logging' and log away!
 """
 
-import sys, os, time, io, re, traceback, warnings, weakref, collections.abc
-
-from types import GenericAlias
-from string import Template
+import collections.abc
+import io
+import os
+import re
+import sys
+import time
+import traceback
+import warnings
+import weakref
 from string import Formatter as StrFormatter
-
+from string import Template
+from types import GenericAlias
 
 __all__ = ['BASIC_FORMAT', 'BufferingFormatter', 'CRITICAL', 'DEBUG', 'ERROR',
            'FATAL', 'FileHandler', 'Filter', 'Formatter', 'Handler', 'INFO',
@@ -2276,6 +2282,7 @@ def shutdown(handlerList=_handlerList):
 
 #Let's try and shutdown automatically on application exit...
 import atexit
+
 atexit.register(shutdown)
 
 # Null handler

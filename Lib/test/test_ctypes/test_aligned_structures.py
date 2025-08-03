@@ -1,11 +1,22 @@
-from ctypes import (
-    c_char, c_uint32, c_uint16, c_ubyte, c_byte, alignment, sizeof,
-    BigEndianStructure, LittleEndianStructure,
-    BigEndianUnion, LittleEndianUnion, Structure,
-)
 import struct
 import unittest
+from ctypes import (
+    BigEndianStructure,
+    BigEndianUnion,
+    LittleEndianStructure,
+    LittleEndianUnion,
+    Structure,
+    alignment,
+    c_byte,
+    c_char,
+    c_ubyte,
+    c_uint16,
+    c_uint32,
+    sizeof,
+)
+
 from ._support import StructCheckMixin
+
 
 class TestAlignedStructures(unittest.TestCase, StructCheckMixin):
     def test_aligned_string(self):

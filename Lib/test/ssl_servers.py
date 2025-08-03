@@ -1,12 +1,13 @@
 import os
-import sys
-import ssl
 import pprint
+import ssl
+import sys
 import threading
 import urllib.parse
+from http.server import BaseHTTPRequestHandler, SimpleHTTPRequestHandler
+
 # Rename HTTPServer to _HTTPServer so as to avoid confusion with HTTPSServer.
-from http.server import (HTTPServer as _HTTPServer,
-    SimpleHTTPRequestHandler, BaseHTTPRequestHandler)
+from http.server import HTTPServer as _HTTPServer
 
 from test import support
 from test.support import socket_helper

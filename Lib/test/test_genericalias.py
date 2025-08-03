@@ -1,23 +1,29 @@
 """Tests for C-implemented GenericAlias."""
 
-import unittest
-import pickle
-from array import array
 import copy
+import pickle
+import unittest
+from array import array
 from collections import (
-    defaultdict, deque, OrderedDict, Counter, UserDict, UserList
+    Counter,
+    OrderedDict,
+    UserDict,
+    UserList,
+    defaultdict,
+    deque,
 )
 from collections.abc import *
 from concurrent.futures import Future
 from concurrent.futures.thread import _WorkItem
-from contextlib import AbstractContextManager, AbstractAsyncContextManager
+from contextlib import AbstractAsyncContextManager, AbstractContextManager
 from contextvars import ContextVar, Token
 from csv import DictReader, DictWriter
 from dataclasses import Field
-from functools import partial, partialmethod, cached_property
+from functools import cached_property, partial, partialmethod
 from graphlib import TopologicalSorter
 from logging import LoggerAdapter, StreamHandler
 from mailbox import Mailbox, _PartialFile
+
 try:
     import ctypes
 except ImportError:
@@ -25,14 +31,15 @@ except ImportError:
 from difflib import SequenceMatcher
 from filecmp import dircmp
 from fileinput import FileInput
-from itertools import chain
 from http.cookies import Morsel
+from itertools import chain
+
 try:
-    from multiprocessing.managers import ValueProxy, DictProxy, ListProxy
+    from multiprocessing.managers import DictProxy, ListProxy, ValueProxy
     from multiprocessing.pool import ApplyResult
-    from multiprocessing.queues import SimpleQueue as MPSimpleQueue
-    from multiprocessing.queues import Queue as MPQueue
     from multiprocessing.queues import JoinableQueue as MPJoinableQueue
+    from multiprocessing.queues import Queue as MPQueue
+    from multiprocessing.queues import SimpleQueue as MPSimpleQueue
 except ImportError:
     # _multiprocessing module is optional
     ValueProxy = None
@@ -47,23 +54,30 @@ try:
 except ImportError:
     # multiprocessing.shared_memory is not available on e.g. Android
     ShareableList = None
-from os import DirEntry
-from re import Pattern, Match
-from types import GenericAlias, MappingProxyType, AsyncGeneratorType, CoroutineType, GeneratorType
-from tempfile import TemporaryDirectory, SpooledTemporaryFile
-from urllib.parse import SplitResult, ParseResult
-from unittest.case import _AssertRaisesContext
-from queue import Queue, SimpleQueue
-from weakref import WeakSet, ReferenceType, ref
 import typing
+from os import DirEntry
+from queue import Queue, SimpleQueue
+from re import Match, Pattern
+from tempfile import SpooledTemporaryFile, TemporaryDirectory
+from types import (
+    AsyncGeneratorType,
+    CoroutineType,
+    GeneratorType,
+    GenericAlias,
+    MappingProxyType,
+)
 from typing import Unpack
+from unittest.case import _AssertRaisesContext
+from urllib.parse import ParseResult, SplitResult
+from weakref import ReferenceType, WeakSet, ref
+
 try:
     from tkinter import Event
 except ImportError:
     Event = None
-from string.templatelib import Template, Interpolation
-
+from string.templatelib import Interpolation, Template
 from typing import TypeVar
+
 T = TypeVar('T')
 K = TypeVar('K')
 V = TypeVar('V')
@@ -253,7 +267,7 @@ class BaseTest(unittest.TestCase):
         self.assertEqual(a.__parameters__, ())
 
     def test_parameters(self):
-        from typing import List, Dict, Callable
+        from typing import Callable, Dict, List
 
         D0 = dict[str, int]
         self.assertEqual(D0.__args__, (str, int))
@@ -315,7 +329,7 @@ class BaseTest(unittest.TestCase):
         self.assertEqual(T4.__parameters__, ())
 
     def test_parameter_chaining(self):
-        from typing import List, Dict, Union, Callable
+        from typing import Callable, Dict, List, Union
         self.assertEqual(list[T][int], list[int])
         self.assertEqual(dict[str, T][int], dict[str, int])
         self.assertEqual(dict[T, int][str], dict[str, int])

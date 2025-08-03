@@ -1,18 +1,21 @@
 # Test case for the os.poll() function
 
 import os
-import subprocess
 import random
 import select
+import subprocess
 import threading
 import time
 import unittest
-from test.support import (
-    cpython_only, requires_subprocess, requires_working_socket, requires_resource
-)
-from test.support import threading_helper
-from test.support.os_helper import TESTFN
 
+from test.support import (
+    cpython_only,
+    requires_resource,
+    requires_subprocess,
+    requires_working_socket,
+    threading_helper,
+)
+from test.support.os_helper import TESTFN
 
 try:
     select.poll
@@ -173,7 +176,7 @@ class PollTests(unittest.TestCase):
     @cpython_only
     def test_poll_c_limits(self):
         try:
-            from _testcapi import USHRT_MAX, INT_MAX, UINT_MAX
+            from _testcapi import INT_MAX, UINT_MAX, USHRT_MAX
         except ImportError:
             raise unittest.SkipTest("requires _testcapi")
         pollster = select.poll()

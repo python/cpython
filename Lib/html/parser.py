@@ -8,12 +8,10 @@
 # and CDATA (character data -- only end tags are special).
 
 
-import re
 import _markupbase
-
+import re
 from html import unescape
 from html.entities import html5 as html5_entities
-
 
 __all__ = ['HTMLParser']
 

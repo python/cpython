@@ -5,10 +5,10 @@ default, these calendars have Monday as the first day of the week, and
 Sunday as the last (the European convention). Use setfirstweekday() to
 set the first day of the week (0=Monday, 6=Sunday)."""
 
-import sys
 import datetime
-from enum import IntEnum, global_enum
 import locale as _locale
+import sys
+from enum import IntEnum, global_enum
 from itertools import repeat
 
 __all__ = ["IllegalMonthError", "IllegalWeekdayError", "setfirstweekday",

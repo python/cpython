@@ -3,11 +3,12 @@ Unittest for time.strftime
 """
 
 import calendar
-import sys
 import re
-from test import support
+import sys
 import time
 import unittest
+
+from test import support
 
 
 # helper functions
@@ -68,7 +69,7 @@ class StrftimeTest(unittest.TestCase):
         self.now = now
 
     def setUp(self):
-        from locale import setlocale, LC_TIME
+        from locale import LC_TIME, setlocale
         saved_locale = setlocale(LC_TIME)
         setlocale(LC_TIME, 'C')
         self.addCleanup(setlocale, LC_TIME, saved_locale)

@@ -1,14 +1,13 @@
-import os
-import unittest
-import random
-from test import support
-from test.support import threading_helper
 import _thread as thread
+import os
+import random
 import time
+import unittest
 import warnings
 import weakref
 
-from test import lock_tests
+from test import lock_tests, support
+from test.support import threading_helper
 
 threading_helper.requires_working_threading(module=True)
 

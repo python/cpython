@@ -7,11 +7,12 @@ import tempfile
 import threading
 import traceback
 import unittest
+import weakref
 from contextlib import *  # Tests __all__
+
 from test import support
 from test.support import os_helper
 from test.support.testcase import ExceptionIsLikeMixin
-import weakref
 
 
 class TestAbstractContextManager(unittest.TestCase):

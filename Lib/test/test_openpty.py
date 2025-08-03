@@ -1,6 +1,7 @@
 # Test to see if openpty works. (But don't worry if it isn't available.)
 
-import os, unittest
+import os
+import unittest
 
 if not hasattr(os, "openpty"):
     raise unittest.SkipTest("os.openpty() not available.")

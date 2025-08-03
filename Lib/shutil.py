@@ -4,12 +4,12 @@ XXX The functions here don't copy the resource fork or other metadata on Mac.
 
 """
 
-import os
-import sys
-import stat
-import fnmatch
 import collections
 import errno
+import fnmatch
+import os
+import stat
+import sys
 
 try:
     import zlib

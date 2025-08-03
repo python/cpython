@@ -2,9 +2,9 @@
 # This is used by the platform module, and potentially others
 
 import unittest
+
 from test import support
 from test.support import import_helper
-
 
 # Do this first so test will be skipped if module doesn't exist
 _wmi = import_helper.import_module('_wmi', required_on=['win'])

@@ -3,7 +3,6 @@
 import copy
 import pickle
 import unittest
-
 import xml.dom
 from xml.dom.minicompat import *
 

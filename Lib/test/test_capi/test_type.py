@@ -1,5 +1,6 @@
-from test.support import import_helper, Py_GIL_DISABLED, refleak_helper
 import unittest
+
+from test.support import Py_GIL_DISABLED, import_helper, refleak_helper
 
 _testcapi = import_helper.import_module('_testcapi')
 
@@ -43,9 +44,11 @@ class TypeTests(unittest.TestCase):
             pass
 
         from _testcapi import (
-            get_type_name, get_type_qualname,
-            get_type_fullyqualname, get_type_module_name)
-
+            get_type_fullyqualname,
+            get_type_module_name,
+            get_type_name,
+            get_type_qualname,
+        )
         from collections import OrderedDict
         ht = _testcapi.get_heaptype_for_name()
         for cls, fullname, modname, qualname, name in (

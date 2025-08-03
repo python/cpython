@@ -5,8 +5,8 @@ import shlex
 import shutil
 import subprocess
 import unittest
-from test import support
 
+from test import support
 
 SOURCE = os.path.join(os.path.dirname(__file__), 'extension.cpp')
 SETUP = os.path.join(os.path.dirname(__file__), 'setup.py')

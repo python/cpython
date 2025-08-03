@@ -7,10 +7,10 @@ machinery = util.import_importlib('importlib.machinery')
 import os
 import sys
 import tempfile
-from types import ModuleType
 import unittest
 import warnings
 import zipimport
+from types import ModuleType
 
 
 class FinderTests:

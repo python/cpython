@@ -7,8 +7,8 @@ import argparse
 import json
 import re
 import sys
-from _colorize import get_theme, can_colorize
 
+from _colorize import can_colorize, get_theme
 
 # The string we are colorizing is valid JSON,
 # so we can use a looser but simpler regex to match

@@ -8,7 +8,6 @@ import unittest
 
 from test import support
 
-
 #=======================================================================
 # Threading support to prevent reporting refleaks when running regrtest.py -R
 

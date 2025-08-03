@@ -1,13 +1,13 @@
 """Unit tests for socket timeout feature."""
 
+import errno
 import functools
+import socket
+import time
 import unittest
+
 from test import support
 from test.support import socket_helper
-
-import time
-import errno
-import socket
 
 
 @functools.lru_cache()

@@ -1,17 +1,21 @@
 # test for xml.dom.minidom
 
 import copy
-import pickle
 import io
-from test import support
+import pickle
 import unittest
-
 import xml.dom.minidom
-
-from xml.dom.minidom import parse, Attr, Node, Document, parseString
-from xml.dom.minidom import getDOMImplementation
+from xml.dom.minidom import (
+    Attr,
+    Document,
+    Node,
+    getDOMImplementation,
+    parse,
+    parseString,
+)
 from xml.parsers.expat import ExpatError
 
+from test import support
 
 tstfile = support.findfile("test.xml", subdir="xmltestdata")
 sample = ("<?xml version='1.0' encoding='us-ascii'?>\n"

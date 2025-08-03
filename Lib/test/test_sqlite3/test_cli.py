@@ -1,23 +1,23 @@
 """sqlite3 CLI tests."""
+import os
 import sqlite3
 import sys
 import textwrap
 import unittest
 import unittest.mock
-import os
-
 from sqlite3.__main__ import main as cli
-from test.support.import_helper import import_module
-from test.support.os_helper import TESTFN, unlink
-from test.support.pty_helper import run_pty
+
 from test.support import (
-    captured_stdout,
     captured_stderr,
     captured_stdin,
+    captured_stdout,
     force_not_colorized_test_class,
     requires_subprocess,
     verbose,
 )
+from test.support.import_helper import import_module
+from test.support.os_helper import TESTFN, unlink
+from test.support.pty_helper import run_pty
 
 
 @force_not_colorized_test_class

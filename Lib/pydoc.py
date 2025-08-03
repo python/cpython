@@ -53,8 +53,9 @@ Richard Chamberlain, for the first implementation of textdoc.
 #     the current directory is changed with os.chdir(), an incorrect
 #     path will be displayed.
 
-import ast
 import __future__
+
+import ast
 import builtins
 import importlib._bootstrap
 import importlib._bootstrap_external
@@ -73,17 +74,20 @@ import time
 import tokenize
 import urllib.parse
 import warnings
-from annotationlib import Format
 from collections import deque
 from reprlib import Repr
 from traceback import format_exception_only
 
-from _pyrepl.pager import (get_pager, pipe_pager,
-                           plain_pager, tempfile_pager, tty_pager)
-
 # Expose plain() as pydoc.plain()
-from _pyrepl.pager import plain  # noqa: F401
-
+from _pyrepl.pager import (
+    get_pager,
+    pipe_pager,
+    plain,  # noqa: F401
+    plain_pager,
+    tempfile_pager,
+    tty_pager,
+)
+from annotationlib import Format
 
 # --------------------------------------------------------- old names
 
@@ -2371,8 +2375,8 @@ def _start_server(urlhandler, hostname, port):
         >>> print(serverthread.error)
         None
    """
-    import http.server
     import email.message
+    import http.server
     import select
     import threading
 

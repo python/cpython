@@ -11,15 +11,15 @@ import io
 import posixpath
 import stat
 import zipfile
-from stat import S_IFMT, S_ISDIR, S_ISREG, S_ISLNK
+from stat import S_IFMT, S_ISDIR, S_ISLNK, S_ISREG
 
 from . import is_pypi
 
 if is_pypi:
-    from pathlib_abc import vfspath, PathInfo, _ReadablePath, _WritablePath
+    from pathlib_abc import PathInfo, _ReadablePath, _WritablePath, vfspath
 else:
-    from pathlib.types import PathInfo, _ReadablePath, _WritablePath
     from pathlib._os import vfspath
+    from pathlib.types import PathInfo, _ReadablePath, _WritablePath
 
 
 class ZipPathGround:

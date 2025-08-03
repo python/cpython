@@ -3,15 +3,20 @@ import time
 import unittest
 import weakref
 from concurrent import futures
-from concurrent.futures._base import (
-    CANCELLED_AND_NOTIFIED, FINISHED, Future)
+from concurrent.futures._base import CANCELLED_AND_NOTIFIED, FINISHED, Future
 
 from test import support
 
 from .util import (
-    PENDING_FUTURE, RUNNING_FUTURE,
-    CANCELLED_AND_NOTIFIED_FUTURE, EXCEPTION_FUTURE, SUCCESSFUL_FUTURE,
-    create_future, create_executor_tests, setup_module)
+    CANCELLED_AND_NOTIFIED_FUTURE,
+    EXCEPTION_FUTURE,
+    PENDING_FUTURE,
+    RUNNING_FUTURE,
+    SUCCESSFUL_FUTURE,
+    create_executor_tests,
+    create_future,
+    setup_module,
+)
 
 
 def mul(x, y):

@@ -1,9 +1,17 @@
 import sys
 import unittest
+from ctypes import (
+    CDLL,
+    POINTER,
+    Structure,
+    c_char,
+    c_char_p,
+    create_string_buffer,
+)
+
 from test import support
-from ctypes import (CDLL, Structure, POINTER, create_string_buffer,
-                    c_char, c_char_p)
 from test.support import import_helper
+
 _ctypes_test = import_helper.import_module("_ctypes_test")
 
 

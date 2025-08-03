@@ -93,17 +93,28 @@ import re
 import socket
 import string
 import sys
-import time
 import tempfile
-
-
-from urllib.error import URLError, HTTPError, ContentTooShortError
+import time
+from urllib.error import ContentTooShortError, HTTPError, URLError
 from urllib.parse import (
-    urlparse, urlsplit, urljoin, unwrap, quote, unquote,
-    _splittype, _splithost, _splitport, _splituser, _splitpasswd,
-    _splitattr, _splitvalue, _splittag,
-    unquote_to_bytes, urlunparse)
-from urllib.response import addinfourl, addclosehook
+    _splitattr,
+    _splithost,
+    _splitpasswd,
+    _splitport,
+    _splittag,
+    _splittype,
+    _splituser,
+    _splitvalue,
+    quote,
+    unquote,
+    unquote_to_bytes,
+    unwrap,
+    urljoin,
+    urlparse,
+    urlsplit,
+    urlunparse,
+)
+from urllib.response import addclosehook, addinfourl
 
 # check for SSL
 try:
@@ -2021,7 +2032,7 @@ def _proxy_bypass_winreg_override(host, override):
 
 
 if sys.platform == 'darwin':
-    from _scproxy import _get_proxy_settings, _get_proxies
+    from _scproxy import _get_proxies, _get_proxy_settings
 
     def proxy_bypass_macosx_sysconf(host):
         proxy_settings = _get_proxy_settings()

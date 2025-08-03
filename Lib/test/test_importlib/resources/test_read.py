@@ -1,5 +1,4 @@
 import unittest
-
 from importlib import import_module, resources
 
 from . import util

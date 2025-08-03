@@ -6,15 +6,17 @@ import random
 import signal
 import sys
 import unittest
+
 from test import support
-from test.support.os_helper import TESTFN_UNDECODABLE, FS_NONASCII
+from test.support.os_helper import FS_NONASCII, TESTFN_UNDECODABLE
 
 from .filter import set_match_tests
 from .runtests import RunTests
 from .utils import (
-    setup_unraisable_hook, setup_threading_excepthook,
-    adjust_rlimit_nofile)
-
+    adjust_rlimit_nofile,
+    setup_threading_excepthook,
+    setup_unraisable_hook,
+)
 
 UNICODE_GUARD_ENV = "PYTHONREGRTEST_UNICODE_GUARD"
 

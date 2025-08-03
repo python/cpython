@@ -1,7 +1,7 @@
 # Test ``inspect.formatannotation``
 # https://github.com/python/cpython/issues/96073
 
-from typing import Union, List
+from typing import List, Union
 
 ann = Union[List[str], int]
 

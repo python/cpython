@@ -5,13 +5,15 @@ import selectors
 import signal
 import socket
 import sys
-from test import support
-from test.support import is_apple, os_helper, socket_helper
-from time import sleep
+import tempfile
 import unittest
 import unittest.mock
-import tempfile
 from time import monotonic as time
+from time import sleep
+
+from test import support
+from test.support import is_apple, os_helper, socket_helper
+
 try:
     import resource
 except ImportError:

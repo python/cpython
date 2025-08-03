@@ -40,7 +40,6 @@ __all__ = [
     ]
 
 import re
-
 from string import ascii_letters, digits, hexdigits
 
 CRLF = '\r\n'

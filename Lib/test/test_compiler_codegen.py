@@ -1,5 +1,6 @@
 
 import textwrap
+
 from test.support.bytecode_helper import CodegenTestCase
 
 # Tests for the code-generation stage of the compiler.

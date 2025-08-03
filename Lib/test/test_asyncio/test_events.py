@@ -10,32 +10,40 @@ import platform
 import re
 import signal
 import socket
+
 try:
     import ssl
 except ImportError:
     ssl = None
+import errno
 import subprocess
 import sys
 import threading
 import time
 import types
-import errno
 import unittest
-from unittest import mock
 import weakref
+from unittest import mock
+
 if sys.platform not in ('win32', 'vxworks'):
     import tty
 
 import asyncio
-from asyncio import coroutines
-from asyncio import events
-from asyncio import selector_events
-from multiprocessing.util import _cleanup_tests as multiprocessing_cleanup_tests
-from test.test_asyncio import utils as test_utils
+from asyncio import coroutines, events, selector_events
+from multiprocessing.util import (
+    _cleanup_tests as multiprocessing_cleanup_tests,
+)
+
 from test import support
-from test.support import socket_helper
-from test.support import threading_helper
-from test.support import ALWAYS_EQ, LARGEST, SMALLEST
+from test.support import (
+    ALWAYS_EQ,
+    LARGEST,
+    SMALLEST,
+    socket_helper,
+    threading_helper,
+)
+from test.test_asyncio import utils as test_utils
+
 
 def tearDownModule():
     asyncio.events._set_event_loop_policy(None)

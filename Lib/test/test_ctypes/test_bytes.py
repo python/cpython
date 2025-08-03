@@ -3,6 +3,7 @@ import sys
 import unittest
 from _ctypes import _SimpleCData
 from ctypes import Structure, c_char, c_char_p, c_wchar, c_wchar_p
+
 from ._support import StructCheckMixin
 
 

@@ -1,12 +1,18 @@
 import pickle
 import types
 import unittest
+from typing import (
+    Callable,
+    ParamSpec,
+    TypeAliasType,
+    TypeVar,
+    TypeVarTuple,
+    Unpack,
+    get_args,
+)
+
 from test.support import check_syntax_error, run_code
 from test.typinganndata import mod_generics_cache
-
-from typing import (
-    Callable, TypeAliasType, TypeVar, TypeVarTuple, ParamSpec, Unpack, get_args,
-)
 
 
 class TypeParamsInvalidTest(unittest.TestCase):

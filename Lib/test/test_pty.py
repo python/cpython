@@ -1,6 +1,11 @@
 import unittest
+
 from test.support import (
-    is_android, is_apple_mobile, is_wasm32, reap_children, verbose
+    is_android,
+    is_apple_mobile,
+    is_wasm32,
+    reap_children,
+    verbose,
 )
 from test.support.import_helper import import_module
 from test.support.os_helper import TESTFN, unlink
@@ -12,14 +17,14 @@ if is_android or is_apple_mobile or is_wasm32:
     raise unittest.SkipTest("pty is not available on this platform")
 
 import errno
+import io  # readline
 import os
 import pty
-import tty
-import sys
 import select
 import signal
 import socket
-import io # readline
+import sys
+import tty
 
 TEST_STRING_1 = b"I wish to buy a fish license.\n"
 TEST_STRING_2 = b"For my pet fish, Eric.\n"

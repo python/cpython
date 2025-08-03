@@ -1,5 +1,6 @@
 import unittest
 from threading import Barrier, Thread
+
 from test.support import threading_helper
 
 threading_helper.requires_working_threading(module=True)

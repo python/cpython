@@ -19,8 +19,8 @@ Load an existing list of tests from a file using -i option:
 
 import argparse
 import datetime
-import os.path
 import math
+import os.path
 import random
 import subprocess
 import sys

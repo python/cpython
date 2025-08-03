@@ -3,14 +3,15 @@ import copy
 import inspect
 import pickle
 import sys
-import types
 import traceback
+import types
 import unittest
 import warnings
+
 from test import support
-from test.support import import_helper
-from test.support import warnings_helper
+from test.support import import_helper, warnings_helper
 from test.support.script_helper import assert_python_ok
+
 try:
     import _testcapi
 except ImportError:

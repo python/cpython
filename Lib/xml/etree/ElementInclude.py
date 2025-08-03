@@ -49,8 +49,9 @@
 ##
 
 import copy
-from . import ElementTree
 from urllib.parse import urljoin
+
+from . import ElementTree
 
 XINCLUDE = "{http://www.w3.org/2001/XInclude}"
 

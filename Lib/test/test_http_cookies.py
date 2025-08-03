@@ -1,10 +1,11 @@
 # Simple test suite for http/cookies.py
 
 import copy
-import unittest
 import doctest
-from http import cookies
 import pickle
+import unittest
+from http import cookies
+
 from test import support
 
 

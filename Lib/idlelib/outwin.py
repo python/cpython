@@ -2,11 +2,8 @@
 """
 
 import re
-
-from tkinter import messagebox
-
 from idlelib.editor import EditorWindow
-
+from tkinter import messagebox
 
 file_line_pats = [
     # order of patterns matters

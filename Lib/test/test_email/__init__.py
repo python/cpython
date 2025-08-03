@@ -1,11 +1,13 @@
-import os
-import unittest
 import collections
 import email
-from email.message import Message
+import os
+import unittest
 from email._policybase import compat32
+from email.message import Message
+
 from test.support import load_package_tests
 from test.test_email import __file__ as landmark
+
 
 # Load all tests in package
 def load_tests(*args):

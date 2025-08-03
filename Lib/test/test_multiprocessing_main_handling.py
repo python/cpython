@@ -1,27 +1,33 @@
 # tests __main__ module handling in multiprocessing
 from test import support
 from test.support import import_helper
+
 # Skip tests if _multiprocessing wasn't built.
 import_helper.import_module('_multiprocessing')
 
 import importlib
 import importlib.machinery
-import unittest
-import sys
 import os
 import os.path
 import py_compile
+import sys
+import unittest
 
 from test.support import os_helper
 from test.support.script_helper import (
-    make_pkg, make_script, make_zip_pkg, make_zip_script,
-    assert_python_ok)
+    assert_python_ok,
+    make_pkg,
+    make_script,
+    make_zip_pkg,
+    make_zip_script,
+)
 
 if support.PGO:
     raise unittest.SkipTest("test is not helpful for PGO")
 
 # Look up which start methods are available to test
 import multiprocessing
+
 AVAILABLE_START_METHODS = set(multiprocessing.get_all_start_methods())
 
 # Issue #22332: Skip tests if sem_open implementation is broken.

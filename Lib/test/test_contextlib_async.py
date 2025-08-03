@@ -1,12 +1,17 @@
 import functools
+import traceback
+import unittest
 from contextlib import (
-    asynccontextmanager, AbstractAsyncContextManager,
-    AsyncExitStack, nullcontext, aclosing, contextmanager)
+    AbstractAsyncContextManager,
+    AsyncExitStack,
+    aclosing,
+    asynccontextmanager,
+    contextmanager,
+    nullcontext,
+)
+
 from test import support
 from test.support import run_no_yield_async_fn as _run_async_fn
-import unittest
-import traceback
-
 from test.test_contextlib import TestBaseExitStack
 
 

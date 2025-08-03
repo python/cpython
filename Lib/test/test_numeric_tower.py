@@ -1,11 +1,10 @@
 # test interactions between int, float, Decimal and Fraction
 
-import unittest
-import random
 import math
-import sys
 import operator
-
+import random
+import sys
+import unittest
 from decimal import Decimal as D
 from fractions import Fraction as F
 

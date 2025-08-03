@@ -98,17 +98,16 @@ Behind the scenes there are some features included with possible
 extensions in mind. These will be commented and documented elsewhere.
 """
 
+import inspect
+import math
+import sys
+import time
 import tkinter as TK
 import types
-import math
-import time
-import inspect
-import sys
-
-from os.path import isfile, split, join
-from pathlib import Path
 from contextlib import contextmanager
 from copy import deepcopy
+from os.path import isfile, join, split
+from pathlib import Path
 from tkinter import simpledialog
 
 _tg_classes = ['ScrolledCanvas', 'TurtleScreen', 'Screen',

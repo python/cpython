@@ -1,13 +1,14 @@
 import tempfile
 import unittest
 from unittest.mock import patch
-from test import support
 
 from _pyrepl import terminfo
 
+from test import support
+
 try:
-    from _pyrepl.console import Event
     from _pyrepl import base_eventqueue
+    from _pyrepl.console import Event
 except ImportError:
     pass
 

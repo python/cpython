@@ -1,14 +1,37 @@
 import ctypes
 import sys
 import unittest
-from ctypes import (Structure, Array, ARRAY, sizeof, addressof,
-                    create_string_buffer, create_unicode_buffer,
-                    c_char, c_wchar, c_byte, c_ubyte, c_short, c_ushort, c_int, c_uint,
-                    c_long, c_ulonglong, c_float, c_double, c_longdouble)
-from test.support import bigmemtest, _2G, threading_helper, Py_GIL_DISABLED
-from ._support import (_CData, PyCArrayType, Py_TPFLAGS_DISALLOW_INSTANTIATION,
-                       Py_TPFLAGS_IMMUTABLETYPE)
+from ctypes import (
+    ARRAY,
+    Array,
+    Structure,
+    addressof,
+    c_byte,
+    c_char,
+    c_double,
+    c_float,
+    c_int,
+    c_long,
+    c_longdouble,
+    c_short,
+    c_ubyte,
+    c_uint,
+    c_ulonglong,
+    c_ushort,
+    c_wchar,
+    create_string_buffer,
+    create_unicode_buffer,
+    sizeof,
+)
 
+from test.support import _2G, Py_GIL_DISABLED, bigmemtest, threading_helper
+
+from ._support import (
+    Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    Py_TPFLAGS_IMMUTABLETYPE,
+    PyCArrayType,
+    _CData,
+)
 
 formats = "bBhHiIlLqQfd"
 

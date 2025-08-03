@@ -7,13 +7,14 @@
 # we can detect here, to make sure that not only the os.startfile()
 # call succeeded, but also the script actually has run.
 
-import unittest
-from test import support
-from test.support import os_helper
 import os
 import platform
 import sys
+import unittest
 from os import path
+
+from test import support
+from test.support import os_helper
 
 startfile = support.get_attribute(os, 'startfile')
 

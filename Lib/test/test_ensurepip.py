@@ -1,15 +1,15 @@
 import contextlib
+import ensurepip
+import ensurepip._uninstall
 import os
 import os.path
 import sys
 import tempfile
-import test.support
 import unittest
 import unittest.mock
 from pathlib import Path
 
-import ensurepip
-import ensurepip._uninstall
+import test.support
 
 
 class TestPackages(unittest.TestCase):

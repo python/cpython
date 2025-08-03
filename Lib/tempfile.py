@@ -36,17 +36,18 @@ __all__ = [
 
 # Imports.
 
+import _thread
+import errno as _errno
 import functools as _functools
-import warnings as _warnings
 import io as _io
 import os as _os
 import shutil as _shutil
-import errno as _errno
-from random import Random as _Random
 import sys as _sys
 import types as _types
+import warnings as _warnings
 import weakref as _weakref
-import _thread
+from random import Random as _Random
+
 _allocate_lock = _thread.allocate_lock
 
 _text_openflags = _os.O_RDWR | _os.O_CREAT | _os.O_EXCL

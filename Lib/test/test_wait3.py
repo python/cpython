@@ -5,8 +5,9 @@ import os
 import subprocess
 import sys
 import unittest
-from test.fork_wait import ForkWait
+
 from test import support
+from test.fork_wait import ForkWait
 
 if not support.has_fork_support:
     raise unittest.SkipTest("requires working os.fork()")

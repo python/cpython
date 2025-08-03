@@ -3,16 +3,15 @@
 
 import collections
 import importlib
-import sys
 import os
 import os.path
-import subprocess
 import py_compile
-
+import subprocess
+import sys
 from importlib.util import source_from_cache
+
 from test import support
 from test.support.import_helper import make_legacy_pyc
-
 
 # Cached result of the expensive test performed in the function below.
 __cached_interp_requires_environment = None

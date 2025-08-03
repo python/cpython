@@ -1,14 +1,13 @@
-import os
 import errno
 import importlib.machinery
+import modulefinder
+import os
 import py_compile
 import shutil
-import unittest
 import tempfile
+import unittest
 
 from test import support
-
-import modulefinder
 
 # Each test description is a list of 5 items:
 #

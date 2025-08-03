@@ -21,16 +21,15 @@
 # 3. This notice may not be removed or altered from any source distribution.
 
 import datetime
-import unittest
-import sqlite3 as sqlite
-import weakref
 import functools
-
-from test import support
+import sqlite3 as sqlite
+import unittest
+import weakref
 from unittest.mock import patch
 
-from .util import memory_database, cx_limit
-from .util import MemoryDatabaseMixin
+from test import support
+
+from .util import MemoryDatabaseMixin, cx_limit, memory_database
 
 
 class RegressionTests(MemoryDatabaseMixin, unittest.TestCase):

@@ -5,8 +5,8 @@ Allows fine grained feature control of how the package parses and emits data.
 
 import abc
 import re
-from email import header
 from email import charset as _charset
+from email import header
 from email.utils import _has_surrogates
 
 __all__ = [

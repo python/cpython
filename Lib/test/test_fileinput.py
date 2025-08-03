@@ -2,13 +2,13 @@
 Tests for fileinput module.
 Nick Mathewson
 '''
+import builtins
+import collections
+import fileinput
 import io
 import os
-import sys
 import re
-import fileinput
-import collections
-import builtins
+import sys
 import tempfile
 import unittest
 
@@ -21,16 +21,14 @@ try:
 except ImportError:
     gzip = None
 
-from io import BytesIO, StringIO
 from fileinput import FileInput, hook_encoded
-
-from test.support import verbose
-from test.support.os_helper import TESTFN, FakePath
-from test.support.os_helper import unlink as safe_unlink
-from test.support import os_helper
-from test import support
+from io import BytesIO, StringIO
 from unittest import mock
 
+from test import support
+from test.support import os_helper, verbose
+from test.support.os_helper import TESTFN, FakePath
+from test.support.os_helper import unlink as safe_unlink
 
 # The fileinput module has 2 interfaces: the FileInput class which does
 # all the work, and a few functions (input, etc.) that use a global _state

@@ -10,6 +10,7 @@
 import curses
 from curses import textpad
 
+
 def test_textpad(stdscr, insert_mode=False):
     ncols, nlines = 8, 3
     uly, ulx = 3, 2

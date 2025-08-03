@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 
 import sys
+
 if __name__ == "__main__":
     sys.modules['idlelib.pyshell'] = sys.modules['__main__']
 
@@ -15,35 +16,30 @@ if sys.platform == 'win32':
     from idlelib.util import fix_win_hidpi
     fix_win_hidpi()
 
-from tkinter import messagebox
-
-from code import InteractiveInterpreter
 import itertools
 import linecache
 import os
 import os.path
-from platform import python_version
 import re
 import socket
 import subprocess
-from textwrap import TextWrapper
 import threading
 import time
 import tokenize
 import warnings
-
+from code import InteractiveInterpreter
+from idlelib import debugger, debugger_r, replace, rpc
 from idlelib.colorizer import ColorDelegator
 from idlelib.config import idleConf
 from idlelib.delegator import Delegator
-from idlelib import debugger
-from idlelib import debugger_r
 from idlelib.editor import EditorWindow, fixwordbreaks
 from idlelib.filelist import FileList
 from idlelib.outwin import OutputWindow
-from idlelib import replace
-from idlelib import rpc
-from idlelib.run import idle_formatwarning, StdInputFile, StdOutputFile
+from idlelib.run import StdInputFile, StdOutputFile, idle_formatwarning
 from idlelib.undo import UndoDelegator
+from platform import python_version
+from textwrap import TextWrapper
+from tkinter import messagebox
 
 # Default for testing; defaults to True in main() for running.
 use_subprocess = False
@@ -934,7 +930,7 @@ class PyShell(OutputWindow):
             sys.stdin = self.stdin
         try:
             # page help() text to shell.
-            import pydoc # import must be done here to capture i/o rebinding.
+            import pydoc  # import must be done here to capture i/o rebinding.
             # XXX KBK 27Dec07 use text viewer someday, but must work w/o subproc
             pydoc.pager = pydoc.plainpager
         except:
@@ -1519,9 +1515,11 @@ echo "import sys; print(sys.argv)" | idle - "foobar"
 
 def main():
     import getopt
+    from idlelib import (
+        macosx,
+        testing,  # bool value
+    )
     from platform import system
-    from idlelib import testing  # bool value
-    from idlelib import macosx
 
     global flist, root, use_subprocess
 

@@ -5,7 +5,6 @@
 #
 
 import array
-from binascii import unhexlify
 import hashlib
 import importlib
 import io
@@ -18,14 +17,18 @@ import sysconfig
 import tempfile
 import threading
 import unittest
-from test import support
-from test.support import _4G, bigmemtest
-from test.support import hashlib_helper
-from test.support.import_helper import import_fresh_module
-from test.support import requires_resource
-from test.support import threading_helper
+from binascii import unhexlify
 from http.client import HTTPException
 
+from test import support
+from test.support import (
+    _4G,
+    bigmemtest,
+    hashlib_helper,
+    requires_resource,
+    threading_helper,
+)
+from test.support.import_helper import import_fresh_module
 
 default_builtin_hashes = {'md5', 'sha1', 'sha256', 'sha512', 'sha3', 'blake2'}
 # --with-builtin-hashlib-hashes override
@@ -47,7 +50,7 @@ else:
     builtin_hashlib = None
 
 try:
-    from _hashlib import HASH, HASHXOF, openssl_md_meth_names, get_fips_mode
+    from _hashlib import HASH, HASHXOF, get_fips_mode, openssl_md_meth_names
 except ImportError:
     HASH = None
     HASHXOF = None

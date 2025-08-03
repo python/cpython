@@ -1,13 +1,12 @@
+import linecache
 import os
 import sys
 import warnings
 from inspect import isabstract
 from typing import Any
-import linecache
 
 from test import support
-from test.support import os_helper
-from test.support import refleak_helper
+from test.support import os_helper, refleak_helper
 
 from .runtests import HuntRefleak
 from .utils import clear_caches
@@ -58,8 +57,8 @@ def runtest_refleak(test_name, test_func,
         False if the test didn't leak references; True if we detected refleaks.
     """
     # This code is hackish and inelegant, but it seems to do the job.
-    import copyreg
     import collections.abc
+    import copyreg
 
     if not hasattr(sys, 'gettotalrefcount'):
         raise Exception("Tracking reference leaks requires a debug build "
@@ -230,8 +229,8 @@ def runtest_refleak(test_name, test_func,
 
 
 def dash_R_cleanup(fs, ps, pic, zdc, abcs, linecache_data):
-    import copyreg
     import collections.abc
+    import copyreg
 
     # Restore some original values.
     warnings.filters[:] = fs

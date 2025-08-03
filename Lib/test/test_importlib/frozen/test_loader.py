@@ -2,12 +2,13 @@ from test.test_importlib import abc, util
 
 machinery = util.import_importlib('importlib.machinery')
 
-from test.support import captured_stdout, import_helper, STDLIB_DIR
 import contextlib
 import os.path
 import types
 import unittest
 import warnings
+
+from test.support import STDLIB_DIR, captured_stdout, import_helper
 
 
 @contextlib.contextmanager

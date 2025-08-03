@@ -1,20 +1,44 @@
 import sys
 import unittest
+from ctypes import (
+    CDLL,
+    POINTER,
+    ArgumentError,
+    Array,
+    PyDLL,
+    Structure,
+    Union,
+    _CFuncPtr,
+    _Pointer,
+    _SimpleCData,
+    byref,
+    c_bool,
+    c_byte,
+    c_char,
+    c_char_p,
+    c_double,
+    c_float,
+    c_int,
+    c_long,
+    c_longdouble,
+    c_longlong,
+    c_short,
+    c_ubyte,
+    c_uint,
+    c_ulong,
+    c_ulonglong,
+    c_ushort,
+    c_void_p,
+    c_wchar,
+    c_wchar_p,
+    pointer,
+    py_object,
+    sizeof,
+)
+
 import test.support
-from ctypes import (CDLL, PyDLL, ArgumentError,
-                    Structure, Array, Union,
-                    _Pointer, _SimpleCData, _CFuncPtr,
-                    POINTER, pointer, byref, sizeof,
-                    c_void_p, c_char_p, c_wchar_p, py_object,
-                    c_bool,
-                    c_char, c_wchar,
-                    c_byte, c_ubyte,
-                    c_short, c_ushort,
-                    c_int, c_uint,
-                    c_long, c_ulong,
-                    c_longlong, c_ulonglong,
-                    c_float, c_double, c_longdouble)
 from test.support import import_helper
+
 _ctypes_test = import_helper.import_module("_ctypes_test")
 
 

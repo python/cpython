@@ -4,14 +4,25 @@ import inspect
 import re
 import unittest
 from contextlib import contextmanager
+
 from test import support
 
 support.requires_working_socket(module=True)
 
 from asyncio import run
 from unittest import IsolatedAsyncioTestCase
-from unittest.mock import (ANY, call, AsyncMock, patch, MagicMock, Mock,
-                           create_autospec, sentinel, _CallList, seal)
+from unittest.mock import (
+    ANY,
+    AsyncMock,
+    MagicMock,
+    Mock,
+    _CallList,
+    call,
+    create_autospec,
+    patch,
+    seal,
+    sentinel,
+)
 
 
 def tearDownModule():

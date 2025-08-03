@@ -1,9 +1,21 @@
 import ctypes
 import math
 import unittest
-from ctypes import (CDLL, CFUNCTYPE, POINTER, create_string_buffer, sizeof,
-                    c_void_p, c_char, c_int, c_double, c_size_t)
+from ctypes import (
+    CDLL,
+    CFUNCTYPE,
+    POINTER,
+    c_char,
+    c_double,
+    c_int,
+    c_size_t,
+    c_void_p,
+    create_string_buffer,
+    sizeof,
+)
+
 from test.support import import_helper
+
 _ctypes_test = import_helper.import_module("_ctypes_test")
 
 

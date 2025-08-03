@@ -1,9 +1,19 @@
 import _ctypes
 import sys
 import unittest
+from ctypes import (
+    POINTER,
+    c_char,
+    c_char_p,
+    c_long,
+    c_size_t,
+    create_string_buffer,
+    py_object,
+    pythonapi,
+    sizeof,
+)
+
 from test import support
-from ctypes import (pythonapi, POINTER, create_string_buffer, sizeof,
-                    py_object, c_char_p, c_char, c_long, c_size_t)
 
 
 class PythonAPITestCase(unittest.TestCase):

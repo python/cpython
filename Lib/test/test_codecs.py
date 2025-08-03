@@ -1,15 +1,15 @@
 import codecs
 import contextlib
 import copy
+import encodings
 import importlib
 import io
-import pickle
 import os
+import pickle
 import sys
 import unittest
-import encodings
-from unittest import mock
 import warnings
+from unittest import mock
 
 from test import support
 from test.support import os_helper
@@ -37,8 +37,8 @@ def coding_checker(self, coder):
 
 # On small versions of Windows like Windows IoT or Windows Nano Server not all codepages are present
 def is_code_page_present(cp):
-    from ctypes import POINTER, WINFUNCTYPE, WinDLL, Structure
-    from ctypes.wintypes import BOOL, BYTE, WCHAR, UINT, DWORD
+    from ctypes import POINTER, WINFUNCTYPE, Structure, WinDLL
+    from ctypes.wintypes import BOOL, BYTE, DWORD, UINT, WCHAR
 
     MAX_LEADBYTES = 12  # 5 ranges, 2 bytes ea., 0 term.
     MAX_DEFAULTCHAR = 2 # single or double byte

@@ -1,22 +1,27 @@
-from test import support
-from test.support import socket_helper
-
-from contextlib import contextmanager
+import calendar
 import imaplib
 import os.path
-import socketserver
-import time
-import calendar
-import threading
 import re
 import socket
-
-from test.support import verbose, run_with_tz, run_with_locale, cpython_only
-from test.support import hashlib_helper
-from test.support import threading_helper
+import socketserver
+import threading
+import time
 import unittest
+from contextlib import contextmanager
+from datetime import datetime, timedelta, timezone
 from unittest import mock
-from datetime import datetime, timezone, timedelta
+
+from test import support
+from test.support import (
+    cpython_only,
+    hashlib_helper,
+    run_with_locale,
+    run_with_tz,
+    socket_helper,
+    threading_helper,
+    verbose,
+)
+
 try:
     import ssl
 except ImportError:

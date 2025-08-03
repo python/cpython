@@ -1,13 +1,13 @@
 """Utilities to support packages."""
 
-from collections import namedtuple
-from functools import singledispatch as simplegeneric
 import importlib
-import importlib.util
 import importlib.machinery
+import importlib.util
 import os
 import os.path
 import sys
+from collections import namedtuple
+from functools import singledispatch as simplegeneric
 
 __all__ = [
     'get_importer', 'iter_importers',

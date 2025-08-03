@@ -1,21 +1,21 @@
-from collections import namedtuple
 import contextlib
 import sys
-from textwrap import dedent
 import threading
 import time
 import unittest
+from collections import namedtuple
+from textwrap import dedent
 
 from test.support import import_helper, skip_if_sanitizer
 
 _channels = import_helper.import_module('_interpchannels')
 from concurrent.interpreters import _crossinterp
+
 from test.test__interpreters import (
     _interpreters,
     _run_output,
     clean_up_interpreters,
 )
-
 
 REPLACE = _crossinterp._UNBOUND_CONSTANT_TO_FLAG[_crossinterp.UNBOUND]
 

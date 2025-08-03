@@ -6,9 +6,9 @@ comment, uncomment, tabify, and untabify.
 File renamed from paragraph.py with functions added from editor.py.
 """
 import re
+from idlelib.config import idleConf
 from tkinter.messagebox import askyesno
 from tkinter.simpledialog import askinteger
-from idlelib.config import idleConf
 
 
 class FormatParagraph:

@@ -4,12 +4,11 @@ Includes BaseSideBar which can be extended for other sidebar based extensions
 import contextlib
 import functools
 import itertools
-
 import tkinter as tk
-from tkinter.font import Font
+from idlelib import macosx
 from idlelib.config import idleConf
 from idlelib.delegator import Delegator
-from idlelib import macosx
+from tkinter.font import Font
 
 
 def get_lineno(text, index):

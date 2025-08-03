@@ -2,17 +2,26 @@ import copy
 import re
 import sys
 import tempfile
-
-from test.support import ALWAYS_EQ
 import unittest
-from test.test_unittest.testmock.support import is_instance
 from unittest import mock
 from unittest.mock import (
-    call, DEFAULT, patch, sentinel,
-    MagicMock, Mock, NonCallableMock,
-    NonCallableMagicMock, AsyncMock, _Call, _CallList,
-    create_autospec, InvalidSpecError
+    DEFAULT,
+    AsyncMock,
+    InvalidSpecError,
+    MagicMock,
+    Mock,
+    NonCallableMagicMock,
+    NonCallableMock,
+    _Call,
+    _CallList,
+    call,
+    create_autospec,
+    patch,
+    sentinel,
 )
+
+from test.support import ALWAYS_EQ
+from test.test_unittest.testmock.support import is_instance
 
 
 class Iter(object):
@@ -2338,7 +2347,10 @@ class MockTest(unittest.TestCase):
             sys.settrace(trace)
 
             from unittest.mock import (
-                Mock, MagicMock, NonCallableMock, NonCallableMagicMock
+                MagicMock,
+                Mock,
+                NonCallableMagicMock,
+                NonCallableMock,
             )
 
             mocks = [

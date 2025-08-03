@@ -1,6 +1,6 @@
 """Abstract base classes related to import."""
-from . import _bootstrap_external
-from . import machinery
+from . import _bootstrap_external, machinery
+
 try:
     import _frozen_importlib
 except ImportError as exc:
@@ -11,9 +11,9 @@ try:
     import _frozen_importlib_external
 except ImportError:
     _frozen_importlib_external = _bootstrap_external
-from ._abc import Loader
 import abc
 
+from ._abc import Loader
 
 __all__ = [
     'Loader', 'MetaPathFinder', 'PathEntryFinder',

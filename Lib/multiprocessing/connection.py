@@ -13,23 +13,21 @@ import errno
 import io
 import itertools
 import os
-import sys
 import socket
 import struct
+import sys
 import tempfile
 import time
 
-
-from . import util
-
-from . import AuthenticationError, BufferTooShort
+from . import AuthenticationError, BufferTooShort, util
 from .context import reduction
+
 _ForkingPickler = reduction.ForkingPickler
 
 try:
     import _multiprocessing
     import _winapi
-    from _winapi import WAIT_OBJECT_0, WAIT_ABANDONED_0, WAIT_TIMEOUT, INFINITE
+    from _winapi import INFINITE, WAIT_ABANDONED_0, WAIT_OBJECT_0, WAIT_TIMEOUT
 except ImportError:
     if sys.platform == 'win32':
         raise

@@ -1,6 +1,7 @@
 import functools
 import tkinter
 
+
 class AbstractTkTest:
 
     @classmethod
@@ -77,6 +78,7 @@ def simulate_mouse_click(widget, x, y):
 
 
 import _tkinter
+
 tcl_version = tuple(map(int, _tkinter.TCL_VERSION.split('.')))
 tk_version = tuple(map(int, _tkinter.TK_VERSION.split('.')))
 

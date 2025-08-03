@@ -122,11 +122,11 @@ backward compatibility.
 
 """
 
-import enum
-from . import _compiler, _parser
-import functools
 import _sre
+import enum
+import functools
 
+from . import _compiler, _parser
 
 # public symbols
 __all__ = [
@@ -379,6 +379,7 @@ def _compile_template(pattern, repl):
 # register myself for pickling
 
 import copyreg
+
 
 def _pickle(p):
     return _compile, (p.pattern, p.flags)

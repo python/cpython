@@ -6,11 +6,11 @@ util = test_util.import_importlib('importlib.util')
 
 import os.path
 import pathlib
-from test.support.import_helper import CleanImport
-import unittest
 import sys
+import unittest
 import warnings
 
+from test.support.import_helper import CleanImport
 
 
 class TestLoader:

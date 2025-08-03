@@ -1,7 +1,6 @@
 import doctest
 import unittest
 
-
 doctests = """
 
 Unpack tuple

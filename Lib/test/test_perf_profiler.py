@@ -1,18 +1,18 @@
-import unittest
+import os
+import pathlib
 import string
 import subprocess
 import sys
 import sysconfig
-import os
-import pathlib
+import unittest
+
 from test import support
+from test.support.os_helper import temp_dir
 from test.support.script_helper import (
-    make_script,
     assert_python_failure,
     assert_python_ok,
+    make_script,
 )
-from test.support.os_helper import temp_dir
-
 
 if not support.has_subprocess_support:
     raise unittest.SkipTest("test module requires subprocess")

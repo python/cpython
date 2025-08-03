@@ -1,18 +1,21 @@
 "Test squeezer, coverage 95%"
 
-from textwrap import dedent
-from tkinter import Text, Tk
 import unittest
-from unittest.mock import Mock, NonCallableMagicMock, patch, sentinel, ANY
-from test.support import requires
-
+from idlelib import macosx
 from idlelib.config import idleConf
 from idlelib.percolator import Percolator
-from idlelib.squeezer import count_lines_with_wrapping, ExpandingButton, \
-    Squeezer
-from idlelib import macosx
+from idlelib.squeezer import (
+    ExpandingButton,
+    Squeezer,
+    count_lines_with_wrapping,
+)
 from idlelib.textview import view_text
 from idlelib.tooltip import Hovertip
+from textwrap import dedent
+from tkinter import Text, Tk
+from unittest.mock import ANY, Mock, NonCallableMagicMock, patch, sentinel
+
+from test.support import requires
 
 SENTINEL_VALUE = sentinel.SENTINEL_VALUE
 

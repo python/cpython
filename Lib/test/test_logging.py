@@ -18,22 +18,21 @@
 
 Copyright (C) 2001-2022 Vinay Sajip. All Rights Reserved.
 """
-import logging
-import logging.handlers
-import logging.config
-
-
+import asyncio
 import codecs
 import configparser
 import copy
 import datetime
-import pathlib
-import pickle
+import gc
 import io
 import itertools
-import gc
 import json
+import logging
+import logging.config
+import logging.handlers
 import os
+import pathlib
+import pickle
 import queue
 import random
 import re
@@ -42,32 +41,39 @@ import socket
 import struct
 import sys
 import tempfile
-from test.support.script_helper import assert_python_ok, assert_python_failure
-from test import support
-from test.support import import_helper
-from test.support import os_helper
-from test.support import socket_helper
-from test.support import threading_helper
-from test.support import warnings_helper
-from test.support import asyncore
-from test.support import smtpd
-from test.support.logging_helper import TestHandler
 import textwrap
 import threading
-import asyncio
 import time
 import unittest
 import warnings
 import weakref
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from socketserver import (
+    DatagramRequestHandler,
+    StreamRequestHandler,
+    ThreadingTCPServer,
+    ThreadingUDPServer,
+)
+from unittest.mock import Mock, call, patch
+from urllib.parse import parse_qs, urlparse
 
-from http.server import HTTPServer, BaseHTTPRequestHandler
-from unittest.mock import call, Mock, patch
-from urllib.parse import urlparse, parse_qs
-from socketserver import (ThreadingUDPServer, DatagramRequestHandler,
-                          ThreadingTCPServer, StreamRequestHandler)
+from test import support
+from test.support import (
+    asyncore,
+    import_helper,
+    os_helper,
+    smtpd,
+    socket_helper,
+    threading_helper,
+    warnings_helper,
+)
+from test.support.logging_helper import TestHandler
+from test.support.script_helper import assert_python_failure, assert_python_ok
 
 try:
-    import win32evtlog, win32evtlogutil, pywintypes
+    import pywintypes
+    import win32evtlog
+    import win32evtlogutil
 except ImportError:
     win32evtlog = win32evtlogutil = pywintypes = None
 
@@ -4113,7 +4119,8 @@ class ConfigDictTest(BaseTest):
         # See gh-119819
 
         cd = copy.deepcopy(self.config_queue_handler)
-        from multiprocessing import Queue as MQ, Manager as MM
+        from multiprocessing import Manager as MM
+        from multiprocessing import Queue as MQ
         q1 = MQ()  # this can't be pickled
         q2 = MM().Queue()  # a proxy queue for use when pickling is needed
         q3 = MM().JoinableQueue()  # a joinable proxy queue

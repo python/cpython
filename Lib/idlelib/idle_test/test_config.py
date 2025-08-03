@@ -3,15 +3,16 @@
 * Exception is OSError clause in Save method.
 Much of IdleConf is also exercised by ConfigDialog and test_configdialog.
 """
-from idlelib import config
-import sys
-import os
-import tempfile
-from test.support import captured_stderr, findfile
-import unittest
-from unittest import mock
 import idlelib
+import os
+import sys
+import tempfile
+import unittest
+from idlelib import config
 from idlelib.idle_test.mock_idle import Func
+from unittest import mock
+
+from test.support import captured_stderr, findfile
 
 # Tests should not depend on fortuitous user configurations.
 # They must not affect actual user .cfg files.
@@ -552,9 +553,10 @@ class IdleConfTest(unittest.TestCase):
             conf.GetExtraHelpSourceList('default') + conf.GetExtraHelpSourceList('user'))
 
     def test_get_font(self):
-        from test.support import requires
         from tkinter import Tk
         from tkinter.font import Font
+
+        from test.support import requires
         conf = self.mock_config()
 
         requires('gui')

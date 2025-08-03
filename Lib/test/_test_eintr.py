@@ -23,9 +23,7 @@ import time
 import unittest
 
 from test import support
-from test.support import os_helper
-from test.support import socket_helper
-
+from test.support import os_helper, socket_helper
 
 # gh-109592: Tolerate a difference of 20 ms when comparing timings
 # (clock resolution)

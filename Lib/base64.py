@@ -4,9 +4,8 @@
 # Modified 30-Dec-2003 by Barry Warsaw to add full RFC 3548 support
 # Modified 22-May-2007 by Guido van Rossum to use bytes everywhere
 
-import struct
 import binascii
-
+import struct
 
 __all__ = [
     # Legacy interface exports traditional RFC 2045 Base64 encodings
@@ -579,7 +578,8 @@ def decodebytes(s):
 # Usable as a script...
 def main():
     """Small main program"""
-    import sys, getopt
+    import getopt
+    import sys
     usage = f"""usage: {sys.argv[0]} [-h|-d|-e|-u] [file|-]
         -h: print this help message and exit
         -d, -u: decode

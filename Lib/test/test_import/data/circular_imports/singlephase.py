@@ -5,6 +5,7 @@ _testsinglephase, and imports that module again.
 """
 
 import importlib
+
 import _testsinglephase
 from test.test_import import import_extension_from_file
 

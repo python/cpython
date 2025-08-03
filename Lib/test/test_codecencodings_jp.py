@@ -3,8 +3,10 @@
 #   Codec encoding tests for Japanese encodings.
 #
 
-from test import multibytecodec_support
 import unittest
+
+from test import multibytecodec_support
+
 
 class Test_CP932(multibytecodec_support.TestBase, unittest.TestCase):
     encoding = 'cp932'

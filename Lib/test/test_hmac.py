@@ -18,16 +18,22 @@ the OpenSSL and HACL* hash functions.
 
 import binascii
 import functools
-import hmac
 import hashlib
+import hmac
 import random
 import types
 import unittest
 import warnings
 from _operator import _compare_digest as operator_compare_digest
-from test.support import _4G, bigmemtest
-from test.support import check_disallow_instantiation
-from test.support import hashlib_helper, import_helper
+from unittest.mock import patch
+
+from test.support import (
+    _4G,
+    bigmemtest,
+    check_disallow_instantiation,
+    hashlib_helper,
+    import_helper,
+)
 from test.support.hashlib_helper import (
     BuiltinHashFunctionsTrait,
     HashFunctionsTrait,
@@ -35,7 +41,6 @@ from test.support.hashlib_helper import (
     OpenSSLHashFunctionsTrait,
 )
 from test.support.import_helper import import_fresh_module
-from unittest.mock import patch
 
 try:
     import _hashlib

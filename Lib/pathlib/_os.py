@@ -2,11 +2,12 @@
 Low-level OS functionality wrappers used by pathlib.
 """
 
-from errno import *
-from io import TextIOWrapper, text_encoding
-from stat import S_ISDIR, S_ISREG, S_ISLNK, S_IMODE
 import os
 import sys
+from errno import *
+from io import TextIOWrapper, text_encoding
+from stat import S_IMODE, S_ISDIR, S_ISLNK, S_ISREG
+
 try:
     import fcntl
 except ImportError:

@@ -1,32 +1,35 @@
-import unittest
-from unittest import mock
-from test import support
-from test.support import check_sanitizer
-from test.support import import_helper
-from test.support import os_helper
-from test.support import strace_helper
-from test.support import warnings_helper
-from test.support.script_helper import assert_python_ok
-import subprocess
-import sys
-import signal
+import errno
+import gc
 import io
 import itertools
+import json
 import os
-import errno
+import select
+import selectors
+import shutil
+import signal
+import subprocess
+import sys
+import sysconfig
 import tempfile
+import textwrap
+import threading
 import time
 import traceback
 import types
-import selectors
-import sysconfig
-import select
-import shutil
-import threading
-import gc
-import textwrap
-import json
+import unittest
+from unittest import mock
+
+from test import support
+from test.support import (
+    check_sanitizer,
+    import_helper,
+    os_helper,
+    strace_helper,
+    warnings_helper,
+)
 from test.support.os_helper import FakePath
+from test.support.script_helper import assert_python_ok
 
 try:
     import _testcapi
@@ -2322,7 +2325,7 @@ class POSIXProcessTestCase(BaseTestCase):
         # The internal code did not preserve the previous exception when
         # re-enabling garbage collection
         try:
-            from resource import getrlimit, setrlimit, RLIMIT_NPROC
+            from resource import RLIMIT_NPROC, getrlimit, setrlimit
         except ImportError as err:
             self.skipTest(err)  # RLIMIT_NPROC is specific to Linux and BSD
         limits = getrlimit(RLIMIT_NPROC)

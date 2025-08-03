@@ -7,7 +7,6 @@
 __all__ = ['MIMEBase']
 
 import email.policy
-
 from email import message
 
 

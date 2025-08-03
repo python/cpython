@@ -2,8 +2,9 @@
 # descriptor which should _not_ be open.  Check this by attempting to
 # write to it -- if we succeed, something is wrong.
 
-import sys
 import os
+import sys
+
 from test.support import SuppressCrashReport
 
 with SuppressCrashReport():

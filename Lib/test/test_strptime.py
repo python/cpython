@@ -1,18 +1,21 @@
 """PyUnit testing against strptime"""
 
-import unittest
-import time
+import _strptime
 import locale
-import re
 import os
 import platform
+import re
 import sys
-from test import support
-from test.support import warnings_helper
-from test.support import skip_if_buggy_ucrt_strfptime, run_with_locales
+import time
+import unittest
 from datetime import date as datetime_date
 
-import _strptime
+from test import support
+from test.support import (
+    run_with_locales,
+    skip_if_buggy_ucrt_strfptime,
+    warnings_helper,
+)
 
 libc_ver = platform.libc_ver()
 if libc_ver[0] == 'glibc':

@@ -12,8 +12,9 @@ always yields None.
 the current pen is cloned. So in the end
 there are 1024 turtles.
 """
-from turtle import Turtle, mainloop
 from time import perf_counter as clock
+from turtle import Turtle, mainloop
+
 
 def tree(plist, l, a, f):
     """ plist is list of pens

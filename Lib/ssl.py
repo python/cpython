@@ -91,22 +91,22 @@ ALERT_DESCRIPTION_BAD_CERTIFICATE_HASH_VALUE
 ALERT_DESCRIPTION_UNKNOWN_PSK_IDENTITY
 """
 
-import sys
+import _ssl  # if we can't import it, let the error propagate
 import os
+import sys
+from _ssl import (
+    SSLCertVerificationError,
+    SSLError,
+    _SSLContext,
+)
+from _ssl import nid2obj as _nid2obj
+from _ssl import txt2obj as _txt2obj
 from collections import namedtuple
-from enum import Enum as _Enum, IntEnum as _IntEnum, IntFlag as _IntFlag
+from enum import Enum as _Enum
+from enum import IntEnum as _IntEnum
+from enum import IntFlag as _IntFlag
 from enum import _simple_enum
 
-import _ssl             # if we can't import it, let the error propagate
-
-from _ssl import OPENSSL_VERSION_NUMBER, OPENSSL_VERSION_INFO, OPENSSL_VERSION
-from _ssl import _SSLContext, MemoryBIO, SSLSession
-from _ssl import (
-    SSLError, SSLZeroReturnError, SSLWantReadError, SSLWantWriteError,
-    SSLSyscallError, SSLEOFError, SSLCertVerificationError
-    )
-from _ssl import txt2obj as _txt2obj, nid2obj as _nid2obj
-from _ssl import RAND_status, RAND_add, RAND_bytes
 try:
     from _ssl import RAND_egd
 except ImportError:
@@ -114,11 +114,7 @@ except ImportError:
     pass
 
 
-from _ssl import (
-    HAS_SNI, HAS_ECDH, HAS_NPN, HAS_ALPN, HAS_SSLv2, HAS_SSLv3, HAS_TLSv1,
-    HAS_TLSv1_1, HAS_TLSv1_2, HAS_TLSv1_3, HAS_PSK, HAS_PSK_TLS13, HAS_PHA
-)
-from _ssl import _DEFAULT_CIPHERS, _OPENSSL_API_VERSION
+from _ssl import _DEFAULT_CIPHERS
 
 _IntEnum._convert_(
     '_SSLMethod', __name__,
@@ -255,15 +251,20 @@ class _TLSMessageType:
 
 
 if sys.platform == "win32":
-    from _ssl import enum_certificates, enum_crls
+    from _ssl import enum_certificates
 
-from socket import socket, SOCK_STREAM, create_connection
-from socket import SOL_SOCKET, SO_TYPE, _GLOBAL_DEFAULT_TIMEOUT
-import socket as _socket
-import base64        # for DER-to-PEM translation
+import base64  # for DER-to-PEM translation
 import errno
+import socket as _socket
 import warnings
-
+from socket import (
+    _GLOBAL_DEFAULT_TIMEOUT,
+    SO_TYPE,
+    SOCK_STREAM,
+    SOL_SOCKET,
+    create_connection,
+    socket,
+)
 
 socket_error = OSError  # keep that public name in module namespace
 
@@ -1484,8 +1485,8 @@ def cert_time_to_seconds(cert_time):
     Month is one of: Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec
     UTC should be specified as GMT (see ASN1_TIME_print())
     """
-    from time import strptime
     from calendar import timegm
+    from time import strptime
 
     months = (
         "Jan","Feb","Mar","Apr","May","Jun",

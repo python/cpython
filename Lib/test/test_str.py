@@ -17,8 +17,9 @@ import textwrap
 import unicodedata
 import unittest
 import warnings
+
+from test import string_tests, support
 from test.support import warnings_helper
-from test import support, string_tests
 from test.support.script_helper import assert_python_failure
 
 try:

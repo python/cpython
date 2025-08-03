@@ -4,7 +4,6 @@ Tests of regrtest.py.
 Note: test_regrtest cannot be run twice in parallel.
 """
 
-import _colorize
 import contextlib
 import dataclasses
 import glob
@@ -25,16 +24,18 @@ import unittest
 import unittest.mock
 from xml.etree import ElementTree
 
+import _colorize
+
 from test import support
-from test.support import import_helper
-from test.support import os_helper
-from test.libregrtest import cmdline
-from test.libregrtest import main
-from test.libregrtest import setup
-from test.libregrtest import utils
-from test.libregrtest.filter import get_match_tests, set_match_tests, match_test
+from test.libregrtest import cmdline, main, setup, utils
+from test.libregrtest.filter import (
+    get_match_tests,
+    match_test,
+    set_match_tests,
+)
 from test.libregrtest.result import TestStats
 from test.libregrtest.utils import normalize_test_name
+from test.support import import_helper, os_helper
 
 if not support.has_subprocess_support:
     raise unittest.SkipTest("test module requires subprocess")

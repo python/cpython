@@ -17,7 +17,6 @@ from sysconfig import (
     parse_config_h,
 )
 
-
 # Regexes needed for parsing Makefile (and similar syntaxes,
 # like old-style Setup files).
 _variable_rx = r"([a-zA-Z][a-zA-Z0-9_]+)\s*=\s*(.*)"

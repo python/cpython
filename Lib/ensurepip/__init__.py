@@ -8,7 +8,6 @@ from importlib import resources
 from pathlib import Path
 from shutil import copy2
 
-
 __all__ = ["version", "bootstrap"]
 _PIP_VERSION = "25.1.1"
 

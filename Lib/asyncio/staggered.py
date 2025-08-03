@@ -4,11 +4,8 @@ __all__ = 'staggered_race',
 
 import contextlib
 
-from . import events
+from . import events, futures, locks, tasks
 from . import exceptions as exceptions_mod
-from . import locks
-from . import tasks
-from . import futures
 
 
 async def staggered_race(coro_fns, delay, *, loop=None):

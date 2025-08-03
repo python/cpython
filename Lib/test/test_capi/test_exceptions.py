@@ -2,8 +2,8 @@ import errno
 import os
 import re
 import sys
-import unittest
 import textwrap
+import unittest
 
 from test import support
 from test.support import import_helper
@@ -257,7 +257,7 @@ class Test_ErrSetAndRestore(unittest.TestCase):
     def test_format(self):
         """Test PyErr_Format()"""
         import_helper.import_module('ctypes')
-        from ctypes import pythonapi, py_object, c_char_p, c_int
+        from ctypes import c_char_p, c_int, py_object, pythonapi
         name = "PyErr_Format"
         PyErr_Format = getattr(pythonapi, name)
         PyErr_Format.argtypes = (py_object, c_char_p,)

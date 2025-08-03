@@ -1,8 +1,7 @@
 '''Define SearchEngine for search dialogs.'''
 import re
+from tkinter import BooleanVar, StringVar, TclError, messagebox
 
-from tkinter import StringVar, BooleanVar, TclError
-from tkinter import messagebox
 
 def get(root):
     '''Return the singleton SearchEngine instance for the process.

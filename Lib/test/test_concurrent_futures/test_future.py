@@ -3,15 +3,28 @@ import time
 import unittest
 from concurrent import futures
 from concurrent.futures._base import (
-    PENDING, RUNNING, CANCELLED, CANCELLED_AND_NOTIFIED, FINISHED, Future)
+    CANCELLED,
+    CANCELLED_AND_NOTIFIED,
+    FINISHED,
+    PENDING,
+    RUNNING,
+    Future,
+)
 
 from test import support
 from test.support import threading_helper
 
 from .util import (
-    PENDING_FUTURE, RUNNING_FUTURE, CANCELLED_FUTURE,
-    CANCELLED_AND_NOTIFIED_FUTURE, EXCEPTION_FUTURE, SUCCESSFUL_FUTURE,
-    BaseTestCase, create_future, setup_module)
+    CANCELLED_AND_NOTIFIED_FUTURE,
+    CANCELLED_FUTURE,
+    EXCEPTION_FUTURE,
+    PENDING_FUTURE,
+    RUNNING_FUTURE,
+    SUCCESSFUL_FUTURE,
+    BaseTestCase,
+    create_future,
+    setup_module,
+)
 
 
 class FutureTests(BaseTestCase):

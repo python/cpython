@@ -1,5 +1,6 @@
-import unittest
 import tkinter
+import unittest
+
 from test.support import requires
 from test.test_tkinter.support import AbstractTkTest
 

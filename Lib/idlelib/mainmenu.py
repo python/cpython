@@ -8,9 +8,8 @@ the PythonShell window, and a Format menu which is only present in the Editor
 windows.
 
 """
-from importlib.util import find_spec
-
 from idlelib.config import idleConf
+from importlib.util import find_spec
 
 #   Warning: menudefs is altered in macosx.overrideRootMenu()
 #   after it is determined that an OS X Aqua Tk is in use,

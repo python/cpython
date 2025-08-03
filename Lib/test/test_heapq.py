@@ -1,12 +1,12 @@
 """Unittests for heapq."""
 
+import doctest
 import random
 import unittest
-import doctest
+from operator import itemgetter
+from unittest import TestCase, skipUnless
 
 from test.support import import_helper
-from unittest import TestCase, skipUnless
-from operator import itemgetter
 
 py_heapq = import_helper.import_fresh_module('heapq', blocked=['_heapq'])
 c_heapq = import_helper.import_fresh_module('heapq', fresh=['_heapq'])
@@ -498,6 +498,8 @@ class S:
         raise StopIteration
 
 from itertools import chain
+
+
 def L(seqn):
     'Test multiple tiers of iterators'
     return chain(map(lambda x:x, R(Ig(G(seqn)))))

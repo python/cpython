@@ -2,6 +2,7 @@
 # of warnings.warn()
 
 import warnings
+
 from test.test_warnings.data import package_helper
 
 

@@ -4,8 +4,8 @@ Similar to test_cfunction but test "py-bt-full" command.
 
 import re
 
-from .util import setup_module
 from .test_cfunction import CFunctionTests
+from .util import setup_module
 
 
 def setUpModule():

@@ -3,21 +3,28 @@
 import contextlib
 import importlib
 import importlib.machinery
-import zipimport
-import unittest
-import sys
+import io
 import os
 import os.path
 import py_compile
 import subprocess
-import io
-
+import sys
 import textwrap
+import unittest
+import zipimport
+
 from test import support
 from test.support import import_helper, is_apple, os_helper
 from test.support.script_helper import (
-    make_pkg, make_script, make_zip_pkg, make_zip_script,
-    assert_python_ok, assert_python_failure, spawn_python, kill_python)
+    assert_python_failure,
+    assert_python_ok,
+    kill_python,
+    make_pkg,
+    make_script,
+    make_zip_pkg,
+    make_zip_script,
+    spawn_python,
+)
 
 verbose = support.verbose
 

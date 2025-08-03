@@ -1,21 +1,20 @@
+import array
 import enum
 import errno
-from http import client, HTTPStatus
 import io
 import itertools
 import os
-import array
 import re
 import socket
 import threading
-
 import unittest
+from http import HTTPStatus, client
 from unittest import mock
+
 TestCase = unittest.TestCase
 
 from test import support
-from test.support import os_helper
-from test.support import socket_helper
+from test.support import os_helper, socket_helper
 
 support.requires_working_socket(module=True)
 

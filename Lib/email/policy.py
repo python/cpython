@@ -9,12 +9,12 @@ from email._policybase import (
     Policy,
     _extend_docstrings,
     compat32,
-    validate_header_name
+    validate_header_name,
 )
-from email.utils import _has_surrogates
-from email.headerregistry import HeaderRegistry as HeaderRegistry
 from email.contentmanager import raw_data_manager
+from email.headerregistry import HeaderRegistry as HeaderRegistry
 from email.message import EmailMessage
+from email.utils import _has_surrogates
 
 __all__ = [
     'Compat32',

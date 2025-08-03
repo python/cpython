@@ -24,22 +24,24 @@ __author__ = 'Ka-Ping Yee <ping@lfw.org>'
 __credits__ = ('GvR, ESR, Tim Peters, Thomas Wouters, Fred Drake, '
                'Skip Montanaro, Raymond Hettinger, Trent Nelson, '
                'Michael Foord')
-from builtins import open as _builtin_open
-from codecs import lookup, BOM_UTF8
 import collections
 import functools
-from io import TextIOWrapper
 import itertools as _itertools
 import re
 import sys
+from builtins import open as _builtin_open
+from codecs import BOM_UTF8, lookup
+from io import TextIOWrapper
 from token import *
 from token import EXACT_TOKEN_TYPES
+
 import _tokenize
 
 cookie_re = re.compile(r'^[ \t\f]*#.*?coding[:=][ \t]*([-\w.]+)', re.ASCII)
 blank_re = re.compile(br'^[ \t\f]*(?:[#\r\n]|$)', re.ASCII)
 
 import token
+
 __all__ = token.__all__ + ["tokenize", "generate_tokens", "detect_encoding",
                            "untokenize", "TokenInfo", "open", "TokenError"]
 del token

@@ -1,22 +1,40 @@
 """Tests for http/cookiejar.py."""
 
 import os
+import re
 import stat
 import sys
-import re
-from test import support
-from test.support import os_helper
-from test.support import warnings_helper
 import time
 import unittest
 import urllib.request
+from http.cookiejar import (
+    DEFAULT_HTTP_PORT,
+    Cookie,
+    CookieJar,
+    DefaultCookiePolicy,
+    LoadError,
+    LWPCookieJar,
+    MozillaCookieJar,
+    domain_match,
+    escape_path,
+    http2time,
+    is_HDN,
+    iso2time,
+    join_header_words,
+    lwp_cookie_str,
+    parse_ns_headers,
+    reach,
+    request_host,
+    request_path,
+    request_port,
+    split_header_words,
+    time2isoz,
+    time2netscape,
+    user_domain_match,
+)
 
-from http.cookiejar import (time2isoz, http2time, iso2time, time2netscape,
-     parse_ns_headers, join_header_words, split_header_words, Cookie,
-     CookieJar, DefaultCookiePolicy, LWPCookieJar, MozillaCookieJar,
-     LoadError, lwp_cookie_str, DEFAULT_HTTP_PORT, escape_path,
-     reach, is_HDN, domain_match, user_domain_match, request_path,
-     request_port, request_host)
+from test import support
+from test.support import os_helper, warnings_helper
 
 mswindows = (sys.platform == "win32")
 
@@ -257,7 +275,8 @@ class HeaderTests(unittest.TestCase):
         try:
             result = split_header_words([arg])
         except:
-            import traceback, io
+            import io
+            import traceback
             f = io.StringIO()
             traceback.print_exc(None, f)
             result = "(error -- traceback follows)\n\n%s" % f.getvalue()

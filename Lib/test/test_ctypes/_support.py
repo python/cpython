@@ -1,9 +1,8 @@
 # Some classes and types are not export to _ctypes module directly.
 
 import ctypes
-from _ctypes import Structure, Union, _Pointer, Array, _SimpleCData, CFuncPtr
 import sys
-
+from _ctypes import Array, CFuncPtr, Structure, Union, _Pointer, _SimpleCData
 
 _CData = Structure.__base__
 assert _CData.__name__ == "_CData"

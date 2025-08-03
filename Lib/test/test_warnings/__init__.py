@@ -1,28 +1,28 @@
-from contextlib import contextmanager
-import linecache
-import os
 import importlib
 import inspect
-from io import StringIO
+import linecache
+import os
 import re
 import sys
 import textwrap
 import types
-from typing import overload, get_overloads
 import unittest
-from test import support
-from test.support import import_helper
-from test.support import os_helper
-from test.support import warnings_helper
-from test.support import force_not_colorized
-from test.support.script_helper import assert_python_ok, assert_python_failure
-
-from test.test_warnings.data import package_helper
-from test.test_warnings.data import stacklevel as warning_tests
-
 import warnings as original_warnings
+from contextlib import contextmanager
+from io import StringIO
+from typing import get_overloads, overload
 from warnings import deprecated
 
+from test import support
+from test.support import (
+    force_not_colorized,
+    import_helper,
+    os_helper,
+    warnings_helper,
+)
+from test.support.script_helper import assert_python_failure, assert_python_ok
+from test.test_warnings.data import package_helper
+from test.test_warnings.data import stacklevel as warning_tests
 
 py_warnings = import_helper.import_fresh_module('_py_warnings')
 py_warnings._set_module(py_warnings)

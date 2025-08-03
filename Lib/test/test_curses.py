@@ -7,9 +7,15 @@ import tempfile
 import unittest
 from unittest.mock import MagicMock
 
-from test.support import (requires, verbose, SaveSignals, cpython_only,
-                          check_disallow_instantiation, MISSING_C_DOCSTRINGS,
-                          gc_collect)
+from test.support import (
+    MISSING_C_DOCSTRINGS,
+    SaveSignals,
+    check_disallow_instantiation,
+    cpython_only,
+    gc_collect,
+    requires,
+    verbose,
+)
 from test.support.import_helper import import_module
 
 # Optionally test curses module.  This currently requires that the

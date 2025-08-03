@@ -11,24 +11,38 @@ import os
 import os.path
 import pathlib
 import re
+import shlex
 import shutil
 import struct
 import subprocess
 import sys
 import sysconfig
 import tempfile
-import shlex
-from test.support import (captured_stdout, captured_stderr,
-                          skip_if_broken_multiprocessing_synchronize, verbose,
-                          requires_subprocess, is_android, is_apple_mobile,
-                          is_wasm32,
-                          requires_venv_with_pip, TEST_HOME_DIR,
-                          requires_resource, copy_python_src_ignore)
-from test.support.os_helper import (can_symlink, EnvironmentVarGuard, rmtree,
-                                    TESTFN, FakePath)
 import unittest
 import venv
-from unittest.mock import patch, Mock
+from unittest.mock import Mock, patch
+
+from test.support import (
+    TEST_HOME_DIR,
+    captured_stderr,
+    captured_stdout,
+    copy_python_src_ignore,
+    is_android,
+    is_apple_mobile,
+    is_wasm32,
+    requires_resource,
+    requires_subprocess,
+    requires_venv_with_pip,
+    skip_if_broken_multiprocessing_synchronize,
+    verbose,
+)
+from test.support.os_helper import (
+    TESTFN,
+    EnvironmentVarGuard,
+    FakePath,
+    can_symlink,
+    rmtree,
+)
 
 try:
     import ctypes

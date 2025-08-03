@@ -22,17 +22,19 @@ __all__ = [
     'unquote',
     ]
 
+import datetime
 import os
 import re
 import time
-import datetime
 import urllib.parse
-
-from email._parseaddr import quote
 from email._parseaddr import AddressList as _AddressList
-from email._parseaddr import mktime_tz
-
-from email._parseaddr import parsedate, parsedate_tz, _parsedate_tz
+from email._parseaddr import (
+    _parsedate_tz,
+    mktime_tz,
+    parsedate,
+    parsedate_tz,
+    quote,
+)
 
 COMMASPACE = ', '
 EMPTYSTRING = ''

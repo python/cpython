@@ -21,15 +21,14 @@
 #    misrepresented as being the original software.
 # 3. This notice may not be removed or altered from any source distribution.
 
+import sqlite3 as sqlite
 import sys
 import unittest
-import sqlite3 as sqlite
-
 from unittest.mock import Mock, patch
+
 from test.support import bigmemtest, gc_collect
 
-from .util import cx_limit, memory_database
-from .util import with_tracebacks
+from .util import cx_limit, memory_database, with_tracebacks
 
 
 def func_returntext():

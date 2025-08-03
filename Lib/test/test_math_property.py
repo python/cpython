@@ -1,6 +1,7 @@
 import functools
 import unittest
 from math import isnan, nextafter
+
 from test.support import requires_IEEE_754
 from test.support.hypothesis_helper import hypothesis
 

@@ -2,8 +2,9 @@
 
 import socket
 import tempfile
-import urllib.response
 import unittest
+import urllib.response
+
 from test import support
 
 if support.is_wasi:

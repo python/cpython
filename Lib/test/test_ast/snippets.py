@@ -3,7 +3,6 @@ import sys
 
 from test.test_ast.utils import to_tuple
 
-
 # These tests are compiled through "exec"
 # There should be at least one test per statement
 exec_tests = [

@@ -1,7 +1,8 @@
-from test.test_importlib import util
 import sys
 import unittest
+
 from test.support import import_helper
+from test.test_importlib import util
 
 
 class ParentModuleTests:

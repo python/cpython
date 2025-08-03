@@ -1,9 +1,10 @@
 """Test that sys.modules is used properly by import."""
-from test.test_importlib import util
 import sys
-from types import MethodType
 import unittest
 import warnings
+from types import MethodType
+
+from test.test_importlib import util
 
 
 class UseCache:

@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import builtins
 import functools
 import keyword
@@ -6,15 +7,15 @@ import re
 import token as T
 import tokenize
 import unicodedata
-import _colorize
-
 from collections import deque
 from io import StringIO
 from tokenize import TokenInfo as TI
 from typing import Iterable, Iterator, Match, NamedTuple, Self
 
-from .types import CharBuffer, CharWidths
+import _colorize
+
 from .trace import trace
+from .types import CharBuffer, CharWidths
 
 ANSI_ESCAPE_SEQUENCE = re.compile(r"\x1b\[[ -@]*[A-~]")
 ZERO_WIDTH_BRACKET = re.compile(r"\x01.*?\x02")

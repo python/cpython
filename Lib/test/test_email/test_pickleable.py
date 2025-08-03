@@ -1,11 +1,12 @@
-import unittest
-import textwrap
 import copy
-import pickle
 import email
 import email.message
+import pickle
+import textwrap
+import unittest
 from email import policy
 from email.headerregistry import HeaderRegistry
+
 from test.test_email import TestEmailBase, parameterize
 
 

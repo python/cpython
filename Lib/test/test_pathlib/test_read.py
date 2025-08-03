@@ -8,15 +8,15 @@ import sys
 import unittest
 
 from .support import is_pypi
-from .support.local_path import ReadableLocalPath, LocalPathGround
+from .support.local_path import LocalPathGround, ReadableLocalPath
 from .support.zip_path import ReadableZipPath, ZipPathGround
 
 if is_pypi:
     from pathlib_abc import PathInfo, _ReadablePath
     from pathlib_abc._os import magic_open
 else:
-    from pathlib.types import PathInfo, _ReadablePath
     from pathlib._os import magic_open
+    from pathlib.types import PathInfo, _ReadablePath
 
 
 class ReadTestBase:

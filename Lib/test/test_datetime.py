@@ -1,9 +1,8 @@
-import unittest
-import sys
 import functools
+import sys
+import unittest
 
 from test.support.import_helper import import_fresh_module
-
 
 TESTS = 'test.datetimetester'
 

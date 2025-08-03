@@ -5,15 +5,15 @@ import gc
 import operator
 import pickle
 import re
-from random import randrange, shuffle
 import struct
 import sys
 import unittest
 import weakref
 from collections.abc import MutableMapping
+from random import randrange, shuffle
+
 from test import mapping_tests, support
 from test.support import import_helper
-
 
 py_coll = import_helper.import_fresh_module('collections',
                                             blocked=['_collections'])

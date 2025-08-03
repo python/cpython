@@ -2,7 +2,6 @@ import itertools
 import operator
 import re
 
-
 # By default, don't filter tests
 _test_matchers = ()
 _test_patterns = ()

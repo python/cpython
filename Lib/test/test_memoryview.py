@@ -4,18 +4,18 @@
    are in test_buffer.
 """
 
-import unittest
-import test.support
-import sys
-import gc
-import weakref
 import array
-import io
 import copy
+import gc
+import io
 import pickle
 import struct
-
+import sys
+import unittest
+import weakref
 from itertools import product
+
+import test.support
 from test import support
 from test.support import import_helper, threading_helper
 
@@ -743,7 +743,7 @@ class RacingTest(unittest.TestCase):
             from multiprocessing.managers import SharedMemoryManager
         except ImportError:
             self.skipTest("Test requires multiprocessing")
-        from threading import Thread, Event
+        from threading import Event, Thread
 
         start = Event()
         with SharedMemoryManager() as smm:

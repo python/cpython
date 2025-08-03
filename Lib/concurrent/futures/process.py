@@ -45,21 +45,21 @@ Process #1..n:
 
 __author__ = 'Brian Quinlan (brian@sweetapp.com)'
 
-import os
-from concurrent.futures import _base
-import queue
+import itertools
 import multiprocessing as mp
+
 # This import is required to load the multiprocessing.connection submodule
 # so that it can be accessed later as `mp.connection`
 import multiprocessing.connection
-from multiprocessing.queues import Queue
+import os
+import queue
+import sys
 import threading
 import weakref
+from concurrent.futures import _base
 from functools import partial
-import itertools
-import sys
+from multiprocessing.queues import Queue
 from traceback import format_exception
-
 
 _threads_wakeups = weakref.WeakKeyDictionary()
 _global_shutdown = False

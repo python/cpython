@@ -3,9 +3,9 @@ import sched
 import threading
 import time
 import unittest
+
 from test import support
 from test.support import threading_helper
-
 
 TIMEOUT = support.SHORT_TIMEOUT
 

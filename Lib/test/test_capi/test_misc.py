@@ -2,11 +2,11 @@
 # these are all functions _testcapi exports whose name begins with 'test_'.
 
 import _thread
-from collections import deque
 import contextlib
 import importlib.machinery
 import importlib.util
 import json
+import operator
 import os
 import pickle
 import queue
@@ -18,16 +18,24 @@ import time
 import types
 import unittest
 import weakref
-import operator
+from collections import deque
+
 from test import support
-from test.support import MISSING_C_DOCSTRINGS
-from test.support import import_helper
-from test.support import threading_helper
-from test.support import warnings_helper
-from test.support import requires_limited_api
-from test.support import expected_failure_if_gil_disabled
-from test.support import Py_GIL_DISABLED
-from test.support.script_helper import assert_python_failure, assert_python_ok, run_python_until_end
+from test.support import (
+    MISSING_C_DOCSTRINGS,
+    Py_GIL_DISABLED,
+    expected_failure_if_gil_disabled,
+    import_helper,
+    requires_limited_api,
+    threading_helper,
+    warnings_helper,
+)
+from test.support.script_helper import (
+    assert_python_failure,
+    assert_python_ok,
+    run_python_until_end,
+)
+
 try:
     import _posixsubprocess
 except ImportError:
@@ -48,11 +56,10 @@ except ModuleNotFoundError:
 # Skip this test if the _testcapi module isn't available.
 _testcapi = import_helper.import_module('_testcapi')
 
+import _testinternalcapi
 from _testcapi import HeapCTypeSubclass, HeapCTypeSubclassWithFinalizer
 
 import _testlimitedcapi
-import _testinternalcapi
-
 
 NULL = None
 
@@ -371,7 +378,14 @@ class CAPITest(unittest.TestCase):
     def test_buildvalue_ints(self):
         # Test Py_BuildValue() with integer arguments
         buildvalue = _testcapi.py_buildvalue_ints
-        from _testcapi import SHRT_MIN, SHRT_MAX, USHRT_MAX, INT_MIN, INT_MAX, UINT_MAX
+        from _testcapi import (
+            INT_MAX,
+            INT_MIN,
+            SHRT_MAX,
+            SHRT_MIN,
+            UINT_MAX,
+            USHRT_MAX,
+        )
         self.assertEqual(buildvalue('i', INT_MAX), INT_MAX)
         self.assertEqual(buildvalue('i', INT_MIN), INT_MIN)
         self.assertEqual(buildvalue('I', UINT_MAX), UINT_MAX)

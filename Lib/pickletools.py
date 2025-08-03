@@ -209,6 +209,7 @@ class ArgumentDescriptor(object):
 
 from struct import unpack as _unpack
 
+
 def read_uint1(f):
     r"""
     >>> import io
@@ -869,6 +870,7 @@ float8 = ArgumentDescriptor(
 # Protocol 2 formats
 
 from pickle import decode_long
+
 
 def read_long1(f):
     r"""

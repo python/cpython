@@ -1,8 +1,10 @@
 # Run by test_gc.
-from test import support
 import _testinternalcapi
 import gc
 import unittest
+
+from test import support
+
 
 class IncrementalGCTests(unittest.TestCase):
 

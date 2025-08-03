@@ -1,5 +1,5 @@
 import unittest
-from ctypes import Structure, sizeof, resize, c_int
+from ctypes import Structure, c_int, resize, sizeof
 
 
 class VarSizeTest(unittest.TestCase):

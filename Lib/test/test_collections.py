@@ -7,26 +7,51 @@ import doctest
 import inspect
 import operator
 import pickle
-from random import choice, randrange
-from itertools import product, chain, combinations
 import string
 import sys
-from test import support
 import types
 import unittest
+from collections import (
+    ChainMap,
+    Counter,
+    OrderedDict,
+    UserDict,
+    UserList,
+    UserString,
+    _count_elements,
+    deque,
+    namedtuple,
+)
+from collections.abc import (
+    AsyncGenerator,
+    AsyncIterable,
+    AsyncIterator,
+    Awaitable,
+    Buffer,
+    Callable,
+    Collection,
+    Container,
+    Coroutine,
+    Generator,
+    Hashable,
+    ItemsView,
+    Iterable,
+    Iterator,
+    KeysView,
+    Mapping,
+    MutableMapping,
+    MutableSequence,
+    MutableSet,
+    Reversible,
+    Sequence,
+    Set,
+    Sized,
+    ValuesView,
+)
+from itertools import chain, combinations, product
+from random import choice, randrange
 
-from collections import namedtuple, Counter, OrderedDict, _count_elements
-from collections import UserDict, UserString, UserList
-from collections import ChainMap
-from collections import deque
-from collections.abc import Awaitable, Coroutine
-from collections.abc import AsyncIterator, AsyncIterable, AsyncGenerator
-from collections.abc import Hashable, Iterable, Iterator, Generator, Reversible
-from collections.abc import Sized, Container, Callable, Collection
-from collections.abc import Set, MutableSet
-from collections.abc import Mapping, MutableMapping, KeysView, ItemsView, ValuesView
-from collections.abc import Sequence, MutableSequence
-from collections.abc import Buffer
+from test import support
 
 
 class TestUserObjects(unittest.TestCase):

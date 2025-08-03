@@ -7,9 +7,10 @@ except ImportError:
 else:
     # Regrtest changes to use a tempdir as the working directory, so we have
     # to tell Hypothesis to use the original in order to persist the database.
+    from hypothesis.configuration import set_hypothesis_home_dir
+
     from test.support import has_socket_support
     from test.support.os_helper import SAVEDCWD
-    from hypothesis.configuration import set_hypothesis_home_dir
 
     set_hypothesis_home_dir(os.path.join(SAVEDCWD, ".hypothesis"))
 

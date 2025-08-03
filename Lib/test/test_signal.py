@@ -12,11 +12,11 @@ import sys
 import threading
 import time
 import unittest
+
 from test import support
-from test.support import (
-    is_apple, is_apple_mobile, os_helper, threading_helper
-)
+from test.support import is_apple, is_apple_mobile, os_helper, threading_helper
 from test.support.script_helper import assert_python_ok, spawn_python
+
 try:
     import _testcapi
 except ImportError:

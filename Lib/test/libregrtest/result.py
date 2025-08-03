@@ -1,11 +1,17 @@
 import dataclasses
 import json
-from _colorize import get_colors  # type: ignore[import-not-found]
 from typing import Any
 
+from _colorize import get_colors  # type: ignore[import-not-found]
+
 from .utils import (
-    StrJSON, TestName, FilterTuple,
-    format_duration, normalize_test_name, print_warning)
+    FilterTuple,
+    StrJSON,
+    TestName,
+    format_duration,
+    normalize_test_name,
+    print_warning,
+)
 
 
 @dataclasses.dataclass(slots=True)

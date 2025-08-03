@@ -4,10 +4,17 @@ import sys
 import unittest
 import warnings
 
-from test.test_capi.test_getargs import (Float, FloatSubclass, FloatSubclass2,
-                                         BadIndex2, BadFloat2, Index, BadIndex,
-                                         BadFloat)
 from test.support import import_helper
+from test.test_capi.test_getargs import (
+    BadFloat,
+    BadFloat2,
+    BadIndex,
+    BadIndex2,
+    Float,
+    FloatSubclass,
+    FloatSubclass2,
+    Index,
+)
 
 _testcapi = import_helper.import_module('_testcapi')
 _testlimitedcapi = import_helper.import_module('_testlimitedcapi')

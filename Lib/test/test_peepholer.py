@@ -1,10 +1,11 @@
 import dis
 import gc
-from itertools import combinations, product
 import opcode
 import sys
 import textwrap
 import unittest
+from itertools import combinations, product
+
 try:
     import _testinternalcapi
 except ImportError:
@@ -12,7 +13,9 @@ except ImportError:
 
 from test import support
 from test.support.bytecode_helper import (
-    BytecodeTestCase, CfgOptimizationTestCase)
+    BytecodeTestCase,
+    CfgOptimizationTestCase,
+)
 
 
 def compile_pattern_with_fast_locals(pattern):

@@ -1,9 +1,17 @@
 import array
 import gc
 import unittest
-from ctypes import (Structure, Union, Array, sizeof,
-                    _Pointer, _SimpleCData, _CFuncPtr,
-                    c_char, c_int)
+from ctypes import (
+    Array,
+    Structure,
+    Union,
+    _CFuncPtr,
+    _Pointer,
+    _SimpleCData,
+    c_char,
+    c_int,
+    sizeof,
+)
 
 
 class X(Structure):

@@ -28,14 +28,15 @@ http://wwwsearch.sf.net/):
 __all__ = ['Cookie', 'CookieJar', 'CookiePolicy', 'DefaultCookiePolicy',
            'FileCookieJar', 'LWPCookieJar', 'LoadError', 'MozillaCookieJar']
 
-import os
 import copy
 import datetime
-import re
-import time
-import urllib.parse, urllib.request
-import threading as _threading
 import http.client  # only for the default HTTP port
+import os
+import re
+import threading as _threading
+import time
+import urllib.parse
+import urllib.request
 from calendar import timegm
 
 debug = False   # set to True to enable debugging via the logging module
@@ -67,7 +68,9 @@ def _warn_unhandled_exception():
     # There are a few catch-all except: statements in this module, for
     # catching input that's bad in unexpected ways.  Warn if any
     # exceptions are caught there.
-    import io, warnings, traceback
+    import io
+    import traceback
+    import warnings
     f = io.StringIO()
     traceback.print_exc(None, f)
     msg = f.getvalue()

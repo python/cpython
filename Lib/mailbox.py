@@ -6,19 +6,20 @@
 # or returning from a flush() method.  See functions _sync_flush() and
 # _sync_close().
 
-import os
-import time
 import calendar
-import socket
-import errno
-import copy
-import warnings
-import email
-import email.message
-import email.generator
-import io
 import contextlib
+import copy
+import email
+import email.generator
+import email.message
+import errno
+import io
+import os
+import socket
+import time
+import warnings
 from types import GenericAlias
+
 try:
     import fcntl
 except ImportError:

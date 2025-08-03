@@ -1,15 +1,13 @@
 import errno
-import unittest
-from test import support
-from test.support import os_helper
-from test.support import socket_helper
-from test.support import ResourceDenied
-
 import os
 import socket
+import sys
+import unittest
 import urllib.error
 import urllib.request
-import sys
+
+from test import support
+from test.support import ResourceDenied, os_helper, socket_helper
 
 support.requires("network")
 
@@ -240,8 +238,8 @@ class OtherNetworkTests(unittest.TestCase):
             self.assertTrue(res)
 
     def _test_urls(self, urls, handlers, retry=True):
-        import time
         import logging
+        import time
         debug = logging.getLogger("test_urllib2").debug
 
         urlopen = urllib.request.build_opener(*handlers).open

@@ -1,7 +1,8 @@
 import codecs
 
+
 def create_win32_code_page_codec(cp):
-    from codecs import code_page_encode, code_page_decode
+    from codecs import code_page_decode, code_page_encode
 
     def encode(input, errors='strict'):
         return code_page_encode(cp, input, errors)

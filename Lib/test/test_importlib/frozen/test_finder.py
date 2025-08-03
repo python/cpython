@@ -5,7 +5,7 @@ machinery = util.import_importlib('importlib.machinery')
 import os.path
 import unittest
 
-from test.support import import_helper, REPO_ROOT, STDLIB_DIR
+from test.support import REPO_ROOT, STDLIB_DIR, import_helper
 
 
 def resolve_stdlib_file(name, ispkg=False):

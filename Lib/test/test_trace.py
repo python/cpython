@@ -1,16 +1,15 @@
 import os
-from pickle import dump
 import sys
-from test.support import captured_stdout, requires_resource
-from test.support.os_helper import (TESTFN, rmtree, unlink)
-from test.support.script_helper import assert_python_ok, assert_python_failure
 import textwrap
+import trace
 import unittest
+from pickle import dump
+from trace import Trace
 from types import FunctionType
 
-import trace
-from trace import Trace
-
+from test.support import captured_stdout, requires_resource
+from test.support.os_helper import TESTFN, rmtree, unlink
+from test.support.script_helper import assert_python_failure, assert_python_ok
 from test.tracedmodules import testmod
 
 ##

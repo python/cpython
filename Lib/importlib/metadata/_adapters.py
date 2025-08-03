@@ -1,11 +1,10 @@
+import email.message
 import functools
-import warnings
 import re
 import textwrap
-import email.message
+import warnings
 
 from ._text import FoldedCase
-
 
 # Do not remove prior to 2024-01-01 or Python 3.14
 _warn = functools.partial(

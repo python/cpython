@@ -23,9 +23,8 @@ and opendir), and leave all pathname manipulation to os.path
 
 #'
 import abc
-import sys
 import stat as st
-
+import sys
 from _collections_abc import _check_methods
 
 GenericAlias = type(list[int])
@@ -82,9 +81,8 @@ elif 'nt' in _names:
         __all__.append('_exit')
     except ImportError:
         pass
-    import ntpath as path
-
     import nt
+    import ntpath as path
     __all__.extend(_get_exports_list(nt))
     del nt
 
@@ -101,8 +99,16 @@ else:
     raise ImportError('no os specific module found')
 
 sys.modules['os.path'] = path
-from os.path import (curdir, pardir, sep, pathsep, defpath, extsep, altsep,
-    devnull)
+from os.path import (
+    altsep,
+    curdir,
+    defpath,
+    devnull,
+    extsep,
+    pardir,
+    pathsep,
+    sep,
+)
 
 del _names
 
@@ -691,7 +697,8 @@ def get_exec_path(env=None):
 
 
 # Change environ to automatically call putenv() and unsetenv()
-from _collections_abc import MutableMapping, Mapping
+from _collections_abc import Mapping, MutableMapping
+
 
 class _Environ(MutableMapping):
     def __init__(self, data, encodekey, decodekey, encodevalue, decodevalue):

@@ -1,5 +1,6 @@
 """Tests for base_events.py"""
 
+import asyncio
 import concurrent.futures
 import errno
 import math
@@ -9,17 +10,14 @@ import sys
 import threading
 import time
 import unittest
+import warnings
+from asyncio import base_events, constants
 from unittest import mock
 
-import asyncio
-from asyncio import base_events
-from asyncio import constants
-from test.test_asyncio import utils as test_utils
 from test import support
+from test.support import os_helper, socket_helper
 from test.support.script_helper import assert_python_ok
-from test.support import os_helper
-from test.support import socket_helper
-import warnings
+from test.test_asyncio import utils as test_utils
 
 MOCK_ANY = mock.ANY
 

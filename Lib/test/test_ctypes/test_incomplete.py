@@ -1,6 +1,6 @@
 import ctypes
 import unittest
-from ctypes import Structure, POINTER, pointer, c_char_p
+from ctypes import POINTER, Structure, c_char_p, pointer
 
 # String-based "incomplete pointers" were implemented in ctypes 0.6.3 (2003, when
 # ctypes was an external project). They made obsolete by the current

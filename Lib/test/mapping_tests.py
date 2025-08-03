@@ -1,6 +1,7 @@
 # tests common to dict and UserDict
-import unittest
 import collections
+import unittest
+
 from test import support
 
 

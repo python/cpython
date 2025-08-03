@@ -7,7 +7,6 @@
 
 from test._code_definitions import *
 
-
 #######################################
 # classes
 

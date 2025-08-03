@@ -1,8 +1,7 @@
 import os
 import unittest
-from test.support import load_package_tests
-from test.support import TEST_MODULES_ENABLED
 
+from test.support import TEST_MODULES_ENABLED, load_package_tests
 
 if not TEST_MODULES_ENABLED:
     raise unittest.SkipTest("requires test modules")

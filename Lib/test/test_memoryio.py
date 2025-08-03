@@ -3,15 +3,16 @@ StringIO -- for unicode strings
 BytesIO -- for bytes
 """
 
-import unittest
-from test import support
-
+import _pyio as pyio
 import gc
 import io
-import _pyio as pyio
 import pickle
 import sys
+import unittest
 import weakref
+
+from test import support
+
 
 class IntLike:
     def __init__(self, num):

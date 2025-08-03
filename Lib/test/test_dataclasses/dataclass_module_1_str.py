@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 USING_STRINGS = True
 
 # dataclass_module_1.py and dataclass_module_1_str.py are identical

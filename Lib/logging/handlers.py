@@ -1081,9 +1081,9 @@ class SMTPHandler(logging.Handler):
         Format the record and send it to the specified addressees.
         """
         try:
+            import email.utils
             import smtplib
             from email.message import EmailMessage
-            import email.utils
 
             port = self.mailport
             if not port:
@@ -1134,7 +1134,8 @@ class NTEventLogHandler(logging.Handler):
     def __init__(self, appname, dllname=None, logtype="Application"):
         logging.Handler.__init__(self)
         try:
-            import win32evtlogutil, win32evtlog
+            import win32evtlog
+            import win32evtlogutil
             self.appname = appname
             self._welu = win32evtlogutil
             if not dllname:

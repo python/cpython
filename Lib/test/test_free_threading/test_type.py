@@ -1,13 +1,10 @@
 import threading
 import unittest
-
 from concurrent.futures import ThreadPoolExecutor
 from threading import Thread
 from unittest import TestCase
 
 from test.support import threading_helper
-
-
 
 NTHREADS = 6
 BOTTOM = 0

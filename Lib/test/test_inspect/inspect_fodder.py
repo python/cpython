@@ -2,6 +2,7 @@
 'A module docstring.'
 
 import inspect
+
 # line 5
 
 # line 7

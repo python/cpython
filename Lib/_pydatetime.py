@@ -6,10 +6,11 @@ __all__ = ("date", "datetime", "time", "timedelta", "timezone", "tzinfo",
 __name__ = "datetime"
 
 
-import time as _time
 import math as _math
 import sys
+import time as _time
 from operator import index as _index
+
 
 def _cmp(x, y):
     return 0 if x == y else 1 if x > y else -1

@@ -306,8 +306,8 @@ def test_mmap():
 
 
 def test_ctypes_call_function():
-    import ctypes
     import _ctypes
+    import ctypes
 
     with TestHook() as hook:
         _ctypes.call_function(ctypes._memmove_addr, (0, 0, 0))
@@ -373,7 +373,7 @@ def test_unraisablehook():
 
 
 def test_winreg():
-    from winreg import OpenKey, EnumKey, CloseKey, HKEY_LOCAL_MACHINE
+    from winreg import HKEY_LOCAL_MACHINE, CloseKey, EnumKey, OpenKey
 
     def hook(event, args):
         if not event.startswith("winreg."):

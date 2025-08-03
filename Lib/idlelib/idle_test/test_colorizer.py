@@ -1,16 +1,14 @@
 "Test colorizer, coverage 99%."
-from idlelib import colorizer
-from test.support import requires
-import unittest
-from unittest import mock
-from idlelib.idle_test.tkinter_testing_utils import run_in_tk_mainloop
-
-from functools import partial
 import textwrap
-from tkinter import Tk, Text
-from idlelib import config
+import unittest
+from functools import partial
+from idlelib import colorizer, config
+from idlelib.idle_test.tkinter_testing_utils import run_in_tk_mainloop
 from idlelib.percolator import Percolator
+from tkinter import Text, Tk
+from unittest import mock
 
+from test.support import requires
 
 usercfg = colorizer.idleConf.userCfg
 testcfg = {

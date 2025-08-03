@@ -1,9 +1,10 @@
 "Test statusbar, coverage 100%."
 
-from idlelib import statusbar
 import unittest
-from test.support import requires
+from idlelib import statusbar
 from tkinter import Tk
+
+from test.support import requires
 
 
 class Test(unittest.TestCase):

@@ -2,16 +2,23 @@ import inspect
 import time
 import types
 import unittest
-
-from unittest.mock import (
-    call, _Call, create_autospec, MagicMock,
-    Mock, ANY, _CallList, patch, PropertyMock, _callable
-)
-
-from dataclasses import dataclass, field, InitVar
+from dataclasses import InitVar, dataclass, field
 from datetime import datetime
 from functools import partial
 from typing import ClassVar
+from unittest.mock import (
+    ANY,
+    MagicMock,
+    Mock,
+    PropertyMock,
+    _Call,
+    _callable,
+    _CallList,
+    call,
+    create_autospec,
+    patch,
+)
+
 
 class SomeClass(object):
     def one(self, a, b): pass

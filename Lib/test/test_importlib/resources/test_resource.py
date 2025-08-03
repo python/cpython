@@ -1,7 +1,7 @@
 import unittest
+from importlib import import_module, resources
 
 from . import util
-from importlib import resources, import_module
 
 
 class ResourceTests:

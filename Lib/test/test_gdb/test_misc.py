@@ -1,8 +1,9 @@
 import re
 import unittest
+
 from test.support import python_is_optimized
 
-from .util import run_gdb, setup_module, DebuggerTests, SAMPLE_SCRIPT
+from .util import SAMPLE_SCRIPT, DebuggerTests, run_gdb, setup_module
 
 
 def setUpModule():

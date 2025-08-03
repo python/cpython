@@ -1,6 +1,7 @@
 from enum import Enum, IntEnum
 from math import isnan
-from test.test_json import PyTest, CTest
+
+from test.test_json import CTest, PyTest
 
 SMALL = 1
 BIG = 1<<32

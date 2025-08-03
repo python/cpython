@@ -15,24 +15,24 @@ import threading
 import time
 
 try:
-    import zlib # We may need its compression method
+    import zlib  # We may need its compression method
     crc32 = zlib.crc32
 except ImportError:
     zlib = None
     crc32 = binascii.crc32
 
 try:
-    import bz2 # We may need its compression method
+    import bz2  # We may need its compression method
 except ImportError:
     bz2 = None
 
 try:
-    import lzma # We may need its compression method
+    import lzma  # We may need its compression method
 except ImportError:
     lzma = None
 
 try:
-    from compression import zstd # We may need its compression method
+    from compression import zstd  # We may need its compression method
 except ImportError:
     zstd = None
 
@@ -2415,8 +2415,7 @@ def main(args=None):
 
 
 from ._path import (  # noqa: E402
-    Path,
-
     # used privately for tests
     CompleteDirs,  # noqa: F401
+    Path,
 )

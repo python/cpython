@@ -7,8 +7,8 @@ adapted from uu.py which was written by Lance Ellinghouse and
 modified by Jack Jansen and Fredrik Lundh.
 """
 
-import codecs
 import binascii
+import codecs
 from io import BytesIO
 
 ### Codec APIs

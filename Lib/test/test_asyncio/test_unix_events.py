@@ -4,7 +4,6 @@ import contextlib
 import errno
 import io
 import multiprocessing
-from multiprocessing.util import _cleanup_tests as multiprocessing_cleanup_tests
 import os
 import signal
 import socket
@@ -12,13 +11,13 @@ import stat
 import sys
 import time
 import unittest
+from multiprocessing.util import (
+    _cleanup_tests as multiprocessing_cleanup_tests,
+)
 from unittest import mock
 
 from test import support
-from test.support import os_helper
-from test.support import socket_helper
-from test.support import wait_process
-from test.support import hashlib_helper
+from test.support import hashlib_helper, os_helper, socket_helper, wait_process
 
 if sys.platform == 'win32':
     raise unittest.SkipTest('UNIX only')
@@ -26,6 +25,7 @@ if sys.platform == 'win32':
 
 import asyncio
 from asyncio import unix_events
+
 from test.test_asyncio import utils as test_utils
 
 

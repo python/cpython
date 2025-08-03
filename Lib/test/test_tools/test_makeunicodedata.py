@@ -1,7 +1,8 @@
 import unittest
-from test.test_tools import skip_if_missing, imports_under_tool
+
 from test import support
 from test.support.hypothesis_helper import hypothesis
+from test.test_tools import imports_under_tool, skip_if_missing
 
 st = hypothesis.strategies
 given = hypothesis.given
@@ -10,7 +11,7 @@ example = hypothesis.example
 
 skip_if_missing("unicode")
 with imports_under_tool("unicode"):
-    from dawg import Dawg, build_compression_dawg, lookup, inverse_lookup
+    from dawg import Dawg, build_compression_dawg, inverse_lookup, lookup
 
 
 @st.composite

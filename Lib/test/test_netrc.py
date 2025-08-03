@@ -1,4 +1,9 @@
-import netrc, os, unittest, sys, textwrap
+import netrc
+import os
+import sys
+import textwrap
+import unittest
+
 from test import support
 from test.support import os_helper
 

@@ -1,13 +1,12 @@
-import unittest
-from test import support
-from test.support import import_helper
 import binascii
 import copy
 import pickle
 import random
 import sys
-from test.support import bigmemtest, _1G, _4G, is_s390x
+import unittest
 
+from test import support
+from test.support import _1G, _4G, bigmemtest, import_helper, is_s390x
 
 zlib = import_helper.import_module('zlib')
 

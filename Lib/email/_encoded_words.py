@@ -39,12 +39,12 @@ to a public API if there is demand.
 # select the shortest possible encoding.  See their docstrings below for
 # details.
 
-import re
 import base64
 import binascii
 import functools
-from string import ascii_letters, digits
+import re
 from email import errors
+from string import ascii_letters, digits
 
 __all__ = ['decode_q',
            'encode_q',

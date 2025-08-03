@@ -6,18 +6,19 @@ machinery = util.import_importlib('importlib.machinery')
 importlib_util = util.import_importlib('importlib.util')
 
 import importlib.util
-from importlib import _bootstrap_external
 import os
 import pathlib
 import string
 import sys
-from test import support
-from test.support import os_helper
 import textwrap
 import types
 import unittest
 import unittest.mock
 import warnings
+from importlib import _bootstrap_external
+
+from test import support
+from test.support import os_helper
 
 try:
     import _testsinglephase

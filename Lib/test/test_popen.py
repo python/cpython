@@ -3,9 +3,11 @@
   Particularly useful for platforms that fake popen.
 """
 
+import os
+import sys
 import unittest
+
 from test import support
-import os, sys
 
 if not hasattr(os, 'popen'):
     raise unittest.SkipTest("need os.popen()")

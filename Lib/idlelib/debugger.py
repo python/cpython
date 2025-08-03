@@ -17,13 +17,11 @@ for more.
 
 import bdb
 import os
-
-from tkinter import *
-from tkinter.ttk import Frame, Scrollbar
-
 from idlelib import macosx
 from idlelib.scrolledlist import ScrolledList
 from idlelib.window import ListedToplevel
+from tkinter import *
+from tkinter.ttk import Frame, Scrollbar
 
 
 class Idb(bdb.Bdb):

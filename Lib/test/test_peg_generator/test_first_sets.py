@@ -1,14 +1,14 @@
 import unittest
+from typing import Dict, Set
 
 from test import test_tools
-from typing import Dict, Set
 
 test_tools.skip_if_missing("peg_generator")
 with test_tools.imports_under_tool("peg_generator"):
-    from pegen.grammar_parser import GeneratedParser as GrammarParser
-    from pegen.testutil import parse_string
     from pegen.first_sets import FirstSetCalculator
     from pegen.grammar import Grammar
+    from pegen.grammar_parser import GeneratedParser as GrammarParser
+    from pegen.testutil import parse_string
 
 
 class TestFirstSets(unittest.TestCase):

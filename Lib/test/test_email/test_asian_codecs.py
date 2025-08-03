@@ -3,11 +3,11 @@
 # email package unit tests for (optional) Asian codecs
 
 import unittest
-
-from test.test_email import TestEmailBase
 from email.charset import Charset
 from email.header import Header, decode_header
 from email.message import Message
+
+from test.test_email import TestEmailBase
 
 # We're compatible with Python 2.3, but it doesn't have the built-in Asian
 # codecs, so we have to skip all these tests.

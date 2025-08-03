@@ -9,12 +9,14 @@ On some systems (e.g. Solaris without posix threads) we find that all
 active threads survive in the child after a fork(); this is an error.
 """
 
-import os, time, unittest
+import os
 import threading
-from test import support
-from test.support import threading_helper
+import time
+import unittest
 import warnings
 
+from test import support
+from test.support import threading_helper
 
 LONGSLEEP = 2
 SHORTSLEEP = 0.5

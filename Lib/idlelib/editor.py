@@ -8,27 +8,26 @@ import sys
 import tokenize
 import traceback
 import webbrowser
-
-from tkinter import *
-from tkinter.font import Font
-from tkinter.ttk import Scrollbar
-from tkinter import simpledialog
-from tkinter import messagebox
-
+from idlelib import (
+    configdialog,
+    grep,
+    help,
+    help_about,
+    macosx,
+    pyparse,
+    query,
+    replace,
+    search,
+    window,
+)
 from idlelib.config import idleConf
-from idlelib import configdialog
-from idlelib import grep
-from idlelib import help
-from idlelib import help_about
-from idlelib import macosx
 from idlelib.multicall import MultiCallCreator
-from idlelib import pyparse
-from idlelib import query
-from idlelib import replace
-from idlelib import search
 from idlelib.tree import wheel_event
 from idlelib.util import py_extensions
-from idlelib import window
+from tkinter import *
+from tkinter import messagebox, simpledialog
+from tkinter.font import Font
+from tkinter.ttk import Scrollbar
 
 # The default tab setting for a Text widget, in average-width characters.
 TK_TABWIDTH_DEFAULT = 8
@@ -49,19 +48,19 @@ def _sphinx_version():
 
 
 class EditorWindow:
-    from idlelib.percolator import Percolator
-    from idlelib.colorizer import ColorDelegator, color_config
-    from idlelib.undo import UndoDelegator
-    from idlelib.iomenu import IOBinding, encoding
     from idlelib import mainmenu
-    from idlelib.statusbar import MultiStatusBar
     from idlelib.autocomplete import AutoComplete
     from idlelib.autoexpand import AutoExpand
     from idlelib.calltip import Calltip
     from idlelib.codecontext import CodeContext
-    from idlelib.sidebar import LineNumbers
+    from idlelib.colorizer import ColorDelegator, color_config
     from idlelib.format import FormatParagraph, FormatRegion, Indents, Rstrip
+    from idlelib.iomenu import IOBinding, encoding
     from idlelib.parenmatch import ParenMatch
+    from idlelib.percolator import Percolator
+    from idlelib.sidebar import LineNumbers
+    from idlelib.statusbar import MultiStatusBar
+    from idlelib.undo import UndoDelegator
     from idlelib.zoomheight import ZoomHeight
 
     filesystemencoding = sys.getfilesystemencoding()  # for file names

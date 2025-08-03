@@ -7,7 +7,7 @@ import unittest
 
 from .support import is_pypi
 from .support.local_path import LocalPathGround
-from .support.zip_path import ZipPathGround, ReadableZipPath, WritableZipPath
+from .support.zip_path import ReadableZipPath, WritableZipPath, ZipPathGround
 
 
 class CopyTestBase:

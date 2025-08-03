@@ -6,13 +6,13 @@
 #       UNIX Environment.  Chapter 19.
 # Author: Steen Lumholt -- with additions by Guido.
 
-from select import select
 import os
 import sys
 import tty
 
 # names imported directly for test mocking purposes
 from os import close, waitpid
+from select import select
 from tty import setraw, tcgetattr, tcsetattr
 
 __all__ = ["openpty", "fork", "spawn"]
@@ -35,7 +35,7 @@ def openpty():
 
     slave_fd = os.open(slave_name, os.O_RDWR)
     try:
-        from fcntl import ioctl, I_PUSH
+        from fcntl import I_PUSH, ioctl
     except ImportError:
          return master_fd, slave_fd
     try:

@@ -2,60 +2,60 @@
 # Unit tests for the multiprocessing package
 #
 
-import unittest
-import unittest.mock
-import queue as pyqueue
-import textwrap
-import time
-import io
-import itertools
-import sys
-import os
-import gc
-import importlib
-import errno
-import functools
-import signal
 import array
 import collections.abc
-import socket
-import random
+import errno
+import functools
+import gc
+import importlib
+import io
+import itertools
 import logging
-import shutil
-import subprocess
-import struct
-import tempfile
 import operator
+import os
 import pickle
-import weakref
+import queue as pyqueue
+import random
+import shutil
+import signal
+import socket
+import struct
+import subprocess
+import sys
+import tempfile
+import textwrap
+import time
+import unittest
+import unittest.mock
 import warnings
+import weakref
+
 import test.support
 import test.support.script_helper
 from test import support
-from test.support import hashlib_helper
-from test.support import import_helper
-from test.support import os_helper
-from test.support import script_helper
-from test.support import socket_helper
-from test.support import threading_helper
-from test.support import warnings_helper
-
+from test.support import (
+    hashlib_helper,
+    import_helper,
+    os_helper,
+    script_helper,
+    socket_helper,
+    threading_helper,
+    warnings_helper,
+)
 
 # Skip tests if _multiprocessing wasn't built.
 _multiprocessing = import_helper.import_module('_multiprocessing')
 # Skip tests if sem_open implementation is broken.
 support.skip_if_broken_multiprocessing_synchronize()
-import threading
-
 import multiprocessing.connection
 import multiprocessing.dummy
 import multiprocessing.heap
 import multiprocessing.managers
 import multiprocessing.pool
 import multiprocessing.queues
-from multiprocessing.connection import wait
-
+import threading
 from multiprocessing import util
+from multiprocessing.connection import wait
 
 try:
     from multiprocessing import reduction
@@ -160,7 +160,7 @@ PRELOAD = ['__main__', 'test.test_multiprocessing_forkserver']
 #
 
 try:
-    from ctypes import Structure, c_int, c_double, c_longlong
+    from ctypes import Structure, c_double, c_int, c_longlong
 except ImportError:
     Structure = object
     c_int = c_double = c_longlong = None
@@ -3291,6 +3291,7 @@ class _TestPoolWorkerLifetime(BaseTestCase):
 #
 
 from multiprocessing.managers import BaseManager, BaseProxy, RemoteError
+
 
 class FooBar(object):
     def f(self):

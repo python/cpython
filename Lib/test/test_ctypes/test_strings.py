@@ -1,6 +1,12 @@
 import unittest
-from ctypes import (create_string_buffer, create_unicode_buffer,
-                    sizeof, byref, c_char, c_wchar)
+from ctypes import (
+    byref,
+    c_char,
+    c_wchar,
+    create_string_buffer,
+    create_unicode_buffer,
+    sizeof,
+)
 
 
 class StringArrayTestCase(unittest.TestCase):

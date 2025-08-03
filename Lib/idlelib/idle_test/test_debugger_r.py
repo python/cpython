@@ -1,7 +1,7 @@
 "Test debugger_r, coverage 30%."
 
-from idlelib import debugger_r
 import unittest
+from idlelib import debugger_r
 
 # Boilerplate likely to be needed for future test classes.
 ##from test.support import requires

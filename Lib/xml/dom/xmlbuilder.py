@@ -2,9 +2,7 @@
 
 import copy
 import xml.dom
-
 from xml.dom.NodeFilter import NodeFilter
-
 
 __all__ = ["DOMBuilder", "DOMEntityResolver", "DOMInputSource"]
 
@@ -223,7 +221,8 @@ class DOMEntityResolver(object):
         source.encoding = self._guess_media_encoding(source)
 
         # determine the base URI is we can
-        import posixpath, urllib.parse
+        import posixpath
+        import urllib.parse
         parts = urllib.parse.urlparse(systemId)
         scheme, netloc, path, params, query, fragment = parts
         # XXX should we check the scheme here as well?

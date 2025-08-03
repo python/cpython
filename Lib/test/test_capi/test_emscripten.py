@@ -1,4 +1,5 @@
 import unittest
+
 from test.support import is_emscripten
 
 if not is_emscripten:

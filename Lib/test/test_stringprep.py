@@ -2,8 +2,8 @@
 # Since we don't have them, this test checks only a few code points.
 
 import unittest
-
 from stringprep import *
+
 
 class StringprepTests(unittest.TestCase):
     def test(self):

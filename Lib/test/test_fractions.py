@@ -1,19 +1,21 @@
 """Tests for Lib/fractions.py."""
 
-from decimal import Decimal
-from test.support import requires_IEEE_754, adjust_int_max_str_digits
+import fractions
+import functools
 import math
 import numbers
 import operator
-import fractions
-import functools
 import os
+import pickle
 import sys
 import typing
 import unittest
 from copy import copy, deepcopy
-import pickle
+from decimal import Decimal
 from pickle import dumps, loads
+
+from test.support import adjust_int_max_str_digits, requires_IEEE_754
+
 F = fractions.Fraction
 
 #locate file with float format test values

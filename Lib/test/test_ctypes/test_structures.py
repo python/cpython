@@ -3,19 +3,41 @@
 Features common with Union should go in test_structunion.py instead.
 """
 
-from platform import architecture as _architecture
 import struct
 import sys
 import unittest
-from ctypes import (CDLL, Structure, Union, POINTER, sizeof, byref,
-                    c_void_p, c_char, c_wchar, c_byte, c_ubyte,
-                    c_uint8, c_uint16, c_uint32, c_int, c_uint,
-                    c_long, c_ulong, c_longlong, c_float, c_double)
-from ctypes.util import find_library
 from collections import namedtuple
+from ctypes import (
+    CDLL,
+    POINTER,
+    Structure,
+    Union,
+    byref,
+    c_byte,
+    c_char,
+    c_double,
+    c_float,
+    c_int,
+    c_long,
+    c_longlong,
+    c_ubyte,
+    c_uint,
+    c_uint8,
+    c_uint16,
+    c_uint32,
+    c_ulong,
+    c_void_p,
+    c_wchar,
+    sizeof,
+)
+from ctypes.util import find_library
+from platform import architecture as _architecture
+
 from test import support
 from test.support import import_helper
+
 from ._support import StructCheckMixin
+
 _ctypes_test = import_helper.import_module("_ctypes_test")
 
 

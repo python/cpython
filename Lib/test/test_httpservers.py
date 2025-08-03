@@ -4,36 +4,38 @@ Written by Cody A.W. Somerville <cody-somerville@ubuntu.com>,
 Josip Dzolonga, and Michael Otteneder for the 2007/08 GHOP contest.
 """
 
-from http.server import BaseHTTPRequestHandler, HTTPServer, HTTPSServer, \
-     SimpleHTTPRequestHandler
-from http import server, HTTPStatus
-
 import contextlib
-import os
-import socket
-import sys
-import re
-import ntpath
-import pathlib
-import shutil
+import datetime
 import email.message
 import email.utils
 import html
-import http, http.client
+import http
+import http.client
+import ntpath
+import os
+import pathlib
+import re
+import shutil
+import socket
+import sys
+import tempfile
+import threading
+import time
+import unittest
 import urllib.parse
 import urllib.request
-import tempfile
-import time
-import datetime
-import threading
-from unittest import mock
-from io import BytesIO, StringIO
-
-import unittest
-from test import support
-from test.support import (
-    is_apple, import_helper, os_helper, threading_helper
+from http import HTTPStatus, server
+from http.server import (
+    BaseHTTPRequestHandler,
+    HTTPServer,
+    HTTPSServer,
+    SimpleHTTPRequestHandler,
 )
+from io import BytesIO, StringIO
+from unittest import mock
+
+from test import support
+from test.support import import_helper, is_apple, os_helper, threading_helper
 from test.support.script_helper import kill_python, spawn_python
 from test.support.socket_helper import find_unused_port
 

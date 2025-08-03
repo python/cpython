@@ -28,12 +28,11 @@ with elsewhere (I assume).
 """
 
 import os
-import sys
 import shutil
+import sys
 import tempfile
 import unittest
 import warnings
-
 
 TEMPLATE = r"""# coding: %s
 a = 'x'

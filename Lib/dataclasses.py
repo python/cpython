@@ -1,14 +1,14 @@
+import abc
+import copy
+import inspect
+import itertools
+import keyword
 import re
 import sys
-import copy
 import types
-import inspect
-import keyword
-import itertools
-import annotationlib
-import abc
 from reprlib import recursive_repr
 
+import annotationlib
 
 __all__ = ['dataclass',
            'field',

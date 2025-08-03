@@ -92,13 +92,13 @@ __all__ = [
 
 VERSION = "1.3.0"
 
-import sys
-import re
-import warnings
-import io
 import collections
 import collections.abc
 import contextlib
+import io
+import re
+import sys
+import warnings
 import weakref
 
 from . import ElementPath

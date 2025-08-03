@@ -3,20 +3,23 @@ import difflib
 import io
 import textwrap
 import unittest
+from tokenize import NAME, NEWLINE, NUMBER, OP, TokenInfo
+from typing import Any, Dict
 
 from test import test_tools
-from typing import Dict, Any
-from tokenize import TokenInfo, NAME, NEWLINE, NUMBER, OP
 
 test_tools.skip_if_missing("peg_generator")
 with test_tools.imports_under_tool("peg_generator"):
+    from pegen.grammar import Grammar, GrammarError, GrammarVisitor
     from pegen.grammar_parser import GeneratedParser as GrammarParser
-    from pegen.testutil import parse_string, generate_parser, make_parser
-    from pegen.grammar import GrammarVisitor, GrammarError, Grammar
     from pegen.grammar_visualizer import ASTGrammarPrinter
     from pegen.parser import Parser
-    from pegen.parser_generator import compute_nullables, compute_left_recursives
+    from pegen.parser_generator import (
+        compute_left_recursives,
+        compute_nullables,
+    )
     from pegen.python_generator import PythonParserGenerator
+    from pegen.testutil import generate_parser, make_parser, parse_string
 
 
 class TestPegen(unittest.TestCase):

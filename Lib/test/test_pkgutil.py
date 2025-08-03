@@ -1,19 +1,18 @@
-from pathlib import Path
-from test.support.import_helper import unload
-from test.support.warnings_helper import check_warnings
-import unittest
-import sys
 import importlib
-from importlib.util import spec_from_file_location
-import pkgutil
 import os
 import os.path
-import tempfile
+import pkgutil
 import shutil
+import sys
+import tempfile
+import unittest
 import zipfile
+from importlib.util import spec_from_file_location
+from pathlib import Path
 
-from test.support.import_helper import DirsOnSysPath
+from test.support.import_helper import DirsOnSysPath, unload
 from test.support.os_helper import FakePath
+from test.support.warnings_helper import check_warnings
 from test.test_importlib.util import uncache
 
 # Note: pkgutil.walk_packages is currently tested in test_runpy. This is
@@ -627,8 +626,8 @@ class ImportlibMigrationTests(unittest.TestCase):
 
 def tearDownModule():
     # this is necessary if test is run repeated (like when finding leaks)
-    import zipimport
     import importlib
+    import zipimport
     zipimport._zip_directory_cache.clear()
     importlib.invalidate_caches()
 

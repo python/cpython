@@ -14,8 +14,12 @@ from test.test_importlib.metadata.fixtures import parameterize
 
 from .executor import ExecutorTest, mul
 from .util import (
-    ProcessPoolForkMixin, ProcessPoolForkserverMixin, ProcessPoolSpawnMixin,
-    create_executor_tests, setup_module)
+    ProcessPoolForkMixin,
+    ProcessPoolForkserverMixin,
+    ProcessPoolSpawnMixin,
+    create_executor_tests,
+    setup_module,
+)
 
 
 class EventfulGCObj():

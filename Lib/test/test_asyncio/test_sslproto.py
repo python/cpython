@@ -4,20 +4,21 @@ import logging
 import socket
 import unittest
 import weakref
+from unittest import mock
+
 from test import support
 from test.support import socket_helper
-from unittest import mock
+
 try:
     import ssl
 except ImportError:
     ssl = None
 
 import asyncio
-from asyncio import log
-from asyncio import protocols
-from asyncio import sslproto
-from test.test_asyncio import utils as test_utils
+from asyncio import log, protocols, sslproto
+
 from test.test_asyncio import functional as func_tests
+from test.test_asyncio import utils as test_utils
 
 
 def tearDownModule():

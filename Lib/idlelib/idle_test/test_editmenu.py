@@ -3,11 +3,13 @@
 Edit modules have their own test files
 '''
 from test.support import requires
+
 requires('gui')
 import tkinter as tk
-from tkinter import ttk
 import unittest
 from idlelib import pyshell
+from tkinter import ttk
+
 
 class PasteTest(unittest.TestCase):
     '''Test pasting into widgets that allow pasting.

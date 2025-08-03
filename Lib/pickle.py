@@ -23,17 +23,21 @@ Misc variables:
 
 """
 
-from types import FunctionType
-from copyreg import dispatch_table
-from copyreg import _extension_registry, _inverted_registry, _extension_cache
-from itertools import batched
-from functools import partial
-import sys
-from sys import maxsize
-from struct import pack, unpack
-import io
-import codecs
 import _compat_pickle
+import codecs
+import io
+import sys
+from copyreg import (
+    _extension_cache,
+    _extension_registry,
+    _inverted_registry,
+    dispatch_table,
+)
+from functools import partial
+from itertools import batched
+from struct import pack, unpack
+from sys import maxsize
+from types import FunctionType
 
 __all__ = ["PickleError", "PicklingError", "UnpicklingError", "Pickler",
            "Unpickler", "dump", "dumps", "load", "loads"]
@@ -1893,14 +1897,14 @@ def _loads(s, /, *, fix_imports=True, encoding="ASCII", errors="strict",
 try:
     from _pickle import (
         PickleError,
-        PicklingError,
-        UnpicklingError,
         Pickler,
+        PicklingError,
         Unpickler,
+        UnpicklingError,
         dump,
         dumps,
         load,
-        loads
+        loads,
     )
 except ImportError:
     Pickler, Unpickler = _Pickler, _Unpickler

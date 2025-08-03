@@ -8,12 +8,11 @@ import sys
 import unittest
 import warnings
 from ntpath import ALL_BUT_LAST, ALLOW_MISSING
-from test import support
-from test.support import TestFailed, cpython_only, os_helper
-from test.support.os_helper import FakePath
-from test import test_genericpath
 from tempfile import TemporaryFile
 
+from test import support, test_genericpath
+from test.support import TestFailed, cpython_only, os_helper
+from test.support.os_helper import FakePath
 
 try:
     import nt

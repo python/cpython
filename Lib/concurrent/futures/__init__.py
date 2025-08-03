@@ -5,17 +5,19 @@
 
 __author__ = 'Brian Quinlan (brian@sweetapp.com)'
 
-from concurrent.futures._base import (FIRST_COMPLETED,
-                                      FIRST_EXCEPTION,
-                                      ALL_COMPLETED,
-                                      CancelledError,
-                                      TimeoutError,
-                                      InvalidStateError,
-                                      BrokenExecutor,
-                                      Future,
-                                      Executor,
-                                      wait,
-                                      as_completed)
+from concurrent.futures._base import (
+    ALL_COMPLETED,
+    FIRST_COMPLETED,
+    FIRST_EXCEPTION,
+    BrokenExecutor,
+    CancelledError,
+    Executor,
+    Future,
+    InvalidStateError,
+    TimeoutError,
+    as_completed,
+    wait,
+)
 
 __all__ = [
     'FIRST_COMPLETED',

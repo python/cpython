@@ -2,7 +2,6 @@ import ast
 import sys
 import unittest
 
-
 funcdef = """\
 def foo():
     # type: () -> int

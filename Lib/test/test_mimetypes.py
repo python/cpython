@@ -5,6 +5,7 @@ import shlex
 import sys
 import unittest.mock
 from platform import win32_edition
+
 from test import support
 from test.support import cpython_only, force_not_colorized, os_helper
 from test.support.import_helper import ensure_lazy_imports

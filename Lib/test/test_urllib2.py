@@ -1,32 +1,33 @@
-import unittest
-from test import support
-from test.support import os_helper
-from test.support import requires_subprocess
-from test.support import warnings_helper
-from test import test_urllib
-from unittest import mock
-
-import os
-import io
-import ftplib
-import socket
 import array
+import ftplib
+import http.client
+import io
+import os
+import socket
+import subprocess
 import sys
 import tempfile
-import subprocess
-
+import unittest
+import urllib.error
 import urllib.request
+from unittest import mock
+from urllib.parse import urlsplit
+
 # The proxy bypass method imported below has logic specific to the
 # corresponding system but is testable on all platforms.
-from urllib.request import (Request, OpenerDirector, HTTPBasicAuthHandler,
-                            HTTPPasswordMgrWithPriorAuth, _parse_proxy,
-                            _proxy_bypass_winreg_override,
-                            _proxy_bypass_macosx_sysconf,
-                            AbstractDigestAuthHandler)
-from urllib.parse import urlsplit
-import urllib.error
-import http.client
+from urllib.request import (
+    AbstractDigestAuthHandler,
+    HTTPBasicAuthHandler,
+    HTTPPasswordMgrWithPriorAuth,
+    OpenerDirector,
+    Request,
+    _parse_proxy,
+    _proxy_bypass_macosx_sysconf,
+    _proxy_bypass_winreg_override,
+)
 
+from test import support, test_urllib
+from test.support import os_helper, requires_subprocess, warnings_helper
 
 support.requires_working_socket(module=True)
 
@@ -510,7 +511,8 @@ class MockHTTPHandlerRedirect(urllib.request.BaseHandler):
         self.requests = []
 
     def http_open(self, req):
-        import email, copy
+        import copy
+        import email
         self.requests.append(copy.deepcopy(req))
         if self._count == 0:
             self._count = self._count + 1
@@ -1342,6 +1344,7 @@ class HandlerTests(unittest.TestCase):
     def test_cookie_redirect(self):
         # cookies shouldn't leak into redirected requests
         from http.cookiejar import CookieJar
+
         from test.test_http_cookiejar import interact_netscape
 
         cj = CookieJar()

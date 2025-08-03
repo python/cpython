@@ -1,11 +1,12 @@
 import unittest
 from collections import OrderedDict
+
 from test import support
 from test.support import import_helper
 
 _testcapi = import_helper.import_module('_testcapi')
 _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
-from _testcapi import PY_SSIZE_T_MIN, PY_SSIZE_T_MAX
+from _testcapi import PY_SSIZE_T_MAX, PY_SSIZE_T_MIN
 
 NULL = None
 

@@ -8,24 +8,25 @@ if sys.platform != 'win32':  # pragma: no cover
 import _overlapped
 import _winapi
 import errno
-from functools import partial
 import math
 import msvcrt
 import socket
 import struct
 import time
 import weakref
+from functools import partial
 
-from . import events
-from . import base_subprocess
-from . import futures
-from . import exceptions
-from . import proactor_events
-from . import selector_events
-from . import tasks
-from . import windows_utils
+from . import (
+    base_subprocess,
+    events,
+    exceptions,
+    futures,
+    proactor_events,
+    selector_events,
+    tasks,
+    windows_utils,
+)
 from .log import logger
-
 
 __all__ = (
     'SelectorEventLoop', 'ProactorEventLoop', 'IocpProactor',

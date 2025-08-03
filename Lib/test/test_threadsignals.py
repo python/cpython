@@ -1,12 +1,13 @@
 """PyUnit testing that threads honor our signal semantics"""
 
-import unittest
-import signal
-import os
-import sys
-from test.support import threading_helper
 import _thread as thread
+import os
+import signal
+import sys
 import time
+import unittest
+
+from test.support import threading_helper
 
 if (sys.platform[:3] == 'win'):
     raise unittest.SkipTest("Can't test signal on %s" % sys.platform)

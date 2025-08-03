@@ -3,7 +3,6 @@ import os
 import sys
 import types
 
-
 CAN_USE_PYREPL: bool
 FAIL_REASON: str
 try:

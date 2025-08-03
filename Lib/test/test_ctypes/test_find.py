@@ -1,10 +1,11 @@
 import os.path
 import sys
-import test.support
 import unittest
 import unittest.mock
 from ctypes import CDLL, RTLD_GLOBAL
 from ctypes.util import find_library
+
+import test.support
 from test.support import os_helper, thread_unsafe
 
 

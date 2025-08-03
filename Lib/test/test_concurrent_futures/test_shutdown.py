@@ -9,9 +9,14 @@ from test import support
 from test.support.script_helper import assert_python_ok
 
 from .util import (
-    BaseTestCase, ThreadPoolMixin, ProcessPoolForkMixin,
-    ProcessPoolForkserverMixin, ProcessPoolSpawnMixin,
-    create_executor_tests, setup_module)
+    BaseTestCase,
+    ProcessPoolForkMixin,
+    ProcessPoolForkserverMixin,
+    ProcessPoolSpawnMixin,
+    ThreadPoolMixin,
+    create_executor_tests,
+    setup_module,
+)
 
 
 def sleep_and_print(t, msg):

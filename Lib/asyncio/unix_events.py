@@ -13,18 +13,19 @@ import sys
 import threading
 import warnings
 
-from . import base_events
-from . import base_subprocess
-from . import constants
-from . import coroutines
-from . import events
-from . import exceptions
-from . import futures
-from . import selector_events
-from . import tasks
-from . import transports
+from . import (
+    base_events,
+    base_subprocess,
+    constants,
+    coroutines,
+    events,
+    exceptions,
+    futures,
+    selector_events,
+    tasks,
+    transports,
+)
 from .log import logger
-
 
 __all__ = (
     'SelectorEventLoop',

@@ -1,8 +1,7 @@
 "Test rpc, coverage 20%."
 
-from idlelib import rpc
 import unittest
-
+from idlelib import rpc
 
 
 class CodePicklerTest(unittest.TestCase):

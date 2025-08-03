@@ -11,5 +11,7 @@ __all__ = [
     ]
 
 from _struct import *
-from _struct import _clearcache  # noqa: F401
-from _struct import __doc__  # noqa: F401
+from _struct import (
+    __doc__,  # noqa: F401
+    _clearcache,  # noqa: F401
+)

@@ -4,7 +4,7 @@ import builtins
 import sys
 import unittest
 
-from test.support import swap_item, swap_attr, skip_wasi_stack_overflow
+from test.support import skip_wasi_stack_overflow, swap_attr, swap_item
 
 
 class RebindBuiltinsTests(unittest.TestCase):

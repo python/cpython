@@ -23,10 +23,10 @@ import os
 import socket
 import stat
 import subprocess
+import sys
 import threading
 import time
 import traceback
-import sys
 import warnings
 import weakref
 
@@ -35,20 +35,21 @@ try:
 except ImportError:  # pragma: no cover
     ssl = None
 
-from . import constants
-from . import coroutines
-from . import events
-from . import exceptions
-from . import futures
-from . import protocols
-from . import sslproto
-from . import staggered
-from . import tasks
-from . import timeouts
-from . import transports
-from . import trsock
+from . import (
+    constants,
+    coroutines,
+    events,
+    exceptions,
+    futures,
+    protocols,
+    sslproto,
+    staggered,
+    tasks,
+    timeouts,
+    transports,
+    trsock,
+)
 from .log import logger
-
 
 __all__ = 'BaseEventLoop','Server',
 

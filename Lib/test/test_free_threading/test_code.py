@@ -1,9 +1,9 @@
 import unittest
-
 from threading import Thread
 from unittest import TestCase
 
 from test.support import threading_helper
+
 
 @threading_helper.requires_working_threading()
 class TestCode(TestCase):

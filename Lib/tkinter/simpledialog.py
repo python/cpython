@@ -24,8 +24,7 @@ askstring -- get a string from the user
 """
 
 from tkinter import *
-from tkinter import _get_temp_root, _destroy_temp_root
-from tkinter import messagebox
+from tkinter import _destroy_temp_root, _get_temp_root, messagebox
 
 
 class SimpleDialog:

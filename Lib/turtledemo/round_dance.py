@@ -19,6 +19,7 @@ controlled through update().
 
 from turtle import *
 
+
 def stop():
     global running
     running = False

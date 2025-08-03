@@ -1,8 +1,8 @@
 import json
 import os
+import string
 import sys
 import sysconfig
-import string
 import unittest
 
 from test.support import is_android, is_apple_mobile, is_wasm32

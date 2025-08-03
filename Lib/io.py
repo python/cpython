@@ -52,13 +52,24 @@ __all__ = ["BlockingIOError", "open", "open_code", "IOBase", "RawIOBase",
 
 import _io
 import abc
-
 from _collections_abc import _check_methods
-from _io import (DEFAULT_BUFFER_SIZE, BlockingIOError, UnsupportedOperation,
-                 open, open_code, FileIO, BytesIO, StringIO, BufferedReader,
-                 BufferedWriter, BufferedRWPair, BufferedRandom,
-                 IncrementalNewlineDecoder, text_encoding, TextIOWrapper)
-
+from _io import (
+    DEFAULT_BUFFER_SIZE,
+    BlockingIOError,
+    BufferedRandom,
+    BufferedReader,
+    BufferedRWPair,
+    BufferedWriter,
+    BytesIO,
+    FileIO,
+    IncrementalNewlineDecoder,
+    StringIO,
+    TextIOWrapper,
+    UnsupportedOperation,
+    open,
+    open_code,
+    text_encoding,
+)
 
 # for seek()
 SEEK_SET = 0

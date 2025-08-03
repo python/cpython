@@ -9,11 +9,10 @@ import pickle
 import sys
 import unittest
 import warnings
-from test.support import (
-    is_apple, os_helper, warnings_helper
-)
-from test.support.script_helper import assert_python_ok
+
+from test.support import is_apple, os_helper, warnings_helper
 from test.support.os_helper import FakePath
+from test.support.script_helper import assert_python_ok
 
 
 def create_file(filename, data=b'foo'):

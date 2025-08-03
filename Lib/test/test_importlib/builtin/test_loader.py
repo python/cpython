@@ -7,6 +7,7 @@ import types
 import unittest
 import warnings
 
+
 @unittest.skipIf(util.BUILTINS.good_name is None, 'no reasonable builtin module')
 class LoaderTests(abc.LoaderTests):
 

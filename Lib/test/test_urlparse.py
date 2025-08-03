@@ -2,6 +2,7 @@ import sys
 import unicodedata
 import unittest
 import urllib.parse
+
 from test import support
 
 RFC1808_BASE = "http://a/b/c/d;p?q#f"

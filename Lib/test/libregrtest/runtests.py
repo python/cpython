@@ -10,7 +10,14 @@ from typing import Any, Iterator
 from test import support
 
 from .utils import (
-    StrPath, StrJSON, TestTuple, TestName, TestFilter, FilterTuple, FilterDict)
+    FilterDict,
+    FilterTuple,
+    StrJSON,
+    StrPath,
+    TestFilter,
+    TestName,
+    TestTuple,
+)
 
 
 class JsonFileType:

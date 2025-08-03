@@ -14,10 +14,10 @@ __all__ = ['BaseProcess', 'current_process', 'active_children',
 # Imports
 #
 
-import os
-import sys
-import signal
 import itertools
+import os
+import signal
+import sys
 import threading
 from _weakrefset import WeakSet
 
@@ -295,7 +295,7 @@ class BaseProcess(object):
     ##
 
     def _bootstrap(self, parent_sentinel=None):
-        from . import util, context
+        from . import context, util
         global _current_process, _parent_process, _process_counter, _children
 
         try:

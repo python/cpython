@@ -3,20 +3,20 @@
   Nick Mathewson
 """
 
-import annotationlib
-import sys
-import os
-import shutil
 import importlib
 import importlib.util
-import unittest
+import os
+import shutil
+import sys
 import textwrap
+import unittest
+from reprlib import Repr, recursive_repr
+from reprlib import repr as r  # Don't shadow builtin repr
 
-from test.support import verbose, EqualToForwardRef
+import annotationlib
+
+from test.support import EqualToForwardRef, verbose
 from test.support.os_helper import create_empty_file
-from reprlib import repr as r # Don't shadow builtin repr
-from reprlib import Repr
-from reprlib import recursive_repr
 
 
 def nestedTuple(nesting):
@@ -711,7 +711,9 @@ class LongReprTest(unittest.TestCase):
         self._check_path_limitations(self.pkgname)
         create_empty_file(os.path.join(self.subpkgname, self.pkgname + '.py'))
         importlib.invalidate_caches()
-        from areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation import areallylongpackageandmodulenametotestreprtruncation
+        from areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation import (
+            areallylongpackageandmodulenametotestreprtruncation,
+        )
         module = areallylongpackageandmodulenametotestreprtruncation
         self.assertEqual(repr(module), "<module %r from %r>" % (module.__name__, module.__file__))
         self.assertEqual(repr(sys), "<module 'sys' (built-in)>")
@@ -724,7 +726,9 @@ class foo(object):
     pass
 ''')
         importlib.invalidate_caches()
-        from areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation import foo
+        from areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation import (
+            foo,
+        )
         eq(repr(foo.foo),
                "<class '%s.foo'>" % foo.__name__)
 
@@ -741,7 +745,9 @@ class bar:
     pass
 ''')
         importlib.invalidate_caches()
-        from areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation import bar
+        from areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation import (
+            bar,
+        )
         # Module name may be prefixed with "test.", depending on how run.
         self.assertEqual(repr(bar.bar), "<class '%s.bar'>" % bar.__name__)
 
@@ -752,7 +758,9 @@ class baz:
     pass
 ''')
         importlib.invalidate_caches()
-        from areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation import baz
+        from areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation import (
+            baz,
+        )
         ibaz = baz.baz()
         self.assertStartsWith(repr(ibaz),
             "<%s.baz object at 0x" % baz.__name__)
@@ -765,7 +773,9 @@ class aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
     def amethod(self): pass
 ''')
         importlib.invalidate_caches()
-        from areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation import qux
+        from areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation import (
+            qux,
+        )
         # Unbound methods first
         r = repr(qux.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.amethod)
         self.assertStartsWith(r, '<function aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.amethod')

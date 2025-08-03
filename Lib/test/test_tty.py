@@ -1,5 +1,6 @@
 import os
 import unittest
+
 from test.support.import_helper import import_module
 
 termios = import_module('termios')

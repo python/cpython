@@ -1,10 +1,10 @@
 import concurrent.futures
-import unittest
 import inspect
+import unittest
 from threading import Barrier
 from unittest import TestCase
 
-from test.support import threading_helper, Py_GIL_DISABLED
+from test.support import Py_GIL_DISABLED, threading_helper
 
 threading_helper.requires_working_threading(module=True)
 

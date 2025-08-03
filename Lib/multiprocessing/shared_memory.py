@@ -8,13 +8,13 @@ documentation for details.
 __all__ = [ 'SharedMemory', 'ShareableList' ]
 
 
-from functools import partial
+import errno
 import mmap
 import os
-import errno
-import struct
 import secrets
+import struct
 import types
+from functools import partial
 
 if os.name == "nt":
     import _winapi

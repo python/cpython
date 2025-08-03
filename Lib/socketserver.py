@@ -123,9 +123,9 @@ BaseServer:
 __version__ = "0.4"
 
 
-import socket
-import selectors
 import os
+import selectors
+import socket
 import sys
 import threading
 from io import BufferedIOBase

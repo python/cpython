@@ -1,10 +1,8 @@
-import unittest
 import builtins
+import unittest
 from collections import UserDict
 
-from test.support import import_helper
-from test.support import swap_attr
-
+from test.support import import_helper, swap_attr
 
 # Skip this test if the _testcapi module isn't available.
 _testcapi = import_helper.import_module('_testcapi')

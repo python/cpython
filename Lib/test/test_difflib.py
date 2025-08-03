@@ -1,8 +1,9 @@
 import difflib
-from test.support import findfile
-import unittest
 import doctest
 import sys
+import unittest
+
+from test.support import findfile
 
 
 class TestWithAscii(unittest.TestCase):

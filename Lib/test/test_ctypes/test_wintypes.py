@@ -4,8 +4,7 @@
 # Tests also work on POSIX
 
 import unittest
-from ctypes import POINTER, cast, c_int16
-from ctypes import wintypes
+from ctypes import POINTER, c_int16, cast, wintypes
 
 
 class WinTypesTest(unittest.TestCase):

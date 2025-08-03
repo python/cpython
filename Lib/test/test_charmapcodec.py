@@ -9,9 +9,9 @@ Written by Marc-Andre Lemburg (mal@lemburg.com).
 
 """#"
 
+import codecs
 import unittest
 
-import codecs
 
 # Register a search function which knows about our codec
 def codec_search_function(encoding):

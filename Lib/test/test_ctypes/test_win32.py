@@ -4,11 +4,26 @@ import ctypes
 import errno
 import sys
 import unittest
-from ctypes import (CDLL, Structure, POINTER, pointer, sizeof, byref,
-                    c_void_p, c_char, c_int, c_long)
+from ctypes import (
+    CDLL,
+    POINTER,
+    Structure,
+    byref,
+    c_char,
+    c_int,
+    c_long,
+    c_void_p,
+    pointer,
+    sizeof,
+)
+
 from test import support
 from test.support import import_helper
-from ._support import Py_TPFLAGS_DISALLOW_INSTANTIATION, Py_TPFLAGS_IMMUTABLETYPE
+
+from ._support import (
+    Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    Py_TPFLAGS_IMMUTABLETYPE,
+)
 
 
 @unittest.skipUnless(sys.platform == "win32", 'Windows-specific test')

@@ -4,9 +4,9 @@ import pkgutil
 import sys
 import token
 import tokenize
-from io import StringIO
 from contextlib import contextmanager
 from dataclasses import dataclass
+from io import StringIO
 from itertools import chain
 from tokenize import TokenInfo
 

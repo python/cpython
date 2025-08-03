@@ -1,11 +1,11 @@
 import sys
-
 import unittest
 from unittest import mock
+
 from test import support
 from test.support.numbers import (
-    VALID_UNDERSCORE_LITERALS,
     INVALID_UNDERSCORE_LITERALS,
+    VALID_UNDERSCORE_LITERALS,
 )
 
 try:
@@ -828,7 +828,7 @@ class PyLongModuleTests(unittest.TestCase):
                 int(big_value)
 
     def test_pylong_roundtrip(self):
-        from random import randrange, getrandbits
+        from random import getrandbits, randrange
         bits = 5000
         while bits <= 1_000_000:
             bits += randrange(-100, 101) # break bitlength patterns

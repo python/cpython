@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 import traceback
-
+from dataclasses import dataclass, field
 
 TYPE_CHECKING = False
 if TYPE_CHECKING:

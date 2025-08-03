@@ -1,7 +1,3 @@
-from test.support import (gc_collect, bigmemtest, _2G,
-                          cpython_only, captured_stdout,
-                          check_disallow_instantiation, linked_to_musl,
-                          warnings_helper, SHORT_TIMEOUT, Stopwatch, requires_resource)
 import locale
 import re
 import string
@@ -9,6 +5,20 @@ import unittest
 import warnings
 from re import Scanner
 from weakref import proxy
+
+from test.support import (
+    _2G,
+    SHORT_TIMEOUT,
+    Stopwatch,
+    bigmemtest,
+    captured_stdout,
+    check_disallow_instantiation,
+    cpython_only,
+    gc_collect,
+    linked_to_musl,
+    requires_resource,
+    warnings_helper,
+)
 
 # some platforms lack working multiprocessing
 try:
@@ -3017,7 +3027,7 @@ class ExternalTests(unittest.TestCase):
 
     def test_re_tests(self):
         're_tests test suite'
-        from test.re_tests import tests, FAIL, SYNTAX_ERROR
+        from test.re_tests import FAIL, SYNTAX_ERROR, tests
         for t in tests:
             pattern = s = outcome = repl = expected = None
             if len(t) == 5:

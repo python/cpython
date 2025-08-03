@@ -37,7 +37,7 @@ class LexicalPosixPathJoinTest(JoinTestBase, unittest.TestCase):
 
 
 if not is_pypi:
-    from pathlib import PurePosixPath, PosixPath
+    from pathlib import PosixPath, PurePosixPath
 
     class PurePosixPathJoinTest(JoinTestBase, unittest.TestCase):
         cls = PurePosixPath

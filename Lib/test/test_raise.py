@@ -3,10 +3,11 @@
 
 """Tests for the raise statement."""
 
-from test import support
 import sys
 import types
 import unittest
+
+from test import support
 
 
 def get_tb():

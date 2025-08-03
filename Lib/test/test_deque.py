@@ -1,13 +1,14 @@
-from collections import deque
-import doctest
-import unittest
-from test import support, seq_tests
-import gc
-import weakref
 import copy
+import doctest
+import gc
 import pickle
 import random
 import struct
+import unittest
+import weakref
+from collections import deque
+
+from test import seq_tests, support
 
 BIG = 100000
 

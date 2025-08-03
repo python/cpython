@@ -1,8 +1,8 @@
-from test import support, seq_tests
-import unittest
-
 import gc
 import pickle
+import unittest
+
+from test import seq_tests, support
 
 # For tuple hashes, we normally only run a test to ensure that we get
 # the same results across platforms in a handful of cases.  If that's

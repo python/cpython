@@ -1,8 +1,8 @@
+import _pyio as pyio  # Python implementation.
+import io  # C implementation.
 import unittest
-from test.support import os_helper
 
-import io # C implementation.
-import _pyio as pyio # Python implementation.
+from test.support import os_helper
 
 # Simple test to ensure that optimizations in the IO library deliver the
 # expected results.  For best testing, run this under a debug-build Python too

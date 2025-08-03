@@ -9,11 +9,11 @@ import tempfile
 import textwrap
 import threading
 import unittest
+
 from test import support
-from test.support import threading_helper
-from test.support import verbose
+from test.support import threading_helper, verbose
 from test.support.import_helper import import_module
-from test.support.os_helper import unlink, temp_dir, TESTFN
+from test.support.os_helper import TESTFN, temp_dir, unlink
 from test.support.pty_helper import run_pty
 from test.support.script_helper import assert_python_ok
 from test.support.threading_helper import requires_working_threading

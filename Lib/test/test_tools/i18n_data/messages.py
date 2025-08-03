@@ -1,13 +1,13 @@
 # Test message extraction
 from gettext import (
-    gettext,
-    ngettext,
-    pgettext,
-    npgettext,
     dgettext,
     dngettext,
+    dnpgettext,
     dpgettext,
-    dnpgettext
+    gettext,
+    ngettext,
+    npgettext,
+    pgettext,
 )
 
 _ = gettext

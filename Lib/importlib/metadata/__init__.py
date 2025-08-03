@@ -1,34 +1,33 @@
 from __future__ import annotations
 
-import os
-import re
 import abc
-import sys
-import json
-import email
-import types
-import inspect
-import pathlib
-import zipfile
-import operator
-import textwrap
-import warnings
-import functools
-import itertools
-import posixpath
 import collections
+import email
+import functools
+import inspect
+import itertools
+import json
+import operator
+import os
+import pathlib
+import posixpath
+import re
+import sys
+import textwrap
+import types
+import warnings
+import zipfile
+from contextlib import suppress
+from importlib import import_module
+from importlib.abc import MetaPathFinder
+from itertools import starmap
+from typing import Any, Iterable, List, Mapping, Match, Optional, Set, cast
 
 from . import _meta
 from ._collections import FreezableDefaultDict, Pair
 from ._functools import method_cache, pass_none
 from ._itertools import always_iterable, unique_everseen
 from ._meta import PackageMetadata, SimplePath
-
-from contextlib import suppress
-from importlib import import_module
-from importlib.abc import MetaPathFinder
-from itertools import starmap
-from typing import Any, Iterable, List, Mapping, Match, Optional, Set, cast
 
 __all__ = [
     'Distribution',

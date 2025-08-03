@@ -5,9 +5,7 @@ import io
 import sys
 import types
 
-from . import events
-from . import futures
-from . import tasks
+from . import events, futures, tasks
 
 __all__ = (
     'capture_call_graph',

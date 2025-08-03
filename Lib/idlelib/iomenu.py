@@ -4,13 +4,10 @@ import shlex
 import sys
 import tempfile
 import tokenize
-
-from tkinter import filedialog
-from tkinter import messagebox
-from tkinter.simpledialog import askstring  # loadfile encoding.
-
 from idlelib.config import idleConf
 from idlelib.util import py_extensions
+from tkinter import filedialog, messagebox
+from tkinter.simpledialog import askstring  # loadfile encoding.
 
 py_extensions = ' '.join("*"+ext for ext in py_extensions)
 encoding = 'utf-8'
@@ -396,7 +393,7 @@ class IOBinding:
 
 
 def _io_binding(parent):  # htest #
-    from tkinter import Toplevel, Text
+    from tkinter import Text, Toplevel
 
     top = Toplevel(parent)
     top.title("Test IOBinding")

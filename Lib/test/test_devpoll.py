@@ -6,6 +6,7 @@ import os
 import random
 import select
 import unittest
+
 from test.support import cpython_only
 
 if not hasattr(select, 'devpoll') :

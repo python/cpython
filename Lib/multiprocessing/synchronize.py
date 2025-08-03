@@ -11,15 +11,13 @@ __all__ = [
     'Lock', 'RLock', 'Semaphore', 'BoundedSemaphore', 'Condition', 'Event'
     ]
 
-import threading
+import _multiprocessing
 import sys
 import tempfile
-import _multiprocessing
+import threading
 import time
 
-from . import context
-from . import process
-from . import util
+from . import context, process, util
 
 # TODO: Do any platforms still lack a functioning sem_open?
 try:
@@ -373,6 +371,7 @@ class Barrier(threading.Barrier):
 
     def __init__(self, parties, action=None, timeout=None, *, ctx):
         import struct
+
         from .heap import BufferWrapper
         wrapper = BufferWrapper(struct.calcsize('i') * 2)
         cond = ctx.Condition()

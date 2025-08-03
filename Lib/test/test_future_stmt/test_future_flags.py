@@ -1,5 +1,6 @@
-import unittest
 import __future__
+
+import unittest
 
 GOOD_SERIALS = ("alpha", "beta", "candidate", "final")
 

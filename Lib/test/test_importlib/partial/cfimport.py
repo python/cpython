@@ -3,7 +3,6 @@ import sys
 import threading
 import traceback
 
-
 NLOOPS = 50
 NTHREADS = 30
 

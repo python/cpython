@@ -6,13 +6,16 @@ import subprocess
 import sys
 import unittest
 import webbrowser
-from test import support
-from test.support import import_helper
-from test.support import is_apple_mobile
-from test.support import os_helper
-from test.support import requires_subprocess
-from test.support import threading_helper
 from unittest import mock
+
+from test import support
+from test.support import (
+    import_helper,
+    is_apple_mobile,
+    os_helper,
+    requires_subprocess,
+    threading_helper,
+)
 
 # The webbrowser module uses threading locks
 threading_helper.requires_working_threading(module=True)

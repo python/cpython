@@ -1,17 +1,15 @@
-import unittest
-from test import support
-from test.support import os_helper
-from test.support import socket_helper
-
 import contextlib
+import email.message
+import os
 import socket
+import time
+import unittest
 import urllib.error
 import urllib.parse
 import urllib.request
-import os
-import email.message
-import time
 
+from test import support
+from test.support import os_helper, socket_helper
 
 support.requires('network')
 

@@ -2,8 +2,7 @@
 
 import sys
 
-from . import case
-from . import util
+from . import case, util
 
 __unittest = True
 

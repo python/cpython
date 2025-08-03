@@ -2,21 +2,19 @@
    Roger E. Masse
 """
 
+import array
 import collections.abc
-import unittest
-from test import support
-from test.support import import_helper
-from test.support import os_helper
-from test.support import _2G
-import weakref
-import pickle
 import operator
+import pickle
 import struct
 import sys
+import unittest
 import warnings
-
-import array
+import weakref
 from array import _array_reconstructor as array_reconstructor
+
+from test import support
+from test.support import _2G, import_helper, os_helper
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore', DeprecationWarning)

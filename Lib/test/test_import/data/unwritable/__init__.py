@@ -1,5 +1,6 @@
 import sys
 
+
 class MyMod(object):
     __slots__ = ['__builtins__', '__cached__', '__doc__',
                  '__file__', '__loader__', '__name__',

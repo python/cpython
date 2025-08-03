@@ -9,23 +9,25 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from unittest import mock
-
 from profile.pstats_collector import PstatsCollector
 from profile.stack_collector import (
     CollapsedStackCollector,
 )
+from unittest import mock
 
+from test.support import (
+    SHORT_TIMEOUT,
+    force_not_colorized_test_class,
+    requires_subprocess,
+)
 from test.support.os_helper import unlink
-from test.support import force_not_colorized_test_class, SHORT_TIMEOUT
 from test.support.socket_helper import find_unused_port
-from test.support import requires_subprocess
 
 PROCESS_VM_READV_SUPPORTED = False
 
 try:
-    from _remote_debugging import PROCESS_VM_READV_SUPPORTED
     import _remote_debugging
+    from _remote_debugging import PROCESS_VM_READV_SUPPORTED
 except ImportError:
     raise unittest.SkipTest(
         "Test only runs when _remote_debugging is available"

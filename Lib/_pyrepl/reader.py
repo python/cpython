@@ -22,20 +22,18 @@
 from __future__ import annotations
 
 import sys
-import _colorize
-
 from contextlib import contextmanager
 from dataclasses import dataclass, field, fields
 
-from . import commands, console, input
-from .utils import wlen, unbracket, disp_str, gen_colors, THEME
-from .trace import trace
+import _colorize
 
+from . import commands, console, input
+from .trace import trace
+from .utils import THEME, disp_str, gen_colors, unbracket, wlen
 
 # types
 Command = commands.Command
-from .types import Callback, SimpleContextManager, KeySpec, CommandName
-
+from .types import Callback, CommandName, KeySpec, SimpleContextManager
 
 # syntax classes
 SYNTAX_WHITESPACE, SYNTAX_WORD, SYNTAX_SYMBOL = range(3)

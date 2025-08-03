@@ -6080,6 +6080,7 @@ ExtendedContext = Context(
 # lookahead expression '(?=\d|\.\d)' checks this.
 
 import re
+
 _parser = re.compile(r"""        # A numeric string consists of:
 #    \s*
     (?P<sign>[-+])?              # an optional sign, followed by either...

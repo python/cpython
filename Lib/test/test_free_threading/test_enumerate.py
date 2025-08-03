@@ -1,6 +1,6 @@
-import unittest
 import sys
-from threading import Thread, Barrier
+import unittest
+from threading import Barrier, Thread
 
 from test.support import threading_helper
 

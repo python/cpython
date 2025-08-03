@@ -4,15 +4,14 @@ Various tests for synchronization primitives.
 
 import gc
 import sys
-import time
-from _thread import start_new_thread, TIMEOUT_MAX
 import threading
+import time
 import unittest
 import weakref
+from _thread import TIMEOUT_MAX, start_new_thread
 
 from test import support
 from test.support import threading_helper
-
 
 requires_fork = unittest.skipUnless(support.has_fork_support,
                                     "platform doesn't support fork "

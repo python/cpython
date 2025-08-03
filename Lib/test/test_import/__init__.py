@@ -1,16 +1,9 @@
+import _imp
 import builtins
 import errno
 import glob
-import json
 import importlib.util
-from importlib._bootstrap_external import _get_sourcefile
-from importlib.machinery import (
-    AppleFrameworkLoader,
-    BuiltinImporter,
-    ExtensionFileLoader,
-    FrozenImporter,
-    SourceFileLoader,
-)
+import json
 import marshal
 import os
 import py_compile
@@ -24,35 +17,54 @@ import threading
 import time
 import types
 import unittest
+from importlib._bootstrap_external import _get_sourcefile
+from importlib.machinery import (
+    AppleFrameworkLoader,
+    BuiltinImporter,
+    ExtensionFileLoader,
+    FrozenImporter,
+    SourceFileLoader,
+)
+from types import ModuleType
 from unittest import mock
-import _imp
 
-from test.support import os_helper
 from test.support import (
     STDLIB_DIR,
-    swap_attr,
-    swap_item,
+    Py_GIL_DISABLED,
+    Py_TRACE_REFS,
     cpython_only,
+    force_not_colorized_test_class,
     is_apple_mobile,
     is_emscripten,
     is_wasm32,
+    no_rerun,
+    os_helper,
+    requires_gil_enabled,
     run_in_subinterp,
     run_in_subinterp_with_config,
-    Py_TRACE_REFS,
-    requires_gil_enabled,
-    Py_GIL_DISABLED,
-    no_rerun,
-    force_not_colorized_test_class,
+    script_helper,
+    swap_attr,
+    swap_item,
+    threading_helper,
 )
 from test.support.import_helper import (
-    forget, make_legacy_pyc, unlink, unload, ready_to_import,
-    DirsOnSysPath, CleanImport, import_module)
+    CleanImport,
+    DirsOnSysPath,
+    forget,
+    import_module,
+    make_legacy_pyc,
+    ready_to_import,
+    unlink,
+    unload,
+)
 from test.support.os_helper import (
-    TESTFN, rmtree, temp_umask, TESTFN_UNENCODABLE)
-from test.support import script_helper
-from test.support import threading_helper
+    TESTFN,
+    TESTFN_UNENCODABLE,
+    rmtree,
+    temp_umask,
+)
 from test.test_importlib.util import uncache
-from types import ModuleType
+
 try:
     import _testsinglephase
 except ImportError:
@@ -2097,8 +2109,8 @@ class CircularImportTests(unittest.TestCase):
             self.fail('circular import with binding a submodule to a name failed')
 
     def test_crossreference1(self):
-        import test.test_import.data.circular_imports.use
         import test.test_import.data.circular_imports.source
+        import test.test_import.data.circular_imports.use
 
     def test_crossreference2(self):
         with self.assertRaises(AttributeError) as cm:

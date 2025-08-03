@@ -12,6 +12,7 @@
 
 import weakref
 
+
 class A(object):
     pass
 

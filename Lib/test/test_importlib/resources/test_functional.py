@@ -1,10 +1,9 @@
-import unittest
-import os
 import importlib
+import os
+import unittest
+from importlib import resources
 
 from test.support import warnings_helper
-
-from importlib import resources
 
 from . import util
 

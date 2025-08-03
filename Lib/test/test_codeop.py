@@ -4,10 +4,11 @@
 """
 import unittest
 import warnings
-from test.support import warnings_helper
+from codeop import PyCF_DONT_IMPLY_DEDENT, compile_command
 from textwrap import dedent
 
-from codeop import compile_command, PyCF_DONT_IMPLY_DEDENT
+from test.support import warnings_helper
+
 
 class CodeopTests(unittest.TestCase):
 

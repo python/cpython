@@ -6,8 +6,12 @@ import sys
 from functools import cmp_to_key
 
 from test import seq_tests
-from test.support import ALWAYS_EQ, NEVER_EQ
-from test.support import skip_emscripten_stack_overflow, skip_wasi_stack_overflow
+from test.support import (
+    ALWAYS_EQ,
+    NEVER_EQ,
+    skip_emscripten_stack_overflow,
+    skip_wasi_stack_overflow,
+)
 
 
 class CommonTest(seq_tests.CommonTest):

@@ -4,15 +4,6 @@ Tests assume the initial paths in sys.path once the interpreter has begun
 executing have not been removed.
 
 """
-import unittest
-import test.support
-from test import support
-from test.support.script_helper import assert_python_ok
-from test.support import import_helper
-from test.support import os_helper
-from test.support import socket_helper
-from test.support import captured_stderr
-from test.support.os_helper import TESTFN, EnvironmentVarGuard
 import ast
 import builtins
 import glob
@@ -25,10 +16,22 @@ import subprocess
 import sys
 import sysconfig
 import tempfile
+import unittest
 import urllib.error
 import urllib.request
-from unittest import mock
 from copy import copy
+from unittest import mock
+
+import test.support
+from test import support
+from test.support import (
+    captured_stderr,
+    import_helper,
+    os_helper,
+    socket_helper,
+)
+from test.support.os_helper import TESTFN, EnvironmentVarGuard
+from test.support.script_helper import assert_python_ok
 
 # These tests are not particularly useful if Python was invoked with -S.
 # If you add tests that are useful under -S, this skip should be moved
@@ -37,7 +40,6 @@ if sys.flags.no_site:
     raise unittest.SkipTest("Python was invoked with -S")
 
 import site
-
 
 HAS_USER_SITE = (site.USER_SITE is not None)
 OLD_SYS_PATH = None

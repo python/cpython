@@ -6,6 +6,7 @@ import sys
 import unittest
 from types import DynamicClassAttribute
 
+
 class PropertyBase(Exception):
     pass
 

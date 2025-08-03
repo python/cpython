@@ -1,8 +1,19 @@
 import sys
 import unittest
-from ctypes import (Structure, Union, POINTER, cast, sizeof, addressof,
-                    c_void_p, c_char_p, c_wchar_p,
-                    c_byte, c_short, c_int)
+from ctypes import (
+    POINTER,
+    Structure,
+    Union,
+    addressof,
+    c_byte,
+    c_char_p,
+    c_int,
+    c_short,
+    c_void_p,
+    c_wchar_p,
+    cast,
+    sizeof,
+)
 
 
 class Test(unittest.TestCase):

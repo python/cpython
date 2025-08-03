@@ -1,10 +1,20 @@
 from gettext import (
-    gettext as foo,
-    ngettext as nfoo,
-    pgettext as pfoo,
-    npgettext as npfoo,
-    gettext as bar,
     gettext as _,
+)
+from gettext import (
+    gettext as bar,
+)
+from gettext import (
+    gettext as foo,
+)
+from gettext import (
+    ngettext as nfoo,
+)
+from gettext import (
+    npgettext as npfoo,
+)
+from gettext import (
+    pgettext as pfoo,
 )
 
 foo('bar')

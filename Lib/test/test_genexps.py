@@ -1,7 +1,6 @@
-import sys
 import doctest
+import sys
 import unittest
-
 
 doctests = """
 

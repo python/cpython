@@ -1,9 +1,10 @@
-import unittest
 import tkinter
-from test.support import requires, swap_attr
-from test.test_tkinter.support import AbstractDefaultRootTest
+import unittest
 from tkinter.commondialog import Dialog
 from tkinter.messagebox import showinfo
+
+from test.support import requires, swap_attr
+from test.test_tkinter.support import AbstractDefaultRootTest
 
 requires('gui')
 

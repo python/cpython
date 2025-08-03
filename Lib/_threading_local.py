@@ -6,8 +6,8 @@
  `threading`.)
 """
 
-from weakref import ref
 from contextlib import contextmanager
+from weakref import ref
 
 __all__ = ["local"]
 
@@ -117,4 +117,4 @@ class local:
             return object.__delattr__(self, name)
 
 
-from threading import current_thread, RLock
+from threading import RLock, current_thread

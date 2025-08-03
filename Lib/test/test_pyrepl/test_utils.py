@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from _pyrepl.utils import str_width, wlen, prev_next_window
+from _pyrepl.utils import prev_next_window, str_width, wlen
 
 
 class TestUtils(TestCase):

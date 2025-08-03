@@ -50,17 +50,29 @@ General notes on the underlying Mersenne Twister core generator:
 # Adrian Baddeley.  Adapted by Raymond Hettinger for use with
 # the Mersenne Twister  and os.urandom() core generators.
 
-from math import log as _log, exp as _exp, pi as _pi, e as _e, ceil as _ceil
-from math import sqrt as _sqrt, acos as _acos, cos as _cos, sin as _sin
-from math import tau as TWOPI, floor as _floor, isfinite as _isfinite
-from math import lgamma as _lgamma, fabs as _fabs, log2 as _log2
-from os import urandom as _urandom
-from _collections_abc import Sequence as _Sequence
-from operator import index as _index
-from itertools import accumulate as _accumulate, repeat as _repeat
-from bisect import bisect as _bisect
-import os as _os
 import _random
+import os as _os
+from _collections_abc import Sequence as _Sequence
+from bisect import bisect as _bisect
+from itertools import accumulate as _accumulate
+from itertools import repeat as _repeat
+from math import acos as _acos
+from math import ceil as _ceil
+from math import cos as _cos
+from math import e as _e
+from math import exp as _exp
+from math import fabs as _fabs
+from math import floor as _floor
+from math import isfinite as _isfinite
+from math import lgamma as _lgamma
+from math import log as _log
+from math import log2 as _log2
+from math import pi as _pi
+from math import sin as _sin
+from math import sqrt as _sqrt
+from math import tau as TWOPI
+from operator import index as _index
+from os import urandom as _urandom
 
 __all__ = [
     "Random",
@@ -961,7 +973,8 @@ randbytes = _inst.randbytes
 ## ----------------- test program -----------------------
 
 def _test_generator(n, func, args):
-    from statistics import stdev, fmean as mean
+    from statistics import fmean as mean
+    from statistics import stdev
     from time import perf_counter
 
     t0 = perf_counter()

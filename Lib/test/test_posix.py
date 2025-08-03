@@ -1,25 +1,23 @@
 "Test posix functions"
 
-from test import support
-from test.support import is_apple
-from test.support import os_helper
-from test.support import warnings_helper
-from test.support.script_helper import assert_python_ok
-
 import copy
 import errno
-import sys
-import signal
-import time
 import os
-import platform
 import pickle
+import platform
+import signal
 import stat
+import sys
 import tempfile
+import textwrap
+import time
 import unittest
 import warnings
-import textwrap
 from contextlib import contextmanager
+
+from test import support
+from test.support import is_apple, os_helper, warnings_helper
+from test.support.script_helper import assert_python_ok
 
 try:
     import posix
@@ -2204,8 +2202,8 @@ class TestPosixWeaklinking(unittest.TestCase):
     #
     # See the section on Weak Linking in Mac/README.txt for more information.
     def setUp(self):
-        import sysconfig
         import platform
+        import sysconfig
 
         config_vars = sysconfig.get_config_vars()
         self.available = { nm for nm in config_vars if nm.startswith("HAVE_") and config_vars[nm] }

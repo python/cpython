@@ -1,13 +1,12 @@
-import unittest
 import inspect
 import pickle
 import sys
+import unittest
 from decimal import Decimal
 from fractions import Fraction
 
 from test import support
 from test.support import import_helper
-
 
 py_operator = import_helper.import_fresh_module('operator',
                                                 blocked=['_operator'])

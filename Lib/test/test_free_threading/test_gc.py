@@ -1,9 +1,8 @@
-import unittest
-
+import gc
 import threading
+import unittest
 from threading import Thread
 from unittest import TestCase
-import gc
 
 from test.support import threading_helper
 

@@ -1,8 +1,9 @@
 # Check that multiple features can be enabled.
-from __future__ import unicode_literals, print_function
+from __future__ import print_function, unicode_literals
 
 import sys
 import unittest
+
 from test import support
 
 

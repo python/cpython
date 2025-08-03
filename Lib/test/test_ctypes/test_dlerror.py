@@ -2,11 +2,11 @@ import _ctypes
 import os
 import platform
 import sys
-import test.support
 import unittest
 from ctypes import CDLL, c_int
 from ctypes.util import find_library
 
+import test.support
 
 FOO_C = r"""
 #include <unistd.h>

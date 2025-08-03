@@ -1,23 +1,22 @@
 """Test sidebar, coverage 85%"""
-from textwrap import dedent
+import idlelib.pyshell
+import idlelib.sidebar
 import sys
-
-from itertools import chain
+import tkinter as tk
 import unittest
 import unittest.mock
-from test.support import requires, swap_attr
-from test import support
-import tkinter as tk
-from idlelib.idle_test.tkinter_testing_utils import run_in_tk_mainloop
-
 from idlelib.delegator import Delegator
 from idlelib.editor import fixwordbreaks
+from idlelib.idle_test.tkinter_testing_utils import run_in_tk_mainloop
 from idlelib.percolator import Percolator
-import idlelib.pyshell
-from idlelib.pyshell import fix_x11_paste, PyShell, PyShellFileList
+from idlelib.pyshell import PyShell, PyShellFileList, fix_x11_paste
 from idlelib.run import fix_scaling
-import idlelib.sidebar
 from idlelib.sidebar import get_end_linenumber, get_lineno
+from itertools import chain
+from textwrap import dedent
+
+from test import support
+from test.support import requires, swap_attr
 
 
 class Dummy_editwin:

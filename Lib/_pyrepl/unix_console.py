@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import errno
 import os
+import platform
 import re
 import select
 import signal
@@ -30,7 +31,6 @@ import struct
 import termios
 import time
 import types
-import platform
 from fcntl import ioctl
 
 from . import terminfo

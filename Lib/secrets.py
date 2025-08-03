@@ -13,7 +13,6 @@ __all__ = ['choice', 'randbelow', 'randbits', 'SystemRandom',
 
 
 import base64
-
 from hmac import compare_digest
 from random import SystemRandom
 

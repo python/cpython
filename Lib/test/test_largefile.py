@@ -1,18 +1,23 @@
 """Test largefile support on system where this makes sense.
 """
 
-import os
-import sys
-import unittest
-import socket
-import shutil
-import threading
-from test.support import requires, bigmemtest, requires_resource
-from test.support import SHORT_TIMEOUT
-from test.support import socket_helper
-from test.support.os_helper import TESTFN, unlink
+import _pyio as pyio  # Python implementation of io
 import io  # C implementation of io
-import _pyio as pyio # Python implementation of io
+import os
+import shutil
+import socket
+import sys
+import threading
+import unittest
+
+from test.support import (
+    SHORT_TIMEOUT,
+    bigmemtest,
+    requires,
+    requires_resource,
+    socket_helper,
+)
+from test.support.os_helper import TESTFN, unlink
 
 # size of file to create (>2 GiB; 2 GiB == 2,147,483,648 bytes)
 size = 2_500_000_000

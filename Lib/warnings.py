@@ -13,37 +13,11 @@ __all__ = [
 ]
 
 from _py_warnings import (
-    WarningMessage,
-    _DEPRECATED_MSG,
-    _OptionError,
-    _add_filter,
-    _deprecated,
-    _filters_mutated,
     _filters_mutated_lock_held,
-    _filters_version,
-    _formatwarning_orig,
-    _formatwarnmsg,
-    _formatwarnmsg_impl,
-    _get_context,
-    _get_filters,
-    _getaction,
-    _getcategory,
-    _is_filename_to_skip,
-    _is_internal_filename,
-    _is_internal_frame,
     _lock,
-    _new_context,
-    _next_external_frame,
     _processoptions,
-    _set_context,
     _set_module,
-    _setoption,
     _setup_defaults,
-    _showwarning_orig,
-    _showwarnmsg,
-    _showwarnmsg_impl,
-    _use_context,
-    _warn_unawaited_coroutine,
     _warnings_context,
     catch_warnings,
     defaultaction,
@@ -64,14 +38,18 @@ try:
     # _py_warnings implementation imported above.
     from _warnings import (
         _acquire_lock,
-        _defaultaction as defaultaction,
         _filters_mutated_lock_held,
-        _onceregistry as onceregistry,
         _release_lock,
         _warnings_context,
         filters,
         warn,
         warn_explicit,
+    )
+    from _warnings import (
+        _defaultaction as defaultaction,
+    )
+    from _warnings import (
+        _onceregistry as onceregistry,
     )
 
     _warnings_defaults = True

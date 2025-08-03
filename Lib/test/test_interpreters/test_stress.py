@@ -2,11 +2,12 @@ import threading
 import unittest
 
 from test import support
-from test.support import import_helper
-from test.support import threading_helper
+from test.support import import_helper, threading_helper
+
 # Raise SkipTest if subinterpreters not supported.
 import_helper.import_module('_interpreters')
 from concurrent import interpreters
+
 from .utils import TestBase
 
 

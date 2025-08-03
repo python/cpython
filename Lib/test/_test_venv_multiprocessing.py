@@ -2,6 +2,7 @@ import multiprocessing
 import random
 import sys
 
+
 def fill_queue(queue, code):
     queue.put(code)
 

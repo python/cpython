@@ -10,16 +10,17 @@ import tempfile
 import textwrap
 import unittest
 import warnings
-from test import support
-from test.support import os_helper
-from test.support import force_not_colorized
-from test.support import threading_helper
-from test.support.script_helper import (
-    spawn_python, kill_python, assert_python_ok, assert_python_failure,
-    interpreter_requires_environment
-)
 from textwrap import dedent
 
+from test import support
+from test.support import force_not_colorized, os_helper, threading_helper
+from test.support.script_helper import (
+    assert_python_failure,
+    assert_python_ok,
+    interpreter_requires_environment,
+    kill_python,
+    spawn_python,
+)
 
 if not support.has_subprocess_support:
     raise unittest.SkipTest("test module requires subprocess")

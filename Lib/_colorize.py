@@ -1,16 +1,15 @@
 import io
 import os
 import sys
-
 from collections.abc import Callable, Iterator, Mapping
-from dataclasses import dataclass, field, Field
+from dataclasses import Field, dataclass, field
 
 COLORIZE = True
 
 
 # types
 if False:
-    from typing import IO, Self, ClassVar
+    from typing import IO, ClassVar, Self
     _theme: Theme
 
 

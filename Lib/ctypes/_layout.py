@@ -4,11 +4,11 @@ This code is internal and tightly coupled to the C part. The interface
 may change at any time.
 """
 
+import ctypes
 import sys
 import warnings
-
 from _ctypes import CField, buffer_info
-import ctypes
+
 
 def round_down(n, multiple):
     assert n >= 0

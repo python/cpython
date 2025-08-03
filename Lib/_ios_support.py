@@ -1,6 +1,7 @@
 import sys
+
 try:
-    from ctypes import cdll, c_void_p, c_char_p, util
+    from ctypes import c_char_p, c_void_p, cdll, util
 except ImportError:
     # ctypes is an optional module. If it's not present, we're limited in what
     # we can tell about the system, but we don't want to prevent the module

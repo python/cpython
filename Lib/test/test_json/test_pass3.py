@@ -1,5 +1,4 @@
-from test.test_json import PyTest, CTest
-
+from test.test_json import CTest, PyTest
 
 # from https://json.org/JSON_checker/test/pass3.json
 JSON = r'''

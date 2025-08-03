@@ -30,13 +30,16 @@ import types
 import unittest
 import uuid
 import warnings
-from test import support
-from test.support import import_helper
-from test.support import os_helper
-from test.support import socket_helper
-from test.support import infinite_recursion
-from test.support import warnings_helper
 from platform import win32_is_iot
+
+from test import support
+from test.support import (
+    import_helper,
+    infinite_recursion,
+    os_helper,
+    socket_helper,
+    warnings_helper,
+)
 
 try:
     import resource
@@ -67,10 +70,9 @@ try:
 except ImportError:
     mmap = None
 
-from test.support.script_helper import assert_python_ok
 from test.support import unix_shell
 from test.support.os_helper import FakePath
-
+from test.support.script_helper import assert_python_ok
 
 root_in_posix = False
 if hasattr(os, 'geteuid'):
@@ -1114,6 +1116,7 @@ class UtimeTests(unittest.TestCase):
 
 
 from test import mapping_tests
+
 
 class EnvironTests(mapping_tests.BasicTestMappingProtocol):
     """check that os.environ object conform to mapping protocol"""
@@ -2806,8 +2809,8 @@ class Win32KillTests(unittest.TestCase):
         # becomes ready, send *sig* via os.kill to the subprocess and check
         # that the return code is equal to *sig*.
         import ctypes
-        from ctypes import wintypes
         import msvcrt
+        from ctypes import wintypes
 
         # Since we can't access the contents of the process' stdout until the
         # process has exited, use PeekNamedPipe to see what's inside stdout
@@ -2899,8 +2902,8 @@ class Win32KillTests(unittest.TestCase):
     @unittest.skip("subprocesses aren't inheriting Ctrl+C property")
     @support.requires_subprocess()
     def test_CTRL_C_EVENT(self):
-        from ctypes import wintypes
         import ctypes
+        from ctypes import wintypes
 
         # Make a NULL value by creating a pointer with no argument.
         NULL = ctypes.POINTER(ctypes.c_int)()

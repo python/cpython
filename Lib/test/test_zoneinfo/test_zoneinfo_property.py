@@ -5,9 +5,8 @@ import pickle
 import unittest
 import zoneinfo
 
-from test.support.hypothesis_helper import hypothesis
-
 import test.test_zoneinfo._support as test_support
+from test.support.hypothesis_helper import hypothesis
 
 ZoneInfoTestBase = test_support.ZoneInfoTestBase
 

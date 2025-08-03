@@ -1,10 +1,11 @@
+import os
 import re
 import sys
 import textwrap
-import os
 import unittest
 from dataclasses import dataclass
 from functools import cache
+
 from test import support
 from test.support.script_helper import run_python_until_end
 

@@ -35,10 +35,9 @@
 
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
 import unicodedata
+from abc import ABC, abstractmethod
 from collections import deque
-
 
 # types
 if False:

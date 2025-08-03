@@ -1,28 +1,26 @@
-from test import support
-from test.support import bigmemtest, _4G
-
 import array
-import unittest
+import glob
 import io
-from io import BytesIO, DEFAULT_BUFFER_SIZE
 import os
 import pickle
-import glob
-import tempfile
 import random
 import shutil
 import subprocess
-import threading
-from test.support import import_helper
-from test.support import threading_helper
-from test.support.os_helper import unlink, FakePath
-from compression._common import _streams
 import sys
+import tempfile
+import threading
+import unittest
+from io import DEFAULT_BUFFER_SIZE, BytesIO
 
+from compression._common import _streams
+
+from test import support
+from test.support import _4G, bigmemtest, import_helper, threading_helper
+from test.support.os_helper import FakePath, unlink
 
 # Skip tests if the bz2 module doesn't exist.
 bz2 = import_helper.import_module('bz2')
-from bz2 import BZ2File, BZ2Compressor, BZ2Decompressor
+from bz2 import BZ2Compressor, BZ2Decompressor, BZ2File
 
 has_cmdline_bunzip2 = None
 

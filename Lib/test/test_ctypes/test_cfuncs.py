@@ -1,12 +1,26 @@
 import ctypes
 import unittest
-from ctypes import (CDLL,
-                    c_byte, c_ubyte, c_char,
-                    c_short, c_ushort, c_int, c_uint,
-                    c_long, c_ulong, c_longlong, c_ulonglong,
-                    c_float, c_double, c_longdouble)
+from ctypes import (
+    CDLL,
+    c_byte,
+    c_char,
+    c_double,
+    c_float,
+    c_int,
+    c_long,
+    c_longdouble,
+    c_longlong,
+    c_short,
+    c_ubyte,
+    c_uint,
+    c_ulong,
+    c_ulonglong,
+    c_ushort,
+)
+
 from test import support
 from test.support import import_helper, threading_helper
+
 _ctypes_test = import_helper.import_module("_ctypes_test")
 
 

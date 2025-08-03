@@ -10,31 +10,67 @@ Refer to comments in EditorWindow autoindent code for details.
 
 """
 import re
-
-from tkinter import (Toplevel, Listbox, Canvas,
-                     StringVar, BooleanVar, IntVar, TRUE, FALSE,
-                     TOP, BOTTOM, RIGHT, LEFT, SOLID, GROOVE,
-                     NONE, BOTH, X, Y, W, E, EW, NS, NSEW, NW,
-                     HORIZONTAL, VERTICAL, ANCHOR, ACTIVE, END, TclError)
-from tkinter.ttk import (Frame, LabelFrame, Button, Checkbutton, Entry, Label,
-                         OptionMenu, Notebook, Radiobutton, Scrollbar, Style,
-                         Spinbox, Combobox)
-from tkinter import colorchooser
 import tkinter.font as tkfont
-from tkinter import messagebox
-
-from idlelib.config import idleConf, ConfigChanges
-from idlelib.config_key import GetKeysWindow
-from idlelib.dynoption import DynOptionMenu
 from idlelib import macosx
-from idlelib.query import SectionName, HelpSource
-from idlelib.textview import view_text
 from idlelib.autocomplete import AutoComplete
 from idlelib.codecontext import CodeContext
-from idlelib.parenmatch import ParenMatch
+from idlelib.config import ConfigChanges, idleConf
+from idlelib.config_key import GetKeysWindow
+from idlelib.dynoption import DynOptionMenu
 from idlelib.format import FormatParagraph
+from idlelib.parenmatch import ParenMatch
+from idlelib.query import HelpSource, SectionName
 from idlelib.squeezer import Squeezer
-from idlelib.textview import ScrollableTextFrame
+from idlelib.textview import ScrollableTextFrame, view_text
+from tkinter import (
+    ACTIVE,
+    ANCHOR,
+    BOTH,
+    BOTTOM,
+    END,
+    EW,
+    FALSE,
+    GROOVE,
+    HORIZONTAL,
+    LEFT,
+    NONE,
+    NS,
+    NSEW,
+    NW,
+    RIGHT,
+    SOLID,
+    TOP,
+    TRUE,
+    VERTICAL,
+    BooleanVar,
+    Canvas,
+    E,
+    IntVar,
+    Listbox,
+    StringVar,
+    TclError,
+    Toplevel,
+    W,
+    X,
+    Y,
+    colorchooser,
+    messagebox,
+)
+from tkinter.ttk import (
+    Button,
+    Checkbutton,
+    Combobox,
+    Entry,
+    Frame,
+    Label,
+    LabelFrame,
+    Notebook,
+    OptionMenu,
+    Radiobutton,
+    Scrollbar,
+    Spinbox,
+    Style,
+)
 
 changes = ConfigChanges()
 # Reload changed options in the following classes.

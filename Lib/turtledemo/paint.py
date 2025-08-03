@@ -15,6 +15,7 @@ includes the starting point is filled.
 """
 from turtle import *
 
+
 def switchupdown(x=0, y=0):
     if pen()["pendown"]:
         end_fill()

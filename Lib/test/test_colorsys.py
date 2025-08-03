@@ -1,5 +1,6 @@
-import unittest
 import colorsys
+import unittest
+
 
 def frange(start, stop, step):
     while start <= stop:

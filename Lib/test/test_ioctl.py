@@ -4,9 +4,11 @@ import struct
 import sys
 import threading
 import unittest
+
 from test import support
 from test.support import os_helper, threading_helper
 from test.support.import_helper import import_module
+
 fcntl = import_module('fcntl')
 termios = import_module('termios')
 

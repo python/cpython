@@ -1,8 +1,9 @@
 import textwrap
 import unittest
+
 from test import support
 
-from .util import setup_module, DebuggerTests
+from .util import DebuggerTests, setup_module
 
 
 def setUpModule():

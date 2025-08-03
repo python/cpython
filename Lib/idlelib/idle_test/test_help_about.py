@@ -3,15 +3,15 @@ help_about.build_bits branches on sys.platform='darwin'.
 '100% combines coverage on Mac and others.
 """
 
-from idlelib import help_about
+import os.path
 import unittest
-from test.support import requires, findfile
-from tkinter import Tk, TclError
+from idlelib import help_about, textview
 from idlelib.idle_test.mock_idle import Func
 from idlelib.idle_test.mock_tk import Mbox_func
-from idlelib import textview
-import os.path
 from platform import python_version
+from tkinter import TclError, Tk
+
+from test.support import findfile, requires
 
 About = help_about.AboutDialog
 

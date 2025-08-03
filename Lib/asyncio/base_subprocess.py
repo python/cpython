@@ -1,12 +1,11 @@
 import collections
-import subprocess
-import warnings
 import os
 import signal
+import subprocess
 import sys
+import warnings
 
-from . import protocols
-from . import transports
+from . import protocols, transports
 from .log import logger
 
 

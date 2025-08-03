@@ -1,6 +1,7 @@
 """This is a test"""
 
-from __future__ import nested_scopes; import site  # noqa: F401
+from __future__ import nested_scopes  # noqa: F401
+
 
 def f(x):
     def g(y):

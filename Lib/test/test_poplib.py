@@ -3,21 +3,22 @@
 # Modified by Giampaolo Rodola' to give poplib.POP3 and poplib.POP3_SSL
 # a real test suite
 
+import errno
+import os
 import poplib
 import socket
-import os
-import errno
 import threading
-
 import unittest
 from unittest import TestCase, skipUnless
-from test import support as test_support
-from test.support import hashlib_helper
-from test.support import socket_helper
-from test.support import threading_helper
-from test.support import asynchat
-from test.support import asyncore
 
+from test import support as test_support
+from test.support import (
+    asynchat,
+    asyncore,
+    hashlib_helper,
+    socket_helper,
+    threading_helper,
+)
 
 test_support.requires_working_socket(module=True)
 

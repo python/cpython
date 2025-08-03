@@ -1,9 +1,10 @@
 """Do a minimal test of all the modules that aren't otherwise tested."""
 import importlib
-from test import support
-from test.support import import_helper
-from test.support import warnings_helper
 import unittest
+
+from test import support
+from test.support import import_helper, warnings_helper
+
 
 class TestUntestedModules(unittest.TestCase):
     def test_untested_modules_can_be_imported(self):

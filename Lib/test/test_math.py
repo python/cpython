@@ -1,19 +1,19 @@
 # Python test set -- math module
 # XXXX Should not do tests around zero only
 
-from test.support import verbose, requires_IEEE_754
-from test import support
-import unittest
+import decimal
 import fractions
 import itertools
-import decimal
 import math
 import os
 import platform
 import random
 import struct
 import sys
+import unittest
 
+from test import support
+from test.support import requires_IEEE_754, verbose
 
 eps = 1E-05
 NAN = float('nan')
@@ -826,7 +826,7 @@ class MathTests(unittest.TestCase):
                           "for math.fsum(%.100r)" % (i, expected, vals))
             self.assertEqual(actual, expected)
 
-        from random import random, gauss, shuffle
+        from random import gauss, random, shuffle
         for j in range(1000):
             vals = [7, 1e100, -7, -1e100, -9e-20, 8e-20] * 10
             s = 0
@@ -1580,11 +1580,11 @@ class MathTests(unittest.TestCase):
     @support.requires_resource('cpu')
     def test_sumprod_extended_precision_accuracy(self):
         import operator
+        from collections import namedtuple
         from fractions import Fraction
         from itertools import starmap
-        from collections import namedtuple
-        from math import log2, exp2, fabs
-        from random import choices, uniform, shuffle
+        from math import exp2, fabs, log2
+        from random import choices, shuffle, uniform
         from statistics import median
 
         DotExample = namedtuple('DotExample', ('x', 'y', 'target_sumprod', 'condition'))

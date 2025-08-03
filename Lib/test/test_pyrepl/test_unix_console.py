@@ -3,12 +3,12 @@ import os
 import sys
 import unittest
 from functools import partial
-from test.support import os_helper, force_not_colorized_test_class
-
 from unittest import TestCase
-from unittest.mock import MagicMock, call, patch, ANY
+from unittest.mock import ANY, MagicMock, call, patch
 
-from .support import handle_all_events, code_to_events
+from test.support import force_not_colorized_test_class, os_helper
+
+from .support import code_to_events, handle_all_events
 
 try:
     from _pyrepl.console import Event

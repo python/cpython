@@ -1,10 +1,12 @@
 "Test percolator, coverage 100%."
 
-from idlelib.percolator import Percolator, Delegator
 import unittest
+from idlelib.percolator import Delegator, Percolator
+
 from test.support import requires
+
 requires('gui')
-from tkinter import Text, Tk, END
+from tkinter import END, Text, Tk
 
 
 class MyFilter(Delegator):

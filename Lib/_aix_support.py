@@ -10,8 +10,8 @@ def _read_cmd_output(commandstring, capture_stderr=False):
     # Similar to os.popen(commandstring, "r").read(),
     # but without actually using os.popen because that
     # function is not usable during python bootstrap.
-    import os
     import contextlib
+    import os
     fp = open("/tmp/_aix_support.%s"%(
         os.getpid(),), "w+b")
 

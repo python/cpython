@@ -1,7 +1,9 @@
 import sys
-import unittest
 import textwrap
+import unittest
+
 from test.support.testcase import ExceptionIsLikeMixin
+
 
 class TestInvalidExceptStar(unittest.TestCase):
     def test_mixed_except_and_except_star_is_syntax_error(self):

@@ -1,6 +1,7 @@
 "Test the functionality of Python classes implementing operators."
 
 import unittest
+
 from test import support
 from test.support import cpython_only, import_helper, script_helper
 
@@ -449,6 +450,7 @@ class ClassTests(unittest.TestCase):
 
     def testHasAttrString(self):
         import sys
+
         from test.support import import_helper
         _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
 

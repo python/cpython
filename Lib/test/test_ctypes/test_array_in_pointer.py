@@ -1,7 +1,7 @@
 import binascii
 import re
 import unittest
-from ctypes import c_byte, Structure, POINTER, cast
+from ctypes import POINTER, Structure, c_byte, cast
 
 
 def dump(obj):

@@ -15,9 +15,8 @@ import threading
 import unittest
 import weakref
 from ast import literal_eval
-from unittest import mock
-
 from http.server import HTTPServer
+from unittest import mock
 from wsgiref.simple_server import WSGIRequestHandler, WSGIServer
 
 try:
@@ -25,15 +24,11 @@ try:
 except ImportError:  # pragma: no cover
     ssl = None
 
-from asyncio import base_events
-from asyncio import events
-from asyncio import format_helpers
-from asyncio import tasks
+from asyncio import base_events, events, format_helpers, tasks
 from asyncio.log import logger
-from test import support
-from test.support import socket_helper
-from test.support import threading_helper
 
+from test import support
+from test.support import socket_helper, threading_helper
 
 # Use the maximum known clock resolution (gh-75191, gh-110088): Windows
 # GetTickCount64() has a resolution of 15.6 ms. Use 50 ms to tolerate rounding

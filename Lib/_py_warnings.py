@@ -1,9 +1,8 @@
 """Python part of the warnings subsystem."""
 
-import sys
 import _contextvars
 import _thread
-
+import sys
 
 __all__ = ["warn", "warn_explicit", "showwarning",
            "formatwarning", "filterwarnings", "simplefilter",
@@ -836,7 +835,8 @@ def _warn_unawaited_coroutine(coro):
         f"coroutine '{coro.__qualname__}' was never awaited\n"
     ]
     if coro.cr_origin is not None:
-        import linecache, traceback
+        import linecache
+        import traceback
         def extract():
             for filename, lineno, funcname in reversed(coro.cr_origin):
                 line = linecache.getline(filename, lineno)

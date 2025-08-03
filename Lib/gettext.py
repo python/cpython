@@ -47,7 +47,6 @@ import operator
 import os
 import sys
 
-
 __all__ = ['NullTranslations', 'GNUTranslations', 'Catalog',
            'bindtextdomain', 'find', 'translation', 'install',
            'textdomain', 'dgettext', 'dngettext', 'gettext',

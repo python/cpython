@@ -7,7 +7,6 @@ grp = import_helper.import_module("grp")
 
 from test import test_grp
 
-
 NTHREADS = 10
 
 

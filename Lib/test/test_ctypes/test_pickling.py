@@ -1,9 +1,21 @@
 import pickle
 import unittest
-from ctypes import (CDLL, Structure, CFUNCTYPE, pointer,
-                    c_void_p, c_char_p, c_wchar_p,
-                    c_char, c_wchar, c_int, c_double)
+from ctypes import (
+    CDLL,
+    CFUNCTYPE,
+    Structure,
+    c_char,
+    c_char_p,
+    c_double,
+    c_int,
+    c_void_p,
+    c_wchar,
+    c_wchar_p,
+    pointer,
+)
+
 from test.support import import_helper, thread_unsafe
+
 _ctypes_test = import_helper.import_module("_ctypes_test")
 
 

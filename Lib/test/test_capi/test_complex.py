@@ -1,14 +1,20 @@
-from math import isnan
 import errno
 import unittest
 import warnings
+from math import isnan
 
-from test.test_capi.test_getargs import (BadComplex, BadComplex2, Complex,
-                                         FloatSubclass, Float, BadFloat,
-                                         BadFloat2, ComplexSubclass)
 from test.support import import_helper
 from test.support.testcase import ComplexesAreIdenticalMixin
-
+from test.test_capi.test_getargs import (
+    BadComplex,
+    BadComplex2,
+    BadFloat,
+    BadFloat2,
+    Complex,
+    ComplexSubclass,
+    Float,
+    FloatSubclass,
+)
 
 _testcapi = import_helper.import_module('_testcapi')
 _testlimitedcapi = import_helper.import_module('_testlimitedcapi')

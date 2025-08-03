@@ -3,14 +3,17 @@
 # http://www.voidspace.org.uk/python/mock/
 
 import unittest
-from test.test_unittest.testmock.support import is_instance, X, SomeClass
-
 from unittest.mock import (
-    Mock, MagicMock, NonCallableMagicMock,
-    NonCallableMock, patch, create_autospec,
-    CallableMixin
+    CallableMixin,
+    MagicMock,
+    Mock,
+    NonCallableMagicMock,
+    NonCallableMock,
+    create_autospec,
+    patch,
 )
 
+from test.test_unittest.testmock.support import SomeClass, X, is_instance
 
 
 class TestCallable(unittest.TestCase):

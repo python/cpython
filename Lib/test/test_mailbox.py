@@ -1,22 +1,24 @@
-import os
-import sys
-import time
-import socket
 import email
 import email.message
-import re
-import io
-import tempfile
-from test import support
-from test.support import import_helper
-from test.support import os_helper
-from test.support import refleak_helper
-from test.support import socket_helper
-import unittest
-import textwrap
-import mailbox
 import glob
+import io
+import mailbox
+import os
+import re
+import socket
+import sys
+import tempfile
+import textwrap
+import time
+import unittest
 
+from test import support
+from test.support import (
+    import_helper,
+    os_helper,
+    refleak_helper,
+    socket_helper,
+)
 
 if not socket_helper.has_gethostname:
     raise unittest.SkipTest("test requires gethostname()")

@@ -1,5 +1,6 @@
 """Tests for futures.py."""
 
+import asyncio
 import concurrent.futures
 import gc
 import re
@@ -7,13 +8,13 @@ import sys
 import threading
 import traceback
 import unittest
-from unittest import mock
-from types import GenericAlias
-import asyncio
-from asyncio import futures
 import warnings
-from test.test_asyncio import utils as test_utils
+from asyncio import futures
+from types import GenericAlias
+from unittest import mock
+
 from test import support
+from test.test_asyncio import utils as test_utils
 
 
 def tearDownModule():

@@ -6,6 +6,7 @@ import os
 import sys
 import tempfile
 import unittest
+
 from test.support import os_helper, requires_resource
 
 if sys.platform != 'win32':

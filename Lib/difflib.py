@@ -30,8 +30,8 @@ __all__ = ['get_close_matches', 'ndiff', 'restore', 'SequenceMatcher',
            'Differ','IS_CHARACTER_JUNK', 'IS_LINE_JUNK', 'context_diff',
            'unified_diff', 'diff_bytes', 'HtmlDiff', 'Match']
 
-from heapq import nlargest as _nlargest
 from collections import namedtuple as _namedtuple
+from heapq import nlargest as _nlargest
 from types import GenericAlias
 
 Match = _namedtuple('Match', 'a b size')

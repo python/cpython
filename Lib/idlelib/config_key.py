@@ -1,13 +1,11 @@
 """
 Dialog for building Tkinter accelerator key bindings
 """
-from tkinter import Toplevel, Listbox, StringVar, TclError
-from tkinter.ttk import Frame, Button, Checkbutton, Entry, Label, Scrollbar
-from tkinter import messagebox
-from tkinter.simpledialog import _setup_dialog
 import string
 import sys
-
+from tkinter import Listbox, StringVar, TclError, Toplevel, messagebox
+from tkinter.simpledialog import _setup_dialog
+from tkinter.ttk import Button, Checkbutton, Entry, Frame, Label, Scrollbar
 
 FUNCTION_KEYS = ('F1', 'F2' ,'F3' ,'F4' ,'F5' ,'F6',
                  'F7', 'F8' ,'F9' ,'F10' ,'F11' ,'F12')

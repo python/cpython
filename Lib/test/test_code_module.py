@@ -2,11 +2,11 @@
 import sys
 import traceback
 import unittest
-from textwrap import dedent
 from contextlib import ExitStack
+from textwrap import dedent
 from unittest import mock
-from test.support import force_not_colorized_test_class
-from test.support import import_helper
+
+from test.support import force_not_colorized_test_class, import_helper
 
 code = import_helper.import_module('code')
 

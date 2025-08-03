@@ -1,7 +1,8 @@
 from io import StringIO
-from test.test_json import PyTest, CTest
 
-from test.support import bigmemtest, _1G
+from test.support import _1G, bigmemtest
+from test.test_json import CTest, PyTest
+
 
 class TestDump:
     def test_dump(self):

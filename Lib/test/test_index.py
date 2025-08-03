@@ -1,6 +1,8 @@
-import unittest
-from test import support
 import operator
+import unittest
+
+from test import support
+
 maxsize = support.MAX_Py_ssize_t
 
 class newstyle:

@@ -8,15 +8,15 @@
 #
 
 import bisect
-from collections import defaultdict
 import mmap
 import os
 import sys
 import tempfile
 import threading
+from collections import defaultdict
 
-from .context import reduction, assert_spawning
 from . import util
+from .context import assert_spawning, reduction
 
 __all__ = ['BufferWrapper']
 

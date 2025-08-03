@@ -8,16 +8,18 @@ import os
 import select
 import signal
 import socket
+import socketserver
 import threading
 import unittest
-import socketserver
 
 import test.support
-from test.support import reap_children, verbose
-from test.support import os_helper
-from test.support import socket_helper
-from test.support import threading_helper
-
+from test.support import (
+    os_helper,
+    reap_children,
+    socket_helper,
+    threading_helper,
+    verbose,
+)
 
 test.support.requires("network")
 test.support.requires_working_socket(module=True)

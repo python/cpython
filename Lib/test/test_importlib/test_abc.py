@@ -2,12 +2,12 @@ import io
 import marshal
 import os
 import sys
-from test.support import import_helper
 import types
 import unittest
-from unittest import mock
 import warnings
+from unittest import mock
 
+from test.support import import_helper
 from test.test_importlib import util as test_util
 
 init = test_util.import_importlib('importlib')

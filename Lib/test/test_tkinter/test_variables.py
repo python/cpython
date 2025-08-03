@@ -1,10 +1,17 @@
-import unittest
-from test import support
-
 import gc
 import tkinter
-from tkinter import (Variable, StringVar, IntVar, DoubleVar, BooleanVar, Tcl,
-                     TclError)
+import unittest
+from tkinter import (
+    BooleanVar,
+    DoubleVar,
+    IntVar,
+    StringVar,
+    Tcl,
+    TclError,
+    Variable,
+)
+
+from test import support
 from test.support import ALWAYS_EQ
 from test.test_tkinter.support import AbstractDefaultRootTest, tcl_version
 

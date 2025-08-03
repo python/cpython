@@ -1,10 +1,10 @@
 """Implements InterpreterPoolExecutor."""
 
-from concurrent import interpreters
 import sys
-import textwrap
-from . import thread as _thread
 import traceback
+from concurrent import interpreters
+
+from . import thread as _thread
 
 
 def do_call(results, func, args, kwargs):

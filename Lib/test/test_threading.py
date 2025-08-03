@@ -2,30 +2,34 @@
 Tests for the threading module.
 """
 
-import test.support
-from test.support import threading_helper, requires_subprocess, requires_gil_enabled
-from test.support import verbose, cpython_only, os_helper
-from test.support.import_helper import ensure_lazy_imports, import_module
-from test.support.script_helper import assert_python_ok, assert_python_failure
-from test.support import force_not_colorized
-
-import random
-import sys
 import _thread
+import os
+import random
+import signal
+import subprocess
+import sys
+import textwrap
 import threading
 import time
-import unittest
-import weakref
-import os
-import subprocess
-import signal
-import textwrap
 import traceback
+import unittest
 import warnings
-
+import weakref
 from unittest import mock
-from test import lock_tests
-from test import support
+
+import test.support
+from test import lock_tests, support
+from test.support import (
+    cpython_only,
+    force_not_colorized,
+    os_helper,
+    requires_gil_enabled,
+    requires_subprocess,
+    threading_helper,
+    verbose,
+)
+from test.support.import_helper import ensure_lazy_imports, import_module
+from test.support.script_helper import assert_python_failure, assert_python_ok
 
 try:
     from concurrent import interpreters
@@ -1308,7 +1312,7 @@ class ThreadTests(BaseTestCase):
         # its state should be removed from interpreter' thread states list
         # to avoid its double cleanup
         try:
-            from resource import setrlimit, RLIMIT_NPROC  # noqa: F401
+            from resource import RLIMIT_NPROC, setrlimit  # noqa: F401
         except ImportError as err:
             self.skipTest(err)  # RLIMIT_NPROC is specific to Linux and BSD
         code = """if 1:

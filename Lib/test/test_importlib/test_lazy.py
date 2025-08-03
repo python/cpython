@@ -1,11 +1,10 @@
 import importlib
-from importlib import abc
-from importlib import util
 import sys
-import time
 import threading
+import time
 import types
 import unittest
+from importlib import abc, util
 
 from test.support import threading_helper
 from test.test_importlib import util as test_util

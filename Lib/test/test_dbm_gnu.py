@@ -1,9 +1,16 @@
 import os
 import unittest
+
 from test import support
 from test.support import cpython_only, import_helper
-from test.support.os_helper import (TESTFN, TESTFN_NONASCII, FakePath,
-                                    create_empty_file, temp_dir, unlink)
+from test.support.os_helper import (
+    TESTFN,
+    TESTFN_NONASCII,
+    FakePath,
+    create_empty_file,
+    temp_dir,
+    unlink,
+)
 
 gdbm = import_helper.import_module("dbm.gnu")  # skip if not supported
 

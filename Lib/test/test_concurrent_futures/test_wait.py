@@ -2,15 +2,23 @@ import sys
 import threading
 import unittest
 from concurrent import futures
+
 from test import support
 from test.support import threading_helper
 
 from .util import (
-    CANCELLED_FUTURE, CANCELLED_AND_NOTIFIED_FUTURE, EXCEPTION_FUTURE,
+    CANCELLED_AND_NOTIFIED_FUTURE,
+    CANCELLED_FUTURE,
+    EXCEPTION_FUTURE,
     SUCCESSFUL_FUTURE,
-    create_executor_tests, setup_module,
-    BaseTestCase, ThreadPoolMixin,
-    ProcessPoolForkMixin, ProcessPoolForkserverMixin, ProcessPoolSpawnMixin)
+    BaseTestCase,
+    ProcessPoolForkMixin,
+    ProcessPoolForkserverMixin,
+    ProcessPoolSpawnMixin,
+    ThreadPoolMixin,
+    create_executor_tests,
+    setup_module,
+)
 
 
 def mul(x, y):

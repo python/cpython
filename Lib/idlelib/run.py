@@ -4,30 +4,32 @@ Simplified, pyshell.ModifiedInterpreter spawns a subprocess with
 f'''{sys.executable} -c "__import__('idlelib.run').run.main()"'''
 '.run' is needed because __import__ returns idlelib, not idlelib.run.
 """
+import _thread as thread
 import contextlib
 import functools
+import idlelib  # testing
 import io
 import linecache
 import queue
 import sys
 import textwrap
-import time
-import traceback
-import _thread as thread
 import threading
+import time
+import tkinter  # Use tcl and, if startup fails, messagebox.
+import traceback
 import warnings
+from idlelib import (
+    autocomplete,  # AutoComplete, fetch_encodings
+    calltip,  # Calltip
+    debugger_r,  # start_debugger
+    debugobj_r,  # remote_object_tree_item
+    iomenu,  # encoding
+    rpc,  # multiple objects
+    stackviewer,  # StackTreeItem
+)
 
-import idlelib  # testing
-from idlelib import autocomplete  # AutoComplete, fetch_encodings
-from idlelib import calltip  # Calltip
-from idlelib import debugger_r  # start_debugger
-from idlelib import debugobj_r  # remote_object_tree_item
-from idlelib import iomenu  # encoding
-from idlelib import rpc  # multiple objects
-from idlelib import stackviewer  # StackTreeItem
 import __main__
 
-import tkinter  # Use tcl and, if startup fails, messagebox.
 if not hasattr(sys.modules['idlelib.run'], 'firstrun'):
     # Undo modifications of tkinter by idlelib imports; see bpo-25507.
     for mod in ('simpledialog', 'messagebox', 'font',
@@ -541,7 +543,7 @@ class MyHandler(rpc.RPCHandler):
 
         sys.displayhook = rpc.displayhook
         # page help() text to shell.
-        import pydoc # import must be done here to capture i/o binding
+        import pydoc  # import must be done here to capture i/o binding
         pydoc.pager = pydoc.plainpager
 
         # Keep a reference to stdin so that it won't try to exit IDLE if

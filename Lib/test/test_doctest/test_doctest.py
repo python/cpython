@@ -2,19 +2,20 @@
 Test script for doctest.
 """
 
-from test import support
-from test.support import import_helper
+import contextlib
 import doctest
 import functools
-import os
-import sys
 import importlib
 import importlib.abc
 import importlib.util
-import unittest
+import os
+import sys
 import tempfile
 import types
-import contextlib
+import unittest
+
+from test import support
+from test.support import import_helper
 
 
 def doctest_skip_if(condition):

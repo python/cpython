@@ -5,8 +5,9 @@ import os
 import subprocess
 import sys
 import unittest
-from test.support import requires, has_subprocess_support
 from textwrap import dedent
+
+from test.support import has_subprocess_support, requires
 
 # Only run these tests if curses is available
 requires("curses")
@@ -20,7 +21,6 @@ except ImportError:
         _curses = None
 
 from _pyrepl import terminfo
-
 
 ABSENT_STRING = terminfo.ABSENT_STRING
 CANCELLED_STRING = terminfo.CANCELLED_STRING

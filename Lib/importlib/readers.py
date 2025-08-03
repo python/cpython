@@ -6,7 +6,10 @@ module directly.
 """
 
 from .resources.readers import (
-    FileReader, ZipReader, MultiplexedPath, NamespaceReader,
+    FileReader,
+    MultiplexedPath,
+    NamespaceReader,
+    ZipReader,
 )
 
 __all__ = ['FileReader', 'ZipReader', 'MultiplexedPath', 'NamespaceReader']

@@ -13,14 +13,10 @@ import os
 import tabnanny
 import time
 import tokenize
-
-from tkinter import messagebox
-
+from idlelib import macosx, outwin, pyshell
 from idlelib.config import idleConf
-from idlelib import macosx
-from idlelib import pyshell
 from idlelib.query import CustomRun
-from idlelib import outwin
+from tkinter import messagebox
 
 indent_message = """Error: Inconsistent indentation detected!
 

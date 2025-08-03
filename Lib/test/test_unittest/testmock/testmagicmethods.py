@@ -1,9 +1,8 @@
 import math
-import unittest
 import os
+import unittest
 from inspect import iscoroutinefunction
-from unittest.mock import AsyncMock, Mock, MagicMock, _magics
-
+from unittest.mock import AsyncMock, MagicMock, Mock, _magics
 
 
 class TestMockingMagicMethods(unittest.TestCase):

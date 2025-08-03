@@ -2,21 +2,30 @@
 Python implementation of the io module.
 """
 
-import os
 import abc
 import codecs
 import errno
+import os
 import stat
 import sys
+
 # Import _thread instead of threading to reduce startup cost
 from _thread import allocate_lock as Lock
+
 if sys.platform in {'win32', 'cygwin'}:
     from msvcrt import setmode as _setmode
 else:
     _setmode = None
 
 import io
-from io import (__all__, SEEK_SET, SEEK_CUR, SEEK_END, Reader, Writer)  # noqa: F401
+from io import (  # noqa: F401
+    SEEK_CUR,
+    SEEK_END,
+    SEEK_SET,
+    Reader,
+    Writer,
+    __all__,
+)
 
 valid_seek_flags = {0, 1, 2}  # Hardwired values
 if hasattr(os, 'SEEK_HOLE') :

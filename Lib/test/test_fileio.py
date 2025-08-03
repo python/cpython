@@ -1,28 +1,33 @@
 # Adapted from test_file.py by Daniel Stutzbach
 
-import sys
-import os
-import io
+import _io  # C implementation of io
+import _pyio  # Python implementation of io
 import errno
+import io
+import os
+import sys
 import unittest
 from array import array
-from weakref import proxy
+from collections import UserList
 from functools import wraps
+from weakref import proxy
 
 from test.support import (
-    cpython_only, swap_attr, gc_collect, is_wasi,
-    infinite_recursion, strace_helper
+    cpython_only,
+    gc_collect,
+    infinite_recursion,
+    is_wasi,
+    strace_helper,
+    swap_attr,
 )
-from test.support.os_helper import (
-    TESTFN, TESTFN_ASCII, TESTFN_UNICODE, make_bad_fd,
-    )
-from test.support.warnings_helper import check_warnings
 from test.support.import_helper import import_module
-from collections import UserList
-
-import _io  # C implementation of io
-import _pyio # Python implementation of io
-
+from test.support.os_helper import (
+    TESTFN,
+    TESTFN_ASCII,
+    TESTFN_UNICODE,
+    make_bad_fd,
+)
+from test.support.warnings_helper import check_warnings
 
 _strace_flags=["--trace=%file,%desc"]
 

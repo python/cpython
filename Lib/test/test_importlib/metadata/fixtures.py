@@ -1,19 +1,16 @@
-import sys
-import copy
-import json
-import shutil
-import pathlib
-import textwrap
-import functools
 import contextlib
+import copy
+import functools
+import json
+import pathlib
+import shutil
+import sys
+import textwrap
 
-from test.support import import_helper
-from test.support import os_helper
-from test.support import requires_zlib
+from test.support import import_helper, os_helper, requires_zlib
 
 from . import _path
 from ._path import FilesSpec
-
 
 try:
     from importlib import resources  # type: ignore

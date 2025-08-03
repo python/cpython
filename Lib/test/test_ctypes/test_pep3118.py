@@ -1,13 +1,32 @@
 import re
 import sys
 import unittest
-from ctypes import (CFUNCTYPE, POINTER, sizeof, Union,
-                    Structure, LittleEndianStructure, BigEndianStructure,
-                    c_char, c_byte, c_ubyte,
-                    c_short, c_ushort, c_int, c_uint,
-                    c_long, c_ulong, c_longlong, c_ulonglong, c_uint64,
-                    c_bool, c_float, c_double, c_longdouble, py_object)
-
+from ctypes import (
+    CFUNCTYPE,
+    POINTER,
+    BigEndianStructure,
+    LittleEndianStructure,
+    Structure,
+    Union,
+    c_bool,
+    c_byte,
+    c_char,
+    c_double,
+    c_float,
+    c_int,
+    c_long,
+    c_longdouble,
+    c_longlong,
+    c_short,
+    c_ubyte,
+    c_uint,
+    c_uint64,
+    c_ulong,
+    c_ulonglong,
+    c_ushort,
+    py_object,
+    sizeof,
+)
 
 if sys.byteorder == "little":
     THIS_ENDIAN = "<"

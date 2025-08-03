@@ -7,9 +7,15 @@ from test import support
 
 from .filter import match_test, set_match_tests
 from .utils import (
-    StrPath, TestName, TestTuple, TestList, TestFilter,
-    abs_module_name, count, printlist)
-
+    StrPath,
+    TestFilter,
+    TestList,
+    TestName,
+    TestTuple,
+    abs_module_name,
+    count,
+    printlist,
+)
 
 # If these test directories are encountered recurse into them and treat each
 # "test_*.py" file or each sub-directory as a separate test module. This can

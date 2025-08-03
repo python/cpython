@@ -2,8 +2,7 @@
 
 import warnings
 
-from ._common import files, as_file
-
+from ._common import as_file, files
 
 _MISSING = object()
 

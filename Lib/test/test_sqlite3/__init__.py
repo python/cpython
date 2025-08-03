@@ -6,6 +6,7 @@ import_helper.import_module('_sqlite3')
 import os
 import sqlite3
 
+
 # Implement the unittest "load tests" protocol.
 def load_tests(*args):
     pkg_dir = os.path.dirname(__file__)

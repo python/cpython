@@ -1,8 +1,14 @@
 import os
 import unittest
 from collections import UserDict
+
 from test.support import import_helper
-from test.support.os_helper import unlink, TESTFN, TESTFN_ASCII, TESTFN_UNDECODABLE
+from test.support.os_helper import (
+    TESTFN,
+    TESTFN_ASCII,
+    TESTFN_UNDECODABLE,
+    unlink,
+)
 
 NULL = None
 _testcapi = import_helper.import_module('_testcapi')

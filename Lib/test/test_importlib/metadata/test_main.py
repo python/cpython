@@ -1,10 +1,11 @@
-import re
-import pickle
-import unittest
-import warnings
+import contextlib
 import importlib
 import importlib.metadata
-import contextlib
+import pickle
+import re
+import unittest
+import warnings
+
 from test.support import os_helper
 
 try:
@@ -12,9 +13,6 @@ try:
 except ImportError:
     from .stubs import fake_filesystem_unittest as ffs
 
-from . import fixtures
-from ._context import suppress
-from ._path import Symlink
 from importlib.metadata import (
     Distribution,
     EntryPoint,
@@ -26,6 +24,10 @@ from importlib.metadata import (
     packages_distributions,
     version,
 )
+
+from . import fixtures
+from ._context import suppress
+from ._path import Symlink
 
 
 @contextlib.contextmanager

@@ -1,25 +1,25 @@
 """Disassembler of Python byte code into mnemonics."""
 
-import sys
-import types
 import collections
 import io
-
+import sys
+import types
+from _opcode import get_executor
 from opcode import *
 from opcode import (
     __all__ as _opcodes_all,
+)
+from opcode import (
     _cache_format,
-    _inline_cache_entries,
-    _nb_ops,
     _common_constants,
+    _inline_cache_entries,
     _intrinsic_1_descs,
     _intrinsic_2_descs,
+    _nb_ops,
     _special_method_names,
     _specializations,
     _specialized_opmap,
 )
-
-from _opcode import get_executor
 
 __all__ = ["code_info", "dis", "disassemble", "distb", "disco",
            "findlinestarts", "findlabels", "show_code",

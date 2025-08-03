@@ -1,12 +1,12 @@
 # Test the module type
 import importlib.machinery
+import sys
 import unittest
 import weakref
-from test.support import gc_collect
-from test.support import import_helper
+
+from test.support import gc_collect, import_helper
 from test.support.script_helper import assert_python_ok
 
-import sys
 ModuleType = type(sys)
 
 

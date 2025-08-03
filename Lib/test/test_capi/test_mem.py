@@ -2,11 +2,9 @@ import re
 import textwrap
 import unittest
 
-
 from test import support
 from test.support import import_helper, requires_subprocess
 from test.support.script_helper import assert_python_failure, assert_python_ok
-
 
 # Skip this test if the _testcapi and _testinternalcapi extensions are not
 # available.

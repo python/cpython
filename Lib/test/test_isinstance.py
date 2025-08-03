@@ -2,10 +2,10 @@
 # tests use new style classes and properties, they actually do whitebox
 # testing of error conditions uncovered when using extension types.
 
-import unittest
 import typing
-from test import support
+import unittest
 
+from test import support
 
 
 class TestIsInstanceExceptions(unittest.TestCase):

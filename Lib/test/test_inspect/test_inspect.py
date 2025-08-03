@@ -1,9 +1,10 @@
-from annotationlib import Format, ForwardRef
+import _pickle
 import asyncio
 import builtins
 import collections
 import copy
 import datetime
+import dis
 import functools
 import gc
 import importlib
@@ -11,44 +12,52 @@ import inspect
 import io
 import linecache
 import os
-import dis
-from os.path import normcase
-import _pickle
 import pickle
 import shutil
 import stat
-import sys
 import subprocess
-import time
-import types
+import sys
 import tempfile
 import textwrap
+import time
+import types
 import unicodedata
 import unittest
 import unittest.mock
 import warnings
 import weakref
+from os.path import normcase
 
+from annotationlib import Format, ForwardRef
 
 try:
     from concurrent.futures import ThreadPoolExecutor
 except ImportError:
     ThreadPoolExecutor = None
 
-from test.support import cpython_only, import_helper
-from test.support import MISSING_C_DOCSTRINGS, ALWAYS_EQ
-from test.support import run_no_yield_async_fn, EqualToForwardRef
+from test import support
+from test.support import (
+    ALWAYS_EQ,
+    MISSING_C_DOCSTRINGS,
+    EqualToForwardRef,
+    cpython_only,
+    has_subprocess_support,
+    import_helper,
+    run_no_yield_async_fn,
+)
 from test.support.import_helper import DirsOnSysPath, ready_to_import
 from test.support.os_helper import TESTFN, temp_cwd
-from test.support.script_helper import assert_python_ok, assert_python_failure, kill_python
-from test.support import has_subprocess_support
-from test import support
-
+from test.support.script_helper import (
+    assert_python_failure,
+    assert_python_ok,
+    kill_python,
+)
+from test.test_inspect import (
+    inspect_deferred_annotations,
+    inspect_stringized_annotations,
+)
 from test.test_inspect import inspect_fodder as mod
 from test.test_inspect import inspect_fodder2 as mod2
-from test.test_inspect import inspect_stringized_annotations
-from test.test_inspect import inspect_deferred_annotations
-
 
 # Functions tested in this suite:
 # ismodule, isclass, ismethod, isfunction, istraceback, isframe, iscode,
@@ -3458,7 +3467,7 @@ class TestSignatureObject(unittest.TestCase):
                           ...))
 
     def test_signature_on_partial(self):
-        from functools import partial, Placeholder
+        from functools import Placeholder, partial
 
         def test():
             pass

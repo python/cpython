@@ -1,11 +1,10 @@
-import os
-import json
 import doctest
+import json
+import os
 import unittest
 
 from test import support
 from test.support import import_helper
-
 
 # import json with and without accelerations
 cjson = import_helper.import_fresh_module('json', fresh=['_json'])

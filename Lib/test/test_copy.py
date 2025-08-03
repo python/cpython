@@ -1,12 +1,12 @@
 """Unit tests for the copy module."""
 
+import abc
 import copy
 import copyreg
-import weakref
-import abc
-from operator import le, lt, ge, gt, eq, ne, attrgetter
-
 import unittest
+import weakref
+from operator import attrgetter, eq, ge, gt, le, lt, ne
+
 from test import support
 
 order_comparisons = le, lt, ge, gt

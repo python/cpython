@@ -83,14 +83,13 @@
      raised when the user presses the STOP button.  (Paint is not such
      a demo; it only acts in response to mouse clicks and movements.)
 """
-import sys
 import os
-
-from tkinter import *
+import sys
+import turtle
 from idlelib.colorizer import ColorDelegator, color_config
 from idlelib.percolator import Percolator
 from idlelib.textview import view_text
-import turtle
+from tkinter import *
 from turtledemo import __doc__ as about_turtledemo
 
 if sys.platform == 'win32':

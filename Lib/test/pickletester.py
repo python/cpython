@@ -2,10 +2,10 @@ import builtins
 import collections
 import copyreg
 import dbm
-import io
 import functools
-import os
+import io
 import math
+import os
 import pickle
 import pickletools
 import shutil
@@ -15,27 +15,30 @@ import threading
 import types
 import unittest
 import weakref
-from textwrap import dedent
 from http.cookies import SimpleCookie
+from textwrap import dedent
 
 try:
     import _testbuffer
 except ImportError:
     _testbuffer = None
 
-from test import support
-from test.support import os_helper
-from test.support import (
-    TestFailed, run_with_locales, no_tracing,
-    _2G, _4G, bigmemtest
-    )
-from test.support.import_helper import forget
-from test.support.os_helper import TESTFN
-from test.support import threading_helper
-from test.support.warnings_helper import save_restore_warnings_filters
-
 from pickle import bytes_types
 
+from test import support
+from test.support import (
+    _2G,
+    _4G,
+    TestFailed,
+    bigmemtest,
+    no_tracing,
+    os_helper,
+    run_with_locales,
+    threading_helper,
+)
+from test.support.import_helper import forget
+from test.support.os_helper import TESTFN
+from test.support.warnings_helper import save_restore_warnings_filters
 
 # bpo-41003: Save/restore warnings filters to leave them unchanged.
 # Ignore filters installed by numpy.
@@ -145,6 +148,7 @@ class E(C):
         return ()
 
 import __main__
+
 __main__.C = C
 C.__module__ = "__main__"
 __main__.D = D
@@ -3000,8 +3004,8 @@ class AbstractPickleTests:
             self.assertIs(type(a), type(b))
 
     def test_structseq(self):
-        import time
         import os
+        import time
 
         t = time.localtime()
         for proto in protocols:

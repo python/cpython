@@ -2,29 +2,34 @@ import contextlib
 import os
 import pickle
 import sys
-from textwrap import dedent
 import threading
 import types
 import unittest
+from textwrap import dedent
 
 from test import support
-from test.support import os_helper
-from test.support import script_helper
-from test.support import import_helper
+from test.support import import_helper, os_helper, script_helper
+
 # Raise SkipTest if subinterpreters not supported.
 _interpreters = import_helper.import_module('_interpreters')
 from concurrent import interpreters
-from test.support import Py_GIL_DISABLED
-from test.support import force_not_colorized
-import test._crossinterp_definitions as defs
 from concurrent.interpreters import (
-    InterpreterError, InterpreterNotFoundError, ExecutionFailed,
-)
-from .utils import (
-    _captured_script, _run_output, _running, TestBase,
-    requires_test_modules, _testinternalcapi,
+    ExecutionFailed,
+    InterpreterError,
+    InterpreterNotFoundError,
 )
 
+import test._crossinterp_definitions as defs
+from test.support import Py_GIL_DISABLED, force_not_colorized
+
+from .utils import (
+    TestBase,
+    _captured_script,
+    _run_output,
+    _running,
+    _testinternalcapi,
+    requires_test_modules,
+)
 
 WHENCE_STR_UNKNOWN = 'unknown'
 WHENCE_STR_RUNTIME = 'runtime init'

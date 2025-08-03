@@ -1,7 +1,8 @@
 import dis
-from test.support.import_helper import import_module
-import unittest
 import opcode
+import unittest
+
+from test.support.import_helper import import_module
 
 _opcode = import_module("_opcode")
 from _opcode import stack_effect

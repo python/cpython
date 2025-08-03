@@ -3,8 +3,10 @@
 #   Codec encoding tests for PRC encodings.
 #
 
-from test import multibytecodec_support
 import unittest
+
+from test import multibytecodec_support
+
 
 class Test_GB2312(multibytecodec_support.TestBase, unittest.TestCase):
     encoding = 'gb2312'

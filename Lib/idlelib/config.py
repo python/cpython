@@ -25,12 +25,12 @@ configuration problem notification and resolution.
 """
 # TODOs added Oct 2014, tjr
 
-from configparser import ConfigParser
+import idlelib
 import os
 import sys
-
+from configparser import ConfigParser
 from tkinter.font import Font
-import idlelib
+
 
 class InvalidConfigType(Exception): pass
 class InvalidConfigSet(Exception): pass

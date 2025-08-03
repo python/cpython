@@ -1,12 +1,22 @@
-import annotationlib
+import pickle
 import textwrap
 import types
 import unittest
-import pickle
 import weakref
-from test.support import check_syntax_error, run_code, run_no_yield_async_fn
+from typing import (
+    Generic,
+    NoDefault,
+    ParamSpec,
+    Sequence,
+    TypeAliasType,
+    TypeVar,
+    TypeVarTuple,
+    get_args,
+)
 
-from typing import Generic, NoDefault, Sequence, TypeAliasType, TypeVar, TypeVarTuple, ParamSpec, get_args
+import annotationlib
+
+from test.support import check_syntax_error, run_code, run_no_yield_async_fn
 
 
 class TypeParamsInvalidTest(unittest.TestCase):

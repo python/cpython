@@ -1,8 +1,21 @@
 import unittest
-from ctypes import (c_byte, c_short, c_int, c_long, c_longlong,
-                    c_ubyte, c_ushort, c_uint, c_ulong, c_ulonglong,
-                    c_float, c_double, c_longdouble, c_bool, c_char)
-
+from ctypes import (
+    c_bool,
+    c_byte,
+    c_char,
+    c_double,
+    c_float,
+    c_int,
+    c_long,
+    c_longdouble,
+    c_longlong,
+    c_short,
+    c_ubyte,
+    c_uint,
+    c_ulong,
+    c_ulonglong,
+    c_ushort,
+)
 
 subclasses = []
 for base in [c_byte, c_short, c_int, c_long, c_longlong,

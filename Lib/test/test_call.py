@@ -1,9 +1,18 @@
 import unittest
-from test.support import (cpython_only, is_wasi, requires_limited_api, Py_DEBUG,
-                          set_recursion_limit, skip_on_s390x,
-                          skip_emscripten_stack_overflow,
-                          skip_wasi_stack_overflow, skip_if_sanitizer,
-                          import_helper)
+
+from test.support import (
+    Py_DEBUG,
+    cpython_only,
+    import_helper,
+    is_wasi,
+    requires_limited_api,
+    set_recursion_limit,
+    skip_emscripten_stack_overflow,
+    skip_if_sanitizer,
+    skip_on_s390x,
+    skip_wasi_stack_overflow,
+)
+
 try:
     import _testcapi
 except ImportError:
@@ -12,11 +21,11 @@ try:
     import _testlimitedcapi
 except ImportError:
     _testlimitedcapi = None
-import struct
 import collections
-import itertools
-import gc
 import contextlib
+import gc
+import itertools
+import struct
 import types
 
 
@@ -745,8 +754,8 @@ class TestPEP590(unittest.TestCase):
                  (_testcapi.MethodDescriptor2(), (0,), {}, False)]
 
         from _testcapi import pyobject_vectorcall, pyvectorcall_call
-        from types import MethodType
         from functools import partial
+        from types import MethodType
 
         def vectorcall(func, args, kwargs):
             args = *args, *kwargs.values()

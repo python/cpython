@@ -1,11 +1,7 @@
 import enum
-
 from types import TracebackType
 
-from . import events
-from . import exceptions
-from . import tasks
-
+from . import events, exceptions, tasks
 
 __all__ = (
     "Timeout",

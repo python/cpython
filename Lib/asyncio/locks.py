@@ -6,8 +6,8 @@ __all__ = ('Lock', 'Event', 'Condition', 'Semaphore',
 import collections
 import enum
 
-from . import exceptions
-from . import mixins
+from . import exceptions, mixins
+
 
 class _ContextManagerMixin:
     async def __aenter__(self):

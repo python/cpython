@@ -3,9 +3,9 @@ import subprocess
 import sys
 import unittest
 from pathlib import Path
+
 from test.support import REPO_ROOT, TEST_HOME_DIR, requires_subprocess
 from test.test_tools import skip_if_missing
-
 
 pygettext = Path(REPO_ROOT) / 'Tools' / 'i18n' / 'pygettext.py'
 

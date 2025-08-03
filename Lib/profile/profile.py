@@ -23,11 +23,9 @@
 # governing permissions and limitations under the License.
 
 
-import importlib.machinery
-import io
+import marshal
 import sys
 import time
-import marshal
 
 __all__ = ["run", "runctx", "Profile"]
 

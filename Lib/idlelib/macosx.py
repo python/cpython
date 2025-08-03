@@ -1,12 +1,10 @@
 """
 A number of functions that enhance IDLE on macOS.
 """
-from os.path import expanduser
 import plistlib
-from sys import platform  # Used in _init_tk_type, changed by test.
-
 import tkinter
-
+from os.path import expanduser
+from sys import platform  # Used in _init_tk_type, changed by test.
 
 ## Define functions that query the Mac graphics type.
 ## _tk_type and its initializer are private to this section.
@@ -26,7 +24,7 @@ def _init_tk_type():
         # If not, guess most common.  Does not matter for testing.
         from idlelib.__init__ import testing
         if testing:
-            from test.support import requires, ResourceDenied
+            from test.support import ResourceDenied, requires
             try:
                 requires('gui')
             except ResourceDenied:
@@ -154,9 +152,8 @@ def overrideRootMenu(root, flist):
     #
     # Due to a (mis-)feature of TkAqua the user will also see an empty Help
     # menu.
+    from idlelib import mainmenu, window
     from tkinter import Menu
-    from idlelib import mainmenu
-    from idlelib import window
 
     closeItem = mainmenu.menudefs[0][1][-2]
 

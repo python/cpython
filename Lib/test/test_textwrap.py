@@ -9,8 +9,7 @@
 #
 
 import unittest
-
-from textwrap import TextWrapper, wrap, fill, dedent, indent, shorten
+from textwrap import TextWrapper, dedent, fill, indent, shorten, wrap
 
 
 class BaseTestCase(unittest.TestCase):

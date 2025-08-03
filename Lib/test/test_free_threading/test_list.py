@@ -1,10 +1,8 @@
 import unittest
-
-from threading import Thread, Barrier
+from threading import Barrier, Thread
 from unittest import TestCase
 
 from test.support import threading_helper
-
 
 NTHREAD = 10
 OBJECT_COUNT = 5_000

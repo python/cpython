@@ -1,5 +1,5 @@
-import io
 import importlib.machinery
+import io
 import os
 import sys
 from optparse import OptionParser

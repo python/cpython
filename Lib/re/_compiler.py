@@ -11,9 +11,10 @@
 """Internal support module for sre"""
 
 import _sre
+
 from . import _parser
-from ._constants import *
 from ._casefix import _EXTRA_CASES
+from ._constants import *
 
 assert _sre.MAGIC == MAGIC, "SRE module mismatch"
 

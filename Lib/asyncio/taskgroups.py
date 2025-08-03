@@ -4,10 +4,7 @@
 
 __all__ = ("TaskGroup",)
 
-from . import events
-from . import exceptions
-from . import futures
-from . import tasks
+from . import events, exceptions, futures, tasks
 
 
 class TaskGroup:

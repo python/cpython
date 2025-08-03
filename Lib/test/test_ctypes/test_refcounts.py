@@ -2,9 +2,10 @@ import ctypes
 import gc
 import sys
 import unittest
+
 from test import support
-from test.support import import_helper, thread_unsafe
-from test.support import script_helper
+from test.support import import_helper, script_helper, thread_unsafe
+
 _ctypes_test = import_helper.import_module("_ctypes_test")
 
 

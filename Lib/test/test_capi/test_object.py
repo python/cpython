@@ -2,12 +2,10 @@ import enum
 import sys
 import textwrap
 import unittest
-from test import support
-from test.support import import_helper
-from test.support import os_helper
-from test.support import threading_helper
-from test.support.script_helper import assert_python_failure
 
+from test import support
+from test.support import import_helper, os_helper, threading_helper
+from test.support.script_helper import assert_python_failure
 
 _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
 _testcapi = import_helper.import_module('_testcapi')
@@ -115,8 +113,8 @@ class ClearWeakRefsNoCallbacksTest(unittest.TestCase):
     """Test PyUnstable_Object_ClearWeakRefsNoCallbacks"""
     def test_ClearWeakRefsNoCallbacks(self):
         """Ensure PyUnstable_Object_ClearWeakRefsNoCallbacks works"""
-        import weakref
         import gc
+        import weakref
         class C:
             pass
         obj = C()

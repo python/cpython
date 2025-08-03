@@ -1,3 +1,5 @@
+import _ast
+import ast
 import contextlib
 import dis
 import io
@@ -5,24 +7,28 @@ import itertools
 import math
 import opcode
 import os
-import unittest
 import sys
-import ast
-import _ast
 import tempfile
-import types
 import textwrap
+import types
+import unittest
 import warnings
+
 try:
     import _testinternalcapi
 except ImportError:
     _testinternalcapi = None
 
 from test import support
-from test.support import (script_helper, requires_debug_ranges, run_code,
-                          requires_specialization)
+from test.support import (
+    requires_debug_ranges,
+    requires_specialization,
+    run_code,
+    script_helper,
+)
 from test.support.bytecode_helper import instructions_with_positions
 from test.support.os_helper import FakePath
+
 
 class TestSpecifics(unittest.TestCase):
 
@@ -450,7 +456,7 @@ class TestSpecifics(unittest.TestCase):
             def f():
                 __mangled = 1
                 __not_mangled__ = 2
-                import __mangled_mod       # noqa: F401
+                import __mangled_mod  # noqa: F401
                 import __package__.module  # noqa: F401
 
         self.assertIn("_A__mangled", A.f.__code__.co_varnames)
@@ -2496,7 +2502,8 @@ class TestStackSizeStability(unittest.TestCase):
 
         sizes = [compile_snippet(i).co_stacksize for i in range(2, 5)]
         if len(set(sizes)) != 1:
-            import dis, io
+            import dis
+            import io
             out = io.StringIO()
             dis.dis(compile_snippet(1), file=out)
             self.fail("stack sizes diverge with # of consecutive snippets: "

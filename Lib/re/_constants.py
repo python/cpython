@@ -15,7 +15,7 @@
 
 MAGIC = 20230612
 
-from _sre import MAXREPEAT, MAXGROUPS  # noqa: F401
+from _sre import MAXGROUPS, MAXREPEAT  # noqa: F401
 
 # SRE standard exception (access as sre.error)
 # should this really be here?

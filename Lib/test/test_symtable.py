@@ -3,13 +3,12 @@ Test the API of the symtable module.
 """
 
 import re
-import textwrap
 import symtable
+import textwrap
 import unittest
 
 from test import support
 from test.support import os_helper
-
 
 TEST_CODE = """
 import sys

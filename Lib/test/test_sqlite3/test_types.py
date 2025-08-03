@@ -21,9 +21,10 @@
 # 3. This notice may not be removed or altered from any source distribution.
 
 import datetime
-import unittest
 import sqlite3 as sqlite
 import sys
+import unittest
+
 try:
     import zlib
 except ImportError:

@@ -20,12 +20,11 @@
 #    misrepresented as being the original software.
 # 3. This notice may not be removed or altered from any source distribution.
 
-import unittest
 import sqlite3 as sqlite
+import unittest
 from collections.abc import Sequence
 
-from .util import memory_database
-from .util import MemoryDatabaseMixin
+from .util import MemoryDatabaseMixin, memory_database
 
 
 def dict_factory(cursor, row):

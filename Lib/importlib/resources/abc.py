@@ -3,10 +3,18 @@ import io
 import itertools
 import os
 import pathlib
-from typing import Any, BinaryIO, Iterable, Iterator, NoReturn, Text, Optional
-from typing import runtime_checkable, Protocol
-from typing import Union
-
+from typing import (
+    Any,
+    BinaryIO,
+    Iterable,
+    Iterator,
+    NoReturn,
+    Optional,
+    Protocol,
+    Text,
+    Union,
+    runtime_checkable,
+)
 
 StrPath = Union[str, os.PathLike[str]]
 

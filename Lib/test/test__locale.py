@@ -1,6 +1,15 @@
-from _locale import (setlocale, LC_ALL, LC_CTYPE, LC_NUMERIC, LC_TIME, localeconv, Error)
+from _locale import (
+    LC_ALL,
+    LC_CTYPE,
+    LC_NUMERIC,
+    LC_TIME,
+    Error,
+    localeconv,
+    setlocale,
+)
+
 try:
-    from _locale import (RADIXCHAR, THOUSEP, nl_langinfo)
+    from _locale import RADIXCHAR, THOUSEP, nl_langinfo
 except ImportError:
     nl_langinfo = None
 

@@ -6,9 +6,7 @@ import time
 import unittest
 
 from test import support
-from test.support import import_helper
-from test.support import os_helper
-
+from test.support import import_helper, os_helper
 
 support.requires('audio')
 winsound = import_helper.import_module('winsound')

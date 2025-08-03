@@ -1,7 +1,8 @@
-from test import support
 import random
 import unittest
 from functools import cmp_to_key
+
+from test import support
 
 verbose = support.verbose
 nerrors = 0

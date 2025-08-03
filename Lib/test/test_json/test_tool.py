@@ -1,15 +1,15 @@
 import errno
 import os
+import subprocess
 import sys
 import textwrap
 import unittest
-import subprocess
+
+from _colorize import get_theme
 
 from test import support
 from test.support import force_colorized, force_not_colorized, os_helper
 from test.support.script_helper import assert_python_ok
-
-from _colorize import get_theme
 
 
 @support.requires_subprocess()

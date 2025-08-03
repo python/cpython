@@ -317,8 +317,8 @@ def coroutine(func):
     # compiled with Cython).
 
     # Delay functools and _collections_abc import for speeding up types import.
-    import functools
     import _collections_abc
+    import functools
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
         coro = func(*args, **kwargs)

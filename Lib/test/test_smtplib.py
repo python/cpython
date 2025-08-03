@@ -1,30 +1,31 @@
 import base64
 import email.mime.text
-from email.message import EmailMessage
-from email.base64mime import body_encode as encode_base64
 import email.utils
+import errno
 import hashlib
 import hmac
-import socket
-import smtplib
 import io
 import re
-import sys
-import time
 import select
-import errno
+import smtplib
+import socket
+import sys
 import textwrap
 import threading
-
+import time
 import unittest
-from test import support, mock_socket
-from test.support import hashlib_helper
-from test.support import socket_helper
-from test.support import threading_helper
-from test.support import asyncore
-from test.support import smtpd
+from email.base64mime import body_encode as encode_base64
+from email.message import EmailMessage
 from unittest.mock import Mock
 
+from test import mock_socket, support
+from test.support import (
+    asyncore,
+    hashlib_helper,
+    smtpd,
+    socket_helper,
+    threading_helper,
+)
 
 support.requires_working_socket(module=True)
 

@@ -5,7 +5,11 @@ import doctest
 import getopt
 import sys
 import unittest
-from test.support.i18n_helper import TestTranslationsBase, update_translation_snapshots
+
+from test.support.i18n_helper import (
+    TestTranslationsBase,
+    update_translation_snapshots,
+)
 from test.support.os_helper import EnvironmentVarGuard
 
 sentinel = object()

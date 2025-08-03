@@ -69,13 +69,13 @@ site-specific customizations.  If this import fails with an
 ImportError exception, it is silently ignored.
 """
 
-import sys
-import os
-import builtins
-import _sitebuiltins
 import _io as io
-import stat
+import _sitebuiltins
+import builtins
 import errno
+import os
+import stat
+import sys
 
 # Prefixes for site-packages; add additional prefixes like /usr/local here
 PREFIXES = [sys.prefix, sys.exec_prefix]

@@ -4,13 +4,12 @@ import os
 import re
 import sys
 import unittest
-from textwrap import dedent
 from pathlib import Path
+from textwrap import dedent
 
+from test.support.os_helper import temp_cwd, temp_dir
 from test.support.script_helper import assert_python_ok
 from test.test_tools import imports_under_tool, skip_if_missing, toolsdir
-from test.support.os_helper import temp_cwd, temp_dir
-
 
 skip_if_missing()
 
@@ -18,8 +17,12 @@ DATA_DIR = Path(__file__).resolve().parent / 'i18n_data'
 
 
 with imports_under_tool("i18n"):
-    from pygettext import (parse_spec, process_keywords, DEFAULTKEYWORDS,
-                           unparse_spec)
+    from pygettext import (
+        DEFAULTKEYWORDS,
+        parse_spec,
+        process_keywords,
+        unparse_spec,
+    )
 
 
 def normalize_POT_file(pot):

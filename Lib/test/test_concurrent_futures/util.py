@@ -5,8 +5,13 @@ import time
 import unittest
 from concurrent import futures
 from concurrent.futures._base import (
-    PENDING, RUNNING, CANCELLED, CANCELLED_AND_NOTIFIED, FINISHED, Future,
-    )
+    CANCELLED,
+    CANCELLED_AND_NOTIFIED,
+    FINISHED,
+    PENDING,
+    RUNNING,
+    Future,
+)
 from concurrent.futures.process import _check_system_limits
 
 from test import support

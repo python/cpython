@@ -20,17 +20,16 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 
-import re
 from . import commands, console, reader
 from .reader import Reader
-
 
 # types
 Command = commands.Command
 if False:
-    from .types import KeySpec, CommandName
+    from .types import CommandName, KeySpec
 
 
 def prefix(wordlist: list[str], j: int = 0) -> str:

@@ -1,7 +1,9 @@
 import unittest
-from _apple_support import SystemLog
-from test.support import is_apple
 from unittest.mock import Mock, call
+
+from _apple_support import SystemLog
+
+from test.support import is_apple
 
 if not is_apple:
     raise unittest.SkipTest("Apple-specific")

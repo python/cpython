@@ -9,27 +9,38 @@ import subprocess
 import sys
 import tempfile
 from pkgutil import ModuleInfo
-from unittest import TestCase, skipUnless, skipIf, SkipTest
+from unittest import SkipTest, TestCase, skipIf, skipUnless
 from unittest.mock import patch
-from test.support import force_not_colorized, make_clean_env, Py_DEBUG
-from test.support import has_subprocess_support, SHORT_TIMEOUT, STDLIB_DIR
+
+from _pyrepl._module_completer import ImportParser, ModuleCompleter
+from _pyrepl.console import Event
+from _pyrepl.readline import (
+    ReadlineAlikeReader,
+    ReadlineConfig,
+    _ReadlineWrapper,
+)
+from _pyrepl.readline import multiline_input as readline_multiline_input
+
+from test.support import (
+    SHORT_TIMEOUT,
+    STDLIB_DIR,
+    Py_DEBUG,
+    force_not_colorized,
+    has_subprocess_support,
+    make_clean_env,
+)
 from test.support.import_helper import import_module
 from test.support.os_helper import EnvironmentVarGuard, unlink
 
 from .support import (
     FakeConsole,
     ScreenEqualMixin,
+    code_to_events,
     handle_all_events,
     handle_events_narrow_console,
     more_lines,
     multiline_input,
-    code_to_events,
 )
-from _pyrepl.console import Event
-from _pyrepl._module_completer import ImportParser, ModuleCompleter
-from _pyrepl.readline import (ReadlineAlikeReader, ReadlineConfig,
-                              _ReadlineWrapper)
-from _pyrepl.readline import multiline_input as readline_multiline_input
 
 try:
     import pty

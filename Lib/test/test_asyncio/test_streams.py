@@ -1,20 +1,22 @@
 """Tests for streams.py."""
 
 import gc
-import queue
 import pickle
+import queue
 import socket
 import threading
 import unittest
 from unittest import mock
+
 try:
     import ssl
 except ImportError:
     ssl = None
 
 import asyncio
-from test.test_asyncio import utils as test_utils
+
 from test.support import socket_helper
+from test.test_asyncio import utils as test_utils
 
 
 def tearDownModule():

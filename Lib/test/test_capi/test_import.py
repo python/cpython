@@ -3,8 +3,8 @@ import os.path
 import sys
 import types
 import unittest
-from test.support import os_helper
-from test.support import import_helper
+
+from test.support import import_helper, os_helper
 from test.support.warnings_helper import check_warnings
 
 _testcapi = import_helper.import_module('_testcapi')

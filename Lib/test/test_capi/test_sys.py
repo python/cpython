@@ -1,6 +1,7 @@
-import unittest
 import contextlib
 import sys
+import unittest
+
 from test import support
 from test.support import import_helper
 
@@ -154,7 +155,7 @@ class CAPITest(unittest.TestCase):
 
     def _test_sys_formatstream(self, funname, streamname):
         import_helper.import_module('ctypes')
-        from ctypes import pythonapi, c_char_p, py_object
+        from ctypes import c_char_p, py_object, pythonapi
         func = getattr(pythonapi, funname)
         func.argtypes = (c_char_p,)
 
@@ -183,7 +184,7 @@ class CAPITest(unittest.TestCase):
 
     def _test_sys_writestream(self, funname, streamname):
         import_helper.import_module('ctypes')
-        from ctypes import pythonapi, c_char_p
+        from ctypes import c_char_p, pythonapi
         func = getattr(pythonapi, funname)
         func.argtypes = (c_char_p,)
 

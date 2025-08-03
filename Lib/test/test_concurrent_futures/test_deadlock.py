@@ -5,15 +5,19 @@ import sys
 import time
 import unittest
 import unittest.mock
-from pickle import PicklingError
 from concurrent import futures
 from concurrent.futures.process import BrokenProcessPool, _ThreadWakeup
+from pickle import PicklingError
 
 from test import support
 
 from .util import (
-    create_executor_tests, setup_module,
-    ProcessPoolForkMixin, ProcessPoolForkserverMixin, ProcessPoolSpawnMixin)
+    ProcessPoolForkMixin,
+    ProcessPoolForkserverMixin,
+    ProcessPoolSpawnMixin,
+    create_executor_tests,
+    setup_module,
+)
 
 
 def _crash(delay=None):

@@ -2,6 +2,7 @@
 # standard library.
 
 import sys
+
 import test.support
 
 test.support.verbose = 0

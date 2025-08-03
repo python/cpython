@@ -1,6 +1,7 @@
 import math
 import unittest
 
+
 class PowTest(unittest.TestCase):
 
     def powtest(self, type):

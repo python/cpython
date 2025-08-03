@@ -1,20 +1,20 @@
 import fractions
+import math
 import operator
 import os
 import random
-import sys
 import struct
+import sys
 import time
 import unittest
+from math import copysign, isinf, isnan, ldexp
 
 from test import support
-from test.support.testcase import FloatsAreIdenticalMixin
 from test.support.numbers import (
-    VALID_UNDERSCORE_LITERALS,
     INVALID_UNDERSCORE_LITERALS,
+    VALID_UNDERSCORE_LITERALS,
 )
-from math import isinf, isnan, copysign, ldexp
-import math
+from test.support.testcase import FloatsAreIdenticalMixin
 
 try:
     import _testcapi

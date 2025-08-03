@@ -8,11 +8,11 @@ See http://msdn.microsoft.com/en-us/library/ms685049%28v=VS.85%29.aspx for a
 similar example in C.
 """
 
-from ctypes import wintypes, WINFUNCTYPE
-import signal
 import ctypes
 import mmap
+import signal
 import sys
+from ctypes import WINFUNCTYPE, wintypes
 
 # Function prototype for the handler function. Returns BOOL, takes a DWORD.
 HandlerRoutine = WINFUNCTYPE(wintypes.BOOL, wintypes.DWORD)

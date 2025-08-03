@@ -2,11 +2,15 @@
 Common tests shared by test_unicode, test_userstring and test_bytes.
 """
 
-import unittest, string, sys, struct
+import random
+import string
+import struct
+import sys
+import unittest
+from collections import UserList
+
 from test import support
 from test.support import import_helper
-from collections import UserList
-import random
 
 
 class Sequence:

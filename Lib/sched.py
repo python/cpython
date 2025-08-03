@@ -23,11 +23,11 @@ The action function may be an instance method so it
 has another way to reference private data (besides global variables).
 """
 
-import time
 import heapq
+import threading
+import time
 from collections import namedtuple
 from itertools import count
-import threading
 from time import monotonic as _time
 
 __all__ = ["scheduler"]

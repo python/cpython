@@ -1,19 +1,24 @@
 """create and manipulate C data types in Python"""
 
-import os as _os, sys as _sys
+import os as _os
+import sys as _sys
 import types as _types
 
 __version__ = "1.1.0"
 
-from _ctypes import Union, Structure, Array
-from _ctypes import _Pointer
+from _ctypes import (
+    RTLD_GLOBAL,
+    RTLD_LOCAL,
+    SIZEOF_TIME_T,
+    ArgumentError,
+    Array,
+    CField,
+    Structure,
+    Union,
+    _Pointer,
+)
 from _ctypes import CFuncPtr as _CFuncPtr
 from _ctypes import __version__ as _ctypes_version
-from _ctypes import RTLD_LOCAL, RTLD_GLOBAL
-from _ctypes import ArgumentError
-from _ctypes import SIZEOF_TIME_T
-from _ctypes import CField
-
 from struct import calcsize as _calcsize
 
 if __version__ != _ctypes_version:
@@ -32,10 +37,10 @@ if _os.name == "posix" and _sys.platform == "darwin":
     if int(_os.uname().release.split('.')[0]) < 8:
         DEFAULT_MODE = RTLD_GLOBAL
 
-from _ctypes import FUNCFLAG_CDECL as _FUNCFLAG_CDECL, \
-     FUNCFLAG_PYTHONAPI as _FUNCFLAG_PYTHONAPI, \
-     FUNCFLAG_USE_ERRNO as _FUNCFLAG_USE_ERRNO, \
-     FUNCFLAG_USE_LASTERROR as _FUNCFLAG_USE_LASTERROR
+from _ctypes import FUNCFLAG_CDECL as _FUNCFLAG_CDECL
+from _ctypes import FUNCFLAG_PYTHONAPI as _FUNCFLAG_PYTHONAPI
+from _ctypes import FUNCFLAG_USE_ERRNO as _FUNCFLAG_USE_ERRNO
+from _ctypes import FUNCFLAG_USE_LASTERROR as _FUNCFLAG_USE_LASTERROR
 
 # WINOLEAPI -> HRESULT
 # WINOLEAPI_(type)
@@ -108,8 +113,8 @@ def CFUNCTYPE(restype, *argtypes, **kw):
     return CFunctionType
 
 if _os.name == "nt":
-    from _ctypes import LoadLibrary as _dlopen
     from _ctypes import FUNCFLAG_STDCALL as _FUNCFLAG_STDCALL
+    from _ctypes import LoadLibrary as _dlopen
 
     _win_functype_cache = {}
     def WINFUNCTYPE(restype, *argtypes, **kw):
@@ -139,9 +144,17 @@ if _os.name == "nt":
 elif _os.name == "posix":
     from _ctypes import dlopen as _dlopen
 
-from _ctypes import sizeof, byref, addressof, alignment, resize
-from _ctypes import get_errno, set_errno
-from _ctypes import _SimpleCData
+from _ctypes import (
+    _SimpleCData,
+    addressof,
+    alignment,
+    byref,
+    get_errno,
+    resize,
+    set_errno,
+    sizeof,
+)
+
 
 def _check_size(typ, typecode=None):
     # Check if sizeof(ctypes_type) against struct.calcsize.  This
@@ -577,8 +590,13 @@ elif sizeof(c_ulonglong) == sizeof(c_void_p):
 
 # functions
 
-from _ctypes import _memmove_addr, _memset_addr, _string_at_addr, _cast_addr
-from _ctypes import _memoryview_at_addr
+from _ctypes import (
+    _cast_addr,
+    _memmove_addr,
+    _memoryview_at_addr,
+    _memset_addr,
+    _string_at_addr,
+)
 
 ## void *memmove(void *, const void *, size_t);
 memmove = CFUNCTYPE(c_void_p, c_void_p, c_void_p, c_size_t)(_memmove_addr)
@@ -641,8 +659,12 @@ if _os.name == "nt": # COM stuff
             return 0 # S_OK
         return ccom.DllCanUnloadNow()
 
-from ctypes._endian import BigEndianStructure, LittleEndianStructure
-from ctypes._endian import BigEndianUnion, LittleEndianUnion
+from ctypes._endian import (
+    BigEndianStructure,
+    BigEndianUnion,
+    LittleEndianStructure,
+    LittleEndianUnion,
+)
 
 # Fill in specifically-sized types
 c_int8 = c_byte

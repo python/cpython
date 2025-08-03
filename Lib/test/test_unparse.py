@@ -1,12 +1,13 @@
 """Tests for ast.unparse."""
 
-import unittest
-import test.support
+import ast
 import pathlib
 import random
 import tokenize
+import unittest
 import warnings
-import ast
+
+import test.support
 from test.support.ast_helper import ASTTestMixin
 
 

@@ -3,6 +3,7 @@
 
 import gc
 
+
 def leak():
     class T(type):
         pass

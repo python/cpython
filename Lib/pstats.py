@@ -20,15 +20,14 @@
 # governing permissions and limitations under the License.
 
 
-import sys
-import os
-import time
 import marshal
+import os
 import re
-
+import sys
+import time
+from dataclasses import dataclass
 from enum import StrEnum, _simple_enum
 from functools import cmp_to_key
-from dataclasses import dataclass
 
 __all__ = ["Stats", "SortKey", "FunctionProfile", "StatsProfile"]
 

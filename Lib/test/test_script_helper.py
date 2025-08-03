@@ -1,11 +1,12 @@
 """Unittests for test.support.script_helper.  Who tests the test helper?"""
 
+import os
 import subprocess
 import sys
-import os
-from test.support import script_helper, requires_subprocess
 import unittest
 from unittest import mock
+
+from test.support import requires_subprocess, script_helper
 
 
 class TestScriptHelper(unittest.TestCase):

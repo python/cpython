@@ -1,5 +1,6 @@
 import unittest
 
+
 class LongExpText(unittest.TestCase):
     def test_longexp(self):
         REPS = 65580

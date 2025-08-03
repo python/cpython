@@ -11,8 +11,8 @@ Most methods calls are inherited from the Text widget; Pack, Grid and
 Place methods are redirected to the Frame widget however.
 """
 
-from tkinter import Frame, Text, Scrollbar, Pack, Grid, Place
-from tkinter.constants import RIGHT, LEFT, Y, BOTH
+from tkinter import Frame, Grid, Pack, Place, Scrollbar, Text
+from tkinter.constants import BOTH, LEFT, RIGHT, Y
 
 __all__ = ['ScrolledText']
 

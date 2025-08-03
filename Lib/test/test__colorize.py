@@ -3,7 +3,9 @@ import io
 import sys
 import unittest
 import unittest.mock
+
 import _colorize
+
 from test.support.os_helper import EnvironmentVarGuard
 
 

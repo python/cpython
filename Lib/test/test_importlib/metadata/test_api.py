@@ -1,11 +1,9 @@
+import contextlib
+import importlib
 import re
 import textwrap
 import unittest
 import warnings
-import importlib
-import contextlib
-
-from . import fixtures
 from importlib.metadata import (
     Distribution,
     PackageNotFoundError,
@@ -16,6 +14,8 @@ from importlib.metadata import (
     requires,
     version,
 )
+
+from . import fixtures
 
 
 @contextlib.contextmanager

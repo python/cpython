@@ -327,6 +327,7 @@ DOWN_EVENTS = (E.PY_START, E.PY_RESUME)
 
 from test.profilee import testfunc
 
+
 class SimulateProfileTest(MonitoringEventsBase, unittest.TestCase):
 
     def test_balanced(self):

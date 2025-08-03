@@ -10,13 +10,12 @@ packages -- for now, you'll have to deal with packages separately.)
 
 See module py_compile for details of the actual byte-compilation.
 """
-import os
-import sys
+import filecmp
 import importlib.util
+import os
 import py_compile
 import struct
-import filecmp
-
+import sys
 from functools import partial
 from pathlib import Path
 

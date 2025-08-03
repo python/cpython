@@ -8,9 +8,9 @@ from .support import is_pypi
 from .support.lexical_path import LexicalPath
 
 if is_pypi:
-    from pathlib_abc import _PathParser, _JoinablePath
+    from pathlib_abc import _JoinablePath, _PathParser
 else:
-    from pathlib.types import _PathParser, _JoinablePath
+    from pathlib.types import _JoinablePath, _PathParser
 
 
 class JoinTestBase:
@@ -360,7 +360,7 @@ class LexicalPathJoinTest(JoinTestBase, unittest.TestCase):
 
 
 if not is_pypi:
-    from pathlib import PurePath, Path
+    from pathlib import Path, PurePath
 
     class PurePathJoinTest(JoinTestBase, unittest.TestCase):
         cls = PurePath

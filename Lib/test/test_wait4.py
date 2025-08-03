@@ -4,8 +4,9 @@
 import os
 import sys
 import unittest
-from test.fork_wait import ForkWait
+
 from test import support
+from test.fork_wait import ForkWait
 
 # If either of these do not exist, skip this test.
 if not support.has_fork_support:

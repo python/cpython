@@ -1,12 +1,19 @@
 import copy
-import pickle
 import dis
+import pickle
 import threading
 import types
 import unittest
-from test.support import (threading_helper, check_impl_detail,
-                          requires_specialization, requires_specialization_ft,
-                          cpython_only, requires_jit_disabled, reset_code)
+
+from test.support import (
+    check_impl_detail,
+    cpython_only,
+    requires_jit_disabled,
+    requires_specialization,
+    requires_specialization_ft,
+    reset_code,
+    threading_helper,
+)
 from test.support.import_helper import import_module
 
 # Skip this module on other interpreters, it is cpython specific:

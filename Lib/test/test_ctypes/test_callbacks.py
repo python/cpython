@@ -5,15 +5,35 @@ import math
 import sys
 import unittest
 from _ctypes import CTYPES_MAX_ARGCOUNT
-from ctypes import (CDLL, cdll, Structure, CFUNCTYPE,
-                    ArgumentError, POINTER, sizeof,
-                    c_byte, c_ubyte, c_char,
-                    c_short, c_ushort, c_int, c_uint,
-                    c_long, c_longlong, c_ulonglong, c_ulong,
-                    c_float, c_double, c_longdouble, py_object)
+from ctypes import (
+    CDLL,
+    CFUNCTYPE,
+    POINTER,
+    ArgumentError,
+    Structure,
+    c_byte,
+    c_char,
+    c_double,
+    c_float,
+    c_int,
+    c_long,
+    c_longdouble,
+    c_longlong,
+    c_short,
+    c_ubyte,
+    c_uint,
+    c_ulong,
+    c_ulonglong,
+    c_ushort,
+    cdll,
+    py_object,
+    sizeof,
+)
 from ctypes.util import find_library
+
 from test import support
 from test.support import import_helper
+
 _ctypes_test = import_helper.import_module("_ctypes_test")
 
 

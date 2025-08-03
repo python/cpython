@@ -6,9 +6,13 @@ import threading
 import time
 import unittest
 import weakref
-from test.support import gc_collect, bigmemtest
-from test.support import import_helper
-from test.support import threading_helper
+
+from test.support import (
+    bigmemtest,
+    gc_collect,
+    import_helper,
+    threading_helper,
+)
 
 # queue module depends on threading primitives
 threading_helper.requires_working_threading(module=True)

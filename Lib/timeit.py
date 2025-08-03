@@ -150,7 +150,8 @@ class Timer:
         The optional file argument directs where the traceback is
         sent; it defaults to sys.stderr.
         """
-        import linecache, traceback
+        import linecache
+        import traceback
         if self.src is not None:
             linecache.cache[dummy_src_name] = (len(self.src),
                                                None,

@@ -11,11 +11,11 @@ import operator
 import os
 import posixpath
 import sys
-from errno import *
-from glob import _StringGlobber, _no_recurse_symlinks
-from itertools import chain
-from stat import S_ISDIR, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
 from _collections_abc import Sequence
+from errno import *
+from glob import _no_recurse_symlinks, _StringGlobber
+from itertools import chain
+from stat import S_ISBLK, S_ISCHR, S_ISDIR, S_ISFIFO, S_ISREG, S_ISSOCK
 
 try:
     import pwd
@@ -27,12 +27,16 @@ except ImportError:
     grp = None
 
 from pathlib._os import (
-    PathInfo, DirEntryInfo,
-    magic_open, vfspath,
-    ensure_different_files, ensure_distinct_paths,
-    copyfile2, copyfileobj, copy_info,
+    DirEntryInfo,
+    PathInfo,
+    copy_info,
+    copyfile2,
+    copyfileobj,
+    ensure_different_files,
+    ensure_distinct_paths,
+    magic_open,
+    vfspath,
 )
-
 
 __all__ = [
     "UnsupportedOperation",

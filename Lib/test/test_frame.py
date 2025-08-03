@@ -6,16 +6,17 @@ import textwrap
 import threading
 import unittest
 import weakref
+
 try:
     import _testcapi
 except ImportError:
     _testcapi = None
 
 from collections.abc import Mapping
-from test import support
+
+from test import mapping_tests, support
 from test.support import import_helper, threading_helper
 from test.support.script_helper import assert_python_ok
-from test import mapping_tests
 
 
 class ClearTest(unittest.TestCase):

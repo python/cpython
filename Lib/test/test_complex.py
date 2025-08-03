@@ -1,15 +1,15 @@
-import unittest
-import sys
-from test import support
-from test.support.testcase import ComplexesAreIdenticalMixin
-from test.support.numbers import (
-    VALID_UNDERSCORE_LITERALS,
-    INVALID_UNDERSCORE_LITERALS,
-)
-
-from random import random
-from math import isnan, copysign
 import operator
+import sys
+import unittest
+from math import copysign, isnan
+from random import random
+
+from test import support
+from test.support.numbers import (
+    INVALID_UNDERSCORE_LITERALS,
+    VALID_UNDERSCORE_LITERALS,
+)
+from test.support.testcase import ComplexesAreIdenticalMixin
 
 INF = float("inf")
 NAN = float("nan")

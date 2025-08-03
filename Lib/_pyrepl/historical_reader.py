@@ -25,9 +25,8 @@ from dataclasses import dataclass, field
 from . import commands, input
 from .reader import Reader
 
-
 if False:
-    from .types import SimpleContextManager, KeySpec, CommandName
+    from .types import CommandName, KeySpec, SimpleContextManager
 
 
 isearch_keymap: tuple[tuple[KeySpec, CommandName], ...] = tuple(

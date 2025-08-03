@@ -3,15 +3,16 @@
 """
 
 import contextlib
+import dbm.dumb as dumbdbm
 import io
 import operator
 import os
 import stat
 import unittest
-import dbm.dumb as dumbdbm
+from functools import partial
+
 from test import support
 from test.support import os_helper
-from functools import partial
 
 _fname = os_helper.TESTFN
 

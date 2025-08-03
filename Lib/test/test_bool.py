@@ -1,9 +1,10 @@
 # Test properties of bool promised by PEP 285
 
+import os
 import unittest
+
 from test.support import os_helper
 
-import os
 
 class BoolTest(unittest.TestCase):
 

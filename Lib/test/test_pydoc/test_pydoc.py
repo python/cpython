@@ -1,19 +1,19 @@
-import datetime
-import os
-import sys
+import _pickle
 import contextlib
+import datetime
 import importlib.util
 import inspect
 import io
-import pydoc
-import py_compile
 import keyword
-import _pickle
+import os
 import pkgutil
+import py_compile
+import pydoc
 import re
 import stat
+import sys
 import tempfile
-import test.support
+import textwrap
 import time
 import types
 import typing
@@ -22,22 +22,30 @@ import unittest.mock
 import urllib.parse
 import xml.etree
 import xml.etree.ElementTree
-import textwrap
-from io import StringIO
 from collections import namedtuple
-from urllib.request import urlopen, urlcleanup
+from io import StringIO
+from urllib.request import urlcleanup, urlopen
+
+import test.support
 from test import support
-from test.support import import_helper
-from test.support import os_helper
-from test.support.script_helper import (assert_python_ok,
-                                        assert_python_failure, spawn_python)
-from test.support import threading_helper
-from test.support import (reap_children, captured_stdout,
-                          captured_stderr, is_wasm32,
-                          requires_docstrings, MISSING_C_DOCSTRINGS)
-from test.support.os_helper import (TESTFN, rmtree, unlink)
-from test.test_pydoc import pydoc_mod
-from test.test_pydoc import pydocfodder
+from test.support import (
+    MISSING_C_DOCSTRINGS,
+    captured_stderr,
+    captured_stdout,
+    import_helper,
+    is_wasm32,
+    os_helper,
+    reap_children,
+    requires_docstrings,
+    threading_helper,
+)
+from test.support.os_helper import TESTFN, rmtree, unlink
+from test.support.script_helper import (
+    assert_python_failure,
+    assert_python_ok,
+    spawn_python,
+)
+from test.test_pydoc import pydoc_mod, pydocfodder
 
 
 class nonascii:
@@ -1134,7 +1142,7 @@ class B(A)
 
     def test_long_signatures(self):
         from collections.abc import Callable
-        from typing import Literal, Annotated
+        from typing import Annotated, Literal
 
         class A:
             def __init__(self,

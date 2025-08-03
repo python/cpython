@@ -1,14 +1,21 @@
 # -*- coding: utf-8 -*-
 
-import unittest
-from test.support import script_helper, captured_stdout, requires_subprocess, requires_resource
-from test.support.os_helper import TESTFN, unlink, rmtree
-from test.support.import_helper import unload
 import importlib
 import os
-import sys
 import subprocess
+import sys
 import tempfile
+import unittest
+
+from test.support import (
+    captured_stdout,
+    requires_resource,
+    requires_subprocess,
+    script_helper,
+)
+from test.support.import_helper import unload
+from test.support.os_helper import TESTFN, rmtree, unlink
+
 
 class MiscSourceEncodingTest(unittest.TestCase):
 

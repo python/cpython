@@ -18,12 +18,12 @@
 # CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
 # CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
+import os
+from termios import VERASE, tcgetattr
+
+from .base_eventqueue import BaseEventQueue
 from .terminfo import TermInfo
 from .trace import trace
-from .base_eventqueue import BaseEventQueue
-from termios import tcgetattr, VERASE
-import os
-
 
 # Mapping of human-readable key names to their terminal-specific codes
 TERMINAL_KEYNAMES = {

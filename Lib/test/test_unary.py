@@ -2,6 +2,7 @@
 
 import unittest
 
+
 class UnaryOpTestCase(unittest.TestCase):
 
     def test_negative(self):

@@ -1,10 +1,9 @@
+import concurrent.futures
 import time
 import unittest
-import concurrent.futures
+from unittest.mock import ThreadingMock, patch
 
 from test.support import threading_helper
-from unittest.mock import patch, ThreadingMock
-
 
 threading_helper.requires_working_threading(module=True)
 

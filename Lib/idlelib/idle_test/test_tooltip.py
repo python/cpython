@@ -5,14 +5,16 @@ They involve TclErrors that either should or should not happen in a
 particular situation, and which are 'pass'ed if they do.
 """
 
-from idlelib.tooltip import TooltipBase, Hovertip
+from idlelib.tooltip import Hovertip, TooltipBase
+
 from test.support import requires
+
 requires('gui')
 
-from functools import wraps
 import time
-from tkinter import Button, Tk, Toplevel
 import unittest
+from functools import wraps
+from tkinter import Button, Tk, Toplevel
 
 
 def setUpModule():

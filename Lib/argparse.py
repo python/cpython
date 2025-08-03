@@ -90,8 +90,8 @@ __all__ = [
 import os as _os
 import re as _re
 import sys as _sys
-
-from gettext import gettext as _, ngettext
+from gettext import gettext as _
+from gettext import ngettext
 
 SUPPRESS = '==SUPPRESS=='
 

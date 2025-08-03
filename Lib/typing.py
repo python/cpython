@@ -18,28 +18,28 @@ Any name not present in __all__ is an implementation detail
 that may be changed without notice. Use at your own risk!
 """
 
-from abc import abstractmethod, ABCMeta
 import collections
-from collections import defaultdict
 import collections.abc
 import copyreg
 import functools
 import operator
 import sys
 import types
+from abc import ABCMeta, abstractmethod
+from collections import defaultdict
 from types import GenericAlias
 
 from _typing import (
-    _idfunc,
-    TypeVar,
+    Generic,
+    NoDefault,
     ParamSpec,
-    TypeVarTuple,
     ParamSpecArgs,
     ParamSpecKwargs,
     TypeAliasType,
-    Generic,
+    TypeVar,
+    TypeVarTuple,
     Union,
-    NoDefault,
+    _idfunc,
 )
 
 # Please keep __all__ alphabetized within each category.

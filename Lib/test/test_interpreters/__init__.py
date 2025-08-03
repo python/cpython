@@ -1,6 +1,7 @@
 import os
-from test.support import load_package_tests, Py_GIL_DISABLED
 import unittest
+
+from test.support import Py_GIL_DISABLED, load_package_tests
 
 if Py_GIL_DISABLED:
     raise unittest.SkipTest("GIL disabled")

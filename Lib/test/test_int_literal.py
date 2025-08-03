@@ -5,6 +5,7 @@ This is complex because of changes due to PEP 237.
 
 import unittest
 
+
 class TestHexOctBin(unittest.TestCase):
 
     def test_hex_baseline(self):

@@ -1,8 +1,9 @@
 """Tests for binary operators on subtypes of built-in types."""
 
 import unittest
-from operator import eq, le, ne
 from abc import ABCMeta
+from operator import eq, le, ne
+
 
 def gcd(a, b):
     """Greatest common divisor using Euclid's algorithm."""

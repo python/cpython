@@ -1,10 +1,10 @@
 import unittest
-
 from itertools import cycle
 from threading import Event, Thread
 from unittest import TestCase
 
 from test.support import threading_helper
+
 
 @threading_helper.requires_working_threading()
 class TestStr(TestCase):

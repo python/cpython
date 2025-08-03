@@ -1,21 +1,30 @@
 from test.test_importlib import util as test_util
+
 machinery = test_util.import_importlib('importlib.machinery')
 
 import os
 import re
 import sys
 import unittest
+from contextlib import contextmanager
+
 from test import support
 from test.support import import_helper
-from contextlib import contextmanager
 from test.test_importlib.util import temp_module
 
 import_helper.import_module('winreg', required_on=['win'])
 from winreg import (
-    CreateKey, HKEY_CURRENT_USER,
-    SetValue, REG_SZ, KEY_ALL_ACCESS,
-    EnumKey, CloseKey, DeleteKey, OpenKey
+    HKEY_CURRENT_USER,
+    KEY_ALL_ACCESS,
+    REG_SZ,
+    CloseKey,
+    CreateKey,
+    DeleteKey,
+    EnumKey,
+    OpenKey,
+    SetValue,
 )
+
 
 def get_platform():
     # Port of distutils.util.get_platform().

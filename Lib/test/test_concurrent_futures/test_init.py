@@ -1,19 +1,17 @@
 import contextlib
+import io
 import logging
 import queue
+import sys
 import time
 import unittest
-import sys
-import io
 from concurrent.futures._base import BrokenExecutor
 from concurrent.futures.process import _check_system_limits
-
 from logging.handlers import QueueHandler
 
 from test import support
 
 from .util import ExecutorMixin, create_executor_tests, setup_module
-
 
 INITIALIZER_STATUS = 'uninitialized'
 

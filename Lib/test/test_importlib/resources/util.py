@@ -1,18 +1,17 @@
 import abc
+import contextlib
 import importlib
 import io
+import pathlib
 import sys
 import types
-import pathlib
-import contextlib
-
-from importlib.resources.abc import ResourceReader
-from test.support import import_helper, os_helper
-from . import zip as zip_
-from . import _path
-
-
 from importlib.machinery import ModuleSpec
+from importlib.resources.abc import ResourceReader
+
+from test.support import import_helper, os_helper
+
+from . import _path
+from . import zip as zip_
 
 
 class Reader(ResourceReader):

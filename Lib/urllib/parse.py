@@ -31,13 +31,13 @@ it either due to existing user code API behavior expectations (Hyrum's Law).
 It serves as a useful guide when making changes.
 """
 
-from collections import namedtuple
 import functools
+import ipaddress
 import math
 import re
 import types
 import warnings
-import ipaddress
+from collections import namedtuple
 
 __all__ = ["urlparse", "urlunparse", "urljoin", "urldefrag",
            "urlsplit", "urlunsplit", "urlencode", "parse_qs",

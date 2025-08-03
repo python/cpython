@@ -1,8 +1,8 @@
+import contextlib
 import textwrap
 import unittest
-import contextlib
-from email import policy
-from email import errors
+from email import errors, policy
+
 from test.test_email import TestEmailBase
 
 

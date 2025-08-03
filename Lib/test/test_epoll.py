@@ -27,6 +27,7 @@ import select
 import socket
 import time
 import unittest
+
 from test import support
 
 if not hasattr(select, "epoll"):

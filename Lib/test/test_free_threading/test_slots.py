@@ -1,7 +1,8 @@
 import _testcapi
 import threading
-from test.support import threading_helper
 from unittest import TestCase
+
+from test.support import threading_helper
 
 
 def run_in_threads(targets):

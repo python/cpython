@@ -1,13 +1,13 @@
 import copy
+import doctest
 import gc
+import inspect
 import pickle
 import sys
-import doctest
-import unittest
-import weakref
-import inspect
 import textwrap
 import types
+import unittest
+import weakref
 
 from test import support
 

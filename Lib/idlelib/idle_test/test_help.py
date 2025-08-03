@@ -1,10 +1,11 @@
 "Test help, coverage 94%."
 
-from idlelib import help
 import unittest
+from idlelib import help
+
 from test.support import requires
+
 requires('gui')
-from os.path import abspath, dirname, join
 from tkinter import Tk
 
 

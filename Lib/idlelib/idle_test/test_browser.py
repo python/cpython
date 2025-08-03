@@ -1,18 +1,17 @@
 "Test browser, coverage 90%."
 
-from idlelib import browser
-from test.support import requires
-import unittest
-from unittest import mock
-from idlelib.idle_test.mock_idle import Func
-from idlelib.util import py_extensions
-
-from collections import deque
 import os.path
 import pyclbr
-from tkinter import Tk
-
+import unittest
+from collections import deque
+from idlelib import browser
+from idlelib.idle_test.mock_idle import Func
 from idlelib.tree import TreeNode
+from idlelib.util import py_extensions
+from tkinter import Tk
+from unittest import mock
+
+from test.support import requires
 
 
 class ModuleBrowserTest(unittest.TestCase):

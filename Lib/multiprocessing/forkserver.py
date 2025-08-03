@@ -9,13 +9,15 @@ import sys
 import threading
 import warnings
 
-from . import AuthenticationError
-from . import connection
-from . import process
+from . import (
+    AuthenticationError,
+    connection,
+    process,
+    resource_tracker,
+    spawn,
+    util,
+)
 from .context import reduction
-from . import resource_tracker
-from . import spawn
-from . import util
 
 __all__ = ['ensure_running', 'get_inherited_fds', 'connect_to_new_process',
            'set_forkserver_preload']

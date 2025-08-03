@@ -1,8 +1,10 @@
 # Python test set -- part 2, opcodes
 
 import unittest
+
 from test import support
 from test.typinganndata import ann_module
+
 
 class OpcodeTest(unittest.TestCase):
 

@@ -4,13 +4,11 @@ import contextvars
 import enum
 import functools
 import inspect
-import threading
 import signal
-from . import coroutines
-from . import events
-from . import exceptions
-from . import tasks
-from . import constants
+import threading
+
+from . import constants, coroutines, events, exceptions, tasks
+
 
 class _State(enum.Enum):
     CREATED = "created"

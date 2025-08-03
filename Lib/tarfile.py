@@ -35,16 +35,16 @@ __credits__ = "Gustavo Niemeyer, Niels Gust\u00e4bel, Richard Townsend."
 #---------
 # Imports
 #---------
-from builtins import open as bltn_open
-import sys
-import os
+import copy
 import io
+import os
+import re
 import shutil
 import stat
-import time
 import struct
-import copy
-import re
+import sys
+import time
+from builtins import open as bltn_open
 
 try:
     import pwd
@@ -2025,7 +2025,7 @@ class TarFile(object):
             raise ValueError("mode must be 'r', 'w' or 'x'")
 
         try:
-            from lzma import LZMAFile, LZMAError
+            from lzma import LZMAError, LZMAFile
         except ImportError:
             raise CompressionError("lzma module is not available") from None
 
@@ -2054,7 +2054,7 @@ class TarFile(object):
             raise ValueError("mode must be 'r', 'w' or 'x'")
 
         try:
-            from compression.zstd import ZstdFile, ZstdError
+            from compression.zstd import ZstdError, ZstdFile
         except ImportError:
             raise CompressionError("compression.zstd module is not available") from None
 

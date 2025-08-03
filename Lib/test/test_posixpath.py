@@ -6,13 +6,19 @@ import random
 import sys
 import unittest
 from functools import partial
-from posixpath import realpath, abspath, dirname, basename, ALL_BUT_LAST, ALLOW_MISSING
-from test import support
-from test import test_genericpath
-from test.support import import_helper
-from test.support import os_helper
-from test.support.os_helper import FakePath, TESTFN
+from posixpath import (
+    ALL_BUT_LAST,
+    ALLOW_MISSING,
+    abspath,
+    basename,
+    dirname,
+    realpath,
+)
 from unittest import mock
+
+from test import support, test_genericpath
+from test.support import import_helper, os_helper
+from test.support.os_helper import TESTFN, FakePath
 
 try:
     import posix

@@ -1,10 +1,12 @@
 "Test tree. coverage 56%."
 
-from idlelib import tree
 import unittest
+from idlelib import tree
+
 from test.support import requires
+
 requires('gui')
-from tkinter import Tk, EventType, SCROLL
+from tkinter import SCROLL, EventType, Tk
 
 
 class TreeTest(unittest.TestCase):

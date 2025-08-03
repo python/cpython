@@ -3,13 +3,14 @@ from test.test_importlib import abc, util
 
 machinery = util.import_importlib('importlib.machinery')
 
+import importlib
+import importlib.util
 import os.path
 import sys
 import types
 import unittest
 import warnings
-import importlib.util
-import importlib
+
 from test import support
 from test.support import MISSING_C_DOCSTRINGS, script_helper
 

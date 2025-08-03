@@ -1,17 +1,17 @@
-import unittest
+import os
 import subprocess
 import sys
-import os
+import unittest
+
 from test import support
-from test.support import import_helper
-from test.support import os_helper
+from test.support import import_helper, os_helper
 
 # Skip this test if the _tkinter module wasn't built.
 _tkinter = import_helper.import_module('_tkinter')
 
 import tkinter
-from tkinter import Tcl
 from _tkinter import TclError
+from tkinter import Tcl
 
 try:
     from _testcapi import INT_MAX, PY_SSIZE_T_MAX

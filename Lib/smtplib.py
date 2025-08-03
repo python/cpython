@@ -39,16 +39,16 @@ Example:
 #
 # This was modified from the Python 1.5 library HTTP lib.
 
-import socket
-import io
-import re
-import email.utils
-import email.message
-import email.generator
 import base64
-import hmac
 import copy
 import datetime
+import email.generator
+import email.message
+import email.utils
+import hmac
+import io
+import re
+import socket
 import sys
 from email.base64mime import body_encode as encode_base64
 

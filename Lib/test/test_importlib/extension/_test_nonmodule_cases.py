@@ -1,10 +1,13 @@
 import types
 import unittest
+
 from test.test_importlib import util
 
 machinery = util.import_importlib('importlib.machinery')
 
-from test.test_importlib.extension.test_loader import MultiPhaseExtensionModuleTests
+from test.test_importlib.extension.test_loader import (
+    MultiPhaseExtensionModuleTests,
+)
 
 
 class NonModuleExtensionTests:

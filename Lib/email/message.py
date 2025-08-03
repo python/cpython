@@ -7,16 +7,16 @@
 __all__ = ['Message', 'EmailMessage']
 
 import binascii
-import re
 import quopri
-from io import BytesIO, StringIO
+import re
+from email import charset as _charset
 
 # Intrapackage imports
-from email import utils
-from email import errors
-from email._policybase import compat32
-from email import charset as _charset
+from email import errors, utils
 from email._encoded_words import decode_b
+from email._policybase import compat32
+from io import BytesIO, StringIO
+
 Charset = _charset.Charset
 
 SEMISPACE = '; '

@@ -1,24 +1,30 @@
 import base64
+import contextlib
 import datetime
 import decimal
+import http
+import http.client
+import http.server
+import io
+import re
+import socket
 import sys
+import threading
 import time
 import unittest
-from unittest import mock
 import xmlrpc.client as xmlrpclib
 import xmlrpc.server
-import http.client
-import http, http.server
-import socket
-import threading
-import re
-import io
-import contextlib
+from unittest import mock
+
 from test import support
-from test.support import os_helper
-from test.support import socket_helper
-from test.support import threading_helper
-from test.support import ALWAYS_EQ, LARGEST, SMALLEST
+from test.support import (
+    ALWAYS_EQ,
+    LARGEST,
+    SMALLEST,
+    os_helper,
+    socket_helper,
+    threading_helper,
+)
 
 try:
     import gzip

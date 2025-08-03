@@ -1,4 +1,6 @@
-import multiprocessing, sys
+import multiprocessing
+import sys
+
 
 def foo():
     print("123")

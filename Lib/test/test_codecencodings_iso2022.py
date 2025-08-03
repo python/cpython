@@ -1,7 +1,8 @@
 # Codec encoding tests for ISO 2022 encodings.
 
-from test import multibytecodec_support
 import unittest
+
+from test import multibytecodec_support
 
 COMMON_CODEC_TESTS = (
         # invalid bytes

@@ -7,10 +7,8 @@ import threading
 import unittest
 import weakref
 
-from test import support
+from test import lock_tests, support
 from test.support import threading_helper
-from test import lock_tests
-
 
 threading_helper.requires_working_threading(module=True)
 

@@ -1,16 +1,19 @@
 import importlib
 import pickle
 import threading
-from textwrap import dedent
 import unittest
+from textwrap import dedent
 
-from test.support import import_helper, Py_DEBUG
+from test.support import Py_DEBUG, import_helper
+
 # Raise SkipTest if subinterpreters not supported.
 _queues = import_helper.import_module('_interpqueues')
 from concurrent import interpreters
-from concurrent.interpreters import _queues as queues, _crossinterp
-from .utils import _run_output, TestBase as _TestBase
+from concurrent.interpreters import _crossinterp
+from concurrent.interpreters import _queues as queues
 
+from .utils import TestBase as _TestBase
+from .utils import _run_output
 
 REPLACE = _crossinterp._UNBOUND_CONSTANT_TO_FLAG[_crossinterp.UNBOUND]
 

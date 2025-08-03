@@ -50,11 +50,10 @@ the setsockopt() and getsockopt() methods.
 """
 
 import _socket
-from _socket import *
-
 import io
 import os
 import sys
+from _socket import *
 from enum import IntEnum, IntFlag
 from functools import partial
 

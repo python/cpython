@@ -1,6 +1,7 @@
 import unittest
-from test.support.import_helper import import_module
+
 from test.support import check_sanitizer
+from test.support.import_helper import import_module
 
 if check_sanitizer(address=True, memory=True):
     # See gh-90791 for details

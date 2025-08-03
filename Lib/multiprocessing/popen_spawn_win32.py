@@ -1,13 +1,12 @@
-import os
+import _winapi
 import msvcrt
+import os
 import signal
 import sys
-import _winapi
-from subprocess import STARTUPINFO, STARTF_FORCEOFFFEEDBACK
+from subprocess import STARTF_FORCEOFFFEEDBACK, STARTUPINFO
 
-from .context import reduction, get_spawning_popen, set_spawning_popen
-from . import spawn
-from . import util
+from . import spawn, util
+from .context import get_spawning_popen, reduction, set_spawning_popen
 
 __all__ = ['Popen']
 

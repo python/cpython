@@ -6,8 +6,7 @@ from test.support import (
     import_helper,
     load_package_tests,
     requires,
-    )
-
+)
 
 if check_sanitizer(address=True, memory=True):
     # See gh-90791 for details

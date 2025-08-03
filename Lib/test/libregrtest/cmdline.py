@@ -2,9 +2,10 @@ import argparse
 import os.path
 import shlex
 import sys
-from test.support import os_helper, Py_DEBUG
-from .utils import ALL_RESOURCES, RESOURCE_NAMES, TestFilter
 
+from test.support import Py_DEBUG, os_helper
+
+from .utils import ALL_RESOURCES, RESOURCE_NAMES, TestFilter
 
 USAGE = """\
 python -m test [options] [test_name1 [test_name2 ...]]

@@ -9,15 +9,14 @@ the subclass definition.
 The appearance of the widgets is checked by the Query and
 HelpSource htests.  These are run by running query.py.
 """
-from idlelib import query
-import unittest
-from test.support import requires
-from tkinter import Tk, END
-
 import sys
-from unittest import mock
+import unittest
+from idlelib import query
 from idlelib.idle_test.mock_tk import Var
+from tkinter import END, Tk
+from unittest import mock
 
+from test.support import requires
 
 # NON-GUI TESTS
 

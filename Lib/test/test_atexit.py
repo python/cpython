@@ -2,9 +2,10 @@ import atexit
 import os
 import textwrap
 import unittest
+
 from test import support
-from test.support import script_helper
-from test.support import threading_helper
+from test.support import script_helper, threading_helper
+
 
 class GeneralTest(unittest.TestCase):
     def test_general(self):

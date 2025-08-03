@@ -3,12 +3,29 @@ import ctypes
 import struct
 import sys
 import unittest
+from ctypes import (
+    alignment,
+    byref,
+    c_bool,
+    c_byte,
+    c_char,
+    c_double,
+    c_float,
+    c_int,
+    c_long,
+    c_longdouble,
+    c_longlong,
+    c_short,
+    c_ubyte,
+    c_uint,
+    c_ulong,
+    c_ulonglong,
+    c_ushort,
+    sizeof,
+)
 from itertools import combinations
 from operator import truth
-from ctypes import (byref, sizeof, alignment,
-                    c_char, c_byte, c_ubyte, c_short, c_ushort, c_int, c_uint,
-                    c_long, c_ulong, c_longlong, c_ulonglong,
-                    c_float, c_double, c_longdouble, c_bool)
+
 from test.support.testcase import ComplexesAreIdenticalMixin
 
 

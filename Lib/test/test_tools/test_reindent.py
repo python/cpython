@@ -6,10 +6,10 @@ Tools directory of a Python checkout or tarball, such as reindent.py.
 
 import os
 import unittest
-from test.support.script_helper import assert_python_ok
-from test.support import findfile
 
-from test.test_tools import toolsdir, skip_if_missing
+from test.support import findfile
+from test.support.script_helper import assert_python_ok
+from test.test_tools import skip_if_missing, toolsdir
 
 skip_if_missing()
 

@@ -3,8 +3,9 @@
 import threading
 import types
 from collections import deque
-from heapq import heappush, heappop
+from heapq import heappop, heappush
 from time import monotonic as time
+
 try:
     from _queue import SimpleQueue
 except ImportError:

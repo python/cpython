@@ -3,7 +3,7 @@ Some correct syntax for variable annotation here.
 More examples are in test_grammar and test_parser.
 """
 
-from typing import no_type_check, ClassVar
+from typing import ClassVar, no_type_check
 
 i: int = 1
 j: int

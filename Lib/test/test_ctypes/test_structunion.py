@@ -1,18 +1,42 @@
 """Common tests for ctypes.Structure and ctypes.Union"""
 
-import unittest
-import sys
-from ctypes import (Structure, Union, POINTER, sizeof, alignment,
-                    c_char, c_byte, c_ubyte,
-                    c_short, c_ushort, c_int, c_uint,
-                    c_long, c_ulong, c_longlong, c_ulonglong, c_float, c_double,
-                    c_int8, c_int16, c_int32)
-from ._support import (_CData, PyCStructType, UnionType,
-                       Py_TPFLAGS_DISALLOW_INSTANTIATION,
-                       Py_TPFLAGS_IMMUTABLETYPE)
-from struct import calcsize
 import contextlib
+import sys
+import unittest
+from ctypes import (
+    POINTER,
+    Structure,
+    Union,
+    alignment,
+    c_byte,
+    c_char,
+    c_double,
+    c_float,
+    c_int,
+    c_int8,
+    c_int16,
+    c_int32,
+    c_long,
+    c_longlong,
+    c_short,
+    c_ubyte,
+    c_uint,
+    c_ulong,
+    c_ulonglong,
+    c_ushort,
+    sizeof,
+)
+from struct import calcsize
+
 from test.support import MS_WINDOWS
+
+from ._support import (
+    Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    Py_TPFLAGS_IMMUTABLETYPE,
+    PyCStructType,
+    UnionType,
+    _CData,
+)
 
 
 class StructUnionTestBase:

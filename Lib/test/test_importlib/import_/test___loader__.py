@@ -1,5 +1,5 @@
-from importlib import machinery
 import unittest
+from importlib import machinery
 
 from test.test_importlib import util
 

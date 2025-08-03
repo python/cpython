@@ -1,25 +1,21 @@
 import errno
-import sys
-import os
 import io
-from hashlib import sha256
-from contextlib import contextmanager, ExitStack
-from random import Random
+import os
 import pathlib
-import shutil
 import re
-import warnings
+import shutil
 import stat
-
+import sys
+import tarfile
 import unittest
 import unittest.mock
-import tarfile
+import warnings
+from contextlib import ExitStack, contextmanager
+from hashlib import sha256
+from random import Random
 
-from test import archiver_tests
-from test import support
-from test.support import os_helper
-from test.support import script_helper
-from test.support import warnings_helper
+from test import archiver_tests, support
+from test.support import os_helper, script_helper, warnings_helper
 
 # Check for our compression modules.
 try:
@@ -3095,7 +3091,8 @@ class Bz2PartialReadTest(Bz2Test, unittest.TestCase):
 
 def root_is_uid_gid_0():
     try:
-        import pwd, grp
+        import grp
+        import pwd
     except ImportError:
         return False
     if pwd.getpwuid(0)[0] != 'root':

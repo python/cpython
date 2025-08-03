@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from typing import Callable, Unpack
 
 
@@ -53,8 +54,8 @@ class E[Eggs]:
 
 
 def nested():
-    from types import SimpleNamespace
     from inspect import get_annotations
+    from types import SimpleNamespace
 
     Eggs = bytes
     Spam = memoryview

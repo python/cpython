@@ -4,8 +4,7 @@ import os
 import string
 import unittest
 import warnings
-from fnmatch import fnmatch, fnmatchcase, translate, filter, filterfalse
-
+from fnmatch import filter, filterfalse, fnmatch, fnmatchcase, translate
 
 IGNORECASE = os.path.normcase('P') == os.path.normcase('p')
 NORMSEP = os.path.normcase('\\') == os.path.normcase('/')

@@ -10,12 +10,12 @@ also includes default encodings for all supported locale names.
 
 """
 
-import sys
+import _collections_abc
 import encodings
 import encodings.aliases
-import _collections_abc
-from builtins import str as _builtin_str
 import functools
+import sys
+from builtins import str as _builtin_str
 
 # Try importing the _locale module.
 #

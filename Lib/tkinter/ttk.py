@@ -26,7 +26,7 @@ __all__ = ["Button", "Checkbutton", "Combobox", "Entry", "Frame", "Label",
            "tclobjs_to_py", "setup_master"]
 
 import tkinter
-from tkinter import _flatten, _join, _stringify, _splitdict
+from tkinter import _flatten, _join, _splitdict, _stringify
 
 
 def _format_optvalue(value, script=False):

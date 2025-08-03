@@ -3,9 +3,10 @@ Tests for `Makefile`.
 """
 
 import os
-import unittest
-from test import support
 import sysconfig
+import unittest
+
+from test import support
 
 MAKEFILE = sysconfig.get_makefile_filename()
 

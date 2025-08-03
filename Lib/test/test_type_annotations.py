@@ -1,9 +1,16 @@
-import annotationlib
 import inspect
 import textwrap
 import types
 import unittest
-from test.support import run_code, check_syntax_error, import_helper, cpython_only
+
+import annotationlib
+
+from test.support import (
+    check_syntax_error,
+    cpython_only,
+    import_helper,
+    run_code,
+)
 from test.test_inspect import inspect_stringized_annotations
 
 

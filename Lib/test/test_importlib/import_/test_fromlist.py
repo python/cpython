@@ -1,7 +1,8 @@
 """Test that the semantics relating to the 'fromlist' argument are correct."""
-from test.test_importlib import util
-import warnings
 import unittest
+import warnings
+
+from test.test_importlib import util
 
 
 class ReturnValue:

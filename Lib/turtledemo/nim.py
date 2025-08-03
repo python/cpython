@@ -8,9 +8,9 @@ design pattern.
 """
 
 
-import turtle
 import random
 import time
+import turtle
 
 SCREENWIDTH = 640
 SCREENHEIGHT = 480

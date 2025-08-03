@@ -3,11 +3,14 @@ A library of useful helper classes to the SAX classes, for the
 convenience of application and driver writers.
 """
 
-import os, urllib.parse, urllib.request
-import io
 import codecs
-from . import handler
-from . import xmlreader
+import io
+import os
+import urllib.parse
+import urllib.request
+
+from . import handler, xmlreader
+
 
 def __dict_replace(s, d):
     """Replace substrings of a string using a dictionary."""

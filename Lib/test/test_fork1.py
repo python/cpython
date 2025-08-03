@@ -9,9 +9,8 @@ import threading
 import time
 import unittest
 
-from test.fork_wait import ForkWait
 from test import support
-
+from test.fork_wait import ForkWait
 
 # Skip test if fork does not exist.
 if not support.has_fork_support:

@@ -6,7 +6,6 @@ import unittest
 
 from test.support import BrokenIter
 
-
 doctests = """
 ########### Tests borrowed from or inspired by test_genexps.py ############
 

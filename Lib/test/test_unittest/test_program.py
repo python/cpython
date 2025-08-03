@@ -1,9 +1,10 @@
 import os
-import sys
 import subprocess
-from test import support
+import sys
 import unittest
+
 import test.test_unittest
+from test import support
 from test.test_unittest.test_result import BufferedWriter
 
 

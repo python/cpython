@@ -1,7 +1,7 @@
 "Test debugobj, coverage 40%."
 
-from idlelib import debugobj
 import unittest
+from idlelib import debugobj
 
 
 class ObjectTreeItemTest(unittest.TestCase):

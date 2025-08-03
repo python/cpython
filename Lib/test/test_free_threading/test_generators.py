@@ -1,11 +1,11 @@
 import concurrent.futures
+import random
+import time
 import unittest
 from threading import Barrier
 from unittest import TestCase
-import random
-import time
 
-from test.support import threading_helper, Py_GIL_DISABLED
+from test.support import Py_GIL_DISABLED, threading_helper
 
 threading_helper.requires_working_threading(module=True)
 

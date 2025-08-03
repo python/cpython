@@ -1,18 +1,27 @@
-import itertools
 import functools
+import itertools
 import rlcompleter
 from textwrap import dedent
 from unittest import TestCase
 from unittest.mock import MagicMock
-from test.support import force_colorized_test_class, force_not_colorized_test_class
 
-from .support import handle_all_events, handle_events_narrow_console
-from .support import ScreenEqualMixin, code_to_events
-from .support import prepare_reader, prepare_console
+from _colorize import default_theme
 from _pyrepl.console import Event
 from _pyrepl.reader import Reader
-from _colorize import default_theme
 
+from test.support import (
+    force_colorized_test_class,
+    force_not_colorized_test_class,
+)
+
+from .support import (
+    ScreenEqualMixin,
+    code_to_events,
+    handle_all_events,
+    handle_events_narrow_console,
+    prepare_console,
+    prepare_reader,
+)
 
 overrides = {"reset": "z", "soft_keyword": "K"}
 colors = {overrides.get(k, k[0].lower()): v for k, v in default_theme.syntax.items()}

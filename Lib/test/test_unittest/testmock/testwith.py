@@ -1,10 +1,8 @@
 import unittest
+from unittest.mock import MagicMock, Mock, call, mock_open, patch, sentinel
 from warnings import catch_warnings
 
 from test.test_unittest.testmock.support import is_instance
-from unittest.mock import MagicMock, Mock, patch, sentinel, mock_open, call
-
-
 
 something  = sentinel.Something
 something_else  = sentinel.SomethingElse

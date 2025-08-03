@@ -1,34 +1,42 @@
 """Test cases for traceback module"""
 
-from collections import namedtuple
-from io import StringIO
-import linecache
-import sys
-import types
-import inspect
 import builtins
-import unittest
-import unittest.mock
-import re
-import tempfile
-import random
-import string
-from test import support
-import shutil
-from test.support import (Error, captured_output, cpython_only, ALWAYS_EQ,
-                          requires_debug_ranges, has_no_debug_ranges,
-                          requires_subprocess)
-from test.support.os_helper import TESTFN, unlink
-from test.support.script_helper import assert_python_ok, assert_python_failure
-from test.support.import_helper import forget
-from test.support import force_not_colorized, force_not_colorized_test_class
-
+import inspect
 import json
+import linecache
+import random
+import re
+import shutil
+import string
+import sys
+import tempfile
 import textwrap
 import traceback
+import types
+import unittest
+import unittest.mock
+from collections import namedtuple
 from functools import partial
+from io import StringIO
 from pathlib import Path
+
 import _colorize
+
+from test import support
+from test.support import (
+    ALWAYS_EQ,
+    Error,
+    captured_output,
+    cpython_only,
+    force_not_colorized,
+    force_not_colorized_test_class,
+    has_no_debug_ranges,
+    requires_debug_ranges,
+    requires_subprocess,
+)
+from test.support.import_helper import forget
+from test.support.os_helper import TESTFN, unlink
+from test.support.script_helper import assert_python_failure, assert_python_ok
 
 MODULE_PREFIX = f'{__name__}.' if __name__ == '__main__' else ''
 
@@ -412,7 +420,8 @@ class TracebackCases(unittest.TestCase):
         # Test that tracebacks are correctly printed for encoded source files:
         # - correct line number (Issue2384)
         # - respect file encoding (Issue3975)
-        import sys, subprocess
+        import subprocess
+        import sys
 
         # The spawned subprocess has its stdout redirected to a PIPE, and its
         # encoding may be different from the current interpreter, on Windows

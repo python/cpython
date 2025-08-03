@@ -1,27 +1,24 @@
 # tempfile.py unit tests.
-import tempfile
+import contextlib
 import errno
+import gc
 import io
 import os
 import pathlib
-import sys
 import re
-import warnings
-import contextlib
-import stat
-import types
-import weakref
-import gc
 import shutil
+import stat
 import subprocess
+import sys
+import tempfile
+import types
+import unittest
+import warnings
+import weakref
 from unittest import mock
 
-import unittest
 from test import support
-from test.support import os_helper
-from test.support import script_helper
-from test.support import warnings_helper
-
+from test.support import os_helper, script_helper, warnings_helper
 
 has_textmode = (tempfile._text_openflags != tempfile._bin_openflags)
 has_spawnl = hasattr(os, 'spawnl')

@@ -2,6 +2,7 @@
 
 import types
 
+
 def global_func(x, y):
     """Module global function"""
 

@@ -5,9 +5,9 @@ import sys
 import unittest
 import warnings
 from unicodedata import normalize
-from test.support import is_apple, os_helper
-from test import support
 
+from test import support
+from test.support import is_apple, os_helper
 
 filenames = [
     '1_abc',

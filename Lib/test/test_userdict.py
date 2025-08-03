@@ -1,8 +1,9 @@
 # Check every path through every method of UserDict
 
-from test import mapping_tests
-import unittest
 import collections
+import unittest
+
+from test import mapping_tests
 
 d0 = {}
 d1 = {"one": 1}

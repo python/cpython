@@ -23,8 +23,16 @@ Public functions:       Internaldate2tuple
 
 __version__ = "2.59"
 
-import binascii, errno, random, re, socket, subprocess, sys, time, calendar
-from datetime import datetime, timezone, timedelta
+import binascii
+import calendar
+import errno
+import random
+import re
+import socket
+import subprocess
+import sys
+import time
+from datetime import datetime, timedelta, timezone
 from io import DEFAULT_BUFFER_SIZE
 
 try:
@@ -1856,7 +1864,8 @@ if __name__ == '__main__':
     # or 'python imaplib.py -s "rsh IMAP4_server_hostname exec /etc/rimapd"'
     # to test the IMAP4_stream class
 
-    import getopt, getpass
+    import getopt
+    import getpass
 
     try:
         optlist, args = getopt.getopt(sys.argv[1:], 'd:s:')

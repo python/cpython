@@ -3,8 +3,10 @@
 Run same tests with both by creating a mixin class.
 '''
 import unittest
-from test.support import requires
 from _tkinter import TclError
+
+from test.support import requires
+
 
 class TextTest:
     "Define items common to both sets of tests."
@@ -219,7 +221,7 @@ class TkTextTest(TextTest, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         requires('gui')
-        from tkinter import Tk, Text
+        from tkinter import Text, Tk
         cls.Text = Text
         cls.root = Tk()
 

@@ -47,20 +47,19 @@ Sample use, programmatically
 """
 __all__ = ['Trace', 'CoverageResults']
 
+import dis
+import gc
+import inspect
 import io
 import linecache
 import os
+import pickle
 import sys
 import sysconfig
+import threading
 import token
 import tokenize
-import inspect
-import gc
-import dis
-import pickle
 from time import monotonic as _time
-
-import threading
 
 PRAGMA_NOCOVER = "#pragma NO COVER"
 

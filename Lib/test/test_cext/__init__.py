@@ -9,8 +9,8 @@ import shlex
 import shutil
 import subprocess
 import unittest
-from test import support
 
+from test import support
 
 SOURCES = [
     os.path.join(os.path.dirname(__file__), 'extension.c'),

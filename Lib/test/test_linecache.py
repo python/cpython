@@ -1,17 +1,16 @@
 """ Tests for the linecache module """
 
 import linecache
-import unittest
 import os.path
 import tempfile
 import threading
 import tokenize
+import unittest
 from importlib.machinery import ModuleSpec
-from test import support
-from test.support import os_helper
-from test.support import threading_helper
-from test.support.script_helper import assert_python_ok
 
+from test import support
+from test.support import os_helper, threading_helper
+from test.support.script_helper import assert_python_ok
 
 FILENAME = linecache.__file__
 NONEXISTENT_FILENAME = FILENAME + '.missing'

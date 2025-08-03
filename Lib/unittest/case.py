@@ -1,20 +1,25 @@
 """Test case implementation"""
 
-import sys
-import functools
-import difflib
-import pprint
-import re
-import warnings
 import collections
 import contextlib
-import traceback
+import difflib
+import functools
+import pprint
+import re
+import sys
 import time
+import traceback
 import types
+import warnings
 
 from . import result
-from .util import (strclass, safe_repr, _count_diff_all_purpose,
-                   _count_diff_hashable, _common_shorten_repr)
+from .util import (
+    _common_shorten_repr,
+    _count_diff_all_purpose,
+    _count_diff_hashable,
+    safe_repr,
+    strclass,
+)
 
 __unittest = True
 

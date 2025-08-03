@@ -3,8 +3,9 @@ import contextlib
 import ctypes
 import sys
 import unittest
+from ctypes import CFUNCTYPE, c_char_p, c_double, c_int, c_void_p
+
 from test import support
-from ctypes import CFUNCTYPE, c_void_p, c_char_p, c_int, c_double
 
 
 def callback_func(arg):

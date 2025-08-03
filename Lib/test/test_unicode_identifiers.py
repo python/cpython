@@ -1,5 +1,6 @@
 import unittest
 
+
 class PEP3131Test(unittest.TestCase):
 
     def test_valid(self):

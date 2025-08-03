@@ -24,28 +24,34 @@ you're working through IDLE, you can import this test module and call test()
 with the corresponding argument.
 """
 
+import contextvars
+import copy
+import inspect
+import locale
 import logging
 import math
-import os, sys
-import operator
-import pickle, copy
-import unittest
 import numbers
-import locale
-from test.support import (is_resource_enabled,
-                          requires_IEEE_754, requires_docstrings,
-                          check_disallow_instantiation)
-from test.support import (TestFailed,
-                          run_with_locale, cpython_only,
-                          darwin_malloc_err_warning)
-from test.support.import_helper import import_fresh_module
-from test.support import threading_helper
-from test.support import warnings_helper
+import operator
+import os
+import pickle
 import random
-import inspect
+import sys
 import threading
-import contextvars
+import unittest
 
+from test.support import (
+    TestFailed,
+    check_disallow_instantiation,
+    cpython_only,
+    darwin_malloc_err_warning,
+    is_resource_enabled,
+    requires_docstrings,
+    requires_IEEE_754,
+    run_with_locale,
+    threading_helper,
+    warnings_helper,
+)
+from test.support.import_helper import import_fresh_module
 
 if sys.platform == 'darwin':
     darwin_malloc_err_warning('test_decimal')
@@ -5954,7 +5960,7 @@ def load_tests(loader, tests, pattern):
         tests.addTest(loader.loadTestsFromTestCase(test_class))
 
     if TODO_TESTS is None:
-        from doctest import DocTestSuite, IGNORE_EXCEPTION_DETAIL
+        from doctest import IGNORE_EXCEPTION_DETAIL, DocTestSuite
         orig_context = orig_sys_decimal.getcontext().copy()
         for mod in C, P:
             if not mod:

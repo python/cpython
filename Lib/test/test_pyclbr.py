@@ -4,14 +4,15 @@
 '''
 
 import importlib.machinery
+import pyclbr
 import sys
 from contextlib import contextmanager
 from textwrap import dedent
-from types import FunctionType, MethodType, BuiltinFunctionType
-import pyclbr
-from unittest import TestCase, main as unittest_main
-from test.test_importlib import util as test_importlib_util
+from types import BuiltinFunctionType, FunctionType, MethodType
+from unittest import TestCase
+from unittest import main as unittest_main
 
+from test.test_importlib import util as test_importlib_util
 
 StaticMethodType = type(staticmethod(lambda: None))
 ClassMethodType = type(classmethod(lambda c: None))

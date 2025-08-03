@@ -6,12 +6,12 @@ import threading
 import time
 import unittest
 import weakref
-
 from contextlib import contextmanager
 from sys import monitoring
-from test.support import threading_helper
-from threading import Thread, _PyRLock, Barrier
+from threading import Barrier, Thread, _PyRLock
 from unittest import TestCase
+
+from test.support import threading_helper
 
 
 class InstrumentationMultiThreadedMixin:

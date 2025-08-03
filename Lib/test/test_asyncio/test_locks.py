@@ -1,11 +1,10 @@
 """Tests for locks.py"""
 
-import unittest
-from unittest import mock
-import re
-
 import asyncio
 import collections
+import re
+import unittest
+from unittest import mock
 
 STR_RGX_REPR = (
     r'^<(?P<class>.*?) object at (?P<address>.*?)'

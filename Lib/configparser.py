@@ -145,8 +145,6 @@ ConfigParser -- responsible for parsing a list of
 
 # Do not import dataclasses; overhead is unacceptable (gh-117703)
 
-from collections.abc import Iterable, MutableMapping
-from collections import ChainMap as _ChainMap
 import contextlib
 import functools
 import io
@@ -154,6 +152,8 @@ import itertools
 import os
 import re
 import sys
+from collections import ChainMap as _ChainMap
+from collections.abc import Iterable, MutableMapping
 
 __all__ = ("NoSectionError", "DuplicateOptionError", "DuplicateSectionError",
            "NoOptionError", "InterpolationError", "InterpolationDepthError",

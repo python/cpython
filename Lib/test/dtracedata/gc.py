@@ -1,5 +1,6 @@
 import gc
 
+
 def start():
     gc.collect(0)
     gc.collect(1)

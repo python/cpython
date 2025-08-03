@@ -7,7 +7,6 @@
 # Licensed to PSF under a Contributor Agreement.
 #
 
-from abc import ABCMeta
 import copyreg
 import functools
 import io
@@ -15,6 +14,7 @@ import os
 import pickle
 import socket
 import sys
+from abc import ABCMeta
 
 from . import context
 

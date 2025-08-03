@@ -10,11 +10,11 @@ For example usage, see the 'if __name__=="__main__"' block at the end of the
 module.  See also the BaseHTTPServer module docs for other API information.
 """
 
-from http.server import BaseHTTPRequestHandler, HTTPServer
 import sys
 import urllib.parse
-from wsgiref.handlers import SimpleHandler
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from platform import python_implementation
+from wsgiref.handlers import SimpleHandler
 
 __version__ = "0.2"
 __all__ = ['WSGIServer', 'WSGIRequestHandler', 'demo_app', 'make_server']

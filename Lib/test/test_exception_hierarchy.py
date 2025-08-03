@@ -1,9 +1,9 @@
 import builtins
+import errno
 import os
 import select
 import socket
 import unittest
-import errno
 from errno import EEXIST
 
 

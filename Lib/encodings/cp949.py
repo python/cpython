@@ -4,8 +4,9 @@
 # Written by Hye-Shik Chang <perky@FreeBSD.org>
 #
 
-import _codecs_kr, codecs
+import _codecs_kr
 import _multibytecodec as mbc
+import codecs
 
 codec = _codecs_kr.getcodec('cp949')
 

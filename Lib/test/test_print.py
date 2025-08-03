@@ -1,5 +1,5 @@
-import unittest
 import sys
+import unittest
 from io import StringIO
 
 from test import support

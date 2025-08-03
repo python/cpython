@@ -1,21 +1,22 @@
+import copy
 import doctest
-import unittest
+import gc
 import itertools
-from test import support
-from test.support import threading_helper, script_helper
-from itertools import *
+import operator
+import pickle
+import random
+import struct
+import sys
+import threading
+import unittest
 import weakref
 from decimal import Decimal
 from fractions import Fraction
-import operator
-import random
-import copy
-import pickle
 from functools import reduce
-import sys
-import struct
-import threading
-import gc
+from itertools import *
+
+from test import support
+from test.support import script_helper, threading_helper
 
 maxsize = support.MAX_Py_ssize_t
 minsize = -maxsize-1

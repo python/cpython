@@ -1,7 +1,7 @@
 import io
 import time
-import unittest
 import tokenize
+import unittest
 from functools import partial
 from threading import Thread
 

@@ -8,6 +8,7 @@ import string
 import sys
 import unittest
 import weakref
+
 from test import support
 from test.support import import_helper
 
@@ -1634,6 +1635,7 @@ class CAPITest(unittest.TestCase):
 
 
 from test import mapping_tests
+
 
 class GeneralMappingTests(mapping_tests.BasicTestMappingProtocol):
     type2test = dict

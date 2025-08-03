@@ -6,16 +6,17 @@ import subprocess
 import sys
 import unittest
 from textwrap import dedent
+
 from test import support
 from test.support import (
+    SHORT_TIMEOUT,
+    SuppressCrashReport,
     cpython_only,
     has_subprocess_support,
     os_helper,
-    SuppressCrashReport,
-    SHORT_TIMEOUT,
 )
-from test.support.script_helper import kill_python
 from test.support.import_helper import import_module
+from test.support.script_helper import kill_python
 
 try:
     import pty

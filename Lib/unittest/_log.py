@@ -1,8 +1,7 @@
-import logging
 import collections
+import logging
 
 from .case import _BaseTestCaseContext
-
 
 _LoggingWatcher = collections.namedtuple("_LoggingWatcher",
                                          ["records", "output"])

@@ -1,9 +1,9 @@
 "Test mainmenu, coverage 100%."
 # Reported as 88%; mocking turtledemo absence would have no point.
 
-from idlelib import mainmenu
 import re
 import unittest
+from idlelib import mainmenu
 
 
 class MainMenuTest(unittest.TestCase):

@@ -11,11 +11,7 @@ import logging
 import sys
 from types import GenericAlias
 
-from . import base_futures
-from . import events
-from . import exceptions
-from . import format_helpers
-
+from . import base_futures, events, exceptions, format_helpers
 
 isfuture = base_futures.isfuture
 

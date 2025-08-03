@@ -133,16 +133,34 @@ import math
 import numbers
 import random
 import sys
-
-from fractions import Fraction
-from decimal import Decimal
-from itertools import count, groupby, repeat
 from bisect import bisect_left, bisect_right
-from math import hypot, sqrt, fabs, exp, erfc, tau, log, fsum, sumprod
-from math import isfinite, isinf, pi, cos, sin, tan, cosh, asin, atan, acos
+from collections import Counter, defaultdict, namedtuple
+from decimal import Decimal
+from fractions import Fraction
 from functools import reduce
+from itertools import count, groupby, repeat
+from math import (
+    acos,
+    asin,
+    atan,
+    cos,
+    cosh,
+    erfc,
+    exp,
+    fabs,
+    fsum,
+    hypot,
+    isfinite,
+    isinf,
+    log,
+    pi,
+    sin,
+    sqrt,
+    sumprod,
+    tan,
+    tau,
+)
 from operator import itemgetter
-from collections import Counter, namedtuple, defaultdict
 
 _SQRT2 = sqrt(2.0)
 _random = random

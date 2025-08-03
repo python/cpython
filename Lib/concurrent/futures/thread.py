@@ -5,14 +5,13 @@
 
 __author__ = 'Brian Quinlan (brian@sweetapp.com)'
 
-from concurrent.futures import _base
 import itertools
+import os
 import queue
 import threading
 import types
 import weakref
-import os
-
+from concurrent.futures import _base
 
 _threads_queues = weakref.WeakKeyDictionary()
 _shutdown = False

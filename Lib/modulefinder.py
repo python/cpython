@@ -3,9 +3,9 @@
 import dis
 import importlib._bootstrap_external
 import importlib.machinery
+import io
 import marshal
 import os
-import io
 import sys
 
 # Old imp constants:

@@ -6,15 +6,14 @@
 
 __all__ = ['Generator', 'DecodedGenerator', 'BytesGenerator']
 
+import random
 import re
 import sys
 import time
-import random
-
 from copy import deepcopy
-from io import StringIO, BytesIO
-from email.utils import _has_surrogates
 from email.errors import HeaderWriteError
+from email.utils import _has_surrogates
+from io import BytesIO, StringIO
 
 UNDERSCORE = '_'
 NL = '\n'  # XXX: no longer used by the code below.

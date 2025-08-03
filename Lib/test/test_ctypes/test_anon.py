@@ -1,6 +1,8 @@
 import unittest
+from ctypes import Structure, Union, c_int, sizeof
+
 import test.support
-from ctypes import c_int, Union, Structure, sizeof
+
 from ._support import StructCheckMixin
 
 

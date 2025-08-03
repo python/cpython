@@ -1,21 +1,28 @@
-from test.support import (
-    requires, _2G, _4G, gc_collect, cpython_only, is_emscripten, is_apple,
-    in_systemd_nspawn_sync_suppressed,
-)
-from test.support.import_helper import import_module
-from test.support.os_helper import TESTFN, unlink
-from test.support.script_helper import assert_python_ok
-import unittest
 import errno
-import os
-import re
 import itertools
+import os
 import random
+import re
 import socket
 import string
 import sys
 import textwrap
+import unittest
 import weakref
+
+from test.support import (
+    _2G,
+    _4G,
+    cpython_only,
+    gc_collect,
+    in_systemd_nspawn_sync_suppressed,
+    is_apple,
+    is_emscripten,
+    requires,
+)
+from test.support.import_helper import import_module
+from test.support.os_helper import TESTFN, unlink
+from test.support.script_helper import assert_python_ok
 
 # Skip test if we can't import mmap.
 mmap = import_module('mmap')

@@ -13,18 +13,16 @@ import itertools
 import math
 import pickle
 import random
-import sys
-import unittest
-from test import support
-from test.support import import_helper, requires_IEEE_754
-
-from decimal import Decimal
-from fractions import Fraction
-
 
 # Module to be tested.
 import statistics
+import sys
+import unittest
+from decimal import Decimal
+from fractions import Fraction
 
+from test import support
+from test.support import import_helper, requires_IEEE_754
 
 # === Helper functions and class ===
 

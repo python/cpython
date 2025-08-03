@@ -1,13 +1,21 @@
 import sys
 import trace
-from _colorize import get_colors  # type: ignore[import-not-found]
 from typing import TYPE_CHECKING
 
+from _colorize import get_colors  # type: ignore[import-not-found]
+
+from .result import Location, State, TestResult, TestStats
 from .runtests import RunTests
-from .result import State, TestResult, TestStats, Location
 from .utils import (
-    StrPath, TestName, TestTuple, TestList, FilterDict,
-    printlist, count, format_duration)
+    FilterDict,
+    StrPath,
+    TestList,
+    TestName,
+    TestTuple,
+    count,
+    format_duration,
+    printlist,
+)
 
 if TYPE_CHECKING:
     from xml.etree.ElementTree import Element

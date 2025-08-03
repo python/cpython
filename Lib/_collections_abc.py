@@ -32,8 +32,8 @@ Unit tests are in test_collections.
 #
 #######################################################################
 
-from abc import ABCMeta, abstractmethod
 import sys
+from abc import ABCMeta, abstractmethod
 
 GenericAlias = type(list[int])
 EllipsisType = type(...)

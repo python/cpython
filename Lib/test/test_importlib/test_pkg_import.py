@@ -1,13 +1,14 @@
 import os
-import sys
+import random
 import shutil
 import string
-import random
+import sys
 import tempfile
 import unittest
-
 from importlib.util import cache_from_source
+
 from test.support.os_helper import create_empty_file
+
 
 class TestImport(unittest.TestCase):
 

@@ -2,6 +2,7 @@ import io
 import itertools
 import json
 import os
+import pdb
 import re
 import signal
 import socket
@@ -10,14 +11,25 @@ import sys
 import textwrap
 import unittest
 import unittest.mock
-from contextlib import closing, contextmanager, redirect_stdout, redirect_stderr, ExitStack
-from test.support import is_wasi, cpython_only, force_color, requires_subprocess, SHORT_TIMEOUT, subTests
-from test.support.os_helper import TESTFN, unlink
+from contextlib import (
+    ExitStack,
+    closing,
+    contextmanager,
+    redirect_stderr,
+    redirect_stdout,
+)
+from pdb import _PdbClient, _PdbServer
 from typing import List
 
-import pdb
-from pdb import _PdbServer, _PdbClient
-
+from test.support import (
+    SHORT_TIMEOUT,
+    cpython_only,
+    force_color,
+    is_wasi,
+    requires_subprocess,
+    subTests,
+)
+from test.support.os_helper import TESTFN, unlink
 
 if not sys.is_remote_debug_enabled():
     raise unittest.SkipTest('remote debugging is disabled')

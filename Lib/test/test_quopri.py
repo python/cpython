@@ -1,10 +1,10 @@
+import io
+import quopri
+import subprocess
+import sys
 import unittest
 
-import sys, io, subprocess
-import quopri
-
 from test import support
-
 
 ENCSAMPLE = b"""\
 Here's a bunch of special=20

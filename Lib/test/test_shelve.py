@@ -1,13 +1,14 @@
 import array
-import unittest
 import dbm
-import shelve
-import pickle
 import os
+import pickle
+import shelve
+import unittest
+from collections.abc import MutableMapping
 
 from test.support import import_helper, os_helper
-from collections.abc import MutableMapping
 from test.test_dbm import dbm_iterator
+
 
 def L1(s):
     return s.decode("latin-1")

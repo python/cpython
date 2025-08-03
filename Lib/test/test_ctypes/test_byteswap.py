@@ -3,13 +3,34 @@ import math
 import struct
 import sys
 import unittest
-from ctypes import (Structure, Union, LittleEndianUnion, BigEndianUnion,
-                    BigEndianStructure, LittleEndianStructure,
-                    POINTER, sizeof, cast,
-                    c_byte, c_ubyte, c_char, c_wchar, c_void_p,
-                    c_short, c_ushort, c_int, c_uint,
-                    c_long, c_ulong, c_longlong, c_ulonglong,
-                    c_uint32, c_float, c_double)
+from ctypes import (
+    POINTER,
+    BigEndianStructure,
+    BigEndianUnion,
+    LittleEndianStructure,
+    LittleEndianUnion,
+    Structure,
+    Union,
+    c_byte,
+    c_char,
+    c_double,
+    c_float,
+    c_int,
+    c_long,
+    c_longlong,
+    c_short,
+    c_ubyte,
+    c_uint,
+    c_uint32,
+    c_ulong,
+    c_ulonglong,
+    c_ushort,
+    c_void_p,
+    c_wchar,
+    cast,
+    sizeof,
+)
+
 from ._support import StructCheckMixin
 
 

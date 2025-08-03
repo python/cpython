@@ -3,20 +3,43 @@ import ctypes
 import gc
 import sys
 import unittest
-from ctypes import (CDLL, CFUNCTYPE, Structure,
-                    POINTER, pointer, _Pointer,
-                    byref, sizeof,
-                    c_void_p, c_char_p,
-                    c_byte, c_ubyte, c_short, c_ushort, c_int, c_uint,
-                    c_long, c_ulong, c_longlong, c_ulonglong,
-                    c_float, c_double)
-from ctypes import _pointer_type_cache, _pointer_type_cache_fallback
-from test.support import import_helper
+from ctypes import (
+    CDLL,
+    CFUNCTYPE,
+    POINTER,
+    Structure,
+    _Pointer,
+    _pointer_type_cache,
+    _pointer_type_cache_fallback,
+    byref,
+    c_byte,
+    c_char_p,
+    c_double,
+    c_float,
+    c_int,
+    c_long,
+    c_longlong,
+    c_short,
+    c_ubyte,
+    c_uint,
+    c_ulong,
+    c_ulonglong,
+    c_ushort,
+    c_void_p,
+    pointer,
+    sizeof,
+)
 from weakref import WeakSet
-_ctypes_test = import_helper.import_module("_ctypes_test")
-from ._support import (_CData, PyCPointerType, Py_TPFLAGS_DISALLOW_INSTANTIATION,
-                       Py_TPFLAGS_IMMUTABLETYPE)
 
+from test.support import import_helper
+
+_ctypes_test = import_helper.import_module("_ctypes_test")
+from ._support import (
+    Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    Py_TPFLAGS_IMMUTABLETYPE,
+    PyCPointerType,
+    _CData,
+)
 
 ctype_types = [c_byte, c_ubyte, c_short, c_ushort, c_int, c_uint,
                  c_long, c_ulong, c_longlong, c_ulonglong, c_double, c_float]

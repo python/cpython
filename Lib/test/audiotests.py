@@ -1,8 +1,9 @@
-from test.support import findfile
-from test.support.os_helper import TESTFN, unlink
 import array
 import io
 import pickle
+
+from test.support import findfile
+from test.support.os_helper import TESTFN, unlink
 
 
 class UnseekableIO(io.FileIO):

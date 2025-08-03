@@ -34,8 +34,9 @@ import builtins
 import inspect
 import keyword
 import re
-import __main__
 import warnings
+
+import __main__
 
 __all__ = ["Completer"]
 

@@ -14,13 +14,14 @@ __all__ = ['update_wrapper', 'wraps', 'WRAPPER_ASSIGNMENTS', 'WRAPPER_UPDATES',
            'partial', 'partialmethod', 'singledispatch', 'singledispatchmethod',
            'cached_property', 'Placeholder']
 
+from _thread import RLock
 from abc import get_cache_token
 from collections import namedtuple
+
 # import weakref  # Deferred to single_dispatch()
 from operator import itemgetter
 from reprlib import recursive_repr
-from types import GenericAlias, MethodType, MappingProxyType, UnionType
-from _thread import RLock
+from types import GenericAlias, MappingProxyType, MethodType, UnionType
 
 ################################################################################
 ### update_wrapper() and wraps() decorator
@@ -435,7 +436,7 @@ class partial:
 
 
 try:
-    from _functools import partial, Placeholder, _PlaceholderType
+    from _functools import Placeholder, _PlaceholderType, partial
 except ImportError:
     pass
 
@@ -946,6 +947,7 @@ def singledispatch(func):
 
             # only import typing if annotation parsing is necessary
             from typing import get_type_hints
+
             from annotationlib import Format, ForwardRef
             argname, cls = next(iter(get_type_hints(func, format=Format.FORWARDREF).items()))
             if not _is_valid_dispatch_type(cls):

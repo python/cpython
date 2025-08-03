@@ -1,32 +1,38 @@
 import collections
 import contextlib
-import io
-import os
-import sys
 import errno
+import io
 import ntpath
+import os
 import pathlib
 import pickle
 import posixpath
 import socket
 import stat
+import sys
 import tempfile
 import unittest
 from unittest import mock
 from urllib.request import pathname2url
 
-from test.support import import_helper
-from test.support import cpython_only
-from test.support import is_emscripten, is_wasi, is_wasm32
-from test.support import infinite_recursion
-from test.support import os_helper
-from test.support.os_helper import TESTFN, FS_NONASCII, FakePath
+from test.support import (
+    cpython_only,
+    import_helper,
+    infinite_recursion,
+    is_emscripten,
+    is_wasi,
+    is_wasm32,
+    os_helper,
+)
+from test.support.os_helper import FS_NONASCII, TESTFN, FakePath
+
 try:
     import fcntl
 except ImportError:
     fcntl = None
 try:
-    import grp, pwd
+    import grp
+    import pwd
 except ImportError:
     grp = pwd = None
 try:

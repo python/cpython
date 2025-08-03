@@ -20,6 +20,7 @@
 # CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 from __future__ import annotations
+
 import os
 import time
 
@@ -31,7 +32,6 @@ import time
 #  history
 #  finishing
 # [completion]
-
 from .trace import trace
 
 # types
@@ -464,8 +464,9 @@ class invalid_command(Command):
 
 class show_history(Command):
     def do(self) -> None:
-        from .pager import get_pager
         from site import gethistoryfile
+
+        from .pager import get_pager
 
         history = os.linesep.join(self.reader.history[:])
         self.reader.console.restore()

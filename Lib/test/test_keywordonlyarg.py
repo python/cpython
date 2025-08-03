@@ -5,6 +5,7 @@ __email__ = "seojiwon at gmail dot com"
 
 import unittest
 
+
 def posonly_sum(pos_arg1, *arg, **kwarg):
     return pos_arg1 + sum(arg) + sum(kwarg.values())
 def keywordonly_sum(*, k1=0, k2):

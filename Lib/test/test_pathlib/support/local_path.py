@@ -13,11 +13,13 @@ from .lexical_path import LexicalPath
 
 if is_pypi:
     from shutil import rmtree
+
     from pathlib_abc import PathInfo, _ReadablePath, _WritablePath
     can_symlink = True
     testfn = "TESTFN"
 else:
     from pathlib.types import PathInfo, _ReadablePath, _WritablePath
+
     from test.support import os_helper
     can_symlink = os_helper.can_symlink()
     testfn = os_helper.TESTFN

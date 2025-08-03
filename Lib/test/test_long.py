@@ -1,11 +1,10 @@
-import unittest
-from test import support
-
-import sys
-
-import random
-import math
 import array
+import math
+import random
+import sys
+import unittest
+
+from test import support
 
 # SHIFT should match the value in longintrepr.h for best testing.
 SHIFT = sys.int_info.bits_per_digit

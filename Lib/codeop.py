@@ -33,6 +33,7 @@ Compile():
 """
 
 import __future__
+
 import warnings
 
 _features = [getattr(__future__, fname)

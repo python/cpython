@@ -8,20 +8,24 @@ import traceback
 import unittest
 
 from _colorize import get_colors  # type: ignore[import-not-found]
+
 from test import support
 from test.support import threading_helper
 
 from .filter import match_test
+from .parallel_case import ParallelTestCase
 from .result import State, TestResult, TestStats
 from .runtests import RunTests
 from .save_env import saved_test_environment
 from .setup import setup_tests
 from .testresult import get_test_runner
-from .parallel_case import ParallelTestCase
 from .utils import (
     TestName,
-    clear_caches, remove_testfn, abs_module_name, print_warning)
-
+    abs_module_name,
+    clear_caches,
+    print_warning,
+    remove_testfn,
+)
 
 # Minimum duration of a test to display its duration or to mention that
 # the test is running in background

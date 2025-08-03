@@ -1,15 +1,13 @@
 "Test codecontext, coverage 100%"
 
-from idlelib import codecontext
+import re
 import unittest
 import unittest.mock
-from test.support import requires
-from tkinter import NSEW, Tk, Frame, Text, TclError
-
+from idlelib import codecontext, config
+from tkinter import NSEW, Frame, TclError, Text, Tk
 from unittest import mock
-import re
-from idlelib import config
 
+from test.support import requires
 
 usercfg = codecontext.idleConf.userCfg
 testcfg = {

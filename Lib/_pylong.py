@@ -12,8 +12,9 @@ integers with a huge number of digits.  Saving a few microseconds with
 tricky or non-obvious code is not worth it.  For people looking for
 maximum performance, they should use something like gmpy2."""
 
-import re
 import decimal
+import re
+
 try:
     import _decimal
 except ImportError:
@@ -265,6 +266,7 @@ _LOG_10_BASE_256 = float.fromhex('0x1.a934f0979a371p-2') # about 0.415
 #     key 1 - quotient had to be boosted by 1, one time
 #     key 999 - one adjustment wasn't enough, so fell back to divmod
 from collections import defaultdict
+
 _spread = defaultdict(int)
 del defaultdict
 

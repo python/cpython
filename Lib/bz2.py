@@ -9,13 +9,12 @@ __all__ = ["BZ2File", "BZ2Compressor", "BZ2Decompressor",
 
 __author__ = "Nadeem Vawda <nadeem.vawda@gmail.com>"
 
-from builtins import open as _builtin_open
-from compression._common import _streams
 import io
 import os
-
 from _bz2 import BZ2Compressor, BZ2Decompressor
+from builtins import open as _builtin_open
 
+from compression._common import _streams
 
 # Value 0 no longer used
 _MODE_READ     = 1

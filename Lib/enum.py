@@ -1,7 +1,6 @@
-import sys
 import builtins as bltns
-from types import MappingProxyType, DynamicClassAttribute
-
+import sys
+from types import DynamicClassAttribute, MappingProxyType
 
 __all__ = [
         'EnumType', 'EnumMeta', 'EnumDict',

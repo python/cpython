@@ -20,13 +20,15 @@ import types
 import weakref
 from types import GenericAlias
 
-from . import base_tasks
-from . import coroutines
-from . import events
-from . import exceptions
-from . import futures
-from . import queues
-from . import timeouts
+from . import (
+    base_tasks,
+    coroutines,
+    events,
+    exceptions,
+    futures,
+    queues,
+    timeouts,
+)
 
 # Helper to generate new task names
 # This uses itertools.count() instead of a "+= 1" operation because the latter
@@ -1123,10 +1125,17 @@ _py_swap_current_task = _swap_current_task
 _py_all_tasks = all_tasks
 
 try:
-    from _asyncio import (_register_task, _register_eager_task,
-                          _unregister_task, _unregister_eager_task,
-                          _enter_task, _leave_task, _swap_current_task,
-                          current_task, all_tasks)
+    from _asyncio import (
+        _enter_task,
+        _leave_task,
+        _register_eager_task,
+        _register_task,
+        _swap_current_task,
+        _unregister_eager_task,
+        _unregister_task,
+        all_tasks,
+        current_task,
+    )
 except ImportError:
     pass
 else:

@@ -7,7 +7,6 @@ for urllib.requests, thus do not use directly.
 
 import warnings
 
-
 warnings._deprecated(
     __name__,
     message=f"{warnings._DEPRECATED_MSG}; use 'urllib.request' instead",

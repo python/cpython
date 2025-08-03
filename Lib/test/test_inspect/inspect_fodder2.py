@@ -120,6 +120,7 @@ class ClassWithMethod:
 
 from functools import wraps
 
+
 def decorator(func):
     @wraps(func)
     def fake():
@@ -318,6 +319,7 @@ class ClassWithCodeObject:
 
 import enum
 
+
 # line 321
 class enum322(enum.Enum):
     A = 'a'
@@ -342,6 +344,7 @@ simple_flag341 = enum.IntFlag('simple_flag341', 'A')
 
 import typing
 
+
 # line 345
 class nt346(typing.NamedTuple):
     x: int
@@ -359,6 +362,7 @@ class td354(typing.TypedDict):
 td359 = typing.TypedDict('td359', (('x', int), ('y', int)))
 
 import dataclasses
+
 
 # line 363
 @dataclasses.dataclass

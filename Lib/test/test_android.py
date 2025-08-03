@@ -5,14 +5,15 @@ import re
 import subprocess
 import sys
 import unittest
-from _android_support import TextLogStream
 from array import array
 from contextlib import ExitStack, contextmanager
 from threading import Thread
-from test.support import LOOPBACK_TIMEOUT
 from time import time
 from unittest.mock import patch
 
+from _android_support import TextLogStream
+
+from test.support import LOOPBACK_TIMEOUT
 
 if sys.platform != "android":
     raise unittest.SkipTest("Android-specific")

@@ -7,9 +7,10 @@ For further details, see tree.py.
 This example is a breadth-first rewrite of
 a Logo program by Erich Neuwirth.
 """
-from turtle import Turtle, colormode, tracer, mainloop
 from random import randrange
 from time import perf_counter as clock
+from turtle import Turtle, colormode, mainloop, tracer
+
 
 def symRandom(n):
     return randrange(-n,n+1)

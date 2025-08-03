@@ -5,12 +5,14 @@ import textwrap
 import tracemalloc
 import unittest
 from unittest.mock import patch
-from test.support.script_helper import (assert_python_ok, assert_python_failure,
-                                        interpreter_requires_environment)
+
 from test import support
-from test.support import force_not_colorized
-from test.support import os_helper
-from test.support import threading_helper
+from test.support import force_not_colorized, os_helper, threading_helper
+from test.support.script_helper import (
+    assert_python_failure,
+    assert_python_ok,
+    interpreter_requires_environment,
+)
 
 try:
     import _testcapi

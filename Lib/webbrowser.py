@@ -4,8 +4,8 @@
 import os
 import shlex
 import shutil
-import sys
 import subprocess
+import sys
 import threading
 
 __all__ = ["Error", "open", "open_new", "open_new_tab", "get", "register"]
@@ -659,7 +659,7 @@ if sys.platform == "ios":
     from _ios_support import objc
     if objc:
         # If objc exists, we know ctypes is also importable.
-        from ctypes import c_void_p, c_char_p, c_ulong
+        from ctypes import c_char_p, c_ulong, c_void_p
 
     class IOSBrowser(BaseBrowser):
         def open(self, url, new=0, autoraise=True):

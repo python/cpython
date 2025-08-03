@@ -2,17 +2,22 @@
 """
 import errno
 import multiprocessing
-import platform
 import os
+import platform
 import struct
 import sys
 import unittest
+
 from test.support import (
-    cpython_only, get_pagesize, is_apple, requires_subprocess, verbose, is_emscripten
+    cpython_only,
+    get_pagesize,
+    is_apple,
+    is_emscripten,
+    requires_subprocess,
+    verbose,
 )
 from test.support.import_helper import import_module
-from test.support.os_helper import TESTFN, unlink, make_bad_fd
-
+from test.support.os_helper import TESTFN, make_bad_fd, unlink
 
 # Skip test if no fcntl module.
 fcntl = import_module('fcntl')

@@ -1,6 +1,6 @@
-import os
 import base64
 import gettext
+import os
 import unittest
 import unittest.mock
 from functools import partial
@@ -8,7 +8,6 @@ from functools import partial
 from test import support
 from test.support import cpython_only, os_helper
 from test.support.import_helper import ensure_lazy_imports
-
 
 # TODO:
 #  - Add new tests, for example for "dgettext"

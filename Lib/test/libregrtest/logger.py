@@ -2,6 +2,7 @@ import os
 import time
 
 from test.support import MS_WINDOWS
+
 from .results import TestResults
 from .runtests import RunTests
 from .utils import print_warning

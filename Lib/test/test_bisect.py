@@ -1,8 +1,8 @@
 import sys
 import unittest
-from test.support import import_helper
 from collections import UserList
 
+from test.support import import_helper
 
 py_bisect = import_helper.import_fresh_module('bisect', blocked=['_bisect'])
 c_bisect = import_helper.import_fresh_module('bisect', fresh=['_bisect'])

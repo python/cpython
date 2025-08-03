@@ -113,11 +113,12 @@ __copyright__ = """
 __version__ = '1.1.0'
 
 import collections
+import functools
+import itertools
 import os
 import re
 import sys
-import functools
-import itertools
+
 try:
     import _wmi
 except ImportError:

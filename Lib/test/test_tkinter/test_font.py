@@ -1,8 +1,9 @@
-import unittest
 import tkinter
+import unittest
 from tkinter import font
-from test.support import requires, gc_collect, ALWAYS_EQ
-from test.test_tkinter.support import AbstractTkTest, AbstractDefaultRootTest
+
+from test.support import ALWAYS_EQ, gc_collect, requires
+from test.test_tkinter.support import AbstractDefaultRootTest, AbstractTkTest
 
 requires('gui')
 

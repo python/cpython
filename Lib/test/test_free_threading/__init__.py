@@ -3,7 +3,6 @@ import unittest
 
 from test import support
 
-
 if not support.Py_GIL_DISABLED:
     raise unittest.SkipTest("GIL enabled")
 

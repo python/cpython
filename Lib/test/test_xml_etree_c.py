@@ -1,10 +1,11 @@
 # xml.etree test for cElementTree
 import io
 import struct
-from test import support
-from test.support.import_helper import import_fresh_module
 import types
 import unittest
+
+from test import support
+from test.support.import_helper import import_fresh_module
 
 cET = import_fresh_module('xml.etree.ElementTree',
                           fresh=['_elementtree'])

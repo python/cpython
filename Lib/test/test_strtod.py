@@ -2,9 +2,10 @@
 # introduced in Python 2.7 and 3.1.
 
 import random
-import unittest
 import re
 import sys
+import unittest
+
 import test.support
 
 if getattr(sys, 'float_repr_style', '') != 'short':

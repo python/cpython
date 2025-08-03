@@ -1,12 +1,12 @@
 """Test the binascii C module."""
 
-import unittest
-import binascii
 import array
+import binascii
 import re
-from test.support import bigmemtest, _1G, _4G
-from test.support.hypothesis_helper import hypothesis
+import unittest
 
+from test.support import _1G, _4G, bigmemtest
+from test.support.hypothesis_helper import hypothesis
 
 # Note: "*_hex" functions are aliases for "(un)hexlify"
 b2a_functions = ['b2a_base64', 'b2a_hex', 'b2a_qp', 'b2a_uu',

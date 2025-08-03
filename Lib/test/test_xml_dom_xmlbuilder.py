@@ -1,9 +1,10 @@
 import io
 import unittest
 from http import client
-from test.test_httplib import FakeSocket
 from unittest import mock
 from xml.dom import getDOMImplementation, minidom, xmlbuilder
+
+from test.test_httplib import FakeSocket
 
 SMALL_SAMPLE = b"""<?xml version="1.0"?>
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:xdc="http://www.xml.com/books">

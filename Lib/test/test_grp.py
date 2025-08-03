@@ -1,8 +1,8 @@
 """Test script for the grp module."""
 
 import unittest
-from test.support import import_helper
 
+from test.support import import_helper
 
 grp = import_helper.import_module('grp')
 

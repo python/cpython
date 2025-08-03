@@ -30,7 +30,6 @@
 import os
 import sys
 import unittest
-
 from ctypes.macholib.dyld import dyld_find
 from ctypes.macholib.dylib import dylib_info
 from ctypes.macholib.framework import framework_info

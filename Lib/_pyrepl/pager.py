@@ -5,7 +5,6 @@ import os
 import re
 import sys
 
-
 # types
 if False:
     from typing import Protocol
@@ -73,8 +72,8 @@ def tty_pager(text: str, title: str = '') -> None:
     lines = plain(escape_stdout(text)).split('\n')
     has_tty = False
     try:
-        import tty
         import termios
+        import tty
         fd = sys.stdin.fileno()
         old = termios.tcgetattr(fd)
         tty.setcbreak(fd)

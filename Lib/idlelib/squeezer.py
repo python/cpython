@@ -15,14 +15,12 @@ output written to the standard error stream ("stderr"), such as exception
 messages and their tracebacks.
 """
 import re
-
 import tkinter as tk
-from tkinter import messagebox
-
+from idlelib import macosx
 from idlelib.config import idleConf
 from idlelib.textview import view_text
 from idlelib.tooltip import Hovertip
-from idlelib import macosx
+from tkinter import messagebox
 
 
 def count_lines_with_wrapping(s, linewidth=80):

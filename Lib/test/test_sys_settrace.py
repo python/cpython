@@ -1,18 +1,24 @@
 # Testing the line trace facility.
 
-from test import support
-import unittest
-import sys
+import contextlib
 import difflib
 import gc
-from functools import wraps
-from test.support import import_helper, requires_subprocess, run_no_yield_async_fn
-import contextlib
 import os
+import subprocess
+import sys
 import tempfile
 import textwrap
-import subprocess
+import unittest
 import warnings
+from functools import wraps
+
+from test import support
+from test.support import (
+    import_helper,
+    requires_subprocess,
+    run_no_yield_async_fn,
+)
+
 try:
     import _testinternalcapi
 except ImportError:

@@ -1,30 +1,31 @@
 # A test suite for pdb; not very comprehensive at the moment.
 
-import _colorize
+import codecs
 import doctest
 import gc
 import io
+import linecache
 import os
 import pdb
-import sys
-import types
-import codecs
-import unittest
 import subprocess
+import sys
 import textwrap
-import linecache
+import types
+import unittest
 import zipapp
 import zipfile
-
 from asyncio.events import _set_event_loop_policy
 from contextlib import ExitStack, redirect_stdout
 from io import StringIO
+from unittest.mock import patch
+
+import _colorize
+
 from test import support
 from test.support import has_socket_support, os_helper
 from test.support.import_helper import import_module
-from test.support.pty_helper import run_pty, FakeInput
+from test.support.pty_helper import FakeInput, run_pty
 from test.support.script_helper import kill_python
-from unittest.mock import patch
 
 SKIP_CORO_TESTS = False
 

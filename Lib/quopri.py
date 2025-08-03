@@ -186,8 +186,8 @@ def unhex(s):
 
 
 def main():
-    import sys
     import getopt
+    import sys
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'td')
     except getopt.error as msg:

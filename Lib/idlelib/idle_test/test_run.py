@@ -1,14 +1,14 @@
 "Test run, coverage 54%."
 
-from idlelib import run
+import idlelib
 import io
 import sys
-from test.support import captured_output, captured_stderr
 import unittest
-from unittest import mock
-import idlelib
+from idlelib import run
 from idlelib.idle_test.mock_idle import Func
-from test.support import force_not_colorized
+from unittest import mock
+
+from test.support import captured_output, captured_stderr, force_not_colorized
 
 idlelib.testing = True  # Use {} for executing test user code.
 

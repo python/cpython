@@ -1,6 +1,11 @@
 import unittest
-from ctypes import (create_string_buffer, create_unicode_buffer, sizeof,
-                    c_char, c_wchar)
+from ctypes import (
+    c_char,
+    c_wchar,
+    create_string_buffer,
+    create_unicode_buffer,
+    sizeof,
+)
 
 
 class StringBufferTestCase(unittest.TestCase):

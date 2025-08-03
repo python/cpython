@@ -1,11 +1,11 @@
 """Utilities for with-statement contexts.  See PEP 343."""
+import _collections_abc
 import abc
 import os
 import sys
-import _collections_abc
 from collections import deque
 from functools import wraps
-from types import MethodType, GenericAlias
+from types import GenericAlias, MethodType
 
 __all__ = ["asynccontextmanager", "contextmanager", "closing", "nullcontext",
            "AbstractContextManager", "AbstractAsyncContextManager",

@@ -1,9 +1,9 @@
 import contextlib
 import errno
 import importlib
-import itertools
 import inspect
 import io
+import itertools
 import logging
 import os
 import shutil
@@ -19,12 +19,14 @@ import unittest
 import warnings
 
 from test import support
-from test.support import hashlib_helper
-from test.support import import_helper
-from test.support import os_helper
-from test.support import script_helper
-from test.support import socket_helper
-from test.support import warnings_helper
+from test.support import (
+    hashlib_helper,
+    import_helper,
+    os_helper,
+    script_helper,
+    socket_helper,
+    warnings_helper,
+)
 
 TESTFN = os_helper.TESTFN
 

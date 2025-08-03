@@ -195,27 +195,34 @@ None
 """
 
 import copy
+import dis
+import doctest
 import inspect
 import sys
-import threading
-import doctest
-import unittest
 import textwrap
+import threading
+import unittest
 import weakref
-import dis
 
 try:
     import ctypes
 except ImportError:
     ctypes = None
-from test.support import (cpython_only,
-                          check_impl_detail, requires_debug_ranges,
-                          gc_collect, Py_GIL_DISABLED)
-from test.support.script_helper import assert_python_ok
-from test.support import threading_helper, import_helper
-from test.support.bytecode_helper import instructions_with_positions
-from opcode import opmap, opname
 from _testcapi import code_offset_to_line
+from opcode import opmap, opname
+
+from test.support import (
+    Py_GIL_DISABLED,
+    check_impl_detail,
+    cpython_only,
+    gc_collect,
+    import_helper,
+    requires_debug_ranges,
+    threading_helper,
+)
+from test.support.bytecode_helper import instructions_with_positions
+from test.support.script_helper import assert_python_ok
+
 try:
     import _testinternalcapi
 except ModuleNotFoundError:

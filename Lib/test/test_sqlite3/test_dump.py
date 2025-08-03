@@ -2,9 +2,7 @@
 
 import unittest
 
-from .util import memory_database
-from .util import MemoryDatabaseMixin
-from .util import requires_virtual_table
+from .util import MemoryDatabaseMixin, memory_database, requires_virtual_table
 
 
 class DumpTests(MemoryDatabaseMixin, unittest.TestCase):

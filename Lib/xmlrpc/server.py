@@ -104,18 +104,19 @@ server.handle_request()
 # Written by Brian Quinlan (brian@sweetapp.com).
 # Based on code written by Fredrik Lundh.
 
-from xmlrpc.client import Fault, dumps, loads, gzip_encode, gzip_decode
-from http.server import BaseHTTPRequestHandler
-from functools import partial
-from inspect import signature
 import html
 import http.server
+import os
+import pydoc
+import re
 import socketserver
 import sys
-import os
-import re
-import pydoc
 import traceback
+from functools import partial
+from http.server import BaseHTTPRequestHandler
+from inspect import signature
+from xmlrpc.client import Fault, dumps, gzip_decode, gzip_encode, loads
+
 try:
     import fcntl
 except ImportError:

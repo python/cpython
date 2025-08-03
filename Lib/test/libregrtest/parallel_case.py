@@ -3,7 +3,6 @@
 import copy
 import threading
 import unittest
-
 from unittest import TestCase
 
 

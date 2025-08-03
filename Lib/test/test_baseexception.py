@@ -1,6 +1,6 @@
-import unittest
 import builtins
 import os
+import unittest
 from platform import system as platform_system
 
 

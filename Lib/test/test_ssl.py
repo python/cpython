@@ -1,37 +1,41 @@
 # Test the support for SSL and sockets
 
-import sys
-import unittest
-import unittest.mock
-from ast import literal_eval
-from threading import Thread
-from test import support
-from test.support import import_helper
-from test.support import os_helper
-from test.support import socket_helper
-from test.support import threading_helper
-from test.support import warnings_helper
-from test.support import asyncore
 import array
-import re
-import socket
-import select
-import struct
-import time
 import enum
+import errno
+import functools
 import gc
 import http.client
 import os
-import errno
-import pprint
-import urllib.request
-import threading
-import traceback
-import weakref
 import platform
+import pprint
+import re
+import select
+import socket
+import struct
+import sys
 import sysconfig
-import functools
+import threading
+import time
+import traceback
+import unittest
+import unittest.mock
+import urllib.request
+import weakref
+from ast import literal_eval
 from contextlib import nullcontext
+from threading import Thread
+
+from test import support
+from test.support import (
+    asyncore,
+    import_helper,
+    os_helper,
+    socket_helper,
+    threading_helper,
+    warnings_helper,
+)
+
 try:
     import ctypes
 except ImportError:
@@ -40,8 +44,13 @@ except ImportError:
 
 ssl = import_helper.import_module("ssl")
 import _ssl
-
-from ssl import Purpose, TLSVersion, _TLSContentType, _TLSMessageType, _TLSAlertType
+from ssl import (
+    Purpose,
+    TLSVersion,
+    _TLSAlertType,
+    _TLSContentType,
+    _TLSMessageType,
+)
 
 Py_DEBUG_WIN32 = support.Py_DEBUG and sys.platform == 'win32'
 
@@ -2282,6 +2291,7 @@ def _test_get_server_certificate_fail(test, host, port):
 
 
 from test.ssl_servers import make_https_server
+
 
 class ThreadedEchoServer(threading.Thread):
 

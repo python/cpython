@@ -1,6 +1,6 @@
 # dialog.py -- Tkinter interface to the tk_dialog script.
 
-from tkinter import _cnfmerge, Widget, TclError, Button, Pack
+from tkinter import Button, Pack, TclError, Widget, _cnfmerge
 
 __all__ = ["Dialog"]
 

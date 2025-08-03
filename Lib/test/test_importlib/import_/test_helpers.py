@@ -1,10 +1,10 @@
 """Tests for helper functions used by import.c ."""
 
-from importlib import _bootstrap_external, machinery
 import os.path
-from types import ModuleType, SimpleNamespace
 import unittest
 import warnings
+from importlib import _bootstrap_external, machinery
+from types import ModuleType, SimpleNamespace
 
 from .. import util
 

@@ -1,5 +1,6 @@
-from collections import deque
 import unittest
+from collections import deque
+
 from test.support import NEVER_EQ
 
 

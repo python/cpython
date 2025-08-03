@@ -8,6 +8,7 @@ it only uses turtle commands.
 
 from turtle import *
 
+
 def main():
     peacecolors = ("red3",  "orange", "yellow",
                    "seagreen4", "orchid4",

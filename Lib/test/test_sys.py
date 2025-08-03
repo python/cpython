@@ -1,6 +1,6 @@
+import _datetime
 import builtins
 import codecs
-import _datetime
 import gc
 import io
 import locale
@@ -12,17 +12,21 @@ import struct
 import subprocess
 import sys
 import sysconfig
-import test.support
 from io import StringIO
 from unittest import mock
+
+import test.support
 from test import support
-from test.support import os_helper
-from test.support.script_helper import assert_python_ok, assert_python_failure
+from test.support import (
+    SHORT_TIMEOUT,
+    force_not_colorized,
+    import_helper,
+    os_helper,
+    threading_helper,
+)
+from test.support.script_helper import assert_python_failure, assert_python_ok
 from test.support.socket_helper import find_unused_port
-from test.support import threading_helper
-from test.support import import_helper
-from test.support import force_not_colorized
-from test.support import SHORT_TIMEOUT
+
 try:
     from concurrent import interpreters
 except ImportError:
@@ -1343,7 +1347,7 @@ class SysModuleTest(unittest.TestCase):
 class UnraisableHookTest(unittest.TestCase):
     def test_original_unraisablehook(self):
         _testcapi = import_helper.import_module('_testcapi')
-        from _testcapi import err_writeunraisable, err_formatunraisable
+        from _testcapi import err_formatunraisable, err_writeunraisable
         obj = hex
 
         with support.swap_attr(sys, 'unraisablehook',
@@ -1449,7 +1453,7 @@ class UnraisableHookTest(unittest.TestCase):
 
     def test_custom_unraisablehook(self):
         _testcapi = import_helper.import_module('_testcapi')
-        from _testcapi import err_writeunraisable, err_formatunraisable
+        from _testcapi import err_formatunraisable, err_writeunraisable
         hook_args = None
 
         def hook_func(args):
@@ -1647,7 +1651,8 @@ class SizeofTest(unittest.TestCase):
         # ellipses
         check(Ellipsis, size(''))
         # EncodingMap
-        import codecs, encodings.iso8859_3
+        import codecs
+        import encodings.iso8859_3
         x = codecs.charmap_build(encodings.iso8859_3.decoding_table)
         check(x, size('32B2iB'))
         # enumerate

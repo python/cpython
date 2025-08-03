@@ -1,11 +1,13 @@
 from test.support import import_helper, threading_helper
+
 syslog = import_helper.import_module("syslog") #skip if not supported
-from test import support
 import sys
 import threading
 import time
 import unittest
 from textwrap import dedent
+
+from test import support
 
 # XXX(nnorwitz): This test sucks.  I don't know of a platform independent way
 # to verify that the messages were really logged.

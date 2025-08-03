@@ -5,6 +5,7 @@
 
 import sys
 
+
 class CallableCycle:
     def __init__(self):
         self._cycle = self

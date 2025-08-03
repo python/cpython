@@ -1,12 +1,12 @@
+import email.errors
 import io
 import textwrap
 import unittest
-from email import message_from_string, message_from_bytes
-from email.message import EmailMessage
-from email.generator import Generator, BytesGenerator
+from email import message_from_bytes, message_from_string, policy
+from email.generator import BytesGenerator, Generator
 from email.headerregistry import Address
-from email import policy
-import email.errors
+from email.message import EmailMessage
+
 from test.test_email import TestEmailBase, parameterize
 
 

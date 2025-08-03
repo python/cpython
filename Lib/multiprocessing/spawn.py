@@ -9,14 +9,12 @@
 #
 
 import os
-import sys
 import runpy
+import sys
 import types
 
-from . import get_start_method, set_start_method
-from . import process
+from . import get_start_method, process, set_start_method, util
 from .context import reduction
-from . import util
 
 __all__ = ['_main', 'freeze_support', 'set_executable', 'get_executable',
            'get_preparation_data', 'get_command_line', 'import_main_path']
@@ -101,8 +99,8 @@ def spawn_main(pipe_handle, parent_pid=None, tracker_fd=None):
     '''
     assert is_forking(sys.argv), "Not forking"
     if sys.platform == 'win32':
-        import msvcrt
         import _winapi
+        import msvcrt
 
         if parent_pid is not None:
             source_process = _winapi.OpenProcess(

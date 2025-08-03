@@ -1,13 +1,11 @@
 import io
 import unittest
 import xml.sax
-
-from xml.sax.xmlreader import AttributesImpl
-from xml.sax.handler import feature_external_ges
 from xml.dom import pulldom
+from xml.sax.handler import feature_external_ges
+from xml.sax.xmlreader import AttributesImpl
 
 from test.support import findfile
-
 
 tstfile = findfile("test.xml", subdir="xmltestdata")
 

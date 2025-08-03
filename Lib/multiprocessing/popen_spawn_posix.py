@@ -1,10 +1,8 @@
 import io
 import os
 
+from . import popen_fork, spawn, util
 from .context import reduction, set_spawning_popen
-from . import popen_fork
-from . import spawn
-from . import util
 
 __all__ = ['Popen']
 

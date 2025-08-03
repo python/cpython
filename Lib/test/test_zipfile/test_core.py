@@ -14,23 +14,33 @@ import time
 import unittest
 import unittest.mock as mock
 import zipfile
-
-
+from random import randbytes, randint, random
 from tempfile import TemporaryFile
-from random import randint, random, randbytes
 
 from test import archiver_tests
-from test.support import script_helper, os_helper
 from test.support import (
-    findfile, requires_zlib, requires_bz2, requires_lzma,
-    requires_zstd, captured_stdout, captured_stderr, requires_subprocess,
-    cpython_only
-)
-from test.support.os_helper import (
-    TESTFN, unlink, rmtree, temp_dir, temp_cwd, fd_count, FakePath
+    captured_stderr,
+    captured_stdout,
+    cpython_only,
+    findfile,
+    os_helper,
+    requires_bz2,
+    requires_lzma,
+    requires_subprocess,
+    requires_zlib,
+    requires_zstd,
+    script_helper,
 )
 from test.support.import_helper import ensure_lazy_imports
-
+from test.support.os_helper import (
+    TESTFN,
+    FakePath,
+    fd_count,
+    rmtree,
+    temp_cwd,
+    temp_dir,
+    unlink,
+)
 
 TESTFN2 = TESTFN + "2"
 TESTFNDIR = TESTFN + "d"

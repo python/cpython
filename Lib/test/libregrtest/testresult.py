@@ -8,8 +8,10 @@ import sys
 import time
 import traceback
 import unittest
+
 from test import support
 from test.libregrtest.utils import sanitize_xml
+
 
 class RegressionTestResult(unittest.TextTestResult):
     USE_XML = False
@@ -19,8 +21,8 @@ class RegressionTestResult(unittest.TextTestResult):
                          verbosity=2 if verbosity else 0)
         self.buffer = True
         if self.USE_XML:
+            from datetime import UTC, datetime
             from xml.etree import ElementTree as ET
-            from datetime import datetime, UTC
             self.__ET = ET
             self.__suite = ET.Element('testsuite')
             self.__suite.set('start',

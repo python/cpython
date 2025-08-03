@@ -2,8 +2,8 @@ import os
 import signal
 import socket
 import sys
-import time
 import threading
+import time
 import unittest
 from unittest import mock
 
@@ -12,9 +12,9 @@ if sys.platform != 'win32':
 
 import _overlapped
 import _winapi
-
 import asyncio
 from asyncio import windows_events
+
 from test.test_asyncio import utils as test_utils
 
 

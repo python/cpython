@@ -3,8 +3,8 @@ from test.test_importlib import abc, util
 
 machinery = util.import_importlib('importlib.machinery')
 
-import unittest
 import sys
+import unittest
 
 
 class FinderTests(abc.FinderTests):

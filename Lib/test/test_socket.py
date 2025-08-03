@@ -1,10 +1,3 @@
-import unittest
-from unittest import mock
-from test import support
-from test.support import (
-    cpython_only, is_apple, os_helper, refleak_helper, socket_helper, threading_helper
-)
-from test.support.import_helper import ensure_lazy_imports
 import _thread as thread
 import array
 import contextlib
@@ -29,8 +22,22 @@ import tempfile
 import threading
 import time
 import traceback
+import unittest
 import warnings
+from unittest import mock
 from weakref import proxy
+
+from test import support
+from test.support import (
+    cpython_only,
+    is_apple,
+    os_helper,
+    refleak_helper,
+    socket_helper,
+    threading_helper,
+)
+from test.support.import_helper import ensure_lazy_imports
+
 try:
     import multiprocessing
 except ImportError:
@@ -1337,7 +1344,8 @@ class GeneralModuleTests(unittest.TestCase):
     @unittest.skipUnless(hasattr(socket, 'inet_pton'),
                          'test needs socket.inet_pton()')
     def testIPv4toString(self):
-        from socket import inet_aton as f, inet_pton, AF_INET
+        from socket import AF_INET, inet_pton
+        from socket import inet_aton as f
         g = lambda a: inet_pton(AF_INET, a)
 
         assertInvalid = lambda func,a: self.assertRaises(
@@ -1371,7 +1379,7 @@ class GeneralModuleTests(unittest.TestCase):
                          'test needs socket.inet_pton()')
     def testIPv6toString(self):
         try:
-            from socket import inet_pton, AF_INET6, has_ipv6
+            from socket import AF_INET6, has_ipv6, inet_pton
             if not has_ipv6:
                 self.skipTest('IPv6 not available')
         except ImportError:
@@ -1434,7 +1442,8 @@ class GeneralModuleTests(unittest.TestCase):
     @unittest.skipUnless(hasattr(socket, 'inet_ntop'),
                          'test needs socket.inet_ntop()')
     def testStringToIPv4(self):
-        from socket import inet_ntoa as f, inet_ntop, AF_INET
+        from socket import AF_INET, inet_ntop
+        from socket import inet_ntoa as f
         g = lambda a: inet_ntop(AF_INET, a)
         assertInvalid = lambda func,a: self.assertRaises(
             (OSError, ValueError), func, a
@@ -1461,7 +1470,7 @@ class GeneralModuleTests(unittest.TestCase):
                          'test needs socket.inet_ntop()')
     def testStringToIPv6(self):
         try:
-            from socket import inet_ntop, AF_INET6, has_ipv6
+            from socket import AF_INET6, has_ipv6, inet_ntop
             if not has_ipv6:
                 self.skipTest('IPv6 not available')
         except ImportError:
@@ -1713,7 +1722,7 @@ class GeneralModuleTests(unittest.TestCase):
         # prior to 3.12 did for ints outside of a [LONG_MIN, LONG_MAX] range.
         # Leave the error up to the underlying string based platform C API.
 
-        from _testcapi import ULONG_MAX, LONG_MAX, LONG_MIN
+        from _testcapi import LONG_MAX, LONG_MIN, ULONG_MAX
         try:
             socket.getaddrinfo(None, ULONG_MAX + 1, type=socket.SOCK_STREAM)
         except OverflowError:
@@ -2135,7 +2144,8 @@ class GeneralModuleTests(unittest.TestCase):
             self.assertEqual(cm.exception.errno, errno.ENOTSOCK)
 
     def test_addressfamily_enum(self):
-        import _socket, enum
+        import _socket
+        import enum
         CheckedAddressFamily = enum._old_convert_(
                 enum.IntEnum, 'AddressFamily', 'socket',
                 lambda C: C.isupper() and C.startswith('AF_'),
@@ -2144,7 +2154,8 @@ class GeneralModuleTests(unittest.TestCase):
         enum._test_simple_enum(CheckedAddressFamily, socket.AddressFamily)
 
     def test_socketkind_enum(self):
-        import _socket, enum
+        import _socket
+        import enum
         CheckedSocketKind = enum._old_convert_(
                 enum.IntEnum, 'SocketKind', 'socket',
                 lambda C: C.isupper() and C.startswith('SOCK_'),
@@ -2153,7 +2164,8 @@ class GeneralModuleTests(unittest.TestCase):
         enum._test_simple_enum(CheckedSocketKind, socket.SocketKind)
 
     def test_msgflag_enum(self):
-        import _socket, enum
+        import _socket
+        import enum
         CheckedMsgFlag = enum._old_convert_(
                 enum.IntFlag, 'MsgFlag', 'socket',
                 lambda C: C.isupper() and C.startswith('MSG_'),
@@ -2162,7 +2174,8 @@ class GeneralModuleTests(unittest.TestCase):
         enum._test_simple_enum(CheckedMsgFlag, socket.MsgFlag)
 
     def test_addressinfo_enum(self):
-        import _socket, enum
+        import _socket
+        import enum
         CheckedAddressInfo = enum._old_convert_(
                 enum.IntFlag, 'AddressInfo', 'socket',
                 lambda C: C.isupper() and C.startswith('AI_'),

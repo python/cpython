@@ -1,28 +1,37 @@
 # Copyright (C) 2003 Python Software Foundation
 
-import unittest
-import unittest.mock
-import shutil
-import tempfile
-import sys
-import stat
-import os
-import os.path
+import contextlib
 import errno
 import functools
-import subprocess
-import random
-import string
-import contextlib
 import io
-from shutil import (make_archive,
-                    register_archive_format, unregister_archive_format,
-                    get_archive_formats, Error, unpack_archive,
-                    register_unpack_format, RegistryError,
-                    unregister_unpack_format, get_unpack_formats,
-                    SameFileError, _GiveupOnFastCopy)
+import os
+import os.path
+import random
+import shutil
+import stat
+import string
+import subprocess
+import sys
 import tarfile
+import tempfile
+import unittest
+import unittest.mock
 import zipfile
+from shutil import (
+    Error,
+    RegistryError,
+    SameFileError,
+    _GiveupOnFastCopy,
+    get_archive_formats,
+    get_unpack_formats,
+    make_archive,
+    register_archive_format,
+    register_unpack_format,
+    unpack_archive,
+    unregister_archive_format,
+    unregister_unpack_format,
+)
+
 try:
     import posix
 except ImportError:

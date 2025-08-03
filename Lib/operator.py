@@ -21,7 +21,6 @@ __all__ = ['abs', 'add', 'and_', 'attrgetter', 'call', 'concat', 'contains', 'co
 
 from builtins import abs as _abs
 
-
 # Comparison Operations *******************************************************#
 
 def lt(a, b):

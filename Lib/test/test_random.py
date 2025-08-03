@@ -1,18 +1,18 @@
+import os
+import pickle
+import random
+import shlex
+import time
 import unittest
 import unittest.mock
-import random
-import os
-import time
-import pickle
-import shlex
 import warnings
-import test.support
-
-from functools import partial
-from math import log, exp, pi, fsum, sin, factorial
-from test import support
+from collections import Counter, abc
 from fractions import Fraction
-from collections import abc, Counter
+from functools import partial
+from math import exp, factorial, fsum, log, pi, sin
+
+import test.support
+from test import support
 
 
 class MyIndex:

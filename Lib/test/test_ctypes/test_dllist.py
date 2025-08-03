@@ -1,10 +1,10 @@
+import ctypes.util
 import os
 import sys
 import unittest
 from ctypes import CDLL
-import ctypes.util
-from test.support import import_helper
 
+from test.support import import_helper
 
 WINDOWS = os.name == "nt"
 APPLE = sys.platform in {"darwin", "ios", "tvos", "watchos"}

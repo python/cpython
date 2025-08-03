@@ -1,11 +1,8 @@
-import unittest
 import contextvars
+import unittest
+from contextlib import ExitStack, contextmanager
 
-from contextlib import contextmanager, ExitStack
-from test.support import (
-    catch_unraisable_exception, import_helper,
-    gc_collect)
-
+from test.support import catch_unraisable_exception, gc_collect, import_helper
 
 # Skip this test if the _testcapi module isn't available.
 _testcapi = import_helper.import_module('_testcapi')

@@ -9,16 +9,16 @@ Run this module to regenerate the files:
 ./python Lib/test/test_ctypes/test_generated_structs.py > Modules/_ctypes/_ctypes_test_generated.c.h
 """
 
-import unittest
-from test.support import import_helper
+import ctypes
 import re
+import sys
+import unittest
+from ctypes import Structure, Union, alignment, pointer, sizeof, string_at
 from dataclasses import dataclass
 from functools import cached_property
-import sys
 
-import ctypes
-from ctypes import Structure, Union
-from ctypes import sizeof, alignment, pointer, string_at
+from test.support import import_helper
+
 _ctypes_test = import_helper.import_module("_ctypes_test")
 
 from test.test_ctypes._support import StructCheckMixin

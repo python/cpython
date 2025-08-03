@@ -3,6 +3,7 @@
 import curses
 import curses.ascii
 
+
 def rectangle(win, uly, ulx, lry, lrx):
     """Draw a rectangle with corners at the provided upper-left
     and lower-right coordinates.

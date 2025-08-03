@@ -21,17 +21,21 @@ import unittest
 import unittest.mock as mock
 import warnings
 import weakref
-
 from contextlib import nullcontext
 from functools import partial
-from itertools import product, islice
+from itertools import islice, product
+
 from test import support
-from test.support import os_helper
-from test.support import warnings_helper
-from test.support import findfile, gc_collect, swap_attr, swap_item
+from test.support import (
+    findfile,
+    gc_collect,
+    os_helper,
+    swap_attr,
+    swap_item,
+    warnings_helper,
+)
 from test.support.import_helper import import_fresh_module
 from test.support.os_helper import TESTFN
-
 
 # pyET is the pure-Python implementation.
 #
@@ -155,9 +159,11 @@ class ModuleTest(unittest.TestCase):
     def test_sanity(self):
         # Import sanity.
 
-        from xml.etree import ElementTree     # noqa: F401
-        from xml.etree import ElementInclude  # noqa: F401
-        from xml.etree import ElementPath     # noqa: F401
+        from xml.etree import (
+            ElementInclude,  # noqa: F401
+            ElementPath,  # noqa: F401
+            ElementTree,  # noqa: F401
+        )
 
     def test_all(self):
         names = ("xml.etree.ElementTree", "_elementtree")

@@ -1,7 +1,6 @@
 import os.path
 import pathlib
 import unittest
-
 from importlib import import_module
 from importlib.readers import MultiplexedPath, NamespaceReader
 

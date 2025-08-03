@@ -68,15 +68,15 @@ Req-started-unread-response    _CS_REQ_STARTED    <response_class>
 Req-sent-unread-response       _CS_REQ_SENT       <response_class>
 """
 
-import email.parser
+import collections.abc
 import email.message
+import email.parser
 import errno
 import http
 import io
 import re
 import socket
 import sys
-import collections.abc
 from urllib.parse import urlsplit
 
 # HTTPMessage, parse_headers(), and the HTTP status code constants are

@@ -4,7 +4,7 @@ import abc
 import math
 import operator
 import unittest
-from numbers import Complex, Real, Rational, Integral, Number
+from numbers import Complex, Integral, Number, Rational, Real
 
 
 def concretize(cls):

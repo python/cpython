@@ -1,14 +1,14 @@
 import string
 import sys
 import unittest
+
 from test import support
-from test.support import import_helper
-from test.support import script_helper
-from test.support import warnings_helper
+from test.support import import_helper, script_helper, warnings_helper
 from test.support.testcase import FloatsAreIdenticalMixin
+
 # Skip this test if the _testcapi module isn't available.
 _testcapi = import_helper.import_module('_testcapi')
-from _testcapi import getargs_keywords, getargs_keyword_only
+from _testcapi import getargs_keyword_only, getargs_keywords
 
 try:
     import _testinternalcapi
@@ -48,9 +48,27 @@ except ImportError:
 LARGE = 0x7FFFFFFF
 VERY_LARGE = 0xFF0000121212121212121242
 
-from _testcapi import UCHAR_MAX, USHRT_MAX, UINT_MAX, ULONG_MAX, ULLONG_MAX, INT_MAX, \
-     INT_MIN, LONG_MIN, LONG_MAX, LLONG_MIN, LLONG_MAX, PY_SSIZE_T_MIN, PY_SSIZE_T_MAX, \
-     SHRT_MIN, SHRT_MAX, FLT_MIN, FLT_MAX, DBL_MIN, DBL_MAX
+from _testcapi import (
+    DBL_MAX,
+    DBL_MIN,
+    FLT_MAX,
+    FLT_MIN,
+    INT_MAX,
+    INT_MIN,
+    LLONG_MAX,
+    LLONG_MIN,
+    LONG_MAX,
+    LONG_MIN,
+    PY_SSIZE_T_MAX,
+    PY_SSIZE_T_MIN,
+    SHRT_MAX,
+    SHRT_MIN,
+    UCHAR_MAX,
+    UINT_MAX,
+    ULLONG_MAX,
+    ULONG_MAX,
+    USHRT_MAX,
+)
 
 DBL_MAX_EXP = sys.float_info.max_exp
 INF = float('inf')

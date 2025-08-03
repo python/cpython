@@ -3,8 +3,8 @@
 import os
 import sys
 
-from test.support import swap_attr
-from test.support import os_helper
+from test.support import os_helper, swap_attr
+
 
 class OverwriteTests:
 

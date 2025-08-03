@@ -25,20 +25,20 @@ __all__ = (
 
 
 import asyncio
+import builtins
 import contextlib
-import io
 import inspect
+import io
+import pkgutil
 import pprint
 import sys
-import builtins
-import pkgutil
-from inspect import iscoroutinefunction
 import threading
 from dataclasses import fields, is_dataclass
-from types import CodeType, ModuleType, MethodType
-from unittest.util import safe_repr
-from functools import wraps, partial
+from functools import partial, wraps
+from inspect import iscoroutinefunction
 from threading import RLock
+from types import CodeType, MethodType, ModuleType
+from unittest.util import safe_repr
 
 
 class InvalidSpecError(Exception):

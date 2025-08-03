@@ -112,9 +112,9 @@ class FileList:
 
 
 def _test():  # TODO check and convert to htest
-    from tkinter import Tk
     from idlelib.editor import fixwordbreaks
     from idlelib.run import fix_scaling
+    from tkinter import Tk
     root = Tk()
     fix_scaling(root)
     fixwordbreaks(root)

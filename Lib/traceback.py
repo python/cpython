@@ -1,18 +1,18 @@
 """Extract, format and print information about Python stack traces."""
 
+import codeop
 import collections.abc
+import io
 import itertools
+import keyword
 import linecache
 import sys
 import textwrap
-import warnings
-import codeop
-import keyword
 import tokenize
-import io
-import _colorize
-
+import warnings
 from contextlib import suppress
+
+import _colorize
 
 __all__ = ['extract_stack', 'extract_tb', 'format_exception',
            'format_exception_only', 'format_list', 'format_stack',

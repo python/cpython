@@ -3,11 +3,10 @@
 import importlib.machinery
 import importlib.util
 import os
-from os.path import dirname
 import sys
 import sysconfig
 import unittest
-
+from os.path import dirname
 
 # This test is only relevant for from-source builds of Python.
 if not sysconfig.is_python_build():

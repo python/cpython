@@ -4,11 +4,9 @@ Defines various replace related functions like replace, replace all,
 and replace+find.
 """
 import re
-
-from tkinter import StringVar, TclError
-
-from idlelib.searchbase import SearchDialogBase
 from idlelib import searchengine
+from idlelib.searchbase import SearchDialogBase
+from tkinter import StringVar, TclError
 
 
 def replace(text, insert_tags=None):
@@ -258,8 +256,8 @@ class ReplaceDialog(SearchDialogBase):
 
 
 def _replace_dialog(parent):  # htest #
-    from tkinter import Toplevel, Text, END, SEL
-    from tkinter.ttk import Frame, Button
+    from tkinter import END, SEL, Text, Toplevel
+    from tkinter.ttk import Button, Frame
 
     top = Toplevel(parent)
     top.title("Test ReplaceDialog")

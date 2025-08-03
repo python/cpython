@@ -3,8 +3,8 @@
 import copy
 import pickle
 import unittest
-
 from collections import defaultdict
+
 
 def foobar():
     return list

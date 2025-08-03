@@ -1,16 +1,19 @@
 import importlib
 import pickle
 import threading
-from textwrap import dedent
-import unittest
 import time
+import unittest
+from textwrap import dedent
 
 from test.support import import_helper
+
 # Raise SkipTest if subinterpreters not supported.
 _channels = import_helper.import_module('_interpchannels')
 from concurrent import interpreters
+
 from test.support import channels
-from .utils import _run_output, TestBase
+
+from .utils import TestBase, _run_output
 
 
 class LowLevelTests(TestBase):
