@@ -3472,12 +3472,13 @@ convert_pseudo_conditional_jumps(cfg_builder *g)
                 instr->i_opcode = instr->i_opcode == JUMP_IF_FALSE ?
                                           POP_JUMP_IF_FALSE : POP_JUMP_IF_TRUE;
                 location loc = instr->i_loc;
+                basicblock *except = instr->i_except;
                 cfg_instr copy = {
                             .i_opcode = COPY,
                             .i_oparg = 1,
                             .i_loc = loc,
                             .i_target = NULL,
-                            .i_except = instr->i_except,
+                            .i_except = except,
                 };
                 RETURN_IF_ERROR(basicblock_insert_instruction(b, i++, &copy));
                 cfg_instr to_bool = {
@@ -3485,7 +3486,7 @@ convert_pseudo_conditional_jumps(cfg_builder *g)
                             .i_oparg = 0,
                             .i_loc = loc,
                             .i_target = NULL,
-                            .i_except = instr->i_except,
+                            .i_except = except,
                 };
                 RETURN_IF_ERROR(basicblock_insert_instruction(b, i++, &to_bool));
             }
