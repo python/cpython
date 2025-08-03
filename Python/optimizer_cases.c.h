@@ -3206,3 +3206,7 @@
             break;
         }
 
+        case _COLD_EXIT: {
+            break;
+        }
+

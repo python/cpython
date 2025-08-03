@@ -183,7 +183,7 @@ Other language changes
   compatibility between versions of Python, ensure that an explicit ``encoding``
   argument is always provided. The :ref:`opt-in encoding warning <io-encoding-warning>`
   can be used to identify code that may be affected by this change.
-  The special special ``encoding='locale'`` argument uses the current locale
+  The special ``encoding='locale'`` argument uses the current locale
   encoding, and has been supported since Python 3.10.
 
   To retain the previous behaviour, Python's UTF-8 mode may be disabled with
@@ -264,12 +264,14 @@ math
 os.path
 -------
 
+* Add support of the all-but-last mode in :func:`~os.path.realpath`.
+  (Contributed by Serhiy Storchaka in :gh:`71189`.)
+
 * The *strict* parameter to :func:`os.path.realpath` accepts a new value,
   :data:`os.path.ALLOW_MISSING`.
   If used, errors other than :exc:`FileNotFoundError` will be re-raised;
   the resulting path can be missing but it will be free of symlinks.
   (Contributed by Petr Viktorin for :cve:`2025-4517`.)
-
 
 shelve
 ------
@@ -483,6 +485,15 @@ typing
   or ``TD = TypedDict("TD", {})`` instead.
   (Contributed by Bénédikt Tran in :gh:`133823`.)
 
+* Code like ``class ExtraTypeVars(P1[S], Protocol[T, T2]): ...`` now raises
+  a :exc:`TypeError`, because ``S`` is not listed in ``Protocol`` parameters.
+  (Contributed by Nikita Sobolev in :gh:`137191`.)
+
+* Code like ``class B2(A[T2], Protocol[T1, T2]): ...`` now correctly handles
+  type parameters order: it is ``(T1, T2)``, not ``(T2, T1)``
+  as it was incorrectly infered in runtime before.
+  (Contributed by Nikita Sobolev in :gh:`137191`.)
+
 
 wave
 ----
@@ -553,6 +564,11 @@ Deprecated C APIs
   for the C type or less than the minimal value for the corresponding
   signed integer type of the same size is now deprecated.
   (Contributed by Serhiy Storchaka in :gh:`132629`.)
+
+* Functions :c:func:`_Py_c_sum`, :c:func:`_Py_c_diff`, :c:func:`_Py_c_neg`,
+  :c:func:`_Py_c_prod`, :c:func:`_Py_c_quot`, :c:func:`_Py_c_pow` and
+  :c:func:`_Py_c_abs` are :term:`soft deprecated`.
+  (Contributed by Sergey B Kirpichev in :gh:`128813`.)
 
 .. Add C API deprecations above alphabetically, not here at the end.
 
