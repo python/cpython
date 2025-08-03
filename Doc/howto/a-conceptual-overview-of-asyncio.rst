@@ -369,7 +369,8 @@ A homemade asyncio.sleep
 ========================
 
 We'll go through an example of how you could leverage a future to create your
-own variant of asynchronous sleep -- :func:`asyncio.sleep`.
+own variant of asynchronous sleep (``async_sleep``) which mimics
+:func:`asyncio.sleep`.
 
 This snippet puts a few tasks on the event loop's queue and then ``await``\ s a
 coroutine wrapped in a task: ``async_sleep(3)``.
