@@ -1933,6 +1933,8 @@ expression support in the :mod:`re` module).
 
       >>> "The sum of 1 + 2 is {0}".format(1+2)
       'The sum of 1 + 2 is 3'
+      >>> "The sum of {a} + {b} is {answer}".format(answer=1+2, a=1, b=2)
+      'The sum of 1 + 2 is 3'
       >>> "{1} expects the {0} Inquisition!".format("Spanish", "Nobody")
       'Nobody expects the Spanish Inquisition!'
 
