@@ -317,39 +317,131 @@ class HashInfo:
         return f"{module_name}.{method_name}"
 
 
-# Mapping from a "canonical" name to a pair (HACL*, _hashlib.*, hashlib.*)
-# constructors. If the constructor name is None, then this means that the
-# algorithm can only be used by the "agile" new() interfaces.
-_EXPLICIT_CONSTRUCTORS = MappingProxyType({  # fmt: skip
-    HashId.md5: HashInfo("_md5.md5", "openssl_md5", "md5"),
-    HashId.sha1: HashInfo("_sha1.sha1", "openssl_sha1", "sha1"),
-    HashId.sha224: HashInfo("_sha2.sha224", "openssl_sha224", "sha224"),
-    HashId.sha256: HashInfo("_sha2.sha256", "openssl_sha256", "sha256"),
-    HashId.sha384: HashInfo("_sha2.sha384", "openssl_sha384", "sha384"),
-    HashId.sha512: HashInfo("_sha2.sha512", "openssl_sha512", "sha512"),
-    HashId.sha3_224: HashInfo(
-        "_sha3.sha3_224", "openssl_sha3_224", "sha3_224"
+class _HashInfo:
+    """Dataclass containing information for supported hash functions.
+
+    - *builtin_method_fullname* is the fully-qualified name
+      of the HACL* hash constructor function, e.g., "_md5.md5".
+
+    - *openssl_method_fullname* is the fully-qualified name
+      of the "_hashlib" module method for the explicit OpenSSL
+      hash constructor function, e.g., "_hashlib.openssl_md5".
+
+    - *hashlib_method_fullname* is the fully-qualified name
+      of the "hashlib"  module method for the explicit hash
+      constructor function, e.g., "hashlib.md5".
+    """
+
+    def __init__(
+        self,
+        name,
+        builtin_method_fullname,
+        openssl_method_fullname=None,
+        hashlib_method_fullname=None,
+    ):
+        self.name = name
+        self.func = _HashFuncInfo(
+            name,
+            builtin_method_fullname,
+            openssl_method_fullname,
+            hashlib_method_fullname,
+        )
+
+
+_HASHINFO_DATABASE = MappingProxyType({
+    HashId.md5: _HashInfo(
+        HashId.md5,
+        "_md5.md5",
+        "_hashlib.openssl_md5",
+        "hashlib.md5",
     ),
-    HashId.sha3_256: HashInfo(
-        "_sha3.sha3_256", "openssl_sha3_256", "sha3_256"
+    HashId.sha1: _HashInfo(
+        HashId.sha1,
+        "_sha1.sha1",
+        "_hashlib.openssl_sha1",
+        "hashlib.sha1",
     ),
-    HashId.sha3_384: HashInfo(
-        "_sha3.sha3_384", "openssl_sha3_384", "sha3_384"
+    HashId.sha224: _HashInfo(
+        HashId.sha224,
+        "_sha2.sha224",
+        "_hashlib.openssl_sha224",
+        "hashlib.sha224",
     ),
-    HashId.sha3_512: HashInfo(
-        "_sha3.sha3_512", "openssl_sha3_512", "sha3_512"
+    HashId.sha256: _HashInfo(
+        HashId.sha256,
+        "_sha2.sha256",
+        "_hashlib.openssl_sha256",
+        "hashlib.sha256",
     ),
-    HashId.shake_128: HashInfo(
-        "_sha3.shake_128", "openssl_shake_128", "shake_128"
+    HashId.sha384: _HashInfo(
+        HashId.sha384,
+        "_sha2.sha384",
+        "_hashlib.openssl_sha384",
+        "hashlib.sha384",
     ),
-    HashId.shake_256: HashInfo(
-        "_sha3.shake_256", "openssl_shake_256", "shake_256"
+    HashId.sha512: _HashInfo(
+        HashId.sha512,
+        "_sha2.sha512",
+        "_hashlib.openssl_sha512",
+        "hashlib.sha512",
     ),
-    HashId.blake2s: HashInfo("_blake2.blake2s", None, "blake2s"),
-    HashId.blake2b: HashInfo("_blake2.blake2b", None, "blake2b"),
+    HashId.sha3_224: _HashInfo(
+        HashId.sha3_224,
+        "_sha3.sha3_224",
+        "_hashlib.openssl_sha3_224",
+        "hashlib.sha3_224",
+    ),
+    HashId.sha3_256: _HashInfo(
+        HashId.sha3_256,
+        "_sha3.sha3_256",
+        "_hashlib.openssl_sha3_256",
+        "hashlib.sha3_256",
+    ),
+    HashId.sha3_384: _HashInfo(
+        HashId.sha3_384,
+        "_sha3.sha3_384",
+        "_hashlib.openssl_sha3_384",
+        "hashlib.sha3_384",
+    ),
+    HashId.sha3_512: _HashInfo(
+        HashId.sha3_512,
+        "_sha3.sha3_512",
+        "_hashlib.openssl_sha3_512",
+        "hashlib.sha3_512",
+    ),
+    HashId.shake_128: _HashInfo(
+        HashId.shake_128,
+        "_sha3.shake_128",
+        "_hashlib.openssl_shake_128",
+        "hashlib.shake_128",
+    ),
+    HashId.shake_256: _HashInfo(
+        HashId.shake_256,
+        "_sha3.shake_256",
+        "_hashlib.openssl_shake_256",
+        "hashlib.shake_256",
+    ),
+    HashId.blake2s: _HashInfo(
+        HashId.blake2s,
+        "_blake2.blake2s",
+        None,
+        "hashlib.blake2s",
+    ),
+    HashId.blake2b: _HashInfo(
+        HashId.blake2b,
+        "_blake2.blake2b",
+        None,
+        "hashlib.blake2b",
+    ),
 })
-assert _EXPLICIT_CONSTRUCTORS.keys() == CANONICAL_DIGEST_NAMES
-get_hash_info = _EXPLICIT_CONSTRUCTORS.__getitem__
+assert _HASHINFO_DATABASE.keys() == CANONICAL_DIGEST_NAMES
+
+
+def get_hash_func_info(name):
+    info = _HASHINFO_DATABASE[name]
+    assert isinstance(info, _HashInfo), info
+    return info.func
+
 
 # Mapping from canonical hash names to their explicit HACL* HMAC constructor.
 # There is currently no OpenSSL one-shot named function and there will likely
