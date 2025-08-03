@@ -12,6 +12,7 @@ import os
 import subprocess
 import tempfile
 import warnings
+import uuid
 
 
 __all__ = 'pipe', 'Popen', 'PIPE', 'PipeHandle'
