@@ -1527,24 +1527,19 @@ encoder_listencode_obj(PyEncoderObject *s, PyUnicodeWriter *writer,
         Py_hash_t ident_hash = -1;
         if (s->markers != Py_None) {
             Py_ssize_t len;
-
             ident = PyLong_FromVoidPtr(obj);
             if (ident == NULL)
                 return -1;
-
             ident_hash = PyObject_Hash(ident);
             if (ident_hash == -1) {
                 Py_DECREF(ident);
                 return -1;
             }
-
             len = PyDict_GET_SIZE(s->markers);
-
             if (_PyDict_SetItem_KnownHash(s->markers, ident, obj, ident_hash)) {
                 Py_DECREF(ident);
                 return -1;
             }
-
             if (PyDict_GET_SIZE(s->markers) == len) {
                 PyErr_SetString(PyExc_ValueError, "Circular reference detected");
                 Py_DECREF(ident);
@@ -1673,22 +1668,17 @@ encoder_listencode_dict(PyEncoderObject *s, PyUnicodeWriter *writer,
 
     if (s->markers != Py_None) {
         Py_ssize_t len;
-
         ident = PyLong_FromVoidPtr(dct);
         if (ident == NULL)
-            return -1;
-
+            goto bail;
         ident_hash = PyObject_Hash(ident);
         if (ident_hash == -1) {
             goto bail;
         }
-
         len = PyDict_GET_SIZE(s->markers);
-
         if (_PyDict_SetItem_KnownHash(s->markers, ident, dct, ident_hash)) {
             goto bail;
         }
-
         if (PyDict_GET_SIZE(s->markers) == len) {
             PyErr_SetString(PyExc_ValueError, "Circular reference detected");
             goto bail;
@@ -1783,22 +1773,17 @@ encoder_listencode_list(PyEncoderObject *s, PyUnicodeWriter *writer,
 
     if (s->markers != Py_None) {
         Py_ssize_t len;
-
         ident = PyLong_FromVoidPtr(seq);
         if (ident == NULL)
-            return -1;
-
+            goto bail;
         ident_hash = PyObject_Hash(ident);
         if (ident_hash == -1) {
             goto bail;
         }
-
         len = PyDict_GET_SIZE(s->markers);
-
         if (_PyDict_SetItem_KnownHash(s->markers, ident, seq, ident_hash)) {
             goto bail;
         }
-
         if (PyDict_GET_SIZE(s->markers) == len) {
             PyErr_SetString(PyExc_ValueError, "Circular reference detected");
             goto bail;
