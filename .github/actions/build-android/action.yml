@@ -20,7 +20,10 @@ runs:
     - shell: bash
       env:
         triplet: ${{ inputs.triplet }}
+      # The `name` of a composite action step doesn't appear anywhere in the
+      # GitHub UI, so put it in a comment on the first line instead.
       run: |
+        # Build and test (Android)
         echo "::group::Configure build Python"
         ./Android/android.py configure-build
         echo "::endgroup::"
@@ -63,7 +66,7 @@ runs:
             echo "::endgroup::"
 
         else
-            echo "Skipping test: GitHub Actions currently only supports the " \
+            echo "Skipping test: GitHub Actions currently only supports the" \
               "Android emulator on Linux x86_64."
         fi
 

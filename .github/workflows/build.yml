@@ -418,7 +418,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - name: Build and Test Android
+      - name: Build and test (Android)
         uses: ./.github/actions/build-android
         with:
           triplet: ${{ matrix.arch }}-linux-android
