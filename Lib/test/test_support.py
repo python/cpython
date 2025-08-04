@@ -879,7 +879,7 @@ class TestHashlibSupport(unittest.TestCase):
         return self.try_import_attribute(fullname)
 
     def fetch_hmac_function(self, name):
-        target = hashlib_helper.get_hmac_info_item(name)
+        target = hashlib_helper.get_hmac_func_info(name)
         return target.import_member()
 
     def check_openssl_hash(self, name, *, disabled=True):

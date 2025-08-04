@@ -20,7 +20,8 @@ def _parse_fullname(fullname, *, strict=False):
         return None, None
     assert isinstance(fullname, str), fullname
     assert fullname.count(".") >= 1, fullname
-    return fullname.rsplit(".", maxsplit=1)
+    module_name, member_name = fullname.rsplit(".", maxsplit=1)
+    return module_name, member_name
 
 
 def _import_module(module_name, *, strict=False):
@@ -482,7 +483,7 @@ _HMACINFO_DATABASE = MappingProxyType(_HMACINFO_DATABASE)
 assert _HMACINFO_DATABASE.keys() == CANONICAL_DIGEST_NAMES
 
 
-def get_hmac_info_item(name):
+def get_hmac_func_info(name):
     info = _HMACINFO_DATABASE[name]
     assert isinstance(info, _HashInfoItem), info
     return info
@@ -646,7 +647,7 @@ def _openssl_hash(digestname, /, **kwargs):
     except ImportError as exc:
         raise SkipNoHash(fullname, "openssl") from exc
     try:
-        constructor = getattr(_hashlib, method_name, None)
+        constructor = getattr(_hashlib, method_name)
     except AttributeError as exc:
         raise SkipNoHash(fullname, "openssl") from exc
     try:
@@ -1017,7 +1018,7 @@ def _block_builtin_hash_constructor(name):
 
 def _block_builtin_hmac_constructor(name):
     """Block explicit HACL* HMAC constructors."""
-    info = get_hmac_info_item(name)
+    info = get_hmac_func_info(name)
     assert info.module_name is None or info.module_name == "_hmac", info
     if (wrapped := info.import_member()) is None:
         # function shouldn't exist for this implementation
