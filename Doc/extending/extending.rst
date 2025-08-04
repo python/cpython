@@ -77,7 +77,7 @@ the module and a copyright notice if you like).
 All user-visible symbols defined by :file:`Python.h` have a prefix of ``Py`` or
 ``PY``, except those defined in standard header files.
 
-For backward compatibility of existing third party C extensions, :file:`Python.h`
+For backward compatibility, :file:`!Python.h`
 includes ``<stdio.h>``, ``<string.h>``, ``<errno.h>``, and ``<stdlib.h>`` if
 :c:macro:`Py_LIMITED_API` is not defined or for limited C API version 3.10 and older.
 The ``<ctype.h>`` and ``<unistd.h>`` headers are also not included for limited
