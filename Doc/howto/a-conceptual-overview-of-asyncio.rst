@@ -42,8 +42,7 @@ It's behind the scenes managing resources.
 Some power is explicitly granted to it, but a lot of its ability to get things
 done comes from the respect and cooperation of its teammates.
 
-In more technical terms, the event loop contains a queue of jobs (or "chunks
-of work") to be run.
+In more technical terms, the event loop contains a queue of jobs to be run.
 Some jobs are added directly by you, and some indirectly by :mod:`!asyncio`.
 The event loop pops a job from the queue and invokes it (or "gives it control"),
 similar to calling a function, then that job runs.
@@ -183,15 +182,16 @@ different ways::
    await task
    await coroutine
 
-Unfortunately, it does matter which type of object is awaited.
+Unfortunately, it does matter which type of object is ``await``\ ed.
 
 ``await``\ ing a task will cede control from the current task or coroutine to
 the event loop.
-And while doing so, adds a callback to the awaited task's list of callbacks
-indicating it should resume the current task/coroutine when it (the
-``await``\ ed one) finishes.
-In other words, when that awaited task finishes, the original task is added
-back to the event loops queue.
+In the process of relinquishing control, the task that's giving up control
+adds a callback to the ``await``\ ed task's list of callbacks indicating it
+should resume the current task/coroutine when it (the ``await``\ ed one)
+finishes.
+In other words, when that ``await``\ ed task finishes, the original task is
+added back to the event loops queue.
 
 This is a basic, yet reliable mental model.
 In practice, it's slightly more complex, but not by much.
@@ -268,8 +268,8 @@ resume a coroutine.
 If the coroutine was paused and is now being resumed, the argument ``arg``
 will be sent in as the return value of the ``yield`` statement which originally
 paused it.
-If the coroutine is being started, as opposed to resumed, ``arg`` must be
-``None``.
+If the coroutine is being used for the first time, as opposed to being resumed,
+arg must be ``None``.
 
 :ref:`yield <yieldexpr>`, like usual, pauses execution and returns control
 to the caller.
@@ -334,11 +334,13 @@ The only way to yield (or effectively cede control) from a coroutine is to
 ``await`` an object that ``yield``\ s in its ``__await__`` method.
 That might sound odd to you. You might be thinking:
 
-   1. What about a ``yield`` directly within the coroutine? The coroutine becomes
-   an async generator, a different beast entirely.
+   1. What about a ``yield`` directly within the coroutine function? The
+   coroutine function becomes an
+   :ref:`async generator function <asynchronous-generator-functions>`, a
+   different beast entirely.
 
-   2. What about a ``yield from`` within the coroutine to a function that yields
-   (that is, a plain generator)?
+   2. What about a ``yield from`` within the coroutine function to a (plain)
+   generator?
    ``SyntaxError: yield from not allowed in a coroutine.``
    This was intentionally designed for the sake of simplicity -- mandating only
    one way of using coroutines. Originally ``yield`` was actually barred as well,
