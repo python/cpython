@@ -599,9 +599,9 @@ The allowed prefixes are:
 
 See the linked sections for details on each type.
 
-Prefixes are case-insensitive (for example, ``B`` works the same as ``b``).
-The ``r`` prefix can be combined with ``f``, ``t`` or ``b``, so ``fr``,
-``rf``, ``tr``, ``rt``, ``br`` and ``rb`` are also valid prefixes.
+Prefixes are case-insensitive (for example, '``B``' works the same as '``b``').
+The '``r``' prefix can be combined with '``f``', '``t``' or '``b``', so '``fr``',
+'``rf``', '``tr``', '``rt``', '``br``', and '``rb``' are also valid prefixes.
 
 .. versionadded:: 3.3
    The ``'rb'`` prefix of raw bytes literals has been added as a synonym
@@ -661,7 +661,7 @@ quote.
 Escape sequences
 ----------------
 
-Unless an ``'r'`` or ``'R'`` prefix is present, escape sequences in string and
+Unless an '``r``' or '``R``' prefix is present, escape sequences in string and
 bytes literals are interpreted according to rules similar to those used by
 Standard C.  The recognized escape sequences are:
 
@@ -852,7 +852,7 @@ unrecognized escapes.
 Bytes literals
 --------------
 
-:dfn:`Bytes literals` are always prefixed with ``'b'`` or ``'B'``; they produce an
+:dfn:`Bytes literals` are always prefixed with '``b``' or '``B``'; they produce an
 instance of the :class:`bytes` type instead of the :class:`str` type.
 They may only contain ASCII characters; bytes with a numeric value of 128
 or greater must be expressed with escape sequences (typically
@@ -878,8 +878,8 @@ Similarly, a zero byte must be expressed using an escape sequence (typically
 Raw string literals
 -------------------
 
-Both string and bytes literals may optionally be prefixed with a letter ``'r'``
-or ``'R'``; such constructs are called :dfn:`raw string literals`
+Both string and bytes literals may optionally be prefixed with a letter '``r``'
+or '``R``'; such constructs are called :dfn:`raw string literals`
 and :dfn:`raw bytes literals` respectively and treat backslashes as
 literal characters.
 As a result, in raw string literals, :ref:`escape sequences <escape-sequences>`
@@ -923,7 +923,7 @@ f-strings
 .. versionadded:: 3.6
 
 A :dfn:`formatted string literal` or :dfn:`f-string` is a string literal
-that is prefixed with ``'f'`` or ``'F'``.  These strings may contain
+that is prefixed with '``f``' or '``F``'.  These strings may contain
 replacement fields, which are expressions delimited by curly braces ``{}``.
 While other string literals always have a constant value, formatted strings
 are really expressions evaluated at run time.
@@ -1089,7 +1089,7 @@ t-strings
 .. versionadded:: 3.14
 
 A :dfn:`template string literal` or :dfn:`t-string` is a string literal
-that is prefixed with ``'t'`` or ``'T'``.
+that is prefixed with '``t``' or '``T``'.
 These strings follow the same syntax and evaluation rules as
 :ref:`formatted string literals <f-strings>`, with the following differences:
 
@@ -1117,7 +1117,7 @@ These strings follow the same syntax and evaluation rules as
   This includes the equals sign and any surrounding whitespace.
   The :class:`!Interpolation` instance for the expression will be created as
   normal, except that :attr:`~string.templatelib.Interpolation.conversion` will
-  be set to ``'r'`` (:func:`repr`) by default.
+  be set to '``r``' (:func:`repr`) by default.
   If an explicit conversion or format specifier are provided,
   this will override the default behaviour.
 

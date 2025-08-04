@@ -34,7 +34,7 @@ To write a t-string, use a ``'t'`` prefix instead of an ``'f'``, like so:
    >>> pi = 3.14
    >>> t't-strings are new in Python {pi!s}!'
    Template(
-      strings=('t-strings are new in Python ', '!'),
+      strings=('t-strings are new in Python ', '.'),
       interpolations=(Interpolation(3.14, 'pi', 's', ''),)
    )
 
@@ -51,8 +51,8 @@ Types
    This syntax is identical to that of :ref:`f-strings <f-strings>`,
    except that it uses a ``t`` prefix in place of an ``f``:
 
-   >>> name = 'World'
-   >>> template = t'Hello, {name}!'
+   >>> cheese = 'Red Leicester'
+   >>> template = t"We're fresh out of {cheese}, sir."
    >>> type(template)
    <class 'string.templatelib.Template'>
 
@@ -60,14 +60,14 @@ Types
    and dynamic :attr:`~Template.interpolations`.
    A :attr:`~Template.values` attribute holds the values of the interpolations:
 
-   >>> name = 'World'
-   >>> template = t'Hello, {name}!'
+   >>> cheese = 'Camembert'
+   >>> template = t'Ah! We do have {cheese}.'
    >>> template.strings
-   ('Hello, ', '!')
+   ('Ah! We do have ', '.')
    >>> template.interpolations
-   (Interpolation('World', ...),)
+   (Interpolation('Camembert', ...),)
    >>> template.values
-   ('World',)
+   ('Camembert',)
 
    The :attr:`!strings` tuple has one more element than :attr:`!interpolations`
    and :attr:`!values`; the interpolations “belong” between the strings.
@@ -75,8 +75,8 @@ Types
 
    .. code-block:: python
 
-      template.strings:  ('Hello, ',          '!')
-      template.values:   (           'World',    )
+      template.strings:  ('Ah! We do have ',              '.')
+      template.values:   (                   'Camembert',    )
 
    .. rubric:: Attributes
 
@@ -85,17 +85,18 @@ Types
 
       A :class:`tuple` of the static strings in the template.
 
-      >>> name = 'World'
-      >>> template = t'Hello, {name}!'
+      >>> cheese = 'Camembert'
+      >>> template = t'Ah! We do have {cheese}.'
       >>> template.strings
-      ('Hello, ', '!')
+      ('Ah! We do have ', '.')
 
       Empty strings *are* included in the tuple:
 
-      >>> name = 'World'
-      >>> template = t'Hello, {name}{name}!'
+      >>> response = 'We do have '
+      >>> cheese = 'Camembert'
+      >>> template = t'Ah! {response}{cheese}.'
       >>> template.strings
-      ('Hello, ', '', '!')
+      ('Ah! ', '', '.')
 
       The ``strings`` tuple is never empty, and always contains one more
       string than the ``interpolations`` and ``values`` tuples:
@@ -114,15 +115,15 @@ Types
 
       A :class:`tuple` of the interpolations in the template.
 
-      >>> name = 'World'
-      >>> template = t'Hello, {name}!'
+      >>> cheese = 'Camembert'
+      >>> template = t'Ah! We do have {cheese}.'
       >>> template.interpolations
-      (Interpolation('World', 'name', None, ''),)
+      (Interpolation('Camembert', 'cheese', None, ''),)
 
       The ``interpolations`` tuple may be empty and always contains one fewer
       values than the ``strings`` tuple:
 
-      >>> t'Hello!'.interpolations
+      >>> t'Red Leicester'.interpolations
       ()
 
    .. attribute:: values
@@ -130,10 +131,10 @@ Types
 
       A tuple of all interpolated values in the template.
 
-      >>> name = 'World'
-      >>> template = t'Hello, {name}!'
+      >>> cheese = 'Camembert'
+      >>> template = t'Ah! We do have {cheese}.'
       >>> template.values
-      ('World',)
+      ('Camembert',)
 
       The ``values`` tuple always has the same length as the
       ``interpolations`` tuple. It is always equivalent to
@@ -147,19 +148,21 @@ Types
       it is also possible to create them directly using the constructor:
 
       >>> from string.templatelib import Interpolation, Template
-      >>> name = 'World'
-      >>> template = Template('Hello, ', Interpolation(name, 'name'), '!')
+      >>> cheese = 'Camembert'
+      >>> template = Template(
+      ...     'Ah! We do have ', Interpolation(cheese, 'cheese'), '.'
+      ... )
       >>> list(template)
-      ['Hello, ', Interpolation('World', 'name', None, ''), '!']
+      ['Ah! We do have ', Interpolation('Camembert', 'cheese', None, ''), '.']
 
       If multiple strings are passed consecutively, they will be concatenated
       into a single value in the :attr:`~Template.strings` attribute. For example,
       the following code creates a :class:`Template` with a single final string:
 
       >>> from string.templatelib import Template
-      >>> template = Template('Hello, ', 'World', '!')
+      >>> template = Template('Ah! We do have ', 'Camembert', '.')
       >>> template.strings
-      ('Hello, World!',)
+      ('Ah! We do have Camembert.',)
 
       If multiple interpolations are passed consecutively, they will be treated
       as separate interpolations and an empty string will be inserted between them.
@@ -168,8 +171,8 @@ Types
 
       >>> from string.templatelib import Interpolation, Template
       >>> template = Template(
-      ...     Interpolation('World', 'name'),
-      ...     Interpolation('!', 'punctuation'),
+      ...     Interpolation('Camembert', 'cheese'),
+      ...     Interpolation('.', 'punctuation'),
       ... )
       >>> template.strings
       ('', '', '')
@@ -179,20 +182,21 @@ Types
       Iterate over the template, yielding each non-empty string and
       :class:`Interpolation` in the correct order:
 
-      >>> name = 'World'
-      >>> list(t'Hello, {name}!')
-      ['Hello, ', Interpolation('World', 'name', None, ''), '!']
+      >>> cheese = 'Camembert'
+      >>> list(t'Ah! We do have {cheese}.')
+      ['Ah! We do have ', Interpolation('Camembert', 'cheese', None, ''), '.']
 
       .. caution::
 
          Empty strings are **not** included in the iteration:
 
-         >>> name = 'World'
-         >>> list(t'Hello, {name}{name}!')  # doctest: +NORMALIZE_WHITESPACE
-         ['Hello, ',
-          Interpolation('World', 'name', None, ''),
-          Interpolation('World', 'name', None, ''),
-          '!']
+         >>> response = 'We do have '
+         >>> cheese = 'Camembert'
+         >>> list(t'Ah! {response}{cheese}.')  # doctest: +NORMALIZE_WHITESPACE
+         ['Ah! ',
+          Interpolation('We do have ', 'response', None, ''),
+          Interpolation('Camembert', 'cheese', None, ''),
+          '.']
 
    .. describe:: template + other
                  template += other
@@ -200,9 +204,9 @@ Types
       Concatenate this template with another, returning a new
       :class:`!Template` instance:
 
-      >>> name = 'World'
-      >>> list(t'Hello ' + t'there {name}!')
-      ['Hello there ', Interpolation('World', 'name', None, ''), '!']
+      >>> cheese = 'Camembert'
+      >>> list(t'Ah! ' + t'We do have {cheese}.')
+      ['Ah! We do have ', Interpolation('Camembert', 'cheese', None, ''), '.']
 
       Concatenating a :class:`!Template` and a ``str`` is **not** supported.
       This is because it is unclear whether the string should be treated as
@@ -212,15 +216,15 @@ Types
       (to treat it as a static string)
       or use an :class:`!Interpolation` (to treat it as dynamic):
 
-      >>> from string.templatelib import Template, Interpolation
-      >>> template = t'Hello '
-      >>> # Treat 'there ' as a static string
-      >>> template += Template('there ')
-      >>> # Treat name as an interpolation
-      >>> name = 'World'
-      >>> template += Template(Interpolation(name, 'name'))
+      >>> from string.templatelib import Interpolation, Template
+      >>> template = t'Ah! '
+      >>> # Treat 'We do have ' as a static string
+      >>> template += Template('We do have ')
+      >>> # Treat cheese as an interpolation
+      >>> cheese = 'Camembert'
+      >>> template += Template(Interpolation(cheese, 'cheese'))
       >>> list(template)
-      ['Hello there ', Interpolation('World', 'name', None, '')]
+      ['Ah! We do have ', Interpolation('Camembert', 'cheese', None, '')]
 
 
 .. class:: Interpolation

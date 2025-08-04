@@ -361,17 +361,20 @@ Literals
 
    * ``value`` is any expression node (such as a literal, a variable, or a
      function call).
+     This has the same meaning as ``FormattedValue.value``.
    * ``str`` is a constant containing the text of the interpolation expression.
    * ``conversion`` is an integer:
 
      * -1: no conversion
-     * 97: ``!a`` :func:`ASCII <ascii>` conversion (``ord('a')``)
-     * 114: ``!r`` :func:`repr` conversion (``ord('r')``)
-     * 115: ``!s`` :func:`string <str>` conversion (``ord('s')``)
+     * 97 (``ord('a')``): ``!a`` :func:`ASCII <ascii>` conversion
+     * 114 (``ord('r')``): ``!r`` :func:`repr` conversion
+     * 115 (``ord('s')``): ``!s`` :func:`string <str>` conversion
 
+     This has the same meaning as ``FormattedValue.conversion``.
    * ``format_spec`` is a :class:`JoinedStr` node representing the formatting
      of the value, or ``None`` if no format was specified. Both
      ``conversion`` and ``format_spec`` can be set at the same time.
+     This has the same meaning as ``FormattedValue.format_spec``.
 
 
 .. class:: List(elts, ctx)
