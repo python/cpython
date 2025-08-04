@@ -380,6 +380,8 @@ class SocketEINTRTest(EINTRBaseTest):
 
     @unittest.skipIf(sys.platform == "darwin",
                      "hangs under macOS; see bpo-25234, bpo-35363")
+    @unittest.skipIf(sys.platform.startswith('netbsd'),
+                     "hangs on NetBSD; see gh-137397")
     def test_os_open(self):
         self._test_open("fd = os.open(path, os.O_RDONLY)\nos.close(fd)",
                         self.os_open)
