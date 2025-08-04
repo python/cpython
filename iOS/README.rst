@@ -196,7 +196,7 @@ simulator build with a deployment target of 15.4.
 Merge thin frameworks into fat frameworks
 -----------------------------------------
 
-Once you've built a ``Python.framework`` for each ABI and and architecture, you
+Once you've built a ``Python.framework`` for each ABI and architecture, you
 must produce a "fat" framework for each ABI that contains all the architectures
 for that ABI.
 

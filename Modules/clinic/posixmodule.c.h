@@ -371,7 +371,7 @@ PyDoc_STRVAR(os_chdir__doc__,
 "\n"
 "path may always be specified as a string.\n"
 "On some platforms, path may also be specified as an open file descriptor.\n"
-"  If this functionality is unavailable, using it raises an exception.");
+"If this functionality is unavailable, using it raises an exception.");
 
 #define OS_CHDIR_METHODDEF    \
     {"chdir", _PyCFunction_CAST(os_chdir), METH_FASTCALL|METH_KEYWORDS, os_chdir__doc__},
@@ -12879,4 +12879,4 @@ os__is_inputhook_installed(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
     #define OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
 #endif /* !defined(OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF) */
-/*[clinic end generated code: output=616483d525403f7c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=28706eafe31b28c1 input=a9049054013a1b77]*/

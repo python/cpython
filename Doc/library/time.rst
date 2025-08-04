@@ -306,10 +306,11 @@ Functions
    .. versionadded:: 3.3
 
    .. versionchanged:: 3.5
-      The function is now always available and always system-wide.
+      The function is now always available and the clock is now the same for
+      all processes.
 
    .. versionchanged:: 3.10
-      On macOS, the function is now system-wide.
+      On macOS, the clock is now the same for all processes.
 
 
 .. function:: monotonic_ns() -> int
@@ -325,7 +326,8 @@ Functions
 
    Return the value (in fractional seconds) of a performance counter, i.e. a
    clock with the highest available resolution to measure a short duration.  It
-   does include time elapsed during sleep and is system-wide.  The reference
+   does include time elapsed during sleep. The clock is the same for all
+   processes. The reference
    point of the returned value is undefined, so that only the difference between
    the results of two calls is valid.
 
@@ -340,7 +342,7 @@ Functions
    .. versionadded:: 3.3
 
    .. versionchanged:: 3.10
-      On Windows, the function is now system-wide.
+      On Windows, the clock is now the same for all processes.
 
    .. versionchanged:: 3.13
       Use the same clock as :func:`time.monotonic`.
@@ -987,8 +989,8 @@ The following constant is the only parameter that can be sent to
 
 .. data:: CLOCK_REALTIME
 
-   System-wide real-time clock.  Setting this clock requires appropriate
-   privileges.
+   Real-time clock.  Setting this clock requires appropriate privileges.
+   The clock is the same for all processes.
 
    .. availability:: Unix.
 

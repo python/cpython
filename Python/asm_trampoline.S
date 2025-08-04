@@ -12,9 +12,10 @@ _Py_trampoline_func_start:
 #if defined(__CET__) && (__CET__ & 1)
     endbr64
 #endif
-    sub    $8, %rsp
-    call    *%rcx
-    add    $8, %rsp
+    push   %rbp
+    mov    %rsp, %rbp
+    call   *%rcx
+    pop    %rbp
     ret
 #endif // __x86_64__
 #if defined(__aarch64__) && defined(__AARCH64EL__) && !defined(__ILP32__)

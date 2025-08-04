@@ -3236,7 +3236,7 @@ class ASTMainTests(unittest.TestCase):
 def compare(left, right):
     return ast.dump(left) == ast.dump(right)
 
-class ASTOptimiziationTests(unittest.TestCase):
+class ASTOptimizationTests(unittest.TestCase):
     binop = {
         "+": ast.Add(),
         "-": ast.Sub(),

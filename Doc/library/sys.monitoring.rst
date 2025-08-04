@@ -314,13 +314,12 @@ To register a callable for events call
    it is unregistered and returned.
    Otherwise :func:`register_callback` returns ``None``.
 
+   .. audit-event:: sys.monitoring.register_callback func sys.monitoring.register_callback
 
 Functions can be unregistered by calling
 ``sys.monitoring.register_callback(tool_id, event, None)``.
 
 Callback functions can be registered and unregistered at any time.
-
-Registering or unregistering a callback function will generate a :func:`sys.audit` event.
 
 
 Callback function arguments

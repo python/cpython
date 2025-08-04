@@ -4127,6 +4127,42 @@ The script, when run, prints something like:
     2025-07-02 13:54:47,234 DEBUG     fool me ...
     2025-07-02 13:54:47,234 DEBUG     can't get fooled again
 
+If, on the other hand, you are concerned about `log injection
+<https://owasp.org/www-community/attacks/Log_Injection>`_, you can use a
+formatter which escapes newlines, as per the following example:
+
+.. code-block:: python
+
+    import logging
+
+    logger = logging.getLogger(__name__)
+
+    class EscapingFormatter(logging.Formatter):
+        def format(self, record):
+            s = super().format(record)
+            return s.replace('\n', r'\n')
+
+    if __name__ == '__main__':
+        h = logging.StreamHandler()
+        h.setFormatter(EscapingFormatter('%(asctime)s %(levelname)-9s %(message)s'))
+        logging.basicConfig(level=logging.DEBUG, handlers = [h])
+        logger.debug('Single line')
+        logger.debug('Multiple lines:\nfool me once ...')
+        logger.debug('Another single line')
+        logger.debug('Multiple lines:\n%s', 'fool me ...\ncan\'t get fooled again')
+
+You can, of course, use whatever escaping scheme makes the most sense for you.
+The script, when run, should produce output like this:
+
+.. code-block:: text
+
+    2025-07-09 06:47:33,783 DEBUG     Single line
+    2025-07-09 06:47:33,783 DEBUG     Multiple lines:\nfool me once ...
+    2025-07-09 06:47:33,783 DEBUG     Another single line
+    2025-07-09 06:47:33,783 DEBUG     Multiple lines:\nfool me ...\ncan't get fooled again
+
+Escaping behaviour can't be the stdlib default , as it would break backwards
+compatibility.
 
 .. patterns-to-avoid:
 

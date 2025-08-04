@@ -380,7 +380,7 @@ class BuiltinTest(unittest.TestCase):
             # test both direct compilation and compilation via AST
                 codeobjs = []
                 codeobjs.append(compile(codestr, "<test>", "exec", optimize=optval))
-                tree = ast.parse(codestr)
+                tree = ast.parse(codestr, optimize=optval)
                 codeobjs.append(compile(tree, "<test>", "exec", optimize=optval))
                 for code in codeobjs:
                     ns = {}
