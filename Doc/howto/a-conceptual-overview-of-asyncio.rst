@@ -16,8 +16,8 @@ article:
 - How does :mod:`!asyncio` differentiate between a task which doesn't need
   CPU-time (such as a network request or file read) as opposed to a task that
   does (such as computing n-factorial)?
-- How would I go about writing my own asynchronous variant of some operation?
-  Something like an async sleep, database request, and so on.
+- How to write an asynchronous variant of an operation, such as
+  an async sleep or database request.
 
 .. seealso::
 
