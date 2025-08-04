@@ -262,6 +262,8 @@ Booleans (:class:`bool`)
    a string, the strings ``"False"`` or ``"True"`` are returned, respectively.
 
 
+.. _datamodel-float:
+
 :class:`numbers.Real` (:class:`float`)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -1228,15 +1230,21 @@ Special attributes
        :attr:`__annotations__ attributes <object.__annotations__>`.
 
        For best practices on working with :attr:`~object.__annotations__`,
-       please see :mod:`annotationlib`.
+       please see :mod:`annotationlib`. Use
+       :func:`annotationlib.get_annotations` instead of accessing this
+       attribute directly.
 
-       .. caution::
+       .. warning::
 
-          Accessing the :attr:`!__annotations__` attribute of a class
-          object directly may yield incorrect results in the presence of
-          metaclasses. In addition, the attribute may not exist for
-          some classes. Use :func:`annotationlib.get_annotations` to
-          retrieve class annotations safely.
+          Accessing the :attr:`!__annotations__` attribute directly
+          on a class object may return annotations for the wrong class, specifically
+          in certain cases where the class, its base class, or a metaclass
+          is defined under ``from __future__ import annotations``.
+          See :pep:`749 <749#pep749-metaclasses>` for details.
+
+          This attribute does not exist on certain builtin classes. On
+          user-defined classes without ``__annotations__``, it is an
+          empty dictionary.
 
        .. versionchanged:: 3.14
           Annotations are now :ref:`lazily evaluated <lazy-evaluation>`.
@@ -1246,13 +1254,6 @@ Special attributes
      - The :term:`annotate function` for this class, or ``None``
        if the class has no annotations.
        See also: :attr:`__annotate__ attributes <object.__annotate__>`.
-
-       .. caution::
-
-          Accessing the :attr:`!__annotate__` attribute of a class
-          object directly may yield incorrect results in the presence of
-          metaclasses. Use :func:`annotationlib.get_annotate_function` to
-          retrieve the annotate function safely.
 
        .. versionadded:: 3.14
 
@@ -1526,18 +1527,17 @@ positional arguments; bit ``0x08`` is set if the function uses the
 if the function is a generator. See :ref:`inspect-module-co-flags` for details
 on the semantics of each flags that might be present.
 
-Future feature declarations (``from __future__ import division``) also use bits
+Future feature declarations (for example, ``from __future__ import division``) also use bits
 in :attr:`~codeobject.co_flags` to indicate whether a code object was compiled with a
-particular feature enabled: bit ``0x2000`` is set if the function was compiled
-with future division enabled; bits ``0x10`` and ``0x1000`` were used in earlier
-versions of Python.
+particular feature enabled. See :attr:`~__future__._Feature.compiler_flag`.
 
 Other bits in :attr:`~codeobject.co_flags` are reserved for internal use.
 
 .. index:: single: documentation string
 
 If a code object represents a function and has a docstring,
-the first item in :attr:`~codeobject.co_consts` is
+the :data:`~inspect.CO_HAS_DOCSTRING` bit is set in :attr:`~codeobject.co_flags`
+and the first item in :attr:`~codeobject.co_consts` is
 the docstring of the function.
 
 Methods on code objects
@@ -2629,7 +2629,7 @@ Notes on using *__slots__*:
 * :attr:`~object.__class__` assignment works only if both classes have the
   same *__slots__*.
 
-* :ref:`Multiple inheritance <tut-multiple>` with multiple slotted parent
+* :ref:`Multiple inheritance <multiple-inheritance>` with multiple slotted parent
   classes can be used,
   but only one parent is allowed to have attributes created by slots
   (the other bases must have empty slot layouts) - violations raise
@@ -2778,6 +2778,8 @@ Resolving MRO entries
    :pep:`560`
       Core support for typing module and generic types.
 
+
+.. _metaclass-determination:
 
 Determining the appropriate metaclass
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -3360,7 +3362,7 @@ left undefined.
    argument if the three-argument version of the built-in :func:`pow` function
    is to be supported.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
 
       Three-argument :func:`pow` now try calling :meth:`~object.__rpow__` if necessary.
       Previously it was only called in two-argument :func:`!pow` and the binary

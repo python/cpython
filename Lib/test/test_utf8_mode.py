@@ -89,8 +89,8 @@ class UTF8ModeTests(unittest.TestCase):
         # the UTF-8 mode
         if not self.posix_locale():
             # PYTHONUTF8 should be ignored if -E is used
-            out = self.get_output('-E', '-c', code, PYTHONUTF8='1')
-            self.assertEqual(out, '0')
+            out = self.get_output('-E', '-c', code, PYTHONUTF8='0')
+            self.assertEqual(out, '1')
 
         # invalid mode
         out = self.get_output('-c', code, PYTHONUTF8='xxx', failure=True)
@@ -116,7 +116,7 @@ class UTF8ModeTests(unittest.TestCase):
             # PYTHONLEGACYWINDOWSFSENCODING disables the UTF-8 mode
             # and has the priority over -X utf8 and PYTHONUTF8
             out = self.get_output('-X', 'utf8', '-c', code,
-                                  PYTHONUTF8='strict',
+                                  PYTHONUTF8='xxx',
                                   PYTHONLEGACYWINDOWSFSENCODING='1')
             self.assertEqual(out, 'mbcs/replace')
 

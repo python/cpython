@@ -48,8 +48,8 @@ except ImportError:
 LARGE = 0x7FFFFFFF
 VERY_LARGE = 0xFF0000121212121212121242
 
-from _testcapi import UCHAR_MAX, USHRT_MAX, UINT_MAX, ULONG_MAX, INT_MAX, \
-     INT_MIN, LONG_MIN, LONG_MAX, PY_SSIZE_T_MIN, PY_SSIZE_T_MAX, \
+from _testcapi import UCHAR_MAX, USHRT_MAX, UINT_MAX, ULONG_MAX, ULLONG_MAX, INT_MAX, \
+     INT_MIN, LONG_MIN, LONG_MAX, LLONG_MIN, LLONG_MAX, PY_SSIZE_T_MIN, PY_SSIZE_T_MAX, \
      SHRT_MIN, SHRT_MAX, FLT_MIN, FLT_MAX, DBL_MIN, DBL_MAX
 
 DBL_MAX_EXP = sys.float_info.max_exp
@@ -57,9 +57,8 @@ INF = float('inf')
 NAN = float('nan')
 
 # fake, they are not defined in Python's header files
-LLONG_MAX = 2**63-1
-LLONG_MIN = -2**63
-ULLONG_MAX = 2**64-1
+SCHAR_MAX = UCHAR_MAX // 2
+SCHAR_MIN = SCHAR_MAX - UCHAR_MAX
 
 NULL = None
 
@@ -209,10 +208,23 @@ class Unsigned_TestCase(unittest.TestCase):
         self.assertEqual(UCHAR_MAX, getargs_B(-1))
         self.assertEqual(0, getargs_B(0))
         self.assertEqual(UCHAR_MAX, getargs_B(UCHAR_MAX))
-        self.assertEqual(0, getargs_B(UCHAR_MAX+1))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(0, getargs_B(UCHAR_MAX+1))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(1, getargs_B(-UCHAR_MAX))
+        self.assertEqual(SCHAR_MAX+1, getargs_B(SCHAR_MIN))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(SCHAR_MAX, getargs_B(SCHAR_MIN-1))
+
+        self.assertEqual(128, getargs_B(-2**7))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(127, getargs_B(-2**7-1))
 
         self.assertEqual(42, getargs_B(42))
-        self.assertEqual(UCHAR_MAX & VERY_LARGE, getargs_B(VERY_LARGE))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(UCHAR_MAX & VERY_LARGE, getargs_B(VERY_LARGE))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(UCHAR_MAX & -VERY_LARGE, getargs_B(-VERY_LARGE))
 
     def test_H(self):
         from _testcapi import getargs_H
@@ -233,11 +245,18 @@ class Unsigned_TestCase(unittest.TestCase):
         self.assertEqual(USHRT_MAX, getargs_H(-1))
         self.assertEqual(0, getargs_H(0))
         self.assertEqual(USHRT_MAX, getargs_H(USHRT_MAX))
-        self.assertEqual(0, getargs_H(USHRT_MAX+1))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(0, getargs_H(USHRT_MAX+1))
+        self.assertEqual(SHRT_MAX+1, getargs_H(SHRT_MIN))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(SHRT_MAX, getargs_H(SHRT_MIN-1))
 
         self.assertEqual(42, getargs_H(42))
 
-        self.assertEqual(VERY_LARGE & USHRT_MAX, getargs_H(VERY_LARGE))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(USHRT_MAX & VERY_LARGE, getargs_H(VERY_LARGE))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(USHRT_MAX & -VERY_LARGE, getargs_H(-VERY_LARGE))
 
     def test_I(self):
         from _testcapi import getargs_I
@@ -258,21 +277,28 @@ class Unsigned_TestCase(unittest.TestCase):
         self.assertEqual(UINT_MAX, getargs_I(-1))
         self.assertEqual(0, getargs_I(0))
         self.assertEqual(UINT_MAX, getargs_I(UINT_MAX))
-        self.assertEqual(0, getargs_I(UINT_MAX+1))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(0, getargs_I(UINT_MAX+1))
+        self.assertEqual(INT_MAX+1, getargs_I(INT_MIN))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(INT_MAX, getargs_I(INT_MIN-1))
 
         self.assertEqual(42, getargs_I(42))
 
-        self.assertEqual(VERY_LARGE & UINT_MAX, getargs_I(VERY_LARGE))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(UINT_MAX & VERY_LARGE, getargs_I(VERY_LARGE))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(UINT_MAX & -VERY_LARGE, getargs_I(-VERY_LARGE))
 
     def test_k(self):
         from _testcapi import getargs_k
         # k returns 'unsigned long', no range checking
-        # it does not accept float, or instances with __int__
         self.assertRaises(TypeError, getargs_k, 3.14)
-        self.assertRaises(TypeError, getargs_k, Index())
+        self.assertEqual(99, getargs_k(Index()))
         self.assertEqual(0, getargs_k(IndexIntSubclass()))
         self.assertRaises(TypeError, getargs_k, BadIndex())
-        self.assertRaises(TypeError, getargs_k, BadIndex2())
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(1, getargs_k(BadIndex2()))
         self.assertEqual(0, getargs_k(BadIndex3()))
         self.assertRaises(TypeError, getargs_k, Int())
         self.assertEqual(0, getargs_k(IntSubclass()))
@@ -283,11 +309,18 @@ class Unsigned_TestCase(unittest.TestCase):
         self.assertEqual(ULONG_MAX, getargs_k(-1))
         self.assertEqual(0, getargs_k(0))
         self.assertEqual(ULONG_MAX, getargs_k(ULONG_MAX))
-        self.assertEqual(0, getargs_k(ULONG_MAX+1))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(0, getargs_k(ULONG_MAX+1))
+        self.assertEqual(LONG_MAX+1, getargs_k(LONG_MIN))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(LONG_MAX, getargs_k(LONG_MIN-1))
 
         self.assertEqual(42, getargs_k(42))
 
-        self.assertEqual(VERY_LARGE & ULONG_MAX, getargs_k(VERY_LARGE))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(ULONG_MAX & VERY_LARGE, getargs_k(VERY_LARGE))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(ULONG_MAX & -VERY_LARGE, getargs_k(-VERY_LARGE))
 
 class Signed_TestCase(unittest.TestCase):
     def test_h(self):
@@ -419,10 +452,11 @@ class LongLong_TestCase(unittest.TestCase):
         from _testcapi import getargs_K
         # K return 'unsigned long long', no range checking
         self.assertRaises(TypeError, getargs_K, 3.14)
-        self.assertRaises(TypeError, getargs_K, Index())
+        self.assertEqual(99, getargs_K(Index()))
         self.assertEqual(0, getargs_K(IndexIntSubclass()))
         self.assertRaises(TypeError, getargs_K, BadIndex())
-        self.assertRaises(TypeError, getargs_K, BadIndex2())
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(1, getargs_K(BadIndex2()))
         self.assertEqual(0, getargs_K(BadIndex3()))
         self.assertRaises(TypeError, getargs_K, Int())
         self.assertEqual(0, getargs_K(IntSubclass()))
@@ -432,11 +466,19 @@ class LongLong_TestCase(unittest.TestCase):
 
         self.assertEqual(ULLONG_MAX, getargs_K(ULLONG_MAX))
         self.assertEqual(0, getargs_K(0))
-        self.assertEqual(0, getargs_K(ULLONG_MAX+1))
+        self.assertEqual(ULLONG_MAX, getargs_K(ULLONG_MAX))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(0, getargs_K(ULLONG_MAX+1))
+        self.assertEqual(LLONG_MAX+1, getargs_K(LLONG_MIN))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(LLONG_MAX, getargs_K(LLONG_MIN-1))
 
         self.assertEqual(42, getargs_K(42))
 
-        self.assertEqual(VERY_LARGE & ULLONG_MAX, getargs_K(VERY_LARGE))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(ULLONG_MAX & VERY_LARGE, getargs_K(VERY_LARGE))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(ULLONG_MAX & -VERY_LARGE, getargs_K(-VERY_LARGE))
 
 
 class Float_TestCase(unittest.TestCase, FloatsAreIdenticalMixin):
@@ -1386,123 +1428,6 @@ class ParseTupleAndKeywords_Test(unittest.TestCase):
             with self.assertRaisesRegex(TypeError,
                     "argument 1 must be sequence of length 1, not 0"):
                 parse(([],), {}, '(' + f + ')', ['a'])
-
-    def test_specific_type_errors(self):
-        parse = _testcapi.parse_tuple_and_keywords
-
-        def check(format, arg, expected, got='list'):
-            errmsg = f'must be {expected}, not {got}'
-            with self.assertRaisesRegex(TypeError, errmsg):
-                parse((arg,), {}, format, ['a'])
-
-        check('k', [], 'int')
-        check('k?', [], 'int or None')
-        check('K', [], 'int')
-        check('K?', [], 'int or None')
-        check('c', [], 'a byte string of length 1')
-        check('c?', [], 'a byte string of length 1 or None')
-        check('c', b'abc', 'a byte string of length 1',
-              'a bytes object of length 3')
-        check('c?', b'abc', 'a byte string of length 1 or None',
-              'a bytes object of length 3')
-        check('c', bytearray(b'abc'), 'a byte string of length 1',
-              'a bytearray object of length 3')
-        check('c?', bytearray(b'abc'), 'a byte string of length 1 or None',
-              'a bytearray object of length 3')
-        check('C', [], 'a unicode character')
-        check('C?', [], 'a unicode character or None')
-        check('C', 'abc', 'a unicode character',
-              'a string of length 3')
-        check('C?', 'abc', 'a unicode character or None',
-              'a string of length 3')
-        check('s', [], 'str')
-        check('s?', [], 'str or None')
-        check('z', [], 'str or None')
-        check('z?', [], 'str or None')
-        check('es', [], 'str')
-        check('es?', [], 'str or None')
-        check('es#', [], 'str')
-        check('es#?', [], 'str or None')
-        check('et', [], 'str, bytes or bytearray')
-        check('et?', [], 'str, bytes, bytearray or None')
-        check('et#', [], 'str, bytes or bytearray')
-        check('et#?', [], 'str, bytes, bytearray or None')
-        check('w*', [], 'read-write bytes-like object')
-        check('w*?', [], 'read-write bytes-like object or None')
-        check('S', [], 'bytes')
-        check('S?', [], 'bytes or None')
-        check('U', [], 'str')
-        check('U?', [], 'str or None')
-        check('Y', [], 'bytearray')
-        check('Y?', [], 'bytearray or None')
-        check('(OO)', 42, '2-item tuple', 'int')
-        check('(OO)?', 42, '2-item tuple or None', 'int')
-        check('(OO)', (1, 2, 3), 'tuple of length 2', '3')
-
-    def test_nullable(self):
-        parse = _testcapi.parse_tuple_and_keywords
-
-        def check(format, arg, allows_none=False):
-            # Because some format units (such as y*) require cleanup,
-            # we force the parsing code to perform the cleanup by adding
-            # an argument that always fails.
-            # By checking for an exception, we ensure that the parsing
-            # of the first argument was successful.
-            self.assertRaises(OverflowError, parse,
-                              (arg, 256), {}, format + '?b', ['a', 'b'])
-            self.assertRaises(OverflowError, parse,
-                              (None, 256), {}, format + '?b', ['a', 'b'])
-            self.assertRaises(OverflowError, parse,
-                              (arg, 256), {}, format + 'b', ['a', 'b'])
-            self.assertRaises(OverflowError if allows_none else TypeError, parse,
-                              (None, 256), {}, format + 'b', ['a', 'b'])
-
-        check('b', 42)
-        check('B', 42)
-        check('h', 42)
-        check('H', 42)
-        check('i', 42)
-        check('I', 42)
-        check('n', 42)
-        check('l', 42)
-        check('k', 42)
-        check('L', 42)
-        check('K', 42)
-        check('f', 2.5)
-        check('d', 2.5)
-        check('D', 2.5j)
-        check('c', b'a')
-        check('C', 'a')
-        check('p', True, allows_none=True)
-        check('y', b'buffer')
-        check('y*', b'buffer')
-        check('y#', b'buffer')
-        check('s', 'string')
-        check('s*', 'string')
-        check('s#', 'string')
-        check('z', 'string', allows_none=True)
-        check('z*', 'string', allows_none=True)
-        check('z#', 'string', allows_none=True)
-        check('w*', bytearray(b'buffer'))
-        check('U', 'string')
-        check('S', b'bytes')
-        check('Y', bytearray(b'bytearray'))
-        check('O', object, allows_none=True)
-
-        check('(OO)', (1, 2))
-        self.assertEqual(parse((((1, 2), 3),), {}, '((OO)?O)', ['a']), (1, 2, 3))
-        self.assertEqual(parse(((None, 3),), {}, '((OO)?O)', ['a']), (NULL, NULL, 3))
-        self.assertEqual(parse((((1, 2), 3),), {}, '((OO)O)', ['a']), (1, 2, 3))
-        self.assertRaises(TypeError, parse, ((None, 3),), {}, '((OO)O)', ['a'])
-
-        parse((None,), {}, 'es?', ['a'])
-        parse((None,), {}, 'es#?', ['a'])
-        parse((None,), {}, 'et?', ['a'])
-        parse((None,), {}, 'et#?', ['a'])
-        parse((None,), {}, 'O!?', ['a'])
-        parse((None,), {}, 'O&?', ['a'])
-
-        # TODO: More tests for es?, es#?, et?, et#?, O!, O&
 
     @unittest.skipIf(_testinternalcapi is None, 'needs _testinternalcapi')
     def test_gh_119213(self):

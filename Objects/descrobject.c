@@ -145,7 +145,7 @@ method_get(PyObject *self, PyObject *obj, PyObject *type)
         return NULL;
     }
     if (descr->d_method->ml_flags & METH_METHOD) {
-        if (PyType_Check(type)) {
+        if (type == NULL || PyType_Check(type)) {
             return PyCMethod_New(descr->d_method, obj, NULL, descr->d_common.d_type);
         } else {
             PyErr_Format(PyExc_TypeError,
@@ -1233,7 +1233,10 @@ static PyObject *
 mappingproxy_richcompare(PyObject *self, PyObject *w, int op)
 {
     mappingproxyobject *v = (mappingproxyobject *)self;
-    return PyObject_RichCompare(v->mapping, w, op);
+    if (op == Py_EQ || op == Py_NE) {
+        return PyObject_RichCompare(v->mapping, w, op);
+    }
+    Py_RETURN_NOTIMPLEMENTED;
 }
 
 static int
@@ -1311,11 +1314,9 @@ wrapper_dealloc(PyObject *self)
 {
     wrapperobject *wp = (wrapperobject *)self;
     PyObject_GC_UnTrack(wp);
-    Py_TRASHCAN_BEGIN(wp, wrapper_dealloc)
     Py_XDECREF(wp->descr);
     Py_XDECREF(wp->self);
     PyObject_GC_Del(wp);
-    Py_TRASHCAN_END
 }
 
 static PyObject *

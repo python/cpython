@@ -1,0 +1,3 @@
+The generated directory listing page in
+:class:`http.server.SimpleHTTPRequestHandler` now only shows the decoded
+path component of the requested URL, and not the query and fragment.

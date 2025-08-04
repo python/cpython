@@ -96,8 +96,8 @@ PyDoc_STRVAR(fcntl_ioctl__doc__,
     {"ioctl", (PyCFunction)(void(*)(void))fcntl_ioctl, METH_FASTCALL, fcntl_ioctl__doc__},
 
 static PyObject *
-fcntl_ioctl_impl(PyObject *module, int fd, unsigned long code,
-                 PyObject *ob_arg, int mutate_arg);
+fcntl_ioctl_impl(PyObject *module, int fd, unsigned long code, PyObject *arg,
+                 int mutate_arg);
 
 static PyObject *
 fcntl_ioctl(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
@@ -105,7 +105,7 @@ fcntl_ioctl(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     int fd;
     unsigned long code;
-    PyObject *ob_arg = NULL;
+    PyObject *arg = NULL;
     int mutate_arg = 1;
 
     if (nargs < 2) {
@@ -120,15 +120,30 @@ fcntl_ioctl(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (fd < 0) {
         goto exit;
     }
-    if (!PyLong_Check(args[1])) {
+    if (!PyIndex_Check(args[1])) {
         PyErr_Format(PyExc_TypeError, "ioctl() argument 2 must be int, not %T", args[1]);
         goto exit;
     }
-    code = PyLong_AsUnsignedLongMask(args[1]);
+    {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(args[1], &code, sizeof(unsigned long),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
+            goto exit;
+        }
+        if ((size_t)_bytes > sizeof(unsigned long)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
+        }
+    }
     if (nargs < 3) {
         goto skip_optional;
     }
-    ob_arg = args[2];
+    arg = args[2];
     if (nargs < 4) {
         goto skip_optional;
     }
@@ -137,7 +152,7 @@ fcntl_ioctl(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
 skip_optional:
-    return_value = fcntl_ioctl_impl(module, fd, code, ob_arg, mutate_arg);
+    return_value = fcntl_ioctl_impl(module, fd, code, arg, mutate_arg);
 
 exit:
     return return_value;
@@ -264,4 +279,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=45a56f53fd17ff3c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bf84289b741e7cf6 input=a9049054013a1b77]*/

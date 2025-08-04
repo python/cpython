@@ -37,6 +37,12 @@ test_code.co_positions = lambda _: iter([(6, 6, 0, 0)])
 test_frame = namedtuple('frame', ['f_code', 'f_globals', 'f_locals'])
 test_tb = namedtuple('tb', ['tb_frame', 'tb_lineno', 'tb_next', 'tb_lasti'])
 
+color_overrides = {"reset": "z", "filename": "fn", "error_highlight": "E"}
+colors = {
+    color_overrides.get(k, k[0].lower()): v
+    for k, v in _colorize.default_theme.traceback.items()
+}
+
 
 LEVENSHTEIN_DATA_FILE = Path(__file__).parent / 'levenshtein_examples.json'
 
@@ -4182,6 +4188,15 @@ class SuggestionFormattingTestBase:
         self.assertNotIn("blech", actual)
         self.assertNotIn("oh no!", actual)
 
+    def test_attribute_error_with_non_string_candidates(self):
+        class T:
+            bluch = 1
+
+        instance = T()
+        instance.__dict__[0] = 1
+        actual = self.get_suggestion(instance, 'blich')
+        self.assertIn("bluch", actual)
+
     def test_attribute_error_with_bad_name(self):
         def raise_attribute_error_with_bad_name():
             raise AttributeError(name=12, obj=23)
@@ -4217,8 +4232,8 @@ class SuggestionFormattingTestBase:
 
         return mod_name
 
-    def get_import_from_suggestion(self, mod_dict, name):
-        modname = self.make_module(mod_dict)
+    def get_import_from_suggestion(self, code, name):
+        modname = self.make_module(code)
 
         def callable():
             try:
@@ -4294,6 +4309,13 @@ class SuggestionFormattingTestBase:
         self.assertIn("'_bluch'", self.get_import_from_suggestion(code, '_blach'))
         self.assertIn("'_bluch'", self.get_import_from_suggestion(code, '_luch'))
         self.assertNotIn("'_bluch'", self.get_import_from_suggestion(code, 'bluch'))
+
+    def test_import_from_suggestions_non_string(self):
+        modWithNonStringAttr = textwrap.dedent("""\
+            globals()[0] = 1
+            bluch = 1
+        """)
+        self.assertIn("'bluch'", self.get_import_from_suggestion(modWithNonStringAttr, 'blech'))
 
     def test_import_from_suggestions_do_not_trigger_for_long_attributes(self):
         code = "blech = None"
@@ -4390,6 +4412,15 @@ class SuggestionFormattingTestBase:
             print(eval("ZeroDivisionErrrrr", custom_globals))
         actual = self.get_suggestion(func)
         self.assertIn("'ZeroDivisionError'?", actual)
+
+    def test_name_error_suggestions_with_non_string_candidates(self):
+        def func():
+            abc = 1
+            custom_globals = globals().copy()
+            custom_globals[0] = 1
+            print(eval("abv", custom_globals, locals()))
+        actual = self.get_suggestion(func)
+        self.assertIn("abc", actual)
 
     def test_name_error_suggestions_do_not_trigger_for_long_names(self):
         def func():
@@ -4555,6 +4586,28 @@ class SuggestionFormattingTestBase:
         actual = self.get_suggestion(instance.foo)
         self.assertNotIn("self.blech", actual)
 
+    def test_unbound_local_error_with_side_effect(self):
+        # gh-132385
+        class A:
+            def __getattr__(self, key):
+                if key == 'foo':
+                    raise AttributeError('foo')
+                if key == 'spam':
+                    raise ValueError('spam')
+
+            def bar(self):
+                foo
+            def baz(self):
+                spam
+
+        suggestion = self.get_suggestion(A().bar)
+        self.assertNotIn('self.', suggestion)
+        self.assertIn("'foo'", suggestion)
+
+        suggestion = self.get_suggestion(A().baz)
+        self.assertNotIn('self.', suggestion)
+        self.assertIn("'spam'", suggestion)
+
     def test_unbound_local_error_does_not_match(self):
         def func():
             something = 3
@@ -4695,10 +4748,31 @@ class MiscTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             _suggestions._generate_suggestions(MyList(), "")
 
+    def test_no_site_package_flavour(self):
+        code = """import boo"""
+        _, _, stderr = assert_python_failure('-S', '-c', code)
 
+        self.assertIn(
+            (b"Site initialization is disabled, did you forget to "
+                b"add the site-packages directory to sys.path?"), stderr
+        )
+
+        code = """
+            import sys
+            sys.stdlib_module_names = sys.stdlib_module_names + ("boo",)
+            import boo
+        """
+        _, _, stderr = assert_python_failure('-S', '-c', code)
+
+        self.assertNotIn(
+            (b"Site initialization is disabled, did you forget to "
+                b"add the site-packages directory to sys.path?"), stderr
+        )
 
 
 class TestColorizedTraceback(unittest.TestCase):
+    maxDiff = None
+
     def test_colorized_traceback(self):
         def foo(*args):
             x = {'a':{'b': None}}
@@ -4721,9 +4795,9 @@ class TestColorizedTraceback(unittest.TestCase):
                 e, capture_locals=True
             )
         lines = "".join(exc.format(colorize=True))
-        red = _colorize.ANSIColors.RED
-        boldr = _colorize.ANSIColors.BOLD_RED
-        reset = _colorize.ANSIColors.RESET
+        red = colors["e"]
+        boldr = colors["E"]
+        reset = colors["z"]
         self.assertIn("y = " + red + "x['a']['b']" + reset + boldr + "['c']" + reset, lines)
         self.assertIn("return " + red + "(lambda *args: foo(*args))" + reset + boldr + "(1,2,3,4)" + reset, lines)
         self.assertIn("return (lambda *args: " + red + "foo" + reset + boldr + "(*args)" + reset + ")(1,2,3,4)", lines)
@@ -4739,18 +4813,16 @@ class TestColorizedTraceback(unittest.TestCase):
                 e, capture_locals=True
             )
         actual = "".join(exc.format(colorize=True))
-        red = _colorize.ANSIColors.RED
-        magenta = _colorize.ANSIColors.MAGENTA
-        boldm = _colorize.ANSIColors.BOLD_MAGENTA
-        boldr = _colorize.ANSIColors.BOLD_RED
-        reset = _colorize.ANSIColors.RESET
-        expected = "".join([
-        f'  File {magenta}"<string>"{reset}, line {magenta}1{reset}\n',
-        f'    a {boldr}${reset} b\n',
-        f'      {boldr}^{reset}\n',
-        f'{boldm}SyntaxError{reset}: {magenta}invalid syntax{reset}\n']
-        )
-        self.assertIn(expected, actual)
+        def expected(t, m, fn, l, f, E, e, z):
+            return "".join(
+                [
+                    f'  File {fn}"<string>"{z}, line {l}1{z}\n',
+                    f'    a {E}${z} b\n',
+                    f'      {E}^{z}\n',
+                    f'{t}SyntaxError{z}: {m}invalid syntax{z}\n'
+                ]
+            )
+        self.assertIn(expected(**colors), actual)
 
     def test_colorized_traceback_is_the_default(self):
         def foo():
@@ -4766,23 +4838,21 @@ class TestColorizedTraceback(unittest.TestCase):
                     exception_print(e)
             actual = tbstderr.getvalue().splitlines()
 
-        red = _colorize.ANSIColors.RED
-        boldr = _colorize.ANSIColors.BOLD_RED
-        magenta = _colorize.ANSIColors.MAGENTA
-        boldm = _colorize.ANSIColors.BOLD_MAGENTA
-        reset = _colorize.ANSIColors.RESET
         lno_foo = foo.__code__.co_firstlineno
-        expected = ['Traceback (most recent call last):',
-            f'  File {magenta}"{__file__}"{reset}, '
-            f'line {magenta}{lno_foo+5}{reset}, in {magenta}test_colorized_traceback_is_the_default{reset}',
-            f'    {red}foo{reset+boldr}(){reset}',
-            f'    {red}~~~{reset+boldr}^^{reset}',
-            f'  File {magenta}"{__file__}"{reset}, '
-            f'line {magenta}{lno_foo+1}{reset}, in {magenta}foo{reset}',
-            f'    {red}1{reset+boldr}/{reset+red}0{reset}',
-            f'    {red}~{reset+boldr}^{reset+red}~{reset}',
-            f'{boldm}ZeroDivisionError{reset}: {magenta}division by zero{reset}']
-        self.assertEqual(actual, expected)
+        def expected(t, m, fn, l, f, E, e, z):
+            return [
+                'Traceback (most recent call last):',
+                f'  File {fn}"{__file__}"{z}, '
+                f'line {l}{lno_foo+5}{z}, in {f}test_colorized_traceback_is_the_default{z}',
+                f'    {e}foo{z}{E}(){z}',
+                f'    {e}~~~{z}{E}^^{z}',
+                f'  File {fn}"{__file__}"{z}, '
+                f'line {l}{lno_foo+1}{z}, in {f}foo{z}',
+                f'    {e}1{z}{E}/{z}{e}0{z}',
+                f'    {e}~{z}{E}^{z}{e}~{z}',
+                f'{t}ZeroDivisionError{z}: {m}division by zero{z}',
+            ]
+        self.assertEqual(actual, expected(**colors))
 
     def test_colorized_traceback_from_exception_group(self):
         def foo():
@@ -4800,33 +4870,31 @@ class TestColorizedTraceback(unittest.TestCase):
                 e, capture_locals=True
             )
 
-        red = _colorize.ANSIColors.RED
-        boldr = _colorize.ANSIColors.BOLD_RED
-        magenta = _colorize.ANSIColors.MAGENTA
-        boldm = _colorize.ANSIColors.BOLD_MAGENTA
-        reset = _colorize.ANSIColors.RESET
         lno_foo = foo.__code__.co_firstlineno
         actual = "".join(exc.format(colorize=True)).splitlines()
-        expected = [f"  + Exception Group Traceback (most recent call last):",
-                   f'  |   File {magenta}"{__file__}"{reset}, line {magenta}{lno_foo+9}{reset}, in {magenta}test_colorized_traceback_from_exception_group{reset}',
-                   f'  |     {red}foo{reset}{boldr}(){reset}',
-                   f'  |     {red}~~~{reset}{boldr}^^{reset}',
-                   f"  |     e = ExceptionGroup('test', [ZeroDivisionError('division by zero')])",
-                   f"  |     foo = {foo}",
-                   f'  |     self = <{__name__}.TestColorizedTraceback testMethod=test_colorized_traceback_from_exception_group>',
-                   f'  |   File {magenta}"{__file__}"{reset}, line {magenta}{lno_foo+6}{reset}, in {magenta}foo{reset}',
-                   f'  |     raise ExceptionGroup("test", exceptions)',
-                   f"  |     exceptions = [ZeroDivisionError('division by zero')]",
-                   f'  | {boldm}ExceptionGroup{reset}: {magenta}test (1 sub-exception){reset}',
-                   f'  +-+---------------- 1 ----------------',
-                   f'    | Traceback (most recent call last):',
-                   f'    |   File {magenta}"{__file__}"{reset}, line {magenta}{lno_foo+3}{reset}, in {magenta}foo{reset}',
-                   f'    |     {red}1 {reset}{boldr}/{reset}{red} 0{reset}',
-                   f'    |     {red}~~{reset}{boldr}^{reset}{red}~~{reset}',
-                   f"    |     exceptions = [ZeroDivisionError('division by zero')]",
-                   f'    | {boldm}ZeroDivisionError{reset}: {magenta}division by zero{reset}',
-                   f'    +------------------------------------']
-        self.assertEqual(actual, expected)
+        def expected(t, m, fn, l, f, E, e, z):
+            return [
+                f"  + Exception Group Traceback (most recent call last):",
+                f'  |   File {fn}"{__file__}"{z}, line {l}{lno_foo+9}{z}, in {f}test_colorized_traceback_from_exception_group{z}',
+                f'  |     {e}foo{z}{E}(){z}',
+                f'  |     {e}~~~{z}{E}^^{z}',
+                f"  |     e = ExceptionGroup('test', [ZeroDivisionError('division by zero')])",
+                f"  |     foo = {foo}",
+                f'  |     self = <{__name__}.TestColorizedTraceback testMethod=test_colorized_traceback_from_exception_group>',
+                f'  |   File {fn}"{__file__}"{z}, line {l}{lno_foo+6}{z}, in {f}foo{z}',
+                f'  |     raise ExceptionGroup("test", exceptions)',
+                f"  |     exceptions = [ZeroDivisionError('division by zero')]",
+                f'  | {t}ExceptionGroup{z}: {m}test (1 sub-exception){z}',
+                f'  +-+---------------- 1 ----------------',
+                f'    | Traceback (most recent call last):',
+                f'    |   File {fn}"{__file__}"{z}, line {l}{lno_foo+3}{z}, in {f}foo{z}',
+                f'    |     {e}1 {z}{E}/{z}{e} 0{z}',
+                f'    |     {e}~~{z}{E}^{z}{e}~~{z}',
+                f"    |     exceptions = [ZeroDivisionError('division by zero')]",
+                f'    | {t}ZeroDivisionError{z}: {m}division by zero{z}',
+                f'    +------------------------------------',
+        ]
+        self.assertEqual(actual, expected(**colors))
 
 if __name__ == "__main__":
     unittest.main()
