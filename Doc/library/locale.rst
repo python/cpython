@@ -657,7 +657,7 @@ or custom modifier (for example, "valencia", "stroke" or "x-python").
 Both hyphen (``'-'``) and underscore (``'_'``) separators are supported.
 Only UTF-8 encoding is allowed for BCP 47 tags.
 
-Windows supports also locale names in the format
+Windows also supports locale names in the format:
 
 .. productionlist:: locale_name
    : language ["_" territory] ["." charset]
