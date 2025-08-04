@@ -863,16 +863,16 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
 
         int r = PyObject_IsSubclass(subclass, scls);
         Py_DECREF(scls);
-        if (r < 0) {
-            Py_XDECREF(scls_impl);
-            goto end;
-        }
 
         if (scls_is_abc > 0) {
+            // reset recursion guard even if exception was raised in __subclasscheck__
             unset_issubclasscheck_recursive(scls_impl);
         }
         Py_XDECREF(scls_impl);
 
+        if (r < 0) {
+            goto end;
+        }
         if (r > 0) {
             if (!is_issubclasscheck_recursive(impl)) {
                 if (_add_to_weak_set(impl, &impl->_abc_cache, subclass) < 0) {
