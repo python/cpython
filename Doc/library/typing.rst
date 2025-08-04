@@ -3357,7 +3357,7 @@ Introspection helpers
      with ``T``, unless *include_extras* is set to ``True`` (see
      :class:`Annotated` for more information).
 
-   See also :func:`inspect.get_annotations`, a lower-level function that
+   See also :func:`annotationlib.get_annotations`, a lower-level function that
    returns annotations more directly.
 
    .. note::
