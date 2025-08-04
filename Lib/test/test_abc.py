@@ -14,7 +14,6 @@ from inspect import isabstract
 
 def test_factory(abc_ABCMeta, abc_get_cache_token):
     class TestLegacyAPI(unittest.TestCase):
-
         def test_abstractproperty_basics(self):
             @abc.abstractproperty
             def foo(self): pass
@@ -70,6 +69,25 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
 
 
     class TestABC(unittest.TestCase):
+        def check_isinstance(self, obj, target_class):
+            self.assertIsInstance(obj, target_class)
+            self.assertIsInstance(obj, (target_class,))
+            self.assertIsInstance(obj, target_class | target_class)
+
+        def check_not_isinstance(self, obj, target_class):
+            self.assertNotIsInstance(obj, target_class)
+            self.assertNotIsInstance(obj, (target_class,))
+            self.assertNotIsInstance(obj, target_class | target_class)
+
+        def check_issubclass(self, klass, target_class):
+            self.assertIsSubclass(klass, target_class)
+            self.assertIsSubclass(klass, (target_class,))
+            self.assertIsSubclass(klass, target_class | target_class)
+
+        def check_not_issubclass(self, klass, target_class):
+            self.assertNotIsSubclass(klass, target_class)
+            self.assertNotIsSubclass(klass, (target_class,))
+            self.assertNotIsSubclass(klass, target_class | target_class)
 
         def test_ABC_helper(self):
             # create an ABC using the helper class and perform basic checks
@@ -283,39 +301,24 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             c = C()
             # trigger caching
             for _ in range(2):
-                self.assertIsInstance(a, A)
-                self.assertIsInstance(a, (A,))
-                self.assertNotIsInstance(a, B)
-                self.assertNotIsInstance(a, (B,))
-                self.assertNotIsInstance(a, C)
-                self.assertNotIsInstance(a, (C,))
+                self.check_isinstance(a, A)
+                self.check_not_isinstance(a, B)
+                self.check_not_isinstance(a, C)
 
-                self.assertIsInstance(b, B)
-                self.assertIsInstance(b, (B,))
-                self.assertIsInstance(b, A)
-                self.assertIsInstance(b, (A,))
-                self.assertNotIsInstance(b, C)
-                self.assertNotIsInstance(b, (C,))
+                self.check_isinstance(b, B)
+                self.check_isinstance(b, A)
+                self.check_not_isinstance(b, C)
 
-                self.assertIsInstance(c, C)
-                self.assertIsInstance(c, (C,))
-                self.assertIsInstance(c, A)
-                self.assertIsInstance(c, (A,))
-                self.assertNotIsInstance(c, B)
-                self.assertNotIsInstance(c, (B,))
+                self.check_isinstance(c, C)
+                self.check_isinstance(c, A)
+                self.check_not_isinstance(c, B)
 
-                self.assertIsSubclass(B, A)
-                self.assertIsSubclass(B, (A,))
-                self.assertIsSubclass(C, A)
-                self.assertIsSubclass(C, (A,))
-                self.assertNotIsSubclass(B, C)
-                self.assertNotIsSubclass(B, (C,))
-                self.assertNotIsSubclass(C, B)
-                self.assertNotIsSubclass(C, (B,))
-                self.assertNotIsSubclass(A, B)
-                self.assertNotIsSubclass(A, (B,))
-                self.assertNotIsSubclass(A, C)
-                self.assertNotIsSubclass(A, (C,))
+                self.check_issubclass(B, A)
+                self.check_issubclass(C, A)
+                self.check_not_issubclass(B, C)
+                self.check_not_issubclass(C, B)
+                self.check_not_issubclass(A, B)
+                self.check_not_issubclass(A, C)
 
         def test_registration_basics(self):
             class A(metaclass=abc_ABCMeta):
@@ -327,29 +330,21 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             b = B()
             # trigger caching
             for _ in range(2):
-                self.assertNotIsSubclass(B, A)
-                self.assertNotIsSubclass(B, (A,))
-                self.assertNotIsInstance(b, A)
-                self.assertNotIsInstance(b, (A,))
+                self.check_not_issubclass(B, A)
+                self.check_not_isinstance(b, A)
 
-                self.assertNotIsSubclass(A, B)
-                self.assertNotIsSubclass(A, (B,))
-                self.assertNotIsInstance(a, B)
-                self.assertNotIsInstance(a, (B,))
+                self.check_not_issubclass(A, B)
+                self.check_not_isinstance(a, B)
 
             B1 = A.register(B)
             # trigger caching
             for _ in range(2):
-                self.assertIsSubclass(B, A)
-                self.assertIsSubclass(B, (A,))
-                self.assertIsInstance(b, A)
-                self.assertIsInstance(b, (A,))
+                self.check_issubclass(B, A)
+                self.check_isinstance(b, A)
                 self.assertIs(B1, B)
 
-                self.assertNotIsSubclass(A, B)
-                self.assertNotIsSubclass(A, (B,))
-                self.assertNotIsInstance(a, B)
-                self.assertNotIsInstance(a, (B,))
+                self.check_not_issubclass(A, B)
+                self.check_not_isinstance(a, B)
 
             class C(B):
                 pass
@@ -357,15 +352,11 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             c = C()
             # trigger caching
             for _ in range(2):
-                self.assertIsSubclass(C, A)
-                self.assertIsSubclass(C, (A,))
-                self.assertIsInstance(c, A)
-                self.assertIsInstance(c, (A,))
+                self.check_issubclass(C, A)
+                self.check_isinstance(c, A)
 
-                self.assertNotIsSubclass(A, C)
-                self.assertNotIsSubclass(A, (C,))
-                self.assertNotIsInstance(a, C)
-                self.assertNotIsInstance(a, (C,))
+                self.check_not_issubclass(A, C)
+                self.check_not_isinstance(a, C)
 
         def test_register_as_class_deco(self):
             class A(metaclass=abc_ABCMeta):
@@ -508,15 +499,15 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
 
             # trigger caching
             for _ in range(2):
-                self.assertIsInstance(A(), Parent1)
-                self.assertIsSubclass(A, Parent1)
-                self.assertNotIsInstance(B(), Parent1)
-                self.assertNotIsSubclass(B, Parent1)
+                self.check_isinstance(A(), Parent1)
+                self.check_issubclass(A, Parent1)
+                self.check_not_isinstance(B(), Parent1)
+                self.check_not_issubclass(B, Parent1)
 
-                self.assertIsInstance(A(), Parent2)
-                self.assertIsSubclass(A, Parent2)
-                self.assertNotIsInstance(B(), Parent2)
-                self.assertNotIsSubclass(B, Parent2)
+                self.check_isinstance(A(), Parent2)
+                self.check_issubclass(A, Parent2)
+                self.check_not_isinstance(B(), Parent2)
+                self.check_not_issubclass(B, Parent2)
 
         def test_issubclass_bad_arguments(self):
             class A(metaclass=abc_ABCMeta):

@@ -181,10 +181,14 @@ _get_impl(PyObject *module, PyObject *self)
     return (_abc_data *)impl;
 }
 
+/* If class is inherited from ABC, set data to point to internal ABC state of class, and return 1.
+   If object is not inherited from ABC, return 0.
+   If error is encountered, return -1.
+ */
 static int
-_get_impl_optional(PyObject *module, PyObject *self, _abc_data **data)
+_get_optional_impl(_abcmodule_state *state, PyObject *self, _abc_data **data)
 {
-    _abcmodule_state *state = get_abc_state(module);
+    assert(data != NULL);
     PyObject *impl = NULL;
     int res = PyObject_GetOptionalAttr(self, &_Py_ID(_abc_impl), &impl);
     if (res <= 0) {
@@ -841,7 +845,7 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
         }
 
         _abc_data *scls_impl;
-        int scls_is_abc = _get_impl_optional(module, scls, &scls_impl);
+        int scls_is_abc = _get_optional_impl(state, scls, &scls_impl);
         if (scls_is_abc < 0) {
             goto end;
         }
@@ -858,14 +862,16 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
 
         int r = PyObject_IsSubclass(subclass, scls);
         Py_DECREF(scls);
-        if (scls_is_abc > 0) {
-            unset_issubclasscheck_recursive(scls_impl);
-            Py_DECREF(scls_impl);
-        }
-
         if (r < 0) {
+            Py_XDECREF(scls_impl);
             goto end;
         }
+
+        if (scls_is_abc > 0) {
+            unset_issubclasscheck_recursive(scls_impl);
+        }
+        Py_XDECREF(scls_impl);
+
         if (r > 0) {
             if (!is_issubclasscheck_recursive(impl)) {
                 if (_add_to_weak_set(impl, &impl->_abc_cache, subclass) < 0) {
