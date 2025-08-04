@@ -632,18 +632,18 @@ Locale names
 The format of the locale name is platform dependent, and the set of supported
 locales can depend on the system configuration.
 
-On Posix platforms, it usually has the format:
+On Posix platforms, it usually has the format [1]_:
 
 .. productionlist:: locale_name
    : language ["_" territory] ["." charset] ["@" modifier]
 
 where *language* is a two- or three-letter language code from `ISO 639`_,
-*territory* is a two-letter country or region code from ISO 3166,
+*territory* is a two-letter country or region code from `ISO 3166`_,
 *charset* is a locale encoding, and *modifier* is a script name,
 a language subtag, a sort order identifier, or other locale modifier
 (for example, "latin", "valencia", "stroke" and "euro").
 
-On Windows, several formats are supported.
+On Windows, several formats are supported. [2]_ [3]_
 A subset of `IETF BCP 47`_ tags:
 
 .. productionlist:: locale_name
@@ -670,11 +670,13 @@ Only the underscore separator is supported in this format.
 The "C" locale is supported on all platforms.
 
 .. _ISO 639: https://www.iso.org/iso-639-language-code
+.. _ISO 3166: https://www.iso.org/iso-3166-country-codes.html
 .. _IETF BCP 47: https://www.rfc-editor.org/info/bcp47
 .. _ISO 15924: https://www.unicode.org/iso15924/
 
-.. https://pubs.opengroup.org/onlinepubs/9799919799/basedefs/V1_chap08.html#tag_08_02
-.. https://learn.microsoft.com/en-us/cpp/c-runtime-library/locale-names-languages-and-country-region-strings
+.. [1] `IEEE Std 1003.1-2024; 8.2 Internationalization Variables <https://pubs.opengroup.org/onlinepubs/9799919799/basedefs/V1_chap08.html#tag_08_02>`_
+.. [2] `UCRT Locale names, Languages, and Country/Region strings <https://learn.microsoft.com/en-us/cpp/c-runtime-library/locale-names-languages-and-country-region-strings>`_
+.. [3] `Locale Names <https://learn.microsoft.com/en-us/windows/win32/intl/locale-names>`_
 
 
 .. _embedding-locale:
