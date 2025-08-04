@@ -34,16 +34,15 @@ The :mod:`locale` module defines the following exception and functions:
 
    If *locale* is given and not ``None``, :func:`setlocale` modifies the locale
    setting for the *category*. The available categories are listed in the data
-   description below. *locale* may be a string, or a pair,
-   language code and encoding. If it is a pair, it is converted to a locale
-   name using the locale aliasing engine. An empty string specifies the user's
+   description below. *locale* may be a :ref:`string <locale_name>`, or a pair,
+   language code and encoding. An empty string specifies the user's
    default settings. If the modification of the locale fails, the exception
    :exc:`Error` is raised. If successful, the new locale setting is returned.
 
-   The format of the *locale* and the language code strings is platform
-   dependent, but the forms ``language[_territory][.encoding][@modifier]``
-   and ``language[_territory]`` respectively are typically accepted on all
-   platforms.
+   If *locale* is a pair, it is converted to a locale name using
+   the locale aliasing engine.
+   The language code has the same format as a :ref:`locale name <locale_name>`,
+   but without encoding and ``@``-modifier.
    The language code and encoding can be ``None``.
 
    If *locale* is omitted or ``None``, the current setting for *category* is
@@ -351,8 +350,8 @@ The :mod:`locale` module defines the following exception and functions:
    ``'LANG'``.  The GNU gettext search path contains ``'LC_ALL'``,
    ``'LC_CTYPE'``, ``'LANG'`` and ``'LANGUAGE'``, in that order.
 
-   The format of the language code is platform depended, but on Posix
-   platforms it usually looks like ``language[_territory]``.
+   The language code has the same format as a :ref:`locale name <locale_name>`,
+   but without encoding and ``@``-modifier.
    The language code and encoding may be ``None`` if their values cannot be
    determined.
    The "C" locale is represented as ``(None, None)``.
@@ -366,8 +365,8 @@ The :mod:`locale` module defines the following exception and functions:
    the language code and encoding. *category* may be one of the :const:`!LC_\*`
    values except :const:`LC_ALL`.  It defaults to :const:`LC_CTYPE`.
 
-   The format of the language code is platform dependent, but on Posix
-   platforms it usually looks like ``language[_territory]``.
+   The language code has the same format as a :ref:`locale name <locale_name>`,
+   but without encoding and ``@``-modifier.
    The language code and encoding may be ``None`` if their values cannot be
    determined.
    The "C" locale is represented as ``(None, None)``.
@@ -623,6 +622,59 @@ to the character value only, while for byte strings, the conversions and
 classifications are done according to the ASCII value of the byte, and bytes
 whose high bit is set (i.e., non-ASCII bytes) are never converted or considered
 part of a character class such as letter or whitespace.
+
+
+.. _locale_name:
+
+Locale names
+------------
+
+The format of the locale name is platform dependent, and the set of supported
+locales can depend on the system configuration.
+
+On Posix platforms, it usually has the format
+
+.. productionlist:: locale_name
+   : language ["_" territory] ["." charset] ["@" modifier]
+
+where *language* is a two- or three-letter language code from `ISO 639`_,
+*territory* is a two-letter country or region code from ISO 3166,
+*charset* is a locale encoding, and *modifier* is a script name,
+a language subtag, a sort order identifier, or other locale modifier
+(e.g. "latin", "valencia", "stroke" and "euro").
+
+On Windows, several formats are supported.
+A subset of `IETF BCP 47`_ tags:
+
+.. productionlist:: locale_name
+   : language ["-" script] ["-" territory] ["." charset]
+   : language ["-" script] "-" territory "-" modifier
+
+where *language* and *territory* has the same meaning as in Posix,
+*script* is a four-letter script code from `ISO 15924`_,
+and *modifier* is a language subtag, a sort order identifier
+or custom modifier (e.g. "valencia", "stroke" or "x-python").
+Both hyphen ("``-``") and underscore ("``_``") separators are supported.
+Only UTF-8 encoding is allowed for BCP 47 tags.
+
+Windows supports also locale names in the format
+
+.. productionlist:: locale_name
+   : language ["_" territory] ["." charset]
+
+where *language* and *territory* are long names, such as "English" and
+"United States", and *charset* is either a code page number (e.g. "1252")
+or UTF-8.
+Only the underscore separator is supported in this format.
+
+The "C" locale is supported on all platforms.
+
+.. _ISO 639: https://www.iso.org/iso-639-language-code
+.. _IETF BCP 47: https://www.rfc-editor.org/info/bcp47
+.. _ISO 15924: https://www.unicode.org/iso15924/
+
+.. https://pubs.opengroup.org/onlinepubs/9799919799/basedefs/V1_chap08.html#tag_08_02
+.. https://learn.microsoft.com/en-us/cpp/c-runtime-library/locale-names-languages-and-country-region-strings
 
 
 .. _embedding-locale:
