@@ -467,19 +467,25 @@ def _iter_hash_func_info(excluded):
 # Mapping from canonical hash names to their explicit HACL* HMAC constructor.
 # There is currently no OpenSSL one-shot named function and there will likely
 # be none in the future.
-_EXPLICIT_HMAC_CONSTRUCTORS = {
-    HashId(name): f"_hmac.compute_{name}"
-    for name in CANONICAL_DIGEST_NAMES
+_HMACINFO_DATABASE = {
+    HashId(canonical_name): _HashInfoItem(f"_hmac.compute_{canonical_name}")
+    for canonical_name in CANONICAL_DIGEST_NAMES
 }
 # Neither HACL* nor OpenSSL supports HMAC over XOFs.
-_EXPLICIT_HMAC_CONSTRUCTORS[HashId.shake_128] = None
-_EXPLICIT_HMAC_CONSTRUCTORS[HashId.shake_256] = None
+_HMACINFO_DATABASE[HashId.shake_128] = _HashInfoItem()
+_HMACINFO_DATABASE[HashId.shake_256] = _HashInfoItem()
 # Strictly speaking, HMAC-BLAKE is meaningless as BLAKE2 is already a
 # keyed hash function. However, as it's exposed by HACL*, we test it.
-_EXPLICIT_HMAC_CONSTRUCTORS[HashId.blake2s] = '_hmac.compute_blake2s_32'
-_EXPLICIT_HMAC_CONSTRUCTORS[HashId.blake2b] = '_hmac.compute_blake2b_32'
-_EXPLICIT_HMAC_CONSTRUCTORS = MappingProxyType(_EXPLICIT_HMAC_CONSTRUCTORS)
-assert _EXPLICIT_HMAC_CONSTRUCTORS.keys() == CANONICAL_DIGEST_NAMES
+_HMACINFO_DATABASE[HashId.blake2s] = _HashInfoItem('_hmac.compute_blake2s_32')
+_HMACINFO_DATABASE[HashId.blake2b] = _HashInfoItem('_hmac.compute_blake2b_32')
+_HMACINFO_DATABASE = MappingProxyType(_HMACINFO_DATABASE)
+assert _HMACINFO_DATABASE.keys() == CANONICAL_DIGEST_NAMES
+
+
+def get_hmac_info_item(name):
+    info = _HMACINFO_DATABASE[name]
+    assert isinstance(info, _HashInfoItem), info
+    return info
 
 
 def _decorate_func_or_class(decorator_func, func_or_class):
@@ -1011,7 +1017,7 @@ def _block_builtin_hash_constructor(name):
 
 def _block_builtin_hmac_constructor(name):
     """Block explicit HACL* HMAC constructors."""
-    info = _HashInfoItem(_EXPLICIT_HMAC_CONSTRUCTORS[name])
+    info = get_hmac_info_item(name)
     assert info.module_name is None or info.module_name == "_hmac", info
     if (wrapped := info.import_member()) is None:
         # function shouldn't exist for this implementation

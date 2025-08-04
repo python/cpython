@@ -879,8 +879,8 @@ class TestHashlibSupport(unittest.TestCase):
         return self.try_import_attribute(fullname)
 
     def fetch_hmac_function(self, name):
-        fullname = hashlib_helper._EXPLICIT_HMAC_CONSTRUCTORS[name]
-        return self.try_import_attribute(fullname)
+        target = hashlib_helper.get_hmac_info_item(name)
+        return target.import_member()
 
     def check_openssl_hash(self, name, *, disabled=True):
         """Check that OpenSSL HASH interface is enabled/disabled."""
