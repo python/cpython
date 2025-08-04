@@ -1,0 +1,1 @@
+Bump the version of pip bundled in ensurepip to version 25.2
