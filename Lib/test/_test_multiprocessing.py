@@ -4624,7 +4624,7 @@ class _TestSharedMemory(BaseTestCase):
 
     def test_shared_memory_ShareableList_basics(self):
         sl = shared_memory.ShareableList(
-            ['howdy', b'HoWdY', -273.154, 100, None, True, 42]
+            ['howdy', b'HoWdY', -273.154, 100, None, True, 42, '💥 💥']
         )
         self.addCleanup(sl.shm.unlink)
 
@@ -4634,11 +4634,11 @@ class _TestSharedMemory(BaseTestCase):
 
         # Index Out of Range (get)
         with self.assertRaises(IndexError):
-            sl[7]
+            sl[8]
 
         # Index Out of Range (set)
         with self.assertRaises(IndexError):
-            sl[7] = 2
+            sl[8] = 2
 
         # Assign value without format change (str -> str)
         current_format = sl._get_packing_format(0)
@@ -4646,10 +4646,10 @@ class _TestSharedMemory(BaseTestCase):
         self.assertEqual(current_format, sl._get_packing_format(0))
 
         # Verify attributes are readable.
-        self.assertEqual(sl.format, '8s8sdqxxxxxx?xxxxxxxx?q')
+        self.assertEqual(sl.format, '8s8sdqxxxxxx?xxxxxxxx?q16s')
 
         # Exercise len().
-        self.assertEqual(len(sl), 7)
+        self.assertEqual(len(sl), 8)
 
         # Exercise index().
         with warnings.catch_warnings():
@@ -4661,12 +4661,13 @@ class _TestSharedMemory(BaseTestCase):
 
         # Exercise retrieving individual values.
         self.assertEqual(sl[0], 'howdy')
-        self.assertEqual(sl[-2], True)
+        self.assertEqual(sl[-3], True)
+        self.assertEqual(sl[-1], '💥 💥')
 
         # Exercise iterability.
         self.assertEqual(
             tuple(sl),
-            ('howdy', b'HoWdY', -273.154, 100, None, True, 42)
+            ('howdy', b'HoWdY', -273.154, 100, None, True, 42, '💥 💥')
         )
 
         # Exercise modifying individual values.
@@ -4674,17 +4675,16 @@ class _TestSharedMemory(BaseTestCase):
         self.assertEqual(sl[3], 42)
         sl[4] = 'some'  # Change type at a given position.
         self.assertEqual(sl[4], 'some')
-        self.assertEqual(sl.format, '8s8sdq8sxxxxxxx?q')
+        self.assertEqual(sl.format, '8s8sdq8sxxxxxxx?q16s')
         with self.assertRaisesRegex(ValueError,
                                     "exceeds available storage"):
             sl[4] = 'far too many'
         self.assertEqual(sl[4], 'some')
-        sl[0] = 'encodés'  # Exactly 8 bytes of UTF-8 data
-        self.assertEqual(sl[0], 'encodés')
-        self.assertEqual(sl[1], b'HoWdY')  # no spillage
+        sl[0] = 'encodé'
+        self.assertEqual(sl[0], 'encodé')  # no spillage
         with self.assertRaisesRegex(ValueError,
                                     "exceeds available storage"):
-            sl[0] = 'encodées'  # Exactly 9 bytes of UTF-8 data
+            sl[0] = 'encodés'  # Exactly 8 bytes of UTF-8 data
         self.assertEqual(sl[1], b'HoWdY')
         with self.assertRaisesRegex(ValueError,
                                     "exceeds available storage"):
