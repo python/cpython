@@ -4825,6 +4825,7 @@
             break;
         }
 
+<<<<<<< HEAD
         case _GUARD_TOS_TUPLE_r11: {
             CHECK_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
@@ -4894,8 +4895,14 @@
         case _BINARY_OP_SUBSCR_TUPLE_INT_r23: {
             CHECK_CURRENT_CACHED_VALUES(2);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+||||||| parent of 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
+        case _BINARY_OP_SUBSCR_TUPLE_INT: {
+=======
+        case _GUARD_BINARY_OP_SUBSCR_TUPLE_INT_BOUNDS: {
+>>>>>>> 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
             _PyStackRef sub_st;
             _PyStackRef tuple_st;
+<<<<<<< HEAD
             _PyStackRef res;
             _PyStackRef ts;
             _PyStackRef ss;
@@ -4903,6 +4910,14 @@
             _PyStackRef _stack_item_1 = _tos_cache1;
             sub_st = _stack_item_1;
             tuple_st = _stack_item_0;
+||||||| parent of 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
+            _PyStackRef res;
+            sub_st = stack_pointer[-1];
+            tuple_st = stack_pointer[-2];
+=======
+            sub_st = stack_pointer[-1];
+            tuple_st = stack_pointer[-2];
+>>>>>>> 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
             PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
             PyObject *tuple = PyStackRef_AsPyObjectBorrow(tuple_st);
             assert(PyLong_CheckExact(sub));
@@ -4922,7 +4937,21 @@
                 SET_CURRENT_CACHED_VALUES(2);
                 JUMP_TO_JUMP_TARGET();
             }
+            break;
+        }
+
+        case _BINARY_OP_SUBSCR_TUPLE_INT: {
+            _PyStackRef sub_st;
+            _PyStackRef tuple_st;
+            _PyStackRef res;
+            sub_st = stack_pointer[-1];
+            tuple_st = stack_pointer[-2];
+            PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
+            PyObject *tuple = PyStackRef_AsPyObjectBorrow(tuple_st);
+            assert(PyLong_CheckExact(sub));
+            assert(PyTuple_CheckExact(tuple));
             STAT_INC(BINARY_OP, hit);
+            Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
             PyObject *res_o = PyTuple_GET_ITEM(tuple, index);
             assert(res_o != NULL);
             res = PyStackRef_FromPyObjectNew(res_o);

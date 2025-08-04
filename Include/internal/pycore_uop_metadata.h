@@ -122,7 +122,14 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_BINARY_OP_SUBSCR_STR_INT] = HAS_DEOPT_FLAG,
     [_GUARD_NOS_TUPLE] = HAS_EXIT_FLAG,
     [_GUARD_TOS_TUPLE] = HAS_EXIT_FLAG,
+<<<<<<< HEAD
     [_BINARY_OP_SUBSCR_TUPLE_INT] = HAS_DEOPT_FLAG,
+||||||| parent of 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
+    [_BINARY_OP_SUBSCR_TUPLE_INT] = HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG,
+=======
+    [_GUARD_BINARY_OP_SUBSCR_TUPLE_INT_BOUNDS] = HAS_DEOPT_FLAG,
+    [_BINARY_OP_SUBSCR_TUPLE_INT] = HAS_ESCAPES_FLAG,
+>>>>>>> 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
     [_GUARD_NOS_DICT] = HAS_EXIT_FLAG,
     [_GUARD_TOS_DICT] = HAS_EXIT_FLAG,
     [_BINARY_OP_SUBSCR_DICT] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
@@ -4222,7 +4229,12 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_GET_YIELD_FROM_ITER] = "_GET_YIELD_FROM_ITER",
     [_GET_YIELD_FROM_ITER_r11] = "_GET_YIELD_FROM_ITER_r11",
     [_GUARD_BINARY_OP_EXTEND] = "_GUARD_BINARY_OP_EXTEND",
+<<<<<<< HEAD
     [_GUARD_BINARY_OP_EXTEND_r22] = "_GUARD_BINARY_OP_EXTEND_r22",
+||||||| parent of 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
+=======
+    [_GUARD_BINARY_OP_SUBSCR_TUPLE_INT_BOUNDS] = "_GUARD_BINARY_OP_SUBSCR_TUPLE_INT_BOUNDS",
+>>>>>>> 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
     [_GUARD_CALLABLE_ISINSTANCE] = "_GUARD_CALLABLE_ISINSTANCE",
     [_GUARD_CALLABLE_ISINSTANCE_r03] = "_GUARD_CALLABLE_ISINSTANCE_r03",
     [_GUARD_CALLABLE_ISINSTANCE_r13] = "_GUARD_CALLABLE_ISINSTANCE_r13",
@@ -5102,6 +5114,8 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _GUARD_NOS_TUPLE:
             return 0;
         case _GUARD_TOS_TUPLE:
+            return 0;
+        case _GUARD_BINARY_OP_SUBSCR_TUPLE_INT_BOUNDS:
             return 0;
         case _BINARY_OP_SUBSCR_TUPLE_INT:
             return 2;

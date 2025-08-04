@@ -125,6 +125,7 @@ extern "C" {
 #define _GET_ITER GET_ITER
 #define _GET_LEN GET_LEN
 #define _GET_YIELD_FROM_ITER GET_YIELD_FROM_ITER
+<<<<<<< HEAD
 #define _GUARD_BINARY_OP_EXTEND 383
 #define _GUARD_CALLABLE_ISINSTANCE 384
 #define _GUARD_CALLABLE_LEN 385
@@ -169,8 +170,93 @@ extern "C" {
 #define _GUARD_TYPE_VERSION 424
 #define _GUARD_TYPE_VERSION_AND_LOCK 425
 #define _HANDLE_PENDING_AND_DEOPT 426
+||||||| parent of 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
+#define _GUARD_BINARY_OP_EXTEND 385
+#define _GUARD_CALLABLE_ISINSTANCE 386
+#define _GUARD_CALLABLE_LEN 387
+#define _GUARD_CALLABLE_LIST_APPEND 388
+#define _GUARD_CALLABLE_STR_1 389
+#define _GUARD_CALLABLE_TUPLE_1 390
+#define _GUARD_CALLABLE_TYPE_1 391
+#define _GUARD_DORV_NO_DICT 392
+#define _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT 393
+#define _GUARD_GLOBALS_VERSION 394
+#define _GUARD_IS_FALSE_POP 395
+#define _GUARD_IS_NONE_POP 396
+#define _GUARD_IS_NOT_NONE_POP 397
+#define _GUARD_IS_TRUE_POP 398
+#define _GUARD_KEYS_VERSION 399
+#define _GUARD_NOS_DICT 400
+#define _GUARD_NOS_FLOAT 401
+#define _GUARD_NOS_INT 402
+#define _GUARD_NOS_LIST 403
+#define _GUARD_NOS_NOT_NULL 404
+#define _GUARD_NOS_NULL 405
+#define _GUARD_NOS_OVERFLOWED 406
+#define _GUARD_NOS_TUPLE 407
+#define _GUARD_NOS_UNICODE 408
+#define _GUARD_NOT_EXHAUSTED_LIST 409
+#define _GUARD_NOT_EXHAUSTED_RANGE 410
+#define _GUARD_NOT_EXHAUSTED_TUPLE 411
+#define _GUARD_THIRD_NULL 412
+#define _GUARD_TOS_ANY_SET 413
+#define _GUARD_TOS_DICT 414
+#define _GUARD_TOS_FLOAT 415
+#define _GUARD_TOS_INT 416
+#define _GUARD_TOS_LIST 417
+#define _GUARD_TOS_OVERFLOWED 418
+#define _GUARD_TOS_SLICE 419
+#define _GUARD_TOS_TUPLE 420
+#define _GUARD_TOS_UNICODE 421
+#define _GUARD_TYPE_VERSION 422
+#define _GUARD_TYPE_VERSION_AND_LOCK 423
+#define _HANDLE_PENDING_AND_DEOPT 424
+=======
+#define _GUARD_BINARY_OP_EXTEND 385
+#define _GUARD_BINARY_OP_SUBSCR_TUPLE_INT_BOUNDS 386
+#define _GUARD_CALLABLE_ISINSTANCE 387
+#define _GUARD_CALLABLE_LEN 388
+#define _GUARD_CALLABLE_LIST_APPEND 389
+#define _GUARD_CALLABLE_STR_1 390
+#define _GUARD_CALLABLE_TUPLE_1 391
+#define _GUARD_CALLABLE_TYPE_1 392
+#define _GUARD_DORV_NO_DICT 393
+#define _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT 394
+#define _GUARD_GLOBALS_VERSION 395
+#define _GUARD_IS_FALSE_POP 396
+#define _GUARD_IS_NONE_POP 397
+#define _GUARD_IS_NOT_NONE_POP 398
+#define _GUARD_IS_TRUE_POP 399
+#define _GUARD_KEYS_VERSION 400
+#define _GUARD_NOS_DICT 401
+#define _GUARD_NOS_FLOAT 402
+#define _GUARD_NOS_INT 403
+#define _GUARD_NOS_LIST 404
+#define _GUARD_NOS_NOT_NULL 405
+#define _GUARD_NOS_NULL 406
+#define _GUARD_NOS_OVERFLOWED 407
+#define _GUARD_NOS_TUPLE 408
+#define _GUARD_NOS_UNICODE 409
+#define _GUARD_NOT_EXHAUSTED_LIST 410
+#define _GUARD_NOT_EXHAUSTED_RANGE 411
+#define _GUARD_NOT_EXHAUSTED_TUPLE 412
+#define _GUARD_THIRD_NULL 413
+#define _GUARD_TOS_ANY_SET 414
+#define _GUARD_TOS_DICT 415
+#define _GUARD_TOS_FLOAT 416
+#define _GUARD_TOS_INT 417
+#define _GUARD_TOS_LIST 418
+#define _GUARD_TOS_OVERFLOWED 419
+#define _GUARD_TOS_SLICE 420
+#define _GUARD_TOS_TUPLE 421
+#define _GUARD_TOS_UNICODE 422
+#define _GUARD_TYPE_VERSION 423
+#define _GUARD_TYPE_VERSION_AND_LOCK 424
+#define _HANDLE_PENDING_AND_DEOPT 425
+>>>>>>> 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
 #define _IMPORT_FROM IMPORT_FROM
 #define _IMPORT_NAME IMPORT_NAME
+<<<<<<< HEAD
 #define _INIT_CALL_BOUND_METHOD_EXACT_ARGS 427
 #define _INIT_CALL_PY_EXACT_ARGS 428
 #define _INIT_CALL_PY_EXACT_ARGS_0 429
@@ -179,6 +265,25 @@ extern "C" {
 #define _INIT_CALL_PY_EXACT_ARGS_3 432
 #define _INIT_CALL_PY_EXACT_ARGS_4 433
 #define _INSERT_NULL 434
+||||||| parent of 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
+#define _INIT_CALL_BOUND_METHOD_EXACT_ARGS 425
+#define _INIT_CALL_PY_EXACT_ARGS 426
+#define _INIT_CALL_PY_EXACT_ARGS_0 427
+#define _INIT_CALL_PY_EXACT_ARGS_1 428
+#define _INIT_CALL_PY_EXACT_ARGS_2 429
+#define _INIT_CALL_PY_EXACT_ARGS_3 430
+#define _INIT_CALL_PY_EXACT_ARGS_4 431
+#define _INSERT_NULL 432
+=======
+#define _INIT_CALL_BOUND_METHOD_EXACT_ARGS 426
+#define _INIT_CALL_PY_EXACT_ARGS 427
+#define _INIT_CALL_PY_EXACT_ARGS_0 428
+#define _INIT_CALL_PY_EXACT_ARGS_1 429
+#define _INIT_CALL_PY_EXACT_ARGS_2 430
+#define _INIT_CALL_PY_EXACT_ARGS_3 431
+#define _INIT_CALL_PY_EXACT_ARGS_4 432
+#define _INSERT_NULL 433
+>>>>>>> 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
 #define _INSTRUMENTED_FOR_ITER INSTRUMENTED_FOR_ITER
 #define _INSTRUMENTED_INSTRUCTION INSTRUMENTED_INSTRUCTION
 #define _INSTRUMENTED_JUMP_FORWARD INSTRUMENTED_JUMP_FORWARD
@@ -188,6 +293,7 @@ extern "C" {
 #define _INSTRUMENTED_POP_JUMP_IF_NONE INSTRUMENTED_POP_JUMP_IF_NONE
 #define _INSTRUMENTED_POP_JUMP_IF_NOT_NONE INSTRUMENTED_POP_JUMP_IF_NOT_NONE
 #define _INSTRUMENTED_POP_JUMP_IF_TRUE INSTRUMENTED_POP_JUMP_IF_TRUE
+<<<<<<< HEAD
 #define _IS_NONE 435
 #define _IS_OP 436
 #define _ITER_CHECK_LIST 437
@@ -202,11 +308,49 @@ extern "C" {
 #define _ITER_NEXT_TUPLE 446
 #define _JUMP_BACKWARD_NO_INTERRUPT JUMP_BACKWARD_NO_INTERRUPT
 #define _JUMP_TO_TOP 447
+||||||| parent of 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
+#define _IS_NONE 433
+#define _IS_OP IS_OP
+#define _ITER_CHECK_LIST 434
+#define _ITER_CHECK_RANGE 435
+#define _ITER_CHECK_TUPLE 436
+#define _ITER_JUMP_LIST 437
+#define _ITER_JUMP_RANGE 438
+#define _ITER_JUMP_TUPLE 439
+#define _ITER_NEXT_LIST 440
+#define _ITER_NEXT_LIST_TIER_TWO 441
+#define _ITER_NEXT_RANGE 442
+#define _ITER_NEXT_TUPLE 443
+#define _JUMP_TO_TOP 444
+=======
+#define _IS_NONE 434
+#define _IS_OP IS_OP
+#define _ITER_CHECK_LIST 435
+#define _ITER_CHECK_RANGE 436
+#define _ITER_CHECK_TUPLE 437
+#define _ITER_JUMP_LIST 438
+#define _ITER_JUMP_RANGE 439
+#define _ITER_JUMP_TUPLE 440
+#define _ITER_NEXT_LIST 441
+#define _ITER_NEXT_LIST_TIER_TWO 442
+#define _ITER_NEXT_RANGE 443
+#define _ITER_NEXT_TUPLE 444
+#define _JUMP_TO_TOP 445
+>>>>>>> 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
 #define _LIST_APPEND LIST_APPEND
 #define _LIST_EXTEND LIST_EXTEND
+<<<<<<< HEAD
 #define _LOAD_ATTR 448
 #define _LOAD_ATTR_CLASS 449
+||||||| parent of 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
+#define _LOAD_ATTR 445
+#define _LOAD_ATTR_CLASS 446
+=======
+#define _LOAD_ATTR 446
+#define _LOAD_ATTR_CLASS 447
+>>>>>>> 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
 #define _LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN
+<<<<<<< HEAD
 #define _LOAD_ATTR_INSTANCE_VALUE 450
 #define _LOAD_ATTR_METHOD_LAZY_DICT 451
 #define _LOAD_ATTR_METHOD_NO_DICT 452
@@ -217,15 +361,57 @@ extern "C" {
 #define _LOAD_ATTR_PROPERTY_FRAME 457
 #define _LOAD_ATTR_SLOT 458
 #define _LOAD_ATTR_WITH_HINT 459
+||||||| parent of 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
+#define _LOAD_ATTR_INSTANCE_VALUE 447
+#define _LOAD_ATTR_METHOD_LAZY_DICT 448
+#define _LOAD_ATTR_METHOD_NO_DICT 449
+#define _LOAD_ATTR_METHOD_WITH_VALUES 450
+#define _LOAD_ATTR_MODULE 451
+#define _LOAD_ATTR_NONDESCRIPTOR_NO_DICT 452
+#define _LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES 453
+#define _LOAD_ATTR_PROPERTY_FRAME 454
+#define _LOAD_ATTR_SLOT 455
+#define _LOAD_ATTR_WITH_HINT 456
+=======
+#define _LOAD_ATTR_INSTANCE_VALUE 448
+#define _LOAD_ATTR_METHOD_LAZY_DICT 449
+#define _LOAD_ATTR_METHOD_NO_DICT 450
+#define _LOAD_ATTR_METHOD_WITH_VALUES 451
+#define _LOAD_ATTR_MODULE 452
+#define _LOAD_ATTR_NONDESCRIPTOR_NO_DICT 453
+#define _LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES 454
+#define _LOAD_ATTR_PROPERTY_FRAME 455
+#define _LOAD_ATTR_SLOT 456
+#define _LOAD_ATTR_WITH_HINT 457
+>>>>>>> 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
 #define _LOAD_BUILD_CLASS LOAD_BUILD_CLASS
+<<<<<<< HEAD
 #define _LOAD_BYTECODE 460
+||||||| parent of 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
+#define _LOAD_BYTECODE 457
+=======
+#define _LOAD_BYTECODE 458
+>>>>>>> 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
 #define _LOAD_COMMON_CONSTANT LOAD_COMMON_CONSTANT
 #define _LOAD_CONST LOAD_CONST
+<<<<<<< HEAD
 #define _LOAD_CONST_INLINE 461
 #define _LOAD_CONST_INLINE_BORROW 462
 #define _LOAD_CONST_UNDER_INLINE 463
 #define _LOAD_CONST_UNDER_INLINE_BORROW 464
+||||||| parent of 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
+#define _LOAD_CONST_INLINE 458
+#define _LOAD_CONST_INLINE_BORROW 459
+#define _LOAD_CONST_UNDER_INLINE 460
+#define _LOAD_CONST_UNDER_INLINE_BORROW 461
+=======
+#define _LOAD_CONST_INLINE 459
+#define _LOAD_CONST_INLINE_BORROW 460
+#define _LOAD_CONST_UNDER_INLINE 461
+#define _LOAD_CONST_UNDER_INLINE_BORROW 462
+>>>>>>> 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
 #define _LOAD_DEREF LOAD_DEREF
+<<<<<<< HEAD
 #define _LOAD_FAST 465
 #define _LOAD_FAST_0 466
 #define _LOAD_FAST_1 467
@@ -235,7 +421,29 @@ extern "C" {
 #define _LOAD_FAST_5 471
 #define _LOAD_FAST_6 472
 #define _LOAD_FAST_7 473
+||||||| parent of 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
+#define _LOAD_FAST 462
+#define _LOAD_FAST_0 463
+#define _LOAD_FAST_1 464
+#define _LOAD_FAST_2 465
+#define _LOAD_FAST_3 466
+#define _LOAD_FAST_4 467
+#define _LOAD_FAST_5 468
+#define _LOAD_FAST_6 469
+#define _LOAD_FAST_7 470
+=======
+#define _LOAD_FAST 463
+#define _LOAD_FAST_0 464
+#define _LOAD_FAST_1 465
+#define _LOAD_FAST_2 466
+#define _LOAD_FAST_3 467
+#define _LOAD_FAST_4 468
+#define _LOAD_FAST_5 469
+#define _LOAD_FAST_6 470
+#define _LOAD_FAST_7 471
+>>>>>>> 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
 #define _LOAD_FAST_AND_CLEAR LOAD_FAST_AND_CLEAR
+<<<<<<< HEAD
 #define _LOAD_FAST_BORROW 474
 #define _LOAD_FAST_BORROW_0 475
 #define _LOAD_FAST_BORROW_1 476
@@ -245,49 +453,151 @@ extern "C" {
 #define _LOAD_FAST_BORROW_5 480
 #define _LOAD_FAST_BORROW_6 481
 #define _LOAD_FAST_BORROW_7 482
+||||||| parent of 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
+#define _LOAD_FAST_BORROW 471
+#define _LOAD_FAST_BORROW_0 472
+#define _LOAD_FAST_BORROW_1 473
+#define _LOAD_FAST_BORROW_2 474
+#define _LOAD_FAST_BORROW_3 475
+#define _LOAD_FAST_BORROW_4 476
+#define _LOAD_FAST_BORROW_5 477
+#define _LOAD_FAST_BORROW_6 478
+#define _LOAD_FAST_BORROW_7 479
+#define _LOAD_FAST_BORROW_LOAD_FAST_BORROW LOAD_FAST_BORROW_LOAD_FAST_BORROW
+=======
+#define _LOAD_FAST_BORROW 472
+#define _LOAD_FAST_BORROW_0 473
+#define _LOAD_FAST_BORROW_1 474
+#define _LOAD_FAST_BORROW_2 475
+#define _LOAD_FAST_BORROW_3 476
+#define _LOAD_FAST_BORROW_4 477
+#define _LOAD_FAST_BORROW_5 478
+#define _LOAD_FAST_BORROW_6 479
+#define _LOAD_FAST_BORROW_7 480
+#define _LOAD_FAST_BORROW_LOAD_FAST_BORROW LOAD_FAST_BORROW_LOAD_FAST_BORROW
+>>>>>>> 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
 #define _LOAD_FAST_CHECK LOAD_FAST_CHECK
 #define _LOAD_FROM_DICT_OR_DEREF LOAD_FROM_DICT_OR_DEREF
 #define _LOAD_FROM_DICT_OR_GLOBALS LOAD_FROM_DICT_OR_GLOBALS
+<<<<<<< HEAD
 #define _LOAD_GLOBAL 483
 #define _LOAD_GLOBAL_BUILTINS 484
 #define _LOAD_GLOBAL_MODULE 485
+||||||| parent of 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
+#define _LOAD_GLOBAL 480
+#define _LOAD_GLOBAL_BUILTINS 481
+#define _LOAD_GLOBAL_MODULE 482
+=======
+#define _LOAD_GLOBAL 481
+#define _LOAD_GLOBAL_BUILTINS 482
+#define _LOAD_GLOBAL_MODULE 483
+>>>>>>> 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
 #define _LOAD_LOCALS LOAD_LOCALS
 #define _LOAD_NAME LOAD_NAME
+<<<<<<< HEAD
 #define _LOAD_SMALL_INT 486
 #define _LOAD_SMALL_INT_0 487
 #define _LOAD_SMALL_INT_1 488
 #define _LOAD_SMALL_INT_2 489
 #define _LOAD_SMALL_INT_3 490
 #define _LOAD_SPECIAL 491
+||||||| parent of 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
+#define _LOAD_SMALL_INT 483
+#define _LOAD_SMALL_INT_0 484
+#define _LOAD_SMALL_INT_1 485
+#define _LOAD_SMALL_INT_2 486
+#define _LOAD_SMALL_INT_3 487
+#define _LOAD_SPECIAL 488
+=======
+#define _LOAD_SMALL_INT 484
+#define _LOAD_SMALL_INT_0 485
+#define _LOAD_SMALL_INT_1 486
+#define _LOAD_SMALL_INT_2 487
+#define _LOAD_SMALL_INT_3 488
+#define _LOAD_SPECIAL 489
+>>>>>>> 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
 #define _LOAD_SUPER_ATTR_ATTR LOAD_SUPER_ATTR_ATTR
 #define _LOAD_SUPER_ATTR_METHOD LOAD_SUPER_ATTR_METHOD
+<<<<<<< HEAD
 #define _MAKE_CALLARGS_A_TUPLE 492
+||||||| parent of 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
+#define _MAKE_CALLARGS_A_TUPLE 489
+=======
+#define _MAKE_CALLARGS_A_TUPLE 490
+>>>>>>> 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
 #define _MAKE_CELL MAKE_CELL
 #define _MAKE_FUNCTION MAKE_FUNCTION
+<<<<<<< HEAD
 #define _MAKE_WARM 493
+||||||| parent of 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
+#define _MAKE_WARM 490
+=======
+#define _MAKE_WARM 491
+>>>>>>> 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
 #define _MAP_ADD MAP_ADD
 #define _MATCH_CLASS MATCH_CLASS
 #define _MATCH_KEYS MATCH_KEYS
 #define _MATCH_MAPPING MATCH_MAPPING
 #define _MATCH_SEQUENCE MATCH_SEQUENCE
+<<<<<<< HEAD
 #define _MAYBE_EXPAND_METHOD 494
 #define _MAYBE_EXPAND_METHOD_KW 495
 #define _MONITOR_CALL 496
 #define _MONITOR_CALL_KW 497
 #define _MONITOR_JUMP_BACKWARD 498
 #define _MONITOR_RESUME 499
+||||||| parent of 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
+#define _MAYBE_EXPAND_METHOD 491
+#define _MAYBE_EXPAND_METHOD_KW 492
+#define _MONITOR_CALL 493
+#define _MONITOR_CALL_KW 494
+#define _MONITOR_JUMP_BACKWARD 495
+#define _MONITOR_RESUME 496
+=======
+#define _MAYBE_EXPAND_METHOD 492
+#define _MAYBE_EXPAND_METHOD_KW 493
+#define _MONITOR_CALL 494
+#define _MONITOR_CALL_KW 495
+#define _MONITOR_JUMP_BACKWARD 496
+#define _MONITOR_RESUME 497
+>>>>>>> 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
 #define _NOP NOP
+<<<<<<< HEAD
 #define _POP_CALL 500
 #define _POP_CALL_LOAD_CONST_INLINE_BORROW 501
 #define _POP_CALL_ONE 502
 #define _POP_CALL_ONE_LOAD_CONST_INLINE_BORROW 503
 #define _POP_CALL_TWO 504
 #define _POP_CALL_TWO_LOAD_CONST_INLINE_BORROW 505
+||||||| parent of 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
+#define _POP_CALL 497
+#define _POP_CALL_LOAD_CONST_INLINE_BORROW 498
+#define _POP_CALL_ONE 499
+#define _POP_CALL_ONE_LOAD_CONST_INLINE_BORROW 500
+#define _POP_CALL_TWO 501
+#define _POP_CALL_TWO_LOAD_CONST_INLINE_BORROW 502
+=======
+#define _POP_CALL 498
+#define _POP_CALL_LOAD_CONST_INLINE_BORROW 499
+#define _POP_CALL_ONE 500
+#define _POP_CALL_ONE_LOAD_CONST_INLINE_BORROW 501
+#define _POP_CALL_TWO 502
+#define _POP_CALL_TWO_LOAD_CONST_INLINE_BORROW 503
+>>>>>>> 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
 #define _POP_EXCEPT POP_EXCEPT
 #define _POP_ITER POP_ITER
+<<<<<<< HEAD
 #define _POP_JUMP_IF_FALSE 506
 #define _POP_JUMP_IF_TRUE 507
+||||||| parent of 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
+#define _POP_JUMP_IF_FALSE 503
+#define _POP_JUMP_IF_TRUE 504
+=======
+#define _POP_JUMP_IF_FALSE 504
+#define _POP_JUMP_IF_TRUE 505
+>>>>>>> 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
 #define _POP_TOP POP_TOP
+<<<<<<< HEAD
 #define _POP_TOP_FLOAT 508
 #define _POP_TOP_INT 509
 #define _POP_TOP_LOAD_CONST_INLINE 510
@@ -296,24 +606,74 @@ extern "C" {
 #define _POP_TOP_UNICODE 513
 #define _POP_TWO 514
 #define _POP_TWO_LOAD_CONST_INLINE_BORROW 515
+||||||| parent of 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
+#define _POP_TOP_FLOAT 505
+#define _POP_TOP_INT 506
+#define _POP_TOP_LOAD_CONST_INLINE 507
+#define _POP_TOP_LOAD_CONST_INLINE_BORROW 508
+#define _POP_TOP_NOP 509
+#define _POP_TOP_UNICODE 510
+#define _POP_TWO 511
+#define _POP_TWO_LOAD_CONST_INLINE_BORROW 512
+=======
+#define _POP_TOP_FLOAT 506
+#define _POP_TOP_INT 507
+#define _POP_TOP_LOAD_CONST_INLINE 508
+#define _POP_TOP_LOAD_CONST_INLINE_BORROW 509
+#define _POP_TOP_NOP 510
+#define _POP_TOP_UNICODE 511
+#define _POP_TWO 512
+#define _POP_TWO_LOAD_CONST_INLINE_BORROW 513
+>>>>>>> 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
 #define _PUSH_EXC_INFO PUSH_EXC_INFO
+<<<<<<< HEAD
 #define _PUSH_FRAME 516
+||||||| parent of 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
+#define _PUSH_FRAME 513
+=======
+#define _PUSH_FRAME 514
+>>>>>>> 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
 #define _PUSH_NULL PUSH_NULL
+<<<<<<< HEAD
 #define _PUSH_NULL_CONDITIONAL 517
 #define _PY_FRAME_GENERAL 518
 #define _PY_FRAME_KW 519
 #define _QUICKEN_RESUME 520
 #define _REPLACE_WITH_TRUE 521
+||||||| parent of 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
+#define _PUSH_NULL_CONDITIONAL 514
+#define _PY_FRAME_GENERAL 515
+#define _PY_FRAME_KW 516
+#define _QUICKEN_RESUME 517
+#define _REPLACE_WITH_TRUE 518
+=======
+#define _PUSH_NULL_CONDITIONAL 515
+#define _PY_FRAME_GENERAL 516
+#define _PY_FRAME_KW 517
+#define _QUICKEN_RESUME 518
+#define _REPLACE_WITH_TRUE 519
+>>>>>>> 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
 #define _RESUME_CHECK RESUME_CHECK
 #define _RETURN_GENERATOR RETURN_GENERATOR
 #define _RETURN_VALUE RETURN_VALUE
+<<<<<<< HEAD
 #define _SAVE_RETURN_OFFSET 522
 #define _SEND 523
 #define _SEND_GEN_FRAME 524
+||||||| parent of 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
+#define _SAVE_RETURN_OFFSET 519
+#define _SEND 520
+#define _SEND_GEN_FRAME 521
+=======
+#define _SAVE_RETURN_OFFSET 520
+#define _SEND 521
+#define _SEND_GEN_FRAME 522
+>>>>>>> 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
 #define _SETUP_ANNOTATIONS SETUP_ANNOTATIONS
 #define _SET_ADD SET_ADD
 #define _SET_FUNCTION_ATTRIBUTE SET_FUNCTION_ATTRIBUTE
 #define _SET_UPDATE SET_UPDATE
+<<<<<<< HEAD
 #define _SHUFFLE_2_LOAD_CONST_INLINE_BORROW 525
 #define _SHUFFLE_3_LOAD_CONST_INLINE_BORROW 526
 #define _SPILL_OR_RELOAD 527
@@ -322,7 +682,21 @@ extern "C" {
 #define _STORE_ATTR_INSTANCE_VALUE 530
 #define _STORE_ATTR_SLOT 531
 #define _STORE_ATTR_WITH_HINT 532
+||||||| parent of 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
+#define _START_EXECUTOR 522
+#define _STORE_ATTR 523
+#define _STORE_ATTR_INSTANCE_VALUE 524
+#define _STORE_ATTR_SLOT 525
+#define _STORE_ATTR_WITH_HINT 526
+=======
+#define _START_EXECUTOR 523
+#define _STORE_ATTR 524
+#define _STORE_ATTR_INSTANCE_VALUE 525
+#define _STORE_ATTR_SLOT 526
+#define _STORE_ATTR_WITH_HINT 527
+>>>>>>> 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
 #define _STORE_DEREF STORE_DEREF
+<<<<<<< HEAD
 #define _STORE_FAST 533
 #define _STORE_FAST_0 534
 #define _STORE_FAST_1 535
@@ -332,8 +706,34 @@ extern "C" {
 #define _STORE_FAST_5 539
 #define _STORE_FAST_6 540
 #define _STORE_FAST_7 541
+||||||| parent of 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
+#define _STORE_FAST 527
+#define _STORE_FAST_0 528
+#define _STORE_FAST_1 529
+#define _STORE_FAST_2 530
+#define _STORE_FAST_3 531
+#define _STORE_FAST_4 532
+#define _STORE_FAST_5 533
+#define _STORE_FAST_6 534
+#define _STORE_FAST_7 535
+#define _STORE_FAST_LOAD_FAST STORE_FAST_LOAD_FAST
+#define _STORE_FAST_STORE_FAST STORE_FAST_STORE_FAST
+=======
+#define _STORE_FAST 528
+#define _STORE_FAST_0 529
+#define _STORE_FAST_1 530
+#define _STORE_FAST_2 531
+#define _STORE_FAST_3 532
+#define _STORE_FAST_4 533
+#define _STORE_FAST_5 534
+#define _STORE_FAST_6 535
+#define _STORE_FAST_7 536
+#define _STORE_FAST_LOAD_FAST STORE_FAST_LOAD_FAST
+#define _STORE_FAST_STORE_FAST STORE_FAST_STORE_FAST
+>>>>>>> 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
 #define _STORE_GLOBAL STORE_GLOBAL
 #define _STORE_NAME STORE_NAME
+<<<<<<< HEAD
 #define _STORE_SLICE 542
 #define _STORE_SUBSCR 543
 #define _STORE_SUBSCR_DICT 544
@@ -343,22 +743,68 @@ extern "C" {
 #define _SWAP_3 548
 #define _TIER2_RESUME_CHECK 549
 #define _TO_BOOL 550
+||||||| parent of 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
+#define _STORE_SLICE 536
+#define _STORE_SUBSCR 537
+#define _STORE_SUBSCR_DICT 538
+#define _STORE_SUBSCR_LIST_INT 539
+#define _SWAP 540
+#define _SWAP_2 541
+#define _SWAP_3 542
+#define _TIER2_RESUME_CHECK 543
+#define _TO_BOOL 544
+=======
+#define _STORE_SLICE 537
+#define _STORE_SUBSCR 538
+#define _STORE_SUBSCR_DICT 539
+#define _STORE_SUBSCR_LIST_INT 540
+#define _SWAP 541
+#define _SWAP_2 542
+#define _SWAP_3 543
+#define _TIER2_RESUME_CHECK 544
+#define _TO_BOOL 545
+>>>>>>> 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
 #define _TO_BOOL_BOOL TO_BOOL_BOOL
 #define _TO_BOOL_INT TO_BOOL_INT
+<<<<<<< HEAD
 #define _TO_BOOL_LIST 551
+||||||| parent of 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
+#define _TO_BOOL_LIST 545
+=======
+#define _TO_BOOL_LIST 546
+>>>>>>> 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
 #define _TO_BOOL_NONE TO_BOOL_NONE
+<<<<<<< HEAD
 #define _TO_BOOL_STR 552
 #define _TRACE_RECORD TRACE_RECORD
+||||||| parent of 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
+#define _TO_BOOL_STR 546
+=======
+#define _TO_BOOL_STR 547
+>>>>>>> 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
 #define _UNARY_INVERT UNARY_INVERT
 #define _UNARY_NEGATIVE UNARY_NEGATIVE
 #define _UNARY_NOT UNARY_NOT
 #define _UNPACK_EX UNPACK_EX
+<<<<<<< HEAD
 #define _UNPACK_SEQUENCE 553
 #define _UNPACK_SEQUENCE_LIST 554
 #define _UNPACK_SEQUENCE_TUPLE 555
 #define _UNPACK_SEQUENCE_TWO_TUPLE 556
+||||||| parent of 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
+#define _UNPACK_SEQUENCE 547
+#define _UNPACK_SEQUENCE_LIST 548
+#define _UNPACK_SEQUENCE_TUPLE 549
+#define _UNPACK_SEQUENCE_TWO_TUPLE 550
+=======
+#define _UNPACK_SEQUENCE 548
+#define _UNPACK_SEQUENCE_LIST 549
+#define _UNPACK_SEQUENCE_TUPLE 550
+#define _UNPACK_SEQUENCE_TWO_TUPLE 551
+>>>>>>> 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
 #define _WITH_EXCEPT_START WITH_EXCEPT_START
 #define _YIELD_VALUE YIELD_VALUE
+<<<<<<< HEAD
 #define MAX_UOP_ID 556
 #define _BINARY_OP_r21 557
 #define _BINARY_OP_ADD_FLOAT_r03 558
@@ -1112,6 +1558,11 @@ extern "C" {
 #define _WITH_EXCEPT_START_r33 1306
 #define _YIELD_VALUE_r11 1307
 #define MAX_UOP_REGS_ID 1307
+||||||| parent of 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
+#define MAX_UOP_ID 550
+=======
+#define MAX_UOP_ID 551
+>>>>>>> 4db3994e31 (Remove bounds check when indexing into tuples with a constant index)
 
 #ifdef __cplusplus
 }
