@@ -197,7 +197,8 @@ This is a basic, yet reliable mental model.
 In practice, it's slightly more complex, but not by much.
 In part 2, we'll walk through the details that make this possible.
 
-**Unlike tasks, awaiting a coroutine does not cede control!**
+**Unlike tasks, awaiting a coroutine does not hand control back to the event
+loop!**
 Wrapping a coroutine in a task first, then ``await``\ ing that would cede
 control.
 The behavior of ``await coroutine`` is effectively the same as invoking a
