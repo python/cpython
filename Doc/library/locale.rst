@@ -632,7 +632,7 @@ Locale names
 The format of the locale name is platform dependent, and the set of supported
 locales can depend on the system configuration.
 
-On Posix platforms, it usually has the format
+On Posix platforms, it usually has the format:
 
 .. productionlist:: locale_name
    : language ["_" territory] ["." charset] ["@" modifier]
@@ -641,7 +641,7 @@ where *language* is a two- or three-letter language code from `ISO 639`_,
 *territory* is a two-letter country or region code from ISO 3166,
 *charset* is a locale encoding, and *modifier* is a script name,
 a language subtag, a sort order identifier, or other locale modifier
-(e.g. "latin", "valencia", "stroke" and "euro").
+(for example, "latin", "valencia", "stroke" and "euro").
 
 On Windows, several formats are supported.
 A subset of `IETF BCP 47`_ tags:
@@ -650,11 +650,11 @@ A subset of `IETF BCP 47`_ tags:
    : language ["-" script] ["-" territory] ["." charset]
    : language ["-" script] "-" territory "-" modifier
 
-where *language* and *territory* has the same meaning as in Posix,
+where *language* and *territory* have the same meaning as in Posix,
 *script* is a four-letter script code from `ISO 15924`_,
 and *modifier* is a language subtag, a sort order identifier
-or custom modifier (e.g. "valencia", "stroke" or "x-python").
-Both hyphen ("``-``") and underscore ("``_``") separators are supported.
+or custom modifier (for example, "valencia", "stroke" or "x-python").
+Both hyphen (``'-'``) and underscore (``'_'``) separators are supported.
 Only UTF-8 encoding is allowed for BCP 47 tags.
 
 Windows supports also locale names in the format
@@ -662,8 +662,8 @@ Windows supports also locale names in the format
 .. productionlist:: locale_name
    : language ["_" territory] ["." charset]
 
-where *language* and *territory* are long names, such as "English" and
-"United States", and *charset* is either a code page number (e.g. "1252")
+where *language* and *territory* are full names, such as "English" and
+"United States", and *charset* is either a code page number (for example, "1252")
 or UTF-8.
 Only the underscore separator is supported in this format.
 
