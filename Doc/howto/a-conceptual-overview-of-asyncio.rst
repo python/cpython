@@ -10,7 +10,7 @@ recommended patterns.
 
 You might be curious about some key :mod:`!asyncio` concepts.
 You'll be comfortably able to answer these questions by the end of this
-article.
+article:
 
 - What's happening behind the scenes when an object is ``await``\ ed?
 - How does :mod:`!asyncio` differentiate between a task which doesn't need
@@ -22,7 +22,7 @@ article.
 .. seealso::
 
    The `guide <https://github.com/anordin95/a-conceptual-overview-of-asyncio/
-   tree/main>`_ which inspired this HOWTO article.
+   tree/main>`_ that inspired this HOWTO article.
 
 --------------------------------------------
 A conceptual overview part 1: the high-level
@@ -45,14 +45,14 @@ done comes from the respect and cooperation of its teammates.
 In more technical terms, the event loop contains a queue of jobs to be run.
 Some jobs are added directly by you, and some indirectly by :mod:`!asyncio`.
 The event loop pops a job from the queue and invokes it (or "gives it control"),
-similar to calling a function, then that job runs.
+similar to calling a function, and then that job runs.
 Once it pauses or completes, it returns control to the event loop.
 The event loop will then move on to the next job in its queue and invoke it.
 This process repeats indefinitely.
 Even if the queue is empty, the event loop continues to cycle (somewhat
 aimlessly).
 
-Effective execution relies on tasks sharing well: a greedy job could hog
+Effective execution relies on tasks sharing well; a greedy job could hog
 control and leave the other tasks to starve, rendering the overall event loop
 approach rather useless.
 
@@ -255,7 +255,7 @@ A conceptual overview part 2: the nuts and bolts
 Part 2 goes into detail on the mechanisms :mod:`!asyncio` uses to manage
 control flow.
 This is where the magic happens.
-You'll come away from this section knowing what await does behind the scenes
+You'll come away from this section knowing what ``await`` does behind the scenes
 and how to make your own asynchronous operators.
 
 ================================================
@@ -269,8 +269,8 @@ resume a coroutine.
 If the coroutine was paused and is now being resumed, the argument ``arg``
 will be sent in as the return value of the ``yield`` statement which originally
 paused it.
-If the coroutine is being used for the first time, as opposed to being resumed,
-arg must be ``None``.
+If the coroutine is being used for the first time (as opposed to being resumed)
+``arg`` must be ``None``.
 
 :ref:`yield <yieldexpr>`, like usual, pauses execution and returns control
 to the caller.
@@ -359,7 +359,7 @@ and the object is a way to keep an eye on that something.
 
 A future has a few important attributes. One is its state which can be either
 "pending", "cancelled" or "done".
-Another is its result which is set when the state transitions to done.
+Another is its result, which is set when the state transitions to done.
 Unlike a coroutine, a future does not represent the actual computation to be
 done; instead, it represents the status and result of that computation, kind of
 like a status light (red, yellow or green) or indicator.
@@ -367,7 +367,7 @@ like a status light (red, yellow or green) or indicator.
 :class:`asyncio.Task` subclasses :class:`asyncio.Future` in order to gain
 these various capabilities.
 The prior section said tasks store a list of callbacks, which wasn't entirely
-true.
+correct.
 It's actually the ``Future`` class that implements this logic which ``Task``
 inherits.
 
@@ -498,4 +498,4 @@ For reference, you could implement it without futures, like so::
 
 But, that's all for now. Hopefully you're ready to more confidently dive into
 some async programming or check out advanced topics in the
-:mod:`docs <asyncio>`.
+:mod:`rest of the documentation <asyncio>`.
